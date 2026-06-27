@@ -451,6 +451,91 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
 }
 
 ///|
+test "render3d: unbatchable shadow phase prepares Bevy work item buffers" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(906UL),
+    @material.DrawFunctionId::new(14U),
+    None,
+    @render_mesh.MeshSlabs::new(51, index_slab_id=Some(52)),
+  )
+  let bin = Render3dShadowBinKeyData::new(909)
+  let first_main = @render.MainEntity::new(@core.Entity::new(141, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(142, 1))
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(151, 1), first_main),
+    90U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(152, 1), second_main),
+    92U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  let direct_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let direct_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.prepare_unbatchable_phase_buffers(
+    "shadow-view", true, false, direct_instances, direct_indirect,
+  )
+  let direct_work_items = direct_instances.buffers.work_item_buffers
+    .get("shadow-view")
+    .unwrap()
+  debug_inspect(direct_work_items.direct_len(), content="2")
+  let direct_items = phase.items()
+  inspect(direct_items[0].batch_range().start(), content="0")
+  inspect(direct_items[1].batch_range().start(), content="1")
+  debug_inspect(direct_items[0].extra_index(), content="NoExtraIndex")
+
+  let indirect_phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  indirect_phase.add(
+    key,
+    bin,
+    (@core.Entity::new(153, 1), first_main),
+    100U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  indirect_phase.add(
+    key,
+    bin,
+    (@core.Entity::new(154, 1), second_main),
+    101U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  let indirect_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  indirect_phase.prepare_unbatchable_phase_buffers(
+    "shadow-view", false, false, indirect_instances, indirect_parameters,
+  )
+  let indirect_work_items = indirect_instances.buffers.work_item_buffers
+    .get("shadow-view")
+    .unwrap()
+  debug_inspect(indirect_work_items.indexed_len(), content="2")
+  debug_inspect(indirect_parameters.buffers.batch_count(true), content="2")
+  debug_inspect(indirect_parameters.buffers.batch_set_count(true), content="2")
+  let indirect_items = indirect_phase.items()
+  debug_inspect(
+    indirect_items[0].extra_index(),
+    content="IndirectParametersIndex(0, 1, None)",
+  )
+  debug_inspect(
+    indirect_items[1].extra_index(),
+    content="IndirectParametersIndex(1, 2, None)",
+  )
+}
+
+///|
 test "render3d: shadow multidraw batch set mirrors Bevy packed bin offsets" {
   let batch_set = Render3dShadowMultidrawableBatchSetData::Render3dShadowMultidrawableBatchSetData()
   let first_bin = Render3dShadowBinKeyData::new(101)

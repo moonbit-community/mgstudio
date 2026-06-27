@@ -2320,6 +2320,77 @@ fn Render3dShadowUnbatchableBinnedEntities::items(
 }
 
 ///|
+fn Render3dShadowUnbatchableBinnedEntities::prepare_phase_buffers(
+  self : Render3dShadowUnbatchableBinnedEntities,
+  no_indirect_drawing : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+  work_item_buffer : @render_batching.PreprocessWorkItemBuffers,
+) -> Unit {
+  let indexed = self.batch_set_key.indexed()
+  let mut indirect_parameters_index = if no_indirect_drawing {
+    None
+  } else {
+    Some(
+      phase_indirect_parameters_buffers.buffers.allocate(
+        indexed,
+        self.entities.length(),
+      ),
+    )
+  }
+  let prepared_indices = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  for entity_index in 0..<self.entities.length() {
+    guard self.buffer_indices.indices_for_entity_index(entity_index)
+      is Some(existing_indices) else {
+      continue
+    }
+    let input_index = existing_indices.instance_index()
+    let output_index = phase_batched_instance_buffers.buffers.data_buffer.len()
+    phase_batched_instance_buffers.buffers.data_buffer.push(())
+    match indirect_parameters_index {
+      Some(index) => {
+        work_item_buffer.push(
+          indexed,
+          @render_batching.PreprocessWorkItem::new(input_index, index),
+        )
+        prepared_indices.add(
+          Render3dShadowUnbatchableBinnedEntityIndices::new(
+            index,
+            Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(
+              index,
+              index + 1,
+            ),
+          ),
+        )
+        phase_indirect_parameters_buffers.buffers.add_batch_set(indexed, index)
+        indirect_parameters_index = Some(index + 1)
+      }
+      None => {
+        work_item_buffer.push(
+          indexed,
+          @render_batching.PreprocessWorkItem::new(input_index, output_index),
+        )
+        prepared_indices.add(
+          Render3dShadowUnbatchableBinnedEntityIndices::new(
+            output_index,
+            Render3dShadowPhaseItemExtraIndex::none(),
+          ),
+        )
+      }
+    }
+  }
+  self.buffer_indices.clear()
+  for entity_index in 0..<prepared_indices.len() {
+    match prepared_indices.indices_for_entity_index(entity_index) {
+      Some(indices) => self.buffer_indices.add(indices)
+      None => ()
+    }
+  }
+}
+
+///|
 pub struct Render3dShadowBatchRange {
   start : Int
   end : Int
@@ -2635,6 +2706,39 @@ pub fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers(
       batch_range: Render3dShadowBatchRange::new(output_start, output_end),
       extra_index,
     }
+  }
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`
+// unbatchable-mesh branch for `Shadow`.
+pub fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers(
+  self : Render3dShadowViewPhaseData,
+  retained_view_key : String,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Unit {
+  let work_item_buffer = @render_batching.get_or_create_work_item_buffer(
+    phase_batched_instance_buffers.buffers.work_item_buffers,
+    retained_view_key,
+    no_indirect_drawing,
+    enable_gpu_occlusion_culling,
+  )
+  @render_batching.init_work_item_buffers(
+    work_item_buffer,
+    phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
+    phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
+  )
+  for entities in self.unbatchable_meshes {
+    entities.prepare_phase_buffers(
+      no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+      work_item_buffer,
+    )
   }
 }
 
