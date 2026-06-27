@@ -68,6 +68,30 @@ fn light_has_point_or_spot_light(world : @ecs.World) -> Bool {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_light/src/cluster/mod.rs::ClusterVisibilityClass`.
+pub struct ClusterVisibilityClass {} derive(Eq, Debug)
+
+///|
+pub fn ClusterVisibilityClass::ClusterVisibilityClass() -> ClusterVisibilityClass {
+  ClusterVisibilityClass::{  }
+}
+
+///|
+pub let ecs_key_cluster_visibility_class : @ecs.ComponentKey[
+  ClusterVisibilityClass,
+] = @ecs.register_component(debug_name="mgstudio.light.ClusterVisibilityClass")
+
+///|
+pub impl @ecs.Component for ClusterVisibilityClass with fn component() {
+  ecs_key_cluster_visibility_class
+}
+
+///|
+pub fn cluster_visibility_class_id() -> Int {
+  ecs_key_cluster_visibility_class.id()
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_light/src/lib.rs::get_shadow_lod_origin`.
 pub fn get_shadow_lod_origin(world : @ecs.World) -> @core.Entity? {
   let mut lod_origin : @core.Entity? = None

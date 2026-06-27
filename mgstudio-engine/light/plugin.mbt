@@ -27,6 +27,67 @@ pub fn LightPlugin::LightPlugin() -> LightPlugin {
 }
 
 ///|
+// Bevy source: `bevy_camera::visibility::add_visibility_class::<ClusterVisibilityClass>`.
+fn add_cluster_visibility_class(
+  world : @ecs.DeferredWorld,
+  context : @ecs.HookContext,
+) -> Unit {
+  let entity = context.entity()
+  let class_id = cluster_visibility_class_id()
+  match
+    (world.get_by_key(entity, @visibility.ecs_key_visibility_class) catch {
+      _ => None
+    }) {
+    Some(visibility_class) => {
+      visibility_class.add(class_id)
+      ignore(
+        try! world.replace_by_key(
+          entity, @visibility.ecs_key_visibility_class, visibility_class,
+        ),
+      )
+    }
+    None =>
+      try! world.set_by_key(
+        entity,
+        @visibility.ecs_key_visibility_class,
+        @visibility.VisibilityClass::single(class_id),
+      )
+  }
+}
+
+///|
+fn register_light_component_hooks(world : @ecs.World) -> Unit {
+  ignore(
+    world
+    .register_component_hooks_for_key(ecs_key_point_light)
+    .on_add(add_cluster_visibility_class) catch {
+      _ => abort("failed to register point light visibility class hook")
+    },
+  )
+  ignore(
+    world
+    .register_component_hooks_for_key(ecs_key_spot_light)
+    .on_add(add_cluster_visibility_class) catch {
+      _ => abort("failed to register spot light visibility class hook")
+    },
+  )
+  ignore(
+    world
+    .register_component_hooks_for_key(ecs_key_directional_light)
+    .on_add(add_cluster_visibility_class) catch {
+      _ => abort("failed to register directional light visibility class hook")
+    },
+  )
+  ignore(
+    world
+    .register_component_hooks_for_key(ecs_key_light_probe)
+    .on_add(add_cluster_visibility_class) catch {
+      _ => abort("failed to register light probe visibility class hook")
+    },
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_light/src/{point_light,spot_light,directional_light,rect_light,probe}.rs`.
 fn register_light_required_components(
   world : @ecs.World,
@@ -43,8 +104,8 @@ fn register_light_required_components(
   )
   world.register_required_components_with(
     ecs_key_point_light,
-    @visibility.ecs_key_view_visibility,
-    fn() { @visibility.ViewVisibility::new(true) },
+    @visibility.ecs_key_visibility_class,
+    fn() { @visibility.VisibilityClass::VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_spot_light,
@@ -58,8 +119,8 @@ fn register_light_required_components(
   )
   world.register_required_components_with(
     ecs_key_spot_light,
-    @visibility.ecs_key_view_visibility,
-    fn() { @visibility.ViewVisibility::new(true) },
+    @visibility.ecs_key_visibility_class,
+    fn() { @visibility.VisibilityClass::VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
@@ -73,8 +134,8 @@ fn register_light_required_components(
   )
   world.register_required_components_with(
     ecs_key_directional_light,
-    @visibility.ecs_key_view_visibility,
-    fn() { @visibility.ViewVisibility::new(true) },
+    @visibility.ecs_key_visibility_class,
+    fn() { @visibility.VisibilityClass::VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_rect_light,
@@ -88,8 +149,8 @@ fn register_light_required_components(
   )
   world.register_required_components_with(
     ecs_key_rect_light,
-    @visibility.ecs_key_view_visibility,
-    fn() { @visibility.ViewVisibility::new(true) },
+    @visibility.ecs_key_visibility_class,
+    fn() { @visibility.VisibilityClass::VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_ambient_light,
@@ -112,6 +173,11 @@ fn register_light_required_components(
     fn() { @visibility.ViewVisibility::new(true) },
   )
   world.register_required_components_with(
+    ecs_key_light_probe,
+    @visibility.ecs_key_visibility_class,
+    fn() { @visibility.VisibilityClass::VisibilityClass() },
+  )
+  world.register_required_components_with(
     ecs_key_irradiance_volume,
     ecs_key_light_probe,
     fn() { LightProbe::LightProbe() },
@@ -130,6 +196,7 @@ pub impl @app.Plugin for LightPlugin with fn build(_self, app) {
 
 ///|
 pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  register_light_component_hooks(app.world())
   try! register_light_required_components(app.world())
   let mut next = @asset.init_asset(app, fn() {
     ScatteringMedium::ScatteringMedium()

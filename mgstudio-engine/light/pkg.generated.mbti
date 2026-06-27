@@ -21,6 +21,8 @@ pub fn ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[GlobalAmbientLi
 
 pub fn automatically_add_parallax_correction_components(@app.Commands, @ecs.Query[@core.Entity, (@ecs.With[EnvironmentMapLight], @ecs.With[LightProbe], @ecs.Without[ParallaxCorrection])]) -> Unit
 
+pub fn cluster_visibility_class_id() -> Int
+
 pub fn directional_light_validated_shadow_map_size(Int) -> Int
 
 pub fn directional_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
@@ -40,6 +42,8 @@ pub let ecs_key_atmosphere_env_map_light : @ecs.ComponentKey[AtmosphereEnvironme
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
 
 pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[AtmosphereSettings]
+
+pub let ecs_key_cluster_visibility_class : @ecs.ComponentKey[ClusterVisibilityClass]
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
 
@@ -255,6 +259,11 @@ pub fn CascadeShadowConfigBuilder::with_maximum_distance(Self, Float) -> Self
 pub fn CascadeShadowConfigBuilder::with_minimum_distance(Self, Float) -> Self
 pub fn CascadeShadowConfigBuilder::with_num_cascades(Self, Int) -> Self
 pub fn CascadeShadowConfigBuilder::with_overlap_proportion(Self, Float) -> Self
+
+pub struct ClusterVisibilityClass {
+} derive(Eq, @debug.Debug)
+pub fn ClusterVisibilityClass::ClusterVisibilityClass() -> Self
+pub impl @ecs.Component for ClusterVisibilityClass
 
 pub struct ClusteredDecal {
   base_color_texture : @asset.Handle[@image.Image]?

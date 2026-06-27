@@ -29,6 +29,10 @@ pub fn cluster_light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn cluster_light_plugin_with(@app.App[@ecs.World], ClusterLightPlugin) -> @app.App[@ecs.World]
 
+pub fn cluster_visibility_class_id() -> Int
+
+pub let ecs_key_cluster_visibility_class : @ecs.ComponentKey[@light.ClusterVisibilityClass]
+
 // Errors
 
 // Types and methods
@@ -199,6 +203,8 @@ pub using @light {type DirectionalLight as ClusterDirectionalLight}
 pub using @light {type PointLight as ClusterPointLight}
 
 pub using @light {type SpotLight as ClusterSpotLight}
+
+pub using @light {type ClusterVisibilityClass}
 
 // Traits
 

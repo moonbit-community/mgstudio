@@ -25,6 +25,17 @@ pub type ClusterDirectionalLight = @light.DirectionalLight
 pub type ClusterSpotLight = @light.SpotLight
 
 ///|
+pub type ClusterVisibilityClass = @light.ClusterVisibilityClass
+
+///|
+pub let ecs_key_cluster_visibility_class : @ecs.ComponentKey[
+  ClusterVisibilityClass,
+] = @light.ecs_key_cluster_visibility_class
+
+///|
+pub let cluster_visibility_class_id : () -> Int = @light.cluster_visibility_class_id
+
+///|
 const CLUSTER_LIGHT_PLUGIN_NAME : String = "mgstudio.light.cluster.ClusterLightPlugin"
 
 ///|

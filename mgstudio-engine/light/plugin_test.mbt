@@ -107,11 +107,58 @@ test "light plugin: light probe required components match bevy probe requirement
     is Some(_)),
     content="true",
   )
+  let probe_visibility_class : @visibility.VisibilityClass? = try! world.get_by_key(
+    probe, @visibility.ecs_key_visibility_class,
+  )
+  debug_inspect(probe_visibility_class is Some(_), content="true")
+  inspect(
+    match probe_visibility_class {
+      Some(classes) =>
+        classes.iter().contains(@light.cluster_visibility_class_id())
+      None => false
+    },
+    content="true",
+  )
 
   let volume = world.spawn()
   try! world.set(volume, @light.IrradianceVolume::IrradianceVolume())
   debug_inspect(
     try! (world.get_by_key(volume, ecs_key_light_probe) is Some(_)),
+    content="true",
+  )
+}
+
+///|
+test "light plugin: cluster visibility hook preserves existing visibility classes" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_visibility_class,
+    @visibility.VisibilityClass::single(123),
+  )
+  try! world.set(entity, @light.PointLight::PointLight())
+
+  let classes : @visibility.VisibilityClass? = try! world.get_by_key(
+    entity, @visibility.ecs_key_visibility_class,
+  )
+  inspect(
+    match classes {
+      Some(classes) => classes.iter().contains(123)
+      None => false
+    },
+    content="true",
+  )
+  inspect(
+    match classes {
+      Some(classes) =>
+        classes.iter().contains(@light.cluster_visibility_class_id())
+      None => false
+    },
     content="true",
   )
 }
