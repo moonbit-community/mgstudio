@@ -24,6 +24,88 @@ let visibility_set_update_skinned_mesh_bounds : @app.SystemSet = @app.system_set
 )
 
 ///|
+fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
+  let visible_rows : Array[
+    (
+      @core.Entity,
+      @root_visibility.InheritedVisibility,
+      @camera_render_layers.RenderLayers,
+      @root_visibility.VisibilityClass?,
+    ),
+  ] = []
+  let visible_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Read[@root_visibility.InheritedVisibility],
+        @ecs.Write[@root_visibility.ViewVisibility],
+        @ecs.Optional[@root_visibility.VisibilityClass],
+        @ecs.Optional[@camera_render_layers.RenderLayers],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! visible_query.view(fn(_query_entity, data) {
+    let (
+      entity,
+      (inherited_visibility, view_visibility, visibility_class, render_layers),
+    ) = data
+    guard inherited_visibility.value().get() else { return }
+    view_visibility.modify(fn(value) { value.set_visible() })
+    visible_rows.push(
+      (
+        entity,
+        inherited_visibility.value(),
+        render_layers
+        .value()
+        .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers()),
+        visibility_class.value(),
+      ),
+    )
+  })
+  let view_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Write[@camera_camera.VisibleEntities],
+        @ecs.Optional[@camera_render_layers.RenderLayers],
+        @ecs.Optional[@camera_camera.Camera],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! view_query.view(fn(_query_entity, data) {
+    let (_view_entity, (visible_entities, view_layers, camera)) = data
+    let camera = camera.value().unwrap_or(@camera_camera.Camera::Camera())
+    if !camera.is_active {
+      return
+    }
+    let view_mask = view_layers
+      .value()
+      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+    visible_entities.modify(fn(value) {
+      value.clear_all()
+      for row in visible_rows {
+        let (entity, inherited_visibility, entity_layers, visibility_class) = row
+        if !inherited_visibility.get() {
+          continue
+        }
+        if !view_mask.intersects(entity_layers) {
+          continue
+        }
+        match visibility_class {
+          Some(classes) =>
+            for class_id in classes.iter() {
+              value.push(entity, class_id)
+            }
+          None => ()
+        }
+      }
+    })
+  })
+}
+
+///|
 pub struct VisibilityPlugin {}
 
 ///|
@@ -60,6 +142,11 @@ pub fn visibility_plugin_with(
     @app.system(@camera_primitives.update_skinned_mesh_bounds_system)
     .named("mgstudio.visibility.update_skinned_mesh_bounds")
     .in_set(visibility_set_update_skinned_mesh_bounds),
+  )
+  .add_post_update_system_config(
+    @app.system(check_visibility_visible_entities_system)
+    .named("mgstudio.visibility.check_visibility_visible_entities")
+    .in_set(@root_visibility.visibility_set_check_visibility),
   )
 }
 

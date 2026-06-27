@@ -291,9 +291,19 @@ fn register_visibility_required_components(
     fn() { Visibility::Inherited },
   )
   world.register_required_components_with(
+    @mesh.ecs_key_mesh2d,
+    ecs_key_visibility_class,
+    fn() { VisibilityClass::single(@mesh.ecs_key_mesh2d.id()) },
+  )
+  world.register_required_components_with(
     @mesh.ecs_key_mesh3d,
     ecs_key_visibility,
     fn() { Visibility::Inherited },
+  )
+  world.register_required_components_with(
+    @mesh.ecs_key_mesh3d,
+    ecs_key_visibility_class,
+    fn() { VisibilityClass::single(@mesh.ecs_key_mesh3d.id()) },
   )
   world.register_required_components_with(
     ecs_key_visibility,

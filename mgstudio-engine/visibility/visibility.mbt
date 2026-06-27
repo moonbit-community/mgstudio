@@ -178,6 +178,44 @@ pub fn ViewVisibility::set_visible(self : ViewVisibility) -> Unit {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibilityClass`.
+pub struct VisibilityClass {
+  classes : Array[Int]
+} derive(Eq, Debug)
+
+///|
+pub fn VisibilityClass::VisibilityClass(
+  classes? : Array[Int] = [],
+) -> VisibilityClass {
+  VisibilityClass::{ classes, }
+}
+
+///|
+pub fn VisibilityClass::single(class_id : Int) -> VisibilityClass {
+  VisibilityClass::{ classes: [class_id] }
+}
+
+///|
+pub fn VisibilityClass::add(self : VisibilityClass, class_id : Int) -> Unit {
+  for current in self.classes {
+    if current == class_id {
+      return
+    }
+  }
+  self.classes.push(class_id)
+}
+
+///|
+pub fn VisibilityClass::iter(self : VisibilityClass) -> Array[Int] {
+  self.classes
+}
+
+///|
+pub fn VisibilityClass::is_empty(self : VisibilityClass) -> Bool {
+  self.classes.length() == 0
+}
+
+///|
 pub struct NoFrustumCulling {} derive(Eq, Debug)
 
 ///|
