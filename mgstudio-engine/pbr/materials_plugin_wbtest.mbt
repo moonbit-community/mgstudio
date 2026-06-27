@@ -321,6 +321,31 @@ test "render3d: material specialization candidates come from visible dirty and p
 }
 
 ///|
+test "render3d: missing material specialization mesh returns to pending queue" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(50, 1),
+  )
+  let render_entity = @core.Entity::new(51, 1)
+  let main_entity = @render.MainEntity::new(@core.Entity::new(52, 1))
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  ignore(pending_queues.prepare_for_new_frame(retained_view))
+  world.insert_resource(PendingMeshMaterialQueues::resource(), pending_queues)
+
+  render3d_enqueue_pending_mesh_material(
+    world, retained_view, render_entity, main_entity,
+  )
+
+  match world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(queues) => {
+      debug_inspect(queues.current_len(retained_view), content="1")
+      debug_inspect(queues.prev_len(retained_view), content="0")
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: materials startup preserves shadow specialization caches" {
   let world = @ecs.World::new()
   let view = @render_view.RetainedViewEntity::new(

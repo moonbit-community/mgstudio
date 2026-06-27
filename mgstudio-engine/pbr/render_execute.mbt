@@ -802,6 +802,26 @@ fn render3d_material_specialization_candidates(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_enqueue_pending_mesh_material(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+) -> Unit {
+  match world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(queues) =>
+      queues
+      .queues()
+      .push_current(retained_view_entity, render_entity, visible_entity)
+    None =>
+      abort(
+        "missing PendingMeshMaterialQueues resource during pbr material specialization",
+      )
+  }
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -860,6 +880,9 @@ fn render3d_prewarm_mesh_pipelines(
       let (_render_entity, main_entity) = candidate
       guard mesh_indices_by_main_entity.get(main_entity.id().to_bits())
         is Some(mesh_index) else {
+        render3d_enqueue_pending_mesh_material(
+          world, retained_view_entity, _render_entity, main_entity,
+        )
         continue
       }
       let extracted_mesh = meshes[mesh_index]
