@@ -164,6 +164,8 @@ pub fn spot_light_clip_from_view(Float, Float) -> @math.Mat4
 
 pub fn spot_light_world_from_view(@transform.GlobalTransform) -> @math.Affine3
 
+pub fn update_directional_light_frusta(@ecs.World) -> Unit
+
 pub fn update_point_light_bounding_spheres(@ecs.World) -> Unit
 
 pub fn update_point_light_frusta(@ecs.World) -> Unit
@@ -294,6 +296,7 @@ pub struct Cascades {
 }
 pub fn Cascades::Cascades() -> Self
 pub fn Cascades::clear(Self) -> Unit
+pub fn Cascades::entries(Self) -> Array[(@core.Entity, Array[Cascade])]
 pub fn Cascades::get(Self, @core.Entity) -> Array[Cascade]
 pub fn Cascades::set(Self, @core.Entity, Array[Cascade]) -> Unit
 pub impl @ecs.Component for Cascades

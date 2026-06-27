@@ -1277,6 +1277,15 @@ pub fn Cascades::set(
 }
 
 ///|
+pub fn Cascades::entries(
+  self : Cascades,
+) -> Array[(@core.Entity, Array[Cascade])] {
+  let entries : Array[(@core.Entity, Array[Cascade])] = []
+  self.cascades.each(fn(view, cascades) { entries.push((view, cascades)) })
+  entries
+}
+
+///|
 pub fn Cascades::clear(self : Cascades) -> Unit {
   self.cascades.clear()
 }

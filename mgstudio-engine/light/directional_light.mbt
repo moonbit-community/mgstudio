@@ -83,3 +83,46 @@ pub fn validate_directional_light_shadow_map_size(world : @ecs.World) -> Unit {
     None => ()
   }
 }
+
+///|
+type DirectionalLightFrustaQuery = @ecs.Query[
+  (
+    @ecs.Read[Cascades],
+    @ecs.Read[DirectionalLight],
+    @ecs.Read[@visibility.ViewVisibility],
+    @ecs.Write[@camera_primitives.CascadesFrusta],
+  ),
+  @ecs.Without[@camera_camera.Camera],
+]
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/directional_light.rs::update_directional_light_frusta`.
+pub fn update_directional_light_frusta(world : @ecs.World) -> Unit {
+  let query : DirectionalLightFrustaQuery = @ecs.query_filtered(
+    world,
+    @ecs.Without::new(@camera_camera.ecs_key_camera),
+  )
+  try! query.for_each(fn(_entity, item) {
+    let (cascades, directional_light, visibility, frusta) = item
+    if !directional_light.value().shadow_maps_enabled ||
+      !visibility.value().get() {
+      return
+    }
+    let updated_frusta = @camera_primitives.CascadesFrusta::CascadesFrusta()
+    for entry in cascades.value().entries() {
+      let (view, view_cascades) = entry
+      let view_frusta : Array[@camera_primitives.Frustum] = []
+      for cascade in view_cascades {
+        view_frusta.push(
+          @camera_primitives.Frustum::new(
+            @camera_primitives.ViewFrustum::from_clip_from_world(
+              cascade.clip_from_world,
+            ),
+          ),
+        )
+      }
+      updated_frusta.set(view, view_frusta)
+    }
+    frusta.set(updated_frusta)
+  })
+}

@@ -567,6 +567,53 @@ test "light plugin: updates visible shadow-mapped point light cubemap frusta" {
 }
 
 ///|
+test "light plugin: updates visible shadow-mapped directional light cascades frusta" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+  let world = app.world()
+  let view = world.spawn()
+  let light = world.spawn()
+  try! world.set(
+    light,
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  let cascades = @light.Cascades::Cascades()
+  cascades.set(view, [
+    @light.Cascade::new(
+      @math.Mat4::identity(),
+      @math.Mat4::identity(),
+      @math.Mat4::identity(),
+      1.0F,
+    ),
+  ])
+  try! world.set_by_key(light, @light.ecs_key_cascades, cascades)
+
+  app = app.update()
+
+  let cascades_frusta = try! app
+    .world()
+    .get_by_key(light, @camera_primitives.ecs_key_cascades_frusta)
+  debug_inspect(cascades_frusta is Some(_), content="true")
+  match cascades_frusta {
+    Some(cascades_frusta) => {
+      let view_frusta = cascades_frusta.get(view)
+      debug_inspect(view_frusta.length(), content="1")
+      debug_inspect(
+        view_frusta[0].view_frustum().half_spaces().length(),
+        content="6",
+      )
+    }
+    None => ()
+  }
+}
+
+///|
 test "light: WithLight matches point, spot, directional, and rect lights" {
   let world = @ecs.World::new()
   let point = world.spawn()

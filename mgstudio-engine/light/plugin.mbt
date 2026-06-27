@@ -302,6 +302,12 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .in_set(simulation_light_set_update_bounds),
   )
   .add_post_update_system_config(
+    @app.system(update_directional_light_frusta)
+    .after(@transform.transform_set_propagate)
+    .after(simulation_light_set_update_directional_light_cascades)
+    .in_set(simulation_light_set_update_light_frusta),
+  )
+  .add_post_update_system_config(
     @app.system(update_point_light_frusta)
     .after(@transform.transform_set_propagate)
     .after(simulation_light_set_assign_lights_to_clusters)
