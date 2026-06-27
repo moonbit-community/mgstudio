@@ -826,6 +826,8 @@ pub let render3d_set_specialize : String
 
 pub fn render3d_shadow_specialization_apply_work_item(@ecs.World, Render3dShadowSpecializationWorkItemData, Bool) -> Bool
 
+pub fn render3d_shadow_specialization_apply_work_items(@ecs.World, Array[Render3dShadowSpecializationWorkItemData], @hashset.HashSet[@view.RetainedViewEntity], Bool) -> Int
+
 pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 
 pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey) -> Render3dShadowSpecializationWorkItemData?

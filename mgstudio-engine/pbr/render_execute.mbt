@@ -1001,6 +1001,37 @@ pub fn render3d_shadow_specialization_apply_work_item(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn render3d_shadow_specialization_apply_work_items(
+  world : @ecs.World,
+  work_items : Array[Render3dShadowSpecializationWorkItemData],
+  all_shadow_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+  depth_clip_control_supported : Bool,
+) -> Int {
+  let mut specialized_count = 0
+  for item in work_items {
+    if render3d_shadow_specialization_apply_work_item(
+        world, item, depth_clip_control_supported,
+      ) {
+      specialized_count += 1
+    }
+  }
+  work_items.clear()
+  match
+    world.get_resource_mut(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    ) {
+    Some(cache) =>
+      cache.modify(fn(value) { value.expire_stale_views(all_shadow_views) })
+    None =>
+      abort(
+        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow specialization",
+      )
+  }
+  specialized_count
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_queue_data(
   world : @ecs.World,

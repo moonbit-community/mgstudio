@@ -1082,6 +1082,91 @@ test "render3d: shadow specialization uses material draw when prepass reads mate
 }
 
 ///|
+test "render3d: shadow specialization drains work items and expires stale views" {
+  let world = @ecs.World::new()
+  let live_view = @render_view.RetainedViewEntity::new(@core.Entity::new(77, 1))
+  let stale_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(78, 1),
+  )
+  let live_entity = @render.MainEntity::new(@core.Entity::new(79, 1))
+  let stale_entity = @render.MainEntity::new(@core.Entity::new(80, 1))
+  let cache = @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  cache.insert(
+    stale_view,
+    stale_entity,
+    @material.CachedRenderPipelineId::new(700UL),
+    @material.DrawFunctionId::new(70U),
+  )
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    cache,
+  )
+  let properties = @material.MaterialProperties::MaterialProperties()
+    .with_prepass_specialize(Some(material_test_base_specialize))
+    .with_material_key(@material.ErasedMaterialKey::new(29UL, "MaterialKey"))
+    .add_draw_function(
+      SHADOWS_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(31U),
+    )
+    .add_draw_function(
+      SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(32U),
+    )
+  let skipped_properties = @material.MaterialProperties::MaterialProperties()
+    .with_material_key(@material.ErasedMaterialKey::new(30UL, "MaterialKey"))
+    .add_draw_function(
+      SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(33U),
+    )
+  let work_items = [
+    Render3dShadowSpecializationWorkItemData::{
+      queue_data: RenderMeshQueueData::new(82, 0U, false),
+      visible_entity: live_entity,
+      retained_view_entity: live_view,
+      mesh_key: @material.ErasedMeshPipelineKey::new(4UL, "MeshPipelineKey"),
+      layout: @render_mesh.RenderMesh::new(vertex_count=3).layout(),
+      properties,
+      material_type_tag: "TestMaterial",
+    },
+    Render3dShadowSpecializationWorkItemData::{
+      queue_data: RenderMeshQueueData::new(83, 0U, false),
+      visible_entity: stale_entity,
+      retained_view_entity: live_view,
+      mesh_key: @material.ErasedMeshPipelineKey::new(4UL, "MeshPipelineKey"),
+      layout: @render_mesh.RenderMesh::new(vertex_count=3).layout(),
+      properties: skipped_properties,
+      material_type_tag: "TestMaterial",
+    },
+  ]
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  live_views.add(live_view)
+  let count = render3d_shadow_specialization_apply_work_items(
+    world, work_items, live_views, false,
+  )
+
+  guard world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    )
+    is Some(updated_cache) else {
+    abort("missing shadow cache")
+  }
+  debug_inspect(count, content="1")
+  debug_inspect(work_items.length(), content="0")
+  debug_inspect(updated_cache.get(stale_view) is None, content="true")
+  guard updated_cache.get(live_view) is Some(view_cache) else {
+    abort("missing live shadow cache")
+  }
+  guard view_cache.get(live_entity) is Some(entry) else {
+    abort("missing live shadow cache entry")
+  }
+  let (pipeline_id, draw_function) = entry
+  inspect(pipeline_id.id(), content="901")
+  inspect(draw_function.id(), content="32")
+  debug_inspect(view_cache.get(stale_entity) is None, content="true")
+}
+
+///|
 test "render3d: missing prepared render mesh does not return to pending queue" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(61, 1)
