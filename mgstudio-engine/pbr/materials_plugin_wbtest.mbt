@@ -1250,6 +1250,313 @@ test "render3d: shadow specialization drains work items and expires stale views"
 }
 
 ///|
+test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rules" {
+  let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      ParityCustomMaterial::ParityCustomMaterial()
+    },
+  )
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(plugin)
+  let world = app.sub_app(@app.RenderApp).world()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(90, 1),
+  )
+  let depth_render = @core.Entity::new(91, 1)
+  let material_render = @core.Entity::new(92, 1)
+  let layer_render = @core.Entity::new(93, 1)
+  let missing_mesh_render = @core.Entity::new(94, 1)
+  let missing_binding_render = @core.Entity::new(95, 1)
+  let cache_miss_render = @core.Entity::new(96, 1)
+  let depth_main = @render.MainEntity::new(world.spawn_empty())
+  let material_main = @render.MainEntity::new(world.spawn_empty())
+  let layer_main = @render.MainEntity::new(world.spawn_empty())
+  let missing_mesh_main = @render.MainEntity::new(world.spawn_empty())
+  let missing_binding_main = @render.MainEntity::new(world.spawn_empty())
+  let cache_miss_main = @render.MainEntity::new(world.spawn_empty())
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let visible_meshes = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_meshes.prepare_for_new_frame()
+  visible_meshes.update_cpu_culled_entities([
+    (depth_render, depth_main),
+    (material_render, material_main),
+    (layer_render, layer_main),
+    (missing_mesh_render, missing_mesh_main),
+    (missing_binding_render, missing_binding_main),
+    (cache_miss_render, cache_miss_main),
+  ])
+  visible_meshes.sort_added_entities()
+  let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
+  dirty_specializations.insert_view(retained_view)
+  let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  ignore(pending_shadow_queues.queues().prepare_for_new_frame(retained_view))
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    pending_shadow_queues,
+  )
+  let material_key : @ecs.ComponentKey[
+    MeshMaterial3dTyped[ParityCustomMaterial],
+  ] = MeshMaterial3dTyped::component()
+  let prepared_assets_key : @ecs.ResourceKey[
+    @render.RenderAssets[PreparedMaterial[ParityCustomMaterial]],
+  ] = @render.RenderAssets::resource()
+  let draw_function_ids = pbr_material_register_draw_functions(
+    @material.DrawFunctions::DrawFunctions(),
+  )
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let pipeline = material_pipeline_from_material_hooks(probe)
+  let prepared_depth_base = PreparedMaterial::from_material(
+    @asset.Handle::new(701),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    pipeline,
+  )
+  let prepared_depth = PreparedMaterial::{
+    ..prepared_depth_base,
+    properties: pbr_material_apply_draw_functions(
+      prepared_depth_base.properties(),
+      draw_function_ids,
+    ),
+  }
+  let prepared_material_base = PreparedMaterial::from_material(
+    @asset.Handle::new(702),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    pipeline,
+  )
+  let prepared_material = PreparedMaterial::{
+    ..prepared_material_base,
+    properties: pbr_material_apply_draw_functions(
+      prepared_material_base.properties(),
+      draw_function_ids,
+    ),
+  }
+  let prepared_layer_base = PreparedMaterial::from_material(
+    @asset.Handle::new(703),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    pipeline,
+  )
+  let prepared_layer = PreparedMaterial::{
+    ..prepared_layer_base,
+    properties: pbr_material_apply_draw_functions(
+      prepared_layer_base.properties(),
+      draw_function_ids,
+    ),
+  }
+  let prepared_missing_binding_base = PreparedMaterial::from_material(
+    @asset.Handle::new(704),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    pipeline,
+  )
+  let prepared_missing_binding = PreparedMaterial::{
+    ..prepared_missing_binding_base,
+    properties: pbr_material_apply_draw_functions(
+      prepared_missing_binding_base.properties(),
+      draw_function_ids,
+    ),
+  }
+  let prepared_cache_miss_base = PreparedMaterial::from_material(
+    @asset.Handle::new(705),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    pipeline,
+  )
+  let prepared_cache_miss = PreparedMaterial::{
+    ..prepared_cache_miss_base,
+    properties: pbr_material_apply_draw_functions(
+      prepared_cache_miss_base.properties(),
+      draw_function_ids,
+    ),
+  }
+  let depth_draw = prepared_depth
+    .properties()
+    .get_draw_function(SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL)
+    .unwrap()
+  let material_draw = prepared_material
+    .properties()
+    .get_draw_function(SHADOWS_DRAW_FUNCTION_LABEL)
+    .unwrap()
+  let prepared_assets = match world.get_resource_mut(prepared_assets_key) {
+    Some(value) => value
+    None => abort("missing PreparedMaterial render assets")
+  }
+  prepared_assets.modify(fn(value) {
+    value.insert(701, prepared_depth)
+    value.insert(702, prepared_material)
+    value.insert(703, prepared_layer)
+    value.insert(704, prepared_missing_binding)
+    value.insert(705, prepared_cache_miss)
+  })
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    depth_main.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(701)),
+  )
+  material_instances.extract_mesh_material(
+    material_main.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(702)),
+  )
+  material_instances.extract_mesh_material(
+    layer_main.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(703)),
+  )
+  material_instances.extract_mesh_material(
+    missing_binding_main.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(704)),
+  )
+  material_instances.extract_mesh_material(
+    cache_miss_main.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(705)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  for
+    entry in [
+      (depth_main, 701),
+      (material_main, 702),
+      (layer_main, 703),
+      (missing_binding_main, 704),
+      (cache_miss_main, 705),
+    ] {
+    let (main_entity, material_id) = entry
+    try! world.set_by_key(
+      main_entity.id(),
+      material_key,
+      MeshMaterial3dTyped::new(@asset.Handle::new(material_id)),
+    )
+  }
+  let shadow_cache = @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  shadow_cache.insert(
+    retained_view,
+    depth_main,
+    @material.CachedRenderPipelineId::new(801UL),
+    depth_draw,
+  )
+  shadow_cache.insert(
+    retained_view,
+    material_main,
+    @material.CachedRenderPipelineId::new(802UL),
+    material_draw,
+  )
+  shadow_cache.insert(
+    retained_view,
+    layer_main,
+    @material.CachedRenderPipelineId::new(803UL),
+    depth_draw,
+  )
+  shadow_cache.insert(
+    retained_view,
+    missing_mesh_main,
+    @material.CachedRenderPipelineId::new(804UL),
+    depth_draw,
+  )
+  shadow_cache.insert(
+    retained_view,
+    missing_binding_main,
+    @material.CachedRenderPipelineId::new(805UL),
+    material_draw,
+  )
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    shadow_cache,
+  )
+  let mesh_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  let shadow_flags = RenderMeshInstanceFlags::shadow_caster()
+  let visible_layer = @camera_render_layers.RenderLayers::layer(1)
+  mesh_instances.insert(
+    depth_main,
+    RenderMeshQueueData::new(
+      701,
+      11U,
+      true,
+      flags=shadow_flags,
+      render_layers=Some(visible_layer),
+    ),
+  )
+  mesh_instances.insert(
+    material_main,
+    RenderMeshQueueData::new(
+      702,
+      12U,
+      true,
+      flags=shadow_flags,
+      render_layers=Some(visible_layer),
+    ),
+  )
+  mesh_instances.insert(
+    layer_main,
+    RenderMeshQueueData::new(
+      703,
+      13U,
+      true,
+      flags=shadow_flags,
+      render_layers=Some(@camera_render_layers.RenderLayers::layer(2)),
+    ),
+  )
+  mesh_instances.insert(
+    missing_binding_main,
+    RenderMeshQueueData::new(
+      704,
+      14U,
+      true,
+      flags=shadow_flags,
+      render_layers=Some(visible_layer),
+    ),
+  )
+  world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+  let material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  material_bindings.set(
+    702,
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(7),
+      MaterialBindGroupSlot::new(3),
+    ),
+  )
+  world.insert_resource(RenderMaterialBindings::resource(), material_bindings)
+  let mesh_allocator = @render_mesh.MeshAllocator::new()
+  for mesh_id in [701, 702, 703, 704, 705] {
+    ignore(
+      mesh_allocator.allocate(
+        mesh_id,
+        96,
+        @render_mesh.MeshAllocatorElementLayout::vertex(32),
+      ),
+    )
+  }
+  world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
+
+  let queued = render3d_queue_shadow_phase_data_for_visible_entities(
+    world,
+    retained_view,
+    visible_entities,
+    Some(@camera_render_layers.RenderLayers::layer(1)),
+    dirty_specializations,
+    pending_shadow_queues,
+  )
+
+  debug_inspect(queued.dequeued().length(), content="6")
+  debug_inspect(queued.items().length(), content="2")
+  let first = queued.items()[0]
+  let second = queued.items()[1]
+  inspect(first.pipeline_id().id(), content="801")
+  debug_inspect(first.material_bind_group_index(), content="None")
+  inspect(first.current_uniform_index().reinterpret_as_int(), content="11")
+  inspect(second.pipeline_id().id(), content="802")
+  debug_inspect(second.material_bind_group_index(), content="Some(7)")
+  inspect(second.current_uniform_index().reinterpret_as_int(), content="12")
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.queues().current_len(retained_view), content="2")
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: missing prepared render mesh does not return to pending queue" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(61, 1)

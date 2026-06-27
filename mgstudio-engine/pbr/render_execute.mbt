@@ -1085,6 +1085,275 @@ pub fn render3d_shadow_specialization_apply_work_items(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::Shadow`.
+pub struct Render3dQueuedShadowPhaseItemData {
+  render_entity : @core.Entity
+  visible_entity : @render.MainEntity
+  pipeline_id : @material.CachedRenderPipelineId
+  draw_function : @material.DrawFunctionId
+  material_bind_group_index : Int?
+  mesh_asset_id : Int
+  current_uniform_index : UInt
+  should_batch : Bool
+  slabs : @render_mesh.MeshSlabs
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::render_entity(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> @core.Entity {
+  self.render_entity
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::visible_entity(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> @render.MainEntity {
+  self.visible_entity
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::pipeline_id(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> @material.CachedRenderPipelineId {
+  self.pipeline_id
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::draw_function(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> @material.DrawFunctionId {
+  self.draw_function
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::material_bind_group_index(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> Int? {
+  self.material_bind_group_index
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::mesh_asset_id(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::current_uniform_index(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> UInt {
+  self.current_uniform_index
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::should_batch(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> Bool {
+  self.should_batch
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseItemData::slabs(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> @render_mesh.MeshSlabs {
+  self.slabs
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub struct Render3dQueuedShadowPhaseData {
+  dequeued : Array[@render.MainEntity]
+  items : Array[Render3dQueuedShadowPhaseItemData]
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseData::Render3dQueuedShadowPhaseData() -> Render3dQueuedShadowPhaseData {
+  Render3dQueuedShadowPhaseData::{ dequeued: [], items: [] }
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseData::dequeued(
+  self : Render3dQueuedShadowPhaseData,
+) -> Array[@render.MainEntity] {
+  self.dequeued
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseData::items(
+  self : Render3dQueuedShadowPhaseData,
+) -> Array[Render3dQueuedShadowPhaseItemData] {
+  self.items
+}
+
+///|
+fn render3d_shadow_queue_material_bind_group_index(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+  material_instance : RenderMaterialInstance,
+  material : Render3dResolvedMaterial,
+  draw_function : @material.DrawFunctionId,
+) -> Int?? {
+  let depth_only_draw_function = material
+    .material_properties()
+    .get_draw_function(SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL)
+  if depth_only_draw_function is Some(depth_only) &&
+    depth_only.id() == draw_function.id() {
+    return Some(None)
+  }
+  guard world.get_resource(RenderMaterialBindings::resource()) is Some(bindings) else {
+    render3d_enqueue_pending_shadow_material(
+      world, retained_view_entity, render_entity, visible_entity,
+    )
+    return None
+  }
+  match bindings.get(material_instance.asset_id()) {
+    Some(binding) => Some(Some(binding.group().to_int()))
+    None => {
+      render3d_enqueue_pending_shadow_material(
+        world, retained_view_entity, render_entity, visible_entity,
+      )
+      None
+    }
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn render3d_queue_shadow_phase_data_for_visible_entities(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  visible_entities : @render_visibility.RenderVisibleEntities,
+  view_render_layers : @camera_render_layers.RenderLayers?,
+  dirty_specializations : @render_visibility.DirtySpecializations,
+  pending_shadow_queues : @pbr_render.PendingShadowQueues,
+) -> Render3dQueuedShadowPhaseData {
+  let result = Render3dQueuedShadowPhaseData::Render3dQueuedShadowPhaseData()
+  guard visible_entities.get(render3d_mesh_visibility_class())
+    is Some(render_visible_mesh_entities) else {
+    return result
+  }
+  let view_cache = match
+    world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    ) {
+    Some(cache) =>
+      match cache.get(retained_view_entity) {
+        Some(value) => value
+        None => return result
+      }
+    None => return result
+  }
+  let view_pending_shadow_queues = pending_shadow_queues
+    .queues()
+    .view_or_insert(retained_view_entity)
+  let dequeued = dirty_specializations.iter_to_dequeue(
+    retained_view_entity, render_visible_mesh_entities,
+  )
+  let result = Render3dQueuedShadowPhaseData::{ dequeued, items: [] }
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None =>
+      abort("missing RenderMeshInstances resource during pbr shadow queueing")
+  }
+  let render_material_instances = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderMaterialInstances resource during pbr shadow queueing",
+      )
+  }
+  let mesh_allocator = match
+    world.get_resource(@render_mesh.MeshAllocator::resource()) {
+    Some(value) => value
+    None => abort("missing MeshAllocator resource during pbr shadow queueing")
+  }
+  let source_world = @render.render_source_world(world)
+  let registry = material_runtime_registry_or_empty(world)
+  let resolved_view_layers = view_render_layers.unwrap_or(
+    @camera_render_layers.RenderLayers::RenderLayers(),
+  )
+  for
+    candidate in dirty_specializations.iter_to_queue(
+      retained_view_entity,
+      render_visible_mesh_entities,
+      view_pending_shadow_queues.prev_frame(),
+    ) {
+    let (render_entity, main_entity) = candidate
+    guard view_cache.get(main_entity) is Some(cache_entry) else { continue }
+    let (pipeline_id, draw_function) = cache_entry
+    let mesh_instance = match
+      render_mesh_instances.render_mesh_queue_data(main_entity) {
+      Some(value) => value
+      None => {
+        render3d_enqueue_pending_shadow_material(
+          world, retained_view_entity, render_entity, main_entity,
+        )
+        continue
+      }
+    }
+    if !mesh_instance.flags().contains(RenderMeshInstanceFlags::shadow_caster()) {
+      continue
+    }
+    let mesh_layers = mesh_instance
+      .render_layers()
+      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+    if !resolved_view_layers.intersects(mesh_layers) {
+      continue
+    }
+    let material_instance = match
+      render_material_instances.get(main_entity.id()) {
+      Some(value) => value
+      None => continue
+    }
+    let material = match
+      material_runtime_registry_resolve_material(
+        world,
+        source_world,
+        registry,
+        main_entity.id(),
+      ) {
+      Some(value) => value
+      None => {
+        render3d_enqueue_pending_shadow_material(
+          world, retained_view_entity, render_entity, main_entity,
+        )
+        continue
+      }
+    }
+    let material_bind_group_index = match
+      render3d_shadow_queue_material_bind_group_index(
+        world, retained_view_entity, render_entity, main_entity, material_instance,
+        material, draw_function,
+      ) {
+      Some(value) => value
+      None => continue
+    }
+    guard mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
+      is Some(slabs) else {
+      continue
+    }
+    result.items.push(Render3dQueuedShadowPhaseItemData::{
+      render_entity,
+      visible_entity: main_entity,
+      pipeline_id,
+      draw_function,
+      material_bind_group_index,
+      mesh_asset_id: mesh_instance.mesh_asset_id(),
+      current_uniform_index: mesh_instance.current_uniform_index(),
+      should_batch: mesh_instance.should_batch(),
+      slabs,
+    })
+  }
+  result
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_queue_data(
   world : @ecs.World,
