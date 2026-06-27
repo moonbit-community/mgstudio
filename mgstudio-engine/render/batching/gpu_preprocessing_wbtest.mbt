@@ -81,6 +81,48 @@ test "gpu preprocessing: collect phase buffers swaps with global table" {
 }
 
 ///|
+test "gpu preprocessing: indirect parameter buffers allocate and swap by phase" {
+  let global = IndirectParametersBuffers::IndirectParametersBuffers()
+  let old_phase_buffers = UntypedPhaseIndirectParametersBuffers::new(false)
+  debug_inspect(old_phase_buffers.allocate(true, 2), content="0")
+  old_phase_buffers.add_batch_set(true, 0)
+  global.buffers.set("shadow", old_phase_buffers)
+  let phase = PhaseIndirectParametersBuffers::new(true)
+  debug_inspect(phase.allocate(false, false), content="Some(0)")
+  debug_inspect(phase.buffers.allocate(false, 2), content="1")
+  phase.buffers.add_batch_set(false, 0)
+  collect_phase_indirect_parameters_buffers(
+    global,
+    "shadow",
+    phase,
+    IndirectParametersBuffersSettings::IndirectParametersBuffersSettings().with_allow_copies_from_indirect_parameter_buffers(
+      true,
+    ),
+  )
+  debug_inspect(global.phase_count(), content="1")
+  let collected = global.get("shadow").unwrap()
+  debug_inspect(collected.batch_count(false), content="3")
+  debug_inspect(collected.batch_set_count(false), content="1")
+  debug_inspect(phase.buffers.batch_count(true), content="0")
+  debug_inspect(phase.buffers.batch_set_count(true), content="0")
+  let fresh_phase = PhaseIndirectParametersBuffers::new(false)
+  debug_inspect(fresh_phase.buffers.allocate(true, 1), content="0")
+  collect_phase_indirect_parameters_buffers(
+    global,
+    "fresh",
+    fresh_phase,
+    IndirectParametersBuffersSettings::IndirectParametersBuffersSettings().with_allow_copies_from_indirect_parameter_buffers(
+      true,
+    ),
+  )
+  debug_inspect(global.phase_count(), content="2")
+  debug_inspect(
+    fresh_phase.buffers.indexed.allow_copies_from_indirect_parameter_buffers(),
+    content="true",
+  )
+}
+
+///|
 test "gpu preprocessing: direct work-item buffers collect one list" {
   let buffers = preprocess_work_item_buffers_direct()
   buffers.push(false, PreprocessWorkItem::new(3, 4))
@@ -156,6 +198,11 @@ test "gpu preprocessing: plugin writes indirect parameter settings into render a
     .unwrap()
   debug_inspect(
     settings.allow_copies_from_indirect_parameter_buffers(),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(indirect_parameters_buffers_resource_key)
+    is Some(_),
     content="true",
   )
 }

@@ -24,6 +24,8 @@ pub fn[T] clear_batched_cpu_instance_buffers(BatchedInstanceBuffer[T]?) -> Unit
 
 pub fn[BD, BDI] collect_phase_batched_instance_buffers(BatchedInstanceBuffers[BD, BDI], String, PhaseBatchedInstanceBuffers[BD]) -> Unit
 
+pub fn collect_phase_indirect_parameters_buffers(IndirectParametersBuffers, String, PhaseIndirectParametersBuffers, IndirectParametersBuffersSettings) -> Unit
+
 pub let ecs_key_no_automatic_batching : @ecs.ComponentKey[NoAutomaticBatching]
 
 pub fn get_or_create_work_item_buffer(@hashmap.HashMap[String, PreprocessWorkItemBuffers], String, Bool, Bool) -> PreprocessWorkItemBuffers
@@ -105,6 +107,22 @@ pub fn GpuPreprocessingSupport::min(Self, GpuPreprocessingMode) -> GpuPreprocess
 pub fn GpuPreprocessingSupport::with_max_supported_mode(GpuPreprocessingMode) -> Self
 pub impl @app.Resource for GpuPreprocessingSupport
 
+pub struct IndirectBatchSet {
+  indirect_parameters_base : Int
+  indirect_parameters_count : Int
+} derive(Eq, @debug.Debug)
+pub fn IndirectBatchSet::indirect_parameters_base(Self) -> Int
+pub fn IndirectBatchSet::indirect_parameters_count(Self) -> Int
+pub fn IndirectBatchSet::new(Int, indirect_parameters_count? : Int) -> Self
+
+pub struct IndirectParametersBuffers {
+  buffers : @hashmap.HashMap[String, UntypedPhaseIndirectParametersBuffers]
+}
+pub fn IndirectParametersBuffers::IndirectParametersBuffers() -> Self
+pub fn IndirectParametersBuffers::get(Self, String) -> UntypedPhaseIndirectParametersBuffers?
+pub fn IndirectParametersBuffers::phase_count(Self) -> Int
+pub impl @app.Resource for IndirectParametersBuffers
+
 pub struct IndirectParametersBuffersSettings {
   allow_copies_from_indirect_parameter_buffers : Bool
 }
@@ -137,6 +155,21 @@ pub struct LatePreprocessWorkItemIndirectParameters {
 } derive(Eq, @debug.Debug)
 pub fn LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters() -> Self
 
+pub struct MeshClassIndirectParametersBuffers {
+  mut indirect_draw_parameter_count : Int
+  mut cpu_metadata_count : Int
+  mut gpu_metadata_count : Int
+  batch_sets : Array[IndirectBatchSet]
+  allow_copies_from_indirect_parameter_buffers : Bool
+}
+pub fn MeshClassIndirectParametersBuffers::add_batch_set(Self, Int) -> Unit
+pub fn MeshClassIndirectParametersBuffers::allocate(Self, Int) -> Int
+pub fn MeshClassIndirectParametersBuffers::allow_copies_from_indirect_parameter_buffers(Self) -> Bool
+pub fn MeshClassIndirectParametersBuffers::batch_count(Self) -> Int
+pub fn MeshClassIndirectParametersBuffers::batch_set_count(Self) -> Int
+pub fn MeshClassIndirectParametersBuffers::clear(Self) -> Unit
+pub fn MeshClassIndirectParametersBuffers::new(Bool) -> Self
+
 pub struct NoAutomaticBatching {
 }
 pub fn NoAutomaticBatching::NoAutomaticBatching() -> Self
@@ -148,6 +181,12 @@ pub struct PhaseBatchedInstanceBuffers[BD] {
 }
 pub fn[BD] PhaseBatchedInstanceBuffers::clear(Self[BD]) -> Unit
 pub fn[BD] PhaseBatchedInstanceBuffers::new() -> Self[BD]
+
+pub struct PhaseIndirectParametersBuffers {
+  mut buffers : UntypedPhaseIndirectParametersBuffers
+}
+pub fn PhaseIndirectParametersBuffers::allocate(Self, Bool, Bool) -> Int?
+pub fn PhaseIndirectParametersBuffers::new(Bool) -> Self
 
 pub struct PreprocessWorkItem {
   input_index : Int
@@ -176,6 +215,18 @@ pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
 }
 pub fn[BD] UntypedPhaseBatchedInstanceBuffers::clear(Self[BD]) -> Unit
 pub fn[BD] UntypedPhaseBatchedInstanceBuffers::new() -> Self[BD]
+
+pub struct UntypedPhaseIndirectParametersBuffers {
+  indexed : MeshClassIndirectParametersBuffers
+  non_indexed : MeshClassIndirectParametersBuffers
+}
+pub fn UntypedPhaseIndirectParametersBuffers::add_batch_set(Self, Bool, Int) -> Unit
+pub fn UntypedPhaseIndirectParametersBuffers::allocate(Self, Bool, Int) -> Int
+pub fn UntypedPhaseIndirectParametersBuffers::batch_count(Self, Bool) -> Int
+pub fn UntypedPhaseIndirectParametersBuffers::batch_set_count(Self, Bool) -> Int
+pub fn UntypedPhaseIndirectParametersBuffers::clear(Self) -> Unit
+pub fn UntypedPhaseIndirectParametersBuffers::get_next_batch_set_index(Self, Bool) -> Int?
+pub fn UntypedPhaseIndirectParametersBuffers::new(Bool) -> Self
 
 // Type aliases
 

@@ -38,6 +38,249 @@ pub struct IndirectParametersBuffersSettings {
 }
 
 ///|
+pub struct IndirectBatchSet {
+  indirect_parameters_base : Int
+  indirect_parameters_count : Int
+} derive(Eq, Debug)
+
+///|
+pub fn IndirectBatchSet::new(
+  indirect_parameters_base : Int,
+  indirect_parameters_count? : Int = 0,
+) -> IndirectBatchSet {
+  IndirectBatchSet::{ indirect_parameters_base, indirect_parameters_count }
+}
+
+///|
+pub fn IndirectBatchSet::indirect_parameters_base(
+  self : IndirectBatchSet,
+) -> Int {
+  self.indirect_parameters_base
+}
+
+///|
+pub fn IndirectBatchSet::indirect_parameters_count(
+  self : IndirectBatchSet,
+) -> Int {
+  self.indirect_parameters_count
+}
+
+///|
+pub struct MeshClassIndirectParametersBuffers {
+  mut indirect_draw_parameter_count : Int
+  mut cpu_metadata_count : Int
+  mut gpu_metadata_count : Int
+  batch_sets : Array[IndirectBatchSet]
+  allow_copies_from_indirect_parameter_buffers : Bool
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::new(
+  allow_copies_from_indirect_parameter_buffers : Bool,
+) -> MeshClassIndirectParametersBuffers {
+  MeshClassIndirectParametersBuffers::{
+    indirect_draw_parameter_count: 0,
+    cpu_metadata_count: 0,
+    gpu_metadata_count: 0,
+    batch_sets: [],
+    allow_copies_from_indirect_parameter_buffers,
+  }
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::allocate(
+  self : MeshClassIndirectParametersBuffers,
+  count : Int,
+) -> Int {
+  let offset = self.indirect_draw_parameter_count
+  if count > 0 {
+    self.indirect_draw_parameter_count += count
+    self.cpu_metadata_count += count
+    self.gpu_metadata_count += count
+  }
+  offset
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::batch_count(
+  self : MeshClassIndirectParametersBuffers,
+) -> Int {
+  self.indirect_draw_parameter_count
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::batch_set_count(
+  self : MeshClassIndirectParametersBuffers,
+) -> Int {
+  self.batch_sets.length()
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::add_batch_set(
+  self : MeshClassIndirectParametersBuffers,
+  indirect_parameters_base : Int,
+) -> Unit {
+  self.batch_sets.push(IndirectBatchSet::new(indirect_parameters_base))
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::clear(
+  self : MeshClassIndirectParametersBuffers,
+) -> Unit {
+  self.indirect_draw_parameter_count = 0
+  self.cpu_metadata_count = 0
+  self.gpu_metadata_count = 0
+  self.batch_sets.clear()
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::allow_copies_from_indirect_parameter_buffers(
+  self : MeshClassIndirectParametersBuffers,
+) -> Bool {
+  self.allow_copies_from_indirect_parameter_buffers
+}
+
+///|
+pub struct UntypedPhaseIndirectParametersBuffers {
+  indexed : MeshClassIndirectParametersBuffers
+  non_indexed : MeshClassIndirectParametersBuffers
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::new(
+  allow_copies_from_indirect_parameter_buffers : Bool,
+) -> UntypedPhaseIndirectParametersBuffers {
+  UntypedPhaseIndirectParametersBuffers::{
+    indexed: MeshClassIndirectParametersBuffers::new(
+      allow_copies_from_indirect_parameter_buffers,
+    ),
+    non_indexed: MeshClassIndirectParametersBuffers::new(
+      allow_copies_from_indirect_parameter_buffers,
+    ),
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::allocate(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+  count : Int,
+) -> Int {
+  if indexed {
+    self.indexed.allocate(count)
+  } else {
+    self.non_indexed.allocate(count)
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::batch_count(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+) -> Int {
+  if indexed {
+    self.indexed.batch_count()
+  } else {
+    self.non_indexed.batch_count()
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::batch_set_count(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+) -> Int {
+  if indexed {
+    self.indexed.batch_set_count()
+  } else {
+    self.non_indexed.batch_set_count()
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::add_batch_set(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+  indirect_parameters_base : Int,
+) -> Unit {
+  if indexed {
+    self.indexed.add_batch_set(indirect_parameters_base)
+  } else {
+    self.non_indexed.add_batch_set(indirect_parameters_base)
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::get_next_batch_set_index(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+) -> Int? {
+  Some(self.batch_set_count(indexed))
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::clear(
+  self : UntypedPhaseIndirectParametersBuffers,
+) -> Unit {
+  self.indexed.clear()
+  self.non_indexed.clear()
+}
+
+///|
+pub struct PhaseIndirectParametersBuffers {
+  mut buffers : UntypedPhaseIndirectParametersBuffers
+}
+
+///|
+pub fn PhaseIndirectParametersBuffers::new(
+  allow_copies_from_indirect_parameter_buffers : Bool,
+) -> PhaseIndirectParametersBuffers {
+  PhaseIndirectParametersBuffers::{
+    buffers: UntypedPhaseIndirectParametersBuffers::new(
+      allow_copies_from_indirect_parameter_buffers,
+    ),
+  }
+}
+
+///|
+pub fn PhaseIndirectParametersBuffers::allocate(
+  self : PhaseIndirectParametersBuffers,
+  no_indirect_drawing : Bool,
+  item_is_indexed : Bool,
+) -> Int? {
+  if no_indirect_drawing {
+    None
+  } else {
+    Some(self.buffers.allocate(item_is_indexed, 1))
+  }
+}
+
+///|
+pub struct IndirectParametersBuffers {
+  buffers : @hashmap.HashMap[String, UntypedPhaseIndirectParametersBuffers]
+}
+
+///|
+pub fn IndirectParametersBuffers::IndirectParametersBuffers() -> IndirectParametersBuffers {
+  IndirectParametersBuffers::{ buffers: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn IndirectParametersBuffers::phase_count(
+  self : IndirectParametersBuffers,
+) -> Int {
+  self.buffers.length()
+}
+
+///|
+pub fn IndirectParametersBuffers::get(
+  self : IndirectParametersBuffers,
+  phase_id : String,
+) -> UntypedPhaseIndirectParametersBuffers? {
+  self.buffers.get(phase_id)
+}
+
+///|
 pub fn GpuPreprocessingSupport::GpuPreprocessingSupport() -> GpuPreprocessingSupport {
   GpuPreprocessingSupport::{ max_supported_mode: GpuPreprocessingMode::None }
 }
@@ -349,6 +592,31 @@ pub fn[BD, BDI] collect_phase_batched_instance_buffers(
   }
   batched_instance_buffers.phase_instance_buffers.set(
     phase_id, outgoing_phase_batched_instance_buffers,
+  )
+}
+
+///|
+pub fn collect_phase_indirect_parameters_buffers(
+  indirect_parameters_buffers : IndirectParametersBuffers,
+  phase_id : String,
+  phase_indirect_parameters_buffers : PhaseIndirectParametersBuffers,
+  indirect_parameters_buffers_settings : IndirectParametersBuffersSettings,
+) -> Unit {
+  let untyped_phase_indirect_parameters_buffers = phase_indirect_parameters_buffers.buffers
+  let outgoing_phase_indirect_parameters_buffers = untyped_phase_indirect_parameters_buffers
+  let replacement = match indirect_parameters_buffers.get(phase_id) {
+    Some(old_untyped_phase_indirect_parameters_buffers) => {
+      old_untyped_phase_indirect_parameters_buffers.clear()
+      old_untyped_phase_indirect_parameters_buffers
+    }
+    None =>
+      UntypedPhaseIndirectParametersBuffers::new(
+        indirect_parameters_buffers_settings.allow_copies_from_indirect_parameter_buffers(),
+      )
+  }
+  phase_indirect_parameters_buffers.buffers = replacement
+  indirect_parameters_buffers.buffers.set(
+    phase_id, outgoing_phase_indirect_parameters_buffers,
   )
 }
 
@@ -669,6 +937,13 @@ let indirect_parameters_buffers_settings_resource_key : @ecs.ResourceKey[
 )
 
 ///|
+let indirect_parameters_buffers_resource_key : @ecs.ResourceKey[
+  IndirectParametersBuffers,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::IndirectParametersBuffers",
+)
+
+///|
 pub impl @app.Resource for GpuPreprocessingSupport with fn resource() {
   gpu_preprocessing_support_resource_key
 }
@@ -676,6 +951,11 @@ pub impl @app.Resource for GpuPreprocessingSupport with fn resource() {
 ///|
 pub impl @app.Resource for IndirectParametersBuffersSettings with fn resource() {
   indirect_parameters_buffers_settings_resource_key
+}
+
+///|
+pub impl @app.Resource for IndirectParametersBuffers with fn resource() {
+  indirect_parameters_buffers_resource_key
 }
 
 ///|
@@ -709,6 +989,17 @@ pub fn gpu_preprocessing_plugin_with(
           plugin.allow_copies_from_indirect_parameter_buffers,
         ),
       )
+      if render_sub_app
+        .world()
+        .get_resource(indirect_parameters_buffers_resource_key)
+        is None {
+        render_sub_app
+        .world()
+        .insert_resource(
+          indirect_parameters_buffers_resource_key,
+          IndirectParametersBuffers::IndirectParametersBuffers(),
+        )
+      }
       render_sub_app
     }),
   )
