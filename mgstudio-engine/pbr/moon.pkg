@@ -35,6 +35,7 @@ import {
   "Milky2018/mgstudio/pbr/ssr" @pbr_ssr,
   "Milky2018/mgstudio/pbr/volumetric_fog" @pbr_volumetric_fog,
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/batching" @render_batching,
   "Milky2018/mgstudio/render/mesh" @render_mesh,

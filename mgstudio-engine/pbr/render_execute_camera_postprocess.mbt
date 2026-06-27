@@ -16,6 +16,7 @@
 fn render3d_execute_camera_postprocess(
   world : @ecs.World,
   camera_entity : @core.Entity,
+  camera_render_entity : @core.Entity,
   camera : Camera3dViewPayload,
   scene_target_id : Int,
   velocity_target_id : Int,
@@ -45,6 +46,20 @@ fn render3d_execute_camera_postprocess(
   cleared_targets_this_frame : Array[Int],
 ) -> Unit {
   let source_world = @render.render_source_world(world)
+  fn motion_blur_pipeline_for_view() -> @render_resource.RenderPipeline? {
+    guard (try! world.get_by_key(
+        camera_render_entity,
+        @post_process_motion_blur.MotionBlurPipelineId::component(),
+      ))
+      is Some(pipeline_id) else {
+      return None
+    }
+    guard world.get_resource(@render.pipeline_cache_resource_key)
+      is Some(pipeline_cache) else {
+      return None
+    }
+    pipeline_cache.get_render_pipeline(pipeline_id.pipeline_id())
+  }
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
     @pbr_render.render3d_pass_viewport_for_target(
       target_id,
@@ -58,7 +73,8 @@ fn render3d_execute_camera_postprocess(
   let mut final_source_texture_id = -1
   if motion_blur_active &&
     camera.motion_blur is Some(motion_blur) &&
-    velocity_target_id >= 0 {
+    velocity_target_id >= 0 &&
+    motion_blur_pipeline_for_view() is Some(motion_blur_pipeline) {
     if bloom_enabled || tonemap_postprocess_enabled {
       let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
         world, camera_entity, view_width, view_height,
@@ -99,6 +115,7 @@ fn render3d_execute_camera_postprocess(
       @render.host_gpu_draw_motion_blur(
         scene_texture_id=scene_target_id,
         velocity_texture_id=velocity_target_id,
+        pipeline=motion_blur_pipeline,
       )
       @render.host_gpu_end_pass()
       final_source_texture_id = post_motion_blur_target_id
@@ -141,6 +158,7 @@ fn render3d_execute_camera_postprocess(
       @render.host_gpu_draw_motion_blur(
         scene_texture_id=scene_target_id,
         velocity_texture_id=velocity_target_id,
+        pipeline=motion_blur_pipeline,
       )
       @render.host_gpu_end_pass()
     }

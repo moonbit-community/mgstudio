@@ -185,6 +185,37 @@ fn render3d_sync_extracted_view_components(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
 ) -> Unit {
+  fn target_format_raw_for_camera(camera : Camera3dViewPayload) -> UInt {
+    let motion_blur_active = match camera.motion_blur {
+      Some(motion_blur) =>
+        motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F
+      None => false
+    }
+    let bloom_enabled = camera.bloom is Some(_)
+    let tonemap_postprocess_enabled = render3d_tonemapping_stage_enabled(
+        camera.tonemapping,
+        camera.deband_dither,
+        camera.hdr_enabled,
+        camera.color_grading,
+      ) ||
+      render3d_effect_stack_enabled(
+        camera.chromatic_aberration,
+        camera.vignette,
+      ) ||
+      render3d_custom_post_process_enabled(camera.custom_post_process3d) ||
+      render3d_fxaa_enabled(camera.fxaa) ||
+      render3d_cas_enabled(camera.contrast_adaptive_sharpening)
+    let auto_exposure_enabled = camera.auto_exposure is Some(_)
+    if camera.hdr_enabled ||
+      motion_blur_active ||
+      bloom_enabled ||
+      tonemap_postprocess_enabled ||
+      auto_exposure_enabled {
+      @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT
+    } else {
+      @render_view.extracted_view_target_format_raw()
+    }
+  }
   for extracted_camera in cameras {
     let render_entity = extracted_camera.entity.render_entity
     if !world.is_alive(render_entity) {
@@ -201,8 +232,8 @@ fn render3d_sync_extracted_view_components(
       }
       None => (0, 0, target_size.x, target_size.y)
     }
-    let target_format_raw = @render_view.extracted_view_target_format_raw(
-      hdr=extracted_camera.payload.hdr_enabled,
+    let target_format_raw = target_format_raw_for_camera(
+      extracted_camera.payload,
     )
     try! world.set_by_key(
       render_entity,

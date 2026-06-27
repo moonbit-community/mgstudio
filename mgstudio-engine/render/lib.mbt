@@ -1860,8 +1860,9 @@ pub fn host_gpu_draw_prepared_skybox(bind_group_id~ : Int) -> Unit {
 pub fn host_gpu_draw_motion_blur(
   scene_texture_id~ : Int,
   velocity_texture_id~ : Int,
+  pipeline~ : @render_resource.RenderPipeline,
 ) -> Unit {
-  @renderer.draw_motion_blur(scene_texture_id~, velocity_texture_id~)
+  @renderer.draw_motion_blur(scene_texture_id~, velocity_texture_id~, pipeline~)
 }
 
 ///|
