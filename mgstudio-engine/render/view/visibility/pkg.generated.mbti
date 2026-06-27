@@ -97,7 +97,9 @@ pub struct RenderShadowMapVisibleEntities {
   subviews : @hashmap.HashMap[@view.RetainedViewEntity, RenderVisibleEntities]
 }
 pub fn RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities() -> Self
+pub fn RenderShadowMapVisibleEntities::for_each_subview(Self, (@view.RetainedViewEntity, RenderVisibleEntities) -> Unit) -> Unit
 pub fn RenderShadowMapVisibleEntities::len(Self) -> Int
+pub fn RenderShadowMapVisibleEntities::subview_or_insert(Self, @view.RetainedViewEntity) -> RenderVisibleEntities
 pub impl @ecs.Component for RenderShadowMapVisibleEntities
 
 pub(all) struct RenderVisibilityEntityInfo {
@@ -152,9 +154,11 @@ pub fn RenderVisibleEntitiesClass::RenderVisibleEntitiesClass() -> Self
 pub fn RenderVisibleEntitiesClass::add_entity(Self, (@core.Entity, @render.MainEntity)) -> Unit
 pub fn RenderVisibleEntitiesClass::added_entities(Self) -> Array[(@core.Entity, @render.MainEntity)]
 pub fn RenderVisibleEntitiesClass::entity_pair_is_visible(Self, @core.Entity, @render.MainEntity) -> Bool
+pub fn RenderVisibleEntitiesClass::gpu_culled_entity_is_visible(Self, @render.MainEntity) -> Bool
 pub fn RenderVisibleEntitiesClass::insert_gpu_culled_entity(Self, @render.MainEntity, @core.Entity) -> Unit
 pub fn RenderVisibleEntitiesClass::iter_visible(Self) -> Array[(@core.Entity, @render.MainEntity)]
 pub fn RenderVisibleEntitiesClass::prepare_for_new_frame(Self) -> Unit
+pub fn RenderVisibleEntitiesClass::remove_gpu_culled_entity(Self, @render.MainEntity) -> @core.Entity?
 pub fn RenderVisibleEntitiesClass::removed_entities(Self) -> Array[(@core.Entity, @render.MainEntity)]
 pub fn RenderVisibleEntitiesClass::sort_added_entities(Self) -> Unit
 pub fn RenderVisibleEntitiesClass::update_cpu_culled_entities(Self, Array[(@core.Entity, @render.MainEntity)]) -> Unit

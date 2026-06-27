@@ -78,6 +78,23 @@ test "render visibility: RenderVisibleEntitiesClass includes GPU-cull entities" 
 }
 
 ///|
+test "render visibility: RenderVisibleEntitiesClass removes GPU-cull entities" {
+  let class = RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  let render_entity = @core.Entity::new(41, 1)
+  let main_entity = test_main_entity(5)
+  class.insert_gpu_culled_entity(main_entity, render_entity)
+
+  let removed = class.remove_gpu_culled_entity(main_entity)
+
+  debug_inspect(removed, content="Some({ id: 41, generation: 1 })")
+  debug_inspect(
+    class.gpu_culled_entity_is_visible(main_entity),
+    content="false",
+  )
+  debug_inspect(class.visible_len(), content="0")
+}
+
+///|
 test "render visibility: RenderVisibleEntities stores classes by visibility key" {
   let visible = RenderVisibleEntities::RenderVisibleEntities()
   let class = visible.class_or_insert("Mesh3d")
@@ -96,6 +113,31 @@ test "render visibility: RenderVisibleEntities stores classes by visibility key"
     stored.added_entities()[0].1.id(),
     content="{ id: 1, generation: 1 }",
   )
+}
+
+///|
+test "render visibility: RenderShadowMapVisibleEntities stores subviews by retained view" {
+  let shadow_visible = RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+  let retained_view = test_retained_view(60)
+  let first = shadow_visible.subview_or_insert(retained_view)
+  first
+  .class_or_insert("Mesh3d")
+  .add_entity((@core.Entity::new(160, 1), test_main_entity(60)))
+  let second = shadow_visible.subview_or_insert(retained_view)
+  let mut visited = 0
+  let mut added_count = 0
+  shadow_visible.for_each_subview((_, visible_entities) => {
+    visited = visited + 1
+    match visible_entities.get("Mesh3d") {
+      Some(class) => added_count = added_count + class.added_entities().length()
+      None => ()
+    }
+  })
+
+  debug_inspect(second.get("Mesh3d") is Some(_), content="true")
+  debug_inspect(shadow_visible.len(), content="1")
+  debug_inspect(visited, content="1")
+  debug_inspect(added_count, content="1")
 }
 
 ///|

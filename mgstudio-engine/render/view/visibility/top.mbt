@@ -121,6 +121,31 @@ pub fn RenderShadowMapVisibleEntities::len(
 }
 
 ///|
+pub fn RenderShadowMapVisibleEntities::subview_or_insert(
+  self : RenderShadowMapVisibleEntities,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> RenderVisibleEntities {
+  match self.subviews.get(retained_view_entity) {
+    Some(value) => value
+    None => {
+      let value = RenderVisibleEntities::RenderVisibleEntities()
+      self.subviews.set(retained_view_entity, value)
+      value
+    }
+  }
+}
+
+///|
+pub fn RenderShadowMapVisibleEntities::for_each_subview(
+  self : RenderShadowMapVisibleEntities,
+  f : (@render_view.RetainedViewEntity, RenderVisibleEntities) -> Unit,
+) -> Unit {
+  for retained_view_entity, visible_entities in self.subviews {
+    f(retained_view_entity, visible_entities)
+  }
+}
+
+///|
 pub let ecs_key_render_shadow_map_visible_entities : @ecs.ComponentKey[
   RenderShadowMapVisibleEntities,
 ] = @ecs.register_component(
@@ -338,6 +363,28 @@ pub fn RenderVisibleEntitiesClass::insert_gpu_culled_entity(
   entity : @core.Entity,
 ) -> Unit {
   self.entities_gpu_culling.set(main_entity, entity)
+}
+
+///|
+pub fn RenderVisibleEntitiesClass::remove_gpu_culled_entity(
+  self : RenderVisibleEntitiesClass,
+  main_entity : @render.MainEntity,
+) -> @core.Entity? {
+  match self.entities_gpu_culling.get(main_entity) {
+    Some(entity) => {
+      self.entities_gpu_culling.remove(main_entity)
+      Some(entity)
+    }
+    None => None
+  }
+}
+
+///|
+pub fn RenderVisibleEntitiesClass::gpu_culled_entity_is_visible(
+  self : RenderVisibleEntitiesClass,
+  main_entity : @render.MainEntity,
+) -> Bool {
+  self.entities_gpu_culling.contains(main_entity)
 }
 
 ///|

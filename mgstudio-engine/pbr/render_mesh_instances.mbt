@@ -709,6 +709,172 @@ pub fn RenderGpuCulledEntities::removed_len(
 }
 
 ///|
+fn render_gpu_culled_entity_layers_match(
+  view_render_layers : @camera_render_layers.RenderLayers?,
+  entity_render_layers : @camera_render_layers.RenderLayers?,
+) -> Bool {
+  match (view_render_layers, entity_render_layers) {
+    (Some(view_layers), Some(entity_layers)) =>
+      view_layers.matches(entity_layers)
+    _ => true
+  }
+}
+
+///|
+fn render_mesh_instances_collect_gpu_culled_meshes_for_subview(
+  view_render_layers : @camera_render_layers.RenderLayers?,
+  render_visible_entities : @render_visibility.RenderVisibleEntities,
+  render_gpu_culled_entities : RenderGpuCulledEntities,
+) -> Unit {
+  let render_view_visible_mesh_entities = render_visible_entities.class_or_insert(
+    @mesh.ecs_key_mesh3d.id().to_string(),
+  )
+  for main_entity in render_gpu_culled_entities.removed {
+    match
+      render_view_visible_mesh_entities.remove_gpu_culled_entity(main_entity) {
+      Some(_) =>
+        render_view_visible_mesh_entities
+        .removed_entities()
+        .push((@core.Entity::placeholder(), main_entity))
+      None => ()
+    }
+  }
+  let mut any_added = false
+  for main_entity in render_gpu_culled_entities.added {
+    let entity_layers = render_gpu_culled_entities.entities.get(
+      main_entity.id().to_bits(),
+    )
+    if !render_gpu_culled_entity_layers_match(view_render_layers, entity_layers) {
+      continue
+    }
+    render_view_visible_mesh_entities.insert_gpu_culled_entity(
+      main_entity,
+      @core.Entity::placeholder(),
+    )
+    render_view_visible_mesh_entities.add_entity(
+      (@core.Entity::placeholder(), main_entity),
+    )
+    any_added = true
+  }
+  for main_entity in render_gpu_culled_entities.changed_layers {
+    let entity_layers = match
+      render_gpu_culled_entities.entities.get(main_entity.id().to_bits()) {
+      Some(value) => value
+      None => continue
+    }
+    let entity_was_visible = render_view_visible_mesh_entities.gpu_culled_entity_is_visible(
+      main_entity,
+    )
+    let entity_is_visible = render_gpu_culled_entity_layers_match(
+      view_render_layers,
+      Some(entity_layers),
+    )
+    match (entity_was_visible, entity_is_visible) {
+      (false, false) | (true, true) => ()
+      (false, true) => {
+        render_view_visible_mesh_entities.insert_gpu_culled_entity(
+          main_entity,
+          @core.Entity::placeholder(),
+        )
+        render_view_visible_mesh_entities.add_entity(
+          (@core.Entity::placeholder(), main_entity),
+        )
+        any_added = true
+      }
+      (true, false) =>
+        match
+          render_view_visible_mesh_entities.remove_gpu_culled_entity(
+            main_entity,
+          ) {
+          Some(_) =>
+            render_view_visible_mesh_entities
+            .removed_entities()
+            .push((@core.Entity::placeholder(), main_entity))
+          None => ()
+        }
+    }
+  }
+  if any_added {
+    render_view_visible_mesh_entities.sort_added_entities()
+  }
+}
+
+///|
+fn render_mesh_instances_collect_gpu_culled_meshes(world : @ecs.World) -> Unit {
+  let render_gpu_culled_entities = match
+    world.get_resource(RenderGpuCulledEntities::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let cameras : Array[
+    (
+      @core.Entity,
+      @camera_render_layers.RenderLayers?,
+      @render_visibility.RenderVisibleEntities,
+    ),
+  ] = []
+  let camera_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Optional[@camera_render_layers.RenderLayers],
+        @ecs.Read[@render_visibility.RenderVisibleEntities],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! camera_query.view(fn(_query_entity, data) {
+    let (entity, (layers, visible_entities)) = data
+    cameras.push((entity, layers.value(), visible_entities.value()))
+  })
+  for camera in cameras {
+    let (entity, layers, visible_entities) = camera
+    render_mesh_instances_collect_gpu_culled_meshes_for_subview(
+      layers, visible_entities, render_gpu_culled_entities,
+    )
+    try! world.set_by_key(
+      entity,
+      @render_visibility.RenderVisibleEntities::component(),
+      visible_entities,
+    )
+  }
+  let shadow_maps : Array[
+    (
+      @core.Entity,
+      @camera_render_layers.RenderLayers?,
+      @render_visibility.RenderShadowMapVisibleEntities,
+    ),
+  ] = []
+  let shadow_query : @ecs.Query[
+    (
+      @core.Entity,
+      (
+        @ecs.Optional[@camera_render_layers.RenderLayers],
+        @ecs.Read[@render_visibility.RenderShadowMapVisibleEntities],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! shadow_query.view(fn(_query_entity, data) {
+    let (entity, (layers, visible_entities)) = data
+    shadow_maps.push((entity, layers.value(), visible_entities.value()))
+  })
+  for shadow_map in shadow_maps {
+    let (entity, layers, visible_entities) = shadow_map
+    visible_entities.for_each_subview(fn(_, subview_visible_entities) {
+      render_mesh_instances_collect_gpu_culled_meshes_for_subview(
+        layers, subview_visible_entities, render_gpu_culled_entities,
+      )
+    })
+    try! world.set_by_key(
+      entity,
+      @render_visibility.RenderShadowMapVisibleEntities::component(),
+      visible_entities,
+    )
+  }
+}
+
+///|
 pub struct RenderMeshInstanceGpuBuilder {
   shared : RenderMeshInstanceSharedFlat
   world_from_local : @math.Affine3
@@ -2631,6 +2797,7 @@ fn render_mesh_instances_collect_gpu_building_resource(
     timestamp,
     meshes_to_reextract_next_frame,
   )
+  render_mesh_instances_collect_gpu_culled_meshes(world)
 }
 
 ///|

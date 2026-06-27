@@ -809,6 +809,189 @@ test "pbr: collect_meshes_for_gpu_building updates GPU-culling visibility and re
 }
 
 ///|
+test "pbr: collect_gpu_culled_meshes_for_subview mirrors Bevy render-layer filtering" {
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let mesh_class = visible_entities.class_or_insert(
+    @mesh.ecs_key_mesh3d.id().to_string(),
+  )
+  let added_match = @render.MainEntity::new(@core.Entity::new(34, 1))
+  let added_hidden = @render.MainEntity::new(@core.Entity::new(35, 1))
+  let removed = @render.MainEntity::new(@core.Entity::new(36, 1))
+  let gpu_entities = RenderGpuCulledEntities::RenderGpuCulledEntities()
+  gpu_entities.update(
+    added_match,
+    @camera_render_layers.RenderLayers::layer(1),
+    true,
+  )
+  gpu_entities.update(
+    added_hidden,
+    @camera_render_layers.RenderLayers::layer(2),
+    true,
+  )
+  mesh_class.insert_gpu_culled_entity(removed, @core.Entity::placeholder())
+  gpu_entities.remove(removed)
+
+  render_mesh_instances_collect_gpu_culled_meshes_for_subview(
+    Some(@camera_render_layers.RenderLayers::layer(1)),
+    visible_entities,
+    gpu_entities,
+  )
+
+  debug_inspect(
+    mesh_class.gpu_culled_entity_is_visible(added_match),
+    content="true",
+  )
+  debug_inspect(
+    mesh_class.gpu_culled_entity_is_visible(added_hidden),
+    content="false",
+  )
+  debug_inspect(
+    mesh_class.gpu_culled_entity_is_visible(removed),
+    content="false",
+  )
+  debug_inspect(mesh_class.added_entities().length(), content="1")
+  debug_inspect(mesh_class.removed_entities().length(), content="1")
+  debug_inspect(
+    mesh_class.added_entities()[0].1.id(),
+    content="{ id: 34, generation: 1 }",
+  )
+  debug_inspect(
+    mesh_class.removed_entities()[0].1.id(),
+    content="{ id: 36, generation: 1 }",
+  )
+}
+
+///|
+test "pbr: collect_gpu_culled_meshes_for_subview mirrors Bevy changed layer handling" {
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let mesh_class = visible_entities.class_or_insert(
+    @mesh.ecs_key_mesh3d.id().to_string(),
+  )
+  let became_visible = @render.MainEntity::new(@core.Entity::new(37, 1))
+  let became_hidden = @render.MainEntity::new(@core.Entity::new(38, 1))
+  let gpu_entities = RenderGpuCulledEntities::RenderGpuCulledEntities()
+  gpu_entities.update(
+    became_visible,
+    @camera_render_layers.RenderLayers::layer(1),
+    true,
+  )
+  gpu_entities.update(
+    became_hidden,
+    @camera_render_layers.RenderLayers::layer(2),
+    true,
+  )
+  gpu_entities.added.clear()
+  gpu_entities.changed_layers.push(became_visible)
+  gpu_entities.changed_layers.push(became_hidden)
+  mesh_class.insert_gpu_culled_entity(
+    became_hidden,
+    @core.Entity::placeholder(),
+  )
+
+  render_mesh_instances_collect_gpu_culled_meshes_for_subview(
+    Some(@camera_render_layers.RenderLayers::layer(1)),
+    visible_entities,
+    gpu_entities,
+  )
+
+  debug_inspect(
+    mesh_class.gpu_culled_entity_is_visible(became_visible),
+    content="true",
+  )
+  debug_inspect(
+    mesh_class.gpu_culled_entity_is_visible(became_hidden),
+    content="false",
+  )
+  debug_inspect(mesh_class.added_entities().length(), content="1")
+  debug_inspect(mesh_class.removed_entities().length(), content="1")
+}
+
+///|
+test "pbr: collect_gpu_culled_meshes transfers resource state into render views" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  let shadow_entity = world.spawn()
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let shadow_visible_entities = @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(39, 1),
+  )
+  ignore(shadow_visible_entities.subview_or_insert(retained_view))
+  try! world.set_by_key(
+    camera_entity,
+    @render_visibility.RenderVisibleEntities::component(),
+    visible_entities,
+  )
+  try! world.set_by_key(
+    camera_entity,
+    @camera_render_layers.RenderLayers::component(),
+    @camera_render_layers.RenderLayers::layer(1),
+  )
+  try! world.set_by_key(
+    shadow_entity,
+    @render_visibility.RenderShadowMapVisibleEntities::component(),
+    shadow_visible_entities,
+  )
+  try! world.set_by_key(
+    shadow_entity,
+    @camera_render_layers.RenderLayers::component(),
+    @camera_render_layers.RenderLayers::layer(1),
+  )
+  let visible_main = @render.MainEntity::new(@core.Entity::new(40, 1))
+  let hidden_main = @render.MainEntity::new(@core.Entity::new(41, 1))
+  let gpu_entities = RenderGpuCulledEntities::RenderGpuCulledEntities()
+  gpu_entities.update(
+    visible_main,
+    @camera_render_layers.RenderLayers::layer(1),
+    true,
+  )
+  gpu_entities.update(
+    hidden_main,
+    @camera_render_layers.RenderLayers::layer(2),
+    true,
+  )
+  world.insert_resource(RenderGpuCulledEntities::resource(), gpu_entities)
+
+  render_mesh_instances_collect_gpu_culled_meshes(world)
+
+  let camera_visible = world
+    .get_by_key(
+      camera_entity,
+      @render_visibility.RenderVisibleEntities::component(),
+    )
+    .unwrap()
+  let camera_mesh_class = camera_visible
+    .get(@mesh.ecs_key_mesh3d.id().to_string())
+    .unwrap()
+  let shadow_visible = world
+    .get_by_key(
+      shadow_entity,
+      @render_visibility.RenderShadowMapVisibleEntities::component(),
+    )
+    .unwrap()
+  let mut shadow_added = 0
+  shadow_visible.for_each_subview((_, subview) => {
+    shadow_added = shadow_added +
+      subview
+      .get(@mesh.ecs_key_mesh3d.id().to_string())
+      .unwrap()
+      .added_entities()
+      .length()
+  })
+
+  debug_inspect(
+    camera_mesh_class.gpu_culled_entity_is_visible(visible_main),
+    content="true",
+  )
+  debug_inspect(
+    camera_mesh_class.gpu_culled_entity_is_visible(hidden_main),
+    content="false",
+  )
+  debug_inspect(camera_mesh_class.added_entities().length(), content="1")
+  debug_inspect(shadow_added, content="1")
+}
+
+///|
 test "pbr: RenderMeshInstanceGpuQueue mirrors Bevy CPU culling state" {
   let queue = RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()
   let entity = @render.MainEntity::new(@core.Entity::new(30, 1))
