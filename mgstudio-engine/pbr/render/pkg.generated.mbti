@@ -215,6 +215,8 @@ pub fn gpu_mesh_preprocess_plugin_install_with(@app.App[@ecs.World], GpuMeshPrep
 
 pub fn init_shadow_samplers(@ecs.World) -> Unit
 
+pub fn light_mesh_pipeline_key_contains_unclipped_depth_ortho(@material.ErasedMeshPipelineKey) -> Bool
+
 pub fn maxf(Float, Float) -> Float
 
 pub fn mesh_binding_slot_index(MeshBindingSlot3d) -> Int

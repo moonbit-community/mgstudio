@@ -712,6 +712,7 @@ pub struct Render3dResolvedMaterial {
   material : StandardMaterial
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  material_type_tag : String
 }
 
 ///|
@@ -719,11 +720,13 @@ pub fn Render3dResolvedMaterial::new(
   material : StandardMaterial,
   material_properties : @material.MaterialProperties,
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
+  material_type_tag : String,
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::{
     material,
     material_properties,
     material_bind_group_data,
+    material_type_tag,
   }
 }
 
@@ -746,6 +749,13 @@ pub fn Render3dResolvedMaterial::material_bind_group_data(
   self : Render3dResolvedMaterial,
 ) -> @render_resource.MaterialBindGroupResolvedData {
   self.material_bind_group_data
+}
+
+///|
+pub fn Render3dResolvedMaterial::material_type_tag(
+  self : Render3dResolvedMaterial,
+) -> String {
+  self.material_type_tag
 }
 
 ///|
@@ -883,13 +893,14 @@ pub fn[M] PreparedMaterial::properties(
 }
 
 ///|
-pub fn[M] PreparedMaterial::resolved_material(
+pub fn[M : Material] PreparedMaterial::resolved_material(
   self : PreparedMaterial[M],
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::new(
     StandardMaterial::StandardMaterial(),
     self.properties,
     self.bind_group_data,
+    M::material_debug_name(),
   )
 }
 

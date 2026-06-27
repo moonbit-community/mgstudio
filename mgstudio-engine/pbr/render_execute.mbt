@@ -883,6 +883,7 @@ pub struct Render3dShadowSpecializationWorkItemData {
   mesh_key : @material.ErasedMeshPipelineKey
   layout : @mesh.MeshVertexBufferLayoutRef
   properties : @material.MaterialProperties
+  material_type_tag : String
 }
 
 ///|
@@ -925,6 +926,78 @@ pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(
   self : Render3dShadowSpecializationWorkItemData,
 ) -> @render_view.RetainedViewEntity {
   self.retained_view_entity
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::material_type_tag(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> String {
+  self.material_type_tag
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn render3d_shadow_specialization_apply_work_item(
+  world : @ecs.World,
+  item : Render3dShadowSpecializationWorkItemData,
+  depth_clip_control_supported : Bool,
+) -> Bool {
+  guard item.properties.prepass_specialize is Some(prepass_specialize) else {
+    return false
+  }
+  let key = @material.ErasedMaterialPipelineKey::new(
+    item.mesh_key,
+    item.properties.material_key,
+    item.material_type_tag,
+  )
+  let emulate_unclipped_depth = @pbr_render.light_mesh_pipeline_key_contains_unclipped_depth_ortho(
+      item.mesh_key,
+    ) &&
+    !depth_clip_control_supported
+  let is_depth_only_opaque = (
+      item.mesh_key.bits() &
+      (MESH_PIPELINE_KEY_MAY_DISCARD | MESH_PIPELINE_KEY_PREPASS_READS_MATERIAL)
+    ) ==
+    0UL &&
+    !emulate_unclipped_depth
+  let draw_function_label = if is_depth_only_opaque {
+    SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL
+  } else {
+    SHADOWS_DRAW_FUNCTION_LABEL
+  }
+  guard item.properties.get_draw_function(draw_function_label)
+    is Some(draw_function) else {
+    return false
+  }
+  let pipeline_id = @material.material_specialize_prepass(
+    prepass_specialize,
+    world,
+    key,
+    item.layout,
+    item.properties,
+  ) catch {
+    _ => return false
+  }
+  match
+    world.get_resource_mut(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    ) {
+    Some(cache) => {
+      cache.modify(fn(value) {
+        value.insert(
+          item.retained_view_entity,
+          item.visible_entity,
+          pipeline_id,
+          draw_function,
+        )
+      })
+      true
+    }
+    None =>
+      abort(
+        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow specialization",
+      )
+  }
 }
 
 ///|
@@ -1089,6 +1162,7 @@ pub fn render3d_shadow_specialization_work_item_data(
     mesh_key,
     layout: render_mesh.layout(),
     properties,
+    material_type_tag: material.material_type_tag(),
   })
 }
 

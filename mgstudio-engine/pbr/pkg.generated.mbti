@@ -824,6 +824,8 @@ pub let render3d_set_render : String
 
 pub let render3d_set_specialize : String
 
+pub fn render3d_shadow_specialization_apply_work_item(@ecs.World, Render3dShadowSpecializationWorkItemData, Bool) -> Bool
+
 pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 
 pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey) -> Render3dShadowSpecializationWorkItemData?
@@ -2049,7 +2051,7 @@ pub fn[M] PreparedMaterial::bind_group_data(Self[M]) -> @render_resource.Materia
 pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M]) -> Self[M]
 pub fn[M] PreparedMaterial::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
 pub fn[M] PreparedMaterial::properties(Self[M]) -> @material.MaterialProperties
-pub fn[M] PreparedMaterial::resolved_material(Self[M]) -> Render3dResolvedMaterial
+pub fn[M : Material] PreparedMaterial::resolved_material(Self[M]) -> Render3dResolvedMaterial
 pub impl[M : Material] @Milky2018/mgstudio/render.RenderAssetResource for PreparedMaterial[M]
 
 pub struct Render3dDiagnosticsSnapshot {
@@ -2064,11 +2066,13 @@ pub struct Render3dResolvedMaterial {
   material : @material.StandardMaterial
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  material_type_tag : String
 }
 pub fn Render3dResolvedMaterial::material(Self) -> @material.StandardMaterial
 pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resource.MaterialBindGroupResolvedData
 pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
-pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData) -> Self
+pub fn Render3dResolvedMaterial::material_type_tag(Self) -> String
+pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String) -> Self
 
 pub struct Render3dShadowSpecializationWorkItemData {
   queue_data : RenderMeshQueueData
@@ -2077,8 +2081,10 @@ pub struct Render3dShadowSpecializationWorkItemData {
   mesh_key : @material.ErasedMeshPipelineKey
   layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
   properties : @material.MaterialProperties
+  material_type_tag : String
 }
 pub fn Render3dShadowSpecializationWorkItemData::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+pub fn Render3dShadowSpecializationWorkItemData::material_type_tag(Self) -> String
 pub fn Render3dShadowSpecializationWorkItemData::mesh_key(Self) -> @material.ErasedMeshPipelineKey
 pub fn Render3dShadowSpecializationWorkItemData::properties(Self) -> @material.MaterialProperties
 pub fn Render3dShadowSpecializationWorkItemData::queue_data(Self) -> RenderMeshQueueData

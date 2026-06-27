@@ -114,6 +114,13 @@ const LIGHT_MESH_PIPELINE_KEY_DEPTH_PREPASS : UInt64 = 1UL << 2
 const LIGHT_MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO : UInt64 = 1UL << 9
 
 ///|
+pub fn light_mesh_pipeline_key_contains_unclipped_depth_ortho(
+  key : @material.ErasedMeshPipelineKey,
+) -> Bool {
+  (key.bits() & LIGHT_MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO) != 0UL
+}
+
+///|
 const LIGHT_MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS : Int = 37
 
 ///|

@@ -975,6 +975,113 @@ test "render3d: shadow specialization mesh key mirrors Bevy work item assembly" 
 }
 
 ///|
+test "render3d: shadow specialization work item selects Bevy draw function" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(73, 1),
+  )
+  let visible_entity = @render.MainEntity::new(@core.Entity::new(74, 1))
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache(),
+  )
+  let properties = @material.MaterialProperties::MaterialProperties()
+    .with_prepass_specialize(Some(material_test_base_specialize))
+    .with_material_key(@material.ErasedMaterialKey::new(19UL, "MaterialKey"))
+    .add_draw_function(
+      SHADOWS_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(11U),
+    )
+    .add_draw_function(
+      SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(12U),
+    )
+  let item = Render3dShadowSpecializationWorkItemData::{
+    queue_data: RenderMeshQueueData::new(80, 0U, false),
+    visible_entity,
+    retained_view_entity: retained_view,
+    mesh_key: @material.ErasedMeshPipelineKey::new(4UL, "MeshPipelineKey"),
+    layout: @render_mesh.RenderMesh::new(vertex_count=3).layout(),
+    properties,
+    material_type_tag: "TestMaterial",
+  }
+  let specialized = render3d_shadow_specialization_apply_work_item(
+    world, item, false,
+  )
+  guard world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    )
+    is Some(cache) else {
+    abort("missing shadow cache")
+  }
+  guard cache.get(retained_view) is Some(view_cache) else {
+    abort("missing retained view shadow cache")
+  }
+  guard view_cache.get(visible_entity) is Some(entry) else {
+    abort("missing visible entity shadow cache")
+  }
+  let (pipeline_id, draw_function) = entry
+  debug_inspect(specialized, content="true")
+  inspect(pipeline_id.id(), content="901")
+  inspect(draw_function.id(), content="12")
+}
+
+///|
+test "render3d: shadow specialization uses material draw when prepass reads material" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(75, 1),
+  )
+  let visible_entity = @render.MainEntity::new(@core.Entity::new(76, 1))
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache(),
+  )
+  let properties = @material.MaterialProperties::MaterialProperties()
+    .with_prepass_specialize(Some(material_test_base_specialize))
+    .with_material_key(@material.ErasedMaterialKey::new(23UL, "MaterialKey"))
+    .add_draw_function(
+      SHADOWS_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(21U),
+    )
+    .add_draw_function(
+      SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(22U),
+    )
+  let item = Render3dShadowSpecializationWorkItemData::{
+    queue_data: RenderMeshQueueData::new(81, 0U, false),
+    visible_entity,
+    retained_view_entity: retained_view,
+    mesh_key: @material.ErasedMeshPipelineKey::new(
+      4UL | MESH_PIPELINE_KEY_PREPASS_READS_MATERIAL,
+      "MeshPipelineKey",
+    ),
+    layout: @render_mesh.RenderMesh::new(vertex_count=3).layout(),
+    properties,
+    material_type_tag: "TestMaterial",
+  }
+  let specialized = render3d_shadow_specialization_apply_work_item(
+    world, item, true,
+  )
+  guard world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    )
+    is Some(cache) else {
+    abort("missing shadow cache")
+  }
+  guard cache.get(retained_view) is Some(view_cache) else {
+    abort("missing retained view shadow cache")
+  }
+  guard view_cache.get(visible_entity) is Some(entry) else {
+    abort("missing visible entity shadow cache")
+  }
+  let (pipeline_id, draw_function) = entry
+  debug_inspect(specialized, content="true")
+  inspect(pipeline_id.id(), content="901")
+  inspect(draw_function.id(), content="21")
+}
+
+///|
 test "render3d: missing prepared render mesh does not return to pending queue" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(61, 1)
