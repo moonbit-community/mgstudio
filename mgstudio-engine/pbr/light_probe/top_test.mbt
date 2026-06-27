@@ -108,6 +108,43 @@ test "pbr light probe: light probe info skips unloaded or incomplete assets" {
 }
 
 ///|
+test "pbr light probe: light probe infos sort by camera distance" {
+  let view_transform = @transform.GlobalTransform::from_transform(
+    @transform.Transform::from_translation(@math.Vec3::zero()),
+  )
+  let near_entity = @render.MainEntity::new(@core.Entity::new(801, 1))
+  let middle_entity = @render.MainEntity::new(@core.Entity::new(802, 1))
+  let far_entity = @render.MainEntity::new(@core.Entity::new(803, 1))
+  let near = LightProbeInfo::new(near_entity, Some(@asset.Handle::new(811))).from_world_from_light(
+    @math.Affine3::from_translation(@math.Vec3::new(1.0F, 0.0F, 0.0F)),
+  )
+  let middle = LightProbeInfo::new(middle_entity, Some(@asset.Handle::new(812))).from_world_from_light(
+    @math.Affine3::from_translation(@math.Vec3::new(3.0F, 0.0F, 0.0F)),
+  )
+  let far = LightProbeInfo::new(far_entity, Some(@asset.Handle::new(813))).from_world_from_light(
+    @math.Affine3::from_translation(@math.Vec3::new(5.0F, 0.0F, 0.0F)),
+  )
+  let sorted = light_probe_infos_sort_by_camera_distance(
+    [far, near, middle],
+    view_transform,
+  )
+  let probes = RenderViewLightProbes::RenderViewLightProbes()
+  probes.maybe_gather_light_probes(sorted)
+  inspect(
+    probes.render_light_probe_index(near_entity).unwrap_or(999U),
+    content="0",
+  )
+  inspect(
+    probes.render_light_probe_index(middle_entity).unwrap_or(999U),
+    content="1",
+  )
+  inspect(
+    probes.render_light_probe_index(far_entity).unwrap_or(999U),
+    content="2",
+  )
+}
+
+///|
 test "pbr light probe: add_to_uniform writes Bevy render-probe counts" {
   let probes = RenderViewLightProbes::RenderViewLightProbes()
   probes.maybe_gather_light_probes([

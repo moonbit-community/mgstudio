@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/transform",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/hashmap",
 }
@@ -39,6 +40,8 @@ pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[RenderViewLightProb
 pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[ViewLightProbesUniformOffset]
 
 pub fn init_light_probes_buffer(@ecs.World) -> Unit
+
+pub fn light_probe_infos_sort_by_camera_distance(Array[LightProbeInfo], @transform.GlobalTransform) -> Array[LightProbeInfo]
 
 pub fn light_probe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -150,6 +153,7 @@ pub fn GeneratorSamplers::GeneratorSamplers() -> Self
 
 pub struct LightProbeInfo {
   main_entity : @render.MainEntity
+  world_from_light : @math.Affine3
   light_from_world : Array[@math.Vec4]
   falloff : @math.Vec3
   parallax_correction_bounds : @math.Vec3
@@ -159,8 +163,10 @@ pub struct LightProbeInfo {
   intensity : Float
   flags : Int
 }
+pub fn LightProbeInfo::camera_distance_sort_key(Self, @transform.GlobalTransform) -> Float
 pub fn LightProbeInfo::from_environment_map_light(@ecs.World, @render.MainEntity, @light.LightProbe, @light.EnvironmentMapLight) -> Self?
 pub fn LightProbeInfo::from_irradiance_volume(@ecs.World, @render.MainEntity, @light.LightProbe, @light.IrradianceVolume) -> Self?
+pub fn LightProbeInfo::from_world_from_light(Self, @math.Affine3) -> Self
 pub fn LightProbeInfo::new(@render.MainEntity, @asset.Handle[@image.Image]?) -> Self
 
 pub struct LightProbePlugin {

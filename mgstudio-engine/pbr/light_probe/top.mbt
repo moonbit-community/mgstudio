@@ -218,6 +218,7 @@ pub struct RenderViewLightProbes {
 ///|
 pub struct LightProbeInfo {
   main_entity : @render.MainEntity
+  world_from_light : @math.Affine3
   light_from_world : Array[@math.Vec4]
   falloff : @math.Vec3
   parallax_correction_bounds : @math.Vec3
@@ -239,6 +240,7 @@ pub fn LightProbeInfo::new(
   }
   LightProbeInfo::{
     main_entity,
+    world_from_light: @math.Affine3::identity(),
     light_from_world: [
       @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
       @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
@@ -332,6 +334,18 @@ fn irradiance_volume_light_probe_flags(
 }
 
 ///|
+pub fn LightProbeInfo::from_world_from_light(
+  self : LightProbeInfo,
+  world_from_light : @math.Affine3,
+) -> LightProbeInfo {
+  LightProbeInfo::{
+    ..self,
+    world_from_light,
+    world_position: world_from_light.translation,
+  }
+}
+
+///|
 fn light_probe_info_from_world_from_light(
   main_entity : @render.MainEntity,
   world_from_light : @math.Affine3,
@@ -344,6 +358,7 @@ fn light_probe_info_from_world_from_light(
   let light_from_world = world_from_light.inverse()
   LightProbeInfo::{
     main_entity,
+    world_from_light,
     light_from_world: [
       @math.Vec4::new(
         light_from_world.matrix3.x_axis.x,
@@ -436,6 +451,42 @@ pub fn LightProbeInfo::from_irradiance_volume(
       irradiance_volume_light_probe_flags(irradiance_volume),
     ),
   )
+}
+
+///|
+pub fn LightProbeInfo::camera_distance_sort_key(
+  self : LightProbeInfo,
+  view_transform : @transform.GlobalTransform,
+) -> Float {
+  self.world_from_light.translation
+  .sub(view_transform.translation())
+  .length_squared()
+}
+
+///|
+fn light_probe_cmp_float(left : Float, right : Float) -> Int {
+  if left < right {
+    -1
+  } else if left > right {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+pub fn light_probe_infos_sort_by_camera_distance(
+  light_probes : Array[LightProbeInfo],
+  view_transform : @transform.GlobalTransform,
+) -> Array[LightProbeInfo] {
+  let sorted = light_probes.copy()
+  sorted.sort_by(fn(left, right) {
+    light_probe_cmp_float(
+      left.camera_distance_sort_key(view_transform),
+      right.camera_distance_sort_key(view_transform),
+    )
+  })
+  sorted
 }
 
 ///|
