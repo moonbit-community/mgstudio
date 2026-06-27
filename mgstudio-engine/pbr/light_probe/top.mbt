@@ -79,11 +79,18 @@ pub fn light_probe_plugin_with(
     LightProbePluginState::LightProbePluginState()
   })
   @render.try_with_render_app(app, fn(render_app) {
-    render_app.add_systems(
+    render_app
+    .add_systems(
       @render.render_startup_schedule_stage(),
       @app.system(init_light_probes_buffer).named(
         "mgstudio_pbr::init_light_probes_buffer",
       ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(upload_light_probes)
+      .named("mgstudio_pbr::upload_light_probes")
+      .in_set(@render.render_system_set_prepare_resources),
     )
   })
 }

@@ -153,6 +153,59 @@ test "pbr light probe: upload_light_probes writes render-world offsets" {
 }
 
 ///|
+test "pbr light probe: plugin schedules upload in render prepare resources" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(LightProbePlugin::LightProbePlugin())
+  let render_sub_app = app
+    .sub_app(@app.RenderApp)
+    .set_update_schedule(Some(@render.render_schedule_stage()))
+  let render_dot = render_sub_app.schedule_graph_dot(
+    @render.render_schedule_stage(),
+    settings=@app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+        name,
+      ) {
+        name == "mgstudio_pbr::upload_light_probes"
+      },
+    ),
+  )
+  inspect(
+    render_dot.contains("\"mgstudio_pbr::upload_light_probes\""),
+    content="true",
+  )
+
+  let render_world = render_sub_app.world()
+  let view = render_world.spawn()
+  try! render_world.set_by_key(
+    view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(@render_view.RetainedViewEntity::new(view)),
+  )
+  let reflection = RenderViewLightProbes::RenderViewLightProbes()
+  reflection.maybe_gather_light_probes([
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(501, 1)),
+      Some(@asset.Handle::new(61)),
+    ),
+  ])
+  try! render_world.set_by_key(
+    view,
+    RenderViewEnvironmentMapLightProbes::component(),
+    RenderViewEnvironmentMapLightProbes::new(reflection),
+  )
+  ignore(render_sub_app.update())
+  let buffer = render_world
+    .get_resource(LightProbesBuffer::resource())
+    .unwrap_or(LightProbesBuffer::LightProbesBuffer())
+  inspect(buffer.uniform_count(), content="1")
+  let offset = (try! render_world.get_by_key(
+    view,
+    ViewLightProbesUniformOffset::component(),
+  )).unwrap_or(ViewLightProbesUniformOffset::new(999U))
+  inspect(offset.offset(), content="0")
+}
+
+///|
 test "pbr light probe: uniform mirrors Bevy light probe capacities" {
   let uniform = LightProbesUniform::LightProbesUniform()
   inspect(uniform.reflection_probe_capacity(), content="8")
