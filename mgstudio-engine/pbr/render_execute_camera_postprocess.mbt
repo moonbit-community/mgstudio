@@ -46,67 +46,6 @@ fn render3d_execute_camera_postprocess(
   cleared_targets_this_frame : Array[Int],
 ) -> Unit {
   let source_world = @render.render_source_world(world)
-  fn motion_blur_pipeline_for_view() -> (
-    @render_resource.RenderPipeline,
-    @render_resource.Sampler,
-    @wgpu.Buffer,
-    UInt,
-    @wgpu.Buffer,
-  )? {
-    guard (try! world.get_by_key(
-        camera_render_entity,
-        @post_process_motion_blur.MotionBlurPipelineId::component(),
-      ))
-      is Some(pipeline_id) else {
-      return None
-    }
-    guard world.get_resource(@render.pipeline_cache_resource_key)
-      is Some(pipeline_cache) else {
-      return None
-    }
-    guard pipeline_cache.get_render_pipeline(pipeline_id.pipeline_id())
-      is Some(render_pipeline) else {
-      return None
-    }
-    guard world.get_resource(
-        @post_process_motion_blur.MotionBlurPipeline::resource(),
-      )
-      is Some(motion_blur_pipeline) else {
-      return None
-    }
-    guard world.get_resource(
-        @post_process_motion_blur.MotionBlurUniforms::resource(),
-      )
-      is Some(motion_blur_uniforms) else {
-      return None
-    }
-    guard motion_blur_uniforms.binding() is Some(settings_buffer) else {
-      return None
-    }
-    guard (try! world.get_by_key(
-        camera_render_entity,
-        @post_process_motion_blur.ViewMotionBlurUniformOffset::component(),
-      ))
-      is Some(settings_offset) else {
-      return None
-    }
-    guard world.get_resource(@render.GlobalsBuffer::resource())
-      is Some(globals_buffer_resource) else {
-      return None
-    }
-    guard globals_buffer_resource.binding() is Some(globals_buffer) else {
-      return None
-    }
-    Some(
-      (
-        render_pipeline,
-        motion_blur_pipeline.sampler(),
-        settings_buffer,
-        settings_offset.offset(),
-        globals_buffer,
-      ),
-    )
-  }
   fn pass_viewport(target_id : Int) -> (Int, Int, Int, Int) {
     @pbr_render.render3d_pass_viewport_for_target(
       target_id,
@@ -121,14 +60,10 @@ fn render3d_execute_camera_postprocess(
   if motion_blur_active &&
     camera.motion_blur is Some(_) &&
     velocity_target_id >= 0 &&
-    motion_blur_pipeline_for_view() is Some(motion_blur_pipeline_entry) {
-    let (
-      motion_blur_pipeline,
-      motion_blur_sampler,
-      motion_blur_settings_buffer,
-      motion_blur_settings_offset,
-      motion_blur_globals_buffer,
-    ) = motion_blur_pipeline_entry
+    @post_process_motion_blur.motion_blur_render_resources_for_view(
+      world, camera_render_entity,
+    )
+    is Some(motion_blur_render_resources) {
     if bloom_enabled || tonemap_postprocess_enabled {
       let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
         world, camera_entity, view_width, view_height,
@@ -164,11 +99,11 @@ fn render3d_execute_camera_postprocess(
       @render.host_gpu_draw_motion_blur(
         scene_texture_id=scene_target_id,
         velocity_texture_id=velocity_target_id,
-        pipeline=motion_blur_pipeline,
-        sampler=motion_blur_sampler,
-        settings_buffer=motion_blur_settings_buffer,
-        settings_offset=motion_blur_settings_offset,
-        globals_buffer=motion_blur_globals_buffer,
+        pipeline=motion_blur_render_resources.pipeline,
+        sampler=motion_blur_render_resources.sampler,
+        settings_buffer=motion_blur_render_resources.settings_buffer,
+        settings_offset=motion_blur_render_resources.settings_offset,
+        globals_buffer=motion_blur_render_resources.globals_buffer,
       )
       @render.host_gpu_end_pass()
       final_source_texture_id = post_motion_blur_target_id
@@ -206,11 +141,11 @@ fn render3d_execute_camera_postprocess(
       @render.host_gpu_draw_motion_blur(
         scene_texture_id=scene_target_id,
         velocity_texture_id=velocity_target_id,
-        pipeline=motion_blur_pipeline,
-        sampler=motion_blur_sampler,
-        settings_buffer=motion_blur_settings_buffer,
-        settings_offset=motion_blur_settings_offset,
-        globals_buffer=motion_blur_globals_buffer,
+        pipeline=motion_blur_render_resources.pipeline,
+        sampler=motion_blur_render_resources.sampler,
+        settings_buffer=motion_blur_render_resources.settings_buffer,
+        settings_offset=motion_blur_render_resources.settings_offset,
+        globals_buffer=motion_blur_render_resources.globals_buffer,
       )
       @render.host_gpu_end_pass()
     }

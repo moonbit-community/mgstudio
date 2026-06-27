@@ -149,6 +149,77 @@ pub fn motion_blur_uniform_is_active(uniform : MotionBlurUniform) -> Bool {
 }
 
 ///|
+pub(all) struct MotionBlurRenderResources {
+  pipeline : @render_resource.RenderPipeline
+  sampler : @render_resource.Sampler
+  settings_buffer : @wgpu.Buffer
+  settings_offset : UInt
+  globals_buffer : @wgpu.Buffer
+}
+
+///|
+pub fn motion_blur_render_resources_for_view(
+  render_world : @ecs.World,
+  view_entity : @core.Entity,
+) -> MotionBlurRenderResources? {
+  guard (try! render_world.get_by_key(
+      view_entity,
+      MotionBlurUniform::component(),
+    ))
+    is Some(motion_blur_uniform) else {
+    return None
+  }
+  if !motion_blur_uniform_is_active(motion_blur_uniform) {
+    return None
+  }
+  guard (try! render_world.get_by_key(
+      view_entity,
+      MotionBlurPipelineId::component(),
+    ))
+    is Some(pipeline_id) else {
+    return None
+  }
+  guard render_world.get_resource(@render.pipeline_cache_resource_key)
+    is Some(pipeline_cache) else {
+    return None
+  }
+  guard pipeline_cache.get_render_pipeline(pipeline_id.pipeline_id())
+    is Some(pipeline) else {
+    return None
+  }
+  guard render_world.get_resource(MotionBlurPipeline::resource())
+    is Some(motion_blur_pipeline) else {
+    return None
+  }
+  guard render_world.get_resource(MotionBlurUniforms::resource())
+    is Some(motion_blur_uniforms) else {
+    return None
+  }
+  guard motion_blur_uniforms.binding() is Some(settings_buffer) else {
+    return None
+  }
+  guard (try! render_world.get_by_key(
+      view_entity,
+      ViewMotionBlurUniformOffset::component(),
+    ))
+    is Some(settings_offset) else {
+    return None
+  }
+  guard render_world.get_resource(@render.GlobalsBuffer::resource())
+    is Some(globals_buffer) else {
+    return None
+  }
+  guard globals_buffer.binding() is Some(globals_binding) else { return None }
+  Some(MotionBlurRenderResources::{
+    pipeline,
+    sampler: motion_blur_pipeline.sampler(),
+    settings_buffer,
+    settings_offset: settings_offset.offset(),
+    globals_buffer: globals_binding,
+  })
+}
+
+///|
 pub struct ViewMotionBlurUniformOffset {
   offset : UInt
 }

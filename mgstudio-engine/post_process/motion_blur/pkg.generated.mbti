@@ -54,6 +54,8 @@ pub fn motion_blur_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn motion_blur_plugin_with(@app.App[@ecs.World], MotionBlurPlugin) -> @app.App[@ecs.World]
 
+pub fn motion_blur_render_resources_for_view(@ecs.World, @core.Entity) -> MotionBlurRenderResources?
+
 pub fn motion_blur_samples(MotionBlur) -> Array[MotionBlurSample]
 
 pub fn motion_blur_uniform_component_key() -> @ecs.ComponentKey[MotionBlurUniform]
@@ -117,6 +119,14 @@ pub struct MotionBlurPlugin {
 }
 pub fn MotionBlurPlugin::MotionBlurPlugin() -> Self
 pub impl @app.Plugin for MotionBlurPlugin
+
+pub(all) struct MotionBlurRenderResources {
+  pipeline : @render_resource.RenderPipeline
+  sampler : @render_resource.Sampler
+  settings_buffer : @wgpu_mbt.Buffer
+  settings_offset : UInt
+  globals_buffer : @wgpu_mbt.Buffer
+}
 
 pub struct MotionBlurSample {
   offset : Float

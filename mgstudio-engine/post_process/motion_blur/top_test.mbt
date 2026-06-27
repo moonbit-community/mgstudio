@@ -49,6 +49,21 @@ test "motion blur: uniform bytes match WGSL layout size" {
 }
 
 ///|
+test "motion blur: render resources skip inactive uniforms before GPU lookups" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    ecs_key_motion_blur_uniform,
+    MotionBlurUniform::new(0.0F, 4U),
+  )
+  inspect(
+    motion_blur_render_resources_for_view(world, entity) is None,
+    content="true",
+  )
+}
+
+///|
 test "motion blur: sample helper stays tied to component settings" {
   let disabled = motion_blur_generate_samples(MotionBlur::new(0.0F, 8U))
   inspect(disabled.length(), content="0")
