@@ -22,6 +22,8 @@ pub fn[T] batch_meta_sort_and_merge(Array[BatchMeta[T]], (T, T) -> Bool) -> Arra
 
 pub fn[T] clear_batched_cpu_instance_buffers(BatchedInstanceBuffer[T]?) -> Unit
 
+pub fn[BD, BDI] collect_phase_batched_instance_buffers(BatchedInstanceBuffers[BD, BDI], String, PhaseBatchedInstanceBuffers[BD]) -> Unit
+
 pub let ecs_key_no_automatic_batching : @ecs.ComponentKey[NoAutomaticBatching]
 
 pub fn get_or_create_work_item_buffer(@hashmap.HashMap[String, PreprocessWorkItemBuffers], String, Bool, Bool) -> PreprocessWorkItemBuffers
@@ -141,7 +143,7 @@ pub fn NoAutomaticBatching::NoAutomaticBatching() -> Self
 pub impl @ecs.Component for NoAutomaticBatching
 
 pub struct PhaseBatchedInstanceBuffers[BD] {
-  buffers : UntypedPhaseBatchedInstanceBuffers[BD]
+  mut buffers : UntypedPhaseBatchedInstanceBuffers[BD]
   mut marker : Int
 }
 pub fn[BD] PhaseBatchedInstanceBuffers::clear(Self[BD]) -> Unit

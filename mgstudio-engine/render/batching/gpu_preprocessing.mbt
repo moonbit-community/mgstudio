@@ -305,7 +305,7 @@ pub fn[BD] UntypedPhaseBatchedInstanceBuffers::clear(
 
 ///|
 pub struct PhaseBatchedInstanceBuffers[BD] {
-  buffers : UntypedPhaseBatchedInstanceBuffers[BD]
+  mut buffers : UntypedPhaseBatchedInstanceBuffers[BD]
   mut marker : Int
 }
 
@@ -323,6 +323,33 @@ pub fn[BD] PhaseBatchedInstanceBuffers::clear(
 ) -> Unit {
   self.buffers.clear()
   self.marker = 0
+}
+
+///|
+pub fn[BD, BDI] collect_phase_batched_instance_buffers(
+  batched_instance_buffers : BatchedInstanceBuffers[BD, BDI],
+  phase_id : String,
+  phase_batched_instance_buffers : PhaseBatchedInstanceBuffers[BD],
+) -> Unit {
+  let untyped_phase_batched_instance_buffers = phase_batched_instance_buffers.buffers
+  let outgoing_phase_batched_instance_buffers = PhaseBatchedInstanceBuffers::{
+    buffers: untyped_phase_batched_instance_buffers,
+    marker: phase_batched_instance_buffers.marker,
+  }
+  match batched_instance_buffers.phase_instance_buffers.get(phase_id) {
+    Some(old_untyped_phase_batched_instance_buffers) => {
+      old_untyped_phase_batched_instance_buffers.clear()
+      phase_batched_instance_buffers.buffers = old_untyped_phase_batched_instance_buffers.buffers
+      phase_batched_instance_buffers.marker = old_untyped_phase_batched_instance_buffers.marker
+    }
+    None => {
+      phase_batched_instance_buffers.buffers = UntypedPhaseBatchedInstanceBuffers::new()
+      phase_batched_instance_buffers.marker = 0
+    }
+  }
+  batched_instance_buffers.phase_instance_buffers.set(
+    phase_id, outgoing_phase_batched_instance_buffers,
+  )
 }
 
 ///|

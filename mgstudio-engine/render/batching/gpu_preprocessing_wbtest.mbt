@@ -57,6 +57,30 @@ test "gpu preprocessing: batched instance clear keeps phase tables for reuse" {
 }
 
 ///|
+test "gpu preprocessing: collect phase buffers swaps with global table" {
+  let global : BatchedInstanceBuffers[Int, Int] = BatchedInstanceBuffers::new()
+  let old_phase : PhaseBatchedInstanceBuffers[Int] = PhaseBatchedInstanceBuffers::new()
+  old_phase.marker = 5
+  global.insert_phase_instance_buffers("shadow", old_phase)
+  let phase : PhaseBatchedInstanceBuffers[Int] = PhaseBatchedInstanceBuffers::new()
+  phase.marker = 9
+  collect_phase_batched_instance_buffers(global, "shadow", phase)
+  debug_inspect(global.phase_instance_buffer_count(), content="1")
+  debug_inspect(
+    global.phase_instance_buffers.get("shadow").unwrap().marker,
+    content="9",
+  )
+  debug_inspect(phase.marker, content="0")
+  phase.marker = 10
+  collect_phase_batched_instance_buffers(global, "shadow", phase)
+  debug_inspect(
+    global.phase_instance_buffers.get("shadow").unwrap().marker,
+    content="10",
+  )
+  debug_inspect(phase.marker, content="0")
+}
+
+///|
 test "gpu preprocessing: direct work-item buffers collect one list" {
   let buffers = preprocess_work_item_buffers_direct()
   buffers.push(false, PreprocessWorkItem::new(3, 4))
