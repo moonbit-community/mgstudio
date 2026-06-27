@@ -93,6 +93,8 @@ pub fn render_light_probe_flags_contains(Int, Int) -> Bool
 
 pub fn render_light_probe_flags_insert(Int, Int) -> Int
 
+pub fn upload_light_probes(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
@@ -197,8 +199,10 @@ pub struct LightProbesUniform {
   view_environment_map_affects_lightmapped_mesh_diffuse : Bool
 }
 pub fn LightProbesUniform::LightProbesUniform() -> Self
+pub fn LightProbesUniform::from_render_view_light_probes(RenderViewEnvironmentMapLightProbes?, RenderViewIrradianceVolumeLightProbes?) -> Self
 pub fn LightProbesUniform::irradiance_volume_capacity(Self) -> Int
 pub fn LightProbesUniform::reflection_probe_capacity(Self) -> Int
+pub fn LightProbesUniform::to_bytes(Self) -> Bytes
 pub fn LightProbesUniform::view_cubemap_index(Self) -> Int
 
 pub struct RenderLightProbe {

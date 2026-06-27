@@ -77,6 +77,82 @@ test "pbr light probe: add_to_uniform writes Bevy render-probe counts" {
 }
 
 ///|
+fn light_probe_test_read_u32_le(bytes : Bytes, offset : Int) -> UInt {
+  let b0 = bytes[offset].to_uint()
+  let b1 = bytes[offset + 1].to_uint()
+  let b2 = bytes[offset + 2].to_uint()
+  let b3 = bytes[offset + 3].to_uint()
+  b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+}
+
+///|
+test "pbr light probe: uniform bytes preserve Bevy probe counts" {
+  let reflection = RenderViewLightProbes::RenderViewLightProbes()
+  reflection.maybe_gather_light_probes([
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(301, 1)),
+      Some(@asset.Handle::new(41)),
+    ),
+  ])
+  let irradiance = RenderViewLightProbes::RenderViewLightProbes()
+  irradiance.maybe_gather_light_probes([
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(302, 1)),
+      Some(@asset.Handle::new(42)),
+    ),
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(303, 1)),
+      Some(@asset.Handle::new(43)),
+    ),
+  ])
+  let uniform = LightProbesUniform::from_render_view_light_probes(
+    Some(RenderViewEnvironmentMapLightProbes::new(reflection)),
+    Some(RenderViewIrradianceVolumeLightProbes::new(irradiance)),
+  )
+  let bytes = uniform.to_bytes()
+  inspect(bytes.length(), content="2048")
+  inspect(light_probe_test_read_u32_le(bytes, 1792), content="1")
+  inspect(light_probe_test_read_u32_le(bytes, 1796), content="2")
+}
+
+///|
+test "pbr light probe: upload_light_probes writes render-world offsets" {
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  try! world.set_by_key(
+    view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(@render_view.RetainedViewEntity::new(view)),
+  )
+  let reflection = RenderViewLightProbes::RenderViewLightProbes()
+  reflection.maybe_gather_light_probes([
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(401, 1)),
+      Some(@asset.Handle::new(51)),
+    ),
+  ])
+  try! world.set_by_key(
+    view,
+    RenderViewEnvironmentMapLightProbes::component(),
+    RenderViewEnvironmentMapLightProbes::new(reflection),
+  )
+
+  upload_light_probes(world)
+
+  let buffer = world
+    .get_resource(LightProbesBuffer::resource())
+    .unwrap_or(LightProbesBuffer::LightProbesBuffer())
+  inspect(buffer.uniform_count(), content="1")
+  let offset = (try! world.get_by_key(
+    view,
+    ViewLightProbesUniformOffset::component(),
+  )).unwrap_or(ViewLightProbesUniformOffset::new(999U))
+  inspect(offset.offset(), content="0")
+  let bytes = buffer.uniform_bytes_at(0).unwrap_or(Bytes::make(0, b'\x00'))
+  inspect(light_probe_test_read_u32_le(bytes, 1792), content="1")
+}
+
+///|
 test "pbr light probe: uniform mirrors Bevy light probe capacities" {
   let uniform = LightProbesUniform::LightProbesUniform()
   inspect(uniform.reflection_probe_capacity(), content="8")

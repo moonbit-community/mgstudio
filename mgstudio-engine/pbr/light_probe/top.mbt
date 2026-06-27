@@ -496,6 +496,127 @@ pub fn LightProbesUniform::view_cubemap_index(self : LightProbesUniform) -> Int 
 }
 
 ///|
+fn light_probe_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn light_probe_push_i32(words : Array[UInt], value : Int) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn light_probe_push_render_light_probe(
+  words : Array[UInt],
+  probe : RenderLightProbe,
+) -> Unit {
+  let first = probe.light_from_world_transposed[0]
+  let second = probe.light_from_world_transposed[1]
+  let third = probe.light_from_world_transposed[2]
+  light_probe_push_f32(words, first.x)
+  light_probe_push_f32(words, first.y)
+  light_probe_push_f32(words, first.z)
+  light_probe_push_f32(words, first.w)
+  light_probe_push_f32(words, second.x)
+  light_probe_push_f32(words, second.y)
+  light_probe_push_f32(words, second.z)
+  light_probe_push_f32(words, second.w)
+  light_probe_push_f32(words, third.x)
+  light_probe_push_f32(words, third.y)
+  light_probe_push_f32(words, third.z)
+  light_probe_push_f32(words, third.w)
+  light_probe_push_f32(words, probe.falloff.x)
+  light_probe_push_f32(words, probe.falloff.y)
+  light_probe_push_f32(words, probe.falloff.z)
+  light_probe_push_f32(words, probe.bounding_sphere_radius)
+  light_probe_push_f32(words, probe.parallax_correction_bounds.x)
+  light_probe_push_f32(words, probe.parallax_correction_bounds.y)
+  light_probe_push_f32(words, probe.parallax_correction_bounds.z)
+  light_probe_push_f32(words, probe.intensity)
+  light_probe_push_f32(words, probe.world_position.x)
+  light_probe_push_f32(words, probe.world_position.y)
+  light_probe_push_f32(words, probe.world_position.z)
+  light_probe_push_i32(words, probe.texture_index)
+  words.push(probe.flags.reinterpret_as_uint())
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+}
+
+///|
+fn light_probe_push_empty_render_light_probe(words : Array[UInt]) -> Unit {
+  for _ in 0..<28 {
+    words.push(0U)
+  }
+}
+
+///|
+fn light_probe_pack_u32le(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, index => {
+    let word = words[index / 4]
+    ((word >> (index % 4 * 8)) & 0xFF).to_byte()
+  })
+}
+
+///|
+pub fn LightProbesUniform::to_bytes(self : LightProbesUniform) -> Bytes {
+  let words : Array[UInt] = []
+  for index in 0..<MAX_VIEW_LIGHT_PROBES {
+    if index < self.reflection_probe_count {
+      light_probe_push_render_light_probe(words, self.reflection_probes[index])
+    } else {
+      light_probe_push_empty_render_light_probe(words)
+    }
+  }
+  for index in 0..<MAX_VIEW_LIGHT_PROBES {
+    if index < self.irradiance_volume_count {
+      light_probe_push_render_light_probe(words, self.irradiance_volumes[index])
+    } else {
+      light_probe_push_empty_render_light_probe(words)
+    }
+  }
+  words.push(self.reflection_probe_count.reinterpret_as_uint())
+  words.push(self.irradiance_volume_count.reinterpret_as_uint())
+  light_probe_push_i32(words, self.view_cubemap_index)
+  words.push(self.smallest_specular_mip_level_for_view.reinterpret_as_uint())
+  light_probe_push_f32(words, self.view_rotation.x)
+  light_probe_push_f32(words, self.view_rotation.y)
+  light_probe_push_f32(words, self.view_rotation.z)
+  light_probe_push_f32(words, self.view_rotation.w)
+  light_probe_push_f32(words, self.intensity_for_view)
+  words.push(
+    if self.view_environment_map_affects_lightmapped_mesh_diffuse {
+      1U
+    } else {
+      0U
+    },
+  )
+  while words.length() < LIGHT_PROBES_UNIFORM_SIZE_BYTES / 4 {
+    words.push(0U)
+  }
+  light_probe_pack_u32le(words)
+}
+
+///|
+pub fn LightProbesUniform::from_render_view_light_probes(
+  render_view_environment_maps : RenderViewEnvironmentMapLightProbes?,
+  render_view_irradiance_volumes : RenderViewIrradianceVolumeLightProbes?,
+) -> LightProbesUniform {
+  let uniform = LightProbesUniform::LightProbesUniform()
+  match render_view_environment_maps {
+    Some(environment_maps) =>
+      environment_maps.probes().add_to_uniform_reflection_probes(uniform)
+    None => ()
+  }
+  match render_view_irradiance_volumes {
+    Some(irradiance_volumes) =>
+      irradiance_volumes.probes().add_to_uniform_irradiance_volumes(uniform)
+    None => ()
+  }
+  uniform
+}
+
+///|
 pub struct LightProbesBuffer {
   uniform_bytes : Array[Bytes]
   mut gpu_buffer : @wgpu.Buffer?
@@ -612,6 +733,60 @@ pub fn LightProbesBuffer::binding(self : LightProbesBuffer) -> @wgpu.Buffer? {
 ///|
 pub fn LightProbesBuffer::gpu_capacity(self : LightProbesBuffer) -> UInt64 {
   self.gpu_capacity
+}
+
+///|
+fn light_probes_buffer_or_insert(world : @ecs.World) -> LightProbesBuffer {
+  match world.get_resource(ecs_key_light_probes_buffer) {
+    Some(value) => value
+    None => {
+      let value = LightProbesBuffer::LightProbesBuffer()
+      world.insert_resource(ecs_key_light_probes_buffer, value)
+      value
+    }
+  }
+}
+
+///|
+pub fn upload_light_probes(world : @ecs.World) -> Unit {
+  let view_entities : Array[@core.Entity] = []
+  world.for_each_component(@render_view.ExtractedView::component(), fn(
+    entity,
+    _view,
+  ) {
+    view_entities.push(entity)
+  })
+  if view_entities.length() == 0 {
+    return
+  }
+
+  let light_probes_buffer = light_probes_buffer_or_insert(world)
+  light_probes_buffer.clear()
+  for view_entity in view_entities {
+    let render_view_environment_maps = world.get_by_key(
+      view_entity,
+      RenderViewEnvironmentMapLightProbes::component(),
+    ) catch {
+      _ => None
+    }
+    let render_view_irradiance_volumes = world.get_by_key(
+      view_entity,
+      RenderViewIrradianceVolumeLightProbes::component(),
+    ) catch {
+      _ => None
+    }
+    let light_probes_uniform = LightProbesUniform::from_render_view_light_probes(
+      render_view_environment_maps, render_view_irradiance_volumes,
+    )
+    let uniform_offset = light_probes_buffer.push_uniform_bytes(
+      light_probes_uniform.to_bytes(),
+    )
+    try! world.set_by_key(
+      view_entity,
+      ViewLightProbesUniformOffset::component(),
+      ViewLightProbesUniformOffset::new(uniform_offset),
+    )
+  }
 }
 
 ///|
