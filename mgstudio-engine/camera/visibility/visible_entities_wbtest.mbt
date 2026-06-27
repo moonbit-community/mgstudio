@@ -34,6 +34,11 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
     @camera_render_layers.ecs_key_render_layers,
     @camera_render_layers.RenderLayers::layer(0),
   )
+  try! world.set_by_key(
+    camera,
+    @camera_primitives.ecs_key_frustum,
+    @camera_primitives.Frustum::default_2d(),
+  )
   for entity in [visible_mesh, hidden_layer_mesh] {
     try! world.set_by_key(
       entity,
@@ -49,6 +54,19 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
       entity,
       @root_visibility.ecs_key_visibility_class,
       @root_visibility.VisibilityClass::single(mesh3d_class),
+    )
+    try! world.set_by_key(
+      entity,
+      @transform.ecs_key_global_transform,
+      @transform.GlobalTransform::identity(),
+    )
+    try! world.set_by_key(
+      entity,
+      @camera_primitives.ecs_key_aabb,
+      @camera_primitives.Aabb::from_min_max(
+        @math.Vec3::new(-0.5F, -0.5F, -0.5F),
+        @math.Vec3::new(0.5F, 0.5F, 0.5F),
+      ),
     )
   }
   try! world.set_by_key(
@@ -77,4 +95,164 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
     .is_visible(),
     content="true",
   )
+}
+
+///|
+test "camera visibility: frustum culls Aabb unless disabled" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  let inside = world.spawn()
+  let outside = world.spawn()
+  let outside_no_frustum_culling = world.spawn()
+  let mesh3d_class = 123456
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_visible_entities,
+    @camera_camera.VisibleEntities::VisibleEntities(),
+  )
+  try! world.set_by_key(
+    camera,
+    @camera_primitives.ecs_key_frustum,
+    @camera_primitives.Frustum::default_2d(),
+  )
+  for entity in [inside, outside, outside_no_frustum_culling] {
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_inherited_visibility,
+      @root_visibility.InheritedVisibility::visible(),
+    )
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_view_visibility,
+      @root_visibility.ViewVisibility::hidden(),
+    )
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_visibility_class,
+      @root_visibility.VisibilityClass::single(mesh3d_class),
+    )
+    try! world.set_by_key(
+      entity,
+      @camera_primitives.ecs_key_aabb,
+      @camera_primitives.Aabb::from_min_max(
+        @math.Vec3::new(-0.5F, -0.5F, -0.5F),
+        @math.Vec3::new(0.5F, 0.5F, 0.5F),
+      ),
+    )
+  }
+  try! world.set_by_key(
+    inside,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  try! world.set_by_key(
+    outside,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(10.0F, 0.0F, 0.0F),
+    ),
+  )
+  try! world.set_by_key(
+    outside_no_frustum_culling,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(10.0F, 0.0F, 0.0F),
+    ),
+  )
+  try! world.set_by_key(
+    outside_no_frustum_culling,
+    @root_visibility.ecs_key_no_frustum_culling,
+    @root_visibility.NoFrustumCulling::NoFrustumCulling(),
+  )
+
+  check_visibility_visible_entities_system(world)
+
+  let visible_entities = (try! world.get_by_key(
+    camera, @camera_camera.ecs_key_visible_entities,
+  )).unwrap()
+  debug_inspect(visible_entities.len(mesh3d_class), content="2")
+  let entities = visible_entities.get(mesh3d_class)
+  debug_inspect(entities[0].id, content="1")
+  debug_inspect(entities[1].id, content="3")
+}
+
+///|
+test "camera visibility: VisibilityRange filters entities before frustum culling" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    ecs_key_visible_entity_ranges,
+    VisibleEntityRanges::VisibleEntityRanges(),
+  )
+  let camera = world.spawn()
+  let near_entity = world.spawn()
+  let far_entity = world.spawn()
+  let mesh3d_class = 123456
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_visible_entities,
+    @camera_camera.VisibleEntities::VisibleEntities(),
+  )
+  try! world.set_by_key(
+    camera,
+    @camera_primitives.ecs_key_frustum,
+    @camera_primitives.Frustum::default_2d(),
+  )
+  try! world.set_by_key(
+    camera,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  for entity in [near_entity, far_entity] {
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_inherited_visibility,
+      @root_visibility.InheritedVisibility::visible(),
+    )
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_view_visibility,
+      @root_visibility.ViewVisibility::hidden(),
+    )
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_visibility_class,
+      @root_visibility.VisibilityClass::single(mesh3d_class),
+    )
+    try! world.set_by_key(
+      entity,
+      @root_visibility.ecs_key_visibility_range,
+      @root_visibility.VisibilityRange::abrupt(0.0F, 5.0F),
+    )
+  }
+  try! world.set_by_key(
+    near_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  try! world.set_by_key(
+    far_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(10.0F, 0.0F, 0.0F),
+    ),
+  )
+
+  check_visibility_ranges(world)
+  check_visibility_visible_entities_system(world)
+
+  let visible_entities = (try! world.get_by_key(
+    camera, @camera_camera.ecs_key_visible_entities,
+  )).unwrap()
+  debug_inspect(visible_entities.len(mesh3d_class), content="1")
+  debug_inspect(visible_entities.get(mesh3d_class)[0].id, content="1")
 }

@@ -142,7 +142,7 @@ pub using @Milky2018/mgstudio/camera/camera {type RenderTarget}
 
 pub using @computed_camera_values {type RenderTargetInfo}
 
-pub using @math {type BoundingSphere as Sphere}
+pub using @primitives {type Sphere}
 
 pub using @render {type SubCameraView3d}
 

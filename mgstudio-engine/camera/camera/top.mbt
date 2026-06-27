@@ -411,6 +411,13 @@ pub fn VisibleEntities::clear_all(self : VisibleEntities) -> Unit {
 }
 
 ///|
+pub fn VisibleEntities::sort_all(self : VisibleEntities) -> Unit {
+  for _, entities in self.entities {
+    entities.sort_by(fn(left, right) { left.id.compare(right.id) })
+  }
+}
+
+///|
 pub fn VisibleEntities::push(
   self : VisibleEntities,
   entity : @core.Entity,

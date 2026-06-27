@@ -21,7 +21,31 @@ pub struct Aabb {
 }
 
 ///|
-pub type Sphere = @math.BoundingSphere
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Sphere`.
+pub struct Sphere {
+  center : @math.Vec3
+  radius : Float
+}
+
+///|
+pub fn Sphere::Sphere() -> Sphere {
+  Sphere::{ center: @math.Vec3::zero(), radius: 0.0F }
+}
+
+///|
+pub fn Sphere::new(center : @math.Vec3, radius : Float) -> Sphere {
+  Sphere::{ center, radius }
+}
+
+///|
+pub fn Sphere::center(self : Sphere) -> @math.Vec3 {
+  self.center
+}
+
+///|
+pub fn Sphere::radius(self : Sphere) -> Float {
+  self.radius
+}
 
 ///|
 pub type HalfSpace = @math.HalfSpace
@@ -92,8 +116,107 @@ pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
 }
 
 ///|
+fn camera_primitives_abs(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn camera_primitives_relative_radius(
+  aabb : Aabb,
+  plane_normal : @math.Vec3,
+  world_from_local : @math.Affine3,
+) -> Float {
+  let half_extents = aabb.half_size()
+  let transformed = @math.Vec3::new(
+    plane_normal.dot(world_from_local.matrix3.x_axis),
+    plane_normal.dot(world_from_local.matrix3.y_axis),
+    plane_normal.dot(world_from_local.matrix3.z_axis),
+  )
+  camera_primitives_abs(transformed.x) * half_extents.x +
+  camera_primitives_abs(transformed.y) * half_extents.y +
+  camera_primitives_abs(transformed.z) * half_extents.z
+}
+
+///|
+fn camera_primitives_signed_distance(
+  half_space : HalfSpace,
+  point : @math.Vec3,
+) -> Float {
+  half_space.normal().dot(point) + half_space.d()
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Frustum::intersects_sphere`.
+pub fn Frustum::intersects_sphere(
+  self : Frustum,
+  sphere : Sphere,
+  intersect_far : Bool,
+) -> Bool {
+  if self.half_spaces.length() == 0 {
+    return true
+  }
+  let max_plane = if intersect_far {
+    VIEW_FRUSTUM_FAR_PLANE_IDX
+  } else {
+    VIEW_FRUSTUM_NEAR_PLANE_IDX
+  }
+  let last = if max_plane < self.half_spaces.length() {
+    max_plane
+  } else {
+    self.half_spaces.length() - 1
+  }
+  for index in 0..<=last {
+    let half_space = self.half_spaces[index]
+    if camera_primitives_signed_distance(half_space, sphere.center()) +
+      sphere.radius() <=
+      0.0F {
+      return false
+    }
+  }
+  true
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Frustum::intersects_obb`.
+pub fn Frustum::intersects_obb(
+  self : Frustum,
+  aabb : Aabb,
+  world_from_local : @math.Affine3,
+  intersect_near : Bool,
+  intersect_far : Bool,
+) -> Bool {
+  let center_world = world_from_local.transform_point3(aabb.center())
+  for index in 0..<self.half_spaces.length() {
+    if (index == VIEW_FRUSTUM_NEAR_PLANE_IDX && !intersect_near) ||
+      (index == VIEW_FRUSTUM_FAR_PLANE_IDX && !intersect_far) {
+      continue
+    }
+    let half_space = self.half_spaces[index]
+    let plane_normal = half_space.normal()
+    let relative_radius = camera_primitives_relative_radius(
+      aabb, plane_normal, world_from_local,
+    )
+    if camera_primitives_signed_distance(half_space, center_world) +
+      relative_radius <=
+      0.0F {
+      return false
+    }
+  }
+  true
+}
+
+///|
 pub let ecs_key_aabb : @ecs.ComponentKey[Aabb] = @ecs.register_component(
   debug_name="mgstudio_camera::Aabb",
+)
+
+///|
+pub let ecs_key_sphere : @ecs.ComponentKey[Sphere] = @ecs.register_component(
+  debug_name="mgstudio_camera::Sphere",
 )
 
 ///|
@@ -104,6 +227,11 @@ pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
 ///|
 pub impl @ecs.Component for Aabb with fn component() {
   ecs_key_aabb
+}
+
+///|
+pub impl @ecs.Component for Sphere with fn component() {
+  ecs_key_sphere
 }
 
 ///|

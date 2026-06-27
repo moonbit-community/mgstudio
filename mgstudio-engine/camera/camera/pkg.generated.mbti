@@ -118,6 +118,7 @@ pub fn VisibleEntities::get(Self, Int) -> Array[@core.Entity]
 pub fn VisibleEntities::is_empty(Self, Int) -> Bool
 pub fn VisibleEntities::len(Self, Int) -> Int
 pub fn VisibleEntities::push(Self, @core.Entity, Int) -> Unit
+pub fn VisibleEntities::sort_all(Self) -> Unit
 pub impl @ecs.Component for VisibleEntities
 
 // Type aliases

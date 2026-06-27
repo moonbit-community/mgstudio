@@ -19,6 +19,8 @@ pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
 
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
+pub let ecs_key_sphere : @ecs.ComponentKey[Sphere]
+
 pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
 
 pub fn update_skinned_mesh_bounds_system(@ecs.World) -> Unit
@@ -42,9 +44,21 @@ pub struct Frustum {
 pub fn Frustum::Frustum() -> Self
 pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::default_2d() -> Self
+pub fn Frustum::intersects_obb(Self, Aabb, @math.Affine3, Bool, Bool) -> Bool
+pub fn Frustum::intersects_sphere(Self, Sphere, Bool) -> Bool
 pub fn Frustum::new(ViewFrustum) -> Self
 pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
+
+pub struct Sphere {
+  center : @math.Vec3
+  radius : Float
+}
+pub fn Sphere::Sphere() -> Self
+pub fn Sphere::center(Self) -> @math.Vec3
+pub fn Sphere::new(@math.Vec3, Float) -> Self
+pub fn Sphere::radius(Self) -> Float
+pub impl @ecs.Component for Sphere
 
 pub struct ViewFrustum {
   inner : @math.ViewFrustum
@@ -55,8 +69,6 @@ pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 
 // Type aliases
 pub using @math {type HalfSpace}
-
-pub using @math {type BoundingSphere as Sphere}
 
 // Traits
 pub(open) trait MeshAabb {
