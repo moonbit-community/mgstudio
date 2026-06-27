@@ -530,22 +530,222 @@ test "render3d: material specialization readiness follows Bevy resources" {
 }
 
 ///|
+struct ShadowReadinessNoShadowMaterial {}
+
+///|
+fn ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial() -> ShadowReadinessNoShadowMaterial {
+  ShadowReadinessNoShadowMaterial::{  }
+}
+
+///|
+impl @asset.Asset for ShadowReadinessNoShadowMaterial with fn asset_debug_name() {
+  "mgstudio_pbr_test::ShadowReadinessNoShadowMaterial"
+}
+
+///|
+impl @asset.Asset for ShadowReadinessNoShadowMaterial with fn asset_as_image(
+  _self,
+) {
+  None
+}
+
+///|
+let shadow_readiness_no_shadow_material_asset_keys : @asset.AssetResourceKeys[
+  ShadowReadinessNoShadowMaterial,
+] = @asset.register_asset_resource_keys(
+  ShadowReadinessNoShadowMaterial::asset_debug_name(),
+)
+
+///|
+impl @asset.Asset for ShadowReadinessNoShadowMaterial with fn asset_resource_keys() {
+  shadow_readiness_no_shadow_material_asset_keys
+}
+
+///|
+let shadow_readiness_no_shadow_material_keys : MaterialKeys[
+  ShadowReadinessNoShadowMaterial,
+] = register_material_keys(ShadowReadinessNoShadowMaterial::asset_debug_name())
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn material_debug_name() {
+  "mgstudio_pbr_test::ShadowReadinessNoShadowMaterial"
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn material_keys() {
+  shadow_readiness_no_shadow_material_keys
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn vertex_shader() {
+  material_default_vertex_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn fragment_shader() {
+  material_default_fragment_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn prepass_vertex_shader() {
+  material_default_vertex_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn prepass_fragment_shader() {
+  material_default_fragment_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn deferred_vertex_shader() {
+  material_default_vertex_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn deferred_fragment_shader() {
+  material_default_fragment_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn meshlet_fragment_shader() {
+  material_default_fragment_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn meshlet_prepass_fragment_shader() {
+  material_default_fragment_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn meshlet_deferred_fragment_shader() {
+  material_default_fragment_shader()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn alpha_mode(self) {
+  ignore(self)
+  material_default_alpha_mode()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn opaque_render_method(
+  self,
+) {
+  ignore(self)
+  material_default_opaque_render_method()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn depth_bias(self) {
+  ignore(self)
+  material_default_depth_bias()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn reads_view_transmission_texture(
+  self,
+) {
+  ignore(self)
+  material_default_reads_view_transmission_texture()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn enable_prepass() {
+  material_default_enable_prepass()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn enable_shadows() {
+  false
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn bindless_supported(
+  render_device,
+) {
+  material_default_bindless_supported(render_device)
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn bindless_slot_count() {
+  material_default_bindless_slot_count()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn bind_group(self) {
+  ignore(self)
+  MaterialBindGroup::MaterialBindGroup()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  material_default_specialize(descriptor, layout, key)
+}
+
+///|
 test "render3d: shadow specialization readiness follows Bevy pending queue rules" {
-  let world = @ecs.World::new()
+  let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      ParityCustomMaterial::ParityCustomMaterial()
+    },
+  )
+  let no_shadow_plugin : MaterialPlugin[ShadowReadinessNoShadowMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial()
+    },
+  )
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(plugin)
+    .add_plugins(no_shadow_plugin)
+  let world = app.sub_app(@app.RenderApp).world()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(58, 1),
   )
   let render_entity = @core.Entity::new(59, 1)
-  let missing_material = @render.MainEntity::new(@core.Entity::new(60, 1))
-  let missing_mesh = @render.MainEntity::new(@core.Entity::new(61, 1))
-  let ready = @render.MainEntity::new(@core.Entity::new(62, 1))
-  let non_shadow_caster = @render.MainEntity::new(@core.Entity::new(63, 1))
+  let missing_material = @render.MainEntity::new(world.spawn_empty())
+  let missing_mesh = @render.MainEntity::new(world.spawn_empty())
+  let missing_prepared = @render.MainEntity::new(world.spawn_empty())
+  let no_shadows = @render.MainEntity::new(world.spawn_empty())
+  let ready = @render.MainEntity::new(world.spawn_empty())
+  let non_shadow_caster = @render.MainEntity::new(world.spawn_empty())
   let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
   ignore(shadow_queues.queues().prepare_for_new_frame(retained_view))
   world.insert_resource(
     @pbr_render.PendingShadowQueues::resource(),
     shadow_queues,
   )
+  let material_key : @ecs.ComponentKey[
+    MeshMaterial3dTyped[ParityCustomMaterial],
+  ] = MeshMaterial3dTyped::component()
+  let no_shadow_material_key : @ecs.ComponentKey[
+    MeshMaterial3dTyped[ShadowReadinessNoShadowMaterial],
+  ] = MeshMaterial3dTyped::component()
+  let prepared_assets_key : @ecs.ResourceKey[
+    @render.RenderAssets[PreparedMaterial[ParityCustomMaterial]],
+  ] = @render.RenderAssets::resource()
+  let no_shadow_prepared_assets_key : @ecs.ResourceKey[
+    @render.RenderAssets[PreparedMaterial[ShadowReadinessNoShadowMaterial]],
+  ] = @render.RenderAssets::resource()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let pipeline = material_pipeline_from_material_hooks(probe)
+  let no_shadow_probe : @asset.Handle[ShadowReadinessNoShadowMaterial] = @asset.Handle::new(
+    0,
+  )
+  let no_shadow_pipeline = material_pipeline_from_material_hooks(
+    no_shadow_probe,
+  )
+  let prepared_assets = match world.get_resource_mut(prepared_assets_key) {
+    Some(value) => value
+    None => abort("missing PreparedMaterial render assets")
+  }
+  let no_shadow_prepared_assets = match
+    world.get_resource_mut(no_shadow_prepared_assets_key) {
+    Some(value) => value
+    None => abort("missing no-shadow PreparedMaterial render assets")
+  }
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   material_instances.extract_mesh_material(
     missing_mesh.id(),
@@ -553,25 +753,91 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     MeshMaterial3d::new(@asset.Handle::new(610)),
   )
   material_instances.extract_mesh_material(
-    ready.id(),
+    missing_prepared.id(),
     true,
     MeshMaterial3d::new(@asset.Handle::new(620)),
   )
   material_instances.extract_mesh_material(
-    non_shadow_caster.id(),
+    no_shadows.id(),
     true,
     MeshMaterial3d::new(@asset.Handle::new(630)),
   )
+  material_instances.extract_mesh_material(
+    ready.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(640)),
+  )
+  material_instances.extract_mesh_material(
+    non_shadow_caster.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(650)),
+  )
   world.insert_resource(ecs_key_render_material_instances, material_instances)
+  try! world.set_by_key(
+    missing_prepared.id(),
+    material_key,
+    MeshMaterial3dTyped::new(@asset.Handle::new(620)),
+  )
+  try! world.set_by_key(
+    no_shadows.id(),
+    no_shadow_material_key,
+    MeshMaterial3dTyped::new(@asset.Handle::new(630)),
+  )
+  try! world.set_by_key(
+    ready.id(),
+    material_key,
+    MeshMaterial3dTyped::new(@asset.Handle::new(640)),
+  )
+  try! world.set_by_key(
+    non_shadow_caster.id(),
+    material_key,
+    MeshMaterial3dTyped::new(@asset.Handle::new(650)),
+  )
+  prepared_assets.modify(fn(value) {
+    value.insert(
+      640,
+      PreparedMaterial::from_material(
+        @asset.Handle::new(640),
+        ParityCustomMaterial::ParityCustomMaterial(),
+        pipeline,
+      ),
+    )
+    value.insert(
+      650,
+      PreparedMaterial::from_material(
+        @asset.Handle::new(650),
+        ParityCustomMaterial::ParityCustomMaterial(),
+        pipeline,
+      ),
+    )
+  })
+  no_shadow_prepared_assets.modify(fn(value) {
+    value.insert(
+      630,
+      PreparedMaterial::from_material(
+        @asset.Handle::new(630),
+        ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial(),
+        no_shadow_pipeline,
+      ),
+    )
+  })
   let mesh_instances = RenderMeshInstances::new()
   let ready_flags = RenderMeshInstanceFlags::shadow_caster()
   mesh_instances.insert(
-    ready,
+    missing_prepared,
     RenderMeshQueueData::new(620, 0U, true, flags=ready_flags),
   )
   mesh_instances.insert(
+    no_shadows,
+    RenderMeshQueueData::new(630, 0U, true, flags=ready_flags),
+  )
+  mesh_instances.insert(
+    ready,
+    RenderMeshQueueData::new(640, 0U, true, flags=ready_flags),
+  )
+  mesh_instances.insert(
     non_shadow_caster,
-    RenderMeshQueueData::new(630, 0U, true),
+    RenderMeshQueueData::new(650, 0U, true),
   )
   world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
 
@@ -580,6 +846,12 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   )
   let missing_mesh_ready = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, missing_mesh,
+  )
+  let missing_prepared_ready = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, missing_prepared,
+  )
+  let no_shadows_ready = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, no_shadows,
   )
   let ready_value = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, ready,
@@ -590,6 +862,8 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
 
   debug_inspect(missing_material_ready is None, content="true")
   debug_inspect(missing_mesh_ready is None, content="true")
+  debug_inspect(missing_prepared_ready is None, content="true")
+  debug_inspect(no_shadows_ready is None, content="true")
   debug_inspect(
     ready_value.flags().contains(RenderMeshInstanceFlags::shadow_caster()),
     content="true",
@@ -597,7 +871,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   debug_inspect(non_shadow_caster_ready is None, content="true")
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
-      debug_inspect(queues.queues().current_len(retained_view), content="2")
+      debug_inspect(queues.queues().current_len(retained_view), content="3")
     None => debug_inspect(false, content="true")
   }
 }

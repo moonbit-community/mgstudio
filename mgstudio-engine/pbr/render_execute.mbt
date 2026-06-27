@@ -912,20 +912,40 @@ pub fn render3d_shadow_specialization_queue_data(
         "missing RenderMeshInstances resource during pbr shadow specialization",
       )
   }
-  match render_mesh_instances.render_mesh_queue_data(visible_entity) {
-    Some(value) =>
-      if value.flags().contains(RenderMeshInstanceFlags::shadow_caster()) {
-        Some(value)
-      } else {
-        None
-      }
+  let mesh_instance = match
+    render_mesh_instances.render_mesh_queue_data(visible_entity) {
+    Some(value) => value
     None => {
       render3d_enqueue_pending_shadow_material(
         world, retained_view_entity, render_entity, visible_entity,
       )
-      None
+      return None
     }
   }
+  let source_world = @render.render_source_world(world)
+  let registry = material_runtime_registry_or_empty(world)
+  let material = match
+    material_runtime_registry_resolve_material(
+      world,
+      source_world,
+      registry,
+      visible_entity.id(),
+    ) {
+    Some(value) => value
+    None => {
+      render3d_enqueue_pending_shadow_material(
+        world, retained_view_entity, render_entity, visible_entity,
+      )
+      return None
+    }
+  }
+  if !material.material_properties().shadows_enabled {
+    return None
+  }
+  if !mesh_instance.flags().contains(RenderMeshInstanceFlags::shadow_caster()) {
+    return None
+  }
+  Some(mesh_instance)
 }
 
 ///|
