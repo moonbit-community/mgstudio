@@ -53,6 +53,122 @@ pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> E
 }
 
 ///|
+pub fn EnvironmentMapViewLightProbeInfo::new(
+  cubemap_index : Int,
+  smallest_specular_mip_level : Int,
+  intensity : Float,
+  affects_lightmapped_mesh_diffuse : Bool,
+  rotation : @math.Quat,
+) -> EnvironmentMapViewLightProbeInfo {
+  EnvironmentMapViewLightProbeInfo::{
+    cubemap_index,
+    smallest_specular_mip_level,
+    intensity,
+    affects_lightmapped_mesh_diffuse,
+    rotation,
+  }
+}
+
+///|
+pub fn EnvironmentMapViewLightProbeInfo::cubemap_index(
+  self : EnvironmentMapViewLightProbeInfo,
+) -> Int {
+  self.cubemap_index
+}
+
+///|
+pub fn EnvironmentMapViewLightProbeInfo::smallest_specular_mip_level(
+  self : EnvironmentMapViewLightProbeInfo,
+) -> Int {
+  self.smallest_specular_mip_level
+}
+
+///|
+pub fn EnvironmentMapViewLightProbeInfo::intensity(
+  self : EnvironmentMapViewLightProbeInfo,
+) -> Float {
+  self.intensity
+}
+
+///|
+pub fn EnvironmentMapViewLightProbeInfo::affects_lightmapped_mesh_diffuse(
+  self : EnvironmentMapViewLightProbeInfo,
+) -> Bool {
+  self.affects_lightmapped_mesh_diffuse
+}
+
+///|
+pub fn EnvironmentMapViewLightProbeInfo::rotation(
+  self : EnvironmentMapViewLightProbeInfo,
+) -> @math.Quat {
+  self.rotation
+}
+
+///|
+pub fn environment_map_light_create_render_view_light_probes(
+  view_component : EnvironmentMapLight?,
+) -> RenderViewLightProbes {
+  let render_view_light_probes = RenderViewLightProbes::RenderViewLightProbes()
+  match view_component {
+    Some(environment_map_light) =>
+      environment_map_light_insert_view_light_probe_info(
+        render_view_light_probes, environment_map_light,
+      )
+    None => ()
+  }
+  render_view_light_probes
+}
+
+///|
+fn environment_map_light_loaded_gpu_image(
+  image : @asset.Handle[@asset.Image]?,
+) -> @render_texture.GpuImage? {
+  guard image is Some(handle) else { return None }
+  guard @render_texture.GpuImage::from_texture_id(handle.id())
+    is Some(gpu_image) else {
+    return None
+  }
+  if gpu_image.is_loaded() {
+    Some(gpu_image)
+  } else {
+    None
+  }
+}
+
+///|
+fn environment_map_light_insert_view_light_probe_info(
+  render_view_light_probes : RenderViewLightProbes,
+  environment_map_light : EnvironmentMapLight,
+) -> Unit {
+  guard environment_map_light.diffuse_map is Some(diffuse_map) else { return }
+  guard environment_map_light.specular_map is Some(specular_map) else { return }
+  guard environment_map_light_loaded_gpu_image(
+      environment_map_light.diffuse_map,
+    )
+    is Some(_) else {
+    return
+  }
+  guard environment_map_light_loaded_gpu_image(
+      environment_map_light.specular_map,
+    )
+    is Some(specular_image) else {
+    return
+  }
+  let cubemap_index = render_view_light_probes.get_or_insert_texture(
+    LightProbeTextureId::environment_map(diffuse_map, specular_map),
+  )
+  render_view_light_probes.set_view_light_probe_info(
+    EnvironmentMapViewLightProbeInfo::new(
+      cubemap_index,
+      specular_image.mip_level_count() - 1,
+      environment_map_light.intensity,
+      environment_map_light.affects_lightmapped_mesh_diffuse,
+      environment_map_light.rotation,
+    ),
+  )
+}
+
+///|
 pub struct RenderViewEnvironmentMapBindGroupEntriesSingle {
   diffuse_texture : @asset.Handle[@asset.Image]?
   specular_texture : @asset.Handle[@asset.Image]?

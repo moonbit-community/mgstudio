@@ -39,6 +39,8 @@ pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[RenderViewLightProb
 
 pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[ViewLightProbesUniformOffset]
 
+pub fn environment_map_light_create_render_view_light_probes(@light.EnvironmentMapLight?) -> RenderViewLightProbes
+
 pub fn gather_environment_map_light_probes(@ecs.World) -> Unit
 
 pub fn gather_irradiance_volume_light_probes(@ecs.World) -> Unit
@@ -133,6 +135,12 @@ pub struct EnvironmentMapViewLightProbeInfo {
   rotation : @math.Quat
 }
 pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> Self
+pub fn EnvironmentMapViewLightProbeInfo::affects_lightmapped_mesh_diffuse(Self) -> Bool
+pub fn EnvironmentMapViewLightProbeInfo::cubemap_index(Self) -> Int
+pub fn EnvironmentMapViewLightProbeInfo::intensity(Self) -> Float
+pub fn EnvironmentMapViewLightProbeInfo::new(Int, Int, Float, Bool, @math.Quat) -> Self
+pub fn EnvironmentMapViewLightProbeInfo::rotation(Self) -> @math.Quat
+pub fn EnvironmentMapViewLightProbeInfo::smallest_specular_mip_level(Self) -> Int
 
 pub struct GeneratorBindGroupLayouts {
   downsampling_first : String
@@ -215,11 +223,11 @@ pub struct LightProbesUniform {
   irradiance_volumes : Array[RenderLightProbe]
   mut reflection_probe_count : Int
   mut irradiance_volume_count : Int
-  view_cubemap_index : Int
-  smallest_specular_mip_level_for_view : Int
-  view_rotation : @math.Quat
-  intensity_for_view : Float
-  view_environment_map_affects_lightmapped_mesh_diffuse : Bool
+  mut view_cubemap_index : Int
+  mut smallest_specular_mip_level_for_view : Int
+  mut view_rotation : @math.Quat
+  mut intensity_for_view : Float
+  mut view_environment_map_affects_lightmapped_mesh_diffuse : Bool
 }
 pub fn LightProbesUniform::LightProbesUniform() -> Self
 pub fn LightProbesUniform::from_render_view_light_probes(RenderViewEnvironmentMapLightProbes?, RenderViewIrradianceVolumeLightProbes?) -> Self
@@ -309,7 +317,7 @@ pub struct RenderViewLightProbes {
   cubemap_to_binding_index : @hashmap.HashMap[(Int, Int), Int]
   render_light_probes : Array[RenderLightProbe]
   main_entity_to_render_light_probe_index : Map[UInt64, UInt]
-  view_light_probe_info : EnvironmentMapViewLightProbeInfo?
+  mut view_light_probe_info : EnvironmentMapViewLightProbeInfo?
 }
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> Self
 pub fn RenderViewLightProbes::add_to_uniform_irradiance_volumes(Self, LightProbesUniform) -> Unit
@@ -321,7 +329,9 @@ pub fn RenderViewLightProbes::probe_count(Self) -> Int
 pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::push_probe_for_main_entity(Self, @render.MainEntity, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::render_light_probe_index(Self, @render.MainEntity) -> UInt?
+pub fn RenderViewLightProbes::set_view_light_probe_info(Self, EnvironmentMapViewLightProbeInfo) -> Unit
 pub fn RenderViewLightProbes::texture_count(Self) -> Int
+pub fn RenderViewLightProbes::view_light_probe_info(Self) -> EnvironmentMapViewLightProbeInfo?
 pub impl @ecs.Component for RenderViewLightProbes
 
 pub struct ViewLightProbesUniformOffset {

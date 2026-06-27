@@ -211,6 +211,88 @@ test "pbr light probe: gather uses visible clusterable probes and skips unloaded
 }
 
 ///|
+test "pbr light probe: view environment map creates Bevy view light probe info" {
+  @render_texture.register_asset_texture_backend()
+  let diffuse = @asset.asset_create_dynamic_texture_with_mips(
+    @math.UVec2::splat(4),
+    1,
+    false,
+  )
+  let specular = @asset.asset_create_dynamic_texture_with_mips(
+    @math.UVec2::splat(4),
+    5,
+    false,
+  )
+  let environment_map_light = @light.EnvironmentMapLight::new(
+    Some(diffuse),
+    Some(specular),
+    2.5F,
+  ).with_affects_lightmapped_mesh_diffuse(false)
+  let probes = environment_map_light_create_render_view_light_probes(
+    Some(environment_map_light),
+  )
+  let info = probes
+    .view_light_probe_info()
+    .unwrap_or(
+      EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo(),
+    )
+  inspect(probes.is_empty(), content="false")
+  inspect(probes.texture_count(), content="1")
+  inspect(info.cubemap_index(), content="0")
+  inspect(info.smallest_specular_mip_level(), content="4")
+  inspect(info.intensity() == 2.5F, content="true")
+  inspect(info.affects_lightmapped_mesh_diffuse(), content="false")
+}
+
+///|
+test "pbr light probe: gather includes view environment maps without visible probes" {
+  @render_texture.register_asset_texture_backend()
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  let render_view = world.spawn()
+  let diffuse = @asset.asset_create_dynamic_texture_with_mips(
+    @math.UVec2::splat(4),
+    1,
+    false,
+  )
+  let specular = @asset.asset_create_dynamic_texture_with_mips(
+    @math.UVec2::splat(4),
+    3,
+    false,
+  )
+  try! world.set_by_key(
+    view,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_view),
+  )
+  try! world.set_by_key(
+    view,
+    @light.ecs_key_environment_map_light,
+    @light.EnvironmentMapLight::new(Some(diffuse), Some(specular), 4.0F),
+  )
+  gather_environment_map_light_probes(world)
+  let render_view_light_probes = (try! world.get_by_key(
+    render_view,
+    RenderViewEnvironmentMapLightProbes::component(),
+  )).unwrap_or(
+    RenderViewEnvironmentMapLightProbes::new(
+      RenderViewLightProbes::RenderViewLightProbes(),
+    ),
+  )
+  let info = render_view_light_probes
+    .probes()
+    .view_light_probe_info()
+    .unwrap_or(
+      EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo(),
+    )
+  inspect(render_view_light_probes.probe_count(), content="0")
+  inspect(render_view_light_probes.probes().texture_count(), content="1")
+  inspect(info.cubemap_index(), content="0")
+  inspect(info.smallest_specular_mip_level(), content="2")
+  inspect(info.intensity() == 4.0F, content="true")
+}
+
+///|
 test "pbr light probe: gather removes stale inactive view components" {
   let world = @ecs.World::new()
   let view = world.spawn()
@@ -321,6 +403,36 @@ test "pbr light probe: uniform bytes preserve Bevy probe counts" {
   inspect(bytes.length(), content="2048")
   inspect(light_probe_test_read_u32_le(bytes, 1792), content="1")
   inspect(light_probe_test_read_u32_le(bytes, 1796), content="2")
+}
+
+///|
+test "pbr light probe: uniform carries Bevy view environment map fields" {
+  let reflection = RenderViewLightProbes::RenderViewLightProbes()
+  reflection.set_view_light_probe_info(
+    EnvironmentMapViewLightProbeInfo::new(
+      3,
+      6,
+      2.0F,
+      false,
+      @math.Quat::identity(),
+    ),
+  )
+  let uniform = LightProbesUniform::from_render_view_light_probes(
+    Some(RenderViewEnvironmentMapLightProbes::new(reflection)),
+    None,
+  )
+  inspect(uniform.view_cubemap_index, content="3")
+  inspect(uniform.smallest_specular_mip_level_for_view, content="6")
+  inspect(uniform.intensity_for_view == 2.0F, content="true")
+  inspect(
+    uniform.view_environment_map_affects_lightmapped_mesh_diffuse,
+    content="false",
+  )
+  let bytes = uniform.to_bytes()
+  inspect(light_probe_test_read_u32_le(bytes, 1800), content="3")
+  inspect(light_probe_test_read_u32_le(bytes, 1804), content="6")
+  inspect(light_probe_test_read_u32_le(bytes, 1824), content="1073741824")
+  inspect(light_probe_test_read_u32_le(bytes, 1828), content="0")
 }
 
 ///|

@@ -231,7 +231,7 @@ pub struct RenderViewLightProbes {
   cubemap_to_binding_index : @hashmap.HashMap[(Int, Int), Int]
   render_light_probes : Array[RenderLightProbe]
   main_entity_to_render_light_probe_index : Map[UInt64, UInt]
-  view_light_probe_info : EnvironmentMapViewLightProbeInfo?
+  mut view_light_probe_info : EnvironmentMapViewLightProbeInfo?
 }
 
 ///|
@@ -632,6 +632,23 @@ fn gather_light_probe_view_entities(
       views.push((entity, visible_clusterable_objects))
     },
   )
+  source_world.for_each_component(@light.ecs_key_environment_map_light, fn(
+    entity,
+    _environment_map_light,
+  ) {
+    guard light_probe_render_view_entity(source_world, entity) is Some(_) else {
+      return
+    }
+    let mut already_present = false
+    for view in views {
+      if view.0.to_bits() == entity.to_bits() {
+        already_present = true
+      }
+    }
+    if !already_present {
+      views.push((entity, @light_cluster.VisibleClusterableObjects::new()))
+    }
+  })
   views
 }
 
@@ -660,7 +677,11 @@ pub fn gather_environment_map_light_probes(render_world : @ecs.World) -> Unit {
       )
       continue
     }
-    let render_view_light_probes = RenderViewLightProbes::RenderViewLightProbes()
+    let render_view_light_probes = environment_map_light_create_render_view_light_probes(
+      try! source_world.get_by_key(
+        source_view_entity, @light.ecs_key_environment_map_light,
+      ),
+    )
     render_view_light_probes.maybe_gather_light_probes(
       gather_environment_map_light_probe_infos(
         source_world,
@@ -795,6 +816,21 @@ pub fn RenderViewLightProbes::push_probe(
     return
   }
   self.render_light_probes.push(probe)
+}
+
+///|
+pub fn RenderViewLightProbes::set_view_light_probe_info(
+  self : RenderViewLightProbes,
+  info : EnvironmentMapViewLightProbeInfo,
+) -> Unit {
+  self.view_light_probe_info = Some(info)
+}
+
+///|
+pub fn RenderViewLightProbes::view_light_probe_info(
+  self : RenderViewLightProbes,
+) -> EnvironmentMapViewLightProbeInfo? {
+  self.view_light_probe_info
 }
 
 ///|
@@ -985,11 +1021,11 @@ pub struct LightProbesUniform {
   irradiance_volumes : Array[RenderLightProbe]
   mut reflection_probe_count : Int
   mut irradiance_volume_count : Int
-  view_cubemap_index : Int
-  smallest_specular_mip_level_for_view : Int
-  view_rotation : @math.Quat
-  intensity_for_view : Float
-  view_environment_map_affects_lightmapped_mesh_diffuse : Bool
+  mut view_cubemap_index : Int
+  mut smallest_specular_mip_level_for_view : Int
+  mut view_rotation : @math.Quat
+  mut intensity_for_view : Float
+  mut view_environment_map_affects_lightmapped_mesh_diffuse : Bool
 }
 
 ///|
@@ -1141,8 +1177,19 @@ pub fn LightProbesUniform::from_render_view_light_probes(
 ) -> LightProbesUniform {
   let uniform = LightProbesUniform::LightProbesUniform()
   match render_view_environment_maps {
-    Some(environment_maps) =>
+    Some(environment_maps) => {
+      match environment_maps.probes().view_light_probe_info() {
+        Some(view_light_probe_info) => {
+          uniform.view_cubemap_index = view_light_probe_info.cubemap_index
+          uniform.smallest_specular_mip_level_for_view = view_light_probe_info.smallest_specular_mip_level
+          uniform.view_rotation = view_light_probe_info.rotation
+          uniform.intensity_for_view = view_light_probe_info.intensity
+          uniform.view_environment_map_affects_lightmapped_mesh_diffuse = view_light_probe_info.affects_lightmapped_mesh_diffuse
+        }
+        None => ()
+      }
       environment_maps.probes().add_to_uniform_reflection_probes(uniform)
+    }
     None => ()
   }
   match render_view_irradiance_volumes {

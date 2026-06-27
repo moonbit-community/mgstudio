@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/light/cluster" @light_cluster,
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/texture" @render_texture,
   "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/shader/source" @shader_source,
   "Milky2018/mgstudio/transform",
