@@ -706,11 +706,17 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(451, 1)
   let shadow_light = world.spawn()
-  let shadow_visible_view = @render_view.RetainedViewEntity::new(main_view)
-  let retained_view = @render_view.RetainedViewEntity::new(
+  let camera_retained_view = @render_view.RetainedViewEntity::new(
     main_view,
     auxiliary_entity=Some(@core.Entity::new(460, 1)),
     subview_index=7,
+  )
+  let light_entity = Render3dLightEntity::Spot(light_entity=shadow_light)
+  let retained_view = light_entity.shadow_phase_retained_view(
+    camera_retained_view,
+  )
+  let shadow_visible_view = light_entity.shadow_map_visible_retained_view(
+    retained_view,
   )
   let unchanged_main = @core.Entity::new(452, 1)
   let unchanged_render = @core.Entity::new(453, 1)
@@ -758,11 +764,7 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
   ignore(pending_queues.queues().prepare_for_new_frame(retained_view))
 
   let candidates = render3d_shadow_specialization_candidates_for_light(
-    world,
-    Render3dLightEntity::Spot(light_entity=shadow_light),
-    retained_view,
-    dirty_specializations,
-    pending_queues,
+    world, light_entity, retained_view, dirty_specializations, pending_queues,
   )
 
   debug_inspect(candidates.length(), content="3")
@@ -1518,10 +1520,14 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let world = app.sub_app(@app.RenderApp).world()
-  let retained_view = @render_view.RetainedViewEntity::new(
+  let camera_retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(90, 1),
   )
   let shadow_light = world.spawn()
+  let spot_light_entity = Render3dLightEntity::Spot(light_entity=shadow_light)
+  let retained_view = spot_light_entity.shadow_phase_retained_view(
+    camera_retained_view,
+  )
   let depth_render = @core.Entity::new(91, 1)
   let material_render = @core.Entity::new(92, 1)
   let layer_render = @core.Entity::new(93, 1)
@@ -1549,7 +1555,6 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   ])
   visible_meshes.sort_added_entities()
   let shadow_map_visible_entities = @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
-  let spot_light_entity = Render3dLightEntity::Spot(light_entity=shadow_light)
   let shadow_visible_entities = shadow_map_visible_entities.subview_or_insert(
     spot_light_entity.shadow_map_visible_retained_view(retained_view),
   )

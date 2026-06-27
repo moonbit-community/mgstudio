@@ -50,22 +50,27 @@ test "pbr shadow map visible subview keys mirror Bevy light entity rules" {
   )
   let point = Render3dLightEntity::Point(light_entity=light, face_index=5)
   let spot = Render3dLightEntity::Spot(light_entity=light)
+  let directional_phase_key = directional.shadow_phase_retained_view(
+    extracted_retained_view,
+  )
+  let point_phase_key = point.shadow_phase_retained_view(
+    extracted_retained_view,
+  )
+  let spot_phase_key = spot.shadow_phase_retained_view(extracted_retained_view)
   let directional_key = directional.shadow_map_visible_retained_view(
-    extracted_retained_view,
+    directional_phase_key,
   )
-  let point_key = point.shadow_map_visible_retained_view(
-    extracted_retained_view,
-  )
-  let spot_key = spot.shadow_map_visible_retained_view(extracted_retained_view)
+  let point_key = point.shadow_map_visible_retained_view(point_phase_key)
+  let spot_key = spot.shadow_map_visible_retained_view(spot_phase_key)
 
   inspect(directional.shadow_map_visible_entity().id, content="32")
-  inspect(directional_key.main_entity().id, content="30")
-  inspect(directional_key.auxiliary_entity().id, content="31")
-  inspect(directional_key.subview_index(), content="4")
-  inspect(point_key.main_entity().id, content="30")
+  inspect(directional_key.main_entity().id, content="32")
+  inspect(directional_key.auxiliary_entity().id, content="30")
+  inspect(directional_key.subview_index(), content="2")
+  inspect(point_key.main_entity().id, content="32")
   inspect(point_key.auxiliary_entity().id, content="-1")
   inspect(point_key.subview_index(), content="5")
-  inspect(spot_key.main_entity().id, content="30")
+  inspect(spot_key.main_entity().id, content="32")
   inspect(spot_key.auxiliary_entity().id, content="-1")
   inspect(spot_key.subview_index(), content="0")
 }
