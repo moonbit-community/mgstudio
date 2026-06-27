@@ -3738,17 +3738,12 @@ pub fn render3d_point_shadow_face_transform(
   light_position : @math.Vec3,
   face_index : Int,
 ) -> @transform.Transform {
-  let (forward, up) = match face_index {
-    // Match Bevy's `CUBE_MAP_FACES` exactly:
-    // [+X, -X, +Y, -Y, +Z, -Z] face order with left-handed cubemap conventions.
-    0 => (@math.Vec3::new(1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    1 => (@math.Vec3::new(-1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    2 => (@math.Vec3::new(0.0F, 1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, 1.0F))
-    3 =>
-      (@math.Vec3::new(0.0F, -1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, -1.0F))
-    4 => (@math.Vec3::new(0.0F, 0.0F, -1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    _ => (@math.Vec3::new(0.0F, 0.0F, 1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  let face = match @camera_primitives.cube_map_face(face_index) {
+    Some(face) => face
+    None => abort("invalid cubemap face index")
   }
+  let forward = face.target()
+  let up = face.up()
   @transform.Transform::from_xyz(
     light_position.x,
     light_position.y,

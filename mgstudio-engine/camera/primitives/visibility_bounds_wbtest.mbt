@@ -124,6 +124,20 @@ test "camera/primitives: update_skinned_mesh_bounds follows joint transforms" {
 
 ///|
 test "camera/primitives: light frusta containers default to Bevy empty shape" {
+  let faces = cube_map_faces()
+  debug_inspect(faces.length(), content="6")
+  debug_inspect(face_index_to_name(0), content="\"+x\"")
+  debug_inspect(face_index_to_name(5), content="\"-z\"")
+  debug_inspect(face_index_to_name(6), content="\"invalid\"")
+  debug_inspect(faces[0].target().x.to_double(), content="1")
+  debug_inspect(faces[0].up().y.to_double(), content="1")
+  debug_inspect(faces[2].target().y.to_double(), content="1")
+  debug_inspect(faces[2].up().z.to_double(), content="1")
+  debug_inspect(faces[3].target().y.to_double(), content="-1")
+  debug_inspect(faces[3].up().z.to_double(), content="-1")
+  debug_inspect(faces[4].target().z.to_double(), content="-1")
+  debug_inspect(faces[5].target().z.to_double(), content="1")
+
   let cubemap = CubemapFrusta::CubemapFrusta()
   debug_inspect(cubemap.iter().length(), content="6")
   debug_inspect(cubemap.get(0) is Some(_), content="true")

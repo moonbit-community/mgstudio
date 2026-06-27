@@ -17,6 +17,10 @@ pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
 pub fn calculate_bounds_system(@ecs.World) -> Unit
 
+pub fn cube_map_face(Int) -> CubeMapFace?
+
+pub fn cube_map_faces() -> Array[CubeMapFace]
+
 pub let ecs_key_aabb : @ecs.ComponentKey[Aabb]
 
 pub let ecs_key_cascades_frusta : @ecs.ComponentKey[CascadesFrusta]
@@ -26,6 +30,8 @@ pub let ecs_key_cubemap_frusta : @ecs.ComponentKey[CubemapFrusta]
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
 pub let ecs_key_sphere : @ecs.ComponentKey[Sphere]
+
+pub fn face_index_to_name(Int) -> String
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> Aabb?
 
@@ -52,6 +58,14 @@ pub fn CascadesFrusta::clear(Self) -> Unit
 pub fn CascadesFrusta::get(Self, @core.Entity) -> Array[Frustum]
 pub fn CascadesFrusta::set(Self, @core.Entity, Array[Frustum]) -> Unit
 pub impl @ecs.Component for CascadesFrusta
+
+pub struct CubeMapFace {
+  target : @math.Vec3
+  up : @math.Vec3
+}
+pub fn CubeMapFace::new(@math.Vec3, @math.Vec3) -> Self
+pub fn CubeMapFace::target(Self) -> @math.Vec3
+pub fn CubeMapFace::up(Self) -> @math.Vec3
 
 pub struct CubemapFrusta {
   frusta : Array[Frustum]

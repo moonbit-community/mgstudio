@@ -116,6 +116,83 @@ pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::CubeMapFace`.
+pub struct CubeMapFace {
+  target : @math.Vec3
+  up : @math.Vec3
+}
+
+///|
+pub fn CubeMapFace::new(target : @math.Vec3, up : @math.Vec3) -> CubeMapFace {
+  CubeMapFace::{ target, up }
+}
+
+///|
+pub fn CubeMapFace::target(self : CubeMapFace) -> @math.Vec3 {
+  self.target
+}
+
+///|
+pub fn CubeMapFace::up(self : CubeMapFace) -> @math.Vec3 {
+  self.up
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::CUBE_MAP_FACES`.
+pub fn cube_map_faces() -> Array[CubeMapFace] {
+  [
+    CubeMapFace::new(
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+    CubeMapFace::new(
+      @math.Vec3::new(-1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+    CubeMapFace::new(
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+    ),
+    CubeMapFace::new(
+      @math.Vec3::new(0.0F, -1.0F, 0.0F),
+      @math.Vec3::new(0.0F, 0.0F, -1.0F),
+    ),
+    CubeMapFace::new(
+      @math.Vec3::new(0.0F, 0.0F, -1.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+    CubeMapFace::new(
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  ]
+}
+
+///|
+pub fn cube_map_face(index : Int) -> CubeMapFace? {
+  let faces = cube_map_faces()
+  if index < 0 || index >= faces.length() {
+    None
+  } else {
+    Some(faces[index])
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::face_index_to_name`.
+pub fn face_index_to_name(face_index : Int) -> String {
+  match face_index {
+    0 => "+x"
+    1 => "-x"
+    2 => "+y"
+    3 => "-y"
+    4 => "+z"
+    5 => "-z"
+    _ => "invalid"
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::CubemapFrusta`.
 pub struct CubemapFrusta {
   frusta : Array[Frustum]
