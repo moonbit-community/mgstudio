@@ -160,6 +160,18 @@ fn render3d_shadow_resolve_phase_items(
 }
 
 ///|
+fn render3d_shadow_material_bind_group_data(
+  phase_item : Render3dShadowPhaseItemData,
+  shadow_mesh : Mesh3dExtractedPayload,
+) -> @render_resource.MaterialBindGroupResolvedData {
+  match phase_item.batch_set_key().material_bind_group_index() {
+    Some(_) => shadow_mesh.material_bind_group_data
+    None =>
+      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+  }
+}
+
+///|
 fn render3d_shadow_visible_extracted_indices(
   meshes : Array[ExtractedMesh3d],
   camera_layers : @camera_render_layers.RenderLayers,
@@ -294,6 +306,9 @@ fn render3d_execute_shadow_phase_view(
     let phase_item = resolved_phase_item.item
     let extracted_shadow_mesh = meshes[resolved_phase_item.extracted_index]
     let shadow_mesh = extracted_shadow_mesh.payload
+    let material_bind_group_data = render3d_shadow_material_bind_group_data(
+      phase_item, shadow_mesh,
+    )
     let draw_storage_index = draw_storage_base + draw_storage_offset
     render3d_mesh_gpu_binned_phase_push(
       shadow_phase,
@@ -344,7 +359,7 @@ fn render3d_execute_shadow_phase_view(
         render3d_mesh_flags(extracted_shadow_mesh),
         0,
         material_pipeline_id=Some(phase_item.cached_pipeline()),
-        material_extension_bind_group_data=shadow_mesh.material_bind_group_data,
+        material_extension_bind_group_data=material_bind_group_data,
         skinning_key_hi=shadow_mesh.skinning_key_hi,
         skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
         morph_weights_index=shadow_mesh.morph_weights_index,

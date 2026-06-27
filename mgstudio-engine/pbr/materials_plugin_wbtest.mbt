@@ -2012,6 +2012,34 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   inspect(shadow_phase_items[1].cached_pipeline().id(), content="802")
   inspect(shadow_phase_items[1].batch_range().start(), content="12")
   inspect(shadow_phase_items[1].batch_range().end(), content="13")
+  let nonempty_material_bind_group_data = @render_resource.MaterialBindGroupResolvedData::new([
+      @render_resource.MaterialBindGroupResolvedEntry::uniform(
+        3,
+        Bytes::makei(4, i => (i + 1).to_byte()),
+      ),
+    ],
+  )
+  let material_shadow_mesh = Mesh3dExtractedPayload::{
+    ..material_test_extracted_mesh_payload(
+      702,
+      @material.MaterialProperties::MaterialProperties(),
+    ),
+    material_bind_group_data: nonempty_material_bind_group_data,
+  }
+  debug_inspect(
+    render3d_shadow_material_bind_group_data(
+      shadow_phase_items[0],
+      material_shadow_mesh,
+    ).is_empty(),
+    content="true",
+  )
+  debug_inspect(
+    render3d_shadow_material_bind_group_data(
+      shadow_phase_items[1],
+      material_shadow_mesh,
+    ).equals(nonempty_material_bind_group_data),
+    content="true",
+  )
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(retained_view), content="2")
