@@ -1162,6 +1162,106 @@ pub fn Render3dQueuedShadowPhaseItemData::slabs(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::ShadowBatchSetKey`.
+pub struct Render3dShadowBatchSetKeyData {
+  pipeline_id : @material.CachedRenderPipelineId
+  draw_function : @material.DrawFunctionId
+  material_bind_group_index : Int?
+  slabs : @render_mesh.MeshSlabs
+}
+
+///|
+pub fn Render3dShadowBatchSetKeyData::new(
+  pipeline_id : @material.CachedRenderPipelineId,
+  draw_function : @material.DrawFunctionId,
+  material_bind_group_index : Int?,
+  slabs : @render_mesh.MeshSlabs,
+) -> Render3dShadowBatchSetKeyData {
+  Render3dShadowBatchSetKeyData::{
+    pipeline_id,
+    draw_function,
+    material_bind_group_index,
+    slabs,
+  }
+}
+
+///|
+pub fn Render3dShadowBatchSetKeyData::pipeline_id(
+  self : Render3dShadowBatchSetKeyData,
+) -> @material.CachedRenderPipelineId {
+  self.pipeline_id
+}
+
+///|
+pub fn Render3dShadowBatchSetKeyData::draw_function(
+  self : Render3dShadowBatchSetKeyData,
+) -> @material.DrawFunctionId {
+  self.draw_function
+}
+
+///|
+pub fn Render3dShadowBatchSetKeyData::material_bind_group_index(
+  self : Render3dShadowBatchSetKeyData,
+) -> Int? {
+  self.material_bind_group_index
+}
+
+///|
+pub fn Render3dShadowBatchSetKeyData::slabs(
+  self : Render3dShadowBatchSetKeyData,
+) -> @render_mesh.MeshSlabs {
+  self.slabs
+}
+
+///|
+pub fn Render3dShadowBatchSetKeyData::indexed(
+  self : Render3dShadowBatchSetKeyData,
+) -> Bool {
+  self.slabs.index_slab_id() is Some(_)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::ShadowBinKey`.
+pub struct Render3dShadowBinKeyData {
+  mesh_asset_id : Int
+}
+
+///|
+pub fn Render3dShadowBinKeyData::new(
+  mesh_asset_id : Int,
+) -> Render3dShadowBinKeyData {
+  Render3dShadowBinKeyData::{ mesh_asset_id, }
+}
+
+///|
+pub fn Render3dShadowBinKeyData::mesh_asset_id(
+  self : Render3dShadowBinKeyData,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::BinnedPhaseItem for Shadow`.
+pub fn Render3dQueuedShadowPhaseItemData::batch_set_key(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> Render3dShadowBatchSetKeyData {
+  Render3dShadowBatchSetKeyData::new(
+    self.pipeline_id,
+    self.draw_function,
+    self.material_bind_group_index,
+    self.slabs,
+  )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::BinnedPhaseItem for Shadow`.
+pub fn Render3dQueuedShadowPhaseItemData::bin_key(
+  self : Render3dQueuedShadowPhaseItemData,
+) -> Render3dShadowBinKeyData {
+  Render3dShadowBinKeyData::new(self.mesh_asset_id)
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
 pub struct Render3dQueuedShadowPhaseData {
   dequeued : Array[@render.MainEntity]

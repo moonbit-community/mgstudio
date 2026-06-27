@@ -2097,6 +2097,8 @@ pub struct Render3dQueuedShadowPhaseItemData {
   should_batch : Bool
   slabs : @Milky2018/mgstudio/render/mesh.MeshSlabs
 }
+pub fn Render3dQueuedShadowPhaseItemData::batch_set_key(Self) -> Render3dShadowBatchSetKeyData
+pub fn Render3dQueuedShadowPhaseItemData::bin_key(Self) -> Render3dShadowBinKeyData
 pub fn Render3dQueuedShadowPhaseItemData::current_uniform_index(Self) -> UInt
 pub fn Render3dQueuedShadowPhaseItemData::draw_function(Self) -> @material.DrawFunctionId
 pub fn Render3dQueuedShadowPhaseItemData::material_bind_group_index(Self) -> Int?
@@ -2118,6 +2120,25 @@ pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resou
 pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
 pub fn Render3dResolvedMaterial::material_type_tag(Self) -> String
 pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String) -> Self
+
+pub struct Render3dShadowBatchSetKeyData {
+  pipeline_id : @render_resource.CachedRenderPipelineId
+  draw_function : @material.DrawFunctionId
+  material_bind_group_index : Int?
+  slabs : @Milky2018/mgstudio/render/mesh.MeshSlabs
+}
+pub fn Render3dShadowBatchSetKeyData::draw_function(Self) -> @material.DrawFunctionId
+pub fn Render3dShadowBatchSetKeyData::indexed(Self) -> Bool
+pub fn Render3dShadowBatchSetKeyData::material_bind_group_index(Self) -> Int?
+pub fn Render3dShadowBatchSetKeyData::new(@render_resource.CachedRenderPipelineId, @material.DrawFunctionId, Int?, @Milky2018/mgstudio/render/mesh.MeshSlabs) -> Self
+pub fn Render3dShadowBatchSetKeyData::pipeline_id(Self) -> @render_resource.CachedRenderPipelineId
+pub fn Render3dShadowBatchSetKeyData::slabs(Self) -> @Milky2018/mgstudio/render/mesh.MeshSlabs
+
+pub struct Render3dShadowBinKeyData {
+  mesh_asset_id : Int
+}
+pub fn Render3dShadowBinKeyData::mesh_asset_id(Self) -> Int
+pub fn Render3dShadowBinKeyData::new(Int) -> Self
 
 pub struct Render3dShadowSpecializationWorkItemData {
   queue_data : RenderMeshQueueData
