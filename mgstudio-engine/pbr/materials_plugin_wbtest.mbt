@@ -320,6 +320,55 @@ test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense state
 }
 
 ///|
+test "render3d: shadow view phase stores unbatchable meshes separately" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(902UL),
+    @material.DrawFunctionId::new(10U),
+    None,
+    @render_mesh.MeshSlabs::new(11, index_slab_id=Some(12)),
+  )
+  let bin = Render3dShadowBinKeyData::new(88)
+  let first_main = @render.MainEntity::new(@core.Entity::new(51, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(52, 1))
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(61, 1), first_main),
+    30U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(62, 1), second_main),
+    31U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  debug_inspect(phase.len(), content="2")
+  debug_inspect(phase.phase_type(first_main), content="Some(UnbatchableMesh)")
+  let items = phase.items()
+  debug_inspect(items.length(), content="2")
+  inspect(items[0].batch_range().start(), content="30")
+  inspect(items[0].batch_range().end(), content="31")
+  inspect(items[1].batch_range().start(), content="31")
+  inspect(items[1].batch_range().end(), content="32")
+  phase.remove(first_main)
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.input_uniform_index(first_main), content="None")
+  debug_inspect(phase.input_uniform_index(second_main), content="Some(31)")
+  debug_inspect(
+    phase.items()[0].main_entity(),
+    content="{ entity: { id: 52, generation: 1 } }",
+  )
+  phase.prepare_for_new_frame()
+  debug_inspect(phase.len(), content="0")
+  debug_inspect(phase.items().length(), content="0")
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)

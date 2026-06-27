@@ -2222,6 +2222,13 @@ pub fn Render3dShadowSpecializationWorkItemData::queue_data(Self) -> RenderMeshQ
 pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(Self) -> @view.RetainedViewEntity
 pub fn Render3dShadowSpecializationWorkItemData::visible_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
 
+pub(all) struct Render3dShadowUnbatchableBinnedEntities {
+  batch_set_key : Render3dShadowBatchSetKeyData
+  bin_key : Render3dShadowBinKeyData
+  mut entities : Array[(@Milky2018/mgstudio/render.MainEntity, @core.Entity)]
+  buffer_indices : Render3dShadowUnbatchableBinnedEntityIndexSet
+}
+
 pub(all) struct Render3dShadowUnbatchableBinnedEntityIndexSet {
   mut kind : Render3dShadowUnbatchableBinnedEntityIndexSetKind
 }
@@ -2249,6 +2256,7 @@ pub fn Render3dShadowUnbatchableBinnedEntityIndices::new(Int, Render3dShadowPhas
 pub struct Render3dShadowViewPhaseData {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
   mut items : Array[Render3dShadowPhaseItemData]
+  mut unbatchable_meshes : Array[Render3dShadowUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, UInt]
   phase_types : Map[UInt64, Render3dShadowBinnedRenderPhaseType]
 }
