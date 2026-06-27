@@ -228,6 +228,49 @@ test "pbr render light: SpecializedShadowMaterialPipelineCache stores per view l
 }
 
 ///|
+test "pbr render light: shadow material pipeline cache supports Bevy specialization maintenance" {
+  let cache = SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  let main_view = @core.Entity::new(10, 1)
+  let first_view = @render_view.RetainedViewEntity::new(
+    main_view,
+    auxiliary_entity=Some(@core.Entity::new(20, 1)),
+    subview_index=0,
+  )
+  let second_view = @render_view.RetainedViewEntity::new(
+    main_view,
+    auxiliary_entity=Some(@core.Entity::new(20, 1)),
+    subview_index=1,
+  )
+  let first_entity = @render_gpu.MainEntity::new(@core.Entity::new(11, 1))
+  let second_entity = @render_gpu.MainEntity::new(@core.Entity::new(12, 1))
+  cache.insert(
+    first_view,
+    first_entity,
+    @material.CachedRenderPipelineId::new(55UL),
+    @material.DrawFunctionId::new(3U),
+  )
+  cache.insert(
+    second_view,
+    second_entity,
+    @material.CachedRenderPipelineId::new(89UL),
+    @material.DrawFunctionId::new(5U),
+  )
+
+  let first_view_cache = cache.get(first_view).unwrap()
+  debug_inspect(first_view_cache.contains(first_entity), content="true")
+  first_view_cache.clear()
+  debug_inspect(first_view_cache.len(), content="0")
+  debug_inspect(cache.len(), content="2")
+
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  live_views.add(second_view)
+  cache.expire_stale_views(live_views)
+  debug_inspect(cache.get(first_view) is Some(_), content="false")
+  debug_inspect(cache.get(second_view) is Some(_), content="true")
+}
+
+///|
 fn light_test_propagate_transforms(world : @ecs.World) -> Unit {
   @hierarchy.hierarchy_install_component_metadata()
   @transform.transform_install_component_metadata()

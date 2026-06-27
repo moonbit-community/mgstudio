@@ -175,11 +175,26 @@ pub fn SpecializedShadowMaterialViewPipelineCache::len(
 }
 
 ///|
+pub fn SpecializedShadowMaterialViewPipelineCache::clear(
+  self : SpecializedShadowMaterialViewPipelineCache,
+) -> Unit {
+  self.map.clear()
+}
+
+///|
 pub fn SpecializedShadowMaterialViewPipelineCache::get(
   self : SpecializedShadowMaterialViewPipelineCache,
   entity : @render_gpu.MainEntity,
 ) -> (@material.CachedRenderPipelineId, @material.DrawFunctionId)? {
   self.map.get(entity)
+}
+
+///|
+pub fn SpecializedShadowMaterialViewPipelineCache::contains(
+  self : SpecializedShadowMaterialViewPipelineCache,
+  entity : @render_gpu.MainEntity,
+) -> Bool {
+  self.map.contains(entity)
 }
 
 ///|
@@ -277,6 +292,22 @@ pub fn SpecializedShadowMaterialPipelineCache::pipeline_id(
         pipeline_id
       })
     None => None
+  }
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::expire_stale_views(
+  self : SpecializedShadowMaterialPipelineCache,
+  live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let stale : Array[@render_view.RetainedViewEntity] = []
+  for view, _cache in self.views {
+    if !live_views.contains(view) {
+      stale.push(view)
+    }
+  }
+  for view in stale {
+    self.views.remove(view)
   }
 }
 

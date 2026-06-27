@@ -1266,6 +1266,7 @@ pub struct SpecializedShadowMaterialPipelineCache {
   views : @hashmap.HashMap[@view.RetainedViewEntity, SpecializedShadowMaterialViewPipelineCache]
 }
 pub fn SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache() -> Self
+pub fn SpecializedShadowMaterialPipelineCache::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
 pub fn SpecializedShadowMaterialPipelineCache::get(Self, @view.RetainedViewEntity) -> SpecializedShadowMaterialViewPipelineCache?
 pub fn SpecializedShadowMaterialPipelineCache::insert(Self, @view.RetainedViewEntity, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId, @material.DrawFunctionId) -> Unit
 pub fn SpecializedShadowMaterialPipelineCache::len(Self) -> Int
@@ -1277,6 +1278,8 @@ pub struct SpecializedShadowMaterialViewPipelineCache {
   map : @hashmap.HashMap[@Milky2018/mgstudio/render.MainEntity, (@render_resource.CachedRenderPipelineId, @material.DrawFunctionId)]
 }
 pub fn SpecializedShadowMaterialViewPipelineCache::SpecializedShadowMaterialViewPipelineCache() -> Self
+pub fn SpecializedShadowMaterialViewPipelineCache::clear(Self) -> Unit
+pub fn SpecializedShadowMaterialViewPipelineCache::contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub fn SpecializedShadowMaterialViewPipelineCache::get(Self, @Milky2018/mgstudio/render.MainEntity) -> (@render_resource.CachedRenderPipelineId, @material.DrawFunctionId)?
 pub fn SpecializedShadowMaterialViewPipelineCache::insert(Self, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId, @material.DrawFunctionId) -> Unit
 pub fn SpecializedShadowMaterialViewPipelineCache::len(Self) -> Int
