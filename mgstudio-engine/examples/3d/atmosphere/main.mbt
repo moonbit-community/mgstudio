@@ -123,7 +123,8 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn apply_atmosphere(world : @ecs.World) -> Unit {
   let state = atmosphere_state.val
   if state.camera is Some(camera_entity) {
-    if (try! world.get_by_key(camera_entity, @pbr.ecs_key_camera3d)) is Some(_) {
+    if (try! world.get_by_key(camera_entity, @camera.ecs_key_camera3d))
+      is Some(_) {
       try! (world.set_by_key(
         camera_entity,
         @pbr.ecs_key_atmosphere,

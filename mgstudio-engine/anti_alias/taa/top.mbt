@@ -207,7 +207,9 @@ pub fn prepare_taa_jitter(world : @ecs.World) -> Unit {
   }
   let offset = temporal_anti_alias_halton_offset(frame_count)
   world.for_each_component(ecs_key_temporal_anti_aliasing, fn(entity, _taa) {
-    let is_camera3d = try! world.contains_by_key(entity, @pbr.ecs_key_camera3d)
+    let is_camera3d = try! world.contains_by_key(
+      entity, @camera_components3d.ecs_key_camera3d,
+    )
     let has_jitter = try! world.contains_by_key(entity, ecs_key_temporal_jitter)
     let has_depth_prepass = try! world.contains_by_key(
       entity, @core_pipeline.ecs_key_depth_prepass,

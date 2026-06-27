@@ -110,7 +110,11 @@ test "anti_alias/taa: prepare_taa_jitter follows Bevy Halton sequence" {
   let entity = taa_test_spawn_camera(app.world())
   try! app
   .world()
-  .set_by_key(entity, @pbr.ecs_key_camera3d, @pbr.Camera3d::Camera3d())
+  .set_by_key(
+    entity,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
   try! app
   .world()
   .set_by_key(entity, ecs_key_temporal_anti_aliasing, TemporalAntiAliasing())

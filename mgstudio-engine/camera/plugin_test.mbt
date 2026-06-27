@@ -50,11 +50,7 @@ test "camera plugin: owns Camera3d color grading and exposure requirements" {
   )
   let world = app.world()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    @pbr.ecs_key_camera3d,
-    @pbr.Camera3d::Camera3d(),
-  )
+  try! world.set_by_key(entity, ecs_key_camera3d, Camera3d::Camera3d())
 
   debug_inspect(
     (try! world.get_by_key(entity, @post_process.ecs_key_color_grading))
