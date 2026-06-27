@@ -293,6 +293,13 @@ test "global ambient light supports affects_lightmapped_meshes toggle" {
     false,
   )
   debug_inspect(ambient.affects_lightmapped_meshes, content="false")
+  let none = @light.GlobalAmbientLight::none()
+  debug_inspect(none.color.r.to_double(), content="1")
+  debug_inspect(none.color.g.to_double(), content="1")
+  debug_inspect(none.color.b.to_double(), content="1")
+  debug_inspect(none.color.a.to_double(), content="1")
+  debug_inspect(none.brightness, content="0")
+  debug_inspect(none.affects_lightmapped_meshes, content="true")
 }
 
 ///|

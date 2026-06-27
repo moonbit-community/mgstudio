@@ -1977,6 +1977,15 @@ pub fn GlobalAmbientLight::GlobalAmbientLight() -> GlobalAmbientLight {
 }
 
 ///|
+pub fn GlobalAmbientLight::none() -> GlobalAmbientLight {
+  GlobalAmbientLight::{
+    color: @color.Color::white(),
+    brightness: 0.0F,
+    affects_lightmapped_meshes: true,
+  }
+}
+
+///|
 pub fn GlobalAmbientLight::new(
   color : @color.Color,
   brightness : Float,

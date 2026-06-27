@@ -406,6 +406,7 @@ pub struct GlobalAmbientLight {
 } derive(ToJson, @json.FromJson)
 pub fn GlobalAmbientLight::GlobalAmbientLight() -> Self
 pub fn GlobalAmbientLight::new(@color.Color, Float) -> Self
+pub fn GlobalAmbientLight::none() -> Self
 pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(Self, Bool) -> Self
 pub impl @app.Resource for GlobalAmbientLight
 
