@@ -22,24 +22,11 @@ priv struct Render3dDirectionalCascadePass {
 }
 
 ///|
-fn render3d_calculate_directional_cascade(
-  camera_transform : @transform.Transform,
+fn render3d_directional_cascade_pass(
   light_transform : @transform.Transform,
-  frustum_corners : Array[@math.Vec3],
+  cascade : @light.Cascade,
   far_bound : Float,
-  shadow_map_size : Int,
 ) -> Render3dDirectionalCascadePass {
-  let world_from_light = @math.Mat4::from_quat(light_transform.rotation)
-  let world_from_view = @math.Mat4::from_affine3(
-    @transform.GlobalTransform::from_transform(camera_transform).affine(),
-  )
-  let light_from_camera = world_from_light.transpose().mul(world_from_view)
-  let cascade = @light.calculate_directional_light_cascade(
-    frustum_corners,
-    Float::from_double(shadow_map_size.to_double()),
-    world_from_light,
-    light_from_camera,
-  )
   let translation = cascade.world_from_cascade.w_axis()
   let clip_from_cascade = @pbr_render.ProjectionMatrix3d::from_mat4(
     cascade.clip_from_cascade,
@@ -64,34 +51,28 @@ fn render3d_calculate_directional_cascade(
 
 ///|
 fn render3d_directional_shadow_cascades(
-  camera : Camera3dViewPayload,
+  camera_entity : @core.Entity,
   pass_lighting : Render3dLightingState,
-  shadow_map_size : Int,
 ) -> Array[Render3dDirectionalCascadePass] {
   let cascades : Array[Render3dDirectionalCascadePass] = []
   let bounds = pass_lighting.directional_cascade_bounds
-  let count = if bounds.length() < @pbr_render.MAX_CASCADES_PER_LIGHT {
+  let source_cascades = pass_lighting.directional_cascades.get(camera_entity)
+  let requested_count = if bounds.length() < source_cascades.length() {
     bounds.length()
+  } else {
+    source_cascades.length()
+  }
+  let count = if requested_count < @pbr_render.MAX_CASCADES_PER_LIGHT {
+    requested_count
   } else {
     @pbr_render.MAX_CASCADES_PER_LIGHT
   }
-  let overlap_factor = 1.0F -
-    pass_lighting.directional_cascade_overlap_proportion
   for i in 0..<count {
-    let near_bound = if i == 0 {
-      pass_lighting.directional_cascade_minimum_distance
-    } else {
-      overlap_factor * bounds[i - 1]
-    }
-    let far_bound = bounds[i]
-    let corners = camera.projection.get_frustum_corners(-near_bound, -far_bound)
     cascades.push(
-      render3d_calculate_directional_cascade(
-        camera.transform,
+      render3d_directional_cascade_pass(
         pass_lighting.directional_transform,
-        corners,
-        far_bound,
-        shadow_map_size,
+        source_cascades[i],
+        bounds[i],
       ),
     )
   }
@@ -172,7 +153,7 @@ fn render3d_execute_camera_directional_shadow_pass(
   let directional_enabled = pass_lighting.directional_shadow_maps_enabled &&
     pass_lighting.directional_entity is Some(_)
   let cascades = if directional_enabled {
-    render3d_directional_shadow_cascades(camera, pass_lighting, shadow_map_size)
+    render3d_directional_shadow_cascades(camera_entity, pass_lighting)
   } else {
     []
   }

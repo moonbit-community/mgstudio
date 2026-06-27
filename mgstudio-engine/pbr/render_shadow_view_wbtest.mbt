@@ -1,4 +1,14 @@
 ///|
+fn shadow_view_approx_eq(a : Float, b : Float) -> Bool {
+  let delta = a - b
+  if delta < 0.0F {
+    -delta <= 1.0e-6F
+  } else {
+    delta <= 1.0e-6F
+  }
+}
+
+///|
 test "pbr shadow view cache keys are distinct per Bevy retained shadow view" {
   let camera = @core.Entity::new(3, 1)
   let light = @core.Entity::new(9, 2)
@@ -49,6 +59,54 @@ test "pbr directional shadow view omits occlusion culling subview when disabled"
     2048,
   )
   inspect(subview is None, content="true")
+}
+
+///|
+test "pbr directional shadow view consumes extracted light cascades" {
+  let camera = @core.Entity::new(3, 1)
+  let cascades = @light.Cascades::Cascades()
+  cascades.set(camera, [
+    @light.Cascade::new(
+      @math.Mat4::from_cols(
+        @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+        @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+        @math.Vec4::new(8.0F, 9.0F, 10.0F, 1.0F),
+      ),
+      @math.Mat4::identity(),
+      @math.Mat4::from_cols(
+        @math.Vec4::new(2.0F, 0.0F, 0.0F, 0.0F),
+        @math.Vec4::new(0.0F, 3.0F, 0.0F, 0.0F),
+        @math.Vec4::new(0.0F, 0.0F, 4.0F, 0.0F),
+        @math.Vec4::new(5.0F, 6.0F, 7.0F, 1.0F),
+      ),
+      0.25F,
+    ),
+  ])
+  let lighting = Render3dLightingState::{
+    ..@pbr_render.render3d_default_lighting_state(),
+    directional_transform: @transform.Transform::identity(),
+    directional_cascade_bounds: [42.0F],
+    directional_cascades: cascades,
+  }
+
+  let cascade_passes = render3d_directional_shadow_cascades(camera, lighting)
+  inspect(cascade_passes.length(), content="1")
+  inspect(
+    shadow_view_approx_eq(cascade_passes[0].transform.translation.x, 8.0F),
+    content="true",
+  )
+  inspect(
+    shadow_view_approx_eq(cascade_passes[0].texel_size, 0.25F),
+    content="true",
+  )
+  let data = render3d_directional_shadow_cascade_data(cascade_passes)
+  inspect(shadow_view_approx_eq(data[0], 2.0F), content="true")
+  inspect(shadow_view_approx_eq(data[5], 3.0F), content="true")
+  inspect(shadow_view_approx_eq(data[10], 4.0F), content="true")
+  inspect(shadow_view_approx_eq(data[15], 1.0F), content="true")
+  inspect(shadow_view_approx_eq(data[16], 0.25F), content="true")
+  inspect(shadow_view_approx_eq(data[17], 42.0F), content="true")
 }
 
 ///|

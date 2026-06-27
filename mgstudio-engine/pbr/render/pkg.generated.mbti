@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
@@ -603,6 +604,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
   cascade_minimum_distance : Float
+  cascades : @light.Cascades
   render_layers : @render_layers.RenderLayers
   occlusion_culling : Bool
   sun_disk_angular_size : Float
@@ -1108,6 +1110,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_bounds : Array[Float]
   directional_cascade_overlap_proportion : Float
   directional_cascade_minimum_distance : Float
+  directional_cascades : @light.Cascades
   directional_occlusion_culling : Bool
   point_entity : @core.Entity?
   point_pos : @math.Vec3

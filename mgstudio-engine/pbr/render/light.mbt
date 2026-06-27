@@ -28,6 +28,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_bounds : Array[Float]
   directional_cascade_overlap_proportion : Float
   directional_cascade_minimum_distance : Float
+  directional_cascades : @light.Cascades
   directional_occlusion_culling : Bool
   point_entity : @core.Entity?
   point_pos : @math.Vec3
@@ -704,6 +705,7 @@ pub struct ExtractedDirectionalLight3d {
   cascade_bounds : Array[Float]
   cascade_overlap_proportion : Float
   cascade_minimum_distance : Float
+  cascades : @light.Cascades
   render_layers : @camera_render_layers.RenderLayers
   occlusion_culling : Bool
   sun_disk_angular_size : Float
@@ -2361,9 +2363,15 @@ fn render3d_extract_directional_light(
     Some(v) => v
     None => @light.SunDisk::SunDisk()
   }
-  let cascade_config = match light.cascade_shadow_config {
+  let cascade_config = match
+    (try! world.get_by_key(entity, @light.ecs_key_cascade_shadow_config)) {
     Some(config) => config
     None => @light.CascadeShadowConfig::CascadeShadowConfig()
+  }
+  let cascades = match
+    (try! world.get_by_key(entity, @light.ecs_key_cascades)) {
+    Some(value) => render3d_clone_cascades(value)
+    None => @light.Cascades::Cascades()
   }
   let cascade_count = cascade_config.bounds.length()
   let cascade_overlap_proportion = cascade_config.overlap_proportion
@@ -2389,11 +2397,26 @@ fn render3d_extract_directional_light(
     cascade_bounds: cascade_config.bounds,
     cascade_overlap_proportion,
     cascade_minimum_distance: cascade_config.minimum_distance,
+    cascades,
     render_layers,
     occlusion_culling,
     sun_disk_angular_size: sun_disk.angular_size,
     sun_disk_intensity: sun_disk.intensity,
   }
+}
+
+///|
+fn render3d_clone_cascades(cascades : @light.Cascades) -> @light.Cascades {
+  let cloned = @light.Cascades::Cascades()
+  for entry in cascades.entries() {
+    let (view, source_view_cascades) = entry
+    let view_cascades : Array[@light.Cascade] = []
+    for cascade in source_view_cascades {
+      view_cascades.push(cascade)
+    }
+    cloned.set(view, view_cascades)
+  }
+  cloned
 }
 
 ///|
@@ -2454,6 +2477,7 @@ fn extract_directional_light_changed(
   world.is_changed_by_key(
     entity, @render_occlusion_culling.ecs_key_occlusion_culling, system_ticks,
   ) ||
+  world.is_changed_by_key(entity, @light.ecs_key_cascades, system_ticks) ||
   world.is_changed_by_key(entity, @light.ecs_key_sun_disk, system_ticks)
 }
 
@@ -3557,6 +3581,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_cascade_bounds: [],
     directional_cascade_overlap_proportion: 0.0F,
     directional_cascade_minimum_distance: 0.1F,
+    directional_cascades: @light.Cascades::Cascades(),
     directional_occlusion_culling: false,
     point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
@@ -3615,6 +3640,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_cascade_bounds: directional.cascade_bounds,
       directional_cascade_overlap_proportion: directional.cascade_overlap_proportion,
       directional_cascade_minimum_distance: directional.cascade_minimum_distance,
+      directional_cascades: directional.cascades,
       directional_occlusion_culling: directional.occlusion_culling,
     }
   }

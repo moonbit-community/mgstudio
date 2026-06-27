@@ -115,9 +115,10 @@ test "pbr/render light: directional shadow flags respect texture array layer cap
   try! world.set_by_key(
     first,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight()
-    .with_shadow_maps_enabled(true)
-    .with_cascade_shadow_config(Some(first_config)),
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    first, @light.ecs_key_cascade_shadow_config, first_config,
   )
   try! world.set_by_key(
     first,
@@ -132,9 +133,10 @@ test "pbr/render light: directional shadow flags respect texture array layer cap
   try! world.set_by_key(
     second,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight()
-    .with_shadow_maps_enabled(true)
-    .with_cascade_shadow_config(Some(second_config)),
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    second, @light.ecs_key_cascade_shadow_config, second_config,
   )
   try! world.set_by_key(
     second,

@@ -557,3 +557,82 @@ test "directional cascade calculation follows Bevy stable texel snapping" {
     content="true",
   )
 }
+
+///|
+test "directional cascade builder filters active cameras and writes cascades" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(1024),
+  )
+  let active_view = world.spawn()
+  let inactive_view = world.spawn()
+  let light = world.spawn()
+  try! world.set_by_key(
+    active_view,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    active_view,
+    @camera_projection3d.ecs_key_projection,
+    @camera_projection3d.Projection::default(),
+  )
+  try! world.set_by_key(
+    active_view,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    ),
+  )
+  try! world.set_by_key(
+    inactive_view,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+  try! world.set_by_key(
+    inactive_view,
+    @camera_projection3d.ecs_key_projection,
+    @camera_projection3d.Projection::default(),
+  )
+  try! world.set_by_key(
+    inactive_view,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    ),
+  )
+  try! world.set_by_key(
+    light,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  try! world.set_by_key(
+    light,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_rotation(@math.Quat::identity()),
+    ),
+  )
+  try! world.set_by_key(
+    light,
+    @light.ecs_key_cascade_shadow_config,
+    @light.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+    .with_num_cascades(2)
+    .with_first_cascade_far_bound(4.0F)
+    .with_maximum_distance(16.0F)
+    .build(),
+  )
+  try! world.set_by_key(
+    light,
+    @light.ecs_key_cascades,
+    @light.Cascades::Cascades(),
+  )
+
+  @light.build_directional_light_cascades(world)
+
+  let cascades = (try! world.get_by_key(light, @light.ecs_key_cascades)).unwrap()
+  debug_inspect(cascades.get(active_view).length(), content="2")
+  debug_inspect(cascades.get(inactive_view).length(), content="0")
+  debug_inspect(cascades.get(active_view)[0].texel_size > 0.0F, content="true")
+}

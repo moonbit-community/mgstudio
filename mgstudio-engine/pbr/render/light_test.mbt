@@ -719,6 +719,47 @@ test "pbr render light: directional extraction preserves authored scalar fields"
 }
 
 ///|
+test "pbr render light: directional extraction carries light-owned cascades" {
+  let world = @ecs.World::new()
+  let light_entity = world.spawn()
+  let view_entity = world.spawn()
+  let cascades = @light.Cascades::Cascades()
+  cascades.set(view_entity, [
+    @light.Cascade::new(
+      @math.Mat4::identity(),
+      @math.Mat4::identity(),
+      @math.Mat4::from_cols(
+        @math.Vec4::new(2.0F, 0.0F, 0.0F, 0.0F),
+        @math.Vec4::new(0.0F, 3.0F, 0.0F, 0.0F),
+        @math.Vec4::new(0.0F, 0.0F, 4.0F, 0.0F),
+        @math.Vec4::new(5.0F, 6.0F, 7.0F, 1.0F),
+      ),
+      0.25F,
+    ),
+  ])
+  try! (world.set_by_key(
+    light_entity,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(light_entity, @light.ecs_key_cascades, cascades)
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let extracted = render3d_collect_extracted_directional_lights(world)
+  inspect(extracted.length(), content="1")
+  let view_cascades = extracted[0].cascades.get(view_entity)
+  inspect(view_cascades.length(), content="1")
+  inspect(
+    approx_eq(view_cascades[0].texel_size, 0.25F, 1.0e-6F),
+    content="true",
+  )
+  let lighting = render3d_collect_lighting(world)
+  inspect(lighting.directional_cascades.get(view_entity).length(), content="1")
+}
+
+///|
 test "pbr render light: directional light uses propagated required GlobalTransform" {
   let world = @ecs.World::new()
   let entity = world.spawn()
@@ -923,10 +964,10 @@ test "pbr render light: directional cascade overlap propagates to gpu lights" {
   try! (world.set_by_key(
     entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight().with_cascade_shadow_config(
-      Some(updated),
-    ),
+    @light.DirectionalLight::DirectionalLight(),
   )
+  |> ignore)
+  try! (world.set_by_key(entity, @light.ecs_key_cascade_shadow_config, updated)
   |> ignore)
 
   light_test_extract_lights(world)
@@ -1105,9 +1146,11 @@ test "pbr render light: directional depth texture base index accumulates cascade
   try! (world.set_by_key(
     first,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight()
-    .with_shadow_maps_enabled(true)
-    .with_cascade_shadow_config(Some(first_config)),
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    first, @light.ecs_key_cascade_shadow_config, first_config,
   )
   |> ignore)
 
@@ -1118,9 +1161,11 @@ test "pbr render light: directional depth texture base index accumulates cascade
   try! (world.set_by_key(
     second,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight()
-    .with_shadow_maps_enabled(true)
-    .with_cascade_shadow_config(Some(second_config)),
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    second, @light.ecs_key_cascade_shadow_config, second_config,
   )
   |> ignore)
 
@@ -1478,9 +1523,11 @@ test "pbr render light: gpu lights computes spot shadow map offset" {
   try! (world.set_by_key(
     directional,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight()
-    .with_shadow_maps_enabled(true)
-    .with_cascade_shadow_config(Some(directional_config)),
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    directional, @light.ecs_key_cascade_shadow_config, directional_config,
   )
   |> ignore)
 

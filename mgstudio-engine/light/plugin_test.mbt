@@ -574,25 +574,47 @@ test "light plugin: updates visible shadow-mapped directional light cascades fru
   let world = app.world()
   let view = world.spawn()
   let light = world.spawn()
+  try! world.set_by_key(
+    view,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    view,
+    @camera_projection3d.ecs_key_projection,
+    @camera_projection3d.Projection::default(),
+  )
+  try! world.set_by_key(
+    view,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    ),
+  )
   try! world.set(
     light,
     @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
     light,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_rotation(@math.Quat::identity()),
+    ),
+  )
+  try! world.set_by_key(
+    light,
+    @light.ecs_key_cascade_shadow_config,
+    @light.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+    .with_num_cascades(1)
+    .with_maximum_distance(12.0F)
+    .build(),
+  )
+  try! world.set_by_key(
+    light,
     @visibility.ecs_key_view_visibility,
     @visibility.ViewVisibility::new(true),
   )
-  let cascades = @light.Cascades::Cascades()
-  cascades.set(view, [
-    @light.Cascade::new(
-      @math.Mat4::identity(),
-      @math.Mat4::identity(),
-      @math.Mat4::identity(),
-      1.0F,
-    ),
-  ])
-  try! world.set_by_key(light, @light.ecs_key_cascades, cascades)
 
   app = app.update()
 
