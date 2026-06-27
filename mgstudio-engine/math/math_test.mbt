@@ -177,6 +177,31 @@ test "math: vec2 angle_to and distance match Bevy glam semantics" {
 }
 
 ///|
+test "math: Mat4 identity uses Bevy column-major axes" {
+  let matrix = Mat4::identity()
+  let x = matrix.x_axis()
+  let y = matrix.y_axis()
+  let z = matrix.z_axis()
+  let w = matrix.w_axis()
+  debug_inspect(
+    x.x == 1.0F && x.y == 0.0F && x.z == 0.0F && x.w == 0.0F,
+    content="true",
+  )
+  debug_inspect(
+    y.x == 0.0F && y.y == 1.0F && y.z == 0.0F && y.w == 0.0F,
+    content="true",
+  )
+  debug_inspect(
+    z.x == 0.0F && z.y == 0.0F && z.z == 1.0F && z.w == 0.0F,
+    content="true",
+  )
+  debug_inspect(
+    w.x == 0.0F && w.y == 0.0F && w.z == 0.0F && w.w == 1.0F,
+    content="true",
+  )
+}
+
+///|
 test "math: pi matches two half turns" {
   debug_inspect(pi() > 3.1415F && pi() < 3.1416F, content="true")
   debug_inspect(pi_half() * 2.0F == pi(), content="true")

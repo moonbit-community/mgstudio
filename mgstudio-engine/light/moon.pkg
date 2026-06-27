@@ -1,6 +1,7 @@
 import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/camera/visibility" @camera_visibility,
   "Milky2018/mgstudio/app",
   "moonbitlang/core/float",
@@ -13,6 +14,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
+  "moonbitlang/core/hashmap",
 }
 
 supported_targets = "native"

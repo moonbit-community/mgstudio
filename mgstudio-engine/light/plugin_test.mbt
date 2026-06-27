@@ -129,6 +129,141 @@ test "light plugin: light probe required components match bevy probe requirement
 }
 
 ///|
+test "light plugin: point light required components match bevy point requirements" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+
+  let entity = world.spawn()
+  try! world.set(entity, @light.PointLight::PointLight())
+  debug_inspect(
+    try! (world.get_by_key(entity, @camera_primitives.ecs_key_cubemap_frusta)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(
+      entity, @camera_visibility.ecs_key_cubemap_visible_entities,
+    )
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @transform.ecs_key_transform) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @visibility.ecs_key_visibility) is Some(_)),
+    content="true",
+  )
+  let classes : @visibility.VisibilityClass? = try! world.get_by_key(
+    entity, @visibility.ecs_key_visibility_class,
+  )
+  inspect(
+    match classes {
+      Some(classes) =>
+        classes.iter().contains(@light.cluster_visibility_class_id())
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "light plugin: spot light required components match bevy spot requirements" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+
+  let entity = world.spawn()
+  try! world.set(entity, @light.SpotLight::SpotLight())
+  debug_inspect(
+    try! (world.get_by_key(entity, @camera_primitives.ecs_key_frustum)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(
+      entity, @camera_visibility.ecs_key_visible_mesh_entities,
+    )
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @transform.ecs_key_transform) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @visibility.ecs_key_visibility) is Some(_)),
+    content="true",
+  )
+  let classes : @visibility.VisibilityClass? = try! world.get_by_key(
+    entity, @visibility.ecs_key_visibility_class,
+  )
+  inspect(
+    match classes {
+      Some(classes) =>
+        classes.iter().contains(@light.cluster_visibility_class_id())
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "light plugin: directional light required components match bevy directional requirements" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+
+  let entity = world.spawn()
+  try! world.set(entity, @light.DirectionalLight::DirectionalLight())
+  debug_inspect(
+    try! (world.get_by_key(entity, @light.ecs_key_cascades) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @camera_primitives.ecs_key_cascades_frusta)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @light.ecs_key_cascade_shadow_config)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(
+      entity, @camera_visibility.ecs_key_cascades_visible_entities,
+    )
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @transform.ecs_key_transform) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(entity, @visibility.ecs_key_visibility) is Some(_)),
+    content="true",
+  )
+  let classes : @visibility.VisibilityClass? = try! world.get_by_key(
+    entity, @visibility.ecs_key_visibility_class,
+  )
+  inspect(
+    match classes {
+      Some(classes) =>
+        classes.iter().contains(@light.cluster_visibility_class_id())
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
 test "light plugin: cluster visibility hook preserves existing visibility classes" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     @light.LightPlugin::LightPlugin(),

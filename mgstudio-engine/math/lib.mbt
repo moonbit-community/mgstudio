@@ -269,6 +269,55 @@ pub fn Vec4::splat(v : Float) -> Vec4 {
 }
 
 ///|
+// Bevy source: `bevy_math::Mat4`.
+pub struct Mat4 {
+  x_axis : Vec4
+  y_axis : Vec4
+  z_axis : Vec4
+  w_axis : Vec4
+} derive(Eq)
+
+///|
+pub fn Mat4::from_cols(
+  x_axis : Vec4,
+  y_axis : Vec4,
+  z_axis : Vec4,
+  w_axis : Vec4,
+) -> Mat4 {
+  Mat4::{ x_axis, y_axis, z_axis, w_axis }
+}
+
+///|
+pub fn Mat4::identity() -> Mat4 {
+  Mat4::from_cols(
+    Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+  )
+}
+
+///|
+pub fn Mat4::x_axis(self : Mat4) -> Vec4 {
+  self.x_axis
+}
+
+///|
+pub fn Mat4::y_axis(self : Mat4) -> Vec4 {
+  self.y_axis
+}
+
+///|
+pub fn Mat4::z_axis(self : Mat4) -> Vec4 {
+  self.z_axis
+}
+
+///|
+pub fn Mat4::w_axis(self : Mat4) -> Vec4 {
+  self.w_axis
+}
+
+///|
 pub struct IVec2 {
   x : Int
   y : Int
@@ -472,6 +521,20 @@ pub impl ToJson for Vec4 with fn to_json(self) {
 pub impl @json.FromJson for Vec4 with fn from_json(json, path) {
   let (x, y, z, w) : (Float, Float, Float, Float) = @json.from_json(json, path~)
   Vec4::new(x, y, z, w)
+}
+
+///|
+pub impl ToJson for Mat4 with fn to_json(self) {
+  (self.x_axis, self.y_axis, self.z_axis, self.w_axis).to_json()
+}
+
+///|
+pub impl @json.FromJson for Mat4 with fn from_json(json, path) {
+  let (x_axis, y_axis, z_axis, w_axis) : (Vec4, Vec4, Vec4, Vec4) = @json.from_json(
+    json,
+    path~,
+  )
+  Mat4::from_cols(x_axis, y_axis, z_axis, w_axis)
 }
 
 ///|

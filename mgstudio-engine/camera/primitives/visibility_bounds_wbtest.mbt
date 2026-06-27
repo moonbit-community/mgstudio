@@ -121,3 +121,21 @@ test "camera/primitives: update_skinned_mesh_bounds follows joint transforms" {
   debug_inspect(aabb.center().x.to_double(), content="5")
   debug_inspect(aabb.center().y.to_double(), content="0")
 }
+
+///|
+test "camera/primitives: light frusta containers default to Bevy empty shape" {
+  let cubemap = CubemapFrusta::CubemapFrusta()
+  debug_inspect(cubemap.iter().length(), content="6")
+  debug_inspect(cubemap.get(0) is Some(_), content="true")
+  debug_inspect(cubemap.get(5) is Some(_), content="true")
+  debug_inspect(cubemap.get(6) is None, content="true")
+
+  let cascades = CascadesFrusta::CascadesFrusta()
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  debug_inspect(cascades.get(view).length(), content="0")
+  cascades.set(view, [Frustum::default_2d()])
+  debug_inspect(cascades.get(view).length(), content="1")
+  cascades.clear()
+  debug_inspect(cascades.get(view).length(), content="0")
+}

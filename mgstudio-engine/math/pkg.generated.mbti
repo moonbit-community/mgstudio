@@ -822,6 +822,21 @@ pub fn Mat3::mul_scalar(Self, Float) -> Self
 pub fn Mat3::mul_vec3(Self, Vec3) -> Vec3
 pub fn Mat3::transpose(Self) -> Self
 
+pub struct Mat4 {
+  x_axis : Vec4
+  y_axis : Vec4
+  z_axis : Vec4
+  w_axis : Vec4
+} derive(Eq)
+pub fn Mat4::from_cols(Vec4, Vec4, Vec4, Vec4) -> Self
+pub fn Mat4::identity() -> Self
+pub fn Mat4::w_axis(Self) -> Vec4
+pub fn Mat4::x_axis(Self) -> Vec4
+pub fn Mat4::y_axis(Self) -> Vec4
+pub fn Mat4::z_axis(Self) -> Vec4
+pub impl ToJson for Mat4
+pub impl @json.FromJson for Mat4
+
 pub struct Plane2d {
   normal : Dir2
 }

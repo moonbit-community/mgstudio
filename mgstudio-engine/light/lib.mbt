@@ -1218,6 +1218,70 @@ pub fn CascadeShadowConfig::CascadeShadowConfig() -> CascadeShadowConfig {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_light/src/cascade.rs::Cascade`.
+pub struct Cascade {
+  world_from_cascade : @math.Mat4
+  clip_from_cascade : @math.Mat4
+  clip_from_world : @math.Mat4
+  texel_size : Float
+}
+
+///|
+pub fn Cascade::Cascade() -> Cascade {
+  Cascade::{
+    world_from_cascade: @math.Mat4::identity(),
+    clip_from_cascade: @math.Mat4::identity(),
+    clip_from_world: @math.Mat4::identity(),
+    texel_size: 0.0F,
+  }
+}
+
+///|
+pub fn Cascade::new(
+  world_from_cascade : @math.Mat4,
+  clip_from_cascade : @math.Mat4,
+  clip_from_world : @math.Mat4,
+  texel_size : Float,
+) -> Cascade {
+  Cascade::{
+    world_from_cascade,
+    clip_from_cascade,
+    clip_from_world,
+    texel_size,
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/cascade.rs::Cascades`.
+pub struct Cascades {
+  cascades : @hashmap.HashMap[@core.Entity, Array[Cascade]]
+}
+
+///|
+pub fn Cascades::Cascades() -> Cascades {
+  Cascades::{ cascades: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn Cascades::get(self : Cascades, view : @core.Entity) -> Array[Cascade] {
+  self.cascades.get(view).unwrap_or([])
+}
+
+///|
+pub fn Cascades::set(
+  self : Cascades,
+  view : @core.Entity,
+  cascades : Array[Cascade],
+) -> Unit {
+  self.cascades.set(view, cascades)
+}
+
+///|
+pub fn Cascades::clear(self : Cascades) -> Unit {
+  self.cascades.clear()
+}
+
+///|
 pub struct DirectionalLight {
   color : @color.Color
   illuminance : Float
@@ -2051,6 +2115,16 @@ pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @ecs.r
 )
 
 ///|
+pub let ecs_key_cascades : @ecs.ComponentKey[Cascades] = @ecs.register_component(
+  debug_name="render3d.cascades",
+)
+
+///|
+pub let ecs_key_cascade_shadow_config : @ecs.ComponentKey[CascadeShadowConfig] = @ecs.register_component(
+  debug_name="render3d.cascade_shadow_config",
+)
+
+///|
 pub let ecs_key_sun_disk : @ecs.ComponentKey[SunDisk] = @ecs.register_component(
   debug_name="render3d.sun_disk",
 )
@@ -2172,6 +2246,16 @@ pub impl @ecs.Component for SpotLightTexture with fn component() {
 ///|
 pub impl @ecs.Component for DirectionalLight with fn component() {
   ecs_key_directional_light
+}
+
+///|
+pub impl @ecs.Component for Cascades with fn component() {
+  ecs_key_cascades
+}
+
+///|
+pub impl @ecs.Component for CascadeShadowConfig with fn component() {
+  ecs_key_cascade_shadow_config
 }
 
 ///|

@@ -17,11 +17,17 @@ pub let default_layers : @render_layers.RenderLayers
 
 pub fn default_visibility() -> @Milky2018/mgstudio/visibility.Visibility
 
+pub let ecs_key_cascades_visible_entities : @ecs.ComponentKey[CascadesVisibleEntities]
+
+pub let ecs_key_cubemap_visible_entities : @ecs.ComponentKey[CubemapVisibleEntities]
+
 pub let ecs_key_render_layers : @ecs.ComponentKey[@render_layers.RenderLayers]
 
 pub let ecs_key_shadow_lod_origin : @ecs.ComponentKey[ShadowLodOrigin]
 
 pub let ecs_key_visible_entity_ranges : @ecs.ResourceKey[VisibleEntityRanges]
+
+pub let ecs_key_visible_mesh_entities : @ecs.ComponentKey[VisibleMeshEntities]
 
 pub fn inherited_visibility(Bool) -> @Milky2018/mgstudio/visibility.InheritedVisibility
 
@@ -72,6 +78,24 @@ pub let visibility_range_set_check : String
 // Errors
 
 // Types and methods
+pub struct CascadesVisibleEntities {
+  entities : @hashmap.HashMap[@core.Entity, Array[VisibleMeshEntities]]
+}
+pub fn CascadesVisibleEntities::CascadesVisibleEntities() -> Self
+pub fn CascadesVisibleEntities::clear(Self) -> Unit
+pub fn CascadesVisibleEntities::get(Self, @core.Entity) -> Array[VisibleMeshEntities]
+pub fn CascadesVisibleEntities::set(Self, @core.Entity, Array[VisibleMeshEntities]) -> Unit
+pub impl @ecs.Component for CascadesVisibleEntities
+
+pub struct CubemapVisibleEntities {
+  data : Array[VisibleMeshEntities]
+}
+pub fn CubemapVisibleEntities::CubemapVisibleEntities() -> Self
+pub fn CubemapVisibleEntities::get(Self, Int) -> VisibleMeshEntities?
+pub fn CubemapVisibleEntities::iter(Self) -> Array[VisibleMeshEntities]
+pub fn CubemapVisibleEntities::set(Self, Int, VisibleMeshEntities) -> Unit
+pub impl @ecs.Component for CubemapVisibleEntities
+
 pub struct ShadowLodOrigin {
 } derive(Eq, @debug.Debug)
 pub fn ShadowLodOrigin::ShadowLodOrigin() -> Self
@@ -95,6 +119,17 @@ pub fn VisibleEntityRanges::VisibleEntityRanges() -> Self
 pub fn VisibleEntityRanges::clear(Self) -> Unit
 pub fn VisibleEntityRanges::entity_is_in_range_of_view(Self, @core.Entity, @core.Entity) -> Bool
 pub impl @app.Resource for VisibleEntityRanges
+
+pub struct VisibleMeshEntities {
+  entities : Array[@core.Entity]
+}
+pub fn VisibleMeshEntities::VisibleMeshEntities() -> Self
+pub fn VisibleMeshEntities::clear(Self) -> Unit
+pub fn VisibleMeshEntities::is_empty(Self) -> Bool
+pub fn VisibleMeshEntities::iter(Self) -> Array[@core.Entity]
+pub fn VisibleMeshEntities::len(Self) -> Int
+pub fn VisibleMeshEntities::push(Self, @core.Entity) -> Unit
+pub impl @ecs.Component for VisibleMeshEntities
 
 // Type aliases
 pub type Layer = Int

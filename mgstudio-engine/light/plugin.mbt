@@ -94,6 +94,16 @@ fn register_light_required_components(
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(
     ecs_key_point_light,
+    @camera_primitives.ecs_key_cubemap_frusta,
+    fn() { @camera_primitives.CubemapFrusta::CubemapFrusta() },
+  )
+  world.register_required_components_with(
+    ecs_key_point_light,
+    @camera_visibility.ecs_key_cubemap_visible_entities,
+    fn() { @camera_visibility.CubemapVisibleEntities::CubemapVisibleEntities() },
+  )
+  world.register_required_components_with(
+    ecs_key_point_light,
     @transform.ecs_key_transform,
     fn() { @transform.Transform::identity() },
   )
@@ -109,6 +119,16 @@ fn register_light_required_components(
   )
   world.register_required_components_with(
     ecs_key_spot_light,
+    @camera_primitives.ecs_key_frustum,
+    fn() { @camera_primitives.Frustum::Frustum() },
+  )
+  world.register_required_components_with(
+    ecs_key_spot_light,
+    @camera_visibility.ecs_key_visible_mesh_entities,
+    fn() { @camera_visibility.VisibleMeshEntities::VisibleMeshEntities() },
+  )
+  world.register_required_components_with(
+    ecs_key_spot_light,
     @transform.ecs_key_transform,
     fn() { @transform.Transform::identity() },
   )
@@ -121,6 +141,28 @@ fn register_light_required_components(
     ecs_key_spot_light,
     @visibility.ecs_key_visibility_class,
     fn() { @visibility.VisibilityClass::VisibilityClass() },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    ecs_key_cascades,
+    fn() { Cascades::Cascades() },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    @camera_primitives.ecs_key_cascades_frusta,
+    fn() { @camera_primitives.CascadesFrusta::CascadesFrusta() },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    ecs_key_cascade_shadow_config,
+    fn() { CascadeShadowConfig::CascadeShadowConfig() },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light,
+    @camera_visibility.ecs_key_cascades_visible_entities,
+    fn() {
+      @camera_visibility.CascadesVisibleEntities::CascadesVisibleEntities()
+    },
   )
   world.register_required_components_with(
     ecs_key_directional_light,

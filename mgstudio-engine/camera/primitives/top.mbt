@@ -116,6 +116,84 @@ pub fn Frustum::corners(self : Frustum) -> Array[@math.Vec3]? {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::CubemapFrusta`.
+pub struct CubemapFrusta {
+  frusta : Array[Frustum]
+}
+
+///|
+pub fn CubemapFrusta::CubemapFrusta() -> CubemapFrusta {
+  CubemapFrusta::{
+    frusta: [
+      Frustum::Frustum(),
+      Frustum::Frustum(),
+      Frustum::Frustum(),
+      Frustum::Frustum(),
+      Frustum::Frustum(),
+      Frustum::Frustum(),
+    ],
+  }
+}
+
+///|
+pub fn CubemapFrusta::get(self : CubemapFrusta, index : Int) -> Frustum? {
+  if index < 0 || index >= self.frusta.length() {
+    None
+  } else {
+    Some(self.frusta[index])
+  }
+}
+
+///|
+pub fn CubemapFrusta::set(
+  self : CubemapFrusta,
+  index : Int,
+  frustum : Frustum,
+) -> Unit {
+  if index >= 0 && index < self.frusta.length() {
+    self.frusta[index] = frustum
+  }
+}
+
+///|
+pub fn CubemapFrusta::iter(self : CubemapFrusta) -> Array[Frustum] {
+  self.frusta
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::CascadesFrusta`.
+pub struct CascadesFrusta {
+  frusta : @hashmap.HashMap[@core.Entity, Array[Frustum]]
+}
+
+///|
+pub fn CascadesFrusta::CascadesFrusta() -> CascadesFrusta {
+  CascadesFrusta::{ frusta: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn CascadesFrusta::get(
+  self : CascadesFrusta,
+  view : @core.Entity,
+) -> Array[Frustum] {
+  self.frusta.get(view).unwrap_or([])
+}
+
+///|
+pub fn CascadesFrusta::set(
+  self : CascadesFrusta,
+  view : @core.Entity,
+  frusta : Array[Frustum],
+) -> Unit {
+  self.frusta.set(view, frusta)
+}
+
+///|
+pub fn CascadesFrusta::clear(self : CascadesFrusta) -> Unit {
+  self.frusta.clear()
+}
+
+///|
 fn camera_primitives_abs(value : Float) -> Float {
   if value < 0.0F {
     -value
@@ -225,6 +303,16 @@ pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_cubemap_frusta : @ecs.ComponentKey[CubemapFrusta] = @ecs.register_component(
+  debug_name="mgstudio_camera::CubemapFrusta",
+)
+
+///|
+pub let ecs_key_cascades_frusta : @ecs.ComponentKey[CascadesFrusta] = @ecs.register_component(
+  debug_name="mgstudio_camera::CascadesFrusta",
+)
+
+///|
 pub impl @ecs.Component for Aabb with fn component() {
   ecs_key_aabb
 }
@@ -237,6 +325,16 @@ pub impl @ecs.Component for Sphere with fn component() {
 ///|
 pub impl @ecs.Component for Frustum with fn component() {
   ecs_key_frustum
+}
+
+///|
+pub impl @ecs.Component for CubemapFrusta with fn component() {
+  ecs_key_cubemap_frusta
+}
+
+///|
+pub impl @ecs.Component for CascadesFrusta with fn component() {
+  ecs_key_cascades_frusta
 }
 
 ///|

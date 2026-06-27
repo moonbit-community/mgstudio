@@ -256,3 +256,34 @@ test "camera visibility: VisibilityRange filters entities before frustum culling
   debug_inspect(visible_entities.len(mesh3d_class), content="1")
   debug_inspect(visible_entities.get(mesh3d_class)[0].id, content="1")
 }
+
+///|
+test "camera visibility: light visible entity containers mirror Bevy defaults" {
+  let world = @ecs.World::new()
+  let first = world.spawn()
+  let second = world.spawn()
+
+  let visible = VisibleMeshEntities::VisibleMeshEntities()
+  debug_inspect(visible.is_empty(), content="true")
+  visible.push(first)
+  debug_inspect(visible.len(), content="1")
+  debug_inspect(visible.iter()[0].id, content="0")
+  visible.clear()
+  debug_inspect(visible.is_empty(), content="true")
+
+  let cubemap = CubemapVisibleEntities::CubemapVisibleEntities()
+  debug_inspect(cubemap.iter().length(), content="6")
+  let face_entities = VisibleMeshEntities::VisibleMeshEntities()
+  face_entities.push(second)
+  cubemap.set(2, face_entities)
+  debug_inspect(cubemap.get(2).unwrap().iter()[0].id, content="1")
+  debug_inspect(cubemap.get(6) is None, content="true")
+
+  let cascades = CascadesVisibleEntities::CascadesVisibleEntities()
+  let view = world.spawn()
+  debug_inspect(cascades.get(view).length(), content="0")
+  cascades.set(view, [face_entities])
+  debug_inspect(cascades.get(view).length(), content="1")
+  cascades.clear()
+  debug_inspect(cascades.get(view).length(), content="0")
+}

@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -42,6 +43,10 @@ pub let ecs_key_atmosphere_env_map_light : @ecs.ComponentKey[AtmosphereEnvironme
 pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[AtmosphereEnvironmentMapLight]
 
 pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[AtmosphereSettings]
+
+pub let ecs_key_cascade_shadow_config : @ecs.ComponentKey[CascadeShadowConfig]
+
+pub let ecs_key_cascades : @ecs.ComponentKey[Cascades]
 
 pub let ecs_key_cluster_visibility_class : @ecs.ComponentKey[ClusterVisibilityClass]
 
@@ -235,6 +240,15 @@ pub fn AtmosphereSettings::with_transmittance_lut_samples(Self, Int) -> Self
 pub fn AtmosphereSettings::with_transmittance_lut_size(Self, @math.UVec2) -> Self
 pub impl @ecs.Component for AtmosphereSettings
 
+pub struct Cascade {
+  world_from_cascade : @math.Mat4
+  clip_from_cascade : @math.Mat4
+  clip_from_world : @math.Mat4
+  texel_size : Float
+}
+pub fn Cascade::Cascade() -> Self
+pub fn Cascade::new(@math.Mat4, @math.Mat4, @math.Mat4, Float) -> Self
+
 #alias(CascadeConfig)
 pub struct CascadeShadowConfig {
   bounds : Array[Float]
@@ -242,6 +256,7 @@ pub struct CascadeShadowConfig {
   minimum_distance : Float
 } derive(ToJson, @json.FromJson)
 pub fn CascadeShadowConfig::CascadeShadowConfig() -> Self
+pub impl @ecs.Component for CascadeShadowConfig
 
 #alias(CascadeConfigBuilder)
 pub struct CascadeShadowConfigBuilder {
@@ -259,6 +274,15 @@ pub fn CascadeShadowConfigBuilder::with_maximum_distance(Self, Float) -> Self
 pub fn CascadeShadowConfigBuilder::with_minimum_distance(Self, Float) -> Self
 pub fn CascadeShadowConfigBuilder::with_num_cascades(Self, Int) -> Self
 pub fn CascadeShadowConfigBuilder::with_overlap_proportion(Self, Float) -> Self
+
+pub struct Cascades {
+  cascades : @hashmap.HashMap[@core.Entity, Array[Cascade]]
+}
+pub fn Cascades::Cascades() -> Self
+pub fn Cascades::clear(Self) -> Unit
+pub fn Cascades::get(Self, @core.Entity) -> Array[Cascade]
+pub fn Cascades::set(Self, @core.Entity, Array[Cascade]) -> Unit
+pub impl @ecs.Component for Cascades
 
 pub struct ClusterVisibilityClass {
 } derive(Eq, @debug.Debug)

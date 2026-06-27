@@ -24,6 +24,162 @@ let visibility_set_update_skinned_mesh_bounds : @app.SystemSet = @app.system_set
 )
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibleMeshEntities`.
+pub struct VisibleMeshEntities {
+  entities : Array[@core.Entity]
+}
+
+///|
+pub fn VisibleMeshEntities::VisibleMeshEntities() -> VisibleMeshEntities {
+  VisibleMeshEntities::{ entities: [] }
+}
+
+///|
+pub fn VisibleMeshEntities::len(self : VisibleMeshEntities) -> Int {
+  self.entities.length()
+}
+
+///|
+pub fn VisibleMeshEntities::is_empty(self : VisibleMeshEntities) -> Bool {
+  self.entities.length() == 0
+}
+
+///|
+pub fn VisibleMeshEntities::push(
+  self : VisibleMeshEntities,
+  entity : @core.Entity,
+) -> Unit {
+  self.entities.push(entity)
+}
+
+///|
+pub fn VisibleMeshEntities::clear(self : VisibleMeshEntities) -> Unit {
+  self.entities.clear()
+}
+
+///|
+pub fn VisibleMeshEntities::iter(
+  self : VisibleMeshEntities,
+) -> Array[@core.Entity] {
+  self.entities
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::CubemapVisibleEntities`.
+pub struct CubemapVisibleEntities {
+  data : Array[VisibleMeshEntities]
+}
+
+///|
+pub fn CubemapVisibleEntities::CubemapVisibleEntities() -> CubemapVisibleEntities {
+  CubemapVisibleEntities::{
+    data: [
+      VisibleMeshEntities::VisibleMeshEntities(),
+      VisibleMeshEntities::VisibleMeshEntities(),
+      VisibleMeshEntities::VisibleMeshEntities(),
+      VisibleMeshEntities::VisibleMeshEntities(),
+      VisibleMeshEntities::VisibleMeshEntities(),
+      VisibleMeshEntities::VisibleMeshEntities(),
+    ],
+  }
+}
+
+///|
+pub fn CubemapVisibleEntities::get(
+  self : CubemapVisibleEntities,
+  index : Int,
+) -> VisibleMeshEntities? {
+  if index < 0 || index >= self.data.length() {
+    None
+  } else {
+    Some(self.data[index])
+  }
+}
+
+///|
+pub fn CubemapVisibleEntities::set(
+  self : CubemapVisibleEntities,
+  index : Int,
+  entities : VisibleMeshEntities,
+) -> Unit {
+  if index >= 0 && index < self.data.length() {
+    self.data[index] = entities
+  }
+}
+
+///|
+pub fn CubemapVisibleEntities::iter(
+  self : CubemapVisibleEntities,
+) -> Array[VisibleMeshEntities] {
+  self.data
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::CascadesVisibleEntities`.
+pub struct CascadesVisibleEntities {
+  entities : @hashmap.HashMap[@core.Entity, Array[VisibleMeshEntities]]
+}
+
+///|
+pub fn CascadesVisibleEntities::CascadesVisibleEntities() -> CascadesVisibleEntities {
+  CascadesVisibleEntities::{ entities: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn CascadesVisibleEntities::get(
+  self : CascadesVisibleEntities,
+  view : @core.Entity,
+) -> Array[VisibleMeshEntities] {
+  self.entities.get(view).unwrap_or([])
+}
+
+///|
+pub fn CascadesVisibleEntities::set(
+  self : CascadesVisibleEntities,
+  view : @core.Entity,
+  entities : Array[VisibleMeshEntities],
+) -> Unit {
+  self.entities.set(view, entities)
+}
+
+///|
+pub fn CascadesVisibleEntities::clear(self : CascadesVisibleEntities) -> Unit {
+  self.entities.clear()
+}
+
+///|
+pub let ecs_key_visible_mesh_entities : @ecs.ComponentKey[VisibleMeshEntities] = @ecs.register_component(
+  debug_name="mgstudio.camera.VisibleMeshEntities",
+)
+
+///|
+pub let ecs_key_cubemap_visible_entities : @ecs.ComponentKey[
+  CubemapVisibleEntities,
+] = @ecs.register_component(debug_name="mgstudio.camera.CubemapVisibleEntities")
+
+///|
+pub let ecs_key_cascades_visible_entities : @ecs.ComponentKey[
+  CascadesVisibleEntities,
+] = @ecs.register_component(
+  debug_name="mgstudio.camera.CascadesVisibleEntities",
+)
+
+///|
+pub impl @ecs.Component for VisibleMeshEntities with fn component() {
+  ecs_key_visible_mesh_entities
+}
+
+///|
+pub impl @ecs.Component for CubemapVisibleEntities with fn component() {
+  ecs_key_cubemap_visible_entities
+}
+
+///|
+pub impl @ecs.Component for CascadesVisibleEntities with fn component() {
+  ecs_key_cascades_visible_entities
+}
+
+///|
 fn visibility_radius_vec3(
   world_from_local : @math.Affine3,
   extents : @math.Vec3,
