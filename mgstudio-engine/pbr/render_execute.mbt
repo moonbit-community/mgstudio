@@ -913,7 +913,12 @@ pub fn render3d_shadow_specialization_queue_data(
       )
   }
   match render_mesh_instances.render_mesh_queue_data(visible_entity) {
-    Some(value) => Some(value)
+    Some(value) =>
+      if value.flags().contains(RenderMeshInstanceFlags::shadow_caster()) {
+        Some(value)
+      } else {
+        None
+      }
     None => {
       render3d_enqueue_pending_shadow_material(
         world, retained_view_entity, render_entity, visible_entity,

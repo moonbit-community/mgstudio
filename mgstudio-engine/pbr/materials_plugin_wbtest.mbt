@@ -539,6 +539,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let missing_material = @render.MainEntity::new(@core.Entity::new(60, 1))
   let missing_mesh = @render.MainEntity::new(@core.Entity::new(61, 1))
   let ready = @render.MainEntity::new(@core.Entity::new(62, 1))
+  let non_shadow_caster = @render.MainEntity::new(@core.Entity::new(63, 1))
   let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
   ignore(shadow_queues.queues().prepare_for_new_frame(retained_view))
   world.insert_resource(
@@ -556,12 +557,21 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     true,
     MeshMaterial3d::new(@asset.Handle::new(620)),
   )
+  material_instances.extract_mesh_material(
+    non_shadow_caster.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(630)),
+  )
   world.insert_resource(ecs_key_render_material_instances, material_instances)
   let mesh_instances = RenderMeshInstances::new()
   let ready_flags = RenderMeshInstanceFlags::shadow_caster()
   mesh_instances.insert(
     ready,
     RenderMeshQueueData::new(620, 0U, true, flags=ready_flags),
+  )
+  mesh_instances.insert(
+    non_shadow_caster,
+    RenderMeshQueueData::new(630, 0U, true),
   )
   world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
 
@@ -574,6 +584,9 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let ready_value = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, ready,
   ).unwrap()
+  let non_shadow_caster_ready = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, non_shadow_caster,
+  )
 
   debug_inspect(missing_material_ready is None, content="true")
   debug_inspect(missing_mesh_ready is None, content="true")
@@ -581,6 +594,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     ready_value.flags().contains(RenderMeshInstanceFlags::shadow_caster()),
     content="true",
   )
+  debug_inspect(non_shadow_caster_ready is None, content="true")
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(retained_view), content="2")
