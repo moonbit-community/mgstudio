@@ -482,6 +482,7 @@ fn render3d_prewarm_material_pipeline(
   camera : Camera3dViewPayload,
   retained_view_entity : @render_view.RetainedViewEntity,
   visible_entity : @core.Entity,
+  render_mesh_queue_data : RenderMeshQueueData,
   specialization_tick : @core.Tick,
 ) -> @material.CachedRenderPipelineId? {
   match world.get_resource(ecs_key_specialized_material_pipeline_cache) {
@@ -516,15 +517,24 @@ fn render3d_prewarm_material_pipeline(
     None => ()
   }
   let layout = render_mesh.layout()
+  let view_key_bits = render3d_camera_mesh_pipeline_view_key_bits(camera)
+  let motion_vector_prepass = (
+      view_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
+    ) !=
+    0UL
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
     render_mesh,
-    view_key_bits=render3d_camera_mesh_pipeline_view_key_bits(camera),
+    view_key_bits~,
     msaa_samples=render3d_camera_msaa_samples(camera),
-    has_previous_skin=camera.motion_vector_prepass_enabled &&
-      mesh.has_previous_skin,
-    has_previous_morph=camera.motion_vector_prepass_enabled &&
-      mesh.previous_morph_weights_index >= 0,
+    has_previous_skin=motion_vector_prepass &&
+      render_mesh_queue_data
+      .flags()
+      .contains(RenderMeshInstanceFlags::has_previous_skin()),
+    has_previous_morph=motion_vector_prepass &&
+      render_mesh_queue_data
+      .flags()
+      .contains(RenderMeshInstanceFlags::has_previous_morph()),
     visibility_range_dither=mesh.visibility_range is Some(_),
     lightmapped=match mesh.lightmap {
       Some(lightmap) => lightmap.image.id() >= 0
@@ -823,12 +833,12 @@ fn render3d_enqueue_pending_mesh_material(
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
-fn render3d_material_specialization_resources_ready(
+fn render3d_material_specialization_queue_data(
   world : @ecs.World,
   retained_view_entity : @render_view.RetainedViewEntity,
   render_entity : @core.Entity,
   visible_entity : @render.MainEntity,
-) -> Bool {
+) -> RenderMeshQueueData? {
   let render_material_instances = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(value) => value
@@ -841,7 +851,7 @@ fn render3d_material_specialization_resources_ready(
     render3d_enqueue_pending_mesh_material(
       world, retained_view_entity, render_entity, visible_entity,
     )
-    return false
+    return None
   }
   let render_mesh_instances = match
     world.get_resource(RenderMeshInstances::resource()) {
@@ -851,13 +861,15 @@ fn render3d_material_specialization_resources_ready(
         "missing RenderMeshInstances resource during pbr material specialization",
       )
   }
-  if render_mesh_instances.render_mesh_queue_data(visible_entity) is None {
-    render3d_enqueue_pending_mesh_material(
-      world, retained_view_entity, render_entity, visible_entity,
-    )
-    return false
+  match render_mesh_instances.render_mesh_queue_data(visible_entity) {
+    Some(value) => Some(value)
+    None => {
+      render3d_enqueue_pending_mesh_material(
+        world, retained_view_entity, render_entity, visible_entity,
+      )
+      None
+    }
   }
-  true
 }
 
 ///|
@@ -917,10 +929,12 @@ fn render3d_prewarm_mesh_pipelines(
     )
     for candidate in candidates {
       let (_render_entity, main_entity) = candidate
-      if !render3d_material_specialization_resources_ready(
+      let mesh_queue_data = match
+        render3d_material_specialization_queue_data(
           world, retained_view_entity, _render_entity, main_entity,
         ) {
-        continue
+        Some(value) => value
+        None => continue
       }
       guard mesh_indices_by_main_entity.get(main_entity.id().to_bits())
         is Some(mesh_index) else {
@@ -938,6 +952,7 @@ fn render3d_prewarm_mesh_pipelines(
         camera.payload,
         retained_view_entity,
         main_entity.id(),
+        mesh_queue_data,
         specialization_tick,
       )
       if view_pipeline_id is Some(_) && mesh.material_pipeline_id is None {

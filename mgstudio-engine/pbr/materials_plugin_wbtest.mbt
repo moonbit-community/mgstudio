@@ -371,22 +371,35 @@ test "render3d: material specialization readiness follows Bevy resources" {
   )
   world.insert_resource(ecs_key_render_material_instances, material_instances)
   let mesh_instances = RenderMeshInstances::new()
-  mesh_instances.insert(ready, RenderMeshQueueData::new(570, 0U, true))
+  let ready_flags = RenderMeshInstanceFlags::has_previous_skin().or(
+    RenderMeshInstanceFlags::has_previous_morph(),
+  )
+  mesh_instances.insert(
+    ready,
+    RenderMeshQueueData::new(570, 0U, true, flags=ready_flags),
+  )
   world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
 
-  let missing_material_ready = render3d_material_specialization_resources_ready(
+  let missing_material_ready = render3d_material_specialization_queue_data(
     world, retained_view, render_entity, missing_material,
   )
-  let missing_mesh_ready = render3d_material_specialization_resources_ready(
+  let missing_mesh_ready = render3d_material_specialization_queue_data(
     world, retained_view, render_entity, missing_mesh,
   )
-  let ready_value = render3d_material_specialization_resources_ready(
+  let ready_value = render3d_material_specialization_queue_data(
     world, retained_view, render_entity, ready,
-  )
+  ).unwrap()
 
-  debug_inspect(missing_material_ready, content="false")
-  debug_inspect(missing_mesh_ready, content="false")
-  debug_inspect(ready_value, content="true")
+  debug_inspect(missing_material_ready is None, content="true")
+  debug_inspect(missing_mesh_ready is None, content="true")
+  debug_inspect(
+    ready_value.flags().contains(RenderMeshInstanceFlags::has_previous_skin()),
+    content="true",
+  )
+  debug_inspect(
+    ready_value.flags().contains(RenderMeshInstanceFlags::has_previous_morph()),
+    content="true",
+  )
   match world.get_resource(PendingMeshMaterialQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.current_len(retained_view), content="2")
