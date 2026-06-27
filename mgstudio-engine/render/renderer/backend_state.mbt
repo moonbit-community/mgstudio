@@ -403,7 +403,6 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_instance_mesh_morph_revision : Int
   mut mesh3d_motion_vector_instance_mesh_morph_target_texture_id : Int
   mut mesh3d_motion_vector_instance_mesh_layout_mask : Int
-  mut motion_blur_sampler : @wgpu.Sampler?
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
   mut effect_stack_bgl : @wgpu.BindGroupLayout?

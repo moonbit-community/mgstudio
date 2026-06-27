@@ -19,6 +19,9 @@ pub type HostGpuDevice = Int
 pub type HostGpuQueue = Int
 
 ///|
+pub type RenderDevice = @renderer.RenderDevice
+
+///|
 pub type HostMaterial2dBindingValue = @renderer.HostMaterial2dBindingValue
 
 ///|
@@ -1861,8 +1864,14 @@ pub fn host_gpu_draw_motion_blur(
   scene_texture_id~ : Int,
   velocity_texture_id~ : Int,
   pipeline~ : @render_resource.RenderPipeline,
+  sampler~ : @render_resource.Sampler,
 ) -> Unit {
-  @renderer.draw_motion_blur(scene_texture_id~, velocity_texture_id~, pipeline~)
+  @renderer.draw_motion_blur(
+    scene_texture_id~,
+    velocity_texture_id~,
+    pipeline~,
+    sampler~,
+  )
 }
 
 ///|

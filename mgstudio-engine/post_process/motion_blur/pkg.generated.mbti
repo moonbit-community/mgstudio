@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/renderer",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -71,16 +72,17 @@ pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 pub impl @ecs.Component for MotionBlur
 
 pub struct MotionBlurPipeline {
+  sampler : @render_resource.Sampler
   layout : @render_resource.BindGroupLayoutDescriptor
   layout_msaa : @render_resource.BindGroupLayoutDescriptor
   fullscreen_shader_path : String
   fullscreen_shader_entry_point : String
   fragment_shader_path : String
 }
-pub fn MotionBlurPipeline::MotionBlurPipeline() -> Self
 pub fn MotionBlurPipeline::layout(Self) -> @render_resource.BindGroupLayoutDescriptor
 pub fn MotionBlurPipeline::layout_msaa(Self) -> @render_resource.BindGroupLayoutDescriptor
-pub fn MotionBlurPipeline::new(@fullscreen_vertex_shader.FullscreenShader) -> Self
+pub fn MotionBlurPipeline::new(@renderer.RenderDevice, @fullscreen_vertex_shader.FullscreenShader) -> Self
+pub fn MotionBlurPipeline::sampler(Self) -> @render_resource.Sampler
 pub fn MotionBlurPipeline::specialize(Self, MotionBlurPipelineKey) -> @render_resource.RenderPipelineDescriptor
 pub impl @app.Resource for MotionBlurPipeline
 

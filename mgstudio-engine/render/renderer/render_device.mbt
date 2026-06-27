@@ -70,6 +70,15 @@ pub fn RenderDevice::create_shader_module_wgsl(
 }
 
 ///|
+pub fn RenderDevice::create_sampler_linear_clamp(
+  self : RenderDevice,
+) -> @render_resource.Sampler {
+  @render_resource.Sampler::from_wgpu(
+    self.wgpu_device().create_sampler_linear_clamp(),
+  )
+}
+
+///|
 pub fn RenderDevice::poll(self : RenderDevice, wait? : Bool = false) -> Bool {
   self.wgpu_device().poll(wait~)
 }

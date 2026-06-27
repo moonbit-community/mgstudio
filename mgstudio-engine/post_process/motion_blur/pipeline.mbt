@@ -92,6 +92,7 @@ pub impl @ecs.Component for MotionBlurPipelineId with fn component() {
 
 ///|
 pub struct MotionBlurPipeline {
+  sampler : @render_resource.Sampler
   layout : @render_resource.BindGroupLayoutDescriptor
   layout_msaa : @render_resource.BindGroupLayoutDescriptor
   fullscreen_shader_path : String
@@ -100,22 +101,25 @@ pub struct MotionBlurPipeline {
 }
 
 ///|
-pub fn MotionBlurPipeline::MotionBlurPipeline() -> MotionBlurPipeline {
-  let fullscreen_shader = @fullscreen_vertex_shader.FullscreenShader::FullscreenShader()
-  MotionBlurPipeline::new(fullscreen_shader)
-}
-
-///|
 pub fn MotionBlurPipeline::new(
+  render_device : @render.RenderDevice,
   fullscreen_shader : @fullscreen_vertex_shader.FullscreenShader,
 ) -> MotionBlurPipeline {
   MotionBlurPipeline::{
+    sampler: render_device.create_sampler_linear_clamp(),
     layout: motion_blur_bind_group_layout_descriptor(multisampled=false),
     layout_msaa: motion_blur_bind_group_layout_descriptor(multisampled=true),
     fullscreen_shader_path: fullscreen_shader.path(),
     fullscreen_shader_entry_point: fullscreen_shader.entry_point(),
     fragment_shader_path: MOTION_BLUR_SHADER_PATH,
   }
+}
+
+///|
+pub fn MotionBlurPipeline::sampler(
+  self : MotionBlurPipeline,
+) -> @render_resource.Sampler {
+  self.sampler
 }
 
 ///|
@@ -137,11 +141,26 @@ pub fn MotionBlurPipeline::specialize(
   self : MotionBlurPipeline,
   key : MotionBlurPipelineKey,
 ) -> @render_resource.RenderPipelineDescriptor {
-  let layout = if key.is_multisampled() {
-    [self.layout_msaa]
-  } else {
-    [self.layout]
-  }
+  motion_blur_pipeline_specialize_descriptor(
+    self.layout,
+    self.layout_msaa,
+    self.fullscreen_shader_path,
+    self.fullscreen_shader_entry_point,
+    self.fragment_shader_path,
+    key,
+  )
+}
+
+///|
+fn motion_blur_pipeline_specialize_descriptor(
+  layout : @render_resource.BindGroupLayoutDescriptor,
+  layout_msaa : @render_resource.BindGroupLayoutDescriptor,
+  fullscreen_shader_path : String,
+  fullscreen_shader_entry_point : String,
+  fragment_shader_path : String,
+  key : MotionBlurPipelineKey,
+) -> @render_resource.RenderPipelineDescriptor {
+  let layout = if key.is_multisampled() { [layout_msaa] } else { [layout] }
   let shader_defs = if key.is_multisampled() {
     [@render_resource.ShaderDefVal::Flag("MULTISAMPLED")]
   } else {
@@ -152,16 +171,16 @@ pub fn MotionBlurPipeline::specialize(
   .with_layout(layout)
   .with_vertex(
     @render_resource.VertexState::new(
-      Some(self.fullscreen_shader_path),
+      Some(fullscreen_shader_path),
       [],
-      Some(self.fullscreen_shader_entry_point),
+      Some(fullscreen_shader_entry_point),
       [],
     ),
   )
   .with_fragment(
     Some(
       @render_resource.FragmentState::new(
-        Some(self.fragment_shader_path),
+        Some(fragment_shader_path),
         shader_defs,
         Some("fragment"),
         [
@@ -240,6 +259,10 @@ pub impl @app.Resource for SpecializedMotionBlurPipelines with fn resource() {
 
 ///|
 pub fn init_motion_blur_pipeline(render_world : @ecs.World) -> Unit {
+  guard render_world.get_resource(@render.render_device_resource_key)
+    is Some(render_device) else {
+    return
+  }
   let fullscreen_shader = match
     render_world.get_resource(
       @fullscreen_vertex_shader.FullscreenShader::resource(),
@@ -249,7 +272,7 @@ pub fn init_motion_blur_pipeline(render_world : @ecs.World) -> Unit {
   }
   render_world.insert_resource(
     MotionBlurPipeline::resource(),
-    MotionBlurPipeline::new(fullscreen_shader),
+    MotionBlurPipeline::new(render_device, fullscreen_shader),
   )
   if !render_world
     .resource(SpecializedMotionBlurPipelines::resource())
@@ -280,12 +303,12 @@ fn motion_blur_pipeline_state_mut_or_init(
 ///|
 fn motion_blur_pipeline_resource_or_init(
   world : @ecs.World,
-) -> MotionBlurPipeline {
+) -> MotionBlurPipeline? {
   match world.get_resource(MotionBlurPipeline::resource()) {
-    Some(value) => value
+    Some(value) => Some(value)
     None => {
       init_motion_blur_pipeline(world)
-      world.get_resource(MotionBlurPipeline::resource()).unwrap()
+      world.get_resource(MotionBlurPipeline::resource())
     }
   }
 }
@@ -339,7 +362,9 @@ pub fn prepare_motion_blur_pipelines(render_world : @ecs.World) -> Unit {
     is Some(pipeline_cache) else {
     return
   }
-  let pipeline = motion_blur_pipeline_resource_or_init(render_world)
+  guard motion_blur_pipeline_resource_or_init(render_world) is Some(pipeline) else {
+    return
+  }
   let query : @ecs.Query[(@core.Entity, @ecs.Read[MotionBlurUniform]), @ecs.All] = @ecs.query(
     render_world,
   )
@@ -474,4 +499,100 @@ pub fn motion_blur_samples(settings : MotionBlur) -> Array[MotionBlurSample] {
     })
   }
   samples
+}
+
+///|
+test "motion blur: pipeline specialization mirrors Bevy MSAA shader def split" {
+  let descriptor = motion_blur_pipeline_specialize_descriptor(
+    motion_blur_bind_group_layout_descriptor(multisampled=false),
+    motion_blur_bind_group_layout_descriptor(multisampled=true),
+    @fullscreen_vertex_shader.FULLSCREEN_SHADER_PATH,
+    @fullscreen_vertex_shader.FULLSCREEN_SHADER_ENTRY_POINT,
+    MOTION_BLUR_SHADER_PATH,
+    MotionBlurPipelineKey::new(
+      target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+      samples=1,
+    ),
+  )
+  debug_inspect(descriptor.label(), content="Some(\"motion_blur_pipeline\")")
+  debug_inspect(descriptor.layout().length(), content="1")
+  debug_inspect(
+    descriptor.layout()[0].label(),
+    content="\"motion_blur_layout\"",
+  )
+  debug_inspect(
+    descriptor.vertex().shader(),
+    content="Some(\"core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl\")",
+  )
+  debug_inspect(
+    descriptor.vertex().entry_point(),
+    content="Some(\"fullscreen_vertex_shader\")",
+  )
+  debug_inspect(descriptor.vertex().buffers().length(), content="0")
+  let fragment = descriptor.fragment_or_error()
+  debug_inspect(
+    fragment.shader(),
+    content="Some(\"post_process/motion_blur/motion_blur.wgsl\")",
+  )
+  debug_inspect(fragment.shader_defs().length(), content="0")
+  debug_inspect(fragment.entry_point(), content="Some(\"fragment\")")
+  debug_inspect(fragment.targets().length(), content="1")
+  guard fragment.targets()[0] is Some(target) else {
+    abort("expected color target")
+  }
+  debug_inspect(
+    target.format(),
+    content=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.to_string(),
+  )
+  debug_inspect(
+    target.write_mask(),
+    content=@wgpu.COLOR_WRITE_MASK_ALL.to_string(),
+  )
+  let msaa_descriptor = motion_blur_pipeline_specialize_descriptor(
+    motion_blur_bind_group_layout_descriptor(multisampled=false),
+    motion_blur_bind_group_layout_descriptor(multisampled=true),
+    @fullscreen_vertex_shader.FULLSCREEN_SHADER_PATH,
+    @fullscreen_vertex_shader.FULLSCREEN_SHADER_ENTRY_POINT,
+    MOTION_BLUR_SHADER_PATH,
+    MotionBlurPipelineKey::new(
+      target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+      samples=4,
+    ),
+  )
+  debug_inspect(
+    msaa_descriptor.layout()[0].label(),
+    content="\"motion_blur_layout_msaa\"",
+  )
+  let msaa_fragment = msaa_descriptor.fragment_or_error()
+  debug_inspect(msaa_fragment.shader_defs().length(), content="1")
+  guard msaa_fragment.shader_defs()[0]
+    is @render_resource.ShaderDefVal::Flag(name) else {
+    abort("expected MULTISAMPLED shader def")
+  }
+  debug_inspect(name, content="\"MULTISAMPLED\"")
+}
+
+///|
+test "motion blur: pipeline key tracks Bevy target format and MSAA samples" {
+  let first = MotionBlurPipelineKey::new(
+    target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    samples=1,
+  )
+  let second = MotionBlurPipelineKey::new(
+    target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    samples=1,
+  )
+  let msaa = MotionBlurPipelineKey::new(
+    target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    samples=4,
+  )
+  inspect(first == second, content="true")
+  inspect(first == msaa, content="false")
+  inspect(first.is_multisampled(), content="false")
+  inspect(msaa.is_multisampled(), content="true")
+  inspect(
+    first.target_format_raw(),
+    content=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.to_string(),
+  )
+  inspect(msaa.samples(), content="4")
 }

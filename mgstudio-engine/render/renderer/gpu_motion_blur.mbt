@@ -60,15 +60,6 @@ fn ensure_motion_blur_uniform_buffers(backend : GpuBackend) -> Unit {
 }
 
 ///|
-fn ensure_motion_blur_sampler(backend : GpuBackend) -> Unit {
-  if backend.motion_blur_sampler is None {
-    backend.motion_blur_sampler = Some(
-      backend.device.create_sampler_linear_clamp(),
-    )
-  }
-}
-
-///|
 pub fn GpuBackend::prepare_motion_blur(
   self : GpuBackend,
   velocity_texture_id : Int,
@@ -96,7 +87,6 @@ pub fn GpuBackend::prepare_motion_blur(
     return
   }
   ensure_motion_blur_uniform_buffers(self)
-  ensure_motion_blur_sampler(self)
   guard self.motion_blur_settings_buf is Some(settings_buf) else {
     motion_blur_debug_log("prepare skip: no settings buffer")
     return
@@ -131,6 +121,7 @@ pub fn GpuBackend::draw_motion_blur(
   scene_texture_id : Int,
   velocity_texture_id : Int,
   pipeline : @render_resource.RenderPipeline,
+  sampler : @render_resource.Sampler,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     motion_blur_debug_log("skip: no frame")
@@ -151,10 +142,6 @@ pub fn GpuBackend::draw_motion_blur(
   }
   guard self.motion_blur_globals_buf is Some(globals_buf) else {
     motion_blur_debug_log("skip: no globals buffer")
-    return
-  }
-  guard self.motion_blur_sampler is Some(sampler) else {
-    motion_blur_debug_log("skip: no sampler")
     return
   }
   if scene_texture_id < 0 || velocity_texture_id < 0 {
@@ -185,7 +172,7 @@ pub fn GpuBackend::draw_motion_blur(
   let ok = builder.add_texture_view(0U, scene_texture.view) &&
     builder.add_texture_view(1U, velocity_texture.view) &&
     builder.add_texture_view(2U, depth_view) &&
-    builder.add_sampler(3U, sampler) &&
+    builder.add_sampler(3U, sampler.into_inner()) &&
     builder.add_buffer(4U, settings_buf) &&
     builder.add_buffer(5U, globals_buf)
   if !ok {
@@ -222,9 +209,12 @@ pub fn draw_motion_blur(
   scene_texture_id~ : Int,
   velocity_texture_id~ : Int,
   pipeline~ : @render_resource.RenderPipeline,
+  sampler~ : @render_resource.Sampler,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.draw_motion_blur(scene_texture_id, velocity_texture_id, pipeline) catch {
+    backend.draw_motion_blur(
+      scene_texture_id, velocity_texture_id, pipeline, sampler,
+    ) catch {
       err => debug_runtime_error("draw_motion_blur", err)
     }
   }
