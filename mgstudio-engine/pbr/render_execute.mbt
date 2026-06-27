@@ -2571,6 +2571,74 @@ pub fn Render3dShadowViewPhaseData::render_items(
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`
+// batchable-mesh branch for `Shadow`.
+pub fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers(
+  self : Render3dShadowViewPhaseData,
+  retained_view_key : String,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Unit {
+  let work_item_buffer = @render_batching.get_or_create_work_item_buffer(
+    phase_batched_instance_buffers.buffers.work_item_buffers,
+    retained_view_key,
+    no_indirect_drawing,
+    enable_gpu_occlusion_culling,
+  )
+  @render_batching.init_work_item_buffers(
+    work_item_buffer,
+    phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
+    phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
+  )
+  for item_index in 0..<self.items.length() {
+    let item = self.items[item_index]
+    let indexed = item.batch_set_key().indexed()
+    let output_start = phase_batched_instance_buffers.buffers.data_buffer.len()
+    let indirect_parameters_index = if no_indirect_drawing {
+      None
+    } else {
+      Some(phase_indirect_parameters_buffers.buffers.allocate(indexed, 1))
+    }
+    let mut output_end = output_start
+    for input_index in item.batch_range().start()..<item.batch_range().end() {
+      phase_batched_instance_buffers.buffers.data_buffer.push(())
+      let output_or_indirect_parameters_index = match
+        indirect_parameters_index {
+        Some(index) => index
+        None => output_end
+      }
+      work_item_buffer.push(
+        indexed,
+        @render_batching.PreprocessWorkItem::new(
+          input_index, output_or_indirect_parameters_index,
+        ),
+      )
+      output_end += 1
+    }
+    let extra_index = match indirect_parameters_index {
+      Some(index) => {
+        phase_indirect_parameters_buffers.buffers.add_batch_set(indexed, index)
+        Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(
+          index,
+          index + 1,
+        )
+      }
+      None => Render3dShadowPhaseItemExtraIndex::none()
+    }
+    self.items[item_index] = Render3dShadowPhaseItemData::{
+      ..item,
+      batch_range: Render3dShadowBatchRange::new(output_start, output_end),
+      extra_index,
+    }
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase::prepare_for_new_frame`.
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(
   self : Render3dShadowViewPhaseData,

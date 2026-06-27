@@ -240,6 +240,88 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
 }
 
 ///|
+test "render3d: batchable shadow phase prepares Bevy work item buffers" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(905UL),
+    @material.DrawFunctionId::new(13U),
+    Some(10),
+    @render_mesh.MeshSlabs::new(41, index_slab_id=Some(42)),
+  )
+  let bin = Render3dShadowBinKeyData::new(808)
+  let first_main = @render.MainEntity::new(@core.Entity::new(121, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(122, 1))
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(131, 1), first_main),
+    70U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(132, 1), second_main),
+    71U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  let direct_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let direct_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.prepare_batchable_phase_buffers(
+    "shadow-view", true, false, direct_instances, direct_indirect,
+  )
+  debug_inspect(direct_instances.buffers.data_buffer.len(), content="2")
+  let direct_work_items = direct_instances.buffers.work_item_buffers
+    .get("shadow-view")
+    .unwrap()
+  debug_inspect(direct_work_items.direct_len(), content="2")
+  inspect(phase.items()[0].batch_range().start(), content="0")
+  inspect(phase.items()[0].batch_range().end(), content="2")
+  debug_inspect(phase.items()[0].extra_index(), content="NoExtraIndex")
+
+  let indirect_phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  indirect_phase.add(
+    key,
+    bin,
+    (@core.Entity::new(133, 1), first_main),
+    80U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  indirect_phase.add(
+    key,
+    bin,
+    (@core.Entity::new(134, 1), second_main),
+    81U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  let indirect_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  indirect_phase.prepare_batchable_phase_buffers(
+    "shadow-view", false, false, indirect_instances, indirect_parameters,
+  )
+  let indirect_work_items = indirect_instances.buffers.work_item_buffers
+    .get("shadow-view")
+    .unwrap()
+  debug_inspect(indirect_work_items.indexed_len(), content="2")
+  debug_inspect(indirect_parameters.buffers.batch_count(true), content="1")
+  debug_inspect(indirect_parameters.buffers.batch_set_count(true), content="1")
+  inspect(indirect_phase.items()[0].batch_range().start(), content="0")
+  inspect(indirect_phase.items()[0].batch_range().end(), content="2")
+  debug_inspect(
+    indirect_phase.items()[0].extra_index(),
+    content="IndirectParametersIndex(0, 1, None)",
+  )
+}
+
+///|
 test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense states" {
   let sparse = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
   sparse.add(
