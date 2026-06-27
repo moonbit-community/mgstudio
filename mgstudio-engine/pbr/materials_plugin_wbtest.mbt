@@ -446,7 +446,13 @@ test "render3d: material specialization candidates come from visible dirty and p
 test "render3d: shadow specialization candidates come from visible dirty and pending meshes" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(451, 1)
-  let render_view = world.spawn()
+  let shadow_light = world.spawn()
+  let shadow_visible_view = @render_view.RetainedViewEntity::new(main_view)
+  let retained_view = @render_view.RetainedViewEntity::new(
+    main_view,
+    auxiliary_entity=Some(@core.Entity::new(460, 1)),
+    subview_index=7,
+  )
   let unchanged_main = @core.Entity::new(452, 1)
   let unchanged_render = @core.Entity::new(453, 1)
   let changed_main = @core.Entity::new(454, 1)
@@ -455,7 +461,10 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
   let pending_render = @core.Entity::new(457, 1)
   let added_main = @core.Entity::new(458, 1)
   let added_render = @core.Entity::new(459, 1)
-  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let shadow_map_visible_entities = @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+  let visible_entities = shadow_map_visible_entities.subview_or_insert(
+    shadow_visible_view,
+  )
   let visible_class = visible_entities.class_or_insert(
     render3d_mesh_visibility_class(),
   )
@@ -474,12 +483,12 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
   ])
   visible_class.sort_added_entities()
   try! world.set_by_key(
-    render_view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+    shadow_light, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    shadow_map_visible_entities,
   )
   let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
   dirty_specializations.insert_changed(@render.MainEntity::new(changed_main))
   let pending_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
-  let retained_view = @render_view.RetainedViewEntity::new(main_view)
   pending_queues
   .queues()
   .push_current(
@@ -490,7 +499,8 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
   ignore(pending_queues.queues().prepare_for_new_frame(retained_view))
 
   let candidates = render3d_shadow_specialization_candidates(
-    world, render_view, retained_view, dirty_specializations, pending_queues,
+    world, shadow_light, shadow_visible_view, retained_view, dirty_specializations,
+    pending_queues,
   )
 
   debug_inspect(candidates.length(), content="3")

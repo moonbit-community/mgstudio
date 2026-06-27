@@ -136,6 +136,14 @@ pub fn RenderShadowMapVisibleEntities::subview_or_insert(
 }
 
 ///|
+pub fn RenderShadowMapVisibleEntities::subview(
+  self : RenderShadowMapVisibleEntities,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> RenderVisibleEntities? {
+  self.subviews.get(retained_view_entity)
+}
+
+///|
 pub fn RenderShadowMapVisibleEntities::for_each_subview(
   self : RenderShadowMapVisibleEntities,
   f : (@render_view.RetainedViewEntity, RenderVisibleEntities) -> Unit,

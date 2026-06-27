@@ -99,6 +99,7 @@ pub struct RenderShadowMapVisibleEntities {
 pub fn RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities() -> Self
 pub fn RenderShadowMapVisibleEntities::for_each_subview(Self, (@view.RetainedViewEntity, RenderVisibleEntities) -> Unit) -> Unit
 pub fn RenderShadowMapVisibleEntities::len(Self) -> Int
+pub fn RenderShadowMapVisibleEntities::subview(Self, @view.RetainedViewEntity) -> RenderVisibleEntities?
 pub fn RenderShadowMapVisibleEntities::subview_or_insert(Self, @view.RetainedViewEntity) -> RenderVisibleEntities
 pub impl @ecs.Component for RenderShadowMapVisibleEntities
 

@@ -805,14 +805,19 @@ fn render3d_material_specialization_candidates(
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
 pub fn render3d_shadow_specialization_candidates(
   world : @ecs.World,
-  render_view_entity : @core.Entity,
+  shadow_light_entity : @core.Entity,
+  shadow_visible_retained_view_entity : @render_view.RetainedViewEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
   dirty_specializations : @render_visibility.DirtySpecializations,
   pending_shadow_queues : @pbr_render.PendingShadowQueues,
 ) -> Array[(@core.Entity, @render.MainEntity)] {
   guard (try! world.get_by_key(
-      render_view_entity, @render_visibility.ecs_key_render_visible_entities,
+      shadow_light_entity, @render_visibility.ecs_key_render_shadow_map_visible_entities,
     ))
+    is Some(shadow_map_visible_entities) else {
+    return []
+  }
+  guard shadow_map_visible_entities.subview(shadow_visible_retained_view_entity)
     is Some(visible_entities) else {
     return []
   }
