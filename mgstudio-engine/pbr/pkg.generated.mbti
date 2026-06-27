@@ -726,6 +726,10 @@ pub fn render3d_apply_queued_shadow_phase_data(@ecs.World, @view.RetainedViewEnt
 
 pub fn render3d_apply_view_contact_shadows_uniform_offsets(@ecs.World, Array[(@core.Entity, ViewContactShadowsUniformOffset)]) -> Unit
 
+pub fn render3d_build_gpu_preprocess_indirect_metadata_from_phase(@batching.UntypedPhaseIndirectParametersBuffers) -> @Milky2018/mgstudio/pbr/render.GpuPreprocessIndirectMetadata3d
+
+pub fn render3d_build_gpu_preprocess_work_item_buffers_from_phase(@batching.PreprocessWorkItemBuffers) -> @Milky2018/mgstudio/pbr/render.GpuPreprocessWorkItemBuffers3d
+
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?

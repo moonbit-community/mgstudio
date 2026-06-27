@@ -180,6 +180,81 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
 }
 
 ///|
+test "render3d: shared phase work-item buffers convert to gpu preprocess payload" {
+  let direct = @render_batching.preprocess_work_item_buffers_direct()
+  direct.push(false, @render_batching.PreprocessWorkItem::new(4, 8))
+  match render3d_build_gpu_preprocess_work_item_buffers_from_phase(direct) {
+    Direct(items) => {
+      debug_inspect(items.length(), content="1")
+      debug_inspect(items[0].input_index, content="4")
+      debug_inspect(items[0].output_or_indirect_parameters_index, content="8")
+    }
+    Indirect(_, _, _) => abort("expected direct work-item payload")
+  }
+
+  let indirect = @render_batching.preprocess_work_item_buffers_indirect(true)
+  indirect.push(true, @render_batching.PreprocessWorkItem::new(5, 9))
+  indirect.push(false, @render_batching.PreprocessWorkItem::new(6, 10))
+  indirect.push_multiple_late_uninit(true, 1)
+  match render3d_build_gpu_preprocess_work_item_buffers_from_phase(indirect) {
+    Direct(_) => abort("expected indirect work-item payload")
+    Indirect(indexed, non_indexed, culling) => {
+      debug_inspect(indexed.length(), content="1")
+      debug_inspect(non_indexed.length(), content="1")
+      debug_inspect(culling is Some(_), content="true")
+      debug_inspect(indexed[0].input_index, content="5")
+      debug_inspect(
+        non_indexed[0].output_or_indirect_parameters_index,
+        content="10",
+      )
+    }
+  }
+}
+
+///|
+test "render3d: shared indirect parameter buffers convert to gpu preprocess metadata" {
+  let buffers = @render_batching.UntypedPhaseIndirectParametersBuffers::new(
+    false,
+  )
+  ignore(buffers.allocate(true, 2))
+  buffers.set_cpu_metadata(
+    true,
+    0,
+    @render_batching.IndirectParametersCpuMetadata::new(12, 3),
+  )
+  buffers.set_cpu_metadata(
+    true,
+    1,
+    @render_batching.IndirectParametersCpuMetadata::new(14, 3),
+  )
+  buffers.add_batch_set(true, 2)
+  let metadata = render3d_build_gpu_preprocess_indirect_metadata_from_phase(
+    buffers,
+  )
+  debug_inspect(
+    metadata.indexed.indirect_parameters_cpu_metadata.length(),
+    content="2",
+  )
+  debug_inspect(
+    metadata.indexed.indirect_parameters_gpu_metadata.length(),
+    content="2",
+  )
+  debug_inspect(metadata.indexed.indirect_batch_sets.length(), content="1")
+  debug_inspect(
+    metadata.indexed.indirect_parameters_cpu_metadata[0].base_output_index,
+    content="12",
+  )
+  debug_inspect(
+    metadata.indexed.indirect_parameters_cpu_metadata[1].batch_set_index,
+    content="3",
+  )
+  debug_inspect(
+    metadata.indexed.indirect_batch_sets[0].indirect_parameters_base,
+    content="2",
+  )
+}
+
+///|
 test "render3d: camera indirect path requires feature support and no marker" {
   debug_inspect(
     @pbr_render.render3d_camera_indirect_enabled(true, true, false) &&

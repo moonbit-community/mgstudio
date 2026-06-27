@@ -167,6 +167,18 @@ pub fn MeshClassIndirectParametersBuffers::batch_set_count(
 }
 
 ///|
+pub fn MeshClassIndirectParametersBuffers::batch_set_at(
+  self : MeshClassIndirectParametersBuffers,
+  index : Int,
+) -> IndirectBatchSet? {
+  if index < 0 || index >= self.batch_sets.length() {
+    None
+  } else {
+    Some(self.batch_sets[index])
+  }
+}
+
+///|
 pub fn MeshClassIndirectParametersBuffers::cpu_metadata_at(
   self : MeshClassIndirectParametersBuffers,
   index : Int,
@@ -292,6 +304,19 @@ pub fn UntypedPhaseIndirectParametersBuffers::batch_set_count(
     self.indexed.batch_set_count()
   } else {
     self.non_indexed.batch_set_count()
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::batch_set_at(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+  index : Int,
+) -> IndirectBatchSet? {
+  if indexed {
+    self.indexed.batch_set_at(index)
+  } else {
+    self.non_indexed.batch_set_at(index)
   }
 }
 
@@ -794,6 +819,18 @@ pub fn PreprocessWorkItem::is_uninit(self : PreprocessWorkItem) -> Bool {
 }
 
 ///|
+pub fn PreprocessWorkItem::input_index(self : PreprocessWorkItem) -> Int {
+  self.input_index
+}
+
+///|
+pub fn PreprocessWorkItem::output_or_indirect_parameters_index(
+  self : PreprocessWorkItem,
+) -> Int {
+  self.output_or_indirect_parameters_index
+}
+
+///|
 pub struct LatePreprocessWorkItemIndirectParameters {
   dispatch_x : Int
   dispatch_y : Int
@@ -1024,12 +1061,42 @@ pub fn PreprocessWorkItemBuffers::direct_len(
 }
 
 ///|
+pub fn PreprocessWorkItemBuffers::is_direct(
+  self : PreprocessWorkItemBuffers,
+) -> Bool {
+  match self {
+    Direct(_) => true
+    Indirect(_, _, _) => false
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::direct_items(
+  self : PreprocessWorkItemBuffers,
+) -> Array[PreprocessWorkItem] {
+  match self {
+    Direct(buffer) => buffer.copy()
+    Indirect(_, _, _) => []
+  }
+}
+
+///|
 pub fn PreprocessWorkItemBuffers::indexed_len(
   self : PreprocessWorkItemBuffers,
 ) -> Int {
   match self {
     Direct(_) => 0
     Indirect(indexed_buffer, _, _) => indexed_buffer.length()
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::indexed_items(
+  self : PreprocessWorkItemBuffers,
+) -> Array[PreprocessWorkItem] {
+  match self {
+    Direct(_) => []
+    Indirect(indexed_buffer, _, _) => indexed_buffer.copy()
   }
 }
 
@@ -1044,6 +1111,16 @@ pub fn PreprocessWorkItemBuffers::non_indexed_len(
 }
 
 ///|
+pub fn PreprocessWorkItemBuffers::non_indexed_items(
+  self : PreprocessWorkItemBuffers,
+) -> Array[PreprocessWorkItem] {
+  match self {
+    Direct(_) => []
+    Indirect(_, non_indexed_buffer, _) => non_indexed_buffer.copy()
+  }
+}
+
+///|
 pub fn PreprocessWorkItemBuffers::late_indexed_len(
   self : PreprocessWorkItemBuffers,
 ) -> Int {
@@ -1054,12 +1131,32 @@ pub fn PreprocessWorkItemBuffers::late_indexed_len(
 }
 
 ///|
+pub fn PreprocessWorkItemBuffers::late_indexed_items(
+  self : PreprocessWorkItemBuffers,
+) -> Array[PreprocessWorkItem] {
+  match self {
+    Indirect(_, _, Some(buffers)) => buffers.late_indexed.copy()
+    _ => []
+  }
+}
+
+///|
 pub fn PreprocessWorkItemBuffers::late_non_indexed_len(
   self : PreprocessWorkItemBuffers,
 ) -> Int {
   match self {
     Indirect(_, _, Some(buffers)) => buffers.late_non_indexed.length()
     _ => 0
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::late_non_indexed_items(
+  self : PreprocessWorkItemBuffers,
+) -> Array[PreprocessWorkItem] {
+  match self {
+    Indirect(_, _, Some(buffers)) => buffers.late_non_indexed.copy()
+    _ => []
   }
 }
 

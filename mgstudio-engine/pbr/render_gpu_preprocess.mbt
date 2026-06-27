@@ -481,6 +481,54 @@ fn render3d_empty_gpu_preprocess_indirect_mesh_class_metadata() -> GpuPreprocess
 }
 
 ///|
+fn render3d_gpu_preprocess_shader_work_item_from_batching(
+  item : @render_batching.PreprocessWorkItem,
+) -> GpuPreprocessShaderWorkItem3d {
+  GpuPreprocessShaderWorkItem3d::{
+    input_index: item.input_index(),
+    output_or_indirect_parameters_index: item.output_or_indirect_parameters_index(),
+  }
+}
+
+///|
+pub fn render3d_build_gpu_preprocess_work_item_buffers_from_phase(
+  work_item_buffers : @render_batching.PreprocessWorkItemBuffers,
+) -> GpuPreprocessWorkItemBuffers3d {
+  if work_item_buffers.is_direct() {
+    let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+    for item in work_item_buffers.direct_items() {
+      direct_work_items.push(
+        render3d_gpu_preprocess_shader_work_item_from_batching(item),
+      )
+    }
+    return GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+  }
+  let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  for item in work_item_buffers.indexed_items() {
+    indexed_work_items.push(
+      render3d_gpu_preprocess_shader_work_item_from_batching(item),
+    )
+  }
+  let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  for item in work_item_buffers.non_indexed_items() {
+    non_indexed_work_items.push(
+      render3d_gpu_preprocess_shader_work_item_from_batching(item),
+    )
+  }
+  let late_indexed_items = work_item_buffers.late_indexed_items()
+  let late_non_indexed_items = work_item_buffers.late_non_indexed_items()
+  GpuPreprocessWorkItemBuffers3d::Indirect(
+    indexed_work_items,
+    non_indexed_work_items,
+    render3d_build_gpu_occlusion_culling_work_item_buffers(
+      indexed_work_items,
+      non_indexed_work_items,
+      late_indexed_items.length() > 0 || late_non_indexed_items.length() > 0,
+    ),
+  )
+}
+
+///|
 fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
   items : Array[GpuPreprocessShaderWorkItem3d],
 ) -> GpuPreprocessIndirectMeshClassMetadata3d {
@@ -519,6 +567,66 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
     indirect_parameters_cpu_metadata,
     indirect_parameters_gpu_metadata,
     indirect_batch_sets,
+  }
+}
+
+///|
+fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
+  phase_indirect_parameters_buffers : @render_batching.UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+) -> GpuPreprocessIndirectMeshClassMetadata3d {
+  let indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ] = []
+  for index in 0..<phase_indirect_parameters_buffers.cpu_metadata_len(indexed) {
+    match phase_indirect_parameters_buffers.cpu_metadata_at(indexed, index) {
+      Some(metadata) =>
+        indirect_parameters_cpu_metadata.push(GpuPreprocessIndirectParametersCpuMetadata3d::{
+          base_output_index: metadata.base_output_index(),
+          batch_set_index: metadata.batch_set_index(),
+        })
+      None => ()
+    }
+  }
+  let indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ] = []
+  for _ in 0..<phase_indirect_parameters_buffers.gpu_metadata_len(indexed) {
+    indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
+      mesh_index: 0,
+      early_instance_count: 0,
+      late_instance_count: 0,
+    })
+  }
+  let indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d] = []
+  for index in 0..<phase_indirect_parameters_buffers.batch_set_count(indexed) {
+    match phase_indirect_parameters_buffers.batch_set_at(indexed, index) {
+      Some(batch_set) =>
+        indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
+          indirect_parameters_count: batch_set.indirect_parameters_count(),
+          indirect_parameters_base: batch_set.indirect_parameters_base(),
+        })
+      None => ()
+    }
+  }
+  GpuPreprocessIndirectMeshClassMetadata3d::{
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  }
+}
+
+///|
+pub fn render3d_build_gpu_preprocess_indirect_metadata_from_phase(
+  phase_indirect_parameters_buffers : @render_batching.UntypedPhaseIndirectParametersBuffers,
+) -> GpuPreprocessIndirectMetadata3d {
+  GpuPreprocessIndirectMetadata3d::{
+    indexed: render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
+      phase_indirect_parameters_buffers, true,
+    ),
+    non_indexed: render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
+      phase_indirect_parameters_buffers, false,
+    ),
   }
 }
 
