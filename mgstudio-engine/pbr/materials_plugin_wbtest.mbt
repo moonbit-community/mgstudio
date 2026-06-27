@@ -530,6 +530,67 @@ test "render3d: material specialization readiness follows Bevy resources" {
 }
 
 ///|
+test "render3d: missing prepared render mesh does not return to pending queue" {
+  let world = @ecs.World::new()
+  let main_view = @core.Entity::new(61, 1)
+  let render_view = world.spawn()
+  let render_entity = @core.Entity::new(62, 1)
+  let visible_entity = @render.MainEntity::new(@core.Entity::new(63, 1))
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let visible_class = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([(render_entity, visible_entity)])
+  visible_class.sort_added_entities()
+  try! world.set_by_key(
+    render_view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+  )
+  let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
+  dirty_specializations.insert_changed(visible_entity)
+  world.insert_resource(
+    @render_visibility.DirtySpecializations::resource(),
+    dirty_specializations,
+  )
+  world.insert_resource(
+    PendingMeshMaterialQueues::resource(),
+    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+  )
+  world.insert_resource(
+    ecs_key_specialized_material_pipeline_cache,
+    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    visible_entity.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(630)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let mesh_instances = RenderMeshInstances::new()
+  mesh_instances.insert(visible_entity, RenderMeshQueueData::new(630, 0U, true))
+  world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+  let camera = ExtractedCamera3d::{
+    entity: phase_entity_ref3d(main_view, render_view),
+    payload: material_test_camera_payload(),
+  }
+
+  render3d_prewarm_mesh_pipelines(
+    world,
+    @pbr_render.Render3dMeshRuntimeState::new(),
+    [camera],
+    [],
+  )
+
+  match world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.current_len(retained_view), content="0")
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: material specialization reads prepared RenderMeshAssets only" {
   let world = @ecs.World::new()
   world.insert_resource(

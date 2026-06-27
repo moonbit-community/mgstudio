@@ -960,9 +960,6 @@ fn render3d_prewarm_mesh_pipelines(
       }
       guard mesh_indices_by_main_entity.get(main_entity.id().to_bits())
         is Some(mesh_index) else {
-        render3d_enqueue_pending_mesh_material(
-          world, retained_view_entity, _render_entity, main_entity,
-        )
         continue
       }
       let extracted_mesh = meshes[mesh_index]
