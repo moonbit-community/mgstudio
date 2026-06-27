@@ -917,6 +917,45 @@ fn render3d_for_each_prepared_camera(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::queue_material_meshes`
+// consumes `RenderVisibleEntities<Mesh3d>` instead of scanning every extracted
+// mesh for every view.
+fn render3d_visible_main_entity_filter_for_camera(
+  world : @ecs.World,
+  camera : ExtractedCamera3d,
+) -> Map[UInt64, Bool] {
+  let visible : Map[UInt64, Bool] = {}
+  guard (try! world.get_by_key(
+      camera.entity.render_entity,
+      @render_visibility.ecs_key_render_visible_entities,
+    ))
+    is Some(render_visible_entities) else {
+    return visible
+  }
+  guard render_visible_entities.get(render3d_mesh_visibility_class())
+    is Some(render_visible_mesh_entities) else {
+    return visible
+  }
+  for pair in render_visible_mesh_entities.iter_visible() {
+    let (_render_entity, main_entity) = pair
+    visible.set(main_entity.id().to_bits(), true)
+  }
+  visible
+}
+
+///|
+fn render3d_visible_main_entity_filters_for_cameras(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+) -> Array[Map[UInt64, Bool]] {
+  let filters : Array[Map[UInt64, Bool]] = []
+  for camera in cameras {
+    filters.push(render3d_visible_main_entity_filter_for_camera(world, camera))
+  }
+  filters
+}
+
+///|
 pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let sorted_cameras_ref = @render.sorted_cameras_ref_or_abort(world)
@@ -1067,6 +1106,10 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       let specialized_material_pipeline_cache = world.get_resource(
         ecs_key_specialized_material_pipeline_cache,
       )
+      let visible_main_entity_filters = render3d_visible_main_entity_filters_for_cameras(
+        world,
+        frame.cameras,
+      )
       let prepared_camera_queues = mesh_runtime_state.modify(fn(
         mesh_runtime_state_value,
       ) {
@@ -1077,6 +1120,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
           specialized_material_pipeline_cache~,
+          visible_main_entity_filters=Some(visible_main_entity_filters),
         )
       })
       render3d_queue_store_frame(

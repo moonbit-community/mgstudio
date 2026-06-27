@@ -381,6 +381,40 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
 }
 
 ///|
+test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
+  let meshes = [
+    render3d_test_transparent_mesh_for_queue(1, -1.0F, 0.0F),
+    render3d_test_transparent_mesh_for_queue(2, -1.0F, 2.0F),
+  ]
+  let visible : Map[UInt64, Bool] = {}
+  visible.set(meshes[1].entity.main_entity.to_bits(), true)
+  let cpu_items = render3d_queue_mesh_phase_items(
+    meshes,
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+    visible_main_entities=Some(visible),
+  )
+  let gpu_items = render3d_queue_mesh_phase_items(
+    meshes,
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    true,
+    visible_main_entities=Some(visible),
+  )
+  debug_inspect(cpu_items.length(), content="1")
+  debug_inspect(cpu_items[0].entity.main_entity.id, content="2")
+  debug_inspect(cpu_items[0].extracted_index, content="1")
+  debug_inspect(gpu_items.length(), content="1")
+  debug_inspect(gpu_items[0].entity.main_entity.id, content="2")
+  debug_inspect(gpu_items[0].extracted_index, content="1")
+}
+
+///|
 test "render3d: transmissive materials use a distinct sorted phase" {
   let material = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.5F,

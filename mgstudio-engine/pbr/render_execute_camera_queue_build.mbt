@@ -50,6 +50,7 @@ fn render3d_build_camera_queue_entry(
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
+  visible_main_entities? : Map[UInt64, Bool]? = None,
 ) -> Render3dExecuteCameraQueueBuildResult {
   let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -76,6 +77,7 @@ fn render3d_build_camera_queue_entry(
         @render_view.RetainedViewEntity::new(view_entity),
       ),
       specialized_material_pipeline_cache~,
+      visible_main_entities~,
     ),
     meshes,
     mesh_runtime_state_value.mesh_preprocess_static_cache,
@@ -274,6 +276,7 @@ fn render3d_prepare_camera_queue_entry(
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
+  visible_main_entities? : Map[UInt64, Bool]? = None,
 ) -> Render3dPreparedCameraQueue? {
   let camera = extracted_camera.payload
   guard render3d_execute_camera_viewport_state(camera) is Some(viewport_state) else {
@@ -299,6 +302,7 @@ fn render3d_prepare_camera_queue_entry(
     gpu_instance_buffer_builder_enabled,
     gpu_culling_supported,
     specialized_material_pipeline_cache~,
+    visible_main_entities~,
   )
   Some(Render3dPreparedCameraQueue::{
     draw_queue_entry: queue_build_result.draw_queue_entry,
@@ -319,9 +323,20 @@ fn render3d_prepare_camera_queue_entries(
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
   specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
+  visible_main_entity_filters? : Array[Map[UInt64, Bool]]? = None,
 ) -> Array[Render3dPreparedCameraQueue?] {
   let prepared : Array[Render3dPreparedCameraQueue?] = []
-  for camera in cameras {
+  for camera_index in 0..<cameras.length() {
+    let camera = cameras[camera_index]
+    let visible_main_entities = match visible_main_entity_filters {
+      Some(filters) =>
+        if camera_index < filters.length() {
+          Some(filters[camera_index])
+        } else {
+          None
+        }
+      None => None
+    }
     prepared.push(
       render3d_prepare_camera_queue_entry(
         mesh_runtime_state_value,
@@ -330,6 +345,7 @@ fn render3d_prepare_camera_queue_entries(
         gpu_instance_buffer_builder_enabled,
         gpu_culling_supported,
         specialized_material_pipeline_cache~,
+        visible_main_entities~,
       ),
     )
   }
