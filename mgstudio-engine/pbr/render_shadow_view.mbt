@@ -19,9 +19,17 @@
 
 ///|
 pub enum Render3dLightEntity {
-  Directional(light_entity~ : @core.Entity, cascade_index~ : Int)
-  Point(light_entity~ : @core.Entity, face_index~ : Int)
-  Spot(light_entity~ : @core.Entity)
+  Directional(
+    light_entity~ : @core.Entity,
+    main_entity~ : @core.Entity,
+    cascade_index~ : Int
+  )
+  Point(
+    light_entity~ : @core.Entity,
+    main_entity~ : @core.Entity,
+    face_index~ : Int
+  )
+  Spot(light_entity~ : @core.Entity, main_entity~ : @core.Entity)
 }
 
 ///|
@@ -31,7 +39,7 @@ pub fn Render3dLightEntity::shadow_map_visible_entity(
   match self {
     Directional(light_entity~, ..)
     | Point(light_entity~, ..)
-    | Spot(light_entity~) => light_entity
+    | Spot(light_entity~, ..) => light_entity
   }
 }
 
@@ -63,19 +71,19 @@ pub fn Render3dLightEntity::shadow_phase_retained_view(
   extracted_retained_view : @render_view.RetainedViewEntity,
 ) -> @render_view.RetainedViewEntity {
   match self {
-    Directional(light_entity~, cascade_index~) =>
+    Directional(main_entity~, cascade_index~, ..) =>
       @render_view.RetainedViewEntity::new(
-        light_entity,
+        main_entity,
         auxiliary_entity=Some(extracted_retained_view.main_entity()),
         subview_index=cascade_index,
       )
-    Point(light_entity~, face_index~) =>
+    Point(main_entity~, face_index~, ..) =>
       @render_view.RetainedViewEntity::new(
-        light_entity,
+        main_entity,
         subview_index=face_index,
       )
-    Spot(light_entity~) =>
-      @render_view.RetainedViewEntity::new(light_entity, subview_index=0)
+    Spot(main_entity~, ..) =>
+      @render_view.RetainedViewEntity::new(main_entity, subview_index=0)
   }
 }
 
@@ -135,11 +143,12 @@ fn render3d_view_shadow_bindings_none() -> Render3dViewShadowBindings {
 ///|
 fn render3d_shadow_light_entity_debug_key(entity : Render3dLightEntity) -> Int {
   match entity {
-    Directional(light_entity~, cascade_index~) =>
+    Directional(light_entity~, cascade_index~, ..) =>
       light_entity.id * 31 + light_entity.generation * 17 + cascade_index
-    Point(light_entity~, face_index~) =>
+    Point(light_entity~, face_index~, ..) =>
       light_entity.id * 31 + light_entity.generation * 17 + face_index
-    Spot(light_entity~) => light_entity.id * 31 + light_entity.generation * 17
+    Spot(light_entity~, ..) =>
+      light_entity.id * 31 + light_entity.generation * 17
   }
 }
 
@@ -187,11 +196,11 @@ fn render3d_shadow_view_cache_key(
   // directional cascade must be distinct from the main camera and each other.
   let camera_key = camera_entity.id * 31 + camera_entity.generation
   let shadow_key = match entity {
-    Directional(light_entity~, cascade_index~) =>
+    Directional(light_entity~, cascade_index~, ..) =>
       1 + light_entity.id * 257 + light_entity.generation * 17 + cascade_index
-    Point(light_entity~, face_index~) =>
+    Point(light_entity~, face_index~, ..) =>
       2 + light_entity.id * 257 + light_entity.generation * 17 + face_index
-    Spot(light_entity~) =>
+    Spot(light_entity~, ..) =>
       3 + light_entity.id * 257 + light_entity.generation * 17
   }
   (camera_key, shadow_key)

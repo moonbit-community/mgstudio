@@ -114,27 +114,43 @@ fn render3d_shadow_phase_light_entities_for_camera(
   let light_entities : Array[Render3dLightEntity] = []
   if lighting.point_shadow_maps_enabled &&
     lighting.point_entity is Some(point_entity) &&
+    lighting.point_render_entity is Some(point_render_entity) &&
     lighting.point_range > 0.0F &&
     point_light_shadow_map_size > 0 {
     for face_index in 0..<6 {
       light_entities.push(
-        Render3dLightEntity::Point(light_entity=point_entity, face_index~),
+        Render3dLightEntity::Point(
+          light_entity=point_render_entity,
+          main_entity=point_entity,
+          face_index~,
+        ),
       )
     }
   }
   if lighting.directional_shadow_maps_enabled &&
-    lighting.directional_entity is Some(light_entity) {
+    lighting.directional_entity is Some(light_entity) &&
+    lighting.directional_render_entity is Some(directional_render_entity) {
     let cascades = render3d_directional_shadow_cascades(camera_entity, lighting)
     for cascade_index in 0..<cascades.length() {
       light_entities.push(
-        Render3dLightEntity::Directional(light_entity~, cascade_index~),
+        Render3dLightEntity::Directional(
+          light_entity=directional_render_entity,
+          main_entity=light_entity,
+          cascade_index~,
+        ),
       )
     }
   }
   if lighting.spot_shadow_maps_enabled &&
     lighting.spot_entity is Some(light_entity) &&
+    lighting.spot_render_entity is Some(spot_render_entity) &&
     lighting.spot_range > 0.0F {
-    light_entities.push(Render3dLightEntity::Spot(light_entity~))
+    light_entities.push(
+      Render3dLightEntity::Spot(
+        light_entity=spot_render_entity,
+        main_entity=light_entity,
+      ),
+    )
   }
   light_entities
 }

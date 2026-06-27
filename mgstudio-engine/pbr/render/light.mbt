@@ -20,6 +20,7 @@ pub(all) struct Render3dLightingState {
   directional_color : @color.Color
   directional_illuminance : Float
   directional_entity : @core.Entity?
+  directional_render_entity : @core.Entity?
   directional_transform : @transform.Transform
   directional_shadow_maps_enabled : Bool
   directional_shadow_depth_bias : Float
@@ -36,6 +37,7 @@ pub(all) struct Render3dLightingState {
   point_intensity : Float
   point_range : Float
   point_light_index : Int
+  point_render_entity : @core.Entity?
   point_shadow_maps_enabled : Bool
   point_shadow_depth_bias : Float
   point_shadow_map_near_z : Float
@@ -47,6 +49,7 @@ pub(all) struct Render3dLightingState {
   spot_inner_angle : Float
   spot_outer_angle : Float
   spot_entity : @core.Entity?
+  spot_render_entity : @core.Entity?
   spot_transform : @transform.Transform
   spot_light_index : Int
   spot_shadow_maps_enabled : Bool
@@ -806,6 +809,12 @@ pub struct ExtractedClusterablePointLight3d {
 }
 
 ///|
+priv struct Render3dExtractedPointLightEntry {
+  render_entity : @core.Entity
+  light : ExtractedPointLight3d
+}
+
+///|
 pub fn ExtractedClusterablePointLight3d::is_point_light(
   self : ExtractedClusterablePointLight3d,
 ) -> Bool {
@@ -881,6 +890,12 @@ pub let ecs_key_extracted_rect_light3d : @ecs.ComponentKey[ExtractedRectLight3d]
 ///|
 pub impl @ecs.Component for ExtractedRectLight3d with fn component() {
   ecs_key_extracted_rect_light3d
+}
+
+///|
+priv struct Render3dExtractedDirectionalLightEntry {
+  render_entity : @core.Entity
+  light : ExtractedDirectionalLight3d
 }
 
 ///|
@@ -2955,18 +2970,53 @@ pub fn extract_lights(render_world : @ecs.World) -> Unit {
 pub fn render3d_collect_extracted_point_lights(
   world : @ecs.World,
 ) -> Array[ExtractedPointLight3d] {
-  let extracted : Array[ExtractedPointLight3d] = []
-  world.for_each_component(ecs_key_extracted_point_light3d, fn(_entity, light) {
+  render3d_collect_extracted_point_light_entries(world).map(fn(entry) {
+    entry.light
+  })
+}
+
+///|
+fn render3d_collect_extracted_point_light_entries(
+  world : @ecs.World,
+) -> Array[Render3dExtractedPointLightEntry] {
+  let extracted : Array[Render3dExtractedPointLightEntry] = []
+  world.for_each_component(ecs_key_extracted_point_light3d, fn(entity, light) {
     if light.spot_light_angles is None {
-      extracted.push(light)
+      extracted.push(Render3dExtractedPointLightEntry::{
+        render_entity: entity,
+        light,
+      })
     }
   })
   extracted.sort_by(fn(left, right) {
-    let id_cmp = cmp_int(left.entity.id, right.entity.id)
+    let id_cmp = cmp_int(left.light.entity.id, right.light.entity.id)
     if id_cmp != 0 {
       return id_cmp
     }
-    cmp_int(left.entity.generation, right.entity.generation)
+    cmp_int(left.light.entity.generation, right.light.entity.generation)
+  })
+  extracted
+}
+
+///|
+fn render3d_collect_extracted_spot_light_entries(
+  world : @ecs.World,
+) -> Array[Render3dExtractedPointLightEntry] {
+  let extracted : Array[Render3dExtractedPointLightEntry] = []
+  world.for_each_component(ecs_key_extracted_point_light3d, fn(entity, light) {
+    if light.spot_light_angles is Some(_) {
+      extracted.push(Render3dExtractedPointLightEntry::{
+        render_entity: entity,
+        light,
+      })
+    }
+  })
+  extracted.sort_by(fn(left, right) {
+    let id_cmp = cmp_int(left.light.entity.id, right.light.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(left.light.entity.generation, right.light.entity.generation)
   })
   extracted
 }
@@ -2975,20 +3025,9 @@ pub fn render3d_collect_extracted_point_lights(
 pub fn render3d_collect_extracted_spot_lights(
   world : @ecs.World,
 ) -> Array[ExtractedPointLight3d] {
-  let extracted : Array[ExtractedPointLight3d] = []
-  world.for_each_component(ecs_key_extracted_point_light3d, fn(_entity, light) {
-    if light.spot_light_angles is Some(_) {
-      extracted.push(light)
-    }
+  render3d_collect_extracted_spot_light_entries(world).map(fn(entry) {
+    entry.light
   })
-  extracted.sort_by(fn(left, right) {
-    let id_cmp = cmp_int(left.entity.id, right.entity.id)
-    if id_cmp != 0 {
-      return id_cmp
-    }
-    cmp_int(left.entity.generation, right.entity.generation)
-  })
-  extracted
 }
 
 ///|
@@ -3053,30 +3092,45 @@ pub fn render3d_collect_extracted_rect_lights(
 pub fn render3d_collect_extracted_directional_lights(
   world : @ecs.World,
 ) -> Array[ExtractedDirectionalLight3d] {
-  let extracted : Array[ExtractedDirectionalLight3d] = []
-  world.for_each_component(ecs_key_extracted_directional_light3d, fn(_, light) {
-    extracted.push(light)
+  render3d_collect_extracted_directional_light_entries(world).map(fn(entry) {
+    entry.light
+  })
+}
+
+///|
+fn render3d_collect_extracted_directional_light_entries(
+  world : @ecs.World,
+) -> Array[Render3dExtractedDirectionalLightEntry] {
+  let extracted : Array[Render3dExtractedDirectionalLightEntry] = []
+  world.for_each_component(ecs_key_extracted_directional_light3d, fn(
+    entity,
+    light,
+  ) {
+    extracted.push(Render3dExtractedDirectionalLightEntry::{
+      render_entity: entity,
+      light,
+    })
   })
   extracted.sort_by(fn(left, right) {
     let volumetric_cmp = cmp_int(
-      render3d_bool_sort_key(left.volumetric),
-      render3d_bool_sort_key(right.volumetric),
+      render3d_bool_sort_key(left.light.volumetric),
+      render3d_bool_sort_key(right.light.volumetric),
     )
     if volumetric_cmp != 0 {
       return volumetric_cmp
     }
     let shadow_cmp = cmp_int(
-      render3d_bool_sort_key(left.shadow_maps_enabled),
-      render3d_bool_sort_key(right.shadow_maps_enabled),
+      render3d_bool_sort_key(left.light.shadow_maps_enabled),
+      render3d_bool_sort_key(right.light.shadow_maps_enabled),
     )
     if shadow_cmp != 0 {
       return shadow_cmp
     }
-    let id_cmp = cmp_int(left.entity.id, right.entity.id)
+    let id_cmp = cmp_int(left.light.entity.id, right.light.entity.id)
     if id_cmp != 0 {
       return id_cmp
     }
-    cmp_int(left.entity.generation, right.entity.generation)
+    cmp_int(left.light.entity.generation, right.light.entity.generation)
   })
   extracted
 }
@@ -3711,6 +3765,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_color: @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     directional_illuminance: 0.0F,
     directional_entity: None,
+    directional_render_entity: None,
     directional_transform: @transform.Transform::identity(),
     directional_shadow_maps_enabled: false,
     directional_shadow_depth_bias: 0.02F,
@@ -3727,6 +3782,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     point_intensity: 0.0F,
     point_range: 1.0F,
     point_light_index: 0,
+    point_render_entity: None,
     point_shadow_maps_enabled: false,
     point_shadow_depth_bias: 0.08F,
     point_shadow_map_near_z: 0.1F,
@@ -3738,6 +3794,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     spot_inner_angle: 0.0F,
     spot_outer_angle: 0.7853981633974483F,
     spot_entity: None,
+    spot_render_entity: None,
     spot_transform: @transform.Transform::identity(),
     spot_light_index: 0,
     spot_shadow_maps_enabled: false,
@@ -3761,15 +3818,19 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       ambient_brightness: ambient.brightness,
     }
   }
-  let directional_lights = render3d_collect_extracted_directional_lights(world)
+  let directional_lights = render3d_collect_extracted_directional_light_entries(
+    world,
+  )
   if directional_lights.length() > 0 {
-    let directional = directional_lights[0]
+    let directional_entry = directional_lights[0]
+    let directional = directional_entry.light
     lighting = Render3dLightingState::{
       ..lighting,
       directional_dir: directional.transform.back(),
       directional_color: directional.color,
       directional_illuminance: directional.illuminance,
       directional_entity: Some(directional.entity),
+      directional_render_entity: Some(directional_entry.render_entity),
       directional_transform: directional.transform,
       directional_shadow_maps_enabled: directional.shadow_maps_enabled,
       directional_shadow_depth_bias: directional.shadow_depth_bias,
@@ -3782,12 +3843,14 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_occlusion_culling: directional.occlusion_culling,
     }
   }
-  let point_lights = render3d_collect_extracted_point_lights(world)
+  let point_lights = render3d_collect_extracted_point_light_entries(world)
   if point_lights.length() > 0 {
-    let point = point_lights[0]
+    let point_entry = point_lights[0]
+    let point = point_entry.light
     lighting = Render3dLightingState::{
       ..lighting,
       point_entity: Some(point.entity),
+      point_render_entity: Some(point_entry.render_entity),
       point_pos: point.transform.translation,
       point_color: point.color,
       point_intensity: point.intensity,
@@ -3799,9 +3862,10 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     let point_flags = render3d_point_light_flags(point)
     point_flags |> ignore
   }
-  let spot_lights = render3d_collect_extracted_spot_lights(world)
+  let spot_lights = render3d_collect_extracted_spot_light_entries(world)
   if spot_lights.length() > 0 {
-    let spot = spot_lights[0]
+    let spot_entry = spot_lights[0]
+    let spot = spot_entry.light
     let spot_flags = render3d_point_light_flags(spot)
     spot_flags |> ignore
     match spot.spot_light_angles {
@@ -3816,6 +3880,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_inner_angle: inner,
           spot_outer_angle: outer,
           spot_entity: Some(spot.entity),
+          spot_render_entity: Some(spot_entry.render_entity),
           spot_transform: spot.transform,
           spot_shadow_maps_enabled: spot.shadow_maps_enabled,
           spot_shadow_depth_bias: spot.shadow_depth_bias,
@@ -3831,6 +3896,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_intensity: spot.intensity,
           spot_range: spot.range,
           spot_entity: Some(spot.entity),
+          spot_render_entity: Some(spot_entry.render_entity),
           spot_transform: spot.transform,
           spot_shadow_maps_enabled: spot.shadow_maps_enabled,
           spot_shadow_depth_bias: spot.shadow_depth_bias,

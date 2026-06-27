@@ -175,13 +175,18 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   )
   let directional = Render3dLightEntity::Directional(
     light_entity=@core.Entity::new(210, 1),
+    main_entity=@core.Entity::new(210, 1),
     cascade_index=2,
   )
   let point = Render3dLightEntity::Point(
     light_entity=@core.Entity::new(211, 1),
+    main_entity=@core.Entity::new(211, 1),
     face_index=5,
   )
-  let spot = Render3dLightEntity::Spot(light_entity=@core.Entity::new(212, 1))
+  let spot = Render3dLightEntity::Spot(
+    light_entity=@core.Entity::new(212, 1),
+    main_entity=@core.Entity::new(212, 1),
+  )
   let directional_view = directional.shadow_phase_retained_view(
     extracted_retained_view,
   )
@@ -298,14 +303,17 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
     directional_entity: Some(directional_light),
+    directional_render_entity: Some(directional_light),
     directional_shadow_maps_enabled: true,
     directional_transform: @transform.Transform::identity(),
     directional_cascade_bounds: [42.0F],
     directional_cascades: cascades,
     point_entity: Some(point_light),
+    point_render_entity: Some(point_light),
     point_range: 12.0F,
     point_shadow_maps_enabled: true,
     spot_entity: Some(spot_light),
+    spot_render_entity: Some(spot_light),
     spot_range: 12.0F,
     spot_shadow_maps_enabled: true,
   }
@@ -328,6 +336,7 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
   let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
   let point_face_zero_view = Render3dLightEntity::Point(
     light_entity=point_light,
+    main_entity=point_light,
     face_index=0,
   ).shadow_phase_retained_view(@render_view.RetainedViewEntity::new(camera_a))
   pending_shadow_queues
@@ -355,10 +364,12 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
 
   let directional_a = Render3dLightEntity::Directional(
     light_entity=directional_light,
+    main_entity=directional_light,
     cascade_index=0,
   ).shadow_phase_retained_view(@render_view.RetainedViewEntity::new(camera_a))
   let directional_b = Render3dLightEntity::Directional(
     light_entity=directional_light,
+    main_entity=directional_light,
     cascade_index=0,
   ).shadow_phase_retained_view(@render_view.RetainedViewEntity::new(camera_b))
   debug_inspect(live_views.length(), content="9")
@@ -388,13 +399,18 @@ test "render3d: shadow visible indices populate Bevy shadow map visibility" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(401, 1)
   let point_light = world.spawn_empty()
+  let point_light_main = world.spawn_empty()
   let light_entity = Render3dLightEntity::Point(
     light_entity=point_light,
+    main_entity=point_light_main,
     face_index=2,
   )
   let camera_retained_view = @render_view.RetainedViewEntity::new(camera)
   let shadow_phase_view = light_entity.shadow_phase_retained_view(
     camera_retained_view,
+  )
+  let visible_retained_view = light_entity.shadow_map_visible_retained_view(
+    shadow_phase_view,
   )
   let material_properties = @material.MaterialProperties::MaterialProperties()
   let first_main = @core.Entity::new(402, 1)
@@ -425,13 +441,18 @@ test "render3d: shadow visible indices populate Bevy shadow map visibility" {
       point_light, @render_visibility.ecs_key_render_shadow_map_visible_entities,
     )) {
     Some(shadow_visible) =>
-      match
-        shadow_visible.subview(
-          light_entity.shadow_map_visible_retained_view(shadow_phase_view),
-        ) {
+      match shadow_visible.subview(visible_retained_view) {
         Some(visible_entities) =>
           match visible_entities.get(render3d_mesh_visibility_class()) {
             Some(mesh_visible) => {
+              inspect(
+                visible_retained_view.main_entity().id,
+                content=point_light_main.id.to_string(),
+              )
+              inspect(
+                light_entity.shadow_map_visible_entity().id,
+                content=point_light.id.to_string(),
+              )
               debug_inspect(mesh_visible.added_entities().length(), content="2")
               inspect(
                 mesh_visible.added_entities()[0].0.id,
@@ -448,6 +469,13 @@ test "render3d: shadow visible indices populate Bevy shadow map visibility" {
       }
     None => debug_inspect(false, content="true")
   }
+  debug_inspect(
+    (try! world.get_by_key(
+      point_light_main, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    ))
+    is None,
+    content="true",
+  )
 }
 
 ///|
@@ -778,7 +806,10 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
     auxiliary_entity=Some(@core.Entity::new(460, 1)),
     subview_index=7,
   )
-  let light_entity = Render3dLightEntity::Spot(light_entity=shadow_light)
+  let light_entity = Render3dLightEntity::Spot(
+    light_entity=shadow_light,
+    main_entity=shadow_light,
+  )
   let retained_view = light_entity.shadow_phase_retained_view(
     camera_retained_view,
   )
@@ -1591,7 +1622,10 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @core.Entity::new(90, 1),
   )
   let shadow_light = world.spawn()
-  let spot_light_entity = Render3dLightEntity::Spot(light_entity=shadow_light)
+  let spot_light_entity = Render3dLightEntity::Spot(
+    light_entity=shadow_light,
+    main_entity=shadow_light,
+  )
   let retained_view = spot_light_entity.shadow_phase_retained_view(
     camera_retained_view,
   )

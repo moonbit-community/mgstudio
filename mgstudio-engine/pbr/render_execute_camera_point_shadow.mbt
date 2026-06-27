@@ -24,11 +24,15 @@ fn render3d_execute_camera_point_shadow_pass(
 ) -> Render3dPointShadowBinding {
   if !pass_lighting.point_shadow_maps_enabled ||
     pass_lighting.point_entity is None ||
+    pass_lighting.point_render_entity is None ||
     pass_lighting.point_range <= 0.0F ||
     point_light_shadow_map_size <= 0 {
     return render3d_point_shadow_binding_none()
   }
   guard pass_lighting.point_entity is Some(point_entity) else {
+    return render3d_point_shadow_binding_none()
+  }
+  guard pass_lighting.point_render_entity is Some(point_render_entity) else {
     return render3d_point_shadow_binding_none()
   }
   let point_light_index = if pass_lighting.point_light_index < 0 {
@@ -38,7 +42,7 @@ fn render3d_execute_camera_point_shadow_pass(
   }
   let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
     world,
-    point_entity,
+    point_render_entity,
     point_light_shadow_map_size,
     point_light_index + 1,
   )
@@ -80,7 +84,8 @@ fn render3d_execute_camera_point_shadow_pass(
       ),
     )
     let shadow_light_entity = Render3dLightEntity::Point(
-      light_entity=point_entity,
+      light_entity=point_render_entity,
+      main_entity=point_entity,
       face_index~,
     )
     render3d_update_shadow_map_visible_entities(

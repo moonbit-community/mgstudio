@@ -2077,9 +2077,9 @@ pub struct Render3dDiagnosticsSnapshot {
 pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Self
 
 pub enum Render3dLightEntity {
-  Directional(light_entity~ : @core.Entity, cascade_index~ : Int)
-  Point(light_entity~ : @core.Entity, face_index~ : Int)
-  Spot(light_entity~ : @core.Entity)
+  Directional(light_entity~ : @core.Entity, main_entity~ : @core.Entity, cascade_index~ : Int)
+  Point(light_entity~ : @core.Entity, main_entity~ : @core.Entity, face_index~ : Int)
+  Spot(light_entity~ : @core.Entity, main_entity~ : @core.Entity)
 }
 pub fn Render3dLightEntity::shadow_map_visible_entity(Self) -> @core.Entity
 pub fn Render3dLightEntity::shadow_map_visible_retained_view(Self, @view.RetainedViewEntity) -> @view.RetainedViewEntity

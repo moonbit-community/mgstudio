@@ -1107,6 +1107,7 @@ pub(all) struct Render3dLightingState {
   directional_color : @color.Color
   directional_illuminance : Float
   directional_entity : @core.Entity?
+  directional_render_entity : @core.Entity?
   directional_transform : @transform.Transform
   directional_shadow_maps_enabled : Bool
   directional_shadow_depth_bias : Float
@@ -1123,6 +1124,7 @@ pub(all) struct Render3dLightingState {
   point_intensity : Float
   point_range : Float
   point_light_index : Int
+  point_render_entity : @core.Entity?
   point_shadow_maps_enabled : Bool
   point_shadow_depth_bias : Float
   point_shadow_map_near_z : Float
@@ -1134,6 +1136,7 @@ pub(all) struct Render3dLightingState {
   spot_inner_angle : Float
   spot_outer_angle : Float
   spot_entity : @core.Entity?
+  spot_render_entity : @core.Entity?
   spot_transform : @transform.Transform
   spot_light_index : Int
   spot_shadow_maps_enabled : Bool

@@ -151,7 +151,8 @@ fn render3d_execute_camera_directional_shadow_pass(
     None => @light.DirectionalLightShadowMap::DirectionalLightShadowMap().size
   }
   let directional_enabled = pass_lighting.directional_shadow_maps_enabled &&
-    pass_lighting.directional_entity is Some(_)
+    pass_lighting.directional_entity is Some(_) &&
+    pass_lighting.directional_render_entity is Some(_)
   let cascades = if directional_enabled {
     render3d_directional_shadow_cascades(camera_entity, pass_lighting)
   } else {
@@ -159,6 +160,7 @@ fn render3d_execute_camera_directional_shadow_pass(
   }
   let spot_enabled = pass_lighting.spot_shadow_maps_enabled &&
     pass_lighting.spot_entity is Some(_) &&
+    pass_lighting.spot_render_entity is Some(_) &&
     pass_lighting.spot_range > 0.0F
   if cascades.length() == 0 && !spot_enabled {
     return render3d_directional_shadow_binding_none()
@@ -175,7 +177,8 @@ fn render3d_execute_camera_directional_shadow_pass(
   let target_id = render3d_directional_light_shadow_target_get_or_create(
     world, camera_entity, shadow_map_size, target_layers,
   )
-  if pass_lighting.directional_entity is Some(light_entity) {
+  if pass_lighting.directional_entity is Some(light_entity) &&
+    pass_lighting.directional_render_entity is Some(directional_render_entity) {
     for cascade_index in 0..<cascades.length() {
       let cascade = cascades[cascade_index]
       let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
@@ -188,7 +191,8 @@ fn render3d_execute_camera_directional_shadow_pass(
         render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
       )
       let shadow_light_entity = Render3dLightEntity::Directional(
-        light_entity~,
+        light_entity=directional_render_entity,
+        main_entity=light_entity,
         cascade_index~,
       )
       render3d_update_shadow_map_visible_entities(
@@ -274,6 +278,9 @@ fn render3d_execute_camera_spot_shadow_pass(
   shadow_map_size : Int,
 ) -> Unit {
   guard pass_lighting.spot_entity is Some(light_entity) else { return }
+  guard pass_lighting.spot_render_entity is Some(spot_render_entity) else {
+    return
+  }
   let spot_near = if pass_lighting.spot_shadow_map_near_z > 0.0001F {
     pass_lighting.spot_shadow_map_near_z
   } else {
@@ -305,7 +312,10 @@ fn render3d_execute_camera_spot_shadow_pass(
     camera.layers,
     render3d_directional_shadow_frustum_planes(clip_from_world),
   )
-  let shadow_light_entity = Render3dLightEntity::Spot(light_entity~)
+  let shadow_light_entity = Render3dLightEntity::Spot(
+    light_entity=spot_render_entity,
+    main_entity=light_entity,
+  )
   render3d_update_shadow_map_visible_entities(
     world,
     shadow_light_entity,

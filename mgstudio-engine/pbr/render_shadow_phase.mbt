@@ -280,9 +280,6 @@ fn render3d_update_shadow_map_visible_entities(
     shadow_phase_retained_view,
   )
   let owner = light_entity.shadow_map_visible_entity()
-  if !world.is_alive(owner) {
-    return
-  }
   let shadow_map_visible_entities = match
     (try! world.get_by_key(
       owner, @render_visibility.ecs_key_render_shadow_map_visible_entities,

@@ -14,19 +14,31 @@ test "pbr shadow view cache keys are distinct per Bevy retained shadow view" {
   let light = @core.Entity::new(9, 2)
   let point0 = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Point(light_entity=light, face_index=0),
+    Render3dLightEntity::Point(
+      light_entity=light,
+      main_entity=light,
+      face_index=0,
+    ),
   )
   let point1 = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Point(light_entity=light, face_index=1),
+    Render3dLightEntity::Point(
+      light_entity=light,
+      main_entity=light,
+      face_index=1,
+    ),
   )
   let cascade0 = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Directional(light_entity=light, cascade_index=0),
+    Render3dLightEntity::Directional(
+      light_entity=light,
+      main_entity=light,
+      cascade_index=0,
+    ),
   )
   let spot = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Spot(light_entity=light),
+    Render3dLightEntity::Spot(light_entity=light, main_entity=light),
   )
   inspect(point0 == point1, content="false")
   inspect(point0 == cascade0, content="false")
@@ -46,10 +58,15 @@ test "pbr shadow map visible subview keys mirror Bevy light entity rules" {
   let light = @core.Entity::new(32, 1)
   let directional = Render3dLightEntity::Directional(
     light_entity=light,
+    main_entity=light,
     cascade_index=2,
   )
-  let point = Render3dLightEntity::Point(light_entity=light, face_index=5)
-  let spot = Render3dLightEntity::Spot(light_entity=light)
+  let point = Render3dLightEntity::Point(
+    light_entity=light,
+    main_entity=light,
+    face_index=5,
+  )
+  let spot = Render3dLightEntity::Spot(light_entity=light, main_entity=light)
   let directional_phase_key = directional.shadow_phase_retained_view(
     extracted_retained_view,
   )
@@ -87,10 +104,15 @@ test "pbr shadow phase retained view keys mirror Bevy prepare_lights" {
   let light = @core.Entity::new(32, 1)
   let directional = Render3dLightEntity::Directional(
     light_entity=light,
+    main_entity=light,
     cascade_index=2,
   )
-  let point = Render3dLightEntity::Point(light_entity=light, face_index=5)
-  let spot = Render3dLightEntity::Spot(light_entity=light)
+  let point = Render3dLightEntity::Point(
+    light_entity=light,
+    main_entity=light,
+    face_index=5,
+  )
+  let spot = Render3dLightEntity::Spot(light_entity=light, main_entity=light)
   let directional_key = directional.shadow_phase_retained_view(
     extracted_retained_view,
   )
