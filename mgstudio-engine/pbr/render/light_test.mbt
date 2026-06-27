@@ -304,6 +304,46 @@ test "pbr render light: shadow material pipeline cache supports Bevy specializat
 }
 
 ///|
+test "pbr render light: shadow material pipeline cache applies dirty specializations per view" {
+  let cache = SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  let dirty = @render_view_visibility.DirtySpecializations::DirtySpecializations()
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(40, 1))
+  let other_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(41, 1),
+  )
+  let changed = @render_gpu.MainEntity::new(@core.Entity::new(42, 1))
+  let removed = @render_gpu.MainEntity::new(@core.Entity::new(43, 1))
+  let stable = @render_gpu.MainEntity::new(@core.Entity::new(44, 1))
+  let pipeline = @material.CachedRenderPipelineId::new(55UL)
+  let draw = @material.DrawFunctionId::new(3U)
+  cache.insert(view, changed, pipeline, draw)
+  cache.insert(view, removed, pipeline, draw)
+  cache.insert(view, stable, pipeline, draw)
+  cache.insert(other_view, changed, pipeline, draw)
+  dirty.insert_changed(changed)
+  dirty.insert_removed(removed)
+
+  cache.apply_dirty_specializations_for_view(dirty, view)
+  debug_inspect(cache.pipeline_id(view, changed) is None, content="true")
+  debug_inspect(cache.pipeline_id(view, removed) is None, content="true")
+  debug_inspect(
+    cache.pipeline_id(view, stable).map(fn(id) { id.id() }),
+    content="Some(55)",
+  )
+  debug_inspect(
+    cache.pipeline_id(other_view, changed).map(fn(id) { id.id() }),
+    content="Some(55)",
+  )
+
+  dirty.insert_view(view)
+  cache.apply_dirty_specializations_for_view(dirty, view)
+  debug_inspect(
+    cache.get(view).map(fn(view_cache) { view_cache.len() }),
+    content="Some(0)",
+  )
+}
+
+///|
 fn light_test_propagate_transforms(world : @ecs.World) -> Unit {
   @hierarchy.hierarchy_install_component_metadata()
   @transform.transform_install_component_metadata()

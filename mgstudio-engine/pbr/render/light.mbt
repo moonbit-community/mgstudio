@@ -356,6 +356,46 @@ pub fn SpecializedShadowMaterialPipelineCache::pipeline_id(
 }
 
 ///|
+pub fn SpecializedShadowMaterialPipelineCache::clear_view(
+  self : SpecializedShadowMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+) -> Unit {
+  match self.views.get(view) {
+    Some(cache) => cache.clear()
+    None => ()
+  }
+}
+
+///|
+pub fn SpecializedShadowMaterialPipelineCache::remove(
+  self : SpecializedShadowMaterialPipelineCache,
+  view : @render_view.RetainedViewEntity,
+  entity : @render_gpu.MainEntity,
+) -> Bool {
+  match self.views.get(view) {
+    Some(cache) => cache.remove(entity)
+    None => false
+  }
+}
+
+///|
+// Bevy source:
+// - `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn SpecializedShadowMaterialPipelineCache::apply_dirty_specializations_for_view(
+  self : SpecializedShadowMaterialPipelineCache,
+  dirty_specializations : @render_view_visibility.DirtySpecializations,
+  view : @render_view.RetainedViewEntity,
+) -> Unit {
+  if dirty_specializations.must_wipe_specializations_for_view(view) {
+    self.clear_view(view)
+  } else {
+    for main_entity in dirty_specializations.iter_to_despecialize() {
+      ignore(self.remove(view, main_entity))
+    }
+  }
+}
+
+///|
 pub fn SpecializedShadowMaterialPipelineCache::expire_stale_views(
   self : SpecializedShadowMaterialPipelineCache,
   live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
