@@ -240,6 +240,86 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
 }
 
 ///|
+test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense states" {
+  let sparse = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  sparse.add(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      4,
+      Render3dShadowPhaseItemExtraIndex::none(),
+    ),
+  )
+  sparse.add(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      5,
+      Render3dShadowPhaseItemExtraIndex::none(),
+    ),
+  )
+  debug_inspect(sparse.len(), content="2")
+  debug_inspect(
+    sparse
+    .indices_for_entity_index(0)
+    .map(fn(indices) { indices.instance_index() }),
+    content="Some(4)",
+  )
+  debug_inspect(
+    sparse
+    .indices_for_entity_index(1)
+    .map(fn(indices) { indices.extra_index() }),
+    content="Some(NoExtraIndex)",
+  )
+  sparse.clear()
+  debug_inspect(sparse.len(), content="0")
+
+  let indirect = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  indirect.add(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      8,
+      Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(20, 21),
+    ),
+  )
+  indirect.add(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      9,
+      Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(21, 22),
+    ),
+  )
+  debug_inspect(indirect.len(), content="2")
+  debug_inspect(
+    indirect
+    .indices_for_entity_index(1)
+    .map(fn(indices) { indices.extra_index() }),
+    content="Some(IndirectParametersIndex(21, 22, None))",
+  )
+
+  let dense = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  dense.add(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      10,
+      Render3dShadowPhaseItemExtraIndex::none(),
+    ),
+  )
+  dense.add(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      12,
+      Render3dShadowPhaseItemExtraIndex::none(),
+    ),
+  )
+  debug_inspect(dense.len(), content="2")
+  debug_inspect(
+    dense
+    .indices_for_entity_index(0)
+    .map(fn(indices) { indices.instance_index() }),
+    content="Some(10)",
+  )
+  debug_inspect(
+    dense
+    .indices_for_entity_index(1)
+    .map(fn(indices) { indices.instance_index() }),
+    content="Some(12)",
+  )
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)

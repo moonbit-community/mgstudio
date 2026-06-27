@@ -2222,6 +2222,30 @@ pub fn Render3dShadowSpecializationWorkItemData::queue_data(Self) -> RenderMeshQ
 pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(Self) -> @view.RetainedViewEntity
 pub fn Render3dShadowSpecializationWorkItemData::visible_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
 
+pub(all) struct Render3dShadowUnbatchableBinnedEntityIndexSet {
+  mut kind : Render3dShadowUnbatchableBinnedEntityIndexSetKind
+}
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet() -> Self
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::add(Self, Render3dShadowUnbatchableBinnedEntityIndices) -> Unit
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::clear(Self) -> Unit
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::indices_for_entity_index(Self, Int) -> Render3dShadowUnbatchableBinnedEntityIndices?
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::kind(Self) -> Render3dShadowUnbatchableBinnedEntityIndexSetKind
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::len(Self) -> Int
+
+pub(all) enum Render3dShadowUnbatchableBinnedEntityIndexSetKind {
+  NoUnbatchableBinnedEntities
+  SparseUnbatchableBinnedEntityIndices(Render3dShadowBatchRange, Int?)
+  DenseUnbatchableBinnedEntityIndices(Array[Render3dShadowUnbatchableBinnedEntityIndices])
+} derive(@debug.Debug)
+
+pub(all) struct Render3dShadowUnbatchableBinnedEntityIndices {
+  instance_index : Int
+  extra_index : Render3dShadowPhaseItemExtraIndex
+} derive(Eq, @debug.Debug)
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::extra_index(Self) -> Render3dShadowPhaseItemExtraIndex
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::instance_index(Self) -> Int
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::new(Int, Render3dShadowPhaseItemExtraIndex) -> Self
+
 pub struct Render3dShadowViewPhaseData {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
   mut items : Array[Render3dShadowPhaseItemData]

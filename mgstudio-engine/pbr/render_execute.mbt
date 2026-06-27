@@ -1331,6 +1331,208 @@ pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_range(
 }
 
 ///|
+pub(all) struct Render3dShadowUnbatchableBinnedEntityIndices {
+  instance_index : Int
+  extra_index : Render3dShadowPhaseItemExtraIndex
+} derive(Eq, Debug)
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::new(
+  instance_index : Int,
+  extra_index : Render3dShadowPhaseItemExtraIndex,
+) -> Render3dShadowUnbatchableBinnedEntityIndices {
+  Render3dShadowUnbatchableBinnedEntityIndices::{ instance_index, extra_index }
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::instance_index(
+  self : Render3dShadowUnbatchableBinnedEntityIndices,
+) -> Int {
+  self.instance_index
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::extra_index(
+  self : Render3dShadowUnbatchableBinnedEntityIndices,
+) -> Render3dShadowPhaseItemExtraIndex {
+  self.extra_index
+}
+
+///|
+pub(all) enum Render3dShadowUnbatchableBinnedEntityIndexSetKind {
+  NoUnbatchableBinnedEntities
+  SparseUnbatchableBinnedEntityIndices(Render3dShadowBatchRange, Int?)
+  DenseUnbatchableBinnedEntityIndices(
+    Array[Render3dShadowUnbatchableBinnedEntityIndices]
+  )
+} derive(Debug)
+
+///|
+pub(all) struct Render3dShadowUnbatchableBinnedEntityIndexSet {
+  mut kind : Render3dShadowUnbatchableBinnedEntityIndexSetKind
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet() -> Render3dShadowUnbatchableBinnedEntityIndexSet {
+  Render3dShadowUnbatchableBinnedEntityIndexSet::{
+    kind: NoUnbatchableBinnedEntities,
+  }
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::len(
+  self : Render3dShadowUnbatchableBinnedEntityIndexSet,
+) -> Int {
+  match self.kind {
+    NoUnbatchableBinnedEntities => 0
+    SparseUnbatchableBinnedEntityIndices(range, _) => range.count()
+    DenseUnbatchableBinnedEntityIndices(indices) => indices.length()
+  }
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::kind(
+  self : Render3dShadowUnbatchableBinnedEntityIndexSet,
+) -> Render3dShadowUnbatchableBinnedEntityIndexSetKind {
+  self.kind
+}
+
+///|
+fn render3d_shadow_unbatchable_indices_from_sparse(
+  range : Render3dShadowBatchRange,
+  first_indirect_parameters_index : Int?,
+  entity_index : Int,
+) -> Render3dShadowUnbatchableBinnedEntityIndices? {
+  if entity_index < 0 || entity_index >= range.count() {
+    return None
+  }
+  let instance_index = range.start() + entity_index
+  let extra_index = match first_indirect_parameters_index {
+    Some(first_index) =>
+      Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(
+        first_index + entity_index,
+        first_index + entity_index + 1,
+      )
+    None => Render3dShadowPhaseItemExtraIndex::none()
+  }
+  Some(
+    Render3dShadowUnbatchableBinnedEntityIndices::new(
+      instance_index, extra_index,
+    ),
+  )
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::indices_for_entity_index(
+  self : Render3dShadowUnbatchableBinnedEntityIndexSet,
+  entity_index : Int,
+) -> Render3dShadowUnbatchableBinnedEntityIndices? {
+  match self.kind {
+    NoUnbatchableBinnedEntities => None
+    SparseUnbatchableBinnedEntityIndices(range, first_indirect_parameters_index) =>
+      render3d_shadow_unbatchable_indices_from_sparse(
+        range, first_indirect_parameters_index, entity_index,
+      )
+    DenseUnbatchableBinnedEntityIndices(indices) =>
+      if entity_index >= 0 && entity_index < indices.length() {
+        Some(indices[entity_index])
+      } else {
+        None
+      }
+  }
+}
+
+///|
+fn render3d_shadow_unbatchable_indices_can_extend_sparse(
+  range : Render3dShadowBatchRange,
+  first_indirect_parameters_index : Int?,
+  indices : Render3dShadowUnbatchableBinnedEntityIndices,
+) -> Bool {
+  if range.end() != indices.instance_index() {
+    return false
+  }
+  match first_indirect_parameters_index {
+    None => indices.extra_index() == Render3dShadowPhaseItemExtraIndex::none()
+    Some(first_index) =>
+      match indices.extra_index().indirect_parameters_range() {
+        Some((range_start, _, _)) => first_index + range.count() == range_start
+        None => false
+      }
+  }
+}
+
+///|
+fn Render3dShadowUnbatchableBinnedEntityIndexSet::demote_sparse_to_dense_with(
+  self : Render3dShadowUnbatchableBinnedEntityIndexSet,
+  indices : Render3dShadowUnbatchableBinnedEntityIndices,
+) -> Unit {
+  let dense : Array[Render3dShadowUnbatchableBinnedEntityIndices] = []
+  let count = self.len()
+  for entity_index in 0..<count {
+    match self.indices_for_entity_index(entity_index) {
+      Some(existing) => dense.push(existing)
+      None => ()
+    }
+  }
+  dense.push(indices)
+  self.kind = DenseUnbatchableBinnedEntityIndices(dense)
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::add(
+  self : Render3dShadowUnbatchableBinnedEntityIndexSet,
+  indices : Render3dShadowUnbatchableBinnedEntityIndices,
+) -> Unit {
+  match self.kind {
+    NoUnbatchableBinnedEntities =>
+      match indices.extra_index() {
+        DynamicOffset(_) =>
+          self.kind = DenseUnbatchableBinnedEntityIndices([indices])
+        NoExtraIndex =>
+          self.kind = SparseUnbatchableBinnedEntityIndices(
+            Render3dShadowBatchRange::new(
+              indices.instance_index(),
+              indices.instance_index() + 1,
+            ),
+            None,
+          )
+        IndirectParametersIndex(range_start, _, _) =>
+          self.kind = SparseUnbatchableBinnedEntityIndices(
+            Render3dShadowBatchRange::new(
+              indices.instance_index(),
+              indices.instance_index() + 1,
+            ),
+            Some(range_start),
+          )
+      }
+    SparseUnbatchableBinnedEntityIndices(range, first_indirect_parameters_index) =>
+      if render3d_shadow_unbatchable_indices_can_extend_sparse(
+          range, first_indirect_parameters_index, indices,
+        ) {
+        self.kind = SparseUnbatchableBinnedEntityIndices(
+          Render3dShadowBatchRange::new(range.start(), range.end() + 1),
+          first_indirect_parameters_index,
+        )
+      } else {
+        self.demote_sparse_to_dense_with(indices)
+      }
+    DenseUnbatchableBinnedEntityIndices(existing) => existing.push(indices)
+  }
+}
+
+///|
+pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::clear(
+  self : Render3dShadowUnbatchableBinnedEntityIndexSet,
+) -> Unit {
+  match self.kind {
+    DenseUnbatchableBinnedEntityIndices(indices) => indices.clear()
+    SparseUnbatchableBinnedEntityIndices(_, _) =>
+      self.kind = NoUnbatchableBinnedEntities
+    NoUnbatchableBinnedEntities => ()
+  }
+}
+
+///|
 pub struct Render3dShadowBatchRange {
   start : Int
   end : Int
