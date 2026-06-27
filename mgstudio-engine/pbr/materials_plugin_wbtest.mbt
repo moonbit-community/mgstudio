@@ -530,6 +530,65 @@ test "render3d: material specialization readiness follows Bevy resources" {
 }
 
 ///|
+test "render3d: shadow specialization readiness follows Bevy pending queue rules" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(58, 1),
+  )
+  let render_entity = @core.Entity::new(59, 1)
+  let missing_material = @render.MainEntity::new(@core.Entity::new(60, 1))
+  let missing_mesh = @render.MainEntity::new(@core.Entity::new(61, 1))
+  let ready = @render.MainEntity::new(@core.Entity::new(62, 1))
+  let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  ignore(shadow_queues.queues().prepare_for_new_frame(retained_view))
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    shadow_queues,
+  )
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    missing_mesh.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(610)),
+  )
+  material_instances.extract_mesh_material(
+    ready.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(620)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let mesh_instances = RenderMeshInstances::new()
+  let ready_flags = RenderMeshInstanceFlags::shadow_caster()
+  mesh_instances.insert(
+    ready,
+    RenderMeshQueueData::new(620, 0U, true, flags=ready_flags),
+  )
+  world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+
+  let missing_material_ready = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, missing_material,
+  )
+  let missing_mesh_ready = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, missing_mesh,
+  )
+  let ready_value = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, ready,
+  ).unwrap()
+
+  debug_inspect(missing_material_ready is None, content="true")
+  debug_inspect(missing_mesh_ready is None, content="true")
+  debug_inspect(
+    ready_value.flags().contains(RenderMeshInstanceFlags::shadow_caster()),
+    content="true",
+  )
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.queues().current_len(retained_view), content="2")
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: missing prepared render mesh does not return to pending queue" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(61, 1)

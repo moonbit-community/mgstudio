@@ -822,6 +822,26 @@ fn render3d_enqueue_pending_mesh_material(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+fn render3d_enqueue_pending_shadow_material(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+) -> Unit {
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) =>
+      queues
+      .queues()
+      .push_current(retained_view_entity, render_entity, visible_entity)
+    None =>
+      abort(
+        "missing PendingShadowQueues resource during pbr shadow specialization",
+      )
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_queue_data(
   world : @ecs.World,
@@ -855,6 +875,47 @@ fn render3d_material_specialization_queue_data(
     Some(value) => Some(value)
     None => {
       render3d_enqueue_pending_mesh_material(
+        world, retained_view_entity, render_entity, visible_entity,
+      )
+      None
+    }
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn render3d_shadow_specialization_queue_data(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+) -> RenderMeshQueueData? {
+  let render_material_instances = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderMaterialInstances resource during pbr shadow specialization",
+      )
+  }
+  if render_material_instances.get(visible_entity.id()) is None {
+    render3d_enqueue_pending_shadow_material(
+      world, retained_view_entity, render_entity, visible_entity,
+    )
+    return None
+  }
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderMeshInstances resource during pbr shadow specialization",
+      )
+  }
+  match render_mesh_instances.render_mesh_queue_data(visible_entity) {
+    Some(value) => Some(value)
+    None => {
+      render3d_enqueue_pending_shadow_material(
         world, retained_view_entity, render_entity, visible_entity,
       )
       None
