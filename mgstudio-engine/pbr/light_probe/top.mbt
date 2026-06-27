@@ -22,6 +22,11 @@ const LIGHT_PROBE_PLUGIN_NAME : String = "mgstudio.pbr.light_probe.LightProbePlu
 pub const MAX_VIEW_LIGHT_PROBES : Int = 8
 
 ///|
+pub let light_probe_extract_system_set : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.light_probe.extract",
+)
+
+///|
 pub const STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS : Int = 16
 
 ///|
@@ -85,6 +90,20 @@ pub fn light_probe_plugin_with(
       @app.system(init_light_probes_buffer).named(
         "mgstudio_pbr::init_light_probes_buffer",
       ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(gather_environment_map_light_probes)
+      .named("mgstudio_pbr::gather_environment_map_light_probes")
+      .in_set(light_probe_extract_system_set)
+      .in_set(@render.render_system_set_extract_commands),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(gather_irradiance_volume_light_probes)
+      .named("mgstudio_pbr::gather_irradiance_volume_light_probes")
+      .in_set(light_probe_extract_system_set)
+      .in_set(@render.render_system_set_extract_commands),
     )
     .add_systems(
       @render.render_schedule_stage(),
@@ -487,6 +506,247 @@ pub fn light_probe_infos_sort_by_camera_distance(
     )
   })
   sorted
+}
+
+///|
+fn light_probe_source_view_transform(
+  source_world : @ecs.World,
+  source_view_entity : @core.Entity,
+) -> @transform.GlobalTransform {
+  match
+    (try! source_world.get_by_key(
+      source_view_entity, @transform.ecs_key_global_transform,
+    )) {
+    Some(global_transform) => global_transform
+    None =>
+      match
+        (try! source_world.get_by_key(
+          source_view_entity, @transform.ecs_key_transform,
+        )) {
+        Some(transform) => @transform.GlobalTransform::from_transform(transform)
+        None => @transform.GlobalTransform::identity()
+      }
+  }
+}
+
+///|
+fn light_probe_source_view_is_active(
+  source_world : @ecs.World,
+  source_view_entity : @core.Entity,
+) -> Bool {
+  match
+    (try! source_world.get_by_key(
+      source_view_entity, @camera_camera.ecs_key_camera,
+    )) {
+    Some(camera) => camera.is_active
+    None => true
+  }
+}
+
+///|
+fn light_probe_render_view_entity(
+  source_world : @ecs.World,
+  source_view_entity : @core.Entity,
+) -> @core.Entity? {
+  match
+    (try! source_world.get_by_key(
+      source_view_entity, @render.ecs_key_render_entity,
+    )) {
+    Some(render_entity) => Some(render_entity.id())
+    None => None
+  }
+}
+
+///|
+fn gather_environment_map_light_probe_infos(
+  source_world : @ecs.World,
+  visible_clusterable_objects : @light_cluster.VisibleClusterableObjects,
+  view_transform : @transform.GlobalTransform,
+) -> Array[LightProbeInfo] {
+  let light_probe_infos : Array[LightProbeInfo] = []
+  for entity in visible_clusterable_objects.reflection_probe_entities() {
+    guard (try! source_world.get_by_key(entity, @light.ecs_key_light_probe))
+      is Some(light_probe) else {
+      continue
+    }
+    guard (try! source_world.get_by_key(
+        entity, @light.ecs_key_environment_map_light,
+      ))
+      is Some(environment_map_light) else {
+      continue
+    }
+    match
+      LightProbeInfo::from_environment_map_light(
+        source_world,
+        @render.MainEntity::new(entity),
+        light_probe,
+        environment_map_light,
+      ) {
+      Some(light_probe_info) => light_probe_infos.push(light_probe_info)
+      None => ()
+    }
+  }
+  light_probe_infos_sort_by_camera_distance(light_probe_infos, view_transform)
+}
+
+///|
+fn gather_irradiance_volume_light_probe_infos(
+  source_world : @ecs.World,
+  visible_clusterable_objects : @light_cluster.VisibleClusterableObjects,
+  view_transform : @transform.GlobalTransform,
+) -> Array[LightProbeInfo] {
+  let light_probe_infos : Array[LightProbeInfo] = []
+  for entity in visible_clusterable_objects.irradiance_volume_entities() {
+    guard (try! source_world.get_by_key(entity, @light.ecs_key_light_probe))
+      is Some(light_probe) else {
+      continue
+    }
+    guard (try! source_world.get_by_key(
+        entity, @light.ecs_key_irradiance_volume,
+      ))
+      is Some(irradiance_volume) else {
+      continue
+    }
+    match
+      LightProbeInfo::from_irradiance_volume(
+        source_world,
+        @render.MainEntity::new(entity),
+        light_probe,
+        irradiance_volume,
+      ) {
+      Some(light_probe_info) => light_probe_infos.push(light_probe_info)
+      None => ()
+    }
+  }
+  light_probe_infos_sort_by_camera_distance(light_probe_infos, view_transform)
+}
+
+///|
+fn gather_light_probe_view_entities(
+  source_world : @ecs.World,
+) -> Array[(@core.Entity, @light_cluster.VisibleClusterableObjects)] {
+  let views : Array[(@core.Entity, @light_cluster.VisibleClusterableObjects)] = []
+  source_world.for_each_component(
+    @light_cluster.VisibleClusterableObjects::component(),
+    fn(entity, visible_clusterable_objects) {
+      views.push((entity, visible_clusterable_objects))
+    },
+  )
+  views
+}
+
+///|
+pub fn gather_environment_map_light_probes(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  render_world
+  .components_registrator()
+  .register_component_by_key(RenderViewEnvironmentMapLightProbes::component())
+  |> ignore
+  for source_view_entry in gather_light_probe_view_entities(source_world) {
+    let source_view_entity = source_view_entry.0
+    let visible_clusterable_objects = source_view_entry.1
+    guard light_probe_render_view_entity(source_world, source_view_entity)
+      is Some(render_view_entity) else {
+      continue
+    }
+    if !light_probe_source_view_is_active(source_world, source_view_entity) {
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          RenderViewEnvironmentMapLightProbes::component(),
+        ) catch {
+          _ => false
+        },
+      )
+      continue
+    }
+    let render_view_light_probes = RenderViewLightProbes::RenderViewLightProbes()
+    render_view_light_probes.maybe_gather_light_probes(
+      gather_environment_map_light_probe_infos(
+        source_world,
+        visible_clusterable_objects,
+        light_probe_source_view_transform(source_world, source_view_entity),
+      ),
+    )
+    if render_view_light_probes.is_empty() {
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          RenderViewEnvironmentMapLightProbes::component(),
+        ) catch {
+          _ => false
+        },
+      )
+    } else {
+      render_world.set_by_key(
+        render_view_entity,
+        RenderViewEnvironmentMapLightProbes::component(),
+        RenderViewEnvironmentMapLightProbes::new(render_view_light_probes),
+      ) catch {
+        _ =>
+          abort(
+            "gather_environment_map_light_probes: failed to insert render view light probes",
+          )
+      }
+    }
+  }
+}
+
+///|
+pub fn gather_irradiance_volume_light_probes(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  render_world
+  .components_registrator()
+  .register_component_by_key(RenderViewIrradianceVolumeLightProbes::component())
+  |> ignore
+  for source_view_entry in gather_light_probe_view_entities(source_world) {
+    let source_view_entity = source_view_entry.0
+    let visible_clusterable_objects = source_view_entry.1
+    guard light_probe_render_view_entity(source_world, source_view_entity)
+      is Some(render_view_entity) else {
+      continue
+    }
+    if !light_probe_source_view_is_active(source_world, source_view_entity) {
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          RenderViewIrradianceVolumeLightProbes::component(),
+        ) catch {
+          _ => false
+        },
+      )
+      continue
+    }
+    let render_view_light_probes = RenderViewLightProbes::RenderViewLightProbes()
+    render_view_light_probes.maybe_gather_light_probes(
+      gather_irradiance_volume_light_probe_infos(
+        source_world,
+        visible_clusterable_objects,
+        light_probe_source_view_transform(source_world, source_view_entity),
+      ),
+    )
+    if render_view_light_probes.is_empty() {
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          RenderViewIrradianceVolumeLightProbes::component(),
+        ) catch {
+          _ => false
+        },
+      )
+    } else {
+      render_world.set_by_key(
+        render_view_entity,
+        RenderViewIrradianceVolumeLightProbes::component(),
+        RenderViewIrradianceVolumeLightProbes::new(render_view_light_probes),
+      ) catch {
+        _ =>
+          abort(
+            "gather_irradiance_volume_light_probes: failed to insert render view light probes",
+          )
+      }
+    }
+  }
 }
 
 ///|

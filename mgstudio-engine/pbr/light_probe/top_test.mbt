@@ -145,6 +145,126 @@ test "pbr light probe: light probe infos sort by camera distance" {
 }
 
 ///|
+test "pbr light probe: gather uses visible clusterable probes and skips unloaded assets" {
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  let render_view = world.spawn()
+  let reflection_probe = world.spawn()
+  let irradiance_volume = world.spawn()
+  try! world.set_by_key(
+    view,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_view),
+  )
+  try! world.set_by_key(
+    view,
+    @light_cluster.VisibleClusterableObjects::component(),
+    @light_cluster.VisibleClusterableObjects::from_lists(
+      [],
+      [reflection_probe],
+      [irradiance_volume],
+      decals=[],
+    ),
+  )
+  try! world.set_by_key(
+    reflection_probe,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
+  )
+  try! world.set_by_key(
+    reflection_probe,
+    @light.ecs_key_environment_map_light,
+    @light.EnvironmentMapLight::new(
+      Some(@asset.Handle::new(910)),
+      Some(@asset.Handle::new(911)),
+      1.0F,
+    ),
+  )
+  try! world.set_by_key(
+    irradiance_volume,
+    @light.ecs_key_light_probe,
+    @light.LightProbe::LightProbe(),
+  )
+  try! world.set_by_key(
+    irradiance_volume,
+    @light.ecs_key_irradiance_volume,
+    @light.IrradianceVolume::new(Some(@asset.Handle::new(912)), 1.0F),
+  )
+  gather_environment_map_light_probes(world)
+  gather_irradiance_volume_light_probes(world)
+  inspect(
+    (try! world.get_by_key(
+      render_view,
+      RenderViewEnvironmentMapLightProbes::component(),
+    ))
+    is None,
+    content="true",
+  )
+  inspect(
+    (try! world.get_by_key(
+      render_view,
+      RenderViewIrradianceVolumeLightProbes::component(),
+    ))
+    is None,
+    content="true",
+  )
+}
+
+///|
+test "pbr light probe: gather removes stale inactive view components" {
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  let render_view = world.spawn()
+  try! world.set_by_key(
+    view,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_view),
+  )
+  try! world.set_by_key(
+    view,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+  try! world.set_by_key(
+    view,
+    @light_cluster.VisibleClusterableObjects::component(),
+    @light_cluster.VisibleClusterableObjects::new(),
+  )
+  try! world.set_by_key(
+    render_view,
+    RenderViewEnvironmentMapLightProbes::component(),
+    RenderViewEnvironmentMapLightProbes::new(
+      RenderViewLightProbes::RenderViewLightProbes(),
+    ),
+  )
+  try! world.set_by_key(
+    render_view,
+    RenderViewIrradianceVolumeLightProbes::component(),
+    RenderViewIrradianceVolumeLightProbes::new(
+      RenderViewLightProbes::RenderViewLightProbes(),
+    ),
+  )
+  gather_environment_map_light_probes(world)
+  gather_irradiance_volume_light_probes(world)
+  inspect(
+    (try! world.get_by_key(
+      render_view,
+      RenderViewEnvironmentMapLightProbes::component(),
+    ))
+    is None,
+    content="true",
+  )
+  inspect(
+    (try! world.get_by_key(
+      render_view,
+      RenderViewIrradianceVolumeLightProbes::component(),
+    ))
+    is None,
+    content="true",
+  )
+}
+
+///|
 test "pbr light probe: add_to_uniform writes Bevy render-probe counts" {
   let probes = RenderViewLightProbes::RenderViewLightProbes()
   probes.maybe_gather_light_probes([

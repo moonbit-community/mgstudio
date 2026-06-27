@@ -39,7 +39,13 @@ pub let ecs_key_render_view_light_probes : @ecs.ComponentKey[RenderViewLightProb
 
 pub let ecs_key_view_light_probes_uniform_offset : @ecs.ComponentKey[ViewLightProbesUniformOffset]
 
+pub fn gather_environment_map_light_probes(@ecs.World) -> Unit
+
+pub fn gather_irradiance_volume_light_probes(@ecs.World) -> Unit
+
 pub fn init_light_probes_buffer(@ecs.World) -> Unit
+
+pub let light_probe_extract_system_set : String
 
 pub fn light_probe_infos_sort_by_camera_distance(Array[LightProbeInfo], @transform.GlobalTransform) -> Array[LightProbeInfo]
 

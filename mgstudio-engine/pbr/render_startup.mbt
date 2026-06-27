@@ -61,6 +61,11 @@ pub let pbr_prepare_lights_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let pbr_cluster_extract_system_set : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.cluster.extract",
+)
+
+///|
 fn prepare_clustered_decals(world : @ecs.World) -> Unit {
   let render_decals = match
     world.get_resource(@pbr_decal.ecs_key_render_clustered_decals) {
@@ -251,10 +256,22 @@ fn configure_pbr_render_extract_systems(
   .world()
   .insert_resource(ecs_key_pbr_render_extract_systems_installed, marker)
   sub_app
+  .configure_sets(
+    @render.render_schedule_stage(),
+    @pbr_light_probe.light_probe_extract_system_set,
+    before=[pbr_cluster_extract_system_set],
+    in_sets=[@render.render_system_set_extract_commands],
+  )
+  .configure_sets(
+    @render.render_schedule_stage(),
+    pbr_cluster_extract_system_set,
+    in_sets=[@render.render_system_set_extract_commands],
+  )
   .add_systems(
     @render.render_schedule_stage(),
     @app.system(extract_clusters_for_cpu_clustering)
     .named("mgstudio_pbr::extract_clusters_for_cpu_clustering")
+    .in_set(pbr_cluster_extract_system_set)
     .in_set(@render.render_system_set_extract_commands)
     .run_if(cpu_clustering_is_enabled_during_extraction),
   )
@@ -262,6 +279,7 @@ fn configure_pbr_render_extract_systems(
     @render.render_schedule_stage(),
     @app.system(extract_clusters_for_gpu_clustering)
     .named("mgstudio_pbr::extract_clusters_for_gpu_clustering")
+    .in_set(pbr_cluster_extract_system_set)
     .in_set(@render.render_system_set_extract_commands)
     .run_if(gpu_clustering_is_enabled_during_extraction),
   )
