@@ -644,11 +644,28 @@ pub struct PreprocessWorkItem {
 } derive(Eq, Debug)
 
 ///|
+const PREPROCESS_WORK_ITEM_UNINIT_INDEX : Int = -1
+
+///|
 pub fn PreprocessWorkItem::new(
   input_index : Int,
   output_or_indirect_parameters_index : Int,
 ) -> PreprocessWorkItem {
   PreprocessWorkItem::{ input_index, output_or_indirect_parameters_index }
+}
+
+///|
+pub fn PreprocessWorkItem::uninit() -> PreprocessWorkItem {
+  PreprocessWorkItem::{
+    input_index: PREPROCESS_WORK_ITEM_UNINIT_INDEX,
+    output_or_indirect_parameters_index: PREPROCESS_WORK_ITEM_UNINIT_INDEX,
+  }
+}
+
+///|
+pub fn PreprocessWorkItem::is_uninit(self : PreprocessWorkItem) -> Bool {
+  self.input_index == PREPROCESS_WORK_ITEM_UNINIT_INDEX &&
+  self.output_or_indirect_parameters_index == PREPROCESS_WORK_ITEM_UNINIT_INDEX
 }
 
 ///|
@@ -801,6 +818,27 @@ pub fn PreprocessWorkItemBuffers::push(
             buffers.late_non_indexed.push(preprocess_work_item)
           }
         None => ()
+      }
+    }
+  }
+}
+
+///|
+pub fn PreprocessWorkItemBuffers::push_multiple_uninit(
+  self : PreprocessWorkItemBuffers,
+  indexed : Bool,
+  count : Int,
+) -> Unit {
+  let item = PreprocessWorkItem::uninit()
+  match self {
+    Direct(buffer) =>
+      for _ in 0..<count {
+        buffer.push(item)
+      }
+    Indirect(indexed_buffer, non_indexed_buffer, _) => {
+      let buffer = if indexed { indexed_buffer } else { non_indexed_buffer }
+      for _ in 0..<count {
+        buffer.push(item)
       }
     }
   }

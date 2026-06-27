@@ -190,6 +190,21 @@ test "gpu preprocessing: indirect work-item buffers split mesh classes and late 
 }
 
 ///|
+test "gpu preprocessing: multidraw reserves uninitialized indirect work-item slots" {
+  let buffers = preprocess_work_item_buffers_indirect(true)
+  buffers.push_multiple_uninit(true, 3)
+  buffers.push_multiple_uninit(false, 2)
+  debug_inspect(buffers.indexed_len(), content="3")
+  debug_inspect(buffers.non_indexed_len(), content="2")
+  debug_inspect(buffers.late_indexed_len(), content="0")
+  debug_inspect(buffers.late_non_indexed_len(), content="0")
+  debug_inspect(PreprocessWorkItem::uninit().is_uninit(), content="true")
+  buffers.push(true, PreprocessWorkItem::new(1, 10))
+  debug_inspect(buffers.indexed_len(), content="4")
+  debug_inspect(buffers.late_indexed_len(), content="1")
+}
+
+///|
 test "gpu preprocessing: work-item table toggles occlusion buffers for retained views" {
   let table : @hashmap.HashMap[String, PreprocessWorkItemBuffers] = @hashmap.HashMap([],
   )
