@@ -826,6 +826,8 @@ pub let render3d_set_specialize : String
 
 pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
 
+pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey) -> Render3dShadowSpecializationWorkItemData?
+
 pub fn render3d_should_apply_cpu_frustum_culling_flags(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_specialize_material_meshes_system(@ecs.World) -> Unit
@@ -2067,6 +2069,21 @@ pub fn Render3dResolvedMaterial::material(Self) -> @material.StandardMaterial
 pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resource.MaterialBindGroupResolvedData
 pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
 pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData) -> Self
+
+pub struct Render3dShadowSpecializationWorkItemData {
+  queue_data : RenderMeshQueueData
+  visible_entity : @Milky2018/mgstudio/render.MainEntity
+  retained_view_entity : @view.RetainedViewEntity
+  mesh_key : @material.ErasedMeshPipelineKey
+  layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+  properties : @material.MaterialProperties
+}
+pub fn Render3dShadowSpecializationWorkItemData::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+pub fn Render3dShadowSpecializationWorkItemData::mesh_key(Self) -> @material.ErasedMeshPipelineKey
+pub fn Render3dShadowSpecializationWorkItemData::properties(Self) -> @material.MaterialProperties
+pub fn Render3dShadowSpecializationWorkItemData::queue_data(Self) -> RenderMeshQueueData
+pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(Self) -> @view.RetainedViewEntity
+pub fn Render3dShadowSpecializationWorkItemData::visible_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
 
 pub struct RenderGpuCulledEntities {
   entities : Map[UInt64, @render_layers.RenderLayers]

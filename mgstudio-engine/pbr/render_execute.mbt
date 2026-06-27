@@ -842,6 +842,92 @@ fn render3d_enqueue_pending_shadow_material(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+fn render3d_shadow_specialization_alpha_may_discard(
+  alpha_mode : @material.AlphaMode3d,
+) -> Bool {
+  match alpha_mode {
+    Mask(_) | Blend | Premultiplied | Add | AlphaToCoverage => true
+    _ => false
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+fn render3d_shadow_specialization_mesh_key(
+  light_key : @material.ErasedMeshPipelineKey,
+  render_mesh : @render_mesh.RenderMesh,
+  material_properties : @material.MaterialProperties,
+  render_lightmaps : @lightmap.RenderLightmaps?,
+  visible_entity : @render.MainEntity,
+) -> @material.ErasedMeshPipelineKey {
+  let mut mesh_key_bits = light_key.bits() | render_mesh.key_bits().bits()
+  if render_lightmaps is Some(lightmaps) &&
+    lightmaps.get(visible_entity.id()) is Some(_) {
+    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_LIGHTMAPPED
+  }
+  if render3d_shadow_specialization_alpha_may_discard(
+      material_properties.alpha_mode,
+    ) {
+    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_MAY_DISCARD
+  }
+  @material.ErasedMeshPipelineKey::new(mesh_key_bits, light_key.type_tag())
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::ShadowSpecializationWorkItem`.
+pub struct Render3dShadowSpecializationWorkItemData {
+  queue_data : RenderMeshQueueData
+  visible_entity : @render.MainEntity
+  retained_view_entity : @render_view.RetainedViewEntity
+  mesh_key : @material.ErasedMeshPipelineKey
+  layout : @mesh.MeshVertexBufferLayoutRef
+  properties : @material.MaterialProperties
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::queue_data(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> RenderMeshQueueData {
+  self.queue_data
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::mesh_key(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> @material.ErasedMeshPipelineKey {
+  self.mesh_key
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::layout(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> @mesh.MeshVertexBufferLayoutRef {
+  self.layout
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::properties(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> @material.MaterialProperties {
+  self.properties
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::visible_entity(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> @render.MainEntity {
+  self.visible_entity
+}
+
+///|
+pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(
+  self : Render3dShadowSpecializationWorkItemData,
+) -> @render_view.RetainedViewEntity {
+  self.retained_view_entity
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_queue_data(
   world : @ecs.World,
@@ -953,6 +1039,57 @@ pub fn render3d_shadow_specialization_queue_data(
     return None
   }
   Some(mesh_instance)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn render3d_shadow_specialization_work_item_data(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+  light_key : @material.ErasedMeshPipelineKey,
+) -> Render3dShadowSpecializationWorkItemData? {
+  let queue_data = match
+    render3d_shadow_specialization_queue_data(
+      world, retained_view_entity, render_entity, visible_entity,
+    ) {
+    Some(value) => value
+    None => return None
+  }
+  guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
+    is Some(render_meshes) else {
+    return None
+  }
+  guard render_meshes.get(queue_data.mesh_asset_id()) is Some(render_mesh) else {
+    return None
+  }
+  let source_world = @render.render_source_world(world)
+  let registry = material_runtime_registry_or_empty(world)
+  guard material_runtime_registry_resolve_material(
+      world,
+      source_world,
+      registry,
+      visible_entity.id(),
+    )
+    is Some(material) else {
+    return None
+  }
+  let render_lightmaps = world.get_resource(
+    @lightmap.RenderLightmaps::resource(),
+  )
+  let properties = material.material_properties()
+  let mesh_key = render3d_shadow_specialization_mesh_key(
+    light_key, render_mesh, properties, render_lightmaps, visible_entity,
+  )
+  Some(Render3dShadowSpecializationWorkItemData::{
+    queue_data,
+    visible_entity,
+    retained_view_entity,
+    mesh_key,
+    layout: render_mesh.layout(),
+    properties,
+  })
 }
 
 ///|

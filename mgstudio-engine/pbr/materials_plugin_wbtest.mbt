@@ -864,7 +864,13 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   )
   world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
   let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
-  render_mesh_assets.insert(640, @render_mesh.RenderMesh::new(vertex_count=3))
+  render_mesh_assets.insert(
+    640,
+    @render_mesh.RenderMesh::new(
+      vertex_count=3,
+      key_bits=@mesh.BaseMeshPipelineKey::new(32UL),
+    ),
+  )
   world.insert_resource(
     @render_mesh.RenderMeshAssets::resource(),
     render_mesh_assets,
@@ -888,6 +894,13 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let ready_value = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, ready,
   ).unwrap()
+  let ready_work_item = render3d_shadow_specialization_work_item_data(
+    world,
+    retained_view,
+    render_entity,
+    ready,
+    @material.ErasedMeshPipelineKey::new(8UL, "MeshPipelineKey"),
+  ).unwrap()
   let non_shadow_caster_ready = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, non_shadow_caster,
   )
@@ -901,12 +914,64 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     ready_value.flags().contains(RenderMeshInstanceFlags::shadow_caster()),
     content="true",
   )
+  inspect(ready_work_item.mesh_key().bits(), content="40")
+  debug_inspect(ready_work_item.properties().shadows_enabled, content="true")
   debug_inspect(non_shadow_caster_ready is None, content="true")
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(retained_view), content="3")
     None => debug_inspect(false, content="true")
   }
+}
+
+///|
+test "render3d: shadow specialization mesh key mirrors Bevy work item assembly" {
+  let visible_entity = @render.MainEntity::new(@core.Entity::new(71, 1))
+  let light_key = @material.ErasedMeshPipelineKey::new(8UL, "MeshPipelineKey")
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=3,
+    key_bits=@mesh.BaseMeshPipelineKey::new(32UL),
+  )
+  let opaque_properties = @material.MaterialProperties::MaterialProperties()
+  let opaque_key = render3d_shadow_specialization_mesh_key(
+    light_key,
+    render_mesh,
+    opaque_properties,
+    None,
+    visible_entity,
+  )
+  inspect(opaque_key.bits(), content="40")
+
+  let render_lightmaps = @lightmap.RenderLightmaps::RenderLightmaps()
+  ignore(
+    render_lightmaps.insert_lightmap(
+      visible_entity.id(),
+      @lightmap.Lightmap::new(@asset.Handle::new(5)),
+    ),
+  )
+  let blend_properties = @material.MaterialProperties::MaterialProperties().with_alpha_mode(
+    @material.AlphaMode3d::Blend,
+  )
+  let blend_lightmapped_key = render3d_shadow_specialization_mesh_key(
+    light_key,
+    render_mesh,
+    blend_properties,
+    Some(render_lightmaps),
+    visible_entity,
+  )
+  inspect(blend_lightmapped_key.bits(), content="4200")
+
+  let multiply_properties = @material.MaterialProperties::MaterialProperties().with_alpha_mode(
+    @material.AlphaMode3d::Multiply,
+  )
+  let multiply_key = render3d_shadow_specialization_mesh_key(
+    light_key,
+    render_mesh,
+    multiply_properties,
+    None,
+    visible_entity,
+  )
+  inspect(multiply_key.bits() & MESH_PIPELINE_KEY_MAY_DISCARD, content="0")
 }
 
 ///|
