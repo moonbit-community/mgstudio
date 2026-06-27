@@ -180,6 +180,26 @@ fn register_light_required_components(
     fn() { @visibility.VisibilityClass::VisibilityClass() },
   )
   world.register_required_components_with(
+    ecs_key_point_light_texture,
+    ecs_key_point_light,
+    fn() { PointLight::PointLight() },
+  )
+  world.register_required_components_with(
+    ecs_key_spot_light_texture,
+    ecs_key_spot_light,
+    fn() { SpotLight::SpotLight() },
+  )
+  world.register_required_components_with(
+    ecs_key_directional_light_texture,
+    ecs_key_directional_light,
+    fn() { DirectionalLight::DirectionalLight() },
+  )
+  world.register_required_components_with(
+    ecs_key_sun_disk,
+    ecs_key_directional_light,
+    fn() { DirectionalLight::DirectionalLight() },
+  )
+  world.register_required_components_with(
     ecs_key_rect_light,
     @transform.ecs_key_transform,
     fn() { @transform.Transform::identity() },

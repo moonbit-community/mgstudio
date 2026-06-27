@@ -264,6 +264,68 @@ test "light plugin: directional light required components match bevy directional
 }
 
 ///|
+test "light plugin: light texture and sun disk components require owner lights" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+
+  let point = world.spawn()
+  try! world.set(point, @light.PointLightTexture::PointLightTexture())
+  debug_inspect(
+    try! (world.get_by_key(point, @light.ecs_key_point_light) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(point, @camera_primitives.ecs_key_cubemap_frusta)
+    is Some(_)),
+    content="true",
+  )
+
+  let spot = world.spawn()
+  try! world.set(spot, @light.SpotLightTexture::SpotLightTexture())
+  debug_inspect(
+    try! (world.get_by_key(spot, @light.ecs_key_spot_light) is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(spot, @camera_primitives.ecs_key_frustum) is Some(_)),
+    content="true",
+  )
+
+  let directional_texture = world.spawn()
+  try! world.set(
+    directional_texture,
+    @light.DirectionalLightTexture::DirectionalLightTexture(),
+  )
+  debug_inspect(
+    try! (world.get_by_key(
+      directional_texture, @light.ecs_key_directional_light,
+    )
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(directional_texture, @light.ecs_key_cascades)
+    is Some(_)),
+    content="true",
+  )
+
+  let sun_disk = world.spawn()
+  try! world.set(sun_disk, @light.SunDisk::SunDisk())
+  debug_inspect(
+    try! (world.get_by_key(sun_disk, @light.ecs_key_directional_light)
+    is Some(_)),
+    content="true",
+  )
+  debug_inspect(
+    try! (world.get_by_key(sun_disk, @light.ecs_key_cascade_shadow_config)
+    is Some(_)),
+    content="true",
+  )
+}
+
+///|
 test "light plugin: cluster visibility hook preserves existing visibility classes" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     @light.LightPlugin::LightPlugin(),
