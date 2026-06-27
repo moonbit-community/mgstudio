@@ -174,6 +174,128 @@ fn material_test_pair_contains(
 }
 
 ///|
+fn material_test_base_specialize(
+  _world : @ecs.World,
+  _key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+  _properties : @material.MaterialProperties,
+) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  if layout.index() < 0 {
+    raise @material.missing_vertex_attribute_error("layout")
+  }
+  @material.CachedRenderPipelineId::new(901UL)
+}
+
+///|
+fn material_test_camera_payload() -> Camera3dViewPayload {
+  Camera3dViewPayload::{
+    decal_config: None,
+    deferred_config: None,
+    distance_fog: None,
+    auto_exposure: None,
+    volumetric_fog: None,
+    atmosphere: None,
+    atmosphere_settings: None,
+    camera: @camera_camera.Camera::Camera(),
+    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+    projection: Projection::default(),
+    sub_camera_view: None,
+    oit_settings: None,
+    screen_space_transmission: None,
+    bloom: None,
+    tonemapping: None,
+    deband_dither: None,
+    chromatic_aberration: None,
+    contrast_adaptive_sharpening: None,
+    custom_post_process3d: None,
+    vignette: None,
+    motion_blur: None,
+    exposure: None,
+    color_grading: None,
+    environment_map_light: None,
+    generated_environment_map_light: None,
+    atmosphere_environment_map_light: None,
+    has_environment_light_probes: false,
+    irradiance_volume: None,
+    screen_space_ambient_occlusion: None,
+    screen_space_reflections: None,
+    contact_shadows: None,
+    depth_prepass_enabled: false,
+    normal_prepass_enabled: false,
+    deferred_prepass_enabled: false,
+    no_indirect_drawing: false,
+    gpu_occlusion_culling_enabled: false,
+    hdr_enabled: false,
+    fxaa: None,
+    temporal_jitter: None,
+    temporal_anti_aliasing: None,
+    shadow_filtering_method: None,
+    motion_vector_prepass_enabled: false,
+    msaa: None,
+    transform: @transform.Transform::Transform(),
+    previous_transform: @transform.Transform::Transform(),
+    previous_clip_from_world: None,
+    target_id: 0,
+    target_size: @math.IVec2::new(1280, 720),
+    scale_factor: 1.0F,
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    has_no_cpu_culling: false,
+    invert_culling: false,
+  }
+}
+
+///|
+fn material_test_extracted_mesh_payload(
+  mesh_id : Int,
+  material_properties : @material.MaterialProperties,
+) -> Mesh3dExtractedPayload {
+  let transform = @transform.Transform::identity()
+  let world_from_local = @math.Affine3::identity()
+  Mesh3dExtractedPayload::{
+    mesh_handle: @asset.Handle::new(mesh_id),
+    mesh_id,
+    mesh_topology_kind: 0,
+    mesh_is_indexed: true,
+    mesh_preprocess_static: None,
+    world_from_local,
+    previous_world_from_local: world_from_local,
+    transform,
+    previous_transform: transform,
+    visibility_range: None,
+    aabb: None,
+    aabb_center_world: None,
+    material: @material.StandardMaterial::StandardMaterial(),
+    material_extension: None,
+    material_properties,
+    material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+    material_pipeline_id: None,
+    lightmap: None,
+    is_forward_decal: false,
+    forward_decal_material_ext: None,
+    clustered_decal: None,
+    has_not_shadow_caster: false,
+    has_not_shadow_receiver: false,
+    has_transmitted_shadow_receiver: false,
+    has_no_frustum_culling: false,
+    has_no_cpu_culling: false,
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    has_no_wireframe: false,
+    wireframe_asset_id: None,
+    wireframe_material: None,
+    wireframe_color: None,
+    wireframe_line_width: None,
+    wireframe_topology: None,
+    skinning_key_hi: -1,
+    has_previous_skin: false,
+    morph_weights_index: -1,
+    previous_morph_weights_index: -1,
+    morph_targets_texture_id: -1,
+    instance_vertex_buffer_id: -1,
+    motion_vector_enabled: false,
+  }
+}
+
+///|
 test "render3d: extract render visible entities mirrors camera visible Mesh3d pairs" {
   let world = @ecs.World::new()
   let main_camera = world.spawn()
@@ -405,6 +527,69 @@ test "render3d: material specialization readiness follows Bevy resources" {
       debug_inspect(queues.current_len(retained_view), content="2")
     None => debug_inspect(false, content="true")
   }
+}
+
+///|
+test "render3d: material specialization reads prepared RenderMeshAssets only" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    ecs_key_specialized_material_pipeline_cache,
+    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
+    Some(material_test_base_specialize),
+  )
+  let extracted_payload_mesh_id = 581
+  let render_mesh_asset_id = 580
+  let mesh = material_test_extracted_mesh_payload(
+    extracted_payload_mesh_id, material_properties,
+  )
+  let queue_data = RenderMeshQueueData::new(render_mesh_asset_id, 0U, true)
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(58, 1),
+  )
+
+  let missing_render_mesh = render3d_prewarm_material_pipeline(
+    world,
+    @pbr_render.Render3dMeshRuntimeState::new(),
+    mesh,
+    material_test_camera_payload(),
+    retained_view,
+    @core.Entity::new(59, 1),
+    queue_data,
+    1,
+  )
+
+  debug_inspect(missing_render_mesh is None, content="true")
+  debug_inspect(
+    world.get_resource(@render_mesh.RenderMeshAssets::resource()) is None,
+    content="true",
+  )
+
+  let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_mesh_assets.insert(
+    render_mesh_asset_id,
+    @render_mesh.RenderMesh::new(vertex_count=3),
+  )
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    render_mesh_assets,
+  )
+  let prepared_render_mesh = render3d_prewarm_material_pipeline(
+    world,
+    @pbr_render.Render3dMeshRuntimeState::new(),
+    mesh,
+    material_test_camera_payload(),
+    retained_view,
+    @core.Entity::new(59, 1),
+    queue_data,
+    2,
+  )
+
+  debug_inspect(
+    prepared_render_mesh.map(fn(value) { value.id() }),
+    content="Some(901)",
+  )
 }
 
 ///|

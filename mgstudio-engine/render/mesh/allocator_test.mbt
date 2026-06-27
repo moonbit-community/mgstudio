@@ -437,20 +437,37 @@ test "render mesh allocator: webgl-style vertex allocation uses large slabs" {
 
 ///|
 test "render mesh allocator plugin initializes resource owners without overwriting" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
-    MeshAllocatorPlugin::MeshAllocatorPlugin(),
-  )
+  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let app = @app.App::new(@ecs.World::new())
+    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   inspect(
-    app.contains_resource(MeshAllocatorSettings::resource()),
+    render_world.get_resource(MeshAllocatorSettings::resource()) is Some(_),
     content="true",
   )
-  inspect(app.contains_resource(MeshAllocator::resource()), content="true")
+  inspect(
+    render_world.get_resource(MeshAllocator::resource()) is Some(_),
+    content="true",
+  )
+  inspect(
+    render_world.get_resource(RenderMeshAssets::resource()) is Some(_),
+    content="true",
+  )
+  inspect(app.contains_resource(MeshAllocator::resource()), content="false")
 
   let seeded = MeshAllocator::new(general_vertex_slabs_supported=false)
+  let seeded_world = @ecs.World::new()
+  seeded_world.insert_resource(MeshAllocator::resource(), seeded)
   let app = @app.App::new(@ecs.World::new())
-    .insert_resource(seeded)
+    .insert_sub_app(@app.RenderApp, @app.SubApp::new(seeded_world))
     .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
-  guard app.world().get_resource(MeshAllocator::resource()) is Some(value) else {
+  guard app
+    .get_sub_app(@app.RenderApp)
+    .unwrap()
+    .world()
+    .get_resource(MeshAllocator::resource())
+    is Some(value) else {
     fail("expected mesh allocator resource")
   }
   guard value.allocate(50, 96, MeshAllocatorElementLayout::vertex(32))
@@ -458,4 +475,12 @@ test "render mesh allocator plugin initializes resource owners without overwriti
     fail("expected webgl-style allocator resource")
   }
   inspect(plan.kind() is LargeObject, content="true")
+}
+
+///|
+test "render mesh allocator plugin tolerates missing render app" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    MeshAllocatorPlugin::MeshAllocatorPlugin(),
+  )
+  inspect(app.contains_resource(MeshAllocator::resource()), content="false")
 }

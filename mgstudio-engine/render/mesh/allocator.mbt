@@ -798,10 +798,32 @@ pub fn mesh_allocator_plugin_with(
   plugin : MeshAllocatorPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  app
-  .init_resource(fn() { MeshAllocatorSettings::MeshAllocatorSettings() })
-  .init_resource(fn() { MeshAllocator::MeshAllocator() })
-  .init_resource(fn() { RenderMeshAssets::RenderMeshAssets() })
+  let next = app
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(sub_app) {
+      let world = sub_app.world()
+      if world.get_resource(MeshAllocatorSettings::resource()) is None {
+        world.insert_resource(
+          MeshAllocatorSettings::resource(),
+          MeshAllocatorSettings::MeshAllocatorSettings(),
+        )
+      }
+      if world.get_resource(MeshAllocator::resource()) is None {
+        world.insert_resource(
+          MeshAllocator::resource(),
+          MeshAllocator::MeshAllocator(),
+        )
+      }
+      if world.get_resource(RenderMeshAssets::resource()) is None {
+        world.insert_resource(
+          RenderMeshAssets::resource(),
+          RenderMeshAssets::RenderMeshAssets(),
+        )
+      }
+      sub_app
+    }),
+  )
+  next
 }
 
 ///|

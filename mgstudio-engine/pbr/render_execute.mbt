@@ -496,26 +496,16 @@ fn render3d_prewarm_material_pipeline(
   guard mesh.material_properties.base_specialize is Some(base_specialize) else {
     return None
   }
-  guard @sprite.render_mesh_asset_get(mesh.mesh_handle) is Some(mesh_asset) else {
+  let render_mesh_assets = match
+    world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
+    Some(value) => value
+    None => return None
+  }
+  guard render_mesh_assets.get(render_mesh_queue_data.mesh_asset_id())
+    is Some(render_mesh) else {
     return None
   }
-  let render_mesh = @render_mesh.RenderMesh::from_mesh(
-    mesh_asset,
-    mesh_runtime_state_value.mesh_vertex_buffer_layouts,
-  )
-  if world.get_resource(@render_mesh.RenderMeshAssets::resource()) is None {
-    world.insert_resource(
-      @render_mesh.RenderMeshAssets::resource(),
-      @render_mesh.RenderMeshAssets::RenderMeshAssets(),
-    )
-  }
-  match world.get_resource_mut(@render_mesh.RenderMeshAssets::resource()) {
-    Some(render_mesh_assets) =>
-      render_mesh_assets.modify(fn(assets) {
-        assets.insert(mesh.mesh_handle.id(), render_mesh)
-      })
-    None => ()
-  }
+  ignore(mesh_runtime_state_value)
   let layout = render_mesh.layout()
   let view_key_bits = render3d_camera_mesh_pipeline_view_key_bits(camera)
   let motion_vector_prepass = (
@@ -554,7 +544,7 @@ fn render3d_prewarm_material_pipeline(
   ) catch {
     err =>
       abort(
-        "failed to specialize pbr material pipeline for mesh \{mesh.mesh_handle.id()}: \{err}",
+        "failed to specialize pbr material pipeline for mesh \{render_mesh_queue_data.mesh_asset_id()}: \{err}",
       )
   }
   match world.get_resource_mut(ecs_key_specialized_material_pipeline_cache) {
@@ -873,6 +863,38 @@ fn render3d_material_specialization_queue_data(
 }
 
 ///|
+// Bevy source: `bevy_render/src/mesh/allocator.rs::allocate_and_free_meshes`
+// and `RenderAssets<RenderMesh>` preparation before
+// `bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
+  world : @ecs.World,
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
+  let render_mesh_assets = match
+    world.get_resource_mut(@render_mesh.RenderMeshAssets::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderMeshAssets resource during pbr render mesh asset preparation",
+      )
+  }
+  render_mesh_assets.modify(fn(assets) {
+    for extracted_mesh in meshes {
+      let mesh_handle = extracted_mesh.payload.mesh_handle
+      guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
+        continue
+      }
+      let render_mesh = @render_mesh.RenderMesh::from_mesh(
+        source_mesh,
+        mesh_runtime_state_value.mesh_vertex_buffer_layouts,
+      )
+      assets.insert(mesh_handle.id(), render_mesh)
+    }
+  })
+}
+
+///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -1141,6 +1163,9 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
         })
       })
     })
+    render3d_prepare_render_mesh_assets_from_extracted_meshes(
+      world, mesh_runtime_state_value, meshes,
+    )
     if frame_config.gpu_instance_buffer_builder_enabled {
       render_mesh_instances_extract_gpu_building_resource(
         world,
