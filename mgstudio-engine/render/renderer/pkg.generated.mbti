@@ -191,7 +191,7 @@ pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Fl
 
 pub fn draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
-pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, pipeline~ : @render_resource.RenderPipeline, sampler~ : @render_resource.Sampler, settings_buffer~ : @wgpu_mbt.Buffer, settings_offset~ : UInt) -> Unit
+pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, pipeline~ : @render_resource.RenderPipeline, sampler~ : @render_resource.Sampler, settings_buffer~ : @wgpu_mbt.Buffer, settings_offset~ : UInt, globals_buffer~ : @wgpu_mbt.Buffer) -> Unit
 
 pub fn draw_prepared_skybox(bind_group_id~ : Int) -> Unit
 
@@ -394,8 +394,6 @@ pub fn prepare_meshlet_storage_buffers(vertex_positions~ : Bytes, vertex_normals
 pub fn prepare_meshlet_view_instance_visibility_buffer(view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 
 pub fn prepare_meshlet_view_visibility_buffer(view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
-
-pub fn prepare_motion_blur(velocity_texture_id~ : Int) -> Unit
 
 pub fn prepare_skybox_bind_group(texture_id~ : Int, brightness~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float) -> Int?
 
@@ -906,7 +904,6 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_instance_mesh_morph_revision : Int
   mut mesh3d_motion_vector_instance_mesh_morph_target_texture_id : Int
   mut mesh3d_motion_vector_instance_mesh_layout_mask : Int
-  mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
   mut effect_stack_bgl : @wgpu_mbt.BindGroupLayout?
   mut effect_stack_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut effect_stack_pipeline : @wgpu_mbt.RenderPipeline?
@@ -1074,7 +1071,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, Gp
 pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Bool, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, UInt, Int, Int, Int, Int, Int, Int, UInt64, @render_resource.MaterialBindGroupResolvedData) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_volumetric_fog(Self, Int, Int, Int, Int, Int, Int, Bool, Array[HostMesh3dVolumetricFogVolume]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?, pipeline_descriptor? : @render_resource.RenderPipelineDescriptor?) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_motion_blur(Self, Int, Int, @render_resource.RenderPipeline, @render_resource.Sampler, @wgpu_mbt.Buffer, UInt) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_motion_blur(Self, Int, Int, @render_resource.RenderPipeline, @render_resource.Sampler, @wgpu_mbt.Buffer, UInt, @wgpu_mbt.Buffer) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_prepared_skybox(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
@@ -1123,7 +1120,6 @@ pub fn GpuBackend::prepare_meshlet_frame_resources(Self, cluster_buffer_slots~ :
 pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
 pub fn GpuBackend::prepare_meshlet_view_instance_visibility_buffer(Self, view_entity_bits~ : UInt64, instance_visibility~ : Bytes) -> Unit
 pub fn GpuBackend::prepare_meshlet_view_visibility_buffer(Self, view_entity_bits~ : UInt64, view_width~ : Int, view_height~ : Int, not_shadow_view~ : Bool) -> Unit
-pub fn GpuBackend::prepare_motion_blur(Self, Int) -> Unit
 pub fn GpuBackend::prepare_skybox_bind_group(Self, Int, Float, Float, Float, Float, Float) -> Int? raise GpuBackendError
 pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::present_active_frames(Self) -> Unit

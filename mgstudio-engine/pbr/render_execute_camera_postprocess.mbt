@@ -51,6 +51,7 @@ fn render3d_execute_camera_postprocess(
     @render_resource.Sampler,
     @wgpu.Buffer,
     UInt,
+    @wgpu.Buffer,
   )? {
     guard (try! world.get_by_key(
         camera_render_entity,
@@ -89,12 +90,20 @@ fn render3d_execute_camera_postprocess(
       is Some(settings_offset) else {
       return None
     }
+    guard world.get_resource(@render.GlobalsBuffer::resource())
+      is Some(globals_buffer_resource) else {
+      return None
+    }
+    guard globals_buffer_resource.binding() is Some(globals_buffer) else {
+      return None
+    }
     Some(
       (
         render_pipeline,
         motion_blur_pipeline.sampler(),
         settings_buffer,
         settings_offset.offset(),
+        globals_buffer,
       ),
     )
   }
@@ -118,6 +127,7 @@ fn render3d_execute_camera_postprocess(
       motion_blur_sampler,
       motion_blur_settings_buffer,
       motion_blur_settings_offset,
+      motion_blur_globals_buffer,
     ) = motion_blur_pipeline_entry
     if bloom_enabled || tonemap_postprocess_enabled {
       let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
@@ -151,9 +161,6 @@ fn render3d_execute_camera_postprocess(
           cleared_targets_this_frame, post_motion_blur_target_id, clear_enabled,
         ),
       )
-      @render.host_gpu_prepare_motion_blur(
-        velocity_texture_id=velocity_target_id,
-      )
       @render.host_gpu_draw_motion_blur(
         scene_texture_id=scene_target_id,
         velocity_texture_id=velocity_target_id,
@@ -161,6 +168,7 @@ fn render3d_execute_camera_postprocess(
         sampler=motion_blur_sampler,
         settings_buffer=motion_blur_settings_buffer,
         settings_offset=motion_blur_settings_offset,
+        globals_buffer=motion_blur_globals_buffer,
       )
       @render.host_gpu_end_pass()
       final_source_texture_id = post_motion_blur_target_id
@@ -195,9 +203,6 @@ fn render3d_execute_camera_postprocess(
           clear_enabled,
         ),
       )
-      @render.host_gpu_prepare_motion_blur(
-        velocity_texture_id=velocity_target_id,
-      )
       @render.host_gpu_draw_motion_blur(
         scene_texture_id=scene_target_id,
         velocity_texture_id=velocity_target_id,
@@ -205,6 +210,7 @@ fn render3d_execute_camera_postprocess(
         sampler=motion_blur_sampler,
         settings_buffer=motion_blur_settings_buffer,
         settings_offset=motion_blur_settings_offset,
+        globals_buffer=motion_blur_globals_buffer,
       )
       @render.host_gpu_end_pass()
     }

@@ -34,56 +34,6 @@ const MOTION_BLUR_UNIFORM_BUFFER_SIZE : UInt64 = 16UL
 const MOTION_BLUR_GLOBALS_BUFFER_SIZE : UInt64 = 16UL
 
 ///|
-fn ensure_motion_blur_globals_buffer(backend : GpuBackend) -> Unit {
-  let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-  if backend.motion_blur_globals_buf is None {
-    backend.motion_blur_globals_buf = Some(
-      backend.device.create_buffer(size=MOTION_BLUR_GLOBALS_BUFFER_SIZE, usage~),
-    )
-  }
-}
-
-///|
-pub fn GpuBackend::prepare_motion_blur(
-  self : GpuBackend,
-  velocity_texture_id : Int,
-) -> Unit {
-  guard self.frame is Some(frame) else {
-    motion_blur_debug_log("prepare skip: no frame")
-    return
-  }
-  guard frame.pass is Some(_) else {
-    motion_blur_debug_log("prepare skip: no active render pass")
-    return
-  }
-  if velocity_texture_id < 0 {
-    motion_blur_debug_log(
-      "prepare skip: invalid velocity texture id=\{velocity_texture_id}",
-    )
-    return
-  }
-  guard find_texture(self, velocity_texture_id) is Some(_) else {
-    motion_blur_debug_log(
-      "prepare skip: velocity texture not found id=\{velocity_texture_id}",
-    )
-    return
-  }
-  ensure_motion_blur_globals_buffer(self)
-  guard self.motion_blur_globals_buf is Some(globals_buf) else {
-    motion_blur_debug_log("prepare skip: no globals buffer")
-    return
-  }
-  let globals_bytes = u32le_pack([
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    self.frame_count,
-    0U,
-  ])
-  self.queue.write_buffer(globals_buf, 0UL, globals_bytes)
-  motion_blur_debug_log("prepare: velocity=\{velocity_texture_id}")
-}
-
-///|
 pub fn GpuBackend::draw_motion_blur(
   self : GpuBackend,
   scene_texture_id : Int,
@@ -92,6 +42,7 @@ pub fn GpuBackend::draw_motion_blur(
   sampler : @render_resource.Sampler,
   settings_buffer : @wgpu.Buffer,
   settings_offset : UInt,
+  globals_buffer : @wgpu.Buffer,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     motion_blur_debug_log("skip: no frame")
@@ -106,10 +57,6 @@ pub fn GpuBackend::draw_motion_blur(
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
-  guard self.motion_blur_globals_buf is Some(globals_buf) else {
-    motion_blur_debug_log("skip: no globals buffer")
-    return
-  }
   if scene_texture_id < 0 || velocity_texture_id < 0 {
     motion_blur_debug_log(
       "skip: invalid texture ids scene=\{scene_texture_id}, velocity=\{velocity_texture_id}",
@@ -145,7 +92,7 @@ pub fn GpuBackend::draw_motion_blur(
       offset=settings_offset.to_uint64(),
       size=MOTION_BLUR_UNIFORM_BUFFER_SIZE,
     ) &&
-    builder.add_buffer(5U, globals_buf)
+    builder.add_buffer(5U, globals_buffer, size=MOTION_BLUR_GLOBALS_BUFFER_SIZE)
   if !ok {
     builder.free()
     return
@@ -165,13 +112,6 @@ pub fn GpuBackend::draw_motion_blur(
 }
 
 ///|
-pub fn prepare_motion_blur(velocity_texture_id~ : Int) -> Unit {
-  if ensure_backend() is Some(backend) {
-    backend.prepare_motion_blur(velocity_texture_id)
-  }
-}
-
-///|
 pub fn draw_motion_blur(
   scene_texture_id~ : Int,
   velocity_texture_id~ : Int,
@@ -179,11 +119,12 @@ pub fn draw_motion_blur(
   sampler~ : @render_resource.Sampler,
   settings_buffer~ : @wgpu.Buffer,
   settings_offset~ : UInt,
+  globals_buffer~ : @wgpu.Buffer,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.draw_motion_blur(
       scene_texture_id, velocity_texture_id, pipeline, sampler, settings_buffer,
-      settings_offset,
+      settings_offset, globals_buffer,
     ) catch {
       err => debug_runtime_error("draw_motion_blur", err)
     }

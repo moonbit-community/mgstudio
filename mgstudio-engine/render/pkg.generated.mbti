@@ -22,6 +22,8 @@ import {
 }
 
 // Values
+pub const GLOBALS_UNIFORM_SIZE_BYTES : Int = 16
+
 pub const HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = 2
 
 pub const HOST_GPU_LINE_GIZMO_PHASE_2D : Int = 0
@@ -146,6 +148,8 @@ pub fn[EI] extract_visible(Array[EI], Array[Bool]) -> ExtractedInstances[EI]
 
 pub fn flush_pending_command_buffers(@ecs.World) -> Unit
 
+pub let globals_buffer_resource_key : @ecs.ResourceKey[GlobalsBuffer]
+
 pub fn[C] gpu_component_array_buffer_plugin(@app.App[@ecs.World], _plugin? : GpuComponentArrayBufferPlugin[C]) -> @app.App[@ecs.World]
 
 pub fn[C : GpuComponentArrayBufferComponent] gpu_component_array_buffer_state_key(debug_name? : String) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]]
@@ -264,7 +268,7 @@ pub fn host_gpu_draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotat
 
 pub fn host_gpu_draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
-pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, pipeline~ : @render_resource.RenderPipeline, sampler~ : @render_resource.Sampler, settings_buffer~ : @wgpu_mbt.Buffer, settings_offset~ : UInt) -> Unit
+pub fn host_gpu_draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, pipeline~ : @render_resource.RenderPipeline, sampler~ : @render_resource.Sampler, settings_buffer~ : @wgpu_mbt.Buffer, settings_offset~ : UInt, globals_buffer~ : @wgpu_mbt.Buffer) -> Unit
 
 pub fn host_gpu_draw_prepared_skybox(bind_group_id~ : Int) -> Unit
 
@@ -338,8 +342,6 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(target_id~ : Int, msaa_sa
 
 pub fn host_gpu_prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes~ : Bytes) -> Unit
 
-pub fn host_gpu_prepare_motion_blur(velocity_texture_id~ : Int) -> Unit
-
 pub fn host_gpu_prepare_skybox_bind_group(texture_id~ : Int, brightness~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float) -> Int?
 
 pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
@@ -382,6 +384,8 @@ pub fn host_mesh3d_main_pass_draw_entry(draw_storage_index~ : Int, world_from_lo
 
 pub fn host_mesh3d_volumetric_fog_volume(density_texture_id~ : Int, uniform_buffer_offset~ : UInt, exterior~ : Bool) -> @renderer.HostMesh3dVolumetricFogVolume
 
+pub fn init_globals_buffer(@ecs.World) -> Unit
+
 pub fn init_pending_command_buffers_resource(@ecs.World) -> Unit
 
 pub fn init_render_state(@ecs.World) -> Unit
@@ -399,6 +403,8 @@ pub fn pipelined_rendering_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn prepare_active_frame_submissions(@ecs.World) -> Unit
 
 pub fn[A, B] prepare_erased_render_assets_with(ExtractedAssets[A], ErasedRenderAssets[B], ErasedPrepareNextFrameAssets[A], (A, Int, B?) -> B raise ErasedPrepareAssetError, (Int, B?) -> Unit, byte_len? : (A) -> Int?, bytes_per_frame? : RenderAssetBytesPerFrameLimiter) -> Unit
+
+pub fn prepare_globals_buffer(@ecs.World) -> Unit
 
 pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(@ecs.World, @ecs.ResourceKey[GpuComponentArrayBufferState[C]], component_key? : @ecs.ComponentKey[C]) -> Unit
 
@@ -754,6 +760,36 @@ pub struct ExtractedResourceState[R] {
 pub fn[R] ExtractedResourceState::ExtractedResourceState() -> Self[R]
 pub fn[R] ExtractedResourceState::get(Self[R]) -> R?
 pub fn[R] ExtractedResourceState::replace(Self[R], R) -> Unit
+
+pub struct GlobalsBuffer {
+  mut value : GlobalsUniform
+  mut gpu_buffer : @wgpu_mbt.Buffer?
+  mut gpu_capacity : UInt64
+}
+pub fn GlobalsBuffer::GlobalsBuffer() -> Self
+pub fn GlobalsBuffer::binding(Self) -> @wgpu_mbt.Buffer?
+pub fn GlobalsBuffer::gpu_capacity(Self) -> UInt64
+pub fn GlobalsBuffer::set(Self, GlobalsUniform) -> Unit
+pub fn GlobalsBuffer::value(Self) -> GlobalsUniform
+pub fn GlobalsBuffer::write_buffer(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
+pub impl @app.Resource for GlobalsBuffer
+
+pub struct GlobalsPlugin {
+}
+pub fn GlobalsPlugin::GlobalsPlugin() -> Self
+pub impl @app.Plugin for GlobalsPlugin
+
+pub struct GlobalsUniform {
+  time : Float
+  delta_time : Float
+  frame_count : UInt
+}
+pub fn GlobalsUniform::GlobalsUniform() -> Self
+pub fn GlobalsUniform::bytes(Self) -> Bytes
+pub fn GlobalsUniform::delta_time(Self) -> Float
+pub fn GlobalsUniform::frame_count(Self) -> UInt
+pub fn GlobalsUniform::new(Float, Float, UInt) -> Self
+pub fn GlobalsUniform::time(Self) -> Float
 
 pub struct GpuComponentArrayBufferPlugin[_] {
 }

@@ -16,181 +16,246 @@
 // Bevy source: `bevy/crates/bevy_render/src/globals.rs`.
 
 ///|
-pub(all) struct HostColorGrading {
-  balance_x_axis_x : Float
-  balance_x_axis_y : Float
-  balance_x_axis_z : Float
-  balance_y_axis_x : Float
-  balance_y_axis_y : Float
-  balance_y_axis_z : Float
-  balance_z_axis_x : Float
-  balance_z_axis_y : Float
-  balance_z_axis_z : Float
-  saturation_shadows : Float
-  saturation_midtones : Float
-  saturation_highlights : Float
-  contrast_shadows : Float
-  contrast_midtones : Float
-  contrast_highlights : Float
-  gamma_shadows : Float
-  gamma_midtones : Float
-  gamma_highlights : Float
-  gain_shadows : Float
-  gain_midtones : Float
-  gain_highlights : Float
-  lift_shadows : Float
-  lift_midtones : Float
-  lift_highlights : Float
-  midtones_start : Float
-  midtones_end : Float
-  exposure : Float
-  hue : Float
-  post_saturation : Float
+const GLOBALS_PLUGIN_NAME : String = "mgstudio.render.GlobalsPlugin"
+
+///|
+pub const GLOBALS_UNIFORM_SIZE_BYTES : Int = 16
+
+///|
+pub struct GlobalsPlugin {}
+
+///|
+pub fn GlobalsPlugin::GlobalsPlugin() -> GlobalsPlugin {
+  GlobalsPlugin::{  }
 }
 
 ///|
-pub fn HostColorGrading::HostColorGrading() -> HostColorGrading {
-  HostColorGrading::{
-    balance_x_axis_x: 1.0F,
-    balance_x_axis_y: 0.0F,
-    balance_x_axis_z: 0.0F,
-    balance_y_axis_x: 0.0F,
-    balance_y_axis_y: 1.0F,
-    balance_y_axis_z: 0.0F,
-    balance_z_axis_x: 0.0F,
-    balance_z_axis_y: 0.0F,
-    balance_z_axis_z: 1.0F,
-    saturation_shadows: 1.0F,
-    saturation_midtones: 1.0F,
-    saturation_highlights: 1.0F,
-    contrast_shadows: 1.0F,
-    contrast_midtones: 1.0F,
-    contrast_highlights: 1.0F,
-    gamma_shadows: 1.0F,
-    gamma_midtones: 1.0F,
-    gamma_highlights: 1.0F,
-    gain_shadows: 1.0F,
-    gain_midtones: 1.0F,
-    gain_highlights: 1.0F,
-    lift_shadows: 0.0F,
-    lift_midtones: 0.0F,
-    lift_highlights: 0.0F,
-    midtones_start: 0.2F,
-    midtones_end: 0.7F,
-    exposure: 0.0F,
-    hue: 0.0F,
-    post_saturation: 1.0F,
+pub impl @app.Plugin for GlobalsPlugin with fn name(_self) {
+  GLOBALS_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for GlobalsPlugin with fn build(_self, app) {
+  try_with_render_app(app, fn(render_app) {
+    render_app
+    .add_systems(
+      render_startup_schedule_stage(),
+      @app.system(init_globals_buffer).named(
+        "mgstudio_render::init_globals_buffer",
+      ),
+    )
+    .add_systems(
+      render_schedule_stage(),
+      @app.system(prepare_globals_buffer)
+      .named("mgstudio_render::prepare_globals_buffer")
+      .in_set(render_system_set_prepare_resources),
+    )
+  })
+}
+
+///|
+pub struct GlobalsUniform {
+  time : Float
+  delta_time : Float
+  frame_count : UInt
+}
+
+///|
+pub fn GlobalsUniform::GlobalsUniform() -> GlobalsUniform {
+  GlobalsUniform::{ time: 0.0F, delta_time: 0.0F, frame_count: 0U }
+}
+
+///|
+pub fn GlobalsUniform::new(
+  time : Float,
+  delta_time : Float,
+  frame_count : UInt,
+) -> GlobalsUniform {
+  GlobalsUniform::{ time, delta_time, frame_count }
+}
+
+///|
+pub fn GlobalsUniform::time(self : GlobalsUniform) -> Float {
+  self.time
+}
+
+///|
+pub fn GlobalsUniform::delta_time(self : GlobalsUniform) -> Float {
+  self.delta_time
+}
+
+///|
+pub fn GlobalsUniform::frame_count(self : GlobalsUniform) -> UInt {
+  self.frame_count
+}
+
+///|
+fn globals_uniform_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).to_byte())
+  out.push(((value >> 8) & 0xFFU).to_byte())
+  out.push(((value >> 16) & 0xFFU).to_byte())
+  out.push(((value >> 24) & 0xFFU).to_byte())
+}
+
+///|
+fn globals_uniform_push_f32_le(out : Array[Byte], value : Float) -> Unit {
+  globals_uniform_push_u32_le(out, value.reinterpret_as_uint())
+}
+
+///|
+pub fn GlobalsUniform::bytes(self : GlobalsUniform) -> Bytes {
+  let out : Array[Byte] = []
+  globals_uniform_push_f32_le(out, self.time)
+  globals_uniform_push_f32_le(out, self.delta_time)
+  globals_uniform_push_u32_le(out, self.frame_count)
+  globals_uniform_push_u32_le(out, 0U)
+  Bytes::from_array(out)
+}
+
+///|
+pub struct GlobalsBuffer {
+  mut value : GlobalsUniform
+  mut gpu_buffer : @wgpu.Buffer?
+  mut gpu_capacity : UInt64
+}
+
+///|
+pub fn GlobalsBuffer::GlobalsBuffer() -> GlobalsBuffer {
+  GlobalsBuffer::{
+    value: GlobalsUniform::GlobalsUniform(),
+    gpu_buffer: None,
+    gpu_capacity: 0UL,
   }
 }
 
 ///|
-const HOST_COLOR_GRADING_D65_X : Float = 0.31272F
-
-///|
-const HOST_COLOR_GRADING_D65_Y : Float = 0.32903F
-
-///|
-const HOST_COLOR_GRADING_D65_LMS_X : Float = 0.975538F
-
-///|
-const HOST_COLOR_GRADING_D65_LMS_Y : Float = 1.01648F
-
-///|
-const HOST_COLOR_GRADING_D65_LMS_Z : Float = 1.08475F
-
-///|
-fn host_color_grading_mat3_mul_vec3(
-  x_axis : @math.Vec3,
-  y_axis : @math.Vec3,
-  z_axis : @math.Vec3,
-  value : @math.Vec3,
-) -> @math.Vec3 {
-  x_axis
-  .mul_scalar(value.x)
-  .add(y_axis.mul_scalar(value.y))
-  .add(z_axis.mul_scalar(value.z))
+pub fn GlobalsBuffer::value(self : GlobalsBuffer) -> GlobalsUniform {
+  self.value
 }
 
 ///|
-pub fn host_color_grading_from_post_process(
-  color_grading : ColorGrading?,
-) -> HostColorGrading {
-  let grading = match color_grading {
+pub fn GlobalsBuffer::set(self : GlobalsBuffer, value : GlobalsUniform) -> Unit {
+  self.value = value
+}
+
+///|
+fn globals_buffer_non_zero_u64(value : UInt64) -> UInt64 {
+  if value == 0UL {
+    4UL
+  } else {
+    value
+  }
+}
+
+///|
+pub fn GlobalsBuffer::write_buffer(
+  self : GlobalsBuffer,
+  render_device : RenderDevice,
+  render_queue : RenderQueue,
+) -> Unit {
+  let bytes = self.value.bytes()
+  let required_size = globals_buffer_non_zero_u64(bytes.length().to_uint64())
+  let device = render_device.wgpu_device()
+  let queue = render_queue.wgpu_queue()
+  let usage = @wgpu.BufferUsage::from_u64(
+    @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
+  let buffer = match self.gpu_buffer {
+    Some(existing) if self.gpu_capacity >= required_size => existing
+    Some(existing) => {
+      existing.release()
+      let next = device.create_buffer(size=required_size, usage~)
+      next.set_label("globals_buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+    None => {
+      let next = device.create_buffer(size=required_size, usage~)
+      next.set_label("globals_buffer")
+      self.gpu_capacity = required_size
+      next
+    }
+  }
+  queue.write_buffer(buffer, 0UL, bytes)
+  self.gpu_buffer = Some(buffer)
+}
+
+///|
+pub fn GlobalsBuffer::binding(self : GlobalsBuffer) -> @wgpu.Buffer? {
+  self.gpu_buffer
+}
+
+///|
+pub fn GlobalsBuffer::gpu_capacity(self : GlobalsBuffer) -> UInt64 {
+  self.gpu_capacity
+}
+
+///|
+pub let globals_buffer_resource_key : @ecs.ResourceKey[GlobalsBuffer] = @ecs.register_resource(
+  debug_name="mgstudio_render::GlobalsBuffer",
+)
+
+///|
+pub impl @app.Resource for GlobalsBuffer with fn resource() {
+  globals_buffer_resource_key
+}
+
+///|
+pub fn init_globals_buffer(render_world : @ecs.World) -> Unit {
+  if render_world.resource(GlobalsBuffer::resource()).is_present() {
+    return
+  }
+  render_world.insert_resource(
+    GlobalsBuffer::resource(),
+    GlobalsBuffer::GlobalsBuffer(),
+  )
+}
+
+///|
+fn globals_frame_count_from_world(world : @ecs.World) -> UInt {
+  ignore(world)
+  @renderer.frame_count()
+}
+
+///|
+fn globals_time_from_world(world : @ecs.World) -> (Float, Float) {
+  match world.get_resource(@time.default_time_resource_key) {
+    Some(time) => (time.elapsed_secs_wrapped(), time.delta_secs())
+    None => (0.0F, 0.0F)
+  }
+}
+
+///|
+fn globals_buffer_mut_or_init(
+  render_world : @ecs.World,
+) -> @ecs.ResourceMut[GlobalsBuffer] {
+  if render_world.get_resource(GlobalsBuffer::resource()) is None {
+    render_world.insert_resource(
+      GlobalsBuffer::resource(),
+      GlobalsBuffer::GlobalsBuffer(),
+    )
+  }
+  match render_world.get_resource_mut(GlobalsBuffer::resource()) {
     Some(value) => value
-    None => ColorGrading::ColorGrading()
+    None => abort("missing GlobalsBuffer resource")
   }
-  let white_point_x = HOST_COLOR_GRADING_D65_X - grading.global.temperature
-  let white_point_y = HOST_COLOR_GRADING_D65_Y + grading.global.tint
-  let white_point_lms = @math.Vec3::new(
-    0.701634F + (-0.051461F + 0.452749F * white_point_x) / white_point_y,
-    1.15856F + (0.045854F - 0.296122F * white_point_x) / white_point_y,
-    -0.904175F + (0.953127F - 0.955206F * white_point_x) / white_point_y,
-  )
-  let white_point_adjustment = @math.Vec3::new(
-    HOST_COLOR_GRADING_D65_LMS_X / white_point_lms.x,
-    HOST_COLOR_GRADING_D65_LMS_Y / white_point_lms.y,
-    HOST_COLOR_GRADING_D65_LMS_Z / white_point_lms.z,
-  )
-  let rgb_to_lms_x_axis = @math.Vec3::new(0.311692F, 0.0905138F, 0.00764433F)
-  let rgb_to_lms_y_axis = @math.Vec3::new(0.652085F, 0.901341F, 0.0486554F)
-  let rgb_to_lms_z_axis = @math.Vec3::new(0.0362225F, 0.00814478F, 0.943700F)
-  let lms_to_rgb_x_axis = @math.Vec3::new(4.06305F, -0.40791F, -0.0118812F)
-  let lms_to_rgb_y_axis = @math.Vec3::new(-2.93241F, 1.40437F, -0.0486532F)
-  let lms_to_rgb_z_axis = @math.Vec3::new(-0.130646F, 0.00353630F, 1.0605344F)
-  let scaled_rgb_to_lms_x_axis = @math.Vec3::new(
-    rgb_to_lms_x_axis.x * white_point_adjustment.x,
-    rgb_to_lms_x_axis.y * white_point_adjustment.y,
-    rgb_to_lms_x_axis.z * white_point_adjustment.z,
-  )
-  let scaled_rgb_to_lms_y_axis = @math.Vec3::new(
-    rgb_to_lms_y_axis.x * white_point_adjustment.x,
-    rgb_to_lms_y_axis.y * white_point_adjustment.y,
-    rgb_to_lms_y_axis.z * white_point_adjustment.z,
-  )
-  let scaled_rgb_to_lms_z_axis = @math.Vec3::new(
-    rgb_to_lms_z_axis.x * white_point_adjustment.x,
-    rgb_to_lms_z_axis.y * white_point_adjustment.y,
-    rgb_to_lms_z_axis.z * white_point_adjustment.z,
-  )
-  let balance_x_axis = host_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_x_axis,
-  )
-  let balance_y_axis = host_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_y_axis,
-  )
-  let balance_z_axis = host_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_z_axis,
-  )
-  let midtones_range = grading.global.midtones_range
-  HostColorGrading::{
-    balance_x_axis_x: balance_x_axis.x,
-    balance_x_axis_y: balance_x_axis.y,
-    balance_x_axis_z: balance_x_axis.z,
-    balance_y_axis_x: balance_y_axis.x,
-    balance_y_axis_y: balance_y_axis.y,
-    balance_y_axis_z: balance_y_axis.z,
-    balance_z_axis_x: balance_z_axis.x,
-    balance_z_axis_y: balance_z_axis.y,
-    balance_z_axis_z: balance_z_axis.z,
-    saturation_shadows: grading.shadows.saturation,
-    saturation_midtones: grading.midtones.saturation,
-    saturation_highlights: grading.highlights.saturation,
-    contrast_shadows: grading.shadows.contrast,
-    contrast_midtones: grading.midtones.contrast,
-    contrast_highlights: grading.highlights.contrast,
-    gamma_shadows: grading.shadows.gamma,
-    gamma_midtones: grading.midtones.gamma,
-    gamma_highlights: grading.highlights.gamma,
-    gain_shadows: grading.shadows.gain,
-    gain_midtones: grading.midtones.gain,
-    gain_highlights: grading.highlights.gain,
-    lift_shadows: grading.shadows.lift,
-    lift_midtones: grading.midtones.lift,
-    lift_highlights: grading.highlights.lift,
-    midtones_start: midtones_range.start,
-    midtones_end: midtones_range.end_,
-    exposure: grading.global.exposure,
-    hue: grading.global.hue,
-    post_saturation: grading.global.post_saturation,
+}
+
+///|
+pub fn prepare_globals_buffer(render_world : @ecs.World) -> Unit {
+  guard render_world.get_resource(render_device_resource_key)
+    is Some(render_device) else {
+    return
   }
+  guard render_world.get_resource(render_queue_resource_key)
+    is Some(render_queue) else {
+    return
+  }
+  let source_world = render_source_world(render_world)
+  let (time, delta_time) = globals_time_from_world(source_world)
+  let frame_count = globals_frame_count_from_world(source_world)
+  globals_buffer_mut_or_init(render_world).modify(fn(buffer) {
+    buffer.set(GlobalsUniform::new(time, delta_time, frame_count))
+    buffer.write_buffer(render_device, render_queue)
+  })
 }

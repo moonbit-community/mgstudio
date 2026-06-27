@@ -251,6 +251,7 @@ fn render_plugin_install_with(
       @render_view_window.WindowRenderPlugin::WindowRenderPlugin(),
     )
     next = next.add_plugins(@render_view.ViewPlugin::ViewPlugin())
+    next = next.add_plugins(GlobalsPlugin::GlobalsPlugin())
     next = next.add_plugins(
       @render_mesh.MeshAllocatorPlugin::MeshAllocatorPlugin(),
     )

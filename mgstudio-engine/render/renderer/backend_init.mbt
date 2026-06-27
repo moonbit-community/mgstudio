@@ -493,7 +493,6 @@ pub fn GpuBackend::new(
     mesh3d_motion_vector_instance_mesh_morph_revision: -1,
     mesh3d_motion_vector_instance_mesh_morph_target_texture_id: -1,
     mesh3d_motion_vector_instance_mesh_layout_mask: -1,
-    motion_blur_globals_buf: None,
     effect_stack_bgl: None,
     effect_stack_pipeline_layout: None,
     effect_stack_pipeline: None,

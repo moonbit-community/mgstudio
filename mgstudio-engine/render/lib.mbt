@@ -25,6 +25,74 @@ pub type RenderDevice = @renderer.RenderDevice
 pub type RenderQueue = @renderer.RenderQueue
 
 ///|
+pub(all) struct HostColorGrading {
+  balance_x_axis_x : Float
+  balance_x_axis_y : Float
+  balance_x_axis_z : Float
+  balance_y_axis_x : Float
+  balance_y_axis_y : Float
+  balance_y_axis_z : Float
+  balance_z_axis_x : Float
+  balance_z_axis_y : Float
+  balance_z_axis_z : Float
+  saturation_shadows : Float
+  saturation_midtones : Float
+  saturation_highlights : Float
+  contrast_shadows : Float
+  contrast_midtones : Float
+  contrast_highlights : Float
+  gamma_shadows : Float
+  gamma_midtones : Float
+  gamma_highlights : Float
+  gain_shadows : Float
+  gain_midtones : Float
+  gain_highlights : Float
+  lift_shadows : Float
+  lift_midtones : Float
+  lift_highlights : Float
+  midtones_start : Float
+  midtones_end : Float
+  exposure : Float
+  hue : Float
+  post_saturation : Float
+}
+
+///|
+pub fn HostColorGrading::HostColorGrading() -> HostColorGrading {
+  HostColorGrading::{
+    balance_x_axis_x: 1.0F,
+    balance_x_axis_y: 0.0F,
+    balance_x_axis_z: 0.0F,
+    balance_y_axis_x: 0.0F,
+    balance_y_axis_y: 1.0F,
+    balance_y_axis_z: 0.0F,
+    balance_z_axis_x: 0.0F,
+    balance_z_axis_y: 0.0F,
+    balance_z_axis_z: 1.0F,
+    saturation_shadows: 1.0F,
+    saturation_midtones: 1.0F,
+    saturation_highlights: 1.0F,
+    contrast_shadows: 1.0F,
+    contrast_midtones: 1.0F,
+    contrast_highlights: 1.0F,
+    gamma_shadows: 1.0F,
+    gamma_midtones: 1.0F,
+    gamma_highlights: 1.0F,
+    gain_shadows: 1.0F,
+    gain_midtones: 1.0F,
+    gain_highlights: 1.0F,
+    lift_shadows: 0.0F,
+    lift_midtones: 0.0F,
+    lift_highlights: 0.0F,
+    midtones_start: 0.2F,
+    midtones_end: 0.7F,
+    exposure: 0.0F,
+    hue: 0.0F,
+    post_saturation: 1.0F,
+  }
+}
+
+///|
 pub type HostMaterial2dBindingValue = @renderer.HostMaterial2dBindingValue
 
 ///|
@@ -1870,6 +1938,7 @@ pub fn host_gpu_draw_motion_blur(
   sampler~ : @render_resource.Sampler,
   settings_buffer~ : @wgpu.Buffer,
   settings_offset~ : UInt,
+  globals_buffer~ : @wgpu.Buffer,
 ) -> Unit {
   @renderer.draw_motion_blur(
     scene_texture_id~,
@@ -1878,12 +1947,8 @@ pub fn host_gpu_draw_motion_blur(
     sampler~,
     settings_buffer~,
     settings_offset~,
+    globals_buffer~,
   )
-}
-
-///|
-pub fn host_gpu_prepare_motion_blur(velocity_texture_id~ : Int) -> Unit {
-  @renderer.prepare_motion_blur(velocity_texture_id~)
 }
 
 ///|
