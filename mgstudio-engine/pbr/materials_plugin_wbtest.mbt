@@ -709,6 +709,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let missing_mesh = @render.MainEntity::new(world.spawn_empty())
   let missing_prepared = @render.MainEntity::new(world.spawn_empty())
   let no_shadows = @render.MainEntity::new(world.spawn_empty())
+  let missing_render_mesh = @render.MainEntity::new(world.spawn_empty())
   let ready = @render.MainEntity::new(world.spawn_empty())
   let non_shadow_caster = @render.MainEntity::new(world.spawn_empty())
   let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
@@ -763,6 +764,11 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     MeshMaterial3d::new(@asset.Handle::new(630)),
   )
   material_instances.extract_mesh_material(
+    missing_render_mesh.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(635)),
+  )
+  material_instances.extract_mesh_material(
     ready.id(),
     true,
     MeshMaterial3d::new(@asset.Handle::new(640)),
@@ -789,11 +795,24 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     MeshMaterial3dTyped::new(@asset.Handle::new(640)),
   )
   try! world.set_by_key(
+    missing_render_mesh.id(),
+    material_key,
+    MeshMaterial3dTyped::new(@asset.Handle::new(635)),
+  )
+  try! world.set_by_key(
     non_shadow_caster.id(),
     material_key,
     MeshMaterial3dTyped::new(@asset.Handle::new(650)),
   )
   prepared_assets.modify(fn(value) {
+    value.insert(
+      635,
+      PreparedMaterial::from_material(
+        @asset.Handle::new(635),
+        ParityCustomMaterial::ParityCustomMaterial(),
+        pipeline,
+      ),
+    )
     value.insert(
       640,
       PreparedMaterial::from_material(
@@ -832,6 +851,10 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     RenderMeshQueueData::new(630, 0U, true, flags=ready_flags),
   )
   mesh_instances.insert(
+    missing_render_mesh,
+    RenderMeshQueueData::new(635, 0U, true, flags=ready_flags),
+  )
+  mesh_instances.insert(
     ready,
     RenderMeshQueueData::new(640, 0U, true, flags=ready_flags),
   )
@@ -840,6 +863,12 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     RenderMeshQueueData::new(650, 0U, true),
   )
   world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+  let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_mesh_assets.insert(640, @render_mesh.RenderMesh::new(vertex_count=3))
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    render_mesh_assets,
+  )
 
   let missing_material_ready = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, missing_material,
@@ -853,6 +882,9 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let no_shadows_ready = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, no_shadows,
   )
+  let missing_render_mesh_ready = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, missing_render_mesh,
+  )
   let ready_value = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, ready,
   ).unwrap()
@@ -864,6 +896,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   debug_inspect(missing_mesh_ready is None, content="true")
   debug_inspect(missing_prepared_ready is None, content="true")
   debug_inspect(no_shadows_ready is None, content="true")
+  debug_inspect(missing_render_mesh_ready is None, content="true")
   debug_inspect(
     ready_value.flags().contains(RenderMeshInstanceFlags::shadow_caster()),
     content="true",

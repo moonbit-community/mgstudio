@@ -945,6 +945,13 @@ pub fn render3d_shadow_specialization_queue_data(
   if !mesh_instance.flags().contains(RenderMeshInstanceFlags::shadow_caster()) {
     return None
   }
+  guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
+    is Some(render_meshes) else {
+    return None
+  }
+  guard render_meshes.get(mesh_instance.mesh_asset_id()) is Some(_) else {
+    return None
+  }
   Some(mesh_instance)
 }
 
