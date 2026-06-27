@@ -34,6 +34,17 @@ fn render3d_light_entity_is_directional(
 }
 
 ///|
+fn render3d_shadow_gpu_preprocessing_support(
+  world : @ecs.World,
+) -> @render_batching.GpuPreprocessingSupport {
+  match
+    world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
+    Some(value) => value
+    None => @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport()
+  }
+}
+
+///|
 fn render3d_prepare_queued_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
@@ -116,7 +127,7 @@ fn render3d_prepare_queued_shadow_phase_for_light(
       None,
       dirty_specializations,
       pending_shadow_queues,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+      render3d_shadow_gpu_preprocessing_support(world),
     ),
   )
 }

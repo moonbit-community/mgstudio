@@ -43,6 +43,13 @@ pub fn GpuPreprocessingSupport::GpuPreprocessingSupport() -> GpuPreprocessingSup
 }
 
 ///|
+pub fn GpuPreprocessingSupport::with_max_supported_mode(
+  max_supported_mode : GpuPreprocessingMode,
+) -> GpuPreprocessingSupport {
+  GpuPreprocessingSupport::{ max_supported_mode, }
+}
+
+///|
 pub fn IndirectParametersBuffersSettings::IndirectParametersBuffersSettings() -> IndirectParametersBuffersSettings {
   IndirectParametersBuffersSettings::{
     allow_copies_from_indirect_parameter_buffers: false,

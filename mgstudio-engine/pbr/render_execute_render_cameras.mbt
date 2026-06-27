@@ -166,6 +166,11 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
   let live_shadow_mapping_lights : @hashset.HashSet[
     @render_view.RetainedViewEntity,
   ] = @hashset.HashSet([])
+  let gpu_preprocessing_mode = match
+    world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
+    Some(value) => value.min(@render_batching.GpuPreprocessingMode::Culling)
+    None => @render_batching.GpuPreprocessingMode::None
+  }
   for camera in cameras {
     let extracted_retained_view = @render_view.RetainedViewEntity::new(
       camera.entity.main_entity,
@@ -191,7 +196,12 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
   }
   shadow_render_phases.modify(fn(phases) {
     for retained_view_entity in live_shadow_mapping_lights.iter() {
-      ignore(phases.prepare_for_new_frame(retained_view_entity))
+      ignore(
+        phases.prepare_for_new_frame(
+          retained_view_entity,
+          gpu_preprocessing_mode~,
+        ),
+      )
     }
     phases.retain(live_shadow_mapping_lights)
   })

@@ -2314,6 +2314,36 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   debug_inspect(second_batch_key.material_bind_group_index(), content="Some(7)")
   debug_inspect(second_batch_key.indexed(), content="false")
   inspect(second_bin_key.mesh_asset_id(), content="702")
+  debug_inspect(first.should_batch(), content="true")
+  let culling_shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  ignore(
+    culling_shadow_phases.prepare_for_new_frame(
+      retained_view,
+      gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::Culling,
+    ),
+  )
+  ignore(
+    culling_shadow_phases.apply_queue(
+      retained_view,
+      queued,
+      @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+        @render_batching.GpuPreprocessingMode::Culling,
+      ),
+    ),
+  )
+  let culling_shadow_phase = match culling_shadow_phases.get(retained_view) {
+    Some(phase) => phase
+    None => abort("missing culling retained shadow phase in test")
+  }
+  debug_inspect(culling_shadow_phase.items().length(), content="0")
+  debug_inspect(
+    culling_shadow_phase.multidrawable_batch_set_count(),
+    content="2",
+  )
+  debug_inspect(
+    culling_shadow_phase.phase_type(depth_main),
+    content="Some(MultidrawableMesh)",
+  )
   let shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
   let shadow_phase = shadow_phases.prepare_for_new_frame(retained_view)
   shadow_phase.add(
