@@ -272,6 +272,18 @@ test "render mesh allocator: render mesh index format selects index layout" {
 }
 
 ///|
+test "render mesh allocator: index allocation count tracks indexed meshes only" {
+  let allocator = MeshAllocator::new()
+  let indexed = RenderMesh::new(vertex_count=4, indexed=true, index_count=6)
+  let non_indexed = RenderMesh::new(vertex_count=3)
+  ignore(allocator.allocate_render_mesh(45, indexed, 32))
+  ignore(allocator.allocate_render_mesh(46, non_indexed, 32))
+  inspect(allocator.index_allocation_count(), content="1")
+  allocator.free_mesh(45)
+  inspect(allocator.index_allocation_count(), content="0")
+}
+
+///|
 test "render mesh: constructor preserves topology key and vertex layout" {
   let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let layout = layouts.insert(

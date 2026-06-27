@@ -1449,6 +1449,11 @@ pub fn MeshAllocator::mesh_index_slice(
 }
 
 ///|
+pub fn MeshAllocator::index_allocation_count(self : MeshAllocator) -> Int {
+  self.mesh_id_to_index_slab.length()
+}
+
+///|
 pub fn MeshAllocator::mesh_slice_in_slab(
   self : MeshAllocator,
   mesh_id : Int,

@@ -68,6 +68,7 @@ pub fn MeshAllocator::allocate_render_mesh(Self, Int, RenderMesh, Int, index_lay
 pub fn MeshAllocator::allocations(Self) -> Int
 pub fn MeshAllocator::free_mesh(Self, Int) -> Unit
 pub fn MeshAllocator::free_meshes(Self, Array[Int], Array[Int]) -> Unit
+pub fn MeshAllocator::index_allocation_count(Self) -> Int
 pub fn MeshAllocator::mark_index_resident(Self, Int) -> Bool
 pub fn MeshAllocator::mark_resident(Self, Int, MeshAllocatorElementClass) -> Bool
 pub fn MeshAllocator::mark_vertex_resident(Self, Int) -> Bool
