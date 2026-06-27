@@ -2004,6 +2004,22 @@ priv struct RenderMeshInstanceGpuExtractionRow {
 }
 
 ///|
+priv struct RenderMeshInstanceCpuExtractionRow {
+  entity : @core.Entity
+  world_from_local : @math.Affine3
+  previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
+  mesh : @mesh.Mesh3d
+  tag : @mesh.MeshTag?
+  has_no_frustum_culling : Bool
+  has_not_shadow_receiver : Bool
+  has_transmitted_shadow_receiver : Bool
+  has_not_shadow_caster : Bool
+  has_no_automatic_batching : Bool
+  visibility_range : @visibility.VisibilityRange?
+  render_layers : @camera_render_layers.RenderLayers?
+}
+
+///|
 fn render_mesh_instance_gpu_extraction_row_from_source(
   source_world : @ecs.World,
   entity : @core.Entity,
@@ -2088,22 +2104,30 @@ fn render_mesh_instance_shared_for_gpu_extraction_row(
 }
 
 ///|
-fn render_mesh_instance_extraction_row_lod_index(
-  row : RenderMeshInstanceGpuExtractionRow,
+fn render_mesh_instance_extraction_lod_index(
+  entity : @core.Entity,
+  visibility_range : @visibility.VisibilityRange?,
   render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
 ) -> Int? {
-  guard row.visibility_range is Some(_) else { return None }
+  guard visibility_range is Some(_) else { return None }
   guard render_visibility_ranges is Some(ranges) else { return None }
-  ranges.lod_index_for_entity(row.entity.id)
+  ranges.lod_index_for_entity(entity.id)
 }
 
 ///|
-fn render_mesh_instance_extraction_row_mesh_flags(
-  row : RenderMeshInstanceGpuExtractionRow,
+fn render_mesh_instance_extraction_mesh_flags(
+  entity : @core.Entity,
+  world_from_local : @math.Affine3,
+  visibility_range : @visibility.VisibilityRange?,
+  has_no_frustum_culling : Bool,
+  has_not_shadow_receiver : Bool,
+  has_transmitted_shadow_receiver : Bool,
   render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
 ) -> UInt {
   let mut flags = match
-    render_mesh_instance_extraction_row_lod_index(row, render_visibility_ranges) {
+    render_mesh_instance_extraction_lod_index(
+      entity, visibility_range, render_visibility_ranges,
+    ) {
     Some(lod_index) =>
       if lod_index >= 0 && lod_index < 0xFFFF {
         lod_index.reinterpret_as_uint()
@@ -2112,23 +2136,23 @@ fn render_mesh_instance_extraction_row_mesh_flags(
       }
     None => RENDER3D_MESH_FLAGS_LOD_INDEX_NONE
   }
-  match row.visibility_range {
+  match visibility_range {
     Some(range) =>
       if range.use_aabb() {
         flags = flags | RENDER3D_MESH_FLAGS_AABB_BASED_VISIBILITY_RANGE
       }
     None => ()
   }
-  if row.has_no_frustum_culling {
+  if has_no_frustum_culling {
     flags = flags | RENDER3D_MESH_FLAGS_NO_FRUSTUM_CULLING
   }
-  if !row.has_not_shadow_receiver {
+  if !has_not_shadow_receiver {
     flags = flags | RENDER3D_MESH_FLAGS_SHADOW_RECEIVER
   }
-  if row.has_transmitted_shadow_receiver {
+  if has_transmitted_shadow_receiver {
     flags = flags | RENDER3D_MESH_FLAGS_TRANSMITTED_SHADOW_RECEIVER
   }
-  if row.world_from_local.matrix3.determinant() >= 0.0F {
+  if world_from_local.matrix3.determinant() >= 0.0F {
     flags = flags | RENDER3D_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3
   }
   flags
@@ -2148,15 +2172,21 @@ fn render_mesh_instance_gpu_builder_from_extraction_row(
     render_mesh_instances_pack_lightmap_uv_rect(row.lightmap),
     render_mesh_instances_gpu_previous_input_index(instances, entity, shared),
     row.render_layers,
-    render_mesh_instance_extraction_row_mesh_flags(
-      row, render_visibility_ranges,
+    render_mesh_instance_extraction_mesh_flags(
+      row.entity,
+      row.world_from_local,
+      row.visibility_range,
+      row.has_no_frustum_culling,
+      row.has_not_shadow_receiver,
+      row.has_transmitted_shadow_receiver,
+      render_visibility_ranges,
     ),
   )
 }
 
 ///|
 fn render_mesh_instance_cpu_material_binding_id(
-  row : RenderMeshInstanceGpuExtractionRow,
+  row : RenderMeshInstanceCpuExtractionRow,
   mesh_material_ids : RenderMaterialInstances?,
   render_material_bindings : RenderMaterialBindings?,
 ) -> MaterialBindingId {
@@ -2179,7 +2209,7 @@ fn render_mesh_instance_cpu_material_binding_id(
 
 ///|
 fn render_mesh_instance_cpu_from_extraction_row(
-  row : RenderMeshInstanceGpuExtractionRow,
+  row : RenderMeshInstanceCpuExtractionRow,
   mesh_material_ids : RenderMaterialInstances?,
   render_material_bindings : RenderMaterialBindings?,
   render_visibility_ranges : @render_visibility.RenderVisibilityRanges?,
@@ -2211,8 +2241,14 @@ fn render_mesh_instance_cpu_from_extraction_row(
   let transforms = MeshTransforms::new(
     row.world_from_local,
     previous_world_from_local,
-    render_mesh_instance_extraction_row_mesh_flags(
-      row, render_visibility_ranges,
+    render_mesh_instance_extraction_mesh_flags(
+      row.entity,
+      row.world_from_local,
+      row.visibility_range,
+      row.has_no_frustum_culling,
+      row.has_not_shadow_receiver,
+      row.has_transmitted_shadow_receiver,
+      render_visibility_ranges,
     ),
   )
   RenderMeshInstanceCpu::new(
@@ -2759,13 +2795,10 @@ fn render_mesh_instances_update_cpu_building_resource(
     if !view_visibility.value().is_visible() {
       return
     }
-    let row = RenderMeshInstanceGpuExtractionRow::{
+    let row = RenderMeshInstanceCpuExtractionRow::{
       entity,
-      view_visibility: view_visibility.value(),
       world_from_local: global_transform.value().affine(),
       previous_global_transform: previous_global_transform.value(),
-      lightmap: None,
-      aabb: None,
       mesh: mesh.value(),
       tag: tag.value(),
       has_no_frustum_culling: no_frustum_culling.present(),
@@ -2773,7 +2806,6 @@ fn render_mesh_instances_update_cpu_building_resource(
       has_transmitted_shadow_receiver: transmitted_shadow_receiver.present(),
       has_not_shadow_caster: not_shadow_caster.present(),
       has_no_automatic_batching: no_automatic_batching.present(),
-      has_no_cpu_culling: false,
       visibility_range: visibility_range.value(),
       render_layers: render_layers.value(),
     }
