@@ -1,5 +1,10 @@
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/components3d" @camera_components3d,
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/json",
   "Milky2018/mgstudio/shader/source" @shader_source,
 }

@@ -69,8 +69,11 @@ pub fn ensure_post_process_required_components(world : @ecs.World) -> Unit {
 ///|
 pub fn post_process_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   register_embedded_wgsl_sources()
+  @post_process_effect_stack.register_embedded_wgsl_sources()
   ensure_post_process_required_components(app.world())
   app
+  .add_plugins(@post_process_motion_blur.MotionBlurPlugin::MotionBlurPlugin())
+  .add_plugins(@post_process_bloom.BloomPlugin::BloomPlugin())
 }
 
 ///|

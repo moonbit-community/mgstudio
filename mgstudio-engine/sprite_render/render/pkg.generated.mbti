@@ -11,7 +11,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/bloom",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui_render/runtime",
@@ -49,7 +49,7 @@ pub fn render2d_diagnostic_queue_cpu_ms() -> Float
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @post_process.Bloom, @render_layers.RenderLayers) -> Unit
+pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @bloom.Bloom, @render_layers.RenderLayers) -> Unit
 
 pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

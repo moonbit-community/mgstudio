@@ -273,139 +273,16 @@ pub fn TemporalJitter::with_offset(
 }
 
 ///|
-/// Midtone range controls aligned with Bevy's `Range<f32>`-based surface.
-pub(all) struct ColorGradingRange {
-  mut start : Float
-  mut end_ : Float
-} derive(ToJson, FromJson)
+pub type ColorGradingRange = @render.ColorGradingRange
 
 ///|
-pub fn ColorGradingRange::ColorGradingRange() -> ColorGradingRange {
-  ColorGradingRange::{ start: 0.2F, end_: 0.7F }
-}
+pub type ColorGradingGlobal = @render.ColorGradingGlobal
 
 ///|
-fn color_grading_range_copy(value : ColorGradingRange) -> ColorGradingRange {
-  let out = ColorGradingRange::ColorGradingRange()
-  out.start = value.start
-  out.end_ = value.end_
-  out
-}
+pub type ColorGradingSection = @render.ColorGradingSection
 
 ///|
-/// Global color-grading controls aligned with Bevy's `ColorGradingGlobal`.
-pub(all) struct ColorGradingGlobal {
-  mut exposure : Float
-  mut temperature : Float
-  mut tint : Float
-  mut hue : Float
-  mut post_saturation : Float
-  mut midtones_range : ColorGradingRange
-} derive(ToJson, FromJson)
-
-///|
-pub fn ColorGradingGlobal::ColorGradingGlobal() -> ColorGradingGlobal {
-  ColorGradingGlobal::{
-    exposure: 0.0F,
-    temperature: 0.0F,
-    tint: 0.0F,
-    hue: 0.0F,
-    post_saturation: 1.0F,
-    midtones_range: ColorGradingRange::ColorGradingRange(),
-  }
-}
-
-///|
-fn color_grading_global_copy(value : ColorGradingGlobal) -> ColorGradingGlobal {
-  let out = ColorGradingGlobal::ColorGradingGlobal()
-  out.exposure = value.exposure
-  out.temperature = value.temperature
-  out.tint = value.tint
-  out.hue = value.hue
-  out.post_saturation = value.post_saturation
-  out.midtones_range = color_grading_range_copy(value.midtones_range)
-  out
-}
-
-///|
-/// Sectional color-grading controls aligned with Bevy's `ColorGradingSection`.
-pub(all) struct ColorGradingSection {
-  mut saturation : Float
-  mut contrast : Float
-  mut gamma : Float
-  mut gain : Float
-  mut lift : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn ColorGradingSection::ColorGradingSection() -> ColorGradingSection {
-  ColorGradingSection::{
-    saturation: 1.0F,
-    contrast: 1.0F,
-    gamma: 1.0F,
-    gain: 1.0F,
-    lift: 0.0F,
-  }
-}
-
-///|
-fn color_grading_section_copy(
-  value : ColorGradingSection,
-) -> ColorGradingSection {
-  let out = ColorGradingSection::ColorGradingSection()
-  out.saturation = value.saturation
-  out.contrast = value.contrast
-  out.gamma = value.gamma
-  out.gain = value.gain
-  out.lift = value.lift
-  out
-}
-
-///|
-/// Camera color grading settings aligned with Bevy's `ColorGrading`.
-pub(all) struct ColorGrading {
-  mut global : ColorGradingGlobal
-  mut shadows : ColorGradingSection
-  mut midtones : ColorGradingSection
-  mut highlights : ColorGradingSection
-} derive(ToJson, FromJson)
-
-///|
-pub fn ColorGrading::ColorGrading() -> ColorGrading {
-  ColorGrading::{
-    global: ColorGradingGlobal::ColorGradingGlobal(),
-    shadows: ColorGradingSection::ColorGradingSection(),
-    midtones: ColorGradingSection::ColorGradingSection(),
-    highlights: ColorGradingSection::ColorGradingSection(),
-  }
-}
-
-///|
-pub fn ColorGrading::with_identical_sections(
-  global : ColorGradingGlobal,
-  section : ColorGradingSection,
-) -> ColorGrading {
-  let color_grading = ColorGrading::ColorGrading()
-  color_grading.global = color_grading_global_copy(global)
-  color_grading.shadows = color_grading_section_copy(section)
-  color_grading.midtones = color_grading_section_copy(section)
-  color_grading.highlights = color_grading_section_copy(section)
-  color_grading
-}
-
-///|
-pub fn ColorGrading::all_sections(
-  self : ColorGrading,
-) -> Iter[ColorGradingSection] {
-  [self.shadows, self.midtones, self.highlights].iter()
-}
-
-///|
-pub fn ColorGrading::all_sections_mut(
-  self : ColorGrading,
-) -> Iter[ColorGradingSection] {
-  [self.shadows, self.midtones, self.highlights].iter()
-}
+pub type ColorGrading = @render.ColorGrading
 
 ///|
 /// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
@@ -439,274 +316,13 @@ pub fn DebandDither::default() -> DebandDither {
 }
 
 ///|
-pub struct BloomPrefilter {
-  threshold : Float
-  threshold_softness : Float
-} derive(ToJson, FromJson)
+pub type BloomPrefilter = @post_process_bloom.BloomPrefilter
 
 ///|
-pub fn BloomPrefilter::BloomPrefilter() -> BloomPrefilter {
-  BloomPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
-}
+pub type BloomCompositeMode = @post_process_bloom.BloomCompositeMode
 
 ///|
-pub fn BloomPrefilter::new(
-  threshold : Float,
-  threshold_softness : Float,
-) -> BloomPrefilter {
-  BloomPrefilter::{
-    threshold: if threshold < 0.0F {
-      0.0F
-    } else {
-      threshold
-    },
-    threshold_softness: if threshold_softness < 0.0F {
-      0.0F
-    } else if threshold_softness > 1.0F {
-      1.0F
-    } else {
-      threshold_softness
-    },
-  }
-}
-
-///|
-pub fn BloomPrefilter::with_threshold(
-  self : BloomPrefilter,
-  threshold : Float,
-) -> BloomPrefilter {
-  BloomPrefilter::new(threshold, self.threshold_softness)
-}
-
-///|
-pub fn BloomPrefilter::with_threshold_softness(
-  self : BloomPrefilter,
-  threshold_softness : Float,
-) -> BloomPrefilter {
-  BloomPrefilter::new(self.threshold, threshold_softness)
-}
-
-///|
-pub(all) enum BloomCompositeMode {
-  EnergyConserving
-  Additive
-} derive(Eq, Debug, ToJson, FromJson)
-
-///|
-pub fn BloomCompositeMode::default() -> BloomCompositeMode {
-  BloomCompositeMode::EnergyConserving
-}
-
-///|
-const BLOOM_DEFAULT_MAX_MIP_DIMENSION : Int = 512
-
-///|
-/// Camera bloom settings aligned with Bevy's `Bloom`.
-pub struct Bloom {
-  intensity : Float
-  low_frequency_boost : Float
-  low_frequency_boost_curvature : Float
-  high_pass_frequency : Float
-  prefilter : BloomPrefilter
-  composite_mode : BloomCompositeMode
-  max_mip_dimension : Int
-  scale : @math.Vec2
-} derive(ToJson, FromJson)
-
-///|
-pub fn Bloom::Bloom() -> Bloom {
-  Bloom::{
-    intensity: 0.15F,
-    low_frequency_boost: 0.7F,
-    low_frequency_boost_curvature: 0.95F,
-    high_pass_frequency: 1.0F,
-    prefilter: BloomPrefilter::BloomPrefilter(),
-    composite_mode: BloomCompositeMode::EnergyConserving,
-    max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION,
-    scale: @math.Vec2::new(1.0F, 1.0F),
-  }
-}
-
-///|
-pub fn Bloom::natural() -> Bloom {
-  Bloom::Bloom()
-}
-
-///|
-pub fn Bloom::anamorphic() -> Bloom {
-  Bloom::{
-    ..Bloom(),
-    max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION * 2,
-    scale: @math.Vec2::new(4.0F, 1.0F),
-  }
-}
-
-///|
-pub fn Bloom::old_school() -> Bloom {
-  Bloom::{
-    ..Bloom(),
-    intensity: 0.05F,
-    prefilter: BloomPrefilter::new(0.6F, 0.2F),
-    composite_mode: BloomCompositeMode::Additive,
-  }
-}
-
-///|
-pub fn Bloom::screen_blur() -> Bloom {
-  Bloom::{
-    ..Bloom(),
-    intensity: 1.0F,
-    low_frequency_boost: 0.0F,
-    low_frequency_boost_curvature: 0.0F,
-    high_pass_frequency: 1.0F / 3.0F,
-  }
-}
-
-///|
-pub fn Bloom::new(intensity : Float) -> Bloom {
-  Bloom::{
-    ..Bloom(),
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
-
-///|
-pub fn Bloom::with_intensity(self : Bloom, intensity : Float) -> Bloom {
-  Bloom::{ ..self, intensity: if intensity < 0.0F { 0.0F } else { intensity } }
-}
-
-///|
-pub fn Bloom::with_low_frequency_boost(
-  self : Bloom,
-  low_frequency_boost : Float,
-) -> Bloom {
-  Bloom::{
-    ..self,
-    low_frequency_boost: if low_frequency_boost < 0.0F {
-      0.0F
-    } else if low_frequency_boost > 1.0F {
-      1.0F
-    } else {
-      low_frequency_boost
-    },
-  }
-}
-
-///|
-pub fn Bloom::with_low_frequency_boost_curvature(
-  self : Bloom,
-  low_frequency_boost_curvature : Float,
-) -> Bloom {
-  Bloom::{
-    ..self,
-    low_frequency_boost_curvature: if low_frequency_boost_curvature < 0.0F {
-      0.0F
-    } else if low_frequency_boost_curvature > 1.0F {
-      1.0F
-    } else {
-      low_frequency_boost_curvature
-    },
-  }
-}
-
-///|
-pub fn Bloom::with_high_pass_frequency(
-  self : Bloom,
-  high_pass_frequency : Float,
-) -> Bloom {
-  Bloom::{
-    ..self,
-    high_pass_frequency: if high_pass_frequency < 0.0F {
-      0.0F
-    } else if high_pass_frequency > 1.0F {
-      1.0F
-    } else {
-      high_pass_frequency
-    },
-  }
-}
-
-///|
-pub fn Bloom::with_prefilter(
-  self : Bloom,
-  threshold : Float,
-  threshold_softness : Float,
-) -> Bloom {
-  Bloom::{
-    ..self,
-    prefilter: BloomPrefilter::new(threshold, threshold_softness),
-  }
-}
-
-///|
-pub fn Bloom::with_prefilter_settings(
-  self : Bloom,
-  prefilter : BloomPrefilter,
-) -> Bloom {
-  Bloom::{
-    ..self,
-    prefilter: BloomPrefilter::new(
-      prefilter.threshold,
-      prefilter.threshold_softness,
-    ),
-  }
-}
-
-///|
-pub fn Bloom::with_composite_mode(
-  self : Bloom,
-  composite_mode : BloomCompositeMode,
-) -> Bloom {
-  Bloom::{ ..self, composite_mode, }
-}
-
-///|
-pub fn Bloom::with_max_mip_dimension(
-  self : Bloom,
-  max_mip_dimension : Int,
-) -> Bloom {
-  Bloom::{
-    ..self,
-    max_mip_dimension: if max_mip_dimension < 4 {
-      4
-    } else {
-      max_mip_dimension
-    },
-  }
-}
-
-///|
-pub fn Bloom::with_scale(self : Bloom, scale : @math.Vec2) -> Bloom {
-  Bloom::{
-    ..self,
-    scale: @math.Vec2::new(
-      if scale.x < 0.0F {
-        0.0F
-      } else {
-        scale.x
-      },
-      if scale.y < 0.0F {
-        0.0F
-      } else {
-        scale.y
-      },
-    ),
-  }
-}
-
-///|
-pub fn Bloom::with_scale_x(self : Bloom, scale_x : Float) -> Bloom {
-  self.with_scale(@math.Vec2::new(scale_x, self.scale.y))
-}
-
-///|
-pub fn Bloom::with_scale_y(self : Bloom, scale_y : Float) -> Bloom {
-  self.with_scale(@math.Vec2::new(self.scale.x, scale_y))
-}
+pub type Bloom = @post_process_bloom.Bloom
 
 ///|
 pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
@@ -979,9 +595,7 @@ pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @ecs.register_component(
-  debug_name="render3d.bloom",
-)
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process_bloom.ecs_key_bloom
 
 ///|
 pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[CustomPostProcess3d] = @ecs.register_component(
@@ -1000,9 +614,7 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @ecs.register_com
 )
 
 ///|
-pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @ecs.register_component(
-  debug_name="post_process.color_grading",
-)
+pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @render.ecs_key_color_grading
 
 ///|
 pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_component(
@@ -1045,11 +657,6 @@ pub impl @ecs.Component for Fxaa with fn component() {
 }
 
 ///|
-pub impl @ecs.Component for Bloom with fn component() {
-  ecs_key_bloom
-}
-
-///|
 pub impl @ecs.Component for CustomPostProcess3d with fn component() {
   ecs_key_custom_post_process3d
 }
@@ -1057,11 +664,6 @@ pub impl @ecs.Component for CustomPostProcess3d with fn component() {
 ///|
 pub impl @ecs.Component for Tonemapping with fn component() {
   ecs_key_tonemapping
-}
-
-///|
-pub impl @ecs.Component for ColorGrading with fn component() {
-  ecs_key_color_grading
 }
 
 ///|

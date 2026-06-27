@@ -32,8 +32,3 @@ pub using @camera_clear_color {encode_clear_color_config}
 
 ///|
 pub using @camera_clear_color {decode_clear_color_config}
-
-///|
-pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback {
-  @post_process.MsaaWriteback::default()
-}

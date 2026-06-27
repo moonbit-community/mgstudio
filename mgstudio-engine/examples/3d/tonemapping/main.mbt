@@ -333,29 +333,29 @@ fn PerMethodSettings::basic_scene_recommendation(
   match tonemapper {
     Reinhard | ReinhardLuminance =>
       @post_process.ColorGrading::{
-        ..@post_process.ColorGrading(),
+        ..@post_process.ColorGrading::ColorGrading(),
         global: @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal(),
+          ..@post_process.ColorGradingGlobal::ColorGradingGlobal(),
           exposure: 0.5F,
         },
       }
     AcesFitted =>
       @post_process.ColorGrading::{
-        ..@post_process.ColorGrading(),
+        ..@post_process.ColorGrading::ColorGrading(),
         global: @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal(),
+          ..@post_process.ColorGradingGlobal::ColorGradingGlobal(),
           exposure: 0.35F,
         },
       }
     AgX =>
       @post_process.ColorGrading::with_identical_sections(
         @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal(),
+          ..@post_process.ColorGradingGlobal::ColorGradingGlobal(),
           exposure: -0.2F,
           post_saturation: 1.1F,
         },
         @post_process.ColorGradingSection::{
-          ..@post_process.ColorGradingSection(),
+          ..@post_process.ColorGradingSection::ColorGradingSection(),
           saturation: 1.1F,
         },
       )

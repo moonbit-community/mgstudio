@@ -130,6 +130,3 @@ pub impl @json.FromJson for ClearColorConfig with fn from_json(json, _path) {
 }
 
 ///|
-pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback {
-  @post_process.MsaaWriteback::default()
-}

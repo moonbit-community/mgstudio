@@ -242,10 +242,6 @@ fn render_plugin_install_with(
     register_embedded_wgsl_sources()
     @renderer.register_embedded_wgsl_sources()
     @render_view_window.register_embedded_wgsl_sources()
-    @post_process.register_embedded_wgsl_sources()
-    @post_process_bloom.register_embedded_wgsl_sources()
-    @post_process_effect_stack.register_embedded_wgsl_sources()
-    @post_process_motion_blur.register_embedded_wgsl_sources()
     let extract_manual_texture_views_plugin : ExtractResourcePlugin[
       @render_texture.ManualTextureViews,
       Unit,

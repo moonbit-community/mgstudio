@@ -8,10 +8,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/post_process",
-  "Milky2018/mgstudio/post_process/bloom" @post_process_bloom,
-  "Milky2018/mgstudio/post_process/effect_stack" @post_process_effect_stack,
-  "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
@@ -28,6 +24,7 @@ import {
   "Milky2018/mgstudio/render/view/window" @render_view_window,
   "Milky2018/wgpu_mbt" @wgpu,
   "moonbitlang/core/float",
+  "moonbitlang/core/json",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/shader/source" @shader_source,
 }

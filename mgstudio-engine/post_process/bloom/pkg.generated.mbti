@@ -2,25 +2,62 @@
 package "Milky2018/mgstudio/post_process/bloom"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
-pub fn bloom_downsample_passes(@post_process.Bloom, Int, Int) -> Array[BloomDownsamplePass]
+pub fn bloom_downsample_passes(Bloom, Int, Int) -> Array[BloomDownsamplePass]
 
-pub fn bloom_is_anamorphic(@post_process.Bloom) -> Bool
+pub fn bloom_is_anamorphic(Bloom) -> Bool
 
-pub fn bloom_upsample_passes(@post_process.Bloom, Array[BloomDownsamplePass]) -> Array[BloomUpsamplePass]
+pub fn bloom_upsample_passes(Bloom, Array[BloomDownsamplePass]) -> Array[BloomUpsamplePass]
 
-pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
 // Errors
 
 // Types and methods
+pub struct Bloom {
+  intensity : Float
+  low_frequency_boost : Float
+  low_frequency_boost_curvature : Float
+  high_pass_frequency : Float
+  prefilter : BloomPrefilter
+  composite_mode : BloomCompositeMode
+  max_mip_dimension : Int
+  scale : @math.Vec2
+} derive(ToJson, @json.FromJson)
+pub fn Bloom::Bloom() -> Self
+pub fn Bloom::anamorphic() -> Self
+pub fn Bloom::natural() -> Self
+pub fn Bloom::new(Float) -> Self
+pub fn Bloom::old_school() -> Self
+pub fn Bloom::screen_blur() -> Self
+pub fn Bloom::with_composite_mode(Self, BloomCompositeMode) -> Self
+pub fn Bloom::with_high_pass_frequency(Self, Float) -> Self
+pub fn Bloom::with_intensity(Self, Float) -> Self
+pub fn Bloom::with_low_frequency_boost(Self, Float) -> Self
+pub fn Bloom::with_low_frequency_boost_curvature(Self, Float) -> Self
+pub fn Bloom::with_max_mip_dimension(Self, Int) -> Self
+pub fn Bloom::with_prefilter(Self, Float, Float) -> Self
+pub fn Bloom::with_prefilter_settings(Self, BloomPrefilter) -> Self
+pub fn Bloom::with_scale(Self, @math.Vec2) -> Self
+pub fn Bloom::with_scale_x(Self, Float) -> Self
+pub fn Bloom::with_scale_y(Self, Float) -> Self
+pub impl @ecs.Component for Bloom
+
+pub(all) enum BloomCompositeMode {
+  EnergyConserving
+  Additive
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn BloomCompositeMode::default() -> Self
+
 pub struct BloomDownsamplePass {
   mip_level : Int
   width : Int
@@ -28,6 +65,20 @@ pub struct BloomDownsamplePass {
   threshold : Float
   threshold_softness : Float
 } derive(ToJson, @json.FromJson)
+
+pub struct BloomPlugin {
+}
+pub fn BloomPlugin::BloomPlugin() -> Self
+pub impl @app.Plugin for BloomPlugin
+
+pub struct BloomPrefilter {
+  threshold : Float
+  threshold_softness : Float
+} derive(ToJson, @json.FromJson)
+pub fn BloomPrefilter::BloomPrefilter() -> Self
+pub fn BloomPrefilter::new(Float, Float) -> Self
+pub fn BloomPrefilter::with_threshold(Self, Float) -> Self
+pub fn BloomPrefilter::with_threshold_softness(Self, Float) -> Self
 
 pub struct BloomSettingsUniform {
   intensity : Float
@@ -41,7 +92,7 @@ pub struct BloomSettingsUniform {
   scale_x : Float
   scale_y : Float
 } derive(ToJson, @json.FromJson)
-pub fn BloomSettingsUniform::from_settings(@post_process.Bloom) -> Self
+pub fn BloomSettingsUniform::from_settings(Bloom) -> Self
 
 pub struct BloomUpsamplePass {
   source_mip_level : Int
@@ -53,11 +104,6 @@ pub struct BloomUpsamplePass {
 } derive(ToJson, @json.FromJson)
 
 // Type aliases
-pub using @post_process {type Bloom}
-
-pub using @post_process {type BloomCompositeMode}
-
-pub using @post_process {type BloomPrefilter}
 
 // Traits
 

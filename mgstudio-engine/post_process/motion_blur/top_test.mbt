@@ -46,3 +46,78 @@ test "motion blur: sample helper stays tied to component settings" {
   inspect(multi[1].offset == 0.0F, content="true")
   inspect(multi[2].offset == 0.5F, content="true")
 }
+
+///|
+test "motion blur: extract only writes uniforms for camera views" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  let render_camera_entity = world.spawn()
+  try! world.set_by_key(
+    camera_entity,
+    @render.RenderEntity::component(),
+    @render.RenderEntity::new(render_camera_entity),
+  )
+  try! world.set_by_key(
+    camera_entity,
+    @camera_camera.Camera::component(),
+    @camera_camera.Camera::Camera(),
+  )
+  try! world.set_by_key(
+    camera_entity,
+    ecs_key_motion_blur,
+    MotionBlur::new(1.25F, 3),
+  )
+  let non_camera_entity = world.spawn()
+  let render_non_camera_entity = world.spawn()
+  try! world.set_by_key(
+    non_camera_entity,
+    @render.RenderEntity::component(),
+    @render.RenderEntity::new(render_non_camera_entity),
+  )
+  try! world.set_by_key(
+    non_camera_entity,
+    ecs_key_motion_blur,
+    MotionBlur::new(0.75F, 2),
+  )
+
+  extract_motion_blur_uniforms(world)
+
+  let camera_uniform = try! world.get_by_key(
+    render_camera_entity, ecs_key_motion_blur_uniform,
+  )
+  inspect(camera_uniform is Some(_), content="true")
+  guard camera_uniform is Some(uniform) else {
+    abort("expected extracted uniform")
+  }
+  inspect(uniform.shutter_angle == 1.25F, content="true")
+  inspect(uniform.samples, content="3")
+  let non_camera_uniform = try! world.get_by_key(
+    render_non_camera_entity, ecs_key_motion_blur_uniform,
+  )
+  inspect(non_camera_uniform is None, content="true")
+}
+
+///|
+test "motion blur: prepare view depth texture usages adds texture binding" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @camera_components3d.Camera3d::component(),
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  try! world.set_by_key(
+    entity,
+    ecs_key_motion_blur_uniform,
+    MotionBlurUniform::new(0.5F, 1),
+  )
+  prepare_view_depth_texture_usages_for_motion_blur(world)
+  guard (try! world.get_by_key(
+      entity,
+      @camera_components3d.Camera3d::component(),
+    ))
+    is Some(camera3d) else {
+    abort("expected camera3d")
+  }
+  inspect(camera3d.depth_texture_usages().has_texture_binding(), content="true")
+}

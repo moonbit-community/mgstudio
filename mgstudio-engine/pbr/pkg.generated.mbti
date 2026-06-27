@@ -23,6 +23,7 @@ import {
   "Milky2018/mgstudio/pbr/lightmap",
   "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/bloom",
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
@@ -212,7 +213,7 @@ pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[@light.AtmosphereSetting
 
 pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure]
 
-pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
+pub let ecs_key_bloom : @ecs.ComponentKey[@bloom.Bloom]
 
 pub let ecs_key_bluenoise : @ecs.ResourceKey[Bluenoise]
 
@@ -226,7 +227,7 @@ pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.Chromatic
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[@light.ClusteredDecal]
 
-pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
+pub let ecs_key_color_grading : @ecs.ComponentKey[@Milky2018/mgstudio/render.ColorGrading]
 
 pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows]
 
@@ -974,7 +975,7 @@ pub struct Camera3dBundle {
   sub_camera_view : @Milky2018/mgstudio/pbr/render.SubCameraView3d?
   screen_space_transmission : @transmission.ScreenSpaceTransmission?
   screen_space_reflections : @post_process.ScreenSpaceReflections?
-  bloom : @post_process.Bloom?
+  bloom : @bloom.Bloom?
   tonemapping : @post_process.Tonemapping?
   deband_dither : @post_process.DebandDither?
   chromatic_aberration : @effect_stack.ChromaticAberration?
@@ -982,7 +983,7 @@ pub struct Camera3dBundle {
   vignette : @effect_stack.Vignette?
   motion_blur : @motion_blur.MotionBlur?
   exposure : @camera.Exposure?
-  color_grading : @post_process.ColorGrading?
+  color_grading : @Milky2018/mgstudio/render.ColorGrading?
   camera3d : @components3d.Camera3d
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
@@ -1003,10 +1004,10 @@ pub fn Camera3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
 pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
-pub fn Camera3dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
+pub fn Camera3dBundle::with_bloom(Self, @bloom.Bloom?) -> Self
 pub fn Camera3dBundle::with_camera3d(Self, @components3d.Camera3d) -> Self
 pub fn Camera3dBundle::with_chromatic_aberration(Self, @effect_stack.ChromaticAberration?) -> Self
-pub fn Camera3dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
+pub fn Camera3dBundle::with_color_grading(Self, @Milky2018/mgstudio/render.ColorGrading?) -> Self
 pub fn Camera3dBundle::with_custom_post_process3d(Self, @post_process.CustomPostProcess3d?) -> Self
 pub fn Camera3dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
 pub fn Camera3dBundle::with_decal_config(Self, CameraDecalConfig3d) -> Self
@@ -3051,11 +3052,11 @@ pub using @light {type AtmosphereMode}
 
 pub using @light {type AtmosphereSettings}
 
-pub using @post_process {type Bloom}
+pub using @bloom {type Bloom}
 
-pub using @post_process {type BloomCompositeMode}
+pub using @bloom {type BloomCompositeMode}
 
-pub using @post_process {type BloomPrefilter}
+pub using @bloom {type BloomPrefilter}
 
 pub using @components3d {type Camera3d}
 
@@ -3071,13 +3072,13 @@ pub using @effect_stack {type ChromaticAberration}
 
 pub using @light {type ClusteredDecal}
 
-pub using @post_process {type ColorGrading}
+pub using @Milky2018/mgstudio/render {type ColorGrading}
 
-pub using @post_process {type ColorGradingGlobal}
+pub using @Milky2018/mgstudio/render {type ColorGradingGlobal}
 
-pub using @post_process {type ColorGradingRange}
+pub using @Milky2018/mgstudio/render {type ColorGradingRange}
 
-pub using @post_process {type ColorGradingSection}
+pub using @Milky2018/mgstudio/render {type ColorGradingSection}
 
 pub using @light {type CubemapLayout3d}
 

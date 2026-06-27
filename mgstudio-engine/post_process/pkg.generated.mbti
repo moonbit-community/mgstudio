@@ -5,8 +5,10 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/post_process/bloom",
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -14,11 +16,11 @@ import {
 // Values
 pub const POST_PROCESS_RUNTIME_ROOT : String = "Milky2018/mgstudio/post_process"
 
-pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
+pub let ecs_key_bloom : @ecs.ComponentKey[@bloom.Bloom]
 
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@effect_stack.ChromaticAberration]
 
-pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading]
+pub let ecs_key_color_grading : @ecs.ComponentKey[@render.ColorGrading]
 
 pub let ecs_key_custom_post_process3d : @ecs.ComponentKey[CustomPostProcess3d]
 
@@ -48,7 +50,7 @@ pub fn ensure_post_process_required_components(@ecs.World) -> Unit
 
 pub fn msaa_writeback_required(MsaaWriteback?, Int, sorted_camera_index_for_target? : Int) -> Bool
 
-pub fn post_process_effect_count(Bloom?, @effect_stack.Vignette?, @motion_blur.MotionBlur?, @effect_stack.ChromaticAberration?, MsaaWriteback?) -> Int
+pub fn post_process_effect_count(@bloom.Bloom?, @effect_stack.Vignette?, @motion_blur.MotionBlur?, @effect_stack.ChromaticAberration?, MsaaWriteback?) -> Int
 
 pub fn post_process_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -59,87 +61,6 @@ pub fn register_post_process_required_components(@ecs.World) -> Unit raise @ecs.
 // Errors
 
 // Types and methods
-pub struct Bloom {
-  intensity : Float
-  low_frequency_boost : Float
-  low_frequency_boost_curvature : Float
-  high_pass_frequency : Float
-  prefilter : BloomPrefilter
-  composite_mode : BloomCompositeMode
-  max_mip_dimension : Int
-  scale : @math.Vec2
-} derive(ToJson, @json.FromJson)
-pub fn Bloom::Bloom() -> Self
-pub fn Bloom::anamorphic() -> Self
-pub fn Bloom::natural() -> Self
-pub fn Bloom::new(Float) -> Self
-pub fn Bloom::old_school() -> Self
-pub fn Bloom::screen_blur() -> Self
-pub fn Bloom::with_composite_mode(Self, BloomCompositeMode) -> Self
-pub fn Bloom::with_high_pass_frequency(Self, Float) -> Self
-pub fn Bloom::with_intensity(Self, Float) -> Self
-pub fn Bloom::with_low_frequency_boost(Self, Float) -> Self
-pub fn Bloom::with_low_frequency_boost_curvature(Self, Float) -> Self
-pub fn Bloom::with_max_mip_dimension(Self, Int) -> Self
-pub fn Bloom::with_prefilter(Self, Float, Float) -> Self
-pub fn Bloom::with_prefilter_settings(Self, BloomPrefilter) -> Self
-pub fn Bloom::with_scale(Self, @math.Vec2) -> Self
-pub fn Bloom::with_scale_x(Self, Float) -> Self
-pub fn Bloom::with_scale_y(Self, Float) -> Self
-pub impl @ecs.Component for Bloom
-
-pub(all) enum BloomCompositeMode {
-  EnergyConserving
-  Additive
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn BloomCompositeMode::default() -> Self
-
-pub struct BloomPrefilter {
-  threshold : Float
-  threshold_softness : Float
-} derive(ToJson, @json.FromJson)
-pub fn BloomPrefilter::BloomPrefilter() -> Self
-pub fn BloomPrefilter::new(Float, Float) -> Self
-pub fn BloomPrefilter::with_threshold(Self, Float) -> Self
-pub fn BloomPrefilter::with_threshold_softness(Self, Float) -> Self
-
-pub(all) struct ColorGrading {
-  mut global : ColorGradingGlobal
-  mut shadows : ColorGradingSection
-  mut midtones : ColorGradingSection
-  mut highlights : ColorGradingSection
-} derive(ToJson, @json.FromJson)
-pub fn ColorGrading::ColorGrading() -> Self
-pub fn ColorGrading::all_sections(Self) -> Iter[ColorGradingSection]
-pub fn ColorGrading::all_sections_mut(Self) -> Iter[ColorGradingSection]
-pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
-pub impl @ecs.Component for ColorGrading
-
-pub(all) struct ColorGradingGlobal {
-  mut exposure : Float
-  mut temperature : Float
-  mut tint : Float
-  mut hue : Float
-  mut post_saturation : Float
-  mut midtones_range : ColorGradingRange
-} derive(ToJson, @json.FromJson)
-pub fn ColorGradingGlobal::ColorGradingGlobal() -> Self
-
-pub(all) struct ColorGradingRange {
-  mut start : Float
-  mut end_ : Float
-} derive(ToJson, @json.FromJson)
-pub fn ColorGradingRange::ColorGradingRange() -> Self
-
-pub(all) struct ColorGradingSection {
-  mut saturation : Float
-  mut contrast : Float
-  mut gamma : Float
-  mut gain : Float
-  mut lift : Float
-} derive(ToJson, @json.FromJson)
-pub fn ColorGradingSection::ColorGradingSection() -> Self
-
 pub struct CustomPostProcess3d {
   enabled : Bool
   shader_path : String
@@ -287,7 +208,21 @@ pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
 
 // Type aliases
+pub using @bloom {type Bloom}
+
+pub using @bloom {type BloomCompositeMode}
+
+pub using @bloom {type BloomPrefilter}
+
 pub using @effect_stack {type ChromaticAberration}
+
+pub using @render {type ColorGrading}
+
+pub using @render {type ColorGradingGlobal}
+
+pub using @render {type ColorGradingRange}
+
+pub using @render {type ColorGradingSection}
 
 pub using @motion_blur {type MotionBlur}
 

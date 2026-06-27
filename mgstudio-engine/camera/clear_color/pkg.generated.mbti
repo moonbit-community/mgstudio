@@ -5,13 +5,10 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/post_process",
   "moonbitlang/core/json",
 }
 
 // Values
-pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
-
 pub fn clear_color_current_value() -> @color.Color
 
 pub fn decode_clear_color_config(Json) -> ClearColorConfig

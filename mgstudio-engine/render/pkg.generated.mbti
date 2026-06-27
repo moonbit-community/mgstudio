@@ -8,7 +8,6 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
-  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render/camera_sort",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
@@ -19,6 +18,7 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -94,6 +94,8 @@ pub let ecs_key_captured : @ecs.ComponentKey[Captured]
 
 pub let ecs_key_capturing : @ecs.ComponentKey[Capturing]
 
+pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading]
+
 pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity]
 
 pub let ecs_key_pending_sync_entity : @ecs.ResourceKey[PendingSyncEntity]
@@ -148,7 +150,7 @@ pub fn[C] gpu_component_array_buffer_plugin(@app.App[@ecs.World], _plugin? : Gpu
 
 pub fn[C : GpuComponentArrayBufferComponent] gpu_component_array_buffer_state_key(debug_name? : String) -> @ecs.ResourceKey[GpuComponentArrayBufferState[C]]
 
-pub fn host_color_grading_from_post_process(@post_process.ColorGrading?) -> HostColorGrading
+pub fn host_color_grading_from_post_process(ColorGrading?) -> HostColorGrading
 
 pub fn host_debug_string(value~ : String) -> Unit
 
@@ -617,6 +619,43 @@ pub impl @ecs.Component for Captured
 pub struct Capturing {
 }
 pub impl @ecs.Component for Capturing
+
+pub(all) struct ColorGrading {
+  mut global : ColorGradingGlobal
+  mut shadows : ColorGradingSection
+  mut midtones : ColorGradingSection
+  mut highlights : ColorGradingSection
+} derive(ToJson, @json.FromJson)
+pub fn ColorGrading::ColorGrading() -> Self
+pub fn ColorGrading::all_sections(Self) -> Iter[ColorGradingSection]
+pub fn ColorGrading::all_sections_mut(Self) -> Iter[ColorGradingSection]
+pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
+pub impl @ecs.Component for ColorGrading
+
+pub(all) struct ColorGradingGlobal {
+  mut exposure : Float
+  mut temperature : Float
+  mut tint : Float
+  mut hue : Float
+  mut post_saturation : Float
+  mut midtones_range : ColorGradingRange
+} derive(ToJson, @json.FromJson)
+pub fn ColorGradingGlobal::ColorGradingGlobal() -> Self
+
+pub(all) struct ColorGradingRange {
+  mut start : Float
+  mut end_ : Float
+} derive(ToJson, @json.FromJson)
+pub fn ColorGradingRange::ColorGradingRange() -> Self
+
+pub(all) struct ColorGradingSection {
+  mut saturation : Float
+  mut contrast : Float
+  mut gamma : Float
+  mut gain : Float
+  mut lift : Float
+} derive(ToJson, @json.FromJson)
+pub fn ColorGradingSection::ColorGradingSection() -> Self
 
 pub struct ComponentUniforms[C] {
   uniforms : Array[C]

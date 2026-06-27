@@ -113,11 +113,11 @@ fn host_color_grading_mat3_mul_vec3(
 
 ///|
 pub fn host_color_grading_from_post_process(
-  color_grading : @post_process.ColorGrading?,
+  color_grading : ColorGrading?,
 ) -> HostColorGrading {
   let grading = match color_grading {
     Some(value) => value
-    None => @post_process.ColorGrading::ColorGrading()
+    None => ColorGrading::ColorGrading()
   }
   let white_point_x = HOST_COLOR_GRADING_D65_X - grading.global.temperature
   let white_point_y = HOST_COLOR_GRADING_D65_Y + grading.global.tint

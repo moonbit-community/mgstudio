@@ -16,6 +16,27 @@
 // Bevy source: `bevy/crates/bevy_post_process/src/motion_blur/mod.rs`.
 
 ///|
+const MOTION_BLUR_PLUGIN_NAME : String = "mgstudio.post_process.motion_blur.MotionBlurPlugin"
+
+///|
+pub struct MotionBlurPlugin {}
+
+///|
+pub fn MotionBlurPlugin::MotionBlurPlugin() -> MotionBlurPlugin {
+  MotionBlurPlugin::{  }
+}
+
+///|
+pub impl @app.Plugin for MotionBlurPlugin with fn name(_self) {
+  MOTION_BLUR_PLUGIN_NAME
+}
+
+///|
+pub impl @app.Plugin for MotionBlurPlugin with fn build(self, app) {
+  motion_blur_plugin_with(app, self)
+}
+
+///|
 pub struct MotionBlur {
   shutter_angle : Float
   samples : Int
@@ -118,6 +139,109 @@ pub fn motion_blur_uniform_component_key() -> @ecs.ComponentKey[
   MotionBlurUniform,
 ] {
   ecs_key_motion_blur_uniform
+}
+
+///|
+fn remove_motion_blur_sync_target(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @ecs.World {
+  ignore(
+    render_world.remove_by_key(render_entity, ecs_key_motion_blur_uniform) catch {
+      _ => false
+    },
+  )
+  render_world
+}
+
+///|
+pub fn extract_motion_blur_uniforms(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  ignore(
+    render_world
+    .components_registrator()
+    .register_component_by_key(ecs_key_motion_blur_uniform),
+  )
+  let extracted : Array[(@core.Entity, MotionBlurUniform)] = []
+  let query : @ecs.Query[
+    (
+      @ecs.Read[@render.RenderEntity],
+      @ecs.Read[@camera_camera.Camera],
+      @ecs.Read[MotionBlur],
+    ),
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! query.view(fn(_entity, data) {
+    let (render_entity_comp, _camera_comp, motion_blur_comp) = data
+    extracted.push(
+      (
+        render_entity_comp.value().id(),
+        motion_blur_comp.value().extract_uniform(),
+      ),
+    )
+  })
+  for item in extracted {
+    let (entity, uniform) = item
+    render_world.set_by_key(entity, ecs_key_motion_blur_uniform, uniform) catch {
+      _ =>
+        abort(
+          "motion_blur: failed to extract MotionBlurUniform to render world",
+        )
+    }
+  }
+}
+
+///|
+pub fn prepare_view_depth_texture_usages_for_motion_blur(
+  render_world : @ecs.World,
+) -> Unit {
+  let query : @ecs.Query[
+    (@ecs.Write[@camera_components3d.Camera3d], @ecs.Read[MotionBlurUniform]),
+    @ecs.All,
+  ] = @ecs.query(render_world)
+  try! query.view(fn(_entity, data) {
+    let (camera3d_write, _uniform_comp) = data
+    let camera3d = camera3d_write.value()
+    camera3d_write.set(
+      camera3d.with_depth_texture_usages(
+        camera3d.depth_texture_usages().with_texture_binding(),
+      ),
+    )
+  })
+}
+
+///|
+pub fn motion_blur_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_plugins(MotionBlurPlugin::MotionBlurPlugin())
+}
+
+///|
+pub fn motion_blur_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : MotionBlurPlugin,
+) -> @app.App[@ecs.World] {
+  register_embedded_wgsl_sources()
+  let sync_component : @render.SyncComponentPlugin[MotionBlur, MotionBlurPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  let next = @render.sync_component_plugin_with_target_removal(
+    app, sync_component, remove_motion_blur_sync_target,
+  )
+  @render.try_with_render_app(next, fn(render_app) {
+    render_app
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(extract_motion_blur_uniforms)
+      .named("mgstudio_post_process::extract_motion_blur_uniforms")
+      .in_set(@render.render_system_set_extract_commands),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(prepare_view_depth_texture_usages_for_motion_blur)
+      .named(
+        "mgstudio_post_process::prepare_view_depth_texture_usages_for_motion_blur",
+      )
+      .in_set(@render.render_system_set_prepare_views),
+    )
+  })
 }
 
 ///|

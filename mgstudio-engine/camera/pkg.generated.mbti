@@ -18,13 +18,10 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/pbr/render",
-  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/transform",
 }
 
 // Values
-pub fn camera_msaa_writeback_default() -> @post_process.MsaaWriteback
-
 pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn camera_projection_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
