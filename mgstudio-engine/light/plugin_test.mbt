@@ -513,6 +513,60 @@ test "light plugin: updates visible shadow-mapped spot light frusta" {
 }
 
 ///|
+test "light plugin: updates visible shadow-mapped point light cubemap frusta" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+  let world = app.world()
+  let point = world.spawn()
+  try! world.set(
+    point,
+    @light.PointLight::PointLight()
+    .with_shadow_maps_enabled(true)
+    .with_range(6.0F),
+  )
+  try! world.set_by_key(
+    point,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+
+  app = app.update()
+
+  let cubemap_frusta = try! app
+    .world()
+    .get_by_key(point, @camera_primitives.ecs_key_cubemap_frusta)
+  debug_inspect(cubemap_frusta is Some(_), content="true")
+  match cubemap_frusta {
+    Some(cubemap_frusta) => {
+      let first = cubemap_frusta.get(0)
+      let last = cubemap_frusta.get(5)
+      debug_inspect(first is Some(_), content="true")
+      debug_inspect(last is Some(_), content="true")
+      match first {
+        Some(first) => {
+          let half_spaces = first.view_frustum().half_spaces()
+          debug_inspect(half_spaces.length(), content="6")
+          let far = half_spaces[@camera_primitives.VIEW_FRUSTUM_FAR_PLANE_IDX]
+          let normal = far.normal()
+          debug_inspect(normal.x.to_double(), content="0")
+          debug_inspect(normal.y.to_double(), content="0")
+          debug_inspect(normal.z.to_double(), content="1")
+          debug_inspect(far.d().to_double(), content="6")
+        }
+        None => ()
+      }
+      match last {
+        Some(last) =>
+          debug_inspect(last.view_frustum().half_spaces().length(), content="6")
+        None => ()
+      }
+    }
+    None => ()
+  }
+}
+
+///|
 test "light: WithLight matches point, spot, directional, and rect lights" {
   let world = @ecs.World::new()
   let point = world.spawn()

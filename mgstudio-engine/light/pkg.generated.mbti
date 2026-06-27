@@ -166,6 +166,8 @@ pub fn spot_light_world_from_view(@transform.GlobalTransform) -> @math.Affine3
 
 pub fn update_point_light_bounding_spheres(@ecs.World) -> Unit
 
+pub fn update_point_light_frusta(@ecs.World) -> Unit
+
 pub fn update_spot_light_bounding_spheres(@ecs.World) -> Unit
 
 pub fn update_spot_light_frusta(@ecs.World) -> Unit
