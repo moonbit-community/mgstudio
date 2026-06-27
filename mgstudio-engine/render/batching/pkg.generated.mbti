@@ -22,6 +22,8 @@ pub fn[T] batch_meta_sort_and_merge(Array[BatchMeta[T]], (T, T) -> Bool) -> Arra
 
 pub fn[T] clear_batched_cpu_instance_buffers(BatchedInstanceBuffer[T]?) -> Unit
 
+pub fn[BD, BDI] collect_buffers_for_phase(String, PhaseBatchedInstanceBuffers[BD], PhaseIndirectParametersBuffers, BatchedInstanceBuffers[BD, BDI], IndirectParametersBuffers, IndirectParametersBuffersSettings) -> Unit
+
 pub fn[BD, BDI] collect_phase_batched_instance_buffers(BatchedInstanceBuffers[BD, BDI], String, PhaseBatchedInstanceBuffers[BD]) -> Unit
 
 pub fn collect_phase_indirect_parameters_buffers(IndirectParametersBuffers, String, PhaseIndirectParametersBuffers, IndirectParametersBuffersSettings) -> Unit

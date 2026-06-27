@@ -621,6 +621,23 @@ pub fn collect_phase_indirect_parameters_buffers(
 }
 
 ///|
+pub fn[BD, BDI] collect_buffers_for_phase(
+  phase_id : String,
+  phase_batched_instance_buffers : PhaseBatchedInstanceBuffers[BD],
+  phase_indirect_parameters_buffers : PhaseIndirectParametersBuffers,
+  batched_instance_buffers : BatchedInstanceBuffers[BD, BDI],
+  indirect_parameters_buffers : IndirectParametersBuffers,
+  indirect_parameters_buffers_settings : IndirectParametersBuffersSettings,
+) -> Unit {
+  collect_phase_batched_instance_buffers(
+    batched_instance_buffers, phase_id, phase_batched_instance_buffers,
+  )
+  collect_phase_indirect_parameters_buffers(
+    indirect_parameters_buffers, phase_id, phase_indirect_parameters_buffers, indirect_parameters_buffers_settings,
+  )
+}
+
+///|
 pub struct PreprocessWorkItem {
   input_index : Int
   output_or_indirect_parameters_index : Int

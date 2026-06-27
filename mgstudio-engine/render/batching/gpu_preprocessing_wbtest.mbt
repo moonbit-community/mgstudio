@@ -123,6 +123,36 @@ test "gpu preprocessing: indirect parameter buffers allocate and swap by phase" 
 }
 
 ///|
+test "gpu preprocessing: collect buffers for phase exchanges instance and indirect tables" {
+  let batched : BatchedInstanceBuffers[Int, Int] = BatchedInstanceBuffers::new()
+  let indirect = IndirectParametersBuffers::IndirectParametersBuffers()
+  let phase_instances : PhaseBatchedInstanceBuffers[Int] = PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = PhaseIndirectParametersBuffers::new(false)
+  phase_instances.marker = 12
+  ignore(phase_indirect.buffers.allocate(true, 4))
+  phase_indirect.buffers.add_batch_set(true, 0)
+  collect_buffers_for_phase(
+    "shadow",
+    phase_instances,
+    phase_indirect,
+    batched,
+    indirect,
+    IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+  )
+  debug_inspect(batched.phase_instance_buffer_count(), content="1")
+  debug_inspect(
+    batched.phase_instance_buffers.get("shadow").unwrap().marker,
+    content="12",
+  )
+  debug_inspect(indirect.phase_count(), content="1")
+  debug_inspect(indirect.get("shadow").unwrap().batch_count(true), content="4")
+  debug_inspect(
+    indirect.get("shadow").unwrap().batch_set_count(true),
+    content="1",
+  )
+}
+
+///|
 test "gpu preprocessing: direct work-item buffers collect one list" {
   let buffers = preprocess_work_item_buffers_direct()
   buffers.push(false, PreprocessWorkItem::new(3, 4))
