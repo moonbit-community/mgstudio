@@ -346,6 +346,55 @@ test "render3d: missing material specialization mesh returns to pending queue" {
 }
 
 ///|
+test "render3d: material specialization readiness follows Bevy resources" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(53, 1),
+  )
+  let render_entity = @core.Entity::new(54, 1)
+  let missing_material = @render.MainEntity::new(@core.Entity::new(55, 1))
+  let missing_mesh = @render.MainEntity::new(@core.Entity::new(56, 1))
+  let ready = @render.MainEntity::new(@core.Entity::new(57, 1))
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  ignore(pending_queues.prepare_for_new_frame(retained_view))
+  world.insert_resource(PendingMeshMaterialQueues::resource(), pending_queues)
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    missing_mesh.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(560)),
+  )
+  material_instances.extract_mesh_material(
+    ready.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(570)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let mesh_instances = RenderMeshInstances::new()
+  mesh_instances.insert(ready, RenderMeshQueueData::new(570, 0U, true))
+  world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+
+  let missing_material_ready = render3d_material_specialization_resources_ready(
+    world, retained_view, render_entity, missing_material,
+  )
+  let missing_mesh_ready = render3d_material_specialization_resources_ready(
+    world, retained_view, render_entity, missing_mesh,
+  )
+  let ready_value = render3d_material_specialization_resources_ready(
+    world, retained_view, render_entity, ready,
+  )
+
+  debug_inspect(missing_material_ready, content="false")
+  debug_inspect(missing_mesh_ready, content="false")
+  debug_inspect(ready_value, content="true")
+  match world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.current_len(retained_view), content="2")
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: materials startup preserves shadow specialization caches" {
   let world = @ecs.World::new()
   let view = @render_view.RetainedViewEntity::new(
