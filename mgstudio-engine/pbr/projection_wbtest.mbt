@@ -46,14 +46,14 @@ fn test_custom_projection_matrix_wb(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view(
   self,
 ) {
   test_custom_projection_matrix_wb(self.view_width, self.view_height, 0.0F)
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view_for_sub(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view_for_sub(
   _self,
   sub_view,
 ) {
@@ -65,7 +65,7 @@ impl CameraProjection3d for TestCustomProjection3dWb with fn get_clip_from_view_
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with fn update(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3dWb with fn update(
   self,
   width,
   height,
@@ -74,12 +74,14 @@ impl CameraProjection3d for TestCustomProjection3dWb with fn update(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with fn far(self) {
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3dWb with fn far(
+  self,
+) {
   self.far_plane
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with fn compute_frustum(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3dWb with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -87,7 +89,7 @@ impl CameraProjection3d for TestCustomProjection3dWb with fn compute_frustum(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with fn get_frustum_corners(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3dWb with fn get_frustum_corners(
   self : TestCustomProjection3dWb,
   z_near : Float,
   z_far : Float,

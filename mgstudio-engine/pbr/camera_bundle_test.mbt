@@ -28,7 +28,7 @@ struct CameraBundleCustomProjection3d {
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from_view(
+impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from_view(
   self,
 ) {
   ProjectionMatrix3d::from_cols(
@@ -40,7 +40,7 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from_view_for_sub(
+impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from_view_for_sub(
   self,
   _sub_view,
 ) {
@@ -48,7 +48,7 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_clip_from
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with fn update(
+impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d with fn update(
   self,
   _width,
   _height,
@@ -57,12 +57,14 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with fn update(
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with fn far(_self) {
+impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d with fn far(
+  _self,
+) {
   256.0F
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with fn compute_frustum(
+impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -70,7 +72,7 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with fn compute_frust
 }
 
 ///|
-impl CameraProjection3d for CameraBundleCustomProjection3d with fn get_frustum_corners(
+impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d with fn get_frustum_corners(
   self,
   _z_near,
   _z_far,

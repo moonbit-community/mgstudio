@@ -37,7 +37,7 @@ fn oblique_clip_from_view(
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_from_view(
+impl @camera_projection3d.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_from_view(
   self,
 ) {
   oblique_clip_from_view(
@@ -48,7 +48,7 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_f
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_from_view_for_sub(
+impl @camera_projection3d.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -60,7 +60,7 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_clip_f
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn update(
+impl @camera_projection3d.CameraProjection3d for ObliquePerspectiveProjection with fn update(
   self,
   width,
   height,
@@ -69,12 +69,14 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn update(
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn far(self) {
+impl @camera_projection3d.CameraProjection3d for ObliquePerspectiveProjection with fn far(
+  self,
+) {
   self.perspective.far
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn compute_frustum(
+impl @camera_projection3d.CameraProjection3d for ObliquePerspectiveProjection with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -82,7 +84,7 @@ impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn compute_fr
 }
 
 ///|
-impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with fn get_frustum_corners(
+impl @camera_projection3d.CameraProjection3d for ObliquePerspectiveProjection with fn get_frustum_corners(
   self : ObliquePerspectiveProjection,
   z_near : Float,
   z_far : Float,

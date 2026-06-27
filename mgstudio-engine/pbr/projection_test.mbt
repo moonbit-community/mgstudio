@@ -23,12 +23,14 @@ fn projection_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-fn[T : CameraProjection3d] generic_projection_far(projection : T) -> Float {
+fn[T : @camera_projection3d.CameraProjection3d] generic_projection_far(
+  projection : T,
+) -> Float {
   projection.far()
 }
 
 ///|
-fn[T : CameraProjection3d] generic_projection_frustum(
+fn[T : @camera_projection3d.CameraProjection3d] generic_projection_frustum(
   projection : T,
   camera_transform : @transform.Transform,
 ) -> Frustum {
@@ -197,14 +199,14 @@ fn test_custom_projection_matrix(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view(
   self,
 ) {
   test_custom_projection_matrix(self.view_width, self.view_height, 0.0F)
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view_for_sub(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view_for_sub(
   _self,
   sub_view,
 ) {
@@ -216,7 +218,7 @@ impl CameraProjection3d for TestCustomProjection3d with fn get_clip_from_view_fo
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with fn update(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3d with fn update(
   self,
   width,
   height,
@@ -225,12 +227,14 @@ impl CameraProjection3d for TestCustomProjection3d with fn update(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with fn far(self) {
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3d with fn far(
+  self,
+) {
   self.far_plane
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with fn compute_frustum(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3d with fn compute_frustum(
   self,
   camera_transform,
 ) {
@@ -238,7 +242,7 @@ impl CameraProjection3d for TestCustomProjection3d with fn compute_frustum(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3d with fn get_frustum_corners(
+impl @camera_projection3d.CameraProjection3d for TestCustomProjection3d with fn get_frustum_corners(
   self : TestCustomProjection3d,
   z_near : Float,
   z_far : Float,
@@ -288,7 +292,7 @@ test "render3d: custom projection stores typed behavior and updates lifecycle st
 }
 
 ///|
-test "render3d: projection and custom projection satisfy CameraProjection3d forwarding surface" {
+test "render3d: projection and custom projection satisfy @camera_projection3d.CameraProjection3d forwarding surface" {
   let custom = CustomProjection3d::new(TestCustomProjection3d::{
     view_width: 3.0F,
     view_height: 2.0F,
@@ -308,7 +312,7 @@ test "render3d: projection and custom projection satisfy CameraProjection3d forw
 }
 
 ///|
-test "render3d: CameraProjection3d trait exposes compute_frustum" {
+test "render3d: @camera_projection3d.CameraProjection3d trait exposes compute_frustum" {
   let custom = CustomProjection3d::new(TestCustomProjection3d::{
     view_width: 12.0F,
     view_height: 6.0F,

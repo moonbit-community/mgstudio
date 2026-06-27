@@ -204,9 +204,6 @@ pub type AmbientLight = @light.AmbientLight
 pub type GlobalAmbientLight = @light.GlobalAmbientLight
 
 ///|
-type ProjectionRuntime3d = @pbr_render.ProjectionRuntime3d
-
-///|
 let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @pbr_render.ecs_key_projection_runtime3d
 
 ///|

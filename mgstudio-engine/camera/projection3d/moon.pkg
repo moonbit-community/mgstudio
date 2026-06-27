@@ -1,0 +1,10 @@
+import {
+  "Milky2018/mgstudio/camera/primitives" @camera_primitives,
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/transform",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"

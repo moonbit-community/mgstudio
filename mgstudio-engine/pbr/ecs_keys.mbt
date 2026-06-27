@@ -203,9 +203,7 @@ pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @li
 pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture] = @light.ecs_key_point_light_texture
 
 ///|
-pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_component(
-  debug_name="render3d.projection",
-)
+pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @camera_projection3d.ecs_key_projection
 
 ///|
 pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @pbr_render.ecs_key_frustum
@@ -357,11 +355,6 @@ pub impl @ecs.Component for Mesh3dWireframe with fn component() {
 ///|
 pub impl @ecs.Component for FreeCameraState with fn component() {
   ecs_key_free_camera_state
-}
-
-///|
-pub impl @ecs.Component for Projection with fn component() {
-  ecs_key_projection
 }
 
 ///|

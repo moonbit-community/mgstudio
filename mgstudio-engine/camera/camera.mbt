@@ -65,10 +65,10 @@ pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @camera_components3d.ecs_key_camera3d
 
 ///|
-pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @pbr.ecs_key_projection
+pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @camera_projection3d.ecs_key_projection
 
 ///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr.ecs_key_sub_camera_view3d
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @camera_projection3d.ecs_key_sub_camera_view3d
 
 ///|
 pub fn camera_viewport_to_world_ray(

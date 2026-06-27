@@ -3,10 +3,10 @@ package "Milky2018/mgstudio/picking/mesh_picking/ray_cast"
 
 import {
   "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/projection3d",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/transform",
 }
 
@@ -15,9 +15,9 @@ pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersection
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
 
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @camera.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
 
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @camera.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastIntersectionSettings) -> (@core.Entity, MeshRayCastIntersectionHit)?
 
 pub fn mesh_ray_cast_intersections(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastIntersectionSettings) -> Array[(@core.Entity, MeshRayCastIntersectionHit)]
 

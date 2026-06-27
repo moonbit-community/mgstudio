@@ -11,13 +11,13 @@ import {
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/projection2d",
+  "Milky2018/mgstudio/camera/projection3d",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
-  "Milky2018/mgstudio/pbr/render",
   "Milky2018/mgstudio/transform",
 }
 
@@ -30,9 +30,9 @@ pub let camera_update_systems : String
 
 pub fn camera_viewport_clamp_to_size(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
 
-pub fn camera_viewport_to_world_ray(@math.Vec2, @Milky2018/mgstudio/camera/camera.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+pub fn camera_viewport_to_world_ray(@math.Vec2, @Milky2018/mgstudio/camera/camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
-pub fn camera_world_to_viewport(@math.Vec3, @Milky2018/mgstudio/camera/camera.Camera, @pbr.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn camera_world_to_viewport(@math.Vec3, @Milky2018/mgstudio/camera/camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn clear_color_current_value() -> @color.Color
 
@@ -46,9 +46,9 @@ pub let ecs_key_clear_color_config : @ecs.ComponentKey[@clear_color.ClearColorCo
 
 pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
-pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
+pub let ecs_key_projection : @ecs.ComponentKey[@projection3d.Projection]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@render.SubCameraView3d]
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@projection3d.SubCameraView3d]
 
 pub fn encode_clear_color_config(@clear_color.ClearColorConfig) -> Json
 
@@ -58,15 +58,15 @@ pub fn orthographic_projection_2d_default() -> @projection2d.OrthographicProject
 
 pub fn orthographic_projection_2d_with_scale(Float) -> @projection2d.OrthographicProjection
 
-pub fn orthographic_projection_3d_compute_frustum(@render.OrthographicProjection3d, @transform.Transform) -> @primitives.Frustum
+pub fn orthographic_projection_3d_compute_frustum(@projection3d.OrthographicProjection3d, @transform.Transform) -> @primitives.Frustum
 
-pub fn perspective_projection_3d_compute_frustum(@render.PerspectiveProjection3d, @transform.Transform) -> @primitives.Frustum
+pub fn perspective_projection_3d_compute_frustum(@projection3d.PerspectiveProjection3d, @transform.Transform) -> @primitives.Frustum
 
-pub fn perspective_projection_3d_default() -> @render.PerspectiveProjection3d
+pub fn perspective_projection_3d_default() -> @projection3d.PerspectiveProjection3d
 
-pub fn perspective_projection_3d_update(@render.PerspectiveProjection3d, Float, Float) -> @render.PerspectiveProjection3d
+pub fn perspective_projection_3d_update(@projection3d.PerspectiveProjection3d, Float, Float) -> @projection3d.PerspectiveProjection3d
 
-pub fn perspective_projection_3d_with_aspect_ratio(@render.PerspectiveProjection3d, Float) -> @render.PerspectiveProjection3d
+pub fn perspective_projection_3d_with_aspect_ratio(@projection3d.PerspectiveProjection3d, Float) -> @projection3d.PerspectiveProjection3d
 
 // Errors
 
@@ -122,19 +122,19 @@ pub using @hdr {type Hdr}
 
 pub using @projection2d {type OrthographicProjection as OrthographicProjection2d}
 
-pub using @render {type OrthographicProjection3d}
+pub using @projection3d {type OrthographicProjection3d}
 
-pub using @render {type OrthographicScalingMode3d}
+pub using @projection3d {type OrthographicScalingMode3d}
 
-pub using @render {type PerspectiveProjection3d as PerspectiveProjection}
+pub using @projection3d {type PerspectiveProjection3d as PerspectiveProjection}
 
-pub using @render {type PerspectiveProjection3d}
+pub using @projection3d {type PerspectiveProjection3d}
 
 pub using @Milky2018/mgstudio/camera/camera {type PhysicalCameraParameters}
 
-pub using @pbr {type Projection}
+pub using @projection3d {type Projection}
 
-pub using @render {type ProjectionMatrix3d}
+pub using @projection3d {type ProjectionMatrix3d}
 
 pub using @Milky2018/mgstudio/camera/camera {type RenderTarget}
 
@@ -142,7 +142,7 @@ pub using @computed_camera_values {type RenderTargetInfo}
 
 pub using @primitives {type Sphere}
 
-pub using @render {type SubCameraView3d}
+pub using @projection3d {type SubCameraView3d}
 
 pub using @primitives {type ViewFrustum}
 

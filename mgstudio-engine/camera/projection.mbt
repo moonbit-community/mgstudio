@@ -16,22 +16,22 @@
 // Bevy source: `bevy/crates/bevy_camera/src/projection.rs`.
 
 ///|
-pub type PerspectiveProjection3d = @pbr.PerspectiveProjection3d
+pub type PerspectiveProjection3d = @camera_projection3d.PerspectiveProjection3d
 
 ///|
-pub type OrthographicProjection3d = @pbr.OrthographicProjection3d
+pub type OrthographicProjection3d = @camera_projection3d.OrthographicProjection3d
 
 ///|
-pub type OrthographicScalingMode3d = @pbr.OrthographicScalingMode3d
+pub type OrthographicScalingMode3d = @camera_projection3d.OrthographicScalingMode3d
 
 ///|
-pub type SubCameraView3d = @pbr.SubCameraView3d
+pub type SubCameraView3d = @camera_projection3d.SubCameraView3d
 
 ///|
-pub type ProjectionMatrix3d = @pbr.ProjectionMatrix3d
+pub type ProjectionMatrix3d = @camera_projection3d.ProjectionMatrix3d
 
 ///|
-pub type Projection = @pbr.Projection
+pub type Projection = @camera_projection3d.Projection
 
 ///|
 pub type PerspectiveProjection = PerspectiveProjection3d
@@ -78,7 +78,7 @@ pub fn perspective_projection_3d_compute_frustum(
   projection : PerspectiveProjection3d,
   camera_transform : @transform.Transform,
 ) -> @camera_primitives.Frustum {
-  @pbr.render3d_perspective_projection_compute_frustum(
+  @camera_projection3d.render3d_perspective_projection_compute_frustum(
     projection, camera_transform,
   )
 }
@@ -88,7 +88,7 @@ pub fn orthographic_projection_3d_compute_frustum(
   projection : OrthographicProjection3d,
   camera_transform : @transform.Transform,
 ) -> @camera_primitives.Frustum {
-  @pbr.render3d_orthographic_projection_compute_frustum(
+  @camera_projection3d.render3d_orthographic_projection_compute_frustum(
     projection, camera_transform,
   )
 }

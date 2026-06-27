@@ -3,10 +3,12 @@ package "Milky2018/mgstudio/pbr/prepass"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/projection3d",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/core_pipeline/deferred",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
 }
@@ -78,10 +80,10 @@ pub fn render3d_prepass_bindings_for_entity(@ecs.World, @core.Entity) -> Prepass
 
 // Types and methods
 pub struct AnyPrepassPluginLoaded {
-  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+  debug_flags : @render.RenderDebugFlags
 }
 pub fn AnyPrepassPluginLoaded::AnyPrepassPluginLoaded() -> Self
-pub fn AnyPrepassPluginLoaded::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
+pub fn AnyPrepassPluginLoaded::debug_flags(Self) -> @render.RenderDebugFlags
 pub impl @app.Resource for AnyPrepassPluginLoaded
 
 pub struct PrepassBindings3d {
@@ -110,11 +112,11 @@ pub fn PrepassPipelineState::PrepassPipelineState() -> Self
 pub impl @app.Resource for PrepassPipelineState
 
 pub struct PrepassPlugin {
-  debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+  debug_flags : @render.RenderDebugFlags
 }
 pub fn PrepassPlugin::PrepassPlugin() -> Self
-pub fn PrepassPlugin::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
-pub fn PrepassPlugin::new(@Milky2018/mgstudio/render.RenderDebugFlags) -> Self
+pub fn PrepassPlugin::debug_flags(Self) -> @render.RenderDebugFlags
+pub fn PrepassPlugin::new(@render.RenderDebugFlags) -> Self
 pub impl @app.Plugin for PrepassPlugin
 
 pub struct PrepassPluginState {
@@ -135,10 +137,10 @@ pub impl @ecs.Component for PreviousGlobalTransform
 
 pub struct PreviousViewData {
   transform : @transform.Transform
-  clip_from_world : @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
+  clip_from_world : @projection3d.ProjectionMatrix3d
 }
-pub fn PreviousViewData::clip_from_world(Self) -> @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d
-pub fn PreviousViewData::new(@transform.Transform, @Milky2018/mgstudio/pbr/render.ProjectionMatrix3d) -> Self
+pub fn PreviousViewData::clip_from_world(Self) -> @projection3d.ProjectionMatrix3d
+pub fn PreviousViewData::new(@transform.Transform, @projection3d.ProjectionMatrix3d) -> Self
 pub fn PreviousViewData::transform(Self) -> @transform.Transform
 pub impl @ecs.Component for PreviousViewData
 
