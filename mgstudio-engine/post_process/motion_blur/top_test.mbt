@@ -121,3 +121,139 @@ test "motion blur: prepare view depth texture usages adds texture binding" {
   }
   inspect(camera3d.depth_texture_usages().has_texture_binding(), content="true")
 }
+
+///|
+test "motion blur: pipeline specialization mirrors Bevy MSAA shader def split" {
+  let pipeline = MotionBlurPipeline::MotionBlurPipeline()
+  let descriptor = pipeline.specialize(
+    MotionBlurPipelineKey::new(
+      target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+      samples=1,
+    ),
+  )
+  debug_inspect(descriptor.label(), content="Some(\"motion_blur_pipeline\")")
+  debug_inspect(descriptor.layout().length(), content="1")
+  debug_inspect(
+    descriptor.layout()[0].label(),
+    content="\"motion_blur_layout\"",
+  )
+  debug_inspect(
+    descriptor.vertex().shader(),
+    content="Some(\"core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl\")",
+  )
+  debug_inspect(
+    descriptor.vertex().entry_point(),
+    content="Some(\"fullscreen_vertex_shader\")",
+  )
+  debug_inspect(descriptor.vertex().buffers().length(), content="0")
+  let fragment = descriptor.fragment_or_error()
+  debug_inspect(
+    fragment.shader(),
+    content="Some(\"post_process/motion_blur/motion_blur.wgsl\")",
+  )
+  debug_inspect(fragment.shader_defs().length(), content="0")
+  debug_inspect(fragment.entry_point(), content="Some(\"fragment\")")
+  debug_inspect(fragment.targets().length(), content="1")
+  guard fragment.targets()[0] is Some(target) else {
+    abort("expected color target")
+  }
+  debug_inspect(
+    target.format(),
+    content=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.to_string(),
+  )
+  debug_inspect(
+    target.write_mask(),
+    content=@wgpu.COLOR_WRITE_MASK_ALL.to_string(),
+  )
+
+  let msaa_descriptor = pipeline.specialize(
+    MotionBlurPipelineKey::new(
+      target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+      samples=4,
+    ),
+  )
+  debug_inspect(
+    msaa_descriptor.layout()[0].label(),
+    content="\"motion_blur_layout_msaa\"",
+  )
+  let msaa_fragment = msaa_descriptor.fragment_or_error()
+  debug_inspect(msaa_fragment.shader_defs().length(), content="1")
+  guard msaa_fragment.shader_defs()[0]
+    is @render_resource.ShaderDefVal::Flag(name) else {
+    abort("expected MULTISAMPLED shader def")
+  }
+  debug_inspect(name, content="\"MULTISAMPLED\"")
+}
+
+///|
+test "motion blur: specialized pipeline cache deduplicates keys" {
+  let pipeline = MotionBlurPipeline::MotionBlurPipeline()
+  let cache = @render_resource.PipelineCache::new()
+  let specialized = SpecializedMotionBlurPipelines::SpecializedMotionBlurPipelines()
+  let key = MotionBlurPipelineKey::new(
+    target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    samples=1,
+  )
+  let first = specialized.queue(cache, pipeline, key)
+  let second = specialized.queue(cache, pipeline, key)
+  inspect(first.id(), content="0")
+  inspect(second.id(), content="0")
+  inspect(specialized.len(), content="1")
+  inspect(cache.queued_pipeline_count(), content="1")
+  ignore(
+    specialized.queue(
+      cache,
+      pipeline,
+      MotionBlurPipelineKey::new(
+        target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+        samples=4,
+      ),
+    ),
+  )
+  inspect(specialized.len(), content="2")
+  inspect(cache.queued_pipeline_count(), content="2")
+}
+
+///|
+test "motion blur: prepare pipelines writes Bevy-shaped pipeline id per view" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
+  )
+  init_motion_blur_pipeline(world)
+  let source_view = world.spawn()
+  let render_view = world.spawn()
+  try! world.set_by_key(
+    render_view,
+    ecs_key_motion_blur_uniform,
+    MotionBlurUniform::new(0.5F, 1),
+  )
+  try! world.set_by_key(
+    render_view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(source_view),
+      target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    ),
+  )
+  try! world.set_by_key(
+    render_view,
+    @render_view.Msaa::component(),
+    @render_view.Msaa::Sample4,
+  )
+
+  prepare_motion_blur_pipelines(world)
+
+  guard (try! world.get_by_key(render_view, ecs_key_motion_blur_pipeline_id))
+    is Some(pipeline_id) else {
+    abort("expected prepared pipeline id")
+  }
+  inspect(pipeline_id.pipeline_id().id(), content="0")
+  let cache = world.get_resource(@render.pipeline_cache_resource_key).unwrap()
+  inspect(cache.queued_pipeline_count(), content="1")
+  let state = world
+    .get_resource(SpecializedMotionBlurPipelines::resource())
+    .unwrap()
+  inspect(state.len(), content="1")
+}

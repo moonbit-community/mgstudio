@@ -20,7 +20,7 @@
 pub const FULLSCREEN_SHADER_PATH : String = "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl"
 
 ///|
-pub const FULLSCREEN_SHADER_ENTRY_POINT : String = "vertex"
+pub const FULLSCREEN_SHADER_ENTRY_POINT : String = "fullscreen_vertex_shader"
 
 ///|
 pub struct FullscreenShader {
@@ -42,6 +42,16 @@ pub fn FullscreenShader::new(
   entry_point? : String = FULLSCREEN_SHADER_ENTRY_POINT,
 ) -> FullscreenShader {
   FullscreenShader::{ path, entry_point }
+}
+
+///|
+pub fn FullscreenShader::path(self : FullscreenShader) -> String {
+  self.path
+}
+
+///|
+pub fn FullscreenShader::entry_point(self : FullscreenShader) -> String {
+  self.entry_point
 }
 
 ///|

@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub const FULLSCREEN_SHADER_ENTRY_POINT : String = "vertex"
+pub const FULLSCREEN_SHADER_ENTRY_POINT : String = "fullscreen_vertex_shader"
 
 pub const FULLSCREEN_SHADER_PATH : String = "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl"
 
@@ -23,7 +23,9 @@ pub struct FullscreenShader {
   entry_point : String
 }
 pub fn FullscreenShader::FullscreenShader() -> Self
+pub fn FullscreenShader::entry_point(Self) -> String
 pub fn FullscreenShader::new(path? : String, entry_point? : String) -> Self
+pub fn FullscreenShader::path(Self) -> String
 pub impl @app.Resource for FullscreenShader
 
 // Type aliases

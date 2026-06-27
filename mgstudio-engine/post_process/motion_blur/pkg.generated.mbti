@@ -3,22 +3,42 @@ package "Milky2018/mgstudio/post_process/motion_blur"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render/render_resource",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const MOTION_BLUR_PIPELINE_LABEL : String = "motion_blur_pipeline"
+
+pub const MOTION_BLUR_SHADER_PATH : String = "post_process/motion_blur/motion_blur.wgsl"
+
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
+
+pub let ecs_key_motion_blur_pipeline : @ecs.ResourceKey[MotionBlurPipeline]
+
+pub let ecs_key_motion_blur_pipeline_id : @ecs.ComponentKey[MotionBlurPipelineId]
 
 pub let ecs_key_motion_blur_uniform : @ecs.ComponentKey[MotionBlurUniform]
 
+pub let ecs_key_specialized_motion_blur_pipelines : @ecs.ResourceKey[SpecializedMotionBlurPipelines]
+
 pub fn extract_motion_blur_uniforms(@ecs.World) -> Unit
+
+pub fn init_motion_blur_pipeline(@ecs.World) -> Unit
+
+pub fn motion_blur_bind_group_layout_descriptor(multisampled~ : Bool) -> @render_resource.BindGroupLayoutDescriptor
 
 pub fn motion_blur_component_key() -> @ecs.ComponentKey[MotionBlur]
 
 pub fn motion_blur_extract_uniform(MotionBlur) -> MotionBlurUniform
 
 pub fn motion_blur_generate_samples(MotionBlur) -> Array[MotionBlurSample]
+
+pub fn motion_blur_pipeline_key_for_render_entity(@ecs.World, @core.Entity) -> MotionBlurPipelineKey?
 
 pub fn motion_blur_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -29,6 +49,8 @@ pub fn motion_blur_samples(MotionBlur) -> Array[MotionBlurSample]
 pub fn motion_blur_uniform_component_key() -> @ecs.ComponentKey[MotionBlurUniform]
 
 pub fn motion_blur_uniform_is_active(MotionBlurUniform) -> Bool
+
+pub fn prepare_motion_blur_pipelines(@ecs.World) -> Unit
 
 pub fn prepare_view_depth_texture_usages_for_motion_blur(@ecs.World) -> Unit
 
@@ -48,6 +70,36 @@ pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 pub impl @ecs.Component for MotionBlur
 
+pub struct MotionBlurPipeline {
+  layout : @render_resource.BindGroupLayoutDescriptor
+  layout_msaa : @render_resource.BindGroupLayoutDescriptor
+  fullscreen_shader_path : String
+  fullscreen_shader_entry_point : String
+  fragment_shader_path : String
+}
+pub fn MotionBlurPipeline::MotionBlurPipeline() -> Self
+pub fn MotionBlurPipeline::layout(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn MotionBlurPipeline::layout_msaa(Self) -> @render_resource.BindGroupLayoutDescriptor
+pub fn MotionBlurPipeline::new(@fullscreen_vertex_shader.FullscreenShader) -> Self
+pub fn MotionBlurPipeline::specialize(Self, MotionBlurPipelineKey) -> @render_resource.RenderPipelineDescriptor
+pub impl @app.Resource for MotionBlurPipeline
+
+pub struct MotionBlurPipelineId {
+  pipeline_id : @render_resource.CachedRenderPipelineId
+}
+pub fn MotionBlurPipelineId::new(pipeline_id~ : @render_resource.CachedRenderPipelineId) -> Self
+pub fn MotionBlurPipelineId::pipeline_id(Self) -> @render_resource.CachedRenderPipelineId
+pub impl @ecs.Component for MotionBlurPipelineId
+
+pub struct MotionBlurPipelineKey {
+  target_format_raw : UInt
+  samples : Int
+} derive(Eq, @debug.Debug)
+pub fn MotionBlurPipelineKey::is_multisampled(Self) -> Bool
+pub fn MotionBlurPipelineKey::new(target_format_raw? : UInt, samples? : Int) -> Self
+pub fn MotionBlurPipelineKey::samples(Self) -> Int
+pub fn MotionBlurPipelineKey::target_format_raw(Self) -> UInt
+
 pub struct MotionBlurPlugin {
 }
 pub fn MotionBlurPlugin::MotionBlurPlugin() -> Self
@@ -65,6 +117,14 @@ pub struct MotionBlurUniform {
 pub fn MotionBlurUniform::MotionBlurUniform() -> Self
 pub fn MotionBlurUniform::new(Float, Int) -> Self
 pub impl @ecs.Component for MotionBlurUniform
+
+pub struct SpecializedMotionBlurPipelines {
+  entries : Array[(MotionBlurPipelineKey, @render_resource.CachedRenderPipelineId)]
+}
+pub fn SpecializedMotionBlurPipelines::SpecializedMotionBlurPipelines() -> Self
+pub fn SpecializedMotionBlurPipelines::len(Self) -> Int
+pub fn SpecializedMotionBlurPipelines::queue(Self, @render_resource.PipelineCache, MotionBlurPipeline, MotionBlurPipelineKey) -> @render_resource.CachedRenderPipelineId
+pub impl @app.Resource for SpecializedMotionBlurPipelines
 
 // Type aliases
 

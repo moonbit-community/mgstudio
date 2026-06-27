@@ -3,8 +3,12 @@ import {
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/camera/components3d" @camera_components3d,
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/view" @render_view,
+  "Milky2018/wgpu_mbt" @wgpu,
   "moonbitlang/core/json",
   "Milky2018/mgstudio/shader/source" @shader_source,
 }

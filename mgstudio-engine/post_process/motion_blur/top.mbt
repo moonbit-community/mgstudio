@@ -228,10 +228,22 @@ pub fn motion_blur_plugin_with(
   @render.try_with_render_app(next, fn(render_app) {
     render_app
     .add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(init_motion_blur_pipeline).named(
+        "mgstudio_post_process::init_motion_blur_pipeline",
+      ),
+    )
+    .add_systems(
       @render.render_schedule_stage(),
       @app.system(extract_motion_blur_uniforms)
       .named("mgstudio_post_process::extract_motion_blur_uniforms")
       .in_set(@render.render_system_set_extract_commands),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(prepare_motion_blur_pipelines)
+      .named("mgstudio_post_process::prepare_motion_blur_pipelines")
+      .in_set(@render.render_system_set_prepare),
     )
     .add_systems(
       @render.render_schedule_stage(),

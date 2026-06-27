@@ -660,7 +660,11 @@ pub struct VertexState {
   buffers : Array[@mesh.VertexBufferLayout]
 }
 pub fn VertexState::VertexState() -> Self
+pub fn VertexState::buffers(Self) -> Array[@mesh.VertexBufferLayout]
+pub fn VertexState::entry_point(Self) -> String?
 pub fn VertexState::new(String?, Array[ShaderDefVal], String?, Array[@mesh.VertexBufferLayout]) -> Self
+pub fn VertexState::shader(Self) -> String?
+pub fn VertexState::shader_defs(Self) -> Array[ShaderDefVal]
 pub impl Default for VertexState
 
 // Type aliases

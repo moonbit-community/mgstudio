@@ -51,6 +51,26 @@ pub fn VertexState::new(
 }
 
 ///|
+pub fn VertexState::shader(self : VertexState) -> String? {
+  self.shader
+}
+
+///|
+pub fn VertexState::shader_defs(self : VertexState) -> Array[ShaderDefVal] {
+  self.shader_defs.copy()
+}
+
+///|
+pub fn VertexState::entry_point(self : VertexState) -> String? {
+  self.entry_point
+}
+
+///|
+pub fn VertexState::buffers(self : VertexState) -> Array[VertexBufferLayout] {
+  self.buffers.copy()
+}
+
+///|
 pub impl Default for VertexState with fn default() {
   VertexState::VertexState()
 }
