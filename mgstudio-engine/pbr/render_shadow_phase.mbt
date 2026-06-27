@@ -20,7 +20,7 @@ priv struct Render3dShadowPhaseView {
 ///|
 priv struct Render3dResolvedShadowPhaseItem {
   item : Render3dShadowPhaseItemData
-  extracted_index : Int
+  extracted_indices : Array[Int]
 }
 
 ///|
@@ -139,24 +139,56 @@ fn render3d_shadow_phase_items_for_view(
 ///|
 fn render3d_shadow_resolve_phase_items(
   meshes : Array[ExtractedMesh3d],
+  render_mesh_instances : RenderMeshInstances,
   items : Array[Render3dShadowPhaseItemData],
 ) -> Array[Render3dResolvedShadowPhaseItem] {
   let mesh_indices_by_main_entity : Map[UInt64, Int] = {}
+  let mesh_indices_by_uniform_index : Map[Int, Int] = {}
   for index in 0..<meshes.length() {
-    mesh_indices_by_main_entity.set(
-      meshes[index].entity.main_entity.to_bits(),
-      index,
-    )
-  }
-  let resolved : Array[Render3dResolvedShadowPhaseItem] = []
-  for item in items {
-    match mesh_indices_by_main_entity.get(item.main_entity().id().to_bits()) {
-      Some(extracted_index) =>
-        resolved.push(Render3dResolvedShadowPhaseItem::{ item, extracted_index })
+    let main_entity = @render.MainEntity::new(meshes[index].entity.main_entity)
+    let main_bits = main_entity.id().to_bits()
+    mesh_indices_by_main_entity.set(main_bits, index)
+    match render_mesh_instances.render_mesh_queue_data(main_entity) {
+      Some(queue_data) =>
+        mesh_indices_by_uniform_index.set(
+          queue_data.current_uniform_index().reinterpret_as_int(),
+          index,
+        )
       None => ()
     }
   }
+  let resolved : Array[Render3dResolvedShadowPhaseItem] = []
+  for item in items {
+    let extracted_indices : Array[Int] = []
+    let batch_range = item.batch_range()
+    for uniform_index in batch_range.start()..<batch_range.end() {
+      match mesh_indices_by_uniform_index.get(uniform_index) {
+        Some(extracted_index) => extracted_indices.push(extracted_index)
+        None => ()
+      }
+    }
+    if extracted_indices.length() == 0 {
+      match mesh_indices_by_main_entity.get(item.main_entity().id().to_bits()) {
+        Some(extracted_index) => extracted_indices.push(extracted_index)
+        None => ()
+      }
+    }
+    if extracted_indices.length() > 0 {
+      resolved.push(Render3dResolvedShadowPhaseItem::{ item, extracted_indices })
+    }
+  }
   resolved
+}
+
+///|
+fn render3d_resolved_shadow_phase_draw_count(
+  items : Array[Render3dResolvedShadowPhaseItem],
+) -> Int {
+  let mut count = 0
+  for item in items {
+    count += item.extracted_indices.length()
+  }
+  count
 }
 
 ///|
@@ -276,8 +308,13 @@ fn render3d_execute_shadow_phase_view(
   let phase_items = render3d_shadow_phase_items_for_view(
     world, retained_view_entity,
   )
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
   let resolved_phase_items = render3d_shadow_resolve_phase_items(
-    meshes, phase_items,
+    meshes, render_mesh_instances, phase_items,
   )
   @app.timeline_trace_emit_counter_int(
     "render_3d_shadow_phase_items",
@@ -294,82 +331,109 @@ fn render3d_execute_shadow_phase_view(
     phase_view.shadow_view.light_entity,
   )
   let shadow_phase = render3d_mesh_gpu_binned_phase_new()
-  let draw_storage_base = @render.host_gpu_reserve_mesh3d_draw_storage(
-    count=resolved_phase_items.length(),
+  let draw_count = render3d_resolved_shadow_phase_draw_count(
+    resolved_phase_items,
   )
-  if draw_storage_base < 0 && resolved_phase_items.length() > 0 {
+  let draw_storage_base = @render.host_gpu_reserve_mesh3d_draw_storage(
+    count=draw_count,
+  )
+  if draw_storage_base < 0 && draw_count > 0 {
     @render.host_gpu_end_pass()
     return
   }
   let mut draw_storage_offset = 0
   for resolved_phase_item in resolved_phase_items {
     let phase_item = resolved_phase_item.item
-    let extracted_shadow_mesh = meshes[resolved_phase_item.extracted_index]
+    let extracted_shadow_mesh = meshes[resolved_phase_item.extracted_indices[0]]
     let shadow_mesh = extracted_shadow_mesh.payload
     let material_bind_group_data = render3d_shadow_material_bind_group_data(
       phase_item, shadow_mesh,
     )
     let draw_storage_index = draw_storage_base + draw_storage_offset
-    render3d_mesh_gpu_binned_phase_push(
-      shadow_phase,
-      @pbr_render.render3d_build_mesh_gpu_draw_payload(
-        shadow_mesh.mesh_id,
-        shadow_view_key_hi,
-        shadow_view_key_lo,
-        draw_storage_index,
-        MESH3D_DRAW_INDIRECT_KIND_NONE,
-        -1,
-        shadow_mesh.material,
-        shadow_mesh.transform,
-        shadow_mesh.transform,
-        1.0F,
-        1.0F,
-        1.0F,
-        1.0F,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        0.5F,
-        0.5F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.5F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        -1,
-        0.0F,
-        @math.Quat::identity(),
-        @color.Color::white(),
-        0.0F,
-        0.0F,
-        render3d_mesh_flags(extracted_shadow_mesh),
-        0,
-        material_pipeline_id=Some(phase_item.cached_pipeline()),
-        material_extension_bind_group_data=material_bind_group_data,
-        skinning_key_hi=shadow_mesh.skinning_key_hi,
-        skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
-        morph_weights_index=shadow_mesh.morph_weights_index,
-        previous_morph_weights_index=shadow_mesh.previous_morph_weights_index,
-        morph_targets_texture_id=shadow_mesh.morph_targets_texture_id,
-        world_from_local=Some(shadow_mesh.world_from_local),
-        previous_world_from_local=Some(shadow_mesh.previous_world_from_local),
-      ),
+    let batch_payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
+      shadow_mesh.mesh_id,
+      shadow_view_key_hi,
+      shadow_view_key_lo,
+      draw_storage_index,
+      MESH3D_DRAW_INDIRECT_KIND_NONE,
+      -1,
+      shadow_mesh.material,
+      shadow_mesh.transform,
+      shadow_mesh.transform,
+      1.0F,
+      1.0F,
+      1.0F,
+      1.0F,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      0.5F,
+      0.5F,
+      0.0F,
+      0.0F,
+      0.0F,
+      1.5F,
+      -1,
+      0.0F,
+      0.0F,
+      -1,
+      0.0F,
+      0.0F,
+      -1,
+      -1,
+      0.0F,
+      @math.Quat::identity(),
+      @color.Color::white(),
+      0.0F,
+      0.0F,
+      render3d_mesh_flags(extracted_shadow_mesh),
+      0,
+      material_pipeline_id=Some(phase_item.cached_pipeline()),
+      material_extension_bind_group_data=material_bind_group_data,
+      skinning_key_hi=shadow_mesh.skinning_key_hi,
+      skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },
+      morph_weights_index=shadow_mesh.morph_weights_index,
+      previous_morph_weights_index=shadow_mesh.previous_morph_weights_index,
+      morph_targets_texture_id=shadow_mesh.morph_targets_texture_id,
+      world_from_local=Some(shadow_mesh.world_from_local),
+      previous_world_from_local=Some(shadow_mesh.previous_world_from_local),
     )
-    draw_storage_offset += 1
+    for extracted_index in resolved_phase_item.extracted_indices {
+      let extracted_batch_mesh = meshes[extracted_index]
+      let batch_mesh = extracted_batch_mesh.payload
+      let batch_material_bind_group_data = render3d_shadow_material_bind_group_data(
+        phase_item, batch_mesh,
+      )
+      let batch_draw_storage_index = draw_storage_base + draw_storage_offset
+      render3d_mesh_gpu_binned_phase_push(shadow_phase, @pbr_render.MeshGpuDrawPayload3d::{
+        ..batch_payload,
+        draw_storage_index: batch_draw_storage_index,
+        transform: batch_mesh.transform,
+        previous_transform: batch_mesh.previous_transform,
+        world_from_local: batch_mesh.world_from_local,
+        previous_world_from_local: batch_mesh.previous_world_from_local,
+        material_extension_bind_group_data: batch_material_bind_group_data,
+        mesh_flags: render3d_mesh_flags(extracted_batch_mesh),
+        skinning_key_hi: batch_mesh.skinning_key_hi,
+        skinning_key_lo: if batch_mesh.skinning_key_hi >= 0 {
+          0
+        } else {
+          -1
+        },
+        morph_weights_index: batch_mesh.morph_weights_index,
+        previous_morph_weights_index: batch_mesh.previous_morph_weights_index,
+        morph_targets_texture_id: batch_mesh.morph_targets_texture_id,
+      })
+      draw_storage_offset += 1
+    }
   }
   @app.timeline_trace_emit_counter_int(
     "render_3d_shadow_binned_batches",

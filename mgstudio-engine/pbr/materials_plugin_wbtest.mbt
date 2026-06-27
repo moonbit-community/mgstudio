@@ -199,6 +199,44 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
   debug_inspect(item.extra_index(), content="NoExtraIndex")
   debug_inspect(phase.input_uniform_index(first_main), content="Some(14)")
   debug_inspect(phase.input_uniform_index(second_main), content="Some(15)")
+  let render_mesh_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  render_mesh_instances.insert(
+    first_main,
+    RenderMeshQueueData::new(77, 14U, true),
+  )
+  render_mesh_instances.insert(
+    second_main,
+    RenderMeshQueueData::new(77, 15U, true),
+  )
+  let meshes = [
+    ExtractedMesh3d::{
+      entity: phase_entity_ref3d_for_main(first_main.id()),
+      payload: material_test_extracted_mesh_payload(
+        77,
+        @material.MaterialProperties::MaterialProperties(),
+      ),
+    },
+    ExtractedMesh3d::{
+      entity: phase_entity_ref3d_for_main(second_main.id()),
+      payload: material_test_extracted_mesh_payload(
+        77,
+        @material.MaterialProperties::MaterialProperties(),
+      ),
+    },
+  ]
+  let resolved = render3d_shadow_resolve_phase_items(
+    meshes,
+    render_mesh_instances,
+    phase.items(),
+  )
+  debug_inspect(resolved.length(), content="1")
+  debug_inspect(
+    render3d_resolved_shadow_phase_draw_count(resolved),
+    content="2",
+  )
+  debug_inspect(resolved[0].extracted_indices.length(), content="2")
 }
 
 ///|
