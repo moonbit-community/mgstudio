@@ -153,7 +153,7 @@ fn help_shutter_text(shutter_angle : Float) -> String {
 }
 
 ///|
-fn help_samples_text(samples : Int) -> String {
+fn help_samples_text(samples : UInt) -> String {
   "Samples: \{samples}\n"
 }
 
@@ -263,7 +263,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_motion_blur,
-    @pbr.MotionBlur::new(1.0F, 2),
+    @pbr.MotionBlur::new(1.0F, 2U),
   )
 }
 
@@ -700,7 +700,7 @@ fn keyboard_inputs(world : @ecs.World) -> Unit {
     return
   }
   let mut shutter_angle = motion_blur.shutter_angle
-  let mut samples = motion_blur.samples
+  let mut samples = motion_blur.samples.reinterpret_as_int()
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     shutter_angle = shutter_angle - 0.25F
   } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
@@ -719,7 +719,10 @@ fn keyboard_inputs(world : @ecs.World) -> Unit {
   } else if samples > 64 {
     samples = 64
   }
-  let next_motion_blur = @pbr.MotionBlur::new(shutter_angle, samples)
+  let next_motion_blur = @pbr.MotionBlur::new(
+    shutter_angle,
+    samples.reinterpret_as_uint(),
+  )
 
   try! (world.replace(camera, @pbr.ecs_key_motion_blur, next_motion_blur)
   |> ignore)

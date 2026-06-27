@@ -24,17 +24,17 @@ test "motion blur: mod owner exposes Bevy default component and uniform extract"
 }
 
 ///|
-test "motion blur: uniform extract clamps invalid local constructor inputs" {
-  let settings = MotionBlur::new(-2.0F, -3)
+test "motion blur: uniform extract preserves Bevy component values" {
+  let settings = MotionBlur::new(-2.0F, 3U)
   let uniform = motion_blur_extract_uniform(settings)
-  inspect(uniform.shutter_angle == 0.0F, content="true")
-  inspect(uniform.samples, content="0")
+  inspect(uniform.shutter_angle == -2.0F, content="true")
+  inspect(uniform.samples, content="3")
   inspect(motion_blur_uniform_is_active(uniform), content="false")
 }
 
 ///|
 test "motion blur: uniform bytes match WGSL layout size" {
-  let uniform = MotionBlurUniform::new(0.5F, 3)
+  let uniform = MotionBlurUniform::new(0.5F, 3U)
   let bytes = uniform.bytes()
   inspect(bytes.length(), content="16")
   inspect(MOTION_BLUR_UNIFORM_SIZE_BYTES, content="16")
@@ -50,13 +50,13 @@ test "motion blur: uniform bytes match WGSL layout size" {
 
 ///|
 test "motion blur: sample helper stays tied to component settings" {
-  let disabled = motion_blur_generate_samples(MotionBlur::new(0.0F, 8))
+  let disabled = motion_blur_generate_samples(MotionBlur::new(0.0F, 8U))
   inspect(disabled.length(), content="0")
   let single = motion_blur_generate_samples(MotionBlur::MotionBlur())
   inspect(single.length(), content="1")
   inspect(single[0].offset == 0.0F, content="true")
   inspect(single[0].weight == 1.0F, content="true")
-  let multi = motion_blur_generate_samples(MotionBlur::new(1.0F, 3))
+  let multi = motion_blur_generate_samples(MotionBlur::new(1.0F, 3U))
   inspect(multi.length(), content="3")
   inspect(multi[0].offset == -0.5F, content="true")
   inspect(multi[1].offset == 0.0F, content="true")
@@ -81,7 +81,7 @@ test "motion blur: extract only writes uniforms for camera views" {
   try! world.set_by_key(
     camera_entity,
     ecs_key_motion_blur,
-    MotionBlur::new(1.25F, 3),
+    MotionBlur::new(1.25F, 3U),
   )
   let non_camera_entity = world.spawn()
   let render_non_camera_entity = world.spawn()
@@ -93,7 +93,7 @@ test "motion blur: extract only writes uniforms for camera views" {
   try! world.set_by_key(
     non_camera_entity,
     ecs_key_motion_blur,
-    MotionBlur::new(0.75F, 2),
+    MotionBlur::new(0.75F, 2U),
   )
 
   extract_motion_blur_uniforms(world)
@@ -128,12 +128,12 @@ test "motion blur: prepare uniforms writes GPU buffer and per-view offsets" {
   try! world.set_by_key(
     first,
     ecs_key_motion_blur_uniform,
-    MotionBlurUniform::new(0.5F, 1),
+    MotionBlurUniform::new(0.5F, 1U),
   )
   try! world.set_by_key(
     second,
     ecs_key_motion_blur_uniform,
-    MotionBlurUniform::new(1.0F, 2),
+    MotionBlurUniform::new(1.0F, 2U),
   )
 
   prepare_motion_blur_uniforms(world)
@@ -181,7 +181,7 @@ test "motion blur: prepare view depth texture usages adds texture binding" {
   try! world.set_by_key(
     entity,
     ecs_key_motion_blur_uniform,
-    MotionBlurUniform::new(0.5F, 1),
+    MotionBlurUniform::new(0.5F, 1U),
   )
   prepare_view_depth_texture_usages_for_motion_blur(world)
   guard (try! world.get_by_key(

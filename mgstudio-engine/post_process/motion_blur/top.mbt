@@ -42,23 +42,17 @@ pub impl @app.Plugin for MotionBlurPlugin with fn build(self, app) {
 ///|
 pub struct MotionBlur {
   shutter_angle : Float
-  samples : Int
+  samples : UInt
 } derive(ToJson, FromJson)
 
 ///|
 pub fn MotionBlur::MotionBlur() -> MotionBlur {
-  MotionBlur::{ shutter_angle: 0.5F, samples: 1 }
+  MotionBlur::{ shutter_angle: 0.5F, samples: 1U }
 }
 
 ///|
-pub fn MotionBlur::new(shutter_angle : Float, samples : Int) -> MotionBlur {
-  let safe_shutter_angle = if shutter_angle < 0.0F {
-    0.0F
-  } else {
-    shutter_angle
-  }
-  let safe_samples = if samples < 0 { 0 } else { samples }
-  MotionBlur::{ shutter_angle: safe_shutter_angle, samples: safe_samples }
+pub fn MotionBlur::new(shutter_angle : Float, samples : UInt) -> MotionBlur {
+  MotionBlur::{ shutter_angle, samples }
 }
 
 ///|
@@ -70,7 +64,10 @@ pub fn MotionBlur::with_shutter_angle(
 }
 
 ///|
-pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur {
+pub fn MotionBlur::with_samples(
+  self : MotionBlur,
+  samples : UInt,
+) -> MotionBlur {
   MotionBlur::new(self.shutter_angle, samples)
 }
 
@@ -87,24 +84,20 @@ pub impl @ecs.Component for MotionBlur with fn component() {
 ///|
 pub struct MotionBlurUniform {
   shutter_angle : Float
-  samples : Int
+  samples : UInt
 }
 
 ///|
 pub fn MotionBlurUniform::MotionBlurUniform() -> MotionBlurUniform {
-  MotionBlurUniform::{ shutter_angle: 0.5F, samples: 1 }
+  MotionBlurUniform::{ shutter_angle: 0.5F, samples: 1U }
 }
 
 ///|
 pub fn MotionBlurUniform::new(
   shutter_angle : Float,
-  samples : Int,
+  samples : UInt,
 ) -> MotionBlurUniform {
-  let settings = MotionBlur::new(shutter_angle, samples)
-  MotionBlurUniform::{
-    shutter_angle: settings.shutter_angle,
-    samples: settings.samples,
-  }
+  MotionBlurUniform::{ shutter_angle, samples }
 }
 
 ///|
@@ -124,7 +117,7 @@ fn motion_blur_uniform_push_f32_le(out : Array[Byte], value : Float) -> Unit {
 pub fn MotionBlurUniform::bytes(self : MotionBlurUniform) -> Bytes {
   let out : Array[Byte] = []
   motion_blur_uniform_push_f32_le(out, self.shutter_angle)
-  motion_blur_uniform_push_u32_le(out, self.samples.reinterpret_as_uint())
+  motion_blur_uniform_push_u32_le(out, self.samples)
   motion_blur_uniform_push_u32_le(out, 0U)
   motion_blur_uniform_push_u32_le(out, 0U)
   Bytes::from_array(out)
@@ -152,7 +145,7 @@ pub fn motion_blur_extract_uniform(settings : MotionBlur) -> MotionBlurUniform {
 
 ///|
 pub fn motion_blur_uniform_is_active(uniform : MotionBlurUniform) -> Bool {
-  uniform.samples > 0 && uniform.shutter_angle > 0.0F
+  uniform.samples > 0U && uniform.shutter_angle > 0.0F
 }
 
 ///|

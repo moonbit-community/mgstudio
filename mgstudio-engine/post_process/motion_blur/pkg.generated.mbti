@@ -73,12 +73,12 @@ pub fn register_embedded_wgsl_sources() -> Unit
 // Types and methods
 pub struct MotionBlur {
   shutter_angle : Float
-  samples : Int
+  samples : UInt
 } derive(ToJson, @json.FromJson)
 pub fn MotionBlur::MotionBlur() -> Self
 pub fn MotionBlur::extract_uniform(Self) -> MotionBlurUniform
-pub fn MotionBlur::new(Float, Int) -> Self
-pub fn MotionBlur::with_samples(Self, Int) -> Self
+pub fn MotionBlur::new(Float, UInt) -> Self
+pub fn MotionBlur::with_samples(Self, UInt) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
 pub impl @ecs.Component for MotionBlur
 
@@ -125,11 +125,11 @@ pub struct MotionBlurSample {
 
 pub struct MotionBlurUniform {
   shutter_angle : Float
-  samples : Int
+  samples : UInt
 }
 pub fn MotionBlurUniform::MotionBlurUniform() -> Self
 pub fn MotionBlurUniform::bytes(Self) -> Bytes
-pub fn MotionBlurUniform::new(Float, Int) -> Self
+pub fn MotionBlurUniform::new(Float, UInt) -> Self
 pub impl @ecs.Component for MotionBlurUniform
 
 pub struct MotionBlurUniforms {

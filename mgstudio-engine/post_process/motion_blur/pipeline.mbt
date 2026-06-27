@@ -475,17 +475,18 @@ pub struct MotionBlurSample {
 
 ///|
 pub fn motion_blur_samples(settings : MotionBlur) -> Array[MotionBlurSample] {
-  if settings.samples <= 0 || settings.shutter_angle <= 0.0F {
+  if settings.samples == 0U || settings.shutter_angle <= 0.0F {
     return []
   }
-  if settings.samples == 1 {
+  if settings.samples == 1U {
     return [MotionBlurSample::{ offset: 0.0F, weight: 1.0F }]
   }
   let samples : Array[MotionBlurSample] = []
   let half_angle = settings.shutter_angle * 0.5F
-  let last_index = settings.samples - 1
+  let sample_count = settings.samples.reinterpret_as_int()
+  let last_index = sample_count - 1
   let last_index_float = Float::from_double(last_index.to_double())
-  for index in 0..<settings.samples {
+  for index in 0..<sample_count {
     let normalized = Float::from_double(index.to_double()) / last_index_float
     let offset = (normalized - 0.5F) * settings.shutter_angle
     let normalized_distance = if half_angle <= 0.0F {
