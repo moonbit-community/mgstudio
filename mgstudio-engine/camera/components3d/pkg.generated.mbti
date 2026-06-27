@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/components3d"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
+
+// Errors
+
+// Types and methods
+pub struct Camera3d {
+  depth_load_op : Camera3dDepthLoadOp
+  depth_texture_usages : Camera3dDepthTextureUsage
+} derive(ToJson, @json.FromJson)
+pub fn Camera3d::Camera3d() -> Self
+pub fn Camera3d::depth_texture_usages(Self) -> Camera3dDepthTextureUsage
+pub fn Camera3d::with_depth_texture_usages(Self, Camera3dDepthTextureUsage) -> Self
+pub impl @ecs.Component for Camera3d
+
+pub enum Camera3dDepthLoadOp {
+  Clear(Float)
+  Load
+} derive(ToJson, @json.FromJson)
+pub fn Camera3dDepthLoadOp::default() -> Self
+
+pub struct Camera3dDepthTextureUsage {
+  bits : UInt
+} derive(ToJson, @json.FromJson)
+pub fn Camera3dDepthTextureUsage::Camera3dDepthTextureUsage() -> Self
+pub fn Camera3dDepthTextureUsage::has_texture_binding(Self) -> Bool
+pub fn Camera3dDepthTextureUsage::to_image_usage_bits(Self) -> Int
+pub fn Camera3dDepthTextureUsage::with_copy_src(Self) -> Self
+pub fn Camera3dDepthTextureUsage::with_texture_binding(Self) -> Self
+
+// Type aliases
+
+// Traits
+

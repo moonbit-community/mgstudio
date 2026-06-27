@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/components2d",
+  "Milky2018/mgstudio/camera/components3d",
   "Milky2018/mgstudio/camera/compositing_space",
   "Milky2018/mgstudio/camera/computed_camera_values",
   "Milky2018/mgstudio/camera/hdr",
@@ -42,7 +43,7 @@ pub fn decode_clear_color_config(Json) -> @clear_color.ClearColorConfig
 
 pub let ecs_key_aabb : @ecs.ComponentKey[@primitives.Aabb]
 
-pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
+pub let ecs_key_camera3d : @ecs.ComponentKey[@components3d.Camera3d]
 
 pub let ecs_key_clear_color_config : @ecs.ComponentKey[@clear_color.ClearColorConfig]
 
@@ -92,7 +93,7 @@ pub using @Milky2018/mgstudio/camera/camera {type Camera}
 
 pub using @components2d {type Camera2d}
 
-pub using @pbr {type Camera3d}
+pub using @components3d {type Camera3d}
 
 pub using @pbr {type Camera3dBundle}
 

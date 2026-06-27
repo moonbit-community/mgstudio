@@ -285,88 +285,13 @@ pub fn DepthOfField::from_physical_camera(
 
 ///|
 /// Camera component aligned with Bevy's `Camera3d`.
-pub enum Camera3dDepthLoadOp {
-  Clear(Float)
-  Load
-} derive(ToJson, FromJson)
+pub type Camera3dDepthLoadOp = @camera_components3d.Camera3dDepthLoadOp
 
 ///|
-pub fn Camera3dDepthLoadOp::default() -> Camera3dDepthLoadOp {
-  Camera3dDepthLoadOp::Clear(0.0F)
-}
+pub type Camera3dDepthTextureUsage = @camera_components3d.Camera3dDepthTextureUsage
 
 ///|
-pub struct Camera3dDepthTextureUsage {
-  bits : UInt
-} derive(ToJson, FromJson)
-
-///|
-pub fn Camera3dDepthTextureUsage::Camera3dDepthTextureUsage() -> Camera3dDepthTextureUsage {
-  Camera3dDepthTextureUsage::{
-    bits: @asset.IMAGE_USAGE_RENDER_ATTACHMENT.reinterpret_as_uint(),
-  }
-}
-
-///|
-pub fn Camera3dDepthTextureUsage::with_texture_binding(
-  self : Camera3dDepthTextureUsage,
-) -> Camera3dDepthTextureUsage {
-  Camera3dDepthTextureUsage::{
-    bits: self.bits | @asset.IMAGE_USAGE_TEXTURE_BINDING.reinterpret_as_uint(),
-  }
-}
-
-///|
-pub fn Camera3dDepthTextureUsage::with_copy_src(
-  self : Camera3dDepthTextureUsage,
-) -> Camera3dDepthTextureUsage {
-  Camera3dDepthTextureUsage::{
-    bits: self.bits | @asset.IMAGE_USAGE_COPY_SRC.reinterpret_as_uint(),
-  }
-}
-
-///|
-pub fn Camera3dDepthTextureUsage::has_texture_binding(
-  self : Camera3dDepthTextureUsage,
-) -> Bool {
-  (self.bits & @asset.IMAGE_USAGE_TEXTURE_BINDING.reinterpret_as_uint()) != 0U
-}
-
-///|
-pub fn Camera3dDepthTextureUsage::to_image_usage_bits(
-  self : Camera3dDepthTextureUsage,
-) -> Int {
-  self.bits.reinterpret_as_int()
-}
-
-///|
-pub struct Camera3d {
-  depth_load_op : Camera3dDepthLoadOp
-  depth_texture_usages : Camera3dDepthTextureUsage
-} derive(ToJson, FromJson)
-
-///|
-pub fn Camera3d::Camera3d() -> Camera3d {
-  Camera3d::{
-    depth_load_op: Camera3dDepthLoadOp::default(),
-    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
-  }
-}
-
-///|
-pub fn Camera3d::with_depth_texture_usages(
-  self : Camera3d,
-  depth_texture_usages : Camera3dDepthTextureUsage,
-) -> Camera3d {
-  Camera3d::{ ..self, depth_texture_usages, }
-}
-
-///|
-pub fn Camera3d::depth_texture_usages(
-  self : Camera3d,
-) -> Camera3dDepthTextureUsage {
-  self.depth_texture_usages
-}
+pub type Camera3d = @camera_components3d.Camera3d
 
 ///|
 pub type ChromaticAberration = @post_process.ChromaticAberration

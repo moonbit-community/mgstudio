@@ -158,6 +158,11 @@ test "pbr light probe: gather uses visible clusterable probes and skips unloaded
   )
   try! world.set_by_key(
     view,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  try! world.set_by_key(
+    view,
     @light_cluster.VisibleClusterableObjects::component(),
     @light_cluster.VisibleClusterableObjects::from_lists(
       [],
@@ -267,6 +272,11 @@ test "pbr light probe: gather includes view environment maps without visible pro
   )
   try! world.set_by_key(
     view,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  try! world.set_by_key(
+    view,
     @light.ecs_key_environment_map_light,
     @light.EnvironmentMapLight::new(Some(diffuse), Some(specular), 4.0F),
   )
@@ -293,6 +303,43 @@ test "pbr light probe: gather includes view environment maps without visible pro
 }
 
 ///|
+test "pbr light probe: gather ignores non-Camera3d source views like Bevy" {
+  @render_texture.register_asset_texture_backend()
+  let world = @ecs.World::new()
+  let view = world.spawn()
+  let render_view = world.spawn()
+  let diffuse = @asset.asset_create_dynamic_texture_with_mips(
+    @math.UVec2::splat(4),
+    1,
+    false,
+  )
+  let specular = @asset.asset_create_dynamic_texture_with_mips(
+    @math.UVec2::splat(4),
+    3,
+    false,
+  )
+  try! world.set_by_key(
+    view,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_view),
+  )
+  try! world.set_by_key(
+    view,
+    @light.ecs_key_environment_map_light,
+    @light.EnvironmentMapLight::new(Some(diffuse), Some(specular), 4.0F),
+  )
+  gather_environment_map_light_probes(world)
+  inspect(
+    (try! world.get_by_key(
+      render_view,
+      RenderViewEnvironmentMapLightProbes::component(),
+    ))
+    is None,
+    content="true",
+  )
+}
+
+///|
 test "pbr light probe: gather removes stale inactive view components" {
   let world = @ecs.World::new()
   let view = world.spawn()
@@ -301,6 +348,11 @@ test "pbr light probe: gather removes stale inactive view components" {
     view,
     @render.ecs_key_render_entity,
     @render.RenderEntity::new(render_view),
+  )
+  try! world.set_by_key(
+    view,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
   )
   try! world.set_by_key(
     view,

@@ -80,7 +80,7 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @camera_camera.ensure_camera_required_components(world)
   @camera_components2d.ensure_camera2d_required_components(world)
   world.register_required_components_with(
-    @pbr.ecs_key_camera3d,
+    ecs_key_camera3d,
     @post_process.ecs_key_color_grading,
     fn() { @post_process.ColorGrading::ColorGrading() },
   ) catch {
@@ -95,7 +95,7 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       )
   }
   world.register_required_components_with(
-    @pbr.ecs_key_camera3d,
+    ecs_key_camera3d,
     @camera_camera.ecs_key_exposure,
     fn() { @camera_camera.Exposure::Exposure() },
   ) catch {

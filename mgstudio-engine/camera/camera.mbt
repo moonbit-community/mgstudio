@@ -29,7 +29,7 @@ pub type RenderTargetInfo = @camera_computed.RenderTargetInfo
 pub type ComputedCameraValues = @camera_computed.ComputedCameraValues
 
 ///|
-pub type Camera3d = @pbr.Camera3d
+pub type Camera3d = @camera_components3d.Camera3d
 
 ///|
 pub type Camera3dBundle = @pbr.Camera3dBundle
@@ -62,7 +62,7 @@ pub type DepthOfField = @pbr.DepthOfField
 pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
 
 ///|
-pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @pbr.ecs_key_camera3d
+pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @camera_components3d.ecs_key_camera3d
 
 ///|
 pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @pbr.ecs_key_projection

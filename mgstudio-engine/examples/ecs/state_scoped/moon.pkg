@@ -4,7 +4,6 @@ import {
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
-  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/state",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",

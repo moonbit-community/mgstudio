@@ -544,6 +544,17 @@ fn light_probe_source_view_is_active(
 }
 
 ///|
+fn light_probe_source_view_is_camera3d(
+  source_world : @ecs.World,
+  source_view_entity : @core.Entity,
+) -> Bool {
+  (try! source_world.get_by_key(
+    source_view_entity, @camera_components3d.ecs_key_camera3d,
+  ))
+  is Some(_)
+}
+
+///|
 fn light_probe_render_view_entity(
   source_world : @ecs.World,
   source_view_entity : @core.Entity,
@@ -629,6 +640,9 @@ fn gather_light_probe_view_entities(
   source_world.for_each_component(
     @light_cluster.VisibleClusterableObjects::component(),
     fn(entity, visible_clusterable_objects) {
+      guard light_probe_source_view_is_camera3d(source_world, entity) else {
+        return
+      }
       views.push((entity, visible_clusterable_objects))
     },
   )
@@ -636,6 +650,9 @@ fn gather_light_probe_view_entities(
     entity,
     _environment_map_light,
   ) {
+    guard light_probe_source_view_is_camera3d(source_world, entity) else {
+      return
+    }
     guard light_probe_render_view_entity(source_world, entity) is Some(_) else {
       return
     }

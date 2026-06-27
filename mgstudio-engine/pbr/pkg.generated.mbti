@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/components3d",
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/visibility/render_layers",
@@ -215,7 +216,7 @@ pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_bluenoise : @ecs.ResourceKey[Bluenoise]
 
-pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
+pub let ecs_key_camera3d : @ecs.ComponentKey[@components3d.Camera3d]
 
 pub let ecs_key_camera_decal_config3d : @ecs.ComponentKey[CameraDecalConfig3d]
 
@@ -967,15 +968,6 @@ pub(all) struct Bluenoise {
 }
 pub impl @app.Resource for Bluenoise
 
-pub struct Camera3d {
-  depth_load_op : Camera3dDepthLoadOp
-  depth_texture_usages : Camera3dDepthTextureUsage
-} derive(ToJson, @json.FromJson)
-pub fn Camera3d::Camera3d() -> Self
-pub fn Camera3d::depth_texture_usages(Self) -> Camera3dDepthTextureUsage
-pub fn Camera3d::with_depth_texture_usages(Self, Camera3dDepthTextureUsage) -> Self
-pub impl @ecs.Component for Camera3d
-
 pub struct Camera3dBundle {
   camera : @camera.Camera
   projection : Projection
@@ -991,7 +983,7 @@ pub struct Camera3dBundle {
   motion_blur : @motion_blur.MotionBlur?
   exposure : @camera.Exposure?
   color_grading : @post_process.ColorGrading?
-  camera3d : Camera3d
+  camera3d : @components3d.Camera3d
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
@@ -1012,7 +1004,7 @@ pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
 pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
 pub fn Camera3dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
-pub fn Camera3dBundle::with_camera3d(Self, Camera3d) -> Self
+pub fn Camera3dBundle::with_camera3d(Self, @components3d.Camera3d) -> Self
 pub fn Camera3dBundle::with_chromatic_aberration(Self, @effect_stack.ChromaticAberration?) -> Self
 pub fn Camera3dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
 pub fn Camera3dBundle::with_custom_post_process3d(Self, @post_process.CustomPostProcess3d?) -> Self
@@ -1031,21 +1023,6 @@ pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Sel
 pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
 pub impl @ecs.Bundle for Camera3dBundle
-
-pub enum Camera3dDepthLoadOp {
-  Clear(Float)
-  Load
-} derive(ToJson, @json.FromJson)
-pub fn Camera3dDepthLoadOp::default() -> Self
-
-pub struct Camera3dDepthTextureUsage {
-  bits : UInt
-} derive(ToJson, @json.FromJson)
-pub fn Camera3dDepthTextureUsage::Camera3dDepthTextureUsage() -> Self
-pub fn Camera3dDepthTextureUsage::has_texture_binding(Self) -> Bool
-pub fn Camera3dDepthTextureUsage::to_image_usage_bits(Self) -> Int
-pub fn Camera3dDepthTextureUsage::with_copy_src(Self) -> Self
-pub fn Camera3dDepthTextureUsage::with_texture_binding(Self) -> Self
 
 pub struct CameraDecalConfig3d {
   mode : DecalRenderMode3d
@@ -3079,6 +3056,12 @@ pub using @post_process {type Bloom}
 pub using @post_process {type BloomCompositeMode}
 
 pub using @post_process {type BloomPrefilter}
+
+pub using @components3d {type Camera3d}
+
+pub using @components3d {type Camera3dDepthLoadOp}
+
+pub using @components3d {type Camera3dDepthTextureUsage}
 
 pub using @light {type CascadeShadowConfig}
 
