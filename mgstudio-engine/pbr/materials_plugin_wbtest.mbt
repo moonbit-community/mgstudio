@@ -443,6 +443,76 @@ test "render3d: material specialization candidates come from visible dirty and p
 }
 
 ///|
+test "render3d: shadow specialization candidates come from visible dirty and pending meshes" {
+  let world = @ecs.World::new()
+  let main_view = @core.Entity::new(451, 1)
+  let render_view = world.spawn()
+  let unchanged_main = @core.Entity::new(452, 1)
+  let unchanged_render = @core.Entity::new(453, 1)
+  let changed_main = @core.Entity::new(454, 1)
+  let changed_render = @core.Entity::new(455, 1)
+  let pending_main = @core.Entity::new(456, 1)
+  let pending_render = @core.Entity::new(457, 1)
+  let added_main = @core.Entity::new(458, 1)
+  let added_render = @core.Entity::new(459, 1)
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let visible_class = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([
+    (unchanged_render, @render.MainEntity::new(unchanged_main)),
+    (changed_render, @render.MainEntity::new(changed_main)),
+    (pending_render, @render.MainEntity::new(pending_main)),
+  ])
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([
+    (unchanged_render, @render.MainEntity::new(unchanged_main)),
+    (changed_render, @render.MainEntity::new(changed_main)),
+    (pending_render, @render.MainEntity::new(pending_main)),
+    (added_render, @render.MainEntity::new(added_main)),
+  ])
+  visible_class.sort_added_entities()
+  try! world.set_by_key(
+    render_view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+  )
+  let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
+  dirty_specializations.insert_changed(@render.MainEntity::new(changed_main))
+  let pending_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  pending_queues
+  .queues()
+  .push_current(
+    retained_view,
+    pending_render,
+    @render.MainEntity::new(pending_main),
+  )
+  ignore(pending_queues.queues().prepare_for_new_frame(retained_view))
+
+  let candidates = render3d_shadow_specialization_candidates(
+    world, render_view, retained_view, dirty_specializations, pending_queues,
+  )
+
+  debug_inspect(candidates.length(), content="3")
+  debug_inspect(
+    material_test_pair_contains(candidates, added_render, added_main),
+    content="true",
+  )
+  debug_inspect(
+    material_test_pair_contains(candidates, changed_render, changed_main),
+    content="true",
+  )
+  debug_inspect(
+    material_test_pair_contains(candidates, pending_render, pending_main),
+    content="true",
+  )
+  debug_inspect(
+    material_test_pair_contains(candidates, unchanged_render, unchanged_main),
+    content="false",
+  )
+}
+
+///|
 test "render3d: missing material specialization mesh returns to pending queue" {
   let world = @ecs.World::new()
   let retained_view = @render_view.RetainedViewEntity::new(

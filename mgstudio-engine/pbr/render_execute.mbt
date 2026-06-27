@@ -802,6 +802,35 @@ fn render3d_material_specialization_candidates(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn render3d_shadow_specialization_candidates(
+  world : @ecs.World,
+  render_view_entity : @core.Entity,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  dirty_specializations : @render_visibility.DirtySpecializations,
+  pending_shadow_queues : @pbr_render.PendingShadowQueues,
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  guard (try! world.get_by_key(
+      render_view_entity, @render_visibility.ecs_key_render_visible_entities,
+    ))
+    is Some(visible_entities) else {
+    return []
+  }
+  guard visible_entities.get(render3d_mesh_visibility_class())
+    is Some(render_visible_mesh_entities) else {
+    return []
+  }
+  let view_pending_shadow_queues = pending_shadow_queues
+    .queues()
+    .view_or_insert(retained_view_entity)
+  dirty_specializations.iter_to_specialize(
+    retained_view_entity,
+    render_visible_mesh_entities,
+    view_pending_shadow_queues.prev_frame(),
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_enqueue_pending_mesh_material(
   world : @ecs.World,
