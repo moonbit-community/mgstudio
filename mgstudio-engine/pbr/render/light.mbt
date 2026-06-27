@@ -515,37 +515,11 @@ fn render3d_tan(value : Float) -> Float {
 }
 
 ///|
-fn render3d_transform_back(transform : @transform.Transform) -> @math.Vec3 {
-  quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, 1.0F)).normalize_or_zero()
-}
-
-///|
-pub fn render3d_spot_light_orthonormal_basis(
-  z_basis : @math.Vec3,
-) -> @math.Mat3 {
-  let normalized_z = z_basis.normalize_or_zero()
-  let sign = if normalized_z.z < 0.0F { -1.0F } else { 1.0F }
-  let a = -1.0F / (sign + normalized_z.z)
-  let b = normalized_z.x * normalized_z.y * a
-  let x_basis = @math.Vec3::new(
-    1.0F + sign * normalized_z.x * normalized_z.x * a,
-    sign * b,
-    0.0F - sign * normalized_z.x,
-  )
-  let y_basis = @math.Vec3::new(
-    b,
-    sign + normalized_z.y * normalized_z.y * a,
-    0.0F - normalized_z.y,
-  )
-  @math.Mat3::from_cols(x_basis, y_basis, normalized_z)
-}
-
-///|
 pub fn render3d_spot_light_clip_from_view(
   angle : Float,
   near_z : Float,
 ) -> ProjectionMatrix3d {
-  render3d_perspective_projection_matrix_raw(near_z, angle * 2.0F, 1.0F)
+  ProjectionMatrix3d::from_mat4(@light.spot_light_clip_from_view(angle, near_z))
 }
 
 ///|
@@ -586,9 +560,8 @@ pub fn render3d_spot_light_clip_from_world(
   angle : Float,
   near_z : Float,
 ) -> ProjectionMatrix3d {
-  let world_from_view = @math.Affine3::from_mat3_translation(
-    render3d_spot_light_orthonormal_basis(render3d_transform_back(transform)),
-    transform.translation,
+  let world_from_view = @light.spot_light_world_from_view(
+    @transform.GlobalTransform::from_transform(transform),
   )
   render3d_spot_light_clip_from_view(angle, near_z).mul(
     render3d_projection_matrix_from_affine3(world_from_view.inverse()),
@@ -3208,13 +3181,7 @@ fn render3d_cluster_camera_depth_context(
       } else {
         1.0F / transform.scale.z
       }
-      Some(
-        (
-          transform.translation,
-          render3d_transform_back(transform),
-          view_scale_z,
-        ),
-      )
+      Some((transform.translation, transform.back(), view_scale_z))
     }
     None => None
   }
@@ -3507,7 +3474,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     gpu_directional_lights.push(GpuDirectionalLight3d::{
       cascades,
       color: render3d_scale_color(item.color, item.illuminance),
-      dir_to_light: render3d_transform_back(item.transform),
+      dir_to_light: item.transform.back(),
       flags: render3d_directional_light_flags_for_gpu(
         item, shadow_maps_enabled, volumetric_enabled,
       ),
@@ -3636,7 +3603,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     let directional = directional_lights[0]
     lighting = Render3dLightingState::{
       ..lighting,
-      directional_dir: render3d_transform_back(directional.transform),
+      directional_dir: directional.transform.back(),
       directional_color: directional.color,
       directional_illuminance: directional.illuminance,
       directional_entity: Some(directional.entity),

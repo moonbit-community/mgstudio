@@ -298,6 +298,23 @@ pub fn Mat4::identity() -> Mat4 {
 }
 
 ///|
+// Bevy source: `bevy_math::Mat4::perspective_infinite_reverse_rh`.
+pub fn Mat4::perspective_infinite_reverse_rh(
+  fov_y_radians : Float,
+  aspect_ratio : Float,
+  z_near : Float,
+) -> Mat4 {
+  let half_fov = fov_y_radians * 0.5F
+  let f = 1.0F / (sin(half_fov) / cos(half_fov))
+  Mat4::from_cols(
+    Vec4::new(f / aspect_ratio, 0.0F, 0.0F, 0.0F),
+    Vec4::new(0.0F, f, 0.0F, 0.0F),
+    Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
+    Vec4::new(0.0F, 0.0F, z_near, 0.0F),
+  )
+}
+
+///|
 pub fn Mat4::x_axis(self : Mat4) -> Vec4 {
   self.x_axis
 }

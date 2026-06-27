@@ -204,6 +204,48 @@ test "spot light angle setters preserve plain field semantics" {
 }
 
 ///|
+test "spot light helpers match Bevy source shape" {
+  let basis = @light.orthonormalize(@math.Vec3::new(0.0F, 0.0F, 1.0F))
+  inspect(approx_eq(basis.x_axis.x, 1.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.y_axis.y, 1.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(basis.z_axis.z, 1.0F, 1.0e-6F), content="true")
+
+  let negative_zero = Float::reinterpret_from_uint(0x8000_0000U)
+  let negative_zero_basis = @light.orthonormalize(
+    @math.Vec3::new(1.0F, 0.0F, negative_zero),
+  )
+  inspect(
+    approx_eq(negative_zero_basis.x_axis.z, 1.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(negative_zero_basis.y_axis.y, -1.0F, 1.0e-6F),
+    content="true",
+  )
+
+  let transform = @transform.GlobalTransform::from_transform(
+    @transform.Transform::from_xyz(3.0F, 4.0F, 5.0F),
+  )
+  let world_from_view = @light.spot_light_world_from_view(transform)
+  inspect(
+    approx_eq(world_from_view.translation.x, 3.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(world_from_view.translation.y, 4.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(world_from_view.translation.z, 5.0F, 1.0e-6F),
+    content="true",
+  )
+
+  let clip = @light.spot_light_clip_from_view(0.5F, 0.25F)
+  inspect(approx_eq(clip.z_axis().w, -1.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(clip.w_axis().z, 0.25F, 1.0e-6F), content="true")
+}
+
+///|
 test "spot light scalar setters preserve Bevy plain field semantics" {
   let spot = @light.SpotLight::SpotLight()
     .with_intensity(-10.0F)

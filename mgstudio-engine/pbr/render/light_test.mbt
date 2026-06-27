@@ -612,22 +612,6 @@ test "pbr render light: lighting state carries spot shadow data" {
 }
 
 ///|
-test "pbr render light: spot shadow basis matches Bevy identity transform" {
-  let basis = render3d_spot_light_orthonormal_basis(
-    @math.Vec3::new(0.0F, 0.0F, 1.0F),
-  )
-  inspect(approx_eq(basis.x_axis.x, 1.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.x_axis.y, 0.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.x_axis.z, 0.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.y_axis.x, 0.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.y_axis.y, 1.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.y_axis.z, 0.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.z_axis.x, 0.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.z_axis.y, 0.0F, 1.0e-6F), content="true")
-  inspect(approx_eq(basis.z_axis.z, 1.0F, 1.0e-6F), content="true")
-}
-
-///|
 test "pbr render light: spot shadow clip_from_world uses Bevy reverse infinite projection" {
   let transform = @transform.Transform::from_xyz(3.0F, 4.0F, 5.0F)
   let clip_from_world = render3d_spot_light_clip_from_world(

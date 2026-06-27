@@ -202,6 +202,25 @@ test "math: Mat4 identity uses Bevy column-major axes" {
 }
 
 ///|
+test "math: Mat4 perspective infinite reverse rh matches Bevy shape" {
+  let matrix = Mat4::perspective_infinite_reverse_rh(pi_half(), 1.0F, 0.25F)
+  let x = matrix.x_axis()
+  let y = matrix.y_axis()
+  let z = matrix.z_axis()
+  let w = matrix.w_axis()
+  debug_inspect(approx_eq(x.x, 1.0F), content="true")
+  debug_inspect(approx_eq(y.y, 1.0F), content="true")
+  debug_inspect(
+    z.x == 0.0F && z.y == 0.0F && z.z == 0.0F && z.w == -1.0F,
+    content="true",
+  )
+  debug_inspect(
+    w.x == 0.0F && w.y == 0.0F && w.z == 0.25F && w.w == 0.0F,
+    content="true",
+  )
+}
+
+///|
 test "math: pi matches two half turns" {
   debug_inspect(pi() > 3.1415F && pi() < 3.1416F, content="true")
   debug_inspect(pi_half() * 2.0F == pi(), content="true")

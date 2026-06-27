@@ -516,8 +516,6 @@ pub fn render3d_spot_light_clip_from_view(Float, Float) -> ProjectionMatrix3d
 
 pub fn render3d_spot_light_clip_from_world(@transform.Transform, Float, Float) -> ProjectionMatrix3d
 
-pub fn render3d_spot_light_orthonormal_basis(@math.Vec3) -> @math.Mat3
-
 pub fn render3d_standard_material_alpha_cutoff(@material.AlphaMode3d) -> Float
 
 pub fn render3d_standard_material_flags(@material.StandardMaterial, Int, Int, Int, Int, Int, Int, Int, Int, forward_decal? : Bool) -> UInt
@@ -1169,6 +1167,7 @@ pub(all) struct ProjectionMatrix3d {
   w_axis : @math.Vec4
 }
 pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ProjectionMatrix3d::from_mat4(@math.Mat4) -> Self
 pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
 pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
 pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?

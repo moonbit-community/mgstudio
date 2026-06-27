@@ -144,6 +144,8 @@ pub fn get_shadow_lod_origin(@ecs.World) -> @core.Entity?
 
 pub fn light_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn orthonormalize(@math.Vec3) -> @math.Mat3
+
 pub fn point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[PointLightShadowMap]
 
 pub let simulation_light_set_assign_lights_to_clusters : String
@@ -157,6 +159,10 @@ pub let simulation_light_set_update_directional_light_cascades : String
 pub let simulation_light_set_update_light_frusta : String
 
 pub fn simulation_light_system_set_name(SimulationLightSystems) -> String
+
+pub fn spot_light_clip_from_view(Float, Float) -> @math.Mat4
+
+pub fn spot_light_world_from_view(@transform.GlobalTransform) -> @math.Affine3
 
 pub fn update_point_light_bounding_spheres(@ecs.World) -> Unit
 

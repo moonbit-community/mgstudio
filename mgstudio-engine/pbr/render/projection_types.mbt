@@ -757,6 +757,16 @@ pub fn ProjectionMatrix3d::from_cols(
 }
 
 ///|
+pub fn ProjectionMatrix3d::from_mat4(matrix : @math.Mat4) -> ProjectionMatrix3d {
+  ProjectionMatrix3d::from_cols(
+    matrix.x_axis(),
+    matrix.y_axis(),
+    matrix.z_axis(),
+    matrix.w_axis(),
+  )
+}
+
+///|
 pub fn ProjectionMatrix3d::mul_vec4(
   self : ProjectionMatrix3d,
   value : @math.Vec4,

@@ -830,6 +830,7 @@ pub struct Mat4 {
 } derive(Eq)
 pub fn Mat4::from_cols(Vec4, Vec4, Vec4, Vec4) -> Self
 pub fn Mat4::identity() -> Self
+pub fn Mat4::perspective_infinite_reverse_rh(Float, Float, Float) -> Self
 pub fn Mat4::w_axis(Self) -> Vec4
 pub fn Mat4::x_axis(Self) -> Vec4
 pub fn Mat4::y_axis(Self) -> Vec4
