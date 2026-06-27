@@ -9,11 +9,19 @@ import {
 // Values
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur]
 
+pub let ecs_key_motion_blur_uniform : @ecs.ComponentKey[MotionBlurUniform]
+
 pub fn motion_blur_component_key() -> @ecs.ComponentKey[MotionBlur]
+
+pub fn motion_blur_extract_uniform(MotionBlur) -> MotionBlurUniform
 
 pub fn motion_blur_generate_samples(MotionBlur) -> Array[MotionBlurSample]
 
 pub fn motion_blur_samples(MotionBlur) -> Array[MotionBlurSample]
+
+pub fn motion_blur_uniform_component_key() -> @ecs.ComponentKey[MotionBlurUniform]
+
+pub fn motion_blur_uniform_is_active(MotionBlurUniform) -> Bool
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -25,6 +33,7 @@ pub struct MotionBlur {
   samples : Int
 } derive(ToJson, @json.FromJson)
 pub fn MotionBlur::MotionBlur() -> Self
+pub fn MotionBlur::extract_uniform(Self) -> MotionBlurUniform
 pub fn MotionBlur::new(Float, Int) -> Self
 pub fn MotionBlur::with_samples(Self, Int) -> Self
 pub fn MotionBlur::with_shutter_angle(Self, Float) -> Self
@@ -34,6 +43,14 @@ pub struct MotionBlurSample {
   offset : Float
   weight : Float
 } derive(ToJson, @json.FromJson)
+
+pub struct MotionBlurUniform {
+  shutter_angle : Float
+  samples : Int
+}
+pub fn MotionBlurUniform::MotionBlurUniform() -> Self
+pub fn MotionBlurUniform::new(Float, Int) -> Self
+pub impl @ecs.Component for MotionBlurUniform
 
 // Type aliases
 

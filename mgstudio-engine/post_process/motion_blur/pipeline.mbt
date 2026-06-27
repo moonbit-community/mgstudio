@@ -14,52 +14,9 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_post_process/src/motion_blur/pipeline.rs`.
-// Host-side sample generation over the stable root `MotionBlur` runtime.
-
-///|
-pub struct MotionBlur {
-  shutter_angle : Float
-  samples : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn MotionBlur::MotionBlur() -> MotionBlur {
-  MotionBlur::{ shutter_angle: 0.5F, samples: 1 }
-}
-
-///|
-pub fn MotionBlur::new(shutter_angle : Float, samples : Int) -> MotionBlur {
-  let safe_shutter_angle = if shutter_angle < 0.0F {
-    0.0F
-  } else {
-    shutter_angle
-  }
-  let safe_samples = if samples < 0 { 0 } else { samples }
-  MotionBlur::{ shutter_angle: safe_shutter_angle, samples: safe_samples }
-}
-
-///|
-pub fn MotionBlur::with_shutter_angle(
-  self : MotionBlur,
-  shutter_angle : Float,
-) -> MotionBlur {
-  MotionBlur::new(shutter_angle, self.samples)
-}
-
-///|
-pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur {
-  MotionBlur::new(self.shutter_angle, samples)
-}
-
-///|
-pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @ecs.register_component(
-  debug_name="render3d.motion_blur",
-)
-
-///|
-pub impl @ecs.Component for MotionBlur with fn component() {
-  ecs_key_motion_blur
-}
+// Pipeline specialization is still tracked by ISS-034. This file currently
+// keeps only the local host-side sample helper until MotionBlurPipeline is
+// ported.
 
 ///|
 pub struct MotionBlurSample {
