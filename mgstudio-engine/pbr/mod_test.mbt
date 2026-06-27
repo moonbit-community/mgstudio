@@ -212,6 +212,30 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
   )
   debug_inspect(
     pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::gather_environment_map_light_probes\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::gather_irradiance_volume_light_probes\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::gather_environment_map_light_probes\" -> \"mgstudio_pbr::gather_irradiance_volume_light_probes\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::gather_irradiance_volume_light_probes\" -> \"mgstudio_pbr::extract_clusters_for_cpu_clustering\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
       "\"mgstudio_pbr::prepare_clusters_for_cpu_clustering\"",
     ),
     content="true",
