@@ -26,11 +26,19 @@ test "pbr light probe: view probe container enforces max probe count" {
 ///|
 test "pbr light probe: texture bindings are deduplicated like Bevy cubemap bindings" {
   let probes = RenderViewLightProbes::RenderViewLightProbes()
-  let first = @asset.Handle::new(11)
-  let second = @asset.Handle::new(23)
-  inspect(probes.get_or_insert_texture(Some(first)), content="0")
-  inspect(probes.get_or_insert_texture(Some(first)), content="0")
-  inspect(probes.get_or_insert_texture(Some(second)), content="1")
+  let first_diffuse : @asset.Handle[@asset.Image] = @asset.Handle::new(11)
+  let first_specular : @asset.Handle[@asset.Image] = @asset.Handle::new(12)
+  let second_diffuse : @asset.Handle[@asset.Image] = @asset.Handle::new(23)
+  let second_specular : @asset.Handle[@asset.Image] = @asset.Handle::new(24)
+  let first = LightProbeTextureId::environment_map(
+    first_diffuse, first_specular,
+  )
+  let second = LightProbeTextureId::environment_map(
+    second_diffuse, second_specular,
+  )
+  inspect(probes.get_or_insert_texture(first), content="0")
+  inspect(probes.get_or_insert_texture(first), content="0")
+  inspect(probes.get_or_insert_texture(second), content="1")
   inspect(probes.texture_count(), content="2")
 }
 
@@ -53,6 +61,49 @@ test "pbr light probe: gather records render probe index by main entity" {
   inspect(
     probes.render_light_probe_index(second_entity).unwrap_or(999U),
     content="1",
+  )
+}
+
+///|
+test "pbr light probe: light probe info skips unloaded or incomplete assets" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let main_entity = @render.MainEntity::new(entity)
+  let light_probe = @light.LightProbe::LightProbe()
+  let incomplete_environment = @light.EnvironmentMapLight::new(
+    None,
+    Some(@asset.Handle::new(701)),
+    1.0F,
+  )
+  inspect(
+    LightProbeInfo::from_environment_map_light(
+      world, main_entity, light_probe, incomplete_environment,
+    )
+    is None,
+    content="true",
+  )
+  let unloaded_environment = @light.EnvironmentMapLight::new(
+    Some(@asset.Handle::new(702)),
+    Some(@asset.Handle::new(703)),
+    1.0F,
+  )
+  inspect(
+    LightProbeInfo::from_environment_map_light(
+      world, main_entity, light_probe, unloaded_environment,
+    )
+    is None,
+    content="true",
+  )
+  let unloaded_volume = @light.IrradianceVolume::new(
+    Some(@asset.Handle::new(704)),
+    1.0F,
+  )
+  inspect(
+    LightProbeInfo::from_irradiance_volume(
+      world, main_entity, light_probe, unloaded_volume,
+    )
+    is None,
+    content="true",
   )
 }
 

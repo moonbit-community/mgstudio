@@ -8,7 +8,9 @@ import {
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/shader/source" @shader_source,
+  "Milky2018/mgstudio/transform",
   "Milky2018/wgpu_mbt" @wgpu,
+  "moonbitlang/core/hashmap",
 }
 
 supported_targets = "native"

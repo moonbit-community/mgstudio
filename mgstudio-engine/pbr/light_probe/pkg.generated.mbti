@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
   "Milky2018/wgpu_mbt",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -154,10 +155,12 @@ pub struct LightProbeInfo {
   parallax_correction_bounds : @math.Vec3
   world_position : @math.Vec3
   bounding_sphere_radius : Float
-  texture : @asset.Handle[@image.Image]?
+  texture : LightProbeTextureId
   intensity : Float
   flags : Int
 }
+pub fn LightProbeInfo::from_environment_map_light(@ecs.World, @render.MainEntity, @light.LightProbe, @light.EnvironmentMapLight) -> Self?
+pub fn LightProbeInfo::from_irradiance_volume(@ecs.World, @render.MainEntity, @light.LightProbe, @light.IrradianceVolume) -> Self?
 pub fn LightProbeInfo::new(@render.MainEntity, @asset.Handle[@image.Image]?) -> Self
 
 pub struct LightProbePlugin {
@@ -171,6 +174,14 @@ pub struct LightProbePluginState {
 }
 pub fn LightProbePluginState::LightProbePluginState() -> Self
 pub impl @app.Resource for LightProbePluginState
+
+pub struct LightProbeTextureId {
+  diffuse : @asset.Handle[@image.Image]?
+  specular : @asset.Handle[@image.Image]?
+}
+pub fn LightProbeTextureId::environment_map(@asset.Handle[@image.Image], @asset.Handle[@image.Image]) -> Self
+pub fn LightProbeTextureId::irradiance_volume(@asset.Handle[@image.Image]) -> Self
+pub fn LightProbeTextureId::missing() -> Self
 
 pub struct LightProbesBuffer {
   uniform_bytes : Array[Bytes]
@@ -282,8 +293,8 @@ pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
 }
 
 pub struct RenderViewLightProbes {
-  binding_index_to_textures : Array[@asset.Handle[@image.Image]?]
-  cubemap_to_binding_index : Map[Int, Int]
+  binding_index_to_textures : Array[LightProbeTextureId]
+  cubemap_to_binding_index : @hashmap.HashMap[(Int, Int), Int]
   render_light_probes : Array[RenderLightProbe]
   main_entity_to_render_light_probe_index : Map[UInt64, UInt]
   view_light_probe_info : EnvironmentMapViewLightProbeInfo?
@@ -291,7 +302,7 @@ pub struct RenderViewLightProbes {
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> Self
 pub fn RenderViewLightProbes::add_to_uniform_irradiance_volumes(Self, LightProbesUniform) -> Unit
 pub fn RenderViewLightProbes::add_to_uniform_reflection_probes(Self, LightProbesUniform) -> Unit
-pub fn RenderViewLightProbes::get_or_insert_texture(Self, @asset.Handle[@image.Image]?) -> Int
+pub fn RenderViewLightProbes::get_or_insert_texture(Self, LightProbeTextureId) -> Int
 pub fn RenderViewLightProbes::is_empty(Self) -> Bool
 pub fn RenderViewLightProbes::maybe_gather_light_probes(Self, Array[LightProbeInfo]) -> Unit
 pub fn RenderViewLightProbes::probe_count(Self) -> Int

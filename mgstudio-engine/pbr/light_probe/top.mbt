@@ -168,9 +168,48 @@ pub fn render_light_probe_flags_contains(flags : Int, flag : Int) -> Bool {
 }
 
 ///|
+pub struct LightProbeTextureId {
+  diffuse : @asset.Handle[@asset.Image]?
+  specular : @asset.Handle[@asset.Image]?
+}
+
+///|
+pub fn LightProbeTextureId::environment_map(
+  diffuse : @asset.Handle[@asset.Image],
+  specular : @asset.Handle[@asset.Image],
+) -> LightProbeTextureId {
+  LightProbeTextureId::{ diffuse: Some(diffuse), specular: Some(specular) }
+}
+
+///|
+pub fn LightProbeTextureId::irradiance_volume(
+  texture : @asset.Handle[@asset.Image],
+) -> LightProbeTextureId {
+  LightProbeTextureId::{ diffuse: Some(texture), specular: Some(texture) }
+}
+
+///|
+pub fn LightProbeTextureId::missing() -> LightProbeTextureId {
+  LightProbeTextureId::{ diffuse: None, specular: None }
+}
+
+///|
+fn light_probe_texture_key(texture : LightProbeTextureId) -> (Int, Int) {
+  let diffuse_id = match texture.diffuse {
+    Some(handle) => handle.id()
+    None => -1
+  }
+  let specular_id = match texture.specular {
+    Some(handle) => handle.id()
+    None => -1
+  }
+  (diffuse_id, specular_id)
+}
+
+///|
 pub struct RenderViewLightProbes {
-  binding_index_to_textures : Array[@asset.Handle[@asset.Image]?]
-  cubemap_to_binding_index : Map[Int, Int]
+  binding_index_to_textures : Array[LightProbeTextureId]
+  cubemap_to_binding_index : @hashmap.HashMap[(Int, Int), Int]
   render_light_probes : Array[RenderLightProbe]
   main_entity_to_render_light_probe_index : Map[UInt64, UInt]
   view_light_probe_info : EnvironmentMapViewLightProbeInfo?
@@ -184,7 +223,7 @@ pub struct LightProbeInfo {
   parallax_correction_bounds : @math.Vec3
   world_position : @math.Vec3
   bounding_sphere_radius : Float
-  texture : @asset.Handle[@asset.Image]?
+  texture : LightProbeTextureId
   intensity : Float
   flags : Int
 }
@@ -194,6 +233,10 @@ pub fn LightProbeInfo::new(
   main_entity : @render.MainEntity,
   texture : @asset.Handle[@asset.Image]?,
 ) -> LightProbeInfo {
+  let texture_id = match texture {
+    Some(handle) => LightProbeTextureId::irradiance_volume(handle)
+    None => LightProbeTextureId::missing()
+  }
   LightProbeInfo::{
     main_entity,
     light_from_world: [
@@ -205,10 +248,194 @@ pub fn LightProbeInfo::new(
     parallax_correction_bounds: @math.Vec3::zero(),
     world_position: @math.Vec3::zero(),
     bounding_sphere_radius: 0.0F,
-    texture,
+    texture: texture_id,
     intensity: 1.0F,
     flags: 0,
   }
+}
+
+///|
+fn light_probe_image_is_loaded(image : @asset.Handle[@asset.Image]?) -> Bool {
+  match image {
+    Some(handle) => @render.asset_is_texture_loaded(texture_id=handle.id())
+    None => false
+  }
+}
+
+///|
+fn light_probe_entity_affine(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @math.Affine3 {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => global_transform.affine()
+    None =>
+      match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+        Some(transform) =>
+          @math.Affine3::from_scale_rotation_translation(
+            transform.scale,
+            transform.rotation,
+            transform.translation,
+          )
+        None => @math.Affine3::identity()
+      }
+  }
+}
+
+///|
+fn light_probe_parallax_bounds(
+  parallax_correction : @light.ParallaxCorrection?,
+) -> @math.Vec3 {
+  match parallax_correction {
+    Some(@light.ParallaxCorrection::Auto) => @math.Vec3::splat(0.5F)
+    Some(@light.ParallaxCorrection::Custom(bounds)) => bounds
+    Some(@light.ParallaxCorrection::None) | None => @math.Vec3::zero()
+  }
+}
+
+///|
+fn environment_map_light_probe_flags(
+  environment_map_light : @light.EnvironmentMapLight,
+  parallax_correction : @light.ParallaxCorrection?,
+) -> Int {
+  let mut flags = 0
+  if environment_map_light.affects_lightmapped_mesh_diffuse {
+    flags = render_light_probe_flags_insert(
+      flags,
+      RENDER_LIGHT_PROBE_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE,
+    )
+  }
+  match parallax_correction {
+    Some(@light.ParallaxCorrection::Auto)
+    | Some(@light.ParallaxCorrection::Custom(_)) =>
+      flags = render_light_probe_flags_insert(
+        flags,
+        RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION,
+      )
+    Some(@light.ParallaxCorrection::None) | None => ()
+  }
+  flags
+}
+
+///|
+fn irradiance_volume_light_probe_flags(
+  irradiance_volume : @light.IrradianceVolume,
+) -> Int {
+  if irradiance_volume.affects_lightmapped_meshes {
+    render_light_probe_flags_insert(
+      0,
+      RENDER_LIGHT_PROBE_FLAG_AFFECTS_LIGHTMAPPED_MESH_DIFFUSE,
+    )
+  } else {
+    0
+  }
+}
+
+///|
+fn light_probe_info_from_world_from_light(
+  main_entity : @render.MainEntity,
+  world_from_light : @math.Affine3,
+  light_probe : @light.LightProbe,
+  texture : LightProbeTextureId,
+  parallax_correction_bounds : @math.Vec3,
+  intensity : Float,
+  flags : Int,
+) -> LightProbeInfo {
+  let light_from_world = world_from_light.inverse()
+  LightProbeInfo::{
+    main_entity,
+    light_from_world: [
+      @math.Vec4::new(
+        light_from_world.matrix3.x_axis.x,
+        light_from_world.matrix3.y_axis.x,
+        light_from_world.matrix3.z_axis.x,
+        light_from_world.translation.x,
+      ),
+      @math.Vec4::new(
+        light_from_world.matrix3.x_axis.y,
+        light_from_world.matrix3.y_axis.y,
+        light_from_world.matrix3.z_axis.y,
+        light_from_world.translation.y,
+      ),
+      @math.Vec4::new(
+        light_from_world.matrix3.x_axis.z,
+        light_from_world.matrix3.y_axis.z,
+        light_from_world.matrix3.z_axis.z,
+        light_from_world.translation.z,
+      ),
+    ],
+    falloff: light_probe.falloff,
+    parallax_correction_bounds,
+    world_position: world_from_light.translation,
+    bounding_sphere_radius: world_from_light.matrix3
+    .mul_vec3(@math.Vec3::splat(1.0F))
+    .length(),
+    texture,
+    intensity,
+    flags,
+  }
+}
+
+///|
+pub fn LightProbeInfo::from_environment_map_light(
+  world : @ecs.World,
+  main_entity : @render.MainEntity,
+  light_probe : @light.LightProbe,
+  environment_map_light : @light.EnvironmentMapLight,
+) -> LightProbeInfo? {
+  guard light_probe_image_is_loaded(environment_map_light.diffuse_map) &&
+    light_probe_image_is_loaded(environment_map_light.specular_map) else {
+    return None
+  }
+  guard environment_map_light.diffuse_map is Some(diffuse) else { return None }
+  guard environment_map_light.specular_map is Some(specular) else {
+    return None
+  }
+  let entity = main_entity.id()
+  let world_from_light = light_probe_entity_affine(world, entity).mul_rotation_translation(
+    environment_map_light.rotation,
+    @math.Vec3::zero(),
+  )
+  let parallax_correction = try! world.get_by_key(
+    entity, @light.ecs_key_parallax_correction,
+  )
+  Some(
+    light_probe_info_from_world_from_light(
+      main_entity,
+      world_from_light,
+      light_probe,
+      LightProbeTextureId::environment_map(diffuse, specular),
+      light_probe_parallax_bounds(parallax_correction),
+      environment_map_light.intensity,
+      environment_map_light_probe_flags(
+        environment_map_light, parallax_correction,
+      ),
+    ),
+  )
+}
+
+///|
+pub fn LightProbeInfo::from_irradiance_volume(
+  world : @ecs.World,
+  main_entity : @render.MainEntity,
+  light_probe : @light.LightProbe,
+  irradiance_volume : @light.IrradianceVolume,
+) -> LightProbeInfo? {
+  guard light_probe_image_is_loaded(irradiance_volume.voxels) else {
+    return None
+  }
+  guard irradiance_volume.voxels is Some(voxels) else { return None }
+  Some(
+    light_probe_info_from_world_from_light(
+      main_entity,
+      light_probe_entity_affine(world, main_entity.id()),
+      light_probe,
+      LightProbeTextureId::irradiance_volume(voxels),
+      @math.Vec3::zero(),
+      irradiance_volume.intensity,
+      irradiance_volume_light_probe_flags(irradiance_volume),
+    ),
+  )
 }
 
 ///|
@@ -225,7 +452,7 @@ pub struct RenderViewIrradianceVolumeLightProbes {
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
   RenderViewLightProbes::{
     binding_index_to_textures: [],
-    cubemap_to_binding_index: {},
+    cubemap_to_binding_index: @hashmap.HashMap([]),
     render_light_probes: [],
     main_entity_to_render_light_probe_index: {},
     view_light_probe_info: None,
@@ -233,17 +460,9 @@ pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
 }
 
 ///|
-fn light_probe_texture_key(texture : @asset.Handle[@asset.Image]?) -> Int {
-  match texture {
-    Some(handle) => handle.id()
-    None => -1
-  }
-}
-
-///|
 pub fn RenderViewLightProbes::get_or_insert_texture(
   self : RenderViewLightProbes,
-  texture : @asset.Handle[@asset.Image]?,
+  texture : LightProbeTextureId,
 ) -> Int {
   let texture_key = light_probe_texture_key(texture)
   match self.cubemap_to_binding_index.get(texture_key) {
