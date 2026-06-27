@@ -2185,6 +2185,17 @@ pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(Int, Int, ba
 pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
 pub fn Render3dShadowPhaseItemExtraIndex::none() -> Self
 
+pub struct Render3dShadowPhasesData {
+  views : @hashmap.HashMap[@view.RetainedViewEntity, Render3dShadowViewPhaseData]
+}
+pub fn Render3dShadowPhasesData::Render3dShadowPhasesData() -> Self
+pub fn Render3dShadowPhasesData::apply_queue(Self, @view.RetainedViewEntity, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport, gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> Render3dShadowViewPhaseData
+pub fn Render3dShadowPhasesData::get(Self, @view.RetainedViewEntity) -> Render3dShadowViewPhaseData?
+pub fn Render3dShadowPhasesData::len(Self) -> Int
+pub fn Render3dShadowPhasesData::remove(Self, @view.RetainedViewEntity) -> Unit
+pub fn Render3dShadowPhasesData::view_or_insert(Self, @view.RetainedViewEntity, gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> Render3dShadowViewPhaseData
+pub impl @app.Resource for Render3dShadowPhasesData
+
 pub struct Render3dShadowSpecializationWorkItemData {
   queue_data : RenderMeshQueueData
   visible_entity : @Milky2018/mgstudio/render.MainEntity

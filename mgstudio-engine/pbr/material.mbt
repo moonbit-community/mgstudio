@@ -249,6 +249,12 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
       @pbr_render.PendingShadowQueues::PendingShadowQueues(),
     )
   }
+  if world.get_resource(Render3dShadowPhasesData::resource()) is None {
+    world.insert_resource(
+      Render3dShadowPhasesData::resource(),
+      Render3dShadowPhasesData::Render3dShadowPhasesData(),
+    )
+  }
 }
 
 ///|

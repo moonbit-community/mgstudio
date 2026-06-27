@@ -1584,6 +1584,82 @@ pub fn Render3dShadowViewPhaseData::apply_queue(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::ViewBinnedRenderPhases<Shadow>`.
+pub struct Render3dShadowPhasesData {
+  views : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    Render3dShadowViewPhaseData,
+  ]
+}
+
+///|
+pub fn Render3dShadowPhasesData::Render3dShadowPhasesData() -> Render3dShadowPhasesData {
+  Render3dShadowPhasesData::{ views: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn Render3dShadowPhasesData::len(self : Render3dShadowPhasesData) -> Int {
+  self.views.length()
+}
+
+///|
+pub fn Render3dShadowPhasesData::get(
+  self : Render3dShadowPhasesData,
+  view : @render_view.RetainedViewEntity,
+) -> Render3dShadowViewPhaseData? {
+  self.views.get(view)
+}
+
+///|
+pub fn Render3dShadowPhasesData::view_or_insert(
+  self : Render3dShadowPhasesData,
+  view : @render_view.RetainedViewEntity,
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+) -> Render3dShadowViewPhaseData {
+  match self.views.get(view) {
+    Some(phase) => phase
+    None => {
+      let phase = Render3dShadowViewPhaseData::new(gpu_preprocessing_mode)
+      self.views.set(view, phase)
+      phase
+    }
+  }
+}
+
+///|
+pub fn Render3dShadowPhasesData::remove(
+  self : Render3dShadowPhasesData,
+  view : @render_view.RetainedViewEntity,
+) -> Unit {
+  self.views.remove(view)
+}
+
+///|
+pub fn Render3dShadowPhasesData::apply_queue(
+  self : Render3dShadowPhasesData,
+  view : @render_view.RetainedViewEntity,
+  queued : Render3dQueuedShadowPhaseData,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+) -> Render3dShadowViewPhaseData {
+  let phase = self.view_or_insert(view, gpu_preprocessing_mode~)
+  phase.apply_queue(queued, gpu_preprocessing_support)
+  phase
+}
+
+///|
+let ecs_key_render3d_shadow_phases_data : @ecs.ResourceKey[
+  Render3dShadowPhasesData,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::ViewBinnedRenderPhases<Shadow>",
+)
+
+///|
+pub impl @app.Resource for Render3dShadowPhasesData with fn resource() {
+  ecs_key_render3d_shadow_phases_data
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
 pub struct Render3dQueuedShadowPhaseData {
   dequeued : Array[@render.MainEntity]

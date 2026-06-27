@@ -59,6 +59,10 @@ test "render3d: materials startup initializes bevy material render resources" {
     content="true",
   )
   debug_inspect(
+    world.get_resource(Render3dShadowPhasesData::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
     get_default_opaque_renderer_method_resource(world).is_present(),
     content="true",
   )
@@ -88,6 +92,7 @@ test "render3d: materials startup preserves existing material render resources" 
 test "render3d: materials startup preserves pending queue resources" {
   let world = @ecs.World::new()
   let view = @render_view.RetainedViewEntity::new(@core.Entity::new(10, 1))
+  let main_entity = @render.MainEntity::new(@core.Entity::new(11, 1))
   let mesh_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   mesh_queues
   .queues()
@@ -109,6 +114,25 @@ test "render3d: materials startup preserves pending queue resources" {
     @pbr_render.PendingShadowQueues::resource(),
     shadow_queues,
   )
+  let shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  shadow_phases
+  .view_or_insert(view)
+  .add(
+    Render3dShadowBatchSetKeyData::new(
+      @material.CachedRenderPipelineId::new(901UL),
+      @material.DrawFunctionId::new(9U),
+      None,
+      @render_mesh.MeshSlabs::new(4),
+    ),
+    Render3dShadowBinKeyData::new(5),
+    (@core.Entity::new(12, 1), main_entity),
+    7U,
+    Render3dShadowBinnedRenderPhaseType::mesh(
+      true,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+  )
+  world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
 
   init_materials_resources(world)
 
@@ -120,6 +144,22 @@ test "render3d: materials startup preserves pending queue resources" {
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(view), content="1")
+    None => debug_inspect(false, content="true")
+  }
+  match world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(phases) => {
+      debug_inspect(phases.len(), content="1")
+      match phases.get(view) {
+        Some(phase) => {
+          debug_inspect(phase.len(), content="1")
+          debug_inspect(
+            phase.input_uniform_index(main_entity),
+            content="Some(7)",
+          )
+        }
+        None => debug_inspect(false, content="true")
+      }
+    }
     None => debug_inspect(false, content="true")
   }
 }
