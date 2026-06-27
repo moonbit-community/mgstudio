@@ -145,6 +145,19 @@ pub struct GeneratorSamplers {
 }
 pub fn GeneratorSamplers::GeneratorSamplers() -> Self
 
+pub struct LightProbeInfo {
+  main_entity : @render.MainEntity
+  light_from_world : Array[@math.Vec4]
+  falloff : @math.Vec3
+  parallax_correction_bounds : @math.Vec3
+  world_position : @math.Vec3
+  bounding_sphere_radius : Float
+  texture : @asset.Handle[@image.Image]?
+  intensity : Float
+  flags : Int
+}
+pub fn LightProbeInfo::new(@render.MainEntity, @asset.Handle[@image.Image]?) -> Self
+
 pub struct LightProbePlugin {
 }
 pub fn LightProbePlugin::LightProbePlugin() -> Self
@@ -175,8 +188,8 @@ pub impl @app.Resource for LightProbesBuffer
 pub struct LightProbesUniform {
   reflection_probes : Array[RenderLightProbe]
   irradiance_volumes : Array[RenderLightProbe]
-  reflection_probe_count : Int
-  irradiance_volume_count : Int
+  mut reflection_probe_count : Int
+  mut irradiance_volume_count : Int
   view_cubemap_index : Int
   smallest_specular_mip_level_for_view : Int
   view_rotation : @math.Quat
@@ -266,15 +279,20 @@ pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
 
 pub struct RenderViewLightProbes {
   binding_index_to_textures : Array[@asset.Handle[@image.Image]?]
+  cubemap_to_binding_index : Map[Int, Int]
   render_light_probes : Array[RenderLightProbe]
   main_entity_to_render_light_probe_index : Map[UInt64, UInt]
-  view_texture_index : Int
+  view_light_probe_info : EnvironmentMapViewLightProbeInfo?
 }
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> Self
+pub fn RenderViewLightProbes::add_to_uniform_irradiance_volumes(Self, LightProbesUniform) -> Unit
+pub fn RenderViewLightProbes::add_to_uniform_reflection_probes(Self, LightProbesUniform) -> Unit
+pub fn RenderViewLightProbes::get_or_insert_texture(Self, @asset.Handle[@image.Image]?) -> Int
+pub fn RenderViewLightProbes::is_empty(Self) -> Bool
+pub fn RenderViewLightProbes::maybe_gather_light_probes(Self, Array[LightProbeInfo]) -> Unit
 pub fn RenderViewLightProbes::probe_count(Self) -> Int
 pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::push_probe_for_main_entity(Self, @render.MainEntity, RenderLightProbe) -> Unit
-pub fn RenderViewLightProbes::push_texture(Self, @asset.Handle[@image.Image]?) -> Int
 pub fn RenderViewLightProbes::render_light_probe_index(Self, @render.MainEntity) -> UInt?
 pub fn RenderViewLightProbes::texture_count(Self) -> Int
 pub impl @ecs.Component for RenderViewLightProbes

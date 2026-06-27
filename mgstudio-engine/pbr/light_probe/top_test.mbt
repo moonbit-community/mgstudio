@@ -16,12 +16,64 @@
 test "pbr light probe: view probe container enforces max probe count" {
   let probes = RenderViewLightProbes::RenderViewLightProbes()
   for i in 0..<16 {
-    ignore(probes.push_texture(None))
     probes.push_probe(RenderLightProbe::RenderLightProbe())
     i |> ignore
   }
-  inspect(probes.texture_count(), content="8")
+  inspect(probes.texture_count(), content="0")
   inspect(probes.probe_count(), content="8")
+}
+
+///|
+test "pbr light probe: texture bindings are deduplicated like Bevy cubemap bindings" {
+  let probes = RenderViewLightProbes::RenderViewLightProbes()
+  let first = @asset.Handle::new(11)
+  let second = @asset.Handle::new(23)
+  inspect(probes.get_or_insert_texture(Some(first)), content="0")
+  inspect(probes.get_or_insert_texture(Some(first)), content="0")
+  inspect(probes.get_or_insert_texture(Some(second)), content="1")
+  inspect(probes.texture_count(), content="2")
+}
+
+///|
+test "pbr light probe: gather records render probe index by main entity" {
+  let probes = RenderViewLightProbes::RenderViewLightProbes()
+  let first_entity = @render.MainEntity::new(@core.Entity::new(101, 1))
+  let second_entity = @render.MainEntity::new(@core.Entity::new(102, 1))
+  let texture = @asset.Handle::new(17)
+  probes.maybe_gather_light_probes([
+    LightProbeInfo::new(first_entity, Some(texture)),
+    LightProbeInfo::new(second_entity, Some(texture)),
+  ])
+  inspect(probes.texture_count(), content="1")
+  inspect(probes.probe_count(), content="2")
+  inspect(
+    probes.render_light_probe_index(first_entity).unwrap_or(999U),
+    content="0",
+  )
+  inspect(
+    probes.render_light_probe_index(second_entity).unwrap_or(999U),
+    content="1",
+  )
+}
+
+///|
+test "pbr light probe: add_to_uniform writes Bevy render-probe counts" {
+  let probes = RenderViewLightProbes::RenderViewLightProbes()
+  probes.maybe_gather_light_probes([
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(201, 1)),
+      Some(@asset.Handle::new(31)),
+    ),
+    LightProbeInfo::new(
+      @render.MainEntity::new(@core.Entity::new(202, 1)),
+      Some(@asset.Handle::new(32)),
+    ),
+  ])
+  let uniform = LightProbesUniform::LightProbesUniform()
+  probes.add_to_uniform_reflection_probes(uniform)
+  inspect(uniform.reflection_probe_count, content="2")
+  inspect(uniform.reflection_probes[0].texture_index, content="0")
+  inspect(uniform.reflection_probes[1].texture_index, content="1")
 }
 
 ///|

@@ -163,9 +163,45 @@ pub fn render_light_probe_flags_contains(flags : Int, flag : Int) -> Bool {
 ///|
 pub struct RenderViewLightProbes {
   binding_index_to_textures : Array[@asset.Handle[@asset.Image]?]
+  cubemap_to_binding_index : Map[Int, Int]
   render_light_probes : Array[RenderLightProbe]
   main_entity_to_render_light_probe_index : Map[UInt64, UInt]
-  view_texture_index : Int
+  view_light_probe_info : EnvironmentMapViewLightProbeInfo?
+}
+
+///|
+pub struct LightProbeInfo {
+  main_entity : @render.MainEntity
+  light_from_world : Array[@math.Vec4]
+  falloff : @math.Vec3
+  parallax_correction_bounds : @math.Vec3
+  world_position : @math.Vec3
+  bounding_sphere_radius : Float
+  texture : @asset.Handle[@asset.Image]?
+  intensity : Float
+  flags : Int
+}
+
+///|
+pub fn LightProbeInfo::new(
+  main_entity : @render.MainEntity,
+  texture : @asset.Handle[@asset.Image]?,
+) -> LightProbeInfo {
+  LightProbeInfo::{
+    main_entity,
+    light_from_world: [
+      @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    ],
+    falloff: @math.Vec3::zero(),
+    parallax_correction_bounds: @math.Vec3::zero(),
+    world_position: @math.Vec3::zero(),
+    bounding_sphere_radius: 0.0F,
+    texture,
+    intensity: 1.0F,
+    flags: 0,
+  }
 }
 
 ///|
@@ -182,22 +218,34 @@ pub struct RenderViewIrradianceVolumeLightProbes {
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
   RenderViewLightProbes::{
     binding_index_to_textures: [],
+    cubemap_to_binding_index: {},
     render_light_probes: [],
     main_entity_to_render_light_probe_index: {},
-    view_texture_index: -1,
+    view_light_probe_info: None,
   }
 }
 
 ///|
-pub fn RenderViewLightProbes::push_texture(
+fn light_probe_texture_key(texture : @asset.Handle[@asset.Image]?) -> Int {
+  match texture {
+    Some(handle) => handle.id()
+    None => -1
+  }
+}
+
+///|
+pub fn RenderViewLightProbes::get_or_insert_texture(
   self : RenderViewLightProbes,
   texture : @asset.Handle[@asset.Image]?,
 ) -> Int {
-  if self.binding_index_to_textures.length() >= MAX_VIEW_LIGHT_PROBES {
-    return MAX_VIEW_LIGHT_PROBES - 1
+  let texture_key = light_probe_texture_key(texture)
+  match self.cubemap_to_binding_index.get(texture_key) {
+    Some(index) => return index
+    None => ()
   }
   let index = self.binding_index_to_textures.length()
   self.binding_index_to_textures.push(texture)
+  self.cubemap_to_binding_index.set(texture_key, index)
   index
 }
 
@@ -210,6 +258,46 @@ pub fn RenderViewLightProbes::push_probe(
     return
   }
   self.render_light_probes.push(probe)
+}
+
+///|
+fn render_light_probe_from_info(
+  info : LightProbeInfo,
+  texture_index : Int,
+) -> RenderLightProbe {
+  RenderLightProbe::{
+    light_from_world_transposed: info.light_from_world,
+    falloff: info.falloff,
+    bounding_sphere_radius: info.bounding_sphere_radius,
+    parallax_correction_bounds: info.parallax_correction_bounds,
+    world_position: info.world_position,
+    texture_index,
+    intensity: info.intensity,
+    flags: info.flags,
+  }
+}
+
+///|
+pub fn RenderViewLightProbes::maybe_gather_light_probes(
+  self : RenderViewLightProbes,
+  light_probes : Array[LightProbeInfo],
+) -> Unit {
+  for light_probe in light_probes {
+    if self.render_light_probes.length() >= MAX_VIEW_LIGHT_PROBES {
+      break
+    }
+    let texture_index = self.get_or_insert_texture(light_probe.texture)
+    let render_light_probe_index = self.render_light_probes
+      .length()
+      .reinterpret_as_uint()
+    self.main_entity_to_render_light_probe_index.set(
+      light_probe.main_entity.id().to_bits(),
+      render_light_probe_index,
+    )
+    self.render_light_probes.push(
+      render_light_probe_from_info(light_probe, texture_index),
+    )
+  }
 }
 
 ///|
@@ -227,6 +315,43 @@ pub fn RenderViewLightProbes::push_probe_for_main_entity(
     main_entity.id().to_bits(),
     index,
   )
+}
+
+///|
+pub fn RenderViewLightProbes::add_to_uniform_reflection_probes(
+  self : RenderViewLightProbes,
+  uniform : LightProbesUniform,
+) -> Unit {
+  let count = if self.render_light_probes.length() < MAX_VIEW_LIGHT_PROBES {
+    self.render_light_probes.length()
+  } else {
+    MAX_VIEW_LIGHT_PROBES
+  }
+  for index in 0..<count {
+    uniform.reflection_probes[index] = self.render_light_probes[index]
+  }
+  uniform.reflection_probe_count = count
+}
+
+///|
+pub fn RenderViewLightProbes::add_to_uniform_irradiance_volumes(
+  self : RenderViewLightProbes,
+  uniform : LightProbesUniform,
+) -> Unit {
+  let count = if self.render_light_probes.length() < MAX_VIEW_LIGHT_PROBES {
+    self.render_light_probes.length()
+  } else {
+    MAX_VIEW_LIGHT_PROBES
+  }
+  for index in 0..<count {
+    uniform.irradiance_volumes[index] = self.render_light_probes[index]
+  }
+  uniform.irradiance_volume_count = count
+}
+
+///|
+pub fn RenderViewLightProbes::is_empty(self : RenderViewLightProbes) -> Bool {
+  self.render_light_probes.length() == 0 && self.view_light_probe_info is None
 }
 
 ///|
@@ -321,8 +446,8 @@ pub let ecs_key_render_view_irradiance_volume_light_probes : @ecs.ComponentKey[
 pub struct LightProbesUniform {
   reflection_probes : Array[RenderLightProbe]
   irradiance_volumes : Array[RenderLightProbe]
-  reflection_probe_count : Int
-  irradiance_volume_count : Int
+  mut reflection_probe_count : Int
+  mut irradiance_volume_count : Int
   view_cubemap_index : Int
   smallest_specular_mip_level_for_view : Int
   view_rotation : @math.Quat
