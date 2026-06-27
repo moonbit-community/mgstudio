@@ -483,6 +483,53 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
 }
 
 ///|
+test "render3d: shadow multidraw batch sets materialize Bevy indirect phase items" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(904UL),
+    @material.DrawFunctionId::new(12U),
+    Some(6),
+    @render_mesh.MeshSlabs::new(31, index_slab_id=Some(32)),
+  )
+  let bin = Render3dShadowBinKeyData::new(606)
+  let first_main = @render.MainEntity::new(@core.Entity::new(101, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(102, 1))
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(111, 1), first_main),
+    60U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(112, 1), second_main),
+    61U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  let items_without_count = phase.multidrawable_items(false)
+  debug_inspect(items_without_count.length(), content="1")
+  let item_without_count = items_without_count[0]
+  inspect(item_without_count.batch_range().start(), content="60")
+  inspect(item_without_count.batch_range().end(), content="62")
+  debug_inspect(
+    item_without_count.extra_index(),
+    content="IndirectParametersIndex(0, 2, None)",
+  )
+  inspect(item_without_count.batch_set_key().pipeline_id().id(), content="904")
+  inspect(item_without_count.bin_key().mesh_asset_id(), content="606")
+  let items_with_count = phase.multidrawable_items(true)
+  debug_inspect(items_with_count.length(), content="1")
+  debug_inspect(
+    items_with_count[0].extra_index(),
+    content="IndirectParametersIndex(0, 2, Some(0))",
+  )
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)

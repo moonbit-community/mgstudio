@@ -2156,6 +2156,30 @@ pub struct Render3dShadowBinKeyData {
 pub fn Render3dShadowBinKeyData::mesh_asset_id(Self) -> Int
 pub fn Render3dShadowBinKeyData::new(Int) -> Self
 
+pub(all) struct Render3dShadowBinnedRenderPhaseBatchData {
+  representative_entity : (@core.Entity, @Milky2018/mgstudio/render.MainEntity)
+  instance_range : Render3dShadowBatchRange
+  extra_index : Render3dShadowPhaseItemExtraIndex
+}
+pub fn Render3dShadowBinnedRenderPhaseBatchData::extra_index(Self) -> Render3dShadowPhaseItemExtraIndex
+pub fn Render3dShadowBinnedRenderPhaseBatchData::instance_range(Self) -> Render3dShadowBatchRange
+pub fn Render3dShadowBinnedRenderPhaseBatchData::new((@core.Entity, @Milky2018/mgstudio/render.MainEntity), Render3dShadowBatchRange, Render3dShadowPhaseItemExtraIndex) -> Self
+pub fn Render3dShadowBinnedRenderPhaseBatchData::representative_entity(Self) -> (@core.Entity, @Milky2018/mgstudio/render.MainEntity)
+
+pub(all) struct Render3dShadowBinnedRenderPhaseBatchSetData {
+  first_batch : Render3dShadowBinnedRenderPhaseBatchData
+  bin_key : Render3dShadowBinKeyData
+  batch_count : Int
+  index : Int
+  first_work_item_index : Int
+}
+pub fn Render3dShadowBinnedRenderPhaseBatchSetData::batch_count(Self) -> Int
+pub fn Render3dShadowBinnedRenderPhaseBatchSetData::bin_key(Self) -> Render3dShadowBinKeyData
+pub fn Render3dShadowBinnedRenderPhaseBatchSetData::first_batch(Self) -> Render3dShadowBinnedRenderPhaseBatchData
+pub fn Render3dShadowBinnedRenderPhaseBatchSetData::first_work_item_index(Self) -> Int
+pub fn Render3dShadowBinnedRenderPhaseBatchSetData::index(Self) -> Int
+pub fn Render3dShadowBinnedRenderPhaseBatchSetData::new(Render3dShadowBinnedRenderPhaseBatchData, Render3dShadowBinKeyData, Int, Int, Int) -> Self
+
 pub(all) enum Render3dShadowBinnedRenderPhaseType {
   MultidrawableMesh
   BatchableMesh
@@ -2191,6 +2215,7 @@ pub(all) struct Render3dShadowMultidrawableBatchSetData {
 pub fn Render3dShadowMultidrawableBatchSetData::Render3dShadowMultidrawableBatchSetData() -> Self
 pub fn Render3dShadowMultidrawableBatchSetData::bin_count(Self) -> Int
 pub fn Render3dShadowMultidrawableBatchSetData::bin_index(Self, Render3dShadowBinKeyData) -> Int?
+pub fn Render3dShadowMultidrawableBatchSetData::binned_render_phase_batch_sets(Self) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
 pub fn Render3dShadowMultidrawableBatchSetData::cpu_instance_at(Self, Int) -> Render3dShadowCpuRenderBinnedMeshInstance?
 pub fn Render3dShadowMultidrawableBatchSetData::cpu_instance_count(Self) -> Int
 pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameter_count(Self) -> Int
@@ -2324,6 +2349,7 @@ pub fn Render3dShadowViewPhaseData::items(Self) -> Array[Render3dShadowPhaseItem
 pub fn Render3dShadowViewPhaseData::len(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_batch_set_count(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_cpu_instance_count(Self) -> Int
+pub fn Render3dShadowViewPhaseData::multidrawable_items(Self, Bool) -> Array[Render3dShadowPhaseItemData]
 pub fn Render3dShadowViewPhaseData::new(@batching.GpuPreprocessingMode) -> Self
 pub fn Render3dShadowViewPhaseData::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> Render3dShadowBinnedRenderPhaseType?
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(Self) -> Unit
