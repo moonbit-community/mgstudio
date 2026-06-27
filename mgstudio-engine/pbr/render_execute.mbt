@@ -1221,6 +1221,27 @@ pub fn Render3dShadowBatchSetKeyData::indexed(
 }
 
 ///|
+fn render3d_shadow_mesh_slabs_eq(
+  lhs : @render_mesh.MeshSlabs,
+  rhs : @render_mesh.MeshSlabs,
+) -> Bool {
+  lhs.vertex_slab_id() == rhs.vertex_slab_id() &&
+  lhs.index_slab_id() == rhs.index_slab_id() &&
+  lhs.morph_target_slab_id() == rhs.morph_target_slab_id()
+}
+
+///|
+fn render3d_shadow_batch_set_key_eq(
+  lhs : Render3dShadowBatchSetKeyData,
+  rhs : Render3dShadowBatchSetKeyData,
+) -> Bool {
+  lhs.pipeline_id().id() == rhs.pipeline_id().id() &&
+  lhs.draw_function().id() == rhs.draw_function().id() &&
+  lhs.material_bind_group_index() == rhs.material_bind_group_index() &&
+  render3d_shadow_mesh_slabs_eq(lhs.slabs(), rhs.slabs())
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::ShadowBinKey`.
 pub struct Render3dShadowBinKeyData {
   mesh_asset_id : Int
@@ -1238,6 +1259,14 @@ pub fn Render3dShadowBinKeyData::mesh_asset_id(
   self : Render3dShadowBinKeyData,
 ) -> Int {
   self.mesh_asset_id
+}
+
+///|
+fn render3d_shadow_bin_key_eq(
+  lhs : Render3dShadowBinKeyData,
+  rhs : Render3dShadowBinKeyData,
+) -> Bool {
+  lhs.mesh_asset_id() == rhs.mesh_asset_id()
 }
 
 ///|
@@ -1503,6 +1532,19 @@ pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(
 }
 
 ///|
+fn render3d_shadow_batchable_item_can_extend(
+  item : Render3dShadowPhaseItemData,
+  batch_set_key : Render3dShadowBatchSetKeyData,
+  bin_key : Render3dShadowBinKeyData,
+  input_uniform_index : Int,
+) -> Bool {
+  render3d_shadow_batch_set_key_eq(item.batch_set_key(), batch_set_key) &&
+  render3d_shadow_bin_key_eq(item.bin_key(), bin_key) &&
+  item.batch_range().end() == input_uniform_index &&
+  item.extra_index() == Render3dShadowPhaseItemExtraIndex::none()
+}
+
+///|
 pub fn Render3dShadowViewPhaseData::add(
   self : Render3dShadowViewPhaseData,
   batch_set_key : Render3dShadowBatchSetKeyData,
@@ -1515,6 +1557,26 @@ pub fn Render3dShadowViewPhaseData::add(
     self.gpu_preprocessing_mode,
     phase_type,
   )
+  let input_uniform_index_int = input_uniform_index.reinterpret_as_int()
+  if effective_phase_type == BatchableMesh && self.items.length() > 0 {
+    let last_index = self.items.length() - 1
+    let last_item = self.items[last_index]
+    if render3d_shadow_batchable_item_can_extend(
+        last_item, batch_set_key, bin_key, input_uniform_index_int,
+      ) {
+      self.items[last_index] = Render3dShadowPhaseItemData::{
+        ..last_item,
+        batch_range: Render3dShadowBatchRange::new(
+          last_item.batch_range().start(),
+          input_uniform_index_int + 1,
+        ),
+      }
+      let key = representative_entity.1.id().to_bits()
+      self.input_uniform_indices.set(key, input_uniform_index)
+      self.phase_types.set(key, effective_phase_type)
+      return
+    }
+  }
   self.items.push(
     Render3dShadowPhaseItemData::new(
       batch_set_key,
@@ -1522,8 +1584,8 @@ pub fn Render3dShadowViewPhaseData::add(
       representative_entity.0,
       representative_entity.1,
       Render3dShadowBatchRange::new(
-        input_uniform_index.reinterpret_as_int(),
-        input_uniform_index.reinterpret_as_int() + 1,
+        input_uniform_index_int,
+        input_uniform_index_int + 1,
       ),
       Render3dShadowPhaseItemExtraIndex::none(),
     ),

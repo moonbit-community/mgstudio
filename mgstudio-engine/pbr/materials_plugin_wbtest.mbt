@@ -165,6 +165,43 @@ test "render3d: materials startup preserves pending queue resources" {
 }
 
 ///|
+test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(901UL),
+    @material.DrawFunctionId::new(9U),
+    Some(4),
+    @render_mesh.MeshSlabs::new(7, index_slab_id=Some(8)),
+  )
+  let bin = Render3dShadowBinKeyData::new(77)
+  let first_main = @render.MainEntity::new(@core.Entity::new(31, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(32, 1))
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(41, 1), first_main),
+    14U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  phase.add(
+    key,
+    bin,
+    (@core.Entity::new(42, 1), second_main),
+    15U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  debug_inspect(phase.len(), content="1")
+  let item = phase.items()[0]
+  inspect(item.batch_range().start(), content="14")
+  inspect(item.batch_range().end(), content="16")
+  debug_inspect(item.extra_index(), content="NoExtraIndex")
+  debug_inspect(phase.input_uniform_index(first_main), content="Some(14)")
+  debug_inspect(phase.input_uniform_index(second_main), content="Some(15)")
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)
