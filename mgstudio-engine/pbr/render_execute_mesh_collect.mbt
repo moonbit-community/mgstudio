@@ -259,7 +259,7 @@ fn render3d_extract_mesh_for_entity(
     prefetched_is_forward_decal,
     prefetched_forward_decal_material_ext,
     prefetched_clustered_decal,
-    prefetched_has_not_shadow_caster,
+    _prefetched_has_not_shadow_caster,
     prefetched_has_no_frustum_culling,
     _prefetched_has_no_automatic_batching,
     prefetched_has_no_cpu_culling,
@@ -561,7 +561,6 @@ fn render3d_extract_mesh_for_entity(
     None => prefetched_forward_decal_material_ext
   }
   let clustered_decal = prefetched_clustered_decal
-  let has_not_shadow_caster = prefetched_has_not_shadow_caster
   let has_no_frustum_culling = prefetched_has_no_frustum_culling
   let has_no_cpu_culling = prefetched_has_no_cpu_culling
   let has_not_shadow_receiver = prefetched_has_not_shadow_receiver
@@ -599,7 +598,6 @@ fn render3d_extract_mesh_for_entity(
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh(),
         mesh_id,
-        mesh_topology_kind: mesh_preprocess_static.topology_kind,
         mesh_is_indexed: mesh_preprocess_static.is_indexed,
         mesh_preprocess_static: Some(mesh_preprocess_static),
         world_from_local,
@@ -618,7 +616,6 @@ fn render3d_extract_mesh_for_entity(
         is_forward_decal,
         forward_decal_material_ext,
         clustered_decal,
-        has_not_shadow_caster,
         has_not_shadow_receiver,
         has_transmitted_shadow_receiver,
         has_no_frustum_culling,

@@ -103,7 +103,6 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(17),
       mesh_id: 17,
-      mesh_topology_kind: 0,
       mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
@@ -122,7 +121,6 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
-      has_not_shadow_caster: false,
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,

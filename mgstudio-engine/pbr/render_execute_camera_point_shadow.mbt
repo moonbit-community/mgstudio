@@ -88,17 +88,14 @@ fn render3d_execute_camera_point_shadow_pass(
       main_entity=point_entity,
       face_index~,
     )
-    render3d_update_shadow_map_visible_entities(
-      world,
-      shadow_light_entity,
-      shadow_light_entity.shadow_phase_retained_view(
-        @render_view.RetainedViewEntity::new(camera_entity),
-      ),
-      meshes,
-      visible_indices,
+    let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
+      @render_view.RetainedViewEntity::new(camera_entity),
     )
-    let shadow_phase_items = render3d_queue_shadow_phase_items(
-      meshes, visible_indices,
+    render3d_update_shadow_map_visible_entities(
+      world, shadow_light_entity, retained_view_entity, meshes, visible_indices,
+    )
+    render3d_prepare_queued_shadow_phase_for_light(
+      world, shadow_light_entity, retained_view_entity,
     )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
@@ -126,7 +123,7 @@ fn render3d_execute_camera_point_shadow_pass(
       point_shadow_pass_kind,
       shadow_camera_near,
       meshes,
-      { shadow_view, items: shadow_phase_items },
+      { shadow_view, },
     )
   }
   {

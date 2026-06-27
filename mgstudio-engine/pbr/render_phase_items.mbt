@@ -138,7 +138,6 @@ priv struct ExtractedCamera3d {
 priv struct Mesh3dExtractedPayload {
   mesh_handle : @asset.Handle[@mesh.Mesh]
   mesh_id : Int
-  mesh_topology_kind : Int
   mesh_is_indexed : Bool
   mesh_preprocess_static : MeshPreprocessStatic3d?
   world_from_local : @math.Affine3
@@ -157,7 +156,6 @@ priv struct Mesh3dExtractedPayload {
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?
   clustered_decal : ClusteredDecal?
-  has_not_shadow_caster : Bool
   has_not_shadow_receiver : Bool
   has_transmitted_shadow_receiver : Bool
   has_no_frustum_culling : Bool

@@ -2240,7 +2240,6 @@ fn render3d_prewarm_mesh_pipelines(
       None => ()
     }
   }
-  let shadow_prewarm_cache = render3d_shadow_material_pipeline_prewarm_cache_new()
   for camera in cameras {
     let retained_view_entity = @render_view.RetainedViewEntity::new(
       camera.entity.main_entity,
@@ -2292,13 +2291,6 @@ fn render3d_prewarm_mesh_pipelines(
     let mesh = meshes[mesh_index].payload
     if motion_vector_prewarm_needed && mesh.motion_vector_enabled {
       ignore(render3d_prewarm_motion_vector_material_pipeline(world, mesh))
-    }
-    if !mesh.has_not_shadow_caster {
-      ignore(
-        render3d_prewarm_shadow_material_pipeline(
-          world, mesh, shadow_prewarm_cache,
-        ),
-      )
     }
   }
 }

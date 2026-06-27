@@ -208,7 +208,6 @@ fn render3d_test_extracted_mesh_for_flags(
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(1),
       mesh_id: 1,
-      mesh_topology_kind: 0,
       mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
@@ -227,7 +226,6 @@ fn render3d_test_extracted_mesh_for_flags(
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
-      has_not_shadow_caster: false,
       has_not_shadow_receiver,
       has_transmitted_shadow_receiver,
       has_no_frustum_culling,
@@ -266,7 +264,6 @@ fn render3d_test_transparent_mesh_for_queue(
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(entity_id),
       mesh_id: entity_id,
-      mesh_topology_kind: 0,
       mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
@@ -290,7 +287,6 @@ fn render3d_test_transparent_mesh_for_queue(
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
-      has_not_shadow_caster: false,
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
@@ -492,7 +488,6 @@ test "render3d: transmissive materials use a distinct sorted phase" {
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(3),
       mesh_id: 3,
-      mesh_topology_kind: 0,
       mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
@@ -516,7 +511,6 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
-      has_not_shadow_caster: false,
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,

@@ -195,17 +195,14 @@ fn render3d_execute_camera_directional_shadow_pass(
         main_entity=light_entity,
         cascade_index~,
       )
-      render3d_update_shadow_map_visible_entities(
-        world,
-        shadow_light_entity,
-        shadow_light_entity.shadow_phase_retained_view(
-          @render_view.RetainedViewEntity::new(camera_entity),
-        ),
-        meshes,
-        visible_indices,
+      let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
+        @render_view.RetainedViewEntity::new(camera_entity),
       )
-      let cascade_phase_items = render3d_queue_shadow_phase_items(
-        meshes, visible_indices,
+      render3d_update_shadow_map_visible_entities(
+        world, shadow_light_entity, retained_view_entity, meshes, visible_indices,
+      )
+      render3d_prepare_queued_shadow_phase_for_light(
+        world, shadow_light_entity, retained_view_entity,
       )
       @app.timeline_trace_end_span(
         @app.TimelineTraceCategory::RenderQueue,
@@ -233,7 +230,7 @@ fn render3d_execute_camera_directional_shadow_pass(
         shadow_pass_kind,
         0.1F,
         meshes,
-        { shadow_view, items: cascade_phase_items },
+        { shadow_view, },
       )
     }
   }
@@ -316,17 +313,14 @@ fn render3d_execute_camera_spot_shadow_pass(
     light_entity=spot_render_entity,
     main_entity=light_entity,
   )
-  render3d_update_shadow_map_visible_entities(
-    world,
-    shadow_light_entity,
-    shadow_light_entity.shadow_phase_retained_view(
-      @render_view.RetainedViewEntity::new(camera_entity),
-    ),
-    meshes,
-    visible_indices,
+  let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
+    @render_view.RetainedViewEntity::new(camera_entity),
   )
-  let spot_phase_items = render3d_queue_shadow_phase_items(
-    meshes, visible_indices,
+  render3d_update_shadow_map_visible_entities(
+    world, shadow_light_entity, retained_view_entity, meshes, visible_indices,
+  )
+  render3d_prepare_queued_shadow_phase_for_light(
+    world, shadow_light_entity, retained_view_entity,
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -352,7 +346,7 @@ fn render3d_execute_camera_spot_shadow_pass(
     shadow_pass_kind,
     spot_near,
     meshes,
-    { shadow_view, items: spot_phase_items },
+    { shadow_view, },
   )
 }
 

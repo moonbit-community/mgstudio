@@ -608,7 +608,6 @@ fn material_test_extracted_mesh_payload(
   Mesh3dExtractedPayload::{
     mesh_handle: @asset.Handle::new(mesh_id),
     mesh_id,
-    mesh_topology_kind: 0,
     mesh_is_indexed: true,
     mesh_preprocess_static: None,
     world_from_local,
@@ -627,7 +626,6 @@ fn material_test_extracted_mesh_payload(
     is_forward_decal: false,
     forward_decal_material_ext: None,
     clustered_decal: None,
-    has_not_shadow_caster: false,
     has_not_shadow_receiver: false,
     has_transmitted_shadow_receiver: false,
     has_no_frustum_culling: false,
