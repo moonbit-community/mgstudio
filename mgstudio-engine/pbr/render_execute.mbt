@@ -1028,10 +1028,6 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
         })
       })
     })
-    render3d_prepare_shader_asset_paths(source_world, world)
-    render3d_prewarm_mesh_pipelines(
-      world, mesh_runtime_state_value, cameras, meshes,
-    )
     if frame_config.gpu_instance_buffer_builder_enabled {
       render_mesh_instances_extract_gpu_building_resource(
         world,
@@ -1049,6 +1045,27 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     world,
     meshes.length(),
   )
+}
+
+///|
+pub fn render3d_specialize_material_meshes_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
+    world,
+  )
+  match render3d_pending_frame_snapshot(world) {
+    Some(frame) =>
+      mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
+        render3d_prepare_shader_asset_paths(source_world, world)
+        render3d_prewarm_mesh_pipelines(
+          world,
+          mesh_runtime_state_value,
+          frame.cameras,
+          frame.meshes,
+        )
+      })
+    None => ()
+  }
 }
 
 ///|

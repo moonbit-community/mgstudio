@@ -146,6 +146,13 @@ fn render3d_prepare_meshes_system_in_render_app(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_specialize_material_meshes_system_in_render_app(
+  world : @ecs.World,
+) -> Unit {
+  render3d_specialize_material_meshes_system(world)
+}
+
+///|
 fn render3d_prepare_bind_groups_system_in_render_app(
   world : @ecs.World,
 ) -> Unit {
@@ -219,6 +226,12 @@ fn configure_mesh_render_sub_app(
     @app.system(render3d_prepare_meshes_system_in_render_app)
     .named("pbr.render3d.prepare_meshes")
     .in_set(render3d_set_prepare_meshes),
+  )
+  .add_systems(
+    stage,
+    @app.system(render3d_specialize_material_meshes_system_in_render_app)
+    .named("pbr.render3d.specialize_material_meshes")
+    .in_set(render3d_set_specialize),
   )
   .add_systems(
     stage,

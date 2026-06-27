@@ -408,6 +408,9 @@ pub let render3d_set_prepare_resources : @app.SystemSet = @render.render_system_
 pub let render3d_set_prepare_meshes : @app.SystemSet = @render.render_system_set_prepare_meshes
 
 ///|
+pub let render3d_set_specialize : @app.SystemSet = @render.render_system_set_specialize
+
+///|
 pub let render3d_set_prepare_bind_groups : @app.SystemSet = @render.render_system_set_prepare_bind_groups
 
 ///|
