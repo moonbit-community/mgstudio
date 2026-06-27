@@ -2336,6 +2336,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     None => abort("missing culling retained shadow phase in test")
   }
   debug_inspect(culling_shadow_phase.items().length(), content="0")
+  debug_inspect(culling_shadow_phase.render_items(false).length(), content="2")
   debug_inspect(
     culling_shadow_phase.multidrawable_batch_set_count(),
     content="2",

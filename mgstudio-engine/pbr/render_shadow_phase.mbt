@@ -140,7 +140,7 @@ fn render3d_shadow_phase_items_for_view(
   match world.get_resource(Render3dShadowPhasesData::resource()) {
     Some(phases) =>
       match phases.get(retained_view_entity) {
-        Some(phase) => phase.items()
+        Some(phase) => phase.render_items(false)
         None => []
       }
     None => []

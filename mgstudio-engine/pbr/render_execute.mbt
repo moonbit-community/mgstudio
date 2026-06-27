@@ -2559,6 +2559,18 @@ pub fn Render3dShadowViewPhaseData::multidrawable_items(
 }
 
 ///|
+pub fn Render3dShadowViewPhaseData::render_items(
+  self : Render3dShadowViewPhaseData,
+  multi_draw_indirect_count_supported : Bool,
+) -> Array[Render3dShadowPhaseItemData] {
+  let result = self.items()
+  for item in self.multidrawable_items(multi_draw_indirect_count_supported) {
+    result.push(item)
+  }
+  result
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase::prepare_for_new_frame`.
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(
   self : Render3dShadowViewPhaseData,
