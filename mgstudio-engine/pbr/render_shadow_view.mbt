@@ -57,6 +57,29 @@ pub fn Render3dLightEntity::shadow_map_visible_retained_view(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
+pub fn Render3dLightEntity::shadow_phase_retained_view(
+  self : Render3dLightEntity,
+  extracted_retained_view : @render_view.RetainedViewEntity,
+) -> @render_view.RetainedViewEntity {
+  match self {
+    Directional(light_entity~, cascade_index~) =>
+      @render_view.RetainedViewEntity::new(
+        light_entity,
+        auxiliary_entity=Some(extracted_retained_view.main_entity()),
+        subview_index=cascade_index,
+      )
+    Point(light_entity~, face_index~) =>
+      @render_view.RetainedViewEntity::new(
+        light_entity,
+        subview_index=face_index,
+      )
+    Spot(light_entity~) =>
+      @render_view.RetainedViewEntity::new(light_entity, subview_index=0)
+  }
+}
+
+///|
 priv struct Render3dShadowView {
   target_id : Int
   target_layer : Int

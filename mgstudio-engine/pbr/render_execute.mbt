@@ -1657,6 +1657,23 @@ pub fn Render3dShadowPhasesData::remove(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
+pub fn Render3dShadowPhasesData::retain(
+  self : Render3dShadowPhasesData,
+  live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+) -> Unit {
+  let stale : Array[@render_view.RetainedViewEntity] = []
+  for view, _phase in self.views {
+    if !live_views.contains(view) {
+      stale.push(view)
+    }
+  }
+  for view in stale {
+    self.views.remove(view)
+  }
+}
+
+///|
 pub fn Render3dShadowPhasesData::apply_queue(
   self : Render3dShadowPhasesData,
   view : @render_view.RetainedViewEntity,
@@ -1682,6 +1699,57 @@ let ecs_key_render3d_shadow_phases_data : @ecs.ResourceKey[
 ///|
 pub impl @app.Resource for Render3dShadowPhasesData with fn resource() {
   ecs_key_render3d_shadow_phases_data
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
+pub fn render3d_prepare_shadow_phase_views(
+  world : @ecs.World,
+  extracted_retained_view : @render_view.RetainedViewEntity,
+  light_entities : Array[Render3dLightEntity],
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
+  let live_shadow_mapping_lights : @hashset.HashSet[
+    @render_view.RetainedViewEntity,
+  ] = @hashset.HashSet([])
+  let shadow_render_phases = match
+    world.get_resource_mut(Render3dShadowPhasesData::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing ViewBinnedRenderPhases<Shadow> resource during pbr shadow phase preparation",
+      )
+  }
+  shadow_render_phases.modify(fn(phases) {
+    for light_entity in light_entities {
+      let retained_view_entity = light_entity.shadow_phase_retained_view(
+        extracted_retained_view,
+      )
+      ignore(
+        phases.prepare_for_new_frame(
+          retained_view_entity,
+          gpu_preprocessing_mode~,
+        ),
+      )
+      live_shadow_mapping_lights.add(retained_view_entity)
+    }
+    phases.retain(live_shadow_mapping_lights)
+  })
+  let pending_shadow_queues = match
+    world.get_resource_mut(@pbr_render.PendingShadowQueues::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing PendingShadowQueues resource during pbr shadow phase preparation",
+      )
+  }
+  pending_shadow_queues.modify(fn(queues) {
+    for retained_view_entity in live_shadow_mapping_lights.iter() {
+      ignore(queues.queues().prepare_for_new_frame(retained_view_entity))
+    }
+    queues.queues().expire_stale_views(live_shadow_mapping_lights)
+  })
+  live_shadow_mapping_lights
 }
 
 ///|

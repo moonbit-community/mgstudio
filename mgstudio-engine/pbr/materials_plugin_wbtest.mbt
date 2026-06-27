@@ -165,6 +165,118 @@ test "render3d: materials startup preserves pending queue resources" {
 }
 
 ///|
+test "render3d: shadow phase preparation mirrors Bevy retained light views" {
+  let world = @ecs.World::new()
+  let camera = @core.Entity::new(201, 1)
+  let extracted_retained_view = @render_view.RetainedViewEntity::new(
+    camera,
+    auxiliary_entity=Some(@core.Entity::new(202, 1)),
+    subview_index=9,
+  )
+  let directional = Render3dLightEntity::Directional(
+    light_entity=@core.Entity::new(210, 1),
+    cascade_index=2,
+  )
+  let point = Render3dLightEntity::Point(
+    light_entity=@core.Entity::new(211, 1),
+    face_index=5,
+  )
+  let spot = Render3dLightEntity::Spot(light_entity=@core.Entity::new(212, 1))
+  let directional_view = directional.shadow_phase_retained_view(
+    extracted_retained_view,
+  )
+  let stale_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(299, 1),
+  )
+  let shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  shadow_phases
+  .prepare_for_new_frame(directional_view)
+  .add(
+    Render3dShadowBatchSetKeyData::new(
+      @material.CachedRenderPipelineId::new(77UL),
+      @material.DrawFunctionId::new(7U),
+      None,
+      @render_mesh.MeshSlabs::new(4),
+    ),
+    Render3dShadowBinKeyData::new(5),
+    (
+      @core.Entity::new(213, 1),
+      @render.MainEntity::new(@core.Entity::new(214, 1)),
+    ),
+    8U,
+    Render3dShadowBinnedRenderPhaseType::mesh(
+      true,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+  )
+  ignore(shadow_phases.prepare_for_new_frame(stale_view))
+  world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
+  let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  pending_shadow_queues
+  .queues()
+  .push_current(
+    directional_view,
+    @core.Entity::new(215, 1),
+    @render.MainEntity::new(@core.Entity::new(216, 1)),
+  )
+  pending_shadow_queues
+  .queues()
+  .push_current(
+    stale_view,
+    @core.Entity::new(217, 1),
+    @render.MainEntity::new(@core.Entity::new(218, 1)),
+  )
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    pending_shadow_queues,
+  )
+
+  let live_views = render3d_prepare_shadow_phase_views(
+    world,
+    extracted_retained_view,
+    [directional, point, spot],
+  )
+
+  debug_inspect(live_views.length(), content="3")
+  debug_inspect(live_views.contains(directional_view), content="true")
+  debug_inspect(
+    live_views.contains(
+      point.shadow_phase_retained_view(extracted_retained_view),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    live_views.contains(
+      spot.shadow_phase_retained_view(extracted_retained_view),
+    ),
+    content="true",
+  )
+  match world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(phases) => {
+      debug_inspect(phases.len(), content="3")
+      debug_inspect(phases.get(stale_view) is None, content="true")
+      match phases.get(directional_view) {
+        Some(phase) => debug_inspect(phase.len(), content="0")
+        None => debug_inspect(false, content="true")
+      }
+    }
+    None => debug_inspect(false, content="true")
+  }
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) => {
+      debug_inspect(
+        queues.queues().contains_view(directional_view),
+        content="true",
+      )
+      debug_inspect(queues.queues().prev_len(directional_view), content="1")
+      debug_inspect(queues.queues().current_len(directional_view), content="0")
+      debug_inspect(queues.queues().contains_view(stale_view), content="false")
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: pending mesh material queues prepare live views and expire stale views" {
   let live_view = @render_view.RetainedViewEntity::new(@core.Entity::new(30, 1))
   let stale_view = @render_view.RetainedViewEntity::new(

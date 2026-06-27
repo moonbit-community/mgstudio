@@ -792,6 +792,8 @@ pub fn render3d_prepare_resources_cleanup_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_resources_flush_system(@ecs.World) -> Unit
 
+pub fn render3d_prepare_shadow_phase_views(@ecs.World, @view.RetainedViewEntity, Array[Render3dLightEntity], gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> @hashset.HashSet[@view.RetainedViewEntity]
+
 pub fn render3d_prepare_skin_bindings_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit
@@ -2081,6 +2083,7 @@ pub enum Render3dLightEntity {
 }
 pub fn Render3dLightEntity::shadow_map_visible_entity(Self) -> @core.Entity
 pub fn Render3dLightEntity::shadow_map_visible_retained_view(Self, @view.RetainedViewEntity) -> @view.RetainedViewEntity
+pub fn Render3dLightEntity::shadow_phase_retained_view(Self, @view.RetainedViewEntity) -> @view.RetainedViewEntity
 
 pub struct Render3dQueuedShadowPhaseData {
   dequeued : Array[@Milky2018/mgstudio/render.MainEntity]
@@ -2198,6 +2201,7 @@ pub fn Render3dShadowPhasesData::get(Self, @view.RetainedViewEntity) -> Render3d
 pub fn Render3dShadowPhasesData::len(Self) -> Int
 pub fn Render3dShadowPhasesData::prepare_for_new_frame(Self, @view.RetainedViewEntity, gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> Render3dShadowViewPhaseData
 pub fn Render3dShadowPhasesData::remove(Self, @view.RetainedViewEntity) -> Unit
+pub fn Render3dShadowPhasesData::retain(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
 pub fn Render3dShadowPhasesData::view_or_insert(Self, @view.RetainedViewEntity, gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> Render3dShadowViewPhaseData
 pub impl @app.Resource for Render3dShadowPhasesData
 

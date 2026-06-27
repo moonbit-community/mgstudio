@@ -71,6 +71,39 @@ test "pbr shadow map visible subview keys mirror Bevy light entity rules" {
 }
 
 ///|
+test "pbr shadow phase retained view keys mirror Bevy prepare_lights" {
+  let camera = @core.Entity::new(30, 1)
+  let auxiliary = @core.Entity::new(31, 1)
+  let extracted_retained_view = @render_view.RetainedViewEntity::new(
+    camera,
+    auxiliary_entity=Some(auxiliary),
+    subview_index=4,
+  )
+  let light = @core.Entity::new(32, 1)
+  let directional = Render3dLightEntity::Directional(
+    light_entity=light,
+    cascade_index=2,
+  )
+  let point = Render3dLightEntity::Point(light_entity=light, face_index=5)
+  let spot = Render3dLightEntity::Spot(light_entity=light)
+  let directional_key = directional.shadow_phase_retained_view(
+    extracted_retained_view,
+  )
+  let point_key = point.shadow_phase_retained_view(extracted_retained_view)
+  let spot_key = spot.shadow_phase_retained_view(extracted_retained_view)
+
+  inspect(directional_key.main_entity().id, content="32")
+  inspect(directional_key.auxiliary_entity().id, content="30")
+  inspect(directional_key.subview_index(), content="2")
+  inspect(point_key.main_entity().id, content="32")
+  inspect(point_key.auxiliary_entity().id, content="-1")
+  inspect(point_key.subview_index(), content="5")
+  inspect(spot_key.main_entity().id, content="32")
+  inspect(spot_key.auxiliary_entity().id, content="-1")
+  inspect(spot_key.subview_index(), content="0")
+}
+
+///|
 test "pbr directional shadow view mirrors Bevy occlusion culling subview marker" {
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
