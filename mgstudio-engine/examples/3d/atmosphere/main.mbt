@@ -241,8 +241,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @color.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       130_000.0F,
       true,
-    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
+    ),
   )
+  try! world.set(sun, cascade_shadow_config)
   atmosphere_state.val.sun = Some(sun)
   try! world.set_by_key(
     sun,

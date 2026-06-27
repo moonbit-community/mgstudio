@@ -101,11 +101,11 @@ fn setup(world : @ecs.World) -> Unit {
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
-        @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-          .with_first_cascade_far_bound(200.0F)
-          .with_maximum_distance(400.0F),
-        ),
+        @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
+        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+        .with_first_cascade_far_bound(200.0F)
+        .with_maximum_distance(400.0F)
+        .build(),
       ),
     ),
   )

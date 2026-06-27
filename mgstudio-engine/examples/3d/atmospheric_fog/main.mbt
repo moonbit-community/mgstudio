@@ -67,7 +67,8 @@ fn setup_terrain_scene(
           @color.Color::srgb(0.98F, 0.95F, 0.82F),
           100_000.0F,
           true,
-        ).with_cascade_shadow_config(Some(cascade_shadow_config)),
+        ),
+        cascade_shadow_config,
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
           @math.Vec3::new(-0.15F, -0.05F, 0.25F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -348,15 +348,12 @@ pub struct DirectionalLight {
   contact_shadows_enabled : Bool
   affects_lightmapped_mesh_diffuse : Bool
   soft_shadow_size : Float?
-  cascade_shadow_config : CascadeShadowConfig?
   shadow_depth_bias : Float
   shadow_normal_bias : Float
 } derive(ToJson, @json.FromJson)
 pub fn DirectionalLight::DirectionalLight() -> Self
 pub fn DirectionalLight::new(@color.Color, Float, Bool) -> Self
 pub fn DirectionalLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
-pub fn DirectionalLight::with_cascade_shadow_config(Self, CascadeShadowConfig?) -> Self
-pub fn DirectionalLight::with_cascade_shadow_config_builder(Self, CascadeShadowConfigBuilder) -> Self
 pub fn DirectionalLight::with_contact_shadows_enabled(Self, Bool) -> Self
 pub fn DirectionalLight::with_illuminance(Self, Float) -> Self
 pub fn DirectionalLight::with_shadow_depth_bias(Self, Float) -> Self

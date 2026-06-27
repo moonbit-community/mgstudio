@@ -306,8 +306,9 @@ fn setup(world : @ecs.World) -> Unit {
       @color.Color::white(),
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
-    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
+    ),
   )
+  try! world.set(directional_light, cascade_shadow_config)
   try! world.set_by_key(
     directional_light,
     @transform.ecs_key_transform,

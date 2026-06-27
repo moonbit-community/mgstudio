@@ -148,8 +148,9 @@ fn setup(world : @ecs.World) -> Unit {
       @color.Color::white(),
       DIRECTIONAL_LIGHT_ILLUMINANCE,
       true,
-    ).with_cascade_shadow_config(Some(cascade_shadow_config)),
+    ),
   )
+  try! world.set(directional, cascade_shadow_config)
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
   )

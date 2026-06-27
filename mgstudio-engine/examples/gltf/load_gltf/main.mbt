@@ -57,16 +57,15 @@ fn setup(
 
   commands.spawn(
     (
-      @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true).with_cascade_shadow_config_builder(
-        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-        .with_num_cascades(1)
-        .with_maximum_distance(1.6F),
-      ),
+      @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
+      @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+      .with_num_cascades(1)
+      .with_maximum_distance(1.6F)
+      .build(),
       @transform.Transform::identity(),
     ),
   )
   |> ignore
-
   ignore(
     commands.spawn_component(
       @scene.SceneRoot::new(

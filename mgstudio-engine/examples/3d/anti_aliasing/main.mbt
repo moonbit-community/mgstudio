@@ -574,12 +574,11 @@ fn setup(
       (
         @pbr.DirectionalLight::DirectionalLight()
         .with_illuminance(110_000.0F)
-        .with_shadow_maps_enabled(true)
-        .with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-          .with_maximum_distance(3.0F)
-          .with_first_cascade_far_bound(0.9F),
-        ),
+        .with_shadow_maps_enabled(true),
+        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+        .with_maximum_distance(3.0F)
+        .with_first_cascade_far_bound(0.9F)
+        .build(),
         @transform.Transform::identity().with_rotation(
           @math.Quat::from_euler(
             @math.EulerRot::ZYX,

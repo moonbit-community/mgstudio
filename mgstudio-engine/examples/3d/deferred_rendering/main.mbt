@@ -168,11 +168,11 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-          .with_num_cascades(3)
-          .with_maximum_distance(10.0F),
-        ),
+        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
+        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+        .with_num_cascades(3)
+        .with_maximum_distance(10.0F)
+        .build(),
         @transform.Transform::identity().with_rotation(
           @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.0F, -FRAC_PI_4),
         ),

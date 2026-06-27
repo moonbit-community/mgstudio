@@ -506,11 +506,11 @@ fn setup_basic_scene(
   ignore(
     commands.spawn(
       (
-        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-          .with_maximum_distance(3.0F)
-          .with_first_cascade_far_bound(0.9F),
-        ),
+        @pbr.DirectionalLight::new(@color.Color::white(), 15_000.0F, true),
+        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+        .with_maximum_distance(3.0F)
+        .with_first_cascade_far_bound(0.9F)
+        .build(),
         @transform.Transform::from_rotation(
           @math.Quat::from_euler(
             @math.EulerRot::ZYX,

@@ -1381,7 +1381,6 @@ pub struct DirectionalLight {
   contact_shadows_enabled : Bool
   affects_lightmapped_mesh_diffuse : Bool
   soft_shadow_size : Float?
-  cascade_shadow_config : CascadeShadowConfig?
   shadow_depth_bias : Float
   shadow_normal_bias : Float
 } derive(ToJson, FromJson)
@@ -1395,7 +1394,6 @@ pub fn DirectionalLight::DirectionalLight() -> DirectionalLight {
     contact_shadows_enabled: false,
     affects_lightmapped_mesh_diffuse: true,
     soft_shadow_size: None,
-    cascade_shadow_config: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
@@ -1414,7 +1412,6 @@ pub fn DirectionalLight::new(
     contact_shadows_enabled: false,
     affects_lightmapped_mesh_diffuse: true,
     soft_shadow_size: None,
-    cascade_shadow_config: None,
     shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
     shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
   }
@@ -1458,25 +1455,6 @@ pub fn DirectionalLight::with_soft_shadow_size(
   soft_shadow_size : Float?,
 ) -> DirectionalLight {
   DirectionalLight::{ ..self, soft_shadow_size, }
-}
-
-///|
-pub fn DirectionalLight::with_cascade_shadow_config(
-  self : DirectionalLight,
-  cascade_shadow_config : CascadeShadowConfig?,
-) -> DirectionalLight {
-  DirectionalLight::{ ..self, cascade_shadow_config, }
-}
-
-///|
-pub fn DirectionalLight::with_cascade_shadow_config_builder(
-  self : DirectionalLight,
-  cascade_shadow_config_builder : CascadeShadowConfigBuilder,
-) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    cascade_shadow_config: Some(cascade_shadow_config_builder.build()),
-  }
 }
 
 ///|

@@ -362,12 +362,11 @@ fn setup(
       (
         @pbr.DirectionalLight::DirectionalLight()
         .with_illuminance(OVERCAST_DAY)
-        .with_shadow_maps_enabled(true)
-        .with_cascade_shadow_config_builder(
-          @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-          .with_first_cascade_far_bound(4.0F)
-          .with_maximum_distance(10.0F),
-        ),
+        .with_shadow_maps_enabled(true),
+        @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+        .with_first_cascade_far_bound(4.0F)
+        .with_maximum_distance(10.0F)
+        .build(),
         @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
           @math.Quat::from_rotation_x(-PI / 4.0F),
         ),
