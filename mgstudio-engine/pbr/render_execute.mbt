@@ -1493,6 +1493,16 @@ pub fn Render3dShadowViewPhaseData::items(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase::prepare_for_new_frame`.
+pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(
+  self : Render3dShadowViewPhaseData,
+) -> Unit {
+  self.items.clear()
+  self.input_uniform_indices.clear()
+  self.phase_types.clear()
+}
+
+///|
 pub fn Render3dShadowViewPhaseData::add(
   self : Render3dShadowViewPhaseData,
   batch_set_key : Render3dShadowBatchSetKeyData,
@@ -1627,6 +1637,18 @@ pub fn Render3dShadowPhasesData::view_or_insert(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::ViewBinnedRenderPhases::prepare_for_new_frame`.
+pub fn Render3dShadowPhasesData::prepare_for_new_frame(
+  self : Render3dShadowPhasesData,
+  view : @render_view.RetainedViewEntity,
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+) -> Render3dShadowViewPhaseData {
+  let phase = self.view_or_insert(view, gpu_preprocessing_mode~)
+  phase.prepare_for_new_frame()
+  phase
+}
+
+///|
 pub fn Render3dShadowPhasesData::remove(
   self : Render3dShadowPhasesData,
   view : @render_view.RetainedViewEntity,
@@ -1640,11 +1662,14 @@ pub fn Render3dShadowPhasesData::apply_queue(
   view : @render_view.RetainedViewEntity,
   queued : Render3dQueuedShadowPhaseData,
   gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
-  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
-) -> Render3dShadowViewPhaseData {
-  let phase = self.view_or_insert(view, gpu_preprocessing_mode~)
-  phase.apply_queue(queued, gpu_preprocessing_support)
-  phase
+) -> Render3dShadowViewPhaseData? {
+  match self.views.get(view) {
+    Some(phase) => {
+      phase.apply_queue(queued, gpu_preprocessing_support)
+      Some(phase)
+    }
+    None => None
+  }
 }
 
 ///|
@@ -1849,6 +1874,28 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
     })
   }
   result
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn render3d_apply_queued_shadow_phase_data(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  queued : Render3dQueuedShadowPhaseData,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Bool {
+  let shadow_render_phases = match
+    world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing ViewBinnedRenderPhases<Shadow> resource during pbr shadow queueing",
+      )
+  }
+  shadow_render_phases.apply_queue(
+    retained_view_entity, queued, gpu_preprocessing_support,
+  )
+  is Some(_)
 }
 
 ///|

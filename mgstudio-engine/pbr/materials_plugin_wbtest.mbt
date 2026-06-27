@@ -1603,9 +1603,8 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   debug_inspect(second_batch_key.material_bind_group_index(), content="Some(7)")
   debug_inspect(second_batch_key.indexed(), content="false")
   inspect(second_bin_key.mesh_asset_id(), content="702")
-  let shadow_phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  let shadow_phase = shadow_phases.prepare_for_new_frame(retained_view)
   shadow_phase.add(
     Render3dShadowBatchSetKeyData::new(
       @material.CachedRenderPipelineId::new(999UL),
@@ -1621,10 +1620,25 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
       @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
     ),
   )
-  shadow_phase.apply_queue(
-    queued,
-    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+  world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
+  debug_inspect(
+    render3d_apply_queued_shadow_phase_data(
+      world,
+      retained_view,
+      queued,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+    content="true",
   )
+  let shadow_phase = match
+    world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(phases) =>
+      match phases.get(retained_view) {
+        Some(phase) => phase
+        None => abort("missing retained shadow phase in test")
+      }
+    None => abort("missing shadow phases resource in test")
+  }
   debug_inspect(shadow_phase.len(), content="2")
   debug_inspect(
     shadow_phase.input_uniform_index(depth_main),
