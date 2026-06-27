@@ -188,6 +188,13 @@ fn configure_pbr_render_prepare_systems(
     .after(pbr_prepare_lights_set)
     .in_set(@render.render_system_set_prepare_views),
   )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(prepare_clusters_for_cpu_clustering)
+    .named("mgstudio_pbr::prepare_clusters_for_cpu_clustering")
+    .in_set(@render.render_system_set_prepare_resources)
+    .run_if(cpu_clustering_is_enabled),
+  )
 }
 
 ///|
@@ -244,6 +251,13 @@ fn configure_pbr_render_extract_systems(
   .world()
   .insert_resource(ecs_key_pbr_render_extract_systems_installed, marker)
   sub_app
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(extract_clusters_for_cpu_clustering)
+    .named("mgstudio_pbr::extract_clusters_for_cpu_clustering")
+    .in_set(@render.render_system_set_extract_commands)
+    .run_if(cpu_clustering_is_enabled_during_extraction),
+  )
   .add_systems(
     @render.render_schedule_stage(),
     @app.system(@pbr_render.extract_ambient_light_resource)

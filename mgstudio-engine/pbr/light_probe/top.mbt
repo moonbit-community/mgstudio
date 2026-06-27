@@ -164,6 +164,7 @@ pub fn render_light_probe_flags_contains(flags : Int, flag : Int) -> Bool {
 pub struct RenderViewLightProbes {
   binding_index_to_textures : Array[@asset.Handle[@asset.Image]?]
   render_light_probes : Array[RenderLightProbe]
+  main_entity_to_render_light_probe_index : Map[UInt64, UInt]
   view_texture_index : Int
 }
 
@@ -182,6 +183,7 @@ pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
   RenderViewLightProbes::{
     binding_index_to_textures: [],
     render_light_probes: [],
+    main_entity_to_render_light_probe_index: {},
     view_texture_index: -1,
   }
 }
@@ -211,6 +213,31 @@ pub fn RenderViewLightProbes::push_probe(
 }
 
 ///|
+pub fn RenderViewLightProbes::push_probe_for_main_entity(
+  self : RenderViewLightProbes,
+  main_entity : @render.MainEntity,
+  probe : RenderLightProbe,
+) -> Unit {
+  if self.render_light_probes.length() >= MAX_VIEW_LIGHT_PROBES {
+    return
+  }
+  let index = self.render_light_probes.length().reinterpret_as_uint()
+  self.render_light_probes.push(probe)
+  self.main_entity_to_render_light_probe_index.set(
+    main_entity.id().to_bits(),
+    index,
+  )
+}
+
+///|
+pub fn RenderViewLightProbes::render_light_probe_index(
+  self : RenderViewLightProbes,
+  main_entity : @render.MainEntity,
+) -> UInt? {
+  self.main_entity_to_render_light_probe_index.get(main_entity.id().to_bits())
+}
+
+///|
 pub fn RenderViewLightProbes::texture_count(
   self : RenderViewLightProbes,
 ) -> Int {
@@ -237,6 +264,13 @@ pub fn RenderViewEnvironmentMapLightProbes::probe_count(
 }
 
 ///|
+pub fn RenderViewEnvironmentMapLightProbes::probes(
+  self : RenderViewEnvironmentMapLightProbes,
+) -> RenderViewLightProbes {
+  self.probes
+}
+
+///|
 pub fn RenderViewIrradianceVolumeLightProbes::new(
   probes : RenderViewLightProbes,
 ) -> RenderViewIrradianceVolumeLightProbes {
@@ -248,6 +282,13 @@ pub fn RenderViewIrradianceVolumeLightProbes::probe_count(
   self : RenderViewIrradianceVolumeLightProbes,
 ) -> Int {
   self.probes.probe_count()
+}
+
+///|
+pub fn RenderViewIrradianceVolumeLightProbes::probes(
+  self : RenderViewIrradianceVolumeLightProbes,
+) -> RenderViewLightProbes {
+  self.probes
 }
 
 ///|

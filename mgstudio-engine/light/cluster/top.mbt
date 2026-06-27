@@ -326,6 +326,39 @@ pub fn ClusterableObjectCounts::ClusterableObjectCounts() -> ClusterableObjectCo
 }
 
 ///|
+pub fn ClusterableObjectCounts::point_lights(
+  self : ClusterableObjectCounts,
+) -> Int {
+  self.point_lights
+}
+
+///|
+pub fn ClusterableObjectCounts::spot_lights(
+  self : ClusterableObjectCounts,
+) -> Int {
+  self.spot_lights
+}
+
+///|
+pub fn ClusterableObjectCounts::reflection_probes(
+  self : ClusterableObjectCounts,
+) -> Int {
+  self.reflection_probes
+}
+
+///|
+pub fn ClusterableObjectCounts::irradiance_volumes(
+  self : ClusterableObjectCounts,
+) -> Int {
+  self.irradiance_volumes
+}
+
+///|
+pub fn ClusterableObjectCounts::decals(self : ClusterableObjectCounts) -> Int {
+  self.decals
+}
+
+///|
 pub struct ObjectsInCluster {
   clusterables : Array[@core.Entity]
   mut counts : ClusterableObjectCounts
@@ -415,6 +448,13 @@ pub fn ObjectsInCluster::clusterables(
 ///|
 pub fn ObjectsInCluster::iter(self : ObjectsInCluster) -> Array[@core.Entity] {
   self.clusterables()
+}
+
+///|
+pub fn ObjectsInCluster::counts(
+  self : ObjectsInCluster,
+) -> ClusterableObjectCounts {
+  self.counts
 }
 
 ///|

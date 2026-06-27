@@ -194,6 +194,28 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     settings~,
   )
   debug_inspect(graph_dot.contains("\"pbr.render3d.execute\""), content="true")
+  let pbr_plugin_settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+      name : String,
+    ) {
+      name.has_prefix("mgstudio_pbr::")
+    },
+  )
+  let pbr_plugin_render_dot = sub_app.schedule_graph_dot(
+    @render.render_schedule_stage(),
+    settings=pbr_plugin_settings,
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::extract_clusters_for_cpu_clustering\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_clusters_for_cpu_clustering\"",
+    ),
+    content="true",
+  )
 }
 
 ///|
@@ -1305,6 +1327,92 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   debug_inspect(
     (try! world.get_by_key(view, ViewClusteringBindGroups::component()))
     is Some(_),
+    content="true",
+  )
+
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
+test "render3d: cpu clustering prepare writes Bevy-shaped view cluster bindings" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  world.insert_resource(@render.render_queue_resource_key, render_queue)
+  world.insert_resource(
+    @light_cluster.GlobalClusterSettings::resource(),
+    @light_cluster.GlobalClusterSettings::new(true, true, None, 204, 16384),
+  )
+  let light_entity = @core.Entity::new(21, 1)
+  let decal_entity = @core.Entity::new(22, 1)
+  let reflection_probe = @render.MainEntity::new(@core.Entity::new(23, 1))
+  let irradiance_volume = @render.MainEntity::new(@core.Entity::new(24, 1))
+  let meta = GlobalClusterableObjectMeta::new(
+    @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+  )
+  meta.insert_entity_index(light_entity, 7)
+  meta.insert_entity_index(decal_entity, 9)
+  world.insert_resource(GlobalClusterableObjectMeta::resource(), meta)
+  let view = world.spawn()
+  try! world.set_by_key(
+    view,
+    ExtractedClusterableObjects::component(),
+    ExtractedClusterableObjects::new([
+      ExtractedClusterableObjectElement::ClusterHeader(
+        ClusterableObjectCounts3d::new(1U, 0U, 1U, 1U, 1U),
+      ),
+      ExtractedClusterableObjectElement::Light(light_entity),
+      ExtractedClusterableObjectElement::ReflectionProbe(reflection_probe),
+      ExtractedClusterableObjectElement::IrradianceVolume(irradiance_volume),
+      ExtractedClusterableObjectElement::Decal(decal_entity),
+    ]),
+  )
+  let reflection_probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
+  reflection_probes.push_probe_for_main_entity(
+    reflection_probe,
+    @pbr_light_probe.RenderLightProbe::RenderLightProbe(),
+  )
+  let irradiance_probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
+  irradiance_probes.push_probe_for_main_entity(
+    irradiance_volume,
+    @pbr_light_probe.RenderLightProbe::RenderLightProbe(),
+  )
+  try! world.set_by_key(
+    view,
+    @pbr_light_probe.RenderViewEnvironmentMapLightProbes::component(),
+    @pbr_light_probe.RenderViewEnvironmentMapLightProbes::new(reflection_probes),
+  )
+  try! world.set_by_key(
+    view,
+    @pbr_light_probe.RenderViewIrradianceVolumeLightProbes::component(),
+    @pbr_light_probe.RenderViewIrradianceVolumeLightProbes::new(
+      irradiance_probes,
+    ),
+  )
+
+  prepare_clusters_for_cpu_clustering(world)
+
+  let bindings = match
+    (try! world.get_by_key(view, ViewClusterBindings::component())) {
+    Some(value) => value
+    None => abort("missing ViewClusterBindings")
+  }
+  debug_inspect(bindings.n_offsets(), content="1")
+  debug_inspect(bindings.n_indices(), content="4")
+  debug_inspect(bindings.cluster_offsets_len(), content="1")
+  debug_inspect(bindings.clusterable_object_index_lists_len(), content="4")
+  debug_inspect(
+    bindings.cluster_offsets_and_counts_gpu_buffer() is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    bindings.clusterable_object_index_lists_gpu_buffer() is Some(_),
     content="true",
   )
 

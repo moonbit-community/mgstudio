@@ -547,6 +547,46 @@ pub impl @ecs.Component for ExtractedClusterConfig with fn component() {
 }
 
 ///|
+pub(all) enum ExtractedClusterableObjectElement {
+  ClusterHeader(ClusterableObjectCounts3d)
+  Light(@core.Entity)
+  ReflectionProbe(@render.MainEntity)
+  IrradianceVolume(@render.MainEntity)
+  Decal(@core.Entity)
+} derive(Eq, Debug)
+
+///|
+pub struct ExtractedClusterableObjects {
+  data : Array[ExtractedClusterableObjectElement]
+} derive(Eq, Debug)
+
+///|
+pub let ecs_key_extracted_clusterable_objects : @ecs.ComponentKey[
+  ExtractedClusterableObjects,
+] = @ecs.register_component(
+  debug_name="mgstudio_pbr::ExtractedClusterableObjects",
+)
+
+///|
+pub impl @ecs.Component for ExtractedClusterableObjects with fn component() {
+  ecs_key_extracted_clusterable_objects
+}
+
+///|
+pub fn ExtractedClusterableObjects::new(
+  data : Array[ExtractedClusterableObjectElement],
+) -> ExtractedClusterableObjects {
+  ExtractedClusterableObjects::{ data, }
+}
+
+///|
+pub fn ExtractedClusterableObjects::data(
+  self : ExtractedClusterableObjects,
+) -> Array[ExtractedClusterableObjectElement] {
+  self.data.copy()
+}
+
+///|
 fn cluster_config_sanitize_dimension(value : Int) -> Int {
   if value <= 0 {
     1
@@ -747,6 +787,34 @@ pub fn ViewClusterBindings::n_indices(self : ViewClusterBindings) -> Int {
 ///|
 pub fn ViewClusterBindings::n_offsets(self : ViewClusterBindings) -> Int {
   self.n_offsets
+}
+
+///|
+pub fn ViewClusterBindings::push_offset_and_counts(
+  self : ViewClusterBindings,
+  offset : UInt,
+  counts : ClusterableObjectCounts3d,
+) -> Unit {
+  self.cluster_offsets_and_counts.push(
+    GpuClusterOffsetAndCounts::new(offset, counts),
+  )
+  self.n_offsets += 1
+}
+
+///|
+pub fn ViewClusterBindings::push_index(
+  self : ViewClusterBindings,
+  index : UInt,
+) -> Unit {
+  self.clusterable_object_index_lists.push(index)
+  self.n_indices += 1
+}
+
+///|
+pub fn ViewClusterBindings::push_dummy_index(
+  self : ViewClusterBindings,
+) -> Unit {
+  self.push_index(0xFFFF_FFFFU)
 }
 
 ///|
@@ -1067,5 +1135,302 @@ pub fn ViewClusterBindings3d::uniform_packed_offsets_and_counts(
     let offset = item.0
     let counts = item.1
     pbr_pack_cluster_offset_and_counts(offset, counts)
+  })
+}
+
+///|
+fn pbr_cluster_int_to_uint(value : Int, label : String) -> UInt {
+  if value < 0 {
+    abort("\{label} must be non-negative")
+  }
+  value.reinterpret_as_uint()
+}
+
+///|
+fn pbr_cluster_counts_from_light_cluster(
+  counts : @light_cluster.ClusterableObjectCounts,
+) -> ClusterableObjectCounts3d {
+  ClusterableObjectCounts3d::new(
+    pbr_cluster_int_to_uint(counts.point_lights(), "point_lights"),
+    pbr_cluster_int_to_uint(counts.spot_lights(), "spot_lights"),
+    pbr_cluster_int_to_uint(counts.reflection_probes(), "reflection_probes"),
+    pbr_cluster_int_to_uint(counts.irradiance_volumes(), "irradiance_volumes"),
+    pbr_cluster_int_to_uint(counts.decals(), "decals"),
+  )
+}
+
+///|
+fn pbr_extract_clusterable_element(
+  source_world : @ecs.World,
+  clusterable_entity : @core.Entity,
+) -> Array[ExtractedClusterableObjectElement] {
+  let out : Array[ExtractedClusterableObjectElement] = []
+  let render_entity = match
+    (try! source_world.get_by_key(
+      clusterable_entity, @render.ecs_key_render_entity,
+    )) {
+    Some(value) => Some(value.id())
+    None => None
+  }
+  if (try! source_world.contains_by_key(
+      clusterable_entity, @light.ecs_key_clustered_decal,
+    )) {
+    match render_entity {
+      Some(entity) => out.push(ExtractedClusterableObjectElement::Decal(entity))
+      None => ()
+    }
+  } else if (try! source_world.contains_by_key(
+      clusterable_entity, @light.ecs_key_point_light,
+    )) ||
+    (try! source_world.contains_by_key(
+      clusterable_entity, @light.ecs_key_spot_light,
+    )) {
+    match render_entity {
+      Some(entity) => out.push(ExtractedClusterableObjectElement::Light(entity))
+      None => ()
+    }
+  }
+  if (try! source_world.contains_by_key(
+      clusterable_entity, @light.ecs_key_environment_map_light,
+    )) {
+    out.push(
+      ExtractedClusterableObjectElement::ReflectionProbe(
+        @render.MainEntity::new(clusterable_entity),
+      ),
+    )
+  }
+  if (try! source_world.contains_by_key(
+      clusterable_entity, @light.ecs_key_irradiance_volume,
+    )) {
+    out.push(
+      ExtractedClusterableObjectElement::IrradianceVolume(
+        @render.MainEntity::new(clusterable_entity),
+      ),
+    )
+  }
+  out
+}
+
+///|
+pub fn gpu_clustering_is_enabled_during_extraction(world : @ecs.World) -> Bool {
+  match
+    @render.render_source_world(world).get_resource(
+      @light_cluster.GlobalClusterSettings::resource(),
+    ) {
+    Some(settings) => settings.gpu_clustering() is Some(_)
+    None => false
+  }
+}
+
+///|
+pub fn cpu_clustering_is_enabled_during_extraction(world : @ecs.World) -> Bool {
+  !gpu_clustering_is_enabled_during_extraction(world)
+}
+
+///|
+pub fn cpu_clustering_is_enabled(world : @ecs.World) -> Bool {
+  match world.get_resource(@light_cluster.GlobalClusterSettings::resource()) {
+    Some(settings) => settings.gpu_clustering() is None
+    None => false
+  }
+}
+
+///|
+pub fn extract_clusters_for_cpu_clustering(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  render_world
+  .components_registrator()
+  .register_component_by_key(ExtractedClusterableObjects::component())
+  |> ignore
+  render_world
+  .components_registrator()
+  .register_component_by_key(ExtractedClusterConfig::component())
+  |> ignore
+  source_world.for_each_component(@light_cluster.Clusters::component(), fn(
+    source_view_entity,
+    clusters,
+  ) {
+    guard (try! source_world.get_by_key(
+        source_view_entity, @render.ecs_key_render_entity,
+      ))
+      is Some(render_entity) else {
+      return
+    }
+    let render_view_entity = render_entity.id()
+    let camera_is_active = match
+      (try! source_world.get_by_key(
+        source_view_entity, @camera_camera.ecs_key_camera,
+      )) {
+      Some(camera) => camera.is_active
+      None => true
+    }
+    if !camera_is_active {
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          ExtractedClusterableObjects::component(),
+        ) catch {
+          _ => false
+        },
+      )
+      ignore(
+        render_world.remove_by_key(
+          render_view_entity,
+          ExtractedClusterConfig::component(),
+        ) catch {
+          _ => false
+        },
+      )
+      return
+    }
+    let data : Array[ExtractedClusterableObjectElement] = []
+    for cluster_objects in clusters.clusterable_objects() {
+      data.push(
+        ExtractedClusterableObjectElement::ClusterHeader(
+          pbr_cluster_counts_from_light_cluster(cluster_objects.counts()),
+        ),
+      )
+      for clusterable_entity in cluster_objects.iter() {
+        for
+          element in pbr_extract_clusterable_element(
+            source_world, clusterable_entity,
+          ) {
+          data.push(element)
+        }
+      }
+    }
+    render_world.set_by_key(
+      render_view_entity,
+      ExtractedClusterableObjects::component(),
+      ExtractedClusterableObjects::new(data),
+    ) catch {
+      _ =>
+        abort("extract_clusters_for_cpu_clustering: failed to insert objects")
+    }
+    render_world.set_by_key(
+      render_view_entity,
+      ExtractedClusterConfig::component(),
+      ExtractedClusterConfig::from_clusters(clusters),
+    ) catch {
+      _ => abort("extract_clusters_for_cpu_clustering: failed to insert config")
+    }
+  })
+  match
+    source_world.get_resource(@light_cluster.GlobalClusterSettings::resource()) {
+    Some(settings) =>
+      render_world.insert_resource(
+        @light_cluster.GlobalClusterSettings::resource(),
+        settings,
+      )
+    None => ()
+  }
+}
+
+///|
+fn prepare_clusters_for_cpu_clustering_probe_index(
+  probes : @pbr_light_probe.RenderViewLightProbes?,
+  main_entity : @render.MainEntity,
+) -> UInt? {
+  match probes {
+    Some(value) => value.render_light_probe_index(main_entity)
+    None => None
+  }
+}
+
+///|
+pub fn prepare_clusters_for_cpu_clustering(world : @ecs.World) -> Unit {
+  let render_device = match
+    world.get_resource(@render.render_device_resource_key) {
+    Some(value) => value
+    None => abort("prepare_clusters_for_cpu_clustering: missing RenderDevice")
+  }
+  let render_queue = match
+    world.get_resource(@render.render_queue_resource_key) {
+    Some(value) => value
+    None => abort("prepare_clusters_for_cpu_clustering: missing RenderQueue")
+  }
+  let global_clusterable_object_meta = match
+    world.get_resource(GlobalClusterableObjectMeta::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "prepare_clusters_for_cpu_clustering: missing GlobalClusterableObjectMeta",
+      )
+  }
+  let supports_storage_buffers = global_clusterable_object_meta
+    .gpu_clustered_lights()
+    .is_storage_buffer()
+  world.for_each_component(ExtractedClusterableObjects::component(), fn(
+    view_entity,
+    extracted_clusters,
+  ) {
+    let environment_maps = match
+      (try! world.get_by_key(
+        view_entity,
+        @pbr_light_probe.RenderViewEnvironmentMapLightProbes::component(),
+      )) {
+      Some(value) => Some(value.probes())
+      None => None
+    }
+    let irradiance_volumes = match
+      (try! world.get_by_key(
+        view_entity,
+        @pbr_light_probe.RenderViewIrradianceVolumeLightProbes::component(),
+      )) {
+      Some(value) => Some(value.probes())
+      None => None
+    }
+    let view_clusters_bindings = ViewClusterBindings::ViewClusterBindings()
+    view_clusters_bindings.clear()
+    for record in extracted_clusters.data() {
+      match record {
+        ClusterHeader(counts) => {
+          let offset = pbr_cluster_int_to_uint(
+            view_clusters_bindings.n_indices(),
+            "cluster index offset",
+          )
+          view_clusters_bindings.push_offset_and_counts(offset, counts)
+        }
+        Light(entity) | Decal(entity) =>
+          match global_clusterable_object_meta.entity_index(entity) {
+            Some(index) => {
+              if view_clusters_bindings.n_indices() >=
+                VIEW_CLUSTER_BINDINGS_MAX_INDICES &&
+                !supports_storage_buffers {
+                break
+              }
+              view_clusters_bindings.push_index(
+                pbr_cluster_int_to_uint(index, "clusterable object index"),
+              )
+            }
+            None => view_clusters_bindings.push_dummy_index()
+          }
+        ReflectionProbe(main_entity) =>
+          match
+            prepare_clusters_for_cpu_clustering_probe_index(
+              environment_maps, main_entity,
+            ) {
+            Some(index) => view_clusters_bindings.push_index(index)
+            None => view_clusters_bindings.push_dummy_index()
+          }
+        IrradianceVolume(main_entity) =>
+          match
+            prepare_clusters_for_cpu_clustering_probe_index(
+              irradiance_volumes, main_entity,
+            ) {
+            Some(index) => view_clusters_bindings.push_index(index)
+            None => view_clusters_bindings.push_dummy_index()
+          }
+      }
+    }
+    view_clusters_bindings.write_buffers(render_device, render_queue)
+    world.set_by_key(
+      view_entity,
+      ViewClusterBindings::component(),
+      view_clusters_bindings,
+    ) catch {
+      _ =>
+        abort("prepare_clusters_for_cpu_clustering: failed to insert bindings")
+    }
   })
 }

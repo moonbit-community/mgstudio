@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
   "Milky2018/wgpu_mbt",
 }
 
@@ -219,6 +220,7 @@ pub struct RenderViewEnvironmentMapLightProbes {
 }
 pub fn RenderViewEnvironmentMapLightProbes::new(RenderViewLightProbes) -> Self
 pub fn RenderViewEnvironmentMapLightProbes::probe_count(Self) -> Int
+pub fn RenderViewEnvironmentMapLightProbes::probes(Self) -> RenderViewLightProbes
 pub impl @ecs.Component for RenderViewEnvironmentMapLightProbes
 
 pub(all) enum RenderViewEnvironmentMapTextureIdEntries {
@@ -254,6 +256,7 @@ pub struct RenderViewIrradianceVolumeLightProbes {
 }
 pub fn RenderViewIrradianceVolumeLightProbes::new(RenderViewLightProbes) -> Self
 pub fn RenderViewIrradianceVolumeLightProbes::probe_count(Self) -> Int
+pub fn RenderViewIrradianceVolumeLightProbes::probes(Self) -> RenderViewLightProbes
 pub impl @ecs.Component for RenderViewIrradianceVolumeLightProbes
 
 pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
@@ -264,12 +267,15 @@ pub(all) enum RenderViewIrradianceVolumeTextureIdEntries {
 pub struct RenderViewLightProbes {
   binding_index_to_textures : Array[@asset.Handle[@image.Image]?]
   render_light_probes : Array[RenderLightProbe]
+  main_entity_to_render_light_probe_index : Map[UInt64, UInt]
   view_texture_index : Int
 }
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> Self
 pub fn RenderViewLightProbes::probe_count(Self) -> Int
 pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
+pub fn RenderViewLightProbes::push_probe_for_main_entity(Self, @render.MainEntity, RenderLightProbe) -> Unit
 pub fn RenderViewLightProbes::push_texture(Self, @asset.Handle[@image.Image]?) -> Int
+pub fn RenderViewLightProbes::render_light_probe_index(Self, @render.MainEntity) -> UInt?
 pub fn RenderViewLightProbes::texture_count(Self) -> Int
 pub impl @ecs.Component for RenderViewLightProbes
 

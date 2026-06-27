@@ -175,6 +175,10 @@ pub fn contact_shadows_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.Wor
 
 pub fn contact_shadows_plugin_install_with(@app.App[@ecs.World], ContactShadowsPlugin) -> @app.App[@ecs.World]
 
+pub fn cpu_clustering_is_enabled(@ecs.World) -> Bool
+
+pub fn cpu_clustering_is_enabled_during_extraction(@ecs.World) -> Bool
+
 pub fn deferred_lighting_color_target_format(@Milky2018/mgstudio/pbr/deferred.DeferredLightingViewState) -> String
 
 pub fn deferred_lighting_pass_plan(has_pipeline? : Bool, has_depth_id_binding? : Bool, has_mesh_view_bind_group? : Bool, has_view_target? : Bool, has_deferred_lighting_id_depth_texture? : Bool) -> @Milky2018/mgstudio/pbr/deferred.DeferredLightingPassPlan
@@ -260,6 +264,8 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 pub let ecs_key_exposure : @ecs.ComponentKey[@camera.Exposure]
 
 pub let ecs_key_extracted_cluster_config : @ecs.ComponentKey[ExtractedClusterConfig]
+
+pub let ecs_key_extracted_clusterable_objects : @ecs.ComponentKey[ExtractedClusterableObjects]
 
 pub let ecs_key_fallback_bindless_resources : @ecs.ResourceKey[FallbackBindlessResources]
 
@@ -453,6 +459,8 @@ pub fn extended_material_metadata_default() -> @material.ExtendedMaterialMetadat
 
 pub fn extended_material_metadata_new(Int) -> @material.ExtendedMaterialMetadata3d
 
+pub fn extract_clusters_for_cpu_clustering(@ecs.World) -> Unit
+
 pub fn forward_decal_material_add(@decal.ForwardDecalMaterial) -> @asset.Handle[@decal.ForwardDecalMaterial]
 
 pub fn forward_decal_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
@@ -484,6 +492,8 @@ pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
 pub fn gpu_clustering_cluster_on_gpu_commands(@wgpu_mbt.CommandEncoder, @renderer.RenderDevice, @render_resource.PipelineCache, GpuClusteringMeshBuffers, RenderViewClusteringReadbackData, @Milky2018/mgstudio/render.MainEntity, ViewGpuClusteringBuffers, ViewGpuClusteringPipelineIds, ViewClusteringDummyTexture, ViewClusteringBindGroups, @light_probe.ViewLightProbesUniformOffset, @Milky2018/mgstudio/pbr/render.ViewLightsUniformOffset, @view.ViewUniformOffset, ExtractedClusterConfig) -> Bool
 
 pub fn gpu_clustering_is_enabled(@ecs.World) -> Bool
+
+pub fn gpu_clustering_is_enabled_during_extraction(@ecs.World) -> Bool
 
 pub fn gpu_clustering_pipeline_steps() -> Array[GpuClusteringStep]
 
@@ -684,6 +694,8 @@ pub fn prepare_cluster_dummy_textures(@ecs.World) -> Unit
 pub fn prepare_clustering_bind_groups(@ecs.World) -> Unit
 
 pub fn prepare_clustering_pipelines(@ecs.World) -> Unit
+
+pub fn prepare_clusters_for_cpu_clustering(@ecs.World) -> Unit
 
 pub fn prepare_clusters_for_gpu_clustering(@ecs.World) -> Unit
 
@@ -1370,6 +1382,21 @@ pub fn ExtractedClusterConfig::from_clusters(@cluster.Clusters) -> Self
 pub fn ExtractedClusterConfig::near(Self) -> Float
 pub fn ExtractedClusterConfig::new(Float, Float, Int, Int, Int) -> Self
 pub impl @ecs.Component for ExtractedClusterConfig
+
+pub(all) enum ExtractedClusterableObjectElement {
+  ClusterHeader(ClusterableObjectCounts3d)
+  Light(@core.Entity)
+  ReflectionProbe(@Milky2018/mgstudio/render.MainEntity)
+  IrradianceVolume(@Milky2018/mgstudio/render.MainEntity)
+  Decal(@core.Entity)
+} derive(Eq, @debug.Debug)
+
+pub struct ExtractedClusterableObjects {
+  data : Array[ExtractedClusterableObjectElement]
+} derive(Eq, @debug.Debug)
+pub fn ExtractedClusterableObjects::data(Self) -> Array[ExtractedClusterableObjectElement]
+pub fn ExtractedClusterableObjects::new(Array[ExtractedClusterableObjectElement]) -> Self
+pub impl @ecs.Component for ExtractedClusterableObjects
 
 pub(all) struct FallbackBindlessResources {
   filtering_sampler : @wgpu_mbt.Sampler
@@ -2566,6 +2593,9 @@ pub fn ViewClusterBindings::clusterable_object_index_lists_gpu_capacity(Self) ->
 pub fn ViewClusterBindings::clusterable_object_index_lists_len(Self) -> Int
 pub fn ViewClusterBindings::n_indices(Self) -> Int
 pub fn ViewClusterBindings::n_offsets(Self) -> Int
+pub fn ViewClusterBindings::push_dummy_index(Self) -> Unit
+pub fn ViewClusterBindings::push_index(Self, UInt) -> Unit
+pub fn ViewClusterBindings::push_offset_and_counts(Self, UInt, ClusterableObjectCounts3d) -> Unit
 pub fn ViewClusterBindings::reserve_clusters(Self, Int) -> Unit
 pub fn ViewClusterBindings::reserve_indices(Self, Int) -> Unit
 pub fn ViewClusterBindings::write_buffers(Self, @renderer.RenderDevice, @renderer.RenderQueue) -> Unit
