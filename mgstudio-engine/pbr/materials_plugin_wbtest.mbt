@@ -277,6 +277,113 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
 }
 
 ///|
+test "render3d: camera shadow phase preparation retains all Bevy light views once" {
+  let world = @ecs.World::new()
+  let camera_a = @core.Entity::new(301, 1)
+  let camera_b = @core.Entity::new(302, 1)
+  let directional_light = @core.Entity::new(310, 1)
+  let point_light = @core.Entity::new(311, 1)
+  let spot_light = @core.Entity::new(312, 1)
+  let cascades = @light.Cascades::Cascades()
+  for camera in [camera_a, camera_b] {
+    cascades.set(camera, [
+      @light.Cascade::new(
+        @math.Mat4::identity(),
+        @math.Mat4::identity(),
+        @math.Mat4::identity(),
+        0.25F,
+      ),
+    ])
+  }
+  let lighting = Render3dLightingState::{
+    ..@pbr_render.render3d_default_lighting_state(),
+    directional_entity: Some(directional_light),
+    directional_shadow_maps_enabled: true,
+    directional_transform: @transform.Transform::identity(),
+    directional_cascade_bounds: [42.0F],
+    directional_cascades: cascades,
+    point_entity: Some(point_light),
+    point_range: 12.0F,
+    point_shadow_maps_enabled: true,
+    spot_entity: Some(spot_light),
+    spot_range: 12.0F,
+    spot_shadow_maps_enabled: true,
+  }
+  let cameras = [
+    ExtractedCamera3d::{
+      entity: phase_entity_ref3d_for_main(camera_a),
+      payload: material_test_camera_payload(),
+    },
+    ExtractedCamera3d::{
+      entity: phase_entity_ref3d_for_main(camera_b),
+      payload: material_test_camera_payload(),
+    },
+  ]
+  let shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  let stale_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(399, 1),
+  )
+  ignore(shadow_phases.prepare_for_new_frame(stale_view))
+  world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
+  let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  let point_face_zero_view = Render3dLightEntity::Point(
+    light_entity=point_light,
+    face_index=0,
+  ).shadow_phase_retained_view(@render_view.RetainedViewEntity::new(camera_a))
+  pending_shadow_queues
+  .queues()
+  .push_current(
+    point_face_zero_view,
+    @core.Entity::new(313, 1),
+    @render.MainEntity::new(@core.Entity::new(314, 1)),
+  )
+  pending_shadow_queues
+  .queues()
+  .push_current(
+    stale_view,
+    @core.Entity::new(315, 1),
+    @render.MainEntity::new(@core.Entity::new(316, 1)),
+  )
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    pending_shadow_queues,
+  )
+
+  let live_views = render3d_prepare_shadow_phase_views_for_cameras(
+    world, cameras, lighting, 1024,
+  )
+
+  let directional_a = Render3dLightEntity::Directional(
+    light_entity=directional_light,
+    cascade_index=0,
+  ).shadow_phase_retained_view(@render_view.RetainedViewEntity::new(camera_a))
+  let directional_b = Render3dLightEntity::Directional(
+    light_entity=directional_light,
+    cascade_index=0,
+  ).shadow_phase_retained_view(@render_view.RetainedViewEntity::new(camera_b))
+  debug_inspect(live_views.length(), content="9")
+  debug_inspect(live_views.contains(directional_a), content="true")
+  debug_inspect(live_views.contains(directional_b), content="true")
+  debug_inspect(live_views.contains(point_face_zero_view), content="true")
+  match world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(phases) => {
+      debug_inspect(phases.len(), content="9")
+      debug_inspect(phases.get(stale_view) is None, content="true")
+      debug_inspect(phases.get(directional_a) is Some(_), content="true")
+      debug_inspect(phases.get(directional_b) is Some(_), content="true")
+    }
+    None => debug_inspect(false, content="true")
+  }
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) => {
+      debug_inspect(queues.queues().prev_len(point_face_zero_view), content="1")
+      debug_inspect(queues.queues().contains_view(stale_view), content="false")
+    }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: pending mesh material queues prepare live views and expire stale views" {
   let live_view = @render_view.RetainedViewEntity::new(@core.Entity::new(30, 1))
   let stale_view = @render_view.RetainedViewEntity::new(

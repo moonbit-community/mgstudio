@@ -39,6 +39,11 @@ fn render3d_execute_render_cameras(
     world,
     @pbr_render.render3d_collect_lighting(world),
   )
+  ignore(
+    render3d_prepare_shadow_phase_views_for_cameras(
+      world, cameras, lighting, point_light_shadow_map_size,
+    ),
+  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_collect_lighting",
@@ -97,6 +102,98 @@ fn render3d_execute_render_cameras(
     "execute_3d_render_cameras",
     trace_render_cameras_start_us,
   )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
+fn render3d_shadow_phase_light_entities_for_camera(
+  camera_entity : @core.Entity,
+  lighting : Render3dLightingState,
+  point_light_shadow_map_size : Int,
+) -> Array[Render3dLightEntity] {
+  let light_entities : Array[Render3dLightEntity] = []
+  if lighting.point_shadow_maps_enabled &&
+    lighting.point_entity is Some(point_entity) &&
+    lighting.point_range > 0.0F &&
+    point_light_shadow_map_size > 0 {
+    for face_index in 0..<6 {
+      light_entities.push(
+        Render3dLightEntity::Point(light_entity=point_entity, face_index~),
+      )
+    }
+  }
+  if lighting.directional_shadow_maps_enabled &&
+    lighting.directional_entity is Some(light_entity) {
+    let cascades = render3d_directional_shadow_cascades(camera_entity, lighting)
+    for cascade_index in 0..<cascades.length() {
+      light_entities.push(
+        Render3dLightEntity::Directional(light_entity~, cascade_index~),
+      )
+    }
+  }
+  if lighting.spot_shadow_maps_enabled &&
+    lighting.spot_entity is Some(light_entity) &&
+    lighting.spot_range > 0.0F {
+    light_entities.push(Render3dLightEntity::Spot(light_entity~))
+  }
+  light_entities
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
+fn render3d_prepare_shadow_phase_views_for_cameras(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+  lighting : Render3dLightingState,
+  point_light_shadow_map_size : Int,
+) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
+  let live_shadow_mapping_lights : @hashset.HashSet[
+    @render_view.RetainedViewEntity,
+  ] = @hashset.HashSet([])
+  for camera in cameras {
+    let extracted_retained_view = @render_view.RetainedViewEntity::new(
+      camera.entity.main_entity,
+    )
+    for
+      light_entity in render3d_shadow_phase_light_entities_for_camera(
+        camera.entity.main_entity,
+        lighting,
+        point_light_shadow_map_size,
+      ) {
+      live_shadow_mapping_lights.add(
+        light_entity.shadow_phase_retained_view(extracted_retained_view),
+      )
+    }
+  }
+  let shadow_render_phases = match
+    world.get_resource_mut(Render3dShadowPhasesData::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing ViewBinnedRenderPhases<Shadow> resource during pbr shadow phase preparation",
+      )
+  }
+  shadow_render_phases.modify(fn(phases) {
+    for retained_view_entity in live_shadow_mapping_lights.iter() {
+      ignore(phases.prepare_for_new_frame(retained_view_entity))
+    }
+    phases.retain(live_shadow_mapping_lights)
+  })
+  let pending_shadow_queues = match
+    world.get_resource_mut(@pbr_render.PendingShadowQueues::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing PendingShadowQueues resource during pbr shadow phase preparation",
+      )
+  }
+  pending_shadow_queues.modify(fn(queues) {
+    for retained_view_entity in live_shadow_mapping_lights.iter() {
+      ignore(queues.queues().prepare_for_new_frame(retained_view_entity))
+    }
+    queues.queues().expire_stale_views(live_shadow_mapping_lights)
+  })
+  live_shadow_mapping_lights
 }
 
 ///|
