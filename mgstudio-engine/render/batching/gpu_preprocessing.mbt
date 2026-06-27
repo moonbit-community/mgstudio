@@ -66,9 +66,42 @@ pub fn IndirectBatchSet::indirect_parameters_count(
 }
 
 ///|
+pub struct IndirectParametersCpuMetadata {
+  base_output_index : Int
+  batch_set_index : Int
+} derive(Eq, Debug)
+
+///|
+pub fn IndirectParametersCpuMetadata::IndirectParametersCpuMetadata() -> IndirectParametersCpuMetadata {
+  IndirectParametersCpuMetadata::{ base_output_index: 0, batch_set_index: 0 }
+}
+
+///|
+pub fn IndirectParametersCpuMetadata::new(
+  base_output_index : Int,
+  batch_set_index : Int,
+) -> IndirectParametersCpuMetadata {
+  IndirectParametersCpuMetadata::{ base_output_index, batch_set_index }
+}
+
+///|
+pub fn IndirectParametersCpuMetadata::base_output_index(
+  self : IndirectParametersCpuMetadata,
+) -> Int {
+  self.base_output_index
+}
+
+///|
+pub fn IndirectParametersCpuMetadata::batch_set_index(
+  self : IndirectParametersCpuMetadata,
+) -> Int {
+  self.batch_set_index
+}
+
+///|
 pub struct MeshClassIndirectParametersBuffers {
   mut indirect_draw_parameter_count : Int
-  mut cpu_metadata_count : Int
+  cpu_metadata : Array[IndirectParametersCpuMetadata]
   mut gpu_metadata_count : Int
   batch_sets : Array[IndirectBatchSet]
   allow_copies_from_indirect_parameter_buffers : Bool
@@ -80,7 +113,7 @@ pub fn MeshClassIndirectParametersBuffers::new(
 ) -> MeshClassIndirectParametersBuffers {
   MeshClassIndirectParametersBuffers::{
     indirect_draw_parameter_count: 0,
-    cpu_metadata_count: 0,
+    cpu_metadata: [],
     gpu_metadata_count: 0,
     batch_sets: [],
     allow_copies_from_indirect_parameter_buffers,
@@ -95,8 +128,12 @@ pub fn MeshClassIndirectParametersBuffers::allocate(
   let offset = self.indirect_draw_parameter_count
   if count > 0 {
     self.indirect_draw_parameter_count += count
-    self.cpu_metadata_count += count
     self.gpu_metadata_count += count
+    for _ in 0..<count {
+      self.cpu_metadata.push(
+        IndirectParametersCpuMetadata::IndirectParametersCpuMetadata(),
+      )
+    }
   }
   offset
 }
@@ -109,10 +146,47 @@ pub fn MeshClassIndirectParametersBuffers::batch_count(
 }
 
 ///|
+pub fn MeshClassIndirectParametersBuffers::cpu_metadata_len(
+  self : MeshClassIndirectParametersBuffers,
+) -> Int {
+  self.cpu_metadata.length()
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::gpu_metadata_len(
+  self : MeshClassIndirectParametersBuffers,
+) -> Int {
+  self.gpu_metadata_count
+}
+
+///|
 pub fn MeshClassIndirectParametersBuffers::batch_set_count(
   self : MeshClassIndirectParametersBuffers,
 ) -> Int {
   self.batch_sets.length()
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::cpu_metadata_at(
+  self : MeshClassIndirectParametersBuffers,
+  index : Int,
+) -> IndirectParametersCpuMetadata? {
+  if index < 0 || index >= self.cpu_metadata.length() {
+    None
+  } else {
+    Some(self.cpu_metadata[index])
+  }
+}
+
+///|
+pub fn MeshClassIndirectParametersBuffers::set_cpu_metadata(
+  self : MeshClassIndirectParametersBuffers,
+  index : Int,
+  value : IndirectParametersCpuMetadata,
+) -> Unit {
+  if index >= 0 && index < self.cpu_metadata.length() {
+    self.cpu_metadata[index] = value
+  }
 }
 
 ///|
@@ -128,7 +202,7 @@ pub fn MeshClassIndirectParametersBuffers::clear(
   self : MeshClassIndirectParametersBuffers,
 ) -> Unit {
   self.indirect_draw_parameter_count = 0
-  self.cpu_metadata_count = 0
+  self.cpu_metadata.clear()
   self.gpu_metadata_count = 0
   self.batch_sets.clear()
 }
@@ -186,6 +260,30 @@ pub fn UntypedPhaseIndirectParametersBuffers::batch_count(
 }
 
 ///|
+pub fn UntypedPhaseIndirectParametersBuffers::cpu_metadata_len(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+) -> Int {
+  if indexed {
+    self.indexed.cpu_metadata_len()
+  } else {
+    self.non_indexed.cpu_metadata_len()
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::gpu_metadata_len(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+) -> Int {
+  if indexed {
+    self.indexed.gpu_metadata_len()
+  } else {
+    self.non_indexed.gpu_metadata_len()
+  }
+}
+
+///|
 pub fn UntypedPhaseIndirectParametersBuffers::batch_set_count(
   self : UntypedPhaseIndirectParametersBuffers,
   indexed : Bool,
@@ -194,6 +292,33 @@ pub fn UntypedPhaseIndirectParametersBuffers::batch_set_count(
     self.indexed.batch_set_count()
   } else {
     self.non_indexed.batch_set_count()
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::cpu_metadata_at(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+  index : Int,
+) -> IndirectParametersCpuMetadata? {
+  if indexed {
+    self.indexed.cpu_metadata_at(index)
+  } else {
+    self.non_indexed.cpu_metadata_at(index)
+  }
+}
+
+///|
+pub fn UntypedPhaseIndirectParametersBuffers::set_cpu_metadata(
+  self : UntypedPhaseIndirectParametersBuffers,
+  indexed : Bool,
+  index : Int,
+  value : IndirectParametersCpuMetadata,
+) -> Unit {
+  if indexed {
+    self.indexed.set_cpu_metadata(index, value)
+  } else {
+    self.non_indexed.set_cpu_metadata(index, value)
   }
 }
 

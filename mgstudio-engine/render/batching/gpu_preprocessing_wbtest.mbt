@@ -90,7 +90,22 @@ test "gpu preprocessing: indirect parameter buffers allocate and swap by phase" 
   let phase = PhaseIndirectParametersBuffers::new(true)
   debug_inspect(phase.allocate(false, false), content="Some(0)")
   debug_inspect(phase.buffers.allocate(false, 2), content="1")
+  phase.buffers.set_cpu_metadata(
+    false,
+    2,
+    IndirectParametersCpuMetadata::new(42, 7),
+  )
   phase.buffers.add_batch_set(false, 0)
+  debug_inspect(phase.buffers.cpu_metadata_len(false), content="3")
+  debug_inspect(phase.buffers.gpu_metadata_len(false), content="3")
+  debug_inspect(
+    phase.buffers.cpu_metadata_at(false, 2).unwrap().base_output_index(),
+    content="42",
+  )
+  debug_inspect(
+    phase.buffers.cpu_metadata_at(false, 2).unwrap().batch_set_index(),
+    content="7",
+  )
   collect_phase_indirect_parameters_buffers(
     global,
     "shadow",
