@@ -158,6 +158,10 @@ pub let simulation_light_set_update_light_frusta : String
 
 pub fn simulation_light_system_set_name(SimulationLightSystems) -> String
 
+pub fn update_point_light_bounding_spheres(@ecs.World) -> Unit
+
+pub fn update_spot_light_bounding_spheres(@ecs.World) -> Unit
+
 pub fn validate_directional_light_shadow_map_size(@ecs.World) -> Unit
 
 // Errors

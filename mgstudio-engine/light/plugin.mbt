@@ -291,4 +291,14 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       simulation_light_set_update_directional_light_cascades,
     ),
   )
+  .add_post_update_system_config(
+    @app.system(update_point_light_bounding_spheres)
+    .after(@transform.transform_set_propagate)
+    .in_set(simulation_light_set_update_bounds),
+  )
+  .add_post_update_system_config(
+    @app.system(update_spot_light_bounding_spheres)
+    .after(@transform.transform_set_propagate)
+    .in_set(simulation_light_set_update_bounds),
+  )
 }

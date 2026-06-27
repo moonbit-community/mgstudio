@@ -40,9 +40,9 @@ test "light plugin: initializes default light resources" {
 
 ///|
 test "light plugin: automatically adds default parallax correction to reflection probes" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
-    @light.LightPlugin::LightPlugin(),
-  )
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
   let world = app.world()
 
   let auto_probe = world.spawn()
@@ -403,6 +403,70 @@ test "light plugin: exposes Bevy simulation light system sets" {
     ),
     content="\"mgstudio.light.SimulationLightSystems.CheckLightVisibility\"",
   )
+}
+
+///|
+test "light plugin: updates point and spot light bounding spheres" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+  let world = app.world()
+
+  let point = world.spawn()
+  try! world.set(point, @light.PointLight::PointLight().with_range(7.5F))
+  try! world.set_by_key(
+    point,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_translation(@math.Vec3::new(1.0F, 2.0F, 3.0F)),
+  )
+
+  let spot = world.spawn()
+  try! world.set(
+    spot,
+    @light.SpotLight::new(
+      @color.Color::white(),
+      1_000_000.0F,
+      4.25F,
+      0.0F,
+      0.7853981633974483F,
+      false,
+    ),
+  )
+  try! world.set_by_key(
+    spot,
+    @transform.ecs_key_transform,
+    @transform.Transform::from_translation(@math.Vec3::new(-2.0F, 0.5F, 9.0F)),
+  )
+
+  app = app.update()
+
+  let point_sphere = try! app
+    .world()
+    .get_by_key(point, @camera_primitives.ecs_key_sphere)
+  debug_inspect(point_sphere is Some(_), content="true")
+  match point_sphere {
+    Some(point_sphere) => {
+      debug_inspect(point_sphere.center().x, content="1")
+      debug_inspect(point_sphere.center().y, content="2")
+      debug_inspect(point_sphere.center().z, content="3")
+      debug_inspect(point_sphere.radius(), content="7.5")
+    }
+    None => ()
+  }
+
+  let spot_sphere = try! app
+    .world()
+    .get_by_key(spot, @camera_primitives.ecs_key_sphere)
+  debug_inspect(spot_sphere is Some(_), content="true")
+  match spot_sphere {
+    Some(spot_sphere) => {
+      debug_inspect(spot_sphere.center().x, content="-2")
+      debug_inspect(spot_sphere.center().y, content="0.5")
+      debug_inspect(spot_sphere.center().z, content="9")
+      debug_inspect(spot_sphere.radius(), content="4.25")
+    }
+    None => ()
+  }
 }
 
 ///|

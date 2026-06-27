@@ -43,3 +43,40 @@ pub fn point_light_shadow_map_resource(
 ) -> @ecs.ResourceAccess[PointLightShadowMapResource] {
   get_point_light_shadow_map_resource(world)
 }
+
+///|
+type PointLightBoundingSphereQuery = @ecs.Query[
+  (@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.GlobalTransform]),
+  @ecs.Or[(@ecs.Changed[PointLight], @ecs.Changed[@transform.GlobalTransform])],
+]
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/point_light.rs::update_point_light_bounding_spheres`.
+pub fn update_point_light_bounding_spheres(world : @ecs.World) -> Unit {
+  let query : PointLightBoundingSphereQuery = @ecs.query_filtered(
+    world,
+    @ecs.Or::new(
+      (
+        @ecs.Changed::new(ecs_key_point_light),
+        @ecs.Changed::new(@transform.ecs_key_global_transform),
+      ),
+    ),
+  )
+  let updates : Array[(@core.Entity, @camera_primitives.Sphere)] = []
+  try! query.for_each(fn(_query_entity, item) {
+    let (entity, point_light, global_transform) = item
+    updates.push(
+      (
+        entity,
+        @camera_primitives.Sphere::new(
+          global_transform.value().translation(),
+          point_light.value().range,
+        ),
+      ),
+    )
+  })
+  for update in updates {
+    let (entity, sphere) = update
+    try! world.set_by_key(entity, @camera_primitives.ecs_key_sphere, sphere)
+  }
+}
