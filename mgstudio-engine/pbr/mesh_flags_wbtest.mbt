@@ -415,6 +415,72 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
 }
 
 ///|
+test "render3d: queue phase skips view cache misses" {
+  let mesh = render3d_test_transparent_mesh_for_queue(5, -1.0F, 0.0F)
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(6, 0))
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+  let cpu_miss = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+    retained_view_entity=Some(view),
+    specialized_material_pipeline_cache=Some(cache),
+  )
+  let gpu_miss = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    true,
+    retained_view_entity=Some(view),
+    specialized_material_pipeline_cache=Some(cache),
+  )
+  debug_inspect(cpu_miss.length(), content="0")
+  debug_inspect(gpu_miss.length(), content="0")
+
+  cache.insert(
+    view,
+    mesh.entity.main_entity,
+    1,
+    @material.CachedRenderPipelineId::new(77UL),
+  )
+  let cpu_hit = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+    retained_view_entity=Some(view),
+    specialized_material_pipeline_cache=Some(cache),
+  )
+  let gpu_hit = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    true,
+    retained_view_entity=Some(view),
+    specialized_material_pipeline_cache=Some(cache),
+  )
+  debug_inspect(cpu_hit.length(), content="1")
+  debug_inspect(gpu_hit.length(), content="1")
+  debug_inspect(
+    cpu_hit[0].pipeline_id.map(fn(value) { value.id() }),
+    content="Some(77)",
+  )
+  debug_inspect(
+    gpu_hit[0].pipeline_id.map(fn(value) { value.id() }),
+    content="Some(77)",
+  )
+}
+
+///|
 test "render3d: transmissive materials use a distinct sorted phase" {
   let material = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.5F,

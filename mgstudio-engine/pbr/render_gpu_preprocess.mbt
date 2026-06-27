@@ -194,6 +194,17 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 }
 
 ///|
+fn render3d_missing_view_pipeline_should_skip(
+  retained_view_entity : @render_view.RetainedViewEntity?,
+  specialized_material_pipeline_cache : SpecializedMaterialPipelineCache?,
+  pipeline_id : @material.CachedRenderPipelineId?,
+) -> Bool {
+  retained_view_entity is Some(_) &&
+  specialized_material_pipeline_cache is Some(_) &&
+  pipeline_id is None
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @camera_render_layers.RenderLayers,
@@ -244,13 +255,19 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       continue
     }
     let phase = render3d_mesh_phase_kind(payload.material_properties, alpha).unwrap()
+    let pipeline_id = render3d_traced_mesh_pipeline_id_for_view(
+      mesh, retained_view_entity, specialized_material_pipeline_cache,
+    )
+    if render3d_missing_view_pipeline_should_skip(
+        retained_view_entity, specialized_material_pipeline_cache, pipeline_id,
+      ) {
+      continue
+    }
     items.push(MeshPhaseItem3d::{
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      pipeline_id: render3d_traced_mesh_pipeline_id_for_view(
-        mesh, retained_view_entity, specialized_material_pipeline_cache,
-      ),
+      pipeline_id,
       distance: render3d_material_phase_distance(payload, camera_transform),
     })
   }
@@ -336,13 +353,19 @@ fn render3d_collect_meshes_for_gpu_building(
       is Some(phase) else {
       continue
     }
+    let pipeline_id = render3d_traced_mesh_pipeline_id_for_view(
+      mesh, retained_view_entity, specialized_material_pipeline_cache,
+    )
+    if render3d_missing_view_pipeline_should_skip(
+        retained_view_entity, specialized_material_pipeline_cache, pipeline_id,
+      ) {
+      continue
+    }
     work_items.push(GpuPreprocessWorkItem3d::{
       entity: mesh.entity,
       extracted_index: i,
       phase,
-      pipeline_id: render3d_traced_mesh_pipeline_id_for_view(
-        mesh, retained_view_entity, specialized_material_pipeline_cache,
-      ),
+      pipeline_id,
       distance: render3d_material_phase_distance(payload, camera_transform),
     })
   }
