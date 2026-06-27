@@ -2121,6 +2121,15 @@ pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.Material
 pub fn Render3dResolvedMaterial::material_type_tag(Self) -> String
 pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String) -> Self
 
+pub struct Render3dShadowBatchRange {
+  start : Int
+  end : Int
+} derive(Eq, @debug.Debug)
+pub fn Render3dShadowBatchRange::count(Self) -> Int
+pub fn Render3dShadowBatchRange::end(Self) -> Int
+pub fn Render3dShadowBatchRange::new(Int, Int) -> Self
+pub fn Render3dShadowBatchRange::start(Self) -> Int
+
 pub struct Render3dShadowBatchSetKeyData {
   pipeline_id : @render_resource.CachedRenderPipelineId
   draw_function : @material.DrawFunctionId
@@ -2140,6 +2149,42 @@ pub struct Render3dShadowBinKeyData {
 pub fn Render3dShadowBinKeyData::mesh_asset_id(Self) -> Int
 pub fn Render3dShadowBinKeyData::new(Int) -> Self
 
+pub(all) enum Render3dShadowBinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+  NonMesh
+} derive(Eq, @debug.Debug)
+pub fn Render3dShadowBinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
+
+pub struct Render3dShadowPhaseItemData {
+  batch_set_key : Render3dShadowBatchSetKeyData
+  bin_key : Render3dShadowBinKeyData
+  render_entity : @core.Entity
+  main_entity : @Milky2018/mgstudio/render.MainEntity
+  batch_range : Render3dShadowBatchRange
+  extra_index : Render3dShadowPhaseItemExtraIndex
+}
+pub fn Render3dShadowPhaseItemData::batch_range(Self) -> Render3dShadowBatchRange
+pub fn Render3dShadowPhaseItemData::batch_set_key(Self) -> Render3dShadowBatchSetKeyData
+pub fn Render3dShadowPhaseItemData::bin_key(Self) -> Render3dShadowBinKeyData
+pub fn Render3dShadowPhaseItemData::cached_pipeline(Self) -> @render_resource.CachedRenderPipelineId
+pub fn Render3dShadowPhaseItemData::draw_function(Self) -> @material.DrawFunctionId
+pub fn Render3dShadowPhaseItemData::entity(Self) -> @core.Entity
+pub fn Render3dShadowPhaseItemData::extra_index(Self) -> Render3dShadowPhaseItemExtraIndex
+pub fn Render3dShadowPhaseItemData::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
+pub fn Render3dShadowPhaseItemData::new(Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, @core.Entity, @Milky2018/mgstudio/render.MainEntity, Render3dShadowBatchRange, Render3dShadowPhaseItemExtraIndex) -> Self
+
+pub(all) enum Render3dShadowPhaseItemExtraIndex {
+  NoExtraIndex
+  DynamicOffset(Int)
+  IndirectParametersIndex(Int, Int, Int?)
+} derive(Eq, @debug.Debug)
+pub fn Render3dShadowPhaseItemExtraIndex::dynamic_offset(Int) -> Self
+pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
+pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
+pub fn Render3dShadowPhaseItemExtraIndex::none() -> Self
+
 pub struct Render3dShadowSpecializationWorkItemData {
   queue_data : RenderMeshQueueData
   visible_entity : @Milky2018/mgstudio/render.MainEntity
@@ -2156,6 +2201,21 @@ pub fn Render3dShadowSpecializationWorkItemData::properties(Self) -> @material.M
 pub fn Render3dShadowSpecializationWorkItemData::queue_data(Self) -> RenderMeshQueueData
 pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(Self) -> @view.RetainedViewEntity
 pub fn Render3dShadowSpecializationWorkItemData::visible_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
+
+pub struct Render3dShadowViewPhaseData {
+  gpu_preprocessing_mode : @batching.GpuPreprocessingMode
+  mut items : Array[Render3dShadowPhaseItemData]
+  input_uniform_indices : Map[UInt64, UInt]
+  phase_types : Map[UInt64, Render3dShadowBinnedRenderPhaseType]
+}
+pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, Render3dShadowBinnedRenderPhaseType) -> Unit
+pub fn Render3dShadowViewPhaseData::apply_queue(Self, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport) -> Unit
+pub fn Render3dShadowViewPhaseData::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
+pub fn Render3dShadowViewPhaseData::items(Self) -> Array[Render3dShadowPhaseItemData]
+pub fn Render3dShadowViewPhaseData::len(Self) -> Int
+pub fn Render3dShadowViewPhaseData::new(@batching.GpuPreprocessingMode) -> Self
+pub fn Render3dShadowViewPhaseData::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> Render3dShadowBinnedRenderPhaseType?
+pub fn Render3dShadowViewPhaseData::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
 
 pub struct RenderGpuCulledEntities {
   entities : Map[UInt64, @render_layers.RenderLayers]

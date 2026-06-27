@@ -1262,6 +1262,328 @@ pub fn Render3dQueuedShadowPhaseItemData::bin_key(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::PhaseItemExtraIndex`.
+pub(all) enum Render3dShadowPhaseItemExtraIndex {
+  NoExtraIndex
+  DynamicOffset(Int)
+  IndirectParametersIndex(Int, Int, Int?)
+} derive(Eq, Debug)
+
+///|
+pub fn Render3dShadowPhaseItemExtraIndex::none() -> Render3dShadowPhaseItemExtraIndex {
+  NoExtraIndex
+}
+
+///|
+pub fn Render3dShadowPhaseItemExtraIndex::dynamic_offset(
+  offset : Int,
+) -> Render3dShadowPhaseItemExtraIndex {
+  DynamicOffset(offset)
+}
+
+///|
+pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(
+  range_start : Int,
+  range_end : Int,
+  batch_set_index? : Int? = None,
+) -> Render3dShadowPhaseItemExtraIndex {
+  IndirectParametersIndex(range_start, range_end, batch_set_index)
+}
+
+///|
+pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_range(
+  self : Render3dShadowPhaseItemExtraIndex,
+) -> (Int, Int, Int?)? {
+  match self {
+    IndirectParametersIndex(range_start, range_end, batch_set_index) =>
+      Some((range_start, range_end, batch_set_index))
+    _ => None
+  }
+}
+
+///|
+pub struct Render3dShadowBatchRange {
+  start : Int
+  end : Int
+} derive(Eq, Debug)
+
+///|
+pub fn Render3dShadowBatchRange::new(
+  start : Int,
+  end : Int,
+) -> Render3dShadowBatchRange {
+  let safe_start = if start < 0 { 0 } else { start }
+  let safe_end = if end < safe_start { safe_start } else { end }
+  Render3dShadowBatchRange::{ start: safe_start, end: safe_end }
+}
+
+///|
+pub fn Render3dShadowBatchRange::start(self : Render3dShadowBatchRange) -> Int {
+  self.start
+}
+
+///|
+pub fn Render3dShadowBatchRange::end(self : Render3dShadowBatchRange) -> Int {
+  self.end
+}
+
+///|
+pub fn Render3dShadowBatchRange::count(self : Render3dShadowBatchRange) -> Int {
+  self.end - self.start
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::Shadow`.
+pub struct Render3dShadowPhaseItemData {
+  batch_set_key : Render3dShadowBatchSetKeyData
+  bin_key : Render3dShadowBinKeyData
+  render_entity : @core.Entity
+  main_entity : @render.MainEntity
+  batch_range : Render3dShadowBatchRange
+  extra_index : Render3dShadowPhaseItemExtraIndex
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::new(
+  batch_set_key : Render3dShadowBatchSetKeyData,
+  bin_key : Render3dShadowBinKeyData,
+  render_entity : @core.Entity,
+  main_entity : @render.MainEntity,
+  batch_range : Render3dShadowBatchRange,
+  extra_index : Render3dShadowPhaseItemExtraIndex,
+) -> Render3dShadowPhaseItemData {
+  Render3dShadowPhaseItemData::{
+    batch_set_key,
+    bin_key,
+    render_entity,
+    main_entity,
+    batch_range,
+    extra_index,
+  }
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::entity(
+  self : Render3dShadowPhaseItemData,
+) -> @core.Entity {
+  self.render_entity
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::main_entity(
+  self : Render3dShadowPhaseItemData,
+) -> @render.MainEntity {
+  self.main_entity
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::draw_function(
+  self : Render3dShadowPhaseItemData,
+) -> @material.DrawFunctionId {
+  self.batch_set_key.draw_function()
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::cached_pipeline(
+  self : Render3dShadowPhaseItemData,
+) -> @material.CachedRenderPipelineId {
+  self.batch_set_key.pipeline_id()
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::batch_range(
+  self : Render3dShadowPhaseItemData,
+) -> Render3dShadowBatchRange {
+  self.batch_range
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::extra_index(
+  self : Render3dShadowPhaseItemData,
+) -> Render3dShadowPhaseItemExtraIndex {
+  self.extra_index
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::batch_set_key(
+  self : Render3dShadowPhaseItemData,
+) -> Render3dShadowBatchSetKeyData {
+  self.batch_set_key
+}
+
+///|
+pub fn Render3dShadowPhaseItemData::bin_key(
+  self : Render3dShadowPhaseItemData,
+) -> Render3dShadowBinKeyData {
+  self.bin_key
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseType`.
+pub(all) enum Render3dShadowBinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+  NonMesh
+} derive(Eq, Debug)
+
+///|
+pub fn Render3dShadowBinnedRenderPhaseType::mesh(
+  batchable : Bool,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Render3dShadowBinnedRenderPhaseType {
+  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
+    (true, true) => MultidrawableMesh
+    (true, false) => BatchableMesh
+    (false, _) => UnbatchableMesh
+  }
+}
+
+///|
+fn render3d_shadow_effective_phase_type(
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+  phase_type : Render3dShadowBinnedRenderPhaseType,
+) -> Render3dShadowBinnedRenderPhaseType {
+  if gpu_preprocessing_mode ==
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly &&
+    phase_type == MultidrawableMesh {
+    BatchableMesh
+  } else {
+    phase_type
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase<Shadow>`.
+pub struct Render3dShadowViewPhaseData {
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
+  mut items : Array[Render3dShadowPhaseItemData]
+  input_uniform_indices : Map[UInt64, UInt]
+  phase_types : Map[UInt64, Render3dShadowBinnedRenderPhaseType]
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::new(
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+) -> Render3dShadowViewPhaseData {
+  Render3dShadowViewPhaseData::{
+    gpu_preprocessing_mode,
+    items: [],
+    input_uniform_indices: {},
+    phase_types: {},
+  }
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::len(
+  self : Render3dShadowViewPhaseData,
+) -> Int {
+  self.items.length()
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::items(
+  self : Render3dShadowViewPhaseData,
+) -> Array[Render3dShadowPhaseItemData] {
+  let result : Array[Render3dShadowPhaseItemData] = []
+  for item in self.items {
+    result.push(item)
+  }
+  result
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::add(
+  self : Render3dShadowViewPhaseData,
+  batch_set_key : Render3dShadowBatchSetKeyData,
+  bin_key : Render3dShadowBinKeyData,
+  representative_entity : (@core.Entity, @render.MainEntity),
+  input_uniform_index : UInt,
+  phase_type : Render3dShadowBinnedRenderPhaseType,
+) -> Unit {
+  let effective_phase_type = render3d_shadow_effective_phase_type(
+    self.gpu_preprocessing_mode,
+    phase_type,
+  )
+  self.items.push(
+    Render3dShadowPhaseItemData::new(
+      batch_set_key,
+      bin_key,
+      representative_entity.0,
+      representative_entity.1,
+      Render3dShadowBatchRange::new(
+        input_uniform_index.reinterpret_as_int(),
+        input_uniform_index.reinterpret_as_int() + 1,
+      ),
+      Render3dShadowPhaseItemExtraIndex::none(),
+    ),
+  )
+  let key = representative_entity.1.id().to_bits()
+  self.input_uniform_indices.set(key, input_uniform_index)
+  self.phase_types.set(key, effective_phase_type)
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::remove(
+  self : Render3dShadowViewPhaseData,
+  main_entity : @render.MainEntity,
+) -> Unit {
+  let key = main_entity.id().to_bits()
+  if !self.phase_types.contains(key) {
+    return
+  }
+  let retained : Array[Render3dShadowPhaseItemData] = []
+  for item in self.items {
+    if item.main_entity() != main_entity {
+      retained.push(item)
+    }
+  }
+  self.items = retained
+  self.input_uniform_indices.remove(key)
+  self.phase_types.remove(key)
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::input_uniform_index(
+  self : Render3dShadowViewPhaseData,
+  main_entity : @render.MainEntity,
+) -> UInt? {
+  self.input_uniform_indices.get(main_entity.id().to_bits())
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::phase_type(
+  self : Render3dShadowViewPhaseData,
+  main_entity : @render.MainEntity,
+) -> Render3dShadowBinnedRenderPhaseType? {
+  self.phase_types.get(main_entity.id().to_bits())
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn Render3dShadowViewPhaseData::apply_queue(
+  self : Render3dShadowViewPhaseData,
+  queued : Render3dQueuedShadowPhaseData,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Unit {
+  for main_entity in queued.dequeued() {
+    self.remove(main_entity)
+  }
+  for item in queued.items() {
+    self.add(
+      item.batch_set_key(),
+      item.bin_key(),
+      (item.render_entity(), item.visible_entity()),
+      item.current_uniform_index(),
+      Render3dShadowBinnedRenderPhaseType::mesh(
+        item.should_batch(),
+        gpu_preprocessing_support,
+      ),
+    )
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
 pub struct Render3dQueuedShadowPhaseData {
   dequeued : Array[@render.MainEntity]

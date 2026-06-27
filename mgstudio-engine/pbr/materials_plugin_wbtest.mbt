@@ -1563,6 +1563,52 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   debug_inspect(second_batch_key.material_bind_group_index(), content="Some(7)")
   debug_inspect(second_batch_key.indexed(), content="false")
   inspect(second_bin_key.mesh_asset_id(), content="702")
+  let shadow_phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  shadow_phase.add(
+    Render3dShadowBatchSetKeyData::new(
+      @material.CachedRenderPipelineId::new(999UL),
+      depth_draw,
+      None,
+      first.slabs(),
+    ),
+    Render3dShadowBinKeyData::new(705),
+    (cache_miss_render, cache_miss_main),
+    99U,
+    Render3dShadowBinnedRenderPhaseType::mesh(
+      true,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+  )
+  shadow_phase.apply_queue(
+    queued,
+    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+  )
+  debug_inspect(shadow_phase.len(), content="2")
+  debug_inspect(
+    shadow_phase.input_uniform_index(depth_main),
+    content="Some(11)",
+  )
+  debug_inspect(
+    shadow_phase.input_uniform_index(material_main),
+    content="Some(12)",
+  )
+  debug_inspect(
+    shadow_phase.input_uniform_index(cache_miss_main),
+    content="None",
+  )
+  debug_inspect(
+    shadow_phase.phase_type(depth_main),
+    content="Some(BatchableMesh)",
+  )
+  let shadow_phase_items = shadow_phase.items()
+  inspect(shadow_phase_items[0].cached_pipeline().id(), content="801")
+  inspect(shadow_phase_items[0].batch_range().start(), content="11")
+  inspect(shadow_phase_items[0].batch_range().end(), content="12")
+  inspect(shadow_phase_items[1].cached_pipeline().id(), content="802")
+  inspect(shadow_phase_items[1].batch_range().start(), content="12")
+  inspect(shadow_phase_items[1].batch_range().end(), content="13")
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(retained_view), content="2")
