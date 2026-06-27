@@ -246,6 +246,68 @@ fn render3d_shadow_visible_extracted_indices(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::get_shadow_map_visible_entities`.
+fn render3d_shadow_visible_entity_pairs(
+  meshes : Array[ExtractedMesh3d],
+  visible_indices : Array[Int],
+) -> Array[(@core.Entity, @render.MainEntity)] {
+  let pairs : Array[(@core.Entity, @render.MainEntity)] = []
+  for extracted_index in visible_indices {
+    if extracted_index < 0 || extracted_index >= meshes.length() {
+      continue
+    }
+    let mesh = meshes[extracted_index]
+    pairs.push(
+      (
+        mesh.entity.render_entity,
+        @render.MainEntity::new(mesh.entity.main_entity),
+      ),
+    )
+  }
+  pairs
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::get_shadow_map_visible_entities`.
+fn render3d_update_shadow_map_visible_entities(
+  world : @ecs.World,
+  light_entity : Render3dLightEntity,
+  shadow_phase_retained_view : @render_view.RetainedViewEntity,
+  meshes : Array[ExtractedMesh3d],
+  visible_indices : Array[Int],
+) -> Unit {
+  let visible_key = light_entity.shadow_map_visible_retained_view(
+    shadow_phase_retained_view,
+  )
+  let owner = light_entity.shadow_map_visible_entity()
+  if !world.is_alive(owner) {
+    return
+  }
+  let shadow_map_visible_entities = match
+    (try! world.get_by_key(
+      owner, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    )) {
+    Some(value) => value
+    None =>
+      @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+  }
+  let visible_entities = shadow_map_visible_entities.subview_or_insert(
+    visible_key,
+  )
+  let visible_meshes = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_meshes.prepare_for_new_frame()
+  visible_meshes.update_cpu_culled_entities(
+    render3d_shadow_visible_entity_pairs(meshes, visible_indices),
+  )
+  visible_meshes.sort_added_entities()
+  try! world.set_by_key(
+    owner, @render_visibility.ecs_key_render_shadow_map_visible_entities, shadow_map_visible_entities,
+  )
+}
+
+///|
 fn render3d_prewarm_shadow_material_pipeline(
   world : @ecs.World,
   shadow_mesh : Mesh3dExtractedPayload,

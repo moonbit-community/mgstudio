@@ -187,6 +187,19 @@ fn render3d_execute_camera_directional_shadow_pass(
         camera.layers,
         render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
       )
+      let shadow_light_entity = Render3dLightEntity::Directional(
+        light_entity~,
+        cascade_index~,
+      )
+      render3d_update_shadow_map_visible_entities(
+        world,
+        shadow_light_entity,
+        shadow_light_entity.shadow_phase_retained_view(
+          @render_view.RetainedViewEntity::new(camera_entity),
+        ),
+        meshes,
+        visible_indices,
+      )
       let cascade_phase_items = render3d_queue_shadow_phase_items(
         meshes, visible_indices,
       )
@@ -203,10 +216,7 @@ fn render3d_execute_camera_directional_shadow_pass(
         transform: cascade.transform,
         projection: cascade.projection,
         clip_from_world: Some(cascade.clip_from_world),
-        light_entity: Render3dLightEntity::Directional(
-          light_entity~,
-          cascade_index~,
-        ),
+        light_entity: shadow_light_entity,
         pass_name: render3d_directional_shadow_pass_name(0, cascade_index),
         occlusion_culling_subview: render3d_directional_shadow_occlusion_culling_subview(
           pass_lighting, target_id, shadow_map_size,
@@ -295,6 +305,16 @@ fn render3d_execute_camera_spot_shadow_pass(
     camera.layers,
     render3d_directional_shadow_frustum_planes(clip_from_world),
   )
+  let shadow_light_entity = Render3dLightEntity::Spot(light_entity~)
+  render3d_update_shadow_map_visible_entities(
+    world,
+    shadow_light_entity,
+    shadow_light_entity.shadow_phase_retained_view(
+      @render_view.RetainedViewEntity::new(camera_entity),
+    ),
+    meshes,
+    visible_indices,
+  )
   let spot_phase_items = render3d_queue_shadow_phase_items(
     meshes, visible_indices,
   )
@@ -311,7 +331,7 @@ fn render3d_execute_camera_spot_shadow_pass(
     transform: pass_lighting.spot_transform,
     projection: spot_projection,
     clip_from_world: Some(clip_from_world),
-    light_entity: Render3dLightEntity::Spot(light_entity~),
+    light_entity: shadow_light_entity,
     pass_name: render3d_spot_shadow_pass_name(pass_lighting.spot_light_index),
     occlusion_culling_subview: None,
   }

@@ -384,6 +384,73 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
 }
 
 ///|
+test "render3d: shadow visible indices populate Bevy shadow map visibility" {
+  let world = @ecs.World::new()
+  let camera = @core.Entity::new(401, 1)
+  let point_light = world.spawn_empty()
+  let light_entity = Render3dLightEntity::Point(
+    light_entity=point_light,
+    face_index=2,
+  )
+  let camera_retained_view = @render_view.RetainedViewEntity::new(camera)
+  let shadow_phase_view = light_entity.shadow_phase_retained_view(
+    camera_retained_view,
+  )
+  let material_properties = @material.MaterialProperties::MaterialProperties()
+  let first_main = @core.Entity::new(402, 1)
+  let first_render = @core.Entity::new(403, 1)
+  let second_main = @core.Entity::new(404, 1)
+  let second_render = @core.Entity::new(405, 1)
+  let meshes = [
+    ExtractedMesh3d::{
+      entity: phase_entity_ref3d(first_main, first_render),
+      payload: material_test_extracted_mesh_payload(901, material_properties),
+    },
+    ExtractedMesh3d::{
+      entity: phase_entity_ref3d(second_main, second_render),
+      payload: material_test_extracted_mesh_payload(902, material_properties),
+    },
+  ]
+
+  render3d_update_shadow_map_visible_entities(
+    world,
+    light_entity,
+    shadow_phase_view,
+    meshes,
+    [1, -1, 0, 99],
+  )
+
+  match
+    (try! world.get_by_key(
+      point_light, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    )) {
+    Some(shadow_visible) =>
+      match
+        shadow_visible.subview(
+          light_entity.shadow_map_visible_retained_view(shadow_phase_view),
+        ) {
+        Some(visible_entities) =>
+          match visible_entities.get(render3d_mesh_visibility_class()) {
+            Some(mesh_visible) => {
+              debug_inspect(mesh_visible.added_entities().length(), content="2")
+              inspect(
+                mesh_visible.added_entities()[0].0.id,
+                content=first_render.id.to_string(),
+              )
+              inspect(
+                mesh_visible.added_entities()[1].0.id,
+                content=second_render.id.to_string(),
+              )
+            }
+            None => debug_inspect(false, content="true")
+          }
+        None => debug_inspect(false, content="true")
+      }
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
 test "render3d: pending mesh material queues prepare live views and expire stale views" {
   let live_view = @render_view.RetainedViewEntity::new(@core.Entity::new(30, 1))
   let stale_view = @render_view.RetainedViewEntity::new(
