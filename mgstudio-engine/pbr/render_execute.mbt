@@ -1899,6 +1899,39 @@ pub fn render3d_apply_queued_shadow_phase_data(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn render3d_queue_shadow_phase_data_for_light(
+  world : @ecs.World,
+  light_entity : Render3dLightEntity,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  view_render_layers : @camera_render_layers.RenderLayers?,
+  dirty_specializations : @render_visibility.DirtySpecializations,
+  pending_shadow_queues : @pbr_render.PendingShadowQueues,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Bool {
+  guard (try! world.get_by_key(
+      light_entity.shadow_map_visible_entity(),
+      @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    ))
+    is Some(shadow_map_visible_entities) else {
+    return false
+  }
+  guard shadow_map_visible_entities.subview(
+      light_entity.shadow_map_visible_retained_view(retained_view_entity),
+    )
+    is Some(visible_entities) else {
+    return false
+  }
+  let queued = render3d_queue_shadow_phase_data_for_visible_entities(
+    world, retained_view_entity, visible_entities, view_render_layers, dirty_specializations,
+    pending_shadow_queues,
+  )
+  render3d_apply_queued_shadow_phase_data(
+    world, retained_view_entity, queued, gpu_preprocessing_support,
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_queue_data(
   world : @ecs.World,

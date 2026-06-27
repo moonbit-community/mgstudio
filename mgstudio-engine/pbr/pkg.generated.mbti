@@ -800,6 +800,8 @@ pub fn render3d_prepared_camera_count(@ecs.World) -> Int?
 
 pub fn render3d_queue_meshes_system(@ecs.World) -> Unit
 
+pub fn render3d_queue_shadow_phase_data_for_light(@ecs.World, Render3dLightEntity, @view.RetainedViewEntity, @render_layers.RenderLayers?, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues, @batching.GpuPreprocessingSupport) -> Bool
+
 pub fn render3d_queue_shadow_phase_data_for_visible_entities(@ecs.World, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntities, @render_layers.RenderLayers?, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Render3dQueuedShadowPhaseData
 
 pub fn render3d_queue_sweep_system(@ecs.World) -> Unit

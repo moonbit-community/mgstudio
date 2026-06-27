@@ -1302,6 +1302,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(90, 1),
   )
+  let shadow_light = world.spawn()
   let depth_render = @core.Entity::new(91, 1)
   let material_render = @core.Entity::new(92, 1)
   let layer_render = @core.Entity::new(93, 1)
@@ -1328,6 +1329,28 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     (cache_miss_render, cache_miss_main),
   ])
   visible_meshes.sort_added_entities()
+  let shadow_map_visible_entities = @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+  let spot_light_entity = Render3dLightEntity::Spot(light_entity=shadow_light)
+  let shadow_visible_entities = shadow_map_visible_entities.subview_or_insert(
+    spot_light_entity.shadow_map_visible_retained_view(retained_view),
+  )
+  let shadow_visible_meshes = shadow_visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  shadow_visible_meshes.prepare_for_new_frame()
+  shadow_visible_meshes.update_cpu_culled_entities([
+    (depth_render, depth_main),
+    (material_render, material_main),
+    (layer_render, layer_main),
+    (missing_mesh_render, missing_mesh_main),
+    (missing_binding_render, missing_binding_main),
+    (cache_miss_render, cache_miss_main),
+  ])
+  shadow_visible_meshes.sort_added_entities()
+  try! world.set_by_key(
+    shadow_light, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    shadow_map_visible_entities,
+  )
   let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
   dirty_specializations.insert_view(retained_view)
   let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
@@ -1622,10 +1645,13 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
   debug_inspect(
-    render3d_apply_queued_shadow_phase_data(
+    render3d_queue_shadow_phase_data_for_light(
       world,
+      spot_light_entity,
       retained_view,
-      queued,
+      Some(@camera_render_layers.RenderLayers::layer(1)),
+      dirty_specializations,
+      pending_shadow_queues,
       @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
     ),
     content="true",
