@@ -18,10 +18,42 @@
 // shadow execution toward Bevy's per-shadow-view `Shadow` render phases.
 
 ///|
-priv enum Render3dLightEntity {
+pub enum Render3dLightEntity {
   Directional(light_entity~ : @core.Entity, cascade_index~ : Int)
   Point(light_entity~ : @core.Entity, face_index~ : Int)
   Spot(light_entity~ : @core.Entity)
+}
+
+///|
+pub fn Render3dLightEntity::shadow_map_visible_entity(
+  self : Render3dLightEntity,
+) -> @core.Entity {
+  match self {
+    Directional(light_entity~, ..)
+    | Point(light_entity~, ..)
+    | Spot(light_entity~) => light_entity
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::get_shadow_map_visible_entities`.
+pub fn Render3dLightEntity::shadow_map_visible_retained_view(
+  self : Render3dLightEntity,
+  extracted_retained_view : @render_view.RetainedViewEntity,
+) -> @render_view.RetainedViewEntity {
+  match self {
+    Directional(..) => extracted_retained_view
+    Point(face_index~, ..) =>
+      @render_view.RetainedViewEntity::new(
+        extracted_retained_view.main_entity(),
+        subview_index=face_index,
+      )
+    Spot(..) =>
+      @render_view.RetainedViewEntity::new(
+        extracted_retained_view.main_entity(),
+        subview_index=0,
+      )
+  }
 }
 
 ///|

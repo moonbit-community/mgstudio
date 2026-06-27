@@ -498,8 +498,11 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
   )
   ignore(pending_queues.queues().prepare_for_new_frame(retained_view))
 
-  let candidates = render3d_shadow_specialization_candidates(
-    world, shadow_light, shadow_visible_view, retained_view, dirty_specializations,
+  let candidates = render3d_shadow_specialization_candidates_for_light(
+    world,
+    Render3dLightEntity::Spot(light_entity=shadow_light),
+    retained_view,
+    dirty_specializations,
     pending_queues,
   )
 
