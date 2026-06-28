@@ -165,6 +165,66 @@ fn pbr_push_view_projection_shader_def(
 }
 
 ///|
+fn pbr_mesh_key_msaa_samples_is_one(mesh_key_bits : UInt64) -> Bool {
+  (
+    (mesh_key_bits >> MESH_PIPELINE_KEY_MSAA_SHIFT_BITS) &
+    MESH_PIPELINE_KEY_MSAA_MASK_BITS
+  ) ==
+  0UL
+}
+
+///|
+fn pbr_mesh_key_is_opaque(mesh_key_bits : UInt64) -> Bool {
+  let blend_key = mesh_key_bits & MESH_PIPELINE_KEY_BLEND_RESERVED_BITS
+  let reads_view_transmission = (
+      mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE
+    ) !=
+    0UL
+  if (mesh_key_bits & MESH_PIPELINE_KEY_OIT_ENABLED) != 0UL &&
+    blend_key == MESH_PIPELINE_KEY_BLEND_ALPHA {
+    false
+  } else if blend_key == MESH_PIPELINE_KEY_BLEND_ALPHA {
+    false
+  } else if blend_key == MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA {
+    false
+  } else if blend_key == MESH_PIPELINE_KEY_BLEND_MULTIPLY {
+    false
+  } else {
+    !reads_view_transmission
+  }
+}
+
+///|
+fn pbr_push_mesh_prepass_shader_defs(
+  mesh_key_bits : UInt64,
+  shader_defs : Array[@material.ShaderDefVal],
+) -> Unit {
+  if (mesh_key_bits & MESH_PIPELINE_KEY_NORMAL_PREPASS) != 0UL {
+    shader_defs.push(pbr_shader_def("NORMAL_PREPASS"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_DEPTH_PREPASS) != 0UL {
+    shader_defs.push(pbr_shader_def("DEPTH_PREPASS"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL {
+    shader_defs.push(pbr_shader_def("MOTION_VECTOR_PREPASS"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN) != 0UL {
+    shader_defs.push(pbr_shader_def("HAS_PREVIOUS_SKIN"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH) != 0UL {
+    shader_defs.push(pbr_shader_def("HAS_PREVIOUS_MORPH"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_DEFERRED_PREPASS) != 0UL {
+    shader_defs.push(pbr_shader_def("DEFERRED_PREPASS"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_NORMAL_PREPASS) != 0UL &&
+    pbr_mesh_key_msaa_samples_is_one(mesh_key_bits) &&
+    pbr_mesh_key_is_opaque(mesh_key_bits) {
+    shader_defs.push(pbr_shader_def("LOAD_PREPASS_NORMALS"))
+  }
+}
+
+///|
 fn pbr_shader_defs_clone(
   shader_defs : Array[@material.ShaderDefVal],
 ) -> Array[@material.ShaderDefVal] {
@@ -694,6 +754,9 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     )
   }
+  if !pbr_mesh_key_msaa_samples_is_one(mesh_key_bits) {
+    shader_defs.push(pbr_shader_def("MULTISAMPLED"))
+  }
   if (mesh_key_bits & MESH_PIPELINE_KEY_READS_VIEW_TRANSMISSION_TEXTURE) != 0UL {
     shader_defs.push(pbr_shader_def("READS_VIEW_TRANSMISSION_TEXTURE"))
   }
@@ -737,6 +800,7 @@ fn pbr_mesh_pipeline_descriptor(
       shader_defs.push(pbr_shader_def("DEBAND_DITHER"))
     }
   }
+  pbr_push_mesh_prepass_shader_defs(mesh_key_bits, shader_defs)
   if (mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL {
     shader_defs.push(pbr_shader_def("ENVIRONMENT_MAP"))
   }

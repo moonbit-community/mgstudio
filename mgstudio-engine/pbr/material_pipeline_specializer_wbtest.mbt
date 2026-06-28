@@ -644,6 +644,100 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
     ),
     content="true",
   )
+  for shader_def in ["MULTISAMPLED", "NORMAL_PREPASS"] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        fragment.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "LOAD_PREPASS_NORMALS",
+    ),
+    content="false",
+  )
+}
+
+///|
+test "pbr material pipeline mirrors bevy load prepass normals gate" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let opaque_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_NORMAL_PREPASS,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  guard opaque_descriptor.fragment is Some(opaque_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      opaque_fragment.shader_defs,
+      "LOAD_PREPASS_NORMALS",
+    ),
+    content="true",
+  )
+  let transparent_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    properties,
+  ).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_NORMAL_PREPASS | MESH_PIPELINE_KEY_BLEND_ALPHA,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  guard transparent_descriptor.fragment is Some(transparent_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      transparent_fragment.shader_defs,
+      "LOAD_PREPASS_NORMALS",
+    ),
+    content="false",
+  )
+}
+
+///|
+test "pbr material pipeline mirrors bevy prepass mesh key shader defs" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS |
+        MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS |
+        MESH_PIPELINE_KEY_DEFERRED_PREPASS |
+        MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN |
+        MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  for
+    shader_def in [
+      "DEPTH_PREPASS", "MOTION_VECTOR_PREPASS", "DEFERRED_PREPASS", "HAS_PREVIOUS_SKIN",
+      "HAS_PREVIOUS_MORPH",
+    ] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        fragment.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
 }
 
 ///|
