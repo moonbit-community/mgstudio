@@ -1840,11 +1840,13 @@ test "render3d: shadow specialization skips cached entities before readiness che
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
 
+  let work_items : Array[Render3dShadowSpecializationWorkItemData] = []
   let specialized = render3d_specialize_shadow_phase_for_light(
-    world, light_entity, retained_view,
+    world, light_entity, retained_view, work_items,
   )
 
   debug_inspect(specialized, content="true")
+  debug_inspect(work_items.length(), content="0")
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.queues().current_len(retained_view), content="0")

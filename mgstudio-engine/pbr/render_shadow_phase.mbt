@@ -79,6 +79,7 @@ fn render3d_specialize_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
+  work_items : Array[Render3dShadowSpecializationWorkItemData],
 ) -> Bool {
   let shadow_phase_exists = match
     world.get_resource(Render3dShadowPhasesData::resource()) {
@@ -146,12 +147,7 @@ fn render3d_specialize_shadow_phase_for_light(
       render3d_shadow_specialization_work_item_data(
         world, retained_view_entity, render_entity, visible_entity, light_key, view_pending_shadow_queues,
       ) {
-      Some(work_item) =>
-        ignore(
-          render3d_shadow_specialization_apply_work_item(
-            world, work_item, false,
-          ),
-        )
+      Some(work_item) => work_items.push(work_item)
       None => ()
     }
   }
@@ -199,16 +195,17 @@ fn render3d_specialize_shadow_phase_views(
 ) -> Int {
   let all_shadow_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
   )
-  let mut specialized_count = 0
+  let work_items : Array[Render3dShadowSpecializationWorkItemData] = []
   for view in views {
     all_shadow_views.add(view.retained_view_entity())
-    if render3d_specialize_shadow_phase_for_light(
+    ignore(
+      render3d_specialize_shadow_phase_for_light(
         world,
         view.light_entity(),
         view.retained_view_entity(),
-      ) {
-      specialized_count += 1
-    }
+        work_items,
+      ),
+    )
   }
   match world.get_resource_mut(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues_ref) =>
@@ -220,18 +217,9 @@ fn render3d_specialize_shadow_phase_views(
         "missing PendingShadowQueues resource during pbr shadow specialization",
       )
   }
-  match
-    world.get_resource_mut(
-      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
-    ) {
-    Some(cache_ref) =>
-      cache_ref.modify(fn(cache) { cache.expire_stale_views(all_shadow_views) })
-    None =>
-      abort(
-        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow specialization",
-      )
-  }
-  specialized_count
+  render3d_shadow_specialization_apply_work_items(
+    world, work_items, all_shadow_views, false,
+  )
 }
 
 ///|
