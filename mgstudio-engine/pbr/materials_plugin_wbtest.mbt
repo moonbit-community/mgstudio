@@ -2046,7 +2046,9 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let ready = @render.MainEntity::new(world.spawn_empty())
   let non_shadow_caster = @render.MainEntity::new(world.spawn_empty())
   let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
-  ignore(shadow_queues.queues().prepare_for_new_frame(retained_view))
+  let view_pending_shadow_queues = shadow_queues
+    .queues()
+    .prepare_for_new_frame(retained_view)
   world.insert_resource(
     @pbr_render.PendingShadowQueues::resource(),
     shadow_queues,
@@ -2210,22 +2212,22 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   )
 
   let missing_material_ready = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, missing_material,
+    world, retained_view, render_entity, missing_material, view_pending_shadow_queues,
   )
   let missing_mesh_ready = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, missing_mesh,
+    world, retained_view, render_entity, missing_mesh, view_pending_shadow_queues,
   )
   let missing_prepared_ready = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, missing_prepared,
+    world, retained_view, render_entity, missing_prepared, view_pending_shadow_queues,
   )
   let no_shadows_ready = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, no_shadows,
+    world, retained_view, render_entity, no_shadows, view_pending_shadow_queues,
   )
   let missing_render_mesh_ready = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, missing_render_mesh,
+    world, retained_view, render_entity, missing_render_mesh, view_pending_shadow_queues,
   )
   let ready_value = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, ready,
+    world, retained_view, render_entity, ready, view_pending_shadow_queues,
   ).unwrap()
   let ready_work_item = render3d_shadow_specialization_work_item_data(
     world,
@@ -2233,9 +2235,10 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     render_entity,
     ready,
     @material.ErasedMeshPipelineKey::new(8UL, "MeshPipelineKey"),
+    view_pending_shadow_queues,
   ).unwrap()
   let non_shadow_caster_ready = render3d_shadow_specialization_queue_data(
-    world, retained_view, render_entity, non_shadow_caster,
+    world, retained_view, render_entity, non_shadow_caster, view_pending_shadow_queues,
   )
 
   debug_inspect(missing_material_ready is None, content="true")

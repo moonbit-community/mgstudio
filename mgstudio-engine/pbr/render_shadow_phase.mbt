@@ -106,9 +106,9 @@ fn render3d_specialize_shadow_phase_for_light(
         "missing PendingShadowQueues resource during pbr shadow specialization",
       )
   }
-  ignore(
-    pending_shadow_queues.queues().prepare_for_new_frame(retained_view_entity),
-  )
+  let view_pending_shadow_queues = pending_shadow_queues
+    .queues()
+    .prepare_for_new_frame(retained_view_entity)
   let candidates = render3d_shadow_specialization_candidates_for_light(
     world, light_entity, retained_view_entity, dirty_specializations, pending_shadow_queues,
   )
@@ -116,7 +116,7 @@ fn render3d_specialize_shadow_phase_for_light(
     let (render_entity, visible_entity) = candidate
     match
       render3d_shadow_specialization_work_item_data(
-        world, retained_view_entity, render_entity, visible_entity, light_key,
+        world, retained_view_entity, render_entity, visible_entity, light_key, view_pending_shadow_queues,
       ) {
       Some(work_item) =>
         ignore(

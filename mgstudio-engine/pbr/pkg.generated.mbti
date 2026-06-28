@@ -856,9 +856,9 @@ pub fn render3d_shadow_specialization_candidates(@ecs.World, @core.Entity, @view
 
 pub fn render3d_shadow_specialization_candidates_for_light(@ecs.World, Render3dLightEntity, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Array[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
 
-pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @Milky2018/mgstudio/render.ViewPendingQueues) -> RenderMeshQueueData?
 
-pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey) -> Render3dShadowSpecializationWorkItemData?
+pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey, @Milky2018/mgstudio/render.ViewPendingQueues) -> Render3dShadowSpecializationWorkItemData?
 
 pub fn render3d_should_apply_cpu_frustum_culling_flags(Bool, Bool, Bool) -> Bool
 

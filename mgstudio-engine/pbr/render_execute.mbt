@@ -874,26 +874,6 @@ fn render3d_enqueue_pending_mesh_material(
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
-fn render3d_enqueue_pending_shadow_material(
-  world : @ecs.World,
-  retained_view_entity : @render_view.RetainedViewEntity,
-  render_entity : @core.Entity,
-  visible_entity : @render.MainEntity,
-) -> Unit {
-  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
-    Some(queues) =>
-      queues
-      .queues()
-      .push_current(retained_view_entity, render_entity, visible_entity)
-    None =>
-      abort(
-        "missing PendingShadowQueues resource during pbr shadow specialization",
-      )
-  }
-}
-
-///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
 fn render3d_enqueue_view_pending_shadow_material(
   view_pending_shadow_queues : @render.ViewPendingQueues,
@@ -3925,7 +3905,9 @@ pub fn render3d_shadow_specialization_queue_data(
   retained_view_entity : @render_view.RetainedViewEntity,
   render_entity : @core.Entity,
   visible_entity : @render.MainEntity,
+  view_pending_shadow_queues : @render.ViewPendingQueues,
 ) -> RenderMeshQueueData? {
+  ignore(retained_view_entity)
   let render_material_instances = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(value) => value
@@ -3935,8 +3917,8 @@ pub fn render3d_shadow_specialization_queue_data(
       )
   }
   if render_material_instances.get(visible_entity.id()) is None {
-    render3d_enqueue_pending_shadow_material(
-      world, retained_view_entity, render_entity, visible_entity,
+    render3d_enqueue_view_pending_shadow_material(
+      view_pending_shadow_queues, render_entity, visible_entity,
     )
     return None
   }
@@ -3952,8 +3934,8 @@ pub fn render3d_shadow_specialization_queue_data(
     render_mesh_instances.render_mesh_queue_data(visible_entity) {
     Some(value) => value
     None => {
-      render3d_enqueue_pending_shadow_material(
-        world, retained_view_entity, render_entity, visible_entity,
+      render3d_enqueue_view_pending_shadow_material(
+        view_pending_shadow_queues, render_entity, visible_entity,
       )
       return None
     }
@@ -3969,8 +3951,8 @@ pub fn render3d_shadow_specialization_queue_data(
     ) {
     Some(value) => value
     None => {
-      render3d_enqueue_pending_shadow_material(
-        world, retained_view_entity, render_entity, visible_entity,
+      render3d_enqueue_view_pending_shadow_material(
+        view_pending_shadow_queues, render_entity, visible_entity,
       )
       return None
     }
@@ -3999,10 +3981,11 @@ pub fn render3d_shadow_specialization_work_item_data(
   render_entity : @core.Entity,
   visible_entity : @render.MainEntity,
   light_key : @material.ErasedMeshPipelineKey,
+  view_pending_shadow_queues : @render.ViewPendingQueues,
 ) -> Render3dShadowSpecializationWorkItemData? {
   let queue_data = match
     render3d_shadow_specialization_queue_data(
-      world, retained_view_entity, render_entity, visible_entity,
+      world, retained_view_entity, render_entity, visible_entity, view_pending_shadow_queues,
     ) {
     Some(value) => value
     None => return None
