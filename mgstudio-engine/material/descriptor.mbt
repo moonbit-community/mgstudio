@@ -31,6 +31,18 @@ pub type VertexBufferLayout = @render_resource.VertexBufferLayout
 pub type VertexState = @render_resource.VertexState
 
 ///|
+pub type BlendFactor = @render_resource.BlendFactor
+
+///|
+pub type BlendOperation = @render_resource.BlendOperation
+
+///|
+pub type BlendComponent = @render_resource.BlendComponent
+
+///|
+pub type BlendState = @render_resource.BlendState
+
+///|
 pub type ColorTargetState = @render_resource.ColorTargetState
 
 ///|

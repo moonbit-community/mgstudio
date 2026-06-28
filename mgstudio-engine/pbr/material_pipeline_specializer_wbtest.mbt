@@ -808,6 +808,150 @@ test "pbr material pipeline mirrors bevy discard visibility and atmosphere shade
 }
 
 ///|
+test "pbr material pipeline mirrors bevy blend pass specialization" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let alpha_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_BLEND_ALPHA),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    alpha_descriptor.label == Some("pbr_alpha_blend_mesh_pipeline"),
+    content="true",
+  )
+  guard alpha_descriptor.fragment is Some(alpha_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  guard alpha_fragment.targets[0] is Some(alpha_target) else {
+    abort("expected pbr color target")
+  }
+  debug_inspect(alpha_target.blend() is Some(_), content="true")
+  guard alpha_descriptor.depth_stencil is Some(alpha_depth) else {
+    abort("expected pbr depth state")
+  }
+  debug_inspect(alpha_depth.depth_write_enabled, content="false")
+
+  let premultiplied_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    properties,
+  ).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    premultiplied_descriptor.label ==
+    Some("pbr_premultiplied_alpha_mesh_pipeline"),
+    content="true",
+  )
+  guard premultiplied_descriptor.fragment is Some(premultiplied_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  for shader_def in ["PREMULTIPLY_ALPHA", "BLEND_PREMULTIPLIED_ALPHA"] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        premultiplied_fragment.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
+
+  let multiply_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_BLEND_MULTIPLY,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    multiply_descriptor.label == Some("pbr_multiply_mesh_pipeline"),
+    content="true",
+  )
+  guard multiply_descriptor.fragment is Some(multiply_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  guard multiply_fragment.targets[0] is Some(multiply_target) else {
+    abort("expected pbr color target")
+  }
+  guard multiply_target.blend() is Some(multiply_blend) else {
+    abort("expected multiply blend state")
+  }
+  debug_inspect(
+    multiply_blend.color().src_factor() == @wgpu.BLEND_FACTOR_DST,
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      multiply_fragment.shader_defs,
+      "BLEND_MULTIPLY",
+    ),
+    content="true",
+  )
+
+  let alpha_to_coverage_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    properties,
+  ).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE |
+        mesh_pipeline_key_msaa_bits(4),
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    alpha_to_coverage_descriptor.label ==
+    Some("pbr_alpha_to_coverage_mesh_pipeline"),
+    content="true",
+  )
+  debug_inspect(
+    alpha_to_coverage_descriptor.multisample.alpha_to_coverage_enabled,
+    content="true",
+  )
+  debug_inspect(
+    alpha_to_coverage_descriptor.multisample.count == 4U,
+    content="true",
+  )
+  guard alpha_to_coverage_descriptor.fragment
+    is Some(alpha_to_coverage_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      alpha_to_coverage_fragment.shader_defs,
+      "ALPHA_TO_COVERAGE",
+    ),
+    content="true",
+  )
+
+  let oit_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_OIT_ENABLED | MESH_PIPELINE_KEY_BLEND_ALPHA,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    oit_descriptor.label == Some("pbr_oit_mesh_pipeline"),
+    content="true",
+  )
+  guard oit_descriptor.fragment is Some(oit_fragment) else {
+    abort("expected pbr fragment state")
+  }
+  guard oit_fragment.targets[0] is Some(oit_target) else {
+    abort("expected pbr color target")
+  }
+  debug_inspect(oit_target.blend() is None, content="true")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      oit_fragment.shader_defs,
+      "OIT_ENABLED",
+    ),
+    content="true",
+  )
+}
+
+///|
 test "pbr material pipeline gates lightmap binding-array defs on pipeline support" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(

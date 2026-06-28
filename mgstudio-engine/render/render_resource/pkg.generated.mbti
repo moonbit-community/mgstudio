@@ -191,6 +191,27 @@ pub struct BindlessSlabResourceLimit {
 }
 pub fn BindlessSlabResourceLimit::new(Int, Int, Int) -> Self
 
+pub struct BlendComponent {
+  src_factor : UInt
+  dst_factor : UInt
+  operation : UInt
+}
+pub fn BlendComponent::BlendComponent(src_factor? : UInt, dst_factor? : UInt, operation? : UInt) -> Self
+pub fn BlendComponent::dst_factor(Self) -> UInt
+pub fn BlendComponent::operation(Self) -> UInt
+pub fn BlendComponent::over() -> Self
+pub fn BlendComponent::src_factor(Self) -> UInt
+
+pub struct BlendState {
+  color : BlendComponent
+  alpha : BlendComponent
+}
+pub fn BlendState::BlendState(color? : BlendComponent, alpha? : BlendComponent) -> Self
+pub fn BlendState::alpha(Self) -> BlendComponent
+pub fn BlendState::alpha_blending() -> Self
+pub fn BlendState::color(Self) -> BlendComponent
+pub fn BlendState::premultiplied_alpha_blending() -> Self
+
 pub struct Buffer {
   id : UInt64
   value : @wgpu_mbt.Buffer
@@ -270,10 +291,13 @@ pub fn CachedRenderPipelineId::new(UInt64) -> Self
 
 pub struct ColorTargetState {
   format : UInt
+  blend : BlendState?
   write_mask : UInt64
 }
+pub fn ColorTargetState::blend(Self) -> BlendState?
 pub fn ColorTargetState::format(Self) -> UInt
-pub fn ColorTargetState::new(UInt, UInt64) -> Self
+pub fn ColorTargetState::new(UInt, UInt64, blend? : BlendState?) -> Self
+pub fn ColorTargetState::with_blend(Self, BlendState?) -> Self
 pub fn ColorTargetState::write_mask(Self) -> UInt64
 
 pub struct ComputePipeline {
@@ -677,6 +701,10 @@ pub impl Default for VertexState
 pub type BindGroupId = UInt64
 
 pub type BindGroupLayoutId = UInt64
+
+pub type BlendFactor = UInt
+
+pub type BlendOperation = UInt
 
 pub type BufferAddress = UInt64
 

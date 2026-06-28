@@ -76,8 +76,89 @@ pub impl Default for VertexState with fn default() {
 }
 
 ///|
+pub type BlendFactor = UInt
+
+///|
+pub type BlendOperation = UInt
+
+///|
+pub struct BlendComponent {
+  src_factor : BlendFactor
+  dst_factor : BlendFactor
+  operation : BlendOperation
+}
+
+///|
+pub fn BlendComponent::BlendComponent(
+  src_factor? : BlendFactor = @wgpu.BLEND_FACTOR_ONE,
+  dst_factor? : BlendFactor = @wgpu.BLEND_FACTOR_ZERO,
+  operation? : BlendOperation = @wgpu.BLEND_OPERATION_ADD,
+) -> BlendComponent {
+  BlendComponent::{ src_factor, dst_factor, operation }
+}
+
+///|
+pub fn BlendComponent::over() -> BlendComponent {
+  BlendComponent::{
+    src_factor: @wgpu.BLEND_FACTOR_ONE,
+    dst_factor: @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    operation: @wgpu.BLEND_OPERATION_ADD,
+  }
+}
+
+///|
+pub fn BlendComponent::src_factor(self : BlendComponent) -> BlendFactor {
+  self.src_factor
+}
+
+///|
+pub fn BlendComponent::dst_factor(self : BlendComponent) -> BlendFactor {
+  self.dst_factor
+}
+
+///|
+pub fn BlendComponent::operation(self : BlendComponent) -> BlendOperation {
+  self.operation
+}
+
+///|
+pub struct BlendState {
+  color : BlendComponent
+  alpha : BlendComponent
+}
+
+///|
+pub fn BlendState::BlendState(
+  color? : BlendComponent = BlendComponent::BlendComponent(),
+  alpha? : BlendComponent = BlendComponent::BlendComponent(),
+) -> BlendState {
+  BlendState::{ color, alpha }
+}
+
+///|
+pub fn BlendState::alpha_blending() -> BlendState {
+  BlendState::{ color: BlendComponent::over(), alpha: BlendComponent::over() }
+}
+
+///|
+pub fn BlendState::premultiplied_alpha_blending() -> BlendState {
+  BlendState::{ color: BlendComponent::over(), alpha: BlendComponent::over() }
+}
+
+///|
+pub fn BlendState::color(self : BlendState) -> BlendComponent {
+  self.color
+}
+
+///|
+pub fn BlendState::alpha(self : BlendState) -> BlendComponent {
+  self.alpha
+}
+
+///|
 pub struct ColorTargetState {
   format : UInt
+  blend : BlendState?
   write_mask : UInt64
 }
 
@@ -85,13 +166,27 @@ pub struct ColorTargetState {
 pub fn ColorTargetState::new(
   format : UInt,
   write_mask : UInt64,
+  blend? : BlendState? = None,
 ) -> ColorTargetState {
-  ColorTargetState::{ format, write_mask }
+  ColorTargetState::{ format, blend, write_mask }
 }
 
 ///|
 pub fn ColorTargetState::format(self : ColorTargetState) -> UInt {
   self.format
+}
+
+///|
+pub fn ColorTargetState::blend(self : ColorTargetState) -> BlendState? {
+  self.blend
+}
+
+///|
+pub fn ColorTargetState::with_blend(
+  self : ColorTargetState,
+  blend : BlendState?,
+) -> ColorTargetState {
+  ColorTargetState::{ ..self, blend, }
 }
 
 ///|

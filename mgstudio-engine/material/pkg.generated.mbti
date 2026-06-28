@@ -472,6 +472,14 @@ pub type BaseSpecializeFn = (@ecs.World, ErasedMaterialPipelineKey, @mesh.MeshVe
 
 pub using @render_resource {type BindGroupLayoutDescriptor}
 
+pub using @render_resource {type BlendComponent}
+
+pub type BlendFactor = UInt
+
+pub type BlendOperation = UInt
+
+pub using @render_resource {type BlendState}
+
 pub using @render_resource {type CachedComputePipelineId}
 
 pub using @render_resource {type CachedRenderPipelineId}

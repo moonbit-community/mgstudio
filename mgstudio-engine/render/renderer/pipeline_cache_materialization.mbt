@@ -253,6 +253,42 @@ fn pipeline_cache_apply_fragment_targets(
 }
 
 ///|
+fn pipeline_cache_apply_blend_state(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  fragment : @render_resource.FragmentState?,
+) -> Unit raise @wgpu.RenderPipelineDescError {
+  let blend = match fragment {
+    Some(fragment_state) => {
+      let targets = fragment_state.targets()
+      if targets.length() > 0 {
+        match targets[0] {
+          Some(target) => target.blend()
+          None => None
+        }
+      } else {
+        None
+      }
+    }
+    None => None
+  }
+  match blend {
+    Some(state) => {
+      let color = state.color()
+      let alpha = state.alpha()
+      builder.set_blend_components(
+        color.src_factor(),
+        color.dst_factor(),
+        color.operation(),
+        alpha.src_factor(),
+        alpha.dst_factor(),
+        alpha.operation(),
+      )
+    }
+    None => builder.disable_blend()
+  }
+}
+
+///|
 fn pipeline_cache_apply_primitive_state(
   builder : @wgpu.RenderPipelineDescBuilder,
   primitive : @render_resource.PrimitiveState,
@@ -407,7 +443,7 @@ fn GpuBackend::create_pipeline_cache_render_pipeline(
     pipeline_cache_apply_depth_stencil_state(builder, descriptor.depth_stencil)
     pipeline_cache_apply_multisample_state(builder, descriptor.multisample)
     pipeline_cache_apply_vertex_buffer_layouts(builder, vertex.buffers)
-    builder.disable_blend()
+    pipeline_cache_apply_blend_state(builder, fragment)
     builder.create_pipeline(self.device)
   } catch {
     err => {

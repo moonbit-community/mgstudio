@@ -208,6 +208,19 @@ fn pbr_mesh_key_msaa_samples_is_one(mesh_key_bits : UInt64) -> Bool {
 }
 
 ///|
+fn pbr_mesh_key_msaa_samples(mesh_key_bits : UInt64) -> UInt {
+  let bits = (mesh_key_bits >> MESH_PIPELINE_KEY_MSAA_SHIFT_BITS) &
+    MESH_PIPELINE_KEY_MSAA_MASK_BITS
+  match bits {
+    0UL => 1U
+    1UL => 2U
+    2UL => 4U
+    3UL => 8U
+    _ => 1U
+  }
+}
+
+///|
 fn pbr_mesh_key_is_opaque(mesh_key_bits : UInt64) -> Bool {
   let blend_key = mesh_key_bits & MESH_PIPELINE_KEY_BLEND_RESERVED_BITS
   let reads_view_transmission = (
@@ -225,6 +238,56 @@ fn pbr_mesh_key_is_opaque(mesh_key_bits : UInt64) -> Bool {
     false
   } else {
     !reads_view_transmission
+  }
+}
+
+///|
+fn pbr_multiply_blend_state() -> @material.BlendState {
+  @material.BlendState::BlendState(
+    color=@material.BlendComponent::BlendComponent(
+      src_factor=@wgpu.BLEND_FACTOR_DST,
+      dst_factor=@wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      operation=@wgpu.BLEND_OPERATION_ADD,
+    ),
+    alpha=@material.BlendComponent::over(),
+  )
+}
+
+///|
+fn pbr_mesh_pipeline_blend_state(
+  mesh_key_bits : UInt64,
+  shader_defs : Array[@material.ShaderDefVal],
+) -> (String, @material.BlendState?, Bool, Bool) {
+  let pass = mesh_key_bits & MESH_PIPELINE_KEY_BLEND_RESERVED_BITS
+  if (mesh_key_bits & MESH_PIPELINE_KEY_OIT_ENABLED) != 0UL &&
+    pass == MESH_PIPELINE_KEY_BLEND_ALPHA {
+    shader_defs.push(pbr_shader_def("OIT_ENABLED"))
+    ("oit_mesh_pipeline", None, false, false)
+  } else if pass == MESH_PIPELINE_KEY_BLEND_ALPHA {
+    (
+      "alpha_blend_mesh_pipeline",
+      Some(@material.BlendState::alpha_blending()),
+      false,
+      false,
+    )
+  } else if pass == MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA {
+    shader_defs.push(pbr_shader_def("PREMULTIPLY_ALPHA"))
+    shader_defs.push(pbr_shader_def("BLEND_PREMULTIPLIED_ALPHA"))
+    (
+      "premultiplied_alpha_mesh_pipeline",
+      Some(@material.BlendState::premultiplied_alpha_blending()),
+      false,
+      false,
+    )
+  } else if pass == MESH_PIPELINE_KEY_BLEND_MULTIPLY {
+    shader_defs.push(pbr_shader_def("PREMULTIPLY_ALPHA"))
+    shader_defs.push(pbr_shader_def("BLEND_MULTIPLY"))
+    ("multiply_mesh_pipeline", Some(pbr_multiply_blend_state()), false, false)
+  } else if pass == MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE {
+    shader_defs.push(pbr_shader_def("ALPHA_TO_COVERAGE"))
+    ("alpha_to_coverage_mesh_pipeline", None, true, true)
+  } else {
+    ("opaque_mesh_pipeline", None, true, false)
   }
 }
 
@@ -800,6 +863,12 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_CONTACT_SHADOWS) != 0UL {
     shader_defs.push(pbr_shader_def("CONTACT_SHADOWS"))
   }
+  let (
+    pipeline_label,
+    color_target_blend,
+    depth_write_enabled,
+    alpha_to_coverage_enabled,
+  ) = pbr_mesh_pipeline_blend_state(mesh_key_bits, shader_defs)
   shader_defs.push(pbr_shader_def("BLUE_NOISE_TEXTURE"))
   shader_defs.push(pbr_shader_def("DFG_LUT"))
   shader_defs.push(pbr_shader_def("AREA_LIGHT_LUTS"))
@@ -898,7 +967,7 @@ fn pbr_mesh_pipeline_descriptor(
     mesh_key_bits, binding_arrays_are_usable, clustered_decals_are_usable,
   )
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
-  .with_label(Some("opaque_mesh_pipeline"))
+  .with_label(Some(pipeline_label))
   .with_layout([
     mesh_view_layout.main_bind_group_layout_descriptor(),
     mesh_view_layout.binding_array_bind_group_layout_descriptor(),
@@ -923,6 +992,7 @@ fn pbr_mesh_pipeline_descriptor(
             @material.ColorTargetState::new(
               @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
               @wgpu.COLOR_WRITE_MASK_ALL,
+              blend=color_target_blend,
             ),
           ),
         ],
@@ -938,9 +1008,15 @@ fn pbr_mesh_pipeline_descriptor(
     Some(
       @material.DepthStencilState::new(
         @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
-        true,
+        depth_write_enabled,
         @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
       ),
+    ),
+  )
+  .with_multisample(
+    @material.MultisampleState::new(
+      pbr_mesh_key_msaa_samples(mesh_key_bits),
+      alpha_to_coverage_enabled~,
     ),
   )
 }
