@@ -115,14 +115,6 @@ fn render3d_prepare_camera_execution_plans_for_queued_frame(
     world,
     @pbr_render.render3d_collect_lighting(world),
   )
-  ignore(
-    render3d_prepare_shadow_phase_views_for_cameras(
-      world,
-      cameras,
-      lighting,
-      frame_config.point_light_shadow_map_size,
-    ),
-  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "queue_3d_collect_lighting",
@@ -162,6 +154,35 @@ fn render3d_prepare_camera_execution_plans_for_queued_frame(
     )
   }
   camera_execution_plans
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
+pub fn render3d_prepare_shadow_phase_views_system(world : @ecs.World) -> Unit {
+  let trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "prepare_3d_shadow_phase_views",
+  )
+  let lighting = render3d_lighting_with_clusterable_indices(
+    world,
+    @pbr_render.render3d_collect_lighting(world),
+  )
+  let (cameras, point_light_shadow_map_size) = match
+    render3d_pending_frame_snapshot(world) {
+    Some(frame) =>
+      (frame.cameras, frame.frame_config.point_light_shadow_map_size)
+    None => ([], 0)
+  }
+  ignore(
+    render3d_prepare_shadow_phase_views_for_cameras(
+      world, cameras, lighting, point_light_shadow_map_size,
+    ),
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "prepare_3d_shadow_phase_views",
+    trace_start_us,
+  )
 }
 
 ///|

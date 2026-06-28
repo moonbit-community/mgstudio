@@ -252,6 +252,18 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
   )
   debug_inspect(
     pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_shadow_phase_views\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_lights\" -> \"mgstudio_pbr::prepare_shadow_phase_views\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
       "\"mgstudio_pbr::prepare_shadow_phase_buffers\"",
     ),
     content="true",

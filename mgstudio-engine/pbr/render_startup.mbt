@@ -188,6 +188,13 @@ fn configure_pbr_render_prepare_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(render3d_prepare_shadow_phase_views_system)
+    .named("mgstudio_pbr::prepare_shadow_phase_views")
+    .after(pbr_prepare_lights_set)
+    .in_set(@render.render_system_set_create_views),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(prepare_clustered_decals)
     .named("mgstudio_pbr::prepare_clustered_decals")
     .after(pbr_prepare_lights_set)
