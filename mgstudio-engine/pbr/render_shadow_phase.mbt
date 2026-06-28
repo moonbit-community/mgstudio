@@ -327,23 +327,21 @@ fn render3d_update_shadow_map_visible_entities(
 }
 
 ///|
-fn render3d_prepare_queued_shadow_phase_visible_view(
+fn render3d_update_shadow_phase_visible_view(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
   meshes : Array[ExtractedMesh3d],
   camera_layers : @camera_render_layers.RenderLayers,
   shadow_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-) -> Int {
+) -> Render3dQueuedShadowPhaseView {
   let visible_indices = render3d_shadow_visible_extracted_indices(
     meshes, camera_layers, shadow_frustum_planes,
   )
   render3d_update_shadow_map_visible_entities(
     world, light_entity, retained_view_entity, meshes, visible_indices,
   )
-  render3d_prepare_queued_shadow_phase_views(world, [
-    Render3dQueuedShadowPhaseView::new(light_entity, retained_view_entity),
-  ])
+  Render3dQueuedShadowPhaseView::new(light_entity, retained_view_entity)
 }
 
 ///|

@@ -204,15 +204,18 @@ fn render3d_prepare_camera_directional_shadow_pass(
       let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
         @render_view.RetainedViewEntity::new(camera_entity),
       )
+      let queued_shadow_phase_view = render3d_update_shadow_phase_visible_view(
+        world,
+        shadow_light_entity,
+        retained_view_entity,
+        meshes,
+        camera.layers,
+        render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
+      )
       ignore(
-        render3d_prepare_queued_shadow_phase_visible_view(
-          world,
-          shadow_light_entity,
-          retained_view_entity,
-          meshes,
-          camera.layers,
-          render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
-        ),
+        render3d_prepare_queued_shadow_phase_views(world, [
+          queued_shadow_phase_view,
+        ]),
       )
       @app.timeline_trace_end_span(
         @app.TimelineTraceCategory::RenderQueue,
@@ -324,15 +327,16 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
   let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
     @render_view.RetainedViewEntity::new(camera_entity),
   )
+  let queued_shadow_phase_view = render3d_update_shadow_phase_visible_view(
+    world,
+    shadow_light_entity,
+    retained_view_entity,
+    meshes,
+    camera.layers,
+    render3d_directional_shadow_frustum_planes(clip_from_world),
+  )
   ignore(
-    render3d_prepare_queued_shadow_phase_visible_view(
-      world,
-      shadow_light_entity,
-      retained_view_entity,
-      meshes,
-      camera.layers,
-      render3d_directional_shadow_frustum_planes(clip_from_world),
-    ),
+    render3d_prepare_queued_shadow_phase_views(world, [queued_shadow_phase_view]),
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,

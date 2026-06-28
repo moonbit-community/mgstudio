@@ -98,17 +98,20 @@ fn render3d_prepare_camera_point_shadow_pass(
     let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
       @render_view.RetainedViewEntity::new(camera_entity),
     )
-    ignore(
-      render3d_prepare_queued_shadow_phase_visible_view(
-        world,
-        shadow_light_entity,
-        retained_view_entity,
-        meshes,
-        camera.layers,
-        render3d_host_preprocess_frustum_planes_from_half_spaces(
-          shadow_frustum.half_spaces,
-        ),
+    let queued_shadow_phase_view = render3d_update_shadow_phase_visible_view(
+      world,
+      shadow_light_entity,
+      retained_view_entity,
+      meshes,
+      camera.layers,
+      render3d_host_preprocess_frustum_planes_from_half_spaces(
+        shadow_frustum.half_spaces,
       ),
+    )
+    ignore(
+      render3d_prepare_queued_shadow_phase_views(world, [
+        queued_shadow_phase_view,
+      ]),
     )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
