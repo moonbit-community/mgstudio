@@ -275,6 +275,9 @@ fn pipeline_cache_apply_primitive_state(
       Some(polygon_mode) => builder.set_polygon_mode_u32(polygon_mode)
       None => ()
     }
+    if primitive.unclipped_depth {
+      builder.set_unclipped_depth(true)
+    }
   } catch {
     err =>
       fatal("wgpu: failed to apply render primitive state: \{err.message()}")

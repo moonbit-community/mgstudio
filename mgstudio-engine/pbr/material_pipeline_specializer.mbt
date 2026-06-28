@@ -49,6 +49,9 @@ const MESH_PIPELINE_KEY_DEFERRED_PREPASS : UInt64 = 16UL
 const MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS : UInt64 = 32UL
 
 ///|
+const MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO : UInt64 = 512UL
+
+///|
 const MESH_PIPELINE_KEY_ENVIRONMENT_MAP : UInt64 = 128UL
 
 ///|
@@ -778,6 +781,7 @@ fn pbr_prepass_pipeline_descriptor(
   layout : @material.MaterialMeshVertexLayout,
   properties : @material.MaterialProperties,
   binding_arrays_are_usable : Bool,
+  depth_clip_control_supported : Bool,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
   let mesh_key_bits = mesh_key.downcast_u64("MeshPipelineKey")
   let motion_vector_prepass = (
@@ -900,6 +904,18 @@ fn pbr_prepass_pipeline_descriptor(
   if normal_prepass || motion_vector_prepass || deferred_prepass {
     shader_defs.push(pbr_shader_def("PREPASS_FRAGMENT"))
   }
+  let unclipped_depth_ortho = (
+      mesh_key_bits & MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO
+    ) !=
+    0UL
+  let emulate_unclipped_depth = unclipped_depth_ortho &&
+    !depth_clip_control_supported
+  if emulate_unclipped_depth {
+    shader_defs.push(pbr_shader_def("UNCLIPPED_DEPTH_ORTHO_EMULATION"))
+    shader_defs.push(pbr_shader_def("PREPASS_FRAGMENT"))
+  }
+  let native_unclipped_depth = unclipped_depth_ortho &&
+    depth_clip_control_supported
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 5, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
@@ -913,6 +929,7 @@ fn pbr_prepass_pipeline_descriptor(
     normal_prepass, motion_vector_prepass, deferred_prepass,
   )
   let fragment_required = targets.length() > 0 ||
+    emulate_unclipped_depth ||
     (
       may_discard &&
       properties.get_shader(@material.PREPASS_FRAGMENT_SHADER_LABEL) is Some(_)
@@ -952,7 +969,8 @@ fn pbr_prepass_pipeline_descriptor(
     }
   }
   let empty_layout = pbr_prepass_empty_layout_descriptor()
-  let material_layout = if pbr_prepass_is_depth_only_opaque(mesh_key_bits) {
+  let material_layout = if pbr_prepass_is_depth_only_opaque(mesh_key_bits) &&
+    !emulate_unclipped_depth {
     empty_layout
   } else {
     match properties.material_layout {
@@ -974,6 +992,11 @@ fn pbr_prepass_pipeline_descriptor(
     ]),
   )
   .with_fragment(fragment)
+  .with_primitive(
+    @render_resource.PrimitiveState::PrimitiveState().with_unclipped_depth(
+      native_unclipped_depth,
+    ),
+  )
   .with_depth_stencil(
     Some(
       @material.DepthStencilState::new(
@@ -1088,14 +1111,20 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
 pub struct PbrPrepassPipelineSpecializer {
   properties : @material.MaterialProperties
   binding_arrays_are_usable : Bool
+  depth_clip_control_supported : Bool
 }
 
 ///|
 pub fn PbrPrepassPipelineSpecializer::new(
   properties : @material.MaterialProperties,
   binding_arrays_are_usable? : Bool = false,
+  depth_clip_control_supported? : Bool = false,
 ) -> PbrPrepassPipelineSpecializer {
-  PbrPrepassPipelineSpecializer::{ properties, binding_arrays_are_usable }
+  PbrPrepassPipelineSpecializer::{
+    properties,
+    binding_arrays_are_usable,
+    depth_clip_control_supported,
+  }
 }
 
 ///|
@@ -1109,6 +1138,7 @@ pub fn PbrPrepassPipelineSpecializer::specialize(
     layout,
     self.properties,
     self.binding_arrays_are_usable,
+    self.depth_clip_control_supported,
   )
   if self.properties.user_specialize is Some(specialize) {
     descriptor = specialize("PrepassPipeline", descriptor, layout, key)
@@ -1130,6 +1160,18 @@ fn pbr_pipeline_cache_or_abort(
   match world.get_resource(@render.pipeline_cache_resource_key) {
     Some(cache) => cache
     None => abort("Missing PipelineCache resource in render world")
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/prepass/mod.rs::init_prepass_pipeline`.
+fn pbr_prepass_depth_clip_control_supported(world : @ecs.World) -> Bool {
+  match world.get_resource(@render.render_device_resource_key) {
+    Some(render_device) =>
+      render_device.supports_rust_features_u64(
+        @wgpu.FEATURES_DEPTH_CLIP_CONTROL,
+      )
+    None => false
   }
 }
 
@@ -1189,6 +1231,7 @@ fn pbr_material_prepass_specialize(
   let specializer = PbrPrepassPipelineSpecializer::new(
     properties,
     binding_arrays_are_usable=state_value.binding_arrays_are_usable,
+    depth_clip_control_supported=pbr_prepass_depth_clip_control_supported(world),
   )
   let result = state_value.specialized_prepass_material_pipelines.specialize(
     pipeline_cache,

@@ -875,6 +875,84 @@ test "pbr prepass depth-only opaque path uses empty material layout" {
 }
 
 ///|
+test "pbr prepass pipeline emulates unclipped depth when depth clip control is missing" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let specializer = PbrPrepassPipelineSpecializer::new(
+    properties,
+    depth_clip_control_supported=false,
+  )
+  let descriptor = try! specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS |
+        MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  inspect(descriptor.layout[3].label(), content="StandardMaterial")
+  debug_inspect(descriptor.primitive.unclipped_depth, content="false")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "UNCLIPPED_DEPTH_ORTHO_EMULATION",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "PREPASS_FRAGMENT",
+    ),
+    content="true",
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected unclipped depth emulation fragment")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "UNCLIPPED_DEPTH_ORTHO_EMULATION",
+    ),
+    content="true",
+  )
+}
+
+///|
+test "pbr prepass pipeline uses native unclipped depth when depth clip control exists" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let specializer = PbrPrepassPipelineSpecializer::new(
+    properties,
+    depth_clip_control_supported=true,
+  )
+  let descriptor = try! specializer.specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS |
+        MESH_PIPELINE_KEY_UNCLIPPED_DEPTH_ORTHO,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  inspect(descriptor.layout[3].label(), content="prepass_empty_layout")
+  debug_inspect(descriptor.primitive.unclipped_depth, content="true")
+  debug_inspect(descriptor.fragment is None, content="true")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "UNCLIPPED_DEPTH_ORTHO_EMULATION",
+    ),
+    content="false",
+  )
+}
+
+///|
 test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
   let properties = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),

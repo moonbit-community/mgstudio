@@ -461,6 +461,7 @@ pub struct PrimitiveState {
   front_face : UInt
   cull_mode : UInt?
   polygon_mode : UInt?
+  unclipped_depth : Bool
 }
 pub fn PrimitiveState::PrimitiveState() -> Self
 pub fn PrimitiveState::with_cull_mode(Self, UInt?) -> Self
@@ -468,6 +469,7 @@ pub fn PrimitiveState::with_front_face(Self, UInt) -> Self
 pub fn PrimitiveState::with_polygon_mode(Self, UInt?) -> Self
 pub fn PrimitiveState::with_strip_index_format(Self, UInt?) -> Self
 pub fn PrimitiveState::with_topology(Self, UInt) -> Self
+pub fn PrimitiveState::with_unclipped_depth(Self, Bool) -> Self
 pub impl Default for PrimitiveState
 
 pub struct RenderPipeline {

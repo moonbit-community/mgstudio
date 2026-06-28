@@ -183,6 +183,7 @@ pub struct PrimitiveState {
   front_face : UInt
   cull_mode : UInt?
   polygon_mode : UInt?
+  unclipped_depth : Bool
 }
 
 ///|
@@ -193,6 +194,7 @@ pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
     front_face: @wgpu.FRONT_FACE_CCW,
     cull_mode: Some(@wgpu.CULL_MODE_BACK),
     polygon_mode: None,
+    unclipped_depth: false,
   }
 }
 
@@ -239,6 +241,14 @@ pub fn PrimitiveState::with_cull_mode(
   cull_mode : UInt?,
 ) -> PrimitiveState {
   PrimitiveState::{ ..self, cull_mode, }
+}
+
+///|
+pub fn PrimitiveState::with_unclipped_depth(
+  self : PrimitiveState,
+  unclipped_depth : Bool,
+) -> PrimitiveState {
+  PrimitiveState::{ ..self, unclipped_depth, }
 }
 
 ///|

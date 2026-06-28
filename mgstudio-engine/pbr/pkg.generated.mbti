@@ -2042,8 +2042,9 @@ pub fn PbrPrepassMaterialSpecializationPlan::mesh_key_bits(Self) -> UInt64
 pub struct PbrPrepassPipelineSpecializer {
   properties : @material.MaterialProperties
   binding_arrays_are_usable : Bool
+  depth_clip_control_supported : Bool
 }
-pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool) -> Self
+pub fn PbrPrepassPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool, depth_clip_control_supported? : Bool) -> Self
 pub fn PbrPrepassPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub struct PendingMeshMaterialQueues {
