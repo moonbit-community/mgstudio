@@ -749,7 +749,7 @@ test "pbr material pipeline keeps clustered decal shader defs and layout in sync
 }
 
 ///|
-test "pbr material pipeline carries Bevy strip index format into primitive state" {
+test "pbr material pipeline carries Bevy primitive state from mesh key" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(
       @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
@@ -763,6 +763,7 @@ test "pbr material pipeline carries Bevy strip index format into primitive state
     pbr_material_specializer_test_key(mesh_bits=mesh_key.bits()),
     pbr_material_specializer_test_layout(),
   )
+  debug_inspect(descriptor.primitive.topology, content="3")
   debug_inspect(descriptor.primitive.strip_index_format, content="Some(1)")
 }
 
@@ -1020,6 +1021,28 @@ test "pbr prepass pipeline mirrors bevy view projection shader defs" {
     ),
     content="false",
   )
+}
+
+///|
+test "pbr prepass pipeline carries Bevy primitive state from mesh key" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let mesh_key = @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+    @mesh.Mesh3dPrimitiveTopology::LineStrip,
+    Some(@mesh.Mesh3dIndexFormat::Uint16),
+  )
+  let descriptor = try! PbrPrepassPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=mesh_key.bits() | MESH_PIPELINE_KEY_DEPTH_PREPASS,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(descriptor.primitive.topology, content="3")
+  debug_inspect(descriptor.primitive.strip_index_format, content="Some(1)")
 }
 
 ///|

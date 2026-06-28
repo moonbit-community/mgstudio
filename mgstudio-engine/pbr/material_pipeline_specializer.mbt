@@ -218,6 +218,16 @@ fn pbr_standard_material_cull_mode(
 }
 
 ///|
+fn pbr_mesh_key_primitive_topology(mesh_key_bits : UInt64) -> UInt {
+  let mesh_key = @mesh.BaseMeshPipelineKey::new(mesh_key_bits)
+  match mesh_key.primitive_topology() {
+    TriangleList => @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    LineList => @wgpu.PRIMITIVE_TOPOLOGY_LINE_LIST
+    LineStrip => @wgpu.PRIMITIVE_TOPOLOGY_LINE_STRIP
+  }
+}
+
+///|
 fn pbr_mesh_key_strip_index_format(mesh_key_bits : UInt64) -> UInt? {
   let mesh_key = @mesh.BaseMeshPipelineKey::new(mesh_key_bits)
   match mesh_key.strip_index_format() {
@@ -249,11 +259,9 @@ fn pbr_specialize_standard_material_descriptor(
     specialized = specialized.with_fragment(Some(fragment))
   }
   specialized = specialized.with_primitive(
-    specialized.primitive
-    .with_cull_mode(
+    specialized.primitive.with_cull_mode(
       pbr_standard_material_cull_mode(material_key_bits, mesh_key_bits),
-    )
-    .with_strip_index_format(pbr_mesh_key_strip_index_format(mesh_key_bits)),
+    ),
   )
   if specialized.label is Some(label) {
     specialized = specialized.with_label(Some("pbr_" + label))
@@ -797,6 +805,11 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     ),
   )
+  .with_primitive(
+    @render_resource.PrimitiveState::PrimitiveState()
+    .with_topology(pbr_mesh_key_primitive_topology(mesh_key_bits))
+    .with_strip_index_format(pbr_mesh_key_strip_index_format(mesh_key_bits)),
+  )
   .with_depth_stencil(
     Some(
       @material.DepthStencilState::new(
@@ -1027,9 +1040,10 @@ fn pbr_prepass_pipeline_descriptor(
   )
   .with_fragment(fragment)
   .with_primitive(
-    @render_resource.PrimitiveState::PrimitiveState().with_unclipped_depth(
-      native_unclipped_depth,
-    ),
+    @render_resource.PrimitiveState::PrimitiveState()
+    .with_topology(pbr_mesh_key_primitive_topology(mesh_key_bits))
+    .with_strip_index_format(pbr_mesh_key_strip_index_format(mesh_key_bits))
+    .with_unclipped_depth(native_unclipped_depth),
   )
   .with_depth_stencil(
     Some(
