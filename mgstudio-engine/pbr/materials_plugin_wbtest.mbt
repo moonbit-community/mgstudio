@@ -1776,6 +1776,93 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
 }
 
 ///|
+test "render3d: shadow specialization skips cached entities before readiness checks" {
+  let world = @ecs.World::new()
+  let camera_retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(461, 1),
+  )
+  let shadow_light = world.spawn()
+  let light_entity = Render3dLightEntity::Spot(
+    light_entity=shadow_light,
+    main_entity=shadow_light,
+  )
+  let retained_view = light_entity.shadow_phase_retained_view(
+    camera_retained_view,
+  )
+  let render_entity = @core.Entity::new(462, 1)
+  let visible_entity = @render.MainEntity::new(@core.Entity::new(463, 1))
+  let shadow_map_visible_entities = @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+  let visible_entities = shadow_map_visible_entities.subview_or_insert(
+    light_entity.shadow_map_visible_retained_view(retained_view),
+  )
+  let visible_class = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([(render_entity, visible_entity)])
+  visible_class.sort_added_entities()
+  try! world.set_by_key(
+    shadow_light, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+    shadow_map_visible_entities,
+  )
+  world.insert_resource(
+    @render_visibility.DirtySpecializations::resource(),
+    @render_visibility.DirtySpecializations::DirtySpecializations(),
+  )
+  let light_key_cache = @pbr_render.LightKeyCache::LightKeyCache()
+  light_key_cache.insert(
+    retained_view,
+    @material.ErasedMeshPipelineKey::new(16UL, "MeshPipelineKey"),
+  )
+  world.insert_resource(@pbr_render.LightKeyCache::resource(), light_key_cache)
+  let shadow_cache = @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  shadow_cache.insert(
+    retained_view,
+    visible_entity,
+    @material.CachedRenderPipelineId::new(321UL),
+    @material.DrawFunctionId::new(44U),
+  )
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    shadow_cache,
+  )
+  let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    pending_shadow_queues,
+  )
+  let shadow_phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  ignore(
+    shadow_phases.prepare_for_new_frame(
+      retained_view,
+      gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    ),
+  )
+  world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
+
+  let specialized = render3d_specialize_shadow_phase_for_light(
+    world, light_entity, retained_view,
+  )
+
+  debug_inspect(specialized, content="true")
+  match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.queues().current_len(retained_view), content="0")
+    None => debug_inspect(false, content="true")
+  }
+  guard world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    )
+    is Some(cache) else {
+    abort("missing shadow cache")
+  }
+  inspect(
+    cache.pipeline_id(retained_view, visible_entity).unwrap().id(),
+    content="321",
+  )
+}
+
+///|
 test "render3d: missing material specialization mesh returns to pending queue" {
   let world = @ecs.World::new()
   let retained_view = @render_view.RetainedViewEntity::new(

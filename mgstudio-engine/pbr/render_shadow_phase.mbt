@@ -52,6 +52,29 @@ fn render3d_shadow_gpu_preprocessing_support(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+fn render3d_shadow_specialization_cache_contains(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  visible_entity : @render.MainEntity,
+) -> Bool {
+  match
+    world.get_resource(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    ) {
+    Some(cache) =>
+      match cache.get(retained_view_entity) {
+        Some(view_cache) => view_cache.contains(visible_entity)
+        None => false
+      }
+    None =>
+      abort(
+        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow specialization",
+      )
+  }
+}
+
+///|
 fn render3d_specialize_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
@@ -114,6 +137,11 @@ fn render3d_specialize_shadow_phase_for_light(
   )
   for candidate in candidates {
     let (render_entity, visible_entity) = candidate
+    if render3d_shadow_specialization_cache_contains(
+        world, retained_view_entity, visible_entity,
+      ) {
+      continue
+    }
     match
       render3d_shadow_specialization_work_item_data(
         world, retained_view_entity, render_entity, visible_entity, light_key, view_pending_shadow_queues,
