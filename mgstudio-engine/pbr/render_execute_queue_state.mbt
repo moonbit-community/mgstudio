@@ -42,14 +42,25 @@ priv struct Render3dQueuedFrame {
 }
 
 ///|
+priv struct Render3dShadowExecutionData {
+  camera_execution_plans : Array[Render3dCameraExecutionPlan?]
+  queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView]
+}
+
+///|
 priv struct Render3dExecuteQueueState {
   mut pending_frame : Render3dPendingFrame?
+  mut shadow_execution_data : Render3dShadowExecutionData?
   mut queued_frame : Render3dQueuedFrame?
 }
 
 ///|
 fn render3d_execute_queue_state_default() -> Render3dExecuteQueueState {
-  Render3dExecuteQueueState::{ pending_frame: None, queued_frame: None }
+  Render3dExecuteQueueState::{
+    pending_frame: None,
+    shadow_execution_data: None,
+    queued_frame: None,
+  }
 }
 
 ///|
@@ -66,6 +77,7 @@ fn render3d_queue_store_pending_frame(
       cameras,
       meshes,
     })
+    value.shadow_execution_data = None
   })
 }
 
@@ -126,6 +138,7 @@ fn render3d_queue_store_frame(
   meshes : Array[ExtractedMesh3d],
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
   camera_execution_plans : Array[Render3dCameraExecutionPlan?],
+  queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView],
 ) -> Unit {
   let mut prepared_camera_count = cameras.length()
   if prepared_camera_queues.length() < prepared_camera_count {
@@ -142,7 +155,7 @@ fn render3d_queue_store_frame(
       meshes,
       prepared_camera_queues,
       camera_execution_plans,
-      queued_shadow_phase_views: [],
+      queued_shadow_phase_views,
       prepared_camera_count,
     })
   })
@@ -172,15 +185,22 @@ fn render3d_queue_store_shadow_execution_data(
 ) -> Unit {
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
-    match value.queued_frame {
-      Some(frame) =>
-        value.queued_frame = Some(Render3dQueuedFrame::{
-          ..frame,
-          camera_execution_plans,
-          queued_shadow_phase_views,
-        })
-      None => ()
-    }
+    value.shadow_execution_data = Some(Render3dShadowExecutionData::{
+      camera_execution_plans,
+      queued_shadow_phase_views,
+    })
+  })
+}
+
+///|
+fn render3d_queue_take_shadow_execution_data(
+  world : @ecs.World,
+) -> Render3dShadowExecutionData? {
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    let data = value.shadow_execution_data
+    value.shadow_execution_data = None
+    data
   })
 }
 
@@ -189,6 +209,7 @@ fn render3d_queue_clear_frame(world : @ecs.World) -> Unit {
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
     value.pending_frame = None
+    value.shadow_execution_data = None
     value.queued_frame = None
   })
 }

@@ -185,11 +185,6 @@ let render3d_queue_material_meshes_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
-let render3d_specialize_shadows_set : @app.SystemSet = @app.system_set(
-  "pbr.render3d.specialize_shadows",
-)
-
-///|
 let render3d_queue_shadows_set : @app.SystemSet = @app.system_set(
   "pbr.render3d.queue_shadows",
 )
@@ -274,7 +269,7 @@ fn configure_mesh_render_sub_app(
     stage,
     @app.system(render3d_specialize_shadows_system_in_render_app)
     .named("pbr.render3d.specialize_shadows")
-    .in_set(render3d_specialize_shadows_set),
+    .in_set(render3d_set_specialize),
   )
   .add_systems(
     stage,
@@ -297,12 +292,6 @@ fn configure_mesh_render_sub_app(
   .configure_set(
     stage,
     render3d_queue_material_meshes_set,
-    before=[render3d_specialize_shadows_set],
-    in_sets=[render3d_set_queue_meshes],
-  )
-  .configure_set(
-    stage,
-    render3d_specialize_shadows_set,
     before=[render3d_queue_shadows_set],
     in_sets=[render3d_set_queue_meshes],
   )

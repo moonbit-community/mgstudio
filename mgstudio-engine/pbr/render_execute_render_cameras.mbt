@@ -100,11 +100,10 @@ fn render3d_execute_render_cameras(
 }
 
 ///|
-fn render3d_prepare_camera_execution_plans_for_queued_frame(
+fn render3d_prepare_camera_execution_plans_for_pending_frame(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
-  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
   frame_config : Render3dExecuteFrameConfig,
 ) -> (Array[Render3dCameraExecutionPlan?], Array[Render3dQueuedShadowPhaseView]) {
   let trace_collect_lighting_start_us = @app.timeline_trace_begin_span(
@@ -123,14 +122,6 @@ fn render3d_prepare_camera_execution_plans_for_queued_frame(
   let camera_execution_plans : Array[Render3dCameraExecutionPlan?] = []
   let queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   for index in 0..<cameras.length() {
-    if index >= prepared_camera_queues.length() {
-      camera_execution_plans.push(None)
-      continue
-    }
-    guard prepared_camera_queues[index] is Some(_) else {
-      camera_execution_plans.push(None)
-      continue
-    }
     let execution_plan = render3d_prepare_camera_execution_plan(
       world,
       cameras[index],
