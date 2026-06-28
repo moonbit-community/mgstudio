@@ -62,6 +62,7 @@ fn render3d_execute_camera_point_shadow_pass(
     shadow_camera_near,
     pass_lighting.point_range,
   )
+  let shadow_phase_views : Array[Render3dShadowPhaseView] = []
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
@@ -115,14 +116,12 @@ fn render3d_execute_camera_point_shadow_pass(
       pass_name: render3d_point_shadow_pass_name(point_light_index, face_index),
       occlusion_culling_subview: None,
     }
+    shadow_phase_views.push({ shadow_view, })
+  }
+  for phase_view in shadow_phase_views {
     render3d_execute_shadow_phase_view(
-      world,
-      camera_entity,
-      pass_lighting,
-      point_shadow_pass_kind,
-      shadow_camera_near,
-      meshes,
-      { shadow_view, },
+      world, camera_entity, pass_lighting, point_shadow_pass_kind, shadow_camera_near,
+      meshes, phase_view,
     )
   }
   {
