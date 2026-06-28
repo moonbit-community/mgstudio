@@ -201,8 +201,12 @@ fn render3d_execute_camera_directional_shadow_pass(
       render3d_update_shadow_map_visible_entities(
         world, shadow_light_entity, retained_view_entity, meshes, visible_indices,
       )
-      render3d_prepare_queued_shadow_phase_for_light(
-        world, shadow_light_entity, retained_view_entity,
+      ignore(
+        render3d_prepare_queued_shadow_phase_views(world, [
+          Render3dQueuedShadowPhaseView::new(
+            shadow_light_entity, retained_view_entity,
+          ),
+        ]),
       )
       @app.timeline_trace_end_span(
         @app.TimelineTraceCategory::RenderQueue,
@@ -319,8 +323,12 @@ fn render3d_execute_camera_spot_shadow_pass(
   render3d_update_shadow_map_visible_entities(
     world, shadow_light_entity, retained_view_entity, meshes, visible_indices,
   )
-  render3d_prepare_queued_shadow_phase_for_light(
-    world, shadow_light_entity, retained_view_entity,
+  ignore(
+    render3d_prepare_queued_shadow_phase_views(world, [
+      Render3dQueuedShadowPhaseView::new(
+        shadow_light_entity, retained_view_entity,
+      ),
+    ]),
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,

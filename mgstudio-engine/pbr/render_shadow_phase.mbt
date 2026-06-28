@@ -49,14 +49,14 @@ fn render3d_prepare_queued_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
-) -> Unit {
+) -> Bool {
   let shadow_phase_exists = match
     world.get_resource(Render3dShadowPhasesData::resource()) {
     Some(phases) => phases.get(retained_view_entity) is Some(_)
     None => false
   }
   if !shadow_phase_exists {
-    return
+    return false
   }
   let dirty_specializations = match
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
@@ -78,7 +78,7 @@ fn render3d_prepare_queued_shadow_phase_for_light(
   )
   let light_key = match light_key_cache.get(retained_view_entity) {
     Some(value) => value
-    None => return
+    None => return false
   }
   match
     world.get_resource_mut(
@@ -119,17 +119,33 @@ fn render3d_prepare_queued_shadow_phase_for_light(
       None => ()
     }
   }
-  ignore(
-    render3d_queue_shadow_phase_data_for_light(
-      world,
-      light_entity,
-      retained_view_entity,
-      None,
-      dirty_specializations,
-      pending_shadow_queues,
-      render3d_shadow_gpu_preprocessing_support(world),
-    ),
+  render3d_queue_shadow_phase_data_for_light(
+    world,
+    light_entity,
+    retained_view_entity,
+    None,
+    dirty_specializations,
+    pending_shadow_queues,
+    render3d_shadow_gpu_preprocessing_support(world),
   )
+}
+
+///|
+fn render3d_prepare_queued_shadow_phase_views(
+  world : @ecs.World,
+  views : Array[Render3dQueuedShadowPhaseView],
+) -> Int {
+  let mut prepared_count = 0
+  for view in views {
+    if render3d_prepare_queued_shadow_phase_for_light(
+        world,
+        view.light_entity(),
+        view.retained_view_entity(),
+      ) {
+      prepared_count += 1
+    }
+  }
+  prepared_count
 }
 
 ///|
