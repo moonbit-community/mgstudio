@@ -455,6 +455,12 @@ const MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_SHIFT_BITS : Int = 39
 const MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_MASK_BITS : UInt64 = 0b11UL
 
 ///|
+const MESH_PIPELINE_KEY_COLOR_TARGET_FORMAT_SHIFT_BITS : Int = 41
+
+///|
+const MESH_PIPELINE_KEY_COLOR_TARGET_FORMAT_MASK_BITS : UInt64 = 0b11111UL
+
+///|
 pub const MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_LOW : UInt64 = 0UL <<
   MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_SHIFT_BITS
 
@@ -584,6 +590,16 @@ fn mesh_pipeline_key_screen_space_transmission_bits(
     MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_MASK_BITS <<
     MESH_PIPELINE_KEY_SCREEN_SPACE_SPECULAR_TRANSMISSION_SHIFT_BITS
   )
+}
+
+///|
+pub fn mesh_pipeline_key_target_format_bits(format_raw : UInt) -> UInt64 {
+  let code = match @render_view.texture_format_to_code(format_raw) {
+    Some(code) => code
+    None => abort("Texture format is not supported by the pipeline")
+  }
+  (code.to_uint64() & MESH_PIPELINE_KEY_COLOR_TARGET_FORMAT_MASK_BITS) <<
+  MESH_PIPELINE_KEY_COLOR_TARGET_FORMAT_SHIFT_BITS
 }
 
 ///|

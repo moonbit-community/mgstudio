@@ -20,6 +20,8 @@ import {
 // Values
 pub const COLOR_GRADING_UNIFORM_SIZE_BYTES : Int = 160
 
+pub const COLOR_TARGET_FORMAT_MASK_BITS : UInt = 0b11111
+
 pub const VIEW_UNIFORM_SIZE_BYTES : Int = 784
 
 pub let ecs_key_extracted_view : @ecs.ComponentKey[ExtractedView]
@@ -43,6 +45,10 @@ pub let render_shadow_lod_origin_resource_key : @ecs.ResourceKey[RenderShadowLod
 pub fn retained_view_entity_contains(Array[RetainedViewEntity], RetainedViewEntity) -> Bool
 
 pub fn retained_view_entity_equals(RetainedViewEntity, RetainedViewEntity) -> Bool
+
+pub fn texture_format_from_code(UInt) -> UInt?
+
+pub fn texture_format_to_code(UInt) -> UInt?
 
 pub let view_target_attachments_resource_key : @ecs.ResourceKey[ViewTargetAttachments]
 

@@ -801,6 +801,9 @@ fn meshlet_prepare_material_views_system(world : @ecs.World) -> Unit {
     let distance_fog = meshlet_distance_fog_enabled(source_world, entity)
     let view_key = MeshletViewMaterialPipelineKey::new(
       hdr=has_hdr,
+      target_format_raw=@render_view.extracted_view_target_format_raw(
+        hdr=has_hdr,
+      ),
       normal_prepass=has_normal_prepass,
       depth_prepass=has_depth_prepass,
       motion_vector_prepass=has_motion_vector_prepass,
@@ -1023,7 +1026,9 @@ fn meshlet_shader_defs_with_material_pass(
 fn meshlet_view_material_mesh_pipeline_bits(
   view_key : MeshletViewMaterialPipelineKey,
 ) -> UInt64 {
-  let mut bits = 0UL
+  let mut bits = @pbr.mesh_pipeline_key_target_format_bits(
+    view_key.target_format_raw,
+  )
   if view_key.tonemap_in_shader {
     bits = bits | 1UL
   }

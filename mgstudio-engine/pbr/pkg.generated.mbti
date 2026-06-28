@@ -570,6 +570,8 @@ pub fn materials_plugin_with(@app.App[@ecs.World], MaterialsPlugin) -> @app.App[
 
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@Milky2018/mgstudio/mesh.Mesh]]
 
+pub fn mesh_pipeline_key_target_format_bits(UInt) -> UInt64
+
 pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?

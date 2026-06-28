@@ -424,6 +424,29 @@ test "pbr meshlet: main opaque descriptor mirrors bevy material pass layout" {
 }
 
 ///|
+test "pbr meshlet: view material key carries bevy target format bits" {
+  let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
+  let view_key = MeshletViewMaterialPipelineKey::new(
+    target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+  )
+  prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
+    main_opaque,
+    [MeshletPreparedMaterialInput::new(17, 170)],
+    view_key~,
+  )
+  let descriptor = main_opaque.entries[0].descriptor
+  debug_inspect(descriptor.view_key.equal(view_key), content="true")
+  debug_inspect(
+    view_key.equal(
+      MeshletViewMaterialPipelineKey::new(
+        target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+      ),
+    ),
+    content="false",
+  )
+}
+
+///|
 test "pbr meshlet: prepass descriptor switches view layout and entry point for overrides" {
   let prepass = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
   let deferred = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()

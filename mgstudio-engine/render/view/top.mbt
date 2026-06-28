@@ -761,6 +761,76 @@ pub fn extracted_view_target_format_raw(
 }
 
 ///|
+// Bevy source: `bevy_render/src/view/mod.rs::COLOR_TARGET_FORMAT_MASK_BITS`.
+pub const COLOR_TARGET_FORMAT_MASK_BITS : UInt = 0b11111U
+
+///|
+// Bevy source: `bevy_render/src/view/mod.rs::texture_format_to_code`.
+pub fn texture_format_to_code(format_raw : UInt) -> UInt? {
+  Some(
+    match format_raw {
+      @wgpu.TEXTURE_FORMAT_R8_UNORM => 0U
+      @wgpu.TEXTURE_FORMAT_R8_SNORM => 1U
+      @wgpu.TEXTURE_FORMAT_RG8_UNORM => 2U
+      @wgpu.TEXTURE_FORMAT_RG8_SNORM => 3U
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM => 4U
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB => 5U
+      @wgpu.TEXTURE_FORMAT_RGBA8_SNORM => 6U
+      @wgpu.TEXTURE_FORMAT_BGRA8_UNORM => 7U
+      @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB => 8U
+      @wgpu.TEXTURE_FORMAT_R16_FLOAT => 11U
+      @wgpu.TEXTURE_FORMAT_R16_UNORM => 9U
+      @wgpu.TEXTURE_FORMAT_R16_SNORM => 10U
+      @wgpu.TEXTURE_FORMAT_RG16_FLOAT => 12U
+      @wgpu.TEXTURE_FORMAT_RG16_UNORM => 13U
+      @wgpu.TEXTURE_FORMAT_RG16_SNORM => 14U
+      @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT => 15U
+      @wgpu.TEXTURE_FORMAT_RGBA16_UNORM => 16U
+      @wgpu.TEXTURE_FORMAT_RGBA16_SNORM => 17U
+      @wgpu.TEXTURE_FORMAT_R32_FLOAT => 18U
+      @wgpu.TEXTURE_FORMAT_RG32_FLOAT => 19U
+      @wgpu.TEXTURE_FORMAT_RGBA32_FLOAT => 20U
+      @wgpu.TEXTURE_FORMAT_RGB10_A2_UNORM => 21U
+      @wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT => 22U
+      _ => return None
+    },
+  )
+}
+
+///|
+// Bevy source: `bevy_render/src/view/mod.rs::texture_format_from_code`.
+pub fn texture_format_from_code(code : UInt) -> UInt? {
+  Some(
+    match code {
+      0U => @wgpu.TEXTURE_FORMAT_R8_UNORM
+      1U => @wgpu.TEXTURE_FORMAT_R8_SNORM
+      2U => @wgpu.TEXTURE_FORMAT_RG8_UNORM
+      3U => @wgpu.TEXTURE_FORMAT_RG8_SNORM
+      4U => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
+      5U => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+      6U => @wgpu.TEXTURE_FORMAT_RGBA8_SNORM
+      7U => @wgpu.TEXTURE_FORMAT_BGRA8_UNORM
+      8U => @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB
+      11U => @wgpu.TEXTURE_FORMAT_R16_FLOAT
+      9U => @wgpu.TEXTURE_FORMAT_R16_UNORM
+      10U => @wgpu.TEXTURE_FORMAT_R16_SNORM
+      12U => @wgpu.TEXTURE_FORMAT_RG16_FLOAT
+      13U => @wgpu.TEXTURE_FORMAT_RG16_UNORM
+      14U => @wgpu.TEXTURE_FORMAT_RG16_SNORM
+      15U => @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT
+      16U => @wgpu.TEXTURE_FORMAT_RGBA16_UNORM
+      17U => @wgpu.TEXTURE_FORMAT_RGBA16_SNORM
+      18U => @wgpu.TEXTURE_FORMAT_R32_FLOAT
+      19U => @wgpu.TEXTURE_FORMAT_RG32_FLOAT
+      20U => @wgpu.TEXTURE_FORMAT_RGBA32_FLOAT
+      21U => @wgpu.TEXTURE_FORMAT_RGB10_A2_UNORM
+      22U => @wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT
+      _ => return None
+    },
+  )
+}
+
+///|
 pub fn view_visibility_range_always_visible() -> @visibility.VisibilityRange {
   @visibility.VisibilityRange::always_visible()
 }

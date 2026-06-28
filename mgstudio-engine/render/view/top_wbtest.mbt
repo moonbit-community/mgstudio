@@ -85,6 +85,26 @@ test "render view: extracted target format follows Bevy HDR and compositing rule
 }
 
 ///|
+test "render view: texture format code table mirrors Bevy view key encoding" {
+  debug_inspect(
+    texture_format_to_code(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) == Some(4U),
+    content="true",
+  )
+  debug_inspect(
+    texture_format_to_code(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT) == Some(15U),
+    content="true",
+  )
+  debug_inspect(
+    texture_format_from_code(5U) == Some(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB),
+    content="true",
+  )
+  debug_inspect(
+    texture_format_from_code(22U) == Some(@wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT),
+    content="true",
+  )
+}
+
+///|
 test "render view: shadow LOD origin defaults to zero" {
   let origin = RenderShadowLodOrigin::RenderShadowLodOrigin()
   inspect(origin.is_default(), content="true")

@@ -267,6 +267,7 @@ pub fn MeshletViewMaterialsDeferredGBufferPrepass::clear(
 ///|
 pub struct MeshletViewMaterialPipelineKey {
   hdr : Bool
+  target_format_raw : UInt
   normal_prepass : Bool
   depth_prepass : Bool
   motion_vector_prepass : Bool
@@ -289,6 +290,7 @@ pub fn MeshletViewMaterialPipelineKey::equal(
   other : MeshletViewMaterialPipelineKey,
 ) -> Bool {
   self.hdr == other.hdr &&
+  self.target_format_raw == other.target_format_raw &&
   self.normal_prepass == other.normal_prepass &&
   self.depth_prepass == other.depth_prepass &&
   self.motion_vector_prepass == other.motion_vector_prepass &&
@@ -308,6 +310,7 @@ pub fn MeshletViewMaterialPipelineKey::equal(
 ///|
 pub fn MeshletViewMaterialPipelineKey::new(
   hdr? : Bool = false,
+  target_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
   normal_prepass? : Bool = false,
   depth_prepass? : Bool = false,
   motion_vector_prepass? : Bool = false,
@@ -332,6 +335,7 @@ pub fn MeshletViewMaterialPipelineKey::new(
   let tonemapping_mode = if tonemapping_mode < 0 { 0 } else { tonemapping_mode }
   MeshletViewMaterialPipelineKey::{
     hdr,
+    target_format_raw,
     normal_prepass,
     depth_prepass,
     motion_vector_prepass,
@@ -369,6 +373,7 @@ pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(
 ) -> MeshletViewMaterialPipelineKey {
   MeshletViewMaterialPipelineKey::{
     hdr: self.hdr,
+    target_format_raw: self.target_format_raw,
     normal_prepass: self.normal_prepass,
     depth_prepass: false,
     motion_vector_prepass: self.motion_vector_prepass,

@@ -701,6 +701,41 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
 }
 
 ///|
+test "pbr material pipeline mirrors bevy target format key" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let view_key_bits = mesh_pipeline_key_target_format_bits(
+    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+  )
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+    view_key_bits~,
+  )
+  debug_inspect(
+    (pipeline_key.mesh_key().bits() & view_key_bits) == view_key_bits,
+    content="true",
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pipeline_key,
+    pbr_material_specializer_test_layout(),
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  guard fragment.targets[0] is Some(target) else {
+    abort("expected pbr color target")
+  }
+  debug_inspect(
+    target.format() == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    content="true",
+  )
+}
+
+///|
 test "pbr material pipeline mirrors bevy load prepass normals gate" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(

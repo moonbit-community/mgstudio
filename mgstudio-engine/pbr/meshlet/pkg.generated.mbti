@@ -826,6 +826,7 @@ pub fn MeshletViewMaterialEntry::new(Int, Int, Int, MeshletMaterialPipelineDescr
 
 pub struct MeshletViewMaterialPipelineKey {
   hdr : Bool
+  target_format_raw : UInt
   normal_prepass : Bool
   depth_prepass : Bool
   motion_vector_prepass : Bool
@@ -844,7 +845,7 @@ pub struct MeshletViewMaterialPipelineKey {
 pub fn MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey() -> Self
 pub fn MeshletViewMaterialPipelineKey::equal(Self, Self) -> Bool
 pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(Self, Bool) -> Self
-pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, projection_type? : Int, shadow_filter_method? : Int, tonemap_in_shader? : Bool, tonemapping_mode? : Int, deband_dither? : Bool, environment_map? : Bool, irradiance_volume? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
+pub fn MeshletViewMaterialPipelineKey::new(hdr? : Bool, target_format_raw? : UInt, normal_prepass? : Bool, depth_prepass? : Bool, motion_vector_prepass? : Bool, deferred_prepass? : Bool, temporal_jitter? : Bool, projection_type? : Int, shadow_filter_method? : Int, tonemap_in_shader? : Bool, tonemapping_mode? : Int, deband_dither? : Bool, environment_map? : Bool, irradiance_volume? : Bool, ssao? : Bool, distance_fog? : Bool) -> Self
 pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(Self, Bool) -> Self
 
 pub struct MeshletViewMaterialsDeferredGBufferPrepass {

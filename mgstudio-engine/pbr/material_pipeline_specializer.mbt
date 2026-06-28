@@ -221,6 +221,16 @@ fn pbr_mesh_key_msaa_samples(mesh_key_bits : UInt64) -> UInt {
 }
 
 ///|
+fn pbr_mesh_key_target_format(mesh_key_bits : UInt64) -> UInt {
+  let code = (mesh_key_bits >> MESH_PIPELINE_KEY_COLOR_TARGET_FORMAT_SHIFT_BITS) &
+    MESH_PIPELINE_KEY_COLOR_TARGET_FORMAT_MASK_BITS
+  match @render_view.texture_format_from_code(code.to_uint()) {
+    Some(format_raw) => format_raw
+    None => abort("Unknown bits in COLOR_TARGET_FORMAT_MASK_BITS")
+  }
+}
+
+///|
 fn pbr_mesh_key_is_opaque(mesh_key_bits : UInt64) -> Bool {
   let blend_key = mesh_key_bits & MESH_PIPELINE_KEY_BLEND_RESERVED_BITS
   let reads_view_transmission = (
@@ -990,7 +1000,7 @@ fn pbr_mesh_pipeline_descriptor(
         [
           Some(
             @material.ColorTargetState::new(
-              @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+              pbr_mesh_key_target_format(mesh_key_bits),
               @wgpu.COLOR_WRITE_MASK_ALL,
               blend=color_target_blend,
             ),
