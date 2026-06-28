@@ -392,7 +392,11 @@ fn render3d_update_shadow_phase_visible_view(
   render3d_update_shadow_map_visible_entities(
     world, light_entity, retained_view_entity, meshes, visible_indices,
   )
-  Render3dQueuedShadowPhaseView::new(light_entity, retained_view_entity)
+  Render3dQueuedShadowPhaseView::new(
+    light_entity,
+    retained_view_entity,
+    view_render_layers=Some(camera_layers),
+  )
 }
 
 ///|
