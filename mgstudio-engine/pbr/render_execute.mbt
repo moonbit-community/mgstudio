@@ -3805,6 +3805,75 @@ pub fn render3d_queue_shadow_phase_data_for_light(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`
+// outer per-shadow-view loop.
+pub struct Render3dQueuedShadowPhaseView {
+  light_entity : Render3dLightEntity
+  retained_view_entity : @render_view.RetainedViewEntity
+  view_render_layers : @camera_render_layers.RenderLayers?
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseView::new(
+  light_entity : Render3dLightEntity,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  view_render_layers? : @camera_render_layers.RenderLayers? = None,
+) -> Render3dQueuedShadowPhaseView {
+  Render3dQueuedShadowPhaseView::{
+    light_entity,
+    retained_view_entity,
+    view_render_layers,
+  }
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseView::light_entity(
+  self : Render3dQueuedShadowPhaseView,
+) -> Render3dLightEntity {
+  self.light_entity
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseView::retained_view_entity(
+  self : Render3dQueuedShadowPhaseView,
+) -> @render_view.RetainedViewEntity {
+  self.retained_view_entity
+}
+
+///|
+pub fn Render3dQueuedShadowPhaseView::view_render_layers(
+  self : Render3dQueuedShadowPhaseView,
+) -> @camera_render_layers.RenderLayers? {
+  self.view_render_layers
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn render3d_queue_shadow_phase_data_for_views(
+  world : @ecs.World,
+  views : Array[Render3dQueuedShadowPhaseView],
+  dirty_specializations : @render_visibility.DirtySpecializations,
+  pending_shadow_queues : @pbr_render.PendingShadowQueues,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Int {
+  let mut queued_count = 0
+  for view in views {
+    if render3d_queue_shadow_phase_data_for_light(
+        world,
+        view.light_entity,
+        view.retained_view_entity,
+        view.view_render_layers,
+        dirty_specializations,
+        pending_shadow_queues,
+        gpu_preprocessing_support,
+      ) {
+      queued_count += 1
+    }
+  }
+  queued_count
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_queue_data(
   world : @ecs.World,

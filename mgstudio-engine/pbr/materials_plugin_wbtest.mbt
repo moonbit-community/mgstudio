@@ -2809,16 +2809,20 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
   debug_inspect(
-    render3d_queue_shadow_phase_data_for_light(
+    render3d_queue_shadow_phase_data_for_views(
       world,
-      spot_light_entity,
-      retained_view,
-      Some(@camera_render_layers.RenderLayers::layer(1)),
+      [
+        Render3dQueuedShadowPhaseView::new(
+          spot_light_entity,
+          retained_view,
+          view_render_layers=Some(@camera_render_layers.RenderLayers::layer(1)),
+        ),
+      ],
       dirty_specializations,
       pending_shadow_queues,
       @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
     ),
-    content="true",
+    content="1",
   )
   let shadow_phase = match
     world.get_resource(Render3dShadowPhasesData::resource()) {
