@@ -13,7 +13,13 @@
 // limitations under the License.
 
 ///|
-fn render3d_execute_camera_point_shadow_pass(
+priv struct Render3dPointShadowPassPlan {
+  binding : Render3dPointShadowBinding
+  phase_views : Array[Render3dShadowPhaseExecutionView]
+}
+
+///|
+fn render3d_prepare_camera_point_shadow_pass(
   world : @ecs.World,
   camera : Camera3dViewPayload,
   pass_lighting : Render3dLightingState,
@@ -21,19 +27,26 @@ fn render3d_execute_camera_point_shadow_pass(
   camera_entity : @core.Entity,
   meshes : Array[ExtractedMesh3d],
   point_shadow_pass_kind : Int,
-) -> Render3dPointShadowBinding {
+) -> Render3dPointShadowPassPlan {
+  let empty_phase_views : Array[Render3dShadowPhaseExecutionView] = []
   if !pass_lighting.point_shadow_maps_enabled ||
     pass_lighting.point_entity is None ||
     pass_lighting.point_render_entity is None ||
     pass_lighting.point_range <= 0.0F ||
     point_light_shadow_map_size <= 0 {
-    return render3d_point_shadow_binding_none()
+    return { binding: render3d_point_shadow_binding_none(), phase_views: [] }
   }
   guard pass_lighting.point_entity is Some(point_entity) else {
-    return render3d_point_shadow_binding_none()
+    return {
+      binding: render3d_point_shadow_binding_none(),
+      phase_views: empty_phase_views,
+    }
   }
   guard pass_lighting.point_render_entity is Some(point_render_entity) else {
-    return render3d_point_shadow_binding_none()
+    return {
+      binding: render3d_point_shadow_binding_none(),
+      phase_views: empty_phase_views,
+    }
   }
   let point_light_index = if pass_lighting.point_light_index < 0 {
     0
@@ -62,7 +75,7 @@ fn render3d_execute_camera_point_shadow_pass(
     shadow_camera_near,
     pass_lighting.point_range,
   )
-  let shadow_phase_views : Array[Render3dShadowPhaseView] = []
+  let shadow_phase_views : Array[Render3dShadowPhaseExecutionView] = []
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
@@ -116,19 +129,19 @@ fn render3d_execute_camera_point_shadow_pass(
       pass_name: render3d_point_shadow_pass_name(point_light_index, face_index),
       occlusion_culling_subview: None,
     }
-    shadow_phase_views.push({ shadow_view, })
-  }
-  render3d_prepare_and_collect_shadow_phase_buffers_system(world)
-  for phase_view in shadow_phase_views {
-    render3d_execute_shadow_phase_view(
-      world, camera_entity, pass_lighting, point_shadow_pass_kind, shadow_camera_near,
-      meshes, phase_view,
-    )
+    shadow_phase_views.push({
+      phase_view: { shadow_view, },
+      pass_kind: point_shadow_pass_kind,
+      point_shadow_near: shadow_camera_near,
+    })
   }
   {
-    texture_id: point_shadow_texture_id,
-    enabled: point_shadow_enabled,
-    depth_bias: point_shadow_depth_bias,
+    binding: {
+      texture_id: point_shadow_texture_id,
+      enabled: point_shadow_enabled,
+      depth_bias: point_shadow_depth_bias,
+    },
+    phase_views: shadow_phase_views,
   }
 }
 

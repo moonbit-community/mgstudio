@@ -18,6 +18,13 @@ priv struct Render3dShadowPhaseView {
 }
 
 ///|
+priv struct Render3dShadowPhaseExecutionView {
+  phase_view : Render3dShadowPhaseView
+  pass_kind : Int
+  point_shadow_near : Float
+}
+
+///|
 priv struct Render3dResolvedShadowPhaseItem {
   item : Render3dShadowPhaseItemData
   extracted_indices : Array[Int]
@@ -494,4 +501,25 @@ fn render3d_execute_shadow_phase_view(
   )
   render3d_draw_mesh_gpu_binned_phase(shadow_phase)
   @render.host_gpu_end_pass()
+}
+
+///|
+fn render3d_execute_shadow_phase_views(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  pass_lighting : Render3dLightingState,
+  meshes : Array[ExtractedMesh3d],
+  phase_views : Array[Render3dShadowPhaseExecutionView],
+) -> Unit {
+  for phase_view in phase_views {
+    render3d_execute_shadow_phase_view(
+      world,
+      camera_entity,
+      pass_lighting,
+      phase_view.pass_kind,
+      phase_view.point_shadow_near,
+      meshes,
+      phase_view.phase_view,
+    )
+  }
 }

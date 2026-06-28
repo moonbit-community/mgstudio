@@ -22,12 +22,6 @@ priv struct Render3dDirectionalCascadePass {
 }
 
 ///|
-priv struct Render3dShadowPhaseExecutionView {
-  phase_view : Render3dShadowPhaseView
-  point_shadow_near : Float
-}
-
-///|
 fn render3d_directional_cascade_pass(
   light_transform : @transform.Transform,
   cascade : @light.Cascade,
@@ -143,14 +137,21 @@ fn render3d_directional_shadow_frustum_planes(
 }
 
 ///|
-fn render3d_execute_camera_directional_shadow_pass(
+priv struct Render3dDirectionalShadowPassPlan {
+  binding : Render3dDirectionalShadowBinding
+  phase_views : Array[Render3dShadowPhaseExecutionView]
+}
+
+///|
+fn render3d_prepare_camera_directional_shadow_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   pass_lighting : Render3dLightingState,
   meshes : Array[ExtractedMesh3d],
   shadow_pass_kind : Int,
-) -> Render3dDirectionalShadowBinding {
+) -> Render3dDirectionalShadowPassPlan {
+  let empty_phase_views : Array[Render3dShadowPhaseExecutionView] = []
   let shadow_map_size = match
     world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
@@ -169,7 +170,10 @@ fn render3d_execute_camera_directional_shadow_pass(
     pass_lighting.spot_render_entity is Some(_) &&
     pass_lighting.spot_range > 0.0F
   if cascades.length() == 0 && !spot_enabled {
-    return render3d_directional_shadow_binding_none()
+    return {
+      binding: render3d_directional_shadow_binding_none(),
+      phase_views: empty_phase_views,
+    }
   }
   let spot_shadow_layer_count = if spot_enabled {
     pass_lighting.spot_light_index + 1
@@ -231,6 +235,7 @@ fn render3d_execute_camera_directional_shadow_pass(
       }
       shadow_phase_views.push({
         phase_view: { shadow_view, },
+        pass_kind: shadow_pass_kind,
         point_shadow_near: 0.1F,
       })
     }
@@ -249,32 +254,24 @@ fn render3d_execute_camera_directional_shadow_pass(
           pass_lighting.spot_light_index,
         ),
         shadow_map_size,
+        shadow_pass_kind,
       ) {
       Some(phase_view) => shadow_phase_views.push(phase_view)
       None => ()
     }
   }
-  render3d_prepare_and_collect_shadow_phase_buffers_system(world)
-  for shadow_phase_view in shadow_phase_views {
-    render3d_execute_shadow_phase_view(
-      world,
-      camera_entity,
-      pass_lighting,
-      shadow_pass_kind,
-      shadow_phase_view.point_shadow_near,
-      meshes,
-      shadow_phase_view.phase_view,
-    )
-  }
   {
-    texture_id: target_id,
-    enabled: if cascades.length() > 0 {
-      1.0F
-    } else {
-      0.0F
+    binding: {
+      texture_id: target_id,
+      enabled: if cascades.length() > 0 {
+        1.0F
+      } else {
+        0.0F
+      },
+      cascade_data: render3d_directional_shadow_cascade_data(cascades),
+      cascade_count: cascades.length(),
     },
-    cascade_data: render3d_directional_shadow_cascade_data(cascades),
-    cascade_count: cascades.length(),
+    phase_views: shadow_phase_views,
   }
 }
 
@@ -288,6 +285,7 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
   target_id : Int,
   target_layer : Int,
   shadow_map_size : Int,
+  shadow_pass_kind : Int,
 ) -> Render3dShadowPhaseExecutionView? {
   guard pass_lighting.spot_entity is Some(light_entity) else { return None }
   guard pass_lighting.spot_render_entity is Some(spot_render_entity) else {
@@ -353,7 +351,11 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
     pass_name: render3d_spot_shadow_pass_name(pass_lighting.spot_light_index),
     occlusion_culling_subview: None,
   }
-  Some({ phase_view: { shadow_view, }, point_shadow_near: spot_near })
+  Some({
+    phase_view: { shadow_view, },
+    pass_kind: shadow_pass_kind,
+    point_shadow_near: spot_near,
+  })
 }
 
 ///|
