@@ -118,6 +118,7 @@ fn render3d_execute_camera_point_shadow_pass(
     }
     shadow_phase_views.push({ shadow_view, })
   }
+  render3d_prepare_and_collect_shadow_phase_buffers_system(world)
   for phase_view in shadow_phase_views {
     render3d_execute_shadow_phase_view(
       world, camera_entity, pass_lighting, point_shadow_pass_kind, shadow_camera_near,

@@ -3507,6 +3507,14 @@ pub fn render3d_collect_shadow_phase_buffers_system(world : @ecs.World) -> Unit 
 }
 
 ///|
+fn render3d_prepare_and_collect_shadow_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_shadow_phase_buffers_system(world)
+  render3d_collect_shadow_phase_buffers_system(world)
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
 pub fn render3d_prepare_shadow_phase_views(
   world : @ecs.World,

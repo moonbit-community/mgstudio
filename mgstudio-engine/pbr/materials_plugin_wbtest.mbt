@@ -975,6 +975,84 @@ test "render3d: shadow phase buffers collect into global preprocessing tables" {
 }
 
 ///|
+test "render3d: shadow phase prepare and collect bridge fills global preprocessing tables" {
+  let world = @ecs.World::new()
+  let phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(302, 1),
+  )
+  let phase = phases.prepare_for_new_frame(
+    retained_view,
+    gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::Culling,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(914UL),
+    @material.DrawFunctionId::new(22U),
+    Some(13),
+    @render_mesh.MeshSlabs::new(48, index_slab_id=Some(49)),
+  )
+  phase.add(
+    key,
+    Render3dShadowBinKeyData::new(714),
+    (
+      @core.Entity::new(167, 1),
+      @render.MainEntity::new(@core.Entity::new(157, 1)),
+    ),
+    41U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  world.insert_resource(Render3dShadowPhasesData::resource(), phases)
+  world.insert_resource(
+    Render3dShadowPhaseBatchedInstanceBuffers::resource(),
+    Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers(),
+  )
+  world.insert_resource(
+    Render3dShadowPhaseIndirectParametersBuffers::resource(),
+    Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.GpuPreprocessingSupport::resource(),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+      @render_batching.GpuPreprocessingMode::Culling,
+    ),
+  )
+  world.insert_resource(
+    RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.IndirectParametersBuffers::resource(),
+    @render_batching.IndirectParametersBuffers::IndirectParametersBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.IndirectParametersBuffersSettings::resource(),
+    @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+  )
+  render3d_prepare_and_collect_shadow_phase_buffers_system(world)
+  let global_instances = world
+    .get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource())
+    .unwrap()
+  let global_indirect = world
+    .get_resource(@render_batching.IndirectParametersBuffers::resource())
+    .unwrap()
+  debug_inspect(
+    global_instances.buffers.phase_instance_buffers
+    .get("mgstudio_pbr::Shadow")
+    .unwrap().buffers.data_buffer.len(),
+    content="1",
+  )
+  debug_inspect(global_indirect.phase_count(), content="1")
+  debug_inspect(
+    global_indirect.get("mgstudio_pbr::Shadow").unwrap().batch_count(true),
+    content="1",
+  )
+  let phase_instances = world
+    .get_resource(Render3dShadowPhaseBatchedInstanceBuffers::resource())
+    .unwrap()
+  debug_inspect(phase_instances.buffers.buffers.data_buffer.len(), content="0")
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)
