@@ -861,6 +861,63 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
 }
 
 ///|
+test "render3d: shadow phase buffer prepare system consumes phase resource" {
+  let world = @ecs.World::new()
+  let phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(301, 1),
+  )
+  let phase = phases.prepare_for_new_frame(
+    retained_view,
+    gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::Culling,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(913UL),
+    @material.DrawFunctionId::new(21U),
+    Some(12),
+    @render_mesh.MeshSlabs::new(46, index_slab_id=Some(47)),
+  )
+  phase.add(
+    key,
+    Render3dShadowBinKeyData::new(713),
+    (
+      @core.Entity::new(166, 1),
+      @render.MainEntity::new(@core.Entity::new(156, 1)),
+    ),
+    40U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  world.insert_resource(Render3dShadowPhasesData::resource(), phases)
+  world.insert_resource(
+    Render3dShadowPhaseBatchedInstanceBuffers::resource(),
+    Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers(),
+  )
+  world.insert_resource(
+    Render3dShadowPhaseIndirectParametersBuffers::resource(),
+    Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.GpuPreprocessingSupport::resource(),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+      @render_batching.GpuPreprocessingMode::Culling,
+    ),
+  )
+  render3d_prepare_shadow_phase_buffers_system(world)
+  let phase_instances = world
+    .get_resource(Render3dShadowPhaseBatchedInstanceBuffers::resource())
+    .unwrap()
+  let phase_indirect = world
+    .get_resource(Render3dShadowPhaseIndirectParametersBuffers::resource())
+    .unwrap()
+  debug_inspect(phase_instances.buffers.buffers.data_buffer.len(), content="1")
+  debug_inspect(phase_indirect.buffers.buffers.batch_count(true), content="1")
+  debug_inspect(
+    phase_indirect.buffers.buffers.batch_set_count(true),
+    content="1",
+  )
+}
+
+///|
 test "render3d: shadow phase buffers collect into global preprocessing tables" {
   let world = @ecs.World::new()
   let phase_instances = Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers()

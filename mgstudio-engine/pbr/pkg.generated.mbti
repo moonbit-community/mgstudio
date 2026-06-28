@@ -798,6 +798,8 @@ pub fn render3d_prepare_resources_cleanup_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_resources_flush_system(@ecs.World) -> Unit
 
+pub fn render3d_prepare_shadow_phase_buffers_system(@ecs.World) -> Unit
+
 pub fn render3d_prepare_shadow_phase_views(@ecs.World, @view.RetainedViewEntity, Array[Render3dLightEntity], gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> @hashset.HashSet[@view.RetainedViewEntity]
 
 pub fn render3d_prepare_skin_bindings_system(@ecs.World) -> Unit

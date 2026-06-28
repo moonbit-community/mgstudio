@@ -3408,6 +3408,49 @@ pub impl @app.Resource for Render3dShadowPhaseIndirectParametersBuffers with fn 
 }
 
 ///|
+pub fn render3d_prepare_shadow_phase_buffers_system(world : @ecs.World) -> Unit {
+  let gpu_preprocessing_support = match
+    world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let shadow_phases_ref = match
+    world.get_resource_mut(Render3dShadowPhasesData::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let phase_instances_ref = match
+    world.get_resource_mut(
+      Render3dShadowPhaseBatchedInstanceBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let phase_indirect_ref = match
+    world.get_resource_mut(
+      Render3dShadowPhaseIndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let enable_gpu_occlusion_culling = gpu_preprocessing_support.is_culling_supported()
+  shadow_phases_ref.modify(fn(shadow_phases) {
+    phase_instances_ref.modify(fn(phase_instances) {
+      phase_indirect_ref.modify(fn(phase_indirect) {
+        ignore(
+          shadow_phases.prepare_phase_buffers(
+            false,
+            enable_gpu_occlusion_culling,
+            phase_instances.buffers,
+            phase_indirect.buffers,
+          ),
+        )
+      })
+    })
+  })
+}
+
+///|
 pub fn render3d_collect_shadow_phase_buffers_system(world : @ecs.World) -> Unit {
   let phase_instances_ref = match
     world.get_resource_mut(
