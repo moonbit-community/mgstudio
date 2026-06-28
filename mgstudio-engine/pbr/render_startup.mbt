@@ -202,6 +202,12 @@ fn configure_pbr_render_prepare_systems(
   )
   .add_systems(
     @render.render_schedule_stage(),
+    @app.system(render3d_prepare_shadow_phase_buffers_system)
+    .named("mgstudio_pbr::prepare_shadow_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_batch_phases),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
     @app.system(render3d_collect_shadow_phase_buffers_system)
     .named("mgstudio_pbr::collect_shadow_phase_buffers")
     .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
