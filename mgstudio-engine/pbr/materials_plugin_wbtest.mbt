@@ -2980,6 +2980,49 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
 }
 
 ///|
+test "render3d: queue shadows skips missing shadow phase before pending queue lookup" {
+  let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      ParityCustomMaterial::ParityCustomMaterial()
+    },
+  )
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(plugin)
+  let world = app.sub_app(@app.RenderApp).world()
+  let light = world.spawn_empty()
+  let light_entity = Render3dLightEntity::Spot(
+    light_entity=light,
+    main_entity=light,
+  )
+  let retained_view = light_entity.shadow_phase_retained_view(
+    @render_view.RetainedViewEntity::new(@core.Entity::new(501, 1)),
+  )
+  let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  world.insert_resource(
+    @pbr_render.PendingShadowQueues::resource(),
+    pending_shadow_queues,
+  )
+  world.insert_resource(
+    Render3dShadowPhasesData::resource(),
+    Render3dShadowPhasesData::Render3dShadowPhasesData(),
+  )
+  debug_inspect(
+    render3d_queue_shadow_phase_data_for_views(
+      world,
+      [Render3dQueuedShadowPhaseView::new(light_entity, retained_view)],
+      @render_visibility.DirtySpecializations::DirtySpecializations(),
+      pending_shadow_queues,
+      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    ),
+    content="0",
+  )
+  debug_inspect(
+    pending_shadow_queues.queues().contains_view(retained_view),
+    content="false",
+  )
+}
+
+///|
 test "render3d: missing prepared render mesh does not return to pending queue" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(61, 1)

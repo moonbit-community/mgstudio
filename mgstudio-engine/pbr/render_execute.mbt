@@ -3782,6 +3782,10 @@ pub fn render3d_queue_shadow_phase_data_for_light(
   pending_shadow_queues : @pbr_render.PendingShadowQueues,
   gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
 ) -> Bool {
+  guard world.get_resource(Render3dShadowPhasesData::resource()) is Some(phases) &&
+    phases.get(retained_view_entity) is Some(_) else {
+    return false
+  }
   guard (try! world.get_by_key(
       light_entity.shadow_map_visible_entity(),
       @render_visibility.ecs_key_render_shadow_map_visible_entities,

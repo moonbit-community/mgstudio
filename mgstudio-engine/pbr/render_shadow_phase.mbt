@@ -137,6 +137,10 @@ fn render3d_queue_shadow_phase_for_light(
   retained_view_entity : @render_view.RetainedViewEntity,
   view_render_layers : @camera_render_layers.RenderLayers?,
 ) -> Bool {
+  guard world.get_resource(Render3dShadowPhasesData::resource()) is Some(phases) &&
+    phases.get(retained_view_entity) is Some(_) else {
+    return false
+  }
   let dirty_specializations = match
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
     Some(value) => value
