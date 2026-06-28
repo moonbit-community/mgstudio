@@ -894,6 +894,16 @@ fn render3d_enqueue_pending_shadow_material(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+fn render3d_enqueue_view_pending_shadow_material(
+  view_pending_shadow_queues : @render.ViewPendingQueues,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+) -> Unit {
+  view_pending_shadow_queues.push_current(render_entity, visible_entity)
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
 fn render3d_shadow_specialization_alpha_may_discard(
   alpha_mode : @material.AlphaMode3d,
@@ -3571,7 +3581,7 @@ pub fn Render3dQueuedShadowPhaseData::items(
 ///|
 fn render3d_shadow_queue_material_bind_group_index(
   world : @ecs.World,
-  retained_view_entity : @render_view.RetainedViewEntity,
+  view_pending_shadow_queues : @render.ViewPendingQueues,
   render_entity : @core.Entity,
   visible_entity : @render.MainEntity,
   material_instance : RenderMaterialInstance,
@@ -3586,16 +3596,16 @@ fn render3d_shadow_queue_material_bind_group_index(
     return Some(None)
   }
   guard world.get_resource(RenderMaterialBindings::resource()) is Some(bindings) else {
-    render3d_enqueue_pending_shadow_material(
-      world, retained_view_entity, render_entity, visible_entity,
+    render3d_enqueue_view_pending_shadow_material(
+      view_pending_shadow_queues, render_entity, visible_entity,
     )
     return None
   }
   match bindings.get(material_instance.asset_id()) {
     Some(binding) => Some(Some(binding.group().to_int()))
     None => {
-      render3d_enqueue_pending_shadow_material(
-        world, retained_view_entity, render_entity, visible_entity,
+      render3d_enqueue_view_pending_shadow_material(
+        view_pending_shadow_queues, render_entity, visible_entity,
       )
       None
     }
@@ -3677,8 +3687,8 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
       render_mesh_instances.render_mesh_queue_data(main_entity) {
       Some(value) => value
       None => {
-        render3d_enqueue_pending_shadow_material(
-          world, retained_view_entity, render_entity, main_entity,
+        render3d_enqueue_view_pending_shadow_material(
+          view_pending_shadow_queues, render_entity, main_entity,
         )
         continue
       }
@@ -3706,15 +3716,15 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
       ) {
       Some(value) => value
       None => {
-        render3d_enqueue_pending_shadow_material(
-          world, retained_view_entity, render_entity, main_entity,
+        render3d_enqueue_view_pending_shadow_material(
+          view_pending_shadow_queues, render_entity, main_entity,
         )
         continue
       }
     }
     let material_bind_group_index = match
       render3d_shadow_queue_material_bind_group_index(
-        world, retained_view_entity, render_entity, main_entity, material_instance,
+        world, view_pending_shadow_queues, render_entity, main_entity, material_instance,
         material, draw_function,
       ) {
       Some(value) => value

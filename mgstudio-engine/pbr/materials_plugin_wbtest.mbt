@@ -2820,6 +2820,10 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
 
   debug_inspect(queued.dequeued().length(), content="6")
   debug_inspect(queued.items().length(), content="2")
+  debug_inspect(
+    pending_shadow_queues.queues().current_len(retained_view),
+    content="2",
+  )
   let first = queued.items()[0]
   let second = queued.items()[1]
   inspect(first.pipeline_id().id(), content="801")
