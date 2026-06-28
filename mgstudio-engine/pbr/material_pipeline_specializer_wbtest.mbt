@@ -779,6 +779,35 @@ test "pbr material pipeline mirrors bevy prepass mesh key shader defs" {
 }
 
 ///|
+test "pbr material pipeline mirrors bevy discard visibility and atmosphere shader defs" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_MAY_DISCARD |
+        MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER |
+        MESH_PIPELINE_KEY_ATMOSPHERE,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  for shader_def in ["MAY_DISCARD", "VISIBILITY_RANGE_DITHER", "ATMOSPHERE"] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        fragment.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
+}
+
+///|
 test "pbr material pipeline gates lightmap binding-array defs on pipeline support" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(

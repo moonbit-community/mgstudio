@@ -834,6 +834,9 @@ fn pbr_mesh_pipeline_descriptor(
       shader_defs.push(pbr_shader_def("DEBAND_DITHER"))
     }
   }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_MAY_DISCARD) != 0UL {
+    shader_defs.push(pbr_shader_def("MAY_DISCARD"))
+  }
   pbr_push_mesh_prepass_shader_defs(mesh_key_bits, shader_defs)
   if (mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL {
     shader_defs.push(pbr_shader_def("ENVIRONMENT_MAP"))
@@ -855,8 +858,14 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_SCREEN_SPACE_REFLECTIONS) != 0UL {
     shader_defs.push(pbr_shader_def("SCREEN_SPACE_REFLECTIONS"))
   }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER) != 0UL {
+    shader_defs.push(pbr_shader_def("VISIBILITY_RANGE_DITHER"))
+  }
   if (mesh_key_bits & MESH_PIPELINE_KEY_DISTANCE_FOG) != 0UL {
     shader_defs.push(pbr_shader_def("DISTANCE_FOG"))
+  }
+  if (mesh_key_bits & MESH_PIPELINE_KEY_ATMOSPHERE) != 0UL {
+    shader_defs.push(pbr_shader_def("ATMOSPHERE"))
   }
   if binding_arrays_are_usable {
     shader_defs.push(pbr_shader_def("MULTIPLE_LIGHT_PROBES_IN_ARRAY"))
