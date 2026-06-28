@@ -344,6 +344,35 @@ test "pbr material pipeline specializer mirrors StandardMaterial shader defs" {
 }
 
 ///|
+test "pbr material pipeline specializer mirrors StandardMaterial depth bias" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let positive_bits = STANDARD_MATERIAL_KEY_CULL_BACK |
+    (42UL << STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT)
+  let positive_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(material_bits=positive_bits),
+    pbr_material_specializer_test_layout(),
+  )
+  guard positive_descriptor.depth_stencil is Some(positive_depth) else {
+    abort("expected pbr depth state")
+  }
+  inspect(positive_depth.bias_constant, content="42")
+  let negative_bits = STANDARD_MATERIAL_KEY_CULL_BACK |
+    (0xffffffffUL << STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT)
+  let negative_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(material_bits=negative_bits),
+    pbr_material_specializer_test_layout(),
+  )
+  guard negative_descriptor.depth_stencil is Some(negative_depth) else {
+    abort("expected pbr depth state")
+  }
+  inspect(negative_depth.bias_constant, content="-1")
+}
+
+///|
 test "pbr material pipeline specializer mirrors StandardMaterial inverted culling" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(

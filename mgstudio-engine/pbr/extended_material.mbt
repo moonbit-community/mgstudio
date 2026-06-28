@@ -328,7 +328,10 @@ fn forward_decal_specialize(
           depth_stencil.format,
           depth_stencil.depth_write_enabled,
           @wgpu.COMPARE_FUNCTION_ALWAYS,
-        ).with_bias_slope_scale(depth_stencil.bias_slope_scale),
+        )
+        .with_bias_constant(depth_stencil.bias_constant)
+        .with_bias_slope_scale(depth_stencil.bias_slope_scale)
+        .with_bias_clamp(depth_stencil.bias_clamp),
       )
     None => None
   }

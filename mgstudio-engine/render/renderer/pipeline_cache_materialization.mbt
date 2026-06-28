@@ -291,7 +291,14 @@ fn pipeline_cache_apply_depth_stencil_state(
 ) -> Unit raise GpuBackendError {
   match depth_stencil {
     None => ()
-    Some(depth) =>
+    Some(depth) => {
+      if depth.bias_constant != 0 ||
+        depth.bias_slope_scale != 0.0F ||
+        depth.bias_clamp != 0.0F {
+        fatal(
+          "wgpu: render pipeline cache cannot yet express depth bias fields; see ISS-161",
+        )
+      }
       builder.set_depth_stencil(
         tf(depth.format),
         depth_write_enabled=depth.depth_write_enabled,
@@ -300,6 +307,7 @@ fn pipeline_cache_apply_depth_stencil_state(
         err =>
           fatal("wgpu: failed to apply render depth state: \{err.message()}")
       }
+    }
   }
 }
 

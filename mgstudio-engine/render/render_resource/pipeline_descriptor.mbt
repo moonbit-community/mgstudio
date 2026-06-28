@@ -256,7 +256,9 @@ pub struct DepthStencilState {
   format : UInt
   depth_write_enabled : Bool
   depth_compare : UInt
+  bias_constant : Int
   bias_slope_scale : Float
+  bias_clamp : Float
 }
 
 ///|
@@ -265,7 +267,9 @@ pub fn DepthStencilState::DepthStencilState() -> DepthStencilState {
     format: @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
     depth_write_enabled: true,
     depth_compare: @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+    bias_constant: 0,
     bias_slope_scale: 0.0F,
+    bias_clamp: 0.0F,
   }
 }
 
@@ -279,8 +283,18 @@ pub fn DepthStencilState::new(
     format,
     depth_write_enabled,
     depth_compare,
+    bias_constant: 0,
     bias_slope_scale: 0.0F,
+    bias_clamp: 0.0F,
   }
+}
+
+///|
+pub fn DepthStencilState::with_bias_constant(
+  self : DepthStencilState,
+  bias_constant : Int,
+) -> DepthStencilState {
+  DepthStencilState::{ ..self, bias_constant, }
 }
 
 ///|
@@ -289,6 +303,14 @@ pub fn DepthStencilState::with_bias_slope_scale(
   bias_slope_scale : Float,
 ) -> DepthStencilState {
   DepthStencilState::{ ..self, bias_slope_scale, }
+}
+
+///|
+pub fn DepthStencilState::with_bias_clamp(
+  self : DepthStencilState,
+  bias_clamp : Float,
+) -> DepthStencilState {
+  DepthStencilState::{ ..self, bias_clamp, }
 }
 
 ///|

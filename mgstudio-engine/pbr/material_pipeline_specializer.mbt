@@ -218,6 +218,13 @@ fn pbr_standard_material_cull_mode(
 }
 
 ///|
+fn pbr_standard_material_depth_bias_constant(material_key_bits : UInt64) -> Int {
+  let raw = (material_key_bits & STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK) >>
+    STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT
+  raw.to_uint().reinterpret_as_int()
+}
+
+///|
 fn pbr_mesh_key_primitive_topology(mesh_key_bits : UInt64) -> UInt {
   let mesh_key = @mesh.BaseMeshPipelineKey::new(mesh_key_bits)
   match mesh_key.primitive_topology() {
@@ -263,6 +270,15 @@ fn pbr_specialize_standard_material_descriptor(
       pbr_standard_material_cull_mode(material_key_bits, mesh_key_bits),
     ),
   )
+  if specialized.depth_stencil is Some(depth_stencil) {
+    specialized = specialized.with_depth_stencil(
+      Some(
+        depth_stencil.with_bias_constant(
+          pbr_standard_material_depth_bias_constant(material_key_bits),
+        ),
+      ),
+    )
+  }
   if specialized.label is Some(label) {
     specialized = specialized.with_label(Some("pbr_" + label))
   }

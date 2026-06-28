@@ -321,10 +321,14 @@ pub struct DepthStencilState {
   format : UInt
   depth_write_enabled : Bool
   depth_compare : UInt
+  bias_constant : Int
   bias_slope_scale : Float
+  bias_clamp : Float
 }
 pub fn DepthStencilState::DepthStencilState() -> Self
 pub fn DepthStencilState::new(UInt, Bool, UInt) -> Self
+pub fn DepthStencilState::with_bias_clamp(Self, Float) -> Self
+pub fn DepthStencilState::with_bias_constant(Self, Int) -> Self
 pub fn DepthStencilState::with_bias_slope_scale(Self, Float) -> Self
 pub impl Default for DepthStencilState
 
