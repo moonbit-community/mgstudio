@@ -734,6 +734,8 @@ pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @camera.Camera, @projec
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub fn render3d_collect_shadow_phase_buffers_system(@ecs.World) -> Unit
+
 pub fn render3d_contact_shadows_buffer_mut(@ecs.World) -> @ecs.ResourceMut[ContactShadowsBuffer]?
 
 pub fn render3d_contact_shadows_buffer_mut_or_init(@ecs.World) -> @ecs.ResourceMut[ContactShadowsBuffer]
@@ -2248,6 +2250,18 @@ pub fn Render3dShadowMultidrawableBin::Render3dShadowMultidrawableBin() -> Self
 pub fn Render3dShadowMultidrawableBin::binned_mesh_instance_index(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
 pub fn Render3dShadowMultidrawableBin::entity_count(Self) -> Int
 pub fn Render3dShadowMultidrawableBin::is_empty(Self) -> Bool
+
+pub struct Render3dShadowPhaseBatchedInstanceBuffers {
+  buffers : @batching.PhaseBatchedInstanceBuffers[Unit]
+}
+pub fn Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers() -> Self
+pub impl @app.Resource for Render3dShadowPhaseBatchedInstanceBuffers
+
+pub struct Render3dShadowPhaseIndirectParametersBuffers {
+  buffers : @batching.PhaseIndirectParametersBuffers
+}
+pub fn Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers() -> Self
+pub impl @app.Resource for Render3dShadowPhaseIndirectParametersBuffers
 
 pub struct Render3dShadowPhaseItemData {
   batch_set_key : Render3dShadowBatchSetKeyData

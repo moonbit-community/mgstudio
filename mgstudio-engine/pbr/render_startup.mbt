@@ -238,6 +238,20 @@ fn configure_pbr_render_world_resources(
     @render_view.RenderShadowLodOrigin::resource(),
     fn() { @render_view.RenderShadowLodOrigin::RenderShadowLodOrigin() },
   )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dShadowPhaseBatchedInstanceBuffers::resource(),
+    fn() {
+      Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers()
+    },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dShadowPhaseIndirectParametersBuffers::resource(),
+    fn() {
+      Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers()
+    },
+  )
   sub_app
 }
 

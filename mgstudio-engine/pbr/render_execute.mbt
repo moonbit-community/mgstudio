@@ -3233,6 +3233,112 @@ pub impl @app.Resource for Render3dShadowPhasesData with fn resource() {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhasePlugin<Shadow>::build`.
+pub struct Render3dShadowPhaseBatchedInstanceBuffers {
+  buffers : @render_batching.PhaseBatchedInstanceBuffers[Unit]
+}
+
+///|
+pub fn Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers() -> Render3dShadowPhaseBatchedInstanceBuffers {
+  Render3dShadowPhaseBatchedInstanceBuffers::{
+    buffers: @render_batching.PhaseBatchedInstanceBuffers::new(),
+  }
+}
+
+///|
+let ecs_key_render3d_shadow_phase_batched_instance_buffers : @ecs.ResourceKey[
+  Render3dShadowPhaseBatchedInstanceBuffers,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PhaseBatchedInstanceBuffers<Shadow>",
+)
+
+///|
+pub impl @app.Resource for Render3dShadowPhaseBatchedInstanceBuffers with fn resource() {
+  ecs_key_render3d_shadow_phase_batched_instance_buffers
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhasePlugin<Shadow>::build`.
+pub struct Render3dShadowPhaseIndirectParametersBuffers {
+  buffers : @render_batching.PhaseIndirectParametersBuffers
+}
+
+///|
+pub fn Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers() -> Render3dShadowPhaseIndirectParametersBuffers {
+  Render3dShadowPhaseIndirectParametersBuffers::{
+    buffers: @render_batching.PhaseIndirectParametersBuffers::new(false),
+  }
+}
+
+///|
+let ecs_key_render3d_shadow_phase_indirect_parameters_buffers : @ecs.ResourceKey[
+  Render3dShadowPhaseIndirectParametersBuffers,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PhaseIndirectParametersBuffers<Shadow>",
+)
+
+///|
+pub impl @app.Resource for Render3dShadowPhaseIndirectParametersBuffers with fn resource() {
+  ecs_key_render3d_shadow_phase_indirect_parameters_buffers
+}
+
+///|
+pub fn render3d_collect_shadow_phase_buffers_system(world : @ecs.World) -> Unit {
+  let phase_instances_ref = match
+    world.get_resource_mut(
+      Render3dShadowPhaseBatchedInstanceBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let phase_indirect_ref = match
+    world.get_resource_mut(
+      Render3dShadowPhaseIndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let batched_instances_ref = match
+    world.get_resource_mut(
+      RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let indirect_buffers_ref = match
+    world.get_resource_mut(
+      @render_batching.IndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let indirect_settings = match
+    world.get_resource(
+      @render_batching.IndirectParametersBuffersSettings::resource(),
+    ) {
+    Some(value) => value
+    None =>
+      @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings()
+  }
+  phase_instances_ref.modify(fn(phase_instances) {
+    phase_indirect_ref.modify(fn(phase_indirect) {
+      batched_instances_ref.modify(fn(batched_instances) {
+        indirect_buffers_ref.modify(fn(indirect_buffers) {
+          @render_batching.collect_buffers_for_phase(
+            "mgstudio_pbr::Shadow",
+            phase_instances.buffers,
+            phase_indirect.buffers,
+            batched_instances.buffers,
+            indirect_buffers,
+            indirect_settings,
+          )
+        })
+      })
+    })
+  })
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
 pub fn render3d_prepare_shadow_phase_views(
   world : @ecs.World,

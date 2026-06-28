@@ -768,6 +768,63 @@ test "render3d: multidrawable shadow phase prepares Bevy indirect buffers" {
 }
 
 ///|
+test "render3d: shadow phase buffers collect into global preprocessing tables" {
+  let world = @ecs.World::new()
+  let phase_instances = Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers()
+  phase_instances.buffers.buffers.data_buffer.push(())
+  let phase_indirect = Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers()
+  ignore(phase_indirect.buffers.buffers.allocate(true, 2))
+  phase_indirect.buffers.buffers.add_batch_set(true, 0)
+  world.insert_resource(
+    Render3dShadowPhaseBatchedInstanceBuffers::resource(),
+    phase_instances,
+  )
+  world.insert_resource(
+    Render3dShadowPhaseIndirectParametersBuffers::resource(),
+    phase_indirect,
+  )
+  world.insert_resource(
+    RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.IndirectParametersBuffers::resource(),
+    @render_batching.IndirectParametersBuffers::IndirectParametersBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.IndirectParametersBuffersSettings::resource(),
+    @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+  )
+  render3d_collect_shadow_phase_buffers_system(world)
+  let global_instances = world
+    .get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource())
+    .unwrap()
+  let global_indirect = world
+    .get_resource(@render_batching.IndirectParametersBuffers::resource())
+    .unwrap()
+  let retained_phase_instances = global_instances.buffers.phase_instance_buffers
+    .get("mgstudio_pbr::Shadow")
+    .unwrap()
+  debug_inspect(retained_phase_instances.buffers.data_buffer.len(), content="1")
+  debug_inspect(global_indirect.phase_count(), content="1")
+  debug_inspect(
+    global_indirect.get("mgstudio_pbr::Shadow").unwrap().batch_count(true),
+    content="2",
+  )
+  debug_inspect(
+    global_indirect.get("mgstudio_pbr::Shadow").unwrap().batch_set_count(true),
+    content="1",
+  )
+  let refreshed_phase_instances = world
+    .get_resource(Render3dShadowPhaseBatchedInstanceBuffers::resource())
+    .unwrap()
+  debug_inspect(
+    refreshed_phase_instances.buffers.buffers.data_buffer.len(),
+    content="0",
+  )
+}
+
+///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
   let camera = @core.Entity::new(201, 1)
