@@ -115,6 +115,22 @@ const MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS : Int = 35
 const MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS : Int = 37
 
 ///|
+const MESH_PIPELINE_KEY_VIEW_PROJECTION_RESERVED_BITS : UInt64 = 0b11UL <<
+  MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+
+///|
+const MESH_PIPELINE_KEY_VIEW_PROJECTION_NONSTANDARD : UInt64 = 0UL <<
+  MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+
+///|
+const MESH_PIPELINE_KEY_VIEW_PROJECTION_PERSPECTIVE : UInt64 = 1UL <<
+  MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+
+///|
+const MESH_PIPELINE_KEY_VIEW_PROJECTION_ORTHOGRAPHIC : UInt64 = 2UL <<
+  MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS
+
+///|
 const MESH_PIPELINE_KEY_BLEND_RESERVED_BITS : UInt64 = 1879048192UL
 
 ///|
@@ -130,6 +146,22 @@ fn pbr_shader_def_uint(name : String, value : UInt) -> @material.ShaderDefVal {
 ///|
 fn pbr_shader_def_int(name : String, value : Int) -> @material.ShaderDefVal {
   @material.ShaderDefVal::Int(name, value)
+}
+
+///|
+fn pbr_push_view_projection_shader_def(
+  mesh_key_bits : UInt64,
+  shader_defs : Array[@material.ShaderDefVal],
+) -> Unit {
+  let view_projection = mesh_key_bits &
+    MESH_PIPELINE_KEY_VIEW_PROJECTION_RESERVED_BITS
+  if view_projection == MESH_PIPELINE_KEY_VIEW_PROJECTION_NONSTANDARD {
+    shader_defs.push(pbr_shader_def("VIEW_PROJECTION_NONSTANDARD"))
+  } else if view_projection == MESH_PIPELINE_KEY_VIEW_PROJECTION_PERSPECTIVE {
+    shader_defs.push(pbr_shader_def("VIEW_PROJECTION_PERSPECTIVE"))
+  } else if view_projection == MESH_PIPELINE_KEY_VIEW_PROJECTION_ORTHOGRAPHIC {
+    shader_defs.push(pbr_shader_def("VIEW_PROJECTION_ORTHOGRAPHIC"))
+  }
 }
 
 ///|
@@ -719,6 +751,7 @@ fn pbr_mesh_pipeline_descriptor(
       pbr_screen_space_specular_transmission_blur_taps(mesh_key_bits),
     ),
   )
+  pbr_push_view_projection_shader_def(mesh_key_bits, shader_defs)
   let draw_layout = pbr_setup_morph_and_skinning_defs(
     mesh_key_bits, layout, 6, shader_defs, vertex_attributes, binding_arrays_are_usable,
   )
@@ -802,6 +835,7 @@ fn pbr_prepass_pipeline_descriptor(
     ),
   )
   shader_defs.push(pbr_shader_def("VERTEX_OUTPUT_INSTANCE_INDEX"))
+  pbr_push_view_projection_shader_def(mesh_key_bits, shader_defs)
   if (mesh_key_bits & MESH_PIPELINE_KEY_DEPTH_PREPASS) != 0UL {
     shader_defs.push(pbr_shader_def("DEPTH_PREPASS"))
   }

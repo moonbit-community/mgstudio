@@ -263,6 +263,45 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
 }
 
 ///|
+test "pbr material pipeline specializer mirrors bevy view projection shader defs" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_VIEW_PROJECTION_PERSPECTIVE,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "VIEW_PROJECTION_PERSPECTIVE",
+    ),
+    content="true",
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "VIEW_PROJECTION_PERSPECTIVE",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "VIEW_PROJECTION_ORTHOGRAPHIC",
+    ),
+    content="false",
+  )
+}
+
+///|
 test "pbr material pipeline specializer mirrors StandardMaterial shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(
@@ -947,6 +986,37 @@ test "pbr prepass pipeline uses native unclipped depth when depth clip control e
     pbr_material_specializer_shader_defs_contain_flag(
       descriptor.vertex.shader_defs,
       "UNCLIPPED_DEPTH_ORTHO_EMULATION",
+    ),
+    content="false",
+  )
+}
+
+///|
+test "pbr prepass pipeline mirrors bevy view projection shader defs" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  let descriptor = try! PbrPrepassPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_DEPTH_PREPASS |
+        MESH_PIPELINE_KEY_VIEW_PROJECTION_ORTHOGRAPHIC,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "VIEW_PROJECTION_ORTHOGRAPHIC",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      descriptor.vertex.shader_defs,
+      "VIEW_PROJECTION_PERSPECTIVE",
     ),
     content="false",
   )
