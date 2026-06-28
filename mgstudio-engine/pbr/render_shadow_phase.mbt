@@ -106,6 +106,9 @@ fn render3d_specialize_shadow_phase_for_light(
         "missing PendingShadowQueues resource during pbr shadow specialization",
       )
   }
+  ignore(
+    pending_shadow_queues.queues().prepare_for_new_frame(retained_view_entity),
+  )
   let candidates = render3d_shadow_specialization_candidates_for_light(
     world, light_entity, retained_view_entity, dirty_specializations, pending_shadow_queues,
   )
@@ -173,6 +176,16 @@ fn render3d_specialize_shadow_phase_views(
       ) {
       specialized_count += 1
     }
+  }
+  match world.get_resource_mut(@pbr_render.PendingShadowQueues::resource()) {
+    Some(queues_ref) =>
+      queues_ref.modify(fn(queues) {
+        queues.queues().expire_stale_views(all_shadow_views)
+      })
+    None =>
+      abort(
+        "missing PendingShadowQueues resource during pbr shadow specialization",
+      )
   }
   match
     world.get_resource_mut(

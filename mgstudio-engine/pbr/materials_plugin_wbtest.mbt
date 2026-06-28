@@ -1162,9 +1162,9 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
         queues.queues().contains_view(directional_view),
         content="true",
       )
-      debug_inspect(queues.queues().prev_len(directional_view), content="1")
-      debug_inspect(queues.queues().current_len(directional_view), content="0")
-      debug_inspect(queues.queues().contains_view(stale_view), content="false")
+      debug_inspect(queues.queues().prev_len(directional_view), content="0")
+      debug_inspect(queues.queues().current_len(directional_view), content="1")
+      debug_inspect(queues.queues().contains_view(stale_view), content="true")
     }
     None => debug_inspect(false, content="true")
   }
@@ -1276,8 +1276,12 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
   }
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) => {
-      debug_inspect(queues.queues().prev_len(point_face_zero_view), content="1")
-      debug_inspect(queues.queues().contains_view(stale_view), content="false")
+      debug_inspect(queues.queues().prev_len(point_face_zero_view), content="0")
+      debug_inspect(
+        queues.queues().current_len(point_face_zero_view),
+        content="1",
+      )
+      debug_inspect(queues.queues().contains_view(stale_view), content="true")
     }
     None => debug_inspect(false, content="true")
   }

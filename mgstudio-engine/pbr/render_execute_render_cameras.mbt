@@ -293,20 +293,6 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
     }
     phases.retain(live_shadow_mapping_lights)
   })
-  let pending_shadow_queues = match
-    world.get_resource_mut(@pbr_render.PendingShadowQueues::resource()) {
-    Some(value) => value
-    None =>
-      abort(
-        "missing PendingShadowQueues resource during pbr shadow phase preparation",
-      )
-  }
-  pending_shadow_queues.modify(fn(queues) {
-    for retained_view_entity in live_shadow_mapping_lights.iter() {
-      ignore(queues.queues().prepare_for_new_frame(retained_view_entity))
-    }
-    queues.queues().expire_stale_views(live_shadow_mapping_lights)
-  })
   live_shadow_mapping_lights
 }
 
