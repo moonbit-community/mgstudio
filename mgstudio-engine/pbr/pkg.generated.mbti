@@ -816,6 +816,8 @@ pub fn render3d_queue_shadow_phase_data_for_views(@ecs.World, Array[Render3dQueu
 
 pub fn render3d_queue_shadow_phase_data_for_visible_entities(@ecs.World, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntities, @render_layers.RenderLayers?, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Render3dQueuedShadowPhaseData
 
+pub fn render3d_queue_shadows_system(@ecs.World) -> Unit
+
 pub fn render3d_queue_sweep_system(@ecs.World) -> Unit
 
 pub fn render3d_queued_visible_mesh_count(@ecs.World) -> Int?

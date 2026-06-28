@@ -41,14 +41,10 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let frame_config = queued_frame.frame_config
   render3d_execute_render_cameras(
     world,
-    source_world,
     queued_frame.cameras,
     queued_frame.meshes,
     queued_frame.prepared_camera_queues,
-    frame_config.point_light_shadow_map_size,
-    frame_config.prepass_enabled,
-    frame_config.deferred_lighting_enabled,
-    frame_config.default_opaque_renderer_method,
+    queued_frame.camera_execution_plans,
     frame_config.wireframe_config,
     frame_config.delta_seconds,
   )
@@ -3507,14 +3503,6 @@ pub fn render3d_collect_shadow_phase_buffers_system(world : @ecs.World) -> Unit 
 }
 
 ///|
-fn render3d_prepare_and_collect_shadow_phase_buffers_system(
-  world : @ecs.World,
-) -> Unit {
-  render3d_prepare_shadow_phase_buffers_system(world)
-  render3d_collect_shadow_phase_buffers_system(world)
-}
-
-///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
 pub fn render3d_prepare_shadow_phase_views(
   world : @ecs.World,
@@ -4452,18 +4440,37 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           visible_main_entity_filters=Some(visible_main_entity_filters),
         )
       })
+      let camera_execution_plans : Array[Render3dCameraExecutionPlan?] = []
+      for _ in frame.cameras {
+        camera_execution_plans.push(None)
+      }
       render3d_queue_store_frame(
         world,
         frame.frame_config,
         frame.cameras,
         frame.meshes,
         prepared_camera_queues,
+        camera_execution_plans,
       )
     }
     None =>
       @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(world, 0)
   }
   finish_queue()
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn render3d_queue_shadows_system(world : @ecs.World) -> Unit {
+  guard render3d_queue_frame_snapshot(world) is Some(frame) else { return }
+  let camera_execution_plans = render3d_prepare_camera_execution_plans_for_queued_frame(
+    world,
+    frame.cameras,
+    frame.meshes,
+    frame.prepared_camera_queues,
+    frame.frame_config,
+  )
+  render3d_queue_store_camera_execution_plans(world, camera_execution_plans)
 }
 
 ///|

@@ -15,39 +15,16 @@
 ///|
 fn render3d_execute_render_cameras(
   world : @ecs.World,
-  source_world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
-  point_light_shadow_map_size : Int,
-  prepass_enabled : Bool,
-  deferred_lighting_enabled : Bool,
-  default_opaque_renderer_method : OpaqueRendererMethod,
+  camera_execution_plans : Array[Render3dCameraExecutionPlan?],
   wireframe_config : WireframeConfig?,
   delta_seconds : Float,
 ) -> Unit {
   let trace_render_cameras_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "execute_3d_render_cameras",
-  )
-  let trace_collect_lighting_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_collect_lighting",
-  )
-  ignore(source_world)
-  let lighting = render3d_lighting_with_clusterable_indices(
-    world,
-    @pbr_render.render3d_collect_lighting(world),
-  )
-  ignore(
-    render3d_prepare_shadow_phase_views_for_cameras(
-      world, cameras, lighting, point_light_shadow_map_size,
-    ),
-  )
-  @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_collect_lighting",
-    trace_collect_lighting_start_us,
   )
   let trace_camera_phase_items_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -76,11 +53,11 @@ fn render3d_execute_render_cameras(
   let ordered_cameras : Array[ExtractedCamera3d] = []
   let ordered_prepared_camera_queues : Array[Render3dPreparedCameraQueue] = []
   let ordered_camera_execution_plans : Array[Render3dCameraExecutionPlan] = []
-  let queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   for camera_phase_item in camera_phase_items {
     guard camera_phase_item.extracted_index >= 0 &&
       camera_phase_item.extracted_index < cameras.length() &&
-      camera_phase_item.extracted_index < prepared_camera_queues.length() else {
+      camera_phase_item.extracted_index < prepared_camera_queues.length() &&
+      camera_phase_item.extracted_index < camera_execution_plans.length() else {
       continue
     }
     let extracted_camera = cameras[camera_phase_item.extracted_index]
@@ -88,24 +65,13 @@ fn render3d_execute_render_cameras(
       is Some(prepared_camera_queue) else {
       continue
     }
-    let execution_plan = render3d_prepare_camera_execution_plan(
-      world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
-      deferred_lighting_enabled, default_opaque_renderer_method, lighting,
-    )
-    for queued_phase_view in execution_plan.shadow_pass_plan.queued_phase_views {
-      queued_shadow_phase_views.push(queued_phase_view)
+    guard camera_execution_plans[camera_phase_item.extracted_index]
+      is Some(execution_plan) else {
+      continue
     }
     ordered_cameras.push(extracted_camera)
     ordered_prepared_camera_queues.push(prepared_camera_queue)
     ordered_camera_execution_plans.push(execution_plan)
-  }
-  if queued_shadow_phase_views.length() > 0 {
-    ignore(
-      render3d_prepare_queued_shadow_phase_views(
-        world, queued_shadow_phase_views,
-      ),
-    )
-    render3d_prepare_and_collect_shadow_phase_buffers_system(world)
   }
   for i in 0..<ordered_cameras.length() {
     let extracted_camera = ordered_cameras[i]
@@ -131,6 +97,71 @@ fn render3d_execute_render_cameras(
     "execute_3d_render_cameras",
     trace_render_cameras_start_us,
   )
+}
+
+///|
+fn render3d_prepare_camera_execution_plans_for_queued_frame(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+  meshes : Array[ExtractedMesh3d],
+  prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
+  frame_config : Render3dExecuteFrameConfig,
+) -> Array[Render3dCameraExecutionPlan?] {
+  let trace_collect_lighting_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_3d_collect_lighting",
+  )
+  let lighting = render3d_lighting_with_clusterable_indices(
+    world,
+    @pbr_render.render3d_collect_lighting(world),
+  )
+  ignore(
+    render3d_prepare_shadow_phase_views_for_cameras(
+      world,
+      cameras,
+      lighting,
+      frame_config.point_light_shadow_map_size,
+    ),
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    "queue_3d_collect_lighting",
+    trace_collect_lighting_start_us,
+  )
+  let camera_execution_plans : Array[Render3dCameraExecutionPlan?] = []
+  let queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView] = []
+  for index in 0..<cameras.length() {
+    if index >= prepared_camera_queues.length() {
+      camera_execution_plans.push(None)
+      continue
+    }
+    guard prepared_camera_queues[index] is Some(_) else {
+      camera_execution_plans.push(None)
+      continue
+    }
+    let execution_plan = render3d_prepare_camera_execution_plan(
+      world,
+      cameras[index],
+      meshes,
+      frame_config.point_light_shadow_map_size,
+      frame_config.prepass_enabled,
+      frame_config.deferred_lighting_enabled,
+      frame_config.default_opaque_renderer_method,
+      lighting,
+    )
+    for queued_phase_view in execution_plan.shadow_pass_plan.queued_phase_views {
+      queued_shadow_phase_views.push(queued_phase_view)
+    }
+    camera_execution_plans.push(Some(execution_plan))
+  }
+  if queued_shadow_phase_views.length() > 0 {
+    ignore(
+      render3d_prepare_queued_shadow_phase_views(
+        world, queued_shadow_phase_views,
+      ),
+    )
+  }
+  camera_execution_plans
 }
 
 ///|

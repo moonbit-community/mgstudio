@@ -1028,7 +1028,8 @@ test "render3d: shadow phase prepare and collect bridge fills global preprocessi
     @render_batching.IndirectParametersBuffersSettings::resource(),
     @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
   )
-  render3d_prepare_and_collect_shadow_phase_buffers_system(world)
+  render3d_prepare_shadow_phase_buffers_system(world)
+  render3d_collect_shadow_phase_buffers_system(world)
   let global_instances = world
     .get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource())
     .unwrap()

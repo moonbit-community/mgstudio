@@ -36,6 +36,7 @@ priv struct Render3dQueuedFrame {
   cameras : Array[ExtractedCamera3d]
   meshes : Array[ExtractedMesh3d]
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?]
+  camera_execution_plans : Array[Render3dCameraExecutionPlan?]
   prepared_camera_count : Int
 }
 
@@ -123,12 +124,14 @@ fn render3d_queue_store_frame(
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
+  camera_execution_plans : Array[Render3dCameraExecutionPlan?],
 ) -> Unit {
-  let prepared_camera_count = if cameras.length() <
-    prepared_camera_queues.length() {
-    cameras.length()
-  } else {
-    prepared_camera_queues.length()
+  let mut prepared_camera_count = cameras.length()
+  if prepared_camera_queues.length() < prepared_camera_count {
+    prepared_camera_count = prepared_camera_queues.length()
+  }
+  if camera_execution_plans.length() < prepared_camera_count {
+    prepared_camera_count = camera_execution_plans.length()
   }
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
@@ -137,6 +140,7 @@ fn render3d_queue_store_frame(
       cameras,
       meshes,
       prepared_camera_queues,
+      camera_execution_plans,
       prepared_camera_count,
     })
   })
@@ -156,6 +160,24 @@ fn render3d_queue_take_frame(world : @ecs.World) -> Render3dQueuedFrame? {
 fn render3d_queue_frame_snapshot(world : @ecs.World) -> Render3dQueuedFrame? {
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.peek().queued_frame
+}
+
+///|
+fn render3d_queue_store_camera_execution_plans(
+  world : @ecs.World,
+  camera_execution_plans : Array[Render3dCameraExecutionPlan?],
+) -> Unit {
+  let state = render3d_execute_queue_state_mut_or_abort(world)
+  state.modify(fn(value) {
+    match value.queued_frame {
+      Some(frame) =>
+        value.queued_frame = Some(Render3dQueuedFrame::{
+          ..frame,
+          camera_execution_plans,
+        })
+      None => ()
+    }
+  })
 }
 
 ///|

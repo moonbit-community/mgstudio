@@ -165,9 +165,24 @@ fn render3d_queue_meshes_system_in_render_app(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_queue_shadows_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_queue_shadows_system(world)
+}
+
+///|
 fn render3d_queue_sweep_system_in_render_app(world : @ecs.World) -> Unit {
   render3d_queue_sweep_system(world)
 }
+
+///|
+let render3d_queue_material_meshes_set : @app.SystemSet = @app.system_set(
+  "pbr.render3d.queue_material_meshes",
+)
+
+///|
+let render3d_queue_shadows_set : @app.SystemSet = @app.system_set(
+  "pbr.render3d.queue_shadows",
+)
 
 ///|
 fn render3d_execute_system_in_render_app(world : @ecs.World) -> Unit {
@@ -243,7 +258,13 @@ fn configure_mesh_render_sub_app(
     stage,
     @app.system(render3d_queue_meshes_system_in_render_app)
     .named("pbr.render3d.queue_meshes")
-    .in_set(render3d_set_queue_meshes),
+    .in_set(render3d_queue_material_meshes_set),
+  )
+  .add_systems(
+    stage,
+    @app.system(render3d_queue_shadows_system_in_render_app)
+    .named("pbr.render3d.queue_shadows")
+    .in_set(render3d_queue_shadows_set),
   )
   .add_systems(
     stage,
@@ -257,6 +278,15 @@ fn configure_mesh_render_sub_app(
     .named("pbr.render3d.execute")
     .in_set(render3d_set_render),
   )
+  .configure_set(
+    stage,
+    render3d_queue_material_meshes_set,
+    before=[render3d_queue_shadows_set],
+    in_sets=[render3d_set_queue_meshes],
+  )
+  .configure_set(stage, render3d_queue_shadows_set, in_sets=[
+    render3d_set_queue_meshes,
+  ])
 }
 
 ///|
