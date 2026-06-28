@@ -19,6 +19,54 @@ priv struct Render3dCameraShadowPassPlan {
 }
 
 ///|
+priv struct Render3dCameraExecutionPlan {
+  pass_lighting : Render3dLightingState
+  pass_config : Render3dExecuteCameraPassConfig
+  shadow_pass_plan : Render3dCameraShadowPassPlan
+}
+
+///|
+fn render3d_prepare_camera_execution_plan(
+  world : @ecs.World,
+  extracted_camera : ExtractedCamera3d,
+  meshes : Array[ExtractedMesh3d],
+  point_light_shadow_map_size : Int,
+  prepass_enabled : Bool,
+  deferred_lighting_enabled : Bool,
+  default_opaque_renderer_method : OpaqueRendererMethod,
+  lighting : Render3dLightingState,
+) -> Render3dCameraExecutionPlan {
+  let camera_entity = extracted_camera.entity.main_entity
+  let camera = extracted_camera.payload
+  let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
+  let pass_lighting = render3d_camera_apply_environment_map_lighting(
+    lighting, extracted_camera,
+  )
+  let camera_deferred_config = match camera.deferred_config {
+    Some(value) => value
+    None => CameraDeferredConfig3d::CameraDeferredConfig3d()
+  }
+  let camera_deferred_mode = render3d_camera_deferred_mode(
+    camera_deferred_config, default_opaque_renderer_method, deferred_lighting_enabled,
+  )
+  let pass_config = render3d_execute_camera_pass_config(
+    camera, camera_deferred_mode, deferred_lighting_enabled, prepass_enabled, temporal_aa_enabled,
+    pass_lighting,
+  )
+  let shadow_pass_plan = render3d_prepare_camera_shadow_passes(
+    world,
+    camera_entity,
+    camera,
+    pass_lighting,
+    meshes,
+    point_light_shadow_map_size,
+    pass_config.point_shadow_pass_kind,
+    pass_config.directional_shadow_pass_kind,
+  )
+  Render3dCameraExecutionPlan::{ pass_lighting, pass_config, shadow_pass_plan }
+}
+
+///|
 fn render3d_prepare_camera_shadow_passes(
   world : @ecs.World,
   camera_entity : @core.Entity,
@@ -57,19 +105,15 @@ fn render3d_execute_camera(
   world : @ecs.World,
   extracted_camera : ExtractedCamera3d,
   meshes : Array[ExtractedMesh3d],
-  point_light_shadow_map_size : Int,
-  prepass_enabled : Bool,
-  deferred_lighting_enabled : Bool,
-  default_opaque_renderer_method : OpaqueRendererMethod,
   wireframe_config : WireframeConfig?,
-  lighting : Render3dLightingState,
   delta_seconds : Float,
   cleared_targets_this_frame : Array[Int],
-  prepared_camera_queue : Render3dPreparedCameraQueue?,
+  prepared_camera_queue : Render3dPreparedCameraQueue,
+  execution_plan : Render3dCameraExecutionPlan,
 ) -> Unit {
   let camera_entity = extracted_camera.entity.main_entity
   let camera = extracted_camera.payload
-  guard prepared_camera_queue is Some(prepared_queue) else { return }
+  let prepared_queue = prepared_camera_queue
   @render.host_gpu_set_active_surface_target(camera.target_id)
   render3d_dispatch_camera_preprocess_early(
     camera_entity, camera, prepared_queue,
@@ -85,25 +129,12 @@ fn render3d_execute_camera(
   let view_height = viewport_state.view_height
   let view_width_logical = viewport_state.view_width_logical
   let view_height_logical = viewport_state.view_height_logical
-  let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
   let camera_pass_projection = prepared_queue.camera_pass_projection
-  let pass_lighting = render3d_camera_apply_environment_map_lighting(
-    lighting, extracted_camera,
-  )
+  let pass_lighting = execution_plan.pass_lighting
   let environment_map_state = render3d_camera_environment_map_state(
     extracted_camera,
   )
-  let camera_deferred_config = match camera.deferred_config {
-    Some(value) => value
-    None => CameraDeferredConfig3d::CameraDeferredConfig3d()
-  }
-  let camera_deferred_mode = render3d_camera_deferred_mode(
-    camera_deferred_config, default_opaque_renderer_method, deferred_lighting_enabled,
-  )
-  let pass_config = render3d_execute_camera_pass_config(
-    camera, camera_deferred_mode, deferred_lighting_enabled, prepass_enabled, temporal_aa_enabled,
-    pass_lighting,
-  )
+  let pass_config = execution_plan.pass_config
   let camera_deferred_enabled = pass_config.camera_deferred_enabled
   let camera_forward_decal_enabled = pass_config.camera_forward_decal_enabled
   let camera_clustered_decal_enabled = pass_config.camera_clustered_decal_enabled
@@ -129,8 +160,6 @@ fn render3d_execute_camera(
   let scene_pass_kind = pass_config.scene_pass_kind
   let prepass_pass_kind = pass_config.prepass_pass_kind
   let motion_vector_pass_kind = pass_config.motion_vector_pass_kind
-  let point_shadow_pass_kind = pass_config.point_shadow_pass_kind
-  let directional_shadow_pass_kind = pass_config.directional_shadow_pass_kind
   let msaa_sample_count = render3d_camera_msaa_samples(camera)
   let mut scene_target_id = camera.target_id
   let mut velocity_target_id = -1
@@ -187,20 +216,14 @@ fn render3d_execute_camera(
       count=draw_queue_entry.draw_items.length(),
     ),
   )
-  let shadow_pass_plan = render3d_prepare_camera_shadow_passes(
-    world, camera_entity, camera, pass_lighting, meshes, point_light_shadow_map_size,
-    point_shadow_pass_kind, directional_shadow_pass_kind,
+  let shadow_pass_plan = execution_plan.shadow_pass_plan
+  render3d_execute_shadow_phase_views(
+    world,
+    camera_entity,
+    pass_lighting,
+    meshes,
+    shadow_pass_plan.phase_views,
   )
-  if shadow_pass_plan.phase_views.length() > 0 {
-    render3d_prepare_and_collect_shadow_phase_buffers_system(world)
-    render3d_execute_shadow_phase_views(
-      world,
-      camera_entity,
-      pass_lighting,
-      meshes,
-      shadow_pass_plan.phase_views,
-    )
-  }
   shadow_bindings = shadow_pass_plan.bindings
   render3d_dispatch_camera_preprocess_late(
     camera_entity, camera, prepared_queue,
