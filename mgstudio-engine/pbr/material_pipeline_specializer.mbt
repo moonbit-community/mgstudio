@@ -112,6 +112,22 @@ const MESH_PIPELINE_KEY_TONEMAP_METHOD_MASK_BITS : UInt64 = 0b1111UL
 const MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS : Int = 35
 
 ///|
+const MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_RESERVED_BITS : UInt64 = 0b11UL <<
+  MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+
+///|
+const MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_HARDWARE_2X2 : UInt64 = 0UL <<
+  MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+
+///|
+const MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_GAUSSIAN : UInt64 = 1UL <<
+  MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+
+///|
+const MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_TEMPORAL : UInt64 = 2UL <<
+  MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_SHIFT_BITS
+
+///|
 const MESH_PIPELINE_KEY_VIEW_PROJECTION_SHIFT_BITS : Int = 37
 
 ///|
@@ -161,6 +177,24 @@ fn pbr_push_view_projection_shader_def(
     shader_defs.push(pbr_shader_def("VIEW_PROJECTION_PERSPECTIVE"))
   } else if view_projection == MESH_PIPELINE_KEY_VIEW_PROJECTION_ORTHOGRAPHIC {
     shader_defs.push(pbr_shader_def("VIEW_PROJECTION_ORTHOGRAPHIC"))
+  }
+}
+
+///|
+fn pbr_push_shadow_filter_method_shader_def(
+  mesh_key_bits : UInt64,
+  shader_defs : Array[@material.ShaderDefVal],
+) -> Unit {
+  let shadow_filter_method = mesh_key_bits &
+    MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_RESERVED_BITS
+  if shadow_filter_method == MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_HARDWARE_2X2 {
+    shader_defs.push(pbr_shader_def("SHADOW_FILTER_METHOD_HARDWARE_2X2"))
+  } else if shadow_filter_method ==
+    MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_GAUSSIAN {
+    shader_defs.push(pbr_shader_def("SHADOW_FILTER_METHOD_GAUSSIAN"))
+  } else if shadow_filter_method ==
+    MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_TEMPORAL {
+    shader_defs.push(pbr_shader_def("SHADOW_FILTER_METHOD_TEMPORAL"))
   }
 }
 
@@ -817,6 +851,7 @@ fn pbr_mesh_pipeline_descriptor(
   if (mesh_key_bits & MESH_PIPELINE_KEY_TEMPORAL_JITTER) != 0UL {
     shader_defs.push(pbr_shader_def("TEMPORAL_JITTER"))
   }
+  pbr_push_shadow_filter_method_shader_def(mesh_key_bits, shader_defs)
   if (mesh_key_bits & MESH_PIPELINE_KEY_SCREEN_SPACE_REFLECTIONS) != 0UL {
     shader_defs.push(pbr_shader_def("SCREEN_SPACE_REFLECTIONS"))
   }

@@ -246,7 +246,10 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
   guard descriptor.fragment is Some(fragment) else {
     abort("expected pbr fragment state")
   }
-  for shader_def in ["BLUE_NOISE_TEXTURE", "DFG_LUT", "AREA_LIGHT_LUTS"] {
+  for
+    shader_def in [
+      "BLUE_NOISE_TEXTURE", "DFG_LUT", "AREA_LIGHT_LUTS", "SHADOW_FILTER_METHOD_HARDWARE_2X2",
+    ] {
     debug_inspect(
       pbr_material_specializer_shader_defs_contain_flag(
         fragment.shader_defs,
@@ -296,6 +299,38 @@ test "pbr material pipeline specializer mirrors bevy view projection shader defs
     pbr_material_specializer_shader_defs_contain_flag(
       fragment.shader_defs,
       "VIEW_PROJECTION_ORTHOGRAPHIC",
+    ),
+    content="false",
+  )
+}
+
+///|
+test "pbr material pipeline mirrors bevy temporal shadow filter shader def" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pbr_material_specializer_test_key(
+      mesh_bits=MESH_PIPELINE_KEY_SHADOW_FILTER_METHOD_TEMPORAL,
+    ),
+    pbr_material_specializer_test_layout(),
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "SHADOW_FILTER_METHOD_TEMPORAL",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "SHADOW_FILTER_METHOD_HARDWARE_2X2",
     ),
     content="false",
   )
@@ -644,7 +679,10 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
     ),
     content="true",
   )
-  for shader_def in ["MULTISAMPLED", "NORMAL_PREPASS"] {
+  for
+    shader_def in [
+      "MULTISAMPLED", "NORMAL_PREPASS", "SHADOW_FILTER_METHOD_GAUSSIAN",
+    ] {
     debug_inspect(
       pbr_material_specializer_shader_defs_contain_flag(
         fragment.shader_defs,
