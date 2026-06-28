@@ -76,13 +76,6 @@ fn render3d_execute_camera_point_shadow_pass(
       @app.TimelineTraceCategory::RenderQueue,
       "render_3d_shadow_phase_construction",
     )
-    let visible_indices = render3d_shadow_visible_extracted_indices(
-      meshes,
-      camera.layers,
-      render3d_host_preprocess_frustum_planes_from_half_spaces(
-        shadow_frustum.half_spaces,
-      ),
-    )
     let shadow_light_entity = Render3dLightEntity::Point(
       light_entity=point_render_entity,
       main_entity=point_entity,
@@ -91,15 +84,17 @@ fn render3d_execute_camera_point_shadow_pass(
     let retained_view_entity = shadow_light_entity.shadow_phase_retained_view(
       @render_view.RetainedViewEntity::new(camera_entity),
     )
-    render3d_update_shadow_map_visible_entities(
-      world, shadow_light_entity, retained_view_entity, meshes, visible_indices,
-    )
     ignore(
-      render3d_prepare_queued_shadow_phase_views(world, [
-        Render3dQueuedShadowPhaseView::new(
-          shadow_light_entity, retained_view_entity,
+      render3d_prepare_queued_shadow_phase_visible_view(
+        world,
+        shadow_light_entity,
+        retained_view_entity,
+        meshes,
+        camera.layers,
+        render3d_host_preprocess_frustum_planes_from_half_spaces(
+          shadow_frustum.half_spaces,
         ),
-      ]),
+      ),
     )
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
