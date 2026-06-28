@@ -13,6 +13,46 @@
 // limitations under the License.
 
 ///|
+priv struct Render3dCameraShadowPassPlan {
+  bindings : Render3dViewShadowBindings
+  phase_views : Array[Render3dShadowPhaseExecutionView]
+}
+
+///|
+fn render3d_prepare_camera_shadow_passes(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  pass_lighting : Render3dLightingState,
+  meshes : Array[ExtractedMesh3d],
+  point_light_shadow_map_size : Int,
+  point_shadow_pass_kind : Int,
+  directional_shadow_pass_kind : Int,
+) -> Render3dCameraShadowPassPlan {
+  let point_shadow_plan = render3d_prepare_camera_point_shadow_pass(
+    world, camera, pass_lighting, point_light_shadow_map_size, camera_entity, meshes,
+    point_shadow_pass_kind,
+  )
+  let directional_shadow_plan = render3d_prepare_camera_directional_shadow_pass(
+    world, camera_entity, camera, pass_lighting, meshes, directional_shadow_pass_kind,
+  )
+  let shadow_phase_views : Array[Render3dShadowPhaseExecutionView] = []
+  for phase_view in point_shadow_plan.phase_views {
+    shadow_phase_views.push(phase_view)
+  }
+  for phase_view in directional_shadow_plan.phase_views {
+    shadow_phase_views.push(phase_view)
+  }
+  {
+    bindings: Render3dViewShadowBindings::{
+      point: point_shadow_plan.binding,
+      directional: directional_shadow_plan.binding,
+    },
+    phase_views: shadow_phase_views,
+  }
+}
+
+///|
 fn render3d_execute_camera(
   world : @ecs.World,
   extracted_camera : ExtractedCamera3d,
@@ -147,30 +187,21 @@ fn render3d_execute_camera(
       count=draw_queue_entry.draw_items.length(),
     ),
   )
-  let point_shadow_plan = render3d_prepare_camera_point_shadow_pass(
-    world, camera, pass_lighting, point_light_shadow_map_size, camera_entity, meshes,
-    point_shadow_pass_kind,
+  let shadow_pass_plan = render3d_prepare_camera_shadow_passes(
+    world, camera_entity, camera, pass_lighting, meshes, point_light_shadow_map_size,
+    point_shadow_pass_kind, directional_shadow_pass_kind,
   )
-  let directional_shadow_plan = render3d_prepare_camera_directional_shadow_pass(
-    world, camera_entity, camera, pass_lighting, meshes, directional_shadow_pass_kind,
-  )
-  let shadow_phase_views : Array[Render3dShadowPhaseExecutionView] = []
-  for phase_view in point_shadow_plan.phase_views {
-    shadow_phase_views.push(phase_view)
-  }
-  for phase_view in directional_shadow_plan.phase_views {
-    shadow_phase_views.push(phase_view)
-  }
-  if shadow_phase_views.length() > 0 {
+  if shadow_pass_plan.phase_views.length() > 0 {
     render3d_prepare_and_collect_shadow_phase_buffers_system(world)
     render3d_execute_shadow_phase_views(
-      world, camera_entity, pass_lighting, meshes, shadow_phase_views,
+      world,
+      camera_entity,
+      pass_lighting,
+      meshes,
+      shadow_pass_plan.phase_views,
     )
   }
-  shadow_bindings = Render3dViewShadowBindings::{
-    point: point_shadow_plan.binding,
-    directional: directional_shadow_plan.binding,
-  }
+  shadow_bindings = shadow_pass_plan.bindings
   render3d_dispatch_camera_preprocess_late(
     camera_entity, camera, prepared_queue,
   )
