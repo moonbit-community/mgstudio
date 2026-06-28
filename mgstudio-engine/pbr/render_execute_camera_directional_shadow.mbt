@@ -177,6 +177,7 @@ fn render3d_execute_camera_directional_shadow_pass(
   let target_id = render3d_directional_light_shadow_target_get_or_create(
     world, camera_entity, shadow_map_size, target_layers,
   )
+  let shadow_phase_views : Array[Render3dShadowPhaseView] = []
   if pass_lighting.directional_entity is Some(light_entity) &&
     pass_lighting.directional_render_entity is Some(directional_render_entity) {
     for cascade_index in 0..<cascades.length() {
@@ -222,16 +223,13 @@ fn render3d_execute_camera_directional_shadow_pass(
           pass_lighting, target_id, shadow_map_size,
         ),
       }
-      render3d_execute_shadow_phase_view(
-        world,
-        camera_entity,
-        pass_lighting,
-        shadow_pass_kind,
-        0.1F,
-        meshes,
-        { shadow_view, },
-      )
+      shadow_phase_views.push({ shadow_view, })
     }
+  }
+  for phase_view in shadow_phase_views {
+    render3d_execute_shadow_phase_view(
+      world, camera_entity, pass_lighting, shadow_pass_kind, 0.1F, meshes, phase_view,
+    )
   }
   if spot_enabled {
     render3d_execute_camera_spot_shadow_pass(
