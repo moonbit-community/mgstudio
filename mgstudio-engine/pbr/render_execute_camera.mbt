@@ -16,6 +16,7 @@
 priv struct Render3dCameraShadowPassPlan {
   bindings : Render3dViewShadowBindings
   phase_views : Array[Render3dShadowPhaseExecutionView]
+  queued_phase_views : Array[Render3dQueuedShadowPhaseView]
 }
 
 ///|
@@ -85,11 +86,18 @@ fn render3d_prepare_camera_shadow_passes(
     world, camera_entity, camera, pass_lighting, meshes, directional_shadow_pass_kind,
   )
   let shadow_phase_views : Array[Render3dShadowPhaseExecutionView] = []
+  let queued_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   for phase_view in point_shadow_plan.phase_views {
     shadow_phase_views.push(phase_view)
   }
   for phase_view in directional_shadow_plan.phase_views {
     shadow_phase_views.push(phase_view)
+  }
+  for queued_phase_view in point_shadow_plan.queued_phase_views {
+    queued_phase_views.push(queued_phase_view)
+  }
+  for queued_phase_view in directional_shadow_plan.queued_phase_views {
+    queued_phase_views.push(queued_phase_view)
   }
   {
     bindings: Render3dViewShadowBindings::{
@@ -97,6 +105,7 @@ fn render3d_prepare_camera_shadow_passes(
       directional: directional_shadow_plan.binding,
     },
     phase_views: shadow_phase_views,
+    queued_phase_views,
   }
 }
 

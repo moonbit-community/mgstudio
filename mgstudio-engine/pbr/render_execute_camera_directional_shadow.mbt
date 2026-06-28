@@ -140,6 +140,13 @@ fn render3d_directional_shadow_frustum_planes(
 priv struct Render3dDirectionalShadowPassPlan {
   binding : Render3dDirectionalShadowBinding
   phase_views : Array[Render3dShadowPhaseExecutionView]
+  queued_phase_views : Array[Render3dQueuedShadowPhaseView]
+}
+
+///|
+priv struct Render3dSpotShadowPhaseViewPlan {
+  phase_view : Render3dShadowPhaseExecutionView
+  queued_phase_view : Render3dQueuedShadowPhaseView
 }
 
 ///|
@@ -152,6 +159,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
   shadow_pass_kind : Int,
 ) -> Render3dDirectionalShadowPassPlan {
   let empty_phase_views : Array[Render3dShadowPhaseExecutionView] = []
+  let empty_queued_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   let shadow_map_size = match
     world.get_resource(@light.ecs_key_directional_light_shadow_map) {
     Some(v) => if v.size <= 0 { 1 } else { v.size }
@@ -173,6 +181,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
     return {
       binding: render3d_directional_shadow_binding_none(),
       phase_views: empty_phase_views,
+      queued_phase_views: empty_queued_phase_views,
     }
   }
   let spot_shadow_layer_count = if spot_enabled {
@@ -188,6 +197,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
     world, camera_entity, shadow_map_size, target_layers,
   )
   let shadow_phase_views : Array[Render3dShadowPhaseExecutionView] = []
+  let queued_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   if pass_lighting.directional_entity is Some(light_entity) &&
     pass_lighting.directional_render_entity is Some(directional_render_entity) {
     for cascade_index in 0..<cascades.length() {
@@ -212,11 +222,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
         camera.layers,
         render3d_directional_shadow_frustum_planes(cascade.clip_from_world),
       )
-      ignore(
-        render3d_prepare_queued_shadow_phase_views(world, [
-          queued_shadow_phase_view,
-        ]),
-      )
+      queued_phase_views.push(queued_shadow_phase_view)
       @app.timeline_trace_end_span(
         @app.TimelineTraceCategory::RenderQueue,
         "render_3d_shadow_phase_construction",
@@ -259,7 +265,10 @@ fn render3d_prepare_camera_directional_shadow_pass(
         shadow_map_size,
         shadow_pass_kind,
       ) {
-      Some(phase_view) => shadow_phase_views.push(phase_view)
+      Some(spot_plan) => {
+        shadow_phase_views.push(spot_plan.phase_view)
+        queued_phase_views.push(spot_plan.queued_phase_view)
+      }
       None => ()
     }
   }
@@ -275,6 +284,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
       cascade_count: cascades.length(),
     },
     phase_views: shadow_phase_views,
+    queued_phase_views,
   }
 }
 
@@ -289,7 +299,7 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
   target_layer : Int,
   shadow_map_size : Int,
   shadow_pass_kind : Int,
-) -> Render3dShadowPhaseExecutionView? {
+) -> Render3dSpotShadowPhaseViewPlan? {
   guard pass_lighting.spot_entity is Some(light_entity) else { return None }
   guard pass_lighting.spot_render_entity is Some(spot_render_entity) else {
     return None
@@ -335,9 +345,6 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
     camera.layers,
     render3d_directional_shadow_frustum_planes(clip_from_world),
   )
-  ignore(
-    render3d_prepare_queued_shadow_phase_views(world, [queued_shadow_phase_view]),
-  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     "render_3d_shadow_phase_construction",
@@ -356,9 +363,12 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
     occlusion_culling_subview: None,
   }
   Some({
-    phase_view: { shadow_view, },
-    pass_kind: shadow_pass_kind,
-    point_shadow_near: spot_near,
+    phase_view: {
+      phase_view: { shadow_view, },
+      pass_kind: shadow_pass_kind,
+      point_shadow_near: spot_near,
+    },
+    queued_phase_view: queued_shadow_phase_view,
   })
 }
 

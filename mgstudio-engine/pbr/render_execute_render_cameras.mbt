@@ -76,7 +76,7 @@ fn render3d_execute_render_cameras(
   let ordered_cameras : Array[ExtractedCamera3d] = []
   let ordered_prepared_camera_queues : Array[Render3dPreparedCameraQueue] = []
   let ordered_camera_execution_plans : Array[Render3dCameraExecutionPlan] = []
-  let mut has_shadow_phase_views = false
+  let queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   for camera_phase_item in camera_phase_items {
     guard camera_phase_item.extracted_index >= 0 &&
       camera_phase_item.extracted_index < cameras.length() &&
@@ -92,14 +92,19 @@ fn render3d_execute_render_cameras(
       world, extracted_camera, meshes, point_light_shadow_map_size, prepass_enabled,
       deferred_lighting_enabled, default_opaque_renderer_method, lighting,
     )
-    if execution_plan.shadow_pass_plan.phase_views.length() > 0 {
-      has_shadow_phase_views = true
+    for queued_phase_view in execution_plan.shadow_pass_plan.queued_phase_views {
+      queued_shadow_phase_views.push(queued_phase_view)
     }
     ordered_cameras.push(extracted_camera)
     ordered_prepared_camera_queues.push(prepared_camera_queue)
     ordered_camera_execution_plans.push(execution_plan)
   }
-  if has_shadow_phase_views {
+  if queued_shadow_phase_views.length() > 0 {
+    ignore(
+      render3d_prepare_queued_shadow_phase_views(
+        world, queued_shadow_phase_views,
+      ),
+    )
     render3d_prepare_and_collect_shadow_phase_buffers_system(world)
   }
   for i in 0..<ordered_cameras.length() {

@@ -16,6 +16,7 @@
 priv struct Render3dPointShadowPassPlan {
   binding : Render3dPointShadowBinding
   phase_views : Array[Render3dShadowPhaseExecutionView]
+  queued_phase_views : Array[Render3dQueuedShadowPhaseView]
 }
 
 ///|
@@ -29,23 +30,30 @@ fn render3d_prepare_camera_point_shadow_pass(
   point_shadow_pass_kind : Int,
 ) -> Render3dPointShadowPassPlan {
   let empty_phase_views : Array[Render3dShadowPhaseExecutionView] = []
+  let empty_queued_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   if !pass_lighting.point_shadow_maps_enabled ||
     pass_lighting.point_entity is None ||
     pass_lighting.point_render_entity is None ||
     pass_lighting.point_range <= 0.0F ||
     point_light_shadow_map_size <= 0 {
-    return { binding: render3d_point_shadow_binding_none(), phase_views: [] }
+    return {
+      binding: render3d_point_shadow_binding_none(),
+      phase_views: empty_phase_views,
+      queued_phase_views: empty_queued_phase_views,
+    }
   }
   guard pass_lighting.point_entity is Some(point_entity) else {
     return {
       binding: render3d_point_shadow_binding_none(),
       phase_views: empty_phase_views,
+      queued_phase_views: empty_queued_phase_views,
     }
   }
   guard pass_lighting.point_render_entity is Some(point_render_entity) else {
     return {
       binding: render3d_point_shadow_binding_none(),
       phase_views: empty_phase_views,
+      queued_phase_views: empty_queued_phase_views,
     }
   }
   let point_light_index = if pass_lighting.point_light_index < 0 {
@@ -76,6 +84,7 @@ fn render3d_prepare_camera_point_shadow_pass(
     pass_lighting.point_range,
   )
   let shadow_phase_views : Array[Render3dShadowPhaseExecutionView] = []
+  let queued_phase_views : Array[Render3dQueuedShadowPhaseView] = []
   for face_index in 0..<6 {
     let shadow_camera_transform = @pbr_render.render3d_point_shadow_face_transform(
       pass_lighting.point_pos,
@@ -108,11 +117,7 @@ fn render3d_prepare_camera_point_shadow_pass(
         shadow_frustum.half_spaces,
       ),
     )
-    ignore(
-      render3d_prepare_queued_shadow_phase_views(world, [
-        queued_shadow_phase_view,
-      ]),
-    )
+    queued_phase_views.push(queued_shadow_phase_view)
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::RenderQueue,
       "render_3d_shadow_phase_construction",
@@ -145,6 +150,7 @@ fn render3d_prepare_camera_point_shadow_pass(
       depth_bias: point_shadow_depth_bias,
     },
     phase_views: shadow_phase_views,
+    queued_phase_views,
   }
 }
 
