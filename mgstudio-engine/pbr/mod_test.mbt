@@ -144,6 +144,10 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     content="true",
   )
   debug_inspect(
+    render_dot.contains("\"pbr.render3d.specialize_shadows\""),
+    content="true",
+  )
+  debug_inspect(
     render_dot.contains("\"pbr.render3d.queue_shadows\""),
     content="true",
   )
@@ -171,7 +175,13 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
   )
   debug_inspect(
     render_dot.contains(
-      "\"pbr.render3d.queue_meshes\" -> \"pbr.render3d.queue_shadows\"",
+      "\"pbr.render3d.queue_meshes\" -> \"pbr.render3d.specialize_shadows\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.specialize_shadows\" -> \"pbr.render3d.queue_shadows\"",
     ),
     content="true",
   )

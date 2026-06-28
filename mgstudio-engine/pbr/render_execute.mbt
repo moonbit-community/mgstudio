@@ -4460,17 +4460,31 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
-pub fn render3d_queue_shadows_system(world : @ecs.World) -> Unit {
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
+pub fn render3d_specialize_shadows_system(world : @ecs.World) -> Unit {
   guard render3d_queue_frame_snapshot(world) is Some(frame) else { return }
-  let camera_execution_plans = render3d_prepare_camera_execution_plans_for_queued_frame(
+  let (camera_execution_plans, queued_shadow_phase_views) = render3d_prepare_camera_execution_plans_for_queued_frame(
     world,
     frame.cameras,
     frame.meshes,
     frame.prepared_camera_queues,
     frame.frame_config,
   )
-  render3d_queue_store_camera_execution_plans(world, camera_execution_plans)
+  ignore(
+    render3d_specialize_shadow_phase_views(world, queued_shadow_phase_views),
+  )
+  render3d_queue_store_shadow_execution_data(
+    world, camera_execution_plans, queued_shadow_phase_views,
+  )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
+pub fn render3d_queue_shadows_system(world : @ecs.World) -> Unit {
+  guard render3d_queue_frame_snapshot(world) is Some(frame) else { return }
+  ignore(
+    render3d_queue_shadow_phase_views(world, frame.queued_shadow_phase_views),
+  )
 }
 
 ///|

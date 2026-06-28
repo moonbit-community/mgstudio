@@ -52,7 +52,7 @@ fn render3d_shadow_gpu_preprocessing_support(
 }
 
 ///|
-fn render3d_prepare_queued_shadow_phase_for_light(
+fn render3d_specialize_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
@@ -69,12 +69,15 @@ fn render3d_prepare_queued_shadow_phase_for_light(
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
     Some(value) => value
     None =>
-      abort("missing DirtySpecializations resource during pbr shadow queueing")
+      abort(
+        "missing DirtySpecializations resource during pbr shadow specialization",
+      )
   }
   let light_key_cache = match
     world.get_resource(@pbr_render.LightKeyCache::resource()) {
     Some(value) => value
-    None => abort("missing LightKeyCache resource during pbr shadow queueing")
+    None =>
+      abort("missing LightKeyCache resource during pbr shadow specialization")
   }
   @pbr_render.check_view_light_needs_specialization(
     light_key_cache,
@@ -99,14 +102,16 @@ fn render3d_prepare_queued_shadow_phase_for_light(
       })
     None =>
       abort(
-        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow queueing",
+        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow specialization",
       )
   }
   let pending_shadow_queues = match
     world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(value) => value
     None =>
-      abort("missing PendingShadowQueues resource during pbr shadow queueing")
+      abort(
+        "missing PendingShadowQueues resource during pbr shadow specialization",
+      )
   }
   let candidates = render3d_shadow_specialization_candidates_for_light(
     world, light_entity, retained_view_entity, dirty_specializations, pending_shadow_queues,
@@ -126,6 +131,27 @@ fn render3d_prepare_queued_shadow_phase_for_light(
       None => ()
     }
   }
+  true
+}
+
+///|
+fn render3d_queue_shadow_phase_for_light(
+  world : @ecs.World,
+  light_entity : Render3dLightEntity,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Bool {
+  let dirty_specializations = match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(value) => value
+    None =>
+      abort("missing DirtySpecializations resource during pbr shadow queueing")
+  }
+  let pending_shadow_queues = match
+    world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
+    Some(value) => value
+    None =>
+      abort("missing PendingShadowQueues resource during pbr shadow queueing")
+  }
   render3d_queue_shadow_phase_data_for_light(
     world,
     light_entity,
@@ -138,21 +164,53 @@ fn render3d_prepare_queued_shadow_phase_for_light(
 }
 
 ///|
-fn render3d_prepare_queued_shadow_phase_views(
+fn render3d_specialize_shadow_phase_views(
   world : @ecs.World,
   views : Array[Render3dQueuedShadowPhaseView],
 ) -> Int {
-  let mut prepared_count = 0
+  let all_shadow_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  let mut specialized_count = 0
   for view in views {
-    if render3d_prepare_queued_shadow_phase_for_light(
+    all_shadow_views.add(view.retained_view_entity())
+    if render3d_specialize_shadow_phase_for_light(
         world,
         view.light_entity(),
         view.retained_view_entity(),
       ) {
-      prepared_count += 1
+      specialized_count += 1
     }
   }
-  prepared_count
+  match
+    world.get_resource_mut(
+      @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    ) {
+    Some(cache_ref) =>
+      cache_ref.modify(fn(cache) { cache.expire_stale_views(all_shadow_views) })
+    None =>
+      abort(
+        "missing SpecializedShadowMaterialPipelineCache resource during pbr shadow specialization",
+      )
+  }
+  specialized_count
+}
+
+///|
+fn render3d_queue_shadow_phase_views(
+  world : @ecs.World,
+  views : Array[Render3dQueuedShadowPhaseView],
+) -> Int {
+  let mut queued_count = 0
+  for view in views {
+    if render3d_queue_shadow_phase_for_light(
+        world,
+        view.light_entity(),
+        view.retained_view_entity(),
+      ) {
+      queued_count += 1
+    }
+  }
+  queued_count
 }
 
 ///|

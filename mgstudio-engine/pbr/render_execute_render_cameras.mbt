@@ -106,7 +106,7 @@ fn render3d_prepare_camera_execution_plans_for_queued_frame(
   meshes : Array[ExtractedMesh3d],
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
   frame_config : Render3dExecuteFrameConfig,
-) -> Array[Render3dCameraExecutionPlan?] {
+) -> (Array[Render3dCameraExecutionPlan?], Array[Render3dQueuedShadowPhaseView]) {
   let trace_collect_lighting_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "queue_3d_collect_lighting",
@@ -146,14 +146,7 @@ fn render3d_prepare_camera_execution_plans_for_queued_frame(
     }
     camera_execution_plans.push(Some(execution_plan))
   }
-  if queued_shadow_phase_views.length() > 0 {
-    ignore(
-      render3d_prepare_queued_shadow_phase_views(
-        world, queued_shadow_phase_views,
-      ),
-    )
-  }
-  camera_execution_plans
+  (camera_execution_plans, queued_shadow_phase_views)
 }
 
 ///|

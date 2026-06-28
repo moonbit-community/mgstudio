@@ -37,6 +37,7 @@ priv struct Render3dQueuedFrame {
   meshes : Array[ExtractedMesh3d]
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?]
   camera_execution_plans : Array[Render3dCameraExecutionPlan?]
+  queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView]
   prepared_camera_count : Int
 }
 
@@ -141,6 +142,7 @@ fn render3d_queue_store_frame(
       meshes,
       prepared_camera_queues,
       camera_execution_plans,
+      queued_shadow_phase_views: [],
       prepared_camera_count,
     })
   })
@@ -163,9 +165,10 @@ fn render3d_queue_frame_snapshot(world : @ecs.World) -> Render3dQueuedFrame? {
 }
 
 ///|
-fn render3d_queue_store_camera_execution_plans(
+fn render3d_queue_store_shadow_execution_data(
   world : @ecs.World,
   camera_execution_plans : Array[Render3dCameraExecutionPlan?],
+  queued_shadow_phase_views : Array[Render3dQueuedShadowPhaseView],
 ) -> Unit {
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
@@ -174,6 +177,7 @@ fn render3d_queue_store_camera_execution_plans(
         value.queued_frame = Some(Render3dQueuedFrame::{
           ..frame,
           camera_execution_plans,
+          queued_shadow_phase_views,
         })
       None => ()
     }
