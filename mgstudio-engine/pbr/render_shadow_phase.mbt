@@ -135,6 +135,7 @@ fn render3d_queue_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
+  view_render_layers : @camera_render_layers.RenderLayers?,
 ) -> Bool {
   let dirty_specializations = match
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
@@ -152,7 +153,7 @@ fn render3d_queue_shadow_phase_for_light(
     world,
     light_entity,
     retained_view_entity,
-    None,
+    view_render_layers,
     dirty_specializations,
     pending_shadow_queues,
     render3d_shadow_gpu_preprocessing_support(world),
@@ -212,6 +213,7 @@ fn render3d_queue_shadow_phase_views(
         world,
         view.light_entity(),
         view.retained_view_entity(),
+        view.view_render_layers(),
       ) {
       queued_count += 1
     }
