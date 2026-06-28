@@ -2785,6 +2785,22 @@ pub fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers(
     phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
     phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
   )
+  self.prepare_batchable_phase_buffers_with_work_item_buffer(
+    no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+    work_item_buffer,
+  )
+}
+
+///|
+fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers_with_work_item_buffer(
+  self : Render3dShadowViewPhaseData,
+  no_indirect_drawing : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+  work_item_buffer : @render_batching.PreprocessWorkItemBuffers,
+) -> Unit {
   for item_index in 0..<self.items.length() {
     let item = self.items[item_index]
     let indexed = item.batch_set_key().indexed()
@@ -2853,6 +2869,22 @@ pub fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers(
     phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
     phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
   )
+  self.prepare_unbatchable_phase_buffers_with_work_item_buffer(
+    no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+    work_item_buffer,
+  )
+}
+
+///|
+fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers_with_work_item_buffer(
+  self : Render3dShadowViewPhaseData,
+  no_indirect_drawing : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+  work_item_buffer : @render_batching.PreprocessWorkItemBuffers,
+) -> Unit {
   for entities in self.unbatchable_meshes {
     entities.prepare_phase_buffers(
       no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
@@ -2875,10 +2907,6 @@ pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(
   ],
   phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
 ) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData] {
-  let batch_sets : Array[Render3dShadowBinnedRenderPhaseBatchSetData] = []
-  if no_indirect_drawing {
-    return batch_sets
-  }
   let work_item_buffer = @render_batching.get_or_create_work_item_buffer(
     phase_batched_instance_buffers.buffers.work_item_buffers,
     retained_view_key,
@@ -2890,6 +2918,26 @@ pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(
     phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
     phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
   )
+  self.prepare_multidrawable_phase_buffers_with_work_item_buffer(
+    no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+    work_item_buffer,
+  )
+}
+
+///|
+fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers_with_work_item_buffer(
+  self : Render3dShadowViewPhaseData,
+  no_indirect_drawing : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+  work_item_buffer : @render_batching.PreprocessWorkItemBuffers,
+) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData] {
+  let batch_sets : Array[Render3dShadowBinnedRenderPhaseBatchSetData] = []
+  if no_indirect_drawing {
+    return batch_sets
+  }
   let indexed_preparer = Render3dShadowMultidrawableBatchSetPreparer::new(
     phase_indirect_parameters_buffers.buffers.batch_count(true),
     phase_indirect_parameters_buffers.buffers.batch_set_count(true),
@@ -2919,6 +2967,44 @@ pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(
     non_indexed_preparer.work_item_count,
   )
   batch_sets
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+pub fn Render3dShadowViewPhaseData::prepare_phase_buffers(
+  self : Render3dShadowViewPhaseData,
+  retained_view_key : String,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData] {
+  let work_item_buffer = @render_batching.get_or_create_work_item_buffer(
+    phase_batched_instance_buffers.buffers.work_item_buffers,
+    retained_view_key,
+    no_indirect_drawing,
+    enable_gpu_occlusion_culling,
+  )
+  @render_batching.init_work_item_buffers(
+    work_item_buffer,
+    phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
+    phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
+  )
+  self.prepare_unbatchable_phase_buffers_with_work_item_buffer(
+    no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+    work_item_buffer,
+  )
+  self.prepare_batchable_phase_buffers_with_work_item_buffer(
+    no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+    work_item_buffer,
+  )
+  self.prepare_multidrawable_phase_buffers_with_work_item_buffer(
+    no_indirect_drawing, phase_batched_instance_buffers, phase_indirect_parameters_buffers,
+    work_item_buffer,
+  )
 }
 
 ///|
@@ -3218,6 +3304,45 @@ pub fn Render3dShadowPhasesData::apply_queue(
     }
     None => None
   }
+}
+
+///|
+fn render3d_shadow_phase_retained_view_key(
+  view : @render_view.RetainedViewEntity,
+) -> String {
+  view.main_entity().to_bits().to_string() +
+  ":" +
+  view.auxiliary_entity().to_bits().to_string() +
+  ":" +
+  view.subview_index().to_string()
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+pub fn Render3dShadowPhasesData::prepare_phase_buffers(
+  self : Render3dShadowPhasesData,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData] {
+  let batch_sets : Array[Render3dShadowBinnedRenderPhaseBatchSetData] = []
+  for view, phase in self.views {
+    let prepared_batch_sets = phase.prepare_phase_buffers(
+      render3d_shadow_phase_retained_view_key(view),
+      no_indirect_drawing,
+      enable_gpu_occlusion_culling,
+      phase_batched_instance_buffers,
+      phase_indirect_parameters_buffers,
+    )
+    for batch_set in prepared_batch_sets {
+      batch_sets.push(batch_set)
+    }
+  }
+  batch_sets
 }
 
 ///|

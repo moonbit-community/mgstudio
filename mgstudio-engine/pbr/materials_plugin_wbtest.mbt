@@ -768,6 +768,99 @@ test "render3d: multidrawable shadow phase prepares Bevy indirect buffers" {
 }
 
 ///|
+test "render3d: shadow phase prepares all binned mesh classes with one work buffer" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let unbatchable_key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(910UL),
+    @material.DrawFunctionId::new(18U),
+    Some(9),
+    @render_mesh.MeshSlabs::new(40, index_slab_id=Some(41)),
+  )
+  let batchable_key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(911UL),
+    @material.DrawFunctionId::new(19U),
+    Some(10),
+    @render_mesh.MeshSlabs::new(42, index_slab_id=Some(43)),
+  )
+  let multidraw_key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(912UL),
+    @material.DrawFunctionId::new(20U),
+    Some(11),
+    @render_mesh.MeshSlabs::new(44, index_slab_id=Some(45)),
+  )
+  phase.add(
+    unbatchable_key,
+    Render3dShadowBinKeyData::new(710),
+    (
+      @core.Entity::new(161, 1),
+      @render.MainEntity::new(@core.Entity::new(151, 1)),
+    ),
+    10U,
+    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+  )
+  phase.add(
+    batchable_key,
+    Render3dShadowBinKeyData::new(711),
+    (
+      @core.Entity::new(162, 1),
+      @render.MainEntity::new(@core.Entity::new(152, 1)),
+    ),
+    20U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  phase.add(
+    batchable_key,
+    Render3dShadowBinKeyData::new(711),
+    (
+      @core.Entity::new(163, 1),
+      @render.MainEntity::new(@core.Entity::new(153, 1)),
+    ),
+    21U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+  )
+  phase.add(
+    multidraw_key,
+    Render3dShadowBinKeyData::new(712),
+    (
+      @core.Entity::new(164, 1),
+      @render.MainEntity::new(@core.Entity::new(154, 1)),
+    ),
+    30U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  phase.add(
+    multidraw_key,
+    Render3dShadowBinKeyData::new(712),
+    (
+      @core.Entity::new(165, 1),
+      @render.MainEntity::new(@core.Entity::new(155, 1)),
+    ),
+    31U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  let multidraw_batch_sets = phase.prepare_phase_buffers(
+    "shadow-view", false, true, phase_instances, indirect_parameters,
+  )
+  let work_items = phase_instances.buffers.work_item_buffers
+    .get("shadow-view")
+    .unwrap()
+  debug_inspect(phase_instances.buffers.data_buffer.len(), content="5")
+  debug_inspect(work_items.indexed_len(), content="5")
+  debug_inspect(work_items.late_indexed_len(), content="5")
+  debug_inspect(indirect_parameters.buffers.batch_count(true), content="3")
+  debug_inspect(indirect_parameters.buffers.batch_set_count(true), content="3")
+  debug_inspect(multidraw_batch_sets.length(), content="1")
+  debug_inspect(phase.items().length(), content="2")
+  debug_inspect(phase.multidrawable_items(false).length(), content="1")
+}
+
+///|
 test "render3d: shadow phase buffers collect into global preprocessing tables" {
   let world = @ecs.World::new()
   let phase_instances = Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers()

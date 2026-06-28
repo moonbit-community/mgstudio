@@ -2299,6 +2299,7 @@ pub fn Render3dShadowPhasesData::apply_queue(Self, @view.RetainedViewEntity, Ren
 pub fn Render3dShadowPhasesData::get(Self, @view.RetainedViewEntity) -> Render3dShadowViewPhaseData?
 pub fn Render3dShadowPhasesData::len(Self) -> Int
 pub fn Render3dShadowPhasesData::prepare_for_new_frame(Self, @view.RetainedViewEntity, gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> Render3dShadowViewPhaseData
+pub fn Render3dShadowPhasesData::prepare_phase_buffers(Self, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
 pub fn Render3dShadowPhasesData::remove(Self, @view.RetainedViewEntity) -> Unit
 pub fn Render3dShadowPhasesData::retain(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
 pub fn Render3dShadowPhasesData::view_or_insert(Self, @view.RetainedViewEntity, gpu_preprocessing_mode? : @batching.GpuPreprocessingMode) -> Render3dShadowViewPhaseData
@@ -2373,6 +2374,7 @@ pub fn Render3dShadowViewPhaseData::phase_type(Self, @Milky2018/mgstudio/render.
 pub fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(Self) -> Unit
 pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
+pub fn Render3dShadowViewPhaseData::prepare_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
 pub fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
 pub fn Render3dShadowViewPhaseData::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
 pub fn Render3dShadowViewPhaseData::render_items(Self, Bool) -> Array[Render3dShadowPhaseItemData]
