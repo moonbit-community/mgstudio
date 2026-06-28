@@ -199,6 +199,14 @@ pub fn PendingQueues::view_or_insert(
 }
 
 ///|
+pub fn PendingQueues::get(
+  self : PendingQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> ViewPendingQueues? {
+  self.views.get(retained_view_entity)
+}
+
+///|
 pub fn PendingQueues::prepare_for_new_frame(
   self : PendingQueues,
   retained_view_entity : @render_view.RetainedViewEntity,

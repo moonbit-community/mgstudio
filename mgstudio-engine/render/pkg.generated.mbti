@@ -882,6 +882,7 @@ pub fn PendingQueues::PendingQueues() -> Self
 pub fn PendingQueues::contains_view(Self, @view.RetainedViewEntity) -> Bool
 pub fn PendingQueues::current_len(Self, @view.RetainedViewEntity) -> Int
 pub fn PendingQueues::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
+pub fn PendingQueues::get(Self, @view.RetainedViewEntity) -> ViewPendingQueues?
 pub fn PendingQueues::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> ViewPendingQueues
 pub fn PendingQueues::prev_len(Self, @view.RetainedViewEntity) -> Int
 pub fn PendingQueues::push_current(Self, @view.RetainedViewEntity, @core.Entity, MainEntity) -> Unit

@@ -131,3 +131,17 @@ test "render camera: PendingQueues expires stale views" {
   debug_inspect(queues.contains_view(stale_view), content="false")
   debug_inspect(queues.view_len(), content="1")
 }
+
+///|
+test "render camera: PendingQueues get does not create missing views" {
+  let queues = PendingQueues::PendingQueues()
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(12, 1))
+
+  debug_inspect(queues.get(view) is None, content="true")
+  debug_inspect(queues.view_len(), content="0")
+
+  ignore(queues.prepare_for_new_frame(view))
+
+  debug_inspect(queues.get(view) is Some(_), content="true")
+  debug_inspect(queues.view_len(), content="1")
+}

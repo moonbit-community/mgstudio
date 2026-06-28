@@ -821,9 +821,12 @@ pub fn render3d_shadow_specialization_candidates(
     is Some(render_visible_mesh_entities) else {
     return []
   }
-  let view_pending_shadow_queues = pending_shadow_queues
-    .queues()
-    .view_or_insert(retained_view_entity)
+  let view_pending_shadow_queues = match
+    pending_shadow_queues.queues().get(retained_view_entity) {
+    Some(queues) => queues
+    None =>
+      abort("missing view PendingShadowQueues during pbr shadow specialization")
+  }
   dirty_specializations.iter_to_specialize(
     retained_view_entity,
     render_visible_mesh_entities,
@@ -3625,9 +3628,14 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
       }
     None => return result
   }
-  let view_pending_shadow_queues = pending_shadow_queues
-    .queues()
-    .view_or_insert(retained_view_entity)
+  let view_pending_shadow_queues = match
+    pending_shadow_queues.queues().get(retained_view_entity) {
+    Some(queues) => queues
+    None =>
+      abort(
+        "View pending shadow queues should have been created in pbr.render3d.specialize_shadows",
+      )
+  }
   let dequeued = dirty_specializations.iter_to_dequeue(
     retained_view_entity, render_visible_mesh_entities,
   )
