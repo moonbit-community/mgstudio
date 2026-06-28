@@ -255,6 +255,121 @@ test "render3d: shared indirect parameter buffers convert to gpu preprocess meta
 }
 
 ///|
+test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
+  let draw_items = [
+    MeshPhaseItem3d::{
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(41, 0)),
+      extracted_index: -1,
+      phase: RENDER3D_PHASE_OPAQUE,
+      pipeline_id: None,
+      distance: 1.0F,
+    },
+  ]
+  let work_items = @render_batching.preprocess_work_item_buffers_indirect(false)
+  work_items.push(true, @render_batching.PreprocessWorkItem::new(7, 0))
+  let indirect_buffers = @render_batching.UntypedPhaseIndirectParametersBuffers::new(
+    false,
+  )
+  ignore(indirect_buffers.allocate(true, 1))
+  indirect_buffers.set_cpu_metadata(
+    true,
+    0,
+    @render_batching.IndirectParametersCpuMetadata::new(3, 0),
+  )
+  indirect_buffers.add_batch_set(true, 0)
+  let entry = render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
+    draw_items,
+    [],
+    {},
+    work_items,
+    indirect_buffers,
+  )
+  debug_inspect(entry.phase_ranges.length(), content="1")
+  debug_inspect(entry.mesh_culling_data.length(), content="1")
+  match entry.work_item_buffers {
+    Direct(_) => abort("expected indirect queue work items")
+    Indirect(indexed, non_indexed, _) => {
+      debug_inspect(indexed.length(), content="1")
+      debug_inspect(non_indexed.length(), content="0")
+      debug_inspect(indexed[0].input_index, content="7")
+      debug_inspect(indexed[0].output_or_indirect_parameters_index, content="0")
+    }
+  }
+  debug_inspect(
+    entry.indirect_metadata.indexed.indirect_parameters_cpu_metadata[0].base_output_index,
+    content="3",
+  )
+  debug_inspect(
+    entry.indirect_metadata.indexed.indirect_batch_sets[0].indirect_parameters_base,
+    content="0",
+  )
+}
+
+///|
+test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
+  let mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d] = {}
+  mesh_preprocess_static_cache.set(1, MeshPreprocessStatic3d::{
+    topology_kind: 0,
+    is_indexed: true,
+    first_vertex_index: 0,
+    first_index_index: 0,
+    index_count: 3,
+    has_local_aabb: false,
+    aabb_center: @math.Vec3::zero(),
+    aabb_half_extents: @math.Vec3::zero(),
+  })
+  let draw_items = [
+    MeshPhaseItem3d::{
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(42, 0)),
+      extracted_index: 0,
+      phase: RENDER3D_PHASE_OPAQUE,
+      pipeline_id: None,
+      distance: 1.0F,
+    },
+  ]
+  let entry = render3d_build_gpu_preprocess_queue_entry(
+    draw_items,
+    [
+      render3d_test_extracted_mesh_for_flags(
+        false,
+        false,
+        false,
+        @math.Vec3::new(1.0F, 1.0F, 1.0F),
+      ),
+    ],
+    mesh_preprocess_static_cache,
+    true,
+    false,
+  )
+  match entry.work_item_buffers {
+    Direct(_) => abort("expected indirect queue work items")
+    Indirect(indexed, non_indexed, culling) => {
+      debug_inspect(indexed.length(), content="1")
+      debug_inspect(non_indexed.length(), content="0")
+      debug_inspect(culling is None, content="true")
+      debug_inspect(indexed[0].input_index, content="0")
+      debug_inspect(indexed[0].output_or_indirect_parameters_index, content="0")
+    }
+  }
+  debug_inspect(
+    entry.indirect_metadata.indexed.indirect_parameters_cpu_metadata[0].base_output_index,
+    content="0",
+  )
+  debug_inspect(
+    entry.indirect_metadata.indexed.indirect_parameters_cpu_metadata[0].batch_set_index,
+    content="-1",
+  )
+  debug_inspect(
+    entry.indirect_metadata.indexed.indirect_parameters_gpu_metadata[0].mesh_index,
+    content="0",
+  )
+  debug_inspect(
+    entry.indirect_metadata.indexed.indirect_batch_sets[0].indirect_parameters_base,
+    content="0",
+  )
+}
+
+///|
 test "render3d: camera indirect path requires feature support and no marker" {
   debug_inspect(
     @pbr_render.render3d_camera_indirect_enabled(true, true, false) &&
@@ -682,34 +797,4 @@ test "render3d: mesh flags honor culling, receiver, transmission, and determinan
     ),
     content="true",
   )
-}
-
-///|
-test "render3d: indirect metadata starts visible counts at zero" {
-  let metadata = render3d_build_gpu_preprocess_indirect_mesh_class_metadata([
-    GpuPreprocessShaderWorkItem3d::{
-      input_index: 3,
-      output_or_indirect_parameters_index: 0,
-    },
-    GpuPreprocessShaderWorkItem3d::{
-      input_index: 7,
-      output_or_indirect_parameters_index: 1,
-    },
-  ])
-  let ok = metadata.indirect_parameters_gpu_metadata.length() == 2 &&
-    metadata.indirect_parameters_cpu_metadata.length() == 2 &&
-    metadata.indirect_batch_sets.length() == 1 &&
-    metadata.indirect_parameters_cpu_metadata[0].base_output_index == 3 &&
-    metadata.indirect_parameters_cpu_metadata[0].batch_set_index == 0 &&
-    metadata.indirect_parameters_cpu_metadata[1].base_output_index == 7 &&
-    metadata.indirect_parameters_cpu_metadata[1].batch_set_index == 0 &&
-    metadata.indirect_parameters_gpu_metadata[0].mesh_index == 3 &&
-    metadata.indirect_parameters_gpu_metadata[0].early_instance_count == 0 &&
-    metadata.indirect_parameters_gpu_metadata[0].late_instance_count == 0 &&
-    metadata.indirect_parameters_gpu_metadata[1].mesh_index == 7 &&
-    metadata.indirect_parameters_gpu_metadata[1].early_instance_count == 0 &&
-    metadata.indirect_parameters_gpu_metadata[1].late_instance_count == 0 &&
-    metadata.indirect_batch_sets[0].indirect_parameters_count == 0 &&
-    metadata.indirect_batch_sets[0].indirect_parameters_base == 0
-  debug_inspect(ok, content="true")
 }
