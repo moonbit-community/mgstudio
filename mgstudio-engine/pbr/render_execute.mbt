@@ -4465,6 +4465,58 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_pbr/src/render/light.rs::check_views_lights_need_specialization`.
+pub fn render3d_check_views_lights_need_specialization_system(
+  world : @ecs.World,
+) -> Unit {
+  guard render3d_pending_frame_snapshot(world) is Some(frame) else { return }
+  let lighting = render3d_lighting_with_clusterable_indices(
+    world,
+    @pbr_render.render3d_collect_lighting(world),
+  )
+  let views = render3d_shadow_phase_queued_views_for_cameras(
+    frame.cameras,
+    lighting,
+    frame.frame_config.point_light_shadow_map_size,
+  )
+  let shadow_render_phases = match
+    world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing ViewBinnedRenderPhases<Shadow> resource during pbr shadow specialization check",
+      )
+  }
+  let light_key_cache = match
+    world.get_resource(@pbr_render.LightKeyCache::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing LightKeyCache resource during pbr shadow specialization check",
+      )
+  }
+  let dirty_specializations = match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing DirtySpecializations resource during pbr shadow specialization check",
+      )
+  }
+  for view in views {
+    let retained_view_entity = view.retained_view_entity()
+    @pbr_render.check_view_light_needs_specialization(
+      light_key_cache,
+      dirty_specializations,
+      retained_view_entity,
+      shadow_render_phases.get(retained_view_entity) is Some(_),
+      render3d_light_entity_is_directional(view.light_entity()),
+    )
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
 pub fn render3d_specialize_shadows_system(world : @ecs.World) -> Unit {
   guard render3d_pending_frame_snapshot(world) is Some(frame) else { return }

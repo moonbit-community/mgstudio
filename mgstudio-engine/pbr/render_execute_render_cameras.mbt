@@ -221,6 +221,38 @@ fn render3d_shadow_phase_light_entities_for_camera(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs` view-light query
+// consumed by `check_views_lights_need_specialization` and
+// `specialize_shadows`.
+fn render3d_shadow_phase_queued_views_for_cameras(
+  cameras : Array[ExtractedCamera3d],
+  lighting : Render3dLightingState,
+  point_light_shadow_map_size : Int,
+) -> Array[Render3dQueuedShadowPhaseView] {
+  let views : Array[Render3dQueuedShadowPhaseView] = []
+  for camera in cameras {
+    let extracted_retained_view = @render_view.RetainedViewEntity::new(
+      camera.entity.main_entity,
+    )
+    for
+      light_entity in render3d_shadow_phase_light_entities_for_camera(
+        camera.entity.main_entity,
+        lighting,
+        point_light_shadow_map_size,
+      ) {
+      views.push(
+        Render3dQueuedShadowPhaseView::new(
+          light_entity,
+          light_entity.shadow_phase_retained_view(extracted_retained_view),
+          view_render_layers=Some(camera.payload.layers),
+        ),
+      )
+    }
+  }
+  views
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
 fn render3d_prepare_shadow_phase_views_for_cameras(
   world : @ecs.World,
@@ -236,20 +268,11 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
     Some(value) => value.min(@render_batching.GpuPreprocessingMode::Culling)
     None => @render_batching.GpuPreprocessingMode::None
   }
-  for camera in cameras {
-    let extracted_retained_view = @render_view.RetainedViewEntity::new(
-      camera.entity.main_entity,
-    )
-    for
-      light_entity in render3d_shadow_phase_light_entities_for_camera(
-        camera.entity.main_entity,
-        lighting,
-        point_light_shadow_map_size,
-      ) {
-      live_shadow_mapping_lights.add(
-        light_entity.shadow_phase_retained_view(extracted_retained_view),
-      )
-    }
+  for
+    view in render3d_shadow_phase_queued_views_for_cameras(
+      cameras, lighting, point_light_shadow_map_size,
+    ) {
+    live_shadow_mapping_lights.add(view.retained_view_entity())
   }
   let shadow_render_phases = match
     world.get_resource_mut(Render3dShadowPhasesData::resource()) {

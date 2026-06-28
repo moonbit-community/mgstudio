@@ -144,6 +144,12 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     content="true",
   )
   debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.check_views_lights_need_specialization\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
     render_dot.contains("\"pbr.render3d.specialize_shadows\""),
     content="true",
   )
@@ -164,6 +170,12 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
   debug_inspect(
     render_dot.contains(
       "\"pbr.render3d.prepare_meshes\" -> \"pbr.render3d.specialize_material_meshes\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"pbr.render3d.check_views_lights_need_specialization\" -> \"pbr.render3d.specialize_shadows\"",
     ),
     content="true",
   )

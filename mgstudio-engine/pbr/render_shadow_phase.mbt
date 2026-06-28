@@ -79,13 +79,6 @@ fn render3d_specialize_shadow_phase_for_light(
     None =>
       abort("missing LightKeyCache resource during pbr shadow specialization")
   }
-  @pbr_render.check_view_light_needs_specialization(
-    light_key_cache,
-    dirty_specializations,
-    retained_view_entity,
-    shadow_phase_exists,
-    render3d_light_entity_is_directional(light_entity),
-  )
   let light_key = match light_key_cache.get(retained_view_entity) {
     Some(value) => value
     None => return false
