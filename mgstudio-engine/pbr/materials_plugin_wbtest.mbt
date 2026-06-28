@@ -1865,6 +1865,34 @@ test "render3d: shadow specialization skips cached entities before readiness che
 }
 
 ///|
+test "render3d: shadow depth clip control support mirrors render device features" {
+  let empty_world = @ecs.World::new()
+  debug_inspect(
+    render3d_shadow_depth_clip_control_supported(empty_world),
+    content="false",
+  )
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let requested_features : Array[UInt] = []
+  if adapter.supports_known_rust_features_u64(@wgpu.FEATURES_DEPTH_CLIP_CONTROL) {
+    requested_features.push(@wgpu.FEATURE_NAME_DEPTH_CLIP_CONTROL)
+  }
+  let device = adapter.request_device_sync_with_features_and_limits(
+    instance, requested_features,
+  )
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  let expected = render_device.supports_rust_features_u64(
+    @wgpu.FEATURES_DEPTH_CLIP_CONTROL,
+  )
+  debug_inspect(
+    render3d_shadow_depth_clip_control_supported(world) == expected,
+    content="true",
+  )
+}
+
+///|
 test "render3d: missing material specialization mesh returns to pending queue" {
   let world = @ecs.World::new()
   let retained_view = @render_view.RetainedViewEntity::new(

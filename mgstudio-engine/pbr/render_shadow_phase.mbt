@@ -75,6 +75,18 @@ fn render3d_shadow_specialization_cache_contains(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/prepass/mod.rs::init_prepass_pipeline`.
+fn render3d_shadow_depth_clip_control_supported(world : @ecs.World) -> Bool {
+  match world.get_resource(@render.render_device_resource_key) {
+    Some(render_device) =>
+      render_device.supports_rust_features_u64(
+        @wgpu.FEATURES_DEPTH_CLIP_CONTROL,
+      )
+    None => false
+  }
+}
+
+///|
 fn render3d_specialize_shadow_phase_for_light(
   world : @ecs.World,
   light_entity : Render3dLightEntity,
@@ -218,7 +230,10 @@ fn render3d_specialize_shadow_phase_views(
       )
   }
   render3d_shadow_specialization_apply_work_items(
-    world, work_items, all_shadow_views, false,
+    world,
+    work_items,
+    all_shadow_views,
+    render3d_shadow_depth_clip_control_supported(world),
   )
 }
 
