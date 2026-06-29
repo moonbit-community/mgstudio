@@ -685,7 +685,7 @@ fn mesh3d_build_view_bind_group_from_descriptor(
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let entries = descriptor.entries()
   let builder = @wgpu.BindGroupBuilder::new(
-    max_entries=entries.length().to_uint64(),
+    max_entries=mesh3d_bind_group_layout_descriptor_capacity(descriptor),
   )
   for entry in entries {
     if !mesh3d_add_view_bind_group_layout_entry(
@@ -781,7 +781,7 @@ fn mesh3d_build_binding_arrays_bind_group_from_descriptor(
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let entries = descriptor.entries()
   let builder = @wgpu.BindGroupBuilder::new(
-    max_entries=entries.length().to_uint64(),
+    max_entries=mesh3d_bind_group_layout_descriptor_capacity(descriptor),
   )
   for entry in entries {
     if !mesh3d_add_binding_array_layout_entry(
@@ -1630,9 +1630,12 @@ fn mesh3d_material_cache_get_or_create(
   }
   let material_extension_uniform_buffers : Array[@wgpu.Buffer] = []
   let builder = @wgpu.BindGroupBuilder::new(
-    max_entries=(14 + material_extension_bind_group_data.entries().length()).to_uint64(),
+    max_entries=match material_layout {
+      Some(layout) => mesh3d_bind_group_layout_descriptor_capacity(layout)
+      None => 13UL
+    },
   )
-  let ok = builder.add_buffer(
+  let mut ok = builder.add_buffer(
       0U,
       material_uniform_buf,
       size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
@@ -1649,7 +1652,7 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_sampler(10U, normal_texture.sampler) &&
     builder.add_texture_view(11U, depth_texture.view) &&
     builder.add_sampler(12U, depth_texture.sampler)
-  let ok = if ok && uses_forward_decal_uniform {
+  ok = if ok && uses_forward_decal_uniform {
     match forward_decal_uniform_buf {
       Some(buffer) => builder.add_buffer(200U, buffer, size=4UL)
       None => false
@@ -1657,7 +1660,7 @@ fn mesh3d_material_cache_get_or_create(
   } else {
     ok
   }
-  let ok = if ok {
+  ok = if ok {
     mesh3d_add_material_extension_bindings(
       backend, builder, material_extension_bind_group_data, material_extension_uniform_buffers,
     )

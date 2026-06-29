@@ -1824,7 +1824,7 @@ fn mesh3d_create_bind_group_layout_from_descriptor(
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
   let entries = descriptor.entries()
   let builder = @wgpu.BindGroupLayoutBuilder::new(
-    max_entries=entries.length().to_uint64(),
+    max_entries=mesh3d_bind_group_layout_descriptor_capacity(descriptor),
   )
   for entry in entries {
     if !mesh3d_add_render_resource_layout_entry(builder, entry) {
@@ -1835,13 +1835,41 @@ fn mesh3d_create_bind_group_layout_from_descriptor(
       )
     }
   }
-  builder.finish(
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+  let layout = builder.finish(
     backend.device,
     label="mgstudio_mesh3d_descriptor_bgl_" +
       label_suffix +
       "_" +
       descriptor.label(),
   )
+  let result = backend.device.pop_error_scope_sync_result(backend.instance)
+  if result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      result,
+      "wgpu: failed to create mesh3d bind group layout " + descriptor.label(),
+    )
+    layout.release()
+    fatal(message)
+  }
+  layout
+}
+
+///|
+fn mesh3d_bind_group_layout_descriptor_capacity(
+  descriptor : @render_resource.BindGroupLayoutDescriptor,
+) -> UInt64 {
+  let mut max_binding = -1
+  for entry in descriptor.entries() {
+    if entry.binding() > max_binding {
+      max_binding = entry.binding()
+    }
+  }
+  if max_binding < 0 {
+    0UL
+  } else {
+    (max_binding + 1).to_uint64()
+  }
 }
 
 ///|
@@ -2094,6 +2122,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
         "mgstudio_mesh3d_empty_material_bgl_" + label_suffix,
       )
   }
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
   let pipeline_layout = create_pipeline_layout_4(
     backend.device,
     view_bgl,
@@ -2101,6 +2130,17 @@ fn mesh3d_material_pipeline_layout_get_or_create(
     draw_bgl,
     material_bgl,
   )
+  let pipeline_layout_result = backend.device.pop_error_scope_sync_result(
+    backend.instance,
+  )
+  if pipeline_layout_result.error_type != @wgpu.ERROR_TYPE_NO_ERROR {
+    let message = mesh3d_error_scope_message(
+      pipeline_layout_result,
+      "wgpu: failed to create mesh3d material pipeline layout " + label_suffix,
+    )
+    pipeline_layout.release()
+    fatal(message)
+  }
   let entry = {
     material_pipeline_id,
     view_layout_key_bits: 0U,

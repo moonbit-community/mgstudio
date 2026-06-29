@@ -60,7 +60,7 @@ fn create_bind_group_layout_from_render_resource_descriptor(
     return backend.device.create_bind_group_layout_empty()
   }
   let builder = @wgpu.BindGroupLayoutBuilder::new(
-    max_entries=entries.length().to_uint64(),
+    max_entries=mesh3d_bind_group_layout_descriptor_capacity(descriptor),
   )
   for entry in entries {
     if !mesh3d_add_render_resource_layout_entry(builder, entry) {

@@ -58,16 +58,46 @@ pub const STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP : UInt64 = 0x000080UL
 pub const STANDARD_MATERIAL_KEY_ANISOTROPY : UInt64 = 0x000100UL
 
 ///|
-pub const STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE : UInt64 = 0x000200UL
+pub const STANDARD_MATERIAL_KEY_BASE_COLOR_UV : UInt64 = 0x000200UL
 
 ///|
-pub const STANDARD_MATERIAL_KEY_EMISSIVE_TEXTURE : UInt64 = 0x000400UL
+pub const STANDARD_MATERIAL_KEY_EMISSIVE_UV : UInt64 = 0x000400UL
 
 ///|
-pub const STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_TEXTURE : UInt64 = 0x000800UL
+pub const STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_UV : UInt64 = 0x000800UL
 
 ///|
-pub const STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE : UInt64 = 0x001000UL
+pub const STANDARD_MATERIAL_KEY_OCCLUSION_UV : UInt64 = 0x001000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_SPECULAR_TRANSMISSION_UV : UInt64 = 0x002000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_THICKNESS_UV : UInt64 = 0x004000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION_UV : UInt64 = 0x008000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_NORMAL_MAP_UV : UInt64 = 0x010000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_ANISOTROPY_UV : UInt64 = 0x020000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT_UV : UInt64 = 0x040000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT_ROUGHNESS_UV : UInt64 = 0x080000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_UV : UInt64 = 0x100000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_SPECULAR_UV : UInt64 = 0x200000UL
+
+///|
+pub const STANDARD_MATERIAL_KEY_SPECULAR_TINT_UV : UInt64 = 0x400000UL
 
 ///|
 pub const STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK : UInt64 = 0xffffffff00000000UL
@@ -170,23 +200,11 @@ pub fn standard_material_key_from_material(
   if material.clearcoat > 0.0F {
     bits = bits | STANDARD_MATERIAL_KEY_CLEARCOAT
   }
-  if material.clearcoat_normal_texture is Some(_) {
+  if material.clearcoat > 0.0F && material.clearcoat_normal_texture is Some(_) {
     bits = bits | STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP
   }
-  if material.anisotropy_strength != 0.0F {
+  if material.anisotropy_strength > 0.0F {
     bits = bits | STANDARD_MATERIAL_KEY_ANISOTROPY
-  }
-  if material.base_color_texture is Some(_) {
-    bits = bits | STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE
-  }
-  if material.emissive_texture is Some(_) {
-    bits = bits | STANDARD_MATERIAL_KEY_EMISSIVE_TEXTURE
-  }
-  if material.metallic_roughness_texture is Some(_) {
-    bits = bits | STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_TEXTURE
-  }
-  if material.occlusion_texture is Some(_) {
-    bits = bits | STANDARD_MATERIAL_KEY_OCCLUSION_TEXTURE
   }
   let depth_bias_bits = (
       material.depth_bias.to_int().to_uint64() <<

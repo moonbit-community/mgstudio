@@ -22,11 +22,13 @@ test "pbr material: key encodes common standard material toggles" {
     .with_specular_transmission(0.2)
     .with_depth_bias(7.0)
   let key = standard_material_key_from_material(material)
+  inspect(key.contains(STANDARD_MATERIAL_KEY_BASE_COLOR_UV), content="false")
+  inspect(key.contains(STANDARD_MATERIAL_KEY_EMISSIVE_UV), content="false")
   inspect(
-    key.contains(STANDARD_MATERIAL_KEY_BASE_COLOR_TEXTURE),
-    content="true",
+    key.contains(STANDARD_MATERIAL_KEY_METALLIC_ROUGHNESS_UV),
+    content="false",
   )
-  inspect(key.contains(STANDARD_MATERIAL_KEY_EMISSIVE_TEXTURE), content="true")
+  inspect(key.contains(STANDARD_MATERIAL_KEY_OCCLUSION_UV), content="false")
   inspect(key.contains(STANDARD_MATERIAL_KEY_NORMAL_MAP), content="true")
   inspect(
     key.contains(STANDARD_MATERIAL_KEY_DIFFUSE_TRANSMISSION),
@@ -37,6 +39,40 @@ test "pbr material: key encodes common standard material toggles" {
     content="true",
   )
   inspect(key.depth_bias(), content="7")
+}
+
+///|
+test "pbr material: key matches Bevy clearcoat and anisotropy predicates" {
+  let clearcoat_normal_without_clearcoat = @material.StandardMaterial::StandardMaterial().with_clearcoat_normal_texture(
+    Some(@asset.Handle::new(1)),
+  )
+  let clearcoat_normal_key = standard_material_key_from_material(
+    clearcoat_normal_without_clearcoat,
+  )
+  inspect(
+    clearcoat_normal_key.contains(STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP),
+    content="false",
+  )
+  let clearcoat_normal_with_clearcoat = clearcoat_normal_without_clearcoat.with_clearcoat(
+    0.5F,
+  )
+  let clearcoat_key = standard_material_key_from_material(
+    clearcoat_normal_with_clearcoat,
+  )
+  inspect(
+    clearcoat_key.contains(STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP),
+    content="true",
+  )
+  let negative_anisotropy = @material.StandardMaterial::StandardMaterial().with_anisotropy_strength(
+    -1.0F,
+  )
+  let negative_anisotropy_key = standard_material_key_from_material(
+    negative_anisotropy,
+  )
+  inspect(
+    negative_anisotropy_key.contains(STANDARD_MATERIAL_KEY_ANISOTROPY),
+    content="false",
+  )
 }
 
 ///|
