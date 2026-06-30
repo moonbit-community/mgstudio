@@ -1355,6 +1355,44 @@ test "render3d: shadow visible indices populate Bevy shadow map visibility" {
                 mesh_visible.added_entities()[1].0.id,
                 content=second_render.id.to_string(),
               )
+              render3d_update_shadow_map_visible_entities(
+                world,
+                light_entity,
+                shadow_phase_view,
+                meshes,
+                [0],
+              )
+              match
+                (try! world.get_by_key(
+                  point_light, @render_visibility.ecs_key_render_shadow_map_visible_entities,
+                )) {
+                Some(updated_shadow_visible) =>
+                  match updated_shadow_visible.subview(visible_retained_view) {
+                    Some(updated_visible_entities) =>
+                      match
+                        updated_visible_entities.get(
+                          render3d_mesh_visibility_class(),
+                        ) {
+                        Some(updated_mesh_visible) => {
+                          debug_inspect(
+                            updated_mesh_visible.added_entities().length(),
+                            content="0",
+                          )
+                          debug_inspect(
+                            updated_mesh_visible.removed_entities().length(),
+                            content="1",
+                          )
+                          inspect(
+                            updated_mesh_visible.removed_entities()[0].0.id,
+                            content=second_render.id.to_string(),
+                          )
+                        }
+                        None => debug_inspect(false, content="true")
+                      }
+                    None => debug_inspect(false, content="true")
+                  }
+                None => debug_inspect(false, content="true")
+              }
             }
             None => debug_inspect(false, content="true")
           }

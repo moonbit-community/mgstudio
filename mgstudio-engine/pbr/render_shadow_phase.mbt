@@ -370,6 +370,31 @@ fn render3d_shadow_visible_extracted_indices(
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::get_shadow_map_visible_entities`.
+fn render3d_shadow_main_entity_compare(
+  left : @render.MainEntity,
+  right : @render.MainEntity,
+) -> Int {
+  let left_bits = left.id().to_bits()
+  let right_bits = right.id().to_bits()
+  if left_bits < right_bits {
+    -1
+  } else if left_bits > right_bits {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn render3d_shadow_visible_pair_compare(
+  left : (@core.Entity, @render.MainEntity),
+  right : (@core.Entity, @render.MainEntity),
+) -> Int {
+  render3d_shadow_main_entity_compare(left.1, right.1)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/view/visibility/mod.rs::collect_visible_cpu_culled_entities`.
 fn render3d_shadow_visible_entity_pairs(
   meshes : Array[ExtractedMesh3d],
   visible_indices : Array[Int],
@@ -387,6 +412,7 @@ fn render3d_shadow_visible_entity_pairs(
       ),
     )
   }
+  pairs.sort_by(render3d_shadow_visible_pair_compare)
   pairs
 }
 
