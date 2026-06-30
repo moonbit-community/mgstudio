@@ -815,6 +815,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
         M::specialize(descriptor, layout, typed_key)
       }),
     )
+    .with_base_specialize(Some(pbr_material_base_specialize))
     .with_shadows_enabled(M::enable_shadows())
     .with_prepass_enabled(M::enable_prepass())
   properties = material_properties_add_shader(
@@ -1049,6 +1050,32 @@ pub fn[M : Material] render_material3d_instances_or_empty(
   } else {
     empty_instances
   }
+}
+
+///|
+fn[M] collect_entities_needing_typed_material_specialization(
+  source_world : @ecs.World,
+  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
+  system_ticks : @core.SystemTicks,
+) -> Array[@core.Entity] {
+  let entities : Array[@core.Entity] = []
+  let seen : Map[UInt64, Bool] = {}
+  for
+    entity in source_world
+    .changed_components(@mesh.ecs_key_mesh3d, system_ticks)
+    .read() {
+    if (try! source_world.get_by_key(entity, material_key)) is Some(_) {
+      collect_unique_material_specialization_entity(entities, seen, entity)
+    }
+  }
+  for
+    entity in source_world.changed_components(material_key, system_ticks).read() {
+    if source_world.is_alive(entity) &&
+      (try! source_world.get_by_key(entity, material_key)) is Some(_) {
+      collect_unique_material_specialization_entity(entities, seen, entity)
+    }
+  }
+  entities
 }
 
 ///|
@@ -1364,7 +1391,7 @@ fn[M : Material + @asset.Asset] material_plugin_build(
       @render.render_schedule_stage(),
       @app.system(fn(world : @ecs.World) {
         extract_mesh_materials_system(world, probe)
-      }).in_set(@render.render_system_set_extract_commands),
+      }).in_set(material_extraction_systems),
     )
     .add_systems(
       @render.render_schedule_stage(),
@@ -1397,10 +1424,137 @@ fn[M : Material] extract_mesh_materials_system(
   let material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]] = MeshMaterial3dTyped::component()
   let key : @ecs.ResourceKey[RenderMaterial3dInstances[M]] = RenderMaterial3dInstances::resource()
   guard world.get_resource_mut(key) is Some(instances) else { return }
+  if world.get_resource(ecs_key_render_material_instances) is None {
+    world.insert_resource(
+      ecs_key_render_material_instances,
+      RenderMaterialInstances::RenderMaterialInstances(),
+    )
+  }
+  if world.get_resource(ecs_key_render_material_shader_paths) is None {
+    world.insert_resource(
+      ecs_key_render_material_shader_paths,
+      RenderMaterialShaderPaths::RenderMaterialShaderPaths(),
+    )
+  }
+  let global_instances = world.get_resource_mut(
+    ecs_key_render_material_instances,
+  )
+  let material_shader_paths = match
+    world.get_resource_mut(ecs_key_render_material_shader_paths) {
+    Some(value) => value
+    None => abort("missing RenderMaterialShaderPaths resource")
+  }
+  let shader_paths = material_shader_asset_paths(_probe)
   instances.modify(fn(value) {
-    value.clear()
-    source_world.for_each_component(material_key, fn(entity, material) {
-      value.set(entity, material.handle())
+    material_shader_paths.modify(fn(paths) {
+      value.clear()
+      source_world.for_each_component(material_key, fn(entity, material) {
+        value.set(entity, material.handle())
+        let view_visible = match
+          (try! source_world.get_by_key(
+            entity, @visibility.ecs_key_view_visibility,
+          )) {
+          Some(view_visibility) => view_visibility.is_visible()
+          None => false
+        }
+        if view_visible {
+          for path in shader_paths {
+            paths.insert(Some(path))
+          }
+        }
+        match global_instances {
+          Some(global) =>
+            global.modify(fn(global_value) {
+              global_value.extract_mesh_material_id(
+                entity,
+                view_visible,
+                material.handle().id(),
+              )
+            })
+          None => ()
+        }
+      })
+    })
+  })
+  let system_ticks = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(global_value) => global_value.source_system_ticks(source_world)
+    None => @core.SystemTicks::new(0, source_world.read_change_tick())
+  }
+  let specialization_entities = collect_entities_needing_typed_material_specialization(
+    source_world, material_key, system_ticks,
+  )
+  let render_material_instances = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(value) => value
+    None => return
+  }
+  let entity_ticks = entity_specialization_ticks_mut_or_init(world)
+  let dirty_specializations = dirty_specializations_mut_or_init(world)
+  entity_ticks.modify(fn(ticks) {
+    dirty_specializations.modify(fn(dirty) {
+      for entity in specialization_entities {
+        ticks.extract_entity_needs_specialization(
+          entity,
+          system_ticks.this_run,
+          render_material_instances,
+          dirty,
+        )
+      }
+    })
+  })
+}
+
+///|
+fn[M : Material] prepare_material_binding_for_prepared_asset(
+  world : @ecs.World,
+  probe : @asset.Handle[M],
+  material_id : Int,
+) -> Unit {
+  let label = material_bind_group_allocator_label(probe)
+  guard world.get_resource_mut(RenderMaterialBindings::resource())
+    is Some(bindings) else {
+    return
+  }
+  if bindings.peek().get(material_id) is Some(_) {
+    return
+  }
+  guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
+    is Some(allocators) else {
+    return
+  }
+  let binding = allocators.modify(fn(value) {
+    guard value.get(label) is Some(allocator) else { return None }
+    allocator.allocate_bindless_material(material_id)
+  })
+  guard binding is Some(binding_id) else { return }
+  bindings.modify(fn(value) { value.set(material_id, binding_id) })
+}
+
+///|
+fn[M] mark_entities_using_prepared_material_needing_specialization(
+  world : @ecs.World,
+  material_instances : RenderMaterial3dInstances[M],
+  material_id : Int,
+  system_tick : @core.Tick,
+) -> Unit {
+  let render_material_instances = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(value) => value
+    None => return
+  }
+  let entity_ticks = entity_specialization_ticks_mut_or_init(world)
+  let dirty_specializations = dirty_specializations_mut_or_init(world)
+  entity_ticks.modify(fn(ticks) {
+    dirty_specializations.modify(fn(dirty) {
+      for entity_key, material_handle in material_instances.instances {
+        if material_handle.id() == material_id {
+          let entity = @core.Entity::new(entity_key.0, entity_key.1)
+          ticks.extract_entity_needs_specialization(
+            entity, system_tick, render_material_instances, dirty,
+          )
+        }
+      }
     })
   })
 }
@@ -1426,6 +1580,11 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
   guard world.get_resource_mut(prepared_assets_key) is Some(prepared_assets) else {
     return
   }
+  let system_ticks = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(global_value) => global_value.source_system_ticks(source_world)
+    None => @core.SystemTicks::new(0, source_world.read_change_tick())
+  }
   let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
   for _, material_handle in instances.instances {
     let material_id = material_handle.id()
@@ -1434,11 +1593,21 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     }
     prepared_ids.add(material_id)
     guard source_assets.get(material_handle) is Some(material) else { continue }
+    let was_prepared = prepared_assets.peek().contains(material_id)
     prepared_assets.modify(fn(value) {
       value.insert(
         material_id,
         PreparedMaterial::from_material(material_handle, material, pipeline),
       )
     })
+    prepare_material_binding_for_prepared_asset(world, _probe, material_id)
+    if !was_prepared {
+      mark_entities_using_prepared_material_needing_specialization(
+        world,
+        instances,
+        material_id,
+        system_ticks.this_run,
+      )
+    }
   }
 }

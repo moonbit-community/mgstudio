@@ -194,14 +194,21 @@ pub fn RenderMaterialInstances::extract_mesh_material(
   view_visible : Bool,
   material : MeshMaterial3d,
 ) -> Unit {
+  self.extract_mesh_material_id(entity, view_visible, material.material.id())
+}
+
+///|
+pub fn RenderMaterialInstances::extract_mesh_material_id(
+  self : RenderMaterialInstances,
+  entity : @core.Entity,
+  view_visible : Bool,
+  material_id : Int,
+) -> Unit {
   let key = entity.to_bits()
   if view_visible {
     self.instances.set(
       key,
-      RenderMaterialInstance::new(
-        material.material.id(),
-        self.current_change_tick,
-      ),
+      RenderMaterialInstance::new(material_id, self.current_change_tick),
     )
   } else {
     ignore(self.instances.remove(key))

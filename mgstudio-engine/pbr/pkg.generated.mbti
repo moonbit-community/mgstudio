@@ -2475,6 +2475,7 @@ pub fn RenderMaterialInstances::advance_change_tick(Self) -> Unit
 pub fn RenderMaterialInstances::current_change_tick(Self) -> Int64
 pub fn RenderMaterialInstances::early_sweep_removed_mesh_material(Self, @core.Entity) -> Bool
 pub fn RenderMaterialInstances::extract_mesh_material(Self, @core.Entity, Bool, @material.MeshMaterial3d) -> Unit
+pub fn RenderMaterialInstances::extract_mesh_material_id(Self, @core.Entity, Bool, Int) -> Unit
 pub fn RenderMaterialInstances::get(Self, @core.Entity) -> RenderMaterialInstance?
 pub fn RenderMaterialInstances::late_sweep_removed_mesh3d(Self, @core.Entity) -> Bool
 pub fn RenderMaterialInstances::len(Self) -> Int

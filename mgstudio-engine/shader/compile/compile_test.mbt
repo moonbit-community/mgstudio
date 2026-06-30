@@ -34,6 +34,30 @@ test "compile package composes registered embedded shader graph" {
 }
 
 ///|
+test "compile package applies shader defs inside imported modules" {
+  clear_registered_shader_sources()
+  register_shader_source(
+    "shader/compile/defined_util.wgsl", "#define_import_path test::defined_util\n#ifdef USE_REAL\nfn value() -> u32 { return 7u; }\n#else\nfn value() -> u32 { return 3u; }\n#endif\n",
+  )
+  register_shader_source(
+    "shader/compile/defined_root.wgsl", "#import test::defined_util::value\nfn root() -> u32 { return value(); }\n",
+  )
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  defines.set("USE_REAL", true)
+  let source = load_preprocessed_wgsl(
+    "",
+    "shader/compile/defined_root.wgsl",
+    defines,
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(source.contains("return 7u"), content="true")
+  debug_inspect(source.contains("return 3u"), content="false")
+  debug_inspect(source.contains("#ifdef"), content="false")
+}
+
+///|
 test "compile package keeps unresolved imports structured" {
   clear_registered_shader_sources()
   register_shader_source(

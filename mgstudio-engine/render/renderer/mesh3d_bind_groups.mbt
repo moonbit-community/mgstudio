@@ -133,6 +133,16 @@ fn mesh3d_add_material_extension_bindings(
 }
 
 ///|
+fn mesh3d_material_layout_is_standard_compatible(
+  layout : @render_resource.BindGroupLayoutDescriptor,
+) -> Bool {
+  mesh3d_bind_group_layout_has_binding(layout, 0) &&
+  mesh3d_bind_group_layout_has_binding(layout, 1) &&
+  mesh3d_bind_group_layout_has_binding(layout, 2) &&
+  mesh3d_bind_group_layout_has_binding(layout, 3)
+}
+
+///|
 fn ensure_mesh3d_point_shadow_compare_sampler(
   backend : GpuBackend,
 ) -> @wgpu.Sampler {
@@ -1583,6 +1593,81 @@ fn mesh3d_material_cache_get_or_create(
       forward_decal_uniform_buffer: None,
       material_extension_bind_group_data: mesh3d_extension_bind_group_data_empty(),
       material_extension_uniform_buffers: [],
+      bind_group,
+    })
+    return bind_group
+  }
+  if material_layout is Some(layout) &&
+    !mesh3d_material_layout_is_standard_compatible(layout) {
+    let empty_bytes = Bytes::new(0)
+    for entry in backend.mesh3d_material_bg_cache {
+      if entry.material_pipeline_id == material_pipeline_id &&
+        entry.base_texture_id == -3 &&
+        entry.normal_texture_id == -3 &&
+        entry.emissive_texture_id == -3 &&
+        entry.metallic_roughness_texture_id == -3 &&
+        entry.occlusion_texture_id == -3 &&
+        entry.depth_texture_id == -3 &&
+        entry.anisotropy_texture_id == -3 &&
+        entry.specular_tint_texture_id == -3 &&
+        entry.clearcoat_texture_id == -3 &&
+        entry.clearcoat_roughness_texture_id == -3 &&
+        entry.clearcoat_normal_texture_id == -3 &&
+        entry.material_uniform_bytes == empty_bytes &&
+        entry.forward_decal_uniform_bytes == empty_bytes &&
+        mesh3d_extension_bind_group_data_matches(
+          entry.material_extension_bind_group_data,
+          material_extension_bind_group_data,
+        ) {
+        return entry.bind_group
+      }
+    }
+    let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+      backend, material_pipeline_id, material_descriptor,
+    )
+    let custom_uniform_buffers : Array[@wgpu.Buffer] = []
+    let builder = @wgpu.BindGroupBuilder::new(
+      max_entries=mesh3d_bind_group_layout_descriptor_capacity(layout),
+    )
+    if !mesh3d_add_material_extension_bindings(
+        backend, builder, material_extension_bind_group_data, custom_uniform_buffers,
+      ) {
+      builder.free()
+      for buffer in custom_uniform_buffers {
+        buffer.release()
+      }
+      fatal("wgpu: failed to build mesh3d custom material bind group")
+    }
+    let bind_group = mesh3d_finish_bind_group_checked(
+      backend,
+      builder,
+      layout_entry.material_bind_group_layout,
+      "mgstudio_mesh3d_custom_material_bg",
+      "wgpu: failed to build mesh3d custom material bind group",
+    )
+    let material_uniform_buf = backend.device.create_buffer(
+      size=4UL,
+      usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+    )
+    backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
+      material_pipeline_id,
+      base_texture_id: -3,
+      normal_texture_id: -3,
+      emissive_texture_id: -3,
+      metallic_roughness_texture_id: -3,
+      occlusion_texture_id: -3,
+      depth_texture_id: -3,
+      anisotropy_texture_id: -3,
+      specular_tint_texture_id: -3,
+      clearcoat_texture_id: -3,
+      clearcoat_roughness_texture_id: -3,
+      clearcoat_normal_texture_id: -3,
+      material_uniform_bytes: empty_bytes,
+      material_uniform_buffer: material_uniform_buf,
+      forward_decal_uniform_bytes: empty_bytes,
+      forward_decal_uniform_buffer: None,
+      material_extension_bind_group_data,
+      material_extension_uniform_buffers: custom_uniform_buffers,
       bind_group,
     })
     return bind_group

@@ -254,43 +254,16 @@ pub fn register_shader_source(rel_path : String, source : String) -> Unit {
 }
 
 ///|
-fn shader_compile_module_descriptor(
-  file : @shader_source.ShaderSourceFile,
-) -> @wgsl_common.ComposableModuleDescriptor {
-  @wgsl_common.ComposableModuleDescriptor::{
-    source: file.source,
-    file_path: file.rel_path,
-    as_name: None,
-    additional_imports: [],
-    shader_defs: Map([]),
-  }
-}
-
-///|
-fn shader_compile_register_composable_module_if_present(
-  composer : @wgsl_compose.Composer,
-  file : @shader_source.ShaderSourceFile,
-) -> Unit raise ShaderCompileError {
-  ignore(composer.add_composable_module(shader_compile_module_descriptor(file))) catch {
-    NoModuleName(_) => ()
-    err => raise shader_compile_error_from_composer(err)
-  }
-}
-
-///|
-fn shader_compile_build_composer() -> @wgsl_compose.Composer raise ShaderCompileError {
+fn shader_compile_build_composer() -> @wgsl_compose.Composer {
   let composer = @wgsl_compose.Composer::default()
   let files = @shader_source.embedded_shader_source_files()
   files.sort_by(fn(left, right) { left.rel_path.compare(right.rel_path) })
   composer.register_source_files(files)
-  for file in files {
-    shader_compile_register_composable_module_if_present(composer, file)
-  }
   composer
 }
 
 ///|
-fn shader_compile_composer() -> @wgsl_compose.Composer raise ShaderCompileError {
+fn shader_compile_composer() -> @wgsl_compose.Composer {
   match shader_compile_runtime_state.composer {
     Some(composer) => composer
     None => {

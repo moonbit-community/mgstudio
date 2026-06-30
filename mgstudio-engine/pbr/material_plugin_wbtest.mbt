@@ -227,6 +227,64 @@ test "pbr material plugin: prepared material carries shader hooks and typed bind
 }
 
 ///|
+test "pbr material plugin: prepared custom material can specialize a mesh pipeline" {
+  let world = @ecs.World::new()
+  let pipeline_cache = @render_resource.PipelineCache::new()
+  world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material = ParityCustomMaterial::ParityCustomMaterial()
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(7),
+    material,
+    material_pipeline_from_material_hooks(probe),
+  )
+  let properties = prepared.properties()
+  guard properties.base_specialize is Some(base_specialize) else {
+    abort("expected prepared custom material to carry Bevy base_specialize")
+  }
+  let render_mesh = pbr_material_specializer_test_render_mesh()
+  let key = @material.ErasedMaterialPipelineKey::new(
+    properties.mesh_pipeline_key_bits,
+    properties.material_key,
+    ParityCustomMaterial::material_debug_name(),
+  )
+  let pipeline_id = try! @material.material_specialize_base(
+    base_specialize,
+    world,
+    key,
+    render_mesh.layout(),
+    properties,
+  )
+  pipeline_cache.process_queue()
+  let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(
+    pipeline_id,
+  )
+  inspect(descriptor.layout.length(), content="4")
+  inspect(
+    descriptor.layout[3].label(),
+    content="mgstudio_pbr::Material<mgstudio_pbr_test::ParityCustomMaterial>",
+  )
+  inspect(descriptor.layout[3].entries().length(), content="3")
+  inspect(descriptor.layout[3].entries()[0].binding(), content="0")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_uint(
+      descriptor.vertex.shader_defs,
+      "MATERIAL_BIND_GROUP",
+      MATERIAL_BIND_GROUP_INDEX.reinterpret_as_uint(),
+    ),
+    content="true",
+  )
+  match descriptor.fragment {
+    Some(fragment) =>
+      debug_inspect(
+        fragment.shader,
+        content="Some(\"shaders/tonemapping_test_patterns.wgsl\")",
+      )
+    None => abort("expected prepared custom material fragment state")
+  }
+}
+
+///|
 test "pbr material plugin: plugin registers assets typed component and render resources" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
       ParityCustomMaterial::ParityCustomMaterial()
@@ -300,6 +358,354 @@ test "pbr material plugin: render startup installs typed bind group allocator" {
     }
     None => debug_inspect(false, content="true")
   }
+}
+
+///|
+test "pbr material plugin: typed material extraction fills Bevy render material tables" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  ensure_prepared_material_assets_resource_in_world(world, probe)
+  ensure_material_pipeline_resource_in_world(
+    world,
+    material_pipeline_from_material_hooks(probe),
+  )
+  ensure_render_material_instances_resource_in_world(world, probe)
+  world.insert_resource(
+    ecs_key_render_material_instances,
+    RenderMaterialInstances::RenderMaterialInstances(),
+  )
+  world.insert_resource(
+    RenderMaterialBindings::resource(),
+    RenderMaterialBindings::RenderMaterialBindings(),
+  )
+  let allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
+  allocators.insert(
+    ParityCustomMaterial::material_debug_name(),
+    MaterialBindGroupAllocator::Bindless(
+      MaterialBindGroupBindlessAllocator::with_slab_capacity(4),
+    ),
+  )
+  world.insert_resource(ecs_key_material_bind_group_allocators, allocators)
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  extract_mesh_materials_system(world, probe)
+  match world.get_resource(ecs_key_render_material_shader_paths) {
+    Some(paths) => {
+      let shader_paths = paths.paths()
+      debug_inspect(
+        shader_paths.contains("shaders/tonemapping_test_patterns.wgsl"),
+        content="true",
+      )
+    }
+    None => abort("missing RenderMaterialShaderPaths")
+  }
+  prepare_material_assets_system(world, probe)
+  match world.get_resource(ecs_key_render_material_instances) {
+    Some(instances) =>
+      match instances.get(entity) {
+        Some(instance) =>
+          debug_inspect(instance.asset_id(), content="\{material_handle.id()}")
+        None =>
+          abort("typed material was not inserted into RenderMaterialInstances")
+      }
+    None => abort("missing RenderMaterialInstances")
+  }
+  match world.get_resource(RenderMaterialBindings::resource()) {
+    Some(bindings) =>
+      match bindings.get(material_handle.id()) {
+        Some(binding) => {
+          debug_inspect(binding.group().to_int(), content="0")
+          debug_inspect(binding.slot().to_int(), content="0")
+        }
+        None => abort("typed material binding was not allocated")
+      }
+    None => abort("missing RenderMaterialBindings")
+  }
+}
+
+///|
+test "pbr material plugin: typed material extraction marks specialization dirty" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  ensure_render_material_instances_resource_in_world(world, probe)
+  world.insert_resource(
+    ecs_key_render_material_instances,
+    RenderMaterialInstances::RenderMaterialInstances(),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(3)),
+  )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  world.increment_change_tick() |> ignore
+  let material_key : @ecs.ComponentKey[
+    MeshMaterial3dTyped[ParityCustomMaterial],
+  ] = MeshMaterial3dTyped::component()
+  let system_ticks = @core.SystemTicks::new(0, world.read_change_tick())
+  debug_inspect(
+    world.changed_components(@mesh.ecs_key_mesh3d, system_ticks).len(),
+    content="1",
+  )
+  debug_inspect(
+    world.changed_components(material_key, system_ticks).len(),
+    content="1",
+  )
+  debug_inspect(
+    collect_entities_needing_typed_material_specialization(
+      world, material_key, system_ticks,
+    ).length(),
+    content="1",
+  )
+  extract_mesh_materials_system(world, probe)
+  match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => {
+      debug_inspect(dirty.changed_len(), content="1")
+      debug_inspect(
+        dirty.changed_contains(@render.MainEntity::new(entity)),
+        content="true",
+      )
+    }
+    None => abort("missing DirtySpecializations")
+  }
+}
+
+///|
+test "pbr material plugin: first prepared typed material marks specialization dirty" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  ensure_prepared_material_assets_resource_in_world(world, probe)
+  ensure_material_pipeline_resource_in_world(
+    world,
+    material_pipeline_from_material_hooks(probe),
+  )
+  ensure_render_material_instances_resource_in_world(world, probe)
+  world.insert_resource(
+    ecs_key_render_material_instances,
+    RenderMaterialInstances::RenderMaterialInstances(),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  extract_mesh_materials_system(world, probe)
+  match
+    world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => dirty.modify(fn(value) { value.clear() })
+    None => abort("missing DirtySpecializations")
+  }
+  prepare_material_assets_system(world, probe)
+  match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => {
+      debug_inspect(dirty.changed_len(), content="1")
+      debug_inspect(
+        dirty.changed_contains(@render.MainEntity::new(entity)),
+        content="true",
+      )
+    }
+    None => abort("missing DirtySpecializations")
+  }
+}
+
+///|
+test "pbr material plugin: runtime registry resolves typed material properties" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  ensure_prepared_material_assets_resource_in_world(world, probe)
+  ensure_material_pipeline_resource_in_world(
+    world,
+    material_pipeline_from_material_hooks(probe),
+  )
+  ensure_render_material_instances_resource_in_world(world, probe)
+  register_material_runtime_world(world, probe)
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  extract_mesh_materials_system(world, probe)
+  prepare_material_assets_system(world, probe)
+  let registry = match world.get_resource(MaterialRuntimeRegistry::resource()) {
+    Some(value) => value
+    None => abort("missing MaterialRuntimeRegistry")
+  }
+  let resolved = match
+    material_runtime_registry_resolve_material(world, world, registry, entity) {
+    Some(value) => value
+    None => abort("typed material did not resolve")
+  }
+  debug_inspect(
+    resolved
+    .material_properties()
+    .get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
+    content="Some(\"shaders/tonemapping_test_patterns.wgsl\")",
+  )
+  inspect(resolved.material_bind_group_data().entries().length(), content="3")
+  inspect(
+    resolved.material_type_tag(),
+    content="mgstudio_pbr_test::ParityCustomMaterial",
+  )
+}
+
+///|
+test "pbr material plugin: prepared typed material prewarms and queues mesh draw" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material = ParityCustomMaterial::ParityCustomMaterial()
+  let material_handle : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(
+    701,
+  )
+  let prepared = PreparedMaterial::from_material(
+    material_handle,
+    material,
+    material_pipeline_from_material_hooks(probe),
+  )
+  let resolved = prepared.resolved_material()
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
+  )
+  world.insert_resource(
+    @pbr_render.Render3dMeshRuntimeState::resource(),
+    @pbr_render.Render3dMeshRuntimeState::new(),
+  )
+  world.insert_resource(
+    ecs_key_specialized_material_pipeline_cache,
+    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
+  let main_view = @core.Entity::new(711, 1)
+  let render_view = world.spawn()
+  let main_mesh = @core.Entity::new(712, 1)
+  let render_mesh = @core.Entity::new(713, 1)
+  let visible_entity = @render.MainEntity::new(main_mesh)
+  dirty_specializations.insert_changed(visible_entity)
+  world.insert_resource(
+    @render_visibility.DirtySpecializations::resource(),
+    dirty_specializations,
+  )
+  world.insert_resource(
+    PendingMeshMaterialQueues::resource(),
+    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+  )
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let visible_class = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([(render_mesh, visible_entity)])
+  visible_class.sort_added_entities()
+  try! world.set_by_key(
+    render_view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+  )
+  let render_material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  render_material_instances.extract_mesh_material_id(
+    main_mesh,
+    true,
+    material_handle.id(),
+  )
+  world.insert_resource(
+    ecs_key_render_material_instances, render_material_instances,
+  )
+  let mesh_instances = RenderMeshInstances::new()
+  mesh_instances.insert(visible_entity, RenderMeshQueueData::new(777, 0U, true))
+  world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+  let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_mesh_assets.insert(777, @render_mesh.RenderMesh::new(vertex_count=3))
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    render_mesh_assets,
+  )
+  let extracted_mesh = ExtractedMesh3d::{
+    entity: phase_entity_ref3d(main_mesh, render_mesh),
+    payload: Mesh3dExtractedPayload::{
+      ..material_test_extracted_mesh_payload(
+        777,
+        resolved.material_properties(),
+      ),
+      material_bind_group_data: resolved.material_bind_group_data(),
+    },
+  }
+  let camera = ExtractedCamera3d::{
+    entity: phase_entity_ref3d(main_view, render_view),
+    payload: material_test_camera_payload(),
+  }
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  render3d_prewarm_mesh_pipelines(
+    world,
+    @pbr_render.Render3dMeshRuntimeState::new(),
+    [camera],
+    [extracted_mesh],
+  )
+  let pipeline_id = match
+    world.get_resource(ecs_key_specialized_material_pipeline_cache) {
+    Some(cache) => cache.pipeline_id(retained_view, main_mesh)
+    None => abort("missing SpecializedMaterialPipelineCache")
+  }
+  debug_inspect(pipeline_id is Some(_), content="true")
+  let items = render3d_queue_mesh_phase_items(
+    [extracted_mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+    retained_view_entity=Some(retained_view),
+    specialized_material_pipeline_cache=world.get_resource(
+      ecs_key_specialized_material_pipeline_cache,
+    ),
+  )
+  inspect(items.length(), content="1")
+  debug_inspect(items[0].pipeline_id is Some(_), content="true")
 }
 
 ///|

@@ -2079,6 +2079,81 @@ test "renderer: mesh3d shader value defines match Bevy native light limits" {
 }
 
 ///|
+test "renderer: mesh3d custom material pipeline preprocesses Bevy PBR vertex shader" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "test/custom_mesh.wgsl", "#ifdef VERTEX_POSITIONS\nfn position_path() -> f32 { return 1.0; }\n#endif\n#ifdef VERTEX_NORMALS\nfn normal_path() -> f32 { return 2.0; }\n#endif\n@vertex\nfn vertex() -> @builtin(position) vec4<f32> {\n  return vec4<f32>(position_path(), 0.0, 0.0, 1.0);\n}\n",
+  )
+  register_wgsl_source(
+    "test/line_material.wgsl", "@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> color: vec4<f32>;\n@fragment\nfn fragment() -> @location(0) vec4<f32> { return color; }\n",
+  )
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+    .with_vertex(
+      @render_resource.VertexState::new(
+        Some("test/custom_mesh.wgsl"),
+        [
+          @render_resource.ShaderDefVal::Flag("VERTEX_POSITIONS"),
+          @render_resource.ShaderDefVal::Flag("VERTEX_OUTPUT_INSTANCE_INDEX"),
+          @render_resource.ShaderDefVal::UInt("MATERIAL_BIND_GROUP", 3U),
+        ],
+        Some("vertex"),
+        [],
+      ),
+    )
+    .with_fragment(
+      Some(
+        @render_resource.FragmentState::new(
+          Some("test/line_material.wgsl"),
+          [@render_resource.ShaderDefVal::UInt("MATERIAL_BIND_GROUP", 3U)],
+          Some("fragment"),
+          [],
+        ),
+      ),
+    )
+  let vertex_source = load_wgsl_required_mesh3d_custom_pipeline(
+    "assets",
+    Some(descriptor),
+    false,
+    false,
+    0,
+    false,
+    1,
+    "test/custom_mesh.wgsl",
+  ) catch {
+    Fatal(message) =>
+      abort(
+        "failed to preprocess custom material mesh vertex shader: \{message}",
+      )
+    ShaderNotReady(message) =>
+      abort("custom material mesh vertex shader not ready: \{message}")
+  }
+  let fragment_source = load_wgsl_required_mesh3d_custom_pipeline(
+    "assets",
+    Some(descriptor),
+    false,
+    false,
+    0,
+    false,
+    1,
+    "test/line_material.wgsl",
+  ) catch {
+    Fatal(message) =>
+      abort("failed to preprocess line material fragment shader: \{message}")
+    ShaderNotReady(message) =>
+      abort("line material fragment shader not ready: \{message}")
+  }
+  debug_inspect(vertex_source.contains("#ifdef"), content="false")
+  debug_inspect(vertex_source.contains("#define"), content="false")
+  debug_inspect(vertex_source.contains("normal_path"), content="false")
+  debug_inspect(
+    fragment_source.contains("#{MATERIAL_BIND_GROUP}"),
+    content="false",
+  )
+  debug_inspect(fragment_source.contains("@group(3)"), content="true")
+  clear_registered_wgsl_source_registry()
+}
+
+///|
 test "renderer: sprite uv axis metrics preserves flipped spans" {
   let (signed_scale, region_extent) = sprite_uv_axis_metrics(1.0F, 0.0F, 128)
   let ok = signed_scale == -1.0F && region_extent == 128.0F
