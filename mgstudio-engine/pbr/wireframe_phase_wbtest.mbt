@@ -1443,6 +1443,10 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     Wireframe3dDrawFunctions::resource(),
     Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
   )
+  world.insert_resource(
+    @render_batching.GpuPreprocessingSupport::resource(),
+    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+  )
 
   specialize_wireframes_system(world)
   queue_wireframes_system(world)
@@ -1507,6 +1511,10 @@ test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
     @render_batching.GpuPreprocessingMode::Culling,
   )
   world.insert_resource(Wireframe3dPhases::resource(), phases)
+  world.insert_resource(
+    @render_batching.GpuPreprocessingSupport::resource(),
+    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+  )
   try! world.set_by_key(active_camera, ecs_key_camera3d, Camera3d::Camera3d())
   try! world.set_by_key(
     active_camera,

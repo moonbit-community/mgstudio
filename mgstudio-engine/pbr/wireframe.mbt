@@ -1671,7 +1671,10 @@ fn wireframe_3d_gpu_preprocessing_support(
   match
     world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
     Some(value) => value
-    None => @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport()
+    None =>
+      abort(
+        "missing GpuPreprocessingSupport resource during pbr wireframe queueing",
+      )
   }
 }
 
