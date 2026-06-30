@@ -1659,6 +1659,7 @@ pub fn MaterialBindGroupAllocator::allocate_bindless_material(Self, Int) -> Mate
 pub fn MaterialBindGroupAllocator::allocations(Self) -> UInt
 pub fn MaterialBindGroupAllocator::default_bindless() -> Self
 pub fn MaterialBindGroupAllocator::default_non_bindless() -> Self
+pub fn MaterialBindGroupAllocator::free(Self, MaterialBindingId) -> Unit
 pub fn MaterialBindGroupAllocator::slab_count(Self) -> Int
 pub fn MaterialBindGroupAllocator::slabs_size(Self) -> Int
 
@@ -2467,6 +2468,7 @@ pub struct RenderMaterialBindings {
 pub fn RenderMaterialBindings::RenderMaterialBindings() -> Self
 pub fn RenderMaterialBindings::get(Self, Int) -> MaterialBindingId?
 pub fn RenderMaterialBindings::len(Self) -> Int
+pub fn RenderMaterialBindings::remove(Self, Int) -> MaterialBindingId?
 pub fn RenderMaterialBindings::set(Self, Int, MaterialBindingId) -> Unit
 pub impl @app.Resource for RenderMaterialBindings
 

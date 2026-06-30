@@ -1559,25 +1559,59 @@ fn[M : Material] prepare_material_binding_for_prepared_asset(
   world : @ecs.World,
   probe : @asset.Handle[M],
   material_id : Int,
+  replace_existing? : Bool = false,
 ) -> Unit {
   let label = material_bind_group_allocator_label(probe)
   guard world.get_resource_mut(RenderMaterialBindings::resource())
     is Some(bindings) else {
     return
   }
-  if bindings.peek().get(material_id) is Some(_) {
+  let previous_binding = bindings.peek().get(material_id)
+  if previous_binding is Some(_) && !replace_existing {
     return
   }
   guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
     is Some(allocators) else {
     return
   }
+  let mut replaced_existing = false
   let binding = allocators.modify(fn(value) {
     guard value.get(label) is Some(allocator) else { return None }
+    if previous_binding is Some(binding_id) {
+      allocator.free(binding_id)
+      replaced_existing = true
+    }
     allocator.allocate_bindless_material(material_id)
   })
+  if replaced_existing {
+    bindings.modify(fn(value) { ignore(value.remove(material_id)) })
+  }
   guard binding is Some(binding_id) else { return }
   bindings.modify(fn(value) { value.set(material_id, binding_id) })
+}
+
+///|
+fn[M : Material] unload_material_binding_for_prepared_asset(
+  world : @ecs.World,
+  probe : @asset.Handle[M],
+  material_id : Int,
+) -> Unit {
+  let label = material_bind_group_allocator_label(probe)
+  guard world.get_resource_mut(RenderMaterialBindings::resource())
+    is Some(bindings) else {
+    return
+  }
+  let removed_binding = bindings.modify(fn(value) { value.remove(material_id) })
+  guard removed_binding is Some(binding_id) else { return }
+  guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
+    is Some(allocators) else {
+    return
+  }
+  allocators.modify(fn(value) {
+    if value.get(label) is Some(allocator) {
+      allocator.free(binding_id)
+    }
+  })
 }
 
 ///|
@@ -1685,6 +1719,8 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     let material_changed = changed_material_ids.contains(material_id)
     guard source_assets.get(material_handle) is Some(material) else {
       if material_changed {
+        prepared_assets.modify(fn(value) { ignore(value.remove(material_id)) })
+        unload_material_binding_for_prepared_asset(world, _probe, material_id)
         mark_entities_using_prepared_material_needing_specialization(
           world,
           instances,
@@ -1703,7 +1739,12 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
         ),
       )
     })
-    prepare_material_binding_for_prepared_asset(world, _probe, material_id)
+    prepare_material_binding_for_prepared_asset(
+      world,
+      _probe,
+      material_id,
+      replace_existing=material_changed,
+    )
     if !was_prepared || material_changed {
       mark_entities_using_prepared_material_needing_specialization(
         world,

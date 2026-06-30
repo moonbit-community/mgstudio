@@ -541,6 +541,120 @@ test "pbr material plugin: typed material extraction fills Bevy render material 
 }
 
 ///|
+test "pbr material plugin: removed typed material unloads prepared binding" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  @asset.asset_update_event_messages(world)
+  ensure_prepared_material_assets_resource_in_world(world, probe)
+  ensure_material_pipeline_resource_in_world(
+    world,
+    material_pipeline_from_material_hooks(probe),
+  )
+  ensure_render_material_instances_resource_in_world(world, probe)
+  ensure_material_asset_event_cursor_resource_in_world(world, probe)
+  world.insert_resource(
+    ecs_key_render_material_instances,
+    RenderMaterialInstances::RenderMaterialInstances(),
+  )
+  world.insert_resource(
+    RenderMaterialBindings::resource(),
+    RenderMaterialBindings::RenderMaterialBindings(),
+  )
+  let allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
+  allocators.insert(
+    ParityCustomMaterial::material_debug_name(),
+    MaterialBindGroupAllocator::Bindless(
+      MaterialBindGroupBindlessAllocator::with_slab_capacity(4),
+    ),
+  )
+  world.insert_resource(ecs_key_material_bind_group_allocators, allocators)
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  extract_mesh_materials_system(world, probe)
+  prepare_material_assets_system(world, probe)
+  let prepared_assets_key : @ecs.ResourceKey[
+    @render.RenderAssets[PreparedMaterial[ParityCustomMaterial]],
+  ] = @render.RenderAssets::resource()
+  match world.get_resource(prepared_assets_key) {
+    Some(prepared_assets) =>
+      debug_inspect(
+        prepared_assets.contains(material_handle.id()),
+        content="true",
+      )
+    None => abort("missing prepared material assets")
+  }
+  match world.get_resource(RenderMaterialBindings::resource()) {
+    Some(bindings) => debug_inspect(bindings.len(), content="1")
+    None => abort("missing RenderMaterialBindings")
+  }
+  match world.get_resource(ecs_key_material_bind_group_allocators) {
+    Some(allocators) =>
+      match allocators.get(ParityCustomMaterial::material_debug_name()) {
+        Some(allocator) => debug_inspect(allocator.allocations(), content="1")
+        None => abort("missing material bind group allocator")
+      }
+    None => abort("missing MaterialBindGroupAllocators")
+  }
+  match world.get_resource_mut(@asset.assets_resource_key()) {
+    Some(assets) =>
+      assets.modify(fn(value) { ignore(value.remove(material_handle)) })
+    None => abort("missing material assets")
+  }
+  @asset.asset_update_event_messages(world)
+  match
+    world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => dirty.modify(fn(value) { value.clear() })
+    None => abort("missing DirtySpecializations")
+  }
+  prepare_material_assets_system(world, probe)
+  match world.get_resource(prepared_assets_key) {
+    Some(prepared_assets) =>
+      debug_inspect(
+        prepared_assets.contains(material_handle.id()),
+        content="false",
+      )
+    None => abort("missing prepared material assets")
+  }
+  match world.get_resource(RenderMaterialBindings::resource()) {
+    Some(bindings) => debug_inspect(bindings.len(), content="0")
+    None => abort("missing RenderMaterialBindings")
+  }
+  match world.get_resource(ecs_key_material_bind_group_allocators) {
+    Some(allocators) =>
+      match allocators.get(ParityCustomMaterial::material_debug_name()) {
+        Some(allocator) => debug_inspect(allocator.allocations(), content="0")
+        None => abort("missing material bind group allocator")
+      }
+    None => abort("missing MaterialBindGroupAllocators")
+  }
+  match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => {
+      debug_inspect(dirty.changed_len(), content="1")
+      debug_inspect(
+        dirty.changed_contains(@render.MainEntity::new(entity)),
+        content="true",
+      )
+    }
+    None => abort("missing DirtySpecializations")
+  }
+}
+
+///|
 test "pbr material plugin: typed material extraction marks specialization dirty" {
   let world = @ecs.World::new()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)

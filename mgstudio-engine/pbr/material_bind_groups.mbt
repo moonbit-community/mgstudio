@@ -479,6 +479,16 @@ pub fn RenderMaterialBindings::set(
 }
 
 ///|
+pub fn RenderMaterialBindings::remove(
+  self : RenderMaterialBindings,
+  material_id : Int,
+) -> MaterialBindingId? {
+  guard self.bindings.get(material_id) is Some(binding) else { return None }
+  self.bindings.remove(material_id)
+  Some(binding)
+}
+
+///|
 const STANDARD_MATERIAL_BIND_GROUP_ALLOCATOR_LABEL : String = "StandardMaterial"
 
 ///|
@@ -849,6 +859,17 @@ pub fn MaterialBindGroupAllocator::allocate_bindless_material(
   match self {
     Bindless(allocator) => allocator.allocate(material_id)
     NonBindless(_) => None
+  }
+}
+
+///|
+pub fn MaterialBindGroupAllocator::free(
+  self : MaterialBindGroupAllocator,
+  binding_id : MaterialBindingId,
+) -> Unit {
+  match self {
+    Bindless(allocator) => allocator.free(binding_id)
+    NonBindless(allocator) => allocator.free(binding_id)
   }
 }
 
