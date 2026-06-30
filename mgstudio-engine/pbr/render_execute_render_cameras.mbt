@@ -266,7 +266,10 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
   let gpu_preprocessing_mode = match
     world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
     Some(value) => value.min(@render_batching.GpuPreprocessingMode::Culling)
-    None => @render_batching.GpuPreprocessingMode::None
+    None =>
+      abort(
+        "missing GpuPreprocessingSupport resource during pbr shadow phase preparation",
+      )
   }
   for
     view in render3d_shadow_phase_queued_views_for_cameras(

@@ -252,7 +252,7 @@ test "gpu preprocessing: plugin writes indirect parameter settings into render a
   let app = @app.App::new(@ecs.World::new())
     .insert_sub_app(@app.RenderApp, render_sub_app)
     .add_plugins(
-      GpuPreprocessingPlugin::GpuPreprocessingPlugin().with_allow_copies_from_indirect_parameter_buffers(
+      GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode::Culling).with_allow_copies_from_indirect_parameter_buffers(
         true,
       ),
     )
@@ -269,4 +269,13 @@ test "gpu preprocessing: plugin writes indirect parameter settings into render a
     is Some(_),
     content="true",
   )
+  let main_support = app
+    .world()
+    .get_resource(gpu_preprocessing_support_resource_key)
+    .unwrap()
+  let render_support = render_world
+    .get_resource(gpu_preprocessing_support_resource_key)
+    .unwrap()
+  debug_inspect(main_support.is_culling_supported(), content="true")
+  debug_inspect(render_support.is_culling_supported(), content="true")
 }

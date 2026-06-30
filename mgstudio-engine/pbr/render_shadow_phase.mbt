@@ -47,7 +47,10 @@ fn render3d_shadow_gpu_preprocessing_support(
   match
     world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
     Some(value) => value
-    None => @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport()
+    None =>
+      abort(
+        "missing GpuPreprocessingSupport resource during pbr shadow queueing",
+      )
   }
 }
 

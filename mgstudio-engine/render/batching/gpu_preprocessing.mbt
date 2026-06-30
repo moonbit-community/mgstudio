@@ -1280,6 +1280,16 @@ pub fn gpu_preprocessing_plugin_with(
   }
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      if render_sub_app
+        .world()
+        .get_resource(gpu_preprocessing_support_resource_key)
+        is None {
+        render_sub_app
+        .world()
+        .insert_resource(gpu_preprocessing_support_resource_key, GpuPreprocessingSupport::{
+          max_supported_mode: plugin.mode,
+        })
+      }
       render_sub_app
       .world()
       .insert_resource(

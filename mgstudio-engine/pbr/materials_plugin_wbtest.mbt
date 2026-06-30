@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+fn material_test_insert_gpu_preprocessing_support(world : @ecs.World) -> Unit {
+  world.insert_resource(
+    @render_batching.GpuPreprocessingSupport::resource(),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+      @render_batching.GpuPreprocessingMode::Culling,
+    ),
+  )
+}
+
+///|
 test "render3d: materials startup initializes bevy material render resources" {
   let world = @ecs.World::new()
 
@@ -1105,6 +1115,7 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   )
   ignore(shadow_phases.prepare_for_new_frame(stale_view))
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
+  material_test_insert_gpu_preprocessing_support(world)
   let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
   pending_shadow_queues
   .queues()
@@ -1222,6 +1233,7 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
   )
   ignore(shadow_phases.prepare_for_new_frame(stale_view))
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
+  material_test_insert_gpu_preprocessing_support(world)
   let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
   let point_face_zero_view = Render3dLightEntity::Point(
     light_entity=point_light,
