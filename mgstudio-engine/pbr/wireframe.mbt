@@ -196,6 +196,25 @@ impl @app.Resource for GlobalWireframeMaterial with fn resource() {
 }
 
 ///|
+priv struct WireframeMaterialAssetEventCursor {
+  mut cursor : @ecs.MessageCursor[@asset.AssetEvent[WireframeMaterial]]
+}
+
+///|
+fn WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor() -> WireframeMaterialAssetEventCursor {
+  WireframeMaterialAssetEventCursor::{
+    cursor: @ecs.MessageCursor::MessageCursor(),
+  }
+}
+
+///|
+let wireframe_material_asset_event_cursor_key : @ecs.ResourceKey[
+  WireframeMaterialAssetEventCursor,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::WireframeMaterialAssetEventCursor",
+)
+
+///|
 pub struct WireframeEntitiesNeedingSpecialization {
   changed : Array[@core.Entity]
   removed : Array[@core.Entity]
@@ -383,6 +402,12 @@ fn init_wireframe_resources(world : @ecs.World) -> Unit {
     world.insert_resource(
       WireframeEntitiesNeedingSpecialization::resource(),
       WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization(),
+    )
+  }
+  if world.get_resource(wireframe_material_asset_event_cursor_key) is None {
+    world.insert_resource(
+      wireframe_material_asset_event_cursor_key,
+      WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor(),
     )
   }
 }
@@ -750,6 +775,57 @@ fn wireframe_collect_unique_entity(
 }
 
 ///|
+fn wireframe_material_asset_changed_ids_since_last_check(
+  world : @ecs.World,
+) -> @hashset.HashSet[Int] {
+  let changed_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let event_key : @ecs.MessageKey[@asset.AssetEvent[WireframeMaterial]] = @ecs.Message::message()
+  if !world.contains_message(event_key) {
+    return changed_ids
+  }
+  if world.get_resource(wireframe_material_asset_event_cursor_key) is None {
+    world.insert_resource(
+      wireframe_material_asset_event_cursor_key,
+      WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor(),
+    )
+  }
+  guard world.get_resource_mut(wireframe_material_asset_event_cursor_key)
+    is Some(cursor_resource) else {
+    return changed_ids
+  }
+  cursor_resource.modify(fn(cursor_state) {
+    let reader = world.message_reader(event_key, cursor=cursor_state.cursor)
+    for event in reader.read() {
+      match event {
+        Added(handle) | Modified(handle) | Removed(handle) =>
+          changed_ids.add(handle.id())
+        Unused(_) | LoadedWithDependencies(_) => ()
+      }
+    }
+    cursor_state.cursor = reader.cursor()
+  })
+  changed_ids
+}
+
+///|
+fn wireframe_collect_asset_changed_entities(
+  world : @ecs.World,
+  changed_material_ids : @hashset.HashSet[Int],
+  entities_needing_specialization : WireframeEntitiesNeedingSpecialization,
+  changed_seen : Map[UInt64, Bool],
+) -> Unit {
+  world.for_each_component(ecs_key_mesh3d_wireframe, fn(entity, wireframe) {
+    if changed_material_ids.contains(wireframe.material().id()) {
+      wireframe_collect_unique_entity(
+        entities_needing_specialization.changed,
+        changed_seen,
+        entity,
+      )
+    }
+  })
+}
+
+///|
 fn check_wireframe_entities_needing_specialization_from_world(
   world : @ecs.World,
   entities_needing_specialization : WireframeEntitiesNeedingSpecialization,
@@ -796,6 +872,12 @@ fn check_wireframe_entities_needing_specialization_from_world(
       entity,
     )
   }
+  wireframe_collect_asset_changed_entities(
+    world,
+    wireframe_material_asset_changed_ids_since_last_check(world),
+    entities_needing_specialization,
+    changed_seen,
+  )
 
   let removed_seen : Map[UInt64, Bool] = {}
   for entity in world.removed_components(ecs_key_mesh3d, system_ticks).read() {

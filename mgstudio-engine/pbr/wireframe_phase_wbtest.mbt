@@ -764,6 +764,68 @@ test "pbr: wireframe specialization check collects changed source entities" {
 }
 
 ///|
+test "pbr: wireframe specialization check tracks material asset changes once" {
+  let world = @ecs.World::new()
+  init_wireframe_resources(world)
+  let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
+  let source_assets : @asset.Assets[WireframeMaterial] = @asset.Assets::new()
+  let material_handle = source_assets.add(
+    WireframeMaterial::new(@color.Color::white(), 1.0F, Triangles),
+  )
+  world.insert_resource(asset_key, source_assets)
+  @asset.asset_update_event_messages(world)
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    ecs_key_mesh3d_wireframe,
+    Mesh3dWireframe::new(material_handle),
+  )
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
+
+  check_wireframe_entities_needing_specialization_from_world(
+    world,
+    needs,
+    @core.SystemTicks::new(1, 2),
+  )
+
+  debug_inspect(needs.changed_len(), content="1")
+  debug_inspect(needs.changed_contains(entity), content="true")
+
+  check_wireframe_entities_needing_specialization_from_world(
+    world,
+    needs,
+    @core.SystemTicks::new(1, 2),
+  )
+
+  debug_inspect(needs.changed_len(), content="0")
+
+  match world.get_resource_mut(asset_key) {
+    Some(assets) =>
+      assets.modify(fn(value) {
+        ignore(
+          value.set(
+            material_handle,
+            WireframeMaterial::new(@color.Color::white(), 3.0F, Quads),
+          ),
+        )
+      })
+    None => abort("missing WireframeMaterial assets")
+  }
+  @asset.asset_update_event_messages(world)
+
+  check_wireframe_entities_needing_specialization_from_world(
+    world,
+    needs,
+    @core.SystemTicks::new(1, 2),
+  )
+
+  debug_inspect(needs.changed_len(), content="1")
+  debug_inspect(needs.changed_contains(entity), content="true")
+}
+
+///|
 test "pbr: wireframe specialization check collects removed source entities" {
   let world = @ecs.World::new()
   let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
