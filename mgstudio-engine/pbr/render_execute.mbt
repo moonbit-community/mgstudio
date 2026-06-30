@@ -809,15 +809,17 @@ pub fn render3d_shadow_specialization_candidates(
   dirty_specializations : @render_visibility.DirtySpecializations,
   pending_shadow_queues : @pbr_render.PendingShadowQueues,
 ) -> Array[(@core.Entity, @render.MainEntity)] {
-  guard (try! world.get_by_key(
+  let shadow_map_visible_entities = match
+    (try! world.get_by_key(
       shadow_light_entity, @render_visibility.ecs_key_render_shadow_map_visible_entities,
-    ))
-    is Some(shadow_map_visible_entities) else {
-    return []
+    )) {
+    Some(value) => value
+    None => abort("failed to get shadow light visible entities")
   }
-  guard shadow_map_visible_entities.subview(shadow_visible_retained_view_entity)
-    is Some(visible_entities) else {
-    return []
+  let visible_entities = match
+    shadow_map_visible_entities.subview(shadow_visible_retained_view_entity) {
+    Some(value) => value
+    None => abort("failed to get shadow light visible entities for view")
   }
   guard visible_entities.get(render3d_mesh_visibility_class())
     is Some(render_visible_mesh_entities) else {
@@ -3768,18 +3770,20 @@ pub fn render3d_queue_shadow_phase_data_for_light(
     phases.get(retained_view_entity) is Some(_) else {
     return false
   }
-  guard (try! world.get_by_key(
+  let shadow_map_visible_entities = match
+    (try! world.get_by_key(
       light_entity.shadow_map_visible_entity(),
       @render_visibility.ecs_key_render_shadow_map_visible_entities,
-    ))
-    is Some(shadow_map_visible_entities) else {
-    return false
+    )) {
+    Some(value) => value
+    None => abort("failed to get shadow light visible entities")
   }
-  guard shadow_map_visible_entities.subview(
+  let visible_entities = match
+    shadow_map_visible_entities.subview(
       light_entity.shadow_map_visible_retained_view(retained_view_entity),
-    )
-    is Some(visible_entities) else {
-    return false
+    ) {
+    Some(value) => value
+    None => abort("failed to get shadow light visible entities for view")
   }
   let queued = render3d_queue_shadow_phase_data_for_visible_entities(
     world, retained_view_entity, visible_entities, view_render_layers, dirty_specializations,
