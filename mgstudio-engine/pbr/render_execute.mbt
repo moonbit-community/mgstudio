@@ -473,6 +473,77 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::SpecializationWorkItem`.
+priv struct Render3dMaterialSpecializationWorkItemData {
+  visible_entity : @core.Entity
+  retained_view_entity : @render_view.RetainedViewEntity
+  mesh_key : @material.ErasedMeshPipelineKey
+  layout : @mesh.MeshVertexBufferLayoutRef
+  properties : @material.MaterialProperties
+  material_type_tag : String
+}
+
+///|
+fn render3d_material_specialization_work_item_data(
+  world : @ecs.World,
+  resolved_material : Render3dResolvedMaterial,
+  camera : Camera3dViewPayload,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  visible_entity : @core.Entity,
+  render_mesh_queue_data : RenderMeshQueueData,
+) -> Render3dMaterialSpecializationWorkItemData? {
+  let material_properties = resolved_material.material_properties()
+  let render_mesh_assets = match
+    world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
+    Some(value) => value
+    None => return None
+  }
+  guard render_mesh_assets.get(render_mesh_queue_data.mesh_asset_id())
+    is Some(render_mesh) else {
+    return None
+  }
+  let view_key_bits = render3d_camera_mesh_pipeline_view_key_bits(camera)
+  let motion_vector_prepass = (
+      view_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
+    ) !=
+    0UL
+  let lightmapped = render3d_material_specialization_lightmapped(
+    world, visible_entity,
+  )
+  let lightmap_bicubic_sampling = render3d_material_specialization_lightmap_bicubic_sampling(
+    world, visible_entity,
+  )
+  let visibility_range_dither = render3d_material_specialization_visibility_range_dither(
+    world, visible_entity,
+  )
+  let mesh_key = material_mesh_pipeline_key_for_render_mesh(
+    material_properties,
+    render_mesh,
+    view_key_bits~,
+    msaa_samples=render3d_camera_msaa_samples(camera),
+    has_previous_skin=motion_vector_prepass &&
+      render_mesh_queue_data
+      .flags()
+      .contains(RenderMeshInstanceFlags::has_previous_skin()),
+    has_previous_morph=motion_vector_prepass &&
+      render_mesh_queue_data
+      .flags()
+      .contains(RenderMeshInstanceFlags::has_previous_morph()),
+    visibility_range_dither~,
+    lightmapped~,
+    lightmap_bicubic_sampling~,
+  )
+  Some(Render3dMaterialSpecializationWorkItemData::{
+    visible_entity,
+    retained_view_entity,
+    mesh_key,
+    layout: render_mesh.layout(),
+    properties: material_properties,
+    material_type_tag: resolved_material.material_type_tag(),
+  })
+}
+
+///|
 fn render3d_prewarm_material_pipeline(
   world : @ecs.World,
   resolved_material : Render3dResolvedMaterial,
@@ -490,54 +561,26 @@ fn render3d_prewarm_material_pipeline(
       }
     None => ()
   }
-  let material_properties = resolved_material.material_properties()
-  guard material_properties.base_specialize is Some(base_specialize) else {
+  guard render3d_material_specialization_work_item_data(
+      world, resolved_material, camera, retained_view_entity, visible_entity, render_mesh_queue_data,
+    )
+    is Some(item) else {
     return None
   }
-  let render_mesh_assets = match
-    world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
-    Some(value) => value
-    None => return None
-  }
-  guard render_mesh_assets.get(render_mesh_queue_data.mesh_asset_id())
-    is Some(render_mesh) else {
+  guard item.properties.base_specialize is Some(base_specialize) else {
     return None
   }
-  let layout = render_mesh.layout()
-  let view_key_bits = render3d_camera_mesh_pipeline_view_key_bits(camera)
-  let motion_vector_prepass = (
-      view_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
-    ) !=
-    0UL
-  let lightmapped = render3d_material_specialization_lightmapped(
-    world, visible_entity,
-  )
-  let lightmap_bicubic_sampling = render3d_material_specialization_lightmap_bicubic_sampling(
-    world, visible_entity,
-  )
-  let visibility_range_dither = render3d_material_specialization_visibility_range_dither(
-    world, visible_entity,
-  )
-  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
-    material_properties,
-    render_mesh,
-    view_key_bits~,
-    msaa_samples=render3d_camera_msaa_samples(camera),
-    has_previous_skin=motion_vector_prepass &&
-      render_mesh_queue_data
-      .flags()
-      .contains(RenderMeshInstanceFlags::has_previous_skin()),
-    has_previous_morph=motion_vector_prepass &&
-      render_mesh_queue_data
-      .flags()
-      .contains(RenderMeshInstanceFlags::has_previous_morph()),
-    visibility_range_dither~,
-    lightmapped~,
-    lightmap_bicubic_sampling~,
-    material_type_tag=resolved_material.material_type_tag(),
+  let pipeline_key = @material.ErasedMaterialPipelineKey::new(
+    item.mesh_key,
+    item.properties.material_key,
+    item.material_type_tag,
   )
   let pipeline_id = @material.material_specialize_base(
-    base_specialize, world, pipeline_key, layout, material_properties,
+    base_specialize,
+    world,
+    pipeline_key,
+    item.layout,
+    item.properties,
   ) catch {
     err =>
       abort(
@@ -549,7 +592,10 @@ fn render3d_prewarm_material_pipeline(
       ignore(
         cache_ref.modify(fn(cache) {
           cache.insert(
-            retained_view_entity, visible_entity, specialization_tick, pipeline_id,
+            item.retained_view_entity,
+            item.visible_entity,
+            specialization_tick,
+            pipeline_id,
           )
         }),
       )
