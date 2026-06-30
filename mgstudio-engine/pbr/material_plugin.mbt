@@ -332,6 +332,7 @@ pub struct MaterialPipelineKey[_] {
   mesh_key : @material.ErasedMeshPipelineKey
   bind_group_layout_key : String
   bind_group_data : String
+  material_key : @material.ErasedMaterialKey
 }
 
 ///|
@@ -339,8 +340,17 @@ pub fn[M] MaterialPipelineKey::new(
   mesh_key : @material.ErasedMeshPipelineKey,
   bind_group_layout_key : String,
   bind_group_data : String,
+  material_key? : @material.ErasedMaterialKey = @material.ErasedMaterialKey::new(
+    material_hash_bind_group_data(bind_group_data),
+    "MaterialKey",
+  ),
 ) -> MaterialPipelineKey[M] {
-  MaterialPipelineKey::{ mesh_key, bind_group_layout_key, bind_group_data }
+  MaterialPipelineKey::{
+    mesh_key,
+    bind_group_layout_key,
+    bind_group_data,
+    material_key,
+  }
 }
 
 ///|
@@ -362,6 +372,13 @@ pub fn[M] MaterialPipelineKey::bind_group_layout_key(
   self : MaterialPipelineKey[M],
 ) -> String {
   self.bind_group_layout_key
+}
+
+///|
+pub fn[M] MaterialPipelineKey::material_key(
+  self : MaterialPipelineKey[M],
+) -> @material.ErasedMaterialKey {
+  self.material_key
 }
 
 ///|
@@ -820,10 +837,12 @@ pub fn[M : Material] PreparedMaterial::from_material(
 ) -> PreparedMaterial[M] {
   let bind_group = material.bind_group()
   let material_layout = material.bind_group_layout_descriptor()
+  let material_key = material.material_key()
   let key = MaterialPipelineKey::new(
     material_mesh_pipeline_key(material),
     bind_group.layout_key(),
     material.bind_group_data(),
+    material_key~,
   )
   let render_method = material
     .opaque_render_method()
@@ -838,13 +857,14 @@ pub fn[M : Material] PreparedMaterial::from_material(
     )
     .with_render_phase_type(material_render_phase_type(material))
     .with_material_layout(Some(material_layout))
-    .with_material_key(material.material_key())
+    .with_material_key(material_key)
     .with_user_specialize(
       Some(fn(_label, descriptor, layout, erased_key) {
         let typed_key = MaterialPipelineKey::new(
           erased_key.mesh_key(),
           key.bind_group_layout_key(),
           key.bind_group_data(),
+          material_key=erased_key.material_key(),
         )
         M::specialize(descriptor, layout, typed_key)
       }),

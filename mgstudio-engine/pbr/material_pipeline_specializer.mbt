@@ -485,6 +485,14 @@ fn pbr_specialize_standard_material_descriptor(
 }
 
 ///|
+pub fn pbr_specialize_standard_material_descriptor_for_key(
+  descriptor : @material.RenderPipelineDescriptor,
+  key : @material.ErasedMaterialPipelineKey,
+) -> @material.RenderPipelineDescriptor {
+  pbr_specialize_standard_material_descriptor(descriptor, key)
+}
+
+///|
 fn pbr_mesh_vertex_attribute_descriptor(
   attribute : @mesh.MeshVertexAttribute,
   shader_location : Int,

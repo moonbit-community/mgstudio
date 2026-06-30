@@ -244,3 +244,185 @@ test "pbr material: standard material plugin installs render startup allocator" 
     None => debug_inspect(false, content="true")
   }
 }
+
+///|
+fn pbr_material_test_shader_defs_contain(
+  shader_defs : Array[@material.ShaderDefVal],
+  name : String,
+) -> Bool {
+  for shader_def in shader_defs {
+    match shader_def {
+      @material.ShaderDefVal::Flag(flag) if flag == name => return true
+      _ => ()
+    }
+  }
+  false
+}
+
+///|
+fn pbr_material_test_standard_material_pipeline() -> MaterialPipeline[
+  @material.StandardMaterial,
+] {
+  MaterialPipeline::new(
+    None,
+    Some(PBR_MESH_FRAGMENT_SHADER_PATH),
+    None,
+    Some(PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH),
+    None,
+    Some(PBR_MESH_FRAGMENT_SHADER_PATH),
+    Some(PBR_MESH_FRAGMENT_SHADER_PATH),
+    Some(PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH),
+    Some(PBR_MESH_FRAGMENT_SHADER_PATH),
+  )
+}
+
+///|
+fn pbr_material_test_mesh_layout() -> @mesh.MeshVertexBufferLayoutRef {
+  let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  layouts.insert(
+    @mesh.MeshVertexBufferLayout::new(
+      attribute_ids=[
+        @mesh.MeshVertexAttribute::position().id(),
+        @mesh.MeshVertexAttribute::normal().id(),
+        @mesh.MeshVertexAttribute::uv_0().id(),
+      ],
+      layout=@mesh.VertexBufferLayout::new(
+        array_stride=32,
+        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=0,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=12,
+            format=@mesh.MeshVertexFormat::Float32x3,
+            shader_location=1,
+          ),
+          @mesh.VertexAttribute::new(
+            offset=24,
+            format=@mesh.MeshVertexFormat::Float32x2,
+            shader_location=2,
+          ),
+        ],
+      ),
+    ),
+  )
+}
+
+///|
+test "pbr material: generic standard material preparation uses typed material key" {
+  let material = @material.StandardMaterial::StandardMaterial()
+    .with_normal_map_texture(Some(@asset.Handle::new(1)))
+    .with_diffuse_transmission(0.5F)
+    .with_depth_bias(7.0F)
+  let expected_key = standard_material_key_from_material(material)
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(11),
+    material,
+    pbr_material_test_standard_material_pipeline(),
+    @material.OpaqueRendererMethod::Deferred,
+  )
+  inspect(prepared.key.material_key().type_tag(), content="StandardMaterialKey")
+  inspect(
+    prepared.key.material_key().bits() == expected_key.bits(),
+    content="true",
+  )
+  inspect(
+    prepared.properties().material_key.type_tag(),
+    content="StandardMaterialKey",
+  )
+  inspect(
+    prepared.properties().material_key.bits() == expected_key.bits(),
+    content="true",
+  )
+  debug_inspect(
+    prepared.properties().render_method
+    is @material.OpaqueRendererMethod::Forward,
+    content="true",
+  )
+  debug_inspect(
+    prepared.properties().get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr.wgsl\")",
+  )
+  debug_inspect(
+    prepared.properties().get_shader(@material.PREPASS_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr_prepass.wgsl\")",
+  )
+  debug_inspect(
+    prepared.properties().get_shader(@material.DEFERRED_FRAGMENT_SHADER_LABEL),
+    content="Some(\"pbr/render/pbr.wgsl\")",
+  )
+}
+
+///|
+test "pbr material: generic standard material user specialize consumes erased typed key" {
+  let material = @material.StandardMaterial::StandardMaterial()
+    .with_normal_map_texture(Some(@asset.Handle::new(1)))
+    .with_depth_bias(3.0F)
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(12),
+    material,
+    pbr_material_test_standard_material_pipeline(),
+    @material.OpaqueRendererMethod::Forward,
+  )
+  guard prepared.properties().user_specialize is Some(user_specialize) else {
+    abort("expected generic StandardMaterial user_specialize hook")
+  }
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+    .with_label(Some("standard_material_test_pipeline"))
+    .with_depth_stencil(
+      Some(
+        @render_resource.DepthStencilState::new(
+          @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+          true,
+          @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+        ),
+      ),
+    )
+    .with_vertex(
+      @render_resource.VertexState::new(
+        Some(PBR_MESH_VERTEX_SHADER_PATH),
+        [],
+        None,
+        [],
+      ),
+    )
+    .with_fragment(
+      Some(
+        @render_resource.FragmentState::new(
+          Some(PBR_MESH_FRAGMENT_SHADER_PATH),
+          [],
+          None,
+          [],
+        ),
+      ),
+    )
+  let erased_key = @material.ErasedMaterialPipelineKey::new(
+    prepared.key.mesh_key(),
+    prepared.key.material_key(),
+    "StandardMaterial",
+  )
+  let specialized = try! @material.material_specialize_user(
+    user_specialize,
+    "PbrMaterialPipeline",
+    descriptor,
+    pbr_material_test_mesh_layout(),
+    erased_key,
+  )
+  guard specialized.fragment is Some(fragment) else {
+    abort("expected specialized StandardMaterial fragment state")
+  }
+  debug_inspect(
+    pbr_material_test_shader_defs_contain(
+      fragment.shader_defs,
+      "STANDARD_MATERIAL_NORMAL_MAP",
+    ),
+    content="true",
+  )
+  guard specialized.depth_stencil is Some(depth_stencil) else {
+    abort("expected specialized StandardMaterial depth state")
+  }
+  inspect(depth_stencil.bias_constant, content="3")
+}

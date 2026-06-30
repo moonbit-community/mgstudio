@@ -270,6 +270,163 @@ pub fn standard_material_render_phase_type(
 }
 
 ///|
+let standard_material_generic_keys : MaterialKeys[StandardMaterial] = register_material_keys(
+  "StandardMaterial",
+)
+
+///|
+fn standard_material_unresolved_opaque_render_method(
+  material : StandardMaterial,
+) -> OpaqueRendererMethod {
+  match material.opaque_render_method {
+    OpaqueRendererMethod::Auto if material.diffuse_transmission > 0.0F =>
+      OpaqueRendererMethod::Forward
+    opaque_method => opaque_method
+  }
+}
+
+///|
+pub impl Material for StandardMaterial with fn material_debug_name() {
+  "StandardMaterial"
+}
+
+///|
+pub impl Material for StandardMaterial with fn material_keys() {
+  standard_material_generic_keys
+}
+
+///|
+pub impl Material for StandardMaterial with fn vertex_shader() {
+  material_default_vertex_shader()
+}
+
+///|
+pub impl Material for StandardMaterial with fn fragment_shader() {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+pub impl Material for StandardMaterial with fn prepass_vertex_shader() {
+  material_default_vertex_shader()
+}
+
+///|
+pub impl Material for StandardMaterial with fn prepass_fragment_shader() {
+  Some(PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH)
+}
+
+///|
+pub impl Material for StandardMaterial with fn deferred_vertex_shader() {
+  material_default_vertex_shader()
+}
+
+///|
+pub impl Material for StandardMaterial with fn deferred_fragment_shader() {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+pub impl Material for StandardMaterial with fn meshlet_fragment_shader() {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+pub impl Material for StandardMaterial with fn meshlet_prepass_fragment_shader() {
+  Some(PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH)
+}
+
+///|
+pub impl Material for StandardMaterial with fn meshlet_deferred_fragment_shader() {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+pub impl Material for StandardMaterial with fn alpha_mode(self) {
+  self.alpha_mode
+}
+
+///|
+pub impl Material for StandardMaterial with fn opaque_render_method(self) {
+  standard_material_unresolved_opaque_render_method(self)
+}
+
+///|
+pub impl Material for StandardMaterial with fn depth_bias(self) {
+  self.depth_bias
+}
+
+///|
+pub impl Material for StandardMaterial with fn reads_view_transmission_texture(
+  self,
+) {
+  standard_material_reads_view_transmission_texture(self)
+}
+
+///|
+pub impl Material for StandardMaterial with fn enable_prepass() {
+  material_default_enable_prepass()
+}
+
+///|
+pub impl Material for StandardMaterial with fn enable_shadows() {
+  material_default_enable_shadows()
+}
+
+///|
+pub impl Material for StandardMaterial with fn bindless_supported(render_device) {
+  standard_material_bindless_supported(render_device)
+}
+
+///|
+pub impl Material for StandardMaterial with fn bindless_slot_count() {
+  standard_material_bindless_slot_count()
+}
+
+///|
+pub impl Material for StandardMaterial with fn bind_group(self) {
+  ignore(self)
+  material_default_bind_group()
+}
+
+///|
+pub impl Material for StandardMaterial with fn bind_group_layout_descriptor(
+  self,
+) {
+  ignore(self)
+  standard_material_bind_group_layout_descriptor()
+}
+
+///|
+pub impl Material for StandardMaterial with fn bind_group_data(self) {
+  standard_material_key_from_material(self).bits().to_string()
+}
+
+///|
+pub impl Material for StandardMaterial with fn material_key(self) {
+  @material.ErasedMaterialKey::new(
+    standard_material_key_from_material(self).bits(),
+    "StandardMaterialKey",
+  )
+}
+
+///|
+pub impl Material for StandardMaterial with fn specialize(
+  descriptor,
+  layout,
+  key,
+) {
+  ignore(layout)
+  pbr_specialize_standard_material_descriptor_for_key(
+    descriptor,
+    @material.ErasedMaterialPipelineKey::new(
+      key.mesh_key(),
+      key.material_key(),
+      "StandardMaterial",
+    ),
+  )
+}
+
+///|
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
   debug_flags : @render.RenderDebugFlags
