@@ -1484,6 +1484,26 @@ fn material_test_base_specialize(
 }
 
 ///|
+fn material_test_resource_key_base_specialize(
+  _world : @ecs.World,
+  key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+  _properties : @material.MaterialProperties,
+) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  if layout.index() < 0 {
+    raise @material.missing_vertex_attribute_error("layout")
+  }
+  let bits = key.mesh_key().bits()
+  if (bits & MESH_PIPELINE_KEY_LIGHTMAPPED) != 0UL &&
+    (bits & MESH_PIPELINE_KEY_LIGHTMAP_BICUBIC_SAMPLING) != 0UL &&
+    (bits & MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER) != 0UL {
+    @material.CachedRenderPipelineId::new(902UL)
+  } else {
+    @material.CachedRenderPipelineId::new(901UL)
+  }
+}
+
+///|
 fn material_test_camera_payload() -> Camera3dViewPayload {
   Camera3dViewPayload::{
     decal_config: None,
@@ -3347,6 +3367,64 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
     prepared_render_mesh.map(fn(value) { value.id() }),
     content="Some(901)",
   )
+}
+
+///|
+test "render3d: material specialization key consumes render resources" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    ecs_key_specialized_material_pipeline_cache,
+    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
+    Some(material_test_resource_key_base_specialize),
+  )
+  let render_mesh_asset_id = 592
+  let mesh = material_test_extracted_mesh_payload(591, material_properties)
+  let queue_data = RenderMeshQueueData::new(render_mesh_asset_id, 0U, true)
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(5920, 1),
+  )
+  let visible_entity = @core.Entity::new(5921, 1)
+  let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_mesh_assets.insert(
+    render_mesh_asset_id,
+    @render_mesh.RenderMesh::new(vertex_count=3),
+  )
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    render_mesh_assets,
+  )
+  let render_lightmaps = @lightmap.RenderLightmaps::RenderLightmaps()
+  ignore(
+    render_lightmaps.insert_lightmap(
+      visible_entity,
+      @lightmap.Lightmap::new(@asset.Handle::new(9)).with_bicubic_sampling(true),
+    ),
+  )
+  world.insert_resource(@lightmap.RenderLightmaps::resource(), render_lightmaps)
+  let render_visibility_ranges = @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges()
+  render_visibility_ranges.insert(
+    visible_entity.id,
+    @visibility.VisibilityRange::new(0.0F, 1.0F, 10.0F, 11.0F, false),
+  )
+  world.insert_resource(
+    @render_visibility.RenderVisibilityRanges::resource(),
+    render_visibility_ranges,
+  )
+
+  let pipeline_id = render3d_prewarm_material_pipeline(
+    world,
+    @pbr_render.Render3dMeshRuntimeState::new(),
+    mesh,
+    material_test_camera_payload(),
+    retained_view,
+    visible_entity,
+    queue_data,
+    1,
+  )
+
+  debug_inspect(pipeline_id.map(fn(value) { value.id() }), content="Some(902)")
 }
 
 ///|

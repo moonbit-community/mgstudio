@@ -158,6 +158,11 @@ pub fn RenderLightmap::new(
 }
 
 ///|
+pub fn RenderLightmap::bicubic_sampling(self : RenderLightmap) -> Bool {
+  self.bicubic_sampling
+}
+
+///|
 pub struct LightmapSlab {
   capacity : Int
   allocated : Int

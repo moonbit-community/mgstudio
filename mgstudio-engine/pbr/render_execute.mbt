@@ -510,6 +510,15 @@ fn render3d_prewarm_material_pipeline(
       view_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
     ) !=
     0UL
+  let lightmapped = render3d_material_specialization_lightmapped(
+    world, visible_entity,
+  )
+  let lightmap_bicubic_sampling = render3d_material_specialization_lightmap_bicubic_sampling(
+    world, visible_entity,
+  )
+  let visibility_range_dither = render3d_material_specialization_visibility_range_dither(
+    world, visible_entity,
+  )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
     mesh.material_properties,
     render_mesh,
@@ -523,15 +532,9 @@ fn render3d_prewarm_material_pipeline(
       render_mesh_queue_data
       .flags()
       .contains(RenderMeshInstanceFlags::has_previous_morph()),
-    visibility_range_dither=mesh.visibility_range is Some(_),
-    lightmapped=match mesh.lightmap {
-      Some(lightmap) => lightmap.image.id() >= 0
-      None => false
-    },
-    lightmap_bicubic_sampling=match mesh.lightmap {
-      Some(lightmap) => lightmap.image.id() >= 0 && lightmap.bicubic_sampling
-      None => false
-    },
+    visibility_range_dither~,
+    lightmapped~,
+    lightmap_bicubic_sampling~,
   )
   let pipeline_id = @material.material_specialize_base(
     base_specialize,
@@ -560,6 +563,50 @@ fn render3d_prewarm_material_pipeline(
       )
   }
   Some(pipeline_id)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_material_specialization_lightmapped(
+  world : @ecs.World,
+  visible_entity : @core.Entity,
+) -> Bool {
+  match world.get_resource(@lightmap.RenderLightmaps::resource()) {
+    Some(render_lightmaps) => render_lightmaps.get(visible_entity) is Some(_)
+    None => false
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_material_specialization_lightmap_bicubic_sampling(
+  world : @ecs.World,
+  visible_entity : @core.Entity,
+) -> Bool {
+  match world.get_resource(@lightmap.RenderLightmaps::resource()) {
+    Some(render_lightmaps) =>
+      match render_lightmaps.get(visible_entity) {
+        Some(render_lightmap) => render_lightmap.bicubic_sampling()
+        None => false
+      }
+    None => false
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_material_specialization_visibility_range_dither(
+  world : @ecs.World,
+  visible_entity : @core.Entity,
+) -> Bool {
+  match
+    world.get_resource(@render_visibility.RenderVisibilityRanges::resource()) {
+    Some(render_visibility_ranges) =>
+      render_visibility_ranges.entity_has_crossfading_visibility_ranges(
+        visible_entity.id,
+      )
+    None => false
+  }
 }
 
 ///|

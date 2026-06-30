@@ -81,6 +81,7 @@ pub struct RenderLightmap {
   slot_index : LightmapSlotIndex
   bicubic_sampling : Bool
 } derive(ToJson, @json.FromJson)
+pub fn RenderLightmap::bicubic_sampling(Self) -> Bool
 pub fn RenderLightmap::new(@math.Rect, LightmapSlabIndex, LightmapSlotIndex, Bool) -> Self
 
 pub struct RenderLightmaps {
