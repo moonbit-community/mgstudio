@@ -179,6 +179,11 @@ impl @pbr.Material for LineMaterial with fn bind_group(self) {
 }
 
 ///|
+impl @pbr.Material for LineMaterial with fn bind_group_layout_descriptor(self) {
+  @pbr.material_default_bind_group_layout_descriptor(self)
+}
+
+///|
 impl @pbr.Material for LineMaterial with fn specialize(descriptor, layout, key) {
   @pbr.material_default_specialize(descriptor, layout, key)
 }

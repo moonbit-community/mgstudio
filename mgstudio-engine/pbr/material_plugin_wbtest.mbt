@@ -173,6 +173,15 @@ impl Material for ParityCustomMaterial with fn bind_group(self) {
 }
 
 ///|
+impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
+  self,
+) {
+  self
+  .bind_group()
+  .layout_descriptor("mgstudio_pbr_test::ParityCustomMaterialLayout")
+}
+
+///|
 impl Material for ParityCustomMaterial with fn specialize(
   descriptor,
   layout,
@@ -237,6 +246,24 @@ test "pbr material plugin: prepared material carries shader hooks and typed bind
 }
 
 ///|
+test "pbr material plugin: prepared material uses material layout descriptor hook" {
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(7),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Forward,
+  )
+  guard prepared.properties().material_layout is Some(layout) else {
+    abort("missing prepared material layout")
+  }
+  inspect(
+    layout.label(),
+    content="mgstudio_pbr_test::ParityCustomMaterialLayout",
+  )
+}
+
+///|
 test "pbr material plugin: prepared material resolves auto renderer method from default resource value" {
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material = ParityCustomMaterial::ParityCustomMaterial().with_opaque_render_method(
@@ -294,7 +321,7 @@ test "pbr material plugin: prepared custom material can specialize a mesh pipeli
   inspect(descriptor.layout.length(), content="4")
   inspect(
     descriptor.layout[3].label(),
-    content="mgstudio_pbr::Material<mgstudio_pbr_test::ParityCustomMaterial>",
+    content="mgstudio_pbr_test::ParityCustomMaterialLayout",
   )
   inspect(descriptor.layout[3].entries().length(), content="3")
   inspect(descriptor.layout[3].entries()[0].binding(), content="0")

@@ -2215,6 +2215,13 @@ impl Material for ShadowReadinessNoShadowMaterial with fn bind_group(self) {
 }
 
 ///|
+impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_layout_descriptor(
+  self,
+) {
+  material_default_bind_group_layout_descriptor(self)
+}
+
+///|
 impl Material for ShadowReadinessNoShadowMaterial with fn specialize(
   descriptor,
   layout,

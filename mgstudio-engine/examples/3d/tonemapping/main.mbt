@@ -258,6 +258,13 @@ impl @pbr.Material for ColorGradientMaterial with fn bind_group(self) {
 }
 
 ///|
+impl @pbr.Material for ColorGradientMaterial with fn bind_group_layout_descriptor(
+  self,
+) {
+  @pbr.material_default_bind_group_layout_descriptor(self)
+}
+
+///|
 impl @pbr.Material for ColorGradientMaterial with fn specialize(
   descriptor,
   layout,

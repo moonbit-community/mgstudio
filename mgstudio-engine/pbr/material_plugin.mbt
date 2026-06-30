@@ -573,6 +573,7 @@ pub(open) trait Material {
   fn bindless_supported(render_device : @renderer.RenderDevice) -> Bool
   fn bindless_slot_count() -> Int?
   fn bind_group(self : Self) -> MaterialBindGroup
+  fn bind_group_layout_descriptor(self : Self) -> @render_resource.BindGroupLayoutDescriptor
   fn specialize(
     descriptor : @render.RenderPipelineDescriptor,
     layout : @mesh.MeshVertexBufferLayoutRef,
@@ -635,6 +636,15 @@ pub fn material_default_bindless_slot_count() -> Int? {
 ///|
 pub fn material_default_bind_group() -> MaterialBindGroup {
   MaterialBindGroup::MaterialBindGroup()
+}
+
+///|
+pub fn[M : Material] material_default_bind_group_layout_descriptor(
+  material : M,
+) -> @render_resource.BindGroupLayoutDescriptor {
+  material
+  .bind_group()
+  .layout_descriptor("mgstudio_pbr::Material<\{M::material_debug_name()}>")
 }
 
 ///|
@@ -792,6 +802,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   default_opaque_renderer_method : @material.OpaqueRendererMethod,
 ) -> PreparedMaterial[M] {
   let bind_group = material.bind_group()
+  let material_layout = material.bind_group_layout_descriptor()
   let key = MaterialPipelineKey::new(
     material_mesh_pipeline_key(material),
     bind_group.layout_key(),
@@ -809,13 +820,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
       material.reads_view_transmission_texture(),
     )
     .with_render_phase_type(material_render_phase_type(material))
-    .with_material_layout(
-      Some(
-        bind_group.layout_descriptor(
-          "mgstudio_pbr::Material<\{M::material_debug_name()}>",
-        ),
-      ),
-    )
+    .with_material_layout(Some(material_layout))
     .with_material_key(
       @material.ErasedMaterialKey::new(
         material_hash_bind_group_data(key.bind_group_data()),
