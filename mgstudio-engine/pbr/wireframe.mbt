@@ -201,6 +201,11 @@ priv struct WireframeMaterialAssetEventCursor {
 }
 
 ///|
+priv struct WireframeMeshAssetEventCursor {
+  mut cursor : @ecs.MessageCursor[@asset.AssetEvent[@mesh.Mesh]]
+}
+
+///|
 fn WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor() -> WireframeMaterialAssetEventCursor {
   WireframeMaterialAssetEventCursor::{
     cursor: @ecs.MessageCursor::MessageCursor(),
@@ -208,10 +213,22 @@ fn WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor() -> Wir
 }
 
 ///|
+fn WireframeMeshAssetEventCursor::WireframeMeshAssetEventCursor() -> WireframeMeshAssetEventCursor {
+  WireframeMeshAssetEventCursor::{ cursor: @ecs.MessageCursor::MessageCursor() }
+}
+
+///|
 let wireframe_material_asset_event_cursor_key : @ecs.ResourceKey[
   WireframeMaterialAssetEventCursor,
 ] = @ecs.register_resource(
   debug_name="mgstudio_pbr::WireframeMaterialAssetEventCursor",
+)
+
+///|
+let wireframe_mesh_asset_event_cursor_key : @ecs.ResourceKey[
+  WireframeMeshAssetEventCursor,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::WireframeMeshAssetEventCursor",
 )
 
 ///|
@@ -408,6 +425,12 @@ fn init_wireframe_resources(world : @ecs.World) -> Unit {
     world.insert_resource(
       wireframe_material_asset_event_cursor_key,
       WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor(),
+    )
+  }
+  if world.get_resource(wireframe_mesh_asset_event_cursor_key) is None {
+    world.insert_resource(
+      wireframe_mesh_asset_event_cursor_key,
+      WireframeMeshAssetEventCursor::WireframeMeshAssetEventCursor(),
     )
   }
 }
@@ -808,7 +831,40 @@ fn wireframe_material_asset_changed_ids_since_last_check(
 }
 
 ///|
-fn wireframe_collect_asset_changed_entities(
+fn wireframe_mesh_asset_changed_ids_since_last_check(
+  world : @ecs.World,
+) -> @hashset.HashSet[Int] {
+  let changed_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let event_key : @ecs.MessageKey[@asset.AssetEvent[@mesh.Mesh]] = @ecs.Message::message()
+  if !world.contains_message(event_key) {
+    return changed_ids
+  }
+  if world.get_resource(wireframe_mesh_asset_event_cursor_key) is None {
+    world.insert_resource(
+      wireframe_mesh_asset_event_cursor_key,
+      WireframeMeshAssetEventCursor::WireframeMeshAssetEventCursor(),
+    )
+  }
+  guard world.get_resource_mut(wireframe_mesh_asset_event_cursor_key)
+    is Some(cursor_resource) else {
+    return changed_ids
+  }
+  cursor_resource.modify(fn(cursor_state) {
+    let reader = world.message_reader(event_key, cursor=cursor_state.cursor)
+    for event in reader.read() {
+      match event {
+        Added(handle) | Modified(handle) | Removed(handle) =>
+          changed_ids.add(handle.id())
+        Unused(_) | LoadedWithDependencies(_) => ()
+      }
+    }
+    cursor_state.cursor = reader.cursor()
+  })
+  changed_ids
+}
+
+///|
+fn wireframe_collect_material_asset_changed_entities(
   world : @ecs.World,
   changed_material_ids : @hashset.HashSet[Int],
   entities_needing_specialization : WireframeEntitiesNeedingSpecialization,
@@ -816,6 +872,24 @@ fn wireframe_collect_asset_changed_entities(
 ) -> Unit {
   world.for_each_component(ecs_key_mesh3d_wireframe, fn(entity, wireframe) {
     if changed_material_ids.contains(wireframe.material().id()) {
+      wireframe_collect_unique_entity(
+        entities_needing_specialization.changed,
+        changed_seen,
+        entity,
+      )
+    }
+  })
+}
+
+///|
+fn wireframe_collect_mesh_asset_changed_entities(
+  world : @ecs.World,
+  changed_mesh_ids : @hashset.HashSet[Int],
+  entities_needing_specialization : WireframeEntitiesNeedingSpecialization,
+  changed_seen : Map[UInt64, Bool],
+) -> Unit {
+  world.for_each_component(ecs_key_mesh3d, fn(entity, mesh3d) {
+    if changed_mesh_ids.contains(mesh3d.mesh().id()) {
       wireframe_collect_unique_entity(
         entities_needing_specialization.changed,
         changed_seen,
@@ -872,7 +946,13 @@ fn check_wireframe_entities_needing_specialization_from_world(
       entity,
     )
   }
-  wireframe_collect_asset_changed_entities(
+  wireframe_collect_mesh_asset_changed_entities(
+    world,
+    wireframe_mesh_asset_changed_ids_since_last_check(world),
+    entities_needing_specialization,
+    changed_seen,
+  )
+  wireframe_collect_material_asset_changed_entities(
     world,
     wireframe_material_asset_changed_ids_since_last_check(world),
     entities_needing_specialization,
