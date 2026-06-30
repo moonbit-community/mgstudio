@@ -1504,6 +1504,23 @@ fn material_test_resource_key_base_specialize(
 }
 
 ///|
+fn material_test_type_tag_base_specialize(
+  _world : @ecs.World,
+  key : @material.ErasedMaterialPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+  _properties : @material.MaterialProperties,
+) -> @material.CachedRenderPipelineId raise @material.SpecializedMeshPipelineError {
+  if layout.index() < 0 {
+    raise @material.missing_vertex_attribute_error("layout")
+  }
+  if key.type_tag() == "mgstudio_pbr_test::CustomResolvedMaterial" {
+    @material.CachedRenderPipelineId::new(903UL)
+  } else {
+    @material.CachedRenderPipelineId::new(901UL)
+  }
+}
+
+///|
 fn material_test_camera_payload() -> Camera3dViewPayload {
   Camera3dViewPayload::{
     decal_config: None,
@@ -3292,12 +3309,7 @@ test "render3d: missing prepared render mesh does not return to pending queue" {
     payload: material_test_camera_payload(),
   }
 
-  render3d_prewarm_mesh_pipelines(
-    world,
-    @pbr_render.Render3dMeshRuntimeState::new(),
-    [camera],
-    [],
-  )
+  render3d_prewarm_mesh_pipelines(world, [camera], [])
 
   match world.get_resource(PendingMeshMaterialQueues::resource()) {
     Some(queues) =>
@@ -3321,6 +3333,12 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
   let mesh = material_test_extracted_mesh_payload(
     extracted_payload_mesh_id, material_properties,
   )
+  let resolved_material = Render3dResolvedMaterial::new(
+    mesh.material,
+    mesh.material_properties,
+    mesh.material_bind_group_data,
+    "StandardMaterial",
+  )
   let queue_data = RenderMeshQueueData::new(render_mesh_asset_id, 0U, true)
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(58, 1),
@@ -3328,8 +3346,7 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
 
   let missing_render_mesh = render3d_prewarm_material_pipeline(
     world,
-    @pbr_render.Render3dMeshRuntimeState::new(),
-    mesh,
+    resolved_material,
     material_test_camera_payload(),
     retained_view,
     @core.Entity::new(59, 1),
@@ -3354,8 +3371,7 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
   )
   let prepared_render_mesh = render3d_prewarm_material_pipeline(
     world,
-    @pbr_render.Render3dMeshRuntimeState::new(),
-    mesh,
+    resolved_material,
     material_test_camera_payload(),
     retained_view,
     @core.Entity::new(59, 1),
@@ -3381,6 +3397,12 @@ test "render3d: material specialization key consumes render resources" {
   )
   let render_mesh_asset_id = 592
   let mesh = material_test_extracted_mesh_payload(591, material_properties)
+  let resolved_material = Render3dResolvedMaterial::new(
+    mesh.material,
+    mesh.material_properties,
+    mesh.material_bind_group_data,
+    "StandardMaterial",
+  )
   let queue_data = RenderMeshQueueData::new(render_mesh_asset_id, 0U, true)
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(5920, 1),
@@ -3415,8 +3437,7 @@ test "render3d: material specialization key consumes render resources" {
 
   let pipeline_id = render3d_prewarm_material_pipeline(
     world,
-    @pbr_render.Render3dMeshRuntimeState::new(),
-    mesh,
+    resolved_material,
     material_test_camera_payload(),
     retained_view,
     visible_entity,
@@ -3425,6 +3446,52 @@ test "render3d: material specialization key consumes render resources" {
   )
 
   debug_inspect(pipeline_id.map(fn(value) { value.id() }), content="Some(902)")
+}
+
+///|
+test "render3d: material specialization key preserves resolved material type" {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    ecs_key_specialized_material_pipeline_cache,
+    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
+    Some(material_test_type_tag_base_specialize),
+  )
+  let render_mesh_asset_id = 593
+  let mesh = material_test_extracted_mesh_payload(594, material_properties)
+  let resolved_material = Render3dResolvedMaterial::new(
+    mesh.material,
+    mesh.material_properties,
+    mesh.material_bind_group_data,
+    "mgstudio_pbr_test::CustomResolvedMaterial",
+  )
+  let queue_data = RenderMeshQueueData::new(render_mesh_asset_id, 0U, true)
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(5930, 1),
+  )
+  let visible_entity = @core.Entity::new(5931, 1)
+  let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_mesh_assets.insert(
+    render_mesh_asset_id,
+    @render_mesh.RenderMesh::new(vertex_count=3),
+  )
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    render_mesh_assets,
+  )
+
+  let pipeline_id = render3d_prewarm_material_pipeline(
+    world,
+    resolved_material,
+    material_test_camera_payload(),
+    retained_view,
+    visible_entity,
+    queue_data,
+    1,
+  )
+
+  debug_inspect(pipeline_id.map(fn(value) { value.id() }), content="Some(903)")
 }
 
 ///|

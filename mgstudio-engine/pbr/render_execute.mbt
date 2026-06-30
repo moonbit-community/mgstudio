@@ -475,8 +475,7 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
 ///|
 fn render3d_prewarm_material_pipeline(
   world : @ecs.World,
-  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
-  mesh : Mesh3dExtractedPayload,
+  resolved_material : Render3dResolvedMaterial,
   camera : Camera3dViewPayload,
   retained_view_entity : @render_view.RetainedViewEntity,
   visible_entity : @core.Entity,
@@ -491,7 +490,8 @@ fn render3d_prewarm_material_pipeline(
       }
     None => ()
   }
-  guard mesh.material_properties.base_specialize is Some(base_specialize) else {
+  let material_properties = resolved_material.material_properties()
+  guard material_properties.base_specialize is Some(base_specialize) else {
     return None
   }
   let render_mesh_assets = match
@@ -503,7 +503,6 @@ fn render3d_prewarm_material_pipeline(
     is Some(render_mesh) else {
     return None
   }
-  ignore(mesh_runtime_state_value)
   let layout = render_mesh.layout()
   let view_key_bits = render3d_camera_mesh_pipeline_view_key_bits(camera)
   let motion_vector_prepass = (
@@ -520,7 +519,7 @@ fn render3d_prewarm_material_pipeline(
     world, visible_entity,
   )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
-    mesh.material_properties,
+    material_properties,
     render_mesh,
     view_key_bits~,
     msaa_samples=render3d_camera_msaa_samples(camera),
@@ -535,13 +534,10 @@ fn render3d_prewarm_material_pipeline(
     visibility_range_dither~,
     lightmapped~,
     lightmap_bicubic_sampling~,
+    material_type_tag=resolved_material.material_type_tag(),
   )
   let pipeline_id = @material.material_specialize_base(
-    base_specialize,
-    world,
-    pipeline_key,
-    layout,
-    mesh.material_properties,
+    base_specialize, world, pipeline_key, layout, material_properties,
   ) catch {
     err =>
       abort(
@@ -563,6 +559,20 @@ fn render3d_prewarm_material_pipeline(
       )
   }
   Some(pipeline_id)
+}
+
+///|
+// Temporary adapter for the remaining legacy `ExtractedMesh3d` producer. Bevy's
+// `specialize_material_meshes` consumes prepared material assets directly.
+fn render3d_resolved_material_from_extracted_payload(
+  mesh : Mesh3dExtractedPayload,
+) -> Render3dResolvedMaterial {
+  Render3dResolvedMaterial::new(
+    mesh.material,
+    mesh.material_properties,
+    mesh.material_bind_group_data,
+    "StandardMaterial",
+  )
 }
 
 ///|
@@ -4127,7 +4137,6 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
 ///|
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
-  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
 ) -> Unit {
@@ -4193,10 +4202,12 @@ fn render3d_prewarm_mesh_pipelines(
       }
       let extracted_mesh = meshes[mesh_index]
       let mesh = extracted_mesh.payload
+      let resolved_material = render3d_resolved_material_from_extracted_payload(
+        mesh,
+      )
       let view_pipeline_id = render3d_prewarm_material_pipeline(
         world,
-        mesh_runtime_state_value,
-        mesh,
+        resolved_material,
         camera.payload,
         retained_view_entity,
         main_entity.id(),
@@ -4408,20 +4419,11 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render3d_specialize_material_meshes_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
-    world,
-  )
   match render3d_pending_frame_snapshot(world) {
-    Some(frame) =>
-      mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
-        render3d_prepare_shader_asset_paths(source_world, world)
-        render3d_prewarm_mesh_pipelines(
-          world,
-          mesh_runtime_state_value,
-          frame.cameras,
-          frame.meshes,
-        )
-      })
+    Some(frame) => {
+      render3d_prepare_shader_asset_paths(source_world, world)
+      render3d_prewarm_mesh_pipelines(world, frame.cameras, frame.meshes)
+    }
     None => ()
   }
 }

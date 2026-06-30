@@ -647,6 +647,7 @@ fn material_pipeline_key_for_standard_material_render_mesh(
   visibility_range_dither? : Bool = false,
   lightmapped? : Bool = false,
   lightmap_bicubic_sampling? : Bool = false,
+  material_type_tag? : String = "StandardMaterial",
 ) -> @material.ErasedMaterialPipelineKey {
   @material.ErasedMaterialPipelineKey::new(
     material_mesh_pipeline_key_for_render_mesh(
@@ -661,7 +662,7 @@ fn material_pipeline_key_for_standard_material_render_mesh(
       lightmap_bicubic_sampling~,
     ),
     properties.material_key,
-    "StandardMaterial",
+    material_type_tag,
   )
 }
 

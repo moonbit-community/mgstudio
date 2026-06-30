@@ -752,12 +752,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     payload: material_test_camera_payload(),
   }
   let retained_view = @render_view.RetainedViewEntity::new(main_view)
-  render3d_prewarm_mesh_pipelines(
-    world,
-    @pbr_render.Render3dMeshRuntimeState::new(),
-    [camera],
-    [extracted_mesh],
-  )
+  render3d_prewarm_mesh_pipelines(world, [camera], [extracted_mesh])
   let pipeline_id = match
     world.get_resource(ecs_key_specialized_material_pipeline_cache) {
     Some(cache) => cache.pipeline_id(retained_view, main_mesh)
