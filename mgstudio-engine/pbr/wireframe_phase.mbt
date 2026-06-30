@@ -1714,8 +1714,16 @@ pub fn WireframeRenderMeshPipelineData::mesh_key(
 pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(
   self : WireframeRenderMeshPipelineData,
   flags : RenderMeshInstanceFlags,
+  visibility_range_dither? : Bool = false,
+  lightmapped? : Bool = false,
 ) -> @material.ErasedMeshPipelineKey {
   let mut mesh_key_bits = self.mesh_key.bits()
+  if visibility_range_dither {
+    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER
+  }
+  if lightmapped {
+    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_LIGHTMAPPED
+  }
   if (mesh_key_bits & MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS) != 0UL {
     if flags.contains(RenderMeshInstanceFlags::has_previous_skin()) {
       mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
@@ -1858,9 +1866,15 @@ fn specialize_wireframe_pipeline_id(
   pipeline_data : WireframeRenderMeshPipelineData,
   mesh_instance : RenderMeshQueueData,
   material : RenderWireframeMaterial?,
+  visibility_range_dither~ : Bool,
+  lightmapped~ : Bool,
 ) -> @material.CachedRenderPipelineId? {
   let wireframe_key = WireframePipelineKey::from_material(
-    pipeline_data.mesh_key_for_instance(mesh_instance.flags()),
+    pipeline_data.mesh_key_for_instance(
+      mesh_instance.flags(),
+      visibility_range_dither~,
+      lightmapped~,
+    ),
     material,
   )
   if wireframe_key.wide() {
@@ -1922,6 +1936,8 @@ pub fn specialize_wireframe_phase_items(
   render_wireframe_assets : Map[Int, RenderWireframeMaterial],
   render_mesh_instances : RenderMeshInstances,
   render_mesh_pipeline_data : Map[Int, WireframeRenderMeshPipelineData],
+  render_visibility_ranges : @render_visibility.RenderVisibilityRanges,
+  render_lightmaps : @lightmap.RenderLightmaps,
   pipeline : Wireframe3dPipeline,
   pipeline_cache : @render_resource.PipelineCache,
 ) -> Unit {
@@ -1956,9 +1972,20 @@ pub fn specialize_wireframe_phase_items(
       continue
     }
     let material = render_wireframe_assets.get(wireframe_asset_id)
+    let visibility_range_dither = render_visibility_ranges.entity_has_crossfading_visibility_ranges(
+      visible_entity.id().id,
+    )
+    let lightmapped = render_lightmaps.get(visible_entity.id()) is Some(_)
     guard specialize_wireframe_pipeline_id(
-        specialized_wireframe_pipeline_cache, specialized_wireframe_mesh_pipelines,
-        pipeline_cache, pipeline, pipeline_data, mesh_instance, material,
+        specialized_wireframe_pipeline_cache,
+        specialized_wireframe_mesh_pipelines,
+        pipeline_cache,
+        pipeline,
+        pipeline_data,
+        mesh_instance,
+        material,
+        visibility_range_dither~,
+        lightmapped~,
       )
       is Some(pipeline_id) else {
       continue

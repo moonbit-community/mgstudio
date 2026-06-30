@@ -303,6 +303,8 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
     {},
     RenderMeshInstances::new(),
     {},
+    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
+    @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
     @render_resource.PipelineCache::new(),
   )
@@ -361,6 +363,8 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     {},
     render_mesh_instances,
     pipeline_data,
+    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
+    @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
     pipeline_cache,
   )
@@ -439,6 +443,8 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
     {},
     render_mesh_instances,
     pipeline_data,
+    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
+    @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
     pipeline_cache,
   )
@@ -451,6 +457,87 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
   )
   debug_inspect(
     cache.pipeline_id(view, second_main_entity).map(fn(id) { id.id() }),
+    content="Some(1)",
+  )
+}
+
+///|
+test "pbr: specialize wireframes derives dither and lightmap keys from render resources" {
+  let view = @core.Entity::new(10, 1)
+  let dither_render_entity = @core.Entity::new(20, 1)
+  let lightmapped_render_entity = @core.Entity::new(22, 1)
+  let dither_main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let lightmapped_main_entity = wireframe_test_main_entity(
+    @core.Entity::new(23, 1),
+  )
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([
+    (dither_render_entity, dither_main_entity),
+    (lightmapped_render_entity, lightmapped_main_entity),
+  ])
+  let pending = ViewPendingWireframeQueues::ViewPendingWireframeQueues()
+  let cache = SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
+  let pipelines = SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
+  let instances = RenderWireframeInstances::RenderWireframeInstances()
+  instances.insert(dither_main_entity, 8)
+  instances.insert(lightmapped_main_entity, 8)
+  let render_mesh_instances = RenderMeshInstances::new()
+  render_mesh_instances.insert(
+    dither_main_entity,
+    RenderMeshQueueData::new(33, 1U, true),
+  )
+  render_mesh_instances.insert(
+    lightmapped_main_entity,
+    RenderMeshQueueData::new(33, 2U, true),
+  )
+  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
+  pipeline_data.set(
+    33,
+    wireframe_mesh_pipeline_data_for_render_mesh(
+      @render_mesh.RenderMesh::new(vertex_count=3),
+      wireframe_phase_test_descriptor(),
+      view_key_bits=0UL,
+    ),
+  )
+  let render_visibility_ranges = @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges()
+  render_visibility_ranges.insert(
+    dither_main_entity.id().id,
+    @visibility.VisibilityRange::new(0.0F, 1.0F, 10.0F, 11.0F, false),
+  )
+  let render_lightmaps = @lightmap.RenderLightmaps::RenderLightmaps()
+  ignore(
+    render_lightmaps.insert_lightmap(
+      lightmapped_main_entity.id(),
+      @lightmap.Lightmap::new(@asset.Handle::new(5)),
+    ),
+  )
+  let pipeline_cache = @render_resource.PipelineCache::new()
+
+  specialize_wireframe_phase_items(
+    view,
+    visible,
+    pending,
+    cache,
+    pipelines,
+    instances,
+    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    {},
+    render_mesh_instances,
+    pipeline_data,
+    render_visibility_ranges,
+    render_lightmaps,
+    Wireframe3dPipeline::new(),
+    pipeline_cache,
+  )
+
+  debug_inspect(pipelines.len(), content="2")
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="2")
+  debug_inspect(
+    cache.pipeline_id(view, dither_main_entity).map(fn(id) { id.id() }),
+    content="Some(0)",
+  )
+  debug_inspect(
+    cache.pipeline_id(view, lightmapped_main_entity).map(fn(id) { id.id() }),
     content="Some(1)",
   )
 }
@@ -501,6 +588,8 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
     materials,
     render_mesh_instances,
     pipeline_data,
+    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
+    @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
     @render_resource.PipelineCache::new(),
   )
@@ -1436,6 +1525,14 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   world.insert_resource(
     @render.pipeline_cache_resource_key,
     @render_resource.PipelineCache::new(),
+  )
+  world.insert_resource(
+    @render_visibility.RenderVisibilityRanges::resource(),
+    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
+  )
+  world.insert_resource(
+    @lightmap.RenderLightmaps::resource(),
+    @lightmap.RenderLightmaps::RenderLightmaps(),
   )
   let mesh_allocator = @render_mesh.MeshAllocator::new()
   let _ = mesh_allocator.allocate_render_mesh(

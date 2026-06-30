@@ -400,13 +400,16 @@ pub fn lightmap_plugin_install_with(
   plugin : LightmapPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let mut next = app
-  if !next.contains_resource(ecs_key_render_lightmaps) {
-    next = next.insert_world_resource(
-      ecs_key_render_lightmaps,
-      RenderLightmaps::RenderLightmaps(),
-    )
-  }
+  let mut next = @render.with_render_app(app, fn(render_app) {
+    let render_world = render_app.world()
+    if render_world.get_resource(ecs_key_render_lightmaps) is None {
+      render_world.insert_resource(
+        ecs_key_render_lightmaps,
+        RenderLightmaps::RenderLightmaps(),
+      )
+    }
+    render_app
+  })
   if !next.contains_resource(ecs_key_lightmap_plugin_state) {
     next = next.insert_world_resource(
       ecs_key_lightmap_plugin_state,

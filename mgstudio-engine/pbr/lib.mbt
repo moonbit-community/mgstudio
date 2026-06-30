@@ -336,6 +336,9 @@ fn pbr_plugin_sync_feature_plugins(
     @pbr_ssao.ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin(),
   )
   .add_plugins(@pbr_render.FogPlugin::FogPlugin())
+  .add_plugins(
+    @render_visibility.RenderVisibilityRangePlugin::RenderVisibilityRangePlugin(),
+  )
   .add_plugins(@lightmap.lightmap_plugin())
   .add_plugins(@pbr_light_probe.LightProbePlugin::LightProbePlugin())
   .add_plugins(

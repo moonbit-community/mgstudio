@@ -305,6 +305,28 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
 }
 
 ///|
+test "pbr: plugin installs render resources required by wireframe specialization" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(PbrPlugin::PbrPlugin())
+  let render_world = app.sub_app(@app.RenderApp).world()
+
+  debug_inspect(
+    render_world.get_resource(
+      @render_visibility.RenderVisibilityRanges::resource(),
+    )
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(@lightmap.RenderLightmaps::resource()) is Some(_),
+    content="true",
+  )
+}
+
+///|
 struct PrepareLightsScheduleProbe {
   mut spawned_view : @core.Entity?
 }

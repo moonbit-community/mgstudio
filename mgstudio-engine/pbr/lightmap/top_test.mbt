@@ -80,3 +80,26 @@ test "pbr/lightmap: plugin state keeps bevy-shaped defaults" {
   debug_inspect(state.lightmaps_per_slab, content="4")
   debug_inspect(state.bindless_supported, content="false")
 }
+
+///|
+test "pbr/lightmap: plugin initializes render-lightmaps in render world" {
+  let app = @app.App::new(@ecs.World::new()).insert_sub_app(
+    @app.RenderApp,
+    @app.SubApp::new(@ecs.World::new()).set_update_schedule(Some(@app.Main)),
+  )
+  let app = lightmap_plugin_install(app)
+  let render_world = app.sub_app(@app.RenderApp).world()
+
+  debug_inspect(
+    app.world().get_resource(RenderLightmaps::resource()) is None,
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(RenderLightmaps::resource()) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    app.world().get_resource(LightmapPluginState::resource()) is Some(_),
+    content="true",
+  )
+}

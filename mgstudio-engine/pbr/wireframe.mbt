@@ -1421,6 +1421,22 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
         "missing WireframeRenderMeshPipelineDataCache resource during pbr wireframe specialization",
       )
   }
+  let render_visibility_ranges = match
+    world.get_resource(@render_visibility.RenderVisibilityRanges::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderVisibilityRanges resource during pbr wireframe specialization",
+      )
+  }
+  let render_lightmaps = match
+    world.get_resource(@lightmap.RenderLightmaps::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderLightmaps resource during pbr wireframe specialization",
+      )
+  }
   let pipeline = match world.get_resource(Wireframe3dPipeline::resource()) {
     Some(value) => value
     None =>
@@ -1475,6 +1491,8 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
       render_wireframe_assets.as_map(),
       render_mesh_instances,
       render_mesh_pipeline_data_cache.view_data(retained_view_entity),
+      render_visibility_ranges,
+      render_lightmaps,
       pipeline,
       pipeline_cache,
     )

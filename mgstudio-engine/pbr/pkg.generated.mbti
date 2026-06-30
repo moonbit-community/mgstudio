@@ -910,7 +910,7 @@ pub fn set_wireframe_3d_wide_bind_group_dynamic_offset(Wireframe3d, RenderMeshIn
 
 pub fn set_wireframe_3d_wide_immediates(Wireframe3d, RenderWireframeInstances, RenderWireframeAssets) -> Wireframe3dWideImmediates raise WireframeRenderCommandError
 
-pub fn specialize_wireframe_phase_items(@core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, SpecializedWireframeMeshPipelines, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, WireframeRenderMeshPipelineData], Wireframe3dPipeline, @render_resource.PipelineCache) -> Unit
+pub fn specialize_wireframe_phase_items(@core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, ViewPendingWireframeQueues, SpecializedWireframePipelineCache, SpecializedWireframeMeshPipelines, RenderWireframeInstances, DirtyWireframeSpecializations, Map[Int, RenderWireframeMaterial], RenderMeshInstances, Map[Int, WireframeRenderMeshPipelineData], @Milky2018/mgstudio/render/view/visibility.RenderVisibilityRanges, @lightmap.RenderLightmaps, Wireframe3dPipeline, @render_resource.PipelineCache) -> Unit
 
 pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
 
@@ -3312,7 +3312,7 @@ pub struct WireframeRenderMeshPipelineData {
 }
 pub fn WireframeRenderMeshPipelineData::base_descriptor(Self) -> @render_resource.RenderPipelineDescriptor
 pub fn WireframeRenderMeshPipelineData::mesh_key(Self) -> @material.ErasedMeshPipelineKey
-pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(Self, RenderMeshInstanceFlags) -> @material.ErasedMeshPipelineKey
+pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(Self, RenderMeshInstanceFlags, visibility_range_dither? : Bool, lightmapped? : Bool) -> @material.ErasedMeshPipelineKey
 pub fn WireframeRenderMeshPipelineData::mesh_layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 pub fn WireframeRenderMeshPipelineData::new(@material.ErasedMeshPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @render_resource.RenderPipelineDescriptor) -> Self
 
