@@ -1923,6 +1923,90 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
 }
 
 ///|
+test "pbr: wireframe 3d render node skips empty phases before command resources" {
+  let world = @ecs.World::new()
+  let retained_view = @core.Entity::new(1, 1)
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    retained_view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  world.insert_resource(Wireframe3dPhases::resource(), phases)
+
+  wireframe_3d_render_node_system(world)
+
+  let phases = world.get_resource(Wireframe3dPhases::resource()).unwrap()
+  debug_inspect(phases.phase(retained_view).unwrap().is_empty(), content="true")
+}
+
+///|
+test "pbr: wireframe 3d render node requires command resources for nonempty phases" {
+  let world = @ecs.World::new()
+  let retained_view = @core.Entity::new(1, 1)
+  let render_entity = @core.Entity::new(2, 1)
+  let main_entity = @render.MainEntity::new(@core.Entity::new(3, 1))
+  let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    retained_view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  phases.add(
+    retained_view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(3UL),
+      7,
+      draw_functions.thin(),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (render_entity, main_entity),
+    9U,
+    BatchableMesh,
+  )
+  world.insert_resource(Wireframe3dPhases::resource(), phases)
+  world.insert_resource(Wireframe3dDrawFunctions::resource(), draw_functions)
+  let render_wireframe_instances = RenderWireframeInstances::RenderWireframeInstances()
+  render_wireframe_instances.insert(main_entity, 7)
+  world.insert_resource(
+    RenderWireframeInstances::resource(),
+    render_wireframe_instances,
+  )
+  let render_wireframe_assets = RenderWireframeAssets::RenderWireframeAssets()
+  render_wireframe_assets.insert(
+    7,
+    RenderWireframeMaterial::from_material(
+      WireframeMaterial::new(@color.Color::white(), 1.0F, Triangles),
+    ),
+  )
+  world.insert_resource(
+    RenderWireframeAssets::resource(),
+    render_wireframe_assets,
+  )
+  world.insert_resource(
+    RenderMeshInstances::resource(),
+    RenderMeshInstances::new(),
+  )
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+  )
+  world.insert_resource(
+    @render_mesh.MeshAllocator::resource(),
+    @render_mesh.MeshAllocator::new(),
+  )
+  world.insert_resource(
+    WireframeWideBindGroups::resource(),
+    WireframeWideBindGroups::WireframeWideBindGroups(),
+  )
+
+  wireframe_3d_render_node_system(world)
+
+  let phases = world.get_resource(Wireframe3dPhases::resource()).unwrap()
+  debug_inspect(phases.phase(retained_view).unwrap().len(), content="1")
+}
+
+///|
 test "pbr: wireframe 3d render node is scheduled between main pass and early postprocess" {
   let log : Array[String] = []
   let graph_stage = @render.RenderGraph::schedule()
