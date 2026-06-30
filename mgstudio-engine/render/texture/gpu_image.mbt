@@ -63,6 +63,24 @@ pub fn GpuImage::from_texture_info(info : @renderer.GpuTextureInfo) -> GpuImage 
 }
 
 ///|
+pub fn GpuImage::from_texture_id_and_format(
+  texture_id : Int,
+  format : @wgpu.TextureFormat,
+) -> GpuImage {
+  GpuImage::{
+    texture_id,
+    width: @renderer.asset_texture_width(texture_id~),
+    height: @renderer.asset_texture_height(texture_id~),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format: Some(format),
+    texture: None,
+    view: None,
+    sampler: None,
+  }
+}
+
+///|
 pub fn GpuImage::from_texture_id(texture_id : Int) -> GpuImage? {
   match @renderer.asset_texture_info(texture_id~) {
     Some(info) => Some(GpuImage::from_texture_info(info))

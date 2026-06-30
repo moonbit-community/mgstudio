@@ -1704,6 +1704,14 @@ pub fn MaterialBindGroupBindlessAllocator::slab_count(Self) -> Int
 pub fn MaterialBindGroupBindlessAllocator::slabs_size(Self) -> Int
 pub fn MaterialBindGroupBindlessAllocator::with_slab_capacity(Int) -> Self
 
+pub struct MaterialBindGroupContext {
+  images : @Milky2018/mgstudio/render.RenderAssets[@texture.GpuImage]
+}
+pub fn MaterialBindGroupContext::MaterialBindGroupContext() -> Self
+pub fn MaterialBindGroupContext::from_images(@Milky2018/mgstudio/render.RenderAssets[@texture.GpuImage]) -> Self
+pub fn MaterialBindGroupContext::image(Self, @asset.Handle[@image.Image]?) -> @texture.GpuImage?
+pub fn MaterialBindGroupContext::normal_map_is_two_component(Self, @asset.Handle[@image.Image]?) -> Bool
+
 pub struct MaterialBindGroupEntry {
   material_id : Int
   binding_id : MaterialBindingId
@@ -2125,7 +2133,7 @@ pub struct PreparedMaterial[M] {
   properties : @material.MaterialProperties
 }
 pub fn[M] PreparedMaterial::bind_group_data(Self[M]) -> @render_resource.MaterialBindGroupResolvedData
-pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M], @material.OpaqueRendererMethod) -> Self[M]
+pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M], @material.OpaqueRendererMethod, context? : MaterialBindGroupContext) -> Self[M]
 pub fn[M] PreparedMaterial::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
 pub fn[M] PreparedMaterial::properties(Self[M]) -> @material.MaterialProperties
 pub fn[M : Material] PreparedMaterial::resolved_material(Self[M]) -> Render3dResolvedMaterial
@@ -3682,7 +3690,7 @@ pub(open) trait Material {
   fn enable_shadows() -> Bool
   fn bindless_supported(@renderer.RenderDevice) -> Bool
   fn bindless_slot_count() -> Int?
-  fn bind_group(Self) -> MaterialBindGroup
+  fn bind_group(Self, MaterialBindGroupContext) -> MaterialBindGroup
   fn bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
   fn bind_group_data(Self) -> String
   fn material_key(Self) -> @material.ErasedMaterialKey

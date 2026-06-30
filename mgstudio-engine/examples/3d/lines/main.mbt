@@ -172,7 +172,8 @@ impl @pbr.Material for LineMaterial with fn bindless_slot_count() {
 }
 
 ///|
-impl @pbr.Material for LineMaterial with fn bind_group(self) {
+impl @pbr.Material for LineMaterial with fn bind_group(self, context) {
+  ignore(context)
   @pbr.MaterialBindGroup::new([
     @pbr.MaterialBinding::uniform(0, line_material_uniform_bytes(self.color)),
   ])

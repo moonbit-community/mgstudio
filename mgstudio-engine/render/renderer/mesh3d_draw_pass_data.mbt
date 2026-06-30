@@ -989,6 +989,7 @@ fn mesh3d_normal_map_is_two_component_format(
 ) -> Bool {
   let format_raw = format.to_u32()
   format_raw == @wgpu.TEXTURE_FORMAT_RG8_UNORM ||
+  format_raw == @wgpu.TEXTURE_FORMAT_RG16_UNORM ||
   format_raw == @wgpu.TEXTURE_FORMAT_BC5_RG_UNORM ||
   format_raw == @wgpu.TEXTURE_FORMAT_EACRG11_UNORM
 }

@@ -2209,7 +2209,11 @@ impl Material for ShadowReadinessNoShadowMaterial with fn bindless_slot_count() 
 }
 
 ///|
-impl Material for ShadowReadinessNoShadowMaterial with fn bind_group(self) {
+impl Material for ShadowReadinessNoShadowMaterial with fn bind_group(
+  self,
+  context,
+) {
+  ignore(context)
   ignore(self)
   MaterialBindGroup::MaterialBindGroup()
 }

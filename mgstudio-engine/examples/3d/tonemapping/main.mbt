@@ -252,7 +252,8 @@ impl @pbr.Material for ColorGradientMaterial with fn bindless_slot_count() {
 }
 
 ///|
-impl @pbr.Material for ColorGradientMaterial with fn bind_group(self) {
+impl @pbr.Material for ColorGradientMaterial with fn bind_group(self, context) {
+  ignore(context)
   ignore(self)
   @pbr.material_default_bind_group()
 }

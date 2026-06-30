@@ -382,6 +382,87 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
 }
 
 ///|
+fn pbr_material_test_prepared_standard_material_flags(
+  material : @material.StandardMaterial,
+  context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
+) -> UInt {
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(37),
+    material,
+    pbr_material_test_standard_material_pipeline(),
+    @material.OpaqueRendererMethod::Forward,
+    context~,
+  )
+  let entries = prepared.bind_group_data().entries()
+  match entries[0].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) =>
+      pbr_material_test_u32le_word(bytes, 40)
+    _ => abort("expected standard material uniform binding")
+  }
+}
+
+///|
+fn pbr_material_test_image_context(
+  handle : @asset.Handle[@asset.Image],
+  format : @wgpu.TextureFormat,
+) -> MaterialBindGroupContext {
+  let images : @render.RenderAssets[@render_texture.GpuImage] = @render.RenderAssets::new()
+  images.insert(
+    handle.id(),
+    @render_texture.GpuImage::from_texture_id_and_format(handle.id(), format),
+  )
+  MaterialBindGroupContext::from_images(images)
+}
+
+///|
+test "pbr material: generic standard material normal map flag uses render image format" {
+  let normal_map = @asset.Handle::new(41)
+  let material = @material.StandardMaterial::StandardMaterial().with_normal_map_texture(
+    Some(normal_map),
+  )
+  let flags_without_image = pbr_material_test_prepared_standard_material_flags(
+    material,
+  )
+  inspect(
+    (
+      flags_without_image &
+      @pbr_render.STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP
+    ) !=
+    0U,
+    content="false",
+  )
+  for
+    format in [
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG8_UNORM),
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_UNORM),
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BC5_RG_UNORM),
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_EACRG11_UNORM),
+    ] {
+    let flags = pbr_material_test_prepared_standard_material_flags(
+      material,
+      context=pbr_material_test_image_context(normal_map, format),
+    )
+    inspect(
+      (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP) !=
+      0U,
+      content="true",
+    )
+  }
+  let rgba_flags = pbr_material_test_prepared_standard_material_flags(
+    material,
+    context=pbr_material_test_image_context(
+      normal_map,
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    ),
+  )
+  inspect(
+    (rgba_flags & @pbr_render.STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP) !=
+    0U,
+    content="false",
+  )
+}
+
+///|
 test "pbr material: standard material plugin installs render startup allocator" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::RenderPlugin())

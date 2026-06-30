@@ -509,11 +509,15 @@ pub fn standard_material_uniform_bytes(
 ///|
 fn standard_material_generic_bind_group(
   material : StandardMaterial,
+  context : MaterialBindGroupContext,
 ) -> MaterialBindGroup {
   MaterialBindGroup::new([
     MaterialBinding::uniform(
       0,
-      standard_material_uniform_bytes(material, false),
+      standard_material_uniform_bytes(
+        material,
+        context.normal_map_is_two_component(material.normal_map_texture),
+      ),
     ),
     MaterialBinding::texture(1, material.base_color_texture),
     MaterialBinding::sampler(2, material.base_color_texture),
@@ -646,8 +650,8 @@ pub impl Material for StandardMaterial with fn bindless_slot_count() {
 }
 
 ///|
-pub impl Material for StandardMaterial with fn bind_group(self) {
-  standard_material_generic_bind_group(self)
+pub impl Material for StandardMaterial with fn bind_group(self, context) {
+  standard_material_generic_bind_group(self, context)
 }
 
 ///|

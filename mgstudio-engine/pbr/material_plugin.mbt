@@ -94,6 +94,55 @@ pub struct MaterialBinding {
 }
 
 ///|
+pub struct MaterialBindGroupContext {
+  images : @render.RenderAssets[@render_texture.GpuImage]
+}
+
+///|
+pub fn MaterialBindGroupContext::MaterialBindGroupContext() -> MaterialBindGroupContext {
+  MaterialBindGroupContext::{ images: @render.RenderAssets::new() }
+}
+
+///|
+pub fn MaterialBindGroupContext::from_images(
+  images : @render.RenderAssets[@render_texture.GpuImage],
+) -> MaterialBindGroupContext {
+  MaterialBindGroupContext::{ images, }
+}
+
+///|
+pub fn MaterialBindGroupContext::image(
+  self : MaterialBindGroupContext,
+  handle : @asset.Handle[@asset.Image]?,
+) -> @render_texture.GpuImage? {
+  match handle {
+    Some(value) => self.images.get(value.id())
+    None => None
+  }
+}
+
+///|
+fn material_normal_map_is_two_component_format(
+  format : @wgpu.TextureFormat,
+) -> Bool {
+  let format_raw = format.to_u32()
+  format_raw == @wgpu.TEXTURE_FORMAT_RG8_UNORM ||
+  format_raw == @wgpu.TEXTURE_FORMAT_RG16_UNORM ||
+  format_raw == @wgpu.TEXTURE_FORMAT_BC5_RG_UNORM ||
+  format_raw == @wgpu.TEXTURE_FORMAT_EACRG11_UNORM
+}
+
+///|
+pub fn MaterialBindGroupContext::normal_map_is_two_component(
+  self : MaterialBindGroupContext,
+  handle : @asset.Handle[@asset.Image]?,
+) -> Bool {
+  guard self.image(handle) is Some(image) else { return false }
+  guard image.format() is Some(format) else { return false }
+  material_normal_map_is_two_component_format(format)
+}
+
+///|
 pub fn MaterialBinding::uniform(
   binding : Int,
   bytes : Bytes,
@@ -589,7 +638,7 @@ pub(open) trait Material {
   fn enable_shadows() -> Bool
   fn bindless_supported(render_device : @renderer.RenderDevice) -> Bool
   fn bindless_slot_count() -> Int?
-  fn bind_group(self : Self) -> MaterialBindGroup
+  fn bind_group(self : Self, context : MaterialBindGroupContext) -> MaterialBindGroup
   fn bind_group_layout_descriptor(self : Self) -> @render_resource.BindGroupLayoutDescriptor
   fn bind_group_data(self : Self) -> String
   fn material_key(self : Self) -> @material.ErasedMaterialKey
@@ -662,13 +711,15 @@ pub fn[M : Material] material_default_bind_group_layout_descriptor(
   material : M,
 ) -> @render_resource.BindGroupLayoutDescriptor {
   material
-  .bind_group()
+  .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
   .layout_descriptor("mgstudio_pbr::Material<\{M::material_debug_name()}>")
 }
 
 ///|
 pub fn[M : Material] material_default_bind_group_data(material : M) -> String {
-  material.bind_group().bind_group_data()
+  material
+  .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
+  .bind_group_data()
 }
 
 ///|
@@ -834,8 +885,9 @@ pub fn[M : Material] PreparedMaterial::from_material(
   material : M,
   pipeline : MaterialPipeline[M],
   default_opaque_renderer_method : @material.OpaqueRendererMethod,
+  context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
 ) -> PreparedMaterial[M] {
-  let bind_group = material.bind_group()
+  let bind_group = material.bind_group(context)
   let material_layout = material.bind_group_layout_descriptor()
   let material_key = material.material_key()
   let key = MaterialPipelineKey::new(
@@ -1721,6 +1773,13 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     Some(value) => value.renderer_method()
     None => @material.OpaqueRendererMethod::Forward
   }
+  let image_assets_key : @ecs.ResourceKey[
+    @render.RenderAssets[@render_texture.GpuImage],
+  ] = @render.RenderAssets::resource()
+  let image_context = match world.get_resource(image_assets_key) {
+    Some(images) => MaterialBindGroupContext::from_images(images)
+    None => MaterialBindGroupContext::MaterialBindGroupContext()
+  }
   let system_ticks = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(global_value) => global_value.source_system_ticks(source_world)
@@ -1755,7 +1814,11 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
       value.insert(
         material_id,
         PreparedMaterial::from_material(
-          material_handle, material, pipeline, default_opaque_renderer_method,
+          material_handle,
+          material,
+          pipeline,
+          default_opaque_renderer_method,
+          context=image_context,
         ),
       )
     })

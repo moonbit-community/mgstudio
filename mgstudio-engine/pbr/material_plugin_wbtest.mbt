@@ -164,7 +164,8 @@ impl Material for ParityCustomMaterial with fn bindless_slot_count() {
 }
 
 ///|
-impl Material for ParityCustomMaterial with fn bind_group(self) {
+impl Material for ParityCustomMaterial with fn bind_group(self, context) {
+  ignore(context)
   MaterialBindGroup::new([
     MaterialBinding::uniform(0, self.color),
     MaterialBinding::texture(1, self.texture),
@@ -177,7 +178,7 @@ impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
   self,
 ) {
   self
-  .bind_group()
+  .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
   .layout_descriptor("mgstudio_pbr_test::ParityCustomMaterialLayout")
 }
 
@@ -204,7 +205,9 @@ impl Material for ParityCustomMaterial with fn specialize(
 ///|
 test "pbr material plugin: typed bind group owns uniform texture and sampler bindings" {
   let material = ParityCustomMaterial::ParityCustomMaterial()
-  let bind_group = material.bind_group()
+  let bind_group = material.bind_group(
+    MaterialBindGroupContext::MaterialBindGroupContext(),
+  )
   inspect(
     bind_group.layout_key(),
     content="0:uniform;1:texture(float,2d);2:sampler",
@@ -289,7 +292,9 @@ test "pbr material plugin: prepared material uses material bind group data hook"
     @material.OpaqueRendererMethod::Forward,
   )
   inspect(
-    material.bind_group().bind_group_data(),
+    material
+    .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
+    .bind_group_data(),
     content="0:uniform(len=4:1,2,3,4);1:texture(9,float,2d);2:sampler(9)",
   )
   inspect(

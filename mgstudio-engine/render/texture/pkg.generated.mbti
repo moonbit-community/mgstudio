@@ -119,6 +119,7 @@ pub fn GpuImage::base_mip_level(Self) -> Int
 pub fn GpuImage::create_mip_view(Self, Int) -> Int
 pub fn GpuImage::format(Self) -> @wgpu_mbt.TextureFormat?
 pub fn GpuImage::from_texture_id(Int) -> Self?
+pub fn GpuImage::from_texture_id_and_format(Int, @wgpu_mbt.TextureFormat) -> Self
 pub fn GpuImage::from_texture_info(@renderer.GpuTextureInfo) -> Self
 pub fn GpuImage::height(Self) -> Int
 pub fn GpuImage::is_loaded(Self) -> Bool
