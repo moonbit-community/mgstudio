@@ -546,7 +546,7 @@ pub fn material_default_bind_group() -> MaterialBindGroup
 
 pub fn[M : Material] material_default_bind_group_data(M) -> String
 
-pub fn[M : Material] material_default_bind_group_layout_descriptor(M) -> @render_resource.BindGroupLayoutDescriptor
+pub fn[M : Material] material_default_bind_group_layout_descriptor(M, context? : MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
 
 pub fn material_default_bindless_slot_count() -> Int?
 
@@ -956,9 +956,9 @@ pub fn standard_material_render_phase_type(@material.StandardMaterial) -> @mater
 
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
-pub fn standard_material_uniform_bytes(@material.StandardMaterial, Bool) -> Bytes
+pub fn standard_material_uniform_bytes(@material.StandardMaterial, Bool, features? : StandardMaterialTextureFeatureSet) -> Bytes
 
-pub fn standard_material_uniform_from_material(@material.StandardMaterial, Bool) -> StandardMaterialUniform
+pub fn standard_material_uniform_from_material(@material.StandardMaterial, Bool, features? : StandardMaterialTextureFeatureSet) -> StandardMaterialUniform
 
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
@@ -1708,11 +1708,14 @@ pub fn MaterialBindGroupBindlessAllocator::with_slab_capacity(Int) -> Self
 
 pub struct MaterialBindGroupContext {
   images : @Milky2018/mgstudio/render.RenderAssets[@texture.GpuImage]
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 pub fn MaterialBindGroupContext::MaterialBindGroupContext() -> Self
 pub fn MaterialBindGroupContext::from_images(@Milky2018/mgstudio/render.RenderAssets[@texture.GpuImage]) -> Self
 pub fn MaterialBindGroupContext::image(Self, @asset.Handle[@image.Image]?) -> @texture.GpuImage?
 pub fn MaterialBindGroupContext::normal_map_is_two_component(Self, @asset.Handle[@image.Image]?) -> Bool
+pub fn MaterialBindGroupContext::standard_material_texture_features(Self) -> StandardMaterialTextureFeatureSet
+pub fn MaterialBindGroupContext::with_standard_material_texture_features(Self, StandardMaterialTextureFeatureSet) -> Self
 
 pub struct MaterialBindGroupEntry {
   material_id : Int
@@ -3706,7 +3709,7 @@ pub(open) trait Material {
   fn bindless_supported(@renderer.RenderDevice) -> Bool
   fn bindless_slot_count() -> Int?
   fn bind_group(Self, MaterialBindGroupContext) -> MaterialBindGroup
-  fn bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
+  fn bind_group_layout_descriptor(Self, MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
   fn bind_group_data(Self) -> String
   fn material_key(Self) -> @material.ErasedMaterialKey
   fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor

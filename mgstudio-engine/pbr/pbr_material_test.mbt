@@ -354,6 +354,7 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
     material,
     pbr_material_test_standard_material_pipeline(),
     @material.OpaqueRendererMethod::Forward,
+    context=pbr_material_test_all_standard_material_texture_features_context(),
   )
   let entries = prepared.bind_group_data().entries()
   inspect(entries.length(), content="31")
@@ -430,7 +431,34 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
 }
 
 ///|
-test "pbr material: generic standard material uniform flags carry represented feature textures" {
+test "pbr material: default standard material bind group carries enabled feature payload only" {
+  let material = @material.StandardMaterial::StandardMaterial()
+    .with_anisotropy_texture(Some(@asset.Handle::new(16)))
+    .with_clearcoat_texture(Some(@asset.Handle::new(17)))
+    .with_specular_transmission_texture(Some(@asset.Handle::new(20)))
+    .with_specular_texture(Some(@asset.Handle::new(23)))
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(32),
+    material,
+    pbr_material_test_standard_material_pipeline(),
+    @material.OpaqueRendererMethod::Forward,
+  )
+  let entries = prepared.bind_group_data().entries()
+  inspect(entries.length(), content="15")
+  match entries[13].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="16")
+    _ => inspect(false, content="true")
+  }
+  match entries[14].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
+      inspect(id, content="16")
+    _ => inspect(false, content="true")
+  }
+}
+
+///|
+test "pbr material: generic standard material uniform flags carry enabled feature textures" {
   let material = @material.StandardMaterial::StandardMaterial()
     .with_clearcoat_texture(Some(@asset.Handle::new(1)))
     .with_clearcoat_roughness_texture(Some(@asset.Handle::new(2)))
@@ -441,7 +469,36 @@ test "pbr material: generic standard material uniform flags carry represented fe
     .with_thickness_texture(Some(@asset.Handle::new(7)))
     .with_diffuse_transmission_texture(Some(@asset.Handle::new(8)))
     .with_specular_texture(Some(@asset.Handle::new(9)))
-  let flags = pbr_material_test_prepared_standard_material_flags(material)
+  let default_flags = pbr_material_test_prepared_standard_material_flags(
+    material,
+  )
+  inspect(
+    (default_flags & @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT) !=
+    0U,
+    content="false",
+  )
+  inspect(
+    (
+      default_flags &
+      @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TRANSMISSION_TEXTURE_BIT
+    ) !=
+    0U,
+    content="false",
+  )
+  inspect(
+    (default_flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT) !=
+    0U,
+    content="false",
+  )
+  inspect(
+    (default_flags & @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT) !=
+    0U,
+    content="true",
+  )
+  let flags = pbr_material_test_prepared_standard_material_flags(
+    material,
+    context=pbr_material_test_all_standard_material_texture_features_context(),
+  )
   inspect(
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT) != 0U,
     content="true",
@@ -512,6 +569,18 @@ fn pbr_material_test_prepared_standard_material_flags(
       pbr_material_test_u32le_word(bytes, 40)
     _ => abort("expected standard material uniform binding")
   }
+}
+
+///|
+fn pbr_material_test_all_standard_material_texture_features_context() -> MaterialBindGroupContext {
+  MaterialBindGroupContext::MaterialBindGroupContext().with_standard_material_texture_features(
+    StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+      pbr_transmission_textures=true,
+      pbr_multi_layer_material_textures=true,
+      pbr_anisotropy_texture=true,
+      pbr_specular_textures=true,
+    ),
+  )
 }
 
 ///|

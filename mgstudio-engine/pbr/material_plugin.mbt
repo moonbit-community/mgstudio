@@ -96,18 +96,40 @@ pub struct MaterialBinding {
 ///|
 pub struct MaterialBindGroupContext {
   images : @render.RenderAssets[@render_texture.GpuImage]
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 
 ///|
 pub fn MaterialBindGroupContext::MaterialBindGroupContext() -> MaterialBindGroupContext {
-  MaterialBindGroupContext::{ images: @render.RenderAssets::new() }
+  MaterialBindGroupContext::{
+    images: @render.RenderAssets::new(),
+    standard_material_texture_features: standard_material_default_texture_feature_set(),
+  }
 }
 
 ///|
 pub fn MaterialBindGroupContext::from_images(
   images : @render.RenderAssets[@render_texture.GpuImage],
 ) -> MaterialBindGroupContext {
-  MaterialBindGroupContext::{ images, }
+  MaterialBindGroupContext::{
+    images,
+    standard_material_texture_features: standard_material_default_texture_feature_set(),
+  }
+}
+
+///|
+pub fn MaterialBindGroupContext::with_standard_material_texture_features(
+  self : MaterialBindGroupContext,
+  standard_material_texture_features : StandardMaterialTextureFeatureSet,
+) -> MaterialBindGroupContext {
+  MaterialBindGroupContext::{ ..self, standard_material_texture_features, }
+}
+
+///|
+pub fn MaterialBindGroupContext::standard_material_texture_features(
+  self : MaterialBindGroupContext,
+) -> StandardMaterialTextureFeatureSet {
+  self.standard_material_texture_features
 }
 
 ///|
@@ -639,7 +661,10 @@ pub(open) trait Material {
   fn bindless_supported(render_device : @renderer.RenderDevice) -> Bool
   fn bindless_slot_count() -> Int?
   fn bind_group(self : Self, context : MaterialBindGroupContext) -> MaterialBindGroup
-  fn bind_group_layout_descriptor(self : Self) -> @render_resource.BindGroupLayoutDescriptor
+  fn bind_group_layout_descriptor(
+    self : Self,
+    context : MaterialBindGroupContext,
+  ) -> @render_resource.BindGroupLayoutDescriptor
   fn bind_group_data(self : Self) -> String
   fn material_key(self : Self) -> @material.ErasedMaterialKey
   fn specialize(
@@ -709,9 +734,10 @@ pub fn material_default_bind_group() -> MaterialBindGroup {
 ///|
 pub fn[M : Material] material_default_bind_group_layout_descriptor(
   material : M,
+  context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
 ) -> @render_resource.BindGroupLayoutDescriptor {
   material
-  .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
+  .bind_group(context)
   .layout_descriptor("mgstudio_pbr::Material<\{M::material_debug_name()}>")
 }
 
@@ -888,7 +914,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
 ) -> PreparedMaterial[M] {
   let bind_group = material.bind_group(context)
-  let material_layout = material.bind_group_layout_descriptor()
+  let material_layout = material.bind_group_layout_descriptor(context)
   let material_key = material.material_key()
   let key = MaterialPipelineKey::new(
     material_mesh_pipeline_key(material),

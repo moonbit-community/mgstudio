@@ -176,9 +176,10 @@ impl Material for ParityCustomMaterial with fn bind_group(self, context) {
 ///|
 impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
   self,
+  context,
 ) {
   self
-  .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
+  .bind_group(context)
   .layout_descriptor("mgstudio_pbr_test::ParityCustomMaterialLayout")
 }
 

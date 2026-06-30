@@ -359,6 +359,7 @@ fn standard_material_uniform_alpha_mode_flags(
 fn standard_material_uniform_flags(
   material : StandardMaterial,
   normal_map_two_component : Bool,
+  features : StandardMaterialTextureFeatureSet,
 ) -> UInt {
   let mut flags = standard_material_uniform_alpha_mode_flags(
     material.alpha_mode,
@@ -388,36 +389,43 @@ fn standard_material_uniform_flags(
   if material.depth_map is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
   }
-  if material.specular_transmission_texture is Some(_) {
+  if features.pbr_transmission_textures() &&
+    material.specular_transmission_texture is Some(_) {
     flags = flags |
       @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TRANSMISSION_TEXTURE_BIT
   }
-  if material.thickness_texture is Some(_) {
+  if features.pbr_transmission_textures() &&
+    material.thickness_texture is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_THICKNESS_TEXTURE_BIT
   }
-  if material.diffuse_transmission_texture is Some(_) {
+  if features.pbr_transmission_textures() &&
+    material.diffuse_transmission_texture is Some(_) {
     flags = flags |
       @pbr_render.STANDARD_MATERIAL_FLAGS_DIFFUSE_TRANSMISSION_TEXTURE_BIT
   }
-  if material.anisotropy_texture is Some(_) {
+  if features.pbr_anisotropy_texture() && material.anisotropy_texture is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT
   }
-  if material.clearcoat_texture is Some(_) {
+  if features.pbr_multi_layer_material_textures() &&
+    material.clearcoat_texture is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT
   }
-  if material.clearcoat_roughness_texture is Some(_) {
+  if features.pbr_multi_layer_material_textures() &&
+    material.clearcoat_roughness_texture is Some(_) {
     flags = flags |
       @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_ROUGHNESS_TEXTURE_BIT
   }
-  if material.clearcoat_normal_texture is Some(_) {
+  if features.pbr_multi_layer_material_textures() &&
+    material.clearcoat_normal_texture is Some(_) {
     flags = flags |
       @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_NORMAL_TEXTURE_BIT
   }
-  if material.specular_tint_texture is Some(_) {
+  if features.pbr_specular_textures() &&
+    material.specular_tint_texture is Some(_) {
     flags = flags |
       @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT
   }
-  if material.specular_texture is Some(_) {
+  if features.pbr_specular_textures() && material.specular_texture is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT
   }
   if material.normal_map_texture is Some(_) && material.flip_normal_map_y {
@@ -438,6 +446,7 @@ fn standard_material_uniform_flags(
 pub fn standard_material_uniform_from_material(
   material : StandardMaterial,
   normal_map_two_component : Bool,
+  features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> StandardMaterialUniform {
   StandardMaterialUniform::{
     base_color: standard_material_color_vec4(material.base_color),
@@ -456,7 +465,9 @@ pub fn standard_material_uniform_from_material(
     clearcoat_perceptual_roughness: material.clearcoat_perceptual_roughness,
     anisotropy_strength: material.anisotropy_strength,
     anisotropy_rotation: @math.Vec2::from_angle(material.anisotropy_rotation),
-    flags: standard_material_uniform_flags(material, normal_map_two_component),
+    flags: standard_material_uniform_flags(
+      material, normal_map_two_component, features,
+    ),
     alpha_cutoff: @pbr_render.render3d_standard_material_alpha_cutoff(
       material.alpha_mode,
     ),
@@ -531,8 +542,13 @@ pub fn StandardMaterialUniform::to_bytes(
 pub fn standard_material_uniform_bytes(
   material : StandardMaterial,
   normal_map_two_component : Bool,
+  features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> Bytes {
-  standard_material_uniform_from_material(material, normal_map_two_component).to_bytes()
+  standard_material_uniform_from_material(
+    material,
+    normal_map_two_component,
+    features~,
+  ).to_bytes()
 }
 
 ///|
@@ -540,12 +556,14 @@ fn standard_material_generic_bind_group(
   material : StandardMaterial,
   context : MaterialBindGroupContext,
 ) -> MaterialBindGroup {
-  MaterialBindGroup::new([
+  let features = context.standard_material_texture_features()
+  let bindings = [
     MaterialBinding::uniform(
       0,
       standard_material_uniform_bytes(
         material,
         context.normal_map_is_two_component(material.normal_map_texture),
+        features~,
       ),
     ),
     MaterialBinding::texture(1, material.base_color_texture),
@@ -560,25 +578,50 @@ fn standard_material_generic_bind_group(
     MaterialBinding::sampler(10, material.normal_map_texture),
     MaterialBinding::texture(11, material.depth_map),
     MaterialBinding::sampler(12, material.depth_map),
-    MaterialBinding::texture(13, material.anisotropy_texture),
-    MaterialBinding::sampler(14, material.anisotropy_texture),
-    MaterialBinding::texture(15, material.specular_transmission_texture),
-    MaterialBinding::sampler(16, material.specular_transmission_texture),
-    MaterialBinding::texture(17, material.thickness_texture),
-    MaterialBinding::sampler(18, material.thickness_texture),
-    MaterialBinding::texture(19, material.diffuse_transmission_texture),
-    MaterialBinding::sampler(20, material.diffuse_transmission_texture),
-    MaterialBinding::texture(21, material.clearcoat_texture),
-    MaterialBinding::sampler(22, material.clearcoat_texture),
-    MaterialBinding::texture(23, material.clearcoat_roughness_texture),
-    MaterialBinding::sampler(24, material.clearcoat_roughness_texture),
-    MaterialBinding::texture(25, material.clearcoat_normal_texture),
-    MaterialBinding::sampler(26, material.clearcoat_normal_texture),
-    MaterialBinding::texture(27, material.specular_texture),
-    MaterialBinding::sampler(28, material.specular_texture),
-    MaterialBinding::texture(29, material.specular_tint_texture),
-    MaterialBinding::sampler(30, material.specular_tint_texture),
-  ])
+  ]
+  if features.pbr_anisotropy_texture() {
+    bindings.push(MaterialBinding::texture(13, material.anisotropy_texture))
+    bindings.push(MaterialBinding::sampler(14, material.anisotropy_texture))
+  }
+  if features.pbr_transmission_textures() {
+    bindings.push(
+      MaterialBinding::texture(15, material.specular_transmission_texture),
+    )
+    bindings.push(
+      MaterialBinding::sampler(16, material.specular_transmission_texture),
+    )
+    bindings.push(MaterialBinding::texture(17, material.thickness_texture))
+    bindings.push(MaterialBinding::sampler(18, material.thickness_texture))
+    bindings.push(
+      MaterialBinding::texture(19, material.diffuse_transmission_texture),
+    )
+    bindings.push(
+      MaterialBinding::sampler(20, material.diffuse_transmission_texture),
+    )
+  }
+  if features.pbr_multi_layer_material_textures() {
+    bindings.push(MaterialBinding::texture(21, material.clearcoat_texture))
+    bindings.push(MaterialBinding::sampler(22, material.clearcoat_texture))
+    bindings.push(
+      MaterialBinding::texture(23, material.clearcoat_roughness_texture),
+    )
+    bindings.push(
+      MaterialBinding::sampler(24, material.clearcoat_roughness_texture),
+    )
+    bindings.push(
+      MaterialBinding::texture(25, material.clearcoat_normal_texture),
+    )
+    bindings.push(
+      MaterialBinding::sampler(26, material.clearcoat_normal_texture),
+    )
+  }
+  if features.pbr_specular_textures() {
+    bindings.push(MaterialBinding::texture(27, material.specular_texture))
+    bindings.push(MaterialBinding::sampler(28, material.specular_texture))
+    bindings.push(MaterialBinding::texture(29, material.specular_tint_texture))
+    bindings.push(MaterialBinding::sampler(30, material.specular_tint_texture))
+  }
+  MaterialBindGroup::new(bindings)
 }
 
 ///|
@@ -702,9 +745,12 @@ pub impl Material for StandardMaterial with fn bind_group(self, context) {
 ///|
 pub impl Material for StandardMaterial with fn bind_group_layout_descriptor(
   self,
+  context,
 ) {
   ignore(self)
-  standard_material_bind_group_layout_descriptor()
+  standard_material_bind_group_layout_descriptor(
+    features=context.standard_material_texture_features(),
+  )
 }
 
 ///|

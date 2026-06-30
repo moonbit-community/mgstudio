@@ -2221,8 +2221,9 @@ impl Material for ShadowReadinessNoShadowMaterial with fn bind_group(
 ///|
 impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_layout_descriptor(
   self,
+  context,
 ) {
-  material_default_bind_group_layout_descriptor(self)
+  material_default_bind_group_layout_descriptor(self, context~)
 }
 
 ///|

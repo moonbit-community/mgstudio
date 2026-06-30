@@ -180,8 +180,11 @@ impl @pbr.Material for LineMaterial with fn bind_group(self, context) {
 }
 
 ///|
-impl @pbr.Material for LineMaterial with fn bind_group_layout_descriptor(self) {
-  @pbr.material_default_bind_group_layout_descriptor(self)
+impl @pbr.Material for LineMaterial with fn bind_group_layout_descriptor(
+  self,
+  context,
+) {
+  @pbr.material_default_bind_group_layout_descriptor(self, context~)
 }
 
 ///|

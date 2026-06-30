@@ -261,8 +261,9 @@ impl @pbr.Material for ColorGradientMaterial with fn bind_group(self, context) {
 ///|
 impl @pbr.Material for ColorGradientMaterial with fn bind_group_layout_descriptor(
   self,
+  context,
 ) {
-  @pbr.material_default_bind_group_layout_descriptor(self)
+  @pbr.material_default_bind_group_layout_descriptor(self, context~)
 }
 
 ///|
