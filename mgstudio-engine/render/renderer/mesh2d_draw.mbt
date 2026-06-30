@@ -1493,6 +1493,14 @@ fn create_mesh2d_pipeline(
     builder.set_topology_u32(topology)
     match key.pipeline_descriptor {
       Some(desc) =>
+        match desc.primitive.strip_index_format {
+          Some(format) => builder.set_strip_index_format_u32(format)
+          None => ()
+        }
+      None => ()
+    }
+    match key.pipeline_descriptor {
+      Some(desc) =>
         match desc.primitive.polygon_mode {
           Some(mode) => builder.set_polygon_mode_u32(mode)
           None =>
@@ -1526,6 +1534,9 @@ fn create_mesh2d_pipeline(
               tf(depth.format),
               depth_write_enabled=depth.depth_write_enabled,
               depth_compare_u32=depth.depth_compare,
+              depth_bias=depth.bias_constant,
+              depth_bias_slope_scale=depth.bias_slope_scale,
+              depth_bias_clamp=depth.bias_clamp,
             )
           None =>
             if key.with_depth {

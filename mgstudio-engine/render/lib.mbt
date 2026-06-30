@@ -184,9 +184,11 @@ pub fn host_gpu_create_mesh3d_morph_target_buffer(
 ///|
 pub fn host_gpu_mesh3d_binding_arrays_are_usable(
   required_storage_textures_per_shader_stage~ : UInt,
+  required_binding_array_sampler_elements_per_shader_stage? : UInt = 0U,
 ) -> Bool {
   @renderer.mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage~,
+    required_binding_array_sampler_elements_per_shader_stage~,
   )
 }
 

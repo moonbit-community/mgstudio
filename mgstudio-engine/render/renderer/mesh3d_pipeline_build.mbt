@@ -324,7 +324,6 @@ fn mesh3d_forward_value_defines(
   descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] {
   let value_defines = default_wgsl_value_defines()
-  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", wgsl_def_int(18))
   value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", wgsl_def_int(19))
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
@@ -708,6 +707,58 @@ fn mesh3d_descriptor_depth_format(
 }
 
 ///|
+fn mesh3d_descriptor_depth_bias_constant(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> Int {
+  match descriptor {
+    Some(desc) =>
+      match desc.depth_stencil {
+        Some(depth_stencil) => depth_stencil.bias_constant
+        None => 0
+      }
+    None => 0
+  }
+}
+
+///|
+fn mesh3d_descriptor_depth_bias_slope_scale(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> Float {
+  match descriptor {
+    Some(desc) =>
+      match desc.depth_stencil {
+        Some(depth_stencil) => depth_stencil.bias_slope_scale
+        None => 0.0F
+      }
+    None => 0.0F
+  }
+}
+
+///|
+fn mesh3d_descriptor_depth_bias_clamp(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> Float {
+  match descriptor {
+    Some(desc) =>
+      match desc.depth_stencil {
+        Some(depth_stencil) => depth_stencil.bias_clamp
+        None => 0.0F
+      }
+    None => 0.0F
+  }
+}
+
+///|
+fn mesh3d_descriptor_strip_index_format(
+  descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> UInt? {
+  match descriptor {
+    Some(desc) => desc.primitive.strip_index_format
+    None => None
+  }
+}
+
+///|
 fn mesh3d_descriptor_shader_bool_defines(
   descriptor : @render_resource.RenderPipelineDescriptor?,
   fallback : @hashmap.HashMap[String, Bool],
@@ -1046,14 +1097,21 @@ fn mesh3d_custom_pipeline_get_or_create(
     depth_write_enabled=!transparent,
     position3d=true,
     topology~,
+    strip_index_format=mesh3d_descriptor_strip_index_format(material_descriptor),
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    depth_format=mesh3d_descriptor_depth_format(material_descriptor),
     depth_compare_u32=if forward_decal {
       @wgpu.COMPARE_FUNCTION_ALWAYS
     } else {
       mesh3d_descriptor_depth_compare(material_descriptor)
     },
+    depth_bias=mesh3d_descriptor_depth_bias_constant(material_descriptor),
+    depth_bias_slope_scale=mesh3d_descriptor_depth_bias_slope_scale(
+      material_descriptor,
+    ),
+    depth_bias_clamp=mesh3d_descriptor_depth_bias_clamp(material_descriptor),
     vertex_entry=match material_descriptor {
       Some(desc) =>
         match desc.vertex.entry_point {
@@ -2378,10 +2436,17 @@ fn ensure_mesh3d_pipeline_rgba8(
     ),
     position3d=true,
     topology~,
+    strip_index_format=mesh3d_descriptor_strip_index_format(material_descriptor),
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    depth_format=mesh3d_descriptor_depth_format(material_descriptor),
     depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
+    depth_bias=mesh3d_descriptor_depth_bias_constant(material_descriptor),
+    depth_bias_slope_scale=mesh3d_descriptor_depth_bias_slope_scale(
+      material_descriptor,
+    ),
+    depth_bias_clamp=mesh3d_descriptor_depth_bias_clamp(material_descriptor),
     vertex_entry="vertex",
     fragment_entry="fragment",
     vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
@@ -2579,10 +2644,17 @@ fn ensure_mesh3d_pipeline_surface(
     ),
     position3d=true,
     topology~,
+    strip_index_format=mesh3d_descriptor_strip_index_format(material_descriptor),
     cull_mode=cull_mode_wgpu,
     alpha_blend=transparent,
     blend_kind~,
+    depth_format=mesh3d_descriptor_depth_format(material_descriptor),
     depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
+    depth_bias=mesh3d_descriptor_depth_bias_constant(material_descriptor),
+    depth_bias_slope_scale=mesh3d_descriptor_depth_bias_slope_scale(
+      material_descriptor,
+    ),
+    depth_bias_clamp=mesh3d_descriptor_depth_bias_clamp(material_descriptor),
     vertex_entry="vertex",
     fragment_entry="fragment",
     vertex_buffer_layout=mesh3d_descriptor_vertex_buffer_layout(
@@ -3111,7 +3183,6 @@ fn mesh3d_build_motion_vector_pipeline(
   let value_defines = mesh3d_forward_value_defines(
     descriptor=material_descriptor,
   )
-  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   let vertex_wgsl = if material_descriptor is Some(_) {
     load_wgsl_preprocessed(
       backend.assets_base,

@@ -145,6 +145,7 @@ fn default_wgsl_value_defines() -> @hashmap.HashMap[
   @wgsl_common.ShaderDefValue,
 ] {
   let value_defines = @shader_compile.default_shader_value_defines()
+  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   value_defines.set(
     "MAX_DIRECTIONAL_LIGHTS",
     @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_DIRECTIONAL_LIGHTS),

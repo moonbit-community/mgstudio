@@ -289,7 +289,7 @@ pub fn materialize_pipeline_cache_render_pipeline_descriptor(@render_resource.Re
 
 pub fn mesh2d_vertex_layout(Int) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayout?
 
-pub fn mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt) -> Bool
+pub fn mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt, required_binding_array_sampler_elements_per_shader_stage? : UInt) -> Bool
 
 pub fn mesh3d_gpu_culling_supported() -> Bool
 
@@ -1859,6 +1859,7 @@ pub fn RenderDevice::has_feature_native_sampled_texture_and_storage_buffer_array
 pub fn RenderDevice::has_feature_native_storage_resource_binding_array(Self) -> Bool
 pub fn RenderDevice::has_feature_native_texture_binding_array(Self) -> Bool
 pub fn RenderDevice::limits_max_bind_groups_u32(Self) -> UInt
+pub fn RenderDevice::limits_max_binding_array_sampler_elements_per_shader_stage_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_immediate_size_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(Self) -> UInt
 pub fn RenderDevice::limits_max_texture_array_layers_u32(Self) -> UInt

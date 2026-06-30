@@ -128,7 +128,7 @@ test "render3d: standard material allocator install plan carries layout descript
   debug_inspect(plan.uses_bindless_resources(), content="true")
   debug_inspect(standard_material_bindless_slot_count(), content="Some(31)")
   debug_inspect(layout.label(), content="\"StandardMaterial\"")
-  debug_inspect(layout.entries().length(), content="13")
+  debug_inspect(layout.entries().length(), content="15")
 }
 
 ///|

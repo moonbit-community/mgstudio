@@ -893,6 +893,7 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     )
   }
+  shader_defs.push(pbr_shader_def("PBR_ANISOTROPY_TEXTURE_SUPPORTED"))
   if !pbr_mesh_key_msaa_samples_is_one(mesh_key_bits) {
     shader_defs.push(pbr_shader_def("MULTISAMPLED"))
   }

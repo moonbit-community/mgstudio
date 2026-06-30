@@ -247,6 +247,7 @@ fn render3d_execute_camera_main_pass(
   let lightmap_bindless_supported = @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
     @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+    required_binding_array_sampler_elements_per_shader_stage=@pbr_render.RENDER3D_LIGHTMAPS_PER_SLAB.reinterpret_as_uint(),
   )
   match world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
     Some(render_lightmaps) =>

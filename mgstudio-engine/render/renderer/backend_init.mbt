@@ -103,9 +103,17 @@ pub fn GpuBackend::new(
   } else {
     0U
   }
+  let adapter_max_sampled_textures_per_shader_stage_u32 = adapter.limits_max_sampled_textures_per_shader_stage_u32()
+  let adapter_max_samplers_per_shader_stage_u32 = adapter.limits_max_samplers_per_shader_stage_u32()
+  let adapter_max_binding_array_elements_per_shader_stage_u32 = adapter.limits_max_binding_array_elements_per_shader_stage_u32()
+  let adapter_max_binding_array_sampler_elements_per_shader_stage_u32 = adapter.limits_max_binding_array_sampler_elements_per_shader_stage_u32()
   let device = adapter.request_device_sync_with_features_and_limits(
     instance,
     required_features,
+    max_sampled_textures_per_shader_stage_u32=adapter_max_sampled_textures_per_shader_stage_u32,
+    max_samplers_per_shader_stage_u32=adapter_max_samplers_per_shader_stage_u32,
+    max_binding_array_elements_per_shader_stage_u32=adapter_max_binding_array_elements_per_shader_stage_u32,
+    max_binding_array_sampler_elements_per_shader_stage_u32=adapter_max_binding_array_sampler_elements_per_shader_stage_u32,
     max_immediate_size_u32=required_max_immediate_size_u32,
   ) catch {
     err => fatal("wgpu: Adapter::request_device_sync failed: \{err.message()}")

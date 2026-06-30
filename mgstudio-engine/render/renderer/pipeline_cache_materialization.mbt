@@ -296,13 +296,12 @@ fn pipeline_cache_apply_primitive_state(
   if primitive.front_face != @wgpu.FRONT_FACE_CCW {
     fatal("wgpu: render pipeline cache cannot yet express non-CCW front_face")
   }
-  match primitive.strip_index_format {
-    Some(_) =>
-      fatal("wgpu: render pipeline cache cannot yet express strip_index_format")
-    None => ()
-  }
   try {
     builder.set_topology_u32(primitive.topology)
+    match primitive.strip_index_format {
+      Some(format) => builder.set_strip_index_format_u32(format)
+      None => ()
+    }
     match primitive.cull_mode {
       Some(cull_mode) => builder.set_cull_mode_u32(cull_mode)
       None => builder.set_cull_mode_u32(@wgpu.CULL_MODE_NONE)
@@ -327,23 +326,18 @@ fn pipeline_cache_apply_depth_stencil_state(
 ) -> Unit raise GpuBackendError {
   match depth_stencil {
     None => ()
-    Some(depth) => {
-      if depth.bias_constant != 0 ||
-        depth.bias_slope_scale != 0.0F ||
-        depth.bias_clamp != 0.0F {
-        fatal(
-          "wgpu: render pipeline cache cannot yet express depth bias fields; see ISS-161",
-        )
-      }
+    Some(depth) =>
       builder.set_depth_stencil(
         tf(depth.format),
         depth_write_enabled=depth.depth_write_enabled,
         depth_compare_u32=depth.depth_compare,
+        depth_bias=depth.bias_constant,
+        depth_bias_slope_scale=depth.bias_slope_scale,
+        depth_bias_clamp=depth.bias_clamp,
       ) catch {
         err =>
           fatal("wgpu: failed to apply render depth state: \{err.message()}")
       }
-    }
   }
 }
 

@@ -1509,11 +1509,11 @@ fn mesh3d_material_cache_get_or_create(
   metallic_roughness_texture : GpuTextureInfo,
   occlusion_texture : GpuTextureInfo,
   depth_texture : GpuTextureInfo,
-  _anisotropy_texture : GpuTextureInfo,
+  anisotropy_texture : GpuTextureInfo,
   _specular_tint_texture : GpuTextureInfo,
-  _clearcoat_texture : GpuTextureInfo,
-  _clearcoat_roughness_texture : GpuTextureInfo,
-  _clearcoat_normal_texture : GpuTextureInfo,
+  clearcoat_texture : GpuTextureInfo,
+  clearcoat_roughness_texture : GpuTextureInfo,
+  clearcoat_normal_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
@@ -1587,6 +1587,38 @@ fn mesh3d_material_cache_get_or_create(
     })
     return bind_group
   }
+  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    backend, material_pipeline_id, material_descriptor,
+  )
+  let layout = layout_entry.material_bind_group_layout
+  let has_anisotropy_texture_binding = match material_layout {
+    Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 13)
+    None => false
+  }
+  let has_multi_layer_texture_bindings = match material_layout {
+    Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 21)
+    None => false
+  }
+  let anisotropy_texture_cache_id = if has_anisotropy_texture_binding {
+    anisotropy_texture.id
+  } else {
+    -2
+  }
+  let clearcoat_texture_cache_id = if has_multi_layer_texture_bindings {
+    clearcoat_texture.id
+  } else {
+    -2
+  }
+  let clearcoat_roughness_texture_cache_id = if has_multi_layer_texture_bindings {
+    clearcoat_roughness_texture.id
+  } else {
+    -2
+  }
+  let clearcoat_normal_texture_cache_id = if has_multi_layer_texture_bindings {
+    clearcoat_normal_texture.id
+  } else {
+    -2
+  }
   for entry in backend.mesh3d_material_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.base_texture_id == base_texture.id &&
@@ -1595,11 +1627,12 @@ fn mesh3d_material_cache_get_or_create(
       entry.metallic_roughness_texture_id == metallic_roughness_texture.id &&
       entry.occlusion_texture_id == occlusion_texture.id &&
       entry.depth_texture_id == depth_texture.id &&
-      entry.anisotropy_texture_id == -2 &&
+      entry.anisotropy_texture_id == anisotropy_texture_cache_id &&
       entry.specular_tint_texture_id == -2 &&
-      entry.clearcoat_texture_id == -2 &&
-      entry.clearcoat_roughness_texture_id == -2 &&
-      entry.clearcoat_normal_texture_id == -2 &&
+      entry.clearcoat_texture_id == clearcoat_texture_cache_id &&
+      entry.clearcoat_roughness_texture_id ==
+      clearcoat_roughness_texture_cache_id &&
+      entry.clearcoat_normal_texture_id == clearcoat_normal_texture_cache_id &&
       entry.material_uniform_bytes == material_uniform_bytes &&
       entry.forward_decal_uniform_bytes == forward_decal_uniform_bytes &&
       mesh3d_extension_bind_group_data_matches(
@@ -1609,10 +1642,6 @@ fn mesh3d_material_cache_get_or_create(
       return entry.bind_group
     }
   }
-  let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
-    backend, material_pipeline_id, material_descriptor,
-  )
-  let layout = layout_entry.material_bind_group_layout
   let material_uniform_buf = backend.device.create_buffer(
     size=MESH3D_STANDARD_MATERIAL_UNIFORM_SIZE,
     usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
@@ -1652,6 +1681,18 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_sampler(10U, normal_texture.sampler) &&
     builder.add_texture_view(11U, depth_texture.view) &&
     builder.add_sampler(12U, depth_texture.sampler)
+  if ok && has_anisotropy_texture_binding {
+    ok = builder.add_texture_view(13U, anisotropy_texture.view) &&
+      builder.add_sampler(14U, anisotropy_texture.sampler)
+  }
+  if ok && has_multi_layer_texture_bindings {
+    ok = builder.add_texture_view(21U, clearcoat_texture.view) &&
+      builder.add_sampler(22U, clearcoat_texture.sampler) &&
+      builder.add_texture_view(23U, clearcoat_roughness_texture.view) &&
+      builder.add_sampler(24U, clearcoat_roughness_texture.sampler) &&
+      builder.add_texture_view(25U, clearcoat_normal_texture.view) &&
+      builder.add_sampler(26U, clearcoat_normal_texture.sampler)
+  }
   ok = if ok && uses_forward_decal_uniform {
     match forward_decal_uniform_buf {
       Some(buffer) => builder.add_buffer(200U, buffer, size=4UL)
@@ -1690,11 +1731,11 @@ fn mesh3d_material_cache_get_or_create(
     metallic_roughness_texture_id: metallic_roughness_texture.id,
     occlusion_texture_id: occlusion_texture.id,
     depth_texture_id: depth_texture.id,
-    anisotropy_texture_id: -2,
+    anisotropy_texture_id: anisotropy_texture_cache_id,
     specular_tint_texture_id: -2,
-    clearcoat_texture_id: -2,
-    clearcoat_roughness_texture_id: -2,
-    clearcoat_normal_texture_id: -2,
+    clearcoat_texture_id: clearcoat_texture_cache_id,
+    clearcoat_roughness_texture_id: clearcoat_roughness_texture_cache_id,
+    clearcoat_normal_texture_id: clearcoat_normal_texture_cache_id,
     material_uniform_bytes,
     material_uniform_buffer: material_uniform_buf,
     forward_decal_uniform_bytes,

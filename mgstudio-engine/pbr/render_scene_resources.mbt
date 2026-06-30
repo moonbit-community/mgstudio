@@ -498,6 +498,7 @@ fn render3d_light_probe_binding_arrays_are_usable() -> Bool {
   @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
     @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+    required_binding_array_sampler_elements_per_shader_stage=@pbr_render.RENDER3D_LIGHTMAPS_PER_SLAB.reinterpret_as_uint(),
   )
 }
 

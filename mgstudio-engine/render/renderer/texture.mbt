@@ -1170,11 +1170,7 @@ pub fn GpuBackend::set_texture_sampler(
       let bind_group = if info.texture.dimension_u32().raw ==
         @wgpu.TEXTURE_DIMENSION_2D &&
         info.texture.sample_count_u32() == 1U {
-        let sampled_view = match info.sample_view {
-          Some(sample) => sample
-          None => info.view
-        }
-        Some(create_cached_texture_bind_group(self, sampler, sampled_view))
+        Some(create_cached_texture_bind_group(self, sampler, info.view))
       } else {
         None
       }

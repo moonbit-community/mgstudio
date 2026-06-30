@@ -233,15 +233,9 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
   )
   debug_inspect(
     pbr_material_specializer_shader_defs_contain_flag(
-      vertex_defs, "PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED",
-    ),
-    content="false",
-  )
-  debug_inspect(
-    pbr_material_specializer_shader_defs_contain_flag(
       vertex_defs, "PBR_ANISOTROPY_TEXTURE_SUPPORTED",
     ),
-    content="false",
+    content="true",
   )
   guard descriptor.fragment is Some(fragment) else {
     abort("expected pbr fragment state")

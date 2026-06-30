@@ -1076,7 +1076,6 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
     }
   }
   let value_defines = default_wgsl_value_defines()
-  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   load_wgsl_preprocessed(
     assets_base, "pbr/prepass/prepass.wgsl", defines, value_defines,
   )

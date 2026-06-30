@@ -136,6 +136,15 @@ pub fn RenderDevice::limits_max_storage_buffers_per_shader_stage_u32(
 }
 
 ///|
+pub fn RenderDevice::limits_max_binding_array_sampler_elements_per_shader_stage_u32(
+  self : RenderDevice,
+) -> UInt {
+  self
+  .wgpu_device()
+  .limits_max_binding_array_sampler_elements_per_shader_stage_u32()
+}
+
+///|
 pub fn RenderDevice::has_feature_native_texture_binding_array(
   self : RenderDevice,
 ) -> Bool {

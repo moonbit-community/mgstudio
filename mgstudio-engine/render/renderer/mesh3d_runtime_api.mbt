@@ -53,6 +53,7 @@ pub fn reserve_mesh3d_draw_storage(count~ : Int) -> Int {
 ///|
 pub fn mesh3d_binding_arrays_are_usable(
   required_storage_textures_per_shader_stage~ : UInt,
+  required_binding_array_sampler_elements_per_shader_stage? : UInt = 0U,
 ) -> Bool {
   if ensure_backend() is Some(backend) {
     let adapter_info = RenderAdapterInfo::from_backend(backend)
@@ -64,7 +65,9 @@ pub fn mesh3d_binding_arrays_are_usable(
     backend.device.has_feature_native_texture_binding_array() &&
     backend.device.has_feature_native_sampled_texture_and_storage_buffer_array_non_uniform_indexing() &&
     backend.device.limits_max_storage_textures_per_shader_stage_u32() >=
-    required_storage_textures_per_shader_stage
+    required_storage_textures_per_shader_stage &&
+    backend.device.limits_max_binding_array_sampler_elements_per_shader_stage_u32() >=
+    required_binding_array_sampler_elements_per_shader_stage
   } else {
     false
   }

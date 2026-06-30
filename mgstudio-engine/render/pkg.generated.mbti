@@ -300,7 +300,7 @@ pub fn host_gpu_get_queue(Int) -> Int
 
 pub fn host_gpu_mesh2d_vertex_layout(mesh_id~ : Int) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayout?
 
-pub fn host_gpu_mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt) -> Bool
+pub fn host_gpu_mesh3d_binding_arrays_are_usable(required_storage_textures_per_shader_stage~ : UInt, required_binding_array_sampler_elements_per_shader_stage? : UInt) -> Bool
 
 pub fn host_gpu_mesh3d_gpu_culling_supported() -> Bool
 

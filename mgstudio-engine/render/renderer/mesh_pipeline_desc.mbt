@@ -166,8 +166,13 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   alpha_blend? : Bool = true,
   blend_kind? : Int = MESH3D_PIPELINE_BLEND_ALPHA,
   topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+  strip_index_format? : UInt? = None,
   cull_mode? : UInt = @wgpu.CULL_MODE_NONE,
+  depth_format? : UInt = @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
   depth_compare_u32? : UInt = @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+  depth_bias? : Int = 0,
+  depth_bias_slope_scale? : Float = 0.0,
+  depth_bias_clamp? : Float = 0.0,
   vertex_entry? : String = "vs_main",
   fragment_entry? : String = "fs_main",
   vertex_buffer_layout? : @mesh.VertexBufferLayout? = None,
@@ -298,6 +303,13 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder, topology,
   )
+  let set_strip_index_format_err = match strip_index_format {
+    Some(format) =>
+      @wgpu_c.render_pipeline_desc_builder_set_strip_index_format(
+        builder, format,
+      )
+    None => 0U
+  }
   let set_cull_mode_err = @wgpu_c.render_pipeline_desc_builder_set_cull_mode(
     builder, cull_mode,
   )
@@ -310,6 +322,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     None => 0U
   }
   if set_topology_err != 0U ||
+    set_strip_index_format_err != 0U ||
     set_cull_mode_err != 0U ||
     set_fragment_module_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
@@ -317,10 +330,8 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   }
   if with_depth {
     let set_depth_err = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
-      builder,
-      @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
-      depth_write_enabled,
-      depth_compare_u32,
+      builder, depth_format, depth_write_enabled, depth_compare_u32, depth_bias,
+      depth_bias_slope_scale, depth_bias_clamp,
     )
     if set_depth_err != 0U {
       @wgpu_c.render_pipeline_desc_builder_free(builder)
