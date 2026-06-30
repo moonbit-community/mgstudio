@@ -954,6 +954,10 @@ pub fn standard_material_render_phase_type(@material.StandardMaterial) -> @mater
 
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
+pub fn standard_material_uniform_bytes(@material.StandardMaterial, Bool) -> Bytes
+
+pub fn standard_material_uniform_from_material(@material.StandardMaterial, Bool) -> StandardMaterialUniform
+
 pub fn sweep_entity_needing_specialization(EntitySpecializationTicks, SpecializedMaterialPipelineCache, RenderMaterialInstances, @core.Entity) -> Bool
 
 pub fn upload_view_gpu_clustering_buffers(@ecs.World) -> Unit
@@ -2902,6 +2906,33 @@ pub struct StandardMaterialPluginState {
 pub fn StandardMaterialPluginState::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 pub fn StandardMaterialPluginState::plan(Self) -> StandardMaterialPluginPlan
+
+pub struct StandardMaterialUniform {
+  base_color : @math.Vec4
+  emissive : @math.Vec4
+  attenuation_color : @math.Vec4
+  uv_transform : @transform.Affine2
+  reflectance : @math.Vec3
+  roughness : Float
+  metallic : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  attenuation_distance : Float
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
+  anisotropy_strength : Float
+  anisotropy_rotation : @math.Vec2
+  flags : UInt
+  alpha_cutoff : Float
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  lightmap_exposure : Float
+  max_relief_mapping_search_steps : UInt
+  deferred_lighting_pass_id : UInt
+}
+pub fn StandardMaterialUniform::to_bytes(Self) -> Bytes
 
 pub struct ViewClusterBindings {
   mut n_indices : Int

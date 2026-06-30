@@ -270,6 +270,269 @@ pub fn standard_material_render_phase_type(
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_pbr/src/pbr_material.rs::StandardMaterialUniform`.
+pub struct StandardMaterialUniform {
+  base_color : @math.Vec4
+  emissive : @math.Vec4
+  attenuation_color : @math.Vec4
+  uv_transform : @transform.Affine2
+  reflectance : @math.Vec3
+  roughness : Float
+  metallic : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  attenuation_distance : Float
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
+  anisotropy_strength : Float
+  anisotropy_rotation : @math.Vec2
+  flags : UInt
+  alpha_cutoff : Float
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  lightmap_exposure : Float
+  max_relief_mapping_search_steps : UInt
+  deferred_lighting_pass_id : UInt
+}
+
+///|
+fn standard_material_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
+fn standard_material_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn standard_material_color_vec4(color : @color.Color) -> @math.Vec4 {
+  @math.Vec4::new(color.r, color.g, color.b, color.a)
+}
+
+///|
+fn standard_material_emissive_vec4(material : StandardMaterial) -> @math.Vec4 {
+  @math.Vec4::new(
+    material.emissive.r,
+    material.emissive.g,
+    material.emissive.b,
+    material.emissive_exposure_weight,
+  )
+}
+
+///|
+fn standard_material_reflectance_vec3(
+  material : StandardMaterial,
+) -> @math.Vec3 {
+  @math.Vec3::new(
+    material.specular_tint.r * material.reflectance,
+    material.specular_tint.g * material.reflectance,
+    material.specular_tint.b * material.reflectance,
+  )
+}
+
+///|
+fn standard_material_uniform_alpha_mode_flags(
+  alpha_mode : @material.AlphaMode3d,
+) -> UInt {
+  match alpha_mode {
+    Opaque => @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
+    Mask(_) => @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
+    Blend => @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND
+    Premultiplied =>
+      @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED
+    Add => @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD
+    Multiply => @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY
+    AlphaToCoverage =>
+      @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE
+  }
+}
+
+///|
+fn standard_material_uniform_flags(
+  material : StandardMaterial,
+  normal_map_two_component : Bool,
+) -> UInt {
+  let mut flags = standard_material_uniform_alpha_mode_flags(
+    material.alpha_mode,
+  )
+  if material.base_color_texture is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT
+  }
+  if material.emissive_texture is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT
+  }
+  if material.metallic_roughness_texture is Some(_) {
+    flags = flags |
+      @pbr_render.STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT
+  }
+  if material.occlusion_texture is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT
+  }
+  if material.cull_mode is None {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT
+  }
+  if material.unlit {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_UNLIT_BIT
+  }
+  if material.fog_enabled {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT
+  }
+  if material.depth_map is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
+  }
+  if material.anisotropy_texture is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT
+  }
+  if material.normal_map_texture is Some(_) && material.flip_normal_map_y {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y
+  }
+  if normal_map_two_component {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP
+  }
+  if material.attenuation_distance == material.attenuation_distance &&
+    material.attenuation_distance != 1.0F / 0.0F &&
+    material.attenuation_distance != -1.0F / 0.0F {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_ATTENUATION_ENABLED_BIT
+  }
+  flags
+}
+
+///|
+pub fn standard_material_uniform_from_material(
+  material : StandardMaterial,
+  normal_map_two_component : Bool,
+) -> StandardMaterialUniform {
+  StandardMaterialUniform::{
+    base_color: standard_material_color_vec4(material.base_color),
+    emissive: standard_material_emissive_vec4(material),
+    attenuation_color: standard_material_color_vec4(material.attenuation_color),
+    uv_transform: material.uv_transform,
+    reflectance: standard_material_reflectance_vec3(material),
+    roughness: material.perceptual_roughness,
+    metallic: material.metallic,
+    diffuse_transmission: material.diffuse_transmission,
+    specular_transmission: material.specular_transmission,
+    thickness: material.thickness,
+    ior: material.ior,
+    attenuation_distance: material.attenuation_distance,
+    clearcoat: material.clearcoat,
+    clearcoat_perceptual_roughness: material.clearcoat_perceptual_roughness,
+    anisotropy_strength: material.anisotropy_strength,
+    anisotropy_rotation: @math.Vec2::from_angle(material.anisotropy_rotation),
+    flags: standard_material_uniform_flags(material, normal_map_two_component),
+    alpha_cutoff: @pbr_render.render3d_standard_material_alpha_cutoff(
+      material.alpha_mode,
+    ),
+    parallax_depth_scale: material.parallax_depth_scale,
+    max_parallax_layer_count: material.max_parallax_layer_count,
+    lightmap_exposure: material.lightmap_exposure,
+    max_relief_mapping_search_steps: material.parallax_mapping_method
+    .max_steps()
+    .reinterpret_as_uint(),
+    deferred_lighting_pass_id: material.deferred_lighting_pass_id.reinterpret_as_uint(),
+  }
+}
+
+///|
+pub fn StandardMaterialUniform::to_bytes(
+  self : StandardMaterialUniform,
+) -> Bytes {
+  let uv_transform = self.uv_transform
+  standard_material_u32le_pack([
+    standard_material_f32_bits(self.base_color.x),
+    standard_material_f32_bits(self.base_color.y),
+    standard_material_f32_bits(self.base_color.z),
+    standard_material_f32_bits(self.base_color.w),
+    standard_material_f32_bits(self.emissive.x),
+    standard_material_f32_bits(self.emissive.y),
+    standard_material_f32_bits(self.emissive.z),
+    standard_material_f32_bits(self.emissive.w),
+    standard_material_f32_bits(self.attenuation_color.x),
+    standard_material_f32_bits(self.attenuation_color.y),
+    standard_material_f32_bits(self.attenuation_color.z),
+    standard_material_f32_bits(self.attenuation_color.w),
+    standard_material_f32_bits(uv_transform.a),
+    standard_material_f32_bits(uv_transform.b),
+    standard_material_f32_bits(0.0F),
+    0U,
+    standard_material_f32_bits(uv_transform.c),
+    standard_material_f32_bits(uv_transform.d),
+    standard_material_f32_bits(0.0F),
+    0U,
+    standard_material_f32_bits(uv_transform.tx),
+    standard_material_f32_bits(uv_transform.ty),
+    standard_material_f32_bits(1.0F),
+    0U,
+    standard_material_f32_bits(self.reflectance.x),
+    standard_material_f32_bits(self.reflectance.y),
+    standard_material_f32_bits(self.reflectance.z),
+    standard_material_f32_bits(self.roughness),
+    standard_material_f32_bits(self.metallic),
+    standard_material_f32_bits(self.diffuse_transmission),
+    standard_material_f32_bits(self.specular_transmission),
+    standard_material_f32_bits(self.thickness),
+    standard_material_f32_bits(self.ior),
+    standard_material_f32_bits(self.attenuation_distance),
+    standard_material_f32_bits(self.clearcoat),
+    standard_material_f32_bits(self.clearcoat_perceptual_roughness),
+    standard_material_f32_bits(self.anisotropy_strength),
+    0U,
+    standard_material_f32_bits(self.anisotropy_rotation.x),
+    standard_material_f32_bits(self.anisotropy_rotation.y),
+    self.flags,
+    standard_material_f32_bits(self.alpha_cutoff),
+    standard_material_f32_bits(self.parallax_depth_scale),
+    standard_material_f32_bits(self.max_parallax_layer_count),
+    standard_material_f32_bits(self.lightmap_exposure),
+    self.max_relief_mapping_search_steps,
+    self.deferred_lighting_pass_id,
+    0U,
+  ])
+}
+
+///|
+pub fn standard_material_uniform_bytes(
+  material : StandardMaterial,
+  normal_map_two_component : Bool,
+) -> Bytes {
+  standard_material_uniform_from_material(material, normal_map_two_component).to_bytes()
+}
+
+///|
+fn standard_material_generic_bind_group(
+  material : StandardMaterial,
+) -> MaterialBindGroup {
+  MaterialBindGroup::new([
+    MaterialBinding::uniform(
+      0,
+      standard_material_uniform_bytes(material, false),
+    ),
+    MaterialBinding::texture(1, material.base_color_texture),
+    MaterialBinding::sampler(2, material.base_color_texture),
+    MaterialBinding::texture(3, material.emissive_texture),
+    MaterialBinding::sampler(4, material.emissive_texture),
+    MaterialBinding::texture(5, material.metallic_roughness_texture),
+    MaterialBinding::sampler(6, material.metallic_roughness_texture),
+    MaterialBinding::texture(7, material.occlusion_texture),
+    MaterialBinding::sampler(8, material.occlusion_texture),
+    MaterialBinding::texture(9, material.normal_map_texture),
+    MaterialBinding::sampler(10, material.normal_map_texture),
+    MaterialBinding::texture(11, material.depth_map),
+    MaterialBinding::sampler(12, material.depth_map),
+    MaterialBinding::texture(13, material.anisotropy_texture),
+    MaterialBinding::sampler(14, material.anisotropy_texture),
+  ])
+}
+
+///|
 let standard_material_generic_keys : MaterialKeys[StandardMaterial] = register_material_keys(
   "StandardMaterial",
 )
@@ -384,8 +647,7 @@ pub impl Material for StandardMaterial with fn bindless_slot_count() {
 
 ///|
 pub impl Material for StandardMaterial with fn bind_group(self) {
-  ignore(self)
-  material_default_bind_group()
+  standard_material_generic_bind_group(self)
 }
 
 ///|

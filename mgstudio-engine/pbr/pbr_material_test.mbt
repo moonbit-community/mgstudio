@@ -217,6 +217,171 @@ test "pbr material: standard material plugin state retains build plan" {
 }
 
 ///|
+fn pbr_material_test_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
+fn pbr_material_test_u32le_word(bytes : Bytes, index : Int) -> UInt {
+  let offset = index * 4
+  bytes[offset].to_uint() |
+  (bytes[offset + 1].to_uint() << 8) |
+  (bytes[offset + 2].to_uint() << 16) |
+  (bytes[offset + 3].to_uint() << 24)
+}
+
+///|
+test "pbr material: standard material uniform bytes match Bevy WGSL layout" {
+  let material = @material.StandardMaterial::StandardMaterial()
+    .with_base_color(@color.Color::new(0.25F, 0.5F, 0.75F, 0.875F))
+    .with_emissive(@color.Color::new(1.0F, 2.0F, 3.0F, 0.0F))
+    .with_base_color_texture(Some(@asset.Handle::new(1)))
+    .with_normal_map_texture(Some(@asset.Handle::new(2)))
+    .with_flip_normal_map_y(true)
+    .with_uv_transform(
+      @transform.Affine2::from_cols(
+        @math.Vec2::new(2.0F, 3.0F),
+        @math.Vec2::new(4.0F, 5.0F),
+        @math.Vec2::new(6.0F, 7.0F),
+      ),
+    )
+    .with_reflectance(0.25F)
+    .with_specular_tint(@color.Color::new(0.5F, 0.25F, 0.125F, 1.0F))
+    .with_perceptual_roughness(0.625F)
+    .with_metallic(0.75F)
+    .with_diffuse_transmission(0.25F)
+    .with_specular_transmission(0.5F)
+    .with_thickness(0.375F)
+    .with_ior(1.25F)
+    .with_clearcoat(0.125F)
+    .with_clearcoat_perceptual_roughness(0.25F)
+    .with_anisotropy_strength(0.5F)
+    .with_alpha_mode(@material.AlphaMode3d::Mask(0.375F))
+  let uniform = standard_material_uniform_from_material(material, true)
+  let bytes = uniform.to_bytes()
+  inspect(bytes.length(), content="192")
+  inspect(
+    pbr_material_test_u32le_word(bytes, 0),
+    content=pbr_material_test_f32_bits(0.25F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 7),
+    content=pbr_material_test_f32_bits(0.0F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 12),
+    content=pbr_material_test_f32_bits(2.0F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 16),
+    content=pbr_material_test_f32_bits(4.0F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 20),
+    content=pbr_material_test_f32_bits(6.0F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 22),
+    content=pbr_material_test_f32_bits(1.0F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 24),
+    content=pbr_material_test_f32_bits(0.125F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 27),
+    content=pbr_material_test_f32_bits(0.625F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 36),
+    content=pbr_material_test_f32_bits(0.5F).to_string(),
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 38),
+    content=pbr_material_test_f32_bits(1.0F).to_string(),
+  )
+  inspect(
+    (
+      pbr_material_test_u32le_word(bytes, 40) &
+      @pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT
+    ) !=
+    0U,
+    content="true",
+  )
+  inspect(
+    (
+      pbr_material_test_u32le_word(bytes, 40) &
+      @pbr_render.STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP
+    ) !=
+    0U,
+    content="true",
+  )
+  inspect(
+    (
+      pbr_material_test_u32le_word(bytes, 40) &
+      @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y
+    ) !=
+    0U,
+    content="true",
+  )
+  inspect(
+    pbr_material_test_u32le_word(bytes, 41),
+    content=pbr_material_test_f32_bits(0.375F).to_string(),
+  )
+  inspect(pbr_material_test_u32le_word(bytes, 45), content="0")
+  inspect(pbr_material_test_u32le_word(bytes, 46), content="1")
+}
+
+///|
+test "pbr material: generic standard material bind group carries Bevy binding payload" {
+  let material = @material.StandardMaterial::StandardMaterial()
+    .with_base_color_texture(Some(@asset.Handle::new(11)))
+    .with_emissive_texture(Some(@asset.Handle::new(12)))
+    .with_metallic_roughness_texture(Some(@asset.Handle::new(13)))
+    .with_occlusion_texture(Some(@asset.Handle::new(14)))
+    .with_depth_map(Some(@asset.Handle::new(15)))
+    .with_anisotropy_texture(Some(@asset.Handle::new(16)))
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(31),
+    material,
+    pbr_material_test_standard_material_pipeline(),
+    @material.OpaqueRendererMethod::Forward,
+  )
+  let entries = prepared.bind_group_data().entries()
+  inspect(entries.length(), content="15")
+  match entries[0].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) =>
+      inspect(bytes.length(), content="192")
+    _ => inspect(false, content="true")
+  }
+  match entries[1].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="11")
+    _ => inspect(false, content="true")
+  }
+  match entries[2].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
+      inspect(id, content="11")
+    _ => inspect(false, content="true")
+  }
+  match entries[9].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="-1")
+    _ => inspect(false, content="true")
+  }
+  match entries[13].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="16")
+    _ => inspect(false, content="true")
+  }
+  match entries[14].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
+      inspect(id, content="16")
+    _ => inspect(false, content="true")
+  }
+}
+
+///|
 test "pbr material: standard material plugin installs render startup allocator" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
