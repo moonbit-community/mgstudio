@@ -348,6 +348,40 @@ test "render mesh: from mesh includes morph target key bit" {
 }
 
 ///|
+test "render mesh assets: prepare assets owns render mesh conversion" {
+  let geometry = @asset_mesh.Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(0.0F, 0.0F, 0.0F),
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    ],
+    Some([0, 1, 2]),
+  )
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  let assets = RenderMeshAssets::RenderMeshAssets()
+  assets.prepare_assets(
+    [
+      ExtractedRenderMeshAsset::new(
+        77,
+        @asset_mesh.Mesh::from_3d_geometry(geometry),
+      ),
+    ],
+    layouts,
+  )
+  inspect(assets.len(), content="1")
+  guard assets.get(77) is Some(render_mesh) else {
+    fail("expected prepared render mesh")
+  }
+  inspect(render_mesh.vertex_count(), content="3")
+  inspect(render_mesh.indexed(), content="true")
+}
+
+///|
 test "render mesh allocator: non-indexed render mesh skips index allocation" {
   let allocator = MeshAllocator::new()
   let mesh = RenderMesh::new(vertex_count=3)

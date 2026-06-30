@@ -4033,9 +4033,26 @@ pub fn render3d_shadow_specialization_work_item_data(
 }
 
 ///|
-// Bevy source: `bevy_render/src/mesh/allocator.rs::allocate_and_free_meshes`
-// and `RenderAssets<RenderMesh>` preparation before
-// `bevy_pbr/src/material.rs::specialize_material_meshes`.
+// Temporary producer adapter for the remaining legacy `ExtractedMesh3d` array.
+// The `RenderMesh` preparation owner itself lives in `render/mesh`.
+fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
+  meshes : Array[ExtractedMesh3d],
+) -> Array[@render_mesh.ExtractedRenderMeshAsset] {
+  let extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset] = []
+  for extracted_mesh in meshes {
+    let mesh_handle = extracted_mesh.payload.mesh_handle
+    guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
+      continue
+    }
+    extracted_assets.push(
+      @render_mesh.ExtractedRenderMeshAsset::new(mesh_handle.id(), source_mesh),
+    )
+  }
+  extracted_assets
+}
+
+///|
+// Bevy source: `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>`.
 fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
@@ -4049,18 +4066,14 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
         "missing RenderMeshAssets resource during pbr render mesh asset preparation",
       )
   }
+  let extracted_assets = render3d_extracted_render_mesh_assets_from_extracted_meshes(
+    meshes,
+  )
   render_mesh_assets.modify(fn(assets) {
-    for extracted_mesh in meshes {
-      let mesh_handle = extracted_mesh.payload.mesh_handle
-      guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
-        continue
-      }
-      let render_mesh = @render_mesh.RenderMesh::from_mesh(
-        source_mesh,
-        mesh_runtime_state_value.mesh_vertex_buffer_layouts,
-      )
-      assets.insert(mesh_handle.id(), render_mesh)
-    }
+    assets.prepare_assets(
+      extracted_assets,
+      mesh_runtime_state_value.mesh_vertex_buffer_layouts,
+    )
   })
 }
 

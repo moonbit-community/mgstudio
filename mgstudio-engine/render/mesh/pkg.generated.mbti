@@ -55,6 +55,14 @@ pub(all) suberror RenderMorphBuildError {
 }
 
 // Types and methods
+pub struct ExtractedRenderMeshAsset {
+  mesh_asset_id : Int
+  mesh : @Milky2018/mgstudio/mesh.Mesh
+}
+pub fn ExtractedRenderMeshAsset::mesh(Self) -> @Milky2018/mgstudio/mesh.Mesh
+pub fn ExtractedRenderMeshAsset::mesh_asset_id(Self) -> Int
+pub fn ExtractedRenderMeshAsset::new(Int, @Milky2018/mgstudio/mesh.Mesh) -> Self
+
 pub struct MeshAllocator {
   slabs : Array[MeshAllocatorSlabState]
   mesh_id_to_vertex_slab : Array[MeshAllocatorMeshSlabEntry]
@@ -304,6 +312,7 @@ pub fn RenderMesh::indexed(Self) -> Bool
 pub fn RenderMesh::key_bits(Self) -> @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
 pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, index_format? : RenderMeshIndexFormat, dimension? : RenderMeshDimension, key_bits? : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey, layout? : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
+pub fn RenderMesh::prepare_asset(@Milky2018/mgstudio/mesh.Mesh, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Self
 pub fn RenderMesh::primitive_topology(Self) -> @Milky2018/mgstudio/mesh.Mesh3dPrimitiveTopology
 pub fn RenderMesh::vertex_count(Self) -> Int
 pub fn RenderMesh::wireframe_index_count(Self) -> Int
@@ -316,6 +325,7 @@ pub fn RenderMeshAssets::clear(Self) -> Unit
 pub fn RenderMeshAssets::get(Self, Int) -> RenderMesh?
 pub fn RenderMeshAssets::insert(Self, Int, RenderMesh) -> Unit
 pub fn RenderMeshAssets::len(Self) -> Int
+pub fn RenderMeshAssets::prepare_assets(Self, Array[ExtractedRenderMeshAsset], @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Unit
 pub fn RenderMeshAssets::remove(Self, Int) -> RenderMesh?
 pub impl @app.Resource for RenderMeshAssets
 

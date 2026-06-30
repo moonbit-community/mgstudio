@@ -217,6 +217,16 @@ pub fn RenderMesh::from_mesh(
 }
 
 ///|
+// Bevy source: `bevy_render/src/mesh/mod.rs::RenderAsset for RenderMesh::prepare_asset`.
+pub fn RenderMesh::prepare_asset(
+  mesh : @asset_mesh.Mesh,
+  mesh_vertex_buffer_layouts : @asset_mesh.MeshVertexBufferLayouts,
+  dimension? : RenderMeshDimension = Dim3,
+) -> RenderMesh {
+  RenderMesh::from_mesh(mesh, mesh_vertex_buffer_layouts, dimension~)
+}
+
+///|
 fn render_mesh_index_format_from_mesh(
   mesh : @asset_mesh.Mesh,
   indices : Array[Int],
@@ -338,6 +348,54 @@ pub fn RenderMeshAssets::insert(
   render_mesh : RenderMesh,
 ) -> Unit {
   self.assets.set(mesh_asset_id, render_mesh)
+}
+
+///|
+pub struct ExtractedRenderMeshAsset {
+  mesh_asset_id : Int
+  mesh : @asset_mesh.Mesh
+}
+
+///|
+pub fn ExtractedRenderMeshAsset::new(
+  mesh_asset_id : Int,
+  mesh : @asset_mesh.Mesh,
+) -> ExtractedRenderMeshAsset {
+  ExtractedRenderMeshAsset::{ mesh_asset_id, mesh }
+}
+
+///|
+pub fn ExtractedRenderMeshAsset::mesh_asset_id(
+  self : ExtractedRenderMeshAsset,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+pub fn ExtractedRenderMeshAsset::mesh(
+  self : ExtractedRenderMeshAsset,
+) -> @asset_mesh.Mesh {
+  self.mesh
+}
+
+///|
+// Bevy source: `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>`.
+pub fn RenderMeshAssets::prepare_assets(
+  self : RenderMeshAssets,
+  extracted_assets : Array[ExtractedRenderMeshAsset],
+  mesh_vertex_buffer_layouts : @asset_mesh.MeshVertexBufferLayouts,
+  dimension? : RenderMeshDimension = Dim3,
+) -> Unit {
+  for extracted_asset in extracted_assets {
+    self.insert(
+      extracted_asset.mesh_asset_id(),
+      RenderMesh::prepare_asset(
+        extracted_asset.mesh(),
+        mesh_vertex_buffer_layouts,
+        dimension~,
+      ),
+    )
+  }
 }
 
 ///|
