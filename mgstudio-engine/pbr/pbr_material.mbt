@@ -388,6 +388,17 @@ fn standard_material_uniform_flags(
   if material.depth_map is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
   }
+  if material.specular_transmission_texture is Some(_) {
+    flags = flags |
+      @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TRANSMISSION_TEXTURE_BIT
+  }
+  if material.thickness_texture is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_THICKNESS_TEXTURE_BIT
+  }
+  if material.diffuse_transmission_texture is Some(_) {
+    flags = flags |
+      @pbr_render.STANDARD_MATERIAL_FLAGS_DIFFUSE_TRANSMISSION_TEXTURE_BIT
+  }
   if material.anisotropy_texture is Some(_) {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT
   }
@@ -405,6 +416,9 @@ fn standard_material_uniform_flags(
   if material.specular_tint_texture is Some(_) {
     flags = flags |
       @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT
+  }
+  if material.specular_texture is Some(_) {
+    flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT
   }
   if material.normal_map_texture is Some(_) && material.flip_normal_map_y {
     flags = flags | @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y
@@ -548,20 +562,20 @@ fn standard_material_generic_bind_group(
     MaterialBinding::sampler(12, material.depth_map),
     MaterialBinding::texture(13, material.anisotropy_texture),
     MaterialBinding::sampler(14, material.anisotropy_texture),
-    MaterialBinding::texture(15, None),
-    MaterialBinding::sampler(16, None),
-    MaterialBinding::texture(17, None),
-    MaterialBinding::sampler(18, None),
-    MaterialBinding::texture(19, None),
-    MaterialBinding::sampler(20, None),
+    MaterialBinding::texture(15, material.specular_transmission_texture),
+    MaterialBinding::sampler(16, material.specular_transmission_texture),
+    MaterialBinding::texture(17, material.thickness_texture),
+    MaterialBinding::sampler(18, material.thickness_texture),
+    MaterialBinding::texture(19, material.diffuse_transmission_texture),
+    MaterialBinding::sampler(20, material.diffuse_transmission_texture),
     MaterialBinding::texture(21, material.clearcoat_texture),
     MaterialBinding::sampler(22, material.clearcoat_texture),
     MaterialBinding::texture(23, material.clearcoat_roughness_texture),
     MaterialBinding::sampler(24, material.clearcoat_roughness_texture),
     MaterialBinding::texture(25, material.clearcoat_normal_texture),
     MaterialBinding::sampler(26, material.clearcoat_normal_texture),
-    MaterialBinding::texture(27, None),
-    MaterialBinding::sampler(28, None),
+    MaterialBinding::texture(27, material.specular_texture),
+    MaterialBinding::sampler(28, material.specular_texture),
     MaterialBinding::texture(29, material.specular_tint_texture),
     MaterialBinding::sampler(30, material.specular_tint_texture),
   ])

@@ -434,12 +434,16 @@ pub struct StandardMaterial {
   perceptual_roughness : Float
   reflectance : Float
   diffuse_transmission : Float
+  diffuse_transmission_texture : @asset.Handle[@asset.Image]?
   specular_transmission : Float
+  specular_transmission_texture : @asset.Handle[@asset.Image]?
   thickness : Float
+  thickness_texture : @asset.Handle[@asset.Image]?
   ior : Float
   attenuation_color : @color.Color
   attenuation_distance : Float
   specular_tint : @color.Color
+  specular_texture : @asset.Handle[@asset.Image]?
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
@@ -505,12 +509,16 @@ pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
     perceptual_roughness: 0.5F,
     reflectance: 0.5F,
     diffuse_transmission: 0.0F,
+    diffuse_transmission_texture: None,
     specular_transmission: 0.0F,
+    specular_transmission_texture: None,
     thickness: 0.0F,
+    thickness_texture: None,
     ior: 1.5F,
     attenuation_color: @color.Color::white(),
     attenuation_distance: 1.0F / 0.0F,
     specular_tint: @color.Color::white(),
+    specular_texture: None,
     specular_tint_texture: None,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
@@ -558,12 +566,16 @@ pub fn StandardMaterial::from_color(color : @color.Color) -> StandardMaterial {
     perceptual_roughness: default_value.perceptual_roughness,
     reflectance: default_value.reflectance,
     diffuse_transmission: default_value.diffuse_transmission,
+    diffuse_transmission_texture: default_value.diffuse_transmission_texture,
     specular_transmission: default_value.specular_transmission,
+    specular_transmission_texture: default_value.specular_transmission_texture,
     thickness: default_value.thickness,
+    thickness_texture: default_value.thickness_texture,
     ior: default_value.ior,
     attenuation_color: default_value.attenuation_color,
     attenuation_distance: default_value.attenuation_distance,
     specular_tint: default_value.specular_tint,
+    specular_texture: default_value.specular_texture,
     specular_tint_texture: default_value.specular_tint_texture,
     occlusion_texture: default_value.occlusion_texture,
     alpha_mode,
@@ -922,6 +934,14 @@ pub fn StandardMaterial::with_diffuse_transmission(
 }
 
 ///|
+pub fn StandardMaterial::with_diffuse_transmission_texture(
+  self : StandardMaterial,
+  diffuse_transmission_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, diffuse_transmission_texture, }
+}
+
+///|
 pub fn StandardMaterial::with_specular_transmission(
   self : StandardMaterial,
   specular_transmission : Float,
@@ -940,12 +960,28 @@ pub fn StandardMaterial::with_specular_transmission(
 }
 
 ///|
+pub fn StandardMaterial::with_specular_transmission_texture(
+  self : StandardMaterial,
+  specular_transmission_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, specular_transmission_texture, }
+}
+
+///|
 pub fn StandardMaterial::with_thickness(
   self : StandardMaterial,
   thickness : Float,
 ) -> StandardMaterial {
   let safe_thickness = if thickness < 0.0F { 0.0F } else { thickness }
   StandardMaterial::{ ..self, thickness: safe_thickness }
+}
+
+///|
+pub fn StandardMaterial::with_thickness_texture(
+  self : StandardMaterial,
+  thickness_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, thickness_texture, }
 }
 
 ///|
@@ -963,6 +999,14 @@ pub fn StandardMaterial::with_specular_tint(
   specular_tint : @color.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, specular_tint, }
+}
+
+///|
+pub fn StandardMaterial::with_specular_texture(
+  self : StandardMaterial,
+  specular_texture : @asset.Handle[@asset.Image]?,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, specular_texture, }
 }
 
 ///|

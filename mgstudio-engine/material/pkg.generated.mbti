@@ -407,12 +407,16 @@ pub struct StandardMaterial {
   perceptual_roughness : Float
   reflectance : Float
   diffuse_transmission : Float
+  diffuse_transmission_texture : @asset.Handle[@image.Image]?
   specular_transmission : Float
+  specular_transmission_texture : @asset.Handle[@image.Image]?
   thickness : Float
+  thickness_texture : @asset.Handle[@image.Image]?
   ior : Float
   attenuation_color : @color.Color
   attenuation_distance : Float
   specular_tint : @color.Color
+  specular_texture : @asset.Handle[@image.Image]?
   specular_tint_texture : @asset.Handle[@image.Image]?
   occlusion_texture : @asset.Handle[@image.Image]?
   alpha_mode : AlphaMode3d
@@ -443,6 +447,7 @@ pub fn StandardMaterial::with_cull_mode(Self, Face3d?) -> Self
 pub fn StandardMaterial::with_depth_bias(Self, Float) -> Self
 pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_diffuse_transmission(Self, Float) -> Self
+pub fn StandardMaterial::with_diffuse_transmission_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_double_sided(Self, Bool) -> Self
 pub fn StandardMaterial::with_emissive(Self, @color.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
@@ -459,10 +464,13 @@ pub fn StandardMaterial::with_parallax_depth_scale(Self, Float) -> Self
 pub fn StandardMaterial::with_parallax_mapping_method(Self, ParallaxMappingMethod) -> Self
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
+pub fn StandardMaterial::with_specular_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_specular_tint(Self, @color.Color) -> Self
 pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
+pub fn StandardMaterial::with_specular_transmission_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_thickness(Self, Float) -> Self
+pub fn StandardMaterial::with_thickness_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
 pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 pub impl @asset.Asset for StandardMaterial
