@@ -3605,10 +3605,6 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
   pending_shadow_queues : @pbr_render.PendingShadowQueues,
 ) -> Render3dQueuedShadowPhaseData {
   let result = Render3dQueuedShadowPhaseData::Render3dQueuedShadowPhaseData()
-  guard visible_entities.get(render3d_mesh_visibility_class())
-    is Some(render_visible_mesh_entities) else {
-    return result
-  }
   let view_cache = match
     world.get_resource(
       @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
@@ -3627,6 +3623,10 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
       abort(
         "View pending shadow queues should have been created in pbr.render3d.specialize_shadows",
       )
+  }
+  guard visible_entities.get(render3d_mesh_visibility_class())
+    is Some(render_visible_mesh_entities) else {
+    return result
   }
   let dequeued = dirty_specializations.iter_to_dequeue(
     retained_view_entity, render_visible_mesh_entities,

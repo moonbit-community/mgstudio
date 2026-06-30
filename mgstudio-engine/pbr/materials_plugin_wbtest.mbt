@@ -2658,6 +2658,39 @@ test "render3d: shadow specialization drains work items and expires stale views"
 }
 
 ///|
+test "render3d: queue shadows checks cache and pending queues before empty visible class" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(85, 1),
+  )
+  let shadow_cache = @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
+  shadow_cache.view_or_insert(retained_view) |> ignore
+  world.insert_resource(
+    @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
+    shadow_cache,
+  )
+  let pending_shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
+  ignore(pending_shadow_queues.queues().prepare_for_new_frame(retained_view))
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+
+  let queued = render3d_queue_shadow_phase_data_for_visible_entities(
+    world,
+    retained_view,
+    visible_entities,
+    None,
+    @render_visibility.DirtySpecializations::DirtySpecializations(),
+    pending_shadow_queues,
+  )
+
+  debug_inspect(queued.dequeued().length(), content="0")
+  debug_inspect(queued.items().length(), content="0")
+  debug_inspect(
+    pending_shadow_queues.queues().contains_view(retained_view),
+    content="true",
+  )
+}
+
+///|
 test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rules" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
       ParityCustomMaterial::ParityCustomMaterial()
