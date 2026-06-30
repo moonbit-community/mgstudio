@@ -16,6 +16,7 @@
 struct ParityCustomMaterial {
   color : Bytes
   texture : @asset.Handle[@asset.Image]?
+  opaque_render_method : @material.OpaqueRendererMethod
 }
 
 ///|
@@ -23,7 +24,16 @@ fn ParityCustomMaterial::ParityCustomMaterial() -> ParityCustomMaterial {
   ParityCustomMaterial::{
     color: Bytes::makei(4, fn(index) { (index + 1).to_byte() }),
     texture: Some(@asset.Handle::new(9)),
+    opaque_render_method: @material.OpaqueRendererMethod::Forward,
   }
+}
+
+///|
+fn ParityCustomMaterial::with_opaque_render_method(
+  self : ParityCustomMaterial,
+  opaque_render_method : @material.OpaqueRendererMethod,
+) -> ParityCustomMaterial {
+  ParityCustomMaterial::{ ..self, opaque_render_method, }
 }
 
 ///|
@@ -116,8 +126,7 @@ impl Material for ParityCustomMaterial with fn alpha_mode(self) {
 
 ///|
 impl Material for ParityCustomMaterial with fn opaque_render_method(self) {
-  ignore(self)
-  material_default_opaque_render_method()
+  self.opaque_render_method
 }
 
 ///|
@@ -218,12 +227,34 @@ test "pbr material plugin: prepared material carries shader hooks and typed bind
     @asset.Handle::new(7),
     material,
     material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Forward,
   )
   debug_inspect(
     prepared.properties().get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/tonemapping_test_patterns.wgsl\")",
   )
   inspect(prepared.bind_group_data().entries().length(), content="3")
+}
+
+///|
+test "pbr material plugin: prepared material resolves auto renderer method from default resource value" {
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material = ParityCustomMaterial::ParityCustomMaterial().with_opaque_render_method(
+    @material.OpaqueRendererMethod::Auto,
+  )
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(8),
+    material,
+    material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Deferred,
+  )
+  debug_inspect(
+    match prepared.properties().render_method {
+      @material.OpaqueRendererMethod::Deferred => true
+      _ => false
+    },
+    content="true",
+  )
 }
 
 ///|
@@ -237,6 +268,7 @@ test "pbr material plugin: prepared custom material can specialize a mesh pipeli
     @asset.Handle::new(7),
     material,
     material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Forward,
   )
   let properties = prepared.properties()
   guard properties.base_specialize is Some(base_specialize) else {
@@ -602,6 +634,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
           value.set(material_handle, ParityCustomMaterial::{
             color: Bytes::makei(4, fn(index) { (index + 5).to_byte() }),
             texture: Some(@asset.Handle::new(11)),
+            opaque_render_method: @material.OpaqueRendererMethod::Forward,
           }),
         )
       })
@@ -680,6 +713,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     material_handle,
     material,
     material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Forward,
   )
   let resolved = prepared.resolved_material()
   world.insert_resource(

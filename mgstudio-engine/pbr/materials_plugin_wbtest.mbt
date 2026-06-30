@@ -2350,6 +2350,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
         @asset.Handle::new(635),
         ParityCustomMaterial::ParityCustomMaterial(),
         pipeline,
+        @material.OpaqueRendererMethod::Forward,
       ),
     )
     value.insert(
@@ -2358,6 +2359,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
         @asset.Handle::new(640),
         ParityCustomMaterial::ParityCustomMaterial(),
         pipeline,
+        @material.OpaqueRendererMethod::Forward,
       ),
     )
     value.insert(
@@ -2366,6 +2368,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
         @asset.Handle::new(650),
         ParityCustomMaterial::ParityCustomMaterial(),
         pipeline,
+        @material.OpaqueRendererMethod::Forward,
       ),
     )
   })
@@ -2376,6 +2379,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
         @asset.Handle::new(630),
         ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial(),
         no_shadow_pipeline,
+        @material.OpaqueRendererMethod::Forward,
       ),
     )
   })
@@ -2830,6 +2834,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(701),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
+    @material.OpaqueRendererMethod::Forward,
   )
   let prepared_depth = PreparedMaterial::{
     ..prepared_depth_base,
@@ -2842,6 +2847,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(702),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
+    @material.OpaqueRendererMethod::Forward,
   )
   let prepared_material = PreparedMaterial::{
     ..prepared_material_base,
@@ -2854,6 +2860,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(703),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
+    @material.OpaqueRendererMethod::Forward,
   )
   let prepared_layer = PreparedMaterial::{
     ..prepared_layer_base,
@@ -2866,6 +2873,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(704),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
+    @material.OpaqueRendererMethod::Forward,
   )
   let prepared_missing_binding = PreparedMaterial::{
     ..prepared_missing_binding_base,
@@ -2878,6 +2886,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(705),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
+    @material.OpaqueRendererMethod::Forward,
   )
   let prepared_cache_miss = PreparedMaterial::{
     ..prepared_cache_miss_base,

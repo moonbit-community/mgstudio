@@ -789,6 +789,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   source : @asset.Handle[M],
   material : M,
   pipeline : MaterialPipeline[M],
+  default_opaque_renderer_method : @material.OpaqueRendererMethod,
 ) -> PreparedMaterial[M] {
   let bind_group = material.bind_group()
   let key = MaterialPipelineKey::new(
@@ -798,7 +799,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   )
   let render_method = material
     .opaque_render_method()
-    .resolve_runtime(@material.OpaqueRendererMethod::Forward)
+    .resolve_runtime(default_opaque_renderer_method)
   let mut properties = @material.MaterialProperties::MaterialProperties()
     .with_render_method(render_method)
     .with_alpha_mode(material.alpha_mode())
@@ -1644,6 +1645,11 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
   guard world.get_resource_mut(prepared_assets_key) is Some(prepared_assets) else {
     return
   }
+  let default_opaque_renderer_method = match
+    world.get_resource(@material.ecs_key_default_opaque_renderer_method) {
+    Some(value) => value.renderer_method()
+    None => @material.OpaqueRendererMethod::Forward
+  }
   let system_ticks = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(global_value) => global_value.source_system_ticks(source_world)
@@ -1675,7 +1681,9 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     prepared_assets.modify(fn(value) {
       value.insert(
         material_id,
-        PreparedMaterial::from_material(material_handle, material, pipeline),
+        PreparedMaterial::from_material(
+          material_handle, material, pipeline, default_opaque_renderer_method,
+        ),
       )
     })
     prepare_material_binding_for_prepared_asset(world, _probe, material_id)

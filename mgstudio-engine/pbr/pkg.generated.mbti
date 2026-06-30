@@ -2110,7 +2110,7 @@ pub struct PreparedMaterial[M] {
   properties : @material.MaterialProperties
 }
 pub fn[M] PreparedMaterial::bind_group_data(Self[M]) -> @render_resource.MaterialBindGroupResolvedData
-pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M]) -> Self[M]
+pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M], @material.OpaqueRendererMethod) -> Self[M]
 pub fn[M] PreparedMaterial::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
 pub fn[M] PreparedMaterial::properties(Self[M]) -> @material.MaterialProperties
 pub fn[M : Material] PreparedMaterial::resolved_material(Self[M]) -> Render3dResolvedMaterial
