@@ -574,6 +574,7 @@ pub(open) trait Material {
   fn bindless_slot_count() -> Int?
   fn bind_group(self : Self) -> MaterialBindGroup
   fn bind_group_layout_descriptor(self : Self) -> @render_resource.BindGroupLayoutDescriptor
+  fn bind_group_data(self : Self) -> String
   fn material_key(self : Self) -> @material.ErasedMaterialKey
   fn specialize(
     descriptor : @render.RenderPipelineDescriptor,
@@ -649,11 +650,16 @@ pub fn[M : Material] material_default_bind_group_layout_descriptor(
 }
 
 ///|
+pub fn[M : Material] material_default_bind_group_data(material : M) -> String {
+  material.bind_group().bind_group_data()
+}
+
+///|
 pub fn[M : Material] material_default_material_key(
   material : M,
 ) -> @material.ErasedMaterialKey {
   @material.ErasedMaterialKey::new(
-    material_hash_bind_group_data(material.bind_group().bind_group_data()),
+    material_hash_bind_group_data(material.bind_group_data()),
     "MaterialKey<\{M::material_debug_name()}>",
   )
 }
@@ -817,7 +823,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   let key = MaterialPipelineKey::new(
     material_mesh_pipeline_key(material),
     bind_group.layout_key(),
-    bind_group.bind_group_data(),
+    material.bind_group_data(),
   )
   let render_method = material
     .opaque_render_method()

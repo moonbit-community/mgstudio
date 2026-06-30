@@ -184,6 +184,11 @@ impl @pbr.Material for LineMaterial with fn bind_group_layout_descriptor(self) {
 }
 
 ///|
+impl @pbr.Material for LineMaterial with fn bind_group_data(self) {
+  @pbr.material_default_bind_group_data(self)
+}
+
+///|
 impl @pbr.Material for LineMaterial with fn material_key(self) {
   @pbr.material_default_material_key(self)
 }

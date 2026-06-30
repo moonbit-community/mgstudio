@@ -182,6 +182,12 @@ impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
 }
 
 ///|
+impl Material for ParityCustomMaterial with fn bind_group_data(self) {
+  ignore(self)
+  "parity_custom_material_pipeline_key"
+}
+
+///|
 impl Material for ParityCustomMaterial with fn material_key(self) {
   material_default_material_key(self)
 }
@@ -269,6 +275,35 @@ test "pbr material plugin: prepared material uses material layout descriptor hoo
   inspect(
     layout.label(),
     content="mgstudio_pbr_test::ParityCustomMaterialLayout",
+  )
+}
+
+///|
+test "pbr material plugin: prepared material uses material bind group data hook" {
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material = ParityCustomMaterial::ParityCustomMaterial()
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(7),
+    material,
+    material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Forward,
+  )
+  inspect(
+    material.bind_group().bind_group_data(),
+    content="0:uniform(len=4:1,2,3,4);1:texture(9,float,2d);2:sampler(9)",
+  )
+  inspect(
+    material.bind_group_data(),
+    content="parity_custom_material_pipeline_key",
+  )
+  inspect(
+    prepared.key.bind_group_data(),
+    content="parity_custom_material_pipeline_key",
+  )
+  inspect(
+    prepared.properties().material_key.bits() ==
+    material_default_material_key(material).bits(),
+    content="true",
   )
 }
 
