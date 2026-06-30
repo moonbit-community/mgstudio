@@ -1344,61 +1344,97 @@ fn prepare_wireframe_view_key_cache_system(world : @ecs.World) -> Unit {
 fn specialize_wireframes_system(world : @ecs.World) -> Unit {
   let phases = match world.get_resource(Wireframe3dPhases::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing Wireframe3dPhases resource during pbr wireframe specialization",
+      )
   }
   let view_key_cache = match
     world.get_resource(WireframeViewKeyCache::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing WireframeViewKeyCache resource during pbr wireframe specialization",
+      )
   }
   let pending_wireframe_queues = match
     world.get_resource(PendingWireframeQueues::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing PendingWireframeQueues resource during pbr wireframe specialization",
+      )
   }
   let specialized_wireframe_pipeline_cache = match
     world.get_resource(SpecializedWireframePipelineCache::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing SpecializedWireframePipelineCache resource during pbr wireframe specialization",
+      )
   }
   let specialized_wireframe_mesh_pipelines = match
     world.get_resource(SpecializedWireframeMeshPipelines::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing SpecializedWireframeMeshPipelines resource during pbr wireframe specialization",
+      )
   }
   let render_wireframe_instances = match
     world.get_resource(RenderWireframeInstances::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderWireframeInstances resource during pbr wireframe specialization",
+      )
   }
   let dirty_wireframe_specializations = match
     world.get_resource(DirtyWireframeSpecializations::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing DirtyWireframeSpecializations resource during pbr wireframe specialization",
+      )
   }
   let render_wireframe_assets = match
     world.get_resource(RenderWireframeAssets::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderWireframeAssets resource during pbr wireframe specialization",
+      )
   }
   let render_mesh_instances = match
     world.get_resource(RenderMeshInstances::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderMeshInstances resource during pbr wireframe specialization",
+      )
   }
   let render_mesh_pipeline_data_cache = match
     world.get_resource(WireframeRenderMeshPipelineDataCache::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing WireframeRenderMeshPipelineDataCache resource during pbr wireframe specialization",
+      )
   }
   let pipeline = match world.get_resource(Wireframe3dPipeline::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing Wireframe3dPipeline resource during pbr wireframe specialization",
+      )
   }
   let pipeline_cache = match
     world.get_resource(@render.pipeline_cache_resource_key) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing PipelineCache resource during pbr wireframe specialization",
+      )
   }
   let live_views : Map[UInt64, Bool] = {}
   let mesh_visibility_class = wireframe_mesh_visibility_class()
