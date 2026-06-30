@@ -2097,6 +2097,7 @@ pub fn PendingWireframeQueues::expire_stale_views(Self, Map[UInt64, Bool]) -> Un
 pub fn PendingWireframeQueues::prepare_for_new_frame(Self, @core.Entity) -> ViewPendingWireframeQueues
 pub fn PendingWireframeQueues::prev_len(Self, @core.Entity) -> Int
 pub fn PendingWireframeQueues::push_current(Self, @core.Entity, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn PendingWireframeQueues::view(Self, @core.Entity) -> ViewPendingWireframeQueues?
 pub fn PendingWireframeQueues::view_len(Self) -> Int
 pub fn PendingWireframeQueues::view_or_insert(Self, @core.Entity) -> ViewPendingWireframeQueues
 pub impl @app.Resource for PendingWireframeQueues

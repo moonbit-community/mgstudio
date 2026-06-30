@@ -1453,47 +1453,70 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
 fn queue_wireframes_system(world : @ecs.World) -> Unit {
   let phases = match world.get_resource(Wireframe3dPhases::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort("missing Wireframe3dPhases resource during pbr wireframe queueing")
   }
   let pending_wireframe_queues = match
     world.get_resource(PendingWireframeQueues::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing PendingWireframeQueues resource during pbr wireframe queueing",
+      )
   }
   let specialized_wireframe_pipeline_cache = match
     world.get_resource(SpecializedWireframePipelineCache::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing SpecializedWireframePipelineCache resource during pbr wireframe queueing",
+      )
   }
   let render_wireframe_instances = match
     world.get_resource(RenderWireframeInstances::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderWireframeInstances resource during pbr wireframe queueing",
+      )
   }
   let dirty_wireframe_specializations = match
     world.get_resource(DirtyWireframeSpecializations::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing DirtyWireframeSpecializations resource during pbr wireframe queueing",
+      )
   }
   let render_wireframe_assets = match
     world.get_resource(RenderWireframeAssets::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderWireframeAssets resource during pbr wireframe queueing",
+      )
   }
   let render_mesh_instances = match
     world.get_resource(RenderMeshInstances::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderMeshInstances resource during pbr wireframe queueing",
+      )
   }
   let mesh_allocator = match
     world.get_resource(@render_mesh.MeshAllocator::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort("missing MeshAllocator resource during pbr wireframe queueing")
   }
   let draw_functions = match
     world.get_resource(Wireframe3dDrawFunctions::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing Wireframe3dDrawFunctions resource during pbr wireframe queueing",
+      )
   }
   let gpu_preprocessing_support = wireframe_3d_gpu_preprocessing_support(world)
   let mesh_visibility_class = wireframe_mesh_visibility_class()
@@ -1516,16 +1539,18 @@ fn queue_wireframes_system(world : @ecs.World) -> Unit {
     guard phases.phase(retained_view_entity) is Some(wireframe_phase) else {
       return
     }
-    guard pending_wireframe_queues.contains_view(retained_view_entity) else {
-      return
-    }
     guard visible_entities.value().get(mesh_visibility_class)
       is Some(render_mesh_visible_entities) else {
       return
     }
-    let view_pending_wireframe_queues = pending_wireframe_queues.view_or_insert(
-      retained_view_entity,
-    )
+    let view_pending_wireframe_queues = match
+      pending_wireframe_queues.view(retained_view_entity) {
+      Some(value) => value
+      None =>
+        abort(
+          "missing view PendingWireframeQueues during pbr wireframe queueing",
+        )
+    }
     queue_wireframe_phase_items(
       wireframe_phase,
       retained_view_entity,

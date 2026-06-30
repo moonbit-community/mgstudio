@@ -549,6 +549,11 @@ test "pbr: PendingWireframeQueues moves per-view current frame into prev frame" 
   debug_inspect(view_a_queues.prev_len(), content="2")
   debug_inspect(queues.current_len(view_a), content="0")
   debug_inspect(queues.prev_len(view_a), content="2")
+  debug_inspect(
+    queues.view(view_a).map(fn(value) { value.prev_len() }),
+    content="Some(2)",
+  )
+  debug_inspect(queues.view(@core.Entity::new(99, 1)) is None, content="true")
   debug_inspect(queues.current_len(view_b), content="1")
   debug_inspect(queues.prev_len(view_b), content="0")
 }

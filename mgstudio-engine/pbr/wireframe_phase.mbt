@@ -1039,6 +1039,14 @@ pub fn PendingWireframeQueues::view_or_insert(
 }
 
 ///|
+pub fn PendingWireframeQueues::view(
+  self : PendingWireframeQueues,
+  retained_view_entity : @core.Entity,
+) -> ViewPendingWireframeQueues? {
+  self.views.get(retained_view_entity.to_bits())
+}
+
+///|
 pub fn PendingWireframeQueues::prepare_for_new_frame(
   self : PendingWireframeQueues,
   retained_view_entity : @core.Entity,
