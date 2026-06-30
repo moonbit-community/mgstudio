@@ -512,6 +512,7 @@ pub struct MaterialKeys[M] {
   mesh_material_component : @ecs.ComponentKey[MeshMaterial3dTyped[M]]
   render_material_instances : @ecs.ResourceKey[RenderMaterial3dInstances[M]]
   material_pipeline : @ecs.ResourceKey[MaterialPipeline[M]]
+  material_asset_event_cursor : @ecs.ResourceKey[MaterialAssetEventCursor[M]]
   prepared_render_asset : @render.RenderAssetResourceKeys[PreparedMaterial[M]]
 }
 
@@ -529,10 +530,25 @@ pub fn[M] register_material_keys(
     material_pipeline: @ecs.register_resource(
       debug_name="mgstudio_pbr::MaterialPipeline<\{material_debug_name}>",
     ),
+    material_asset_event_cursor: @ecs.register_resource(
+      debug_name="mgstudio_pbr::MaterialAssetEventCursor<\{material_debug_name}>",
+    ),
     prepared_render_asset: @render.register_render_asset_resource_keys(
       "mgstudio_pbr::PreparedMaterial<\{material_debug_name}>",
     ),
   }
+}
+
+///|
+pub struct MaterialAssetEventCursor[M] {
+  mut cursor : @ecs.MessageCursor[@asset.AssetEvent[M]]
+}
+
+///|
+pub fn[M] MaterialAssetEventCursor::MaterialAssetEventCursor() -> MaterialAssetEventCursor[
+  M,
+] {
+  MaterialAssetEventCursor::{ cursor: @ecs.MessageCursor::MessageCursor() }
 }
 
 ///|
@@ -1021,6 +1037,20 @@ fn[M : Material] ensure_render_material_instances_resource_in_world(
 }
 
 ///|
+fn[M : Material] ensure_material_asset_event_cursor_resource_in_world(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  let key = M::material_keys().material_asset_event_cursor
+  if world.get_resource(key) is None {
+    world.insert_resource(
+      key,
+      MaterialAssetEventCursor::MaterialAssetEventCursor(),
+    )
+  }
+}
+
+///|
 pub fn[M : Material] prepared_material_assets_or_empty(
   world : @ecs.World,
   _probe : @asset.Handle[M],
@@ -1376,6 +1406,7 @@ fn[M : Material + @asset.Asset] material_plugin_build(
     ensure_prepared_material_assets_resource_in_world(render_world, probe)
     ensure_material_pipeline_resource_in_world(render_world, pipeline)
     ensure_render_material_instances_resource_in_world(render_world, probe)
+    ensure_material_asset_event_cursor_resource_in_world(render_world, probe)
     ensure_material_runtime_registry_resource_in_world(render_world)
     register_material_runtime_world(render_world, probe)
     @render.configure_base_render_sets(render_app)
@@ -1560,6 +1591,39 @@ fn[M] mark_entities_using_prepared_material_needing_specialization(
 }
 
 ///|
+fn[M : Material + @asset.Asset] material_asset_changed_ids_since_last_prepare(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> @hashset.HashSet[Int] {
+  let changed_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let event_key : @ecs.MessageKey[@asset.AssetEvent[M]] = @ecs.Message::message()
+  if !source_world.contains_message(event_key) {
+    return changed_ids
+  }
+  ensure_material_asset_event_cursor_resource_in_world(render_world, _probe)
+  let cursor_key = M::material_keys().material_asset_event_cursor
+  guard render_world.get_resource_mut(cursor_key) is Some(cursor_resource) else {
+    return changed_ids
+  }
+  cursor_resource.modify(fn(cursor_state) {
+    let reader = source_world.message_reader(
+      event_key,
+      cursor=cursor_state.cursor,
+    )
+    for event in reader.read() {
+      match event {
+        Added(handle) | Modified(handle) | Removed(handle) =>
+          changed_ids.add(handle.id())
+        Unused(_) | LoadedWithDependencies(_) => ()
+      }
+    }
+    cursor_state.cursor = reader.cursor()
+  })
+  changed_ids
+}
+
+///|
 fn[M : Material + @asset.Asset] prepare_material_assets_system(
   world : @ecs.World,
   _probe : @asset.Handle[M],
@@ -1585,6 +1649,9 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     Some(global_value) => global_value.source_system_ticks(source_world)
     None => @core.SystemTicks::new(0, source_world.read_change_tick())
   }
+  let changed_material_ids = material_asset_changed_ids_since_last_prepare(
+    source_world, world, _probe,
+  )
   let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
   for _, material_handle in instances.instances {
     let material_id = material_handle.id()
@@ -1592,7 +1659,18 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
       continue
     }
     prepared_ids.add(material_id)
-    guard source_assets.get(material_handle) is Some(material) else { continue }
+    let material_changed = changed_material_ids.contains(material_id)
+    guard source_assets.get(material_handle) is Some(material) else {
+      if material_changed {
+        mark_entities_using_prepared_material_needing_specialization(
+          world,
+          instances,
+          material_id,
+          system_ticks.this_run,
+        )
+      }
+      continue
+    }
     let was_prepared = prepared_assets.peek().contains(material_id)
     prepared_assets.modify(fn(value) {
       value.insert(
@@ -1601,7 +1679,7 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
       )
     })
     prepare_material_binding_for_prepared_asset(world, _probe, material_id)
-    if !was_prepared {
+    if !was_prepared || material_changed {
       mark_entities_using_prepared_material_needing_specialization(
         world,
         instances,

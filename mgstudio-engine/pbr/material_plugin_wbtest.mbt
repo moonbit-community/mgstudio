@@ -551,6 +551,78 @@ test "pbr material plugin: first prepared typed material marks specialization di
 }
 
 ///|
+test "pbr material plugin: changed typed material asset marks specialization dirty once" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  @asset.asset_update_event_messages(world)
+  ensure_prepared_material_assets_resource_in_world(world, probe)
+  ensure_material_pipeline_resource_in_world(
+    world,
+    material_pipeline_from_material_hooks(probe),
+  )
+  ensure_render_material_instances_resource_in_world(world, probe)
+  ensure_material_asset_event_cursor_resource_in_world(world, probe)
+  world.insert_resource(
+    ecs_key_render_material_instances,
+    RenderMaterialInstances::RenderMaterialInstances(),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  extract_mesh_materials_system(world, probe)
+  prepare_material_assets_system(world, probe)
+  match
+    world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => dirty.modify(fn(value) { value.clear() })
+    None => abort("missing DirtySpecializations")
+  }
+  prepare_material_assets_system(world, probe)
+  match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => debug_inspect(dirty.changed_len(), content="0")
+    None => abort("missing DirtySpecializations")
+  }
+  match world.get_resource_mut(@asset.assets_resource_key()) {
+    Some(assets) =>
+      assets.modify(fn(value) {
+        ignore(
+          value.set(material_handle, ParityCustomMaterial::{
+            color: Bytes::makei(4, fn(index) { (index + 5).to_byte() }),
+            texture: Some(@asset.Handle::new(11)),
+          }),
+        )
+      })
+    None => abort("missing material assets")
+  }
+  @asset.asset_update_event_messages(world)
+  prepare_material_assets_system(world, probe)
+  match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(dirty) => {
+      debug_inspect(dirty.changed_len(), content="1")
+      debug_inspect(
+        dirty.changed_contains(@render.MainEntity::new(entity)),
+        content="true",
+      )
+    }
+    None => abort("missing DirtySpecializations")
+  }
+}
+
+///|
 test "pbr material plugin: runtime registry resolves typed material properties" {
   let world = @ecs.World::new()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)

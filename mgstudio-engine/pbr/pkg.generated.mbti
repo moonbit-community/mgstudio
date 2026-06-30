@@ -1629,6 +1629,11 @@ pub struct MaterialAllocatorDiagnosticsSnapshot {
 }
 pub fn MaterialAllocatorDiagnosticsSnapshot::MaterialAllocatorDiagnosticsSnapshot() -> Self
 
+pub struct MaterialAssetEventCursor[M] {
+  mut cursor : @ecs.MessageCursor[@asset.AssetEvent[M]]
+}
+pub fn[M] MaterialAssetEventCursor::MaterialAssetEventCursor() -> Self[M]
+
 pub struct MaterialBindGroup {
   bindings : Array[MaterialBinding]
 }
@@ -1772,6 +1777,7 @@ pub struct MaterialKeys[M] {
   mesh_material_component : @ecs.ComponentKey[MeshMaterial3dTyped[M]]
   render_material_instances : @ecs.ResourceKey[RenderMaterial3dInstances[M]]
   material_pipeline : @ecs.ResourceKey[MaterialPipeline[M]]
+  material_asset_event_cursor : @ecs.ResourceKey[MaterialAssetEventCursor[M]]
   prepared_render_asset : @Milky2018/mgstudio/render.RenderAssetResourceKeys[PreparedMaterial[M]]
 }
 
