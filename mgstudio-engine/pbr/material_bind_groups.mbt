@@ -33,6 +33,64 @@ pub impl @app.Resource for FallbackBindlessResources with fn resource() {
 }
 
 ///|
+pub struct StandardMaterialTextureFeatureSet {
+  pbr_transmission_textures : Bool
+  pbr_multi_layer_material_textures : Bool
+  pbr_anisotropy_texture : Bool
+  pbr_specular_textures : Bool
+} derive(Eq, Debug)
+
+///|
+pub fn StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+  pbr_transmission_textures? : Bool = false,
+  pbr_multi_layer_material_textures? : Bool = false,
+  pbr_anisotropy_texture? : Bool = false,
+  pbr_specular_textures? : Bool = false,
+) -> StandardMaterialTextureFeatureSet {
+  StandardMaterialTextureFeatureSet::{
+    pbr_transmission_textures,
+    pbr_multi_layer_material_textures,
+    pbr_anisotropy_texture,
+    pbr_specular_textures,
+  }
+}
+
+///|
+pub fn standard_material_default_texture_feature_set() -> StandardMaterialTextureFeatureSet {
+  StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    pbr_anisotropy_texture=true,
+  )
+}
+
+///|
+pub fn StandardMaterialTextureFeatureSet::pbr_transmission_textures(
+  self : StandardMaterialTextureFeatureSet,
+) -> Bool {
+  self.pbr_transmission_textures
+}
+
+///|
+pub fn StandardMaterialTextureFeatureSet::pbr_multi_layer_material_textures(
+  self : StandardMaterialTextureFeatureSet,
+) -> Bool {
+  self.pbr_multi_layer_material_textures
+}
+
+///|
+pub fn StandardMaterialTextureFeatureSet::pbr_anisotropy_texture(
+  self : StandardMaterialTextureFeatureSet,
+) -> Bool {
+  self.pbr_anisotropy_texture
+}
+
+///|
+pub fn StandardMaterialTextureFeatureSet::pbr_specular_textures(
+  self : StandardMaterialTextureFeatureSet,
+) -> Bool {
+  self.pbr_specular_textures
+}
+
+///|
 pub fn FallbackBindlessResources::filtering_sampler(
   self : FallbackBindlessResources,
 ) -> @wgpu.Sampler {
@@ -120,11 +178,58 @@ pub fn init_fallback_bindless_resources(world : @ecs.World) -> Unit {
 // Bevy source: `bevy/crates/bevy_pbr/src/pbr_material.rs`
 // `StandardMaterial` derives `AsBindGroup` with the binding indices mirrored
 // here for the descriptor-level material pipeline specializer.
-pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLayoutDescriptor {
+fn standard_material_texture_layout_entry(
+  binding : Int,
+  fragment : UInt,
+) -> @render_resource.BindGroupLayoutEntry {
+  @render_resource.BindGroupLayoutEntry::new(
+    binding,
+    fragment,
+    @render_resource.BindingType::TextureBinding(
+      @render_resource.TextureSampleType::Float(true),
+      @render_resource.TextureViewDimension::D2,
+      false,
+    ),
+  )
+}
+
+///|
+fn standard_material_sampler_layout_entry(
+  binding : Int,
+  fragment : UInt,
+) -> @render_resource.BindGroupLayoutEntry {
+  @render_resource.BindGroupLayoutEntry::new(
+    binding,
+    fragment,
+    @render_resource.BindingType::SamplerBinding(
+      @render_resource.SamplerBindingType::Filtering,
+    ),
+  )
+}
+
+///|
+fn standard_material_push_texture_sampler_layout_pair(
+  entries : Array[@render_resource.BindGroupLayoutEntry],
+  texture_binding : Int,
+  sampler_binding : Int,
+  fragment : UInt,
+) -> Unit {
+  entries.push(
+    standard_material_texture_layout_entry(texture_binding, fragment),
+  )
+  entries.push(
+    standard_material_sampler_layout_entry(sampler_binding, fragment),
+  )
+}
+
+///|
+pub fn standard_material_bind_group_layout_descriptor(
+  features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
+) -> @material.BindGroupLayoutDescriptor {
   let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
   let material_uniform_visibility = (@wgpu.SHADER_STAGE_VERTEX |
   @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
-  @material.BindGroupLayoutDescriptor::new("StandardMaterial", [
+  let entries : Array[@render_resource.BindGroupLayoutEntry] = [
     @render_resource.BindGroupLayoutEntry::new(
       0,
       material_uniform_visibility,
@@ -134,119 +239,49 @@ pub fn standard_material_bind_group_layout_descriptor() -> @material.BindGroupLa
         192UL,
       ),
     ),
-    @render_resource.BindGroupLayoutEntry::new(
-      1,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      2,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      3,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      4,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      5,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      6,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      7,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      8,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      9,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      10,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      11,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      12,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      13,
-      fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
-    ),
-    @render_resource.BindGroupLayoutEntry::new(
-      14,
-      fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
-    ),
-  ])
+  ]
+  standard_material_push_texture_sampler_layout_pair(entries, 1, 2, fragment)
+  standard_material_push_texture_sampler_layout_pair(entries, 3, 4, fragment)
+  standard_material_push_texture_sampler_layout_pair(entries, 5, 6, fragment)
+  standard_material_push_texture_sampler_layout_pair(entries, 7, 8, fragment)
+  standard_material_push_texture_sampler_layout_pair(entries, 9, 10, fragment)
+  standard_material_push_texture_sampler_layout_pair(entries, 11, 12, fragment)
+  if features.pbr_anisotropy_texture() {
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 13, 14, fragment,
+    )
+  }
+  if features.pbr_transmission_textures() {
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 15, 16, fragment,
+    )
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 17, 18, fragment,
+    )
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 19, 20, fragment,
+    )
+  }
+  if features.pbr_multi_layer_material_textures() {
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 21, 22, fragment,
+    )
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 23, 24, fragment,
+    )
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 25, 26, fragment,
+    )
+  }
+  if features.pbr_specular_textures() {
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 27, 28, fragment,
+    )
+    standard_material_push_texture_sampler_layout_pair(
+      entries, 29, 30, fragment,
+    )
+  }
+  @material.BindGroupLayoutDescriptor::new("StandardMaterial", entries)
 }
 
 ///|

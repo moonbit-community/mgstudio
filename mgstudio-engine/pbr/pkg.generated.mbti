@@ -926,11 +926,13 @@ pub fn standard_material_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets
 
 pub fn standard_material_bind_group_allocator_install_plan(Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
 
-pub fn standard_material_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDescriptor
+pub fn standard_material_bind_group_layout_descriptor(features? : StandardMaterialTextureFeatureSet) -> @render_resource.BindGroupLayoutDescriptor
 
 pub fn standard_material_bindless_slot_count() -> Int?
 
 pub fn standard_material_bindless_supported(@renderer.RenderDevice) -> Bool
+
+pub fn standard_material_default_texture_feature_set() -> StandardMaterialTextureFeatureSet
 
 pub fn standard_material_from_gltf_material(@material.StandardMaterial) -> @material.StandardMaterial
 
@@ -2048,8 +2050,9 @@ pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
   binding_arrays_are_usable : Bool
   clustered_decals_are_usable : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
-pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool, clustered_decals_are_usable? : Bool) -> Self
+pub fn PbrMaterialPipelineSpecializer::new(@material.MaterialProperties, binding_arrays_are_usable? : Bool, clustered_decals_are_usable? : Bool, standard_material_texture_features? : StandardMaterialTextureFeatureSet) -> Self
 pub fn PbrMaterialPipelineSpecializer::specialize(Self, @material.ErasedMaterialPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 
 pub(all) struct PbrPlugin {
@@ -2914,6 +2917,18 @@ pub struct StandardMaterialPluginState {
 pub fn StandardMaterialPluginState::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 pub fn StandardMaterialPluginState::plan(Self) -> StandardMaterialPluginPlan
+
+pub struct StandardMaterialTextureFeatureSet {
+  pbr_transmission_textures : Bool
+  pbr_multi_layer_material_textures : Bool
+  pbr_anisotropy_texture : Bool
+  pbr_specular_textures : Bool
+} derive(Eq, @debug.Debug)
+pub fn StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(pbr_transmission_textures? : Bool, pbr_multi_layer_material_textures? : Bool, pbr_anisotropy_texture? : Bool, pbr_specular_textures? : Bool) -> Self
+pub fn StandardMaterialTextureFeatureSet::pbr_anisotropy_texture(Self) -> Bool
+pub fn StandardMaterialTextureFeatureSet::pbr_multi_layer_material_textures(Self) -> Bool
+pub fn StandardMaterialTextureFeatureSet::pbr_specular_textures(Self) -> Bool
+pub fn StandardMaterialTextureFeatureSet::pbr_transmission_textures(Self) -> Bool
 
 pub struct StandardMaterialUniform {
   base_color : @math.Vec4

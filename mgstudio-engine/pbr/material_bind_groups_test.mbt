@@ -132,6 +132,34 @@ test "render3d: standard material allocator install plan carries layout descript
 }
 
 ///|
+test "render3d: standard material layout derives optional texture feature gates" {
+  let no_optional = standard_material_bind_group_layout_descriptor(
+    features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(),
+  )
+  debug_inspect(no_optional.entries().length(), content="13")
+  inspect(no_optional.entries()[12].binding(), content="12")
+
+  let default_features = standard_material_bind_group_layout_descriptor()
+  debug_inspect(default_features.entries().length(), content="15")
+  inspect(default_features.entries()[13].binding(), content="13")
+  inspect(default_features.entries()[14].binding(), content="14")
+
+  let all_optional = standard_material_bind_group_layout_descriptor(
+    features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+      pbr_transmission_textures=true,
+      pbr_multi_layer_material_textures=true,
+      pbr_anisotropy_texture=true,
+      pbr_specular_textures=true,
+    ),
+  )
+  debug_inspect(all_optional.entries().length(), content="31")
+  inspect(all_optional.entries()[15].binding(), content="15")
+  inspect(all_optional.entries()[21].binding(), content="21")
+  inspect(all_optional.entries()[27].binding(), content="27")
+  inspect(all_optional.entries()[30].binding(), content="30")
+}
+
+///|
 test "render3d: standard material allocator install chooses bindless mode from bevy rule" {
   let bindless_allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   let bindless_plan = bindless_allocators.install_standard_material(

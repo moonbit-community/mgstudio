@@ -165,33 +165,22 @@ fn pbr_shader_def_int(name : String, value : Int) -> @material.ShaderDefVal {
 }
 
 ///|
-const PBR_FEATURE_TRANSMISSION_TEXTURES_ENABLED : Bool = false
-
-///|
-const PBR_FEATURE_MULTI_LAYER_MATERIAL_TEXTURES_ENABLED : Bool = false
-
-///|
-const PBR_FEATURE_ANISOTROPY_TEXTURE_ENABLED : Bool = true
-
-///|
-const PBR_FEATURE_SPECULAR_TEXTURES_ENABLED : Bool = false
-
-///|
 fn pbr_push_standard_material_feature_shader_defs(
   shader_defs : Array[@material.ShaderDefVal],
+  features : StandardMaterialTextureFeatureSet,
 ) -> Unit {
-  if PBR_FEATURE_TRANSMISSION_TEXTURES_ENABLED {
+  if features.pbr_transmission_textures() {
     shader_defs.push(pbr_shader_def("PBR_TRANSMISSION_TEXTURES_SUPPORTED"))
   }
-  if PBR_FEATURE_MULTI_LAYER_MATERIAL_TEXTURES_ENABLED {
+  if features.pbr_multi_layer_material_textures() {
     shader_defs.push(
       pbr_shader_def("PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED"),
     )
   }
-  if PBR_FEATURE_ANISOTROPY_TEXTURE_ENABLED {
+  if features.pbr_anisotropy_texture() {
     shader_defs.push(pbr_shader_def("PBR_ANISOTROPY_TEXTURE_SUPPORTED"))
   }
-  if PBR_FEATURE_SPECULAR_TEXTURES_ENABLED {
+  if features.pbr_specular_textures() {
     shader_defs.push(pbr_shader_def("PBR_SPECULAR_TEXTURES_SUPPORTED"))
   }
 }
@@ -876,6 +865,7 @@ fn pbr_mesh_pipeline_descriptor(
   layout : @material.MaterialMeshVertexLayout,
   binding_arrays_are_usable : Bool,
   clustered_decals_are_usable : Bool,
+  standard_material_texture_features : StandardMaterialTextureFeatureSet,
 ) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
   let mesh_key_bits = mesh_key.downcast_u64("MeshPipelineKey")
   let shader_defs : Array[@material.ShaderDefVal] = []
@@ -933,7 +923,9 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     )
   }
-  pbr_push_standard_material_feature_shader_defs(shader_defs)
+  pbr_push_standard_material_feature_shader_defs(
+    shader_defs, standard_material_texture_features,
+  )
   if !pbr_mesh_key_msaa_samples_is_one(mesh_key_bits) {
     shader_defs.push(pbr_shader_def("MULTISAMPLED"))
   }
@@ -1344,6 +1336,7 @@ pub struct PbrMaterialPipelineSpecializer {
   properties : @material.MaterialProperties
   binding_arrays_are_usable : Bool
   clustered_decals_are_usable : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 
 ///|
@@ -1351,11 +1344,13 @@ pub fn PbrMaterialPipelineSpecializer::new(
   properties : @material.MaterialProperties,
   binding_arrays_are_usable? : Bool = false,
   clustered_decals_are_usable? : Bool = false,
+  standard_material_texture_features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> PbrMaterialPipelineSpecializer {
   PbrMaterialPipelineSpecializer::{
     properties,
     binding_arrays_are_usable,
     clustered_decals_are_usable,
+    standard_material_texture_features,
   }
 }
 
@@ -1370,6 +1365,7 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
     layout,
     self.binding_arrays_are_usable,
     self.clustered_decals_are_usable,
+    self.standard_material_texture_features,
   )
   descriptor.vertex.shader_defs.push(
     pbr_shader_def_uint(

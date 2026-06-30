@@ -270,6 +270,61 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
 }
 
 ///|
+test "pbr material pipeline optional texture feature set controls shader defs" {
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(
+      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+    ),
+  )
+  let no_optional_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    properties,
+    standard_material_texture_features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(),
+  ).specialize(
+    pbr_material_specializer_test_key(),
+    pbr_material_specializer_test_layout(),
+  )
+  for
+    shader_def in [
+      "PBR_TRANSMISSION_TEXTURES_SUPPORTED", "PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED",
+      "PBR_ANISOTROPY_TEXTURE_SUPPORTED", "PBR_SPECULAR_TEXTURES_SUPPORTED",
+    ] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        no_optional_descriptor.vertex.shader_defs,
+        shader_def,
+      ),
+      content="false",
+    )
+  }
+
+  let all_optional_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    properties,
+    standard_material_texture_features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+      pbr_transmission_textures=true,
+      pbr_multi_layer_material_textures=true,
+      pbr_anisotropy_texture=true,
+      pbr_specular_textures=true,
+    ),
+  ).specialize(
+    pbr_material_specializer_test_key(),
+    pbr_material_specializer_test_layout(),
+  )
+  for
+    shader_def in [
+      "PBR_TRANSMISSION_TEXTURES_SUPPORTED", "PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED",
+      "PBR_ANISOTROPY_TEXTURE_SUPPORTED", "PBR_SPECULAR_TEXTURES_SUPPORTED",
+    ] {
+    debug_inspect(
+      pbr_material_specializer_shader_defs_contain_flag(
+        all_optional_descriptor.vertex.shader_defs,
+        shader_def,
+      ),
+      content="true",
+    )
+  }
+}
+
+///|
 test "pbr material pipeline specializer mirrors bevy view projection shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(
