@@ -77,3 +77,37 @@ test "compile package does not auto-register entry shaders as import modules" {
   }
   debug_inspect(source.contains("return 2u"), content="true")
 }
+
+///|
+test "compile package invalidates persistent shader cache after source update" {
+  clear_registered_shader_sources()
+  register_shader_source(
+    "shader/compile/live_util.wgsl", "#define_import_path test::live_util\nfn value() -> u32 { return 1u; }\n",
+  )
+  register_shader_source(
+    "shader/compile/live_root.wgsl", "#import test::live_util::value\nfn root() -> u32 { return value(); }\n",
+  )
+  let first = load_preprocessed_wgsl(
+    "",
+    "shader/compile/live_root.wgsl",
+    @hashmap.HashMap([]),
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(first.contains("return 1u"), content="true")
+
+  register_shader_source(
+    "shader/compile/live_util.wgsl", "#define_import_path test::live_util\nfn value() -> u32 { return 7u; }\n",
+  )
+  let second = load_preprocessed_wgsl(
+    "",
+    "shader/compile/live_root.wgsl",
+    @hashmap.HashMap([]),
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(second.contains("return 7u"), content="true")
+  debug_inspect(second.contains("return 1u"), content="false")
+}

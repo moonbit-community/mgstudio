@@ -99,6 +99,8 @@ fn shader_compile_error_from_composer(
 priv struct ShaderCompileRuntimeState {
   mut startup_sources_registered : Bool
   composed_cache : Array[ShaderCompileCacheEntry]
+  mut composer : @wgsl_compose.Composer?
+  mut source_registry_fingerprint : String?
 }
 
 ///|
@@ -111,6 +113,8 @@ priv struct ShaderCompileCacheEntry {
 let shader_compile_runtime_state : ShaderCompileRuntimeState = {
   startup_sources_registered: false,
   composed_cache: [],
+  composer: None,
+  source_registry_fingerprint: None,
 }
 
 ///|
@@ -125,19 +129,6 @@ pub fn ensure_startup_shader_sources_once(register : () -> Unit) -> Unit {
   }
   register()
   shader_compile_runtime_state.startup_sources_registered = true
-}
-
-///|
-fn runtime_composer(
-  assets_base : String,
-  root_rel_path : String?,
-) -> @wgsl_compose.Composer {
-  ignore(assets_base)
-  let composer = @wgsl_compose.Composer::default()
-  composer.register_source_files(
-    @shader_source.embedded_shader_composer_source_files(root_rel_path),
-  )
-  composer
 }
 
 ///|
@@ -200,6 +191,34 @@ fn shader_compile_cache_key(
 }
 
 ///|
+fn shader_compile_source_registry_fingerprint() -> String {
+  match shader_compile_runtime_state.source_registry_fingerprint {
+    Some(fingerprint) => return fingerprint
+    None => ()
+  }
+  let files = @shader_source.embedded_shader_source_files()
+  files.sort_by(fn(left, right) { left.rel_path.compare(right.rel_path) })
+  let parts : Array[String] = []
+  for file in files {
+    parts.push("\{file.rel_path}:\{file.source.length()}:\{file.source.hash()}")
+  }
+  let joined = parts.join("|")
+  let fingerprint = "count=\{files.length()}|hash=\{joined.hash()}"
+  shader_compile_runtime_state.source_registry_fingerprint = Some(fingerprint)
+  fingerprint
+}
+
+///|
+fn shader_compile_full_cache_key(
+  assets_base : String,
+  target : ShaderCompileTarget,
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
+) -> String {
+  "\{shader_compile_cache_key(assets_base, target, defines, value_defines)}|registry=\{shader_compile_source_registry_fingerprint()}"
+}
+
+///|
 fn shader_compile_cache_get(key : String) -> String? {
   for entry in shader_compile_runtime_state.composed_cache {
     if entry.key == key {
@@ -222,11 +241,64 @@ pub fn clear_registered_shader_sources() -> Unit {
   @shader_source.clear_embedded_shader_sources()
   shader_compile_runtime_state.startup_sources_registered = false
   shader_compile_runtime_state.composed_cache.clear()
+  shader_compile_runtime_state.composer = None
+  shader_compile_runtime_state.source_registry_fingerprint = None
 }
 
 ///|
 pub fn register_shader_source(rel_path : String, source : String) -> Unit {
   @shader_source.load_embedded_shader_source(rel_path, source)
+  shader_compile_runtime_state.composed_cache.clear()
+  shader_compile_runtime_state.composer = None
+  shader_compile_runtime_state.source_registry_fingerprint = None
+}
+
+///|
+fn shader_compile_module_descriptor(
+  file : @shader_source.ShaderSourceFile,
+) -> @wgsl_common.ComposableModuleDescriptor {
+  @wgsl_common.ComposableModuleDescriptor::{
+    source: file.source,
+    file_path: file.rel_path,
+    as_name: None,
+    additional_imports: [],
+    shader_defs: Map([]),
+  }
+}
+
+///|
+fn shader_compile_register_composable_module_if_present(
+  composer : @wgsl_compose.Composer,
+  file : @shader_source.ShaderSourceFile,
+) -> Unit raise ShaderCompileError {
+  ignore(composer.add_composable_module(shader_compile_module_descriptor(file))) catch {
+    NoModuleName(_) => ()
+    err => raise shader_compile_error_from_composer(err)
+  }
+}
+
+///|
+fn shader_compile_build_composer() -> @wgsl_compose.Composer raise ShaderCompileError {
+  let composer = @wgsl_compose.Composer::default()
+  let files = @shader_source.embedded_shader_source_files()
+  files.sort_by(fn(left, right) { left.rel_path.compare(right.rel_path) })
+  composer.register_source_files(files)
+  for file in files {
+    shader_compile_register_composable_module_if_present(composer, file)
+  }
+  composer
+}
+
+///|
+fn shader_compile_composer() -> @wgsl_compose.Composer raise ShaderCompileError {
+  match shader_compile_runtime_state.composer {
+    Some(composer) => composer
+    None => {
+      let composer = shader_compile_build_composer()
+      shader_compile_runtime_state.composer = Some(composer)
+      composer
+    }
+  }
 }
 
 ///|
@@ -284,7 +356,7 @@ pub fn preprocess_shader_source(
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> String raise ShaderCompileError {
-  let key = shader_compile_cache_key(
+  let key = shader_compile_full_cache_key(
     assets_base,
     ShaderCompileTarget::Source(source),
     defines,
@@ -294,9 +366,8 @@ pub fn preprocess_shader_source(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composed = runtime_composer(assets_base, None).compose_wgsl_source(
-    source, options,
-  ) catch {
+  let composer = shader_compile_composer()
+  let composed = composer.compose_wgsl_source(source, options) catch {
     err => raise shader_compile_error_from_composer(err)
   }
   shader_compile_cache_insert(key, composed)
@@ -310,7 +381,7 @@ pub fn load_preprocessed_wgsl(
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> String raise ShaderCompileError {
-  let key = shader_compile_cache_key(
+  let key = shader_compile_full_cache_key(
     assets_base,
     ShaderCompileTarget::Path(rel),
     defines,
@@ -320,9 +391,8 @@ pub fn load_preprocessed_wgsl(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composed = runtime_composer(assets_base, Some(rel)).compose_wgsl(
-    rel, options,
-  ) catch {
+  let composer = shader_compile_composer()
+  let composed = composer.compose_wgsl(rel, options) catch {
     err => raise shader_compile_error_from_composer(err)
   }
   shader_compile_cache_insert(key, composed)
