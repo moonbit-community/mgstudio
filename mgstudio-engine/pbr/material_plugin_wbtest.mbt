@@ -182,6 +182,11 @@ impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
 }
 
 ///|
+impl Material for ParityCustomMaterial with fn material_key(self) {
+  material_default_material_key(self)
+}
+
+///|
 impl Material for ParityCustomMaterial with fn specialize(
   descriptor,
   layout,
@@ -241,6 +246,10 @@ test "pbr material plugin: prepared material carries shader hooks and typed bind
   debug_inspect(
     prepared.properties().get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/tonemapping_test_patterns.wgsl\")",
+  )
+  inspect(
+    prepared.properties().material_key.type_tag(),
+    content="MaterialKey<mgstudio_pbr_test::ParityCustomMaterial>",
   )
   inspect(prepared.bind_group_data().entries().length(), content="3")
 }

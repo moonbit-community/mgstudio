@@ -265,6 +265,11 @@ impl @pbr.Material for ColorGradientMaterial with fn bind_group_layout_descripto
 }
 
 ///|
+impl @pbr.Material for ColorGradientMaterial with fn material_key(self) {
+  @pbr.material_default_material_key(self)
+}
+
+///|
 impl @pbr.Material for ColorGradientMaterial with fn specialize(
   descriptor,
   layout,

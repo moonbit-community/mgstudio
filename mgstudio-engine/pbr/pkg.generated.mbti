@@ -558,6 +558,8 @@ pub fn material_default_enable_shadows() -> Bool
 
 pub fn material_default_fragment_shader() -> String?
 
+pub fn[M : Material] material_default_material_key(M) -> @material.ErasedMaterialKey
+
 pub fn material_default_opaque_render_method() -> @material.OpaqueRendererMethod
 
 pub fn material_default_reads_view_transmission_texture() -> Bool
@@ -3643,6 +3645,7 @@ pub(open) trait Material {
   fn bindless_slot_count() -> Int?
   fn bind_group(Self) -> MaterialBindGroup
   fn bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
+  fn material_key(Self) -> @material.ErasedMaterialKey
   fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor
 }
 
