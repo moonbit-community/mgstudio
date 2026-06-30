@@ -341,6 +341,10 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
     .with_occlusion_texture(Some(@asset.Handle::new(14)))
     .with_depth_map(Some(@asset.Handle::new(15)))
     .with_anisotropy_texture(Some(@asset.Handle::new(16)))
+    .with_clearcoat_texture(Some(@asset.Handle::new(17)))
+    .with_clearcoat_roughness_texture(Some(@asset.Handle::new(18)))
+    .with_clearcoat_normal_texture(Some(@asset.Handle::new(19)))
+    .with_specular_tint_texture(Some(@asset.Handle::new(20)))
   let prepared = PreparedMaterial::from_material(
     @asset.Handle::new(31),
     material,
@@ -348,7 +352,7 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
     @material.OpaqueRendererMethod::Forward,
   )
   let entries = prepared.bind_group_data().entries()
-  inspect(entries.length(), content="15")
+  inspect(entries.length(), content="31")
   match entries[0].resource() {
     @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) =>
       inspect(bytes.length(), content="192")
@@ -379,6 +383,72 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
       inspect(id, content="16")
     _ => inspect(false, content="true")
   }
+  match entries[15].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="-1")
+    _ => inspect(false, content="true")
+  }
+  match entries[21].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="17")
+    _ => inspect(false, content="true")
+  }
+  match entries[25].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="19")
+    _ => inspect(false, content="true")
+  }
+  match entries[29].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
+      inspect(id, content="20")
+    _ => inspect(false, content="true")
+  }
+  match entries[30].resource() {
+    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
+      inspect(id, content="20")
+    _ => inspect(false, content="true")
+  }
+}
+
+///|
+test "pbr material: generic standard material uniform flags carry represented feature textures" {
+  let material = @material.StandardMaterial::StandardMaterial()
+    .with_clearcoat_texture(Some(@asset.Handle::new(1)))
+    .with_clearcoat_roughness_texture(Some(@asset.Handle::new(2)))
+    .with_clearcoat_normal_texture(Some(@asset.Handle::new(3)))
+    .with_anisotropy_texture(Some(@asset.Handle::new(4)))
+    .with_specular_tint_texture(Some(@asset.Handle::new(5)))
+  let flags = pbr_material_test_prepared_standard_material_flags(material)
+  inspect(
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_TEXTURE_BIT) != 0U,
+    content="true",
+  )
+  inspect(
+    (
+      flags &
+      @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_ROUGHNESS_TEXTURE_BIT
+    ) !=
+    0U,
+    content="true",
+  )
+  inspect(
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_CLEARCOAT_NORMAL_TEXTURE_BIT) !=
+    0U,
+    content="true",
+  )
+  inspect(
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT) != 0U,
+    content="true",
+  )
+  inspect(
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT) !=
+    0U,
+    content="true",
+  )
+  inspect(
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT) != 0U,
+    content="false",
+  )
 }
 
 ///|
