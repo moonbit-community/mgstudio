@@ -165,6 +165,38 @@ fn pbr_shader_def_int(name : String, value : Int) -> @material.ShaderDefVal {
 }
 
 ///|
+const PBR_FEATURE_TRANSMISSION_TEXTURES_ENABLED : Bool = false
+
+///|
+const PBR_FEATURE_MULTI_LAYER_MATERIAL_TEXTURES_ENABLED : Bool = false
+
+///|
+const PBR_FEATURE_ANISOTROPY_TEXTURE_ENABLED : Bool = true
+
+///|
+const PBR_FEATURE_SPECULAR_TEXTURES_ENABLED : Bool = false
+
+///|
+fn pbr_push_standard_material_feature_shader_defs(
+  shader_defs : Array[@material.ShaderDefVal],
+) -> Unit {
+  if PBR_FEATURE_TRANSMISSION_TEXTURES_ENABLED {
+    shader_defs.push(pbr_shader_def("PBR_TRANSMISSION_TEXTURES_SUPPORTED"))
+  }
+  if PBR_FEATURE_MULTI_LAYER_MATERIAL_TEXTURES_ENABLED {
+    shader_defs.push(
+      pbr_shader_def("PBR_MULTI_LAYER_MATERIAL_TEXTURES_SUPPORTED"),
+    )
+  }
+  if PBR_FEATURE_ANISOTROPY_TEXTURE_ENABLED {
+    shader_defs.push(pbr_shader_def("PBR_ANISOTROPY_TEXTURE_SUPPORTED"))
+  }
+  if PBR_FEATURE_SPECULAR_TEXTURES_ENABLED {
+    shader_defs.push(pbr_shader_def("PBR_SPECULAR_TEXTURES_SUPPORTED"))
+  }
+}
+
+///|
 fn pbr_push_view_projection_shader_def(
   mesh_key_bits : UInt64,
   shader_defs : Array[@material.ShaderDefVal],
@@ -901,7 +933,7 @@ fn pbr_mesh_pipeline_descriptor(
       ),
     )
   }
-  shader_defs.push(pbr_shader_def("PBR_ANISOTROPY_TEXTURE_SUPPORTED"))
+  pbr_push_standard_material_feature_shader_defs(shader_defs)
   if !pbr_mesh_key_msaa_samples_is_one(mesh_key_bits) {
     shader_defs.push(pbr_shader_def("MULTISAMPLED"))
   }
