@@ -271,9 +271,12 @@ fn render3d_execute_camera_prepass(
     if deferred_prepass_enabled && !mesh_deferred_prepass {
       continue
     }
-    let material_pipeline_id = render3d_prewarm_prepass_material_pipeline(
-      world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled, deferred_prepass_enabled,
-    )
+    guard render3d_prewarm_prepass_material_pipeline(
+        world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled, deferred_prepass_enabled,
+      )
+      is Some(material_pipeline_id) else {
+      continue
+    }
     let motion_vector_indexed = mesh.mesh_is_indexed
     let motion_vector_indirect_parameters_index = if motion_vector_indexed {
       indexed_indirect_parameter_indices[draw_item_index]

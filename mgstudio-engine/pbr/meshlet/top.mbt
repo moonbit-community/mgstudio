@@ -1325,8 +1325,8 @@ fn meshlet_host_material_shade_draw_entry(
     0U,
     0,
     specular_texture_id~,
-    material_pipeline_id=Some(
-      @render_resource.CachedRenderPipelineId::new(material_pipeline_id),
+    material_pipeline_id=@render_resource.CachedRenderPipelineId::new(
+      material_pipeline_id,
     ),
   )
   @renderer.host_meshlet_material_shade_draw_entry(

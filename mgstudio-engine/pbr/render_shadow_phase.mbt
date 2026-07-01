@@ -582,7 +582,7 @@ fn render3d_execute_shadow_phase_view(
       0.0F,
       render3d_mesh_flags(extracted_shadow_mesh),
       0,
-      material_pipeline_id=Some(phase_item.cached_pipeline()),
+      material_pipeline_id=phase_item.cached_pipeline(),
       material_extension_bind_group_data=material_bind_group_data,
       skinning_key_hi=shadow_mesh.skinning_key_hi,
       skinning_key_lo=if shadow_mesh.skinning_key_hi >= 0 { 0 } else { -1 },

@@ -305,7 +305,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   vertex_shader_path : String?
   fragment_shader_path : String?
   material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData
-  material_pipeline_id : @material.CachedRenderPipelineId?
+  material_pipeline_id : @material.CachedRenderPipelineId
   skinning_key_hi : Int
   skinning_key_lo : Int
   morph_weights_index : Int
@@ -429,7 +429,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
   material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-  material_pipeline_id? : @material.CachedRenderPipelineId? = None,
+  material_pipeline_id~ : @material.CachedRenderPipelineId,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
   morph_weights_index? : Int = -1,
@@ -735,10 +735,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
     forward_decal_inv_depth_fade_factor=payload.forward_decal_inv_depth_fade_factor,
-    material_pipeline_id=match payload.material_pipeline_id {
-      Some(id) => id.id()
-      None => @material.CachedRenderPipelineId::invalid().id()
-    },
+    material_pipeline_id=payload.material_pipeline_id.id(),
     lightmap_exposure=payload.lightmap_exposure,
     lightmap_texture_id=payload.lightmap_texture_id,
     lightmap_slab_index=payload.lightmap_slab_index,

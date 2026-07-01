@@ -119,10 +119,7 @@ fn render3d_mesh_gpu_batch_set_key(
     cull_mode: payload.cull_mode,
     vertex_shader_path: payload.vertex_shader_path,
     fragment_shader_path: payload.fragment_shader_path,
-    material_pipeline_id: match payload.material_pipeline_id {
-      Some(id) => id.id()
-      None => @material.CachedRenderPipelineId::invalid().id()
-    },
+    material_pipeline_id: payload.material_pipeline_id.id(),
     point_shadow_texture_id: payload.point_shadow_texture_id,
     point_shadow_enabled: payload.point_shadow_enabled,
     point_shadow_depth_bias: payload.point_shadow_depth_bias,
