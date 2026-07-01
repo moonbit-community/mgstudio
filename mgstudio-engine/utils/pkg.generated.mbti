@@ -111,11 +111,11 @@ pub fn[T] ParallelQueue::ParallelQueue() -> Self[T]
 pub fn[T] ParallelQueue::clear(Self[T]) -> Unit
 pub fn[T] ParallelQueue::drain(Self[T]) -> Array[T]
 pub fn[T] ParallelQueue::drain_into(Self[T], Array[T]) -> Unit
-pub fn[T] ParallelQueue::extend(Self[T], Array[T]) -> Unit
 pub fn[T] ParallelQueue::is_empty(Self[T]) -> Bool
 pub fn[T] ParallelQueue::len(Self[T]) -> Int
 pub fn[T] ParallelQueue::new() -> Self[T]
 pub fn[T] ParallelQueue::push(Self[T], T) -> Unit
+pub fn[T] ParallelQueue::push_all(Self[T], Array[T]) -> Unit
 
 // Type aliases
 pub type BloomFilterHashes = Array[Int]

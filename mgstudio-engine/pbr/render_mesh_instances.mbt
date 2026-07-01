@@ -1732,7 +1732,7 @@ pub fn MeshesToReextractNextFrame::insert(
 }
 
 ///|
-pub fn MeshesToReextractNextFrame::extend(
+pub fn MeshesToReextractNextFrame::insert_all(
   self : MeshesToReextractNextFrame,
   entities : Array[@render.MainEntity],
 ) -> Unit {
@@ -2112,7 +2112,7 @@ pub fn mark_all_meshes_for_reextraction(
   render_mesh_instances : RenderMeshInstances,
   meshes_to_reextract : MeshesToReextractNextFrame,
 ) -> Unit {
-  meshes_to_reextract.extend(render_mesh_instances.keys())
+  meshes_to_reextract.insert_all(render_mesh_instances.keys())
   render_mesh_instances.clear()
 }
 

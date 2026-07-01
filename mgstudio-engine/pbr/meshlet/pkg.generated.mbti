@@ -1054,7 +1054,6 @@ pub fn[T] PersistentGpuBuffer::allocated_byte_len(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::clear(Self[T]) -> Unit
 pub fn[T] PersistentGpuBuffer::committed_write_count(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::element_byte_size(Self[T]) -> Int
-pub fn[T] PersistentGpuBuffer::extend(Self[T], Array[T]) -> Unit
 pub fn[T] PersistentGpuBuffer::is_empty(Self[T]) -> Bool
 pub fn[T] PersistentGpuBuffer::label(Self[T]) -> String
 pub fn[T] PersistentGpuBuffer::len(Self[T]) -> Int
@@ -1064,6 +1063,7 @@ pub fn[T] PersistentGpuBuffer::pending_ranges_snapshot(Self[T]) -> Array[Persist
 pub fn[T] PersistentGpuBuffer::pending_write_count(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::perform_writes(Self[T]) -> Int
 pub fn[T] PersistentGpuBuffer::push(Self[T], T) -> Unit
+pub fn[T] PersistentGpuBuffer::push_all(Self[T], Array[T]) -> Unit
 pub fn[T, M] PersistentGpuBuffer::queue_write(Self[T], Array[T], M) -> PersistentBufferSliceRange
 pub fn[T] PersistentGpuBuffer::snapshot(Self[T]) -> Array[T]
 pub fn[T] PersistentGpuBuffer::unused_slice_count(Self[T]) -> Int

@@ -243,11 +243,11 @@ pub struct BufferVec[T] {
 }
 pub fn[T] BufferVec::buffer_id(Self[T]) -> UInt64
 pub fn[T] BufferVec::clear(Self[T]) -> Unit
-pub fn[T] BufferVec::extend(Self[T], Array[T]) -> Unit
 pub fn[T] BufferVec::is_empty(Self[T]) -> Bool
 pub fn[T] BufferVec::len(Self[T]) -> Int
 pub fn[T] BufferVec::new() -> Self[T]
 pub fn[T] BufferVec::push(Self[T], T) -> Unit
+pub fn[T] BufferVec::push_all(Self[T], Array[T]) -> Unit
 pub fn[T] BufferVec::values(Self[T]) -> Array[T]
 pub fn[T] BufferVec::with_buffer_id(UInt64) -> Self[T]
 

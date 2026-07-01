@@ -42,7 +42,7 @@ pub fn[T] BufferVec::push(self : BufferVec[T], value : T) -> Unit {
 }
 
 ///|
-pub fn[T] BufferVec::extend(self : BufferVec[T], values : Array[T]) -> Unit {
+pub fn[T] BufferVec::push_all(self : BufferVec[T], values : Array[T]) -> Unit {
   self.values.append(values.view())
 }
 

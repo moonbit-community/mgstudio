@@ -13,9 +13,9 @@
 // limitations under the License.
 
 ///|
-test "pbr meshlet: persistent buffer supports extend and clear" {
+test "pbr meshlet: persistent buffer supports push_all and clear" {
   let buffer = PersistentGpuBuffer::new(label="meshlet_test_buffer")
-  buffer.extend([1, 2, 3])
+  buffer.push_all([1, 2, 3])
   inspect(buffer.len(), content="3")
   inspect(buffer.is_empty(), content="false")
   buffer.clear()

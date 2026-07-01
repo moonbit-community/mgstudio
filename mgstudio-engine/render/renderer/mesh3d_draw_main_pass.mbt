@@ -113,39 +113,14 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   transparent : Bool,
   material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
 ) -> Unit raise GpuBackendError {
-  let draw_vertex_shader_path = if pass_kind == 0 {
-    vertex_shader_path
-  } else {
-    None
-  }
-  let draw_fragment_shader_path = if pass_kind == 0 {
-    fragment_shader_path
-  } else {
-    None
-  }
-  let forward_decal = (material_flags & (1U << 20)) != 0U
   let lightmapped = lightmap_texture_id >= 0
-  let pipeline = if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
-    mesh3d_material_render_pipeline_for_draw(self, material_pipeline_id)
-  } else {
-    mesh3d_pipeline_for_current_pass(
-      self,
-      transparent,
-      material_flags,
-      material_pipeline_id,
-      forward_decal,
-      mesh.primitive_topology,
-      cull_mode,
-      draw_vertex_shader_path,
-      draw_fragment_shader_path,
-      skinning_key_hi >= 0,
-      ps.tonemap_in_shader,
-      ps.tonemapping_mode,
-      ps.deband_dither_enabled,
-      pass_kind_shadow_filter_method(ps.pass_kind),
-      lightmapped~,
-    )
-  }
+  vertex_shader_path |> ignore
+  fragment_shader_path |> ignore
+  transparent |> ignore
+  cull_mode |> ignore
+  let pipeline = mesh3d_material_render_pipeline_for_draw(
+    self, material_pipeline_id,
+  )
   guard pipeline is Some(pipeline) else { return }
   let material_descriptor = mesh3d_material_pipeline_descriptor_find(
     self, material_pipeline_id,

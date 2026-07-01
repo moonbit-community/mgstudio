@@ -2019,8 +2019,8 @@ pub fn MeshesToReextractNextFrame::MeshesToReextractNextFrame() -> Self
 pub fn MeshesToReextractNextFrame::clear(Self) -> Unit
 pub fn MeshesToReextractNextFrame::contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
 pub fn MeshesToReextractNextFrame::entities(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
-pub fn MeshesToReextractNextFrame::extend(Self, Array[@Milky2018/mgstudio/render.MainEntity]) -> Unit
 pub fn MeshesToReextractNextFrame::insert(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn MeshesToReextractNextFrame::insert_all(Self, Array[@Milky2018/mgstudio/render.MainEntity]) -> Unit
 pub fn MeshesToReextractNextFrame::len(Self) -> Int
 pub impl @app.Resource for MeshesToReextractNextFrame
 

@@ -118,7 +118,7 @@ pub fn[T] PersistentGpuBuffer::push(
 }
 
 ///|
-pub fn[T] PersistentGpuBuffer::extend(
+pub fn[T] PersistentGpuBuffer::push_all(
   self : PersistentGpuBuffer[T],
   values : Array[T],
 ) -> Unit {
