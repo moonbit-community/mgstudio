@@ -514,10 +514,18 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(AppStatus::AppStatus())
   .add_plugins(
-    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+    @mgstudio.DefaultPlugins::build()
+    .set(@window.WindowPlugin::{
       ..@window.WindowPlugin::WindowPlugin(),
       primary_window: Some(configured_window()),
-    }),
+    })
+    .set(
+      @pbr.PbrPlugin::PbrPlugin().with_standard_material_texture_features(
+        @pbr.StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+          pbr_anisotropy_texture=true,
+        ),
+      ),
+    ),
   )
   .add_systems_param3(@app.Startup, setup)
   .add_systems_param3(@app.Update, create_material_variants)
