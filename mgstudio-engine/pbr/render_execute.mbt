@@ -4531,9 +4531,14 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
         world,
       )
-      let specialized_material_pipeline_cache = world.get_resource(
-        ecs_key_specialized_material_pipeline_cache,
-      )
+      let specialized_material_pipeline_cache = match
+        world.get_resource(ecs_key_specialized_material_pipeline_cache) {
+        Some(cache) => cache
+        None =>
+          abort(
+            "missing SpecializedMaterialPipelineCache resource during pbr queue_meshes",
+          )
+      }
       let visible_main_entity_filters = render3d_visible_main_entity_filters_for_cameras(
         world,
         frame.cameras,
@@ -4547,7 +4552,9 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.meshes,
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
-          specialized_material_pipeline_cache~,
+          specialized_material_pipeline_cache=Some(
+            specialized_material_pipeline_cache,
+          ),
           visible_main_entity_filters=Some(visible_main_entity_filters),
         )
       })
