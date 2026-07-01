@@ -126,6 +126,11 @@ impl @pbr.Material for LineMaterial with fn meshlet_deferred_fragment_shader() {
 }
 
 ///|
+impl @pbr.Material for LineMaterial with fn register_shader_sources() {
+  @pbr.material_default_register_shader_sources()
+}
+
+///|
 impl @pbr.Material for LineMaterial with fn alpha_mode(self) {
   self |> ignore
   @pbr.material_default_alpha_mode()

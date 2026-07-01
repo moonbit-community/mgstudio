@@ -2158,6 +2158,11 @@ impl Material for ShadowReadinessNoShadowMaterial with fn meshlet_deferred_fragm
 }
 
 ///|
+impl Material for ShadowReadinessNoShadowMaterial with fn register_shader_sources() {
+  material_default_register_shader_sources()
+}
+
+///|
 impl Material for ShadowReadinessNoShadowMaterial with fn alpha_mode(self) {
   ignore(self)
   material_default_alpha_mode()

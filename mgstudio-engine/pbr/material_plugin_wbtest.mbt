@@ -119,6 +119,11 @@ impl Material for ParityCustomMaterial with fn meshlet_deferred_fragment_shader(
 }
 
 ///|
+impl Material for ParityCustomMaterial with fn register_shader_sources() {
+  material_default_register_shader_sources()
+}
+
+///|
 impl Material for ParityCustomMaterial with fn alpha_mode(self) {
   ignore(self)
   material_default_alpha_mode()

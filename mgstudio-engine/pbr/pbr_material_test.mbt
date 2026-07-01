@@ -168,7 +168,7 @@ test "pbr material: standard material plugin plan mirrors material plugin build 
   )
   inspect(plan.shadows_enabled(), content="true")
   inspect(plan.main_world_steps().length(), content="4")
-  inspect(plan.post_update_steps().length(), content="3")
+  inspect(plan.post_update_steps().length(), content="2")
   inspect(plan.render_startup_steps().length(), content="1")
   inspect(plan.extract_schedule_steps().length(), content="4")
   inspect(plan.main_world_steps()[0], content="init_asset<StandardMaterial>")
@@ -177,8 +177,8 @@ test "pbr material: standard material plugin plan mirrors material plugin build 
     content="add_plugin<ErasedRenderAssetPlugin<MeshMaterial3d<StandardMaterial>>>",
   )
   inspect(
-    plan.post_update_steps()[2],
-    content="check_light_entities_needing_specialization<StandardMaterial>",
+    plan.post_update_steps()[1],
+    content="check_entities_needing_specialization<StandardMaterial>",
   )
   inspect(
     plan.render_startup_steps()[0],
@@ -186,7 +186,7 @@ test "pbr material: standard material plugin plan mirrors material plugin build 
   )
   inspect(
     plan.extract_schedule_steps()[3],
-    content="sweep_entities_needing_specialization<StandardMaterial>",
+    content="extract_entities_that_need_specializations_removed<StandardMaterial>",
   )
 }
 

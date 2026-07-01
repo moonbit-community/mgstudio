@@ -696,6 +696,11 @@ pub impl Material for StandardMaterial with fn meshlet_deferred_fragment_shader(
 }
 
 ///|
+pub impl Material for StandardMaterial with fn register_shader_sources() {
+  false
+}
+
+///|
 pub impl Material for StandardMaterial with fn alpha_mode(self) {
   self.alpha_mode
 }
@@ -913,14 +918,13 @@ pub fn standard_material_plugin_plan(
     ],
     post_update_steps: [
       "mark_meshes_as_changed_if_their_materials_changed<StandardMaterial>", "check_entities_needing_specialization<StandardMaterial>",
-      "check_light_entities_needing_specialization<StandardMaterial>",
     ],
     render_startup_steps: [
       "add_material_bind_group_allocator<StandardMaterial>",
     ],
     extract_schedule_steps: [
       "extract_mesh_materials<StandardMaterial>", "early_sweep_material_instances<StandardMaterial>",
-      "extract_entities_needs_specialization<StandardMaterial>", "sweep_entities_needing_specialization<StandardMaterial>",
+      "extract_entities_needs_specialization<StandardMaterial>", "extract_entities_that_need_specializations_removed<StandardMaterial>",
     ],
   }
 }
@@ -984,34 +988,6 @@ pub impl @app.Plugin for StandardMaterialPlugin with fn build(self, app) {
 }
 
 ///|
-fn add_standard_material_bind_group_allocator(world : @ecs.World) -> Unit {
-  if world.get_resource(ecs_key_material_bind_group_allocators) is None {
-    world.insert_resource(
-      ecs_key_material_bind_group_allocators,
-      MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
-    )
-  }
-  guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
-    is Some(allocators) else {
-    return
-  }
-  let bindless_supported = match
-    world.get_resource(@render.render_device_resource_key) {
-    Some(render_device) => standard_material_bindless_supported(render_device)
-    None => false
-  }
-  allocators.modify(fn(value) {
-    ignore(
-      value.install_standard_material(
-        bindless_supported,
-        standard_material_bindless_slot_count(),
-        features=standard_material_plugin_state(world).standard_material_texture_features(),
-      ),
-    )
-  })
-}
-
-///|
 pub fn standard_material_plugin_state(
   world : @ecs.World,
 ) -> StandardMaterialPluginState {
@@ -1039,18 +1015,15 @@ pub fn standard_material_plugin_with(
   app : @app.App[@ecs.World],
   plugin : StandardMaterialPlugin,
 ) -> @app.App[@ecs.World] {
-  let app = app.insert_world_resource(
+  let material_plugin : MaterialPlugin[StandardMaterial] = MaterialPlugin::MaterialPlugin()
+    .with_asset_init(fn() { StandardMaterial::StandardMaterial() })
+    .with_debug_flags(plugin.debug_flags)
+  app
+  .insert_world_resource(
     ecs_key_standard_material_plugin_state,
     StandardMaterialPluginState::from_plugin(plugin),
   )
-  @render.try_with_render_app(app, fn(sub_app) {
-    sub_app.add_systems(
-      @render.render_startup_schedule_stage(),
-      @app.system(add_standard_material_bind_group_allocator).named(
-        "mgstudio_pbr::add_material_bind_group_allocator<StandardMaterial>",
-      ),
-    )
-  })
+  .add_plugins(material_plugin)
 }
 
 ///|

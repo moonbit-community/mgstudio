@@ -566,6 +566,8 @@ pub fn material_default_opaque_render_method() -> @material.OpaqueRendererMethod
 
 pub fn material_default_reads_view_transmission_texture() -> Bool
 
+pub fn material_default_register_shader_sources() -> Bool
+
 pub fn[M] material_default_specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[M]) -> @render_resource.RenderPipelineDescriptor
 
 pub fn material_default_vertex_shader() -> String?
@@ -3721,6 +3723,7 @@ pub(open) trait Material {
   fn meshlet_fragment_shader() -> String?
   fn meshlet_prepass_fragment_shader() -> String?
   fn meshlet_deferred_fragment_shader() -> String?
+  fn register_shader_sources() -> Bool
   fn alpha_mode(Self) -> @material.AlphaMode3d
   fn opaque_render_method(Self) -> @material.OpaqueRendererMethod
   fn depth_bias(Self) -> Float

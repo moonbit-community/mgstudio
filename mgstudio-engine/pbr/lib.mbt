@@ -546,10 +546,6 @@ fn pbr_plugin_install_with(
     next = next
       .insert_world_resource(ecs_key_pbr_plugin_marker, PbrPluginMarker::{  })
       .insert_world_resource(ecs_key_pbr_plugin_runtime_config, runtime_config)
-    next = @asset.init_asset(next, fn() {
-      @material.StandardMaterial::StandardMaterial()
-    })
-    pbr_plugin_initialize_default_standard_material(next.world())
   } else {
     next = next.insert_world_resource(
       ecs_key_pbr_plugin_runtime_config, runtime_config,
@@ -560,6 +556,7 @@ fn pbr_plugin_install_with(
   next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
   next = pbr_plugin_sync_materials_state(next, runtime_config)
   next = pbr_plugin_sync_standard_material_state(next, runtime_config)
+  pbr_plugin_initialize_default_standard_material(next.world())
   next = pbr_plugin_sync_feature_plugins(next, runtime_config)
   next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
   next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)

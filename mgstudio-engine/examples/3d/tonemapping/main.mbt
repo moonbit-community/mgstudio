@@ -204,6 +204,11 @@ impl @pbr.Material for ColorGradientMaterial with fn meshlet_deferred_fragment_s
 }
 
 ///|
+impl @pbr.Material for ColorGradientMaterial with fn register_shader_sources() {
+  @pbr.material_default_register_shader_sources()
+}
+
+///|
 impl @pbr.Material for ColorGradientMaterial with fn alpha_mode(self) {
   ignore(self)
   @pbr.material_default_alpha_mode()

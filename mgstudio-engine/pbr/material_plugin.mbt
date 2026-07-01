@@ -652,6 +652,7 @@ pub(open) trait Material {
   fn meshlet_fragment_shader() -> String?
   fn meshlet_prepass_fragment_shader() -> String?
   fn meshlet_deferred_fragment_shader() -> String?
+  fn register_shader_sources() -> Bool
   fn alpha_mode(self : Self) -> @material.AlphaMode3d
   fn opaque_render_method(self : Self) -> @material.OpaqueRendererMethod
   fn depth_bias(self : Self) -> Float
@@ -702,6 +703,11 @@ pub fn material_default_depth_bias() -> Float {
 ///|
 pub fn material_default_reads_view_transmission_texture() -> Bool {
   false
+}
+
+///|
+pub fn material_default_register_shader_sources() -> Bool {
+  true
 }
 
 ///|
@@ -1508,7 +1514,11 @@ fn[M : Material + @asset.Asset] material_plugin_build(
   plugin : MaterialPlugin[M],
 ) -> @app.App[@ecs.World] {
   let probe : @asset.Handle[M] = @asset.Handle::new(0)
-  let shader_paths = material_shader_asset_paths(probe)
+  let shader_paths = if M::register_shader_sources() {
+    material_shader_asset_paths(probe)
+  } else {
+    []
+  }
   let pipeline = material_pipeline_from_material_hooks(probe)
   let configured = match plugin.asset_init {
     Some(init) => @asset.init_asset(app, init)
