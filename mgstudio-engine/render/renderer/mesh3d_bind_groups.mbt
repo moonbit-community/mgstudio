@@ -1520,7 +1520,8 @@ fn mesh3d_material_cache_get_or_create(
   occlusion_texture : GpuTextureInfo,
   depth_texture : GpuTextureInfo,
   anisotropy_texture : GpuTextureInfo,
-  _specular_tint_texture : GpuTextureInfo,
+  specular_texture : GpuTextureInfo,
+  specular_tint_texture : GpuTextureInfo,
   clearcoat_texture : GpuTextureInfo,
   clearcoat_roughness_texture : GpuTextureInfo,
   clearcoat_normal_texture : GpuTextureInfo,
@@ -1549,6 +1550,7 @@ fn mesh3d_material_cache_get_or_create(
         entry.occlusion_texture_id == -2 &&
         entry.depth_texture_id == -2 &&
         entry.anisotropy_texture_id == -2 &&
+        entry.specular_texture_id == -2 &&
         entry.specular_tint_texture_id == -2 &&
         entry.clearcoat_texture_id == -2 &&
         entry.clearcoat_roughness_texture_id == -2 &&
@@ -1583,6 +1585,7 @@ fn mesh3d_material_cache_get_or_create(
       occlusion_texture_id: -2,
       depth_texture_id: -2,
       anisotropy_texture_id: -2,
+      specular_texture_id: -2,
       specular_tint_texture_id: -2,
       clearcoat_texture_id: -2,
       clearcoat_roughness_texture_id: -2,
@@ -1609,6 +1612,7 @@ fn mesh3d_material_cache_get_or_create(
         entry.occlusion_texture_id == -3 &&
         entry.depth_texture_id == -3 &&
         entry.anisotropy_texture_id == -3 &&
+        entry.specular_texture_id == -3 &&
         entry.specular_tint_texture_id == -3 &&
         entry.clearcoat_texture_id == -3 &&
         entry.clearcoat_roughness_texture_id == -3 &&
@@ -1658,6 +1662,7 @@ fn mesh3d_material_cache_get_or_create(
       occlusion_texture_id: -3,
       depth_texture_id: -3,
       anisotropy_texture_id: -3,
+      specular_texture_id: -3,
       specular_tint_texture_id: -3,
       clearcoat_texture_id: -3,
       clearcoat_roughness_texture_id: -3,
@@ -1684,6 +1689,10 @@ fn mesh3d_material_cache_get_or_create(
     Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 21)
     None => false
   }
+  let has_specular_texture_bindings = match material_layout {
+    Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 27)
+    None => false
+  }
   let anisotropy_texture_cache_id = if has_anisotropy_texture_binding {
     anisotropy_texture.id
   } else {
@@ -1704,6 +1713,16 @@ fn mesh3d_material_cache_get_or_create(
   } else {
     -2
   }
+  let specular_texture_cache_id = if has_specular_texture_bindings {
+    specular_texture.id
+  } else {
+    -2
+  }
+  let specular_tint_texture_cache_id = if has_specular_texture_bindings {
+    specular_tint_texture.id
+  } else {
+    -2
+  }
   for entry in backend.mesh3d_material_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
       entry.base_texture_id == base_texture.id &&
@@ -1713,7 +1732,8 @@ fn mesh3d_material_cache_get_or_create(
       entry.occlusion_texture_id == occlusion_texture.id &&
       entry.depth_texture_id == depth_texture.id &&
       entry.anisotropy_texture_id == anisotropy_texture_cache_id &&
-      entry.specular_tint_texture_id == -2 &&
+      entry.specular_texture_id == specular_texture_cache_id &&
+      entry.specular_tint_texture_id == specular_tint_texture_cache_id &&
       entry.clearcoat_texture_id == clearcoat_texture_cache_id &&
       entry.clearcoat_roughness_texture_id ==
       clearcoat_roughness_texture_cache_id &&
@@ -1778,6 +1798,12 @@ fn mesh3d_material_cache_get_or_create(
       builder.add_texture_view(25U, clearcoat_normal_texture.view) &&
       builder.add_sampler(26U, clearcoat_normal_texture.sampler)
   }
+  if ok && has_specular_texture_bindings {
+    ok = builder.add_texture_view(27U, specular_texture.view) &&
+      builder.add_sampler(28U, specular_texture.sampler) &&
+      builder.add_texture_view(29U, specular_tint_texture.view) &&
+      builder.add_sampler(30U, specular_tint_texture.sampler)
+  }
   ok = if ok && uses_forward_decal_uniform {
     match forward_decal_uniform_buf {
       Some(buffer) => builder.add_buffer(200U, buffer, size=4UL)
@@ -1817,7 +1843,8 @@ fn mesh3d_material_cache_get_or_create(
     occlusion_texture_id: occlusion_texture.id,
     depth_texture_id: depth_texture.id,
     anisotropy_texture_id: anisotropy_texture_cache_id,
-    specular_tint_texture_id: -2,
+    specular_texture_id: specular_texture_cache_id,
+    specular_tint_texture_id: specular_tint_texture_cache_id,
     clearcoat_texture_id: clearcoat_texture_cache_id,
     clearcoat_roughness_texture_id: clearcoat_roughness_texture_cache_id,
     clearcoat_normal_texture_id: clearcoat_normal_texture_cache_id,
@@ -1944,6 +1971,7 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
   occlusion_texture_id : Int,
   depth_texture_id : Int,
   anisotropy_texture_id : Int,
+  specular_texture_id : Int,
   specular_tint_texture_id : Int,
   clearcoat_texture_id : Int,
   clearcoat_roughness_texture_id : Int,
@@ -1981,6 +2009,11 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
     -1
   } else {
     anisotropy_texture_id
+  }
+  let resolved_specular_texture_id = if specular_texture_id < 0 {
+    -1
+  } else {
+    specular_texture_id
   }
   let resolved_specular_tint_texture_id = if specular_tint_texture_id < 0 {
     -1
@@ -2031,6 +2064,10 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
     is Some(anisotropy_texture) else {
     return
   }
+  guard resolve_mesh3d_texture(self, resolved_specular_texture_id)
+    is Some(specular_texture) else {
+    return
+  }
   guard resolve_mesh3d_texture(self, resolved_specular_tint_texture_id)
     is Some(specular_tint_texture) else {
     return
@@ -2059,6 +2096,7 @@ pub fn GpuBackend::prepare_mesh3d_material_bind_group(
       occlusion_texture,
       depth_texture,
       anisotropy_texture,
+      specular_texture,
       specular_tint_texture,
       clearcoat_texture,
       clearcoat_roughness_texture,

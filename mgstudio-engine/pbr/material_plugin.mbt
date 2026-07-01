@@ -1802,10 +1802,12 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
   let image_assets_key : @ecs.ResourceKey[
     @render.RenderAssets[@render_texture.GpuImage],
   ] = @render.RenderAssets::resource()
-  let image_context = match world.get_resource(image_assets_key) {
+  let image_context = (match world.get_resource(image_assets_key) {
     Some(images) => MaterialBindGroupContext::from_images(images)
     None => MaterialBindGroupContext::MaterialBindGroupContext()
-  }
+  }).with_standard_material_texture_features(
+    pbr_standard_material_texture_features(source_world),
+  )
   let system_ticks = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(global_value) => global_value.source_system_ticks(source_world)

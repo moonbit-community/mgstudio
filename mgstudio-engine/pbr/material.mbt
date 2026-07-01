@@ -672,6 +672,7 @@ pub fn render3d_material_properties_for_standard_material(
   extension : ExtendedMaterialMetadata3d?,
   default_opaque_renderer_method : OpaqueRendererMethod,
   prepass_enabled : Bool,
+  standard_material_texture_features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> @material.MaterialProperties {
   let mut effective_material = material
   if extension is Some(metadata) {
@@ -712,7 +713,10 @@ pub fn render3d_material_properties_for_standard_material(
   let base_material_layout = match extension {
     Some(metadata) if metadata.extension_tag == 1 =>
       forward_decal_material_bind_group_layout_descriptor()
-    _ => standard_material_bind_group_layout_descriptor()
+    _ =>
+      standard_material_bind_group_layout_descriptor(
+        features=standard_material_texture_features,
+      )
   }
   let material_layout = match extension {
     Some(metadata) =>

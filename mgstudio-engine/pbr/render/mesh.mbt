@@ -257,6 +257,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   metallic : Float
   anisotropy_texture_id : Int
   anisotropy_rotation : Float
+  specular_texture_id : Int
   specular_tint_texture_id : Int
   clearcoat_texture_id : Int
   clearcoat_roughness_texture_id : Int
@@ -422,6 +423,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   max_relief_mapping_search_steps : Float,
   mesh_flags : UInt,
   draw_flags : Int,
+  specular_texture_id? : Int = -1,
   forward_decal? : Bool = false,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   vertex_shader_path? : String? = None,
@@ -455,6 +457,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     depth_texture_id,
     anisotropy_texture_id,
     specular_tint_texture_id,
+    specular_texture_id~,
     forward_decal~,
   )
   let resolved_world_from_local = match world_from_local {
@@ -494,6 +497,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     metallic: material.metallic,
     anisotropy_texture_id,
     anisotropy_rotation: material.anisotropy_rotation,
+    specular_texture_id,
     specular_tint_texture_id,
     clearcoat_texture_id,
     clearcoat_roughness_texture_id,
@@ -604,6 +608,7 @@ pub fn render3d_host_main_pass_draw_entry(
     anisotropy_texture_id=payload.anisotropy_texture_id,
     anisotropy_strength=payload.anisotropy_strength,
     anisotropy_rotation=payload.anisotropy_rotation,
+    specular_texture_id=payload.specular_texture_id,
     specular_tint_texture_id=payload.specular_tint_texture_id,
     clearcoat_texture_id=payload.clearcoat_texture_id,
     clearcoat_roughness_texture_id=payload.clearcoat_roughness_texture_id,
@@ -712,6 +717,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     anisotropy_texture_id=payload.anisotropy_texture_id,
     anisotropy_strength=payload.anisotropy_strength,
     anisotropy_rotation=payload.anisotropy_rotation,
+    specular_texture_id=payload.specular_texture_id,
     specular_tint_texture_id=payload.specular_tint_texture_id,
     specular_tint_r=payload.specular_tint.r,
     specular_tint_g=payload.specular_tint.g,

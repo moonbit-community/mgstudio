@@ -524,6 +524,10 @@ fn render3d_execute_camera_main_pass(
       Some(texture) => texture.id()
       None => -1
     }
+    let specular_texture_id = match draw_material.specular_texture {
+      Some(texture) => texture.id()
+      None => -1
+    }
     let specular_tint_texture_id = match draw_material.specular_tint_texture {
       Some(texture) => texture.id()
       None => -1
@@ -721,6 +725,7 @@ fn render3d_execute_camera_main_pass(
       max_relief_mapping_search_steps,
       mesh_flags,
       draw_flags,
+      specular_texture_id~,
       forward_decal=mesh.is_forward_decal,
       forward_decal_inv_depth_fade_factor~,
       vertex_shader_path=draw_vertex_shader_path,

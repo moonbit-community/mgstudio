@@ -696,6 +696,8 @@ pub fn pbr_prepass_enabled(@ecs.World) -> Bool
 
 pub fn pbr_prepass_material_specialization_decision(@material.MaterialProperties, UInt64, UInt64, has_deferred_prepass? : Bool, lightmapped? : Bool, lightmap_bicubic_sampling? : Bool, visibility_range_dither? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool, emulate_unclipped_depth? : Bool) -> PbrPrepassMaterialSpecializationDecision
 
+pub fn pbr_render_world_standard_material_texture_features(@ecs.World) -> StandardMaterialTextureFeatureSet
+
 pub fn pbr_scattering_medium_default() -> @light.ScatteringMedium
 
 pub fn pbr_scattering_medium_default_density_lut(@light.ScatteringMedium) -> Array[@math.Vec4]
@@ -721,6 +723,8 @@ pub fn pbr_standard_material_add(@material.StandardMaterial) -> @asset.Handle[@m
 pub fn pbr_standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
 
 pub fn pbr_standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
+
+pub fn pbr_standard_material_texture_features(@ecs.World) -> StandardMaterialTextureFeatureSet
 
 pub fn pbr_unpack_cluster_offset_and_counts(UInt) -> ClusterOffsetAndCountsPacked3d
 
@@ -802,7 +806,7 @@ pub fn render3d_material_allocator_slabs_size_path(String) -> String
 
 pub fn render3d_material_allocator_snapshot_for_key(MaterialBindGroupAllocators, String) -> MaterialAllocatorDiagnosticsSnapshot?
 
-pub fn render3d_material_properties_for_standard_material(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?, @material.OpaqueRendererMethod, Bool) -> @material.MaterialProperties
+pub fn render3d_material_properties_for_standard_material(@material.StandardMaterial, @material.ExtendedMaterialMetadata3d?, @material.OpaqueRendererMethod, Bool, standard_material_texture_features? : StandardMaterialTextureFeatureSet) -> @material.MaterialProperties
 
 pub fn render3d_orthographic_projection_compute_frustum(@projection3d.OrthographicProjection3d, @transform.Transform) -> @primitives.Frustum
 
@@ -924,7 +928,7 @@ pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@mater
 
 pub fn standard_material_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@material.StandardMaterial]]
 
-pub fn standard_material_bind_group_allocator_install_plan(Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
+pub fn standard_material_bind_group_allocator_install_plan(Bool, Int?, features? : StandardMaterialTextureFeatureSet) -> MaterialBindGroupAllocatorInstallPlan
 
 pub fn standard_material_bind_group_layout_descriptor(features? : StandardMaterialTextureFeatureSet) -> @render_resource.BindGroupLayoutDescriptor
 
@@ -945,6 +949,8 @@ pub fn standard_material_opaque_render_method(@material.StandardMaterial, @mater
 pub fn standard_material_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn standard_material_plugin_plan(StandardMaterialPlugin) -> StandardMaterialPluginPlan
+
+pub fn standard_material_plugin_state(@ecs.World) -> StandardMaterialPluginState
 
 pub fn standard_material_plugin_with(@app.App[@ecs.World], StandardMaterialPlugin) -> @app.App[@ecs.World]
 
@@ -1689,7 +1695,7 @@ pub fn MaterialBindGroupAllocators::MaterialBindGroupAllocators() -> Self
 pub fn MaterialBindGroupAllocators::contains(Self, String) -> Bool
 pub fn MaterialBindGroupAllocators::get(Self, String) -> MaterialBindGroupAllocator?
 pub fn MaterialBindGroupAllocators::insert(Self, String, MaterialBindGroupAllocator) -> Unit
-pub fn MaterialBindGroupAllocators::install_standard_material(Self, Bool, Int?) -> MaterialBindGroupAllocatorInstallPlan
+pub fn MaterialBindGroupAllocators::install_standard_material(Self, Bool, Int?, features? : StandardMaterialTextureFeatureSet) -> MaterialBindGroupAllocatorInstallPlan
 pub fn MaterialBindGroupAllocators::len(Self) -> Int
 
 pub struct MaterialBindGroupBindlessAllocator {
@@ -2065,8 +2071,10 @@ pub(all) struct PbrPlugin {
   use_gpu_instance_buffer_builder : Bool
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   gltf_render_enabled : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 pub fn PbrPlugin::PbrPlugin() -> Self
+pub fn PbrPlugin::with_standard_material_texture_features(Self, StandardMaterialTextureFeatureSet) -> Self
 pub impl @app.Plugin for PbrPlugin
 
 pub struct PbrPluginRuntimeConfig {
@@ -2075,6 +2083,7 @@ pub struct PbrPluginRuntimeConfig {
   use_gpu_instance_buffer_builder : Bool
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
   gltf_render_enabled : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
 
@@ -2889,16 +2898,19 @@ pub fn StandardMaterialKey::without_flag(Self, UInt64) -> Self
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> Self
 pub fn StandardMaterialPlugin::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn StandardMaterialPlugin::with_debug_flags(Self, @Milky2018/mgstudio/render.RenderDebugFlags) -> Self
 pub fn StandardMaterialPlugin::with_prepass_enabled(Self, Bool) -> Self
+pub fn StandardMaterialPlugin::with_standard_material_texture_features(Self, StandardMaterialTextureFeatureSet) -> Self
 pub impl @app.Plugin for StandardMaterialPlugin
 
 pub struct StandardMaterialPluginPlan {
   prepass_enabled : Bool
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
   shadows_enabled : Bool
   main_world_steps : Array[String]
   post_update_steps : Array[String]
@@ -2912,15 +2924,18 @@ pub fn StandardMaterialPluginPlan::post_update_steps(Self) -> Array[String]
 pub fn StandardMaterialPluginPlan::prepass_enabled(Self) -> Bool
 pub fn StandardMaterialPluginPlan::render_startup_steps(Self) -> Array[String]
 pub fn StandardMaterialPluginPlan::shadows_enabled(Self) -> Bool
+pub fn StandardMaterialPluginPlan::standard_material_texture_features(Self) -> StandardMaterialTextureFeatureSet
 
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
   plan : StandardMaterialPluginPlan
 }
 pub fn StandardMaterialPluginState::debug_flags(Self) -> @Milky2018/mgstudio/render.RenderDebugFlags
 pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 pub fn StandardMaterialPluginState::plan(Self) -> StandardMaterialPluginPlan
+pub fn StandardMaterialPluginState::standard_material_texture_features(Self) -> StandardMaterialTextureFeatureSet
 
 pub struct StandardMaterialTextureFeatureSet {
   pbr_transmission_textures : Bool

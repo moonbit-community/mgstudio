@@ -24,6 +24,7 @@ priv struct MeshGpuBatchSetKey3d {
   occlusion_texture_id : Int
   depth_texture_id : Int
   anisotropy_texture_id : Int
+  specular_texture_id : Int
   specular_tint_texture_id : Int
   material_flags : UInt
   cull_mode : Int
@@ -112,6 +113,7 @@ fn render3d_mesh_gpu_batch_set_key(
     occlusion_texture_id: payload.occlusion_texture_id,
     depth_texture_id: payload.depth_texture_id,
     anisotropy_texture_id: payload.anisotropy_texture_id,
+    specular_texture_id: payload.specular_texture_id,
     specular_tint_texture_id: payload.specular_tint_texture_id,
     material_flags: payload.material_flags,
     cull_mode: payload.cull_mode,
@@ -186,6 +188,7 @@ fn render3d_mesh_gpu_batch_set_key_eq(
   lhs.occlusion_texture_id == rhs.occlusion_texture_id &&
   lhs.depth_texture_id == rhs.depth_texture_id &&
   lhs.anisotropy_texture_id == rhs.anisotropy_texture_id &&
+  lhs.specular_texture_id == rhs.specular_texture_id &&
   lhs.specular_tint_texture_id == rhs.specular_tint_texture_id &&
   lhs.material_flags == rhs.material_flags &&
   lhs.cull_mode == rhs.cull_mode &&

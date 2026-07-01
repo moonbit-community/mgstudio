@@ -300,10 +300,19 @@ fn app_assets_from_world_asset_server(app : @app.App[@ecs.World]) -> AppAssets {
 ///|
 fn main {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
-    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+    @mgstudio.DefaultPlugins::build()
+    .set(@window.WindowPlugin::{
       ..@window.WindowPlugin::WindowPlugin(),
       primary_window: Some(configured_window()),
-    }),
+    })
+    .set(
+      @pbr.PbrPlugin::PbrPlugin().with_standard_material_texture_features(
+        @pbr.StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+          pbr_anisotropy_texture=true,
+          pbr_specular_textures=true,
+        ),
+      ),
+    ),
   )
   let app_assets = app_assets_from_world_asset_server(app)
   let toggle_specular_map_system : @app.SystemConfig[@ecs.World] = @app.system_config_param5(

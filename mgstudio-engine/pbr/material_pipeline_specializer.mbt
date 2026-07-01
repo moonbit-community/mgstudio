@@ -1594,6 +1594,15 @@ fn pbr_material_base_specialize(
     properties,
     binding_arrays_are_usable=state_value.binding_arrays_are_usable,
     clustered_decals_are_usable=state_value.clustered_decals_are_usable,
+    standard_material_texture_features=pbr_render_world_standard_material_texture_features(
+      world,
+    ),
+    max_fragment_samplers_per_shader_stage=match
+      world.get_resource(@render.render_device_resource_key) {
+      Some(render_device) =>
+        Some(render_device.limits_max_samplers_per_shader_stage_u32())
+      None => None
+    },
   )
   let result = state_value.specialized_material_pipelines.specialize(
     pipeline_cache,

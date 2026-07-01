@@ -128,6 +128,7 @@ fn render3d_resolve_mesh_material(
   resolved_material_frame_cache : Map[Int, Render3dResolvedMeshMaterial],
   default_opaque_renderer_method : OpaqueRendererMethod,
   material_prepass_enabled : Bool,
+  standard_material_texture_features : StandardMaterialTextureFeatureSet,
 ) -> Render3dResolvedMeshMaterial? {
   // Mirrors Bevy's render-material cache shape: the common non-extended
   // material path is resolved once per frame and reused by all mesh instances.
@@ -169,7 +170,11 @@ fn render3d_resolve_mesh_material(
     base_material, material_extension,
   )
   let material_properties = render3d_material_properties_for_standard_material(
-    material, material_extension, default_opaque_renderer_method, material_prepass_enabled,
+    material,
+    material_extension,
+    default_opaque_renderer_method,
+    material_prepass_enabled,
+    standard_material_texture_features~,
   )
   let resolved = Render3dResolvedMeshMaterial::{
     material,
@@ -242,6 +247,7 @@ fn render3d_extract_mesh_for_entity(
   needs_mesh_previous_transform : Bool,
   default_opaque_renderer_method : OpaqueRendererMethod,
   material_prepass_enabled : Bool,
+  standard_material_texture_features : StandardMaterialTextureFeatureSet,
   required_components : Render3dExtractMeshRequiredComponents?,
   counters : Render3dPrepareMeshesCounters,
 ) -> (ExtractedMesh3d?, Bool) {
@@ -418,7 +424,7 @@ fn render3d_extract_mesh_for_entity(
       match
         render3d_resolve_mesh_material(
           value, standard_material_frame_cache, resolved_material_frame_cache, default_opaque_renderer_method,
-          material_prepass_enabled,
+          material_prepass_enabled, standard_material_texture_features,
         ) {
         Some(v) => v
         None => return (None, true)
@@ -660,6 +666,9 @@ fn render3d_execute_collect_meshes(
     world,
   )
   let material_prepass_enabled = standard_material_prepass_enabled(world)
+  let standard_material_texture_features = pbr_standard_material_texture_features(
+    source_world,
+  )
   let meshes : Array[ExtractedMesh3d] = []
   let counters = Render3dPrepareMeshesCounters::Render3dPrepareMeshesCounters()
   let mesh_query : @ecs.Query[
@@ -750,6 +759,7 @@ fn render3d_execute_collect_meshes(
       needs_mesh_previous_transform,
       default_opaque_renderer_method,
       material_prepass_enabled,
+      standard_material_texture_features,
       Some(Render3dExtractMeshRequiredComponents::{
         mesh3d: mesh3d.value(),
         material_handle: material.value(),

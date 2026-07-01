@@ -393,6 +393,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
       default_texture,
       default_texture,
       default_texture,
+      default_texture,
       normal_texture,
       mesh3d_standard_material_uniform_bytes(
         color_r, color_g, color_b, color_a, uv_transform_a, uv_transform_b, uv_transform_c,

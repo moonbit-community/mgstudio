@@ -31,6 +31,7 @@ pub(all) struct PbrPlugin {
   use_gpu_instance_buffer_builder : Bool
   debug_flags : @render.RenderDebugFlags
   gltf_render_enabled : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 
 ///|
@@ -41,7 +42,16 @@ pub fn PbrPlugin::PbrPlugin() -> PbrPlugin {
     use_gpu_instance_buffer_builder: true,
     debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
     gltf_render_enabled: true,
+    standard_material_texture_features: standard_material_default_texture_feature_set(),
   }
+}
+
+///|
+pub fn PbrPlugin::with_standard_material_texture_features(
+  self : PbrPlugin,
+  standard_material_texture_features : StandardMaterialTextureFeatureSet,
+) -> PbrPlugin {
+  PbrPlugin::{ ..self, standard_material_texture_features, }
 }
 
 ///|
@@ -51,6 +61,7 @@ pub struct PbrPluginRuntimeConfig {
   use_gpu_instance_buffer_builder : Bool
   debug_flags : @render.RenderDebugFlags
   gltf_render_enabled : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 
 ///|
@@ -63,6 +74,7 @@ pub fn PbrPluginRuntimeConfig::from_plugin(
     use_gpu_instance_buffer_builder: plugin.use_gpu_instance_buffer_builder,
     debug_flags: plugin.debug_flags,
     gltf_render_enabled: plugin.gltf_render_enabled,
+    standard_material_texture_features: plugin.standard_material_texture_features,
   }
 }
 
@@ -103,6 +115,22 @@ pub fn pbr_plugin_runtime_config(world : @ecs.World) -> PbrPluginRuntimeConfig {
     Some(config) => config
     None => pbr_default_runtime_config()
   }
+}
+
+///|
+pub fn pbr_standard_material_texture_features(
+  world : @ecs.World,
+) -> StandardMaterialTextureFeatureSet {
+  pbr_plugin_runtime_config(world).standard_material_texture_features
+}
+
+///|
+pub fn pbr_render_world_standard_material_texture_features(
+  render_world : @ecs.World,
+) -> StandardMaterialTextureFeatureSet {
+  pbr_standard_material_texture_features(
+    @render.render_source_world(render_world),
+  )
 }
 
 ///|
@@ -384,6 +412,7 @@ fn pbr_plugin_sync_standard_material_state(
   standard_material_plugin_with(app, StandardMaterialPlugin::{
     prepass_enabled: runtime_config.prepass_enabled,
     debug_flags: runtime_config.debug_flags,
+    standard_material_texture_features: runtime_config.standard_material_texture_features,
   })
 }
 

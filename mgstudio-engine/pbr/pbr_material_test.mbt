@@ -217,6 +217,26 @@ test "pbr material: standard material plugin state retains build plan" {
 }
 
 ///|
+test "pbr material: standard material plugin state retains texture feature set" {
+  let features = StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    pbr_anisotropy_texture=true,
+    pbr_specular_textures=true,
+  )
+  let plugin = StandardMaterialPlugin::StandardMaterialPlugin().with_standard_material_texture_features(
+    features,
+  )
+  let state = StandardMaterialPluginState::from_plugin(plugin)
+  inspect(
+    state.standard_material_texture_features() == features,
+    content="true",
+  )
+  inspect(
+    state.plan().standard_material_texture_features() == features,
+    content="true",
+  )
+}
+
+///|
 fn pbr_material_test_f32_bits(value : Float) -> UInt {
   value.reinterpret_as_uint()
 }

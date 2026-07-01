@@ -389,6 +389,7 @@ pub fn MaterialBindGroupAllocatorInstallPlan::layout_descriptor(
 pub fn standard_material_bind_group_allocator_install_plan(
   bindless_supported : Bool,
   bindless_slot_count : Int?,
+  features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> MaterialBindGroupAllocatorInstallPlan {
   MaterialBindGroupAllocatorInstallPlan::{
     material_label: "StandardMaterial",
@@ -396,7 +397,7 @@ pub fn standard_material_bind_group_allocator_install_plan(
       bindless_supported, bindless_slot_count,
     ),
     bindless_slot_count,
-    layout_descriptor: standard_material_bind_group_layout_descriptor(),
+    layout_descriptor: standard_material_bind_group_layout_descriptor(features~),
   }
 }
 
@@ -962,9 +963,12 @@ pub fn MaterialBindGroupAllocators::install_standard_material(
   self : MaterialBindGroupAllocators,
   bindless_supported : Bool,
   bindless_slot_count : Int?,
+  features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> MaterialBindGroupAllocatorInstallPlan {
   let plan = standard_material_bind_group_allocator_install_plan(
-    bindless_supported, bindless_slot_count,
+    bindless_supported,
+    bindless_slot_count,
+    features~,
   )
   self.insert(
     plan.material_label(),

@@ -2778,6 +2778,11 @@ fn meshlet_bind_material_shade_draw(
   } else {
     draw.anisotropy_texture_id
   }
+  let resolved_specular_texture_id = if draw.specular_texture_id < 0 {
+    -1
+  } else {
+    draw.specular_texture_id
+  }
   let resolved_specular_tint_texture_id = if draw.specular_tint_texture_id < 0 {
     -1
   } else {
@@ -2846,6 +2851,10 @@ fn meshlet_bind_material_shade_draw(
   }
   guard resolve_mesh3d_texture(backend, resolved_anisotropy_texture_id)
     is Some(anisotropy_texture) else {
+    return false
+  }
+  guard resolve_mesh3d_texture(backend, resolved_specular_texture_id)
+    is Some(specular_texture) else {
     return false
   }
   guard resolve_mesh3d_texture(backend, resolved_specular_tint_texture_id)
@@ -2923,6 +2932,7 @@ fn meshlet_bind_material_shade_draw(
     occlusion_texture,
     depth_texture,
     anisotropy_texture,
+    specular_texture,
     specular_tint_texture,
     base_texture,
     metallic_roughness_texture,

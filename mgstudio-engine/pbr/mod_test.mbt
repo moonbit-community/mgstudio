@@ -2799,6 +2799,10 @@ test "render3d: pbr plugin does not cache internal LUTs before renderer backend"
 
 ///|
 test "render3d: pbr plugin config updates runtime feature switches" {
+  let texture_features = StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    pbr_anisotropy_texture=true,
+    pbr_specular_textures=true,
+  )
   let _app = pbr_plugin_with(
     @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
@@ -2811,6 +2815,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
         true,
       ),
       gltf_render_enabled: false,
+      standard_material_texture_features: texture_features,
     },
   )
 
@@ -2821,6 +2826,10 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     content="false",
   )
   debug_inspect(pbr_gltf_render_enabled(_app.world()), content="false")
+  debug_inspect(
+    pbr_standard_material_texture_features(_app.world()) == texture_features,
+    content="true",
+  )
   debug_inspect(
     pbr_plugin_runtime_config(_app.world()).debug_flags.allow_copies_from_indirect_parameters(),
     content="true",
@@ -2935,6 +2944,7 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
           true,
         ),
         gltf_render_enabled: false,
+        standard_material_texture_features: standard_material_default_texture_feature_set(),
       }),
     )
 

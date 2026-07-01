@@ -30,7 +30,16 @@ test "render3d: standard material flags pack current Bevy subset bits" {
     .with_flip_normal_map_y(true)
     .with_alpha_mode(Mask(0.37F))
   let flags = @pbr_render.render3d_standard_material_flags(
-    material, 11, 12, 13, 14, 15, 16, 17, 18,
+    material,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    specular_texture_id=19,
   )
   let ok = (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) !=
     0U &&
@@ -43,6 +52,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) != 0U &&
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT) != 0U &&
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT) != 0U &&
+    (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT) != 0U &&
     (flags & @pbr_render.STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT) !=
     0U &&
     (flags & (7U << 29)) == @pbr_render.STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK

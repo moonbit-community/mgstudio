@@ -314,6 +314,10 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
     Some(texture) => texture.id()
     None => -1
   }
+  let specular_texture_id = match draw_material.specular_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
   let specular_tint_texture_id = match draw_material.specular_tint_texture {
     Some(texture) => texture.id()
     None => -1
@@ -346,7 +350,7 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
       emissive_texture_id = texture.id()
     }
   }
-  let key = "\{texture_id}|\{normal_texture_id}|\{emissive_texture_id}|\{metallic_roughness_texture_id}|\{occlusion_texture_id}|\{depth_texture_id}|\{anisotropy_texture_id}|\{specular_tint_texture_id}|\{clearcoat_texture_id}|\{clearcoat_roughness_texture_id}|\{clearcoat_normal_texture_id}"
+  let key = "\{texture_id}|\{normal_texture_id}|\{emissive_texture_id}|\{metallic_roughness_texture_id}|\{occlusion_texture_id}|\{depth_texture_id}|\{anisotropy_texture_id}|\{specular_texture_id}|\{specular_tint_texture_id}|\{clearcoat_texture_id}|\{clearcoat_roughness_texture_id}|\{clearcoat_normal_texture_id}"
   if prepared_material_bind_groups.contains(key) {
     return
   }
@@ -359,6 +363,7 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
     occlusion_texture_id~,
     depth_texture_id~,
     anisotropy_texture_id~,
+    specular_texture_id~,
     specular_tint_texture_id~,
     clearcoat_texture_id~,
     clearcoat_roughness_texture_id~,

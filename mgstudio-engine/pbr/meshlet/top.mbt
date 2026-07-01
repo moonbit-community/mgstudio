@@ -1250,6 +1250,7 @@ fn meshlet_host_material_shade_draw_entry(
   let occlusion_texture_id = meshlet_texture_id(material.occlusion_texture)
   let depth_texture_id = meshlet_texture_id(material.depth_map)
   let anisotropy_texture_id = meshlet_texture_id(material.anisotropy_texture)
+  let specular_texture_id = meshlet_texture_id(material.specular_texture)
   let specular_tint_texture_id = meshlet_texture_id(
     material.specular_tint_texture,
   )
@@ -1323,6 +1324,7 @@ fn meshlet_host_material_shade_draw_entry(
     max_relief_mapping_search_steps,
     0U,
     0,
+    specular_texture_id~,
     material_pipeline_id=Some(
       @render_resource.CachedRenderPipelineId::new(material_pipeline_id),
     ),

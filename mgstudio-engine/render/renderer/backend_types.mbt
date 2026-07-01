@@ -129,6 +129,7 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   occlusion_texture_id : Int
   depth_texture_id : Int
   anisotropy_texture_id : Int
+  specular_texture_id : Int
   specular_tint_texture_id : Int
   clearcoat_texture_id : Int
   clearcoat_roughness_texture_id : Int

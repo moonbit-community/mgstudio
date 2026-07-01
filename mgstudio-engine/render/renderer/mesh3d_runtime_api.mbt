@@ -187,6 +187,7 @@ pub struct HostMesh3dMainPassDrawEntry {
   anisotropy_texture_id : Int
   anisotropy_strength : Float
   anisotropy_rotation : Float
+  specular_texture_id : Int
   specular_tint_texture_id : Int
   clearcoat_texture_id : Int
   clearcoat_roughness_texture_id : Int
@@ -271,6 +272,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
   anisotropy_texture_id~ : Int,
   anisotropy_strength~ : Float,
   anisotropy_rotation~ : Float,
+  specular_texture_id? : Int = -1,
   specular_tint_texture_id~ : Int,
   clearcoat_texture_id? : Int = -1,
   clearcoat_roughness_texture_id? : Int = -1,
@@ -353,6 +355,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     anisotropy_texture_id,
     anisotropy_strength,
     anisotropy_rotation,
+    specular_texture_id,
     specular_tint_texture_id,
     clearcoat_texture_id,
     clearcoat_roughness_texture_id,
@@ -1066,6 +1069,7 @@ pub fn prepare_mesh3d_material_bind_group(
   occlusion_texture_id~ : Int,
   depth_texture_id~ : Int,
   anisotropy_texture_id~ : Int,
+  specular_texture_id? : Int = -1,
   specular_tint_texture_id~ : Int,
   clearcoat_texture_id? : Int = -1,
   clearcoat_roughness_texture_id? : Int = -1,
@@ -1074,8 +1078,9 @@ pub fn prepare_mesh3d_material_bind_group(
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_material_bind_group(
       texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
-      occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
-      clearcoat_texture_id, clearcoat_roughness_texture_id, clearcoat_normal_texture_id,
+      occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_texture_id,
+      specular_tint_texture_id, clearcoat_texture_id, clearcoat_roughness_texture_id,
+      clearcoat_normal_texture_id,
     ) catch {
       err => debug_runtime_error("prepare_mesh3d_material_bind_group", err)
     }
@@ -1264,6 +1269,7 @@ pub fn draw_mesh3d(
   anisotropy_texture_id~ : Int,
   anisotropy_strength~ : Float,
   anisotropy_rotation~ : Float,
+  specular_texture_id? : Int = -1,
   specular_tint_texture_id~ : Int,
   clearcoat_texture_id? : Int = -1,
   clearcoat_roughness_texture_id? : Int = -1,
@@ -1383,6 +1389,7 @@ pub fn draw_mesh3d(
       anisotropy_texture_id,
       anisotropy_strength,
       anisotropy_rotation,
+      specular_texture_id,
       specular_tint_texture_id,
       clearcoat_texture_id,
       clearcoat_roughness_texture_id,

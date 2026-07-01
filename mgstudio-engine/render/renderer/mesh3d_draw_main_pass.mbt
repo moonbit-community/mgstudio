@@ -67,6 +67,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   anisotropy_texture_id : Int,
   anisotropy_strength : Float,
   anisotropy_rotation : Float,
+  specular_texture_id : Int,
   specular_tint_texture_id : Int,
   clearcoat_texture_id : Int,
   clearcoat_roughness_texture_id : Int,
@@ -275,6 +276,11 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   } else {
     anisotropy_texture_id
   }
+  let resolved_specular_texture_id = if specular_texture_id < 0 {
+    -1
+  } else {
+    specular_texture_id
+  }
   let resolved_specular_tint_texture_id = if specular_tint_texture_id < 0 {
     -1
   } else {
@@ -360,6 +366,10 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     is Some(anisotropy_texture) else {
     return
   }
+  guard resolve_mesh3d_texture(self, resolved_specular_texture_id)
+    is Some(specular_texture) else {
+    return
+  }
   guard resolve_mesh3d_texture(self, resolved_specular_tint_texture_id)
     is Some(specular_tint_texture) else {
     return
@@ -403,6 +413,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let occlusion_textured = occlusion_texture_id >= 0
   let depth_textured = depth_texture_id >= 0
   let anisotropy_textured = anisotropy_texture_id >= 0
+  let specular_textured = specular_texture_id >= 0
   let specular_tint_textured = specular_tint_texture_id >= 0
   let clearcoat_textured = clearcoat_texture_id >= 0
   let clearcoat_roughness_textured = clearcoat_roughness_texture_id >= 0
@@ -432,6 +443,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     occlusion_textured ||
     depth_textured ||
     anisotropy_textured ||
+    specular_textured ||
     specular_tint_textured ||
     clearcoat_textured ||
     clearcoat_roughness_textured ||
@@ -561,6 +573,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
         occlusion_texture,
         depth_texture,
         anisotropy_texture,
+        specular_texture,
         specular_tint_texture,
         clearcoat_texture,
         clearcoat_roughness_texture,

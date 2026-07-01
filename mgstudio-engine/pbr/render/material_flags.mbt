@@ -203,6 +203,7 @@ pub fn render3d_standard_material_flags(
   depth_texture_id : Int,
   anisotropy_texture_id : Int,
   specular_tint_texture_id : Int,
+  specular_texture_id? : Int = -1,
   forward_decal? : Bool = false,
 ) -> UInt {
   let mut flags = render3d_standard_material_alpha_mode_flags(
@@ -251,6 +252,9 @@ pub fn render3d_standard_material_flags(
   }
   if anisotropy_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT
+  }
+  if specular_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_SPECULAR_TEXTURE_BIT
   }
   if specular_tint_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT

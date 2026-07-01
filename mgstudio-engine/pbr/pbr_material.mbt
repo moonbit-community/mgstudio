@@ -787,6 +787,7 @@ pub impl Material for StandardMaterial with fn specialize(
 pub(all) struct StandardMaterialPlugin {
   prepass_enabled : Bool
   debug_flags : @render.RenderDebugFlags
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 
 ///|
@@ -794,6 +795,7 @@ pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> StandardMaterialPlugi
   StandardMaterialPlugin::{
     prepass_enabled: true,
     debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+    standard_material_texture_features: standard_material_default_texture_feature_set(),
   }
 }
 
@@ -814,6 +816,14 @@ pub fn StandardMaterialPlugin::with_debug_flags(
 }
 
 ///|
+pub fn StandardMaterialPlugin::with_standard_material_texture_features(
+  self : StandardMaterialPlugin,
+  standard_material_texture_features : StandardMaterialTextureFeatureSet,
+) -> StandardMaterialPlugin {
+  StandardMaterialPlugin::{ ..self, standard_material_texture_features, }
+}
+
+///|
 pub fn StandardMaterialPlugin::debug_flags(
   self : StandardMaterialPlugin,
 ) -> @render.RenderDebugFlags {
@@ -824,6 +834,7 @@ pub fn StandardMaterialPlugin::debug_flags(
 pub struct StandardMaterialPluginPlan {
   prepass_enabled : Bool
   debug_flags : @render.RenderDebugFlags
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
   shadows_enabled : Bool
   main_world_steps : Array[String]
   post_update_steps : Array[String]
@@ -843,6 +854,13 @@ pub fn StandardMaterialPluginPlan::debug_flags(
   self : StandardMaterialPluginPlan,
 ) -> @render.RenderDebugFlags {
   self.debug_flags
+}
+
+///|
+pub fn StandardMaterialPluginPlan::standard_material_texture_features(
+  self : StandardMaterialPluginPlan,
+) -> StandardMaterialTextureFeatureSet {
+  self.standard_material_texture_features
 }
 
 ///|
@@ -887,6 +905,7 @@ pub fn standard_material_plugin_plan(
   StandardMaterialPluginPlan::{
     prepass_enabled: plugin.prepass_enabled,
     debug_flags: plugin.debug_flags,
+    standard_material_texture_features: plugin.standard_material_texture_features,
     shadows_enabled: true,
     main_world_steps: [
       "init_asset<StandardMaterial>", "register_type<MeshMaterial3d<StandardMaterial>>",
@@ -910,6 +929,7 @@ pub fn standard_material_plugin_plan(
 pub struct StandardMaterialPluginState {
   prepass_enabled : Bool
   debug_flags : @render.RenderDebugFlags
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
   plan : StandardMaterialPluginPlan
 }
 
@@ -920,6 +940,7 @@ pub fn StandardMaterialPluginState::from_plugin(
   StandardMaterialPluginState::{
     prepass_enabled: plugin.prepass_enabled,
     debug_flags: plugin.debug_flags,
+    standard_material_texture_features: plugin.standard_material_texture_features,
     plan: standard_material_plugin_plan(plugin),
   }
 }
@@ -936,6 +957,13 @@ pub fn StandardMaterialPluginState::plan(
   self : StandardMaterialPluginState,
 ) -> StandardMaterialPluginPlan {
   self.plan
+}
+
+///|
+pub fn StandardMaterialPluginState::standard_material_texture_features(
+  self : StandardMaterialPluginState,
+) -> StandardMaterialTextureFeatureSet {
+  self.standard_material_texture_features
 }
 
 ///|
@@ -977,9 +1005,23 @@ fn add_standard_material_bind_group_allocator(world : @ecs.World) -> Unit {
       value.install_standard_material(
         bindless_supported,
         standard_material_bindless_slot_count(),
+        features=standard_material_plugin_state(world).standard_material_texture_features(),
       ),
     )
   })
+}
+
+///|
+pub fn standard_material_plugin_state(
+  world : @ecs.World,
+) -> StandardMaterialPluginState {
+  match world.get_resource(ecs_key_standard_material_plugin_state) {
+    Some(state) => state
+    None =>
+      StandardMaterialPluginState::from_plugin(
+        StandardMaterialPlugin::StandardMaterialPlugin(),
+      )
+  }
 }
 
 ///|
@@ -1013,10 +1055,7 @@ pub fn standard_material_plugin_with(
 
 ///|
 pub fn standard_material_prepass_enabled(world : @ecs.World) -> Bool {
-  match world.get_resource(ecs_key_standard_material_plugin_state) {
-    Some(state) => state.prepass_enabled
-    None => true
-  }
+  standard_material_plugin_state(world).prepass_enabled
 }
 
 ///|
