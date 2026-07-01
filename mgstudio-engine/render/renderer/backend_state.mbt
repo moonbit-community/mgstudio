@@ -165,6 +165,9 @@ pub struct GpuBackend {
   mesh3d_material_pipeline_descriptors : Array[
     Mesh3dRegisteredMaterialPipelineDescriptor,
   ]
+  mesh3d_material_render_pipelines : Array[
+    Mesh3dRegisteredMaterialRenderPipeline,
+  ]
   mesh3d_material_pipeline_layout_cache : Array[
     Mesh3dMaterialPipelineLayoutCacheEntry,
   ]

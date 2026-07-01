@@ -418,10 +418,15 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             @renderer.materialize_pipeline_cache_render_pipeline_descriptor(
               descriptor,
             ) {
-            Some(pipeline) =>
+            Some(pipeline) => {
+              @renderer.register_mesh3d_material_render_pipeline(
+                material_pipeline_id=pipeline_id,
+                pipeline~,
+              )
               cache.mark_render_pipeline_ready(cached_id, pipeline) catch {
                 _ => ()
               }
+            }
             None => ()
           }
         } catch {

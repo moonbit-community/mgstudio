@@ -19,6 +19,12 @@ struct Mesh3dRegisteredMaterialPipelineDescriptor {
 }
 
 ///|
+struct Mesh3dRegisteredMaterialRenderPipeline {
+  material_pipeline_id : UInt64
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
 fn mesh3d_material_pipeline_descriptor_find(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
@@ -29,6 +35,34 @@ fn mesh3d_material_pipeline_descriptor_find(
     }
   }
   None
+}
+
+///|
+fn mesh3d_material_render_pipeline_find(
+  backend : GpuBackend,
+  material_pipeline_id : UInt64,
+) -> @wgpu.RenderPipeline? {
+  for entry in backend.mesh3d_material_render_pipelines {
+    if entry.material_pipeline_id == material_pipeline_id {
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_material_pipeline_hits", 1,
+      )
+      return Some(entry.pipeline)
+    }
+  }
+  @app.timeline_trace_emit_counter_int("render_3d_material_pipeline_misses", 1)
+  None
+}
+
+///|
+fn mesh3d_material_render_pipeline_for_draw(
+  backend : GpuBackend,
+  material_pipeline_id : UInt64,
+) -> @wgpu.RenderPipeline? {
+  if material_pipeline_id == MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    return None
+  }
+  mesh3d_material_render_pipeline_find(backend, material_pipeline_id)
 }
 
 ///|
@@ -60,6 +94,33 @@ fn GpuBackend::register_mesh3d_material_pipeline_descriptor(
 }
 
 ///|
+fn GpuBackend::register_mesh3d_material_render_pipeline(
+  self : GpuBackend,
+  material_pipeline_id : UInt64,
+  pipeline : @render_resource.RenderPipeline,
+) -> Unit {
+  let raw_pipeline = pipeline.into_inner()
+  for index in 0..<self.mesh3d_material_render_pipelines.length() {
+    let entry = self.mesh3d_material_render_pipelines[index]
+    if entry.material_pipeline_id == material_pipeline_id {
+      self.mesh3d_material_render_pipelines[index] = Mesh3dRegisteredMaterialRenderPipeline::{
+        material_pipeline_id,
+        pipeline: raw_pipeline,
+      }
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_material_pipeline_updates", 1,
+      )
+      return
+    }
+  }
+  self.mesh3d_material_render_pipelines.push({
+    material_pipeline_id,
+    pipeline: raw_pipeline,
+  })
+  @app.timeline_trace_emit_counter_int("render_3d_material_pipeline_inserts", 1)
+}
+
+///|
 pub fn register_mesh3d_material_pipeline_descriptor(
   material_pipeline_id~ : UInt64,
   descriptor~ : @render_resource.RenderPipelineDescriptor,
@@ -73,6 +134,24 @@ pub fn register_mesh3d_material_pipeline_descriptor(
   if ensure_backend() is Some(backend) {
     backend.register_mesh3d_material_pipeline_descriptor(
       material_pipeline_id, descriptor,
+    )
+  }
+}
+
+///|
+pub fn register_mesh3d_material_render_pipeline(
+  material_pipeline_id~ : UInt64,
+  pipeline~ : @render_resource.RenderPipeline,
+) -> Unit {
+  if material_pipeline_id == MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    return
+  }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_material_pipeline_registrations", 1,
+  )
+  if ensure_backend() is Some(backend) {
+    backend.register_mesh3d_material_render_pipeline(
+      material_pipeline_id, pipeline,
     )
   }
 }

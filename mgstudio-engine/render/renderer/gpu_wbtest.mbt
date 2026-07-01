@@ -2044,6 +2044,23 @@ test "renderer: mesh3d pipeline honors descriptor cull mode" {
 }
 
 ///|
+test "renderer: material pipeline draw treats unregistered cached ids as pending" {
+  let backend = GpuBackend::new(assets_base="assets")
+  debug_inspect(
+    mesh3d_material_render_pipeline_for_draw(
+      backend,
+      MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+    )
+    is None,
+    content="true",
+  )
+  debug_inspect(
+    mesh3d_material_render_pipeline_for_draw(backend, 42UL) is None,
+    content="true",
+  )
+}
+
+///|
 test "renderer: mesh3d shader value defines match Bevy native light limits" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(

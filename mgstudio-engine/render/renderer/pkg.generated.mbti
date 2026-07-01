@@ -425,6 +425,8 @@ pub fn register_mesh2d_pipeline_descriptor(pipeline_id~ : UInt64, shader_path~ :
 
 pub fn register_mesh3d_material_pipeline_descriptor(material_pipeline_id~ : UInt64, descriptor~ : @render_resource.RenderPipelineDescriptor) -> Unit
 
+pub fn register_mesh3d_material_render_pipeline(material_pipeline_id~ : UInt64, pipeline~ : @render_resource.RenderPipeline) -> Unit
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn release_frame_retired_resources() -> Unit
@@ -676,6 +678,7 @@ pub struct GpuBackend {
   mut mesh3d_shadow_empty_bg : @wgpu_mbt.BindGroup?
   mesh3d_pipeline_cache : Array[Mesh3dPipelineCacheEntry]
   mesh3d_material_pipeline_descriptors : Array[Mesh3dRegisteredMaterialPipelineDescriptor]
+  mesh3d_material_render_pipelines : Array[Mesh3dRegisteredMaterialRenderPipeline]
   mesh3d_material_pipeline_layout_cache : Array[Mesh3dMaterialPipelineLayoutCacheEntry]
   mesh3d_custom_pipeline_cache : Map[String, RenderPipelineCacheState]
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
@@ -1720,6 +1723,8 @@ type Mesh3dPassUniformState
 type Mesh3dPipelineCacheEntry
 
 type Mesh3dRegisteredMaterialPipelineDescriptor
+
+type Mesh3dRegisteredMaterialRenderPipeline
 
 type Mesh3dShadowPipelineCacheEntry
 

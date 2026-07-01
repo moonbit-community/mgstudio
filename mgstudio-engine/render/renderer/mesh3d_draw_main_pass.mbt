@@ -125,7 +125,10 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   }
   let forward_decal = (material_flags & (1U << 20)) != 0U
   let lightmapped = lightmap_texture_id >= 0
-  guard mesh3d_pipeline_for_current_pass(
+  let pipeline = if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    mesh3d_material_render_pipeline_for_draw(self, material_pipeline_id)
+  } else {
+    mesh3d_pipeline_for_current_pass(
       self,
       transparent,
       material_flags,
@@ -142,9 +145,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       pass_kind_shadow_filter_method(ps.pass_kind),
       lightmapped~,
     )
-    is Some(pipeline) else {
-    return
   }
+  guard pipeline is Some(pipeline) else { return }
   let material_descriptor = mesh3d_material_pipeline_descriptor_find(
     self, material_pipeline_id,
   )
