@@ -3602,3 +3602,48 @@ fn mesh3d_motion_vector_pipeline_entry_get_or_create(
   mesh3d_motion_vector_pipeline_set(backend, entry)
   Some(entry)
 }
+
+///|
+fn mesh3d_motion_vector_pipeline_entry_for_draw(
+  backend : GpuBackend,
+  topology : UInt,
+  msaa_sample_count : Int,
+  material_pipeline_id : UInt64,
+  material_descriptor : @render_resource.RenderPipelineDescriptor?,
+  cull_mode : Int,
+  skinned : Bool,
+  has_previous_skin : Bool,
+  morphed : Bool,
+  has_previous_morph : Bool,
+) -> Mesh3dMotionVectorPipelineCacheEntry? raise GpuBackendError {
+  if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    guard mesh3d_material_render_pipeline_for_draw(
+        backend, material_pipeline_id,
+      )
+      is Some(pipeline) else {
+      return None
+    }
+    guard material_descriptor is Some(_) else { return None }
+    let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+      backend, material_pipeline_id, material_descriptor,
+    )
+    Some({
+      topology,
+      material_pipeline_id,
+      msaa_sample_count,
+      cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
+      skinned,
+      has_previous_skin,
+      morphed,
+      has_previous_morph,
+      mesh_bind_group_layout_descriptor: layout_entry.draw_bind_group_layout_descriptor,
+      mesh_bind_group_layout: layout_entry.draw_bind_group_layout,
+      pipeline,
+    })
+  } else {
+    mesh3d_motion_vector_pipeline_entry_get_or_create(
+      backend, topology, msaa_sample_count, material_pipeline_id, material_descriptor,
+      cull_mode, skinned, has_previous_skin, morphed, has_previous_morph,
+    )
+  }
+}

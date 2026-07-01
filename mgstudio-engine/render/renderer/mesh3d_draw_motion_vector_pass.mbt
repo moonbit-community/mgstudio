@@ -198,7 +198,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     self, material_pipeline_id, material_descriptor,
   )
-  guard mesh3d_motion_vector_pipeline_entry_get_or_create(
+  guard mesh3d_motion_vector_pipeline_entry_for_draw(
       self,
       mesh.primitive_topology,
       ps.msaa_sample_count,

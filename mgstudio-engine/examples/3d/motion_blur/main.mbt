@@ -797,7 +797,7 @@ fn move_cars(world : @ecs.World) -> Unit {
       let circumference = TWO_PI * radius
       let angle = distance / circumference * TWO_PI
       let next_wheel_transform = wheel_transform
-      next_wheel_transform.rotate_y(angle)
+      next_wheel_transform.rotate_local_y(angle)
       try! (world.replace(
         wheel_entity, @transform.ecs_key_transform, next_wheel_transform,
       )
