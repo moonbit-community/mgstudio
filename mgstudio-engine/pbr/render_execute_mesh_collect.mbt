@@ -617,7 +617,6 @@ fn render3d_extract_mesh_for_entity(
         material_extension: resolved_material_extension,
         material_properties,
         material_bind_group_data,
-        material_pipeline_id: None,
         lightmap,
         is_forward_decal,
         forward_decal_material_ext,

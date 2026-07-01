@@ -1601,7 +1601,6 @@ fn material_test_extracted_mesh_payload(
     material_extension: None,
     material_properties,
     material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-    material_pipeline_id: None,
     lightmap: None,
     is_forward_decal: false,
     forward_decal_material_ext: None,

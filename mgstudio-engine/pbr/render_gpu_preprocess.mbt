@@ -93,7 +93,6 @@ fn render3d_mesh_pipeline_id_for_view(
 test "render3d gpu preprocess: view cache miss does not fall back to extracted pipeline id" {
   let view = @render_view.RetainedViewEntity::new(@core.Entity::new(61, 0))
   let entity = @core.Entity::new(62, 0)
-  let payload_pipeline = @material.CachedRenderPipelineId::new(91UL)
   let cached_pipeline = @material.CachedRenderPipelineId::new(92UL)
   let transform = @transform.Transform::identity()
   let world_from_local = @math.Affine3::identity()
@@ -115,7 +114,6 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
       material_extension: None,
       material_properties: @material.MaterialProperties::MaterialProperties(),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-      material_pipeline_id: Some(payload_pipeline),
       lightmap: None,
       is_forward_decal: false,
       forward_decal_material_ext: None,

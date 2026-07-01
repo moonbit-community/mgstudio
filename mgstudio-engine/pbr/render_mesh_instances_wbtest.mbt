@@ -1151,7 +1151,6 @@ fn render_mesh_instances_test_mesh_for_entity(
       material_extension: None,
       material_properties: @material.MaterialProperties::MaterialProperties(),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-      material_pipeline_id: None,
       lightmap,
       is_forward_decal: false,
       forward_decal_material_ext: None,

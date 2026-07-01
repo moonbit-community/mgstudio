@@ -4256,24 +4256,17 @@ fn render3d_prewarm_mesh_pipelines(
       let resolved_material = render3d_resolved_material_from_extracted_payload(
         mesh,
       )
-      let view_pipeline_id = render3d_prewarm_material_pipeline(
-        world,
-        resolved_material,
-        camera.payload,
-        retained_view_entity,
-        main_entity.id(),
-        mesh_queue_data,
-        specialization_tick,
+      ignore(
+        render3d_prewarm_material_pipeline(
+          world,
+          resolved_material,
+          camera.payload,
+          retained_view_entity,
+          main_entity.id(),
+          mesh_queue_data,
+          specialization_tick,
+        ),
       )
-      if view_pipeline_id is Some(_) && mesh.material_pipeline_id is None {
-        meshes[mesh_index] = ExtractedMesh3d::{
-          ..extracted_mesh,
-          payload: Mesh3dExtractedPayload::{
-            ..mesh,
-            material_pipeline_id: view_pipeline_id,
-          },
-        }
-      }
     }
   }
   for mesh_index in 0..<meshes.length() {

@@ -151,7 +151,6 @@ priv struct Mesh3dExtractedPayload {
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
-  material_pipeline_id : @material.CachedRenderPipelineId?
   lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?
