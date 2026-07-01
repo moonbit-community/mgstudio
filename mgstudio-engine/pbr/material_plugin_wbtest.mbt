@@ -991,13 +991,16 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     [],
     false,
     false,
-    retained_view_entity=Some(retained_view),
-    specialized_material_pipeline_cache=world.get_resource(
-      ecs_key_specialized_material_pipeline_cache,
-    ),
+    retained_view_entity=retained_view,
+    specialized_material_pipeline_cache=world
+      .get_resource(ecs_key_specialized_material_pipeline_cache)
+      .unwrap(),
   )
   inspect(items.length(), content="1")
-  debug_inspect(items[0].pipeline_id is Some(_), content="true")
+  debug_inspect(
+    items[0].pipeline_id.id() == pipeline_id.unwrap().id(),
+    content="true",
+  )
 }
 
 ///|

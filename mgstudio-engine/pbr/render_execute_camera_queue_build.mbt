@@ -49,7 +49,7 @@ fn render3d_build_camera_queue_entry(
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
-  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
+  specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_main_entities? : Map[UInt64, Bool]? = None,
 ) -> Render3dExecuteCameraQueueBuildResult {
   let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
@@ -73,9 +73,7 @@ fn render3d_build_camera_queue_entry(
       camera_frustum_planes,
       camera.has_no_cpu_culling,
       camera_indirect_enabled,
-      retained_view_entity=Some(
-        @render_view.RetainedViewEntity::new(view_entity),
-      ),
+      retained_view_entity=@render_view.RetainedViewEntity::new(view_entity),
       specialized_material_pipeline_cache~,
       visible_main_entities~,
     ),
@@ -275,7 +273,7 @@ fn render3d_prepare_camera_queue_entry(
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
-  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
+  specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_main_entities? : Map[UInt64, Bool]? = None,
 ) -> Render3dPreparedCameraQueue? {
   let camera = extracted_camera.payload
@@ -322,7 +320,7 @@ fn render3d_prepare_camera_queue_entries(
   meshes : Array[ExtractedMesh3d],
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
-  specialized_material_pipeline_cache? : SpecializedMaterialPipelineCache? = None,
+  specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_main_entity_filters? : Array[Map[UInt64, Bool]]? = None,
 ) -> Array[Render3dPreparedCameraQueue?] {
   let prepared : Array[Render3dPreparedCameraQueue?] = []

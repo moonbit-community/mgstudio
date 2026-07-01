@@ -213,7 +213,7 @@ priv struct MeshPhaseItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
   phase : Int
-  pipeline_id : @material.CachedRenderPipelineId?
+  pipeline_id : @material.CachedRenderPipelineId
   distance : Float
 }
 

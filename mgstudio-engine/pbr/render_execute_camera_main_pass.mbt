@@ -731,7 +731,7 @@ fn render3d_execute_camera_main_pass(
       vertex_shader_path=draw_vertex_shader_path,
       fragment_shader_path=draw_fragment_shader_path,
       material_extension_bind_group_data=mesh.material_bind_group_data,
-      material_pipeline_id=draw_item.pipeline_id,
+      material_pipeline_id=Some(draw_item.pipeline_id),
       skinning_key_hi=mesh.skinning_key_hi,
       skinning_key_lo=if mesh.skinning_key_hi >= 0 { 0 } else { -1 },
       morph_weights_index=mesh.morph_weights_index,

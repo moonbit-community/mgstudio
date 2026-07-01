@@ -136,21 +136,21 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
       extracted_index: 0,
       phase: RENDER3D_PHASE_OPAQUE,
-      pipeline_id: None,
+      pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
     },
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(2, 0)),
       extracted_index: 1,
       phase: RENDER3D_PHASE_OPAQUE,
-      pipeline_id: None,
+      pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 2.0F,
     },
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
       extracted_index: 2,
       phase: RENDER3D_PHASE_ALPHA_MASK,
-      pipeline_id: None,
+      pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 3.0F,
     },
   ]
@@ -271,7 +271,7 @@ test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
       entity: phase_entity_ref3d_for_main(@core.Entity::new(41, 0)),
       extracted_index: -1,
       phase: RENDER3D_PHASE_OPAQUE,
-      pipeline_id: None,
+      pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
     },
   ]
@@ -333,7 +333,7 @@ test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
       entity: phase_entity_ref3d_for_main(@core.Entity::new(42, 0)),
       extracted_index: 0,
       phase: RENDER3D_PHASE_OPAQUE,
-      pipeline_id: None,
+      pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
     },
   ]
@@ -510,11 +510,29 @@ fn render3d_test_transparent_mesh_for_queue(
 }
 
 ///|
+fn render3d_test_queue_pipeline_cache(
+  meshes : Array[ExtractedMesh3d],
+) -> (@render_view.RetainedViewEntity, SpecializedMaterialPipelineCache) {
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(5000, 0))
+  let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
+  for mesh in meshes {
+    cache.insert(
+      view,
+      mesh.entity.main_entity,
+      1,
+      @material.CachedRenderPipelineId::new(77UL),
+    )
+  }
+  (view, cache)
+}
+
+///|
 test "render3d: transparent phase ordering includes bevy material depth bias" {
   let meshes = [
     render3d_test_transparent_mesh_for_queue(1, -1.0F, 0.0F),
     render3d_test_transparent_mesh_for_queue(2, -1.0F, 2.0F),
   ]
+  let (view, cache) = render3d_test_queue_pipeline_cache(meshes)
   let camera_transform = @transform.Transform::identity()
   let cpu_items = render3d_queue_mesh_phase_items(
     meshes,
@@ -523,6 +541,8 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
     [],
     false,
     false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   let gpu_items = render3d_queue_mesh_phase_items(
     meshes,
@@ -531,6 +551,8 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
     [],
     false,
     true,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   debug_inspect(cpu_items[0].entity.main_entity.id, content="2")
   debug_inspect(cpu_items[0].distance, content="3")
@@ -556,6 +578,7 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
       material_properties: properties,
     },
   }
+  let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
   let cpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     @camera_render_layers.RenderLayers::RenderLayers(),
@@ -563,6 +586,8 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
     [],
     false,
     false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   let gpu_items = render3d_queue_mesh_phase_items(
     [mesh],
@@ -571,6 +596,8 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
     [],
     false,
     true,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   debug_inspect(cpu_items[0].phase, content="3")
   debug_inspect(gpu_items[0].phase, content="3")
@@ -584,6 +611,7 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
   ]
   let visible : Map[UInt64, Bool] = {}
   visible.set(meshes[1].entity.main_entity.to_bits(), true)
+  let (view, cache) = render3d_test_queue_pipeline_cache(meshes)
   let cpu_items = render3d_queue_mesh_phase_items(
     meshes,
     @camera_render_layers.RenderLayers::RenderLayers(),
@@ -591,6 +619,8 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
     [],
     false,
     false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
     visible_main_entities=Some(visible),
   )
   let gpu_items = render3d_queue_mesh_phase_items(
@@ -600,6 +630,8 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
     [],
     false,
     true,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
     visible_main_entities=Some(visible),
   )
   debug_inspect(cpu_items.length(), content="1")
@@ -622,8 +654,8 @@ test "render3d: queue phase skips view cache misses" {
     [],
     false,
     false,
-    retained_view_entity=Some(view),
-    specialized_material_pipeline_cache=Some(cache),
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   let gpu_miss = render3d_queue_mesh_phase_items(
     [mesh],
@@ -632,8 +664,8 @@ test "render3d: queue phase skips view cache misses" {
     [],
     false,
     true,
-    retained_view_entity=Some(view),
-    specialized_material_pipeline_cache=Some(cache),
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   debug_inspect(cpu_miss.length(), content="0")
   debug_inspect(gpu_miss.length(), content="0")
@@ -651,8 +683,8 @@ test "render3d: queue phase skips view cache misses" {
     [],
     false,
     false,
-    retained_view_entity=Some(view),
-    specialized_material_pipeline_cache=Some(cache),
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   let gpu_hit = render3d_queue_mesh_phase_items(
     [mesh],
@@ -661,19 +693,13 @@ test "render3d: queue phase skips view cache misses" {
     [],
     false,
     true,
-    retained_view_entity=Some(view),
-    specialized_material_pipeline_cache=Some(cache),
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   debug_inspect(cpu_hit.length(), content="1")
   debug_inspect(gpu_hit.length(), content="1")
-  debug_inspect(
-    cpu_hit[0].pipeline_id.map(fn(value) { value.id() }),
-    content="Some(77)",
-  )
-  debug_inspect(
-    gpu_hit[0].pipeline_id.map(fn(value) { value.id() }),
-    content="Some(77)",
-  )
+  debug_inspect(cpu_hit[0].pipeline_id.id(), content="77")
+  debug_inspect(gpu_hit[0].pipeline_id.id(), content="77")
 }
 
 ///|
@@ -731,6 +757,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       motion_vector_enabled: false,
     },
   }
+  let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
   let items = render3d_queue_mesh_phase_items(
     [mesh],
     @camera_render_layers.RenderLayers::RenderLayers(),
@@ -738,6 +765,8 @@ test "render3d: transmissive materials use a distinct sorted phase" {
     [],
     false,
     false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
   )
   debug_inspect(items[0].phase, content="2")
   debug_inspect(

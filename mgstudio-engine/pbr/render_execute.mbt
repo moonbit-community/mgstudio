@@ -4552,9 +4552,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.meshes,
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
-          specialized_material_pipeline_cache=Some(
-            specialized_material_pipeline_cache,
-          ),
+          specialized_material_pipeline_cache~,
           visible_main_entity_filters=Some(visible_main_entity_filters),
         )
       })
