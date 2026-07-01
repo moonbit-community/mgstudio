@@ -48,6 +48,72 @@ test "renderer: pending command buffers default to empty bevy resource state" {
 }
 
 ///|
+fn pending_submit_test_u32le_at(bytes : Bytes, offset : Int) -> UInt {
+  bytes[offset].to_uint() |
+  (bytes[offset + 1].to_uint() << 8) |
+  (bytes[offset + 2].to_uint() << 16) |
+  (bytes[offset + 3].to_uint() << 24)
+}
+
+///|
+test "renderer: pending command buffers submit map-read callbacks" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let render_instance = RenderInstance::from_wgpu(instance)
+  let src = device.create_buffer(
+    size=8UL,
+    usage=bu(@wgpu.BUFFER_USAGE_COPY_SRC | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  let staging = device.create_buffer(
+    size=8UL,
+    usage=bu(@wgpu.BUFFER_USAGE_MAP_READ | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  render_queue
+  .wgpu_queue()
+  .write_buffer(src, 0UL, u32le_pack([0xAABBCCDDU, 0x11223344U]))
+  let encoder = render_device.create_command_encoder()
+  encoder.copy_buffer_to_buffer(src, 0UL, staging, 0UL, 8UL)
+  let completed = @ref.new(false)
+  let first_word = @ref.new(0U)
+  let pending = PendingCommandBuffers::PendingCommandBuffers()
+  pending.push_encoder_map_read(encoder, staging, 0UL, 8UL, fn(
+    status,
+    bytes,
+    _buffer,
+  ) {
+    completed.val = status == @wgpu.MAP_ASYNC_STATUS_SUCCESS
+    if completed.val {
+      first_word.val = pending_submit_test_u32le_at(bytes, 0)
+    }
+  })
+  let first_submit = @ref.new(true)
+  for _ in 0..<4000 {
+    if !completed.val {
+      pending.submit(
+        render_queue,
+        render_device=Some(render_device),
+        render_instance=Some(render_instance),
+      )
+      if first_submit.val {
+        first_submit.val = false
+        ignore(device.poll(wait=true))
+      }
+    }
+  }
+  debug_inspect(completed.val, content="true")
+  debug_inspect(first_word.val, content="2864434397")
+  debug_inspect(pending.is_empty(), content="true")
+  src.release()
+  staging.release()
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "renderer: surface frame present follows Bevy view target intent" {
   debug_inspect(
     frame_binding_should_present_state(false, false),

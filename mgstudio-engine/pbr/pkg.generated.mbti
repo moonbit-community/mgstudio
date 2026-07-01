@@ -514,7 +514,7 @@ pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @mat
 
 pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
 
-pub fn gpu_clustering_cluster_on_gpu_commands(@wgpu_mbt.CommandEncoder, @renderer.RenderDevice, @render_resource.PipelineCache, GpuClusteringMeshBuffers, RenderViewClusteringReadbackData, @Milky2018/mgstudio/render.MainEntity, ViewGpuClusteringBuffers, ViewGpuClusteringPipelineIds, ViewClusteringDummyTexture, ViewClusteringBindGroups, @light_probe.ViewLightProbesUniformOffset, @Milky2018/mgstudio/pbr/render.ViewLightsUniformOffset, @view.ViewUniformOffset, ExtractedClusterConfig) -> Bool
+pub fn gpu_clustering_cluster_on_gpu_commands(@wgpu_mbt.CommandEncoder, @renderer.RenderDevice, @render_resource.PipelineCache, GpuClusteringMeshBuffers, RenderViewClusteringReadbackData, @Milky2018/mgstudio/render.MainEntity, ViewGpuClusteringBuffers, ViewGpuClusteringPipelineIds, ViewClusteringDummyTexture, ViewClusteringBindGroups, @light_probe.ViewLightProbesUniformOffset, @Milky2018/mgstudio/pbr/render.ViewLightsUniformOffset, @view.ViewUniformOffset, ExtractedClusterConfig) -> GpuClusteringReadbackRequest?
 
 pub fn gpu_clustering_is_enabled(@ecs.World) -> Bool
 
@@ -524,7 +524,7 @@ pub fn gpu_clustering_pipeline_steps() -> Array[GpuClusteringStep]
 
 pub fn gpu_clustering_plugin_with(@app.App[@ecs.World], GpuClusteringPlugin) -> @app.App[@ecs.World]
 
-pub fn gpu_clustering_process_readback_staging_buffer(@wgpu_mbt.Instance, ViewClusteringReadbackData, @wgpu_mbt.Buffer) -> Bool
+pub fn gpu_clustering_process_readback_staging_buffer(ViewClusteringReadbackData, UInt, Bytes, @wgpu_mbt.Buffer) -> Bool
 
 pub fn gpu_clustering_schedule_readback_staging(@wgpu_mbt.CommandEncoder, ViewGpuClusteringBuffers, @wgpu_mbt.Buffer) -> Bool
 
@@ -1611,6 +1611,11 @@ pub struct GpuClusteringPluginState {
 pub fn GpuClusteringPluginState::enabled(Self) -> Bool
 pub fn GpuClusteringPluginState::max_storage_buffers_per_shader_stage(Self) -> Int
 pub fn GpuClusteringPluginState::new(Int) -> Self
+
+pub struct GpuClusteringReadbackRequest {
+  view_clustering_readback_data : ViewClusteringReadbackData
+  staging_buffer : @wgpu_mbt.Buffer
+}
 
 pub(all) enum GpuClusteringStep {
   ZSlicing

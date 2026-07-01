@@ -71,13 +71,37 @@ test "render3d: gpu clustering schedules metadata staging copy" {
     content="true",
   )
   let command_buffer = encoder.finish()
-  render_queue.submit([command_buffer])
+  let future_id = render_queue
+    .wgpu_queue()
+    .submit_one_and_map_read_async(
+      command_buffer,
+      staging_buffer,
+      0UL,
+      GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES,
+    )
+  debug_inspect(future_id != 0UL, content="true")
+  ignore(device.poll(wait=true))
+  let mut completed = false
+  for _ in 0..<4000 {
+    if !completed {
+      ignore(device.poll())
+      let wait = instance.wait_any_one(future_id)
+      completed = wait.completed
+      if !completed {
+        instance.process_events()
+      }
+    }
+  }
+  debug_inspect(completed, content="true")
+  let status = render_queue.wgpu_queue().map_read_async_status_u32(future_id)
+  let bytes = render_queue.wgpu_queue().map_read_async_read(future_id)
+  render_queue.wgpu_queue().map_read_async_clear(future_id)
   command_buffer.release()
   encoder.release()
 
   debug_inspect(
     gpu_clustering_process_readback_staging_buffer(
-      instance, readback, staging_buffer,
+      readback, status, bytes, staging_buffer,
     ),
     content="true",
   )

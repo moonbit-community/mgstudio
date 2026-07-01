@@ -167,6 +167,12 @@ pub struct RenderViewClusteringReadbackData {
 }
 
 ///|
+pub struct GpuClusteringReadbackRequest {
+  view_clustering_readback_data : ViewClusteringReadbackData
+  staging_buffer : @wgpu.Buffer
+}
+
+///|
 pub struct ViewGpuClusteringBuffers {
   z_slices_buffer : @render_resource.StorageBuffer[ClusterableObjectZSlice]
   scratchpad_offsets_and_counts_buffer : @render_resource.StorageBuffer[
@@ -2261,25 +2267,24 @@ pub fn gpu_clustering_schedule_readback_staging(
 
 ///|
 pub fn gpu_clustering_process_readback_staging_buffer(
-  instance : @wgpu.Instance,
   view_clustering_readback_data : ViewClusteringReadbackData,
+  status : UInt,
+  bytes : Bytes,
   staging_buffer : @wgpu.Buffer,
 ) -> Bool {
-  let bytes = staging_buffer.map_read_sync(
-    instance,
-    0UL,
-    GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES,
-  )
-  if bytes.length() == 0 {
+  if status != @wgpu.MAP_ASYNC_STATUS_SUCCESS || bytes.length() == 0 {
+    view_clustering_readback_data.recycle_staging_buffer(staging_buffer)
     return false
   }
   match ClusterMetadata::from_readback_bytes(bytes) {
-    None => false
+    None => {
+      view_clustering_readback_data.recycle_staging_buffer(staging_buffer)
+      false
+    }
     Some(gpu_clustering_metadata) => {
       view_clustering_readback_data.update_from_metadata(
         gpu_clustering_metadata,
       )
-      staging_buffer.unmap()
       view_clustering_readback_data.recycle_staging_buffer(staging_buffer)
       true
     }
@@ -2483,16 +2488,16 @@ pub fn gpu_clustering_cluster_on_gpu_commands(
   view_lights_uniform_offset : @pbr_render.ViewLightsUniformOffset,
   view_uniform_offset : @render_view.ViewUniformOffset,
   extracted_cluster_config : ExtractedClusterConfig,
-) -> Bool {
+) -> GpuClusteringReadbackRequest? {
   guard render_view_clustering_readback_data.view_data(view_main_entity)
     is Some(view_clustering_readback_data) else {
-    return false
+    return None
   }
   guard gpu_clustering_resolve_view_pipelines(
       pipeline_cache, view_gpu_clustering_pipeline_ids,
     )
     is Some(pipelines) else {
-    return false
+    return None
   }
   let staging_buffer = view_clustering_readback_data.get_or_create_staging_buffer(
     render_device,
@@ -2519,7 +2524,8 @@ pub fn gpu_clustering_cluster_on_gpu_commands(
       clustering_mesh_buffers,
       false,
     ) {
-    return false
+    view_clustering_readback_data.recycle_staging_buffer(staging_buffer)
+    return None
   }
   gpu_clustering_run_allocation_pass(
     command_encoder,
@@ -2550,11 +2556,18 @@ pub fn gpu_clustering_cluster_on_gpu_commands(
       clustering_mesh_buffers,
       true,
     ) {
-    return false
+    view_clustering_readback_data.recycle_staging_buffer(staging_buffer)
+    return None
   }
-  gpu_clustering_schedule_readback_staging(
-    command_encoder, view_gpu_clustering_buffers, staging_buffer,
+  ignore(
+    gpu_clustering_schedule_readback_staging(
+      command_encoder, view_gpu_clustering_buffers, staging_buffer,
+    ),
   )
+  Some(GpuClusteringReadbackRequest::{
+    view_clustering_readback_data,
+    staging_buffer,
+  })
 }
 
 ///|
@@ -2590,8 +2603,11 @@ fn cluster_on_gpu(world : @ecs.World) -> Unit {
     Some(value) => value
     None => return
   }
-  let mut command_encoder : @wgpu.CommandEncoder? = None
-  let mut encoded_any = false
+  let pending = match
+    world.get_resource(@render.pending_command_buffers_resource_key) {
+    Some(value) => value
+    None => return
+  }
   world.for_each_component(@render_view.ExtractedView::component(), fn(
     view_entity,
     _view,
@@ -2666,39 +2682,34 @@ fn cluster_on_gpu(world : @ecs.World) -> Unit {
       is Some(extracted_cluster_config) else {
       return
     }
-    let encoder = match command_encoder {
-      Some(value) => value
-      None => {
-        let value = render_device.create_command_encoder()
-        command_encoder = Some(value)
-        value
-      }
-    }
-    if gpu_clustering_cluster_on_gpu_commands(
+    let encoder = render_device.create_command_encoder()
+    match
+      gpu_clustering_cluster_on_gpu_commands(
         encoder, render_device, pipeline_cache, clustering_mesh_buffers, render_view_clustering_readback_data,
         view_main_entity, view_gpu_clustering_buffers, view_gpu_clustering_pipeline_ids,
         view_clustering_dummy_texture, view_clustering_bind_groups, view_light_probes_uniform_offset,
         view_lights_uniform_offset, view_uniform_offset, extracted_cluster_config,
       ) {
-      encoded_any = true
+      None => encoder.release()
+      Some(readback_request) =>
+        pending.push_encoder_map_read(
+          encoder,
+          readback_request.staging_buffer,
+          0UL,
+          GPU_CLUSTERING_CLUSTER_METADATA_SIZE_BYTES,
+          fn(status, bytes, staging_buffer) {
+            ignore(
+              gpu_clustering_process_readback_staging_buffer(
+                readback_request.view_clustering_readback_data,
+                status,
+                bytes,
+                staging_buffer,
+              ),
+            )
+          },
+        )
     }
   })
-  match command_encoder {
-    None => ()
-    Some(encoder) =>
-      if encoded_any {
-        guard world.get_resource_mut(
-            @render.pending_command_buffers_resource_key,
-          )
-          is Some(pending_mut) else {
-          encoder.release()
-          return
-        }
-        pending_mut.modify(fn(pending) { pending.push_encoder(encoder) })
-      } else {
-        encoder.release()
-      }
-  }
 }
 
 ///|

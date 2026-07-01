@@ -1797,12 +1797,31 @@ pub fn PendingCommandBuffers::length(Self) -> Int
 pub fn PendingCommandBuffers::new() -> Self
 pub fn PendingCommandBuffers::push(Self, Array[@wgpu_mbt.CommandBuffer]) -> Unit
 pub fn PendingCommandBuffers::push_encoder(Self, @wgpu_mbt.CommandEncoder) -> Unit
+pub fn PendingCommandBuffers::push_encoder_map_read(Self, @wgpu_mbt.CommandEncoder, @wgpu_mbt.Buffer, UInt64, UInt64, (UInt, Bytes, @wgpu_mbt.Buffer) -> Unit) -> Unit
 pub fn PendingCommandBuffers::push_one(Self, @wgpu_mbt.CommandBuffer) -> Unit
+pub fn PendingCommandBuffers::submit(Self, RenderQueue, render_device? : RenderDevice?, render_instance? : RenderInstance?) -> Unit
 pub fn PendingCommandBuffers::take(Self) -> Array[@wgpu_mbt.CommandBuffer]
 
 pub(all) struct PendingCommandBuffersInner {
   mut buffers : Array[@wgpu_mbt.CommandBuffer]
   mut encoders : Array[@wgpu_mbt.CommandEncoder]
+  mut map_read_encoders : Array[PendingMapReadEncoder]
+  mut map_read_futures : Array[PendingMapReadFuture]
+}
+
+pub(all) struct PendingMapReadEncoder {
+  encoder : @wgpu_mbt.CommandEncoder
+  buffer : @wgpu_mbt.Buffer
+  offset : UInt64
+  size : UInt64
+  on_complete : (UInt, Bytes, @wgpu_mbt.Buffer) -> Unit
+}
+
+pub(all) struct PendingMapReadFuture {
+  future_id : UInt64
+  command_buffer : @wgpu_mbt.CommandBuffer
+  buffer : @wgpu_mbt.Buffer
+  on_complete : (UInt, Bytes, @wgpu_mbt.Buffer) -> Unit
 }
 
 pub struct RenderAdapter {
@@ -1992,6 +2011,8 @@ pub type NativeGpuDevice = Int
 pub type NativeGpuQueue = Int
 
 pub type NativeGpuSurface = Int
+
+pub type PendingMapReadCallback = (UInt, Bytes, @wgpu_mbt.Buffer) -> Unit
 
 // Traits
 

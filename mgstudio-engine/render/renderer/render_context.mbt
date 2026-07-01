@@ -27,14 +27,36 @@ pub type NativeGpuQueue = Int
 pub type NativeGpuSurface = Int
 
 ///|
+pub type PendingMapReadCallback = (UInt, Bytes, @wgpu.Buffer) -> Unit
+
+///|
+pub(all) struct PendingMapReadEncoder {
+  encoder : @wgpu.CommandEncoder
+  buffer : @wgpu.Buffer
+  offset : UInt64
+  size : UInt64
+  on_complete : PendingMapReadCallback
+}
+
+///|
+pub(all) struct PendingMapReadFuture {
+  future_id : UInt64
+  command_buffer : @wgpu.CommandBuffer
+  buffer : @wgpu.Buffer
+  on_complete : PendingMapReadCallback
+}
+
+///|
 pub(all) struct PendingCommandBuffersInner {
   mut buffers : Array[@wgpu.CommandBuffer]
   mut encoders : Array[@wgpu.CommandEncoder]
+  mut map_read_encoders : Array[PendingMapReadEncoder]
+  mut map_read_futures : Array[PendingMapReadFuture]
 }
 
 ///|
 fn pending_command_buffers_inner_default() -> PendingCommandBuffersInner {
-  { buffers: [], encoders: [] }
+  { buffers: [], encoders: [], map_read_encoders: [], map_read_futures: [] }
 }
 
 ///|
@@ -85,6 +107,24 @@ pub fn PendingCommandBuffers::push_encoder(
 }
 
 ///|
+pub fn PendingCommandBuffers::push_encoder_map_read(
+  self : PendingCommandBuffers,
+  encoder : @wgpu.CommandEncoder,
+  buffer : @wgpu.Buffer,
+  offset : UInt64,
+  size : UInt64,
+  on_complete : PendingMapReadCallback,
+) -> Unit {
+  self.inner.get().map_read_encoders.push({
+    encoder,
+    buffer,
+    offset,
+    size,
+    on_complete,
+  })
+}
+
+///|
 pub fn PendingCommandBuffers::take(
   self : PendingCommandBuffers,
 ) -> Array[@wgpu.CommandBuffer] {
@@ -99,15 +139,107 @@ pub fn PendingCommandBuffers::take(
 }
 
 ///|
+fn PendingCommandBuffers::poll_map_read_futures(
+  self : PendingCommandBuffers,
+  queue : RenderQueue,
+  render_device : RenderDevice?,
+  render_instance : RenderInstance?,
+) -> Unit {
+  if render_device is Some(device) {
+    ignore(device.poll(wait=false))
+  }
+  if render_instance is Some(instance) {
+    instance.wgpu_instance().process_events()
+  }
+  let inner = self.inner.get()
+  let remaining : Array[PendingMapReadFuture] = []
+  for future in inner.map_read_futures {
+    if render_instance is Some(instance) {
+      let wait = instance.wgpu_instance().wait_any_one(future.future_id)
+      if !wait.completed {
+        instance.wgpu_instance().process_events()
+      }
+    }
+    let status = queue.wgpu_queue().map_read_async_status_u32(future.future_id)
+    if status == 0U {
+      remaining.push(future)
+      continue
+    }
+    let bytes = if status == @wgpu.MAP_ASYNC_STATUS_SUCCESS {
+      queue.wgpu_queue().map_read_async_read(future.future_id)
+    } else {
+      Bytes::makei(0, _ => 0)
+    }
+    queue.wgpu_queue().map_read_async_clear(future.future_id)
+    future.command_buffer.release()
+    (future.on_complete)(status, bytes, future.buffer)
+  }
+  inner.map_read_futures = remaining
+}
+
+///|
+pub fn PendingCommandBuffers::submit(
+  self : PendingCommandBuffers,
+  queue : RenderQueue,
+  render_device? : RenderDevice? = None,
+  render_instance? : RenderInstance? = None,
+) -> Unit {
+  self.poll_map_read_futures(queue, render_device, render_instance)
+  let buffers = self.take()
+  if buffers.length() > 0 {
+    queue.submit(buffers)
+    for buffer in buffers {
+      buffer.release()
+    }
+  }
+  let inner = self.inner.get()
+  let map_read_encoders = inner.map_read_encoders
+  inner.map_read_encoders = []
+  for entry in map_read_encoders {
+    let command_buffer = entry.encoder.finish()
+    let future_id = queue
+      .wgpu_queue()
+      .submit_one_and_map_read_async(
+        command_buffer,
+        entry.buffer,
+        entry.offset,
+        entry.size,
+      )
+    if future_id == 0UL {
+      command_buffer.release()
+      (entry.on_complete)(
+        @wgpu.MAP_ASYNC_STATUS_ERROR,
+        Bytes::makei(0, _ => 0),
+        entry.buffer,
+      )
+    } else {
+      inner.map_read_futures.push({
+        future_id,
+        command_buffer,
+        buffer: entry.buffer,
+        on_complete: entry.on_complete,
+      })
+    }
+  }
+  self.poll_map_read_futures(queue, render_device, render_instance)
+}
+
+///|
 pub fn PendingCommandBuffers::is_empty(self : PendingCommandBuffers) -> Bool {
   let inner = self.inner.get()
-  inner.buffers.length() == 0 && inner.encoders.length() == 0
+  inner.buffers.length() == 0 &&
+  inner.encoders.length() == 0 &&
+  inner.map_read_encoders.length() == 0 &&
+  inner.map_read_futures.length() == 0
 }
 
 ///|
 pub fn PendingCommandBuffers::length(self : PendingCommandBuffers) -> Int {
   let inner = self.inner.get()
-  inner.buffers.length() + inner.encoders.length()
+  inner.buffers.length() +
+  inner.encoders.length() +
+  inner.map_read_encoders.length() +
+  inner.map_read_futures.length()
 }
 
 ///|

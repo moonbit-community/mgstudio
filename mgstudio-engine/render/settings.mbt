@@ -348,13 +348,9 @@ pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
     Some(value) => value
     None => return
   }
-  let buffers = pending.take()
-  if buffers.length() > 0 {
-    queue.submit(buffers)
-    for buffer in buffers {
-      buffer.release()
-    }
-  }
+  let render_device = world.get_resource(render_device_resource_key)
+  let render_instance = world.get_resource(render_instance_resource_key)
+  pending.submit(queue, render_device~, render_instance~)
   @renderer.release_frame_retired_resources()
   world.insert_resource(pending_command_buffers_resource_key, pending)
 }
