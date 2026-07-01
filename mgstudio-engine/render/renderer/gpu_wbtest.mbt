@@ -2061,6 +2061,24 @@ test "renderer: material pipeline draw treats unregistered cached ids as pending
 }
 
 ///|
+test "renderer: shadow draw treats unregistered cached material pipelines as pending" {
+  let backend = GpuBackend::new(assets_base="assets")
+  debug_inspect(
+    mesh3d_shadow_depth_pipeline_for_draw(
+      backend,
+      @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      42UL,
+      2,
+      false,
+      false,
+      false,
+    )
+    is None,
+    content="true",
+  )
+}
+
+///|
 test "renderer: mesh3d shader value defines match Bevy native light limits" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(

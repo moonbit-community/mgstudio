@@ -121,16 +121,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
 ) -> Unit raise GpuBackendError {
   let material_path = mesh3d_shadow_material_path_from_flags(material_flags)
   let skinned = skinning_key_hi >= 0
-  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
-    self, material_pipeline_id,
-  )
-  let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
-    self, material_pipeline_id, material_descriptor,
-  )
-  let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
-    self, directional_light,
-  )
-  guard mesh3d_shadow_depth_pipeline_for_current_pass(
+  guard mesh3d_shadow_depth_pipeline_for_draw(
       self,
       mesh.primitive_topology,
       material_pipeline_id,
@@ -142,6 +133,15 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
     is Some(pipeline) else {
     return
   }
+  let material_descriptor = mesh3d_material_pipeline_descriptor_find(
+    self, material_pipeline_id,
+  )
+  let material_layout_entry = mesh3d_material_pipeline_layout_get_or_create(
+    self, material_pipeline_id, material_descriptor,
+  )
+  let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
+    self, directional_light,
+  )
   let indirect_first_instance_supported = self.device.supported_features_contains_u32(
     @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
   )

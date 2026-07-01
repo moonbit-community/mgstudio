@@ -3112,6 +3112,26 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
 }
 
 ///|
+fn mesh3d_shadow_depth_pipeline_for_draw(
+  backend : GpuBackend,
+  topology : UInt,
+  material_pipeline_id : UInt64,
+  cull_mode : Int,
+  material_path : Bool,
+  skinned : Bool,
+  directional_light : Bool,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
+    return mesh3d_material_render_pipeline_for_draw(
+      backend, material_pipeline_id,
+    )
+  }
+  mesh3d_shadow_depth_pipeline_for_current_pass(
+    backend, topology, material_pipeline_id, cull_mode, material_path, skinned, directional_light,
+  )
+}
+
+///|
 fn mesh3d_shadow_pipeline_material_id(
   material_pipeline_id : UInt64,
   material_path : Bool,
