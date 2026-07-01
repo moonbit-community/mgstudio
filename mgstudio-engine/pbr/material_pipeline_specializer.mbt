@@ -186,6 +186,62 @@ fn pbr_push_standard_material_feature_shader_defs(
 }
 
 ///|
+fn pbr_pipeline_layout_fragment_sampler_count(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+) -> Int {
+  let fragment_visibility = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  let mut sampler_count = 0
+  for layout in descriptor.layout() {
+    for entry in layout.entries() {
+      if (entry.visibility() & fragment_visibility) == 0U {
+        continue
+      }
+      match entry.kind() {
+        @render_resource.BindingType::Sampler
+        | @render_resource.BindingType::SamplerBinding(_) => {
+          let entry_count = entry.count()
+          sampler_count += if entry_count > 0 { entry_count } else { 1 }
+        }
+        _ => ()
+      }
+    }
+  }
+  sampler_count
+}
+
+///|
+fn pbr_pipeline_layout_sampler_limit_unsupported_reason(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+  max_fragment_samplers_per_shader_stage : UInt,
+) -> String? {
+  let sampler_count = pbr_pipeline_layout_fragment_sampler_count(descriptor)
+  if sampler_count.reinterpret_as_uint() <=
+    max_fragment_samplers_per_shader_stage {
+    return None
+  }
+  let label = match descriptor.label() {
+    Some(label) => label
+    None => "unnamed PBR material pipeline"
+  }
+  Some(
+    "\{label} uses \{sampler_count.to_string()} fragment-visible samplers, exceeding max_samplers_per_shader_stage \{max_fragment_samplers_per_shader_stage.to_string()}",
+  )
+}
+
+///|
+fn pbr_validate_pipeline_layout_sampler_limit(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+  max_fragment_samplers_per_shader_stage : UInt?,
+) -> Unit raise @material.SpecializedMeshPipelineError {
+  guard max_fragment_samplers_per_shader_stage is Some(limit) else { return }
+  guard pbr_pipeline_layout_sampler_limit_unsupported_reason(descriptor, limit)
+    is Some(reason) else {
+    return
+  }
+  raise @material.specialized_mesh_pipeline_unsupported_feature_error(reason)
+}
+
+///|
 fn pbr_push_view_projection_shader_def(
   mesh_key_bits : UInt64,
   shader_defs : Array[@material.ShaderDefVal],
@@ -1337,6 +1393,7 @@ pub struct PbrMaterialPipelineSpecializer {
   binding_arrays_are_usable : Bool
   clustered_decals_are_usable : Bool
   standard_material_texture_features : StandardMaterialTextureFeatureSet
+  max_fragment_samplers_per_shader_stage : UInt?
 }
 
 ///|
@@ -1345,12 +1402,14 @@ pub fn PbrMaterialPipelineSpecializer::new(
   binding_arrays_are_usable? : Bool = false,
   clustered_decals_are_usable? : Bool = false,
   standard_material_texture_features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
+  max_fragment_samplers_per_shader_stage? : UInt? = None,
 ) -> PbrMaterialPipelineSpecializer {
   PbrMaterialPipelineSpecializer::{
     properties,
     binding_arrays_are_usable,
     clustered_decals_are_usable,
     standard_material_texture_features,
+    max_fragment_samplers_per_shader_stage,
   }
 }
 
@@ -1366,6 +1425,10 @@ pub fn PbrMaterialPipelineSpecializer::specialize(
     self.binding_arrays_are_usable,
     self.clustered_decals_are_usable,
     self.standard_material_texture_features,
+  )
+  pbr_validate_pipeline_layout_sampler_limit(
+    descriptor,
+    self.max_fragment_samplers_per_shader_stage,
   )
   descriptor.vertex.shader_defs.push(
     pbr_shader_def_uint(

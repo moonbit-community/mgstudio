@@ -79,6 +79,8 @@ pub fn shader_label(String) -> String
 
 pub fn specialized_mesh_pipeline_missing_vertex_attribute_error(@mesh.MissingVertexAttributeError) -> SpecializedMeshPipelineError
 
+pub fn specialized_mesh_pipeline_unsupported_feature_error(String) -> SpecializedMeshPipelineError
+
 pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
 pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMaterial?
@@ -88,6 +90,7 @@ pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) 
 // Errors
 pub suberror SpecializedMeshPipelineError {
   MissingVertexAttribute(@mesh.MissingVertexAttributeError)
+  UnsupportedFeature(String)
 }
 
 // Types and methods

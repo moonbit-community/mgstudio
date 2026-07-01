@@ -325,6 +325,56 @@ test "pbr material pipeline optional texture feature set controls shader defs" {
 }
 
 ///|
+test "pbr material pipeline rejects non-bindless sampler-limit overflow before pipeline creation" {
+  let all_features = StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    pbr_transmission_textures=true,
+    pbr_multi_layer_material_textures=true,
+    pbr_anisotropy_texture=true,
+    pbr_specular_textures=true,
+  )
+  let default_properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(standard_material_bind_group_layout_descriptor()),
+  )
+  let default_descriptor = try! PbrMaterialPipelineSpecializer::new(
+    default_properties,
+    max_fragment_samplers_per_shader_stage=Some(16U),
+  ).specialize(
+    pbr_material_specializer_test_key(),
+    pbr_material_specializer_test_layout(),
+  )
+  inspect(
+    pbr_pipeline_layout_fragment_sampler_count(default_descriptor),
+    content="12",
+  )
+  let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
+    Some(standard_material_bind_group_layout_descriptor(features=all_features)),
+  )
+  let unsupported = PbrMaterialPipelineSpecializer::new(
+    properties,
+    standard_material_texture_features=all_features,
+    max_fragment_samplers_per_shader_stage=Some(16U),
+  ).specialize(
+    pbr_material_specializer_test_key(),
+    pbr_material_specializer_test_layout(),
+  ) catch {
+    error => {
+      match error {
+        @material.SpecializedMeshPipelineError::UnsupportedFeature(message) => {
+          debug_inspect(message.contains("uses 20"), content="true")
+          debug_inspect(
+            message.contains("max_samplers_per_shader_stage 16"),
+            content="true",
+          )
+        }
+        _ => abort("expected unsupported feature sampler-limit error")
+      }
+      @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+    }
+  }
+  ignore(unsupported)
+}
+
+///|
 test "pbr material pipeline specializer mirrors bevy view projection shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(

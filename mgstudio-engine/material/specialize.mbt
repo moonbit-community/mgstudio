@@ -21,6 +21,7 @@ pub type MaterialMeshVertexLayout = @mesh.MeshVertexBufferLayoutRef
 ///|
 pub suberror SpecializedMeshPipelineError {
   MissingVertexAttribute(@mesh.MissingVertexAttributeError)
+  UnsupportedFeature(String)
 }
 
 ///|
@@ -64,6 +65,13 @@ pub fn specialized_mesh_pipeline_missing_vertex_attribute_error(
   error : @mesh.MissingVertexAttributeError,
 ) -> SpecializedMeshPipelineError {
   MissingVertexAttribute(error)
+}
+
+///|
+pub fn specialized_mesh_pipeline_unsupported_feature_error(
+  message : String,
+) -> SpecializedMeshPipelineError {
+  UnsupportedFeature(message)
 }
 
 ///|
