@@ -13,6 +13,46 @@
 // limitations under the License.
 
 ///|
+struct RenderExtractDirectMarker {} derive(Eq, Debug)
+
+///|
+fn RenderExtractDirectMarker::RenderExtractDirectMarker() -> RenderExtractDirectMarker {
+  RenderExtractDirectMarker::{  }
+}
+
+///|
+let render_extract_direct_marker_key : @ecs.ResourceKey[
+  RenderExtractDirectMarker,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderExtractDirectMarker",
+)
+
+///|
+impl @app.Resource for RenderExtractDirectMarker with fn resource() {
+  render_extract_direct_marker_key
+}
+
+///|
+struct RenderExtractDeferredMarker {} derive(Eq, Debug)
+
+///|
+fn RenderExtractDeferredMarker::RenderExtractDeferredMarker() -> RenderExtractDeferredMarker {
+  RenderExtractDeferredMarker::{  }
+}
+
+///|
+let render_extract_deferred_marker_key : @ecs.ResourceKey[
+  RenderExtractDeferredMarker,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::RenderExtractDeferredMarker",
+)
+
+///|
+impl @app.Resource for RenderExtractDeferredMarker with fn resource() {
+  render_extract_deferred_marker_key
+}
+
+///|
 test "render settings: default render creation is automatic" {
   match RenderCreation::default() {
     Automatic(settings) => {
@@ -526,6 +566,47 @@ test "render asset byte budget: extract updates limiter and cleanup resets write
   debug_inspect(limiter.bytes_written(), content="16")
   reset_render_asset_bytes_per_frame(render_world)
   debug_inspect(limiter.bytes_written(), content="0")
+}
+
+///|
+test "render extract schedule: runs before render and defers commands to ExtractCommands" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    RenderPlugin::RenderPlugin(),
+  )
+  ignore(
+    app.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      render_sub_app
+      .add_systems(
+        render_extract_schedule_stage(),
+        @app.system(fn(world : @ecs.World) {
+          world.insert_resource(
+            RenderExtractDirectMarker::resource(),
+            RenderExtractDirectMarker::RenderExtractDirectMarker(),
+          )
+        }),
+      )
+      .add_systems(
+        render_extract_schedule_stage(),
+        @app.system_config_param(fn(commands : @app.Commands) {
+          commands.insert_resource(
+            RenderExtractDeferredMarker::RenderExtractDeferredMarker(),
+          )
+        }),
+      )
+    }),
+  )
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  mark_renderer_ready(render_world)
+  let app = app.run_once()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    render_world.resource(RenderExtractDirectMarker::resource()).is_present(),
+    content="true",
+  )
+  debug_inspect(
+    render_world.resource(RenderExtractDeferredMarker::resource()).is_present(),
+    content="true",
+  )
 }
 
 ///|

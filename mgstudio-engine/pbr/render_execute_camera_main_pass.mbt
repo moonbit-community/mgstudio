@@ -121,21 +121,11 @@ fn render3d_draw_gizmo_lines_3d(
 }
 
 ///|
-fn render3d_camera_world_to_atmosphere(
-  transform : @transform.Transform,
-) -> @math.Affine3 {
-  @math.Affine3::from_scale_rotation_translation(
-    transform.scale,
-    transform.rotation,
-    transform.translation,
-  ).inverse()
-}
-
-///|
 fn render3d_prepare_camera_atmosphere_resources(
   camera : Camera3dViewPayload,
 ) -> Unit {
-  guard camera.atmosphere is Some(atmosphere) else { return }
+  guard camera.atmosphere is Some(extracted_atmosphere) else { return }
+  let atmosphere = extracted_atmosphere.atmosphere
   let settings = match camera.atmosphere_settings {
     Some(value) => value
     None => @pbr_atmosphere.pbr_atmosphere_settings_default()
@@ -155,7 +145,7 @@ fn render3d_prepare_camera_atmosphere_resources(
   let gpu_settings = @pbr_atmosphere.pbr_gpu_atmosphere_settings(settings)
   let gpu_atmosphere = @pbr_atmosphere.pbr_gpu_atmosphere(
     atmosphere,
-    render3d_camera_world_to_atmosphere(camera.transform),
+    extracted_atmosphere.world_to_atmosphere,
   )
   let textures = @pbr_atmosphere.AtmosphereTextures::from_settings(gpu_settings)
   let world_to_atmosphere = gpu_atmosphere.world_to_atmosphere
@@ -165,6 +155,9 @@ fn render3d_prepare_camera_atmosphere_resources(
     ground_albedo_z=gpu_atmosphere.ground_albedo.z,
     inner_radius=gpu_atmosphere.inner_radius,
     outer_radius=gpu_atmosphere.outer_radius,
+    camera_world_x=camera.transform.translation.x,
+    camera_world_y=camera.transform.translation.y,
+    camera_world_z=camera.transform.translation.z,
     world_to_atmosphere_x_axis_x=world_to_atmosphere.matrix3.x_axis.x,
     world_to_atmosphere_x_axis_y=world_to_atmosphere.matrix3.x_axis.y,
     world_to_atmosphere_x_axis_z=world_to_atmosphere.matrix3.x_axis.z,
@@ -195,7 +188,40 @@ fn render3d_prepare_camera_atmosphere_resources(
     sky_max_samples=gpu_settings.sky_max_samples,
     rendering_method=gpu_settings.rendering_method,
   )
-  @render.host_gpu_dispatch_mesh3d_atmosphere_luts()
+}
+
+///|
+fn render3d_dispatch_camera_atmosphere_environment(
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+) -> Unit {
+  guard camera.atmosphere is Some(_) else { return }
+  guard camera.atmosphere_environment_map_light
+    is Some(atmosphere_environment_map_light) else {
+    return
+  }
+  guard camera.generated_environment_map_light
+    is Some(generated_environment_map_light) else {
+    return
+  }
+  guard generated_environment_map_light.environment_map is Some(environment_map) else {
+    return
+  }
+  let environment_texture_id = environment_map.id()
+  if environment_texture_id < 0 ||
+    !@render.asset_is_texture_loaded(texture_id=environment_texture_id) {
+    return
+  }
+  let size = @pbr_atmosphere.pbr_validate_atmosphere_environment_map_size(
+    atmosphere_environment_map_light.size,
+  )
+  @render.host_gpu_dispatch_mesh3d_atmosphere_environment(
+    camera_key_hi=camera_entity.id,
+    camera_key_lo=camera_entity.generation,
+    environment_texture_id~,
+    environment_width=size.x,
+    environment_height=size.y,
+  )
 }
 
 ///|
@@ -415,6 +441,24 @@ fn render3d_execute_camera_main_pass(
   )
   prepare_light_probe_bindings()
   prepare_view_bind_group(-1)
+  if camera.atmosphere is Some(_) {
+    @render.host_gpu_dispatch_mesh3d_atmosphere_luts(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+    )
+    render3d_dispatch_camera_atmosphere_environment(camera_entity, camera)
+  }
+  if camera_deferred_enabled {
+    @render.host_gpu_draw_mesh3d_deferred_lighting(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      screen_space_ambient_occlusion=camera.screen_space_ambient_occlusion
+        is Some(_),
+      screen_space_reflections=camera.screen_space_reflections is Some(_),
+      distance_fog=fog_enabled,
+      atmosphere=camera.atmosphere is Some(_),
+    )
+  }
   let main_phase_trace_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     "render_3d_main_pass_construction",
@@ -849,23 +893,6 @@ fn render3d_execute_camera_main_pass(
     )
   }
   let batched_draw_entries = render3d_mesh_gpu_binned_phase_entries(main_phase)
-  for transmissive_phase_item in transmissive_phase_items {
-    batched_draw_entries.push(
-      @pbr_render.render3d_host_main_pass_draw_entry(
-        transmissive_phase_item.payload,
-      ),
-    )
-  }
-  for draw_payload in transparent_draws {
-    batched_draw_entries.push(
-      @pbr_render.render3d_host_main_pass_draw_entry(draw_payload),
-    )
-  }
-  for wireframe_draw in wireframe_draws {
-    batched_draw_entries.push(
-      @pbr_render.render3d_host_main_pass_draw_entry(wireframe_draw),
-    )
-  }
   @app.timeline_trace_emit_counter_int(
     "render_3d_main_pass_input_draw_items",
     draw_items.length(),
@@ -913,6 +940,12 @@ fn render3d_execute_camera_main_pass(
       extracted_camera.entity.render_entity,
     ),
   )
+  if camera.atmosphere is Some(_) {
+    @render.host_gpu_draw_mesh3d_atmosphere_sky(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+    )
+  }
   @render.host_gpu_end_pass()
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,

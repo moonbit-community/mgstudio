@@ -2009,6 +2009,25 @@ fn mesh3d_descriptor_view_bind_group_dynamic_offsets(
 }
 
 ///|
+fn mesh3d_view_layout_key_dynamic_offsets(
+  view_layout_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
+  light_probes_uniform_offset~ : UInt,
+) -> Array[UInt] {
+  let mesh_view_layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
+    true,
+    true,
+    view_layout_key,
+    clustered_decals_usable=mesh3d_clustered_decals_are_usable(),
+    irradiance_volumes_usable=false,
+    oit_supported=false,
+  )
+  mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
+    mesh_view_layout.main_bind_group_layout_descriptor(),
+    light_probes_uniform_offset~,
+  )
+}
+
+///|
 fn mesh3d_material_pipeline_layout_cache_get(
   backend : GpuBackend,
   material_pipeline_id : UInt64,

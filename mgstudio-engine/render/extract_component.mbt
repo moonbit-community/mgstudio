@@ -195,20 +195,20 @@ pub fn[C : @ecs.Component, F] extract_component_plugin_with(
   let next = sync_component_plugin_with(app, sync_component)
   let component_key = C::component()
   with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
-    let stage = render_schedule_stage()
+    let stage = render_extract_schedule_stage()
     if plugin.only_extract_visible {
       sub_app.add_systems(
         stage,
         @app.system(fn(render_world : @ecs.World) -> Unit {
           extract_components(render_world, true, component_key)
-        }).in_set(render_system_set_extract_commands),
+        }),
       )
     } else {
       sub_app.add_systems(
         stage,
         @app.system(fn(render_world : @ecs.World) -> Unit {
           extract_components(render_world, false, component_key)
-        }).in_set(render_system_set_extract_commands),
+        }),
       )
     }
   })

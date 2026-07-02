@@ -1263,6 +1263,49 @@ test "asset system preserves image loader settings in stored image assets" {
 }
 
 ///|
+test "asset system preserves texture bytes srgb setting" {
+  let world = @ecs.World::new()
+  let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  world.insert_resource(asset_server_resource_key, AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
+  world.insert_resource(image_assets_key, Assets::new())
+
+  let asset_server = match world.get_resource(asset_server_resource_key) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let blob = asset_server.load_bytes(
+    "textures/fantasy_ui_borders/panel-border-010-repeated.png",
+  )
+  let bytes = match asset_blob_read_bytes(blob) {
+    Some(value) => value
+    None => Bytes::new(0)
+  }
+  let image = asset_server.load_texture_bytes(bytes, false, is_srgb=false)
+
+  for _ in 0..<120 {
+    asset_with_world(world, fn() { asset_system(world) })
+    if host_asset_is_texture_loaded(image.id()) {
+      break
+    }
+  }
+
+  debug_inspect(
+    match world.get_resource(image_assets_key) {
+      Some(images) =>
+        match images.get(image) {
+          Some(stored) => stored.format == TextureFormat::Rgba8Unorm
+          None => false
+        }
+      None => false
+    },
+    content="true",
+  )
+  let metadata_ok = asset_with_world(world, fn() { asset_image_is_srgb(image) })
+  debug_inspect(metadata_ok, content="false")
+}
+
+///|
 test "asset system releases load_acquire guard after asset becomes ready" {
   let world = @ecs.World::new()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()

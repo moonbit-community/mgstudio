@@ -53,10 +53,8 @@ pub fn render_visibility_range_plugin_with(
     ensure_render_visibility_ranges_resource(world)
     sub_app
     .add_systems(
-      @render.render_schedule_stage(),
-      @app.system(extract_visibility_ranges_system).in_set(
-        @render.render_system_set_extract_commands,
-      ),
+      @render.render_extract_schedule_stage(),
+      @app.system(extract_visibility_ranges_system),
     )
     .add_systems(
       @render.render_schedule_stage(),

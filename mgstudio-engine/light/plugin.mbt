@@ -85,6 +85,13 @@ fn register_light_component_hooks(world : @ecs.World) -> Unit {
       _ => abort("failed to register light probe visibility class hook")
     },
   )
+  ignore(
+    world
+    .register_component_hooks_for_key(ecs_key_atmosphere)
+    .on_add(atmosphere_set_default_transform) catch {
+      _ => abort("failed to register atmosphere default transform hook")
+    },
+  )
 }
 
 ///|
@@ -243,6 +250,42 @@ fn register_light_required_components(
     ecs_key_irradiance_volume,
     ecs_key_light_probe,
     fn() { LightProbe::LightProbe() },
+  )
+  world.register_required_components_with(
+    ecs_key_atmosphere,
+    @transform.ecs_key_global_transform,
+    fn() { @transform.GlobalTransform::GlobalTransform() },
+  )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_light/src/atmosphere.rs::set_default_transform`.
+fn atmosphere_set_default_transform(
+  world : @ecs.DeferredWorld,
+  context : @ecs.HookContext,
+) -> Unit {
+  let entity = context.entity()
+  guard (world.get_by_key(entity, ecs_key_atmosphere) catch { _ => None })
+    is Some(atmosphere) else {
+    abort("Atmosphere on_add hook must run after Atmosphere is inserted")
+  }
+  let current = match
+    (world.get_by_key(entity, @transform.ecs_key_global_transform) catch {
+      _ => None
+    }) {
+    Some(value) => value
+    None => return
+  }
+  if !current.is_identity() {
+    return
+  }
+  let next = @transform.GlobalTransform::from_transform(
+    @transform.Transform::from_xyz(0.0F, -atmosphere.inner_radius, 0.0F),
+  )
+  ignore(
+    world.replace_by_key(entity, @transform.ecs_key_global_transform, next) catch {
+      _ => false
+    },
   )
 }
 

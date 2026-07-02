@@ -1,11 +1,28 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/atmosphere"
 
+import {
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/render/render_resource",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type AtmospherePresets
+
+type GameState
+
+type Terrain
+
+type Water
+pub impl @pbr.MaterialExtension for Water
+
+type WaterSettings
 
 // Type aliases
 

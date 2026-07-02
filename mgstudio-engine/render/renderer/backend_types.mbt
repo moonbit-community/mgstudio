@@ -161,6 +161,7 @@ pub struct Mesh3dMaterialPipelineLayoutCacheEntry {
 ///|
 pub struct Mesh3dViewBindGroupCacheEntry {
   material_pipeline_id : UInt64
+  view_layout_key_bits : UInt
   tonemap_in_shader : Bool
   transmission_source_texture_id : Int
   point_shadow_texture_id : Int
@@ -169,6 +170,10 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_specular_texture_id : Int
   environment_texture_ids_signature : String
   irradiance_volume_texture_ids_signature : String
+  prepass_depth_texture_id : Int
+  prepass_normal_texture_id : Int
+  prepass_motion_vector_texture_id : Int
+  prepass_deferred_texture_id : Int
   tonemapping_lut_texture_id : Int
   pbr_blue_noise_texture_id : Int
   pbr_area_light_luts_texture_id : Int
@@ -281,12 +286,24 @@ struct GpuAtmosphereResources {
   sampler : @wgpu.Sampler
   atmosphere_buffer : @wgpu.Buffer
   settings_buffer : @wgpu.Buffer
+  transform_buffer : @wgpu.Buffer
   transmittance_lut_bgl : @wgpu.BindGroupLayout
   transmittance_lut_pipeline_layout : @wgpu.PipelineLayout
   transmittance_lut_pipeline : @wgpu.ComputePipeline
   multiscattering_lut_bgl : @wgpu.BindGroupLayout
   multiscattering_lut_pipeline_layout : @wgpu.PipelineLayout
   multiscattering_lut_pipeline : @wgpu.ComputePipeline
+  sky_view_lut_bgl : @wgpu.BindGroupLayout
+  sky_view_lut_pipeline_layout : @wgpu.PipelineLayout
+  sky_view_lut_pipeline : @wgpu.ComputePipeline
+  aerial_view_lut_bgl : @wgpu.BindGroupLayout
+  aerial_view_lut_pipeline_layout : @wgpu.PipelineLayout
+  aerial_view_lut_pipeline : @wgpu.ComputePipeline
+  environment_bgl : @wgpu.BindGroupLayout
+  environment_pipeline : @wgpu.ComputePipeline
+  render_sky_bgl : @wgpu.BindGroupLayout
+  render_sky_pipeline_layout : @wgpu.PipelineLayout
+  render_sky_pipeline : @wgpu.RenderPipeline
   transmittance_width : Int
   transmittance_height : Int
   multiscattering_width : Int
@@ -297,6 +314,31 @@ struct GpuAtmosphereResources {
   aerial_view_height : Int
   aerial_view_depth : Int
   revision : Int
+}
+
+///|
+struct GpuDeferredLightingIdDepthTexture {
+  width : Int
+  height : Int
+  texture : @wgpu.Texture
+  view : @wgpu.TextureView
+}
+
+///|
+struct GpuDeferredLightingPipelineCacheEntry {
+  color_format : UInt
+  view_layout_key_bits : UInt
+  tonemap_in_shader : Bool
+  tonemapping_mode : Int
+  deband_dither_enabled : Bool
+  shadow_filter_method : Int
+  screen_space_ambient_occlusion : Bool
+  screen_space_reflections : Bool
+  distance_fog : Bool
+  atmosphere : Bool
+  pipeline_layout : @wgpu.PipelineLayout
+  depth_id_bind_group_layout : @wgpu.BindGroupLayout
+  pipeline : @wgpu.RenderPipeline
 }
 
 ///|

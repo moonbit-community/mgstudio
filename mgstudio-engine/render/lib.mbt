@@ -529,6 +529,9 @@ pub fn host_gpu_prepare_mesh3d_atmosphere_resources(
   ground_albedo_z~ : Float,
   inner_radius~ : Float,
   outer_radius~ : Float,
+  camera_world_x~ : Float,
+  camera_world_y~ : Float,
+  camera_world_z~ : Float,
   world_to_atmosphere_x_axis_x~ : Float,
   world_to_atmosphere_x_axis_y~ : Float,
   world_to_atmosphere_x_axis_z~ : Float,
@@ -565,6 +568,9 @@ pub fn host_gpu_prepare_mesh3d_atmosphere_resources(
     ground_albedo_z~,
     inner_radius~,
     outer_radius~,
+    camera_world_x~,
+    camera_world_y~,
+    camera_world_z~,
     world_to_atmosphere_x_axis_x~,
     world_to_atmosphere_x_axis_y~,
     world_to_atmosphere_x_axis_z~,
@@ -598,8 +604,55 @@ pub fn host_gpu_prepare_mesh3d_atmosphere_resources(
 }
 
 ///|
-pub fn host_gpu_dispatch_mesh3d_atmosphere_luts() -> Unit {
-  @renderer.dispatch_mesh3d_atmosphere_luts()
+pub fn host_gpu_dispatch_mesh3d_atmosphere_luts(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  @renderer.dispatch_mesh3d_atmosphere_luts(camera_key_hi~, camera_key_lo~)
+}
+
+///|
+pub fn host_gpu_dispatch_mesh3d_atmosphere_environment(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  environment_texture_id~ : Int,
+  environment_width~ : Int,
+  environment_height~ : Int,
+) -> Unit {
+  @renderer.dispatch_mesh3d_atmosphere_environment(
+    camera_key_hi~,
+    camera_key_lo~,
+    environment_texture_id~,
+    environment_width~,
+    environment_height~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_mesh3d_atmosphere_sky(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  @renderer.draw_mesh3d_atmosphere_sky(camera_key_hi~, camera_key_lo~)
+}
+
+///|
+pub fn host_gpu_draw_mesh3d_deferred_lighting(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  screen_space_ambient_occlusion~ : Bool,
+  screen_space_reflections~ : Bool,
+  distance_fog~ : Bool,
+  atmosphere~ : Bool,
+) -> Unit {
+  @renderer.draw_mesh3d_deferred_lighting(
+    camera_key_hi~,
+    camera_key_lo~,
+    screen_space_ambient_occlusion~,
+    screen_space_reflections~,
+    distance_fog~,
+    atmosphere~,
+  )
 }
 
 ///|

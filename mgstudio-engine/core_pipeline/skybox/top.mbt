@@ -734,10 +734,8 @@ fn configure_skybox_render_sub_app(
   }
   @render.configure_base_render_sets(sub_app)
   .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(extract_skybox).in_set(
-      @render.render_system_set_extract_commands,
-    ),
+    @render.render_extract_schedule_stage(),
+    @app.system(extract_skybox),
   )
   .add_systems(
     @render.render_schedule_stage(),

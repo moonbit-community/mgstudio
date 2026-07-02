@@ -228,6 +228,68 @@ test "mesh plugin: Mesh2d and Mesh3d require Transform" {
 }
 
 ///|
+test "mesh plugin: Mesh3d transform requirement cascades to GlobalTransform" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  let world = app.world()
+  let mesh_handle : @asset.Handle[Mesh] = @asset.Handle::new(1)
+  let mesh3d_entity = world.spawn()
+  try! world.set(mesh3d_entity, Mesh3d::new(mesh_handle))
+
+  debug_inspect(
+    try! world.contains_by_key(mesh3d_entity, @transform.ecs_key_transform),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(
+      mesh3d_entity, @transform.ecs_key_global_transform,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(
+      mesh3d_entity, @transform.ecs_key_transform_tree_changed,
+    ),
+    content="true",
+  )
+}
+
+///|
+test "mesh plugin: batch writers keep explicit Transform requirements" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+  let world = app.world()
+  let mesh_handle : @asset.Handle[Mesh] = @asset.Handle::new(1)
+  let mesh3d_entity = world.spawn()
+  try! world.insert_component_writers(mesh3d_entity, [
+    @ecs.component_writer(
+      @transform.ecs_key_transform,
+      @transform.Transform::identity(),
+    ),
+    @ecs.component_writer(ecs_key_mesh3d, Mesh3d::new(mesh_handle)),
+  ])
+
+  debug_inspect(
+    try! world.contains_by_key(mesh3d_entity, @transform.ecs_key_transform),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(
+      mesh3d_entity, @transform.ecs_key_global_transform,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(
+      mesh3d_entity, @transform.ecs_key_transform_tree_changed,
+    ),
+    content="true",
+  )
+}
+
+///|
 test "mesh: base mesh pipeline key primitive topology roundtrip" {
   let triangle = BaseMeshPipelineKey::from_primitive_topology(
     Mesh3dPrimitiveTopology::TriangleList,

@@ -13,63 +13,216 @@
 // limitations under the License.
 
 ///|
-const SUN_ROTATION_SPEED : Float = 0.3141592653589793F
+const SHADER_ASSET_PATH : String = "shaders/water_material.wgsl"
 
 ///|
 const PI : Float = 3.141592653589793F
 
 ///|
-const SCENE_FOCUS_X : Float = 0.0F
-
-///|
-const SCENE_FOCUS_Y : Float = 0.1F
-
-///|
-const SCENE_FOCUS_Z : Float = 0.0F
-
-///|
 const BASE_EXPOSURE_EV100 : Float = 13.0F
 
 ///|
-priv struct AtmosphereState {
+struct GameState {
   mut paused : Bool
-  mut mode : Int
-  mut exposure_ev100 : Float
-  mut sun_pitch : Float
-  atmosphere : @pbr.Atmosphere
-  mut atmosphere_settings : @pbr.AtmosphereSettings
-  volumetric_fog : @pbr.VolumetricFog
-  fog_volume : @pbr.FogVolume
-  mut camera : @core.Entity?
-  mut sun : @core.Entity?
-  mut fog_volume_entity : @core.Entity?
-  mut water_material : @asset.Handle[@pbr.StandardMaterial]?
-  mut help_text : @text.TextHandle?
 }
 
 ///|
-let atmosphere_state : Ref[AtmosphereState] = Ref({
-  paused: false,
-  mode: 0,
-  exposure_ev100: BASE_EXPOSURE_EV100,
-  sun_pitch: 0.0F,
-  atmosphere: @pbr.Atmosphere::earth(
-    @pbr.ScatteringMedium::earth(256, 256).with_density_multiplier(1.0F),
-  ),
-  atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings(),
-  volumetric_fog: @pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(
-    0.0F,
-  ),
-  fog_volume: @pbr.FogVolume::FogVolume()
-  .with_density_factor(0.1F)
-  .with_scattering(0.3F)
-  .with_absorption(0.3F),
-  camera: None,
-  sun: None,
-  fog_volume_entity: None,
-  water_material: None,
-  help_text: None,
-})
+fn GameState::GameState() -> GameState {
+  { paused: false }
+}
+
+///|
+let game_state_resource_key : @ecs.ResourceKey[GameState] = @ecs.register_resource(
+  debug_name="mgstudio_examples::atmosphere::GameState",
+)
+
+///|
+impl @app.Resource for GameState with fn resource() {
+  game_state_resource_key
+}
+
+///|
+struct AtmospherePresets {
+  earth : @pbr.ScatteringMedium
+  mars : @pbr.ScatteringMedium
+}
+
+///|
+let atmosphere_presets_resource_key : @ecs.ResourceKey[AtmospherePresets] = @ecs.register_resource(
+  debug_name="mgstudio_examples::atmosphere::AtmospherePresets",
+)
+
+///|
+impl @app.Resource for AtmospherePresets with fn resource() {
+  atmosphere_presets_resource_key
+}
+
+///|
+struct Terrain {}
+
+///|
+let terrain_component_key : @ecs.ComponentKey[Terrain] = @ecs.register_component(
+  debug_name="mgstudio_examples::atmosphere::Terrain",
+)
+
+///|
+impl @ecs.Component for Terrain with fn component() {
+  terrain_component_key
+}
+
+///|
+struct WaterSettings {
+  octave_vectors : Array[@math.Vec4]
+  octave_scales : @math.Vec4
+  octave_strengths : @math.Vec4
+}
+
+///|
+struct Water {
+  normals : @asset.Handle[@asset.Image]
+  settings : WaterSettings
+}
+
+///|
+fn atmosphere_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn atmosphere_push_f32(words : Array[UInt], value : Float) -> Unit {
+  words.push(value.reinterpret_as_uint())
+}
+
+///|
+fn atmosphere_push_vec4(words : Array[UInt], value : @math.Vec4) -> Unit {
+  atmosphere_push_f32(words, value.x)
+  atmosphere_push_f32(words, value.y)
+  atmosphere_push_f32(words, value.z)
+  atmosphere_push_f32(words, value.w)
+}
+
+///|
+fn WaterSettings::as_uniform_bytes(self : WaterSettings) -> Bytes {
+  let words : Array[UInt] = []
+  for vector in self.octave_vectors {
+    atmosphere_push_vec4(words, vector)
+  }
+  atmosphere_push_vec4(words, self.octave_scales)
+  atmosphere_push_vec4(words, self.octave_strengths)
+  atmosphere_u32le_pack(words)
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn extension_tag(_self) {
+  82
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn vertex_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn fragment_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn prepass_vertex_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn prepass_fragment_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn deferred_vertex_shader(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn deferred_fragment_shader(
+  _self,
+) {
+  Some(SHADER_ASSET_PATH)
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn alpha_mode(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn opaque_render_method(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn enable_prepass(_self) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn enable_shadows(_self) {
+  true
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn specialize(_self) {
+  None
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn bind_group_layout_entries(
+  _self,
+) {
+  let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
+  [
+    @render_resource.BindGroupLayoutEntry::new(
+      100,
+      fragment,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Float(true),
+        @render_resource.TextureViewDimension::D2,
+        false,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      101,
+      fragment,
+      @render_resource.BindingType::SamplerBinding(
+        @render_resource.SamplerBindingType::Filtering,
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      102,
+      fragment,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        false,
+        64UL,
+      ),
+    ),
+  ]
+}
+
+///|
+pub impl @pbr.MaterialExtension for Water with fn bind_group_bindings(self) {
+  [
+    @material.MaterialExtensionBinding3d::texture(100, self.normals),
+    @material.MaterialExtensionBinding3d::sampler(101, self.normals),
+    @material.MaterialExtensionBinding3d::uniform(
+      102,
+      self.settings.as_uniform_bytes(),
+    ),
+  ]
+}
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
@@ -83,238 +236,110 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn scene_focus() -> @math.Vec3 {
-  @math.Vec3::new(SCENE_FOCUS_X, SCENE_FOCUS_Y, SCENE_FOCUS_Z)
-}
-
-///|
-fn atmosphere_mode_name(mode : Int) -> String {
-  if mode == 0 {
-    "LookupTexture"
-  } else {
-    "Raymarched"
-  }
-}
-
-///|
-fn atmosphere_instruction_text() -> String {
-  let paused = if atmosphere_state.val.paused { "yes" } else { "no" }
-  "Atmosphere Example Controls\n1 - LookupTexture\n2 - Raymarched\nEnter - Pause/Resume Sun Motion\nArrowUp/ArrowDown - Adjust Exposure\n\nMode: \{atmosphere_mode_name(atmosphere_state.val.mode)}\nPaused: \{paused}\nExposure ev100: \{atmosphere_state.val.exposure_ev100}"
-}
-
-///|
 fn print_controls() -> Unit {
   println("Atmosphere Example Controls:")
   println("    1          - Switch to lookup texture rendering method")
   println("    2          - Switch to raymarched rendering method")
+  println("    3          - Switch to Earth atmosphere")
+  println("    4          - Switch to Mars atmosphere")
   println("    Enter      - Pause/Resume sun motion")
   println("    Up/Down    - Increase/Decrease exposure")
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in atmosphere example")
-  }
-}
-
-///|
-fn apply_atmosphere(world : @ecs.World) -> Unit {
-  let state = atmosphere_state.val
-  if state.camera is Some(camera_entity) {
-    if (try! world.get_by_key(camera_entity, @camera.ecs_key_camera3d))
-      is Some(_) {
-      try! (world.set_by_key(
-        camera_entity,
-        @pbr.ecs_key_atmosphere,
-        state.atmosphere,
-      )
-      |> ignore)
-      try! (world.set_by_key(
-        camera_entity,
-        @pbr.ecs_key_atmosphere_settings,
-        state.atmosphere_settings,
-      )
-      |> ignore)
-      try! (world.set_by_key(
-        camera_entity,
-        @pbr.ecs_key_volumetric_fog,
-        state.volumetric_fog,
-      )
-      |> ignore)
-    }
-    try! world.set_by_key(
-      camera_entity,
-      @pbr.ecs_key_atmosphere_environment_map_light,
-      @pbr.AtmosphereEnvironmentMapLight::AtmosphereEnvironmentMapLight(),
-    )
-  }
-  if state.fog_volume_entity is Some(fog_volume_entity) {
-    try! (world.replace(
-      fog_volume_entity,
-      @pbr.ecs_key_fog_volume,
-      state.fog_volume,
-    )
-    |> ignore)
-  }
-  world.insert_resource(
-    @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
-  )
-}
-
-///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @mesh.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn setup_camera(world : @ecs.World) -> Unit {
-  let camera = @camera.Camera3dBundle::new(
+fn setup_camera_fog(commands : @app.Commands) -> Unit {
+  let earth_medium = @pbr.ScatteringMedium::earth(256, 256)
+  let mars_medium = @pbr.ScatteringMedium::earth(256, 256)
+  commands.insert_resource(AtmospherePresets::{
+    earth: earth_medium,
+    mars: mars_medium,
+  })
+  ignore(commands.spawn_component(@pbr.Atmosphere::earth(earth_medium)))
+  let camera = commands.spawn(
+    @camera.Camera3dBundle::new(
       @camera_camera.Camera::Camera().with_clear_color(@color.Color::black()),
-      @transform.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
-        scene_focus(),
+      @transform.Transform::from_xyz(-2.8F, 0.045F, 0.0F).looking_at(
+        @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_atmosphere(Some(atmosphere_state.val.atmosphere))
-    .with_atmosphere_settings(Some(atmosphere_state.val.atmosphere_settings))
-    .with_volumetric_fog(Some(atmosphere_state.val.volumetric_fog))
+    .with_atmosphere_settings(
+      Some(@pbr.AtmosphereSettings::AtmosphereSettings()),
+    )
+    .with_volumetric_fog(
+      Some(@pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(0.0F)),
+    )
     .with_exposure(Some(@pbr.Exposure::new(BASE_EXPOSURE_EV100)))
     .with_screen_space_reflections(
-      Some(@post_process.ScreenSpaceReflections::ScreenSpaceReflections()),
+      Some(
+        @post_process.ScreenSpaceReflections::ScreenSpaceReflections().with_min_perceptual_roughness(
+          0.0F, 0.0F,
+        ),
+      ),
     )
-    .spawn(world)
-
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::AcesFitted,
+    .with_tonemapping(Some(@post_process.Tonemapping::AcesFitted))
+    .with_bloom(Some(@post_process.Bloom::natural())),
   )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_bloom,
-    @post_process.Bloom::natural(),
+  commands
+  .entity(camera)
+  .insert(
+    (
+      @pbr.AtmosphereEnvironmentMapLight::AtmosphereEnvironmentMapLight(),
+      @pbr.Msaa::Off,
+      @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+    ),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
-  )
-
-  atmosphere_state.val.camera = Some(camera)
 }
 
 ///|
-fn setup_scene(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
-    .with_first_cascade_far_bound(0.3F)
-    .with_maximum_distance(15.0F)
-    .build()
+fn setup_terrain_scene(
+  commands : @app.Commands,
+  asset_server_resource : @app.Res[@asset.AssetServer],
+  mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let asset_server = asset_server_resource.get()
 
-  let sun = world.spawn_empty()
-  try! world.set_by_key(
-    sun,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(1.0F, 0.4F, 0.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-  try! world.set_by_key(
-    sun,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(
-      @color.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
-      130_000.0F,
-      true,
-    ),
-  )
-  try! world.set(sun, cascade_shadow_config)
-  atmosphere_state.val.sun = Some(sun)
-  try! world.set_by_key(
-    sun,
-    @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::VolumetricLight(),
-  )
-
-  let terrain = world.spawn_empty()
-  try! world.set_by_key(
-    terrain,
-    @scene.ecs_key_scene_root,
-    @scene.SceneRoot::new(
-      @scene.scene_load_gltf_scene(
-        asset_server,
-        @gltf.GltfAssetLabel::Scene(0).from_asset("models/terrain/terrain.glb"),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@color.Color::white(), 130_000.0F, true),
+        @transform.Transform::from_xyz(1.0F, 0.4F, 0.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @pbr.VolumetricLight::VolumetricLight(),
       ),
     ),
   )
-  try! world.set_by_key(
-    terrain,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(-1.0F, 0.0F, -0.5F)
-    .with_scale(@math.Vec3::splat(0.5F))
-    .with_rotation(@math.Quat::from_rotation_y(PI / 2.0F)),
-  )
 
-  let probe_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets |> @pbr.add_mesh(@math.Sphere::new(1.0F))
-    }),
-  )
-  let probe_metal = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_metallic(1.0F)
-    .with_perceptual_roughness(0.0F),
-  )
-  spawn_mesh(
-    world,
-    probe_mesh,
-    probe_metal,
-    @transform.Transform::from_xyz(-1.0F, 0.1F, -0.1F).with_scale(
-      @math.Vec3::splat(0.05F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.FogVolume::FogVolume(),
+        @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F).with_scale(
+          @math.Vec3::new(10.0F, 1.0F, 10.0F),
+        ),
+      ),
     ),
   )
 
-  let probe_rough = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white())
-    .with_metallic(0.0F)
-    .with_perceptual_roughness(1.0F),
-  )
-  spawn_mesh(
-    world,
-    probe_mesh,
-    probe_rough,
-    @transform.Transform::from_xyz(-1.0F, 0.1F, 0.1F).with_scale(
-      @math.Vec3::splat(0.05F),
-    ),
-  )
-
-  let fog_volume_entity = world.spawn_empty()
-  atmosphere_state.val.fog_volume_entity = Some(fog_volume_entity)
-  try! world.set_by_key(
-    fog_volume_entity,
-    @pbr.ecs_key_fog_volume,
-    atmosphere_state.val.fog_volume,
-  )
-  try! world.set_by_key(
-    fog_volume_entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F).with_scale(
-      @math.Vec3::new(10.0F, 1.0F, 10.0F),
+  ignore(
+    commands.spawn(
+      (
+        Terrain::{  },
+        @scene.WorldAssetRoot::new(
+          @scene.scene_load_gltf_scene(
+            asset_server,
+            @gltf.GltfAssetLabel::Scene(0).from_asset(
+              "models/terrain/terrain.glb",
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(-1.0F, 0.0F, -0.5F)
+        .with_scale(@math.Vec3::splat(0.5F))
+        .with_rotation(@math.Quat::from_rotation_y(PI / 2.0F)),
+      ),
     ),
   )
 
@@ -329,211 +354,165 @@ fn setup_scene(world : @ecs.World) -> Unit {
       )
     },
   )
-  let water_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
-    .with_perceptual_roughness(0.0F)
-    .with_normal_map_texture(Some(water_normals))
-    .with_uv_transform(
-      @transform.Affine2::from_scale(@math.Vec2::new(500.0F, 500.0F)),
-    ),
-  )
-  atmosphere_state.val.water_material = Some(water_material)
-  spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(100.0F, 100.0F),
-          ).build(),
-        )
-      }),
-    ),
-    water_material,
-    @transform.Transform::identity(),
-  )
-}
-
-///|
-fn setup_instructions() -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(atmosphere_instruction_text()),
-      @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
+  let water_base_material = @pbr.StandardMaterial::from_color(
+    @color.Color::black(),
+  ).with_perceptual_roughness(0.0F)
+  let water_material = @pbr.standard_material_add(water_base_material)
+  let water_extension = Water::{
+    normals: water_normals,
+    settings: WaterSettings::{
+      octave_vectors: [
+        @math.Vec4::new(0.080F, 0.059F, 0.073F, -0.062F),
+        @math.Vec4::new(0.153F, 0.138F, -0.149F, -0.195F),
+      ],
+      octave_scales: @math.Vec4::new(1.0F, 2.1F, 7.9F, 14.9F).mul_scalar(500.0F),
+      octave_strengths: @math.Vec4::new(0.16F, 0.18F, 0.093F, 0.044F).mul_scalar(
+        0.2F,
       ),
+    },
+  }
+  let water_mesh = mesh_assets.peek()
+    |> @pbr.add_mesh(
+      @mesh_primitives_dim3.PlaneMeshBuilder::from_size(@math.Vec2::splat(1.0F)).build(),
     )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
-    .spawn()
-  atmosphere_state.val.help_text = Some(handle)
+  let water_mesh_material = @pbr.MeshMaterial3d::new(water_material).with_extended_material(
+    Some(
+      @pbr.ExtendedMaterial::new(water_base_material, water_extension).metadata(),
+    ),
+  )
+  ignore(material_assets)
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(water_mesh),
+        water_mesh_material,
+        @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
+      ),
+    ),
+  )
 }
 
 ///|
-fn atmosphere_controls(world : @ecs.World) -> Unit {
-  let mut changed = false
+fn atmosphere_controls(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  planet_atmosphere : @ecs.Query[
+    (@ecs.Write[@pbr.Atmosphere], @ecs.Write[@transform.Transform]),
+    @ecs.All,
+  ],
+  camera_settings : @ecs.Query[
+    @ecs.Write[@pbr.AtmosphereSettings],
+    @ecs.With[@camera.Camera3d],
+  ],
+  atmosphere_presets : @app.Res[AtmospherePresets],
+  game_state : @app.ResMut[GameState],
+  camera_exposure : @ecs.Query[
+    @ecs.Write[@pbr.Exposure],
+    @ecs.With[@camera.Camera3d],
+  ],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+    let presets = atmosphere_presets.get()
+    try! planet_atmosphere.view(fn(_entity, item) {
+      let atmosphere = @pbr.Atmosphere::earth(presets.earth)
+      item.0.set(atmosphere)
+      item.1.set(
+        @transform.Transform::from_xyz(0.0F, -atmosphere.inner_radius, 0.0F),
+      )
+    })
+    println("Switched to Earth atmosphere")
+  }
+
+  if @input.key_just_pressed(@window.KeyCode::Digit4) {
+    ignore(atmosphere_presets.get().mars)
+    println(
+      "Mars atmosphere is blocked until ScatteringMedium::mars and chromatic phase textures are ported",
+    )
+  }
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    atmosphere_state.val.mode = 0
-    atmosphere_state.val.atmosphere_settings = atmosphere_state.val.atmosphere_settings.with_rendering_method(
-      @pbr.AtmosphereMode::LookupTexture,
-    )
-    changed = true
+    try! camera_settings.view(fn(_entity, settings) {
+      settings.set(
+        settings
+        .value()
+        .with_rendering_method(@pbr.AtmosphereMode::LookupTexture),
+      )
+    })
+    println("Switched to lookup texture rendering method")
   }
 
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    atmosphere_state.val.mode = 1
-    atmosphere_state.val.atmosphere_settings = atmosphere_state.val.atmosphere_settings.with_rendering_method(
-      @pbr.AtmosphereMode::Raymarched,
-    )
-    changed = true
+    try! camera_settings.view(fn(_entity, settings) {
+      settings.set(
+        settings.value().with_rendering_method(@pbr.AtmosphereMode::Raymarched),
+      )
+    })
+    println("Switched to raymarched rendering method")
   }
 
   if @input.key_just_pressed(@window.KeyCode::Enter) {
-    atmosphere_state.val.paused = !atmosphere_state.val.paused
-    changed = true
+    game_state.modify(fn(state) { state.paused = !state.paused })
   }
 
-  let delta = world_time(world).delta_seconds()
-  let mut exposure_changed = false
-  let exposure_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
+  let delta = time.get().delta_seconds()
+  let exposure_delta = if keyboard_input.pressed(@window.KeyCode::ArrowUp) {
     -delta * 2.0F
-  } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
+  } else if keyboard_input.pressed(@window.KeyCode::ArrowDown) {
     delta * 2.0F
   } else {
     0.0F
   }
   if exposure_delta != 0.0F {
-    if atmosphere_state.val.camera is Some(camera_entity) {
-      if (try! world.get_by_key(camera_entity, @pbr.ecs_key_exposure))
-        is Some(exposure) {
-        let next = clampf(exposure.ev100 + exposure_delta, 6.0F, 20.0F)
-        if next != exposure.ev100 {
-          try! (world.replace(
-            camera_entity,
-            @pbr.ecs_key_exposure,
-            exposure.with_ev100(next),
-          )
-          |> ignore)
-          atmosphere_state.val.exposure_ev100 = next
-          exposure_changed = true
-        }
+    try! camera_exposure.view(fn(_entity, exposure) {
+      let current = exposure.value()
+      let next = clampf(current.ev100 + exposure_delta, 6.0F, 20.0F)
+      if next != current.ev100 {
+        exposure.set(current.with_ev100(next))
       }
-    } else {
-      atmosphere_state.val.exposure_ev100 = clampf(
-        atmosphere_state.val.exposure_ev100 + exposure_delta,
-        6.0F,
-        20.0F,
-      )
-      exposure_changed = true
-    }
-  }
-  changed = changed || exposure_changed
-
-  if changed {
-    if atmosphere_state.val.help_text is Some(handle) {
-      @text.text_set_content(handle, atmosphere_instruction_text())
-    }
-    apply_atmosphere(world)
+    })
   }
 }
 
 ///|
-fn dynamic_scene(world : @ecs.World) -> Unit {
-  if !atmosphere_state.val.paused {
-    atmosphere_state.val.sun_pitch = atmosphere_state.val.sun_pitch -
-      world_time(world).delta_seconds() * SUN_ROTATION_SPEED
+fn dynamic_scene(
+  suns : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@pbr.DirectionalLight],
+  ],
+  time : @app.Res[@time.Time[Unit]],
+  sun_motion_state : @app.Res[GameState],
+) -> Unit {
+  if !sun_motion_state.get().paused {
+    try! suns.view(fn(_entity, transform) {
+      transform.modify(fn(value) {
+        value.rotate(
+          @math.Quat::from_rotation_x(-time.get().delta_seconds() * PI / 10.0F),
+        )
+      })
+    })
   }
-
-  if atmosphere_state.val.sun is Some(sun_entity) {
-    let sun_pos = @math.Vec3::new(
-      1.0F,
-      0.4F * @math.cos(atmosphere_state.val.sun_pitch),
-      0.4F * @math.sin(atmosphere_state.val.sun_pitch),
-    )
-    try! (world.replace(
-      sun_entity,
-      @transform.ecs_key_transform,
-      @transform.Transform::from_xyz(sun_pos.x, sun_pos.y, sun_pos.z).looking_at(
-        @math.Vec3::new(0.0F, 0.0F, 0.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    )
-    |> ignore)
-  }
-
-  if atmosphere_state.val.water_material is Some(material_handle) {
-    if @pbr.standard_material_get(material_handle) is Some(material) {
-      let t = world_time(world).elapsed_seconds()
-      let offset = @math.Vec2::new(t * 0.012F, -t * 0.009F)
-      let updated = material.with_uv_transform(
-        @transform.Affine2::from_translation(offset).mul(
-          @transform.Affine2::from_scale(@math.Vec2::new(500.0F, 500.0F)),
-        ),
-      )
-      @pbr.standard_material_set(material_handle, updated) |> ignore
-    }
-  }
-
-  apply_atmosphere(world)
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  world.insert_resource(
-    @pbr.ecs_key_default_opaque_renderer_method,
-    @pbr.DefaultOpaqueRendererMethod::deferred(),
-  )
-
-  atmosphere_state.val = {
-    paused: false,
-    mode: 0,
-    exposure_ev100: BASE_EXPOSURE_EV100,
-    sun_pitch: 0.0F,
-    atmosphere: @pbr.Atmosphere::earth(
-      @pbr.ScatteringMedium::earth(256, 256).with_density_multiplier(1.0F),
-    ),
-    atmosphere_settings: @pbr.AtmosphereSettings::AtmosphereSettings().with_rendering_method(
-      @pbr.AtmosphereMode::LookupTexture,
-    ),
-    volumetric_fog: @pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(
-      0.0F,
-    ),
-    fog_volume: @pbr.FogVolume::FogVolume()
-    .with_density_factor(0.1F)
-    .with_scattering(0.3F)
-    .with_absorption(0.3F),
-    camera: None,
-    sun: None,
-    fog_volume_entity: None,
-    water_material: None,
-    help_text: None,
-  }
-
-  setup_camera(world)
-  setup_scene(world)
-  setup_instructions()
-  apply_atmosphere(world)
+fn setup_instructions(_commands : @app.Commands) -> Unit {
   print_controls()
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
+  .insert_world_resource(
+    @pbr.ecs_key_default_opaque_renderer_method,
+    @pbr.DefaultOpaqueRendererMethod::deferred(),
+  )
+  .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
+  .insert_resource(@camera.ClearColor::new(@color.Color::black()))
+  .insert_resource(GameState::GameState())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, atmosphere_controls)
-  .add_systems_world(@app.Update, dynamic_scene)
+  .add_systems_param(@app.Startup, setup_camera_fog)
+  .add_systems_param4(@app.Startup, setup_terrain_scene)
+  .add_systems_param(@app.Startup, setup_instructions)
+  .add_systems_param7(@app.Update, atmosphere_controls)
+  .add_systems_param3(@app.Update, dynamic_scene)
   .run()
 }

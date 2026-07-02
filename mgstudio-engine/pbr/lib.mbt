@@ -428,7 +428,9 @@ fn pbr_plugin_sync_gltf_material_handler_state(
 }
 
 ///|
-pub let render3d_set_extract : @app.SystemSet = @render.render_system_set_extract_commands
+pub let render3d_set_extract : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.render3d.extract",
+)
 
 ///|
 pub let render3d_set_prepare_resources_flush : @app.SystemSet = @render.render_system_set_prepare_resources_flush

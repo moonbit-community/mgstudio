@@ -19,9 +19,11 @@ fn run_scene_test_app_with_gltf_plugin(
 ) -> Unit {
   @app.App::new(@ecs.World::new())
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
+  .add_plugins(@transform.TransformPlugin::TransformPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   .add_plugins(@render.RenderPlugin::RenderPlugin())
   .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+  .add_plugins(@camera.CameraPlugin::CameraPlugin())
   .add_plugins(@pbr.PbrPlugin::PbrPlugin())
   .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
   .add_plugins(@scene.ScenePlugin::ScenePlugin())
@@ -42,6 +44,29 @@ fn run_scene_reload_frame(world : @ecs.World) -> Unit {
   @asset.asset_update_event_messages(world)
   @scene.scene_reload_modified_roots_system(world)
   @scene.scene_spawn_roots_system(world)
+}
+
+///|
+fn scene_test_float_close(a : Float, b : Float) -> Bool {
+  (a - b).abs() < 0.0001F
+}
+
+///|
+fn scene_test_vec3_close(a : @math.Vec3, b : @math.Vec3) -> Bool {
+  scene_test_float_close(a.x, b.x) &&
+  scene_test_float_close(a.y, b.y) &&
+  scene_test_float_close(a.z, b.z)
+}
+
+///|
+fn scene_test_image_srgb_is(
+  world : @ecs.World,
+  image : @asset.Handle[@asset.Image],
+  expected : Bool,
+) -> Bool {
+  @asset.asset_with_world(world, fn() {
+    @asset.asset_image_is_srgb(image) == expected
+  })
 }
 
 ///|
@@ -139,9 +164,11 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@camera.CameraPlugin::CameraPlugin())
     .add_plugins(@pbr.PbrPlugin::PbrPlugin())
     .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
     .add_plugins(@scene.ScenePlugin::ScenePlugin())
@@ -200,6 +227,386 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   debug_inspect(has_default_scene.val, content="true")
   debug_inspect(first_scene_ready.val, content="true")
   debug_inspect(source_is_none.val, content="true")
+}
+
+///|
+test "scene: child batch writers preserve required transform and visibility components" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@camera.CameraPlugin::CameraPlugin())
+  let world = app.world()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+  let mesh_handle : @asset.Handle[@mesh.Mesh] = @asset.Handle::new(1)
+
+  try! world.insert_component_writers(child, [
+    @ecs.component_writer(
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(parent),
+    ),
+    @ecs.component_writer(
+      @transform.ecs_key_transform,
+      @transform.Transform::identity(),
+    ),
+    @ecs.component_writer(
+      @visibility.ecs_key_visibility,
+      @visibility.Visibility::Inherited,
+    ),
+    @ecs.component_writer(@pbr.ecs_key_mesh3d, @mesh.Mesh3d::new(mesh_handle)),
+  ])
+
+  debug_inspect(
+    try! world.contains_by_key(child, @transform.ecs_key_transform),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(child, @transform.ecs_key_global_transform),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(child, @transform.ecs_key_transform_tree_changed),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(child, @visibility.ecs_key_visibility),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(child, @visibility.ecs_key_inherited_visibility),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(child, @visibility.ecs_key_view_visibility),
+    content="true",
+  )
+}
+
+///|
+test "scene: child batch writers preserve requirements inside schedule" {
+  let child_ref : Ref[@core.Entity?] = Ref(None)
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@camera.CameraPlugin::CameraPlugin())
+    .add_system(fn(world : @ecs.World) {
+      let parent = world.spawn_empty()
+      let child = world.spawn_empty()
+      child_ref.val = Some(child)
+      let mesh_handle : @asset.Handle[@mesh.Mesh] = @asset.Handle::new(1)
+      try! world.insert_component_writers(child, [
+        @ecs.component_writer(
+          @hierarchy.ecs_key_parent,
+          @hierarchy.Parent::new(parent),
+        ),
+        @ecs.component_writer(
+          @transform.ecs_key_transform,
+          @transform.Transform::identity(),
+        ),
+        @ecs.component_writer(
+          @visibility.ecs_key_visibility,
+          @visibility.Visibility::Inherited,
+        ),
+        @ecs.component_writer(
+          @pbr.ecs_key_mesh3d,
+          @mesh.Mesh3d::new(mesh_handle),
+        ),
+      ])
+    })
+  let app = app.run_once()
+  guard child_ref.val is Some(child) else { fail("child should be spawned") }
+  let world = app.world()
+
+  debug_inspect(
+    try! world.contains_by_key(child, @transform.ecs_key_global_transform),
+    content="true",
+  )
+  debug_inspect(
+    try! world.contains_by_key(child, @visibility.ecs_key_view_visibility),
+    content="true",
+  )
+}
+
+///|
+test "scene: terrain glb scene spawns mesh children" {
+  let root_ref : Ref[@core.Entity?] = Ref(None)
+  let scene_ready = Ref(false)
+  let child_count = Ref(0)
+  let world_mesh_count = Ref(0)
+  let mesh_with_transform_count = Ref(0)
+  let mesh_with_global_transform_count = Ref(0)
+  let mesh_with_view_visibility_count = Ref(0)
+  let mesh_global_matches_helper_count = Ref(0)
+  let terrain_min_y = Ref(1_000_000.0F)
+  let terrain_max_y = Ref(-1_000_000.0F)
+  let terrain_max_height_seen = Ref(false)
+  let terrain_world_min_x = Ref(1_000_000.0F)
+  let terrain_world_max_x = Ref(-1_000_000.0F)
+  let terrain_world_min_y = Ref(1_000_000.0F)
+  let terrain_world_max_y = Ref(-1_000_000.0F)
+  let terrain_world_min_z = Ref(1_000_000.0F)
+  let terrain_world_max_z = Ref(-1_000_000.0F)
+  let terrain_material_loaded = Ref(false)
+  let terrain_material_base_color_ok = Ref(false)
+  let terrain_material_roughness_ok = Ref(false)
+  let terrain_material_metallic_ok = Ref(false)
+  let terrain_material_cull_ok = Ref(false)
+  let terrain_material_reflectance_ok = Ref(false)
+  let terrain_material_specular_tint_ok = Ref(false)
+  let terrain_material_ior_ok = Ref(false)
+  let terrain_material_base_color_texture_srgb_ok = Ref(false)
+  let terrain_material_normal_texture_linear_ok = Ref(false)
+  let terrain_material_metallic_roughness_texture_linear_ok = Ref(false)
+
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@camera.CameraPlugin::CameraPlugin())
+    .add_plugins(@pbr.PbrPlugin::PbrPlugin())
+    .add_plugins(@animation.AnimationPlugin::AnimationPlugin())
+    .add_plugins(@scene.ScenePlugin::ScenePlugin())
+    .add_plugins(@gltf.GltfPlugin::GltfPlugin())
+    .add_plugins(@time.TimePlugin::TimePlugin())
+    .add_systems(
+      @app.Startup,
+      @app.system(fn(world : @ecs.World) {
+        let scene_handle = @scene.scene_load_gltf_scene(
+          @asset.AssetServer::new(),
+          @gltf.GltfAssetLabel::Scene(0).from_asset(
+            "models/terrain/terrain.glb",
+          ),
+        )
+        let root = world.spawn_empty()
+        root_ref.val = Some(root)
+        try! world.set_by_key(
+          root,
+          @scene.ecs_key_world_asset_root,
+          @scene.WorldAssetRoot::new(scene_handle),
+        )
+        try! world.set_by_key(
+          root,
+          @transform.ecs_key_transform,
+          @transform.Transform::from_xyz(-1.0F, 0.0F, -0.5F)
+          .with_scale(@math.Vec3::splat(0.5F))
+          .with_rotation(@math.Quat::from_rotation_y(3.141592653589793F / 2.0F)),
+        )
+      }),
+    )
+
+  for _ in 0..<180 {
+    app = app.run_once()
+    guard root_ref.val is Some(root) else { continue }
+    let frame_world = app.world()
+    if @scene.scene_components_has_scene_instance_ready(frame_world, root) {
+      scene_ready.val = true
+      child_count.val = 0
+      world_mesh_count.val = 0
+      mesh_with_transform_count.val = 0
+      mesh_with_global_transform_count.val = 0
+      mesh_with_view_visibility_count.val = 0
+      mesh_global_matches_helper_count.val = 0
+      frame_world.for_each_component(@hierarchy.ecs_key_parent, fn(
+        entity,
+        parent,
+      ) {
+        guard parent.entity().id == root.id else { return }
+        child_count.val = child_count.val + 1
+        ignore(entity)
+      })
+      let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+      let mesh_assets = frame_world.get_resource(mesh_assets_key)
+      let material_assets_key : @ecs.ResourceKey[
+        @asset.Assets[@pbr.StandardMaterial],
+      ] = @asset.assets_resource_key()
+      let material_assets = frame_world.get_resource(material_assets_key)
+      frame_world.for_each_component(@pbr.ecs_key_mesh3d, fn(entity, mesh3d) {
+        world_mesh_count.val = world_mesh_count.val + 1
+        let stored_global = try! frame_world.get_by_key(
+          entity, @transform.ecs_key_global_transform,
+        )
+        if mesh_assets is Some(assets) {
+          if assets.get(mesh3d.mesh()) is Some(mesh_asset) &&
+            mesh_asset.as_3d_geometry() is Some(geometry) {
+            for position in geometry.positions {
+              if position.y < terrain_min_y.val {
+                terrain_min_y.val = position.y
+              }
+              if position.y > terrain_max_y.val {
+                terrain_max_y.val = position.y
+              }
+              if stored_global is Some(global) {
+                let world_position = global.affine().transform_point3(position)
+                if world_position.x < terrain_world_min_x.val {
+                  terrain_world_min_x.val = world_position.x
+                }
+                if world_position.x > terrain_world_max_x.val {
+                  terrain_world_max_x.val = world_position.x
+                }
+                if world_position.y < terrain_world_min_y.val {
+                  terrain_world_min_y.val = world_position.y
+                }
+                if world_position.y > terrain_world_max_y.val {
+                  terrain_world_max_y.val = world_position.y
+                }
+                if world_position.z < terrain_world_min_z.val {
+                  terrain_world_min_z.val = world_position.z
+                }
+                if world_position.z > terrain_world_max_z.val {
+                  terrain_world_max_z.val = world_position.z
+                }
+              }
+            }
+            if terrain_max_y.val > 0.99F {
+              terrain_max_height_seen.val = true
+            }
+          }
+        }
+        if (try! frame_world.get_by_key(entity, @pbr.ecs_key_mesh_material3d))
+          is Some(mesh_material) {
+          if material_assets is Some(assets) {
+            if assets.get(@asset.Handle::new(mesh_material.material_asset_id()))
+              is Some(material) {
+              terrain_material_loaded.val = true
+              let (base_r, base_g, base_b, base_a) = material.base_color.to_linear_rgba_tuple()
+              terrain_material_base_color_ok.val = terrain_material_base_color_ok.val ||
+                (
+                  scene_test_float_close(base_r, 1.0F) &&
+                  scene_test_float_close(base_g, 1.0F) &&
+                  scene_test_float_close(base_b, 1.0F) &&
+                  scene_test_float_close(base_a, 1.0F)
+                )
+              terrain_material_roughness_ok.val = terrain_material_roughness_ok.val ||
+                scene_test_float_close(material.perceptual_roughness, 1.0F)
+              terrain_material_metallic_ok.val = terrain_material_metallic_ok.val ||
+                scene_test_float_close(material.metallic, 0.0F)
+              terrain_material_cull_ok.val = terrain_material_cull_ok.val ||
+                material.cull_mode is None
+              terrain_material_reflectance_ok.val = terrain_material_reflectance_ok.val ||
+                scene_test_float_close(material.reflectance, 0.5F)
+              let (specular_r, specular_g, specular_b, specular_a) = material.specular_tint.to_linear_rgba_tuple()
+              terrain_material_specular_tint_ok.val = terrain_material_specular_tint_ok.val ||
+                (
+                  scene_test_float_close(specular_r, 1.0F) &&
+                  scene_test_float_close(specular_g, 1.0F) &&
+                  scene_test_float_close(specular_b, 1.0F) &&
+                  scene_test_float_close(specular_a, 1.0F)
+                )
+              terrain_material_ior_ok.val = terrain_material_ior_ok.val ||
+                scene_test_float_close(material.ior, 1.5F)
+              if material.base_color_texture is Some(texture) {
+                terrain_material_base_color_texture_srgb_ok.val = terrain_material_base_color_texture_srgb_ok.val ||
+                  scene_test_image_srgb_is(frame_world, texture, true)
+              }
+              if material.normal_map_texture is Some(texture) {
+                terrain_material_normal_texture_linear_ok.val = terrain_material_normal_texture_linear_ok.val ||
+                  scene_test_image_srgb_is(frame_world, texture, false)
+              }
+              if material.metallic_roughness_texture is Some(texture) {
+                terrain_material_metallic_roughness_texture_linear_ok.val = terrain_material_metallic_roughness_texture_linear_ok.val ||
+                  scene_test_image_srgb_is(frame_world, texture, false)
+              }
+            }
+          }
+        }
+        if (try! frame_world.contains_by_key(
+            entity, @transform.ecs_key_transform,
+          )) {
+          mesh_with_transform_count.val = mesh_with_transform_count.val + 1
+        }
+        if (try! frame_world.contains_by_key(
+            entity, @transform.ecs_key_global_transform,
+          )) {
+          mesh_with_global_transform_count.val = mesh_with_global_transform_count.val +
+            1
+          let stored_global = stored_global.unwrap()
+          match @transform.compute_global_transform(frame_world, entity) {
+            Some(computed_global) =>
+              if scene_test_vec3_close(
+                  stored_global.translation(),
+                  computed_global.translation(),
+                ) {
+                mesh_global_matches_helper_count.val = mesh_global_matches_helper_count.val +
+                  1
+              }
+            None => ()
+          }
+        }
+        if (try! frame_world.contains_by_key(
+            entity, @visibility.ecs_key_view_visibility,
+          )) {
+          mesh_with_view_visibility_count.val = mesh_with_view_visibility_count.val +
+            1
+        }
+      })
+      break
+    }
+  }
+
+  debug_inspect(scene_ready.val, content="true")
+  debug_inspect(child_count.val > 0, content="true")
+  debug_inspect(world_mesh_count.val > 0, content="true")
+  debug_inspect(
+    mesh_with_transform_count.val == world_mesh_count.val,
+    content="true",
+  )
+  debug_inspect(
+    mesh_with_global_transform_count.val == world_mesh_count.val,
+    content="true",
+  )
+  debug_inspect(
+    mesh_global_matches_helper_count.val == world_mesh_count.val,
+    content="true",
+  )
+  debug_inspect(
+    mesh_with_view_visibility_count.val == world_mesh_count.val,
+    content="true",
+  )
+  debug_inspect(
+    scene_test_float_close(terrain_min_y.val, 0.0000628F),
+    content="true",
+  )
+  debug_inspect(terrain_max_height_seen.val, content="true")
+  debug_inspect(
+    scene_test_float_close(terrain_world_min_x.val, -3.5F),
+    content="true",
+  )
+  debug_inspect(
+    scene_test_float_close(terrain_world_max_x.val, 1.5001465F),
+    content="true",
+  )
+  debug_inspect(
+    scene_test_float_close(terrain_world_min_y.val, 0.0000314F),
+    content="true",
+  )
+  debug_inspect(
+    scene_test_float_close(terrain_world_max_y.val, 0.50000876F),
+    content="true",
+  )
+  debug_inspect(
+    scene_test_float_close(terrain_world_min_z.val, -3.000142F),
+    content="true",
+  )
+  debug_inspect(
+    scene_test_float_close(terrain_world_max_z.val, 2.0000334F),
+    content="true",
+  )
+  debug_inspect(terrain_material_loaded.val, content="true")
+  debug_inspect(terrain_material_base_color_ok.val, content="true")
+  debug_inspect(terrain_material_roughness_ok.val, content="true")
+  debug_inspect(terrain_material_metallic_ok.val, content="true")
+  debug_inspect(terrain_material_cull_ok.val, content="true")
+  debug_inspect(terrain_material_reflectance_ok.val, content="true")
+  debug_inspect(terrain_material_specular_tint_ok.val, content="true")
+  debug_inspect(terrain_material_ior_ok.val, content="true")
+  debug_inspect(terrain_material_base_color_texture_srgb_ok.val, content="true")
+  debug_inspect(terrain_material_normal_texture_linear_ok.val, content="true")
+  debug_inspect(
+    terrain_material_metallic_roughness_texture_linear_ok.val,
+    content="true",
+  )
 }
 
 ///|

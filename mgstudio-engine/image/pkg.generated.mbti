@@ -136,24 +136,29 @@ pub(all) struct Image {
   mut texture_view_dimension : ImageTextureViewDimension?
 }
 pub fn Image::array_layout(Self) -> ImageArrayLayout?
+pub fn Image::format(Self) -> TextureFormat
 pub fn Image::height(Self) -> Int
 pub fn Image::is_target_texture(Self) -> Bool
 pub fn Image::mip_level_count(Self) -> Int
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
+pub fn Image::pixel_byte_len(Self) -> Int
 pub fn Image::reinterpret_stacked_2d_as_array(Self, Int) -> Bool
 pub fn Image::set_texture_descriptor_label(Self, String?) -> Unit
 pub fn Image::set_texture_view_dimension(Self, ImageTextureViewDimension?) -> Unit
 pub fn Image::texture_descriptor_label(Self) -> String?
 pub fn Image::texture_usage_bits(Self) -> Int
 pub fn Image::texture_view_dimension(Self) -> ImageTextureViewDimension?
+pub fn Image::view_format(Self) -> TextureFormat?
 pub fn Image::width(Self) -> Int
 pub fn Image::with_added_texture_usage(Self, Int) -> Self
+pub fn Image::with_array_layout(Self, ImageArrayLayout?) -> Self
 pub fn Image::with_format(Self, TextureFormat) -> Self
 pub fn Image::with_mip_level_count(Self, Int) -> Self
 pub fn Image::with_sampler(Self, ImageSampler) -> Self
 pub fn Image::with_texture_descriptor_label(Self, String?) -> Self
 pub fn Image::with_texture_usage_bits(Self, Int) -> Self
+pub fn Image::with_texture_view_dimension(Self, ImageTextureViewDimension?) -> Self
 
 pub(all) enum ImageAddressMode {
   ClampToEdge

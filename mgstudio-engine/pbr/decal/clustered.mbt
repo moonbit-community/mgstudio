@@ -788,10 +788,8 @@ pub fn clustered_decal_plugin_install_with(
     }
     sub_app
     .add_systems(
-      @render.render_schedule_stage(),
-      @app.system(render3d_extract_clustered_decals_system_in_render_app).in_set(
-        @render.render_system_set_extract_commands,
-      ),
+      @render.render_extract_schedule_stage(),
+      @app.system(render3d_extract_clustered_decals_system_in_render_app),
     )
     .add_systems(
       @render.render_schedule_stage(),

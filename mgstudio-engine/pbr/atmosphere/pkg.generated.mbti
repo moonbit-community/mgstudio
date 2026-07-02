@@ -22,6 +22,8 @@ pub fn atmosphere_plugin_state_with_extracted_camera_count(AtmospherePluginState
 
 pub fn atmosphere_plugin_state_with_lut_ready(AtmospherePluginState, Bool) -> AtmospherePluginState
 
+pub let ecs_key_atmosphere_environment_map : @ecs.ComponentKey[AtmosphereEnvironmentMap]
+
 pub fn pbr_atmosphere_default() -> @light.Atmosphere
 
 pub fn pbr_atmosphere_earth(@light.ScatteringMedium) -> @light.Atmosphere
@@ -53,6 +55,8 @@ pub fn pbr_gpu_atmosphere(@light.Atmosphere, @math.Affine3) -> GpuAtmosphere
 pub fn pbr_gpu_atmosphere_settings(@light.AtmosphereSettings) -> GpuAtmosphereSettings
 
 pub fn pbr_validate_atmosphere_environment_map_size(@math.UVec2) -> @math.UVec2
+
+pub fn prepare_atmosphere_probe_components(@ecs.World) -> Unit
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
@@ -86,6 +90,9 @@ pub struct AtmosphereEnvironmentMap {
   size : @math.UVec2
 }
 pub fn AtmosphereEnvironmentMap::AtmosphereEnvironmentMap() -> Self
+pub fn AtmosphereEnvironmentMap::environment_map(Self) -> @asset.Handle[@image.Image]?
+pub fn AtmosphereEnvironmentMap::size(Self) -> @math.UVec2
+pub impl @ecs.Component for AtmosphereEnvironmentMap
 
 pub struct AtmosphereLutPipelines {
   transmittance_lut : Bool

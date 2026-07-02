@@ -114,9 +114,11 @@ pub fn atmosphere_plugin_install_with(
   if app.contains_resource(ecs_key_atmosphere_plugin_state) {
     app
   } else {
-    app.insert_world_resource(ecs_key_atmosphere_plugin_state, AtmospherePluginState::{
+    app
+    .insert_world_resource(ecs_key_atmosphere_plugin_state, AtmospherePluginState::{
       ..AtmospherePluginState(),
       plugin,
     })
+    .add_systems_world(@app.Update, prepare_atmosphere_probe_components)
   }
 }

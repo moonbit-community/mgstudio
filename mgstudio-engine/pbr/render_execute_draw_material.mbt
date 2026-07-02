@@ -1,0 +1,233 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+priv struct Render3dMeshDrawMaterialFields {
+  draw_alpha : Float
+  base_color_r : Float
+  base_color_g : Float
+  base_color_b : Float
+  texture_id : Int
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  depth_texture_id : Int
+  anisotropy_texture_id : Int
+  specular_texture_id : Int
+  specular_tint_texture_id : Int
+  clearcoat_texture_id : Int
+  clearcoat_roughness_texture_id : Int
+  clearcoat_normal_texture_id : Int
+  surface_roughness : Float
+  reflectance : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  anisotropy_strength : Float
+  max_relief_mapping_search_steps : Float
+  forward_decal_inv_depth_fade_factor : Float
+  lightmap_texture_id : Int
+  lightmap_slab_index : Int
+  lightmap_slot_index : Int
+  lightmap_slab_texture_ids : Array[Int]
+  lightmap_uv_min_x : Float
+  lightmap_uv_min_y : Float
+  lightmap_uv_max_x : Float
+  lightmap_uv_max_y : Float
+}
+
+///|
+fn render3d_resolve_mesh_draw_material_fields(
+  world : @ecs.World,
+  extracted_mesh : ExtractedMesh3d,
+  draw_alpha : Float,
+) -> Render3dMeshDrawMaterialFields {
+  let mesh = extracted_mesh.payload
+  let material = mesh.material
+  let mut texture_id = match material.base_color_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let mut normal_texture_id = match material.normal_map_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let mut emissive_texture_id = match material.emissive_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let mut metallic_roughness_texture_id = match
+    material.metallic_roughness_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let occlusion_texture_id = match material.occlusion_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let depth_texture_id = match material.depth_map {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let anisotropy_texture_id = match material.anisotropy_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let specular_texture_id = match material.specular_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let specular_tint_texture_id = match material.specular_tint_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let clearcoat_texture_id = match material.clearcoat_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let clearcoat_roughness_texture_id = match
+    material.clearcoat_roughness_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  let clearcoat_normal_texture_id = match material.clearcoat_normal_texture {
+    Some(texture) => texture.id()
+    None => -1
+  }
+  if mesh.clustered_decal is Some(clustered_decal) {
+    if clustered_decal.base_color_texture is Some(texture) {
+      texture_id = texture.id()
+    }
+    if clustered_decal.normal_map_texture is Some(texture) {
+      normal_texture_id = texture.id()
+    }
+    if clustered_decal.metallic_roughness_texture is Some(texture) {
+      metallic_roughness_texture_id = texture.id()
+    }
+    if clustered_decal.emissive_texture is Some(texture) {
+      emissive_texture_id = texture.id()
+    }
+  }
+  let (
+    lightmap_texture_id,
+    lightmap_slab_index,
+    lightmap_slot_index,
+    lightmap_slab_texture_ids,
+    lightmap_uv_min_x,
+    lightmap_uv_min_y,
+    lightmap_uv_max_x,
+    lightmap_uv_max_y,
+  ) = match mesh.lightmap {
+    Some(lightmap) if lightmap.image.id() >= 0 => {
+      let uv_min = lightmap.uv_rect.min()
+      let uv_max = lightmap.uv_rect.max()
+      let (slab_index, slot_index, slab_texture_ids) = match
+        world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
+        Some(render_lightmaps) =>
+          render_lightmaps.modify(fn(value) {
+            let render_lightmap = value.insert_lightmap(
+              extracted_mesh.entity.main_entity,
+              lightmap,
+            )
+            (
+              render_lightmap.slab_index.to_int(),
+              render_lightmap.slot_index.to_int(),
+              value.slab_texture_ids(render_lightmap.slab_index),
+            )
+          })
+        None => (-1, 0, [lightmap.image.id()])
+      }
+      (
+        lightmap.image.id(),
+        slab_index,
+        slot_index,
+        slab_texture_ids,
+        uv_min.x,
+        uv_min.y,
+        uv_max.x,
+        uv_max.y,
+      )
+    }
+    _ => (-1, -1, -1, [], 0.0F, 0.0F, 0.0F, 0.0F)
+  }
+  let clearcoat_reflectance = @pbr_render.maxf(
+    0.0F,
+    material.reflectance + material.clearcoat * 0.5F,
+  )
+  let clearcoat_roughness = @pbr_render.minf(
+    material.perceptual_roughness,
+    material.clearcoat_perceptual_roughness,
+  )
+  let surface_roughness = if material.clearcoat > 0.0F {
+    clearcoat_roughness
+  } else {
+    material.perceptual_roughness
+  }
+  let forward_decal_inv_depth_fade_factor = if mesh.is_forward_decal {
+    let depth_fade_factor = match mesh.forward_decal_material_ext {
+      Some(extension) => extension.depth_fade_factor
+      None => 8.0F
+    }
+    let safe_depth_fade_factor = if depth_fade_factor < 0.001F {
+      0.001F
+    } else {
+      depth_fade_factor
+    }
+    1.0F / safe_depth_fade_factor
+  } else {
+    1.0F / 8.0F
+  }
+  Render3dMeshDrawMaterialFields::{
+    draw_alpha,
+    base_color_r: material.base_color.r,
+    base_color_g: material.base_color.g,
+    base_color_b: material.base_color.b,
+    texture_id,
+    normal_texture_id,
+    emissive_texture_id,
+    metallic_roughness_texture_id,
+    occlusion_texture_id,
+    depth_texture_id,
+    anisotropy_texture_id,
+    specular_texture_id,
+    specular_tint_texture_id,
+    clearcoat_texture_id,
+    clearcoat_roughness_texture_id,
+    clearcoat_normal_texture_id,
+    surface_roughness,
+    reflectance: clearcoat_reflectance,
+    diffuse_transmission: @pbr_render.clamp01(material.diffuse_transmission),
+    specular_transmission: @pbr_render.clamp01(material.specular_transmission),
+    thickness: @pbr_render.maxf(0.0F, material.thickness),
+    ior: @pbr_render.maxf(1.0F, material.ior),
+    anisotropy_strength: @pbr_render.maxf(
+      0.0F,
+      @pbr_render.minf(1.0F, material.anisotropy_strength),
+    ),
+    max_relief_mapping_search_steps: Float::from_double(
+      material.parallax_mapping_method.max_steps().to_double(),
+    ),
+    forward_decal_inv_depth_fade_factor,
+    lightmap_texture_id,
+    lightmap_slab_index,
+    lightmap_slot_index,
+    lightmap_slab_texture_ids,
+    lightmap_uv_min_x,
+    lightmap_uv_min_y,
+    lightmap_uv_max_x,
+    lightmap_uv_max_y,
+  }
+}

@@ -65,6 +65,46 @@ fn render3d_world_has_environment_light_probes(world : @ecs.World) -> Bool {
 }
 
 ///|
+fn render3d_world_to_atmosphere(
+  transform : @transform.Transform,
+) -> @math.Affine3 {
+  @math.Affine3::from_scale_rotation_translation(
+    transform.scale,
+    transform.rotation,
+    transform.translation,
+  ).inverse()
+}
+
+///|
+fn render3d_extract_nearest_atmosphere(
+  source_world : @ecs.World,
+  world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
+  camera_transform : @transform.Transform,
+) -> ExtractedAtmosphere3d? {
+  let mut selected_atmosphere : Atmosphere? = None
+  let mut selected_world_to_atmosphere : @math.Affine3? = None
+  let mut selected_distance = 0.0F
+  source_world.for_each_component(ecs_key_atmosphere, fn(entity, atmosphere) {
+    let transform = @pbr_render.render3d_entity_world_transform_cached(
+      source_world, entity, world_transform_cache_value,
+    )
+    let distance = camera_transform.translation.distance(transform.translation)
+    if selected_atmosphere is None || distance < selected_distance {
+      selected_atmosphere = Some(atmosphere)
+      selected_world_to_atmosphere = Some(
+        render3d_world_to_atmosphere(transform),
+      )
+      selected_distance = distance
+    }
+  })
+  match (selected_atmosphere, selected_world_to_atmosphere) {
+    (Some(atmosphere), Some(world_to_atmosphere)) =>
+      Some(ExtractedAtmosphere3d::{ atmosphere, world_to_atmosphere })
+    _ => None
+  }
+}
+
+///|
 fn render3d_execute_collect_cameras(
   source_world : @ecs.World,
   world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
@@ -164,7 +204,6 @@ fn render3d_execute_collect_cameras(
     let volumetric_fog = try! source_world.get_by_key(
       entity, ecs_key_volumetric_fog,
     )
-    let atmosphere = try! source_world.get_by_key(entity, ecs_key_atmosphere)
     let atmosphere_settings = try! source_world.get_by_key(
       entity, ecs_key_atmosphere_settings,
     )
@@ -274,6 +313,9 @@ fn render3d_execute_collect_cameras(
       is Some(_)
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_value,
+    )
+    let atmosphere = render3d_extract_nearest_atmosphere(
+      source_world, world_transform_cache_value, transform,
     )
     let previous_view_data = previous_view_data_opt.value()
     let previous_transform = match previous_view_data {

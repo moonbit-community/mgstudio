@@ -90,6 +90,7 @@ pub fn GlobalTransform::compute_transform(Self) -> Transform
 pub fn GlobalTransform::from_transform(Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
 pub fn GlobalTransform::inverse(Self) -> Self
+pub fn GlobalTransform::is_identity(Self) -> Bool
 pub fn GlobalTransform::mul(Self, Self) -> Self
 pub fn GlobalTransform::mul_transform(Self, Transform) -> Self
 pub fn GlobalTransform::reparented_to(Self, Self) -> Transform

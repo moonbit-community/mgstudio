@@ -116,6 +116,23 @@ pub fn GlobalTransform::identity() -> GlobalTransform {
 }
 
 ///|
+pub fn GlobalTransform::is_identity(self : GlobalTransform) -> Bool {
+  let affine = self.affine
+  affine.matrix3.x_axis.x == 1.0F &&
+  affine.matrix3.x_axis.y == 0.0F &&
+  affine.matrix3.x_axis.z == 0.0F &&
+  affine.matrix3.y_axis.x == 0.0F &&
+  affine.matrix3.y_axis.y == 1.0F &&
+  affine.matrix3.y_axis.z == 0.0F &&
+  affine.matrix3.z_axis.x == 0.0F &&
+  affine.matrix3.z_axis.y == 0.0F &&
+  affine.matrix3.z_axis.z == 1.0F &&
+  affine.translation.x == 0.0F &&
+  affine.translation.y == 0.0F &&
+  affine.translation.z == 0.0F
+}
+
+///|
 pub fn GlobalTransform::GlobalTransform() -> GlobalTransform {
   GlobalTransform::identity()
 }

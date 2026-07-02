@@ -131,6 +131,12 @@ pub fn render_recovery_schedule_stage() -> @app.ScheduleStage {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/extract_plugin.rs` (`ExtractSchedule`).
+pub fn render_extract_schedule_stage() -> @app.ScheduleStage {
+  @app.schedule_label("mgstudio.render.extract")
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/lib.rs` (`RenderScheduleOrder`).
 pub struct RenderScheduleOrder {
   labels : Array[@app.ScheduleStage]

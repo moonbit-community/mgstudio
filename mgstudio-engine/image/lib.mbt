@@ -191,6 +191,21 @@ pub fn Image::mip_level_count(self : Image) -> Int {
 }
 
 ///|
+pub fn Image::format(self : Image) -> TextureFormat {
+  self.format
+}
+
+///|
+pub fn Image::view_format(self : Image) -> TextureFormat? {
+  self.view_format
+}
+
+///|
+pub fn Image::pixel_byte_len(self : Image) -> Int {
+  self.pixels.length()
+}
+
+///|
 pub fn Image::texture_usage_bits(self : Image) -> Int {
   self.usage_bits
 }
@@ -242,11 +257,53 @@ pub fn Image::array_layout(self : Image) -> ImageArrayLayout? {
 }
 
 ///|
+pub fn Image::with_array_layout(
+  self : Image,
+  array_layout : ImageArrayLayout?,
+) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: self.view_format,
+    sampler: self.sampler,
+    kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: self.usage_bits,
+    texture_descriptor_label: self.texture_descriptor_label,
+    array_layout,
+    texture_view_dimension: self.texture_view_dimension,
+  }
+}
+
+///|
 pub fn Image::set_texture_view_dimension(
   self : Image,
   dimension : ImageTextureViewDimension?,
 ) -> Unit {
   self.texture_view_dimension = dimension
+}
+
+///|
+pub fn Image::with_texture_view_dimension(
+  self : Image,
+  texture_view_dimension : ImageTextureViewDimension?,
+) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format: self.format,
+    view_format: self.view_format,
+    sampler: self.sampler,
+    kind: self.kind,
+    mip_level_count: self.mip_level_count,
+    usage_bits: self.usage_bits,
+    texture_descriptor_label: self.texture_descriptor_label,
+    array_layout: self.array_layout,
+    texture_view_dimension,
+  }
 }
 
 ///|

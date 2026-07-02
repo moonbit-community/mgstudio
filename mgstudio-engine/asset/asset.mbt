@@ -1702,11 +1702,12 @@ pub fn AssetServer::load_texture_bytes(
   self : AssetServer,
   bytes : Bytes,
   nearest : Bool,
+  is_srgb? : Bool = true,
 ) -> Handle[Image] {
   let decoded_image = image_from_loaded_texture_bytes(
     "",
     bytes,
-    true,
+    is_srgb,
     ImageFormatSetting::Guess,
     None,
   )
@@ -1733,6 +1734,7 @@ pub fn AssetServer::load_texture_bytes(
     },
   )
   self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
+  self.set_image_is_srgb(handle, is_srgb)
   match decoded_image {
     Some(image) => self.set_pending_image_asset(handle, image)
     None =>
@@ -1740,7 +1742,7 @@ pub fn AssetServer::load_texture_bytes(
         handle,
         "",
         bytes,
-        true,
+        is_srgb,
         ImageFormatSetting::Guess,
         None,
       )

@@ -79,7 +79,7 @@ priv struct Camera3dViewPayload {
   distance_fog : DistanceFog?
   auto_exposure : AutoExposure?
   volumetric_fog : VolumetricFog?
-  atmosphere : Atmosphere?
+  atmosphere : ExtractedAtmosphere3d?
   atmosphere_settings : AtmosphereSettings?
   camera : @camera_camera.Camera
   depth_texture_usages : Camera3dDepthTextureUsage
@@ -126,6 +126,12 @@ priv struct Camera3dViewPayload {
   layers : @camera_render_layers.RenderLayers
   has_no_cpu_culling : Bool
   invert_culling : Bool
+}
+
+///|
+priv struct ExtractedAtmosphere3d {
+  atmosphere : Atmosphere
+  world_to_atmosphere : @math.Affine3
 }
 
 ///|

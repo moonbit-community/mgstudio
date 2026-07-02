@@ -99,7 +99,7 @@ fn shader_compile_error_from_composer(
 priv struct ShaderCompileRuntimeState {
   mut startup_sources_registered : Bool
   composed_cache : Array[ShaderCompileCacheEntry]
-  mut composer : @wgsl_compose.Composer?
+  composers : Array[ShaderCompileComposerEntry]
   mut source_registry_fingerprint : String?
 }
 
@@ -110,10 +110,16 @@ priv struct ShaderCompileCacheEntry {
 }
 
 ///|
+priv struct ShaderCompileComposerEntry {
+  root_rel_path : String
+  composer : @wgsl_compose.Composer
+}
+
+///|
 let shader_compile_runtime_state : ShaderCompileRuntimeState = {
   startup_sources_registered: false,
   composed_cache: [],
-  composer: None,
+  composers: [],
   source_registry_fingerprint: None,
 }
 
@@ -241,7 +247,7 @@ pub fn clear_registered_shader_sources() -> Unit {
   @shader_source.clear_embedded_shader_sources()
   shader_compile_runtime_state.startup_sources_registered = false
   shader_compile_runtime_state.composed_cache.clear()
-  shader_compile_runtime_state.composer = None
+  shader_compile_runtime_state.composers.clear()
   shader_compile_runtime_state.source_registry_fingerprint = None
 }
 
@@ -249,29 +255,45 @@ pub fn clear_registered_shader_sources() -> Unit {
 pub fn register_shader_source(rel_path : String, source : String) -> Unit {
   @shader_source.load_embedded_shader_source(rel_path, source)
   shader_compile_runtime_state.composed_cache.clear()
-  shader_compile_runtime_state.composer = None
+  shader_compile_runtime_state.composers.clear()
   shader_compile_runtime_state.source_registry_fingerprint = None
 }
 
 ///|
-fn shader_compile_build_composer() -> @wgsl_compose.Composer {
+fn shader_compile_composer_root_key(root_rel_path : String?) -> String {
+  match root_rel_path {
+    Some(path) => normalize_shader_rel_path(path)
+    None => ""
+  }
+}
+
+///|
+fn shader_compile_build_composer(
+  root_rel_path : String?,
+) -> @wgsl_compose.Composer {
   let composer = @wgsl_compose.Composer::default()
-  let files = @shader_source.embedded_shader_source_files()
+  let files = @shader_source.embedded_shader_composer_source_files(
+    root_rel_path,
+  )
   files.sort_by(fn(left, right) { left.rel_path.compare(right.rel_path) })
   composer.register_source_files(files)
   composer
 }
 
 ///|
-fn shader_compile_composer() -> @wgsl_compose.Composer {
-  match shader_compile_runtime_state.composer {
-    Some(composer) => composer
-    None => {
-      let composer = shader_compile_build_composer()
-      shader_compile_runtime_state.composer = Some(composer)
-      composer
+fn shader_compile_composer(root_rel_path : String?) -> @wgsl_compose.Composer {
+  let root_key = shader_compile_composer_root_key(root_rel_path)
+  for entry in shader_compile_runtime_state.composers {
+    if entry.root_rel_path == root_key {
+      return entry.composer
     }
   }
+  let composer = shader_compile_build_composer(root_rel_path)
+  shader_compile_runtime_state.composers.push(ShaderCompileComposerEntry::{
+    root_rel_path: root_key,
+    composer,
+  })
+  composer
 }
 
 ///|
@@ -339,7 +361,7 @@ pub fn preprocess_shader_source(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composer = shader_compile_composer()
+  let composer = shader_compile_composer(None)
   let composed = composer.compose_wgsl_source(source, options) catch {
     err => raise shader_compile_error_from_composer(err)
   }
@@ -364,7 +386,7 @@ pub fn load_preprocessed_wgsl(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composer = shader_compile_composer()
+  let composer = shader_compile_composer(Some(rel))
   let composed = composer.compose_wgsl(rel, options) catch {
     err => raise shader_compile_error_from_composer(err)
   }

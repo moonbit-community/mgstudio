@@ -220,13 +220,14 @@ fn configure_mesh_render_sub_app(
   @pbr_render.ensure_morph_resources(sub_app.world())
   @pbr_render.ensure_skin_uniforms_resource(sub_app.world())
   let stage = @render.render_schedule_stage()
+  let extract_stage = @render.render_extract_schedule_stage()
   let graph_stage = @render.RenderGraph::schedule()
   @render.configure_base_render_sets(sub_app)
   .add_systems(
-    stage,
-    @app.system(render3d_extract_system_in_render_app)
-    .named("pbr.render3d.extract")
-    .in_set(render3d_set_extract),
+    extract_stage,
+    @app.system(render3d_extract_system_in_render_app).named(
+      "pbr.render3d.extract",
+    ),
   )
   .add_systems(
     stage,

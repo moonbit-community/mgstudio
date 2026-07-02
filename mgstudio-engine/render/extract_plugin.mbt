@@ -43,6 +43,7 @@ fn render_sub_app_extract(
   render_world.insert_resource(ecs_key_render_main_world, RenderMainWorld::{
     world: main_world,
   })
+  @app.run_current_schedule_stage(render_world, render_extract_schedule_stage())
   (main_world, render_world)
 }
 
@@ -99,6 +100,13 @@ fn render_plugin_install_with(
     )
     let render_sub_app = render_sub_app.add_schedule(
       @app.Schedule::new(render_startup_schedule_stage()),
+    )
+    let render_sub_app = render_sub_app.add_schedule(
+      @app.Schedule::new(render_extract_schedule_stage())
+      .set_build_settings(
+        @app.ScheduleBuildSettings::new().set_auto_insert_apply_deferred(false),
+      )
+      .set_apply_final_deferred(false),
     )
     let render_sub_app = render_sub_app.add_schedule(
       @app.Schedule::new(render_recovery_schedule_stage()),
@@ -168,9 +176,11 @@ fn render_plugin_install_with(
       )
       .add_systems(
         render_schedule_stage(),
-        @app.system(extract_render_asset_bytes_per_frame).in_set(
-          render_system_set_extract_commands,
-        ),
+        @app.apply_deferred_system().in_set(render_system_set_extract_commands),
+      )
+      .add_systems(
+        render_extract_schedule_stage(),
+        @app.system(extract_render_asset_bytes_per_frame),
       )
       .add_systems(
         render_schedule_stage(),
@@ -181,15 +191,13 @@ fn render_plugin_install_with(
         .in_set(render_system_set_prepare_assets),
       )
       .add_systems(
-        render_schedule_stage(),
+        render_extract_schedule_stage(),
         @app.system(fn(render_world : @ecs.World) {
           @render_view_window.extract_windows(
             render_source_world(render_world),
             render_world,
           )
-        })
-        .named("mgstudio_render::view::window::extract_windows")
-        .in_set(render_system_set_extract_commands),
+        }).named("mgstudio_render::view::window::extract_windows"),
       )
       .add_systems(
         render_schedule_stage(),

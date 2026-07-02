@@ -70,7 +70,9 @@ pub let ecs_key_meshlet_mesh3d : @ecs.ComponentKey[MeshletMesh3d] = @ecs.registe
 )
 
 ///|
-let meshlet_render3d_set_extract : @app.SystemSet = @render.render_system_set_extract_commands
+let meshlet_render3d_set_extract : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.meshlet.extract",
+)
 
 ///|
 let meshlet_render3d_set_prepare_assets : @app.SystemSet = @render.render_system_set_prepare_assets
@@ -1563,15 +1565,16 @@ fn meshlet_configure_render_sub_app(
 ) -> @app.SubApp[@ecs.World] {
   meshlet_ensure_render_sub_app_resources(sub_app.world(), plugin)
   let stage = @render.render_schedule_stage()
+  let extract_stage = @render.render_extract_schedule_stage()
   @render.configure_base_render_sets(sub_app)
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(meshlet_refresh_plugin_state_system).in_set(
       meshlet_render3d_set_extract,
     ),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(meshlet_extract_entities_system).in_set(
       meshlet_render3d_set_extract,
     ),

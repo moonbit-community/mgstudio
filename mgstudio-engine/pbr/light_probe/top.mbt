@@ -80,9 +80,11 @@ pub fn light_probe_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : LightProbePlugin,
 ) -> @app.App[@ecs.World] {
-  let app = app.init_resource(fn() {
-    LightProbePluginState::LightProbePluginState()
-  })
+  let app = app
+    .add_plugins(
+      EnvironmentMapGenerationPlugin::EnvironmentMapGenerationPlugin(),
+    )
+    .init_resource(fn() { LightProbePluginState::LightProbePluginState() })
   @render.try_with_render_app(app, fn(render_app) {
     render_app
     .add_systems(
@@ -92,18 +94,16 @@ pub fn light_probe_plugin_with(
       ),
     )
     .add_systems(
-      @render.render_schedule_stage(),
+      @render.render_extract_schedule_stage(),
       @app.system(gather_environment_map_light_probes)
       .named("mgstudio_pbr::gather_environment_map_light_probes")
-      .in_set(light_probe_extract_system_set)
-      .in_set(@render.render_system_set_extract_commands),
+      .in_set(light_probe_extract_system_set),
     )
     .add_systems(
-      @render.render_schedule_stage(),
+      @render.render_extract_schedule_stage(),
       @app.system(gather_irradiance_volume_light_probes)
       .named("mgstudio_pbr::gather_irradiance_volume_light_probes")
-      .in_set(light_probe_extract_system_set)
-      .in_set(@render.render_system_set_extract_commands),
+      .in_set(light_probe_extract_system_set),
     )
     .add_systems(
       @render.render_schedule_stage(),

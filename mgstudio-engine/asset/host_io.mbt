@@ -3077,6 +3077,7 @@ fn load_texture_bytes_with_container(
         format=payload.format,
         levels=payload.levels,
         nearest~,
+        usage_bits=IMAGE_USAGE_DEFAULT_SAMPLED,
         label=texture_descriptor_label,
       )
     } else {

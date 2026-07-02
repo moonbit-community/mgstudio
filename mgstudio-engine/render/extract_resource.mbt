@@ -106,10 +106,10 @@ pub fn[R : @app.Resource, F] extract_resource_plugin_with(
   let resource_key = R::resource()
   with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     sub_app.add_systems(
-      render_schedule_stage(),
+      render_extract_schedule_stage(),
       @app.system(fn(render_world : @ecs.World) -> Unit {
         extract_resource_system(render_world, resource_key)
-      }).in_set(render_system_set_extract_commands),
+      }),
     )
   })
 }

@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+const IMAGE_USAGE_DEFAULT_SAMPLED_BITS : Int = 7
+
+///|
 pub fn host_gpu_create_render_target(
   width~ : Int,
   height~ : Int,
@@ -243,6 +246,7 @@ pub fn asset_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
   label? : String? = None,
 ) -> Int {
   @renderer.asset_create_texture_cube_with_format(
@@ -251,6 +255,7 @@ pub fn asset_create_texture_cube_with_format(
     format~,
     levels~,
     nearest~,
+    usage_bits~,
     label~,
   )
 }
@@ -263,6 +268,7 @@ pub fn asset_replace_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Bool {
   @renderer.asset_replace_texture_cube_with_format(
     texture_id~,
@@ -271,6 +277,7 @@ pub fn asset_replace_texture_cube_with_format(
     format~,
     levels~,
     nearest~,
+    usage_bits~,
   )
 }
 
@@ -474,6 +481,7 @@ pub fn register_asset_texture_backend() -> Unit {
         format,
         levels,
         nearest,
+        usage_bits,
         label,
       ) {
         asset_create_texture_cube_with_format(
@@ -482,6 +490,7 @@ pub fn register_asset_texture_backend() -> Unit {
           format~,
           levels~,
           nearest~,
+          usage_bits~,
           label~,
         )
       },
@@ -492,6 +501,7 @@ pub fn register_asset_texture_backend() -> Unit {
         format,
         levels,
         nearest,
+        usage_bits,
       ) {
         asset_replace_texture_cube_with_format(
           texture_id~,
@@ -500,6 +510,7 @@ pub fn register_asset_texture_backend() -> Unit {
           format~,
           levels~,
           nearest~,
+          usage_bits~,
         )
       },
       write_texture_region_rgba8_fn=fn(

@@ -958,6 +958,15 @@ fn mesh3d_atmosphere_resources_keepalive(
   ignore(resources.multiscattering_lut_bgl)
   ignore(resources.multiscattering_lut_pipeline_layout)
   ignore(resources.multiscattering_lut_pipeline)
+  ignore(resources.sky_view_lut_bgl)
+  ignore(resources.sky_view_lut_pipeline_layout)
+  ignore(resources.sky_view_lut_pipeline)
+  ignore(resources.aerial_view_lut_bgl)
+  ignore(resources.aerial_view_lut_pipeline_layout)
+  ignore(resources.aerial_view_lut_pipeline)
+  ignore(resources.render_sky_bgl)
+  ignore(resources.render_sky_pipeline_layout)
+  ignore(resources.render_sky_pipeline)
 }
 
 ///|
@@ -971,6 +980,10 @@ fn mesh3d_view_bg_cache_get_or_create(
   directional_shadow_texture : GpuTextureInfo,
   environment_diffuse_texture : GpuTextureInfo,
   environment_specular_texture : GpuTextureInfo,
+  prepass_depth_texture_id : Int,
+  prepass_normal_texture_id : Int,
+  prepass_motion_vector_texture_id : Int,
+  prepass_deferred_texture_id : Int,
   tonemapping_mode : Int,
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
@@ -978,7 +991,15 @@ fn mesh3d_view_bg_cache_get_or_create(
   pbr_blue_noise_texture_id? : Int = -1,
   pbr_area_light_luts_texture_id? : Int = -1,
   pbr_dfg_lut_texture_id? : Int = -1,
+  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(),
 ) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
+  let default_view_layout_key = if default_view_layout_key.bits() == 0U &&
+    tonemap_in_shader {
+    mesh3d_default_mesh_view_layout_key(tonemap_in_shader~)
+  } else {
+    default_view_layout_key
+  }
+  let view_layout_key_bits = default_view_layout_key.bits()
   let dt_lut_texture = tonemapping_selected_lut_texture(
     backend, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
@@ -1012,6 +1033,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   )
   for entry in backend.mesh3d_view_bg_cache {
     if entry.material_pipeline_id == material_pipeline_id &&
+      entry.view_layout_key_bits == view_layout_key_bits &&
       entry.tonemap_in_shader == tonemap_in_shader &&
       entry.transmission_source_texture_id == transmission_source_texture.id &&
       entry.point_shadow_texture_id == point_shadow_texture.id &&
@@ -1022,6 +1044,10 @@ fn mesh3d_view_bg_cache_get_or_create(
       environment_texture_ids_signature &&
       entry.irradiance_volume_texture_ids_signature ==
       irradiance_volume_texture_ids_signature &&
+      entry.prepass_depth_texture_id == prepass_depth_texture_id &&
+      entry.prepass_normal_texture_id == prepass_normal_texture_id &&
+      entry.prepass_motion_vector_texture_id == prepass_motion_vector_texture_id &&
+      entry.prepass_deferred_texture_id == prepass_deferred_texture_id &&
       entry.tonemapping_lut_texture_id == dt_lut_texture.id &&
       entry.pbr_blue_noise_texture_id == pbr_blue_noise_texture_id &&
       entry.pbr_area_light_luts_texture_id == pbr_area_light_luts_texture_id &&
@@ -1036,9 +1062,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     backend,
     material_pipeline_id,
     material_descriptor,
-    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
-      tonemap_in_shader~,
-    ),
+    default_view_layout_key~,
   )
   let layout = layout_entry.view_bind_group_layout
   let layout_descriptor = layout_entry.view_bind_group_layout_descriptor
@@ -1129,6 +1153,20 @@ fn mesh3d_view_bg_cache_get_or_create(
     }
     None => None
   }
+  let depth_prepass_view = match
+    find_prepass_depth_texture(backend, prepass_depth_texture_id) {
+    Some(texture) => Some(texture.view)
+    None => None
+  }
+  let normal_prepass_view = mesh3d_prepass_texture_view_for_id(
+    backend, prepass_normal_texture_id,
+  )
+  let motion_vector_prepass_view = mesh3d_prepass_texture_view_for_id(
+    backend, prepass_motion_vector_texture_id,
+  )
+  let deferred_prepass_view = mesh3d_prepass_texture_view_for_id(
+    backend, prepass_deferred_texture_id,
+  )
   let fallback_decal_texture = ensure_normal_map_fallback_texture(backend)
   let clustered_decals_buf = ensure_mesh3d_clustered_decals_buffer(backend)
   let environment_diffuse_sample_views = mesh3d_environment_texture_views(
@@ -1161,10 +1199,10 @@ fn mesh3d_view_bg_cache_get_or_create(
     point_shadow_sample_view,
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
-    None,
-    None,
-    None,
-    None,
+    depth_prepass_view,
+    normal_prepass_view,
+    motion_vector_prepass_view,
+    deferred_prepass_view,
     ssao_view,
     transmission_source_texture,
     dt_lut_sample_view,
@@ -1193,6 +1231,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   )
   backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
     material_pipeline_id,
+    view_layout_key_bits,
     tonemap_in_shader,
     transmission_source_texture_id: transmission_source_texture.id,
     point_shadow_texture_id: point_shadow_texture.id,
@@ -1201,6 +1240,10 @@ fn mesh3d_view_bg_cache_get_or_create(
     environment_specular_texture_id: environment_specular_texture.id,
     environment_texture_ids_signature,
     irradiance_volume_texture_ids_signature,
+    prepass_depth_texture_id,
+    prepass_normal_texture_id,
+    prepass_motion_vector_texture_id,
+    prepass_deferred_texture_id,
     tonemapping_lut_texture_id: dt_lut_texture.id,
     pbr_blue_noise_texture_id,
     pbr_area_light_luts_texture_id,
@@ -2369,6 +2412,33 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
     is Some(environment_specular_texture) else {
     return
   }
+  let (
+    tonemapping_mode,
+    agx_lut_texture_id,
+    tony_lut_texture_id,
+    blender_lut_texture_id,
+    pbr_blue_noise_texture_id,
+    pbr_area_light_luts_texture_id,
+    pbr_dfg_lut_texture_id,
+    default_view_layout_key,
+  ) = match self.pass_state {
+    Some(pass_state) =>
+      (
+        pass_state.tonemapping_mode,
+        pass_state.tonemapping_agx_lut_texture_id,
+        pass_state.tonemapping_tony_lut_texture_id,
+        pass_state.tonemapping_blender_lut_texture_id,
+        pass_state.pbr_blue_noise_texture_id,
+        pass_state.pbr_area_light_luts_texture_id,
+        pass_state.pbr_dfg_lut_texture_id,
+        mesh3d_pass_mesh_view_layout_key(
+          pass_state,
+          atmosphere=pass_state.prepass_deferred_texture_id >= 0 &&
+            self.mesh3d_atmosphere_resources is Some(_),
+        ),
+      )
+    None => (0, -1, -1, -1, -1, -1, -1, mesh3d_default_mesh_view_layout_key())
+  }
   ignore(
     mesh3d_view_bg_cache_get_or_create(
       self,
@@ -2384,6 +2454,14 @@ pub fn GpuBackend::prepare_mesh3d_view_bind_group(
       prepass_normal_texture_id,
       prepass_motion_vector_texture_id,
       prepass_deferred_texture_id,
+      tonemapping_mode,
+      agx_lut_texture_id,
+      tony_lut_texture_id,
+      blender_lut_texture_id,
+      pbr_blue_noise_texture_id~,
+      pbr_area_light_luts_texture_id~,
+      pbr_dfg_lut_texture_id~,
+      default_view_layout_key~,
     ),
   )
 }

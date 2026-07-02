@@ -216,6 +216,11 @@ priv struct GltfMaterialDef {
   anisotropy_strength : Float
   anisotropy_rotation : Float
   anisotropy_texture : Int?
+  reflectance : Float
+  specular_tint : @color.Color
+  specular_texture : Int?
+  specular_tint_texture : Int?
+  ior : Float
   normal_texture : Int?
   emissive_texture : Int?
   metallic_roughness_texture : Int?
@@ -1062,6 +1067,56 @@ fn gltf_parse_material_anisotropy(
 }
 
 ///|
+fn gltf_parse_specular_color_factor(
+  value : Json?,
+  default_value : @color.Color,
+) -> @color.Color {
+  guard value is Some(json) else { return default_value }
+  guard json_array(json) is Some(values) else { return default_value }
+  guard json_array_float(values, 0) is Some(r) else { return default_value }
+  guard json_array_float(values, 1) is Some(g) else { return default_value }
+  guard json_array_float(values, 2) is Some(b) else { return default_value }
+  @color.Color::new(r, g, b, 1.0F)
+}
+
+///|
+fn gltf_parse_material_specular(
+  obj : Map[String, Json],
+) -> (Float, @color.Color, Int?, Int?) {
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return (0.5F, @color.Color::white(), None, None)
+  }
+  guard json_get_object(extensions, "KHR_materials_specular")
+    is Some(specular_ext) else {
+    return (0.5F, @color.Color::white(), None, None)
+  }
+  let reflectance = json_get_float(specular_ext, "specularFactor").unwrap_or(
+      1.0F,
+    ) *
+    0.5F
+  (
+    reflectance,
+    gltf_parse_specular_color_factor(
+      specular_ext.get("specularColorFactor"),
+      @color.Color::white(),
+    ),
+    gltf_parse_texture_index(specular_ext, "specularTexture"),
+    gltf_parse_texture_index(specular_ext, "specularColorTexture"),
+  )
+}
+
+///|
+fn gltf_parse_material_ior(obj : Map[String, Json]) -> Float {
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return 1.5F
+  }
+  guard json_get_object(extensions, "KHR_materials_ior") is Some(ior_ext) else {
+    return 1.5F
+  }
+  json_get_float(ior_ext, "ior").unwrap_or(1.5F)
+}
+
+///|
 fn gltf_sampler_mag_filter(filter : Int) -> @image.ImageFilterMode? {
   match filter {
     9728 => Some(@image.ImageFilterMode::Nearest)
@@ -1612,6 +1667,11 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         let mut anisotropy_strength = 0.0F
         let mut anisotropy_rotation = 0.0F
         let mut anisotropy_texture : Int? = None
+        let mut reflectance = 0.5F
+        let mut specular_tint = @color.Color::white()
+        let mut specular_texture : Int? = None
+        let mut specular_tint_texture : Int? = None
+        let mut ior = 1.5F
         let mut base_color_texture : Int? = None
         let mut base_color_uv_offset = @math.Vec2::new(0.0F, 0.0F)
         let mut base_color_uv_scale = @math.Vec2::new(1.0F, 1.0F)
@@ -1659,6 +1719,17 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         anisotropy_strength = parsed_anisotropy_strength
         anisotropy_rotation = parsed_anisotropy_rotation
         anisotropy_texture = parsed_anisotropy_texture
+        let (
+          parsed_reflectance,
+          parsed_specular_tint,
+          parsed_specular_texture,
+          parsed_specular_tint_texture,
+        ) = gltf_parse_material_specular(obj)
+        reflectance = parsed_reflectance
+        specular_tint = parsed_specular_tint
+        specular_texture = parsed_specular_texture
+        specular_tint_texture = parsed_specular_tint_texture
+        ior = gltf_parse_material_ior(obj)
 
         let emissive = if obj.get("emissiveFactor") is Some(value) {
           gltf_parse_emissive(value, @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
@@ -1682,6 +1753,11 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           anisotropy_strength,
           anisotropy_rotation,
           anisotropy_texture,
+          reflectance,
+          specular_tint,
+          specular_texture,
+          specular_tint_texture,
+          ior,
           normal_texture: gltf_parse_texture_index(obj, "normalTexture"),
           emissive_texture: gltf_parse_texture_index(obj, "emissiveTexture"),
           metallic_roughness_texture,
@@ -1709,6 +1785,11 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           anisotropy_strength: 0.0F,
           anisotropy_rotation: 0.0F,
           anisotropy_texture: None,
+          reflectance: 0.5F,
+          specular_tint: @color.Color::white(),
+          specular_texture: None,
+          specular_tint_texture: None,
+          ior: 1.5F,
           normal_texture: None,
           emissive_texture: None,
           metallic_roughness_texture: None,
@@ -2882,6 +2963,30 @@ fn gltf_buffer_view_bytes(
 }
 
 ///|
+fn gltf_material_uses_linear_texture(
+  material : GltfMaterialDef,
+  texture_index : Int,
+) -> Bool {
+  material.normal_texture == Some(texture_index) ||
+  material.occlusion_texture == Some(texture_index) ||
+  material.metallic_roughness_texture == Some(texture_index) ||
+  material.clearcoat_texture == Some(texture_index) ||
+  material.clearcoat_roughness_texture == Some(texture_index) ||
+  material.clearcoat_normal_texture == Some(texture_index) ||
+  material.anisotropy_texture == Some(texture_index)
+}
+
+///|
+fn gltf_texture_is_srgb(doc : ParsedGltfDocument, texture_index : Int) -> Bool {
+  for material in doc.materials {
+    if gltf_material_uses_linear_texture(material, texture_index) {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn scene_cached_load_texture(
   asset_server : @asset.AssetServer,
   gltf_path : String,
@@ -2895,28 +3000,34 @@ fn scene_cached_load_texture(
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
     return None
   }
+  if cache[texture_index] is Some(handle) {
+    return Some(handle)
+  }
   let texture_def = doc.textures[texture_index]
   guard texture_def.source is Some(image_index) else { return None }
   guard image_index >= 0 && image_index < doc.images.length() else {
     return None
   }
-  if cache[image_index] is Some(handle) {
-    return Some(handle)
-  }
   let image_def = doc.images[image_index]
   if image_def.mime_type is Some(_) {
     ()
   }
+  let is_srgb = gltf_texture_is_srgb(doc, texture_index)
   let handle = match image_def.uri {
     Some(uri) =>
       if uri.has_prefix("data:") {
         guard data_uri_decode_bytes(uri) is Some(image_blob) else {
           return None
         }
-        asset_server.load_texture_bytes(image_blob, false)
+        asset_server.load_texture_bytes(image_blob, false, is_srgb~)
       } else {
         let resolved_path = path_join(path_dirname(gltf_path), uri)
-        asset_server.load(resolved_path)
+        asset_server.load_with_settings(resolved_path, fn(settings) {
+          settings.is_srgb = is_srgb
+          settings.sampler = gltf_texture_image_sampler(
+            doc, texture_index, default_sampler, override_sampler,
+          )
+        })
       }
     None => {
       guard image_def.buffer_view is Some(buffer_view_index) else {
@@ -2926,7 +3037,7 @@ fn scene_cached_load_texture(
         is Some(image_blob) else {
         return None
       }
-      asset_server.load_texture_bytes(image_blob, false)
+      asset_server.load_texture_bytes(image_blob, false, is_srgb~)
     }
   }
   @asset.asset_set_texture_sampler(
@@ -2935,7 +3046,7 @@ fn scene_cached_load_texture(
       doc, texture_index, default_sampler, override_sampler,
     ),
   )
-  cache[image_index] = Some(handle)
+  cache[texture_index] = Some(handle)
   Some(handle)
 }
 
@@ -2979,6 +3090,9 @@ fn scene_build_material_component(
   )
   material = material.with_anisotropy_strength(def.anisotropy_strength)
   material = material.with_anisotropy_rotation(def.anisotropy_rotation)
+  material = material.with_reflectance(def.reflectance)
+  material = material.with_specular_tint(def.specular_tint)
+  material = material.with_ior(def.ior)
   material = material.with_metallic(def.metallic)
   material = material.with_perceptual_roughness(def.roughness)
   material = material.with_emissive(def.emissive)
@@ -3030,6 +3144,22 @@ fn scene_build_material_component(
   }
   if def.anisotropy_texture is Some(texture_index) {
     material = material.with_anisotropy_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
+      ),
+    )
+  }
+  if def.specular_texture is Some(texture_index) {
+    material = material.with_specular_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
+      ),
+    )
+  }
+  if def.specular_tint_texture is Some(texture_index) {
+    material = material.with_specular_tint_texture(
       scene_cached_load_texture(
         asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
         override_sampler, image_cache,
@@ -3534,7 +3664,7 @@ fn scene_build_from_gltf(
     []
   }
   let image_cache : Array[@asset.Handle[@asset.Image]?] = []
-  for _ in doc.images {
+  for _ in doc.textures {
     image_cache.push(None)
   }
   let material_cache : Array[@pbr.MeshMaterial3d?] = []

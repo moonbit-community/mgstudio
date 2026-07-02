@@ -288,133 +288,118 @@ fn configure_pbr_render_extract_systems(
   sub_app
   .world()
   .insert_resource(ecs_key_pbr_render_extract_systems_installed, marker)
+  let extract_stage = @render.render_extract_schedule_stage()
   sub_app
   .configure_sets(
-    @render.render_schedule_stage(),
+    extract_stage,
     @pbr_light_probe.light_probe_extract_system_set,
     before=[pbr_cluster_extract_system_set],
-    in_sets=[@render.render_system_set_extract_commands],
   )
-  .configure_sets(
-    @render.render_schedule_stage(),
-    pbr_cluster_extract_system_set,
-    in_sets=[@render.render_system_set_extract_commands],
-  )
+  .configure_sets(extract_stage, pbr_cluster_extract_system_set)
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(extract_clusters_for_cpu_clustering)
     .named("mgstudio_pbr::extract_clusters_for_cpu_clustering")
     .in_set(pbr_cluster_extract_system_set)
-    .in_set(@render.render_system_set_extract_commands)
     .run_if(cpu_clustering_is_enabled_during_extraction),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(extract_clusters_for_gpu_clustering)
     .named("mgstudio_pbr::extract_clusters_for_gpu_clustering")
     .in_set(pbr_cluster_extract_system_set)
-    .in_set(@render.render_system_set_extract_commands)
     .run_if(gpu_clustering_is_enabled_during_extraction),
   )
   .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(@pbr_render.extract_ambient_light_resource)
-    .named("mgstudio_pbr::extract_ambient_light_resource")
-    .in_set(@render.render_system_set_extract_commands),
+    extract_stage,
+    @app.system(@pbr_render.extract_ambient_light_resource).named(
+      "mgstudio_pbr::extract_ambient_light_resource",
+    ),
   )
   .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(@pbr_render.extract_lights)
-    .named("mgstudio_pbr::extract_lights")
-    .in_set(@render.render_system_set_extract_commands),
+    extract_stage,
+    @app.system(@pbr_render.extract_lights).named(
+      "mgstudio_pbr::extract_lights",
+    ),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(clear_dirty_specializations_system)
     .named("mgstudio_pbr::clear_dirty_specializations")
     .in_set(material_dirty_specializations_clear_set),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(extract_mesh_materials)
     .named("mgstudio_pbr::extract_mesh_materials")
     .in_set(material_extraction_systems),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(extract_entities_needs_specialization)
     .named("mgstudio_pbr::extract_entities_needs_specialization")
     .in_set(material_extraction_systems),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(early_sweep_material_instances)
     .named("mgstudio_pbr::early_sweep_material_instances")
     .in_set(early_sweep_material_instances_set),
   )
   .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(extract_shadow_filtering_method)
-    .named("mgstudio_pbr::extract_shadow_filtering_method")
-    .in_set(@render.render_system_set_extract_commands),
+    extract_stage,
+    @app.system(extract_shadow_filtering_method).named(
+      "mgstudio_pbr::extract_shadow_filtering_method",
+    ),
   )
   .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(extract_ambient_light)
-    .named("mgstudio_pbr::extract_ambient_light")
-    .in_set(@render.render_system_set_extract_commands),
+    extract_stage,
+    @app.system(extract_ambient_light).named(
+      "mgstudio_pbr::extract_ambient_light",
+    ),
   )
   .add_systems(
-    @render.render_schedule_stage(),
-    @app.system(extract_shadow_lod_origin)
-    .named("mgstudio_pbr::extract_shadow_lod_origin")
-    .in_set(@render.render_system_set_extract_commands),
+    extract_stage,
+    @app.system(extract_shadow_lod_origin).named(
+      "mgstudio_pbr::extract_shadow_lod_origin",
+    ),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(extract_entities_that_need_specializations_removed)
     .named("mgstudio_pbr::extract_entities_that_need_specializations_removed")
     .in_set(material_dirty_specializations_removed_set),
   )
   .add_systems(
-    @render.render_schedule_stage(),
+    extract_stage,
     @app.system(late_sweep_material_instances)
     .named("mgstudio_pbr::late_sweep_material_instances")
     .in_set(late_sweep_material_instances_set),
   )
+  .configure_set(extract_stage, material_dirty_specializations_clear_set, before=[
+    material_extraction_systems,
+  ])
   .configure_set(
-    @render.render_schedule_stage(),
-    material_dirty_specializations_clear_set,
-    before=[material_extraction_systems],
-    in_sets=[@render.render_system_set_extract_commands],
-  )
-  .configure_set(
-    @render.render_schedule_stage(),
+    extract_stage,
     material_extraction_systems,
     after=[material_dirty_specializations_clear_set],
     before=[early_sweep_material_instances_set],
-    in_sets=[@render.render_system_set_extract_commands],
   )
   .configure_set(
-    @render.render_schedule_stage(),
+    extract_stage,
     early_sweep_material_instances_set,
     after=[material_extraction_systems],
     before=[material_dirty_specializations_removed_set],
-    in_sets=[@render.render_system_set_extract_commands],
   )
   .configure_set(
-    @render.render_schedule_stage(),
+    extract_stage,
     material_dirty_specializations_removed_set,
     after=[early_sweep_material_instances_set],
     before=[late_sweep_material_instances_set],
-    in_sets=[@render.render_system_set_extract_commands],
   )
-  .configure_set(
-    @render.render_schedule_stage(),
-    late_sweep_material_instances_set,
-    after=[material_dirty_specializations_removed_set],
-    in_sets=[@render.render_system_set_extract_commands],
-  )
+  .configure_set(extract_stage, late_sweep_material_instances_set, after=[
+    material_dirty_specializations_removed_set,
+  ])
 }
 
 ///|

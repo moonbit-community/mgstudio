@@ -1,0 +1,147 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+fn atmosphere_collect_approx_eq(a : Float, b : Float) -> Bool {
+  let delta = if a > b { a - b } else { b - a }
+  delta <= 0.0001F
+}
+
+///|
+fn atmosphere_collect_insert_primary_window(
+  world : @ecs.World,
+  width : Int,
+  height : Int,
+) -> Unit {
+  let window = @window.Window::Window()
+  window.resolution.set_physical_resolution(width, height)
+  window.resolution.set_scale_factor(1.0F)
+  let entity = world.spawn()
+  try! (world.set_by_key(entity, @window.ecs_key_window, window) |> ignore)
+  try! (world.set_by_key(entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
+
+  })
+  |> ignore)
+}
+
+///|
+test "render3d collect cameras: atmosphere example keeps Bevy camera and planet transforms" {
+  let source_world = @ecs.World::new()
+  atmosphere_collect_insert_primary_window(source_world, 2048, 1024)
+
+  let atmosphere = Atmosphere::earth(ScatteringMedium::earth(256, 256))
+  let atmosphere_entity = source_world.spawn()
+  let atmosphere_transform = @transform.Transform::from_xyz(
+    0.0F,
+    -atmosphere.inner_radius,
+    0.0F,
+  )
+  try! (source_world.set_by_key(
+    atmosphere_entity, ecs_key_atmosphere, atmosphere,
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    atmosphere_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(atmosphere_transform),
+  )
+  |> ignore)
+
+  let camera_entity = source_world.spawn()
+  let camera_transform = @transform.Transform::from_xyz(-2.8F, 0.045F, 0.0F).looking_at(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_camera3d,
+    Camera3d::Camera3d(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity, @transform.ecs_key_transform, camera_transform,
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(camera_transform),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_atmosphere_settings,
+    AtmosphereSettings::AtmosphereSettings(),
+  )
+  |> ignore)
+
+  let render_world = @ecs.World::new()
+  let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
+      cache,
+    ) {
+      @pbr_render.render3d_world_transform_cache_begin_frame(cache)
+      render3d_execute_collect_cameras(source_world, cache, false, false, true)
+    },
+  )
+
+  inspect(cameras.length(), content="1")
+  let payload = cameras[0].payload
+  inspect(payload.target_size.x, content="2048")
+  inspect(payload.target_size.y, content="1024")
+  inspect(
+    atmosphere_collect_approx_eq(
+      payload.transform.translation.x,
+      camera_transform.translation.x,
+    ),
+    content="true",
+  )
+  inspect(
+    atmosphere_collect_approx_eq(
+      payload.transform.translation.y,
+      camera_transform.translation.y,
+    ),
+    content="true",
+  )
+  inspect(
+    atmosphere_collect_approx_eq(
+      payload.transform.translation.z,
+      camera_transform.translation.z,
+    ),
+    content="true",
+  )
+  match payload.atmosphere {
+    Some(extracted) => {
+      let (_scale, _rotation, translation) = extracted.world_to_atmosphere.to_scale_rotation_translation()
+      inspect(atmosphere_collect_approx_eq(translation.x, 0.0F), content="true")
+      inspect(
+        atmosphere_collect_approx_eq(translation.y, atmosphere.inner_radius),
+        content="true",
+      )
+      inspect(atmosphere_collect_approx_eq(translation.z, 0.0F), content="true")
+    }
+    None => inspect(false, content="true")
+  }
+}

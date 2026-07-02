@@ -1,7 +1,9 @@
 import {
   "Milky2018/mgstudio/embedded_asset",
+  "Milky2018/wgsl/ast" @wgsl_ast,
   "Milky2018/wgsl/common" @wgsl_common,
   "Milky2018/moon_wgsl_naga_oil/compose" @wgsl_compose,
+  "Milky2018/moon_wgsl_naga_oil/directive" @wgsl_directive,
   "Milky2018/moon_wgsl_naga_oil/resolver" @wgsl_resolver,
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/hashmap",

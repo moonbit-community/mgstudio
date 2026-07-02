@@ -77,6 +77,7 @@ pub(all) struct AssetTextureBackend {
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    Int,
     String?,
   ) -> Int
   replace_texture_cube_with_format_fn : (
@@ -86,6 +87,7 @@ pub(all) struct AssetTextureBackend {
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    Int,
   ) -> Bool
   write_texture_region_rgba8_fn : (Int, Int, Int, Int, Int, Bytes) -> Unit
   write_texture_region_rgba8_mip_fn : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit
@@ -146,6 +148,7 @@ pub fn AssetTextureBackend::new(
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    Int,
     String?,
   ) -> Int,
   replace_texture_cube_with_format_fn~ : (
@@ -155,6 +158,7 @@ pub fn AssetTextureBackend::new(
     @wgpu.TextureFormat,
     Array[Bytes],
     Bool,
+    Int,
   ) -> Bool,
   write_texture_region_rgba8_fn~ : (Int, Int, Int, Int, Int, Bytes) -> Unit,
   write_texture_region_rgba8_mip_fn~ : (Int, Int, Int, Int, Int, Int, Bytes) -> Unit,
@@ -355,14 +359,16 @@ fn asset_texture_backend_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits~ : Int,
   label? : String? = None,
 ) -> Int {
   format |> ignore
   nearest |> ignore
+  usage_bits |> ignore
   match asset_texture_backend() {
     Some(backend) =>
       (backend.create_texture_cube_with_format_fn)(
-        width, height, format, levels, nearest, label,
+        width, height, format, levels, nearest, usage_bits, label,
       )
     None => 0
   }
@@ -376,16 +382,18 @@ fn asset_texture_backend_replace_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits~ : Int,
 ) -> Bool {
   format |> ignore
   nearest |> ignore
+  usage_bits |> ignore
   if texture_id <= 0 {
     return false
   }
   match asset_texture_backend() {
     Some(backend) =>
       (backend.replace_texture_cube_with_format_fn)(
-        texture_id, width, height, format, levels, nearest,
+        texture_id, width, height, format, levels, nearest, usage_bits,
       )
     None => {
       texture_record_set(texture_id, width, height, true)

@@ -416,7 +416,7 @@ fn render3d_color_lerp(
 fn render3d_camera_distance_fog(
   base_fog : DistanceFog,
   volumetric_fog : VolumetricFog?,
-  atmosphere : Atmosphere?,
+  atmosphere : ExtractedAtmosphere3d?,
   atmosphere_settings : AtmosphereSettings?,
 ) -> DistanceFog {
   let mut fog = base_fog
@@ -447,7 +447,8 @@ fn render3d_camera_distance_fog(
       0.5F,
     )
   }
-  if atmosphere is Some(atmosphere_value) {
+  if atmosphere is Some(extracted_atmosphere) {
+    let atmosphere_value = extracted_atmosphere.atmosphere
     let albedo_color = @color.Color::new(
       @pbr_render.render3d_float_clamp(
         atmosphere_value.ground_albedo.x,

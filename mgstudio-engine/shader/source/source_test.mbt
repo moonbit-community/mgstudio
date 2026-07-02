@@ -42,3 +42,52 @@ test "embedded shader source clear removes only persistent source handles" {
     content="Some(\"fn keep_asset() {}\")",
   )
 }
+
+///|
+test "embedded shader composer sources use the root import dependency closure" {
+  clear_embedded_shader_sources()
+  load_embedded_shader_source(
+    "shader/source/closure/root.wgsl",
+    (
+      #|#import mgstudio_test::used::USED
+      #|#import "shader/source/closure/file_import.wgsl"::FILE_USED
+      #|fn root() -> f32 { return USED + FILE_USED; }
+      #|
+    ),
+  )
+  load_embedded_shader_source(
+    "shader/source/closure/used.wgsl",
+    (
+      #|#define_import_path mgstudio_test::used
+      #|const USED: f32 = 1.0;
+      #|
+    ),
+  )
+  load_embedded_shader_source(
+    "shader/source/closure/file_import.wgsl",
+    (
+      #|const FILE_USED: f32 = 2.0;
+      #|
+    ),
+  )
+  load_embedded_shader_source(
+    "shader/source/closure/unused.wgsl",
+    (
+      #|#define_import_path mgstudio_test::unused
+      #|const UNUSED: f32 = 3.0;
+      #|
+    ),
+  )
+
+  let files = embedded_shader_composer_source_files(
+    Some("shader/source/closure/root.wgsl"),
+  )
+  let paths : Array[String] = []
+  for file in files {
+    paths.push(file.rel_path)
+  }
+  debug_inspect(
+    paths.join("|"),
+    content="\"shader/source/closure/root.wgsl|shader/source/closure/used.wgsl|shader/source/closure/file_import.wgsl\"",
+  )
+}

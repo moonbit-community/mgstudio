@@ -165,6 +165,7 @@ fn image_asset_create_gpu_texture_with_array_layout(
       format=@image.texture_format(image.format),
       levels=image_asset_mip_levels(image, height_per_slice, slice_count),
       nearest~,
+      usage_bits=image_asset_usage_bits(image),
       label=image.texture_descriptor_label,
     )
     if id > 0 {
@@ -225,6 +226,7 @@ fn image_asset_replace_gpu_texture_if_needed(
       format=@image.texture_format(image.format),
       levels=image_asset_mip_levels(image, height_per_slice, slice_count),
       nearest=asset_server_or_abort().image_sampler_uses_nearest(image.sampler),
+      usage_bits=image_asset_usage_bits(image),
     )
   } else {
     false

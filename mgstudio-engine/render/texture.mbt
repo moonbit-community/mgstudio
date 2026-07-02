@@ -242,6 +242,7 @@ pub fn asset_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
   label? : String? = None,
 ) -> Int {
   @renderer.asset_create_texture_cube_with_format(
@@ -250,6 +251,7 @@ pub fn asset_create_texture_cube_with_format(
     format~,
     levels~,
     nearest~,
+    usage_bits~,
     label~,
   )
 }
@@ -262,6 +264,7 @@ pub fn asset_replace_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Bool {
   @renderer.asset_replace_texture_cube_with_format(
     texture_id~,
@@ -270,6 +273,7 @@ pub fn asset_replace_texture_cube_with_format(
     format~,
     levels~,
     nearest~,
+    usage_bits~,
   )
 }
 

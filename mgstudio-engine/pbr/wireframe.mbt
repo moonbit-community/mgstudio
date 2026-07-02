@@ -1939,6 +1939,7 @@ fn configure_wireframe_render_sub_app(
     },
   )
   let stage = @render.render_schedule_stage()
+  let extract_stage = @render.render_extract_schedule_stage()
   let graph_stage = @render.RenderGraph::schedule()
   sub_app
   .configure_sets(
@@ -1966,56 +1967,56 @@ fn configure_wireframe_render_sub_app(
     render3d_set_queue_meshes,
   ])
   .configure_sets(
-    stage,
+    extract_stage,
     wireframe_dirty_specialization_set_clear,
     before=[wireframe_dirty_specialization_set_check_for_changes],
     in_sets=[render3d_set_extract],
   )
   .configure_sets(
-    stage,
+    extract_stage,
     wireframe_dirty_specialization_set_check_for_changes,
     before=[wireframe_dirty_specialization_set_check_for_removals],
     in_sets=[render3d_set_extract],
   )
   .configure_sets(
-    stage,
+    extract_stage,
     wireframe_dirty_specialization_set_check_for_removals,
     in_sets=[render3d_set_extract],
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(extract_wireframe_3d_camera_system).in_set(render3d_set_extract),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(extract_wireframe_render_visible_entities_system).in_set(
       render3d_set_extract,
     ),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(clear_dirty_wireframe_specializations_system).in_set(
       wireframe_dirty_specialization_set_clear,
     ),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(extract_wireframe_entities_needing_specialization_system).in_set(
       wireframe_dirty_specialization_set_check_for_changes,
     ),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(
       extract_wireframe_entities_that_need_specializations_removed_system,
     ).in_set(wireframe_dirty_specialization_set_check_for_removals),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(extract_wireframe_materials_system).in_set(render3d_set_extract),
   )
   .add_systems(
-    stage,
+    extract_stage,
     @app.system(extract_wireframe_material_assets_system).in_set(
       render3d_set_extract,
     ),

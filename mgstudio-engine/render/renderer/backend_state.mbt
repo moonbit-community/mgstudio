@@ -502,6 +502,13 @@ pub struct GpuBackend {
   mut mesh3d_atmosphere_resource_revision : Int
   mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
   mut mesh3d_scattering_medium_resource_revision : Int
+  mut mesh3d_deferred_lighting_id_depth_texture : GpuDeferredLightingIdDepthTexture?
+  mut mesh3d_copy_deferred_lighting_id_bind_group_layout : @wgpu.BindGroupLayout?
+  mut mesh3d_copy_deferred_lighting_id_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_copy_deferred_lighting_id_pipeline : @wgpu.RenderPipeline?
+  mesh3d_deferred_lighting_pipeline_cache : Array[
+    GpuDeferredLightingPipelineCacheEntry,
+  ]
   sampler_cache : @hashmap.HashMap[String, @wgpu.Sampler]
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int

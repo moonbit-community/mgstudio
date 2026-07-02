@@ -59,7 +59,7 @@ pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~
 
 pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format~ : @wgpu_mbt.TextureFormat, pixels~ : Bytes, label? : String?) -> Int
 
-pub fn asset_create_texture_cube_with_format(width~ : Int, height~ : Int, format~ : @wgpu_mbt.TextureFormat, levels~ : Array[Bytes], nearest~ : Bool, label? : String?) -> Int
+pub fn asset_create_texture_cube_with_format(width~ : Int, height~ : Int, format~ : @wgpu_mbt.TextureFormat, levels~ : Array[Bytes], nearest~ : Bool, usage_bits? : Int, label? : String?) -> Int
 
 pub fn asset_create_texture_empty(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool, usage_bits? : Int) -> Int
 
@@ -69,7 +69,7 @@ pub fn asset_create_texture_stacked_2d_with_format(width~ : Int, height_per_slic
 
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool
 
-pub fn asset_replace_texture_cube_with_format(texture_id~ : Int, width~ : Int, height~ : Int, format~ : @wgpu_mbt.TextureFormat, levels~ : Array[Bytes], nearest~ : Bool) -> Bool
+pub fn asset_replace_texture_cube_with_format(texture_id~ : Int, width~ : Int, height~ : Int, format~ : @wgpu_mbt.TextureFormat, levels~ : Array[Bytes], nearest~ : Bool, usage_bits? : Int) -> Bool
 
 pub fn asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
 
@@ -161,7 +161,9 @@ pub fn delete_mesh(Int) -> Bool
 
 pub fn delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
 
-pub fn dispatch_mesh3d_atmosphere_luts() -> Unit
+pub fn dispatch_mesh3d_atmosphere_environment(camera_key_hi~ : Int, camera_key_lo~ : Int, environment_texture_id~ : Int, environment_width~ : Int, environment_height~ : Int) -> Unit
+
+pub fn dispatch_mesh3d_atmosphere_luts(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
@@ -184,6 +186,10 @@ pub fn draw_mesh(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scal
 pub fn draw_mesh2d_pipeline(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, pipeline_id~ : UInt64) -> Unit
 
 pub fn draw_mesh3d(mesh_id~ : Int, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, indirect_kind? : Int, indirect_parameters_index? : Int, indirect_draw_count? : Int, instance_vertex_buffer_id? : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, world_from_local? : Array[Float]?, previous_world_from_local? : Array[Float]?, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, emissive_exposure_weight? : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_texture_id? : Int, specular_tint_texture_id~ : Int, clearcoat_texture_id? : Int, clearcoat_roughness_texture_id? : Int, clearcoat_normal_texture_id? : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, attenuation_color_r? : Float, attenuation_color_g? : Float, attenuation_color_b? : Float, attenuation_distance? : Float, clearcoat? : Float, clearcoat_perceptual_roughness? : Float, alpha_cutoff~ : Float, material_flags~ : UInt, forward_decal_inv_depth_fade_factor? : Float, material_pipeline_id? : UInt64, lightmap_exposure? : Float, lightmap_texture_id? : Int, lightmap_slab_index? : Int, lightmap_slot_index? : Int, lightmap_slab_texture_ids? : Array[Int], lightmap_uv_min_x? : Float, lightmap_uv_min_y? : Float, lightmap_uv_max_x? : Float, lightmap_uv_max_y? : Float, deferred_lighting_pass_id? : Int, transmission_source_texture_id~ : Int, transmission_blur_taps~ : Float, transmission_steps~ : Float, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, mesh_flags~ : UInt, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, cull_mode~ : Int, vertex_shader_path? : String?, fragment_shader_path? : String?, material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData, skinning_key_hi? : Int, skinning_key_lo? : Int, morph_weights_index? : Int, previous_morph_weights_index? : Int, morph_targets_texture_id? : Int, skinning_matrices? : Array[Float]?) -> Unit
+
+pub fn draw_mesh3d_atmosphere_sky(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+
+pub fn draw_mesh3d_deferred_lighting(camera_key_hi~ : Int, camera_key_lo~ : Int, screen_space_ambient_occlusion~ : Bool, screen_space_reflections~ : Bool, distance_fog~ : Bool, atmosphere~ : Bool) -> Unit
 
 pub fn draw_mesh3d_volumetric_fog(camera_key_hi~ : Int, camera_key_lo~ : Int, plane_mesh_id~ : Int, cube_mesh_id~ : Int, textureless_pipeline_id~ : Int, textured_pipeline_id~ : Int, atmosphere~ : Bool, volumes~ : Array[HostMesh3dVolumetricFogVolume]) -> Unit
 
@@ -357,7 +363,7 @@ pub fn prepare_active_frame_submissions(PendingCommandBuffers) -> Unit
 
 pub fn prepare_initial_surface_frames() -> Unit
 
-pub fn prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, ground_albedo_y~ : Float, ground_albedo_z~ : Float, inner_radius~ : Float, outer_radius~ : Float, world_to_atmosphere_x_axis_x~ : Float, world_to_atmosphere_x_axis_y~ : Float, world_to_atmosphere_x_axis_z~ : Float, world_to_atmosphere_y_axis_x~ : Float, world_to_atmosphere_y_axis_y~ : Float, world_to_atmosphere_y_axis_z~ : Float, world_to_atmosphere_z_axis_x~ : Float, world_to_atmosphere_z_axis_y~ : Float, world_to_atmosphere_z_axis_z~ : Float, world_to_atmosphere_translation_x~ : Float, world_to_atmosphere_translation_y~ : Float, world_to_atmosphere_translation_z~ : Float, transmittance_width~ : Int, transmittance_height~ : Int, transmittance_lut_samples~ : Int, multiscattering_width~ : Int, multiscattering_height~ : Int, multiscattering_lut_dirs~ : Int, multiscattering_lut_samples~ : Int, sky_view_width~ : Int, sky_view_height~ : Int, sky_view_lut_samples~ : Int, aerial_view_width~ : Int, aerial_view_height~ : Int, aerial_view_depth~ : Int, aerial_view_lut_samples~ : Int, aerial_view_lut_max_distance~ : Float, sky_max_samples~ : Int, rendering_method~ : Int) -> Unit
+pub fn prepare_mesh3d_atmosphere_resources(ground_albedo_x~ : Float, ground_albedo_y~ : Float, ground_albedo_z~ : Float, inner_radius~ : Float, outer_radius~ : Float, camera_world_x~ : Float, camera_world_y~ : Float, camera_world_z~ : Float, world_to_atmosphere_x_axis_x~ : Float, world_to_atmosphere_x_axis_y~ : Float, world_to_atmosphere_x_axis_z~ : Float, world_to_atmosphere_y_axis_x~ : Float, world_to_atmosphere_y_axis_y~ : Float, world_to_atmosphere_y_axis_z~ : Float, world_to_atmosphere_z_axis_x~ : Float, world_to_atmosphere_z_axis_y~ : Float, world_to_atmosphere_z_axis_z~ : Float, world_to_atmosphere_translation_x~ : Float, world_to_atmosphere_translation_y~ : Float, world_to_atmosphere_translation_z~ : Float, transmittance_width~ : Int, transmittance_height~ : Int, transmittance_lut_samples~ : Int, multiscattering_width~ : Int, multiscattering_height~ : Int, multiscattering_lut_dirs~ : Int, multiscattering_lut_samples~ : Int, sky_view_width~ : Int, sky_view_height~ : Int, sky_view_lut_samples~ : Int, aerial_view_width~ : Int, aerial_view_height~ : Int, aerial_view_depth~ : Int, aerial_view_lut_samples~ : Int, aerial_view_lut_max_distance~ : Float, sky_max_samples~ : Int, rendering_method~ : Int) -> Unit
 
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
 
@@ -1001,6 +1007,11 @@ pub struct GpuBackend {
   mut mesh3d_atmosphere_resource_revision : Int
   mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
   mut mesh3d_scattering_medium_resource_revision : Int
+  mut mesh3d_deferred_lighting_id_depth_texture : GpuDeferredLightingIdDepthTexture?
+  mut mesh3d_copy_deferred_lighting_id_bind_group_layout : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_copy_deferred_lighting_id_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_copy_deferred_lighting_id_pipeline : @wgpu_mbt.RenderPipeline?
+  mesh3d_deferred_lighting_pipeline_cache : Array[GpuDeferredLightingPipelineCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int
@@ -1054,7 +1065,7 @@ pub fn GpuBackend::create_render_target_with_formats(Self, Int, Int, Bool, @wgpu
 pub fn GpuBackend::create_surface(Self, Int) -> Unit
 pub fn GpuBackend::create_surface_binding(Self, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], label? : String?) -> Int raise GpuBackendError
-pub fn GpuBackend::create_texture_cube_with_format(Self, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool, label? : String?, replace_texture_id? : Int) -> Int raise GpuBackendError
+pub fn GpuBackend::create_texture_cube_with_format(Self, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool, usage_bits? : Int, label? : String?, replace_texture_id? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool, usage_bits? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool, usage_bits? : Int, label? : String?) -> Int raise GpuBackendError
@@ -1104,6 +1115,7 @@ pub fn GpuBackend::execute_meshlet_visibility_buffer_hardware_raster(Self, view_
 pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(Self, view_entity_bits~ : UInt64) -> Bool raise GpuBackendError
 pub fn GpuBackend::frame_copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
+pub fn GpuBackend::mesh3d_draw_deferred_lighting(Self, Int, Int, Bool, Bool, Bool, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_initial_surface_frames(Self) -> Unit
@@ -1160,6 +1172,10 @@ pub struct GpuClipMatrix {
   w_axis_z : Float
   w_axis_w : Float
 }
+
+type GpuDeferredLightingIdDepthTexture
+
+type GpuDeferredLightingPipelineCacheEntry
 
 pub struct GpuFrameState {
   surface_tex : @wgpu_mbt.SurfaceTexture
@@ -1730,6 +1746,7 @@ type Mesh3dShadowPipelineCacheEntry
 
 pub struct Mesh3dViewBindGroupCacheEntry {
   material_pipeline_id : UInt64
+  view_layout_key_bits : UInt
   tonemap_in_shader : Bool
   transmission_source_texture_id : Int
   point_shadow_texture_id : Int
@@ -1738,6 +1755,10 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   environment_specular_texture_id : Int
   environment_texture_ids_signature : String
   irradiance_volume_texture_ids_signature : String
+  prepass_depth_texture_id : Int
+  prepass_normal_texture_id : Int
+  prepass_motion_vector_texture_id : Int
+  prepass_deferred_texture_id : Int
   tonemapping_lut_texture_id : Int
   pbr_blue_noise_texture_id : Int
   pbr_area_light_luts_texture_id : Int

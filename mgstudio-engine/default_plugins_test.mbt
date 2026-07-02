@@ -168,6 +168,12 @@ test "default plugins: include winit plugin after window plugin" {
   let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_WEB_ASSET)
   let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_RENDER3D)
   let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_ANTI_ALIAS)
+  let transform_index = plugin_index(
+    builder, "mgstudio.transform.TransformPlugin",
+  )
+  let scene_index = plugin_index(builder, "mgstudio.scene.ScenePlugin")
+  let winit_index = plugin_index(builder, "mgstudio.winit.WinitPlugin")
+  let render_index = plugin_index(builder, "mgstudio.render.RenderPlugin")
   let mesh_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_MESH)
   let camera_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_CAMERA)
   let light_index = plugin_index(builder, DEFAULT_PLUGIN_NAME_LIGHT)
@@ -180,25 +186,55 @@ test "default plugins: include winit plugin after window plugin" {
     builder,
     DEFAULT_PLUGIN_NAME_SPRITE_RENDER,
   )
+  let text_index = plugin_index(builder, "mgstudio.text.TextPlugin")
+  let ui_index = plugin_index(builder, "mgstudio.ui.UiPlugin")
+  let ui_render_index = plugin_index(
+    builder, "mgstudio.ui_render.UiRenderPlugin",
+  )
+  let gltf_index = plugin_index(builder, "mgstudio.gltf.loader.GltfPlugin")
+  let audio_index = plugin_index(builder, "mgstudio.audio.AudioPlugin")
+  let animation_index = plugin_index(
+    builder, "mgstudio.animation.AnimationPlugin",
+  )
+  let gizmo_index = plugin_index(builder, "mgstudio.gizmos.GizmoPlugin")
+  let gizmo_render_index = plugin_index(
+    builder, "mgstudio.gizmos_render.GizmoRenderPlugin",
+  )
+  let states_index = plugin_index(builder, "mgstudio.app.StatesPlugin")
+  let ui_widgets_index = plugin_index(
+    builder, "mgstudio.ui_widgets.UiWidgetsPlugins",
+  )
+  let pointer_input_index = plugin_index(
+    builder, "mgstudio.picking.PointerInputPlugin",
+  )
   debug_inspect(
     web_asset_index < plugin_index(builder, "mgstudio.asset.AssetPlugin"),
     content="true",
   )
-  debug_inspect(shader_index < render3d_index, content="true")
-  debug_inspect(shader_index < camera_index, content="true")
+  debug_inspect(transform_index < scene_index, content="true")
+  debug_inspect(scene_index < winit_index, content="true")
+  debug_inspect(winit_index < render_index, content="true")
+  debug_inspect(shader_index < render_index, content="true")
+  debug_inspect(render_index < mesh_index, content="true")
   debug_inspect(mesh_index < camera_index, content="true")
-  debug_inspect(
-    plugin_index(builder, "mgstudio.render.RenderPlugin") < mesh_index,
-    content="true",
-  )
   debug_inspect(camera_index < light_index, content="true")
   debug_inspect(light_index < light_cluster_index, content="true")
   debug_inspect(light_cluster_index < render3d_index, content="true")
-  debug_inspect(light_index < render3d_index, content="true")
-  debug_inspect(camera_index < render3d_index, content="true")
-  debug_inspect(render3d_index < anti_alias_index, content="true")
+  debug_inspect(light_cluster_index < anti_alias_index, content="true")
   debug_inspect(anti_alias_index < sprite_index, content="true")
   debug_inspect(sprite_index < sprite_render_index, content="true")
+  debug_inspect(sprite_render_index < text_index, content="true")
+  debug_inspect(text_index < ui_index, content="true")
+  debug_inspect(ui_index < ui_render_index, content="true")
+  debug_inspect(ui_render_index < gltf_index, content="true")
+  debug_inspect(gltf_index < render3d_index, content="true")
+  debug_inspect(render3d_index < audio_index, content="true")
+  debug_inspect(audio_index < animation_index, content="true")
+  debug_inspect(animation_index < gizmo_index, content="true")
+  debug_inspect(gizmo_index < gizmo_render_index, content="true")
+  debug_inspect(gizmo_render_index < states_index, content="true")
+  debug_inspect(states_index < ui_widgets_index, content="true")
+  debug_inspect(ui_widgets_index < pointer_input_index, content="true")
   debug_inspect(
     plugin_contains(builder, "mgstudio.gltf.loader.GltfPlugin"),
     content="true",

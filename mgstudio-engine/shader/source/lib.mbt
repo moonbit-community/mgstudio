@@ -22,102 +22,44 @@ pub type ShaderSourceScanOptions = @wgsl_common.WgslSourceScanOptions
 let embedded_shader_source_paths : Array[String] = []
 
 ///|
-fn shader_source_push_unique(paths : Array[String], rel_path : String) -> Unit {
-  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
-  if normalized == "" {
-    return
-  }
-  if !paths.contains(normalized) {
-    paths.push(normalized)
-  }
-}
-
-///|
-fn shader_source_parent_rel_path(rel_path : String) -> String {
-  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
-  let segments : Array[String] = []
-  for segment in normalized.split("/") {
-    let text = segment.to_owned()
-    if text != "" {
-      segments.push(text)
-    }
-  }
-  if segments.length() == 0 {
-    return ""
-  }
-  segments.pop() |> ignore
-  segments.join("/")
-}
-
-///|
-fn shader_source_resolve_file_import(
-  importer_rel_path : String,
-  import_path : String,
-) -> String {
-  let raw = import_path.trim().to_owned()
-  if raw.has_prefix("./") || raw.has_prefix("../") {
-    let parent = shader_source_parent_rel_path(importer_rel_path)
-    if parent == "" {
-      @wgsl_resolver.normalize_shader_rel_path(raw)
-    } else {
-      @wgsl_resolver.normalize_shader_rel_path("\{parent}/\{raw}")
-    }
-  } else {
-    @wgsl_resolver.normalize_shader_rel_path(raw)
-  }
-}
-
-///|
-fn shader_source_collect_quoted_imports_from_line(
-  importer_rel_path : String,
-  line : String,
-  out : Array[String],
-) -> Unit {
-  guard line.contains("#import") else { return }
-  let mut first_quote = -1
-  let mut second_quote = -1
-  for index in 0..<line.length() {
-    if line.code_unit_at(index).to_int() == 34 {
-      if first_quote < 0 {
-        first_quote = index
-      } else {
-        second_quote = index
-        break
-      }
-    }
-  }
-  if first_quote < 0 || second_quote <= first_quote + 1 {
-    return
-  }
-  shader_source_push_unique(
-    out,
-    shader_source_resolve_file_import(
-      importer_rel_path,
-      line[first_quote + 1:second_quote].to_owned(),
-    ),
-  )
-}
-
-///|
-fn shader_source_collect_quoted_imports(
-  importer_rel_path : String,
+fn shader_source_collect_import_targets(
   source : String,
-  out : Array[String],
+  out : Array[@wgsl_common.WgslImportTarget],
 ) -> Unit {
-  for line in source.split("\n") {
-    shader_source_collect_quoted_imports_from_line(
-      importer_rel_path,
-      line.to_owned(),
-      out,
-    )
+  for
+    item in @wgsl_directive.parse_wgsl_directive_scan_items(
+      source,
+      include_glsl_version=false,
+    ) {
+    match item.kind() {
+      @wgsl_directive.WgslDirectiveScanItemKind::Directive(directive) =>
+        if @wgsl_directive.wgsl_effective_directive_kind(directive) ==
+          @wgsl_ast.WgslDirectiveKind::Import {
+          @wgsl_resolver.collect_wgsl_import_targets(
+            @wgsl_directive.wgsl_effective_directive_tail(directive),
+            "",
+            out,
+          )
+        }
+      _ => ()
+    }
   }
 }
 
 ///|
 fn shader_source_has_define_import_path(source : String) -> Bool {
-  for line in source.split("\n") {
-    if line.to_owned().trim().has_prefix("#define_import_path") {
-      return true
+  for
+    item in @wgsl_directive.parse_wgsl_directive_scan_items(
+      source,
+      include_glsl_version=false,
+    ) {
+    match item.kind() {
+      @wgsl_directive.WgslDirectiveScanItemKind::Directive(directive) =>
+        if @wgsl_directive.wgsl_effective_directive_kind(directive) ==
+          @wgsl_ast.WgslDirectiveKind::DefineImportPath {
+          return true
+        }
+      _ => ()
     }
   }
   false
@@ -178,32 +120,183 @@ pub fn embedded_shader_source_files() -> Array[ShaderSourceFile] {
 }
 
 ///|
-pub fn embedded_shader_composer_source_files(
-  root_rel_path : String?,
-) -> Array[ShaderSourceFile] {
-  let root = match root_rel_path {
-    Some(path) => @wgsl_resolver.normalize_shader_rel_path(path)
-    None => ""
-  }
-  let quoted_imports : Array[String] = []
-  let files = embedded_shader_source_files()
+fn shader_source_file_by_rel_path(
+  files : Array[ShaderSourceFile],
+  rel_path : String,
+) -> ShaderSourceFile? {
+  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
   for file in files {
-    shader_source_collect_quoted_imports(
-      file.rel_path,
-      file.source,
-      quoted_imports,
-    )
+    if @wgsl_resolver.normalize_shader_rel_path(file.rel_path) == normalized {
+      return Some(file)
+    }
   }
+  None
+}
+
+///|
+fn shader_source_extract_quoted_target_path(raw_path : String) -> String? {
+  let text = raw_path.trim().to_owned()
+  let mut first_quote = -1
+  let mut second_quote = -1
+  for index in 0..<text.length() {
+    if text.code_unit_at(index).to_int() == 34 {
+      if first_quote < 0 {
+        first_quote = index
+      } else {
+        second_quote = index
+        break
+      }
+    }
+  }
+  if first_quote < 0 || second_quote <= first_quote + 1 {
+    None
+  } else {
+    Some(text[first_quote + 1:second_quote].to_owned())
+  }
+}
+
+///|
+fn shader_source_resolve_file_import_target(
+  registry : @wgsl_resolver.WgslSourceRegistry,
+  importer_rel_path : String,
+  target : @wgsl_common.WgslImportTarget,
+) -> String? {
+  match
+    @wgsl_resolver.resolve_wgsl_import_file_path_from_registry(
+      registry,
+      importer_rel_path,
+      target.raw_path,
+    ) {
+    Some(path) => Some(path)
+    None =>
+      match shader_source_extract_quoted_target_path(target.raw_path) {
+        Some(path) =>
+          @wgsl_resolver.resolve_wgsl_import_file_path_from_registry(
+            registry,
+            importer_rel_path,
+            "\"\{path}\"",
+          )
+        None => None
+      }
+  }
+}
+
+///|
+fn shader_source_push_dependency_path(
+  included_paths : Array[String],
+  pending_paths : Array[String],
+  rel_path : String,
+) -> Unit {
+  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
+  if normalized == "" || included_paths.contains(normalized) {
+    return
+  }
+  if !pending_paths.contains(normalized) {
+    pending_paths.push(normalized)
+  }
+}
+
+///|
+fn shader_source_collect_dependency_paths(
+  registry : @wgsl_resolver.WgslSourceRegistry,
+  modules : Map[String, String],
+  importer_rel_path : String,
+  importer_source : String,
+  included_paths : Array[String],
+  pending_paths : Array[String],
+) -> Unit {
+  let targets : Array[@wgsl_common.WgslImportTarget] = []
+  shader_source_collect_import_targets(importer_source, targets)
+  for target in targets {
+    match
+      shader_source_resolve_file_import_target(
+        registry, importer_rel_path, target,
+      ) {
+      Some(rel_path) =>
+        shader_source_push_dependency_path(
+          included_paths, pending_paths, rel_path,
+        )
+      None =>
+        match
+          @wgsl_resolver.resolve_wgsl_import_module_in_registry(
+            registry,
+            target.raw_path,
+            modules,
+          ) {
+          Some(resolved) =>
+            shader_source_push_dependency_path(
+              included_paths,
+              pending_paths,
+              resolved.rel_path(),
+            )
+          None => ()
+        }
+    }
+  }
+}
+
+///|
+fn embedded_shader_composer_source_files_for_root(
+  root_rel_path : String,
+) -> Array[ShaderSourceFile] {
+  let root = @wgsl_resolver.normalize_shader_rel_path(root_rel_path)
+  let files = embedded_shader_source_files()
+  let registry = @wgsl_resolver.WgslSourceRegistry::default()
+  registry.register_source_files(files)
+  let modules = registry.copy_import_module_paths()
+  let included_paths : Array[String] = []
+  let pending_paths : Array[String] = []
+  shader_source_push_dependency_path(included_paths, pending_paths, root)
+  while pending_paths.length() > 0 {
+    let next_index = pending_paths.length() - 1
+    let rel_path = pending_paths[next_index]
+    pending_paths.pop() |> ignore
+    if included_paths.contains(rel_path) {
+      continue
+    }
+    match shader_source_file_by_rel_path(files, rel_path) {
+      Some(file) => {
+        included_paths.push(rel_path)
+        shader_source_collect_dependency_paths(
+          registry,
+          modules,
+          rel_path,
+          file.source,
+          included_paths,
+          pending_paths,
+        )
+      }
+      None => ()
+    }
+  }
+
   let composer_files : Array[ShaderSourceFile] = []
   for file in files {
-    let normalized_rel = @wgsl_resolver.normalize_shader_rel_path(file.rel_path)
-    if normalized_rel == root ||
-      shader_source_has_define_import_path(file.source) ||
-      quoted_imports.contains(normalized_rel) {
+    if included_paths.contains(
+        @wgsl_resolver.normalize_shader_rel_path(file.rel_path),
+      ) {
       composer_files.push(file)
     }
   }
   composer_files
+}
+
+///|
+pub fn embedded_shader_composer_source_files(
+  root_rel_path : String?,
+) -> Array[ShaderSourceFile] {
+  match root_rel_path {
+    Some(root) => embedded_shader_composer_source_files_for_root(root)
+    None => {
+      let files : Array[ShaderSourceFile] = []
+      for file in embedded_shader_source_files() {
+        if shader_source_has_define_import_path(file.source) {
+          files.push(file)
+        }
+      }
+      files
+    }
+  }
 }
 
 ///|

@@ -547,31 +547,32 @@ fn World::insert_component_with_requirements_unchecked(
     self
     .ensure_added_component_messages(component_definition_id)
     .send(component_write_tick(self), entity)
-    self.run_component_add_hooks(entity, component_definition_id, caller~)
-    self.run_add_observers(entity, component_definition_id)
   }
-  self.run_component_insert_hooks(entity, component_definition_id, caller~)
-  self.run_insert_observers(entity, component_definition_id)
   if replacing {
+    self.run_component_insert_hooks(entity, component_definition_id, caller~)
+    self.run_insert_observers(entity, component_definition_id)
     return
   }
 
-  guard self.required_components_state(component_local_id) is Some(state) else {
-    return
-  }
-  for entry in state.all {
-    if self.component_present_by_local_id(entity, entry.component_id) ||
-      transaction.writes.contains(entry.component_id) {
-      continue
+  if self.required_components_state(component_local_id) is Some(state) {
+    for entry in state.all {
+      if self.component_present_by_local_id(entity, entry.component_id) ||
+        transaction.writes.contains(entry.component_id) {
+        continue
+      }
+      guard self.definition_component_id(entry.component_id)
+        is Some(required_definition_id) else {
+        continue
+      }
+      self.insert_component_with_requirements_unchecked(
+        transaction,
+        required_definition_id,
+        (entry.init)(),
+      )
     }
-    guard self.definition_component_id(entry.component_id)
-      is Some(required_definition_id) else {
-      continue
-    }
-    self.insert_component_with_requirements_unchecked(
-      transaction,
-      required_definition_id,
-      (entry.init)(),
-    )
   }
+  self.run_component_add_hooks(entity, component_definition_id, caller~)
+  self.run_add_observers(entity, component_definition_id)
+  self.run_component_insert_hooks(entity, component_definition_id, caller~)
+  self.run_insert_observers(entity, component_definition_id)
 }

@@ -39,6 +39,32 @@ test "light plugin: initializes default light resources" {
 }
 
 ///|
+test "light plugin: atmosphere required GlobalTransform matches bevy on_add default" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins(
+    @light.LightPlugin::LightPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  let atmosphere = @light.Atmosphere::earth(
+    @light.ScatteringMedium::earth(256, 256),
+  )
+  try! world.set(entity, atmosphere)
+  let global_transform = try! world.get_by_key(
+    entity, @transform.ecs_key_global_transform,
+  )
+  debug_inspect(global_transform is Some(_), content="true")
+  match global_transform {
+    Some(global_transform) => {
+      let translation = global_transform.translation()
+      debug_inspect(translation.x, content="0")
+      debug_inspect(translation.y, content="-6360000")
+      debug_inspect(translation.z, content="0")
+    }
+    None => ()
+  }
+}
+
+///|
 test "light plugin: automatically adds default parallax correction to reflection probes" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@transform.TransformPlugin::TransformPlugin())

@@ -383,7 +383,9 @@ pub fn GpuBackend::create_texture_rgba8(
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+    texture_usage_bits_to_wgpu(usage_bits) |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST,
   )
   let tex = self.device.create_texture_rgba8_2d_with_usage(w, h, usage)
   let view = tex.create_view()
@@ -450,7 +452,9 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   let h_per_slice = if height_per_slice <= 0 { 1 } else { height_per_slice }
   let slices = if slice_count <= 0 { 1 } else { slice_count }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+    texture_usage_bits_to_wgpu(usage_bits) |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST,
   )
   let tex = self.device.create_texture_u32(
     w.reinterpret_as_uint(),
@@ -1550,7 +1554,9 @@ pub fn GpuBackend::create_depth_prepass_target(
     sample_count.reinterpret_as_uint()
   }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+    texture_usage_bits_to_wgpu(usage_bits) |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST,
   )
   let format = tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT)
   let tex = self.device.create_texture_u32(
@@ -1737,6 +1743,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
   format : @wgpu.TextureFormat,
   levels : Array[Bytes],
   nearest : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
   label? : String? = None,
   replace_texture_id? : Int = -2147483648,
 ) -> Int raise GpuBackendError {
@@ -1755,10 +1762,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
   let id = if replacing { replace_texture_id } else { alloc_id(self) }
   let w = if width <= 0 { 1 } else { width }
   let h = if height <= 0 { 1 } else { height }
-  let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
-    @wgpu.TEXTURE_USAGE_COPY_DST |
-    @wgpu.TEXTURE_USAGE_COPY_SRC
-  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let usage = @wgpu.TextureUsage::from_u64(
+    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+  )
   let tex = self.device.create_texture_u32(
     w.reinterpret_as_uint(),
     h.reinterpret_as_uint(),
@@ -2653,6 +2659,7 @@ pub fn asset_create_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
   label? : String? = None,
 ) -> Int {
   let safe_width = if width <= 0 { 1 } else { width }
@@ -2665,6 +2672,7 @@ pub fn asset_create_texture_cube_with_format(
         format,
         levels,
         nearest,
+        usage_bits~,
         label~,
       )
     } catch {
@@ -2682,6 +2690,7 @@ pub fn asset_replace_texture_cube_with_format(
   format~ : @wgpu.TextureFormat,
   levels~ : Array[Bytes],
   nearest~ : Bool,
+  usage_bits? : Int = IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
 ) -> Bool {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
@@ -2696,6 +2705,7 @@ pub fn asset_replace_texture_cube_with_format(
           format,
           levels,
           nearest,
+          usage_bits~,
           replace_texture_id=texture_id,
         ) ==
         texture_id

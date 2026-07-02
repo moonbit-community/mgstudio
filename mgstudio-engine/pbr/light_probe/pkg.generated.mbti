@@ -45,6 +45,8 @@ pub fn gather_environment_map_light_probes(@ecs.World) -> Unit
 
 pub fn gather_irradiance_volume_light_probes(@ecs.World) -> Unit
 
+pub fn generate_environment_map_light(@ecs.World) -> Unit
+
 pub fn init_light_probes_buffer(@ecs.World) -> Unit
 
 pub let light_probe_extract_system_set : String
