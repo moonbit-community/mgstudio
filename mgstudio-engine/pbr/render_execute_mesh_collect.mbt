@@ -659,6 +659,8 @@ fn render3d_execute_collect_meshes(
   skin_uniforms_value : @pbr_render.SkinUniforms,
   world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
   needs_mesh_previous_transform : Bool,
+  default_opaque_renderer_method : OpaqueRendererMethod,
+  material_prepass_enabled : Bool,
 ) -> Array[ExtractedMesh3d] {
   let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -666,10 +668,6 @@ fn render3d_execute_collect_meshes(
   )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = {}
   let resolved_material_frame_cache : Map[Int, Render3dResolvedMeshMaterial] = {}
-  let default_opaque_renderer_method = render3d_material_default_opaque_renderer_method(
-    world,
-  )
-  let material_prepass_enabled = standard_material_prepass_enabled(world)
   let standard_material_texture_features = pbr_standard_material_texture_features(
     source_world,
   )

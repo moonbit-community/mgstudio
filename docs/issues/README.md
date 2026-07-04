@@ -239,6 +239,7 @@ graph TD
   ISS_166["ISS-166: Queue mesh3d forward pipeline creation before draw execution"]
   ISS_167["ISS-167: Diagnose atmosphere environment cubemap compute dispatch scaling"]
   ISS_168["ISS-168: Reclassify WGSL 0.15.x compose hang as a new-native backend issue"]
+  ISS_169["ISS-169: Restore atmosphere water SSR reflection parity"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004

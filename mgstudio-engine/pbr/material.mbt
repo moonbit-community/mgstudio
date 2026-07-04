@@ -855,13 +855,3 @@ pub fn render3d_material_properties_for_standard_material(
   }
   properties
 }
-
-///|
-fn render3d_material_default_opaque_renderer_method(
-  world : @ecs.World,
-) -> OpaqueRendererMethod {
-  match world.get_resource(ecs_key_default_opaque_renderer_method) {
-    Some(default_method) => default_method.renderer_method()
-    None => OpaqueRendererMethod::Forward
-  }
-}

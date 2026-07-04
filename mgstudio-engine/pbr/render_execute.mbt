@@ -4434,8 +4434,15 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
       skin_uniforms.modify(fn(skin_uniforms_value) {
         world_transform_cache.modify(fn(world_transform_cache_value) {
           render3d_execute_collect_meshes(
-            world, source_world, mesh_runtime_state_value, morph_indices_value, skin_uniforms_value,
-            world_transform_cache_value, needs_mesh_previous_transform,
+            world,
+            source_world,
+            mesh_runtime_state_value,
+            morph_indices_value,
+            skin_uniforms_value,
+            world_transform_cache_value,
+            needs_mesh_previous_transform,
+            frame_config.default_opaque_renderer_method,
+            frame_config.prepass_enabled,
           )
         })
       })
