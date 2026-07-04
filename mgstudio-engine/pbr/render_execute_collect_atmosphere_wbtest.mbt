@@ -40,7 +40,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
   let source_world = @ecs.World::new()
   atmosphere_collect_insert_primary_window(source_world, 2048, 1024)
 
-  let atmosphere = Atmosphere::earth(ScatteringMedium::earth(256, 256))
+  let atmosphere = Atmosphere::earth(@asset.Handle::new(6))
   let atmosphere_entity = source_world.spawn()
   let atmosphere_transform = @transform.Transform::from_xyz(
     0.0F,
@@ -103,7 +103,14 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
       cache,
     ) {
       @pbr_render.render3d_world_transform_cache_begin_frame(cache)
-      render3d_execute_collect_cameras(source_world, cache, false, false, true)
+      render3d_execute_collect_cameras(
+        source_world,
+        cache,
+        false,
+        false,
+        true,
+        OpaqueRendererMethod::Forward,
+      )
     },
   )
 
@@ -144,4 +151,229 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
     }
     None => inspect(false, content="true")
   }
+}
+
+///|
+test "render3d collect cameras: atmosphere default transform follows Bevy on_add hook" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@transform.TransformPlugin::TransformPlugin())
+    .add_plugins(@light.LightPlugin::LightPlugin())
+  let source_world = app.world()
+  atmosphere_collect_insert_primary_window(source_world, 2048, 1024)
+
+  let atmosphere = Atmosphere::earth(@asset.Handle::new(7))
+  let atmosphere_entity = source_world.spawn()
+  try! (source_world.set_by_key(
+    atmosphere_entity, ecs_key_atmosphere, atmosphere,
+  )
+  |> ignore)
+
+  let camera_entity = source_world.spawn()
+  let camera_transform = @transform.Transform::from_xyz(-2.8F, 0.045F, 0.0F).looking_at(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_camera3d,
+    Camera3d::Camera3d(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity, @transform.ecs_key_transform, camera_transform,
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(camera_transform),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_atmosphere_settings,
+    AtmosphereSettings::AtmosphereSettings(),
+  )
+  |> ignore)
+
+  let render_world = @ecs.World::new()
+  let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
+      cache,
+    ) {
+      @pbr_render.render3d_world_transform_cache_begin_frame(cache)
+      render3d_execute_collect_cameras(
+        source_world,
+        cache,
+        false,
+        false,
+        true,
+        OpaqueRendererMethod::Forward,
+      )
+    },
+  )
+
+  inspect(cameras.length(), content="1")
+  match cameras[0].payload.atmosphere {
+    Some(extracted) => {
+      let (_scale, _rotation, translation) = extracted.world_to_atmosphere.to_scale_rotation_translation()
+      inspect(
+        atmosphere_collect_approx_eq(translation.y, atmosphere.inner_radius),
+        content="true",
+      )
+    }
+    None => inspect(false, content="true")
+  }
+}
+
+///|
+test "render3d collect cameras: default deferred method enables deferred prepass view" {
+  let source_world = @ecs.World::new()
+  atmosphere_collect_insert_primary_window(source_world, 1280, 720)
+
+  let camera_entity = source_world.spawn()
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_camera3d,
+    Camera3d::Camera3d(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
+  |> ignore)
+  let camera_transform = @transform.Transform::from_xyz(-2.8F, 0.045F, 0.0F).looking_at(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  try! (source_world.set_by_key(
+    camera_entity, @transform.ecs_key_transform, camera_transform,
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(camera_transform),
+  )
+  |> ignore)
+
+  let render_world = @ecs.World::new()
+  let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
+      cache,
+    ) {
+      @pbr_render.render3d_world_transform_cache_begin_frame(cache)
+      render3d_execute_collect_cameras(
+        source_world,
+        cache,
+        false,
+        false,
+        true,
+        OpaqueRendererMethod::Deferred,
+      )
+    },
+  )
+
+  inspect(cameras.length(), content="1")
+  inspect(cameras[0].payload.depth_prepass_enabled, content="true")
+  inspect(cameras[0].payload.deferred_prepass_enabled, content="true")
+}
+
+///|
+test "render3d collect cameras: Bevy component requirements enable prepass views" {
+  let source_world = @ecs.World::new()
+  atmosphere_collect_insert_primary_window(source_world, 1280, 720)
+
+  let camera_entity = source_world.spawn()
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_camera3d,
+    Camera3d::Camera3d(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @post_process.ScreenSpaceReflections::component(),
+    @post_process.ScreenSpaceReflections::ScreenSpaceReflections(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @post_process.ScreenSpaceAmbientOcclusion::component(),
+    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(camera_entity, ecs_key_msaa, Msaa::Off)
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_contact_shadows,
+    ContactShadows::ContactShadows(),
+  )
+  |> ignore)
+  let camera_transform = @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
+    @math.Vec3::zero(),
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  try! (source_world.set_by_key(
+    camera_entity, @transform.ecs_key_transform, camera_transform,
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(camera_transform),
+  )
+  |> ignore)
+
+  let render_world = @ecs.World::new()
+  let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
+      cache,
+    ) {
+      @pbr_render.render3d_world_transform_cache_begin_frame(cache)
+      render3d_execute_collect_cameras(
+        source_world,
+        cache,
+        false,
+        false,
+        true,
+        OpaqueRendererMethod::Forward,
+      )
+    },
+  )
+
+  inspect(cameras.length(), content="1")
+  inspect(cameras[0].payload.depth_prepass_enabled, content="true")
+  inspect(cameras[0].payload.normal_prepass_enabled, content="true")
+  inspect(cameras[0].payload.deferred_prepass_enabled, content="true")
 }

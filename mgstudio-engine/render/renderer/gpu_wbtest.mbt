@@ -137,6 +137,19 @@ fn wbtest_bind_group_layout_has_binding(
 }
 
 ///|
+fn wbtest_bind_group_layout_binding_count(
+  descriptor : @render_resource.BindGroupLayoutDescriptor,
+  binding : Int,
+) -> Int {
+  for entry in descriptor.entries() {
+    if entry.binding() == binding {
+      return entry.count()
+    }
+  }
+  -1
+}
+
+///|
 test "renderer: default mesh view layout can include clustered decal bindings" {
   let layout = mesh3d_default_mesh_view_layout(clustered_decals_usable=true)
   let binding_arrays = layout.binding_array_bind_group_layout_descriptor()
@@ -151,6 +164,43 @@ test "renderer: default mesh view layout can include clustered decal bindings" {
   debug_inspect(
     wbtest_bind_group_layout_has_binding(binding_arrays, 7),
     content="true",
+  )
+}
+
+///|
+test "renderer: environment-map layout uses binding arrays when light probes do" {
+  let key = @mesh_view_layout.mesh_view_layout_key(
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    environment_map=true,
+  )
+  let layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
+    true,
+    true,
+    key,
+    multiple_light_probes_in_array=true,
+    clustered_decals_usable=false,
+    irradiance_volumes_usable=false,
+    oit_supported=false,
+  )
+  let binding_arrays = layout.binding_array_bind_group_layout_descriptor()
+  debug_inspect(
+    wbtest_bind_group_layout_binding_count(binding_arrays, 0),
+    content="8",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_binding_count(binding_arrays, 1),
+    content="8",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_binding_count(binding_arrays, 2),
+    content="0",
   )
 }
 
@@ -777,6 +827,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
     prepass_deferred_lighting_pass_id_texture_id: -1,
+    screen_space_reflections: false,
     msaa_sample_count: 1,
     width_logical: 128.0F,
     height_logical: 128.0F,

@@ -250,18 +250,22 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
   guard descriptor.fragment is Some(fragment) else {
     abort("expected pbr fragment state")
   }
-  for
-    shader_def in [
-      "BLUE_NOISE_TEXTURE", "DFG_LUT", "AREA_LIGHT_LUTS", "SHADOW_FILTER_METHOD_HARDWARE_2X2",
-    ] {
+  for shader_def in ["BLUE_NOISE_TEXTURE", "DFG_LUT", "AREA_LIGHT_LUTS"] {
     debug_inspect(
       pbr_material_specializer_shader_defs_contain_flag(
         fragment.shader_defs,
         shader_def,
       ),
-      content="true",
+      content="false",
     )
   }
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "SHADOW_FILTER_METHOD_HARDWARE_2X2",
+    ),
+    content="true",
+  )
   let vertex_layout = descriptor.vertex.buffers[0]
   inspect(vertex_layout.attributes[0].shader_location, content="0")
   inspect(vertex_layout.attributes[1].shader_location, content="1")
@@ -344,7 +348,7 @@ test "pbr material pipeline rejects non-bindless sampler-limit overflow before p
   )
   inspect(
     pbr_pipeline_layout_fragment_sampler_count(default_descriptor),
-    content="12",
+    content="10",
   )
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
     Some(standard_material_bind_group_layout_descriptor(features=all_features)),
@@ -620,16 +624,13 @@ test "pbr material pipeline specializer inserts material bind group and override
     pbr_material_specializer_test_layout(),
   )
   inspect(descriptor.layout.length(), content="4")
-  inspect(
-    descriptor.layout[0].label(),
-    content="mesh_view_layout:stbn,area_light_luts,dfg_lut",
-  )
+  inspect(descriptor.layout[0].label(), content="mesh_view_layout:")
   inspect(
     descriptor.layout[1].label(),
-    content="mesh_view_layout_binding_array:stbn,area_light_luts,dfg_lut",
+    content="mesh_view_layout_binding_array:",
   )
   inspect(descriptor.layout[2].label(), content="mesh_layout")
-  inspect(descriptor.layout[0].entries().length(), content="19")
+  inspect(descriptor.layout[0].entries().length(), content="14")
   inspect(descriptor.layout[1].entries().length(), content="0")
   inspect(descriptor.layout[2].entries().length(), content="1")
   debug_inspect(
@@ -777,7 +778,7 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
   )
   inspect(
     descriptor.layout[0].label(),
-    content="mesh_view_layout:multisampled,normal_prepass,stbn,tonemap_in_shader,area_light_luts,dfg_lut",
+    content="mesh_view_layout:multisampled,normal_prepass,tonemap_in_shader",
   )
   debug_inspect(
     pbr_material_specializer_layout_has_binding(descriptor.layout[0], 18),
@@ -785,7 +786,7 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
   )
   debug_inspect(
     pbr_material_specializer_layout_has_binding(descriptor.layout[0], 37),
-    content="true",
+    content="false",
   )
   debug_inspect(
     pbr_material_specializer_layout_has_binding(descriptor.layout[0], 19),

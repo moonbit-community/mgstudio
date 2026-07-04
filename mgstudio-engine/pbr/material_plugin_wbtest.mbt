@@ -149,6 +149,18 @@ impl Material for ParityCustomMaterial with fn reads_view_transmission_texture(
 }
 
 ///|
+impl Material for ParityCustomMaterial with fn standard_material_payload(self) {
+  ignore(self)
+  material_default_standard_material_payload()
+}
+
+///|
+impl Material for ParityCustomMaterial with fn material_extension_metadata(self) {
+  ignore(self)
+  None
+}
+
+///|
 impl Material for ParityCustomMaterial with fn enable_prepass() {
   material_default_enable_prepass()
 }
@@ -192,6 +204,14 @@ impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
 impl Material for ParityCustomMaterial with fn bind_group_data(self) {
   ignore(self)
   "parity_custom_material_pipeline_key"
+}
+
+///|
+impl Material for ParityCustomMaterial with fn renderer_extra_bind_group_data(
+  self,
+  context,
+) {
+  material_default_renderer_extra_bind_group_data(self, context)
 }
 
 ///|
@@ -336,6 +356,36 @@ test "pbr material plugin: prepared material resolves auto renderer method from 
       _ => false
     },
     content="true",
+  )
+}
+
+///|
+test "pbr material plugin: prepared typed material carries bevy draw functions" {
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let prepared = PreparedMaterial::from_material(
+    @asset.Handle::new(9),
+    ParityCustomMaterial::ParityCustomMaterial(),
+    material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Deferred,
+  )
+  let properties = prepared.properties()
+  debug_inspect(
+    properties
+    .get_draw_function(DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(7)",
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(PREPASS_OPAQUE_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(4)",
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(10)",
   )
 }
 

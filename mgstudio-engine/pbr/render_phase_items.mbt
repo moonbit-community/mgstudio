@@ -130,7 +130,10 @@ priv struct Camera3dViewPayload {
 
 ///|
 priv struct ExtractedAtmosphere3d {
-  atmosphere : Atmosphere
+  inner_radius : Float
+  outer_radius : Float
+  ground_albedo : @math.Vec3
+  medium : @asset.Handle[ScatteringMedium]
   world_to_atmosphere : @math.Affine3
 }
 
@@ -157,6 +160,7 @@ priv struct Mesh3dExtractedPayload {
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  material_type_tag : String
   lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?

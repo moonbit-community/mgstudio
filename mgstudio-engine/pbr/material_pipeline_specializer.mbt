@@ -595,7 +595,7 @@ fn pbr_mesh_pipeline_view_layout_key(
     (mesh_key_bits & MESH_PIPELINE_KEY_DEFERRED_PREPASS) != 0UL,
     (mesh_key_bits & MESH_PIPELINE_KEY_OIT_ENABLED) != 0UL,
     (mesh_key_bits & MESH_PIPELINE_KEY_ATMOSPHERE) != 0UL,
-    true,
+    pbr_bluenoise_texture_feature_enabled(),
     tonemap_in_shader=(mesh_key_bits & MESH_PIPELINE_KEY_TONEMAP_IN_SHADER) !=
       0UL,
     environment_map=(mesh_key_bits & MESH_PIPELINE_KEY_ENVIRONMENT_MAP) != 0UL,
@@ -611,8 +611,8 @@ fn pbr_mesh_pipeline_view_layout_key(
       0UL,
     contact_shadows=(mesh_key_bits & MESH_PIPELINE_KEY_CONTACT_SHADOWS) != 0UL,
     distance_fog=(mesh_key_bits & MESH_PIPELINE_KEY_DISTANCE_FOG) != 0UL,
-    area_light_luts=true,
-    dfg_lut=true,
+    area_light_luts=pbr_area_light_luts_feature_enabled(),
+    dfg_lut=pbr_dfg_lut_feature_enabled(),
   )
 }
 
@@ -1000,9 +1000,15 @@ fn pbr_mesh_pipeline_descriptor(
     depth_write_enabled,
     alpha_to_coverage_enabled,
   ) = pbr_mesh_pipeline_blend_state(mesh_key_bits, shader_defs)
-  shader_defs.push(pbr_shader_def("BLUE_NOISE_TEXTURE"))
-  shader_defs.push(pbr_shader_def("DFG_LUT"))
-  shader_defs.push(pbr_shader_def("AREA_LIGHT_LUTS"))
+  if pbr_bluenoise_texture_feature_enabled() {
+    shader_defs.push(pbr_shader_def("BLUE_NOISE_TEXTURE"))
+  }
+  if pbr_dfg_lut_feature_enabled() {
+    shader_defs.push(pbr_shader_def("DFG_LUT"))
+  }
+  if pbr_area_light_luts_feature_enabled() {
+    shader_defs.push(pbr_shader_def("AREA_LIGHT_LUTS"))
+  }
   if (mesh_key_bits & MESH_PIPELINE_KEY_TONEMAP_IN_SHADER) != 0UL {
     shader_defs.push(pbr_shader_def("TONEMAP_IN_SHADER"))
     shader_defs.push(

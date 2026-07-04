@@ -89,7 +89,7 @@ pub fn begin_frame(Int) -> Bool
 
 pub fn begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
-pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_exposure~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], mesh3d_lights_uniform_bytes? : Bytes?, tonemap_in_shader? : Bool, tonemapping_mode? : Int, tonemapping_agx_lut_texture_id? : Int, tonemapping_tony_lut_texture_id? : Int, tonemapping_blender_lut_texture_id? : Int, pbr_blue_noise_texture_id? : Int, pbr_area_light_luts_texture_id? : Int, pbr_dfg_lut_texture_id? : Int, deband_dither_enabled? : Bool, prepass_depth_texture_id? : Int, prepass_normal_texture_id? : Int, prepass_motion_vector_texture_id? : Int, prepass_deferred_texture_id? : Int, prepass_deferred_lighting_pass_id_texture_id? : Int, msaa_sample_count? : Int, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
+pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_exposure~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, transmission_blur_taps? : Float, transmission_steps? : Float, point_shadow_texture_id? : Int, point_shadow_enabled? : Float, point_shadow_depth_bias? : Float, transmission_source_texture_id? : Int, environment_diffuse_texture_id? : Int, environment_specular_texture_id? : Int, environment_map_intensity? : Float, environment_map_rotation_x? : Float, environment_map_rotation_y? : Float, environment_map_rotation_z? : Float, environment_map_rotation_w? : Float, point_shadow_near~ : Float, directional_shadow_texture_id? : Int, directional_shadow_enabled? : Float, directional_shadow_depth_bias? : Float, directional_shadow_normal_bias? : Float, directional_shadow_soft_size? : Float, directional_shadow_cascade_count? : Int, directional_shadow_cascade_overlap? : Float, directional_shadow_cascade_data? : Array[Float], mesh3d_lights_uniform_bytes? : Bytes?, tonemap_in_shader? : Bool, tonemapping_mode? : Int, tonemapping_agx_lut_texture_id? : Int, tonemapping_tony_lut_texture_id? : Int, tonemapping_blender_lut_texture_id? : Int, pbr_blue_noise_texture_id? : Int, pbr_area_light_luts_texture_id? : Int, pbr_dfg_lut_texture_id? : Int, deband_dither_enabled? : Bool, prepass_depth_texture_id? : Int, prepass_normal_texture_id? : Int, prepass_motion_vector_texture_id? : Int, prepass_deferred_texture_id? : Int, prepass_deferred_lighting_pass_id_texture_id? : Int, screen_space_reflections? : Bool, msaa_sample_count? : Int, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
 pub fn begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
@@ -191,6 +191,8 @@ pub fn draw_mesh3d_atmosphere_sky(camera_key_hi~ : Int, camera_key_lo~ : Int) ->
 
 pub fn draw_mesh3d_deferred_lighting(camera_key_hi~ : Int, camera_key_lo~ : Int, screen_space_ambient_occlusion~ : Bool, screen_space_reflections~ : Bool, distance_fog~ : Bool, atmosphere~ : Bool) -> Unit
 
+pub fn draw_mesh3d_screen_space_reflections(camera_key_hi~ : Int, camera_key_lo~ : Int, source_texture_id~ : Int, ping_target_id~ : Int, atmosphere~ : Bool) -> Unit
+
 pub fn draw_mesh3d_volumetric_fog(camera_key_hi~ : Int, camera_key_lo~ : Int, plane_mesh_id~ : Int, cube_mesh_id~ : Int, textureless_pipeline_id~ : Int, textured_pipeline_id~ : Int, atmosphere~ : Bool, volumes~ : Array[HostMesh3dVolumetricFogVolume]) -> Unit
 
 pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, alpha_mode_kind~ : Int, material_bind_group~ : HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?, pipeline_descriptor? : @render_resource.RenderPipelineDescriptor?) -> Unit
@@ -207,6 +209,8 @@ pub fn draw_sprite_uv(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Flo
 
 pub fn draw_sprite_uv_slices(texture_id~ : Int, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, slices_xy_uv~ : Array[Float]) -> Unit
 
+pub fn draw_taa(camera_key_hi~ : Int, camera_key_lo~ : Int, scene_texture_id~ : Int, motion_vector_texture_id~ : Int, depth_texture_id~ : Int, reset~ : Bool, tonemap~ : Bool, view_width~ : Int, view_height~ : Int) -> Unit
+
 pub fn draw_tonemapping2d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float) -> Unit
 
 pub fn draw_tonemapping3d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float) -> Unit
@@ -218,6 +222,8 @@ pub fn draw_ui_rect(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float
 pub fn draw_ui_rect_uv_slices(texture_id~ : Int, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, slices_xy_uv~ : Array[Float]) -> Unit
 
 pub fn draw_ui_texture_slice(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_slice_l~ : Float, texture_slice_t~ : Float, texture_slice_r~ : Float, texture_slice_b~ : Float, target_slice_l~ : Float, target_slice_t~ : Float, target_slice_r~ : Float, target_slice_b~ : Float, repeat_side_x~ : Float, repeat_side_y~ : Float, repeat_center_x~ : Float, repeat_center_y~ : Float, atlas_l~ : Float, atlas_t~ : Float, atlas_r~ : Float, atlas_b~ : Float) -> Unit
+
+pub fn end_active_pass_preserving_state() -> Unit
 
 pub fn end_pass() -> Unit
 
@@ -272,6 +278,8 @@ pub fn host_gpu_delete_mesh(mesh_id~ : Int) -> Bool
 pub fn host_gpu_delete_old_mesh3d_preprocess_work_item_buffers(retained_camera_keys~ : Array[UInt64]) -> Unit
 
 pub fn host_gpu_downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+
+pub fn host_gpu_generate_environment_map_light(source_texture_id~ : Int, diffuse_texture_id~ : Int, specular_texture_id~ : Int, blue_noise_texture_id~ : Int) -> Unit
 
 pub fn host_gpu_get_queue(Int) -> Int
 
@@ -380,6 +388,8 @@ pub fn prepare_mesh3d_material_bind_group(texture_id~ : Int, normal_texture_id~ 
 pub fn prepare_mesh3d_morph_bindings(morph_weights~ : Array[Float]) -> Unit
 
 pub fn prepare_mesh3d_scattering_medium_resources(density_width~ : Int, density_height~ : Int, density_bytes~ : Bytes, scattering_width~ : Int, scattering_height~ : Int, scattering_bytes~ : Bytes) -> Unit
+
+pub fn prepare_mesh3d_screen_space_reflections_settings(min_perceptual_roughness_start~ : Float, min_perceptual_roughness_end~ : Float, max_perceptual_roughness_start~ : Float, max_perceptual_roughness_end~ : Float, edge_fadeout_start~ : Float, edge_fadeout_end~ : Float, thickness~ : Float, linear_steps~ : Int, linear_march_exponent~ : Float, bisection_steps~ : Int, use_secant~ : Bool) -> Unit
 
 pub fn prepare_mesh3d_skin_bindings(skinning_rows~ : Array[Float]) -> Unit
 
@@ -551,6 +561,7 @@ pub struct GpuBackend {
   mut pass_has_depth : Bool
   frame_retired_buffers : Array[@wgpu_mbt.Buffer]
   frame_retired_bind_groups : Array[@wgpu_mbt.BindGroup]
+  frame_retired_texture_views : Array[@wgpu_mbt.TextureView]
   mut frame_count : UInt
   mut depth_texture : @wgpu_mbt.Texture?
   mut depth_view : @wgpu_mbt.TextureView?
@@ -958,6 +969,12 @@ pub struct GpuBackend {
   mut fxaa_pipeline_surface_edge_threshold_mode : Int
   mut fxaa_pipeline_surface_edge_threshold_min_mode : Int
   mut fxaa_sampler : @wgpu_mbt.Sampler?
+  mut taa_bgl : @wgpu_mbt.BindGroupLayout?
+  mut taa_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut taa_nearest_sampler : @wgpu_mbt.Sampler?
+  mut taa_linear_sampler : @wgpu_mbt.Sampler?
+  taa_history_textures : Array[GpuTaaHistoryTextures]
+  taa_pipeline_cache : Array[GpuTaaPipelineCacheEntry]
   mut bloom_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut tonemapping_bgl : @wgpu_mbt.BindGroupLayout?
@@ -1005,6 +1022,8 @@ pub struct GpuBackend {
   mut mesh3d_ssao_pending_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_atmosphere_resources : GpuAtmosphereResources?
   mut mesh3d_atmosphere_resource_revision : Int
+  mut light_probe_environment_generator : GpuLightProbeEnvironmentGenerator?
+  mut light_probe_environment_intermediate : GpuLightProbeIntermediateTexture?
   mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
   mut mesh3d_scattering_medium_resource_revision : Int
   mut mesh3d_deferred_lighting_id_depth_texture : GpuDeferredLightingIdDepthTexture?
@@ -1012,6 +1031,11 @@ pub struct GpuBackend {
   mut mesh3d_copy_deferred_lighting_id_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_copy_deferred_lighting_id_pipeline : @wgpu_mbt.RenderPipeline?
   mesh3d_deferred_lighting_pipeline_cache : Array[GpuDeferredLightingPipelineCacheEntry]
+  mut mesh3d_ssr_bind_group_layout : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_ssr_color_sampler : @wgpu_mbt.Sampler?
+  mut mesh3d_ssr_depth_linear_sampler : @wgpu_mbt.Sampler?
+  mut mesh3d_ssr_depth_nearest_sampler : @wgpu_mbt.Sampler?
+  mesh3d_ssr_pipeline_cache : Array[GpuScreenSpaceReflectionsPipelineCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int
@@ -1034,7 +1058,7 @@ pub fn GpuBackend::apply_bloom(Self, Int, Float, Float, Float, Float, Float, Flo
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_frame_binding(Self, Int) -> Bool
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Float, Array[Float], Bytes?, Bool, Int, Int, Int, Int, Int, Int, Int, Bool, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Int, Int, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Int, Float, Array[Float], Bytes?, Bool, Int, Int, Int, Int, Int, Int, Int, Bool, Int, Int, Int, Int, Int, Bool, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_with_depth(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::build_mesh3d_indirect_parameters(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
@@ -1089,12 +1113,14 @@ pub fn GpuBackend::draw_motion_blur(Self, Int, Int, @render_resource.RenderPipel
 pub fn GpuBackend::draw_prepared_skybox(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_taa(Self, Int, Int, Int, Int, Int, Bool, Bool, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping3d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect_uv_slices(Self, Int, Float, Float, Float, Float, Float, Float, Float, Array[Float]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::end_active_pass_preserving_state(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_mesh3d_draw_slot(Self, Int) -> GpuStorageSlot?
 pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(Self, UInt64) -> (@wgpu_mbt.Buffer, @wgpu_mbt.BindGroup)?
@@ -1116,6 +1142,7 @@ pub fn GpuBackend::execute_meshlet_visibility_buffer_software_raster(Self, view_
 pub fn GpuBackend::frame_copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::mesh3d_draw_deferred_lighting(Self, Int, Int, Bool, Bool, Bool, Bool) -> Unit raise GpuBackendError
+pub fn GpuBackend::mesh3d_draw_screen_space_reflections(Self, Int, Int, Int, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_initial_surface_frames(Self) -> Unit
@@ -1125,6 +1152,7 @@ pub fn GpuBackend::prepare_mesh3d_light_probes(Self, Bytes, UInt, Array[Int], Ar
 pub fn GpuBackend::prepare_mesh3d_main_pass_draw_batch(Self, Int, Int, Int, Array[HostMesh3dMainPassDrawEntry]) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_material_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_morph_bindings(Self, Array[Float]) -> Unit
+pub fn GpuBackend::prepare_mesh3d_screen_space_reflections_settings(Self, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_skin_bindings(Self, Array[Float]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_ssao_pipeline(Self, Int, Int, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_ssao_resources(Self, Int, Int, Float) -> Unit raise GpuBackendError
@@ -1188,7 +1216,12 @@ pub struct GpuFrameState {
   mut pass : @wgpu_mbt.RenderPass?
   transient_buffers : Array[@wgpu_mbt.Buffer]
   transient_bind_groups : Array[@wgpu_mbt.BindGroup]
+  transient_texture_views : Array[@wgpu_mbt.TextureView]
 }
+
+type GpuLightProbeEnvironmentGenerator
+
+type GpuLightProbeIntermediateTexture
 
 type GpuMesh3dInstanceVertexBufferInfo
 
@@ -1226,6 +1259,7 @@ pub struct GpuPassState {
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
   prepass_deferred_lighting_pass_id_texture_id : Int
+  screen_space_reflections : Bool
   msaa_sample_count : Int
   width_logical : Float
   height_logical : Float
@@ -1338,6 +1372,8 @@ type GpuQueuedLineGizmoDraw
 
 type GpuScatteringMediumResources
 
+type GpuScreenSpaceReflectionsPipelineCacheEntry
+
 type GpuSsaoPipelineCacheEntry
 
 type GpuSsaoPipelines
@@ -1359,6 +1395,10 @@ pub struct GpuSurfaceState {
   mut frame : GpuFrameState?
   mut cleared_this_frame : Bool
 }
+
+type GpuTaaHistoryTextures
+
+type GpuTaaPipelineCacheEntry
 
 pub struct GpuTextureInfo {
   id : Int
@@ -1767,6 +1807,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   ssao_resource_revision : Int
   clustered_decals_revision : Int
   bind_group : @wgpu_mbt.BindGroup
+  main_offsets : Array[UInt]
   binding_arrays_bind_group : @wgpu_mbt.BindGroup
 }
 

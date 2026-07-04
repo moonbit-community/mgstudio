@@ -787,6 +787,7 @@ pub fn GpuBackend::begin_frame_binding(
     pass: None,
     transient_buffers: [],
     transient_bind_groups: [],
+    transient_texture_views: [],
   })
   prepare_surface_capture_frame(self)
   true
@@ -897,6 +898,10 @@ fn GpuBackend::present_frame_binding(
     self.frame_retired_buffers.push(buffer)
   }
   frame.transient_buffers.clear()
+  for view in frame.transient_texture_views {
+    self.frame_retired_texture_views.push(view)
+  }
+  frame.transient_texture_views.clear()
   frame.encoder.release()
   if frame.present_view is Some(present_view) {
     present_view.release()
@@ -936,6 +941,10 @@ fn GpuBackend::release_frame_binding(
     self.frame_retired_buffers.push(buffer)
   }
   frame.transient_buffers.clear()
+  for view in frame.transient_texture_views {
+    self.frame_retired_texture_views.push(view)
+  }
+  frame.transient_texture_views.clear()
   frame.encoder.release()
   if frame.present_view is Some(present_view) {
     present_view.release()
@@ -994,6 +1003,10 @@ pub fn GpuBackend::release_frame_retired_resources(self : GpuBackend) -> Unit {
     buffer.release()
   }
   self.frame_retired_buffers.clear()
+  for view in self.frame_retired_texture_views {
+    view.release()
+  }
+  self.frame_retired_texture_views.clear()
 }
 
 ///|

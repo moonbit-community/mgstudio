@@ -39,6 +39,36 @@ fn mesh3d_clustered_decals_are_usable() -> Bool {
 }
 
 ///|
+const MESH3D_STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS : UInt = 16U
+
+///|
+const MESH3D_MAX_VIEW_LIGHT_PROBES : UInt = 8U
+
+///|
+fn mesh3d_bluenoise_texture_feature_enabled() -> Bool {
+  false
+}
+
+///|
+fn mesh3d_area_light_luts_feature_enabled() -> Bool {
+  false
+}
+
+///|
+fn mesh3d_dfg_lut_feature_enabled() -> Bool {
+  false
+}
+
+///|
+fn mesh3d_light_probe_binding_arrays_are_usable() -> Bool {
+  // Bevy source: `bevy/crates/bevy_pbr/src/light_probe/mod.rs::binding_arrays_are_usable`.
+  mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=MESH3D_STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
+      MESH3D_MAX_VIEW_LIGHT_PROBES,
+  )
+}
+
+///|
 fn mesh3d_default_mesh_view_layout(
   tonemap_in_shader? : Bool = false,
   clustered_decals_usable? : Bool = mesh3d_clustered_decals_are_usable(),
@@ -47,6 +77,7 @@ fn mesh3d_default_mesh_view_layout(
     true,
     true,
     mesh3d_default_mesh_view_layout_key(tonemap_in_shader~),
+    multiple_light_probes_in_array=mesh3d_light_probe_binding_arrays_are_usable(),
     clustered_decals_usable~,
     irradiance_volumes_usable=false,
     oit_supported=false,
@@ -66,12 +97,13 @@ fn mesh3d_pass_mesh_view_layout_key(
     pass_state.prepass_deferred_texture_id >= 0,
     false,
     atmosphere,
-    pass_state.pbr_blue_noise_texture_id >= 0,
+    mesh3d_bluenoise_texture_feature_enabled(),
     tonemap_in_shader=pass_state.tonemap_in_shader,
     environment_map=pass_state.environment_map_intensity > 0.0F,
     irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
-    area_light_luts=pass_state.pbr_area_light_luts_texture_id >= 0,
-    dfg_lut=pass_state.pbr_dfg_lut_texture_id >= 0,
+    screen_space_reflections=pass_state.screen_space_reflections,
+    area_light_luts=mesh3d_area_light_luts_feature_enabled(),
+    dfg_lut=mesh3d_dfg_lut_feature_enabled(),
   )
 }
 

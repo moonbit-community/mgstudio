@@ -22,6 +22,9 @@ pub type AtmosphereMode = @light.AtmosphereMode
 pub type AtmosphereSettings = @light.AtmosphereSettings
 
 ///|
+pub type Atmosphere = @light.Atmosphere
+
+///|
 pub struct GpuAtmosphereSettings {
   transmittance_lut_size : @math.UVec2
   multiscattering_lut_size : @math.UVec2
@@ -60,10 +63,25 @@ pub fn pbr_gpu_atmosphere(
   atmosphere : Atmosphere,
   world_to_atmosphere : @math.Affine3,
 ) -> GpuAtmosphere {
+  pbr_gpu_atmosphere_from_extracted(
+    atmosphere.inner_radius,
+    atmosphere.outer_radius,
+    atmosphere.ground_albedo,
+    world_to_atmosphere,
+  )
+}
+
+///|
+pub fn pbr_gpu_atmosphere_from_extracted(
+  inner_radius : Float,
+  outer_radius : Float,
+  ground_albedo : @math.Vec3,
+  world_to_atmosphere : @math.Affine3,
+) -> GpuAtmosphere {
   GpuAtmosphere::{
-    ground_albedo: atmosphere.ground_albedo,
-    inner_radius: atmosphere.inner_radius,
-    outer_radius: atmosphere.outer_radius,
+    ground_albedo,
+    inner_radius,
+    outer_radius,
     world_to_atmosphere,
   }
 }
@@ -176,116 +194,6 @@ pub fn AtmosphereTextures::from_settings(
       AtmosphereTextureDimension::D3,
     ),
   }
-}
-
-///|
-pub struct AtmosphereSampler {
-  filtering : Bool
-}
-
-///|
-pub fn AtmosphereSampler::AtmosphereSampler() -> AtmosphereSampler {
-  AtmosphereSampler::{ filtering: true }
-}
-
-///|
-pub struct AtmosphereBindGroupLayouts {
-  transmittance_lut : Bool
-  multiscattering_lut : Bool
-  sky_view_lut : Bool
-  aerial_view_lut : Bool
-}
-
-///|
-pub fn AtmosphereBindGroupLayouts::AtmosphereBindGroupLayouts() -> AtmosphereBindGroupLayouts {
-  AtmosphereBindGroupLayouts::{
-    transmittance_lut: true,
-    multiscattering_lut: true,
-    sky_view_lut: true,
-    aerial_view_lut: true,
-  }
-}
-
-///|
-pub struct RenderSkyBindGroupLayouts {
-  render_sky : Bool
-}
-
-///|
-pub fn RenderSkyBindGroupLayouts::RenderSkyBindGroupLayouts() -> RenderSkyBindGroupLayouts {
-  RenderSkyBindGroupLayouts::{ render_sky: true }
-}
-
-///|
-pub struct AtmosphereLutPipelines {
-  transmittance_lut : Bool
-  multiscattering_lut : Bool
-  sky_view_lut : Bool
-  aerial_view_lut : Bool
-}
-
-///|
-pub fn AtmosphereLutPipelines::AtmosphereLutPipelines() -> AtmosphereLutPipelines {
-  AtmosphereLutPipelines::{
-    transmittance_lut: true,
-    multiscattering_lut: true,
-    sky_view_lut: true,
-    aerial_view_lut: true,
-  }
-}
-
-///|
-pub struct AtmosphereTransform {
-  world_from_atmosphere : @math.Affine3
-  atmosphere_from_world : @math.Affine3
-}
-
-///|
-pub fn AtmosphereTransform::identity() -> AtmosphereTransform {
-  AtmosphereTransform::{
-    world_from_atmosphere: @math.Affine3::identity(),
-    atmosphere_from_world: @math.Affine3::identity(),
-  }
-}
-
-///|
-pub struct AtmosphereTransforms {
-  uniforms : Array[AtmosphereTransform]
-}
-
-///|
-pub fn AtmosphereTransforms::AtmosphereTransforms() -> AtmosphereTransforms {
-  AtmosphereTransforms::{ uniforms: [] }
-}
-
-///|
-pub struct AtmosphereBindGroups {
-  transmittance_lut : Bool
-  multiscattering_lut : Bool
-  sky_view_lut : Bool
-  aerial_view_lut : Bool
-  render_sky : Bool
-}
-
-///|
-pub fn AtmosphereBindGroups::AtmosphereBindGroups() -> AtmosphereBindGroups {
-  AtmosphereBindGroups::{
-    transmittance_lut: true,
-    multiscattering_lut: true,
-    sky_view_lut: true,
-    aerial_view_lut: true,
-    render_sky: true,
-  }
-}
-
-///|
-pub struct AtmosphereBuffer {
-  value : GpuAtmosphere
-}
-
-///|
-pub fn AtmosphereBuffer::AtmosphereBuffer() -> AtmosphereBuffer {
-  AtmosphereBuffer::{ value: GpuAtmosphere::GpuAtmosphere() }
 }
 
 ///|

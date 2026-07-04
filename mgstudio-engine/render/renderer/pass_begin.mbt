@@ -33,6 +33,31 @@ fn render_pass_sparse_prepass_attachment_count(
 }
 
 ///|
+fn mesh3d_scene_depth_attachment_view(
+  backend : GpuBackend,
+  target_id : Int,
+  safe_msaa_sample_count : Int,
+  prepass_depth_texture_id : Int,
+) -> (@wgpu.TextureView, Bool)? {
+  if find_prepass_depth_texture(backend, prepass_depth_texture_id)
+    is Some(prepass_depth_texture) {
+    if backend.depth_width == prepass_depth_texture.width &&
+      backend.depth_height == prepass_depth_texture.height &&
+      backend.depth_sample_count == safe_msaa_sample_count {
+      match backend.depth_view {
+        Some(view_depth_view) => return Some((view_depth_view, true))
+        None => ()
+      }
+    }
+  }
+  guard ensure_depth_view_for_target(backend, target_id, safe_msaa_sample_count)
+    is Some(scene_depth_view) else {
+    return None
+  }
+  Some((scene_depth_view, false))
+}
+
+///|
 pub fn GpuBackend::begin_pass(
   self : GpuBackend,
   target_id : Int,
@@ -118,6 +143,7 @@ pub fn GpuBackend::begin_pass(
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
     prepass_deferred_lighting_pass_id_texture_id: -1,
+    screen_space_reflections: false,
     msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
@@ -368,6 +394,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
     prepass_deferred_lighting_pass_id_texture_id: -1,
+    screen_space_reflections: false,
     msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
@@ -644,6 +671,7 @@ pub fn GpuBackend::begin_pass_3d(
   prepass_motion_vector_texture_id : Int,
   prepass_deferred_texture_id : Int,
   prepass_deferred_lighting_pass_id_texture_id : Int,
+  screen_space_reflections : Bool,
   msaa_sample_count : Int,
   pass_kind : Int,
   clear_enabled : Int,
@@ -680,14 +708,19 @@ pub fn GpuBackend::begin_pass_3d(
     deferred_lighting_pass_id_color_view,
     deferred_lighting_pass_id_color_resolve_view,
     depth_view,
+    depth_attachment_uses_prepass,
   ) = if is_shadow_depth_pass {
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
-    (None, None, None, None, None, None, None, None, shadow_depth_view)
+    (None, None, None, None, None, None, None, None, shadow_depth_view, false)
   } else if is_prepass_depth_pass {
     guard find_prepass_depth_texture(self, prepass_depth_texture_id)
       is Some(prepass_depth_texture) else {
+      return
+    }
+    guard ensure_depth_view_for_target(self, target_id, safe_msaa_sample_count)
+      is Some(view_depth_view) else {
       return
     }
     let (normal_view, normal_resolve_view) = if prepass_normal_texture_id >= 0 {
@@ -763,12 +796,19 @@ pub fn GpuBackend::begin_pass_3d(
       deferred_resolve_view,
       deferred_lighting_view,
       deferred_lighting_resolve_view,
-      prepass_depth_texture.view,
+      view_depth_view,
+      false,
     )
   } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
     secondary_target_id >= 0 {
     guard find_prepass_depth_texture(self, prepass_depth_texture_id)
       is Some(prepass_depth_texture) else {
+      return
+    }
+    guard ensure_depth_view_for_target(
+        self, prepass_depth_texture_id, safe_msaa_sample_count,
+      )
+      is Some(view_depth_view) else {
       return
     }
     let (primary_view, primary_resolve_view) = if prepass_normal_texture_id >= 0 {
@@ -842,7 +882,8 @@ pub fn GpuBackend::begin_pass_3d(
       deferred_resolve_view,
       deferred_lighting_view,
       deferred_lighting_resolve_view,
-      prepass_depth_texture.view,
+      view_depth_view,
+      false,
     )
   } else {
     guard target_color_attachment(
@@ -851,8 +892,10 @@ pub fn GpuBackend::begin_pass_3d(
       is Some((view, resolve_view)) else {
       return
     }
-    guard ensure_depth_view_for_target(self, target_id, safe_msaa_sample_count)
-      is Some(scene_depth_view) else {
+    guard mesh3d_scene_depth_attachment_view(
+        self, target_id, safe_msaa_sample_count, prepass_depth_texture_id,
+      )
+      is Some((scene_depth_view, uses_prepass_depth)) else {
       return
     }
     (
@@ -865,6 +908,7 @@ pub fn GpuBackend::begin_pass_3d(
       None,
       None,
       scene_depth_view,
+      uses_prepass_depth,
     )
   }
   let effective_clear_enabled = if target_id < 0 &&
@@ -879,7 +923,9 @@ pub fn GpuBackend::begin_pass_3d(
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
-  let depth_load_op_u32 = if effective_clear_enabled == 0 {
+  let depth_load_op_u32 = if depth_attachment_uses_prepass {
+    @wgpu.LOAD_OP_LOAD
+  } else if effective_clear_enabled == 0 {
     @wgpu.LOAD_OP_LOAD
   } else {
     @wgpu.LOAD_OP_CLEAR
@@ -942,6 +988,7 @@ pub fn GpuBackend::begin_pass_3d(
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,
     prepass_deferred_lighting_pass_id_texture_id,
+    screen_space_reflections,
     msaa_sample_count: safe_msaa_sample_count,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
@@ -1617,6 +1664,7 @@ pub fn begin_pass_3d(
   prepass_motion_vector_texture_id? : Int = -1,
   prepass_deferred_texture_id? : Int = -1,
   prepass_deferred_lighting_pass_id_texture_id? : Int = -1,
+  screen_space_reflections? : Bool = false,
   msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
@@ -1660,7 +1708,7 @@ pub fn begin_pass_3d(
       pbr_area_light_luts_texture_id, pbr_dfg_lut_texture_id, deband_dither_enabled,
       prepass_depth_texture_id, prepass_normal_texture_id, prepass_motion_vector_texture_id,
       prepass_deferred_texture_id, prepass_deferred_lighting_pass_id_texture_id,
-      msaa_sample_count, pass_kind, clear_enabled,
+      screen_space_reflections, msaa_sample_count, pass_kind, clear_enabled,
     ) catch {
       err => debug_runtime_error("begin_pass_3d", err)
     }

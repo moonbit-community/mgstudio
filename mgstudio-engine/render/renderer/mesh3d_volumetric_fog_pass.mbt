@@ -33,15 +33,11 @@ pub fn HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
 }
 
 ///|
-fn mesh3d_volumetric_fog_depth_view(
+fn mesh3d_pass_view_depth_view(
   backend : GpuBackend,
-  pass_state : GpuPassState,
+  _pass_state : GpuPassState,
 ) -> @wgpu.TextureView? {
-  match
-    find_prepass_depth_texture(backend, pass_state.prepass_depth_texture_id) {
-    Some(texture) => Some(texture.view)
-    None => backend.depth_view
-  }
+  backend.depth_view
 }
 
 ///|
@@ -163,7 +159,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     is Some(color_view) else {
     return
   }
-  guard mesh3d_volumetric_fog_depth_view(self, pass_state) is Some(depth_view) else {
+  guard mesh3d_pass_view_depth_view(self, pass_state) is Some(depth_view) else {
     return
   }
   let resolved_transmission_source_texture_id = if pass_state.transmission_source_texture_id <
@@ -184,18 +180,17 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   } else {
     pass_state.directional_shadow_texture_id
   }
-  let environment_map_enabled = pass_state.environment_map_intensity > 0.0F
-  let resolved_environment_diffuse_texture_id = if environment_map_enabled &&
-    pass_state.environment_diffuse_texture_id >= 0 {
+  let resolved_environment_diffuse_texture_id = if pass_state.environment_diffuse_texture_id >=
+    0 {
     pass_state.environment_diffuse_texture_id
   } else {
-    -1
+    ensure_environment_map_fallback_texture(self).id
   }
-  let resolved_environment_specular_texture_id = if environment_map_enabled &&
-    pass_state.environment_specular_texture_id >= 0 {
+  let resolved_environment_specular_texture_id = if pass_state.environment_specular_texture_id >=
+    0 {
     pass_state.environment_specular_texture_id
   } else {
-    -1
+    ensure_environment_map_fallback_texture(self).id
   }
   guard resolve_mesh3d_texture(self, resolved_transmission_source_texture_id)
     is Some(transmission_source_texture) else {
@@ -227,12 +222,17 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     is Some(pass_uniforms) else {
     return
   }
-  let (view_bg, _) = mesh3d_frame_view_bg_cache_get_or_create(
+  let view_layout_key = mesh3d_pass_mesh_view_layout_key(
+    pass_state,
+    atmosphere~,
+  )
+  let (view_bg, view_offsets, _) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
     0UL,
     None,
     pass_state.tonemap_in_shader,
     pass_uniforms,
+    pass_state.light_probes_uniform_offset,
     transmission_source_texture,
     point_shadow_texture,
     directional_shadow_texture,
@@ -249,10 +249,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     pbr_blue_noise_texture_id=pass_state.pbr_blue_noise_texture_id,
     pbr_area_light_luts_texture_id=pass_state.pbr_area_light_luts_texture_id,
     pbr_dfg_lut_texture_id=pass_state.pbr_dfg_lut_texture_id,
-    default_view_layout_key=mesh3d_pass_mesh_view_layout_key(
-      pass_state,
-      atmosphere~,
-    ),
+    default_view_layout_key=view_layout_key,
   )
   guard mesh3d_volumetric_fog_pipeline_get_by_id(self, textureless_pipeline_id)
     is Some(textureless_pipeline) else {
@@ -304,15 +301,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     )
     render_pass.set_scissor_rect(sx, sy, sw, sh)
     render_pass.set_pipeline(pipeline)
-    render_pass.set_bind_group(
-      0U,
-      view_bg,
-      mesh3d_descriptor_view_bind_group_dynamic_offsets(
-        None,
-        0,
-        light_probes_uniform_offset=pass_state.light_probes_uniform_offset,
-      ),
-    )
+    render_pass.set_bind_group(0U, view_bg, view_offsets)
     render_pass.set_bind_group(1U, volumetric_view_bind_group, [
       volume.uniform_buffer_offset,
     ])

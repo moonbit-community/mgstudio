@@ -296,24 +296,17 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   } else {
     ps.directional_shadow_texture_id
   }
-  let environment_map_enabled = ps.environment_map_intensity > 0.0F
-  let resolved_environment_diffuse_texture_id = if environment_map_enabled {
-    if ps.environment_diffuse_texture_id >= 0 {
-      ps.environment_diffuse_texture_id
-    } else {
-      -1
-    }
+  let resolved_environment_diffuse_texture_id = if ps.environment_diffuse_texture_id >=
+    0 {
+    ps.environment_diffuse_texture_id
   } else {
-    -1
+    ensure_environment_map_fallback_texture(self).id
   }
-  let resolved_environment_specular_texture_id = if environment_map_enabled {
-    if ps.environment_specular_texture_id >= 0 {
-      ps.environment_specular_texture_id
-    } else {
-      -1
-    }
+  let resolved_environment_specular_texture_id = if ps.environment_specular_texture_id >=
+    0 {
+    ps.environment_specular_texture_id
   } else {
-    -1
+    ensure_environment_map_fallback_texture(self).id
   }
   guard resolve_mesh3d_texture(self, resolved_base_texture_id)
     is Some(base_texture) else {
@@ -511,12 +504,13 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     )
     self.queue.write_buffer(active_draw_buffer, draw_write_offset, draw_bytes)
   }
-  let (view_bg, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
+  let (view_bg, view_offsets, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
     material_pipeline_id,
     material_descriptor,
     ps.tonemap_in_shader,
     pass_uniforms,
+    ps.light_probes_uniform_offset,
     transmission_source_texture,
     point_shadow_texture,
     directional_shadow_texture,
@@ -572,15 +566,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     )
   }
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(
-    0U,
-    view_bg,
-    mesh3d_descriptor_view_bind_group_dynamic_offsets(
-      material_descriptor,
-      0,
-      light_probes_uniform_offset=ps.light_probes_uniform_offset,
-    ),
-  )
+  pass.set_bind_group(0U, view_bg, view_offsets)
   pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(
     2U,

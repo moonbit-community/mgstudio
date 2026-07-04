@@ -622,7 +622,8 @@ fn render3d_resolved_material_from_extracted_payload(
     mesh.material,
     mesh.material_properties,
     mesh.material_bind_group_data,
-    "StandardMaterial",
+    mesh.material_type_tag,
+    material_extension=mesh.material_extension,
   )
 }
 
@@ -4413,6 +4414,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
       frame_config.gpu_instance_buffer_builder_requested,
       frame_config.gpu_culling_supported,
       frame_config.prepass_enabled,
+      frame_config.default_opaque_renderer_method,
     )
   })
   let needs_mesh_previous_transform = render3d_set_mesh_motion_vector_flags(

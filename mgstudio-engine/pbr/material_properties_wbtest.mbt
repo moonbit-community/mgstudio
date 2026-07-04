@@ -162,7 +162,7 @@ impl MaterialExtension for ParityMaterialExtension with fn deferred_vertex_shade
 impl MaterialExtension for ParityMaterialExtension with fn deferred_fragment_shader(
   _self,
 ) {
-  None
+  Some("shaders/deferred_extended_material.wgsl")
 }
 
 ///|
@@ -204,6 +204,95 @@ impl MaterialExtension for ParityMaterialExtension with fn bind_group_bindings(
   _self,
 ) {
   []
+}
+
+///|
+let parity_extended_material_asset_keys : @asset.AssetResourceKeys[
+  ExtendedMaterial[StandardMaterial, ParityMaterialExtension],
+] = @asset.register_asset_resource_keys(
+  "mgstudio_pbr_test::ExtendedMaterial<StandardMaterial, ParityMaterialExtension>",
+)
+
+///|
+let parity_extended_material_keys : MaterialKeys[
+  ExtendedMaterial[StandardMaterial, ParityMaterialExtension],
+] = register_material_keys(
+  "mgstudio_pbr_test::ExtendedMaterial<StandardMaterial, ParityMaterialExtension>",
+)
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn extended_material_asset_debug_name() {
+  "mgstudio_pbr_test::ExtendedMaterial<StandardMaterial, ParityMaterialExtension>"
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn extended_material_asset_keys() {
+  parity_extended_material_asset_keys
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn extended_material_keys() {
+  parity_extended_material_keys
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn vertex_shader_ref() {
+  standard_material_extension_default_vertex_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn fragment_shader_ref() {
+  Some("shaders/extended_material.wgsl")
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn prepass_vertex_shader_ref() {
+  standard_material_extension_default_prepass_vertex_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn prepass_fragment_shader_ref() {
+  standard_material_extension_default_prepass_fragment_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn deferred_vertex_shader_ref() {
+  standard_material_extension_default_deferred_vertex_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn deferred_fragment_shader_ref() {
+  Some("shaders/deferred_extended_material.wgsl")
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn meshlet_fragment_shader_ref() {
+  standard_material_extension_default_meshlet_fragment_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn meshlet_prepass_fragment_shader_ref() {
+  standard_material_extension_default_meshlet_prepass_fragment_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn meshlet_deferred_fragment_shader_ref() {
+  standard_material_extension_default_meshlet_deferred_fragment_shader_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn enable_prepass_ref() {
+  standard_material_extension_default_enable_prepass_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn enable_shadows_ref() {
+  standard_material_extension_default_enable_shadows_ref()
+}
+
+///|
+impl StandardMaterialExtension for ParityMaterialExtension with fn specialize_ref() {
+  standard_material_extension_default_specialize_ref()
 }
 
 ///|
@@ -330,6 +419,39 @@ test "render3d: material extension prepass flag does not require camera prepasse
   debug_inspect(
     props.get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/extended_material.wgsl\")",
+  )
+}
+
+///|
+test "pbr material plugin: prepared extended material preserves runtime metadata" {
+  let material = ExtendedMaterial::new(
+    StandardMaterial::StandardMaterial(),
+    ParityMaterialExtension::ParityMaterialExtension(),
+  )
+  let material_handle : @asset.Handle[
+    ExtendedMaterial[StandardMaterial, ParityMaterialExtension],
+  ] = @asset.Handle::new(987)
+  let probe : @asset.Handle[
+    ExtendedMaterial[StandardMaterial, ParityMaterialExtension],
+  ] = @asset.Handle::new(0)
+  let prepared = PreparedMaterial::from_material(
+    material_handle,
+    material,
+    material_pipeline_from_material_hooks(probe),
+    @material.OpaqueRendererMethod::Deferred,
+  )
+  let resolved = prepared.resolved_material()
+  guard resolved.material_extension() is Some(metadata) else {
+    abort("typed ExtendedMaterial must preserve extension metadata")
+  }
+  inspect(metadata.extension_tag, content="87")
+  debug_inspect(
+    metadata.fragment_shader_path,
+    content="Some(\"shaders/extended_material.wgsl\")",
+  )
+  debug_inspect(
+    metadata.deferred_fragment_shader_path,
+    content="Some(\"shaders/deferred_extended_material.wgsl\")",
   )
 }
 
@@ -586,5 +708,33 @@ test "render3d: pbr material properties can carry bevy draw function ids" {
     .get_draw_function(SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL)
     .map(fn(id) { id.id() }),
     content="Some(10)",
+  )
+}
+
+///|
+test "render3d: standard material properties carry default bevy draw functions" {
+  let properties = render3d_material_properties_for_standard_material(
+    @material.StandardMaterial::StandardMaterial(),
+    None,
+    OpaqueRendererMethod::Deferred,
+    true,
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(7)",
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(6)",
+  )
+  debug_inspect(
+    properties
+    .get_draw_function(SHADOWS_DRAW_FUNCTION_LABEL)
+    .map(fn(id) { id.id() }),
+    content="Some(9)",
   )
 }

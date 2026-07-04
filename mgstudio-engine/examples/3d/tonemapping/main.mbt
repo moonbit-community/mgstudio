@@ -235,6 +235,22 @@ impl @pbr.Material for ColorGradientMaterial with fn reads_view_transmission_tex
 }
 
 ///|
+impl @pbr.Material for ColorGradientMaterial with fn standard_material_payload(
+  self,
+) {
+  ignore(self)
+  @pbr.material_default_standard_material_payload()
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn material_extension_metadata(
+  self,
+) {
+  ignore(self)
+  None
+}
+
+///|
 impl @pbr.Material for ColorGradientMaterial with fn enable_prepass() {
   @pbr.material_default_enable_prepass()
 }
@@ -274,6 +290,14 @@ impl @pbr.Material for ColorGradientMaterial with fn bind_group_layout_descripto
 ///|
 impl @pbr.Material for ColorGradientMaterial with fn bind_group_data(self) {
   @pbr.material_default_bind_group_data(self)
+}
+
+///|
+impl @pbr.Material for ColorGradientMaterial with fn renderer_extra_bind_group_data(
+  self,
+  context,
+) {
+  @pbr.material_default_renderer_extra_bind_group_data(self, context)
 }
 
 ///|

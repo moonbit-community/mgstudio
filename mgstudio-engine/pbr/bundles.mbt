@@ -520,6 +520,21 @@ pub fn register_render3d_required_components(
     ecs_key_normal_prepass,
     fn() { NormalPrepass() },
   )
+  world.register_required_components_with(
+    ecs_key_screen_space_reflections,
+    ecs_key_depth_prepass,
+    fn() { DepthPrepass() },
+  )
+  world.register_required_components_with(
+    ecs_key_screen_space_reflections,
+    ecs_key_deferred_prepass,
+    fn() { DeferredPrepass() },
+  )
+  world.register_required_components_with(
+    ecs_key_atmosphere_settings,
+    ecs_key_hdr,
+    fn() { Hdr() },
+  )
 }
 
 ///|

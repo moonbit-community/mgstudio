@@ -106,7 +106,14 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     @render.render_schedule_stage(),
     settings~,
   )
-  debug_inspect(render_dot.contains("\"pbr.render3d.extract\""), content="true")
+  let extract_dot = sub_app.schedule_graph_dot(
+    @render.render_extract_schedule_stage(),
+    settings~,
+  )
+  debug_inspect(
+    extract_dot.contains("\"pbr.render3d.extract\""),
+    content="true",
+  )
   debug_inspect(
     render_dot.contains("\"pbr.render3d.prepare_morphs\""),
     content="true",
@@ -159,12 +166,6 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
   )
   debug_inspect(
     render_dot.contains("\"pbr.render3d.queue_sweep\""),
-    content="true",
-  )
-  debug_inspect(
-    render_dot.contains(
-      "\"pbr.render3d.extract\" -> \"pbr.render3d.prepare_meshes\"",
-    ),
     content="true",
   )
   debug_inspect(
@@ -230,32 +231,36 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     @render.render_schedule_stage(),
     settings=pbr_plugin_settings,
   )
+  let pbr_plugin_extract_dot = sub_app.schedule_graph_dot(
+    @render.render_extract_schedule_stage(),
+    settings=pbr_plugin_settings,
+  )
   debug_inspect(
-    pbr_plugin_render_dot.contains(
+    pbr_plugin_extract_dot.contains(
       "\"mgstudio_pbr::extract_clusters_for_cpu_clustering\"",
     ),
     content="true",
   )
   debug_inspect(
-    pbr_plugin_render_dot.contains(
+    pbr_plugin_extract_dot.contains(
       "\"mgstudio_pbr::gather_environment_map_light_probes\"",
     ),
     content="true",
   )
   debug_inspect(
-    pbr_plugin_render_dot.contains(
+    pbr_plugin_extract_dot.contains(
       "\"mgstudio_pbr::gather_irradiance_volume_light_probes\"",
     ),
     content="true",
   )
   debug_inspect(
-    pbr_plugin_render_dot.contains(
+    pbr_plugin_extract_dot.contains(
       "\"mgstudio_pbr::gather_environment_map_light_probes\" -> \"mgstudio_pbr::gather_irradiance_volume_light_probes\"",
     ),
     content="true",
   )
   debug_inspect(
-    pbr_plugin_render_dot.contains(
+    pbr_plugin_extract_dot.contains(
       "\"mgstudio_pbr::gather_irradiance_volume_light_probes\" -> \"mgstudio_pbr::extract_clusters_for_cpu_clustering\"",
     ),
     content="true",
@@ -297,7 +302,7 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     content="true",
   )
   debug_inspect(
-    pbr_plugin_render_dot.contains(
+    pbr_plugin_extract_dot.contains(
       "\"mgstudio_pbr::extract_clusters_for_gpu_clustering\"",
     ),
     content="true",

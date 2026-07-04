@@ -95,6 +95,146 @@ fn render3d_prewarm_motion_vector_material_pipeline(
 }
 
 ///|
+fn render3d_execute_camera_prepass_draw_phase(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
+  meshes : Array[ExtractedMesh3d],
+  opaque_alpha_draw_item_indices : Array[Int],
+  indexed_indirect_parameter_indices : Array[Int],
+  non_indexed_indirect_parameter_indices : Array[Int],
+  view_deferred_prepass_enabled : Bool,
+  phase_deferred_prepass : Bool,
+  normal_prepass_enabled : Bool,
+  motion_vector_prepass_enabled : Bool,
+) -> Unit {
+  let draw_items = draw_queue_entry.draw_items
+  for draw_item_index in opaque_alpha_draw_item_indices {
+    let draw_item = draw_items[draw_item_index]
+    if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
+      draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
+      continue
+    }
+    let extracted_mesh = meshes[draw_item.extracted_index]
+    let mesh = extracted_mesh.payload
+    let mesh_deferred_prepass = view_deferred_prepass_enabled &&
+      mesh.material_properties.render_method is OpaqueRendererMethod::Deferred
+    if phase_deferred_prepass {
+      if !mesh_deferred_prepass {
+        continue
+      }
+    } else if mesh_deferred_prepass {
+      continue
+    }
+    guard render3d_prewarm_prepass_material_pipeline(
+        world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled, phase_deferred_prepass,
+      )
+      is Some(material_pipeline_id) else {
+      continue
+    }
+    let motion_vector_indexed = mesh.mesh_is_indexed
+    let motion_vector_indirect_parameters_index = if motion_vector_indexed {
+      indexed_indirect_parameter_indices[draw_item_index]
+    } else {
+      non_indexed_indirect_parameter_indices[draw_item_index]
+    }
+    guard render3d_mesh_draw_alpha(
+        mesh.material.alpha_mode,
+        mesh.material.base_color.a,
+      )
+      is Some(draw_alpha) else {
+      continue
+    }
+    let material_fields = render3d_resolve_mesh_draw_material_fields(
+      world, extracted_mesh, draw_alpha,
+    )
+    @pbr_render.render3d_draw_mesh_gpu_payload(
+      @pbr_render.render3d_build_mesh_gpu_draw_payload(
+        mesh.mesh_id,
+        camera_entity.id,
+        camera_entity.generation,
+        draw_item_index,
+        if motion_vector_indirect_parameters_index >= 0 {
+          if motion_vector_indexed {
+            MESH3D_DRAW_INDIRECT_KIND_INDEXED
+          } else {
+            MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
+          }
+        } else {
+          MESH3D_DRAW_INDIRECT_KIND_NONE
+        },
+        motion_vector_indirect_parameters_index,
+        mesh.material,
+        mesh.transform,
+        mesh.previous_transform,
+        material_fields.base_color_r,
+        material_fields.base_color_g,
+        material_fields.base_color_b,
+        material_fields.draw_alpha,
+        material_fields.texture_id,
+        material_fields.normal_texture_id,
+        material_fields.emissive_texture_id,
+        material_fields.metallic_roughness_texture_id,
+        material_fields.occlusion_texture_id,
+        material_fields.depth_texture_id,
+        material_fields.anisotropy_texture_id,
+        material_fields.specular_tint_texture_id,
+        material_fields.clearcoat_texture_id,
+        material_fields.clearcoat_roughness_texture_id,
+        material_fields.clearcoat_normal_texture_id,
+        material_fields.surface_roughness,
+        material_fields.reflectance,
+        material_fields.diffuse_transmission,
+        material_fields.specular_transmission,
+        material_fields.thickness,
+        material_fields.ior,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        -1,
+        0.0F,
+        @math.Quat::identity(),
+        @color.Color::white(),
+        material_fields.anisotropy_strength,
+        material_fields.max_relief_mapping_search_steps,
+        render3d_mesh_flags(extracted_mesh),
+        render3d_mesh_draw_flags(extracted_mesh),
+        specular_texture_id=material_fields.specular_texture_id,
+        forward_decal=mesh.is_forward_decal,
+        forward_decal_inv_depth_fade_factor=material_fields.forward_decal_inv_depth_fade_factor,
+        skinning_key_hi=mesh.skinning_key_hi,
+        skinning_key_lo=if mesh.skinning_key_hi < 0 {
+          -1
+        } else if mesh.has_previous_skin {
+          1
+        } else {
+          0
+        },
+        material_pipeline_id~,
+        material_extension_bind_group_data=mesh.material_bind_group_data,
+        morph_weights_index=mesh.morph_weights_index,
+        previous_morph_weights_index=mesh.previous_morph_weights_index,
+        morph_targets_texture_id=mesh.morph_targets_texture_id,
+        lightmap_texture_id=material_fields.lightmap_texture_id,
+        lightmap_slab_index=material_fields.lightmap_slab_index,
+        lightmap_slot_index=material_fields.lightmap_slot_index,
+        lightmap_slab_texture_ids=material_fields.lightmap_slab_texture_ids,
+        lightmap_uv_min_x=material_fields.lightmap_uv_min_x,
+        lightmap_uv_min_y=material_fields.lightmap_uv_min_y,
+        lightmap_uv_max_x=material_fields.lightmap_uv_max_x,
+        lightmap_uv_max_y=material_fields.lightmap_uv_max_y,
+        world_from_local=Some(mesh.world_from_local),
+        previous_world_from_local=Some(mesh.previous_world_from_local),
+      ),
+    )
+  }
+}
+
+///|
 priv struct Render3dCameraPrepassResult {
   scene_target_id : Int
   velocity_target_id : Int
@@ -209,12 +349,19 @@ fn render3d_execute_camera_prepass(
     deferred_lighting_pass_id_target_id = targets.deferred_lighting_pass_id_texture_id
     let color_target_id = if normal_target_id >= 0 {
       normal_target_id
-    } else if deferred_target_id >= 0 {
-      deferred_target_id
     } else {
       targets.depth_texture_id
     }
     (color_target_id, -1, targets.depth_texture_id, prepass_pass_kind)
+  }
+  let deferred_phase_target_id = if normal_target_id >= 0 {
+    normal_target_id
+  } else if motion_vector_prepass_enabled {
+    prepass_target_id
+  } else if deferred_target_id >= 0 {
+    deferred_target_id
+  } else {
+    shared_depth_id
   }
   let (
     motion_viewport_x,
@@ -250,134 +397,68 @@ fn render3d_execute_camera_prepass(
     prepass_depth_texture_id=shared_depth_id,
     prepass_normal_texture_id=normal_target_id,
     prepass_motion_vector_texture_id=prepass_secondary_target_id,
-    prepass_deferred_texture_id=deferred_target_id,
-    prepass_deferred_lighting_pass_id_texture_id=deferred_lighting_pass_id_target_id,
+    prepass_deferred_texture_id=-1,
+    prepass_deferred_lighting_pass_id_texture_id=-1,
     point_shadow_near~,
     pass_kind=active_prepass_kind,
     msaa_sample_count~,
     clear_enabled=1,
   )
-  let draw_items = draw_queue_entry.draw_items
-  for draw_item_index in opaque_alpha_draw_item_indices {
-    let draw_item = draw_items[draw_item_index]
-    if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-      draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-      continue
-    }
-    let extracted_mesh = meshes[draw_item.extracted_index]
-    let mesh = extracted_mesh.payload
-    let mesh_deferred_prepass = deferred_prepass_enabled &&
-      mesh.material_properties.render_method is OpaqueRendererMethod::Deferred
-    if deferred_prepass_enabled && !mesh_deferred_prepass {
-      continue
-    }
-    guard render3d_prewarm_prepass_material_pipeline(
-        world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled, deferred_prepass_enabled,
-      )
-      is Some(material_pipeline_id) else {
-      continue
-    }
-    let motion_vector_indexed = mesh.mesh_is_indexed
-    let motion_vector_indirect_parameters_index = if motion_vector_indexed {
-      indexed_indirect_parameter_indices[draw_item_index]
-    } else {
-      non_indexed_indirect_parameter_indices[draw_item_index]
-    }
-    guard render3d_mesh_draw_alpha(
-        mesh.material.alpha_mode,
-        mesh.material.base_color.a,
-      )
-      is Some(draw_alpha) else {
-      continue
-    }
-    let material_fields = render3d_resolve_mesh_draw_material_fields(
-      world, extracted_mesh, draw_alpha,
-    )
-    @pbr_render.render3d_draw_mesh_gpu_payload(
-      @pbr_render.render3d_build_mesh_gpu_draw_payload(
-        mesh.mesh_id,
-        camera_entity.id,
-        camera_entity.generation,
-        draw_item_index,
-        if motion_vector_indirect_parameters_index >= 0 {
-          if motion_vector_indexed {
-            MESH3D_DRAW_INDIRECT_KIND_INDEXED
-          } else {
-            MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
-          }
-        } else {
-          MESH3D_DRAW_INDIRECT_KIND_NONE
-        },
-        motion_vector_indirect_parameters_index,
-        mesh.material,
-        mesh.transform,
-        mesh.previous_transform,
-        material_fields.base_color_r,
-        material_fields.base_color_g,
-        material_fields.base_color_b,
-        material_fields.draw_alpha,
-        material_fields.texture_id,
-        material_fields.normal_texture_id,
-        material_fields.emissive_texture_id,
-        material_fields.metallic_roughness_texture_id,
-        material_fields.occlusion_texture_id,
-        material_fields.depth_texture_id,
-        material_fields.anisotropy_texture_id,
-        material_fields.specular_tint_texture_id,
-        material_fields.clearcoat_texture_id,
-        material_fields.clearcoat_roughness_texture_id,
-        material_fields.clearcoat_normal_texture_id,
-        material_fields.surface_roughness,
-        material_fields.reflectance,
-        material_fields.diffuse_transmission,
-        material_fields.specular_transmission,
-        material_fields.thickness,
-        material_fields.ior,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        -1,
-        0.0F,
-        @math.Quat::identity(),
-        @color.Color::white(),
-        material_fields.anisotropy_strength,
-        material_fields.max_relief_mapping_search_steps,
-        render3d_mesh_flags(extracted_mesh),
-        render3d_mesh_draw_flags(extracted_mesh),
-        specular_texture_id=material_fields.specular_texture_id,
-        forward_decal=mesh.is_forward_decal,
-        forward_decal_inv_depth_fade_factor=material_fields.forward_decal_inv_depth_fade_factor,
-        skinning_key_hi=mesh.skinning_key_hi,
-        skinning_key_lo=if mesh.skinning_key_hi < 0 {
-          -1
-        } else if mesh.has_previous_skin {
-          1
-        } else {
-          0
-        },
-        material_pipeline_id~,
-        material_extension_bind_group_data=mesh.material_bind_group_data,
-        morph_weights_index=mesh.morph_weights_index,
-        previous_morph_weights_index=mesh.previous_morph_weights_index,
-        morph_targets_texture_id=mesh.morph_targets_texture_id,
-        lightmap_texture_id=material_fields.lightmap_texture_id,
-        lightmap_slab_index=material_fields.lightmap_slab_index,
-        lightmap_slot_index=material_fields.lightmap_slot_index,
-        lightmap_slab_texture_ids=material_fields.lightmap_slab_texture_ids,
-        lightmap_uv_min_x=material_fields.lightmap_uv_min_x,
-        lightmap_uv_min_y=material_fields.lightmap_uv_min_y,
-        lightmap_uv_max_x=material_fields.lightmap_uv_max_x,
-        lightmap_uv_max_y=material_fields.lightmap_uv_max_y,
-        world_from_local=Some(mesh.world_from_local),
-        previous_world_from_local=Some(mesh.previous_world_from_local),
-      ),
-    )
-  }
+  render3d_execute_camera_prepass_draw_phase(
+    world, camera_entity, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
+    indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, deferred_prepass_enabled,
+    false, normal_prepass_enabled, motion_vector_prepass_enabled,
+  )
   @render.host_gpu_end_pass()
+  if deferred_prepass_enabled {
+    let (
+      deferred_viewport_x,
+      deferred_viewport_y,
+      deferred_viewport_width,
+      deferred_viewport_height,
+    ) = @pbr_render.render3d_pass_viewport_for_target(
+      deferred_phase_target_id,
+      camera.target_id,
+      viewport_x,
+      viewport_y,
+      viewport_width,
+      viewport_height,
+    )
+    @pbr_render.render3d_begin_pass_3d(
+      target_id=deferred_phase_target_id,
+      secondary_target_id=prepass_secondary_target_id,
+      width=view_width_logical,
+      height=view_height_logical,
+      clear_r=0.0F,
+      clear_g=0.0F,
+      clear_b=0.0F,
+      clear_a=0.0F,
+      camera.transform,
+      camera_pass_projection,
+      viewport_x=deferred_viewport_x,
+      viewport_y=deferred_viewport_y,
+      viewport_width=deferred_viewport_width,
+      viewport_height=deferred_viewport_height,
+      pass_lighting,
+      camera_exposure=camera_exposure_value,
+      previous_clip_from_world=camera.previous_clip_from_world,
+      prepass_depth_texture_id=shared_depth_id,
+      prepass_normal_texture_id=normal_target_id,
+      prepass_motion_vector_texture_id=prepass_secondary_target_id,
+      prepass_deferred_texture_id=deferred_target_id,
+      prepass_deferred_lighting_pass_id_texture_id=deferred_lighting_pass_id_target_id,
+      point_shadow_near~,
+      pass_kind=active_prepass_kind,
+      msaa_sample_count~,
+      clear_enabled=1,
+    )
+    render3d_execute_camera_prepass_draw_phase(
+      world, camera_entity, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
+      indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices,
+      deferred_prepass_enabled, true, normal_prepass_enabled, motion_vector_prepass_enabled,
+    )
+    @render.host_gpu_end_pass()
+  }
   Render3dCameraPrepassResult::{
     scene_target_id: next_scene_target_id,
     velocity_target_id: next_velocity_target_id,

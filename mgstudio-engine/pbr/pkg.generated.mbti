@@ -568,7 +568,11 @@ pub fn material_default_reads_view_transmission_texture() -> Bool
 
 pub fn material_default_register_shader_sources() -> Bool
 
+pub fn[M : Material] material_default_renderer_extra_bind_group_data(M, MaterialBindGroupContext) -> @render_resource.MaterialBindGroupResolvedData
+
 pub fn[M] material_default_specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[M]) -> @render_resource.RenderPipelineDescriptor
+
+pub fn material_default_standard_material_payload() -> @material.StandardMaterial
 
 pub fn material_default_vertex_shader() -> String?
 
@@ -640,9 +644,13 @@ pub fn pbr_make_global_cluster_settings(Bool, Bool, gpu_clustering_supported? : 
 
 pub fn pbr_make_global_cluster_settings_from_render_world(@ecs.World) -> @cluster.GlobalClusterSettings?
 
+pub fn pbr_material_apply_default_draw_functions(@material.MaterialProperties) -> @material.MaterialProperties
+
 pub fn pbr_material_apply_draw_functions(@material.MaterialProperties, PbrMaterialDrawFunctionIds) -> @material.MaterialProperties
 
 pub fn pbr_material_bind_group_index() -> Int
+
+pub fn pbr_material_default_draw_function_ids() -> PbrMaterialDrawFunctionIds
 
 pub fn pbr_material_draw_function_labels() -> Array[String]
 
@@ -939,6 +947,30 @@ pub fn standard_material_bindless_slot_count() -> Int?
 pub fn standard_material_bindless_supported(@renderer.RenderDevice) -> Bool
 
 pub fn standard_material_default_texture_feature_set() -> StandardMaterialTextureFeatureSet
+
+pub fn standard_material_extension_default_deferred_fragment_shader_ref() -> String?
+
+pub fn standard_material_extension_default_deferred_vertex_shader_ref() -> String?
+
+pub fn standard_material_extension_default_enable_prepass_ref() -> Bool
+
+pub fn standard_material_extension_default_enable_shadows_ref() -> Bool
+
+pub fn standard_material_extension_default_fragment_shader_ref() -> String?
+
+pub fn standard_material_extension_default_meshlet_deferred_fragment_shader_ref() -> String?
+
+pub fn standard_material_extension_default_meshlet_fragment_shader_ref() -> String?
+
+pub fn standard_material_extension_default_meshlet_prepass_fragment_shader_ref() -> String?
+
+pub fn standard_material_extension_default_prepass_fragment_shader_ref() -> String?
+
+pub fn standard_material_extension_default_prepass_vertex_shader_ref() -> String?
+
+pub fn standard_material_extension_default_specialize_ref() -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
+
+pub fn standard_material_extension_default_vertex_shader_ref() -> String?
 
 pub fn standard_material_from_gltf_material(@material.StandardMaterial) -> @material.StandardMaterial
 
@@ -1419,6 +1451,8 @@ pub fn[B, E : MaterialExtension] ExtendedMaterial::metadata(Self[B, E]) -> @mate
 pub fn[B, E] ExtendedMaterial::new(B, E) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_base(Self[B, E], B) -> Self[B, E]
 pub fn[B, E] ExtendedMaterial::with_extension(Self[B, E], E) -> Self[B, E]
+pub impl[E : StandardMaterialExtension] @asset.Asset for ExtendedMaterial[@material.StandardMaterial, E]
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[@material.StandardMaterial, E]
 
 pub struct ExtractedClusterConfig {
   near : Float
@@ -2150,8 +2184,11 @@ pub impl @app.Resource for PendingWireframeQueues
 
 pub struct PreparedMaterial[M] {
   source : @asset.Handle[M]
+  material_payload : @material.StandardMaterial
+  material_extension : @material.ExtendedMaterialMetadata3d?
   bind_group : MaterialBindGroup
   bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  renderer_extra_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   key : MaterialPipelineKey[M]
   properties : @material.MaterialProperties
 }
@@ -2222,15 +2259,17 @@ pub fn Render3dQueuedShadowPhaseView::view_render_layers(Self) -> @render_layers
 
 pub struct Render3dResolvedMaterial {
   material : @material.StandardMaterial
+  material_extension : @material.ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   material_type_tag : String
 }
 pub fn Render3dResolvedMaterial::material(Self) -> @material.StandardMaterial
 pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resource.MaterialBindGroupResolvedData
+pub fn Render3dResolvedMaterial::material_extension(Self) -> @material.ExtendedMaterialMetadata3d?
 pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
 pub fn Render3dResolvedMaterial::material_type_tag(Self) -> String
-pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String) -> Self
+pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String, material_extension? : @material.ExtendedMaterialMetadata3d?) -> Self
 
 pub struct Render3dShadowBatchRange {
   start : Int
@@ -3728,6 +3767,8 @@ pub(open) trait Material {
   fn opaque_render_method(Self) -> @material.OpaqueRendererMethod
   fn depth_bias(Self) -> Float
   fn reads_view_transmission_texture(Self) -> Bool
+  fn standard_material_payload(Self) -> @material.StandardMaterial
+  fn material_extension_metadata(Self) -> @material.ExtendedMaterialMetadata3d?
   fn enable_prepass() -> Bool
   fn enable_shadows() -> Bool
   fn bindless_supported(@renderer.RenderDevice) -> Bool
@@ -3735,8 +3776,9 @@ pub(open) trait Material {
   fn bind_group(Self, MaterialBindGroupContext) -> MaterialBindGroup
   fn bind_group_layout_descriptor(Self, MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
   fn bind_group_data(Self) -> String
+  fn renderer_extra_bind_group_data(Self, MaterialBindGroupContext) -> @render_resource.MaterialBindGroupResolvedData
   fn material_key(Self) -> @material.ErasedMaterialKey
-  fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor
+  fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 }
 pub impl Material for @material.StandardMaterial
 
@@ -3755,5 +3797,23 @@ pub(open) trait MaterialExtension {
   fn specialize(Self) -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
   fn bind_group_layout_entries(Self) -> Array[@render_resource.BindGroupLayoutEntry]
   fn bind_group_bindings(Self) -> Array[@material.MaterialExtensionBinding3d]
+}
+
+pub(open) trait StandardMaterialExtension {
+  fn extended_material_asset_debug_name() -> String
+  fn extended_material_asset_keys() -> @asset.AssetResourceKeys[ExtendedMaterial[@material.StandardMaterial, Self]]
+  fn extended_material_keys() -> MaterialKeys[ExtendedMaterial[@material.StandardMaterial, Self]]
+  fn vertex_shader_ref() -> String?
+  fn fragment_shader_ref() -> String?
+  fn prepass_vertex_shader_ref() -> String?
+  fn prepass_fragment_shader_ref() -> String?
+  fn deferred_vertex_shader_ref() -> String?
+  fn deferred_fragment_shader_ref() -> String?
+  fn meshlet_fragment_shader_ref() -> String?
+  fn meshlet_prepass_fragment_shader_ref() -> String?
+  fn meshlet_deferred_fragment_shader_ref() -> String?
+  fn enable_prepass_ref() -> Bool
+  fn enable_shadows_ref() -> Bool
+  fn specialize_ref() -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
 }
 

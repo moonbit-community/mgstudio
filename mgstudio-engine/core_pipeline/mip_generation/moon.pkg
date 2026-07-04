@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture" @render_texture,
+  "Milky2018/mgstudio/core_pipeline/mip_generation/source" @mip_generation_source,
   "Milky2018/mgstudio/core_pipeline/mip_generation/experimental",
   "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/shader/compile" @shader_compile,

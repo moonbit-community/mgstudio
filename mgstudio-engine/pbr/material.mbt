@@ -400,6 +400,11 @@ pub fn pbr_material_register_draw_functions(
 }
 
 ///|
+pub fn pbr_material_default_draw_function_ids() -> PbrMaterialDrawFunctionIds {
+  pbr_material_register_draw_functions(@material.DrawFunctions::new())
+}
+
+///|
 pub fn pbr_material_apply_draw_functions(
   properties : @material.MaterialProperties,
   ids : PbrMaterialDrawFunctionIds,
@@ -436,6 +441,16 @@ pub fn pbr_material_apply_draw_functions(
   .add_draw_function(
     SHADOWS_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
     ids.shadows_depth_only,
+  )
+}
+
+///|
+pub fn pbr_material_apply_default_draw_functions(
+  properties : @material.MaterialProperties,
+) -> @material.MaterialProperties {
+  pbr_material_apply_draw_functions(
+    properties,
+    pbr_material_default_draw_function_ids(),
   )
 }
 
@@ -781,6 +796,7 @@ pub fn render3d_material_properties_for_standard_material(
       @material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL,
       PBR_MESH_FRAGMENT_SHADER_PATH,
     )
+  properties = pbr_material_apply_default_draw_functions(properties)
   if extension is Some(metadata) {
     if metadata.vertex_shader_path is Some(shader_path) {
       properties = properties.add_shader(

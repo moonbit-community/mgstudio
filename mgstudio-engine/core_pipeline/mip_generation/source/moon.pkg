@@ -1,0 +1,15 @@
+import {
+  "moonbitlang/core/string",
+}
+
+supported_targets = "native"
+
+options(
+  "pre-build": [
+    {
+      "command": ":embed --input $input --output $output --name downsample_wgsl_source",
+      "input": "../downsample.wgsl",
+      "output": "downsample_wgsl.mbt",
+    },
+  ],
+)

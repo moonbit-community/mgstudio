@@ -19,19 +19,11 @@
 const ATMOSPHERE_PLUGIN_NAME : String = "mgstudio.pbr.AtmospherePlugin"
 
 ///|
-pub struct AtmospherePlugin {
-  enabled : Bool
-  supports_compute : Bool
-  supports_storage_binding : Bool
-}
+pub struct AtmospherePlugin {}
 
 ///|
 pub fn AtmospherePlugin::AtmospherePlugin() -> AtmospherePlugin {
-  AtmospherePlugin::{
-    enabled: true,
-    supports_compute: true,
-    supports_storage_binding: true,
-  }
+  AtmospherePlugin::{  }
 }
 
 ///|
@@ -43,55 +35,6 @@ pub impl @app.Plugin for AtmospherePlugin with fn name(_self) {
 pub impl @app.Plugin for AtmospherePlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   atmosphere_plugin_install_with(app, self)
-}
-
-///|
-pub struct AtmospherePluginState {
-  plugin : AtmospherePlugin
-  extracted_camera_count : Int
-  lut_ready : Bool
-}
-
-///|
-pub fn AtmospherePluginState::AtmospherePluginState() -> AtmospherePluginState {
-  AtmospherePluginState::{
-    plugin: AtmospherePlugin::AtmospherePlugin(),
-    extracted_camera_count: 0,
-    lut_ready: false,
-  }
-}
-
-///|
-let ecs_key_atmosphere_plugin_state : @ecs.ResourceKey[AtmospherePluginState] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::AtmospherePluginState",
-)
-
-///|
-pub impl @app.Resource for AtmospherePluginState with fn resource() {
-  ecs_key_atmosphere_plugin_state
-}
-
-///|
-pub fn atmosphere_plugin_state_with_extracted_camera_count(
-  state : AtmospherePluginState,
-  extracted_camera_count : Int,
-) -> AtmospherePluginState {
-  AtmospherePluginState::{
-    ..state,
-    extracted_camera_count: if extracted_camera_count < 0 {
-      0
-    } else {
-      extracted_camera_count
-    },
-  }
-}
-
-///|
-pub fn atmosphere_plugin_state_with_lut_ready(
-  state : AtmospherePluginState,
-  lut_ready : Bool,
-) -> AtmospherePluginState {
-  AtmospherePluginState::{ ..state, lut_ready, }
 }
 
 ///|
@@ -111,14 +54,6 @@ pub fn atmosphere_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : AtmospherePlugin,
 ) -> @app.App[@ecs.World] {
-  if app.contains_resource(ecs_key_atmosphere_plugin_state) {
-    app
-  } else {
-    app
-    .insert_world_resource(ecs_key_atmosphere_plugin_state, AtmospherePluginState::{
-      ..AtmospherePluginState(),
-      plugin,
-    })
-    .add_systems_world(@app.Update, prepare_atmosphere_probe_components)
-  }
+  ignore(plugin)
+  app.add_systems_world(@app.Update, prepare_atmosphere_probe_components)
 }

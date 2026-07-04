@@ -67,6 +67,7 @@ pub fn GpuBackend::clear_scissor(
 ///|
 pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
+  let ended_pass_state = self.pass_state
   if frame.pass is Some(pass) {
     flush_mesh2d_batches(self)
     flush_ui_shadow_batches(self)
@@ -78,8 +79,29 @@ pub fn GpuBackend::end_pass(self : GpuBackend) -> Unit raise GpuBackendError {
     pass.release()
     frame.pass = None
   }
+  match ended_pass_state {
+    Some(pass_state) =>
+      if pass_state.prepass_depth_texture_id >= 0 {
+        let base_kind = pass_kind_base_kind(pass_state.pass_kind)
+        if base_kind == PASS_KIND_BASE_PREPASS ||
+          base_kind == PASS_KIND_BASE_MOTION_VECTOR {
+          frame_copy_view_depth_to_prepass_depth(
+            self,
+            pass_state.prepass_depth_texture_id,
+          )
+        }
+      }
+    None => ()
+  }
   self.pass_state = None
   self.pass_has_depth = false
+}
+
+///|
+pub fn GpuBackend::end_active_pass_preserving_state(
+  self : GpuBackend,
+) -> Unit raise GpuBackendError {
+  mesh3d_end_active_pass_preserving_state(self)
 }
 
 ///|
@@ -105,6 +127,15 @@ pub fn end_pass() -> Unit {
   if ensure_backend() is Some(backend) {
     backend.end_pass() catch {
       err => debug_runtime_error("end_pass", err)
+    }
+  }
+}
+
+///|
+pub fn end_active_pass_preserving_state() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.end_active_pass_preserving_state() catch {
+      err => debug_runtime_error("end_active_pass_preserving_state", err)
     }
   }
 }

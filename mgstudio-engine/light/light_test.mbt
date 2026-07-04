@@ -395,20 +395,21 @@ test "atmosphere environment map size preserves Bevy authoring semantics" {
 
 ///|
 test "atmosphere radii preserve Bevy plain field semantics" {
-  let atmosphere = @light.Atmosphere::earth(
-    @light.ScatteringMedium::earth(256, 256),
-  ).with_radii(-1.0F, -2.0F)
+  let atmosphere = @light.Atmosphere::earth(@asset.Handle::new(1)).with_radii(
+    -1.0F,
+    -2.0F,
+  )
   inspect(atmosphere.inner_radius.to_double(), content="-1")
   inspect(atmosphere.outer_radius.to_double(), content="-2")
 }
 
 ///|
 test "atmosphere constructors preserve Bevy planet constants" {
-  let earth = @light.Atmosphere::earth(@light.ScatteringMedium::earth(256, 256))
+  let earth = @light.Atmosphere::earth(@asset.Handle::new(2))
   inspect(earth.inner_radius.to_double(), content="6360000")
   inspect(earth.outer_radius.to_double(), content="6460000")
   debug_inspect(approx_eq(earth.ground_albedo.x, 0.3F, 1.0e-6F), content="true")
-  let mars = @light.Atmosphere::mars(@light.ScatteringMedium::earth(256, 256))
+  let mars = @light.Atmosphere::mars(@asset.Handle::new(3))
   inspect(mars.inner_radius.to_double(), content="3389500")
   inspect(mars.outer_radius.to_double(), content="3509500")
   debug_inspect(approx_eq(mars.ground_albedo.x, 0.1F, 1.0e-6F), content="true")

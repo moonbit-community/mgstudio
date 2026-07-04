@@ -18,15 +18,7 @@ pub fn atmosphere_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn atmosphere_plugin_install_with(@app.App[@ecs.World], AtmospherePlugin) -> @app.App[@ecs.World]
 
-pub fn atmosphere_plugin_state_with_extracted_camera_count(AtmospherePluginState, Int) -> AtmospherePluginState
-
-pub fn atmosphere_plugin_state_with_lut_ready(AtmospherePluginState, Bool) -> AtmospherePluginState
-
 pub let ecs_key_atmosphere_environment_map : @ecs.ComponentKey[AtmosphereEnvironmentMap]
-
-pub fn pbr_atmosphere_default() -> @light.Atmosphere
-
-pub fn pbr_atmosphere_earth(@light.ScatteringMedium) -> @light.Atmosphere
 
 pub fn pbr_atmosphere_environment_map(@asset.Handle[@image.Image]?, @math.UVec2) -> AtmosphereEnvironmentMap
 
@@ -36,21 +28,17 @@ pub fn pbr_atmosphere_environment_map_light_new(Float, Bool, @math.UVec2) -> @li
 
 pub fn pbr_atmosphere_environment_map_light_with_intensity(@light.AtmosphereEnvironmentMapLight, Float) -> @light.AtmosphereEnvironmentMapLight
 
-pub fn pbr_atmosphere_mars(@light.ScatteringMedium) -> @light.Atmosphere
-
 pub fn pbr_atmosphere_settings_default() -> @light.AtmosphereSettings
 
 pub fn pbr_atmosphere_settings_with_rendering_method(@light.AtmosphereSettings, @light.AtmosphereMode) -> @light.AtmosphereSettings
 
 pub fn pbr_atmosphere_settings_with_sky_max_samples(@light.AtmosphereSettings, Int) -> @light.AtmosphereSettings
 
-pub fn pbr_atmosphere_with_radii(@light.Atmosphere, Float, Float) -> @light.Atmosphere
-
-pub fn pbr_extracted_atmosphere(Float, Float, @math.Vec3, Int) -> ExtractedAtmosphere
-
 pub fn pbr_generated_environment_map_light_from_atmosphere(@asset.Handle[@image.Image]?, Float, Bool) -> @light.GeneratedEnvironmentMapLight
 
 pub fn pbr_gpu_atmosphere(@light.Atmosphere, @math.Affine3) -> GpuAtmosphere
+
+pub fn pbr_gpu_atmosphere_from_extracted(Float, Float, @math.Vec3, @math.Affine3) -> GpuAtmosphere
 
 pub fn pbr_gpu_atmosphere_settings(@light.AtmosphereSettings) -> GpuAtmosphereSettings
 
@@ -63,28 +51,6 @@ pub fn register_embedded_wgsl_sources() -> Unit
 // Errors
 
 // Types and methods
-pub struct AtmosphereBindGroupLayouts {
-  transmittance_lut : Bool
-  multiscattering_lut : Bool
-  sky_view_lut : Bool
-  aerial_view_lut : Bool
-}
-pub fn AtmosphereBindGroupLayouts::AtmosphereBindGroupLayouts() -> Self
-
-pub struct AtmosphereBindGroups {
-  transmittance_lut : Bool
-  multiscattering_lut : Bool
-  sky_view_lut : Bool
-  aerial_view_lut : Bool
-  render_sky : Bool
-}
-pub fn AtmosphereBindGroups::AtmosphereBindGroups() -> Self
-
-pub struct AtmosphereBuffer {
-  value : GpuAtmosphere
-}
-pub fn AtmosphereBuffer::AtmosphereBuffer() -> Self
-
 pub struct AtmosphereEnvironmentMap {
   environment_map : @asset.Handle[@image.Image]?
   size : @math.UVec2
@@ -94,40 +60,10 @@ pub fn AtmosphereEnvironmentMap::environment_map(Self) -> @asset.Handle[@image.I
 pub fn AtmosphereEnvironmentMap::size(Self) -> @math.UVec2
 pub impl @ecs.Component for AtmosphereEnvironmentMap
 
-pub struct AtmosphereLutPipelines {
-  transmittance_lut : Bool
-  multiscattering_lut : Bool
-  sky_view_lut : Bool
-  aerial_view_lut : Bool
-}
-pub fn AtmosphereLutPipelines::AtmosphereLutPipelines() -> Self
-
 pub struct AtmospherePlugin {
-  enabled : Bool
-  supports_compute : Bool
-  supports_storage_binding : Bool
 }
 pub fn AtmospherePlugin::AtmospherePlugin() -> Self
 pub impl @app.Plugin for AtmospherePlugin
-
-pub struct AtmospherePluginState {
-  plugin : AtmospherePlugin
-  extracted_camera_count : Int
-  lut_ready : Bool
-}
-pub fn AtmospherePluginState::AtmospherePluginState() -> Self
-pub impl @app.Resource for AtmospherePluginState
-
-pub struct AtmosphereRenderNodeState {
-  luts_ready : Bool
-  render_sky_ready : Bool
-}
-pub fn AtmosphereRenderNodeState::AtmosphereRenderNodeState() -> Self
-
-pub struct AtmosphereSampler {
-  filtering : Bool
-}
-pub fn AtmosphereSampler::AtmosphereSampler() -> Self
 
 pub struct AtmosphereTextureDescriptor {
   width : Int
@@ -157,25 +93,6 @@ pub struct AtmosphereTextures {
 }
 pub fn AtmosphereTextures::from_settings(GpuAtmosphereSettings) -> Self
 
-pub struct AtmosphereTransform {
-  world_from_atmosphere : @math.Affine3
-  atmosphere_from_world : @math.Affine3
-}
-pub fn AtmosphereTransform::identity() -> Self
-
-pub struct AtmosphereTransforms {
-  uniforms : Array[AtmosphereTransform]
-}
-pub fn AtmosphereTransforms::AtmosphereTransforms() -> Self
-
-pub struct ExtractedAtmosphere {
-  inner_radius : Float
-  outer_radius : Float
-  ground_albedo : @math.Vec3
-  medium_id : Int
-}
-pub fn ExtractedAtmosphere::ExtractedAtmosphere() -> Self
-
 pub struct GpuAtmosphere {
   ground_albedo : @math.Vec3
   inner_radius : Float
@@ -199,11 +116,6 @@ pub struct GpuAtmosphereSettings {
   rendering_method : Int
 }
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> Self
-
-pub struct RenderSkyBindGroupLayouts {
-  render_sky : Bool
-}
-pub fn RenderSkyBindGroupLayouts::RenderSkyBindGroupLayouts() -> Self
 
 // Type aliases
 pub using @light {type Atmosphere}

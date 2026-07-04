@@ -629,6 +629,21 @@ pub fn host_gpu_dispatch_mesh3d_atmosphere_environment(
 }
 
 ///|
+pub fn host_gpu_generate_environment_map_light(
+  source_texture_id~ : Int,
+  diffuse_texture_id~ : Int,
+  specular_texture_id~ : Int,
+  blue_noise_texture_id~ : Int,
+) -> Unit {
+  @renderer.host_gpu_generate_environment_map_light(
+    source_texture_id~,
+    diffuse_texture_id~,
+    specular_texture_id~,
+    blue_noise_texture_id~,
+  )
+}
+
+///|
 pub fn host_gpu_draw_mesh3d_atmosphere_sky(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
@@ -651,6 +666,52 @@ pub fn host_gpu_draw_mesh3d_deferred_lighting(
     screen_space_ambient_occlusion~,
     screen_space_reflections~,
     distance_fog~,
+    atmosphere~,
+  )
+}
+
+///|
+pub fn host_gpu_prepare_mesh3d_screen_space_reflections_settings(
+  min_perceptual_roughness_start~ : Float,
+  min_perceptual_roughness_end~ : Float,
+  max_perceptual_roughness_start~ : Float,
+  max_perceptual_roughness_end~ : Float,
+  edge_fadeout_start~ : Float,
+  edge_fadeout_end~ : Float,
+  thickness~ : Float,
+  linear_steps~ : Int,
+  linear_march_exponent~ : Float,
+  bisection_steps~ : Int,
+  use_secant~ : Bool,
+) -> Unit {
+  @renderer.prepare_mesh3d_screen_space_reflections_settings(
+    min_perceptual_roughness_start~,
+    min_perceptual_roughness_end~,
+    max_perceptual_roughness_start~,
+    max_perceptual_roughness_end~,
+    edge_fadeout_start~,
+    edge_fadeout_end~,
+    thickness~,
+    linear_steps~,
+    linear_march_exponent~,
+    bisection_steps~,
+    use_secant~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_mesh3d_screen_space_reflections(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  source_texture_id~ : Int,
+  ping_target_id~ : Int,
+  atmosphere~ : Bool,
+) -> Unit {
+  @renderer.draw_mesh3d_screen_space_reflections(
+    camera_key_hi~,
+    camera_key_lo~,
+    source_texture_id~,
+    ping_target_id~,
     atmosphere~,
   )
 }
@@ -1084,6 +1145,7 @@ pub fn host_gpu_begin_pass_3d(
   prepass_motion_vector_texture_id? : Int = -1,
   prepass_deferred_texture_id? : Int = -1,
   prepass_deferred_lighting_pass_id_texture_id? : Int = -1,
+  screen_space_reflections? : Bool = false,
   msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
@@ -1227,6 +1289,7 @@ pub fn host_gpu_begin_pass_3d(
     prepass_motion_vector_texture_id~,
     prepass_deferred_texture_id~,
     prepass_deferred_lighting_pass_id_texture_id~,
+    screen_space_reflections~,
     msaa_sample_count~,
     pass_kind~,
     clear_enabled~,
@@ -2013,6 +2076,31 @@ pub fn host_gpu_draw_motion_blur(
 }
 
 ///|
+pub fn host_gpu_draw_taa(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  scene_texture_id~ : Int,
+  motion_vector_texture_id~ : Int,
+  depth_texture_id~ : Int,
+  reset~ : Bool,
+  tonemap~ : Bool,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit {
+  @renderer.draw_taa(
+    camera_key_hi~,
+    camera_key_lo~,
+    scene_texture_id~,
+    motion_vector_texture_id~,
+    depth_texture_id~,
+    reset~,
+    tonemap~,
+    view_width~,
+    view_height~,
+  )
+}
+
+///|
 pub fn host_gpu_apply_auto_exposure(
   view_key_hi~ : Int,
   view_key_lo~ : Int,
@@ -2517,6 +2605,11 @@ pub fn host_gpu_execute_queued_line_gizmo_phase_draws(
 ///|
 pub fn host_gpu_end_pass() -> Unit {
   @render_phase_api.host_gpu_end_pass()
+}
+
+///|
+pub fn host_gpu_end_active_pass_preserving_state() -> Unit {
+  @render_phase_api.host_gpu_end_active_pass_preserving_state()
 }
 
 ///|

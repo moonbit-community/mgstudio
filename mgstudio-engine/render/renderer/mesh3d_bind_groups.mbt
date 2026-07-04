@@ -329,6 +329,10 @@ fn mesh3d_environment_texture_views(
   texture_ids : Array[Int],
   fallback_environment_texture : GpuTextureInfo,
 ) -> Array[@wgpu.TextureView] raise GpuBackendError {
+  let debug_environment = @sys.get_env_var(
+      "MGSTUDIO_ATMOSPHERE_ENV_BINDING_DEBUG",
+    )
+    is Some(_)
   let fallback_view = match fallback_environment_texture.sample_view {
     Some(view) => view
     None => fallback_environment_texture.view
@@ -338,6 +342,11 @@ fn mesh3d_environment_texture_views(
     let texture = match resolve_mesh3d_texture(backend, texture_id) {
       Some(value) => value
       None => fallback_environment_texture
+    }
+    if debug_environment {
+      println(
+        "[atmosphere-env-binding] id=\{texture_id} resolved=\{texture.id} size=\{texture.width}x\{texture.height} mips=\{texture.mip_level_count} sample_view=\{texture.sample_view is Some(_)} fallback=\{texture.id == fallback_environment_texture.id}",
+      )
     }
     views.push(
       match texture.sample_view {
@@ -992,7 +1001,7 @@ fn mesh3d_view_bg_cache_get_or_create(
   pbr_area_light_luts_texture_id? : Int = -1,
   pbr_dfg_lut_texture_id? : Int = -1,
   default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(),
-) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
+) -> (@wgpu.BindGroup, Array[UInt], @wgpu.BindGroup) raise GpuBackendError {
   let default_view_layout_key = if default_view_layout_key.bits() == 0U &&
     tonemap_in_shader {
     mesh3d_default_mesh_view_layout_key(tonemap_in_shader~)
@@ -1055,7 +1064,11 @@ fn mesh3d_view_bg_cache_get_or_create(
       entry.atmosphere_resource_revision == atmosphere_revision &&
       entry.ssao_resource_revision == ssao_revision &&
       entry.clustered_decals_revision == clustered_decals_revision {
-      return (entry.bind_group, entry.binding_arrays_bind_group)
+      return (
+        entry.bind_group,
+        entry.main_offsets,
+        entry.binding_arrays_bind_group,
+      )
     }
   }
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
@@ -1066,6 +1079,10 @@ fn mesh3d_view_bg_cache_get_or_create(
   )
   let layout = layout_entry.view_bind_group_layout
   let layout_descriptor = layout_entry.view_bind_group_layout_descriptor
+  let main_offsets = mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
+    layout_descriptor,
+    light_probes_uniform_offset=0U,
+  )
   let binding_arrays_layout = layout_entry.binding_arrays_bind_group_layout
   let binding_arrays_layout_descriptor = layout_entry.binding_arrays_bind_group_layout_descriptor
   let view_buf = match backend.mesh3d_view_buf {
@@ -1252,9 +1269,10 @@ fn mesh3d_view_bg_cache_get_or_create(
     ssao_resource_revision: ssao_revision,
     clustered_decals_revision,
     bind_group,
+    main_offsets,
     binding_arrays_bind_group,
   })
-  (bind_group, binding_arrays_bind_group)
+  (bind_group, main_offsets, binding_arrays_bind_group)
 }
 
 ///|
@@ -1264,6 +1282,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
   tonemap_in_shader : Bool,
   uniforms : Mesh3dPassUniformState,
+  light_probes_uniform_offset : UInt,
   transmission_source_texture : GpuTextureInfo,
   point_shadow_texture : GpuTextureInfo,
   directional_shadow_texture : GpuTextureInfo,
@@ -1281,7 +1300,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   pbr_area_light_luts_texture_id? : Int = -1,
   pbr_dfg_lut_texture_id? : Int = -1,
   default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(),
-) -> (@wgpu.BindGroup, @wgpu.BindGroup) raise GpuBackendError {
+) -> (@wgpu.BindGroup, Array[UInt], @wgpu.BindGroup) raise GpuBackendError {
   let default_view_layout_key = if default_view_layout_key.bits() == 0U &&
     tonemap_in_shader {
     mesh3d_default_mesh_view_layout_key(tonemap_in_shader~)
@@ -1348,7 +1367,11 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
       entry.atmosphere_resource_revision == atmosphere_revision &&
       entry.ssao_resource_revision == ssao_revision &&
       entry.clustered_decals_revision == clustered_decals_revision {
-      return (entry.bind_group, entry.binding_arrays_bind_group)
+      return (
+        entry.bind_group,
+        entry.main_offsets,
+        entry.binding_arrays_bind_group,
+      )
     }
   }
   guard backend.frame is Some(frame) else {
@@ -1367,6 +1390,10 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   )
   let layout = layout_entry.view_bind_group_layout
   let layout_descriptor = layout_entry.view_bind_group_layout_descriptor
+  let main_offsets = mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
+    layout_descriptor,
+    light_probes_uniform_offset~,
+  )
   let binding_arrays_layout = layout_entry.binding_arrays_bind_group_layout
   let binding_arrays_layout_descriptor = layout_entry.binding_arrays_bind_group_layout_descriptor
   let clustered_lights_buf = match backend.mesh3d_clustered_lights_buf {
@@ -1546,9 +1573,10 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     ssao_resource_revision: ssao_revision,
     clustered_decals_revision,
     bind_group,
+    main_offsets,
     binding_arrays_bind_group,
   })
-  (bind_group, binding_arrays_bind_group)
+  (bind_group, main_offsets, binding_arrays_bind_group)
 }
 
 ///|

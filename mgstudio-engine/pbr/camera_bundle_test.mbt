@@ -322,3 +322,65 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
     content="true",
   )
 }
+
+///|
+test "render3d: ScreenSpaceReflections requires depth and deferred prepasses" {
+  let spawned : Ref[@core.Entity?] = Ref(None)
+  let world = @ecs.World::new()
+  try! register_render3d_required_components(world)
+  let mut app = @app.App::new(world).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    spawned.val = Some(
+      commands.spawn_component(ScreenSpaceReflections::ScreenSpaceReflections()),
+    )
+  })
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn_component to return an entity")
+  }
+
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_screen_space_reflections))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_depth_prepass)) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_deferred_prepass)) is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "render3d: AtmosphereSettings requires HDR" {
+  let spawned : Ref[@core.Entity?] = Ref(None)
+  let world = @ecs.World::new()
+  try! register_render3d_required_components(world)
+  let mut app = @app.App::new(world).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    spawned.val = Some(
+      commands.spawn_component(AtmosphereSettings::AtmosphereSettings()),
+    )
+  })
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn_component to return an entity")
+  }
+
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_atmosphere_settings))
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    (try! app.world().get_by_key(entity, ecs_key_hdr)) is Some(_),
+    content="true",
+  )
+}

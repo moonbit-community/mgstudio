@@ -1525,9 +1525,7 @@ fn GpuBackend::mesh3d_draw_atmosphere_sky(
     is Some(color_view) else {
     return
   }
-  guard mesh3d_volumetric_fog_depth_view(self, pass_state) is Some(depth_view) else {
-    return
-  }
+  guard self.depth_view is Some(depth_view) else { return }
   guard pass_state.msaa_sample_count <= 1 else {
     fatal("wgpu: atmosphere render-sky MSAA pipeline is not implemented")
   }

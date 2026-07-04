@@ -40,9 +40,7 @@ fn render3d_prepare_camera_execution_plan(
   let camera_entity = extracted_camera.entity.main_entity
   let camera = extracted_camera.payload
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
-  let pass_lighting = render3d_camera_apply_environment_map_lighting(
-    lighting, extracted_camera,
-  )
+  let pass_lighting = lighting
   let camera_deferred_config = match camera.deferred_config {
     Some(value) => value
     None => CameraDeferredConfig3d::CameraDeferredConfig3d()
@@ -164,6 +162,7 @@ fn render3d_execute_camera(
   let fxaa_postprocess_enabled = pass_config.fxaa_postprocess_enabled
   let cas_postprocess_enabled = pass_config.cas_postprocess_enabled
   let auto_exposure_enabled = pass_config.auto_exposure_enabled
+  let temporal_aa_enabled = pass_config.temporal_aa_enabled
   let motion_vector_prepass_enabled = pass_config.motion_vector_prepass_enabled
   let fog_enabled = pass_config.fog_enabled
   let scene_pass_kind = pass_config.scene_pass_kind
@@ -240,12 +239,14 @@ fn render3d_execute_camera(
   if !motion_blur_active &&
     (
       transmission_enabled ||
+      temporal_aa_enabled ||
       bloom_enabled ||
       tonemap_postprocess_enabled ||
       auto_exposure_enabled
     ) &&
     (
       camera.target_id < 0 ||
+      temporal_aa_enabled ||
       bloom_enabled ||
       tonemap_postprocess_enabled ||
       auto_exposure_enabled
@@ -334,7 +335,10 @@ fn render3d_execute_camera(
     camera,
     scene_target_id,
     velocity_target_id,
+    prepass_depth_target_id,
+    velocity_target_id,
     motion_blur_active,
+    temporal_aa_enabled,
     bloom_enabled,
     tonemap_postprocess_enabled,
     auto_exposure_enabled,

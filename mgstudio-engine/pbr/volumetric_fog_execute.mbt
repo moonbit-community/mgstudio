@@ -89,6 +89,11 @@ fn render3d_prepare_volumetric_fog_pipelines(
   let (needs_textureless, needs_textured) = render3d_volumetric_fog_pipeline_variants(
     prepared,
   )
+  if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+    println(
+      "[DEBUG-atmosphere-parity] fog-prepare lights=\{prepared.light_count} views=\{prepared.view_count} volumes=\{prepared.volume_count} plane=\{prepared.plane_mesh_id} cube=\{prepared.cube_mesh_id} needs_textureless=\{needs_textureless} needs_textured=\{needs_textured}",
+    )
+  }
   guard needs_textureless || needs_textured else { return None }
   let textureless_pipeline_id = if needs_textureless {
     @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
@@ -113,12 +118,23 @@ fn render3d_prepare_volumetric_fog_pipelines(
     None
   }
   match (textureless_pipeline_id, textured_pipeline_id) {
-    (Some(textureless), Some(textured)) =>
+    (Some(textureless), Some(textured)) => {
+      if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+        println(
+          "[DEBUG-atmosphere-parity] fog-pipelines textureless=\{textureless} textured=\{textured}",
+        )
+      }
       Some(@pbr_volumetric_fog.ViewVolumetricFogPipelines::{
         textureless,
         textured,
       })
-    _ => None
+    }
+    _ => {
+      if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+        println("[DEBUG-atmosphere-parity] fog-pipelines missing")
+      }
+      None
+    }
   }
 }
 
@@ -190,8 +206,11 @@ fn render3d_prepare_view_depth_texture_usage_for_sampled_depth(
   camera3d : Camera3d,
   has_volumetric_fog_views : Bool,
   has_screen_space_ambient_occlusion : Bool,
+  has_atmosphere : Bool,
 ) -> Camera3dDepthTextureUsage {
-  if has_volumetric_fog_views || has_screen_space_ambient_occlusion {
+  if has_volumetric_fog_views ||
+    has_screen_space_ambient_occlusion ||
+    has_atmosphere {
     camera3d.depth_texture_usages().with_texture_binding()
   } else {
     camera3d.depth_texture_usages()
@@ -211,6 +230,11 @@ fn render3d_draw_volumetric_fog(
     prepared.volume_count > 0 &&
     prepared.plane_mesh_id >= 0 &&
     prepared.cube_mesh_id >= 0 else {
+    if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+      println(
+        "[DEBUG-atmosphere-parity] fog-draw skip counts lights=\{prepared.light_count} views=\{prepared.view_count} volumes=\{prepared.volume_count} plane=\{prepared.plane_mesh_id} cube=\{prepared.cube_mesh_id}",
+      )
+    }
     return
   }
   guard (try! world.get_by_key(
@@ -218,6 +242,9 @@ fn render3d_draw_volumetric_fog(
       @pbr_volumetric_fog.ViewVolumetricFog::component(),
     ))
     is Some(view_fog) else {
+    if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+      println("[DEBUG-atmosphere-parity] fog-draw skip missing view fog")
+    }
     return
   }
   guard (try! world.get_by_key(
@@ -225,6 +252,9 @@ fn render3d_draw_volumetric_fog(
       @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
     ))
     is Some(pipelines) else {
+    if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+      println("[DEBUG-atmosphere-parity] fog-draw skip missing pipelines")
+    }
     return
   }
   let volumes : Array[@render.HostMesh3dVolumetricFogVolume] = []

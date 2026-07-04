@@ -239,12 +239,22 @@ test "pbr volumetric fog execute: prepares depth texture usage from sampled dept
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
       false,
+      false,
     ).has_texture_binding(),
   )
   assert_true(
     render3d_prepare_view_depth_texture_usage_for_sampled_depth(
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
+      true,
+      false,
+    ).has_texture_binding(),
+  )
+  assert_true(
+    render3d_prepare_view_depth_texture_usage_for_sampled_depth(
+      camera3d,
+      render3d_world_has_volumetric_fog_views(world),
+      false,
       true,
     ).has_texture_binding(),
   )
@@ -262,6 +272,7 @@ test "pbr volumetric fog execute: prepares depth texture usage from sampled dept
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
       false,
+      false,
     ).has_texture_binding(),
   )
   let light_entity = world.spawn()
@@ -276,6 +287,7 @@ test "pbr volumetric fog execute: prepares depth texture usage from sampled dept
     render3d_prepare_view_depth_texture_usage_for_sampled_depth(
       camera3d,
       render3d_world_has_volumetric_fog_views(world),
+      false,
       false,
     ).has_texture_binding(),
   )

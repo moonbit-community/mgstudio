@@ -25,6 +25,21 @@ const PBR_AREA_LIGHT_LUTS_PATH : String = "pbr/ltc/ltc.ktx2"
 const PBR_DFG_LUT_PATH : String = "pbr/environment_map/dfg.ktx2"
 
 ///|
+fn pbr_bluenoise_texture_feature_enabled() -> Bool {
+  false
+}
+
+///|
+fn pbr_area_light_luts_feature_enabled() -> Bool {
+  false
+}
+
+///|
+fn pbr_dfg_lut_feature_enabled() -> Bool {
+  false
+}
+
+///|
 pub(all) struct PbrPlugin {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
@@ -241,6 +256,25 @@ fn pbr_plugin_register_internal_image_assets(
 
 ///|
 fn pbr_load_bluenoise(world : @ecs.World) -> @asset.Handle[@asset.Image] {
+  if !pbr_bluenoise_texture_feature_enabled() {
+    return @asset.asset_with_world(world, fn() {
+      @asset.asset_world_add(
+        world,
+        @asset.Image::new(
+          1,
+          1,
+          Bytes::from_array([
+            (255).to_byte(),
+            (0).to_byte(),
+            (255).to_byte(),
+            (255).to_byte(),
+          ]),
+        )
+        .with_texture_usage_bits(@asset.IMAGE_USAGE_TEXTURE_BINDING)
+        .with_texture_descriptor_label(Some("bluenoise_placeholder")),
+      )
+    })
+  }
   @asset.asset_world_load_with_settings(world, PBR_BLUENOISE_PATH, fn(
     settings,
   ) {
@@ -253,6 +287,21 @@ fn pbr_load_bluenoise(world : @ecs.World) -> @asset.Handle[@asset.Image] {
 
 ///|
 fn pbr_load_area_light_luts(world : @ecs.World) -> @asset.Handle[@asset.Image] {
+  if !pbr_area_light_luts_feature_enabled() {
+    return @asset.asset_with_world(world, fn() {
+      @asset.asset_world_add(
+        world,
+        @asset.Image::new(1, 2, Bytes::new(16))
+        .with_format(@asset.TextureFormat::Rgba16Float)
+        .with_texture_usage_bits(@asset.IMAGE_USAGE_TEXTURE_BINDING)
+        .with_texture_descriptor_label(Some("area_light_luts_placeholder"))
+        .with_array_layout(Some(@asset.ImageArrayLayout::RowHeight(1)))
+        .with_texture_view_dimension(
+          Some(@asset.ImageTextureViewDimension::D2Array),
+        ),
+      )
+    })
+  }
   @asset.asset_world_load_with_settings(world, PBR_AREA_LIGHT_LUTS_PATH, fn(
     settings,
   ) {
@@ -265,6 +314,9 @@ fn pbr_load_area_light_luts(world : @ecs.World) -> @asset.Handle[@asset.Image] {
 
 ///|
 fn pbr_load_dfg_lut(world : @ecs.World) -> @asset.Handle[@asset.Image] {
+  if !pbr_dfg_lut_feature_enabled() {
+    return @asset.Handle::new(0)
+  }
   @asset.asset_world_load_with_settings(world, PBR_DFG_LUT_PATH, fn(settings) {
     settings.is_srgb = false
     settings.sampler = @asset.ImageSampler::linear()

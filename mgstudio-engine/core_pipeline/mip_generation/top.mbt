@@ -268,7 +268,7 @@ pub fn downsample_texture_formats() -> Array[(String, String)] {
 
 ///|
 fn downsample_specialized_wgsl_source(identifier : String) -> String {
-  downsample_wgsl_source.replace_all(old="##TEXTURE_FORMAT##", new=identifier)
+  @mip_generation_source.downsample_specialized_wgsl_source(identifier)
 }
 
 ///|

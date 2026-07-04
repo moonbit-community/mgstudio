@@ -448,20 +448,19 @@ fn render3d_camera_distance_fog(
     )
   }
   if atmosphere is Some(extracted_atmosphere) {
-    let atmosphere_value = extracted_atmosphere.atmosphere
     let albedo_color = @color.Color::new(
       @pbr_render.render3d_float_clamp(
-        atmosphere_value.ground_albedo.x,
+        extracted_atmosphere.ground_albedo.x,
         0.0F,
         1.0F,
       ),
       @pbr_render.render3d_float_clamp(
-        atmosphere_value.ground_albedo.y,
+        extracted_atmosphere.ground_albedo.y,
         0.0F,
         1.0F,
       ),
       @pbr_render.render3d_float_clamp(
-        atmosphere_value.ground_albedo.z,
+        extracted_atmosphere.ground_albedo.z,
         0.0F,
         1.0F,
       ),

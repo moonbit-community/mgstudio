@@ -20,7 +20,10 @@ fn render3d_execute_camera_postprocess(
   camera : Camera3dViewPayload,
   scene_target_id : Int,
   velocity_target_id : Int,
+  prepass_depth_texture_id : Int,
+  prepass_motion_vector_texture_id : Int,
   motion_blur_active : Bool,
+  temporal_aa_enabled : Bool,
   bloom_enabled : Bool,
   tonemap_postprocess_enabled : Bool,
   auto_exposure_enabled : Bool,
@@ -151,6 +154,77 @@ fn render3d_execute_camera_postprocess(
     }
   } else if scene_target_id != camera.target_id {
     final_source_texture_id = scene_target_id
+  }
+  let temporal_aa_active = temporal_aa_enabled &&
+    prepass_depth_texture_id >= 0 &&
+    prepass_motion_vector_texture_id >= 0 &&
+    render3d_camera_msaa_samples(camera) == 1
+  if temporal_aa_active {
+    let taa_source_texture_id = if final_source_texture_id >= 0 {
+      final_source_texture_id
+    } else {
+      scene_target_id
+    }
+    if taa_source_texture_id >= 0 {
+      let taa_has_later_postprocess = bloom_enabled ||
+        tonemap_postprocess_enabled ||
+        auto_exposure_enabled
+      let taa_target_id = if taa_has_later_postprocess {
+        render3d_postprocess_ping_target_get_or_create(
+          world, camera_entity, view_width, view_height,
+        )
+      } else {
+        camera.target_id
+      }
+      let (
+        taa_viewport_x,
+        taa_viewport_y,
+        taa_viewport_width,
+        taa_viewport_height,
+      ) = pass_viewport(taa_target_id)
+      @render.host_gpu_begin_pass(
+        target_id=taa_target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera_x=0.0F,
+        camera_y=0.0F,
+        camera_rotation=0.0F,
+        camera_scale=1.0F,
+        viewport_x=taa_viewport_x,
+        viewport_y=taa_viewport_y,
+        viewport_width=taa_viewport_width,
+        viewport_height=taa_viewport_height,
+        viewport_depth_min~,
+        viewport_depth_max~,
+        clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
+          cleared_targets_this_frame, taa_target_id, clear_enabled,
+        ),
+      )
+      @render.host_gpu_draw_taa(
+        camera_key_hi=camera_entity.id,
+        camera_key_lo=camera_entity.generation,
+        scene_texture_id=taa_source_texture_id,
+        motion_vector_texture_id=prepass_motion_vector_texture_id,
+        depth_texture_id=prepass_depth_texture_id,
+        reset=match camera.temporal_anti_aliasing {
+          Some(taa) => taa.reset
+          None => false
+        },
+        tonemap=camera.hdr_enabled,
+        view_width~,
+        view_height~,
+      )
+      @render.host_gpu_end_pass()
+      final_source_texture_id = if taa_has_later_postprocess {
+        taa_target_id
+      } else {
+        -1
+      }
+    }
   }
   if bloom_enabled || tonemap_postprocess_enabled || auto_exposure_enabled {
     let postprocess_source_texture_id = if final_source_texture_id >= 0 {

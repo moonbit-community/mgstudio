@@ -1376,6 +1376,7 @@ test "scene: gltf lod visibility policy set/get/reset" {
 ///|
 test "scene: SceneRoot inserts default transform and visibility" {
   let has_transform = Ref(false)
+  let has_global_transform = Ref(false)
   let has_visibility = Ref(false)
   let inherited_visibility = Ref(false)
   run_scene_test_app(fn(world : @ecs.World) {
@@ -1392,6 +1393,9 @@ test "scene: SceneRoot inserts default transform and visibility" {
     has_transform.val = try! world.contains_by_key(
       root, @transform.ecs_key_transform,
     )
+    has_global_transform.val = try! world.contains_by_key(
+      root, @transform.ecs_key_global_transform,
+    )
     has_visibility.val = try! world.contains_by_key(
       root, @visibility.ecs_key_visibility,
     )
@@ -1402,6 +1406,7 @@ test "scene: SceneRoot inserts default transform and visibility" {
     }
   })
   debug_inspect(has_transform.val, content="true")
+  debug_inspect(has_global_transform.val, content="true")
   debug_inspect(has_visibility.val, content="true")
   debug_inspect(inherited_visibility.val, content="true")
 }
@@ -1409,6 +1414,7 @@ test "scene: SceneRoot inserts default transform and visibility" {
 ///|
 test "scene: WorldAssetRoot inserts default transform and visibility" {
   let has_transform = Ref(false)
+  let has_global_transform = Ref(false)
   let has_visibility = Ref(false)
   let inherited_visibility = Ref(false)
   run_scene_test_app(fn(world : @ecs.World) {
@@ -1425,6 +1431,9 @@ test "scene: WorldAssetRoot inserts default transform and visibility" {
     has_transform.val = try! world.contains_by_key(
       root, @transform.ecs_key_transform,
     )
+    has_global_transform.val = try! world.contains_by_key(
+      root, @transform.ecs_key_global_transform,
+    )
     has_visibility.val = try! world.contains_by_key(
       root, @visibility.ecs_key_visibility,
     )
@@ -1435,6 +1444,7 @@ test "scene: WorldAssetRoot inserts default transform and visibility" {
     }
   })
   debug_inspect(has_transform.val, content="true")
+  debug_inspect(has_global_transform.val, content="true")
   debug_inspect(has_visibility.val, content="true")
   debug_inspect(inherited_visibility.val, content="true")
 }

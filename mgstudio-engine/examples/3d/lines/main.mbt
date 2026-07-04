@@ -157,6 +157,18 @@ impl @pbr.Material for LineMaterial with fn reads_view_transmission_texture(
 }
 
 ///|
+impl @pbr.Material for LineMaterial with fn standard_material_payload(self) {
+  self |> ignore
+  @pbr.material_default_standard_material_payload()
+}
+
+///|
+impl @pbr.Material for LineMaterial with fn material_extension_metadata(self) {
+  self |> ignore
+  None
+}
+
+///|
 impl @pbr.Material for LineMaterial with fn enable_prepass() {
   @pbr.material_default_enable_prepass()
 }
@@ -195,6 +207,14 @@ impl @pbr.Material for LineMaterial with fn bind_group_layout_descriptor(
 ///|
 impl @pbr.Material for LineMaterial with fn bind_group_data(self) {
   @pbr.material_default_bind_group_data(self)
+}
+
+///|
+impl @pbr.Material for LineMaterial with fn renderer_extra_bind_group_data(
+  self,
+  context,
+) {
+  @pbr.material_default_renderer_extra_bind_group_data(self, context)
 }
 
 ///|

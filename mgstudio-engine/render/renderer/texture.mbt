@@ -994,16 +994,29 @@ pub fn GpuBackend::copy_texture_to_texture(
     return
   }
   let encoder = self.device.create_command_encoder()
-  encoder.copy_texture_to_texture_rgba8_mip_layer(
-    src.texture,
+  let src_info = @wgpu_c.texel_copy_texture_info_new(
+    src.texture.raw_handle(),
     src.base_mip_level.reinterpret_as_uint(),
     0U,
-    dst.texture,
-    dst.base_mip_level.reinterpret_as_uint(),
     0U,
+    0U,
+  )
+  let dst_info = @wgpu_c.texel_copy_texture_info_new(
+    dst.texture.raw_handle(),
+    dst.base_mip_level.reinterpret_as_uint(),
+    origin_x.reinterpret_as_uint(),
+    origin_y.reinterpret_as_uint(),
+    0U,
+  )
+  let extent = @wgpu_c.extent3d_new(
     copy_width.reinterpret_as_uint(),
     copy_height.reinterpret_as_uint(),
+    1U,
   )
+  encoder.copy_texture_to_texture_ptr(src_info, dst_info, extent)
+  @wgpu_c.extent3d_free(extent)
+  @wgpu_c.texel_copy_texture_info_free(dst_info)
+  @wgpu_c.texel_copy_texture_info_free(src_info)
   let command_buffer = encoder.finish()
   self.queue.submit_one(command_buffer)
   command_buffer.release()
@@ -1037,16 +1050,29 @@ pub fn GpuBackend::frame_copy_texture_to_texture(
   if copy_width <= 0 || copy_height <= 0 {
     return
   }
-  frame.encoder.copy_texture_to_texture_rgba8_mip_layer(
-    src.texture,
+  let src_info = @wgpu_c.texel_copy_texture_info_new(
+    src.texture.raw_handle(),
     src.base_mip_level.reinterpret_as_uint(),
     0U,
-    dst.texture,
-    dst.base_mip_level.reinterpret_as_uint(),
     0U,
+    0U,
+  )
+  let dst_info = @wgpu_c.texel_copy_texture_info_new(
+    dst.texture.raw_handle(),
+    dst.base_mip_level.reinterpret_as_uint(),
+    origin_x.reinterpret_as_uint(),
+    origin_y.reinterpret_as_uint(),
+    0U,
+  )
+  let extent = @wgpu_c.extent3d_new(
     copy_width.reinterpret_as_uint(),
     copy_height.reinterpret_as_uint(),
+    1U,
   )
+  frame.encoder.copy_texture_to_texture_ptr(src_info, dst_info, extent)
+  @wgpu_c.extent3d_free(extent)
+  @wgpu_c.texel_copy_texture_info_free(dst_info)
+  @wgpu_c.texel_copy_texture_info_free(src_info)
 }
 
 ///|
@@ -1763,7 +1789,9 @@ pub fn GpuBackend::create_texture_cube_with_format(
   let w = if width <= 0 { 1 } else { width }
   let h = if height <= 0 { 1 } else { height }
   let usage = @wgpu.TextureUsage::from_u64(
-    texture_usage_bits_to_wgpu(usage_bits) | @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+    texture_usage_bits_to_wgpu(usage_bits) |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+    @wgpu.TEXTURE_USAGE_COPY_DST,
   )
   let tex = self.device.create_texture_u32(
     w.reinterpret_as_uint(),
@@ -1848,6 +1876,15 @@ pub fn GpuBackend::create_texture_cube_with_format(
     @wgpu_c.texel_copy_texture_info_free(tex_info)
   }
 
+  let array_view = tex.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY,
+    texture_view_aspect_for_format(format),
+    0U,
+    6U,
+    0U,
+    levels.length().reinterpret_as_uint(),
+  )
   let face0_view = tex.create_view_u32(
     format,
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
@@ -1894,7 +1931,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
     base_mip_level: 0,
     format,
     texture: tex,
-    view: face0_view,
+    view: array_view,
     sample_view: Some(cube_view),
     msaa_texture: None,
     msaa_view: None,
@@ -2282,7 +2319,8 @@ fn ensure_depth_view_for_target(
     1U,
     @wgpu.TextureUsage::from_u64(
       @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
-      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING,
+      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+      @wgpu.TEXTURE_USAGE_COPY_SRC,
     ),
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
@@ -2296,6 +2334,47 @@ fn ensure_depth_view_for_target(
   backend.depth_height = height
   backend.depth_sample_count = safe_sample_count
   Some(depth_view)
+}
+
+///|
+fn frame_copy_view_depth_to_prepass_depth(
+  backend : GpuBackend,
+  prepass_depth_texture_id : Int,
+) -> Unit {
+  guard backend.frame is Some(frame) else { return }
+  guard backend.depth_texture is Some(view_depth_texture) else { return }
+  guard find_prepass_depth_texture(backend, prepass_depth_texture_id)
+    is Some(prepass_depth_texture) else {
+    return
+  }
+  if backend.depth_width != prepass_depth_texture.width ||
+    backend.depth_height != prepass_depth_texture.height ||
+    backend.depth_sample_count != prepass_depth_texture.sample_count {
+    return
+  }
+  let src_info = @wgpu_c.texel_copy_texture_info_new(
+    view_depth_texture.raw_handle(),
+    0U,
+    0U,
+    0U,
+    0U,
+  )
+  let dst_info = @wgpu_c.texel_copy_texture_info_new(
+    prepass_depth_texture.texture.raw_handle(),
+    0U,
+    0U,
+    0U,
+    0U,
+  )
+  let extent = @wgpu_c.extent3d_new(
+    prepass_depth_texture.width.reinterpret_as_uint(),
+    prepass_depth_texture.height.reinterpret_as_uint(),
+    1U,
+  )
+  frame.encoder.copy_texture_to_texture_ptr(src_info, dst_info, extent)
+  @wgpu_c.extent3d_free(extent)
+  @wgpu_c.texel_copy_texture_info_free(dst_info)
+  @wgpu_c.texel_copy_texture_info_free(src_info)
 }
 
 ///|

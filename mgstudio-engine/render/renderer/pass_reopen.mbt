@@ -163,6 +163,7 @@ fn reopen_saved_pass(
       pass_state.prepass_motion_vector_texture_id,
       pass_state.prepass_deferred_texture_id,
       pass_state.prepass_deferred_lighting_pass_id_texture_id,
+      pass_state.screen_space_reflections,
       pass_state.msaa_sample_count,
       pass_state.pass_kind,
       0,

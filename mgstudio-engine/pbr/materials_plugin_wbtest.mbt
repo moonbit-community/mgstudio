@@ -1601,6 +1601,7 @@ fn material_test_extracted_mesh_payload(
     material_extension: None,
     material_properties,
     material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+    material_type_tag: "StandardMaterial",
     lightmap: None,
     is_forward_decal: false,
     forward_decal_material_ext: None,
@@ -2191,6 +2192,22 @@ impl Material for ShadowReadinessNoShadowMaterial with fn reads_view_transmissio
 }
 
 ///|
+impl Material for ShadowReadinessNoShadowMaterial with fn standard_material_payload(
+  self,
+) {
+  ignore(self)
+  material_default_standard_material_payload()
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn material_extension_metadata(
+  self,
+) {
+  ignore(self)
+  None
+}
+
+///|
 impl Material for ShadowReadinessNoShadowMaterial with fn enable_prepass() {
   material_default_enable_prepass()
 }
@@ -2233,6 +2250,14 @@ impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_layout_desc
 ///|
 impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_data(self) {
   material_default_bind_group_data(self)
+}
+
+///|
+impl Material for ShadowReadinessNoShadowMaterial with fn renderer_extra_bind_group_data(
+  self,
+  context,
+) {
+  material_default_renderer_extra_bind_group_data(self, context)
 }
 
 ///|

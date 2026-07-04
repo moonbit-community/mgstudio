@@ -99,7 +99,13 @@ fn render3d_extract_nearest_atmosphere(
   })
   match (selected_atmosphere, selected_world_to_atmosphere) {
     (Some(atmosphere), Some(world_to_atmosphere)) =>
-      Some(ExtractedAtmosphere3d::{ atmosphere, world_to_atmosphere })
+      Some(ExtractedAtmosphere3d::{
+        inner_radius: atmosphere.inner_radius,
+        outer_radius: atmosphere.outer_radius,
+        ground_albedo: atmosphere.ground_albedo,
+        medium: atmosphere.medium,
+        world_to_atmosphere,
+      })
     _ => None
   }
 }
@@ -111,6 +117,7 @@ fn render3d_execute_collect_cameras(
   gpu_instance_buffer_builder_requested : Bool,
   gpu_culling_supported : Bool,
   prepass_enabled : Bool,
+  default_opaque_renderer_method : OpaqueRendererMethod,
 ) -> Array[ExtractedCamera3d] {
   let trace_collect_cameras_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -192,6 +199,7 @@ fn render3d_execute_collect_cameras(
       camera3d.value(),
       has_volumetric_fog_views,
       false,
+      false,
     )
     let projection_changed = projection_changed_entities.contains(
       entity_key(entity),
@@ -207,6 +215,9 @@ fn render3d_execute_collect_cameras(
     let atmosphere_settings = try! source_world.get_by_key(
       entity, ecs_key_atmosphere_settings,
     )
+    if atmosphere_settings is Some(_) {
+      depth_texture_usages = depth_texture_usages.with_texture_binding()
+    }
     let oit_settings = try! source_world.get_by_key(
       entity, ecs_key_order_independent_transparency_settings,
     )
@@ -252,19 +263,41 @@ fn render3d_execute_collect_cameras(
     let contact_shadows = try! source_world.get_by_key(
       entity, ecs_key_contact_shadows,
     )
+    let screen_space_ambient_occlusion_opt = try! source_world.get_by_key(
+      entity, ecs_key_screen_space_ambient_occlusion,
+    )
     let hdr_enabled = (try! source_world.get_by_key(entity, ecs_key_hdr))
       is Some(_)
+    if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) &&
+      atmosphere_settings is Some(_) {
+      println(
+        "[DEBUG-atmosphere-parity] camera hdr=\{hdr_enabled} tonemapping=\{tonemapping is Some(_)} atmosphere_settings=true ssr=\{screen_space_reflections is Some(_)}",
+      )
+    }
     let fxaa = try! source_world.get_by_key(entity, ecs_key_fxaa)
     let temporal_jitter = try! source_world.get_by_key(
       entity, ecs_key_temporal_jitter,
     )
-    let depth_prepass_enabled = prepass_enabled &&
-      (try! source_world.get_by_key(entity, ecs_key_depth_prepass)) is Some(_)
-    let normal_prepass_enabled = prepass_enabled &&
-      (try! source_world.get_by_key(entity, ecs_key_normal_prepass)) is Some(_)
     let deferred_prepass_enabled = prepass_enabled &&
-      (try! source_world.get_by_key(entity, ecs_key_deferred_prepass))
-      is Some(_)
+      (
+        (try! source_world.get_by_key(entity, ecs_key_deferred_prepass))
+        is Some(_) ||
+        default_opaque_renderer_method is OpaqueRendererMethod::Deferred ||
+        screen_space_reflections is Some(_)
+      )
+    let depth_prepass_enabled = prepass_enabled &&
+      (
+        (try! source_world.get_by_key(entity, ecs_key_depth_prepass)) is Some(_) ||
+        deferred_prepass_enabled ||
+        screen_space_ambient_occlusion_opt is Some(_) ||
+        contact_shadows is Some(_)
+      )
+    let normal_prepass_enabled = prepass_enabled &&
+      (
+        (try! source_world.get_by_key(entity, ecs_key_normal_prepass))
+        is Some(_) ||
+        screen_space_ambient_occlusion_opt is Some(_)
+      )
     let no_indirect_drawing = (try! source_world.get_by_key(
         entity, ecs_key_no_indirect_drawing,
       ))
@@ -290,11 +323,7 @@ fn render3d_execute_collect_cameras(
     )
     let msaa = try! source_world.get_by_key(entity, ecs_key_msaa)
     let screen_space_ambient_occlusion = render3d_extract_ssao_settings(
-      entity,
-      try! source_world.get_by_key(
-        entity, ecs_key_screen_space_ambient_occlusion,
-      ),
-      msaa,
+      entity, screen_space_ambient_occlusion_opt, msaa,
     )
     if screen_space_ambient_occlusion is Some(_) {
       depth_texture_usages = depth_texture_usages.with_texture_binding()

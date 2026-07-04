@@ -313,6 +313,7 @@ pub fn host_gpu_begin_pass_3d(
   prepass_motion_vector_texture_id? : Int = -1,
   prepass_deferred_texture_id? : Int = -1,
   prepass_deferred_lighting_pass_id_texture_id? : Int = -1,
+  screen_space_reflections? : Bool = false,
   msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
@@ -457,6 +458,7 @@ pub fn host_gpu_begin_pass_3d(
     prepass_motion_vector_texture_id~,
     prepass_deferred_texture_id~,
     prepass_deferred_lighting_pass_id_texture_id~,
+    screen_space_reflections~,
     msaa_sample_count~,
     pass_kind~,
     clear_enabled~,
@@ -466,5 +468,11 @@ pub fn host_gpu_begin_pass_3d(
 ///|
 pub fn host_gpu_end_pass() -> Unit {
   @renderer.end_pass()
+  render_pass_trace_end_active_span()
+}
+
+///|
+pub fn host_gpu_end_active_pass_preserving_state() -> Unit {
+  @renderer.end_active_pass_preserving_state()
   render_pass_trace_end_active_span()
 }

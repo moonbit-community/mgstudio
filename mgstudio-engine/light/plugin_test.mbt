@@ -45,9 +45,7 @@ test "light plugin: atmosphere required GlobalTransform matches bevy on_add defa
   )
   let world = app.world()
   let entity = world.spawn()
-  let atmosphere = @light.Atmosphere::earth(
-    @light.ScatteringMedium::earth(256, 256),
-  )
+  let atmosphere = @light.Atmosphere::earth(@asset.Handle::new(4))
   try! world.set(entity, atmosphere)
   let global_transform = try! world.get_by_key(
     entity, @transform.ecs_key_global_transform,

@@ -98,6 +98,29 @@ fn render3d_ssao_quality_level_to_int(
 }
 
 ///|
+fn render3d_prepare_camera_screen_space_reflections_settings(
+  camera : Camera3dViewPayload,
+) -> Unit {
+  match camera.screen_space_reflections {
+    Some(settings) =>
+      @render.host_gpu_prepare_mesh3d_screen_space_reflections_settings(
+        min_perceptual_roughness_start=settings.min_perceptual_roughness_start,
+        min_perceptual_roughness_end=settings.min_perceptual_roughness_end,
+        max_perceptual_roughness_start=settings.max_perceptual_roughness_start,
+        max_perceptual_roughness_end=settings.max_perceptual_roughness_end,
+        edge_fadeout_start=settings.edge_fadeout_start,
+        edge_fadeout_end=settings.edge_fadeout_end,
+        thickness=settings.thickness,
+        linear_steps=settings.linear_steps,
+        linear_march_exponent=settings.linear_march_exponent,
+        bisection_steps=settings.bisection_steps,
+        use_secant=settings.use_secant,
+      )
+    None => ()
+  }
+}
+
+///|
 fn render3d_main_pass_skips_deferred_opaque(
   material_properties : @material.MaterialProperties,
 ) -> Bool {
@@ -121,17 +144,34 @@ fn render3d_draw_gizmo_lines_3d(
 }
 
 ///|
+fn render3d_resolve_scattering_medium(
+  world : @ecs.World,
+  handle : @asset.Handle[ScatteringMedium],
+) -> ScatteringMedium? {
+  let source_world = @render.render_source_world(world)
+  let medium_assets_key : @ecs.ResourceKey[@asset.Assets[ScatteringMedium]] = @asset.assets_resource_key()
+  match source_world.get_resource(medium_assets_key) {
+    Some(assets) => assets.get(handle)
+    None => None
+  }
+}
+
+///|
 fn render3d_prepare_camera_atmosphere_resources(
+  world : @ecs.World,
   camera : Camera3dViewPayload,
 ) -> Unit {
   guard camera.atmosphere is Some(extracted_atmosphere) else { return }
-  let atmosphere = extracted_atmosphere.atmosphere
+  guard render3d_resolve_scattering_medium(world, extracted_atmosphere.medium)
+    is Some(medium) else {
+    return
+  }
   let settings = match camera.atmosphere_settings {
     Some(value) => value
     None => @pbr_atmosphere.pbr_atmosphere_settings_default()
   }
   let gpu_medium = GpuScatteringMedium::new(
-    atmosphere.medium,
+    medium,
     ScatteringMediumSampler::ScatteringMediumSampler(),
   )
   @render.host_gpu_prepare_mesh3d_scattering_medium_resources(
@@ -143,8 +183,10 @@ fn render3d_prepare_camera_atmosphere_resources(
     scattering_bytes=gpu_medium.scattering_lut_rgba32f_bytes(),
   )
   let gpu_settings = @pbr_atmosphere.pbr_gpu_atmosphere_settings(settings)
-  let gpu_atmosphere = @pbr_atmosphere.pbr_gpu_atmosphere(
-    atmosphere,
+  let gpu_atmosphere = @pbr_atmosphere.pbr_gpu_atmosphere_from_extracted(
+    extracted_atmosphere.inner_radius,
+    extracted_atmosphere.outer_radius,
+    extracted_atmosphere.ground_albedo,
     extracted_atmosphere.world_to_atmosphere,
   )
   let textures = @pbr_atmosphere.AtmosphereTextures::from_settings(gpu_settings)
@@ -221,6 +263,43 @@ fn render3d_dispatch_camera_atmosphere_environment(
     environment_texture_id~,
     environment_width=size.x,
     environment_height=size.y,
+  )
+}
+
+///|
+fn render3d_generate_camera_environment_map_light(
+  camera : Camera3dViewPayload,
+  blue_noise_texture_id : Int,
+) -> Unit {
+  guard camera.generated_environment_map_light
+    is Some(generated_environment_map_light) else {
+    return
+  }
+  guard camera.environment_map_light is Some(environment_map_light) else {
+    return
+  }
+  guard render3d_loaded_image_texture_id(
+      generated_environment_map_light.environment_map,
+    )
+    is Some(source_texture_id) else {
+    return
+  }
+  guard render3d_loaded_image_texture_id(environment_map_light.diffuse_map)
+    is Some(diffuse_texture_id) else {
+    return
+  }
+  guard render3d_loaded_image_texture_id(environment_map_light.specular_map)
+    is Some(specular_texture_id) else {
+    return
+  }
+  if blue_noise_texture_id < 0 {
+    return
+  }
+  @render.host_gpu_generate_environment_map_light(
+    source_texture_id~,
+    diffuse_texture_id~,
+    specular_texture_id~,
+    blue_noise_texture_id~,
   )
 }
 
@@ -340,7 +419,7 @@ fn render3d_execute_camera_main_pass(
       prepass_deferred_texture_id~,
     )
   }
-  render3d_prepare_camera_atmosphere_resources(camera)
+  render3d_prepare_camera_atmosphere_resources(world, camera)
   let scene_view_bind_group_prepared = point_shadow_binding.texture_id >= 0 ||
     directional_shadow_binding.texture_id >= 0
   if scene_view_bind_group_prepared {
@@ -432,6 +511,7 @@ fn render3d_execute_camera_main_pass(
     prepass_motion_vector_texture_id~,
     prepass_deferred_texture_id~,
     prepass_deferred_lighting_pass_id_texture_id~,
+    screen_space_reflections=camera.screen_space_reflections is Some(_),
     msaa_sample_count~,
     point_shadow_near~,
     pass_kind=scene_pass_kind,
@@ -440,6 +520,7 @@ fn render3d_execute_camera_main_pass(
     ),
   )
   prepare_light_probe_bindings()
+  render3d_prepare_camera_screen_space_reflections_settings(camera)
   prepare_view_bind_group(-1)
   if camera.atmosphere is Some(_) {
     @render.host_gpu_dispatch_mesh3d_atmosphere_luts(
@@ -448,6 +529,7 @@ fn render3d_execute_camera_main_pass(
     )
     render3d_dispatch_camera_atmosphere_environment(camera_entity, camera)
   }
+  render3d_generate_camera_environment_map_light(camera, blue_noise_texture_id)
   if camera_deferred_enabled {
     @render.host_gpu_draw_mesh3d_deferred_lighting(
       camera_key_hi=camera_entity.id,
@@ -456,6 +538,18 @@ fn render3d_execute_camera_main_pass(
         is Some(_),
       screen_space_reflections=camera.screen_space_reflections is Some(_),
       distance_fog=fog_enabled,
+      atmosphere=camera.atmosphere is Some(_),
+    )
+  }
+  if camera.screen_space_reflections is Some(_) {
+    let ssr_ping_target_id = render3d_postprocess_ping_target_get_or_create(
+      world, camera_entity, view_width, view_height,
+    )
+    @render.host_gpu_draw_mesh3d_screen_space_reflections(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      source_texture_id=scene_target_id,
+      ping_target_id=ssr_ping_target_id,
       atmosphere=camera.atmosphere is Some(_),
     )
   }
@@ -946,7 +1040,7 @@ fn render3d_execute_camera_main_pass(
       camera_key_lo=camera_entity.generation,
     )
   }
-  @render.host_gpu_end_pass()
+  @render.host_gpu_end_active_pass_preserving_state()
   let transmissive_draws = render3d_sort_transmissive_phase_items(
     transmissive_phase_items,
   )
@@ -1052,7 +1146,7 @@ fn render3d_execute_camera_main_pass(
           point_shadow_depth_bias: transmissive_draw.payload.point_shadow_depth_bias,
         })
       }
-      @render.host_gpu_end_pass()
+      @render.host_gpu_end_active_pass_preserving_state()
     }
   }
   if transparent_draws.length() > 0 || wireframe_draws.length() > 0 {
@@ -1121,7 +1215,7 @@ fn render3d_execute_camera_main_pass(
     for wireframe_draw in wireframe_draws {
       @pbr_render.render3d_draw_mesh_gpu_payload(wireframe_draw)
     }
-    @render.host_gpu_end_pass()
+    @render.host_gpu_end_active_pass_preserving_state()
   }
   let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
     world, source_world, camera, camera_pass_projection,

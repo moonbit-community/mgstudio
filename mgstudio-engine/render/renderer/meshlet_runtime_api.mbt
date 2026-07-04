@@ -2602,18 +2602,19 @@ fn meshlet_material_shade_pipeline_get_or_create(
   let shadow_filter_method = pass_kind_shadow_filter_method(
     pass_state.pass_kind,
   )
+  let view_layout_key_bits = 0U
   if mesh3d_pipeline_get(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, view_layout_key_bits,
+      cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+      deband_dither_enabled, shadow_filter_method,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
   if mesh3d_pipeline_failed(
-      backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
-      blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      backend, color_format, msaa_sample_count, topology, material_pipeline_id, view_layout_key_bits,
+      cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+      deband_dither_enabled, shadow_filter_method,
     ) {
     return None
   }
@@ -2685,8 +2686,8 @@ fn meshlet_material_shade_pipeline_get_or_create(
       builder.free()
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
-        cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, message,
+        view_layout_key_bits, cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader,
+        tonemapping_mode, deband_dither_enabled, shadow_filter_method, message,
       )
       debug("[renderer] meshlet material shade pipeline failed: \{message}")
       vertex_sm.release()
@@ -2700,8 +2701,8 @@ fn meshlet_material_shade_pipeline_get_or_create(
       let message = "wgpu: failed to build meshlet material shade pipeline: \{err.message()}"
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
-        cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-        deband_dither_enabled, shadow_filter_method, message,
+        view_layout_key_bits, cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader,
+        tonemapping_mode, deband_dither_enabled, shadow_filter_method, message,
       )
       debug("[renderer] meshlet material shade pipeline failed: \{message}")
       vertex_sm.release()
@@ -2711,9 +2712,9 @@ fn meshlet_material_shade_pipeline_get_or_create(
   }
   pipeline.set_label("mgstudio_meshlet_material_shade_pipeline")
   mesh3d_pipeline_set(
-    backend, color_format, msaa_sample_count, topology, material_pipeline_id, cull_mode,
-    blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, pipeline,
+    backend, color_format, msaa_sample_count, topology, material_pipeline_id, view_layout_key_bits,
+    cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
+    deband_dither_enabled, shadow_filter_method, pipeline,
   )
   vertex_sm.release()
   fragment_sm.release()
@@ -2898,12 +2899,13 @@ fn meshlet_bind_material_shade_draw(
     is Some(pass_uniforms) else {
     return false
   }
-  let (view_bg, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
+  let (view_bg, view_offsets, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
     backend,
     entry.material_pipeline_id,
     material_descriptor,
     pass_state.tonemap_in_shader,
     pass_uniforms,
+    pass_state.light_probes_uniform_offset,
     transmission_source_texture,
     point_shadow_texture,
     directional_shadow_texture,
@@ -2980,15 +2982,7 @@ fn meshlet_bind_material_shade_draw(
     ),
   )
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(
-    0U,
-    view_bg,
-    mesh3d_descriptor_view_bind_group_dynamic_offsets(
-      material_descriptor,
-      0,
-      light_probes_uniform_offset=pass_state.light_probes_uniform_offset,
-    ),
-  )
+  pass.set_bind_group(0U, view_bg, view_offsets)
   pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(2U, material_shade_bind_group, [])
   pass.set_bind_group(3U, material_bg, [])

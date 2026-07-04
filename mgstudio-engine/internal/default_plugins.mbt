@@ -27,6 +27,37 @@ const DEFAULT_PLUGINS_NAME : String = "DefaultPlugins"
 const MINIMAL_PLUGINS_NAME : String = "MinimalPlugins"
 
 ///|
+fn default_plugins_env_present(key : String) -> Bool {
+  match @sys.get_env_var(key) {
+    Some(value) => value.trim().to_owned() != ""
+    None => false
+  }
+}
+
+///|
+fn default_plugins_ci_testing_enabled() -> Bool {
+  default_plugins_env_present("CI_TESTING_CONFIG") ||
+  default_plugins_env_present("CI_TESTING_SCREENSHOT_FRAME") ||
+  default_plugins_env_present("CI_TESTING_SCREENSHOT_AND_EXIT_FRAME") ||
+  default_plugins_env_present("CI_TESTING_EXIT_FRAME") ||
+  default_plugins_env_present("CI_TESTING_FIXED_FRAME_TIME_MS") ||
+  default_plugins_env_present("CI_TESTING_FIXED_FRAME_TIME_US") ||
+  default_plugins_env_present("MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB") ||
+  default_plugins_env_present("MGSTUDIO_SCREENSHOT_PATH")
+}
+
+///|
+fn default_plugins_add_ci_testing_if_enabled(
+  builder : @app.PluginGroupBuilder[@ecs.World],
+) -> @app.PluginGroupBuilder[@ecs.World] {
+  if default_plugins_ci_testing_enabled() {
+    builder.add(@dev_tools_ci_testing.CiTestingPlugin::CiTestingPlugin())
+  } else {
+    builder
+  }
+}
+
+///|
 fn default_plugins_builder(
   asset_plugin : @asset.AssetPlugin,
 ) -> @app.PluginGroupBuilder[@ecs.World] {
@@ -73,6 +104,7 @@ fn default_plugins_builder(
   .add(@picking.InteractionPlugin::InteractionPlugin())
   .add(@physics2d.Physics2dPlugin::Physics2dPlugin())
   .add(@physics3d.Physics3dPlugin::Physics3dPlugin())
+  |> default_plugins_add_ci_testing_if_enabled
 }
 
 ///|
@@ -104,6 +136,7 @@ fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
   .add(@app.StatesPlugin::StatesPlugin())
   .add(@time.TimePlugin::TimePlugin())
   .add(@app.ScheduleRunnerPlugin::run_loop(0.0F))
+  |> default_plugins_add_ci_testing_if_enabled
 }
 
 ///|

@@ -39,6 +39,7 @@ struct Mesh3dPipelineCacheEntry {
   msaa_sample_count : Int
   topology : UInt
   material_pipeline_id : UInt64
+  view_layout_key_bits : UInt
   cull_mode : Int
   blend_kind : Int
   skinned : Bool
@@ -58,6 +59,7 @@ fn mesh3d_pipeline_get(
   msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
+  view_layout_key_bits : UInt,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -74,6 +76,7 @@ fn mesh3d_pipeline_get(
       entry.msaa_sample_count == msaa_sample_count &&
       entry.topology == topology &&
       entry.material_pipeline_id == material_pipeline_id &&
+      entry.view_layout_key_bits == view_layout_key_bits &&
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
@@ -111,6 +114,7 @@ fn mesh3d_pipeline_failed(
   msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
+  view_layout_key_bits : UInt,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -127,6 +131,7 @@ fn mesh3d_pipeline_failed(
       entry.msaa_sample_count == msaa_sample_count &&
       entry.topology == topology &&
       entry.material_pipeline_id == material_pipeline_id &&
+      entry.view_layout_key_bits == view_layout_key_bits &&
       entry.cull_mode == safe_cull_mode &&
       entry.blend_kind == blend_kind &&
       entry.skinned == skinned &&
@@ -155,6 +160,7 @@ fn mesh3d_pipeline_set(
   msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
+  view_layout_key_bits : UInt,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -171,6 +177,7 @@ fn mesh3d_pipeline_set(
     msaa_sample_count,
     topology,
     material_pipeline_id,
+    view_layout_key_bits,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
     skinned,
@@ -192,6 +199,7 @@ fn mesh3d_pipeline_set_failed(
   msaa_sample_count : Int,
   topology : UInt,
   material_pipeline_id : UInt64,
+  view_layout_key_bits : UInt,
   cull_mode : Int,
   blend_kind : Int,
   skinned : Bool,
@@ -209,6 +217,7 @@ fn mesh3d_pipeline_set_failed(
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       cull_mode,
       blend_kind,
       skinned,
@@ -228,6 +237,7 @@ fn mesh3d_pipeline_set_failed(
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       cull_mode,
       blend_kind,
       skinned,
@@ -245,6 +255,7 @@ fn mesh3d_pipeline_set_failed(
     msaa_sample_count,
     topology,
     material_pipeline_id,
+    view_layout_key_bits,
     cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
     blend_kind,
     skinned,

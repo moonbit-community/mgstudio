@@ -723,6 +723,18 @@ pub impl Material for StandardMaterial with fn reads_view_transmission_texture(
 }
 
 ///|
+pub impl Material for StandardMaterial with fn standard_material_payload(self) {
+  self
+}
+
+///|
+pub impl Material for StandardMaterial with fn material_extension_metadata(
+  _self,
+) {
+  None
+}
+
+///|
 pub impl Material for StandardMaterial with fn enable_prepass() {
   material_default_enable_prepass()
 }
@@ -761,6 +773,15 @@ pub impl Material for StandardMaterial with fn bind_group_layout_descriptor(
 ///|
 pub impl Material for StandardMaterial with fn bind_group_data(self) {
   standard_material_key_from_material(self).bits().to_string()
+}
+
+///|
+pub impl Material for StandardMaterial with fn renderer_extra_bind_group_data(
+  self,
+  _context,
+) {
+  ignore(self)
+  @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
 }
 
 ///|

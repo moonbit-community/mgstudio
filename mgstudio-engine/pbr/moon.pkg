@@ -9,6 +9,7 @@ import {
   "moonbitlang/core/hashset",
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/x/sys",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/animation",
   "Milky2018/mgstudio/anti_alias/contrast_adaptive_sharpening" @cas,

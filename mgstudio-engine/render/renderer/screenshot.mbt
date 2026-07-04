@@ -354,6 +354,9 @@ fn screenshot_capture_bytes_per_pixel(format_raw : UInt) -> Int? {
     format_raw == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB {
     return Some(4)
   }
+  if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT {
+    return Some(8)
+  }
   None
 }
 
@@ -369,14 +372,85 @@ fn screenshot_capture_row_bytes(width : Int, bytes_per_pixel : Int) -> Int {
 }
 
 ///|
+fn screenshot_pow2(exponent : Int) -> Float {
+  let mut value = 1.0F
+  if exponent >= 0 {
+    for _ in 0..<exponent {
+      value = value * 2.0F
+    }
+  } else {
+    for _ in 0..<(0 - exponent) {
+      value = value * 0.5F
+    }
+  }
+  value
+}
+
+///|
+fn screenshot_half_to_float(bits : UInt) -> Float {
+  let sign = (bits & 0x8000U) != 0U
+  let exponent = ((bits >> 10) & 0x1FU).reinterpret_as_int()
+  let mantissa = (bits & 0x03FFU).reinterpret_as_int()
+  let magnitude = if exponent == 0 {
+    if mantissa == 0 {
+      0.0F
+    } else {
+      Float::from_int(mantissa) / 1024.0F * screenshot_pow2(-14)
+    }
+  } else if exponent == 31 {
+    65504.0F
+  } else {
+    (1.0F + Float::from_int(mantissa) / 1024.0F) *
+    screenshot_pow2(exponent - 15)
+  }
+  if sign {
+    0.0F - magnitude
+  } else {
+    magnitude
+  }
+}
+
+///|
+fn screenshot_float_to_unorm_byte(value : Float) -> Byte {
+  let mapped = if @sys.get_env_var("MGSTUDIO_DEBUG_SCREENSHOT_HDR_REINHARD")
+    is Some(_) {
+    if value <= 0.0F {
+      0.0F
+    } else {
+      value / (1.0F + value)
+    }
+  } else {
+    value
+  }
+  let clamped = if mapped <= 0.0F {
+    0.0F
+  } else if mapped >= 1.0F {
+    1.0F
+  } else {
+    mapped
+  }
+  (clamped * 255.0F + 0.5F).to_double().to_int().to_byte()
+}
+
+///|
+fn screenshot_read_u16_le(bytes : Bytes, offset : Int) -> UInt {
+  let lo = bytes[offset].to_int() & 0xFF
+  let hi = bytes[offset + 1].to_int() & 0xFF
+  (lo | (hi << 8)).reinterpret_as_uint()
+}
+
+///|
 fn screenshot_capture_pixels_rgba8(
   format_raw : UInt,
   width : Int,
   height : Int,
   bytes : Bytes,
 ) -> Bytes? {
-  let compact_len = width * height * 4
-  let row_bytes = screenshot_capture_row_bytes(width, 4)
+  guard screenshot_capture_bytes_per_pixel(format_raw) is Some(bytes_per_pixel) else {
+    return None
+  }
+  let compact_len = width * height * bytes_per_pixel
+  let row_bytes = screenshot_capture_row_bytes(width, bytes_per_pixel)
   let expected_len = row_bytes * height
   if bytes.length() != compact_len && bytes.length() != expected_len {
     return None
@@ -387,6 +461,36 @@ fn screenshot_capture_pixels_rgba8(
       format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
     ) {
     return Some(bytes)
+  }
+  if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT {
+    let out : Array[Byte] = []
+    for y in 0..<height {
+      let row_start = y * row_bytes
+      for x in 0..<width {
+        let base = row_start + x * 8
+        out.push(
+          screenshot_float_to_unorm_byte(
+            screenshot_half_to_float(screenshot_read_u16_le(bytes, base)),
+          ),
+        )
+        out.push(
+          screenshot_float_to_unorm_byte(
+            screenshot_half_to_float(screenshot_read_u16_le(bytes, base + 2)),
+          ),
+        )
+        out.push(
+          screenshot_float_to_unorm_byte(
+            screenshot_half_to_float(screenshot_read_u16_le(bytes, base + 4)),
+          ),
+        )
+        out.push(
+          screenshot_float_to_unorm_byte(
+            screenshot_half_to_float(screenshot_read_u16_le(bytes, base + 6)),
+          ),
+        )
+      }
+    }
+    return Some(Bytes::from_array(out))
   }
   if format_raw != @wgpu.TEXTURE_FORMAT_BGRA8_UNORM &&
     format_raw != @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB &&
@@ -451,19 +555,47 @@ fn screenshot_read_texture_sync(
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(bytes_per_pixel) else {
     return None
   }
+  let layer = match
+    @sys.get_env_var("MGSTUDIO_DEBUG_SCREENSHOT_TEXTURE_LAYER") {
+    Some(value) => {
+      let parsed = @string.parse_int(value.trim(), base=10) catch { _ => 0 }
+      if parsed < 0 {
+        0
+      } else {
+        parsed
+      }
+    }
+    None => 0
+  }
   let byte_len = (screenshot_capture_row_bytes(width, bytes_per_pixel) * height).to_uint64()
   let usage = @wgpu.BufferUsage::from_u64(
     @wgpu.BUFFER_USAGE_MAP_READ | @wgpu.BUFFER_USAGE_COPY_DST,
   )
   let buffer = backend.device.create_buffer(size=byte_len, usage~)
   let encoder = backend.device.create_command_encoder()
-  encoder.copy_texture_to_buffer_bytes_per_pixel(
-    texture,
-    buffer,
+  let tex_info = @wgpu_c.texel_copy_texture_info_new(
+    texture.raw,
+    0U,
+    0U,
+    0U,
+    layer.reinterpret_as_uint(),
+  )
+  let row_bytes = screenshot_capture_row_bytes(width, bytes_per_pixel)
+  let buffer_info = @wgpu_c.texel_copy_buffer_info_new(
+    buffer.raw,
+    0UL,
+    row_bytes.reinterpret_as_uint(),
+    height.reinterpret_as_uint(),
+  )
+  let extent = @wgpu_c.extent3d_new(
     width.reinterpret_as_uint(),
     height.reinterpret_as_uint(),
-    bytes_per_pixel.reinterpret_as_uint(),
+    1U,
   )
+  encoder.copy_texture_to_buffer(tex_info, buffer_info, extent)
+  @wgpu_c.extent3d_free(extent)
+  @wgpu_c.texel_copy_buffer_info_free(buffer_info)
+  @wgpu_c.texel_copy_texture_info_free(tex_info)
   let cmd = encoder.finish()
   backend.queue.submit_one(cmd)
   let bytes = buffer.readback(backend.instance, 0UL, byte_len)

@@ -182,6 +182,7 @@ pub struct Mesh3dViewBindGroupCacheEntry {
   ssao_resource_revision : Int
   clustered_decals_revision : Int
   bind_group : @wgpu.BindGroup
+  main_offsets : Array[UInt]
   binding_arrays_bind_group : @wgpu.BindGroup
 }
 
@@ -224,6 +225,7 @@ struct Mesh3dFrameViewBindGroupCacheEntry {
   ssao_resource_revision : Int
   clustered_decals_revision : Int
   bind_group : @wgpu.BindGroup
+  main_offsets : Array[UInt]
   binding_arrays_bind_group : @wgpu.BindGroup
 }
 
@@ -271,6 +273,28 @@ struct GpuSsaoPipelineCacheEntry {
   samples_per_slice_side : Int
   temporal_jitter : Bool
   pipeline : @wgpu.ComputePipeline
+}
+
+///|
+struct GpuTaaHistoryTextures {
+  camera_key_hi : Int
+  camera_key_lo : Int
+  width : Int
+  height : Int
+  format : @wgpu.TextureFormat
+  texture_0 : @wgpu.Texture
+  view_0 : @wgpu.TextureView
+  texture_1 : @wgpu.Texture
+  view_1 : @wgpu.TextureView
+  mut next_write_index : Int
+}
+
+///|
+struct GpuTaaPipelineCacheEntry {
+  format : @wgpu.TextureFormat
+  tonemap : Bool
+  reset : Bool
+  pipeline : @wgpu.RenderPipeline
 }
 
 ///|
@@ -338,6 +362,16 @@ struct GpuDeferredLightingPipelineCacheEntry {
   atmosphere : Bool
   pipeline_layout : @wgpu.PipelineLayout
   depth_id_bind_group_layout : @wgpu.BindGroupLayout
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
+struct GpuScreenSpaceReflectionsPipelineCacheEntry {
+  color_format : UInt
+  view_layout_key_bits : UInt
+  atmosphere : Bool
+  pipeline_layout : @wgpu.PipelineLayout
+  bind_group_layout : @wgpu.BindGroupLayout
   pipeline : @wgpu.RenderPipeline
 }
 

@@ -13,14 +13,9 @@
 // limitations under the License.
 
 ///|
-test "pbr atmosphere: extracted atmosphere preserves Bevy radius fields" {
-  let extracted = pbr_extracted_atmosphere(
-    -1.0F,
-    -2.0F,
-    @math.Vec3::new(0.1F, 0.2F, 0.3F),
-    42,
-  )
-  inspect(extracted.inner_radius.to_double(), content="-1")
-  inspect(extracted.outer_radius.to_double(), content="-2")
-  inspect(extracted.medium_id, content="42")
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/mip_generation/mod.rs`.
+
+///|
+pub fn downsample_specialized_wgsl_source(identifier : String) -> String {
+  downsample_wgsl_source.replace_all(old="##TEXTURE_FORMAT##", new=identifier)
 }

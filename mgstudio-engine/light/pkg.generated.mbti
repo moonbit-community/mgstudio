@@ -198,13 +198,13 @@ pub struct Atmosphere {
   inner_radius : Float
   outer_radius : Float
   ground_albedo : @math.Vec3
-  medium : ScatteringMedium
+  medium : @asset.Handle[ScatteringMedium]
 } derive(ToJson, @json.FromJson)
 pub fn Atmosphere::Atmosphere() -> Self
-pub fn Atmosphere::earth(ScatteringMedium) -> Self
-pub fn Atmosphere::mars(ScatteringMedium) -> Self
+pub fn Atmosphere::earth(@asset.Handle[ScatteringMedium]) -> Self
+pub fn Atmosphere::mars(@asset.Handle[ScatteringMedium]) -> Self
 pub fn Atmosphere::with_ground_albedo(Self, @math.Vec3) -> Self
-pub fn Atmosphere::with_medium(Self, ScatteringMedium) -> Self
+pub fn Atmosphere::with_medium(Self, @asset.Handle[ScatteringMedium]) -> Self
 pub fn Atmosphere::with_radii(Self, Float, Float) -> Self
 pub impl @ecs.Component for Atmosphere
 

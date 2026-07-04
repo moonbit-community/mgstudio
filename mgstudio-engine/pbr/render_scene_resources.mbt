@@ -57,10 +57,19 @@ priv struct TransmissionSourceTargetsEntry {
 }
 
 ///|
+priv struct PostProcessPingTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  target_id : Int
+}
+
+///|
 priv struct Render3dSceneTargetsState {
   mut motion_blur_targets : Array[MotionBlurTargetsEntry]
   mut prepass_targets : Array[PrepassTargetsEntry]
   mut transmission_source_targets : Array[TransmissionSourceTargetsEntry]
+  mut postprocess_ping_targets : Array[PostProcessPingTargetsEntry]
 }
 
 ///|
@@ -82,6 +91,7 @@ fn render3d_scene_targets_state_mut_or_init(
       motion_blur_targets: [],
       prepass_targets: [],
       transmission_source_targets: [],
+      postprocess_ping_targets: [],
     })
   }
   match world.get_resource_mut(Render3dSceneTargetsState::resource()) {
@@ -408,6 +418,48 @@ fn render3d_transmission_source_target_get_or_create(
 }
 
 ///|
+fn render3d_postprocess_ping_target_get_or_create(
+  world : @ecs.World,
+  entity : @core.Entity,
+  width : Int,
+  height : Int,
+) -> Int {
+  let scene_targets_state = render3d_scene_targets_state_mut_or_init(world)
+  let postprocess_ping_targets = scene_targets_state.peek().postprocess_ping_targets
+  for item in postprocess_ping_targets {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.width == width &&
+      item.height == height {
+      return item.target_id
+    }
+  }
+  let target_id = @render.host_gpu_create_render_target_rgba16f(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let next : Array[PostProcessPingTargetsEntry] = []
+  let mut replaced = false
+  for item in postprocess_ping_targets {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, width, height, target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, width, height, target_id })
+  }
+  scene_targets_state.modify(fn(state) { state.postprocess_ping_targets = next })
+  target_id
+}
+
+///|
 fn render3d_copy_texture_to_texture(
   source_texture_id : Int,
   target_texture_id : Int,
@@ -427,6 +479,7 @@ fn render3d_copy_texture_to_texture(
 priv struct Render3dEnvironmentMapState {
   diffuse_texture_id : Int
   specular_texture_id : Int
+  smallest_specular_mip_level : Int
   intensity : Float
   rotation : @math.Quat
   affects_lightmapped_mesh_diffuse : Bool
@@ -520,12 +573,31 @@ fn render3d_loaded_image_texture_id(
 }
 
 ///|
+fn render3d_texture_smallest_specular_mip_level(texture_id : Int) -> Int {
+  if texture_id < 0 {
+    return 0
+  }
+  match @render_texture.GpuImage::from_texture_id(texture_id) {
+    Some(gpu_image) => {
+      let mip_count = gpu_image.mip_level_count()
+      if mip_count <= 0 {
+        0
+      } else {
+        mip_count - 1
+      }
+    }
+    None => 0
+  }
+}
+
+///|
 fn render3d_camera_environment_map_state(
   camera : ExtractedCamera3d,
 ) -> Render3dEnvironmentMapState {
   let mut state = Render3dEnvironmentMapState::{
     diffuse_texture_id: -1,
     specular_texture_id: -1,
+    smallest_specular_mip_level: 0,
     intensity: 0.0F,
     rotation: @math.Quat::identity(),
     affects_lightmapped_mesh_diffuse: true,
@@ -538,26 +610,12 @@ fn render3d_camera_environment_map_state(
       state = Render3dEnvironmentMapState::{
         diffuse_texture_id,
         specular_texture_id,
+        smallest_specular_mip_level: render3d_texture_smallest_specular_mip_level(
+          specular_texture_id,
+        ),
         intensity: environment_map_light.intensity,
         rotation: environment_map_light.rotation,
         affects_lightmapped_mesh_diffuse: environment_map_light.affects_lightmapped_mesh_diffuse,
-      }
-    }
-  }
-  if state.diffuse_texture_id < 0 &&
-    state.specular_texture_id < 0 &&
-    camera.payload.generated_environment_map_light
-    is Some(generated_environment_map_light) {
-    if render3d_loaded_image_texture_id(
-        generated_environment_map_light.environment_map,
-      )
-      is Some(generated_texture_id) {
-      state = Render3dEnvironmentMapState::{
-        diffuse_texture_id: generated_texture_id,
-        specular_texture_id: generated_texture_id,
-        intensity: generated_environment_map_light.intensity,
-        rotation: generated_environment_map_light.rotation,
-        affects_lightmapped_mesh_diffuse: generated_environment_map_light.affects_lightmapped_mesh_diffuse,
       }
     }
   }
@@ -573,6 +631,7 @@ fn render3d_camera_environment_map_state(
     Render3dEnvironmentMapState::{
       diffuse_texture_id: -1,
       specular_texture_id: -1,
+      smallest_specular_mip_level: 0,
       intensity: 0.0F,
       rotation: @math.Quat::identity(),
       affects_lightmapped_mesh_diffuse: true,
@@ -582,6 +641,9 @@ fn render3d_camera_environment_map_state(
       ..state,
       diffuse_texture_id,
       specular_texture_id,
+      smallest_specular_mip_level: render3d_texture_smallest_specular_mip_level(
+        specular_texture_id,
+      ),
     }
   }
 }
@@ -1030,7 +1092,9 @@ fn render3d_camera_light_probe_state(
   words.push(probe_cubemap_indices.length().reinterpret_as_uint())
   words.push(irradiance_volume_indices.length().reinterpret_as_uint())
   render3d_light_probe_push_i32(words, view_cubemap_index)
-  words.push(0U)
+  words.push(
+    environment_map_state.smallest_specular_mip_level.reinterpret_as_uint(),
+  )
   let view_rotation = if view_cubemap_index >= 0 {
     environment_map_state.rotation
   } else {
@@ -1056,6 +1120,16 @@ fn render3d_camera_light_probe_state(
   words.push(if view_affects_lightmapped_mesh_diffuse { 1U } else { 0U })
   while words.length() < 512 {
     words.push(0U)
+  }
+  if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
+    println(
+      "[DEBUG-atmosphere-parity] light-probe view_cubemap_index=\{view_cubemap_index} smallest_mip=\{environment_map_state.smallest_specular_mip_level} intensity=\{environment_map_state.intensity} binding_arrays=\{render3d_light_probe_binding_arrays_are_usable()} diffuse_count=\{diffuse_texture_ids.length()} specular_count=\{specular_texture_ids.length()}",
+    )
+    if diffuse_texture_ids.length() > 0 && specular_texture_ids.length() > 0 {
+      println(
+        "[DEBUG-atmosphere-parity] light-probe first diffuse=\{diffuse_texture_ids[0]} specular=\{specular_texture_ids[0]}",
+      )
+    }
   }
   let uniform_bytes = render3d_light_probe_u32le_pack(words)
   let uniform_offset = render3d_push_view_light_probes_uniform(
@@ -1092,24 +1166,3 @@ fn render3d_camera_light_probe_state(
 }
 
 ///|
-fn render3d_camera_apply_environment_map_lighting(
-  lighting : Render3dLightingState,
-  camera : ExtractedCamera3d,
-) -> Render3dLightingState {
-  let atmosphere_environment_intensity = if camera.payload.atmosphere_environment_map_light
-    is Some(atmosphere_environment_map_light) {
-    @pbr_render.maxf(0.0F, atmosphere_environment_map_light.intensity)
-  } else {
-    0.0F
-  }
-  if atmosphere_environment_intensity <= 0.0F {
-    return lighting
-  }
-  Render3dLightingState::{
-    ..lighting,
-    ambient_brightness: @pbr_render.maxf(
-      lighting.ambient_brightness,
-      atmosphere_environment_intensity,
-    ),
-  }
-}

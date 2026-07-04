@@ -78,6 +78,16 @@ fn ci_testing_config_from_env() -> CiTestingConfig {
       )
     }
   }
+  if ci_testing_env_parse_int("CI_TESTING_FIXED_FRAME_TIME_US")
+    is Some(frame_time_us) {
+    if frame_time_us > 0 {
+      config = config.with_setup(
+        config.setup.with_fixed_frame_time(
+          @core.Duration::from_micros(frame_time_us.to_int64()),
+        ),
+      )
+    }
+  }
   config
 }
 

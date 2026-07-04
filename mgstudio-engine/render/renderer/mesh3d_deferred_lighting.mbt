@@ -77,9 +77,7 @@ fn mesh3d_deferred_lighting_shader_defines(
   if pass_state.irradiance_volume_texture_ids.length() > 0 {
     defines.set("IRRADIANCE_VOLUME", true)
   }
-  if mesh3d_binding_arrays_are_usable(
-      required_storage_textures_per_shader_stage=0U,
-    ) {
+  if mesh3d_light_probe_binding_arrays_are_usable() {
     defines.set("MULTIPLE_LIGHT_PROBES_IN_ARRAY", true)
     defines.set("MULTIPLE_LIGHTMAPS_IN_ARRAY", true)
   }
@@ -106,15 +104,15 @@ fn mesh3d_deferred_lighting_view_layout_key(
     true,
     false,
     atmosphere,
-    pass_state.pbr_blue_noise_texture_id >= 0,
+    mesh3d_bluenoise_texture_feature_enabled(),
     tonemap_in_shader=pass_state.tonemap_in_shader,
     environment_map=pass_state.environment_map_intensity > 0.0F,
     screen_space_ambient_occlusion~,
     irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
     screen_space_reflections~,
     distance_fog~,
-    area_light_luts=pass_state.pbr_area_light_luts_texture_id >= 0,
-    dfg_lut=pass_state.pbr_dfg_lut_texture_id >= 0,
+    area_light_luts=mesh3d_area_light_luts_feature_enabled(),
+    dfg_lut=mesh3d_dfg_lut_feature_enabled(),
   )
 }
 
@@ -685,12 +683,13 @@ pub fn GpuBackend::mesh3d_draw_deferred_lighting(
     reopen_saved_pass(self, pass_state)
     return
   }
-  let (view_bg, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
+  let (view_bg, view_offsets, binding_arrays_bg) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
     MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
     None,
     pass_state.tonemap_in_shader,
     pass_uniforms,
+    pass_state.light_probes_uniform_offset,
     transmission_source_texture,
     point_shadow_texture,
     directional_shadow_texture,
@@ -787,14 +786,7 @@ pub fn GpuBackend::mesh3d_draw_deferred_lighting(
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
   pass.set_pipeline(pipeline_entry.pipeline)
-  pass.set_bind_group(
-    0U,
-    view_bg,
-    mesh3d_view_layout_key_dynamic_offsets(
-      view_layout_key,
-      light_probes_uniform_offset=pass_state.light_probes_uniform_offset,
-    ),
-  )
+  pass.set_bind_group(0U, view_bg, view_offsets)
   pass.set_bind_group(1U, binding_arrays_bg, [])
   pass.set_bind_group(2U, depth_id_bg, [])
   pass.draw(3U, 1U, 0U, 0U)

@@ -657,6 +657,8 @@ pub(open) trait Material {
   fn opaque_render_method(self : Self) -> @material.OpaqueRendererMethod
   fn depth_bias(self : Self) -> Float
   fn reads_view_transmission_texture(self : Self) -> Bool
+  fn standard_material_payload(self : Self) -> @material.StandardMaterial
+  fn material_extension_metadata(self : Self) -> @material.ExtendedMaterialMetadata3d?
   fn enable_prepass() -> Bool
   fn enable_shadows() -> Bool
   fn bindless_supported(render_device : @renderer.RenderDevice) -> Bool
@@ -667,12 +669,16 @@ pub(open) trait Material {
     context : MaterialBindGroupContext,
   ) -> @render_resource.BindGroupLayoutDescriptor
   fn bind_group_data(self : Self) -> String
+  fn renderer_extra_bind_group_data(
+    self : Self,
+    context : MaterialBindGroupContext,
+  ) -> @render_resource.MaterialBindGroupResolvedData
   fn material_key(self : Self) -> @material.ErasedMaterialKey
   fn specialize(
     descriptor : @render.RenderPipelineDescriptor,
     layout : @mesh.MeshVertexBufferLayoutRef,
     key : MaterialPipelineKey[Self],
-  ) -> @render.RenderPipelineDescriptor
+  ) -> @render.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 }
 
 ///|
@@ -703,6 +709,11 @@ pub fn material_default_depth_bias() -> Float {
 ///|
 pub fn material_default_reads_view_transmission_texture() -> Bool {
   false
+}
+
+///|
+pub fn material_default_standard_material_payload() -> @material.StandardMaterial {
+  @material.StandardMaterial::StandardMaterial()
 }
 
 ///|
@@ -752,6 +763,14 @@ pub fn[M : Material] material_default_bind_group_data(material : M) -> String {
   material
   .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
   .bind_group_data()
+}
+
+///|
+pub fn[M : Material] material_default_renderer_extra_bind_group_data(
+  material : M,
+  context : MaterialBindGroupContext,
+) -> @render_resource.MaterialBindGroupResolvedData {
+  material.bind_group(context).resolved_data()
 }
 
 ///|
@@ -844,8 +863,11 @@ fn material_properties_add_shader(
 ///|
 pub struct PreparedMaterial[M] {
   source : @asset.Handle[M]
+  material_payload : StandardMaterial
+  material_extension : @material.ExtendedMaterialMetadata3d?
   bind_group : MaterialBindGroup
   bind_group_data : @render_resource.MaterialBindGroupResolvedData
+  renderer_extra_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   key : MaterialPipelineKey[M]
   properties : @material.MaterialProperties
 }
@@ -853,6 +875,7 @@ pub struct PreparedMaterial[M] {
 ///|
 pub struct Render3dResolvedMaterial {
   material : StandardMaterial
+  material_extension : @material.ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   material_type_tag : String
@@ -864,13 +887,22 @@ pub fn Render3dResolvedMaterial::new(
   material_properties : @material.MaterialProperties,
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
   material_type_tag : String,
+  material_extension? : @material.ExtendedMaterialMetadata3d? = None,
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::{
     material,
+    material_extension,
     material_properties,
     material_bind_group_data,
     material_type_tag,
   }
+}
+
+///|
+pub fn Render3dResolvedMaterial::material_extension(
+  self : Render3dResolvedMaterial,
+) -> @material.ExtendedMaterialMetadata3d? {
+  self.material_extension
 }
 
 ///|
@@ -943,7 +975,12 @@ pub fn[M : Material] PreparedMaterial::from_material(
     .with_material_layout(Some(material_layout))
     .with_material_key(material_key)
     .with_user_specialize(
-      Some(fn(_label, descriptor, layout, erased_key) {
+      Some(fn(
+        _label,
+        descriptor,
+        layout,
+        erased_key,
+      ) raise @material.SpecializedMeshPipelineError {
         let typed_key = MaterialPipelineKey::new(
           erased_key.mesh_key(),
           key.bind_group_layout_key(),
@@ -954,8 +991,10 @@ pub fn[M : Material] PreparedMaterial::from_material(
       }),
     )
     .with_base_specialize(Some(pbr_material_base_specialize))
+    .with_prepass_specialize(Some(pbr_material_prepass_specialize))
     .with_shadows_enabled(M::enable_shadows())
     .with_prepass_enabled(M::enable_prepass())
+  properties = pbr_material_apply_default_draw_functions(properties)
   properties = material_properties_add_shader(
     properties,
     @material.MATERIAL_VERTEX_SHADER_LABEL,
@@ -1003,8 +1042,13 @@ pub fn[M : Material] PreparedMaterial::from_material(
   )
   PreparedMaterial::{
     source,
+    material_payload: material.standard_material_payload(),
+    material_extension: material.material_extension_metadata(),
     bind_group,
     bind_group_data: bind_group.resolved_data(),
+    renderer_extra_bind_group_data: material.renderer_extra_bind_group_data(
+      context,
+    ),
     key,
     properties,
   }
@@ -1036,10 +1080,11 @@ pub fn[M : Material] PreparedMaterial::resolved_material(
   self : PreparedMaterial[M],
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::new(
-    StandardMaterial::StandardMaterial(),
+    self.material_payload,
     self.properties,
-    self.bind_group_data,
+    self.renderer_extra_bind_group_data,
     M::material_debug_name(),
+    material_extension=self.material_extension,
   )
 }
 
@@ -1805,7 +1850,7 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     return
   }
   let default_opaque_renderer_method = match
-    world.get_resource(@material.ecs_key_default_opaque_renderer_method) {
+    source_world.get_resource(@material.ecs_key_default_opaque_renderer_method) {
     Some(value) => value.renderer_method()
     None => @material.OpaqueRendererMethod::Forward
   }

@@ -106,6 +106,89 @@ pub(open) trait MaterialExtension {
 }
 
 ///|
+pub(open) trait StandardMaterialExtension {
+  fn extended_material_asset_debug_name() -> String
+  fn extended_material_asset_keys() -> @asset.AssetResourceKeys[
+    ExtendedMaterial[StandardMaterial, Self],
+  ]
+  fn extended_material_keys() -> MaterialKeys[
+    ExtendedMaterial[StandardMaterial, Self],
+  ]
+  fn vertex_shader_ref() -> String?
+  fn fragment_shader_ref() -> String?
+  fn prepass_vertex_shader_ref() -> String?
+  fn prepass_fragment_shader_ref() -> String?
+  fn deferred_vertex_shader_ref() -> String?
+  fn deferred_fragment_shader_ref() -> String?
+  fn meshlet_fragment_shader_ref() -> String?
+  fn meshlet_prepass_fragment_shader_ref() -> String?
+  fn meshlet_deferred_fragment_shader_ref() -> String?
+  fn enable_prepass_ref() -> Bool
+  fn enable_shadows_ref() -> Bool
+  fn specialize_ref() -> @material.UserSpecializeFn?
+}
+
+///|
+pub fn standard_material_extension_default_vertex_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_fragment_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_prepass_vertex_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_prepass_fragment_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_deferred_vertex_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_deferred_fragment_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_meshlet_fragment_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_meshlet_prepass_fragment_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_meshlet_deferred_fragment_shader_ref() -> String? {
+  None
+}
+
+///|
+pub fn standard_material_extension_default_enable_prepass_ref() -> Bool {
+  true
+}
+
+///|
+pub fn standard_material_extension_default_enable_shadows_ref() -> Bool {
+  true
+}
+
+///|
+pub fn standard_material_extension_default_specialize_ref() -> @material.UserSpecializeFn? {
+  None
+}
+
+///|
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   extension : T,
 ) -> ExtendedMaterialMetadata3d {
@@ -203,6 +286,422 @@ pub fn[B, E : MaterialExtension] ExtendedMaterial::material_pipeline_support(
     pipeline.use_shadows
   }
   prepass_supported && shadow_supported
+}
+
+///|
+fn extended_material_shader_override(
+  extension_shader : String?,
+  base_shader : String?,
+) -> String? {
+  match extension_shader {
+    Some(_) => extension_shader
+    None => base_shader
+  }
+}
+
+///|
+fn extended_material_standard_vertex_shader() -> String? {
+  material_default_vertex_shader()
+}
+
+///|
+fn extended_material_standard_fragment_shader() -> String? {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+fn extended_material_standard_prepass_vertex_shader() -> String? {
+  material_default_vertex_shader()
+}
+
+///|
+fn extended_material_standard_prepass_fragment_shader() -> String? {
+  Some(PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH)
+}
+
+///|
+fn extended_material_standard_deferred_vertex_shader() -> String? {
+  material_default_vertex_shader()
+}
+
+///|
+fn extended_material_standard_deferred_fragment_shader() -> String? {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+fn extended_material_standard_meshlet_fragment_shader() -> String? {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+fn extended_material_standard_meshlet_prepass_fragment_shader() -> String? {
+  Some(PBR_MESH_PREPASS_FRAGMENT_SHADER_PATH)
+}
+
+///|
+fn extended_material_standard_meshlet_deferred_fragment_shader() -> String? {
+  Some(PBR_MESH_FRAGMENT_SHADER_PATH)
+}
+
+///|
+fn extended_material_binding_from_extension_binding(
+  binding : @material.MaterialExtensionBinding3d,
+) -> MaterialBinding {
+  match binding.resource() {
+    @material.MaterialExtensionBindingResource3d::Texture(image) =>
+      MaterialBinding::texture(binding.binding(), Some(image))
+    @material.MaterialExtensionBindingResource3d::Sampler(image) =>
+      MaterialBinding::sampler(binding.binding(), Some(image))
+    @material.MaterialExtensionBindingResource3d::Uniform(bytes) =>
+      MaterialBinding::uniform(binding.binding(), bytes)
+  }
+}
+
+///|
+fn[E : MaterialExtension] extended_material_standard_bind_group(
+  material : ExtendedMaterial[StandardMaterial, E],
+  context : MaterialBindGroupContext,
+) -> MaterialBindGroup {
+  let base_bind_group = standard_material_generic_bind_group(
+    material.base,
+    context,
+  )
+  let bindings : Array[MaterialBinding] = []
+  for binding in base_bind_group.bindings {
+    bindings.push(binding)
+  }
+  for binding in material.extension.bind_group_bindings() {
+    bindings.push(extended_material_binding_from_extension_binding(binding))
+  }
+  MaterialBindGroup::new(bindings)
+}
+
+///|
+pub impl[E : StandardMaterialExtension] @asset.Asset for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn asset_debug_name() {
+  E::extended_material_asset_debug_name()
+}
+
+///|
+pub impl[E : StandardMaterialExtension] @asset.Asset for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn asset_as_image(_self) {
+  None
+}
+
+///|
+pub impl[E : StandardMaterialExtension] @asset.Asset for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn asset_resource_keys() {
+  E::extended_material_asset_keys()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn material_debug_name() {
+  E::extended_material_asset_debug_name()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn material_keys() {
+  E::extended_material_keys()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn vertex_shader() {
+  extended_material_shader_override(
+    E::vertex_shader_ref(),
+    extended_material_standard_vertex_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn fragment_shader() {
+  extended_material_shader_override(
+    E::fragment_shader_ref(),
+    extended_material_standard_fragment_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn prepass_vertex_shader() {
+  extended_material_shader_override(
+    E::prepass_vertex_shader_ref(),
+    extended_material_standard_prepass_vertex_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn prepass_fragment_shader() {
+  extended_material_shader_override(
+    E::prepass_fragment_shader_ref(),
+    extended_material_standard_prepass_fragment_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn deferred_vertex_shader() {
+  extended_material_shader_override(
+    E::deferred_vertex_shader_ref(),
+    extended_material_standard_deferred_vertex_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn deferred_fragment_shader() {
+  extended_material_shader_override(
+    E::deferred_fragment_shader_ref(),
+    extended_material_standard_deferred_fragment_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn meshlet_fragment_shader() {
+  extended_material_shader_override(
+    E::meshlet_fragment_shader_ref(),
+    extended_material_standard_meshlet_fragment_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn meshlet_prepass_fragment_shader() {
+  extended_material_shader_override(
+    E::meshlet_prepass_fragment_shader_ref(),
+    extended_material_standard_meshlet_prepass_fragment_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn meshlet_deferred_fragment_shader() {
+  extended_material_shader_override(
+    E::meshlet_deferred_fragment_shader_ref(),
+    extended_material_standard_meshlet_deferred_fragment_shader(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn register_shader_sources() {
+  true
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn alpha_mode(self) {
+  match self.extension.alpha_mode() {
+    Some(value) => value
+    None => self.base.alpha_mode
+  }
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn opaque_render_method(self) {
+  standard_material_unresolved_opaque_render_method(self.base)
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn depth_bias(self) {
+  self.base.depth_bias
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn reads_view_transmission_texture(self) {
+  standard_material_reads_view_transmission_texture(self.base)
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn standard_material_payload(self) {
+  self.base
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn material_extension_metadata(self) {
+  Some(self.metadata())
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn enable_prepass() {
+  E::enable_prepass_ref()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn enable_shadows() {
+  E::enable_shadows_ref()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn bindless_supported(render_device) {
+  standard_material_bindless_supported(render_device)
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn bindless_slot_count() {
+  standard_material_bindless_slot_count()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn bind_group(self, context) {
+  extended_material_standard_bind_group(self, context)
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn bind_group_layout_descriptor(self, context) {
+  let base = standard_material_bind_group_layout_descriptor(
+    features=context.standard_material_texture_features(),
+  )
+  let extension_entries = self.extension.bind_group_layout_entries()
+  extended_material_bind_group_layout_descriptor(
+    base,
+    extension_entries,
+    E::extended_material_asset_debug_name(),
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn bind_group_data(self) {
+  extended_material_standard_bind_group(
+    self,
+    MaterialBindGroupContext::MaterialBindGroupContext(),
+  ).bind_group_data()
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn renderer_extra_bind_group_data(self, _context) {
+  let entries : Array[@render_resource.MaterialBindGroupResolvedEntry] = []
+  for binding in self.extension.bind_group_bindings() {
+    let material_binding = extended_material_binding_from_extension_binding(
+      binding,
+    )
+    entries.push(material_binding_to_resolved_entry(material_binding))
+  }
+  @render_resource.MaterialBindGroupResolvedData::new(entries)
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn material_key(self) {
+  @material.ErasedMaterialKey::new(
+    material_hash_bind_group_data(self.bind_group_data()),
+    "MaterialExtensionBindGroupData<\{E::extended_material_asset_debug_name()}>",
+  )
+}
+
+///|
+pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
+  StandardMaterial,
+  E,
+] with fn specialize(descriptor, layout, key) {
+  ignore(layout)
+  let base_key : MaterialPipelineKey[StandardMaterial] = MaterialPipelineKey::new(
+    key.mesh_key(),
+    key.bind_group_layout_key(),
+    key.bind_group_data(),
+    material_key=key.material_key(),
+  )
+  let base_descriptor = pbr_specialize_standard_material_descriptor_for_key(
+    descriptor,
+    @material.ErasedMaterialPipelineKey::new(
+      base_key.mesh_key(),
+      base_key.material_key(),
+      "StandardMaterial",
+    ),
+  )
+  match E::specialize_ref() {
+    Some(user_specialize) =>
+      user_specialize(
+        E::extended_material_asset_debug_name(),
+        base_descriptor,
+        layout,
+        @material.ErasedMaterialPipelineKey::new(
+          key.mesh_key(),
+          key.material_key(),
+          E::extended_material_asset_debug_name(),
+        ),
+      )
+    None => base_descriptor
+  }
 }
 
 ///|

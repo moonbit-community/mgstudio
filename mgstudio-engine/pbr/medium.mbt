@@ -416,12 +416,13 @@ pub fn scattering_medium_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ScatteringMediumPlugin,
 ) -> @app.App[@ecs.World] {
-  if app.contains_resource(ecs_key_scattering_medium_plugin_state) {
+  let next = if app.contains_resource(ecs_key_scattering_medium_plugin_state) {
     app
   } else {
     init_scattering_medium_resources(app.world(), plugin)
     app
   }
+  @asset.init_asset(next, fn() { ScatteringMedium::ScatteringMedium() })
 }
 
 ///|

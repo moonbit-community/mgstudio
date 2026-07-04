@@ -43,8 +43,8 @@ impl @app.Resource for GameState with fn resource() {
 
 ///|
 struct AtmospherePresets {
-  earth : @pbr.ScatteringMedium
-  mars : @pbr.ScatteringMedium
+  earth : @asset.Handle[@pbr.ScatteringMedium]
+  mars : @asset.Handle[@pbr.ScatteringMedium]
 }
 
 ///|
@@ -78,9 +78,117 @@ struct WaterSettings {
 }
 
 ///|
+fn WaterSettings::WaterSettings() -> WaterSettings {
+  WaterSettings::{
+    octave_vectors: [
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    ],
+    octave_scales: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    octave_strengths: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+  }
+}
+
+///|
 struct Water {
   normals : @asset.Handle[@asset.Image]
   settings : WaterSettings
+}
+
+///|
+fn Water::Water() -> Water {
+  Water::{
+    normals: @asset.Handle::new(0),
+    settings: WaterSettings::WaterSettings(),
+  }
+}
+
+///|
+type WaterMaterial = @pbr.ExtendedMaterial[@pbr.StandardMaterial, Water]
+
+///|
+let water_material_asset_resource_keys : @asset.AssetResourceKeys[WaterMaterial] = @asset.register_asset_resource_keys(
+  "mgstudio_examples::atmosphere::ExtendedMaterial<StandardMaterial, Water>",
+)
+
+///|
+let water_material_keys : @pbr.MaterialKeys[WaterMaterial] = @pbr.register_material_keys(
+  "mgstudio_examples::atmosphere::ExtendedMaterial<StandardMaterial, Water>",
+)
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn extended_material_asset_debug_name() {
+  "mgstudio_examples::atmosphere::ExtendedMaterial<StandardMaterial, Water>"
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn extended_material_asset_keys() {
+  water_material_asset_resource_keys
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn extended_material_keys() {
+  water_material_keys
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn vertex_shader_ref() {
+  @pbr.standard_material_extension_default_vertex_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn fragment_shader_ref() {
+  @pbr.standard_material_extension_default_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn prepass_vertex_shader_ref() {
+  @pbr.standard_material_extension_default_prepass_vertex_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn prepass_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_prepass_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn deferred_vertex_shader_ref() {
+  @pbr.standard_material_extension_default_deferred_vertex_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn deferred_fragment_shader_ref() {
+  Some(SHADER_ASSET_PATH)
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn meshlet_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_meshlet_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn meshlet_prepass_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_meshlet_prepass_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn meshlet_deferred_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_meshlet_deferred_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn enable_prepass_ref() {
+  @pbr.standard_material_extension_default_enable_prepass_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn enable_shadows_ref() {
+  @pbr.standard_material_extension_default_enable_shadows_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for Water with fn specialize_ref() {
+  @pbr.standard_material_extension_default_specialize_ref()
 }
 
 ///|
@@ -225,17 +333,6 @@ pub impl @pbr.MaterialExtension for Water with fn bind_group_bindings(self) {
 }
 
 ///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
-  }
-}
-
-///|
 fn print_controls() -> Unit {
   println("Atmosphere Example Controls:")
   println("    1          - Switch to lookup texture rendering method")
@@ -247,9 +344,16 @@ fn print_controls() -> Unit {
 }
 
 ///|
-fn setup_camera_fog(commands : @app.Commands) -> Unit {
-  let earth_medium = @pbr.ScatteringMedium::earth(256, 256)
-  let mars_medium = @pbr.ScatteringMedium::earth(256, 256)
+fn setup_camera_fog(
+  commands : @app.Commands,
+  scattering_mediums : @app.ResMut[@asset.Assets[@pbr.ScatteringMedium]],
+) -> Unit {
+  let earth_medium = scattering_mediums.modify(fn(assets) {
+    assets.add(@pbr.ScatteringMedium::earth(256, 256))
+  })
+  let mars_medium : @asset.Handle[@pbr.ScatteringMedium] = @asset.Handle::new(
+    -1,
+  )
   commands.insert_resource(AtmospherePresets::{
     earth: earth_medium,
     mars: mars_medium,
@@ -296,7 +400,7 @@ fn setup_terrain_scene(
   commands : @app.Commands,
   asset_server_resource : @app.Res[@asset.AssetServer],
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  water_material_assets : @app.ResMut[@asset.Assets[WaterMaterial]],
 ) -> Unit {
   let asset_server = asset_server_resource.get()
 
@@ -357,7 +461,6 @@ fn setup_terrain_scene(
   let water_base_material = @pbr.StandardMaterial::from_color(
     @color.Color::black(),
   ).with_perceptual_roughness(0.0F)
-  let water_material = @pbr.standard_material_add(water_base_material)
   let water_extension = Water::{
     normals: water_normals,
     settings: WaterSettings::{
@@ -371,16 +474,14 @@ fn setup_terrain_scene(
       ),
     },
   }
+  let water_material = water_material_assets.modify(fn(assets) {
+    assets.add(@pbr.ExtendedMaterial::new(water_base_material, water_extension))
+  })
   let water_mesh = mesh_assets.peek()
     |> @pbr.add_mesh(
       @mesh_primitives_dim3.PlaneMeshBuilder::from_size(@math.Vec2::splat(1.0F)).build(),
     )
-  let water_mesh_material = @pbr.MeshMaterial3d::new(water_material).with_extended_material(
-    Some(
-      @pbr.ExtendedMaterial::new(water_base_material, water_extension).metadata(),
-    ),
-  )
-  ignore(material_assets)
+  let water_mesh_material = @pbr.MeshMaterial3dTyped::new(water_material)
   ignore(
     commands.spawn(
       (
@@ -416,9 +517,13 @@ fn atmosphere_controls(
     try! planet_atmosphere.view(fn(_entity, item) {
       let atmosphere = @pbr.Atmosphere::earth(presets.earth)
       item.0.set(atmosphere)
-      item.1.set(
-        @transform.Transform::from_xyz(0.0F, -atmosphere.inner_radius, 0.0F),
-      )
+      item.1.modify(fn(transform) {
+        transform.translation = @math.Vec3::new(
+          0.0F,
+          -atmosphere.inner_radius,
+          0.0F,
+        )
+      })
     })
     println("Switched to Earth atmosphere")
   }
@@ -465,10 +570,7 @@ fn atmosphere_controls(
   if exposure_delta != 0.0F {
     try! camera_exposure.view(fn(_entity, exposure) {
       let current = exposure.value()
-      let next = clampf(current.ev100 + exposure_delta, 6.0F, 20.0F)
-      if next != current.ev100 {
-        exposure.set(current.with_ev100(next))
-      }
+      exposure.set(current.with_ev100(current.ev100 + exposure_delta))
     })
   }
 }
@@ -500,6 +602,13 @@ fn setup_instructions(_commands : @app.Commands) -> Unit {
 
 ///|
 fn main {
+  let water_material_plugin : @pbr.MaterialPlugin[WaterMaterial] = @pbr.MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      @pbr.ExtendedMaterial::new(
+        @pbr.StandardMaterial::StandardMaterial(),
+        Water::Water(),
+      )
+    },
+  )
   @app.App::new(@ecs.World::new())
   .insert_world_resource(
     @pbr.ecs_key_default_opaque_renderer_method,
@@ -509,7 +618,8 @@ fn main {
   .insert_resource(@camera.ClearColor::new(@color.Color::black()))
   .insert_resource(GameState::GameState())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup_camera_fog)
+  .add_plugins(water_material_plugin)
+  .add_systems_param2(@app.Startup, setup_camera_fog)
   .add_systems_param4(@app.Startup, setup_terrain_scene)
   .add_systems_param(@app.Startup, setup_instructions)
   .add_systems_param7(@app.Update, atmosphere_controls)

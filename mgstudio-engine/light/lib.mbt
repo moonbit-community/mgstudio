@@ -725,16 +725,18 @@ pub struct Atmosphere {
   inner_radius : Float
   outer_radius : Float
   ground_albedo : @math.Vec3
-  medium : ScatteringMedium
+  medium : @asset.Handle[ScatteringMedium]
 } derive(ToJson, FromJson)
 
 ///|
 pub fn Atmosphere::Atmosphere() -> Atmosphere {
-  Atmosphere::earth(ScatteringMedium::ScatteringMedium())
+  Atmosphere::earth(@asset.Handle::new(0))
 }
 
 ///|
-pub fn Atmosphere::earth(medium : ScatteringMedium) -> Atmosphere {
+pub fn Atmosphere::earth(
+  medium : @asset.Handle[ScatteringMedium],
+) -> Atmosphere {
   Atmosphere::{
     inner_radius: 6_360_000.0F,
     outer_radius: 6_460_000.0F,
@@ -744,7 +746,7 @@ pub fn Atmosphere::earth(medium : ScatteringMedium) -> Atmosphere {
 }
 
 ///|
-pub fn Atmosphere::mars(medium : ScatteringMedium) -> Atmosphere {
+pub fn Atmosphere::mars(medium : @asset.Handle[ScatteringMedium]) -> Atmosphere {
   Atmosphere::{
     inner_radius: 3_389_500.0F,
     outer_radius: 3_509_500.0F,
@@ -773,7 +775,7 @@ pub fn Atmosphere::with_ground_albedo(
 ///|
 pub fn Atmosphere::with_medium(
   self : Atmosphere,
-  medium : ScatteringMedium,
+  medium : @asset.Handle[ScatteringMedium],
 ) -> Atmosphere {
   Atmosphere::{ ..self, medium, }
 }

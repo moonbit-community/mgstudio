@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/dev_tools/ci_testing" @dev_tools_ci_testing,
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf/loader" @gltf_loader,
   "Milky2018/mgstudio/gizmos",
@@ -35,6 +36,7 @@ import {
   "Milky2018/mgstudio/physics3d",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/winit",
+  "moonbitlang/x/sys",
 }
 
 supported_targets = "native"

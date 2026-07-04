@@ -34,6 +34,7 @@ priv struct Render3dExecuteCameraPassConfig {
   fxaa_postprocess_enabled : Bool
   cas_postprocess_enabled : Bool
   auto_exposure_enabled : Bool
+  temporal_aa_enabled : Bool
   motion_vector_prepass_enabled : Bool
   fog_enabled : Bool
   scene_pass_kind : Int
@@ -179,6 +180,7 @@ fn render3d_execute_camera_pass_config(
   let decal_enabled = camera_forward_decal_enabled ||
     camera_clustered_decal_enabled
   let postprocess_enabled = motion_blur_active ||
+    temporal_aa_enabled ||
     bloom_enabled ||
     tonemap_postprocess_enabled ||
     auto_exposure_enabled
@@ -241,6 +243,7 @@ fn render3d_execute_camera_pass_config(
     fxaa_postprocess_enabled,
     cas_postprocess_enabled,
     auto_exposure_enabled,
+    temporal_aa_enabled,
     motion_vector_prepass_enabled,
     fog_enabled,
     scene_pass_kind,

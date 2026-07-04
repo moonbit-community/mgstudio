@@ -2,6 +2,7 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader/source" @fullscreen_vertex_shader_source,
+  "Milky2018/mgstudio/core_pipeline/mip_generation/source" @mip_generation_source,
   "Milky2018/mgstudio/embedded_asset",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render/mesh" @render_mesh,

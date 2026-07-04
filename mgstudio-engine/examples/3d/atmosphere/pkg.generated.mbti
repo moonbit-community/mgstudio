@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/examples/3d/atmosphere"
 
 import {
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
@@ -21,6 +22,7 @@ type Terrain
 
 type Water
 pub impl @pbr.MaterialExtension for Water
+pub impl @pbr.StandardMaterialExtension for Water
 
 type WaterSettings
 

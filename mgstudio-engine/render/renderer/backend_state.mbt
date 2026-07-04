@@ -30,6 +30,7 @@ pub struct GpuBackend {
   mut pass_has_depth : Bool
   frame_retired_buffers : Array[@wgpu.Buffer]
   frame_retired_bind_groups : Array[@wgpu.BindGroup]
+  frame_retired_texture_views : Array[@wgpu.TextureView]
   mut frame_count : UInt
   mut depth_texture : @wgpu.Texture?
   mut depth_view : @wgpu.TextureView?
@@ -453,6 +454,12 @@ pub struct GpuBackend {
   mut fxaa_pipeline_surface_edge_threshold_mode : Int
   mut fxaa_pipeline_surface_edge_threshold_min_mode : Int
   mut fxaa_sampler : @wgpu.Sampler?
+  mut taa_bgl : @wgpu.BindGroupLayout?
+  mut taa_pipeline_layout : @wgpu.PipelineLayout?
+  mut taa_nearest_sampler : @wgpu.Sampler?
+  mut taa_linear_sampler : @wgpu.Sampler?
+  taa_history_textures : Array[GpuTaaHistoryTextures]
+  taa_pipeline_cache : Array[GpuTaaPipelineCacheEntry]
   mut bloom_intermediate_bgl : @wgpu.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping_bgl : @wgpu.BindGroupLayout?
@@ -500,6 +507,8 @@ pub struct GpuBackend {
   mut mesh3d_ssao_pending_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_atmosphere_resources : GpuAtmosphereResources?
   mut mesh3d_atmosphere_resource_revision : Int
+  mut light_probe_environment_generator : GpuLightProbeEnvironmentGenerator?
+  mut light_probe_environment_intermediate : GpuLightProbeIntermediateTexture?
   mut mesh3d_scattering_medium_resources : GpuScatteringMediumResources?
   mut mesh3d_scattering_medium_resource_revision : Int
   mut mesh3d_deferred_lighting_id_depth_texture : GpuDeferredLightingIdDepthTexture?
@@ -509,6 +518,11 @@ pub struct GpuBackend {
   mesh3d_deferred_lighting_pipeline_cache : Array[
     GpuDeferredLightingPipelineCacheEntry,
   ]
+  mut mesh3d_ssr_bind_group_layout : @wgpu.BindGroupLayout?
+  mut mesh3d_ssr_color_sampler : @wgpu.Sampler?
+  mut mesh3d_ssr_depth_linear_sampler : @wgpu.Sampler?
+  mut mesh3d_ssr_depth_nearest_sampler : @wgpu.Sampler?
+  mesh3d_ssr_pipeline_cache : Array[GpuScreenSpaceReflectionsPipelineCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu.Sampler]
   mut next_id : Int
   mut normal_map_fallback_texture_id : Int

@@ -2009,25 +2009,6 @@ fn mesh3d_descriptor_view_bind_group_dynamic_offsets(
 }
 
 ///|
-fn mesh3d_view_layout_key_dynamic_offsets(
-  view_layout_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
-  light_probes_uniform_offset~ : UInt,
-) -> Array[UInt] {
-  let mesh_view_layout = @mesh_view_layout.render3d_mesh_pipeline_view_layout(
-    true,
-    true,
-    view_layout_key,
-    clustered_decals_usable=mesh3d_clustered_decals_are_usable(),
-    irradiance_volumes_usable=false,
-    oit_supported=false,
-  )
-  mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
-    mesh_view_layout.main_bind_group_layout_descriptor(),
-    light_probes_uniform_offset~,
-  )
-}
-
-///|
 fn mesh3d_material_pipeline_layout_cache_get(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
@@ -2082,6 +2063,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
         true,
         true,
         default_view_layout_key,
+        multiple_light_probes_in_array=mesh3d_light_probe_binding_arrays_are_usable(),
         clustered_decals_usable=mesh3d_clustered_decals_are_usable(),
         irradiance_volumes_usable=false,
         oit_supported=false,
@@ -2352,6 +2334,9 @@ fn ensure_mesh3d_pipeline_rgba8(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(
+    tonemap_in_shader~,
+  ),
   lightmapped? : Bool = false,
 ) -> Unit raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
@@ -2360,12 +2345,14 @@ fn ensure_mesh3d_pipeline_rgba8(
   )
   let safe_cull_mode = mesh3d_cull_mode_sanitize(effective_cull_mode)
   let color_format = tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM).to_u32()
+  let view_layout_key_bits = default_view_layout_key.bits()
   if mesh3d_pipeline_get(
       backend,
       color_format,
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       safe_cull_mode,
       blend_kind,
       skinned,
@@ -2385,6 +2372,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       safe_cull_mode,
       blend_kind,
       skinned,
@@ -2403,9 +2391,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend,
     material_pipeline_id,
     material_descriptor,
-    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
-      tonemap_in_shader~,
-    ),
+    default_view_layout_key~,
     default_lightmapped=lightmapped,
   )
   let pl = layout_entry.pipeline_layout
@@ -2428,6 +2414,7 @@ fn ensure_mesh3d_pipeline_rgba8(
         msaa_sample_count,
         topology,
         material_pipeline_id,
+        view_layout_key_bits,
         safe_cull_mode,
         blend_kind,
         skinned,
@@ -2496,6 +2483,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       safe_cull_mode,
       blend_kind,
       skinned,
@@ -2525,6 +2513,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     msaa_sample_count,
     topology,
     material_pipeline_id,
+    view_layout_key_bits,
     safe_cull_mode,
     blend_kind,
     skinned,
@@ -2555,6 +2544,9 @@ fn ensure_mesh3d_pipeline_surface(
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
   shadow_filter_method : Int,
+  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(
+    tonemap_in_shader~,
+  ),
   lightmapped? : Bool = false,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh3d pipeline resources/layout exist before creating
@@ -2568,12 +2560,14 @@ fn ensure_mesh3d_pipeline_surface(
   )
   let safe_cull_mode = mesh3d_cull_mode_sanitize(effective_cull_mode)
   let color_format = format.to_u32()
+  let view_layout_key_bits = default_view_layout_key.bits()
   if mesh3d_pipeline_get(
       backend,
       color_format,
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       safe_cull_mode,
       blend_kind,
       skinned,
@@ -2593,6 +2587,7 @@ fn ensure_mesh3d_pipeline_surface(
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       safe_cull_mode,
       blend_kind,
       skinned,
@@ -2611,9 +2606,7 @@ fn ensure_mesh3d_pipeline_surface(
     backend,
     material_pipeline_id,
     material_descriptor,
-    default_view_layout_key=mesh3d_default_mesh_view_layout_key(
-      tonemap_in_shader~,
-    ),
+    default_view_layout_key~,
     default_lightmapped=lightmapped,
   )
   let pl = layout_entry.pipeline_layout
@@ -2636,6 +2629,7 @@ fn ensure_mesh3d_pipeline_surface(
         msaa_sample_count,
         topology,
         material_pipeline_id,
+        view_layout_key_bits,
         safe_cull_mode,
         blend_kind,
         skinned,
@@ -2704,6 +2698,7 @@ fn ensure_mesh3d_pipeline_surface(
       msaa_sample_count,
       topology,
       material_pipeline_id,
+      view_layout_key_bits,
       safe_cull_mode,
       blend_kind,
       skinned,
@@ -2733,6 +2728,7 @@ fn ensure_mesh3d_pipeline_surface(
     msaa_sample_count,
     topology,
     material_pipeline_id,
+    view_layout_key_bits,
     safe_cull_mode,
     blend_kind,
     skinned,
@@ -2792,6 +2788,16 @@ fn mesh3d_pipeline_for_current_pass(
     Some(pass_state) => pass_state.msaa_sample_count
     None => 1
   }
+  let default_view_layout_key = match backend.pass_state {
+    Some(pass_state) =>
+      mesh3d_pass_mesh_view_layout_key(
+        pass_state,
+        atmosphere=pass_state.prepass_deferred_texture_id >= 0 &&
+          backend.mesh3d_atmosphere_resources is Some(_),
+      )
+    None => mesh3d_default_mesh_view_layout_key(tonemap_in_shader~)
+  }
+  let view_layout_key_bits = default_view_layout_key.bits()
   if resolved_vertex_shader_path != MESH3D_FORWARD_VERTEX_SHADER_PATH ||
     resolved_fragment_shader_path != MESH3D_FORWARD_SHADER_PATH {
     let custom_surface_format = match current_pass_color_format(backend) {
@@ -2823,6 +2829,7 @@ fn mesh3d_pipeline_for_current_pass(
         tonemapping_mode,
         deband_dither_enabled,
         shadow_filter_method,
+        default_view_layout_key~,
         lightmapped~,
       )
       return mesh3d_pipeline_get(
@@ -2831,6 +2838,7 @@ fn mesh3d_pipeline_for_current_pass(
         msaa_sample_count,
         topology,
         material_pipeline_id,
+        view_layout_key_bits,
         effective_cull_mode,
         blend_kind,
         skinned,
@@ -2858,6 +2866,7 @@ fn mesh3d_pipeline_for_current_pass(
     tonemapping_mode,
     deband_dither_enabled,
     shadow_filter_method,
+    default_view_layout_key~,
     lightmapped~,
   )
   mesh3d_pipeline_get(
@@ -2866,6 +2875,7 @@ fn mesh3d_pipeline_for_current_pass(
     msaa_sample_count,
     topology,
     material_pipeline_id,
+    view_layout_key_bits,
     effective_cull_mode,
     blend_kind,
     skinned,
@@ -3636,29 +3646,11 @@ fn mesh3d_motion_vector_pipeline_entry_for_draw(
   has_previous_morph : Bool,
 ) -> Mesh3dMotionVectorPipelineCacheEntry? raise GpuBackendError {
   if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
-    guard mesh3d_material_render_pipeline_for_draw(
-        backend, material_pipeline_id,
-      )
-      is Some(pipeline) else {
-      return None
-    }
     guard material_descriptor is Some(_) else { return None }
-    let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
-      backend, material_pipeline_id, material_descriptor,
+    mesh3d_motion_vector_pipeline_entry_get_or_create(
+      backend, topology, msaa_sample_count, material_pipeline_id, material_descriptor,
+      cull_mode, skinned, has_previous_skin, morphed, has_previous_morph,
     )
-    Some({
-      topology,
-      material_pipeline_id,
-      msaa_sample_count,
-      cull_mode: mesh3d_cull_mode_sanitize(cull_mode),
-      skinned,
-      has_previous_skin,
-      morphed,
-      has_previous_morph,
-      mesh_bind_group_layout_descriptor: layout_entry.draw_bind_group_layout_descriptor,
-      mesh_bind_group_layout: layout_entry.draw_bind_group_layout,
-      pipeline,
-    })
   } else {
     mesh3d_motion_vector_pipeline_entry_get_or_create(
       backend, topology, msaa_sample_count, material_pipeline_id, material_descriptor,
