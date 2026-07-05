@@ -36,6 +36,76 @@ fn atmosphere_collect_insert_primary_window(
 }
 
 ///|
+test "render3d collect cameras: volumetric fog depth usage is prepared from render world without source mutation" {
+  let source_world = @ecs.World::new()
+  atmosphere_collect_insert_primary_window(source_world, 1280, 720)
+  let camera_entity = source_world.spawn()
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_camera3d,
+    Camera3d::Camera3d(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(true),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    ecs_key_projection,
+    Projection::default(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
+  )
+  |> ignore)
+  try! (source_world.set_by_key(
+    camera_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(@transform.Transform::identity()),
+  )
+  |> ignore)
+
+  let render_world = @ecs.World::new()
+  let render_view = render_world.spawn()
+  try! (render_world.set_by_key(
+    render_view,
+    ecs_key_volumetric_fog,
+    VolumetricFog::VolumetricFog(),
+  )
+  |> ignore)
+  let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
+      cache,
+    ) {
+      @pbr_render.render3d_world_transform_cache_begin_frame(cache)
+      render3d_execute_collect_cameras(
+        source_world,
+        render_world,
+        cache,
+        false,
+        false,
+        true,
+        OpaqueRendererMethod::Forward,
+      )
+    },
+  )
+
+  inspect(cameras.length(), content="1")
+  assert_true(cameras[0].payload.depth_texture_usages.has_texture_binding())
+  assert_false(
+    (try! source_world.get_by_key(camera_entity, ecs_key_camera3d))
+    .unwrap()
+    .depth_texture_usages()
+    .has_texture_binding(),
+  )
+}
+
+///|
 test "render3d collect cameras: atmosphere example keeps Bevy camera and planet transforms" {
   let source_world = @ecs.World::new()
   atmosphere_collect_insert_primary_window(source_world, 2048, 1024)
@@ -105,6 +175,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
       @pbr_render.render3d_world_transform_cache_begin_frame(cache)
       render3d_execute_collect_cameras(
         source_world,
+        render_world,
         cache,
         false,
         false,
@@ -215,6 +286,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
       @pbr_render.render3d_world_transform_cache_begin_frame(cache)
       render3d_execute_collect_cameras(
         source_world,
+        render_world,
         cache,
         false,
         false,
@@ -283,6 +355,7 @@ test "render3d collect cameras: default deferred method enables deferred prepass
       @pbr_render.render3d_world_transform_cache_begin_frame(cache)
       render3d_execute_collect_cameras(
         source_world,
+        render_world,
         cache,
         false,
         false,
@@ -363,6 +436,7 @@ test "render3d collect cameras: Bevy component requirements enable prepass views
       @pbr_render.render3d_world_transform_cache_begin_frame(cache)
       render3d_execute_collect_cameras(
         source_world,
+        render_world,
         cache,
         false,
         false,

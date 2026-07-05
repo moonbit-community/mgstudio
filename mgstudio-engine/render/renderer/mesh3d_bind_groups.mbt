@@ -165,6 +165,28 @@ fn ensure_mesh3d_point_shadow_compare_sampler(
 }
 
 ///|
+fn ensure_mesh3d_directional_shadow_compare_sampler(
+  backend : GpuBackend,
+) -> @wgpu.Sampler {
+  match backend.mesh3d_directional_shadow_compare_sampler {
+    Some(sampler) => sampler
+    None => {
+      let sampler = backend.device.create_sampler_u32(
+        @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+        @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+        @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE,
+        @wgpu.FILTER_MODE_LINEAR,
+        @wgpu.FILTER_MODE_LINEAR,
+        @wgpu.MIPMAP_FILTER_MODE_NEAREST,
+        compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+      )
+      backend.mesh3d_directional_shadow_compare_sampler = Some(sampler)
+      sampler
+    }
+  }
+}
+
+///|
 fn mesh3d_layout_binding_count(
   entry : @render_resource.BindGroupLayoutEntry,
 ) -> Int {
@@ -443,6 +465,7 @@ fn mesh3d_add_view_bind_group_layout_entry(
   point_shadow_sample_view : @wgpu.TextureView,
   point_shadow_compare_sampler : @wgpu.Sampler,
   directional_shadow_sample_view : @wgpu.TextureView,
+  directional_shadow_compare_sampler : @wgpu.Sampler,
   depth_prepass_view : @wgpu.TextureView?,
   normal_prepass_view : @wgpu.TextureView?,
   motion_vector_prepass_view : @wgpu.TextureView?,
@@ -474,7 +497,7 @@ fn mesh3d_add_view_bind_group_layout_entry(
       mesh3d_add_texture_view_for_layout_entry(
         builder, binding, directional_shadow_sample_view, entry,
       )
-    6 => builder.add_sampler(binding, point_shadow_compare_sampler)
+    6 => builder.add_sampler(binding, directional_shadow_compare_sampler)
     8 =>
       builder.add_buffer(
         binding,
@@ -686,6 +709,7 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   point_shadow_sample_view : @wgpu.TextureView,
   point_shadow_compare_sampler : @wgpu.Sampler,
   directional_shadow_sample_view : @wgpu.TextureView,
+  directional_shadow_compare_sampler : @wgpu.Sampler,
   depth_prepass_view : @wgpu.TextureView?,
   normal_prepass_view : @wgpu.TextureView?,
   motion_vector_prepass_view : @wgpu.TextureView?,
@@ -711,11 +735,11 @@ fn mesh3d_build_view_bind_group_from_descriptor(
         builder, entry, view_buf, lights_buf, clustered_lights_buf, clusterable_object_index_lists_buf,
         cluster_offsets_and_counts_buf, globals_buf, fog_buf, light_probes_buf, visibility_ranges_buf,
         ssr_settings_buf, contact_shadows_settings_buf, point_shadow_sample_view,
-        point_shadow_compare_sampler, directional_shadow_sample_view, depth_prepass_view,
-        normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view, ssao_view,
-        transmission_source_texture, dt_lut_sample_view, dt_lut_sampler, atmosphere_transmittance_view,
-        atmosphere_transmittance_sampler, atmosphere_buffer, pbr_blue_noise_texture,
-        pbr_area_light_luts_texture, pbr_dfg_lut_texture,
+        point_shadow_compare_sampler, directional_shadow_sample_view, directional_shadow_compare_sampler,
+        depth_prepass_view, normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view,
+        ssao_view, transmission_source_texture, dt_lut_sample_view, dt_lut_sampler,
+        atmosphere_transmittance_view, atmosphere_transmittance_sampler, atmosphere_buffer,
+        pbr_blue_noise_texture, pbr_area_light_luts_texture, pbr_dfg_lut_texture,
       ) {
       builder.free()
       fatal(
@@ -1139,6 +1163,9 @@ fn mesh3d_view_bg_cache_get_or_create(
   let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
     backend,
   )
+  let directional_shadow_compare_sampler = ensure_mesh3d_directional_shadow_compare_sampler(
+    backend,
+  )
   let dt_lut_sample_view = match dt_lut_texture.sample_view {
     Some(view) => view
     None => dt_lut_texture.view
@@ -1216,6 +1243,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     point_shadow_sample_view,
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
+    directional_shadow_compare_sampler,
     depth_prepass_view,
     normal_prepass_view,
     motion_vector_prepass_view,
@@ -1442,6 +1470,9 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
     backend,
   )
+  let directional_shadow_compare_sampler = ensure_mesh3d_directional_shadow_compare_sampler(
+    backend,
+  )
   let dt_lut_sample_view = match dt_lut_texture.sample_view {
     Some(view) => view
     None => dt_lut_texture.view
@@ -1514,6 +1545,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     point_shadow_sample_view,
     point_shadow_compare_sampler,
     directional_shadow_sample_view,
+    directional_shadow_compare_sampler,
     depth_prepass_view,
     normal_prepass_view,
     motion_vector_prepass_view,

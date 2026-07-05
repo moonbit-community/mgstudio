@@ -18,6 +18,7 @@ pub struct SceneNode3d {
   parent_node_index : Int?
   mesh : @mesh.Mesh3d?
   material : @pbr.MeshMaterial3d?
+  aabb : @camera.Aabb?
   camera : @camera_camera.Camera?
   camera3d : @camera.Camera3d?
   projection : @camera.Projection?
@@ -65,6 +66,7 @@ pub fn SceneNode3d::new(
   gltf_extras? : @gltf.GltfExtras? = None,
   gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
   gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
+  aabb? : @camera.Aabb? = None,
   camera? : @camera_camera.Camera? = None,
   camera3d? : @camera.Camera3d? = None,
   projection? : @camera.Projection? = None,
@@ -82,6 +84,7 @@ pub fn SceneNode3d::new(
     parent_node_index,
     mesh: Some(mesh),
     material: Some(material),
+    aabb,
     camera,
     camera3d,
     projection,
@@ -135,6 +138,7 @@ pub fn SceneNode3d::new_empty(
     parent_node_index,
     mesh: None,
     material: None,
+    aabb: None,
     camera,
     camera3d,
     projection,

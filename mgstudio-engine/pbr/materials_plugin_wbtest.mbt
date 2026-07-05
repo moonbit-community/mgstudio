@@ -458,6 +458,8 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
   phase.prepare_for_new_frame()
   debug_inspect(phase.len(), content="0")
   debug_inspect(phase.items().length(), content="0")
+  debug_inspect(phase.input_uniform_index(second_main), content="Some(31)")
+  debug_inspect(phase.phase_type(second_main), content="Some(UnbatchableMesh)")
 }
 
 ///|
@@ -635,8 +637,8 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
   debug_inspect(phase.input_uniform_index(first_main), content="None")
   debug_inspect(phase.input_uniform_index(second_main), content="Some(41)")
   phase.prepare_for_new_frame()
-  debug_inspect(phase.len(), content="0")
-  debug_inspect(phase.multidrawable_batch_set_count(), content="0")
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.multidrawable_batch_set_count(), content="1")
 
   let preprocessing_only_phase = Render3dShadowViewPhaseData::new(
     @render_batching.GpuPreprocessingMode::PreprocessingOnly,
@@ -1161,7 +1163,7 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
       debug_inspect(phases.len(), content="3")
       debug_inspect(phases.get(stale_view) is None, content="true")
       match phases.get(directional_view) {
-        Some(phase) => debug_inspect(phase.len(), content="0")
+        Some(phase) => debug_inspect(phase.len(), content="1")
         None => debug_inspect(false, content="true")
       }
     }
@@ -1297,6 +1299,78 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
     }
     None => debug_inspect(false, content="true")
   }
+}
+
+///|
+test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
+  let material_properties = @material.MaterialProperties::MaterialProperties()
+  let camera_layers = @camera_render_layers.RenderLayers::layer(1)
+  let normal_mesh = ExtractedMesh3d::{
+    entity: phase_entity_ref3d(
+      @core.Entity::new(2101, 1),
+      @core.Entity::new(2201, 1),
+    ),
+    payload: Mesh3dExtractedPayload::{
+      ..material_test_extracted_mesh_payload(2101, material_properties),
+      layers: @camera_render_layers.RenderLayers::layer(1),
+      has_no_frustum_culling: true,
+    },
+  }
+  let non_shadow_caster = ExtractedMesh3d::{
+    entity: phase_entity_ref3d(
+      @core.Entity::new(2102, 1),
+      @core.Entity::new(2202, 1),
+    ),
+    payload: Mesh3dExtractedPayload::{
+      ..material_test_extracted_mesh_payload(2102, material_properties),
+      layers: @camera_render_layers.RenderLayers::layer(1),
+      has_not_shadow_caster: true,
+      has_no_frustum_culling: true,
+    },
+  }
+  let no_cpu_culling_mesh = ExtractedMesh3d::{
+    entity: phase_entity_ref3d(
+      @core.Entity::new(2103, 1),
+      @core.Entity::new(2203, 1),
+    ),
+    payload: Mesh3dExtractedPayload::{
+      ..material_test_extracted_mesh_payload(2103, material_properties),
+      layers: @camera_render_layers.RenderLayers::layer(1),
+      has_no_cpu_culling: true,
+      has_no_frustum_culling: true,
+    },
+  }
+  let wrong_layer_mesh = ExtractedMesh3d::{
+    entity: phase_entity_ref3d(
+      @core.Entity::new(2104, 1),
+      @core.Entity::new(2204, 1),
+    ),
+    payload: Mesh3dExtractedPayload::{
+      ..material_test_extracted_mesh_payload(2104, material_properties),
+      layers: @camera_render_layers.RenderLayers::layer(2),
+      has_no_frustum_culling: true,
+    },
+  }
+  let missing_gpu_mesh = ExtractedMesh3d::{
+    entity: phase_entity_ref3d(
+      @core.Entity::new(2105, 1),
+      @core.Entity::new(2205, 1),
+    ),
+    payload: Mesh3dExtractedPayload::{
+      ..material_test_extracted_mesh_payload(0, material_properties),
+      layers: @camera_render_layers.RenderLayers::layer(1),
+      has_no_frustum_culling: true,
+    },
+  }
+  let visible = render3d_shadow_visible_extracted_indices(
+    [
+      normal_mesh, non_shadow_caster, no_cpu_culling_mesh, wrong_layer_mesh, missing_gpu_mesh,
+    ],
+    camera_layers,
+    [],
+  )
+  debug_inspect(visible.length(), content="1")
+  debug_inspect(visible[0], content="0")
 }
 
 ///|
@@ -1606,6 +1680,7 @@ fn material_test_extracted_mesh_payload(
     is_forward_decal: false,
     forward_decal_material_ext: None,
     clustered_decal: None,
+    has_not_shadow_caster: false,
     has_not_shadow_receiver: false,
     has_transmitted_shadow_receiver: false,
     has_no_frustum_culling: false,

@@ -1156,6 +1156,7 @@ fn render_mesh_instances_test_mesh_for_entity(
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
+      has_not_shadow_caster: false,
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,

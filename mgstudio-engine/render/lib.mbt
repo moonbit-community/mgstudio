@@ -454,19 +454,27 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_uniforms(
 
 ///|
 pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
-  target_id~ : Int,
+  target_format~ : UInt,
   msaa_sample_count~ : Int,
   has_density_texture~ : Bool,
-  atmosphere~ : Bool,
-  hull_mesh_id~ : Int,
+  mesh_pipeline_view_key_bits~ : UInt,
+  vertex_buffer_layout~ : @mesh.VertexBufferLayout,
 ) -> Int? {
   @renderer.prepare_mesh3d_volumetric_fog_pipeline(
-    target_id~,
+    target_format~,
     msaa_sample_count~,
     has_density_texture~,
-    atmosphere~,
-    hull_mesh_id~,
+    mesh_pipeline_view_key_bits~,
+    vertex_buffer_layout~,
   )
+}
+
+///|
+pub fn host_gpu_mesh3d_volumetric_fog_pipeline_key_inputs(
+  target_id~ : Int,
+  hull_mesh_id~ : Int,
+) -> (UInt, @mesh.VertexBufferLayout)? {
+  @renderer.mesh3d_volumetric_fog_pipeline_key_inputs(target_id~, hull_mesh_id~)
 }
 
 ///|
@@ -1753,6 +1761,8 @@ pub fn host_gpu_prepare_mesh3d_main_pass_draw_batch(
 pub fn host_gpu_draw_mesh3d_volumetric_fog(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
+  point_shadow_texture_id~ : Int,
+  directional_shadow_texture_id~ : Int,
   plane_mesh_id~ : Int,
   cube_mesh_id~ : Int,
   textureless_pipeline_id~ : Int,
@@ -1763,6 +1773,8 @@ pub fn host_gpu_draw_mesh3d_volumetric_fog(
   @renderer.draw_mesh3d_volumetric_fog(
     camera_key_hi~,
     camera_key_lo~,
+    point_shadow_texture_id~,
+    directional_shadow_texture_id~,
     plane_mesh_id~,
     cube_mesh_id~,
     textureless_pipeline_id~,

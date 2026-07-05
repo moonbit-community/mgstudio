@@ -38,6 +38,8 @@ pub let mesh_allocator_settings_resource_key : @ecs.ResourceKey[MeshAllocatorSet
 
 pub fn mesh_allocator_should_allocate_large(Int, MeshAllocatorElementLayout, settings? : MeshAllocatorSettings) -> Bool
 
+pub fn prepare_render_mesh_assets(Array[ExtractedRenderMeshAsset], @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Array[PreparedRenderMeshAsset]
+
 pub fn render_mesh3d_host_vertex_buffer_layout(@Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 
 pub let render_mesh_assets_resource_key : @ecs.ResourceKey[RenderMeshAssets]
@@ -297,6 +299,14 @@ pub fn MorphTargetImagePlan::height(Self) -> Int
 pub fn MorphTargetImagePlan::padding_components_per_layer(Self) -> Int
 pub fn MorphTargetImagePlan::width(Self) -> Int
 
+pub struct PreparedRenderMeshAsset {
+  mesh_asset_id : Int
+  render_mesh : RenderMesh
+}
+pub fn PreparedRenderMeshAsset::mesh_asset_id(Self) -> Int
+pub fn PreparedRenderMeshAsset::new(Int, RenderMesh) -> Self
+pub fn PreparedRenderMeshAsset::render_mesh(Self) -> RenderMesh
+
 pub struct RenderMesh {
   vertex_count : Int
   buffer_info : RenderMeshBufferInfo
@@ -324,6 +334,7 @@ pub fn RenderMeshAssets::RenderMeshAssets() -> Self
 pub fn RenderMeshAssets::clear(Self) -> Unit
 pub fn RenderMeshAssets::get(Self, Int) -> RenderMesh?
 pub fn RenderMeshAssets::insert(Self, Int, RenderMesh) -> Unit
+pub fn RenderMeshAssets::insert_prepared_assets(Self, Array[PreparedRenderMeshAsset]) -> Unit
 pub fn RenderMeshAssets::len(Self) -> Int
 pub fn RenderMeshAssets::prepare_assets(Self, Array[ExtractedRenderMeshAsset], @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Unit
 pub fn RenderMeshAssets::remove(Self, Int) -> RenderMesh?

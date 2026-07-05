@@ -59,6 +59,27 @@ fn light_wbtest_directional_shadow_map_size(world : @ecs.World) -> Int {
 }
 
 ///|
+fn light_wbtest_u8_at(bytes : Bytes, index : Int) -> Int {
+  match bytes.get(index) {
+    Some(value) => value.to_int() & 0xFF
+    None => 0
+  }
+}
+
+///|
+fn light_wbtest_u32le_at(bytes : Bytes, index : Int) -> UInt {
+  (light_wbtest_u8_at(bytes, index) & 0xFF).reinterpret_as_uint() |
+  ((light_wbtest_u8_at(bytes, index + 1) & 0xFF).reinterpret_as_uint() << 8) |
+  ((light_wbtest_u8_at(bytes, index + 2) & 0xFF).reinterpret_as_uint() << 16) |
+  ((light_wbtest_u8_at(bytes, index + 3) & 0xFF).reinterpret_as_uint() << 24)
+}
+
+///|
+fn light_wbtest_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
 test "pbr/render light: extract_lights mirrors Bevy shadow map resources into render world" {
   let source_world = @ecs.World::new()
   let render_world = @ecs.World::new()
@@ -102,6 +123,443 @@ test "pbr/render light: extract_lights mirrors Bevy shadow map resources into re
     light_wbtest_directional_shadow_map_size(render_world),
     content="4096",
   )
+}
+
+///|
+test "pbr/render light: directional light uniform byte offsets match bevy mesh_view_types" {
+  let first_cascade = GpuDirectionalCascade3d::{
+    clip_from_world: ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
+      @math.Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
+      @math.Vec4::new(9.0F, 10.0F, 11.0F, 12.0F),
+      @math.Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
+    ),
+    texel_size: 0.125F,
+    far_bound: 64.0F,
+  }
+  let second_cascade = GpuDirectionalCascade3d::{
+    clip_from_world: ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(17.0F, 18.0F, 19.0F, 20.0F),
+      @math.Vec4::new(21.0F, 22.0F, 23.0F, 24.0F),
+      @math.Vec4::new(25.0F, 26.0F, 27.0F, 28.0F),
+      @math.Vec4::new(29.0F, 30.0F, 31.0F, 32.0F),
+    ),
+    texel_size: 0.25F,
+    far_bound: 128.0F,
+  }
+  let directional = GpuDirectionalLight3d::{
+    cascades: [first_cascade, second_cascade],
+    color: @color.Color::new(0.2F, 0.4F, 0.6F, 0.8F),
+    dir_to_light: @math.Vec3::new(-0.3F, -0.4F, -0.5F),
+    flags: DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED |
+    DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC,
+    soft_shadow_size: 1.25F,
+    shadow_depth_bias: 0.03125F,
+    shadow_normal_bias: 0.0625F,
+    num_cascades: 2,
+    cascades_overlap_proportion: 0.15F,
+    depth_texture_base_index: 3,
+    decal_index: 9,
+    sun_disk_angular_size: 0.01F,
+    sun_disk_intensity: 2.5F,
+  }
+  let lights = GpuLights3d::{
+    directional_lights: [directional],
+    ambient_color: @color.Color::new(0.1F, 0.2F, 0.3F, 0.4F),
+    cluster_dimensions: (4, 5, 6, 120),
+    cluster_factors: @math.Vec4::new(0.01F, 0.02F, 0.03F, 0.04F),
+    n_directional_lights: 1,
+    spot_light_shadowmap_offset: -2,
+    ambient_light_affects_lightmapped_meshes: 1,
+    n_rect_lights: 0,
+    rect_lights: [],
+  }
+  let bytes = render3d_gpu_lights_uniform_bytes(lights)
+  inspect(bytes.length(), content="4576")
+  inspect(
+    light_wbtest_u32le_at(bytes, 0),
+    content=light_wbtest_f32_bits(1.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 60),
+    content=light_wbtest_f32_bits(16.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 64),
+    content=light_wbtest_f32_bits(0.125F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 68),
+    content=light_wbtest_f32_bits(64.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 72),
+    content=light_wbtest_f32_bits(0.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 80),
+    content=light_wbtest_f32_bits(17.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 144),
+    content=light_wbtest_f32_bits(0.25F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 148),
+    content=light_wbtest_f32_bits(128.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 320),
+    content=light_wbtest_f32_bits(0.2F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 332),
+    content=light_wbtest_f32_bits(0.8F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 336),
+    content=light_wbtest_f32_bits(-0.3F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 344),
+    content=light_wbtest_f32_bits(-0.5F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 348), content="3")
+  inspect(
+    light_wbtest_u32le_at(bytes, 352),
+    content=light_wbtest_f32_bits(1.25F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 356),
+    content=light_wbtest_f32_bits(0.03125F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 360),
+    content=light_wbtest_f32_bits(0.0625F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 364), content="2")
+  inspect(
+    light_wbtest_u32le_at(bytes, 368),
+    content=light_wbtest_f32_bits(0.15F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 372), content="3")
+  inspect(light_wbtest_u32le_at(bytes, 376), content="9")
+  inspect(
+    light_wbtest_u32le_at(bytes, 380),
+    content=light_wbtest_f32_bits(0.01F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 384),
+    content=light_wbtest_f32_bits(2.5F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 388),
+    content=light_wbtest_f32_bits(0.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 400),
+    content=light_wbtest_f32_bits(1.0F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 748), content="65535")
+  inspect(
+    light_wbtest_u32le_at(bytes, 4000),
+    content=light_wbtest_f32_bits(0.1F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 4016), content="4")
+  inspect(light_wbtest_u32le_at(bytes, 4028), content="120")
+  inspect(
+    light_wbtest_u32le_at(bytes, 4032),
+    content=light_wbtest_f32_bits(0.01F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 4048), content="1")
+  inspect(light_wbtest_u32le_at(bytes, 4052), content="4294967294")
+  inspect(light_wbtest_u32le_at(bytes, 4056), content="1")
+  inspect(light_wbtest_u32le_at(bytes, 4060), content="0")
+}
+
+///|
+test "pbr/render light: directional shadow cascade override reaches packed gpu lights" {
+  let base_directional = GpuDirectionalLight3d::{
+    cascades: [],
+    color: @color.Color::new(1.0F, 0.5F, 0.25F, 1.0F),
+    dir_to_light: @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    flags: DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC,
+    soft_shadow_size: 0.0F,
+    shadow_depth_bias: 0.02F,
+    shadow_normal_bias: 0.04F,
+    num_cascades: 0,
+    cascades_overlap_proportion: 0.0F,
+    depth_texture_base_index: 0,
+    decal_index: -1,
+    sun_disk_angular_size: 0.009F,
+    sun_disk_intensity: 1.0F,
+  }
+  let base_lights = GpuLights3d::{
+    directional_lights: [base_directional],
+    ambient_color: @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    cluster_dimensions: (16, 9, 24, 3456),
+    cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    n_directional_lights: 1,
+    spot_light_shadowmap_offset: 0,
+    ambient_light_affects_lightmapped_meshes: 0,
+    n_rect_lights: 0,
+    rect_lights: [],
+  }
+  let cascade_data = [
+    1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F, 13.0F,
+    14.0F, 15.0F, 16.0F, 0.125F, 64.0F, 0.0F, 0.0F, 17.0F, 18.0F, 19.0F, 20.0F, 21.0F,
+    22.0F, 23.0F, 24.0F, 25.0F, 26.0F, 27.0F, 28.0F, 29.0F, 30.0F, 31.0F, 32.0F,
+    0.25F, 128.0F, 0.0F, 0.0F,
+  ]
+  let resolved = render3d_gpu_lights_with_directional_shadow_cascades(
+    base_lights, 37, 1.0F, 2, 0.33F, cascade_data,
+  )
+  inspect(resolved.directional_lights[0].num_cascades, content="2")
+  inspect(
+    resolved.directional_lights[0].flags,
+    content=(DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC |
+    DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED).to_string(),
+  )
+  inspect(
+    light_wbtest_f32_bits(
+      resolved.directional_lights[0].cascades_overlap_proportion,
+    ),
+    content=light_wbtest_f32_bits(0.33F).to_string(),
+  )
+  let bytes = render3d_gpu_lights_uniform_bytes(resolved)
+  inspect(
+    light_wbtest_u32le_at(bytes, 0),
+    content=light_wbtest_f32_bits(1.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 60),
+    content=light_wbtest_f32_bits(16.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 64),
+    content=light_wbtest_f32_bits(0.125F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 68),
+    content=light_wbtest_f32_bits(64.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 80),
+    content=light_wbtest_f32_bits(17.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 144),
+    content=light_wbtest_f32_bits(0.25F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 148),
+    content=light_wbtest_f32_bits(128.0F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 348), content="3")
+  inspect(light_wbtest_u32le_at(bytes, 364), content="2")
+  inspect(
+    light_wbtest_u32le_at(bytes, 368),
+    content=light_wbtest_f32_bits(0.33F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 372), content="0")
+  inspect(
+    light_wbtest_u32le_at(bytes, 356),
+    content=light_wbtest_f32_bits(0.02F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 360),
+    content=light_wbtest_f32_bits(0.04F).to_string(),
+  )
+}
+
+///|
+test "pbr/render light: scrolling_fog pass bytes preserve volumetric shadow inputs" {
+  let base_directional = GpuDirectionalLight3d::{
+    cascades: [],
+    color: @color.Color::new(1.0F, 0.95F, 0.85F, 1.0F),
+    dir_to_light: @math.Vec3::new(-0.2F, -0.9F, -0.3F),
+    flags: DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC,
+    soft_shadow_size: 0.0F,
+    shadow_depth_bias: 0.02F,
+    shadow_normal_bias: 0.04F,
+    num_cascades: 0,
+    cascades_overlap_proportion: 0.0F,
+    depth_texture_base_index: 0,
+    decal_index: -1,
+    sun_disk_angular_size: 0.00935F,
+    sun_disk_intensity: 1.0F,
+  }
+  let base_lights = GpuLights3d::{
+    directional_lights: [base_directional],
+    ambient_color: @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    cluster_dimensions: (16, 9, 24, 3456),
+    cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    n_directional_lights: 1,
+    spot_light_shadowmap_offset: 0,
+    ambient_light_affects_lightmapped_meshes: 0,
+    n_rect_lights: 0,
+    rect_lights: [],
+  }
+  let cascade_data = [
+    1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F, 10.0F, 11.0F, 12.0F, 13.0F,
+    14.0F, 15.0F, 16.0F, 0.125F, 64.0F, 0.0F, 0.0F, 17.0F, 18.0F, 19.0F, 20.0F, 21.0F,
+    22.0F, 23.0F, 24.0F, 25.0F, 26.0F, 27.0F, 28.0F, 29.0F, 30.0F, 31.0F, 32.0F,
+    0.25F, 128.0F, 0.0F, 0.0F,
+  ]
+  let lighting = Render3dLightingState::{
+    ..render3d_default_lighting_state(),
+    gpu_lights: Some(base_lights),
+  }
+  let encoded = render3d_mesh3d_lights_uniform_bytes_for_pass(
+    lighting, 37, 1.0F, 2, 0.33F, cascade_data,
+  )
+  guard encoded is Some(bytes) else {
+    abort("expected scrolling_fog-shaped PBR lights bytes")
+  }
+  inspect(bytes.length(), content="4576")
+  inspect(light_wbtest_u32le_at(bytes, 4048), content="1")
+  inspect(light_wbtest_u32le_at(bytes, 348), content="3")
+  inspect(light_wbtest_u32le_at(bytes, 364), content="2")
+  inspect(
+    light_wbtest_u32le_at(bytes, 368),
+    content=light_wbtest_f32_bits(0.33F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 372), content="0")
+  inspect(
+    light_wbtest_u32le_at(bytes, 0),
+    content=light_wbtest_f32_bits(1.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 60),
+    content=light_wbtest_f32_bits(16.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 64),
+    content=light_wbtest_f32_bits(0.125F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 68),
+    content=light_wbtest_f32_bits(64.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 80),
+    content=light_wbtest_f32_bits(17.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 144),
+    content=light_wbtest_f32_bits(0.25F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 148),
+    content=light_wbtest_f32_bits(128.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 356),
+    content=light_wbtest_f32_bits(0.02F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 360),
+    content=light_wbtest_f32_bits(0.04F).to_string(),
+  )
+}
+
+///|
+test "pbr/render light: volumetric cascade shader reads map to Bevy host fields" {
+  let directional = GpuDirectionalLight3d::{
+    cascades: [
+      GpuDirectionalCascade3d::{
+        clip_from_world: ProjectionMatrix3d::from_cols(
+          @math.Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
+          @math.Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
+          @math.Vec4::new(9.0F, 10.0F, 11.0F, 12.0F),
+          @math.Vec4::new(13.0F, 14.0F, 15.0F, 16.0F),
+        ),
+        texel_size: 0.125F,
+        far_bound: 64.0F,
+      },
+      GpuDirectionalCascade3d::{
+        clip_from_world: ProjectionMatrix3d::from_cols(
+          @math.Vec4::new(17.0F, 18.0F, 19.0F, 20.0F),
+          @math.Vec4::new(21.0F, 22.0F, 23.0F, 24.0F),
+          @math.Vec4::new(25.0F, 26.0F, 27.0F, 28.0F),
+          @math.Vec4::new(29.0F, 30.0F, 31.0F, 32.0F),
+        ),
+        texel_size: 0.25F,
+        far_bound: 128.0F,
+      },
+    ],
+    color: @color.Color::white(),
+    dir_to_light: @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    flags: DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED |
+    DIRECTIONAL_LIGHT_FLAG_VOLUMETRIC,
+    soft_shadow_size: 0.0F,
+    shadow_depth_bias: 0.02F,
+    shadow_normal_bias: 0.04F,
+    num_cascades: 2,
+    cascades_overlap_proportion: 0.33F,
+    depth_texture_base_index: 7,
+    decal_index: -1,
+    sun_disk_angular_size: 0.00935F,
+    sun_disk_intensity: 1.0F,
+  }
+  let lights = GpuLights3d::{
+    directional_lights: [directional],
+    ambient_color: @color.Color::black(),
+    cluster_dimensions: (0, 0, 0, 0),
+    cluster_factors: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
+    n_directional_lights: 1,
+    spot_light_shadowmap_offset: 0,
+    ambient_light_affects_lightmapped_meshes: 0,
+    n_rect_lights: 0,
+    rect_lights: [],
+  }
+  let bytes = render3d_gpu_lights_uniform_bytes(lights)
+  inspect(bytes.length(), content="4576")
+
+  // Bevy mesh_view_types.wgsl:
+  // DirectionalCascade { clip_from_world, texel_size, far_bound }
+  inspect(
+    light_wbtest_u32le_at(bytes, 0),
+    content=light_wbtest_f32_bits(1.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 60),
+    content=light_wbtest_f32_bits(16.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 64),
+    content=light_wbtest_f32_bits(0.125F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 68),
+    content=light_wbtest_f32_bits(64.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 80),
+    content=light_wbtest_f32_bits(17.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 140),
+    content=light_wbtest_f32_bits(32.0F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 144),
+    content=light_wbtest_f32_bits(0.25F).to_string(),
+  )
+  inspect(
+    light_wbtest_u32le_at(bytes, 148),
+    content=light_wbtest_f32_bits(128.0F).to_string(),
+  )
+
+  // Bevy volumetric_fog.wgsl and shadows.wgsl read these DirectionalLight fields.
+  inspect(light_wbtest_u32le_at(bytes, 348), content="3")
+  inspect(light_wbtest_u32le_at(bytes, 364), content="2")
+  inspect(
+    light_wbtest_u32le_at(bytes, 368),
+    content=light_wbtest_f32_bits(0.33F).to_string(),
+  )
+  inspect(light_wbtest_u32le_at(bytes, 372), content="7")
+  inspect(light_wbtest_u32le_at(bytes, 4048), content="1")
 }
 
 ///|

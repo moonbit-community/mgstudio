@@ -14,7 +14,6 @@
 
 ///|
 priv struct Render3dVolumetricFogPrepareOutput {
-  view_fog : @pbr_volumetric_fog.ViewVolumetricFog?
   view_count : Int
   volume_count : Int
   light_count : Int
@@ -26,7 +25,6 @@ priv struct Render3dVolumetricFogPrepareOutput {
 ///|
 fn Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput() -> Render3dVolumetricFogPrepareOutput {
   Render3dVolumetricFogPrepareOutput::{
-    view_fog: None,
     view_count: 0,
     volume_count: 0,
     light_count: 0,
@@ -34,6 +32,44 @@ fn Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput() -> R
     plane_mesh_id: -1,
     cube_mesh_id: -1,
   }
+}
+
+///|
+priv struct Render3dVolumetricFogUniformPrepareViewInput {
+  view_entity : @core.Entity
+  volumetric_fog : @pbr_volumetric_fog.VolumetricFog
+  world_from_view : @math.Affine3
+  clip_from_view : @pbr_volumetric_fog.VolumetricFogMat4
+}
+
+///|
+fn Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+  view_entity : @core.Entity,
+  volumetric_fog : @pbr_volumetric_fog.VolumetricFog,
+  world_from_view : @math.Affine3,
+  clip_from_view : @pbr_volumetric_fog.VolumetricFogMat4,
+) -> Render3dVolumetricFogUniformPrepareViewInput {
+  Render3dVolumetricFogUniformPrepareViewInput::{
+    view_entity,
+    volumetric_fog,
+    world_from_view,
+    clip_from_view,
+  }
+}
+
+///|
+priv struct Render3dVolumetricFogPreparedViewUniforms {
+  view_entity : @core.Entity
+  view_fog : @pbr_volumetric_fog.ViewVolumetricFog
+}
+
+///|
+priv struct Render3dVolumetricFogUniformPrepareOutput {
+  views : Array[Render3dVolumetricFogPreparedViewUniforms]
+  view_count : Int
+  volume_count : Int
+  light_count : Int
+  uniform_count : Int
 }
 
 ///|
@@ -59,6 +95,50 @@ fn render3d_volumetric_fog_uniform_buffer_mut(
 }
 
 ///|
+fn render3d_prepare_volumetric_fog_uniform_buffer(
+  render_world : @ecs.World,
+  views : Array[Render3dVolumetricFogUniformPrepareViewInput],
+) -> Render3dVolumetricFogUniformPrepareOutput {
+  let light_count = render3d_collect_volumetric_light_count(render_world)
+  let fog_volumes = render3d_collect_fog_volumes(render_world)
+  let prepared_views : Array[Render3dVolumetricFogPreparedViewUniforms] = []
+  let uniform_count = render3d_volumetric_fog_uniform_buffer_mut(render_world).modify(fn(
+      uniform_buffer,
+    ) {
+      uniform_buffer.clear()
+      for view in views {
+        let view_fog = @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+          uniform_buffer,
+          view.volumetric_fog,
+          view.world_from_view,
+          view.clip_from_view,
+          fog_volumes,
+        )
+        try! (render_world.set_by_key(
+          view.view_entity,
+          @pbr_volumetric_fog.ViewVolumetricFog::component(),
+          view_fog,
+        )
+        |> ignore)
+        prepared_views.push(Render3dVolumetricFogPreparedViewUniforms::{
+          view_entity: view.view_entity,
+          view_fog,
+        })
+      }
+      uniform_buffer.count()
+    },
+  )
+  render3d_upload_volumetric_fog_uniform_buffer(render_world)
+  Render3dVolumetricFogUniformPrepareOutput::{
+    views: prepared_views,
+    view_count: views.length(),
+    volume_count: fog_volumes.length(),
+    light_count,
+    uniform_count,
+  }
+}
+
+///|
 fn render3d_reset_volumetric_fog_uniform_buffer(world : @ecs.World) -> Unit {
   render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(buffer) {
     buffer.clear()
@@ -80,12 +160,104 @@ fn render3d_upload_volumetric_fog_uniform_buffer(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render3d_volumetric_fog_pipeline_key(
+  target_id : Int,
+  hull_mesh_id : Int,
+  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
+  has_density_texture : Bool,
+) -> @pbr_volumetric_fog.VolumetricFogPipelineKey? {
+  guard @render.host_gpu_mesh3d_volumetric_fog_pipeline_key_inputs(
+      target_id~,
+      hull_mesh_id~,
+    )
+    is Some((target_format, vertex_buffer_layout)) else {
+    return None
+  }
+  Some(
+    @pbr_volumetric_fog.VolumetricFogPipelineKey::VolumetricFogPipelineKey(
+      mesh_pipeline_view_key~,
+      target_format~,
+      vertex_buffer_layout~,
+      has_density_texture~,
+    ),
+  )
+}
+
+///|
+fn render3d_prepare_volumetric_fog_pipeline_id(
+  key : @pbr_volumetric_fog.VolumetricFogPipelineKey,
+  msaa_sample_count : Int,
+) -> Int? {
+  @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
+    target_format=key.target_format(),
+    msaa_sample_count~,
+    has_density_texture=key.has_density_texture(),
+    mesh_pipeline_view_key_bits=key.mesh_pipeline_view_key().bits(),
+    vertex_buffer_layout=key.vertex_buffer_layout(),
+  )
+}
+
+///|
+fn render3d_trace_volumetric_fog_pipeline_variant(
+  key : @pbr_volumetric_fog.VolumetricFogPipelineKey,
+  pipeline_id : Int,
+) -> Unit {
+  guard pipeline_id > 0 else { return }
+  let variant = if key.has_density_texture() {
+    "textured"
+  } else {
+    "textureless"
+  }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" + variant,
+    1,
+  )
+  let bind_group_layout_key = key.bind_group_layout_key()
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" +
+    variant +
+    "_shadow_filter_hardware_2x2",
+    1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" + variant + "_density_texture",
+    if key.has_density_texture() {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" + variant + "_multisampled",
+    if bind_group_layout_key.is_multisampled() {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" + variant + "_atmosphere",
+    if (
+        key.mesh_pipeline_view_key().bits() &
+        @mesh_view_layout.MESH_VIEW_LAYOUT_ATMOSPHERE
+      ) !=
+      0U {
+      1
+    } else {
+      0
+    },
+  )
+}
+
+///|
 fn render3d_prepare_volumetric_fog_pipelines(
+  render_world : @ecs.World,
+  view_entity : @core.Entity,
   prepared : Render3dVolumetricFogPrepareOutput,
   target_id : Int,
   msaa_sample_count : Int,
-  atmosphere : Bool,
-) -> @pbr_volumetric_fog.ViewVolumetricFogPipelines? {
+  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
+) -> Unit {
   let (needs_textureless, needs_textured) = render3d_volumetric_fog_pipeline_variants(
     prepared,
   )
@@ -94,30 +266,54 @@ fn render3d_prepare_volumetric_fog_pipelines(
       "[DEBUG-atmosphere-parity] fog-prepare lights=\{prepared.light_count} views=\{prepared.view_count} volumes=\{prepared.volume_count} plane=\{prepared.plane_mesh_id} cube=\{prepared.cube_mesh_id} needs_textureless=\{needs_textureless} needs_textured=\{needs_textured}",
     )
   }
-  guard needs_textureless || needs_textured else { return None }
+  guard needs_textureless || needs_textured else { return }
   let textureless_pipeline_id = if needs_textureless {
-    @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
-      target_id~,
-      msaa_sample_count~,
-      has_density_texture=false,
-      atmosphere~,
-      hull_mesh_id=prepared.plane_mesh_id,
-    )
+    match
+      render3d_volumetric_fog_pipeline_key(
+        target_id,
+        prepared.plane_mesh_id,
+        mesh_pipeline_view_key,
+        false,
+      ) {
+      Some(key) => {
+        let pipeline_id = render3d_prepare_volumetric_fog_pipeline_id(
+          key, msaa_sample_count,
+        )
+        match pipeline_id {
+          Some(id) => render3d_trace_volumetric_fog_pipeline_variant(key, id)
+          None => ()
+        }
+        pipeline_id
+      }
+      None => None
+    }
   } else {
     None
   }
   let textured_pipeline_id = if needs_textured {
-    @render.host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
-      target_id~,
-      msaa_sample_count~,
-      has_density_texture=true,
-      atmosphere~,
-      hull_mesh_id=prepared.plane_mesh_id,
-    )
+    match
+      render3d_volumetric_fog_pipeline_key(
+        target_id,
+        prepared.plane_mesh_id,
+        mesh_pipeline_view_key,
+        true,
+      ) {
+      Some(key) => {
+        let pipeline_id = render3d_prepare_volumetric_fog_pipeline_id(
+          key, msaa_sample_count,
+        )
+        match pipeline_id {
+          Some(id) => render3d_trace_volumetric_fog_pipeline_variant(key, id)
+          None => ()
+        }
+        pipeline_id
+      }
+      None => None
+    }
   } else {
     None
   }
-  match (textureless_pipeline_id, textured_pipeline_id) {
+  let pipelines = match (textureless_pipeline_id, textured_pipeline_id) {
     (Some(textureless), Some(textured)) => {
       if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) {
         println(
@@ -135,6 +331,16 @@ fn render3d_prepare_volumetric_fog_pipelines(
       }
       None
     }
+  }
+  match pipelines {
+    Some(pipelines) =>
+      try! (render_world.set_by_key(
+        view_entity,
+        @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
+        pipelines,
+      )
+      |> ignore)
+    None => ()
   }
 }
 
@@ -193,7 +399,6 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
 
 ///|
 fn render3d_world_has_volumetric_fog_views(world : @ecs.World) -> Bool {
-  guard render3d_collect_volumetric_light_count(world) > 0 else { return false }
   let mut has_volumetric_fog = false
   world.for_each_component(ecs_key_volumetric_fog, fn(_entity, _fog) {
     has_volumetric_fog = true
@@ -222,6 +427,7 @@ fn render3d_draw_volumetric_fog(
   world : @ecs.World,
   view_entity : @core.Entity,
   prepared : Render3dVolumetricFogPrepareOutput,
+  shadow_bindings : Render3dViewShadowBindings,
   camera_entity : @core.Entity,
   atmosphere : Bool,
 ) -> Unit {
@@ -267,9 +473,28 @@ fn render3d_draw_volumetric_fog(
       ),
     )
   }
+  if shadow_bindings.directional.texture_id >= 0 &&
+    shadow_bindings.directional.cascade_count > 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_view_shadow_binding_resources", 1,
+    )
+  }
+  if shadow_bindings.point.texture_id >= 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_view_point_shadow_binding_resources", 1,
+    )
+  }
+  if shadow_bindings.directional.texture_id >= 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_view_directional_spot_shadow_binding_resources",
+      1,
+    )
+  }
   @render.host_gpu_draw_mesh3d_volumetric_fog(
     camera_key_hi=camera_entity.id,
     camera_key_lo=camera_entity.generation,
+    point_shadow_texture_id=shadow_bindings.point.texture_id,
+    directional_shadow_texture_id=shadow_bindings.directional.texture_id,
     plane_mesh_id=prepared.plane_mesh_id,
     cube_mesh_id=prepared.cube_mesh_id,
     textureless_pipeline_id=pipelines.textureless,
@@ -280,32 +505,54 @@ fn render3d_draw_volumetric_fog(
 }
 
 ///|
+fn render3d_execute_camera_volumetric_fog_pass(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+  prepared : Render3dVolumetricFogPrepareOutput,
+  shadow_bindings : Render3dViewShadowBindings,
+  camera_entity : @core.Entity,
+  atmosphere : Bool,
+) -> Unit {
+  render3d_draw_volumetric_fog(
+    world, view_entity, prepared, shadow_bindings, camera_entity, atmosphere,
+  )
+  @render.host_gpu_end_pass()
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_views",
+    prepared.view_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_volumes",
+    render3d_volumetric_fog_view_volume_count(world, view_entity),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_lights",
+    prepared.light_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_uniforms",
+    prepared.uniform_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_plane_mesh_id",
+    prepared.plane_mesh_id,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_cube_mesh_id",
+    prepared.cube_mesh_id,
+  )
+}
+
+///|
 fn render3d_collect_volumetric_light_count(world : @ecs.World) -> Int {
-  let mut count = 0
-  world.for_each_component(@light.ecs_key_volumetric_light, fn(
-    _entity,
-    _volumetric_light,
-  ) {
-    count = count + 1
-  })
-  count
+  @pbr_volumetric_fog.volumetric_fog_render_world_storage_counts(world).light_count()
 }
 
 ///|
 fn render3d_collect_fog_volumes(
   world : @ecs.World,
 ) -> Array[(@light.FogVolume, @math.Affine3)] {
-  let volumes_with_local_from_world : Array[(@light.FogVolume, @math.Affine3)] = []
-  world.for_each_component(@light.ecs_key_fog_volume, fn(entity, fog_volume) {
-    match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
-      Some(global_transform) =>
-        volumes_with_local_from_world.push(
-          (fog_volume, global_transform.affine().inverse()),
-        )
-      None => ()
-    }
-  })
-  volumes_with_local_from_world
+  @pbr_volumetric_fog.volumetric_fog_render_world_volume_inputs(world)
 }
 
 ///|
@@ -327,29 +574,23 @@ fn render3d_projection_matrix_to_volumetric_mat4(
 ///|
 fn render3d_prepare_camera_volumetric_fog(
   render_world : @ecs.World,
-  source_world : @ecs.World,
+  view_entity : @core.Entity,
   camera : Camera3dViewPayload,
   camera_pass_projection : @pbr_render.Render3dPassProjection,
 ) -> Render3dVolumetricFogPrepareOutput {
-  let light_count = render3d_collect_volumetric_light_count(source_world)
-  guard light_count > 0 else {
+  let light_count = render3d_collect_volumetric_light_count(render_world)
+  guard (try! render_world.get_by_key(view_entity, ecs_key_volumetric_fog))
+    is Some(volumetric_fog) else {
     return Render3dVolumetricFogPrepareOutput::{
       ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
       light_count,
     }
   }
-  guard camera.volumetric_fog is Some(volumetric_fog) else {
-    return Render3dVolumetricFogPrepareOutput::{
-      ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
-      light_count,
-    }
-  }
-  let fog_volumes = render3d_collect_fog_volumes(source_world)
-  let view_fog = render3d_volumetric_fog_uniform_buffer_mut(render_world).modify(fn(
-      uniform_buffer,
-    ) {
-      @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
-        uniform_buffer,
+  let uniform_prepare = render3d_prepare_volumetric_fog_uniform_buffer(
+    render_world,
+    [
+      Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+        view_entity,
         volumetric_fog,
         @math.Affine3::from_scale_rotation_translation(
           camera.transform.scale,
@@ -361,84 +602,89 @@ fn render3d_prepare_camera_volumetric_fog(
             camera_pass_projection,
           ),
         ),
-        fog_volumes,
-      )
-    },
+      ),
+    ],
   )
-  let uniform_count = render3d_volumetric_fog_uniform_buffer_mut(render_world)
-    .peek()
-    .count()
+  guard uniform_prepare.views.length() > 0 else {
+    return Render3dVolumetricFogPrepareOutput::{
+      ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+      view_count: uniform_prepare.view_count,
+      volume_count: uniform_prepare.volume_count,
+      light_count: uniform_prepare.light_count,
+      uniform_count: uniform_prepare.uniform_count,
+    }
+  }
+  let prepared_view = uniform_prepare.views[0]
+  guard prepared_view.view_entity == view_entity else {
+    return Render3dVolumetricFogPrepareOutput::{
+      ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+      view_count: uniform_prepare.view_count,
+      volume_count: uniform_prepare.volume_count,
+      light_count: uniform_prepare.light_count,
+      uniform_count: uniform_prepare.uniform_count,
+    }
+  }
   Render3dVolumetricFogPrepareOutput::{
-    view_fog: Some(view_fog),
-    view_count: 1,
-    volume_count: view_fog.count(),
-    light_count,
-    uniform_count,
+    view_count: uniform_prepare.view_count,
+    volume_count: prepared_view.view_fog.count(),
+    light_count: uniform_prepare.light_count,
+    uniform_count: uniform_prepare.uniform_count,
     plane_mesh_id: -1,
     cube_mesh_id: -1,
   }
 }
 
 ///|
-fn render3d_write_volumetric_fog_view_components(
-  world : @ecs.World,
-  view_entity : @core.Entity,
-  prepared : Render3dVolumetricFogPrepareOutput,
-) -> Unit {
-  if prepared.light_count <= 0 ||
-    prepared.view_count <= 0 ||
-    prepared.view_fog is None {
-    ignore(
-      world.remove_by_key(
-        view_entity,
-        @pbr_volumetric_fog.ViewVolumetricFog::component(),
-      ) catch {
-        _ => false
-      },
-    )
-    ignore(
-      world.remove_by_key(
-        view_entity,
-        @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
-      ) catch {
-        _ => false
-      },
-    )
-    return
-  }
-  guard prepared.view_fog is Some(view_fog) else { return }
-  try! (world.set_by_key(
-    view_entity,
-    @pbr_volumetric_fog.ViewVolumetricFog::component(),
-    view_fog,
+fn render3d_prepare_camera_volumetric_fog_state(
+  render_world : @ecs.World,
+  source_world : @ecs.World,
+  extracted_camera : ExtractedCamera3d,
+  camera : Camera3dViewPayload,
+  camera_pass_projection : @pbr_render.Render3dPassProjection,
+  scene_target_id : Int,
+  msaa_sample_count : Int,
+  prepass_depth_texture_id : Int,
+  prepass_normal_texture_id : Int,
+  prepass_motion_vector_texture_id : Int,
+  prepass_deferred_texture_id : Int,
+  environment_map_state : Render3dEnvironmentMapState,
+  light_probe_state : Render3dLightProbeState,
+) -> Render3dVolumetricFogPrepareOutput {
+  let prepared = render3d_prepare_camera_volumetric_fog(
+    render_world,
+    extracted_camera.entity.render_entity,
+    camera,
+    camera_pass_projection,
   )
-  |> ignore)
-}
-
-///|
-fn render3d_write_volumetric_fog_pipeline_components(
-  world : @ecs.World,
-  view_entity : @core.Entity,
-  pipelines : @pbr_volumetric_fog.ViewVolumetricFogPipelines?,
-) -> Unit {
-  match pipelines {
-    Some(pipelines) =>
-      try! (world.set_by_key(
-        view_entity,
-        @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
-        pipelines,
-      )
-      |> ignore)
-    None =>
-      ignore(
-        world.remove_by_key(
-          view_entity,
-          @pbr_volumetric_fog.ViewVolumetricFogPipelines::component(),
-        ) catch {
-          _ => false
-        },
-      )
-  }
+  let prepared = render3d_prepare_volumetric_fog_hull_meshes(
+    render_world, source_world, prepared,
+  )
+  let mesh_pipeline_view_key = @mesh_view_layout.mesh_view_layout_key(
+    msaa_sample_count > 1,
+    prepass_depth_texture_id >= 0,
+    prepass_normal_texture_id >= 0,
+    prepass_motion_vector_texture_id >= 0,
+    prepass_deferred_texture_id >= 0,
+    false,
+    camera.atmosphere is Some(_),
+    false,
+    tonemap_in_shader=render3d_main_pass_tonemap_in_shader(camera),
+    environment_map=environment_map_state.intensity > 0.0F,
+    irradiance_volume=light_probe_state.irradiance_volume_texture_ids.length() >
+      0,
+    screen_space_reflections=camera.screen_space_reflections is Some(_),
+    area_light_luts=false,
+    dfg_lut=false,
+  )
+  render3d_prepare_volumetric_fog_pipelines(
+    render_world,
+    extracted_camera.entity.render_entity,
+    prepared,
+    scene_target_id,
+    msaa_sample_count,
+    mesh_pipeline_view_key,
+  )
+  prepared
 }
 
 ///|

@@ -301,6 +301,7 @@ fn configure_mesh_render_sub_app(
     stage,
     @app.system(render3d_queue_shadows_system_in_render_app)
     .named("pbr.render3d.queue_shadows")
+    .after("pbr.render3d.queue_meshes")
     .in_set(render3d_queue_shadows_set),
   )
   .add_systems(

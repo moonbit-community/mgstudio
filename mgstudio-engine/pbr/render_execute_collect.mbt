@@ -113,6 +113,7 @@ fn render3d_extract_nearest_atmosphere(
 ///|
 fn render3d_execute_collect_cameras(
   source_world : @ecs.World,
+  render_world : @ecs.World,
   world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
   gpu_instance_buffer_builder_requested : Bool,
   gpu_culling_supported : Bool,
@@ -133,7 +134,7 @@ fn render3d_execute_collect_cameras(
     source_world,
   )
   let has_volumetric_fog_views = render3d_world_has_volumetric_fog_views(
-    source_world,
+    render_world,
   )
   let tick = source_world.get_tick_context().ticks()
   for entity in source_world.changed_components(ecs_key_projection, tick).read() {

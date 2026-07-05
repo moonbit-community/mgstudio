@@ -303,7 +303,7 @@ struct Mesh3dVolumetricFogPipelineCacheEntry {
   has_density_texture : Bool
   atmosphere : Bool
   view_layout_key_bits : UInt
-  vertex_stride_bytes : UInt64
+  vertex_buffer_layout : @mesh.VertexBufferLayout
   pipeline_layout : @wgpu.PipelineLayout?
   state : RenderPipelineCacheState
 }
@@ -316,14 +316,14 @@ fn Mesh3dVolumetricFogPipelineCacheEntry::matches(
   has_density_texture : Bool,
   atmosphere : Bool,
   view_layout_key_bits : UInt,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
 ) -> Bool {
   self.color_format == color_format &&
   self.msaa_sample_count == msaa_sample_count &&
   self.has_density_texture == has_density_texture &&
   self.atmosphere == atmosphere &&
   self.view_layout_key_bits == view_layout_key_bits &&
-  self.vertex_stride_bytes == vertex_stride_bytes
+  self.vertex_buffer_layout.equal(vertex_buffer_layout)
 }
 
 ///|
@@ -334,12 +334,12 @@ fn mesh3d_volumetric_fog_pipeline_available_id_get(
   has_density_texture : Bool,
   atmosphere : Bool,
   view_layout_key_bits : UInt,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
 ) -> Int? {
   for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
     if entry.matches(
         color_format, msaa_sample_count, has_density_texture, atmosphere, view_layout_key_bits,
-        vertex_stride_bytes,
+        vertex_buffer_layout,
       ) {
       match entry.state {
         RenderPipelineOk(_) => {
@@ -372,12 +372,12 @@ fn mesh3d_volumetric_fog_pipeline_id_get(
   has_density_texture : Bool,
   atmosphere : Bool,
   view_layout_key_bits : UInt,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
 ) -> Int? {
   for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
     if entry.matches(
         color_format, msaa_sample_count, has_density_texture, atmosphere, view_layout_key_bits,
-        vertex_stride_bytes,
+        vertex_buffer_layout,
       ) {
       return Some(entry.pipeline_id)
     }
@@ -412,12 +412,12 @@ fn mesh3d_volumetric_fog_pipeline_failed(
   has_density_texture : Bool,
   atmosphere : Bool,
   view_layout_key_bits : UInt,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
 ) -> Bool {
   for entry in backend.mesh3d_volumetric_fog_pipeline_cache {
     if entry.matches(
         color_format, msaa_sample_count, has_density_texture, atmosphere, view_layout_key_bits,
-        vertex_stride_bytes,
+        vertex_buffer_layout,
       ) {
       match entry.state {
         RenderPipelineOk(_) => return false
@@ -439,7 +439,7 @@ fn mesh3d_volumetric_fog_pipeline_set(
   has_density_texture : Bool,
   atmosphere : Bool,
   view_layout_key_bits : UInt,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
   pipeline_layout : @wgpu.PipelineLayout,
   pipeline : @wgpu.RenderPipeline,
 ) -> Int {
@@ -451,7 +451,7 @@ fn mesh3d_volumetric_fog_pipeline_set(
     has_density_texture,
     atmosphere,
     view_layout_key_bits,
-    vertex_stride_bytes,
+    vertex_buffer_layout,
     pipeline_layout: Some(pipeline_layout),
     state: RenderPipelineOk(pipeline),
   })
@@ -469,19 +469,19 @@ fn mesh3d_volumetric_fog_pipeline_set_failed(
   has_density_texture : Bool,
   atmosphere : Bool,
   view_layout_key_bits : UInt,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
   message : String,
 ) -> Int {
   if mesh3d_volumetric_fog_pipeline_available_id_get(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-      view_layout_key_bits, vertex_stride_bytes,
+      view_layout_key_bits, vertex_buffer_layout,
     )
     is Some(pipeline_id) {
     return pipeline_id
   }
   if mesh3d_volumetric_fog_pipeline_id_get(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-      view_layout_key_bits, vertex_stride_bytes,
+      view_layout_key_bits, vertex_buffer_layout,
     )
     is Some(pipeline_id) {
     return pipeline_id
@@ -494,7 +494,7 @@ fn mesh3d_volumetric_fog_pipeline_set_failed(
     has_density_texture,
     atmosphere,
     view_layout_key_bits,
-    vertex_stride_bytes,
+    vertex_buffer_layout,
     pipeline_layout: None,
     state: RenderPipelineErr(message),
   })

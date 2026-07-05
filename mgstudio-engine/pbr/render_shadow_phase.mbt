@@ -356,11 +356,10 @@ fn render3d_shadow_visible_extracted_indices(
     if !camera_layers.matches(mesh.layers) {
       continue
     }
-    if !render3d_should_apply_cpu_frustum_culling_flags(
-        mesh.has_no_frustum_culling,
-        false,
-        mesh.has_no_cpu_culling,
-      ) {
+    if mesh.has_not_shadow_caster || mesh.has_no_cpu_culling {
+      continue
+    }
+    if mesh.has_no_frustum_culling {
       visible.push(extracted_index)
       continue
     }

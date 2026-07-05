@@ -19,6 +19,11 @@
 const VOLUMETRIC_FOG_PLUGIN_NAME : String = "mgstudio.pbr.volumetric_fog.VolumetricFogPlugin"
 
 ///|
+let volumetric_fog_render_set_node : @app.SystemSet = @app.system_set(
+  "mgstudio.pbr.volumetric_fog.node",
+)
+
+///|
 pub type VolumetricFog = @light.VolumetricFog
 
 ///|
@@ -83,12 +88,53 @@ fn volumetric_fog_plugin_install_with(
   plugin : VolumetricFogPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  if app.contains_resource(ecs_key_fog_assets) {
+  let mut next = if app.contains_resource(ecs_key_fog_assets) {
     app
   } else {
     let fog_assets = volumetric_fog_create_fog_assets(app.world())
     app.insert_world_resource(ecs_key_fog_assets, fog_assets)
   }
+  let fog_volume_sync : @render.SyncComponentPlugin[
+    FogVolume,
+    VolumetricFogPlugin,
+  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  next = @render.sync_component_plugin_with(next, fog_volume_sync)
+  let volumetric_fog_sync : @render.SyncComponentPlugin[
+    VolumetricFog,
+    VolumetricFogPlugin,
+  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  next = @render.sync_component_plugin_with(next, volumetric_fog_sync)
+  next = @render.try_with_render_app(
+    next, volumetric_fog_configure_render_sub_app,
+  )
+  if next.contains_resource(VolumetricFogPipeline::resource()) {
+    next
+  } else {
+    next.insert_world_resource(
+      VolumetricFogPipeline::resource(),
+      VolumetricFogPipeline::VolumetricFogPipeline(),
+    )
+  }
+}
+
+///|
+fn volumetric_fog_configure_render_sub_app(
+  render_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  let graph_stage = @render.RenderGraph::schedule()
+  render_app
+  .configure_sets(
+    graph_stage,
+    volumetric_fog_render_set_node,
+    after=[@core_pipeline.core3d_system_set_main_pass()],
+    before=[@core_pipeline.core3d_system_set_early_post_process()],
+  )
+  .add_systems(
+    @render.render_extract_schedule_stage(),
+    @app.system(extract_volumetric_fog).named(
+      "mgstudio_pbr::volumetric_fog::extract_volumetric_fog",
+    ),
+  )
 }
 
 ///|

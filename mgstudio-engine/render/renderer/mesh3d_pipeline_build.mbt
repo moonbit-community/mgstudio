@@ -1382,6 +1382,33 @@ fn mesh3d_volumetric_fog_color_format_for_target(
 }
 
 ///|
+pub fn GpuBackend::mesh3d_volumetric_fog_pipeline_key_inputs(
+  self : GpuBackend,
+  target_id : Int,
+  hull_mesh_id : Int,
+) -> (UInt, @mesh.VertexBufferLayout)? {
+  guard mesh3d_volumetric_fog_color_format_for_target(self, target_id)
+    is Some(color_format) else {
+    return None
+  }
+  guard find_mesh(self, hull_mesh_id) is Some(hull_mesh) else { return None }
+  guard hull_mesh.mesh_vertex_layout is Some(mesh_vertex_layout) else {
+    return None
+  }
+  let position = @mesh.MeshVertexAttribute::position()
+  let vertex_buffer_layout = mesh_vertex_layout.get_layout([
+    @mesh.VertexAttributeDescriptor::new(
+      shader_location=0,
+      id=position.id(),
+      name=position.name(),
+    ),
+  ]) catch {
+    _ => return None
+  }
+  Some((color_format, vertex_buffer_layout))
+}
+
+///|
 fn mesh3d_volumetric_fog_shader_defines(
   msaa_sample_count : Int,
   has_density_texture : Bool,
@@ -1442,6 +1469,34 @@ fn mesh3d_volumetric_fog_pipeline_label(
 }
 
 ///|
+fn mesh3d_volumetric_fog_pipeline_render_sample_count(
+  _msaa_sample_count : Int,
+) -> UInt {
+  // Bevy writes volumetric fog to `ViewTarget::main_texture_view()`. MSAA
+  // still selects shader and bind-group variants, but not color samples.
+  1U
+}
+
+///|
+fn mesh3d_volumetric_fog_blend_components() -> (
+  UInt,
+  UInt,
+  UInt,
+  UInt,
+  UInt,
+  UInt,
+) {
+  (
+    @wgpu.BLEND_FACTOR_ONE,
+    @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    @wgpu.BLEND_OPERATION_ADD,
+    @wgpu.BLEND_FACTOR_ZERO,
+    @wgpu.BLEND_FACTOR_ONE,
+    @wgpu.BLEND_OPERATION_ADD,
+  )
+}
+
+///|
 fn mesh3d_build_volumetric_fog_pipeline(
   backend : GpuBackend,
   color_format : UInt,
@@ -1449,19 +1504,19 @@ fn mesh3d_build_volumetric_fog_pipeline(
   has_density_texture : Bool,
   atmosphere : Bool,
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
-  vertex_stride_bytes : UInt64,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
 ) -> Int? raise GpuBackendError {
   let view_layout_key_bits = mesh_pipeline_view_key.bits()
   if mesh3d_volumetric_fog_pipeline_available_id_get(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-      view_layout_key_bits, vertex_stride_bytes,
+      view_layout_key_bits, vertex_buffer_layout,
     )
     is Some(pipeline_id) {
     return Some(pipeline_id)
   }
   if mesh3d_volumetric_fog_pipeline_failed(
       backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-      view_layout_key_bits, vertex_stride_bytes,
+      view_layout_key_bits, vertex_buffer_layout,
     ) {
     return None
   }
@@ -1495,7 +1550,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
           backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-          view_layout_key_bits, vertex_stride_bytes, message,
+          view_layout_key_bits, vertex_buffer_layout, message,
         ),
       )
       debug("[renderer] volumetric fog pipeline failed: \{message}")
@@ -1510,7 +1565,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
           backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-          view_layout_key_bits, vertex_stride_bytes, message,
+          view_layout_key_bits, vertex_buffer_layout, message,
         ),
       )
       debug("[renderer] volumetric fog pipeline failed: \{message}")
@@ -1532,22 +1587,34 @@ fn mesh3d_build_volumetric_fog_pipeline(
     builder.set_entry_points("vertex", "fragment")
     builder.set_fragment_module(shader)
     builder.set_color_target_format(tf(color_format))
+    let (
+      color_src_factor,
+      color_dst_factor,
+      color_operation,
+      alpha_src_factor,
+      alpha_dst_factor,
+      alpha_operation,
+    ) = mesh3d_volumetric_fog_blend_components()
     builder.set_blend_components(
-      @wgpu.BLEND_FACTOR_ONE,
-      @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-      @wgpu.BLEND_OPERATION_ADD,
-      @wgpu.BLEND_FACTOR_ZERO,
-      @wgpu.BLEND_FACTOR_ONE,
-      @wgpu.BLEND_OPERATION_ADD,
+      color_src_factor, color_dst_factor, color_operation, alpha_src_factor, alpha_dst_factor,
+      alpha_operation,
     )
     builder.set_vertex_buffer_layout(
-      vertex_stride_bytes,
-      @wgpu.VERTEX_STEP_MODE_VERTEX,
+      vertex_buffer_layout.array_stride.to_uint64(),
+      mesh_vertex_step_mode_to_wgpu(vertex_buffer_layout.step_mode),
     )
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
+    for attribute in vertex_buffer_layout.attributes {
+      builder.add_vertex_attribute(
+        mesh_vertex_format_to_wgpu(attribute.format),
+        attribute.offset.to_uint64(),
+        attribute.shader_location.reinterpret_as_uint(),
+      )
+    }
     builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
     builder.set_cull_mode_u32(@wgpu.CULL_MODE_BACK)
-    builder.set_multisample(msaa_sample_count.reinterpret_as_uint())
+    builder.set_multisample(
+      mesh3d_volumetric_fog_pipeline_render_sample_count(msaa_sample_count),
+    )
     backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
     let created = builder.create_pipeline(backend.device)
     let result = backend.device.pop_error_scope_sync_result(backend.instance)
@@ -1560,7 +1627,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
           backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-          view_layout_key_bits, vertex_stride_bytes, message,
+          view_layout_key_bits, vertex_buffer_layout, message,
         ),
       )
       debug("[renderer] volumetric fog pipeline failed: \{message}")
@@ -1576,7 +1643,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
           backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
-          view_layout_key_bits, vertex_stride_bytes, message,
+          view_layout_key_bits, vertex_buffer_layout, message,
         ),
       )
       debug("[renderer] volumetric fog pipeline failed: \{message}")
@@ -1588,7 +1655,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
   pipeline.set_label(label)
   let pipeline_id = mesh3d_volumetric_fog_pipeline_set(
     backend, color_format, msaa_sample_count, has_density_texture, atmosphere, view_layout_key_bits,
-    vertex_stride_bytes, pipeline_layout, pipeline,
+    vertex_buffer_layout, pipeline_layout, pipeline,
   )
   shader.release()
   Some(pipeline_id)
@@ -1597,52 +1664,35 @@ fn mesh3d_build_volumetric_fog_pipeline(
 ///|
 pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
   self : GpuBackend,
-  target_id : Int,
+  target_format : UInt,
   msaa_sample_count : Int,
   has_density_texture : Bool,
-  atmosphere : Bool,
-  hull_mesh_id : Int,
+  mesh_pipeline_view_key_bits : UInt,
+  vertex_buffer_layout : @mesh.VertexBufferLayout,
 ) -> Int? raise GpuBackendError {
-  guard mesh3d_volumetric_fog_color_format_for_target(self, target_id)
-    is Some(color_format) else {
-    return None
-  }
-  guard find_mesh(self, hull_mesh_id) is Some(hull_mesh) else { return None }
-  let mesh_pipeline_view_key = match self.pass_state {
-    Some(pass_state) =>
-      mesh3d_pass_mesh_view_layout_key(pass_state, atmosphere~)
-    None =>
-      @mesh_view_layout.mesh_view_layout_key(
-        msaa_sample_count > 1,
-        false,
-        false,
-        false,
-        false,
-        false,
-        atmosphere,
-        false,
-      )
-  }
+  let mesh_pipeline_view_key = @mesh_view_layout.mesh_view_layout_key_from_bits_truncate(
+    mesh_pipeline_view_key_bits,
+  )
+  let atmosphere = (
+      mesh_pipeline_view_key.bits() &
+      @mesh_view_layout.MESH_VIEW_LAYOUT_ATMOSPHERE
+    ) !=
+    0U
   match
     mesh3d_build_volumetric_fog_pipeline(
-      self,
-      color_format,
-      msaa_sample_count,
-      has_density_texture,
-      atmosphere,
-      mesh_pipeline_view_key,
-      hull_mesh.vertex_stride_bytes,
+      self, target_format, msaa_sample_count, has_density_texture, atmosphere, mesh_pipeline_view_key,
+      vertex_buffer_layout,
     ) {
     Some(pipeline_id) => Some(pipeline_id)
     None =>
       mesh3d_volumetric_fog_pipeline_id_get(
         self,
-        color_format,
+        target_format,
         msaa_sample_count,
         has_density_texture,
         atmosphere,
         mesh_pipeline_view_key.bits(),
-        hull_mesh.vertex_stride_bytes,
+        vertex_buffer_layout,
       )
   }
 }
@@ -3116,6 +3166,10 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   let material_descriptor = mesh3d_material_pipeline_descriptor_find(
     backend, material_pipeline_id,
   )
+  if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID &&
+    material_descriptor is None {
+    return None
+  }
   let emulate_unclipped_depth = mesh3d_shadow_depth_should_emulate_unclipped_depth(
     backend, directional_light,
   )
@@ -3150,11 +3204,6 @@ fn mesh3d_shadow_depth_pipeline_for_draw(
   skinned : Bool,
   directional_light : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  if material_pipeline_id != MESH3D_DEFAULT_MATERIAL_PIPELINE_ID {
-    return mesh3d_material_render_pipeline_for_draw(
-      backend, material_pipeline_id,
-    )
-  }
   mesh3d_shadow_depth_pipeline_for_current_pass(
     backend, topology, material_pipeline_id, cull_mode, material_path, skinned, directional_light,
   )

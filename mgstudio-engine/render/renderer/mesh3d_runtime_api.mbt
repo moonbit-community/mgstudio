@@ -1134,21 +1134,35 @@ pub fn prepare_mesh3d_volumetric_fog_uniforms(
 
 ///|
 pub fn prepare_mesh3d_volumetric_fog_pipeline(
-  target_id~ : Int,
+  target_format~ : UInt,
   msaa_sample_count~ : Int,
   has_density_texture~ : Bool,
-  atmosphere~ : Bool,
-  hull_mesh_id~ : Int,
+  mesh_pipeline_view_key_bits~ : UInt,
+  vertex_buffer_layout~ : @mesh.VertexBufferLayout,
 ) -> Int? {
   if ensure_backend() is Some(backend) {
     return backend.prepare_mesh3d_volumetric_fog_pipeline(
-      target_id, msaa_sample_count, has_density_texture, atmosphere, hull_mesh_id,
+      target_format, msaa_sample_count, has_density_texture, mesh_pipeline_view_key_bits,
+      vertex_buffer_layout,
     ) catch {
       err => {
         debug_runtime_error("prepare_mesh3d_volumetric_fog_pipeline", err)
         None
       }
     }
+  }
+  None
+}
+
+///|
+pub fn mesh3d_volumetric_fog_pipeline_key_inputs(
+  target_id~ : Int,
+  hull_mesh_id~ : Int,
+) -> (UInt, @mesh.VertexBufferLayout)? {
+  if ensure_backend() is Some(backend) {
+    return backend.mesh3d_volumetric_fog_pipeline_key_inputs(
+      target_id, hull_mesh_id,
+    )
   }
   None
 }

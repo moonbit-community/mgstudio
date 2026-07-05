@@ -68,23 +68,23 @@ test "pbr volumetric fog: uniform buffer prepare and clear" {
   let buffer = VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
   let fog = @light.VolumetricFog::VolumetricFog()
   let volume = @light.FogVolume::FogVolume()
-  ignore(
-    prepare_volumetric_fog_view_uniforms(
-      buffer,
-      fog,
-      @math.Affine3::identity(),
-      volumetric_fog_wbtest_identity_mat4(),
-      [
-        (volume, @math.Affine3::identity()),
-        (
-          volume,
-          @math.Affine3::from_translation(@math.Vec3::new(-10.0F, 0.0F, 0.0F)),
-        ),
-      ],
-    ),
+  let view_fog = prepare_volumetric_fog_view_uniforms(
+    buffer,
+    fog,
+    @math.Affine3::identity(),
+    volumetric_fog_wbtest_identity_mat4(),
+    [
+      (volume, @math.Affine3::identity()),
+      (
+        volume,
+        @math.Affine3::from_translation(@math.Vec3::new(-10.0F, 0.0F, 0.0F)),
+      ),
+    ],
   )
   inspect(buffer.count(), content="2")
   inspect(buffer.bytes().length(), content="1024")
+  inspect(view_fog.volumes()[0].uniform_buffer_offset(), content="0")
+  inspect(view_fog.volumes()[1].uniform_buffer_offset(), content="512")
   buffer.clear()
   inspect(buffer.count(), content="0")
 }
@@ -204,5 +204,170 @@ test "pbr volumetric fog: far planes keep only view-facing cube faces" {
     volumetric_fog_wbtest_approx_eq(far_planes[2].z, 0.0F) &&
     volumetric_fog_wbtest_approx_eq(far_planes[2].w, 0.0F),
     content="true",
+  )
+}
+
+///|
+fn volumetric_fog_wbtest_link_render_entity(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  source_entity : @core.Entity,
+) -> @core.Entity {
+  let render_entity = render_world.spawn()
+  try! source_world.set_by_key(
+    source_entity,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_entity),
+  )
+  try! render_world.set_by_key(
+    render_entity,
+    @render.ecs_key_main_entity,
+    @render.MainEntity::new(source_entity),
+  )
+  render_entity
+}
+
+///|
+test "pbr volumetric fog: extract copies Bevy render-world components" {
+  let source_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  let view_entity = source_world.spawn()
+  let render_view = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, view_entity,
+  )
+  try! source_world.set_by_key(
+    view_entity,
+    @light.ecs_key_volumetric_fog,
+    @light.VolumetricFog::VolumetricFog().with_step_count(96),
+  )
+
+  let volume_entity = source_world.spawn()
+  let render_volume = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, volume_entity,
+  )
+  try! source_world.set_by_key(
+    volume_entity,
+    @light.ecs_key_fog_volume,
+    @light.FogVolume::FogVolume().with_density_factor(3.0F),
+  )
+  try! source_world.set_by_key(
+    volume_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(
+      @transform.Transform::from_translation(@math.Vec3::new(4.0F, 5.0F, 6.0F)),
+    ),
+  )
+
+  let light_entity = source_world.spawn()
+  let render_light = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, light_entity,
+  )
+  try! source_world.set_by_key(
+    light_entity,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::VolumetricLight(),
+  )
+
+  extract_volumetric_fog_from_worlds(source_world, render_world)
+
+  inspect(
+    (try! render_world.get_by_key(render_view, @light.ecs_key_volumetric_fog)).unwrap().step_count,
+    content="96",
+  )
+  inspect(
+    (try! render_world.get_by_key(render_volume, @light.ecs_key_fog_volume)).unwrap().density_factor,
+    content="3",
+  )
+  inspect(
+    (try! render_world.get_by_key(
+      render_volume, @transform.ecs_key_global_transform,
+    ))
+    .unwrap()
+    .affine().translation.x,
+    content="4",
+  )
+  assert_true(
+    (try! render_world.get_by_key(render_light, @light.ecs_key_volumetric_light))
+    is Some(_),
+  )
+}
+
+///|
+test "pbr volumetric fog: no-light extract cleans render-world fog state only" {
+  let source_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  let view_entity = source_world.spawn()
+  let render_view = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, view_entity,
+  )
+  try! source_world.set_by_key(
+    view_entity,
+    @light.ecs_key_volumetric_fog,
+    @light.VolumetricFog::VolumetricFog().with_step_count(48),
+  )
+  try! render_world.set_by_key(
+    render_view,
+    @light.ecs_key_volumetric_fog,
+    @light.VolumetricFog::VolumetricFog().with_step_count(12),
+  )
+  try! render_world.set_by_key(
+    render_view,
+    ViewVolumetricFogPipelines::component(),
+    ViewVolumetricFogPipelines::{ textureless: 1, textured: 2 },
+  )
+  try! render_world.set_by_key(
+    render_view,
+    ViewVolumetricFog::component(),
+    ViewVolumetricFog::ViewVolumetricFog(),
+  )
+
+  let volume_entity = source_world.spawn()
+  let render_volume = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, volume_entity,
+  )
+  try! source_world.set_by_key(
+    volume_entity,
+    @light.ecs_key_fog_volume,
+    @light.FogVolume::FogVolume().with_density_factor(4.0F),
+  )
+  try! source_world.set_by_key(
+    volume_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(@transform.Transform::identity()),
+  )
+  try! render_world.set_by_key(
+    render_volume,
+    @light.ecs_key_fog_volume,
+    @light.FogVolume::FogVolume().with_density_factor(9.0F),
+  )
+
+  extract_volumetric_fog_from_worlds(source_world, render_world)
+
+  assert_true(
+    (try! render_world.get_by_key(render_view, @light.ecs_key_volumetric_fog))
+    is None,
+  )
+  assert_true(
+    (try! render_world.get_by_key(
+      render_view,
+      ViewVolumetricFogPipelines::component(),
+    ))
+    is None,
+  )
+  assert_true(
+    (try! render_world.get_by_key(render_view, ViewVolumetricFog::component()))
+    is None,
+  )
+  assert_true(
+    (try! render_world.get_by_key(render_volume, @light.ecs_key_fog_volume))
+    is None,
+  )
+  inspect(
+    (try! source_world.get_by_key(view_entity, @light.ecs_key_volumetric_fog)).unwrap().step_count,
+    content="48",
+  )
+  inspect(
+    (try! source_world.get_by_key(volume_entity, @light.ecs_key_fog_volume)).unwrap().density_factor,
+    content="4",
   )
 }

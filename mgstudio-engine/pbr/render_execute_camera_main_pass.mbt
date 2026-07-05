@@ -329,6 +329,7 @@ fn render3d_execute_camera_main_pass(
   camera_exposure_value : Float,
   shadow_bindings : Render3dViewShadowBindings,
   environment_map_state : Render3dEnvironmentMapState,
+  light_probe_state : Render3dLightProbeState,
   point_shadow_near : Float,
   scene_pass_kind : Int,
   clear_enabled : Bool,
@@ -379,9 +380,6 @@ fn render3d_execute_camera_main_pass(
     texture_ids=render_decals.texture_ids(),
   )
   let source_world = @render.render_source_world(world)
-  let light_probe_state = render3d_camera_light_probe_state(
-    source_world, extracted_camera, environment_map_state,
-  )
   fn prepare_light_probe_bindings() -> Unit {
     let (
       gpu_clustered_lights_bytes,
@@ -422,6 +420,12 @@ fn render3d_execute_camera_main_pass(
   render3d_prepare_camera_atmosphere_resources(world, camera)
   let scene_view_bind_group_prepared = point_shadow_binding.texture_id >= 0 ||
     directional_shadow_binding.texture_id >= 0
+  if directional_shadow_binding.texture_id >= 0 &&
+    directional_shadow_binding.cascade_count > 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_main_pass_directional_shadow_resources", 1,
+    )
+  }
   if scene_view_bind_group_prepared {
     prepare_view_bind_group(-1)
   }
@@ -1217,62 +1221,4 @@ fn render3d_execute_camera_main_pass(
     }
     @render.host_gpu_end_active_pass_preserving_state()
   }
-  let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog(
-    world, source_world, camera, camera_pass_projection,
-  )
-  let volumetric_fog_prepare = render3d_prepare_volumetric_fog_hull_meshes(
-    world, source_world, volumetric_fog_prepare,
-  )
-  render3d_write_volumetric_fog_view_components(
-    world,
-    extracted_camera.entity.render_entity,
-    volumetric_fog_prepare,
-  )
-  render3d_upload_volumetric_fog_uniform_buffer(world)
-  let volumetric_fog_pipelines = render3d_prepare_volumetric_fog_pipelines(
-    volumetric_fog_prepare,
-    scene_target_id,
-    msaa_sample_count,
-    camera.atmosphere is Some(_),
-  )
-  render3d_write_volumetric_fog_pipeline_components(
-    world,
-    extracted_camera.entity.render_entity,
-    volumetric_fog_pipelines,
-  )
-  render3d_draw_volumetric_fog(
-    world,
-    extracted_camera.entity.render_entity,
-    volumetric_fog_prepare,
-    camera_entity,
-    camera.atmosphere is Some(_),
-  )
-  @render.host_gpu_end_pass()
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_views",
-    volumetric_fog_prepare.view_count,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_volumes",
-    render3d_volumetric_fog_view_volume_count(
-      world,
-      extracted_camera.entity.render_entity,
-    ),
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_lights",
-    volumetric_fog_prepare.light_count,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_uniforms",
-    volumetric_fog_prepare.uniform_count,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_plane_mesh_id",
-    volumetric_fog_prepare.plane_mesh_id,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_volumetric_fog_cube_mesh_id",
-    volumetric_fog_prepare.cube_mesh_id,
-  )
 }

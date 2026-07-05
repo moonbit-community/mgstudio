@@ -178,6 +178,7 @@ pub struct GpuBackend {
     Mesh3dVolumetricFogPipelineCacheEntry,
   ]
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
+  mut mesh3d_directional_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
   mut mesh3d_lights_buf : @wgpu.Buffer?
   mut mesh3d_clustered_lights_buf : @wgpu.Buffer?

@@ -4,16 +4,32 @@ package "Milky2018/mgstudio/pbr/volumetric_fog"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/mesh_view_layout",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub const VOLUMETRIC_FOG_SHADER_PATH : String = "pbr/volumetric_fog/volumetric_fog.wgsl"
+
+pub fn extract_volumetric_fog(@ecs.World) -> Unit
+
 pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.VolumetricFog, @math.Affine3, VolumetricFogMat4, Array[(@light.FogVolume, @math.Affine3)]) -> ViewVolumetricFog
 
 pub fn register_embedded_wgsl_sources() -> Unit
+
+pub fn register_volumetric_fog_render_world_components(@ecs.World) -> Unit
+
+pub fn volumetric_fog_render_world_entity(@ecs.World, @core.Entity) -> VolumetricFogRenderWorldEntity?
+
+pub fn volumetric_fog_render_world_storage_counts(@ecs.World) -> VolumetricFogRenderWorldStorageCounts
+
+pub fn volumetric_fog_render_world_volume_inputs(@ecs.World) -> Array[(@light.FogVolume, @math.Affine3)]
 
 // Errors
 
@@ -46,15 +62,62 @@ pub(all) struct ViewVolumetricFogPipelines {
 }
 pub impl @ecs.Component for ViewVolumetricFogPipelines
 
+pub struct VolumetricFogBindGroupLayoutKey {
+  // private fields
+} derive(Eq, @debug.Debug)
+pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> Self
+pub fn VolumetricFogBindGroupLayoutKey::bits(Self) -> UInt
+pub fn VolumetricFogBindGroupLayoutKey::description(Self) -> String
+pub fn VolumetricFogBindGroupLayoutKey::from_msaa_and_density(Bool, Bool) -> Self
+pub fn VolumetricFogBindGroupLayoutKey::has_density_texture(Self) -> Bool
+pub fn VolumetricFogBindGroupLayoutKey::is_multisampled(Self) -> Bool
+pub fn VolumetricFogBindGroupLayoutKey::layout_index(Self) -> Int
+
 pub struct VolumetricFogMat4 {
   // private fields
 }
 pub fn VolumetricFogMat4::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
 
+pub struct VolumetricFogPipeline {
+  shader_path : String
+}
+pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> Self
+pub fn VolumetricFogPipeline::shader_path(Self) -> String
+pub impl @app.Resource for VolumetricFogPipeline
+
+pub struct VolumetricFogPipelineKey {
+  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey
+  target_format : UInt
+  vertex_buffer_layout : @mesh.VertexBufferLayout
+  has_density_texture : Bool
+}
+pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey(mesh_pipeline_view_key~ : @mesh_view_layout.MeshPipelineViewLayoutKey, target_format~ : UInt, vertex_buffer_layout~ : @mesh.VertexBufferLayout, has_density_texture~ : Bool) -> Self
+pub fn VolumetricFogPipelineKey::bind_group_layout_key(Self) -> VolumetricFogBindGroupLayoutKey
+pub fn VolumetricFogPipelineKey::has_density_texture(Self) -> Bool
+pub fn VolumetricFogPipelineKey::mesh_pipeline_view_key(Self) -> @mesh_view_layout.MeshPipelineViewLayoutKey
+pub fn VolumetricFogPipelineKey::shader_defs(Self) -> Array[String]
+pub fn VolumetricFogPipelineKey::target_format(Self) -> UInt
+pub fn VolumetricFogPipelineKey::vertex_buffer_layout(Self) -> @mesh.VertexBufferLayout
+
 pub struct VolumetricFogPlugin {
 }
 pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> Self
 pub impl @app.Plugin for VolumetricFogPlugin
+
+pub struct VolumetricFogRenderWorldEntity {
+  // private fields
+}
+pub fn VolumetricFogRenderWorldEntity::main_entity(Self) -> @render.MainEntity
+pub fn VolumetricFogRenderWorldEntity::new(@core.Entity, @render.MainEntity) -> Self
+pub fn VolumetricFogRenderWorldEntity::render_entity(Self) -> @core.Entity
+
+pub struct VolumetricFogRenderWorldStorageCounts {
+  // private fields
+}
+pub fn VolumetricFogRenderWorldStorageCounts::light_count(Self) -> Int
+pub fn VolumetricFogRenderWorldStorageCounts::transformed_volume_count(Self) -> Int
+pub fn VolumetricFogRenderWorldStorageCounts::view_count(Self) -> Int
+pub fn VolumetricFogRenderWorldStorageCounts::volume_count(Self) -> Int
 
 type VolumetricFogUniform
 

@@ -122,6 +122,71 @@ fn render3d_projection_runtime_projection(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/camera.rs::camera_system`.
+pub fn render3d_camera_system(world : @ecs.World) -> Unit {
+  let projection_updates : Array[(@core.Entity, Projection)] = []
+  let camera_updates : Array[(@core.Entity, @camera_camera.Camera)] = []
+  let camera_query : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Read[@camera_camera.Camera],
+      @ecs.Read[Projection],
+      @ecs.Optional[@camera_camera.RenderTarget],
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! camera_query.view(fn(_query_entity, data) {
+    let (entity, camera_read, projection_read, target_opt) = data
+    let target = match target_opt.value() {
+      Some(v) => v
+      None => @camera_camera.RenderTarget::Screen
+    }
+    match @pbr_render.render3d_target_info(world, target) {
+      Some(target_info) => {
+        let mut camera = camera_read.value()
+        if camera.viewport is Some(viewport) {
+          camera = camera.with_viewport(
+            @pbr_render.render3d_clamp_viewport(
+              viewport,
+              target_info.target_size,
+            ),
+          )
+        }
+        let viewport_size = camera.physical_viewport_size()
+        let computed = @camera_camera.ComputedCameraValues::new(
+          Some(
+            @camera_camera.RenderTargetInfo::new(
+              target_info.target_size,
+              target_info.scale_factor,
+            ),
+          ),
+          viewport_size,
+        )
+        let camera_with_computed = camera.with_computed(computed)
+        let projection = projection_read.value()
+        match camera_with_computed.logical_viewport_size() {
+          Some(logical_size) =>
+            if logical_size.x != 0.0F && logical_size.y != 0.0F {
+              projection_updates.push(
+                (entity, projection.update(logical_size.x, logical_size.y)),
+              )
+            }
+          None => ()
+        }
+        camera_updates.push((entity, camera_with_computed))
+      }
+      None => ()
+    }
+  })
+  for update in projection_updates {
+    try! world.set_by_key(update.0, ecs_key_projection, update.1)
+  }
+  for update in camera_updates {
+    try! world.set_by_key(update.0, @camera_camera.ecs_key_camera, update.1)
+  }
+}
+
+///|
 fn render3d_projection_runtime_update(
   projection : Projection,
   runtime : ProjectionRuntime3d?,

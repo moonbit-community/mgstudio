@@ -34,10 +34,10 @@ pub fn HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
 
 ///|
 fn mesh3d_pass_view_depth_view(
-  backend : GpuBackend,
-  _pass_state : GpuPassState,
+  _backend : GpuBackend,
+  pass_state : GpuPassState,
 ) -> @wgpu.TextureView? {
-  backend.depth_view
+  pass_state.view_depth_view
 }
 
 ///|
@@ -141,10 +141,61 @@ fn mesh3d_volumetric_fog_draw_mesh(
 }
 
 ///|
+fn mesh3d_volumetric_fog_hull_mesh_id(
+  volume : HostMesh3dVolumetricFogVolume,
+  plane_mesh_id : Int,
+  cube_mesh_id : Int,
+) -> Int {
+  if volume.exterior {
+    cube_mesh_id
+  } else {
+    plane_mesh_id
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_dynamic_offsets(
+  volume : HostMesh3dVolumetricFogVolume,
+) -> Array[UInt] {
+  [volume.uniform_buffer_offset]
+}
+
+///|
+fn mesh3d_volumetric_fog_resolved_point_shadow_texture_id(
+  texture_id : Int,
+  fallback_texture_id : Int,
+) -> Int {
+  if texture_id < 0 {
+    fallback_texture_id
+  } else {
+    texture_id
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_resolved_directional_shadow_texture_id(
+  texture_id : Int,
+  fallback_texture_id : Int,
+) -> Int {
+  if texture_id < 0 {
+    fallback_texture_id
+  } else {
+    texture_id
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_view_material_pipeline_id() -> UInt64 {
+  MESH3D_DEFAULT_MATERIAL_PIPELINE_ID
+}
+
+///|
 pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   self : GpuBackend,
   camera_key_hi : Int,
   camera_key_lo : Int,
+  point_shadow_texture_id : Int,
+  directional_shadow_texture_id : Int,
   plane_mesh_id : Int,
   cube_mesh_id : Int,
   textureless_pipeline_id : Int,
@@ -153,7 +204,12 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   volumes : Array[HostMesh3dVolumetricFogVolume],
 ) -> Unit raise GpuBackendError {
   guard volumes.length() > 0 else { return }
-  guard self.pass_state is Some(pass_state) else { return }
+  guard self.pass_state is Some(pass_state) else {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_missing_pass_state", 1,
+    )
+    return
+  }
   guard self.frame is Some(frame) else { return }
   guard target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(color_view) else {
@@ -168,17 +224,22 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   } else {
     pass_state.transmission_source_texture_id
   }
-  let resolved_point_shadow_texture_id = if pass_state.point_shadow_texture_id <
-    0 {
-    ensure_point_shadow_fallback_texture(self).id
+  let resolved_point_shadow_texture_id = mesh3d_volumetric_fog_resolved_point_shadow_texture_id(
+    point_shadow_texture_id,
+    ensure_point_shadow_fallback_texture(self).id,
+  )
+  let resolved_directional_shadow_texture_id = mesh3d_volumetric_fog_resolved_directional_shadow_texture_id(
+    directional_shadow_texture_id,
+    ensure_directional_shadow_fallback_texture(self).id,
+  )
+  if directional_shadow_texture_id >= 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_directional_shadow_input_resources", 1,
+    )
   } else {
-    pass_state.point_shadow_texture_id
-  }
-  let resolved_directional_shadow_texture_id = if pass_state.directional_shadow_texture_id <
-    0 {
-    ensure_directional_shadow_fallback_texture(self).id
-  } else {
-    pass_state.directional_shadow_texture_id
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_directional_shadow_input_fallback", 1,
+    )
   }
   let resolved_environment_diffuse_texture_id = if pass_state.environment_diffuse_texture_id >=
     0 {
@@ -202,7 +263,17 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   }
   guard resolve_mesh3d_texture(self, resolved_directional_shadow_texture_id)
     is Some(directional_shadow_texture) else {
+    if directional_shadow_texture_id >= 0 {
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_volumetric_fog_directional_shadow_resolve_failed", 1,
+      )
+    }
     return
+  }
+  if directional_shadow_texture_id >= 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_volumetric_fog_directional_shadow_resources", 1,
+    )
   }
   guard resolve_mesh3d_texture(self, resolved_environment_diffuse_texture_id)
     is Some(environment_diffuse_texture) else {
@@ -228,7 +299,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   )
   let (view_bg, view_offsets, _) = mesh3d_frame_view_bg_cache_get_or_create(
     self,
-    0UL,
+    mesh3d_volumetric_fog_view_material_pipeline_id(),
     None,
     pass_state.tonemap_in_shader,
     pass_uniforms,
@@ -262,7 +333,9 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   guard self.mesh3d_volumetric_fog_buf is Some(_) else { return }
   mesh3d_end_active_pass_preserving_state(self)
   for volume in volumes {
-    let mesh_id = if volume.exterior { cube_mesh_id } else { plane_mesh_id }
+    let mesh_id = mesh3d_volumetric_fog_hull_mesh_id(
+      volume, plane_mesh_id, cube_mesh_id,
+    )
     guard find_mesh(self, mesh_id) is Some(mesh) else { continue }
     let density_texture = mesh3d_volumetric_fog_resolved_texture(
       self,
@@ -281,6 +354,15 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
       )
       is Some(volumetric_view_bind_group) else {
       continue
+    }
+    if density_texture is Some(_) {
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_volumetric_fog_textured_draws", 1,
+      )
+    } else {
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_volumetric_fog_textureless_draws", 1,
+      )
     }
     let render_pass = frame.encoder.begin_render_pass_color_load(color_view)
     render_pass.set_viewport(
@@ -302,9 +384,11 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
     render_pass.set_scissor_rect(sx, sy, sw, sh)
     render_pass.set_pipeline(pipeline)
     render_pass.set_bind_group(0U, view_bg, view_offsets)
-    render_pass.set_bind_group(1U, volumetric_view_bind_group, [
-      volume.uniform_buffer_offset,
-    ])
+    render_pass.set_bind_group(
+      1U,
+      volumetric_view_bind_group,
+      mesh3d_volumetric_fog_dynamic_offsets(volume),
+    )
     mesh3d_volumetric_fog_draw_mesh(render_pass, mesh)
     render_pass.end()
     render_pass.release()
@@ -315,6 +399,8 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
 pub fn draw_mesh3d_volumetric_fog(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
+  point_shadow_texture_id~ : Int,
+  directional_shadow_texture_id~ : Int,
   plane_mesh_id~ : Int,
   cube_mesh_id~ : Int,
   textureless_pipeline_id~ : Int,
@@ -324,8 +410,9 @@ pub fn draw_mesh3d_volumetric_fog(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.draw_mesh3d_volumetric_fog(
-      camera_key_hi, camera_key_lo, plane_mesh_id, cube_mesh_id, textureless_pipeline_id,
-      textured_pipeline_id, atmosphere, volumes,
+      camera_key_hi, camera_key_lo, point_shadow_texture_id, directional_shadow_texture_id,
+      plane_mesh_id, cube_mesh_id, textureless_pipeline_id, textured_pipeline_id,
+      atmosphere, volumes,
     ) catch {
       err => debug_runtime_error("draw_mesh3d_volumetric_fog", err)
     }

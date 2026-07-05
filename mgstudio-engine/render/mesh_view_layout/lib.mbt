@@ -15,7 +15,7 @@
 // Bevy source: `bevy/crates/bevy_pbr/src/render/mesh_view_bindings.rs`.
 
 ///|
-const MESH_VIEW_LAYOUT_MULTISAMPLED : UInt = 1U << 0
+pub const MESH_VIEW_LAYOUT_MULTISAMPLED : UInt = 1U << 0
 
 ///|
 const MESH_VIEW_LAYOUT_DEPTH_PREPASS : UInt = 1U << 1
@@ -33,7 +33,7 @@ const MESH_VIEW_LAYOUT_DEFERRED_PREPASS : UInt = 1U << 4
 const MESH_VIEW_LAYOUT_OIT_ENABLED : UInt = 1U << 5
 
 ///|
-const MESH_VIEW_LAYOUT_ATMOSPHERE : UInt = 1U << 6
+pub const MESH_VIEW_LAYOUT_ATMOSPHERE : UInt = 1U << 6
 
 ///|
 const MESH_VIEW_LAYOUT_STBN : UInt = 1U << 7

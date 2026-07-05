@@ -111,6 +111,8 @@ priv struct GltfAccessorDef {
   component_type : Int
   count : Int
   accessor_type : String
+  min : @math.Vec3?
+  max : @math.Vec3?
 }
 
 ///|
@@ -118,6 +120,7 @@ priv struct GltfPrimitiveDef {
   primitive_index : Int
   position : Int?
   normal : Int?
+  tangent : Int?
   uv0 : Int?
   uv1 : Int?
   joint_indices : Int?
@@ -747,6 +750,18 @@ fn gltf_parse_vec3(value : Json, default_value : @math.Vec3) -> @math.Vec3 {
   guard json_array_float(values, 1) is Some(y) else { return default_value }
   guard json_array_float(values, 2) is Some(z) else { return default_value }
   @math.Vec3::new(x, y, z)
+}
+
+///|
+fn gltf_parse_accessor_bound_vec3(
+  obj : Map[String, Json],
+  key : String,
+) -> @math.Vec3? {
+  guard json_get_array(obj, key) is Some(values) else { return None }
+  guard json_array_float(values, 0) is Some(x) else { return None }
+  guard json_array_float(values, 1) is Some(y) else { return None }
+  guard json_array_float(values, 2) is Some(z) else { return None }
+  Some(@math.Vec3::new(x, y, z))
 }
 
 ///|
@@ -1412,6 +1427,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             Some(value) => value
             None => ""
           },
+          min: gltf_parse_accessor_bound_vec3(obj, "min"),
+          max: gltf_parse_accessor_bound_vec3(obj, "max"),
         })
       } else {
         accessors.push({
@@ -1420,6 +1437,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           component_type: 0,
           count: 0,
           accessor_type: "",
+          min: None,
+          max: None,
         })
       }
     }
@@ -1470,6 +1489,10 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 Some(attr_obj) => json_get_int(attr_obj, "NORMAL")
                 None => None
               }
+              let tangent = match attributes {
+                Some(attr_obj) => json_get_int(attr_obj, "TANGENT")
+                None => None
+              }
               let joint_indices = match attributes {
                 Some(attr_obj) => json_get_int(attr_obj, "JOINTS_0")
                 None => None
@@ -1484,6 +1507,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                   let (key, value) = entry
                   if key != "POSITION" &&
                     key != "NORMAL" &&
+                    key != "TANGENT" &&
                     key != "TEXCOORD_0" &&
                     key != "TEXCOORD_1" &&
                     key != "COLOR_0" &&
@@ -1518,6 +1542,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 primitive_index,
                 position,
                 normal,
+                tangent,
                 uv0,
                 uv1,
                 joint_indices,
@@ -1533,6 +1558,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 primitive_index,
                 position: None,
                 normal: None,
+                tangent: None,
                 uv0: None,
                 uv1: None,
                 joint_indices: None,
@@ -3465,6 +3491,29 @@ fn scene_compute_missing_gltf_flat_normals(
 }
 
 ///|
+fn scene_gltf_primitive_aabb(
+  doc : ParsedGltfDocument,
+  primitive : GltfPrimitiveDef,
+  convert_coordinates : @gltf.GltfConvertCoordinates,
+) -> @camera.Aabb? {
+  guard primitive.position is Some(position_accessor) else { return None }
+  guard position_accessor >= 0 && position_accessor < doc.accessors.length() else {
+    return None
+  }
+  let accessor = doc.accessors[position_accessor]
+  guard accessor.min is Some(accessor_min) else { return None }
+  guard accessor.max is Some(accessor_max) else { return None }
+  let (bounds_min, bounds_max) = if convert_coordinates.rotate_meshes {
+    let converted_min = @gltf.gltf_convert_coordinates_vec3(accessor_min)
+    let converted_max = @gltf.gltf_convert_coordinates_vec3(accessor_max)
+    (converted_min.min(converted_max), converted_min.max(converted_max))
+  } else {
+    (accessor_min, accessor_max)
+  }
+  Some(@camera.Aabb::from_min_max(bounds_min, bounds_max))
+}
+
+///|
 fn scene_build_mesh_primitive_from_gltf(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
@@ -3525,6 +3574,16 @@ fn scene_build_mesh_primitive_from_gltf(
       normals
     }
     geometry = geometry.with_normals(Some(converted_normals))
+  }
+  if primitive.tangent is Some(tangent_accessor) &&
+    gltf_read_accessor_vec4(doc, buffer_bytes, tangent_accessor)
+    is Some(tangents) {
+    let converted_tangents = if convert_coordinates.rotate_meshes {
+      tangents.map(@gltf.gltf_convert_coordinates_vec4)
+    } else {
+      tangents
+    }
+    ignore(geometry.replace_tangents(Some(converted_tangents)))
   }
   if primitive.joint_indices is Some(joint_indices_accessor) &&
     primitive.joint_weights is Some(joint_weights_accessor) &&
@@ -3991,6 +4050,7 @@ fn scene_build_from_gltf(
             gltf_extras=primitive_extras,
             gltf_mesh_extras=mesh_extras,
             gltf_material_extras=material_extras,
+            aabb=scene_gltf_primitive_aabb(doc, primitive, convert_coordinates),
             skinned_joint_node_indices=skin.map(fn(value) { value.joints }),
             skinned_inverse_bindposes=inverse_bindposes,
             skinned_mesh_bounds_policy=if node.skin is Some(_) {

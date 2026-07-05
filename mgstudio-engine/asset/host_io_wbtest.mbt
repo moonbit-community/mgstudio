@@ -773,6 +773,30 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
 }
 
 ///|
+test "asset host io: bevy pisa specular environment map decodes as rgb9e5 cubemap" {
+  let path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")
+  })
+  let bytes = @fs.read_file_to_bytes(path)
+  debug_inspect(ktx2_is_3d_texture(bytes), content="false")
+  debug_inspect(
+    blob_u32_at(bytes, 44) == KTX2_SUPERCOMPRESSION_ZSTD,
+    content="true",
+  )
+  let payload = ktx2_decode_2d_payload(bytes).unwrap()
+  debug_inspect(payload.width, content="512")
+  debug_inspect(payload.height, content="512")
+  debug_inspect(payload.is_cube, content="true")
+  debug_inspect(payload.slice_count, content="6")
+  debug_inspect(payload.levels.length(), content="9")
+  debug_inspect(
+    payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT,
+    content="true",
+  )
+  debug_inspect(payload.levels[0].length(), content="6291456")
+}
+
+///|
 test "asset host io: bevy scrolling fog ktx2 density texture decodes as 3d r32f" {
   let path = asset_with_world(@ecs.World::new(), fn() {
     resolve_asset_path("volumes/fog_noise.ktx2")

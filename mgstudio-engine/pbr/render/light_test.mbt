@@ -1252,6 +1252,74 @@ test "pbr render light: directional extraction order follows bevy key" {
 }
 
 ///|
+test "pbr render light: scrolling fog directional light keeps shadow and volumetric GPU flags" {
+  let world = @ecs.World::new()
+  let directional = world.spawn()
+  try! (world.set_by_key(
+    directional,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    directional,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::VolumetricLight(),
+  )
+  |> ignore)
+  light_test_extract_lights(world)
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="1")
+  inspect((gpu.directional_lights[0].flags & (1U << 0)) != 0U, content="true")
+  inspect((gpu.directional_lights[0].flags & (1U << 1)) != 0U, content="true")
+  inspect(gpu.directional_lights[0].num_cascades, content="4")
+  inspect(gpu.directional_lights[0].depth_texture_base_index, content="0")
+}
+
+///|
+test "pbr render light: mixed directional GPU list preserves Bevy bool key flag behavior" {
+  let world = @ecs.World::new()
+  let shadow_and_volumetric = world.spawn()
+  let shadow_only = world.spawn()
+  let no_shadow = world.spawn()
+
+  try! (world.set_by_key(
+    shadow_and_volumetric,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    shadow_and_volumetric,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::VolumetricLight(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    shadow_only,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    no_shadow,
+    @light.ecs_key_directional_light,
+    @light.DirectionalLight::DirectionalLight(),
+  )
+  |> ignore)
+
+  light_test_extract_lights(world)
+  let gpu = render3d_collect_gpu_lights(world)
+  inspect(gpu.n_directional_lights, content="3")
+  inspect((gpu.directional_lights[0].flags & (1U << 0)) == 0U, content="true")
+  inspect((gpu.directional_lights[0].flags & (1U << 1)) == 0U, content="true")
+  inspect((gpu.directional_lights[1].flags & (1U << 0)) != 0U, content="true")
+  inspect((gpu.directional_lights[1].flags & (1U << 1)) == 0U, content="true")
+  inspect((gpu.directional_lights[2].flags & (1U << 0)) != 0U, content="true")
+  inspect((gpu.directional_lights[2].flags & (1U << 1)) == 0U, content="true")
+}
+
+///|
 test "pbr render light: directional depth texture base index accumulates cascades" {
   let world = @ecs.World::new()
 

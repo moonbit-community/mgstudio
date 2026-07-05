@@ -19,15 +19,6 @@
 /// keys. `Milky2018/mgstudio/pbr` consumes these types/keys.
 
 ///|
-fn light_sanitize_non_negative(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else {
-    value
-  }
-}
-
-///|
 fn light_min_entity(
   current : @core.Entity?,
   candidate : @core.Entity,
@@ -231,14 +222,7 @@ pub fn VolumetricFog::with_step_count(
   self : VolumetricFog,
   step_count : Int,
 ) -> VolumetricFog {
-  VolumetricFog::{
-    ..self,
-    step_count: if step_count <= 0 {
-      1
-    } else {
-      step_count
-    },
-  }
+  VolumetricFog::{ ..self, step_count, }
 }
 
 ///|
@@ -1065,17 +1049,6 @@ pub struct CascadeShadowConfigBuilder {
 }
 
 ///|
-fn cascade_shadow_config_safe_overlap(overlap : Float) -> Float {
-  if overlap < 0.0F {
-    0.0F
-  } else if overlap >= 1.0F {
-    0.9999F
-  } else {
-    overlap
-  }
-}
-
-///|
 fn cascade_shadow_config_calculate_bounds(
   num_cascades : Int,
   nearest_bound : Float,
@@ -1116,14 +1089,7 @@ pub fn CascadeShadowConfigBuilder::with_num_cascades(
   self : CascadeShadowConfigBuilder,
   num_cascades : Int,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    num_cascades: if num_cascades <= 0 {
-      1
-    } else {
-      num_cascades
-    },
-  }
+  CascadeShadowConfigBuilder::{ ..self, num_cascades, }
 }
 
 ///|
@@ -1131,10 +1097,7 @@ pub fn CascadeShadowConfigBuilder::with_minimum_distance(
   self : CascadeShadowConfigBuilder,
   minimum_distance : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    minimum_distance: light_sanitize_non_negative(minimum_distance),
-  }
+  CascadeShadowConfigBuilder::{ ..self, minimum_distance, }
 }
 
 ///|
@@ -1142,10 +1105,7 @@ pub fn CascadeShadowConfigBuilder::with_maximum_distance(
   self : CascadeShadowConfigBuilder,
   maximum_distance : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    maximum_distance: light_sanitize_non_negative(maximum_distance),
-  }
+  CascadeShadowConfigBuilder::{ ..self, maximum_distance, }
 }
 
 ///|
@@ -1153,12 +1113,7 @@ pub fn CascadeShadowConfigBuilder::with_first_cascade_far_bound(
   self : CascadeShadowConfigBuilder,
   first_cascade_far_bound : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    first_cascade_far_bound: light_sanitize_non_negative(
-      first_cascade_far_bound,
-    ),
-  }
+  CascadeShadowConfigBuilder::{ ..self, first_cascade_far_bound, }
 }
 
 ///|
@@ -1166,51 +1121,45 @@ pub fn CascadeShadowConfigBuilder::with_overlap_proportion(
   self : CascadeShadowConfigBuilder,
   overlap_proportion : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    overlap_proportion: cascade_shadow_config_safe_overlap(overlap_proportion),
-  }
+  CascadeShadowConfigBuilder::{ ..self, overlap_proportion, }
 }
 
 ///|
 pub fn CascadeShadowConfigBuilder::build(
   self : CascadeShadowConfigBuilder,
 ) -> CascadeShadowConfig {
-  let safe_num_cascades = if self.num_cascades <= 0 {
-    1
-  } else {
-    self.num_cascades
+  if self.num_cascades <= 0 {
+    abort("num_cascades must be positive, but was \{self.num_cascades}")
   }
-  let safe_minimum_distance = light_sanitize_non_negative(self.minimum_distance)
-  let mut safe_maximum_distance = if self.maximum_distance <=
-    safe_minimum_distance {
-    safe_minimum_distance + 0.1F
-  } else {
-    self.maximum_distance
+  if self.minimum_distance < 0.0F {
+    abort(
+      "minimum_distance must be non-negative, but was \{self.minimum_distance}",
+    )
   }
-  if safe_maximum_distance <= 0.0F {
-    safe_maximum_distance = 0.1F
+  if self.num_cascades != 1 &&
+    self.minimum_distance >= self.first_cascade_far_bound {
+    abort(
+      "minimum_distance must be less than first_cascade_far_bound, but was \{self.minimum_distance}",
+    )
   }
-  let mut safe_first_cascade_far_bound = if self.first_cascade_far_bound <=
-    safe_minimum_distance {
-    safe_minimum_distance + 0.1F
-  } else {
-    self.first_cascade_far_bound
+  if self.maximum_distance <= self.minimum_distance {
+    abort(
+      "maximum_distance must be greater than minimum_distance, but was \{self.maximum_distance}",
+    )
   }
-  if safe_num_cascades == 1 {
-    safe_first_cascade_far_bound = safe_maximum_distance
-  } else if safe_first_cascade_far_bound > safe_maximum_distance {
-    safe_first_cascade_far_bound = safe_maximum_distance
+  if self.overlap_proportion < 0.0F || self.overlap_proportion >= 1.0F {
+    abort(
+      "overlap_proportion must be in [0.0, 1.0) but was \{self.overlap_proportion}",
+    )
   }
-
   CascadeShadowConfig::{
     bounds: cascade_shadow_config_calculate_bounds(
-      safe_num_cascades, safe_first_cascade_far_bound, safe_maximum_distance,
+      self.num_cascades,
+      self.first_cascade_far_bound,
+      self.maximum_distance,
     ),
-    overlap_proportion: cascade_shadow_config_safe_overlap(
-      self.overlap_proportion,
-    ),
-    minimum_distance: safe_minimum_distance,
+    overlap_proportion: self.overlap_proportion,
+    minimum_distance: self.minimum_distance,
   }
 }
 

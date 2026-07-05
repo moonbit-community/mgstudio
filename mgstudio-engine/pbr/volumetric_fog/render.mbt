@@ -22,6 +22,480 @@ const VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES : Int = 288
 const VOLUMETRIC_FOG_UNIFORM_DYNAMIC_STRIDE_BYTES : Int = 512
 
 ///|
+pub const VOLUMETRIC_FOG_SHADER_PATH : String = "pbr/volumetric_fog/volumetric_fog.wgsl"
+
+///|
+const VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_MULTISAMPLED : UInt = 1U
+
+///|
+const VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_DENSITY_TEXTURE : UInt = 2U
+
+///|
+pub struct VolumetricFogBindGroupLayoutKey {
+  priv bits : UInt
+} derive(Eq, Debug)
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> VolumetricFogBindGroupLayoutKey {
+  VolumetricFogBindGroupLayoutKey::{ bits: 0U }
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::from_msaa_and_density(
+  multisampled : Bool,
+  has_density_texture : Bool,
+) -> VolumetricFogBindGroupLayoutKey {
+  let mut bits = 0U
+  if multisampled {
+    bits = bits | VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_MULTISAMPLED
+  }
+  if has_density_texture {
+    bits = bits | VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_DENSITY_TEXTURE
+  }
+  VolumetricFogBindGroupLayoutKey::{ bits, }
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::bits(
+  self : VolumetricFogBindGroupLayoutKey,
+) -> UInt {
+  self.bits
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::layout_index(
+  self : VolumetricFogBindGroupLayoutKey,
+) -> Int {
+  self.bits.reinterpret_as_int()
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::is_multisampled(
+  self : VolumetricFogBindGroupLayoutKey,
+) -> Bool {
+  (self.bits & VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_MULTISAMPLED) != 0U
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::has_density_texture(
+  self : VolumetricFogBindGroupLayoutKey,
+) -> Bool {
+  (self.bits & VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_DENSITY_TEXTURE) != 0U
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::description(
+  self : VolumetricFogBindGroupLayoutKey,
+) -> String {
+  if self.bits == 0U {
+    return "volumetric lighting view bind group layout"
+  }
+  let labels : Array[String] = []
+  if self.has_density_texture() {
+    labels.push("density texture")
+  }
+  if self.is_multisampled() {
+    labels.push("multisampled")
+  }
+  "volumetric lighting view bind group layout (" + labels.join(", ") + ")"
+}
+
+///|
+pub struct VolumetricFogPipeline {
+  shader_path : String
+}
+
+///|
+let ecs_key_volumetric_fog_pipeline : @ecs.ResourceKey[VolumetricFogPipeline] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::VolumetricFogPipeline",
+)
+
+///|
+pub impl @app.Resource for VolumetricFogPipeline with fn resource() {
+  ecs_key_volumetric_fog_pipeline
+}
+
+///|
+pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> VolumetricFogPipeline {
+  VolumetricFogPipeline::{ shader_path: VOLUMETRIC_FOG_SHADER_PATH }
+}
+
+///|
+pub fn VolumetricFogPipeline::shader_path(
+  self : VolumetricFogPipeline,
+) -> String {
+  self.shader_path
+}
+
+///|
+pub struct VolumetricFogPipelineKey {
+  mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey
+  target_format : UInt
+  vertex_buffer_layout : @mesh.VertexBufferLayout
+  has_density_texture : Bool
+}
+
+///|
+pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey(
+  mesh_pipeline_view_key~ : @mesh_view_layout.MeshPipelineViewLayoutKey,
+  target_format~ : UInt,
+  vertex_buffer_layout~ : @mesh.VertexBufferLayout,
+  has_density_texture~ : Bool,
+) -> VolumetricFogPipelineKey {
+  VolumetricFogPipelineKey::{
+    mesh_pipeline_view_key,
+    target_format,
+    vertex_buffer_layout,
+    has_density_texture,
+  }
+}
+
+///|
+pub fn VolumetricFogPipelineKey::mesh_pipeline_view_key(
+  self : VolumetricFogPipelineKey,
+) -> @mesh_view_layout.MeshPipelineViewLayoutKey {
+  self.mesh_pipeline_view_key
+}
+
+///|
+pub fn VolumetricFogPipelineKey::target_format(
+  self : VolumetricFogPipelineKey,
+) -> UInt {
+  self.target_format
+}
+
+///|
+pub fn VolumetricFogPipelineKey::vertex_buffer_layout(
+  self : VolumetricFogPipelineKey,
+) -> @mesh.VertexBufferLayout {
+  self.vertex_buffer_layout
+}
+
+///|
+pub fn VolumetricFogPipelineKey::has_density_texture(
+  self : VolumetricFogPipelineKey,
+) -> Bool {
+  self.has_density_texture
+}
+
+///|
+pub fn VolumetricFogPipelineKey::bind_group_layout_key(
+  self : VolumetricFogPipelineKey,
+) -> VolumetricFogBindGroupLayoutKey {
+  VolumetricFogBindGroupLayoutKey::from_msaa_and_density(
+    (
+      self.mesh_pipeline_view_key.bits() &
+      @mesh_view_layout.MESH_VIEW_LAYOUT_MULTISAMPLED
+    ) !=
+    0U,
+    self.has_density_texture,
+  )
+}
+
+///|
+pub fn VolumetricFogPipelineKey::shader_defs(
+  self : VolumetricFogPipelineKey,
+) -> Array[String] {
+  let defs : Array[String] = ["SHADOW_FILTER_METHOD_HARDWARE_2X2"]
+  let bits = self.mesh_pipeline_view_key.bits()
+  if (bits & @mesh_view_layout.MESH_VIEW_LAYOUT_MULTISAMPLED) != 0U {
+    defs.push("MULTISAMPLED")
+  }
+  if (bits & @mesh_view_layout.MESH_VIEW_LAYOUT_ATMOSPHERE) != 0U {
+    defs.push("ATMOSPHERE")
+  }
+  if self.has_density_texture {
+    defs.push("DENSITY_TEXTURE")
+  }
+  defs
+}
+
+///|
+pub struct VolumetricFogRenderWorldEntity {
+  priv render_entity : @core.Entity
+  priv main_entity : @render.MainEntity
+}
+
+///|
+pub fn VolumetricFogRenderWorldEntity::new(
+  render_entity : @core.Entity,
+  main_entity : @render.MainEntity,
+) -> VolumetricFogRenderWorldEntity {
+  VolumetricFogRenderWorldEntity::{ render_entity, main_entity }
+}
+
+///|
+pub fn VolumetricFogRenderWorldEntity::render_entity(
+  self : VolumetricFogRenderWorldEntity,
+) -> @core.Entity {
+  self.render_entity
+}
+
+///|
+pub fn VolumetricFogRenderWorldEntity::main_entity(
+  self : VolumetricFogRenderWorldEntity,
+) -> @render.MainEntity {
+  self.main_entity
+}
+
+///|
+pub struct VolumetricFogRenderWorldStorageCounts {
+  priv view_count : Int
+  priv volume_count : Int
+  priv transformed_volume_count : Int
+  priv light_count : Int
+}
+
+///|
+pub fn VolumetricFogRenderWorldStorageCounts::view_count(
+  self : VolumetricFogRenderWorldStorageCounts,
+) -> Int {
+  self.view_count
+}
+
+///|
+pub fn VolumetricFogRenderWorldStorageCounts::volume_count(
+  self : VolumetricFogRenderWorldStorageCounts,
+) -> Int {
+  self.volume_count
+}
+
+///|
+pub fn VolumetricFogRenderWorldStorageCounts::transformed_volume_count(
+  self : VolumetricFogRenderWorldStorageCounts,
+) -> Int {
+  self.transformed_volume_count
+}
+
+///|
+pub fn VolumetricFogRenderWorldStorageCounts::light_count(
+  self : VolumetricFogRenderWorldStorageCounts,
+) -> Int {
+  self.light_count
+}
+
+///|
+pub fn register_volumetric_fog_render_world_components(
+  render_world : @ecs.World,
+) -> Unit {
+  let registrator = render_world.components_registrator()
+  ignore(registrator.register_component_by_key(@render.ecs_key_main_entity))
+  ignore(registrator.register_component_by_key(@light.ecs_key_volumetric_fog))
+  ignore(registrator.register_component_by_key(@light.ecs_key_fog_volume))
+  ignore(registrator.register_component_by_key(@light.ecs_key_volumetric_light))
+  ignore(
+    registrator.register_component_by_key(@transform.ecs_key_global_transform),
+  )
+  ignore(
+    registrator.register_component_by_key(
+      ViewVolumetricFogPipelines::component(),
+    ),
+  )
+  ignore(registrator.register_component_by_key(ViewVolumetricFog::component()))
+}
+
+///|
+pub fn volumetric_fog_render_world_entity(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> VolumetricFogRenderWorldEntity? {
+  match
+    (try! render_world.get_by_key(render_entity, @render.ecs_key_main_entity)) {
+    Some(main_entity) =>
+      Some(VolumetricFogRenderWorldEntity::new(render_entity, main_entity))
+    None => None
+  }
+}
+
+///|
+pub fn volumetric_fog_render_world_storage_counts(
+  render_world : @ecs.World,
+) -> VolumetricFogRenderWorldStorageCounts {
+  let mut view_count = 0
+  let mut volume_count = 0
+  let mut transformed_volume_count = 0
+  let mut light_count = 0
+  render_world.for_each_component(@light.ecs_key_volumetric_fog, fn(
+    _entity,
+    _volumetric_fog,
+  ) {
+    view_count = view_count + 1
+  })
+  render_world.for_each_component(@light.ecs_key_fog_volume, fn(
+    entity,
+    _fog_volume,
+  ) {
+    volume_count = volume_count + 1
+    if (try! render_world.contains_by_key(
+        entity, @transform.ecs_key_global_transform,
+      )) {
+      transformed_volume_count = transformed_volume_count + 1
+    }
+  })
+  render_world.for_each_component(@light.ecs_key_volumetric_light, fn(
+    _entity,
+    _volumetric_light,
+  ) {
+    light_count = light_count + 1
+  })
+  VolumetricFogRenderWorldStorageCounts::{
+    view_count,
+    volume_count,
+    transformed_volume_count,
+    light_count,
+  }
+}
+
+///|
+pub fn volumetric_fog_render_world_volume_inputs(
+  render_world : @ecs.World,
+) -> Array[(@light.FogVolume, @math.Affine3)] {
+  let inputs : Array[(@light.FogVolume, @math.Affine3)] = []
+  render_world.for_each_component(@light.ecs_key_fog_volume, fn(
+    entity,
+    fog_volume,
+  ) {
+    match
+      (try! render_world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+      Some(global_transform) =>
+        inputs.push((fog_volume, global_transform.affine().inverse()))
+      None => ()
+    }
+  })
+  inputs
+}
+
+///|
+fn volumetric_fog_extract_render_entity(
+  source_world : @ecs.World,
+  source_entity : @core.Entity,
+) -> @core.Entity? {
+  match
+    (try! source_world.get_by_key(source_entity, @render.ecs_key_render_entity)) {
+    Some(render_entity) => Some(render_entity.id())
+    None => None
+  }
+}
+
+///|
+fn remove_volumetric_fog_render_view_state(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> Unit {
+  ignore(
+    render_world.remove_by_key(render_entity, @light.ecs_key_volumetric_fog) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(
+      render_entity,
+      ViewVolumetricFogPipelines::component(),
+    ) catch {
+      _ => false
+    },
+  )
+  ignore(
+    render_world.remove_by_key(render_entity, ViewVolumetricFog::component()) catch {
+      _ => false
+    },
+  )
+}
+
+///|
+fn extract_volumetric_fog_from_worlds(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+) -> Unit {
+  register_volumetric_fog_render_world_components(render_world)
+  let view_targets : Array[(@core.Entity, @light.VolumetricFog)] = []
+  let fog_volumes : Array[
+    (@core.Entity, @light.FogVolume, @transform.GlobalTransform),
+  ] = []
+  let volumetric_lights : Array[(@core.Entity, @light.VolumetricLight)] = []
+  source_world.for_each_component(@light.ecs_key_volumetric_fog, fn(
+    source_entity,
+    volumetric_fog,
+  ) {
+    match volumetric_fog_extract_render_entity(source_world, source_entity) {
+      Some(render_entity) => view_targets.push((render_entity, volumetric_fog))
+      None => ()
+    }
+  })
+  source_world.for_each_component(@light.ecs_key_fog_volume, fn(
+    source_entity,
+    fog_volume,
+  ) {
+    guard (try! source_world.get_by_key(
+        source_entity, @transform.ecs_key_global_transform,
+      ))
+      is Some(global_transform) else {
+      return
+    }
+    match volumetric_fog_extract_render_entity(source_world, source_entity) {
+      Some(render_entity) =>
+        fog_volumes.push((render_entity, fog_volume, global_transform))
+      None => ()
+    }
+  })
+  source_world.for_each_component(@light.ecs_key_volumetric_light, fn(
+    source_entity,
+    volumetric_light,
+  ) {
+    match volumetric_fog_extract_render_entity(source_world, source_entity) {
+      Some(render_entity) =>
+        volumetric_lights.push((render_entity, volumetric_light))
+      None => ()
+    }
+  })
+
+  if volumetric_lights.length() == 0 {
+    for entry in view_targets {
+      remove_volumetric_fog_render_view_state(render_world, entry.0)
+    }
+    for entry in fog_volumes {
+      ignore(
+        render_world.remove_by_key(entry.0, @light.ecs_key_fog_volume) catch {
+          _ => false
+        },
+      )
+    }
+    return
+  }
+
+  for entry in view_targets {
+    try! render_world.set_by_key(
+      entry.0,
+      @light.ecs_key_volumetric_fog,
+      entry.1,
+    )
+  }
+  for entry in fog_volumes {
+    try! render_world.set_by_key(entry.0, @light.ecs_key_fog_volume, entry.1)
+    try! render_world.set_by_key(
+      entry.0,
+      @transform.ecs_key_global_transform,
+      entry.2,
+    )
+  }
+  for entry in volumetric_lights {
+    try! render_world.set_by_key(
+      entry.0,
+      @light.ecs_key_volumetric_light,
+      entry.1,
+    )
+  }
+}
+
+///|
+pub fn extract_volumetric_fog(render_world : @ecs.World) -> Unit {
+  extract_volumetric_fog_from_worlds(
+    @render.render_source_world(render_world),
+    render_world,
+  )
+}
+
+///|
 fn volumetric_fog_color_to_vec3(color : @color.Color) -> @math.Vec3 {
   let tuple = color.to_linear_rgba_tuple()
   @math.Vec3::new(tuple.0, tuple.1, tuple.2)

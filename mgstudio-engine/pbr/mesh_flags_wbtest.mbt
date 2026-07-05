@@ -426,6 +426,7 @@ fn render3d_test_extracted_mesh_for_flags(
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
+      has_not_shadow_caster: false,
       has_not_shadow_receiver,
       has_transmitted_shadow_receiver,
       has_no_frustum_culling,
@@ -487,6 +488,7 @@ fn render3d_test_transparent_mesh_for_queue(
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
+      has_not_shadow_caster: false,
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
@@ -601,6 +603,73 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
   )
   debug_inspect(cpu_items[0].phase, content="3")
   debug_inspect(gpu_items[0].phase, content="3")
+}
+
+///|
+test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
+  let cube_material = @material.StandardMaterial::StandardMaterial()
+    .with_normal_map_texture(Some(@asset.Handle::new(1)))
+    .with_cull_mode(None)
+    .with_alpha_mode(@material.AlphaMode3d::Opaque)
+    .with_metallic(0.0F)
+    .with_perceptual_roughness(0.5F)
+  let properties = render3d_material_properties_for_standard_material(
+    cube_material,
+    None,
+    OpaqueRendererMethod::Forward,
+    true,
+  )
+  let base = render3d_test_extracted_mesh_for_flags(
+    false,
+    false,
+    false,
+    @math.Vec3::splat(1.0F),
+  )
+  let mesh = ExtractedMesh3d::{
+    ..base,
+    payload: Mesh3dExtractedPayload::{
+      ..base.payload,
+      material: cube_material,
+      material_properties: properties,
+    },
+  }
+  let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
+  let cpu_items = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
+  )
+  let gpu_items = render3d_queue_mesh_phase_items(
+    [mesh],
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    true,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
+  )
+  debug_inspect(
+    properties.render_phase_type is @material.RenderPhaseType::Opaque,
+    content="true",
+  )
+  debug_inspect(cpu_items.length(), content="1")
+  debug_inspect(cpu_items[0].phase, content="0")
+  debug_inspect(cpu_items[0].phase == RENDER3D_PHASE_OPAQUE, content="true")
+  debug_inspect(cpu_items[0].entity.main_entity.id, content="1")
+  debug_inspect(cpu_items[0].extracted_index, content="0")
+  debug_inspect(cpu_items[0].pipeline_id.id(), content="77")
+  debug_inspect(gpu_items.length(), content="1")
+  debug_inspect(gpu_items[0].phase, content="0")
+  debug_inspect(gpu_items[0].phase == RENDER3D_PHASE_OPAQUE, content="true")
+  debug_inspect(gpu_items[0].entity.main_entity.id, content="1")
+  debug_inspect(gpu_items[0].extracted_index, content="0")
+  debug_inspect(gpu_items[0].pipeline_id.id(), content="77")
 }
 
 ///|
@@ -737,6 +806,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       is_forward_decal: false,
       forward_decal_material_ext: None,
       clustered_decal: None,
+      has_not_shadow_caster: false,
       has_not_shadow_receiver: false,
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,

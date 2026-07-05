@@ -1328,6 +1328,98 @@ test "scene: SceneRoot propagates gltf extras metadata" {
 }
 
 ///|
+test "scene: spawner inserts primitive aabb component from scene node" {
+  let bounded_has_aabb = Ref(false)
+  let unbounded_has_aabb = Ref(true)
+  let bounded_center = Ref(@math.Vec3::zero())
+  let bounded_half_size = Ref(@math.Vec3::zero())
+
+  run_scene_test_app(fn(world : @ecs.World) {
+    let mesh = scene_test_mesh3d_from_mesh_asset(
+      @math.Cuboid::new(1.0F, 1.0F, 1.0F),
+    )
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
+    )
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#aabb",
+      @scene.Scene::new([
+        @scene.SceneNode3d::new(
+          mesh,
+          material,
+          @transform.Transform::identity(),
+          None,
+          None,
+          name=Some(@ecs.Name::new("Bounded")),
+          aabb=Some(
+            @camera.Aabb::from_min_max(
+              @math.Vec3::new(-1.0F, -2.0F, -3.0F),
+              @math.Vec3::new(3.0F, 4.0F, 5.0F),
+            ),
+          ),
+        ),
+        @scene.SceneNode3d::new(
+          mesh,
+          material,
+          @transform.Transform::identity(),
+          None,
+          None,
+          name=Some(@ecs.Name::new("Unbounded")),
+        ),
+      ]),
+    )
+
+    let root = world.spawn()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    if (try! world.entity(root).get() : @hierarchy.Children?) is Some(children) {
+      for child in children.entities() {
+        guard (try! world.entity(child).get() : @ecs.Name?) is Some(name) else {
+          continue
+        }
+        if name.as_str() == "Bounded" {
+          bounded_has_aabb.val = try! world.contains_by_key(
+            child, @camera.ecs_key_aabb,
+          )
+          if (try! world.get_by_key(child, @camera.ecs_key_aabb)) is Some(aabb) {
+            bounded_center.val = aabb.center()
+            bounded_half_size.val = aabb.half_size()
+          }
+        } else if name.as_str() == "Unbounded" {
+          unbounded_has_aabb.val = try! world.contains_by_key(
+            child, @camera.ecs_key_aabb,
+          )
+        }
+      }
+    }
+  })
+
+  debug_inspect(bounded_has_aabb.val, content="true")
+  debug_inspect(unbounded_has_aabb.val, content="false")
+  debug_inspect(
+    (
+      bounded_center.val.x.to_double(),
+      bounded_center.val.y.to_double(),
+      bounded_center.val.z.to_double(),
+    ),
+    content="(1, 1, 1)",
+  )
+  debug_inspect(
+    (
+      bounded_half_size.val.x.to_double(),
+      bounded_half_size.val.y.to_double(),
+      bounded_half_size.val.z.to_double(),
+    ),
+    content="(2, 3, 4)",
+  )
+}
+
+///|
 test "scene: gltf lod visibility policy set/get/reset" {
   let default_enabled = Ref(false)
   let default_step = Ref(0.0)

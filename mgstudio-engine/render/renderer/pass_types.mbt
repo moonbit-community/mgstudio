@@ -22,6 +22,8 @@ pub struct GpuPassState {
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
   prepass_deferred_lighting_pass_id_texture_id : Int
+  view_depth_texture_id : Int
+  view_depth_view : @wgpu.TextureView?
   screen_space_reflections : Bool
   msaa_sample_count : Int
   width_logical : Float
@@ -136,6 +138,11 @@ pub struct GpuFrameState {
   transient_buffers : Array[@wgpu.Buffer]
   transient_bind_groups : Array[@wgpu.BindGroup]
   transient_texture_views : Array[@wgpu.TextureView]
+}
+
+///|
+pub fn GpuPassState::view_depth_texture_id(self : GpuPassState) -> Int {
+  self.view_depth_texture_id
 }
 
 ///|

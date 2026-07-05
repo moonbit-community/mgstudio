@@ -2514,6 +2514,13 @@ fn Render3dShadowUnbatchableBinnedEntities::is_empty(
 }
 
 ///|
+fn Render3dShadowUnbatchableBinnedEntities::clear_buffer_indices(
+  self : Render3dShadowUnbatchableBinnedEntities,
+) -> Unit {
+  self.buffer_indices.clear()
+}
+
+///|
 fn Render3dShadowUnbatchableBinnedEntities::items(
   self : Render3dShadowUnbatchableBinnedEntities,
 ) -> Array[Render3dShadowPhaseItemData] {
@@ -3114,14 +3121,9 @@ pub fn Render3dShadowViewPhaseData::prepare_phase_buffers(
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(
   self : Render3dShadowViewPhaseData,
 ) -> Unit {
-  self.items.clear()
-  self.multidrawable_meshes.clear()
   for entities in self.unbatchable_meshes {
-    entities.buffer_indices.clear()
+    entities.clear_buffer_indices()
   }
-  self.unbatchable_meshes.clear()
-  self.input_uniform_indices.clear()
-  self.phase_types.clear()
 }
 
 ///|
@@ -3767,12 +3769,12 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
   let resolved_view_layers = view_render_layers.unwrap_or(
     @camera_render_layers.RenderLayers::RenderLayers(),
   )
-  for
-    candidate in dirty_specializations.iter_to_queue(
-      retained_view_entity,
-      render_visible_mesh_entities,
-      view_pending_shadow_queues.prev_frame(),
-    ) {
+  let candidates = dirty_specializations.iter_to_queue(
+    retained_view_entity,
+    render_visible_mesh_entities,
+    view_pending_shadow_queues.prev_frame(),
+  )
+  for candidate in candidates {
     let (render_entity, main_entity) = candidate
     guard view_cache.get(main_entity) is Some(cache_entry) else { continue }
     let (pipeline_id, draw_function) = cache_entry
@@ -4148,11 +4150,16 @@ fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
   meshes : Array[ExtractedMesh3d],
 ) -> Array[@render_mesh.ExtractedRenderMeshAsset] {
   let extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset] = []
+  let seen_mesh_assets : Map[Int, Unit] = {}
   for extracted_mesh in meshes {
     let mesh_handle = extracted_mesh.payload.mesh_handle
+    if seen_mesh_assets.contains(mesh_handle.id()) {
+      continue
+    }
     guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
       continue
     }
+    seen_mesh_assets.set(mesh_handle.id(), ())
     extracted_assets.push(
       @render_mesh.ExtractedRenderMeshAsset::new(mesh_handle.id(), source_mesh),
     )
@@ -4175,14 +4182,49 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
         "missing RenderMeshAssets resource during pbr render mesh asset preparation",
       )
   }
+  let mesh_allocator = match
+    world.get_resource_mut(@render_mesh.MeshAllocator::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing MeshAllocator resource during pbr render mesh asset preparation",
+      )
+  }
+  let mesh_allocator_settings = world
+    .get_resource(@render_mesh.MeshAllocatorSettings::resource())
+    .unwrap_or(@render_mesh.MeshAllocatorSettings::MeshAllocatorSettings())
   let extracted_assets = render3d_extracted_render_mesh_assets_from_extracted_meshes(
     meshes,
   )
+  let prepared_assets = @render_mesh.prepare_render_mesh_assets(
+    extracted_assets,
+    mesh_runtime_state_value.mesh_vertex_buffer_layouts,
+  )
+  mesh_allocator.modify(fn(allocator) {
+    for prepared_asset in prepared_assets {
+      if allocator.mesh_slabs(prepared_asset.mesh_asset_id()) is Some(_) {
+        continue
+      }
+      let render_mesh = prepared_asset.render_mesh()
+      let vertex_stride = render_mesh
+        .host_vertex_buffer_layout(
+          mesh_runtime_state_value.mesh_vertex_buffer_layouts,
+        )
+        .layout()
+        .layout()
+        .array_stride()
+      ignore(
+        allocator.allocate_render_mesh(
+          prepared_asset.mesh_asset_id(),
+          render_mesh,
+          vertex_stride,
+          settings=mesh_allocator_settings,
+        ),
+      )
+    }
+  })
   render_mesh_assets.modify(fn(assets) {
-    assets.prepare_assets(
-      extracted_assets,
-      mesh_runtime_state_value.mesh_vertex_buffer_layouts,
-    )
+    assets.insert_prepared_assets(prepared_assets)
   })
 }
 
@@ -4410,6 +4452,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
   let cameras = world_transform_cache.modify(fn(world_transform_cache_value) {
     render3d_execute_collect_cameras(
       source_world,
+      world,
       world_transform_cache_value,
       frame_config.gpu_instance_buffer_builder_requested,
       frame_config.gpu_culling_supported,
@@ -4592,6 +4635,14 @@ pub fn render3d_check_views_lights_need_specialization_system(
   let lighting = render3d_lighting_with_clusterable_indices(
     world,
     @pbr_render.render3d_collect_lighting(world),
+  )
+  ignore(
+    render3d_prepare_shadow_phase_views_for_cameras(
+      world,
+      frame.cameras,
+      lighting,
+      frame.frame_config.point_light_shadow_map_size,
+    ),
   )
   let views = render3d_shadow_phase_queued_views_for_cameras(
     frame.cameras,

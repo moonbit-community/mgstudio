@@ -143,6 +143,8 @@ pub fn GpuBackend::begin_pass(
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
     prepass_deferred_lighting_pass_id_texture_id: -1,
+    view_depth_texture_id: -1,
+    view_depth_view: None,
     screen_space_reflections: false,
     msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
@@ -394,6 +396,8 @@ pub fn GpuBackend::begin_pass_with_depth(
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
     prepass_deferred_lighting_pass_id_texture_id: -1,
+    view_depth_texture_id: target_id,
+    view_depth_view: Some(depth_view),
     screen_space_reflections: false,
     msaa_sample_count: 1,
     width_logical: Float::from_double(width_logical.to_double()),
@@ -979,6 +983,11 @@ pub fn GpuBackend::begin_pass_3d(
     clip_from_world_matrix, camera_x, camera_y, camera_z, camera_rot_x, camera_rot_y,
     camera_rot_z, camera_rot_w,
   )
+  let view_depth_texture_id = if is_shadow_depth_pass {
+    target_id
+  } else {
+    self.depth_target_id
+  }
   let pass_state = GpuPassState::{
     target_id,
     target_layer,
@@ -988,6 +997,8 @@ pub fn GpuBackend::begin_pass_3d(
     prepass_motion_vector_texture_id,
     prepass_deferred_texture_id,
     prepass_deferred_lighting_pass_id_texture_id,
+    view_depth_texture_id,
+    view_depth_view: Some(depth_view),
     screen_space_reflections,
     msaa_sample_count: safe_msaa_sample_count,
     width_logical: Float::from_double(width_logical.to_double()),
@@ -1106,6 +1117,11 @@ pub fn GpuBackend::begin_pass_3d(
     deband_dither_enabled,
   }
   self.pass_state = Some(pass_state)
+  if directional_shadow_texture_id >= 0 && directional_shadow_cascade_count > 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_begin_pass_directional_shadow_resources", 1,
+    )
+  }
   ensure_mesh3d_view_binding_buffers(self)
   if self.mesh3d_light_probes_buf is Some(light_probes_buf) {
     self.queue.write_buffer(

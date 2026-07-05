@@ -128,8 +128,10 @@ test "volumetric fog setters preserve Bevy plain field semantics" {
   let fog = @light.VolumetricFog::VolumetricFog()
     .with_ambient_intensity(-2.5F)
     .with_jitter(-0.75F)
+    .with_step_count(0)
   inspect(approx_eq(fog.ambient_intensity, -2.5F, 0.0001F), content="true")
   inspect(approx_eq(fog.jitter, -0.75F, 0.0001F), content="true")
+  debug_inspect(fog.step_count, content="0")
   let volume = @light.FogVolume::FogVolume()
     .with_density_factor(-0.1F)
     .with_absorption(-0.2F)
@@ -141,6 +143,49 @@ test "volumetric fog setters preserve Bevy plain field semantics" {
   inspect(approx_eq(volume.scattering, -0.3F, 0.0001F), content="true")
   inspect(approx_eq(volume.scattering_asymmetry, 1.5F, 0.0001F), content="true")
   inspect(approx_eq(volume.light_intensity, -0.4F, 0.0001F), content="true")
+}
+
+///|
+test "volumetric fog and fog volume defaults match Bevy source" {
+  let fog = @light.VolumetricFog::VolumetricFog()
+  let fog_color = fog.ambient_color.to_srgba_tuple()
+  inspect(approx_eq(fog_color.0, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog_color.1, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog_color.2, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog_color.3, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog.ambient_intensity, 0.1F, 0.0001F), content="true")
+  inspect(approx_eq(fog.jitter, 0.0F, 0.0001F), content="true")
+  debug_inspect(fog.step_count, content="64")
+
+  let volume = @light.FogVolume::FogVolume()
+  let fog_volume_color = volume.fog_color.to_srgba_tuple()
+  let light_tint = volume.light_tint.to_srgba_tuple()
+  inspect(approx_eq(fog_volume_color.0, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog_volume_color.1, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog_volume_color.2, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(fog_volume_color.3, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(volume.density_factor, 0.1F, 0.0001F), content="true")
+  debug_inspect(volume.density_texture is None, content="true")
+  inspect(
+    approx_eq(volume.density_texture_offset.x, 0.0F, 0.0001F),
+    content="true",
+  )
+  inspect(
+    approx_eq(volume.density_texture_offset.y, 0.0F, 0.0001F),
+    content="true",
+  )
+  inspect(
+    approx_eq(volume.density_texture_offset.z, 0.0F, 0.0001F),
+    content="true",
+  )
+  inspect(approx_eq(volume.absorption, 0.3F, 0.0001F), content="true")
+  inspect(approx_eq(volume.scattering, 0.3F, 0.0001F), content="true")
+  inspect(approx_eq(volume.scattering_asymmetry, 0.5F, 0.0001F), content="true")
+  inspect(approx_eq(light_tint.0, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(light_tint.1, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(light_tint.2, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(light_tint.3, 1.0F, 0.0001F), content="true")
+  inspect(approx_eq(volume.light_intensity, 1.0F, 0.0001F), content="true")
 }
 
 ///|

@@ -723,6 +723,76 @@ test "pbr standard material properties install base specialization hook" {
 }
 
 ///|
+test "pbr material pipeline specializes volumetric_fog cube material like Bevy" {
+  let cube_material = @material.StandardMaterial::StandardMaterial()
+    .with_normal_map_texture(Some(@asset.Handle::new(1)))
+    .with_cull_mode(None)
+    .with_alpha_mode(@material.AlphaMode3d::Opaque)
+    .with_metallic(0.0F)
+    .with_perceptual_roughness(0.5F)
+  let properties = render3d_material_properties_for_standard_material(
+    cube_material,
+    None,
+    @material.OpaqueRendererMethod::Forward,
+    true,
+  )
+  debug_inspect(
+    properties.render_phase_type is @material.RenderPhaseType::Opaque,
+    content="true",
+  )
+  inspect(properties.mesh_pipeline_key_bits.bits(), content="0")
+  inspect(
+    properties.material_key.bits() & STANDARD_MATERIAL_KEY_NORMAL_MAP,
+    content="4",
+  )
+  inspect(
+    properties.material_key.bits() &
+    (STANDARD_MATERIAL_KEY_CULL_FRONT | STANDARD_MATERIAL_KEY_CULL_BACK),
+    content="0",
+  )
+  let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
+    properties,
+    pbr_material_specializer_test_render_mesh(),
+  )
+  inspect(
+    pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_BLEND_RESERVED_BITS,
+    content="0",
+  )
+  inspect(
+    pipeline_key.mesh_key().bits() & MESH_PIPELINE_KEY_MAY_DISCARD,
+    content="0",
+  )
+  let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
+    pipeline_key,
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(descriptor.label, content="Some(\"pbr_opaque_mesh_pipeline\")")
+  debug_inspect(descriptor.primitive.cull_mode is None, content="true")
+  guard descriptor.depth_stencil is Some(depth) else {
+    abort("expected pbr depth state")
+  }
+  debug_inspect(depth.depth_write_enabled, content="true")
+  debug_inspect(
+    depth.depth_compare == @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+    content="true",
+  )
+  guard descriptor.fragment is Some(fragment) else {
+    abort("expected pbr fragment state")
+  }
+  guard fragment.targets[0] is Some(target) else {
+    abort("expected pbr color target")
+  }
+  debug_inspect(target.blend() is None, content="true")
+  debug_inspect(
+    pbr_material_specializer_shader_defs_contain_flag(
+      fragment.shader_defs,
+      "STANDARD_MATERIAL_NORMAL_MAP",
+    ),
+    content="true",
+  )
+}
+
+///|
 test "pbr material pipeline key carries mesh-owned lightmap bits" {
   let properties = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),

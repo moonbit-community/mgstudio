@@ -280,6 +280,7 @@ pub fn GpuBackend::new(
     mesh3d_shadow_pipeline_cache: [],
     mesh3d_volumetric_fog_pipeline_cache: [],
     mesh3d_point_shadow_compare_sampler: None,
+    mesh3d_directional_shadow_compare_sampler: None,
     mesh3d_view_buf: None,
     mesh3d_lights_buf: None,
     mesh3d_clustered_lights_buf: None,

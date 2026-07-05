@@ -272,7 +272,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
       None => ()
     }
   }
-  {
+  let plan : Render3dDirectionalShadowPassPlan = {
     binding: {
       texture_id: target_id,
       enabled: if cascades.length() > 0 {
@@ -286,6 +286,12 @@ fn render3d_prepare_camera_directional_shadow_pass(
     phase_views: shadow_phase_views,
     queued_phase_views,
   }
+  if plan.binding.texture_id >= 0 && plan.binding.cascade_count > 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_directional_shadow_binding_resources", 1,
+    )
+  }
+  plan
 }
 
 ///|

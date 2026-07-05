@@ -774,6 +774,8 @@ pub fn render3d_build_gpu_preprocess_indirect_metadata_from_phase(@batching.Unty
 
 pub fn render3d_build_gpu_preprocess_work_item_buffers_from_phase(@batching.PreprocessWorkItemBuffers) -> @Milky2018/mgstudio/pbr/render.GpuPreprocessWorkItemBuffers3d
 
+pub fn render3d_camera_system(@ecs.World) -> Unit
+
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
@@ -2115,6 +2117,7 @@ pub(all) struct PbrPlugin {
   standard_material_texture_features : StandardMaterialTextureFeatureSet
 }
 pub fn PbrPlugin::PbrPlugin() -> Self
+pub fn PbrPlugin::with_gpu_instance_buffer_builder(Self, Bool) -> Self
 pub fn PbrPlugin::with_standard_material_texture_features(Self, StandardMaterialTextureFeatureSet) -> Self
 pub impl @app.Plugin for PbrPlugin
 

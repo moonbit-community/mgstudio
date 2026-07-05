@@ -44,4 +44,13 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
     }
     None => inspect("missing fog assets", content="present fog assets")
   }
+  match
+    app.world().get_resource(@volumetric_fog.VolumetricFogPipeline::resource()) {
+    Some(pipeline) =>
+      inspect(
+        pipeline.shader_path(),
+        content="pbr/volumetric_fog/volumetric_fog.wgsl",
+      )
+    None => inspect("missing pipeline", content="present pipeline")
+  }
 }

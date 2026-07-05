@@ -106,6 +106,11 @@ pub fn gltf_convert_coordinates_quat(value : @math.Quat) -> @math.Quat {
 }
 
 ///|
+pub fn gltf_convert_coordinates_vec4(value : @math.Vec4) -> @math.Vec4 {
+  @math.Vec4::new(-value.x, value.y, -value.z, value.w)
+}
+
+///|
 pub fn gltf_convert_coordinates_vec3_components(
   value : (Float, Float, Float),
 ) -> (Float, Float, Float) {

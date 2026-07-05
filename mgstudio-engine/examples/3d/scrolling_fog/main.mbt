@@ -24,26 +24,23 @@ fn configured_window() -> @window.Window {
 
 ///|
 fn spawn_camera(commands : @app.Commands) -> Unit {
-  let camera = commands.spawn(
-    @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
-        @math.Vec3::new(-5.0F, 3.5F, -6.0F),
-        @math.Vec3::new(0.0F, 1.0F, 0.0F),
-      ),
-    ).with_volumetric_fog(
-      Some(
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
+          @math.Vec3::new(-5.0F, 3.5F, -6.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @pbr.Msaa::Off,
+        @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+        @post_process.Bloom::Bloom(),
         @pbr.VolumetricFog::VolumetricFog()
         .with_ambient_intensity(0.0F)
         .with_jitter(0.5F),
       ),
     ),
   )
-  commands.entity(camera).insert_component(@pbr.Msaa::Off)
-  commands
-  .entity(camera)
-  .insert_component(@post_process.TemporalAntiAliasing::TemporalAntiAliasing())
-  commands.entity(camera).insert_component(@post_process.Bloom::Bloom())
 }
 
 ///|
@@ -92,6 +89,7 @@ fn spawn_scene_geometry(
       (
         @mesh.Mesh3d::new(ground_mesh),
         @pbr.MeshMaterial3d::new(ground_material),
+        @pbr.MeshMaterial3dTyped::new(ground_material),
         @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
       ),
     ),
@@ -101,6 +99,7 @@ fn spawn_scene_geometry(
       (
         @mesh.Mesh3d::new(pillar_mesh),
         @pbr.MeshMaterial3d::new(pillar_material),
+        @pbr.MeshMaterial3dTyped::new(pillar_material),
         @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
       ),
     ),
@@ -143,10 +142,6 @@ fn setup(
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  commands.insert_world_resource(
-    @pbr.ecs_key_directional_light_shadow_map,
-    @pbr.DirectionalLightShadowMap::new(4096),
-  )
   spawn_camera(commands)
   spawn_directional_light(commands)
   spawn_scene_geometry(commands, meshes, materials)
@@ -174,7 +169,7 @@ fn scroll_fog(
 }
 
 ///|
-fn main {
+fn scrolling_fog_app() -> @app.App[@ecs.World] {
   @app.App::new(@ecs.World::new())
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
@@ -184,7 +179,12 @@ fn main {
       close_when_requested: true,
     }),
   )
+  .insert_resource(@pbr.DirectionalLightShadowMap::new(4096))
   .add_systems_param4(@app.Startup, setup)
   .add_systems_param2(@app.Update, scroll_fog)
-  .run()
+}
+
+///|
+fn main {
+  scrolling_fog_app().run()
 }

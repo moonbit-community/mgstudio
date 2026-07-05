@@ -18,6 +18,123 @@ fn gpu_float_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn gpu_wbtest_pass_state(
+  mesh3d_lights_uniform_bytes? : Bytes? = None,
+) -> GpuPassState {
+  GpuPassState::{
+    target_id: -1,
+    target_layer: -1,
+    secondary_target_id: -1,
+    prepass_depth_texture_id: -1,
+    prepass_normal_texture_id: -1,
+    prepass_motion_vector_texture_id: -1,
+    prepass_deferred_texture_id: -1,
+    prepass_deferred_lighting_pass_id_texture_id: -1,
+    view_depth_texture_id: -1,
+    view_depth_view: None,
+    screen_space_reflections: false,
+    msaa_sample_count: 1,
+    width_logical: 128.0F,
+    height_logical: 128.0F,
+    is_3d: true,
+    camera_x: 0.0F,
+    camera_y: 0.0F,
+    camera_rot: 0.0F,
+    camera_scale: 1.0F,
+    camera_z: 0.0F,
+    camera_exposure: 1.0F,
+    camera_rot_x: 0.0F,
+    camera_rot_y: 0.0F,
+    camera_rot_z: 0.0F,
+    camera_rot_w: 1.0F,
+    clip_from_world: gpu_clip_matrix_identity(),
+    unjittered_clip_from_world: gpu_clip_matrix_identity(),
+    world_from_clip: gpu_clip_matrix_identity(),
+    world_from_view: gpu_clip_matrix_identity(),
+    view_from_world: gpu_clip_matrix_identity(),
+    clip_from_view: gpu_clip_matrix_identity(),
+    view_from_clip: gpu_clip_matrix_identity(),
+    previous_clip_from_world: gpu_clip_matrix_identity(),
+    pass_kind: 0,
+    viewport_x: 0U,
+    viewport_y: 0U,
+    viewport_w: 128U,
+    viewport_h: 128U,
+    viewport_depth_min: 0.0F,
+    viewport_depth_max: 1.0F,
+    ambient_r: 0.0F,
+    ambient_g: 0.0F,
+    ambient_b: 0.0F,
+    ambient_brightness: 0.0F,
+    directional_dir_x: 0.0F,
+    directional_dir_y: 0.0F,
+    directional_dir_z: -1.0F,
+    directional_color_r: 0.0F,
+    directional_color_g: 0.0F,
+    directional_color_b: 0.0F,
+    directional_illuminance: 0.0F,
+    point_pos_x: 0.0F,
+    point_pos_y: 0.0F,
+    point_pos_z: 0.0F,
+    point_color_r: 0.0F,
+    point_color_g: 0.0F,
+    point_color_b: 0.0F,
+    point_intensity: 0.0F,
+    point_range: 0.0F,
+    spot_pos_x: 0.0F,
+    spot_pos_y: 0.0F,
+    spot_pos_z: 0.0F,
+    spot_dir_x: 0.0F,
+    spot_dir_y: 0.0F,
+    spot_dir_z: -1.0F,
+    spot_color_r: 0.0F,
+    spot_color_g: 0.0F,
+    spot_color_b: 0.0F,
+    spot_intensity: 0.0F,
+    spot_range: 0.0F,
+    spot_inner_angle: 0.0F,
+    spot_outer_angle: 0.0F,
+    transmission_blur_taps: 0.0F,
+    transmission_steps: 0.0F,
+    point_shadow_texture_id: -1,
+    point_shadow_enabled: 0.0F,
+    point_shadow_depth_bias: 0.0F,
+    transmission_source_texture_id: -1,
+    environment_diffuse_texture_id: -1,
+    environment_specular_texture_id: -1,
+    environment_map_intensity: 0.0F,
+    environment_map_rotation_x: 0.0F,
+    environment_map_rotation_y: 0.0F,
+    environment_map_rotation_z: 0.0F,
+    environment_map_rotation_w: 1.0F,
+    environment_diffuse_texture_ids: [],
+    environment_specular_texture_ids: [],
+    irradiance_volume_texture_ids: [],
+    mesh3d_light_probes_uniform_bytes: None,
+    light_probes_uniform_offset: 0U,
+    point_shadow_near: 0.0F,
+    directional_shadow_texture_id: -1,
+    directional_shadow_enabled: 0.0F,
+    directional_shadow_depth_bias: 0.0F,
+    directional_shadow_normal_bias: 0.0F,
+    directional_shadow_soft_size: 0.0F,
+    directional_shadow_cascade_count: 0,
+    directional_shadow_cascade_overlap: 0.0F,
+    directional_shadow_cascade_data: [],
+    mesh3d_lights_uniform_bytes,
+    tonemap_in_shader: false,
+    tonemapping_mode: 0,
+    tonemapping_agx_lut_texture_id: -1,
+    tonemapping_tony_lut_texture_id: -1,
+    tonemapping_blender_lut_texture_id: -1,
+    pbr_blue_noise_texture_id: -1,
+    pbr_area_light_luts_texture_id: -1,
+    pbr_dfg_lut_texture_id: -1,
+    deband_dither_enabled: false,
+  }
+}
+
+///|
 test "gpu: 2d clip matrix maps logical viewport coordinates to clip space" {
   let matrix = gpu_clip_matrix_2d(800.0F, 600.0F, 0.0F, 0.0F, 0.0F, 1.0F)
   debug_inspect(gpu_float_approx_eq(matrix.x_axis_x, 0.0025F), content="true")
@@ -827,6 +944,8 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     prepass_motion_vector_texture_id: -1,
     prepass_deferred_texture_id: -1,
     prepass_deferred_lighting_pass_id_texture_id: -1,
+    view_depth_texture_id: 17,
+    view_depth_view: None,
     screen_space_reflections: false,
     msaa_sample_count: 1,
     width_logical: 128.0F,
@@ -962,6 +1081,122 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     content="320",
   )
   debug_inspect(mesh_bytes.length(), content="176")
+}
+
+///|
+test "renderer: pass state records active view depth texture identity" {
+  let pass_state = GpuPassState::{
+    target_id: 3,
+    target_layer: -1,
+    secondary_target_id: -1,
+    prepass_depth_texture_id: 11,
+    prepass_normal_texture_id: -1,
+    prepass_motion_vector_texture_id: -1,
+    prepass_deferred_texture_id: -1,
+    prepass_deferred_lighting_pass_id_texture_id: -1,
+    view_depth_texture_id: 29,
+    view_depth_view: None,
+    screen_space_reflections: false,
+    msaa_sample_count: 1,
+    width_logical: 128.0F,
+    height_logical: 128.0F,
+    is_3d: true,
+    camera_x: 0.0F,
+    camera_y: 0.0F,
+    camera_rot: 0.0F,
+    camera_scale: 1.0F,
+    camera_z: 0.0F,
+    camera_exposure: 1.0F,
+    camera_rot_x: 0.0F,
+    camera_rot_y: 0.0F,
+    camera_rot_z: 0.0F,
+    camera_rot_w: 1.0F,
+    clip_from_world: gpu_clip_matrix_identity(),
+    unjittered_clip_from_world: gpu_clip_matrix_identity(),
+    world_from_clip: gpu_clip_matrix_identity(),
+    world_from_view: gpu_clip_matrix_identity(),
+    view_from_world: gpu_clip_matrix_identity(),
+    clip_from_view: gpu_clip_matrix_identity(),
+    view_from_clip: gpu_clip_matrix_identity(),
+    previous_clip_from_world: gpu_clip_matrix_identity(),
+    pass_kind: 0,
+    viewport_x: 0U,
+    viewport_y: 0U,
+    viewport_w: 128U,
+    viewport_h: 128U,
+    viewport_depth_min: 0.0F,
+    viewport_depth_max: 1.0F,
+    ambient_r: 0.0F,
+    ambient_g: 0.0F,
+    ambient_b: 0.0F,
+    ambient_brightness: 0.0F,
+    directional_dir_x: 0.0F,
+    directional_dir_y: 0.0F,
+    directional_dir_z: -1.0F,
+    directional_color_r: 0.0F,
+    directional_color_g: 0.0F,
+    directional_color_b: 0.0F,
+    directional_illuminance: 0.0F,
+    point_pos_x: 0.0F,
+    point_pos_y: 0.0F,
+    point_pos_z: 0.0F,
+    point_color_r: 0.0F,
+    point_color_g: 0.0F,
+    point_color_b: 0.0F,
+    point_intensity: 0.0F,
+    point_range: 0.0F,
+    spot_pos_x: 0.0F,
+    spot_pos_y: 0.0F,
+    spot_pos_z: 0.0F,
+    spot_dir_x: 0.0F,
+    spot_dir_y: 0.0F,
+    spot_dir_z: -1.0F,
+    spot_color_r: 0.0F,
+    spot_color_g: 0.0F,
+    spot_color_b: 0.0F,
+    spot_intensity: 0.0F,
+    spot_range: 0.0F,
+    spot_inner_angle: 0.0F,
+    spot_outer_angle: 0.0F,
+    transmission_blur_taps: 0.0F,
+    transmission_steps: 0.0F,
+    point_shadow_texture_id: -1,
+    point_shadow_enabled: 0.0F,
+    point_shadow_depth_bias: 0.0F,
+    transmission_source_texture_id: -1,
+    environment_diffuse_texture_id: -1,
+    environment_specular_texture_id: -1,
+    environment_map_intensity: 0.0F,
+    environment_map_rotation_x: 0.0F,
+    environment_map_rotation_y: 0.0F,
+    environment_map_rotation_z: 0.0F,
+    environment_map_rotation_w: 1.0F,
+    environment_diffuse_texture_ids: [],
+    environment_specular_texture_ids: [],
+    irradiance_volume_texture_ids: [],
+    mesh3d_light_probes_uniform_bytes: None,
+    light_probes_uniform_offset: 0U,
+    point_shadow_near: 0.0F,
+    directional_shadow_texture_id: -1,
+    directional_shadow_enabled: 0.0F,
+    directional_shadow_depth_bias: 0.0F,
+    directional_shadow_normal_bias: 0.0F,
+    directional_shadow_soft_size: 0.0F,
+    directional_shadow_cascade_count: 0,
+    directional_shadow_cascade_overlap: 0.0F,
+    directional_shadow_cascade_data: [],
+    mesh3d_lights_uniform_bytes: None,
+    tonemap_in_shader: false,
+    tonemapping_mode: 0,
+    tonemapping_agx_lut_texture_id: -1,
+    tonemapping_tony_lut_texture_id: -1,
+    tonemapping_blender_lut_texture_id: -1,
+    pbr_blue_noise_texture_id: -1,
+    pbr_area_light_luts_texture_id: -1,
+    pbr_dfg_lut_texture_id: -1,
+    deband_dither_enabled: false,
+  }
+  inspect(pass_state.view_depth_texture_id(), content="29")
 }
 
 ///|
@@ -1608,6 +1843,263 @@ test "renderer: shadow depth keeps non-default material pipeline id for mesh lay
 }
 
 ///|
+test "renderer: volumetric fog uses default mesh view bind group owner" {
+  debug_inspect(
+    mesh3d_volumetric_fog_view_material_pipeline_id() ==
+    MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+    content="true",
+  )
+  debug_inspect(
+    mesh3d_volumetric_fog_view_material_pipeline_id() == 0UL,
+    content="false",
+  )
+}
+
+///|
+test "renderer: volumetric fog group zero dynamic offsets mirror Bevy mesh view order" {
+  let descriptor = mesh3d_default_mesh_view_layout().main_bind_group_layout_descriptor()
+  let offsets = mesh3d_bind_group_layout_descriptor_view_dynamic_offsets(
+    descriptor,
+    light_probes_uniform_offset=640U,
+  )
+  inspect(offsets.length(), content="3")
+  inspect(offsets[0], content="0")
+  inspect(offsets[1], content="0")
+  inspect(offsets[2], content="640")
+}
+
+///|
+test "renderer: volumetric fog group zero layout exposes Bevy mesh view shadow slots" {
+  let descriptor = mesh3d_default_mesh_view_layout().main_bind_group_layout_descriptor()
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 0),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 1),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 5),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 6),
+    content="true",
+  )
+  debug_inspect(
+    wbtest_bind_group_layout_has_binding(descriptor, 12),
+    content="true",
+  )
+}
+
+///|
+test "renderer: volumetric fog resolves explicit view shadow texture identities" {
+  inspect(
+    mesh3d_volumetric_fog_resolved_point_shadow_texture_id(-1, 11),
+    content="11",
+  )
+  inspect(
+    mesh3d_volumetric_fog_resolved_directional_shadow_texture_id(-1, 22),
+    content="22",
+  )
+  inspect(
+    mesh3d_volumetric_fog_resolved_point_shadow_texture_id(55, 11),
+    content="55",
+  )
+  inspect(
+    mesh3d_volumetric_fog_resolved_directional_shadow_texture_id(77, 22),
+    content="77",
+  )
+}
+
+///|
+test "renderer: volumetric fog bind group layout index mirrors Bevy flags" {
+  inspect(mesh3d_volumetric_fog_bind_group_layout_index(1, false), content="0")
+  inspect(mesh3d_volumetric_fog_bind_group_layout_index(4, false), content="1")
+  inspect(mesh3d_volumetric_fog_bind_group_layout_index(1, true), content="2")
+  inspect(mesh3d_volumetric_fog_bind_group_layout_index(4, true), content="3")
+}
+
+///|
+test "renderer: volumetric fog MSAA shader key keeps single-sample color pipeline" {
+  let defines = mesh3d_volumetric_fog_shader_defines(4, false, false)
+  debug_inspect(defines.get("MULTISAMPLED"), content="Some(true)")
+  inspect(mesh3d_volumetric_fog_bind_group_layout_index(4, false), content="1")
+  inspect(mesh3d_volumetric_fog_pipeline_render_sample_count(4), content="1")
+}
+
+///|
+test "renderer: volumetric fog shader defs mirror Bevy specialization flags" {
+  let base = mesh3d_volumetric_fog_shader_defines(1, false, false)
+  debug_inspect(
+    base.get("SHADOW_FILTER_METHOD_HARDWARE_2X2"),
+    content="Some(true)",
+  )
+  debug_inspect(base.get("MULTISAMPLED"), content="None")
+  debug_inspect(base.get("ATMOSPHERE"), content="None")
+  debug_inspect(base.get("DENSITY_TEXTURE"), content="None")
+
+  let full = mesh3d_volumetric_fog_shader_defines(4, true, true)
+  debug_inspect(
+    full.get("SHADOW_FILTER_METHOD_HARDWARE_2X2"),
+    content="Some(true)",
+  )
+  debug_inspect(full.get("MULTISAMPLED"), content="Some(true)")
+  debug_inspect(full.get("ATMOSPHERE"), content="Some(true)")
+  debug_inspect(full.get("DENSITY_TEXTURE"), content="Some(true)")
+}
+
+///|
+test "renderer: volumetric fog blend mirrors Bevy additive alpha state" {
+  let (
+    color_src_factor,
+    color_dst_factor,
+    color_operation,
+    alpha_src_factor,
+    alpha_dst_factor,
+    alpha_operation,
+  ) = mesh3d_volumetric_fog_blend_components()
+  inspect(color_src_factor == @wgpu.BLEND_FACTOR_ONE, content="true")
+  inspect(
+    color_dst_factor == @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    content="true",
+  )
+  inspect(color_operation == @wgpu.BLEND_OPERATION_ADD, content="true")
+  inspect(alpha_src_factor == @wgpu.BLEND_FACTOR_ZERO, content="true")
+  inspect(alpha_dst_factor == @wgpu.BLEND_FACTOR_ONE, content="true")
+  inspect(alpha_operation == @wgpu.BLEND_OPERATION_ADD, content="true")
+}
+
+///|
+test "renderer: mesh3d lights uniform prefers bevy-shaped pbr bytes" {
+  let sentinel = Bytes::from_array([
+    (0xDE).to_byte(),
+    (0xAD).to_byte(),
+    (0xBE).to_byte(),
+    (0xEF).to_byte(),
+    (0x34).to_byte(),
+    (0x12).to_byte(),
+  ])
+  let pass_state = gpu_wbtest_pass_state(
+    mesh3d_lights_uniform_bytes=Some(sentinel),
+  )
+  let bytes = mesh3d_lights_uniform_bytes(pass_state)
+  inspect(bytes.length(), content="6")
+  inspect(bytes[0].to_uint(), content="222")
+  inspect(bytes[1].to_uint(), content="173")
+  inspect(bytes[2].to_uint(), content="190")
+  inspect(bytes[3].to_uint(), content="239")
+  inspect(bytes[4].to_uint(), content="52")
+  inspect(bytes[5].to_uint(), content="18")
+}
+
+///|
+test "renderer: volumetric fog pipeline cache key includes full hull vertex layout" {
+  let layout_a = @mesh.VertexBufferLayout::new(
+    array_stride=32,
+    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    attributes=[
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=@mesh.MeshVertexFormat::Float32x3,
+        shader_location=0,
+      ),
+    ],
+  )
+  let layout_b = @mesh.VertexBufferLayout::new(
+    array_stride=32,
+    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    attributes=[
+      @mesh.VertexAttribute::new(
+        offset=16,
+        format=@mesh.MeshVertexFormat::Float32x3,
+        shader_location=0,
+      ),
+    ],
+  )
+  let entry = Mesh3dVolumetricFogPipelineCacheEntry::{
+    pipeline_id: 1,
+    color_format: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    msaa_sample_count: 1,
+    has_density_texture: false,
+    atmosphere: false,
+    view_layout_key_bits: 0U,
+    vertex_buffer_layout: layout_a,
+    pipeline_layout: None,
+    state: RenderPipelineErr("not materialized"),
+  }
+  inspect(
+    entry.matches(
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+      1,
+      false,
+      false,
+      0U,
+      layout_a,
+    ),
+    content="true",
+  )
+  inspect(
+    entry.matches(
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+      1,
+      false,
+      false,
+      0U,
+      layout_b,
+    ),
+    content="false",
+  )
+}
+
+///|
+test "renderer: volumetric fog volume selects Bevy hull mesh and dynamic uniform offset" {
+  let interior = HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
+    density_texture_id=-1,
+    uniform_buffer_offset=32U,
+    exterior=false,
+  )
+  let exterior = HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
+    density_texture_id=7,
+    uniform_buffer_offset=96U,
+    exterior=true,
+  )
+  inspect(mesh3d_volumetric_fog_hull_mesh_id(interior, 11, 22), content="11")
+  inspect(mesh3d_volumetric_fog_hull_mesh_id(exterior, 11, 22), content="22")
+  let interior_offsets = mesh3d_volumetric_fog_dynamic_offsets(interior)
+  let exterior_offsets = mesh3d_volumetric_fog_dynamic_offsets(exterior)
+  inspect(interior_offsets.length(), content="1")
+  inspect(interior_offsets[0], content="32")
+  inspect(exterior_offsets.length(), content="1")
+  inspect(exterior_offsets[0], content="96")
+}
+
+///|
+test "renderer: volumetric fog density texture lookup follows Bevy render asset absence" {
+  let backend = GpuBackend::new(assets_base="assets")
+  inspect(
+    mesh3d_volumetric_fog_resolved_texture(backend, -1) is None,
+    content="true",
+  )
+  inspect(
+    mesh3d_volumetric_fog_resolved_texture(backend, 123456) is None,
+    content="true",
+  )
+  let texture_id = backend.create_texture_3d_with_format(
+    4,
+    4,
+    4,
+    @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+    [Bytes::make(4 * 4 * 4 * 4, (0).to_byte())],
+  )
+  inspect(
+    mesh3d_volumetric_fog_resolved_texture(backend, texture_id) is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(
@@ -1936,6 +2428,30 @@ test "renderer: rgb9e5 stacked 2d texture upload preserves 2d-array dimension" {
   let ok = match find_texture(backend, texture_id) {
     Some(texture) =>
       texture.texture.dimension_u32().raw == @wgpu.TEXTURE_DIMENSION_2D
+    None => false
+  }
+  debug_inspect(ok, content="true")
+}
+
+///|
+test "renderer: rgb9e5 cube texture upload creates a cubemap sample view" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let level0 = Bytes::makei(4 * 4 * 4 * 6, _ => (0).to_byte())
+  let texture_id = backend.create_texture_cube_with_format(
+    4,
+    4,
+    tf(@wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT),
+    [level0],
+    false,
+    usage_bits=IMAGE_USAGE_DEFAULT_SAMPLED_BITS,
+  )
+  let ok = match find_texture(backend, texture_id) {
+    Some(texture) =>
+      texture.width == 4 &&
+      texture.height == 4 &&
+      texture.mip_level_count == 1 &&
+      texture.texture.dimension_u32().raw == @wgpu.TEXTURE_DIMENSION_2D &&
+      texture.sample_view is Some(_)
     None => false
   }
   debug_inspect(ok, content="true")

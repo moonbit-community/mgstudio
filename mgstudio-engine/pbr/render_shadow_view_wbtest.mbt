@@ -206,6 +206,288 @@ test "pbr directional shadow view consumes extracted light cascades" {
 }
 
 ///|
+fn shadow_view_test_camera_payload() -> Camera3dViewPayload {
+  Camera3dViewPayload::{
+    decal_config: None,
+    deferred_config: None,
+    distance_fog: None,
+    auto_exposure: None,
+    volumetric_fog: None,
+    atmosphere: None,
+    atmosphere_settings: None,
+    camera: @camera_camera.Camera::Camera(),
+    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+    projection: Projection::default(),
+    sub_camera_view: None,
+    oit_settings: None,
+    screen_space_transmission: None,
+    bloom: None,
+    tonemapping: None,
+    deband_dither: None,
+    chromatic_aberration: None,
+    contrast_adaptive_sharpening: None,
+    custom_post_process3d: None,
+    vignette: None,
+    motion_blur: None,
+    exposure: None,
+    color_grading: None,
+    environment_map_light: None,
+    generated_environment_map_light: None,
+    atmosphere_environment_map_light: None,
+    has_environment_light_probes: false,
+    irradiance_volume: None,
+    screen_space_ambient_occlusion: None,
+    screen_space_reflections: None,
+    contact_shadows: None,
+    depth_prepass_enabled: false,
+    normal_prepass_enabled: false,
+    deferred_prepass_enabled: false,
+    no_indirect_drawing: false,
+    gpu_occlusion_culling_enabled: false,
+    hdr_enabled: false,
+    fxaa: None,
+    temporal_jitter: None,
+    temporal_anti_aliasing: None,
+    shadow_filtering_method: None,
+    motion_vector_prepass_enabled: false,
+    msaa: None,
+    transform: @transform.Transform::Transform(),
+    previous_transform: @transform.Transform::Transform(),
+    previous_clip_from_world: None,
+    target_id: 0,
+    target_size: @math.IVec2::new(1280, 720),
+    scale_factor: 1.0F,
+    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    has_no_cpu_culling: false,
+    invert_culling: false,
+  }
+}
+
+///|
+fn shadow_view_test_cascade(
+  scale : Float,
+  texel_size : Float,
+) -> @light.Cascade {
+  @light.Cascade::new(
+    @math.Mat4::identity(),
+    @math.Mat4::identity(),
+    @math.Mat4::from_cols(
+      @math.Vec4::new(scale, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, scale, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, scale, 0.0F),
+      @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+    ),
+    texel_size,
+  )
+}
+
+///|
+test "pbr directional shadow binding carries cascades for volumetric fog pass" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  let light = world.spawn()
+  let render_light = world.spawn()
+  let cascades = @light.Cascades::Cascades()
+  cascades.set(camera, [
+    shadow_view_test_cascade(1.0F, 0.125F),
+    shadow_view_test_cascade(2.0F, 0.25F),
+    shadow_view_test_cascade(3.0F, 0.5F),
+    shadow_view_test_cascade(4.0F, 1.0F),
+  ])
+  world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(4096),
+  )
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
+    entries: [
+      DirectionalLightShadowTargetsEntry::{
+        camera_entity: camera,
+        size: 4096,
+        layers: 4,
+        target_id: 77,
+      },
+    ],
+  })
+  let lighting = Render3dLightingState::{
+    ..@pbr_render.render3d_default_lighting_state(),
+    directional_entity: Some(light),
+    directional_render_entity: Some(render_light),
+    directional_shadow_maps_enabled: true,
+    directional_cascade_bounds: [8.0F, 16.0F, 32.0F, 64.0F],
+    directional_cascade_overlap_proportion: 0.2F,
+    directional_cascades: cascades,
+  }
+
+  let plan = render3d_prepare_camera_directional_shadow_pass(
+    world,
+    camera,
+    shadow_view_test_camera_payload(),
+    lighting,
+    [],
+    0,
+  )
+
+  inspect(plan.binding.texture_id, content="77")
+  inspect(shadow_view_approx_eq(plan.binding.enabled, 1.0F), content="true")
+  inspect(plan.binding.cascade_count, content="4")
+  inspect(plan.binding.cascade_data.length(), content="80")
+  if plan.binding.cascade_data.length() >= 18 {
+    inspect(
+      shadow_view_approx_eq(plan.binding.cascade_data[0], 1.0F),
+      content="true",
+    )
+    inspect(
+      shadow_view_approx_eq(plan.binding.cascade_data[17], 8.0F),
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+  inspect(plan.phase_views.length(), content="4")
+  inspect(plan.queued_phase_views.length(), content="4")
+}
+
+///|
+test "pbr directional shadow pass attaches Bevy-shaped target layers" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  let light = world.spawn()
+  let render_light = world.spawn()
+  let cascades = @light.Cascades::Cascades()
+  cascades.set(camera, [
+    shadow_view_test_cascade(1.0F, 0.125F),
+    shadow_view_test_cascade(2.0F, 0.25F),
+    shadow_view_test_cascade(3.0F, 0.5F),
+  ])
+  world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(2048),
+  )
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
+    entries: [
+      DirectionalLightShadowTargetsEntry::{
+        camera_entity: camera,
+        size: 2048,
+        layers: 3,
+        target_id: 91,
+      },
+    ],
+  })
+  let lighting = Render3dLightingState::{
+    ..@pbr_render.render3d_default_lighting_state(),
+    directional_entity: Some(light),
+    directional_render_entity: Some(render_light),
+    directional_shadow_maps_enabled: true,
+    directional_cascade_bounds: [10.0F, 25.0F, 50.0F],
+    directional_cascades: cascades,
+  }
+
+  let plan = render3d_prepare_camera_directional_shadow_pass(
+    world,
+    camera,
+    shadow_view_test_camera_payload(),
+    lighting,
+    [],
+    @pbr_render.RENDER3D_PASS_KIND_BASE_DIRECTIONAL_SHADOW,
+  )
+
+  inspect(plan.phase_views.length(), content="3")
+  for i in 0..<plan.phase_views.length() {
+    let view = plan.phase_views[i]
+    let shadow_view = view.phase_view.shadow_view
+    inspect(shadow_view.target_id, content="91")
+    inspect(shadow_view.target_layer, content="\{i}")
+    inspect(shadow_view.width, content="2048")
+    inspect(shadow_view.height, content="2048")
+    inspect(
+      shadow_view.pass_name,
+      content="shadow_directional_light_0_cascade_\{i}",
+    )
+    inspect(
+      view.pass_kind,
+      content="\{@pbr_render.RENDER3D_PASS_KIND_BASE_DIRECTIONAL_SHADOW}",
+    )
+  }
+}
+
+///|
+test "pbr directional shadow frame identity reaches volumetric view binding" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  let light = world.spawn()
+  let render_light = world.spawn()
+  let cascades = @light.Cascades::Cascades()
+  cascades.set(camera, [
+    shadow_view_test_cascade(1.0F, 0.125F),
+    shadow_view_test_cascade(2.0F, 0.25F),
+  ])
+  world.insert_resource(
+    @light.ecs_key_directional_light_shadow_map,
+    @light.DirectionalLightShadowMap::new(1024),
+  )
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
+    entries: [
+      DirectionalLightShadowTargetsEntry::{
+        camera_entity: camera,
+        size: 1024,
+        layers: 2,
+        target_id: 123,
+      },
+    ],
+  })
+  let lighting = Render3dLightingState::{
+    ..@pbr_render.render3d_default_lighting_state(),
+    directional_entity: Some(light),
+    directional_render_entity: Some(render_light),
+    directional_shadow_maps_enabled: true,
+    directional_cascade_bounds: [8.0F, 16.0F],
+    directional_cascades: cascades,
+  }
+
+  let plan = render3d_prepare_camera_shadow_passes(
+    world,
+    camera,
+    shadow_view_test_camera_payload(),
+    lighting,
+    [],
+    512,
+    @pbr_render.RENDER3D_PASS_KIND_BASE_POINT_SHADOW,
+    @pbr_render.RENDER3D_PASS_KIND_BASE_DIRECTIONAL_SHADOW,
+  )
+
+  inspect(plan.bindings.directional.texture_id, content="123")
+  inspect(plan.bindings.directional.cascade_count, content="2")
+  inspect(plan.bindings.directional.cascade_data.length(), content="80")
+  inspect(plan.phase_views.length(), content="2")
+  inspect(plan.queued_phase_views.length(), content="2")
+  for i in 0..<plan.phase_views.length() {
+    let execution_view = plan.phase_views[i]
+    let shadow_view = execution_view.phase_view.shadow_view
+    inspect(
+      shadow_view.target_id,
+      content="\{plan.bindings.directional.texture_id}",
+    )
+    inspect(shadow_view.target_layer, content="\{i}")
+    let retained_view = shadow_view.light_entity.shadow_phase_retained_view(
+      @render_view.RetainedViewEntity::new(camera),
+    )
+    inspect(retained_view.main_entity().id, content="\{light.id}")
+    inspect(retained_view.auxiliary_entity().id, content="\{camera.id}")
+    inspect(retained_view.subview_index(), content="\{i}")
+    match shadow_view.light_entity {
+      Directional(light_entity~, main_entity~, cascade_index~) => {
+        inspect(light_entity.id, content="\{render_light.id}")
+        inspect(light_entity.generation, content="\{render_light.generation}")
+        inspect(main_entity.id, content="\{light.id}")
+        inspect(main_entity.generation, content="\{light.generation}")
+        inspect(cascade_index, content="\{i}")
+      }
+      _ => inspect(false, content="true")
+    }
+  }
+}
+
+///|
 test "pbr directional shadow target reserves Bevy spot layers" {
   inspect(render3d_directional_spot_shadow_target_layers(4, 0), content="4")
   inspect(render3d_directional_spot_shadow_target_layers(4, 1), content="5")

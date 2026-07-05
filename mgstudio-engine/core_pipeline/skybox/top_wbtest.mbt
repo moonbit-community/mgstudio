@@ -65,6 +65,26 @@ test "skybox: uniforms match Bevy brightness and inverse-rotation transform" {
 }
 
 ///|
+test "skybox: default exposure fallback scales brightness like Bevy extract" {
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(9)
+  let skybox = @light.Skybox::new(image, 1000.0F)
+  let exposure = @camera_camera.Exposure::Exposure().exposure()
+  let uniforms = SkyboxUniforms::from_skybox(skybox, exposure)
+
+  debug_inspect(
+    skybox_test_approx(uniforms.brightness, 1000.0F * exposure),
+    content="true",
+  )
+  debug_inspect(
+    skybox_test_approx(uniforms.transform[0], 1.0F) &&
+    skybox_test_approx(uniforms.transform[5], 1.0F) &&
+    skybox_test_approx(uniforms.transform[10], 1.0F) &&
+    skybox_test_approx(uniforms.transform[15], 1.0F),
+    content="true",
+  )
+}
+
+///|
 test "skybox: draw params come from extracted uniforms and inverse rotation" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(11)
   let skybox = @light.Skybox::new(image, 4.0F).with_rotation(
@@ -83,6 +103,165 @@ test "skybox: draw params come from extracted uniforms and inverse rotation" {
   debug_inspect(skybox_test_approx(params.brightness, 2.0F), content="true")
   debug_inspect(skybox_test_approx(params.rotation.x, -0.25F), content="true")
   debug_inspect(skybox_test_approx(params.rotation.w, 1.0F), content="true")
+}
+
+///|
+test "skybox: embedded wgsl preserves Bevy sampling anchors" {
+  debug_inspect(
+    skybox_wgsl_source.contains(
+      "@group(0) @binding(0) var skybox: texture_cube<f32>;",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    skybox_wgsl_source.contains(
+      "@group(0) @binding(1) var skybox_sampler: sampler;",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    skybox_wgsl_source.contains(
+      "@group(0) @binding(2) var<uniform> view: View;",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    skybox_wgsl_source.contains(
+      "@group(0) @binding(3) var<uniform> uniforms: SkyboxUniforms;",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    skybox_wgsl_source.contains(
+      "textureSample(skybox, skybox_sampler, ray_direction * vec3(1.0, 1.0, -1.0))",
+    ),
+    content="true",
+  )
+}
+
+///|
+test "skybox: pipeline descriptor matches Bevy layout and depth anchors" {
+  let key = SkyboxPipelineKey::new(
+    target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    samples=4,
+    depth_format_raw=@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+  )
+  let descriptor = skybox_render_pipeline_descriptor(key)
+  debug_inspect(descriptor.label(), content="Some(\"skybox_pipeline\")")
+  debug_inspect(
+    descriptor.vertex().shader(),
+    content="Some(\"core_pipeline/skybox/skybox.wgsl\")",
+  )
+  debug_inspect(
+    descriptor.vertex().entry_point(),
+    content="Some(\"skybox_vertex\")",
+  )
+  guard descriptor.fragment() is Some(fragment) else {
+    abort("expected skybox fragment state")
+  }
+  debug_inspect(
+    fragment.shader(),
+    content="Some(\"core_pipeline/skybox/skybox.wgsl\")",
+  )
+  debug_inspect(fragment.entry_point(), content="Some(\"skybox_fragment\")")
+  let targets = fragment.targets()
+  debug_inspect(targets.length(), content="1")
+  guard targets[0] is Some(target) else {
+    abort("expected skybox color target")
+  }
+  debug_inspect(
+    target.format() == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+    content="true",
+  )
+  debug_inspect(target.blend() is None, content="true")
+  debug_inspect(
+    target.write_mask() == @wgpu.COLOR_WRITE_MASK_ALL,
+    content="true",
+  )
+
+  let layouts = descriptor.layout()
+  debug_inspect(layouts.length(), content="1")
+  let entries = layouts[0].entries()
+  debug_inspect(layouts[0].label(), content="\"skybox_bind_group_layout\"")
+  debug_inspect(entries.length(), content="4")
+  match entries[0].kind() {
+    @render_resource.BindingType::TextureBinding(
+      sample_type,
+      view_dimension,
+      multisampled
+    ) => {
+      let sample_type_ok = match sample_type {
+        @render_resource.TextureSampleType::Float(filterable) => filterable
+        _ => false
+      }
+      let view_dimension_ok = match view_dimension {
+        @render_resource.TextureViewDimension::Cube => true
+        _ => false
+      }
+      debug_inspect(sample_type_ok, content="true")
+      debug_inspect(view_dimension_ok, content="true")
+      debug_inspect(multisampled, content="false")
+    }
+    _ => abort("expected skybox cube texture binding")
+  }
+  match entries[1].kind() {
+    @render_resource.BindingType::SamplerBinding(kind) => {
+      let filtering = match kind {
+        @render_resource.SamplerBindingType::Filtering => true
+        _ => false
+      }
+      debug_inspect(filtering, content="true")
+    }
+    _ => abort("expected skybox filtering sampler")
+  }
+  match entries[2].kind() {
+    @render_resource.BindingType::BufferBinding(
+      kind,
+      has_dynamic_offset,
+      min_size
+    ) => {
+      let uniform = match kind {
+        @render_resource.BufferBindingType::Uniform => true
+        _ => false
+      }
+      debug_inspect(uniform, content="true")
+      debug_inspect(has_dynamic_offset, content="true")
+      debug_inspect(
+        min_size == @render_view.VIEW_UNIFORM_SIZE_BYTES.to_uint64(),
+        content="true",
+      )
+    }
+    _ => abort("expected view uniform binding")
+  }
+  match entries[3].kind() {
+    @render_resource.BindingType::BufferBinding(
+      kind,
+      has_dynamic_offset,
+      min_size
+    ) => {
+      let uniform = match kind {
+        @render_resource.BufferBindingType::Uniform => true
+        _ => false
+      }
+      debug_inspect(uniform, content="true")
+      debug_inspect(has_dynamic_offset, content="true")
+      debug_inspect(min_size, content="80")
+    }
+    _ => abort("expected skybox uniform binding")
+  }
+  guard descriptor.depth_stencil is Some(depth) else {
+    abort("expected skybox depth state")
+  }
+  debug_inspect(
+    depth.format == @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    content="true",
+  )
+  debug_inspect(depth.depth_write_enabled, content="false")
+  debug_inspect(
+    depth.depth_compare == @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+    content="true",
+  )
+  debug_inspect(descriptor.multisample.count(), content="4")
 }
 
 ///|

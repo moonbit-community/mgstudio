@@ -31,6 +31,8 @@ pub fn gltf_convert_coordinates_vec3(@math.Vec3) -> @math.Vec3
 
 pub fn gltf_convert_coordinates_vec3_components((Float, Float, Float)) -> (Float, Float, Float)
 
+pub fn gltf_convert_coordinates_vec4(@math.Vec4) -> @math.Vec4
+
 pub fn gltf_custom_vertex_attributes() -> Array[@loader.GltfCustomVertexAttribute]
 
 pub fn gltf_default_convert_coordinates() -> @loader.GltfConvertCoordinates

@@ -677,6 +677,9 @@ fn scene_spawn_instance_when_ready(
           @ecs.component_writer(@pbr.ecs_key_mesh_material3d, material),
         )
       }
+      if node.aabb is Some(aabb) {
+        child_writers.push(@ecs.component_writer(@camera.ecs_key_aabb, aabb))
+      }
       if has_morph_targets {
         child_writers.push(
           @ecs.component_writer(

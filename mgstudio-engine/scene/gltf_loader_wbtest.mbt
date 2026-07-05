@@ -573,6 +573,128 @@ test "scene gltf wb: mesh primitive builder applies coordinate conversion" {
 }
 
 ///|
+test "scene gltf wb: mesh primitive builder converts normals and tangents" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0,\"NORMAL\":1,\"TANGENT\":2}}]}],\"buffers\":[{\"byteLength\":36},{\"byteLength\":36},{\"byteLength\":48}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":1,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":2,\"byteOffset\":0,\"byteLength\":48}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":3,\"type\":\"VEC4\"}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let positions : Array[Byte] = []
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  let normals : Array[Byte] = []
+  push_f32_le(normals, 1.0F)
+  push_f32_le(normals, 2.0F)
+  push_f32_le(normals, 3.0F)
+  push_f32_le(normals, 0.0F)
+  push_f32_le(normals, 1.0F)
+  push_f32_le(normals, 0.0F)
+  push_f32_le(normals, 0.0F)
+  push_f32_le(normals, 0.0F)
+  push_f32_le(normals, 1.0F)
+  let tangents : Array[Byte] = []
+  push_f32_le(tangents, 4.0F)
+  push_f32_le(tangents, 5.0F)
+  push_f32_le(tangents, 6.0F)
+  push_f32_le(tangents, -1.0F)
+  push_f32_le(tangents, 1.0F)
+  push_f32_le(tangents, 0.0F)
+  push_f32_le(tangents, 0.0F)
+  push_f32_le(tangents, 1.0F)
+  push_f32_le(tangents, 0.0F)
+  push_f32_le(tangents, 1.0F)
+  push_f32_le(tangents, 0.0F)
+  push_f32_le(tangents, 1.0F)
+  let mesh = scene_build_mesh_primitive_from_gltf(
+    doc,
+    [
+      Bytes::from_array(positions),
+      Bytes::from_array(normals),
+      Bytes::from_array(tangents),
+    ],
+    0,
+    0,
+    @gltf.GltfConvertCoordinates::{
+      rotate_scene_entity: false,
+      rotate_meshes: true,
+    },
+  ).unwrap()
+  let geometry = mesh.as_3d_geometry().unwrap()
+  let normal = geometry.normal(0).unwrap()
+  debug_inspect(
+    (normal.x.to_double(), normal.y.to_double(), normal.z.to_double()),
+    content="(-1, 2, -3)",
+  )
+  let tangent = geometry.tangent(0).unwrap()
+  debug_inspect(
+    (
+      tangent.x.to_double(),
+      tangent.y.to_double(),
+      tangent.z.to_double(),
+      tangent.w.to_double(),
+    ),
+    content="(-4, 5, -6, -1)",
+  )
+}
+
+///|
+test "scene gltf wb: primitive aabb uses accessor bounds and coordinate conversion" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0}}]}],\"accessors\":[{\"componentType\":5126,\"count\":3,\"type\":\"VEC3\",\"min\":[-1,-2,-3],\"max\":[4,6,8]}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let primitive = doc.meshes[0].primitives[0]
+  let unconverted = scene_gltf_primitive_aabb(
+    doc,
+    primitive,
+    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+  ).unwrap()
+  let unconverted_center = unconverted.center()
+  let unconverted_half_size = unconverted.half_size()
+  debug_inspect(
+    (
+      unconverted_center.x.to_double(),
+      unconverted_center.y.to_double(),
+      unconverted_center.z.to_double(),
+    ),
+    content="(1.5, 2, 2.5)",
+  )
+  debug_inspect(
+    (
+      unconverted_half_size.x.to_double(),
+      unconverted_half_size.y.to_double(),
+      unconverted_half_size.z.to_double(),
+    ),
+    content="(2.5, 4, 5.5)",
+  )
+
+  let converted = scene_gltf_primitive_aabb(doc, primitive, @gltf.GltfConvertCoordinates::{
+    rotate_scene_entity: false,
+    rotate_meshes: true,
+  }).unwrap()
+  let converted_center = converted.center()
+  let converted_half_size = converted.half_size()
+  debug_inspect(
+    (
+      converted_center.x.to_double(),
+      converted_center.y.to_double(),
+      converted_center.z.to_double(),
+    ),
+    content="(-1.5, 2, -2.5)",
+  )
+  debug_inspect(
+    (
+      converted_half_size.x.to_double(),
+      converted_half_size.y.to_double(),
+      converted_half_size.z.to_double(),
+    ),
+    content="(2.5, 4, 5.5)",
+  )
+}
+
+///|
 test "scene gltf wb: mesh primitive builder computes missing flat normals like Bevy" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0,\"TEXCOORD_0\":1},\"indices\":2}]}],\"buffers\":[{\"byteLength\":48},{\"byteLength\":32},{\"byteLength\":6}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":48},{\"buffer\":1,\"byteOffset\":0,\"byteLength\":32},{\"buffer\":2,\"byteOffset\":0,\"byteLength\":6}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":4,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5126,\"count\":4,\"type\":\"VEC2\"},{\"bufferView\":2,\"componentType\":5121,\"count\":6,\"type\":\"SCALAR\"}]}"
   let doc = gltf_parse_document(source).unwrap()

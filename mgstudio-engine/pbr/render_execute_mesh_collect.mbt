@@ -267,7 +267,7 @@ fn render3d_extract_mesh_for_entity(
     prefetched_is_forward_decal,
     prefetched_forward_decal_material_ext,
     prefetched_clustered_decal,
-    _prefetched_has_not_shadow_caster,
+    prefetched_has_not_shadow_caster,
     prefetched_has_no_frustum_culling,
     _prefetched_has_no_automatic_batching,
     prefetched_has_no_cpu_culling,
@@ -586,6 +586,7 @@ fn render3d_extract_mesh_for_entity(
   let wireframe_color = prefetched_wireframe_color
   let wireframe_line_width = prefetched_wireframe_line_width
   let wireframe_topology = prefetched_wireframe_topology
+  let has_not_shadow_caster = prefetched_has_not_shadow_caster
   let instance_vertex_buffer_id = match
     (try! source_world.get_by_key(
       entity,
@@ -626,6 +627,7 @@ fn render3d_extract_mesh_for_entity(
         is_forward_decal,
         forward_decal_material_ext,
         clustered_decal,
+        has_not_shadow_caster,
         has_not_shadow_receiver,
         has_transmitted_shadow_receiver,
         has_no_frustum_culling,

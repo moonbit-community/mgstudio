@@ -193,7 +193,7 @@ pub fn draw_mesh3d_deferred_lighting(camera_key_hi~ : Int, camera_key_lo~ : Int,
 
 pub fn draw_mesh3d_screen_space_reflections(camera_key_hi~ : Int, camera_key_lo~ : Int, source_texture_id~ : Int, ping_target_id~ : Int, atmosphere~ : Bool) -> Unit
 
-pub fn draw_mesh3d_volumetric_fog(camera_key_hi~ : Int, camera_key_lo~ : Int, plane_mesh_id~ : Int, cube_mesh_id~ : Int, textureless_pipeline_id~ : Int, textured_pipeline_id~ : Int, atmosphere~ : Bool, volumes~ : Array[HostMesh3dVolumetricFogVolume]) -> Unit
+pub fn draw_mesh3d_volumetric_fog(camera_key_hi~ : Int, camera_key_lo~ : Int, point_shadow_texture_id~ : Int, directional_shadow_texture_id~ : Int, plane_mesh_id~ : Int, cube_mesh_id~ : Int, textureless_pipeline_id~ : Int, textured_pipeline_id~ : Int, atmosphere~ : Bool, volumes~ : Array[HostMesh3dVolumetricFogVolume]) -> Unit
 
 pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, alpha_mode_kind~ : Int, material_bind_group~ : HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?, pipeline_descriptor? : @render_resource.RenderPipelineDescriptor?) -> Unit
 
@@ -315,6 +315,8 @@ pub fn mesh3d_non_indexed_indirect_offset(Int) -> UInt64
 
 pub fn mesh3d_preprocess_disabled() -> Bool
 
+pub fn mesh3d_volumetric_fog_pipeline_key_inputs(target_id~ : Int, hull_mesh_id~ : Int) -> (UInt, @Milky2018/mgstudio/mesh.VertexBufferLayout)?
+
 pub fn mesh_allocator_snapshot() -> @Milky2018/mgstudio/render/mesh.MeshAllocator?
 
 pub fn mesh_info(Int) -> HostGpuMeshInfo?
@@ -399,7 +401,7 @@ pub fn prepare_mesh3d_ssao_resources(width~ : Int, height~ : Int, constant_objec
 
 pub fn prepare_mesh3d_view_bind_group(transmission_source_texture_id~ : Int, point_shadow_texture_id~ : Int, directional_shadow_texture_id? : Int, environment_diffuse_texture_id~ : Int, environment_specular_texture_id~ : Int, prepass_depth_texture_id? : Int, prepass_normal_texture_id? : Int, prepass_motion_vector_texture_id? : Int, prepass_deferred_texture_id? : Int) -> Unit
 
-pub fn prepare_mesh3d_volumetric_fog_pipeline(target_id~ : Int, msaa_sample_count~ : Int, has_density_texture~ : Bool, atmosphere~ : Bool, hull_mesh_id~ : Int) -> Int?
+pub fn prepare_mesh3d_volumetric_fog_pipeline(target_format~ : UInt, msaa_sample_count~ : Int, has_density_texture~ : Bool, mesh_pipeline_view_key_bits~ : UInt, vertex_buffer_layout~ : @Milky2018/mgstudio/mesh.VertexBufferLayout) -> Int?
 
 pub fn prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes~ : Bytes) -> Unit
 
@@ -701,6 +703,7 @@ pub struct GpuBackend {
   mesh3d_shadow_pipeline_cache : Array[Mesh3dShadowPipelineCacheEntry]
   mesh3d_volumetric_fog_pipeline_cache : Array[Mesh3dVolumetricFogPipelineCacheEntry]
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
+  mut mesh3d_directional_shadow_compare_sampler : @wgpu_mbt.Sampler?
   mut mesh3d_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_lights_buf : @wgpu_mbt.Buffer?
   mut mesh3d_clustered_lights_buf : @wgpu_mbt.Buffer?
@@ -1107,7 +1110,7 @@ pub fn GpuBackend::draw_mesh3d(Self, Int, Int, Int, Int, Int, Int, Int, Int, Flo
 pub fn GpuBackend::draw_mesh3d_main_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Float, Int, Int, Int, Array[Int], Float, Float, Float, Float, Int, Float, Float, UInt, Int, String?, String?, Int, Int, Int, Int, Int, UInt64, Bool, @render_resource.MaterialBindGroupResolvedData) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_motion_vector_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Array[Float]?, Int, Int, Int, Int, Int, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, Int, UInt64, Bool, @render_resource.MaterialBindGroupResolvedData) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(Self, @wgpu_mbt.RenderPass, GpuPassState, GpuMeshInfo, Int, Bool, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Array[Float]?, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Float, Int, UInt, Int, Int, Int, Int, Int, Int, UInt64, @render_resource.MaterialBindGroupResolvedData) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_mesh3d_volumetric_fog(Self, Int, Int, Int, Int, Int, Int, Bool, Array[HostMesh3dVolumetricFogVolume]) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh3d_volumetric_fog(Self, Int, Int, Int, Int, Int, Int, Int, Int, Bool, Array[HostMesh3dVolumetricFogVolume]) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?, pipeline_descriptor? : @render_resource.RenderPipelineDescriptor?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, @render_resource.RenderPipeline, @render_resource.Sampler, @wgpu_mbt.Buffer, UInt, @wgpu_mbt.Buffer) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_prepared_skybox(Self, Int) -> Unit raise GpuBackendError
@@ -1143,6 +1146,7 @@ pub fn GpuBackend::frame_copy_texture_to_texture(Self, Int, Int, Int, Int) -> Un
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::mesh3d_draw_deferred_lighting(Self, Int, Int, Bool, Bool, Bool, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::mesh3d_draw_screen_space_reflections(Self, Int, Int, Int, Int, Bool) -> Unit raise GpuBackendError
+pub fn GpuBackend::mesh3d_volumetric_fog_pipeline_key_inputs(Self, Int, Int) -> (UInt, @Milky2018/mgstudio/mesh.VertexBufferLayout)?
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_initial_surface_frames(Self) -> Unit
@@ -1157,7 +1161,7 @@ pub fn GpuBackend::prepare_mesh3d_skin_bindings(Self, Array[Float]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_ssao_pipeline(Self, Int, Int, Int, Bool) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_ssao_resources(Self, Int, Int, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_view_bind_group(Self, Int, Int, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(Self, Int, Int, Bool, Bool, Int) -> Int? raise GpuBackendError
+pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(Self, UInt, Int, Bool, UInt, @Milky2018/mgstudio/mesh.VertexBufferLayout) -> Int? raise GpuBackendError
 pub fn GpuBackend::prepare_mesh3d_volumetric_fog_uniforms(Self, Bytes) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_meshlet_frame_resources(Self, cluster_buffer_slots~ : Int, scene_instance_count~ : Int) -> Unit
 pub fn GpuBackend::prepare_meshlet_storage_buffers(Self, vertex_positions~ : Bytes, vertex_normals~ : Bytes, vertex_uvs~ : Bytes, indices~ : Bytes, bvh_nodes~ : Bytes, meshlets~ : Bytes, cull_data~ : Bytes, instance_uniforms~ : Bytes, instance_aabbs~ : Bytes, instance_material_ids~ : Bytes, instance_bvh_root_nodes~ : Bytes) -> Unit
@@ -1259,6 +1263,8 @@ pub struct GpuPassState {
   prepass_motion_vector_texture_id : Int
   prepass_deferred_texture_id : Int
   prepass_deferred_lighting_pass_id_texture_id : Int
+  view_depth_texture_id : Int
+  view_depth_view : @wgpu_mbt.TextureView?
   screen_space_reflections : Bool
   msaa_sample_count : Int
   width_logical : Float
@@ -1364,6 +1370,7 @@ pub fn GpuPassState::pass_kind(Self) -> Int
 pub fn GpuPassState::secondary_target_id(Self) -> Int
 pub fn GpuPassState::target_id(Self) -> Int
 pub fn GpuPassState::target_layer(Self) -> Int
+pub fn GpuPassState::view_depth_texture_id(Self) -> Int
 pub fn GpuPassState::viewport(Self) -> (UInt, UInt, UInt, UInt)
 
 type GpuPrepassDepthTextureInfo

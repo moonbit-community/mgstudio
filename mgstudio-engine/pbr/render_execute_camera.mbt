@@ -27,6 +27,15 @@ priv struct Render3dCameraExecutionPlan {
 }
 
 ///|
+const RENDER3D_CAMERA_MAIN_PASS_TRACE : String = "execute_3d_camera_main_pass"
+
+///|
+const RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE : String = "execute_3d_camera_volumetric_fog_pass"
+
+///|
+const RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE : String = "execute_3d_camera_postprocess"
+
+///|
 fn render3d_prepare_camera_execution_plan(
   world : @ecs.World,
   extracted_camera : ExtractedCamera3d,
@@ -270,10 +279,19 @@ fn render3d_execute_camera(
   }
   let trace_camera_main_pass_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_main_pass",
+    RENDER3D_CAMERA_MAIN_PASS_TRACE,
   )
   render3d_dispatch_camera_preprocess_main(
     camera_entity, camera, prepared_queue,
+  )
+  let source_world = @render.render_source_world(world)
+  let light_probe_state = render3d_camera_light_probe_state(
+    source_world, extracted_camera, environment_map_state,
+  )
+  let volumetric_fog_prepare = render3d_prepare_camera_volumetric_fog_state(
+    world, source_world, extracted_camera, camera, camera_pass_projection, scene_target_id,
+    msaa_sample_count, prepass_depth_target_id, prepass_normal_target_id, velocity_target_id,
+    prepass_deferred_target_id, environment_map_state, light_probe_state,
   )
   render3d_execute_camera_main_pass(
     world,
@@ -300,6 +318,7 @@ fn render3d_execute_camera(
     camera_exposure_value,
     shadow_bindings,
     environment_map_state,
+    light_probe_state,
     point_shadow_near,
     scene_pass_kind,
     clear_enabled,
@@ -321,12 +340,29 @@ fn render3d_execute_camera(
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_main_pass",
+    RENDER3D_CAMERA_MAIN_PASS_TRACE,
     trace_camera_main_pass_start_us,
+  )
+  let trace_camera_volumetric_fog_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE,
+  )
+  render3d_execute_camera_volumetric_fog_pass(
+    world,
+    extracted_camera.entity.render_entity,
+    volumetric_fog_prepare,
+    shadow_bindings,
+    camera_entity,
+    camera.atmosphere is Some(_),
+  )
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::RenderQueue,
+    RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE,
+    trace_camera_volumetric_fog_start_us,
   )
   let trace_camera_postprocess_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_postprocess",
+    RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE,
   )
   render3d_execute_camera_postprocess(
     world,
@@ -365,7 +401,7 @@ fn render3d_execute_camera(
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
-    "execute_3d_camera_postprocess",
+    RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE,
     trace_camera_postprocess_start_us,
   )
   let overlay_scale_factor = if camera.scale_factor <= 0.0F {

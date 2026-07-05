@@ -357,6 +357,12 @@ pub struct ExtractedRenderMeshAsset {
 }
 
 ///|
+pub struct PreparedRenderMeshAsset {
+  mesh_asset_id : Int
+  render_mesh : RenderMesh
+}
+
+///|
 pub fn ExtractedRenderMeshAsset::new(
   mesh_asset_id : Int,
   mesh : @asset_mesh.Mesh,
@@ -379,6 +385,60 @@ pub fn ExtractedRenderMeshAsset::mesh(
 }
 
 ///|
+pub fn PreparedRenderMeshAsset::new(
+  mesh_asset_id : Int,
+  render_mesh : RenderMesh,
+) -> PreparedRenderMeshAsset {
+  PreparedRenderMeshAsset::{ mesh_asset_id, render_mesh }
+}
+
+///|
+pub fn PreparedRenderMeshAsset::mesh_asset_id(
+  self : PreparedRenderMeshAsset,
+) -> Int {
+  self.mesh_asset_id
+}
+
+///|
+pub fn PreparedRenderMeshAsset::render_mesh(
+  self : PreparedRenderMeshAsset,
+) -> RenderMesh {
+  self.render_mesh
+}
+
+///|
+pub fn prepare_render_mesh_assets(
+  extracted_assets : Array[ExtractedRenderMeshAsset],
+  mesh_vertex_buffer_layouts : @asset_mesh.MeshVertexBufferLayouts,
+  dimension? : RenderMeshDimension = Dim3,
+) -> Array[PreparedRenderMeshAsset] {
+  let prepared_assets : Array[PreparedRenderMeshAsset] = []
+  for extracted_asset in extracted_assets {
+    prepared_assets.push(
+      PreparedRenderMeshAsset::new(
+        extracted_asset.mesh_asset_id(),
+        RenderMesh::prepare_asset(
+          extracted_asset.mesh(),
+          mesh_vertex_buffer_layouts,
+          dimension~,
+        ),
+      ),
+    )
+  }
+  prepared_assets
+}
+
+///|
+pub fn RenderMeshAssets::insert_prepared_assets(
+  self : RenderMeshAssets,
+  prepared_assets : Array[PreparedRenderMeshAsset],
+) -> Unit {
+  for prepared_asset in prepared_assets {
+    self.insert(prepared_asset.mesh_asset_id(), prepared_asset.render_mesh())
+  }
+}
+
+///|
 // Bevy source: `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>`.
 pub fn RenderMeshAssets::prepare_assets(
   self : RenderMeshAssets,
@@ -386,16 +446,13 @@ pub fn RenderMeshAssets::prepare_assets(
   mesh_vertex_buffer_layouts : @asset_mesh.MeshVertexBufferLayouts,
   dimension? : RenderMeshDimension = Dim3,
 ) -> Unit {
-  for extracted_asset in extracted_assets {
-    self.insert(
-      extracted_asset.mesh_asset_id(),
-      RenderMesh::prepare_asset(
-        extracted_asset.mesh(),
-        mesh_vertex_buffer_layouts,
-        dimension~,
-      ),
-    )
-  }
+  self.insert_prepared_assets(
+    prepare_render_mesh_assets(
+      extracted_assets,
+      mesh_vertex_buffer_layouts,
+      dimension~,
+    ),
+  )
 }
 
 ///|

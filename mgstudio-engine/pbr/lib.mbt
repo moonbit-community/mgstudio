@@ -70,6 +70,14 @@ pub fn PbrPlugin::with_standard_material_texture_features(
 }
 
 ///|
+pub fn PbrPlugin::with_gpu_instance_buffer_builder(
+  self : PbrPlugin,
+  use_gpu_instance_buffer_builder : Bool,
+) -> PbrPlugin {
+  PbrPlugin::{ ..self, use_gpu_instance_buffer_builder, }
+}
+
+///|
 pub struct PbrPluginRuntimeConfig {
   prepass_enabled : Bool
   add_default_deferred_lighting_plugin : Bool
