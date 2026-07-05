@@ -54,6 +54,6 @@ pub fn standard_material_from_gltf_material(
 ///|
 pub fn gltf_pbr_mesh_material(
   standard_material_handle : @asset.Handle[@material.StandardMaterial],
-) -> @material.MeshMaterial3d {
-  @material.MeshMaterial3d::new(standard_material_handle)
+) -> MeshMaterial3dTyped[@material.StandardMaterial] {
+  MeshMaterial3dTyped::new(standard_material_handle)
 }

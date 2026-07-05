@@ -510,7 +510,7 @@ pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@l
 
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
 
-pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
+pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> MeshMaterial3dTyped[@material.StandardMaterial]
 
 pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
 
@@ -666,7 +666,7 @@ pub fn pbr_materials_plugin_state_default() -> MaterialsPluginState
 
 pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState
 
-pub fn pbr_mesh_material3d_new(@asset.Handle[@material.StandardMaterial]) -> @material.MeshMaterial3d
+pub fn pbr_mesh_material3d_new(@asset.Handle[@material.StandardMaterial]) -> MeshMaterial3dTyped[@material.StandardMaterial]
 
 pub fn pbr_mesh_material3d_with_extended_metadata(@material.MeshMaterial3d, @material.ExtendedMaterialMetadata3d?) -> @material.MeshMaterial3d
 

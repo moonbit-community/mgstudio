@@ -1077,8 +1077,8 @@ pub fn pbr_standard_material_set(
 ///|
 pub fn pbr_mesh_material3d_new(
   material : @asset.Handle[StandardMaterial],
-) -> @material.MeshMaterial3d {
-  @material.MeshMaterial3d::new(material)
+) -> MeshMaterial3dTyped[StandardMaterial] {
+  MeshMaterial3dTyped::new(material)
 }
 
 ///|
