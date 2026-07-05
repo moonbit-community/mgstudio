@@ -338,10 +338,16 @@ fn render3d_execute_camera(
     prepass_deferred_texture_id=prepass_deferred_target_id,
     prepass_deferred_lighting_pass_id_texture_id=prepass_deferred_lighting_pass_id_target_id,
   )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_order_main_pass_complete", 1,
+  )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
     RENDER3D_CAMERA_MAIN_PASS_TRACE,
     trace_camera_main_pass_start_us,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_order_volumetric_fog_begin", 1,
   )
   let trace_camera_volumetric_fog_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -359,6 +365,12 @@ fn render3d_execute_camera(
     @app.TimelineTraceCategory::RenderQueue,
     RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE,
     trace_camera_volumetric_fog_start_us,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_order_volumetric_fog_complete", 1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_order_postprocess_begin", 1,
   )
   let trace_camera_postprocess_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -403,6 +415,9 @@ fn render3d_execute_camera(
     @app.TimelineTraceCategory::RenderQueue,
     RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE,
     trace_camera_postprocess_start_us,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_order_postprocess_complete", 1,
   )
   let overlay_scale_factor = if camera.scale_factor <= 0.0F {
     1.0F

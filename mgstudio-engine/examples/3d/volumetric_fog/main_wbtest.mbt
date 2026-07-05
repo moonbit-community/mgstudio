@@ -629,7 +629,16 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   let textured_pipeline_target_format = Ref(false)
   let textureless_pipeline_msaa_sample_count = Ref(false)
   let textured_pipeline_msaa_sample_count = Ref(false)
+  let skybox_drawn_index = Ref(-1)
+  let main_pass_complete_index = Ref(-1)
+  let fog_begin_index = Ref(-1)
+  let fog_complete_index = Ref(-1)
+  let postprocess_begin_index = Ref(-1)
+  let postprocess_complete_index = Ref(-1)
+  let transparent_not_applicable = Ref(false)
+  let counter_index = Ref(0)
   for counter in counters {
+    let current_counter_index = counter_index.val
     if counter.name() == "render_3d_volumetric_fog_views" &&
       counter.value() > 0.0 {
       volumetric_view_counter.val = true
@@ -676,6 +685,10 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
     if counter.name() == "render_3d_volumetric_fog_pipeline_textured" &&
       counter.value() > 0.0 {
       textured_pipeline_counter.val = true
+    }
+    if counter.name() == "render_3d_main_pass_transparent_items" &&
+      counter.value() == 0.0 {
+      transparent_not_applicable.val = true
     }
     if counter.name() ==
       "render_3d_volumetric_fog_pipeline_textureless_shadow_filter_hardware_2x2" &&
@@ -738,6 +751,32 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
       counter.value() > 1.0 {
       textured_pipeline_msaa_sample_count.val = true
     }
+    if counter.name() ==
+      "render_3d_main_pass_skybox_drawn_before_volumetric_fog" &&
+      skybox_drawn_index.val < 0 {
+      skybox_drawn_index.val = current_counter_index
+    }
+    if counter.name() == "render_3d_camera_order_main_pass_complete" &&
+      main_pass_complete_index.val < 0 {
+      main_pass_complete_index.val = current_counter_index
+    }
+    if counter.name() == "render_3d_camera_order_volumetric_fog_begin" &&
+      fog_begin_index.val < 0 {
+      fog_begin_index.val = current_counter_index
+    }
+    if counter.name() == "render_3d_camera_order_volumetric_fog_complete" &&
+      fog_complete_index.val < 0 {
+      fog_complete_index.val = current_counter_index
+    }
+    if counter.name() == "render_3d_camera_order_postprocess_begin" &&
+      postprocess_begin_index.val < 0 {
+      postprocess_begin_index.val = current_counter_index
+    }
+    if counter.name() == "render_3d_camera_order_postprocess_complete" &&
+      postprocess_complete_index.val < 0 {
+      postprocess_complete_index.val = current_counter_index
+    }
+    counter_index.val = counter_index.val + 1
   }
 
   let render_world = app.sub_app(@app.RenderApp).world()
@@ -811,6 +850,25 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   debug_inspect(textured_pipeline_target_format.val, content="true")
   debug_inspect(textureless_pipeline_msaa_sample_count.val, content="true")
   debug_inspect(textured_pipeline_msaa_sample_count.val, content="true")
+  debug_inspect(transparent_not_applicable.val, content="true")
+  debug_inspect(skybox_drawn_index.val >= 0, content="true")
+  debug_inspect(
+    skybox_drawn_index.val < main_pass_complete_index.val,
+    content="true",
+  )
+  debug_inspect(
+    main_pass_complete_index.val < fog_begin_index.val,
+    content="true",
+  )
+  debug_inspect(fog_begin_index.val < fog_complete_index.val, content="true")
+  debug_inspect(
+    fog_complete_index.val < postprocess_begin_index.val,
+    content="true",
+  )
+  debug_inspect(
+    postprocess_begin_index.val < postprocess_complete_index.val,
+    content="true",
+  )
   debug_inspect(render_view_count.val > 0, content="true")
   debug_inspect(view_fog_count_positive.val, content="true")
   debug_inspect(view_fog_count_one.val, content="true")

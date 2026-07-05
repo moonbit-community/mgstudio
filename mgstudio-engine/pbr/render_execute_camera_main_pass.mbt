@@ -1032,12 +1032,15 @@ fn render3d_execute_camera_main_pass(
   )
   render3d_draw_mesh_gpu_binned_phase(main_phase)
   render3d_draw_gizmo_lines_3d(camera_entity, camera)
-  ignore(
-    @core_pipeline.main_opaque_pass_3d_draw_skybox(
-      world,
-      extracted_camera.entity.render_entity,
-    ),
+  let skybox_drawn = @core_pipeline.main_opaque_pass_3d_draw_skybox(
+    world,
+    extracted_camera.entity.render_entity,
   )
+  if skybox_drawn {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_main_pass_skybox_drawn_before_volumetric_fog", 1,
+    )
+  }
   if camera.atmosphere is Some(_) {
     @render.host_gpu_draw_mesh3d_atmosphere_sky(
       camera_key_hi=camera_entity.id,
