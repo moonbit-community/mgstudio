@@ -479,6 +479,9 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+  .insert_resource(
+    @camera.ClearColor::new(@color.Color::srgba(0.02F, 0.02F, 0.02F, 1.0F)),
+  )
   .insert_resource(AppSettings::AppSettings())
   .add_systems_world(@app.Startup, setup)
   .add_systems_param2(@app.Update, tweak_scene)

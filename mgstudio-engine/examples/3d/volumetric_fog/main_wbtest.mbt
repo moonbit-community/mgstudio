@@ -290,6 +290,37 @@ test "volumetric_fog: AppSettings and help text match Bevy defaults" {
 }
 
 ///|
+test "volumetric_fog: app resources match Bevy clear and ambient defaults" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .insert_resource(
+      @camera.ClearColor::new(@color.Color::srgba(0.02F, 0.02F, 0.02F, 1.0F)),
+    )
+    .insert_resource(AppSettings::AppSettings())
+    .add_systems_world(@app.Startup, setup)
+  app = app.run_once()
+  let world = app.world()
+  guard world.get_resource(@camera.ClearColor::resource()) is Some(clear_color) else {
+    abort("expected ClearColor resource")
+  }
+  let (clear_r, clear_g, clear_b, clear_a) = clear_color.color.to_srgba_tuple()
+  debug_inspect(approx_eq(clear_r, 0.02F), content="true")
+  debug_inspect(approx_eq(clear_g, 0.02F), content="true")
+  debug_inspect(approx_eq(clear_b, 0.02F), content="true")
+  debug_inspect(approx_eq(clear_a, 1.0F), content="true")
+  guard world.get_resource(@pbr.ecs_key_global_ambient_light) is Some(ambient) else {
+    abort("expected GlobalAmbientLight resource")
+  }
+  let (ambient_r, ambient_g, ambient_b, ambient_a) = ambient.color.to_srgba_tuple()
+  debug_inspect(approx_eq(ambient_r, 1.0F), content="true")
+  debug_inspect(approx_eq(ambient_g, 1.0F), content="true")
+  debug_inspect(approx_eq(ambient_b, 1.0F), content="true")
+  debug_inspect(approx_eq(ambient_a, 1.0F), content="true")
+  debug_inspect(approx_eq(ambient.brightness, 0.0F), content="true")
+  debug_inspect(ambient.affects_lightmapped_meshes, content="true")
+}
+
+///|
 test "volumetric_fog: AppSettings toggles follow Bevy P and L keys" {
   let input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
   input.press(@window.KeyCode::KeyP)
