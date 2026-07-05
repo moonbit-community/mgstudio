@@ -26,6 +26,54 @@ fn volumetric_fog_uniform_u32_at(bytes : Bytes, byte_offset : Int) -> UInt {
 }
 
 ///|
+fn clustered_light_word(
+  bytes : Bytes,
+  light_index : Int,
+  word_index : Int,
+) -> UInt {
+  volumetric_fog_uniform_u32_at(bytes, (light_index * 20 + word_index) * 4)
+}
+
+///|
+fn clustered_light_word_matches_f32(
+  bytes : Bytes,
+  light_index : Int,
+  word_index : Int,
+  value : Float,
+) -> Bool {
+  clustered_light_word(bytes, light_index, word_index) ==
+  value.reinterpret_as_uint()
+}
+
+///|
+fn clustered_light_expected_flags(
+  clustered : @pbr_render.ExtractedClusterablePointLight3d,
+) -> UInt {
+  let extracted = clustered.light()
+  let mut flags = 0U
+  if extracted.shadow_maps_enabled {
+    flags = flags | (1U << 0)
+  }
+  if clustered.is_spot_light() {
+    flags = flags | (1U << 5)
+    let direction = @pbr_render.render3d_transform_forward(extracted.transform)
+    if direction.y < 0.0F {
+      flags = flags | (1U << 1)
+    }
+  }
+  if extracted.volumetric && extracted.shadow_maps_enabled {
+    flags = flags | (1U << 2)
+  }
+  if extracted.affects_lightmapped_mesh_diffuse {
+    flags = flags | (1U << 3)
+  }
+  if extracted.contact_shadows_enabled {
+    flags = flags | (1U << 4)
+  }
+  flags
+}
+
+///|
 fn volumetric_fog_uniform_words(bytes : Bytes) -> Array[UInt] {
   let words : Array[UInt] = []
   for index in 0..<70 {
@@ -960,6 +1008,356 @@ test "volumetric_fog: directional shadow cascade records match Bevy packing" {
       content="true",
     )
   }
+}
+
+///|
+test "volumetric_fog: clustered point and spot light GPU values match Bevy packing" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .insert_resource(AppSettings::AppSettings())
+    .add_systems_world(@app.Startup, setup)
+    .add_systems_param2(@app.Update, tweak_scene)
+    .add_systems_param2(@app.Update, move_directional_light)
+    .add_systems_param2(@app.Update, move_point_light)
+    .add_systems_param6(@app.Update, adjust_app_settings)
+  for _ in 0..<6 {
+    app = app.update()
+  }
+
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let lighting = @pbr_render.render3d_collect_lighting(render_world)
+  guard lighting.gpu_clustered_lights_bytes is Some(clustered_bytes) else {
+    debug_inspect("missing", content="clustered")
+    return
+  }
+  let clusterable_lights = @pbr_render.render3d_collect_extracted_clusterable_point_lights(
+    render_world,
+  )
+  debug_inspect(clustered_bytes.length() >= 160, content="true")
+  debug_inspect(clusterable_lights.length() >= 2, content="true")
+  debug_inspect(clusterable_lights[0].is_point_light(), content="true")
+  debug_inspect(clusterable_lights[1].is_spot_light(), content="true")
+
+  let point = clusterable_lights[0].light()
+  let point_projection = @pbr_render.render3d_point_shadow_pass_projection(
+      point.shadow_map_near_z,
+      point.range,
+    ).clip_from_view
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      0,
+      point_projection.z_axis.z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      1,
+      point_projection.z_axis.w,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      2,
+      point_projection.w_axis.z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      3,
+      point_projection.w_axis.w,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      4,
+      point.color.r * point.intensity,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      5,
+      point.color.g * point.intensity,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      6,
+      point.color.b * point.intensity,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      7,
+      1.0F / (point.range * point.range),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      8,
+      point.transform.translation.x,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      9,
+      point.transform.translation.y,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      10,
+      point.transform.translation.z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 0, 11, point.radius),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word(clustered_bytes, 0, 12),
+    content=clustered_light_expected_flags(clusterable_lights[0]).to_string(),
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      13,
+      point.shadow_depth_bias,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      14,
+      point.shadow_normal_bias,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      15,
+      point.shadow_map_near_z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 0, 16, 0.0F),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word(clustered_bytes, 0, 17),
+    content="4294967295",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 0, 18, point.range),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      19,
+      if point.soft_shadows_enabled {
+        point.radius
+      } else {
+        0.0F
+      },
+    ),
+    content="true",
+  )
+
+  let spot = clusterable_lights[1].light()
+  guard spot.spot_light_angles is Some((inner, outer)) else {
+    debug_inspect("missing", content="spot")
+    return
+  }
+  let spot_direction = @pbr_render.render3d_transform_forward(spot.transform)
+  let cos_outer = @math.cos(outer)
+  let raw_denom = @math.cos(inner) - cos_outer
+  let denom = if raw_denom < 0.0001F { 0.0001F } else { raw_denom }
+  let spot_scale = 1.0F / denom
+  let spot_offset = 0.0F - cos_outer * spot_scale
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 0, spot_direction.x),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 1, spot_direction.z),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 2, spot_scale),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 3, spot_offset),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      4,
+      spot.color.r * spot.intensity,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      5,
+      spot.color.g * spot.intensity,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      6,
+      spot.color.b * spot.intensity,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      7,
+      1.0F / (spot.range * spot.range),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      8,
+      spot.transform.translation.x,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      9,
+      spot.transform.translation.y,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      10,
+      spot.transform.translation.z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 11, spot.radius),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word(clustered_bytes, 1, 12),
+    content=clustered_light_expected_flags(clusterable_lights[1]).to_string(),
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      13,
+      spot.shadow_depth_bias,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      14,
+      spot.shadow_normal_bias,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      15,
+      spot.shadow_map_near_z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      16,
+      @math.sin(outer) / @math.cos(outer),
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word(clustered_bytes, 1, 17),
+    content="4294967295",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 18, spot.range),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      19,
+      if spot.soft_shadows_enabled {
+        spot.radius
+      } else {
+        0.0F
+      },
+    ),
+    content="true",
+  )
 }
 
 ///|

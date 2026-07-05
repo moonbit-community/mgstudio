@@ -2001,16 +2001,8 @@ fn render3d_lights_push_clustered_light(
           )
           render3d_lights_push_f32(words, extracted.shadow_depth_bias)
           render3d_lights_push_f32(words, extracted.shadow_normal_bias)
-          render3d_lights_push_f32(words, render3d_tan(outer))
-          render3d_lights_push_f32(
-            words,
-            if extracted.soft_shadows_enabled {
-              extracted.radius
-            } else {
-              0.0F
-            },
-          )
           render3d_lights_push_f32(words, extracted.shadow_map_near_z)
+          render3d_lights_push_f32(words, render3d_tan(outer))
           let decal_index = render3d_clustered_decal_index(
             world,
             extracted.entity,
@@ -2023,7 +2015,15 @@ fn render3d_lights_push_clustered_light(
               0xFFFF_FFFFU
             },
           )
-          render3d_lights_push_f32(words, 0.0F)
+          render3d_lights_push_f32(words, extracted.range)
+          render3d_lights_push_f32(
+            words,
+            if extracted.soft_shadows_enabled {
+              extracted.radius
+            } else {
+              0.0F
+            },
+          )
         }
         _ => {
           let cube_face_projection = render3d_point_shadow_pass_projection(
@@ -2060,16 +2060,8 @@ fn render3d_lights_push_clustered_light(
           )
           render3d_lights_push_f32(words, extracted.shadow_depth_bias)
           render3d_lights_push_f32(words, extracted.shadow_normal_bias)
-          render3d_lights_push_f32(words, 0.0F)
-          render3d_lights_push_f32(
-            words,
-            if extracted.soft_shadows_enabled {
-              extracted.radius
-            } else {
-              0.0F
-            },
-          )
           render3d_lights_push_f32(words, extracted.shadow_map_near_z)
+          render3d_lights_push_f32(words, 0.0F)
           let decal_index = render3d_clustered_decal_index(
             world,
             extracted.entity,
@@ -2082,7 +2074,15 @@ fn render3d_lights_push_clustered_light(
               0xFFFF_FFFFU
             },
           )
-          render3d_lights_push_f32(words, 0.0F)
+          render3d_lights_push_f32(words, extracted.range)
+          render3d_lights_push_f32(
+            words,
+            if extracted.soft_shadows_enabled {
+              extracted.radius
+            } else {
+              0.0F
+            },
+          )
         }
       }
     }

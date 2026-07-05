@@ -1508,7 +1508,7 @@ test "pbr render light: clustered point light reads decal index" {
     return
   }
   inspect(
-    test_u32le_at(clustered, 18 * 4),
+    test_u32le_at(clustered, 17 * 4),
     content=inserted_decal_index.reinterpret_as_uint().to_string(),
   )
 }
