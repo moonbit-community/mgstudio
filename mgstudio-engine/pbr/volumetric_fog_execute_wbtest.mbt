@@ -214,8 +214,6 @@ test "pbr volumetric fog execute: pre-main prepare state consumes prepared rende
       diffuse_texture_ids: [],
       specular_texture_ids: [],
       irradiance_volume_texture_ids: [],
-      reflection_probe_entities: [],
-      irradiance_volume_entities: [],
     },
   )
 

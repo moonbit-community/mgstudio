@@ -379,23 +379,7 @@ fn render3d_execute_camera_main_pass(
     decal_words=decals_buffer.gpu_words(),
     texture_ids=render_decals.texture_ids(),
   )
-  let source_world = @render.render_source_world(world)
   fn prepare_light_probe_bindings() -> Unit {
-    let (
-      gpu_clustered_lights_bytes,
-      gpu_clusterable_object_index_lists_bytes,
-      gpu_cluster_offsets_and_counts_bytes,
-    ) = @pbr_render.render3d_gpu_cluster_buffers_for_reflection_probe_entities(
-      source_world,
-      camera_entity,
-      light_probe_state.reflection_probe_entities,
-      light_probe_state.irradiance_volume_entities,
-    )
-    @render.host_gpu_prepare_mesh3d_cluster_buffers(
-      clustered_lights_bytes=gpu_clustered_lights_bytes,
-      clusterable_object_index_lists_bytes=gpu_clusterable_object_index_lists_bytes,
-      cluster_offsets_and_counts_bytes=gpu_cluster_offsets_and_counts_bytes,
-    )
     @render.host_gpu_prepare_mesh3d_light_probes(
       light_probes_uniform_bytes=light_probe_state.uniform_bytes,
       uniform_offset=light_probe_state.uniform_offset,

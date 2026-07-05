@@ -507,8 +507,6 @@ priv struct Render3dLightProbeState {
   diffuse_texture_ids : Array[Int]
   specular_texture_ids : Array[Int]
   irradiance_volume_texture_ids : Array[Int]
-  reflection_probe_entities : Array[@core.Entity]
-  irradiance_volume_entities : Array[@core.Entity]
 }
 
 ///|
@@ -1036,12 +1034,10 @@ fn render3d_camera_light_probe_state(
   let sorted_irradiance_volumes = render3d_light_probe_sort(irradiance_volumes)
   let words : Array[UInt] = []
   let probe_cubemap_indices : Array[Int] = []
-  let reflection_probe_entities : Array[@core.Entity] = []
   for probe in sorted_probes {
     if probe_cubemap_indices.length() >= @pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
       break
     }
-    reflection_probe_entities.push(probe.entity)
     probe_cubemap_indices.push(
       render3d_light_probe_texture_binding_index(
         diffuse_texture_ids,
@@ -1052,13 +1048,11 @@ fn render3d_camera_light_probe_state(
     )
   }
   let irradiance_volume_indices : Array[Int] = []
-  let irradiance_volume_entities : Array[@core.Entity] = []
   for volume in sorted_irradiance_volumes {
     if irradiance_volume_indices.length() >=
       @pbr_light_probe.MAX_VIEW_LIGHT_PROBES {
       break
     }
-    irradiance_volume_entities.push(volume.entity)
     irradiance_volume_indices.push(
       render3d_light_probe_3d_texture_binding_index(
         irradiance_volume_texture_ids,
@@ -1160,8 +1154,6 @@ fn render3d_camera_light_probe_state(
     irradiance_volume_texture_ids: @pbr_light_probe.pbr_irradiance_volume_texture_id_entries_ids(
       irradiance_volume_entries,
     ),
-    reflection_probe_entities,
-    irradiance_volume_entities,
   }
 }
 
