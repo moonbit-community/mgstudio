@@ -372,6 +372,65 @@ fn render3d_execute_camera(
   @app.timeline_trace_emit_counter_int(
     "render_3d_camera_order_postprocess_begin", 1,
   )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_hdr_enabled",
+    if camera.hdr_enabled {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_bloom_enabled",
+    if bloom_enabled {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_tonemap_postprocess_enabled",
+    if tonemap_postprocess_enabled {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_tonemapping_stage_enabled",
+    if tonemapping_stage_enabled {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_auto_exposure_enabled",
+    if auto_exposure_enabled {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter(
+    "render_3d_camera_postprocess_exposure_value", camera_exposure_value,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_scene_target_is_surface",
+    if scene_target_id < 0 {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_camera_postprocess_camera_target_is_surface",
+    if camera.target_id < 0 {
+      1
+    } else {
+      0
+    },
+  )
   let trace_camera_postprocess_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
     RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE,

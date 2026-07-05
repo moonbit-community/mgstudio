@@ -232,6 +232,9 @@ fn render3d_execute_camera_postprocess(
     } else {
       scene_target_id
     }
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_camera_postprocess_source_texture_id", postprocess_source_texture_id,
+    )
     if postprocess_source_texture_id >= 0 {
       if camera.auto_exposure is Some(auto_exposure_settings) {
         let (
@@ -277,6 +280,9 @@ fn render3d_execute_camera_postprocess(
         @render.host_gpu_end_pass()
       }
       if bloom_enabled && camera.bloom is Some(bloom) {
+        @app.timeline_trace_emit_counter_int(
+          "render_3d_camera_postprocess_bloom_stage", 1,
+        )
         let (
           bloom_viewport_x,
           bloom_viewport_y,
@@ -321,6 +327,9 @@ fn render3d_execute_camera_postprocess(
         (if tonemapping_stage_enabled { 1 } else { 0 }) +
         (if fxaa_postprocess_enabled { 1 } else { 0 }) +
         (if cas_postprocess_enabled { 1 } else { 0 })
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_camera_postprocess_stage_count", postprocess_stage_count,
+      )
       if postprocess_stage_count > 0 {
         let stage_ping_target_id = render3d_transmission_source_target_get_or_create(
           world, camera_entity, view_width, view_height,
@@ -431,6 +440,42 @@ fn render3d_execute_camera_postprocess(
             camera.target_id,
             stage_index,
             postprocess_stage_count,
+          )
+          let tonemapping_exposure_value = match effective_exposure {
+            Some(value) => value.exposure()
+            None => Exposure::Exposure().exposure()
+          }
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_tonemapping_stage", 1,
+          )
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_tonemapping_source_id", current_source_texture_id,
+          )
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_tonemapping_target_is_camera_target",
+            if stage_target_id == camera.target_id {
+              1
+            } else {
+              0
+            },
+          )
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_tonemapping_mode",
+            match camera.tonemapping {
+              Some(mode) => render3d_tonemapping_mode_to_int(mode)
+              None => 0
+            },
+          )
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_tonemapping_hdr_enabled",
+            if camera.hdr_enabled {
+              1
+            } else {
+              0
+            },
+          )
+          @app.timeline_trace_emit_counter(
+            "render_3d_camera_postprocess_tonemapping_exposure_value", tonemapping_exposure_value,
           )
           let (
             tonemapping_viewport_x,
@@ -605,6 +650,9 @@ fn render3d_execute_camera_postprocess(
           ),
         )
         if bloom_enabled {
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_final_copy_tonemapping_resolve", 1,
+          )
           // Bloom can render through an fp16 intermediate even when camera
           // HDR is disabled. Resolve through the postprocess fullscreen
           // shader to avoid dark fp16->surface blits on this path.
@@ -620,6 +668,9 @@ fn render3d_execute_camera_postprocess(
             view_height_logical,
           )
         } else {
+          @app.timeline_trace_emit_counter_int(
+            "render_3d_camera_postprocess_final_copy_sprite_uv", 1,
+          )
           @render.host_gpu_draw_sprite_uv(
             texture_id=postprocess_source_texture_id,
             x=0.0F,
@@ -641,6 +692,9 @@ fn render3d_execute_camera_postprocess(
       }
     }
   } else if final_source_texture_id >= 0 {
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_camera_postprocess_final_source_present", 1,
+    )
     let (
       final_present_viewport_x,
       final_present_viewport_y,

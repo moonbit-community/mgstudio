@@ -636,6 +636,27 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   let postprocess_begin_index = Ref(-1)
   let postprocess_complete_index = Ref(-1)
   let transparent_not_applicable = Ref(false)
+  let expected_default_exposure = @camera_camera.Exposure::Exposure().exposure()
+  let postprocess_hdr_enabled = Ref(false)
+  let postprocess_bloom_enabled = Ref(false)
+  let postprocess_tonemap_enabled = Ref(false)
+  let postprocess_tonemapping_stage_enabled = Ref(false)
+  let postprocess_auto_exposure_disabled = Ref(false)
+  let postprocess_exposure_default = Ref(false)
+  let postprocess_scene_target_texture = Ref(false)
+  let postprocess_camera_target_surface = Ref(false)
+  let postprocess_source_texture = Ref(false)
+  let postprocess_bloom_stage = Ref(false)
+  let postprocess_stage_count_one = Ref(false)
+  let postprocess_tonemapping_stage = Ref(false)
+  let postprocess_tonemapping_source_texture = Ref(false)
+  let postprocess_tonemapping_target_camera = Ref(false)
+  let postprocess_tonemapping_mode_tony = Ref(false)
+  let postprocess_tonemapping_hdr = Ref(false)
+  let postprocess_tonemapping_default_exposure = Ref(false)
+  let postprocess_final_copy_tonemapping_resolve = Ref(false)
+  let postprocess_final_copy_sprite_uv = Ref(false)
+  let postprocess_final_source_present = Ref(false)
   let counter_index = Ref(0)
   for counter in counters {
     let current_counter_index = counter_index.val
@@ -776,6 +797,88 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
       postprocess_complete_index.val < 0 {
       postprocess_complete_index.val = current_counter_index
     }
+    if counter.name() == "render_3d_camera_postprocess_hdr_enabled" &&
+      counter.value() == 1.0 {
+      postprocess_hdr_enabled.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_bloom_enabled" &&
+      counter.value() == 1.0 {
+      postprocess_bloom_enabled.val = true
+    }
+    if counter.name() ==
+      "render_3d_camera_postprocess_tonemap_postprocess_enabled" &&
+      counter.value() == 1.0 {
+      postprocess_tonemap_enabled.val = true
+    }
+    if counter.name() ==
+      "render_3d_camera_postprocess_tonemapping_stage_enabled" &&
+      counter.value() == 1.0 {
+      postprocess_tonemapping_stage_enabled.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_auto_exposure_enabled" &&
+      counter.value() == 0.0 {
+      postprocess_auto_exposure_disabled.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_exposure_value" &&
+      approx_eq(counter.value(), expected_default_exposure) {
+      postprocess_exposure_default.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_scene_target_is_surface" &&
+      counter.value() == 0.0 {
+      postprocess_scene_target_texture.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_camera_target_is_surface" &&
+      counter.value() == 1.0 {
+      postprocess_camera_target_surface.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_source_texture_id" &&
+      counter.value() >= 0.0 {
+      postprocess_source_texture.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_bloom_stage" &&
+      counter.value() == 1.0 {
+      postprocess_bloom_stage.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_stage_count" &&
+      counter.value() == 1.0 {
+      postprocess_stage_count_one.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_tonemapping_stage" &&
+      counter.value() == 1.0 {
+      postprocess_tonemapping_stage.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_tonemapping_source_id" &&
+      counter.value() >= 0.0 {
+      postprocess_tonemapping_source_texture.val = true
+    }
+    if counter.name() ==
+      "render_3d_camera_postprocess_tonemapping_target_is_camera_target" &&
+      counter.value() == 1.0 {
+      postprocess_tonemapping_target_camera.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_tonemapping_mode" &&
+      counter.value() == 6.0 {
+      postprocess_tonemapping_mode_tony.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_tonemapping_hdr_enabled" &&
+      counter.value() == 1.0 {
+      postprocess_tonemapping_hdr.val = true
+    }
+    if counter.name() ==
+      "render_3d_camera_postprocess_tonemapping_exposure_value" &&
+      approx_eq(counter.value(), expected_default_exposure) {
+      postprocess_tonemapping_default_exposure.val = true
+    }
+    if counter.name() ==
+      "render_3d_camera_postprocess_final_copy_tonemapping_resolve" {
+      postprocess_final_copy_tonemapping_resolve.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_final_copy_sprite_uv" {
+      postprocess_final_copy_sprite_uv.val = true
+    }
+    if counter.name() == "render_3d_camera_postprocess_final_source_present" {
+      postprocess_final_source_present.val = true
+    }
     counter_index.val = counter_index.val + 1
   }
 
@@ -869,6 +972,26 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
     postprocess_begin_index.val < postprocess_complete_index.val,
     content="true",
   )
+  debug_inspect(postprocess_hdr_enabled.val, content="true")
+  debug_inspect(postprocess_bloom_enabled.val, content="true")
+  debug_inspect(postprocess_tonemap_enabled.val, content="true")
+  debug_inspect(postprocess_tonemapping_stage_enabled.val, content="true")
+  debug_inspect(postprocess_auto_exposure_disabled.val, content="true")
+  debug_inspect(postprocess_exposure_default.val, content="true")
+  debug_inspect(postprocess_scene_target_texture.val, content="true")
+  debug_inspect(postprocess_camera_target_surface.val, content="true")
+  debug_inspect(postprocess_source_texture.val, content="true")
+  debug_inspect(postprocess_bloom_stage.val, content="true")
+  debug_inspect(postprocess_stage_count_one.val, content="true")
+  debug_inspect(postprocess_tonemapping_stage.val, content="true")
+  debug_inspect(postprocess_tonemapping_source_texture.val, content="true")
+  debug_inspect(postprocess_tonemapping_target_camera.val, content="true")
+  debug_inspect(postprocess_tonemapping_mode_tony.val, content="true")
+  debug_inspect(postprocess_tonemapping_hdr.val, content="true")
+  debug_inspect(postprocess_tonemapping_default_exposure.val, content="true")
+  debug_inspect(!postprocess_final_copy_tonemapping_resolve.val, content="true")
+  debug_inspect(!postprocess_final_copy_sprite_uv.val, content="true")
+  debug_inspect(!postprocess_final_source_present.val, content="true")
   debug_inspect(render_view_count.val > 0, content="true")
   debug_inspect(view_fog_count_positive.val, content="true")
   debug_inspect(view_fog_count_one.val, content="true")
