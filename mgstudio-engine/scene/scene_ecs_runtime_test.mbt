@@ -38,6 +38,9 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let has_target = Ref(false)
   let has_animated_by = Ref(false)
   let animated_by_points_to_player = Ref(false)
+  let material_key : @ecs.ComponentKey[
+    @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
+  ] = @pbr.MeshMaterial3dTyped::component()
   let instance_after_second_tick = Ref(0)
   ignore(instance_after_second_tick)
   let ready_event_count_after_second_tick = Ref(0)
@@ -57,7 +60,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   .add_plugins(@time.TimePlugin::TimePlugin())
   .add_system(fn(world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -117,10 +120,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     let child = children[0]
     has_mesh.val = (try! world.get_by_key(child, @pbr.ecs_key_mesh3d))
       is Some(_)
-    has_material.val = (try! world.get_by_key(
-        child, @pbr.ecs_key_mesh_material3d,
-      ))
-      is Some(_)
+    has_material.val = (try! world.get_by_key(child, material_key)) is Some(_)
     has_transform.val = (try! world.get_by_key(
         child, @transform.ecs_key_transform,
       ))
@@ -204,7 +204,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     let second_path = @gltf.GltfAssetLabel::Scene(2).from_asset(
       "models/Foo/Foo.gltf",
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -286,7 +286,10 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     old_child_alive.val = world.is_alive(first_child)
 
     let second_children : Array[@core.Entity] = []
-    try! parent_query.view(fn(entity, parent) {
+    let second_parent_query : @ecs.Query[@ecs.Read[@hierarchy.Parent], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! second_parent_query.view(fn(entity, parent) {
       if parent.value().entity().id == root.id {
         second_children.push(entity)
       }

@@ -17,7 +17,7 @@ pub struct SceneNode3d {
   name : @ecs.Name?
   parent_node_index : Int?
   mesh : @mesh.Mesh3d?
-  material : @pbr.MeshMaterial3d?
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?
   aabb : @camera.Aabb?
   camera : @camera_camera.Camera?
   camera3d : @camera.Camera3d?
@@ -49,7 +49,7 @@ pub struct SceneNode3d {
 ///|
 pub fn SceneNode3d::new(
   mesh : @mesh.Mesh3d,
-  material : @pbr.MeshMaterial3d,
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
   transform : @transform.Transform,
   visibility_range : @visibility.VisibilityRange?,
   animation_target : @animation.AnimationTargetId?,

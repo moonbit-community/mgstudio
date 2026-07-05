@@ -868,7 +868,7 @@ test "scene: skinned mesh joints map by gltf node index" {
     let mesh = scene_test_mesh3d_from_mesh_asset(
       @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
     )
     let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
@@ -978,7 +978,7 @@ test "scene: skinned mesh skips when any gltf joint node is unresolved" {
     let mesh = scene_test_mesh3d_from_mesh_asset(
       @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
     )
     let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
@@ -1051,7 +1051,7 @@ test "scene: skinned mesh policy NoFrustumCulling inserts no-frustum component" 
           )
         }),
       )
-      let material = @pbr.MeshMaterial3d::new(
+      let material = @pbr.MeshMaterial3dTyped::new(
         @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
       )
       let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
@@ -1137,7 +1137,7 @@ test "scene: skinned mesh policy BindPose keeps static bounds components unset" 
           )
         }),
       )
-      let material = @pbr.MeshMaterial3d::new(
+      let material = @pbr.MeshMaterial3dTyped::new(
         @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
       )
       let inverse_bindposes_handle = scene_test_add_inverse_bindposes_asset(
@@ -1235,7 +1235,7 @@ test "scene: SceneRoot propagates gltf extras metadata" {
               )
             }),
           ),
-          @pbr.MeshMaterial3d::new(
+          @pbr.MeshMaterial3dTyped::new(
             @pbr.standard_material_add(
               @pbr.StandardMaterial::StandardMaterial(),
             ),
@@ -1338,7 +1338,7 @@ test "scene: spawner inserts primitive aabb component from scene node" {
     let mesh = scene_test_mesh3d_from_mesh_asset(
       @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
     )
     let scene_handle = @scene.scene_register_gltf_scene(
@@ -1549,7 +1549,7 @@ test "scene: spawned gltf nodes include default visibility" {
     let mesh = scene_test_mesh3d_from_mesh_asset(
       @math.Cuboid::new(1.0F, 1.0F, 1.0F),
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
     )
     let scene_handle = @scene.scene_register_gltf_scene(
@@ -1669,7 +1669,7 @@ test "scene: removing SceneRoot despawns spawned children" {
               )
             }),
           ),
-          @pbr.MeshMaterial3d::new(
+          @pbr.MeshMaterial3dTyped::new(
             @pbr.standard_material_add(
               @pbr.StandardMaterial::StandardMaterial(),
             ),
@@ -1735,7 +1735,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     let tick = world.increment_change_tick()
     ignore(tick)
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -1904,7 +1904,7 @@ test "scene: pending SceneInstance retries spawn after scene becomes ready" {
                 )
               }),
             ),
-            @pbr.MeshMaterial3d::new(
+            @pbr.MeshMaterial3dTyped::new(
               @pbr.standard_material_add(
                 @pbr.StandardMaterial::StandardMaterial(),
               ),
@@ -1985,7 +1985,7 @@ test "scene: instance readiness and entity iteration follow Bevy semantics" {
                 )
               }),
             ),
-            @pbr.MeshMaterial3d::new(
+            @pbr.MeshMaterial3dTyped::new(
               @pbr.standard_material_add(
                 @pbr.StandardMaterial::StandardMaterial(),
               ),
@@ -2039,7 +2039,7 @@ test "scene: SceneRoot propagates gltf material name" {
   let material_name = Ref("")
   run_scene_test_app(fn(world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -2108,7 +2108,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     let second_path = @gltf.GltfAssetLabel::Scene(2).from_asset(
       "models/Foo/Foo.gltf",
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -2252,7 +2252,7 @@ test "scene: changed SceneRoot with same handle still respawns instance" {
               )
             }),
           ),
-          @pbr.MeshMaterial3d::new(
+          @pbr.MeshMaterial3dTyped::new(
             @pbr.standard_material_add(
               @pbr.StandardMaterial::StandardMaterial(),
             ),
@@ -2319,7 +2319,7 @@ test "scene: modified scene asset respawns SceneRoot children" {
   let new_child_x = Ref(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -2425,7 +2425,7 @@ test "scene: modified scene asset debounce suppresses rapid respawns" {
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset(
       "models/Foo/Foo.gltf#debounced-reload",
     )
-    let material = @pbr.MeshMaterial3d::new(
+    let material = @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),

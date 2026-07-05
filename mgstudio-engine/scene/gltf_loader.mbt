@@ -3085,9 +3085,9 @@ fn scene_build_material_component(
   loader_settings : @asset.ImageLoaderSettings,
   is_scale_inverted : Bool,
   material_index : Int,
-  material_cache : Array[@pbr.MeshMaterial3d?],
+  material_cache : Array[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?],
   image_cache : Array[@asset.Handle[@asset.Image]?],
-) -> @pbr.MeshMaterial3d? {
+) -> @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]? {
   guard material_index >= 0 && material_index < doc.materials.length() else {
     return None
   }
@@ -3217,7 +3217,9 @@ fn scene_build_material_component(
     )
   }
 
-  let component = @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material))
+  let component = @pbr.MeshMaterial3dTyped::new(
+    @pbr.standard_material_add(material),
+  )
   material_cache[material_index] = Some(component)
   Some(component)
 }
@@ -3763,8 +3765,10 @@ fn scene_build_from_gltf(
   for _ in doc.textures {
     image_cache.push(None)
   }
-  let material_cache : Array[@pbr.MeshMaterial3d?] = []
-  let material_inverted_cache : Array[@pbr.MeshMaterial3d?] = []
+  let material_cache : Array[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?] = []
+  let material_inverted_cache : Array[
+    @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?,
+  ] = []
   for _ in doc.materials {
     material_cache.push(None)
     material_inverted_cache.push(None)
@@ -3792,7 +3796,7 @@ fn scene_build_from_gltf(
     }
   }
 
-  let default_material_component = @pbr.MeshMaterial3d::new(
+  let default_material_component = @pbr.MeshMaterial3dTyped::new(
     @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
   )
   let should_load_meshes = gltf_loader_should_load_meshes(

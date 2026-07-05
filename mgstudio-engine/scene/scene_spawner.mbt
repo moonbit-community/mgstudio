@@ -674,7 +674,7 @@ fn scene_spawn_instance_when_ready(
       )
       if node.material is Some(material) {
         child_writers.push(
-          @ecs.component_writer(@pbr.ecs_key_mesh_material3d, material),
+          @ecs.component_writer(@pbr.MeshMaterial3dTyped::component(), material),
         )
       }
       if node.aabb is Some(aabb) {

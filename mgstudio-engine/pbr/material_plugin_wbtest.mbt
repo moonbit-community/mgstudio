@@ -843,6 +843,37 @@ test "pbr material plugin: typed material extraction marks specialization dirty"
 }
 
 ///|
+test "pbr material plugin: typed specialization collector ignores despawned mesh changes" {
+  let world = @ecs.World::new()
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @mesh.ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(4)),
+  )
+  let material_key : @ecs.ComponentKey[
+    MeshMaterial3dTyped[ParityCustomMaterial],
+  ] = MeshMaterial3dTyped::component()
+  try! world.set_by_key(
+    entity,
+    material_key,
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  ignore(try! world.despawn(entity))
+
+  let changed = collect_entities_needing_typed_material_specialization(
+    world,
+    material_key,
+    @core.SystemTicks::new(0, world.read_change_tick()),
+  )
+  debug_inspect(changed.length(), content="0")
+}
+
+///|
 test "pbr material plugin: first prepared typed material marks specialization dirty" {
   let world = @ecs.World::new()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)

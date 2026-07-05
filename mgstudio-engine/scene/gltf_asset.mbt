@@ -140,7 +140,7 @@ fn scene_load_gltf_root_asset(
     for _ in doc.images {
       image_cache.push(None)
     }
-    let material_cache : Array[@pbr.MeshMaterial3d?] = []
+    let material_cache : Array[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?] = []
     for _ in doc.materials {
       material_cache.push(None)
     }
@@ -152,7 +152,7 @@ fn scene_load_gltf_root_asset(
         is Some(component) else {
         continue
       }
-      let handle = component.material
+      let handle = component.handle()
       materials.push(handle)
       if material_def.name != "" {
         named_materials.push((material_def.name, handle))

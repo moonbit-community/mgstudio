@@ -226,8 +226,8 @@ fn collect_entities_needing_material_specialization(
     entity in source_world
     .changed_components(ecs_key_mesh3d, system_ticks)
     .read() {
-    if (try! source_world.get_by_key(entity, ecs_key_mesh_material3d))
-      is Some(_) {
+    if source_world.is_alive(entity) &&
+      (try! source_world.get_by_key(entity, ecs_key_mesh_material3d)) is Some(_) {
       collect_unique_material_specialization_entity(entities, seen, entity)
     }
   }
@@ -326,6 +326,29 @@ test "pbr render extract: material specialization collector follows mesh and mat
   )
   debug_inspect(second_changed.length(), content="1")
   debug_inspect(second_changed.contains(material_only_changed), content="true")
+}
+
+///|
+test "pbr render extract: material specialization collector ignores despawned mesh changes" {
+  let source_world = @ecs.World::new()
+  let entity = source_world.spawn()
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_mesh3d,
+    @mesh.Mesh3d::new(@asset.Handle::new(60)),
+  )
+  try! source_world.set_by_key(
+    entity,
+    ecs_key_mesh_material3d,
+    MeshMaterial3d::new(@asset.Handle::new(70)),
+  )
+  ignore(try! source_world.despawn(entity))
+
+  let changed = collect_entities_needing_material_specialization(
+    source_world,
+    @core.SystemTicks::new(0, source_world.read_change_tick()),
+  )
+  debug_inspect(changed.length(), content="0")
 }
 
 ///|

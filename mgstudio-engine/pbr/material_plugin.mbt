@@ -1269,7 +1269,8 @@ fn[M] collect_entities_needing_typed_material_specialization(
     entity in source_world
     .changed_components(@mesh.ecs_key_mesh3d, system_ticks)
     .read() {
-    if (try! source_world.get_by_key(entity, material_key)) is Some(_) {
+    if source_world.is_alive(entity) &&
+      (try! source_world.get_by_key(entity, material_key)) is Some(_) {
       collect_unique_material_specialization_entity(entities, seen, entity)
     }
   }
