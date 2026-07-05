@@ -386,6 +386,60 @@ test "light cluster: assign system writes visible point lights into cluster list
 }
 
 ///|
+test "light cluster: spot lights use bevy cone culling inside projected bounds" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    cluster_test_camera(),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera_entity,
+    @transform.Transform::component(),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
+      @math.Vec3::zero(),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
+  )
+  |> ignore)
+  let point = world.spawn()
+  try! (world.set_by_key(
+    point,
+    @light.ecs_key_point_light,
+    @light.PointLight::PointLight().with_range(10.0F),
+  )
+  |> ignore)
+  let spot = world.spawn()
+  try! (world.set_by_key(
+    spot,
+    @light.ecs_key_spot_light,
+    @light.SpotLight::new(
+      @color.Color::white(),
+      1000.0F,
+      10.0F,
+      0.1F,
+      0.25F,
+      false,
+    ),
+  )
+  |> ignore)
+
+  cluster_assign_lights_system(world)
+  let clusters = (try! world.get_by_key(camera_entity, Clusters::component())).unwrap()
+  let mut point_count = 0
+  let mut spot_count = 0
+  for cluster in clusters.clusterable_objects {
+    point_count += cluster.counts.point_lights
+    spot_count += cluster.counts.spot_lights
+  }
+  inspect(point_count > 0, content="true")
+  inspect(spot_count > 0, content="true")
+  inspect(spot_count < point_count, content="true")
+}
+
+///|
 test "light cluster: assign system honors constant far z mode from config" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
