@@ -190,6 +190,70 @@ fn mesh3d_volumetric_fog_view_material_pipeline_id() -> UInt64 {
 }
 
 ///|
+fn mesh3d_volumetric_fog_emit_pass_descriptor_evidence(
+  backend : GpuBackend,
+  pass_state : GpuPassState,
+) -> Unit {
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_target_view_used", 1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_target_is_surface",
+    if pass_state.target_id < 0 {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_target_id",
+    pass_state.target_id,
+  )
+  match current_pass_color_format(backend) {
+    Some(format) =>
+      @app.timeline_trace_emit_counter_int(
+        "render_3d_volumetric_fog_pass_color_format_raw",
+        format.to_u32().reinterpret_as_int(),
+      )
+    None => ()
+  }
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_shader_msaa_sample_count",
+    pass_state.msaa_sample_count,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_render_sample_count",
+    mesh3d_volumetric_fog_pipeline_render_sample_count(
+      pass_state.msaa_sample_count,
+    ).reinterpret_as_int(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_resolve_target_none", 1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_color_load_op_load", 1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_color_store_op_store", 1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_depth_attachment_none", 1,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_depth_input_available",
+    if pass_state.view_depth_texture_id >= 0 {
+      1
+    } else {
+      0
+    },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pass_depth_input_texture_id",
+    pass_state.view_depth_texture_id,
+  )
+}
+
+///|
 pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   self : GpuBackend,
   camera_key_hi : Int,
@@ -218,6 +282,7 @@ pub fn GpuBackend::draw_mesh3d_volumetric_fog(
   guard mesh3d_pass_view_depth_view(self, pass_state) is Some(depth_view) else {
     return
   }
+  mesh3d_volumetric_fog_emit_pass_descriptor_evidence(self, pass_state)
   let resolved_transmission_source_texture_id = if pass_state.transmission_source_texture_id <
     0 {
     ensure_transmission_source_fallback_texture(self).id

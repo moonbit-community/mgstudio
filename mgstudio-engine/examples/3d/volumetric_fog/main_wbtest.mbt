@@ -625,6 +625,10 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   let textured_pipeline_multisampled_flag = Ref(false)
   let textureless_pipeline_atmosphere_flag = Ref(false)
   let textured_pipeline_atmosphere_flag = Ref(false)
+  let textureless_pipeline_target_format = Ref(false)
+  let textured_pipeline_target_format = Ref(false)
+  let textureless_pipeline_msaa_sample_count = Ref(false)
+  let textured_pipeline_msaa_sample_count = Ref(false)
   for counter in counters {
     if counter.name() == "render_3d_volumetric_fog_views" &&
       counter.value() > 0.0 {
@@ -712,6 +716,28 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
       counter.value() == 0.0 {
       textured_pipeline_atmosphere_flag.val = true
     }
+    if counter.name() ==
+      "render_3d_volumetric_fog_pipeline_textureless_target_format_raw" &&
+      counter.value() ==
+      Float::from_int(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.reinterpret_as_int()) {
+      textureless_pipeline_target_format.val = true
+    }
+    if counter.name() ==
+      "render_3d_volumetric_fog_pipeline_textured_target_format_raw" &&
+      counter.value() ==
+      Float::from_int(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.reinterpret_as_int()) {
+      textured_pipeline_target_format.val = true
+    }
+    if counter.name() ==
+      "render_3d_volumetric_fog_pipeline_textureless_msaa_sample_count" &&
+      counter.value() > 1.0 {
+      textureless_pipeline_msaa_sample_count.val = true
+    }
+    if counter.name() ==
+      "render_3d_volumetric_fog_pipeline_textured_msaa_sample_count" &&
+      counter.value() > 1.0 {
+      textured_pipeline_msaa_sample_count.val = true
+    }
   }
 
   let render_world = app.sub_app(@app.RenderApp).world()
@@ -781,6 +807,10 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   debug_inspect(textured_pipeline_multisampled_flag.val, content="true")
   debug_inspect(textureless_pipeline_atmosphere_flag.val, content="true")
   debug_inspect(textured_pipeline_atmosphere_flag.val, content="true")
+  debug_inspect(textureless_pipeline_target_format.val, content="true")
+  debug_inspect(textured_pipeline_target_format.val, content="true")
+  debug_inspect(textureless_pipeline_msaa_sample_count.val, content="true")
+  debug_inspect(textured_pipeline_msaa_sample_count.val, content="true")
   debug_inspect(render_view_count.val > 0, content="true")
   debug_inspect(view_fog_count_positive.val, content="true")
   debug_inspect(view_fog_count_one.val, content="true")

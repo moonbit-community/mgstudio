@@ -201,6 +201,7 @@ fn render3d_prepare_volumetric_fog_pipeline_id(
 fn render3d_trace_volumetric_fog_pipeline_variant(
   key : @pbr_volumetric_fog.VolumetricFogPipelineKey,
   pipeline_id : Int,
+  msaa_sample_count : Int,
 ) -> Unit {
   guard pipeline_id > 0 else { return }
   let variant = if key.has_density_texture() {
@@ -226,6 +227,14 @@ fn render3d_trace_volumetric_fog_pipeline_variant(
     } else {
       0
     },
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" + variant + "_target_format_raw",
+    key.target_format().reinterpret_as_int(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "render_3d_volumetric_fog_pipeline_" + variant + "_msaa_sample_count",
+    msaa_sample_count,
   )
   @app.timeline_trace_emit_counter_int(
     "render_3d_volumetric_fog_pipeline_" + variant + "_multisampled",
@@ -280,7 +289,10 @@ fn render3d_prepare_volumetric_fog_pipelines(
           key, msaa_sample_count,
         )
         match pipeline_id {
-          Some(id) => render3d_trace_volumetric_fog_pipeline_variant(key, id)
+          Some(id) =>
+            render3d_trace_volumetric_fog_pipeline_variant(
+              key, id, msaa_sample_count,
+            )
           None => ()
         }
         pipeline_id
@@ -303,7 +315,10 @@ fn render3d_prepare_volumetric_fog_pipelines(
           key, msaa_sample_count,
         )
         match pipeline_id {
-          Some(id) => render3d_trace_volumetric_fog_pipeline_variant(key, id)
+          Some(id) =>
+            render3d_trace_volumetric_fog_pipeline_variant(
+              key, id, msaa_sample_count,
+            )
           None => ()
         }
         pipeline_id
