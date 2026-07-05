@@ -88,7 +88,6 @@ fn spawn_scene_geometry(
     commands.spawn(
       (
         @mesh.Mesh3d::new(ground_mesh),
-        @pbr.MeshMaterial3d::new(ground_material),
         @pbr.MeshMaterial3dTyped::new(ground_material),
         @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
       ),
@@ -98,7 +97,6 @@ fn spawn_scene_geometry(
     commands.spawn(
       (
         @mesh.Mesh3d::new(pillar_mesh),
-        @pbr.MeshMaterial3d::new(pillar_material),
         @pbr.MeshMaterial3dTyped::new(pillar_material),
         @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
       ),

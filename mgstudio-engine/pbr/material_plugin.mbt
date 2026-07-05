@@ -589,6 +589,14 @@ pub fn[M] RenderMaterial3dInstances::set(
 }
 
 ///|
+pub fn[M] RenderMaterial3dInstances::remove(
+  self : RenderMaterial3dInstances[M],
+  entity : @core.Entity,
+) -> Unit {
+  ignore(self.instances.remove(material_entity_key(entity)))
+}
+
+///|
 pub fn[M] RenderMaterial3dInstances::clear(
   self : RenderMaterial3dInstances[M],
 ) -> Unit {
@@ -1276,6 +1284,44 @@ fn[M] collect_entities_needing_typed_material_specialization(
 }
 
 ///|
+fn[M] collect_changed_typed_mesh_material_entities(
+  source_world : @ecs.World,
+  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
+  system_ticks : @core.SystemTicks,
+) -> Map[UInt64, @core.Entity] {
+  let changed_entities : Map[UInt64, @core.Entity] = {}
+  for
+    entity in source_world
+    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
+    .read() {
+    changed_entities.set(entity.to_bits(), entity)
+  }
+  for
+    entity in source_world.changed_components(material_key, system_ticks).read() {
+    changed_entities.set(entity.to_bits(), entity)
+  }
+  changed_entities
+}
+
+///|
+fn[M] collect_removed_typed_mesh_material_entities(
+  source_world : @ecs.World,
+  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
+  system_ticks : @core.SystemTicks,
+) -> Array[@core.Entity] {
+  let removed_entities : Map[UInt64, @core.Entity] = {}
+  for
+    entity in source_world.removed_components(material_key, system_ticks).read() {
+    removed_entities.set(entity.to_bits(), entity)
+  }
+  let values : Array[@core.Entity] = []
+  for _, entity in removed_entities {
+    values.push(entity)
+  }
+  values
+}
+
+///|
 pub fn[M] prepared_material_handle_for_entity(
   entity : @core.Entity,
   material_instances : RenderMaterial3dInstances[M],
@@ -1590,10 +1636,16 @@ fn[M : Material + @asset.Asset] material_plugin_build(
       ),
     )
     .add_systems(
-      @render.render_schedule_stage(),
+      @render.render_extract_schedule_stage(),
       @app.system(fn(world : @ecs.World) {
         extract_mesh_materials_system(world, probe)
       }).in_set(material_extraction_systems),
+    )
+    .add_systems(
+      @render.render_extract_schedule_stage(),
+      @app.system(fn(world : @ecs.World) {
+        early_sweep_material_instances_system(world, probe)
+      }).in_set(early_sweep_material_instances_set),
     )
     .add_systems(
       @render.render_schedule_stage(),
@@ -1647,11 +1699,24 @@ fn[M : Material] extract_mesh_materials_system(
     None => abort("missing RenderMaterialShaderPaths resource")
   }
   let shader_paths = material_shader_asset_paths(_probe)
+  let system_ticks = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(global_value) => global_value.source_system_ticks(source_world)
+    None => @core.SystemTicks::new(0, source_world.read_change_tick())
+  }
   instances.modify(fn(value) {
     material_shader_paths.modify(fn(paths) {
-      value.clear()
-      source_world.for_each_component(material_key, fn(entity, material) {
-        value.set(entity, material.handle())
+      let changed_entities = collect_changed_typed_mesh_material_entities(
+        source_world, material_key, system_ticks,
+      )
+      for _, entity in changed_entities {
+        if !source_world.is_alive(entity) {
+          continue
+        }
+        guard (try! source_world.get_by_key(entity, material_key))
+          is Some(material) else {
+          continue
+        }
         let view_visible = match
           (try! source_world.get_by_key(
             entity, @visibility.ecs_key_view_visibility,
@@ -1659,6 +1724,7 @@ fn[M : Material] extract_mesh_materials_system(
           Some(view_visibility) => view_visibility.is_visible()
           None => false
         }
+        value.set(entity, material.handle())
         if view_visible {
           for path in shader_paths {
             paths.insert(Some(path))
@@ -1675,14 +1741,9 @@ fn[M : Material] extract_mesh_materials_system(
             })
           None => ()
         }
-      })
+      }
     })
   })
-  let system_ticks = match
-    world.get_resource(ecs_key_render_material_instances) {
-    Some(global_value) => global_value.source_system_ticks(source_world)
-    None => @core.SystemTicks::new(0, source_world.read_change_tick())
-  }
   let specialization_entities = collect_entities_needing_typed_material_specialization(
     source_world, material_key, system_ticks,
   )
@@ -1705,6 +1766,43 @@ fn[M : Material] extract_mesh_materials_system(
       }
     })
   })
+}
+
+///|
+fn[M : Material] early_sweep_material_instances_system(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  _probe |> ignore
+  let source_world = @render.render_source_world(world)
+  let material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]] = MeshMaterial3dTyped::component()
+  let system_ticks = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(global_value) => global_value.source_system_ticks(source_world)
+    None => @core.SystemTicks::new(0, source_world.read_change_tick())
+  }
+  let removed_materials = collect_removed_typed_mesh_material_entities(
+    source_world, material_key, system_ticks,
+  )
+  let instances_key : @ecs.ResourceKey[RenderMaterial3dInstances[M]] = RenderMaterial3dInstances::resource()
+  match world.get_resource_mut(instances_key) {
+    Some(typed_instances) =>
+      typed_instances.modify(fn(value) {
+        for entity in removed_materials {
+          value.remove(entity)
+        }
+      })
+    None => ()
+  }
+  match world.get_resource_mut(ecs_key_render_material_instances) {
+    Some(global_instances) =>
+      global_instances.modify(fn(value) {
+        for entity in removed_materials {
+          ignore(value.early_sweep_removed_mesh_material(entity))
+        }
+      })
+    None => ()
+  }
 }
 
 ///|

@@ -566,6 +566,7 @@ test "pbr material plugin: typed material extraction fills Bevy render material 
     MeshMaterial3dTyped::component(),
     MeshMaterial3dTyped::new(material_handle),
   )
+  world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
   match world.get_resource(ecs_key_render_material_shader_paths) {
     Some(paths) => {
@@ -645,6 +646,7 @@ test "pbr material plugin: removed typed material unloads prepared binding" {
     MeshMaterial3dTyped::component(),
     MeshMaterial3dTyped::new(material_handle),
   )
+  world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
   prepare_material_assets_system(world, probe)
   let prepared_assets_key : @ecs.ResourceKey[
@@ -712,6 +714,68 @@ test "pbr material plugin: removed typed material unloads prepared binding" {
       )
     }
     None => abort("missing DirtySpecializations")
+  }
+}
+
+///|
+test "pbr material plugin: typed material removal sweeps Bevy render material tables" {
+  let world = @ecs.World::new()
+  let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
+  let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
+  let material_handle = material_assets.add(
+    ParityCustomMaterial::ParityCustomMaterial(),
+  )
+  world.insert_resource(@asset.assets_resource_key(), material_assets)
+  ensure_render_material_instances_resource_in_world(world, probe)
+  world.insert_resource(
+    ecs_key_render_material_instances,
+    RenderMaterialInstances::RenderMaterialInstances(),
+  )
+  let typed_instances_key : @ecs.ResourceKey[
+    RenderMaterial3dInstances[ParityCustomMaterial],
+  ] = RenderMaterial3dInstances::resource()
+  let material_key : @ecs.ComponentKey[
+    MeshMaterial3dTyped[ParityCustomMaterial],
+  ] = MeshMaterial3dTyped::component()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
+  try! world.set_by_key(
+    entity,
+    material_key,
+    MeshMaterial3dTyped::new(material_handle),
+  )
+  world.increment_change_tick() |> ignore
+  extract_mesh_materials_system(world, probe)
+  match world.get_resource(typed_instances_key) {
+    Some(instances) =>
+      debug_inspect(instances.get(entity) is Some(_), content="true")
+    None => abort("missing typed RenderMaterial3dInstances")
+  }
+  match world.get_resource(ecs_key_render_material_instances) {
+    Some(instances) =>
+      debug_inspect(instances.get(entity) is Some(_), content="true")
+    None => abort("missing RenderMaterialInstances")
+  }
+  late_sweep_material_instances(world)
+
+  world.increment_change_tick() |> ignore
+  ignore(try! world.remove_by_key(entity, material_key))
+  world.increment_change_tick() |> ignore
+  early_sweep_material_instances_system(world, probe)
+
+  match world.get_resource(typed_instances_key) {
+    Some(instances) =>
+      debug_inspect(instances.get(entity) is None, content="true")
+    None => abort("missing typed RenderMaterial3dInstances")
+  }
+  match world.get_resource(ecs_key_render_material_instances) {
+    Some(instances) =>
+      debug_inspect(instances.get(entity) is None, content="true")
+    None => abort("missing RenderMaterialInstances")
   }
 }
 
@@ -808,6 +872,7 @@ test "pbr material plugin: first prepared typed material marks specialization di
     MeshMaterial3dTyped::component(),
     MeshMaterial3dTyped::new(material_handle),
   )
+  world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
   match
     world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
@@ -860,6 +925,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
     MeshMaterial3dTyped::component(),
     MeshMaterial3dTyped::new(material_handle),
   )
+  world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
   prepare_material_assets_system(world, probe)
   match
@@ -923,6 +989,7 @@ test "pbr material plugin: runtime registry resolves typed material properties" 
     MeshMaterial3dTyped::component(),
     MeshMaterial3dTyped::new(material_handle),
   )
+  world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
   prepare_material_assets_system(world, probe)
   let registry = match world.get_resource(MaterialRuntimeRegistry::resource()) {

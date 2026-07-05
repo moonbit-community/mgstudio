@@ -124,6 +124,7 @@ test "scrolling_fog: Bevy scene authoring inputs reach source world" {
   let ground_count = Ref(0)
   let pillar_count = Ref(0)
   let material_count = Ref(0)
+  let legacy_material_count = Ref(0)
   let material_key : @ecs.ComponentKey[
     @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
   ] = @pbr.MeshMaterial3dTyped::component()
@@ -148,8 +149,15 @@ test "scrolling_fog: Bevy scene authoring inputs reach source world" {
   world.for_each_component(material_key, fn(_entity, _material) {
     material_count.val = material_count.val + 1
   })
+  world.for_each_component(@pbr.ecs_key_mesh_material3d, fn(
+    _entity,
+    _material,
+  ) {
+    legacy_material_count.val = legacy_material_count.val + 1
+  })
   debug_inspect(mesh_count.val, content="2")
   debug_inspect(material_count.val, content="2")
+  debug_inspect(legacy_material_count.val, content="0")
   debug_inspect(ground_count.val, content="1")
   debug_inspect(pillar_count.val, content="1")
 }

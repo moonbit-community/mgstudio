@@ -2540,6 +2540,7 @@ pub struct RenderMaterial3dInstances[M] {
 pub fn[M] RenderMaterial3dInstances::clear(Self[M]) -> Unit
 pub fn[M] RenderMaterial3dInstances::get(Self[M], @core.Entity) -> @asset.Handle[M]?
 pub fn[M] RenderMaterial3dInstances::new() -> Self[M]
+pub fn[M] RenderMaterial3dInstances::remove(Self[M], @core.Entity) -> Unit
 pub fn[M] RenderMaterial3dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
 pub impl[M : Material] @app.Resource for RenderMaterial3dInstances[M]
 
