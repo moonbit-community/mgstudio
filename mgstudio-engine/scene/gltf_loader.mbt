@@ -3491,6 +3491,42 @@ fn scene_compute_missing_gltf_flat_normals(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_gltf/src/loader/gltf_ext/material.rs::needs_tangents`.
+fn scene_gltf_material_needs_tangents(
+  doc : ParsedGltfDocument,
+  primitive : GltfPrimitiveDef,
+) -> Bool {
+  guard primitive.material is Some(material_index) else { return false }
+  guard material_index >= 0 && material_index < doc.materials.length() else {
+    return false
+  }
+  let material = doc.materials[material_index]
+  material.normal_texture is Some(_) ||
+  material.clearcoat_normal_texture is Some(_)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_gltf/src/loader/mod.rs`.
+fn scene_generate_missing_gltf_tangents(
+  doc : ParsedGltfDocument,
+  primitive : GltfPrimitiveDef,
+  geometry : @mesh.Mesh3dGeometry,
+) -> @mesh.Mesh3dGeometry {
+  if geometry.has_tangents() ||
+    !geometry.has_normals() ||
+    !scene_gltf_material_needs_tangents(doc, primitive) {
+    return geometry
+  }
+  let tangent_error = geometry.generate_tangents()
+  if tangent_error is Some(err) {
+    @log.warn(
+      "Failed to generate vertex tangents using the mikktspace algorithm: \{to_repr(err).to_string()}",
+    )
+  }
+  geometry
+}
+
+///|
 fn scene_gltf_primitive_aabb(
   doc : ParsedGltfDocument,
   primitive : GltfPrimitiveDef,
@@ -3690,6 +3726,7 @@ fn scene_build_mesh_primitive_from_gltf(
     Some(value) => geometry = value
     None => return None
   }
+  geometry = scene_generate_missing_gltf_tangents(doc, primitive, geometry)
   guard geometry.validate() is None else { return None }
   Some(@mesh.Mesh::from_3d_geometry(geometry))
 }

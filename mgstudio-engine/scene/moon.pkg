@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/log",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",

@@ -749,6 +749,58 @@ test "scene gltf wb: mesh primitive builder computes missing flat normals like B
 }
 
 ///|
+test "scene gltf wb: mesh primitive builder generates missing tangents when material needs them like Bevy" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0}],\"materials\":[{\"normalTexture\":{\"index\":0}}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":0,\"NORMAL\":1,\"TEXCOORD_0\":2},\"material\":0}]}],\"buffers\":[{\"byteLength\":36},{\"byteLength\":36},{\"byteLength\":24}],\"bufferViews\":[{\"buffer\":0,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":1,\"byteOffset\":0,\"byteLength\":36},{\"buffer\":2,\"byteOffset\":0,\"byteLength\":24}],\"accessors\":[{\"bufferView\":0,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":1,\"componentType\":5126,\"count\":3,\"type\":\"VEC3\"},{\"bufferView\":2,\"componentType\":5126,\"count\":3,\"type\":\"VEC2\"}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  let positions : Array[Byte] = []
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 0.0F)
+  push_f32_le(positions, 1.0F)
+  push_f32_le(positions, 0.0F)
+  let normals : Array[Byte] = []
+  for _ in 0..<3 {
+    push_f32_le(normals, 0.0F)
+    push_f32_le(normals, 0.0F)
+    push_f32_le(normals, 1.0F)
+  }
+  let uvs : Array[Byte] = []
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 1.0F)
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 0.0F)
+  push_f32_le(uvs, 1.0F)
+  let mesh = scene_build_mesh_primitive_from_gltf(
+    doc,
+    [
+      Bytes::from_array(positions),
+      Bytes::from_array(normals),
+      Bytes::from_array(uvs),
+    ],
+    0,
+    0,
+    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+  ).unwrap()
+  let geometry = mesh.as_3d_geometry().unwrap()
+  debug_inspect(geometry.has_tangents(), content="true")
+  let tangent = geometry.tangent(0).unwrap()
+  debug_inspect(
+    (
+      tangent.x.to_double(),
+      tangent.y.to_double(),
+      tangent.z.to_double(),
+      tangent.w.to_double(),
+    ),
+    content="(1, 0, 0, 1)",
+  )
+}
+
+///|
 test "scene gltf wb: parse KHR_materials_clearcoat" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_clearcoat\":{\"clearcoatFactor\":0.7,\"clearcoatRoughnessFactor\":0.2,\"clearcoatTexture\":{\"index\":3},\"clearcoatRoughnessTexture\":{\"index\":4},\"clearcoatNormalTexture\":{\"index\":5}}}}]}"
   let doc = gltf_parse_document(source).unwrap()
