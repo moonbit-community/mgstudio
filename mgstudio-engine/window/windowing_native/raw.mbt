@@ -269,6 +269,7 @@ priv struct NativePumpHandler {}
 ///|
 priv struct WindowingNativeRuntimeState {
   open_window_ids : Array[Int]
+  close_requested_window_ids : Array[Int]
   closed_window_ids : Array[Int]
   key_down : Array[Bool]
   key_just_pressed : Array[Bool]
@@ -314,6 +315,7 @@ priv struct WindowingNativeRuntimeState {
 ///|
 let windowing_native_runtime_state : WindowingNativeRuntimeState = {
   open_window_ids: [],
+  close_requested_window_ids: [],
   closed_window_ids: [],
   key_down: new_bool_state(KEY_COUNT),
   key_just_pressed: new_bool_state(KEY_COUNT),
@@ -368,6 +370,7 @@ fn remove_int(items : Array[Int], value : Int) -> Unit {
 
 ///|
 fn mark_window_open(window : Int) -> Unit {
+  remove_int(windowing_native_runtime_state.close_requested_window_ids, window)
   remove_int(windowing_native_runtime_state.closed_window_ids, window)
   if !contains_int(windowing_native_runtime_state.open_window_ids, window) {
     windowing_native_runtime_state.open_window_ids.push(window)
@@ -375,7 +378,18 @@ fn mark_window_open(window : Int) -> Unit {
 }
 
 ///|
+fn mark_window_close_requested(window : Int) -> Unit {
+  if !contains_int(
+      windowing_native_runtime_state.close_requested_window_ids,
+      window,
+    ) {
+    windowing_native_runtime_state.close_requested_window_ids.push(window)
+  }
+}
+
+///|
 fn mark_window_closed(window : Int) -> Unit {
+  remove_int(windowing_native_runtime_state.close_requested_window_ids, window)
   if !contains_int(windowing_native_runtime_state.closed_window_ids, window) {
     windowing_native_runtime_state.closed_window_ids.push(window)
   }
@@ -1116,7 +1130,7 @@ fn process_drag_left(window : Int) -> Unit {
 fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit {
   push_raw_winit_window_events(window, event.into_winit_events())
   match event {
-    CloseRequested => mark_window_closed(window)
+    CloseRequested => mark_window_close_requested(window)
     Destroyed => mark_window_closed(window)
     PointerMoved(_, position, _is_primary, _source) => {
       windowing_native_runtime_state.has_cursor = true
@@ -1471,6 +1485,12 @@ pub fn focused(window : Int) -> Bool {
 
 ///|
 pub fn should_close(window : Int) -> Bool {
+  if contains_int(
+      windowing_native_runtime_state.close_requested_window_ids,
+      window,
+    ) {
+    return true
+  }
   if is_window_closed(window) {
     return true
   }

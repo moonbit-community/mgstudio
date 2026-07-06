@@ -714,6 +714,49 @@ test "winit: close request follows bevy two-frame close lifecycle" {
 }
 
 ///|
+test "winit: native close request keeps host open until ECS closes window" {
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  try! (world
+  .entity_mut(window_entity)
+  .insert_component(@window.Window::Window())
+  |> ignore)
+
+  let mut app = winit_plugin(
+    @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{
+      primary_window: None,
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::DontExit,
+      close_when_requested: true,
+    }),
+  ).run_once()
+  let host_window = match
+    @window.window_host_window_for_ref(
+      app.world(),
+      @window.WindowRef::Entity(window_entity),
+    ) {
+    Some(host_window) => host_window
+    None => abort("missing host window for close request test")
+  }
+
+  @windowing.runner_process_window_event(
+    host_window,
+    @window_core.WindowEvent::CloseRequested,
+  )
+
+  app = app.run_once()
+
+  debug_inspect(app.world().is_alive(window_entity), content="true")
+  debug_inspect(read_window_closing(app.world()).length(), content="1")
+
+  app = app.run_once()
+
+  debug_inspect(app.world().is_alive(window_entity), content="false")
+  debug_inspect(read_window_closed(app.world()).length(), content="1")
+  debug_inspect(read_window_destroyed(app.world()).length(), content="1")
+}
+
+///|
 test "winit: app exit emits WindowClosing for all open windows" {
   let world = @ecs.World::new()
   let window_entity = world.spawn()

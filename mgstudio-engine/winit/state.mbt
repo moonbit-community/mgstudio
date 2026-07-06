@@ -343,6 +343,7 @@ priv struct WinitAppRunnerState {
   mut startup_forced_updates : Int
   mut scheduled_tick_start_ms : Int64?
   request_redraw_cursor : @ecs.MessageCursor[@window.RequestRedraw]
+  close_request_cursor : @ecs.MessageCursor[@window.WindowCloseRequested]
 }
 
 ///|
@@ -378,6 +379,21 @@ fn WinitAppRunnerState::read_app_redraw_requests(
   let reader = world.message_reader(
     @window.RequestRedraw::message(),
     cursor=self.request_redraw_cursor,
+  )
+  reader.read().length() > 0
+}
+
+///|
+fn WinitAppRunnerState::read_app_close_requests(
+  self : WinitAppRunnerState,
+) -> Bool {
+  let world = self.app_ref.val.world()
+  if !world.contains_message(@window.WindowCloseRequested::message()) {
+    return false
+  }
+  let reader = world.message_reader(
+    @window.WindowCloseRequested::message(),
+    cursor=self.close_request_cursor,
   )
   reader.read().length() > 0
 }
@@ -580,10 +596,6 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     @window.window_request_close_all_hosts(self.app_ref.val.world())
     return
   }
-  if self.primary_window > 0 &&
-    @window.host_window_should_close(self.primary_window) {
-    @window.window_request_close_all_hosts(self.app_ref.val.world())
-  }
 }
 
 ///|
@@ -628,6 +640,9 @@ fn WinitAppRunnerState::redraw_requested(
       self.redraw_requested = true
     }
     if self.read_app_redraw_requests() {
+      self.redraw_requested = true
+    }
+    if self.read_app_close_requests() {
       self.redraw_requested = true
     }
   }
@@ -890,6 +905,7 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       startup_forced_updates: 5,
       scheduled_tick_start_ms: None,
       request_redraw_cursor: @ecs.MessageCursor::MessageCursor(),
+      close_request_cursor: @ecs.MessageCursor::MessageCursor(),
     }
     @windowing.native_event_loop().run_app(runner_state)
   }

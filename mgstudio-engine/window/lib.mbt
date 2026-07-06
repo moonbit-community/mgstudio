@@ -64,22 +64,26 @@ pub fn window_plugin_with(
   match plugin.exit_condition {
     OnPrimaryClosed =>
       next = next.add_systems(
-        @app.PostUpdate,
-        @app.system_config_param2(exit_on_primary_closed),
+        @app.Last,
+        @app.system_config_param2(exit_on_primary_closed).in_set(
+          window_exit_systems,
+        ),
       )
     OnAllClosed =>
       next = next.add_systems(
-        @app.PostUpdate,
-        @app.system_config_param2(exit_on_all_closed),
+        @app.Last,
+        @app.system_config_param2(exit_on_all_closed).in_set(
+          window_exit_systems,
+        ),
       )
     DontExit => ()
   }
   if plugin.close_when_requested {
     next = next.add_systems(
-      @app.Update,
-      @app.system_config_param2(close_when_requested).in_set(
-        window_close_when_requested_system_set,
-      ),
+      @app.Last,
+      @app.system_config_param2(close_when_requested)
+      .before(window_exit_systems)
+      .in_set(window_close_when_requested_system_set),
     )
   }
   next

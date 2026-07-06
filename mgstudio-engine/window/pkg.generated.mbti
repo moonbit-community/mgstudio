@@ -250,6 +250,8 @@ pub fn window_entity_for_host(@ecs.World, Int) -> @Milky2018/mgstudio/core.Entit
 
 pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @Milky2018/mgstudio/core.Entity?
 
+pub let window_exit_systems : String
+
 pub fn window_height() -> Int
 
 pub fn window_host_entries(@ecs.World) -> Array[WindowHostEntry]

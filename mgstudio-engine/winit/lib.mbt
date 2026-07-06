@@ -103,9 +103,9 @@ pub fn winit_plugin_with(
       @app.system(@winit_cursor.winit_changed_cursor_options_system).named(
         "mgstudio_winit::changed_cursor_options",
       ),
-      @app.system(winit_despawn_windows_system).named(
-        "mgstudio_winit::despawn_windows",
-      ),
+      @app.system(winit_despawn_windows_system)
+      .named("mgstudio_winit::despawn_windows")
+      .after(@window.window_exit_systems),
       @app.system(winit_check_keyboard_focus_lost_system).named(
         "mgstudio_winit::check_keyboard_focus_lost",
       ),

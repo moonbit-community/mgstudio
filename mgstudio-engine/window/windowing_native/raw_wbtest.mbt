@@ -58,6 +58,25 @@ test "windowing_native wbtest: cursor grab mode setter reports unknown window fa
 }
 
 ///|
+test "windowing_native wbtest: close requested is not closed" {
+  windowing_native_runtime_state.open_window_ids.clear()
+  windowing_native_runtime_state.close_requested_window_ids.clear()
+  windowing_native_runtime_state.closed_window_ids.clear()
+
+  let window = 903001
+  mark_window_open(window)
+  process_window_event(window, CloseRequested)
+
+  debug_inspect(should_close(window), content="true")
+  debug_inspect(any_window_open(), content="true")
+
+  request_close(window)
+
+  debug_inspect(should_close(window), content="true")
+  debug_inspect(any_window_open(), content="false")
+}
+
+///|
 test "windowing_native wbtest: raw winit event snapshots preserve typed payloads" {
   ignore(take_raw_winit_window_events())
 
