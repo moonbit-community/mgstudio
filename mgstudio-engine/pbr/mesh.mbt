@@ -210,6 +210,9 @@ let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @pbr
 type Render3dLightingState = @pbr_render.Render3dLightingState
 
 ///|
+type ExtractedDirectionalLight3d = @pbr_render.ExtractedDirectionalLight3d
+
+///|
 type MeshPreprocessStatic3d = @pbr_render.MeshPreprocessStatic3d
 
 ///|

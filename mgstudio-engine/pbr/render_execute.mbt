@@ -4810,6 +4810,7 @@ pub fn render3d_check_views_lights_need_specialization_system(
     ),
   )
   let views = render3d_shadow_phase_queued_views_for_cameras(
+    world,
     frame.cameras,
     lighting,
     frame.frame_config.point_light_shadow_map_size,

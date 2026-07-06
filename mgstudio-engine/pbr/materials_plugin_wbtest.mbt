@@ -1263,12 +1263,19 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
   }
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
-    directional_entity: Some(directional_light),
-    directional_render_entity: Some(directional_light),
-    directional_shadow_maps_enabled: true,
-    directional_transform: @transform.Transform::identity(),
-    directional_cascade_bounds: [42.0F],
-    directional_cascades: cascades,
+    directional_lights: [
+      @pbr_render.Render3dLightingDirectionalLight::{
+        render_entity: directional_light,
+        light: @pbr_render.render3d_extracted_directional_light_for_shadow(
+          directional_light,
+          @transform.Transform::identity(),
+          cascades,
+          [42.0F],
+          @camera_render_layers.RenderLayers::RenderLayers(),
+          false,
+        ),
+      },
+    ],
     point_entity: Some(point_light),
     point_render_entity: Some(point_light),
     point_range: 12.0F,

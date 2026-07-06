@@ -287,7 +287,7 @@ test "pbr/render light: directional shadow cascade override reaches packed gpu l
     soft_shadow_size: 0.0F,
     shadow_depth_bias: 0.02F,
     shadow_normal_bias: 0.04F,
-    num_cascades: 0,
+    num_cascades: 2,
     cascades_overlap_proportion: 0.0F,
     depth_texture_base_index: 0,
     decal_index: -1,
@@ -324,7 +324,7 @@ test "pbr/render light: directional shadow cascade override reaches packed gpu l
     light_wbtest_f32_bits(
       resolved.directional_lights[0].cascades_overlap_proportion,
     ),
-    content=light_wbtest_f32_bits(0.33F).to_string(),
+    content=light_wbtest_f32_bits(0.0F).to_string(),
   )
   let bytes = render3d_gpu_lights_uniform_bytes(resolved)
   inspect(
@@ -359,7 +359,7 @@ test "pbr/render light: directional shadow cascade override reaches packed gpu l
   inspect(light_wbtest_u32le_at(bytes, 364), content="2")
   inspect(
     light_wbtest_u32le_at(bytes, 368),
-    content=light_wbtest_f32_bits(0.33F).to_string(),
+    content=light_wbtest_f32_bits(0.0F).to_string(),
   )
   inspect(light_wbtest_u32le_at(bytes, 372), content="0")
   inspect(
@@ -382,7 +382,7 @@ test "pbr/render light: scrolling_fog pass bytes preserve volumetric shadow inpu
     soft_shadow_size: 0.0F,
     shadow_depth_bias: 0.02F,
     shadow_normal_bias: 0.04F,
-    num_cascades: 0,
+    num_cascades: 2,
     cascades_overlap_proportion: 0.0F,
     depth_texture_base_index: 0,
     decal_index: -1,
@@ -422,7 +422,7 @@ test "pbr/render light: scrolling_fog pass bytes preserve volumetric shadow inpu
   inspect(light_wbtest_u32le_at(bytes, 364), content="2")
   inspect(
     light_wbtest_u32le_at(bytes, 368),
-    content=light_wbtest_f32_bits(0.33F).to_string(),
+    content=light_wbtest_f32_bits(0.0F).to_string(),
   )
   inspect(light_wbtest_u32le_at(bytes, 372), content="0")
   inspect(

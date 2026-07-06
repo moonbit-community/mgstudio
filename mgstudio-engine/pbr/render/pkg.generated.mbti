@@ -349,6 +349,8 @@ pub fn render3d_extract_skinning_matrices_with_columns(@ecs.World, @core.Entity,
 
 pub let render3d_extract_system_label : String
 
+pub fn render3d_extracted_directional_light_for_shadow(@core.Entity, @transform.Transform, @light.Cascades, Array[Float], @render_layers.RenderLayers, Bool) -> ExtractedDirectionalLight3d
+
 pub fn render3d_float_clamp(Float, Float, Float) -> Float
 
 pub fn render3d_fog_atmospheric_presence(@math.Vec3, @math.Vec3, Float) -> Float
@@ -1113,6 +1115,11 @@ pub fn Render3dGpuPreprocessState::enabled(Self) -> Bool
 pub fn Render3dGpuPreprocessState::indirect_enabled(Self) -> Bool
 pub impl @app.Resource for Render3dGpuPreprocessState
 
+pub(all) struct Render3dLightingDirectionalLight {
+  render_entity : @core.Entity
+  light : ExtractedDirectionalLight3d
+}
+
 pub(all) struct Render3dLightingState {
   ambient_color : @color.Color
   ambient_brightness : Float
@@ -1131,6 +1138,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_minimum_distance : Float
   directional_cascades : @light.Cascades
   directional_occlusion_culling : Bool
+  directional_lights : Array[Render3dLightingDirectionalLight]
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @color.Color

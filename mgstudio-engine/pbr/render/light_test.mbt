@@ -1202,7 +1202,7 @@ test "pbr render light: directional gpu lights resolve view cascade data" {
   inspect(
     approx_eq(
       resolved.directional_lights[0].cascades_overlap_proportion,
-      0.21F,
+      gpu_lights.directional_lights[0].cascades_overlap_proportion,
       1.0e-6F,
     ),
     content="true",

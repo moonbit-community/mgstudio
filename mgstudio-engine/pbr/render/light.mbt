@@ -31,6 +31,7 @@ pub(all) struct Render3dLightingState {
   directional_cascade_minimum_distance : Float
   directional_cascades : @light.Cascades
   directional_occlusion_culling : Bool
+  directional_lights : Array[Render3dLightingDirectionalLight]
   point_entity : @core.Entity?
   point_pos : @math.Vec3
   point_color : @color.Color
@@ -60,6 +61,12 @@ pub(all) struct Render3dLightingState {
   gpu_clustered_lights_bytes : Bytes?
   gpu_clusterable_object_index_lists_bytes : Bytes?
   gpu_cluster_offsets_and_counts_bytes : Bytes?
+}
+
+///|
+pub(all) struct Render3dLightingDirectionalLight {
+  render_entity : @core.Entity
+  light : ExtractedDirectionalLight3d
 }
 
 ///|
@@ -865,6 +872,39 @@ pub struct ExtractedDirectionalLight3d {
   occlusion_culling : Bool
   sun_disk_angular_size : Float
   sun_disk_intensity : Float
+}
+
+///|
+pub fn render3d_extracted_directional_light_for_shadow(
+  entity : @core.Entity,
+  transform : @transform.Transform,
+  cascades : @light.Cascades,
+  cascade_bounds : Array[Float],
+  render_layers : @camera_render_layers.RenderLayers,
+  occlusion_culling : Bool,
+) -> ExtractedDirectionalLight3d {
+  ExtractedDirectionalLight3d::{
+    entity,
+    color: @color.Color::white(),
+    illuminance: 1.0F,
+    transform,
+    shadow_maps_enabled: true,
+    contact_shadows_enabled: false,
+    shadow_depth_bias: 0.0F,
+    shadow_normal_bias: 0.0F,
+    volumetric: false,
+    affects_lightmapped_mesh_diffuse: true,
+    soft_shadow_size: None,
+    cascade_count: cascade_bounds.length(),
+    cascade_bounds,
+    cascade_overlap_proportion: 0.0F,
+    cascade_minimum_distance: 0.1F,
+    cascades,
+    render_layers,
+    occlusion_culling,
+    sun_disk_angular_size: 0.0F,
+    sun_disk_intensity: 0.0F,
+  }
 }
 
 ///|
@@ -1885,7 +1925,7 @@ pub fn render3d_gpu_lights_with_directional_shadow_cascades(
   directional_shadow_texture_id : Int,
   directional_shadow_enabled : Float,
   directional_shadow_cascade_count : Int,
-  directional_shadow_cascade_overlap : Float,
+  _directional_shadow_cascade_overlap : Float,
   directional_shadow_cascade_data : Array[Float],
 ) -> GpuLights3d {
   let cascades_enabled = directional_shadow_texture_id >= 0 &&
@@ -1898,29 +1938,38 @@ pub fn render3d_gpu_lights_with_directional_shadow_cascades(
   if resolved_cascade_count == 0 {
     return lights
   }
-  let resolved_cascades : Array[GpuDirectionalCascade3d] = []
-  for cascade_index in 0..<MAX_CASCADES_PER_LIGHT {
-    if cascade_index < resolved_cascade_count {
-      resolved_cascades.push(
-        render3d_gpu_directional_cascade_from_flat_data(
-          directional_shadow_cascade_data, cascade_index,
-        ),
-      )
-    } else {
-      resolved_cascades.push(render3d_gpu_directional_cascade_default())
-    }
-  }
   let directional_lights : Array[GpuDirectionalLight3d] = []
+  let mut remaining_cascades = resolved_cascade_count
   for light_index in 0..<lights.directional_lights.length() {
     let light = lights.directional_lights[light_index]
-    if light_index == 0 {
+    let light_cascade_count = if remaining_cascades <= 0 {
+      0
+    } else if light.num_cascades < remaining_cascades {
+      light.num_cascades
+    } else {
+      remaining_cascades
+    }
+    if light_cascade_count > 0 {
+      let resolved_cascades : Array[GpuDirectionalCascade3d] = []
+      for cascade_index in 0..<MAX_CASCADES_PER_LIGHT {
+        if cascade_index < light_cascade_count {
+          resolved_cascades.push(
+            render3d_gpu_directional_cascade_from_flat_data(
+              directional_shadow_cascade_data,
+              light.depth_texture_base_index + cascade_index,
+            ),
+          )
+        } else {
+          resolved_cascades.push(render3d_gpu_directional_cascade_default())
+        }
+      }
       directional_lights.push(GpuDirectionalLight3d::{
         ..light,
         cascades: resolved_cascades,
         flags: light.flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED,
-        num_cascades: resolved_cascade_count,
-        cascades_overlap_proportion: directional_shadow_cascade_overlap,
+        num_cascades: light_cascade_count,
       })
+      remaining_cascades = remaining_cascades - light_cascade_count
     } else {
       directional_lights.push(light)
     }
@@ -3910,6 +3959,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_cascade_minimum_distance: 0.1F,
     directional_cascades: @light.Cascades::Cascades(),
     directional_occlusion_culling: false,
+    directional_lights: [],
     point_entity: None,
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     point_color: @color.Color::white(),
@@ -3955,6 +4005,12 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   let directional_lights = render3d_collect_extracted_directional_light_entries(
     world,
   )
+  let lighting_directional_lights = directional_lights.map(fn(entry) {
+    Render3dLightingDirectionalLight::{
+      render_entity: entry.render_entity,
+      light: entry.light,
+    }
+  })
   if directional_lights.length() > 0 {
     let directional_entry = directional_lights[0]
     let directional = directional_entry.light
@@ -3975,6 +4031,12 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_cascade_minimum_distance: directional.cascade_minimum_distance,
       directional_cascades: directional.cascades,
       directional_occlusion_culling: directional.occlusion_culling,
+      directional_lights: lighting_directional_lights,
+    }
+  } else {
+    lighting = Render3dLightingState::{
+      ..lighting,
+      directional_lights: lighting_directional_lights,
     }
   }
   let point_lights = render3d_collect_extracted_point_light_entries(world)

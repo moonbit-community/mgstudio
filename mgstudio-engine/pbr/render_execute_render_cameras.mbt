@@ -172,7 +172,9 @@ pub fn render3d_prepare_shadow_phase_views_system(world : @ecs.World) -> Unit {
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
 fn render3d_shadow_phase_light_entities_for_camera(
+  world : @ecs.World,
   camera_entity : @core.Entity,
+  camera_layers : @camera_render_layers.RenderLayers,
   lighting : Render3dLightingState,
   point_light_shadow_map_size : Int,
 ) -> Array[Render3dLightEntity] {
@@ -192,15 +194,15 @@ fn render3d_shadow_phase_light_entities_for_camera(
       )
     }
   }
-  if lighting.directional_shadow_maps_enabled &&
-    lighting.directional_entity is Some(light_entity) &&
-    lighting.directional_render_entity is Some(directional_render_entity) {
-    let cascades = render3d_directional_shadow_cascades(camera_entity, lighting)
-    for cascade_index in 0..<cascades.length() {
+  for
+    light_pass in render3d_directional_shadow_light_passes(
+      world, camera_entity, camera_layers, lighting,
+    ) {
+    for cascade_index in 0..<light_pass.cascades.length() {
       light_entities.push(
         Render3dLightEntity::Directional(
-          light_entity=directional_render_entity,
-          main_entity=light_entity,
+          light_entity=light_pass.render_entity,
+          main_entity=light_pass.main_entity,
           cascade_index~,
         ),
       )
@@ -225,6 +227,7 @@ fn render3d_shadow_phase_light_entities_for_camera(
 // consumed by `check_views_lights_need_specialization` and
 // `specialize_shadows`.
 fn render3d_shadow_phase_queued_views_for_cameras(
+  world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
   lighting : Render3dLightingState,
   point_light_shadow_map_size : Int,
@@ -236,7 +239,9 @@ fn render3d_shadow_phase_queued_views_for_cameras(
     )
     for
       light_entity in render3d_shadow_phase_light_entities_for_camera(
+        world,
         camera.entity.main_entity,
+        camera.payload.layers,
         lighting,
         point_light_shadow_map_size,
       ) {
@@ -273,7 +278,7 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
   }
   for
     view in render3d_shadow_phase_queued_views_for_cameras(
-      cameras, lighting, point_light_shadow_map_size,
+      world, cameras, lighting, point_light_shadow_map_size,
     ) {
     live_shadow_mapping_lights.add(view.retained_view_entity())
   }
