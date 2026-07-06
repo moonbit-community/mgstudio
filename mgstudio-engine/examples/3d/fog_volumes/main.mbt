@@ -159,6 +159,19 @@ fn fog_volumes_vec3_approx_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
 }
 
 ///|
+fn fog_volumes_uniform_u32_at(bytes : Bytes, byte_offset : Int) -> UInt {
+  (bytes[byte_offset].to_uint() & 0xFFU) |
+  ((bytes[byte_offset + 1].to_uint() & 0xFFU) << 8) |
+  ((bytes[byte_offset + 2].to_uint() & 0xFFU) << 16) |
+  ((bytes[byte_offset + 3].to_uint() & 0xFFU) << 24)
+}
+
+///|
+fn fog_volumes_uniform_f32_bits_at(bytes : Bytes, byte_offset : Int) -> UInt {
+  fog_volumes_uniform_u32_at(bytes, byte_offset)
+}
+
+///|
 fn fog_volumes_read_camera_translation(world : @ecs.World) -> @math.Vec3 {
   let translation = Ref(@math.Vec3::zero())
   let query : @ecs.Query[
@@ -284,9 +297,22 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
           ),
         ],
       )
+      let uniform_bytes = buffer.bytes()
       buffer.count() == 1 &&
       view_fog.count() == 1 &&
-      view_fog.volumes()[0].has_density_texture()
+      view_fog.volumes()[0].has_density_texture() &&
+      uniform_bytes.length() == 512 &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 208) ==
+      1.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 212) ==
+      1.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 216) ==
+      1.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 220) ==
+      0.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_u32_at(uniform_bytes, 224) == 64U &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 276) ==
+      0.0F.reinterpret_as_uint()
     }
     _ => false
   }
