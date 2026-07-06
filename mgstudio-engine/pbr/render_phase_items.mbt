@@ -325,11 +325,22 @@ fn render3d_material_phase_distance(
 ///|
 fn render3d_queue_resolved_material_for_mesh(
   material_slots : RenderMaterial3dResolvedSlots,
+  pending_mesh_material_queues : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
   mesh : ExtractedMesh3d,
 ) -> Render3dResolvedMaterial? {
   match material_slots.get(mesh.entity.main_entity) {
     Some(Resolved(material)) => Some(material)
-    Some(Pending) | None => None
+    Some(Pending) | None => {
+      pending_mesh_material_queues
+      .queues()
+      .push_current(
+        retained_view_entity,
+        mesh.entity.render_entity,
+        @render.MainEntity::new(mesh.entity.main_entity),
+      )
+      None
+    }
   }
 }
 

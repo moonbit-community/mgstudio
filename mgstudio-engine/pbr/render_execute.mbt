@@ -4783,6 +4783,14 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         frame.cameras,
       )
       let material_slots = render_material3d_resolved_slots_or_empty(world)
+      let pending_mesh_material_queues = match
+        world.get_resource(PendingMeshMaterialQueues::resource()) {
+        Some(value) => value
+        None =>
+          abort(
+            "missing PendingMeshMaterialQueues resource during pbr queue_meshes",
+          )
+      }
       let prepared_camera_queues = mesh_runtime_state.modify(fn(
         mesh_runtime_state_value,
       ) {
@@ -4791,6 +4799,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.cameras,
           frame.meshes,
           material_slots,
+          pending_mesh_material_queues,
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
           specialized_material_pipeline_cache~,

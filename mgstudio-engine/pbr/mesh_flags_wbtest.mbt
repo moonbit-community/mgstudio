@@ -557,10 +557,12 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
   ]
   let (view, cache) = render3d_test_queue_pipeline_cache(meshes)
   let material_slots = render3d_test_queue_material_slots(meshes)
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let camera_transform = @transform.Transform::identity()
   let cpu_items = render3d_queue_mesh_phase_items(
     meshes,
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     camera_transform,
     [],
@@ -572,6 +574,7 @@ test "render3d: transparent phase ordering includes bevy material depth bias" {
   let gpu_items = render3d_queue_mesh_phase_items(
     meshes,
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     camera_transform,
     [],
@@ -606,9 +609,11 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
   }
   let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
   let material_slots = render3d_test_queue_material_slots([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let cpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -620,6 +625,7 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
   let gpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -669,9 +675,11 @@ test "render3d: queue phase reads material properties from resolved material slo
     ),
   )
   let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let cpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -683,6 +691,7 @@ test "render3d: queue phase reads material properties from resolved material slo
   let gpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -695,6 +704,28 @@ test "render3d: queue phase reads material properties from resolved material slo
   debug_inspect(cpu_items[0].distance, content="4")
   debug_inspect(gpu_items[0].phase, content="3")
   debug_inspect(gpu_items[0].distance, content="4")
+}
+
+///|
+test "render3d: queue phase returns missing resolved material slots to pending queue" {
+  let mesh = render3d_test_transparent_mesh_for_queue(9, -1.0F, 0.0F)
+  let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
+  let material_slots = RenderMaterial3dResolvedSlots::new()
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  let items = render3d_queue_mesh_phase_items(
+    [mesh],
+    material_slots,
+    pending_queues,
+    @camera_render_layers.RenderLayers::RenderLayers(),
+    @transform.Transform::identity(),
+    [],
+    false,
+    false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
+  )
+  debug_inspect(items.length(), content="0")
+  debug_inspect(pending_queues.current_len(view), content="1")
 }
 
 ///|
@@ -727,9 +758,11 @@ test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
   }
   let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
   let material_slots = render3d_test_queue_material_slots([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let cpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -741,6 +774,7 @@ test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
   let gpu_items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -777,9 +811,11 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
   visible.set(meshes[1].entity.main_entity.to_bits(), true)
   let (view, cache) = render3d_test_queue_pipeline_cache(meshes)
   let material_slots = render3d_test_queue_material_slots(meshes)
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let cpu_items = render3d_queue_mesh_phase_items(
     meshes,
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -792,6 +828,7 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
   let gpu_items = render3d_queue_mesh_phase_items(
     meshes,
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -813,11 +850,13 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
 test "render3d: queue phase skips view cache misses" {
   let mesh = render3d_test_transparent_mesh_for_queue(5, -1.0F, 0.0F)
   let material_slots = render3d_test_queue_material_slots([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let view = @render_view.RetainedViewEntity::new(@core.Entity::new(6, 0))
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
   let cpu_miss = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -829,6 +868,7 @@ test "render3d: queue phase skips view cache misses" {
   let gpu_miss = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -849,6 +889,7 @@ test "render3d: queue phase skips view cache misses" {
   let cpu_hit = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -860,6 +901,7 @@ test "render3d: queue phase skips view cache misses" {
   let gpu_hit = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
@@ -931,9 +973,11 @@ test "render3d: transmissive materials use a distinct sorted phase" {
   }
   let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
   let material_slots = render3d_test_queue_material_slots([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
   let items = render3d_queue_mesh_phase_items(
     [mesh],
     material_slots,
+    pending_queues,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],
