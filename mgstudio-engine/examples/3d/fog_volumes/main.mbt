@@ -172,6 +172,24 @@ fn fog_volumes_uniform_f32_bits_at(bytes : Bytes, byte_offset : Int) -> UInt {
 }
 
 ///|
+fn fog_volumes_uniform_word_range_changed(
+  lhs : Bytes,
+  rhs : Bytes,
+  byte_start : Int,
+  byte_end : Int,
+) -> Bool {
+  let mut offset = byte_start
+  while offset < byte_end {
+    if fog_volumes_uniform_u32_at(lhs, offset) !=
+      fog_volumes_uniform_u32_at(rhs, offset) {
+      return true
+    }
+    offset = offset + 4
+  }
+  false
+}
+
+///|
 fn fog_volumes_read_camera_translation(world : @ecs.World) -> @math.Vec3 {
   let translation = Ref(@math.Vec3::zero())
   let query : @ecs.Query[
@@ -182,6 +200,45 @@ fn fog_volumes_read_camera_translation(world : @ecs.World) -> @math.Vec3 {
     translation.val = transform.value().translation
   })
   translation.val
+}
+
+///|
+fn fog_volumes_identity_volumetric_mat4() -> @pbr_volumetric_fog.VolumetricFogMat4 {
+  @pbr_volumetric_fog.VolumetricFogMat4::from_cols(
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+  )
+}
+
+///|
+fn fog_volumes_prepared_uniform_bytes_for_camera(
+  fog_volume : @pbr.FogVolume,
+  volumetric_fog : @pbr.VolumetricFog,
+  fog_volume_translation : @math.Vec3,
+  camera_transform : @transform.Transform,
+) -> Bytes {
+  let buffer = @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
+  ignore(
+    @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+      buffer,
+      volumetric_fog,
+      @math.Affine3::from_scale_rotation_translation(
+        camera_transform.scale,
+        camera_transform.rotation,
+        camera_transform.translation,
+      ),
+      fog_volumes_identity_volumetric_mat4(),
+      [
+        (
+          fog_volume,
+          @math.Affine3::from_translation(fog_volume_translation).inverse(),
+        ),
+      ],
+    ),
+  )
+  buffer.bytes()
 }
 
 ///|
@@ -268,9 +325,11 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
   let camera_transform_matches = Ref(false)
   let volumetric_fog_matches = Ref(false)
+  let camera_transform_component : Ref[@transform.Transform?] = Ref(None)
   let volumetric_fog_component : Ref[@pbr.VolumetricFog?] = Ref(None)
   try! camera_query.view(fn(_entity, data) {
     let (_, transform, _, volumetric_fog) = data
+    camera_transform_component.val = Some(transform.value())
     volumetric_fog_component.val = Some(volumetric_fog.value())
     camera_transform_matches.val = fog_volumes_vec3_approx_eq(
       transform.value().translation,
@@ -290,12 +349,7 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
         buffer,
         volumetric_fog,
         @math.Affine3::identity(),
-        @pbr_volumetric_fog.VolumetricFogMat4::from_cols(
-          @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
-          @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
-          @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
-          @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
-        ),
+        fog_volumes_identity_volumetric_mat4(),
         [
           (
             fog_volume,
@@ -304,10 +358,24 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
         ],
       )
       let uniform_bytes = buffer.bytes()
+      let density_texture_id_matches = match fog_volume.density_texture {
+        Some(texture) =>
+          view_fog.volumes()[0].density_texture_id() == texture.id()
+        None => false
+      }
       buffer.count() == 1 &&
       view_fog.count() == 1 &&
       view_fog.volumes()[0].has_density_texture() &&
+      density_texture_id_matches &&
       uniform_bytes.length() == 512 &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 112) ==
+      0.5F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 116) ==
+      0.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 120) ==
+      0.5F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 124) ==
+      1.0F.reinterpret_as_uint() &&
       fog_volumes_uniform_f32_bits_at(uniform_bytes, 208) ==
       1.0F.reinterpret_as_uint() &&
       fog_volumes_uniform_f32_bits_at(uniform_bytes, 212) ==
@@ -317,6 +385,16 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
       fog_volumes_uniform_f32_bits_at(uniform_bytes, 220) ==
       0.0F.reinterpret_as_uint() &&
       fog_volumes_uniform_u32_at(uniform_bytes, 224) == 64U &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 236) ==
+      1.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 240) ==
+      1.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 256) ==
+      0.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 260) ==
+      0.0F.reinterpret_as_uint() &&
+      fog_volumes_uniform_f32_bits_at(uniform_bytes, 264) ==
+      0.0F.reinterpret_as_uint() &&
       fog_volumes_uniform_f32_bits_at(uniform_bytes, 276) ==
       0.0F.reinterpret_as_uint()
     }
@@ -356,6 +434,43 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
     (gpu_lights.directional_lights[0].flags & (1U << 1)) != 0U,
     content="true",
   )
+  let camera_rotation_changes_prepared_uniform = match
+    (
+      fog_volume_component.val,
+      volumetric_fog_component.val,
+      camera_transform_component.val,
+    ) {
+    (Some(fog_volume), Some(volumetric_fog), Some(camera_transform)) => {
+      let initial_bytes = fog_volumes_prepared_uniform_bytes_for_camera(
+        fog_volume,
+        volumetric_fog,
+        fog_volume_translation.val,
+        camera_transform,
+      )
+      let rotated_translation = @math.Quat::from_rotation_y(0.01F).mul_vec3(
+        camera_transform.translation,
+      )
+      let rotated_transform = @transform.Transform::from_translation(
+        rotated_translation,
+      ).looking_at(fog_center(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+      let rotated_bytes = fog_volumes_prepared_uniform_bytes_for_camera(
+        fog_volume,
+        volumetric_fog,
+        fog_volume_translation.val,
+        rotated_transform,
+      )
+      fog_volumes_uniform_word_range_changed(
+        initial_bytes, rotated_bytes, 0, 64,
+      ) ||
+      fog_volumes_uniform_word_range_changed(
+        initial_bytes, rotated_bytes, 128, 176,
+      ) ||
+      fog_volumes_uniform_u32_at(initial_bytes, 228) !=
+      fog_volumes_uniform_u32_at(rotated_bytes, 228)
+    }
+    _ => false
+  }
+  debug_inspect(camera_rotation_changes_prepared_uniform, content="true")
 }
 
 ///|
