@@ -127,7 +127,7 @@ fn setup(
         commands.spawn(
           (
             @mesh.Mesh3d::new(cube),
-            @pbr.MeshMaterial3d::new(
+            @pbr.MeshMaterial3dTyped::new(
               materials.modify(fn(material_assets) {
                 material_assets |> @pbr.add_material(color_from_hue_deg(hue))
               }),

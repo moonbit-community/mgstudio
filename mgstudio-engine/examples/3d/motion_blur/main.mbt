@@ -444,7 +444,7 @@ fn spawn_car(
 ) -> Unit {
   let body = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
-    @pbr.MeshMaterial3d::new(car_material),
+    @pbr.MeshMaterial3dTyped::new(car_material),
     @transform.Transform::identity().with_scale(
       @math.Vec3::new(0.5F, 0.5F, 0.5F),
     ),
@@ -456,7 +456,7 @@ fn spawn_car(
 
   let cabin = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
-    @pbr.MeshMaterial3d::new(car_material),
+    @pbr.MeshMaterial3dTyped::new(car_material),
     @transform.Transform::from_xyz(0.0F, 0.08F, 0.03F).with_scale(
       @math.Vec3::new(1.0F, 1.0F, 0.5F),
     ),
@@ -476,7 +476,7 @@ fn spawn_car(
   for offset in wheel_offsets {
     let wheel = @pbr.MeshMaterial3dBundle::new(
       wheel_mesh,
-      @pbr.MeshMaterial3d::new(wheel_material),
+      @pbr.MeshMaterial3dTyped::new(wheel_material),
       @transform.Transform::from_xyz(offset.x, offset.y, offset.z)
       .with_scale(@math.Vec3::new(0.15F, 0.04F, 0.15F))
       .with_rotation(@math.Quat::from_rotation_z(@math.pi_half())),
@@ -505,7 +505,7 @@ fn spawn_barriers(
       let pos = race_track_pos(offset, t)
       @pbr.MeshMaterial3dBundle::new(
         mesh,
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(pos.x, -0.65F, pos.y).with_scale(
           @math.Vec3::splat(0.07F),
         ),
@@ -532,7 +532,7 @@ fn spawn_trees(
       let pos = race_track_pos(offset, t)
       @pbr.MeshMaterial3dBundle::new(
         leaves_mesh,
-        @pbr.MeshMaterial3d::new(leaves_material),
+        @pbr.MeshMaterial3dTyped::new(leaves_material),
         @transform.Transform::from_xyz(pos.x, -0.3F, pos.y).with_scale(
           @math.Vec3::splat(0.3F),
         ),
@@ -540,7 +540,7 @@ fn spawn_trees(
       |> ignore
       @pbr.MeshMaterial3dBundle::new(
         trunk_mesh,
-        @pbr.MeshMaterial3d::new(trunk_material),
+        @pbr.MeshMaterial3dTyped::new(trunk_material),
         @transform.Transform::from_xyz(pos.x, -0.5F, pos.y).with_scale(
           @math.Vec3::new(0.05F, 0.3F, 0.05F),
         ),
@@ -584,7 +584,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
-    @pbr.MeshMaterial3d::new(sky_material),
+    @pbr.MeshMaterial3dTyped::new(sky_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(-4000.0F)),
   ).spawn(world)
   |> ignore
@@ -605,7 +605,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   @pbr.MeshMaterial3dBundle::new(
     mesh3d_from_geometry(mesh_assets, ground_geometry),
-    @pbr.MeshMaterial3d::new(ground_material),
+    @pbr.MeshMaterial3dTyped::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.65F, 0.0F).with_scale(
       @math.Vec3::splat(80.0F),
     ),

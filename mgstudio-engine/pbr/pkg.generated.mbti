@@ -1998,14 +1998,14 @@ pub fn MeshInputUniform::with_previous_input_index(Self, UInt) -> Self
 
 pub struct MeshMaterial3dBundle {
   mesh : @Milky2018/mgstudio/mesh.Mesh3d
-  material : @material.MeshMaterial3d
+  material : MeshMaterial3dTyped[@material.StandardMaterial]
   transform : @transform.Transform
   layers : @render_layers.RenderLayers
   visibility : @Milky2018/mgstudio/visibility.Visibility
   inherited_visibility : @Milky2018/mgstudio/visibility.InheritedVisibility
   view_visibility : @Milky2018/mgstudio/visibility.ViewVisibility
 }
-pub fn MeshMaterial3dBundle::new(@Milky2018/mgstudio/mesh.Mesh3d, @material.MeshMaterial3d, @transform.Transform) -> Self
+pub fn MeshMaterial3dBundle::new(@Milky2018/mgstudio/mesh.Mesh3d, MeshMaterial3dTyped[@material.StandardMaterial], @transform.Transform) -> Self
 #callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @ecs.Bundle for MeshMaterial3dBundle

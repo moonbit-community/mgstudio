@@ -115,7 +115,7 @@ fn spawn_car_paint_sphere(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(-1.0F, 1.0F, 0.0F).with_scale(
           @math.Vec3::splat(SPHERE_SCALE),
         ),
@@ -143,7 +143,7 @@ fn spawn_coated_glass_bubble_sphere(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(-1.0F, -1.0F, 0.0F).with_scale(
           @math.Vec3::splat(SPHERE_SCALE),
         ),
@@ -207,7 +207,7 @@ fn spawn_scratched_gold_ball(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(1.0F, -1.0F, 0.0F).with_scale(
           @math.Vec3::splat(SPHERE_SCALE),
         ),

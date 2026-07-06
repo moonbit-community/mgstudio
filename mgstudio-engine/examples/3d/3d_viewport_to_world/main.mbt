@@ -186,7 +186,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
@@ -221,7 +221,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cursor_marker = @pbr.MeshMaterial3dBundle::new(
     circle_line_mesh(CURSOR_RADIUS, CURSOR_SEGMENTS),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()).with_unlit(
           true,

@@ -257,7 +257,7 @@ fn spawn_wall_panel(
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(wall_mesh),
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       height,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

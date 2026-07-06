@@ -75,7 +75,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(room_mesh),
-        @pbr.MeshMaterial3d::new(room_material),
+        @pbr.MeshMaterial3dTyped::new(room_material),
         @transform.Transform::from_xyz(0.0F, -12.0F, 0.0F),
       ),
     ),
@@ -92,7 +92,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(marker_mesh),
-        @pbr.MeshMaterial3d::new(marker_material),
+        @pbr.MeshMaterial3dTyped::new(marker_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),

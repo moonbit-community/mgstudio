@@ -181,7 +181,7 @@ fn spawn_sphere(
   commands.spawn(
     (
       @mesh.Mesh3d::new(mesh),
-      @pbr.MeshMaterial3d::new(material),
+      @pbr.MeshMaterial3dTyped::new(material),
       @transform.Transform::from_translation(translation),
       ExampleControls::ExampleControls(unlit=true, color=true),
     ),
@@ -200,7 +200,7 @@ fn spawn_chessboard_square(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(
           Float::from_int(x) * 2.0F,
           -1.0F,

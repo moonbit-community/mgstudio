@@ -60,7 +60,7 @@ fn spawn_sphere(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere_mesh),
-        @pbr.MeshMaterial3d::new(sphere_material),
+        @pbr.MeshMaterial3dTyped::new(sphere_material),
         @transform.Transform::identity().with_scale(@math.Vec3::splat(1.25F)),
       ),
     ),

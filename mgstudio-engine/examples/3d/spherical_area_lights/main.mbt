@@ -118,7 +118,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
           @color.Color::new(0.2F, 0.2F, 0.2F, 1.0F),
@@ -141,7 +141,7 @@ fn setup(world : @ecs.World) -> Unit {
 
     let sphere = @pbr.MeshMaterial3dBundle::new(
       sphere_mesh,
-      @pbr.MeshMaterial3d::new(
+      @pbr.MeshMaterial3dTyped::new(
         @pbr.standard_material_add(
           @pbr.StandardMaterial::from_color(
             @color.Color::new(0.5F, 0.5F, 1.0F, 1.0F),

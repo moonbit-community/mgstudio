@@ -148,7 +148,7 @@ fn spawn_mesh_with_layer(
 ) -> @core.Entity {
   let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     transform,
   ).spawn(world)
   try! world.set_by_key(

@@ -67,7 +67,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(plane_mesh),
-        @pbr.MeshMaterial3d::new(white_material),
+        @pbr.MeshMaterial3dTyped::new(white_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
@@ -79,7 +79,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_mesh),
-        @pbr.MeshMaterial3d::new(white_material),
+        @pbr.MeshMaterial3dTyped::new(white_material),
         @transform.Transform::from_xyz(0.0F, 0.55F, 0.0F),
       ),
     ),

@@ -164,7 +164,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()),
       ),
@@ -179,7 +179,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
           @color.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),

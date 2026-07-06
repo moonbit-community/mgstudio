@@ -136,7 +136,10 @@ fn change_material(
   colors : @ecs.Query[@ecs.Read[ColorOverride], @ecs.All],
   children_query : @ecs.Query[@ecs.Read[@hierarchy.Children], @ecs.All],
   mesh_materials : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[@gltf.GltfMaterialName]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[@gltf.GltfMaterialName],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
@@ -154,13 +157,13 @@ fn change_material(
       return
     }
     let mesh_material = mesh_material_comp.value()
-    guard @pbr.standard_material_get(mesh_material.material) is Some(material) else {
+    guard @pbr.standard_material_get(mesh_material.handle()) is Some(material) else {
       return
     }
     let updated_handle = @pbr.standard_material_add(
       material.with_base_color(color_override.value().color),
     )
-    mesh_material_comp.set(@pbr.MeshMaterial3d::new(updated_handle))
+    mesh_material_comp.set(@pbr.MeshMaterial3dTyped::new(updated_handle))
   })
 }
 

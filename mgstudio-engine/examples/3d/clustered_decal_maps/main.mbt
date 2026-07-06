@@ -375,7 +375,7 @@ fn spawn_plane(
         assets |> @pbr.add_mesh(flat_normals)
       }),
     ),
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     @transform.Transform::Transform(),
   ).spawn(world)
   |> ignore

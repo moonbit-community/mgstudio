@@ -150,7 +150,7 @@ fn setup(
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
@@ -174,7 +174,7 @@ fn setup(
         assets |> @pbr.add_mesh(@math.Cuboid::new(2.9F, 2.9F, 2.9F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(shape_material),
+    @pbr.MeshMaterial3dTyped::new(shape_material),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -369,7 +369,7 @@ fn spawn_sample_point(
 ) -> Unit {
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
-    @pbr.MeshMaterial3d::new(point_material.handle),
+    @pbr.MeshMaterial3dTyped::new(point_material.handle),
     @transform.Transform::from_translation(sample),
   ).spawn(world)
   try! world.set_by_key(entity, SamplePoint::component(), SamplePoint::{  })

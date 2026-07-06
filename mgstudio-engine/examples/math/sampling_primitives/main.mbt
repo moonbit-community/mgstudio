@@ -620,7 +620,7 @@ fn setup(
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       materials
       .peek()
       .add(
@@ -650,7 +650,7 @@ fn setup(
   for sampled_shape in sampled_shapes.shapes {
     @pbr.MeshMaterial3dBundle::new(
       shape_mesh(sampled_shape.shape),
-      @pbr.MeshMaterial3d::new(shape_material),
+      @pbr.MeshMaterial3dTyped::new(shape_material),
       @transform.Transform::from_translation(sampled_shape.translation),
     ).spawn(world)
     |> ignore
@@ -751,7 +751,7 @@ fn spawn_sample_point(
 ) -> Unit {
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
-    @pbr.MeshMaterial3d::new(sample_point_material(mode, point_material)),
+    @pbr.MeshMaterial3dTyped::new(sample_point_material(mode, point_material)),
     @transform.Transform::from_translation(sample).with_scale(
       @math.Vec3::zero(),
     ),

@@ -346,7 +346,7 @@ fn spawn_ground_plane(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_rotation(
           @math.Quat::from_axis_angle(
             @math.Vec3::new(1.0F, 0.0F, 0.0F),

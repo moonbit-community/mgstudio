@@ -105,7 +105,7 @@ fn spawn_cubes(
       commands.spawn(
         (
           @mesh.Mesh3d::new(assets.mesh),
-          @pbr.MeshMaterial3d::new(assets.material),
+          @pbr.MeshMaterial3dTyped::new(assets.material),
           @transform.Transform::from_xyz(x, y, z),
           CubeVelocity::{ value: @math.Vec3::new(vx, vy, vz) },
         ),
@@ -134,7 +134,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(floor_mesh),
-        @pbr.MeshMaterial3d::new(floor_material),
+        @pbr.MeshMaterial3dTyped::new(floor_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),

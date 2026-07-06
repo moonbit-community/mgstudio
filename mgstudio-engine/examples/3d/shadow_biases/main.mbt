@@ -148,7 +148,7 @@ fn setup(
         commands.spawn(
           (
             sphere_handle,
-            @pbr.MeshMaterial3d::new(white_handle),
+            @pbr.MeshMaterial3dTyped::new(white_handle),
             @transform.Transform::from_xyz(
               0.0F,
               if z_i32 % 4 == 0 {
@@ -178,7 +178,7 @@ fn setup(
             )
           }),
         ),
-        @pbr.MeshMaterial3d::new(white_handle),
+        @pbr.MeshMaterial3dTyped::new(white_handle),
       ),
     ),
   )

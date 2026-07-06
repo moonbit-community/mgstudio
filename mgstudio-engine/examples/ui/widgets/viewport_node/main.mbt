@@ -67,7 +67,7 @@ fn setup(
     (
       ViewportMesh::{  },
       @mesh.Mesh3d::new(viewport_mesh),
-      @pbr.MeshMaterial3d::new(viewport_material),
+      @pbr.MeshMaterial3dTyped::new(viewport_material),
       @transform.Transform::identity(),
     ),
   )

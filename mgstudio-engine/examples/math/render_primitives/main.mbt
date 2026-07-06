@@ -36,7 +36,7 @@ fn spawn_primitive(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         Spin::{  },
         @transform.Transform::from_xyz(x, 1.0F, 0.0F),
       ),
@@ -119,7 +119,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(plane_mesh),
-        @pbr.MeshMaterial3d::new(plane_material),
+        @pbr.MeshMaterial3dTyped::new(plane_material),
         @transform.Transform::identity(),
       ),
     ),

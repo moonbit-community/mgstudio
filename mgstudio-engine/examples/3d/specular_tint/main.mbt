@@ -162,7 +162,7 @@ fn setup(
           @math.Quat::from_rotation_x(PI * 0.5F),
         ),
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
       ),
     ),
   )

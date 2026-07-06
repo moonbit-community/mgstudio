@@ -253,7 +253,7 @@ fn spawn_background_cube(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_translation(translation),
         Spin::{ speed: -0.1F },
       ),
@@ -304,7 +304,7 @@ fn setup(
       (
         @hierarchy.Parent::new(light),
         @mesh.Mesh3d::new(light_mesh),
-        @pbr.MeshMaterial3d::new(light_material),
+        @pbr.MeshMaterial3dTyped::new(light_material),
       ),
     ),
   )
@@ -331,7 +331,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(plane_mesh),
-        @pbr.MeshMaterial3d::new(plane_material),
+        @pbr.MeshMaterial3dTyped::new(plane_material),
         @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
       ),
     ),
@@ -366,7 +366,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(main_cube),
-        @pbr.MeshMaterial3d::new(parallax_material),
+        @pbr.MeshMaterial3dTyped::new(parallax_material),
         Spin::{ speed: 0.3F },
       ),
     ),

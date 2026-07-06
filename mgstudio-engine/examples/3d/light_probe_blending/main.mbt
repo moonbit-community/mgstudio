@@ -340,7 +340,7 @@ fn spawn_probe_gizmo_box(
         assets |> @pbr.add_mesh(@math.Cuboid::new(side, side, side))
       }),
     ),
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, center_z),
   ).spawn(world)
 }
@@ -492,7 +492,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 18, 32),
-    @pbr.MeshMaterial3d::new(reflective_material),
+    @pbr.MeshMaterial3dTyped::new(reflective_material),
     @transform.Transform::identity(),
   ).spawn(world)
   light_probe_blending_state.val.sphere = Some(sphere)
@@ -503,7 +503,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 2.0F, 20.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(reflective_material),
+    @pbr.MeshMaterial3dTyped::new(reflective_material),
     @transform.Transform::from_xyz(0.0F, -4.0F, -5.5F),
   ).spawn(world)
   light_probe_blending_state.val.prism = Some(prism)

@@ -91,7 +91,7 @@ fn setup(
           @mesh_primitives.RectangleMeshBuilder::new(10.0F, 10.0F).build(),
         ),
       ),
-      @pbr.MeshMaterial3d::new(white_material),
+      @pbr.MeshMaterial3dTyped::new(white_material),
       @transform.Transform::identity().with_rotation(
         @math.Quat::from_rotation_x(-FRAC_PI_2),
       ),
@@ -123,7 +123,7 @@ fn setup(
             meshes.peek()
             |> @pbr.add_mesh(@math.Cuboid::new(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)),
           ),
-          @pbr.MeshMaterial3d::new(white_material),
+          @pbr.MeshMaterial3dTyped::new(white_material),
           transform,
         ),
       )

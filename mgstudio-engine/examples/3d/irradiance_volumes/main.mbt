@@ -378,7 +378,7 @@ fn spawn_sphere(world : @ecs.World) -> Unit {
   )
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 24, 36),
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     @transform.Transform::from_xyz(0.0F, SPHERE_SCALE, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
@@ -440,7 +440,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
         )
         let entity = @pbr.MeshMaterial3dBundle::new(
           mesh,
-          @pbr.MeshMaterial3d::new(cube_material),
+          @pbr.MeshMaterial3dTyped::new(cube_material),
           @transform.Transform::from_xyz(position.x, position.y, position.z).with_scale(
             @math.Vec3::splat(VOXEL_CUBE_SCALE),
           ),

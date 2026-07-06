@@ -213,7 +213,7 @@ fn setup(
             ).build(),
           ),
         ),
-        @pbr.MeshMaterial3d::new(forward_material),
+        @pbr.MeshMaterial3dTyped::new(forward_material),
       ),
     ),
   )
@@ -230,7 +230,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_h),
-        @pbr.MeshMaterial3d::new(forward_material),
+        @pbr.MeshMaterial3dTyped::new(forward_material),
         @transform.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
       ),
     ),
@@ -239,7 +239,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_h),
-        @pbr.MeshMaterial3d::new(forward_material),
+        @pbr.MeshMaterial3dTyped::new(forward_material),
         @transform.Transform::from_xyz(0.2F, 0.5F, 0.2F),
       ),
     ),
@@ -254,7 +254,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere_h),
-        @pbr.MeshMaterial3d::new(material_handle(materials, unlit_mat)),
+        @pbr.MeshMaterial3dTyped::new(material_handle(materials, unlit_mat)),
         sphere_pos,
         @pbr.NotShadowCaster::NotShadowCaster(),
       ),
@@ -309,7 +309,7 @@ fn setup(
       commands.spawn(
         (
           @mesh.Mesh3d::new(sphere_h),
-          @pbr.MeshMaterial3d::new(material),
+          @pbr.MeshMaterial3dTyped::new(material),
           @transform.Transform::from_xyz(
             jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) - 0.4F,
             0.125F,
@@ -324,7 +324,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh_handle(meshes, cuboid_mesh(2.0F, 1.0F, 1.0F))),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           material_handle(
             materials,
             @pbr.StandardMaterial::from_color(
@@ -420,7 +420,7 @@ fn setup_parallax(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh_handle(meshes, cube)),
-        @pbr.MeshMaterial3d::new(parallax_material),
+        @pbr.MeshMaterial3dTyped::new(parallax_material),
         @transform.Transform::from_xyz(0.4F, 0.2F, -0.8F),
         Spin::Spin(0.3F),
       ),

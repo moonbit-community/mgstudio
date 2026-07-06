@@ -93,7 +93,7 @@ fn setup(
   commands.spawn(
     (
       @mesh.Mesh3d::new(floor),
-      @pbr.MeshMaterial3d::new(floor_mat),
+      @pbr.MeshMaterial3dTyped::new(floor_mat),
       @transform.Transform::identity(),
     ),
   )

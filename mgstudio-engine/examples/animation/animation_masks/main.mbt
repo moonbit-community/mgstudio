@@ -501,7 +501,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         ground_mesh,
-        @pbr.MeshMaterial3d::new(ground_material),
+        @pbr.MeshMaterial3dTyped::new(ground_material),
         @transform.Transform::identity(),
       ),
     ),

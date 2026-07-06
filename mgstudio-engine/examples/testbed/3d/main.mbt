@@ -51,7 +51,10 @@ fn setup(
     )
   ignore(
     commands.spawn(
-      (@mesh.Mesh3d::new(floor_mesh), @pbr.MeshMaterial3d::new(floor_material)),
+      (
+        @mesh.Mesh3d::new(floor_mesh),
+        @pbr.MeshMaterial3dTyped::new(floor_material),
+      ),
     ),
   )
 
@@ -68,7 +71,7 @@ fn setup(
         commands.spawn(
           (
             @mesh.Mesh3d::new(cube_mesh),
-            @pbr.MeshMaterial3d::new(cube_material),
+            @pbr.MeshMaterial3dTyped::new(cube_material),
             @transform.Transform::from_xyz(
               float_from_int(x) * GRID_SPACING,
               0.45F,

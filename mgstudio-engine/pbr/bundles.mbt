@@ -296,7 +296,7 @@ pub fn Camera3dBundle::with_depth_of_field(
 ///|
 pub struct MeshMaterial3dBundle {
   mesh : @mesh.Mesh3d
-  material : MeshMaterial3d
+  material : MeshMaterial3dTyped[StandardMaterial]
   transform : @transform.Transform
   layers : @camera_render_layers.RenderLayers
   visibility : @visibility.Visibility
@@ -307,7 +307,7 @@ pub struct MeshMaterial3dBundle {
 ///|
 pub fn MeshMaterial3dBundle::new(
   mesh : @mesh.Mesh3d,
-  material : MeshMaterial3d,
+  material : MeshMaterial3dTyped[StandardMaterial],
   transform : @transform.Transform,
 ) -> MeshMaterial3dBundle {
   MeshMaterial3dBundle::{
@@ -551,7 +551,12 @@ fn mesh_material3d_bundle_insert(
   loc~ : SourceLoc,
 ) -> Unit raise @ecs.EcsError {
   world.set_by_key(entity, ecs_key_mesh3d, bundle.mesh, loc~)
-  world.set_by_key(entity, ecs_key_mesh_material3d, bundle.material, loc~)
+  world.set_by_key(
+    entity,
+    MeshMaterial3dTyped::component(),
+    bundle.material,
+    loc~,
+  )
   world.set_by_key(
     entity,
     @camera_render_layers.ecs_key_render_layers,

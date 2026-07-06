@@ -224,14 +224,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   let red_sphere = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
-    @pbr.MeshMaterial3d::new(red_material),
+    @pbr.MeshMaterial3dTyped::new(red_material),
     @transform.Transform::from_xyz(-1.0F, spawn_height, 0.0F),
   ).spawn(world)
   red_sphere |> ignore
 
   let blue_sphere = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
-    @pbr.MeshMaterial3d::new(blue_material),
+    @pbr.MeshMaterial3dTyped::new(blue_material),
     @transform.Transform::from_xyz(1.0F, spawn_height, 0.0F),
   ).spawn(world)
   try! world.set_by_key(
@@ -251,7 +251,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(lime_material),
+    @pbr.MeshMaterial3dTyped::new(lime_material),
     @transform.Transform::from_xyz(0.0F, 1.0F, -10.0F),
   ).spawn(world)
   try! world.set_by_key(
@@ -276,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(white_material),
+    @pbr.MeshMaterial3dTyped::new(white_material),
     @transform.Transform::identity(),
   ).spawn(world)
   ground_plane |> ignore

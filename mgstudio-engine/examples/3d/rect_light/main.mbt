@@ -88,7 +88,7 @@ fn spawn_mesh(
     commands.spawn(
       @pbr.MeshMaterial3dBundle::new(
         mesh,
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         transform,
       ),
     ),

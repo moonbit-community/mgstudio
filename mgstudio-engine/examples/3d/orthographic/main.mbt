@@ -45,7 +45,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
           @color.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
@@ -66,7 +66,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(cube_material),
+    @pbr.MeshMaterial3dTyped::new(cube_material),
     @transform.Transform::from_xyz(1.5F, 0.5F, 1.5F),
   ).spawn(world)
   |> ignore
@@ -77,7 +77,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(cube_material),
+    @pbr.MeshMaterial3dTyped::new(cube_material),
     @transform.Transform::from_xyz(1.5F, 0.5F, -1.5F),
   ).spawn(world)
   |> ignore
@@ -88,7 +88,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(cube_material),
+    @pbr.MeshMaterial3dTyped::new(cube_material),
     @transform.Transform::from_xyz(-1.5F, 0.5F, 1.5F),
   ).spawn(world)
   |> ignore
@@ -99,7 +99,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(cube_material),
+    @pbr.MeshMaterial3dTyped::new(cube_material),
     @transform.Transform::from_xyz(-1.5F, 0.5F, -1.5F),
   ).spawn(world)
   |> ignore

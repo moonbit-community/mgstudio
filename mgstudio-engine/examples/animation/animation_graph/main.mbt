@@ -331,7 +331,7 @@ fn setup_scene(
           mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(14.0F, 0.1F, 14.0F))
         }),
       ),
-      @pbr.MeshMaterial3d::new(
+      @pbr.MeshMaterial3dTyped::new(
         materials.modify(fn(material_assets) {
           material_assets
           |> @pbr.add_material(@color.Color::srgb(0.3F, 0.5F, 0.3F))

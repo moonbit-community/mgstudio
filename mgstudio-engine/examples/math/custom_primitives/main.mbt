@@ -85,7 +85,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(plane_mesh),
-        @pbr.MeshMaterial3d::new(plane_material),
+        @pbr.MeshMaterial3dTyped::new(plane_material),
         @transform.Transform::identity(),
       ),
     ),
@@ -95,7 +95,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(pyramid_mesh),
-        @pbr.MeshMaterial3d::new(pyramid_material),
+        @pbr.MeshMaterial3dTyped::new(pyramid_material),
         Rotates::{  },
         @transform.Transform::from_xyz(0.0F, 0.7F, 0.0F),
       ),

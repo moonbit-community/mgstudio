@@ -85,7 +85,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_handle),
-        @pbr.MeshMaterial3d::new(first_pass_material),
+        @pbr.MeshMaterial3dTyped::new(first_pass_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
         FirstPassCube::{  },
         first_pass_layer,
@@ -122,7 +122,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_handle),
-        @pbr.MeshMaterial3d::new(main_pass_material),
+        @pbr.MeshMaterial3dTyped::new(main_pass_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(
           @math.Quat::from_rotation_x(-PI / 5.0F),
         ),

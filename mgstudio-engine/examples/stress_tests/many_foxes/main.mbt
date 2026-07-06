@@ -355,7 +355,7 @@ fn setup(
             )
           }),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           @pbr.standard_material_add(
             @pbr.StandardMaterial::from_color(
               @color.Color::srgb(0.3F, 0.5F, 0.3F),

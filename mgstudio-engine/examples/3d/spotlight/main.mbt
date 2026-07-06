@@ -153,7 +153,7 @@ fn setup(
             )
           }),
         ),
-        @pbr.MeshMaterial3d::new(ground_material),
+        @pbr.MeshMaterial3dTyped::new(ground_material),
         Movable::{  },
       ),
     ),
@@ -173,7 +173,7 @@ fn setup(
       commands.spawn(
         (
           cube_mesh,
-          @pbr.MeshMaterial3d::new(cube_material),
+          @pbr.MeshMaterial3dTyped::new(cube_material),
           @transform.Transform::from_xyz(x, y, z),
           Movable::{  },
         ),
@@ -213,7 +213,7 @@ fn setup(
           (
             @hierarchy.Parent::new(spotlight),
             sphere_mesh,
-            @pbr.MeshMaterial3d::new(red_emissive),
+            @pbr.MeshMaterial3dTyped::new(red_emissive),
           ),
         ),
       )
@@ -222,7 +222,7 @@ fn setup(
           (
             @hierarchy.Parent::new(spotlight),
             sphere_mesh_direction,
-            @pbr.MeshMaterial3d::new(maroon_emissive),
+            @pbr.MeshMaterial3dTyped::new(maroon_emissive),
             @transform.Transform::from_translation(
               @math.Vec3::new(0.0F, 0.0F, -0.1F),
             ),

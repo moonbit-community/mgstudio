@@ -144,7 +144,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(0.1F, 0.1F, 0.5F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
           @color.Color::srgb(0.65F, 0.93F, 0.90F),
@@ -172,7 +172,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_world_model(world : @ecs.World) -> Unit {
-  let floor_material = @pbr.MeshMaterial3d::new(
+  let floor_material = @pbr.MeshMaterial3dTyped::new(
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(@color.Color::white()),
     ),
@@ -193,7 +193,7 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let cube_material = @pbr.MeshMaterial3d::new(
+  let cube_material = @pbr.MeshMaterial3dTyped::new(
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(@color.Color::white()),
     ),

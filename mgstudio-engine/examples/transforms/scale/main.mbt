@@ -54,7 +54,7 @@ fn setup(
             meshes |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
           }),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials
           .peek()
           .add(@pbr.StandardMaterial::from_color(@color.Color::white())),

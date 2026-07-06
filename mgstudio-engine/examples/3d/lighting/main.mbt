@@ -90,8 +90,8 @@ fn add_mesh(
 fn add_material(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   material : @pbr.StandardMaterial,
-) -> @pbr.MeshMaterial3d {
-  @pbr.MeshMaterial3d::new(
+) -> @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial] {
+  @pbr.MeshMaterial3dTyped::new(
     materials.modify(fn(assets) { assets.add(material) }),
   )
 }

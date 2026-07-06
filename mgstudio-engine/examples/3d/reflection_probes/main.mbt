@@ -273,7 +273,7 @@ fn spawn_sphere(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere_mesh),
-        @pbr.MeshMaterial3d::new(sphere_material),
+        @pbr.MeshMaterial3dTyped::new(sphere_material),
         SphereMaterial::{  },
       ),
     ),

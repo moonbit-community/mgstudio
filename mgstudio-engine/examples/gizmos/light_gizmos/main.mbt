@@ -80,7 +80,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(base_material),
+    @pbr.MeshMaterial3dTyped::new(base_material),
     @transform.Transform::from_rotation(@math.Quat::from_rotation_x(-FRAC_PI_2)),
   ).spawn(world)
   |> ignore
@@ -93,7 +93,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   for x in [-2.0F, 0.0F, 2.0F] {
     @pbr.MeshMaterial3dBundle::new(
       cube_mesh,
-      @pbr.MeshMaterial3d::new(cube_material),
+      @pbr.MeshMaterial3dTyped::new(cube_material),
       @transform.Transform::from_xyz(x, 0.5F, 0.0F),
     ).spawn(world)
     |> ignore

@@ -102,7 +102,7 @@ fn spawn_mesh(
     commands.spawn(
       @engine_pbr.MeshMaterial3dBundle::new(
         mesh,
-        @engine_pbr.MeshMaterial3d::new(material),
+        @engine_pbr.MeshMaterial3dTyped::new(material),
         transform,
       ),
     ),

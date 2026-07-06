@@ -68,10 +68,9 @@ fn color_for_row(index : Int) -> @color.Color {
 }
 
 ///|
-fn spawn_meshlet_bunny(
+fn spawn_meshlet_bunny_base(
   world : @ecs.World,
   meshlet_mesh : @asset.Handle[@pbr_meshlet.MeshletMesh],
-  material : @pbr.MeshMaterial3d,
   transform : @transform.Transform,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
@@ -80,7 +79,6 @@ fn spawn_meshlet_bunny(
     @pbr_meshlet.ecs_key_meshlet_mesh3d,
     @pbr_meshlet.MeshletMesh3d::new(meshlet_mesh.id()),
   )
-  try! world.set_by_key(entity, @pbr.ecs_key_mesh_material3d, material)
   try! world.set_by_key(
     entity,
     @camera_render_layers.ecs_key_render_layers,
@@ -102,6 +100,30 @@ fn spawn_meshlet_bunny(
     @visibility.ViewVisibility::new(true),
   )
   try! world.set_by_key(entity, @transform.ecs_key_transform, transform)
+  entity
+}
+
+///|
+fn spawn_meshlet_bunny(
+  world : @ecs.World,
+  meshlet_mesh : @asset.Handle[@pbr_meshlet.MeshletMesh],
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
+  transform : @transform.Transform,
+) -> @core.Entity {
+  let entity = spawn_meshlet_bunny_base(world, meshlet_mesh, transform)
+  try! world.set_by_key(entity, @pbr.MeshMaterial3dTyped::component(), material)
+  entity
+}
+
+///|
+fn spawn_meshlet_debug_bunny(
+  world : @ecs.World,
+  meshlet_mesh : @asset.Handle[@pbr_meshlet.MeshletMesh],
+  material : @pbr.MeshMaterial3d,
+  transform : @transform.Transform,
+) -> @core.Entity {
+  let entity = spawn_meshlet_bunny_base(world, meshlet_mesh, transform)
+  try! world.set_by_key(entity, @pbr.ecs_key_mesh_material3d, material)
   entity
 }
 
@@ -179,7 +201,7 @@ fn setup(world : @ecs.World) -> Unit {
     spawn_meshlet_bunny(
       world,
       meshlet_mesh,
-      @pbr.MeshMaterial3d::new(material),
+      @pbr.MeshMaterial3dTyped::new(material),
       @transform.Transform::from_xyz(x, 0.0F, -0.3F).with_scale(
         @math.Vec3::splat(0.2F),
       ),
@@ -196,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
   for i in 0..<5 {
     let x_int = i - 2
     let x = float_from_int(x_int) / 2.0F
-    let entity = spawn_meshlet_bunny(
+    let entity = spawn_meshlet_debug_bunny(
       world,
       meshlet_mesh,
       @pbr_meshlet.meshlet_debug_mesh_material3d(debug_material),
@@ -218,7 +240,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::white()).with_perceptual_roughness(
           1.0F,

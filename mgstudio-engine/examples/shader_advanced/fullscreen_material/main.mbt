@@ -47,7 +47,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_mesh),
-        @pbr.MeshMaterial3d::new(cube_material),
+        @pbr.MeshMaterial3dTyped::new(cube_material),
         @transform.Transform::identity(),
       ),
     ),

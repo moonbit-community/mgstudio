@@ -102,7 +102,7 @@ fn setup(
           @pbr.add_mesh(assets, @math.Cuboid::new(1.0F, 1.0F, 1.0F))
         }),
       ),
-      @pbr.MeshMaterial3d::new(
+      @pbr.MeshMaterial3dTyped::new(
         materials
         .peek()
         .add(
@@ -128,7 +128,7 @@ fn setup(
           @pbr.add_mesh(assets, @math.Cuboid::new(0.5F, 0.5F, 0.5F))
         }),
       ),
-      @pbr.MeshMaterial3d::new(
+      @pbr.MeshMaterial3dTyped::new(
         materials
         .peek()
         .add(
@@ -159,7 +159,7 @@ fn setup(
           )
         }),
       ),
-      @pbr.MeshMaterial3d::new(
+      @pbr.MeshMaterial3dTyped::new(
         materials
         .peek()
         .add(

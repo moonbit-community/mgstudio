@@ -201,7 +201,7 @@ fn spawn_box_plane(
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     plane_mesh,
-    @pbr.MeshMaterial3d::new(plane_material),
+    @pbr.MeshMaterial3dTyped::new(plane_material),
     @transform.Transform::from_xyz(translation.x, translation.y, translation.z).with_rotation(
       rotation,
     ),
@@ -224,7 +224,7 @@ fn spawn_beam_pool(
     )
     let segment_entity = @pbr.MeshMaterial3dBundle::new(
       line_mesh,
-      @pbr.MeshMaterial3d::new(segment_material),
+      @pbr.MeshMaterial3dTyped::new(segment_material),
       @transform.Transform::identity(),
     ).spawn(world)
     set_visibility(world, segment_entity, false)
@@ -235,7 +235,7 @@ fn spawn_beam_pool(
     )
     let marker_entity = @pbr.MeshMaterial3dBundle::new(
       marker_mesh,
-      @pbr.MeshMaterial3d::new(marker_material),
+      @pbr.MeshMaterial3dTyped::new(marker_material),
       @transform.Transform::identity(),
     ).spawn(world)
     set_visibility(world, marker_entity, false)
@@ -385,7 +385,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let origin_marker_entity = @pbr.MeshMaterial3dBundle::new(
     marker_mesh,
-    @pbr.MeshMaterial3d::new(origin_marker_material),
+    @pbr.MeshMaterial3dTyped::new(origin_marker_material),
     @transform.Transform::identity(),
   ).spawn(world)
   set_visibility(world, origin_marker_entity, true)

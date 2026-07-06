@@ -73,7 +73,7 @@ fn setup(
     (
       OffscreenObject::{  },
       @mesh.Mesh3d::new(offscreen_mesh),
-      @pbr.MeshMaterial3d::new(offscreen_material),
+      @pbr.MeshMaterial3dTyped::new(offscreen_material),
       @transform.Transform::identity(),
       offscreen_layer,
     ),

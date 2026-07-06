@@ -206,7 +206,7 @@ fn spawn_controlled_mesh(
 ) -> Unit {
   ignore(
     commands.spawn(
-      (mesh, @pbr.MeshMaterial3d::new(material), transform, controls),
+      (mesh, @pbr.MeshMaterial3dTyped::new(material), transform, controls),
     ),
   )
 }
@@ -331,7 +331,7 @@ fn setup_scene(
     commands.spawn(
       (
         sphere_mesh,
-        @pbr.MeshMaterial3d::new(flame_material),
+        @pbr.MeshMaterial3dTyped::new(flame_material),
         @transform.Transform::from_xyz(-1.0F, 1.15F, 0.0F).with_scale(
           @math.Vec3::new(0.1F, 0.2F, 0.1F),
         ),
@@ -503,7 +503,7 @@ fn setup_scene(
     commands.spawn(
       (
         plane_mesh,
-        @pbr.MeshMaterial3d::new(paper_material),
+        @pbr.MeshMaterial3dTyped::new(paper_material),
         @transform.Transform::from_xyz(0.0F, 0.5F, -3.0F)
         .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
         .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),

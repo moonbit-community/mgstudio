@@ -50,7 +50,7 @@ fn setup(
             mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32))
           }),
         ),
-        @pbr.MeshMaterial3d::new(plane_material),
+        @pbr.MeshMaterial3dTyped::new(plane_material),
         @transform.Transform::identity().with_rotation(
           @math.Quat::from_rotation_x(-@math.pi_half()),
         ),
@@ -118,7 +118,7 @@ fn setup(
               mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
             }),
           ),
-          @pbr.MeshMaterial3d::new(normal),
+          @pbr.MeshMaterial3dTyped::new(normal),
           @transform.Transform::from_xyz(
             0.0F,
             0.35F + Float::from_double(index.to_double()) * 0.6F,
@@ -154,7 +154,10 @@ fn setup(
 fn toggle_cube_color_on_click(
   pointer : @app.OnPointer[@app.PointerClick],
   cubes : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Write[PickableCube]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Write[PickableCube],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
@@ -169,7 +172,7 @@ fn toggle_cube_color_on_click(
       value.normal
     }
   })
-  material.set(@pbr.MeshMaterial3d::new(next))
+  material.set(@pbr.MeshMaterial3dTyped::new(next))
 }
 
 ///|

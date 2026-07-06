@@ -85,7 +85,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(plane_mesh),
-        @pbr.MeshMaterial3d::new(plane_material),
+        @pbr.MeshMaterial3dTyped::new(plane_material),
         @transform.Transform::identity(),
       ),
     ),

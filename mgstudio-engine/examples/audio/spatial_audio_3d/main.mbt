@@ -224,7 +224,7 @@ fn spawn_mesh(
   )
   @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     transform,
   ).spawn(world)
 }

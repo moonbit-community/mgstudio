@@ -226,7 +226,7 @@ fn spawn_cubes(
         @mesh.Mesh3d::new(
           meshes.peek() |> @pbr.add_mesh(@math.Cuboid::new(3.0F, 3.0F, 3.0F)),
         ),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         transform,
         Rotate::{  },
       ),
@@ -239,7 +239,7 @@ fn spawn_cubes(
           meshes.peek()
           |> @pbr.add_mesh(@math.Cuboid::new(-13.0F, -13.0F, -13.0F)),
         ),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         transform,
       ),
     ),
@@ -355,7 +355,7 @@ fn spawn_light_textures(
         @mesh.Mesh3d::new(
           meshes.peek() |> @pbr.add_mesh(@math.Sphere::new(1.0F)),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials
           .peek()
           .add(

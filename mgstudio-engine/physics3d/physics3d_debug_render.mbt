@@ -34,11 +34,11 @@ pub fn Physics3dDebugRenderContext::Physics3dDebugRenderContext() -> Physics3dDe
 ///|
 priv struct Physics3dDebugRenderState {
   mut line_mesh : @mesh.Mesh3d?
-  mut dynamic_material : @pbr.MeshMaterial3d?
-  mut fixed_material : @pbr.MeshMaterial3d?
-  mut kinematic_material : @pbr.MeshMaterial3d?
-  mut parentless_material : @pbr.MeshMaterial3d?
-  mut sensor_material : @pbr.MeshMaterial3d?
+  mut dynamic_material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?
+  mut fixed_material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?
+  mut kinematic_material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?
+  mut parentless_material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?
+  mut sensor_material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]?
   line_entities : Array[@core.Entity]
 }
 
@@ -60,11 +60,13 @@ let physics3d_debug_render_state : Physics3dDebugRenderState = {
 const DEBUG_LINE_THICKNESS : Float = 0.04F
 
 ///|
-fn physics3d_debug_make_material(color : @color.Color) -> @pbr.MeshMaterial3d {
+fn physics3d_debug_make_material(
+  color : @color.Color,
+) -> @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial] {
   let standard = @pbr.StandardMaterial::from_color(color)
     .with_unlit(true)
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-  @pbr.MeshMaterial3d::new(@pbr.standard_material_add(standard))
+  @pbr.MeshMaterial3dTyped::new(@pbr.standard_material_add(standard))
 }
 
 ///|
@@ -80,7 +82,7 @@ fn physics3d_debug_min_extent(value : Float) -> Float {
 fn physics3d_debug_material_for(
   rb3d : RigidBody3d?,
   sensor : Bool,
-) -> @pbr.MeshMaterial3d? {
+) -> @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]? {
   let state = physics3d_debug_render_state
   if sensor {
     return state.sensor_material
@@ -153,7 +155,7 @@ fn physics3d_debug_clear_lines(world : @ecs.World) -> Unit {
 priv struct DebugLine3d {
   start : @math.Vec3
   end : @math.Vec3
-  material : @pbr.MeshMaterial3d
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]
 }
 
 ///|
@@ -215,7 +217,7 @@ fn physics3d_debug_add_line(
   lines : Array[DebugLine3d],
   start : @math.Vec3,
   end : @math.Vec3,
-  material : @pbr.MeshMaterial3d,
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
 ) -> Unit {
   if end.sub(start).length() <= 0.0001F {
     return
@@ -230,7 +232,7 @@ fn physics3d_debug_emit_cuboid_lines(
   hx : Float,
   hy : Float,
   hz : Float,
-  material : @pbr.MeshMaterial3d,
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
 ) -> Unit {
   let x = physics3d_debug_min_extent(hx)
   let y = physics3d_debug_min_extent(hy)
@@ -280,7 +282,7 @@ fn physics3d_debug_emit_ball_lines(
   lines : Array[DebugLine3d],
   transform : @transform.Transform,
   radius : Float,
-  material : @pbr.MeshMaterial3d,
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
 ) -> Unit {
   let r = physics3d_debug_min_extent(radius)
   let segments = 24
@@ -325,7 +327,7 @@ fn physics3d_debug_emit_triangle_lines(
   a : @math.Vec3,
   b : @math.Vec3,
   c : @math.Vec3,
-  material : @pbr.MeshMaterial3d,
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
 ) -> Unit {
   let wa = physics3d_debug_transform_point(transform, a)
   let wb = physics3d_debug_transform_point(transform, b)
@@ -341,7 +343,7 @@ fn physics3d_debug_emit_trimesh_lines(
   transform : @transform.Transform,
   vertices : Array[@math.Vec3],
   indices : Array[(Int, Int, Int)],
-  material : @pbr.MeshMaterial3d,
+  material : @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial],
 ) -> Unit {
   for tri in indices {
     let i0 = tri.0
@@ -445,7 +447,11 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
       physics3d_debug_line_transform(line.start, line.end),
     )
     |> ignore)
-    try! (ecs_world.replace(entity, @pbr.ecs_key_mesh_material3d, line.material)
+    try! (ecs_world.replace(
+      entity,
+      @pbr.MeshMaterial3dTyped::component(),
+      line.material,
+    )
     |> ignore)
   }
 }

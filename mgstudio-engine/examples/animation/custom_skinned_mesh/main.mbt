@@ -183,7 +183,7 @@ fn setup(
     let mesh_entity = commands.spawn(
       @pbr.MeshMaterial3dBundle::new(
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::identity(),
       ),
     )

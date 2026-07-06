@@ -164,7 +164,7 @@ fn setup_scene(
         commands.spawn(
           (
             @mesh.Mesh3d::new(mesh),
-            @pbr.MeshMaterial3d::new(material),
+            @pbr.MeshMaterial3dTyped::new(material),
             @transform.Transform::from_xyz(
               float_from_int(x) * 2.0F,
               0.0F,

@@ -48,7 +48,7 @@ fn spawn_pickable_shape(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(normal),
+        @pbr.MeshMaterial3dTyped::new(normal),
         @transform.Transform::from_xyz(position.x, position.y, position.z),
         PickableMesh::{ normal, hover, pressed },
       ),
@@ -85,7 +85,7 @@ fn setup(
             mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(8.0F, 64))
           }),
         ),
-        @pbr.MeshMaterial3d::new(ground),
+        @pbr.MeshMaterial3dTyped::new(ground),
         @transform.Transform::identity().with_rotation(
           @math.Quat::from_rotation_x(-@math.pi_half()),
         ),
@@ -152,21 +152,29 @@ fn set_target_material(
   target : @core.Entity?,
   material_handle : (PickableMesh) -> @asset.Handle[@pbr.StandardMaterial],
   query : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[PickableMesh],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
   guard target is Some(entity) else { return }
   let target_data = query.get(entity) catch { _ => None }
   guard target_data is Some((mesh_material, pickable)) else { return }
-  mesh_material.set(@pbr.MeshMaterial3d::new(material_handle(pickable.value())))
+  mesh_material.set(
+    @pbr.MeshMaterial3dTyped::new(material_handle(pickable.value())),
+  )
 }
 
 ///|
 fn on_pointer_enter(
   pointer : @app.OnPointer[@app.PointerEnter],
   query : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[PickableMesh],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
@@ -177,7 +185,10 @@ fn on_pointer_enter(
 fn on_pointer_leave(
   pointer : @app.OnPointer[@app.PointerLeave],
   query : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[PickableMesh],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
@@ -188,7 +199,10 @@ fn on_pointer_leave(
 fn on_pointer_down(
   pointer : @app.OnPointer[@app.PointerDown],
   query : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[PickableMesh],
+    ),
     @ecs.All,
   ],
 ) -> Unit {
@@ -199,7 +213,7 @@ fn on_pointer_down(
   }
   let target_data = query.get(entity) catch { _ => None }
   if target_data is Some((mesh_material, pickable)) {
-    mesh_material.set(@pbr.MeshMaterial3d::new(pickable.value().pressed))
+    mesh_material.set(@pbr.MeshMaterial3dTyped::new(pickable.value().pressed))
     dragging_entity.val = Some(entity)
     last_drag_position.val = Some(pointer.position())
   } else {
@@ -212,7 +226,10 @@ fn on_pointer_down(
 fn on_pointer_up(
   pointer : @app.OnPointer[@app.PointerUp],
   query : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[PickableMesh]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[PickableMesh],
+    ),
     @ecs.All,
   ],
 ) -> Unit {

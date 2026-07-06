@@ -162,7 +162,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let planet = @pbr.MeshMaterial3dBundle::new(
     planet_mesh,
-    @pbr.MeshMaterial3d::new(planet_material),
+    @pbr.MeshMaterial3dTyped::new(planet_material),
     @transform.Transform::identity(),
   ).spawn(world)
   ignore(
@@ -204,7 +204,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let satellite = @pbr.MeshMaterial3dBundle::new(
     satellite_mesh,
-    @pbr.MeshMaterial3d::new(satellite_material),
+    @pbr.MeshMaterial3dTyped::new(satellite_material),
     @transform.Transform::from_xyz(1.5F, 0.0F, 0.0F),
   ).spawn(world)
   ignore(

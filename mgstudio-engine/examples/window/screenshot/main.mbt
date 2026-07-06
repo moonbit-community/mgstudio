@@ -41,7 +41,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
@@ -56,7 +56,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@color.Color::srgb(0.8F, 0.7F, 0.6F)),
       ),

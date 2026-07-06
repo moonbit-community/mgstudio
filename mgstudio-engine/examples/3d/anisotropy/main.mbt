@@ -302,7 +302,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(create_anisotropy_sphere_mesh(asset_server.get())),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           create_anisotropy_sphere_material(asset_server.get()),
         ),
         Scene::Sphere,
@@ -413,7 +413,10 @@ fn handle_input(
     @ecs.Or[(@ecs.With[@pbr.DirectionalLight], @ecs.With[@pbr.PointLight])],
   ],
   meshes : @ecs.Query[
-    (@ecs.Write[@pbr.MeshMaterial3d], @ecs.Read[MaterialVariants]),
+    (
+      @ecs.Write[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+      @ecs.Read[MaterialVariants],
+    ),
     @ecs.All,
   ],
   scenes : @ecs.Query[
@@ -459,7 +462,7 @@ fn handle_input(
     try! meshes.view(fn(_entity, data) {
       let (material_handle, material_variants) = data
       material_handle.set(
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           if status.anisotropy_enabled {
             material_variants.value().anisotropic
           } else {

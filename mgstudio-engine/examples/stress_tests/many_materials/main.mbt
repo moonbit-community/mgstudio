@@ -84,7 +84,7 @@ fn setup(
         commands.spawn(
           (
             @mesh.Mesh3d::new(cube_mesh),
-            @pbr.MeshMaterial3d::new(mat_handle),
+            @pbr.MeshMaterial3dTyped::new(mat_handle),
             @transform.Transform::from_xyz(
               float_from_int(x),
               0.0F,

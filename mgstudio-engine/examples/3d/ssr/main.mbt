@@ -651,7 +651,7 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(ssr_add_mesh(world, @math.Cuboid::new(1.0F, 1.0F, 1.0F))),
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   try! world.set_by_key(cube, CubeModel::component(), CubeModel::{  })
@@ -720,7 +720,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     )
     let entity = @pbr.MeshMaterial3dBundle::new(
       capsule_mesh,
-      @pbr.MeshMaterial3d::new(material),
+      @pbr.MeshMaterial3dTyped::new(material),
       @transform.Transform::from_xyz(
         float_from_int(i) * 1.1F - 2.2F,
         0.5F,
@@ -758,7 +758,7 @@ fn spawn_metallic_base(world : @ecs.World) -> Unit {
         ).build(),
       ),
     ),
-    @pbr.MeshMaterial3d::new(metallic_material),
+    @pbr.MeshMaterial3dTyped::new(metallic_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
   try! (world.replace(
@@ -791,7 +791,7 @@ fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
         ).build(),
       ),
     ),
-    @pbr.MeshMaterial3d::new(red_material),
+    @pbr.MeshMaterial3dTyped::new(red_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
   try! (world.replace(
@@ -838,7 +838,10 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       @pbr.ExtendedMaterial::new(water_base_material, water_extension).metadata(),
     ),
   )
-  let water = @pbr.MeshMaterial3dBundle::new(
+  let water = world.spawn_empty()
+  try! world.set_by_key(
+    water,
+    @mesh.ecs_key_mesh3d,
     @mesh.Mesh3d::new(
       ssr_add_mesh(
         world,
@@ -847,9 +850,35 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         ).build(),
       ),
     ),
-    water_mesh_material,
+  )
+  try! world.set_by_key(
+    water, @pbr.ecs_key_mesh_material3d, water_mesh_material,
+  )
+  try! world.set_by_key(
+    water,
+    @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
-  ).spawn(world)
+  )
+  try! world.set_by_key(
+    water,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::RenderLayers(),
+  )
+  try! world.set_by_key(
+    water,
+    @visibility.ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    water,
+    @visibility.ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  try! world.set_by_key(
+    water,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
   try! world.set_by_key(water, WaterModel::component(), WaterModel::{  })
 }
 

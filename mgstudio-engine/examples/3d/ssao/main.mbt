@@ -240,7 +240,7 @@ fn setup(
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(base_material),
+    @pbr.MeshMaterial3dTyped::new(base_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   |> ignore
@@ -251,7 +251,7 @@ fn setup(
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(base_material),
+    @pbr.MeshMaterial3dTyped::new(base_material),
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   ).spawn(world)
   |> ignore
@@ -262,7 +262,7 @@ fn setup(
         assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(base_material),
+    @pbr.MeshMaterial3dTyped::new(base_material),
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
@@ -280,7 +280,7 @@ fn setup(
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(
+    @pbr.MeshMaterial3dTyped::new(
       materials
       .peek()
       .add(

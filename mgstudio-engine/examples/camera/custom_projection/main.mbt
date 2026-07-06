@@ -133,7 +133,7 @@ fn setup(
   commands.spawn(
     (
       @mesh.Mesh3d::new(ground_mesh),
-      @pbr.MeshMaterial3d::new(white_material),
+      @pbr.MeshMaterial3dTyped::new(white_material),
       @transform.Transform::from_rotation(
         @math.Quat::from_rotation_x(-@math.pi() / 2.0F),
       ),
@@ -144,7 +144,7 @@ fn setup(
   commands.spawn(
     (
       @mesh.Mesh3d::new(cube_mesh),
-      @pbr.MeshMaterial3d::new(cube_material),
+      @pbr.MeshMaterial3dTyped::new(cube_material),
       @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
     ),
   )

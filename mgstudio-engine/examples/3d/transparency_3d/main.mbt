@@ -105,7 +105,7 @@ fn spawn_mesh(
 ) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @pbr.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dTyped::new(material),
     transform,
   ).spawn(world)
   |> ignore

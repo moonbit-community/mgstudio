@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/physics3d",
   "Milky2018/mgstudio/transform",
 }
@@ -56,7 +57,7 @@ pub fn rapier3d_spawn_cuboid(@ecs.World, @math.Vec3, @math.Vec3, @color.Color, @
 
 pub fn rapier3d_spawn_ground(@ecs.World, @math.Vec3, @math.Vec3) -> @core.Entity
 
-pub fn rapier3d_unlit_material(@color.Color) -> @material.MeshMaterial3d
+pub fn rapier3d_unlit_material(@color.Color) -> @pbr.MeshMaterial3dTyped[@material.StandardMaterial]
 
 // Errors
 

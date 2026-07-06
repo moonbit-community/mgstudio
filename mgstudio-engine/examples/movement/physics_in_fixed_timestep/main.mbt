@@ -283,7 +283,7 @@ fn spawn_environment(
               @ecs.Name::new("Sphere"),
               @transform.Transform::from_translation(translation),
               @mesh.Mesh3d::new(sphere_mesh),
-              @pbr.MeshMaterial3d::new(sphere_material),
+              @pbr.MeshMaterial3dTyped::new(sphere_material),
             ),
           ),
         )

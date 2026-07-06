@@ -629,7 +629,7 @@ fn setup_image_viewer_scene(
     commands.spawn(
       (
         @mesh.Mesh3d::new(mesh_handle),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         transform,
         @visibility.Visibility::Hidden,
         SceneNumber::{ value: 3 },

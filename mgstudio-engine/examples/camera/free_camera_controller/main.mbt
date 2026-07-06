@@ -370,14 +370,14 @@ fn spawn_world(
 
   ignore(
     commands.spawn(
-      (@mesh.Mesh3d::new(floor), @pbr.MeshMaterial3d::new(white_material)),
+      (@mesh.Mesh3d::new(floor), @pbr.MeshMaterial3dTyped::new(white_material)),
     ),
   )
   ignore(
     commands.spawn(
       (
         @mesh.Mesh3d::new(floor),
-        @pbr.MeshMaterial3d::new(white_material),
+        @pbr.MeshMaterial3dTyped::new(white_material),
         @transform.Transform::from_xyz(0.0F, -0.01F, 0.0F).with_rotation(
           @math.Quat::from_rotation_x(@math.pi()),
         ),
@@ -388,7 +388,7 @@ fn spawn_world(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere),
-        @pbr.MeshMaterial3d::new(blue_material),
+        @pbr.MeshMaterial3dTyped::new(blue_material),
         @transform.Transform::from_xyz(3.0F, 1.5F, 0.0F),
       ),
     ),
@@ -397,7 +397,7 @@ fn spawn_world(
     commands.spawn(
       (
         @mesh.Mesh3d::new(wall),
-        @pbr.MeshMaterial3d::new(white_material),
+        @pbr.MeshMaterial3dTyped::new(white_material),
         @transform.Transform::from_xyz(-3.0F, 2.0F, 0.0F),
       ),
     ),
@@ -406,7 +406,7 @@ fn spawn_world(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube),
-        @pbr.MeshMaterial3d::new(blue_material),
+        @pbr.MeshMaterial3dTyped::new(blue_material),
         @transform.Transform::from_xyz(-4.2F, 0.5F, 0.0F),
       ),
     ),
@@ -415,7 +415,7 @@ fn spawn_world(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube),
-        @pbr.MeshMaterial3d::new(red_material),
+        @pbr.MeshMaterial3dTyped::new(red_material),
         @transform.Transform::from_xyz(3.0F, -2.0F, 0.0F).with_rotation(
           @math.Quat::from_rotation_y(@math.pi() / 4.0F)
           .mul(@math.Quat::from_rotation_x(@math.pi() / 4.0F))

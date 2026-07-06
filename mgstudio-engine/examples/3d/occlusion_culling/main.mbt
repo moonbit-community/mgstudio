@@ -129,7 +129,7 @@ fn spawn_small_cubes(
       )
       let entity = @pbr.MeshMaterial3dBundle::new(
         mesh,
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(
           local_position.x,
           local_position.y,
@@ -167,7 +167,7 @@ fn setup(world : @ecs.World) -> Unit {
         )
       }),
     ),
-    @pbr.MeshMaterial3d::new(large_cube_material),
+    @pbr.MeshMaterial3dTyped::new(large_cube_material),
     @transform.Transform::identity(),
   ).spawn(world)
   occlusion_state.val.large_cube = Some(large_cube)

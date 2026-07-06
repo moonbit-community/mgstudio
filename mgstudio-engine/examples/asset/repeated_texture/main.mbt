@@ -75,7 +75,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(center_mesh),
-        @pbr.MeshMaterial3d::new(center_material),
+        @pbr.MeshMaterial3dTyped::new(center_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
@@ -84,7 +84,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(left_mesh),
-        @pbr.MeshMaterial3d::new(left_material),
+        @pbr.MeshMaterial3dTyped::new(left_material),
         @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
       ),
     ),
@@ -93,7 +93,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(right_mesh),
-        @pbr.MeshMaterial3d::new(right_material),
+        @pbr.MeshMaterial3dTyped::new(right_material),
         @transform.Transform::from_xyz(1.5F, 0.0F, 0.0F),
       ),
     ),

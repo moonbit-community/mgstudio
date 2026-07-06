@@ -237,7 +237,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         plane_mesh,
-        @pbr.MeshMaterial3d::new(plane_material),
+        @pbr.MeshMaterial3dTyped::new(plane_material),
         @transform.Transform::identity(),
       ),
     ),
@@ -350,7 +350,7 @@ fn observe_on_step(
             ),
           },
           @mesh.Mesh3d::new(particle_assets.get().mesh),
-          @pbr.MeshMaterial3d::new(particle_assets.get().material),
+          @pbr.MeshMaterial3dTyped::new(particle_assets.get().material),
           @transform.Transform::from_translation(translation).with_scale(
             @math.Vec3::splat(size),
           ),

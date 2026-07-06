@@ -53,7 +53,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(20.0F, 1.0F, 20.0F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(ground_material),
+    @pbr.MeshMaterial3dTyped::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
   ).spawn(world)
   try! world.set_by_key(
@@ -80,7 +80,7 @@ fn setup(world : @ecs.World) -> Unit {
         assets |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 0.4F))
       }),
     ),
-    @pbr.MeshMaterial3d::new(wall_material),
+    @pbr.MeshMaterial3dTyped::new(wall_material),
     @transform.Transform::from_xyz(0.0F, 2.0F, -3.0F),
   ).spawn(world)
   try! world.set_by_key(

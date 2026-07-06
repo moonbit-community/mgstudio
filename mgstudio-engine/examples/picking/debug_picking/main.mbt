@@ -68,7 +68,7 @@ fn setup(
             mesh_assets |> @pbr.add_mesh(@mesh_primitives.circle_mesh(4.0F, 32))
           }),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials.modify(fn(material_assets) {
             material_assets |> @pbr.add_material(@color.Color::white())
           }),
@@ -87,7 +87,7 @@ fn setup(
             mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
           }),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials.modify(fn(material_assets) {
             material_assets
             |> @pbr.add_material(@color.Color::srgb(0.5F, 0.7F, 1.0F))

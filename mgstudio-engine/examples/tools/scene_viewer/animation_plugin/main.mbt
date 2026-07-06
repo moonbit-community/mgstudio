@@ -41,7 +41,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @mesh.Mesh3d::new(mesh),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::identity(),
         Spin::{ speed: 0.8F },
       ),

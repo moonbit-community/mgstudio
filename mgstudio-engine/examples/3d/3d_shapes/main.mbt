@@ -184,7 +184,7 @@ fn spawn_shape(
     commands.spawn(
       (
         mesh,
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         @transform.Transform::from_xyz(x, 2.0F, row_z(row)).with_rotation(
           @math.Quat::from_rotation_x(-PI / 4.0F),
         ),
@@ -453,7 +453,7 @@ fn setup(
             )
           }),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials.modify(fn(material_assets) {
             material_assets.add(
               @pbr.StandardMaterial::from_color(

@@ -515,7 +515,7 @@ fn setup(
             ).build(),
           ),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials.modify(fn(assets) {
             assets.add(
               @pbr.StandardMaterial::from_color(
@@ -545,7 +545,7 @@ fn setup(
               assets |> @pbr.add_mesh(@math.Cuboid::new(0.25F, 0.25F, 0.25F))
             }),
           ),
-          @pbr.MeshMaterial3d::new(cube_material),
+          @pbr.MeshMaterial3dTyped::new(cube_material),
           @transform.Transform::from_xyz(
             i_f * 0.25F - 1.0F,
             0.125F,

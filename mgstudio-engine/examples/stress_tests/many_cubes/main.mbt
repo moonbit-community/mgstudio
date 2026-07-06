@@ -53,7 +53,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(floor_mesh),
-        @pbr.MeshMaterial3d::new(floor_material),
+        @pbr.MeshMaterial3dTyped::new(floor_material),
         @transform.Transform::from_xyz(0.0F, -0.05F, 0.0F),
       ),
     ),
@@ -74,7 +74,7 @@ fn setup(
         commands.spawn(
           (
             @mesh.Mesh3d::new(cube_mesh),
-            @pbr.MeshMaterial3d::new(cube_material),
+            @pbr.MeshMaterial3dTyped::new(cube_material),
             @transform.Transform::from_xyz(px, 0.45F, pz),
             RotatingCube::{  },
           ),

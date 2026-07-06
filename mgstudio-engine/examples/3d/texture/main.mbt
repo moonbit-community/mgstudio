@@ -70,7 +70,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(quad_handle),
-        @pbr.MeshMaterial3d::new(base_material),
+        @pbr.MeshMaterial3dTyped::new(base_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(rotation),
       ),
     ),
@@ -80,7 +80,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(quad_handle),
-        @pbr.MeshMaterial3d::new(red_material),
+        @pbr.MeshMaterial3dTyped::new(red_material),
         @transform.Transform::identity().with_rotation(rotation),
       ),
     ),
@@ -90,7 +90,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(quad_handle),
-        @pbr.MeshMaterial3d::new(blue_material),
+        @pbr.MeshMaterial3dTyped::new(blue_material),
         @transform.Transform::from_xyz(0.0F, 0.0F, -1.5F).with_rotation(
           rotation,
         ),

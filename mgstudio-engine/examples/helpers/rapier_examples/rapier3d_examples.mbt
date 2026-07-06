@@ -86,8 +86,10 @@ pub fn rapier3d_color(i : Int) -> @color.Color {
 }
 
 ///|
-pub fn rapier3d_unlit_material(color : @color.Color) -> @pbr.MeshMaterial3d {
-  @pbr.MeshMaterial3d::new(
+pub fn rapier3d_unlit_material(
+  color : @color.Color,
+) -> @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial] {
+  @pbr.MeshMaterial3dTyped::new(
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(color).with_unlit(true),
     ),

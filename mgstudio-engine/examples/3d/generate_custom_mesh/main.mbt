@@ -191,7 +191,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_mesh_handle),
-        @pbr.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3dTyped::new(material),
         CustomUV::{  },
       ),
     ),

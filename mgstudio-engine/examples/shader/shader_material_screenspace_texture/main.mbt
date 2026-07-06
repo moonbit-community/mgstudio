@@ -67,7 +67,7 @@ fn setup(
           ).build(),
         ),
       ),
-      @pbr.MeshMaterial3d::new(
+      @pbr.MeshMaterial3dTyped::new(
         materials
         .peek()
         .add(

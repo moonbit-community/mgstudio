@@ -124,7 +124,7 @@ fn setup(
             ).build(),
           ),
         ),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials
           .peek()
           .add(
@@ -145,7 +145,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere_mesh),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials
           .peek()
           .add(
@@ -163,7 +163,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere_mesh),
-        @pbr.MeshMaterial3d::new(
+        @pbr.MeshMaterial3dTyped::new(
           materials
           .peek()
           .add(

@@ -92,7 +92,7 @@ fn setup(
         Left::{  },
         @ecs.Name::new("Left Shape"),
         @mesh.Mesh3d::new(left_shape_model),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         @transform.Transform::from_xyz(-3.0F, 0.0F, 0.0F),
         left_shape,
       ),
@@ -104,7 +104,7 @@ fn setup(
       (
         @ecs.Name::new("Right Shape"),
         @mesh.Mesh3d::new(right_shape_model),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         @transform.Transform::from_xyz(3.0F, 0.0F, 0.0F),
         right_shape,
       ),

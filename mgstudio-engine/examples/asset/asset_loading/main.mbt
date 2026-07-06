@@ -74,7 +74,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(torus_handle),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         @transform.Transform::from_xyz(-3.0F, 0.0F, 0.0F),
       ),
     ),
@@ -83,7 +83,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(cube_handle),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
@@ -92,7 +92,7 @@ fn setup(
     commands.spawn(
       (
         @mesh.Mesh3d::new(sphere_handle),
-        @pbr.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3dTyped::new(material_handle),
         @transform.Transform::from_xyz(3.0F, 0.0F, 0.0F),
       ),
     ),
