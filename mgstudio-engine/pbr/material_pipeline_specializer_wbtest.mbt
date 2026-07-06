@@ -1717,21 +1717,14 @@ test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support
 
 ///|
 test "pbr material specialization keeps tangent defs for forward decal meshes" {
-  let geometry = @mesh.Mesh3dGeometry::new(
-    [
-      @math.Vec3::new(-0.5F, -0.5F, 0.0F),
-      @math.Vec3::new(0.5F, -0.5F, 0.0F),
-      @math.Vec3::new(0.5F, 0.5F, 0.0F),
-      @math.Vec3::new(-0.5F, 0.5F, 0.0F),
-    ],
-    [
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-      @math.Vec2::new(0.0F, 1.0F),
-    ],
-    Some([0, 1, 2, 0, 2, 3]),
-  )
+  let geometry = @mesh_primitives.RectangleMeshBuilder::new(1.0F, 1.0F)
+    .build()
+    .rotated_by(
+      @math.Quat::from_rotation_arc(
+        @math.Vec3::new(0.0F, 0.0F, 1.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
   match geometry.generate_tangents() {
     Some(err) => {
       ignore(err)

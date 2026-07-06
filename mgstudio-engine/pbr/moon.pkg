@@ -71,6 +71,10 @@ import {
   "Milky2018/wgsl/common" @wgsl_common,
 } for "test"
 
+import {
+  "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
+} for "wbtest"
+
 supported_targets = "native"
 
 options(
