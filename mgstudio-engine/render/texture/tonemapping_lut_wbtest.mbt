@@ -34,3 +34,40 @@ test "render/texture: bevy tonemapping ktx2 assets upload as 3d textures" {
   }
   debug_inspect(is_3d, content="true")
 }
+
+///|
+test "render/texture: bevy fog volume density asset reaches volumetric fog textured branch" {
+  let backend = @renderer.GpuBackend::new(assets_base="assets")
+  let previous_backend = @renderer.render_context_backend_for_test()
+  @renderer.render_context_set_backend_for_test(Some(backend))
+  register_asset_texture_backend()
+  let handle : @asset.Handle[@asset.Image] = @asset.asset_with_world(
+    @ecs.World::new(),
+    fn() { @asset.AssetServer::new().load("volumes/bunny.ktx2") },
+  )
+  let texture_id = handle.id()
+  debug_inspect(texture_id > 0, content="true")
+  let image = GpuImage::from_texture_id(texture_id).unwrap()
+  debug_inspect(image.width(), content="64")
+  debug_inspect(image.height(), content="64")
+  debug_inspect(
+    image
+    .format()
+    .map(fn(format) { format.to_u32() == @wgpu.TEXTURE_FORMAT_R32_FLOAT }),
+    content="Some(true)",
+  )
+  debug_inspect(
+    image
+    .texture()
+    .map(fn(texture) {
+      texture.dimension_u32().raw == @wgpu.TEXTURE_DIMENSION_3D
+    }),
+    content="Some(true)",
+  )
+  debug_inspect(image.view() is Some(_), content="true")
+  debug_inspect(
+    GpuImage::from_texture_id(texture_id) is Some(_),
+    content="true",
+  )
+  @renderer.render_context_set_backend_for_test(previous_backend)
+}
