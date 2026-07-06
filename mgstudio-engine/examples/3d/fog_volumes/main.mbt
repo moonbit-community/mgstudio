@@ -239,7 +239,8 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   ] = @ecs.query_filtered(world, @ecs.With::new(@pbr.ecs_key_directional_light))
   let directional_light_matches = Ref(false)
   let directional_light_transform_matches = Ref(false)
-  try! directional_light_query.view(fn(_entity, data) {
+  let directional_light_has_volumetric_marker = Ref(false)
+  try! directional_light_query.view(fn(entity, data) {
     let (directional_light, transform) = data
     directional_light_matches.val = directional_light.value().shadow_maps_enabled &&
       fog_volumes_approx_eq(directional_light.value().illuminance, 32_000.0F)
@@ -247,9 +248,14 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
       transform.value().translation,
       @math.Vec3::new(1.0F, 1.0F, -0.3F),
     )
+    directional_light_has_volumetric_marker.val = (try! world.get_by_key(
+        entity, @pbr.ecs_key_volumetric_light,
+      ))
+      is Some(_)
   })
   debug_inspect(directional_light_matches.val, content="true")
   debug_inspect(directional_light_transform_matches.val, content="true")
+  debug_inspect(directional_light_has_volumetric_marker.val, content="true")
 
   let camera_query : @ecs.Query[
     (
@@ -329,9 +335,26 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
     @pbr_render.render3d_collect_extracted_directional_lights(render_world).length(),
     content="1",
   )
+  let extracted_directional_lights = @pbr_render.render3d_collect_extracted_directional_lights(
+    render_world,
+  )
+  let extracted_directional_matches = extracted_directional_lights.length() == 1 &&
+    extracted_directional_lights[0].volumetric &&
+    extracted_directional_lights[0].shadow_maps_enabled &&
+    fog_volumes_approx_eq(
+      extracted_directional_lights[0].illuminance,
+      32_000.0F,
+    ) &&
+    fog_volumes_vec3_approx_eq(
+      extracted_directional_lights[0].transform.translation,
+      @math.Vec3::new(1.0F, 1.0F, -0.3F),
+    )
+  debug_inspect(extracted_directional_matches, content="true")
+  let gpu_lights = @pbr_render.render3d_collect_gpu_lights(render_world)
+  debug_inspect(gpu_lights.n_directional_lights, content="1")
   debug_inspect(
-    @pbr_render.render3d_collect_gpu_lights(render_world).n_directional_lights,
-    content="1",
+    (gpu_lights.directional_lights[0].flags & (1U << 1)) != 0U,
+    content="true",
   )
 }
 
