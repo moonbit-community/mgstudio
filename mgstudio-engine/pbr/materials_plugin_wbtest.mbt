@@ -1743,7 +1743,6 @@ fn material_test_extracted_mesh_payload(
     material_extension: None,
     material_properties,
     material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-    material_type_tag: "StandardMaterial",
     lightmap: None,
     is_forward_decal: false,
     forward_decal_material_ext: None,
@@ -2633,6 +2632,47 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       ),
     )
   })
+  let resolved_slots = RenderMaterial3dResolvedSlots::new()
+  resolved_slots.set_resolved(
+    no_shadows.id(),
+    PreparedMaterial::from_material(
+      @asset.Handle::new(630),
+      ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial(),
+      no_shadow_pipeline,
+      @material.OpaqueRendererMethod::Forward,
+    ).resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    missing_render_mesh.id(),
+    PreparedMaterial::from_material(
+      @asset.Handle::new(635),
+      ParityCustomMaterial::ParityCustomMaterial(),
+      pipeline,
+      @material.OpaqueRendererMethod::Forward,
+    ).resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    ready.id(),
+    PreparedMaterial::from_material(
+      @asset.Handle::new(640),
+      ParityCustomMaterial::ParityCustomMaterial(),
+      pipeline,
+      @material.OpaqueRendererMethod::Forward,
+    ).resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    non_shadow_caster.id(),
+    PreparedMaterial::from_material(
+      @asset.Handle::new(650),
+      ParityCustomMaterial::ParityCustomMaterial(),
+      pipeline,
+      @material.OpaqueRendererMethod::Forward,
+    ).resolved_material(),
+  )
+  world.insert_resource(
+    RenderMaterial3dResolvedSlots::resource(),
+    resolved_slots,
+  )
   let mesh_instances = RenderMeshInstances::new()
   let ready_flags = RenderMeshInstanceFlags::shadow_caster()
   mesh_instances.insert(
@@ -3206,6 +3246,31 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     value.insert(704, prepared_missing_binding)
     value.insert(705, prepared_cache_miss)
   })
+  let resolved_slots = RenderMaterial3dResolvedSlots::new()
+  resolved_slots.set_resolved(
+    depth_main.id(),
+    prepared_depth.resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    material_main.id(),
+    prepared_material.resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    layer_main.id(),
+    prepared_layer.resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    missing_binding_main.id(),
+    prepared_missing_binding.resolved_material(),
+  )
+  resolved_slots.set_resolved(
+    cache_miss_main.id(),
+    prepared_cache_miss.resolved_material(),
+  )
+  world.insert_resource(
+    RenderMaterial3dResolvedSlots::resource(),
+    resolved_slots,
+  )
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   material_instances.extract_mesh_material(
     depth_main.id(),
@@ -3605,13 +3670,124 @@ test "render3d: missing prepared render mesh does not return to pending queue" {
   let mesh_instances = RenderMeshInstances::new()
   mesh_instances.insert(visible_entity, RenderMeshQueueData::new(630, 0U, true))
   world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+  let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
+    Some(material_test_base_specialize),
+  )
+  let material_payload = material_test_extracted_mesh_payload(
+    630, material_properties,
+  )
+  let material_slots = RenderMaterial3dResolvedSlots::new()
+  material_slots.set_resolved(
+    visible_entity.id(),
+    Render3dResolvedMaterial::new(
+      material_payload.material_draw_data,
+      material_payload.material_properties,
+      material_payload.material_bind_group_data,
+      "StandardMaterial",
+    ),
+  )
+  world.insert_resource(
+    RenderMaterial3dResolvedSlots::resource(),
+    material_slots,
+  )
   let camera = ExtractedCamera3d::{
     entity: phase_entity_ref3d(main_view, render_view),
     payload: material_test_camera_payload(),
   }
 
-  render3d_prewarm_mesh_pipelines(world, [camera], [])
+  render3d_prewarm_mesh_pipelines(world, [camera])
 
+  match world.get_resource(PendingMeshMaterialQueues::resource()) {
+    Some(queues) =>
+      debug_inspect(queues.current_len(retained_view), content="0")
+    None => debug_inspect(false, content="true")
+  }
+}
+
+///|
+test "render3d: material specialization reads resolved material slots without extracted meshes" {
+  let world = @ecs.World::new()
+  let main_view = @core.Entity::new(610, 1)
+  let render_view = world.spawn()
+  let render_entity = @core.Entity::new(611, 1)
+  let visible_entity = @render.MainEntity::new(@core.Entity::new(612, 1))
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+  let visible_class = visible_entities.class_or_insert(
+    render3d_mesh_visibility_class(),
+  )
+  visible_class.prepare_for_new_frame()
+  visible_class.update_cpu_culled_entities([(render_entity, visible_entity)])
+  visible_class.sort_added_entities()
+  try! world.set_by_key(
+    render_view, @render_visibility.ecs_key_render_visible_entities, visible_entities,
+  )
+  let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
+  dirty_specializations.insert_changed(visible_entity)
+  world.insert_resource(
+    @render_visibility.DirtySpecializations::resource(),
+    dirty_specializations,
+  )
+  world.insert_resource(
+    PendingMeshMaterialQueues::resource(),
+    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+  )
+  world.insert_resource(
+    ecs_key_specialized_material_pipeline_cache,
+    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  let material_instances = RenderMaterialInstances::RenderMaterialInstances()
+  material_instances.extract_mesh_material(
+    visible_entity.id(),
+    true,
+    MeshMaterial3d::new(@asset.Handle::new(6120)),
+  )
+  world.insert_resource(ecs_key_render_material_instances, material_instances)
+  let mesh_instances = RenderMeshInstances::new()
+  mesh_instances.insert(
+    visible_entity,
+    RenderMeshQueueData::new(6120, 0U, true),
+  )
+  world.insert_resource(RenderMeshInstances::resource(), mesh_instances)
+  let render_mesh_assets = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_mesh_assets.insert(6120, @render_mesh.RenderMesh::new(vertex_count=3))
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    render_mesh_assets,
+  )
+  let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
+    Some(material_test_base_specialize),
+  )
+  let material_payload = material_test_extracted_mesh_payload(
+    9999, material_properties,
+  )
+  let material_slots = RenderMaterial3dResolvedSlots::new()
+  material_slots.set_resolved(
+    visible_entity.id(),
+    Render3dResolvedMaterial::new(
+      material_payload.material_draw_data,
+      material_payload.material_properties,
+      material_payload.material_bind_group_data,
+      "StandardMaterial",
+    ),
+  )
+  world.insert_resource(
+    RenderMaterial3dResolvedSlots::resource(),
+    material_slots,
+  )
+  let camera = ExtractedCamera3d::{
+    entity: phase_entity_ref3d(main_view, render_view),
+    payload: material_test_camera_payload(),
+  }
+
+  render3d_prewarm_mesh_pipelines(world, [camera])
+
+  let pipeline_id = match
+    world.get_resource(ecs_key_specialized_material_pipeline_cache) {
+    Some(cache) => cache.pipeline_id(retained_view, visible_entity.id())
+    None => abort("missing SpecializedMaterialPipelineCache")
+  }
+  debug_inspect(pipeline_id.map(fn(value) { value.id() }), content="Some(901)")
   match world.get_resource(PendingMeshMaterialQueues::resource()) {
     Some(queues) =>
       debug_inspect(queues.current_len(retained_view), content="0")

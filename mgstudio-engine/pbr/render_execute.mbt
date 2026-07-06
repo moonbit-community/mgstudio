@@ -744,21 +744,6 @@ fn render3d_prewarm_material_pipeline(
 }
 
 ///|
-// Temporary adapter for the remaining legacy `ExtractedMesh3d` producer. Bevy's
-// `specialize_material_meshes` consumes prepared material assets directly.
-fn render3d_resolved_material_from_extracted_payload(
-  mesh : Mesh3dExtractedPayload,
-) -> Render3dResolvedMaterial {
-  Render3dResolvedMaterial::new(
-    mesh.material_draw_data,
-    mesh.material_properties,
-    mesh.material_bind_group_data,
-    mesh.material_type_tag,
-    material_extension=mesh.material_extension,
-  )
-}
-
-///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
 fn render3d_material_specialization_lightmapped(
   world : @ecs.World,
@@ -998,17 +983,6 @@ fn render3d_prepare_pending_mesh_material_queues(
     }
     queues.expire_stale_views(retained_views)
   })
-}
-
-///|
-fn render3d_mesh_indices_by_main_entity(
-  meshes : Array[ExtractedMesh3d],
-) -> Map[UInt64, Int] {
-  let indices : Map[UInt64, Int] = {}
-  for index in 0..<meshes.length() {
-    indices.set(meshes[index].entity.main_entity.to_bits(), index)
-  }
-  indices
 }
 
 ///|
@@ -4209,6 +4183,26 @@ fn render3d_material_specialization_queue_data(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/material.rs::specialize_material_meshes`.
+fn render3d_material_specialization_resolved_material(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
+) -> Render3dResolvedMaterial? {
+  let material_slots = render_material3d_resolved_slots_or_empty(world)
+  match material_slots.get(visible_entity.id()) {
+    Some(Resolved(material)) => Some(material)
+    Some(Pending) | None => {
+      render3d_enqueue_pending_mesh_material(
+        world, retained_view_entity, render_entity, visible_entity,
+      )
+      None
+    }
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`.
 pub fn render3d_shadow_specialization_queue_data(
   world : @ecs.World,
@@ -4420,7 +4414,6 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
 fn render3d_prewarm_mesh_pipelines(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
-  meshes : Array[ExtractedMesh3d],
 ) -> Unit {
   let specialization_tick = world.read_change_tick()
   let retained_views = render3d_retained_view_entities(cameras)
@@ -4442,22 +4435,6 @@ fn render3d_prewarm_mesh_pipelines(
         "missing PendingMeshMaterialQueues resource during pbr material specialization",
       )
   }
-  let mesh_indices_by_main_entity = render3d_mesh_indices_by_main_entity(meshes)
-  let mut motion_vector_prewarm_needed = false
-  for camera in cameras {
-    if camera.payload.motion_vector_prepass_enabled {
-      motion_vector_prewarm_needed = true
-      break
-    }
-    match camera.payload.motion_blur {
-      Some(motion_blur) =>
-        if motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F {
-          motion_vector_prewarm_needed = true
-          break
-        }
-      None => ()
-    }
-  }
   for camera in cameras {
     let retained_view_entity = @render_view.RetainedViewEntity::new(
       camera.entity.main_entity,
@@ -4478,15 +4455,13 @@ fn render3d_prewarm_mesh_pipelines(
         Some(value) => value
         None => continue
       }
-      guard mesh_indices_by_main_entity.get(main_entity.id().to_bits())
-        is Some(mesh_index) else {
-        continue
+      let resolved_material = match
+        render3d_material_specialization_resolved_material(
+          world, retained_view_entity, _render_entity, main_entity,
+        ) {
+        Some(value) => value
+        None => continue
       }
-      let extracted_mesh = meshes[mesh_index]
-      let mesh = extracted_mesh.payload
-      let resolved_material = render3d_resolved_material_from_extracted_payload(
-        mesh,
-      )
       ignore(
         render3d_prewarm_material_pipeline(
           world,
@@ -4498,6 +4473,29 @@ fn render3d_prewarm_mesh_pipelines(
           specialization_tick,
         ),
       )
+    }
+  }
+}
+
+///|
+fn render3d_prewarm_motion_vector_material_pipelines(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+  meshes : Array[ExtractedMesh3d],
+) -> Unit {
+  let mut motion_vector_prewarm_needed = false
+  for camera in cameras {
+    if camera.payload.motion_vector_prepass_enabled {
+      motion_vector_prewarm_needed = true
+      break
+    }
+    match camera.payload.motion_blur {
+      Some(motion_blur) =>
+        if motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F {
+          motion_vector_prewarm_needed = true
+          break
+        }
+      None => ()
     }
   }
   for mesh_index in 0..<meshes.length() {
@@ -4709,7 +4707,12 @@ pub fn render3d_specialize_material_meshes_system(world : @ecs.World) -> Unit {
   match render3d_pending_frame_snapshot(world) {
     Some(frame) => {
       render3d_prepare_shader_asset_paths(source_world, world)
-      render3d_prewarm_mesh_pipelines(world, frame.cameras, frame.meshes)
+      render3d_prewarm_mesh_pipelines(world, frame.cameras)
+      render3d_prewarm_motion_vector_material_pipelines(
+        world,
+        frame.cameras,
+        frame.meshes,
+      )
     }
     None => ()
   }

@@ -1142,6 +1142,12 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     @render_mesh.RenderMeshAssets::resource(),
     render_mesh_assets,
   )
+  let material_slots = RenderMaterial3dResolvedSlots::new()
+  material_slots.set_resolved(main_mesh, resolved)
+  world.insert_resource(
+    RenderMaterial3dResolvedSlots::resource(),
+    material_slots,
+  )
   let extracted_mesh = ExtractedMesh3d::{
     entity: phase_entity_ref3d(main_mesh, render_mesh),
     payload: Mesh3dExtractedPayload::{
@@ -1157,7 +1163,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     payload: material_test_camera_payload(),
   }
   let retained_view = @render_view.RetainedViewEntity::new(main_view)
-  render3d_prewarm_mesh_pipelines(world, [camera], [extracted_mesh])
+  render3d_prewarm_mesh_pipelines(world, [camera])
   let pipeline_id = match
     world.get_resource(ecs_key_specialized_material_pipeline_cache) {
     Some(cache) => cache.pipeline_id(retained_view, main_mesh)

@@ -116,7 +116,6 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
       material_extension: None,
       material_properties: @material.MaterialProperties::MaterialProperties(),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-      material_type_tag: "StandardMaterial",
       lightmap: None,
       is_forward_decal: false,
       forward_decal_material_ext: None,

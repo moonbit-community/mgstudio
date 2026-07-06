@@ -60,7 +60,6 @@ priv struct Render3dResolvedMeshMaterial {
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
-  material_type_tag : String
   forward_decal_material_ext : ForwardDecalMaterialExt?
 }
 
@@ -184,7 +183,6 @@ fn render3d_resolve_mesh_material(
     material_bind_group_data: @pbr_render.render3d_resolve_material_extension_bind_group_data(
       material_extension,
     ),
-    material_type_tag: "StandardMaterial",
     forward_decal_material_ext,
   }
   if material_handle.material_family is @material.Material3dFamily::Standard &&
@@ -437,7 +435,6 @@ fn render3d_extract_mesh_for_entity(
             material_extension: value.material_extension(),
             material_properties: value.material_properties(),
             material_bind_group_data: value.material_bind_group_data(),
-            material_type_tag: value.material_type_tag(),
             forward_decal_material_ext: None,
           }
         Some(Pending) => return (None, true)
@@ -448,7 +445,6 @@ fn render3d_extract_mesh_for_entity(
   let resolved_material_extension = resolved_material.material_extension
   let material_properties = resolved_material.material_properties
   let material_bind_group_data = resolved_material.material_bind_group_data
-  let material_type_tag = resolved_material.material_type_tag
   let layers = match prefetched_layers {
     Some(v) => v
     None => @camera_render_layers.RenderLayers::RenderLayers()
@@ -614,7 +610,6 @@ fn render3d_extract_mesh_for_entity(
         material_extension: resolved_material_extension,
         material_properties,
         material_bind_group_data,
-        material_type_tag,
         lightmap,
         is_forward_decal,
         forward_decal_material_ext,
