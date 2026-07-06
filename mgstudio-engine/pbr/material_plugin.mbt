@@ -613,11 +613,6 @@ pub struct RenderMaterial3dInstances[M] {
 }
 
 ///|
-fn material_entity_key(entity : @core.Entity) -> (Int, Int) {
-  (entity.id, entity.generation)
-}
-
-///|
 pub fn[M] RenderMaterial3dInstances::new() -> RenderMaterial3dInstances[M] {
   RenderMaterial3dInstances::{ instances: @hashmap.HashMap([]) }
 }
@@ -627,7 +622,7 @@ pub fn[M] RenderMaterial3dInstances::get(
   self : RenderMaterial3dInstances[M],
   entity : @core.Entity,
 ) -> @asset.Handle[M]? {
-  self.instances.get(material_entity_key(entity))
+  self.instances.get(@material.render_material_entity_key(entity))
 }
 
 ///|
@@ -636,7 +631,7 @@ pub fn[M] RenderMaterial3dInstances::set(
   entity : @core.Entity,
   material : @asset.Handle[M],
 ) -> Unit {
-  self.instances.set(material_entity_key(entity), material)
+  self.instances.set(@material.render_material_entity_key(entity), material)
 }
 
 ///|
@@ -644,7 +639,7 @@ pub fn[M] RenderMaterial3dInstances::remove(
   self : RenderMaterial3dInstances[M],
   entity : @core.Entity,
 ) -> Unit {
-  ignore(self.instances.remove(material_entity_key(entity)))
+  ignore(self.instances.remove(@material.render_material_entity_key(entity)))
 }
 
 ///|
@@ -662,12 +657,13 @@ pub(all) enum RenderMaterial3dResolvedSlot {
 
 ///|
 pub struct RenderMaterial3dResolvedSlots {
-  slots : @hashmap.HashMap[(Int, Int), RenderMaterial3dResolvedSlot]
+  slots : @material.RenderMaterialEntitySlots[RenderMaterial3dResolvedSlot]
 }
 
 ///|
 pub fn RenderMaterial3dResolvedSlots::new() -> RenderMaterial3dResolvedSlots {
-  RenderMaterial3dResolvedSlots::{ slots: @hashmap.HashMap([]) }
+  let slots : @material.RenderMaterialEntitySlots[RenderMaterial3dResolvedSlot] = @material.RenderMaterialEntitySlots::new()
+  RenderMaterial3dResolvedSlots::{ slots, }
 }
 
 ///|
@@ -675,7 +671,7 @@ pub fn RenderMaterial3dResolvedSlots::get(
   self : RenderMaterial3dResolvedSlots,
   entity : @core.Entity,
 ) -> RenderMaterial3dResolvedSlot? {
-  self.slots.get(material_entity_key(entity))
+  self.slots.get(entity)
 }
 
 ///|
@@ -683,10 +679,7 @@ pub fn RenderMaterial3dResolvedSlots::set_pending(
   self : RenderMaterial3dResolvedSlots,
   entity : @core.Entity,
 ) -> Unit {
-  self.slots.set(
-    material_entity_key(entity),
-    RenderMaterial3dResolvedSlot::Pending,
-  )
+  self.slots.set(entity, RenderMaterial3dResolvedSlot::Pending)
 }
 
 ///|
@@ -695,10 +688,7 @@ pub fn RenderMaterial3dResolvedSlots::set_resolved(
   entity : @core.Entity,
   material : Render3dResolvedMaterial,
 ) -> Unit {
-  self.slots.set(
-    material_entity_key(entity),
-    RenderMaterial3dResolvedSlot::Resolved(material),
-  )
+  self.slots.set(entity, RenderMaterial3dResolvedSlot::Resolved(material))
 }
 
 ///|
@@ -706,7 +696,7 @@ pub fn RenderMaterial3dResolvedSlots::remove(
   self : RenderMaterial3dResolvedSlots,
   entity : @core.Entity,
 ) -> Unit {
-  ignore(self.slots.remove(material_entity_key(entity)))
+  self.slots.remove(entity)
 }
 
 ///|
@@ -714,7 +704,7 @@ pub fn RenderMaterial3dResolvedSlots::contains(
   self : RenderMaterial3dResolvedSlots,
   entity : @core.Entity,
 ) -> Bool {
-  self.slots.contains(material_entity_key(entity))
+  self.slots.contains(entity)
 }
 
 ///|

@@ -5,12 +5,14 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
@@ -74,6 +76,8 @@ pub fn material_specialize_prepass((@ecs.World, ErasedMaterialPipelineKey, @mesh
 pub fn material_specialize_user((String, @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise SpecializedMeshPipelineError, String, @render_resource.RenderPipelineDescriptor, @mesh.MeshVertexBufferLayoutRef, ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise
 
 pub fn missing_vertex_attribute_error(String) -> SpecializedMeshPipelineError
+
+pub fn render_material_entity_key(@core.Entity) -> (Int, Int)
 
 pub fn shader_label(String) -> String
 
@@ -359,6 +363,16 @@ pub(all) enum ParallaxMappingMethod {
 pub fn ParallaxMappingMethod::default() -> Self
 pub fn ParallaxMappingMethod::max_steps(Self) -> Int
 pub fn ParallaxMappingMethod::relief_default() -> Self
+
+pub struct RenderMaterialEntitySlots[S] {
+  slots : @hashmap.HashMap[(Int, Int), S]
+}
+pub fn[S] RenderMaterialEntitySlots::clear(Self[S]) -> Unit
+pub fn[S] RenderMaterialEntitySlots::contains(Self[S], @core.Entity) -> Bool
+pub fn[S] RenderMaterialEntitySlots::get(Self[S], @core.Entity) -> S?
+pub fn[S] RenderMaterialEntitySlots::new() -> Self[S]
+pub fn[S] RenderMaterialEntitySlots::remove(Self[S], @core.Entity) -> Unit
+pub fn[S] RenderMaterialEntitySlots::set(Self[S], @core.Entity, S) -> Unit
 
 #alias(MaterialRenderPhaseType)
 pub(all) enum RenderPhaseType {

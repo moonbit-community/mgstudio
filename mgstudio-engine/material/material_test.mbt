@@ -602,6 +602,20 @@ test "material boundary Assets::add accepts Color and Image handle inputs" {
 }
 
 ///|
+test "render material entity slots keep entity generation in the key" {
+  let entity_a = @core.Entity::new(7, 1)
+  let entity_b = @core.Entity::new(7, 2)
+  let slots = @material.RenderMaterialEntitySlots::new()
+  slots.set(entity_a, "first")
+  slots.set(entity_b, "second")
+  debug_inspect(slots.get(entity_a), content="Some(\"first\")")
+  debug_inspect(slots.get(entity_b), content="Some(\"second\")")
+  slots.remove(entity_a)
+  debug_inspect(slots.contains(entity_a), content="false")
+  debug_inspect(slots.contains(entity_b), content="true")
+}
+
+///|
 fn material_test_abs(value : Float) -> Float {
   if value < 0.0F {
     -value

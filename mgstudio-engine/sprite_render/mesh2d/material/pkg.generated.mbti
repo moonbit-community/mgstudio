@@ -197,7 +197,7 @@ pub(all) enum RenderMaterial2dResolvedSlot {
 }
 
 pub struct RenderMaterial2dResolvedSlots {
-  slots : @hashmap.HashMap[(Int, Int), RenderMaterial2dResolvedSlot]
+  slots : @Milky2018/mgstudio/material.RenderMaterialEntitySlots[RenderMaterial2dResolvedSlot]
 }
 pub fn RenderMaterial2dResolvedSlots::contains(Self, @core.Entity) -> Bool
 pub fn RenderMaterial2dResolvedSlots::get(Self, @core.Entity) -> RenderMaterial2dResolvedSlot?

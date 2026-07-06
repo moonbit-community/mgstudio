@@ -2558,7 +2558,7 @@ pub(all) enum RenderMaterial3dResolvedSlot {
 }
 
 pub struct RenderMaterial3dResolvedSlots {
-  slots : @hashmap.HashMap[(Int, Int), RenderMaterial3dResolvedSlot]
+  slots : @material.RenderMaterialEntitySlots[RenderMaterial3dResolvedSlot]
 }
 pub fn RenderMaterial3dResolvedSlots::contains(Self, @core.Entity) -> Bool
 pub fn RenderMaterial3dResolvedSlots::get(Self, @core.Entity) -> RenderMaterial3dResolvedSlot?

@@ -21,11 +21,6 @@ pub(all) enum AlphaMode2d {
 } derive(ToJson, FromJson)
 
 ///|
-fn material2d_entity_key(entity : @core.Entity) -> (Int, Int) {
-  (entity.id, entity.generation)
-}
-
-///|
 pub struct RenderMaterial2dInstances[M] {
   instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
 }
@@ -40,7 +35,7 @@ pub fn[M] RenderMaterial2dInstances::contains(
   self : RenderMaterial2dInstances[M],
   entity : @core.Entity,
 ) -> Bool {
-  self.instances.contains(material2d_entity_key(entity))
+  self.instances.contains(@render_material.render_material_entity_key(entity))
 }
 
 ///|
@@ -48,7 +43,7 @@ pub fn[M] RenderMaterial2dInstances::get(
   self : RenderMaterial2dInstances[M],
   entity : @core.Entity,
 ) -> @asset.Handle[M]? {
-  self.instances.get(material2d_entity_key(entity))
+  self.instances.get(@render_material.render_material_entity_key(entity))
 }
 
 ///|
@@ -57,7 +52,10 @@ pub fn[M] RenderMaterial2dInstances::set(
   entity : @core.Entity,
   material : @asset.Handle[M],
 ) -> Unit {
-  self.instances.set(material2d_entity_key(entity), material)
+  self.instances.set(
+    @render_material.render_material_entity_key(entity),
+    material,
+  )
 }
 
 ///|
@@ -65,7 +63,8 @@ pub fn[M] RenderMaterial2dInstances::remove(
   self : RenderMaterial2dInstances[M],
   entity : @core.Entity,
 ) -> Unit {
-  self.instances.remove(material2d_entity_key(entity)) |> ignore
+  self.instances.remove(@render_material.render_material_entity_key(entity))
+  |> ignore
 }
 
 ///|
@@ -727,12 +726,17 @@ pub(all) enum RenderMaterial2dResolvedSlot {
 
 ///|
 pub struct RenderMaterial2dResolvedSlots {
-  slots : @hashmap.HashMap[(Int, Int), RenderMaterial2dResolvedSlot]
+  slots : @render_material.RenderMaterialEntitySlots[
+    RenderMaterial2dResolvedSlot,
+  ]
 }
 
 ///|
 pub fn RenderMaterial2dResolvedSlots::new() -> RenderMaterial2dResolvedSlots {
-  RenderMaterial2dResolvedSlots::{ slots: @hashmap.HashMap([]) }
+  let slots : @render_material.RenderMaterialEntitySlots[
+    RenderMaterial2dResolvedSlot,
+  ] = @render_material.RenderMaterialEntitySlots::new()
+  RenderMaterial2dResolvedSlots::{ slots, }
 }
 
 ///|
@@ -740,7 +744,7 @@ pub fn RenderMaterial2dResolvedSlots::get(
   self : RenderMaterial2dResolvedSlots,
   entity : @core.Entity,
 ) -> RenderMaterial2dResolvedSlot? {
-  self.slots.get(material2d_entity_key(entity))
+  self.slots.get(entity)
 }
 
 ///|
@@ -748,10 +752,7 @@ pub fn RenderMaterial2dResolvedSlots::set_pending(
   self : RenderMaterial2dResolvedSlots,
   entity : @core.Entity,
 ) -> Unit {
-  self.slots.set(
-    material2d_entity_key(entity),
-    RenderMaterial2dResolvedSlot::Pending,
-  )
+  self.slots.set(entity, RenderMaterial2dResolvedSlot::Pending)
 }
 
 ///|
@@ -760,10 +761,7 @@ pub fn RenderMaterial2dResolvedSlots::set_resolved(
   entity : @core.Entity,
   material : RenderMaterial2dResolvedMaterial,
 ) -> Unit {
-  self.slots.set(
-    material2d_entity_key(entity),
-    RenderMaterial2dResolvedSlot::Resolved(material),
-  )
+  self.slots.set(entity, RenderMaterial2dResolvedSlot::Resolved(material))
 }
 
 ///|
@@ -771,7 +769,7 @@ pub fn RenderMaterial2dResolvedSlots::remove(
   self : RenderMaterial2dResolvedSlots,
   entity : @core.Entity,
 ) -> Unit {
-  self.slots.remove(material2d_entity_key(entity)) |> ignore
+  self.slots.remove(entity)
 }
 
 ///|
@@ -779,7 +777,7 @@ pub fn RenderMaterial2dResolvedSlots::contains(
   self : RenderMaterial2dResolvedSlots,
   entity : @core.Entity,
 ) -> Bool {
-  self.slots.contains(material2d_entity_key(entity))
+  self.slots.contains(entity)
 }
 
 ///|
