@@ -113,16 +113,14 @@ fn rotate_camera(
   ],
 ) -> Unit {
   try! cameras.view(fn(_entity, camera_transform) {
-    let transform = camera_transform.value()
     let translation = @math.Quat::from_rotation_y(0.01F).mul_vec3(
-      transform.translation,
+      camera_transform.value().translation,
     )
     camera_transform.set(
-      @transform.Transform::from_xyz(
-        translation.x,
-        translation.y,
-        translation.z,
-      ).looking_at(fog_center(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
+      @transform.Transform::from_translation(translation).looking_at(
+        fog_center(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     )
   })
 }
@@ -158,6 +156,19 @@ fn fog_volumes_vec3_approx_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
   fog_volumes_approx_eq(lhs.x, rhs.x) &&
   fog_volumes_approx_eq(lhs.y, rhs.y) &&
   fog_volumes_approx_eq(lhs.z, rhs.z)
+}
+
+///|
+fn fog_volumes_read_camera_translation(world : @ecs.World) -> @math.Vec3 {
+  let translation = Ref(@math.Vec3::zero())
+  let query : @ecs.Query[
+    @ecs.Read[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
+  try! query.view(fn(_entity, transform) {
+    translation.val = transform.value().translation
+  })
+  translation.val
 }
 
 ///|
@@ -303,28 +314,55 @@ test "fog_volumes: camera rotation system matches upstream orbit step" {
   let mut app = fog_volumes_app()
   app = app.run_startup()
   let world = app.world()
-  let initial_translation = Ref(@math.Vec3::zero())
-  let query : @ecs.Query[
-    @ecs.Read[@transform.Transform],
-    @ecs.With[@camera.Camera3d],
-  ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
-  try! query.view(fn(_entity, transform) {
-    initial_translation.val = transform.value().translation
-  })
+  let initial_translation = fog_volumes_read_camera_translation(world)
   let camera_query : @ecs.Query[
     @ecs.Write[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
   rotate_camera(camera_query)
-  let rotated_translation = Ref(@math.Vec3::zero())
-  try! query.view(fn(_entity, transform) {
-    rotated_translation.val = transform.value().translation
-  })
+  let rotated_translation = fog_volumes_read_camera_translation(world)
   let expected = @math.Quat::from_rotation_y(0.01F).mul_vec3(
-    initial_translation.val,
+    initial_translation,
   )
   debug_inspect(
-    fog_volumes_vec3_approx_eq(rotated_translation.val, expected),
+    fog_volumes_vec3_approx_eq(rotated_translation, expected),
     content="true",
   )
+}
+
+///|
+test "fog_volumes: update schedule rotates camera every rendered frame" {
+  let mut app = fog_volumes_app()
+  app = app.run_startup()
+  let initial_translation = fog_volumes_read_camera_translation(app.world())
+  app = app.update()
+  let first_frame_translation = fog_volumes_read_camera_translation(app.world())
+  app = app.update()
+  let second_frame_translation = fog_volumes_read_camera_translation(
+    app.world(),
+  )
+  let rotation_step = @math.Quat::from_rotation_y(0.01F)
+  let expected_first = rotation_step.mul_vec3(initial_translation)
+  let expected_second = rotation_step.mul_vec3(expected_first)
+  debug_inspect(
+    fog_volumes_vec3_approx_eq(first_frame_translation, expected_first),
+    content="true",
+  )
+  debug_inspect(
+    fog_volumes_vec3_approx_eq(second_frame_translation, expected_second),
+    content="true",
+  )
+  debug_inspect(
+    !fog_volumes_vec3_approx_eq(
+      first_frame_translation, second_frame_translation,
+    ),
+    content="true",
+  )
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_storage_counts = @pbr_volumetric_fog.volumetric_fog_render_world_storage_counts(
+    render_world,
+  )
+  debug_inspect(render_storage_counts.view_count(), content="1")
+  debug_inspect(render_storage_counts.volume_count(), content="1")
+  debug_inspect(render_storage_counts.light_count(), content="1")
 }
