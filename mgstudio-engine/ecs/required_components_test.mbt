@@ -120,6 +120,28 @@ test "ecs: required components insert recursively on set_component" {
 }
 
 ///|
+test "ecs: batch insert keeps indirect required components when direct required is explicit" {
+  let world = World::new()
+  let entity = world.spawn()
+
+  try! world.register_required_components(required_a_key, required_b_key)
+  try! world.register_required_components(required_b_key, required_c_key)
+  try! world.insert_component_writers(entity, [
+    component_writer(required_b_key, RequiredB::{ value: 77 }),
+    component_writer(required_a_key, RequiredA::{  }),
+  ])
+
+  debug_inspect(
+    try! world.get_by_key(entity, required_b_key),
+    content="Some({ value: 77 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(entity, required_c_key),
+    content="Some({ value: 20 })",
+  )
+}
+
+///|
 test "ecs: direct required constructor overrides indirect constructor" {
   let world = World::new()
   let entity = world.spawn()

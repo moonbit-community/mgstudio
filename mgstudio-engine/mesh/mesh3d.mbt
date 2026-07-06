@@ -126,6 +126,7 @@ pub(all) enum Mesh3dGenerateTangentsError {
   InvalidGeometry(Mesh3dValidationError)
   UnsupportedTopology(Mesh3dPrimitiveTopology)
   DegenerateUvTriangle(Int, Int, Int)
+  TangentGenerationFailed(String)
 } derive(Eq, Debug)
 
 ///|
@@ -267,9 +268,6 @@ pub fn Mesh3dGeometry::primitive_topology(
 ) -> Mesh3dPrimitiveTopology {
   self.topology
 }
-
-///|
-const MESH3D_TANGENT_EPSILON : Float = 1.0e-8F
 
 ///|
 pub fn Mesh3dGeometry::new_with_positions(
@@ -1477,6 +1475,54 @@ pub fn Mesh3dGeometry::validate(
 }
 
 ///|
+fn mesh3d_vec3_fixed(values : Array[@math.Vec3]) -> FixedArray[Float] {
+  if values.is_empty() {
+    return []
+  }
+  let fixed = FixedArray::make(values.length() * 3, 0.0F)
+  for index in 0..<values.length() {
+    let value = values[index]
+    let offset = index * 3
+    fixed[offset] = value.x
+    fixed[offset + 1] = value.y
+    fixed[offset + 2] = value.z
+  }
+  fixed
+}
+
+///|
+fn mesh3d_vec2_fixed(values : Array[@math.Vec2]) -> FixedArray[Float] {
+  if values.is_empty() {
+    return []
+  }
+  let fixed = FixedArray::make(values.length() * 2, 0.0F)
+  for index in 0..<values.length() {
+    let value = values[index]
+    let offset = index * 2
+    fixed[offset] = value.x
+    fixed[offset + 1] = value.y
+  }
+  fixed
+}
+
+///|
+fn mesh3d_tangent_indices_fixed(indices : Array[Int]) -> FixedArray[UInt]? {
+  if indices.is_empty() {
+    return Some([])
+  }
+  let fixed = FixedArray::make(indices.length(), 0U)
+  for index in 0..<indices.length() {
+    let value = indices[index]
+    if value < 0 {
+      return None
+    }
+    fixed[index] = value.reinterpret_as_uint()
+  }
+  Some(fixed)
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_mesh/src/mikktspace.rs::generate_tangents_for_mesh`.
 pub fn Mesh3dGeometry::generate_tangents(
   self : Mesh3dGeometry,
 ) -> Mesh3dGenerateTangentsError? {
@@ -1485,6 +1531,16 @@ pub fn Mesh3dGeometry::generate_tangents(
   }
   if self.validate() is Some(err) {
     return Some(Mesh3dGenerateTangentsError::InvalidGeometry(err))
+  }
+  guard self.normals is Some(normals) else {
+    return Some(
+      Mesh3dGenerateTangentsError::InvalidGeometry(
+        Mesh3dValidationError::AttributeLengthMismatch(
+          self.positions.length(),
+          0,
+        ),
+      ),
+    )
   }
   guard self.uvs is Some(uvs) else {
     return Some(
@@ -1497,117 +1553,54 @@ pub fn Mesh3dGeometry::generate_tangents(
     )
   }
 
-  let vertex_count = self.positions.length()
-  let tangent_x : Array[Float] = []
-  let tangent_y : Array[Float] = []
-  let tangent_z : Array[Float] = []
-  let bitangent_x : Array[Float] = []
-  let bitangent_y : Array[Float] = []
-  let bitangent_z : Array[Float] = []
-  for _ in 0..<vertex_count {
-    tangent_x.push(0.0F)
-    tangent_y.push(0.0F)
-    tangent_z.push(0.0F)
-    bitangent_x.push(0.0F)
-    bitangent_y.push(0.0F)
-    bitangent_z.push(0.0F)
-  }
-
-  let mut accumulate_error : Mesh3dGenerateTangentsError? = None
-  let accumulate_triangle = fn(i0 : Int, i1 : Int, i2 : Int) -> Unit {
-    if accumulate_error is Some(_) {
-      return
-    }
-    let p0 = self.positions[i0]
-    let p1 = self.positions[i1]
-    let p2 = self.positions[i2]
-    let uv0 = uvs[i0]
-    let uv1 = uvs[i1]
-    let uv2 = uvs[i2]
-    let edge1 = p1.sub(p0)
-    let edge2 = p2.sub(p0)
-    let du1 = uv1.x - uv0.x
-    let dv1 = uv1.y - uv0.y
-    let du2 = uv2.x - uv0.x
-    let dv2 = uv2.y - uv0.y
-    let denominator = du1 * dv2 - du2 * dv1
-    if @math.abs(denominator) <= MESH3D_TANGENT_EPSILON {
-      accumulate_error = Some(
-        Mesh3dGenerateTangentsError::DegenerateUvTriangle(i0, i1, i2),
-      )
-      return
-    }
-    let inv_denom = 1.0F / denominator
-    let tx = (edge1.x * dv2 - edge2.x * dv1) * inv_denom
-    let ty = (edge1.y * dv2 - edge2.y * dv1) * inv_denom
-    let tz = (edge1.z * dv2 - edge2.z * dv1) * inv_denom
-    let bx = (edge2.x * du1 - edge1.x * du2) * inv_denom
-    let by = (edge2.y * du1 - edge1.y * du2) * inv_denom
-    let bz = (edge2.z * du1 - edge1.z * du2) * inv_denom
-
-    tangent_x[i0] = tangent_x[i0] + tx
-    tangent_y[i0] = tangent_y[i0] + ty
-    tangent_z[i0] = tangent_z[i0] + tz
-    tangent_x[i1] = tangent_x[i1] + tx
-    tangent_y[i1] = tangent_y[i1] + ty
-    tangent_z[i1] = tangent_z[i1] + tz
-    tangent_x[i2] = tangent_x[i2] + tx
-    tangent_y[i2] = tangent_y[i2] + ty
-    tangent_z[i2] = tangent_z[i2] + tz
-
-    bitangent_x[i0] = bitangent_x[i0] + bx
-    bitangent_y[i0] = bitangent_y[i0] + by
-    bitangent_z[i0] = bitangent_z[i0] + bz
-    bitangent_x[i1] = bitangent_x[i1] + bx
-    bitangent_y[i1] = bitangent_y[i1] + by
-    bitangent_z[i1] = bitangent_z[i1] + bz
-    bitangent_x[i2] = bitangent_x[i2] + bx
-    bitangent_y[i2] = bitangent_y[i2] + by
-    bitangent_z[i2] = bitangent_z[i2] + bz
-  }
-
-  match self.indices {
-    Some(indices) => {
-      let triangle_count = indices.length() / 3
-      for tri in 0..<triangle_count {
-        let i0 = indices[tri * 3]
-        let i1 = indices[tri * 3 + 1]
-        let i2 = indices[tri * 3 + 2]
-        accumulate_triangle(i0, i1, i2)
-      }
-    }
-    None => {
-      let triangle_count = vertex_count / 3
-      for tri in 0..<triangle_count {
-        let i0 = tri * 3
-        let i1 = tri * 3 + 1
-        let i2 = tri * 3 + 2
-        accumulate_triangle(i0, i1, i2)
-      }
-    }
-  }
-
-  if accumulate_error is Some(err) {
-    return Some(err)
-  }
-
-  let tangents : Array[@math.Vec4] = []
-  for i in 0..<vertex_count {
-    let tangent = @math.Vec3::new(tangent_x[i], tangent_y[i], tangent_z[i]).normalize_or_zero()
-    let bitangent = @math.Vec3::new(
-      bitangent_x[i],
-      bitangent_y[i],
-      bitangent_z[i],
+  let indices = self.indices_or_sequential()
+  guard mesh3d_tangent_indices_fixed(indices) is Some(fixed_indices) else {
+    return Some(
+      Mesh3dGenerateTangentsError::InvalidGeometry(
+        Mesh3dValidationError::IndexOutOfBounds(-1, self.positions.length()),
+      ),
     )
-    let normal = tangent.cross(bitangent).normalize_or_zero()
-    let handedness = if normal.length_squared() <= MESH3D_TANGENT_EPSILON {
-      1.0F
-    } else if normal.cross(tangent).dot(bitangent) < 0.0F {
-      -1.0F
-    } else {
-      1.0F
+  }
+  let vertex_count = self.positions.length()
+  let raw_tangents = @meshopt_mbt.generate_tangents(
+    fixed_indices,
+    mesh3d_vec3_fixed(self.positions),
+    vertex_count,
+    12,
+    mesh3d_vec3_fixed(normals),
+    12,
+    mesh3d_vec2_fixed(uvs),
+    8,
+    options=@meshopt_mbt.TangentOptions::new(compatible=true),
+  ) catch {
+    err =>
+      return Some(
+        Mesh3dGenerateTangentsError::TangentGenerationFailed(
+          to_repr(err).to_string(),
+        ),
+      )
+  }
+
+  let tangents = Array::make(
+    vertex_count,
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F),
+  )
+  for corner in 0..<fixed_indices.length() {
+    let vertex_index = fixed_indices[corner].reinterpret_as_int()
+    if vertex_index < 0 || vertex_index >= vertex_count {
+      return Some(
+        Mesh3dGenerateTangentsError::InvalidGeometry(
+          Mesh3dValidationError::IndexOutOfBounds(vertex_index, vertex_count),
+        ),
+      )
     }
-    tangents.push(@math.Vec4::new(tangent.x, tangent.y, tangent.z, handedness))
+    let offset = corner * 4
+    tangents[vertex_index] = @math.Vec4::new(
+      raw_tangents[offset],
+      raw_tangents[offset + 1],
+      raw_tangents[offset + 2],
+      raw_tangents[offset + 3],
+    )
   }
   self.tangents = Some(tangents)
   None

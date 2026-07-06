@@ -225,6 +225,7 @@ pub(all) enum Mesh3dGenerateTangentsError {
   InvalidGeometry(Mesh3dValidationError)
   UnsupportedTopology(Mesh3dPrimitiveTopology)
   DegenerateUvTriangle(Int, Int, Int)
+  TangentGenerationFailed(String)
 } derive(Eq, @debug.Debug)
 
 pub struct Mesh3dGeometry {

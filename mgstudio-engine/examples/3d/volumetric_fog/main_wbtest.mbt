@@ -1411,37 +1411,37 @@ test "volumetric_fog: clustered point and spot light GPU values match Bevy packi
     content="true",
   )
   debug_inspect(
-    clustered_light_word_matches_f32(
-      clustered_bytes,
-      0,
-      15,
-      point.shadow_map_near_z,
-    ),
-    content="true",
-  )
-  debug_inspect(
-    clustered_light_word_matches_f32(clustered_bytes, 0, 16, 0.0F),
-    content="true",
-  )
-  debug_inspect(
-    clustered_light_word(clustered_bytes, 0, 17),
-    content="4294967295",
-  )
-  debug_inspect(
-    clustered_light_word_matches_f32(clustered_bytes, 0, 18, point.range),
+    clustered_light_word_matches_f32(clustered_bytes, 0, 15, 0.0F),
     content="true",
   )
   debug_inspect(
     clustered_light_word_matches_f32(
       clustered_bytes,
       0,
-      19,
+      16,
       if point.soft_shadows_enabled {
         point.radius
       } else {
         0.0F
       },
     ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      0,
+      17,
+      point.shadow_map_near_z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word(clustered_bytes, 0, 18),
+    content="4294967295",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 0, 19, point.range),
     content="true",
   )
 
@@ -1566,7 +1566,7 @@ test "volumetric_fog: clustered point and spot light GPU values match Bevy packi
       clustered_bytes,
       1,
       15,
-      spot.shadow_map_near_z,
+      @math.sin(outer) / @math.cos(outer),
     ),
     content="true",
   )
@@ -1575,29 +1575,29 @@ test "volumetric_fog: clustered point and spot light GPU values match Bevy packi
       clustered_bytes,
       1,
       16,
-      @math.sin(outer) / @math.cos(outer),
-    ),
-    content="true",
-  )
-  debug_inspect(
-    clustered_light_word(clustered_bytes, 1, 17),
-    content="4294967295",
-  )
-  debug_inspect(
-    clustered_light_word_matches_f32(clustered_bytes, 1, 18, spot.range),
-    content="true",
-  )
-  debug_inspect(
-    clustered_light_word_matches_f32(
-      clustered_bytes,
-      1,
-      19,
       if spot.soft_shadows_enabled {
         spot.radius
       } else {
         0.0F
       },
     ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(
+      clustered_bytes,
+      1,
+      17,
+      spot.shadow_map_near_z,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    clustered_light_word(clustered_bytes, 1, 18),
+    content="4294967295",
+  )
+  debug_inspect(
+    clustered_light_word_matches_f32(clustered_bytes, 1, 19, spot.range),
     content="true",
   )
 }
@@ -1811,11 +1811,17 @@ test "volumetric_fog: camera and fog volume prepare Bevy interior view fog" {
 }
 
 ///|
-test "volumetric_fog: GLB scene contributor is the visible Cube mesh" {
+test "volumetric_fog: GLB scene contributor is the inherited-visible Cube mesh" {
+  let world_asset_root_count = Ref(0)
+  let ready_scene_instance_count = Ref(0)
   let mesh_count = Ref(0)
-  let visible_mesh_count = Ref(0)
+  let mesh_with_inherited_visibility_count = Ref(0)
+  let mesh_with_view_visibility_count = Ref(0)
+  let inherited_visible_mesh_count = Ref(0)
   let cube_seen = Ref(false)
-  let cube_visible = Ref(false)
+  let cube_has_inherited_visibility = Ref(false)
+  let cube_has_view_visibility = Ref(false)
+  let cube_inherited_visible = Ref(false)
   let cube_node_index = Ref(-1)
   let cube_mesh_index = Ref(-1)
   let cube_primitive_index = Ref(-1)
@@ -1858,348 +1864,375 @@ test "volumetric_fog: GLB scene contributor is the visible Cube mesh" {
   let scene_root_name = Ref("")
   let scene_root_index = Ref(-1)
 
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .insert_resource(AppSettings::AppSettings())
-  .add_system(fn(world : @ecs.World) {
-    setup_scene(world)
-    @scene.scene_load_pending_system(world)
-    @scene.scene_spawn_roots_system(world)
-    @transform.propagate_transforms_system(world)
-    @visibility.visibility_propagate_system(world)
-    @visibility.check_visibility_system(world)
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .insert_resource(AppSettings::AppSettings())
+    .add_systems_world(@app.Startup, fn(world : @ecs.World) {
+      setup_scene(world)
+    })
+  app = app.run_startup()
+  for _ in 0..<180 {
+    app = app.run_once()
+  }
+  let world = app.world()
 
-    let mesh_query : @ecs.Query[
+  world.for_each_component(@scene.ecs_key_world_asset_root, fn(entity, _root) {
+    world_asset_root_count.val = world_asset_root_count.val + 1
+    if @scene.scene_components_has_scene_instance_ready(world, entity) {
+      ready_scene_instance_count.val = ready_scene_instance_count.val + 1
+    }
+  })
+
+  let mesh_query : @ecs.Query[
+    (
+      @core.Entity,
       (
-        @core.Entity,
         (
-          (
-            @ecs.Read[@mesh.Mesh3d],
-            @ecs.Read[@pbr.MeshMaterial3d],
-            @ecs.Read[@transform.Transform],
-            @ecs.Read[@transform.GlobalTransform],
-          ),
-          (
-            @ecs.Read[@visibility.ViewVisibility],
-            @ecs.Optional[@ecs.Name],
-            @ecs.Optional[@gltf.GltfNodeIndex],
-            @ecs.Optional[@gltf.GltfMeshIndex],
-          ),
-          (
-            @ecs.Optional[@gltf.GltfPrimitiveIndex],
-            @ecs.Optional[@gltf.GltfMeshName],
-            @ecs.Optional[@gltf.GltfMaterialName],
-          ),
+          @ecs.Read[@mesh.Mesh3d],
+          @ecs.Read[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+          @ecs.Read[@transform.Transform],
+          @ecs.Read[@transform.GlobalTransform],
+        ),
+        (
+          @ecs.Optional[@ecs.Name],
+          @ecs.Optional[@gltf.GltfNodeIndex],
+          @ecs.Optional[@gltf.GltfMeshIndex],
+        ),
+        (
+          @ecs.Optional[@gltf.GltfPrimitiveIndex],
+          @ecs.Optional[@gltf.GltfMeshName],
+          @ecs.Optional[@gltf.GltfMaterialName],
         ),
       ),
-      @ecs.All,
-    ] = @ecs.query(world)
-    try! mesh_query.view(fn(entity, data) {
-      let (
-        _entity,
-        (
-          (
-            mesh3d_read,
-            material_read,
-            local_transform_read,
-            global_transform_read,
-          ),
-          (view_visibility_read, name_read, node_index_read, mesh_index_read),
-          (primitive_index_read, mesh_name_read, material_name_read),
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! mesh_query.view(fn(entity, data) {
+    let (
+      _entity,
+      (
+        (mesh3d_read, material_read, local_transform_read, global_transform_read
         ),
-      ) = data
-      mesh_count.val = mesh_count.val + 1
-      if view_visibility_read.value().is_visible() {
-        visible_mesh_count.val = visible_mesh_count.val + 1
-      }
-      if mesh_count.val == 1 {
-        cube_seen.val = true
-        cube_primitive_entity.val = entity
-        cube_visible.val = view_visibility_read.value().is_visible()
-        cube_node_index.val = match node_index_read.value() {
-          Some(index) => index.index()
-          None => -1
-        }
-        cube_mesh_index.val = match mesh_index_read.value() {
-          Some(index) => index.index()
-          None => -1
-        }
-        cube_primitive_index.val = match primitive_index_read.value() {
-          Some(index) => index.primitive_index()
-          None => -1
-        }
-        cube_mesh_name.val = match mesh_name_read.value() {
-          Some(mesh_name) => mesh_name.as_str()
-          None => ""
-        }
-        cube_material_name.val = match material_name_read.value() {
-          Some(material_name) => material_name.as_str()
-          None => ""
-        }
-        cube_primitive_name.val = match name_read.value() {
-          Some(name) => name.as_str()
-          None => ""
-        }
-        cube_mesh_handle_id.val = mesh3d_read.value().mesh().id()
-        cube_material_handle_id.val = material_read.value().material_asset_id()
-        cube_local_translation.val = local_transform_read.value().translation
-        cube_local_scale.val = local_transform_read.value().scale
-        cube_local_rotation.val = local_transform_read.value().rotation
-        let global_transform = global_transform_read.value()
-        cube_global_translation.val = global_transform.translation()
-        match @transform.compute_global_transform(world, entity) {
-          Some(computed_global) =>
-            cube_computed_global_translation.val = computed_global.translation()
-          None => ()
+        (name_read, node_index_read, mesh_index_read),
+        (primitive_index_read, mesh_name_read, material_name_read),
+      ),
+    ) = data
+    mesh_count.val = mesh_count.val + 1
+    match
+      (
+        try! world.get_by_key(entity, @visibility.ecs_key_inherited_visibility) :
+        @visibility.InheritedVisibility?) {
+      Some(inherited_visibility) => {
+        mesh_with_inherited_visibility_count.val = mesh_with_inherited_visibility_count.val +
+          1
+        if inherited_visibility.is_visible() {
+          inherited_visible_mesh_count.val = inherited_visible_mesh_count.val +
+            1
         }
       }
-    })
-    if cube_material_handle_id.val >= 0 {
-      let material_assets_key : @ecs.ResourceKey[
-        @asset.Assets[@pbr.StandardMaterial],
-      ] = @asset.assets_resource_key()
-      match world.get_resource(material_assets_key) {
-        Some(material_assets) =>
-          match
-            material_assets.get(@asset.Handle::new(cube_material_handle_id.val)) {
-            Some(material) => {
-              cube_material_loaded.val = true
-              let (base_r, base_g, base_b, base_a) = material.base_color.to_linear_rgba_tuple()
-              cube_material_base_color_matches.val = approx_eq(
-                  base_r, 0.800000011920929F,
-                ) &&
-                approx_eq(base_g, 0.800000011920929F) &&
-                approx_eq(base_b, 0.800000011920929F) &&
-                approx_eq(base_a, 1.0F)
-              cube_material_alpha_mode_matches.val = material.alpha_mode
-                is @pbr.AlphaMode3d::Opaque
-              cube_material_normal_texture_matches.val = material.normal_map_texture
-                is Some(_)
-              match material.normal_map_texture {
-                Some(texture) => {
-                  cube_material_normal_texture_id.val = texture.id()
-                  cube_material_normal_texture_loaded.val = @render.asset_is_texture_loaded(
-                    texture_id=texture.id(),
-                  )
-                }
-                None => ()
-              }
-              cube_material_absent_textures_match.val = material.base_color_texture
-                is None &&
-                material.emissive_texture is None &&
-                material.metallic_roughness_texture is None &&
-                material.occlusion_texture is None
-              let transformed_uv = material.uv_transform.transform_point2(
-                @math.Vec2::new(0.25F, 0.75F),
-              )
-              cube_material_scalar_fields_match.val = approx_eq(
-                  material.metallic,
-                  0.0F,
-                ) &&
-                approx_eq(material.perceptual_roughness, 0.5F) &&
-                vec2_approx_eq(transformed_uv, @math.Vec2::new(0.25F, 0.75F))
-              cube_material_double_sided_matches.val = material.cull_mode
-                is None
-              let (emissive_r, emissive_g, emissive_b, emissive_a) = material.emissive.to_linear_rgba_tuple()
-              let (specular_r, specular_g, specular_b, specular_a) = material.specular_tint.to_linear_rgba_tuple()
-              cube_material_extension_defaults_match.val = !material.unlit &&
-                approx_eq(emissive_r, 0.0F) &&
-                approx_eq(emissive_g, 0.0F) &&
-                approx_eq(emissive_b, 0.0F) &&
-                approx_eq(emissive_a, 1.0F) &&
-                approx_eq(material.emissive_exposure_weight, 0.0F) &&
-                approx_eq(material.reflectance, 0.5F) &&
-                approx_eq(specular_r, 1.0F) &&
-                approx_eq(specular_g, 1.0F) &&
-                approx_eq(specular_b, 1.0F) &&
-                approx_eq(specular_a, 1.0F) &&
-                approx_eq(material.ior, 1.5F) &&
-                approx_eq(material.clearcoat, 0.0F) &&
-                approx_eq(material.clearcoat_perceptual_roughness, 0.0F) &&
-                approx_eq(material.anisotropy_strength, 0.0F) &&
-                approx_eq(material.anisotropy_rotation, 0.0F)
-              let properties = @pbr.render3d_material_properties_for_standard_material(
-                material,
-                None,
-                @material.OpaqueRendererMethod::Forward,
-                true,
-              )
-              cube_prepared_phase_matches.val = properties.render_phase_type
-                is @material.RenderPhaseType::Opaque &&
-                properties.alpha_mode is @material.AlphaMode3d::Opaque &&
-                !properties.reads_view_transmission_texture &&
-                properties.mesh_pipeline_key_bits.bits() == 0UL
-              let material_key = @pbr.standard_material_key_from_material(
-                material,
-              )
-              cube_prepared_material_key_matches.val = material_key.contains(
-                  @pbr.STANDARD_MATERIAL_KEY_NORMAL_MAP,
-                ) &&
-                !material_key.contains(@pbr.STANDARD_MATERIAL_KEY_CULL_FRONT) &&
-                !material_key.contains(@pbr.STANDARD_MATERIAL_KEY_CULL_BACK) &&
-                material_key.bits() == properties.material_key.bits()
-              let pipeline_key = @material.ErasedMaterialPipelineKey::new(
-                properties.mesh_pipeline_key_bits,
-                properties.material_key,
-                "StandardMaterial",
-              )
-              let descriptor = try! @pbr.PbrMaterialPipelineSpecializer::new(
-                properties,
-              ).specialize(
-                pipeline_key,
-                volumetric_fog_material_specializer_layout(),
-              )
-              let fragment_matches = match descriptor.fragment {
-                Some(fragment) =>
-                  match fragment.targets[0] {
-                    Some(target) =>
-                      target.blend() is None &&
-                      shader_defs_contain_flag(
-                        fragment.shader_defs,
-                        "STANDARD_MATERIAL_NORMAL_MAP",
-                      )
-                    None => false
-                  }
-                None => false
-              }
-              let depth_matches = match descriptor.depth_stencil {
-                Some(depth) =>
-                  depth.depth_write_enabled &&
-                  depth.depth_compare == @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
-                None => false
-              }
-              cube_prepared_descriptor_matches.val = descriptor.label ==
-                Some("pbr_opaque_mesh_pipeline") &&
-                descriptor.primitive.cull_mode is None &&
-                depth_matches &&
-                fragment_matches
-            }
-            None => ()
-          }
-        None => ()
-      }
+      None => ()
     }
-    if !cube_primitive_entity.val.is_placeholder() {
-      match
-        (
-          try! world.get_by_key(cube_primitive_entity.val, @camera.ecs_key_aabb) :
-          @camera.Aabb?) {
-        Some(aabb) => {
-          cube_has_aabb.val = true
-          cube_aabb_center.val = aabb.center()
-          cube_aabb_half_size.val = aabb.half_size()
-        }
-        None => ()
-      }
+    if (try! world.contains_by_key(entity, @visibility.ecs_key_view_visibility)) {
+      mesh_with_view_visibility_count.val = mesh_with_view_visibility_count.val +
+        1
     }
-    if !cube_primitive_entity.val.is_placeholder() {
+    if mesh_count.val == 1 {
+      cube_seen.val = true
+      cube_primitive_entity.val = entity
       match
         (
           try! world.get_by_key(
-            cube_primitive_entity.val,
-            @hierarchy.ecs_key_parent,
-          ) : @hierarchy.Parent?) {
-        Some(parent) => {
-          cube_node_entity.val = parent.entity()
-          cube_parent_matches.val = match
-            (
-              try! world.get_by_key(
-                cube_node_entity.val,
-                @gltf.GltfNodeIndex::component(),
-              ) : @gltf.GltfNodeIndex?) {
-            Some(node_index) => node_index.index() == 1
-            None => false
-          }
-          cube_node_name.val = match
-            (
-              try! world.get_by_key(
-                cube_node_entity.val,
-                @ecs.Name::component(),
-              ) : @ecs.Name?) {
-            Some(name) => name.as_str()
-            None => ""
-          }
-          match
-            (
-              try! world.get_by_key(
-                cube_node_entity.val,
-                @transform.ecs_key_global_transform,
-              ) : @transform.GlobalTransform?) {
-            Some(global_transform) => {
-              cube_node_global_translation.val = global_transform.translation()
-              match
-                @transform.compute_global_transform(world, cube_node_entity.val) {
-                Some(computed_global) =>
-                  cube_node_computed_global_translation.val = computed_global.translation()
-                None => ()
-              }
-            }
-            None => ()
-          }
+            entity, @visibility.ecs_key_inherited_visibility,
+          ) : @visibility.InheritedVisibility?) {
+        Some(inherited_visibility) => {
+          cube_has_inherited_visibility.val = true
+          cube_inherited_visible.val = inherited_visibility.is_visible()
         }
         None => ()
       }
-    }
-    if !cube_node_entity.val.is_placeholder() {
-      match
-        (
-          try! world.get_by_key(cube_node_entity.val, @hierarchy.ecs_key_parent) :
-          @hierarchy.Parent?) {
-        Some(parent) => {
-          scene_root_entity.val = parent.entity()
-          scene_parent_matches.val = match
-            (
-              try! world.get_by_key(
-                scene_root_entity.val,
-                @gltf.GltfSceneIndex::component(),
-              ) : @gltf.GltfSceneIndex?) {
-            Some(scene_index) => {
-              scene_root_index.val = scene_index.index()
-              scene_index.index() == 0
-            }
-            None => false
-          }
-          scene_root_name.val = match
-            (
-              try! world.get_by_key(
-                scene_root_entity.val,
-                @ecs.Name::component(),
-              ) : @ecs.Name?) {
-            Some(name) => name.as_str()
-            None => ""
-          }
-          match
-            (
-              try! world.get_by_key(
-                scene_root_entity.val,
-                @transform.ecs_key_global_transform,
-              ) : @transform.GlobalTransform?) {
-            Some(global_transform) => {
-              scene_root_global_translation.val = global_transform.translation()
-              match
-                @transform.compute_global_transform(
-                  world,
-                  scene_root_entity.val,
-                ) {
-                Some(computed_global) =>
-                  scene_root_computed_global_translation.val = computed_global.translation()
-                None => ()
-              }
-            }
-            None => ()
-          }
-        }
+      if (try! world.contains_by_key(
+          entity, @visibility.ecs_key_view_visibility,
+        )) {
+        cube_has_view_visibility.val = true
+      }
+      cube_node_index.val = match node_index_read.value() {
+        Some(index) => index.index()
+        None => -1
+      }
+      cube_mesh_index.val = match mesh_index_read.value() {
+        Some(index) => index.index()
+        None => -1
+      }
+      cube_primitive_index.val = match primitive_index_read.value() {
+        Some(index) => index.primitive_index()
+        None => -1
+      }
+      cube_mesh_name.val = match mesh_name_read.value() {
+        Some(mesh_name) => mesh_name.as_str()
+        None => ""
+      }
+      cube_material_name.val = match material_name_read.value() {
+        Some(material_name) => material_name.as_str()
+        None => ""
+      }
+      cube_primitive_name.val = match name_read.value() {
+        Some(name) => name.as_str()
+        None => ""
+      }
+      cube_mesh_handle_id.val = mesh3d_read.value().mesh().id()
+      cube_material_handle_id.val = material_read.value().handle().id()
+      cube_local_translation.val = local_transform_read.value().translation
+      cube_local_scale.val = local_transform_read.value().scale
+      cube_local_rotation.val = local_transform_read.value().rotation
+      let global_transform = global_transform_read.value()
+      cube_global_translation.val = global_transform.translation()
+      match @transform.compute_global_transform(world, entity) {
+        Some(computed_global) =>
+          cube_computed_global_translation.val = computed_global.translation()
         None => ()
       }
     }
   })
-  .run_once()
-  |> ignore
-
+  if cube_material_handle_id.val >= 0 {
+    let material_assets_key : @ecs.ResourceKey[
+      @asset.Assets[@pbr.StandardMaterial],
+    ] = @asset.assets_resource_key()
+    match world.get_resource(material_assets_key) {
+      Some(material_assets) =>
+        match
+          material_assets.get(@asset.Handle::new(cube_material_handle_id.val)) {
+          Some(material) => {
+            cube_material_loaded.val = true
+            let (base_r, base_g, base_b, base_a) = material.base_color.to_linear_rgba_tuple()
+            cube_material_base_color_matches.val = approx_eq(
+                base_r, 0.800000011920929F,
+              ) &&
+              approx_eq(base_g, 0.800000011920929F) &&
+              approx_eq(base_b, 0.800000011920929F) &&
+              approx_eq(base_a, 1.0F)
+            cube_material_alpha_mode_matches.val = material.alpha_mode
+              is @pbr.AlphaMode3d::Opaque
+            cube_material_normal_texture_matches.val = material.normal_map_texture
+              is Some(_)
+            match material.normal_map_texture {
+              Some(texture) => {
+                cube_material_normal_texture_id.val = texture.id()
+                cube_material_normal_texture_loaded.val = @render.asset_is_texture_loaded(
+                  texture_id=texture.id(),
+                )
+              }
+              None => ()
+            }
+            cube_material_absent_textures_match.val = material.base_color_texture
+              is None &&
+              material.emissive_texture is None &&
+              material.metallic_roughness_texture is None &&
+              material.occlusion_texture is None
+            let transformed_uv = material.uv_transform.transform_point2(
+              @math.Vec2::new(0.25F, 0.75F),
+            )
+            cube_material_scalar_fields_match.val = approx_eq(
+                material.metallic,
+                0.0F,
+              ) &&
+              approx_eq(material.perceptual_roughness, 0.5F) &&
+              vec2_approx_eq(transformed_uv, @math.Vec2::new(0.25F, 0.75F))
+            cube_material_double_sided_matches.val = material.cull_mode is None
+            let (emissive_r, emissive_g, emissive_b, emissive_a) = material.emissive.to_linear_rgba_tuple()
+            let (specular_r, specular_g, specular_b, specular_a) = material.specular_tint.to_linear_rgba_tuple()
+            cube_material_extension_defaults_match.val = !material.unlit &&
+              approx_eq(emissive_r, 0.0F) &&
+              approx_eq(emissive_g, 0.0F) &&
+              approx_eq(emissive_b, 0.0F) &&
+              approx_eq(emissive_a, 1.0F) &&
+              approx_eq(material.emissive_exposure_weight, 0.0F) &&
+              approx_eq(material.reflectance, 0.5F) &&
+              approx_eq(specular_r, 1.0F) &&
+              approx_eq(specular_g, 1.0F) &&
+              approx_eq(specular_b, 1.0F) &&
+              approx_eq(specular_a, 1.0F) &&
+              approx_eq(material.ior, 1.5F) &&
+              approx_eq(material.clearcoat, 0.0F) &&
+              approx_eq(material.clearcoat_perceptual_roughness, 0.0F) &&
+              approx_eq(material.anisotropy_strength, 0.0F) &&
+              approx_eq(material.anisotropy_rotation, 0.0F)
+            let properties = @pbr.render3d_material_properties_for_standard_material(
+              material,
+              None,
+              @material.OpaqueRendererMethod::Forward,
+              true,
+            )
+            cube_prepared_phase_matches.val = properties.render_phase_type
+              is @material.RenderPhaseType::Opaque &&
+              properties.alpha_mode is @material.AlphaMode3d::Opaque &&
+              !properties.reads_view_transmission_texture &&
+              properties.mesh_pipeline_key_bits.bits() == 0UL
+            let material_key = @pbr.standard_material_key_from_material(
+              material,
+            )
+            cube_prepared_material_key_matches.val = material_key.contains(
+                @pbr.STANDARD_MATERIAL_KEY_NORMAL_MAP,
+              ) &&
+              !material_key.contains(@pbr.STANDARD_MATERIAL_KEY_CULL_FRONT) &&
+              !material_key.contains(@pbr.STANDARD_MATERIAL_KEY_CULL_BACK) &&
+              material_key.bits() == properties.material_key.bits()
+            let pipeline_key = @material.ErasedMaterialPipelineKey::new(
+              properties.mesh_pipeline_key_bits,
+              properties.material_key,
+              "StandardMaterial",
+            )
+            let descriptor = try! @pbr.PbrMaterialPipelineSpecializer::new(
+              properties,
+            ).specialize(
+              pipeline_key,
+              volumetric_fog_material_specializer_layout(),
+            )
+            let fragment_matches = match descriptor.fragment {
+              Some(fragment) =>
+                match fragment.targets[0] {
+                  Some(target) =>
+                    target.blend() is None &&
+                    shader_defs_contain_flag(
+                      fragment.shader_defs,
+                      "STANDARD_MATERIAL_NORMAL_MAP",
+                    )
+                  None => false
+                }
+              None => false
+            }
+            let depth_matches = match descriptor.depth_stencil {
+              Some(depth) =>
+                depth.depth_write_enabled &&
+                depth.depth_compare == @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+              None => false
+            }
+            cube_prepared_descriptor_matches.val = descriptor.label ==
+              Some("pbr_opaque_mesh_pipeline") &&
+              descriptor.primitive.cull_mode is None &&
+              depth_matches &&
+              fragment_matches
+          }
+          None => ()
+        }
+      None => ()
+    }
+  }
+  if !cube_primitive_entity.val.is_placeholder() {
+    match
+      (
+        try! world.get_by_key(cube_primitive_entity.val, @camera.ecs_key_aabb) :
+        @camera.Aabb?) {
+      Some(aabb) => {
+        cube_has_aabb.val = true
+        cube_aabb_center.val = aabb.center()
+        cube_aabb_half_size.val = aabb.half_size()
+      }
+      None => ()
+    }
+  }
+  if !cube_primitive_entity.val.is_placeholder() {
+    match
+      (
+        try! world.get_by_key(
+          cube_primitive_entity.val,
+          @hierarchy.ecs_key_parent,
+        ) : @hierarchy.Parent?) {
+      Some(parent) => {
+        cube_node_entity.val = parent.entity()
+        cube_parent_matches.val = match
+          (
+            try! world.get_by_key(
+              cube_node_entity.val,
+              @gltf.GltfNodeIndex::component(),
+            ) : @gltf.GltfNodeIndex?) {
+          Some(node_index) => node_index.index() == 1
+          None => false
+        }
+        cube_node_name.val = match
+          (
+            try! world.get_by_key(cube_node_entity.val, @ecs.Name::component()) :
+            @ecs.Name?) {
+          Some(name) => name.as_str()
+          None => ""
+        }
+        match
+          (
+            try! world.get_by_key(
+              cube_node_entity.val,
+              @transform.ecs_key_global_transform,
+            ) : @transform.GlobalTransform?) {
+          Some(global_transform) => {
+            cube_node_global_translation.val = global_transform.translation()
+            match
+              @transform.compute_global_transform(world, cube_node_entity.val) {
+              Some(computed_global) =>
+                cube_node_computed_global_translation.val = computed_global.translation()
+              None => ()
+            }
+          }
+          None => ()
+        }
+      }
+      None => ()
+    }
+  }
+  if !cube_node_entity.val.is_placeholder() {
+    match
+      (
+        try! world.get_by_key(cube_node_entity.val, @hierarchy.ecs_key_parent) :
+        @hierarchy.Parent?) {
+      Some(parent) => {
+        scene_root_entity.val = parent.entity()
+        scene_parent_matches.val = match
+          (
+            try! world.get_by_key(
+              scene_root_entity.val,
+              @gltf.GltfSceneIndex::component(),
+            ) : @gltf.GltfSceneIndex?) {
+          Some(scene_index) => {
+            scene_root_index.val = scene_index.index()
+            scene_index.index() == 0
+          }
+          None => false
+        }
+        scene_root_name.val = match
+          (
+            try! world.get_by_key(scene_root_entity.val, @ecs.Name::component()) :
+            @ecs.Name?) {
+          Some(name) => name.as_str()
+          None => ""
+        }
+        match
+          (
+            try! world.get_by_key(
+              scene_root_entity.val,
+              @transform.ecs_key_global_transform,
+            ) : @transform.GlobalTransform?) {
+          Some(global_transform) => {
+            scene_root_global_translation.val = global_transform.translation()
+            match
+              @transform.compute_global_transform(world, scene_root_entity.val) {
+              Some(computed_global) =>
+                scene_root_computed_global_translation.val = computed_global.translation()
+              None => ()
+            }
+          }
+          None => ()
+        }
+      }
+      None => ()
+    }
+  }
+  debug_inspect(world_asset_root_count.val, content="1")
+  debug_inspect(ready_scene_instance_count.val, content="1")
   debug_inspect(mesh_count.val, content="1")
-  debug_inspect(visible_mesh_count.val, content="1")
+  debug_inspect(mesh_with_inherited_visibility_count.val, content="1")
+  debug_inspect(mesh_with_view_visibility_count.val, content="1")
+  debug_inspect(inherited_visible_mesh_count.val, content="1")
   debug_inspect(cube_seen.val, content="true")
-  debug_inspect(cube_visible.val, content="true")
+  debug_inspect(cube_has_inherited_visibility.val, content="true")
+  debug_inspect(cube_has_view_visibility.val, content="true")
+  debug_inspect(cube_inherited_visible.val, content="true")
   debug_inspect(cube_node_index.val, content="1")
   debug_inspect(cube_mesh_index.val, content="0")
   debug_inspect(cube_primitive_index.val, content="0")
@@ -2316,6 +2349,7 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
       setup_camera(world)
       setup_scene(world)
       @scene.scene_load_pending_system(world)
+      @scene.scene_collect_root_spawn_requests_system(world)
       @scene.scene_spawn_roots_system(world)
       @transform.propagate_transforms_system(world)
       @visibility.visibility_propagate_system(world)
@@ -2326,9 +2360,9 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
           @core.Entity,
           (
             @ecs.Read[@mesh.Mesh3d],
-            @ecs.Read[@pbr.MeshMaterial3d],
+            @ecs.Read[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
             @ecs.Read[@transform.GlobalTransform],
-            @ecs.Read[@visibility.ViewVisibility],
+            @ecs.Read[@visibility.InheritedVisibility],
           ),
         ),
         @ecs.All,
@@ -2340,16 +2374,14 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
             mesh3d_read,
             material_read,
             global_transform_read,
-            view_visibility_read,
+            inherited_visibility_read,
           ),
         ) = data
-        if view_visibility_read.value().is_visible() &&
+        if inherited_visibility_read.value().is_visible() &&
           cube_primitive_entity.val.is_placeholder() {
           cube_primitive_entity.val = entity
           cube_mesh_handle_id.val = mesh3d_read.value().mesh().id()
-          cube_material_handle_id.val = material_read
-            .value()
-            .material_asset_id()
+          cube_material_handle_id.val = material_read.value().handle().id()
           cube_global_translation.val = global_transform_read
             .value()
             .translation()
@@ -2540,6 +2572,7 @@ test "volumetric_fog: GLB Sun node imports Bevy-shaped directional light child" 
   .add_system(fn(world : @ecs.World) {
     setup_scene(world)
     @scene.scene_load_pending_system(world)
+    @scene.scene_collect_root_spawn_requests_system(world)
     @scene.scene_spawn_roots_system(world)
     @transform.propagate_transforms_system(world)
 
