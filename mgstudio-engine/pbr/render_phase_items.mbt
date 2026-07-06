@@ -345,6 +345,29 @@ fn render3d_queue_resolved_material_for_mesh(
 }
 
 ///|
+fn render3d_queue_mesh_instance_for_mesh(
+  render_mesh_instances : RenderMeshInstances,
+  pending_mesh_material_queues : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  mesh : ExtractedMesh3d,
+) -> RenderMeshQueueData? {
+  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
+  match render_mesh_instances.render_mesh_queue_data(visible_entity) {
+    Some(mesh_instance) => Some(mesh_instance)
+    None => {
+      pending_mesh_material_queues
+      .queues()
+      .push_current(
+        retained_view_entity,
+        mesh.entity.render_entity,
+        visible_entity,
+      )
+      None
+    }
+  }
+}
+
+///|
 fn render3d_split_phase_ranges(
   length : Int,
   max_num_splits : Int,

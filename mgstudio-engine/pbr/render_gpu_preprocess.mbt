@@ -183,6 +183,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 ///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
+  render_mesh_instances : RenderMeshInstances,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -204,10 +205,20 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
         }
       None => ()
     }
-    if payload.mesh_id <= 0 {
+    guard render3d_queue_mesh_instance_for_mesh(
+        render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
+        mesh,
+      )
+      is Some(mesh_instance) else {
       continue
     }
-    if !payload.layers.matches(layers) {
+    if mesh_instance.mesh_asset_id() <= 0 {
+      continue
+    }
+    let mesh_layers = mesh_instance
+      .render_layers()
+      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+    if !mesh_layers.matches(layers) {
       continue
     }
     if payload.visibility_range is Some(visibility_range) &&
@@ -287,6 +298,7 @@ priv struct GpuPreprocessWorkItem3d {
 ///|
 fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
+  render_mesh_instances : RenderMeshInstances,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -308,10 +320,20 @@ fn render3d_collect_meshes_for_gpu_building(
         }
       None => ()
     }
-    if payload.mesh_id <= 0 {
+    guard render3d_queue_mesh_instance_for_mesh(
+        render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
+        mesh,
+      )
+      is Some(mesh_instance) else {
       continue
     }
-    if !payload.layers.matches(layers) {
+    if mesh_instance.mesh_asset_id() <= 0 {
+      continue
+    }
+    let mesh_layers = mesh_instance
+      .render_layers()
+      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+    if !mesh_layers.matches(layers) {
       continue
     }
     if payload.visibility_range is Some(visibility_range) &&
@@ -1672,6 +1694,7 @@ fn render3d_gpu_preprocess_indirect_parameter_index_maps(
 ///|
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
+  render_mesh_instances : RenderMeshInstances,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -1686,6 +1709,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   // collect mesh work items, then write batched instance work payloads.
   let work_items = render3d_collect_meshes_for_gpu_building(
     meshes,
+    render_mesh_instances,
     material_slots,
     pending_mesh_material_queues,
     layers,
@@ -1702,6 +1726,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
 ///|
 fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
+  render_mesh_instances : RenderMeshInstances,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -1716,6 +1741,7 @@ fn render3d_queue_mesh_phase_items(
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
       meshes,
+      render_mesh_instances,
       material_slots,
       pending_mesh_material_queues,
       layers,
@@ -1729,6 +1755,7 @@ fn render3d_queue_mesh_phase_items(
   }
   render3d_queue_mesh_phase_items_cpu_builder(
     meshes,
+    render_mesh_instances,
     material_slots,
     pending_mesh_material_queues,
     layers,
