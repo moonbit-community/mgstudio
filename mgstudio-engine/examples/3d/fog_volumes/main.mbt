@@ -149,6 +149,18 @@ fn main {
 }
 
 ///|
+fn fog_volumes_approx_eq(lhs : Float, rhs : Float) -> Bool {
+  (lhs - rhs).abs() <= 1.0e-5F
+}
+
+///|
+fn fog_volumes_vec3_approx_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
+  fog_volumes_approx_eq(lhs.x, rhs.x) &&
+  fog_volumes_approx_eq(lhs.y, rhs.y) &&
+  fog_volumes_approx_eq(lhs.z, rhs.z)
+}
+
+///|
 test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   let mut app = fog_volumes_app()
   app = app.run_startup()
@@ -183,4 +195,77 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   debug_inspect(fog_volume_translation.val.x, content="0")
   debug_inspect(fog_volume_translation.val.y, content="0.5")
   debug_inspect(fog_volume_translation.val.z, content="0")
+
+  let directional_light_query : @ecs.Query[
+    (@ecs.Read[@pbr.DirectionalLight], @ecs.Read[@transform.Transform]),
+    @ecs.With[@pbr.DirectionalLight],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@pbr.ecs_key_directional_light))
+  let directional_light_matches = Ref(false)
+  let directional_light_transform_matches = Ref(false)
+  try! directional_light_query.view(fn(_entity, data) {
+    let (directional_light, transform) = data
+    directional_light_matches.val = directional_light.value().shadow_maps_enabled &&
+      fog_volumes_approx_eq(directional_light.value().illuminance, 32_000.0F)
+    directional_light_transform_matches.val = fog_volumes_vec3_approx_eq(
+      transform.value().translation,
+      @math.Vec3::new(1.0F, 1.0F, -0.3F),
+    )
+  })
+  debug_inspect(directional_light_matches.val, content="true")
+  debug_inspect(directional_light_transform_matches.val, content="true")
+
+  let camera_query : @ecs.Query[
+    (
+      @ecs.Read[@camera.Camera3d],
+      @ecs.Read[@transform.Transform],
+      @ecs.Read[@pbr.Hdr],
+      @ecs.Read[@pbr.VolumetricFog],
+    ),
+    @ecs.With[@camera.Camera3d],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
+  let camera_transform_matches = Ref(false)
+  let volumetric_fog_matches = Ref(false)
+  try! camera_query.view(fn(_entity, data) {
+    let (_, transform, _, volumetric_fog) = data
+    camera_transform_matches.val = fog_volumes_vec3_approx_eq(
+      transform.value().translation,
+      @math.Vec3::new(-0.75F, 1.0F, 2.0F),
+    )
+    volumetric_fog_matches.val = volumetric_fog.value().step_count == 64 &&
+      fog_volumes_approx_eq(volumetric_fog.value().ambient_intensity, 0.0F) &&
+      fog_volumes_approx_eq(volumetric_fog.value().jitter, 0.0F)
+  })
+  debug_inspect(camera_transform_matches.val, content="true")
+  debug_inspect(volumetric_fog_matches.val, content="true")
+}
+
+///|
+test "fog_volumes: camera rotation system matches upstream orbit step" {
+  let mut app = fog_volumes_app()
+  app = app.run_startup()
+  let world = app.world()
+  let initial_translation = Ref(@math.Vec3::zero())
+  let query : @ecs.Query[
+    @ecs.Read[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
+  try! query.view(fn(_entity, transform) {
+    initial_translation.val = transform.value().translation
+  })
+  let camera_query : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
+  rotate_camera(camera_query)
+  let rotated_translation = Ref(@math.Vec3::zero())
+  try! query.view(fn(_entity, transform) {
+    rotated_translation.val = transform.value().translation
+  })
+  let expected = @math.Quat::from_rotation_y(0.01F).mul_vec3(
+    initial_translation.val,
+  )
+  debug_inspect(
+    fog_volumes_vec3_approx_eq(rotated_translation.val, expected),
+    content="true",
+  )
 }
