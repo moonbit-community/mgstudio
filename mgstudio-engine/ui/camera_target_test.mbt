@@ -41,7 +41,9 @@ fn camera_with_target_info(
   .with_order(order)
   .with_computed(
     @camera_camera.ComputedCameraValues::new(
+      @math.Mat4::identity(),
       Some(@camera_camera.RenderTargetInfo::new(physical_size, scale_factor)),
+      None,
       None,
     ),
   )

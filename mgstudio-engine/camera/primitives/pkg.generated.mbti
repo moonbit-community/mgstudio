@@ -98,6 +98,14 @@ pub fn Sphere::new(@math.Vec3, Float) -> Self
 pub fn Sphere::radius(Self) -> Float
 pub impl @ecs.Component for Sphere
 
+pub struct SubCameraView3d {
+  full_size : @math.IVec2
+  offset : @math.Vec2
+  size : @math.IVec2
+} derive(ToJson, @json.FromJson)
+pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
+pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
+
 pub struct ViewFrustum {
   inner : @math.ViewFrustum
 } derive(Eq, ToJson, @json.FromJson)

@@ -48,8 +48,6 @@ pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
 pub let ecs_key_projection : @ecs.ComponentKey[@projection3d.Projection]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@projection3d.SubCameraView3d]
-
 pub fn encode_clear_color_config(@clear_color.ClearColorConfig) -> Json
 
 pub fn mesh_compute_aabb(@mesh.Mesh) -> @primitives.Aabb?
@@ -142,7 +140,7 @@ pub using @computed_camera_values {type RenderTargetInfo}
 
 pub using @primitives {type Sphere}
 
-pub using @projection3d {type SubCameraView3d}
+pub using @primitives {type SubCameraView3d}
 
 pub using @primitives {type ViewFrustum}
 

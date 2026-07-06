@@ -16,15 +16,13 @@ pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
-pub fn custom_projection3d_from_callbacks(String, () -> ProjectionMatrix3d, (SubCameraView3d) -> ProjectionMatrix3d, (Float, Float) -> CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
+pub fn custom_projection3d_from_callbacks(String, () -> ProjectionMatrix3d, (@primitives.SubCameraView3d) -> ProjectionMatrix3d, (Float, Float) -> CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> CustomProjection3d
 
 pub let ecs_key_frustum : @ecs.ComponentKey[@primitives.Frustum]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d]
-
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
 pub fn maxf(Float, Float) -> Float
 
@@ -42,7 +40,7 @@ pub fn render3d_orthographic_projection_compute_frustum(OrthographicProjection3d
 
 pub fn render3d_orthographic_projection_matrix(Float, Float, Float, Float, Float, Float) -> ProjectionMatrix3d
 
-pub fn render3d_orthographic_projection_matrix_for_sub(OrthographicProjection3d, SubCameraView3d) -> ProjectionMatrix3d
+pub fn render3d_orthographic_projection_matrix_for_sub(OrthographicProjection3d, @primitives.SubCameraView3d) -> ProjectionMatrix3d
 
 pub fn render3d_pass_projection(ProjectionMatrix3d, ProjectionMatrix3d, Float, Float) -> Render3dPassProjection
 
@@ -58,7 +56,7 @@ pub fn render3d_perspective_projection_compute_frustum(PerspectiveProjection3d, 
 
 pub fn render3d_perspective_projection_matrix(PerspectiveProjection3d) -> ProjectionMatrix3d
 
-pub fn render3d_perspective_projection_matrix_for_sub(PerspectiveProjection3d, SubCameraView3d) -> ProjectionMatrix3d
+pub fn render3d_perspective_projection_matrix_for_sub(PerspectiveProjection3d, @primitives.SubCameraView3d) -> ProjectionMatrix3d
 
 pub fn render3d_perspective_projection_matrix_raw(Float, Float, Float) -> ProjectionMatrix3d
 
@@ -84,7 +82,7 @@ pub fn render3d_view_from_world_matrix(@transform.Transform) -> ProjectionMatrix
 pub struct CustomProjection3d {
   type_name : String
   get_clip_from_view_fn : () -> ProjectionMatrix3d
-  get_clip_from_view_for_sub_fn : (SubCameraView3d) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (@primitives.SubCameraView3d) -> ProjectionMatrix3d
   update_fn : (Float, Float) -> CustomProjection3d
   far_fn : () -> Float
   get_frustum_corners_fn : (Float, Float) -> Array[@math.Vec3]
@@ -93,7 +91,7 @@ pub fn CustomProjection3d::CustomProjection3d() -> Self
 pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> @primitives.Frustum
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, @primitives.SubCameraView3d) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
@@ -114,7 +112,7 @@ pub fn OrthographicProjection3d::default_2d() -> Self
 pub fn OrthographicProjection3d::default_3d() -> Self
 pub fn OrthographicProjection3d::far(Self) -> Float
 pub fn OrthographicProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn OrthographicProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn OrthographicProjection3d::get_clip_from_view_for_sub(Self, @primitives.SubCameraView3d) -> ProjectionMatrix3d
 pub fn OrthographicProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn OrthographicProjection3d::near(Self) -> Float
 pub fn OrthographicProjection3d::scale(Self) -> Float
@@ -150,7 +148,7 @@ pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
 pub fn PerspectiveProjection3d::far(Self) -> Float
 pub fn PerspectiveProjection3d::fov(Self) -> Float
 pub fn PerspectiveProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn PerspectiveProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn PerspectiveProjection3d::get_clip_from_view_for_sub(Self, @primitives.SubCameraView3d) -> ProjectionMatrix3d
 pub fn PerspectiveProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn PerspectiveProjection3d::near(Self) -> Float
 pub fn PerspectiveProjection3d::near_clip_plane(Self) -> @math.Vec4
@@ -172,7 +170,7 @@ pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
 pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
-pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, @primitives.SubCameraView3d) -> ProjectionMatrix3d
 pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
@@ -209,15 +207,6 @@ pub(all) struct Render3dPassProjection {
   camera_far : Float
 }
 
-pub struct SubCameraView3d {
-  full_size : @math.IVec2
-  offset : @math.Vec2
-  size : @math.IVec2
-} derive(ToJson, @json.FromJson)
-pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
-pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
-pub impl @ecs.Component for SubCameraView3d
-
 pub struct ViewFrustum {
   inner : @primitives.ViewFrustum
 } derive(Eq, ToJson, @json.FromJson)
@@ -232,10 +221,12 @@ pub using @primitives {type Frustum}
 
 pub using @math {type HalfSpace}
 
+pub using @primitives {type SubCameraView3d}
+
 // Traits
 pub(open) trait CameraProjection3d {
   fn get_clip_from_view(Self) -> ProjectionMatrix3d
-  fn get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  fn get_clip_from_view_for_sub(Self, @primitives.SubCameraView3d) -> ProjectionMatrix3d
   fn update(Self, Float, Float) -> Self
   fn far(Self) -> Float
   fn compute_frustum(Self, @transform.Transform) -> @primitives.Frustum

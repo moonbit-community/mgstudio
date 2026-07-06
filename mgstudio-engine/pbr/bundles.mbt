@@ -118,7 +118,11 @@ pub fn Camera3dBundle::with_sub_camera_view(
   self : Camera3dBundle,
   sub_camera_view : SubCameraView3d?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, sub_camera_view, }
+  Camera3dBundle::{
+    ..self,
+    camera: self.camera.with_sub_camera_view(sub_camera_view),
+    sub_camera_view,
+  }
 }
 
 ///|
@@ -360,9 +364,6 @@ fn camera3d_bundle_insert(
     )
   }
   world.set_by_key(entity, ecs_key_projection, bundle.projection, loc~)
-  if bundle.sub_camera_view is Some(sub_camera_view) {
-    world.set_by_key(entity, ecs_key_sub_camera_view3d, sub_camera_view, loc~)
-  }
   if bundle.screen_space_transmission is Some(screen_space_transmission) {
     world.set_by_key(
       entity,
@@ -416,7 +417,12 @@ fn camera3d_bundle_insert(
   if bundle.color_grading is Some(color_grading) {
     world.set_by_key(entity, ecs_key_color_grading, color_grading, loc~)
   }
-  world.set_by_key(entity, @camera_camera.ecs_key_camera, bundle.camera, loc~)
+  world.set_by_key(
+    entity,
+    @camera_camera.ecs_key_camera,
+    bundle.camera.with_sub_camera_view(bundle.sub_camera_view),
+    loc~,
+  )
   world.set_by_key(
     entity,
     @camera_camera.ecs_key_render_target,

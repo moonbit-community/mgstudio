@@ -42,21 +42,35 @@ pub fn RenderTargetInfo::RenderTargetInfo() -> RenderTargetInfo {
 
 ///|
 pub struct ComputedCameraValues {
+  clip_from_view : @math.Mat4
   target_info : RenderTargetInfo?
   old_viewport_size : @math.IVec2?
+  old_sub_camera_view : @camera_primitives.SubCameraView3d?
 }
 
 ///|
 pub fn ComputedCameraValues::ComputedCameraValues() -> ComputedCameraValues {
-  ComputedCameraValues::{ target_info: None, old_viewport_size: None }
+  ComputedCameraValues::{
+    clip_from_view: @math.Mat4::identity(),
+    target_info: None,
+    old_viewport_size: None,
+    old_sub_camera_view: None,
+  }
 }
 
 ///|
 pub fn ComputedCameraValues::new(
+  clip_from_view : @math.Mat4,
   target_info : RenderTargetInfo?,
   old_viewport_size : @math.IVec2?,
+  old_sub_camera_view : @camera_primitives.SubCameraView3d?,
 ) -> ComputedCameraValues {
-  ComputedCameraValues::{ target_info, old_viewport_size }
+  ComputedCameraValues::{
+    clip_from_view,
+    target_info,
+    old_viewport_size,
+    old_sub_camera_view,
+  }
 }
 
 ///|
@@ -73,25 +87,34 @@ pub fn decode_render_target_info(json : Json) -> RenderTargetInfo {
 ///|
 pub fn encode_computed_camera_values(computed : ComputedCameraValues) -> Json {
   (
+    computed.clip_from_view,
     computed.target_info.map(fn(target_info) {
       encode_render_target_info(target_info)
     }),
     computed.old_viewport_size.map(fn(size) { encode_ivec2(size) }),
+    computed.old_sub_camera_view,
   ).to_json()
 }
 
 ///|
 pub fn decode_computed_camera_values(json : Json) -> ComputedCameraValues {
-  let (target_info_json, old_viewport_size_json) : (Json?, Json?) = try! @json.from_json(
+  let (
+    clip_from_view,
+    target_info_json,
+    old_viewport_size_json,
+    old_sub_camera_view,
+  ) : (@math.Mat4, Json?, Json?, @camera_primitives.SubCameraView3d?) = try! @json.from_json(
     json,
   )
   ComputedCameraValues::{
+    clip_from_view,
     target_info: target_info_json.map(fn(value) {
       decode_render_target_info(value)
     }),
     old_viewport_size: old_viewport_size_json.map(fn(value) {
       decode_ivec2(value)
     }),
+    old_sub_camera_view,
   }
 }
 

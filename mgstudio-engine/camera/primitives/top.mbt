@@ -28,6 +28,48 @@ pub struct Sphere {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::SubCameraView`.
+pub struct SubCameraView3d {
+  full_size : @math.IVec2
+  offset : @math.Vec2
+  size : @math.IVec2
+} derive(ToJson, FromJson)
+
+///|
+fn sub_camera_view3d_sanitize(
+  full_size : @math.IVec2,
+  offset : @math.Vec2,
+  size : @math.IVec2,
+) -> SubCameraView3d {
+  let safe_full_width = if full_size.x <= 0 { 1 } else { full_size.x }
+  let safe_full_height = if full_size.y <= 0 { 1 } else { full_size.y }
+  let safe_size_width = if size.x <= 0 { 1 } else { size.x }
+  let safe_size_height = if size.y <= 0 { 1 } else { size.y }
+  SubCameraView3d::{
+    full_size: @math.IVec2::new(safe_full_width, safe_full_height),
+    offset,
+    size: @math.IVec2::new(safe_size_width, safe_size_height),
+  }
+}
+
+///|
+pub fn SubCameraView3d::new(
+  full_size : @math.IVec2,
+  offset : @math.Vec2,
+  size : @math.IVec2,
+) -> SubCameraView3d {
+  sub_camera_view3d_sanitize(full_size, offset, size)
+}
+
+///|
+pub fn SubCameraView3d::with_offset(
+  self : SubCameraView3d,
+  offset : @math.Vec2,
+) -> SubCameraView3d {
+  sub_camera_view3d_sanitize(self.full_size, offset, self.size)
+}
+
+///|
 pub fn Sphere::Sphere() -> Sphere {
   Sphere::{ center: @math.Vec3::zero(), radius: 0.0F }
 }

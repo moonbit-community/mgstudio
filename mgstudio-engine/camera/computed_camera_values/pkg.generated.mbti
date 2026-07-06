@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/camera/computed_camera_values"
 
 import {
+  "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
 }
@@ -19,11 +20,13 @@ pub fn encode_render_target_info(RenderTargetInfo) -> Json
 
 // Types and methods
 pub struct ComputedCameraValues {
+  clip_from_view : @math.Mat4
   target_info : RenderTargetInfo?
   old_viewport_size : @math.IVec2?
+  old_sub_camera_view : @primitives.SubCameraView3d?
 }
 pub fn ComputedCameraValues::ComputedCameraValues() -> Self
-pub fn ComputedCameraValues::new(RenderTargetInfo?, @math.IVec2?) -> Self
+pub fn ComputedCameraValues::new(@math.Mat4, RenderTargetInfo?, @math.IVec2?, @primitives.SubCameraView3d?) -> Self
 pub impl ToJson for ComputedCameraValues
 pub impl @json.FromJson for ComputedCameraValues
 

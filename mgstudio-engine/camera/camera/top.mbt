@@ -28,6 +28,9 @@ pub type ComputedCameraValues = @camera_computed.ComputedCameraValues
 pub type ClearColorConfig = @camera_clear_color.ClearColorConfig
 
 ///|
+pub type SubCameraView3d = @camera_primitives.SubCameraView3d
+
+///|
 pub struct Camera {
   viewport : Viewport?
   order : Int
@@ -35,6 +38,7 @@ pub struct Camera {
   computed : ComputedCameraValues
   clear_color : ClearColorConfig
   invert_culling : Bool
+  sub_camera_view : SubCameraView3d?
 }
 
 ///|
@@ -46,6 +50,7 @@ pub fn Camera::new(clear_color : @color.Color) -> Camera {
     computed: ComputedCameraValues::ComputedCameraValues(),
     clear_color: ClearColorConfig::Custom(clear_color),
     invert_culling: false,
+    sub_camera_view: None,
   }
 }
 
@@ -58,6 +63,7 @@ pub fn Camera::Camera() -> Camera {
     computed: ComputedCameraValues::ComputedCameraValues(),
     clear_color: ClearColorConfig::default(),
     invert_culling: false,
+    sub_camera_view: None,
   }
 }
 
@@ -108,6 +114,14 @@ pub fn Camera::with_invert_culling(
   invert_culling : Bool,
 ) -> Camera {
   Camera::{ ..self, invert_culling, }
+}
+
+///|
+pub fn Camera::with_sub_camera_view(
+  self : Camera,
+  sub_camera_view : SubCameraView3d?,
+) -> Camera {
+  Camera::{ ..self, sub_camera_view, }
 }
 
 ///|
@@ -544,6 +558,7 @@ fn encode_camera(camera : Camera) -> Json {
     @camera_computed.encode_computed_camera_values(camera.computed),
     @camera_clear_color.encode_clear_color_config(camera.clear_color),
     camera.invert_culling,
+    camera.sub_camera_view,
   ).to_json()
 }
 
@@ -570,7 +585,10 @@ fn decode_camera(json : Json) -> Camera {
     computed_json,
     clear_color_json,
     invert_culling,
-  ) : (Json?, Int, Bool, Json, Json, Bool) = try! @json.from_json(json)
+    sub_camera_view,
+  ) : (Json?, Int, Bool, Json, Json, Bool, SubCameraView3d?) = try! @json.from_json(
+    json,
+  )
   Camera::{
     viewport: viewport_json.map(fn(value) {
       @camera_viewport.decode_viewport(value)
@@ -580,6 +598,7 @@ fn decode_camera(json : Json) -> Camera {
     computed: @camera_computed.decode_computed_camera_values(computed_json),
     clear_color: @camera_clear_color.decode_clear_color_config(clear_color_json),
     invert_culling,
+    sub_camera_view,
   }
 }
 

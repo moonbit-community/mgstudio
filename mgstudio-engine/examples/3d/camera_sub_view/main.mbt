@@ -247,10 +247,15 @@ fn move_camera_view(world : @ecs.World) -> Unit {
   let offset = wrapped - 50.0F
 
   for entity in camera_sub_view_state.val.moving_cameras {
-    if (try! world.get_by_key(entity, @pbr.ecs_key_sub_camera_view3d))
-      is Some(sub_camera_view) {
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) &&
+      camera.sub_camera_view is Some(sub_camera_view) {
       let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))
-      try! (world.replace(entity, @pbr.ecs_key_sub_camera_view3d, next)
+      try! (world.replace(
+        entity,
+        @camera_camera.ecs_key_camera,
+        camera.with_sub_camera_view(Some(next)),
+      )
       |> ignore)
     }
   }

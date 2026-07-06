@@ -25,9 +25,6 @@ pub type OrthographicProjection3d = @camera_projection3d.OrthographicProjection3
 pub type OrthographicScalingMode3d = @camera_projection3d.OrthographicScalingMode3d
 
 ///|
-pub type SubCameraView3d = @camera_projection3d.SubCameraView3d
-
-///|
 pub type ProjectionMatrix3d = @camera_projection3d.ProjectionMatrix3d
 
 ///|

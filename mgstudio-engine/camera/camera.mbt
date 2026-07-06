@@ -35,6 +35,9 @@ pub type Camera3d = @camera_components3d.Camera3d
 pub type Camera3dBundle = @pbr.Camera3dBundle
 
 ///|
+pub type SubCameraView3d = @camera_camera.SubCameraView3d
+
+///|
 pub type CameraDecalConfig3d = @pbr.CameraDecalConfig3d
 
 ///|
@@ -66,9 +69,6 @@ pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @camera_components3d.ec
 
 ///|
 pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @camera_projection3d.ecs_key_projection
-
-///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @camera_projection3d.ecs_key_sub_camera_view3d
 
 ///|
 pub fn camera_viewport_to_world_ray(

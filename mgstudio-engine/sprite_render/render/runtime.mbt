@@ -1964,8 +1964,10 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
       }
       camera_value = camera_value.with_computed(
         ComputedCameraValues::new(
+          @math.Mat4::identity(),
           next_target_info,
           render2d_camera_viewport_size(camera_value),
+          None,
         ),
       )
       try! (world.replace(entity, @camera_camera.ecs_key_camera, camera_value)
@@ -2068,8 +2070,10 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
     }
     camera_value = camera_value.with_computed(
       ComputedCameraValues::new(
+        @math.Mat4::identity(),
         next_target_info,
         render2d_camera_viewport_size(camera_value),
+        None,
       ),
     )
     try! world.set_by_key(entity, @camera_camera.ecs_key_camera, camera_value)

@@ -13,55 +13,7 @@
 // limitations under the License.
 
 ///|
-pub struct SubCameraView3d {
-  full_size : @math.IVec2
-  offset : @math.Vec2
-  size : @math.IVec2
-} derive(ToJson, FromJson)
-
-///|
-fn sub_camera_view3d_sanitize(
-  full_size : @math.IVec2,
-  offset : @math.Vec2,
-  size : @math.IVec2,
-) -> SubCameraView3d {
-  let safe_full_width = if full_size.x <= 0 { 1 } else { full_size.x }
-  let safe_full_height = if full_size.y <= 0 { 1 } else { full_size.y }
-  let safe_size_width = if size.x <= 0 { 1 } else { size.x }
-  let safe_size_height = if size.y <= 0 { 1 } else { size.y }
-  SubCameraView3d::{
-    full_size: @math.IVec2::new(safe_full_width, safe_full_height),
-    offset,
-    size: @math.IVec2::new(safe_size_width, safe_size_height),
-  }
-}
-
-///|
-pub fn SubCameraView3d::new(
-  full_size : @math.IVec2,
-  offset : @math.Vec2,
-  size : @math.IVec2,
-) -> SubCameraView3d {
-  sub_camera_view3d_sanitize(full_size, offset, size)
-}
-
-///|
-pub fn SubCameraView3d::with_offset(
-  self : SubCameraView3d,
-  offset : @math.Vec2,
-) -> SubCameraView3d {
-  sub_camera_view3d_sanitize(self.full_size, offset, self.size)
-}
-
-///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.register_component(
-  debug_name="mgstudio_core_pipeline::core_3d::SubCameraView",
-)
-
-///|
-pub impl @ecs.Component for SubCameraView3d with fn component() {
-  ecs_key_sub_camera_view3d
-}
+pub type SubCameraView3d = @camera_primitives.SubCameraView3d
 
 ///|
 pub(all) enum OrthographicScalingMode3d {

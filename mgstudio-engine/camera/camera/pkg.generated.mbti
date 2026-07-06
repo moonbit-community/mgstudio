@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/clear_color",
   "Milky2018/mgstudio/camera/computed_camera_values",
+  "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/projection2d",
   "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/color",
@@ -43,6 +44,7 @@ pub struct Camera {
   computed : @computed_camera_values.ComputedCameraValues
   clear_color : @clear_color.ClearColorConfig
   invert_culling : Bool
+  sub_camera_view : @primitives.SubCameraView3d?
 }
 pub fn Camera::Camera() -> Self
 pub fn Camera::clear_viewport(Self) -> Self
@@ -61,6 +63,7 @@ pub fn Camera::with_computed(Self, @computed_camera_values.ComputedCameraValues)
 pub fn Camera::with_invert_culling(Self, Bool) -> Self
 pub fn Camera::with_is_active(Self, Bool) -> Self
 pub fn Camera::with_order(Self, Int) -> Self
+pub fn Camera::with_sub_camera_view(Self, @primitives.SubCameraView3d?) -> Self
 pub fn Camera::with_viewport(Self, @viewport.Viewport) -> Self
 pub fn Camera::world_to_viewport_2d(Self, @transform.Transform, @math.Vec2, @projection2d.OrthographicProjection, @math.IVec2, Float) -> @math.Vec2?
 pub impl @ecs.Component for Camera
@@ -127,6 +130,8 @@ pub using @clear_color {type ClearColorConfig}
 pub using @computed_camera_values {type ComputedCameraValues}
 
 pub using @computed_camera_values {type RenderTargetInfo}
+
+pub using @primitives {type SubCameraView3d}
 
 pub using @viewport {type Viewport}
 

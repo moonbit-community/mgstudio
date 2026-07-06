@@ -422,8 +422,6 @@ pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
 
 pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[StandardMaterialPluginState]
 
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@projection3d.SubCameraView3d]
-
 pub let ecs_key_sun_disk : @ecs.ComponentKey[@light.SunDisk]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
@@ -1089,7 +1087,7 @@ pub impl @app.Resource for Bluenoise
 pub struct Camera3dBundle {
   camera : @camera.Camera
   projection : @projection3d.Projection
-  sub_camera_view : @projection3d.SubCameraView3d?
+  sub_camera_view : @primitives.SubCameraView3d?
   screen_space_transmission : @transmission.ScreenSpaceTransmission?
   screen_space_reflections : @post_process.ScreenSpaceReflections?
   bloom : @bloom.Bloom?
@@ -1135,7 +1133,7 @@ pub fn Camera3dBundle::with_exposure(Self, @camera.Exposure?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_screen_space_transmission(Self, @transmission.ScreenSpaceTransmission?) -> Self
-pub fn Camera3dBundle::with_sub_camera_view(Self, @projection3d.SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_sub_camera_view(Self, @primitives.SubCameraView3d?) -> Self
 pub fn Camera3dBundle::with_target(Self, @camera.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, @effect_stack.Vignette?) -> Self
@@ -3720,7 +3718,7 @@ pub using @light {type SpotLightTexture}
 
 pub using @material {type StandardMaterial}
 
-pub using @projection3d {type SubCameraView3d}
+pub using @primitives {type SubCameraView3d}
 
 pub using @light {type SunDisk}
 

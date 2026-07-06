@@ -170,9 +170,6 @@ pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.re
 pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @light.ecs_key_not_shadow_caster
 
 ///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr_render.ecs_key_sub_camera_view3d
-
-///|
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
 
 ///|

@@ -175,7 +175,7 @@ pub fn cmp_float(Float, Float) -> Int
 
 pub fn cmp_int(Int, Int) -> Int
 
-pub fn custom_projection3d_from_callbacks(String, () -> @projection3d.ProjectionMatrix3d, (@projection3d.SubCameraView3d) -> @projection3d.ProjectionMatrix3d, (Float, Float) -> @projection3d.CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> @projection3d.CustomProjection3d
+pub fn custom_projection3d_from_callbacks(String, () -> @projection3d.ProjectionMatrix3d, (@primitives.SubCameraView3d) -> @projection3d.ProjectionMatrix3d, (Float, Float) -> @projection3d.CustomProjection3d, () -> Float, (Float, Float) -> Array[@math.Vec3]) -> @projection3d.CustomProjection3d
 
 pub let ecs_key_directional_light_view_entities : @ecs.ComponentKey[DirectionalLightViewEntities]
 
@@ -194,8 +194,6 @@ pub let ecs_key_point_and_spot_light_view_entities : @ecs.ComponentKey[PointAndS
 pub let ecs_key_projection_runtime3d : @ecs.ComponentKey[@projection3d.ProjectionRuntime3d]
 
 pub let ecs_key_shadow_samplers : @ecs.ResourceKey[ShadowSamplers]
-
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@projection3d.SubCameraView3d]
 
 pub let ecs_key_view_fog_uniform_offset : @ecs.ComponentKey[ViewFogUniformOffset]
 
@@ -437,7 +435,7 @@ pub fn render3d_orthographic_projection_compute_frustum(@projection3d.Orthograph
 
 pub fn render3d_orthographic_projection_matrix(Float, Float, Float, Float, Float, Float) -> @projection3d.ProjectionMatrix3d
 
-pub fn render3d_orthographic_projection_matrix_for_sub(@projection3d.OrthographicProjection3d, @projection3d.SubCameraView3d) -> @projection3d.ProjectionMatrix3d
+pub fn render3d_orthographic_projection_matrix_for_sub(@projection3d.OrthographicProjection3d, @primitives.SubCameraView3d) -> @projection3d.ProjectionMatrix3d
 
 pub fn render3d_pass_clear_enabled_for_target(Array[Int], Int, Bool) -> Int
 
@@ -459,7 +457,7 @@ pub fn render3d_perspective_projection_compute_frustum(@projection3d.Perspective
 
 pub fn render3d_perspective_projection_matrix(@projection3d.PerspectiveProjection3d) -> @projection3d.ProjectionMatrix3d
 
-pub fn render3d_perspective_projection_matrix_for_sub(@projection3d.PerspectiveProjection3d, @projection3d.SubCameraView3d) -> @projection3d.ProjectionMatrix3d
+pub fn render3d_perspective_projection_matrix_for_sub(@projection3d.PerspectiveProjection3d, @primitives.SubCameraView3d) -> @projection3d.ProjectionMatrix3d
 
 pub fn render3d_perspective_projection_matrix_raw(Float, Float, Float) -> @projection3d.ProjectionMatrix3d
 
@@ -1359,7 +1357,7 @@ pub using @projection3d {type ProjectionRuntime3d}
 
 pub using @projection3d {type Render3dPassProjection}
 
-pub using @projection3d {type SubCameraView3d}
+pub using @primitives {type SubCameraView3d}
 
 pub using @projection3d {type ViewFrustum}
 

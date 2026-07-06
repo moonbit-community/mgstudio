@@ -122,6 +122,85 @@ fn render3d_projection_runtime_projection(
 }
 
 ///|
+fn render3d_scale_viewport_axis(value : Int, scale : Float) -> Int {
+  if value <= 0 || scale <= 0.0F {
+    return 0
+  }
+  let scaled = Float::from_double(value.to_double()) * scale
+  if scaled <= 0.0F {
+    return 0
+  }
+  scaled.to_int()
+}
+
+///|
+fn render3d_scale_viewport(
+  viewport : @camera_viewport.Viewport,
+  scale : Float,
+) -> @camera_viewport.Viewport {
+  let position = @math.IVec2::new(
+    render3d_scale_viewport_axis(viewport.physical_position.x, scale),
+    render3d_scale_viewport_axis(viewport.physical_position.y, scale),
+  )
+  let size = @math.IVec2::new(
+    render3d_scale_viewport_axis(viewport.physical_size.x, scale),
+    render3d_scale_viewport_axis(viewport.physical_size.y, scale),
+  )
+  @camera_viewport.Viewport::new(position, size).with_depth(
+    viewport.depth_min,
+    viewport.depth_max,
+  )
+}
+
+///|
+fn render3d_sub_camera_view_eq(
+  lhs : SubCameraView3d?,
+  rhs : SubCameraView3d?,
+) -> Bool {
+  match (lhs, rhs) {
+    (None, None) => true
+    (Some(a), Some(b)) =>
+      render3d_ivec2_eq(a.full_size, b.full_size) &&
+      render3d_vec2_eq(a.offset, b.offset) &&
+      render3d_ivec2_eq(a.size, b.size)
+    _ => false
+  }
+}
+
+///|
+fn render3d_ivec2_eq(lhs : @math.IVec2, rhs : @math.IVec2) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y
+}
+
+///|
+fn render3d_vec2_eq(lhs : @math.Vec2, rhs : @math.Vec2) -> Bool {
+  lhs.x == rhs.x && lhs.y == rhs.y
+}
+
+///|
+fn render3d_optional_ivec2_eq(lhs : @math.IVec2?, rhs : @math.IVec2?) -> Bool {
+  match (lhs, rhs) {
+    (None, None) => true
+    (Some(a), Some(b)) => render3d_ivec2_eq(a, b)
+    _ => false
+  }
+}
+
+///|
+fn render3d_target_info_eq(
+  lhs : @camera_camera.RenderTargetInfo?,
+  rhs : @camera_camera.RenderTargetInfo?,
+) -> Bool {
+  match (lhs, rhs) {
+    (None, None) => true
+    (Some(a), Some(b)) =>
+      render3d_ivec2_eq(a.physical_size, b.physical_size) &&
+      a.scale_factor == b.scale_factor
+    _ => false
+  }
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_render/src/camera.rs::camera_system`.
 pub fn render3d_camera_system(world : @ecs.World) -> Unit {
   let projection_updates : Array[(@core.Entity, Projection)] = []
@@ -144,36 +223,81 @@ pub fn render3d_camera_system(world : @ecs.World) -> Unit {
     match @pbr_render.render3d_target_info(world, target) {
       Some(target_info) => {
         let mut camera = camera_read.value()
-        if camera.viewport is Some(viewport) {
-          camera = camera.with_viewport(
-            @pbr_render.render3d_clamp_viewport(
-              viewport,
-              target_info.target_size,
-            ),
-          )
-        }
         let viewport_size = camera.physical_viewport_size()
-        let computed = @camera_camera.ComputedCameraValues::new(
-          Some(
-            @camera_camera.RenderTargetInfo::new(
-              target_info.target_size,
-              target_info.scale_factor,
-            ),
+        let next_target_info = Some(
+          @camera_camera.RenderTargetInfo::new(
+            target_info.target_size,
+            target_info.scale_factor,
           ),
-          viewport_size,
         )
-        let camera_with_computed = camera.with_computed(computed)
+        let scale_factor_changed = camera.computed.target_info
+          is Some(old_target_info) &&
+          old_target_info.scale_factor > 0.0F &&
+          old_target_info.scale_factor != target_info.scale_factor
+        let should_update = !render3d_target_info_eq(
+            camera.computed.target_info,
+            next_target_info,
+          ) ||
+          camera_read.is_added() ||
+          projection_read.is_changed() ||
+          !render3d_optional_ivec2_eq(
+            camera.computed.old_viewport_size,
+            viewport_size,
+          ) ||
+          !render3d_sub_camera_view_eq(
+            camera.computed.old_sub_camera_view,
+            camera.sub_camera_view,
+          )
+        if should_update {
+          if scale_factor_changed &&
+            camera.computed.target_info is Some(old_target_info) &&
+            camera.viewport is Some(viewport) {
+            let resize_factor = target_info.scale_factor /
+              old_target_info.scale_factor
+            camera = camera.with_viewport(
+              render3d_scale_viewport(viewport, resize_factor),
+            )
+          }
+          if camera.viewport is Some(viewport) {
+            camera = camera.with_viewport(
+              @pbr_render.render3d_clamp_viewport(
+                viewport,
+                target_info.target_size,
+              ),
+            )
+          }
+        }
         let projection = projection_read.value()
-        match camera_with_computed.logical_viewport_size() {
+        let mut updated_projection = projection
+        let mut clip_from_view = projection.get_clip_from_view()
+        match camera.logical_viewport_size() {
           Some(logical_size) =>
             if logical_size.x != 0.0F && logical_size.y != 0.0F {
-              projection_updates.push(
-                (entity, projection.update(logical_size.x, logical_size.y)),
+              updated_projection = projection.update(
+                logical_size.x,
+                logical_size.y,
               )
+              clip_from_view = match camera.sub_camera_view {
+                Some(sub_view) =>
+                  updated_projection.get_clip_from_view_for_sub(sub_view)
+                None => updated_projection.get_clip_from_view()
+              }
+              if should_update {
+                projection_updates.push((entity, updated_projection))
+              }
             }
           None => ()
         }
-        camera_updates.push((entity, camera_with_computed))
+        let computed = @camera_camera.ComputedCameraValues::new(
+          clip_from_view.to_mat4(),
+          next_target_info,
+          camera.physical_viewport_size(),
+          camera.sub_camera_view,
+        )
+        let camera_with_computed = camera.with_computed(computed)
+        if should_update {
+          camera_updates.push((entity, camera_with_computed))
+        }
       }
       None => ()
     }

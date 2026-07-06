@@ -21,9 +21,6 @@
 pub type SubCameraView3d = @camera_projection3d.SubCameraView3d
 
 ///|
-pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @camera_projection3d.ecs_key_sub_camera_view3d
-
-///|
 pub type OrthographicScalingMode3d = @camera_projection3d.OrthographicScalingMode3d
 
 ///|

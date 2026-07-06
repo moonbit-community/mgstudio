@@ -155,7 +155,6 @@ fn render3d_execute_collect_cameras(
         @ecs.Read[Camera3d],
         @ecs.Optional[@camera_camera.Camera],
         @ecs.Optional[Projection],
-        @ecs.Optional[SubCameraView3d],
       ),
       (
         @ecs.Optional[DistanceFog],
@@ -175,7 +174,7 @@ fn render3d_execute_collect_cameras(
   try! camera_query.view(fn(_query_entity, data) {
     let (
       entity,
-      (camera3d, camera_opt, projection_opt, sub_camera_view_opt),
+      (camera3d, camera_opt, projection_opt),
       (
         distance_fog_opt,
         decal_config_opt,
@@ -205,7 +204,7 @@ fn render3d_execute_collect_cameras(
     let projection_changed = projection_changed_entities.contains(
       entity_key(entity),
     )
-    let sub_camera_view = sub_camera_view_opt.value()
+    let sub_camera_view = camera.sub_camera_view
     let distance_fog = distance_fog_opt.value()
     let decal_config = decal_config_opt.value()
     let deferred_config = deferred_config_opt.value()
