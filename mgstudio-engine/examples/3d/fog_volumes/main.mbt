@@ -182,8 +182,10 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   let fog_volume_scattering = Ref(0.0F)
   let fog_volume_translation = Ref(@math.Vec3::zero())
   let fog_volume_density_texture : Ref[@asset.Handle[@asset.Image]?] = Ref(None)
+  let fog_volume_component : Ref[@pbr.FogVolume?] = Ref(None)
   try! fog_volume_query.view(fn(_entity, data) {
     let (fog_volume, transform) = data
+    fog_volume_component.val = Some(fog_volume.value())
     fog_volume_has_density_texture.val = fog_volume.value().density_texture
       is Some(_)
     fog_volume_density_texture.val = fog_volume.value().density_texture
@@ -236,8 +238,10 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   ] = @ecs.query_filtered(world, @ecs.With::new(@camera.ecs_key_camera3d))
   let camera_transform_matches = Ref(false)
   let volumetric_fog_matches = Ref(false)
+  let volumetric_fog_component : Ref[@pbr.VolumetricFog?] = Ref(None)
   try! camera_query.view(fn(_entity, data) {
     let (_, transform, _, volumetric_fog) = data
+    volumetric_fog_component.val = Some(volumetric_fog.value())
     camera_transform_matches.val = fog_volumes_vec3_approx_eq(
       transform.value().translation,
       @math.Vec3::new(-0.75F, 1.0F, 2.0F),
@@ -248,6 +252,50 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   })
   debug_inspect(camera_transform_matches.val, content="true")
   debug_inspect(volumetric_fog_matches.val, content="true")
+  let prepared_fog_matches = match
+    (fog_volume_component.val, volumetric_fog_component.val) {
+    (Some(fog_volume), Some(volumetric_fog)) => {
+      let buffer = @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
+      let view_fog = @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
+        buffer,
+        volumetric_fog,
+        @math.Affine3::identity(),
+        @pbr_volumetric_fog.VolumetricFogMat4::from_cols(
+          @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+          @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+          @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+          @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+        ),
+        [
+          (
+            fog_volume,
+            @math.Affine3::from_translation(fog_volume_translation.val).inverse(),
+          ),
+        ],
+      )
+      buffer.count() == 1 &&
+      view_fog.count() == 1 &&
+      view_fog.volumes()[0].has_density_texture()
+    }
+    _ => false
+  }
+  debug_inspect(prepared_fog_matches, content="true")
+  app = app.update()
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_storage_counts = @pbr_volumetric_fog.volumetric_fog_render_world_storage_counts(
+    render_world,
+  )
+  debug_inspect(render_storage_counts.view_count(), content="1")
+  debug_inspect(render_storage_counts.volume_count(), content="1")
+  debug_inspect(render_storage_counts.light_count(), content="1")
+  debug_inspect(
+    @pbr_render.render3d_collect_extracted_directional_lights(render_world).length(),
+    content="1",
+  )
+  debug_inspect(
+    @pbr_render.render3d_collect_gpu_lights(render_world).n_directional_lights,
+    content="1",
+  )
 }
 
 ///|
