@@ -284,7 +284,25 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
   prepared_material_bind_groups : Map[String, Bool],
 ) -> Unit {
-  let draw_material = mesh.payload.material_draw_data.standard_material_for_legacy_host_draw()
+  guard mesh.payload.material_draw_data.standard_material()
+    is Some(draw_material) else {
+    let key = "-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1|-1"
+    if prepared_material_bind_groups.contains(key) {
+      return
+    }
+    prepared_material_bind_groups.set(key, true)
+    @render.host_gpu_prepare_mesh3d_material_bind_group(
+      texture_id=-1,
+      normal_texture_id=-1,
+      emissive_texture_id=-1,
+      metallic_roughness_texture_id=-1,
+      occlusion_texture_id=-1,
+      depth_texture_id=-1,
+      anisotropy_texture_id=-1,
+      specular_tint_texture_id=-1,
+    )
+    return
+  }
   let mut texture_id = match draw_material.base_color_texture {
     Some(texture) => texture.id()
     None => -1

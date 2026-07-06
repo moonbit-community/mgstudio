@@ -456,7 +456,6 @@ fn render3d_extract_mesh_for_entity(
       }
   }
   let material_draw_data = resolved_material.material_draw_data
-  let material = material_draw_data.standard_material_for_legacy_host_draw()
   let resolved_material_extension = resolved_material.material_extension
   let material_properties = resolved_material.material_properties
   let material_bind_group_data = resolved_material.material_bind_group_data
@@ -482,7 +481,10 @@ fn render3d_extract_mesh_for_entity(
   let has_previous_morph = morph_indices_value.prev.get(entity_key) is Some(_)
   let motion_vector_enabled = if needs_mesh_previous_transform {
     let supports_motion = match
-      render3d_mesh_draw_alpha(material.alpha_mode, material.base_color.a) {
+      render3d_mesh_draw_alpha(
+        material_properties.alpha_mode,
+        material_draw_data.draw_alpha_source(),
+      ) {
       Some(alpha) => alpha >= 0.999F
       None => false
     }

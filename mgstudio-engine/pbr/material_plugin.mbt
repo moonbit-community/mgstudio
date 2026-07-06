@@ -993,12 +993,10 @@ pub fn MaterialDrawData3d::standard_material(
 }
 
 ///|
-fn MaterialDrawData3d::standard_material_for_legacy_host_draw(
-  self : MaterialDrawData3d,
-) -> StandardMaterial {
+fn MaterialDrawData3d::draw_alpha_source(self : MaterialDrawData3d) -> Float {
   match self {
-    Standard(material) => material
-    Custom => StandardMaterial::StandardMaterial()
+    Standard(material) => material.base_color.a
+    Custom => 1.0F
   }
 }
 

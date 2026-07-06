@@ -168,7 +168,7 @@ pub fn render3d_pass_kind_encode(
 }
 
 ///|
-fn render3d_standard_material_alpha_mode_flags(
+pub fn render3d_material_alpha_mode_flags(
   alpha_mode : @material.AlphaMode3d,
 ) -> UInt {
   match alpha_mode {
@@ -206,9 +206,7 @@ pub fn render3d_standard_material_flags(
   specular_texture_id? : Int = -1,
   forward_decal? : Bool = false,
 ) -> UInt {
-  let mut flags = render3d_standard_material_alpha_mode_flags(
-    material.alpha_mode,
-  )
+  let mut flags = render3d_material_alpha_mode_flags(material.alpha_mode)
   if base_color_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT
   }
@@ -266,11 +264,8 @@ pub fn render3d_standard_material_flags(
 }
 
 ///|
-pub fn render3d_cull_mode_value(
-  material : @material.StandardMaterial,
-  draw_flags : Int,
-) -> Int {
-  let draw_cull_mode_base = match material.cull_mode {
+pub fn render3d_material_cull_mode_base(cull_mode : @material.Face3d?) -> Int {
+  match cull_mode {
     None => 0
     Some(face) =>
       match face {
@@ -278,7 +273,14 @@ pub fn render3d_cull_mode_value(
         @material.Face3d::Back => 2
       }
   }
-  draw_cull_mode_base | draw_flags
+}
+
+///|
+pub fn render3d_cull_mode_value(
+  material : @material.StandardMaterial,
+  draw_flags : Int,
+) -> Int {
+  render3d_material_cull_mode_base(material.cull_mode) | draw_flags
 }
 
 ///|

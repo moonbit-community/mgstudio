@@ -314,6 +314,103 @@ pub(all) struct MeshGpuDrawPayload3d {
 }
 
 ///|
+pub(all) struct Render3dDrawMaterialInput {
+  uv_transform : @transform.Affine2
+  emissive : @color.Color
+  emissive_exposure_weight : Float
+  metallic : Float
+  anisotropy_rotation : Float
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  attenuation_color : @color.Color
+  attenuation_distance : Float
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
+  alpha_cutoff : Float
+  material_flags : UInt
+  lightmap_exposure : Float
+  deferred_lighting_pass_id : Int
+  cull_mode_base : Int
+}
+
+///|
+pub fn Render3dDrawMaterialInput::from_standard_material(
+  material : @material.StandardMaterial,
+  base_color_texture_id : Int,
+  normal_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  depth_texture_id : Int,
+  anisotropy_texture_id : Int,
+  specular_tint_texture_id : Int,
+  specular_texture_id? : Int = -1,
+  forward_decal? : Bool = false,
+) -> Render3dDrawMaterialInput {
+  Render3dDrawMaterialInput::{
+    uv_transform: material.uv_transform,
+    emissive: material.emissive,
+    emissive_exposure_weight: material.emissive_exposure_weight,
+    metallic: material.metallic,
+    anisotropy_rotation: material.anisotropy_rotation,
+    parallax_depth_scale: material.parallax_depth_scale,
+    max_parallax_layer_count: material.max_parallax_layer_count,
+    attenuation_color: material.attenuation_color,
+    attenuation_distance: material.attenuation_distance,
+    clearcoat: material.clearcoat,
+    clearcoat_perceptual_roughness: material.clearcoat_perceptual_roughness,
+    alpha_cutoff: render3d_standard_material_alpha_cutoff(material.alpha_mode),
+    material_flags: render3d_standard_material_flags(
+      material,
+      base_color_texture_id,
+      normal_texture_id,
+      emissive_texture_id,
+      metallic_roughness_texture_id,
+      occlusion_texture_id,
+      depth_texture_id,
+      anisotropy_texture_id,
+      specular_tint_texture_id,
+      specular_texture_id~,
+      forward_decal~,
+    ),
+    lightmap_exposure: material.lightmap_exposure,
+    deferred_lighting_pass_id: material.deferred_lighting_pass_id,
+    cull_mode_base: render3d_material_cull_mode_base(material.cull_mode),
+  }
+}
+
+///|
+pub fn Render3dDrawMaterialInput::from_material_properties(
+  material_properties : @material.MaterialProperties,
+) -> Render3dDrawMaterialInput {
+  Render3dDrawMaterialInput::{
+    uv_transform: @transform.Affine2::identity(),
+    emissive: @color.Color::black(),
+    emissive_exposure_weight: 0.0F,
+    metallic: 0.0F,
+    anisotropy_rotation: 0.0F,
+    parallax_depth_scale: 0.1F,
+    max_parallax_layer_count: 16.0F,
+    attenuation_color: @color.Color::white(),
+    attenuation_distance: 1.0F / 0.0F,
+    clearcoat: 0.0F,
+    clearcoat_perceptual_roughness: 0.5F,
+    alpha_cutoff: render3d_standard_material_alpha_cutoff(
+      material_properties.alpha_mode,
+    ),
+    material_flags: render3d_material_alpha_mode_flags(
+      material_properties.alpha_mode,
+    ) |
+    STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT,
+    lightmap_exposure: 1.0F,
+    deferred_lighting_pass_id: 1,
+    cull_mode_base: render3d_material_cull_mode_base(
+      Some(@material.Face3d::Back),
+    ),
+  }
+}
+
+///|
 fn render3d_transform_affine(transform : @transform.Transform) -> @math.Affine3 {
   @math.Affine3::from_scale_rotation_translation(
     transform.scale,
@@ -384,7 +481,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   draw_storage_index : Int,
   indirect_kind : Int,
   indirect_parameters_index : Int,
-  material : @material.StandardMaterial,
+  draw_material_input : Render3dDrawMaterialInput,
   transform : @transform.Transform,
   previous_transform : @transform.Transform,
   draw_color_r : Float,
@@ -424,7 +521,6 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   mesh_flags : UInt,
   draw_flags : Int,
   specular_texture_id? : Int = -1,
-  forward_decal? : Bool = false,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
@@ -447,19 +543,6 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   previous_world_from_local? : @math.Affine3? = None,
   instance_vertex_buffer_id? : Int = -1,
 ) -> MeshGpuDrawPayload3d {
-  let material_flags = render3d_standard_material_flags(
-    material,
-    texture_id,
-    normal_texture_id,
-    emissive_texture_id,
-    metallic_roughness_texture_id,
-    occlusion_texture_id,
-    depth_texture_id,
-    anisotropy_texture_id,
-    specular_tint_texture_id,
-    specular_texture_id~,
-    forward_decal~,
-  )
   let resolved_world_from_local = match world_from_local {
     Some(affine) => affine
     None => render3d_transform_affine(transform)
@@ -486,38 +569,38 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     color_b: draw_color_b,
     color_a: draw_alpha,
     texture_id,
-    uv_transform: material.uv_transform,
+    uv_transform: draw_material_input.uv_transform,
     normal_texture_id,
     emissive_texture_id,
     metallic_roughness_texture_id,
     occlusion_texture_id,
     depth_texture_id,
-    emissive: material.emissive,
-    emissive_exposure_weight: material.emissive_exposure_weight,
-    metallic: material.metallic,
+    emissive: draw_material_input.emissive,
+    emissive_exposure_weight: draw_material_input.emissive_exposure_weight,
+    metallic: draw_material_input.metallic,
     anisotropy_texture_id,
-    anisotropy_rotation: material.anisotropy_rotation,
+    anisotropy_rotation: draw_material_input.anisotropy_rotation,
     specular_texture_id,
     specular_tint_texture_id,
     clearcoat_texture_id,
     clearcoat_roughness_texture_id,
     clearcoat_normal_texture_id,
-    parallax_depth_scale: material.parallax_depth_scale,
-    max_parallax_layer_count: material.max_parallax_layer_count,
+    parallax_depth_scale: draw_material_input.parallax_depth_scale,
+    max_parallax_layer_count: draw_material_input.max_parallax_layer_count,
     surface_roughness: draw_surface_roughness,
     reflectance: draw_reflectance,
     diffuse_transmission: draw_diffuse_transmission,
     specular_transmission: draw_specular_transmission,
     thickness: draw_thickness,
     ior: draw_ior,
-    attenuation_color: material.attenuation_color,
-    attenuation_distance: material.attenuation_distance,
-    clearcoat: material.clearcoat,
-    clearcoat_perceptual_roughness: material.clearcoat_perceptual_roughness,
-    alpha_cutoff: render3d_standard_material_alpha_cutoff(material.alpha_mode),
-    material_flags,
+    attenuation_color: draw_material_input.attenuation_color,
+    attenuation_distance: draw_material_input.attenuation_distance,
+    clearcoat: draw_material_input.clearcoat,
+    clearcoat_perceptual_roughness: draw_material_input.clearcoat_perceptual_roughness,
+    alpha_cutoff: draw_material_input.alpha_cutoff,
+    material_flags: draw_material_input.material_flags,
     forward_decal_inv_depth_fade_factor,
-    lightmap_exposure: material.lightmap_exposure,
+    lightmap_exposure: draw_material_input.lightmap_exposure,
     lightmap_texture_id,
     lightmap_slab_index,
     lightmap_slot_index,
@@ -526,7 +609,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     lightmap_uv_min_y,
     lightmap_uv_max_x,
     lightmap_uv_max_y,
-    deferred_lighting_pass_id: material.deferred_lighting_pass_id,
+    deferred_lighting_pass_id: draw_material_input.deferred_lighting_pass_id,
     transmission_source_texture_id,
     transmission_blur_taps,
     transmission_steps,
@@ -541,7 +624,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     anisotropy_strength,
     max_relief_mapping_search_steps,
     mesh_flags,
-    cull_mode: render3d_cull_mode_value(material, draw_flags),
+    cull_mode: draw_material_input.cull_mode_base | draw_flags,
     vertex_shader_path,
     fragment_shader_path,
     material_extension_bind_group_data,

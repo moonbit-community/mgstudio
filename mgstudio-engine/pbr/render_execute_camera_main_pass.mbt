@@ -609,196 +609,51 @@ fn render3d_execute_camera_main_pass(
     if render3d_main_pass_skips_deferred_opaque(material_properties) {
       continue
     }
-    let draw_material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
     guard render3d_mesh_draw_alpha(
-        draw_material.alpha_mode,
-        draw_material.base_color.a,
+        material_properties.alpha_mode,
+        mesh.material_draw_data.draw_alpha_source(),
       )
       is Some(base_draw_alpha) else {
       continue
     }
-    let (
-      lightmap_texture_id,
-      lightmap_slab_index,
-      lightmap_slot_index,
-      lightmap_slab_texture_ids,
-      lightmap_uv_min_x,
-      lightmap_uv_min_y,
-      lightmap_uv_max_x,
-      lightmap_uv_max_y,
-    ) = match mesh.lightmap {
-      Some(lightmap) if lightmap.image.id() >= 0 => {
-        let uv_min = lightmap.uv_rect.min()
-        let uv_max = lightmap.uv_rect.max()
-        let (slab_index, slot_index, slab_texture_ids) = match
-          world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
-          Some(render_lightmaps) =>
-            render_lightmaps.modify(fn(value) {
-              let render_lightmap = value.insert_lightmap(
-                extracted_mesh.entity.main_entity,
-                lightmap,
-              )
-              (
-                render_lightmap.slab_index.to_int(),
-                render_lightmap.slot_index.to_int(),
-                value.slab_texture_ids(render_lightmap.slab_index),
-              )
-            })
-          None => (-1, 0, [lightmap.image.id()])
-        }
-        (
-          lightmap.image.id(),
-          slab_index,
-          slot_index,
-          slab_texture_ids,
-          uv_min.x,
-          uv_min.y,
-          uv_max.x,
-          uv_max.y,
-        )
-      }
-      _ => (-1, -1, -1, [], 0.0F, 0.0F, 0.0F, 0.0F)
-    }
     let draw_alpha = base_draw_alpha
-    let mut texture_id = match draw_material.base_color_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let mut normal_texture_id = match draw_material.normal_map_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let mut emissive_texture_id = match draw_material.emissive_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let mut metallic_roughness_texture_id = match
-      draw_material.metallic_roughness_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let occlusion_texture_id = match draw_material.occlusion_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let depth_texture_id = match draw_material.depth_map {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let anisotropy_texture_id = match draw_material.anisotropy_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let specular_texture_id = match draw_material.specular_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let specular_tint_texture_id = match draw_material.specular_tint_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let clearcoat_texture_id = match draw_material.clearcoat_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let clearcoat_roughness_texture_id = match
-      draw_material.clearcoat_roughness_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    let clearcoat_normal_texture_id = match
-      draw_material.clearcoat_normal_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
-    if mesh.clustered_decal is Some(clustered_decal) {
-      if clustered_decal.base_color_texture is Some(texture) {
-        texture_id = texture.id()
-      }
-      if clustered_decal.normal_map_texture is Some(texture) {
-        normal_texture_id = texture.id()
-      }
-      if clustered_decal.metallic_roughness_texture is Some(texture) {
-        metallic_roughness_texture_id = texture.id()
-      }
-      if clustered_decal.emissive_texture is Some(texture) {
-        emissive_texture_id = texture.id()
-      }
-    }
-    let anisotropy_strength = @pbr_render.maxf(
-      0.0F,
-      @pbr_render.minf(1.0F, draw_material.anisotropy_strength),
+    let material_fields = render3d_resolve_mesh_draw_material_fields(
+      world, extracted_mesh, draw_alpha,
     )
-    let max_relief_mapping_search_steps = Float::from_double(
-      draw_material.parallax_mapping_method.max_steps().to_double(),
-    )
-    let clearcoat_reflectance = @pbr_render.maxf(
-      0.0F,
-      draw_material.reflectance + draw_material.clearcoat * 0.5F,
-    )
-    let clearcoat_roughness = @pbr_render.minf(
-      draw_material.perceptual_roughness,
-      draw_material.clearcoat_perceptual_roughness,
-    )
-    let draw_roughness = if draw_material.clearcoat > 0.0F {
-      clearcoat_roughness
-    } else {
-      draw_material.perceptual_roughness
-    }
     let needs_mesh_distance = fog_enabled
     let mesh_distance = if needs_mesh_distance {
       mesh.transform.translation.sub(camera.transform.translation).length()
     } else {
       0.0F
     }
-    let forward_decal_inv_depth_fade_factor = if mesh.is_forward_decal {
-      let depth_fade_factor = if mesh.forward_decal_material_ext
-        is Some(extension) {
-        extension.depth_fade_factor
-      } else {
-        8.0F
-      }
-      let safe_depth_fade_factor = if depth_fade_factor < 0.001F {
-        0.001F
-      } else {
-        depth_fade_factor
-      }
-      1.0F / safe_depth_fade_factor
-    } else {
-      1.0F / 8.0F
-    }
     let (fogged_r, fogged_g, fogged_b) = if fog_enabled {
       render3d_apply_distance_fog(
         distance_fog,
         mesh_distance,
-        draw_material.base_color.r,
-        draw_material.base_color.g,
-        draw_material.base_color.b,
+        material_fields.base_color_r,
+        material_fields.base_color_g,
+        material_fields.base_color_b,
         camera.transform.translation,
         mesh.transform.translation,
         pass_lighting,
       )
     } else {
       (
-        draw_material.base_color.r,
-        draw_material.base_color.g,
-        draw_material.base_color.b,
+        material_fields.base_color_r,
+        material_fields.base_color_g,
+        material_fields.base_color_b,
       )
     }
     let draw_color_r = fogged_r
     let draw_color_g = fogged_g
     let draw_color_b = fogged_b
-    let draw_surface_roughness = draw_roughness
-    let draw_reflectance = clearcoat_reflectance
-    let draw_diffuse_transmission = @pbr_render.clamp01(
-      draw_material.diffuse_transmission,
-    )
-    let draw_specular_transmission = @pbr_render.clamp01(
-      draw_material.specular_transmission,
-    )
+    let draw_surface_roughness = material_fields.surface_roughness
+    let draw_reflectance = material_fields.reflectance
+    let draw_diffuse_transmission = material_fields.diffuse_transmission
+    let draw_specular_transmission = material_fields.specular_transmission
     let draw_render_phase_type = material_properties.render_phase_type
-    let draw_thickness = @pbr_render.maxf(0.0F, draw_material.thickness)
-    let draw_ior = @pbr_render.maxf(1.0F, draw_material.ior)
+    let draw_thickness = material_fields.thickness
+    let draw_ior = material_fields.ior
     if draw_render_phase_type is @material.RenderPhaseType::Transparent &&
       camera.oit_settings is Some(oit_settings) &&
       draw_alpha < oit_settings.alpha_threshold {
@@ -851,24 +706,24 @@ fn render3d_execute_camera_main_pass(
         MESH3D_DRAW_INDIRECT_KIND_NONE
       },
       draw_indirect_parameters_index,
-      draw_material,
+      material_fields.draw_material_input,
       mesh.transform,
       mesh.previous_transform,
       draw_color_r,
       draw_color_g,
       draw_color_b,
       draw_alpha,
-      texture_id,
-      normal_texture_id,
-      emissive_texture_id,
-      metallic_roughness_texture_id,
-      occlusion_texture_id,
-      depth_texture_id,
-      anisotropy_texture_id,
-      specular_tint_texture_id,
-      clearcoat_texture_id,
-      clearcoat_roughness_texture_id,
-      clearcoat_normal_texture_id,
+      material_fields.texture_id,
+      material_fields.normal_texture_id,
+      material_fields.emissive_texture_id,
+      material_fields.metallic_roughness_texture_id,
+      material_fields.occlusion_texture_id,
+      material_fields.depth_texture_id,
+      material_fields.anisotropy_texture_id,
+      material_fields.specular_tint_texture_id,
+      material_fields.clearcoat_texture_id,
+      material_fields.clearcoat_roughness_texture_id,
+      material_fields.clearcoat_normal_texture_id,
       draw_surface_roughness,
       draw_reflectance,
       draw_diffuse_transmission,
@@ -885,14 +740,13 @@ fn render3d_execute_camera_main_pass(
       environment_map_state.specular_texture_id,
       environment_map_state.intensity,
       environment_map_state.rotation,
-      draw_material.specular_tint,
-      anisotropy_strength,
-      max_relief_mapping_search_steps,
+      material_fields.specular_tint,
+      material_fields.anisotropy_strength,
+      material_fields.max_relief_mapping_search_steps,
       mesh_flags,
       draw_flags,
-      specular_texture_id~,
-      forward_decal=mesh.is_forward_decal,
-      forward_decal_inv_depth_fade_factor~,
+      specular_texture_id=material_fields.specular_texture_id,
+      forward_decal_inv_depth_fade_factor=material_fields.forward_decal_inv_depth_fade_factor,
       vertex_shader_path=draw_vertex_shader_path,
       fragment_shader_path=draw_fragment_shader_path,
       material_extension_bind_group_data=mesh.material_bind_group_data,
@@ -902,14 +756,14 @@ fn render3d_execute_camera_main_pass(
       morph_weights_index=mesh.morph_weights_index,
       previous_morph_weights_index=mesh.previous_morph_weights_index,
       morph_targets_texture_id=mesh.morph_targets_texture_id,
-      lightmap_texture_id~,
-      lightmap_slab_index~,
-      lightmap_slot_index~,
-      lightmap_slab_texture_ids~,
-      lightmap_uv_min_x~,
-      lightmap_uv_min_y~,
-      lightmap_uv_max_x~,
-      lightmap_uv_max_y~,
+      lightmap_texture_id=material_fields.lightmap_texture_id,
+      lightmap_slab_index=material_fields.lightmap_slab_index,
+      lightmap_slot_index=material_fields.lightmap_slot_index,
+      lightmap_slab_texture_ids=material_fields.lightmap_slab_texture_ids,
+      lightmap_uv_min_x=material_fields.lightmap_uv_min_x,
+      lightmap_uv_min_y=material_fields.lightmap_uv_min_y,
+      lightmap_uv_max_x=material_fields.lightmap_uv_max_x,
+      lightmap_uv_max_y=material_fields.lightmap_uv_max_y,
       world_from_local=Some(mesh.world_from_local),
       previous_world_from_local=Some(mesh.previous_world_from_local),
       instance_vertex_buffer_id=mesh.instance_vertex_buffer_id,
@@ -950,10 +804,14 @@ fn render3d_execute_camera_main_pass(
     let _wireframe_topology = render3d_mesh_wireframe_topology(
       extracted_mesh, wireframe_config,
     )
-    let wireframe_source_material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
+    let wireframe_source_cull_mode = match
+      mesh.material_draw_data.standard_material() {
+      Some(material) => material.cull_mode
+      None => Some(@material.Face3d::Back)
+    }
     let wireframe_material = StandardMaterial::from_color(wireframe_color)
       .with_unlit(true)
-      .with_cull_mode(wireframe_source_material.cull_mode)
+      .with_cull_mode(wireframe_source_cull_mode)
     guard render3d_mesh_draw_alpha(
         wireframe_material.alpha_mode,
         wireframe_material.base_color.a,
@@ -969,7 +827,9 @@ fn render3d_execute_camera_main_pass(
         draw_item_index,
         MESH3D_DRAW_INDIRECT_KIND_NONE,
         -1,
-        wireframe_material,
+        @pbr_render.Render3dDrawMaterialInput::from_standard_material(
+          wireframe_material, -1, -1, -1, -1, -1, -1, -1, -1,
+        ),
         mesh.transform,
         mesh.previous_transform,
         wireframe_material.base_color.r,

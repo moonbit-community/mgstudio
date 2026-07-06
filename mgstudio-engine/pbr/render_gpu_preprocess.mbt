@@ -227,7 +227,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
-    let alpha = payload.material_draw_data.standard_material_for_legacy_host_draw().base_color.a
+    let alpha = payload.material_draw_data.draw_alpha_source()
     if render3d_mesh_phase_kind(payload.material_properties, alpha) is None {
       continue
     }
@@ -321,7 +321,7 @@ fn render3d_collect_meshes_for_gpu_building(
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
-    let alpha = payload.material_draw_data.standard_material_for_legacy_host_draw().base_color.a
+    let alpha = payload.material_draw_data.draw_alpha_source()
     guard render3d_mesh_phase_kind(payload.material_properties, alpha)
       is Some(phase) else {
       continue

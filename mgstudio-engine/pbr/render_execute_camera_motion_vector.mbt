@@ -138,10 +138,9 @@ fn render3d_execute_camera_prepass_draw_phase(
     } else {
       non_indexed_indirect_parameter_indices[draw_item_index]
     }
-    let draw_material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
     guard render3d_mesh_draw_alpha(
-        draw_material.alpha_mode,
-        draw_material.base_color.a,
+        mesh.material_properties.alpha_mode,
+        mesh.material_draw_data.draw_alpha_source(),
       )
       is Some(draw_alpha) else {
       continue
@@ -165,7 +164,7 @@ fn render3d_execute_camera_prepass_draw_phase(
           MESH3D_DRAW_INDIRECT_KIND_NONE
         },
         motion_vector_indirect_parameters_index,
-        draw_material,
+        material_fields.draw_material_input,
         mesh.transform,
         mesh.previous_transform,
         material_fields.base_color_r,
@@ -205,7 +204,6 @@ fn render3d_execute_camera_prepass_draw_phase(
         render3d_mesh_flags(extracted_mesh),
         render3d_mesh_draw_flags(extracted_mesh),
         specular_texture_id=material_fields.specular_texture_id,
-        forward_decal=mesh.is_forward_decal,
         forward_decal_inv_depth_fade_factor=material_fields.forward_decal_inv_depth_fade_factor,
         skinning_key_hi=mesh.skinning_key_hi,
         skinning_key_lo=if mesh.skinning_key_hi < 0 {
