@@ -116,3 +116,137 @@ test "shader runtime wesl registration compiles after imported module is loaded 
   )
   debug_inspect(registered_sources[0].contains("wave_speed"), content="true")
 }
+
+///|
+test "shader runtime loaded wgsl sources include quoted file import dependencies" {
+  let dep_source =
+    #|const COLOR_MULTIPLIER: vec4<f32> = vec4<f32>(1.0, 1.0, 1.0, 0.5);
+    #|
+  let root_source =
+    #|#import "shader/runtime/dep.wgsl"::COLOR_MULTIPLIER
+    #|
+    #|fn root_value() -> vec4<f32> {
+    #|  return COLOR_MULTIPLIER;
+    #|}
+    #|
+  @asset.register_embedded_asset_virtual_bytes(
+    "shader/runtime/dep.wgsl",
+    @asset.asset_text_to_bytes(dep_source),
+  )
+  @asset.register_embedded_asset_virtual_bytes(
+    "shader/runtime/root.wgsl",
+    @asset.asset_text_to_bytes(root_source),
+  )
+  let source_paths : Array[String] = []
+  let source_texts : Array[String] = []
+  let mut app = shader_plugin(
+    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+  )
+  app = app.add_systems(
+    @app.Startup,
+    @app.system(fn(world : @ecs.World) {
+      let asset_server = match
+        world.get_resource(@asset.AssetServer::resource()) {
+        Some(asset_server) => asset_server
+        None => abort("expected AssetServer resource")
+      }
+      let root_handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+        asset_server.load("shader/runtime/root.wgsl")
+      })
+      ignore(root_handle)
+    }),
+  )
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if source_paths.length() > 0 {
+        return
+      }
+      let _ = shader_runtime_load_wgsl_sources(
+        world, "shader/runtime/root.wgsl",
+      )
+      let sources = shader_runtime_loaded_wgsl_sources(world)
+      if sources.length() == 0 {
+        return
+      }
+      for source in sources {
+        source_paths.push(source.0)
+        source_texts.push(source.1)
+      }
+    }),
+  )
+
+  app = app.update()
+  app = app.update()
+  app = app.update()
+
+  debug_inspect(
+    source_paths.contains("shader/runtime/root.wgsl"),
+    content="true",
+  )
+  debug_inspect(
+    source_paths.contains("shader/runtime/dep.wgsl"),
+    content="true",
+  )
+  let mut dep_has_import_path = false
+  for i in 0..<source_paths.length() {
+    if source_paths[i] == "shader/runtime/dep.wgsl" {
+      dep_has_import_path = source_texts[i].contains(
+        "#define_import_path shader/runtime/dep.wgsl",
+      )
+    }
+  }
+  debug_inspect(dep_has_import_path, content="true")
+}
+
+///|
+test "shader runtime loads Bevy-style custom material file import dependencies" {
+  let source_paths : Array[String] = []
+  let mut app = shader_plugin(
+    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+  )
+  app = app.add_systems(
+    @app.Startup,
+    @app.system(fn(world : @ecs.World) {
+      let asset_server = match
+        world.get_resource(@asset.AssetServer::resource()) {
+        Some(asset_server) => asset_server
+        None => abort("expected AssetServer resource")
+      }
+      let handle : @asset.Handle[Shader] = @asset.asset_with_world(world, fn() {
+        asset_server.load("shaders/custom_material_2d.wgsl")
+      })
+      ignore(handle)
+    }),
+  )
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if source_paths.length() > 0 {
+        return
+      }
+      let sources = shader_runtime_load_wgsl_sources(
+        world, "shaders/custom_material_2d.wgsl",
+      )
+      if sources.length() == 0 {
+        return
+      }
+      for source in sources {
+        source_paths.push(source.0)
+      }
+    }),
+  )
+
+  app = app.update()
+  app = app.update()
+  app = app.update()
+
+  debug_inspect(
+    source_paths.contains("shaders/custom_material_2d.wgsl"),
+    content="true",
+  )
+  debug_inspect(
+    source_paths.contains("shaders/custom_material_import.wgsl"),
+    content="true",
+  )
+}

@@ -683,6 +683,162 @@ pub fn[M] prepared_material2d_alpha_phase(
 }
 
 ///|
+pub(all) struct RenderMaterial2dResolvedMaterial {
+  phase : Int
+  draw_mesh_fn : (@sprite_render_mesh2d_runtime.ExtractedMesh2d) -> Unit
+}
+
+///|
+pub fn RenderMaterial2dResolvedMaterial::phase(
+  self : RenderMaterial2dResolvedMaterial,
+) -> Int {
+  self.phase
+}
+
+///|
+pub fn RenderMaterial2dResolvedMaterial::draw_mesh(
+  self : RenderMaterial2dResolvedMaterial,
+  mesh : @sprite_render_mesh2d_runtime.ExtractedMesh2d,
+) -> Unit {
+  (self.draw_mesh_fn)(mesh)
+}
+
+///|
+fn[M : Material2d] render_material2d_resolved_material(
+  material : PreparedMaterial2d[M],
+  pipeline : Material2dPipeline[M],
+) -> RenderMaterial2dResolvedMaterial? {
+  guard prepared_material2d_alpha_phase(material) is Some(phase) else {
+    return None
+  }
+  Some(RenderMaterial2dResolvedMaterial::{
+    phase,
+    draw_mesh_fn: fn(mesh) {
+      draw_material2d_mesh_item_with_prepared_material(mesh, material, pipeline)
+    },
+  })
+}
+
+///|
+pub(all) enum RenderMaterial2dResolvedSlot {
+  Pending
+  Resolved(RenderMaterial2dResolvedMaterial)
+}
+
+///|
+pub struct RenderMaterial2dResolvedSlots {
+  slots : @hashmap.HashMap[(Int, Int), RenderMaterial2dResolvedSlot]
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::new() -> RenderMaterial2dResolvedSlots {
+  RenderMaterial2dResolvedSlots::{ slots: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::get(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+) -> RenderMaterial2dResolvedSlot? {
+  self.slots.get(material2d_entity_key(entity))
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::set_pending(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+) -> Unit {
+  self.slots.set(
+    material2d_entity_key(entity),
+    RenderMaterial2dResolvedSlot::Pending,
+  )
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::set_resolved(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+  material : RenderMaterial2dResolvedMaterial,
+) -> Unit {
+  self.slots.set(
+    material2d_entity_key(entity),
+    RenderMaterial2dResolvedSlot::Resolved(material),
+  )
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::remove(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+) -> Unit {
+  self.slots.remove(material2d_entity_key(entity)) |> ignore
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::contains(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+) -> Bool {
+  self.slots.contains(material2d_entity_key(entity))
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::is_pending(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+) -> Bool {
+  match self.get(entity) {
+    Some(Pending) => true
+    _ => false
+  }
+}
+
+///|
+pub fn RenderMaterial2dResolvedSlots::is_resolved(
+  self : RenderMaterial2dResolvedSlots,
+  entity : @core.Entity,
+) -> Bool {
+  match self.get(entity) {
+    Some(Resolved(_)) => true
+    _ => false
+  }
+}
+
+///|
+let render_material2d_resolved_slots_key : @ecs.ResourceKey[
+  RenderMaterial2dResolvedSlots,
+] = @ecs.register_resource(
+  debug_name="mgstudio_sprite_render::RenderMaterial2dResolvedSlots",
+)
+
+///|
+pub impl @app.Resource for RenderMaterial2dResolvedSlots with fn resource() {
+  render_material2d_resolved_slots_key
+}
+
+///|
+fn ensure_render_material2d_resolved_slots_resource_in_world(
+  world : @ecs.World,
+) -> Unit {
+  if world.get_resource(RenderMaterial2dResolvedSlots::resource()) is None {
+    world.insert_resource(
+      RenderMaterial2dResolvedSlots::resource(),
+      RenderMaterial2dResolvedSlots::new(),
+    )
+  }
+}
+
+///|
+pub fn render_material2d_resolved_slots_or_empty(
+  world : @ecs.World,
+) -> RenderMaterial2dResolvedSlots {
+  match world.get_resource(RenderMaterial2dResolvedSlots::resource()) {
+    Some(slots) => slots
+    None => RenderMaterial2dResolvedSlots::new()
+  }
+}
+
+///|
 pub fn[M] prepared_material2d_get(
   prepared_assets : @render.RenderAssets[PreparedMaterial2d[M]],
   handle : @asset.Handle[PreparedMaterial2d[M]],
@@ -955,18 +1111,6 @@ fn[M : Material2d] ensure_render_material2d_instances_resource_in_world(
 }
 
 ///|
-fn ensure_material2d_runtime_registry_resource_in_world(
-  world : @ecs.World,
-) -> Unit {
-  if world.get_resource(Material2dRuntimeRegistry::resource()) is None {
-    world.insert_resource(
-      Material2dRuntimeRegistry::resource(),
-      Material2dRuntimeRegistry::new(),
-    )
-  }
-}
-
-///|
 fn[M : Material2d + @asset.Asset] material2d_plugin_build(
   app : @app.App[@ecs.World],
   plugin : Material2dPlugin[M],
@@ -989,8 +1133,7 @@ fn[M : Material2d + @asset.Asset] material2d_plugin_build(
     ensure_prepared_material2d_assets_resource_in_world(render_world, probe)
     ensure_material2d_pipeline_resource_in_world(render_world, pipeline)
     ensure_render_material2d_instances_resource_in_world(render_world, probe)
-    ensure_material2d_runtime_registry_resource_in_world(render_world)
-    register_material2d_runtime_world(render_world, probe)
+    ensure_render_material2d_resolved_slots_resource_in_world(render_world)
     let stage = @render.render_schedule_stage()
     @render.configure_base_render_sets(render_app)
     .add_systems(
@@ -1096,175 +1239,42 @@ pub fn[M : Material2d] draw_material2d_mesh_item_with_prepared_material(
 }
 
 ///|
-pub struct Material2dRuntimeEntry {
-  type_name : String
-  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
-  mesh_phase_for_draw_fn : (
-    @ecs.World,
-    @sprite_render_mesh2d_runtime.ExtractedMesh2d,
-  ) -> Int?
-  draw_mesh_fn : (@ecs.World, @sprite_render_mesh2d_runtime.ExtractedMesh2d) -> Unit
-}
-
-///|
-pub struct Material2dRuntimeRegistry {
-  entries : Array[Material2dRuntimeEntry]
-}
-
-///|
-pub fn Material2dRuntimeRegistry::new() -> Material2dRuntimeRegistry {
-  Material2dRuntimeRegistry::{ entries: [] }
-}
-
-///|
-pub impl @app.Resource for Material2dRuntimeRegistry with fn resource() {
-  material2d_runtime_registry_key
-}
-
-///|
-let material2d_runtime_registry_key : @ecs.ResourceKey[
-  Material2dRuntimeRegistry,
-] = @ecs.register_resource(
-  debug_name="mgstudio_sprite_render::Material2dRuntimeRegistry",
-)
-
-///|
-pub fn Material2dRuntimeRegistry::contains_type_name(
-  self : Material2dRuntimeRegistry,
-  type_name : String,
-) -> Bool {
-  self.entries.any(fn(entry) { entry.type_name == type_name })
-}
-
-///|
-pub fn Material2dRuntimeRegistry::entry_count(
-  self : Material2dRuntimeRegistry,
-) -> Int {
-  self.entries.length()
-}
-
-///|
-fn Material2dRuntimeRegistry::register(
-  self : Material2dRuntimeRegistry,
-  entry : Material2dRuntimeEntry,
-) -> Unit {
-  if self.contains_type_name(entry.type_name) {
-    return
-  }
-  self.entries.push(entry)
-}
-
-///|
-pub fn material2d_runtime_registry_or_empty(
-  world : @ecs.World,
-) -> Material2dRuntimeRegistry {
-  if world.get_resource(Material2dRuntimeRegistry::resource()) is Some(registry) {
-    registry
-  } else {
-    Material2dRuntimeRegistry::new()
-  }
-}
-
-///|
-fn[M : Material2d] material2d_runtime_entry(
-  probe : @asset.Handle[M],
-) -> Material2dRuntimeEntry {
-  let type_name = material2d_runtime_type_name(probe)
-  let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
-  let contains_source_material = fn(
-    source_world : @ecs.World,
-    entity : @core.Entity,
-  ) -> Bool {
-    (try! source_world.get_by_key(entity, material_key)) is Some(_)
-  }
-  Material2dRuntimeEntry::{
-    type_name,
-    contains_source_material_fn: contains_source_material,
-    mesh_phase_for_draw_fn: fn(world, mesh) {
-      let prepared_assets = prepared_material2d_assets_or_empty(world, probe)
-      let material_instances = render_material2d_instances_or_empty(
-        world, probe,
-      )
-      guard prepared_material2d_handle_for_mesh(mesh, material_instances)
-        is Some(material_handle) else {
-        return None
-      }
-      guard prepared_material2d_get(prepared_assets, material_handle)
-        is Some(material) else {
-        return None
-      }
-      prepared_material2d_alpha_phase(material)
-    },
-    draw_mesh_fn: fn(world, mesh) {
-      let prepared_assets = prepared_material2d_assets_or_empty(world, probe)
-      let material_instances = render_material2d_instances_or_empty(
-        world, probe,
-      )
-      let pipeline = material2d_pipeline_or_default(world, probe)
-      draw_material2d_mesh_item(
-        mesh, prepared_assets, material_instances, pipeline,
-      )
-    },
-  }
-}
-
-///|
-fn[M : Material2d] register_material2d_runtime_world(
-  world : @ecs.World,
-  probe : @asset.Handle[M],
-) -> Unit {
-  ensure_material2d_runtime_registry_resource_in_world(world)
-  if world.get_resource_mut(Material2dRuntimeRegistry::resource())
-    is Some(registry) {
-    registry.modify(fn(value) {
-      value.register(material2d_runtime_entry(probe))
-    })
-  }
-}
-
-///|
-pub fn material2d_runtime_registry_contains_entity(
-  source_world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  entity : @core.Entity,
-) -> Bool {
-  for entry in registry.entries {
-    if (entry.contains_source_material_fn)(source_world, entity) {
-      return true
-    }
-  }
-  false
-}
-
-///|
-pub fn draw_registered_material2d_mesh_item(
-  world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  runtime_index : Int,
-  mesh : @sprite_render_mesh2d_runtime.ExtractedMesh2d,
-) -> Unit {
-  guard runtime_index >= 0 && runtime_index < registry.entries.length() else {
-    return
-  }
-  let entry = registry.entries[runtime_index]
-  (entry.draw_mesh_fn)(world, mesh)
-}
-
-///|
 fn[M : Material2d] extract_material2d_mesh_instances_system(
   world : @ecs.World,
-  _probe : @asset.Handle[M],
+  probe : @asset.Handle[M],
 ) -> Unit {
-  _probe |> ignore
+  probe |> ignore
   let source_world = @render.render_source_world(world)
   let material_key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
+  let prepared_assets = prepared_material2d_assets_or_empty(world, probe)
+  let pipeline = material2d_pipeline_or_default(world, probe)
   guard world.get_resource_mut(key) is Some(instances) else { return }
   instances.modify(fn(value) {
     value.clear()
-    source_world.for_each_component(material_key, fn(entity, material) {
-      value.set(entity, material.handle)
-    })
+    match world.get_resource_mut(RenderMaterial2dResolvedSlots::resource()) {
+      Some(resolved_slots) =>
+        resolved_slots.modify(fn(slots) {
+          source_world.for_each_component(material_key, fn(entity, material) {
+            value.set(entity, material.handle)
+            let prepared_handle = PreparedMaterial2d::prepared_handle(
+              material.handle,
+            )
+            match prepared_material2d_get(prepared_assets, prepared_handle) {
+              Some(prepared) =>
+                match render_material2d_resolved_material(prepared, pipeline) {
+                  Some(resolved) => slots.set_resolved(entity, resolved)
+                  None => slots.set_pending(entity)
+                }
+              None => slots.set_pending(entity)
+            }
+          })
+        })
+      None =>
+        source_world.for_each_component(material_key, fn(entity, material) {
+          value.set(entity, material.handle)
+        })
+    }
   })
 }
 
@@ -1286,6 +1296,13 @@ fn[M : Material2d + @asset.Asset] prepare_material2d_assets_system(
     return
   }
   guard world.get_resource(pipeline_key) is Some(pipeline) else { return }
+  register_material2d_shader_sources(
+    source_world,
+    material2d_shader_asset_paths(
+      pipeline.vertex_shader,
+      pipeline.fragment_shader,
+    ),
+  )
   guard world.get_resource_mut(prepared_assets_key) is Some(prepared_assets) else {
     return
   }
@@ -1298,27 +1315,66 @@ fn[M : Material2d + @asset.Asset] prepare_material2d_assets_system(
     prepared_ids.add(material_id)
     guard source_assets.get(material_handle) is Some(material) else { continue }
     let prepared_id = material_handle.id()
+    let prepared_material = PreparedMaterial2d::from_material(
+      material_handle, material, pipeline,
+    )
     prepared_assets.modify(fn(value) {
-      value.insert(
-        prepared_id,
-        PreparedMaterial2d::from_material(material_handle, material, pipeline),
-      )
+      value.insert(prepared_id, prepared_material)
     })
+    match render_material2d_resolved_material(prepared_material, pipeline) {
+      Some(resolved) =>
+        match
+          world.get_resource_mut(RenderMaterial2dResolvedSlots::resource()) {
+          Some(resolved_slots) =>
+            resolved_slots.modify(fn(slots) {
+              for entity_key, instance_material_handle in instances.instances {
+                if instance_material_handle.id() == material_id {
+                  slots.set_resolved(
+                    @core.Entity::new(entity_key.0, entity_key.1),
+                    resolved,
+                  )
+                }
+              }
+            })
+          None => ()
+        }
+      None =>
+        match
+          world.get_resource_mut(RenderMaterial2dResolvedSlots::resource()) {
+          Some(resolved_slots) =>
+            resolved_slots.modify(fn(slots) {
+              for entity_key, instance_material_handle in instances.instances {
+                if instance_material_handle.id() == material_id {
+                  slots.set_pending(
+                    @core.Entity::new(entity_key.0, entity_key.1),
+                  )
+                }
+              }
+            })
+          None => ()
+        }
+    }
   }
 }
 
 ///|
-pub fn material2d_runtime_phase_for_draw(
-  world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
+pub fn material2d_resolved_phase_for_draw(
+  slots : RenderMaterial2dResolvedSlots,
   mesh : @sprite_render_mesh2d_runtime.ExtractedMesh2d,
-) -> (Int, Int)? {
-  for runtime_index in 0..<registry.entries.length() {
-    let entry = registry.entries[runtime_index]
-    guard (entry.mesh_phase_for_draw_fn)(world, mesh) is Some(phase) else {
-      continue
-    }
-    return Some((runtime_index, phase))
+) -> Int? {
+  match slots.get(mesh.entity.main_entity) {
+    Some(Resolved(material)) => Some(material.phase())
+    _ => None
   }
-  None
+}
+
+///|
+pub fn draw_resolved_material2d_mesh_item(
+  slots : RenderMaterial2dResolvedSlots,
+  mesh : @sprite_render_mesh2d_runtime.ExtractedMesh2d,
+) -> Unit {
+  match slots.get(mesh.entity.main_entity) {
+    Some(Resolved(material)) => material.draw_mesh(mesh)
+    _ => ()
+  }
 }

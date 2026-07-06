@@ -127,9 +127,6 @@ pub type SceneCullContext = @sprite_render_render.SceneCullContext
 pub type CustomMesh2dPipelineDescriptor = @sprite_render_render.CustomMesh2dPipelineDescriptor
 
 ///|
-pub type CustomMesh2dRuntimeRegistry = @sprite_render_render.CustomMesh2dRuntimeRegistry
-
-///|
 pub let render2d_set_extract : @app.SystemSet = @sprite_render_schedule.render2d_set_extract
 
 ///|

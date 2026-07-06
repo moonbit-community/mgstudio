@@ -1154,12 +1154,10 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let pipeline_key : @ecs.ResourceKey[
     @sprite_render_mesh2d_material.Material2dPipeline[DummyMaterialAsset],
   ] = @sprite_render_mesh2d_material.Material2dPipeline::resource()
-  let registry_key : @ecs.ResourceKey[
-    @sprite_render_mesh2d_material.Material2dRuntimeRegistry,
-  ] = @sprite_render_mesh2d_material.Material2dRuntimeRegistry::resource()
+  let slots_key : @ecs.ResourceKey[
+    @sprite_render_mesh2d_material.RenderMaterial2dResolvedSlots,
+  ] = @sprite_render_mesh2d_material.RenderMaterial2dResolvedSlots::resource()
   let pipeline = render_world.get_resource(pipeline_key).unwrap()
-  let registry = render_world.get_resource(registry_key).unwrap()
-  let probe : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(0)
 
   debug_inspect(app.contains_resource(key), content="true")
   debug_inspect(
@@ -1174,10 +1172,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     render_world.get_resource(pipeline_key) is Some(_),
     content="true",
   )
-  debug_inspect(
-    render_world.get_resource(registry_key) is Some(_),
-    content="true",
-  )
+  debug_inspect(render_world.get_resource(slots_key) is Some(_), content="true")
   debug_inspect(
     pipeline.vertex_shader,
     content="Some(\"sprite_render/mesh2d/mesh2d.wgsl\")",
@@ -1186,17 +1181,10 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     pipeline.fragment_shader,
     content="Some(\"shaders/custom_material_2d.wgsl\")",
   )
-  debug_inspect(registry.entry_count(), content="1")
-  debug_inspect(
-    registry.contains_type_name(
-      @sprite_render_mesh2d_material.material2d_runtime_type_name(probe),
-    ),
-    content="true",
-  )
 }
 
 ///|
-test "render2d: custom Mesh2d runtime registry matches marker components" {
+test "render2d: custom Mesh2d pipeline extraction writes entity slots" {
   let source_world = @ecs.World::new()
   let render_world = @ecs.World::new()
   let descriptor = CustomMesh2dPipelineDescriptor::new(
@@ -1213,20 +1201,23 @@ test "render2d: custom Mesh2d runtime registry matches marker components" {
 
   })
   |> ignore)
-  let registry = render_world
-    .get_resource(CustomMesh2dRuntimeRegistry::resource())
+  extract_custom_mesh2d_pipeline_slots_from_source(source_world, render_world)
+  let slots = render_world
+    .get_resource(CustomMesh2dPipelineSlots::resource())
     .unwrap()
-  debug_inspect(registry.entry_count(), content="1")
   debug_inspect(
-    registry.contains_type_name("mgstudio_sprite_test::TestCustomMesh2d"),
-    content="true",
+    slots
+    .get(entity)
+    .map(fn(value) { value.pipeline_id() == descriptor.pipeline_id() }),
+    content="Some(true)",
   )
-  debug_inspect(registry.contains_entity(source_world, entity), content="true")
+  debug_inspect(slots.contains(entity), content="true")
 }
 
 ///|
 test "render2d: generic Material2d runtime extracts and prepares custom assets" {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
+  let pending_entity_ref : Ref[@core.Entity?] = Ref(None)
   let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref(None)
   let expected = dummy_material_asset(
     color=@color.Color::new(0.3F, 0.6F, 0.9F, 1.0F),
@@ -1262,11 +1253,22 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
       @sprite_render_mesh2d_material.MeshMaterial2d::new(handle),
     )
     |> ignore)
+    let pending_entity = world.spawn()
+    pending_entity_ref.val = Some(pending_entity)
+    try! (world.set_by_key(
+      pending_entity,
+      material_key,
+      @sprite_render_mesh2d_material.MeshMaterial2d::new(
+        @asset.Handle::new(404),
+      ),
+    )
+    |> ignore)
   })
   app = app.run_once()
 
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
+  let pending_entity = pending_entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let instances_key : @ecs.ResourceKey[
     @sprite_render_mesh2d_material.RenderMaterial2dInstances[DummyMaterialAsset],
@@ -1279,12 +1281,20 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let instances = render_world.get_resource(instances_key).unwrap()
   let prepared_assets = render_world.get_resource(prepared_key).unwrap()
   let prepared = prepared_assets.get(handle.id()).unwrap()
+  let resolved_slots = render_world
+    .get_resource(
+      @sprite_render_mesh2d_material.RenderMaterial2dResolvedSlots::resource(),
+    )
+    .unwrap()
 
   debug_inspect(instances.contains(entity), content="true")
+  debug_inspect(instances.contains(pending_entity), content="true")
   debug_inspect(
     instances.get(entity).map(fn(value) { value.id() == handle.id() }),
     content="Some(true)",
   )
+  debug_inspect(resolved_slots.is_resolved(entity), content="true")
+  debug_inspect(resolved_slots.is_pending(pending_entity), content="true")
   debug_inspect(prepared.source.id() == handle.id(), content="true")
   debug_inspect(
     prepared.bind_group.layout_key(),

@@ -66,6 +66,17 @@ fn shader_source_has_define_import_path(source : String) -> Bool {
 }
 
 ///|
+fn embedded_shader_source_files_with_import_path() -> Array[ShaderSourceFile] {
+  let files : Array[ShaderSourceFile] = []
+  for file in embedded_shader_source_files() {
+    if shader_source_has_define_import_path(file.source) {
+      files.push(file)
+    }
+  }
+  files
+}
+
+///|
 pub fn clear_embedded_shader_sources() -> Unit {
   embedded_shader_source_paths.clear()
 }
@@ -287,15 +298,7 @@ pub fn embedded_shader_composer_source_files(
 ) -> Array[ShaderSourceFile] {
   match root_rel_path {
     Some(root) => embedded_shader_composer_source_files_for_root(root)
-    None => {
-      let files : Array[ShaderSourceFile] = []
-      for file in embedded_shader_source_files() {
-        if shader_source_has_define_import_path(file.source) {
-          files.push(file)
-        }
-      }
-      files
-    }
+    None => embedded_shader_source_files()
   }
 }
 
@@ -318,7 +321,9 @@ pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[
   String,
 ] {
   let registry = @wgsl_resolver.WgslSourceRegistry::default()
-  registry.register_source_files(embedded_shader_composer_source_files(None))
+  registry.register_source_files(
+    embedded_shader_source_files_with_import_path(),
+  )
   @hashmap.HashMap(registry.copy_import_module_paths().to_array())
 }
 

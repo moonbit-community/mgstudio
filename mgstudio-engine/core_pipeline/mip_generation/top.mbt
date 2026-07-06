@@ -277,14 +277,16 @@ fn downsample_shaders_from_world(world : @ecs.World) -> DownsampleShaders {
     world,
     DOWNSAMPLE_DEPTH_SHADER_PATH,
   )
+  let asset_server = world.get_resource(@asset.AssetServer::resource()).unwrap()
   let general : Map[String, @asset.Handle[@shader.Shader]] = {}
   for entry in downsample_texture_formats() {
     let (target_format, identifier) = entry
     let source = downsample_specialized_wgsl_source(identifier)
-    let handle = @asset.asset_world_add(
-      world,
-      @shader.Shader::from_wgsl(source, DOWNSAMPLE_SHADER_PATH),
-    )
+    let handle = @asset.asset_with_world(world, fn() {
+      asset_server.add(
+        @shader.Shader::from_wgsl(source, DOWNSAMPLE_SHADER_PATH),
+      )
+    })
     general.set(target_format, handle)
   }
   DownsampleShaders::new(depth~, general~)

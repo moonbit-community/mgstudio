@@ -148,19 +148,52 @@ pub fn shader_runtime_loaded_wgsl_sources(
   let shader_assets = shader_assets_or_abort(world)
   let shader_paths = shader_asset_paths_or_abort(world)
   let sources : Array[(String, String)] = []
+  let visited : @hashset.HashSet[Int] = @hashset.HashSet([])
   for entry in shader_paths.entries {
     let canonical_path = entry.0
     let handle = entry.1
     match shader_assets.get(handle) {
-      Some(shader) =>
-        match shader.source {
-          Source::Wgsl(source) => sources.push((canonical_path, source))
-          _ => ()
-        }
+      Some(shader) => {
+        shader_record_asset_and_dependencies(
+          world, canonical_path, handle, shader, shader_assets,
+        )
+        shader_runtime_push_wgsl_source_closure(
+          shader_assets, handle, canonical_path, visited, sources,
+        )
+      }
       None => ()
     }
   }
   sources
+}
+
+///|
+fn shader_runtime_push_wgsl_source_asset_path(
+  asset_path : String,
+  sources : Array[(String, String)],
+) -> Unit {
+  match @asset.load_optional_asset_source_text(asset_path) {
+    Some(source) =>
+      sources.push(
+        (
+          @asset.asset_canonical_path(asset_path),
+          shader_runtime_source_with_asset_import_path(asset_path, source),
+        ),
+      )
+    None => ()
+  }
+}
+
+///|
+fn shader_runtime_source_with_asset_import_path(
+  asset_path : String,
+  source : String,
+) -> String {
+  if asset_path == "" || source.contains("#define_import_path") {
+    source
+  } else {
+    "#define_import_path \{asset_path}\n\{source}"
+  }
 }
 
 ///|
@@ -180,13 +213,34 @@ fn shader_runtime_push_wgsl_source_closure(
   let source_path = if shader.path == "" { fallback_path } else { shader.path }
   match shader.source {
     Source::Wgsl(source) =>
-      sources.push((@asset.asset_canonical_path(source_path), source))
+      sources.push(
+        (
+          @asset.asset_canonical_path(source_path),
+          shader_runtime_source_with_asset_import_path(source_path, source),
+        ),
+      )
     _ => ()
   }
-  for dependency in shader.file_dependencies {
-    shader_runtime_push_wgsl_source_closure(
-      shader_assets, dependency, "", visited, sources,
-    )
+  let mut dependency_index = 0
+  for import_path in shader.imports {
+    match import_path {
+      AssetPath(asset_path) => {
+        if dependency_index < shader.file_dependencies.length() {
+          let dependency = shader.file_dependencies[dependency_index]
+          if shader_assets.get(dependency) is Some(_) {
+            shader_runtime_push_wgsl_source_closure(
+              shader_assets, dependency, asset_path, visited, sources,
+            )
+          } else {
+            shader_runtime_push_wgsl_source_asset_path(asset_path, sources)
+          }
+        } else {
+          shader_runtime_push_wgsl_source_asset_path(asset_path, sources)
+        }
+        dependency_index = dependency_index + 1
+      }
+      Custom(_) => ()
+    }
   }
 }
 

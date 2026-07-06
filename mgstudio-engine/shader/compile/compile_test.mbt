@@ -76,6 +76,63 @@ test "compile package keeps unresolved imports structured" {
 }
 
 ///|
+test "compile package composes quoted file imports by registered rel path" {
+  clear_registered_shader_sources()
+  register_shader_source(
+    "shader/compile/file_dep.wgsl", "const FILE_VALUE: u32 = 9u;\n",
+  )
+  register_shader_source(
+    "shader/compile/file_root.wgsl", "#import \"shader/compile/file_dep.wgsl\"::FILE_VALUE\nfn root() -> u32 { return FILE_VALUE; }\n",
+  )
+  let source = load_preprocessed_wgsl(
+    "",
+    "shader/compile/file_root.wgsl",
+    @hashmap.HashMap([]),
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(source.contains("9u"), content="true")
+  debug_inspect(source.contains("#import"), content="false")
+}
+
+///|
+test "compile package composes quoted file imports from combined source" {
+  clear_registered_shader_sources()
+  register_shader_source(
+    "shader/compile/source_dep.wgsl", "const SOURCE_VALUE: u32 = 11u;\n",
+  )
+  let source = preprocess_shader_source(
+    "",
+    "#import \"shader/compile/source_dep.wgsl\"::SOURCE_VALUE\nfn root() -> u32 { return SOURCE_VALUE; }\n",
+    @hashmap.HashMap([]),
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(source.contains("11u"), content="true")
+  debug_inspect(source.contains("#import"), content="false")
+}
+
+///|
+test "compile package composes quoted file imports when dependency has file import path" {
+  clear_registered_shader_sources()
+  register_shader_source(
+    "shader/compile/synthetic_dep.wgsl", "#define_import_path shader/compile/synthetic_dep.wgsl\nconst SYNTHETIC_VALUE: u32 = 13u;\n",
+  )
+  let source = preprocess_shader_source(
+    "",
+    "#import \"shader/compile/synthetic_dep.wgsl\"::SYNTHETIC_VALUE\nfn root() -> u32 { return SYNTHETIC_VALUE; }\n",
+    @hashmap.HashMap([]),
+    default_shader_value_defines(),
+  ) catch {
+    err => abort(err.message())
+  }
+  debug_inspect(source.contains("13u"), content="true")
+  debug_inspect(source.contains("#import"), content="false")
+}
+
+///|
 test "compile package does not auto-register entry shaders as import modules" {
   clear_registered_shader_sources()
   register_shader_source(

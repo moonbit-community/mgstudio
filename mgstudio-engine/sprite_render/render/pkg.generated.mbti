@@ -15,11 +15,18 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui_render/runtime",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
 // Values
 pub let camera_update_systems : String
+
+pub fn custom_mesh2d_pipeline_slots_or_empty(@ecs.World) -> CustomMesh2dPipelineSlots
+
+pub fn extract_custom_mesh2d_pipeline_slots_from_source(@ecs.World, @ecs.World) -> Unit
+
+pub fn extract_custom_mesh2d_pipeline_slots_world(@ecs.World) -> Unit
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
@@ -112,12 +119,21 @@ pub fn CustomMesh2dPipelineDescriptor::phase(Self) -> Int
 pub fn CustomMesh2dPipelineDescriptor::pipeline_id(Self) -> UInt64
 pub fn CustomMesh2dPipelineDescriptor::shader_path(Self) -> String
 
-type CustomMesh2dRuntimeRegistry
-pub fn CustomMesh2dRuntimeRegistry::contains_entity(Self, @ecs.World, @core.Entity) -> Bool
-pub fn CustomMesh2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
-pub fn CustomMesh2dRuntimeRegistry::entry_count(Self) -> Int
-pub fn CustomMesh2dRuntimeRegistry::new() -> Self
-pub impl @app.Resource for CustomMesh2dRuntimeRegistry
+type CustomMesh2dPipelineRegistrations
+pub fn CustomMesh2dPipelineRegistrations::contains_type_name(Self, String) -> Bool
+pub fn CustomMesh2dPipelineRegistrations::entry_count(Self) -> Int
+pub fn CustomMesh2dPipelineRegistrations::new() -> Self
+pub impl @app.Resource for CustomMesh2dPipelineRegistrations
+
+pub struct CustomMesh2dPipelineSlots {
+  slots : @hashmap.HashMap[(Int, Int), CustomMesh2dPipelineDescriptor]
+}
+pub fn CustomMesh2dPipelineSlots::clear(Self) -> Unit
+pub fn CustomMesh2dPipelineSlots::contains(Self, @core.Entity) -> Bool
+pub fn CustomMesh2dPipelineSlots::get(Self, @core.Entity) -> CustomMesh2dPipelineDescriptor?
+pub fn CustomMesh2dPipelineSlots::new() -> Self
+pub fn CustomMesh2dPipelineSlots::set(Self, @core.Entity, CustomMesh2dPipelineDescriptor) -> Unit
+pub impl @app.Resource for CustomMesh2dPipelineSlots
 
 pub(all) struct OverlaySpriteUvScissor {
   texture : @asset.Handle[@image.Image]

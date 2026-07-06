@@ -115,8 +115,6 @@ pub using @color_material {type ColorMaterialPlugin}
 
 pub using @render {type CustomMesh2dPipelineDescriptor}
 
-pub using @render {type CustomMesh2dRuntimeRegistry}
-
 pub using @material {type Material2dKey}
 
 pub using @material {type Material2dPipeline}

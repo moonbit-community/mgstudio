@@ -128,18 +128,6 @@ fn registered_wgsl_source_required(
 }
 
 ///|
-fn split_once_text(text : String, sep : String) -> (String, String)? {
-  let parts : Array[String] = []
-  for piece in text.split(sep) {
-    parts.push(piece.to_owned())
-  }
-  if parts.length() != 2 {
-    return None
-  }
-  Some((parts[0], parts[1]))
-}
-
-///|
 fn default_wgsl_value_defines() -> @hashmap.HashMap[
   String,
   @wgsl_common.ShaderDefValue,
@@ -168,6 +156,19 @@ fn default_wgsl_value_defines() -> @hashmap.HashMap[
 ///|
 fn wgsl_def_int(value : Int) -> @wgsl_common.ShaderDefValue {
   @wgsl_common.ShaderDefValue::Int(value)
+}
+
+///|
+fn mesh2d_pipeline_value_defines() -> @hashmap.HashMap[
+  String,
+  @wgsl_common.ShaderDefValue,
+] {
+  let value_defines = default_wgsl_value_defines()
+  value_defines.set(
+    "PER_OBJECT_BUFFER_BATCH_SIZE",
+    wgsl_def_int(MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE),
+  )
+  value_defines
 }
 
 ///|

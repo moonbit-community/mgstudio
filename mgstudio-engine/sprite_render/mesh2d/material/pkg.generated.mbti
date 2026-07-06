@@ -22,7 +22,7 @@ pub fn[M : Material2d] draw_material2d_mesh_item(@runtime.ExtractedMesh2d, @rend
 
 pub fn[M : Material2d] draw_material2d_mesh_item_with_prepared_material(@runtime.ExtractedMesh2d, PreparedMaterial2d[M], Material2dPipeline[M]) -> Unit
 
-pub fn draw_registered_material2d_mesh_item(@ecs.World, Material2dRuntimeRegistry, Int, @runtime.ExtractedMesh2d) -> Unit
+pub fn draw_resolved_material2d_mesh_item(RenderMaterial2dResolvedSlots, @runtime.ExtractedMesh2d) -> Unit
 
 pub fn material2d_alpha_mode_kind_bits(AlphaMode2d) -> UInt
 
@@ -38,11 +38,7 @@ pub fn[M : Material2d] material2d_pipeline_or_default(@ecs.World, @asset.Handle[
 
 pub fn[M] material2d_plugin(Material2dPlugin[M]) -> Material2dPlugin[M]
 
-pub fn material2d_runtime_phase_for_draw(@ecs.World, Material2dRuntimeRegistry, @runtime.ExtractedMesh2d) -> (Int, Int)?
-
-pub fn material2d_runtime_registry_contains_entity(@ecs.World, Material2dRuntimeRegistry, @core.Entity) -> Bool
-
-pub fn material2d_runtime_registry_or_empty(@ecs.World) -> Material2dRuntimeRegistry
+pub fn material2d_resolved_phase_for_draw(RenderMaterial2dResolvedSlots, @runtime.ExtractedMesh2d) -> Int?
 
 pub fn[M : Material2d] material2d_runtime_type_name(@asset.Handle[M]) -> String
 
@@ -69,6 +65,8 @@ pub fn[M] render_material2d_instances_for_tests(Array[(@core.Entity, @asset.Hand
 pub fn[M : Material2d] render_material2d_instances_or_empty(@ecs.World, @asset.Handle[M]) -> RenderMaterial2dInstances[M]
 
 pub fn[M : Material2d] render_material2d_instances_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]]
+
+pub fn render_material2d_resolved_slots_or_empty(@ecs.World) -> RenderMaterial2dResolvedSlots
 
 // Errors
 
@@ -146,21 +144,6 @@ pub struct Material2dProperties {
 }
 pub fn Material2dProperties::new(AlphaMode2d, Int) -> Self
 
-pub struct Material2dRuntimeEntry {
-  type_name : String
-  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
-  mesh_phase_for_draw_fn : (@ecs.World, @runtime.ExtractedMesh2d) -> Int?
-  draw_mesh_fn : (@ecs.World, @runtime.ExtractedMesh2d) -> Unit
-}
-
-pub struct Material2dRuntimeRegistry {
-  entries : Array[Material2dRuntimeEntry]
-}
-pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
-pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
-pub fn Material2dRuntimeRegistry::new() -> Self
-pub impl @app.Resource for Material2dRuntimeRegistry
-
 pub(all) enum Material2dTextureSampleType {
   Float
   UInt
@@ -200,6 +183,31 @@ pub fn[M] RenderMaterial2dInstances::new() -> Self[M]
 pub fn[M] RenderMaterial2dInstances::remove(Self[M], @core.Entity) -> Unit
 pub fn[M] RenderMaterial2dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
 pub impl[M : Material2d] @app.Resource for RenderMaterial2dInstances[M]
+
+pub(all) struct RenderMaterial2dResolvedMaterial {
+  phase : Int
+  draw_mesh_fn : (@runtime.ExtractedMesh2d) -> Unit
+}
+pub fn RenderMaterial2dResolvedMaterial::draw_mesh(Self, @runtime.ExtractedMesh2d) -> Unit
+pub fn RenderMaterial2dResolvedMaterial::phase(Self) -> Int
+
+pub(all) enum RenderMaterial2dResolvedSlot {
+  Pending
+  Resolved(RenderMaterial2dResolvedMaterial)
+}
+
+pub struct RenderMaterial2dResolvedSlots {
+  slots : @hashmap.HashMap[(Int, Int), RenderMaterial2dResolvedSlot]
+}
+pub fn RenderMaterial2dResolvedSlots::contains(Self, @core.Entity) -> Bool
+pub fn RenderMaterial2dResolvedSlots::get(Self, @core.Entity) -> RenderMaterial2dResolvedSlot?
+pub fn RenderMaterial2dResolvedSlots::is_pending(Self, @core.Entity) -> Bool
+pub fn RenderMaterial2dResolvedSlots::is_resolved(Self, @core.Entity) -> Bool
+pub fn RenderMaterial2dResolvedSlots::new() -> Self
+pub fn RenderMaterial2dResolvedSlots::remove(Self, @core.Entity) -> Unit
+pub fn RenderMaterial2dResolvedSlots::set_pending(Self, @core.Entity) -> Unit
+pub fn RenderMaterial2dResolvedSlots::set_resolved(Self, @core.Entity, RenderMaterial2dResolvedMaterial) -> Unit
+pub impl @app.Resource for RenderMaterial2dResolvedSlots
 
 // Type aliases
 

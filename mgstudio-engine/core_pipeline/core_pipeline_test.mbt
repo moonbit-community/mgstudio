@@ -29,11 +29,12 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
 
 ///|
 test "mip_generation plugin initializes downsample shader registry resource" {
-  let app = @app.App::new(@ecs.World::new())
+  let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
+  app = app.update()
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let shaders = render_world
     .get_resource(@mip_generation.ecs_key_downsample_shaders)
@@ -46,6 +47,32 @@ test "mip_generation plugin initializes downsample shader registry resource" {
   let shader_assets = app.world().get_resource(shader_assets_key).unwrap()
   debug_inspect(shader_assets.contains(shaders.depth()), content="true")
   debug_inspect(shader_assets.contains(rgba8), content="true")
+}
+
+///|
+test "mip_generation dynamic shaders keep AssetServer shader handles in sync" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
+  let asset_server = app
+    .world()
+    .get_resource(@asset.AssetServer::resource())
+    .unwrap()
+  let custom_handle : @asset.Handle[@shader.Shader] = @asset.asset_with_world(
+    app.world(),
+    fn() { asset_server.load("shaders/custom_material_2d.wgsl") },
+  )
+  app = app.update()
+  app = app.update()
+  let shader_assets_key : @ecs.ResourceKey[@asset.Assets[@shader.Shader]] = @asset.assets_resource_key()
+  let shader_assets = app.world().get_resource(shader_assets_key).unwrap()
+  let custom_shader = shader_assets.get(custom_handle).unwrap()
+  debug_inspect(
+    custom_shader.path,
+    content="\"shaders/custom_material_2d.wgsl\"",
+  )
 }
 
 ///|

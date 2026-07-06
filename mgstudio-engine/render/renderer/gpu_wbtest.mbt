@@ -2124,6 +2124,107 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
 }
 
 ///|
+test "renderer: mesh2d material preprocessing resolves quoted file imports" {
+  clear_registered_wgsl_source_registry()
+  let mesh_source =
+    #|#import bevy_sprite::{
+    #|  mesh2d_vertex_output::VertexOutput,
+    #|}
+    #|
+    #|@fragment
+    #|fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
+    #|  _ = in;
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let material_source =
+    #|#import bevy_sprite::mesh2d_vertex_output::VertexOutput
+    #|#import "shaders/custom_material_import.wgsl"::COLOR_MULTIPLIER
+    #|
+    #|@fragment
+    #|fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
+    #|  _ = mesh;
+    #|  return COLOR_MULTIPLIER;
+    #|}
+    #|
+  register_wgsl_source(
+    "shaders/custom_material_import.wgsl", "const COLOR_MULTIPLIER: vec4<f32> = vec4<f32>(1.0, 1.0, 1.0, 0.5);\n",
+  )
+  register_wgsl_source("sprite_render/mesh2d/mesh2d.wgsl", mesh_source)
+  register_wgsl_source(
+    "sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "#define_import_path bevy_sprite::mesh2d_vertex_output\nstruct VertexOutput { @builtin(position) position: vec4<f32>, @location(0) uv: vec2<f32>, }\n",
+  )
+  register_wgsl_source("shaders/custom_material_2d.wgsl", material_source)
+  let preprocessed = load_wgsl_with_defines_required_mesh2d_material(
+    Some("sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("shaders/custom_material_2d.wgsl"),
+    [],
+  )
+  debug_inspect(preprocessed.contains("COLOR_MULTIPLIER"), content="true")
+  debug_inspect(preprocessed.contains("#import"), content="false")
+  clear_registered_wgsl_source_registry()
+}
+
+///|
+test "renderer: custom mesh2d pipeline preprocessing uses per-object uniform layout" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "sprite_render/mesh2d/mesh2d_types.wgsl", "#define_import_path bevy_sprite::mesh2d_types\nstruct Mesh2d { tag: u32, }\n",
+  )
+  let bindings_source =
+    #|#define_import_path bevy_sprite::mesh2d_bindings
+    #|#import bevy_sprite::mesh2d_types::Mesh2d
+    #|
+    #|#ifdef PER_OBJECT_BUFFER_BATCH_SIZE
+    #|@group(1) @binding(0) var<uniform> mesh: array<Mesh2d, #{PER_OBJECT_BUFFER_BATCH_SIZE}u>;
+    #|#else
+    #|@group(1) @binding(0) var<storage> mesh: array<Mesh2d>;
+    #|#endif
+    #|
+  register_wgsl_source(
+    "sprite_render/mesh2d/mesh2d_bindings.wgsl", bindings_source,
+  )
+  let functions_source =
+    #|#define_import_path bevy_sprite::mesh2d_functions
+    #|#import bevy_sprite::mesh2d_bindings::mesh
+    #|
+    #|fn get_tag(instance_index: u32) -> u32 {
+    #|    return mesh[instance_index].tag;
+    #|}
+    #|
+  register_wgsl_source(
+    "sprite_render/mesh2d/mesh2d_functions.wgsl", functions_source,
+  )
+  let shader_source =
+    #|#import bevy_sprite::mesh2d_functions
+    #|
+    #|@vertex
+    #|fn vertex(@builtin(instance_index) instance_index: u32) -> @builtin(position) vec4<f32> {
+    #|    _ = mesh2d_functions::get_tag(instance_index);
+    #|    return vec4<f32>(0.0);
+    #|}
+    #|
+    #|@fragment
+    #|fn fragment() -> @location(0) vec4<f32> {
+    #|    return vec4<f32>(1.0);
+    #|}
+    #|
+  register_wgsl_source(
+    "examples/2d/mesh2d_manual/colored_mesh2d.wgsl", shader_source,
+  )
+  let preprocessed = load_wgsl_preprocessed(
+    "",
+    "examples/2d/mesh2d_manual/colored_mesh2d.wgsl",
+    @hashmap.HashMap([]),
+    mesh2d_pipeline_value_defines(),
+  )
+  debug_inspect(preprocessed.contains("var<uniform>"), content="true")
+  debug_inspect(preprocessed.contains("var<storage>"), content="false")
+  debug_inspect(preprocessed.contains("#import"), content="false")
+  clear_registered_wgsl_source_registry()
+}
+
+///|
 test "renderer: registered wgsl sources resolve nested alias imports" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(

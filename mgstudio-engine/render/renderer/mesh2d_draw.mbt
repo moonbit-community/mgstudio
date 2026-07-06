@@ -805,14 +805,30 @@ fn ensure_mesh2d_instance_uniform_binding(
 }
 
 ///|
-fn mesh2d_strip_fragment_entry(source : String) -> String raise GpuBackendError {
-  match split_once_text(source, "@fragment\nfn fragment(") {
-    Some((prefix, _)) => prefix
-    None =>
-      fatal(
-        "wgpu: failed to strip mesh2d fragment entry from registered source",
-      )
+fn mesh2d_find_text_from(text : String, needle : String, start : Int) -> Int? {
+  if needle.length() == 0 || text.length() < needle.length() {
+    return None
   }
+  let mut i = if start < 0 { 0 } else { start }
+  let limit = text.length() - needle.length()
+  while i <= limit {
+    if text[i:i + needle.length()] == needle {
+      return Some(i)
+    }
+    i = i + 1
+  }
+  None
+}
+
+///|
+fn mesh2d_strip_fragment_entry(source : String) -> String raise GpuBackendError {
+  guard mesh2d_find_text_from(source, "@fragment", 0) is Some(fragment_index) else {
+    fatal("wgpu: failed to strip mesh2d fragment entry from registered source")
+  }
+  guard mesh2d_find_text_from(source, "fn fragment", fragment_index) is Some(_) else {
+    fatal("wgpu: failed to strip mesh2d fragment entry from registered source")
+  }
+  source[0:fragment_index].to_owned()
 }
 
 ///|
@@ -1108,12 +1124,8 @@ fn load_wgsl_with_defines_required_mesh2d_material(
   for key in define_keys {
     defines.set(key, true)
   }
-  let value_defines = default_wgsl_value_defines()
+  let value_defines = mesh2d_pipeline_value_defines()
   value_defines.set("MATERIAL_BIND_GROUP", wgsl_def_int(2))
-  value_defines.set(
-    "PER_OBJECT_BUFFER_BATCH_SIZE",
-    wgsl_def_int(MESH2D_PER_OBJECT_BUFFER_BATCH_SIZE),
-  )
   match pipeline_descriptor {
     Some(descriptor) => {
       let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
@@ -1707,7 +1719,7 @@ fn create_mesh2d_registered_pipeline(
     backend.assets_base,
     descriptor.shader_path,
     @hashmap.HashMap([]),
-    default_wgsl_value_defines(),
+    mesh2d_pipeline_value_defines(),
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = try {

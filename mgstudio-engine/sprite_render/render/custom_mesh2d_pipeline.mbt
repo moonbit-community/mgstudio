@@ -70,38 +70,37 @@ pub fn CustomMesh2dPipelineDescriptor::phase(
 }
 
 ///|
-priv struct CustomMesh2dRuntimeEntry {
+priv struct CustomMesh2dPipelineRegistrationEntry {
   type_name : String
-  descriptor : CustomMesh2dPipelineDescriptor
-  contains_source_component_fn : (@ecs.World, @core.Entity) -> Bool
+  extract_slots_fn : (@ecs.World, CustomMesh2dPipelineSlots) -> Unit
 }
 
 ///|
-struct CustomMesh2dRuntimeRegistry {
-  entries : Array[CustomMesh2dRuntimeEntry]
+struct CustomMesh2dPipelineRegistrations {
+  entries : Array[CustomMesh2dPipelineRegistrationEntry]
 }
 
 ///|
-pub fn CustomMesh2dRuntimeRegistry::new() -> CustomMesh2dRuntimeRegistry {
-  CustomMesh2dRuntimeRegistry::{ entries: [] }
+pub fn CustomMesh2dPipelineRegistrations::new() -> CustomMesh2dPipelineRegistrations {
+  CustomMesh2dPipelineRegistrations::{ entries: [] }
 }
 
 ///|
-pub impl @app.Resource for CustomMesh2dRuntimeRegistry with fn resource() {
-  custom_mesh2d_runtime_registry_key
+pub impl @app.Resource for CustomMesh2dPipelineRegistrations with fn resource() {
+  custom_mesh2d_pipeline_registrations_key
 }
 
 ///|
-let custom_mesh2d_runtime_registry_key : @ecs.ResourceKey[
-  CustomMesh2dRuntimeRegistry,
+let custom_mesh2d_pipeline_registrations_key : @ecs.ResourceKey[
+  CustomMesh2dPipelineRegistrations,
 ] = @ecs.register_resource(
-  debug_name="mgstudio_sprite_render::CustomMesh2dRuntimeRegistry",
+  debug_name="mgstudio_sprite_render::CustomMesh2dPipelineRegistrations",
 )
 
 ///|
-fn CustomMesh2dRuntimeRegistry::register(
-  self : CustomMesh2dRuntimeRegistry,
-  entry : CustomMesh2dRuntimeEntry,
+fn CustomMesh2dPipelineRegistrations::register(
+  self : CustomMesh2dPipelineRegistrations,
+  entry : CustomMesh2dPipelineRegistrationEntry,
 ) -> Unit {
   for i in 0..<self.entries.length() {
     if self.entries[i].type_name == entry.type_name {
@@ -113,54 +112,111 @@ fn CustomMesh2dRuntimeRegistry::register(
 }
 
 ///|
-fn custom_mesh2d_runtime_registry_or_empty(
+fn custom_mesh2d_pipeline_registrations_or_empty(
   world : @ecs.World,
-) -> CustomMesh2dRuntimeRegistry {
-  if world.get_resource(CustomMesh2dRuntimeRegistry::resource())
-    is Some(registry) {
-    registry
+) -> CustomMesh2dPipelineRegistrations {
+  if world.get_resource(CustomMesh2dPipelineRegistrations::resource())
+    is Some(registrations) {
+    registrations
   } else {
-    CustomMesh2dRuntimeRegistry::new()
+    CustomMesh2dPipelineRegistrations::new()
   }
 }
 
 ///|
-pub fn CustomMesh2dRuntimeRegistry::contains_type_name(
-  self : CustomMesh2dRuntimeRegistry,
+pub fn CustomMesh2dPipelineRegistrations::contains_type_name(
+  self : CustomMesh2dPipelineRegistrations,
   type_name : String,
 ) -> Bool {
   self.entries.any(fn(entry) { entry.type_name == type_name })
 }
 
 ///|
-pub fn CustomMesh2dRuntimeRegistry::entry_count(
-  self : CustomMesh2dRuntimeRegistry,
+pub fn CustomMesh2dPipelineRegistrations::entry_count(
+  self : CustomMesh2dPipelineRegistrations,
 ) -> Int {
   self.entries.length()
 }
 
 ///|
-pub fn CustomMesh2dRuntimeRegistry::contains_entity(
-  self : CustomMesh2dRuntimeRegistry,
-  source_world : @ecs.World,
-  entity : @core.Entity,
-) -> Bool {
-  for entry in self.entries {
-    if (entry.contains_source_component_fn)(source_world, entity) {
-      return true
-    }
-  }
-  false
+pub struct CustomMesh2dPipelineSlots {
+  slots : @hashmap.HashMap[(Int, Int), CustomMesh2dPipelineDescriptor]
 }
 
 ///|
-fn ensure_custom_mesh2d_runtime_registry_resource_in_world(
+pub fn CustomMesh2dPipelineSlots::new() -> CustomMesh2dPipelineSlots {
+  CustomMesh2dPipelineSlots::{ slots: @hashmap.HashMap([]) }
+}
+
+///|
+fn custom_mesh2d_pipeline_entity_key(entity : @core.Entity) -> (Int, Int) {
+  (entity.id, entity.generation)
+}
+
+///|
+pub fn CustomMesh2dPipelineSlots::clear(
+  self : CustomMesh2dPipelineSlots,
+) -> Unit {
+  self.slots.clear()
+}
+
+///|
+pub fn CustomMesh2dPipelineSlots::set(
+  self : CustomMesh2dPipelineSlots,
+  entity : @core.Entity,
+  descriptor : CustomMesh2dPipelineDescriptor,
+) -> Unit {
+  self.slots.set(custom_mesh2d_pipeline_entity_key(entity), descriptor)
+}
+
+///|
+pub fn CustomMesh2dPipelineSlots::get(
+  self : CustomMesh2dPipelineSlots,
+  entity : @core.Entity,
+) -> CustomMesh2dPipelineDescriptor? {
+  self.slots.get(custom_mesh2d_pipeline_entity_key(entity))
+}
+
+///|
+pub fn CustomMesh2dPipelineSlots::contains(
+  self : CustomMesh2dPipelineSlots,
+  entity : @core.Entity,
+) -> Bool {
+  self.slots.contains(custom_mesh2d_pipeline_entity_key(entity))
+}
+
+///|
+pub impl @app.Resource for CustomMesh2dPipelineSlots with fn resource() {
+  custom_mesh2d_pipeline_slots_key
+}
+
+///|
+let custom_mesh2d_pipeline_slots_key : @ecs.ResourceKey[
+  CustomMesh2dPipelineSlots,
+] = @ecs.register_resource(
+  debug_name="mgstudio_sprite_render::CustomMesh2dPipelineSlots",
+)
+
+///|
+fn ensure_custom_mesh2d_pipeline_slots_resource_in_world(
   world : @ecs.World,
 ) -> Unit {
-  if world.get_resource(CustomMesh2dRuntimeRegistry::resource()) is None {
+  if world.get_resource(CustomMesh2dPipelineSlots::resource()) is None {
     world.insert_resource(
-      CustomMesh2dRuntimeRegistry::resource(),
-      CustomMesh2dRuntimeRegistry::new(),
+      CustomMesh2dPipelineSlots::resource(),
+      CustomMesh2dPipelineSlots::new(),
+    )
+  }
+}
+
+///|
+fn ensure_custom_mesh2d_pipeline_registrations_resource_in_world(
+  world : @ecs.World,
+) -> Unit {
+  if world.get_resource(CustomMesh2dPipelineRegistrations::resource()) is None {
+    world.insert_resource(
+      CustomMesh2dPipelineRegistrations::resource(),
+      CustomMesh2dPipelineRegistrations::new(),
     )
   }
 }
@@ -172,66 +228,82 @@ pub fn[T] register_custom_mesh2d_pipeline_world(
   component_key~ : @ecs.ComponentKey[T],
   descriptor~ : CustomMesh2dPipelineDescriptor,
 ) -> Unit {
-  ensure_custom_mesh2d_runtime_registry_resource_in_world(world)
-  let contains_source_component = fn(
+  ensure_custom_mesh2d_pipeline_registrations_resource_in_world(world)
+  ensure_custom_mesh2d_pipeline_slots_resource_in_world(world)
+  let extract_slots = fn(
     source_world : @ecs.World,
-    entity : @core.Entity,
-  ) -> Bool {
-    (try! source_world.get_by_key(entity, component_key)) is Some(_)
+    slots : CustomMesh2dPipelineSlots,
+  ) -> Unit {
+    source_world.for_each_component(component_key, fn(entity, _component) {
+      slots.set(entity, descriptor)
+    })
   }
-  if world.get_resource_mut(CustomMesh2dRuntimeRegistry::resource())
-    is Some(registry) {
-    registry.modify(fn(value) {
-      value.register(CustomMesh2dRuntimeEntry::{
+  if world.get_resource_mut(CustomMesh2dPipelineRegistrations::resource())
+    is Some(registrations) {
+    registrations.modify(fn(value) {
+      value.register(CustomMesh2dPipelineRegistrationEntry::{
         type_name,
-        descriptor,
-        contains_source_component_fn: contains_source_component,
+        extract_slots_fn: extract_slots,
       })
     })
   }
 }
 
 ///|
-fn custom_mesh2d_runtime_registry_contains_entity(
-  source_world : @ecs.World,
-  registry : CustomMesh2dRuntimeRegistry,
-  entity : @core.Entity,
-) -> Bool {
-  registry.contains_entity(source_world, entity)
+pub fn custom_mesh2d_pipeline_slots_or_empty(
+  world : @ecs.World,
+) -> CustomMesh2dPipelineSlots {
+  match world.get_resource(CustomMesh2dPipelineSlots::resource()) {
+    Some(slots) => slots
+    None => CustomMesh2dPipelineSlots::new()
+  }
 }
 
 ///|
-fn custom_mesh2d_runtime_phase_for_draw(
+pub fn extract_custom_mesh2d_pipeline_slots_world(world : @ecs.World) -> Unit {
+  let source_world = @renderer.render_source_world(world)
+  extract_custom_mesh2d_pipeline_slots_from_source(source_world, world)
+}
+
+///|
+pub fn extract_custom_mesh2d_pipeline_slots_from_source(
   source_world : @ecs.World,
-  registry : CustomMesh2dRuntimeRegistry,
+  world : @ecs.World,
+) -> Unit {
+  ensure_custom_mesh2d_pipeline_slots_resource_in_world(world)
+  let registrations = custom_mesh2d_pipeline_registrations_or_empty(world)
+  match world.get_resource_mut(CustomMesh2dPipelineSlots::resource()) {
+    Some(slots_ref) =>
+      slots_ref.modify(fn(slots) {
+        slots.clear()
+        for entry in registrations.entries {
+          (entry.extract_slots_fn)(source_world, slots)
+        }
+      })
+    None => ()
+  }
+}
+
+///|
+fn custom_mesh2d_pipeline_phase_for_draw(
+  slots : CustomMesh2dPipelineSlots,
   mesh : ExtractedMesh2d,
-) -> (Int, Int)? {
+) -> Int? {
   if mesh.payload.mesh_id <= 0 {
     return None
   }
-  for runtime_index in 0..<registry.entries.length() {
-    let entry = registry.entries[runtime_index]
-    if (entry.contains_source_component_fn)(
-        source_world,
-        mesh.entity.main_entity,
-      ) {
-      return Some((runtime_index, entry.descriptor.phase))
-    }
+  match slots.get(mesh.entity.main_entity) {
+    Some(descriptor) => Some(descriptor.phase)
+    None => None
   }
-  None
 }
 
 ///|
-fn draw_registered_custom_mesh2d_item(
-  registry : CustomMesh2dRuntimeRegistry,
-  runtime_index : Int,
+fn draw_custom_mesh2d_pipeline_item(
+  slots : CustomMesh2dPipelineSlots,
   mesh : ExtractedMesh2d,
 ) -> Unit {
-  guard runtime_index >= 0 && runtime_index < registry.entries.length() else {
-    return
-  }
-  let entry = registry.entries[runtime_index]
-  let descriptor = entry.descriptor
+  guard slots.get(mesh.entity.main_entity) is Some(descriptor) else { return }
   @renderer.host_gpu_register_mesh2d_pipeline_descriptor(
     pipeline_id=descriptor.pipeline_id,
     shader_path=descriptor.shader_path,

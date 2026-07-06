@@ -71,7 +71,7 @@ type RenderMaterial2dInstances[M] = @sprite_render_mesh2d_material.RenderMateria
 ]
 
 ///|
-type Material2dRuntimeRegistry = @sprite_render_mesh2d_material.Material2dRuntimeRegistry
+type RenderMaterial2dResolvedSlots = @sprite_render_mesh2d_material.RenderMaterial2dResolvedSlots
 
 ///|
 type SpriteMeshPlugin = @sprite_render_sprite_mesh.SpriteMeshPlugin
@@ -154,13 +154,6 @@ fn compute_slices_on_asset_event_system(
 }
 
 ///|
-fn[M : @sprite_render_mesh2d_material.Material2d] material2d_runtime_type_name(
-  probe : @asset.Handle[M],
-) -> String {
-  @sprite_render_mesh2d_material.material2d_runtime_type_name(probe)
-}
-
-///|
 fn[M] prepared_material2d_alpha_phase(material : PreparedMaterial2d[M]) -> Int? {
   @sprite_render_mesh2d_material.prepared_material2d_alpha_phase(material)
 }
@@ -206,10 +199,12 @@ fn[M : @sprite_render_mesh2d_material.Material2d] render_material2d_instances_or
 }
 
 ///|
-fn material2d_runtime_registry_or_empty(
+fn render_material2d_resolved_slots_or_empty(
   world : @ecs.World,
-) -> Material2dRuntimeRegistry {
-  @sprite_render_mesh2d_material.material2d_runtime_registry_or_empty(world)
+) -> RenderMaterial2dResolvedSlots {
+  @sprite_render_mesh2d_material.render_material2d_resolved_slots_or_empty(
+    world,
+  )
 }
 
 ///|
@@ -221,37 +216,11 @@ fn[M : @sprite_render_mesh2d_material.Material2d] material2d_pipeline_or_default
 }
 
 ///|
-fn draw_registered_material2d_mesh_item(
-  world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  runtime_index : Int,
+fn material2d_resolved_phase_for_draw(
+  slots : RenderMaterial2dResolvedSlots,
   mesh : ExtractedMesh2d,
-) -> Unit {
-  @sprite_render_mesh2d_material.draw_registered_material2d_mesh_item(
-    world, registry, runtime_index, mesh,
-  )
-}
-
-///|
-fn material2d_runtime_registry_contains_entity(
-  source_world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  entity : @core.Entity,
-) -> Bool {
-  @sprite_render_mesh2d_material.material2d_runtime_registry_contains_entity(
-    source_world, registry, entity,
-  )
-}
-
-///|
-fn material2d_runtime_phase_for_draw(
-  world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  mesh : ExtractedMesh2d,
-) -> (Int, Int)? {
-  @sprite_render_mesh2d_material.material2d_runtime_phase_for_draw(
-    world, registry, mesh,
-  )
+) -> Int? {
+  @sprite_render_mesh2d_material.material2d_resolved_phase_for_draw(slots, mesh)
 }
 
 ///|
@@ -275,6 +244,14 @@ fn[M : @sprite_render_mesh2d_material.Material2d] draw_material2d_mesh_item_with
   @sprite_render_mesh2d_material.draw_material2d_mesh_item_with_prepared_material(
     mesh, material, pipeline,
   )
+}
+
+///|
+fn draw_resolved_material2d_mesh_item(
+  slots : RenderMaterial2dResolvedSlots,
+  mesh : ExtractedMesh2d,
+) -> Unit {
+  @sprite_render_mesh2d_material.draw_resolved_material2d_mesh_item(slots, mesh)
 }
 
 ///|
@@ -2245,10 +2222,9 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
   let source_world = @renderer.render_source_world(world)
-  let material_runtime_registry = material2d_runtime_registry_or_empty(world)
-  let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
-    world,
-  )
+  extract_custom_mesh2d_pipeline_slots_world(world)
+  let material_slots = render_material2d_resolved_slots_or_empty(world)
+  let custom_mesh2d_slots = custom_mesh2d_pipeline_slots_or_empty(world)
   render_state_update(world, fn(rs) {
     rs.draw_enabled = true
     rs.primary_camera = @core.Entity::placeholder()
@@ -2385,12 +2361,8 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       if !render2d_entity_visible_ecs(source_world, entity) {
         return
       }
-      let has_material2d = material2d_runtime_registry_contains_entity(
-        source_world, material_runtime_registry, entity,
-      )
-      let has_custom_mesh2d = custom_mesh2d_runtime_registry_contains_entity(
-        source_world, custom_mesh2d_runtime_registry, entity,
-      )
+      let has_material2d = material_slots.contains(entity)
+      let has_custom_mesh2d = custom_mesh2d_slots.contains(entity)
       if !has_material2d && !has_custom_mesh2d {
         return
       }
@@ -2448,19 +2420,12 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
     @app.TimelineTraceCategory::RenderQueue,
     "queue_2d",
   )
-  let material_runtime_registry = material2d_runtime_registry_or_empty(world)
-  let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
-    world,
-  )
+  let material_slots = render_material2d_resolved_slots_or_empty(world)
+  let custom_mesh2d_slots = custom_mesh2d_pipeline_slots_or_empty(world)
   let color_material_probe : @asset.Handle[ColorMaterial] = @asset.Handle::new(
     0,
   )
-  let use_color_material_fast_path = material_runtime_registry.entry_count() ==
-    1 &&
-    custom_mesh2d_runtime_registry.entry_count() == 0 &&
-    material_runtime_registry.contains_type_name(
-      material2d_runtime_type_name(color_material_probe),
-    )
+  let use_color_material_fast_path = false
   let color_prepared_materials = prepared_material2d_assets_or_empty(
     world, color_material_probe,
   )
@@ -2494,8 +2459,8 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       let scene_cull_context = render2d_camera_scene_cull_context(camera)
       let item = build_camera_draw_items(
         world,
-        material_runtime_registry,
-        custom_mesh2d_runtime_registry,
+        material_slots,
+        custom_mesh2d_slots,
         rs.sprites,
         rs.sprite_slice_batches,
         rs.extra_sprites,
@@ -2871,9 +2836,9 @@ fn[M] append_material2d_mesh_draw_items(
 }
 
 ///|
-fn append_registered_material2d_mesh_draw_items(
+fn append_resolved_material2d_mesh_draw_items(
   world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
+  slots : RenderMaterial2dResolvedSlots,
   opaque_items : Array[DrawItem],
   transparent_items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
@@ -2881,6 +2846,7 @@ fn append_registered_material2d_mesh_draw_items(
   tie : Int,
   scene_cull_context? : SceneCullContext? = None,
 ) -> Int {
+  ignore(world)
   let mut next_tie = tie
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
@@ -2899,8 +2865,7 @@ fn append_registered_material2d_mesh_draw_items(
         continue
       }
     }
-    if material2d_runtime_phase_for_draw(world, registry, mesh)
-      is Some((runtime_index, phase)) {
+    if material2d_resolved_phase_for_draw(slots, mesh) is Some(phase) {
       let item = DrawItem::{
         kind: Mesh(i),
         entity: mesh.entity,
@@ -2908,7 +2873,7 @@ fn append_registered_material2d_mesh_draw_items(
         phase,
         tie: next_tie,
         material_handle_id: -1,
-        material_runtime_index: runtime_index,
+        material_runtime_index: -1,
       }
       if phase == 0 {
         opaque_items.push(item)
@@ -2923,9 +2888,9 @@ fn append_registered_material2d_mesh_draw_items(
 }
 
 ///|
-fn append_registered_custom_mesh2d_draw_items(
+fn append_custom_mesh2d_pipeline_draw_items(
   world : @ecs.World,
-  registry : CustomMesh2dRuntimeRegistry,
+  slots : CustomMesh2dPipelineSlots,
   opaque_items : Array[DrawItem],
   transparent_items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
@@ -2933,7 +2898,7 @@ fn append_registered_custom_mesh2d_draw_items(
   tie : Int,
   scene_cull_context? : SceneCullContext? = None,
 ) -> Int {
-  let source_world = @renderer.render_source_world(world)
+  ignore(world)
   let mut next_tie = tie
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
@@ -2952,8 +2917,7 @@ fn append_registered_custom_mesh2d_draw_items(
         continue
       }
     }
-    guard custom_mesh2d_runtime_phase_for_draw(source_world, registry, mesh)
-      is Some((runtime_index, phase)) else {
+    guard custom_mesh2d_pipeline_phase_for_draw(slots, mesh) is Some(phase) else {
       continue
     }
     let item = DrawItem::{
@@ -2963,7 +2927,7 @@ fn append_registered_custom_mesh2d_draw_items(
       phase,
       tie: next_tie,
       material_handle_id: -1,
-      material_runtime_index: runtime_index,
+      material_runtime_index: -1,
     }
     if phase == 0 {
       opaque_items.push(item)
@@ -3344,10 +3308,10 @@ fn draw_scene_items_for_layers(
 }
 
 ///|
-fn draw_registered_scene_phase_items_for_layers(
+fn draw_resolved_scene_phase_items_for_layers(
   world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  custom_registry : CustomMesh2dRuntimeRegistry,
+  material_slots : RenderMaterial2dResolvedSlots,
+  custom_slots : CustomMesh2dPipelineSlots,
   sprites : Array[ExtractedSprite],
   sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
@@ -3366,9 +3330,9 @@ fn draw_registered_scene_phase_items_for_layers(
     extra_sprite_slice_batches.length(),
   )
   let mut tie = 0
-  tie = append_registered_custom_mesh2d_draw_items(
+  tie = append_custom_mesh2d_pipeline_draw_items(
     world,
-    custom_registry,
+    custom_slots,
     opaque_items,
     transparent_items,
     meshes,
@@ -3376,9 +3340,9 @@ fn draw_registered_scene_phase_items_for_layers(
     tie,
     scene_cull_context~,
   )
-  tie = append_registered_material2d_mesh_draw_items(
+  tie = append_resolved_material2d_mesh_draw_items(
     world,
-    registry,
+    material_slots,
     opaque_items,
     transparent_items,
     meshes,
@@ -3547,8 +3511,8 @@ fn has_wireframe_meshes_for_layers(
 ///|
 fn build_camera_draw_items(
   world : @ecs.World,
-  registry : Material2dRuntimeRegistry,
-  custom_registry : CustomMesh2dRuntimeRegistry,
+  material_slots : RenderMaterial2dResolvedSlots,
+  custom_slots : CustomMesh2dPipelineSlots,
   sprites : Array[ExtractedSprite],
   sprite_slice_batches : Array[ExtractedComputedSpriteSlices],
   extra_sprites : Array[ExtractedSprite],
@@ -3579,10 +3543,10 @@ fn build_camera_draw_items(
       scene_cull_context~,
     )
   } else {
-    draw_registered_scene_phase_items_for_layers(
+    draw_resolved_scene_phase_items_for_layers(
       world,
-      registry,
-      custom_registry,
+      material_slots,
+      custom_slots,
       sprites,
       sprite_slice_batches,
       extra_sprites,
@@ -4747,19 +4711,12 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     "execute_2d",
   )
   let source_world = @renderer.render_source_world(world)
-  let material_runtime_registry = material2d_runtime_registry_or_empty(world)
-  let custom_mesh2d_runtime_registry = custom_mesh2d_runtime_registry_or_empty(
-    world,
-  )
+  let material_slots = render_material2d_resolved_slots_or_empty(world)
+  let custom_mesh2d_slots = custom_mesh2d_pipeline_slots_or_empty(world)
   let color_material_probe : @asset.Handle[ColorMaterial] = @asset.Handle::new(
     0,
   )
-  let use_color_material_fast_path = material_runtime_registry.entry_count() ==
-    1 &&
-    custom_mesh2d_runtime_registry.entry_count() == 0 &&
-    material_runtime_registry.contains_type_name(
-      material2d_runtime_type_name(color_material_probe),
-    )
+  let use_color_material_fast_path = false
   let color_prepared_materials = prepared_material2d_assets_or_empty(
     world, color_material_probe,
   )
@@ -4992,8 +4949,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         None => {
           let built = build_camera_draw_items(
             world,
-            material_runtime_registry,
-            custom_mesh2d_runtime_registry,
+            material_slots,
+            custom_mesh2d_slots,
             sprites,
             sprite_slice_batches,
             extra_sprites,
@@ -5313,21 +5270,12 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                   )
                 }
               } else {
-                draw_registered_material2d_mesh_item(
-                  world,
-                  material_runtime_registry,
-                  item.material_runtime_index,
-                  mesh,
-                )
+                draw_resolved_material2d_mesh_item(material_slots, mesh)
               }
             }
             CustomMesh(i) => {
               apply_scissor(None)
-              draw_registered_custom_mesh2d_item(
-                custom_mesh2d_runtime_registry,
-                item.material_runtime_index,
-                meshes[i],
-              )
+              draw_custom_mesh2d_pipeline_item(custom_mesh2d_slots, meshes[i])
             }
             UiRectExtra(i) => {
               let rect = extra_ui_rects[i].payload

@@ -60,10 +60,20 @@ fn trim_trailing_semicolons(text : String) -> String {
 ///|
 fn shader_import_from_raw(raw_import : String) -> ShaderImport {
   let trimmed = trim_trailing_semicolons(raw_import)
-  if trimmed.length() >= 2 &&
-    trimmed.code_unit_at(0).to_int() == 34 && // '"'
-    trimmed.code_unit_at(trimmed.length() - 1).to_int() == 34 { // '"'
-    return ShaderImport::AssetPath(trimmed[1:trimmed.length() - 1].to_owned())
+  if trimmed.length() >= 2 && trimmed.code_unit_at(0).to_int() == 34 { // '"'
+    let mut closing_quote = -1
+    for i in 1..<trimmed.length() {
+      if trimmed.code_unit_at(i).to_int() == 34 {
+        closing_quote = i
+        break
+      }
+    }
+    if closing_quote > 0 {
+      let tail = trimmed[closing_quote + 1:].trim().to_owned()
+      if tail == "" || tail.has_prefix("::") {
+        return ShaderImport::AssetPath(trimmed[1:closing_quote].to_owned())
+      }
+    }
   }
   ShaderImport::Custom(trimmed)
 }

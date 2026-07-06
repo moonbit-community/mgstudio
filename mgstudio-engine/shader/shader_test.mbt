@@ -89,3 +89,21 @@ test "shader: asset path imports quote module names" {
     content="\"\\\"shaders/demo.wgsl\\\"\"",
   )
 }
+
+///|
+test "shader: quoted file import with item path is an asset dependency" {
+  let source =
+    #|#import "shaders/custom_material_import.wgsl"::COLOR_MULTIPLIER
+    #|fn root() -> vec4<f32> {
+    #|  return COLOR_MULTIPLIER;
+    #|}
+    #|
+  let shader = @shader.Shader::from_wgsl(
+    source, "shaders/custom_material_2d.wgsl",
+  )
+  debug_inspect(shader.imports.length(), content="1")
+  debug_inspect(
+    shader.imports[0],
+    content="AssetPath(\"shaders/custom_material_import.wgsl\")",
+  )
+}
