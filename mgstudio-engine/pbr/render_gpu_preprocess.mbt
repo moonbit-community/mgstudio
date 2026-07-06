@@ -183,6 +183,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 ///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
+  material_slots : RenderMaterial3dResolvedSlots,
   layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
@@ -226,11 +227,15 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
-    let alpha = payload.material_draw_data.draw_alpha_source()
-    if render3d_mesh_phase_kind(payload.material_properties, alpha) is None {
+    guard render3d_queue_resolved_material_for_mesh(material_slots, mesh)
+      is Some(material) else {
       continue
     }
-    let phase = render3d_mesh_phase_kind(payload.material_properties, alpha).unwrap()
+    let material_properties = material.material_properties()
+    let alpha = material.material_draw_data().draw_alpha_source()
+    guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
+      continue
+    }
     let pipeline_id = render3d_traced_mesh_pipeline_id_for_view(
       mesh, retained_view_entity, specialized_material_pipeline_cache,
     )
@@ -240,7 +245,9 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       extracted_index: i,
       phase,
       pipeline_id,
-      distance: render3d_material_phase_distance(payload, camera_transform),
+      distance: render3d_material_phase_distance(
+        payload, material_properties, camera_transform,
+      ),
     })
   }
   items.sort_by(fn(a, b) {
@@ -277,6 +284,7 @@ priv struct GpuPreprocessWorkItem3d {
 ///|
 fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
+  material_slots : RenderMaterial3dResolvedSlots,
   layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
@@ -320,9 +328,13 @@ fn render3d_collect_meshes_for_gpu_building(
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
-    let alpha = payload.material_draw_data.draw_alpha_source()
-    guard render3d_mesh_phase_kind(payload.material_properties, alpha)
-      is Some(phase) else {
+    guard render3d_queue_resolved_material_for_mesh(material_slots, mesh)
+      is Some(material) else {
+      continue
+    }
+    let material_properties = material.material_properties()
+    let alpha = material.material_draw_data().draw_alpha_source()
+    guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
       continue
     }
     let pipeline_id = render3d_traced_mesh_pipeline_id_for_view(
@@ -334,7 +346,9 @@ fn render3d_collect_meshes_for_gpu_building(
       extracted_index: i,
       phase,
       pipeline_id,
-      distance: render3d_material_phase_distance(payload, camera_transform),
+      distance: render3d_material_phase_distance(
+        payload, material_properties, camera_transform,
+      ),
     })
   }
   work_items
@@ -1652,6 +1666,7 @@ fn render3d_gpu_preprocess_indirect_parameter_index_maps(
 ///|
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
+  material_slots : RenderMaterial3dResolvedSlots,
   layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
@@ -1664,6 +1679,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   // collect mesh work items, then write batched instance work payloads.
   let work_items = render3d_collect_meshes_for_gpu_building(
     meshes,
+    material_slots,
     layers,
     camera_transform,
     camera_frustum_planes,
@@ -1678,6 +1694,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
 ///|
 fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
+  material_slots : RenderMaterial3dResolvedSlots,
   layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
   camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
@@ -1690,6 +1707,7 @@ fn render3d_queue_mesh_phase_items(
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
       meshes,
+      material_slots,
       layers,
       camera_transform,
       camera_frustum_planes,
@@ -1701,6 +1719,7 @@ fn render3d_queue_mesh_phase_items(
   }
   render3d_queue_mesh_phase_items_cpu_builder(
     meshes,
+    material_slots,
     layers,
     camera_transform,
     camera_frustum_planes,

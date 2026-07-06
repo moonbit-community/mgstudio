@@ -307,17 +307,29 @@ fn render3d_mesh_phase_kind(
 ///|
 fn render3d_material_phase_distance(
   payload : Mesh3dExtractedPayload,
+  material_properties : @material.MaterialProperties,
   camera_transform : @transform.Transform,
 ) -> Float {
   let distance = @pbr_render.render3d_mesh_position_view_depth(
     payload.world_from_local.translation,
     camera_transform,
   )
-  match payload.material_properties.render_phase_type {
+  match material_properties.render_phase_type {
     @material.RenderPhaseType::Transmissive
     | @material.RenderPhaseType::Transparent =>
-      distance + payload.material_properties.depth_bias
+      distance + material_properties.depth_bias
     _ => distance
+  }
+}
+
+///|
+fn render3d_queue_resolved_material_for_mesh(
+  material_slots : RenderMaterial3dResolvedSlots,
+  mesh : ExtractedMesh3d,
+) -> Render3dResolvedMaterial? {
+  match material_slots.get(mesh.entity.main_entity) {
+    Some(Resolved(material)) => Some(material)
+    Some(Pending) | None => None
   }
 }
 

@@ -1172,6 +1172,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
   debug_inspect(pipeline_id is Some(_), content="true")
   let items = render3d_queue_mesh_phase_items(
     [extracted_mesh],
+    material_slots,
     @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
     [],

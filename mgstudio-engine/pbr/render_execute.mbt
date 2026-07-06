@@ -4782,6 +4782,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         world,
         frame.cameras,
       )
+      let material_slots = render_material3d_resolved_slots_or_empty(world)
       let prepared_camera_queues = mesh_runtime_state.modify(fn(
         mesh_runtime_state_value,
       ) {
@@ -4789,6 +4790,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           mesh_runtime_state_value,
           frame.cameras,
           frame.meshes,
+          material_slots,
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
           specialized_material_pipeline_cache~,
