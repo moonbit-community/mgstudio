@@ -615,10 +615,11 @@ test "scrolling_fog: pillar resolves Bevy shadow specialization inputs" {
     Some(value) => value
     None => abort("expected RenderMeshInstances resource")
   }
-  let registry = @pbr.material_runtime_registry_or_empty(render_world)
-  let resolved_material = @pbr.material_runtime_registry_resolve_material(
-    render_world, world, registry, pillar,
-  )
+  let resolved_material = match
+    @pbr.render_material3d_resolved_slots_or_empty(render_world).get(pillar) {
+    Some(Resolved(material)) => Some(material)
+    Some(Pending) | None => None
+  }
   let render_mesh_assets = match
     render_world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
     Some(value) => value

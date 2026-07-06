@@ -655,6 +655,103 @@ pub fn[M] RenderMaterial3dInstances::clear(
 }
 
 ///|
+pub(all) enum RenderMaterial3dResolvedSlot {
+  Pending
+  Resolved(Render3dResolvedMaterial)
+}
+
+///|
+pub struct RenderMaterial3dResolvedSlots {
+  slots : @hashmap.HashMap[(Int, Int), RenderMaterial3dResolvedSlot]
+}
+
+///|
+pub fn RenderMaterial3dResolvedSlots::new() -> RenderMaterial3dResolvedSlots {
+  RenderMaterial3dResolvedSlots::{ slots: @hashmap.HashMap([]) }
+}
+
+///|
+pub fn RenderMaterial3dResolvedSlots::get(
+  self : RenderMaterial3dResolvedSlots,
+  entity : @core.Entity,
+) -> RenderMaterial3dResolvedSlot? {
+  self.slots.get(material_entity_key(entity))
+}
+
+///|
+pub fn RenderMaterial3dResolvedSlots::set_pending(
+  self : RenderMaterial3dResolvedSlots,
+  entity : @core.Entity,
+) -> Unit {
+  self.slots.set(
+    material_entity_key(entity),
+    RenderMaterial3dResolvedSlot::Pending,
+  )
+}
+
+///|
+pub fn RenderMaterial3dResolvedSlots::set_resolved(
+  self : RenderMaterial3dResolvedSlots,
+  entity : @core.Entity,
+  material : Render3dResolvedMaterial,
+) -> Unit {
+  self.slots.set(
+    material_entity_key(entity),
+    RenderMaterial3dResolvedSlot::Resolved(material),
+  )
+}
+
+///|
+pub fn RenderMaterial3dResolvedSlots::remove(
+  self : RenderMaterial3dResolvedSlots,
+  entity : @core.Entity,
+) -> Unit {
+  ignore(self.slots.remove(material_entity_key(entity)))
+}
+
+///|
+pub fn RenderMaterial3dResolvedSlots::contains(
+  self : RenderMaterial3dResolvedSlots,
+  entity : @core.Entity,
+) -> Bool {
+  self.slots.contains(material_entity_key(entity))
+}
+
+///|
+let render_material3d_resolved_slots_key : @ecs.ResourceKey[
+  RenderMaterial3dResolvedSlots,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::RenderMaterial3dResolvedSlots",
+)
+
+///|
+pub impl @app.Resource for RenderMaterial3dResolvedSlots with fn resource() {
+  render_material3d_resolved_slots_key
+}
+
+///|
+fn ensure_render_material3d_resolved_slots_resource_in_world(
+  world : @ecs.World,
+) -> Unit {
+  if world.get_resource(RenderMaterial3dResolvedSlots::resource()) is None {
+    world.insert_resource(
+      RenderMaterial3dResolvedSlots::resource(),
+      RenderMaterial3dResolvedSlots::new(),
+    )
+  }
+}
+
+///|
+pub fn render_material3d_resolved_slots_or_empty(
+  world : @ecs.World,
+) -> RenderMaterial3dResolvedSlots {
+  match world.get_resource(RenderMaterial3dResolvedSlots::resource()) {
+    Some(slots) => slots
+    None => RenderMaterial3dResolvedSlots::new()
+  }
+}
+
+///|
 pub struct MaterialKeys[M] {
   mesh_material_component : @ecs.ComponentKey[MeshMaterial3dTyped[M]]
   entities_needing_specialization : @ecs.ResourceKey[
@@ -1573,137 +1670,6 @@ pub fn[M] prepared_material_get(
 }
 
 ///|
-pub struct MaterialRuntimeEntry {
-  type_name : String
-  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
-  resolve_material_fn : (@ecs.World, @ecs.World, @core.Entity) -> Render3dResolvedMaterial?
-}
-
-///|
-pub struct MaterialRuntimeRegistry {
-  entries : Array[MaterialRuntimeEntry]
-}
-
-///|
-pub fn MaterialRuntimeRegistry::new() -> MaterialRuntimeRegistry {
-  MaterialRuntimeRegistry::{ entries: [] }
-}
-
-///|
-let material_runtime_registry_key : @ecs.ResourceKey[MaterialRuntimeRegistry] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::MaterialRuntimeRegistry",
-)
-
-///|
-pub impl @app.Resource for MaterialRuntimeRegistry with fn resource() {
-  material_runtime_registry_key
-}
-
-///|
-pub fn MaterialRuntimeRegistry::contains_type_name(
-  self : MaterialRuntimeRegistry,
-  type_name : String,
-) -> Bool {
-  self.entries.any(fn(entry) { entry.type_name == type_name })
-}
-
-///|
-pub fn MaterialRuntimeRegistry::entry_count(
-  self : MaterialRuntimeRegistry,
-) -> Int {
-  self.entries.length()
-}
-
-///|
-fn MaterialRuntimeRegistry::register(
-  self : MaterialRuntimeRegistry,
-  entry : MaterialRuntimeEntry,
-) -> Unit {
-  if self.contains_type_name(entry.type_name) {
-    return
-  }
-  self.entries.push(entry)
-}
-
-///|
-fn ensure_material_runtime_registry_resource_in_world(
-  world : @ecs.World,
-) -> Unit {
-  if world.get_resource(MaterialRuntimeRegistry::resource()) is None {
-    world.insert_resource(
-      MaterialRuntimeRegistry::resource(),
-      MaterialRuntimeRegistry::new(),
-    )
-  }
-}
-
-///|
-pub fn material_runtime_registry_or_empty(
-  world : @ecs.World,
-) -> MaterialRuntimeRegistry {
-  if world.get_resource(MaterialRuntimeRegistry::resource()) is Some(registry) {
-    registry
-  } else {
-    MaterialRuntimeRegistry::new()
-  }
-}
-
-///|
-pub fn[M : Material] material_runtime_type_name(
-  _probe : @asset.Handle[M],
-) -> String {
-  ignore(_probe)
-  "Material<\{M::material_debug_name()}>"
-}
-
-///|
-fn[M : Material] material_runtime_entry(
-  probe : @asset.Handle[M],
-) -> MaterialRuntimeEntry {
-  let type_name = material_runtime_type_name(probe)
-  let material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]] = MeshMaterial3dTyped::component()
-  let contains_source_material = fn(
-    source_world : @ecs.World,
-    entity : @core.Entity,
-  ) -> Bool {
-    (try! source_world.get_by_key(entity, material_key)) is Some(_)
-  }
-  MaterialRuntimeEntry::{
-    type_name,
-    contains_source_material_fn: contains_source_material,
-    resolve_material_fn: fn(render_world, source_world, entity) {
-      guard (try! source_world.get_by_key(entity, material_key))
-        is Some(mesh_material) else {
-        return None
-      }
-      let prepared_assets = prepared_material_assets_or_empty(
-        render_world, probe,
-      )
-      let prepared_handle = PreparedMaterial::prepared_handle(
-        mesh_material.handle(),
-      )
-      guard prepared_material_get(prepared_assets, prepared_handle)
-        is Some(prepared) else {
-        return None
-      }
-      Some(prepared.resolved_material())
-    },
-  }
-}
-
-///|
-fn[M : Material] register_material_runtime_world(
-  world : @ecs.World,
-  probe : @asset.Handle[M],
-) -> Unit {
-  ensure_material_runtime_registry_resource_in_world(world)
-  if world.get_resource_mut(MaterialRuntimeRegistry::resource())
-    is Some(registry) {
-    registry.modify(fn(value) { value.register(material_runtime_entry(probe)) })
-  }
-}
-
-///|
 fn[M : Material] material_bind_group_allocator_label(
   _probe : @asset.Handle[M],
 ) -> String {
@@ -1741,40 +1707,6 @@ fn[M : Material] add_material_bind_group_allocator_system(
       ),
     )
   })
-}
-
-///|
-pub fn material_runtime_registry_contains_entity(
-  source_world : @ecs.World,
-  registry : MaterialRuntimeRegistry,
-  entity : @core.Entity,
-) -> Bool {
-  for entry in registry.entries {
-    if (entry.contains_source_material_fn)(source_world, entity) {
-      return true
-    }
-  }
-  false
-}
-
-///|
-pub fn material_runtime_registry_resolve_material(
-  render_world : @ecs.World,
-  source_world : @ecs.World,
-  registry : MaterialRuntimeRegistry,
-  entity : @core.Entity,
-) -> Render3dResolvedMaterial? {
-  for entry in registry.entries {
-    guard (entry.contains_source_material_fn)(source_world, entity) else {
-      continue
-    }
-    guard (entry.resolve_material_fn)(render_world, source_world, entity)
-      is Some(material) else {
-      return None
-    }
-    return Some(material)
-  }
-  None
 }
 
 ///|
@@ -1867,9 +1799,8 @@ fn[M : Material + @asset.Asset] material_plugin_build(
     ensure_prepared_material_assets_resource_in_world(render_world, probe)
     ensure_material_pipeline_resource_in_world(render_world, pipeline)
     ensure_render_material_instances_resource_in_world(render_world, probe)
+    ensure_render_material3d_resolved_slots_resource_in_world(render_world)
     ensure_material_asset_event_cursor_resource_in_world(render_world, probe)
-    ensure_material_runtime_registry_resource_in_world(render_world)
-    register_material_runtime_world(render_world, probe)
     @render.configure_base_render_sets(render_app)
     .add_systems(
       @render.render_startup_schedule_stage(),
@@ -1957,6 +1888,7 @@ fn[M : Material] extract_mesh_materials_system(
     None => abort("missing RenderMaterialShaderPaths resource")
   }
   let shader_paths = material_shader_asset_paths(_probe)
+  let prepared_assets = prepared_material_assets_or_empty(world, _probe)
   let system_ticks = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(global_value) => global_value.source_system_ticks(source_world)
@@ -1983,6 +1915,25 @@ fn[M : Material] extract_mesh_materials_system(
           None => false
         }
         value.set(entity, material.handle())
+        match
+          world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
+          Some(resolved_slots) =>
+            resolved_slots.modify(fn(slots) {
+              if view_visible {
+                let prepared_handle = PreparedMaterial::prepared_handle(
+                  material.handle(),
+                )
+                match prepared_material_get(prepared_assets, prepared_handle) {
+                  Some(prepared) =>
+                    slots.set_resolved(entity, prepared.resolved_material())
+                  None => slots.set_pending(entity)
+                }
+              } else {
+                slots.remove(entity)
+              }
+            })
+          None => ()
+        }
         if view_visible {
           for path in shader_paths {
             paths.insert(Some(path))
@@ -2076,6 +2027,15 @@ fn[M : Material] early_sweep_material_instances_system(
   match world.get_resource_mut(instances_key) {
     Some(typed_instances) =>
       typed_instances.modify(fn(value) {
+        for entity in removed_materials {
+          value.remove(entity)
+        }
+      })
+    None => ()
+  }
+  match world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
+    Some(resolved_slots) =>
+      resolved_slots.modify(fn(value) {
         for entity in removed_materials {
           value.remove(entity)
         }
@@ -2266,6 +2226,17 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
     prepared_ids.add(material_id)
     let material_changed = changed_material_ids.contains(material_id)
     guard source_assets.get(material_handle) is Some(material) else {
+      match world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
+        Some(resolved_slots) =>
+          resolved_slots.modify(fn(slots) {
+            for entity_key, instance_material_handle in instances.instances {
+              if instance_material_handle.id() == material_id {
+                slots.set_pending(@core.Entity::new(entity_key.0, entity_key.1))
+              }
+            }
+          })
+        None => ()
+      }
       if material_changed {
         prepared_assets.modify(fn(value) { ignore(value.remove(material_id)) })
         unload_material_binding_for_prepared_asset(world, _probe, material_id)
@@ -2279,18 +2250,31 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
       continue
     }
     let was_prepared = prepared_assets.peek().contains(material_id)
+    let prepared_material = PreparedMaterial::from_material(
+      material_handle,
+      material,
+      pipeline,
+      default_opaque_renderer_method,
+      context=image_context,
+    )
+    let resolved_material = prepared_material.resolved_material()
     prepared_assets.modify(fn(value) {
-      value.insert(
-        material_id,
-        PreparedMaterial::from_material(
-          material_handle,
-          material,
-          pipeline,
-          default_opaque_renderer_method,
-          context=image_context,
-        ),
-      )
+      value.insert(material_id, prepared_material)
     })
+    match world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
+      Some(resolved_slots) =>
+        resolved_slots.modify(fn(slots) {
+          for entity_key, instance_material_handle in instances.instances {
+            if instance_material_handle.id() == material_id {
+              slots.set_resolved(
+                @core.Entity::new(entity_key.0, entity_key.1),
+                resolved_material,
+              )
+            }
+          }
+        })
+      None => ()
+    }
     prepare_material_binding_for_prepared_asset(
       world,
       _probe,

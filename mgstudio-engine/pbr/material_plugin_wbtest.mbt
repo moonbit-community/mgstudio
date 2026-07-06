@@ -1015,7 +1015,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
 }
 
 ///|
-test "pbr material plugin: runtime registry resolves typed material properties" {
+test "pbr material plugin: typed extraction writes resolved material slots" {
   let world = @ecs.World::new()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
@@ -1029,24 +1029,35 @@ test "pbr material plugin: runtime registry resolves typed material properties" 
     material_pipeline_from_material_hooks(probe),
   )
   ensure_render_material_instances_resource_in_world(world, probe)
-  register_material_runtime_world(world, probe)
+  ensure_render_material3d_resolved_slots_resource_in_world(world)
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
     MeshMaterial3dTyped::component(),
     MeshMaterial3dTyped::new(material_handle),
   )
+  try! world.set_by_key(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::new(true),
+  )
   world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
-  prepare_material_assets_system(world, probe)
-  let registry = match world.get_resource(MaterialRuntimeRegistry::resource()) {
-    Some(value) => value
-    None => abort("missing MaterialRuntimeRegistry")
+  match world.get_resource(RenderMaterial3dResolvedSlots::resource()) {
+    Some(slots) =>
+      debug_inspect(slots.get(entity) is Some(Pending), content="true")
+    None => abort("missing RenderMaterial3dResolvedSlots")
   }
-  let resolved = match
-    material_runtime_registry_resolve_material(world, world, registry, entity) {
+  prepare_material_assets_system(world, probe)
+  let slots = match
+    world.get_resource(RenderMaterial3dResolvedSlots::resource()) {
     Some(value) => value
-    None => abort("typed material did not resolve")
+    None => abort("missing RenderMaterial3dResolvedSlots")
+  }
+  let resolved = match slots.get(entity) {
+    Some(Resolved(value)) => value
+    Some(Pending) => abort("typed material slot stayed pending")
+    None => abort("typed material slot missing")
   }
   debug_inspect(
     resolved

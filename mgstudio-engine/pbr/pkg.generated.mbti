@@ -582,14 +582,6 @@ pub fn[M : Material] material_pipeline_resource_key_of(@asset.Handle[M]) -> @ecs
 
 pub fn[M] material_plugin(MaterialPlugin[M]) -> MaterialPlugin[M]
 
-pub fn material_runtime_registry_contains_entity(@ecs.World, MaterialRuntimeRegistry, @core.Entity) -> Bool
-
-pub fn material_runtime_registry_or_empty(@ecs.World) -> MaterialRuntimeRegistry
-
-pub fn material_runtime_registry_resolve_material(@ecs.World, @ecs.World, MaterialRuntimeRegistry, @core.Entity) -> Render3dResolvedMaterial?
-
-pub fn[M : Material] material_runtime_type_name(@asset.Handle[M]) -> String
-
 pub fn material_specialization_tick_is_newer_than(Int64, Int64, Int64) -> Bool
 
 pub fn material_uses_bindless_resources(Bool, Int?) -> Bool
@@ -917,6 +909,8 @@ pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 pub fn render3d_view_fog_data(DistanceFog) -> @Milky2018/mgstudio/pbr/render.Render3dViewFogData
 
 pub fn[M : Material] render_material3d_instances_or_empty(@ecs.World, @asset.Handle[M]) -> RenderMaterial3dInstances[M]
+
+pub fn render_material3d_resolved_slots_or_empty(@ecs.World) -> RenderMaterial3dResolvedSlots
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
@@ -1927,20 +1921,6 @@ pub fn[M] MaterialPlugin::with_asset_init(Self[M], () -> M) -> Self[M]
 pub fn[M] MaterialPlugin::with_debug_flags(Self[M], @Milky2018/mgstudio/render.RenderDebugFlags) -> Self[M]
 pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M]
 
-pub struct MaterialRuntimeEntry {
-  type_name : String
-  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
-  resolve_material_fn : (@ecs.World, @ecs.World, @core.Entity) -> Render3dResolvedMaterial?
-}
-
-pub struct MaterialRuntimeRegistry {
-  entries : Array[MaterialRuntimeEntry]
-}
-pub fn MaterialRuntimeRegistry::contains_type_name(Self, String) -> Bool
-pub fn MaterialRuntimeRegistry::entry_count(Self) -> Int
-pub fn MaterialRuntimeRegistry::new() -> Self
-pub impl @app.Resource for MaterialRuntimeRegistry
-
 pub(all) enum MaterialTextureSampleType {
   Float
   UInt
@@ -2571,6 +2551,22 @@ pub fn[M] RenderMaterial3dInstances::new() -> Self[M]
 pub fn[M] RenderMaterial3dInstances::remove(Self[M], @core.Entity) -> Unit
 pub fn[M] RenderMaterial3dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
 pub impl[M : Material] @app.Resource for RenderMaterial3dInstances[M]
+
+pub(all) enum RenderMaterial3dResolvedSlot {
+  Pending
+  Resolved(Render3dResolvedMaterial)
+}
+
+pub struct RenderMaterial3dResolvedSlots {
+  slots : @hashmap.HashMap[(Int, Int), RenderMaterial3dResolvedSlot]
+}
+pub fn RenderMaterial3dResolvedSlots::contains(Self, @core.Entity) -> Bool
+pub fn RenderMaterial3dResolvedSlots::get(Self, @core.Entity) -> RenderMaterial3dResolvedSlot?
+pub fn RenderMaterial3dResolvedSlots::new() -> Self
+pub fn RenderMaterial3dResolvedSlots::remove(Self, @core.Entity) -> Unit
+pub fn RenderMaterial3dResolvedSlots::set_pending(Self, @core.Entity) -> Unit
+pub fn RenderMaterial3dResolvedSlots::set_resolved(Self, @core.Entity, Render3dResolvedMaterial) -> Unit
+pub impl @app.Resource for RenderMaterial3dResolvedSlots
 
 pub struct RenderMaterialBindings {
   bindings : Map[Int, MaterialBindingId]

@@ -3847,23 +3847,31 @@ fn render3d_shadow_resolve_material(
   render_material_instances : RenderMaterialInstances,
 ) -> Render3dResolvedMaterial? {
   let source_world = @render.render_source_world(world)
-  let registry = material_runtime_registry_or_empty(world)
-  match
-    material_runtime_registry_resolve_material(
-      world,
-      source_world,
-      registry,
-      visible_entity.id(),
-    ) {
-    Some(material) => return Some(material)
+  let material_slots = render_material3d_resolved_slots_or_empty(world)
+  match material_slots.get(visible_entity.id()) {
+    Some(Resolved(material)) => return Some(material)
+    Some(Pending) => return None
     None => ()
   }
-  guard render_material_instances.get(visible_entity.id())
-    is Some(material_instance) else {
-    return None
+  match render_material_instances.get(visible_entity.id()) {
+    Some(material_instance) =>
+      return render3d_shadow_resolve_standard_material(
+        world,
+        source_world,
+        material_instance.asset_id(),
+      )
+    None => return None
   }
+}
+
+///|
+fn render3d_shadow_resolve_standard_material(
+  world : @ecs.World,
+  source_world : @ecs.World,
+  material_id : Int,
+) -> Render3dResolvedMaterial? {
   let material_handle : @asset.Handle[StandardMaterial] = @asset.Handle::new(
-    material_instance.asset_id(),
+    material_id,
   )
   let material_assets_key : @ecs.ResourceKey[@asset.Assets[StandardMaterial]] = @asset.assets_resource_key()
   guard source_world.get_resource(material_assets_key) is Some(material_assets) else {

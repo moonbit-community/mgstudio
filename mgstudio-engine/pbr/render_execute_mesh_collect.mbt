@@ -418,9 +418,7 @@ fn render3d_extract_mesh_for_entity(
   if !view_visibility.is_visible() {
     return (None, false)
   }
-  let material_runtime_registry = material_runtime_registry_or_empty(
-    render_world,
-  )
+  let material_slots = render_material3d_resolved_slots_or_empty(render_world)
   let resolved_material = match material_handle {
     Some(value) =>
       match
@@ -432,11 +430,8 @@ fn render3d_extract_mesh_for_entity(
         None => return (None, true)
       }
     None =>
-      match
-        material_runtime_registry_resolve_material(
-          render_world, source_world, material_runtime_registry, entity,
-        ) {
-        Some(value) =>
+      match material_slots.get(entity) {
+        Some(Resolved(value)) =>
           Render3dResolvedMeshMaterial::{
             material_draw_data: value.material_draw_data(),
             material_extension: value.material_extension(),
@@ -445,14 +440,8 @@ fn render3d_extract_mesh_for_entity(
             material_type_tag: value.material_type_tag(),
             forward_decal_material_ext: None,
           }
-        None =>
-          if material_runtime_registry_contains_entity(
-              source_world, material_runtime_registry, entity,
-            ) {
-            return (None, true)
-          } else {
-            return (None, false)
-          }
+        Some(Pending) => return (None, true)
+        None => return (None, false)
       }
   }
   let material_draw_data = resolved_material.material_draw_data
