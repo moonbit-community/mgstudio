@@ -723,8 +723,8 @@ pub impl Material for StandardMaterial with fn reads_view_transmission_texture(
 }
 
 ///|
-pub impl Material for StandardMaterial with fn standard_material_payload(self) {
-  self
+pub impl Material for StandardMaterial with fn draw_data(self) {
+  MaterialDrawData3d::Standard(self)
 }
 
 ///|
@@ -772,7 +772,9 @@ pub impl Material for StandardMaterial with fn bind_group_layout_descriptor(
 
 ///|
 pub impl Material for StandardMaterial with fn bind_group_data(self) {
-  standard_material_key_from_material(self).bits().to_string()
+  MaterialBindGroupKey::from_u64_bits(
+    standard_material_key_from_material(self).bits(),
+  )
 }
 
 ///|

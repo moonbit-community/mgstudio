@@ -609,14 +609,14 @@ fn render3d_execute_camera_main_pass(
     if render3d_main_pass_skips_deferred_opaque(material_properties) {
       continue
     }
+    let draw_material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
     guard render3d_mesh_draw_alpha(
-        mesh.material.alpha_mode,
-        mesh.material.base_color.a,
+        draw_material.alpha_mode,
+        draw_material.base_color.a,
       )
       is Some(base_draw_alpha) else {
       continue
     }
-    let draw_material = mesh.material
     let (
       lightmap_texture_id,
       lightmap_slab_index,
@@ -950,9 +950,10 @@ fn render3d_execute_camera_main_pass(
     let _wireframe_topology = render3d_mesh_wireframe_topology(
       extracted_mesh, wireframe_config,
     )
+    let wireframe_source_material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
     let wireframe_material = StandardMaterial::from_color(wireframe_color)
       .with_unlit(true)
-      .with_cull_mode(mesh.material.cull_mode)
+      .with_cull_mode(wireframe_source_material.cull_mode)
     guard render3d_mesh_draw_alpha(
         wireframe_material.alpha_mode,
         wireframe_material.base_color.a,

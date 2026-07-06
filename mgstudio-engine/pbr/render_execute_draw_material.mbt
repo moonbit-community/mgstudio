@@ -56,7 +56,7 @@ fn render3d_resolve_mesh_draw_material_fields(
   draw_alpha : Float,
 ) -> Render3dMeshDrawMaterialFields {
   let mesh = extracted_mesh.payload
-  let material = mesh.material
+  let material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
   let mut texture_id = match material.base_color_texture {
     Some(texture) => texture.id()
     None => -1

@@ -1147,7 +1147,9 @@ fn render_mesh_instances_test_mesh_for_entity(
       visibility_range: None,
       aabb: None,
       aabb_center_world: None,
-      material: @material.StandardMaterial::StandardMaterial(),
+      material_draw_data: MaterialDrawData3d::Standard(
+        @material.StandardMaterial::StandardMaterial(),
+      ),
       material_extension: None,
       material_properties: @material.MaterialProperties::MaterialProperties(),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),

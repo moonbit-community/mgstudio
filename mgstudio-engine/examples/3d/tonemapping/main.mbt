@@ -235,11 +235,9 @@ impl @pbr.Material for ColorGradientMaterial with fn reads_view_transmission_tex
 }
 
 ///|
-impl @pbr.Material for ColorGradientMaterial with fn standard_material_payload(
-  self,
-) {
+impl @pbr.Material for ColorGradientMaterial with fn draw_data(self) {
   ignore(self)
-  @pbr.material_default_standard_material_payload()
+  @pbr.material_default_draw_data()
 }
 
 ///|

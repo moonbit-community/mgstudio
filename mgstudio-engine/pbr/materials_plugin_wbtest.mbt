@@ -1730,7 +1730,9 @@ fn material_test_extracted_mesh_payload(
     visibility_range: None,
     aabb: None,
     aabb_center_world: None,
-    material: @material.StandardMaterial::StandardMaterial(),
+    material_draw_data: MaterialDrawData3d::Standard(
+      @material.StandardMaterial::StandardMaterial(),
+    ),
     material_extension: None,
     material_properties,
     material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
@@ -2364,11 +2366,9 @@ impl Material for ShadowReadinessNoShadowMaterial with fn reads_view_transmissio
 }
 
 ///|
-impl Material for ShadowReadinessNoShadowMaterial with fn standard_material_payload(
-  self,
-) {
+impl Material for ShadowReadinessNoShadowMaterial with fn draw_data(self) {
   ignore(self)
-  material_default_standard_material_payload()
+  material_default_draw_data()
 }
 
 ///|
@@ -3628,7 +3628,7 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
     extracted_payload_mesh_id, material_properties,
   )
   let resolved_material = Render3dResolvedMaterial::new(
-    mesh.material,
+    mesh.material_draw_data,
     mesh.material_properties,
     mesh.material_bind_group_data,
     "StandardMaterial",
@@ -3692,7 +3692,7 @@ test "render3d: material specialization key consumes render resources" {
   let render_mesh_asset_id = 592
   let mesh = material_test_extracted_mesh_payload(591, material_properties)
   let resolved_material = Render3dResolvedMaterial::new(
-    mesh.material,
+    mesh.material_draw_data,
     mesh.material_properties,
     mesh.material_bind_group_data,
     "StandardMaterial",
@@ -3755,7 +3755,7 @@ test "render3d: material specialization key preserves resolved material type" {
   let render_mesh_asset_id = 593
   let mesh = material_test_extracted_mesh_payload(594, material_properties)
   let resolved_material = Render3dResolvedMaterial::new(
-    mesh.material,
+    mesh.material_draw_data,
     mesh.material_properties,
     mesh.material_bind_group_data,
     "mgstudio_pbr_test::CustomResolvedMaterial",

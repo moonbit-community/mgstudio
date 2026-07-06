@@ -149,9 +149,9 @@ impl Material for ParityCustomMaterial with fn reads_view_transmission_texture(
 }
 
 ///|
-impl Material for ParityCustomMaterial with fn standard_material_payload(self) {
+impl Material for ParityCustomMaterial with fn draw_data(self) {
   ignore(self)
-  material_default_standard_material_payload()
+  material_default_draw_data()
 }
 
 ///|
@@ -203,7 +203,9 @@ impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
 ///|
 impl Material for ParityCustomMaterial with fn bind_group_data(self) {
   ignore(self)
-  "parity_custom_material_pipeline_key"
+  MaterialBindGroupKey::from_bytes(
+    @utf8.encode("parity_custom_material_pipeline_key"),
+  )
 }
 
 ///|
@@ -239,7 +241,7 @@ test "pbr material plugin: typed bind group owns uniform texture and sampler bin
     content="0:uniform;1:texture(float,2d);2:sampler",
   )
   inspect(
-    bind_group.bind_group_data(),
+    bind_group.bind_group_data().debug_string(),
     content="0:uniform(len=4:1,2,3,4);1:texture(9,float,2d);2:sampler(9)",
   )
   let resolved = bind_group.resolved_data().entries()
@@ -282,6 +284,10 @@ test "pbr material plugin: prepared material carries shader hooks and typed bind
     prepared.properties().get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/tonemapping_test_patterns.wgsl\")",
   )
+  debug_inspect(
+    prepared.material_draw_data() is MaterialDrawData3d::Custom,
+    content="true",
+  )
   inspect(
     prepared.properties().material_key.type_tag(),
     content="MaterialKey<mgstudio_pbr_test::ParityCustomMaterial>",
@@ -320,15 +326,16 @@ test "pbr material plugin: prepared material uses material bind group data hook"
   inspect(
     material
     .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
-    .bind_group_data(),
+    .bind_group_data()
+    .debug_string(),
     content="0:uniform(len=4:1,2,3,4);1:texture(9,float,2d);2:sampler(9)",
   )
   inspect(
-    material.bind_group_data(),
+    material.bind_group_data().debug_string(),
     content="parity_custom_material_pipeline_key",
   )
   inspect(
-    prepared.key.bind_group_data(),
+    prepared.key.bind_group_data().debug_string(),
     content="parity_custom_material_pipeline_key",
   )
   inspect(

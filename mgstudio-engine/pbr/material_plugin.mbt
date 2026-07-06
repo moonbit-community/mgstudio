@@ -248,6 +248,55 @@ fn material_bytes_bind_group_data(bytes : Bytes) -> String {
 }
 
 ///|
+pub struct MaterialBindGroupKey {
+  bytes : Bytes
+}
+
+///|
+fn material_bind_group_key_copy_bytes(bytes : Bytes) -> Bytes {
+  Bytes::makei(bytes.length(), fn(index) { bytes[index] })
+}
+
+///|
+pub fn MaterialBindGroupKey::from_bytes(bytes : Bytes) -> MaterialBindGroupKey {
+  MaterialBindGroupKey::{ bytes: material_bind_group_key_copy_bytes(bytes) }
+}
+
+///|
+pub fn MaterialBindGroupKey::from_u64_bits(
+  bits : UInt64,
+) -> MaterialBindGroupKey {
+  MaterialBindGroupKey::{ bytes: bits.to_le_bytes() }
+}
+
+///|
+fn material_bind_group_key_from_string(data : String) -> MaterialBindGroupKey {
+  MaterialBindGroupKey::from_bytes(@utf8.encode(data[:]))
+}
+
+///|
+pub fn MaterialBindGroupKey::bytes(self : MaterialBindGroupKey) -> Bytes {
+  material_bind_group_key_copy_bytes(self.bytes)
+}
+
+///|
+pub fn MaterialBindGroupKey::debug_string(
+  self : MaterialBindGroupKey,
+) -> String {
+  @utf8.decode_lossy(self.bytes[:], ignore_bom=true)
+}
+
+///|
+pub fn MaterialBindGroupKey::hash64(self : MaterialBindGroupKey) -> UInt64 {
+  let mut hash = 1469598103934665603UL
+  for i in 0..<self.bytes.length() {
+    hash = hash ^ self.bytes[i].to_uint64()
+    hash = hash * 1099511628211UL
+  }
+  hash
+}
+
+///|
 fn material_binding_to_layout_entry(
   binding : MaterialBinding,
 ) -> @render_resource.BindGroupLayoutEntry {
@@ -363,7 +412,9 @@ pub fn MaterialBindGroup::layout_key(self : MaterialBindGroup) -> String {
 }
 
 ///|
-pub fn MaterialBindGroup::bind_group_data(self : MaterialBindGroup) -> String {
+pub fn MaterialBindGroup::bind_group_data(
+  self : MaterialBindGroup,
+) -> MaterialBindGroupKey {
   let mut data = ""
   for i in 0..<self.bindings.length() {
     let binding = self.bindings[i]
@@ -372,7 +423,7 @@ pub fn MaterialBindGroup::bind_group_data(self : MaterialBindGroup) -> String {
     }
     data = "\{data}\{binding.binding.to_string()}:\{material_binding_data_key(binding.value)}"
   }
-  data
+  material_bind_group_key_from_string(data)
 }
 
 ///|
@@ -402,7 +453,7 @@ pub fn MaterialBindGroup::resolved_data(
 pub struct MaterialPipelineKey[_] {
   mesh_key : @material.ErasedMeshPipelineKey
   bind_group_layout_key : String
-  bind_group_data : String
+  bind_group_data : MaterialBindGroupKey
   material_key : @material.ErasedMaterialKey
 }
 
@@ -410,9 +461,9 @@ pub struct MaterialPipelineKey[_] {
 pub fn[M] MaterialPipelineKey::new(
   mesh_key : @material.ErasedMeshPipelineKey,
   bind_group_layout_key : String,
-  bind_group_data : String,
+  bind_group_data : MaterialBindGroupKey,
   material_key? : @material.ErasedMaterialKey = @material.ErasedMaterialKey::new(
-    material_hash_bind_group_data(bind_group_data),
+    bind_group_data.hash64(),
     "MaterialKey",
   ),
 ) -> MaterialPipelineKey[M] {
@@ -434,7 +485,7 @@ pub fn[M] MaterialPipelineKey::mesh_key(
 ///|
 pub fn[M] MaterialPipelineKey::bind_group_data(
   self : MaterialPipelineKey[M],
-) -> String {
+) -> MaterialBindGroupKey {
   self.bind_group_data
 }
 
@@ -665,7 +716,7 @@ pub(open) trait Material {
   fn opaque_render_method(self : Self) -> @material.OpaqueRendererMethod
   fn depth_bias(self : Self) -> Float
   fn reads_view_transmission_texture(self : Self) -> Bool
-  fn standard_material_payload(self : Self) -> @material.StandardMaterial
+  fn draw_data(self : Self) -> MaterialDrawData3d
   fn material_extension_metadata(self : Self) -> @material.ExtendedMaterialMetadata3d?
   fn enable_prepass() -> Bool
   fn enable_shadows() -> Bool
@@ -676,7 +727,7 @@ pub(open) trait Material {
     self : Self,
     context : MaterialBindGroupContext,
   ) -> @render_resource.BindGroupLayoutDescriptor
-  fn bind_group_data(self : Self) -> String
+  fn bind_group_data(self : Self) -> MaterialBindGroupKey
   fn renderer_extra_bind_group_data(
     self : Self,
     context : MaterialBindGroupContext,
@@ -720,8 +771,8 @@ pub fn material_default_reads_view_transmission_texture() -> Bool {
 }
 
 ///|
-pub fn material_default_standard_material_payload() -> @material.StandardMaterial {
-  @material.StandardMaterial::StandardMaterial()
+pub fn material_default_draw_data() -> MaterialDrawData3d {
+  MaterialDrawData3d::Custom
 }
 
 ///|
@@ -767,7 +818,9 @@ pub fn[M : Material] material_default_bind_group_layout_descriptor(
 }
 
 ///|
-pub fn[M : Material] material_default_bind_group_data(material : M) -> String {
+pub fn[M : Material] material_default_bind_group_data(
+  material : M,
+) -> MaterialBindGroupKey {
   material
   .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
   .bind_group_data()
@@ -786,7 +839,7 @@ pub fn[M : Material] material_default_material_key(
   material : M,
 ) -> @material.ErasedMaterialKey {
   @material.ErasedMaterialKey::new(
-    material_hash_bind_group_data(material.bind_group_data()),
+    material.bind_group_data().hash64(),
     "MaterialKey<\{M::material_debug_name()}>",
   )
 }
@@ -869,9 +922,35 @@ fn material_properties_add_shader(
 }
 
 ///|
+pub(all) enum MaterialDrawData3d {
+  Standard(StandardMaterial)
+  Custom
+}
+
+///|
+pub fn MaterialDrawData3d::standard_material(
+  self : MaterialDrawData3d,
+) -> StandardMaterial? {
+  match self {
+    Standard(material) => Some(material)
+    Custom => None
+  }
+}
+
+///|
+fn MaterialDrawData3d::standard_material_for_legacy_host_draw(
+  self : MaterialDrawData3d,
+) -> StandardMaterial {
+  match self {
+    Standard(material) => material
+    Custom => StandardMaterial::StandardMaterial()
+  }
+}
+
+///|
 pub struct PreparedMaterial[M] {
   source : @asset.Handle[M]
-  material_payload : StandardMaterial
+  material_draw_data : MaterialDrawData3d
   material_extension : @material.ExtendedMaterialMetadata3d?
   bind_group : MaterialBindGroup
   bind_group_data : @render_resource.MaterialBindGroupResolvedData
@@ -882,7 +961,7 @@ pub struct PreparedMaterial[M] {
 
 ///|
 pub struct Render3dResolvedMaterial {
-  material : StandardMaterial
+  material_draw_data : MaterialDrawData3d
   material_extension : @material.ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
@@ -891,14 +970,14 @@ pub struct Render3dResolvedMaterial {
 
 ///|
 pub fn Render3dResolvedMaterial::new(
-  material : StandardMaterial,
+  material_draw_data : MaterialDrawData3d,
   material_properties : @material.MaterialProperties,
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
   material_type_tag : String,
   material_extension? : @material.ExtendedMaterialMetadata3d? = None,
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::{
-    material,
+    material_draw_data,
     material_extension,
     material_properties,
     material_bind_group_data,
@@ -914,10 +993,10 @@ pub fn Render3dResolvedMaterial::material_extension(
 }
 
 ///|
-pub fn Render3dResolvedMaterial::material(
+pub fn Render3dResolvedMaterial::material_draw_data(
   self : Render3dResolvedMaterial,
-) -> StandardMaterial {
-  self.material
+) -> MaterialDrawData3d {
+  self.material_draw_data
 }
 
 ///|
@@ -1050,7 +1129,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   )
   PreparedMaterial::{
     source,
-    material_payload: material.standard_material_payload(),
+    material_draw_data: material.draw_data(),
     material_extension: material.material_extension_metadata(),
     bind_group,
     bind_group_data: bind_group.resolved_data(),
@@ -1084,11 +1163,18 @@ pub fn[M] PreparedMaterial::properties(
 }
 
 ///|
+pub fn[M] PreparedMaterial::material_draw_data(
+  self : PreparedMaterial[M],
+) -> MaterialDrawData3d {
+  self.material_draw_data
+}
+
+///|
 pub fn[M : Material] PreparedMaterial::resolved_material(
   self : PreparedMaterial[M],
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::new(
-    self.material_payload,
+    self.material_draw_data,
     self.properties,
     self.renderer_extra_bind_group_data,
     M::material_debug_name(),
@@ -1097,14 +1183,6 @@ pub fn[M : Material] PreparedMaterial::resolved_material(
 }
 
 ///|
-fn material_hash_bind_group_data(data : String) -> UInt64 {
-  let mut hash = 1469598103934665603UL
-  for byte in @utf8.encode(data[:]) {
-    hash = hash ^ byte.to_uint().to_uint64()
-    hash = hash * 1099511628211UL
-  }
-  hash
-}
 
 ///|
 pub struct MaterialPlugin[M] {

@@ -156,7 +156,7 @@ priv struct Mesh3dExtractedPayload {
   visibility_range : @visibility.VisibilityRange?
   aabb : @camera_primitives.Aabb?
   aabb_center_world : @math.Vec3?
-  material : StandardMaterial
+  material_draw_data : MaterialDrawData3d
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData

@@ -563,8 +563,8 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
 pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
   StandardMaterial,
   E,
-] with fn standard_material_payload(self) {
-  self.base
+] with fn draw_data(self) {
+  MaterialDrawData3d::Standard(self.base)
 }
 
 ///|
@@ -663,7 +663,7 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   E,
 ] with fn material_key(self) {
   @material.ErasedMaterialKey::new(
-    material_hash_bind_group_data(self.bind_group_data()),
+    self.bind_group_data().hash64(),
     "MaterialExtensionBindGroupData<\{E::extended_material_asset_debug_name()}>",
   )
 }

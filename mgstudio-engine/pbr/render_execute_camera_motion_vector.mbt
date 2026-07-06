@@ -138,9 +138,10 @@ fn render3d_execute_camera_prepass_draw_phase(
     } else {
       non_indexed_indirect_parameter_indices[draw_item_index]
     }
+    let draw_material = mesh.material_draw_data.standard_material_for_legacy_host_draw()
     guard render3d_mesh_draw_alpha(
-        mesh.material.alpha_mode,
-        mesh.material.base_color.a,
+        draw_material.alpha_mode,
+        draw_material.base_color.a,
       )
       is Some(draw_alpha) else {
       continue
@@ -164,7 +165,7 @@ fn render3d_execute_camera_prepass_draw_phase(
           MESH3D_DRAW_INDIRECT_KIND_NONE
         },
         motion_vector_indirect_parameters_index,
-        mesh.material,
+        draw_material,
         mesh.transform,
         mesh.previous_transform,
         material_fields.base_color_r,

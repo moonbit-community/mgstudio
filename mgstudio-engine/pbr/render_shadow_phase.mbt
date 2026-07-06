@@ -561,6 +561,7 @@ fn render3d_execute_shadow_phase_view(
     let material_bind_group_data = render3d_shadow_material_bind_group_data(
       phase_item, shadow_mesh,
     )
+    let shadow_material = shadow_mesh.material_draw_data.standard_material_for_legacy_host_draw()
     let draw_storage_index = draw_storage_base + draw_storage_offset
     let batch_payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
       shadow_mesh.mesh_id,
@@ -569,7 +570,7 @@ fn render3d_execute_shadow_phase_view(
       draw_storage_index,
       MESH3D_DRAW_INDIRECT_KIND_NONE,
       -1,
-      shadow_mesh.material,
+      shadow_material,
       shadow_mesh.transform,
       shadow_mesh.transform,
       1.0F,

@@ -417,7 +417,9 @@ fn render3d_test_extracted_mesh_for_flags(
       visibility_range: None,
       aabb: None,
       aabb_center_world: None,
-      material: @material.StandardMaterial::StandardMaterial(),
+      material_draw_data: MaterialDrawData3d::Standard(
+        @material.StandardMaterial::StandardMaterial(),
+      ),
       material_extension: None,
       material_properties: @material.MaterialProperties::MaterialProperties(),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
@@ -474,7 +476,7 @@ fn render3d_test_transparent_mesh_for_queue(
       visibility_range: None,
       aabb: None,
       aabb_center_world: None,
-      material,
+      material_draw_data: MaterialDrawData3d::Standard(material),
       material_extension: None,
       material_properties: render3d_material_properties_for_standard_material(
         material,
@@ -629,7 +631,7 @@ test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
     ..base,
     payload: Mesh3dExtractedPayload::{
       ..base.payload,
-      material: cube_material,
+      material_draw_data: MaterialDrawData3d::Standard(cube_material),
       material_properties: properties,
     },
   }
@@ -792,7 +794,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       visibility_range: None,
       aabb: None,
       aabb_center_world: None,
-      material,
+      material_draw_data: MaterialDrawData3d::Standard(material),
       material_extension: None,
       material_properties: render3d_material_properties_for_standard_material(
         material,

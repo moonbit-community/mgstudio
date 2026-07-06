@@ -56,7 +56,7 @@ fn render3d_resolve_forward_decal_material(
 
 ///|
 priv struct Render3dResolvedMeshMaterial {
-  material : StandardMaterial
+  material_draw_data : MaterialDrawData3d
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
@@ -178,7 +178,7 @@ fn render3d_resolve_mesh_material(
     standard_material_texture_features~,
   )
   let resolved = Render3dResolvedMeshMaterial::{
-    material,
+    material_draw_data: MaterialDrawData3d::Standard(material),
     material_extension,
     material_properties,
     material_bind_group_data: @pbr_render.render3d_resolve_material_extension_bind_group_data(
@@ -438,7 +438,7 @@ fn render3d_extract_mesh_for_entity(
         ) {
         Some(value) =>
           Render3dResolvedMeshMaterial::{
-            material: value.material(),
+            material_draw_data: value.material_draw_data(),
             material_extension: value.material_extension(),
             material_properties: value.material_properties(),
             material_bind_group_data: value.material_bind_group_data(),
@@ -455,7 +455,8 @@ fn render3d_extract_mesh_for_entity(
           }
       }
   }
-  let material = resolved_material.material
+  let material_draw_data = resolved_material.material_draw_data
+  let material = material_draw_data.standard_material_for_legacy_host_draw()
   let resolved_material_extension = resolved_material.material_extension
   let material_properties = resolved_material.material_properties
   let material_bind_group_data = resolved_material.material_bind_group_data
@@ -618,7 +619,7 @@ fn render3d_extract_mesh_for_entity(
         visibility_range,
         aabb,
         aabb_center_world,
-        material,
+        material_draw_data,
         material_extension: resolved_material_extension,
         material_properties,
         material_bind_group_data,

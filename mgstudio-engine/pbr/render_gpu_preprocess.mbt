@@ -110,7 +110,9 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
       visibility_range: None,
       aabb: None,
       aabb_center_world: None,
-      material: @material.StandardMaterial::StandardMaterial(),
+      material_draw_data: MaterialDrawData3d::Standard(
+        @material.StandardMaterial::StandardMaterial(),
+      ),
       material_extension: None,
       material_properties: @material.MaterialProperties::MaterialProperties(),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
@@ -225,7 +227,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
-    let alpha = payload.material.base_color.a
+    let alpha = payload.material_draw_data.standard_material_for_legacy_host_draw().base_color.a
     if render3d_mesh_phase_kind(payload.material_properties, alpha) is None {
       continue
     }
@@ -319,7 +321,7 @@ fn render3d_collect_meshes_for_gpu_building(
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
       continue
     }
-    let alpha = payload.material.base_color.a
+    let alpha = payload.material_draw_data.standard_material_for_legacy_host_draw().base_color.a
     guard render3d_mesh_phase_kind(payload.material_properties, alpha)
       is Some(phase) else {
       continue

@@ -544,7 +544,7 @@ pub fn material_default_alpha_mode() -> @material.AlphaMode3d
 
 pub fn material_default_bind_group() -> MaterialBindGroup
 
-pub fn[M : Material] material_default_bind_group_data(M) -> String
+pub fn[M : Material] material_default_bind_group_data(M) -> MaterialBindGroupKey
 
 pub fn[M : Material] material_default_bind_group_layout_descriptor(M, context? : MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
 
@@ -553,6 +553,8 @@ pub fn material_default_bindless_slot_count() -> Int?
 pub fn material_default_bindless_supported(@renderer.RenderDevice) -> Bool
 
 pub fn material_default_depth_bias() -> Float
+
+pub fn material_default_draw_data() -> MaterialDrawData3d
 
 pub fn material_default_enable_prepass() -> Bool
 
@@ -571,8 +573,6 @@ pub fn material_default_register_shader_sources() -> Bool
 pub fn[M : Material] material_default_renderer_extra_bind_group_data(M, MaterialBindGroupContext) -> @render_resource.MaterialBindGroupResolvedData
 
 pub fn[M] material_default_specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[M]) -> @render_resource.RenderPipelineDescriptor
-
-pub fn material_default_standard_material_payload() -> @material.StandardMaterial
 
 pub fn material_default_vertex_shader() -> String?
 
@@ -1702,7 +1702,7 @@ pub struct MaterialBindGroup {
   bindings : Array[MaterialBinding]
 }
 pub fn MaterialBindGroup::MaterialBindGroup() -> Self
-pub fn MaterialBindGroup::bind_group_data(Self) -> String
+pub fn MaterialBindGroup::bind_group_data(Self) -> MaterialBindGroupKey
 pub fn MaterialBindGroup::binding(Self, Int) -> MaterialBinding?
 pub fn MaterialBindGroup::layout_descriptor(Self, String) -> @render_resource.BindGroupLayoutDescriptor
 pub fn MaterialBindGroup::layout_key(Self) -> String
@@ -1781,6 +1781,15 @@ pub struct MaterialBindGroupIndex {
 pub fn MaterialBindGroupIndex::new(Int) -> Self
 pub fn MaterialBindGroupIndex::to_int(Self) -> Int
 
+pub struct MaterialBindGroupKey {
+  bytes : Bytes
+}
+pub fn MaterialBindGroupKey::bytes(Self) -> Bytes
+pub fn MaterialBindGroupKey::debug_string(Self) -> String
+pub fn MaterialBindGroupKey::from_bytes(Bytes) -> Self
+pub fn MaterialBindGroupKey::from_u64_bits(UInt64) -> Self
+pub fn MaterialBindGroupKey::hash64(Self) -> UInt64
+
 pub struct MaterialBindGroupNonBindlessAllocator {
   bind_groups : Array[MaterialNonBindlessAllocatedBindGroup?]
   free_indices : Array[Int]
@@ -1830,6 +1839,12 @@ pub(all) enum MaterialBindingValue {
   Texture(@asset.Handle[@image.Image]?, MaterialTextureSampleType, MaterialTextureViewDimension)
   Sampler(@asset.Handle[@image.Image]?)
 }
+
+pub(all) enum MaterialDrawData3d {
+  Standard(@material.StandardMaterial)
+  Custom
+}
+pub fn MaterialDrawData3d::standard_material(Self) -> @material.StandardMaterial?
 
 #alias(MaterialExtensionKey3d)
 pub struct MaterialExtensionKey[E] {
@@ -1882,14 +1897,14 @@ pub impl[M : Material] @app.Resource for MaterialPipeline[M]
 pub struct MaterialPipelineKey[_] {
   mesh_key : @material.ErasedMeshPipelineKey
   bind_group_layout_key : String
-  bind_group_data : String
+  bind_group_data : MaterialBindGroupKey
   material_key : @material.ErasedMaterialKey
 }
-pub fn[M] MaterialPipelineKey::bind_group_data(Self[M]) -> String
+pub fn[M] MaterialPipelineKey::bind_group_data(Self[M]) -> MaterialBindGroupKey
 pub fn[M] MaterialPipelineKey::bind_group_layout_key(Self[M]) -> String
 pub fn[M] MaterialPipelineKey::material_key(Self[M]) -> @material.ErasedMaterialKey
 pub fn[M] MaterialPipelineKey::mesh_key(Self[M]) -> @material.ErasedMeshPipelineKey
-pub fn[M] MaterialPipelineKey::new(@material.ErasedMeshPipelineKey, String, String, material_key? : @material.ErasedMaterialKey) -> Self[M]
+pub fn[M] MaterialPipelineKey::new(@material.ErasedMeshPipelineKey, String, MaterialBindGroupKey, material_key? : @material.ErasedMaterialKey) -> Self[M]
 
 pub struct MaterialPlugin[M] {
   debug_flags : @Milky2018/mgstudio/render.RenderDebugFlags
@@ -2188,7 +2203,7 @@ pub impl @app.Resource for PendingWireframeQueues
 
 pub struct PreparedMaterial[M] {
   source : @asset.Handle[M]
-  material_payload : @material.StandardMaterial
+  material_draw_data : MaterialDrawData3d
   material_extension : @material.ExtendedMaterialMetadata3d?
   bind_group : MaterialBindGroup
   bind_group_data : @render_resource.MaterialBindGroupResolvedData
@@ -2198,6 +2213,7 @@ pub struct PreparedMaterial[M] {
 }
 pub fn[M] PreparedMaterial::bind_group_data(Self[M]) -> @render_resource.MaterialBindGroupResolvedData
 pub fn[M : Material] PreparedMaterial::from_material(@asset.Handle[M], M, MaterialPipeline[M], @material.OpaqueRendererMethod, context? : MaterialBindGroupContext) -> Self[M]
+pub fn[M] PreparedMaterial::material_draw_data(Self[M]) -> MaterialDrawData3d
 pub fn[M] PreparedMaterial::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
 pub fn[M] PreparedMaterial::properties(Self[M]) -> @material.MaterialProperties
 pub fn[M : Material] PreparedMaterial::resolved_material(Self[M]) -> Render3dResolvedMaterial
@@ -2262,18 +2278,18 @@ pub fn Render3dQueuedShadowPhaseView::retained_view_entity(Self) -> @view.Retain
 pub fn Render3dQueuedShadowPhaseView::view_render_layers(Self) -> @render_layers.RenderLayers?
 
 pub struct Render3dResolvedMaterial {
-  material : @material.StandardMaterial
+  material_draw_data : MaterialDrawData3d
   material_extension : @material.ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties
   material_bind_group_data : @render_resource.MaterialBindGroupResolvedData
   material_type_tag : String
 }
-pub fn Render3dResolvedMaterial::material(Self) -> @material.StandardMaterial
 pub fn Render3dResolvedMaterial::material_bind_group_data(Self) -> @render_resource.MaterialBindGroupResolvedData
+pub fn Render3dResolvedMaterial::material_draw_data(Self) -> MaterialDrawData3d
 pub fn Render3dResolvedMaterial::material_extension(Self) -> @material.ExtendedMaterialMetadata3d?
 pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.MaterialProperties
 pub fn Render3dResolvedMaterial::material_type_tag(Self) -> String
-pub fn Render3dResolvedMaterial::new(@material.StandardMaterial, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String, material_extension? : @material.ExtendedMaterialMetadata3d?) -> Self
+pub fn Render3dResolvedMaterial::new(MaterialDrawData3d, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String, material_extension? : @material.ExtendedMaterialMetadata3d?) -> Self
 
 pub struct Render3dShadowBatchRange {
   start : Int
@@ -3772,7 +3788,7 @@ pub(open) trait Material {
   fn opaque_render_method(Self) -> @material.OpaqueRendererMethod
   fn depth_bias(Self) -> Float
   fn reads_view_transmission_texture(Self) -> Bool
-  fn standard_material_payload(Self) -> @material.StandardMaterial
+  fn draw_data(Self) -> MaterialDrawData3d
   fn material_extension_metadata(Self) -> @material.ExtendedMaterialMetadata3d?
   fn enable_prepass() -> Bool
   fn enable_shadows() -> Bool
@@ -3780,7 +3796,7 @@ pub(open) trait Material {
   fn bindless_slot_count() -> Int?
   fn bind_group(Self, MaterialBindGroupContext) -> MaterialBindGroup
   fn bind_group_layout_descriptor(Self, MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
-  fn bind_group_data(Self) -> String
+  fn bind_group_data(Self) -> MaterialBindGroupKey
   fn renderer_extra_bind_group_data(Self, MaterialBindGroupContext) -> @render_resource.MaterialBindGroupResolvedData
   fn material_key(Self) -> @material.ErasedMaterialKey
   fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError

@@ -284,7 +284,7 @@ fn render3d_prepare_extracted_mesh_material_bind_group(
   mesh : ExtractedMesh3d,
   prepared_material_bind_groups : Map[String, Bool],
 ) -> Unit {
-  let draw_material = mesh.payload.material
+  let draw_material = mesh.payload.material_draw_data.standard_material_for_legacy_host_draw()
   let mut texture_id = match draw_material.base_color_texture {
     Some(texture) => texture.id()
     None => -1
@@ -732,7 +732,7 @@ fn render3d_resolved_material_from_extracted_payload(
   mesh : Mesh3dExtractedPayload,
 ) -> Render3dResolvedMaterial {
   Render3dResolvedMaterial::new(
-    mesh.material,
+    mesh.material_draw_data,
     mesh.material_properties,
     mesh.material_bind_group_data,
     mesh.material_type_tag,
@@ -3870,7 +3870,7 @@ fn render3d_shadow_resolve_material(
   )
   Some(
     Render3dResolvedMaterial::new(
-      material,
+      MaterialDrawData3d::Standard(material),
       properties,
       @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
       "StandardMaterial",

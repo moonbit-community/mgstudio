@@ -157,9 +157,9 @@ impl @pbr.Material for LineMaterial with fn reads_view_transmission_texture(
 }
 
 ///|
-impl @pbr.Material for LineMaterial with fn standard_material_payload(self) {
+impl @pbr.Material for LineMaterial with fn draw_data(self) {
   self |> ignore
-  @pbr.material_default_standard_material_payload()
+  @pbr.material_default_draw_data()
 }
 
 ///|
