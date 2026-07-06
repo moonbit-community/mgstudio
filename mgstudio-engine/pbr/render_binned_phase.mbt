@@ -27,6 +27,7 @@ priv struct MeshGpuBatchSetKey3d {
   specular_texture_id : Int
   specular_tint_texture_id : Int
   material_flags : UInt
+  material_bind_group_index : Int
   cull_mode : Int
   vertex_shader_path : String?
   fragment_shader_path : String?
@@ -116,6 +117,7 @@ fn render3d_mesh_gpu_batch_set_key(
     specular_texture_id: payload.specular_texture_id,
     specular_tint_texture_id: payload.specular_tint_texture_id,
     material_flags: payload.material_flags,
+    material_bind_group_index: payload.material_bind_group_index,
     cull_mode: payload.cull_mode,
     vertex_shader_path: payload.vertex_shader_path,
     fragment_shader_path: payload.fragment_shader_path,
@@ -188,6 +190,7 @@ fn render3d_mesh_gpu_batch_set_key_eq(
   lhs.specular_texture_id == rhs.specular_texture_id &&
   lhs.specular_tint_texture_id == rhs.specular_tint_texture_id &&
   lhs.material_flags == rhs.material_flags &&
+  lhs.material_bind_group_index == rhs.material_bind_group_index &&
   lhs.cull_mode == rhs.cull_mode &&
   lhs.vertex_shader_path == rhs.vertex_shader_path &&
   lhs.fragment_shader_path == rhs.fragment_shader_path &&

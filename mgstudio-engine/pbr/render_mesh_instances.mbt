@@ -117,6 +117,7 @@ pub fn RenderMeshInstanceFlags::from_extraction_components(
 ///|
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
+  material_bindings_index : MaterialBindingId
   current_uniform_index : UInt
   should_batch : Bool
   flags : RenderMeshInstanceFlags
@@ -128,6 +129,7 @@ pub fn RenderMeshQueueData::new(
   mesh_asset_id : Int,
   current_uniform_index : UInt,
   should_batch : Bool,
+  material_bindings_index? : MaterialBindingId = MaterialBindingId::MaterialBindingId(),
   flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
   render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> RenderMeshQueueData {
@@ -138,6 +140,7 @@ pub fn RenderMeshQueueData::new(
   }
   RenderMeshQueueData::{
     mesh_asset_id,
+    material_bindings_index,
     current_uniform_index,
     should_batch,
     flags,
@@ -148,6 +151,13 @@ pub fn RenderMeshQueueData::new(
 ///|
 pub fn RenderMeshQueueData::mesh_asset_id(self : RenderMeshQueueData) -> Int {
   self.mesh_asset_id
+}
+
+///|
+pub fn RenderMeshQueueData::material_bindings_index(
+  self : RenderMeshQueueData,
+) -> MaterialBindingId {
+  self.material_bindings_index
 }
 
 ///|
@@ -244,6 +254,7 @@ pub fn RenderMeshInstanceSharedFlat::from_queue_data(
 ) -> RenderMeshInstanceSharedFlat {
   RenderMeshInstanceSharedFlat::new(
     data.mesh_asset_id(),
+    material_bindings_index=data.material_bindings_index(),
     current_uniform_index=data.current_uniform_index(),
     flags=data.flags(),
   )
@@ -308,6 +319,7 @@ pub fn RenderMeshInstanceSharedFlat::to_queue_data(
     self.mesh_asset_id,
     current_uniform_index,
     self.should_batch(),
+    material_bindings_index=self.material_bindings_index,
     flags=self.flags,
     render_layers~,
   )

@@ -248,6 +248,7 @@ pub struct HostMesh3dMainPassDrawEntry {
   clearcoat_perceptual_roughness : Float
   alpha_cutoff : Float
   material_flags : UInt
+  material_bind_group_slot : Int
   lightmap_exposure : Float
   lightmap_texture_id : Int
   lightmap_slab_index : Int
@@ -333,6 +334,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
   clearcoat_perceptual_roughness? : Float = 0.5F,
   alpha_cutoff~ : Float,
   material_flags~ : UInt,
+  material_bind_group_slot? : Int = 0,
   lightmap_exposure? : Float = 1.0F,
   lightmap_texture_id? : Int = -1,
   lightmap_slab_index? : Int = -1,
@@ -416,6 +418,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
     clearcoat_perceptual_roughness,
     alpha_cutoff,
     material_flags,
+    material_bind_group_slot,
     lightmap_exposure,
     lightmap_texture_id,
     lightmap_slab_index,
@@ -544,6 +547,7 @@ fn GpuBackend::write_mesh3d_main_pass_draw_entry(
     },
     entry.mesh_flags,
     draw_point_shadow_depth_bias,
+    entry.material_bind_group_slot,
     entry.lightmap_texture_id,
     entry.lightmap_slot_index,
     entry.lightmap_uv_min_x,
@@ -1346,6 +1350,7 @@ pub fn draw_mesh3d(
   material_flags~ : UInt,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   material_pipeline_id? : UInt64 = MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
+  material_bind_group_slot? : Int = 0,
   lightmap_exposure? : Float = 1.0F,
   lightmap_texture_id? : Int = -1,
   lightmap_slab_index? : Int = -1,
@@ -1466,6 +1471,7 @@ pub fn draw_mesh3d(
       material_flags,
       forward_decal_inv_depth_fade_factor,
       material_pipeline_id,
+      material_bind_group_slot,
       lightmap_exposure,
       lightmap_texture_id,
       lightmap_slab_index,

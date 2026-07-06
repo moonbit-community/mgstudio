@@ -2777,6 +2777,7 @@ pub fn RenderMeshInstancesGpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/
 
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
+  material_bindings_index : MaterialBindingId
   current_uniform_index : UInt
   should_batch : Bool
   flags : RenderMeshInstanceFlags
@@ -2784,8 +2785,9 @@ pub struct RenderMeshQueueData {
 }
 pub fn RenderMeshQueueData::current_uniform_index(Self) -> UInt
 pub fn RenderMeshQueueData::flags(Self) -> RenderMeshInstanceFlags
+pub fn RenderMeshQueueData::material_bindings_index(Self) -> MaterialBindingId
 pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
-pub fn RenderMeshQueueData::new(Int, UInt, Bool, flags? : RenderMeshInstanceFlags, render_layers? : @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshQueueData::new(Int, UInt, Bool, material_bindings_index? : MaterialBindingId, flags? : RenderMeshInstanceFlags, render_layers? : @render_layers.RenderLayers?) -> Self
 pub fn RenderMeshQueueData::render_layers(Self) -> @render_layers.RenderLayers?
 pub fn RenderMeshQueueData::should_batch(Self) -> Bool
 

@@ -293,6 +293,7 @@ pub fn GpuBackend::draw_mesh3d_shadow_depth_pass(
       },
       mesh_flags,
       0.0F,
+      0,
       -1,
       0,
       0.0F,

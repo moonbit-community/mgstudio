@@ -1130,6 +1130,14 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     true,
     material_handle.id(),
   )
+  let render_material_bindings = RenderMaterialBindings::RenderMaterialBindings()
+  render_material_bindings.set(
+    material_handle.id(),
+    MaterialBindingId::new(
+      MaterialBindGroupIndex::new(3),
+      MaterialBindGroupSlot::new(11),
+    ),
+  )
   world.insert_resource(
     ecs_key_render_material_instances, render_material_instances,
   )
@@ -1182,6 +1190,8 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     [extracted_mesh],
     mesh_instances,
     mesh_allocator,
+    render_material_instances,
+    render_material_bindings,
     material_slots,
     PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
     @camera_render_layers.RenderLayers::RenderLayers(),

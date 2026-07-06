@@ -226,6 +226,8 @@ priv struct MeshPhaseItem3d {
   distance : Float
   mesh_asset_id : Int
   slabs : @render_mesh.MeshSlabs
+  material_bind_group_index : Int
+  material_bind_group_slot : Int
 }
 
 ///|
@@ -340,6 +342,43 @@ fn render3d_queue_resolved_material_for_mesh(
         retained_view_entity,
         mesh.entity.render_entity,
         @render.MainEntity::new(mesh.entity.main_entity),
+      )
+      None
+    }
+  }
+}
+
+///|
+fn render3d_queue_material_binding_for_mesh(
+  render_material_instances : RenderMaterialInstances,
+  render_material_bindings : RenderMaterialBindings,
+  pending_mesh_material_queues : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  mesh : ExtractedMesh3d,
+) -> MaterialBindingId? {
+  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
+  guard render_material_instances.get(visible_entity.id()) is Some(instance) else {
+    pending_mesh_material_queues
+    .queues()
+    .push_current(
+      retained_view_entity,
+      mesh.entity.render_entity,
+      visible_entity,
+    )
+    return None
+  }
+  if instance.asset_id() == DUMMY_MESH_MATERIAL_ID {
+    return Some(MaterialBindingId::MaterialBindingId())
+  }
+  match render_material_bindings.get(instance.asset_id()) {
+    Some(binding) => Some(binding)
+    None => {
+      pending_mesh_material_queues
+      .queues()
+      .push_current(
+        retained_view_entity,
+        mesh.entity.render_entity,
+        visible_entity,
       )
       None
     }

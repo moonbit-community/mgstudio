@@ -746,6 +746,8 @@ fn render3d_execute_camera_main_pass(
       mesh_flags,
       draw_flags,
       specular_texture_id=material_fields.specular_texture_id,
+      material_bind_group_index=draw_item.material_bind_group_index,
+      material_bind_group_slot=draw_item.material_bind_group_slot,
       forward_decal_inv_depth_fade_factor=material_fields.forward_decal_inv_depth_fade_factor,
       vertex_shader_path=draw_vertex_shader_path,
       fragment_shader_path=draw_fragment_shader_path,

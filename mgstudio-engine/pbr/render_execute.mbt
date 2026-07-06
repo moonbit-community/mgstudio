@@ -4802,6 +4802,22 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         Some(value) => value
         None => abort("missing MeshAllocator resource during pbr queue_meshes")
       }
+      let render_material_instances = match
+        world.get_resource(ecs_key_render_material_instances) {
+        Some(value) => value
+        None =>
+          abort(
+            "missing RenderMaterialInstances resource during pbr queue_meshes",
+          )
+      }
+      let render_material_bindings = match
+        world.get_resource(RenderMaterialBindings::resource()) {
+        Some(value) => value
+        None =>
+          abort(
+            "missing RenderMaterialBindings resource during pbr queue_meshes",
+          )
+      }
       let prepared_camera_queues = mesh_runtime_state.modify(fn(
         mesh_runtime_state_value,
       ) {
@@ -4811,6 +4827,8 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.meshes,
           render_mesh_instances,
           mesh_allocator,
+          render_material_instances,
+          render_material_bindings,
           material_slots,
           pending_mesh_material_queues,
           frame.frame_config.gpu_instance_buffer_builder_enabled,

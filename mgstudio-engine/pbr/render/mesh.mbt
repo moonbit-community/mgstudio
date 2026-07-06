@@ -262,6 +262,8 @@ pub(all) struct MeshGpuDrawPayload3d {
   clearcoat_texture_id : Int
   clearcoat_roughness_texture_id : Int
   clearcoat_normal_texture_id : Int
+  material_bind_group_index : Int
+  material_bind_group_slot : Int
   parallax_depth_scale : Float
   max_parallax_layer_count : Float
   surface_roughness : Float
@@ -521,6 +523,8 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   mesh_flags : UInt,
   draw_flags : Int,
   specular_texture_id? : Int = -1,
+  material_bind_group_index? : Int = 0,
+  material_bind_group_slot? : Int = 0,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
@@ -585,6 +589,8 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     clearcoat_texture_id,
     clearcoat_roughness_texture_id,
     clearcoat_normal_texture_id,
+    material_bind_group_index,
+    material_bind_group_slot,
     parallax_depth_scale: draw_material_input.parallax_depth_scale,
     max_parallax_layer_count: draw_material_input.max_parallax_layer_count,
     surface_roughness: draw_surface_roughness,
@@ -711,6 +717,7 @@ pub fn render3d_host_main_pass_draw_entry(
     clearcoat_perceptual_roughness=payload.clearcoat_perceptual_roughness,
     alpha_cutoff=payload.alpha_cutoff,
     material_flags=payload.material_flags,
+    material_bind_group_slot=payload.material_bind_group_slot,
     lightmap_exposure=payload.lightmap_exposure,
     lightmap_texture_id=payload.lightmap_texture_id,
     lightmap_slab_index=payload.lightmap_slab_index,
@@ -819,6 +826,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     material_flags=payload.material_flags,
     forward_decal_inv_depth_fade_factor=payload.forward_decal_inv_depth_fade_factor,
     material_pipeline_id=payload.material_pipeline_id.id(),
+    material_bind_group_slot=payload.material_bind_group_slot,
     lightmap_exposure=payload.lightmap_exposure,
     lightmap_texture_id=payload.lightmap_texture_id,
     lightmap_slab_index=payload.lightmap_slab_index,
