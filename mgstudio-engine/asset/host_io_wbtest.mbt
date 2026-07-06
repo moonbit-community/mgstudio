@@ -813,3 +813,32 @@ test "asset host io: bevy scrolling fog ktx2 density texture decodes as 3d r32f"
   )
   debug_inspect(payload.pixels.length(), content="1048576")
 }
+
+///|
+test "asset host io: bevy fog volumes bunny ktx2 density texture decodes as 3d r32f" {
+  let path = asset_with_world(@ecs.World::new(), fn() {
+    resolve_asset_path("volumes/bunny.ktx2")
+  })
+  let bytes = @fs.read_file_to_bytes(path)
+  debug_inspect(ktx2_has_identifier(bytes), content="true")
+  debug_inspect(ktx2_is_3d_texture(bytes), content="true")
+  debug_inspect(blob_u32_at(bytes, 20), content="64")
+  debug_inspect(blob_u32_at(bytes, 24), content="64")
+  debug_inspect(blob_u32_at(bytes, 28), content="64")
+  debug_inspect(blob_u32_at(bytes, 32), content="0")
+  debug_inspect(blob_u32_at(bytes, 36), content="1")
+  debug_inspect(blob_u32_at(bytes, 40), content="1")
+  debug_inspect(
+    blob_u32_at(bytes, 44) == KTX2_SUPERCOMPRESSION_NONE,
+    content="true",
+  )
+  let payload = ktx2_decode_3d_payload(bytes).unwrap()
+  debug_inspect(payload.width, content="64")
+  debug_inspect(payload.height, content="64")
+  debug_inspect(payload.depth, content="64")
+  debug_inspect(
+    payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_R32_FLOAT,
+    content="true",
+  )
+  debug_inspect(payload.pixels.length(), content="1048576")
+}
