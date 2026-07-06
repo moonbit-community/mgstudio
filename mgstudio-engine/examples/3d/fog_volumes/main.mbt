@@ -181,10 +181,12 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   let fog_volume_density_factor = Ref(0.0F)
   let fog_volume_scattering = Ref(0.0F)
   let fog_volume_translation = Ref(@math.Vec3::zero())
+  let fog_volume_density_texture : Ref[@asset.Handle[@asset.Image]?] = Ref(None)
   try! fog_volume_query.view(fn(_entity, data) {
     let (fog_volume, transform) = data
     fog_volume_has_density_texture.val = fog_volume.value().density_texture
       is Some(_)
+    fog_volume_density_texture.val = fog_volume.value().density_texture
     fog_volume_density_factor.val = fog_volume.value().density_factor
     fog_volume_scattering.val = fog_volume.value().scattering
     fog_volume_translation.val = transform.value().translation
@@ -195,6 +197,15 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   debug_inspect(fog_volume_translation.val.x, content="0")
   debug_inspect(fog_volume_translation.val.y, content="0.5")
   debug_inspect(fog_volume_translation.val.z, content="0")
+  let fog_volume_density_texture_resolves = match
+    fog_volume_density_texture.val {
+    Some(texture) =>
+      @asset.asset_is_texture_loaded(texture) &&
+      @asset.asset_texture_width(texture) == 64 &&
+      @asset.asset_texture_height(texture) == 64
+    None => false
+  }
+  debug_inspect(fog_volume_density_texture_resolves, content="true")
 
   let directional_light_query : @ecs.Query[
     (@ecs.Read[@pbr.DirectionalLight], @ecs.Read[@transform.Transform]),
