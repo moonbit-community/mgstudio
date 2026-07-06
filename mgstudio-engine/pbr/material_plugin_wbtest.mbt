@@ -1142,6 +1142,14 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     @render_mesh.RenderMeshAssets::resource(),
     render_mesh_assets,
   )
+  let mesh_allocator = @render_mesh.MeshAllocator::MeshAllocator()
+  ignore(
+    mesh_allocator.allocate_render_mesh(
+      777,
+      @render_mesh.RenderMesh::new(vertex_count=3),
+      80,
+    ),
+  )
   let material_slots = RenderMaterial3dResolvedSlots::new()
   material_slots.set_resolved(main_mesh, resolved)
   world.insert_resource(
@@ -1173,6 +1181,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
   let items = render3d_queue_mesh_phase_items(
     [extracted_mesh],
     mesh_instances,
+    mesh_allocator,
     material_slots,
     PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
     @camera_render_layers.RenderLayers::RenderLayers(),

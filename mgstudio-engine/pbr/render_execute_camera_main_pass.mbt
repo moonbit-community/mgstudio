@@ -673,7 +673,7 @@ fn render3d_execute_camera_main_pass(
     }
     let mesh_flags = render3d_mesh_flags(extracted_mesh)
     let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
-    let draw_indexed = mesh.mesh_is_indexed
+    let draw_indexed = draw_item.slabs.index_slab_id() is Some(_)
     let draw_indirect_parameters_index = if draw_indexed {
       indexed_indirect_parameter_indices[draw_item_index]
     } else {

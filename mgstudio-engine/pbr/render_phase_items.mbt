@@ -224,6 +224,8 @@ priv struct MeshPhaseItem3d {
   phase : Int
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
+  mesh_asset_id : Int
+  slabs : @render_mesh.MeshSlabs
 }
 
 ///|

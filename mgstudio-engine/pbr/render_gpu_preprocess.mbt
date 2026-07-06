@@ -184,6 +184,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  mesh_allocator : @render_mesh.MeshAllocator,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -213,6 +214,10 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       continue
     }
     if mesh_instance.mesh_asset_id() <= 0 {
+      continue
+    }
+    guard mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
+      is Some(mesh_slabs) else {
       continue
     }
     let mesh_layers = mesh_instance
@@ -262,6 +267,8 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       distance: render3d_material_phase_distance(
         payload, material_properties, camera_transform,
       ),
+      mesh_asset_id: mesh_instance.mesh_asset_id(),
+      slabs: mesh_slabs,
     })
   }
   items.sort_by(fn(a, b) {
@@ -293,12 +300,15 @@ priv struct GpuPreprocessWorkItem3d {
   phase : Int
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
+  mesh_asset_id : Int
+  slabs : @render_mesh.MeshSlabs
 }
 
 ///|
 fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  mesh_allocator : @render_mesh.MeshAllocator,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -328,6 +338,10 @@ fn render3d_collect_meshes_for_gpu_building(
       continue
     }
     if mesh_instance.mesh_asset_id() <= 0 {
+      continue
+    }
+    guard mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
+      is Some(mesh_slabs) else {
       continue
     }
     let mesh_layers = mesh_instance
@@ -377,6 +391,8 @@ fn render3d_collect_meshes_for_gpu_building(
       distance: render3d_material_phase_distance(
         payload, material_properties, camera_transform,
       ),
+      mesh_asset_id: mesh_instance.mesh_asset_id(),
+      slabs: mesh_slabs,
     })
   }
   work_items
@@ -441,6 +457,8 @@ fn render3d_write_batched_instance_buffers(
       phase: work_item.phase,
       pipeline_id: work_item.pipeline_id,
       distance: work_item.distance,
+      mesh_asset_id: work_item.mesh_asset_id,
+      slabs: work_item.slabs,
     })
   }
   phase_items
@@ -709,7 +727,7 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
     if !render3d_mesh_preprocess_indirect_eligible(extracted_mesh) {
       continue
     }
-    let indexed = extracted_mesh.payload.mesh_is_indexed
+    let indexed = draw_item.slabs.index_slab_id() is Some(_)
     let indirect_parameters_index = indirect_parameters_buffers.allocate(
       indexed, 1,
     )
@@ -1251,10 +1269,7 @@ fn render3d_mesh_preprocess_static_for_draw_item(
     Some(metadata) => Some(metadata)
     None =>
       Some(
-        render3d_mesh_preprocess_static(
-          mesh_handle,
-          meshes[draw_item.extracted_index].payload.mesh_id,
-        ),
+        render3d_mesh_preprocess_static(mesh_handle, draw_item.mesh_asset_id),
       )
   }
 }
@@ -1695,6 +1710,7 @@ fn render3d_gpu_preprocess_indirect_parameter_index_maps(
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  mesh_allocator : @render_mesh.MeshAllocator,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -1710,6 +1726,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   let work_items = render3d_collect_meshes_for_gpu_building(
     meshes,
     render_mesh_instances,
+    mesh_allocator,
     material_slots,
     pending_mesh_material_queues,
     layers,
@@ -1727,6 +1744,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
 fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  mesh_allocator : @render_mesh.MeshAllocator,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   layers : @camera_render_layers.RenderLayers,
@@ -1742,6 +1760,7 @@ fn render3d_queue_mesh_phase_items(
     return render3d_queue_mesh_phase_items_gpu_builder(
       meshes,
       render_mesh_instances,
+      mesh_allocator,
       material_slots,
       pending_mesh_material_queues,
       layers,
@@ -1756,6 +1775,7 @@ fn render3d_queue_mesh_phase_items(
   render3d_queue_mesh_phase_items_cpu_builder(
     meshes,
     render_mesh_instances,
+    mesh_allocator,
     material_slots,
     pending_mesh_material_queues,
     layers,
