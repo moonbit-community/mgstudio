@@ -13,22 +13,10 @@
 // limitations under the License.
 
 ///|
-/// Distance-fog volume visualization example.
-///
-/// Uses translucent proxy geometry and camera/light motion to demonstrate how
-/// local scene parameters can drive camera-attached `DistanceFog`.
+/// Demonstrates fog volumes with voxel density textures.
 
 ///|
-const PI : Float = 3.141592653589793F
-
-///|
-const CAMERA_RADIUS : Float = 2.2F
-
-///|
-const CAMERA_HEIGHT : Float = 1.0F
-
-///|
-const CAMERA_SPEED : Float = 0.75F
+const FOG_VOLUME_DENSITY_TEXTURE : String = "volumes/bunny.ktx2"
 
 ///|
 fn fog_center() -> @math.Vec3 {
@@ -36,306 +24,163 @@ fn fog_center() -> @math.Vec3 {
 }
 
 ///|
-priv struct FogVolumesState {
-  mut camera : @core.Entity?
-  mut light : @core.Entity?
-  mut density_factor : Float
-  mut ambient_intensity : Float
-  mut fog_color : @color.Color
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.title = "Mgstudio Fog Volumes Example"
+  window
 }
 
 ///|
-let fog_volumes_state : Ref[FogVolumesState] = Ref({
-  camera: None,
-  light: None,
-  density_factor: 1.0F,
-  ambient_intensity: 0.0F,
-  fog_color: @color.Color::new(0.45F, 0.5F, 0.56F, 1.0F),
-})
-
-///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
-  }
-}
-
-///|
-fn clamp01(value : Float) -> Float {
-  clampf(value, 0.0F, 1.0F)
-}
-
-///|
-fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
-}
-
-///|
-fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
-  quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
-}
-
-///|
-fn apply_distance_fog(world : @ecs.World, phase : Float) -> Unit {
-  let visibility = clampf(
-    12.0F / (1.0F + fog_volumes_state.val.density_factor * 2.5F),
-    2.5F,
-    20.0F,
-  )
-  let brightness = 0.55F + 0.45F * phase
-  let ambient_lift = clampf(
-    fog_volumes_state.val.ambient_intensity * 0.4F,
-    0.0F,
-    0.2F,
-  )
-  let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
-  let fog_color = fog_volumes_state.val.fog_color
-
-  let fog = @pbr.DistanceFog::DistanceFog()
-    .with_color(
-      @color.Color::new(
-        clamp01(fog_color.r * brightness + ambient_lift),
-        clamp01(fog_color.g * brightness + ambient_lift),
-        clamp01(fog_color.b * brightness + ambient_lift),
-        0.9F,
+fn spawn_fog_volume(
+  commands : @app.Commands,
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+        @pbr.FogVolume::FogVolume()
+        .with_density_texture(
+          Some(asset_server.load(FOG_VOLUME_DENSITY_TEXTURE)),
+        )
+        .with_density_factor(1.0F)
+        .with_scattering(1.0F),
       ),
-    )
-    .with_directional_light_color(
-      @color.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
-    )
-    .with_directional_light_exponent(24.0F)
-    .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
-  guard fog_volumes_state.val.camera is Some(camera) else { return }
-  try! (world.set_by_key(camera, @pbr.ecs_key_distance_fog, fog) |> ignore)
+    ),
+  )
 }
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
+fn spawn_directional_light(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @transform.Transform::from_xyz(1.0F, 1.0F, -0.3F).looking_at(
+          fog_center(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
-      )
-    }
-  }
+        @pbr.DirectionalLight::DirectionalLight()
+        .with_shadow_maps_enabled(true)
+        .with_illuminance(32_000.0F),
+        @pbr.VolumetricLight::VolumetricLight(),
+      ),
+    ),
+  )
+}
 
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(
-        @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+///|
+fn spawn_camera(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @transform.Transform::from_xyz(-0.75F, 1.0F, 2.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
-      )
-    }),
+        @pbr.Hdr::Hdr(),
+        @pbr.VolumetricFog::VolumetricFog()
+        .with_step_count(64)
+        .with_ambient_intensity(0.0F),
+      ),
+    ),
   )
 }
 
 ///|
-fn spawn_volume_proxy(world : @ecs.World) -> Unit {
-  let fog_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @color.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
-    )
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
-    .with_perceptual_roughness(1.0F)
-    .with_metallic(0.0F)
-    .with_emissive(@color.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
-  )
-
-  let head = @pbr.MeshMaterial3dBundle::new(
-    uv_sphere_mesh(0.45F, 18, 32),
-    @pbr.MeshMaterial3d::new(fog_material),
-    @transform.Transform::from_xyz(
-      fog_center().x,
-      fog_center().y,
-      fog_center().z,
-    ),
-  ).spawn(world)
-
-  // Two elongated cubes approximate bunny ears for a fog-volume silhouette.
-  let ear_left = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(0.16F, 0.8F, 0.16F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(fog_material),
-    @transform.Transform::from_xyz(
-      fog_center().x - 0.16F,
-      fog_center().y + 0.7F,
-      fog_center().z,
-    ),
-  ).spawn(world)
-  try! world.set_by_key(
-    ear_left,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(head),
-  )
-
-  let ear_right = @pbr.MeshMaterial3dBundle::new(
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets |> @pbr.add_mesh(@math.Cuboid::new(0.16F, 0.8F, 0.16F))
-      }),
-    ),
-    @pbr.MeshMaterial3d::new(fog_material),
-    @transform.Transform::from_xyz(
-      fog_center().x + 0.16F,
-      fog_center().y + 0.7F,
-      fog_center().z,
-    ),
-  ).spawn(world)
-  try! world.set_by_key(
-    ear_right,
-    @hierarchy.ecs_key_parent,
-    @hierarchy.Parent::new(head),
-  )
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  spawn_fog_volume(commands, asset_server.get())
+  spawn_directional_light(commands)
+  spawn_camera(commands)
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  fog_volumes_state.val.camera = None
-  fog_volumes_state.val.light = None
-  fog_volumes_state.val.density_factor = 1.0F
-  fog_volumes_state.val.ambient_intensity = 0.0F
-  fog_volumes_state.val.fog_color = @color.Color::new(0.45F, 0.5F, 0.56F, 1.0F)
-
+fn setup_global_ambient_light(world : @ecs.World) -> Unit {
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::none(),
   )
-
-  spawn_volume_proxy(world)
-
-  let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(1.0F, 1.0F, -0.3F).looking_at(
-      fog_center(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::new(@color.Color::white(), 32_000.0F, true),
-  )
-  fog_volumes_state.val.light = Some(light)
-
-  let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-0.75F, 1.0F, 2.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  fog_volumes_state.val.camera = Some(camera)
-  apply_distance_fog(world, 1.0F)
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in fog_volumes example")
-  }
+fn rotate_camera(
+  cameras : @ecs.Query[
+    @ecs.Write[@transform.Transform],
+    @ecs.With[@camera.Camera3d],
+  ],
+) -> Unit {
+  try! cameras.view(fn(_entity, camera_transform) {
+    let transform = camera_transform.value()
+    let translation = @math.Quat::from_rotation_y(0.01F).mul_vec3(
+      transform.translation,
+    )
+    camera_transform.set(
+      @transform.Transform::from_xyz(
+        translation.x,
+        translation.y,
+        translation.z,
+      ).looking_at(fog_center(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
+    )
+  })
 }
 
 ///|
-fn rotate_camera(world : @ecs.World) -> Unit {
-  guard fog_volumes_state.val.camera is Some(camera_entity) else { return }
-
-  let elapsed = world_time(world).elapsed_seconds()
-  let angle = elapsed * CAMERA_SPEED
-  let camera_pos = @math.Vec3::new(
-    @math.cos(angle) * CAMERA_RADIUS,
-    CAMERA_HEIGHT,
-    @math.sin(angle) * CAMERA_RADIUS,
+fn fog_volumes_app() -> @app.App[@ecs.World] {
+  @app.App::new(@ecs.World::new())
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
   )
-
-  try! (world.replace(
-    camera_entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
-      fog_center(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-  |> ignore)
-
-  let light_dir = if fog_volumes_state.val.light is Some(light_entity) {
-    if (try! world.get_by_key(light_entity, @transform.ecs_key_transform))
-      is Some(light_transform) {
-      transform_forward(light_transform)
-    } else {
-      @math.Vec3::new(0.0F, -1.0F, 0.0F)
-    }
-  } else {
-    @math.Vec3::new(0.0F, -1.0F, 0.0F)
-  }
-  let view_dir = fog_center().sub(camera_pos).normalize_or_zero()
-  let phase = clamp01(light_dir.neg().dot(view_dir) * 0.5F + 0.5F)
-
-  let density = 0.18F + 0.22F * (1.0F - phase)
-  fog_volumes_state.val.density_factor = density
-  apply_distance_fog(world, phase)
+  .add_systems_world(@app.Startup, setup_global_ambient_light)
+  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param(@app.Update, rotate_camera)
 }
 
 ///|
 fn main {
-  @app.App::new(@ecs.World::new())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, rotate_camera)
-  .run()
+  fog_volumes_app().run()
+}
+
+///|
+test "fog_volumes: scene matches upstream volumetric fog volume shape" {
+  let mut app = fog_volumes_app()
+  app = app.run_startup()
+  let world = app.world()
+  debug_inspect(world.component_count(@pbr.ecs_key_fog_volume), content="1")
+  debug_inspect(
+    world.component_count(@pbr.ecs_key_volumetric_light),
+    content="1",
+  )
+  debug_inspect(world.component_count(@pbr.ecs_key_volumetric_fog), content="1")
+  debug_inspect(world.component_count(@pbr.ecs_key_hdr), content="1")
+
+  let fog_volume_query : @ecs.Query[
+    (@ecs.Read[@pbr.FogVolume], @ecs.Read[@transform.Transform]),
+    @ecs.With[@pbr.FogVolume],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@pbr.ecs_key_fog_volume))
+  let fog_volume_has_density_texture = Ref(false)
+  let fog_volume_density_factor = Ref(0.0F)
+  let fog_volume_scattering = Ref(0.0F)
+  let fog_volume_translation = Ref(@math.Vec3::zero())
+  try! fog_volume_query.view(fn(_entity, data) {
+    let (fog_volume, transform) = data
+    fog_volume_has_density_texture.val = fog_volume.value().density_texture
+      is Some(_)
+    fog_volume_density_factor.val = fog_volume.value().density_factor
+    fog_volume_scattering.val = fog_volume.value().scattering
+    fog_volume_translation.val = transform.value().translation
+  })
+  debug_inspect(fog_volume_has_density_texture.val, content="true")
+  debug_inspect(fog_volume_density_factor.val, content="1")
+  debug_inspect(fog_volume_scattering.val, content="1")
+  debug_inspect(fog_volume_translation.val.x, content="0")
+  debug_inspect(fog_volume_translation.val.y, content="0.5")
+  debug_inspect(fog_volume_translation.val.z, content="0")
 }

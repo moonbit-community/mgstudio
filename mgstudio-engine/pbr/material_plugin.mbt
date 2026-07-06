@@ -657,6 +657,9 @@ pub fn[M] RenderMaterial3dInstances::clear(
 ///|
 pub struct MaterialKeys[M] {
   mesh_material_component : @ecs.ComponentKey[MeshMaterial3dTyped[M]]
+  entities_needing_specialization : @ecs.ResourceKey[
+    EntitiesNeedingSpecialization[M],
+  ]
   render_material_instances : @ecs.ResourceKey[RenderMaterial3dInstances[M]]
   material_pipeline : @ecs.ResourceKey[MaterialPipeline[M]]
   material_asset_event_cursor : @ecs.ResourceKey[MaterialAssetEventCursor[M]]
@@ -670,6 +673,9 @@ pub fn[M] register_material_keys(
   MaterialKeys::{
     mesh_material_component: @ecs.register_component(
       debug_name="mgstudio_pbr::MeshMaterial3d<\{material_debug_name}>",
+    ),
+    entities_needing_specialization: @ecs.register_resource(
+      debug_name="mgstudio_pbr::EntitiesNeedingSpecialization<\{material_debug_name}>",
     ),
     render_material_instances: @ecs.register_resource(
       debug_name="mgstudio_pbr::RenderMaterialInstances<\{material_debug_name}>",
@@ -869,6 +875,55 @@ pub impl[M : Material] @app.Resource for MaterialPipeline[M] with fn resource() 
 ///|
 pub impl[M : Material] @app.Resource for RenderMaterial3dInstances[M] with fn resource() {
   M::material_keys().render_material_instances
+}
+
+///|
+pub struct EntitiesNeedingSpecialization[M] {
+  changed : Array[@core.Entity]
+  removed : Array[@core.Entity]
+  marker : M?
+}
+
+///|
+pub fn[M] EntitiesNeedingSpecialization::EntitiesNeedingSpecialization() -> EntitiesNeedingSpecialization[
+  M,
+] {
+  EntitiesNeedingSpecialization::{ changed: [], removed: [], marker: None }
+}
+
+///|
+pub fn[M] EntitiesNeedingSpecialization::changed_len(
+  self : EntitiesNeedingSpecialization[M],
+) -> Int {
+  self.changed.length()
+}
+
+///|
+pub fn[M] EntitiesNeedingSpecialization::removed_len(
+  self : EntitiesNeedingSpecialization[M],
+) -> Int {
+  self.removed.length()
+}
+
+///|
+pub fn[M] EntitiesNeedingSpecialization::changed_contains(
+  self : EntitiesNeedingSpecialization[M],
+  entity : @core.Entity,
+) -> Bool {
+  self.changed.contains(entity)
+}
+
+///|
+pub fn[M] EntitiesNeedingSpecialization::removed_contains(
+  self : EntitiesNeedingSpecialization[M],
+  entity : @core.Entity,
+) -> Bool {
+  self.removed.contains(entity)
+}
+
+///|
+pub impl[M : Material] @app.Resource for EntitiesNeedingSpecialization[M] with fn resource() {
+  M::material_keys().entities_needing_specialization
 }
 
 ///|
@@ -1304,6 +1359,21 @@ fn[M : Material] ensure_material_asset_event_cursor_resource_in_world(
 }
 
 ///|
+fn[M : Material] ensure_entities_needing_specialization_resource_in_world(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  ignore(_probe)
+  let key : @ecs.ResourceKey[EntitiesNeedingSpecialization[M]] = EntitiesNeedingSpecialization::resource()
+  if world.get_resource(key) is None {
+    world.insert_resource(
+      key,
+      EntitiesNeedingSpecialization::EntitiesNeedingSpecialization(),
+    )
+  }
+}
+
+///|
 pub fn[M : Material] prepared_material_assets_or_empty(
   world : @ecs.World,
   _probe : @asset.Handle[M],
@@ -1360,6 +1430,91 @@ fn[M] collect_entities_needing_typed_material_specialization(
     }
   }
   entities
+}
+
+///|
+fn[M] collect_entities_needing_typed_material_specialization_removed(
+  source_world : @ecs.World,
+  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
+  system_ticks : @core.SystemTicks,
+) -> Array[@core.Entity] {
+  let entities : Array[@core.Entity] = []
+  let seen : Map[UInt64, Bool] = {}
+  for
+    entity in source_world
+    .removed_components(@mesh.ecs_key_mesh3d, system_ticks)
+    .read() {
+    collect_unique_material_specialization_entity(entities, seen, entity)
+  }
+  for
+    entity in source_world.removed_components(material_key, system_ticks).read() {
+    collect_unique_material_specialization_entity(entities, seen, entity)
+  }
+  entities
+}
+
+///|
+fn[M] mark_typed_material_meshes_as_changed_if_their_materials_changed(
+  world : @ecs.World,
+  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  let changed : Array[@core.Entity] = []
+  let seen : Map[UInt64, Bool] = {}
+  for entity in world.changed_components(material_key, system_ticks).read() {
+    collect_unique_material_specialization_entity(changed, seen, entity)
+  }
+  for entity in changed {
+    guard (try! world.get_by_key(entity, @mesh.ecs_key_mesh3d)) is Some(mesh3d) else {
+      continue
+    }
+    ignore(try! world.replace(entity, @mesh.ecs_key_mesh3d, mesh3d))
+  }
+}
+
+///|
+fn[M] check_typed_entities_needing_specialization_from_world(
+  world : @ecs.World,
+  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
+  entities_needing_specialization : EntitiesNeedingSpecialization[M],
+  system_ticks : @core.SystemTicks,
+) -> Unit {
+  entities_needing_specialization.changed.clear()
+  entities_needing_specialization.removed.clear()
+  for
+    entity in collect_entities_needing_typed_material_specialization(
+      world, material_key, system_ticks,
+    ) {
+    entities_needing_specialization.changed.push(entity)
+  }
+  for
+    entity in collect_entities_needing_typed_material_specialization_removed(
+      world, material_key, system_ticks,
+    ) {
+    entities_needing_specialization.removed.push(entity)
+  }
+}
+
+///|
+fn[M : Material] check_typed_entities_needing_specialization_system(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  let material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]] = MeshMaterial3dTyped::component()
+  let system_ticks = @app.current_system_ticks()
+  mark_typed_material_meshes_as_changed_if_their_materials_changed(
+    world, material_key, system_ticks,
+  )
+  ensure_entities_needing_specialization_resource_in_world(world, _probe)
+  guard world.get_resource_mut(EntitiesNeedingSpecialization::resource())
+    is Some(entities_needing_specialization) else {
+    return
+  }
+  entities_needing_specialization.modify(fn(value) {
+    check_typed_entities_needing_specialization_from_world(
+      world, material_key, value, system_ticks,
+    )
+  })
 }
 
 ///|
@@ -1697,6 +1852,18 @@ fn[M : Material + @asset.Asset] material_plugin_build(
         "MaterialPlugin requires with_asset_init(fn() { ... }) because MoonBit cannot call init_asset with explicit generic parameters",
       )
   }
+  let configured = configured
+  let entities_needing_specialization_key : @ecs.ResourceKey[
+    EntitiesNeedingSpecialization[M],
+  ] = EntitiesNeedingSpecialization::resource()
+  let entities_needing_specialization : EntitiesNeedingSpecialization[M] = EntitiesNeedingSpecialization::EntitiesNeedingSpecialization()
+  let configured = configured
+    .insert_world_resource(
+      entities_needing_specialization_key, entities_needing_specialization,
+    )
+    .add_systems_world(@app.PostUpdate, fn(world : @ecs.World) {
+      check_typed_entities_needing_specialization_system(world, probe)
+    })
   let configured = @render.with_render_app(configured, fn(render_app) {
     let render_world = render_app.world()
     ensure_prepared_material_assets_resource_in_world(render_world, probe)
@@ -1719,6 +1886,20 @@ fn[M : Material + @asset.Asset] material_plugin_build(
       @app.system(fn(world : @ecs.World) {
         extract_mesh_materials_system(world, probe)
       }).in_set(material_extraction_systems),
+    )
+    .add_systems(
+      @render.render_extract_schedule_stage(),
+      @app.system(fn(world : @ecs.World) {
+        extract_typed_entities_needs_specialization_system(world, probe)
+      }).in_set(material_extraction_systems),
+    )
+    .add_systems(
+      @render.render_extract_schedule_stage(),
+      @app.system(fn(world : @ecs.World) {
+        extract_typed_entities_that_need_specializations_removed_system(
+          world, probe,
+        )
+      }).in_set(material_dirty_specializations_removed_set),
     )
     .add_systems(
       @render.render_extract_schedule_stage(),
@@ -1823,9 +2004,20 @@ fn[M : Material] extract_mesh_materials_system(
       }
     })
   })
-  let specialization_entities = collect_entities_needing_typed_material_specialization(
-    source_world, material_key, system_ticks,
-  )
+}
+
+///|
+fn[M : Material] extract_typed_entities_needs_specialization_system(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  ignore(_probe)
+  let source_world = @render.render_source_world(world)
+  let source_key : @ecs.ResourceKey[EntitiesNeedingSpecialization[M]] = EntitiesNeedingSpecialization::resource()
+  guard source_world.get_resource(source_key)
+    is Some(entities_needing_specialization) else {
+    return
+  }
   let render_material_instances = match
     world.get_resource(ecs_key_render_material_instances) {
     Some(value) => value
@@ -1835,15 +2027,34 @@ fn[M : Material] extract_mesh_materials_system(
   let dirty_specializations = dirty_specializations_mut_or_init(world)
   entity_ticks.modify(fn(ticks) {
     dirty_specializations.modify(fn(dirty) {
-      for entity in specialization_entities {
+      for entity in entities_needing_specialization.changed {
         ticks.extract_entity_needs_specialization(
           entity,
-          system_ticks.this_run,
+          source_world.read_change_tick(),
           render_material_instances,
           dirty,
         )
       }
     })
+  })
+}
+
+///|
+fn[M : Material] extract_typed_entities_that_need_specializations_removed_system(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  ignore(_probe)
+  let source_world = @render.render_source_world(world)
+  let source_key : @ecs.ResourceKey[EntitiesNeedingSpecialization[M]] = EntitiesNeedingSpecialization::resource()
+  guard source_world.get_resource(source_key)
+    is Some(entities_needing_specialization) else {
+    return
+  }
+  dirty_specializations_mut_or_init(world).modify(fn(dirty) {
+    for entity in entities_needing_specialization.removed {
+      dirty.insert_removed(@render.MainEntity::new(entity))
+    }
   })
 }
 

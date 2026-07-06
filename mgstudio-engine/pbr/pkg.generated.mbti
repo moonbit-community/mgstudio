@@ -1420,6 +1420,18 @@ pub fn DrawWireframeMeshPulledIndirectPlan::indirect_parameters_count(Self) -> I
 pub fn DrawWireframeMeshPulledIndirectPlan::indirect_parameters_offset(Self) -> Int
 pub fn DrawWireframeMeshPulledIndirectPlan::new(Int, Int, batch_set_count_offset? : Int?) -> Self
 
+pub struct EntitiesNeedingSpecialization[M] {
+  changed : Array[@core.Entity]
+  removed : Array[@core.Entity]
+  marker : M?
+}
+pub fn[M] EntitiesNeedingSpecialization::EntitiesNeedingSpecialization() -> Self[M]
+pub fn[M] EntitiesNeedingSpecialization::changed_contains(Self[M], @core.Entity) -> Bool
+pub fn[M] EntitiesNeedingSpecialization::changed_len(Self[M]) -> Int
+pub fn[M] EntitiesNeedingSpecialization::removed_contains(Self[M], @core.Entity) -> Bool
+pub fn[M] EntitiesNeedingSpecialization::removed_len(Self[M]) -> Int
+pub impl[M : Material] @app.Resource for EntitiesNeedingSpecialization[M]
+
 pub struct EntitySpecializationTickPair {
   system_tick : Int64
   material_instances_tick : Int64
@@ -1864,6 +1876,7 @@ pub fn MaterialExtensionPipeline::with_shadows(Self, Bool) -> Self
 
 pub struct MaterialKeys[M] {
   mesh_material_component : @ecs.ComponentKey[MeshMaterial3dTyped[M]]
+  entities_needing_specialization : @ecs.ResourceKey[EntitiesNeedingSpecialization[M]]
   render_material_instances : @ecs.ResourceKey[RenderMaterial3dInstances[M]]
   material_pipeline : @ecs.ResourceKey[MaterialPipeline[M]]
   material_asset_event_cursor : @ecs.ResourceKey[MaterialAssetEventCursor[M]]

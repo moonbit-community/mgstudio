@@ -2416,12 +2416,10 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
       }
       match world.get_resource(@pbr.ecs_key_render_material_instances) {
         Some(material_instances) =>
-          material_instances.extract_mesh_material(
+          material_instances.extract_mesh_material_id(
             cube_primitive_entity.val,
             true,
-            @pbr.MeshMaterial3d::new(
-              @asset.Handle::new(cube_material_handle_id.val),
-            ),
+            cube_material_handle_id.val,
           )
         None => ()
       }

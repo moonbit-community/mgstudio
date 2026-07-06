@@ -685,11 +685,7 @@ test "pbr material plugin: removed typed material unloads prepared binding" {
     None => abort("missing material assets")
   }
   @asset.asset_update_event_messages(world)
-  match
-    world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
-    Some(dirty) => dirty.modify(fn(value) { value.clear() })
-    None => abort("missing DirtySpecializations")
-  }
+  dirty_specializations_mut_or_init(world).modify(fn(value) { value.clear() })
   prepare_material_assets_system(world, probe)
   match world.get_resource(prepared_assets_key) {
     Some(prepared_assets) =>
@@ -835,7 +831,28 @@ test "pbr material plugin: typed material extraction marks specialization dirty"
     ).length(),
     content="1",
   )
+  ensure_entities_needing_specialization_resource_in_world(world, probe)
+  let entities_needing_specialization_key : @ecs.ResourceKey[
+    EntitiesNeedingSpecialization[ParityCustomMaterial],
+  ] = EntitiesNeedingSpecialization::resource()
+  match world.get_resource_mut(entities_needing_specialization_key) {
+    Some(entities) =>
+      entities.modify(fn(value) {
+        check_typed_entities_needing_specialization_from_world(
+          world, material_key, value, system_ticks,
+        )
+      })
+    None => abort("missing EntitiesNeedingSpecialization")
+  }
+  match world.get_resource(entities_needing_specialization_key) {
+    Some(entities) => {
+      debug_inspect(entities.changed_len(), content="1")
+      debug_inspect(entities.changed_contains(entity), content="true")
+    }
+    None => abort("missing EntitiesNeedingSpecialization")
+  }
   extract_mesh_materials_system(world, probe)
+  extract_typed_entities_needs_specialization_system(world, probe)
   match
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
     Some(dirty) => {
@@ -912,11 +929,7 @@ test "pbr material plugin: first prepared typed material marks specialization di
   )
   world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
-  match
-    world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
-    Some(dirty) => dirty.modify(fn(value) { value.clear() })
-    None => abort("missing DirtySpecializations")
-  }
+  dirty_specializations_mut_or_init(world).modify(fn(value) { value.clear() })
   prepare_material_assets_system(world, probe)
   match
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
@@ -966,11 +979,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
   world.increment_change_tick() |> ignore
   extract_mesh_materials_system(world, probe)
   prepare_material_assets_system(world, probe)
-  match
-    world.get_resource_mut(@render_visibility.DirtySpecializations::resource()) {
-    Some(dirty) => dirty.modify(fn(value) { value.clear() })
-    None => abort("missing DirtySpecializations")
-  }
+  dirty_specializations_mut_or_init(world).modify(fn(value) { value.clear() })
   prepare_material_assets_system(world, probe)
   match
     world.get_resource(@render_visibility.DirtySpecializations::resource()) {
