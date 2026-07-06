@@ -707,6 +707,20 @@ fn mesh3d_descriptor_depth_format(
 }
 
 ///|
+fn mesh3d_shadow_depth_format(
+  _descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> UInt {
+  @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT
+}
+
+///|
+fn mesh3d_shadow_depth_compare(
+  _descriptor : @render_resource.RenderPipelineDescriptor?,
+) -> UInt {
+  @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+}
+
+///|
 fn mesh3d_descriptor_depth_bias_constant(
   descriptor : @render_resource.RenderPipelineDescriptor?,
 ) -> Int {
@@ -872,6 +886,7 @@ fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
     backend.mesh3d_clustered_lights_buf = Some(
       mesh3d_create_storage_buffer(backend, MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE),
     )
+    backend.mesh3d_clustered_lights_size = MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE
   }
   if backend.mesh3d_clusterable_object_index_lists_buf is None {
     backend.mesh3d_clusterable_object_index_lists_buf = Some(
@@ -880,6 +895,7 @@ fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
         MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
       ),
     )
+    backend.mesh3d_clusterable_object_index_lists_size = MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE
   }
   if backend.mesh3d_cluster_offsets_and_counts_buf is None {
     backend.mesh3d_cluster_offsets_and_counts_buf = Some(
@@ -888,6 +904,7 @@ fn ensure_mesh3d_view_binding_buffers(backend : GpuBackend) -> Unit {
         MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
       ),
     )
+    backend.mesh3d_cluster_offsets_and_counts_size = MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE
   }
   if backend.mesh3d_globals_buf is None {
     backend.mesh3d_globals_buf = Some(
@@ -3004,7 +3021,10 @@ fn mesh3d_build_shadow_depth_pipeline(
   guard pipeline_layout is Some(pl) else {
     fatal("wgpu: missing mesh3d pipeline layout for shadow depth pipeline")
   }
-  let safe_cull_mode = mesh3d_cull_mode_sanitize(cull_mode)
+  let effective_cull_mode = mesh3d_effective_pipeline_cull_mode(
+    material_descriptor, cull_mode,
+  )
+  let safe_cull_mode = mesh3d_cull_mode_sanitize(effective_cull_mode)
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   let vertex_shader_path = match
     mesh3d_descriptor_vertex_shader_path(material_descriptor) {
@@ -3096,9 +3116,9 @@ fn mesh3d_build_shadow_depth_pipeline(
     }
     builder.set_topology_u32(topology)
     builder.set_depth_stencil(
-      tf(mesh3d_descriptor_depth_format(material_descriptor)),
+      tf(mesh3d_shadow_depth_format(material_descriptor)),
       depth_write_enabled=true,
-      depth_compare_u32=mesh3d_descriptor_depth_compare(material_descriptor),
+      depth_compare_u32=mesh3d_shadow_depth_compare(material_descriptor),
     )
     builder.set_cull_mode_u32(cull_mode_wgpu)
     if native_unclipped_depth {
@@ -3176,20 +3196,23 @@ fn mesh3d_shadow_depth_pipeline_for_current_pass(
   let shadow_pipeline_material_id = mesh3d_shadow_pipeline_material_id(
     material_pipeline_id, material_path, emulate_unclipped_depth,
   )
+  let effective_cull_mode = mesh3d_effective_pipeline_cull_mode(
+    material_descriptor, cull_mode,
+  )
   if mesh3d_shadow_pipeline_get(
-      backend, topology, shadow_pipeline_material_id, cull_mode, material_path, skinned,
-      directional_light,
+      backend, topology, shadow_pipeline_material_id, effective_cull_mode, material_path,
+      skinned, directional_light,
     )
     is Some(pipeline) {
     return Some(pipeline)
   }
   let pipeline = mesh3d_build_shadow_depth_pipeline(
-    backend, topology, shadow_pipeline_material_id, material_descriptor, cull_mode,
+    backend, topology, shadow_pipeline_material_id, material_descriptor, effective_cull_mode,
     material_path, skinned, directional_light,
   )
   mesh3d_shadow_pipeline_set(
-    backend, topology, shadow_pipeline_material_id, cull_mode, material_path, skinned,
-    directional_light, pipeline,
+    backend, topology, shadow_pipeline_material_id, effective_cull_mode, material_path,
+    skinned, directional_light, pipeline,
   )
   Some(pipeline)
 }

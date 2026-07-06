@@ -282,6 +282,14 @@ pub fn GlobalClusterableObjectMeta::clear_entity_to_index(
 }
 
 ///|
+pub fn GlobalClusterableObjectMeta::clear(
+  self : GlobalClusterableObjectMeta,
+) -> Unit {
+  self.gpu_clustered_lights.clear()
+  self.entity_to_index.clear()
+}
+
+///|
 pub fn GlobalClusterableObjectMeta::insert_entity_index(
   self : GlobalClusterableObjectMeta,
   entity : @core.Entity,
@@ -468,8 +476,10 @@ pub fn pbr_make_global_cluster_settings_from_render_world(
   let clustered_decals_are_usable = @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=0U,
   )
-  let gpu_clustering_supported = render_device.limits_max_storage_buffers_per_shader_stage_u32() >
-    0U
+  // The current native host renderer consumes render-world `ViewClusterBindings`
+  // buffers in the mesh3d pass. Until the GPU clustering graph feeds those same
+  // buffers before the main pass, advertise Bevy's CPU clustering fallback here.
+  let gpu_clustering_supported = false
   Some(
     pbr_make_global_cluster_settings(
       supports_storage_buffers,

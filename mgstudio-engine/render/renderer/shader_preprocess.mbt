@@ -158,6 +158,10 @@ fn default_wgsl_value_defines() -> @hashmap.HashMap[
     "MAX_RECT_LIGHTS",
     @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_RECT_LIGHTS),
   )
+  value_defines.set(
+    "AVAILABLE_STORAGE_BUFFER_BINDINGS",
+    @wgsl_common.ShaderDefValue::UInt(8U),
+  )
   value_defines
 }
 

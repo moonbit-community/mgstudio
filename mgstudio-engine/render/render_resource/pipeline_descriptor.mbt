@@ -287,7 +287,7 @@ pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
     topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     strip_index_format: None,
     front_face: @wgpu.FRONT_FACE_CCW,
-    cull_mode: Some(@wgpu.CULL_MODE_BACK),
+    cull_mode: None,
     polygon_mode: None,
     unclipped_depth: false,
   }

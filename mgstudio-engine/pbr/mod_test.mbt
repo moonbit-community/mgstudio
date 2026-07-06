@@ -1001,6 +1001,83 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
 }
 
 ///|
+test "render3d: prepare_lights uses extracted view viewport for cluster factors" {
+  let instance = @wgpu.Instance::create()
+  let adapter = instance.request_adapter_sync()
+  let device = adapter.request_device_sync(instance)
+  let render_device = @renderer.RenderDevice::from_wgpu(device)
+  let render_queue = render_device.queue()
+  let world = @ecs.World::new()
+  world.insert_resource(@render.render_device_resource_key, render_device)
+  world.insert_resource(@render.render_queue_resource_key, render_queue)
+  world.insert_resource(
+    @pbr_render.LightMeta::resource(),
+    @pbr_render.LightMeta::LightMeta(),
+  )
+  let camera = world.spawn()
+  let view = world.spawn()
+  try! world.set_by_key(camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(
+    camera,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_viewport(
+      @camera_viewport.Viewport::new(
+        @math.IVec2::new(0, 0),
+        @math.IVec2::new(1280, 720),
+      ),
+    ),
+  )
+  try! world.set_by_key(
+    view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(camera),
+      viewport_x=0,
+      viewport_y=0,
+      viewport_z=2560,
+      viewport_w=1440,
+    ),
+  )
+  try! world.set_by_key(
+    view,
+    @render.ecs_key_main_entity,
+    @render.MainEntity::new(camera),
+  )
+  try! world.set_by_key(
+    view,
+    ExtractedClusterConfig::component(),
+    ExtractedClusterConfig::new(0.1F, 1000.0F, 16, 9, 24),
+  )
+
+  prepare_lights(world)
+
+  let light_meta = world
+    .get_resource(@pbr_render.LightMeta::resource())
+    .unwrap()
+  let gpu_lights = match light_meta.view_gpu_lights_at(0) {
+    Some(value) => value
+    None => abort("missing prepared view GPU lights")
+  }
+  fn close(lhs : Float, rhs : Float) -> Bool {
+    let diff = lhs - rhs
+    let abs_diff = if diff < 0.0F { -diff } else { diff }
+    abs_diff <= 1.0e-6F
+  }
+  debug_inspect(
+    close(gpu_lights.cluster_factors.x, 16.0F / 2560.0F),
+    content="true",
+  )
+  debug_inspect(
+    close(gpu_lights.cluster_factors.y, 9.0F / 1440.0F),
+    content="true",
+  )
+
+  device.release()
+  adapter.release()
+  instance.release()
+}
+
+///|
 test "render3d: NoIndirectDrawing reuses render view owner key" {
   debug_inspect(
     ecs_key_no_indirect_drawing.id() ==
@@ -1981,8 +2058,7 @@ test "render3d: pbr plugin finish initializes global cluster settings" {
   let expected_supports_storage = device.supports_read_only_storage_buffer_binding(
     CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT,
   )
-  let expected_gpu_clustering = device.limits_max_storage_buffers_per_shader_stage_u32() >
-    0U
+  let expected_gpu_clustering = false
   let expected_clustered_decals = @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=0U,
   )
@@ -2021,7 +2097,7 @@ test "render3d: pbr plugin finish initializes global cluster settings" {
     Some(gpu) => {
       if !expected_gpu_clustering {
         abort(
-          "GlobalClusterSettings enabled GPU clustering without storage-buffer support",
+          "GlobalClusterSettings enabled GPU clustering before the renderer supports the GPU clustering buffer flow",
         )
       }
       debug_inspect(gpu.initial_z_slice_list_capacity(), content="1024")

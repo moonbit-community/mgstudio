@@ -343,9 +343,9 @@ fn mesh_view_layout_sampler_binding_type(
 ///|
 fn mesh_view_layout_min_binding_size(binding : Int) -> UInt64 {
   match binding {
-    8 => 16320UL
-    9 => 65536UL
-    10 => 131072UL
+    8 => 80UL
+    9 => 4UL
+    10 => 32UL
     11 => 16UL
     12 => 2048UL
     13 => 64UL

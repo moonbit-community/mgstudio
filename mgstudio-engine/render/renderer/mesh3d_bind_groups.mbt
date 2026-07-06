@@ -454,8 +454,11 @@ fn mesh3d_add_view_bind_group_layout_entry(
   view_buf : @wgpu.Buffer,
   lights_buf : @wgpu.Buffer,
   clustered_lights_buf : @wgpu.Buffer,
+  clustered_lights_size : UInt64,
   clusterable_object_index_lists_buf : @wgpu.Buffer,
+  clusterable_object_index_lists_size : UInt64,
   cluster_offsets_and_counts_buf : @wgpu.Buffer,
+  cluster_offsets_and_counts_size : UInt64,
   globals_buf : @wgpu.Buffer,
   fog_buf : @wgpu.Buffer,
   light_probes_buf : @wgpu.Buffer,
@@ -502,19 +505,19 @@ fn mesh3d_add_view_bind_group_layout_entry(
       builder.add_buffer(
         binding,
         clustered_lights_buf,
-        size=MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE,
+        size=clustered_lights_size,
       )
     9 =>
       builder.add_buffer(
         binding,
         clusterable_object_index_lists_buf,
-        size=MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE,
+        size=clusterable_object_index_lists_size,
       )
     10 =>
       builder.add_buffer(
         binding,
         cluster_offsets_and_counts_buf,
-        size=MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE,
+        size=cluster_offsets_and_counts_size,
       )
     11 =>
       builder.add_buffer(binding, globals_buf, size=MESH3D_GLOBALS_BUFFER_SIZE)
@@ -698,8 +701,11 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   view_buf : @wgpu.Buffer,
   lights_buf : @wgpu.Buffer,
   clustered_lights_buf : @wgpu.Buffer,
+  clustered_lights_size : UInt64,
   clusterable_object_index_lists_buf : @wgpu.Buffer,
+  clusterable_object_index_lists_size : UInt64,
   cluster_offsets_and_counts_buf : @wgpu.Buffer,
+  cluster_offsets_and_counts_size : UInt64,
   globals_buf : @wgpu.Buffer,
   fog_buf : @wgpu.Buffer,
   light_probes_buf : @wgpu.Buffer,
@@ -732,14 +738,15 @@ fn mesh3d_build_view_bind_group_from_descriptor(
   )
   for entry in entries {
     if !mesh3d_add_view_bind_group_layout_entry(
-        builder, entry, view_buf, lights_buf, clustered_lights_buf, clusterable_object_index_lists_buf,
-        cluster_offsets_and_counts_buf, globals_buf, fog_buf, light_probes_buf, visibility_ranges_buf,
-        ssr_settings_buf, contact_shadows_settings_buf, point_shadow_sample_view,
-        point_shadow_compare_sampler, directional_shadow_sample_view, directional_shadow_compare_sampler,
-        depth_prepass_view, normal_prepass_view, motion_vector_prepass_view, deferred_prepass_view,
-        ssao_view, transmission_source_texture, dt_lut_sample_view, dt_lut_sampler,
-        atmosphere_transmittance_view, atmosphere_transmittance_sampler, atmosphere_buffer,
-        pbr_blue_noise_texture, pbr_area_light_luts_texture, pbr_dfg_lut_texture,
+        builder, entry, view_buf, lights_buf, clustered_lights_buf, clustered_lights_size,
+        clusterable_object_index_lists_buf, clusterable_object_index_lists_size,
+        cluster_offsets_and_counts_buf, cluster_offsets_and_counts_size, globals_buf,
+        fog_buf, light_probes_buf, visibility_ranges_buf, ssr_settings_buf, contact_shadows_settings_buf,
+        point_shadow_sample_view, point_shadow_compare_sampler, directional_shadow_sample_view,
+        directional_shadow_compare_sampler, depth_prepass_view, normal_prepass_view,
+        motion_vector_prepass_view, deferred_prepass_view, ssao_view, transmission_source_texture,
+        dt_lut_sample_view, dt_lut_sampler, atmosphere_transmittance_view, atmosphere_transmittance_sampler,
+        atmosphere_buffer, pbr_blue_noise_texture, pbr_area_light_luts_texture, pbr_dfg_lut_texture,
       ) {
       builder.free()
       fatal(
@@ -1232,8 +1239,11 @@ fn mesh3d_view_bg_cache_get_or_create(
     view_buf,
     lights_buf,
     clustered_lights_buf,
+    backend.mesh3d_clustered_lights_size,
     clusterable_object_index_lists_buf,
+    backend.mesh3d_clusterable_object_index_lists_size,
     cluster_offsets_and_counts_buf,
+    backend.mesh3d_cluster_offsets_and_counts_size,
     globals_buf,
     fog_buf,
     light_probes_buf,
@@ -1534,8 +1544,11 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
     uniforms.view_buffer,
     uniforms.lights_buffer,
     clustered_lights_buf,
+    backend.mesh3d_clustered_lights_size,
     clusterable_object_index_lists_buf,
+    backend.mesh3d_clusterable_object_index_lists_size,
     cluster_offsets_and_counts_buf,
+    backend.mesh3d_cluster_offsets_and_counts_size,
     globals_buf,
     fog_buf,
     light_probes_buf,

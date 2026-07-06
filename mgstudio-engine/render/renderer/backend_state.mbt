@@ -182,8 +182,11 @@ pub struct GpuBackend {
   mut mesh3d_view_buf : @wgpu.Buffer?
   mut mesh3d_lights_buf : @wgpu.Buffer?
   mut mesh3d_clustered_lights_buf : @wgpu.Buffer?
+  mut mesh3d_clustered_lights_size : UInt64
   mut mesh3d_clusterable_object_index_lists_buf : @wgpu.Buffer?
+  mut mesh3d_clusterable_object_index_lists_size : UInt64
   mut mesh3d_cluster_offsets_and_counts_buf : @wgpu.Buffer?
+  mut mesh3d_cluster_offsets_and_counts_size : UInt64
   mut mesh3d_clustered_decals_buf : @wgpu.Buffer?
   mut mesh3d_clustered_decals_capacity : UInt64
   mut mesh3d_clustered_decals_revision : Int

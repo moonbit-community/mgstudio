@@ -179,9 +179,9 @@ fn mesh3d_mesh_view_buffer_binding_type(read_only : Bool) -> UInt {
 ///|
 fn mesh3d_mesh_view_min_binding_size(binding : Int) -> UInt64 {
   match binding {
-    8 => MESH3D_CLUSTERED_LIGHTS_BUFFER_SIZE
-    9 => MESH3D_CLUSTERABLE_OBJECT_INDEX_LISTS_BUFFER_SIZE
-    10 => MESH3D_CLUSTER_OFFSETS_AND_COUNTS_BUFFER_SIZE
+    8 => 80UL
+    9 => 4UL
+    10 => 32UL
     11 => MESH3D_GLOBALS_BUFFER_SIZE
     12 => MESH3D_LIGHT_PROBES_BUFFER_SIZE
     13 => MESH3D_FOG_BUFFER_SIZE

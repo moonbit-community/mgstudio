@@ -36,6 +36,91 @@ const RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE : String = "execute_3d_camera_vo
 const RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE : String = "execute_3d_camera_postprocess"
 
 ///|
+fn render3d_camera_view_clusters(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+) -> @light_cluster.Clusters? {
+  let source_world = @render.render_source_world(world)
+  match
+    (source_world.get_by_key(
+      camera_entity,
+      @light_cluster.Clusters::component(),
+    ) catch {
+      _ => abort("render3d: failed to read source-world Clusters")
+    }) {
+    Some(clusters) => Some(clusters)
+    None =>
+      world.get_by_key(camera_entity, @light_cluster.Clusters::component()) catch {
+        _ => abort("render3d: failed to read render-world Clusters")
+      }
+  }
+}
+
+///|
+fn render3d_camera_view_is_orthographic(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+) -> Bool {
+  let source_world = @render.render_source_world(world)
+  match
+    (source_world.get_by_key(
+      camera_entity,
+      @light_cluster.ClusterCameraProjection::component(),
+    ) catch {
+      _ =>
+        abort("render3d: failed to read source-world ClusterCameraProjection")
+    }) {
+    Some(projection) => projection.is_orthographic()
+    None =>
+      match
+        (world.get_by_key(
+          camera_entity,
+          @light_cluster.ClusterCameraProjection::component(),
+        ) catch {
+          _ =>
+            abort(
+              "render3d: failed to read render-world ClusterCameraProjection",
+            )
+        }) {
+        Some(projection) => projection.is_orthographic()
+        None => !camera.projection.is_perspective()
+      }
+  }
+}
+
+///|
+fn render3d_camera_view_pass_lighting(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+  pass_lighting : Render3dLightingState,
+  viewport_width : Int,
+  viewport_height : Int,
+) -> Render3dLightingState {
+  guard viewport_width > 0 && viewport_height > 0 else { return pass_lighting }
+  guard render3d_camera_view_clusters(world, camera_entity) is Some(clusters) else {
+    return pass_lighting
+  }
+  let (cluster_dimensions_x, cluster_dimensions_y, cluster_dimensions_z) = clusters.dimensions()
+  let gpu_lights = @pbr_render.render3d_collect_gpu_lights_for_view_config(
+    world,
+    viewport_width~,
+    viewport_height~,
+    cluster_dimensions_x~,
+    cluster_dimensions_y~,
+    cluster_dimensions_z~,
+    cluster_near=clusters.near(),
+    cluster_far=clusters.far(),
+    cluster_is_orthographic=render3d_camera_view_is_orthographic(
+      world, camera_entity, camera,
+    ),
+    render_layers=camera.layers,
+  )
+  Render3dLightingState::{ ..pass_lighting, gpu_lights: Some(gpu_lights) }
+}
+
+///|
 fn render3d_prepare_camera_execution_plan(
   world : @ecs.World,
   extracted_camera : ExtractedCamera3d,
@@ -48,8 +133,19 @@ fn render3d_prepare_camera_execution_plan(
 ) -> Render3dCameraExecutionPlan {
   let camera_entity = extracted_camera.entity.main_entity
   let camera = extracted_camera.payload
+  let pass_lighting = match render3d_execute_camera_viewport_state(camera) {
+    Some(viewport_state) =>
+      render3d_camera_view_pass_lighting(
+        world,
+        camera_entity,
+        camera,
+        lighting,
+        viewport_state.viewport_width,
+        viewport_state.viewport_height,
+      )
+    None => lighting
+  }
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
-  let pass_lighting = lighting
   let camera_deferred_config = match camera.deferred_config {
     Some(value) => value
     None => CameraDeferredConfig3d::CameraDeferredConfig3d()

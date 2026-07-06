@@ -206,6 +206,25 @@ pub fn host_gpu_prepare_mesh3d_cluster_buffers(
 }
 
 ///|
+pub fn host_gpu_use_mesh3d_cluster_buffers(
+  clustered_lights_buffer~ : @wgpu.Buffer,
+  clustered_lights_size~ : UInt64,
+  clusterable_object_index_lists_buffer~ : @wgpu.Buffer,
+  clusterable_object_index_lists_size~ : UInt64,
+  cluster_offsets_and_counts_buffer~ : @wgpu.Buffer,
+  cluster_offsets_and_counts_size~ : UInt64,
+) -> Unit {
+  @renderer.use_mesh3d_cluster_buffers(
+    clustered_lights_buffer~,
+    clustered_lights_size~,
+    clusterable_object_index_lists_buffer~,
+    clusterable_object_index_lists_size~,
+    cluster_offsets_and_counts_buffer~,
+    cluster_offsets_and_counts_size~,
+  )
+}
+
+///|
 pub fn host_mesh3d_volumetric_fog_volume(
   density_texture_id~ : Int,
   uniform_buffer_offset~ : UInt,

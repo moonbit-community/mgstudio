@@ -64,6 +64,7 @@ import {
 
 import {
   "Milky2018/mgstudio/camera/visibility" @camera_visibility,
+  "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/core_pipeline/fullscreen_vertex_shader/source" @fullscreen_vertex_shader_source,
   "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/shader/compile" @shader_compile,

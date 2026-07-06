@@ -521,6 +521,7 @@ test "pbr lighting state uses global clusterable point light index" {
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
     point_entity: Some(point_entity),
+    point_render_entity: Some(point_entity),
   }
   let resolved = render3d_lighting_with_clusterable_indices(world, lighting)
   inspect(resolved.point_light_index, content="3")

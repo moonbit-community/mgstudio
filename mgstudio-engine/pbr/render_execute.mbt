@@ -478,6 +478,119 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/mesh.rs::ViewKeyCache`.
+priv struct Render3dViewSpecializationKey {
+  view_key_bits : UInt64
+  binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
+} derive(Eq)
+
+///|
+fn Render3dViewSpecializationKey::new(
+  camera : Camera3dViewPayload,
+  binding_arrays_are_usable : Bool,
+  clustered_decals_are_usable : Bool,
+) -> Render3dViewSpecializationKey {
+  Render3dViewSpecializationKey::{
+    view_key_bits: render3d_camera_mesh_pipeline_view_key_bits(camera),
+    binding_arrays_are_usable,
+    clustered_decals_are_usable,
+  }
+}
+
+///|
+priv struct Render3dViewKeyCache {
+  keys : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    Render3dViewSpecializationKey,
+  ]
+}
+
+///|
+fn Render3dViewKeyCache::Render3dViewKeyCache() -> Render3dViewKeyCache {
+  Render3dViewKeyCache::{ keys: @hashmap.HashMap([]) }
+}
+
+///|
+let ecs_key_render3d_view_key_cache : @ecs.ResourceKey[Render3dViewKeyCache] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::ViewKeyCache",
+)
+
+///|
+impl @app.Resource for Render3dViewKeyCache with fn resource() {
+  ecs_key_render3d_view_key_cache
+}
+
+///|
+fn render3d_view_key_cache_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[Render3dViewKeyCache] {
+  if world.get_resource(Render3dViewKeyCache::resource()) is None {
+    world.insert_resource(
+      Render3dViewKeyCache::resource(),
+      Render3dViewKeyCache::Render3dViewKeyCache(),
+    )
+  }
+  match world.get_resource_mut(Render3dViewKeyCache::resource()) {
+    Some(value) => value
+    None => abort("missing Render3dViewKeyCache resource")
+  }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/mesh.rs::check_views_need_specialization`.
+fn render3d_check_views_need_specialization(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+  binding_arrays_are_usable : Bool,
+  clustered_decals_are_usable : Bool,
+) -> Unit {
+  let dirty_specializations = match
+    world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing DirtySpecializations resource during pbr view specialization check",
+      )
+  }
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  )
+  render3d_view_key_cache_mut_or_init(world).modify(fn(view_key_cache) {
+    for camera in cameras {
+      let retained_view_entity = @render_view.RetainedViewEntity::new(
+        camera.entity.main_entity,
+      )
+      live_views.add(retained_view_entity)
+      let view_key = Render3dViewSpecializationKey::new(
+        camera.payload,
+        binding_arrays_are_usable,
+        clustered_decals_are_usable,
+      )
+      match view_key_cache.keys.get(retained_view_entity) {
+        Some(current_key) =>
+          if current_key != view_key {
+            view_key_cache.keys.set(retained_view_entity, view_key)
+            dirty_specializations.insert_view(retained_view_entity)
+          }
+        None => {
+          view_key_cache.keys.set(retained_view_entity, view_key)
+          dirty_specializations.insert_view(retained_view_entity)
+        }
+      }
+    }
+    let stale_views : Array[@render_view.RetainedViewEntity] = []
+    for view, _key in view_key_cache.keys {
+      if !live_views.contains(view) {
+        stale_views.push(view)
+      }
+    }
+    for view in stale_views {
+      view_key_cache.keys.remove(view)
+    }
+  })
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::SpecializationWorkItem`.
 priv struct Render3dMaterialSpecializationWorkItemData {
   visible_entity : @core.Entity
@@ -3708,6 +3821,64 @@ fn render3d_shadow_queue_material_bind_group_index(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::specialize_shadows`
+// resolves `RenderMaterialInstances` through the prepared render material.
+fn render3d_shadow_resolve_material(
+  world : @ecs.World,
+  visible_entity : @render.MainEntity,
+  render_material_instances : RenderMaterialInstances,
+) -> Render3dResolvedMaterial? {
+  let source_world = @render.render_source_world(world)
+  let registry = material_runtime_registry_or_empty(world)
+  match
+    material_runtime_registry_resolve_material(
+      world,
+      source_world,
+      registry,
+      visible_entity.id(),
+    ) {
+    Some(material) => return Some(material)
+    None => ()
+  }
+  guard render_material_instances.get(visible_entity.id())
+    is Some(material_instance) else {
+    return None
+  }
+  let material_handle : @asset.Handle[StandardMaterial] = @asset.Handle::new(
+    material_instance.asset_id(),
+  )
+  let material_assets_key : @ecs.ResourceKey[@asset.Assets[StandardMaterial]] = @asset.assets_resource_key()
+  guard source_world.get_resource(material_assets_key) is Some(material_assets) else {
+    return None
+  }
+  guard material_assets.get(material_handle) is Some(material) else {
+    return None
+  }
+  let default_opaque_renderer_method = match
+    world.get_resource(ecs_key_default_opaque_renderer_method) {
+    Some(resource) => resource.renderer_method()
+    None => OpaqueRendererMethod::Forward
+  }
+  let properties = render3d_material_properties_for_standard_material(
+    material,
+    None,
+    default_opaque_renderer_method,
+    pbr_prepass_enabled(source_world),
+    standard_material_texture_features=pbr_render_world_standard_material_texture_features(
+      world,
+    ),
+  )
+  Some(
+    Render3dResolvedMaterial::new(
+      material,
+      properties,
+      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      "StandardMaterial",
+    ),
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::queue_shadows`.
 pub fn render3d_queue_shadow_phase_data_for_visible_entities(
   world : @ecs.World,
@@ -3764,8 +3935,6 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
     Some(value) => value
     None => abort("missing MeshAllocator resource during pbr shadow queueing")
   }
-  let source_world = @render.render_source_world(world)
-  let registry = material_runtime_registry_or_empty(world)
   let resolved_view_layers = view_render_layers.unwrap_or(
     @camera_render_layers.RenderLayers::RenderLayers(),
   )
@@ -3803,11 +3972,8 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
       None => continue
     }
     let material = match
-      material_runtime_registry_resolve_material(
-        world,
-        source_world,
-        registry,
-        main_entity.id(),
+      render3d_shadow_resolve_material(
+        world, main_entity, render_material_instances,
       ) {
       Some(value) => value
       None => {
@@ -3900,9 +4066,10 @@ pub fn render3d_queue_shadow_phase_data_for_light(
     world, retained_view_entity, visible_entities, view_render_layers, dirty_specializations,
     pending_shadow_queues,
   )
-  render3d_apply_queued_shadow_phase_data(
+  let applied = render3d_apply_queued_shadow_phase_data(
     world, retained_view_entity, queued, gpu_preprocessing_support,
   )
+  applied
 }
 
 ///|
@@ -4057,14 +4224,9 @@ pub fn render3d_shadow_specialization_queue_data(
       return None
     }
   }
-  let source_world = @render.render_source_world(world)
-  let registry = material_runtime_registry_or_empty(world)
   let material = match
-    material_runtime_registry_resolve_material(
-      world,
-      source_world,
-      registry,
-      visible_entity.id(),
+    render3d_shadow_resolve_material(
+      world, visible_entity, render_material_instances,
     ) {
     Some(value) => value
     None => {
@@ -4114,13 +4276,13 @@ pub fn render3d_shadow_specialization_work_item_data(
   guard render_meshes.get(queue_data.mesh_asset_id()) is Some(render_mesh) else {
     return None
   }
-  let source_world = @render.render_source_world(world)
-  let registry = material_runtime_registry_or_empty(world)
-  guard material_runtime_registry_resolve_material(
-      world,
-      source_world,
-      registry,
-      visible_entity.id(),
+  let render_material_instances = match
+    world.get_resource(ecs_key_render_material_instances) {
+    Some(value) => value
+    None => return None
+  }
+  guard render3d_shadow_resolve_material(
+      world, visible_entity, render_material_instances,
     )
     is Some(material) else {
     return None
@@ -4471,6 +4633,9 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     return
   }
   render3d_sync_extracted_view_components(world, cameras)
+  render3d_check_views_need_specialization(
+    world, cameras, binding_arrays_are_usable, clustered_decals_are_usable,
+  )
   render3d_extract_render_visible_entities(world, source_world)
   let meshes = mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
     let meshes = morph_indices.modify(fn(morph_indices_value) {

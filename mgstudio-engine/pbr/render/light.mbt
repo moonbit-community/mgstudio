@@ -805,6 +805,7 @@ pub impl @ecs.Component for ExtractedPointLight3d with fn component() {
 ///|
 pub struct ExtractedClusterablePointLight3d {
   clusterable_type_order : Int
+  render_entity : @core.Entity
   light : ExtractedPointLight3d
 }
 
@@ -833,6 +834,13 @@ pub fn ExtractedClusterablePointLight3d::light(
   self : ExtractedClusterablePointLight3d,
 ) -> ExtractedPointLight3d {
   self.light
+}
+
+///|
+pub fn ExtractedClusterablePointLight3d::render_entity(
+  self : ExtractedClusterablePointLight3d,
+) -> @core.Entity {
+  self.render_entity
 }
 
 ///|
@@ -2001,8 +2009,16 @@ fn render3d_lights_push_clustered_light(
           )
           render3d_lights_push_f32(words, extracted.shadow_depth_bias)
           render3d_lights_push_f32(words, extracted.shadow_normal_bias)
-          render3d_lights_push_f32(words, extracted.shadow_map_near_z)
           render3d_lights_push_f32(words, render3d_tan(outer))
+          render3d_lights_push_f32(
+            words,
+            if extracted.soft_shadows_enabled {
+              extracted.radius
+            } else {
+              0.0F
+            },
+          )
+          render3d_lights_push_f32(words, extracted.shadow_map_near_z)
           let decal_index = render3d_clustered_decal_index(
             world,
             extracted.entity,
@@ -2016,14 +2032,6 @@ fn render3d_lights_push_clustered_light(
             },
           )
           render3d_lights_push_f32(words, extracted.range)
-          render3d_lights_push_f32(
-            words,
-            if extracted.soft_shadows_enabled {
-              extracted.radius
-            } else {
-              0.0F
-            },
-          )
         }
         _ => {
           let cube_face_projection = render3d_point_shadow_pass_projection(
@@ -2060,8 +2068,16 @@ fn render3d_lights_push_clustered_light(
           )
           render3d_lights_push_f32(words, extracted.shadow_depth_bias)
           render3d_lights_push_f32(words, extracted.shadow_normal_bias)
-          render3d_lights_push_f32(words, extracted.shadow_map_near_z)
           render3d_lights_push_f32(words, 0.0F)
+          render3d_lights_push_f32(
+            words,
+            if extracted.soft_shadows_enabled {
+              extracted.radius
+            } else {
+              0.0F
+            },
+          )
+          render3d_lights_push_f32(words, extracted.shadow_map_near_z)
           let decal_index = render3d_clustered_decal_index(
             world,
             extracted.entity,
@@ -2075,14 +2091,6 @@ fn render3d_lights_push_clustered_light(
             },
           )
           render3d_lights_push_f32(words, extracted.range)
-          render3d_lights_push_f32(
-            words,
-            if extracted.soft_shadows_enabled {
-              extracted.radius
-            } else {
-              0.0F
-            },
-          )
         }
       }
     }
@@ -3033,30 +3041,30 @@ pub fn render3d_collect_extracted_spot_lights(
 ///|
 fn render3d_clusterable_light_sort_by_key(
   left_order : Int,
-  left : ExtractedPointLight3d,
+  left : Render3dExtractedPointLightEntry,
   right_order : Int,
-  right : ExtractedPointLight3d,
+  right : Render3dExtractedPointLightEntry,
 ) -> Int {
   let type_cmp = cmp_int(left_order, right_order)
   if type_cmp != 0 {
     return type_cmp
   }
-  let id_cmp = cmp_int(left.entity.id, right.entity.id)
+  let id_cmp = cmp_int(left.light.entity.id, right.light.entity.id)
   if id_cmp != 0 {
     return id_cmp
   }
-  cmp_int(left.entity.generation, right.entity.generation)
+  cmp_int(left.light.entity.generation, right.light.entity.generation)
 }
 
 ///|
 pub fn render3d_collect_extracted_clusterable_point_lights(
   world : @ecs.World,
 ) -> Array[ExtractedClusterablePointLight3d] {
-  let combined : Array[(Int, ExtractedPointLight3d)] = []
-  for point in render3d_collect_extracted_point_lights(world) {
+  let combined : Array[(Int, Render3dExtractedPointLightEntry)] = []
+  for point in render3d_collect_extracted_point_light_entries(world) {
     combined.push((0, point))
   }
-  for spot in render3d_collect_extracted_spot_lights(world) {
+  for spot in render3d_collect_extracted_spot_light_entries(world) {
     combined.push((1, spot))
   }
   combined.sort_by(fn(left, right) {
@@ -3065,7 +3073,8 @@ pub fn render3d_collect_extracted_clusterable_point_lights(
   combined.map(fn(item) {
     ExtractedClusterablePointLight3d::{
       clusterable_type_order: item.0,
-      light: item.1,
+      render_entity: item.1.render_entity,
+      light: item.1.light,
     }
   })
 }
@@ -3256,12 +3265,33 @@ priv struct Render3dVisibleClusterableObjectsFallback {
 }
 
 ///|
+priv struct Render3dGpuLightsViewConfig {
+  viewport_width : Int
+  viewport_height : Int
+  cluster_dimensions_x : Int
+  cluster_dimensions_y : Int
+  cluster_dimensions_z : Int
+  cluster_near : Float
+  cluster_far : Float
+  cluster_is_orthographic : Bool
+  render_layers : @camera_render_layers.RenderLayers
+}
+
+///|
 fn render3d_cluster_camera_entity(world : @ecs.World) -> @core.Entity? {
   let selection = Render3dClusterCameraSelection::{
     preferred: None,
     fallback: None,
   }
-  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, camera) {
+  world.for_each_component(@camera_components3d.ecs_key_camera3d, fn(
+    entity,
+    _camera3d,
+  ) {
+    let camera = match
+      (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
+      Some(value) => value
+      None => return
+    }
     if !camera.is_active {
       return
     }
@@ -3309,6 +3339,15 @@ fn render3d_cluster_view_render_layers(
 ///|
 fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
   if render3d_cluster_camera_entity(world) is Some(entity) &&
+    (try! world.get_by_key(entity, @render_view.ExtractedView::component()))
+    is Some(view) {
+    let width = view.viewport_z()
+    let height = view.viewport_w()
+    if width > 0 && height > 0 {
+      return (width, height)
+    }
+  }
+  if render3d_cluster_camera_entity(world) is Some(entity) &&
     (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
     is Some(camera) &&
     camera.physical_viewport_size() is Some(viewport_size) {
@@ -3319,11 +3358,29 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
     }
   }
   let fallback_view = Render3dClusterViewFallback::{ view: None }
-  world.for_each_component(@camera_camera.ecs_key_camera, fn(_entity, camera) {
+  world.for_each_component(@camera_components3d.ecs_key_camera3d, fn(
+    entity,
+    _camera3d,
+  ) {
     if fallback_view.view is Some(_) {
       return
     }
-    if !camera.is_active {
+    if (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) &&
+      !camera.is_active {
+      return
+    }
+    if (try! world.get_by_key(entity, @render_view.ExtractedView::component()))
+      is Some(view) {
+      let width = view.viewport_z()
+      let height = view.viewport_w()
+      if width > 0 && height > 0 {
+        fallback_view.view = Some((width, height))
+        return
+      }
+    }
+    guard (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) else {
       return
     }
     if camera.physical_viewport_size() is Some(viewport_size) {
@@ -3558,7 +3615,10 @@ fn render3d_visible_clusterable_objects(
 }
 
 ///|
-pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
+fn render3d_collect_gpu_lights_with_view_config(
+  world : @ecs.World,
+  view_config : Render3dGpuLightsViewConfig?,
+) -> GpuLights3d {
   let directional = render3d_collect_extracted_directional_lights(world)
   let rect_lights = render3d_collect_extracted_rect_lights(world)
   let clusterable_point_lights = render3d_collect_extracted_clusterable_point_lights(
@@ -3576,62 +3636,103 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   } else {
     @light.GlobalAmbientLight::GlobalAmbientLight()
   }
-  let (cluster_screen_width, cluster_screen_height) = render3d_cluster_view_info(
-    world,
-  )
-  let cluster_projection_runtime = render3d_cluster_projection_runtime(world)
-  let cluster_is_orthographic = if cluster_projection_runtime is Some(runtime) {
-    runtime.is_orthographic
-  } else {
-    false
-  }
-  let mut cluster_dimensions_x = 16
-  let mut cluster_dimensions_y = 9
-  let mut cluster_dimensions_z = 24
-  let mut cluster_near = 0.1F
-  let mut cluster_far = 1000.0F
-  if render3d_cluster_runtime(world)
-    is Some(
+  let (
+    cluster_screen_width,
+    cluster_screen_height,
+    cluster_dimensions_x,
+    cluster_dimensions_y,
+    cluster_dimensions_z,
+    cluster_near,
+    cluster_far,
+    cluster_is_orthographic,
+    view_render_layers,
+  ) = match view_config {
+    Some(config) =>
       (
-        runtime_dimensions_x,
-        runtime_dimensions_y,
-        runtime_dimensions_z,
-        runtime_near,
-        runtime_far,
+        config.viewport_width,
+        config.viewport_height,
+        config.cluster_dimensions_x,
+        config.cluster_dimensions_y,
+        config.cluster_dimensions_z,
+        config.cluster_near,
+        config.cluster_far,
+        config.cluster_is_orthographic,
+        config.render_layers,
       )
-    ) {
-    cluster_dimensions_x = runtime_dimensions_x
-    cluster_dimensions_y = runtime_dimensions_y
-    cluster_dimensions_z = runtime_dimensions_z
-    cluster_near = runtime_near
-    cluster_far = runtime_far
-  } else {
-    let cluster_config = render3d_cluster_config(world)
-    let (config_dimensions_x, config_dimensions_y, config_dimensions_z) = @light_cluster.cluster_config_dimensions_for_screen_size(
-      cluster_config, cluster_screen_width, cluster_screen_height,
-    )
-    cluster_dimensions_x = config_dimensions_x
-    cluster_dimensions_y = config_dimensions_y
-    cluster_dimensions_z = config_dimensions_z
-    cluster_near = @light_cluster.cluster_config_first_slice_depth(
-      cluster_config,
-    )
-    if cluster_projection_runtime is Some(runtime) && runtime.is_orthographic {
-      cluster_near = runtime.orthographic_first_slice_depth
-    }
-    cluster_far = match
-      @light_cluster.cluster_config_far_z_mode(cluster_config) {
-      @light_cluster.ClusterFarZMode::Constant(far) => far
-      @light_cluster.ClusterFarZMode::MaxClusterableObjectRange =>
-        render3d_clusterable_object_max_range(world)
-    }
-    if !cluster_is_orthographic &&
-      cluster_dimensions_z == 1 &&
-      cluster_far > cluster_near {
-      cluster_near = cluster_far
-    }
-    if cluster_far < cluster_near {
-      cluster_far = cluster_near
+    None => {
+      let (cluster_screen_width, cluster_screen_height) = render3d_cluster_view_info(
+        world,
+      )
+      let cluster_projection_runtime = render3d_cluster_projection_runtime(
+        world,
+      )
+      let cluster_is_orthographic = if cluster_projection_runtime
+        is Some(runtime) {
+        runtime.is_orthographic
+      } else {
+        false
+      }
+      let mut cluster_dimensions_x = 16
+      let mut cluster_dimensions_y = 9
+      let mut cluster_dimensions_z = 24
+      let mut cluster_near = 0.1F
+      let mut cluster_far = 1000.0F
+      if render3d_cluster_runtime(world)
+        is Some(
+          (
+            runtime_dimensions_x,
+            runtime_dimensions_y,
+            runtime_dimensions_z,
+            runtime_near,
+            runtime_far,
+          )
+        ) {
+        cluster_dimensions_x = runtime_dimensions_x
+        cluster_dimensions_y = runtime_dimensions_y
+        cluster_dimensions_z = runtime_dimensions_z
+        cluster_near = runtime_near
+        cluster_far = runtime_far
+      } else {
+        let cluster_config = render3d_cluster_config(world)
+        let (config_dimensions_x, config_dimensions_y, config_dimensions_z) = @light_cluster.cluster_config_dimensions_for_screen_size(
+          cluster_config, cluster_screen_width, cluster_screen_height,
+        )
+        cluster_dimensions_x = config_dimensions_x
+        cluster_dimensions_y = config_dimensions_y
+        cluster_dimensions_z = config_dimensions_z
+        cluster_near = @light_cluster.cluster_config_first_slice_depth(
+          cluster_config,
+        )
+        if cluster_projection_runtime is Some(runtime) &&
+          runtime.is_orthographic {
+          cluster_near = runtime.orthographic_first_slice_depth
+        }
+        cluster_far = match
+          @light_cluster.cluster_config_far_z_mode(cluster_config) {
+          @light_cluster.ClusterFarZMode::Constant(far) => far
+          @light_cluster.ClusterFarZMode::MaxClusterableObjectRange =>
+            render3d_clusterable_object_max_range(world)
+        }
+        if !cluster_is_orthographic &&
+          cluster_dimensions_z == 1 &&
+          cluster_far > cluster_near {
+          cluster_near = cluster_far
+        }
+        if cluster_far < cluster_near {
+          cluster_far = cluster_near
+        }
+      }
+      (
+        cluster_screen_width,
+        cluster_screen_height,
+        cluster_dimensions_x,
+        cluster_dimensions_y,
+        cluster_dimensions_z,
+        cluster_near,
+        cluster_far,
+        cluster_is_orthographic,
+        render3d_cluster_view_render_layers(world),
+      )
     }
   }
   let n_clusters = cluster_dimensions_x *
@@ -3660,7 +3761,6 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
   }
   let gpu_directional_lights : Array[GpuDirectionalLight3d] = []
   let mut directional_shadow_texture_base_index = 0
-  let view_render_layers = render3d_cluster_view_render_layers(world)
   let max_texture_array_layers = render3d_lights_max_texture_array_layers(world)
   let directional_volumetric_enabled_count = render3d_directional_lights_volumetric_enabled_count(
     directional, max_texture_array_layers,
@@ -3754,6 +3854,40 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
     n_rect_lights: rect_light_count,
     rect_lights: gpu_rect_lights,
   }
+}
+
+///|
+pub fn render3d_collect_gpu_lights_for_view_config(
+  world : @ecs.World,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  cluster_dimensions_x~ : Int,
+  cluster_dimensions_y~ : Int,
+  cluster_dimensions_z~ : Int,
+  cluster_near~ : Float,
+  cluster_far~ : Float,
+  cluster_is_orthographic~ : Bool,
+  render_layers~ : @camera_render_layers.RenderLayers,
+) -> GpuLights3d {
+  render3d_collect_gpu_lights_with_view_config(
+    world,
+    Some(Render3dGpuLightsViewConfig::{
+      viewport_width,
+      viewport_height,
+      cluster_dimensions_x,
+      cluster_dimensions_y,
+      cluster_dimensions_z,
+      cluster_near,
+      cluster_far,
+      cluster_is_orthographic,
+      render_layers,
+    }),
+  )
+}
+
+///|
+pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
+  render3d_collect_gpu_lights_with_view_config(world, None)
 }
 
 ///|
@@ -3928,6 +4062,35 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       gpu_cluster_offsets_and_counts_bytes,
     ),
   }
+}
+
+///|
+pub fn render3d_collect_lighting_for_view_config(
+  world : @ecs.World,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  cluster_dimensions_x~ : Int,
+  cluster_dimensions_y~ : Int,
+  cluster_dimensions_z~ : Int,
+  cluster_near~ : Float,
+  cluster_far~ : Float,
+  cluster_is_orthographic~ : Bool,
+  render_layers~ : @camera_render_layers.RenderLayers,
+) -> Render3dLightingState {
+  let lighting = render3d_collect_lighting(world)
+  let gpu_lights = render3d_collect_gpu_lights_for_view_config(
+    world,
+    viewport_width~,
+    viewport_height~,
+    cluster_dimensions_x~,
+    cluster_dimensions_y~,
+    cluster_dimensions_z~,
+    cluster_near~,
+    cluster_far~,
+    cluster_is_orthographic~,
+    render_layers~,
+  )
+  Render3dLightingState::{ ..lighting, gpu_lights: Some(gpu_lights) }
 }
 
 ///|

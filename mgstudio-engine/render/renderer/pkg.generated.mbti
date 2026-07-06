@@ -529,6 +529,8 @@ pub fn update_mesh3d_xyznuvrgba_indexed(mesh_id~ : Int, vertices_xyznuvrgba~ : A
 
 pub fn upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
 
+pub fn use_mesh3d_cluster_buffers(clustered_lights_buffer~ : @wgpu_mbt.Buffer, clustered_lights_size~ : UInt64, clusterable_object_index_lists_buffer~ : @wgpu_mbt.Buffer, clusterable_object_index_lists_size~ : UInt64, cluster_offsets_and_counts_buffer~ : @wgpu_mbt.Buffer, cluster_offsets_and_counts_size~ : UInt64) -> Unit
+
 // Errors
 #alias(RawVulkanBackendError)
 pub(all) suberror GpuBackendError {
@@ -707,8 +709,11 @@ pub struct GpuBackend {
   mut mesh3d_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_lights_buf : @wgpu_mbt.Buffer?
   mut mesh3d_clustered_lights_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_clustered_lights_size : UInt64
   mut mesh3d_clusterable_object_index_lists_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_clusterable_object_index_lists_size : UInt64
   mut mesh3d_cluster_offsets_and_counts_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_cluster_offsets_and_counts_size : UInt64
   mut mesh3d_clustered_decals_buf : @wgpu_mbt.Buffer?
   mut mesh3d_clustered_decals_capacity : UInt64
   mut mesh3d_clustered_decals_revision : Int
@@ -1183,6 +1188,7 @@ pub fn GpuBackend::texture_width(Self, Int) -> Int
 pub fn GpuBackend::update_mesh3d_xyznuvrgba(Self, Int, Array[Float], Int) -> Bool
 pub fn GpuBackend::update_mesh3d_xyznuvrgba_indexed(Self, Int, Array[Float], Array[Int], Int) -> Bool
 pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(Self, Int, Int, HostMesh3dPreprocessCameraPayload) -> Unit
+pub fn GpuBackend::use_mesh3d_cluster_buffers(Self, @wgpu_mbt.Buffer, UInt64, @wgpu_mbt.Buffer, UInt64, @wgpu_mbt.Buffer, UInt64) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8_mip(Self, Int, Int, Int, Int, Int, Int, Bytes) -> Unit
 

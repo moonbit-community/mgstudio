@@ -82,7 +82,14 @@ pub fn calculate_cluster_factors(
 pub fn cluster_assign_lights(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_system(cluster_assign_lights_system)
+  app.add_post_update_system_config(
+    @app.system(cluster_assign_lights_system)
+    .named("mgstudio.light.cluster.assign_objects_to_clusters")
+    .after(@transform.transform_set_propagate)
+    .after(@visibility.visibility_set_check_visibility)
+    .after("mgstudio.camera.update")
+    .in_set(@light.simulation_light_set_assign_lights_to_clusters),
+  )
 }
 
 ///|
@@ -1179,7 +1186,10 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     None => GlobalClusterSettings::GlobalClusterSettings()
   }
   let camera_entities = []
-  world.for_each_component(@camera_camera.ecs_key_camera, fn(entity, _camera) {
+  world.for_each_component(@camera_components3d.ecs_key_camera3d, fn(
+    entity,
+    _camera3d,
+  ) {
     camera_entities.push(entity)
   })
   for entity in camera_entities {

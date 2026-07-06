@@ -77,6 +77,41 @@ fn render3d_main_pass_pbr_internal_lut_ids(
 }
 
 ///|
+fn render3d_main_pass_use_view_cluster_buffers(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+) -> Unit {
+  guard world.get_resource(GlobalClusterableObjectMeta::resource())
+    is Some(global_clusterable_object_meta) else {
+    return
+  }
+  guard global_clusterable_object_meta.gpu_clustered_lights_binding()
+    is Some(clustered_lights_buffer) else {
+    return
+  }
+  guard (try! world.get_by_key(view_entity, ViewClusterBindings::component()))
+    is Some(view_cluster_bindings) else {
+    return
+  }
+  guard view_cluster_bindings.clusterable_object_index_lists_gpu_buffer()
+    is Some(clusterable_object_index_lists_buffer) else {
+    return
+  }
+  guard view_cluster_bindings.cluster_offsets_and_counts_gpu_buffer()
+    is Some(cluster_offsets_and_counts_buffer) else {
+    return
+  }
+  @render.host_gpu_use_mesh3d_cluster_buffers(
+    clustered_lights_buffer~,
+    clustered_lights_size=global_clusterable_object_meta.gpu_clustered_lights_gpu_capacity(),
+    clusterable_object_index_lists_buffer~,
+    clusterable_object_index_lists_size=view_cluster_bindings.clusterable_object_index_lists_gpu_capacity(),
+    cluster_offsets_and_counts_buffer~,
+    cluster_offsets_and_counts_size=view_cluster_bindings.cluster_offsets_and_counts_gpu_capacity(),
+  )
+}
+
+///|
 fn render3d_main_pass_deband_dither_enabled(
   camera : Camera3dViewPayload,
 ) -> Bool {
@@ -506,6 +541,10 @@ fn render3d_execute_camera_main_pass(
     clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
       cleared_targets_this_frame, scene_target_id, clear_enabled,
     ),
+  )
+  render3d_main_pass_use_view_cluster_buffers(
+    world,
+    extracted_camera.entity.render_entity,
   )
   prepare_light_probe_bindings()
   render3d_prepare_camera_screen_space_reflections_settings(camera)
@@ -1120,6 +1159,10 @@ fn render3d_execute_camera_main_pass(
         pass_kind=scene_pass_kind,
         clear_enabled=0,
       )
+      render3d_main_pass_use_view_cluster_buffers(
+        world,
+        extracted_camera.entity.render_entity,
+      )
       prepare_light_probe_bindings()
       prepare_view_bind_group(transmission_source_texture_id)
       for i in transmission_range.0..<transmission_range.1 {
@@ -1197,6 +1240,10 @@ fn render3d_execute_camera_main_pass(
       point_shadow_near~,
       pass_kind=scene_pass_kind,
       clear_enabled=0,
+    )
+    render3d_main_pass_use_view_cluster_buffers(
+      world,
+      extracted_camera.entity.render_entity,
     )
     prepare_light_probe_bindings()
     prepare_view_bind_group(-1)

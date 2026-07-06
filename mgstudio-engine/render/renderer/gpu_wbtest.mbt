@@ -2694,6 +2694,29 @@ test "renderer: material pipeline draw treats unregistered cached ids as pending
 }
 
 ///|
+test "renderer: shadow depth pipeline keeps Bevy reverse-Z depth state" {
+  let descriptor = @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_depth_stencil(
+    Some(
+      @render_resource.DepthStencilState::new(
+        @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
+        true,
+        @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+      ),
+    ),
+  )
+  debug_inspect(
+    mesh3d_shadow_depth_format(Some(descriptor)) ==
+    @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    content="true",
+  )
+  debug_inspect(
+    mesh3d_shadow_depth_compare(Some(descriptor)) ==
+    @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+    content="true",
+  )
+}
+
+///|
 test "renderer: shadow draw treats unregistered cached material pipelines as pending" {
   let backend = GpuBackend::new(assets_base="assets")
   debug_inspect(

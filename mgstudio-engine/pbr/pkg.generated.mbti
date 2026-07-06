@@ -1565,6 +1565,7 @@ pub(all) struct GlobalClusterableObjectMeta {
   entity_to_index : Map[UInt64, Int]
 }
 pub fn GlobalClusterableObjectMeta::add_gpu_clustered_light(Self, GpuClusteredLight) -> Unit
+pub fn GlobalClusterableObjectMeta::clear(Self) -> Unit
 pub fn GlobalClusterableObjectMeta::clear_entity_to_index(Self) -> Unit
 pub fn GlobalClusterableObjectMeta::entity_index(Self, @core.Entity) -> Int?
 pub fn GlobalClusterableObjectMeta::entity_to_index_len(Self) -> Int

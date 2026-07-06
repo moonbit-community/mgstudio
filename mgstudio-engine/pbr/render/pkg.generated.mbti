@@ -299,7 +299,11 @@ pub fn render3d_collect_extracted_spot_lights(@ecs.World) -> Array[ExtractedPoin
 
 pub fn render3d_collect_gpu_lights(@ecs.World) -> GpuLights3d
 
+pub fn render3d_collect_gpu_lights_for_view_config(@ecs.World, viewport_width~ : Int, viewport_height~ : Int, cluster_dimensions_x~ : Int, cluster_dimensions_y~ : Int, cluster_dimensions_z~ : Int, cluster_near~ : Float, cluster_far~ : Float, cluster_is_orthographic~ : Bool, render_layers~ : @render_layers.RenderLayers) -> GpuLights3d
+
 pub fn render3d_collect_lighting(@ecs.World) -> Render3dLightingState
+
+pub fn render3d_collect_lighting_for_view_config(@ecs.World, viewport_width~ : Int, viewport_height~ : Int, cluster_dimensions_x~ : Int, cluster_dimensions_y~ : Int, cluster_dimensions_z~ : Int, cluster_near~ : Float, cluster_far~ : Float, cluster_is_orthographic~ : Bool, render_layers~ : @render_layers.RenderLayers) -> Render3dLightingState
 
 pub fn render3d_compose_transform(@transform.Transform, @transform.Transform) -> @transform.Transform
 
@@ -595,11 +599,13 @@ pub impl @ecs.Component for DirectionalLightViewEntities
 
 pub struct ExtractedClusterablePointLight3d {
   clusterable_type_order : Int
+  render_entity : @core.Entity
   light : ExtractedPointLight3d
 }
 pub fn ExtractedClusterablePointLight3d::is_point_light(Self) -> Bool
 pub fn ExtractedClusterablePointLight3d::is_spot_light(Self) -> Bool
 pub fn ExtractedClusterablePointLight3d::light(Self) -> ExtractedPointLight3d
+pub fn ExtractedClusterablePointLight3d::render_entity(Self) -> @core.Entity
 
 pub struct ExtractedDirectionalLight3d {
   entity : @core.Entity

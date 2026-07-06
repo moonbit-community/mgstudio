@@ -118,6 +118,13 @@ fn render3d_specialize_shadow_phase_for_light(
     None =>
       abort("missing LightKeyCache resource during pbr shadow specialization")
   }
+  @pbr_render.check_view_light_needs_specialization(
+    light_key_cache,
+    dirty_specializations,
+    retained_view_entity,
+    true,
+    render3d_light_entity_is_directional(light_entity),
+  )
   let light_key = match light_key_cache.get(retained_view_entity) {
     Some(value) => value
     None => return false
@@ -275,6 +282,14 @@ fn render3d_shadow_phase_items_for_view(
 }
 
 ///|
+fn render3d_extracted_shadow_mesh_matches_bin(
+  mesh : ExtractedMesh3d,
+  bin_key : Render3dShadowBinKeyData,
+) -> Bool {
+  mesh.payload.mesh_handle.id() == bin_key.mesh_asset_id()
+}
+
+///|
 fn render3d_shadow_resolve_phase_items(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
@@ -301,13 +316,25 @@ fn render3d_shadow_resolve_phase_items(
     let batch_range = item.batch_range()
     for uniform_index in batch_range.start()..<batch_range.end() {
       match mesh_indices_by_uniform_index.get(uniform_index) {
-        Some(extracted_index) => extracted_indices.push(extracted_index)
+        Some(extracted_index) =>
+          if render3d_extracted_shadow_mesh_matches_bin(
+              meshes[extracted_index],
+              item.bin_key(),
+            ) {
+            extracted_indices.push(extracted_index)
+          }
         None => ()
       }
     }
     if extracted_indices.length() == 0 {
       match mesh_indices_by_main_entity.get(item.main_entity().id().to_bits()) {
-        Some(extracted_index) => extracted_indices.push(extracted_index)
+        Some(extracted_index) =>
+          if render3d_extracted_shadow_mesh_matches_bin(
+              meshes[extracted_index],
+              item.bin_key(),
+            ) {
+            extracted_indices.push(extracted_index)
+          }
         None => ()
       }
     }

@@ -250,6 +250,65 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
 }
 
 ///|
+test "render3d: shadow phase resolve keeps Bevy mesh bins isolated" {
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(902UL),
+    @material.DrawFunctionId::new(10U),
+    Some(5),
+    @render_mesh.MeshSlabs::new(17, index_slab_id=Some(18)),
+  )
+  let first_main = @render.MainEntity::new(@core.Entity::new(51, 1))
+  let second_main = @render.MainEntity::new(@core.Entity::new(52, 1))
+  let item = Render3dShadowPhaseItemData::new(
+    key,
+    Render3dShadowBinKeyData::new(77),
+    @core.Entity::new(61, 1),
+    first_main,
+    Render3dShadowBatchRange::new(14, 16),
+    Render3dShadowPhaseItemExtraIndex::none(),
+  )
+  let render_mesh_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  render_mesh_instances.insert(
+    first_main,
+    RenderMeshQueueData::new(77, 14U, true),
+  )
+  render_mesh_instances.insert(
+    second_main,
+    RenderMeshQueueData::new(78, 15U, true),
+  )
+  let meshes = [
+    ExtractedMesh3d::{
+      entity: phase_entity_ref3d_for_main(first_main.id()),
+      payload: material_test_extracted_mesh_payload(
+        77,
+        @material.MaterialProperties::MaterialProperties(),
+      ),
+    },
+    ExtractedMesh3d::{
+      entity: phase_entity_ref3d_for_main(second_main.id()),
+      payload: material_test_extracted_mesh_payload(
+        78,
+        @material.MaterialProperties::MaterialProperties(),
+      ),
+    },
+  ]
+  let resolved = render3d_shadow_resolve_phase_items(
+    meshes,
+    render_mesh_instances,
+    [item],
+  )
+  debug_inspect(resolved.length(), content="1")
+  debug_inspect(
+    render3d_resolved_shadow_phase_draw_count(resolved),
+    content="1",
+  )
+  debug_inspect(resolved[0].extracted_indices.length(), content="1")
+  inspect(resolved[0].extracted_indices[0], content="0")
+}
+
+///|
 test "render3d: batchable shadow phase prepares Bevy work item buffers" {
   let phase = Render3dShadowViewPhaseData::new(
     @render_batching.GpuPreprocessingMode::None,
@@ -1850,6 +1909,44 @@ test "render3d: material specialization candidates come from visible dirty and p
 }
 
 ///|
+test "render3d: view key cache marks material views dirty when pipeline capabilities change" {
+  let world = @ecs.World::new()
+  let main_view = @core.Entity::new(410, 1)
+  let render_view = world.spawn()
+  world.insert_resource(
+    @render_visibility.DirtySpecializations::resource(),
+    @render_visibility.DirtySpecializations::DirtySpecializations(),
+  )
+  let camera = ExtractedCamera3d::{
+    entity: phase_entity_ref3d(main_view, render_view),
+    payload: material_test_camera_payload(),
+  }
+
+  render3d_check_views_need_specialization(world, [camera], false, true)
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  let dirty = world
+    .get_resource(@render_visibility.DirtySpecializations::resource())
+    .unwrap()
+  debug_inspect(
+    dirty.must_wipe_specializations_for_view(retained_view),
+    content="true",
+  )
+
+  dirty.clear()
+  render3d_check_views_need_specialization(world, [camera], false, true)
+  debug_inspect(
+    dirty.must_wipe_specializations_for_view(retained_view),
+    content="false",
+  )
+
+  render3d_check_views_need_specialization(world, [camera], true, true)
+  debug_inspect(
+    dirty.must_wipe_specializations_for_view(retained_view),
+    content="true",
+  )
+}
+
+///|
 test "render3d: shadow specialization candidates come from visible dirty and pending meshes" {
   let world = @ecs.World::new()
   let main_view = @core.Entity::new(451, 1)
@@ -1974,7 +2071,7 @@ test "render3d: shadow specialization skips cached entities before readiness che
   let light_key_cache = @pbr_render.LightKeyCache::LightKeyCache()
   light_key_cache.insert(
     retained_view,
-    @material.ErasedMeshPipelineKey::new(16UL, "MeshPipelineKey"),
+    @material.ErasedMeshPipelineKey::new(137438953476UL, "MeshPipelineKey"),
   )
   world.insert_resource(@pbr_render.LightKeyCache::resource(), light_key_cache)
   let shadow_cache = @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache()
@@ -2374,7 +2471,22 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   let no_shadows = @render.MainEntity::new(world.spawn_empty())
   let missing_render_mesh = @render.MainEntity::new(world.spawn_empty())
   let ready = @render.MainEntity::new(world.spawn_empty())
+  let standard_ready = @render.MainEntity::new(world.spawn_empty())
   let non_shadow_caster = @render.MainEntity::new(world.spawn_empty())
+  let source_world = @render.render_source_world(world)
+  let standard_material_handle = {
+    let key : @ecs.ResourceKey[@asset.Assets[StandardMaterial]] = @asset.assets_resource_key()
+    if source_world.get_resource(key) is None {
+      source_world.insert_resource(key, @asset.Assets::new())
+    }
+    match source_world.get_resource_mut(key) {
+      Some(assets) =>
+        assets.modify(fn(store) {
+          store.add(StandardMaterial::from_color(@color.Color::white()))
+        })
+      None => abort("missing StandardMaterial assets resource")
+    }
+  }
   let shadow_queues = @pbr_render.PendingShadowQueues::PendingShadowQueues()
   let view_pending_shadow_queues = shadow_queues
     .queues()
@@ -2437,6 +2549,11 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     ready.id(),
     true,
     MeshMaterial3d::new(@asset.Handle::new(640)),
+  )
+  material_instances.extract_mesh_material(
+    standard_ready.id(),
+    true,
+    MeshMaterial3d::new(standard_material_handle),
   )
   material_instances.extract_mesh_material(
     non_shadow_caster.id(),
@@ -2528,6 +2645,15 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     RenderMeshQueueData::new(640, 0U, true, flags=ready_flags),
   )
   mesh_instances.insert(
+    standard_ready,
+    RenderMeshQueueData::new(
+      standard_material_handle.id(),
+      0U,
+      true,
+      flags=ready_flags,
+    ),
+  )
+  mesh_instances.insert(
     non_shadow_caster,
     RenderMeshQueueData::new(650, 0U, true),
   )
@@ -2538,6 +2664,13 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     @render_mesh.RenderMesh::new(
       vertex_count=3,
       key_bits=@mesh.BaseMeshPipelineKey::new(32UL),
+    ),
+  )
+  render_mesh_assets.insert(
+    standard_material_handle.id(),
+    @render_mesh.RenderMesh::new(
+      vertex_count=3,
+      key_bits=@mesh.BaseMeshPipelineKey::new(64UL),
     ),
   )
   world.insert_resource(
@@ -2571,6 +2704,17 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     @material.ErasedMeshPipelineKey::new(8UL, "MeshPipelineKey"),
     view_pending_shadow_queues,
   ).unwrap()
+  let standard_ready_value = render3d_shadow_specialization_queue_data(
+    world, retained_view, render_entity, standard_ready, view_pending_shadow_queues,
+  ).unwrap()
+  let standard_ready_work_item = render3d_shadow_specialization_work_item_data(
+    world,
+    retained_view,
+    render_entity,
+    standard_ready,
+    @material.ErasedMeshPipelineKey::new(8UL, "MeshPipelineKey"),
+    view_pending_shadow_queues,
+  ).unwrap()
   let non_shadow_caster_ready = render3d_shadow_specialization_queue_data(
     world, retained_view, render_entity, non_shadow_caster, view_pending_shadow_queues,
   )
@@ -2586,6 +2730,21 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
   )
   inspect(ready_work_item.mesh_key().bits(), content="40")
   debug_inspect(ready_work_item.properties().shadows_enabled, content="true")
+  debug_inspect(
+    standard_ready_value
+    .flags()
+    .contains(RenderMeshInstanceFlags::shadow_caster()),
+    content="true",
+  )
+  inspect(standard_ready_work_item.mesh_key().bits(), content="72")
+  inspect(
+    standard_ready_work_item.material_type_tag(),
+    content="StandardMaterial",
+  )
+  debug_inspect(
+    standard_ready_work_item.properties().shadows_enabled,
+    content="true",
+  )
   debug_inspect(non_shadow_caster_ready is None, content="true")
   match world.get_resource(@pbr_render.PendingShadowQueues::resource()) {
     Some(queues) =>

@@ -305,11 +305,15 @@ fn render3d_lighting_with_clusterable_indices(
   lighting : Render3dLightingState,
 ) -> Render3dLightingState {
   let point_light_index = match lighting.point_entity {
-    Some(entity) =>
+    Some(_) =>
       match world.get_resource(ecs_key_global_clusterable_object_meta) {
         Some(meta) =>
-          match meta.entity_index(entity) {
-            Some(index) => if index < 0 { 0 } else { index }
+          match lighting.point_render_entity {
+            Some(render_entity) =>
+              match meta.entity_index(render_entity) {
+                Some(index) => if index < 0 { 0 } else { index }
+                None => lighting.point_light_index
+              }
             None => lighting.point_light_index
           }
         None => lighting.point_light_index
@@ -318,14 +322,18 @@ fn render3d_lighting_with_clusterable_indices(
   }
   let point_light_count = render3d_clusterable_point_light_count(world)
   let spot_light_index = match lighting.spot_entity {
-    Some(entity) =>
+    Some(_) =>
       match world.get_resource(ecs_key_global_clusterable_object_meta) {
         Some(meta) =>
-          match meta.entity_index(entity) {
-            Some(index) =>
-              render3d_spot_light_index_from_global_index(
-                index, point_light_count,
-              )
+          match lighting.spot_render_entity {
+            Some(render_entity) =>
+              match meta.entity_index(render_entity) {
+                Some(index) =>
+                  render3d_spot_light_index_from_global_index(
+                    index, point_light_count,
+                  )
+                None => lighting.spot_light_index
+              }
             None => lighting.spot_light_index
           }
         None => lighting.spot_light_index

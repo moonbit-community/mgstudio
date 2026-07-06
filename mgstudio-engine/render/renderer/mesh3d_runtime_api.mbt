@@ -131,6 +131,30 @@ pub fn GpuBackend::prepare_mesh3d_cluster_buffers(
 }
 
 ///|
+pub fn GpuBackend::use_mesh3d_cluster_buffers(
+  self : GpuBackend,
+  clustered_lights_buffer : @wgpu.Buffer,
+  clustered_lights_size : UInt64,
+  clusterable_object_index_lists_buffer : @wgpu.Buffer,
+  clusterable_object_index_lists_size : UInt64,
+  cluster_offsets_and_counts_buffer : @wgpu.Buffer,
+  cluster_offsets_and_counts_size : UInt64,
+) -> Unit {
+  self.mesh3d_clustered_lights_buf = Some(clustered_lights_buffer)
+  self.mesh3d_clustered_lights_size = clustered_lights_size
+  self.mesh3d_clusterable_object_index_lists_buf = Some(
+    clusterable_object_index_lists_buffer,
+  )
+  self.mesh3d_clusterable_object_index_lists_size = clusterable_object_index_lists_size
+  self.mesh3d_cluster_offsets_and_counts_buf = Some(
+    cluster_offsets_and_counts_buffer,
+  )
+  self.mesh3d_cluster_offsets_and_counts_size = cluster_offsets_and_counts_size
+  self.mesh3d_view_bg_cache.clear()
+  self.mesh3d_frame_view_bg_cache.clear()
+}
+
+///|
 pub fn prepare_mesh3d_cluster_buffers(
   clustered_lights_bytes~ : Bytes,
   clusterable_object_index_lists_bytes~ : Bytes,
@@ -139,6 +163,23 @@ pub fn prepare_mesh3d_cluster_buffers(
   if ensure_backend() is Some(backend) {
     backend.prepare_mesh3d_cluster_buffers(
       clustered_lights_bytes, clusterable_object_index_lists_bytes, cluster_offsets_and_counts_bytes,
+    )
+  }
+}
+
+///|
+pub fn use_mesh3d_cluster_buffers(
+  clustered_lights_buffer~ : @wgpu.Buffer,
+  clustered_lights_size~ : UInt64,
+  clusterable_object_index_lists_buffer~ : @wgpu.Buffer,
+  clusterable_object_index_lists_size~ : UInt64,
+  cluster_offsets_and_counts_buffer~ : @wgpu.Buffer,
+  cluster_offsets_and_counts_size~ : UInt64,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.use_mesh3d_cluster_buffers(
+      clustered_lights_buffer, clustered_lights_size, clusterable_object_index_lists_buffer,
+      clusterable_object_index_lists_size, cluster_offsets_and_counts_buffer, cluster_offsets_and_counts_size,
     )
   }
 }

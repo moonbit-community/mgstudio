@@ -23,6 +23,15 @@ fn approx_eq(a : Float, b : Float, eps : Float) -> Bool {
 }
 
 ///|
+fn test_abs(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
 fn test_u8_at(bytes : Bytes, index : Int) -> Int {
   match bytes.get(index) {
     Some(value) => value.to_int() & 0xFF
@@ -51,6 +60,22 @@ fn light_test_cluster_camera() -> @camera_camera.Camera {
       @math.IVec2::new(1280, 720),
     ),
   )
+}
+
+///|
+fn light_test_set_camera3d(
+  world : @ecs.World,
+  entity : @core.Entity,
+  camera : @camera_camera.Camera,
+) -> Unit {
+  try! (world.set_by_key(entity, @camera_camera.ecs_key_camera, camera)
+  |> ignore)
+  try! (world.set_by_key(
+    entity,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  |> ignore)
 }
 
 ///|
@@ -1369,12 +1394,7 @@ test "pbr render light: directional gpu lights respect camera render layers" {
   let world = @ecs.World::new()
 
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    light_test_cluster_camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, light_test_cluster_camera())
   try! (world.set_by_key(
     camera,
     @camera_render_layers.ecs_key_render_layers,
@@ -1508,7 +1528,7 @@ test "pbr render light: clustered point light reads decal index" {
     return
   }
   inspect(
-    test_u32le_at(clustered, 17 * 4),
+    test_u32le_at(clustered, 18 * 4),
     content=inserted_decal_index.reinterpret_as_uint().to_string(),
   )
 }
@@ -1798,12 +1818,7 @@ test "pbr render light: gpu lights carries bevy-shaped cluster dimensions" {
 test "pbr render light: storage cluster buffers fit bevy default clusters" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    light_test_cluster_camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, light_test_cluster_camera())
   try! (world.set_by_key(
     camera,
     @transform.ecs_key_transform,
@@ -1854,12 +1869,7 @@ test "pbr render light: storage cluster buffers fit bevy default clusters" {
 test "pbr render light: storage cluster buffers include clustered decal ranges" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    light_test_cluster_camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, light_test_cluster_camera())
   try! (world.set_by_key(
     camera,
     @transform.ecs_key_transform,
@@ -1922,12 +1932,7 @@ test "pbr render light: storage cluster buffers include clustered decal ranges" 
 test "pbr render light: point shadow clustered custom data matches Bevy projection" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    light_test_cluster_camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, light_test_cluster_camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -1975,15 +1980,46 @@ test "pbr render light: point shadow clustered custom data matches Bevy projecti
 }
 
 ///|
+test "pbr render light: point shadow pass depth matches Bevy shader depth" {
+  let light_position = @math.Vec3::zero()
+  let near = 0.1F
+  let projection = render3d_point_shadow_pass_projection(near, 100.0F)
+  for face_index in 0..<6 {
+    let face = match @camera_primitives.cube_map_face(face_index) {
+      Some(face) => face
+      None => abort("missing cubemap face")
+    }
+    let world_position = face.target().mul_scalar(2.0F)
+    let shadow_transform = render3d_point_shadow_face_transform(
+      light_position, face_index,
+    )
+    let clip_from_world = projection.clip_from_view.mul(
+      render3d_view_from_world_matrix(shadow_transform),
+    )
+    guard clip_from_world.project_point3(world_position) is Some(projected) else {
+      abort("point shadow world position failed to project")
+    }
+    let frag_ls = world_position.sub(light_position)
+    let major_axis_magnitude = test_abs(frag_ls.x)
+      .max(test_abs(frag_ls.y))
+      .max(test_abs(frag_ls.z))
+    let light_custom_data = projection.clip_from_view
+    let zw_x = 0.0F -
+      major_axis_magnitude * light_custom_data.z_axis.z +
+      light_custom_data.w_axis.z
+    let zw_y = 0.0F -
+      major_axis_magnitude * light_custom_data.z_axis.w +
+      light_custom_data.w_axis.w
+    inspect(approx_eq(projected.z, zw_x / zw_y, 1.0e-5F), content="true")
+    inspect(approx_eq(projected.z, near / 2.0F, 1.0e-5F), content="true")
+  }
+}
+
+///|
 test "pbr render light: cluster factors zw follow orthographic projection runtime" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2064,12 +2100,7 @@ test "pbr render light: cluster far fallback follows max visible clusterable ran
 test "pbr render light: cluster far ignores non-camera visible cluster list" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
   let small_light = world.spawn()
   try! (world.set_by_key(
     small_light,
@@ -2111,12 +2142,7 @@ test "pbr render light: cluster far ignores non-camera visible cluster list" {
 test "pbr render light: cluster far fallback prefers camera visible cluster list" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2162,12 +2188,7 @@ test "pbr render light: cluster far fallback prefers camera visible cluster list
 test "pbr render light: cluster far fallback includes camera view depth" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2223,12 +2244,7 @@ test "pbr render light: cluster far fallback includes camera view depth" {
 test "pbr render light: single-z perspective cluster near pins to far" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2262,12 +2278,7 @@ test "pbr render light: single-z perspective cluster near pins to far" {
 test "pbr render light: gpu lights cluster dimensions follow cluster config component" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, entity, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     entity,
     @light_cluster.ClusterConfig::component(),
@@ -2315,12 +2326,7 @@ test "pbr render light: cluster config is sourced from camera entities" {
 test "pbr render light: cluster config none yields zero cluster payload" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, entity, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     entity,
     @light_cluster.ClusterConfig::component(),
@@ -2347,12 +2353,11 @@ test "pbr render light: cluster config none yields zero cluster payload" {
 test "pbr render light: inactive camera clusters are ignored" {
   let world = @ecs.World::new()
   let inactive = world.spawn()
-  try! (world.set_by_key(
+  light_test_set_camera3d(
+    world,
     inactive,
-    @camera_camera.ecs_key_camera,
     @camera_camera.Camera::Camera().with_is_active(false),
   )
-  |> ignore)
   try! (world.set_by_key(
     inactive,
     @light_cluster.Clusters::component(),
@@ -2360,12 +2365,7 @@ test "pbr render light: inactive camera clusters are ignored" {
   )
   |> ignore)
   let active = world.spawn()
-  try! (world.set_by_key(
-    active,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, active, @camera_camera.Camera::Camera())
 
   light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
@@ -2379,12 +2379,7 @@ test "pbr render light: inactive camera clusters are ignored" {
 test "pbr render light: cluster payload prefers runtime clusters component" {
   let world = @ecs.World::new()
   let entity = world.spawn()
-  try! (world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  |> ignore)
+  light_test_set_camera3d(world, entity, @camera_camera.Camera::Camera())
   try! (world.set_by_key(
     entity,
     @light_cluster.Clusters::component(),
@@ -2424,9 +2419,9 @@ test "pbr render light: cluster payload prefers runtime clusters component" {
 test "pbr render light: cluster factors xy prefer camera viewport size when present" {
   let world = @ecs.World::new()
   let camera = world.spawn()
-  try! (world.set_by_key(
+  light_test_set_camera3d(
+    world,
     camera,
-    @camera_camera.ecs_key_camera,
     @camera_camera.Camera::Camera().with_viewport(
       @camera_viewport.Viewport::new(
         @math.IVec2::new(0, 0),
@@ -2434,7 +2429,6 @@ test "pbr render light: cluster factors xy prefer camera viewport size when pres
       ),
     ),
   )
-  |> ignore)
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2455,6 +2449,62 @@ test "pbr render light: cluster factors xy prefer camera viewport size when pres
   )
   inspect(
     approx_eq(gpu_lights.cluster_factors.y, 9.0F / 360.0F, 1.0e-6F),
+    content="true",
+  )
+}
+
+///|
+test "pbr render light: cluster factors xy use extracted physical viewport" {
+  let world = @ecs.World::new()
+  let camera = world.spawn()
+  try! (world.set_by_key(
+    camera,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  |> ignore)
+  light_test_set_camera3d(
+    world,
+    camera,
+    @camera_camera.Camera::Camera().with_viewport(
+      @camera_viewport.Viewport::new(
+        @math.IVec2::new(0, 0),
+        @math.IVec2::new(1280, 720),
+      ),
+    ),
+  )
+  try! (world.set_by_key(
+    camera,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(camera),
+      viewport_x=0,
+      viewport_y=0,
+      viewport_z=2560,
+      viewport_w=1440,
+    ),
+  )
+  |> ignore)
+  try! (world.set_by_key(
+    camera,
+    @light_cluster.ClusterConfig::component(),
+    @light_cluster.ClusterConfig::XYZ(
+      16,
+      9,
+      24,
+      @light_cluster.ClusterZConfig::ClusterZConfig(),
+      false,
+    ),
+  )
+  |> ignore)
+  light_test_extract_lights(world)
+  let gpu_lights = render3d_collect_gpu_lights(world)
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.x, 16.0F / 2560.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(
+    approx_eq(gpu_lights.cluster_factors.y, 9.0F / 1440.0F, 1.0e-6F),
     content="true",
   )
 }

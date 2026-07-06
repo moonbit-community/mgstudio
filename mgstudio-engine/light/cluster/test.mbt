@@ -39,6 +39,22 @@ fn cluster_test_camera_with_size(
 }
 
 ///|
+fn cluster_test_set_camera3d(
+  world : @ecs.World,
+  entity : @core.Entity,
+  camera : @camera_camera.Camera,
+) -> Unit {
+  try! (world.set_by_key(entity, @camera_camera.ecs_key_camera, camera)
+  |> ignore)
+  try! (world.set_by_key(
+    entity,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  |> ignore)
+}
+
+///|
 test "light cluster: calculate_cluster_factors matches bevy perspective formula shape" {
   let factors = calculate_cluster_factors(0.1F, 1000.0F, 24.0F, false)
   inspect(cluster_approx_eq(factors.x, 2.4971933F, 1.0e-5F), content="true")
@@ -105,15 +121,65 @@ test "light cluster: cluster config helper semantics match bevy shape" {
 }
 
 ///|
+test "light cluster: assignment is scheduled after transform camera and visibility like bevy" {
+  let camera_update_set = @app.system_set("mgstudio.camera.update")
+  let app = @app.App::new(@ecs.World::new())
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(fn(_world : @ecs.World) { () })
+      .named("tests.transform.propagate")
+      .in_set(@transform.transform_set_propagate),
+    )
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(fn(_world : @ecs.World) { () })
+      .named("tests.visibility.check")
+      .in_set(@visibility.visibility_set_check_visibility),
+    )
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(fn(_world : @ecs.World) { () })
+      .named("tests.camera.update")
+      .in_set(camera_update_set),
+    )
+    .add_plugins(ClusterLightPlugin::ClusterLightPlugin())
+  let update_dot = app.schedule_graph_dot(@app.Update)
+  debug_inspect(
+    update_dot.contains("\"mgstudio.light.cluster.assign_objects_to_clusters\""),
+    content="false",
+  )
+  let post_update_dot = app.schedule_graph_dot(@app.PostUpdate)
+  debug_inspect(
+    post_update_dot.contains(
+      "\"mgstudio.light.cluster.assign_objects_to_clusters\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    post_update_dot.contains(
+      "\"tests.transform.propagate\" -> \"tests.visibility.check\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    post_update_dot.contains(
+      "\"tests.visibility.check\" -> \"tests.camera.update\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    post_update_dot.contains(
+      "\"tests.camera.update\" -> \"mgstudio.light.cluster.assign_objects_to_clusters\"",
+    ),
+    content="true",
+  )
+}
+
+///|
 test "light cluster: assign system populates camera cluster payload with default config" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   cluster_assign_lights_system(world)
   let clusters = try! world.get_by_key(camera_entity, Clusters::component())
   let visible = try! world.get_by_key(
@@ -146,12 +212,7 @@ test "light cluster: assign system populates camera cluster payload with default
 test "light cluster: assign system uses previous frame max range for default far z mode" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   let point = world.spawn()
   try! (world.set_by_key(
     point,
@@ -199,12 +260,7 @@ test "light cluster: assign system uses previous frame max range for default far
 test "light cluster: assign system uses previous frame index count for dynamic resizing" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
   previous_clusters.last_frame_total_cluster_index_count = Some(65536)
   try! (world.set_by_key(
@@ -225,12 +281,7 @@ test "light cluster: assign system uses previous frame index count for dynamic r
 test "light cluster: ClusterConfig::None clears clusters and preserves last-frame statistics" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   try! (world.set_by_key(
     camera_entity,
     ClusterConfig::component(),
@@ -270,12 +321,11 @@ test "light cluster: ClusterConfig::None clears clusters and preserves last-fram
 test "light cluster: camera without physical viewport clears clusters" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
+  cluster_test_set_camera3d(
+    world,
     camera_entity,
-    @camera_camera.ecs_key_camera,
     @camera_camera.Camera::Camera(),
   )
-  |> ignore)
   let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
   previous_clusters.last_frame_farthest_z = Some(88.0F)
   previous_clusters.last_frame_total_cluster_index_count = Some(4321)
@@ -306,15 +356,40 @@ test "light cluster: camera without physical viewport clears clusters" {
 }
 
 ///|
-test "light cluster: zero-sized camera viewport clears clusters" {
+test "light cluster: non-3d cameras do not receive 3d clusters" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
   try! (world.set_by_key(
     camera_entity,
     @camera_camera.ecs_key_camera,
-    cluster_test_camera_with_size(0, 720),
+    cluster_test_camera(),
   )
   |> ignore)
+
+  cluster_assign_lights_system(world)
+  inspect(
+    (try! world.get_by_key(camera_entity, Clusters::component())) is None,
+    content="true",
+  )
+  inspect(
+    (try! world.get_by_key(
+      camera_entity,
+      VisibleClusterableObjects::component(),
+    ))
+    is None,
+    content="true",
+  )
+}
+
+///|
+test "light cluster: zero-sized camera viewport clears clusters" {
+  let world = @ecs.World::new()
+  let camera_entity = world.spawn()
+  cluster_test_set_camera3d(
+    world,
+    camera_entity,
+    cluster_test_camera_with_size(0, 720),
+  )
   let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
   previous_clusters.last_frame_farthest_z = Some(99.0F)
   previous_clusters.last_frame_total_cluster_index_count = Some(7654)
@@ -348,12 +423,7 @@ test "light cluster: zero-sized camera viewport clears clusters" {
 test "light cluster: assign system writes visible point lights into cluster lists" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   try! (world.set_by_key(
     camera_entity,
     @transform.Transform::component(),
@@ -389,12 +459,7 @@ test "light cluster: assign system writes visible point lights into cluster list
 test "light cluster: spot lights use bevy cone culling inside projected bounds" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   try! (world.set_by_key(
     camera_entity,
     @transform.Transform::component(),
@@ -443,12 +508,7 @@ test "light cluster: spot lights use bevy cone culling inside projected bounds" 
 test "light cluster: assign system honors constant far z mode from config" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   try! (world.set_by_key(
     camera_entity,
     ClusterConfig::component(),
@@ -474,12 +534,7 @@ test "light cluster: assign system honors constant far z mode from config" {
 test "light cluster: assign system filters hidden clusterables by view visibility" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
 
   let point_visible = world.spawn()
   try! (world.set_by_key(
@@ -588,12 +643,7 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
 test "light cluster: assign system filters lights by render layers" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
   try! (world.set_by_key(
     camera_entity,
     @camera_render_layers.ecs_key_render_layers,
@@ -643,12 +693,7 @@ test "light cluster: assign system filters lights by render layers" {
 test "light cluster: light probes require LightProbe and use transform radius" {
   let world = @ecs.World::new()
   let camera_entity = world.spawn()
-  try! (world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    cluster_test_camera(),
-  )
-  |> ignore)
+  cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
 
   let bare_environment_map = world.spawn()
   try! (world.set_by_key(
