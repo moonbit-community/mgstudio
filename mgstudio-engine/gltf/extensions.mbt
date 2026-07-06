@@ -72,6 +72,42 @@ pub fn gltf_extension_notify_mesh_spawned(
 }
 
 ///|
+pub fn gltf_extension_notify_spawn_light_directional(
+  asset_path : String,
+  node_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  @gltf_loader_extensions.gltf_extension_notify_spawn_light_directional(
+    asset_path, node_index, entity, world,
+  )
+}
+
+///|
+pub fn gltf_extension_notify_spawn_light_point(
+  asset_path : String,
+  node_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  @gltf_loader_extensions.gltf_extension_notify_spawn_light_point(
+    asset_path, node_index, entity, world,
+  )
+}
+
+///|
+pub fn gltf_extension_notify_spawn_light_spot(
+  asset_path : String,
+  node_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  @gltf_loader_extensions.gltf_extension_notify_spawn_light_spot(
+    asset_path, node_index, entity, world,
+  )
+}
+
+///|
 pub fn gltf_extension_notify_scene_completed(
   asset_path : String,
   scene_index : Int,

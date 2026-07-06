@@ -53,6 +53,12 @@ pub fn gltf_extension_notify_node_spawned(String, Int, @core.Entity, @ecs.World)
 
 pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.World) -> Unit
 
+pub fn gltf_extension_notify_spawn_light_directional(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_spawn_light_point(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_spawn_light_spot(String, Int, @core.Entity, @ecs.World) -> Unit
+
 pub fn gltf_install_loader_registration(() -> Unit) -> Unit
 
 pub fn gltf_material_asset_label(Int, Bool) -> @gltf_ext.GltfAssetLabel

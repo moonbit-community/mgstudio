@@ -24,6 +24,12 @@ pub fn gltf_extension_notify_node_spawned(String, Int, @core.Entity, @ecs.World)
 
 pub fn gltf_extension_notify_scene_completed(String, Int, @core.Entity, @ecs.World) -> Unit
 
+pub fn gltf_extension_notify_spawn_light_directional(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_spawn_light_point(String, Int, @core.Entity, @ecs.World) -> Unit
+
+pub fn gltf_extension_notify_spawn_light_spot(String, Int, @core.Entity, @ecs.World) -> Unit
+
 pub fn gltf_extension_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gltf_khr_materials_anisotropy_handler_enabled() -> Bool
@@ -57,9 +63,12 @@ pub struct GltfExtensionHandler {
   on_animations_collected : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?
   on_node_spawned : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
   on_mesh_spawned : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_spawn_light_directional : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_spawn_light_point : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_spawn_light_spot : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
   on_scene_completed : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
 }
-pub fn GltfExtensionHandler::new(on_animations_collected? : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?, on_node_spawned? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_mesh_spawned? : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?, on_scene_completed? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?) -> Self
+pub fn GltfExtensionHandler::new(on_animations_collected? : ((String, Array[@asset.Handle[@animation.AnimationClip]], Array[(String, @asset.Handle[@animation.AnimationClip])], Array[Int]) -> Unit)?, on_node_spawned? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_mesh_spawned? : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?, on_spawn_light_directional? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_spawn_light_point? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_spawn_light_spot? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?, on_scene_completed? : ((String, Int, @core.Entity, @ecs.World) -> Unit)?) -> Self
 
 pub struct GltfExtensionHandlers {
   handlers : Array[GltfExtensionHandler]

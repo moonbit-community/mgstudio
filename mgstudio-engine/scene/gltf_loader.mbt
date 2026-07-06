@@ -3943,6 +3943,7 @@ fn scene_build_from_gltf(
           parent_node_index=Some(scene_node_index),
           name=light_components.name,
           gltf_extras=light_components.extras,
+          gltf_light_node_index=Some(@gltf.GltfNodeIndex::new(node_index)),
           directional_light=light_components.directional_light,
           point_light=light_components.point_light,
           spot_light=light_components.spot_light,

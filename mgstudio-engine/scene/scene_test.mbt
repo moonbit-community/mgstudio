@@ -855,6 +855,119 @@ test "scene: spawn applies camera and light components from scene node payload" 
 }
 
 ///|
+test "scene: gltf extension light spawn hooks observe spawned light entities" {
+  let directional_seen = Ref(false)
+  let point_seen = Ref(false)
+  let spot_seen = Ref(false)
+  let directional_node_index = Ref(-1)
+  let point_node_index = Ref(-1)
+  let spot_node_index = Ref(-1)
+  let extension_handler = @gltf.GltfExtensionHandler::new(
+    on_spawn_light_directional=Some(fn(
+      _asset_path : String,
+      node_index : Int,
+      entity : @core.Entity,
+      world : @ecs.World,
+    ) {
+      directional_node_index.val = node_index
+      directional_seen.val = try! world.contains_by_key(
+        entity,
+        @light.DirectionalLight::component(),
+      )
+    }),
+    on_spawn_light_point=Some(fn(
+      _asset_path : String,
+      node_index : Int,
+      entity : @core.Entity,
+      world : @ecs.World,
+    ) {
+      point_node_index.val = node_index
+      point_seen.val = try! world.contains_by_key(
+        entity,
+        @light.PointLight::component(),
+      )
+    }),
+    on_spawn_light_spot=Some(fn(
+      _asset_path : String,
+      node_index : Int,
+      entity : @core.Entity,
+      world : @ecs.World,
+    ) {
+      spot_node_index.val = node_index
+      spot_seen.val = try! world.contains_by_key(
+        entity,
+        @light.SpotLight::component(),
+      )
+    }),
+  )
+  run_scene_test_app_with_gltf_plugin(
+    @gltf.GltfPlugin::GltfPlugin().add_extension_handler(extension_handler),
+    fn(world : @ecs.World) {
+      let scene_handle = @scene.scene_register_gltf_scene(
+        "models/Foo/Foo.gltf#light-extension-hooks",
+        @scene.Scene::new([
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(0)),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(0),
+            gltf_light_node_index=Some(@gltf.GltfNodeIndex::new(0)),
+            directional_light=Some(@light.DirectionalLight::DirectionalLight()),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(1)),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(2),
+            gltf_light_node_index=Some(@gltf.GltfNodeIndex::new(1)),
+            point_light=Some(@light.PointLight::PointLight()),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            gltf_node_index=Some(@gltf.GltfNodeIndex::new(2)),
+          ),
+          @scene.SceneNode3d::new_empty(
+            @transform.Transform::identity(),
+            None,
+            None,
+            parent_node_index=Some(4),
+            gltf_light_node_index=Some(@gltf.GltfNodeIndex::new(2)),
+            spot_light=Some(@light.SpotLight::SpotLight()),
+          ),
+        ]),
+      )
+      let root = world.spawn_empty()
+      try! world.set_by_key(
+        root,
+        @scene.ecs_key_scene_root,
+        @scene.SceneRoot::new(scene_handle),
+      )
+      @scene.scene_spawn_roots_system(world)
+    },
+  )
+  debug_inspect(directional_seen.val, content="true")
+  debug_inspect(point_seen.val, content="true")
+  debug_inspect(spot_seen.val, content="true")
+  debug_inspect(directional_node_index.val, content="0")
+  debug_inspect(point_node_index.val, content="1")
+  debug_inspect(spot_node_index.val, content="2")
+}
+
+///|
 test "scene: skinned mesh joints map by gltf node index" {
   let skinned_present = Ref(false)
   let joint_count = Ref(0)

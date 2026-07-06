@@ -23,6 +23,9 @@ pub struct GltfExtensionHandler {
   ) -> Unit)?
   on_node_spawned : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
   on_mesh_spawned : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_spawn_light_directional : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_spawn_light_point : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
+  on_spawn_light_spot : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
   on_scene_completed : ((String, Int, @core.Entity, @ecs.World) -> Unit)?
 }
 
@@ -36,12 +39,18 @@ pub fn GltfExtensionHandler::new(
   ) -> Unit)? = None,
   on_node_spawned? : ((String, Int, @core.Entity, @ecs.World) -> Unit)? = None,
   on_mesh_spawned? : ((String, Int, Int, @core.Entity, @ecs.World) -> Unit)? = None,
+  on_spawn_light_directional? : ((String, Int, @core.Entity, @ecs.World) -> Unit)? = None,
+  on_spawn_light_point? : ((String, Int, @core.Entity, @ecs.World) -> Unit)? = None,
+  on_spawn_light_spot? : ((String, Int, @core.Entity, @ecs.World) -> Unit)? = None,
   on_scene_completed? : ((String, Int, @core.Entity, @ecs.World) -> Unit)? = None,
 ) -> GltfExtensionHandler {
   {
     on_animations_collected,
     on_node_spawned,
     on_mesh_spawned,
+    on_spawn_light_directional,
+    on_spawn_light_point,
+    on_spawn_light_spot,
     on_scene_completed,
   }
 }
@@ -205,6 +214,48 @@ pub fn gltf_extension_notify_mesh_spawned(
   for handler in gltf_extension_runtime_handlers() {
     if handler.on_mesh_spawned is Some(callback) {
       callback(asset_path, mesh_index, primitive_index, entity, world)
+    }
+  }
+}
+
+///|
+pub fn gltf_extension_notify_spawn_light_directional(
+  asset_path : String,
+  node_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  for handler in gltf_extension_runtime_handlers() {
+    if handler.on_spawn_light_directional is Some(callback) {
+      callback(asset_path, node_index, entity, world)
+    }
+  }
+}
+
+///|
+pub fn gltf_extension_notify_spawn_light_point(
+  asset_path : String,
+  node_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  for handler in gltf_extension_runtime_handlers() {
+    if handler.on_spawn_light_point is Some(callback) {
+      callback(asset_path, node_index, entity, world)
+    }
+  }
+}
+
+///|
+pub fn gltf_extension_notify_spawn_light_spot(
+  asset_path : String,
+  node_index : Int,
+  entity : @core.Entity,
+  world : @ecs.World,
+) -> Unit {
+  for handler in gltf_extension_runtime_handlers() {
+    if handler.on_spawn_light_spot is Some(callback) {
+      callback(asset_path, node_index, entity, world)
     }
   }
 }

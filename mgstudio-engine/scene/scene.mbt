@@ -28,6 +28,7 @@ pub struct SceneNode3d {
   gltf_scene_index : @gltf.GltfSceneIndex?
   gltf_scene_extras : @gltf.GltfSceneExtras?
   gltf_node_index : @gltf.GltfNodeIndex?
+  gltf_light_node_index : @gltf.GltfNodeIndex?
   gltf_mesh_index : @gltf.GltfMeshIndex?
   gltf_primitive_index : @gltf.GltfPrimitiveIndex?
   gltf_skin_index : @gltf.GltfSkinIndex?
@@ -58,6 +59,7 @@ pub fn SceneNode3d::new(
   gltf_scene_index? : @gltf.GltfSceneIndex? = None,
   gltf_scene_extras? : @gltf.GltfSceneExtras? = None,
   gltf_node_index? : @gltf.GltfNodeIndex? = None,
+  gltf_light_node_index? : @gltf.GltfNodeIndex? = None,
   gltf_mesh_index? : @gltf.GltfMeshIndex? = None,
   gltf_primitive_index? : @gltf.GltfPrimitiveIndex? = None,
   gltf_skin_index? : @gltf.GltfSkinIndex? = None,
@@ -94,6 +96,7 @@ pub fn SceneNode3d::new(
     gltf_scene_index,
     gltf_scene_extras,
     gltf_node_index,
+    gltf_light_node_index,
     gltf_mesh_index,
     gltf_primitive_index,
     gltf_skin_index,
@@ -123,6 +126,7 @@ pub fn SceneNode3d::new_empty(
   gltf_scene_index? : @gltf.GltfSceneIndex? = None,
   gltf_scene_extras? : @gltf.GltfSceneExtras? = None,
   gltf_node_index? : @gltf.GltfNodeIndex? = None,
+  gltf_light_node_index? : @gltf.GltfNodeIndex? = None,
   gltf_skin_index? : @gltf.GltfSkinIndex? = None,
   gltf_extras? : @gltf.GltfExtras? = None,
   camera? : @camera_camera.Camera? = None,
@@ -148,6 +152,7 @@ pub fn SceneNode3d::new_empty(
     gltf_scene_index,
     gltf_scene_extras,
     gltf_node_index,
+    gltf_light_node_index,
     gltf_mesh_index: None,
     gltf_primitive_index: None,
     gltf_skin_index,

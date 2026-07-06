@@ -736,6 +736,32 @@ fn scene_spawn_instance_when_ready(
       }
     }
     try! world.insert_component_writers(child, child_writers)
+    if node.gltf_light_node_index is Some(node_index) {
+      if node.directional_light is Some(_) {
+        @gltf_loader_extensions.gltf_extension_notify_spawn_light_directional(
+          gltf_scene_asset_path,
+          node_index.index(),
+          child,
+          world,
+        )
+      }
+      if node.point_light is Some(_) {
+        @gltf_loader_extensions.gltf_extension_notify_spawn_light_point(
+          gltf_scene_asset_path,
+          node_index.index(),
+          child,
+          world,
+        )
+      }
+      if node.spot_light is Some(_) {
+        @gltf_loader_extensions.gltf_extension_notify_spawn_light_spot(
+          gltf_scene_asset_path,
+          node_index.index(),
+          child,
+          world,
+        )
+      }
+    }
     if node.gltf_node_index is Some(node_index) {
       @gltf_loader_extensions.gltf_extension_notify_node_spawned(
         gltf_scene_asset_path,
