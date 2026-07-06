@@ -597,7 +597,6 @@ fn render3d_extract_mesh_for_entity(
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh(),
         mesh_id,
-        mesh_is_indexed: mesh_preprocess_static.is_indexed,
         mesh_preprocess_static: Some(mesh_preprocess_static),
         world_from_local,
         previous_world_from_local,

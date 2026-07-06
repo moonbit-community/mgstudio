@@ -428,7 +428,6 @@ fn render3d_test_extracted_mesh_for_flags(
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(1),
       mesh_id: 1,
-      mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
@@ -486,7 +485,6 @@ fn render3d_test_transparent_mesh_for_queue(
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(entity_id),
       mesh_id: entity_id,
-      mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
@@ -596,8 +594,8 @@ fn render3d_test_queue_mesh_allocator(
   for mesh in meshes {
     let render_mesh = @render_mesh.RenderMesh::new(
       vertex_count=3,
-      indexed=mesh.payload.mesh_is_indexed,
-      index_count=if mesh.payload.mesh_is_indexed { 3 } else { 0 },
+      indexed=true,
+      index_count=3,
     )
     ignore(
       allocator.allocate_render_mesh(mesh.payload.mesh_id, render_mesh, 80),
@@ -1206,7 +1204,6 @@ test "render3d: transmissive materials use a distinct sorted phase" {
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(3),
       mesh_id: 3,
-      mesh_is_indexed: true,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,

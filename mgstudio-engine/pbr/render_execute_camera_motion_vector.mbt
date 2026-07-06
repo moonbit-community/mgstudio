@@ -132,7 +132,7 @@ fn render3d_execute_camera_prepass_draw_phase(
       is Some(material_pipeline_id) else {
       continue
     }
-    let motion_vector_indexed = mesh.mesh_is_indexed
+    let motion_vector_indexed = draw_item.slabs.index_slab_id() is Some(_)
     let motion_vector_indirect_parameters_index = if motion_vector_indexed {
       indexed_indirect_parameter_indices[draw_item_index]
     } else {
