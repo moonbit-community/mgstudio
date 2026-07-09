@@ -3,7 +3,9 @@ package "Milky2018/mgstudio/examples/shader_advanced/custom_shader_instancing"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/shader",
 }
 
 // Values
@@ -13,6 +15,9 @@ import {
 // Types and methods
 type CustomMaterialPlugin
 pub impl @app.Plugin for CustomMaterialPlugin
+
+type CustomPipeline
+pub fn CustomPipeline::shader(Self) -> @asset.Handle[@shader.Shader]
 
 type InstanceData
 

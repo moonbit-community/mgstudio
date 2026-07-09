@@ -754,11 +754,13 @@ pub fn[T] Extract::item(Self[T]) -> T
 pub fn[T, U] Extract::map(Self[T], (T) -> U) -> Self[U]
 pub fn[T] Extract::new(T) -> Self[T]
 
-pub struct ExtractComponentPlugin[_, _] {
+pub struct ExtractComponentPlugin[C, _] {
   only_extract_visible : Bool
+  extract_component : (C) -> C
 }
 pub fn[C, F] ExtractComponentPlugin::ExtractComponentPlugin() -> Self[C, F]
 pub fn[C, F] ExtractComponentPlugin::extract_visible() -> Self[C, F]
+pub fn[C, F] ExtractComponentPlugin::with_extract_component(Self[C, F], (C) -> C) -> Self[C, F]
 pub impl[C : @ecs.Component, F] @app.Plugin for ExtractComponentPlugin[C, F]
 
 pub struct ExtractResourcePlugin[_, _] {

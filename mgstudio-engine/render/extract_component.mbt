@@ -19,8 +19,9 @@
 const EXTRACT_COMPONENT_PLUGIN_NAME : String = "mgstudio.render.ExtractComponentPlugin"
 
 ///|
-pub struct ExtractComponentPlugin[_, _] {
+pub struct ExtractComponentPlugin[C, _] {
   only_extract_visible : Bool
+  extract_component : (C) -> C
 }
 
 ///|
@@ -28,7 +29,10 @@ pub fn[C, F] ExtractComponentPlugin::ExtractComponentPlugin() -> ExtractComponen
   C,
   F,
 ] {
-  ExtractComponentPlugin::{ only_extract_visible: false }
+  ExtractComponentPlugin::{
+    only_extract_visible: false,
+    extract_component: fn(component) { component },
+  }
 }
 
 ///|
@@ -36,7 +40,21 @@ pub fn[C, F] ExtractComponentPlugin::extract_visible() -> ExtractComponentPlugin
   C,
   F,
 ] {
-  ExtractComponentPlugin::{ only_extract_visible: true }
+  ExtractComponentPlugin::{
+    only_extract_visible: true,
+    extract_component: fn(component) { component },
+  }
+}
+
+///|
+pub fn[C, F] ExtractComponentPlugin::with_extract_component(
+  self : ExtractComponentPlugin[C, F],
+  extract_component : (C) -> C,
+) -> ExtractComponentPlugin[C, F] {
+  ExtractComponentPlugin::{
+    only_extract_visible: self.only_extract_visible,
+    extract_component,
+  }
 }
 
 ///|
@@ -76,6 +94,7 @@ fn[C : @ecs.Component] extract_components(
   render_world : @ecs.World,
   only_visible : Bool,
   component_key : @ecs.ComponentKey[C],
+  extract_component : (C) -> C,
 ) -> Unit {
   let main_world = render_source_world(render_world)
   extract_component_register_world_component(render_world, component_key)
@@ -97,7 +116,10 @@ fn[C : @ecs.Component] extract_components(
         return
       }
       extracted_values.push(
-        (render_entity_comp.value().id(), component_comp.value()),
+        (
+          render_entity_comp.value().id(),
+          extract_component(component_comp.value()),
+        ),
       )
     })
   } else {
@@ -107,7 +129,10 @@ fn[C : @ecs.Component] extract_components(
     try! query.view(fn(_entity, data) {
       let (render_entity_comp, component_comp) = data
       extracted_values.push(
-        (render_entity_comp.value().id(), component_comp.value()),
+        (
+          render_entity_comp.value().id(),
+          extract_component(component_comp.value()),
+        ),
       )
     })
   }
@@ -162,14 +187,24 @@ pub fn[C : @ecs.Component, F] extract_component_plugin_with(
       sub_app.add_systems(
         stage,
         @app.system(fn(render_world : @ecs.World) -> Unit {
-          extract_components(render_world, true, component_key)
+          extract_components(
+            render_world,
+            true,
+            component_key,
+            plugin.extract_component,
+          )
         }),
       )
     } else {
       sub_app.add_systems(
         stage,
         @app.system(fn(render_world : @ecs.World) -> Unit {
-          extract_components(render_world, false, component_key)
+          extract_components(
+            render_world,
+            false,
+            component_key,
+            plugin.extract_component,
+          )
         }),
       )
     }

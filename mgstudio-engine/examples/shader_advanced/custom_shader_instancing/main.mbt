@@ -31,11 +31,40 @@ struct InstanceMaterialData {
 }
 
 ///|
+fn InstanceMaterialData::clone(
+  self : InstanceMaterialData,
+) -> InstanceMaterialData {
+  InstanceMaterialData::{ instances: self.instances.copy() }
+}
+
+///|
 struct CustomMaterialPlugin {}
+
+///|
+struct CustomPipeline {
+  shader : @asset.Handle[@shader.Shader]
+}
+
+///|
+pub fn CustomPipeline::shader(
+  self : CustomPipeline,
+) -> @asset.Handle[@shader.Shader] {
+  self.shader
+}
 
 ///|
 fn CustomMaterialPlugin::CustomMaterialPlugin() -> CustomMaterialPlugin {
   CustomMaterialPlugin::{  }
+}
+
+///|
+let custom_pipeline_key : @ecs.ResourceKey[CustomPipeline] = @ecs.register_resource(
+  debug_name="examples.shader_advanced.custom_shader_instancing.CustomPipeline",
+)
+
+///|
+impl @app.Resource for CustomPipeline with fn resource() {
+  custom_pipeline_key
 }
 
 ///|
@@ -205,6 +234,18 @@ fn prepare_instance_buffers(
 }
 
 ///|
+fn init_custom_pipeline(world : @ecs.World) -> Unit {
+  let asset_server = match world.get_resource(@asset.AssetServer::resource()) {
+    Some(asset_server) => asset_server
+    None => abort("custom_shader_instancing: expected AssetServer resource")
+  }
+  let shader : @asset.Handle[@shader.Shader] = @asset.asset_with_world(world, fn() {
+    asset_server.load(SHADER_ASSET_PATH)
+  })
+  world.insert_resource(CustomPipeline::resource(), CustomPipeline::{ shader, })
+}
+
+///|
 pub impl @app.Plugin for CustomMaterialPlugin with fn name(_self) {
   "mgstudio.examples.shader_advanced.CustomMaterialPlugin"
 }
@@ -214,11 +255,16 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
   let extract_plugin : @render.ExtractComponentPlugin[
     InstanceMaterialData,
     Unit,
-  ] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
-  @render.extract_component_plugin_with(app, extract_plugin).add_systems_param2(
-    @app.PostUpdate,
-    prepare_instance_buffers,
+  ] = @render.ExtractComponentPlugin::ExtractComponentPlugin().with_extract_component(fn(
+      value,
+    ) {
+      value.clone()
+    },
   )
+  let next = @render.extract_component_plugin_with(app, extract_plugin)
+  next
+  .add_systems_world(@app.Startup, init_custom_pipeline)
+  .add_systems_param2(@app.PostUpdate, prepare_instance_buffers)
 }
 
 ///|
