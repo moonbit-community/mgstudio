@@ -371,3 +371,68 @@ test "pbr volumetric fog: no-light extract cleans render-world fog state only" {
     content="4",
   )
 }
+
+///|
+test "pbr volumetric fog: last-light removal follows Bevy extract cleanup boundary" {
+  let source_world = @ecs.World::new()
+  let render_world = @ecs.World::new()
+  let view_entity = source_world.spawn()
+  let render_view = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, view_entity,
+  )
+  try! source_world.set_by_key(
+    view_entity,
+    @light.ecs_key_volumetric_fog,
+    @light.VolumetricFog::VolumetricFog(),
+  )
+
+  let volume_entity = source_world.spawn()
+  let render_volume = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, volume_entity,
+  )
+  try! source_world.set_by_key(
+    volume_entity,
+    @light.ecs_key_fog_volume,
+    @light.FogVolume::FogVolume(),
+  )
+  try! source_world.set_by_key(
+    volume_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(@transform.Transform::identity()),
+  )
+
+  let light_entity = source_world.spawn()
+  let render_light = volumetric_fog_wbtest_link_render_entity(
+    source_world, render_world, light_entity,
+  )
+  try! source_world.set_by_key(
+    light_entity,
+    @light.ecs_key_volumetric_light,
+    @light.VolumetricLight::VolumetricLight(),
+  )
+  extract_volumetric_fog_from_worlds(source_world, render_world)
+  assert_true(
+    (try! render_world.get_by_key(render_light, @light.ecs_key_volumetric_light))
+    is Some(_),
+  )
+
+  ignore(
+    try! source_world.remove_by_key(
+      light_entity, @light.ecs_key_volumetric_light,
+    ),
+  )
+  extract_volumetric_fog_from_worlds(source_world, render_world)
+
+  assert_true(
+    (try! render_world.get_by_key(render_view, @light.ecs_key_volumetric_fog))
+    is None,
+  )
+  assert_true(
+    (try! render_world.get_by_key(render_volume, @light.ecs_key_fog_volume))
+    is None,
+  )
+  assert_true(
+    (try! render_world.get_by_key(render_light, @light.ecs_key_volumetric_light))
+    is Some(_),
+  )
+}
