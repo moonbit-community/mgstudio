@@ -28,6 +28,8 @@ pub fn pbr_atmosphere_environment_map_light_new(Float, Bool, @math.UVec2) -> @li
 
 pub fn pbr_atmosphere_environment_map_light_with_intensity(@light.AtmosphereEnvironmentMapLight, Float) -> @light.AtmosphereEnvironmentMapLight
 
+pub fn pbr_atmosphere_prepare_transform(@math.Vec3, @math.Affine3) -> AtmosphereTransform
+
 pub fn pbr_atmosphere_settings_default() -> @light.AtmosphereSettings
 
 pub fn pbr_atmosphere_settings_with_rendering_method(@light.AtmosphereSettings, @light.AtmosphereMode) -> @light.AtmosphereSettings
@@ -93,6 +95,12 @@ pub struct AtmosphereTextures {
 }
 pub fn AtmosphereTextures::from_settings(GpuAtmosphereSettings) -> Self
 
+pub struct AtmosphereTransform {
+  world_from_atmosphere : @math.Mat4
+  atmosphere_from_world : @math.Mat4
+}
+pub fn AtmosphereTransform::as_uniform_bytes(Self) -> Bytes
+
 pub struct GpuAtmosphere {
   ground_albedo : @math.Vec3
   inner_radius : Float
@@ -100,6 +108,7 @@ pub struct GpuAtmosphere {
   world_to_atmosphere : @math.Affine3
 }
 pub fn GpuAtmosphere::GpuAtmosphere() -> Self
+pub fn GpuAtmosphere::as_uniform_bytes(Self) -> Bytes
 
 pub struct GpuAtmosphereSettings {
   transmittance_lut_size : @math.UVec2
@@ -116,6 +125,7 @@ pub struct GpuAtmosphereSettings {
   rendering_method : Int
 }
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> Self
+pub fn GpuAtmosphereSettings::as_uniform_bytes(Self, AtmosphereTextures) -> Bytes
 
 // Type aliases
 pub using @light {type Atmosphere}

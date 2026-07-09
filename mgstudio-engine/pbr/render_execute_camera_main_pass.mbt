@@ -271,44 +271,23 @@ fn render3d_prepare_camera_atmosphere_resources(
   )
   let textures = @pbr_atmosphere.AtmosphereTextures::from_settings(gpu_settings)
   let world_to_atmosphere = gpu_atmosphere.world_to_atmosphere
+  let atmosphere_transform = @pbr_atmosphere.pbr_atmosphere_prepare_transform(
+    camera.transform.translation,
+    world_to_atmosphere,
+  )
   @render.host_gpu_prepare_mesh3d_atmosphere_resources(
-    ground_albedo_x=gpu_atmosphere.ground_albedo.x,
-    ground_albedo_y=gpu_atmosphere.ground_albedo.y,
-    ground_albedo_z=gpu_atmosphere.ground_albedo.z,
-    inner_radius=gpu_atmosphere.inner_radius,
-    outer_radius=gpu_atmosphere.outer_radius,
-    camera_world_x=camera.transform.translation.x,
-    camera_world_y=camera.transform.translation.y,
-    camera_world_z=camera.transform.translation.z,
-    world_to_atmosphere_x_axis_x=world_to_atmosphere.matrix3.x_axis.x,
-    world_to_atmosphere_x_axis_y=world_to_atmosphere.matrix3.x_axis.y,
-    world_to_atmosphere_x_axis_z=world_to_atmosphere.matrix3.x_axis.z,
-    world_to_atmosphere_y_axis_x=world_to_atmosphere.matrix3.y_axis.x,
-    world_to_atmosphere_y_axis_y=world_to_atmosphere.matrix3.y_axis.y,
-    world_to_atmosphere_y_axis_z=world_to_atmosphere.matrix3.y_axis.z,
-    world_to_atmosphere_z_axis_x=world_to_atmosphere.matrix3.z_axis.x,
-    world_to_atmosphere_z_axis_y=world_to_atmosphere.matrix3.z_axis.y,
-    world_to_atmosphere_z_axis_z=world_to_atmosphere.matrix3.z_axis.z,
-    world_to_atmosphere_translation_x=world_to_atmosphere.translation.x,
-    world_to_atmosphere_translation_y=world_to_atmosphere.translation.y,
-    world_to_atmosphere_translation_z=world_to_atmosphere.translation.z,
+    atmosphere_uniform_bytes=gpu_atmosphere.as_uniform_bytes(),
+    atmosphere_transform_bytes=atmosphere_transform.as_uniform_bytes(),
+    atmosphere_settings_bytes=gpu_settings.as_uniform_bytes(textures),
     transmittance_width=textures.transmittance_lut.width,
     transmittance_height=textures.transmittance_lut.height,
-    transmittance_lut_samples=gpu_settings.transmittance_lut_samples,
     multiscattering_width=textures.multiscattering_lut.width,
     multiscattering_height=textures.multiscattering_lut.height,
-    multiscattering_lut_dirs=gpu_settings.multiscattering_lut_dirs,
-    multiscattering_lut_samples=gpu_settings.multiscattering_lut_samples,
     sky_view_width=textures.sky_view_lut.width,
     sky_view_height=textures.sky_view_lut.height,
-    sky_view_lut_samples=gpu_settings.sky_view_lut_samples,
     aerial_view_width=textures.aerial_view_lut.width,
     aerial_view_height=textures.aerial_view_lut.height,
     aerial_view_depth=textures.aerial_view_lut.depth_or_array_layers,
-    aerial_view_lut_samples=gpu_settings.aerial_view_lut_samples,
-    aerial_view_lut_max_distance=gpu_settings.aerial_view_lut_max_distance,
-    sky_max_samples=gpu_settings.sky_max_samples,
-    rendering_method=gpu_settings.rendering_method,
   )
 }
 

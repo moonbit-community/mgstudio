@@ -111,214 +111,6 @@ fn atmosphere_resource_shape_matches(
 }
 
 ///|
-fn atmosphere_pack_storage_buffer(
-  ground_albedo_x : Float,
-  ground_albedo_y : Float,
-  ground_albedo_z : Float,
-  inner_radius : Float,
-  outer_radius : Float,
-  world_to_atmosphere_x_axis_x : Float,
-  world_to_atmosphere_x_axis_y : Float,
-  world_to_atmosphere_x_axis_z : Float,
-  world_to_atmosphere_y_axis_x : Float,
-  world_to_atmosphere_y_axis_y : Float,
-  world_to_atmosphere_y_axis_z : Float,
-  world_to_atmosphere_z_axis_x : Float,
-  world_to_atmosphere_z_axis_y : Float,
-  world_to_atmosphere_z_axis_z : Float,
-  world_to_atmosphere_translation_x : Float,
-  world_to_atmosphere_translation_y : Float,
-  world_to_atmosphere_translation_z : Float,
-) -> Bytes {
-  u32le_pack([
-    f32_bits(ground_albedo_x),
-    f32_bits(ground_albedo_y),
-    f32_bits(ground_albedo_z),
-    f32_bits(inner_radius),
-    f32_bits(outer_radius),
-    0U,
-    0U,
-    0U,
-    f32_bits(world_to_atmosphere_x_axis_x),
-    f32_bits(world_to_atmosphere_x_axis_y),
-    f32_bits(world_to_atmosphere_x_axis_z),
-    f32_bits(0.0F),
-    f32_bits(world_to_atmosphere_y_axis_x),
-    f32_bits(world_to_atmosphere_y_axis_y),
-    f32_bits(world_to_atmosphere_y_axis_z),
-    f32_bits(0.0F),
-    f32_bits(world_to_atmosphere_z_axis_x),
-    f32_bits(world_to_atmosphere_z_axis_y),
-    f32_bits(world_to_atmosphere_z_axis_z),
-    f32_bits(0.0F),
-    f32_bits(world_to_atmosphere_translation_x),
-    f32_bits(world_to_atmosphere_translation_y),
-    f32_bits(world_to_atmosphere_translation_z),
-    f32_bits(1.0F),
-  ])
-}
-
-///|
-fn atmosphere_mode_to_u32(rendering_method : Int) -> UInt {
-  if rendering_method <= 0 {
-    0U
-  } else {
-    rendering_method.reinterpret_as_uint()
-  }
-}
-
-///|
-fn atmosphere_pack_settings_buffer(
-  transmittance_width : Int,
-  transmittance_height : Int,
-  multiscattering_width : Int,
-  multiscattering_height : Int,
-  sky_view_width : Int,
-  sky_view_height : Int,
-  aerial_view_width : Int,
-  aerial_view_height : Int,
-  aerial_view_depth : Int,
-  transmittance_lut_samples : Int,
-  multiscattering_lut_dirs : Int,
-  multiscattering_lut_samples : Int,
-  sky_view_lut_samples : Int,
-  aerial_view_lut_samples : Int,
-  aerial_view_lut_max_distance : Float,
-  sky_max_samples : Int,
-  rendering_method : Int,
-) -> Bytes {
-  u32le_pack([
-    transmittance_width.reinterpret_as_uint(),
-    transmittance_height.reinterpret_as_uint(),
-    multiscattering_width.reinterpret_as_uint(),
-    multiscattering_height.reinterpret_as_uint(),
-    sky_view_width.reinterpret_as_uint(),
-    sky_view_height.reinterpret_as_uint(),
-    0U,
-    0U,
-    aerial_view_width.reinterpret_as_uint(),
-    aerial_view_height.reinterpret_as_uint(),
-    aerial_view_depth.reinterpret_as_uint(),
-    transmittance_lut_samples.reinterpret_as_uint(),
-    multiscattering_lut_dirs.reinterpret_as_uint(),
-    multiscattering_lut_samples.reinterpret_as_uint(),
-    sky_view_lut_samples.reinterpret_as_uint(),
-    aerial_view_lut_samples.reinterpret_as_uint(),
-    f32_bits(aerial_view_lut_max_distance),
-    sky_max_samples.reinterpret_as_uint(),
-    atmosphere_mode_to_u32(rendering_method),
-    0U,
-  ])
-}
-
-///|
-fn atmosphere_pack_transform_buffer(
-  camera_world_x : Float,
-  camera_world_y : Float,
-  camera_world_z : Float,
-  world_to_atmosphere_x_axis_x : Float,
-  world_to_atmosphere_x_axis_y : Float,
-  world_to_atmosphere_x_axis_z : Float,
-  world_to_atmosphere_y_axis_x : Float,
-  world_to_atmosphere_y_axis_y : Float,
-  world_to_atmosphere_y_axis_z : Float,
-  world_to_atmosphere_z_axis_x : Float,
-  world_to_atmosphere_z_axis_y : Float,
-  world_to_atmosphere_z_axis_z : Float,
-  world_to_atmosphere_translation_x : Float,
-  world_to_atmosphere_translation_y : Float,
-  world_to_atmosphere_translation_z : Float,
-) -> Bytes {
-  let cam_atmosphere_x = world_to_atmosphere_x_axis_x * camera_world_x +
-    world_to_atmosphere_y_axis_x * camera_world_y +
-    world_to_atmosphere_z_axis_x * camera_world_z +
-    world_to_atmosphere_translation_x
-  let cam_atmosphere_y = world_to_atmosphere_x_axis_y * camera_world_x +
-    world_to_atmosphere_y_axis_y * camera_world_y +
-    world_to_atmosphere_z_axis_y * camera_world_z +
-    world_to_atmosphere_translation_y
-  let cam_atmosphere_z = world_to_atmosphere_x_axis_z * camera_world_x +
-    world_to_atmosphere_y_axis_z * camera_world_y +
-    world_to_atmosphere_z_axis_z * camera_world_z +
-    world_to_atmosphere_translation_z
-  let atmo_y_len_sq = cam_atmosphere_x * cam_atmosphere_x +
-    cam_atmosphere_y * cam_atmosphere_y +
-    cam_atmosphere_z * cam_atmosphere_z
-  let (atmo_y_x, atmo_y_y, atmo_y_z) = if atmo_y_len_sq > 0.0F {
-    let inv_len = 1.0F / Float::sqrt(atmo_y_len_sq)
-    (
-      cam_atmosphere_x * inv_len,
-      cam_atmosphere_y * inv_len,
-      cam_atmosphere_z * inv_len,
-    )
-  } else {
-    (0.0F, 1.0F, 0.0F)
-  }
-  let world_ref_x = 0.0F
-  let world_ref_y = 0.0F
-  let world_ref_z = -1.0F
-  let ref_dot = atmo_y_x * world_ref_x +
-    atmo_y_y * world_ref_y +
-    atmo_y_z * world_ref_z
-  let ref_horizontal_x = world_ref_x - atmo_y_x * ref_dot
-  let ref_horizontal_y = world_ref_y - atmo_y_y * ref_dot
-  let ref_horizontal_z = world_ref_z - atmo_y_z * ref_dot
-  let ref_len = Float::sqrt(
-    ref_horizontal_x * ref_horizontal_x +
-    ref_horizontal_y * ref_horizontal_y +
-    ref_horizontal_z * ref_horizontal_z,
-  )
-  let atmo_z_x = ref_horizontal_x / ref_len
-  let atmo_z_y = ref_horizontal_y / ref_len
-  let atmo_z_z = ref_horizontal_z / ref_len
-  let atmo_x_raw_x = atmo_y_y * atmo_z_z - atmo_y_z * atmo_z_y
-  let atmo_x_raw_y = atmo_y_z * atmo_z_x - atmo_y_x * atmo_z_z
-  let atmo_x_raw_z = atmo_y_x * atmo_z_y - atmo_y_y * atmo_z_x
-  let atmo_x_len = Float::sqrt(
-    atmo_x_raw_x * atmo_x_raw_x +
-    atmo_x_raw_y * atmo_x_raw_y +
-    atmo_x_raw_z * atmo_x_raw_z,
-  )
-  let atmo_x_x = atmo_x_raw_x / atmo_x_len
-  let atmo_x_y = atmo_x_raw_y / atmo_x_len
-  let atmo_x_z = atmo_x_raw_z / atmo_x_len
-  u32le_pack([
-    f32_bits(atmo_x_x),
-    f32_bits(atmo_x_y),
-    f32_bits(atmo_x_z),
-    f32_bits(0.0F),
-    f32_bits(atmo_y_x),
-    f32_bits(atmo_y_y),
-    f32_bits(atmo_y_z),
-    f32_bits(0.0F),
-    f32_bits(atmo_z_x),
-    f32_bits(atmo_z_y),
-    f32_bits(atmo_z_z),
-    f32_bits(0.0F),
-    f32_bits(camera_world_x),
-    f32_bits(camera_world_y),
-    f32_bits(camera_world_z),
-    f32_bits(1.0F),
-    f32_bits(atmo_x_x),
-    f32_bits(atmo_y_x),
-    f32_bits(atmo_z_x),
-    f32_bits(camera_world_x),
-    f32_bits(atmo_x_y),
-    f32_bits(atmo_y_y),
-    f32_bits(atmo_z_y),
-    f32_bits(camera_world_y),
-    f32_bits(atmo_x_z),
-    f32_bits(atmo_y_z),
-    f32_bits(atmo_z_z),
-    f32_bits(camera_world_z),
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    f32_bits(1.0F),
-  ])
-}
-
-///|
 fn atmosphere_create_transmittance_lut_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -854,43 +646,18 @@ fn atmosphere_create_render_sky_pipeline(
 ///|
 fn GpuBackend::mesh3d_prepare_atmosphere_resources(
   self : GpuBackend,
-  ground_albedo_x~ : Float,
-  ground_albedo_y~ : Float,
-  ground_albedo_z~ : Float,
-  inner_radius~ : Float,
-  outer_radius~ : Float,
-  camera_world_x~ : Float,
-  camera_world_y~ : Float,
-  camera_world_z~ : Float,
-  world_to_atmosphere_x_axis_x~ : Float,
-  world_to_atmosphere_x_axis_y~ : Float,
-  world_to_atmosphere_x_axis_z~ : Float,
-  world_to_atmosphere_y_axis_x~ : Float,
-  world_to_atmosphere_y_axis_y~ : Float,
-  world_to_atmosphere_y_axis_z~ : Float,
-  world_to_atmosphere_z_axis_x~ : Float,
-  world_to_atmosphere_z_axis_y~ : Float,
-  world_to_atmosphere_z_axis_z~ : Float,
-  world_to_atmosphere_translation_x~ : Float,
-  world_to_atmosphere_translation_y~ : Float,
-  world_to_atmosphere_translation_z~ : Float,
+  atmosphere_uniform_bytes~ : Bytes,
+  atmosphere_transform_bytes~ : Bytes,
+  atmosphere_settings_bytes~ : Bytes,
   transmittance_width~ : Int,
   transmittance_height~ : Int,
-  transmittance_lut_samples~ : Int,
   multiscattering_width~ : Int,
   multiscattering_height~ : Int,
-  multiscattering_lut_dirs~ : Int,
-  multiscattering_lut_samples~ : Int,
   sky_view_width~ : Int,
   sky_view_height~ : Int,
-  sky_view_lut_samples~ : Int,
   aerial_view_width~ : Int,
   aerial_view_height~ : Int,
   aerial_view_depth~ : Int,
-  aerial_view_lut_samples~ : Int,
-  aerial_view_lut_max_distance~ : Float,
-  sky_max_samples~ : Int,
-  rendering_method~ : Int,
 ) -> Unit raise GpuBackendError {
   let safe_transmittance_width = if transmittance_width <= 0 {
     1
@@ -1086,66 +853,21 @@ fn GpuBackend::mesh3d_prepare_atmosphere_resources(
     })
   }
   guard self.mesh3d_atmosphere_resources is Some(resources) else { return }
-  let bytes = atmosphere_pack_storage_buffer(
-    ground_albedo_x, ground_albedo_y, ground_albedo_z, inner_radius, outer_radius,
-    world_to_atmosphere_x_axis_x, world_to_atmosphere_x_axis_y, world_to_atmosphere_x_axis_z,
-    world_to_atmosphere_y_axis_x, world_to_atmosphere_y_axis_y, world_to_atmosphere_y_axis_z,
-    world_to_atmosphere_z_axis_x, world_to_atmosphere_z_axis_y, world_to_atmosphere_z_axis_z,
-    world_to_atmosphere_translation_x, world_to_atmosphere_translation_y, world_to_atmosphere_translation_z,
+  self.queue.write_buffer(
+    resources.atmosphere_buffer,
+    0UL,
+    atmosphere_uniform_bytes,
   )
-  self.queue.write_buffer(resources.atmosphere_buffer, 0UL, bytes)
-  let transform_bytes = atmosphere_pack_transform_buffer(
-    camera_world_x, camera_world_y, camera_world_z, world_to_atmosphere_x_axis_x,
-    world_to_atmosphere_x_axis_y, world_to_atmosphere_x_axis_z, world_to_atmosphere_y_axis_x,
-    world_to_atmosphere_y_axis_y, world_to_atmosphere_y_axis_z, world_to_atmosphere_z_axis_x,
-    world_to_atmosphere_z_axis_y, world_to_atmosphere_z_axis_z, world_to_atmosphere_translation_x,
-    world_to_atmosphere_translation_y, world_to_atmosphere_translation_z,
+  self.queue.write_buffer(
+    resources.transform_buffer,
+    0UL,
+    atmosphere_transform_bytes,
   )
-  self.queue.write_buffer(resources.transform_buffer, 0UL, transform_bytes)
-  let settings_bytes = atmosphere_pack_settings_buffer(
-    safe_transmittance_width,
-    safe_transmittance_height,
-    safe_multiscattering_width,
-    safe_multiscattering_height,
-    safe_sky_view_width,
-    safe_sky_view_height,
-    safe_aerial_view_width,
-    safe_aerial_view_height,
-    safe_aerial_view_depth,
-    if transmittance_lut_samples <= 0 {
-      1
-    } else {
-      transmittance_lut_samples
-    },
-    if multiscattering_lut_dirs <= 0 {
-      1
-    } else {
-      multiscattering_lut_dirs
-    },
-    if multiscattering_lut_samples <= 0 {
-      1
-    } else {
-      multiscattering_lut_samples
-    },
-    if sky_view_lut_samples <= 0 {
-      1
-    } else {
-      sky_view_lut_samples
-    },
-    if aerial_view_lut_samples <= 0 {
-      1
-    } else {
-      aerial_view_lut_samples
-    },
-    aerial_view_lut_max_distance,
-    if sky_max_samples <= 0 {
-      1
-    } else {
-      sky_max_samples
-    },
-    rendering_method,
+  self.queue.write_buffer(
+    resources.settings_buffer,
+    0UL,
+    atmosphere_settings_bytes,
   )
-  self.queue.write_buffer(resources.settings_buffer, 0UL, settings_bytes)
 }
 
 ///|
@@ -1615,83 +1337,33 @@ fn GpuBackend::mesh3d_draw_atmosphere_sky(
 
 ///|
 pub fn prepare_mesh3d_atmosphere_resources(
-  ground_albedo_x~ : Float,
-  ground_albedo_y~ : Float,
-  ground_albedo_z~ : Float,
-  inner_radius~ : Float,
-  outer_radius~ : Float,
-  camera_world_x~ : Float,
-  camera_world_y~ : Float,
-  camera_world_z~ : Float,
-  world_to_atmosphere_x_axis_x~ : Float,
-  world_to_atmosphere_x_axis_y~ : Float,
-  world_to_atmosphere_x_axis_z~ : Float,
-  world_to_atmosphere_y_axis_x~ : Float,
-  world_to_atmosphere_y_axis_y~ : Float,
-  world_to_atmosphere_y_axis_z~ : Float,
-  world_to_atmosphere_z_axis_x~ : Float,
-  world_to_atmosphere_z_axis_y~ : Float,
-  world_to_atmosphere_z_axis_z~ : Float,
-  world_to_atmosphere_translation_x~ : Float,
-  world_to_atmosphere_translation_y~ : Float,
-  world_to_atmosphere_translation_z~ : Float,
+  atmosphere_uniform_bytes~ : Bytes,
+  atmosphere_transform_bytes~ : Bytes,
+  atmosphere_settings_bytes~ : Bytes,
   transmittance_width~ : Int,
   transmittance_height~ : Int,
-  transmittance_lut_samples~ : Int,
   multiscattering_width~ : Int,
   multiscattering_height~ : Int,
-  multiscattering_lut_dirs~ : Int,
-  multiscattering_lut_samples~ : Int,
   sky_view_width~ : Int,
   sky_view_height~ : Int,
-  sky_view_lut_samples~ : Int,
   aerial_view_width~ : Int,
   aerial_view_height~ : Int,
   aerial_view_depth~ : Int,
-  aerial_view_lut_samples~ : Int,
-  aerial_view_lut_max_distance~ : Float,
-  sky_max_samples~ : Int,
-  rendering_method~ : Int,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.mesh3d_prepare_atmosphere_resources(
-      ground_albedo_x~,
-      ground_albedo_y~,
-      ground_albedo_z~,
-      inner_radius~,
-      outer_radius~,
-      camera_world_x~,
-      camera_world_y~,
-      camera_world_z~,
-      world_to_atmosphere_x_axis_x~,
-      world_to_atmosphere_x_axis_y~,
-      world_to_atmosphere_x_axis_z~,
-      world_to_atmosphere_y_axis_x~,
-      world_to_atmosphere_y_axis_y~,
-      world_to_atmosphere_y_axis_z~,
-      world_to_atmosphere_z_axis_x~,
-      world_to_atmosphere_z_axis_y~,
-      world_to_atmosphere_z_axis_z~,
-      world_to_atmosphere_translation_x~,
-      world_to_atmosphere_translation_y~,
-      world_to_atmosphere_translation_z~,
+      atmosphere_uniform_bytes~,
+      atmosphere_transform_bytes~,
+      atmosphere_settings_bytes~,
       transmittance_width~,
       transmittance_height~,
-      transmittance_lut_samples~,
       multiscattering_width~,
       multiscattering_height~,
-      multiscattering_lut_dirs~,
-      multiscattering_lut_samples~,
       sky_view_width~,
       sky_view_height~,
-      sky_view_lut_samples~,
       aerial_view_width~,
       aerial_view_height~,
       aerial_view_depth~,
-      aerial_view_lut_samples~,
-      aerial_view_lut_max_distance~,
-      sky_max_samples~,
-      rendering_method~,
     ) catch {
       err => debug_runtime_error("prepare_mesh3d_atmosphere_resources", err)
     }

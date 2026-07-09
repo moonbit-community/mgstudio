@@ -108,3 +108,91 @@ test "pbr atmosphere: gpu atmosphere maps source component radii and albedo" {
     content="true",
   )
 }
+
+///|
+test "pbr atmosphere: transform owner follows Bevy resource basis shape" {
+  let transform = pbr_atmosphere_prepare_transform(
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Affine3::identity(),
+  )
+  inspect(
+    atmosphere_resource_test_approx_eq(
+      transform.world_from_atmosphere.x_axis().x,
+      -1.0F,
+    ),
+    content="true",
+  )
+  inspect(
+    atmosphere_resource_test_approx_eq(
+      transform.world_from_atmosphere.y_axis().y,
+      1.0F,
+    ),
+    content="true",
+  )
+  inspect(
+    atmosphere_resource_test_approx_eq(
+      transform.world_from_atmosphere.z_axis().z,
+      -1.0F,
+    ),
+    content="true",
+  )
+  inspect(
+    atmosphere_resource_test_approx_eq(
+      transform.world_from_atmosphere.w_axis().y,
+      1.0F,
+    ),
+    content="true",
+  )
+  inspect(
+    atmosphere_resource_test_approx_eq(
+      transform.atmosphere_from_world.x_axis().w,
+      0.0F,
+    ),
+    content="true",
+  )
+  inspect(transform.as_uniform_bytes().length(), content="128")
+}
+
+///|
+test "pbr atmosphere: uniform bytes are owned by pbr atmosphere resources" {
+  let settings = pbr_gpu_atmosphere_settings(
+    AtmosphereSettings::AtmosphereSettings()
+    .with_transmittance_lut_size(@math.UVec2::new(8, 4))
+    .with_multiscattering_lut_size(@math.UVec2::new(4, 2))
+    .with_sky_view_lut_size(@math.UVec2::new(6, 3))
+    .with_aerial_view_lut_size((@math.UVec2::new(2, 2), 2))
+    .with_transmittance_lut_samples(0)
+    .with_multiscattering_lut_dirs(0)
+    .with_multiscattering_lut_samples(0)
+    .with_sky_view_lut_samples(0)
+    .with_aerial_view_lut_samples(0)
+    .with_aerial_view_lut_max_distance(9.0F)
+    .with_sky_max_samples(0)
+    .with_rendering_method(AtmosphereMode::Raymarched),
+  )
+  let textures = AtmosphereTextures::from_settings(settings)
+  let atmosphere = GpuAtmosphere::GpuAtmosphere()
+  inspect(atmosphere.as_uniform_bytes().length(), content="96")
+  inspect(settings.as_uniform_bytes(textures).length(), content="80")
+  guard pbr_atmosphere_read_u32_le_for_test(
+      settings.as_uniform_bytes(textures),
+      44,
+    )
+    is Some(transmittance_samples) else {
+    abort("expected transmittance sample word")
+  }
+  inspect(transmittance_samples, content="0")
+}
+
+///|
+fn pbr_atmosphere_read_u32_le_for_test(bytes : Bytes, offset : Int) -> UInt? {
+  if offset < 0 || offset + 4 > bytes.length() {
+    return None
+  }
+  Some(
+    bytes[offset].to_int().reinterpret_as_uint() |
+    (bytes[offset + 1].to_int().reinterpret_as_uint() << 8) |
+    (bytes[offset + 2].to_int().reinterpret_as_uint() << 16) |
+    (bytes[offset + 3].to_int().reinterpret_as_uint() << 24),
+  )
+}

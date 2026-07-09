@@ -49,6 +49,45 @@ pub struct GpuAtmosphere {
 }
 
 ///|
+pub struct AtmosphereTransform {
+  world_from_atmosphere : @math.Mat4
+  atmosphere_from_world : @math.Mat4
+}
+
+///|
+fn pbr_atmosphere_u32le_pack(words : Array[UInt]) -> Bytes {
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn pbr_atmosphere_f32_bits(value : Float) -> UInt {
+  value.reinterpret_as_uint()
+}
+
+///|
+fn pbr_atmosphere_push_mat4_words(
+  words : Array[UInt],
+  matrix : @math.Mat4,
+) -> Unit {
+  let columns = [
+    matrix.x_axis(),
+    matrix.y_axis(),
+    matrix.z_axis(),
+    matrix.w_axis(),
+  ]
+  for column in columns {
+    words.push(pbr_atmosphere_f32_bits(column.x))
+    words.push(pbr_atmosphere_f32_bits(column.y))
+    words.push(pbr_atmosphere_f32_bits(column.z))
+    words.push(pbr_atmosphere_f32_bits(column.w))
+  }
+}
+
+///|
 pub fn GpuAtmosphere::GpuAtmosphere() -> GpuAtmosphere {
   GpuAtmosphere::{
     ground_albedo: @math.Vec3::zero(),
@@ -56,6 +95,36 @@ pub fn GpuAtmosphere::GpuAtmosphere() -> GpuAtmosphere {
     outer_radius: 0.0F,
     world_to_atmosphere: @math.Affine3::identity(),
   }
+}
+
+///|
+pub fn GpuAtmosphere::as_uniform_bytes(self : GpuAtmosphere) -> Bytes {
+  pbr_atmosphere_u32le_pack([
+    pbr_atmosphere_f32_bits(self.ground_albedo.x),
+    pbr_atmosphere_f32_bits(self.ground_albedo.y),
+    pbr_atmosphere_f32_bits(self.ground_albedo.z),
+    pbr_atmosphere_f32_bits(self.inner_radius),
+    pbr_atmosphere_f32_bits(self.outer_radius),
+    0U,
+    0U,
+    0U,
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.x_axis.x),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.x_axis.y),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.x_axis.z),
+    pbr_atmosphere_f32_bits(0.0F),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.y_axis.x),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.y_axis.y),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.y_axis.z),
+    pbr_atmosphere_f32_bits(0.0F),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.z_axis.x),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.z_axis.y),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.matrix3.z_axis.z),
+    pbr_atmosphere_f32_bits(0.0F),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.translation.x),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.translation.y),
+    pbr_atmosphere_f32_bits(self.world_to_atmosphere.translation.z),
+    pbr_atmosphere_f32_bits(1.0F),
+  ])
 }
 
 ///|
@@ -87,6 +156,43 @@ pub fn pbr_gpu_atmosphere_from_extracted(
 }
 
 ///|
+pub fn pbr_atmosphere_prepare_transform(
+  camera_world : @math.Vec3,
+  world_to_atmosphere : @math.Affine3,
+) -> AtmosphereTransform {
+  let cam_pos = world_to_atmosphere.transform_point3(camera_world)
+  let atmo_y = if cam_pos.length_squared() > 0.0F {
+    cam_pos.normalize()
+  } else {
+    @math.Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+  let world_ref = @math.Vec3::new(0.0F, 0.0F, -1.0F)
+  let ref_horizontal = world_ref.sub(atmo_y.mul_scalar(atmo_y.dot(world_ref)))
+  let atmo_z = ref_horizontal.normalize()
+  let atmo_x = atmo_y.cross(atmo_z).normalize()
+  let world_from_atmosphere = @math.Mat4::from_affine3(
+    @math.Affine3::from_mat3_translation(
+      @math.Mat3::from_cols(atmo_x, atmo_y, atmo_z),
+      camera_world,
+    ),
+  )
+  AtmosphereTransform::{
+    world_from_atmosphere,
+    atmosphere_from_world: world_from_atmosphere.transpose(),
+  }
+}
+
+///|
+pub fn AtmosphereTransform::as_uniform_bytes(
+  self : AtmosphereTransform,
+) -> Bytes {
+  let words : Array[UInt] = []
+  pbr_atmosphere_push_mat4_words(words, self.world_from_atmosphere)
+  pbr_atmosphere_push_mat4_words(words, self.atmosphere_from_world)
+  pbr_atmosphere_u32le_pack(words)
+}
+
+///|
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
   GpuAtmosphereSettings::{
     transmittance_lut_size: @math.UVec2::new(256, 128),
@@ -102,6 +208,44 @@ pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
     sky_max_samples: 16,
     rendering_method: 0,
   }
+}
+
+///|
+fn pbr_atmosphere_mode_to_u32(rendering_method : Int) -> UInt {
+  if rendering_method <= 0 {
+    0U
+  } else {
+    rendering_method.reinterpret_as_uint()
+  }
+}
+
+///|
+pub fn GpuAtmosphereSettings::as_uniform_bytes(
+  self : GpuAtmosphereSettings,
+  textures : AtmosphereTextures,
+) -> Bytes {
+  pbr_atmosphere_u32le_pack([
+    textures.transmittance_lut.width.reinterpret_as_uint(),
+    textures.transmittance_lut.height.reinterpret_as_uint(),
+    textures.multiscattering_lut.width.reinterpret_as_uint(),
+    textures.multiscattering_lut.height.reinterpret_as_uint(),
+    textures.sky_view_lut.width.reinterpret_as_uint(),
+    textures.sky_view_lut.height.reinterpret_as_uint(),
+    0U,
+    0U,
+    textures.aerial_view_lut.width.reinterpret_as_uint(),
+    textures.aerial_view_lut.height.reinterpret_as_uint(),
+    textures.aerial_view_lut.depth_or_array_layers.reinterpret_as_uint(),
+    self.transmittance_lut_samples.reinterpret_as_uint(),
+    self.multiscattering_lut_dirs.reinterpret_as_uint(),
+    self.multiscattering_lut_samples.reinterpret_as_uint(),
+    self.sky_view_lut_samples.reinterpret_as_uint(),
+    self.aerial_view_lut_samples.reinterpret_as_uint(),
+    pbr_atmosphere_f32_bits(self.aerial_view_lut_max_distance),
+    self.sky_max_samples.reinterpret_as_uint(),
+    pbr_atmosphere_mode_to_u32(self.rendering_method),
+    0U,
+  ])
 }
 
 ///|
