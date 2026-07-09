@@ -55,6 +55,26 @@ pub struct AtmosphereTransform {
 }
 
 ///|
+pub let ecs_key_gpu_atmosphere_settings : @ecs.ComponentKey[
+  GpuAtmosphereSettings,
+] = @ecs.register_component(debug_name="mgstudio_pbr::GpuAtmosphereSettings")
+
+///|
+pub impl @ecs.Component for GpuAtmosphereSettings with fn component() {
+  ecs_key_gpu_atmosphere_settings
+}
+
+///|
+pub let ecs_key_gpu_atmosphere : @ecs.ComponentKey[GpuAtmosphere] = @ecs.register_component(
+  debug_name="mgstudio_pbr::GpuAtmosphere",
+)
+
+///|
+pub impl @ecs.Component for GpuAtmosphere with fn component() {
+  ecs_key_gpu_atmosphere
+}
+
+///|
 fn pbr_atmosphere_u32le_pack(words : Array[UInt]) -> Bytes {
   Bytes::makei(words.length() * 4, i => {
     let word = words[i / 4]

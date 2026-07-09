@@ -20,6 +20,14 @@ pub fn atmosphere_plugin_install_with(@app.App[@ecs.World], AtmospherePlugin) ->
 
 pub let ecs_key_atmosphere_environment_map : @ecs.ComponentKey[AtmosphereEnvironmentMap]
 
+pub let ecs_key_extracted_atmosphere : @ecs.ComponentKey[ExtractedAtmosphere]
+
+pub let ecs_key_gpu_atmosphere : @ecs.ComponentKey[GpuAtmosphere]
+
+pub let ecs_key_gpu_atmosphere_settings : @ecs.ComponentKey[GpuAtmosphereSettings]
+
+pub fn extract_atmosphere(@ecs.World) -> Unit
+
 pub fn pbr_atmosphere_environment_map(@asset.Handle[@image.Image]?, @math.UVec2) -> AtmosphereEnvironmentMap
 
 pub fn pbr_atmosphere_environment_map_light_default() -> @light.AtmosphereEnvironmentMapLight
@@ -101,6 +109,15 @@ pub struct AtmosphereTransform {
 }
 pub fn AtmosphereTransform::as_uniform_bytes(Self) -> Bytes
 
+pub struct ExtractedAtmosphere {
+  inner_radius : Float
+  outer_radius : Float
+  ground_albedo : @math.Vec3
+  medium : @asset.Handle[@light.ScatteringMedium]
+  world_to_atmosphere : @math.Affine3
+}
+pub impl @ecs.Component for ExtractedAtmosphere
+
 pub struct GpuAtmosphere {
   ground_albedo : @math.Vec3
   inner_radius : Float
@@ -109,6 +126,7 @@ pub struct GpuAtmosphere {
 }
 pub fn GpuAtmosphere::GpuAtmosphere() -> Self
 pub fn GpuAtmosphere::as_uniform_bytes(Self) -> Bytes
+pub impl @ecs.Component for GpuAtmosphere
 
 pub struct GpuAtmosphereSettings {
   transmittance_lut_size : @math.UVec2
@@ -126,6 +144,7 @@ pub struct GpuAtmosphereSettings {
 }
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> Self
 pub fn GpuAtmosphereSettings::as_uniform_bytes(Self, AtmosphereTextures) -> Bytes
+pub impl @ecs.Component for GpuAtmosphereSettings
 
 // Type aliases
 pub using @light {type Atmosphere}
