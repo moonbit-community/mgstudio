@@ -221,138 +221,41 @@ priv struct MeshPhaseItem3d {
 }
 
 ///|
-priv struct Render3dMainViewPhase {
-  mut draw_items : Array[MeshPhaseItem3d]
-  mut opaque_draw_item_indices : Array[Int]
-  mut alpha_mask_draw_item_indices : Array[Int]
-  mut transmissive_draw_item_indices : Array[Int]
-  mut transparent_draw_item_indices : Array[Int]
+priv struct Render3dMainViewDrawItems {
+  views : Map[UInt64, Array[MeshPhaseItem3d]]
 }
 
 ///|
-fn Render3dMainViewPhase::new() -> Render3dMainViewPhase {
-  Render3dMainViewPhase::{
-    draw_items: [],
-    opaque_draw_item_indices: [],
-    alpha_mask_draw_item_indices: [],
-    transmissive_draw_item_indices: [],
-    transparent_draw_item_indices: [],
-  }
+fn Render3dMainViewDrawItems::Render3dMainViewDrawItems() -> Render3dMainViewDrawItems {
+  Render3dMainViewDrawItems::{ views: {} }
 }
 
 ///|
-fn Render3dMainViewPhase::prepare_for_new_frame(
-  self : Render3dMainViewPhase,
-) -> Unit {
-  self.draw_items = []
-  self.opaque_draw_item_indices = []
-  self.alpha_mask_draw_item_indices = []
-  self.transmissive_draw_item_indices = []
-  self.transparent_draw_item_indices = []
+let render3d_main_view_draw_items_key : @ecs.ResourceKey[
+  Render3dMainViewDrawItems,
+] = @ecs.register_resource(debug_name="mgstudio_pbr::Render3dMainViewDrawItems")
+
+///|
+impl @app.Resource for Render3dMainViewDrawItems with fn resource() {
+  render3d_main_view_draw_items_key
 }
 
 ///|
-fn Render3dMainViewPhase::set_draw_items(
-  self : Render3dMainViewPhase,
+fn Render3dMainViewDrawItems::set_draw_items(
+  self : Render3dMainViewDrawItems,
+  retained_view_entity : @core.Entity,
   draw_items : Array[MeshPhaseItem3d],
 ) -> Unit {
-  self.draw_items = draw_items.copy()
-  self.opaque_draw_item_indices = []
-  self.alpha_mask_draw_item_indices = []
-  self.transmissive_draw_item_indices = []
-  self.transparent_draw_item_indices = []
-  for index in 0..<draw_items.length() {
-    let item = draw_items[index]
-    if item.phase == RENDER3D_PHASE_OPAQUE {
-      self.opaque_draw_item_indices.push(index)
-    } else if item.phase == RENDER3D_PHASE_ALPHA_MASK {
-      self.alpha_mask_draw_item_indices.push(index)
-    } else if item.phase == RENDER3D_PHASE_TRANSMISSIVE {
-      self.transmissive_draw_item_indices.push(index)
-    } else if item.phase == RENDER3D_PHASE_TRANSPARENT {
-      self.transparent_draw_item_indices.push(index)
-    }
-  }
+  self.views.set(retained_view_entity.to_bits(), draw_items.copy())
 }
 
 ///|
-fn Render3dMainViewPhase::draw_items(
-  self : Render3dMainViewPhase,
-) -> Array[MeshPhaseItem3d] {
-  self.draw_items.copy()
-}
-
-///|
-fn Render3dMainViewPhase::len(self : Render3dMainViewPhase) -> Int {
-  self.draw_items.length()
-}
-
-///|
-fn Render3dMainViewPhase::draw_item_indices(
-  self : Render3dMainViewPhase,
-) -> Array[Int] {
-  let indices : Array[Int] = []
-  for index in self.opaque_draw_item_indices {
-    indices.push(index)
-  }
-  for index in self.alpha_mask_draw_item_indices {
-    indices.push(index)
-  }
-  for index in self.transmissive_draw_item_indices {
-    indices.push(index)
-  }
-  for index in self.transparent_draw_item_indices {
-    indices.push(index)
-  }
-  indices
-}
-
-///|
-priv struct Render3dMainViewPhases {
-  views : Map[UInt64, Render3dMainViewPhase]
-}
-
-///|
-fn Render3dMainViewPhases::Render3dMainViewPhases() -> Render3dMainViewPhases {
-  Render3dMainViewPhases::{ views: {} }
-}
-
-///|
-let render3d_main_view_phases_key : @ecs.ResourceKey[Render3dMainViewPhases] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::Render3dMainViewPhases",
-)
-
-///|
-impl @app.Resource for Render3dMainViewPhases with fn resource() {
-  render3d_main_view_phases_key
-}
-
-///|
-fn Render3dMainViewPhases::prepare_for_new_frame(
-  self : Render3dMainViewPhases,
-  retained_view_entity : @core.Entity,
-) -> Render3dMainViewPhase {
-  let key = retained_view_entity.to_bits()
-  match self.views.get(key) {
-    Some(phase) => {
-      phase.prepare_for_new_frame()
-      phase
-    }
-    None => {
-      let phase = Render3dMainViewPhase::new()
-      self.views.set(key, phase)
-      phase
-    }
-  }
-}
-
-///|
-fn Render3dMainViewPhases::retain_live_views(
-  self : Render3dMainViewPhases,
+fn Render3dMainViewDrawItems::retain_live_views(
+  self : Render3dMainViewDrawItems,
   live_views : Map[UInt64, Bool],
 ) -> Unit {
   let stale : Array[UInt64] = []
-  for view_bits, _phase in self.views {
+  for view_bits, _draw_items in self.views {
     if !live_views.contains(view_bits) {
       stale.push(view_bits)
     }
@@ -363,32 +266,232 @@ fn Render3dMainViewPhases::retain_live_views(
 }
 
 ///|
-fn Render3dMainViewPhases::phase(
-  self : Render3dMainViewPhases,
+fn Render3dMainViewDrawItems::items(
+  self : Render3dMainViewDrawItems,
   retained_view_entity : @core.Entity,
-) -> Render3dMainViewPhase? {
+) -> Array[MeshPhaseItem3d]? {
   self.views.get(retained_view_entity.to_bits())
 }
 
 ///|
-fn ensure_render3d_main_view_phases(world : @ecs.World) -> Unit {
-  if world.get_resource(Render3dMainViewPhases::resource()) is None {
+fn Render3dMainViewDrawItems::len(
+  self : Render3dMainViewDrawItems,
+  retained_view_entity : @core.Entity,
+) -> Int {
+  match self.items(retained_view_entity) {
+    Some(draw_items) => draw_items.length()
+    None => 0
+  }
+}
+
+///|
+priv struct Render3dMainViewPhaseIndexStore {
+  views : Map[UInt64, Array[Int]]
+}
+
+///|
+fn Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore() -> Render3dMainViewPhaseIndexStore {
+  Render3dMainViewPhaseIndexStore::{ views: {} }
+}
+
+///|
+fn Render3dMainViewPhaseIndexStore::set_indices(
+  self : Render3dMainViewPhaseIndexStore,
+  retained_view_entity : @core.Entity,
+  indices : Array[Int],
+) -> Unit {
+  self.views.set(retained_view_entity.to_bits(), indices.copy())
+}
+
+///|
+fn Render3dMainViewPhaseIndexStore::retain_live_views(
+  self : Render3dMainViewPhaseIndexStore,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _indices in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
+}
+
+///|
+fn Render3dMainViewPhaseIndexStore::indices(
+  self : Render3dMainViewPhaseIndexStore,
+  retained_view_entity : @core.Entity,
+) -> Array[Int]? {
+  self.views.get(retained_view_entity.to_bits())
+}
+
+///|
+priv struct Render3dOpaqueMainViewPhases {
+  store : Render3dMainViewPhaseIndexStore
+}
+
+///|
+fn Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases() -> Render3dOpaqueMainViewPhases {
+  Render3dOpaqueMainViewPhases::{
+    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
+  }
+}
+
+///|
+let render3d_opaque_main_view_phases_key : @ecs.ResourceKey[
+  Render3dOpaqueMainViewPhases,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Render3dOpaqueMainViewPhases",
+)
+
+///|
+impl @app.Resource for Render3dOpaqueMainViewPhases with fn resource() {
+  render3d_opaque_main_view_phases_key
+}
+
+///|
+priv struct Render3dAlphaMaskMainViewPhases {
+  store : Render3dMainViewPhaseIndexStore
+}
+
+///|
+fn Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases() -> Render3dAlphaMaskMainViewPhases {
+  Render3dAlphaMaskMainViewPhases::{
+    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
+  }
+}
+
+///|
+let render3d_alpha_mask_main_view_phases_key : @ecs.ResourceKey[
+  Render3dAlphaMaskMainViewPhases,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Render3dAlphaMaskMainViewPhases",
+)
+
+///|
+impl @app.Resource for Render3dAlphaMaskMainViewPhases with fn resource() {
+  render3d_alpha_mask_main_view_phases_key
+}
+
+///|
+priv struct Render3dTransmissiveMainViewPhases {
+  store : Render3dMainViewPhaseIndexStore
+}
+
+///|
+fn Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases() -> Render3dTransmissiveMainViewPhases {
+  Render3dTransmissiveMainViewPhases::{
+    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
+  }
+}
+
+///|
+let render3d_transmissive_main_view_phases_key : @ecs.ResourceKey[
+  Render3dTransmissiveMainViewPhases,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Render3dTransmissiveMainViewPhases",
+)
+
+///|
+impl @app.Resource for Render3dTransmissiveMainViewPhases with fn resource() {
+  render3d_transmissive_main_view_phases_key
+}
+
+///|
+priv struct Render3dTransparentMainViewPhases {
+  store : Render3dMainViewPhaseIndexStore
+}
+
+///|
+fn Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases() -> Render3dTransparentMainViewPhases {
+  Render3dTransparentMainViewPhases::{
+    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
+  }
+}
+
+///|
+let render3d_transparent_main_view_phases_key : @ecs.ResourceKey[
+  Render3dTransparentMainViewPhases,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Render3dTransparentMainViewPhases",
+)
+
+///|
+impl @app.Resource for Render3dTransparentMainViewPhases with fn resource() {
+  render3d_transparent_main_view_phases_key
+}
+
+///|
+fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
+  if world.get_resource(Render3dMainViewDrawItems::resource()) is None {
     world.insert_resource(
-      Render3dMainViewPhases::resource(),
-      Render3dMainViewPhases::Render3dMainViewPhases(),
+      Render3dMainViewDrawItems::resource(),
+      Render3dMainViewDrawItems::Render3dMainViewDrawItems(),
+    )
+  }
+  if world.get_resource(Render3dOpaqueMainViewPhases::resource()) is None {
+    world.insert_resource(
+      Render3dOpaqueMainViewPhases::resource(),
+      Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases(),
+    )
+  }
+  if world.get_resource(Render3dAlphaMaskMainViewPhases::resource()) is None {
+    world.insert_resource(
+      Render3dAlphaMaskMainViewPhases::resource(),
+      Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases(),
+    )
+  }
+  if world.get_resource(Render3dTransmissiveMainViewPhases::resource()) is None {
+    world.insert_resource(
+      Render3dTransmissiveMainViewPhases::resource(),
+      Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases(),
+    )
+  }
+  if world.get_resource(Render3dTransparentMainViewPhases::resource()) is None {
+    world.insert_resource(
+      Render3dTransparentMainViewPhases::resource(),
+      Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases(),
     )
   }
 }
 
 ///|
-fn render3d_main_view_phases_mut_or_abort(
+fn render3d_main_view_draw_items_mut_or_abort(
   world : @ecs.World,
-) -> @ecs.ResourceMut[Render3dMainViewPhases] {
-  ensure_render3d_main_view_phases(world)
-  match world.get_resource_mut(Render3dMainViewPhases::resource()) {
-    Some(phases) => phases
-    None => abort("Missing Render3dMainViewPhases resource in render world")
+) -> @ecs.ResourceMut[Render3dMainViewDrawItems] {
+  ensure_render3d_main_view_phase_resources(world)
+  match world.get_resource_mut(Render3dMainViewDrawItems::resource()) {
+    Some(draw_items) => draw_items
+    None => abort("Missing Render3dMainViewDrawItems resource in render world")
   }
+}
+
+///|
+fn render3d_partition_main_view_phase_indices(
+  draw_items : Array[MeshPhaseItem3d],
+) -> (Array[Int], Array[Int], Array[Int], Array[Int]) {
+  let opaque_draw_item_indices : Array[Int] = []
+  let alpha_mask_draw_item_indices : Array[Int] = []
+  let transmissive_draw_item_indices : Array[Int] = []
+  let transparent_draw_item_indices : Array[Int] = []
+  for index in 0..<draw_items.length() {
+    let item = draw_items[index]
+    if item.phase == RENDER3D_PHASE_OPAQUE {
+      opaque_draw_item_indices.push(index)
+    } else if item.phase == RENDER3D_PHASE_ALPHA_MASK {
+      alpha_mask_draw_item_indices.push(index)
+    } else if item.phase == RENDER3D_PHASE_TRANSMISSIVE {
+      transmissive_draw_item_indices.push(index)
+    } else if item.phase == RENDER3D_PHASE_TRANSPARENT {
+      transparent_draw_item_indices.push(index)
+    }
+  }
+  (
+    opaque_draw_item_indices, alpha_mask_draw_item_indices, transmissive_draw_item_indices,
+    transparent_draw_item_indices,
+  )
 }
 
 ///|
@@ -397,10 +500,46 @@ fn render3d_prepare_main_view_phase(
   retained_view_entity : @core.Entity,
   draw_items : Array[MeshPhaseItem3d],
 ) -> Unit {
-  let phases = render3d_main_view_phases_mut_or_abort(world)
-  phases.modify(fn(value) {
-    let phase = value.prepare_for_new_frame(retained_view_entity)
-    phase.set_draw_items(draw_items)
+  ensure_render3d_main_view_phase_resources(world)
+  let (
+    opaque_draw_item_indices,
+    alpha_mask_draw_item_indices,
+    transmissive_draw_item_indices,
+    transparent_draw_item_indices,
+  ) = render3d_partition_main_view_phase_indices(draw_items)
+  let draw_items_resource = render3d_main_view_draw_items_mut_or_abort(world)
+  draw_items_resource.modify(fn(value) {
+    value.set_draw_items(retained_view_entity, draw_items)
+  })
+  guard world.get_resource_mut(Render3dOpaqueMainViewPhases::resource())
+    is Some(opaque_phases) else {
+    abort("Missing Render3dOpaqueMainViewPhases resource in render world")
+  }
+  opaque_phases.modify(fn(value) {
+    value.store.set_indices(retained_view_entity, opaque_draw_item_indices)
+  })
+  guard world.get_resource_mut(Render3dAlphaMaskMainViewPhases::resource())
+    is Some(alpha_mask_phases) else {
+    abort("Missing Render3dAlphaMaskMainViewPhases resource in render world")
+  }
+  alpha_mask_phases.modify(fn(value) {
+    value.store.set_indices(retained_view_entity, alpha_mask_draw_item_indices)
+  })
+  guard world.get_resource_mut(Render3dTransmissiveMainViewPhases::resource())
+    is Some(transmissive_phases) else {
+    abort("Missing Render3dTransmissiveMainViewPhases resource in render world")
+  }
+  transmissive_phases.modify(fn(value) {
+    value.store.set_indices(
+      retained_view_entity, transmissive_draw_item_indices,
+    )
+  })
+  guard world.get_resource_mut(Render3dTransparentMainViewPhases::resource())
+    is Some(transparent_phases) else {
+    abort("Missing Render3dTransparentMainViewPhases resource in render world")
+  }
+  transparent_phases.modify(fn(value) {
+    value.store.set_indices(retained_view_entity, transparent_draw_item_indices)
   })
 }
 
@@ -413,8 +552,35 @@ fn render3d_retain_live_main_view_phases(
   for camera in cameras {
     live_views.set(camera.entity.main_entity.to_bits(), true)
   }
-  let phases = render3d_main_view_phases_mut_or_abort(world)
-  phases.modify(fn(value) { value.retain_live_views(live_views) })
+  ensure_render3d_main_view_phase_resources(world)
+  let draw_items = render3d_main_view_draw_items_mut_or_abort(world)
+  draw_items.modify(fn(value) { value.retain_live_views(live_views) })
+  guard world.get_resource_mut(Render3dOpaqueMainViewPhases::resource())
+    is Some(opaque_phases) else {
+    abort("Missing Render3dOpaqueMainViewPhases resource in render world")
+  }
+  opaque_phases.modify(fn(value) { value.store.retain_live_views(live_views) })
+  guard world.get_resource_mut(Render3dAlphaMaskMainViewPhases::resource())
+    is Some(alpha_mask_phases) else {
+    abort("Missing Render3dAlphaMaskMainViewPhases resource in render world")
+  }
+  alpha_mask_phases.modify(fn(value) {
+    value.store.retain_live_views(live_views)
+  })
+  guard world.get_resource_mut(Render3dTransmissiveMainViewPhases::resource())
+    is Some(transmissive_phases) else {
+    abort("Missing Render3dTransmissiveMainViewPhases resource in render world")
+  }
+  transmissive_phases.modify(fn(value) {
+    value.store.retain_live_views(live_views)
+  })
+  guard world.get_resource_mut(Render3dTransparentMainViewPhases::resource())
+    is Some(transparent_phases) else {
+    abort("Missing Render3dTransparentMainViewPhases resource in render world")
+  }
+  transparent_phases.modify(fn(value) {
+    value.store.retain_live_views(live_views)
+  })
 }
 
 ///|
@@ -422,13 +588,14 @@ fn render3d_main_view_phase_items_or_abort(
   world : @ecs.World,
   retained_view_entity : @core.Entity,
 ) -> Array[MeshPhaseItem3d] {
-  guard world.get_resource(Render3dMainViewPhases::resource()) is Some(phases) else {
-    abort("Missing Render3dMainViewPhases resource during pbr main pass")
+  guard world.get_resource(Render3dMainViewDrawItems::resource())
+    is Some(draw_items) else {
+    abort("Missing Render3dMainViewDrawItems resource during pbr main pass")
   }
-  guard phases.phase(retained_view_entity) is Some(phase) else {
-    abort("Missing retained Render3dMainViewPhase during pbr main pass")
+  guard draw_items.items(retained_view_entity) is Some(items) else {
+    abort("Missing retained Render3dMainViewDrawItems during pbr main pass")
   }
-  phase.draw_items()
+  items.copy()
 }
 
 ///|
@@ -436,13 +603,58 @@ fn render3d_main_view_phase_draw_item_indices_or_abort(
   world : @ecs.World,
   retained_view_entity : @core.Entity,
 ) -> Array[Int] {
-  guard world.get_resource(Render3dMainViewPhases::resource()) is Some(phases) else {
-    abort("Missing Render3dMainViewPhases resource during pbr main pass")
+  guard world.get_resource(Render3dOpaqueMainViewPhases::resource())
+    is Some(opaque_phases) else {
+    abort("Missing Render3dOpaqueMainViewPhases resource during pbr main pass")
   }
-  guard phases.phase(retained_view_entity) is Some(phase) else {
-    abort("Missing retained Render3dMainViewPhase during pbr main pass")
+  guard world.get_resource(Render3dAlphaMaskMainViewPhases::resource())
+    is Some(alpha_mask_phases) else {
+    abort(
+      "Missing Render3dAlphaMaskMainViewPhases resource during pbr main pass",
+    )
   }
-  phase.draw_item_indices()
+  guard world.get_resource(Render3dTransmissiveMainViewPhases::resource())
+    is Some(transmissive_phases) else {
+    abort(
+      "Missing Render3dTransmissiveMainViewPhases resource during pbr main pass",
+    )
+  }
+  guard world.get_resource(Render3dTransparentMainViewPhases::resource())
+    is Some(transparent_phases) else {
+    abort(
+      "Missing Render3dTransparentMainViewPhases resource during pbr main pass",
+    )
+  }
+  let indices : Array[Int] = []
+  match opaque_phases.store.indices(retained_view_entity) {
+    Some(opaque_indices) =>
+      for index in opaque_indices {
+        indices.push(index)
+      }
+    None => ()
+  }
+  match alpha_mask_phases.store.indices(retained_view_entity) {
+    Some(alpha_mask_indices) =>
+      for index in alpha_mask_indices {
+        indices.push(index)
+      }
+    None => ()
+  }
+  match transmissive_phases.store.indices(retained_view_entity) {
+    Some(transmissive_indices) =>
+      for index in transmissive_indices {
+        indices.push(index)
+      }
+    None => ()
+  }
+  match transparent_phases.store.indices(retained_view_entity) {
+    Some(transparent_indices) =>
+      for index in transparent_indices {
+        indices.push(index)
+      }
+    None => ()
+  }
+  indices
 }
 
 ///|
@@ -450,17 +662,13 @@ fn render3d_main_view_phase_item_count_or_abort(
   world : @ecs.World,
   retained_view_entity : @core.Entity,
 ) -> Int {
-  guard world.get_resource(Render3dMainViewPhases::resource()) is Some(phases) else {
+  guard world.get_resource(Render3dMainViewDrawItems::resource())
+    is Some(draw_items) else {
     abort(
-      "Missing Render3dMainViewPhases resource during pbr draw storage reservation",
+      "Missing Render3dMainViewDrawItems resource during pbr draw storage reservation",
     )
   }
-  guard phases.phase(retained_view_entity) is Some(phase) else {
-    abort(
-      "Missing retained Render3dMainViewPhase during pbr draw storage reservation",
-    )
-  }
-  phase.len()
+  draw_items.len(retained_view_entity)
 }
 
 ///|

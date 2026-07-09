@@ -154,10 +154,33 @@ test "pbr: main view phases retain only live cameras" {
 
   render3d_retain_live_main_view_phases(world, [camera])
 
-  let phases = match world.get_resource(Render3dMainViewPhases::resource()) {
+  let draw_items = match
+    world.get_resource(Render3dMainViewDrawItems::resource()) {
     Some(value) => value
-    None => abort("missing main view phases")
+    None => abort("missing main view draw items")
   }
-  debug_inspect(phases.phase(live_view) is Some(_), content="true")
-  debug_inspect(phases.phase(stale_view) is Some(_), content="false")
+  debug_inspect(draw_items.items(live_view) is Some(_), content="true")
+  debug_inspect(draw_items.items(stale_view) is Some(_), content="false")
+  let opaque_phases = match
+    world.get_resource(Render3dOpaqueMainViewPhases::resource()) {
+    Some(value) => value
+    None => abort("missing opaque main view phases")
+  }
+  let alpha_mask_phases = match
+    world.get_resource(Render3dAlphaMaskMainViewPhases::resource()) {
+    Some(value) => value
+    None => abort("missing alpha-mask main view phases")
+  }
+  debug_inspect(
+    opaque_phases.store.indices(live_view) is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    opaque_phases.store.indices(stale_view) is Some(_),
+    content="false",
+  )
+  debug_inspect(
+    alpha_mask_phases.store.indices(stale_view) is Some(_),
+    content="false",
+  )
 }

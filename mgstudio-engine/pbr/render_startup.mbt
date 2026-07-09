@@ -273,8 +273,32 @@ fn configure_pbr_render_world_resources(
   )
   pbr_init_render_resource_if_missing(
     world,
-    Render3dMainViewPhases::resource(),
-    fn() { Render3dMainViewPhases::Render3dMainViewPhases() },
+    Render3dMainViewDrawItems::resource(),
+    fn() { Render3dMainViewDrawItems::Render3dMainViewDrawItems() },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dOpaqueMainViewPhases::resource(),
+    fn() { Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases() },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dAlphaMaskMainViewPhases::resource(),
+    fn() { Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases() },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dTransmissiveMainViewPhases::resource(),
+    fn() {
+      Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases()
+    },
+  )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dTransparentMainViewPhases::resource(),
+    fn() {
+      Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases()
+    },
   )
   sub_app
 }
