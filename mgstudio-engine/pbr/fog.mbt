@@ -416,8 +416,8 @@ fn render3d_color_lerp(
 fn render3d_camera_distance_fog(
   base_fog : DistanceFog,
   volumetric_fog : VolumetricFog?,
-  atmosphere : ExtractedAtmosphere3d?,
-  atmosphere_settings : AtmosphereSettings?,
+  atmosphere : @pbr_atmosphere.ExtractedAtmosphere?,
+  atmosphere_settings : @pbr_atmosphere.GpuAtmosphereSettings?,
 ) -> DistanceFog {
   let mut fog = base_fog
   if volumetric_fog is Some(volumetric_fog_value) {
@@ -469,7 +469,7 @@ fn render3d_camera_distance_fog(
     fog = fog.with_color(render3d_color_lerp(fog.color, albedo_color, 0.15F))
   }
   if atmosphere_settings is Some(atmosphere_settings_value) {
-    if atmosphere_settings_value.rendering_method is AtmosphereMode::Raymarched {
+    if atmosphere_settings_value.rendering_method == 1 {
       fog = fog.with_directional_light_exponent(
         fog.directional_light_exponent + 1.0F,
       )

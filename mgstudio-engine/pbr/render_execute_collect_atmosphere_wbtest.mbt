@@ -36,6 +36,43 @@ fn atmosphere_collect_insert_primary_window(
 }
 
 ///|
+fn atmosphere_collect_attach_render_atmosphere_payload(
+  source_world : @ecs.World,
+  render_world : @ecs.World,
+  camera_entity : @core.Entity,
+  atmosphere : Atmosphere,
+  atmosphere_global_transform : @transform.GlobalTransform,
+  settings : AtmosphereSettings,
+) -> @core.Entity {
+  let render_entity = render_world.spawn()
+  try! (source_world.set_by_key(
+    camera_entity,
+    @render.ecs_key_render_entity,
+    @render.RenderEntity::new(render_entity),
+  )
+  |> ignore)
+  try! (render_world.set_by_key(
+    render_entity,
+    @pbr_atmosphere.ecs_key_extracted_atmosphere,
+    @pbr_atmosphere.ExtractedAtmosphere::ExtractedAtmosphere(
+      atmosphere.inner_radius,
+      atmosphere.outer_radius,
+      atmosphere.ground_albedo,
+      atmosphere.medium,
+      atmosphere_global_transform.affine().inverse(),
+    ),
+  )
+  |> ignore)
+  try! (render_world.set_by_key(
+    render_entity,
+    @pbr_atmosphere.GpuAtmosphereSettings::component(),
+    @pbr_atmosphere.pbr_gpu_atmosphere_settings(settings),
+  )
+  |> ignore)
+  render_entity
+}
+
+///|
 test "render3d collect cameras: volumetric fog depth usage is prepared from render world without source mutation" {
   let source_world = @ecs.World::new()
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
@@ -169,6 +206,16 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
   |> ignore)
 
   let render_world = @ecs.World::new()
+  ignore(
+    atmosphere_collect_attach_render_atmosphere_payload(
+      source_world,
+      render_world,
+      camera_entity,
+      atmosphere,
+      @transform.GlobalTransform::from_transform(atmosphere_transform),
+      AtmosphereSettings::AtmosphereSettings(),
+    ),
+  )
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
       cache,
     ) {
@@ -280,6 +327,19 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
   |> ignore)
 
   let render_world = @ecs.World::new()
+  let atmosphere_global_transform = (try! source_world.get_by_key(
+    atmosphere_entity, @transform.ecs_key_global_transform,
+  )).unwrap()
+  ignore(
+    atmosphere_collect_attach_render_atmosphere_payload(
+      source_world,
+      render_world,
+      camera_entity,
+      atmosphere,
+      atmosphere_global_transform,
+      AtmosphereSettings::AtmosphereSettings(),
+    ),
+  )
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
       cache,
     ) {

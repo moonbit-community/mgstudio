@@ -65,49 +65,30 @@ fn render3d_world_has_environment_light_probes(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn render3d_world_to_atmosphere(
-  transform : @transform.Transform,
-) -> @math.Affine3 {
-  @math.Affine3::from_scale_rotation_translation(
-    transform.scale,
-    transform.rotation,
-    transform.translation,
-  ).inverse()
+fn render3d_extracted_atmosphere_for_view(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @pbr_atmosphere.ExtractedAtmosphere? {
+  if !render_world.is_alive(render_entity) {
+    return None
+  }
+  try! render_world.get_by_key(
+    render_entity, @pbr_atmosphere.ecs_key_extracted_atmosphere,
+  )
 }
 
 ///|
-fn render3d_extract_nearest_atmosphere(
-  source_world : @ecs.World,
-  world_transform_cache_value : @pbr_render.Render3dWorldTransformCache,
-  camera_transform : @transform.Transform,
-) -> ExtractedAtmosphere3d? {
-  let mut selected_atmosphere : Atmosphere? = None
-  let mut selected_world_to_atmosphere : @math.Affine3? = None
-  let mut selected_distance = 0.0F
-  source_world.for_each_component(ecs_key_atmosphere, fn(entity, atmosphere) {
-    let transform = @pbr_render.render3d_entity_world_transform_cached(
-      source_world, entity, world_transform_cache_value,
-    )
-    let distance = camera_transform.translation.distance(transform.translation)
-    if selected_atmosphere is None || distance < selected_distance {
-      selected_atmosphere = Some(atmosphere)
-      selected_world_to_atmosphere = Some(
-        render3d_world_to_atmosphere(transform),
-      )
-      selected_distance = distance
-    }
-  })
-  match (selected_atmosphere, selected_world_to_atmosphere) {
-    (Some(atmosphere), Some(world_to_atmosphere)) =>
-      Some(ExtractedAtmosphere3d::{
-        inner_radius: atmosphere.inner_radius,
-        outer_radius: atmosphere.outer_radius,
-        ground_albedo: atmosphere.ground_albedo,
-        medium: atmosphere.medium,
-        world_to_atmosphere,
-      })
-    _ => None
+fn render3d_gpu_atmosphere_settings_for_view(
+  render_world : @ecs.World,
+  render_entity : @core.Entity,
+) -> @pbr_atmosphere.GpuAtmosphereSettings? {
+  if !render_world.is_alive(render_entity) {
+    return None
   }
+  try! render_world.get_by_key(
+    render_entity,
+    @pbr_atmosphere.GpuAtmosphereSettings::component(),
+  )
 }
 
 ///|
@@ -212,10 +193,16 @@ fn render3d_execute_collect_cameras(
     let volumetric_fog = try! source_world.get_by_key(
       entity, ecs_key_volumetric_fog,
     )
-    let atmosphere_settings = try! source_world.get_by_key(
-      entity, ecs_key_atmosphere_settings,
+    let phase_entity = phase_entity_ref3d_for_world_main(source_world, entity)
+    let atmosphere = render3d_extracted_atmosphere_for_view(
+      render_world,
+      phase_entity.render_entity,
     )
-    if atmosphere_settings is Some(_) {
+    let atmosphere_settings = render3d_gpu_atmosphere_settings_for_view(
+      render_world,
+      phase_entity.render_entity,
+    )
+    if atmosphere is Some(_) {
       depth_texture_usages = depth_texture_usages.with_texture_binding()
     }
     let oit_settings = try! source_world.get_by_key(
@@ -269,9 +256,9 @@ fn render3d_execute_collect_cameras(
     let hdr_enabled = (try! source_world.get_by_key(entity, ecs_key_hdr))
       is Some(_)
     if @sys.get_env_var("MGSTUDIO_ATMOSPHERE_PARITY_DEBUG") is Some(_) &&
-      atmosphere_settings is Some(_) {
+      atmosphere is Some(_) {
       println(
-        "[DEBUG-atmosphere-parity] camera hdr=\{hdr_enabled} tonemapping=\{tonemapping is Some(_)} atmosphere_settings=true ssr=\{screen_space_reflections is Some(_)}",
+        "[DEBUG-atmosphere-parity] camera hdr=\{hdr_enabled} tonemapping=\{tonemapping is Some(_)} extracted_atmosphere=true ssr=\{screen_space_reflections is Some(_)}",
       )
     }
     let fxaa = try! source_world.get_by_key(entity, ecs_key_fxaa)
@@ -343,9 +330,6 @@ fn render3d_execute_collect_cameras(
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_value,
     )
-    let atmosphere = render3d_extract_nearest_atmosphere(
-      source_world, world_transform_cache_value, transform,
-    )
     let previous_view_data = previous_view_data_opt.value()
     let previous_transform = match previous_view_data {
       Some(v) => v.transform()
@@ -390,7 +374,7 @@ fn render3d_execute_collect_cameras(
           (entity, render3d_cluster_camera_projection(projection)),
         )
         cameras.push(ExtractedCamera3d::{
-          entity: phase_entity_ref3d_for_world_main(source_world, entity),
+          entity: phase_entity,
           payload: Camera3dViewPayload::{
             decal_config,
             deferred_config,

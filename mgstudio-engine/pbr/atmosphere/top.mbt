@@ -41,6 +41,23 @@ pub impl @ecs.Component for ExtractedAtmosphere with fn component() {
 }
 
 ///|
+pub fn ExtractedAtmosphere::ExtractedAtmosphere(
+  inner_radius : Float,
+  outer_radius : Float,
+  ground_albedo : @math.Vec3,
+  medium : @asset.Handle[@light.ScatteringMedium],
+  world_to_atmosphere : @math.Affine3,
+) -> ExtractedAtmosphere {
+  ExtractedAtmosphere::{
+    inner_radius,
+    outer_radius,
+    ground_albedo,
+    medium,
+    world_to_atmosphere,
+  }
+}
+
+///|
 pub fn AtmospherePlugin::AtmospherePlugin() -> AtmospherePlugin {
   AtmospherePlugin::{  }
 }

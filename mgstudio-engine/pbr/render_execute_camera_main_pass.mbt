@@ -245,9 +245,9 @@ fn render3d_prepare_camera_atmosphere_resources(
     is Some(medium) else {
     return
   }
-  let settings = match camera.atmosphere_settings {
+  let gpu_settings = match camera.atmosphere_settings {
     Some(value) => value
-    None => @pbr_atmosphere.pbr_atmosphere_settings_default()
+    None => @pbr_atmosphere.GpuAtmosphereSettings::GpuAtmosphereSettings()
   }
   let gpu_medium = render3d_prepare_scattering_medium_asset(
     world,
@@ -262,7 +262,6 @@ fn render3d_prepare_camera_atmosphere_resources(
     scattering_height=gpu_medium.scattering_height(),
     scattering_bytes=gpu_medium.scattering_bytes(),
   )
-  let gpu_settings = @pbr_atmosphere.pbr_gpu_atmosphere_settings(settings)
   let gpu_atmosphere = @pbr_atmosphere.pbr_gpu_atmosphere_from_extracted(
     extracted_atmosphere.inner_radius,
     extracted_atmosphere.outer_radius,

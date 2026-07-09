@@ -116,6 +116,7 @@ pub struct ExtractedAtmosphere {
   medium : @asset.Handle[@light.ScatteringMedium]
   world_to_atmosphere : @math.Affine3
 }
+pub fn ExtractedAtmosphere::ExtractedAtmosphere(Float, Float, @math.Vec3, @asset.Handle[@light.ScatteringMedium], @math.Affine3) -> Self
 pub impl @ecs.Component for ExtractedAtmosphere
 
 pub struct GpuAtmosphere {

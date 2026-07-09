@@ -79,8 +79,8 @@ priv struct Camera3dViewPayload {
   distance_fog : DistanceFog?
   auto_exposure : AutoExposure?
   volumetric_fog : VolumetricFog?
-  atmosphere : ExtractedAtmosphere3d?
-  atmosphere_settings : AtmosphereSettings?
+  atmosphere : @pbr_atmosphere.ExtractedAtmosphere?
+  atmosphere_settings : @pbr_atmosphere.GpuAtmosphereSettings?
   camera : @camera_camera.Camera
   depth_texture_usages : Camera3dDepthTextureUsage
   projection : Projection
@@ -126,15 +126,6 @@ priv struct Camera3dViewPayload {
   layers : @camera_render_layers.RenderLayers
   has_no_cpu_culling : Bool
   invert_culling : Bool
-}
-
-///|
-priv struct ExtractedAtmosphere3d {
-  inner_radius : Float
-  outer_radius : Float
-  ground_albedo : @math.Vec3
-  medium : @asset.Handle[ScatteringMedium]
-  world_to_atmosphere : @math.Affine3
 }
 
 ///|
