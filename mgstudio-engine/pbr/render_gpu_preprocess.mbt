@@ -1275,13 +1275,8 @@ fn render3d_update_mesh_preprocess_static_cache(
     if cache.get(mesh_handle_id) is Some(_) {
       continue
     }
-    let metadata = match mesh.payload.mesh_preprocess_static {
-      Some(static_metadata) => static_metadata
-      None =>
-        render3d_mesh_preprocess_static(
-          mesh.payload.mesh_handle,
-          mesh.payload.mesh_id,
-        )
+    guard mesh.payload.mesh_preprocess_static is Some(metadata) else {
+      continue
     }
     cache.set(mesh_handle_id, metadata)
   }
@@ -1304,10 +1299,7 @@ fn render3d_mesh_preprocess_static_for_draw_item(
   }
   match mesh_preprocess_static_cache.get(mesh_handle_id) {
     Some(metadata) => Some(metadata)
-    None =>
-      Some(
-        render3d_mesh_preprocess_static(mesh_handle, draw_item.mesh_asset_id),
-      )
+    None => None
   }
 }
 
