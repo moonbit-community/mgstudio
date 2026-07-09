@@ -153,6 +153,9 @@ fn meta_texture_format_setting(content : String) -> TextureFormat? {
   if string_contains(content, "texture_format: Some(Rgba16Float)") {
     return Some(TextureFormat::Rgba16Float)
   }
+  if string_contains(content, "texture_format: Some(Rgba32Float)") {
+    return Some(TextureFormat::Rgba32Float)
+  }
   if string_contains(content, "texture_format: Some(Rg16Float)") {
     return Some(TextureFormat::Rg16Float)
   }

@@ -489,10 +489,25 @@ pub struct ScatteringTerm {
 } derive(ToJson, FromJson)
 
 ///|
+pub struct SampledFloatCurve {
+  domain_start : Float
+  domain_end : Float
+  samples : Array[Float]
+} derive(ToJson, FromJson)
+
+///|
+pub struct SampledVec3Curve {
+  domain_start : Float
+  domain_end : Float
+  samples : Array[@math.Vec3]
+} derive(ToJson, FromJson)
+
+///|
 pub enum Falloff {
   Linear
   Exponential(Float)
   Tent(Float, Float)
+  Curve(SampledFloatCurve)
 } derive(ToJson, FromJson)
 
 ///|
@@ -500,7 +515,96 @@ pub enum PhaseFunction {
   Isotropic
   Rayleigh
   Mie(Float)
+  Curve(SampledFloatCurve)
+  ChromaticCurve(SampledVec3Curve)
+  ChromaticTexture(@asset.Handle[@asset.Image])
 } derive(ToJson, FromJson)
+
+///|
+pub fn SampledFloatCurve::new(
+  domain_start : Float,
+  domain_end : Float,
+  samples : Array[Float],
+) -> SampledFloatCurve {
+  SampledFloatCurve::{ domain_start, domain_end, samples }
+}
+
+///|
+pub fn SampledVec3Curve::new(
+  domain_start : Float,
+  domain_end : Float,
+  samples : Array[@math.Vec3],
+) -> SampledVec3Curve {
+  SampledVec3Curve::{ domain_start, domain_end, samples }
+}
+
+///|
+fn sampled_curve_index(
+  domain_start : Float,
+  domain_end : Float,
+  sample_count : Int,
+  t : Float,
+) -> (Int, Int, Float)? {
+  if sample_count < 2 ||
+    domain_start >= domain_end ||
+    t < domain_start ||
+    t > domain_end {
+    return None
+  }
+  let subdivisions = sample_count - 1
+  let position = (t - domain_start) /
+    (domain_end - domain_start) *
+    Float::from_int(subdivisions)
+  if position <= 0.0F {
+    return Some((0, 0, 0.0F))
+  }
+  if position >= Float::from_int(subdivisions) {
+    return Some((subdivisions, subdivisions, 0.0F))
+  }
+  let lower = position.floor().to_int()
+  let upper = lower + 1
+  Some((lower, upper, position - Float::from_int(lower)))
+}
+
+///|
+pub fn SampledFloatCurve::sample(self : SampledFloatCurve, t : Float) -> Float? {
+  match
+    sampled_curve_index(
+      self.domain_start,
+      self.domain_end,
+      self.samples.length(),
+      t,
+    ) {
+    None => None
+    Some((lower, upper, factor)) =>
+      Some(
+        self.samples[lower] +
+        (self.samples[upper] - self.samples[lower]) * factor,
+      )
+  }
+}
+
+///|
+pub fn SampledVec3Curve::sample(
+  self : SampledVec3Curve,
+  t : Float,
+) -> @math.Vec3? {
+  match
+    sampled_curve_index(
+      self.domain_start,
+      self.domain_end,
+      self.samples.length(),
+      t,
+    ) {
+    None => None
+    Some((lower, upper, factor)) =>
+      Some(
+        self.samples[lower].add(
+          self.samples[upper].sub(self.samples[lower]).mul_scalar(factor),
+        ),
+      )
+  }
+}
 
 ///|
 pub fn Falloff::Falloff() -> Falloff {
@@ -523,6 +627,11 @@ pub fn Falloff::tent(center : Float, width : Float) -> Falloff {
 }
 
 ///|
+pub fn Falloff::from_curve(curve : SampledFloatCurve) -> Falloff {
+  Curve(curve)
+}
+
+///|
 pub fn PhaseFunction::isotropic() -> PhaseFunction {
   Isotropic
 }
@@ -535,6 +644,25 @@ pub fn PhaseFunction::rayleigh() -> PhaseFunction {
 ///|
 pub fn PhaseFunction::mie(asymmetry : Float) -> PhaseFunction {
   Mie(asymmetry)
+}
+
+///|
+pub fn PhaseFunction::from_curve(curve : SampledFloatCurve) -> PhaseFunction {
+  Curve(curve)
+}
+
+///|
+pub fn PhaseFunction::from_chromatic_curve(
+  curve : SampledVec3Curve,
+) -> PhaseFunction {
+  ChromaticCurve(curve)
+}
+
+///|
+pub fn PhaseFunction::from_chromatic_texture(
+  image : @asset.Handle[@asset.Image],
+) -> PhaseFunction {
+  ChromaticTexture(image)
 }
 
 ///|
@@ -613,6 +741,14 @@ pub fn ScatteringMedium::with_label(
 }
 
 ///|
+pub fn ScatteringMedium::with_terms(
+  self : ScatteringMedium,
+  terms : Array[ScatteringTerm],
+) -> ScatteringMedium {
+  ScatteringMedium::{ ..self, terms, }
+}
+
+///|
 pub fn ScatteringMedium::earth(
   falloff_resolution : Int,
   phase_resolution : Int,
@@ -637,6 +773,54 @@ pub fn ScatteringMedium::earth(
       PhaseFunction::isotropic(),
     ),
   ]).with_label("earth_atmosphere")
+}
+
+///|
+fn scattering_medium_mars_dust_falloff_sample(p : Float) -> Float {
+  let mars_atmosphere_height = 120_000.0F
+  let h = (1.0F - p) * mars_atmosphere_height
+  0.75F * @math.exp(1.0F - @math.exp(h / 4_000.0F)) +
+  0.25F * @math.exp(1.0F - @math.exp(h / 20_000.0F))
+}
+
+///|
+fn scattering_medium_mars_dust_falloff_curve(
+  falloff_resolution : Int,
+) -> SampledFloatCurve {
+  let samples : Array[Float] = []
+  let count = if falloff_resolution < 2 { 2 } else { falloff_resolution }
+  for index in 0..<count {
+    let p = Float::from_int(index) / Float::from_int(count - 1)
+    samples.push(scattering_medium_mars_dust_falloff_sample(p))
+  }
+  SampledFloatCurve::new(0.0F, 1.0F, samples)
+}
+
+///|
+pub fn ScatteringMedium::mars(
+  falloff_resolution : Int,
+  phase_resolution : Int,
+  dust_phase : @asset.Handle[@asset.Image],
+) -> ScatteringMedium {
+  let mars_atmosphere_height = 120_000.0F
+  let rayleigh_scale_height = 8_000.0F
+  let dust_falloff = Falloff::from_curve(
+    scattering_medium_mars_dust_falloff_curve(falloff_resolution),
+  )
+  ScatteringMedium::new(falloff_resolution, phase_resolution, [
+    ScatteringTerm::new(
+      @math.Vec3::zero(),
+      @math.Vec3::new(9.91e-8F, 2.32e-7F, 5.65e-7F),
+      Falloff::exponential(rayleigh_scale_height / mars_atmosphere_height),
+      PhaseFunction::rayleigh(),
+    ),
+    ScatteringTerm::new(
+      @math.Vec3::new(1.26e-6F, 5.25e-6F, 9.33e-6F),
+      @math.Vec3::new(30.67e-6F, 25.39e-6F, 20.93e-6F),
+      dust_falloff,
+      PhaseFunction::from_chromatic_texture(dust_phase),
+    ),
+  ]).with_label("mars_atmosphere")
 }
 
 ///|
@@ -676,6 +860,11 @@ pub fn Falloff::sample(self : Falloff, p : Float) -> Float {
         value
       }
     }
+    Curve(curve) =>
+      match curve.sample(p) {
+        Some(value) => value
+        None => 0.0F
+      }
   }
 }
 
@@ -700,6 +889,17 @@ pub fn PhaseFunction::sample(
         ),
       )
     }
+    Curve(curve) =>
+      match curve.sample(neg_l_dot_v) {
+        Some(value) => Some(@math.Vec3::splat(value))
+        None => Some(@math.Vec3::zero())
+      }
+    ChromaticCurve(curve) =>
+      match curve.sample(neg_l_dot_v) {
+        Some(value) => Some(value)
+        None => Some(@math.Vec3::zero())
+      }
+    ChromaticTexture(_) => None
   }
 }
 

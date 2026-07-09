@@ -347,13 +347,17 @@ fn print_controls() -> Unit {
 fn setup_camera_fog(
   commands : @app.Commands,
   scattering_mediums : @app.ResMut[@asset.Assets[@pbr.ScatteringMedium]],
+  asset_server_resource : @app.Res[@asset.AssetServer],
 ) -> Unit {
   let earth_medium = scattering_mediums.modify(fn(assets) {
     assets.add(@pbr.ScatteringMedium::earth(256, 256))
   })
-  let mars_medium : @asset.Handle[@pbr.ScatteringMedium] = @asset.Handle::new(
-    -1,
-  )
+  let mars_phase = asset_server_resource
+    .get()
+    .load("textures/mars_mie_phase.ktx2")
+  let mars_medium = scattering_mediums.modify(fn(assets) {
+    assets.add(@pbr.ScatteringMedium::mars(256, 256, mars_phase))
+  })
   commands.insert_resource(AtmospherePresets::{
     earth: earth_medium,
     mars: mars_medium,
@@ -529,10 +533,19 @@ fn atmosphere_controls(
   }
 
   if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    ignore(atmosphere_presets.get().mars)
-    println(
-      "Mars atmosphere is blocked until ScatteringMedium::mars and chromatic phase textures are ported",
-    )
+    let presets = atmosphere_presets.get()
+    try! planet_atmosphere.view(fn(_entity, item) {
+      let atmosphere = @pbr.Atmosphere::mars(presets.mars)
+      item.0.set(atmosphere)
+      item.1.modify(fn(transform) {
+        transform.translation = @math.Vec3::new(
+          0.0F,
+          -atmosphere.inner_radius,
+          0.0F,
+        )
+      })
+    })
+    println("Switched to Mars atmosphere")
   }
 
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
@@ -619,7 +632,7 @@ fn main {
   .insert_resource(GameState::GameState())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(water_material_plugin)
-  .add_systems_param2(@app.Startup, setup_camera_fog)
+  .add_systems_param3(@app.Startup, setup_camera_fog)
   .add_systems_param4(@app.Startup, setup_terrain_scene)
   .add_systems_param(@app.Startup, setup_instructions)
   .add_systems_param7(@app.Update, atmosphere_controls)

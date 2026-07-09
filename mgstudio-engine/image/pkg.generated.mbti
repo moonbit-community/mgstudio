@@ -136,6 +136,7 @@ pub(all) struct Image {
   mut texture_view_dimension : ImageTextureViewDimension?
 }
 pub fn Image::array_layout(Self) -> ImageArrayLayout?
+pub fn Image::data(Self) -> Bytes
 pub fn Image::format(Self) -> TextureFormat
 pub fn Image::height(Self) -> Int
 pub fn Image::is_target_texture(Self) -> Bool
@@ -334,6 +335,7 @@ pub(all) enum TextureFormat {
   Bgra8UnormSrgb
   Rgba16Uint
   Rgba16Float
+  Rgba32Float
   Rg16Float
 } derive(Eq, @debug.Debug)
 pub fn TextureFormat::default() -> Self

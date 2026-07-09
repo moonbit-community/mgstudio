@@ -87,6 +87,7 @@ fn image_asset_pixel_size(format : TextureFormat) -> Int {
     TextureFormat::Bgra8UnormSrgb => 4
     TextureFormat::Rgba16Uint => 8
     TextureFormat::Rgba16Float => 8
+    TextureFormat::Rgba32Float => 16
     TextureFormat::Rg16Float => 4
   }
 }

@@ -205,6 +205,136 @@ pub fn pbr_scattering_medium_default_scattering_lut(
 }
 
 ///|
+fn pbr_scattering_medium_read_u32_le(bytes : Bytes, offset : Int) -> UInt? {
+  if offset < 0 || offset + 3 >= bytes.length() {
+    return None
+  }
+  Some(
+    bytes[offset].to_uint() |
+    (bytes[offset + 1].to_uint() << 8) |
+    (bytes[offset + 2].to_uint() << 16) |
+    (bytes[offset + 3].to_uint() << 24),
+  )
+}
+
+///|
+fn pbr_scattering_medium_read_f32_le(bytes : Bytes, offset : Int) -> Float? {
+  match pbr_scattering_medium_read_u32_le(bytes, offset) {
+    Some(bits) => Some(Float::reinterpret_from_uint(bits))
+    None => None
+  }
+}
+
+///|
+fn pbr_scattering_medium_chromatic_curve_from_image(
+  image : @asset.Image,
+) -> @light.SampledVec3Curve? {
+  if image.format() != @asset.TextureFormat::Rgba32Float || image.width() <= 0 {
+    return None
+  }
+  let data = image.data()
+  let samples : Array[@math.Vec3] = []
+  for x in 0..<image.width() {
+    let offset = x * 16
+    guard pbr_scattering_medium_read_f32_le(data, offset) is Some(r) else {
+      return None
+    }
+    guard pbr_scattering_medium_read_f32_le(data, offset + 4) is Some(g) else {
+      return None
+    }
+    guard pbr_scattering_medium_read_f32_le(data, offset + 8) is Some(b) else {
+      return None
+    }
+    samples.push(@math.Vec3::new(r, g, b))
+  }
+  Some(@light.SampledVec3Curve::new(-1.0F, 1.0F, samples))
+}
+
+///|
+fn pbr_scattering_medium_collect_chromatic_texture_ids(
+  media : @asset.Assets[ScatteringMedium],
+) -> @hashset.HashSet[Int] {
+  let ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  for entry in media.iter() {
+    let (_, medium) = entry
+    for term in medium.terms {
+      if term.phase is @light.PhaseFunction::ChromaticTexture(handle) {
+        ids.add(handle.id())
+      }
+    }
+  }
+  ids
+}
+
+///|
+fn pbr_scattering_medium_resolve_chromatic_texture(
+  media : @asset.Assets[ScatteringMedium],
+  image_handle : @asset.Handle[@asset.Image],
+  curve : @light.SampledVec3Curve,
+) -> Unit {
+  let new_phase = @light.PhaseFunction::from_chromatic_curve(curve)
+  for entry in media.iter() {
+    let (medium_handle, medium) = entry
+    let mut changed = false
+    let terms : Array[@light.ScatteringTerm] = []
+    for term in medium.terms {
+      if term.phase is @light.PhaseFunction::ChromaticTexture(handle) &&
+        handle.id() == image_handle.id() {
+        terms.push(
+          @light.ScatteringTerm::new(
+            term.absorption,
+            term.scattering,
+            term.falloff,
+            new_phase,
+          ),
+        )
+        changed = true
+      } else {
+        terms.push(term)
+      }
+    }
+    if changed {
+      ignore(media.set(medium_handle, medium.with_terms(terms)))
+    }
+  }
+}
+
+///|
+fn extract_chromatic_phase_textures(
+  image_events : @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
+  images : @app.Res[@asset.Assets[@asset.Image]],
+  scattering_media : @app.ResMut[@asset.Assets[ScatteringMedium]],
+) -> Unit {
+  let events = image_events.read()
+  if events.length() == 0 {
+    return
+  }
+  let referenced = pbr_scattering_medium_collect_chromatic_texture_ids(
+    scattering_media.get(),
+  )
+  if referenced.is_empty() {
+    return
+  }
+  let image_assets = images.get()
+  scattering_media.modify(fn(media) {
+    for event in events {
+      guard event is @asset.AssetEvent::LoadedWithDependencies(handle) else {
+        continue
+      }
+      if !referenced.contains(handle.id()) {
+        continue
+      }
+      guard image_assets.get(handle) is Some(image) else { continue }
+      guard pbr_scattering_medium_chromatic_curve_from_image(image)
+        is Some(curve) else {
+        continue
+      }
+      pbr_scattering_medium_resolve_chromatic_texture(media, handle, curve)
+    }
+  })
+}
+
+///|
 pub struct GpuScatteringMedium {
   terms : Array[@light.ScatteringTerm]
   falloff_resolution : Int
@@ -341,6 +471,16 @@ fn pbr_scattering_medium_hash_falloff(
       )
       pbr_scattering_medium_hash_float(next, width)
     }
+    @light.Falloff::Curve(curve) => {
+      let mut next = pbr_scattering_medium_hash_u64(hash, 4UL)
+      next = pbr_scattering_medium_hash_float(next, curve.domain_start)
+      next = pbr_scattering_medium_hash_float(next, curve.domain_end)
+      next = pbr_scattering_medium_hash_int(next, curve.samples.length())
+      for sample in curve.samples {
+        next = pbr_scattering_medium_hash_float(next, sample)
+      }
+      next
+    }
   }
 }
 
@@ -356,6 +496,31 @@ fn pbr_scattering_medium_hash_phase(
       pbr_scattering_medium_hash_float(
         pbr_scattering_medium_hash_u64(hash, 3UL),
         asymmetry,
+      )
+    @light.PhaseFunction::Curve(curve) => {
+      let mut next = pbr_scattering_medium_hash_u64(hash, 4UL)
+      next = pbr_scattering_medium_hash_float(next, curve.domain_start)
+      next = pbr_scattering_medium_hash_float(next, curve.domain_end)
+      next = pbr_scattering_medium_hash_int(next, curve.samples.length())
+      for sample in curve.samples {
+        next = pbr_scattering_medium_hash_float(next, sample)
+      }
+      next
+    }
+    @light.PhaseFunction::ChromaticCurve(curve) => {
+      let mut next = pbr_scattering_medium_hash_u64(hash, 5UL)
+      next = pbr_scattering_medium_hash_float(next, curve.domain_start)
+      next = pbr_scattering_medium_hash_float(next, curve.domain_end)
+      next = pbr_scattering_medium_hash_int(next, curve.samples.length())
+      for sample in curve.samples {
+        next = pbr_scattering_medium_hash_vec3(next, sample)
+      }
+      next
+    }
+    @light.PhaseFunction::ChromaticTexture(handle) =>
+      pbr_scattering_medium_hash_int(
+        pbr_scattering_medium_hash_u64(hash, 6UL),
+        handle.id(),
       )
   }
 }
@@ -599,7 +764,11 @@ pub fn scattering_medium_plugin_with(
     init_scattering_medium_resources(app.world(), plugin)
     app
   }
-  @asset.init_asset(next, fn() { ScatteringMedium::ScatteringMedium() })
+  @asset.init_asset(next, fn() { ScatteringMedium::ScatteringMedium() }).add_post_update_system_config(
+    @app.system_config_param3(extract_chromatic_phase_textures).after(
+      @asset.asset_event_system_set(),
+    ),
+  )
 }
 
 ///|

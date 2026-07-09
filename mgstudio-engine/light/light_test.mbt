@@ -102,6 +102,68 @@ test "scattering medium earth terms match Bevy source shape" {
 }
 
 ///|
+test "scattering sampled curves follow Bevy curve sample semantics" {
+  let scalar = @light.SampledFloatCurve::new(0.0F, 1.0F, [0.0F, 10.0F])
+  inspect(
+    approx_eq(scalar.sample(0.5F).unwrap(), 5.0F, 1.0e-6F),
+    content="true",
+  )
+  inspect(scalar.sample(-0.1F) is None, content="true")
+  let vector = @light.SampledVec3Curve::new(-1.0F, 1.0F, [
+    @math.Vec3::new(1.0F, 2.0F, 3.0F),
+    @math.Vec3::new(3.0F, 6.0F, 9.0F),
+  ])
+  let sampled = vector.sample(0.0F).unwrap()
+  inspect(approx_eq(sampled.x, 2.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(sampled.y, 4.0F, 1.0e-6F), content="true")
+  inspect(approx_eq(sampled.z, 6.0F, 1.0e-6F), content="true")
+}
+
+///|
+test "scattering medium mars terms match Bevy source shape" {
+  let dust_phase : @asset.Handle[@asset.Image] = @asset.Handle::new(42)
+  let medium = @light.ScatteringMedium::mars(8, 4, dust_phase)
+  debug_inspect(medium.label, content="Some(\"mars_atmosphere\")")
+  debug_inspect(medium.falloff_resolution, content="8")
+  debug_inspect(medium.phase_resolution, content="4")
+  debug_inspect(medium.terms.length(), content="2")
+  inspect(
+    if medium.terms[0].falloff is Exponential(scale) {
+      approx_eq(scale, 8_000.0F / 120_000.0F, 1.0e-6F)
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(
+    if medium.terms[0].phase is Rayleigh {
+      true
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(
+    if medium.terms[1].falloff is Curve(curve) {
+      curve.samples.length() == 8 &&
+      approx_eq(curve.sample(1.0F).unwrap(), 1.0F, 1.0e-6F)
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(
+    if medium.terms[1].phase is ChromaticTexture(handle) {
+      handle.id() == dust_phase.id()
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(medium.terms[1].phase.sample(0.0F) is None, content="true")
+}
+
+///|
 test "scattering term defaults match Bevy" {
   let term = @light.ScatteringTerm::ScatteringTerm()
   inspect(approx_eq(term.absorption.x, 0.0F, 0.000001F), content="true")

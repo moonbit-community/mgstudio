@@ -206,6 +206,11 @@ pub fn Image::pixel_byte_len(self : Image) -> Int {
 }
 
 ///|
+pub fn Image::data(self : Image) -> Bytes {
+  self.pixels
+}
+
+///|
 pub fn Image::texture_usage_bits(self : Image) -> Int {
   self.usage_bits
 }
@@ -327,6 +332,7 @@ pub(all) enum TextureFormat {
   Bgra8UnormSrgb
   Rgba16Uint
   Rgba16Float
+  Rgba32Float
   Rg16Float
 } derive(Eq, Debug)
 
@@ -384,6 +390,8 @@ pub fn texture_format(format : TextureFormat) -> @wgpu.TextureFormat {
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_UINT)
     TextureFormat::Rgba16Float =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+    TextureFormat::Rgba32Float =>
+      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA32_FLOAT)
     TextureFormat::Rg16Float =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_FLOAT)
   }

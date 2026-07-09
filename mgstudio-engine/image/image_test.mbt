@@ -106,6 +106,11 @@ test "image texture formats follow current wgpu constants" {
     content="true",
   )
   debug_inspect(
+    @image.texture_format(@image.TextureFormat::Rgba32Float).to_u32() ==
+    @wgpu.TEXTURE_FORMAT_RGBA32_FLOAT,
+    content="true",
+  )
+  debug_inspect(
     @image.texture_format(@image.TextureFormat::Rg16Float).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
     content="true",

@@ -73,3 +73,27 @@ test "pbr medium: gpu medium LUT samples source terms" {
     content="true",
   )
 }
+
+///|
+test "pbr medium: chromatic phase curve contributes per-channel scattering" {
+  let phase = @light.SampledVec3Curve::new(-1.0F, 1.0F, [
+    @math.Vec3::new(1.0F, 2.0F, 3.0F),
+    @math.Vec3::new(1.0F, 2.0F, 3.0F),
+  ])
+  let medium = ScatteringMedium::new(1, 1, [
+    @light.ScatteringTerm::new(
+      @math.Vec3::zero(),
+      @math.Vec3::new(2.0F, 3.0F, 4.0F),
+      @light.Falloff::linear(),
+      @light.PhaseFunction::from_chromatic_curve(phase),
+    ),
+  ])
+  let gpu_medium = GpuScatteringMedium::new(
+    medium,
+    ScatteringMediumSampler::ScatteringMediumSampler(),
+  )
+  let scattering = gpu_medium.scattering_lut()
+  inspect(medium_approx_eq(scattering[0].x, 1.0F), content="true")
+  inspect(medium_approx_eq(scattering[0].y, 3.0F), content="true")
+  inspect(medium_approx_eq(scattering[0].z, 6.0F), content="true")
+}

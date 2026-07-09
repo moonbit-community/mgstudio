@@ -403,9 +403,11 @@ pub enum Falloff {
   Linear
   Exponential(Float)
   Tent(Float, Float)
+  Curve(SampledFloatCurve)
 } derive(ToJson, @json.FromJson)
 pub fn Falloff::Falloff() -> Self
 pub fn Falloff::exponential(Float) -> Self
+pub fn Falloff::from_curve(SampledFloatCurve) -> Self
 pub fn Falloff::linear() -> Self
 pub fn Falloff::sample(Self, Float) -> Float
 pub fn Falloff::tent(Float, Float) -> Self
@@ -531,8 +533,14 @@ pub enum PhaseFunction {
   Isotropic
   Rayleigh
   Mie(Float)
+  Curve(SampledFloatCurve)
+  ChromaticCurve(SampledVec3Curve)
+  ChromaticTexture(@asset.Handle[@image.Image])
 } derive(ToJson, @json.FromJson)
 pub fn PhaseFunction::PhaseFunction() -> Self
+pub fn PhaseFunction::from_chromatic_curve(SampledVec3Curve) -> Self
+pub fn PhaseFunction::from_chromatic_texture(@asset.Handle[@image.Image]) -> Self
+pub fn PhaseFunction::from_curve(SampledFloatCurve) -> Self
 pub fn PhaseFunction::isotropic() -> Self
 pub fn PhaseFunction::mie(Float) -> Self
 pub fn PhaseFunction::rayleigh() -> Self
@@ -603,6 +611,22 @@ pub fn RectLight::range(Self) -> Float
 pub fn RectLight::width(Self) -> Float
 pub impl @ecs.Component for RectLight
 
+pub struct SampledFloatCurve {
+  domain_start : Float
+  domain_end : Float
+  samples : Array[Float]
+} derive(ToJson, @json.FromJson)
+pub fn SampledFloatCurve::new(Float, Float, Array[Float]) -> Self
+pub fn SampledFloatCurve::sample(Self, Float) -> Float?
+
+pub struct SampledVec3Curve {
+  domain_start : Float
+  domain_end : Float
+  samples : Array[@math.Vec3]
+} derive(ToJson, @json.FromJson)
+pub fn SampledVec3Curve::new(Float, Float, Array[@math.Vec3]) -> Self
+pub fn SampledVec3Curve::sample(Self, Float) -> @math.Vec3?
+
 #alias(AtmosphereMedium)
 pub struct ScatteringMedium {
   label : String?
@@ -612,9 +636,11 @@ pub struct ScatteringMedium {
 } derive(ToJson, @json.FromJson)
 pub fn ScatteringMedium::ScatteringMedium() -> Self
 pub fn ScatteringMedium::earth(Int, Int) -> Self
+pub fn ScatteringMedium::mars(Int, Int, @asset.Handle[@image.Image]) -> Self
 pub fn ScatteringMedium::new(Int, Int, Array[ScatteringTerm]) -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
 pub fn ScatteringMedium::with_label(Self, String) -> Self
+pub fn ScatteringMedium::with_terms(Self, Array[ScatteringTerm]) -> Self
 pub impl @asset.Asset for ScatteringMedium
 
 pub struct ScatteringTerm {
