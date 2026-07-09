@@ -223,11 +223,21 @@ priv struct MeshPhaseItem3d {
 ///|
 priv struct Render3dMainViewPhase {
   mut draw_items : Array[MeshPhaseItem3d]
+  mut opaque_draw_item_indices : Array[Int]
+  mut alpha_mask_draw_item_indices : Array[Int]
+  mut transmissive_draw_item_indices : Array[Int]
+  mut transparent_draw_item_indices : Array[Int]
 }
 
 ///|
 fn Render3dMainViewPhase::new() -> Render3dMainViewPhase {
-  Render3dMainViewPhase::{ draw_items: [] }
+  Render3dMainViewPhase::{
+    draw_items: [],
+    opaque_draw_item_indices: [],
+    alpha_mask_draw_item_indices: [],
+    transmissive_draw_item_indices: [],
+    transparent_draw_item_indices: [],
+  }
 }
 
 ///|
@@ -235,6 +245,10 @@ fn Render3dMainViewPhase::prepare_for_new_frame(
   self : Render3dMainViewPhase,
 ) -> Unit {
   self.draw_items = []
+  self.opaque_draw_item_indices = []
+  self.alpha_mask_draw_item_indices = []
+  self.transmissive_draw_item_indices = []
+  self.transparent_draw_item_indices = []
 }
 
 ///|
@@ -243,6 +257,22 @@ fn Render3dMainViewPhase::set_draw_items(
   draw_items : Array[MeshPhaseItem3d],
 ) -> Unit {
   self.draw_items = draw_items.copy()
+  self.opaque_draw_item_indices = []
+  self.alpha_mask_draw_item_indices = []
+  self.transmissive_draw_item_indices = []
+  self.transparent_draw_item_indices = []
+  for index in 0..<draw_items.length() {
+    let item = draw_items[index]
+    if item.phase == RENDER3D_PHASE_OPAQUE {
+      self.opaque_draw_item_indices.push(index)
+    } else if item.phase == RENDER3D_PHASE_ALPHA_MASK {
+      self.alpha_mask_draw_item_indices.push(index)
+    } else if item.phase == RENDER3D_PHASE_TRANSMISSIVE {
+      self.transmissive_draw_item_indices.push(index)
+    } else if item.phase == RENDER3D_PHASE_TRANSPARENT {
+      self.transparent_draw_item_indices.push(index)
+    }
+  }
 }
 
 ///|
@@ -255,6 +285,26 @@ fn Render3dMainViewPhase::draw_items(
 ///|
 fn Render3dMainViewPhase::len(self : Render3dMainViewPhase) -> Int {
   self.draw_items.length()
+}
+
+///|
+fn Render3dMainViewPhase::draw_item_indices(
+  self : Render3dMainViewPhase,
+) -> Array[Int] {
+  let indices : Array[Int] = []
+  for index in self.opaque_draw_item_indices {
+    indices.push(index)
+  }
+  for index in self.alpha_mask_draw_item_indices {
+    indices.push(index)
+  }
+  for index in self.transmissive_draw_item_indices {
+    indices.push(index)
+  }
+  for index in self.transparent_draw_item_indices {
+    indices.push(index)
+  }
+  indices
 }
 
 ///|
@@ -379,6 +429,20 @@ fn render3d_main_view_phase_items_or_abort(
     abort("Missing retained Render3dMainViewPhase during pbr main pass")
   }
   phase.draw_items()
+}
+
+///|
+fn render3d_main_view_phase_draw_item_indices_or_abort(
+  world : @ecs.World,
+  retained_view_entity : @core.Entity,
+) -> Array[Int] {
+  guard world.get_resource(Render3dMainViewPhases::resource()) is Some(phases) else {
+    abort("Missing Render3dMainViewPhases resource during pbr main pass")
+  }
+  guard phases.phase(retained_view_entity) is Some(phase) else {
+    abort("Missing retained Render3dMainViewPhase during pbr main pass")
+  }
+  phase.draw_item_indices()
 }
 
 ///|

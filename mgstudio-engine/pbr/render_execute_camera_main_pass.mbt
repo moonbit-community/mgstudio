@@ -409,6 +409,9 @@ fn render3d_execute_camera_main_pass(
 ) -> Unit {
   ignore(draw_queue_entry)
   let draw_items = render3d_main_view_phase_items_or_abort(world, camera_entity)
+  let draw_item_indices = render3d_main_view_phase_draw_item_indices_or_abort(
+    world, camera_entity,
+  )
   let lightmap_bindless_supported = @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
     @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
@@ -611,7 +614,7 @@ fn render3d_execute_camera_main_pass(
   let main_phase = render3d_mesh_gpu_binned_phase_new()
   let transmissive_phase_items : Array[TransmissivePhaseItem3d] = []
   let transparent_draws : Array[MeshGpuDrawPayload3d] = []
-  for draw_item_index in 0..<draw_items.length() {
+  for draw_item_index in draw_item_indices {
     let draw_item = draw_items[draw_item_index]
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
@@ -810,7 +813,7 @@ fn render3d_execute_camera_main_pass(
     render3d_mesh_gpu_binned_phase_push(main_phase, draw_payload)
   }
   let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
-  for draw_item_index in 0..<draw_items.length() {
+  for draw_item_index in draw_item_indices {
     let draw_item = draw_items[draw_item_index]
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload

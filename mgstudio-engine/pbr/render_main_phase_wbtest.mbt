@@ -43,6 +43,11 @@ test "pbr: main view phases prepare retained views from queued material meshes" 
   let stored = render3d_main_view_phase_items_or_abort(world, view)
   debug_inspect(stored.length(), content="1")
   debug_inspect(stored[0].entity.main_entity.id, content="20")
+  let stored_indices = render3d_main_view_phase_draw_item_indices_or_abort(
+    world, view,
+  )
+  debug_inspect(stored_indices.length(), content="1")
+  debug_inspect(stored_indices[0], content="0")
   debug_inspect(
     render3d_main_view_phase_item_count_or_abort(world, view),
     content="1",
@@ -53,6 +58,27 @@ test "pbr: main view phases prepare retained views from queued material meshes" 
     render3d_main_view_phase_items_or_abort(world, view).length(),
     content="0",
   )
+}
+
+///|
+test "pbr: main view phases store Bevy phase buckets in render order" {
+  let world = @ecs.World::new()
+  let view = @core.Entity::new(22, 0)
+  let draw_items = [
+    render3d_main_phase_test_item(20, RENDER3D_PHASE_OPAQUE),
+    render3d_main_phase_test_item(21, RENDER3D_PHASE_ALPHA_MASK),
+    render3d_main_phase_test_item(22, RENDER3D_PHASE_TRANSMISSIVE),
+    render3d_main_phase_test_item(23, RENDER3D_PHASE_TRANSPARENT),
+  ]
+
+  render3d_prepare_main_view_phase(world, view, draw_items)
+
+  let indices = render3d_main_view_phase_draw_item_indices_or_abort(world, view)
+  debug_inspect(indices.length(), content="4")
+  debug_inspect(indices[0], content="0")
+  debug_inspect(indices[1], content="1")
+  debug_inspect(indices[2], content="2")
+  debug_inspect(indices[3], content="3")
 }
 
 ///|
