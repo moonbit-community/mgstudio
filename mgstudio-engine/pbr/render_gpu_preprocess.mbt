@@ -180,6 +180,121 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 }
 
 ///|
+priv struct QueuedMaterialMesh3d {
+  phase : Int
+  pipeline_id : @material.CachedRenderPipelineId
+  distance : Float
+  mesh_asset_id : Int
+  slabs : @render_mesh.MeshSlabs
+  material_bind_group_index : Int
+  material_bind_group_slot : Int
+}
+
+///|
+fn render3d_queue_material_mesh_candidate(
+  mesh : ExtractedMesh3d,
+  render_mesh_instances : RenderMeshInstances,
+  mesh_allocator : @render_mesh.MeshAllocator,
+  render_material_instances : RenderMaterialInstances,
+  render_material_bindings : RenderMaterialBindings,
+  material_slots : RenderMaterial3dResolvedSlots,
+  pending_mesh_material_queues : PendingMeshMaterialQueues,
+  layers : @camera_render_layers.RenderLayers,
+  camera_transform : @transform.Transform,
+  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
+  camera_has_no_cpu_culling : Bool,
+  retained_view_entity~ : @render_view.RetainedViewEntity,
+  specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
+  visible_main_entities? : Map[UInt64, Bool]? = None,
+) -> QueuedMaterialMesh3d? {
+  let payload = mesh.payload
+  match visible_main_entities {
+    Some(visible) =>
+      if !visible.get(mesh.entity.main_entity.to_bits()).unwrap_or(false) {
+        return None
+      }
+    None => ()
+  }
+  guard render3d_queue_material_instance_for_mesh(
+      render_material_instances, pending_mesh_material_queues, retained_view_entity,
+      mesh,
+    )
+    is Some(material_instance) else {
+    return None
+  }
+  guard render3d_queue_mesh_instance_for_mesh(
+      render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
+      mesh,
+    )
+    is Some(mesh_instance) else {
+    return None
+  }
+  guard render3d_queue_resolved_material_for_mesh(
+      material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
+    )
+    is Some(material) else {
+    return None
+  }
+  guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
+    is Some(mesh_slabs) else {
+    return None
+  }
+  guard render3d_queue_material_binding_for_instance(
+      render_material_bindings, pending_mesh_material_queues, retained_view_entity,
+      mesh, material_instance,
+    )
+    is Some(material_binding) else {
+    return None
+  }
+  let mesh_layers = mesh_instance
+    .render_layers()
+    .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+  if !mesh_layers.matches(layers) {
+    return None
+  }
+  if payload.visibility_range is Some(visibility_range) &&
+    !render3d_visibility_range_visible(
+      visibility_range,
+      camera_transform,
+      payload.world_from_local.translation,
+      payload.aabb_center_world,
+    ) {
+    return None
+  }
+  let should_apply_cpu_frustum_culling = render3d_should_apply_cpu_frustum_culling_flags(
+    payload.has_no_frustum_culling,
+    camera_has_no_cpu_culling,
+    payload.has_no_cpu_culling,
+  )
+  if should_apply_cpu_frustum_culling &&
+    !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
+    return None
+  }
+  let material_properties = material.material_properties()
+  let alpha = material.material_draw_data().draw_alpha_source()
+  guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
+    return None
+  }
+  guard render3d_traced_mesh_pipeline_id_for_view(
+      mesh, retained_view_entity, specialized_material_pipeline_cache,
+    )
+    is Some(pipeline_id) else {
+    return None
+  }
+  Some(QueuedMaterialMesh3d::{
+    phase,
+    pipeline_id,
+    distance: render3d_material_phase_distance(
+      payload, material_properties, camera_transform,
+    ),
+    mesh_asset_id: mesh_instance.mesh_asset_id(),
+    slabs: mesh_slabs,
+    material_bind_group_index: material_binding.group().to_int(),
+    material_bind_group_slot: material_binding.slot().to_int(),
+  })
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
@@ -199,90 +314,35 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
-    let payload = mesh.payload
-    match visible_main_entities {
-      Some(visible) =>
-        if !visible.get(mesh.entity.main_entity.to_bits()).unwrap_or(false) {
-          continue
-        }
-      None => ()
-    }
-    guard render3d_queue_material_instance_for_mesh(
-        render_material_instances, pending_mesh_material_queues, retained_view_entity,
+    guard render3d_queue_material_mesh_candidate(
         mesh,
-      )
-      is Some(material_instance) else {
-      continue
-    }
-    guard render3d_queue_mesh_instance_for_mesh(
-        render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
-        mesh,
-      )
-      is Some(mesh_instance) else {
-      continue
-    }
-    guard render3d_queue_resolved_material_for_mesh(
-        material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
-      )
-      is Some(material) else {
-      continue
-    }
-    guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
-      is Some(mesh_slabs) else {
-      continue
-    }
-    guard render3d_queue_material_binding_for_instance(
-        render_material_bindings, pending_mesh_material_queues, retained_view_entity,
-        mesh, material_instance,
-      )
-      is Some(material_binding) else {
-      continue
-    }
-    let mesh_layers = mesh_instance
-      .render_layers()
-      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
-    if !mesh_layers.matches(layers) {
-      continue
-    }
-    if payload.visibility_range is Some(visibility_range) &&
-      !render3d_visibility_range_visible(
-        visibility_range,
+        render_mesh_instances,
+        mesh_allocator,
+        render_material_instances,
+        render_material_bindings,
+        material_slots,
+        pending_mesh_material_queues,
+        layers,
         camera_transform,
-        payload.world_from_local.translation,
-        payload.aabb_center_world,
-      ) {
+        camera_frustum_planes,
+        camera_has_no_cpu_culling,
+        retained_view_entity~,
+        specialized_material_pipeline_cache~,
+        visible_main_entities~,
+      )
+      is Some(candidate) else {
       continue
     }
-    let should_apply_cpu_frustum_culling = render3d_should_apply_cpu_frustum_culling_flags(
-      payload.has_no_frustum_culling,
-      camera_has_no_cpu_culling,
-      payload.has_no_cpu_culling,
-    )
-    if should_apply_cpu_frustum_culling &&
-      !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
-      continue
-    }
-    let material_properties = material.material_properties()
-    let alpha = material.material_draw_data().draw_alpha_source()
-    guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
-      continue
-    }
-    let pipeline_id = render3d_traced_mesh_pipeline_id_for_view(
-      mesh, retained_view_entity, specialized_material_pipeline_cache,
-    )
-    guard pipeline_id is Some(pipeline_id) else { continue }
     items.push(MeshPhaseItem3d::{
       entity: mesh.entity,
       extracted_index: i,
-      phase,
-      pipeline_id,
-      distance: render3d_material_phase_distance(
-        payload, material_properties, camera_transform,
-      ),
-      mesh_asset_id: mesh_instance.mesh_asset_id(),
-      slabs: mesh_slabs,
-      material_bind_group_index: material_binding.group().to_int(),
-      material_bind_group_slot: material_binding.slot().to_int(),
+      phase: candidate.phase,
+      pipeline_id: candidate.pipeline_id,
+      distance: candidate.distance,
+      mesh_asset_id: candidate.mesh_asset_id,
+      slabs: candidate.slabs,
+      material_bind_group_index: candidate.material_bind_group_index,
+      material_bind_group_slot: candidate.material_bind_group_slot,
     })
   }
   items.sort_by(fn(a, b) {
@@ -340,90 +400,35 @@ fn render3d_collect_meshes_for_gpu_building(
   let work_items : Array[GpuPreprocessWorkItem3d] = []
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
-    let payload = mesh.payload
-    match visible_main_entities {
-      Some(visible) =>
-        if !visible.get(mesh.entity.main_entity.to_bits()).unwrap_or(false) {
-          continue
-        }
-      None => ()
-    }
-    guard render3d_queue_material_instance_for_mesh(
-        render_material_instances, pending_mesh_material_queues, retained_view_entity,
+    guard render3d_queue_material_mesh_candidate(
         mesh,
-      )
-      is Some(material_instance) else {
-      continue
-    }
-    guard render3d_queue_mesh_instance_for_mesh(
-        render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
-        mesh,
-      )
-      is Some(mesh_instance) else {
-      continue
-    }
-    guard render3d_queue_resolved_material_for_mesh(
-        material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
-      )
-      is Some(material) else {
-      continue
-    }
-    guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
-      is Some(mesh_slabs) else {
-      continue
-    }
-    guard render3d_queue_material_binding_for_instance(
-        render_material_bindings, pending_mesh_material_queues, retained_view_entity,
-        mesh, material_instance,
-      )
-      is Some(material_binding) else {
-      continue
-    }
-    let mesh_layers = mesh_instance
-      .render_layers()
-      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
-    if !mesh_layers.matches(layers) {
-      continue
-    }
-    if payload.visibility_range is Some(visibility_range) &&
-      !render3d_visibility_range_visible(
-        visibility_range,
+        render_mesh_instances,
+        mesh_allocator,
+        render_material_instances,
+        render_material_bindings,
+        material_slots,
+        pending_mesh_material_queues,
+        layers,
         camera_transform,
-        payload.world_from_local.translation,
-        payload.aabb_center_world,
-      ) {
+        camera_frustum_planes,
+        camera_has_no_cpu_culling,
+        retained_view_entity~,
+        specialized_material_pipeline_cache~,
+        visible_main_entities~,
+      )
+      is Some(candidate) else {
       continue
     }
-    let should_apply_cpu_frustum_culling = render3d_should_apply_cpu_frustum_culling_flags(
-      payload.has_no_frustum_culling,
-      camera_has_no_cpu_culling,
-      payload.has_no_cpu_culling,
-    )
-    if should_apply_cpu_frustum_culling &&
-      !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
-      continue
-    }
-    let material_properties = material.material_properties()
-    let alpha = material.material_draw_data().draw_alpha_source()
-    guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
-      continue
-    }
-    let pipeline_id = render3d_traced_mesh_pipeline_id_for_view(
-      mesh, retained_view_entity, specialized_material_pipeline_cache,
-    )
-    guard pipeline_id is Some(pipeline_id) else { continue }
     work_items.push(GpuPreprocessWorkItem3d::{
       entity: mesh.entity,
       extracted_index: i,
-      phase,
-      pipeline_id,
-      distance: render3d_material_phase_distance(
-        payload, material_properties, camera_transform,
-      ),
-      mesh_asset_id: mesh_instance.mesh_asset_id(),
-      slabs: mesh_slabs,
-      material_bind_group_index: material_binding.group().to_int(),
-      material_bind_group_slot: material_binding.slot().to_int(),
+      phase: candidate.phase,
+      pipeline_id: candidate.pipeline_id,
+      distance: candidate.distance,
+      mesh_asset_id: candidate.mesh_asset_id,
+      slabs: candidate.slabs,
+      material_bind_group_index: candidate.material_bind_group_index,
+      material_bind_group_slot: candidate.material_bind_group_slot,
     })
   }
   work_items
