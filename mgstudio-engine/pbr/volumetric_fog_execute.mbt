@@ -387,7 +387,8 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
   guard render3d_volumetric_fog_should_prepare_hull_meshes(prepared) else {
     return prepared
   }
-  guard source_world.get_resource(@pbr_volumetric_fog.FogAssets::resource())
+  ignore(source_world)
+  guard render_world.get_resource(@pbr_volumetric_fog.FogAssets::resource())
     is Some(fog_assets) else {
     return prepared
   }

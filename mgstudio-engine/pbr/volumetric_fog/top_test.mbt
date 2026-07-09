@@ -15,6 +15,7 @@
 ///|
 test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
   let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
@@ -30,7 +31,8 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
     None => -1
   }
   inspect(after_count - before_count, content="2")
-  match app.world().get_resource(@volumetric_fog.FogAssets::resource()) {
+  let render_world = app.sub_app(@app.RenderApp).world()
+  match render_world.get_resource(@volumetric_fog.FogAssets::resource()) {
     Some(fog_assets) => {
       let meshes = app.world().get_resource(mesh_assets_key).unwrap()
       inspect(
@@ -45,7 +47,7 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
     None => inspect("missing fog assets", content="present fog assets")
   }
   match
-    app.world().get_resource(@volumetric_fog.VolumetricFogPipeline::resource()) {
+    render_world.get_resource(@volumetric_fog.VolumetricFogPipeline::resource()) {
     Some(pipeline) =>
       inspect(
         pipeline.shader_path(),
@@ -53,4 +55,11 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
       )
     None => inspect("missing pipeline", content="present pipeline")
   }
+  inspect(
+    render_world.get_resource(
+      @volumetric_fog.VolumetricFogUniformBuffer::resource(),
+    )
+    is Some(_),
+    content="true",
+  )
 }

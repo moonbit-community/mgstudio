@@ -88,12 +88,8 @@ fn volumetric_fog_plugin_install_with(
   plugin : VolumetricFogPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let mut next = if app.contains_resource(ecs_key_fog_assets) {
-    app
-  } else {
-    let fog_assets = volumetric_fog_create_fog_assets(app.world())
-    app.insert_world_resource(ecs_key_fog_assets, fog_assets)
-  }
+  let fog_assets = volumetric_fog_create_fog_assets(app.world())
+  let mut next = app
   let fog_volume_sync : @render.SyncComponentPlugin[
     FogVolume,
     VolumetricFogPlugin,
@@ -104,24 +100,30 @@ fn volumetric_fog_plugin_install_with(
     VolumetricFogPlugin,
   ] = @render.SyncComponentPlugin::SyncComponentPlugin()
   next = @render.sync_component_plugin_with(next, volumetric_fog_sync)
-  next = @render.try_with_render_app(
-    next, volumetric_fog_configure_render_sub_app,
-  )
-  if next.contains_resource(VolumetricFogPipeline::resource()) {
-    next
-  } else {
-    next.insert_world_resource(
-      VolumetricFogPipeline::resource(),
-      VolumetricFogPipeline::VolumetricFogPipeline(),
-    )
-  }
+  @render.try_with_render_app(next, fn(render_app) {
+    volumetric_fog_configure_render_sub_app(render_app, fog_assets)
+  })
 }
 
 ///|
 fn volumetric_fog_configure_render_sub_app(
   render_app : @app.SubApp[@ecs.World],
+  fog_assets : FogAssets,
 ) -> @app.SubApp[@ecs.World] {
   let graph_stage = @render.RenderGraph::schedule()
+  render_app.world().insert_resource(ecs_key_fog_assets, fog_assets)
+  render_app
+  .world()
+  .insert_resource(
+    VolumetricFogPipeline::resource(),
+    VolumetricFogPipeline::VolumetricFogPipeline(),
+  )
+  render_app
+  .world()
+  .insert_resource(
+    VolumetricFogUniformBuffer::resource(),
+    VolumetricFogUniformBuffer::VolumetricFogUniformBuffer(),
+  )
   render_app
   .configure_sets(
     graph_stage,

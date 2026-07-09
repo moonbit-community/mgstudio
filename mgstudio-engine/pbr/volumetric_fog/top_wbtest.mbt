@@ -19,7 +19,10 @@ test "pbr volumetric fog: Bevy Core3d order is MainPass then volumetric_fog then
   let render_sub_app = @app.SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(graph_stage))
     .add_schedule(@render.RenderGraph::base_schedule())
-  let render_sub_app = volumetric_fog_configure_render_sub_app(render_sub_app)
+  let fog_assets = FogAssets::new(@asset.Handle::new(1), @asset.Handle::new(2))
+  let render_sub_app = volumetric_fog_configure_render_sub_app(
+      render_sub_app, fog_assets,
+    )
     .add_systems(
       graph_stage,
       @app.system(fn(_world : @ecs.World) { log.push("main") }).in_set(
