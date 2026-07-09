@@ -328,6 +328,10 @@ struct GpuAtmosphereResources {
   render_sky_bgl : @wgpu.BindGroupLayout
   render_sky_pipeline_layout : @wgpu.PipelineLayout
   render_sky_pipeline : @wgpu.RenderPipeline
+  render_sky_msaa_bgl : @wgpu.BindGroupLayout
+  render_sky_msaa_pipeline_layout : @wgpu.PipelineLayout
+  mut render_sky_msaa_pipeline : @wgpu.RenderPipeline?
+  mut render_sky_msaa_sample_count : Int
   transmittance_width : Int
   transmittance_height : Int
   multiscattering_width : Int

@@ -809,6 +809,13 @@ fn GpuBackend::mesh3d_prepare_atmosphere_resources(
       tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
       1,
     )
+    let render_sky_msaa_bgl = atmosphere_create_render_sky_bgl(self, true)
+    let render_sky_msaa_pipeline_layout = self.device.create_pipeline_layout_1(
+      render_sky_msaa_bgl,
+    )
+    render_sky_msaa_pipeline_layout.set_label(
+      "mgstudio_atmosphere_render_sky_msaa_pipeline_layout",
+    )
     self.mesh3d_atmosphere_resource_revision += 1
     self.mesh3d_atmosphere_resources = Some(GpuAtmosphereResources::{
       transmittance_texture,
@@ -840,6 +847,10 @@ fn GpuBackend::mesh3d_prepare_atmosphere_resources(
       render_sky_bgl,
       render_sky_pipeline_layout,
       render_sky_pipeline,
+      render_sky_msaa_bgl,
+      render_sky_msaa_pipeline_layout,
+      render_sky_msaa_pipeline: None,
+      render_sky_msaa_sample_count: 1,
       transmittance_width: safe_transmittance_width,
       transmittance_height: safe_transmittance_height,
       multiscattering_width: safe_multiscattering_width,
@@ -1234,6 +1245,36 @@ fn GpuBackend::mesh3d_dispatch_atmosphere_environment(
 }
 
 ///|
+fn atmosphere_render_sky_pipeline_for_sample_count(
+  backend : GpuBackend,
+  resources : GpuAtmosphereResources,
+  sample_count : Int,
+) -> (@wgpu.BindGroupLayout, @wgpu.RenderPipeline) raise GpuBackendError {
+  if sample_count <= 1 {
+    return (resources.render_sky_bgl, resources.render_sky_pipeline)
+  }
+  match resources.render_sky_msaa_pipeline {
+    Some(pipeline) =>
+      if resources.render_sky_msaa_sample_count == sample_count {
+        return (resources.render_sky_msaa_bgl, pipeline)
+      } else {
+        pipeline.release()
+        resources.render_sky_msaa_pipeline = None
+      }
+    None => ()
+  }
+  let pipeline = atmosphere_create_render_sky_pipeline(
+    backend,
+    resources.render_sky_msaa_pipeline_layout,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    sample_count,
+  )
+  resources.render_sky_msaa_pipeline = Some(pipeline)
+  resources.render_sky_msaa_sample_count = sample_count
+  (resources.render_sky_msaa_bgl, pipeline)
+}
+
+///|
 fn GpuBackend::mesh3d_draw_atmosphere_sky(
   self : GpuBackend,
   camera_key_hi : Int,
@@ -1243,14 +1284,16 @@ fn GpuBackend::mesh3d_draw_atmosphere_sky(
   guard self.pass_state is Some(pass_state) else { return }
   guard self.mesh3d_atmosphere_resources is Some(atmosphere) else { return }
   guard self.mesh3d_scattering_medium_resources is Some(medium) else { return }
-  guard target_view(self, pass_state.target_id, pass_state.target_layer)
-    is Some(color_view) else {
+  guard target_color_attachment(
+      self,
+      pass_state.target_id,
+      pass_state.target_layer,
+      pass_state.msaa_sample_count,
+    )
+    is Some((color_view, color_resolve_view)) else {
     return
   }
   guard self.depth_view is Some(depth_view) else { return }
-  guard pass_state.msaa_sample_count <= 1 else {
-    fatal("wgpu: atmosphere render-sky MSAA pipeline is not implemented")
-  }
   guard mesh3d_pass_uniform_state_get_or_create(
       self,
       pass_state,
@@ -1261,6 +1304,11 @@ fn GpuBackend::mesh3d_draw_atmosphere_sky(
     is Some(pass_uniforms) else {
     return
   }
+  let (render_sky_bgl, render_sky_pipeline) = atmosphere_render_sky_pipeline_for_sample_count(
+    self,
+    atmosphere,
+    pass_state.msaa_sample_count,
+  )
   let builder = @wgpu.BindGroupBuilder::new(max_entries=14UL)
   let ok = builder.add_buffer(
       0U,
@@ -1301,14 +1349,51 @@ fn GpuBackend::mesh3d_draw_atmosphere_sky(
     return
   }
   let bind_group = mesh3d_finish_bind_group_checked(
-    self,
-    builder,
-    atmosphere.render_sky_bgl,
-    "mgstudio_atmosphere_render_sky_bind_group",
-    "wgpu: failed to build atmosphere render-sky bind group",
+    self, builder, render_sky_bgl, "mgstudio_atmosphere_render_sky_bind_group", "wgpu: failed to build atmosphere render-sky bind group",
   )
   mesh3d_end_active_pass_preserving_state(self)
-  let pass = frame.encoder.begin_render_pass_color_load(color_view)
+  let render_pass_builder = @wgpu.RenderPassDescBuilder::new(1U) catch {
+    _ => {
+      bind_group.release()
+      reopen_saved_pass(self, pass_state)
+      fatal("wgpu: failed to build atmosphere render-sky pass descriptor")
+    }
+  }
+  try {
+    render_pass_builder.set_color_attachment(
+      0U,
+      color_view,
+      load_op_u32=@wgpu.LOAD_OP_LOAD,
+      store_op_u32=@wgpu.STORE_OP_STORE,
+      clear_r_f32=0.0F,
+      clear_g_f32=0.0F,
+      clear_b_f32=0.0F,
+      clear_a_f32=1.0F,
+    )
+    match color_resolve_view {
+      Some(resolve_view) =>
+        render_pass_builder.set_color_attachment_resolve_target(
+          0U, resolve_view,
+        )
+      None => ()
+    }
+  } catch {
+    _ => {
+      render_pass_builder.free()
+      bind_group.release()
+      reopen_saved_pass(self, pass_state)
+      fatal("wgpu: failed to configure atmosphere render-sky pass descriptor")
+    }
+  }
+  let pass = render_pass_builder.begin(frame.encoder) catch {
+    _ => {
+      render_pass_builder.free()
+      bind_group.release()
+      reopen_saved_pass(self, pass_state)
+      fatal("wgpu: failed to begin atmosphere render-sky pass")
+    }
+  }
+  render_pass_builder.free()
   pass.set_viewport(
     Float::from_double(pass_state.viewport_x.to_double()),
     Float::from_double(pass_state.viewport_y.to_double()),
@@ -1326,7 +1411,7 @@ fn GpuBackend::mesh3d_draw_atmosphere_sky(
     pass_state.viewport_h,
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
-  pass.set_pipeline(atmosphere.render_sky_pipeline)
+  pass.set_pipeline(render_sky_pipeline)
   pass.set_bind_group(0U, bind_group, [])
   pass.draw(3U, 1U, 0U, 0U)
   pass.end()
