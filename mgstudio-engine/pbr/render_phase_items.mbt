@@ -137,8 +137,8 @@ priv struct ExtractedCamera3d {
 ///|
 priv struct Mesh3dExtractedPayload {
   mesh_handle : @asset.Handle[@mesh.Mesh]
-  mesh_id : Int
-  mesh_preprocess_static : MeshPreprocessStatic3d?
+  mut mesh_id : Int
+  mut mesh_preprocess_static : MeshPreprocessStatic3d?
   world_from_local : @math.Affine3
   previous_world_from_local : @math.Affine3
   transform : @transform.Transform
