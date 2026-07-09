@@ -90,6 +90,7 @@ pub struct VolumetricFogPipeline {
 pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> Self
 pub fn VolumetricFogPipeline::mesh_view_layouts(Self) -> @mesh_view_layout.MeshPipelineViewLayouts
 pub fn VolumetricFogPipeline::shader_path(Self) -> String
+pub fn VolumetricFogPipeline::specialize(Self, VolumetricFogPipelineKey) -> @render_resource.RenderPipelineDescriptor
 pub fn VolumetricFogPipeline::volumetric_view_bind_group_layouts(Self) -> Array[@render_resource.BindGroupLayoutDescriptor]
 pub impl @app.Resource for VolumetricFogPipeline
 

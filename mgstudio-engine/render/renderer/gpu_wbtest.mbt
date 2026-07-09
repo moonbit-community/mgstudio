@@ -2003,52 +2003,8 @@ test "renderer: volumetric fog bind group layout index mirrors Bevy flags" {
 
 ///|
 test "renderer: volumetric fog MSAA shader key keeps single-sample color pipeline" {
-  let defines = mesh3d_volumetric_fog_shader_defines(4, false, false)
-  debug_inspect(defines.get("MULTISAMPLED"), content="Some(true)")
   inspect(mesh3d_volumetric_fog_bind_group_layout_index(4, false), content="1")
   inspect(mesh3d_volumetric_fog_pipeline_render_sample_count(4), content="1")
-}
-
-///|
-test "renderer: volumetric fog shader defs mirror Bevy specialization flags" {
-  let base = mesh3d_volumetric_fog_shader_defines(1, false, false)
-  debug_inspect(
-    base.get("SHADOW_FILTER_METHOD_HARDWARE_2X2"),
-    content="Some(true)",
-  )
-  debug_inspect(base.get("MULTISAMPLED"), content="None")
-  debug_inspect(base.get("ATMOSPHERE"), content="None")
-  debug_inspect(base.get("DENSITY_TEXTURE"), content="None")
-
-  let full = mesh3d_volumetric_fog_shader_defines(4, true, true)
-  debug_inspect(
-    full.get("SHADOW_FILTER_METHOD_HARDWARE_2X2"),
-    content="Some(true)",
-  )
-  debug_inspect(full.get("MULTISAMPLED"), content="Some(true)")
-  debug_inspect(full.get("ATMOSPHERE"), content="Some(true)")
-  debug_inspect(full.get("DENSITY_TEXTURE"), content="Some(true)")
-}
-
-///|
-test "renderer: volumetric fog blend mirrors Bevy additive alpha state" {
-  let (
-    color_src_factor,
-    color_dst_factor,
-    color_operation,
-    alpha_src_factor,
-    alpha_dst_factor,
-    alpha_operation,
-  ) = mesh3d_volumetric_fog_blend_components()
-  inspect(color_src_factor == @wgpu.BLEND_FACTOR_ONE, content="true")
-  inspect(
-    color_dst_factor == @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-    content="true",
-  )
-  inspect(color_operation == @wgpu.BLEND_OPERATION_ADD, content="true")
-  inspect(alpha_src_factor == @wgpu.BLEND_FACTOR_ZERO, content="true")
-  inspect(alpha_dst_factor == @wgpu.BLEND_FACTOR_ONE, content="true")
-  inspect(alpha_operation == @wgpu.BLEND_OPERATION_ADD, content="true")
 }
 
 ///|

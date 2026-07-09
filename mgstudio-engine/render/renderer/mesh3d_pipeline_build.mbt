@@ -1426,26 +1426,6 @@ pub fn GpuBackend::mesh3d_volumetric_fog_pipeline_key_inputs(
 }
 
 ///|
-fn mesh3d_volumetric_fog_shader_defines(
-  msaa_sample_count : Int,
-  has_density_texture : Bool,
-  atmosphere : Bool,
-) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
-  defines.set("SHADOW_FILTER_METHOD_HARDWARE_2X2", true)
-  if msaa_sample_count > 1 {
-    defines.set("MULTISAMPLED", true)
-  }
-  if atmosphere {
-    defines.set("ATMOSPHERE", true)
-  }
-  if has_density_texture {
-    defines.set("DENSITY_TEXTURE", true)
-  }
-  defines
-}
-
-///|
 fn mesh3d_volumetric_fog_bind_group_layout_index(
   msaa_sample_count : Int,
   has_density_texture : Bool,
@@ -1495,22 +1475,110 @@ fn mesh3d_volumetric_fog_pipeline_render_sample_count(
 }
 
 ///|
-fn mesh3d_volumetric_fog_blend_components() -> (
-  UInt,
-  UInt,
-  UInt,
-  UInt,
-  UInt,
-  UInt,
-) {
-  (
-    @wgpu.BLEND_FACTOR_ONE,
-    @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-    @wgpu.BLEND_OPERATION_ADD,
-    @wgpu.BLEND_FACTOR_ZERO,
-    @wgpu.BLEND_FACTOR_ONE,
-    @wgpu.BLEND_OPERATION_ADD,
-  )
+fn mesh3d_volumetric_fog_shader_defines_from_descriptor(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+) -> @hashmap.HashMap[String, Bool] {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
+    for shader_def in shader_defs {
+      match shader_def {
+        Flag(name) => defines.set(name, true)
+        Bool(name, value) => defines.set(name, value)
+        Int(_, _) | UInt(_, _) | String(_, _) => ()
+      }
+    }
+  }
+  apply_defs(descriptor.vertex.shader_defs)
+  match descriptor.fragment {
+    Some(fragment) => apply_defs(fragment.shader_defs)
+    None => ()
+  }
+  defines
+}
+
+///|
+fn mesh3d_volumetric_fog_required_shader_path(
+  shader : String?,
+  stage_label : String,
+) -> String raise GpuBackendError {
+  match shader {
+    Some(path) if path != "" => path
+    _ =>
+      fatal(
+        "wgpu: volumetric fog descriptor missing " + stage_label + " shader",
+      )
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_required_fragment(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+) -> @render_resource.FragmentState raise GpuBackendError {
+  match descriptor.fragment {
+    Some(fragment) => fragment
+    None => fatal("wgpu: volumetric fog descriptor missing fragment state")
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_required_color_target(
+  fragment : @render_resource.FragmentState,
+) -> @render_resource.ColorTargetState raise GpuBackendError {
+  let targets = fragment.targets()
+  guard targets.length() > 0 else {
+    fatal("wgpu: volumetric fog descriptor missing color target")
+  }
+  match targets[0] {
+    Some(target) => target
+    None => fatal("wgpu: volumetric fog descriptor missing color target")
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_required_layout(
+  descriptor : @render_resource.RenderPipelineDescriptor,
+  index : Int,
+) -> @render_resource.BindGroupLayoutDescriptor raise GpuBackendError {
+  let layout = descriptor.layout()
+  guard index >= 0 && index < layout.length() else {
+    fatal("wgpu: volumetric fog descriptor missing pipeline layout")
+  }
+  layout[index]
+}
+
+///|
+fn mesh3d_volumetric_fog_entry_point_or_default(
+  entry_point : String?,
+  default_entry_point : String,
+) -> String {
+  match entry_point {
+    Some(value) if value != "" => value
+    _ => default_entry_point
+  }
+}
+
+///|
+fn mesh3d_volumetric_fog_apply_blend(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  color_target : @render_resource.ColorTargetState,
+) -> Unit raise GpuBackendError {
+  match color_target.blend() {
+    Some(blend) =>
+      builder.set_blend_components(
+        blend.color().src_factor(),
+        blend.color().dst_factor(),
+        blend.color().operation(),
+        blend.alpha().src_factor(),
+        blend.alpha().dst_factor(),
+        blend.alpha().operation(),
+      ) catch {
+        err => {
+          err |> ignore
+          fatal("wgpu: failed to configure volumetric fog blend state")
+        }
+      }
+    None => ()
+  }
 }
 
 ///|
@@ -1522,9 +1590,7 @@ fn mesh3d_build_volumetric_fog_pipeline(
   atmosphere : Bool,
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
   vertex_buffer_layout : @mesh.VertexBufferLayout,
-  volumetric_view_bind_group_layouts : Array[
-    @render_resource.BindGroupLayoutDescriptor,
-  ],
+  descriptor : @render_resource.RenderPipelineDescriptor,
 ) -> Int? raise GpuBackendError {
   let view_layout_key_bits = mesh_pipeline_view_key.bits()
   if mesh3d_volumetric_fog_pipeline_available_id_get(
@@ -1541,9 +1607,21 @@ fn mesh3d_build_volumetric_fog_pipeline(
     return None
   }
   ensure_mesh3d_pipeline_layout_resources(backend)
-  ensure_mesh3d_volumetric_fog_bind_group_layouts(
-    backend, volumetric_view_bind_group_layouts,
+  let fragment = mesh3d_volumetric_fog_required_fragment(descriptor)
+  let color_target = mesh3d_volumetric_fog_required_color_target(fragment)
+  let vertex_shader_path = mesh3d_volumetric_fog_required_shader_path(
+    descriptor.vertex.shader,
+    "vertex",
   )
+  let fragment_shader_path = mesh3d_volumetric_fog_required_shader_path(
+    fragment.shader(),
+    "fragment",
+  )
+  if fragment_shader_path != vertex_shader_path {
+    fatal(
+      "wgpu: volumetric fog descriptor requires shared vertex and fragment shader",
+    )
+  }
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     backend,
     MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
@@ -1555,17 +1633,20 @@ fn mesh3d_build_volumetric_fog_pipeline(
     msaa_sample_count, has_density_texture,
   )
   guard layout_index >= 0 &&
-    layout_index < backend.mesh3d_volumetric_fog_bgls.length() else {
-    return None
+    layout_index < MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT else {
+    fatal("wgpu: invalid volumetric fog bind group layout index")
   }
+  ensure_mesh3d_volumetric_fog_bind_group_layout(
+    backend,
+    layout_index,
+    mesh3d_volumetric_fog_required_layout(descriptor, 1),
+  )
   let volumetric_bgl = backend.mesh3d_volumetric_fog_bgls[layout_index]
   let shader_source = load_wgsl_preprocessed(
     backend.assets_base,
-    MESH3D_VOLUMETRIC_FOG_SHADER_PATH,
-    mesh3d_volumetric_fog_shader_defines(
-      msaa_sample_count, has_density_texture, atmosphere,
-    ),
-    default_wgsl_value_defines(),
+    vertex_shader_path,
+    mesh3d_volumetric_fog_shader_defines_from_descriptor(descriptor),
+    mesh3d_forward_value_defines(descriptor=Some(descriptor)),
   ) catch {
     ShaderNotReady(_) => return None
     Fatal(message) => {
@@ -1606,21 +1687,19 @@ fn mesh3d_build_volumetric_fog_pipeline(
       shader,
       layout=pipeline_layout,
     )
-    builder.set_entry_points("vertex", "fragment")
-    builder.set_fragment_module(shader)
-    builder.set_color_target_format(tf(color_format))
-    let (
-      color_src_factor,
-      color_dst_factor,
-      color_operation,
-      alpha_src_factor,
-      alpha_dst_factor,
-      alpha_operation,
-    ) = mesh3d_volumetric_fog_blend_components()
-    builder.set_blend_components(
-      color_src_factor, color_dst_factor, color_operation, alpha_src_factor, alpha_dst_factor,
-      alpha_operation,
+    builder.set_entry_points(
+      mesh3d_volumetric_fog_entry_point_or_default(
+        descriptor.vertex.entry_point,
+        "vertex",
+      ),
+      mesh3d_volumetric_fog_entry_point_or_default(
+        fragment.entry_point(),
+        "fragment",
+      ),
     )
+    builder.set_fragment_module(shader)
+    builder.set_color_target_format(tf(color_target.format()))
+    mesh3d_volumetric_fog_apply_blend(builder, color_target)
     builder.set_vertex_buffer_layout(
       vertex_buffer_layout.array_stride.to_uint64(),
       mesh_vertex_step_mode_to_wgpu(vertex_buffer_layout.step_mode),
@@ -1632,11 +1711,12 @@ fn mesh3d_build_volumetric_fog_pipeline(
         attribute.shader_location.reinterpret_as_uint(),
       )
     }
-    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-    builder.set_cull_mode_u32(@wgpu.CULL_MODE_BACK)
-    builder.set_multisample(
-      mesh3d_volumetric_fog_pipeline_render_sample_count(msaa_sample_count),
-    )
+    builder.set_topology_u32(descriptor.primitive.topology)
+    match descriptor.primitive.cull_mode {
+      Some(cull_mode) => builder.set_cull_mode_u32(cull_mode)
+      None => ()
+    }
+    builder.set_multisample(descriptor.multisample.count())
     backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
     let created = builder.create_pipeline(backend.device)
     let result = backend.device.pop_error_scope_sync_result(backend.instance)
@@ -1661,7 +1741,8 @@ fn mesh3d_build_volumetric_fog_pipeline(
     created
   } catch {
     err => {
-      let message = "wgpu: failed to build volumetric fog pipeline: \{err.message()}"
+      err |> ignore
+      let message = "wgpu: failed to build volumetric fog pipeline"
       ignore(
         mesh3d_volumetric_fog_pipeline_set_failed(
           backend, color_format, msaa_sample_count, has_density_texture, atmosphere,
@@ -1691,9 +1772,7 @@ pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
   has_density_texture : Bool,
   mesh_pipeline_view_key_bits : UInt,
   vertex_buffer_layout : @mesh.VertexBufferLayout,
-  volumetric_view_bind_group_layouts : Array[
-    @render_resource.BindGroupLayoutDescriptor,
-  ],
+  descriptor : @render_resource.RenderPipelineDescriptor,
 ) -> Int? raise GpuBackendError {
   let mesh_pipeline_view_key = @mesh_view_layout.mesh_view_layout_key_from_bits_truncate(
     mesh_pipeline_view_key_bits,
@@ -1706,7 +1785,7 @@ pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
   match
     mesh3d_build_volumetric_fog_pipeline(
       self, target_format, msaa_sample_count, has_density_texture, atmosphere, mesh_pipeline_view_key,
-      vertex_buffer_layout, volumetric_view_bind_group_layouts,
+      vertex_buffer_layout, descriptor,
     ) {
     Some(pipeline_id) => Some(pipeline_id)
     None =>

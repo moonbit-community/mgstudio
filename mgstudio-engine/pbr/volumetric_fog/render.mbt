@@ -224,6 +224,33 @@ pub fn VolumetricFogPipeline::volumetric_view_bind_group_layouts(
 }
 
 ///|
+fn volumetric_fog_shader_def_vals(
+  shader_defs : Array[String],
+) -> Array[@render_resource.ShaderDefVal] {
+  let values : Array[@render_resource.ShaderDefVal] = []
+  for shader_def in shader_defs {
+    values.push(@render_resource.ShaderDefVal::Flag(shader_def))
+  }
+  values
+}
+
+///|
+fn volumetric_fog_blend_state() -> @render_resource.BlendState {
+  @render_resource.BlendState::BlendState(
+    color=@render_resource.BlendComponent::BlendComponent(
+      src_factor=@wgpu.BLEND_FACTOR_ONE,
+      dst_factor=@wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      operation=@wgpu.BLEND_OPERATION_ADD,
+    ),
+    alpha=@render_resource.BlendComponent::BlendComponent(
+      src_factor=@wgpu.BLEND_FACTOR_ZERO,
+      dst_factor=@wgpu.BLEND_FACTOR_ONE,
+      operation=@wgpu.BLEND_OPERATION_ADD,
+    ),
+  )
+}
+
+///|
 pub struct VolumetricFogPipelineKey {
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey
   target_format : UInt
@@ -304,6 +331,60 @@ pub fn VolumetricFogPipelineKey::shader_defs(
     defs.push("DENSITY_TEXTURE")
   }
   defs
+}
+
+///|
+pub fn VolumetricFogPipeline::specialize(
+  self : VolumetricFogPipeline,
+  key : VolumetricFogPipelineKey,
+) -> @render_resource.RenderPipelineDescriptor {
+  let bind_group_layout_key = key.bind_group_layout_key()
+  let layout_index = bind_group_layout_key.layout_index()
+  if layout_index < 0 ||
+    layout_index >= self.volumetric_view_bind_group_layouts.length() {
+    abort("volumetric fog bind group layout key out of range")
+  }
+  let shader_defs = volumetric_fog_shader_def_vals(key.shader_defs())
+  let layout = self.mesh_view_layouts.get_view_layout(
+    key.mesh_pipeline_view_key,
+  )
+  @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+  .with_label(Some("volumetric lighting pipeline"))
+  .with_layout([
+    layout.main_bind_group_layout_descriptor(),
+    self.volumetric_view_bind_group_layouts[layout_index],
+  ])
+  .with_vertex(
+    @render_resource.VertexState::new(
+      Some(self.shader_path),
+      shader_defs.copy(),
+      None,
+      [key.vertex_buffer_layout],
+    ),
+  )
+  .with_primitive(
+    @render_resource.PrimitiveState::PrimitiveState().with_cull_mode(
+      Some(@wgpu.CULL_MODE_BACK),
+    ),
+  )
+  .with_fragment(
+    Some(
+      @render_resource.FragmentState::new(
+        Some(self.shader_path),
+        shader_defs,
+        None,
+        [
+          Some(
+            @render_resource.ColorTargetState::new(
+              key.target_format,
+              @wgpu.COLOR_WRITE_MASK_ALL,
+              blend=Some(volumetric_fog_blend_state()),
+            ),
+          ),
+        ],
+      ),
+    ),
+  )
 }
 
 ///|

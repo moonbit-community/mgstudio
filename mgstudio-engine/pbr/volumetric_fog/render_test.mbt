@@ -23,6 +23,20 @@ fn volumetric_fog_test_identity_mat4() -> @volumetric_fog.VolumetricFogMat4 {
 }
 
 ///|
+fn volumetric_fog_test_shader_defs_contain(
+  shader_defs : Array[@render_resource.ShaderDefVal],
+  name : String,
+) -> Bool {
+  for shader_def in shader_defs {
+    match shader_def {
+      @render_resource.ShaderDefVal::Flag(flag) if flag == name => return true
+      _ => ()
+    }
+  }
+  false
+}
+
+///|
 test "pbr volumetric fog: pipeline key mirrors Bevy shader defs and layout bits" {
   let view_key = @mesh_view_layout.mesh_view_layout_key(
     true, false, false, false, false, false, true, false,
@@ -108,6 +122,130 @@ test "pbr volumetric fog: bind group layout descriptors mirror Bevy variants" {
   }
   let pipeline = @volumetric_fog.VolumetricFogPipeline::VolumetricFogPipeline()
   inspect(pipeline.volumetric_view_bind_group_layouts().length(), content="4")
+}
+
+///|
+test "pbr volumetric fog: pipeline specialize mirrors Bevy descriptor" {
+  let view_key = @mesh_view_layout.mesh_view_layout_key(
+    true, false, false, false, false, false, true, false,
+  )
+  let vertex_buffer_layout = @mesh.VertexBufferLayout::new(
+    array_stride=12,
+    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    attributes=[
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=@mesh.MeshVertexFormat::Float32x3,
+        shader_location=0,
+      ),
+    ],
+  )
+  let key = @volumetric_fog.VolumetricFogPipelineKey::VolumetricFogPipelineKey(
+    mesh_pipeline_view_key=view_key,
+    target_format=80U,
+    vertex_buffer_layout~,
+    has_density_texture=true,
+  )
+  let pipeline = @volumetric_fog.VolumetricFogPipeline::VolumetricFogPipeline()
+  let descriptor = pipeline.specialize(key)
+  inspect(
+    descriptor.label() == Some("volumetric lighting pipeline"),
+    content="true",
+  )
+  let layout = descriptor.layout()
+  inspect(layout.length(), content="2")
+  inspect(
+    layout[1].label(),
+    content="volumetric lighting view bind group layout (density texture, multisampled)",
+  )
+  let vertex = descriptor.vertex()
+  inspect(
+    vertex.shader() == Some("pbr/volumetric_fog/volumetric_fog.wgsl"),
+    content="true",
+  )
+  inspect(vertex.entry_point() == None, content="true")
+  inspect(vertex.buffers().length(), content="1")
+  inspect(vertex.buffers()[0].attributes().length(), content="1")
+  inspect(vertex.buffers()[0].attributes()[0].shader_location(), content="0")
+  inspect(
+    volumetric_fog_test_shader_defs_contain(
+      vertex.shader_defs(),
+      "SHADOW_FILTER_METHOD_HARDWARE_2X2",
+    ),
+    content="true",
+  )
+  inspect(
+    volumetric_fog_test_shader_defs_contain(
+      vertex.shader_defs(),
+      "MULTISAMPLED",
+    ),
+    content="true",
+  )
+  inspect(
+    volumetric_fog_test_shader_defs_contain(vertex.shader_defs(), "ATMOSPHERE"),
+    content="true",
+  )
+  inspect(
+    volumetric_fog_test_shader_defs_contain(
+      vertex.shader_defs(),
+      "DENSITY_TEXTURE",
+    ),
+    content="true",
+  )
+  inspect(
+    descriptor.primitive.cull_mode == Some(@wgpu.CULL_MODE_BACK),
+    content="true",
+  )
+  inspect(descriptor.multisample.count(), content="1")
+  match descriptor.fragment() {
+    Some(fragment) => {
+      inspect(
+        fragment.shader() == Some("pbr/volumetric_fog/volumetric_fog.wgsl"),
+        content="true",
+      )
+      inspect(fragment.entry_point() == None, content="true")
+      let targets = fragment.targets()
+      inspect(targets.length(), content="1")
+      match targets[0] {
+        Some(target) => {
+          inspect(target.format(), content="80")
+          inspect(target.write_mask(), content="15")
+          match target.blend() {
+            Some(blend) => {
+              inspect(
+                blend.color().src_factor() == @wgpu.BLEND_FACTOR_ONE,
+                content="true",
+              )
+              inspect(
+                blend.color().dst_factor() ==
+                @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+                content="true",
+              )
+              inspect(
+                blend.color().operation() == @wgpu.BLEND_OPERATION_ADD,
+                content="true",
+              )
+              inspect(
+                blend.alpha().src_factor() == @wgpu.BLEND_FACTOR_ZERO,
+                content="true",
+              )
+              inspect(
+                blend.alpha().dst_factor() == @wgpu.BLEND_FACTOR_ONE,
+                content="true",
+              )
+              inspect(
+                blend.alpha().operation() == @wgpu.BLEND_OPERATION_ADD,
+                content="true",
+              )
+            }
+            None => abort("expected volumetric fog blend state")
+          }
+        }
+        None => abort("expected volumetric fog color target")
+      }
+    }
+    None => abort("expected volumetric fog fragment state")
+  }
 }
 
 ///|

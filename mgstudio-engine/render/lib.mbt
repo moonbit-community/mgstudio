@@ -480,9 +480,7 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
   has_density_texture~ : Bool,
   mesh_pipeline_view_key_bits~ : UInt,
   vertex_buffer_layout~ : @mesh.VertexBufferLayout,
-  volumetric_view_bind_group_layouts~ : Array[
-    @render_resource.BindGroupLayoutDescriptor,
-  ],
+  descriptor~ : @render_resource.RenderPipelineDescriptor,
 ) -> Int? {
   @renderer.prepare_mesh3d_volumetric_fog_pipeline(
     target_format~,
@@ -490,7 +488,7 @@ pub fn host_gpu_prepare_mesh3d_volumetric_fog_pipeline(
     has_density_texture~,
     mesh_pipeline_view_key_bits~,
     vertex_buffer_layout~,
-    volumetric_view_bind_group_layouts~,
+    descriptor~,
   )
 }
 

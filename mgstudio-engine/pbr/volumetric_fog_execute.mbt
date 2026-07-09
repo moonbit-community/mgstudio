@@ -195,7 +195,7 @@ fn render3d_prepare_volumetric_fog_pipeline_id(
     has_density_texture=key.has_density_texture(),
     mesh_pipeline_view_key_bits=key.mesh_pipeline_view_key().bits(),
     vertex_buffer_layout=key.vertex_buffer_layout(),
-    volumetric_view_bind_group_layouts=pipeline.volumetric_view_bind_group_layouts(),
+    descriptor=pipeline.specialize(key),
   )
 }
 

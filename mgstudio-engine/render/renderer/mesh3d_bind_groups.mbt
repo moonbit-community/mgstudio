@@ -2321,29 +2321,32 @@ fn ensure_mesh3d_volumetric_fog_buffer_capacity(
 }
 
 ///|
-fn ensure_mesh3d_volumetric_fog_bind_group_layouts(
+fn ensure_mesh3d_volumetric_fog_bind_group_layout(
   backend : GpuBackend,
-  descriptors : Array[@render_resource.BindGroupLayoutDescriptor],
+  layout_index : Int,
+  descriptor : @render_resource.BindGroupLayoutDescriptor,
 ) -> Unit raise GpuBackendError {
-  if backend.mesh3d_volumetric_fog_bgls.length() ==
+  guard layout_index >= 0 &&
+    layout_index < MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT else {
+    fatal("wgpu: invalid mesh3d volumetric fog bind group layout index")
+  }
+  if backend.mesh3d_volumetric_fog_bgls.length() !=
     MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT {
-    return
+    backend.mesh3d_volumetric_fog_bgls.clear()
+    for bits in 0..<MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT {
+      backend.mesh3d_volumetric_fog_bgls.push(
+        mesh3d_create_empty_bind_group_layout(
+          backend,
+          "volumetric_fog_uninitialized_" + bits.to_string(),
+        ),
+      )
+    }
   }
-  guard descriptors.length() == MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT else {
-    fatal(
-      "wgpu: invalid mesh3d volumetric fog bind group layout descriptor count",
-    )
-  }
-  backend.mesh3d_volumetric_fog_bgls.clear()
-  for bits in 0..<MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT {
-    backend.mesh3d_volumetric_fog_bgls.push(
-      mesh3d_create_bind_group_layout_from_descriptor(
-        backend,
-        descriptors[bits],
-        "volumetric_fog_" + bits.to_string(),
-      ),
-    )
-  }
+  backend.mesh3d_volumetric_fog_bgls[layout_index] = mesh3d_create_bind_group_layout_from_descriptor(
+    backend,
+    descriptor,
+    "volumetric_fog_" + layout_index.to_string(),
+  )
 }
 
 ///|
