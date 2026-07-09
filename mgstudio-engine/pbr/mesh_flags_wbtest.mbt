@@ -1061,8 +1061,13 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
     render3d_test_transparent_mesh_for_queue(1, -1.0F, 0.0F),
     render3d_test_transparent_mesh_for_queue(2, -1.0F, 2.0F),
   ]
-  let visible : Map[UInt64, Bool] = {}
-  visible.set(meshes[1].entity.main_entity.to_bits(), true)
+  let visible = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+  visible.update_cpu_culled_entities([
+    (
+      meshes[1].entity.render_entity,
+      @render.MainEntity::new(meshes[1].entity.main_entity),
+    ),
+  ])
   let (view, cache) = render3d_test_queue_pipeline_cache(meshes)
   let material_slots = render3d_test_queue_material_slots(meshes)
   let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
@@ -1081,7 +1086,7 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
     false,
     retained_view_entity=view,
     specialized_material_pipeline_cache=cache,
-    visible_main_entities=Some(visible),
+    visible_mesh_entities=Some(visible),
   )
   let gpu_items = render3d_queue_mesh_phase_items(
     meshes,
@@ -1098,7 +1103,7 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
     true,
     retained_view_entity=view,
     specialized_material_pipeline_cache=cache,
-    visible_main_entities=Some(visible),
+    visible_mesh_entities=Some(visible),
   )
   debug_inspect(cpu_items.length(), content="1")
   debug_inspect(cpu_items[0].entity.main_entity.id, content="2")

@@ -204,12 +204,15 @@ fn render3d_queue_material_mesh_candidate(
   camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
-  visible_main_entities? : Map[UInt64, Bool]? = None,
+  visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> QueuedMaterialMesh3d? {
   let payload = mesh.payload
-  match visible_main_entities {
+  match visible_mesh_entities {
     Some(visible) =>
-      if !visible.get(mesh.entity.main_entity.to_bits()).unwrap_or(false) {
+      if !visible.entity_pair_is_visible(
+          mesh.entity.render_entity,
+          @render.MainEntity::new(mesh.entity.main_entity),
+        ) {
         return None
       }
     None => ()
@@ -308,7 +311,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
-  visible_main_entities? : Map[UInt64, Bool]? = None,
+  visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -327,7 +330,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
         camera_has_no_cpu_culling,
         retained_view_entity~,
         specialized_material_pipeline_cache~,
-        visible_main_entities~,
+        visible_mesh_entities~,
       )
       is Some(candidate) else {
       continue
@@ -394,7 +397,7 @@ fn render3d_collect_meshes_for_gpu_building(
   camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
-  visible_main_entities? : Map[UInt64, Bool]? = None,
+  visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
   for i in 0..<meshes.length() {
@@ -413,7 +416,7 @@ fn render3d_collect_meshes_for_gpu_building(
         camera_has_no_cpu_culling,
         retained_view_entity~,
         specialized_material_pipeline_cache~,
-        visible_main_entities~,
+        visible_mesh_entities~,
       )
       is Some(candidate) else {
       continue
@@ -1749,7 +1752,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
-  visible_main_entities? : Map[UInt64, Bool]? = None,
+  visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
   // collect mesh work items, then write batched instance work payloads.
@@ -1767,7 +1770,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
     camera_has_no_cpu_culling,
     retained_view_entity~,
     specialized_material_pipeline_cache~,
-    visible_main_entities~,
+    visible_mesh_entities~,
   )
   render3d_write_batched_instance_buffers(work_items)
 }
@@ -1788,7 +1791,7 @@ fn render3d_queue_mesh_phase_items(
   use_gpu_instance_buffer_builder : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
-  visible_main_entities? : Map[UInt64, Bool]? = None,
+  visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
     return render3d_queue_mesh_phase_items_gpu_builder(
@@ -1805,7 +1808,7 @@ fn render3d_queue_mesh_phase_items(
       camera_has_no_cpu_culling,
       retained_view_entity~,
       specialized_material_pipeline_cache~,
-      visible_main_entities~,
+      visible_mesh_entities~,
     )
   }
   render3d_queue_mesh_phase_items_cpu_builder(
@@ -1822,6 +1825,6 @@ fn render3d_queue_mesh_phase_items(
     camera_has_no_cpu_culling,
     retained_view_entity~,
     specialized_material_pipeline_cache~,
-    visible_main_entities~,
+    visible_mesh_entities~,
   )
 }

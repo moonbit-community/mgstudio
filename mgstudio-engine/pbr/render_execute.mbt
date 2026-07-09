@@ -4556,39 +4556,33 @@ fn render3d_for_each_prepared_camera(
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/material.rs::queue_material_meshes`
-// consumes `RenderVisibleEntities<Mesh3d>` instead of scanning every extracted
-// mesh for every view.
-fn render3d_visible_main_entity_filter_for_camera(
+// consumes `RenderVisibleEntities<Mesh3d>` instead of a local boolean map.
+fn render3d_visible_mesh_entity_class_for_camera(
   world : @ecs.World,
   camera : ExtractedCamera3d,
-) -> Map[UInt64, Bool] {
-  let visible : Map[UInt64, Bool] = {}
+) -> @render_visibility.RenderVisibleEntitiesClass? {
   guard (try! world.get_by_key(
       camera.entity.render_entity,
       @render_visibility.ecs_key_render_visible_entities,
     ))
     is Some(render_visible_entities) else {
-    return visible
+    return None
   }
   guard render_visible_entities.get(render3d_mesh_visibility_class())
     is Some(render_visible_mesh_entities) else {
-    return visible
+    return None
   }
-  for pair in render_visible_mesh_entities.iter_visible() {
-    let (_render_entity, main_entity) = pair
-    visible.set(main_entity.id().to_bits(), true)
-  }
-  visible
+  Some(render_visible_mesh_entities)
 }
 
 ///|
-fn render3d_visible_main_entity_filters_for_cameras(
+fn render3d_visible_mesh_entity_classes_for_cameras(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
-) -> Array[Map[UInt64, Bool]] {
-  let filters : Array[Map[UInt64, Bool]] = []
+) -> Array[@render_visibility.RenderVisibleEntitiesClass?] {
+  let filters : Array[@render_visibility.RenderVisibleEntitiesClass?] = []
   for camera in cameras {
-    filters.push(render3d_visible_main_entity_filter_for_camera(world, camera))
+    filters.push(render3d_visible_mesh_entity_class_for_camera(world, camera))
   }
   filters
 }
@@ -4778,7 +4772,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
             "missing SpecializedMaterialPipelineCache resource during pbr queue_meshes",
           )
       }
-      let visible_main_entity_filters = render3d_visible_main_entity_filters_for_cameras(
+      let visible_mesh_entity_classes = render3d_visible_mesh_entity_classes_for_cameras(
         world,
         frame.cameras,
       )
@@ -4834,7 +4828,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.frame_config.gpu_instance_buffer_builder_enabled,
           frame.frame_config.gpu_culling_supported,
           specialized_material_pipeline_cache~,
-          visible_main_entity_filters=Some(visible_main_entity_filters),
+          visible_mesh_entity_classes=Some(visible_mesh_entity_classes),
         )
       })
       render3d_retain_live_main_view_phases(world, frame.cameras)
