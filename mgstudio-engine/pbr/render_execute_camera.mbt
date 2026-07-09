@@ -326,7 +326,7 @@ fn render3d_execute_camera(
   prepass_deferred_lighting_pass_id_target_id = prepass_result.deferred_lighting_pass_id_texture_id
   ignore(
     @render.host_gpu_reserve_mesh3d_draw_storage(
-      count=draw_queue_entry.draw_items.length(),
+      count=render3d_main_view_phase_item_count_or_abort(world, camera_entity),
     ),
   )
   let shadow_pass_plan = execution_plan.shadow_pass_plan

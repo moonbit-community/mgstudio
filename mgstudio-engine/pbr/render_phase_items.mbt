@@ -221,6 +221,185 @@ priv struct MeshPhaseItem3d {
 }
 
 ///|
+priv struct Render3dMainViewPhase {
+  mut draw_items : Array[MeshPhaseItem3d]
+}
+
+///|
+fn Render3dMainViewPhase::new() -> Render3dMainViewPhase {
+  Render3dMainViewPhase::{ draw_items: [] }
+}
+
+///|
+fn Render3dMainViewPhase::prepare_for_new_frame(
+  self : Render3dMainViewPhase,
+) -> Unit {
+  self.draw_items = []
+}
+
+///|
+fn Render3dMainViewPhase::set_draw_items(
+  self : Render3dMainViewPhase,
+  draw_items : Array[MeshPhaseItem3d],
+) -> Unit {
+  self.draw_items = draw_items.copy()
+}
+
+///|
+fn Render3dMainViewPhase::draw_items(
+  self : Render3dMainViewPhase,
+) -> Array[MeshPhaseItem3d] {
+  self.draw_items.copy()
+}
+
+///|
+fn Render3dMainViewPhase::len(self : Render3dMainViewPhase) -> Int {
+  self.draw_items.length()
+}
+
+///|
+priv struct Render3dMainViewPhases {
+  views : Map[UInt64, Render3dMainViewPhase]
+}
+
+///|
+fn Render3dMainViewPhases::Render3dMainViewPhases() -> Render3dMainViewPhases {
+  Render3dMainViewPhases::{ views: {} }
+}
+
+///|
+let render3d_main_view_phases_key : @ecs.ResourceKey[Render3dMainViewPhases] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::Render3dMainViewPhases",
+)
+
+///|
+impl @app.Resource for Render3dMainViewPhases with fn resource() {
+  render3d_main_view_phases_key
+}
+
+///|
+fn Render3dMainViewPhases::prepare_for_new_frame(
+  self : Render3dMainViewPhases,
+  retained_view_entity : @core.Entity,
+) -> Render3dMainViewPhase {
+  let key = retained_view_entity.to_bits()
+  match self.views.get(key) {
+    Some(phase) => {
+      phase.prepare_for_new_frame()
+      phase
+    }
+    None => {
+      let phase = Render3dMainViewPhase::new()
+      self.views.set(key, phase)
+      phase
+    }
+  }
+}
+
+///|
+fn Render3dMainViewPhases::retain_live_views(
+  self : Render3dMainViewPhases,
+  live_views : Map[UInt64, Bool],
+) -> Unit {
+  let stale : Array[UInt64] = []
+  for view_bits, _phase in self.views {
+    if !live_views.contains(view_bits) {
+      stale.push(view_bits)
+    }
+  }
+  for view_bits in stale {
+    self.views.remove(view_bits)
+  }
+}
+
+///|
+fn Render3dMainViewPhases::phase(
+  self : Render3dMainViewPhases,
+  retained_view_entity : @core.Entity,
+) -> Render3dMainViewPhase? {
+  self.views.get(retained_view_entity.to_bits())
+}
+
+///|
+fn ensure_render3d_main_view_phases(world : @ecs.World) -> Unit {
+  if world.get_resource(Render3dMainViewPhases::resource()) is None {
+    world.insert_resource(
+      Render3dMainViewPhases::resource(),
+      Render3dMainViewPhases::Render3dMainViewPhases(),
+    )
+  }
+}
+
+///|
+fn render3d_main_view_phases_mut_or_abort(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[Render3dMainViewPhases] {
+  ensure_render3d_main_view_phases(world)
+  match world.get_resource_mut(Render3dMainViewPhases::resource()) {
+    Some(phases) => phases
+    None => abort("Missing Render3dMainViewPhases resource in render world")
+  }
+}
+
+///|
+fn render3d_prepare_main_view_phase(
+  world : @ecs.World,
+  retained_view_entity : @core.Entity,
+  draw_items : Array[MeshPhaseItem3d],
+) -> Unit {
+  let phases = render3d_main_view_phases_mut_or_abort(world)
+  phases.modify(fn(value) {
+    let phase = value.prepare_for_new_frame(retained_view_entity)
+    phase.set_draw_items(draw_items)
+  })
+}
+
+///|
+fn render3d_retain_live_main_view_phases(
+  world : @ecs.World,
+  cameras : Array[ExtractedCamera3d],
+) -> Unit {
+  let live_views : Map[UInt64, Bool] = {}
+  for camera in cameras {
+    live_views.set(camera.entity.main_entity.to_bits(), true)
+  }
+  let phases = render3d_main_view_phases_mut_or_abort(world)
+  phases.modify(fn(value) { value.retain_live_views(live_views) })
+}
+
+///|
+fn render3d_main_view_phase_items_or_abort(
+  world : @ecs.World,
+  retained_view_entity : @core.Entity,
+) -> Array[MeshPhaseItem3d] {
+  guard world.get_resource(Render3dMainViewPhases::resource()) is Some(phases) else {
+    abort("Missing Render3dMainViewPhases resource during pbr main pass")
+  }
+  guard phases.phase(retained_view_entity) is Some(phase) else {
+    abort("Missing retained Render3dMainViewPhase during pbr main pass")
+  }
+  phase.draw_items()
+}
+
+///|
+fn render3d_main_view_phase_item_count_or_abort(
+  world : @ecs.World,
+  retained_view_entity : @core.Entity,
+) -> Int {
+  guard world.get_resource(Render3dMainViewPhases::resource()) is Some(phases) else {
+    abort(
+      "Missing Render3dMainViewPhases resource during pbr draw storage reservation",
+    )
+  }
+  guard phases.phase(retained_view_entity) is Some(phase) else {
+    abort(
+      "Missing retained Render3dMainViewPhase during pbr draw storage reservation",
+    )
+  }
+  phase.len()
+}
+
+///|
 const MESH3D_DRAW_INDIRECT_KIND_NONE : Int = 0
 
 ///|

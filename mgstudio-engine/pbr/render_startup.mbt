@@ -271,6 +271,11 @@ fn configure_pbr_render_world_resources(
       Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers()
     },
   )
+  pbr_init_render_resource_if_missing(
+    world,
+    Render3dMainViewPhases::resource(),
+    fn() { Render3dMainViewPhases::Render3dMainViewPhases() },
+  )
   sub_app
 }
 

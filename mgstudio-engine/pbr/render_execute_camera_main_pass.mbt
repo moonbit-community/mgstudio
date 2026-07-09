@@ -407,7 +407,8 @@ fn render3d_execute_camera_main_pass(
   prepass_deferred_texture_id~ : Int,
   prepass_deferred_lighting_pass_id_texture_id~ : Int,
 ) -> Unit {
-  let draw_items = draw_queue_entry.draw_items
+  ignore(draw_queue_entry)
+  let draw_items = render3d_main_view_phase_items_or_abort(world, camera_entity)
   let lightmap_bindless_supported = @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
     @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),

@@ -4837,6 +4837,21 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           visible_main_entity_filters=Some(visible_main_entity_filters),
         )
       })
+      render3d_retain_live_main_view_phases(world, frame.cameras)
+      for camera_index in 0..<frame.cameras.length() {
+        if camera_index >= prepared_camera_queues.length() {
+          continue
+        }
+        match prepared_camera_queues[camera_index] {
+          Some(prepared_queue) =>
+            render3d_prepare_main_view_phase(
+              world,
+              frame.cameras[camera_index].entity.main_entity,
+              prepared_queue.draw_queue_entry.draw_items,
+            )
+          None => ()
+        }
+      }
       let shadow_execution_data = match
         render3d_queue_take_shadow_execution_data(world) {
         Some(value) => value
