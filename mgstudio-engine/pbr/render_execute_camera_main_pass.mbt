@@ -192,6 +192,50 @@ fn render3d_resolve_scattering_medium(
 }
 
 ///|
+fn render3d_scattering_medium_assets_mut_or_init(
+  world : @ecs.World,
+) -> @ecs.ResourceMut[@render.RenderAssets[PreparedGpuScatteringMedium]] {
+  let key : @ecs.ResourceKey[@render.RenderAssets[PreparedGpuScatteringMedium]] = @render.RenderAssets::resource()
+  if world.get_resource(key) is None {
+    world.insert_resource(key, @render.RenderAssets::new())
+  }
+  match world.get_resource_mut(key) {
+    Some(value) => value
+    None => abort("missing RenderAssets<GpuScatteringMedium> resource")
+  }
+}
+
+///|
+fn render3d_prepare_scattering_medium_asset(
+  world : @ecs.World,
+  handle : @asset.Handle[ScatteringMedium],
+  medium : ScatteringMedium,
+) -> PreparedGpuScatteringMedium {
+  let signature = pbr_scattering_medium_signature(medium)
+  let handle_id = handle.id()
+  let key : @ecs.ResourceKey[@render.RenderAssets[PreparedGpuScatteringMedium]] = @render.RenderAssets::resource()
+  match world.get_resource(key) {
+    Some(cache) =>
+      match cache.get(handle_id) {
+        Some(prepared) =>
+          if prepared.signature() == signature {
+            return prepared
+          }
+        None => ()
+      }
+    None => ()
+  }
+  let next = PreparedGpuScatteringMedium::from_medium(
+    medium,
+    ScatteringMediumSampler::ScatteringMediumSampler(),
+  )
+  render3d_scattering_medium_assets_mut_or_init(world).modify(fn(cache) {
+    cache.insert(handle_id, next)
+  })
+  next
+}
+
+///|
 fn render3d_prepare_camera_atmosphere_resources(
   world : @ecs.World,
   camera : Camera3dViewPayload,
@@ -205,17 +249,18 @@ fn render3d_prepare_camera_atmosphere_resources(
     Some(value) => value
     None => @pbr_atmosphere.pbr_atmosphere_settings_default()
   }
-  let gpu_medium = GpuScatteringMedium::new(
+  let gpu_medium = render3d_prepare_scattering_medium_asset(
+    world,
+    extracted_atmosphere.medium,
     medium,
-    ScatteringMediumSampler::ScatteringMediumSampler(),
   )
   @render.host_gpu_prepare_mesh3d_scattering_medium_resources(
-    density_width=gpu_medium.density_lut_width(),
-    density_height=gpu_medium.density_lut_height(),
-    density_bytes=gpu_medium.density_lut_rgba32f_bytes(),
-    scattering_width=gpu_medium.scattering_lut_width(),
-    scattering_height=gpu_medium.scattering_lut_height(),
-    scattering_bytes=gpu_medium.scattering_lut_rgba32f_bytes(),
+    density_width=gpu_medium.density_width(),
+    density_height=gpu_medium.density_height(),
+    density_bytes=gpu_medium.density_bytes(),
+    scattering_width=gpu_medium.scattering_width(),
+    scattering_height=gpu_medium.scattering_height(),
+    scattering_bytes=gpu_medium.scattering_bytes(),
   )
   let gpu_settings = @pbr_atmosphere.pbr_gpu_atmosphere_settings(settings)
   let gpu_atmosphere = @pbr_atmosphere.pbr_gpu_atmosphere_from_extracted(

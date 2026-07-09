@@ -293,6 +293,183 @@ fn pbr_scattering_medium_vec4_rgba32f_bytes(
 }
 
 ///|
+fn pbr_scattering_medium_hash_u64(hash : UInt64, value : UInt64) -> UInt64 {
+  let mut next = hash
+  next = (next ^ (value & 0xFFUL)) * 1099511628211UL
+  next = (next ^ ((value >> 8) & 0xFFUL)) * 1099511628211UL
+  next = (next ^ ((value >> 16) & 0xFFUL)) * 1099511628211UL
+  next = (next ^ ((value >> 24) & 0xFFUL)) * 1099511628211UL
+  next = (next ^ ((value >> 32) & 0xFFUL)) * 1099511628211UL
+  next = (next ^ ((value >> 40) & 0xFFUL)) * 1099511628211UL
+  next = (next ^ ((value >> 48) & 0xFFUL)) * 1099511628211UL
+  (next ^ ((value >> 56) & 0xFFUL)) * 1099511628211UL
+}
+
+///|
+fn pbr_scattering_medium_hash_int(hash : UInt64, value : Int) -> UInt64 {
+  pbr_scattering_medium_hash_u64(hash, value.reinterpret_as_uint().to_uint64())
+}
+
+///|
+fn pbr_scattering_medium_hash_float(hash : UInt64, value : Float) -> UInt64 {
+  pbr_scattering_medium_hash_u64(hash, value.reinterpret_as_uint().to_uint64())
+}
+
+///|
+fn pbr_scattering_medium_hash_vec3(hash : UInt64, value : @math.Vec3) -> UInt64 {
+  let next = pbr_scattering_medium_hash_float(hash, value.x)
+  let next = pbr_scattering_medium_hash_float(next, value.y)
+  pbr_scattering_medium_hash_float(next, value.z)
+}
+
+///|
+fn pbr_scattering_medium_hash_falloff(
+  hash : UInt64,
+  falloff : @light.Falloff,
+) -> UInt64 {
+  match falloff {
+    @light.Falloff::Linear => pbr_scattering_medium_hash_u64(hash, 1UL)
+    @light.Falloff::Exponential(scale) =>
+      pbr_scattering_medium_hash_float(
+        pbr_scattering_medium_hash_u64(hash, 2UL),
+        scale,
+      )
+    @light.Falloff::Tent(center, width) => {
+      let next = pbr_scattering_medium_hash_float(
+        pbr_scattering_medium_hash_u64(hash, 3UL),
+        center,
+      )
+      pbr_scattering_medium_hash_float(next, width)
+    }
+  }
+}
+
+///|
+fn pbr_scattering_medium_hash_phase(
+  hash : UInt64,
+  phase : @light.PhaseFunction,
+) -> UInt64 {
+  match phase {
+    @light.PhaseFunction::Isotropic => pbr_scattering_medium_hash_u64(hash, 1UL)
+    @light.PhaseFunction::Rayleigh => pbr_scattering_medium_hash_u64(hash, 2UL)
+    @light.PhaseFunction::Mie(asymmetry) =>
+      pbr_scattering_medium_hash_float(
+        pbr_scattering_medium_hash_u64(hash, 3UL),
+        asymmetry,
+      )
+  }
+}
+
+///|
+fn pbr_scattering_medium_signature(medium : ScatteringMedium) -> UInt64 {
+  let mut hash = 14695981039346656037UL
+  hash = pbr_scattering_medium_hash_int(hash, medium.falloff_resolution)
+  hash = pbr_scattering_medium_hash_int(hash, medium.phase_resolution)
+  hash = pbr_scattering_medium_hash_int(hash, medium.terms.length())
+  for term in medium.terms {
+    hash = pbr_scattering_medium_hash_vec3(hash, term.absorption)
+    hash = pbr_scattering_medium_hash_vec3(hash, term.scattering)
+    hash = pbr_scattering_medium_hash_falloff(hash, term.falloff)
+    hash = pbr_scattering_medium_hash_phase(hash, term.phase)
+  }
+  hash
+}
+
+///|
+priv struct PreparedGpuScatteringMedium {
+  signature : UInt64
+  density_width : Int
+  density_height : Int
+  density_bytes : Bytes
+  scattering_width : Int
+  scattering_height : Int
+  scattering_bytes : Bytes
+}
+
+///|
+let prepared_gpu_scattering_medium_render_asset_keys : @render.RenderAssetResourceKeys[
+  PreparedGpuScatteringMedium,
+] = @render.register_render_asset_resource_keys(
+  "mgstudio_pbr::GpuScatteringMedium",
+)
+
+///|
+impl @render.RenderAssetResource for PreparedGpuScatteringMedium with fn render_asset_resource_debug_name() {
+  "mgstudio_pbr::GpuScatteringMedium"
+}
+
+///|
+impl @render.RenderAssetResource for PreparedGpuScatteringMedium with fn render_asset_resource_keys() {
+  prepared_gpu_scattering_medium_render_asset_keys
+}
+
+///|
+fn PreparedGpuScatteringMedium::from_medium(
+  medium : ScatteringMedium,
+  sampler : ScatteringMediumSampler,
+) -> PreparedGpuScatteringMedium {
+  let gpu_medium = GpuScatteringMedium::new(medium, sampler)
+  PreparedGpuScatteringMedium::{
+    signature: pbr_scattering_medium_signature(medium),
+    density_width: gpu_medium.density_lut_width(),
+    density_height: gpu_medium.density_lut_height(),
+    density_bytes: gpu_medium.density_lut_rgba32f_bytes(),
+    scattering_width: gpu_medium.scattering_lut_width(),
+    scattering_height: gpu_medium.scattering_lut_height(),
+    scattering_bytes: gpu_medium.scattering_lut_rgba32f_bytes(),
+  }
+}
+
+///|
+fn PreparedGpuScatteringMedium::signature(
+  self : PreparedGpuScatteringMedium,
+) -> UInt64 {
+  self.signature
+}
+
+///|
+fn PreparedGpuScatteringMedium::density_width(
+  self : PreparedGpuScatteringMedium,
+) -> Int {
+  self.density_width
+}
+
+///|
+fn PreparedGpuScatteringMedium::density_height(
+  self : PreparedGpuScatteringMedium,
+) -> Int {
+  self.density_height
+}
+
+///|
+fn PreparedGpuScatteringMedium::density_bytes(
+  self : PreparedGpuScatteringMedium,
+) -> Bytes {
+  self.density_bytes
+}
+
+///|
+fn PreparedGpuScatteringMedium::scattering_width(
+  self : PreparedGpuScatteringMedium,
+) -> Int {
+  self.scattering_width
+}
+
+///|
+fn PreparedGpuScatteringMedium::scattering_height(
+  self : PreparedGpuScatteringMedium,
+) -> Int {
+  self.scattering_height
+}
+
+///|
+fn PreparedGpuScatteringMedium::scattering_bytes(
+  self : PreparedGpuScatteringMedium,
+) -> Bytes {
+  self.scattering_bytes
+}
+
+///|
 pub fn GpuScatteringMedium::density_lut_width(
   self : GpuScatteringMedium,
 ) -> Int {
