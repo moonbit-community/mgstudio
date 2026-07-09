@@ -45,6 +45,28 @@ test "skybox: render sub app configuration installs Bevy-shaped resources" {
 }
 
 ///|
+test "skybox: plugin installs Bevy-shaped uniform component preparation" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(SkyboxPlugin::SkyboxPlugin())
+  let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+      name : String,
+    ) {
+      name.has_prefix("mgstudio_render::uniform::")
+    },
+  )
+  let render_dot = app
+    .sub_app(@app.RenderApp)
+    .schedule_graph_dot(@render.render_schedule_stage(), settings~)
+  debug_inspect(
+    render_dot.contains(
+      "\"mgstudio_render::uniform::prepare_uniform_components<mgstudio_core_pipeline::SkyboxUniforms>\"",
+    ),
+    content="true",
+  )
+}
+
+///|
 test "skybox: uniforms match Bevy brightness and inverse-rotation transform" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(7)
   let skybox = @light.Skybox::new(image, -2.0F).with_rotation(
@@ -338,4 +360,67 @@ test "skybox: prepare pipelines requires Bevy render-view components" {
     .get_resource(@render.pipeline_cache_resource_key)
     .unwrap()
   debug_inspect(pipeline_cache.queued_pipeline_count(), content="0")
+}
+
+///|
+test "skybox: extract_skybox writes Bevy component and uniform payload to render entity" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(SkyboxPlugin::SkyboxPlugin())
+  let source_world = app.world()
+  let source_entity = source_world.spawn()
+  let image : @asset.Handle[@asset.Image] = @asset.Handle::new(23)
+  let skybox = @light.Skybox::new(image, 5.0F)
+  try! source_world.set_by_key(
+    source_entity,
+    @render.SyncToRenderWorld::component(),
+    @render.SyncToRenderWorld::SyncToRenderWorld(),
+  )
+  try! source_world.set_by_key(
+    source_entity,
+    @light.Skybox::component(),
+    skybox,
+  )
+  try! source_world.set_by_key(
+    source_entity,
+    @camera_camera.Exposure::component(),
+    @camera_camera.Exposure::from_physical_camera(
+      @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters(),
+    ),
+  )
+
+  @render.mark_renderer_ready(app.sub_app(@app.RenderApp).world())
+  let app = app.run_once()
+  let source_world = app.world()
+  let render_entity = (try! source_world.get_by_key(
+      source_entity,
+      @render.RenderEntity::component(),
+    ))
+    .unwrap()
+    .id()
+  let render_world = app.sub_app(@app.RenderApp).world()
+
+  debug_inspect(
+    (try! render_world.get_by_key(render_entity, @light.Skybox::component()))
+    is Some(_),
+    content="true",
+  )
+  guard (try! render_world.get_by_key(
+      render_entity,
+      SkyboxUniforms::component(),
+    ))
+    is Some(uniforms) else {
+    abort("expected SkyboxUniforms on render entity")
+  }
+  debug_inspect(uniforms.is_ready_for_bind_group(), content="true")
+  debug_inspect(
+    skybox_test_approx(
+      uniforms.brightness,
+      5.0F *
+      @camera_camera.Exposure::from_physical_camera(
+        @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters(),
+      ).exposure(),
+    ),
+    content="true",
+  )
 }

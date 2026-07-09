@@ -329,6 +329,31 @@ priv struct SkyboxUniforms {
 }
 
 ///|
+let ecs_key_skybox_uniforms : @ecs.ComponentKey[SkyboxUniforms] = @ecs.register_component(
+  debug_name="mgstudio_core_pipeline::SkyboxUniforms",
+)
+
+///|
+let skybox_uniform_component_keys : @render.UniformComponentKeys[SkyboxUniforms] = @render.register_uniform_component_keys(
+  "mgstudio_core_pipeline::SkyboxUniforms",
+)
+
+///|
+impl @ecs.Component for SkyboxUniforms with fn component() {
+  ecs_key_skybox_uniforms
+}
+
+///|
+impl @render.UniformComponent for SkyboxUniforms with fn uniform_component_debug_name() {
+  "mgstudio_core_pipeline::SkyboxUniforms"
+}
+
+///|
+impl @render.UniformComponent for SkyboxUniforms with fn uniform_component_keys() {
+  skybox_uniform_component_keys
+}
+
+///|
 fn SkyboxUniforms::new(
   brightness~ : Float,
   transform~ : Array[Float],
@@ -477,9 +502,11 @@ fn skybox_plugin_install_with(
   plugin : SkyboxPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
+  let skybox_uniform_plugin : @render.UniformComponentPlugin[SkyboxUniforms] = @render.UniformComponentPlugin::UniformComponentPlugin()
   let next = app.init_resource(fn() {
     SkyboxPipelineState::SkyboxPipelineState()
   })
+  let next = @render.uniform_component_plugin_with(next, skybox_uniform_plugin)
   @render.with_render_app(next, configure_skybox_render_sub_app)
 }
 
@@ -771,11 +798,22 @@ fn extract_skybox(world : @ecs.World) -> Unit {
         Some(value) => value.exposure()
         None => @camera_camera.Exposure::Exposure().exposure()
       }
+      let uniforms = SkyboxUniforms::from_skybox(skybox, exposure)
+      try! world.set_by_key(
+        render_entity_ref.value().id(),
+        @light.Skybox::component(),
+        skybox,
+      )
+      try! world.set_by_key(
+        render_entity_ref.value().id(),
+        SkyboxUniforms::component(),
+        uniforms,
+      )
       extracted.push(
         ExtractedSkybox::new(
           render_entity=render_entity_ref.value().id(),
           skybox~,
-          uniforms=SkyboxUniforms::from_skybox(skybox, exposure),
+          uniforms~,
         ),
       )
     })
