@@ -2323,57 +2323,24 @@ fn ensure_mesh3d_volumetric_fog_buffer_capacity(
 ///|
 fn ensure_mesh3d_volumetric_fog_bind_group_layouts(
   backend : GpuBackend,
+  descriptors : Array[@render_resource.BindGroupLayoutDescriptor],
 ) -> Unit raise GpuBackendError {
   if backend.mesh3d_volumetric_fog_bgls.length() ==
     MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT {
     return
   }
+  guard descriptors.length() == MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT else {
+    fatal(
+      "wgpu: invalid mesh3d volumetric fog bind group layout descriptor count",
+    )
+  }
   backend.mesh3d_volumetric_fog_bgls.clear()
-  let uniform_stage = ss(
-    @wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT,
-  )
-  let fragment_stage = ss(@wgpu.SHADER_STAGE_FRAGMENT)
   for bits in 0..<MESH3D_VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT {
-    let multisampled = (bits & 1) != 0
-    let density_texture = (bits & 2) != 0
-    let max_entries = if density_texture { 4UL } else { 2UL }
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries~)
-    let mut ok = builder.add_buffer(
-        0U,
-        uniform_stage,
-        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-        has_dynamic_offset=true,
-        min_binding_size=MESH3D_VOLUMETRIC_FOG_UNIFORM_SIZE,
-      ) &&
-      builder.add_texture(
-        1U,
-        fragment_stage,
-        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-        multisampled~,
-      )
-    if density_texture {
-      ok = ok &&
-        builder.add_texture(
-          2U,
-          fragment_stage,
-          @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-          @wgpu.TEXTURE_VIEW_DIMENSION_3D,
-        ) &&
-        builder.add_sampler(
-          3U,
-          fragment_stage,
-          @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-        )
-    }
-    if !ok {
-      builder.free()
-      fatal("wgpu: failed to build mesh3d volumetric fog bind group layout")
-    }
     backend.mesh3d_volumetric_fog_bgls.push(
-      builder.finish(
-        backend.device,
-        label="mgstudio_mesh3d_volumetric_fog_bgl_" + bits.to_string(),
+      mesh3d_create_bind_group_layout_from_descriptor(
+        backend,
+        descriptors[bits],
+        "volumetric_fog_" + bits.to_string(),
       ),
     )
   }
@@ -2383,8 +2350,7 @@ fn ensure_mesh3d_volumetric_fog_bind_group_layouts(
 pub fn GpuBackend::prepare_mesh3d_volumetric_fog_uniforms(
   self : GpuBackend,
   volumetric_fog_uniform_bytes : Bytes,
-) -> Unit raise GpuBackendError {
-  ensure_mesh3d_volumetric_fog_bind_group_layouts(self)
+) -> Unit {
   let required_size = volumetric_fog_uniform_bytes.length().to_uint64()
   guard ensure_mesh3d_volumetric_fog_buffer_capacity(self, required_size)
     is Some(buffer) else {

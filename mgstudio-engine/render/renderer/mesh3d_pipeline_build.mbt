@@ -1522,6 +1522,9 @@ fn mesh3d_build_volumetric_fog_pipeline(
   atmosphere : Bool,
   mesh_pipeline_view_key : @mesh_view_layout.MeshPipelineViewLayoutKey,
   vertex_buffer_layout : @mesh.VertexBufferLayout,
+  volumetric_view_bind_group_layouts : Array[
+    @render_resource.BindGroupLayoutDescriptor,
+  ],
 ) -> Int? raise GpuBackendError {
   let view_layout_key_bits = mesh_pipeline_view_key.bits()
   if mesh3d_volumetric_fog_pipeline_available_id_get(
@@ -1538,7 +1541,9 @@ fn mesh3d_build_volumetric_fog_pipeline(
     return None
   }
   ensure_mesh3d_pipeline_layout_resources(backend)
-  ensure_mesh3d_volumetric_fog_bind_group_layouts(backend)
+  ensure_mesh3d_volumetric_fog_bind_group_layouts(
+    backend, volumetric_view_bind_group_layouts,
+  )
   let layout_entry = mesh3d_material_pipeline_layout_get_or_create(
     backend,
     MESH3D_DEFAULT_MATERIAL_PIPELINE_ID,
@@ -1686,6 +1691,9 @@ pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
   has_density_texture : Bool,
   mesh_pipeline_view_key_bits : UInt,
   vertex_buffer_layout : @mesh.VertexBufferLayout,
+  volumetric_view_bind_group_layouts : Array[
+    @render_resource.BindGroupLayoutDescriptor,
+  ],
 ) -> Int? raise GpuBackendError {
   let mesh_pipeline_view_key = @mesh_view_layout.mesh_view_layout_key_from_bits_truncate(
     mesh_pipeline_view_key_bits,
@@ -1698,7 +1706,7 @@ pub fn GpuBackend::prepare_mesh3d_volumetric_fog_pipeline(
   match
     mesh3d_build_volumetric_fog_pipeline(
       self, target_format, msaa_sample_count, has_density_texture, atmosphere, mesh_pipeline_view_key,
-      vertex_buffer_layout,
+      vertex_buffer_layout, volumetric_view_bind_group_layouts,
     ) {
     Some(pipeline_id) => Some(pipeline_id)
     None =>

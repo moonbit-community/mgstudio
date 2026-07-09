@@ -185,6 +185,7 @@ fn render3d_volumetric_fog_pipeline_key(
 
 ///|
 fn render3d_prepare_volumetric_fog_pipeline_id(
+  pipeline : @pbr_volumetric_fog.VolumetricFogPipeline,
   key : @pbr_volumetric_fog.VolumetricFogPipelineKey,
   msaa_sample_count : Int,
 ) -> Int? {
@@ -194,6 +195,7 @@ fn render3d_prepare_volumetric_fog_pipeline_id(
     has_density_texture=key.has_density_texture(),
     mesh_pipeline_view_key_bits=key.mesh_pipeline_view_key().bits(),
     vertex_buffer_layout=key.vertex_buffer_layout(),
+    volumetric_view_bind_group_layouts=pipeline.volumetric_view_bind_group_layouts(),
   )
 }
 
@@ -276,6 +278,13 @@ fn render3d_prepare_volumetric_fog_pipelines(
     )
   }
   guard needs_textureless || needs_textured else { return }
+  let pipeline = match
+    render_world.get_resource(
+      @pbr_volumetric_fog.VolumetricFogPipeline::resource(),
+    ) {
+    Some(pipeline) => pipeline
+    None => abort("missing VolumetricFogPipeline render resource")
+  }
   let textureless_pipeline_id = if needs_textureless {
     match
       render3d_volumetric_fog_pipeline_key(
@@ -286,7 +295,7 @@ fn render3d_prepare_volumetric_fog_pipelines(
       ) {
       Some(key) => {
         let pipeline_id = render3d_prepare_volumetric_fog_pipeline_id(
-          key, msaa_sample_count,
+          pipeline, key, msaa_sample_count,
         )
         match pipeline_id {
           Some(id) =>
@@ -312,7 +321,7 @@ fn render3d_prepare_volumetric_fog_pipelines(
       ) {
       Some(key) => {
         let pipeline_id = render3d_prepare_volumetric_fog_pipeline_id(
-          key, msaa_sample_count,
+          pipeline, key, msaa_sample_count,
         )
         match pipeline_id {
           Some(id) =>

@@ -31,6 +31,9 @@ const VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_MULTISAMPLED : UInt = 1U
 const VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_DENSITY_TEXTURE : UInt = 2U
 
 ///|
+const VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT : Int = 4
+
+///|
 pub struct VolumetricFogBindGroupLayoutKey {
   priv bits : UInt
 } derive(Eq, Debug)
@@ -101,8 +104,81 @@ pub fn VolumetricFogBindGroupLayoutKey::description(
 }
 
 ///|
+fn volumetric_fog_bind_group_layout_key_from_bits(
+  bits : Int,
+) -> VolumetricFogBindGroupLayoutKey {
+  VolumetricFogBindGroupLayoutKey::{ bits: bits.reinterpret_as_uint() }
+}
+
+///|
+pub fn VolumetricFogBindGroupLayoutKey::bind_group_layout_descriptor(
+  self : VolumetricFogBindGroupLayoutKey,
+) -> @render_resource.BindGroupLayoutDescriptor {
+  let entries : Array[@render_resource.BindGroupLayoutEntry] = [
+    @render_resource.BindGroupLayoutEntry::new(
+      0,
+      @render_resource.SHADER_STAGE_VERTEX_FRAGMENT,
+      @render_resource.BindingType::BufferBinding(
+        @render_resource.BufferBindingType::Uniform,
+        true,
+        VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES.to_uint64(),
+      ),
+    ),
+    @render_resource.BindGroupLayoutEntry::new(
+      1,
+      @render_resource.SHADER_STAGE_FRAGMENT,
+      @render_resource.BindingType::TextureBinding(
+        @render_resource.TextureSampleType::Depth,
+        @render_resource.TextureViewDimension::D2,
+        self.is_multisampled(),
+      ),
+    ),
+  ]
+  if self.has_density_texture() {
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        2,
+        @render_resource.SHADER_STAGE_FRAGMENT,
+        @render_resource.BindingType::TextureBinding(
+          @render_resource.TextureSampleType::Float(true),
+          @render_resource.TextureViewDimension::D3,
+          false,
+        ),
+      ),
+    )
+    entries.push(
+      @render_resource.BindGroupLayoutEntry::new(
+        3,
+        @render_resource.SHADER_STAGE_FRAGMENT,
+        @render_resource.BindingType::SamplerBinding(
+          @render_resource.SamplerBindingType::Filtering,
+        ),
+      ),
+    )
+  }
+  @render_resource.BindGroupLayoutDescriptor::new(self.description(), entries)
+}
+
+///|
+pub fn volumetric_fog_bind_group_layout_descriptors() -> Array[
+  @render_resource.BindGroupLayoutDescriptor,
+] {
+  let descriptors : Array[@render_resource.BindGroupLayoutDescriptor] = []
+  for bits in 0..<VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_COUNT {
+    descriptors.push(
+      volumetric_fog_bind_group_layout_key_from_bits(bits).bind_group_layout_descriptor(),
+    )
+  }
+  descriptors
+}
+
+///|
 pub struct VolumetricFogPipeline {
   shader_path : String
+  mesh_view_layouts : @mesh_view_layout.MeshPipelineViewLayouts
+  volumetric_view_bind_group_layouts : Array[
+    @render_resource.BindGroupLayoutDescriptor,
+  ]
 }
 
 ///|
@@ -117,7 +193,13 @@ pub impl @app.Resource for VolumetricFogPipeline with fn resource() {
 
 ///|
 pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> VolumetricFogPipeline {
-  VolumetricFogPipeline::{ shader_path: VOLUMETRIC_FOG_SHADER_PATH }
+  VolumetricFogPipeline::{
+    shader_path: VOLUMETRIC_FOG_SHADER_PATH,
+    mesh_view_layouts: @mesh_view_layout.render3d_mesh_pipeline_view_layouts(
+      false, false,
+    ),
+    volumetric_view_bind_group_layouts: volumetric_fog_bind_group_layout_descriptors(),
+  }
 }
 
 ///|
@@ -125,6 +207,20 @@ pub fn VolumetricFogPipeline::shader_path(
   self : VolumetricFogPipeline,
 ) -> String {
   self.shader_path
+}
+
+///|
+pub fn VolumetricFogPipeline::mesh_view_layouts(
+  self : VolumetricFogPipeline,
+) -> @mesh_view_layout.MeshPipelineViewLayouts {
+  self.mesh_view_layouts
+}
+
+///|
+pub fn VolumetricFogPipeline::volumetric_view_bind_group_layouts(
+  self : VolumetricFogPipeline,
+) -> Array[@render_resource.BindGroupLayoutDescriptor] {
+  self.volumetric_view_bind_group_layouts
 }
 
 ///|

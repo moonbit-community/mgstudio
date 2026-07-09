@@ -16,6 +16,15 @@
 // Bevy source: `bevy/crates/bevy_render/src/render_resource/bind_group_layout.rs`.
 
 ///|
+pub const SHADER_STAGE_VERTEX : UInt = 1U
+
+///|
+pub const SHADER_STAGE_FRAGMENT : UInt = 2U
+
+///|
+pub const SHADER_STAGE_VERTEX_FRAGMENT : UInt = 3U
+
+///|
 pub struct BindGroupLayout {
   id : BindGroupLayoutId
   value : @wgpu.BindGroupLayout

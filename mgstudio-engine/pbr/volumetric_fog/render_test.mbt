@@ -59,6 +59,58 @@ test "pbr volumetric fog: pipeline key mirrors Bevy shader defs and layout bits"
 }
 
 ///|
+test "pbr volumetric fog: bind group layout descriptors mirror Bevy variants" {
+  let descriptors = @volumetric_fog.volumetric_fog_bind_group_layout_descriptors()
+  inspect(descriptors.length(), content="4")
+  inspect(
+    descriptors[0].label(),
+    content="volumetric lighting view bind group layout",
+  )
+  inspect(
+    descriptors[3].label(),
+    content="volumetric lighting view bind group layout (density texture, multisampled)",
+  )
+  inspect(descriptors[0].entries().length(), content="2")
+  inspect(descriptors[1].entries().length(), content="2")
+  inspect(descriptors[2].entries().length(), content="4")
+  inspect(descriptors[3].entries().length(), content="4")
+  inspect(descriptors[0].entries()[0].binding(), content="0")
+  inspect(descriptors[0].entries()[0].visibility(), content="3")
+  match descriptors[0].entries()[0].kind() {
+    @render_resource.BindingType::BufferBinding(
+      @render_resource.BufferBindingType::Uniform,
+      true,
+      size
+    ) => inspect(size, content="288")
+    _ => inspect("unexpected binding", content="uniform dynamic binding")
+  }
+  match descriptors[1].entries()[1].kind() {
+    @render_resource.BindingType::TextureBinding(
+      @render_resource.TextureSampleType::Depth,
+      @render_resource.TextureViewDimension::D2,
+      true
+    ) => inspect("multisampled depth", content="multisampled depth")
+    _ => inspect("unexpected binding", content="multisampled depth")
+  }
+  match descriptors[2].entries()[2].kind() {
+    @render_resource.BindingType::TextureBinding(
+      @render_resource.TextureSampleType::Float(true),
+      @render_resource.TextureViewDimension::D3,
+      false
+    ) => inspect("density texture", content="density texture")
+    _ => inspect("unexpected binding", content="density texture")
+  }
+  match descriptors[2].entries()[3].kind() {
+    @render_resource.BindingType::SamplerBinding(
+      @render_resource.SamplerBindingType::Filtering
+    ) => inspect("density sampler", content="density sampler")
+    _ => inspect("unexpected binding", content="density sampler")
+  }
+  let pipeline = @volumetric_fog.VolumetricFogPipeline::VolumetricFogPipeline()
+  inspect(pipeline.volumetric_view_bind_group_layouts().length(), content="4")
+}
+
+///|
 test "pbr volumetric fog: prepares view volume metadata and uniforms" {
   let buffer = @volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer()
   let fog = @light.VolumetricFog::VolumetricFog()

@@ -60,7 +60,6 @@ fn mesh3d_volumetric_fog_bind_group(
   density_texture : GpuTextureInfo?,
   msaa_sample_count : Int,
 ) -> @wgpu.BindGroup? raise GpuBackendError {
-  ensure_mesh3d_volumetric_fog_bind_group_layouts(backend)
   guard backend.mesh3d_volumetric_fog_buf is Some(fog_buffer) else {
     return None
   }

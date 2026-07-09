@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/mesh_view_layout",
+  "Milky2018/mgstudio/render/render_resource",
   "moonbitlang/core/debug",
 }
 
@@ -24,6 +25,8 @@ pub fn prepare_volumetric_fog_view_uniforms(VolumetricFogUniformBuffer, @light.V
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn register_volumetric_fog_render_world_components(@ecs.World) -> Unit
+
+pub fn volumetric_fog_bind_group_layout_descriptors() -> Array[@render_resource.BindGroupLayoutDescriptor]
 
 pub fn volumetric_fog_render_world_entity(@ecs.World, @core.Entity) -> VolumetricFogRenderWorldEntity?
 
@@ -66,6 +69,7 @@ pub struct VolumetricFogBindGroupLayoutKey {
   // private fields
 } derive(Eq, @debug.Debug)
 pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> Self
+pub fn VolumetricFogBindGroupLayoutKey::bind_group_layout_descriptor(Self) -> @render_resource.BindGroupLayoutDescriptor
 pub fn VolumetricFogBindGroupLayoutKey::bits(Self) -> UInt
 pub fn VolumetricFogBindGroupLayoutKey::description(Self) -> String
 pub fn VolumetricFogBindGroupLayoutKey::from_msaa_and_density(Bool, Bool) -> Self
@@ -80,9 +84,13 @@ pub fn VolumetricFogMat4::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Ve
 
 pub struct VolumetricFogPipeline {
   shader_path : String
+  mesh_view_layouts : @mesh_view_layout.MeshPipelineViewLayouts
+  volumetric_view_bind_group_layouts : Array[@render_resource.BindGroupLayoutDescriptor]
 }
 pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> Self
+pub fn VolumetricFogPipeline::mesh_view_layouts(Self) -> @mesh_view_layout.MeshPipelineViewLayouts
 pub fn VolumetricFogPipeline::shader_path(Self) -> String
+pub fn VolumetricFogPipeline::volumetric_view_bind_group_layouts(Self) -> Array[@render_resource.BindGroupLayoutDescriptor]
 pub impl @app.Resource for VolumetricFogPipeline
 
 pub struct VolumetricFogPipelineKey {

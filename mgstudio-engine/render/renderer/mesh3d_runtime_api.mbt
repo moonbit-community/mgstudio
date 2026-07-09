@@ -1171,9 +1171,7 @@ pub fn prepare_mesh3d_volumetric_fog_uniforms(
   volumetric_fog_uniform_bytes~ : Bytes,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes) catch {
-      err => debug_runtime_error("prepare_mesh3d_volumetric_fog_uniforms", err)
-    }
+    backend.prepare_mesh3d_volumetric_fog_uniforms(volumetric_fog_uniform_bytes)
   }
 }
 
@@ -1184,11 +1182,14 @@ pub fn prepare_mesh3d_volumetric_fog_pipeline(
   has_density_texture~ : Bool,
   mesh_pipeline_view_key_bits~ : UInt,
   vertex_buffer_layout~ : @mesh.VertexBufferLayout,
+  volumetric_view_bind_group_layouts~ : Array[
+    @render_resource.BindGroupLayoutDescriptor,
+  ],
 ) -> Int? {
   if ensure_backend() is Some(backend) {
     return backend.prepare_mesh3d_volumetric_fog_pipeline(
       target_format, msaa_sample_count, has_density_texture, mesh_pipeline_view_key_bits,
-      vertex_buffer_layout,
+      vertex_buffer_layout, volumetric_view_bind_group_layouts,
     ) catch {
       err => {
         debug_runtime_error("prepare_mesh3d_volumetric_fog_pipeline", err)
