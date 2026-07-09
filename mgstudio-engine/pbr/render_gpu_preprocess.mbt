@@ -712,9 +712,9 @@ fn render3d_build_gpu_occlusion_culling_work_item_buffers(
 
 ///|
 fn render3d_mesh_preprocess_indirect_eligible(
-  extracted_mesh : ExtractedMesh3d,
+  draw_item : MeshPhaseItem3d,
 ) -> Bool {
-  extracted_mesh.payload.mesh_id > 0
+  draw_item.mesh_asset_id > 0
 }
 
 ///|
@@ -761,8 +761,7 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
       draw_item.extracted_index >= meshes.length() {
       continue
     }
-    let extracted_mesh = meshes[draw_item.extracted_index]
-    if !render3d_mesh_preprocess_indirect_eligible(extracted_mesh) {
+    if !render3d_mesh_preprocess_indirect_eligible(draw_item) {
       continue
     }
     let indexed = draw_item.slabs.index_slab_id() is Some(_)
