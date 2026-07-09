@@ -855,7 +855,6 @@ fn move_camera(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@dev_tools_ci_testing.CiTestingPlugin::CiTestingPlugin())
   .add_systems(
     @app.Startup,
     (
