@@ -1627,32 +1627,50 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
   let render_mesh_instances = match
     world.get_resource(RenderMeshInstances::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderMeshInstances resource during pbr wireframe wide bind group preparation",
+      )
   }
   let render_meshes = match
     world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderMeshAssets resource during pbr wireframe wide bind group preparation",
+      )
   }
   let render_wireframe_instances = match
     world.get_resource(RenderWireframeInstances::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderWireframeInstances resource during pbr wireframe wide bind group preparation",
+      )
   }
   let render_wireframe_assets = match
     world.get_resource(RenderWireframeAssets::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing RenderWireframeAssets resource during pbr wireframe wide bind group preparation",
+      )
   }
   let mesh_allocator = match
     world.get_resource(@render_mesh.MeshAllocator::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing MeshAllocator resource during pbr wireframe wide bind group preparation",
+      )
   }
   let wide_bind_groups = match
     world.get_resource(WireframeWideBindGroups::resource()) {
     Some(value) => value
-    None => return
+    None =>
+      abort(
+        "missing WireframeWideBindGroups resource during pbr wireframe wide bind group preparation",
+      )
   }
   prepare_wireframe_wide_bind_groups(
     render_mesh_instances, render_meshes, render_wireframe_instances, render_wireframe_assets,
