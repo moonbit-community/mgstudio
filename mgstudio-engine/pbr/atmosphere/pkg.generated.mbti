@@ -57,6 +57,8 @@ pub fn pbr_validate_atmosphere_environment_map_size(@math.UVec2) -> @math.UVec2
 
 pub fn prepare_atmosphere_probe_components(@ecs.World) -> Unit
 
+pub fn prepare_atmosphere_uniforms(@ecs.World) -> Unit
+
 pub fn register_embedded_wgsl_sources() -> Unit
 
 // Errors

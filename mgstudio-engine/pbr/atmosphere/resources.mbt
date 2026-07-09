@@ -245,6 +245,30 @@ pub fn AtmosphereTransform::as_uniform_bytes(
 }
 
 ///|
+pub fn prepare_atmosphere_uniforms(world : @ecs.World) -> Unit {
+  let entries : Array[(@core.Entity, GpuAtmosphere)] = []
+  world.for_each_component(ecs_key_extracted_atmosphere, fn(
+    entity,
+    atmosphere,
+  ) {
+    entries.push(
+      (
+        entity,
+        pbr_gpu_atmosphere_from_extracted(
+          atmosphere.inner_radius,
+          atmosphere.outer_radius,
+          atmosphere.ground_albedo,
+          atmosphere.world_to_atmosphere,
+        ),
+      ),
+    )
+  })
+  for entry in entries {
+    try! world.set_by_key(entry.0, GpuAtmosphere::component(), entry.1)
+  }
+}
+
+///|
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
   GpuAtmosphereSettings::{
     transmittance_lut_size: @math.UVec2::new(256, 128),

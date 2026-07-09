@@ -74,6 +74,11 @@ pub impl @app.Plugin for AtmospherePlugin with fn build(self, app) {
 }
 
 ///|
+pub impl @app.Plugin for AtmospherePlugin with fn finish(self, app) {
+  atmosphere_plugin_finish_with(app, self)
+}
+
+///|
 pub fn atmosphere_plugin() -> AtmospherePlugin {
   AtmospherePlugin::AtmospherePlugin()
 }
@@ -125,6 +130,23 @@ pub fn atmosphere_plugin_install_with(
       )
     },
   )
+}
+
+///|
+fn atmosphere_plugin_finish_with(
+  app : @app.App[@ecs.World],
+  plugin : AtmospherePlugin,
+) -> @app.App[@ecs.World] {
+  ignore(plugin)
+  @render.try_with_render_app(app, fn(render_app) {
+    render_app.add_systems(
+      @render.render_schedule_stage(),
+      @app.system(prepare_atmosphere_uniforms)
+      .named("mgstudio_pbr::atmosphere::prepare_atmosphere_uniforms")
+      .in_set(@render.render_system_set_prepare)
+      .before(@render.render_system_set_prepare_resources),
+    )
+  })
 }
 
 ///|

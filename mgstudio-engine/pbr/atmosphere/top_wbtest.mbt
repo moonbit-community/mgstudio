@@ -99,6 +99,17 @@ test "pbr atmosphere: extract_atmosphere writes nearest Bevy atmosphere to rende
     GpuAtmosphereSettings::component(),
   )).unwrap()
   inspect(gpu_settings.sky_max_samples, content="23")
+
+  prepare_atmosphere_uniforms(render_world)
+
+  let gpu_atmosphere = (try! render_world.get_by_key(
+    render_entity,
+    GpuAtmosphere::component(),
+  )).unwrap()
+  inspect(
+    atmosphere_top_approx_eq(gpu_atmosphere.inner_radius, 7.0F),
+    content="true",
+  )
 }
 
 ///|
@@ -139,7 +150,7 @@ test "pbr atmosphere: extract_atmosphere removes stale render payload when scene
 
 ///|
 test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
-  let app = @app.App::new(@ecs.World::new())
+  let app_before_finish = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(AtmospherePlugin::AtmospherePlugin())
   let update_settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
@@ -148,14 +159,17 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
       name.has_prefix("mgstudio_pbr::atmosphere::")
     },
   )
-  let update_dot = app.schedule_graph_dot(@app.Update, settings=update_settings)
+  let update_dot = app_before_finish.schedule_graph_dot(
+    @app.Update,
+    settings=update_settings,
+  )
   inspect(
     update_dot.contains(
       "\"mgstudio_pbr::atmosphere::prepare_atmosphere_probe_components\"",
     ),
     content="true",
   )
-  let render_extract_dot = app
+  let render_extract_dot = app_before_finish
     .sub_app(@app.RenderApp)
     .schedule_graph_dot(
       @render.render_extract_schedule_stage(),
@@ -173,7 +187,7 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
       name.has_prefix("mgstudio_render::uniform::")
     },
   )
-  let render_dot = app
+  let render_dot = app_before_finish
     .sub_app(@app.RenderApp)
     .schedule_graph_dot(
       @render.render_schedule_stage(),
@@ -188,6 +202,25 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
   inspect(
     render_dot.contains(
       "\"mgstudio_render::uniform::prepare_uniform_components<mgstudio_pbr::GpuAtmosphereSettings>\"",
+    ),
+    content="true",
+  )
+  let app = app_before_finish.finish()
+  let finish_settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+      name : String,
+    ) {
+      name.has_prefix("mgstudio_pbr::atmosphere::prepare_")
+    },
+  )
+  let finish_dot = app
+    .sub_app(@app.RenderApp)
+    .schedule_graph_dot(
+      @render.render_schedule_stage(),
+      settings=finish_settings,
+    )
+  inspect(
+    finish_dot.contains(
+      "\"mgstudio_pbr::atmosphere::prepare_atmosphere_uniforms\"",
     ),
     content="true",
   )
