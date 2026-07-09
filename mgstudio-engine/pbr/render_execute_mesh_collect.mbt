@@ -155,7 +155,6 @@ fn render3d_prepare_extracted_mesh_backend_uploads(
       counters.preprocess_static_cache_misses = counters.preprocess_static_cache_misses +
         1
     }
-    mesh.payload.mesh_id = mesh_id
     mesh.payload.mesh_preprocess_static = Some(
       render3d_mesh_preprocess_static_cached(
         mesh_handle,
@@ -611,7 +610,6 @@ fn render3d_extract_mesh_for_entity(
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh(),
-        mesh_id: -1,
         mesh_preprocess_static: None,
         world_from_local,
         previous_world_from_local,

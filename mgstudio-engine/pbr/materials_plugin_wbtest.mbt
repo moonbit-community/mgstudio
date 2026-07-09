@@ -1417,7 +1417,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
       has_no_frustum_culling: true,
     },
   }
-  let missing_gpu_mesh = ExtractedMesh3d::{
+  let second_visible_mesh = ExtractedMesh3d::{
     entity: phase_entity_ref3d(
       @core.Entity::new(2105, 1),
       @core.Entity::new(2205, 1),
@@ -1430,13 +1430,14 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
   }
   let visible = render3d_shadow_visible_extracted_indices(
     [
-      normal_mesh, non_shadow_caster, no_cpu_culling_mesh, wrong_layer_mesh, missing_gpu_mesh,
+      normal_mesh, non_shadow_caster, no_cpu_culling_mesh, wrong_layer_mesh, second_visible_mesh,
     ],
     camera_layers,
     [],
   )
-  debug_inspect(visible.length(), content="1")
+  debug_inspect(visible.length(), content="2")
   debug_inspect(visible[0], content="0")
+  debug_inspect(visible[1], content="4")
 }
 
 ///|
@@ -1727,7 +1728,6 @@ fn material_test_extracted_mesh_payload(
   let world_from_local = @math.Affine3::identity()
   Mesh3dExtractedPayload::{
     mesh_handle: @asset.Handle::new(mesh_id),
-    mesh_id,
     mesh_preprocess_static: None,
     world_from_local,
     previous_world_from_local: world_from_local,

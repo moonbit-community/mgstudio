@@ -377,9 +377,6 @@ fn render3d_shadow_visible_extracted_indices(
   let visible : Array[Int] = []
   for extracted_index in 0..<meshes.length() {
     let mesh = meshes[extracted_index].payload
-    if mesh.mesh_id <= 0 {
-      continue
-    }
     if !camera_layers.matches(mesh.layers) {
       continue
     }

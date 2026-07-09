@@ -1137,7 +1137,6 @@ fn render_mesh_instances_test_mesh_for_entity(
     entity: phase_entity_ref3d_for_main(entity),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(mesh_id),
-      mesh_id,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,

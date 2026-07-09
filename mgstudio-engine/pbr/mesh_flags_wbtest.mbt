@@ -427,7 +427,6 @@ fn render3d_test_extracted_mesh_for_flags(
     entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(1),
-      mesh_id: 1,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
@@ -484,7 +483,6 @@ fn render3d_test_transparent_mesh_for_queue(
     entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(entity_id),
-      mesh_id: entity_id,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
@@ -576,7 +574,7 @@ fn render3d_test_queue_mesh_instances(
     instances.insert(
       @render.MainEntity::new(mesh.entity.main_entity),
       RenderMeshQueueData::new(
-        mesh.payload.mesh_id,
+        mesh.payload.mesh_handle.id(),
         0U,
         true,
         render_layers=Some(mesh.payload.layers),
@@ -598,7 +596,11 @@ fn render3d_test_queue_mesh_allocator(
       index_count=3,
     )
     ignore(
-      allocator.allocate_render_mesh(mesh.payload.mesh_id, render_mesh, 80),
+      allocator.allocate_render_mesh(
+        mesh.payload.mesh_handle.id(),
+        render_mesh,
+        80,
+      ),
     )
   }
   allocator
@@ -861,7 +863,7 @@ test "render3d: queue phase reads mesh layers from RenderMeshInstances" {
   mesh_instances.insert(
     @render.MainEntity::new(mesh.entity.main_entity),
     RenderMeshQueueData::new(
-      mesh.payload.mesh_id,
+      mesh.payload.mesh_handle.id(),
       0U,
       true,
       render_layers=Some(camera_layer),
@@ -1203,7 +1205,6 @@ test "render3d: transmissive materials use a distinct sorted phase" {
     entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(3),
-      mesh_id: 3,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,

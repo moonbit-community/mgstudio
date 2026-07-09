@@ -100,7 +100,6 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
     entity: phase_entity_ref3d_for_main(entity),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(17),
-      mesh_id: 17,
       mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
