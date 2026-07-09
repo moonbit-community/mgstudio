@@ -146,6 +146,25 @@ pub fn render3d_mesh_upload_cache_has_valid(
 }
 
 ///|
+pub fn render3d_uploaded_mesh_id(
+  mesh_runtime_state_value : Render3dMeshRuntimeState,
+  mesh_asset_id : Int,
+) -> Int? {
+  if mesh_asset_id < 0 {
+    return None
+  }
+  match mesh_runtime_state_value.mesh_upload_cache.get(mesh_asset_id) {
+    Some(mesh_id) =>
+      if mesh_id > 0 && @render_gpu.host_gpu_mesh_info(mesh_id) is Some(_) {
+        Some(mesh_id)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
 pub fn render3d_mesh_preprocess_static_cache_has(
   mesh_runtime_state_value : Render3dMeshRuntimeState,
   mesh_handle : @asset.Handle[@mesh.Mesh],

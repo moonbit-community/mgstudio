@@ -559,6 +559,8 @@ pub fn[T] render3d_update_frusta_system_by_projection_key(@ecs.World, @ecs.Compo
 
 pub fn render3d_upload_mesh_handle_cached(Render3dMeshRuntimeState, @asset.Handle[@mesh.Mesh]) -> Int
 
+pub fn render3d_uploaded_mesh_id(Render3dMeshRuntimeState, Int) -> Int?
+
 pub fn render3d_use_gpu_instance_buffer_builder(Bool) -> Bool
 
 pub fn render3d_vec4_dot(@math.Vec4, @math.Vec4) -> Float

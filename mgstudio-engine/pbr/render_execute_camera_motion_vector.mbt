@@ -150,7 +150,7 @@ fn render3d_execute_camera_prepass_draw_phase(
     )
     @pbr_render.render3d_draw_mesh_gpu_payload(
       @pbr_render.render3d_build_mesh_gpu_draw_payload(
-        mesh.mesh_id,
+        render3d_uploaded_mesh_id_or_abort(world, draw_item.mesh_asset_id),
         camera_entity.id,
         camera_entity.generation,
         draw_item_index,

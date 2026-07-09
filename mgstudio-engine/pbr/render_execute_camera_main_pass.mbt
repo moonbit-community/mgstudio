@@ -77,6 +77,25 @@ fn render3d_main_pass_pbr_internal_lut_ids(
 }
 
 ///|
+fn render3d_uploaded_mesh_id_or_abort(
+  world : @ecs.World,
+  mesh_asset_id : Int,
+) -> Int {
+  guard world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource())
+    is Some(mesh_runtime_state) else {
+    abort("Missing Render3dMeshRuntimeState resource during pbr main pass")
+  }
+  match
+    @pbr_render.render3d_uploaded_mesh_id(mesh_runtime_state, mesh_asset_id) {
+    Some(mesh_id) => mesh_id
+    None =>
+      abort(
+        "Missing uploaded host mesh id for mesh asset \{mesh_asset_id} during pbr main pass",
+      )
+  }
+}
+
+///|
 fn render3d_main_pass_use_view_cluster_buffers(
   world : @ecs.World,
   view_entity : @core.Entity,
@@ -719,7 +738,7 @@ fn render3d_execute_camera_main_pass(
         }
     }
     let draw_payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
-      mesh.mesh_id,
+      render3d_uploaded_mesh_id_or_abort(world, draw_item.mesh_asset_id),
       camera_entity.id,
       camera_entity.generation,
       draw_item_index,
