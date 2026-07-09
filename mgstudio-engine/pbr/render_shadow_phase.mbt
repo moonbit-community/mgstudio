@@ -574,7 +574,10 @@ fn render3d_execute_shadow_phase_view(
     }
     let draw_storage_index = draw_storage_base + draw_storage_offset
     let batch_payload = @pbr_render.render3d_build_mesh_gpu_draw_payload(
-      shadow_mesh.mesh_id,
+      render3d_uploaded_mesh_id_or_abort(
+        world,
+        phase_item.bin_key().mesh_asset_id(),
+      ),
       shadow_view_key_hi,
       shadow_view_key_lo,
       draw_storage_index,

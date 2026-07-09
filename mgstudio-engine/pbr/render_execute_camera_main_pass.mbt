@@ -83,14 +83,14 @@ fn render3d_uploaded_mesh_id_or_abort(
 ) -> Int {
   guard world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource())
     is Some(mesh_runtime_state) else {
-    abort("Missing Render3dMeshRuntimeState resource during pbr main pass")
+    abort("Missing Render3dMeshRuntimeState resource during pbr mesh draw")
   }
   match
     @pbr_render.render3d_uploaded_mesh_id(mesh_runtime_state, mesh_asset_id) {
     Some(mesh_id) => mesh_id
     None =>
       abort(
-        "Missing uploaded host mesh id for mesh asset \{mesh_asset_id} during pbr main pass",
+        "Missing uploaded host mesh id for mesh asset \{mesh_asset_id} during pbr mesh draw",
       )
   }
 }
