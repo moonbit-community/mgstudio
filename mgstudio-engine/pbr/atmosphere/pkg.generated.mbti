@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/debug",
 }
 
@@ -128,6 +129,7 @@ pub struct GpuAtmosphere {
 pub fn GpuAtmosphere::GpuAtmosphere() -> Self
 pub fn GpuAtmosphere::as_uniform_bytes(Self) -> Bytes
 pub impl @ecs.Component for GpuAtmosphere
+pub impl @render.UniformComponent for GpuAtmosphere
 
 pub struct GpuAtmosphereSettings {
   transmittance_lut_size : @math.UVec2
@@ -146,6 +148,7 @@ pub struct GpuAtmosphereSettings {
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> Self
 pub fn GpuAtmosphereSettings::as_uniform_bytes(Self, AtmosphereTextures) -> Bytes
 pub impl @ecs.Component for GpuAtmosphereSettings
+pub impl @render.UniformComponent for GpuAtmosphereSettings
 
 // Type aliases
 pub using @light {type Atmosphere}

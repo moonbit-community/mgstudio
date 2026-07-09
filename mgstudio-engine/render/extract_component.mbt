@@ -19,44 +19,6 @@
 const EXTRACT_COMPONENT_PLUGIN_NAME : String = "mgstudio.render.ExtractComponentPlugin"
 
 ///|
-pub struct DynamicUniformIndex[_] {
-  index : UInt
-}
-
-///|
-pub fn[C] DynamicUniformIndex::new(index : UInt) -> DynamicUniformIndex[C] {
-  DynamicUniformIndex::{ index, }
-}
-
-///|
-pub fn[C] DynamicUniformIndex::index(self : DynamicUniformIndex[C]) -> UInt {
-  self.index
-}
-
-///|
-pub struct ComponentUniforms[C] {
-  uniforms : Array[C]
-}
-
-///|
-pub fn[C] ComponentUniforms::ComponentUniforms() -> ComponentUniforms[C] {
-  ComponentUniforms::{ uniforms: [] }
-}
-
-///|
-pub fn[C] ComponentUniforms::push(
-  self : ComponentUniforms[C],
-  component : C,
-) -> Unit {
-  self.uniforms.push(component)
-}
-
-///|
-pub fn[C] ComponentUniforms::len(self : ComponentUniforms[C]) -> Int {
-  self.uniforms.length()
-}
-
-///|
 pub struct ExtractComponentPlugin[_, _] {
   only_extract_visible : Bool
 }

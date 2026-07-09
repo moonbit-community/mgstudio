@@ -99,8 +99,16 @@ pub fn atmosphere_plugin_install_with(
     AtmosphereSettings,
     AtmospherePlugin,
   ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  let gpu_atmosphere_uniform : @render.UniformComponentPlugin[GpuAtmosphere] = @render.UniformComponentPlugin::UniformComponentPlugin()
+  let gpu_atmosphere_settings_uniform : @render.UniformComponentPlugin[
+    GpuAtmosphereSettings,
+  ] = @render.UniformComponentPlugin::UniformComponentPlugin()
   let next = @render.extract_component_plugin_with(app, environment_map_extract)
   let next = @render.sync_component_plugin_with(next, atmosphere_settings_sync)
+  let next = @render.uniform_component_plugin_with(next, gpu_atmosphere_uniform)
+  let next = @render.uniform_component_plugin_with(
+    next, gpu_atmosphere_settings_uniform,
+  )
   @render.try_with_render_app(
     next.add_systems(
       @app.Update,

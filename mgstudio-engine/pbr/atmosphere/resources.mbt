@@ -60,8 +60,25 @@ pub let ecs_key_gpu_atmosphere_settings : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="mgstudio_pbr::GpuAtmosphereSettings")
 
 ///|
+let gpu_atmosphere_settings_uniform_keys : @render.UniformComponentKeys[
+  GpuAtmosphereSettings,
+] = @render.register_uniform_component_keys(
+  "mgstudio_pbr::GpuAtmosphereSettings",
+)
+
+///|
 pub impl @ecs.Component for GpuAtmosphereSettings with fn component() {
   ecs_key_gpu_atmosphere_settings
+}
+
+///|
+pub impl @render.UniformComponent for GpuAtmosphereSettings with fn uniform_component_debug_name() {
+  "mgstudio_pbr::GpuAtmosphereSettings"
+}
+
+///|
+pub impl @render.UniformComponent for GpuAtmosphereSettings with fn uniform_component_keys() {
+  gpu_atmosphere_settings_uniform_keys
 }
 
 ///|
@@ -70,8 +87,23 @@ pub let ecs_key_gpu_atmosphere : @ecs.ComponentKey[GpuAtmosphere] = @ecs.registe
 )
 
 ///|
+let gpu_atmosphere_uniform_keys : @render.UniformComponentKeys[GpuAtmosphere] = @render.register_uniform_component_keys(
+  "mgstudio_pbr::GpuAtmosphere",
+)
+
+///|
 pub impl @ecs.Component for GpuAtmosphere with fn component() {
   ecs_key_gpu_atmosphere
+}
+
+///|
+pub impl @render.UniformComponent for GpuAtmosphere with fn uniform_component_debug_name() {
+  "mgstudio_pbr::GpuAtmosphere"
+}
+
+///|
+pub impl @render.UniformComponent for GpuAtmosphere with fn uniform_component_keys() {
+  gpu_atmosphere_uniform_keys
 }
 
 ///|

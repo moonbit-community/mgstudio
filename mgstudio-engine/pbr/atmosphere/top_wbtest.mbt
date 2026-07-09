@@ -138,7 +138,7 @@ test "pbr atmosphere: extract_atmosphere removes stale render payload when scene
 }
 
 ///|
-test "pbr atmosphere: plugin installs Bevy-shaped update and render extract systems" {
+test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(AtmospherePlugin::AtmospherePlugin())
@@ -164,6 +164,30 @@ test "pbr atmosphere: plugin installs Bevy-shaped update and render extract syst
   inspect(
     render_extract_dot.contains(
       "\"mgstudio_pbr::atmosphere::extract_atmosphere\"",
+    ),
+    content="true",
+  )
+  let render_settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+      name : String,
+    ) {
+      name.has_prefix("mgstudio_render::uniform::")
+    },
+  )
+  let render_dot = app
+    .sub_app(@app.RenderApp)
+    .schedule_graph_dot(
+      @render.render_schedule_stage(),
+      settings=render_settings,
+    )
+  inspect(
+    render_dot.contains(
+      "\"mgstudio_render::uniform::prepare_uniform_components<mgstudio_pbr::GpuAtmosphere>\"",
+    ),
+    content="true",
+  )
+  inspect(
+    render_dot.contains(
+      "\"mgstudio_render::uniform::prepare_uniform_components<mgstudio_pbr::GpuAtmosphereSettings>\"",
     ),
     content="true",
   )

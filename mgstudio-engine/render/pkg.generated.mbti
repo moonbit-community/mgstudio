@@ -442,6 +442,8 @@ pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn[A] register_render_asset_resource_keys(String) -> RenderAssetResourceKeys[A]
 
+pub fn[C] register_uniform_component_keys(String) -> UniformComponentKeys[C]
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub let render_adapter_info_resource_key : @ecs.ResourceKey[@renderer.RenderAdapterInfo]
@@ -612,7 +614,7 @@ pub fn trigger_screenshots(@ecs.World) -> Unit
 
 pub fn try_with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn uniform_component_prepare_indices(Int) -> Array[UInt]
+pub fn[C : @ecs.Component + UniformComponent] uniform_component_plugin_with(@app.App[@ecs.World], UniformComponentPlugin[C]) -> @app.App[@ecs.World]
 
 pub fn with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -689,8 +691,12 @@ pub struct ComponentUniforms[C] {
   uniforms : Array[C]
 }
 pub fn[C] ComponentUniforms::ComponentUniforms() -> Self[C]
+pub fn[C] ComponentUniforms::clear(Self[C]) -> Unit
+pub fn[C] ComponentUniforms::get(Self[C], Int) -> C?
 pub fn[C] ComponentUniforms::len(Self[C]) -> Int
 pub fn[C] ComponentUniforms::push(Self[C], C) -> Unit
+pub fn[C : UniformComponent] ComponentUniforms::resource() -> @ecs.ResourceKey[Self[C]]
+pub impl[C : UniformComponent] @app.Resource for ComponentUniforms[C]
 
 pub struct CurrentView {
   entity : @core.Entity
@@ -701,8 +707,10 @@ pub fn CurrentView::new(@core.Entity) -> Self
 pub struct DynamicUniformIndex[_] {
   index : UInt
 }
+pub fn[C : UniformComponent] DynamicUniformIndex::component() -> @ecs.ComponentKey[Self[C]]
 pub fn[C] DynamicUniformIndex::index(Self[C]) -> UInt
 pub fn[C] DynamicUniformIndex::new(UInt) -> Self[C]
+pub impl[C : UniformComponent] @ecs.Component for DynamicUniformIndex[C]
 
 pub(all) enum EntityRecord {
   ComponentRemoved(@core.Entity, (@ecs.World, @core.Entity) -> @ecs.World)
@@ -1221,13 +1229,15 @@ pub struct TemporaryRenderEntity {
 pub fn TemporaryRenderEntity::TemporaryRenderEntity() -> Self
 pub impl @ecs.Component for TemporaryRenderEntity
 
-pub struct UniformComponentPluginState {
-  component_debug_name : String
-  prepared_count : Int
-} derive(Eq, @debug.Debug)
-pub fn UniformComponentPluginState::component_debug_name(Self) -> String
-pub fn UniformComponentPluginState::new(String) -> Self
-pub fn UniformComponentPluginState::prepared_count(Self) -> Int
+pub struct UniformComponentKeys[C] {
+  uniforms : @ecs.ResourceKey[ComponentUniforms[C]]
+  dynamic_index : @ecs.ComponentKey[DynamicUniformIndex[C]]
+}
+
+pub struct UniformComponentPlugin[_] {
+}
+pub fn[C] UniformComponentPlugin::UniformComponentPlugin() -> Self[C]
+pub impl[C : @ecs.Component + UniformComponent] @app.Plugin for UniformComponentPlugin[C]
 
 pub struct ViewPendingQueues {
   mut current_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
@@ -1347,4 +1357,9 @@ pub(open) trait RenderAssetResource {
   fn render_asset_resource_keys() -> RenderAssetResourceKeys[Self]
 }
 pub impl RenderAssetResource for @texture.GpuImage
+
+pub(open) trait UniformComponent {
+  fn uniform_component_debug_name() -> String
+  fn uniform_component_keys() -> UniformComponentKeys[Self]
+}
 
