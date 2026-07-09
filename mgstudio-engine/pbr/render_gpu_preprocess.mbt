@@ -207,6 +207,13 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
         }
       None => ()
     }
+    guard render3d_queue_material_instance_for_mesh(
+        render_material_instances, pending_mesh_material_queues, retained_view_entity,
+        mesh,
+      )
+      is Some(material_instance) else {
+      continue
+    }
     guard render3d_queue_mesh_instance_for_mesh(
         render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
         mesh,
@@ -214,18 +221,21 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       is Some(mesh_instance) else {
       continue
     }
-    guard render3d_queue_material_binding_for_mesh(
-        render_material_instances, render_material_bindings, pending_mesh_material_queues,
-        retained_view_entity, mesh,
+    guard render3d_queue_resolved_material_for_mesh(
+        material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
+      )
+      is Some(material) else {
+      continue
+    }
+    guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
+      is Some(mesh_slabs) else {
+      continue
+    }
+    guard render3d_queue_material_binding_for_instance(
+        render_material_bindings, pending_mesh_material_queues, retained_view_entity,
+        mesh, material_instance,
       )
       is Some(material_binding) else {
-      continue
-    }
-    if mesh_instance.mesh_asset_id() <= 0 {
-      continue
-    }
-    guard mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
-      is Some(mesh_slabs) else {
       continue
     }
     let mesh_layers = mesh_instance
@@ -250,12 +260,6 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
     )
     if should_apply_cpu_frustum_culling &&
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
-      continue
-    }
-    guard render3d_queue_resolved_material_for_mesh(
-        material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
-      )
-      is Some(material) else {
       continue
     }
     let material_properties = material.material_properties()
@@ -344,6 +348,13 @@ fn render3d_collect_meshes_for_gpu_building(
         }
       None => ()
     }
+    guard render3d_queue_material_instance_for_mesh(
+        render_material_instances, pending_mesh_material_queues, retained_view_entity,
+        mesh,
+      )
+      is Some(material_instance) else {
+      continue
+    }
     guard render3d_queue_mesh_instance_for_mesh(
         render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
         mesh,
@@ -351,18 +362,21 @@ fn render3d_collect_meshes_for_gpu_building(
       is Some(mesh_instance) else {
       continue
     }
-    guard render3d_queue_material_binding_for_mesh(
-        render_material_instances, render_material_bindings, pending_mesh_material_queues,
-        retained_view_entity, mesh,
+    guard render3d_queue_resolved_material_for_mesh(
+        material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
+      )
+      is Some(material) else {
+      continue
+    }
+    guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
+      is Some(mesh_slabs) else {
+      continue
+    }
+    guard render3d_queue_material_binding_for_instance(
+        render_material_bindings, pending_mesh_material_queues, retained_view_entity,
+        mesh, material_instance,
       )
       is Some(material_binding) else {
-      continue
-    }
-    if mesh_instance.mesh_asset_id() <= 0 {
-      continue
-    }
-    guard mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
-      is Some(mesh_slabs) else {
       continue
     }
     let mesh_layers = mesh_instance
@@ -387,12 +401,6 @@ fn render3d_collect_meshes_for_gpu_building(
     )
     if should_apply_cpu_frustum_culling &&
       !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
-      continue
-    }
-    guard render3d_queue_resolved_material_for_mesh(
-        material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
-      )
-      is Some(material) else {
       continue
     }
     let material_properties = material.material_properties()

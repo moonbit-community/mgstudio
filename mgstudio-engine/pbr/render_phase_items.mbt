@@ -339,27 +339,40 @@ fn render3d_queue_resolved_material_for_mesh(
 }
 
 ///|
-fn render3d_queue_material_binding_for_mesh(
+fn render3d_queue_material_instance_for_mesh(
   render_material_instances : RenderMaterialInstances,
+  pending_mesh_material_queues : PendingMeshMaterialQueues,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  mesh : ExtractedMesh3d,
+) -> RenderMaterialInstance? {
+  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
+  match render_material_instances.get(visible_entity.id()) {
+    Some(instance) => Some(instance)
+    None => {
+      pending_mesh_material_queues
+      .queues()
+      .push_current(
+        retained_view_entity,
+        mesh.entity.render_entity,
+        visible_entity,
+      )
+      None
+    }
+  }
+}
+
+///|
+fn render3d_queue_material_binding_for_instance(
   render_material_bindings : RenderMaterialBindings,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   retained_view_entity : @render_view.RetainedViewEntity,
   mesh : ExtractedMesh3d,
+  instance : RenderMaterialInstance,
 ) -> MaterialBindingId? {
-  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
-  guard render_material_instances.get(visible_entity.id()) is Some(instance) else {
-    pending_mesh_material_queues
-    .queues()
-    .push_current(
-      retained_view_entity,
-      mesh.entity.render_entity,
-      visible_entity,
-    )
-    return None
-  }
   if instance.asset_id() == DUMMY_MESH_MATERIAL_ID {
     return Some(MaterialBindingId::MaterialBindingId())
   }
+  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
   match render_material_bindings.get(instance.asset_id()) {
     Some(binding) => Some(binding)
     None => {
@@ -373,6 +386,17 @@ fn render3d_queue_material_binding_for_mesh(
       None
     }
   }
+}
+
+///|
+fn render3d_queue_mesh_slabs_for_instance(
+  mesh_allocator : @render_mesh.MeshAllocator,
+  mesh_instance : RenderMeshQueueData,
+) -> @render_mesh.MeshSlabs? {
+  if mesh_instance.mesh_asset_id() <= 0 {
+    return None
+  }
+  mesh_allocator.mesh_slabs(mesh_instance.mesh_asset_id())
 }
 
 ///|
