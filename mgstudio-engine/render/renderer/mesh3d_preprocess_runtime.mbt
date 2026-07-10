@@ -977,6 +977,11 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
 }
 
 ///|
+fn mesh3d_downsample_depth_mip_index_for_binding(binding : Int) -> Int {
+  binding - 1
+}
+
+///|
 pub fn GpuBackend::downsample_mesh3d_depth_pyramid(
   self : GpuBackend,
   camera_key_hi : Int,
@@ -999,17 +1004,25 @@ pub fn GpuBackend::downsample_mesh3d_depth_pyramid(
   guard self.mesh3d_preprocess_depth_pyramid_sampler is Some(sampler) else {
     return
   }
-  guard self.mesh3d_preprocess_downsample_depth_bgl is Some(downsample_bgl) else {
-    return
+  let is_multisampled = self.depth_sample_count > 1
+  let downsample_bgl = if is_multisampled {
+    self.mesh3d_preprocess_downsample_depth_multisample_bgl
+  } else {
+    self.mesh3d_preprocess_downsample_depth_bgl
   }
-  guard self.mesh3d_preprocess_downsample_depth_first_pipeline
-    is Some(first_pipeline) else {
-    return
+  guard downsample_bgl is Some(downsample_bgl) else { return }
+  let first_pipeline = if is_multisampled {
+    self.mesh3d_preprocess_downsample_depth_first_multisample_pipeline
+  } else {
+    self.mesh3d_preprocess_downsample_depth_first_pipeline
   }
-  guard self.mesh3d_preprocess_downsample_depth_second_pipeline
-    is Some(second_pipeline) else {
-    return
+  guard first_pipeline is Some(first_pipeline) else { return }
+  let second_pipeline = if is_multisampled {
+    self.mesh3d_preprocess_downsample_depth_second_multisample_pipeline
+  } else {
+    self.mesh3d_preprocess_downsample_depth_second_pipeline
   }
+  guard second_pipeline is Some(second_pipeline) else { return }
   let mip_views = state.depth_pyramid_mips
   let mip_or_dummy = fn(index : Int) -> @wgpu.TextureView {
     if index >= 0 && index < mip_views.length() {
@@ -1019,20 +1032,15 @@ pub fn GpuBackend::downsample_mesh3d_depth_pyramid(
     }
   }
   let builder = @wgpu.BindGroupBuilder::new(max_entries=14UL)
-  let ok = builder.add_texture_view(0U, depth_view) &&
-    builder.add_texture_view(1U, mip_or_dummy(1)) &&
-    builder.add_texture_view(2U, mip_or_dummy(2)) &&
-    builder.add_texture_view(3U, mip_or_dummy(3)) &&
-    builder.add_texture_view(4U, mip_or_dummy(4)) &&
-    builder.add_texture_view(5U, mip_or_dummy(5)) &&
-    builder.add_texture_view(6U, mip_or_dummy(6)) &&
-    builder.add_texture_view(7U, mip_or_dummy(7)) &&
-    builder.add_texture_view(8U, mip_or_dummy(8)) &&
-    builder.add_texture_view(9U, mip_or_dummy(9)) &&
-    builder.add_texture_view(10U, mip_or_dummy(10)) &&
-    builder.add_texture_view(11U, mip_or_dummy(11)) &&
-    builder.add_texture_view(12U, mip_or_dummy(12)) &&
-    builder.add_sampler(13U, sampler)
+  let mut ok = builder.add_texture_view(0U, depth_view)
+  for binding in 1..<=12 {
+    ok = ok &&
+      builder.add_texture_view(
+        binding.reinterpret_as_uint(),
+        mip_or_dummy(mesh3d_downsample_depth_mip_index_for_binding(binding)),
+      )
+  }
+  ok = ok && builder.add_sampler(13U, sampler)
   if !ok {
     builder.free()
     return
@@ -1040,7 +1048,11 @@ pub fn GpuBackend::downsample_mesh3d_depth_pyramid(
   let bind_group = builder.finish(
     self.device,
     downsample_bgl,
-    label="mgstudio_mesh3d_preprocess_downsample_depth_bg",
+    label=if is_multisampled {
+      "mgstudio_mesh3d_preprocess_downsample_multisample_depth_bg"
+    } else {
+      "mgstudio_mesh3d_preprocess_downsample_depth_bg"
+    },
   )
   let dispatch_x = (
       mesh3d_preprocess_depth_pyramid_dispatch_size(state.depth_pyramid_width) +

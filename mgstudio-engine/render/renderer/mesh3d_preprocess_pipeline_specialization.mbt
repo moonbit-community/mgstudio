@@ -56,6 +56,13 @@ const MESH3D_BUILD_INDIRECT_KEY_LATE_PHASE : UInt = 1U << 4
 const MESH3D_BUILD_INDIRECT_KEY_MAIN_PHASE : UInt = 1U << 5
 
 ///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/mip_generation/experimental/depth.rs`.
+const MESH3D_DOWNSAMPLE_DEPTH_KEY_MULTISAMPLE : UInt = 1U
+
+///|
+const MESH3D_DOWNSAMPLE_DEPTH_KEY_SECOND_PHASE : UInt = 1U << 1
+
+///|
 priv struct Mesh3dComputePipelineDescriptor {
   label : String
   layout : @wgpu.PipelineLayout
@@ -91,6 +98,11 @@ priv struct Mesh3dPreprocessPipelineKey {
 
 ///|
 priv struct Mesh3dBuildIndirectParametersPipelineKey {
+  bits : UInt
+}
+
+///|
+priv struct Mesh3dDownsampleDepthPipelineKey {
   bits : UInt
 }
 
@@ -271,6 +283,68 @@ fn Mesh3dBuildIndirectParametersPipelineKey::contains(
 }
 
 ///|
+fn mesh3d_downsample_depth_pipeline_key(
+  multisampled : Bool,
+  second_phase : Bool,
+) -> Mesh3dDownsampleDepthPipelineKey {
+  Mesh3dDownsampleDepthPipelineKey::{
+    bits: (if multisampled {
+      MESH3D_DOWNSAMPLE_DEPTH_KEY_MULTISAMPLE
+    } else {
+      0U
+    }) |
+    (if second_phase { MESH3D_DOWNSAMPLE_DEPTH_KEY_SECOND_PHASE } else { 0U }),
+  }
+}
+
+///|
+fn Mesh3dDownsampleDepthPipelineKey::contains(
+  self : Mesh3dDownsampleDepthPipelineKey,
+  flag : UInt,
+) -> Bool {
+  (self.bits & flag) != 0U
+}
+
+///|
+fn Mesh3dDownsampleDepthPipelineKey::shader_defs(
+  self : Mesh3dDownsampleDepthPipelineKey,
+) -> Array[String] {
+  if self.contains(MESH3D_DOWNSAMPLE_DEPTH_KEY_MULTISAMPLE) {
+    ["MULTISAMPLE"]
+  } else {
+    []
+  }
+}
+
+///|
+fn Mesh3dDownsampleDepthPipelineKey::entry_point(
+  self : Mesh3dDownsampleDepthPipelineKey,
+) -> String {
+  if self.contains(MESH3D_DOWNSAMPLE_DEPTH_KEY_SECOND_PHASE) {
+    "downsample_depth_second"
+  } else {
+    "downsample_depth_first"
+  }
+}
+
+///|
+fn Mesh3dDownsampleDepthPipelineKey::label(
+  self : Mesh3dDownsampleDepthPipelineKey,
+) -> String {
+  let multisample = if self.contains(MESH3D_DOWNSAMPLE_DEPTH_KEY_MULTISAMPLE) {
+    " multisample"
+  } else {
+    ""
+  }
+  let phase = if self.contains(MESH3D_DOWNSAMPLE_DEPTH_KEY_SECOND_PHASE) {
+    " second phase"
+  } else {
+    " first phase"
+  }
+  "mgstudio downsample depth\{multisample}\{phase} pipeline"
+}
+
+///|
 fn Mesh3dBuildIndirectParametersPipelineKey::shader_defs(
   self : Mesh3dBuildIndirectParametersPipelineKey,
 ) -> Array[String] {
@@ -363,15 +437,14 @@ fn Mesh3dBuildIndirectParametersPipeline::specialize(
 ///|
 fn Mesh3dDownsampleDepthPipeline::specialize(
   self : Mesh3dDownsampleDepthPipeline,
-  entry_point : String,
-  label : String,
+  key : Mesh3dDownsampleDepthPipelineKey,
 ) -> Mesh3dComputePipelineDescriptor {
   Mesh3dComputePipelineDescriptor::{
-    label,
+    label: key.label(),
     layout: self.layout,
     shader_path: MESH3D_DOWNSAMPLE_DEPTH_SHADER_PATH,
-    shader_defs: [],
-    entry_point,
+    shader_defs: key.shader_defs(),
+    entry_point: key.entry_point(),
   }
 }
 

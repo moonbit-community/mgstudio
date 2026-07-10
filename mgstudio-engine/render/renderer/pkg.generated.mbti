@@ -806,6 +806,10 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_downsample_depth_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_preprocess_downsample_depth_first_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_downsample_depth_second_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_downsample_depth_multisample_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_downsample_depth_multisample_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_downsample_depth_first_multisample_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_downsample_depth_second_multisample_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_depth_pyramid_sampler : @wgpu_mbt.Sampler?
   mut meshlet_vertex_positions_buf : @wgpu_mbt.Buffer?
   mut meshlet_vertex_positions_capacity : UInt64

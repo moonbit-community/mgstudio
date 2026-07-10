@@ -24,6 +24,121 @@ fn mesh3d_preprocess_pipeline_layout_with_u32_immediate(
 }
 
 ///|
+fn mesh3d_preprocess_create_downsample_depth_bind_group_layout(
+  backend : GpuBackend,
+  compute : @wgpu.ShaderStage,
+  is_multisampled : Bool,
+) -> @wgpu.BindGroupLayout raise GpuBackendError {
+  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=14UL)
+  let ok = builder.add_texture(
+      0U,
+      compute,
+      @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      multisampled=is_multisampled,
+    ) &&
+    builder.add_storage_texture(
+      1U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      2U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      3U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      4U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      5U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      6U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_READ_WRITE,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      7U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      8U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      9U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      10U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      11U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_storage_texture(
+      12U,
+      compute,
+      @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    ) &&
+    builder.add_sampler(13U, compute, @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING)
+  if !ok {
+    builder.free()
+    fatal(
+      "wgpu: failed to build mesh3d preprocess downsample depth bind group layout",
+    )
+  }
+  builder.finish(
+    backend.device,
+    label=if is_multisampled {
+      "mgstudio_mesh3d_preprocess_downsample_multisample_depth_bgl"
+    } else {
+      "mgstudio_mesh3d_preprocess_downsample_depth_bgl"
+    },
+  )
+}
+
+///|
 fn ensure_mesh3d_preprocess_indirect_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -371,111 +486,8 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     )
   }
   if backend.mesh3d_preprocess_downsample_depth_bgl is None {
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=14UL)
-    let ok = builder.add_texture(
-        0U,
-        compute,
-        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        1U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        2U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        3U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        4U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        5U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        6U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_READ_WRITE,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        7U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        8U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        9U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        10U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        11U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_storage_texture(
-        12U,
-        compute,
-        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
-        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_sampler(
-        13U,
-        compute,
-        @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING,
-      )
-    if !ok {
-      builder.free()
-      fatal(
-        "wgpu: failed to build mesh3d preprocess downsample depth bind group layout",
-      )
-    }
-    let bgl = builder.finish(
-      backend.device,
-      label="mgstudio_mesh3d_preprocess_downsample_depth_bgl",
+    let bgl = mesh3d_preprocess_create_downsample_depth_bind_group_layout(
+      backend, compute, false,
     )
     let layout = mesh3d_preprocess_pipeline_layout_with_u32_immediate(
       backend, bgl, compute,
@@ -485,6 +497,21 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     )
     backend.mesh3d_preprocess_downsample_depth_bgl = Some(bgl)
     backend.mesh3d_preprocess_downsample_depth_pipeline_layout = Some(layout)
+  }
+  if backend.mesh3d_preprocess_downsample_depth_multisample_bgl is None {
+    let bgl = mesh3d_preprocess_create_downsample_depth_bind_group_layout(
+      backend, compute, true,
+    )
+    let layout = mesh3d_preprocess_pipeline_layout_with_u32_immediate(
+      backend, bgl, compute,
+    )
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_downsample_multisample_depth_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_downsample_depth_multisample_bgl = Some(bgl)
+    backend.mesh3d_preprocess_downsample_depth_multisample_pipeline_layout = Some(
+      layout,
+    )
   }
   if backend.mesh3d_preprocess_depth_pyramid_dummy_texture is None {
     let usage = @wgpu.TextureUsage::from_u64(
@@ -694,16 +721,37 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     }
     let downsample_depth_pipeline = Mesh3dDownsampleDepthPipeline::new(layout)
     let first_descriptor = downsample_depth_pipeline.specialize(
-      "downsample_depth_first", "mgstudio mesh3d preprocess downsample depth first",
+      mesh3d_downsample_depth_pipeline_key(false, false),
     )
     let downsample_depth_pipeline = Mesh3dDownsampleDepthPipeline::new(layout)
     let second_descriptor = downsample_depth_pipeline.specialize(
-      "downsample_depth_second", "mgstudio mesh3d preprocess downsample depth second",
+      mesh3d_downsample_depth_pipeline_key(false, true),
     )
     backend.mesh3d_preprocess_downsample_depth_first_pipeline = Some(
       first_descriptor.compile(backend),
     )
     backend.mesh3d_preprocess_downsample_depth_second_pipeline = Some(
+      second_descriptor.compile(backend),
+    )
+  }
+  if backend.mesh3d_preprocess_downsample_depth_first_multisample_pipeline
+    is None {
+    guard backend.mesh3d_preprocess_downsample_depth_multisample_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let downsample_depth_pipeline = Mesh3dDownsampleDepthPipeline::new(layout)
+    let first_descriptor = downsample_depth_pipeline.specialize(
+      mesh3d_downsample_depth_pipeline_key(true, false),
+    )
+    let downsample_depth_pipeline = Mesh3dDownsampleDepthPipeline::new(layout)
+    let second_descriptor = downsample_depth_pipeline.specialize(
+      mesh3d_downsample_depth_pipeline_key(true, true),
+    )
+    backend.mesh3d_preprocess_downsample_depth_first_multisample_pipeline = Some(
+      first_descriptor.compile(backend),
+    )
+    backend.mesh3d_preprocess_downsample_depth_second_multisample_pipeline = Some(
       second_descriptor.compile(backend),
     )
   }

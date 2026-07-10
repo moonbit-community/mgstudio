@@ -735,6 +735,35 @@ test "renderer: mesh3d preprocess shader defines match bevy specialization keys"
 }
 
 ///|
+test "renderer: depth downsample pipeline keys select Bevy MSAA variants" {
+  let standard_first = mesh3d_downsample_depth_pipeline_key(false, false)
+  let multisampled_first = mesh3d_downsample_depth_pipeline_key(true, false)
+  let multisampled_second = mesh3d_downsample_depth_pipeline_key(true, true)
+  debug_inspect(
+    wbtest_shader_defs_contains(standard_first.shader_defs(), "MULTISAMPLE"),
+    content="false",
+  )
+  debug_inspect(
+    wbtest_shader_defs_contains(multisampled_first.shader_defs(), "MULTISAMPLE"),
+    content="true",
+  )
+  debug_inspect(
+    multisampled_first.entry_point(),
+    content="\"downsample_depth_first\"",
+  )
+  debug_inspect(
+    multisampled_second.entry_point(),
+    content="\"downsample_depth_second\"",
+  )
+}
+
+///|
+test "renderer: depth downsample storage bindings start at pyramid mip zero" {
+  debug_inspect(mesh3d_downsample_depth_mip_index_for_binding(1), content="0")
+  debug_inspect(mesh3d_downsample_depth_mip_index_for_binding(12), content="11")
+}
+
+///|
 test "renderer: mesh3d build indirect shader defines match bevy specialization keys" {
   let indexed_main = Mesh3dBuildIndirectParametersPipelineKey::main_occlusion_culling(
     true, true,
