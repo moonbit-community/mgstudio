@@ -146,6 +146,18 @@ pub fn GpuPassState::view_depth_texture_id(self : GpuPassState) -> Int {
 }
 
 ///|
+fn mesh3d_irradiance_volume_texture_ids_have_loaded_texture(
+  texture_ids : Array[Int],
+) -> Bool {
+  for texture_id in texture_ids {
+    if texture_id >= 0 {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub struct GpuSurfaceState {
   surface_id : Int
   target_id : Int

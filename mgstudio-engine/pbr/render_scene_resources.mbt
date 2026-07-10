@@ -510,6 +510,18 @@ priv struct Render3dLightProbeState {
 }
 
 ///|
+fn render3d_light_probe_state_has_irradiance_volume(
+  state : Render3dLightProbeState,
+) -> Bool {
+  for texture_id in state.irradiance_volume_texture_ids {
+    if texture_id >= 0 {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub fn render3d_light_probes_buffer_clear(world : @ecs.World) -> Unit {
   if world.get_resource(@pbr_light_probe.LightProbesBuffer::resource())
     is Some(buffer) {

@@ -205,7 +205,9 @@ fn mesh3d_ssr_view_layout_key(
     tonemap_in_shader=pass_state.tonemap_in_shader,
     environment_map=pass_state.environment_map_intensity > 0.0F,
     screen_space_ambient_occlusion=false,
-    irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
+    irradiance_volume=mesh3d_irradiance_volume_texture_ids_have_loaded_texture(
+      pass_state.irradiance_volume_texture_ids,
+    ),
     screen_space_reflections=true,
     distance_fog=false,
     area_light_luts=mesh3d_area_light_luts_feature_enabled(),

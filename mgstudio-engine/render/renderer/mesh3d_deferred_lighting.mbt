@@ -74,7 +74,9 @@ fn mesh3d_deferred_lighting_shader_defines(
   if pass_state.environment_map_intensity > 0.0F {
     defines.set("ENVIRONMENT_MAP", true)
   }
-  if pass_state.irradiance_volume_texture_ids.length() > 0 {
+  if mesh3d_irradiance_volume_texture_ids_have_loaded_texture(
+      pass_state.irradiance_volume_texture_ids,
+    ) {
     defines.set("IRRADIANCE_VOLUME", true)
   }
   if mesh3d_light_probe_binding_arrays_are_usable() {
@@ -108,7 +110,9 @@ fn mesh3d_deferred_lighting_view_layout_key(
     tonemap_in_shader=pass_state.tonemap_in_shader,
     environment_map=pass_state.environment_map_intensity > 0.0F,
     screen_space_ambient_occlusion~,
-    irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
+    irradiance_volume=mesh3d_irradiance_volume_texture_ids_have_loaded_texture(
+      pass_state.irradiance_volume_texture_ids,
+    ),
     screen_space_reflections~,
     distance_fog~,
     area_light_luts=mesh3d_area_light_luts_feature_enabled(),

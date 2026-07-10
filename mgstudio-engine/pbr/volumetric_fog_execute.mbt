@@ -695,8 +695,9 @@ fn render3d_prepare_camera_volumetric_fog_state(
     false,
     tonemap_in_shader=render3d_main_pass_tonemap_in_shader(camera),
     environment_map=environment_map_state.intensity > 0.0F,
-    irradiance_volume=light_probe_state.irradiance_volume_texture_ids.length() >
-      0,
+    irradiance_volume=render3d_light_probe_state_has_irradiance_volume(
+      light_probe_state,
+    ),
     screen_space_reflections=camera.screen_space_reflections is Some(_),
     area_light_luts=false,
     dfg_lut=false,

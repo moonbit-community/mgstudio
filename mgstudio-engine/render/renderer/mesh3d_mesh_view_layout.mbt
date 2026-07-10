@@ -100,7 +100,9 @@ fn mesh3d_pass_mesh_view_layout_key(
     mesh3d_bluenoise_texture_feature_enabled(),
     tonemap_in_shader=pass_state.tonemap_in_shader,
     environment_map=pass_state.environment_map_intensity > 0.0F,
-    irradiance_volume=pass_state.irradiance_volume_texture_ids.length() > 0,
+    irradiance_volume=mesh3d_irradiance_volume_texture_ids_have_loaded_texture(
+      pass_state.irradiance_volume_texture_ids,
+    ),
     screen_space_reflections=pass_state.screen_space_reflections,
     area_light_luts=mesh3d_area_light_luts_feature_enabled(),
     dfg_lut=mesh3d_dfg_lut_feature_enabled(),
