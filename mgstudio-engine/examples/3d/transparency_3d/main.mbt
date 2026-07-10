@@ -13,243 +13,207 @@
 // limitations under the License.
 
 ///|
-const PI : Float = 3.141592653589793F
-
-///|
-const TAU : Float = 6.283185307179586F
-
-///|
-priv struct TransparencyState {
-  mut materials : Array[@asset.Handle[@pbr.StandardMaterial]]
+fn add_mesh(
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  geometry : @mesh.Mesh3dGeometry,
+) -> @asset.Handle[@mesh.Mesh] {
+  meshes.modify(fn(assets) {
+    assets.add(@mesh.Mesh::from_3d_geometry(geometry))
+  })
 }
 
 ///|
-let transparency_state : Ref[TransparencyState] = Ref({ materials: [] })
+fn add_material(
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  material : @pbr.StandardMaterial,
+) -> @asset.Handle[@pbr.StandardMaterial] {
+  materials.modify(fn(assets) { assets.add(material) })
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  // Opaque plane, uses `alpha_mode: Opaque` by default.
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(
+          add_mesh(
+            meshes,
+            @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
+              @math.Vec2::new(6.0F, 6.0F),
+            ).build(),
+          ),
+        ),
+        @pbr.MeshMaterial3dTyped::new(
+          add_material(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::srgb(0.3F, 0.5F, 0.3F),
+            ),
+          ),
+        ),
+      ),
+    ),
+  )
+
+  let sphere_geometry = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
+    @math.Sphere::new(0.5F),
+  ).ico(3) catch {
+    _ => abort("transparency_3d sphere subdivisions should be valid")
+  }
+  let sphere_mesh = add_mesh(meshes, sphere_geometry)
+
+  // Transparent sphere, uses `alpha_mode: Mask(f32)`.
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3dTyped::new(
+          add_material(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::srgba(0.2F, 0.7F, 0.1F, 0.0F),
+            ).with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F)),
+          ),
+        ),
+        @transform.Transform::from_xyz(1.0F, 0.5F, -1.5F),
+      ),
+    ),
+  )
+
+  // Transparent unlit sphere, uses `alpha_mode: Mask(f32)`.
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3dTyped::new(
+          add_material(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::srgba(0.2F, 0.7F, 0.1F, 0.0F),
+            )
+            .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.1F))
+            .with_unlit(true),
+          ),
+        ),
+        @transform.Transform::from_xyz(-1.0F, 0.5F, -1.5F),
+      ),
+    ),
+  )
+
+  let cube_mesh = add_mesh(
+    meshes,
+    @mesh_primitives_dim3.Meshable::mesh(@math.Cuboid::Cuboid()),
+  )
+
+  // Transparent cube, uses `alpha_mode: Blend`.
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(cube_mesh),
+        @pbr.MeshMaterial3dTyped::new(
+          add_material(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::srgba(0.5F, 0.5F, 1.0F, 0.0F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+      ),
+    ),
+  )
+
+  // Transparent cube, uses `alpha_mode: AlphaToCoverage`.
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(cube_mesh),
+        @pbr.MeshMaterial3dTyped::new(
+          add_material(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::srgba(0.5F, 1.0F, 0.5F, 0.0F),
+            ).with_alpha_mode(@pbr.AlphaMode3d::AlphaToCoverage),
+          ),
+        ),
+        @transform.Transform::from_xyz(-1.5F, 0.5F, 0.0F),
+      ),
+    ),
+  )
+
+  // Opaque sphere.
+  ignore(
+    commands.spawn(
+      (
+        @mesh.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3dTyped::new(
+          add_material(
+            materials,
+            @pbr.StandardMaterial::from_color(
+              @color.Color::srgb(0.7F, 0.2F, 0.1F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.5F, -1.5F),
+      ),
+    ),
+  )
+
+  // Light.
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::PointLight().with_shadow_maps_enabled(true),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      ),
+    ),
+  )
+
+  // Camera.
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::Camera3d(),
+        @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+/// Fades the alpha channel of all materials between 0 and 1.
+fn fade_transparency(
+  time : @app.Res[@time.Time[Unit]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let alpha = @math.sin(time.get().elapsed_seconds()) / 2.0F + 0.5F
+  materials.modify(fn(assets) {
+    let entries = assets.iter()
+    for entry in entries {
+      let (handle, material) = entry
+      ignore(
+        assets.set(
+          handle,
+          material.with_base_color(material.base_color.with_alpha(alpha)),
+        ),
+      )
+    }
+  })
+}
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, fade_transparency)
+  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Update, fade_transparency)
   .run()
-}
-
-///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = TAU / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
-    }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets.add(@mesh.Mesh::from_3d_geometry(geometry))
-    }),
-  )
-}
-
-///|
-fn spawn_mesh(
-  world : @ecs.World,
-  mesh : @mesh.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @transform.Transform,
-) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
-    mesh,
-    @pbr.MeshMaterial3dTyped::new(material),
-    transform,
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  let floor_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.3F, 0.5F, 0.3F, 1.0F)),
-  )
-  let mask_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.2F, 0.7F, 0.1F, 0.0F)).with_alpha_mode(
-      @pbr.AlphaMode3d::Mask(0.5F),
-    ),
-  )
-  let mask_unlit_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.2F, 0.7F, 0.1F, 0.0F))
-    .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F))
-    .with_unlit(true),
-  )
-  let blend_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.5F, 0.5F, 1.0F, 0.0F)).with_alpha_mode(
-      @pbr.AlphaMode3d::Blend,
-    ),
-  )
-  let alpha_to_coverage_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.5F, 1.0F, 0.5F, 0.0F)).with_alpha_mode(
-      @pbr.AlphaMode3d::AlphaToCoverage,
-    ),
-  )
-  let opaque_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::new(0.7F, 0.2F, 0.1F, 1.0F)),
-  )
-
-  transparency_state.val.materials = [
-    floor_material, mask_material, mask_unlit_material, blend_material, alpha_to_coverage_material,
-    opaque_material,
-  ]
-
-  let sphere_mesh = uv_sphere_mesh(0.5F, 16, 24)
-  let cube_mesh = @mesh.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-      assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
-    }),
-  )
-
-  // Opaque plane.
-  spawn_mesh(
-    world,
-    @mesh.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
-        assets
-        |> @pbr.add_mesh(
-          @mesh_primitives_dim3.PlaneMeshBuilder::from_size(
-            @math.Vec2::new(6.0F, 6.0F),
-          ).build(),
-        )
-      }),
-    ),
-    floor_material,
-    @transform.Transform::identity(),
-  )
-
-  // Transparent mask spheres.
-  spawn_mesh(
-    world,
-    sphere_mesh,
-    mask_material,
-    @transform.Transform::from_xyz(1.0F, 0.5F, -1.5F),
-  )
-  spawn_mesh(
-    world,
-    sphere_mesh,
-    mask_unlit_material,
-    @transform.Transform::from_xyz(-1.0F, 0.5F, -1.5F),
-  )
-
-  // Transparent blend cube.
-  spawn_mesh(
-    world,
-    cube_mesh,
-    blend_material,
-    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
-  )
-
-  // Transparent alpha-to-coverage cube.
-  spawn_mesh(
-    world,
-    cube_mesh,
-    alpha_to_coverage_material,
-    @transform.Transform::from_xyz(-1.5F, 0.5F, 0.0F),
-  )
-
-  // Opaque sphere.
-  spawn_mesh(
-    world,
-    sphere_mesh,
-    opaque_material,
-    @transform.Transform::from_xyz(0.0F, 0.5F, -1.5F),
-  )
-
-  let point = world.spawn_empty()
-  try! world.set_by_key(
-    point,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::new(@color.Color::white(), 1_000_000.0F, 20.0F, true),
-  )
-  try! world.set_by_key(
-    point,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
-  )
-
-  @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match world.get_resource(@time.default_time_resource_key) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in transparency_3d example")
-  }
-}
-
-///|
-fn fade_transparency(world : @ecs.World) -> Unit {
-  let alpha = @math.sin(world_time(world).elapsed_seconds()) / 2.0F + 0.5F
-  for handle in transparency_state.val.materials {
-    if @pbr.standard_material_get(handle) is Some(material) {
-      let next_color = @color.Color::new(
-        material.base_color.r,
-        material.base_color.g,
-        material.base_color.b,
-        alpha,
-      )
-      let next_material = material.with_base_color(next_color)
-      @pbr.standard_material_set(handle, next_material) |> ignore
-    }
-  }
 }
