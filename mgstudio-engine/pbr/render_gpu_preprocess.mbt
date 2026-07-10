@@ -64,13 +64,13 @@ fn render3d_mesh_frustum_visible(
 
 ///|
 fn render3d_mesh_pipeline_id_for_view(
-  mesh : ExtractedMesh3d,
+  visible_entity : @render.MainEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache : SpecializedMaterialPipelineCache,
 ) -> @material.CachedRenderPipelineId? {
   specialized_material_pipeline_cache.pipeline_id(
     retained_view_entity,
-    mesh.entity.main_entity,
+    visible_entity.id(),
   )
 }
 
@@ -78,54 +78,14 @@ fn render3d_mesh_pipeline_id_for_view(
 test "render3d gpu preprocess: view cache miss does not fall back to extracted pipeline id" {
   let view = @render_view.RetainedViewEntity::new(@core.Entity::new(61, 0))
   let entity = @core.Entity::new(62, 0)
+  let visible_entity = @render.MainEntity::new(entity)
   let cached_pipeline = @material.CachedRenderPipelineId::new(92UL)
-  let transform = @transform.Transform::identity()
-  let world_from_local = @math.Affine3::identity()
-  let mesh = ExtractedMesh3d::{
-    entity: phase_entity_ref3d_for_main(entity),
-    payload: Mesh3dExtractedPayload::{
-      mesh_handle: @asset.Handle::new(17),
-      mesh_preprocess_static: None,
-      world_from_local,
-      previous_world_from_local: world_from_local,
-      transform,
-      previous_transform: transform,
-      aabb: None,
-      material_draw_data: MaterialDrawData3d::Standard(
-        @material.StandardMaterial::StandardMaterial(),
-      ),
-      material_extension: None,
-      material_properties: @material.MaterialProperties::MaterialProperties(),
-      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
-      lightmap: None,
-      is_forward_decal: false,
-      forward_decal_material_ext: None,
-      clustered_decal: None,
-      has_not_shadow_caster: false,
-      has_not_shadow_receiver: false,
-      has_transmitted_shadow_receiver: false,
-      has_no_frustum_culling: false,
-      has_no_cpu_culling: false,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
-      has_no_wireframe: false,
-      wireframe_asset_id: None,
-      wireframe_material: None,
-      wireframe_color: None,
-      wireframe_line_width: None,
-      wireframe_topology: None,
-      skinning_key_hi: -1,
-      has_previous_skin: false,
-      morph_weights_index: -1,
-      previous_morph_weights_index: -1,
-      morph_targets_texture_id: -1,
-      instance_vertex_buffer_id: -1,
-      motion_vector_enabled: false,
-    },
-  }
   let cache = SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache()
 
   debug_inspect(
-    render3d_mesh_pipeline_id_for_view(mesh, view, cache).map(fn(value) {
+    render3d_mesh_pipeline_id_for_view(visible_entity, view, cache).map(fn(
+      value,
+    ) {
       value.id()
     }),
     content="None",
@@ -133,7 +93,9 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
 
   cache.insert(view, entity, 1, cached_pipeline)
   debug_inspect(
-    render3d_mesh_pipeline_id_for_view(mesh, view, cache).map(fn(value) {
+    render3d_mesh_pipeline_id_for_view(visible_entity, view, cache).map(fn(
+      value,
+    ) {
       value.id()
     }),
     content="Some(92)",
@@ -142,7 +104,7 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
 
 ///|
 fn render3d_traced_mesh_pipeline_id_for_view(
-  mesh : ExtractedMesh3d,
+  visible_entity : @render.MainEntity,
   retained_view_entity : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache : SpecializedMaterialPipelineCache,
 ) -> @material.CachedRenderPipelineId? {
@@ -151,7 +113,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
     "render_3d_pipeline_lookup",
   )
   let pipeline_id = render3d_mesh_pipeline_id_for_view(
-    mesh, retained_view_entity, specialized_material_pipeline_cache,
+    visible_entity, retained_view_entity, specialized_material_pipeline_cache,
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -175,7 +137,8 @@ priv struct QueuedMaterialMesh3d {
 
 ///|
 fn render3d_queue_material_mesh_candidate(
-  mesh : ExtractedMesh3d,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
   render_mesh_instances : RenderMeshInstances,
   render_mesh_assets : @render_mesh.RenderMeshAssets,
   maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
@@ -189,34 +152,35 @@ fn render3d_queue_material_mesh_candidate(
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
 ) -> QueuedMaterialMesh3d? {
   guard render3d_traced_mesh_pipeline_id_for_view(
-      mesh, retained_view_entity, specialized_material_pipeline_cache,
+      visible_entity, retained_view_entity, specialized_material_pipeline_cache,
     )
     is Some(pipeline_id) else {
     return None
   }
   guard render3d_queue_material_instance_for_mesh(
       render_material_instances, pending_mesh_material_queues, retained_view_entity,
-      mesh,
+      render_entity, visible_entity,
     )
     is Some(material_instance) else {
     return None
   }
   guard render3d_queue_mesh_instance_for_mesh(
       render_mesh_instances, pending_mesh_material_queues, retained_view_entity,
-      mesh,
+      render_entity, visible_entity,
     )
     is Some(mesh_instance) else {
     return None
   }
   guard render3d_queue_resolved_material_for_mesh(
-      material_slots, pending_mesh_material_queues, retained_view_entity, mesh,
+      material_slots, pending_mesh_material_queues, retained_view_entity, render_entity,
+      visible_entity,
     )
     is Some(material) else {
     return None
   }
   guard render3d_queue_material_binding_for_instance(
       render_material_bindings, pending_mesh_material_queues, retained_view_entity,
-      mesh, material_instance,
+      render_entity, visible_entity, material_instance,
     )
     is Some(material_binding) else {
     return None
@@ -231,13 +195,8 @@ fn render3d_queue_material_mesh_candidate(
     phase,
     pipeline_id,
     distance: render3d_material_phase_distance(
-      @render.MainEntity::new(mesh.entity.main_entity),
-      mesh_instance,
-      render_mesh_instances,
-      render_mesh_assets,
-      maybe_batched_instance_buffers,
-      material_properties,
-      camera_transform,
+      visible_entity, mesh_instance, render_mesh_instances, render_mesh_assets, maybe_batched_instance_buffers,
+      material_properties, camera_transform,
     ),
     mesh_asset_id: mesh_instance.mesh_asset_id(),
     current_uniform_index: mesh_instance.current_uniform_index(),
@@ -297,7 +256,8 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   for i in render3d_queue_mesh_candidate_indices(meshes, visible_mesh_entities) {
     let mesh = meshes[i]
     guard render3d_queue_material_mesh_candidate(
-        mesh,
+        mesh.entity.render_entity,
+        @render.MainEntity::new(mesh.entity.main_entity),
         render_mesh_instances,
         render_mesh_assets,
         maybe_batched_instance_buffers,
@@ -382,7 +342,8 @@ fn render3d_collect_meshes_for_gpu_building(
   for i in render3d_queue_mesh_candidate_indices(meshes, visible_mesh_entities) {
     let mesh = meshes[i]
     guard render3d_queue_material_mesh_candidate(
-        mesh,
+        mesh.entity.render_entity,
+        @render.MainEntity::new(mesh.entity.main_entity),
         render_mesh_instances,
         render_mesh_assets,
         maybe_batched_instance_buffers,

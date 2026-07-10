@@ -776,18 +776,15 @@ fn render3d_queue_resolved_material_for_mesh(
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   retained_view_entity : @render_view.RetainedViewEntity,
-  mesh : ExtractedMesh3d,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
 ) -> Render3dResolvedMaterial? {
-  match material_slots.get(mesh.entity.main_entity) {
+  match material_slots.get(visible_entity.id()) {
     Some(Resolved(material)) => Some(material)
     Some(Pending) | None => {
       pending_mesh_material_queues
       .queues()
-      .push_current(
-        retained_view_entity,
-        mesh.entity.render_entity,
-        @render.MainEntity::new(mesh.entity.main_entity),
-      )
+      .push_current(retained_view_entity, render_entity, visible_entity)
       None
     }
   }
@@ -798,19 +795,15 @@ fn render3d_queue_material_instance_for_mesh(
   render_material_instances : RenderMaterialInstances,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   retained_view_entity : @render_view.RetainedViewEntity,
-  mesh : ExtractedMesh3d,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
 ) -> RenderMaterialInstance? {
-  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
   match render_material_instances.get(visible_entity.id()) {
     Some(instance) => Some(instance)
     None => {
       pending_mesh_material_queues
       .queues()
-      .push_current(
-        retained_view_entity,
-        mesh.entity.render_entity,
-        visible_entity,
-      )
+      .push_current(retained_view_entity, render_entity, visible_entity)
       None
     }
   }
@@ -821,23 +814,19 @@ fn render3d_queue_material_binding_for_instance(
   render_material_bindings : RenderMaterialBindings,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   retained_view_entity : @render_view.RetainedViewEntity,
-  mesh : ExtractedMesh3d,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
   instance : RenderMaterialInstance,
 ) -> MaterialBindingId? {
   if instance.asset_id() == DUMMY_MESH_MATERIAL_ID {
     return Some(MaterialBindingId::MaterialBindingId())
   }
-  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
   match render_material_bindings.get(instance.asset_id()) {
     Some(binding) => Some(binding)
     None => {
       pending_mesh_material_queues
       .queues()
-      .push_current(
-        retained_view_entity,
-        mesh.entity.render_entity,
-        visible_entity,
-      )
+      .push_current(retained_view_entity, render_entity, visible_entity)
       None
     }
   }
@@ -859,19 +848,15 @@ fn render3d_queue_mesh_instance_for_mesh(
   render_mesh_instances : RenderMeshInstances,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
   retained_view_entity : @render_view.RetainedViewEntity,
-  mesh : ExtractedMesh3d,
+  render_entity : @core.Entity,
+  visible_entity : @render.MainEntity,
 ) -> RenderMeshQueueData? {
-  let visible_entity = @render.MainEntity::new(mesh.entity.main_entity)
   match render_mesh_instances.render_mesh_queue_data(visible_entity) {
     Some(mesh_instance) => Some(mesh_instance)
     None => {
       pending_mesh_material_queues
       .queues()
-      .push_current(
-        retained_view_entity,
-        mesh.entity.render_entity,
-        visible_entity,
-      )
+      .push_current(retained_view_entity, render_entity, visible_entity)
       None
     }
   }
