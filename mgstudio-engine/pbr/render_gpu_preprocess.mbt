@@ -719,10 +719,6 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
   let mut has_non_indexed_items = false
   for i in 0..<draw_items.length() {
     let draw_item = draw_items[i]
-    if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-      draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-      continue
-    }
     if !render3d_mesh_preprocess_indirect_eligible(draw_item) {
       continue
     }

@@ -486,6 +486,61 @@ test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
 }
 
 ///|
+test "render3d: GPU preprocess includes every Bevy main mesh phase" {
+  let phases = [
+    RENDER3D_PHASE_OPAQUE,
+    RENDER3D_PHASE_ALPHA_MASK,
+    RENDER3D_PHASE_TRANSMISSIVE,
+    RENDER3D_PHASE_TRANSPARENT,
+  ]
+  let draw_items : Array[MeshPhaseItem3d] = []
+  for index in 0..<phases.length() {
+    draw_items.push(MeshPhaseItem3d::{
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(50 + index, 0)),
+      extracted_index: index,
+      current_uniform_index: (10 + index).reinterpret_as_uint(),
+      phase: phases[index],
+      pipeline_id: @material.CachedRenderPipelineId::new(
+        (index + 1).to_uint64(),
+      ),
+      distance: Float::from_int(index),
+      mesh_asset_id: 50 + index,
+      slabs: @render_mesh.MeshSlabs::new(
+        1,
+        index_slab_id=if index % 2 == 0 { Some(2) } else { None },
+      ),
+      material_bind_group_index: 0,
+      material_bind_group_slot: 0,
+    })
+  }
+  let phase_buffers = render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
+    draw_items, true, false,
+  )
+  let indexed = phase_buffers.work_item_buffers.indexed_items()
+  let non_indexed = phase_buffers.work_item_buffers.non_indexed_items()
+  debug_inspect(indexed.length(), content="2")
+  debug_inspect(non_indexed.length(), content="2")
+  debug_inspect(indexed[0].input_index, content="10")
+  debug_inspect(indexed[1].input_index, content="12")
+  debug_inspect(non_indexed[0].input_index, content="11")
+  debug_inspect(non_indexed[1].input_index, content="13")
+  debug_inspect(
+    phase_buffers.indirect_parameters_buffers.indexed
+    .cpu_metadata_at(1)
+    .unwrap()
+    .base_output_index(),
+    content="2",
+  )
+  debug_inspect(
+    phase_buffers.indirect_parameters_buffers.non_indexed
+    .cpu_metadata_at(1)
+    .unwrap()
+    .base_output_index(),
+    content="3",
+  )
+}
+
+///|
 test "render3d: camera indirect path requires feature support and no marker" {
   debug_inspect(
     @pbr_render.render3d_camera_indirect_enabled(true, true, false) &&
