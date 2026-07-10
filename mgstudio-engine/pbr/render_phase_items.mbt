@@ -282,6 +282,86 @@ fn Render3dMainViewDrawItems::len(
 }
 
 ///|
+fn render3d_sort_mesh_phase_items(
+  items : Array[MeshPhaseItem3d],
+) -> Array[MeshPhaseItem3d] {
+  items.sort_by(fn(a, b) {
+    let phase_cmp = @pbr_render.cmp_int(a.phase, b.phase)
+    if phase_cmp != 0 {
+      return phase_cmp
+    }
+    if a.phase == RENDER3D_PHASE_TRANSMISSIVE ||
+      a.phase == RENDER3D_PHASE_TRANSPARENT {
+      let depth_cmp = @pbr_render.cmp_float(b.distance, a.distance)
+      if depth_cmp != 0 {
+        return depth_cmp
+      }
+    } else {
+      let depth_cmp = @pbr_render.cmp_float(a.distance, b.distance)
+      if depth_cmp != 0 {
+        return depth_cmp
+      }
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  items
+}
+
+///|
+fn render3d_merge_main_view_phase_items(
+  existing : Array[MeshPhaseItem3d],
+  meshes : Array[ExtractedMesh3d],
+  dequeued : Array[@render.MainEntity],
+  queued : Array[MeshPhaseItem3d],
+) -> Array[MeshPhaseItem3d] {
+  let extracted_index_by_main_entity : Map[UInt64, Int] = Map([])
+  for index in 0..<meshes.length() {
+    extracted_index_by_main_entity.set(
+      meshes[index].entity.main_entity.to_bits(),
+      index,
+    )
+  }
+  let dequeued_main_entities : Map[UInt64, Bool] = Map([])
+  for main_entity in dequeued {
+    dequeued_main_entities.set(main_entity.id().to_bits(), true)
+  }
+  let queued_by_main_entity : Map[UInt64, MeshPhaseItem3d] = Map([])
+  for queued_item in queued {
+    guard extracted_index_by_main_entity.get(
+        queued_item.entity.main_entity.to_bits(),
+      )
+      is Some(extracted_index) else {
+      abort(
+        "queued pbr main phase entity is missing its current extracted draw payload",
+      )
+    }
+    queued_by_main_entity.set(queued_item.entity.main_entity.to_bits(), MeshPhaseItem3d::{
+      ..queued_item,
+      extracted_index,
+    })
+  }
+  let merged : Array[MeshPhaseItem3d] = []
+  for item in existing {
+    let main_entity_bits = item.entity.main_entity.to_bits()
+    if dequeued_main_entities.contains(main_entity_bits) ||
+      queued_by_main_entity.contains(main_entity_bits) {
+      continue
+    }
+    guard extracted_index_by_main_entity.get(main_entity_bits)
+      is Some(extracted_index) else {
+      abort(
+        "retained pbr main phase entity is missing its current extracted draw payload",
+      )
+    }
+    merged.push(MeshPhaseItem3d::{ ..item, extracted_index, })
+  }
+  for _, queued_item in queued_by_main_entity {
+    merged.push(queued_item)
+  }
+  render3d_sort_mesh_phase_items(merged)
+}
+
+///|
 priv struct Render3dMainViewPhaseIndexStore {
   views : Map[UInt64, Array[Int]]
 }
@@ -538,6 +618,31 @@ fn render3d_prepare_main_view_phase(
   transparent_phases.modify(fn(value) {
     value.store.set_indices(retained_view_entity, transparent_draw_item_indices)
   })
+}
+
+///|
+fn render3d_apply_main_view_phase_queue(
+  world : @ecs.World,
+  retained_view_entity : @core.Entity,
+  meshes : Array[ExtractedMesh3d],
+  dequeued : Array[@render.MainEntity],
+  queued : Array[MeshPhaseItem3d],
+) -> Array[MeshPhaseItem3d] {
+  ensure_render3d_main_view_phase_resources(world)
+  let existing = match
+    world.get_resource(Render3dMainViewDrawItems::resource()) {
+    Some(draw_items) =>
+      match draw_items.items(retained_view_entity) {
+        Some(items) => items.copy()
+        None => []
+      }
+    None => []
+  }
+  let merged = render3d_merge_main_view_phase_items(
+    existing, meshes, dequeued, queued,
+  )
+  render3d_prepare_main_view_phase(world, retained_view_entity, merged)
+  merged
 }
 
 ///|

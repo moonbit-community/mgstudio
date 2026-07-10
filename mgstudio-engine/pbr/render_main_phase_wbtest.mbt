@@ -83,6 +83,38 @@ test "pbr: main view phases store Bevy phase buckets in render order" {
 }
 
 ///|
+test "pbr: main view phases apply Bevy dequeue and incremental queue" {
+  let world = @ecs.World::new()
+  let view = @core.Entity::new(24, 0)
+  render3d_prepare_main_view_phase(world, view, [
+    render3d_main_phase_test_item(1, RENDER3D_PHASE_OPAQUE),
+    render3d_main_phase_test_item(2, RENDER3D_PHASE_TRANSPARENT),
+  ])
+  let meshes = [
+    render3d_test_transparent_mesh_for_queue(2, -1.0F, 0.0F),
+    render3d_test_transparent_mesh_for_queue(3, -1.0F, 0.0F),
+  ]
+
+  let merged = render3d_apply_main_view_phase_queue(
+    world,
+    view,
+    meshes,
+    [@render.MainEntity::new(@core.Entity::new(1, 0))],
+    [render3d_main_phase_test_item(3, RENDER3D_PHASE_OPAQUE)],
+  )
+
+  debug_inspect(merged.length(), content="2")
+  debug_inspect(merged[0].entity.main_entity.id, content="3")
+  debug_inspect(merged[0].extracted_index, content="1")
+  debug_inspect(merged[1].entity.main_entity.id, content="2")
+  debug_inspect(merged[1].extracted_index, content="0")
+  debug_inspect(
+    render3d_main_view_phase_items_or_abort(world, view).length(),
+    content="2",
+  )
+}
+
+///|
 test "pbr: main view phases retain only live cameras" {
   let world = @ecs.World::new()
   let live_view = @core.Entity::new(30, 0)

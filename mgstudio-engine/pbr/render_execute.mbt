@@ -4861,7 +4861,15 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
             "missing RenderMaterialBindings resource during pbr queue_meshes",
           )
       }
+      let dirty_specializations = match
+        world.get_resource(@render_visibility.DirtySpecializations::resource()) {
+        Some(value) => value
+        None =>
+          abort("missing DirtySpecializations resource during pbr queue_meshes")
+      }
+      render3d_retain_live_main_view_phases(world, frame.cameras)
       let prepared_camera_queues = render3d_prepare_camera_queue_entries(
+        world,
         frame.cameras,
         frame.meshes,
         render_mesh_instances,
@@ -4873,26 +4881,12 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         render_material_bindings,
         material_slots,
         pending_mesh_material_queues,
+        dirty_specializations,
         frame.frame_config.gpu_instance_buffer_builder_enabled,
         frame.frame_config.gpu_culling_supported,
         specialized_material_pipeline_cache~,
         visible_mesh_entity_classes=Some(visible_mesh_entity_classes),
       )
-      render3d_retain_live_main_view_phases(world, frame.cameras)
-      for camera_index in 0..<frame.cameras.length() {
-        if camera_index >= prepared_camera_queues.length() {
-          continue
-        }
-        match prepared_camera_queues[camera_index] {
-          Some(prepared_queue) =>
-            render3d_prepare_main_view_phase(
-              world,
-              frame.cameras[camera_index].entity.main_entity,
-              prepared_queue.draw_queue_entry.draw_items,
-            )
-          None => ()
-        }
-      }
       let shadow_execution_data = match
         render3d_queue_take_shadow_execution_data(world) {
         Some(value) => value

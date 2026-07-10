@@ -286,26 +286,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       material_bind_group_slot: candidate.material_bind_group_slot,
     })
   }
-  items.sort_by(fn(a, b) {
-    let phase_cmp = @pbr_render.cmp_int(a.phase, b.phase)
-    if phase_cmp != 0 {
-      return phase_cmp
-    }
-    if a.phase == RENDER3D_PHASE_TRANSMISSIVE ||
-      a.phase == RENDER3D_PHASE_TRANSPARENT {
-      let depth_cmp = @pbr_render.cmp_float(b.distance, a.distance)
-      if depth_cmp != 0 {
-        return depth_cmp
-      }
-    } else {
-      let depth_cmp = @pbr_render.cmp_float(a.distance, b.distance)
-      if depth_cmp != 0 {
-        return depth_cmp
-      }
-    }
-    phase_entity_ref3d_cmp(a.entity, b.entity)
-  })
-  items
+  render3d_sort_mesh_phase_items(items)
 }
 
 ///|

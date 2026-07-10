@@ -58,6 +58,7 @@ fn render3d_build_camera_queue_entry(
   gpu_culling_supported : Bool,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
+  retained_phase_items? : Array[MeshPhaseItem3d]? = None,
 ) -> Render3dExecuteCameraQueueBuildResult {
   let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -72,23 +73,28 @@ fn render3d_build_camera_queue_entry(
     gpu_culling_supported,
     camera.no_indirect_drawing,
   )
+  let phase_items = match retained_phase_items {
+    Some(items) => items
+    None =>
+      render3d_queue_mesh_phase_items(
+        meshes,
+        render_mesh_instances,
+        render_mesh_assets,
+        maybe_batched_instance_buffers,
+        mesh_allocator,
+        render_material_instances,
+        render_material_bindings,
+        material_slots,
+        pending_mesh_material_queues,
+        camera.transform,
+        camera_indirect_enabled,
+        retained_view_entity=@render_view.RetainedViewEntity::new(view_entity),
+        specialized_material_pipeline_cache~,
+        visible_mesh_entities~,
+      )
+  }
   let draw_queue_entry = render3d_build_gpu_preprocess_queue_entry(
-    render3d_queue_mesh_phase_items(
-      meshes,
-      render_mesh_instances,
-      render_mesh_assets,
-      maybe_batched_instance_buffers,
-      mesh_allocator,
-      render_material_instances,
-      render_material_bindings,
-      material_slots,
-      pending_mesh_material_queues,
-      camera.transform,
-      camera_indirect_enabled,
-      retained_view_entity=@render_view.RetainedViewEntity::new(view_entity),
-      specialized_material_pipeline_cache~,
-      visible_mesh_entities~,
-    ),
+    phase_items,
     maybe_batched_instance_buffers,
     maybe_mesh_culling_data_buffer,
     camera_indirect_enabled,
@@ -296,6 +302,7 @@ fn render3d_prepare_camera_queue_entry(
   gpu_culling_supported : Bool,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
+  retained_phase_items? : Array[MeshPhaseItem3d]? = None,
 ) -> Render3dPreparedCameraQueue? {
   let camera = extracted_camera.payload
   guard render3d_execute_camera_viewport_state(camera) is Some(viewport_state) else {
@@ -325,6 +332,7 @@ fn render3d_prepare_camera_queue_entry(
     gpu_culling_supported,
     specialized_material_pipeline_cache~,
     visible_mesh_entities~,
+    retained_phase_items~,
   )
   Some(Render3dPreparedCameraQueue::{
     draw_queue_entry: queue_build_result.draw_queue_entry,
@@ -339,6 +347,7 @@ fn render3d_prepare_camera_queue_entry(
 
 ///|
 fn render3d_prepare_camera_queue_entries(
+  world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
@@ -350,6 +359,7 @@ fn render3d_prepare_camera_queue_entries(
   render_material_bindings : RenderMaterialBindings,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
+  dirty_specializations : @render_visibility.DirtySpecializations,
   gpu_instance_buffer_builder_enabled : Bool,
   gpu_culling_supported : Bool,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
@@ -369,6 +379,61 @@ fn render3d_prepare_camera_queue_entries(
         }
       None => None
     }
+    let retained_view_entity = @render_view.RetainedViewEntity::new(
+      camera.entity.main_entity,
+    )
+    let (dequeued, queue_candidates) = match visible_mesh_entities {
+      Some(visible) => {
+        let view_pending_queues = match
+          pending_mesh_material_queues.queues().get(retained_view_entity) {
+          Some(queues) => queues
+          None =>
+            abort(
+              "View pending mesh material queues should have been created in pbr material specialization",
+            )
+        }
+        (
+          dirty_specializations.iter_to_dequeue(retained_view_entity, visible),
+          dirty_specializations.iter_to_queue(
+            retained_view_entity,
+            visible,
+            view_pending_queues.prev_frame(),
+          ),
+        )
+      }
+      None => ([], [])
+    }
+    queue_candidates.sort_by(render3d_visible_pair_compare)
+    let candidate_entities = @render_visibility.RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
+    candidate_entities.update_cpu_culled_entities(queue_candidates)
+    let camera_indirect_enabled = @pbr_render.render3d_camera_indirect_enabled(
+      gpu_instance_buffer_builder_enabled,
+      gpu_culling_supported,
+      camera.payload.no_indirect_drawing,
+    )
+    let queued_items = render3d_queue_mesh_phase_items(
+      meshes,
+      render_mesh_instances,
+      render_mesh_assets,
+      maybe_batched_instance_buffers,
+      mesh_allocator,
+      render_material_instances,
+      render_material_bindings,
+      material_slots,
+      pending_mesh_material_queues,
+      camera.payload.transform,
+      camera_indirect_enabled,
+      retained_view_entity~,
+      specialized_material_pipeline_cache~,
+      visible_mesh_entities=Some(candidate_entities),
+    )
+    let retained_phase_items = render3d_apply_main_view_phase_queue(
+      world,
+      camera.entity.main_entity,
+      meshes,
+      dequeued,
+      queued_items,
+    )
     prepared.push(
       render3d_prepare_camera_queue_entry(
         camera,
@@ -385,7 +450,7 @@ fn render3d_prepare_camera_queue_entries(
         gpu_instance_buffer_builder_enabled,
         gpu_culling_supported,
         specialized_material_pipeline_cache~,
-        visible_mesh_entities~,
+        retained_phase_items=Some(retained_phase_items),
       ),
     )
   }
