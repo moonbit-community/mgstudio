@@ -109,6 +109,10 @@ pub fn configure_pbr_render_startup_systems(
   sub_app
   .add_systems(
     @render.render_startup_schedule_stage(),
+    @app.system(init_mesh_pipeline).named("mgstudio_pbr::init_mesh_pipeline"),
+  )
+  .add_systems(
+    @render.render_startup_schedule_stage(),
     @app.system(@pbr_render.init_shadow_samplers).named(
       "mgstudio_pbr::init_shadow_samplers",
     ),
@@ -237,6 +241,9 @@ fn configure_pbr_render_world_resources(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
+  pbr_init_render_resource_if_missing(world, ViewKeyCache::resource(), fn() {
+    ViewKeyCache::ViewKeyCache()
+  })
   pbr_init_render_resource_if_missing(
     world,
     @pbr_render.LightMeta::resource(),

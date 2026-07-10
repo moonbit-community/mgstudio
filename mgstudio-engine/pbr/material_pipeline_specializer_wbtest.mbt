@@ -1484,6 +1484,21 @@ test "pbr prepass depth-only opaque path uses empty material layout" {
 }
 
 ///|
+test "pbr mesh pipeline specializes the base mesh descriptor without material layout" {
+  let pipeline = MeshPipeline::new()
+  let descriptor = try! pipeline.specialize(
+    pbr_material_specializer_test_key().mesh_key(),
+    pbr_material_specializer_test_layout(),
+  )
+  debug_inspect(
+    descriptor.vertex.shader,
+    content="Some(\"pbr/render/mesh.wgsl\")",
+  )
+  debug_inspect(descriptor.layout.length(), content="3")
+  debug_inspect(descriptor.vertex.buffers.length(), content="1")
+}
+
+///|
 test "pbr prepass pipeline emulates unclipped depth when depth clip control is missing" {
   let properties = render3d_material_properties_for_standard_material(
     @material.StandardMaterial::StandardMaterial(),

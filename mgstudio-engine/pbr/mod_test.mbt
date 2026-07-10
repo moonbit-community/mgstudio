@@ -2154,6 +2154,10 @@ test "render3d: pbr plugin installs Bevy-shaped render startup resources" {
     render_world.resource(ecs_key_fallback_bindless_resources).is_present(),
     content="true",
   )
+  debug_inspect(
+    render_world.resource(MeshPipeline::resource()).is_present(),
+    content="true",
+  )
   let meta = match
     render_world.get_resource(ecs_key_global_clusterable_object_meta) {
     Some(value) => value

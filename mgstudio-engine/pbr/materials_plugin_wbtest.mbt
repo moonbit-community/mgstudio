@@ -1927,6 +1927,13 @@ test "render3d: view key cache marks material views dirty when pipeline capabili
 
   render3d_check_views_need_specialization(world, [camera], false, true)
   let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  let view_key_cache = world.get_resource(ViewKeyCache::resource()).unwrap()
+  debug_inspect(view_key_cache.len(), content="1")
+  debug_inspect(
+    view_key_cache.get(retained_view).unwrap().bits() ==
+    render3d_camera_mesh_pipeline_view_key_bits(camera.payload),
+    content="true",
+  )
   let dirty = world
     .get_resource(@render_visibility.DirtySpecializations::resource())
     .unwrap()

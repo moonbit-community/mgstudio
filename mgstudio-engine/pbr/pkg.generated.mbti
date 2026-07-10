@@ -2019,6 +2019,15 @@ pub impl[M : Material] @ecs.Component for MeshMaterial3dTyped[M]
 pub impl[M] ToJson for MeshMaterial3dTyped[M]
 pub impl[M] @json.FromJson for MeshMaterial3dTyped[M]
 
+pub struct MeshPipeline {
+  binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
+}
+pub fn MeshPipeline::new(binding_arrays_are_usable? : Bool, clustered_decals_are_usable? : Bool, standard_material_texture_features? : StandardMaterialTextureFeatureSet) -> Self
+pub fn MeshPipeline::specialize(Self, @material.ErasedMeshPipelineKey, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
+pub impl @app.Resource for MeshPipeline
+
 pub struct MeshRayCastHit {
   point : @math.Vec3
   normal : @math.Vec3
@@ -3186,6 +3195,20 @@ pub fn ViewGpuClusteringPipelineIds::clustering_populate_pipeline_id(Self) -> @r
 pub fn ViewGpuClusteringPipelineIds::clustering_z_slicing_pipeline_id(Self) -> @render_resource.CachedComputePipelineId
 pub fn ViewGpuClusteringPipelineIds::new(@render_resource.CachedComputePipelineId, @render_resource.CachedRenderPipelineId, @render_resource.CachedComputePipelineId, @render_resource.CachedComputePipelineId, @render_resource.CachedRenderPipelineId) -> Self
 pub impl @ecs.Component for ViewGpuClusteringPipelineIds
+
+pub struct ViewKeyCache {
+  keys : @hashmap.HashMap[@view.RetainedViewEntity, ViewKeyCacheEntry]
+}
+pub fn ViewKeyCache::ViewKeyCache() -> Self
+pub fn ViewKeyCache::get(Self, @view.RetainedViewEntity) -> @material.ErasedMeshPipelineKey?
+pub fn ViewKeyCache::len(Self) -> Int
+pub impl @app.Resource for ViewKeyCache
+
+pub struct ViewKeyCacheEntry {
+  view_key_bits : UInt64
+  binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
+} derive(Eq)
 
 pub struct ViewPendingWireframeQueues {
   mut current_frame : @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]

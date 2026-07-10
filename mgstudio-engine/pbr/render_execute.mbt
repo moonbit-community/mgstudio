@@ -497,19 +497,19 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/mesh.rs::ViewKeyCache`.
-priv struct Render3dViewSpecializationKey {
+pub struct ViewKeyCacheEntry {
   view_key_bits : UInt64
   binding_arrays_are_usable : Bool
   clustered_decals_are_usable : Bool
 } derive(Eq)
 
 ///|
-fn Render3dViewSpecializationKey::new(
+fn ViewKeyCacheEntry::new(
   camera : Camera3dViewPayload,
   binding_arrays_are_usable : Bool,
   clustered_decals_are_usable : Bool,
-) -> Render3dViewSpecializationKey {
-  Render3dViewSpecializationKey::{
+) -> ViewKeyCacheEntry {
+  ViewKeyCacheEntry::{
     view_key_bits: render3d_camera_mesh_pipeline_view_key_bits(camera),
     binding_arrays_are_usable,
     clustered_decals_are_usable,
@@ -517,41 +517,55 @@ fn Render3dViewSpecializationKey::new(
 }
 
 ///|
-priv struct Render3dViewKeyCache {
-  keys : @hashmap.HashMap[
-    @render_view.RetainedViewEntity,
-    Render3dViewSpecializationKey,
-  ]
+pub struct ViewKeyCache {
+  keys : @hashmap.HashMap[@render_view.RetainedViewEntity, ViewKeyCacheEntry]
 }
 
 ///|
-fn Render3dViewKeyCache::Render3dViewKeyCache() -> Render3dViewKeyCache {
-  Render3dViewKeyCache::{ keys: @hashmap.HashMap([]) }
+pub fn ViewKeyCache::ViewKeyCache() -> ViewKeyCache {
+  ViewKeyCache::{ keys: @hashmap.HashMap([]) }
 }
 
 ///|
-let ecs_key_render3d_view_key_cache : @ecs.ResourceKey[Render3dViewKeyCache] = @ecs.register_resource(
+let ecs_key_render3d_view_key_cache : @ecs.ResourceKey[ViewKeyCache] = @ecs.register_resource(
   debug_name="mgstudio_pbr::ViewKeyCache",
 )
 
 ///|
-impl @app.Resource for Render3dViewKeyCache with fn resource() {
+pub impl @app.Resource for ViewKeyCache with fn resource() {
   ecs_key_render3d_view_key_cache
+}
+
+///|
+pub fn ViewKeyCache::get(
+  self : ViewKeyCache,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> @material.ErasedMeshPipelineKey? {
+  self.keys
+  .get(retained_view_entity)
+  .map(fn(entry) {
+    @material.ErasedMeshPipelineKey::new(entry.view_key_bits, "MeshPipelineKey")
+  })
+}
+
+///|
+pub fn ViewKeyCache::len(self : ViewKeyCache) -> Int {
+  self.keys.length()
 }
 
 ///|
 fn render3d_view_key_cache_mut_or_init(
   world : @ecs.World,
-) -> @ecs.ResourceMut[Render3dViewKeyCache] {
-  if world.get_resource(Render3dViewKeyCache::resource()) is None {
+) -> @ecs.ResourceMut[ViewKeyCache] {
+  if world.get_resource(ViewKeyCache::resource()) is None {
     world.insert_resource(
-      Render3dViewKeyCache::resource(),
-      Render3dViewKeyCache::Render3dViewKeyCache(),
+      ViewKeyCache::resource(),
+      ViewKeyCache::ViewKeyCache(),
     )
   }
-  match world.get_resource_mut(Render3dViewKeyCache::resource()) {
+  match world.get_resource_mut(ViewKeyCache::resource()) {
     Some(value) => value
-    None => abort("missing Render3dViewKeyCache resource")
+    None => abort("missing ViewKeyCache resource")
   }
 }
 
@@ -579,7 +593,7 @@ fn render3d_check_views_need_specialization(
         camera.entity.main_entity,
       )
       live_views.add(retained_view_entity)
-      let view_key = Render3dViewSpecializationKey::new(
+      let view_key = ViewKeyCacheEntry::new(
         camera.payload,
         binding_arrays_are_usable,
         clustered_decals_are_usable,

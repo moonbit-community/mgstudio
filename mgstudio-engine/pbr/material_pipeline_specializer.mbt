@@ -1159,6 +1159,74 @@ fn pbr_mesh_pipeline_descriptor(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_pbr/src/render/mesh.rs::MeshPipeline`.
+pub struct MeshPipeline {
+  binding_arrays_are_usable : Bool
+  clustered_decals_are_usable : Bool
+  standard_material_texture_features : StandardMaterialTextureFeatureSet
+}
+
+///|
+pub fn MeshPipeline::new(
+  binding_arrays_are_usable? : Bool = false,
+  clustered_decals_are_usable? : Bool = false,
+  standard_material_texture_features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
+) -> MeshPipeline {
+  MeshPipeline::{
+    binding_arrays_are_usable,
+    clustered_decals_are_usable,
+    standard_material_texture_features,
+  }
+}
+
+///|
+pub fn MeshPipeline::specialize(
+  self : MeshPipeline,
+  key : @material.ErasedMeshPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  pbr_mesh_pipeline_descriptor(
+    key,
+    layout,
+    self.binding_arrays_are_usable,
+    self.clustered_decals_are_usable,
+    self.standard_material_texture_features,
+  )
+}
+
+///|
+let mesh_pipeline_resource_key : @ecs.ResourceKey[MeshPipeline] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::MeshPipeline",
+)
+
+///|
+pub impl @app.Resource for MeshPipeline with fn resource() {
+  mesh_pipeline_resource_key
+}
+
+///|
+fn init_mesh_pipeline(world : @ecs.World) -> Unit {
+  let binding_arrays_are_usable = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+    required_binding_array_sampler_elements_per_shader_stage=@pbr_render.RENDER3D_LIGHTMAPS_PER_SLAB.reinterpret_as_uint(),
+  )
+  let clustered_decals_are_usable = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=0U,
+  )
+  world.insert_resource(
+    MeshPipeline::resource(),
+    MeshPipeline::new(
+      binding_arrays_are_usable~,
+      clustered_decals_are_usable~,
+      standard_material_texture_features=pbr_render_world_standard_material_texture_features(
+        world,
+      ),
+    ),
+  )
+}
+
+///|
 fn pbr_prepass_pipeline_descriptor(
   mesh_key : @material.ErasedMeshPipelineKey,
   layout : @material.MaterialMeshVertexLayout,
