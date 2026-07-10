@@ -727,6 +727,7 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh3d_pass_uniform_states.clear()
   self.mesh3d_frame_view_bg_cache.clear()
   self.mesh3d_motion_vector_view_bg_cache.clear()
+  self.mesh3d_prepass_attachments_used.clear()
   if self.frame_count == 4294967295U {
     self.frame_count = 0U
   } else {

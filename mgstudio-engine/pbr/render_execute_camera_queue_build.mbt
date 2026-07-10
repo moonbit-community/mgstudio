@@ -31,6 +31,27 @@ fn render3d_camera_queue_needs_gpu_preprocess(
 }
 
 ///|
+fn render3d_should_run_late_prepass(
+  gpu_preprocess_needed : Bool,
+  gpu_occlusion_culling_enabled : Bool,
+  no_indirect_drawing : Bool,
+) -> Bool {
+  gpu_preprocess_needed && gpu_occlusion_culling_enabled && !no_indirect_drawing
+}
+
+///|
+fn render3d_camera_queue_runs_late_prepass(
+  camera : Camera3dViewPayload,
+  prepared_queue : Render3dPreparedCameraQueue,
+) -> Bool {
+  render3d_should_run_late_prepass(
+    render3d_camera_queue_needs_gpu_preprocess(prepared_queue.draw_queue_entry),
+    camera.gpu_occlusion_culling_enabled,
+    camera.no_indirect_drawing,
+  )
+}
+
+///|
 fn render3d_camera_exposure_value_for_preprocess(
   camera : Camera3dViewPayload,
 ) -> Float {
@@ -256,10 +277,7 @@ fn render3d_dispatch_camera_preprocess_late(
   camera : Camera3dViewPayload,
   prepared_queue : Render3dPreparedCameraQueue,
 ) -> Unit {
-  if !render3d_camera_queue_needs_gpu_preprocess(
-      prepared_queue.draw_queue_entry,
-    ) ||
-    !camera.gpu_occlusion_culling_enabled {
+  if !render3d_camera_queue_runs_late_prepass(camera, prepared_queue) {
     return
   }
   let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(

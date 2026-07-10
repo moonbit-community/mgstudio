@@ -142,6 +142,7 @@ pub fn GpuBackend::new(
     frame_retired_bind_groups: [],
     frame_retired_texture_views: [],
     frame_count: 0U,
+    mesh3d_prepass_attachments_used: Map([]),
     depth_texture: None,
     depth_view: None,
     depth_target_id: -2,

@@ -32,6 +32,7 @@ pub struct GpuBackend {
   frame_retired_bind_groups : Array[@wgpu.BindGroup]
   frame_retired_texture_views : Array[@wgpu.TextureView]
   mut frame_count : UInt
+  mesh3d_prepass_attachments_used : Map[Int, Bool]
   mut depth_texture : @wgpu.Texture?
   mut depth_view : @wgpu.TextureView?
   mut depth_target_id : Int

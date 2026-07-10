@@ -535,6 +535,26 @@ pub fn GpuBackend::begin_pass_with_depth(
 }
 
 ///|
+// Bevy source: `bevy_render/src/texture/texture_attachment.rs`,
+// `TextureAttachment::get_attachment` and `DepthAttachment::get_attachment`.
+// Each attachment clears on its first stored use in a frame and loads on all
+// subsequent uses, independently of the other prepass attachments.
+fn mesh3d_prepass_attachment_load_op(
+  attachments_used : Map[Int, Bool],
+  attachment_id : Int,
+  clear_enabled : Int,
+) -> UInt {
+  if clear_enabled == 0 || attachment_id < 0 {
+    return @wgpu.LOAD_OP_LOAD
+  }
+  if attachments_used.contains(attachment_id) {
+    return @wgpu.LOAD_OP_LOAD
+  }
+  attachments_used.set(attachment_id, true)
+  @wgpu.LOAD_OP_CLEAR
+}
+
+///|
 pub fn GpuBackend::begin_pass_3d(
   self : GpuBackend,
   target_id : Int,
@@ -723,7 +743,9 @@ pub fn GpuBackend::begin_pass_3d(
       is Some(prepass_depth_texture) else {
       return
     }
-    guard ensure_depth_view_for_target(self, target_id, safe_msaa_sample_count)
+    guard ensure_depth_view_for_target(
+        self, prepass_depth_texture_id, safe_msaa_sample_count,
+      )
       is Some(view_depth_view) else {
       return
     }
@@ -939,6 +961,75 @@ pub fn GpuBackend::begin_pass_3d(
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
+  let uses_prepass_attachments = is_prepass_depth_pass ||
+    (base_kind == PASS_KIND_BASE_MOTION_VECTOR && secondary_target_id >= 0)
+  let primary_prepass_attachment_id = if is_prepass_depth_pass {
+    prepass_normal_texture_id
+  } else {
+    target_id
+  }
+  let primary_color_load_op_u32 = match color_view {
+    Some(_) =>
+      if uses_prepass_attachments {
+        mesh3d_prepass_attachment_load_op(
+          self.mesh3d_prepass_attachments_used,
+          primary_prepass_attachment_id,
+          effective_clear_enabled,
+        )
+      } else {
+        color_load_op_u32
+      }
+    None => color_load_op_u32
+  }
+  let secondary_color_load_op_u32 = match secondary_color_view {
+    Some(_) =>
+      if uses_prepass_attachments {
+        mesh3d_prepass_attachment_load_op(
+          self.mesh3d_prepass_attachments_used,
+          secondary_target_id,
+          effective_clear_enabled,
+        )
+      } else {
+        color_load_op_u32
+      }
+    None => color_load_op_u32
+  }
+  let deferred_color_load_op_u32 = match deferred_color_view {
+    Some(_) =>
+      if uses_prepass_attachments {
+        mesh3d_prepass_attachment_load_op(
+          self.mesh3d_prepass_attachments_used,
+          prepass_deferred_texture_id,
+          effective_clear_enabled,
+        )
+      } else {
+        color_load_op_u32
+      }
+    None => color_load_op_u32
+  }
+  let deferred_lighting_load_op_u32 = match
+    deferred_lighting_pass_id_color_view {
+    Some(_) =>
+      if uses_prepass_attachments {
+        mesh3d_prepass_attachment_load_op(
+          self.mesh3d_prepass_attachments_used,
+          prepass_deferred_lighting_pass_id_texture_id,
+          effective_clear_enabled,
+        )
+      } else {
+        color_load_op_u32
+      }
+    None => color_load_op_u32
+  }
+  let prepass_depth_load_op_u32 = if uses_prepass_attachments {
+    mesh3d_prepass_attachment_load_op(
+      self.mesh3d_prepass_attachments_used,
+      prepass_depth_texture_id,
+      effective_clear_enabled,
+    )
+  } else {
+    depth_load_op_u32
+  }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
   let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
   let vw = if viewport_w < 0 { 0U } else { viewport_w.reinterpret_as_uint() }
@@ -1150,7 +1241,7 @@ pub fn GpuBackend::begin_pass_3d(
         builder.set_color_attachment(
           0U,
           view,
-          load_op_u32=color_load_op_u32,
+          load_op_u32=primary_color_load_op_u32,
           store_op_u32=@wgpu.STORE_OP_STORE,
           clear_r_f32=0.0F,
           clear_g_f32=0.0F,
@@ -1177,7 +1268,7 @@ pub fn GpuBackend::begin_pass_3d(
         builder.set_color_attachment(
           1U,
           view,
-          load_op_u32=color_load_op_u32,
+          load_op_u32=secondary_color_load_op_u32,
           store_op_u32=@wgpu.STORE_OP_STORE,
           clear_r_f32=0.0F,
           clear_g_f32=0.0F,
@@ -1207,7 +1298,7 @@ pub fn GpuBackend::begin_pass_3d(
         builder.set_color_attachment(
           2U,
           view,
-          load_op_u32=color_load_op_u32,
+          load_op_u32=deferred_color_load_op_u32,
           store_op_u32=@wgpu.STORE_OP_STORE,
           clear_r_f32=0.0F,
           clear_g_f32=0.0F,
@@ -1234,7 +1325,7 @@ pub fn GpuBackend::begin_pass_3d(
         builder.set_color_attachment(
           3U,
           view,
-          load_op_u32=color_load_op_u32,
+          load_op_u32=deferred_lighting_load_op_u32,
           store_op_u32=@wgpu.STORE_OP_STORE,
           clear_r_f32=0.0F,
           clear_g_f32=0.0F,
@@ -1261,7 +1352,7 @@ pub fn GpuBackend::begin_pass_3d(
     }
     builder.set_depth_stencil_attachment(
       depth_view,
-      depth_load_op_u32~,
+      depth_load_op_u32=prepass_depth_load_op_u32,
       depth_store_op_u32=@wgpu.STORE_OP_STORE,
       depth_clear_value_f32=0.0F,
       depth_read_only=false,
@@ -1281,7 +1372,7 @@ pub fn GpuBackend::begin_pass_3d(
         command_encoder_begin_render_pass_depth_u32(
           frame.encoder,
           depth_view,
-          depth_load_op_u32~,
+          depth_load_op_u32=prepass_depth_load_op_u32,
           depth_store_op_u32=@wgpu.STORE_OP_STORE,
           depth_clear_value_f32=0.0F,
           depth_read_only=false,
@@ -1299,19 +1390,19 @@ pub fn GpuBackend::begin_pass_3d(
                   color0_view,
                   color1_view,
                   depth_view,
-                  color0_load_op_u32=color_load_op_u32,
+                  color0_load_op_u32=primary_color_load_op_u32,
                   color0_store_op_u32=@wgpu.STORE_OP_STORE,
                   color0_clear_r_f32=0.0F,
                   color0_clear_g_f32=0.0F,
                   color0_clear_b_f32=0.0F,
                   color0_clear_a_f32=0.0F,
-                  color1_load_op_u32=color_load_op_u32,
+                  color1_load_op_u32=secondary_color_load_op_u32,
                   color1_store_op_u32=@wgpu.STORE_OP_STORE,
                   color1_clear_r_f32=0.0F,
                   color1_clear_g_f32=0.0F,
                   color1_clear_b_f32=0.0F,
                   color1_clear_a_f32=0.0F,
-                  depth_load_op_u32~,
+                  depth_load_op_u32=prepass_depth_load_op_u32,
                   depth_store_op_u32=@wgpu.STORE_OP_STORE,
                   depth_clear_value_f32=0.0F,
                   depth_read_only=false,
@@ -1325,13 +1416,13 @@ pub fn GpuBackend::begin_pass_3d(
                 frame.encoder.begin_render_pass_color1_depth_u32(
                   color1_view,
                   depth_view,
-                  color1_load_op_u32=color_load_op_u32,
+                  color1_load_op_u32=secondary_color_load_op_u32,
                   color1_store_op_u32=@wgpu.STORE_OP_STORE,
                   color1_clear_r_f32=0.0F,
                   color1_clear_g_f32=0.0F,
                   color1_clear_b_f32=0.0F,
                   color1_clear_a_f32=0.0F,
-                  depth_load_op_u32~,
+                  depth_load_op_u32=prepass_depth_load_op_u32,
                   depth_store_op_u32=@wgpu.STORE_OP_STORE,
                   depth_clear_value_f32=0.0F,
                   depth_read_only=false,
@@ -1347,19 +1438,19 @@ pub fn GpuBackend::begin_pass_3d(
                 color0_view,
                 color1_view,
                 depth_view,
-                color0_load_op_u32=color_load_op_u32,
+                color0_load_op_u32=primary_color_load_op_u32,
                 color0_store_op_u32=@wgpu.STORE_OP_STORE,
                 color0_clear_r_f32=clear_r,
                 color0_clear_g_f32=clear_g,
                 color0_clear_b_f32=clear_b,
                 color0_clear_a_f32=clear_a,
-                color1_load_op_u32=color_load_op_u32,
+                color1_load_op_u32=secondary_color_load_op_u32,
                 color1_store_op_u32=@wgpu.STORE_OP_STORE,
                 color1_clear_r_f32=0.0F,
                 color1_clear_g_f32=0.0F,
                 color1_clear_b_f32=0.0F,
                 color1_clear_a_f32=0.0F,
-                depth_load_op_u32~,
+                depth_load_op_u32=prepass_depth_load_op_u32,
                 depth_store_op_u32=@wgpu.STORE_OP_STORE,
                 depth_clear_value_f32=0.0F,
                 depth_read_only=false,
@@ -1377,14 +1468,14 @@ pub fn GpuBackend::begin_pass_3d(
                   frame.encoder,
                   color0_view,
                   resolve_view,
-                  color_load_op_u32~,
+                  color_load_op_u32=primary_color_load_op_u32,
                   color_store_op_u32=@wgpu.STORE_OP_STORE,
                   color_clear_r_f32=clear_r,
                   color_clear_g_f32=clear_g,
                   color_clear_b_f32=clear_b,
                   color_clear_a_f32=clear_a,
                   depth_view,
-                  depth_load_op_u32~,
+                  depth_load_op_u32=prepass_depth_load_op_u32,
                   depth_store_op_u32=@wgpu.STORE_OP_STORE,
                   depth_clear_value_f32=0.0F,
                   depth_read_only=false,
@@ -1402,13 +1493,13 @@ pub fn GpuBackend::begin_pass_3d(
                 frame.encoder.begin_render_pass_color_depth_u32(
                   color0_view,
                   depth_view,
-                  color_load_op_u32~,
+                  color_load_op_u32=primary_color_load_op_u32,
                   color_store_op_u32=@wgpu.STORE_OP_STORE,
                   color_clear_r_f32=clear_r,
                   color_clear_g_f32=clear_g,
                   color_clear_b_f32=clear_b,
                   color_clear_a_f32=clear_a,
-                  depth_load_op_u32~,
+                  depth_load_op_u32=prepass_depth_load_op_u32,
                   depth_store_op_u32=@wgpu.STORE_OP_STORE,
                   depth_clear_value_f32=0.0F,
                   depth_read_only=false,

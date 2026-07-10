@@ -325,6 +325,49 @@ fn render3d_execute_camera(
   prepass_normal_target_id = prepass_result.normal_texture_id
   prepass_deferred_target_id = prepass_result.deferred_texture_id
   prepass_deferred_lighting_pass_id_target_id = prepass_result.deferred_lighting_pass_id_texture_id
+  if render3d_camera_queue_runs_late_prepass(camera, prepared_queue) {
+    render3d_dispatch_camera_preprocess_late(
+      camera_entity, camera, prepared_queue,
+    )
+    let late_prepass_result = render3d_execute_camera_prepass(
+      world,
+      camera_entity,
+      camera,
+      meshes,
+      prepass_draw_items,
+      deferred_prepass_draw_items,
+      indexed_indirect_parameter_indices,
+      non_indexed_indirect_parameter_indices,
+      camera.depth_prepass_enabled,
+      camera.normal_prepass_enabled,
+      motion_vector_prepass_enabled,
+      camera_deferred_enabled,
+      motion_blur_active,
+      scene_target_id,
+      velocity_target_id,
+      view_width,
+      view_height,
+      msaa_sample_count,
+      view_width_logical,
+      view_height_logical,
+      viewport_x,
+      viewport_y,
+      viewport_width,
+      viewport_height,
+      camera_pass_projection,
+      pass_lighting,
+      camera_exposure_value,
+      point_shadow_near,
+      motion_vector_pass_kind,
+      prepass_pass_kind,
+    )
+    scene_target_id = late_prepass_result.scene_target_id
+    velocity_target_id = late_prepass_result.velocity_target_id
+    prepass_depth_target_id = late_prepass_result.depth_texture_id
+    prepass_normal_target_id = late_prepass_result.normal_texture_id
+    prepass_deferred_target_id = late_prepass_result.deferred_texture_id
+    prepass_deferred_lighting_pass_id_target_id = late_prepass_result.deferred_lighting_pass_id_texture_id
+  }
   ignore(
     @render.host_gpu_reserve_mesh3d_draw_storage(
       count=render3d_main_view_phase_item_count_or_abort(world, camera_entity),
@@ -339,9 +382,6 @@ fn render3d_execute_camera(
     shadow_pass_plan.phase_views,
   )
   shadow_bindings = shadow_pass_plan.bindings
-  render3d_dispatch_camera_preprocess_late(
-    camera_entity, camera, prepared_queue,
-  )
   if !motion_blur_active &&
     (
       transmission_enabled ||

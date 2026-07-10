@@ -128,3 +128,11 @@ test "pbr prepass: consumer reads retained prepass and deferred phase items" {
     inspect(non_indexed[index], content="-1")
   }
 }
+
+///|
+test "pbr prepass: late node follows Bevy occlusion and indirect gates" {
+  inspect(render3d_should_run_late_prepass(true, true, false), content="true")
+  inspect(render3d_should_run_late_prepass(false, true, false), content="false")
+  inspect(render3d_should_run_late_prepass(true, false, false), content="false")
+  inspect(render3d_should_run_late_prepass(true, true, true), content="false")
+}
