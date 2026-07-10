@@ -1325,6 +1325,86 @@ test "renderer: indexed mesh3d allocator metadata exposes index slab ranges" {
 }
 
 ///|
+test "renderer: prepared render assets replace legacy buffers with allocator slabs" {
+  let backend = GpuBackend::new()
+  backend.meshes.clear()
+  let mesh_vertex_layout = @mesh.MeshVertexBufferLayout::new(
+    attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
+    layout=@mesh.VertexBufferLayout::new(
+      array_stride=12,
+      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=0,
+        ),
+      ],
+    ),
+  )
+  let vertex_bytes = Bytes::from_array(Array::make(36, b'\x00'))
+  let indices : Array[Int] = [0, 1, 2]
+  let first_mesh_id = backend.create_mesh2d_vertex_buffer(
+    vertex_bytes, 3, indices, 0, mesh_vertex_layout,
+  )
+  let second_mesh_id = backend.create_mesh2d_vertex_buffer(
+    vertex_bytes, 3, indices, 0, mesh_vertex_layout,
+  )
+  let allocator = @render_mesh.MeshAllocator::MeshAllocator()
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=3,
+    indexed=true,
+    index_count=3,
+    index_format=@render_mesh.RenderMeshIndexFormat::Uint16,
+  )
+  let first_plan = allocator.allocate_render_mesh(101, render_mesh, 12)
+  let first_vertex_slice = allocator.mesh_vertex_slice(101).unwrap()
+  let first_index_slice = allocator.mesh_index_slice(101).unwrap()
+  let first_prepared = backend.prepare_mesh3d_allocator_asset(
+    first_mesh_id,
+    first_plan,
+    vertex_bytes,
+    3,
+    indices,
+    false,
+    0,
+    mesh_vertex_layout,
+    first_vertex_slice.start(),
+    first_index_slice.start(),
+  )
+  let second_plan = allocator.allocate_render_mesh(102, render_mesh, 12)
+  let second_vertex_slice = allocator.mesh_vertex_slice(102).unwrap()
+  let second_index_slice = allocator.mesh_index_slice(102).unwrap()
+  let second_prepared = backend.prepare_mesh3d_allocator_asset(
+    second_mesh_id,
+    second_plan,
+    vertex_bytes,
+    3,
+    indices,
+    false,
+    0,
+    mesh_vertex_layout,
+    second_vertex_slice.start(),
+    second_index_slice.start(),
+  )
+  let first = backend.meshes[0]
+  let second = backend.meshes[1]
+  let ok = first_prepared &&
+    second_prepared &&
+    first.vertex_start == 0U &&
+    first.index_start == 0U &&
+    second.vertex_start == 3U &&
+    second.index_start == 4U &&
+    first.vertex_slab_id == second.vertex_slab_id &&
+    first.index_slab_id == second.index_slab_id &&
+    first.vertex_stride_bytes == 12UL &&
+    first.index_stride_bytes == 2UL &&
+    !first.uses_u32_indices &&
+    backend.mesh_allocator_buffers.length() == 2
+  debug_inspect(ok, content="true")
+}
+
+///|
 test "renderer: deleting mesh3d frees allocator slabs after last resident mesh" {
   let backend = GpuBackend::new()
   backend.meshes.clear()

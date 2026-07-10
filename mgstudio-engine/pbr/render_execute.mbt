@@ -4383,26 +4383,66 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
     mesh_runtime_state_value.mesh_vertex_buffer_layouts,
   )
   mesh_allocator.modify(fn(allocator) {
-    for prepared_asset in prepared_assets {
+    for prepared_index in 0..<prepared_assets.length() {
+      let prepared_asset = prepared_assets[prepared_index]
       if allocator.mesh_slabs(prepared_asset.mesh_asset_id()) is Some(_) {
         continue
       }
       let render_mesh = prepared_asset.render_mesh()
-      let vertex_stride = render_mesh
-        .host_vertex_buffer_layout(
-          mesh_runtime_state_value.mesh_vertex_buffer_layouts,
-        )
-        .layout()
-        .layout()
-        .array_stride()
-      ignore(
-        allocator.allocate_render_mesh(
-          prepared_asset.mesh_asset_id(),
-          render_mesh,
-          vertex_stride,
-          settings=mesh_allocator_settings,
-        ),
+      let mesh_vertex_layout = render_mesh.layout().layout()
+      let plan = allocator.allocate_render_mesh(
+        prepared_asset.mesh_asset_id(),
+        render_mesh,
+        mesh_vertex_layout.layout().array_stride(),
+        settings=mesh_allocator_settings,
       )
+      let source_mesh = extracted_assets[prepared_index].mesh()
+      let indices = source_mesh.indices().unwrap_or([])
+      let uses_u32_indices = match render_mesh.buffer_info() {
+        @render_mesh.RenderMeshBufferInfo::Indexed(
+          _,
+          @render_mesh.RenderMeshIndexFormat::Uint32
+        ) => true
+        _ => false
+      }
+      let primitive_topology = source_mesh
+        .primitive_topology()
+        .unwrap_or(@mesh.Mesh3dPrimitiveTopology::TriangleList)
+        .to_int()
+      guard allocator.mesh_vertex_slice(prepared_asset.mesh_asset_id())
+        is Some(vertex_slice) else {
+        abort("missing allocated render-mesh vertex slice")
+      }
+      let index_start = match
+        allocator.mesh_index_slice(prepared_asset.mesh_asset_id()) {
+        Some(index_slice) => index_slice.start()
+        None => 0
+      }
+      guard @pbr_render.render3d_uploaded_mesh_id(
+          mesh_runtime_state_value,
+          prepared_asset.mesh_asset_id(),
+        )
+        is Some(uploaded_mesh_id) else {
+        abort("missing uploaded host mesh before allocator preparation")
+      }
+      guard @render.host_gpu_prepare_mesh3d_allocator_asset(
+        mesh_id=uploaded_mesh_id,
+        plan~,
+        vertex_bytes=source_mesh.create_packed_vertex_buffer_data(),
+        vertex_count=source_mesh.count_vertices(),
+        indices~,
+        uses_u32_indices~,
+        primitive_topology~,
+        mesh_vertex_layout~,
+        vertex_start=vertex_slice.start(),
+        index_start~,
+      ) else {
+        abort("failed to prepare host render mesh in allocator slabs")
+      }
+      ignore(allocator.mark_vertex_resident(prepared_asset.mesh_asset_id()))
+      if indices.length() > 0 {
+        ignore(allocator.mark_index_resident(prepared_asset.mesh_asset_id()))
+      }
     }
   })
   render_mesh_assets.modify(fn(assets) {
@@ -4761,9 +4801,6 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
   }
   match render3d_queue_take_pending_frame(world) {
     Some(frame) => {
-      let mesh_runtime_state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(
-        world,
-      )
       let specialized_material_pipeline_cache = match
         world.get_resource(ecs_key_specialized_material_pipeline_cache) {
         Some(cache) => cache
@@ -4800,6 +4837,9 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       let maybe_batched_instance_buffers = world.get_resource(
         RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
       )
+      let maybe_mesh_culling_data_buffer = world.get_resource(
+        MeshCullingDataBuffer::resource(),
+      )
       let mesh_allocator = match
         world.get_resource(@render_mesh.MeshAllocator::resource()) {
         Some(value) => value
@@ -4821,27 +4861,23 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
             "missing RenderMaterialBindings resource during pbr queue_meshes",
           )
       }
-      let prepared_camera_queues = mesh_runtime_state.modify(fn(
-        mesh_runtime_state_value,
-      ) {
-        render3d_prepare_camera_queue_entries(
-          mesh_runtime_state_value,
-          frame.cameras,
-          frame.meshes,
-          render_mesh_instances,
-          render_mesh_assets,
-          maybe_batched_instance_buffers,
-          mesh_allocator,
-          render_material_instances,
-          render_material_bindings,
-          material_slots,
-          pending_mesh_material_queues,
-          frame.frame_config.gpu_instance_buffer_builder_enabled,
-          frame.frame_config.gpu_culling_supported,
-          specialized_material_pipeline_cache~,
-          visible_mesh_entity_classes=Some(visible_mesh_entity_classes),
-        )
-      })
+      let prepared_camera_queues = render3d_prepare_camera_queue_entries(
+        frame.cameras,
+        frame.meshes,
+        render_mesh_instances,
+        render_mesh_assets,
+        maybe_batched_instance_buffers,
+        maybe_mesh_culling_data_buffer,
+        mesh_allocator,
+        render_material_instances,
+        render_material_bindings,
+        material_slots,
+        pending_mesh_material_queues,
+        frame.frame_config.gpu_instance_buffer_builder_enabled,
+        frame.frame_config.gpu_culling_supported,
+        specialized_material_pipeline_cache~,
+        visible_mesh_entity_classes=Some(visible_mesh_entity_classes),
+      )
       render3d_retain_live_main_view_phases(world, frame.cameras)
       for camera_index in 0..<frame.cameras.length() {
         if camera_index >= prepared_camera_queues.length() {

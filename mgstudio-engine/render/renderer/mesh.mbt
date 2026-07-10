@@ -357,6 +357,29 @@ pub fn create_mesh3d_xyznuvrgba_indexed(
 }
 
 ///|
+pub fn prepare_mesh3d_allocator_asset(
+  mesh_id~ : Int,
+  plan~ : @render_mesh.MeshAllocatorRenderMeshPlan,
+  vertex_bytes~ : Bytes,
+  vertex_count~ : Int,
+  indices~ : Array[Int],
+  uses_u32_indices~ : Bool,
+  primitive_topology~ : Int,
+  mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout,
+  vertex_start~ : Int,
+  index_start~ : Int,
+) -> Bool {
+  match ensure_backend() {
+    Some(backend) =>
+      backend.prepare_mesh3d_allocator_asset(
+        mesh_id, plan, vertex_bytes, vertex_count, indices, uses_u32_indices, primitive_topology,
+        mesh_vertex_layout, vertex_start, index_start,
+      )
+    None => false
+  }
+}
+
+///|
 pub fn update_mesh3d_xyznuvrgba(
   mesh_id~ : Int,
   vertices_xyznuvrgba~ : Array[Float],

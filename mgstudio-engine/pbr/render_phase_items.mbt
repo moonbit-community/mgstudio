@@ -207,6 +207,7 @@ priv struct Render3dCameraOrderEntry {
 priv struct MeshPhaseItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
+  current_uniform_index : UInt
   phase : Int
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float

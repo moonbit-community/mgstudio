@@ -284,6 +284,94 @@ fn GpuBackend::mesh3d_execute_allocator_upload(
 }
 
 ///|
+pub fn GpuBackend::prepare_mesh3d_allocator_asset(
+  self : GpuBackend,
+  mesh_id : Int,
+  plan : @render_mesh.MeshAllocatorRenderMeshPlan,
+  vertex_bytes : Bytes,
+  vertex_count : Int,
+  indices : Array[Int],
+  uses_u32_indices : Bool,
+  primitive_topology_kind : Int,
+  mesh_vertex_layout : @mesh.MeshVertexBufferLayout,
+  vertex_start : Int,
+  index_start : Int,
+) -> Bool {
+  guard find_mesh_index(self, mesh_id) is Some(mesh_index) else { return false }
+  let vertex_layout = mesh_vertex_layout.layout()
+  if vertex_count <= 0 || vertex_layout.array_stride <= 0 {
+    return false
+  }
+  guard plan.vertex_upload() is Some(vertex_upload) else { return false }
+  if vertex_bytes.length() != vertex_count * vertex_layout.array_stride ||
+    vertex_bytes.length() > vertex_upload.size() {
+    return false
+  }
+  if plan.vertex_reallocate() is Some(reallocate) {
+    self.mesh3d_reallocate_allocator_slab(reallocate)
+  }
+  guard self.mesh3d_execute_allocator_upload(
+      mesh_id, vertex_upload, vertex_bytes,
+    )
+    is Some(vertex_buffer) else {
+    return false
+  }
+  let indexed = indices.length() > 0
+  let (index_buffer, index_slab_id) = if indexed {
+    guard plan.index_upload() is Some(index_upload) else { return false }
+    let index_bytes = mesh3d_index_bytes(indices, uses_u32_indices)
+    if index_bytes.length() > index_upload.size() {
+      return false
+    }
+    if plan.index_reallocate() is Some(reallocate) {
+      self.mesh3d_reallocate_allocator_slab(reallocate)
+    }
+    guard self.mesh3d_execute_allocator_upload(
+        mesh_id, index_upload, index_bytes,
+      )
+      is Some(buffer) else {
+      return false
+    }
+    (buffer, index_upload.slab_id())
+  } else {
+    (self.create_mesh3d_empty_index_buffer(), -1)
+  }
+  let old_mesh = self.meshes[mesh_index]
+  if old_mesh.vertex_slab_id < 0 {
+    mesh3d_retire_or_release_buffer(self, old_mesh.vertex_buf)
+  }
+  if old_mesh.index_slab_id < 0 {
+    mesh3d_retire_or_release_buffer(self, old_mesh.index_buf)
+  }
+  self.meshes[mesh_index] = GpuMeshInfo::{
+    id: mesh_id,
+    index_count: indices.length().reinterpret_as_uint(),
+    vertex_count: vertex_count.reinterpret_as_uint(),
+    index_start: if indexed {
+      index_start.reinterpret_as_uint()
+    } else {
+      0U
+    },
+    vertex_start: vertex_start.reinterpret_as_uint(),
+    index_slab_id,
+    vertex_slab_id: vertex_upload.slab_id(),
+    primitive_topology: mesh3d_topology_from_kind(primitive_topology_kind),
+    vertex_stride_bytes: vertex_layout.array_stride.to_uint64(),
+    mesh_vertex_layout: Some(mesh_vertex_layout),
+    vertex_layout: Some(vertex_layout),
+    index_stride_bytes: if uses_u32_indices {
+      4UL
+    } else {
+      2UL
+    },
+    uses_u32_indices,
+    vertex_buf: vertex_buffer,
+    index_buf: index_buffer,
+  }
+  true
+}
+
+///|
 fn mesh3d_usable_non_indexed_vertex_count(
   vertex_count : Int,
   primitive_topology : UInt,

@@ -42,13 +42,13 @@ fn render3d_camera_exposure_value_for_preprocess(
 
 ///|
 fn render3d_build_camera_queue_entry(
-  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   view_entity : @core.Entity,
   camera : Camera3dViewPayload,
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
   render_mesh_assets : @render_mesh.RenderMeshAssets,
   maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
+  maybe_mesh_culling_data_buffer : MeshCullingDataBuffer?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -89,8 +89,8 @@ fn render3d_build_camera_queue_entry(
       specialized_material_pipeline_cache~,
       visible_mesh_entities~,
     ),
-    meshes,
-    mesh_runtime_state_value.mesh_preprocess_static_cache,
+    maybe_batched_instance_buffers,
+    maybe_mesh_culling_data_buffer,
     camera_indirect_enabled,
     camera_indirect_enabled && camera.gpu_occlusion_culling_enabled,
   )
@@ -115,6 +115,7 @@ fn render3d_build_camera_queue_entry(
   ) = render3d_gpu_preprocess_indirect_parameter_index_maps(
     draw_items,
     draw_queue_entry.work_item_buffers,
+    draw_queue_entry.indirect_metadata,
   )
   @app.timeline_trace_end_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -280,12 +281,12 @@ fn render3d_dispatch_camera_preprocess_main(
 
 ///|
 fn render3d_prepare_camera_queue_entry(
-  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   extracted_camera : ExtractedCamera3d,
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
   render_mesh_assets : @render_mesh.RenderMeshAssets,
   maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
+  maybe_mesh_culling_data_buffer : MeshCullingDataBuffer?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -308,13 +309,13 @@ fn render3d_prepare_camera_queue_entry(
     viewport_state.view_height,
   )
   let queue_build_result = render3d_build_camera_queue_entry(
-    mesh_runtime_state_value,
     extracted_camera.entity.main_entity,
     camera,
     meshes,
     render_mesh_instances,
     render_mesh_assets,
     maybe_batched_instance_buffers,
+    maybe_mesh_culling_data_buffer,
     mesh_allocator,
     render_material_instances,
     render_material_bindings,
@@ -338,12 +339,12 @@ fn render3d_prepare_camera_queue_entry(
 
 ///|
 fn render3d_prepare_camera_queue_entries(
-  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   cameras : Array[ExtractedCamera3d],
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
   render_mesh_assets : @render_mesh.RenderMeshAssets,
   maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
+  maybe_mesh_culling_data_buffer : MeshCullingDataBuffer?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -370,12 +371,12 @@ fn render3d_prepare_camera_queue_entries(
     }
     prepared.push(
       render3d_prepare_camera_queue_entry(
-        mesh_runtime_state_value,
         camera,
         meshes,
         render_mesh_instances,
         render_mesh_assets,
         maybe_batched_instance_buffers,
+        maybe_mesh_culling_data_buffer,
         mesh_allocator,
         render_material_instances,
         render_material_bindings,

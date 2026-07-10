@@ -2679,6 +2679,33 @@ pub fn host_gpu_create_mesh3d_xyznuvrgba_indexed(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_allocator_asset(
+  mesh_id~ : Int,
+  plan~ : @render_mesh.MeshAllocatorRenderMeshPlan,
+  vertex_bytes~ : Bytes,
+  vertex_count~ : Int,
+  indices~ : Array[Int],
+  uses_u32_indices~ : Bool,
+  primitive_topology~ : Int,
+  mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout,
+  vertex_start~ : Int,
+  index_start~ : Int,
+) -> Bool {
+  @renderer.prepare_mesh3d_allocator_asset(
+    mesh_id~,
+    plan~,
+    vertex_bytes~,
+    vertex_count~,
+    indices~,
+    uses_u32_indices~,
+    primitive_topology~,
+    mesh_vertex_layout~,
+    vertex_start~,
+    index_start~,
+  )
+}
+
+///|
 pub fn host_gpu_mesh_info(mesh_id : Int) -> HostGpuMeshInfo? {
   @renderer.mesh_info(mesh_id)
 }

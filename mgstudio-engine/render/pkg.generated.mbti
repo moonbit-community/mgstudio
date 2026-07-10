@@ -328,6 +328,8 @@ pub fn host_gpu_mesh_allocator_snapshot() -> @Milky2018/mgstudio/render/mesh.Mes
 
 pub fn host_gpu_mesh_info(Int) -> @renderer.HostGpuMeshInfo?
 
+pub fn host_gpu_prepare_mesh3d_allocator_asset(mesh_id~ : Int, plan~ : @Milky2018/mgstudio/render/mesh.MeshAllocatorRenderMeshPlan, vertex_bytes~ : Bytes, vertex_count~ : Int, indices~ : Array[Int], uses_u32_indices~ : Bool, primitive_topology~ : Int, mesh_vertex_layout~ : @Milky2018/mgstudio/mesh.MeshVertexBufferLayout, vertex_start~ : Int, index_start~ : Int) -> Bool
+
 pub fn host_gpu_prepare_mesh3d_atmosphere_resources(atmosphere_uniform_bytes~ : Bytes, atmosphere_transform_bytes~ : Bytes, atmosphere_settings_bytes~ : Bytes, transmittance_width~ : Int, transmittance_height~ : Int, multiscattering_width~ : Int, multiscattering_height~ : Int, sky_view_width~ : Int, sky_view_height~ : Int, aerial_view_width~ : Int, aerial_view_height~ : Int, aerial_view_depth~ : Int) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit

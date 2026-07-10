@@ -167,6 +167,7 @@ priv struct QueuedMaterialMesh3d {
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
   mesh_asset_id : Int
+  current_uniform_index : UInt
   slabs : @render_mesh.MeshSlabs
   material_bind_group_index : Int
   material_bind_group_slot : Int
@@ -253,6 +254,7 @@ fn render3d_queue_material_mesh_candidate(
       camera_transform,
     ),
     mesh_asset_id: mesh_instance.mesh_asset_id(),
+    current_uniform_index: mesh_instance.current_uniform_index(),
     slabs: mesh_slabs,
     material_bind_group_index: material_binding.group().to_int(),
     material_bind_group_slot: material_binding.slot().to_int(),
@@ -299,6 +301,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
     items.push(MeshPhaseItem3d::{
       entity: mesh.entity,
       extracted_index: i,
+      current_uniform_index: candidate.current_uniform_index,
       phase: candidate.phase,
       pipeline_id: candidate.pipeline_id,
       distance: candidate.distance,
@@ -334,6 +337,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
 priv struct GpuPreprocessWorkItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
+  current_uniform_index : UInt
   phase : Int
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
@@ -383,6 +387,7 @@ fn render3d_collect_meshes_for_gpu_building(
     work_items.push(GpuPreprocessWorkItem3d::{
       entity: mesh.entity,
       extracted_index: i,
+      current_uniform_index: candidate.current_uniform_index,
       phase: candidate.phase,
       pipeline_id: candidate.pipeline_id,
       distance: candidate.distance,
@@ -451,6 +456,7 @@ fn render3d_write_batched_instance_buffers(
     phase_items.push(MeshPhaseItem3d::{
       entity: work_item.entity,
       extracted_index: work_item.extracted_index,
+      current_uniform_index: work_item.current_uniform_index,
       phase: work_item.phase,
       pipeline_id: work_item.pipeline_id,
       distance: work_item.distance,
@@ -687,7 +693,6 @@ priv struct Render3dGpuPreprocessPhaseBuffers {
 ///|
 fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
   draw_items : Array[MeshPhaseItem3d],
-  meshes : Array[ExtractedMesh3d],
   indirect_enabled : Bool,
   gpu_occlusion_culling_enabled : Bool,
 ) -> Render3dGpuPreprocessPhaseBuffers {
@@ -718,10 +723,6 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
       draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
       continue
     }
-    if draw_item.extracted_index < 0 ||
-      draw_item.extracted_index >= meshes.length() {
-      continue
-    }
     if !render3d_mesh_preprocess_indirect_eligible(draw_item) {
       continue
     }
@@ -736,7 +737,10 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
     )
     work_item_buffers.push(
       indexed,
-      @render_batching.PreprocessWorkItem::new(i, indirect_parameters_index),
+      @render_batching.PreprocessWorkItem::new(
+        draw_item.current_uniform_index.reinterpret_as_int(),
+        indirect_parameters_index,
+      ),
     )
     if indexed {
       has_indexed_items = true
@@ -759,18 +763,18 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
 ///|
 fn render3d_build_gpu_preprocess_queue_entry(
   draw_items : Array[MeshPhaseItem3d],
-  meshes : Array[ExtractedMesh3d],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
+  maybe_mesh_culling_data_buffer : MeshCullingDataBuffer?,
   indirect_enabled : Bool,
   gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
   let phase_buffers = render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
-    draw_items, meshes, indirect_enabled, gpu_occlusion_culling_enabled,
+    draw_items, indirect_enabled, gpu_occlusion_culling_enabled,
   )
   render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
     draw_items,
-    meshes,
-    mesh_preprocess_static_cache,
+    maybe_batched_instance_buffers,
+    maybe_mesh_culling_data_buffer,
     phase_buffers.work_item_buffers,
     phase_buffers.indirect_parameters_buffers,
   )
@@ -779,8 +783,8 @@ fn render3d_build_gpu_preprocess_queue_entry(
 ///|
 fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
   draw_items : Array[MeshPhaseItem3d],
-  meshes : Array[ExtractedMesh3d],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
+  maybe_mesh_culling_data_buffer : MeshCullingDataBuffer?,
   work_item_buffers : @render_batching.PreprocessWorkItemBuffers,
   phase_indirect_parameters_buffers : @render_batching.UntypedPhaseIndirectParametersBuffers,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
@@ -798,17 +802,30 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
   )
   let mesh_culling_data : Array[@render.HostMesh3dPreprocessMeshCullingData] = []
   let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
-  for draw_item in draw_items {
-    mesh_culling_data.push(
-      render3d_host_preprocess_mesh_culling_data(
-        draw_item, meshes, mesh_preprocess_static_cache,
-      ),
-    )
-    mesh_inputs.push(
-      render3d_host_preprocess_mesh_input(
-        draw_item, meshes, mesh_preprocess_static_cache,
-      ),
-    )
+  match resolved_work_item_buffers {
+    Direct(_) => ()
+    Indirect(_, _, _) => {
+      guard maybe_batched_instance_buffers is Some(batched_instance_buffers) else {
+        abort("Missing BatchedInstanceBuffers during pbr GPU preprocessing")
+      }
+      guard maybe_mesh_culling_data_buffer is Some(mesh_culling_data_buffer) else {
+        abort("Missing MeshCullingDataBuffer during pbr GPU preprocessing")
+      }
+      for input_index in 0..<batched_instance_buffers.current_input_len() {
+        mesh_culling_data.push(
+          render3d_host_preprocess_mesh_culling_data(
+            input_index.reinterpret_as_uint(),
+            mesh_culling_data_buffer,
+          ),
+        )
+        mesh_inputs.push(
+          render3d_host_preprocess_mesh_input(
+            input_index.reinterpret_as_uint(),
+            batched_instance_buffers,
+          ),
+        )
+      }
+    }
   }
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
@@ -1050,43 +1067,21 @@ fn render3d_host_preprocess_previous_view(
 
 ///|
 fn render3d_host_preprocess_mesh_culling_data(
-  draw_item : MeshPhaseItem3d,
-  meshes : Array[ExtractedMesh3d],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  input_index : UInt,
+  mesh_culling_data_buffer : MeshCullingDataBuffer,
 ) -> @render.HostMesh3dPreprocessMeshCullingData {
-  match
-    render3d_mesh_preprocess_static_for_draw_item(
-      draw_item, meshes, mesh_preprocess_static_cache,
-    ) {
-    Some(metadata) => {
-      if !metadata.has_local_aabb {
-        return @render.HostMesh3dPreprocessMeshCullingData::{
-          aabb_center_x: 0.0F,
-          aabb_center_y: 0.0F,
-          aabb_center_z: 0.0F,
-          aabb_half_extents_x: 1.0F / 0.0F,
-          aabb_half_extents_y: 1.0F / 0.0F,
-          aabb_half_extents_z: 1.0F / 0.0F,
-        }
-      }
-      @render.HostMesh3dPreprocessMeshCullingData::{
-        aabb_center_x: metadata.aabb_center.x,
-        aabb_center_y: metadata.aabb_center.y,
-        aabb_center_z: metadata.aabb_center.z,
-        aabb_half_extents_x: metadata.aabb_half_extents.x,
-        aabb_half_extents_y: metadata.aabb_half_extents.y,
-        aabb_half_extents_z: metadata.aabb_half_extents.z,
-      }
-    }
-    None =>
-      @render.HostMesh3dPreprocessMeshCullingData::{
-        aabb_center_x: 0.0F,
-        aabb_center_y: 0.0F,
-        aabb_center_z: 0.0F,
-        aabb_half_extents_x: 1.0F / 0.0F,
-        aabb_half_extents_y: 1.0F / 0.0F,
-        aabb_half_extents_z: 1.0F / 0.0F,
-      }
+  guard mesh_culling_data_buffer.get(input_index) is Some(culling_data) else {
+    abort("Missing MeshCullingData for queued pbr GPU mesh instance")
+  }
+  let center = culling_data.aabb_center()
+  let half_extents = culling_data.aabb_half_extents()
+  @render.HostMesh3dPreprocessMeshCullingData::{
+    aabb_center_x: center.x,
+    aabb_center_y: center.y,
+    aabb_center_z: center.z,
+    aabb_half_extents_x: half_extents.x,
+    aabb_half_extents_y: half_extents.y,
+    aabb_half_extents_z: half_extents.z,
   }
 }
 
@@ -1244,27 +1239,6 @@ fn render3d_update_mesh_preprocess_static_cache(
 }
 
 ///|
-fn render3d_mesh_preprocess_static_for_draw_item(
-  draw_item : MeshPhaseItem3d,
-  meshes : Array[ExtractedMesh3d],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
-) -> MeshPreprocessStatic3d? {
-  if draw_item.extracted_index < 0 ||
-    draw_item.extracted_index >= meshes.length() {
-    return None
-  }
-  let mesh_handle = meshes[draw_item.extracted_index].payload.mesh_handle
-  let mesh_handle_id = mesh_handle.id()
-  if mesh_handle_id < 0 {
-    return None
-  }
-  match mesh_preprocess_static_cache.get(mesh_handle_id) {
-    Some(metadata) => Some(metadata)
-    None => None
-  }
-}
-
-///|
 fn render3d_mesh_preprocess_static_cached(
   mesh_handle : @asset.Handle[@mesh.Mesh],
   mesh_id : Int,
@@ -1339,135 +1313,84 @@ fn render3d_world_from_view_matrix(
 
 ///|
 fn render3d_host_preprocess_mesh_input(
-  draw_item : MeshPhaseItem3d,
-  meshes : Array[ExtractedMesh3d],
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d],
+  input_index : UInt,
+  batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers,
 ) -> @render.HostMesh3dPreprocessMeshInput {
-  if draw_item.extracted_index < 0 ||
-    draw_item.extracted_index >= meshes.length() {
-    return @render.HostMesh3dPreprocessMeshInput::{
-      translation_x: 0.0F,
-      translation_y: 0.0F,
-      translation_z: 0.0F,
-      rotation_x: 0.0F,
-      rotation_y: 0.0F,
-      rotation_z: 0.0F,
-      rotation_w: 1.0F,
-      scale_x: 1.0F,
-      scale_y: 1.0F,
-      scale_z: 1.0F,
-      previous_translation_x: 0.0F,
-      previous_translation_y: 0.0F,
-      previous_translation_z: 0.0F,
-      previous_rotation_x: 0.0F,
-      previous_rotation_y: 0.0F,
-      previous_rotation_z: 0.0F,
-      previous_rotation_w: 1.0F,
-      previous_scale_x: 1.0F,
-      previous_scale_y: 1.0F,
-      previous_scale_z: 1.0F,
-      world_from_local_x_axis_x: 1.0F,
-      world_from_local_x_axis_y: 0.0F,
-      world_from_local_x_axis_z: 0.0F,
-      world_from_local_y_axis_x: 0.0F,
-      world_from_local_y_axis_y: 1.0F,
-      world_from_local_y_axis_z: 0.0F,
-      world_from_local_z_axis_x: 0.0F,
-      world_from_local_z_axis_y: 0.0F,
-      world_from_local_z_axis_z: 1.0F,
-      world_from_local_translation_x: 0.0F,
-      world_from_local_translation_y: 0.0F,
-      world_from_local_translation_z: 0.0F,
-      previous_world_from_local_x_axis_x: 1.0F,
-      previous_world_from_local_x_axis_y: 0.0F,
-      previous_world_from_local_x_axis_z: 0.0F,
-      previous_world_from_local_y_axis_x: 0.0F,
-      previous_world_from_local_y_axis_y: 1.0F,
-      previous_world_from_local_y_axis_z: 0.0F,
-      previous_world_from_local_z_axis_x: 0.0F,
-      previous_world_from_local_z_axis_y: 0.0F,
-      previous_world_from_local_z_axis_z: 1.0F,
-      previous_world_from_local_translation_x: 0.0F,
-      previous_world_from_local_translation_y: 0.0F,
-      previous_world_from_local_translation_z: 0.0F,
-      flags: 0U,
-      first_vertex_index: 0,
-      first_index_index: 0,
-      index_count: 0,
-      tag: 0,
+  guard batched_instance_buffers.buffers.current_input_buffer.get(
+      input_index.reinterpret_as_int(),
+    )
+    is Some(mesh_input) else {
+    abort("Missing MeshInputUniform for queued pbr GPU mesh instance")
+  }
+  let previous_mesh_input = if mesh_input.previous_input_index() ==
+    mesh_input_uniform_invalid_index() {
+    mesh_input
+  } else {
+    match
+      batched_instance_buffers.buffers.previous_input_buffer.get(
+        mesh_input.previous_input_index().reinterpret_as_int(),
+      ) {
+      Some(value) => value
+      None =>
+        abort(
+          "Missing previous MeshInputUniform for queued pbr GPU mesh instance",
+        )
     }
   }
-  let extracted_mesh = meshes[draw_item.extracted_index]
-  let mesh = extracted_mesh.payload
-  let metadata = match
-    render3d_mesh_preprocess_static_for_draw_item(
-      draw_item, meshes, mesh_preprocess_static_cache,
-    ) {
-    Some(value) => value
-    None =>
-      MeshPreprocessStatic3d::{
-        topology_kind: 0,
-        is_indexed: false,
-        first_vertex_index: 0,
-        first_index_index: 0,
-        index_count: 0,
-        has_local_aabb: false,
-        aabb_center: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-        aabb_half_extents: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      }
-  }
-  ignore(metadata.has_local_aabb)
-  let flags = render3d_mesh_flags(extracted_mesh)
+  let world_from_local = mesh_input.world_from_local
+  let previous_world_from_local = previous_mesh_input.world_from_local
+  let (scale, rotation, translation) = world_from_local.to_scale_rotation_translation()
+  let (previous_scale, previous_rotation, previous_translation) = previous_world_from_local.to_scale_rotation_translation()
   @render.HostMesh3dPreprocessMeshInput::{
-    translation_x: mesh.transform.translation.x,
-    translation_y: mesh.transform.translation.y,
-    translation_z: mesh.transform.translation.z,
-    rotation_x: mesh.transform.rotation.x,
-    rotation_y: mesh.transform.rotation.y,
-    rotation_z: mesh.transform.rotation.z,
-    rotation_w: mesh.transform.rotation.w,
-    scale_x: mesh.transform.scale.x,
-    scale_y: mesh.transform.scale.y,
-    scale_z: mesh.transform.scale.z,
-    previous_translation_x: mesh.previous_transform.translation.x,
-    previous_translation_y: mesh.previous_transform.translation.y,
-    previous_translation_z: mesh.previous_transform.translation.z,
-    previous_rotation_x: mesh.previous_transform.rotation.x,
-    previous_rotation_y: mesh.previous_transform.rotation.y,
-    previous_rotation_z: mesh.previous_transform.rotation.z,
-    previous_rotation_w: mesh.previous_transform.rotation.w,
-    previous_scale_x: mesh.previous_transform.scale.x,
-    previous_scale_y: mesh.previous_transform.scale.y,
-    previous_scale_z: mesh.previous_transform.scale.z,
-    world_from_local_x_axis_x: mesh.world_from_local.matrix3.x_axis.x,
-    world_from_local_x_axis_y: mesh.world_from_local.matrix3.x_axis.y,
-    world_from_local_x_axis_z: mesh.world_from_local.matrix3.x_axis.z,
-    world_from_local_y_axis_x: mesh.world_from_local.matrix3.y_axis.x,
-    world_from_local_y_axis_y: mesh.world_from_local.matrix3.y_axis.y,
-    world_from_local_y_axis_z: mesh.world_from_local.matrix3.y_axis.z,
-    world_from_local_z_axis_x: mesh.world_from_local.matrix3.z_axis.x,
-    world_from_local_z_axis_y: mesh.world_from_local.matrix3.z_axis.y,
-    world_from_local_z_axis_z: mesh.world_from_local.matrix3.z_axis.z,
-    world_from_local_translation_x: mesh.world_from_local.translation.x,
-    world_from_local_translation_y: mesh.world_from_local.translation.y,
-    world_from_local_translation_z: mesh.world_from_local.translation.z,
-    previous_world_from_local_x_axis_x: mesh.previous_world_from_local.matrix3.x_axis.x,
-    previous_world_from_local_x_axis_y: mesh.previous_world_from_local.matrix3.x_axis.y,
-    previous_world_from_local_x_axis_z: mesh.previous_world_from_local.matrix3.x_axis.z,
-    previous_world_from_local_y_axis_x: mesh.previous_world_from_local.matrix3.y_axis.x,
-    previous_world_from_local_y_axis_y: mesh.previous_world_from_local.matrix3.y_axis.y,
-    previous_world_from_local_y_axis_z: mesh.previous_world_from_local.matrix3.y_axis.z,
-    previous_world_from_local_z_axis_x: mesh.previous_world_from_local.matrix3.z_axis.x,
-    previous_world_from_local_z_axis_y: mesh.previous_world_from_local.matrix3.z_axis.y,
-    previous_world_from_local_z_axis_z: mesh.previous_world_from_local.matrix3.z_axis.z,
-    previous_world_from_local_translation_x: mesh.previous_world_from_local.translation.x,
-    previous_world_from_local_translation_y: mesh.previous_world_from_local.translation.y,
-    previous_world_from_local_translation_z: mesh.previous_world_from_local.translation.z,
-    flags,
-    first_vertex_index: metadata.first_vertex_index,
-    first_index_index: metadata.first_index_index,
-    index_count: metadata.index_count,
-    tag: draw_item.extracted_index,
+    translation_x: translation.x,
+    translation_y: translation.y,
+    translation_z: translation.z,
+    rotation_x: rotation.x,
+    rotation_y: rotation.y,
+    rotation_z: rotation.z,
+    rotation_w: rotation.w,
+    scale_x: scale.x,
+    scale_y: scale.y,
+    scale_z: scale.z,
+    previous_translation_x: previous_translation.x,
+    previous_translation_y: previous_translation.y,
+    previous_translation_z: previous_translation.z,
+    previous_rotation_x: previous_rotation.x,
+    previous_rotation_y: previous_rotation.y,
+    previous_rotation_z: previous_rotation.z,
+    previous_rotation_w: previous_rotation.w,
+    previous_scale_x: previous_scale.x,
+    previous_scale_y: previous_scale.y,
+    previous_scale_z: previous_scale.z,
+    world_from_local_x_axis_x: world_from_local.matrix3.x_axis.x,
+    world_from_local_x_axis_y: world_from_local.matrix3.x_axis.y,
+    world_from_local_x_axis_z: world_from_local.matrix3.x_axis.z,
+    world_from_local_y_axis_x: world_from_local.matrix3.y_axis.x,
+    world_from_local_y_axis_y: world_from_local.matrix3.y_axis.y,
+    world_from_local_y_axis_z: world_from_local.matrix3.y_axis.z,
+    world_from_local_z_axis_x: world_from_local.matrix3.z_axis.x,
+    world_from_local_z_axis_y: world_from_local.matrix3.z_axis.y,
+    world_from_local_z_axis_z: world_from_local.matrix3.z_axis.z,
+    world_from_local_translation_x: world_from_local.translation.x,
+    world_from_local_translation_y: world_from_local.translation.y,
+    world_from_local_translation_z: world_from_local.translation.z,
+    previous_world_from_local_x_axis_x: previous_world_from_local.matrix3.x_axis.x,
+    previous_world_from_local_x_axis_y: previous_world_from_local.matrix3.x_axis.y,
+    previous_world_from_local_x_axis_z: previous_world_from_local.matrix3.x_axis.z,
+    previous_world_from_local_y_axis_x: previous_world_from_local.matrix3.y_axis.x,
+    previous_world_from_local_y_axis_y: previous_world_from_local.matrix3.y_axis.y,
+    previous_world_from_local_y_axis_z: previous_world_from_local.matrix3.y_axis.z,
+    previous_world_from_local_z_axis_x: previous_world_from_local.matrix3.z_axis.x,
+    previous_world_from_local_z_axis_y: previous_world_from_local.matrix3.z_axis.y,
+    previous_world_from_local_z_axis_z: previous_world_from_local.matrix3.z_axis.z,
+    previous_world_from_local_translation_x: previous_world_from_local.translation.x,
+    previous_world_from_local_translation_y: previous_world_from_local.translation.y,
+    previous_world_from_local_translation_z: previous_world_from_local.translation.z,
+    flags: mesh_input.flags,
+    first_vertex_index: mesh_input.first_vertex_index.reinterpret_as_int(),
+    first_index_index: mesh_input.first_index_index.reinterpret_as_int(),
+    index_count: mesh_input.index_count.reinterpret_as_int(),
+    tag: mesh_input.tag().reinterpret_as_int(),
   }
 }
 
@@ -1671,6 +1594,7 @@ fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
 fn render3d_gpu_preprocess_indirect_parameter_index_maps(
   draw_items : Array[MeshPhaseItem3d],
   work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+  indirect_metadata : GpuPreprocessIndirectMetadata3d,
 ) -> (Array[Int], Array[Int]) {
   let indexed : Array[Int] = []
   let non_indexed : Array[Int] = []
@@ -1680,15 +1604,21 @@ fn render3d_gpu_preprocess_indirect_parameter_index_maps(
   }
   match work_item_buffers {
     Direct(_) => ()
-    Indirect(indexed_items, non_indexed_items, _) => {
-      for item in indexed_items {
-        if item.input_index >= 0 && item.input_index < indexed.length() {
-          indexed[item.input_index] = item.output_or_indirect_parameters_index
+    Indirect(_, _, _) => {
+      for
+        indirect_parameters_index in 0..<indirect_metadata.indexed.indirect_parameters_cpu_metadata.length() {
+        let metadata = indirect_metadata.indexed.indirect_parameters_cpu_metadata[indirect_parameters_index]
+        if metadata.base_output_index >= 0 &&
+          metadata.base_output_index < indexed.length() {
+          indexed[metadata.base_output_index] = indirect_parameters_index
         }
       }
-      for item in non_indexed_items {
-        if item.input_index >= 0 && item.input_index < non_indexed.length() {
-          non_indexed[item.input_index] = item.output_or_indirect_parameters_index
+      for
+        indirect_parameters_index in 0..<indirect_metadata.non_indexed.indirect_parameters_cpu_metadata.length() {
+        let metadata = indirect_metadata.non_indexed.indirect_parameters_cpu_metadata[indirect_parameters_index]
+        if metadata.base_output_index >= 0 &&
+          metadata.base_output_index < non_indexed.length() {
+          non_indexed[metadata.base_output_index] = indirect_parameters_index
         }
       }
     }

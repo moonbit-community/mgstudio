@@ -21,6 +21,7 @@ fn render3d_main_phase_test_item(
   MeshPhaseItem3d::{
     entity: phase_entity_ref3d_for_main(entity),
     extracted_index: entity_id,
+    current_uniform_index: entity_id.reinterpret_as_uint(),
     phase,
     pipeline_id: @material.CachedRenderPipelineId::new(entity_id.to_uint64()),
     distance: Float::from_int(entity_id),

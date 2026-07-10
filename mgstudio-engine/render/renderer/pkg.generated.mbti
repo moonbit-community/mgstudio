@@ -373,6 +373,8 @@ pub fn prepare_active_frame_submissions(PendingCommandBuffers) -> Unit
 
 pub fn prepare_initial_surface_frames() -> Unit
 
+pub fn prepare_mesh3d_allocator_asset(mesh_id~ : Int, plan~ : @Milky2018/mgstudio/render/mesh.MeshAllocatorRenderMeshPlan, vertex_bytes~ : Bytes, vertex_count~ : Int, indices~ : Array[Int], uses_u32_indices~ : Bool, primitive_topology~ : Int, mesh_vertex_layout~ : @Milky2018/mgstudio/mesh.MeshVertexBufferLayout, vertex_start~ : Int, index_start~ : Int) -> Bool
+
 pub fn prepare_mesh3d_atmosphere_resources(atmosphere_uniform_bytes~ : Bytes, atmosphere_transform_bytes~ : Bytes, atmosphere_settings_bytes~ : Bytes, transmittance_width~ : Int, transmittance_height~ : Int, multiscattering_width~ : Int, multiscattering_height~ : Int, sky_view_width~ : Int, sky_view_height~ : Int, aerial_view_width~ : Int, aerial_view_height~ : Int, aerial_view_depth~ : Int) -> Unit
 
 pub fn prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, clusterable_object_index_lists_bytes~ : Bytes, cluster_offsets_and_counts_bytes~ : Bytes) -> Unit
@@ -1155,6 +1157,7 @@ pub fn GpuBackend::mesh3d_volumetric_fog_pipeline_key_inputs(Self, Int, Int) -> 
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::prepare_active_frame_submissions(Self, PendingCommandBuffers) -> Unit raise GpuBackendError
 pub fn GpuBackend::prepare_initial_surface_frames(Self) -> Unit
+pub fn GpuBackend::prepare_mesh3d_allocator_asset(Self, Int, @Milky2018/mgstudio/render/mesh.MeshAllocatorRenderMeshPlan, Bytes, Int, Array[Int], Bool, Int, @Milky2018/mgstudio/mesh.MeshVertexBufferLayout, Int, Int) -> Bool
 pub fn GpuBackend::prepare_mesh3d_cluster_buffers(Self, Bytes, Bytes, Bytes) -> Unit
 pub fn GpuBackend::prepare_mesh3d_clustered_decals(Self, Array[UInt], Array[Int]) -> Unit
 pub fn GpuBackend::prepare_mesh3d_light_probes(Self, Bytes, UInt, Array[Int], Array[Int], Array[Int]) -> Unit

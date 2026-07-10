@@ -2655,7 +2655,7 @@ fn render_mesh_instances_gpu_queue_extraction_row(
 fn render_mesh_instances_gpu_resource_or_insert(
   world : @ecs.World,
 ) -> RenderMeshInstances {
-  match world.get_resource(RenderMeshInstances::resource()) {
+  let instances = match world.get_resource(RenderMeshInstances::resource()) {
     Some(instances) =>
       match instances {
         GpuBuilding(_) => instances
@@ -2679,6 +2679,16 @@ fn render_mesh_instances_gpu_resource_or_insert(
       }
     }
   }
+  // Bevy initializes the GPU-building resource group together when
+  // `MeshRenderPlugin::finish` selects GPU mesh uniform building. Mgstudio can
+  // switch this mode from runtime adapter capabilities, so this variant switch
+  // is the equivalent ownership boundary.
+  ignore(render_mesh_instance_gpu_queues_or_insert(world))
+  ignore(meshes_to_reextract_next_frame_or_insert(world))
+  ignore(render_mesh_instance_gpu_batched_instance_buffers_or_insert(world))
+  ignore(mesh_culling_data_buffer_or_insert(world))
+  ignore(render_gpu_culled_entities_or_insert(world))
+  instances
 }
 
 ///|

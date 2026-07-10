@@ -135,6 +135,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
       extracted_index: 0,
+      current_uniform_index: 0U,
       phase: RENDER3D_PHASE_OPAQUE,
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
@@ -146,6 +147,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(2, 0)),
       extracted_index: 1,
+      current_uniform_index: 1U,
       phase: RENDER3D_PHASE_OPAQUE,
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 2.0F,
@@ -157,6 +159,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
       extracted_index: 2,
+      current_uniform_index: 2U,
       phase: RENDER3D_PHASE_ALPHA_MASK,
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 3.0F,
@@ -187,6 +190,32 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       ],
       None,
     ),
+    GpuPreprocessIndirectMetadata3d::{
+      indexed: GpuPreprocessIndirectMeshClassMetadata3d::{
+        indirect_parameters_cpu_metadata: [
+          GpuPreprocessIndirectParametersCpuMetadata3d::{
+            base_output_index: 0,
+            batch_set_index: -1,
+          },
+          GpuPreprocessIndirectParametersCpuMetadata3d::{
+            base_output_index: 2,
+            batch_set_index: -1,
+          },
+        ],
+        indirect_parameters_gpu_metadata: [],
+        indirect_batch_sets: [],
+      },
+      non_indexed: GpuPreprocessIndirectMeshClassMetadata3d::{
+        indirect_parameters_cpu_metadata: [
+          GpuPreprocessIndirectParametersCpuMetadata3d::{
+            base_output_index: 1,
+            batch_set_index: -1,
+          },
+        ],
+        indirect_parameters_gpu_metadata: [],
+        indirect_batch_sets: [],
+      },
+    },
   )
   debug_inspect(
     indexed.length() == 3 &&
@@ -282,6 +311,7 @@ test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(41, 0)),
       extracted_index: -1,
+      current_uniform_index: 0U,
       phase: RENDER3D_PHASE_OPAQUE,
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
@@ -303,15 +333,25 @@ test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
     @render_batching.IndirectParametersCpuMetadata::new(3, 0),
   )
   indirect_buffers.add_batch_set(true, 0)
+  let batched_instance_buffers = RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers()
+  for _ in 0..<8 {
+    ignore(
+      batched_instance_buffers.buffers.current_input_buffer.add(
+        MeshInputUniform::new(),
+      ),
+    )
+  }
+  let mesh_culling_data_buffer = MeshCullingDataBuffer::MeshCullingDataBuffer()
+  mesh_culling_data_buffer.grow(8U)
   let entry = render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
     draw_items,
-    [],
-    {},
+    Some(batched_instance_buffers),
+    Some(mesh_culling_data_buffer),
     work_items,
     indirect_buffers,
   )
   debug_inspect(entry.phase_ranges.length(), content="1")
-  debug_inspect(entry.mesh_culling_data.length(), content="1")
+  debug_inspect(entry.mesh_culling_data.length(), content="8")
   match entry.work_item_buffers {
     Direct(_) => abort("expected indirect queue work items")
     Indirect(indexed, non_indexed, _) => {
@@ -333,21 +373,11 @@ test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
 
 ///|
 test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
-  let mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d] = {}
-  mesh_preprocess_static_cache.set(1, MeshPreprocessStatic3d::{
-    topology_kind: 0,
-    is_indexed: true,
-    first_vertex_index: 0,
-    first_index_index: 0,
-    index_count: 3,
-    has_local_aabb: false,
-    aabb_center: @math.Vec3::zero(),
-    aabb_half_extents: @math.Vec3::zero(),
-  })
   let draw_items = [
     MeshPhaseItem3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(42, 0)),
       extracted_index: 0,
+      current_uniform_index: 1U,
       phase: RENDER3D_PHASE_OPAQUE,
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
@@ -357,17 +387,52 @@ test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
       material_bind_group_slot: 0,
     },
   ]
+  let previous_world_from_local = @math.Affine3::from_translation(
+    @math.Vec3::new(-1.0F, -2.0F, -3.0F),
+  )
+  let world_from_local = @math.Affine3::from_scale_rotation_translation(
+    @math.Vec3::new(2.0F, 3.0F, 4.0F),
+    @math.Quat::identity(),
+    @math.Vec3::new(3.0F, 4.0F, 5.0F),
+  )
+  let batched_instance_buffers = RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers()
+  ignore(
+    batched_instance_buffers.buffers.current_input_buffer.add(
+      MeshInputUniform::new(),
+    ),
+  )
+  let previous_input_index = batched_instance_buffers.buffers.previous_input_buffer
+    .add(MeshInputUniform::new(world_from_local=previous_world_from_local))
+    .reinterpret_as_uint()
+  ignore(
+    batched_instance_buffers.buffers.current_input_buffer.add(
+      MeshInputUniform::new(
+        world_from_local~,
+        previous_input_index~,
+        flags=91U,
+        first_vertex_index=7U,
+        first_index_index=11U,
+        index_count=13U,
+        tag=17U,
+      ),
+    ),
+  )
+  let mesh_culling_data_buffer = MeshCullingDataBuffer::MeshCullingDataBuffer()
+  mesh_culling_data_buffer.set(
+    1U,
+    MeshCullingData::new(
+      Some(
+        @camera_primitives.Aabb::from_min_max(
+          @math.Vec3::new(-3.0F, -3.0F, -3.0F),
+          @math.Vec3::new(5.0F, 7.0F, 9.0F),
+        ),
+      ),
+    ),
+  )
   let entry = render3d_build_gpu_preprocess_queue_entry(
     draw_items,
-    [
-      render3d_test_extracted_mesh_for_flags(
-        false,
-        false,
-        false,
-        @math.Vec3::new(1.0F, 1.0F, 1.0F),
-      ),
-    ],
-    mesh_preprocess_static_cache,
+    Some(batched_instance_buffers),
+    Some(mesh_culling_data_buffer),
     true,
     false,
   )
@@ -377,7 +442,7 @@ test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
       debug_inspect(indexed.length(), content="1")
       debug_inspect(non_indexed.length(), content="0")
       debug_inspect(culling is None, content="true")
-      debug_inspect(indexed[0].input_index, content="0")
+      debug_inspect(indexed[0].input_index, content="1")
       debug_inspect(indexed[0].output_or_indirect_parameters_index, content="0")
     }
   }
@@ -397,6 +462,27 @@ test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
     entry.indirect_metadata.indexed.indirect_batch_sets[0].indirect_parameters_base,
     content="0",
   )
+  debug_inspect(entry.mesh_inputs.length(), content="2")
+  debug_inspect(entry.mesh_inputs[1].translation_x, content="3")
+  debug_inspect(entry.mesh_inputs[1].translation_y, content="4")
+  debug_inspect(entry.mesh_inputs[1].translation_z, content="5")
+  debug_inspect(entry.mesh_inputs[1].previous_translation_x, content="-1")
+  debug_inspect(entry.mesh_inputs[1].previous_translation_y, content="-2")
+  debug_inspect(entry.mesh_inputs[1].previous_translation_z, content="-3")
+  debug_inspect(entry.mesh_inputs[1].scale_x, content="2")
+  debug_inspect(entry.mesh_inputs[1].scale_y, content="3")
+  debug_inspect(entry.mesh_inputs[1].scale_z, content="4")
+  debug_inspect(entry.mesh_inputs[1].flags, content="91")
+  debug_inspect(entry.mesh_inputs[1].first_vertex_index, content="7")
+  debug_inspect(entry.mesh_inputs[1].first_index_index, content="11")
+  debug_inspect(entry.mesh_inputs[1].index_count, content="13")
+  debug_inspect(entry.mesh_inputs[1].tag, content="17")
+  debug_inspect(entry.mesh_culling_data[1].aabb_center_x, content="1")
+  debug_inspect(entry.mesh_culling_data[1].aabb_center_y, content="2")
+  debug_inspect(entry.mesh_culling_data[1].aabb_center_z, content="3")
+  debug_inspect(entry.mesh_culling_data[1].aabb_half_extents_x, content="4")
+  debug_inspect(entry.mesh_culling_data[1].aabb_half_extents_y, content="5")
+  debug_inspect(entry.mesh_culling_data[1].aabb_half_extents_z, content="6")
 }
 
 ///|
