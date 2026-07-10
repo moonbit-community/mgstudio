@@ -4766,6 +4766,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     render3d_prepare_meshes_emit_counters(prepare_meshes_counters)
     meshes
   })
+  render3d_extract_camera_prepass_phases(world, cameras)
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)
   @pbr_render.render3d_set_diagnostic_queued_visible_mesh_count(
     world,
