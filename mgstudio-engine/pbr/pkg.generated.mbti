@@ -504,6 +504,8 @@ pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAcc
 
 pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@light.GlobalAmbientLight]
 
+pub fn get_mesh_instance_world_from_local(@Milky2018/mgstudio/render.MainEntity, UInt, RenderMeshInstances, RenderMeshInstanceGpuBatchedInstanceBuffers?) -> @math.Affine3
+
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.PointLightShadowMap]
 
 pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]

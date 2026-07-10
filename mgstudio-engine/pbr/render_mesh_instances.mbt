@@ -2106,6 +2106,40 @@ pub fn RenderMeshInstances::render_mesh_queue_data(
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_pbr/src/material.rs::get_mesh_instance_world_from_local`.
+pub fn get_mesh_instance_world_from_local(
+  entity : @render.MainEntity,
+  current_uniform_index : UInt,
+  render_mesh_instances : RenderMeshInstances,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
+) -> @math.Affine3 {
+  match render_mesh_instances {
+    CpuBuilding(instances) =>
+      match instances.entries.get(entity.id().to_bits()) {
+        Some(instance) =>
+          match instance.transforms {
+            Some(transforms) => transforms.world_from_local()
+            None => @math.Affine3::identity()
+          }
+        None => @math.Affine3::identity()
+      }
+    GpuBuilding(_) =>
+      match maybe_batched_instance_buffers {
+        Some(batched_instance_buffers) =>
+          match
+            batched_instance_buffers.buffers.current_input_buffer.get(
+              current_uniform_index.reinterpret_as_int(),
+            ) {
+            Some(mesh_input_uniform) => mesh_input_uniform.world_from_local
+            None => @math.Affine3::identity()
+          }
+        None => @math.Affine3::identity()
+      }
+  }
+}
+
+///|
 fn RenderMeshInstances::insert_mesh_instance_flags(
   self : RenderMeshInstances,
   entity : @render.MainEntity,

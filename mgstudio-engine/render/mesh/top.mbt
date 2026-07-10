@@ -36,6 +36,7 @@ pub(all) enum RenderMeshBufferInfo {
 ///|
 pub struct RenderMesh {
   vertex_count : Int
+  aabb_center : @math.Vec3
   buffer_info : RenderMeshBufferInfo
   dimension : RenderMeshDimension
   key_bits : @asset_mesh.BaseMeshPipelineKey
@@ -161,6 +162,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
 ///|
 pub fn RenderMesh::new(
   vertex_count~ : Int,
+  aabb_center? : @math.Vec3 = @math.Vec3::zero(),
   indexed? : Bool = false,
   index_count? : Int = 0,
   index_format? : RenderMeshIndexFormat = Uint32,
@@ -175,7 +177,74 @@ pub fn RenderMesh::new(
   } else {
     NonIndexed
   }
-  RenderMesh::{ vertex_count, buffer_info, dimension, key_bits, layout }
+  RenderMesh::{
+    vertex_count,
+    aabb_center,
+    buffer_info,
+    dimension,
+    key_bits,
+    layout,
+  }
+}
+
+///|
+fn render_mesh_aabb_center(mesh : @asset_mesh.Mesh) -> @math.Vec3 {
+  match mesh.as_3d_geometry() {
+    Some(geometry) => {
+      let vertex_count = geometry.vertex_count()
+      if vertex_count == 0 {
+        return @math.Vec3::zero()
+      }
+      guard geometry.vertex_position(0) is Some(first) else {
+        return @math.Vec3::zero()
+      }
+      let mut min = first
+      let mut max = first
+      for index in 1..<vertex_count {
+        guard geometry.vertex_position(index) is Some(position) else {
+          continue
+        }
+        min = min.min(position)
+        max = max.max(position)
+      }
+      min.add(max).div_scalar(2.0F)
+    }
+    None =>
+      match mesh.as_2d_geometry() {
+        Some(geometry) => {
+          let vertex_count = geometry.vertex_count()
+          if vertex_count == 0 {
+            return @math.Vec3::zero()
+          }
+          guard geometry.vertex_position(0) is Some(first) else {
+            return @math.Vec3::zero()
+          }
+          let mut min_x = first.x
+          let mut min_y = first.y
+          let mut max_x = first.x
+          let mut max_y = first.y
+          for index in 1..<vertex_count {
+            guard geometry.vertex_position(index) is Some(position) else {
+              continue
+            }
+            if position.x < min_x {
+              min_x = position.x
+            }
+            if position.y < min_y {
+              min_y = position.y
+            }
+            if position.x > max_x {
+              max_x = position.x
+            }
+            if position.y > max_y {
+              max_y = position.y
+            }
+          }
+          @math.Vec3::new((min_x + max_x) / 2.0F, (min_y + max_y) / 2.0F, 0.0F)
+        }
+        None => @math.Vec3::zero()
+      }
+  }
 }
 
 ///|
@@ -213,7 +282,14 @@ pub fn RenderMesh::from_mesh(
     base_key_bits
   }
   let layout = mesh.get_mesh_vertex_buffer_layout(mesh_vertex_buffer_layouts)
-  RenderMesh::{ vertex_count, buffer_info, dimension, key_bits, layout }
+  RenderMesh::{
+    vertex_count,
+    aabb_center: render_mesh_aabb_center(mesh),
+    buffer_info,
+    dimension,
+    key_bits,
+    layout,
+  }
 }
 
 ///|
@@ -256,6 +332,11 @@ fn render_mesh_indices_use_u32(indices : Array[Int]) -> Bool {
 ///|
 pub fn RenderMesh::vertex_count(self : RenderMesh) -> Int {
   self.vertex_count
+}
+
+///|
+pub fn RenderMesh::aabb_center(self : RenderMesh) -> @math.Vec3 {
+  self.aabb_center
 }
 
 ///|

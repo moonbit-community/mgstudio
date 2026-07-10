@@ -348,6 +348,44 @@ test "render mesh: from mesh includes morph target key bit" {
 }
 
 ///|
+test "render mesh: prepare asset stores the Bevy model-space AABB center" {
+  let geometry = @asset_mesh.Mesh3dGeometry::new_with_positions(
+    [
+      @math.Vec3::new(-2.0F, 1.0F, 4.0F),
+      @math.Vec3::new(4.0F, 5.0F, -2.0F),
+      @math.Vec3::new(0.0F, 3.0F, 2.0F),
+    ],
+    None,
+  )
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  let render_mesh = RenderMesh::prepare_asset(
+    @asset_mesh.Mesh::from_3d_geometry(geometry),
+    layouts,
+  )
+  let center = render_mesh.aabb_center()
+  inspect(center.x, content="1")
+  inspect(center.y, content="3")
+  inspect(center.z, content="1")
+}
+
+///|
+test "render mesh: prepare asset stores a zero-z AABB center for 2D meshes" {
+  let geometry = @asset_mesh.Mesh2dGeometry::new_with_positions(
+    [@math.Vec2::new(-4.0F, 2.0F), @math.Vec2::new(2.0F, 6.0F)],
+    None,
+  )
+  let layouts = @asset_mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
+  let render_mesh = RenderMesh::prepare_asset(
+    @asset_mesh.Mesh::from_2d_geometry(geometry),
+    layouts,
+  )
+  let center = render_mesh.aabb_center()
+  inspect(center.x, content="-1")
+  inspect(center.y, content="4")
+  inspect(center.z, content="0")
+}
+
+///|
 test "render mesh assets: prepare assets owns render mesh conversion" {
   let geometry = @asset_mesh.Mesh3dGeometry::new(
     [

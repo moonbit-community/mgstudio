@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/render/mesh"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/debug",
 }
 
@@ -309,11 +310,13 @@ pub fn PreparedRenderMeshAsset::render_mesh(Self) -> RenderMesh
 
 pub struct RenderMesh {
   vertex_count : Int
+  aabb_center : @math.Vec3
   buffer_info : RenderMeshBufferInfo
   dimension : RenderMeshDimension
   key_bits : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
   layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
 }
+pub fn RenderMesh::aabb_center(Self) -> @math.Vec3
 pub fn RenderMesh::buffer_info(Self) -> RenderMeshBufferInfo
 pub fn RenderMesh::dimension(Self) -> RenderMeshDimension
 pub fn RenderMesh::from_mesh(@Milky2018/mgstudio/mesh.Mesh, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Self
@@ -321,7 +324,7 @@ pub fn RenderMesh::host_vertex_buffer_layout(Self, @Milky2018/mgstudio/mesh.Mesh
 pub fn RenderMesh::indexed(Self) -> Bool
 pub fn RenderMesh::key_bits(Self) -> @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
 pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
-pub fn RenderMesh::new(vertex_count~ : Int, indexed? : Bool, index_count? : Int, index_format? : RenderMeshIndexFormat, dimension? : RenderMeshDimension, key_bits? : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey, layout? : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
+pub fn RenderMesh::new(vertex_count~ : Int, aabb_center? : @math.Vec3, indexed? : Bool, index_count? : Int, index_format? : RenderMeshIndexFormat, dimension? : RenderMeshDimension, key_bits? : @Milky2018/mgstudio/mesh.BaseMeshPipelineKey, layout? : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef) -> Self
 pub fn RenderMesh::prepare_asset(@Milky2018/mgstudio/mesh.Mesh, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Self
 pub fn RenderMesh::primitive_topology(Self) -> @Milky2018/mgstudio/mesh.Mesh3dPrimitiveTopology
 pub fn RenderMesh::vertex_count(Self) -> Int

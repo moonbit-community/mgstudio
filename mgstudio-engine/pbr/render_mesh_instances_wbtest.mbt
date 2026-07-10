@@ -1562,3 +1562,50 @@ test "pbr: runtime GPU-building collect consumes queued meshes" {
   }
   debug_inspect(reextract.len(), content="0")
 }
+
+///|
+test "pbr: mesh instance world transform follows Bevy CPU and GPU owners" {
+  let entity = @render.MainEntity::new(@core.Entity::new(901, 0))
+  let cpu_transform = @math.Affine3::from_translation(
+    @math.Vec3::new(1.0F, 2.0F, 3.0F),
+  )
+  let cpu_instances = RenderMeshInstancesCpu::RenderMeshInstancesCpu()
+  cpu_instances.insert_instance(
+    entity,
+    RenderMeshInstanceCpu::new(
+      RenderMeshInstanceSharedFlat::new(91),
+      transforms=Some(MeshTransforms::new(cpu_transform, cpu_transform, 0U)),
+    ),
+  )
+  let cpu_world_from_local = get_mesh_instance_world_from_local(
+    entity,
+    0U,
+    CpuBuilding(cpu_instances),
+    None,
+  )
+  inspect(cpu_world_from_local.translation.x, content="1")
+  inspect(cpu_world_from_local.translation.y, content="2")
+  inspect(cpu_world_from_local.translation.z, content="3")
+
+  let gpu_instances = RenderMeshInstancesGpu::RenderMeshInstancesGpu()
+  gpu_instances.insert(entity, RenderMeshQueueData::new(92, 0U, true))
+  let gpu_buffers = RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers()
+  ignore(
+    gpu_buffers.buffers.current_input_buffer.add(
+      MeshInputUniform::new(
+        world_from_local=@math.Affine3::from_translation(
+          @math.Vec3::new(4.0F, 5.0F, 6.0F),
+        ),
+      ),
+    ),
+  )
+  let gpu_world_from_local = get_mesh_instance_world_from_local(
+    entity,
+    0U,
+    GpuBuilding(gpu_instances),
+    Some(gpu_buffers),
+  )
+  inspect(gpu_world_from_local.translation.x, content="4")
+  inspect(gpu_world_from_local.translation.y, content="5")
+  inspect(gpu_world_from_local.translation.z, content="6")
+}
