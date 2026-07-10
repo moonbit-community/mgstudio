@@ -231,10 +231,7 @@ fn render3d_queue_material_mesh_candidate(
     return None
   }
   let material_properties = material.material_properties()
-  let alpha = material.material_draw_data().draw_alpha_source()
-  guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
-    return None
-  }
+  let phase = render3d_mesh_phase_kind(material_properties)
   guard render3d_traced_mesh_pipeline_id_for_view(
       mesh, retained_view_entity, specialized_material_pipeline_cache,
     )

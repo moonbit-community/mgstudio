@@ -23,6 +23,14 @@ fn render3d_flags_approx_eq(lhs : Float, rhs : Float) -> Bool {
 }
 
 ///|
+test "render3d: alpha-mask phase queueing does not evaluate shader cutoff" {
+  let properties = @material.MaterialProperties::MaterialProperties()
+    .with_render_phase_type(@material.RenderPhaseType::AlphaMask)
+    .with_alpha_mode(@material.AlphaMode3d::Mask(0.9F))
+  debug_inspect(render3d_mesh_phase_kind(properties), content="1")
+}
+
+///|
 test "render3d: standard material flags pack current Bevy subset bits" {
   let material = @material.StandardMaterial::StandardMaterial()
     .with_unlit(true)
