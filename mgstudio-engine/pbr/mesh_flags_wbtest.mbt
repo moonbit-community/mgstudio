@@ -1223,6 +1223,30 @@ test "render3d: queue phase skips missing MeshAllocator slabs without pending re
 }
 
 ///|
+test "render3d: queue phase checks prepared binding before allocator slabs" {
+  let mesh = render3d_test_transparent_mesh_for_queue(15, -1.0F, 0.0F)
+  let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  let items = render3d_queue_mesh_phase_items(
+    [mesh],
+    render3d_test_queue_mesh_instances([mesh]),
+    render3d_test_queue_render_mesh_assets([mesh]),
+    None,
+    @render_mesh.MeshAllocator::MeshAllocator(),
+    render3d_test_queue_material_instances([mesh]),
+    RenderMaterialBindings::RenderMaterialBindings(),
+    render3d_test_queue_material_slots([mesh]),
+    pending_queues,
+    @transform.Transform::identity(),
+    false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
+  )
+  debug_inspect(items.length(), content="0")
+  debug_inspect(pending_queues.current_len(view), content="1")
+}
+
+///|
 test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
   let cube_material = @material.StandardMaterial::StandardMaterial()
     .with_normal_map_texture(Some(@asset.Handle::new(1)))

@@ -214,15 +214,15 @@ fn render3d_queue_material_mesh_candidate(
     is Some(material) else {
     return None
   }
-  guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
-    is Some(mesh_slabs) else {
-    return None
-  }
   guard render3d_queue_material_binding_for_instance(
       render_material_bindings, pending_mesh_material_queues, retained_view_entity,
       mesh, material_instance,
     )
     is Some(material_binding) else {
+    return None
+  }
+  guard render3d_queue_mesh_slabs_for_instance(mesh_allocator, mesh_instance)
+    is Some(mesh_slabs) else {
     return None
   }
   let material_properties = material.material_properties()
