@@ -6,8 +6,13 @@ import {
   "Milky2018/mgstudio/camera/hdr",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/view",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -42,6 +47,8 @@ pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 pub let ecs_key_opaque3d_phase : @ecs.ResourceKey[Opaque3dPhase]
 
 pub let ecs_key_transparent3d_phase : @ecs.ResourceKey[Transparent3dPhase]
+
+pub fn extract_core_3d_camera_phases(@ecs.World) -> Unit
 
 pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity) -> Bool
 
@@ -176,27 +183,60 @@ pub struct OpaqueNoLightmap3dBinKey {
 pub fn OpaqueNoLightmap3dBinKey::new(asset_id~ : Int) -> Self
 
 pub struct Transparent3d {
+  sorting_info : TransparentSortingInfo3d
   distance : Float
-  pipeline_id : Int
-  entity_id : Int
-  main_entity_id : Int
-  draw_function_id : Int
+  pipeline : @render_resource.CachedRenderPipelineId
+  entity : @core.Entity
+  main_entity : @render.MainEntity
+  draw_function : @material.DrawFunctionId
   batch_range_start : Int
   batch_range_end : Int
   extra_index : Int
   indexed : Bool
-} derive(Eq, @debug.Debug)
-pub fn Transparent3d::new(distance~ : Float, pipeline_id~ : Int, entity_id~ : Int, main_entity_id~ : Int, draw_function_id~ : Int, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int, indexed? : Bool) -> Self
+}
+pub fn Transparent3d::batch_range(Self) -> (Int, Int)
+pub fn Transparent3d::draw_function(Self) -> @material.DrawFunctionId
+pub fn Transparent3d::entity(Self) -> @core.Entity
+pub fn Transparent3d::extra_index(Self) -> Int
+pub fn Transparent3d::indexed(Self) -> Bool
+pub fn Transparent3d::main_entity(Self) -> @render.MainEntity
+pub fn Transparent3d::new(sorting_info? : TransparentSortingInfo3d, distance~ : Float, pipeline~ : @render_resource.CachedRenderPipelineId, entity~ : @core.Entity, main_entity~ : @render.MainEntity, draw_function~ : @material.DrawFunctionId, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int, indexed? : Bool) -> Self
+pub fn Transparent3d::pipeline(Self) -> @render_resource.CachedRenderPipelineId
 pub fn Transparent3d::sort_key(Self) -> Float
+pub fn Transparent3d::sorting_info(Self) -> TransparentSortingInfo3d
 
 pub struct Transparent3dPhase {
-  items : Array[Transparent3d]
+  views : @hashmap.HashMap[@view.RetainedViewEntity, Transparent3dViewPhase]
 }
 pub fn Transparent3dPhase::Transparent3dPhase() -> Self
+pub fn Transparent3dPhase::add(Self, @view.RetainedViewEntity, Transparent3d) -> Unit
+pub fn Transparent3dPhase::add_transient(Self, @view.RetainedViewEntity, Transparent3d) -> Unit
 pub fn Transparent3dPhase::clear(Self) -> Unit
 pub fn Transparent3dPhase::is_empty(Self) -> Bool
-pub fn Transparent3dPhase::push(Self, Transparent3d) -> Unit
+pub fn Transparent3dPhase::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> Unit
+pub fn Transparent3dPhase::retain_views(Self, Array[@view.RetainedViewEntity]) -> Unit
+pub fn Transparent3dPhase::view(Self, @view.RetainedViewEntity) -> Transparent3dViewPhase?
+pub fn Transparent3dPhase::view_count(Self) -> Int
 pub impl @app.Resource for Transparent3dPhase
+
+pub struct Transparent3dViewPhase {
+  mut items : Array[Transparent3d]
+  transient_items : Array[(@core.Entity, @render.MainEntity)]
+}
+pub fn Transparent3dViewPhase::Transparent3dViewPhase() -> Self
+pub fn Transparent3dViewPhase::add(Self, Transparent3d) -> Unit
+pub fn Transparent3dViewPhase::add_transient(Self, Transparent3d) -> Unit
+pub fn Transparent3dViewPhase::clear(Self) -> Unit
+pub fn Transparent3dViewPhase::items(Self) -> Array[Transparent3d]
+pub fn Transparent3dViewPhase::len(Self) -> Int
+pub fn Transparent3dViewPhase::remove(Self, @core.Entity, @render.MainEntity) -> Unit
+
+pub enum TransparentSortingInfo3d {
+  AlwaysOnTop
+  Sorted(@math.Vec3, Float)
+}
+pub fn TransparentSortingInfo3d::always_on_top() -> Self
+pub fn TransparentSortingInfo3d::sorted(mesh_center~ : @math.Vec3, depth_bias? : Float) -> Self
 
 // Type aliases
 pub using @hdr {type Hdr}

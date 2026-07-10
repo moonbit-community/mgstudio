@@ -1,12 +1,22 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/components3d" @camera_components3d,
   "Milky2018/mgstudio/camera/hdr" @camera_hdr,
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/core_pipeline/skybox",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/shader",
+} for "wbtest"
 
 supported_targets = "native"

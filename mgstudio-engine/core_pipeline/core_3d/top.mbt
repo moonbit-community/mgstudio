@@ -43,6 +43,11 @@ pub let core_3d_set_post_process : @app.SystemSet = @app.system_set(
 )
 
 ///|
+let core_3d_set_extract : @app.SystemSet = @app.system_set(
+  "mgstudio.core_pipeline.core3d.extract",
+)
+
+///|
 pub struct Core3dPlugin {}
 
 ///|
@@ -59,12 +64,42 @@ pub fn core_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 fn core_3d_configure_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
+  let world = sub_app.world()
+  if world.get_resource(Opaque3dPhase::resource()) is None {
+    world.insert_resource(
+      Opaque3dPhase::resource(),
+      Opaque3dPhase::Opaque3dPhase(),
+    )
+  }
+  if world.get_resource(AlphaMask3dPhase::resource()) is None {
+    world.insert_resource(
+      AlphaMask3dPhase::resource(),
+      AlphaMask3dPhase::AlphaMask3dPhase(),
+    )
+  }
+  if world.get_resource(Transparent3dPhase::resource()) is None {
+    world.insert_resource(
+      Transparent3dPhase::resource(),
+      Transparent3dPhase::Transparent3dPhase(),
+    )
+  }
+  let stage = @render.render_schedule_stage()
   let graph_stage = @render.RenderGraph::schedule()
   let core_3d_stage = @app.schedule_label("mgstudio.core_pipeline.core_3d")
   let sub_app = @render.configure_base_render_sets(sub_app).add_schedule(
     @app.Schedule::new(core_3d_stage),
   )
   sub_app
+  .configure_set(stage, @render.render_system_set_extract_commands, before=[
+    core_3d_set_extract,
+  ])
+  .add_systems(
+    stage,
+    @app.system(extract_core_3d_camera_phases).in_set(core_3d_set_extract),
+  )
+  .configure_set(stage, core_3d_set_extract, before=[
+    @render.render_system_set_queue_meshes,
+  ])
   .configure_set(core_3d_stage, core_3d_set_prepass, before=[
     core_3d_set_main_pass,
   ])
@@ -107,11 +142,7 @@ pub fn core_3d_plugin_with(
   plugin : Core3dPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let next = app
-    .init_resource(fn() { Opaque3dPhase::Opaque3dPhase() })
-    .init_resource(fn() { AlphaMask3dPhase::AlphaMask3dPhase() })
-    .init_resource(fn() { Transparent3dPhase::Transparent3dPhase() })
-    .add_plugins(@skybox.SkyboxPlugin::SkyboxPlugin())
+  let next = app.add_plugins(@skybox.SkyboxPlugin::SkyboxPlugin())
   @render.with_render_app(next, core_3d_configure_render_sub_app)
 }
 
@@ -301,36 +332,58 @@ pub fn AlphaMask3d::draw_function_id(self : AlphaMask3d) -> Int {
 }
 
 ///|
+pub enum TransparentSortingInfo3d {
+  AlwaysOnTop
+  Sorted(@math.Vec3, Float)
+}
+
+///|
+pub fn TransparentSortingInfo3d::always_on_top() -> TransparentSortingInfo3d {
+  AlwaysOnTop
+}
+
+///|
+pub fn TransparentSortingInfo3d::sorted(
+  mesh_center~ : @math.Vec3,
+  depth_bias? : Float = 0.0F,
+) -> TransparentSortingInfo3d {
+  Sorted(mesh_center, depth_bias)
+}
+
+///|
 pub struct Transparent3d {
+  sorting_info : TransparentSortingInfo3d
   distance : Float
-  pipeline_id : Int
-  entity_id : Int
-  main_entity_id : Int
-  draw_function_id : Int
+  pipeline : @material.CachedRenderPipelineId
+  entity : @core.Entity
+  main_entity : @render.MainEntity
+  draw_function : @material.DrawFunctionId
   batch_range_start : Int
   batch_range_end : Int
   extra_index : Int
   indexed : Bool
-} derive(Eq, Debug)
+}
 
 ///|
 pub fn Transparent3d::new(
+  sorting_info? : TransparentSortingInfo3d = TransparentSortingInfo3d::always_on_top(),
   distance~ : Float,
-  pipeline_id~ : Int,
-  entity_id~ : Int,
-  main_entity_id~ : Int,
-  draw_function_id~ : Int,
+  pipeline~ : @material.CachedRenderPipelineId,
+  entity~ : @core.Entity,
+  main_entity~ : @render.MainEntity,
+  draw_function~ : @material.DrawFunctionId,
   batch_range_start? : Int = 0,
   batch_range_end? : Int = 0,
   extra_index? : Int = 0,
   indexed? : Bool = false,
 ) -> Transparent3d {
   Transparent3d::{
+    sorting_info,
     distance,
-    pipeline_id,
-    entity_id,
-    main_entity_id,
-    draw_function_id,
+    pipeline,
+    entity,
+    main_entity,
+    draw_function,
     batch_range_start,
     batch_range_end,
     extra_index,
@@ -341,6 +394,52 @@ pub fn Transparent3d::new(
 ///|
 pub fn Transparent3d::sort_key(self : Transparent3d) -> Float {
   self.distance
+}
+
+///|
+pub fn Transparent3d::sorting_info(
+  self : Transparent3d,
+) -> TransparentSortingInfo3d {
+  self.sorting_info
+}
+
+///|
+pub fn Transparent3d::pipeline(
+  self : Transparent3d,
+) -> @material.CachedRenderPipelineId {
+  self.pipeline
+}
+
+///|
+pub fn Transparent3d::entity(self : Transparent3d) -> @core.Entity {
+  self.entity
+}
+
+///|
+pub fn Transparent3d::main_entity(self : Transparent3d) -> @render.MainEntity {
+  self.main_entity
+}
+
+///|
+pub fn Transparent3d::draw_function(
+  self : Transparent3d,
+) -> @material.DrawFunctionId {
+  self.draw_function
+}
+
+///|
+pub fn Transparent3d::batch_range(self : Transparent3d) -> (Int, Int) {
+  (self.batch_range_start, self.batch_range_end)
+}
+
+///|
+pub fn Transparent3d::extra_index(self : Transparent3d) -> Int {
+  self.extra_index
+}
+
+///|
+pub fn Transparent3d::indexed(self : Transparent3d) -> Bool {
+  self.indexed
 }
 
 ///|
@@ -397,31 +496,225 @@ pub fn AlphaMask3dPhase::push(
 }
 
 ///|
+pub struct Transparent3dViewPhase {
+  mut items : Array[Transparent3d]
+  transient_items : Array[(@core.Entity, @render.MainEntity)]
+}
+
+///|
+pub fn Transparent3dViewPhase::Transparent3dViewPhase() -> Transparent3dViewPhase {
+  Transparent3dViewPhase::{ items: [], transient_items: [] }
+}
+
+///|
+fn Transparent3dViewPhase::item_index(
+  self : Transparent3dViewPhase,
+  entity : @core.Entity,
+  main_entity : @render.MainEntity,
+) -> Int? {
+  for index in 0..<self.items.length() {
+    let item = self.items[index]
+    if item.entity() == entity && item.main_entity() == main_entity {
+      return Some(index)
+    }
+  }
+  None
+}
+
+///|
+pub fn Transparent3dViewPhase::add(
+  self : Transparent3dViewPhase,
+  item : Transparent3d,
+) -> Unit {
+  match self.item_index(item.entity(), item.main_entity()) {
+    Some(index) => self.items[index] = item
+    None => self.items.push(item)
+  }
+}
+
+///|
+pub fn Transparent3dViewPhase::add_transient(
+  self : Transparent3dViewPhase,
+  item : Transparent3d,
+) -> Unit {
+  let key = (item.entity(), item.main_entity())
+  self.add(item)
+  self.transient_items.push(key)
+}
+
+///|
+pub fn Transparent3dViewPhase::remove(
+  self : Transparent3dViewPhase,
+  entity : @core.Entity,
+  main_entity : @render.MainEntity,
+) -> Unit {
+  self.items = self.items.filter(fn(item) {
+    item.entity() != entity || item.main_entity() != main_entity
+  })
+}
+
+///|
+pub fn Transparent3dViewPhase::clear(self : Transparent3dViewPhase) -> Unit {
+  self.items.clear()
+  self.transient_items.clear()
+}
+
+///|
+fn Transparent3dViewPhase::prepare_for_new_frame(
+  self : Transparent3dViewPhase,
+) -> Unit {
+  for key in self.transient_items {
+    let (entity, main_entity) = key
+    self.remove(entity, main_entity)
+  }
+  self.transient_items.clear()
+}
+
+///|
+pub fn Transparent3dViewPhase::items(
+  self : Transparent3dViewPhase,
+) -> Array[Transparent3d] {
+  self.items
+}
+
+///|
+pub fn Transparent3dViewPhase::len(self : Transparent3dViewPhase) -> Int {
+  self.items.length()
+}
+
+///|
 pub struct Transparent3dPhase {
-  items : Array[Transparent3d]
+  views : @hashmap.HashMap[
+    @render_view.RetainedViewEntity,
+    Transparent3dViewPhase,
+  ]
 }
 
 ///|
 pub fn Transparent3dPhase::Transparent3dPhase() -> Transparent3dPhase {
-  Transparent3dPhase::{ items: [] }
+  Transparent3dPhase::{ views: @hashmap.HashMap([]) }
 }
 
 ///|
 pub fn Transparent3dPhase::is_empty(self : Transparent3dPhase) -> Bool {
-  self.items.is_empty()
+  for _, phase in self.views {
+    if !phase.items().is_empty() {
+      return false
+    }
+  }
+  true
 }
 
 ///|
 pub fn Transparent3dPhase::clear(self : Transparent3dPhase) -> Unit {
-  self.items.clear()
+  self.views.clear()
 }
 
 ///|
-pub fn Transparent3dPhase::push(
+pub fn Transparent3dPhase::prepare_for_new_frame(
   self : Transparent3dPhase,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Unit {
+  match self.views.get(retained_view_entity) {
+    Some(phase) => phase.prepare_for_new_frame()
+    None =>
+      self.views.set(
+        retained_view_entity,
+        Transparent3dViewPhase::Transparent3dViewPhase(),
+      )
+  }
+}
+
+///|
+pub fn Transparent3dPhase::view(
+  self : Transparent3dPhase,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Transparent3dViewPhase? {
+  self.views.get(retained_view_entity)
+}
+
+///|
+pub fn Transparent3dPhase::add(
+  self : Transparent3dPhase,
+  retained_view_entity : @render_view.RetainedViewEntity,
   item : Transparent3d,
 ) -> Unit {
-  self.items.push(item)
+  self.prepare_for_view(retained_view_entity).add(item)
+}
+
+///|
+pub fn Transparent3dPhase::add_transient(
+  self : Transparent3dPhase,
+  retained_view_entity : @render_view.RetainedViewEntity,
+  item : Transparent3d,
+) -> Unit {
+  self.prepare_for_view(retained_view_entity).add_transient(item)
+}
+
+///|
+fn Transparent3dPhase::prepare_for_view(
+  self : Transparent3dPhase,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> Transparent3dViewPhase {
+  match self.views.get(retained_view_entity) {
+    Some(phase) => phase
+    None => {
+      let phase = Transparent3dViewPhase::Transparent3dViewPhase()
+      self.views.set(retained_view_entity, phase)
+      phase
+    }
+  }
+}
+
+///|
+pub fn Transparent3dPhase::retain_views(
+  self : Transparent3dPhase,
+  live_views : Array[@render_view.RetainedViewEntity],
+) -> Unit {
+  let stale_views : Array[@render_view.RetainedViewEntity] = []
+  for retained_view_entity, _phase in self.views {
+    if !@render_view.retained_view_entity_contains(
+        live_views, retained_view_entity,
+      ) {
+      stale_views.push(retained_view_entity)
+    }
+  }
+  for retained_view_entity in stale_views {
+    self.views.remove(retained_view_entity)
+  }
+}
+
+///|
+pub fn Transparent3dPhase::view_count(self : Transparent3dPhase) -> Int {
+  self.views.length()
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs::extract_core_3d_camera_phases`.
+pub fn extract_core_3d_camera_phases(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  guard render_world.get_resource(Transparent3dPhase::resource())
+    is Some(transparent_phases) else {
+    return
+  }
+  let live_views : Array[@render_view.RetainedViewEntity] = []
+  let cameras_3d : @ecs.Query[
+    @ecs.Read[@camera_components3d.Camera3d],
+    @ecs.All,
+  ] = @ecs.query(source_world)
+  try! cameras_3d.view(fn(entity, _camera3d) {
+    guard (try! source_world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) else {
+      return
+    }
+    if !camera.is_active {
+      return
+    }
+    let retained_view_entity = @render_view.RetainedViewEntity::new(entity)
+    transparent_phases.prepare_for_new_frame(retained_view_entity)
+    live_views.push(retained_view_entity)
+  })
+  transparent_phases.retain_views(live_views)
 }
 
 ///|

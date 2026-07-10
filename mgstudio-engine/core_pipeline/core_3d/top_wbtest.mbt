@@ -60,3 +60,139 @@ test "core3d: main opaque pass skybox draw requires prepared skybox state" {
     content="false",
   )
 }
+
+///|
+fn transparent_test_item(
+  render_entity : @core.Entity,
+  main_entity : @core.Entity,
+  pipeline_id : UInt64,
+  distance? : Float = 0.0F,
+) -> Transparent3d {
+  Transparent3d::new(
+    sorting_info=TransparentSortingInfo3d::sorted(
+      mesh_center=@math.Vec3::new(1.0F, 2.0F, 3.0F),
+    ),
+    distance~,
+    pipeline=@material.CachedRenderPipelineId::new(pipeline_id),
+    entity=render_entity,
+    main_entity=@render.MainEntity::new(main_entity),
+    draw_function=@material.DrawFunctionId::new(7U),
+    batch_range_end=1,
+    indexed=true,
+  )
+}
+
+///|
+test "core3d: sorted transparent phases preserve stable items and expire transient items" {
+  let world = @ecs.World::new()
+  let retained_view = @render_view.RetainedViewEntity::new(world.spawn_empty())
+  let stale_view = @render_view.RetainedViewEntity::new(world.spawn_empty())
+  let stable_render_entity = world.spawn_empty()
+  let stable_main_entity = world.spawn_empty()
+  let transient_render_entity = world.spawn_empty()
+  let transient_main_entity = world.spawn_empty()
+  let phases = Transparent3dPhase::Transparent3dPhase()
+  phases.prepare_for_new_frame(retained_view)
+  phases.add(
+    retained_view,
+    transparent_test_item(stable_render_entity, stable_main_entity, 11UL),
+  )
+  phases.add_transient(
+    retained_view,
+    transparent_test_item(transient_render_entity, transient_main_entity, 12UL),
+  )
+  phases.prepare_for_new_frame(stale_view)
+  debug_inspect(phases.view_count(), content="2")
+  debug_inspect(phases.view(retained_view).unwrap().len(), content="2")
+
+  phases.prepare_for_new_frame(retained_view)
+  let retained_phase = phases.view(retained_view).unwrap()
+  debug_inspect(retained_phase.len(), content="1")
+  debug_inspect(retained_phase.items()[0].pipeline().id(), content="11")
+
+  phases.add(
+    retained_view,
+    transparent_test_item(stable_render_entity, stable_main_entity, 13UL),
+  )
+  debug_inspect(retained_phase.len(), content="1")
+  debug_inspect(retained_phase.items()[0].pipeline().id(), content="13")
+  match retained_phase.items()[0].sorting_info() {
+    Sorted(mesh_center, depth_bias) => {
+      debug_inspect(mesh_center.x, content="1")
+      debug_inspect(depth_bias, content="0")
+    }
+    AlwaysOnTop => abort("expected sorted transparent phase item")
+  }
+
+  phases.retain_views([retained_view])
+  debug_inspect(phases.view_count(), content="1")
+  debug_inspect(phases.view(stale_view) is None, content="true")
+}
+
+///|
+test "core3d: phase resources live in RenderApp" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(Core3dPlugin::Core3dPlugin())
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  debug_inspect(
+    app.world().get_resource(Transparent3dPhase::resource()) is None,
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(Transparent3dPhase::resource()) is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "core3d: active Camera3d prepares and retains transparent phase views" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
+    .add_plugins(@render.RenderPlugin::RenderPlugin())
+    .add_plugins(Core3dPlugin::Core3dPlugin())
+  let camera_entity = app.world().spawn_empty()
+  try! app
+  .world()
+  .set_by_key(
+    camera_entity,
+    @camera_components3d.ecs_key_camera3d,
+    @camera_components3d.Camera3d::Camera3d(),
+  )
+  try! app
+  .world()
+  .set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera(),
+  )
+  app = app.update()
+  let retained_view = @render_view.RetainedViewEntity::new(camera_entity)
+  let phases = app
+    .get_sub_app(@app.RenderApp)
+    .unwrap()
+    .world()
+    .get_resource(Transparent3dPhase::resource())
+    .unwrap()
+  debug_inspect(phases.view_count(), content="1")
+  debug_inspect(phases.view(retained_view) is Some(_), content="true")
+
+  try! app
+  .world()
+  .set_by_key(
+    camera_entity,
+    @camera_camera.ecs_key_camera,
+    @camera_camera.Camera::Camera().with_is_active(false),
+  )
+  app = app.update()
+  let phases = app
+    .get_sub_app(@app.RenderApp)
+    .unwrap()
+    .world()
+    .get_resource(Transparent3dPhase::resource())
+    .unwrap()
+  debug_inspect(phases.view_count(), content="0")
+}
