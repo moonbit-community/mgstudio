@@ -636,25 +636,29 @@ fn render3d_execute_shadow_phase_view(
         phase_item, batch_mesh,
       )
       let batch_draw_storage_index = draw_storage_base + draw_storage_offset
-      render3d_mesh_gpu_binned_phase_push(shadow_phase, @pbr_render.MeshGpuDrawPayload3d::{
-        ..batch_payload,
-        draw_storage_index: batch_draw_storage_index,
-        transform: batch_mesh.transform,
-        previous_transform: batch_mesh.previous_transform,
-        world_from_local: batch_mesh.world_from_local,
-        previous_world_from_local: batch_mesh.previous_world_from_local,
-        material_extension_bind_group_data: batch_material_bind_group_data,
-        mesh_flags: render3d_mesh_flags(extracted_batch_mesh),
-        skinning_key_hi: batch_mesh.skinning_key_hi,
-        skinning_key_lo: if batch_mesh.skinning_key_hi >= 0 {
-          0
-        } else {
-          -1
+      render3d_mesh_gpu_binned_phase_push(
+        shadow_phase,
+        @pbr_render.MeshGpuDrawPayload3d::{
+          ..batch_payload,
+          draw_storage_index: batch_draw_storage_index,
+          transform: batch_mesh.transform,
+          previous_transform: batch_mesh.previous_transform,
+          world_from_local: batch_mesh.world_from_local,
+          previous_world_from_local: batch_mesh.previous_world_from_local,
+          material_extension_bind_group_data: batch_material_bind_group_data,
+          mesh_flags: render3d_mesh_flags(extracted_batch_mesh),
+          skinning_key_hi: batch_mesh.skinning_key_hi,
+          skinning_key_lo: if batch_mesh.skinning_key_hi >= 0 {
+            0
+          } else {
+            -1
+          },
+          morph_weights_index: batch_mesh.morph_weights_index,
+          previous_morph_weights_index: batch_mesh.previous_morph_weights_index,
+          morph_targets_texture_id: batch_mesh.morph_targets_texture_id,
         },
-        morph_weights_index: batch_mesh.morph_weights_index,
-        previous_morph_weights_index: batch_mesh.previous_morph_weights_index,
-        morph_targets_texture_id: batch_mesh.morph_targets_texture_id,
-      })
+        phase_item.draw_function(),
+      )
       draw_storage_offset += 1
     }
   }

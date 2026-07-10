@@ -126,6 +126,7 @@ fn render3d_traced_mesh_pipeline_id_for_view(
 ///|
 priv struct QueuedMaterialMesh3d {
   phase : Int
+  draw_function : @material.DrawFunctionId
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
   mesh_asset_id : Int
@@ -191,8 +192,13 @@ fn render3d_queue_material_mesh_candidate(
   }
   let material_properties = material.material_properties()
   let phase = render3d_mesh_phase_kind(material_properties)
+  guard render3d_main_pass_draw_function(material_properties)
+    is Some(draw_function) else {
+    return None
+  }
   Some(QueuedMaterialMesh3d::{
     phase,
+    draw_function,
     pipeline_id,
     distance: render3d_material_phase_distance(
       visible_entity, mesh_instance, render_mesh_instances, render_mesh_assets, maybe_batched_instance_buffers,
@@ -278,6 +284,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       extracted_index: i,
       current_uniform_index: candidate.current_uniform_index,
       phase: candidate.phase,
+      draw_function: candidate.draw_function,
       pipeline_id: candidate.pipeline_id,
       distance: candidate.distance,
       mesh_asset_id: candidate.mesh_asset_id,
@@ -295,6 +302,7 @@ priv struct GpuPreprocessWorkItem3d {
   extracted_index : Int
   current_uniform_index : UInt
   phase : Int
+  draw_function : @material.DrawFunctionId
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
   mesh_asset_id : Int
@@ -345,6 +353,7 @@ fn render3d_collect_meshes_for_gpu_building(
       extracted_index: i,
       current_uniform_index: candidate.current_uniform_index,
       phase: candidate.phase,
+      draw_function: candidate.draw_function,
       pipeline_id: candidate.pipeline_id,
       distance: candidate.distance,
       mesh_asset_id: candidate.mesh_asset_id,
@@ -414,6 +423,7 @@ fn render3d_write_batched_instance_buffers(
       extracted_index: work_item.extracted_index,
       current_uniform_index: work_item.current_uniform_index,
       phase: work_item.phase,
+      draw_function: work_item.draw_function,
       pipeline_id: work_item.pipeline_id,
       distance: work_item.distance,
       mesh_asset_id: work_item.mesh_asset_id,

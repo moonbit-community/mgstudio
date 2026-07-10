@@ -209,6 +209,7 @@ priv struct MeshPhaseItem3d {
   extracted_index : Int
   current_uniform_index : UInt
   phase : Int
+  draw_function : @material.DrawFunctionId
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
   mesh_asset_id : Int
@@ -836,6 +837,22 @@ fn render3d_mesh_phase_kind(properties : @material.MaterialProperties) -> Int {
     @material.RenderPhaseType::AlphaMask => RENDER3D_PHASE_ALPHA_MASK
     @material.RenderPhaseType::Transmissive => RENDER3D_PHASE_TRANSMISSIVE
     @material.RenderPhaseType::Transparent => RENDER3D_PHASE_TRANSPARENT
+  }
+}
+
+///|
+fn render3d_main_pass_draw_function(
+  properties : @material.MaterialProperties,
+) -> @material.DrawFunctionId? {
+  match properties.render_phase_type {
+    @material.RenderPhaseType::Opaque =>
+      properties.get_draw_function(MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL)
+    @material.RenderPhaseType::AlphaMask =>
+      properties.get_draw_function(MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL)
+    @material.RenderPhaseType::Transmissive =>
+      properties.get_draw_function(MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL)
+    @material.RenderPhaseType::Transparent =>
+      properties.get_draw_function(MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL)
   }
 }
 

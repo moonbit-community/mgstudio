@@ -145,6 +145,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       extracted_index: 0,
       current_uniform_index: 0U,
       phase: RENDER3D_PHASE_OPAQUE,
+      draw_function: @material.DrawFunctionId::new(0U),
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
       mesh_asset_id: 1,
@@ -157,6 +158,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       extracted_index: 1,
       current_uniform_index: 1U,
       phase: RENDER3D_PHASE_OPAQUE,
+      draw_function: @material.DrawFunctionId::new(0U),
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 2.0F,
       mesh_asset_id: 2,
@@ -169,6 +171,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       extracted_index: 2,
       current_uniform_index: 2U,
       phase: RENDER3D_PHASE_ALPHA_MASK,
+      draw_function: @material.DrawFunctionId::new(0U),
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 3.0F,
       mesh_asset_id: 3,
@@ -321,6 +324,7 @@ test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
       extracted_index: -1,
       current_uniform_index: 0U,
       phase: RENDER3D_PHASE_OPAQUE,
+      draw_function: @material.DrawFunctionId::new(0U),
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
       mesh_asset_id: 41,
@@ -387,6 +391,7 @@ test "render3d: draw-item queue entry stores Bevy-shaped indirect metadata" {
       extracted_index: 0,
       current_uniform_index: 1U,
       phase: RENDER3D_PHASE_OPAQUE,
+      draw_function: @material.DrawFunctionId::new(0U),
       pipeline_id: @material.CachedRenderPipelineId::new(1UL),
       distance: 1.0F,
       mesh_asset_id: 1,
@@ -508,6 +513,7 @@ test "render3d: GPU preprocess includes every Bevy main mesh phase" {
       extracted_index: index,
       current_uniform_index: (10 + index).reinterpret_as_uint(),
       phase: phases[index],
+      draw_function: @material.DrawFunctionId::new(index.reinterpret_as_uint()),
       pipeline_id: @material.CachedRenderPipelineId::new(
         (index + 1).to_uint64(),
       ),
@@ -586,7 +592,10 @@ fn render3d_test_extracted_mesh_for_flags(
         @material.StandardMaterial::StandardMaterial(),
       ),
       material_extension: None,
-      material_properties: @material.MaterialProperties::MaterialProperties(),
+      material_properties: pbr_material_apply_draw_functions(
+        @material.MaterialProperties::MaterialProperties(),
+        pbr_material_default_draw_function_ids(),
+      ),
       material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
       lightmap: None,
       is_forward_decal: false,
@@ -959,6 +968,10 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
   let properties = @material.MaterialProperties::MaterialProperties()
     .with_alpha_mode(@material.AlphaMode3d::Blend)
     .with_render_phase_type(@material.RenderPhaseType::Transparent)
+    .add_draw_function(
+      MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(70U),
+    )
   let mesh = ExtractedMesh3d::{
     ..base,
     payload: Mesh3dExtractedPayload::{
@@ -1000,7 +1013,9 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
     specialized_material_pipeline_cache=cache,
   )
   debug_inspect(cpu_items[0].phase, content="3")
+  debug_inspect(cpu_items[0].draw_function.id(), content="70")
   debug_inspect(gpu_items[0].phase, content="3")
+  debug_inspect(gpu_items[0].draw_function.id(), content="70")
 }
 
 ///|
@@ -1012,6 +1027,10 @@ test "render3d: queue phase reads material properties from resolved material slo
     .with_alpha_mode(@material.AlphaMode3d::Blend)
     .with_render_phase_type(@material.RenderPhaseType::Transparent)
     .with_depth_bias(4.0F)
+    .add_draw_function(
+      MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
+      @material.DrawFunctionId::new(71U),
+    )
   let material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
     @material.AlphaMode3d::Blend,
   )
@@ -1072,9 +1091,50 @@ test "render3d: queue phase reads material properties from resolved material slo
     specialized_material_pipeline_cache=cache,
   )
   debug_inspect(cpu_items[0].phase, content="3")
+  debug_inspect(cpu_items[0].draw_function.id(), content="71")
   debug_inspect(cpu_items[0].distance, content="4")
   debug_inspect(gpu_items[0].phase, content="3")
+  debug_inspect(gpu_items[0].draw_function.id(), content="71")
   debug_inspect(gpu_items[0].distance, content="4")
+}
+
+///|
+test "render3d: queue phase skips material without its main pass draw function" {
+  let mesh = render3d_test_transparent_mesh_for_queue(8, -1.0F, 0.0F)
+  let material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
+    @material.AlphaMode3d::Blend,
+  )
+  let material_slots = RenderMaterial3dResolvedSlots::new()
+  material_slots.set_resolved(
+    mesh.entity.main_entity,
+    Render3dResolvedMaterial::new(
+      MaterialDrawData3d::Standard(material),
+      @material.MaterialProperties::MaterialProperties()
+      .with_alpha_mode(@material.AlphaMode3d::Blend)
+      .with_render_phase_type(@material.RenderPhaseType::Transparent),
+      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      "StandardMaterial",
+    ),
+  )
+  let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  let items = render3d_queue_mesh_phase_items(
+    [mesh],
+    render3d_test_queue_mesh_instances([mesh]),
+    render3d_test_queue_render_mesh_assets([mesh]),
+    None,
+    render3d_test_queue_mesh_allocator([mesh]),
+    render3d_test_queue_material_instances([mesh]),
+    render3d_test_queue_material_bindings([mesh]),
+    material_slots,
+    pending_queues,
+    @transform.Transform::identity(),
+    false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=cache,
+  )
+  debug_inspect(items.length(), content="0")
+  debug_inspect(pending_queues.current_len(view), content="0")
 }
 
 ///|

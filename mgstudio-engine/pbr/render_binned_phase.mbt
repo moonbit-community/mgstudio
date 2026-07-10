@@ -14,6 +14,7 @@
 
 ///|
 priv struct MeshGpuBatchSetKey3d {
+  draw_function : @material.DrawFunctionId
   indirect_kind : Int
   preprocess_camera_key_hi : Int
   preprocess_camera_key_lo : Int
@@ -102,8 +103,10 @@ fn render3d_mesh_gpu_binned_phase_new() -> MeshGpuBinnedRenderPhase3d {
 ///|
 fn render3d_mesh_gpu_batch_set_key(
   payload : @pbr_render.MeshGpuDrawPayload3d,
+  draw_function : @material.DrawFunctionId,
 ) -> MeshGpuBatchSetKey3d {
   {
+    draw_function,
     indirect_kind: payload.indirect_kind,
     preprocess_camera_key_hi: payload.preprocess_camera_key_hi,
     preprocess_camera_key_lo: payload.preprocess_camera_key_lo,
@@ -177,6 +180,7 @@ fn render3d_mesh_gpu_batch_set_key_eq(
   lhs : MeshGpuBatchSetKey3d,
   rhs : MeshGpuBatchSetKey3d,
 ) -> Bool {
+  lhs.draw_function.id() == rhs.draw_function.id() &&
   lhs.indirect_kind == rhs.indirect_kind &&
   lhs.preprocess_camera_key_hi == rhs.preprocess_camera_key_hi &&
   lhs.preprocess_camera_key_lo == rhs.preprocess_camera_key_lo &&
@@ -277,8 +281,9 @@ fn render3d_mesh_gpu_payload_follows_batch(
 fn render3d_mesh_gpu_binned_phase_push(
   phase : MeshGpuBinnedRenderPhase3d,
   payload : @pbr_render.MeshGpuDrawPayload3d,
+  draw_function : @material.DrawFunctionId,
 ) -> Unit {
-  let batch_set_key = render3d_mesh_gpu_batch_set_key(payload)
+  let batch_set_key = render3d_mesh_gpu_batch_set_key(payload, draw_function)
   let bin_key = render3d_mesh_gpu_bin_key(payload)
   let payload_index = phase.payloads.length()
   let can_extend = if payload_index == 0 || phase.batches.length() == 0 {

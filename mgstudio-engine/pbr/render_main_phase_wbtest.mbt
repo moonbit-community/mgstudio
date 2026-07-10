@@ -23,6 +23,9 @@ fn render3d_main_phase_test_item(
     extracted_index: entity_id,
     current_uniform_index: entity_id.reinterpret_as_uint(),
     phase,
+    draw_function: @material.DrawFunctionId::new(
+      entity_id.reinterpret_as_uint(),
+    ),
     pipeline_id: @material.CachedRenderPipelineId::new(entity_id.to_uint64()),
     distance: Float::from_int(entity_id),
     mesh_asset_id: entity_id,

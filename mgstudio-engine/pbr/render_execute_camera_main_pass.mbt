@@ -829,7 +829,11 @@ fn render3d_execute_camera_main_pass(
       })
       continue
     }
-    render3d_mesh_gpu_binned_phase_push(main_phase, draw_payload)
+    render3d_mesh_gpu_binned_phase_push(
+      main_phase,
+      draw_payload,
+      draw_item.draw_function,
+    )
   }
   let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
   for draw_item_index in draw_item_indices {
