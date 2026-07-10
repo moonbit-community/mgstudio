@@ -187,18 +187,7 @@ fn render3d_queue_material_mesh_candidate(
   camera_transform : @transform.Transform,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
-  visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> QueuedMaterialMesh3d? {
-  match visible_mesh_entities {
-    Some(visible) =>
-      if !visible.entity_pair_is_visible(
-          mesh.entity.render_entity,
-          @render.MainEntity::new(mesh.entity.main_entity),
-        ) {
-        return None
-      }
-    None => ()
-  }
   guard render3d_traced_mesh_pipeline_id_for_view(
       mesh, retained_view_entity, specialized_material_pipeline_cache,
     )
@@ -259,6 +248,36 @@ fn render3d_queue_material_mesh_candidate(
 }
 
 ///|
+fn render3d_queue_mesh_candidate_indices(
+  meshes : Array[ExtractedMesh3d],
+  visible_mesh_entities : @render_visibility.RenderVisibleEntitiesClass?,
+) -> Array[Int] {
+  match visible_mesh_entities {
+    None => Array::makei(meshes.length(), fn(index) { index })
+    Some(visible) => {
+      let extracted_index_by_main_entity : Map[UInt64, Int] = Map([])
+      for index in 0..<meshes.length() {
+        extracted_index_by_main_entity.set(
+          meshes[index].entity.main_entity.to_bits(),
+          index,
+        )
+      }
+      let indices : Array[Int] = []
+      for pair in visible.iter_visible() {
+        guard extracted_index_by_main_entity.get(pair.1.id().to_bits())
+          is Some(index) else {
+          continue
+        }
+        if meshes[index].entity.render_entity == pair.0 {
+          indices.push(index)
+        }
+      }
+      indices
+    }
+  }
+}
+
+///|
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
@@ -275,7 +294,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
-  for i in 0..<meshes.length() {
+  for i in render3d_queue_mesh_candidate_indices(meshes, visible_mesh_entities) {
     let mesh = meshes[i]
     guard render3d_queue_material_mesh_candidate(
         mesh,
@@ -290,7 +309,6 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
         camera_transform,
         retained_view_entity~,
         specialized_material_pipeline_cache~,
-        visible_mesh_entities~,
       )
       is Some(candidate) else {
       continue
@@ -361,7 +379,7 @@ fn render3d_collect_meshes_for_gpu_building(
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
-  for i in 0..<meshes.length() {
+  for i in render3d_queue_mesh_candidate_indices(meshes, visible_mesh_entities) {
     let mesh = meshes[i]
     guard render3d_queue_material_mesh_candidate(
         mesh,
@@ -376,7 +394,6 @@ fn render3d_collect_meshes_for_gpu_building(
         camera_transform,
         retained_view_entity~,
         specialized_material_pipeline_cache~,
-        visible_mesh_entities~,
       )
       is Some(candidate) else {
       continue

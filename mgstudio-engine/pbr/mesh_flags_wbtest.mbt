@@ -1314,6 +1314,12 @@ test "render3d: queue phase consumes RenderVisibleEntities main entity filter" {
       @render.MainEntity::new(meshes[1].entity.main_entity),
     ),
   ])
+  let candidate_indices = render3d_queue_mesh_candidate_indices(
+    meshes,
+    Some(visible),
+  )
+  debug_inspect(candidate_indices.length(), content="1")
+  debug_inspect(candidate_indices[0], content="1")
   let (view, cache) = render3d_test_queue_pipeline_cache(meshes)
   let material_slots = render3d_test_queue_material_slots(meshes)
   let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
