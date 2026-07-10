@@ -1189,6 +1189,8 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
   let items = render3d_queue_mesh_phase_items(
     [extracted_mesh],
     mesh_instances,
+    render_mesh_assets,
+    None,
     mesh_allocator,
     render_material_instances,
     render_material_bindings,

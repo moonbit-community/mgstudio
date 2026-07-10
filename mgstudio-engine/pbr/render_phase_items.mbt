@@ -747,19 +747,38 @@ fn render3d_mesh_phase_kind(
 
 ///|
 fn render3d_material_phase_distance(
-  payload : Mesh3dExtractedPayload,
+  visible_entity : @render.MainEntity,
+  mesh_instance : RenderMeshQueueData,
+  render_mesh_instances : RenderMeshInstances,
+  render_mesh_assets : @render_mesh.RenderMeshAssets,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
   material_properties : @material.MaterialProperties,
   camera_transform : @transform.Transform,
 ) -> Float {
-  let distance = @pbr_render.render3d_mesh_position_view_depth(
-    payload.world_from_local.translation,
-    camera_transform,
-  )
   match material_properties.render_phase_type {
     @material.RenderPhaseType::Transmissive
-    | @material.RenderPhaseType::Transparent =>
-      distance + material_properties.depth_bias
-    _ => distance
+    | @material.RenderPhaseType::Transparent => {
+      guard render_mesh_assets.get(mesh_instance.mesh_asset_id())
+        is Some(render_mesh) else {
+        abort(
+          "Missing prepared RenderMesh during pbr transparent material queueing",
+        )
+      }
+      let world_from_local = get_mesh_instance_world_from_local(
+        visible_entity,
+        mesh_instance.current_uniform_index(),
+        render_mesh_instances,
+        maybe_batched_instance_buffers,
+      )
+      let mesh_center = world_from_local.transform_point3(
+        render_mesh.aabb_center(),
+      )
+      @pbr_render.render3d_mesh_position_view_depth(
+        mesh_center, camera_transform,
+      ) +
+      material_properties.depth_bias
+    }
+    _ => 0.0F
   }
 }
 

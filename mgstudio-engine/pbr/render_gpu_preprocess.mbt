@@ -176,6 +176,8 @@ priv struct QueuedMaterialMesh3d {
 fn render3d_queue_material_mesh_candidate(
   mesh : ExtractedMesh3d,
   render_mesh_instances : RenderMeshInstances,
+  render_mesh_assets : @render_mesh.RenderMeshAssets,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -186,7 +188,6 @@ fn render3d_queue_material_mesh_candidate(
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
 ) -> QueuedMaterialMesh3d? {
-  let payload = mesh.payload
   match visible_mesh_entities {
     Some(visible) =>
       if !visible.entity_pair_is_visible(
@@ -243,7 +244,13 @@ fn render3d_queue_material_mesh_candidate(
     phase,
     pipeline_id,
     distance: render3d_material_phase_distance(
-      payload, material_properties, camera_transform,
+      @render.MainEntity::new(mesh.entity.main_entity),
+      mesh_instance,
+      render_mesh_instances,
+      render_mesh_assets,
+      maybe_batched_instance_buffers,
+      material_properties,
+      camera_transform,
     ),
     mesh_asset_id: mesh_instance.mesh_asset_id(),
     slabs: mesh_slabs,
@@ -256,6 +263,8 @@ fn render3d_queue_material_mesh_candidate(
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  render_mesh_assets : @render_mesh.RenderMeshAssets,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -272,6 +281,8 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
     guard render3d_queue_material_mesh_candidate(
         mesh,
         render_mesh_instances,
+        render_mesh_assets,
+        maybe_batched_instance_buffers,
         mesh_allocator,
         render_material_instances,
         render_material_bindings,
@@ -336,6 +347,8 @@ priv struct GpuPreprocessWorkItem3d {
 fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  render_mesh_assets : @render_mesh.RenderMeshAssets,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -352,6 +365,8 @@ fn render3d_collect_meshes_for_gpu_building(
     guard render3d_queue_material_mesh_candidate(
         mesh,
         render_mesh_instances,
+        render_mesh_assets,
+        maybe_batched_instance_buffers,
         mesh_allocator,
         render_material_instances,
         render_material_bindings,
@@ -1685,6 +1700,8 @@ fn render3d_gpu_preprocess_indirect_parameter_index_maps(
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  render_mesh_assets : @render_mesh.RenderMeshAssets,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -1700,6 +1717,8 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   let work_items = render3d_collect_meshes_for_gpu_building(
     meshes,
     render_mesh_instances,
+    render_mesh_assets,
+    maybe_batched_instance_buffers,
     mesh_allocator,
     render_material_instances,
     render_material_bindings,
@@ -1717,6 +1736,8 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
 fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
+  render_mesh_assets : @render_mesh.RenderMeshAssets,
+  maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
   mesh_allocator : @render_mesh.MeshAllocator,
   render_material_instances : RenderMaterialInstances,
   render_material_bindings : RenderMaterialBindings,
@@ -1732,6 +1753,8 @@ fn render3d_queue_mesh_phase_items(
     return render3d_queue_mesh_phase_items_gpu_builder(
       meshes,
       render_mesh_instances,
+      render_mesh_assets,
+      maybe_batched_instance_buffers,
       mesh_allocator,
       render_material_instances,
       render_material_bindings,
@@ -1746,6 +1769,8 @@ fn render3d_queue_mesh_phase_items(
   render3d_queue_mesh_phase_items_cpu_builder(
     meshes,
     render_mesh_instances,
+    render_mesh_assets,
+    maybe_batched_instance_buffers,
     mesh_allocator,
     render_material_instances,
     render_material_bindings,

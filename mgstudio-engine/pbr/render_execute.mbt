@@ -4791,6 +4791,15 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         None =>
           abort("missing RenderMeshInstances resource during pbr queue_meshes")
       }
+      let render_mesh_assets = match
+        world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
+        Some(value) => value
+        None =>
+          abort("missing RenderMeshAssets resource during pbr queue_meshes")
+      }
+      let maybe_batched_instance_buffers = world.get_resource(
+        RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+      )
       let mesh_allocator = match
         world.get_resource(@render_mesh.MeshAllocator::resource()) {
         Some(value) => value
@@ -4820,6 +4829,8 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
           frame.cameras,
           frame.meshes,
           render_mesh_instances,
+          render_mesh_assets,
+          maybe_batched_instance_buffers,
           mesh_allocator,
           render_material_instances,
           render_material_bindings,
