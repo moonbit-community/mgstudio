@@ -696,7 +696,7 @@ pub let pbr_prepare_lights_set : String
 
 pub fn pbr_prepass_enabled(@ecs.World) -> Bool
 
-pub fn pbr_prepass_material_specialization_decision(@material.MaterialProperties, UInt64, UInt64, has_deferred_prepass? : Bool, lightmapped? : Bool, lightmap_bicubic_sampling? : Bool, visibility_range_dither? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool, emulate_unclipped_depth? : Bool) -> PbrPrepassMaterialSpecializationDecision
+pub fn pbr_prepass_material_specialization_decision(@material.MaterialProperties, UInt64, UInt64, msaa_samples? : Int, has_deferred_prepass? : Bool, lightmapped? : Bool, lightmap_bicubic_sampling? : Bool, visibility_range_dither? : Bool, has_previous_skin? : Bool, has_previous_morph? : Bool, emulate_unclipped_depth? : Bool) -> PbrPrepassMaterialSpecializationDecision
 
 pub fn pbr_render_world_standard_material_texture_features(@ecs.World) -> StandardMaterialTextureFeatureSet
 

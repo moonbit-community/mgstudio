@@ -4553,35 +4553,6 @@ fn render3d_prewarm_mesh_pipelines(
 }
 
 ///|
-fn render3d_prewarm_motion_vector_material_pipelines(
-  world : @ecs.World,
-  cameras : Array[ExtractedCamera3d],
-  meshes : Array[ExtractedMesh3d],
-) -> Unit {
-  let mut motion_vector_prewarm_needed = false
-  for camera in cameras {
-    if camera.payload.motion_vector_prepass_enabled {
-      motion_vector_prewarm_needed = true
-      break
-    }
-    match camera.payload.motion_blur {
-      Some(motion_blur) =>
-        if motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F {
-          motion_vector_prewarm_needed = true
-          break
-        }
-      None => ()
-    }
-  }
-  for mesh_index in 0..<meshes.length() {
-    let mesh = meshes[mesh_index].payload
-    if motion_vector_prewarm_needed && mesh.motion_vector_enabled {
-      ignore(render3d_prewarm_motion_vector_material_pipeline(world, mesh))
-    }
-  }
-}
-
-///|
 fn render3d_prepare_shader_asset_paths(
   source_world : @ecs.World,
   world : @ecs.World,
@@ -4780,12 +4751,9 @@ pub fn render3d_specialize_material_meshes_system(world : @ecs.World) -> Unit {
   match render3d_pending_frame_snapshot(world) {
     Some(frame) => {
       render3d_prepare_shader_asset_paths(source_world, world)
+      render3d_check_prepass_views_need_specialization(world, frame.cameras)
       render3d_prewarm_mesh_pipelines(world, frame.cameras)
-      render3d_prewarm_motion_vector_material_pipelines(
-        world,
-        frame.cameras,
-        frame.meshes,
-      )
+      render3d_specialize_prepass_material_meshes(world, frame.cameras)
     }
     None => ()
   }
@@ -4906,6 +4874,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
         None =>
           abort("missing DirtySpecializations resource during pbr queue_meshes")
       }
+      render3d_queue_prepass_material_meshes(world, frame.cameras, frame.meshes)
       render3d_retain_live_main_view_phases(world, frame.cameras)
       let prepared_camera_queues = render3d_prepare_camera_queue_entries(
         world,

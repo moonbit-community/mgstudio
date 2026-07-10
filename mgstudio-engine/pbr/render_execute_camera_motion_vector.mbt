@@ -92,16 +92,6 @@ fn render3d_prewarm_prepass_material_pipeline(
 }
 
 ///|
-fn render3d_prewarm_motion_vector_material_pipeline(
-  world : @ecs.World,
-  motion_mesh : Mesh3dExtractedPayload,
-) -> @material.CachedRenderPipelineId? {
-  render3d_prewarm_prepass_material_pipeline(
-    world, motion_mesh, false, true, false,
-  )
-}
-
-///|
 fn render3d_execute_camera_prepass_draw_phase(
   world : @ecs.World,
   camera_entity : @core.Entity,

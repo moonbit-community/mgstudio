@@ -141,3 +141,24 @@ test "pbr prepass specialization: alpha mask motion path keeps previous flags" {
     content="262144",
   )
 }
+
+///|
+test "pbr prepass specialization: alpha-to-coverage consumes view MSAA" {
+  let decision = pbr_prepass_material_specialization_decision(
+    pbr_prepass_test_properties(
+      alpha_mode=@material.AlphaMode3d::AlphaToCoverage,
+      render_phase_type=@material.RenderPhaseType::AlphaMask,
+    ),
+    0UL,
+    MESH_PIPELINE_KEY_DEPTH_PREPASS,
+    msaa_samples=4,
+  )
+  guard decision is PbrPrepassMaterialSpecializationDecision::Queue(plan) else {
+    abort("expected queued alpha-to-coverage prepass plan")
+  }
+  inspect(
+    plan.mesh_key_bits() & MESH_PIPELINE_KEY_BLEND_ALPHA_TO_COVERAGE,
+    content="1073741824",
+  )
+  inspect(plan.mesh_key_bits() & MESH_PIPELINE_KEY_MAY_DISCARD, content="0")
+}

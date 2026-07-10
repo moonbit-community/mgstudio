@@ -183,6 +183,7 @@ pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState] 
 
 ///|
 fn init_materials_resources(world : @ecs.World) -> Unit {
+  ensure_render3d_prepass_specialization_resources(world)
   let default_opaque_renderer_method = get_default_opaque_renderer_method_resource(
     world,
   )

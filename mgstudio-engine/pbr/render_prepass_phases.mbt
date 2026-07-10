@@ -18,8 +18,42 @@
 
 ///|
 priv struct Render3dRetainedMeshPhaseView {
-  items : Array[MeshPhaseItem3d]
+  mut items : Array[MeshPhaseItem3d]
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
+  phase_types : Map[UInt64, Render3dPrepassBinnedRenderPhaseType]
+}
+
+///|
+priv enum Render3dPrepassBinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+}
+
+///|
+fn Render3dPrepassBinnedRenderPhaseType::mesh(
+  batchable : Bool,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> Render3dPrepassBinnedRenderPhaseType {
+  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
+    (true, true) => MultidrawableMesh
+    (true, false) => BatchableMesh
+    (false, _) => UnbatchableMesh
+  }
+}
+
+///|
+fn render3d_prepass_effective_phase_type(
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+  phase_type : Render3dPrepassBinnedRenderPhaseType,
+) -> Render3dPrepassBinnedRenderPhaseType {
+  match (gpu_preprocessing_mode, phase_type) {
+    (@render_batching.GpuPreprocessingMode::PreprocessingOnly, MultidrawableMesh
+    ) => BatchableMesh
+    (_, MultidrawableMesh) => MultidrawableMesh
+    (_, BatchableMesh) => BatchableMesh
+    (_, UnbatchableMesh) => UnbatchableMesh
+  }
 }
 
 ///|
@@ -45,6 +79,7 @@ fn Render3dRetainedMeshPhaseViews::prepare_for_new_frame(
     self.views.set(retained_view_entity, Render3dRetainedMeshPhaseView::{
       items: [],
       gpu_preprocessing_mode,
+      phase_types: Map([]),
     })
   }
 }
@@ -82,13 +117,54 @@ fn Render3dRetainedMeshPhaseViews::contains(
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::gpu_preprocessing_mode(
+fn Render3dRetainedMeshPhaseViews::view(
   self : Render3dRetainedMeshPhaseViews,
   retained_view_entity : @render_view.RetainedViewEntity,
-) -> @render_batching.GpuPreprocessingMode? {
-  self.views
-  .get(retained_view_entity)
-  .map(fn(view) { view.gpu_preprocessing_mode })
+) -> Render3dRetainedMeshPhaseView? {
+  self.views.get(retained_view_entity)
+}
+
+///|
+fn Render3dRetainedMeshPhaseView::remove(
+  self : Render3dRetainedMeshPhaseView,
+  main_entity : @core.Entity,
+) -> Unit {
+  self.items = self.items.filter(fn(item) {
+    item.entity.main_entity != main_entity
+  })
+  self.phase_types.remove(main_entity.to_bits())
+}
+
+///|
+fn Render3dRetainedMeshPhaseView::add(
+  self : Render3dRetainedMeshPhaseView,
+  item : MeshPhaseItem3d,
+  phase_type : Render3dPrepassBinnedRenderPhaseType,
+) -> Unit {
+  let effective_phase_type = render3d_prepass_effective_phase_type(
+    self.gpu_preprocessing_mode,
+    phase_type,
+  )
+  self.remove(item.entity.main_entity)
+  self.items.push(item)
+  self.phase_types.set(item.entity.main_entity.to_bits(), effective_phase_type)
+}
+
+///|
+fn Render3dRetainedMeshPhaseView::refresh_extracted_indices(
+  self : Render3dRetainedMeshPhaseView,
+  extracted_indices : Map[UInt64, Int],
+) -> Unit {
+  for index in 0..<self.items.length() {
+    let item = self.items[index]
+    guard extracted_indices.get(item.entity.main_entity.to_bits())
+      is Some(extracted_index) else {
+      abort(
+        "Retained prepass phase entity is missing its current extracted mesh payload",
+      )
+    }
+    self.items[index] = MeshPhaseItem3d::{ ..item, extracted_index, }
+  }
 }
 
 ///|

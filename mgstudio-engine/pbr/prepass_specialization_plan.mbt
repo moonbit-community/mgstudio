@@ -113,6 +113,7 @@ pub fn pbr_prepass_material_specialization_decision(
   properties : @material.MaterialProperties,
   base_mesh_key_bits : UInt64,
   view_key_bits : UInt64,
+  msaa_samples? : Int = 1,
   has_deferred_prepass? : Bool = false,
   lightmapped? : Bool = false,
   lightmap_bicubic_sampling? : Bool = false,
@@ -133,7 +134,7 @@ pub fn pbr_prepass_material_specialization_decision(
   let mut mesh_key_bits = view_key_bits |
     base_mesh_key_bits |
     properties.mesh_pipeline_key_bits.bits() |
-    alpha_mode_pipeline_key(properties.alpha_mode)
+    alpha_mode_pipeline_key(properties.alpha_mode, msaa_samples~)
   if deferred {
     mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_DEFERRED_PREPASS
   }
