@@ -13,6 +13,18 @@
 // limitations under the License.
 
 ///|
+fn render3d_prepass_render_mesh(
+  world : @ecs.World,
+  mesh_asset_id : Int,
+) -> @render_mesh.RenderMesh? {
+  guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
+    is Some(render_mesh_assets) else {
+    return None
+  }
+  render_mesh_assets.get(mesh_asset_id)
+}
+
+///|
 fn render3d_prewarm_prepass_material_pipeline(
   world : @ecs.World,
   prepass_mesh : Mesh3dExtractedPayload,
@@ -24,15 +36,10 @@ fn render3d_prewarm_prepass_material_pipeline(
     is Some(prepass_specialize) else {
     return None
   }
-  guard @sprite.render_mesh_asset_get(prepass_mesh.mesh_handle)
-    is Some(mesh_asset) else {
+  guard render3d_prepass_render_mesh(world, prepass_mesh.mesh_handle.id())
+    is Some(render_mesh) else {
     return None
   }
-  let state = @pbr_render.render3d_mesh_runtime_state_mut_or_abort(world)
-  let render_mesh = @render_mesh.RenderMesh::from_mesh(
-    mesh_asset,
-    state.peek().mesh_vertex_buffer_layouts,
-  )
   let layout = render_mesh.layout()
   let base_key = material_pipeline_key_for_standard_material_render_mesh(
     prepass_mesh.material_properties,
