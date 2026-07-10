@@ -245,7 +245,6 @@ priv struct Render3dExtractMeshRequiredComponents {
   previous_global_transform : @pbr_prepass.PreviousGlobalTransform?
   aabb : @camera_primitives.Aabb?
   layers : @camera_render_layers.RenderLayers?
-  visibility_range : @visibility.VisibilityRange?
   lightmap : Lightmap?
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?
@@ -304,7 +303,6 @@ fn render3d_extract_mesh_for_entity(
     prefetched_previous_global_transform,
     prefetched_aabb,
     prefetched_layers,
-    prefetched_visibility_range,
     prefetched_lightmap,
     prefetched_is_forward_decal,
     prefetched_forward_decal_material_ext,
@@ -330,7 +328,6 @@ fn render3d_extract_mesh_for_entity(
         components.previous_global_transform,
         components.aabb,
         components.layers,
-        components.visibility_range,
         components.lightmap,
         components.is_forward_decal,
         components.forward_decal_material_ext,
@@ -392,9 +389,6 @@ fn render3d_extract_mesh_for_entity(
       let layers = try! source_world.get_by_key(
         entity, @camera_render_layers.ecs_key_render_layers,
       )
-      let visibility_range = try! source_world.get_by_key(
-        entity, @visibility.ecs_key_visibility_range,
-      )
       let lightmap = try! source_world.get_by_key(entity, ecs_key_lightmap)
       let is_forward_decal = (try! source_world.get_by_key(
           entity, ecs_key_forward_decal,
@@ -449,8 +443,8 @@ fn render3d_extract_mesh_for_entity(
       )
       (
         mesh3d, material_handle, view_visibility, global_transform, previous_global_transform,
-        aabb, layers, visibility_range, lightmap, is_forward_decal, forward_decal_material_ext,
-        clustered_decal, has_not_shadow_caster, has_no_frustum_culling, has_no_automatic_batching,
+        aabb, layers, lightmap, is_forward_decal, forward_decal_material_ext, clustered_decal,
+        has_not_shadow_caster, has_no_frustum_culling, has_no_automatic_batching,
         has_no_cpu_culling, has_not_shadow_receiver, has_transmitted_shadow_receiver,
         has_no_wireframe, mesh3d_wireframe, wireframe_color, wireframe_line_width,
         wireframe_topology,
@@ -534,16 +528,6 @@ fn render3d_extract_mesh_for_entity(
     Some(v) => v.affine()
     None => world_from_local
   }
-  let visibility_range = prefetched_visibility_range
-  let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
-    match render3d_mesh_local_aabb_center(mesh3d) {
-      Some(local_center) =>
-        Some(world_from_local.transform_point3(local_center))
-      None => None
-    }
-  } else {
-    None
-  }
   let (skinning_key_hi, _skinning_key_lo) = @pbr_render.render3d_prepared_skin_binding_keys(
     skin_uniforms_value, entity,
   )
@@ -615,9 +599,7 @@ fn render3d_extract_mesh_for_entity(
         previous_world_from_local,
         transform,
         previous_transform,
-        visibility_range,
         aabb,
-        aabb_center_world,
         material_draw_data,
         material_extension: resolved_material_extension,
         material_properties,
@@ -688,10 +670,7 @@ fn render3d_execute_collect_meshes(
           @ecs.Optional[@pbr_prepass.PreviousGlobalTransform],
           @ecs.Optional[@camera_primitives.Aabb],
         ),
-        (
-          @ecs.Optional[@camera_render_layers.RenderLayers],
-          @ecs.Optional[@visibility.VisibilityRange],
-        ),
+        @ecs.Optional[@camera_render_layers.RenderLayers],
         @ecs.Optional[Lightmap],
       ),
       (
@@ -725,11 +704,7 @@ fn render3d_execute_collect_meshes(
     let (
       entity,
       (mesh3d, material, view_visibility, global_transform),
-      (
-        (previous_global_transform, aabb),
-        (render_layers, visibility_range),
-        lightmap,
-      ),
+      ((previous_global_transform, aabb), render_layers, lightmap),
       (
         (
           forward_decal,
@@ -771,7 +746,6 @@ fn render3d_execute_collect_meshes(
         previous_global_transform: previous_global_transform.value(),
         aabb: aabb.value(),
         layers: render_layers.value(),
-        visibility_range: visibility_range.value(),
         lightmap: lightmap.value(),
         is_forward_decal: forward_decal.present(),
         forward_decal_material_ext: forward_decal_material_ext.value(),

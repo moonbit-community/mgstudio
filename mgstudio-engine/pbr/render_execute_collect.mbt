@@ -323,10 +323,6 @@ fn render3d_execute_collect_cameras(
       Some(v) => v
       None => @camera_render_layers.RenderLayers::RenderLayers()
     }
-    let has_no_cpu_culling = (try! source_world.get_by_key(
-        entity, @visibility.ecs_key_no_cpu_culling,
-      ))
-      is Some(_)
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_value,
     )
@@ -429,7 +425,6 @@ fn render3d_execute_collect_cameras(
             target_size: target_info.target_size,
             scale_factor: target_info.scale_factor,
             layers,
-            has_no_cpu_culling,
             invert_culling: camera.invert_culling,
           },
         })

@@ -63,21 +63,6 @@ fn render3d_mesh_frustum_visible(
 }
 
 ///|
-// Bevy source:
-// `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
-// CPU frustum culling is applied only when all three opt-out flags are false:
-// `!no_frustum_culling && !no_cpu_culling_camera && !no_cpu_culling_entity`.
-pub fn render3d_should_apply_cpu_frustum_culling_flags(
-  has_no_frustum_culling : Bool,
-  camera_has_no_cpu_culling : Bool,
-  entity_has_no_cpu_culling : Bool,
-) -> Bool {
-  !has_no_frustum_culling &&
-  !camera_has_no_cpu_culling &&
-  !entity_has_no_cpu_culling
-}
-
-///|
 fn render3d_mesh_pipeline_id_for_view(
   mesh : ExtractedMesh3d,
   retained_view_entity : @render_view.RetainedViewEntity,
@@ -105,9 +90,7 @@ test "render3d gpu preprocess: view cache miss does not fall back to extracted p
       previous_world_from_local: world_from_local,
       transform,
       previous_transform: transform,
-      visibility_range: None,
       aabb: None,
-      aabb_center_world: None,
       material_draw_data: MaterialDrawData3d::Standard(
         @material.StandardMaterial::StandardMaterial(),
       ),
@@ -198,10 +181,7 @@ fn render3d_queue_material_mesh_candidate(
   render_material_bindings : RenderMaterialBindings,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
-  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
-  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
@@ -248,30 +228,6 @@ fn render3d_queue_material_mesh_candidate(
     is Some(material_binding) else {
     return None
   }
-  let mesh_layers = mesh_instance
-    .render_layers()
-    .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
-  if !mesh_layers.matches(layers) {
-    return None
-  }
-  if payload.visibility_range is Some(visibility_range) &&
-    !render3d_visibility_range_visible(
-      visibility_range,
-      camera_transform,
-      payload.world_from_local.translation,
-      payload.aabb_center_world,
-    ) {
-    return None
-  }
-  let should_apply_cpu_frustum_culling = render3d_should_apply_cpu_frustum_culling_flags(
-    payload.has_no_frustum_culling,
-    camera_has_no_cpu_culling,
-    payload.has_no_cpu_culling,
-  )
-  if should_apply_cpu_frustum_culling &&
-    !render3d_mesh_frustum_visible(payload, camera_frustum_planes) {
-    return None
-  }
   let material_properties = material.material_properties()
   let alpha = material.material_draw_data().draw_alpha_source()
   guard render3d_mesh_phase_kind(material_properties, alpha) is Some(phase) else {
@@ -305,10 +261,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
   render_material_bindings : RenderMaterialBindings,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
-  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
-  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
@@ -324,10 +277,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
         render_material_bindings,
         material_slots,
         pending_mesh_material_queues,
-        layers,
         camera_transform,
-        camera_frustum_planes,
-        camera_has_no_cpu_culling,
         retained_view_entity~,
         specialized_material_pipeline_cache~,
         visible_mesh_entities~,
@@ -391,10 +341,7 @@ fn render3d_collect_meshes_for_gpu_building(
   render_material_bindings : RenderMaterialBindings,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
-  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
-  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
@@ -410,10 +357,7 @@ fn render3d_collect_meshes_for_gpu_building(
         render_material_bindings,
         material_slots,
         pending_mesh_material_queues,
-        layers,
         camera_transform,
-        camera_frustum_planes,
-        camera_has_no_cpu_culling,
         retained_view_entity~,
         specialized_material_pipeline_cache~,
         visible_mesh_entities~,
@@ -1746,10 +1690,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
   render_material_bindings : RenderMaterialBindings,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
-  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
-  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  camera_has_no_cpu_culling : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
@@ -1764,10 +1705,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
     render_material_bindings,
     material_slots,
     pending_mesh_material_queues,
-    layers,
     camera_transform,
-    camera_frustum_planes,
-    camera_has_no_cpu_culling,
     retained_view_entity~,
     specialized_material_pipeline_cache~,
     visible_mesh_entities~,
@@ -1784,10 +1722,7 @@ fn render3d_queue_mesh_phase_items(
   render_material_bindings : RenderMaterialBindings,
   material_slots : RenderMaterial3dResolvedSlots,
   pending_mesh_material_queues : PendingMeshMaterialQueues,
-  layers : @camera_render_layers.RenderLayers,
   camera_transform : @transform.Transform,
-  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
-  camera_has_no_cpu_culling : Bool,
   use_gpu_instance_buffer_builder : Bool,
   retained_view_entity~ : @render_view.RetainedViewEntity,
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
@@ -1802,10 +1737,7 @@ fn render3d_queue_mesh_phase_items(
       render_material_bindings,
       material_slots,
       pending_mesh_material_queues,
-      layers,
       camera_transform,
-      camera_frustum_planes,
-      camera_has_no_cpu_culling,
       retained_view_entity~,
       specialized_material_pipeline_cache~,
       visible_mesh_entities~,
@@ -1819,10 +1751,7 @@ fn render3d_queue_mesh_phase_items(
     render_material_bindings,
     material_slots,
     pending_mesh_material_queues,
-    layers,
     camera_transform,
-    camera_frustum_planes,
-    camera_has_no_cpu_culling,
     retained_view_entity~,
     specialized_material_pipeline_cache~,
     visible_mesh_entities~,

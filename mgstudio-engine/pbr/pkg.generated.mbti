@@ -896,8 +896,6 @@ pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewE
 
 pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey, @Milky2018/mgstudio/render.ViewPendingQueues) -> Render3dShadowSpecializationWorkItemData?
 
-pub fn render3d_should_apply_cpu_frustum_culling_flags(Bool, Bool, Bool) -> Bool
-
 pub fn render3d_specialize_material_meshes_system(@ecs.World) -> Unit
 
 pub fn render3d_specialize_shadows_system(@ecs.World) -> Unit

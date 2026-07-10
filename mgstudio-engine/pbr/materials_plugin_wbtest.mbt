@@ -1714,7 +1714,6 @@ fn material_test_camera_payload() -> Camera3dViewPayload {
     target_size: @math.IVec2::new(1280, 720),
     scale_factor: 1.0F,
     layers: @camera_render_layers.RenderLayers::RenderLayers(),
-    has_no_cpu_culling: false,
     invert_culling: false,
   }
 }
@@ -1733,9 +1732,7 @@ fn material_test_extracted_mesh_payload(
     previous_world_from_local: world_from_local,
     transform,
     previous_transform: transform,
-    visibility_range: None,
     aabb: None,
-    aabb_center_world: None,
     material_draw_data: MaterialDrawData3d::Standard(
       @material.StandardMaterial::StandardMaterial(),
     ),

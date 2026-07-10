@@ -45,7 +45,6 @@ fn render3d_build_camera_queue_entry(
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   view_entity : @core.Entity,
   camera : Camera3dViewPayload,
-  camera_frustum_planes : Array[@render.HostMesh3dPreprocessFrustumPlane],
   meshes : Array[ExtractedMesh3d],
   render_mesh_instances : RenderMeshInstances,
   mesh_allocator : @render_mesh.MeshAllocator,
@@ -80,10 +79,7 @@ fn render3d_build_camera_queue_entry(
       render_material_bindings,
       material_slots,
       pending_mesh_material_queues,
-      camera.layers,
       camera.transform,
-      camera_frustum_planes,
-      camera.has_no_cpu_culling,
       camera_indirect_enabled,
       retained_view_entity=@render_view.RetainedViewEntity::new(view_entity),
       specialized_material_pipeline_cache~,
@@ -305,15 +301,10 @@ fn render3d_prepare_camera_queue_entry(
     viewport_state.view_width,
     viewport_state.view_height,
   )
-  let camera_frustum_planes = render3d_host_preprocess_view_frustum_planes(
-    camera.projection,
-    camera.transform,
-  )
   let queue_build_result = render3d_build_camera_queue_entry(
     mesh_runtime_state_value,
     extracted_camera.entity.main_entity,
     camera,
-    camera_frustum_planes,
     meshes,
     render_mesh_instances,
     mesh_allocator,

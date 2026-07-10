@@ -1142,9 +1142,7 @@ fn render_mesh_instances_test_mesh_for_entity(
       previous_world_from_local: world_from_local,
       transform,
       previous_transform: transform,
-      visibility_range: None,
       aabb: None,
-      aabb_center_world: None,
       material_draw_data: MaterialDrawData3d::Standard(
         @material.StandardMaterial::StandardMaterial(),
       ),

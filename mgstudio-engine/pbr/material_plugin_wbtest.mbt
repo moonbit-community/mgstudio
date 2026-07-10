@@ -1194,10 +1194,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     render_material_bindings,
     material_slots,
     PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
-    @camera_render_layers.RenderLayers::RenderLayers(),
     @transform.Transform::identity(),
-    [],
-    false,
     false,
     retained_view_entity=retained_view,
     specialized_material_pipeline_cache=world

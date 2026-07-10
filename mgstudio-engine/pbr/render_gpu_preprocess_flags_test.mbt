@@ -13,26 +13,6 @@
 // limitations under the License.
 
 ///|
-test "render3d gpu preprocess: frustum culling applies only when all Bevy opt-outs are false" {
-  debug_inspect(
-    render3d_should_apply_cpu_frustum_culling_flags(false, false, false),
-    content="true",
-  )
-  debug_inspect(
-    render3d_should_apply_cpu_frustum_culling_flags(true, false, false),
-    content="false",
-  )
-  debug_inspect(
-    render3d_should_apply_cpu_frustum_culling_flags(false, true, false),
-    content="false",
-  )
-  debug_inspect(
-    render3d_should_apply_cpu_frustum_culling_flags(false, false, true),
-    content="false",
-  )
-}
-
-///|
 test "render3d gpu preprocess: transmissive phase classification follows bevy render phase type" {
   let opaque_transmissive = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.6F,

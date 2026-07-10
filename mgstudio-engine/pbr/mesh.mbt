@@ -380,41 +380,6 @@ fn render3d_mesh_local_aabb(mesh3d : @mesh.Mesh3d) -> (@math.Vec3, @math.Vec3)? 
 }
 
 ///|
-fn render3d_mesh_local_aabb_center(mesh3d : @mesh.Mesh3d) -> @math.Vec3? {
-  if render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) {
-    Some(
-      @math.Vec3::new(
-        (min_corner.x + max_corner.x) * 0.5F,
-        (min_corner.y + max_corner.y) * 0.5F,
-        (min_corner.z + max_corner.z) * 0.5F,
-      ),
-    )
-  } else {
-    None
-  }
-}
-
-///|
-fn render3d_visibility_range_visible(
-  visibility_range : @visibility.VisibilityRange,
-  camera_transform : @transform.Transform,
-  mesh_position : @math.Vec3,
-  mesh_aabb_center_world : @math.Vec3?,
-) -> Bool {
-  let resolved_mesh_position = if visibility_range.use_aabb() {
-    match mesh_aabb_center_world {
-      Some(center) => center
-      None => mesh_position
-    }
-  } else {
-    mesh_position
-  }
-  let to_mesh = resolved_mesh_position.sub(camera_transform.translation)
-  let distance = to_mesh.length()
-  visibility_range.is_visible_at_all(distance)
-}
-
-///|
 const RENDER3D_MORPH_UNIFORM_STRIDE_WEIGHTS : Int = 64
 
 ///|

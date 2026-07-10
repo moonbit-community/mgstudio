@@ -124,7 +124,6 @@ priv struct Camera3dViewPayload {
   target_size : @math.IVec2
   scale_factor : Float
   layers : @camera_render_layers.RenderLayers
-  has_no_cpu_culling : Bool
   invert_culling : Bool
 }
 
@@ -142,9 +141,7 @@ priv struct Mesh3dExtractedPayload {
   previous_world_from_local : @math.Affine3
   transform : @transform.Transform
   previous_transform : @transform.Transform
-  visibility_range : @visibility.VisibilityRange?
   aabb : @camera_primitives.Aabb?
-  aabb_center_world : @math.Vec3?
   material_draw_data : MaterialDrawData3d
   material_extension : ExtendedMaterialMetadata3d?
   material_properties : @material.MaterialProperties

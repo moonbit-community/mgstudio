@@ -147,7 +147,6 @@ test "pbr: main view phases retain only live cameras" {
       target_size: @math.IVec2::new(640, 480),
       scale_factor: 1.0,
       layers: @camera_render_layers.RenderLayers::RenderLayers(),
-      has_no_cpu_culling: false,
       invert_culling: false,
     },
   }
