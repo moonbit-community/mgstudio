@@ -199,6 +199,12 @@ fn render3d_queue_material_mesh_candidate(
       }
     None => ()
   }
+  guard render3d_traced_mesh_pipeline_id_for_view(
+      mesh, retained_view_entity, specialized_material_pipeline_cache,
+    )
+    is Some(pipeline_id) else {
+    return None
+  }
   guard render3d_queue_material_instance_for_mesh(
       render_material_instances, pending_mesh_material_queues, retained_view_entity,
       mesh,
@@ -232,12 +238,6 @@ fn render3d_queue_material_mesh_candidate(
   }
   let material_properties = material.material_properties()
   let phase = render3d_mesh_phase_kind(material_properties)
-  guard render3d_traced_mesh_pipeline_id_for_view(
-      mesh, retained_view_entity, specialized_material_pipeline_cache,
-    )
-    is Some(pipeline_id) else {
-    return None
-  }
   Some(QueuedMaterialMesh3d::{
     phase,
     pipeline_id,

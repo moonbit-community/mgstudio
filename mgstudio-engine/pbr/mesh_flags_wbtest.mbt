@@ -1440,6 +1440,30 @@ test "render3d: queue phase skips view cache misses" {
 }
 
 ///|
+test "render3d: queue phase checks pipeline cache before pending resources" {
+  let mesh = render3d_test_transparent_mesh_for_queue(7, -1.0F, 0.0F)
+  let view = @render_view.RetainedViewEntity::new(@core.Entity::new(8, 0))
+  let pending_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
+  let items = render3d_queue_mesh_phase_items(
+    [mesh],
+    RenderMeshInstances::new(),
+    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    None,
+    @render_mesh.MeshAllocator::MeshAllocator(),
+    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialBindings::RenderMaterialBindings(),
+    RenderMaterial3dResolvedSlots::new(),
+    pending_queues,
+    @transform.Transform::identity(),
+    false,
+    retained_view_entity=view,
+    specialized_material_pipeline_cache=SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+  )
+  debug_inspect(items.length(), content="0")
+  debug_inspect(pending_queues.current_len(view), content="0")
+}
+
+///|
 test "render3d: transmissive materials use a distinct sorted phase" {
   let material = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     0.5F,
