@@ -582,7 +582,6 @@ fn render3d_test_extracted_mesh_for_flags(
     entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(1),
-      mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,
@@ -639,7 +638,6 @@ fn render3d_test_transparent_mesh_for_queue(
     entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(entity_id),
-      mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,
@@ -1564,7 +1562,6 @@ test "render3d: transmissive materials use a distinct sorted phase" {
     entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
     payload: Mesh3dExtractedPayload::{
       mesh_handle: @asset.Handle::new(3),
-      mesh_preprocess_static: None,
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,

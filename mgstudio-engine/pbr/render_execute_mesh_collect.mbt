@@ -70,8 +70,6 @@ priv struct Render3dPrepareMeshesCounters {
   mut skipped_unchanged_meshes : Int
   mut mesh_upload_cache_hits : Int
   mut mesh_upload_cache_misses : Int
-  mut preprocess_static_cache_hits : Int
-  mut preprocess_static_cache_misses : Int
 }
 
 ///|
@@ -82,8 +80,6 @@ fn Render3dPrepareMeshesCounters::Render3dPrepareMeshesCounters() -> Render3dPre
     skipped_unchanged_meshes: 0,
     mesh_upload_cache_hits: 0,
     mesh_upload_cache_misses: 0,
-    preprocess_static_cache_hits: 0,
-    preprocess_static_cache_misses: 0,
   }
 }
 
@@ -111,14 +107,6 @@ fn render3d_prepare_meshes_emit_counters(
     "render_3d_prepare_meshes.mesh_upload_cache_misses",
     counters.mesh_upload_cache_misses,
   )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_prepare_meshes.preprocess_static_cache_hits",
-    counters.preprocess_static_cache_hits,
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_prepare_meshes.preprocess_static_cache_misses",
-    counters.preprocess_static_cache_misses,
-  )
 }
 
 ///|
@@ -143,23 +131,9 @@ fn render3d_prepare_extracted_mesh_backend_uploads(
       counters.mesh_upload_cache_misses = counters.mesh_upload_cache_misses + 1
       counters.buffer_uploads = counters.buffer_uploads + 1
     }
-    let mesh_id = @pbr_render.render3d_upload_mesh_handle_cached(
-      mesh_runtime_state_value, mesh_handle,
-    )
-    if @pbr_render.render3d_mesh_preprocess_static_cache_has(
+    ignore(
+      @pbr_render.render3d_upload_mesh_handle_cached(
         mesh_runtime_state_value, mesh_handle,
-      ) {
-      counters.preprocess_static_cache_hits = counters.preprocess_static_cache_hits +
-        1
-    } else {
-      counters.preprocess_static_cache_misses = counters.preprocess_static_cache_misses +
-        1
-    }
-    mesh.payload.mesh_preprocess_static = Some(
-      render3d_mesh_preprocess_static_cached(
-        mesh_handle,
-        mesh_id,
-        mesh_runtime_state_value.mesh_preprocess_static_cache,
       ),
     )
   }
@@ -594,7 +568,6 @@ fn render3d_extract_mesh_for_entity(
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh(),
-        mesh_preprocess_static: None,
         world_from_local,
         previous_world_from_local,
         transform,
@@ -782,10 +755,6 @@ fn render3d_execute_collect_meshes(
   )
   render3d_prepare_extracted_mesh_backend_uploads(
     mesh_runtime_state_value, meshes, counters,
-  )
-  render3d_update_mesh_preprocess_static_cache(
-    mesh_runtime_state_value.mesh_preprocess_static_cache,
-    meshes,
   )
   render3d_prepare_meshes_emit_counters(counters)
   meshes

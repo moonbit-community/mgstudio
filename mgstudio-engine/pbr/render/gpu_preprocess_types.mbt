@@ -20,18 +20,6 @@ pub(all) struct PreparedSkinBinding3d {
 }
 
 ///|
-pub(all) struct MeshPreprocessStatic3d {
-  topology_kind : Int
-  is_indexed : Bool
-  first_vertex_index : Int
-  first_index_index : Int
-  index_count : Int
-  has_local_aabb : Bool
-  aabb_center : @math.Vec3
-  aabb_half_extents : @math.Vec3
-}
-
-///|
 pub(all) struct GpuPreprocessPhaseRange3d {
   phase : Int
   start : Int

@@ -18,7 +18,6 @@
 pub struct Render3dMeshRuntimeState {
   mesh_upload_cache : Map[Int, Int]
   morph_target_texture_cache : Map[Int, Int]
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
   binding_arrays_are_usable : Bool
   clustered_decals_are_usable : Bool
@@ -31,7 +30,6 @@ pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
   Render3dMeshRuntimeState::{
     mesh_upload_cache: {},
     morph_target_texture_cache: {},
-    mesh_preprocess_static_cache: {},
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
     clustered_decals_are_usable: @render_gpu.host_gpu_mesh3d_binding_arrays_are_usable(
@@ -106,9 +104,6 @@ pub fn render3d_upload_mesh_handle_cached(
       if mesh_id > 0 && @render_gpu.host_gpu_mesh_info(mesh_id) is Some(_) {
         mesh_id
       } else {
-        mesh_runtime_state_value.mesh_preprocess_static_cache.remove(
-          mesh_handle_id,
-        )
         let uploaded_mesh_id = @sprite_render.render2d_upload_mesh_handle(
           mesh_handle,
         )
@@ -162,19 +157,6 @@ pub fn render3d_uploaded_mesh_id(
       }
     None => None
   }
-}
-
-///|
-pub fn render3d_mesh_preprocess_static_cache_has(
-  mesh_runtime_state_value : Render3dMeshRuntimeState,
-  mesh_handle : @asset.Handle[@mesh.Mesh],
-) -> Bool {
-  let mesh_handle_id = mesh_handle.id()
-  if mesh_handle_id < 0 {
-    return false
-  }
-  mesh_runtime_state_value.mesh_preprocess_static_cache.get(mesh_handle_id)
-  is Some(_)
 }
 
 ///|
@@ -233,16 +215,6 @@ pub fn render3d_sweep_mesh_runtime_caches(
   }
   for mesh_handle_id in stale_morph_target_texture_keys {
     mesh_runtime_state_value.morph_target_texture_cache.remove(mesh_handle_id)
-  }
-  let stale_preprocess_cache_keys : Array[Int] = []
-  for entry in mesh_runtime_state_value.mesh_preprocess_static_cache.iter() {
-    let (mesh_handle_id, _metadata) = entry
-    if !render3d_mesh_handle_alive(mesh_handle_id) {
-      stale_preprocess_cache_keys.push(mesh_handle_id)
-    }
-  }
-  for mesh_handle_id in stale_preprocess_cache_keys {
-    mesh_runtime_state_value.mesh_preprocess_static_cache.remove(mesh_handle_id)
   }
 }
 

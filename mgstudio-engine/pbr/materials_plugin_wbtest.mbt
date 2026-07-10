@@ -1727,7 +1727,6 @@ fn material_test_extracted_mesh_payload(
   let world_from_local = @math.Affine3::identity()
   Mesh3dExtractedPayload::{
     mesh_handle: @asset.Handle::new(mesh_id),
-    mesh_preprocess_static: None,
     world_from_local,
     previous_world_from_local: world_from_local,
     transform,

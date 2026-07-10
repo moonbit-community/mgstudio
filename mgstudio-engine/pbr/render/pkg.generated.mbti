@@ -413,8 +413,6 @@ pub fn render3d_mesh_layouts(binding_arrays_are_usable? : Bool) -> MeshLayouts3d
 
 pub fn render3d_mesh_position_view_depth(@math.Vec3, @transform.Transform) -> Float
 
-pub fn render3d_mesh_preprocess_static_cache_has(Render3dMeshRuntimeState, @asset.Handle[@mesh.Mesh]) -> Bool
-
 pub let render3d_mesh_runtime_state_key : @ecs.ResourceKey[Render3dMeshRuntimeState]
 
 pub fn render3d_mesh_runtime_state_mut_or_abort(@ecs.World) -> @ecs.ResourceMut[Render3dMeshRuntimeState]
@@ -997,17 +995,6 @@ pub fn MeshPreparedBindGroup3d::has_slot(Self, MeshBindingSlot3d) -> Bool
 pub fn MeshPreparedBindGroup3d::label(Self) -> String
 pub fn MeshPreparedBindGroup3d::layout_name(Self) -> String
 
-pub(all) struct MeshPreprocessStatic3d {
-  topology_kind : Int
-  is_indexed : Bool
-  first_vertex_index : Int
-  first_index_index : Int
-  index_count : Int
-  has_local_aabb : Bool
-  aabb_center : @math.Vec3
-  aabb_half_extents : @math.Vec3
-}
-
 pub struct MeshViewBindings3d {
   viewport : (Int, Int, Int, Int)?
   clear_enabled : Bool
@@ -1202,7 +1189,6 @@ pub(all) struct Render3dLightingState {
 pub struct Render3dMeshRuntimeState {
   mesh_upload_cache : Map[Int, Int]
   morph_target_texture_cache : Map[Int, Int]
-  mesh_preprocess_static_cache : Map[Int, MeshPreprocessStatic3d]
   mesh_vertex_buffer_layouts : @mesh.MeshVertexBufferLayouts
   binding_arrays_are_usable : Bool
   clustered_decals_are_usable : Bool

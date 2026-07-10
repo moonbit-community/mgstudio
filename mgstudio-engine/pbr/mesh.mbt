@@ -213,9 +213,6 @@ type Render3dLightingState = @pbr_render.Render3dLightingState
 type ExtractedDirectionalLight3d = @pbr_render.ExtractedDirectionalLight3d
 
 ///|
-type MeshPreprocessStatic3d = @pbr_render.MeshPreprocessStatic3d
-
-///|
 type GpuPreprocessPhaseRange3d = @pbr_render.GpuPreprocessPhaseRange3d
 
 ///|
