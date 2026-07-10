@@ -4350,11 +4350,43 @@ fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
 }
 
 ///|
+// Temporary backend adapter under Bevy's
+// `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>` owner. The host
+// draw API still consumes a mesh id, so prepare each unique render asset once;
+// extraction and mesh-instance preparation must not upload asset buffers.
+fn render3d_prepare_render_mesh_backend_uploads(
+  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
+  extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset],
+  counters : Render3dPrepareMeshesCounters,
+) -> Unit {
+  for extracted_asset in extracted_assets {
+    let mesh_handle : @asset.Handle[@mesh.Mesh] = @asset.Handle::new(
+      extracted_asset.mesh_asset_id(),
+    )
+    if @pbr_render.render3d_mesh_upload_cache_has_valid(
+        mesh_runtime_state_value, mesh_handle,
+      ) {
+      counters.mesh_upload_cache_hits = counters.mesh_upload_cache_hits + 1
+      counters.skipped_unchanged_meshes = counters.skipped_unchanged_meshes + 1
+    } else {
+      counters.mesh_upload_cache_misses = counters.mesh_upload_cache_misses + 1
+      counters.buffer_uploads = counters.buffer_uploads + 1
+    }
+    ignore(
+      @pbr_render.render3d_upload_mesh_handle_cached(
+        mesh_runtime_state_value, mesh_handle,
+      ),
+    )
+  }
+}
+
+///|
 // Bevy source: `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>`.
 fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
   world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
   meshes : Array[ExtractedMesh3d],
+  counters : Render3dPrepareMeshesCounters,
 ) -> Unit {
   let render_mesh_assets = match
     world.get_resource_mut(@render_mesh.RenderMeshAssets::resource()) {
@@ -4381,6 +4413,9 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
   let prepared_assets = @render_mesh.prepare_render_mesh_assets(
     extracted_assets,
     mesh_runtime_state_value.mesh_vertex_buffer_layouts,
+  )
+  render3d_prepare_render_mesh_backend_uploads(
+    mesh_runtime_state_value, extracted_assets, counters,
   )
   mesh_allocator.modify(fn(allocator) {
     for prepared_index in 0..<prepared_assets.length() {
@@ -4695,6 +4730,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
     world, cameras, binding_arrays_are_usable, clustered_decals_are_usable,
   )
   render3d_extract_render_visible_entities(world, source_world)
+  let prepare_meshes_counters = Render3dPrepareMeshesCounters::Render3dPrepareMeshesCounters()
   let meshes = mesh_runtime_state.modify(fn(mesh_runtime_state_value) {
     let meshes = morph_indices.modify(fn(morph_indices_value) {
       skin_uniforms.modify(fn(skin_uniforms_value) {
@@ -4709,12 +4745,13 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
             needs_mesh_previous_transform,
             frame_config.default_opaque_renderer_method,
             frame_config.prepass_enabled,
+            prepare_meshes_counters,
           )
         })
       })
     })
     render3d_prepare_render_mesh_assets_from_extracted_meshes(
-      world, mesh_runtime_state_value, meshes,
+      world, mesh_runtime_state_value, meshes, prepare_meshes_counters,
     )
     if frame_config.gpu_instance_buffer_builder_enabled {
       render_mesh_instances_extract_gpu_building_resource(
@@ -4726,6 +4763,7 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
       render_mesh_instances_update_cpu_building_resource(world, source_world)
     }
     render_mesh_instances_set_mesh_motion_vector_flags(world)
+    render3d_prepare_meshes_emit_counters(prepare_meshes_counters)
     meshes
   })
   render3d_queue_store_pending_frame(world, frame_config, cameras, meshes)

@@ -680,6 +680,60 @@ fn render3d_test_transparent_mesh_for_queue(
 }
 
 ///|
+test "render3d: render asset preparation deduplicates shared mesh instances" {
+  let world = @ecs.World::new()
+  let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  world.insert_resource(mesh_assets_key, @asset.Assets::new())
+  let extracted_asset_count = Ref(-1)
+  let preserved_asset_id = Ref(false)
+  let app = @app.App::new(world).add_system(fn(_world) {
+    let mesh_handle = @sprite.render_mesh_asset_add(
+      @mesh.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(
+          [
+            @math.Vec3::new(0.0F, 0.0F, 0.0F),
+            @math.Vec3::new(1.0F, 0.0F, 0.0F),
+            @math.Vec3::new(0.0F, 1.0F, 0.0F),
+          ],
+          [
+            @math.Vec2::new(0.0F, 0.0F),
+            @math.Vec2::new(1.0F, 0.0F),
+            @math.Vec2::new(0.0F, 1.0F),
+          ],
+          Some([0, 1, 2]),
+        ),
+      ),
+    )
+    let base = render3d_test_extracted_mesh_for_flags(
+      false,
+      false,
+      false,
+      @math.Vec3::splat(1.0F),
+    )
+    let first = ExtractedMesh3d::{
+      ..base,
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(301, 0)),
+      payload: Mesh3dExtractedPayload::{ ..base.payload, mesh_handle, },
+    }
+    let second = ExtractedMesh3d::{
+      ..base,
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(302, 0)),
+      payload: Mesh3dExtractedPayload::{ ..base.payload, mesh_handle, },
+    }
+    let extracted_assets = render3d_extracted_render_mesh_assets_from_extracted_meshes([
+        first, second,
+      ],
+    )
+    extracted_asset_count.val = extracted_assets.length()
+    preserved_asset_id.val = extracted_assets[0].mesh_asset_id() ==
+      mesh_handle.id()
+  })
+  ignore(app.run_once())
+  debug_inspect(extracted_asset_count.val, content="1")
+  debug_inspect(preserved_asset_id.val, content="true")
+}
+
+///|
 fn render3d_test_queue_pipeline_cache(
   meshes : Array[ExtractedMesh3d],
 ) -> (@render_view.RetainedViewEntity, SpecializedMaterialPipelineCache) {

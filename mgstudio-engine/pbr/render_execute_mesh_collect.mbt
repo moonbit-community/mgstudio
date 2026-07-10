@@ -110,36 +110,6 @@ fn render3d_prepare_meshes_emit_counters(
 }
 
 ///|
-fn render3d_prepare_extracted_mesh_backend_uploads(
-  mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
-  meshes : Array[ExtractedMesh3d],
-  counters : Render3dPrepareMeshesCounters,
-) -> Unit {
-  // Bevy's extraction systems populate render-world mesh instance data; GPU
-  // asset preparation is a separate render-asset owner. Mgstudio still has a
-  // legacy host mesh id consumed by the draw backend, so backfill it after
-  // extraction instead of owning host uploads inside per-entity extraction.
-  for mesh in meshes {
-    let mesh_handle = mesh.payload.mesh_handle
-    let mesh_upload_cache_hit = @pbr_render.render3d_mesh_upload_cache_has_valid(
-      mesh_runtime_state_value, mesh_handle,
-    )
-    if mesh_upload_cache_hit {
-      counters.mesh_upload_cache_hits = counters.mesh_upload_cache_hits + 1
-      counters.skipped_unchanged_meshes = counters.skipped_unchanged_meshes + 1
-    } else {
-      counters.mesh_upload_cache_misses = counters.mesh_upload_cache_misses + 1
-      counters.buffer_uploads = counters.buffer_uploads + 1
-    }
-    ignore(
-      @pbr_render.render3d_upload_mesh_handle_cached(
-        mesh_runtime_state_value, mesh_handle,
-      ),
-    )
-  }
-}
-
-///|
 fn render3d_resolve_mesh_material(
   material_handle : MeshMaterial3d,
   standard_material_frame_cache : Map[Int, StandardMaterial],
@@ -617,6 +587,7 @@ fn render3d_execute_collect_meshes(
   needs_mesh_previous_transform : Bool,
   default_opaque_renderer_method : OpaqueRendererMethod,
   material_prepass_enabled : Bool,
+  counters : Render3dPrepareMeshesCounters,
 ) -> Array[ExtractedMesh3d] {
   let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
     @app.TimelineTraceCategory::RenderQueue,
@@ -628,7 +599,6 @@ fn render3d_execute_collect_meshes(
     source_world,
   )
   let meshes : Array[ExtractedMesh3d] = []
-  let counters = Render3dPrepareMeshesCounters::Render3dPrepareMeshesCounters()
   let mesh_query : @ecs.Query[
     (
       @core.Entity,
@@ -753,9 +723,5 @@ fn render3d_execute_collect_meshes(
     "execute_3d_collect_meshes",
     trace_collect_meshes_start_us,
   )
-  render3d_prepare_extracted_mesh_backend_uploads(
-    mesh_runtime_state_value, meshes, counters,
-  )
-  render3d_prepare_meshes_emit_counters(counters)
   meshes
 }
