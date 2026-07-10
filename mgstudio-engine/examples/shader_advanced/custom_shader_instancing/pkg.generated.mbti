@@ -19,6 +19,8 @@ pub impl @app.Plugin for CustomMaterialPlugin
 type CustomPipeline
 pub fn CustomPipeline::shader(Self) -> @asset.Handle[@shader.Shader]
 
+type InstanceBuffer
+
 type InstanceData
 
 type InstanceMaterialData

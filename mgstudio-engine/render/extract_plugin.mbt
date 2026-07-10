@@ -116,9 +116,17 @@ fn render_plugin_install_with(
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
   @render_texture.register_asset_texture_backend()
   ignore(insert_future_render_resources(plugin.render_creation(), next.world()))
+  let asset_server = next.world().get_resource(@asset.AssetServer::resource())
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
       init_render_state(render_sub_app.world())
+      match asset_server {
+        Some(asset_server) =>
+          render_sub_app
+          .world()
+          .insert_resource(@asset.AssetServer::resource(), asset_server)
+        None => ()
+      }
       render_sub_app
       .world()
       .insert_resource(@time.time_sender_resource_key, time_channels.0)

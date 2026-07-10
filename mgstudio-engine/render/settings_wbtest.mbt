@@ -499,6 +499,23 @@ test "render plugin: initializes pending command buffers from render startup" {
 }
 
 ///|
+test "render plugin: copies AssetServer resource into RenderApp" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(RenderPlugin::RenderPlugin())
+  let render_server = app
+    .get_sub_app(@app.RenderApp)
+    .unwrap()
+    .world()
+    .get_resource(@asset.AssetServer::resource())
+    .unwrap()
+  debug_inspect(
+    render_server.unapproved_path_mode() == @asset.UnapprovedPathMode::Forbid,
+    content="true",
+  )
+}
+
+///|
 test "render startup: gpu resources can be initialized repeatedly" {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     RenderPlugin::RenderPlugin(),

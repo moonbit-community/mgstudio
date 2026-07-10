@@ -38,6 +38,17 @@ fn InstanceMaterialData::clone(
 }
 
 ///|
+struct InstanceBuffer {
+  buffer_id : Int
+  length : Int
+}
+
+///|
+fn InstanceBuffer::new(buffer_id : Int, length : Int) -> InstanceBuffer {
+  InstanceBuffer::{ buffer_id, length }
+}
+
+///|
 struct CustomMaterialPlugin {}
 
 ///|
@@ -75,6 +86,16 @@ let instance_material_data_key : @ecs.ComponentKey[InstanceMaterialData] = @ecs.
 ///|
 impl @ecs.Component for InstanceMaterialData with fn component() {
   instance_material_data_key
+}
+
+///|
+let instance_buffer_key : @ecs.ComponentKey[InstanceBuffer] = @ecs.register_component(
+  debug_name="examples.shader_advanced.custom_shader_instancing.InstanceBuffer",
+)
+
+///|
+impl @ecs.Component for InstanceBuffer with fn component() {
+  instance_buffer_key
 }
 
 ///|
@@ -204,33 +225,34 @@ fn custom_material_metadata() -> @material.ExtendedMaterialMetadata3d {
 }
 
 ///|
-fn prepare_instance_buffers(
-  commands : @app.Commands,
-  query : @ecs.Query[
-    (
-      @core.Entity,
-      @ecs.Read[InstanceMaterialData],
-      @ecs.Optional[@render.Mesh3dInstanceVertexBufferData],
-    ),
+fn prepare_instance_buffers(world : @ecs.World) -> Unit {
+  let query : @ecs.Query[
+    (@core.Entity, @ecs.Read[InstanceMaterialData]),
     @ecs.All,
-  ],
-) -> Unit {
+  ] = @ecs.query(world)
+  let prepared : Array[(@core.Entity, Bytes, Int)] = []
   try! query.view(fn(_query_entity, data) {
-    let (entity, instance_material, current_buffer) = data
-    if !instance_material.is_changed() && current_buffer.value() is Some(_) {
-      return
-    }
+    let (entity, instance_material) = data
     let value = instance_material.value()
-    commands
-    .entity(entity)
-    .insert_component(
-      @render.Mesh3dInstanceVertexBufferData::new(
-        buffer_id=INSTANCE_VERTEX_BUFFER_ID,
-        bytes=instance_data_bytes(value),
-        length=value.instances.length(),
-      ),
+    prepared.push(
+      (entity, instance_data_bytes(value), value.instances.length()),
     )
   })
+  for entry in prepared {
+    let (entity, bytes, length) = entry
+    @render.host_gpu_prepare_mesh3d_instance_vertex_buffer(
+      buffer_id=INSTANCE_VERTEX_BUFFER_ID,
+      bytes~,
+      length~,
+    )
+    world.set_by_key(
+      entity,
+      InstanceBuffer::component(),
+      InstanceBuffer::new(INSTANCE_VERTEX_BUFFER_ID, length),
+    ) catch {
+      _ => abort("custom_shader_instancing: failed to insert InstanceBuffer")
+    }
+  }
 }
 
 ///|
@@ -239,9 +261,9 @@ fn init_custom_pipeline(world : @ecs.World) -> Unit {
     Some(asset_server) => asset_server
     None => abort("custom_shader_instancing: expected AssetServer resource")
   }
-  let shader : @asset.Handle[@shader.Shader] = @asset.asset_with_world(world, fn() {
-    asset_server.load(SHADER_ASSET_PATH)
-  })
+  let shader : @asset.Handle[@shader.Shader] = asset_server.load(
+    SHADER_ASSET_PATH,
+  )
   world.insert_resource(CustomPipeline::resource(), CustomPipeline::{ shader, })
 }
 
@@ -262,9 +284,21 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
     },
   )
   let next = @render.extract_component_plugin_with(app, extract_plugin)
-  next
-  .add_systems_world(@app.Startup, init_custom_pipeline)
-  .add_systems_param2(@app.PostUpdate, prepare_instance_buffers)
+  @render.with_render_app(next, fn(render_app) {
+    render_app
+    .add_systems(
+      @render.render_startup_schedule_stage(),
+      @app.system(init_custom_pipeline).named(
+        "custom_shader_instancing::init_custom_pipeline",
+      ),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(prepare_instance_buffers)
+      .named("custom_shader_instancing::prepare_instance_buffers")
+      .in_set(@render.render_system_set_prepare_resources),
+    )
+  })
 }
 
 ///|

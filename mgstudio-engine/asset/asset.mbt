@@ -324,13 +324,21 @@ pub fn[T] asset_with_world(world : @ecs.World, f : () -> T) -> T {
 
 ///|
 fn[T] asset_with_server_world(asset_server : AssetServer, f : () -> T) -> T {
-  match asset_current_world() {
-    Some(_) => f()
-    None =>
-      match asset_server.owner_world {
-        Some(world) => asset_with_world(world, f)
-        None => f()
+  match asset_server.owner_world {
+    Some(world) => asset_with_world(world, f)
+    None => f()
+  }
+}
+
+///|
+fn AssetServer::shared_owner(self : AssetServer) -> AssetServer {
+  match self.owner_world {
+    Some(world) =>
+      match world.get_resource(asset_server_resource_key) {
+        Some(server) => server
+        None => self
       }
+    None => self
   }
 }
 
@@ -1590,23 +1598,24 @@ pub fn[T : Asset, P : IntoAssetPath] AssetServer::load(
   self : AssetServer,
   path : P,
 ) -> Handle[T] {
-  asset_with_server_world(self, fn() {
+  let server = self.shared_owner()
+  asset_with_server_world(server, fn() {
     asset_register_builtin_loaders()
     let parsed_path = path.into_asset_path()
     let asset_type_name = assets_type_name((None : T?))
-    if !self.unapproved_asset_load_allowed(parsed_path, false) {
-      return self.reserve_unapproved_path_handle(parsed_path, asset_type_name)
+    if !server.unapproved_asset_load_allowed(parsed_path, false) {
+      return server.reserve_unapproved_path_handle(parsed_path, asset_type_name)
     }
     if typed_asset_loader_is_registered(asset_type_name) {
-      return self.load_registered_asset(parsed_path)
+      return server.load_registered_asset(parsed_path)
     }
     let formatted_path = asset_format_path(parsed_path)
     let probe : Handle[T] = Handle::new(0)
     let loader_type_name = asset_loader_type_name(probe)
     match asset_loader_registry_active().get(loader_type_name) {
-      Some(entry) => Handle::new((entry.load)(self, formatted_path))
+      Some(entry) => Handle::new((entry.load)(server, formatted_path))
       None =>
-        self.reserve_missing_loader_handle(
+        server.reserve_missing_loader_handle(
           parsed_path,
           asset_type_name,
           "No asset loader is registered for \{loader_type_name}; load the plugin that owns this asset type before calling AssetServer::load",

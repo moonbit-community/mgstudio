@@ -137,28 +137,31 @@ test "custom shader instancing: extraction clones instance array for render worl
 }
 
 ///|
-test "custom shader instancing: main-world bridge prepares instance vertex buffer" {
+test "custom shader instancing: render-world prepare stores InstanceBuffer" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .add_systems_param3(@app.Startup, setup)
     .run_once()
+    .run_once()
+    .run_once()
+  let render_world = app.sub_app(@app.RenderApp).world()
   let query : @ecs.Query[
-    (
-      @ecs.Read[InstanceMaterialData],
-      @ecs.Read[@render.Mesh3dInstanceVertexBufferData],
-    ),
+    (@ecs.Read[InstanceMaterialData], @ecs.Read[InstanceBuffer]),
     @ecs.All,
-  ] = @ecs.query(app.world())
+  ] = @ecs.query(render_world)
   let mut count = 0
   let mut length = 0
+  let mut buffer_id = -1
   try! query.view(fn(_entity, data) {
     count = count + 1
     let (_instance_material, instance_buffer) = data
-    length = instance_buffer.value().length()
+    length = instance_buffer.value().length
+    buffer_id = instance_buffer.value().buffer_id
   })
   debug_inspect(count, content="1")
   debug_inspect(length, content="100")
+  debug_inspect(buffer_id, content="1")
 }
 
 ///|
@@ -168,11 +171,49 @@ test "custom shader instancing: custom pipeline startup loads shader asset" {
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .run_once()
     .run_once()
-  guard app.world().get_resource(CustomPipeline::resource()) is Some(pipeline) else {
+  let render_world = app.sub_app(@app.RenderApp).world()
+  guard render_world.get_resource(CustomPipeline::resource()) is Some(pipeline) else {
     abort("expected CustomPipeline resource")
   }
   let shader_assets_key : @ecs.ResourceKey[@asset.Assets[@shader.Shader]] = @asset.assets_resource_key()
   let shader_assets = app.world().get_resource(shader_assets_key).unwrap()
   let shader = shader_assets.get(pipeline.shader()).unwrap()
   debug_inspect(shader.path, content="\"shaders/instancing.wgsl\"")
+}
+
+///|
+test "custom shader instancing: source mesh reaches visible render extraction" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
+    .add_systems_param3(@app.Startup, setup)
+    .run_once()
+    .run_once()
+    .run_once()
+  let query : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Read[InstanceMaterialData],
+      @ecs.Read[@visibility.ViewVisibility],
+      @ecs.Optional[@render.RenderEntity],
+    ),
+    @ecs.All,
+  ] = @ecs.query(app.world())
+  let mut count = 0
+  let mut visible = false
+  let mut has_render_entity = false
+  try! query.view(fn(_query_entity, data) {
+    let (_entity, _instances, view_visibility, render_entity) = data
+    count = count + 1
+    visible = view_visibility.value().is_visible()
+    has_render_entity = render_entity.value() is Some(_)
+  })
+  debug_inspect(count, content="1")
+  debug_inspect(visible, content="true")
+  debug_inspect(has_render_entity, content="true")
+  let render_world = app.sub_app(@app.RenderApp).world()
+  debug_inspect(
+    @pbr.render3d_diagnostic_queued_visible_mesh_count(render_world),
+    content="1",
+  )
 }
