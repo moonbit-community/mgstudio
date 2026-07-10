@@ -218,6 +218,12 @@ priv struct MeshPhaseItem3d {
 }
 
 ///|
+priv struct Render3dPrepassPhaseDrawItem3d {
+  phase_item : MeshPhaseItem3d
+  preprocess_draw_item_index : Int
+}
+
+///|
 priv struct Render3dMainViewDrawItems {
   views : Map[UInt64, Array[MeshPhaseItem3d]]
 }

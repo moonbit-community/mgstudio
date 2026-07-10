@@ -652,7 +652,8 @@ fn render3d_material_specialization_work_item_data(
   let visibility_range_dither = render3d_material_specialization_visibility_range_dither(
     world, visible_entity,
   )
-  let mesh_key = material_mesh_pipeline_key_for_render_mesh(
+  let material_type_tag = resolved_material.material_type_tag()
+  let mesh_key = material_pipeline_key_for_standard_material_render_mesh(
     material_properties,
     render_mesh,
     view_key_bits~,
@@ -668,14 +669,15 @@ fn render3d_material_specialization_work_item_data(
     visibility_range_dither~,
     lightmapped~,
     lightmap_bicubic_sampling~,
-  )
+    material_type_tag~,
+  ).mesh_key()
   Some(Render3dMaterialSpecializationWorkItemData::{
     visible_entity,
     retained_view_entity,
     mesh_key,
     layout: render_mesh.layout(),
     properties: material_properties,
-    material_type_tag: resolved_material.material_type_tag(),
+    material_type_tag,
   })
 }
 

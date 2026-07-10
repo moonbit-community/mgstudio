@@ -168,6 +168,58 @@ fn Render3dRetainedMeshPhaseView::refresh_extracted_indices(
 }
 
 ///|
+fn render3d_append_retained_prepass_phase_items(
+  output : Array[MeshPhaseItem3d],
+  view : Render3dRetainedMeshPhaseView?,
+) -> Unit {
+  match view {
+    Some(view) =>
+      for item in view.items {
+        output.push(item)
+      }
+    None => ()
+  }
+}
+
+///|
+fn render3d_retained_prepass_phase_items(
+  world : @ecs.World,
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> (Array[MeshPhaseItem3d], Array[MeshPhaseItem3d]) {
+  let prepass_items : Array[MeshPhaseItem3d] = []
+  let deferred_items : Array[MeshPhaseItem3d] = []
+  let opaque_prepass = world
+    .get_resource(Render3dOpaquePrepassPhases::resource())
+    .unwrap()
+  let alpha_mask_prepass = world
+    .get_resource(Render3dAlphaMaskPrepassPhases::resource())
+    .unwrap()
+  let opaque_deferred = world
+    .get_resource(Render3dOpaqueDeferredPhases::resource())
+    .unwrap()
+  let alpha_mask_deferred = world
+    .get_resource(Render3dAlphaMaskDeferredPhases::resource())
+    .unwrap()
+  render3d_append_retained_prepass_phase_items(
+    prepass_items,
+    opaque_prepass.phases.view(retained_view_entity),
+  )
+  render3d_append_retained_prepass_phase_items(
+    prepass_items,
+    alpha_mask_prepass.phases.view(retained_view_entity),
+  )
+  render3d_append_retained_prepass_phase_items(
+    deferred_items,
+    opaque_deferred.phases.view(retained_view_entity),
+  )
+  render3d_append_retained_prepass_phase_items(
+    deferred_items,
+    alpha_mask_deferred.phases.view(retained_view_entity),
+  )
+  (prepass_items, deferred_items)
+}
+
+///|
 priv struct Render3dOpaquePrepassPhases {
   phases : Render3dRetainedMeshPhaseViews
 }

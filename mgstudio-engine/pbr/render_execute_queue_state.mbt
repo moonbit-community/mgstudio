@@ -22,7 +22,8 @@ priv struct Render3dPendingFrame {
 ///|
 priv struct Render3dPreparedCameraQueue {
   draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d
-  opaque_alpha_draw_item_indices : Array[Int]
+  prepass_draw_items : Array[Render3dPrepassPhaseDrawItem3d]
+  deferred_prepass_draw_items : Array[Render3dPrepassPhaseDrawItem3d]
   indexed_indirect_parameter_indices : Array[Int]
   non_indexed_indirect_parameter_indices : Array[Int]
   camera_pass_projection : @pbr_render.Render3dPassProjection

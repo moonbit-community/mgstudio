@@ -13,127 +13,27 @@
 // limitations under the License.
 
 ///|
-fn render3d_prepass_render_mesh(
-  world : @ecs.World,
-  mesh_asset_id : Int,
-) -> @render_mesh.RenderMesh? {
-  guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
-    is Some(render_mesh_assets) else {
-    return None
-  }
-  render_mesh_assets.get(mesh_asset_id)
-}
-
-///|
-fn render3d_prewarm_prepass_material_pipeline(
-  world : @ecs.World,
-  prepass_mesh : Mesh3dExtractedPayload,
-  normal_prepass_enabled : Bool,
-  motion_vector_prepass_enabled : Bool,
-  deferred_prepass_enabled : Bool,
-) -> @material.CachedRenderPipelineId? {
-  guard prepass_mesh.material_properties.prepass_specialize
-    is Some(prepass_specialize) else {
-    return None
-  }
-  guard render3d_prepass_render_mesh(world, prepass_mesh.mesh_handle.id())
-    is Some(render_mesh) else {
-    return None
-  }
-  let layout = render_mesh.layout()
-  let base_key = material_pipeline_key_for_standard_material_render_mesh(
-    prepass_mesh.material_properties,
-    render_mesh,
-    lightmapped=match prepass_mesh.lightmap {
-      Some(lightmap) => lightmap.image.id() >= 0
-      None => false
-    },
-    lightmap_bicubic_sampling=false,
-  )
-  let mut prepass_bits = base_key.mesh_key().bits() |
-    MESH_PIPELINE_KEY_DEPTH_PREPASS
-  if normal_prepass_enabled {
-    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_NORMAL_PREPASS
-  }
-  if motion_vector_prepass_enabled {
-    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS
-  }
-  if deferred_prepass_enabled &&
-    prepass_mesh.material_properties.render_method
-    is OpaqueRendererMethod::Deferred {
-    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_DEFERRED_PREPASS
-  }
-  if motion_vector_prepass_enabled && prepass_mesh.has_previous_skin {
-    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_SKIN
-  }
-  if motion_vector_prepass_enabled &&
-    prepass_mesh.previous_morph_weights_index >= 0 {
-    prepass_bits = prepass_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
-  }
-  let motion_key = @material.ErasedMaterialPipelineKey::new(
-    @material.ErasedMeshPipelineKey::new(prepass_bits, "MeshPipelineKey"),
-    prepass_mesh.material_properties.material_key,
-    "StandardMaterial",
-  )
-  let prepass_pipeline_id = @material.material_specialize_prepass(
-    prepass_specialize,
-    world,
-    motion_key,
-    layout,
-    prepass_mesh.material_properties,
-  ) catch {
-    err =>
-      abort(
-        "failed to specialize pbr prepass material pipeline for mesh \{prepass_mesh.mesh_handle.id()}: \{err}",
-      )
-  }
-  let runtime_pipeline_id = pbr_prepass_runtime_pipeline_id(prepass_pipeline_id)
-  Some(runtime_pipeline_id)
-}
-
-///|
 fn render3d_execute_camera_prepass_draw_phase(
   world : @ecs.World,
   camera_entity : @core.Entity,
-  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   meshes : Array[ExtractedMesh3d],
-  opaque_alpha_draw_item_indices : Array[Int],
+  phase_draw_items : Array[Render3dPrepassPhaseDrawItem3d],
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
-  view_deferred_prepass_enabled : Bool,
-  phase_deferred_prepass : Bool,
-  normal_prepass_enabled : Bool,
-  motion_vector_prepass_enabled : Bool,
 ) -> Unit {
-  let draw_items = draw_queue_entry.draw_items
-  for draw_item_index in opaque_alpha_draw_item_indices {
-    let draw_item = draw_items[draw_item_index]
-    if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
-      draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
-      continue
-    }
+  for phase_draw_item in phase_draw_items {
+    let draw_item = phase_draw_item.phase_item
+    let preprocess_draw_item_index = phase_draw_item.preprocess_draw_item_index
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
-    let mesh_deferred_prepass = view_deferred_prepass_enabled &&
-      mesh.material_properties.render_method is OpaqueRendererMethod::Deferred
-    if phase_deferred_prepass {
-      if !mesh_deferred_prepass {
-        continue
-      }
-    } else if mesh_deferred_prepass {
-      continue
-    }
-    guard render3d_prewarm_prepass_material_pipeline(
-        world, mesh, normal_prepass_enabled, motion_vector_prepass_enabled, phase_deferred_prepass,
-      )
-      is Some(material_pipeline_id) else {
-      continue
-    }
+    let material_pipeline_id = pbr_prepass_runtime_pipeline_id(
+      draw_item.pipeline_id,
+    )
     let motion_vector_indexed = draw_item.slabs.index_slab_id() is Some(_)
     let motion_vector_indirect_parameters_index = if motion_vector_indexed {
-      indexed_indirect_parameter_indices[draw_item_index]
+      indexed_indirect_parameter_indices[preprocess_draw_item_index]
     } else {
-      non_indexed_indirect_parameter_indices[draw_item_index]
+      non_indexed_indirect_parameter_indices[preprocess_draw_item_index]
     }
     guard render3d_mesh_draw_alpha(
         mesh.material_properties.alpha_mode,
@@ -150,7 +50,7 @@ fn render3d_execute_camera_prepass_draw_phase(
         render3d_uploaded_mesh_id_or_abort(world, draw_item.mesh_asset_id),
         camera_entity.id,
         camera_entity.generation,
-        draw_item_index,
+        preprocess_draw_item_index,
         if motion_vector_indirect_parameters_index >= 0 {
           if motion_vector_indexed {
             MESH3D_DRAW_INDIRECT_KIND_INDEXED
@@ -201,6 +101,8 @@ fn render3d_execute_camera_prepass_draw_phase(
         render3d_mesh_flags(extracted_mesh),
         render3d_mesh_draw_flags(extracted_mesh),
         specular_texture_id=material_fields.specular_texture_id,
+        material_bind_group_index=draw_item.material_bind_group_index,
+        material_bind_group_slot=draw_item.material_bind_group_slot,
         forward_decal_inv_depth_fade_factor=material_fields.forward_decal_inv_depth_fade_factor,
         skinning_key_hi=mesh.skinning_key_hi,
         skinning_key_lo=if mesh.skinning_key_hi < 0 {
@@ -245,9 +147,9 @@ fn render3d_execute_camera_prepass(
   world : @ecs.World,
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
-  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   meshes : Array[ExtractedMesh3d],
-  opaque_alpha_draw_item_indices : Array[Int],
+  prepass_draw_items : Array[Render3dPrepassPhaseDrawItem3d],
+  deferred_prepass_draw_items : Array[Render3dPrepassPhaseDrawItem3d],
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
   depth_prepass_enabled : Bool,
@@ -401,9 +303,8 @@ fn render3d_execute_camera_prepass(
     clear_enabled=1,
   )
   render3d_execute_camera_prepass_draw_phase(
-    world, camera_entity, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
-    indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices, deferred_prepass_enabled,
-    false, normal_prepass_enabled, motion_vector_prepass_enabled,
+    world, camera_entity, meshes, prepass_draw_items, indexed_indirect_parameter_indices,
+    non_indexed_indirect_parameter_indices,
   )
   @render.host_gpu_end_pass()
   if deferred_prepass_enabled {
@@ -449,9 +350,8 @@ fn render3d_execute_camera_prepass(
       clear_enabled=1,
     )
     render3d_execute_camera_prepass_draw_phase(
-      world, camera_entity, draw_queue_entry, meshes, opaque_alpha_draw_item_indices,
-      indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices,
-      deferred_prepass_enabled, true, normal_prepass_enabled, motion_vector_prepass_enabled,
+      world, camera_entity, meshes, deferred_prepass_draw_items, indexed_indirect_parameter_indices,
+      non_indexed_indirect_parameter_indices,
     )
     @render.host_gpu_end_pass()
   }

@@ -142,6 +142,36 @@ fn render3d_build_camera_queue_entry(
 }
 
 ///|
+fn render3d_resolve_prepass_phase_draw_items(
+  phase_items : Array[MeshPhaseItem3d],
+  main_draw_items : Array[MeshPhaseItem3d],
+  opaque_alpha_draw_item_indices : Array[Int],
+) -> Array[Render3dPrepassPhaseDrawItem3d] {
+  let main_draw_item_indices : Map[UInt64, Int] = Map([])
+  for draw_item_index in opaque_alpha_draw_item_indices {
+    let draw_item = main_draw_items[draw_item_index]
+    main_draw_item_indices.set(
+      draw_item.entity.main_entity.to_bits(),
+      draw_item_index,
+    )
+  }
+  let resolved : Array[Render3dPrepassPhaseDrawItem3d] = []
+  for phase_item in phase_items {
+    guard main_draw_item_indices.get(phase_item.entity.main_entity.to_bits())
+      is Some(preprocess_draw_item_index) else {
+      abort(
+        "Retained prepass phase entity is missing its main-pass GPU preprocess output",
+      )
+    }
+    resolved.push(Render3dPrepassPhaseDrawItem3d::{
+      phase_item,
+      preprocess_draw_item_index,
+    })
+  }
+  resolved
+}
+
+///|
 fn render3d_upload_camera_queue_entry(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
@@ -303,6 +333,8 @@ fn render3d_prepare_camera_queue_entry(
   specialized_material_pipeline_cache~ : SpecializedMaterialPipelineCache,
   visible_mesh_entities? : @render_visibility.RenderVisibleEntitiesClass? = None,
   retained_phase_items? : Array[MeshPhaseItem3d]? = None,
+  prepass_phase_items? : Array[MeshPhaseItem3d] = [],
+  deferred_prepass_phase_items? : Array[MeshPhaseItem3d] = [],
 ) -> Render3dPreparedCameraQueue? {
   let camera = extracted_camera.payload
   guard render3d_execute_camera_viewport_state(camera) is Some(viewport_state) else {
@@ -334,9 +366,20 @@ fn render3d_prepare_camera_queue_entry(
     visible_mesh_entities~,
     retained_phase_items~,
   )
+  let prepass_draw_items = render3d_resolve_prepass_phase_draw_items(
+    prepass_phase_items,
+    queue_build_result.draw_queue_entry.draw_items,
+    queue_build_result.opaque_alpha_draw_item_indices,
+  )
+  let deferred_prepass_draw_items = render3d_resolve_prepass_phase_draw_items(
+    deferred_prepass_phase_items,
+    queue_build_result.draw_queue_entry.draw_items,
+    queue_build_result.opaque_alpha_draw_item_indices,
+  )
   Some(Render3dPreparedCameraQueue::{
     draw_queue_entry: queue_build_result.draw_queue_entry,
-    opaque_alpha_draw_item_indices: queue_build_result.opaque_alpha_draw_item_indices,
+    prepass_draw_items,
+    deferred_prepass_draw_items,
     indexed_indirect_parameter_indices: queue_build_result.indexed_indirect_parameter_indices,
     non_indexed_indirect_parameter_indices: queue_build_result.non_indexed_indirect_parameter_indices,
     camera_pass_projection,
@@ -434,6 +477,9 @@ fn render3d_prepare_camera_queue_entries(
       dequeued,
       queued_items,
     )
+    let (prepass_phase_items, deferred_prepass_phase_items) = render3d_retained_prepass_phase_items(
+      world, retained_view_entity,
+    )
     prepared.push(
       render3d_prepare_camera_queue_entry(
         camera,
@@ -451,6 +497,8 @@ fn render3d_prepare_camera_queue_entries(
         gpu_culling_supported,
         specialized_material_pipeline_cache~,
         retained_phase_items=Some(retained_phase_items),
+        prepass_phase_items~,
+        deferred_prepass_phase_items~,
       ),
     )
   }
