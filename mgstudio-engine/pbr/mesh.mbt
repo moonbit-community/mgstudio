@@ -248,6 +248,7 @@ type GpuPreprocessDispatchMetadata3d = @pbr_render.GpuPreprocessDispatchMetadata
 ///|
 priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   draw_items : Array[MeshPhaseItem3d]
+  output_count : Int
   phase_ranges : Array[GpuPreprocessPhaseRange3d]
   indirect_metadata : GpuPreprocessIndirectMetadata3d
   dispatch_metadata : GpuPreprocessDispatchMetadata3d

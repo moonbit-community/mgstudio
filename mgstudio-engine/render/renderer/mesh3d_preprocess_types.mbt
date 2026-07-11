@@ -155,6 +155,7 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
 pub(all) struct HostMesh3dPreprocessCameraPayload {
   view : HostMesh3dPreprocessView
   previous_view : HostMesh3dPreprocessPreviousView
+  output_count : Int
   mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
   mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -178,6 +179,10 @@ pub(all) struct HostMesh3dPreprocessCameraPayload {
   non_indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
   dispatch_metadata : HostMesh3dPreprocessDispatchMetadata
 }
+
+///|
+// MoonBit's stable identifier for Bevy's main mesh phase `TypeId`.
+pub const MESH3D_PREPROCESS_MAIN_PHASE_ID : String = "mgstudio_render::Main3d"
 
 ///|
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0

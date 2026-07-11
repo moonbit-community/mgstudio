@@ -21,6 +21,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   pass_kind : Int,
   preprocess_camera_key_hi : Int,
   preprocess_camera_key_lo : Int,
+  preprocess_phase_id : String,
   draw_storage_index : Int,
   indirect_kind : Int,
   indirect_parameters_index : Int,
@@ -158,6 +159,18 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   let mut draw_write_offset = 0UL
   let mut draw_index = 0U
   let mut morph_descriptor_index = 0U
+  let phase_state_index = if preprocess_phase_id !=
+    MESH3D_PREPROCESS_MAIN_PHASE_ID &&
+    draw_storage_index >= 0 {
+    mesh3d_preprocess_camera_upload_state_index(
+      self,
+      preprocess_camera_key_hi,
+      preprocess_camera_key_lo,
+      phase_id=preprocess_phase_id,
+    )
+  } else {
+    None
+  }
   if draw_storage_index >= 0 ||
     self.mesh3d_gpu_instance_builder_enabled ||
     use_indirect {
@@ -177,20 +190,42 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       return
     }
     let required_size = next_used_int.to_uint64()
-    guard self.ensure_mesh3d_instance_draw_binding_with_layout(
-        material_pipeline_id,
-        material_layout_entry.draw_bind_group_layout,
-        material_layout_entry.draw_bind_group_layout_descriptor,
-        required_size,
-        lightmap_texture_id,
-        lightmap_slab_index,
-        lightmap_slab_texture_ids,
-        morph_targets_texture_id,
-        desired_draw_index.reinterpret_as_uint(),
-        morph_weights_index,
-        previous_morph_weights_index,
-      )
-      is Some((instance_draw_buf, instance_draw_bg)) else {
+    let phase_draw_binding = match phase_state_index {
+      Some(state_index) => {
+        if desired_draw_index + draw_count >
+          self.mesh3d_preprocess_camera_upload_states[state_index].output_count {
+          return
+        }
+        self.mesh3d_preprocess_phase_draw_bind_group_get_or_create(
+          state_index,
+          material_pipeline_id,
+          material_layout_entry.draw_bind_group_layout,
+          material_layout_entry.draw_bind_group_layout_descriptor,
+          lightmap_texture_id,
+          lightmap_slab_index,
+          lightmap_slab_texture_ids,
+          morph_targets_texture_id,
+          desired_draw_index.reinterpret_as_uint(),
+          morph_weights_index,
+          previous_morph_weights_index,
+        )
+      }
+      None =>
+        self.ensure_mesh3d_instance_draw_binding_with_layout(
+          material_pipeline_id,
+          material_layout_entry.draw_bind_group_layout,
+          material_layout_entry.draw_bind_group_layout_descriptor,
+          required_size,
+          lightmap_texture_id,
+          lightmap_slab_index,
+          lightmap_slab_texture_ids,
+          morph_targets_texture_id,
+          desired_draw_index.reinterpret_as_uint(),
+          morph_weights_index,
+          previous_morph_weights_index,
+        )
+    }
+    guard phase_draw_binding is Some((instance_draw_buf, instance_draw_bg)) else {
       return
     }
     draw_index = desired_draw_index.reinterpret_as_uint()
@@ -199,7 +234,8 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     draw_bind_group = Some(instance_draw_bg)
     draw_write_offset = desired_draw_index.to_uint64() *
       MESH3D_DRAW_STORAGE_STRIDE_BYTES
-    if self.mesh3d_instance_draw_used < next_used_int {
+    if phase_state_index is None &&
+      self.mesh3d_instance_draw_used < next_used_int {
       self.mesh3d_instance_draw_used = next_used_int
     }
   } else {
@@ -437,11 +473,14 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   guard draw_buffer is Some(active_draw_buffer) else { return }
   guard draw_bind_group is Some(active_draw_bg) else { return }
   ignore(skinning_key_lo)
-  let draw_preuploaded = draw_storage_index >= 0 &&
-    self.mesh3d_prepared_draw_pass_kind == ps.pass_kind &&
-    self.mesh3d_prepared_draw_camera_key_hi == preprocess_camera_key_hi &&
-    self.mesh3d_prepared_draw_camera_key_lo == preprocess_camera_key_lo &&
-    draw_storage_index < self.mesh3d_prepared_draw_count
+  let draw_preuploaded = phase_state_index is Some(_) ||
+    (
+      draw_storage_index >= 0 &&
+      self.mesh3d_prepared_draw_pass_kind == ps.pass_kind &&
+      self.mesh3d_prepared_draw_camera_key_hi == preprocess_camera_key_hi &&
+      self.mesh3d_prepared_draw_camera_key_lo == preprocess_camera_key_lo &&
+      draw_storage_index < self.mesh3d_prepared_draw_count
+    )
   if !use_indirect &&
     draw_storage_index >= 0 &&
     indirect_draw_count > 1 &&
@@ -632,7 +671,10 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   }
   if use_indirect &&
     mesh3d_preprocess_camera_upload_state(
-      self, preprocess_camera_key_hi, preprocess_camera_key_lo,
+      self,
+      preprocess_camera_key_hi,
+      preprocess_camera_key_lo,
+      phase_id=preprocess_phase_id,
     )
     is Some(preprocess_state) {
     if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED &&

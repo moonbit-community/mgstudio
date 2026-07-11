@@ -816,15 +816,20 @@ pub fn clear_registered_wgsl_source_registry() -> Unit {
 }
 
 ///|
+pub const MESH3D_PREPROCESS_MAIN_PHASE_ID : String = @renderer.MESH3D_PREPROCESS_MAIN_PHASE_ID
+
+///|
 pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
+  phase_id? : String = @renderer.MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   @renderer.host_gpu_upload_mesh3d_preprocess_camera_payload(
     camera_key_hi~,
     camera_key_lo~,
     payload~,
+    phase_id~,
   )
 }
 
@@ -842,11 +847,13 @@ pub fn host_gpu_build_mesh3d_indirect_parameters(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_BUILD_INDIRECT_PHASE_MAIN,
+  phase_id? : String = @renderer.MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   @renderer.host_gpu_build_mesh3d_indirect_parameters(
     camera_key_hi~,
     camera_key_lo~,
     phase_kind~,
+    phase_id~,
   )
 }
 
@@ -855,11 +862,13 @@ pub fn host_gpu_preprocess_mesh3d(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_PREPROCESS_PHASE_MAIN,
+  phase_id? : String = @renderer.MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   @renderer.host_gpu_preprocess_mesh3d(
     camera_key_hi~,
     camera_key_lo~,
     phase_kind~,
+    phase_id~,
   )
 }
 
@@ -1776,6 +1785,7 @@ pub fn host_gpu_draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,
   preprocess_camera_key_lo? : Int = 0,
+  preprocess_phase_id? : String = @renderer.MESH3D_PREPROCESS_MAIN_PHASE_ID,
   draw_storage_index? : Int = -1,
   indirect_kind? : Int = 0,
   indirect_parameters_index? : Int = -1,
@@ -1900,6 +1910,7 @@ pub fn host_gpu_draw_mesh3d(
     mesh_id~,
     preprocess_camera_key_hi~,
     preprocess_camera_key_lo~,
+    preprocess_phase_id~,
     draw_storage_index~,
     indirect_kind~,
     indirect_parameters_index~,

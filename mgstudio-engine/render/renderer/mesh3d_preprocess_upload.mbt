@@ -49,10 +49,12 @@ const MESH3D_PREPROCESS_INPUT_FLAG_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
 fn mesh3d_preprocess_camera_upload_state_new(
   key_hi : Int,
   key_lo : Int,
+  phase_id : String,
 ) -> GpuMesh3dPreprocessCameraUploadState {
   GpuMesh3dPreprocessCameraUploadState::{
     key_hi,
     key_lo,
+    phase_id,
     mesh_input_buffer: None,
     mesh_input_capacity: 0UL,
     previous_mesh_input_buffer: None,
@@ -60,6 +62,7 @@ fn mesh3d_preprocess_camera_upload_state_new(
     output_buffer: None,
     output_capacity: 0UL,
     output_count: 0,
+    phase_draw_bind_groups: [],
     motion_vector_mesh_bind_group: None,
     motion_vector_mesh_bind_group_skin_revision: -1,
     motion_vector_mesh_bind_group_morph_revision: -1,
@@ -136,13 +139,19 @@ fn mesh3d_preprocess_camera_upload_state_new(
 }
 
 ///|
-fn mesh3d_preprocess_camera_upload_state_key(
-  key_hi : Int,
-  key_lo : Int,
-) -> UInt64 {
+fn mesh3d_preprocess_camera_key(key_hi : Int, key_lo : Int) -> UInt64 {
   let hi = key_hi.reinterpret_as_uint().to_uint64()
   let lo = key_lo.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
   (hi << 32) | lo
+}
+
+///|
+fn mesh3d_preprocess_camera_upload_state_key(
+  key_hi : Int,
+  key_lo : Int,
+  phase_id : String,
+) -> String {
+  "\{phase_id}|\{key_hi}|\{key_lo}"
 }
 
 ///|
@@ -150,20 +159,25 @@ fn mesh3d_preprocess_camera_upload_state_index(
   backend : GpuBackend,
   key_hi : Int,
   key_lo : Int,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Int? {
-  let key = mesh3d_preprocess_camera_upload_state_key(key_hi, key_lo)
+  let key = mesh3d_preprocess_camera_upload_state_key(key_hi, key_lo, phase_id)
   if backend.mesh3d_preprocess_camera_upload_state_indices.get(key)
     is Some(index) &&
     index >= 0 &&
     index < backend.mesh3d_preprocess_camera_upload_states.length() {
     let state = backend.mesh3d_preprocess_camera_upload_states[index]
-    if state.key_hi == key_hi && state.key_lo == key_lo {
+    if state.key_hi == key_hi &&
+      state.key_lo == key_lo &&
+      state.phase_id == phase_id {
       return Some(index)
     }
   }
   for i in 0..<backend.mesh3d_preprocess_camera_upload_states.length() {
     let state = backend.mesh3d_preprocess_camera_upload_states[i]
-    if state.key_hi == key_hi && state.key_lo == key_lo {
+    if state.key_hi == key_hi &&
+      state.key_lo == key_lo &&
+      state.phase_id == phase_id {
       backend.mesh3d_preprocess_camera_upload_state_indices.set(key, i)
       return Some(i)
     }
@@ -176,14 +190,20 @@ fn mesh3d_preprocess_camera_upload_state_get_or_create(
   backend : GpuBackend,
   key_hi : Int,
   key_lo : Int,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Int {
-  if mesh3d_preprocess_camera_upload_state_index(backend, key_hi, key_lo)
+  if mesh3d_preprocess_camera_upload_state_index(
+      backend,
+      key_hi,
+      key_lo,
+      phase_id~,
+    )
     is Some(index) {
     return index
   }
-  let key = mesh3d_preprocess_camera_upload_state_key(key_hi, key_lo)
+  let key = mesh3d_preprocess_camera_upload_state_key(key_hi, key_lo, phase_id)
   backend.mesh3d_preprocess_camera_upload_states.push(
-    mesh3d_preprocess_camera_upload_state_new(key_hi, key_lo),
+    mesh3d_preprocess_camera_upload_state_new(key_hi, key_lo, phase_id),
   )
   let state_index = backend.mesh3d_preprocess_camera_upload_states.length() - 1
   backend.mesh3d_preprocess_camera_upload_state_indices.set(key, state_index)
@@ -201,10 +221,7 @@ pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
   }
   let kept_states : Array[GpuMesh3dPreprocessCameraUploadState] = []
   for state in self.mesh3d_preprocess_camera_upload_states {
-    let key = mesh3d_preprocess_camera_upload_state_key(
-      state.key_hi,
-      state.key_lo,
-    )
+    let key = mesh3d_preprocess_camera_key(state.key_hi, state.key_lo)
     if retained.contains(key) {
       kept_states.push(state)
     }
@@ -216,6 +233,7 @@ pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
     let key = mesh3d_preprocess_camera_upload_state_key(
       state.key_hi,
       state.key_lo,
+      state.phase_id,
     )
     self.mesh3d_preprocess_camera_upload_state_indices.set(key, state_index)
     self.mesh3d_preprocess_camera_upload_states.push(state)

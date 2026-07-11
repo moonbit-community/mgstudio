@@ -749,6 +749,7 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
   maybe_mesh_culling_data_buffer : MeshCullingDataBuffer?,
   work_item_buffers : @render_batching.PreprocessWorkItemBuffers,
   phase_indirect_parameters_buffers : @render_batching.UntypedPhaseIndirectParametersBuffers,
+  output_count? : Int = -1,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
   let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
     draw_items,
@@ -764,22 +765,9 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
   )
   let mesh_culling_data : Array[@render.HostMesh3dPreprocessMeshCullingData] = []
   let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
-  match resolved_work_item_buffers {
-    Direct(_) => ()
-    Indirect(_, _, _) => {
-      guard maybe_batched_instance_buffers is Some(batched_instance_buffers) else {
-        abort("Missing BatchedInstanceBuffers during pbr GPU preprocessing")
-      }
-      guard maybe_mesh_culling_data_buffer is Some(mesh_culling_data_buffer) else {
-        abort("Missing MeshCullingDataBuffer during pbr GPU preprocessing")
-      }
+  match maybe_batched_instance_buffers {
+    Some(batched_instance_buffers) =>
       for input_index in 0..<batched_instance_buffers.current_input_len() {
-        mesh_culling_data.push(
-          render3d_host_preprocess_mesh_culling_data(
-            input_index.reinterpret_as_uint(),
-            mesh_culling_data_buffer,
-          ),
-        )
         mesh_inputs.push(
           render3d_host_preprocess_mesh_input(
             input_index.reinterpret_as_uint(),
@@ -787,10 +775,41 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
           ),
         )
       }
+    None =>
+      match resolved_work_item_buffers {
+        Direct(_) => ()
+        Indirect(_, _, _) =>
+          abort("Missing BatchedInstanceBuffers during pbr GPU preprocessing")
+      }
+  }
+  match resolved_work_item_buffers {
+    Direct(_) => ()
+    Indirect(_, _, _) => {
+      guard maybe_mesh_culling_data_buffer is Some(mesh_culling_data_buffer) else {
+        abort("Missing MeshCullingDataBuffer during pbr GPU preprocessing")
+      }
+      let input_count = match maybe_batched_instance_buffers {
+        Some(batched_instance_buffers) =>
+          batched_instance_buffers.current_input_len()
+        None => 0
+      }
+      for input_index in 0..<input_count {
+        mesh_culling_data.push(
+          render3d_host_preprocess_mesh_culling_data(
+            input_index.reinterpret_as_uint(),
+            mesh_culling_data_buffer,
+          ),
+        )
+      }
     }
   }
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
+    output_count: if output_count < 0 {
+      draw_items.length()
+    } else {
+      output_count
+    },
     phase_ranges,
     indirect_metadata,
     dispatch_metadata,
@@ -1302,6 +1321,7 @@ fn render3d_host_preprocess_camera_payload(
   @render.HostMesh3dPreprocessCameraPayload::{
     view,
     previous_view,
+    output_count: queue_entry.output_count,
     mesh_culling_data,
     mesh_inputs,
     direct_work_items,

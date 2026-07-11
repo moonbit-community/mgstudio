@@ -25,10 +25,15 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   camera_key_hi : Int,
   camera_key_lo : Int,
   payload : HostMesh3dPreprocessCameraPayload,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   let state_index = mesh3d_preprocess_camera_upload_state_get_or_create(
-    self, camera_key_hi, camera_key_lo,
+    self,
+    camera_key_hi,
+    camera_key_lo,
+    phase_id~,
   )
+  self.clear_mesh3d_preprocess_phase_draw_bind_groups(state_index)
   let old_preprocess_view_capacity = self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity
   let old_previous_view_capacity = self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_capacity
   let old_mesh_input_capacity = self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_capacity
@@ -85,7 +90,7 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = previous_mesh_input_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].previous_mesh_input_capacity
   = previous_mesh_input_capacity
-  let output_required_size = payload.mesh_inputs.length().to_uint64() *
+  let output_required_size = payload.output_count.to_uint64() *
     MESH3D_PREPASS_MESH_BUFFER_SIZE
   let (output_buffer, output_capacity) = mesh3d_preprocess_ensure_storage_buffer(
     self,
@@ -96,7 +101,7 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   )
   self.mesh3d_preprocess_camera_upload_states[state_index].output_buffer = output_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].output_capacity = output_capacity
-  self.mesh3d_preprocess_camera_upload_states[state_index].output_count = payload.mesh_inputs.length()
+  self.mesh3d_preprocess_camera_upload_states[state_index].output_count = payload.output_count
   let (preprocess_view_buffer, preprocess_view_capacity) = mesh3d_preprocess_upload_uniform_buffer(
     self,
     self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_buffer,
@@ -716,6 +721,7 @@ pub fn GpuBackend::preprocess_mesh3d(
   camera_key_hi : Int,
   camera_key_lo : Int,
   phase_kind : Int,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit raise GpuBackendError {
   if self.frame is None && self.active_surface_target_id < 0 {
     activate_surface_frame_for_target(self, self.active_surface_target_id)
@@ -723,7 +729,10 @@ pub fn GpuBackend::preprocess_mesh3d(
   }
   guard self.frame is Some(frame) else { return }
   guard mesh3d_preprocess_camera_upload_state_index(
-      self, camera_key_hi, camera_key_lo,
+      self,
+      camera_key_hi,
+      camera_key_lo,
+      phase_id~,
     )
     is Some(state_index) else {
     return
@@ -878,6 +887,7 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
   camera_key_hi : Int,
   camera_key_lo : Int,
   phase_kind : Int,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit raise GpuBackendError {
   if self.frame is None && self.active_surface_target_id < 0 {
     activate_surface_frame_for_target(self, self.active_surface_target_id)
@@ -885,7 +895,10 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
   }
   guard self.frame is Some(frame) else { return }
   guard mesh3d_preprocess_camera_upload_state_index(
-      self, camera_key_hi, camera_key_lo,
+      self,
+      camera_key_hi,
+      camera_key_lo,
+      phase_id~,
     )
     is Some(state_index) else {
     return
@@ -1086,8 +1099,14 @@ fn mesh3d_preprocess_camera_upload_state(
   backend : GpuBackend,
   key_hi : Int,
   key_lo : Int,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> GpuMesh3dPreprocessCameraUploadState? {
-  guard mesh3d_preprocess_camera_upload_state_index(backend, key_hi, key_lo)
+  guard mesh3d_preprocess_camera_upload_state_index(
+      backend,
+      key_hi,
+      key_lo,
+      phase_id~,
+    )
     is Some(state_index) else {
     return None
   }

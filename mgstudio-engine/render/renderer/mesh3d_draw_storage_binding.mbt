@@ -517,6 +517,87 @@ pub fn GpuBackend::ensure_mesh3d_instance_draw_binding(
 }
 
 ///|
+fn GpuBackend::clear_mesh3d_preprocess_phase_draw_bind_groups(
+  self : GpuBackend,
+  state_index : Int,
+) -> Unit {
+  for
+    entry in self.mesh3d_preprocess_camera_upload_states[state_index].phase_draw_bind_groups {
+    self.retire_mesh3d_draw_bind_group(entry.bind_group)
+  }
+  self.mesh3d_preprocess_camera_upload_states[state_index].phase_draw_bind_groups.clear()
+}
+
+///|
+// Bevy source: `bevy_pbr/src/render/mesh.rs::prepare_mesh_bind_groups` creates
+// a distinct `MeshPhaseBindGroups` entry for every render phase output buffer.
+fn GpuBackend::mesh3d_preprocess_phase_draw_bind_group_get_or_create(
+  self : GpuBackend,
+  state_index : Int,
+  material_pipeline_id : UInt64,
+  bgl : @wgpu.BindGroupLayout,
+  layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
+  lightmap_texture_id : Int,
+  lightmap_slab_index : Int,
+  lightmap_slab_texture_ids : Array[Int],
+  morph_target_texture_id : Int,
+  morph_descriptor_index : UInt,
+  current_morph_weights_byte_offset : Int,
+  previous_morph_weights_byte_offset : Int,
+) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
+  guard self.mesh3d_preprocess_camera_upload_states[state_index].output_buffer
+    is Some(output_buffer) else {
+    return None
+  }
+  let output_capacity = self.mesh3d_preprocess_camera_upload_states[state_index].output_capacity
+  if output_capacity == 0UL {
+    return None
+  }
+  let morph_revision = mesh3d_draw_layout_morph_revision(
+    self, layout_descriptor,
+  )
+  let resolved_morph_target_texture_id = mesh3d_draw_layout_morph_target_texture_id(
+    layout_descriptor, morph_target_texture_id,
+  )
+  for
+    entry in self.mesh3d_preprocess_camera_upload_states[state_index].phase_draw_bind_groups {
+    if entry.material_pipeline_id == material_pipeline_id &&
+      entry.skin_revision == self.mesh3d_skin_revision &&
+      entry.morph_revision == morph_revision &&
+      entry.lightmap_slab_index == lightmap_slab_index &&
+      entry.morph_target_texture_id == resolved_morph_target_texture_id {
+      if mesh3d_draw_layout_has_binding(layout_descriptor, 8) {
+        guard self.write_mesh3d_morph_descriptor(
+          morph_descriptor_index, current_morph_weights_byte_offset, previous_morph_weights_byte_offset,
+          morph_target_texture_id,
+        ) else {
+          return None
+        }
+      }
+      return Some((output_buffer, entry.bind_group))
+    }
+  }
+  guard self.create_mesh3d_draw_bind_group(
+      bgl, layout_descriptor, output_buffer, output_capacity, lightmap_texture_id,
+      lightmap_slab_texture_ids, morph_target_texture_id, morph_descriptor_index,
+      current_morph_weights_byte_offset, previous_morph_weights_byte_offset, "mgstudio_mesh3d_preprocess_phase_draw_bg",
+    )
+    is Some(bind_group) else {
+    return None
+  }
+  self.mesh3d_preprocess_camera_upload_states[state_index].phase_draw_bind_groups.push(GpuMesh3dPhaseDrawBindGroupEntry::{
+      material_pipeline_id,
+      skin_revision: self.mesh3d_skin_revision,
+      morph_revision,
+      lightmap_slab_index,
+      morph_target_texture_id: resolved_morph_target_texture_id,
+      bind_group,
+    },
+  )
+  Some((output_buffer, bind_group))
+}
+
+///|
 fn mesh3d_draw_bind_group_dynamic_offsets(
   layout_descriptor : @render_resource.BindGroupLayoutDescriptor,
   current_morph_weights_index : Int,

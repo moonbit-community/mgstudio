@@ -874,10 +874,14 @@ pub fn upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.upload_mesh3d_preprocess_camera_payload(
-      camera_key_hi, camera_key_lo, payload,
+      camera_key_hi,
+      camera_key_lo,
+      payload,
+      phase_id~,
     )
   }
 }
@@ -887,10 +891,14 @@ pub fn build_mesh3d_indirect_parameters(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_BUILD_INDIRECT_PHASE_MAIN,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.build_mesh3d_indirect_parameters(
-      camera_key_hi, camera_key_lo, phase_kind,
+      camera_key_hi,
+      camera_key_lo,
+      phase_kind,
+      phase_id~,
     ) catch {
       ShaderNotReady(_) => ()
       Fatal(message) =>
@@ -904,9 +912,15 @@ pub fn preprocess_mesh3d(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_PREPROCESS_PHASE_MAIN,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.preprocess_mesh3d(camera_key_hi, camera_key_lo, phase_kind) catch {
+    backend.preprocess_mesh3d(
+      camera_key_hi,
+      camera_key_lo,
+      phase_kind,
+      phase_id~,
+    ) catch {
       ShaderNotReady(_) => ()
       Fatal(message) => debug("[renderer] preprocess_mesh3d: Fatal(\{message})")
     }
@@ -1270,6 +1284,7 @@ pub fn draw_mesh3d(
   mesh_id~ : Int,
   preprocess_camera_key_hi? : Int = 0,
   preprocess_camera_key_lo? : Int = 0,
+  preprocess_phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
   draw_storage_index? : Int = -1,
   indirect_kind? : Int = 0,
   indirect_parameters_index? : Int = -1,
@@ -1396,6 +1411,7 @@ pub fn draw_mesh3d(
       mesh_id,
       preprocess_camera_key_hi,
       preprocess_camera_key_lo,
+      preprocess_phase_id,
       draw_storage_index,
       indirect_kind,
       indirect_parameters_index,

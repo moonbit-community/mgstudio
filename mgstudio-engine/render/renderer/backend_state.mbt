@@ -251,7 +251,7 @@ pub struct GpuBackend {
   mesh3d_preprocess_camera_upload_states : Array[
     GpuMesh3dPreprocessCameraUploadState,
   ]
-  mesh3d_preprocess_camera_upload_state_indices : Map[UInt64, Int]
+  mesh3d_preprocess_camera_upload_state_indices : Map[String, Int]
   mut mesh3d_preprocess_reset_batch_sets_bgl : @wgpu.BindGroupLayout?
   mut mesh3d_preprocess_reset_batch_sets_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_reset_batch_sets_pipeline : @wgpu.ComputePipeline?

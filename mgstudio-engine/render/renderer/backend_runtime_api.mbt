@@ -65,11 +65,13 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
   upload_mesh3d_preprocess_camera_payload(
     camera_key_hi~,
     camera_key_lo~,
     payload~,
+    phase_id~,
   )
 }
 
@@ -90,8 +92,14 @@ pub fn host_gpu_build_mesh3d_indirect_parameters(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_BUILD_INDIRECT_PHASE_MAIN,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
-  build_mesh3d_indirect_parameters(camera_key_hi~, camera_key_lo~, phase_kind~)
+  build_mesh3d_indirect_parameters(
+    camera_key_hi~,
+    camera_key_lo~,
+    phase_kind~,
+    phase_id~,
+  )
 }
 
 ///|
@@ -99,8 +107,9 @@ pub fn host_gpu_preprocess_mesh3d(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
   phase_kind? : Int = MESH3D_PREPROCESS_PHASE_MAIN,
+  phase_id? : String = MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> Unit {
-  preprocess_mesh3d(camera_key_hi~, camera_key_lo~, phase_kind~)
+  preprocess_mesh3d(camera_key_hi~, camera_key_lo~, phase_kind~, phase_id~)
 }
 
 ///|

@@ -274,6 +274,30 @@ test "render3d: shared phase work-item buffers convert to gpu preprocess payload
 }
 
 ///|
+test "render3d: direct phase preprocessing uploads mesh inputs and output capacity" {
+  let work_items = @render_batching.preprocess_work_item_buffers_direct()
+  work_items.push(false, @render_batching.PreprocessWorkItem::new(0, 2))
+  let batched_instance_buffers = RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers()
+  ignore(
+    batched_instance_buffers.buffers.current_input_buffer.add(
+      MeshInputUniform::new(flags=37U),
+    ),
+  )
+  let entry = render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
+    [],
+    Some(batched_instance_buffers),
+    None,
+    work_items,
+    @render_batching.UntypedPhaseIndirectParametersBuffers::new(false),
+    output_count=3,
+  )
+  debug_inspect(entry.output_count, content="3")
+  debug_inspect(entry.mesh_inputs.length(), content="1")
+  debug_inspect(entry.mesh_inputs[0].flags, content="37")
+  debug_inspect(entry.mesh_culling_data.length(), content="0")
+}
+
+///|
 test "render3d: shared indirect parameter buffers convert to gpu preprocess metadata" {
   let buffers = @render_batching.UntypedPhaseIndirectParametersBuffers::new(
     false,

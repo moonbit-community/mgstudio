@@ -469,9 +469,20 @@ pub struct TonemappingPipelineCacheEntry {
 }
 
 ///|
+priv struct GpuMesh3dPhaseDrawBindGroupEntry {
+  material_pipeline_id : UInt64
+  skin_revision : Int
+  morph_revision : Int
+  lightmap_slab_index : Int
+  morph_target_texture_id : Int
+  bind_group : @wgpu.BindGroup
+}
+
+///|
 struct GpuMesh3dPreprocessCameraUploadState {
   key_hi : Int
   key_lo : Int
+  phase_id : String
   mut mesh_input_buffer : @wgpu.Buffer?
   mut mesh_input_capacity : UInt64
   mut previous_mesh_input_buffer : @wgpu.Buffer?
@@ -479,6 +490,7 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut output_buffer : @wgpu.Buffer?
   mut output_capacity : UInt64
   mut output_count : Int
+  phase_draw_bind_groups : Array[GpuMesh3dPhaseDrawBindGroupEntry]
   mut motion_vector_mesh_bind_group : @wgpu.BindGroup?
   mut motion_vector_mesh_bind_group_skin_revision : Int
   mut motion_vector_mesh_bind_group_morph_revision : Int

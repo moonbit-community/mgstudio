@@ -1669,6 +1669,123 @@ pub fn collect_wireframe_3d_phase_buffers_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+const WIREFRAME_3D_PREPROCESS_PHASE_ID : String = "mgstudio_pbr::Wireframe3d"
+
+///|
+// Bevy sources:
+// - `bevy_render/src/batching/gpu_preprocessing.rs::collect_buffers_for_phase`
+// - `bevy_pbr/src/render/mesh.rs::prepare_mesh_bind_groups`
+// - `bevy_pbr/src/render/gpu_preprocess.rs::PreprocessNode::run`
+fn prepare_wireframe_3d_preprocess_payloads_system(world : @ecs.World) -> Unit {
+  guard render3d_queue_frame_snapshot(world) is Some(frame) else { return }
+  guard world.get_resource(
+      RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    )
+    is Some(batched_instance_buffers) else {
+    return
+  }
+  guard batched_instance_buffers.buffers.phase_instance_buffers.get(
+      WIREFRAME_3D_PREPROCESS_PHASE_ID,
+    )
+    is Some(phase_instance_buffers) else {
+    return
+  }
+  guard world.get_resource(
+      @render_batching.IndirectParametersBuffers::resource(),
+    )
+    is Some(indirect_parameters_buffers) else {
+    return
+  }
+  guard indirect_parameters_buffers.get(WIREFRAME_3D_PREPROCESS_PHASE_ID)
+    is Some(phase_indirect_parameters_buffers) else {
+    return
+  }
+  render3d_for_each_prepared_camera(frame, fn(
+    camera_entity,
+    camera,
+    prepared_queue,
+  ) {
+    if camera.gpu_occlusion_culling_enabled {
+      return
+    }
+    guard phase_instance_buffers.buffers.work_item_buffers.get(
+        camera_entity.to_bits().to_string(),
+      )
+      is Some(work_item_buffers) else {
+      return
+    }
+    let queue_entry = render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
+      [],
+      Some(batched_instance_buffers),
+      world.get_resource(MeshCullingDataBuffer::resource()),
+      work_item_buffers,
+      phase_indirect_parameters_buffers,
+      output_count=phase_instance_buffers.buffers.data_buffer.len(),
+    )
+    @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      payload=render3d_host_preprocess_camera_payload(
+        queue_entry,
+        camera,
+        prepared_queue.camera_pass_projection,
+        prepared_queue.viewport_state.viewport_x,
+        prepared_queue.viewport_state.viewport_y,
+        prepared_queue.viewport_state.viewport_width,
+        prepared_queue.viewport_state.viewport_height,
+        prepared_queue.camera_exposure_value,
+      ),
+      phase_id=WIREFRAME_3D_PREPROCESS_PHASE_ID,
+    )
+  })
+}
+
+///|
+fn wireframe_3d_dispatch_phase_preprocess(
+  world : @ecs.World,
+  retained_view_entity : @core.Entity,
+) -> Bool {
+  let source_world = @render.render_source_world(world)
+  if (try! source_world.get_by_key(
+      retained_view_entity, ecs_key_occlusion_culling,
+    ))
+    is Some(_) {
+    return false
+  }
+  guard world.get_resource(
+      RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    )
+    is Some(batched_instance_buffers) else {
+    return false
+  }
+  guard batched_instance_buffers.buffers.phase_instance_buffers.get(
+      WIREFRAME_3D_PREPROCESS_PHASE_ID,
+    )
+    is Some(phase_instance_buffers) else {
+    return false
+  }
+  guard phase_instance_buffers.buffers.work_item_buffers.get(
+      retained_view_entity.to_bits().to_string(),
+    )
+    is Some(work_item_buffers) else {
+    return false
+  }
+  @render.host_gpu_preprocess_mesh3d(
+    camera_key_hi=retained_view_entity.id,
+    camera_key_lo=retained_view_entity.generation,
+    phase_id=WIREFRAME_3D_PREPROCESS_PHASE_ID,
+  )
+  if !work_item_buffers.is_direct() {
+    @render.host_gpu_build_mesh3d_indirect_parameters(
+      camera_key_hi=retained_view_entity.id,
+      camera_key_lo=retained_view_entity.generation,
+      phase_id=WIREFRAME_3D_PREPROCESS_PHASE_ID,
+    )
+  }
+  true
+}
+
+///|
 fn wireframe_3d_execute_thin_command(
   world : @ecs.World,
   plan : Wireframe3dRenderCommandPlan,
@@ -1715,6 +1832,7 @@ fn wireframe_3d_execute_thin_command(
     world_from_local~,
     preprocess_camera_key_hi=retained_view_entity.id,
     preprocess_camera_key_lo=retained_view_entity.generation,
+    preprocess_phase_id=WIREFRAME_3D_PREPROCESS_PHASE_ID,
     draw_storage_index~,
     draw_count=batch_range.count(),
     immediate_bytes=Some(immediates.bytes()),
@@ -1774,6 +1892,7 @@ fn wireframe_3d_execute_wide_command(
         world_from_local~,
         preprocess_camera_key_hi=retained_view_entity.id,
         preprocess_camera_key_lo=retained_view_entity.generation,
+        preprocess_phase_id=WIREFRAME_3D_PREPROCESS_PHASE_ID,
         draw_storage_index~,
         draw_count=batch_range.count(),
         immediate_bytes=Some(immediates.bytes()),
@@ -1796,6 +1915,7 @@ fn wireframe_3d_execute_wide_command(
         world_from_local~,
         preprocess_camera_key_hi=retained_view_entity.id,
         preprocess_camera_key_lo=retained_view_entity.generation,
+        preprocess_phase_id=WIREFRAME_3D_PREPROCESS_PHASE_ID,
         draw_storage_index~,
         draw_count=indirect_plan.indirect_parameters_count(),
         immediate_bytes=Some(immediates.bytes()),
@@ -1867,6 +1987,13 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
     Some(value) => value
     None =>
       abort("missing RenderMeshInstances resource during pbr wireframe node")
+  }
+  match render_mesh_instances {
+    GpuBuilding(_) =>
+      if !wireframe_3d_dispatch_phase_preprocess(world, retained_view_entity) {
+        return
+      }
+    CpuBuilding(_) => ()
   }
   let render_meshes = match
     world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
@@ -2296,6 +2423,12 @@ fn configure_wireframe_render_sub_app(
     @app.system(collect_wireframe_3d_phase_buffers_system)
     .named("mgstudio_pbr::collect_wireframe_3d_phase_buffers")
     .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
+  )
+  .add_systems(
+    stage,
+    @app.system(prepare_wireframe_3d_preprocess_payloads_system)
+    .named("mgstudio_pbr::prepare_wireframe_3d_preprocess_payloads")
+    .in_set(@render.render_system_set_prepare_resources_flush),
   )
   .add_systems(
     core_3d_stage,

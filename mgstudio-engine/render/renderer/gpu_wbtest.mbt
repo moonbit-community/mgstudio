@@ -332,6 +332,7 @@ test "renderer: render context state starts empty and finish clears state" {
 ///|
 fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
   HostMesh3dPreprocessCameraPayload::{
+    output_count: 1,
     view: HostMesh3dPreprocessView::{
       clip_from_world: gpu_clip_matrix_identity(),
       unjittered_clip_from_world: gpu_clip_matrix_identity(),
@@ -960,6 +961,36 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
     state.depth_pyramid_texture is Some(_) &&
     state.depth_pyramid_mips.length() >= 1
   debug_inspect(ok, content="true")
+}
+
+///|
+test "renderer: mesh3d preprocess upload state is isolated by render phase" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let payload = wbtest_mesh3d_preprocess_payload()
+  backend.upload_mesh3d_preprocess_camera_payload(7, 9, payload)
+  backend.upload_mesh3d_preprocess_camera_payload(
+    7,
+    9,
+    payload,
+    phase_id="mgstudio_pbr::Wireframe3d",
+  )
+  debug_inspect(
+    backend.mesh3d_preprocess_camera_upload_states.length(),
+    content="2",
+  )
+  debug_inspect(
+    mesh3d_preprocess_camera_upload_state_index(backend, 7, 9),
+    content="Some(0)",
+  )
+  debug_inspect(
+    mesh3d_preprocess_camera_upload_state_index(
+      backend,
+      7,
+      9,
+      phase_id="mgstudio_pbr::Wireframe3d",
+    ),
+    content="Some(1)",
+  )
 }
 
 ///|
