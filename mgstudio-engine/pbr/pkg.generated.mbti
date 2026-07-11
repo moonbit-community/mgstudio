@@ -2351,7 +2351,7 @@ pub fn Render3dShadowGpuRenderBinnedMeshInstance::new(UInt, Int) -> Self
 pub(all) struct Render3dShadowMultidrawableBatchSetData {
   gpu_buffers : Render3dShadowMultidrawableBatchSetGpuBuffers
   bin_key_to_bin_index : Map[Int, Int]
-  mut bins : Array[Render3dShadowMultidrawableBin?]
+  mut bins : Array[@render_phase.RenderMultidrawableBin?]
   mut bin_free_list : Array[Int]
   mut indirect_parameters_offset_to_bin_index : Array[Int]
   render_binned_mesh_instances_cpu : Array[Render3dShadowCpuRenderBinnedMeshInstance]
@@ -2380,14 +2380,6 @@ pub(all) struct Render3dShadowMultidrawableBatchSetGpuBuffers {
 pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::Render3dShadowMultidrawableBatchSetGpuBuffers() -> Self
 pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::indirect_parameters_offset_for_bin(Self, Int) -> Int?
 pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::render_binned_mesh_instance_len(Self) -> Int
-
-pub(all) struct Render3dShadowMultidrawableBin {
-  entity_to_binned_mesh_instance_index : Map[UInt64, Int]
-}
-pub fn Render3dShadowMultidrawableBin::Render3dShadowMultidrawableBin() -> Self
-pub fn Render3dShadowMultidrawableBin::binned_mesh_instance_index(Self, @sync_world.MainEntity) -> Int?
-pub fn Render3dShadowMultidrawableBin::entity_count(Self) -> Int
-pub fn Render3dShadowMultidrawableBin::is_empty(Self) -> Bool
 
 pub struct Render3dShadowPhaseBatchedInstanceBuffers {
   buffers : @batching.PhaseBatchedInstanceBuffers[Unit]
@@ -3643,6 +3635,8 @@ pub using @projection3d {type ProjectionRuntime3d}
 pub using @render_phase {type PhaseItemBatchRange as Render3dShadowBatchRange}
 
 pub using @render_phase {type BinnedRenderPhaseType as Render3dShadowBinnedRenderPhaseType}
+
+pub using @render_phase {type RenderMultidrawableBin as Render3dShadowMultidrawableBin}
 
 pub using @render_phase {type PhaseItemExtraIndex as Render3dShadowPhaseItemExtraIndex}
 

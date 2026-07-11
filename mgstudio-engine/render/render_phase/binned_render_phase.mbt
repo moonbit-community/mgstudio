@@ -248,6 +248,92 @@ pub fn RenderBin::entities(
 
 ///|
 // Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderBinnedMeshInstanceIndex`.
+pub(all) struct RenderBinnedMeshInstanceIndex(UInt) derive(Eq, Debug)
+
+///|
+pub fn RenderBinnedMeshInstanceIndex::new(
+  index : UInt,
+) -> RenderBinnedMeshInstanceIndex {
+  RenderBinnedMeshInstanceIndex(index)
+}
+
+///|
+pub fn RenderBinnedMeshInstanceIndex::value(
+  self : RenderBinnedMeshInstanceIndex,
+) -> UInt {
+  let RenderBinnedMeshInstanceIndex(index) = self
+  index
+}
+
+///|
+pub fn RenderBinnedMeshInstanceIndex::to_int(
+  self : RenderBinnedMeshInstanceIndex,
+) -> Int {
+  self.value().reinterpret_as_int()
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderMultidrawableBin`.
+pub struct RenderMultidrawableBin {
+  entity_to_binned_mesh_instance_index : Map[
+    @render_sync_world.MainEntity,
+    RenderBinnedMeshInstanceIndex,
+  ]
+} derive(Default)
+
+///|
+pub fn RenderMultidrawableBin::new() -> RenderMultidrawableBin {
+  RenderMultidrawableBin::default()
+}
+
+///|
+pub fn RenderMultidrawableBin::is_empty(self : RenderMultidrawableBin) -> Bool {
+  self.entity_to_binned_mesh_instance_index.is_empty()
+}
+
+///|
+pub fn RenderMultidrawableBin::entity_count(
+  self : RenderMultidrawableBin,
+) -> Int {
+  self.entity_to_binned_mesh_instance_index.length()
+}
+
+///|
+pub fn RenderMultidrawableBin::binned_mesh_instance_index(
+  self : RenderMultidrawableBin,
+  main_entity : @render_sync_world.MainEntity,
+) -> RenderBinnedMeshInstanceIndex? {
+  self.entity_to_binned_mesh_instance_index.get(main_entity)
+}
+
+///|
+pub fn RenderMultidrawableBin::insert(
+  self : RenderMultidrawableBin,
+  main_entity : @render_sync_world.MainEntity,
+  binned_mesh_instance_index : RenderBinnedMeshInstanceIndex,
+) -> Unit {
+  self.entity_to_binned_mesh_instance_index.set(
+    main_entity, binned_mesh_instance_index,
+  )
+}
+
+///|
+pub fn RenderMultidrawableBin::remove(
+  self : RenderMultidrawableBin,
+  main_entity : @render_sync_world.MainEntity,
+) -> RenderBinnedMeshInstanceIndex? {
+  guard self.entity_to_binned_mesh_instance_index.get(main_entity)
+    is Some(index) else {
+    return None
+  }
+  self.entity_to_binned_mesh_instance_index.remove(main_entity)
+  Some(index)
+}
+
+///|
+// Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
 pub(all) struct UnbatchableBinnedEntityIndices {
   instance_index : Int

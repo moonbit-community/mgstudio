@@ -125,6 +125,30 @@ test "render_phase: RenderBin retains MainEntity input indices" {
 }
 
 ///|
+test "render_phase: multidrawable bins retain nominal instance indices" {
+  let first = @render_sync_world.MainEntity::new(@core.Entity::new(11, 1))
+  let second = @render_sync_world.MainEntity::new(@core.Entity::new(12, 1))
+  let bin = RenderMultidrawableBin::new()
+  debug_inspect(bin.is_empty(), content="true")
+  bin.insert(first, RenderBinnedMeshInstanceIndex::new(3U))
+  bin.insert(second, RenderBinnedMeshInstanceIndex::new(5U))
+  bin.insert(first, RenderBinnedMeshInstanceIndex::new(7U))
+  inspect(bin.entity_count(), content="2")
+  debug_inspect(
+    bin.binned_mesh_instance_index(first),
+    content="Some(RenderBinnedMeshInstanceIndex(7))",
+  )
+  debug_inspect(
+    bin.remove(second),
+    content="Some(RenderBinnedMeshInstanceIndex(5))",
+  )
+  debug_inspect(bin.remove(second), content="None")
+  inspect(bin.entity_count(), content="1")
+  ignore(bin.remove(first))
+  debug_inspect(bin.is_empty(), content="true")
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))

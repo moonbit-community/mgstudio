@@ -670,6 +670,23 @@ test "render3d: shadow multidraw batch set mirrors Bevy packed bin offsets" {
 }
 
 ///|
+test "panic render3d: shadow multidraw removal rejects a missing bin key" {
+  let batch_set = Render3dShadowMultidrawableBatchSetData::Render3dShadowMultidrawableBatchSetData()
+  batch_set.remove(
+    @render.MainEntity::new(@core.Entity::new(75, 1)),
+    Render3dShadowBinKeyData::new(404),
+  )
+}
+
+///|
+test "panic render3d: shadow multidraw removal rejects a missing entity" {
+  let batch_set = Render3dShadowMultidrawableBatchSetData::Render3dShadowMultidrawableBatchSetData()
+  let bin = Render3dShadowBinKeyData::new(405)
+  batch_set.insert(bin, @render.MainEntity::new(@core.Entity::new(76, 1)), 31U)
+  batch_set.remove(@render.MainEntity::new(@core.Entity::new(77, 1)), bin)
+}
+
+///|
 test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
   let phase = Render3dShadowViewPhaseData::new(
     @render_batching.GpuPreprocessingMode::Culling,

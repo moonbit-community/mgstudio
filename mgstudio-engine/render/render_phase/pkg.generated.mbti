@@ -82,6 +82,21 @@ pub fn RenderBin::entities(Self) -> ArrayView[(@sync_world.MainEntity, InputUnif
 
 type RenderBinEntities derive(Default)
 
+pub(all) struct RenderBinnedMeshInstanceIndex(UInt) derive(Eq, @debug.Debug)
+pub fn RenderBinnedMeshInstanceIndex::new(UInt) -> Self
+pub fn RenderBinnedMeshInstanceIndex::to_int(Self) -> Int
+pub fn RenderBinnedMeshInstanceIndex::value(Self) -> UInt
+
+pub struct RenderMultidrawableBin {
+  entity_to_binned_mesh_instance_index : Map[@sync_world.MainEntity, RenderBinnedMeshInstanceIndex]
+} derive(Default)
+pub fn RenderMultidrawableBin::binned_mesh_instance_index(Self, @sync_world.MainEntity) -> RenderBinnedMeshInstanceIndex?
+pub fn RenderMultidrawableBin::entity_count(Self) -> Int
+pub fn RenderMultidrawableBin::insert(Self, @sync_world.MainEntity, RenderBinnedMeshInstanceIndex) -> Unit
+pub fn RenderMultidrawableBin::is_empty(Self) -> Bool
+pub fn RenderMultidrawableBin::new() -> Self
+pub fn RenderMultidrawableBin::remove(Self, @sync_world.MainEntity) -> RenderBinnedMeshInstanceIndex?
+
 pub(all) struct UnbatchableBinnedEntityIndexSet {
   mut kind : UnbatchableBinnedEntityIndexSetKind
 }
