@@ -247,11 +247,11 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
   debug_inspect(item.indexed(), content="true")
   debug_inspect(item.extra_index(), content="0")
   let draw_functions = render_world
-    .get_resource(CustomDrawFunctions::resource())
+    .get_resource(@core_3d.Transparent3dDrawFunctions::resource())
     .unwrap()
   debug_inspect(draw_functions.len(), content="1")
   debug_inspect(
-    item.draw_function() == draw_functions.draw_custom(),
+    item.draw_function() == draw_functions.id(DRAW_CUSTOM_LABEL).unwrap(),
     content="true",
   )
   debug_inspect(
@@ -290,4 +290,18 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
     descriptor.fragment.unwrap().shader,
     content="Some(\"shaders/instancing.wgsl\")",
   )
+  try! render_world.set_by_key(
+    item.entity(),
+    InstanceBuffer::component(),
+    InstanceBuffer::new(INSTANCE_VERTEX_BUFFER_ID, 0),
+  )
+  debug_inspect(draw_mesh_instanced(render_world, item), content="Success")
+  let missing_item = @core_3d.Transparent3d::new(
+    distance=0.0F,
+    pipeline=item.pipeline(),
+    entity=@core.Entity::new(99999, 0),
+    main_entity=item.main_entity(),
+    draw_function=item.draw_function(),
+  )
+  debug_inspect(draw_mesh_instanced(render_world, missing_item), content="Skip")
 }

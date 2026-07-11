@@ -422,6 +422,14 @@ pub fn Transparent3dDrawFunctions::len(
 }
 
 ///|
+pub fn Transparent3dDrawFunctions::id(
+  self : Transparent3dDrawFunctions,
+  label : @material.DrawFunctionLabel,
+) -> @material.DrawFunctionId? {
+  self.draw_functions.id(label)
+}
+
+///|
 pub fn Transparent3dDrawFunctions::render(
   self : Transparent3dDrawFunctions,
   world : @ecs.World,

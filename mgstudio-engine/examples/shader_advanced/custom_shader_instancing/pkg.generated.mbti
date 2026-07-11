@@ -13,8 +13,6 @@ import {
 // Errors
 
 // Types and methods
-type CustomDrawFunctions
-
 type CustomMaterialPlugin
 pub impl @app.Plugin for CustomMaterialPlugin
 

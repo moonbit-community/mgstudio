@@ -80,31 +80,6 @@ fn CustomSpecializedMeshPipelines::CustomSpecializedMeshPipelines() -> CustomSpe
 }
 
 ///|
-struct CustomDrawFunctions {
-  draw_functions : @material.DrawFunctions
-  draw_custom : @material.DrawFunctionId
-}
-
-///|
-fn CustomDrawFunctions::CustomDrawFunctions() -> CustomDrawFunctions {
-  let draw_functions = @material.DrawFunctions::new()
-  let draw_custom = draw_functions.register(DRAW_CUSTOM_LABEL)
-  CustomDrawFunctions::{ draw_functions, draw_custom }
-}
-
-///|
-fn CustomDrawFunctions::draw_custom(
-  self : CustomDrawFunctions,
-) -> @material.DrawFunctionId {
-  self.draw_custom
-}
-
-///|
-fn CustomDrawFunctions::len(self : CustomDrawFunctions) -> Int {
-  self.draw_functions.len()
-}
-
-///|
 fn CustomMaterialPlugin::CustomMaterialPlugin() -> CustomMaterialPlugin {
   CustomMaterialPlugin::{  }
 }
@@ -129,16 +104,6 @@ let custom_specialized_mesh_pipelines_key : @ecs.ResourceKey[
 ///|
 impl @app.Resource for CustomSpecializedMeshPipelines with fn resource() {
   custom_specialized_mesh_pipelines_key
-}
-
-///|
-let custom_draw_functions_key : @ecs.ResourceKey[CustomDrawFunctions] = @ecs.register_resource(
-  debug_name="examples.shader_advanced.custom_shader_instancing.DrawFunctions<Transparent3d>",
-)
-
-///|
-impl @app.Resource for CustomDrawFunctions with fn resource() {
-  custom_draw_functions_key
 }
 
 ///|
@@ -306,9 +271,84 @@ fn custom_material_metadata() -> @material.ExtendedMaterialMetadata3d {
 }
 
 ///|
+// Bevy source: `DrawMeshInstanced::render`.
+fn draw_mesh_instanced(
+  world : @ecs.World,
+  item : @core_3d.Transparent3d,
+) -> @core_3d.Transparent3dRenderCommandResult {
+  guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
+    is Some(meshes) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  guard world.get_resource(@pbr.RenderMeshInstances::resource())
+    is Some(render_mesh_instances) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  guard world.get_resource(@render_mesh.MeshAllocator::resource())
+    is Some(mesh_allocator) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  if !world.is_alive(item.entity()) {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  guard (try! world.get_by_key(item.entity(), InstanceBuffer::component()))
+    is Some(instance_buffer) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  guard render_mesh_instances.render_mesh_queue_data(item.main_entity())
+    is Some(mesh_instance) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  let mesh_asset_id = mesh_instance.mesh_asset_id()
+  guard meshes.get(mesh_asset_id) is Some(mesh) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  guard mesh_allocator.mesh_vertex_slice(mesh_asset_id) is Some(_) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  match mesh.buffer_info() {
+    @render_mesh.RenderMeshBufferInfo::Indexed(_, _) => {
+      guard mesh_allocator.mesh_index_slice(mesh_asset_id) is Some(_) else {
+        return @core_3d.Transparent3dRenderCommandResult::Skip
+      }
+    }
+    @render_mesh.RenderMeshBufferInfo::NonIndexed => ()
+  }
+  if instance_buffer.length == 0 {
+    return @core_3d.Transparent3dRenderCommandResult::Success
+  }
+  guard world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource())
+    is Some(mesh_runtime_state) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  guard @pbr_render.render3d_uploaded_mesh_id(mesh_runtime_state, mesh_asset_id)
+    is Some(mesh_id) else {
+    return @core_3d.Transparent3dRenderCommandResult::Skip
+  }
+  let world_from_local = @pbr.get_mesh_instance_world_from_local(
+    item.main_entity(),
+    mesh_instance.current_uniform_index(),
+    render_mesh_instances,
+    world.get_resource(
+      @pbr.RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    ),
+  )
+  @pbr_render.render3d_draw_mesh_instanced(
+    mesh_id~,
+    pipeline=item.pipeline(),
+    instance_vertex_buffer_id=instance_buffer.buffer_id,
+    world_from_local~,
+  )
+  @core_3d.Transparent3dRenderCommandResult::Success
+}
+
+///|
 fn queue_custom(world : @ecs.World) -> Unit {
-  guard world.get_resource(CustomDrawFunctions::resource())
+  guard world.get_resource(@core_3d.Transparent3dDrawFunctions::resource())
     is Some(draw_functions) else {
+    return
+  }
+  guard draw_functions.id(DRAW_CUSTOM_LABEL) is Some(draw_custom) else {
     return
   }
   guard world.get_resource(CustomPipeline::resource()) is Some(custom_pipeline) else {
@@ -407,7 +447,7 @@ fn queue_custom(world : @ecs.World) -> Unit {
           pipeline~,
           entity~,
           main_entity~,
-          draw_function=draw_functions.draw_custom(),
+          draw_function=draw_custom,
           batch_range_start=0,
           batch_range_end=1,
           extra_index=0,
@@ -487,12 +527,19 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
   let next = @render.extract_component_plugin_with(app, extract_plugin)
   @render.with_render_app(next, fn(render_app) {
     let render_world = render_app.world()
-    if render_world.get_resource(CustomDrawFunctions::resource()) is None {
-      render_world.insert_resource(
-        CustomDrawFunctions::resource(),
-        CustomDrawFunctions::CustomDrawFunctions(),
-      )
+    let draw_functions = match
+      render_world.get_resource(@core_3d.Transparent3dDrawFunctions::resource()) {
+      Some(draw_functions) => draw_functions
+      None => {
+        let draw_functions = @core_3d.Transparent3dDrawFunctions::Transparent3dDrawFunctions()
+        render_world.insert_resource(
+          @core_3d.Transparent3dDrawFunctions::resource(),
+          draw_functions,
+        )
+        draw_functions
+      }
     }
+    ignore(draw_functions.register(DRAW_CUSTOM_LABEL, draw_mesh_instanced))
     if render_world.get_resource(CustomSpecializedMeshPipelines::resource())
       is None {
       render_world.insert_resource(

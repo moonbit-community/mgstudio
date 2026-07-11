@@ -212,6 +212,7 @@ pub struct Transparent3dDrawFunctions {
   commands : Array[(@material.DrawFunctionId, (@ecs.World, Transparent3d) -> Transparent3dRenderCommandResult)]
 }
 pub fn Transparent3dDrawFunctions::Transparent3dDrawFunctions() -> Self
+pub fn Transparent3dDrawFunctions::id(Self, String) -> @material.DrawFunctionId?
 pub fn Transparent3dDrawFunctions::len(Self) -> Int
 pub fn Transparent3dDrawFunctions::register(Self, String, (@ecs.World, Transparent3d) -> Transparent3dRenderCommandResult) -> @material.DrawFunctionId
 pub fn Transparent3dDrawFunctions::render(Self, @ecs.World, Transparent3d) -> Transparent3dRenderCommandResult
