@@ -6,7 +6,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/sync_world",
   "Milky2018/mgstudio/render/view",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
@@ -51,25 +51,25 @@ pub fn visibility_ranges_should_use_uniform_buffer(Int, Bool) -> Bool
 
 // Types and methods
 pub struct DirtySpecializations {
-  changed_renderables : @hashset.HashSet[@render.MainEntity]
-  removed_renderables : @hashset.HashSet[@render.MainEntity]
+  changed_renderables : @hashset.HashSet[@sync_world.MainEntity]
+  removed_renderables : @hashset.HashSet[@sync_world.MainEntity]
   views : @hashset.HashSet[@view.RetainedViewEntity]
 }
 pub fn DirtySpecializations::DirtySpecializations() -> Self
-pub fn DirtySpecializations::changed_contains(Self, @render.MainEntity) -> Bool
+pub fn DirtySpecializations::changed_contains(Self, @sync_world.MainEntity) -> Bool
 pub fn DirtySpecializations::changed_len(Self) -> Int
 pub fn DirtySpecializations::clear(Self) -> Unit
-pub fn DirtySpecializations::entity_pair_from_visible_main_entity(Self, RenderVisibleEntitiesClass, @render.MainEntity) -> (@core.Entity, @render.MainEntity)?
+pub fn DirtySpecializations::entity_pair_from_visible_main_entity(Self, RenderVisibleEntitiesClass, @sync_world.MainEntity) -> (@core.Entity, @sync_world.MainEntity)?
 pub fn DirtySpecializations::expire_stale_views(Self, @hashset.HashSet[@view.RetainedViewEntity]) -> Unit
-pub fn DirtySpecializations::insert_changed(Self, @render.MainEntity) -> Unit
-pub fn DirtySpecializations::insert_removed(Self, @render.MainEntity) -> Unit
+pub fn DirtySpecializations::insert_changed(Self, @sync_world.MainEntity) -> Unit
+pub fn DirtySpecializations::insert_removed(Self, @sync_world.MainEntity) -> Unit
 pub fn DirtySpecializations::insert_view(Self, @view.RetainedViewEntity) -> Unit
-pub fn DirtySpecializations::iter_to_dequeue(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass) -> Array[@render.MainEntity]
-pub fn DirtySpecializations::iter_to_despecialize(Self) -> Array[@render.MainEntity]
-pub fn DirtySpecializations::iter_to_queue(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @render.MainEntity)]) -> Array[(@core.Entity, @render.MainEntity)]
-pub fn DirtySpecializations::iter_to_specialize(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @render.MainEntity)]) -> Array[(@core.Entity, @render.MainEntity)]
+pub fn DirtySpecializations::iter_to_dequeue(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass) -> Array[@sync_world.MainEntity]
+pub fn DirtySpecializations::iter_to_despecialize(Self) -> Array[@sync_world.MainEntity]
+pub fn DirtySpecializations::iter_to_queue(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]) -> Array[(@core.Entity, @sync_world.MainEntity)]
+pub fn DirtySpecializations::iter_to_specialize(Self, @view.RetainedViewEntity, RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]) -> Array[(@core.Entity, @sync_world.MainEntity)]
 pub fn DirtySpecializations::must_wipe_specializations_for_view(Self, @view.RetainedViewEntity) -> Bool
-pub fn DirtySpecializations::removed_contains(Self, @render.MainEntity) -> Bool
+pub fn DirtySpecializations::removed_contains(Self, @sync_world.MainEntity) -> Bool
 pub fn DirtySpecializations::removed_len(Self) -> Int
 pub fn DirtySpecializations::views_len(Self) -> Int
 pub impl @app.Resource for DirtySpecializations
@@ -88,7 +88,7 @@ pub fn RenderExtractedVisibleEntities::RenderExtractedVisibleEntities() -> Self
 pub impl @ecs.Component for RenderExtractedVisibleEntities
 
 pub struct RenderExtractedVisibleEntitiesClass {
-  entities : Array[@render.MainEntity]
+  entities : Array[@sync_world.MainEntity]
 }
 pub fn RenderExtractedVisibleEntitiesClass::RenderExtractedVisibleEntitiesClass() -> Self
 pub fn RenderExtractedVisibleEntitiesClass::len(Self) -> Int
@@ -146,23 +146,23 @@ pub fn RenderVisibleEntities::len(Self, String) -> Int
 pub impl @ecs.Component for RenderVisibleEntities
 
 pub struct RenderVisibleEntitiesClass {
-  mut entities_cpu_culling : Array[(@core.Entity, @render.MainEntity)]
-  entities_gpu_culling : @hashmap.HashMap[@render.MainEntity, @core.Entity]
-  added_entities : Array[(@core.Entity, @render.MainEntity)]
-  removed_entities : Array[(@core.Entity, @render.MainEntity)]
+  mut entities_cpu_culling : Array[(@core.Entity, @sync_world.MainEntity)]
+  entities_gpu_culling : @hashmap.HashMap[@sync_world.MainEntity, @core.Entity]
+  added_entities : Array[(@core.Entity, @sync_world.MainEntity)]
+  removed_entities : Array[(@core.Entity, @sync_world.MainEntity)]
 }
 pub fn RenderVisibleEntitiesClass::RenderVisibleEntitiesClass() -> Self
-pub fn RenderVisibleEntitiesClass::add_entity(Self, (@core.Entity, @render.MainEntity)) -> Unit
-pub fn RenderVisibleEntitiesClass::added_entities(Self) -> Array[(@core.Entity, @render.MainEntity)]
-pub fn RenderVisibleEntitiesClass::entity_pair_is_visible(Self, @core.Entity, @render.MainEntity) -> Bool
-pub fn RenderVisibleEntitiesClass::gpu_culled_entity_is_visible(Self, @render.MainEntity) -> Bool
-pub fn RenderVisibleEntitiesClass::insert_gpu_culled_entity(Self, @render.MainEntity, @core.Entity) -> Unit
-pub fn RenderVisibleEntitiesClass::iter_visible(Self) -> Array[(@core.Entity, @render.MainEntity)]
+pub fn RenderVisibleEntitiesClass::add_entity(Self, (@core.Entity, @sync_world.MainEntity)) -> Unit
+pub fn RenderVisibleEntitiesClass::added_entities(Self) -> Array[(@core.Entity, @sync_world.MainEntity)]
+pub fn RenderVisibleEntitiesClass::entity_pair_is_visible(Self, @core.Entity, @sync_world.MainEntity) -> Bool
+pub fn RenderVisibleEntitiesClass::gpu_culled_entity_is_visible(Self, @sync_world.MainEntity) -> Bool
+pub fn RenderVisibleEntitiesClass::insert_gpu_culled_entity(Self, @sync_world.MainEntity, @core.Entity) -> Unit
+pub fn RenderVisibleEntitiesClass::iter_visible(Self) -> Array[(@core.Entity, @sync_world.MainEntity)]
 pub fn RenderVisibleEntitiesClass::prepare_for_new_frame(Self) -> Unit
-pub fn RenderVisibleEntitiesClass::remove_gpu_culled_entity(Self, @render.MainEntity) -> @core.Entity?
-pub fn RenderVisibleEntitiesClass::removed_entities(Self) -> Array[(@core.Entity, @render.MainEntity)]
+pub fn RenderVisibleEntitiesClass::remove_gpu_culled_entity(Self, @sync_world.MainEntity) -> @core.Entity?
+pub fn RenderVisibleEntitiesClass::removed_entities(Self) -> Array[(@core.Entity, @sync_world.MainEntity)]
 pub fn RenderVisibleEntitiesClass::sort_added_entities(Self) -> Unit
-pub fn RenderVisibleEntitiesClass::update_cpu_culled_entities(Self, Array[(@core.Entity, @render.MainEntity)]) -> Unit
+pub fn RenderVisibleEntitiesClass::update_cpu_culled_entities(Self, Array[(@core.Entity, @sync_world.MainEntity)]) -> Unit
 pub fn RenderVisibleEntitiesClass::visible_len(Self) -> Int
 
 // Type aliases

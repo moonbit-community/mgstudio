@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/sync_world",
   "Milky2018/mgstudio/sprite",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
@@ -74,7 +75,7 @@ pub fn line_gizmo_color_bytes(Array[@color.Color]) -> Bytes
 
 pub fn line_gizmo_fragment_entry_point(@sprite.GizmoLineStyle) -> String
 
-pub fn line_gizmo_phase_items_for_counts(@core.Entity, @render.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
+pub fn line_gizmo_phase_items_for_counts(@core.Entity, @sync_world.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
 
 pub fn line_gizmo_pipeline_plan_for_phase(LineGizmoPhasePipelineKey, msaa_samples~ : UInt, target_format~ : UInt) -> LineGizmoPipelinePlan
 
@@ -220,20 +221,20 @@ pub fn LineGizmoDrawPlan::instance_count(Self) -> UInt
 pub fn LineGizmoDrawPlan::vertex_count(Self) -> UInt
 
 pub struct LineGizmoEntities {
-  line_gizmo_renderer : @render.MainEntity
-  line_strip_gizmo_renderer : @render.MainEntity
-  line_joint_gizmo_renderer : @render.MainEntity
+  line_gizmo_renderer : @sync_world.MainEntity
+  line_strip_gizmo_renderer : @sync_world.MainEntity
+  line_joint_gizmo_renderer : @sync_world.MainEntity
 }
-pub fn LineGizmoEntities::line_gizmo_renderer(Self) -> @render.MainEntity
-pub fn LineGizmoEntities::line_joint_gizmo_renderer(Self) -> @render.MainEntity
-pub fn LineGizmoEntities::line_strip_gizmo_renderer(Self) -> @render.MainEntity
-pub fn LineGizmoEntities::new(@render.MainEntity, @render.MainEntity, @render.MainEntity) -> Self
+pub fn LineGizmoEntities::line_gizmo_renderer(Self) -> @sync_world.MainEntity
+pub fn LineGizmoEntities::line_joint_gizmo_renderer(Self) -> @sync_world.MainEntity
+pub fn LineGizmoEntities::line_strip_gizmo_renderer(Self) -> @sync_world.MainEntity
+pub fn LineGizmoEntities::new(@sync_world.MainEntity, @sync_world.MainEntity, @sync_world.MainEntity) -> Self
 pub impl @app.Resource for LineGizmoEntities
 
 pub struct LineGizmoPhaseItem {
   render_entity : @core.Entity
-  main_entity : @render.MainEntity
-  renderer_entity : @render.MainEntity
+  main_entity : @sync_world.MainEntity
+  renderer_entity : @sync_world.MainEntity
   handle_id : Int
   draw_function : @material.DrawFunctionId
   pipeline_key : LineGizmoPhasePipelineKey
@@ -245,10 +246,10 @@ pub fn LineGizmoPhaseItem::batch_range(Self) -> (Int, Int)
 pub fn LineGizmoPhaseItem::draw_function(Self) -> @material.DrawFunctionId
 pub fn LineGizmoPhaseItem::handle_id(Self) -> Int
 pub fn LineGizmoPhaseItem::indexed(Self) -> Bool
-pub fn LineGizmoPhaseItem::main_entity(Self) -> @render.MainEntity
+pub fn LineGizmoPhaseItem::main_entity(Self) -> @sync_world.MainEntity
 pub fn LineGizmoPhaseItem::pipeline_key(Self) -> LineGizmoPhasePipelineKey
 pub fn LineGizmoPhaseItem::render_entity(Self) -> @core.Entity
-pub fn LineGizmoPhaseItem::renderer_entity(Self) -> @render.MainEntity
+pub fn LineGizmoPhaseItem::renderer_entity(Self) -> @sync_world.MainEntity
 
 pub struct LineGizmoPhaseItems {
   items : Array[LineGizmoPhaseItem]

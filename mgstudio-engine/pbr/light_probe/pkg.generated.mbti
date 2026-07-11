@@ -8,7 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/sync_world",
   "Milky2018/mgstudio/transform",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/hashmap",
@@ -168,7 +168,7 @@ pub struct GeneratorSamplers {
 pub fn GeneratorSamplers::GeneratorSamplers() -> Self
 
 pub struct LightProbeInfo {
-  main_entity : @render.MainEntity
+  main_entity : @sync_world.MainEntity
   world_from_light : @math.Affine3
   light_from_world : Array[@math.Vec4]
   falloff : @math.Vec3
@@ -180,10 +180,10 @@ pub struct LightProbeInfo {
   flags : Int
 }
 pub fn LightProbeInfo::camera_distance_sort_key(Self, @transform.GlobalTransform) -> Float
-pub fn LightProbeInfo::from_environment_map_light(@ecs.World, @render.MainEntity, @light.LightProbe, @light.EnvironmentMapLight) -> Self?
-pub fn LightProbeInfo::from_irradiance_volume(@ecs.World, @render.MainEntity, @light.LightProbe, @light.IrradianceVolume) -> Self?
+pub fn LightProbeInfo::from_environment_map_light(@ecs.World, @sync_world.MainEntity, @light.LightProbe, @light.EnvironmentMapLight) -> Self?
+pub fn LightProbeInfo::from_irradiance_volume(@ecs.World, @sync_world.MainEntity, @light.LightProbe, @light.IrradianceVolume) -> Self?
 pub fn LightProbeInfo::from_world_from_light(Self, @math.Affine3) -> Self
-pub fn LightProbeInfo::new(@render.MainEntity, @asset.Handle[@image.Image]?) -> Self
+pub fn LightProbeInfo::new(@sync_world.MainEntity, @asset.Handle[@image.Image]?) -> Self
 
 pub struct LightProbePlugin {
 }
@@ -329,8 +329,8 @@ pub fn RenderViewLightProbes::is_empty(Self) -> Bool
 pub fn RenderViewLightProbes::maybe_gather_light_probes(Self, Array[LightProbeInfo]) -> Unit
 pub fn RenderViewLightProbes::probe_count(Self) -> Int
 pub fn RenderViewLightProbes::push_probe(Self, RenderLightProbe) -> Unit
-pub fn RenderViewLightProbes::push_probe_for_main_entity(Self, @render.MainEntity, RenderLightProbe) -> Unit
-pub fn RenderViewLightProbes::render_light_probe_index(Self, @render.MainEntity) -> UInt?
+pub fn RenderViewLightProbes::push_probe_for_main_entity(Self, @sync_world.MainEntity, RenderLightProbe) -> Unit
+pub fn RenderViewLightProbes::render_light_probe_index(Self, @sync_world.MainEntity) -> UInt?
 pub fn RenderViewLightProbes::set_view_light_probe_info(Self, EnvironmentMapViewLightProbeInfo) -> Unit
 pub fn RenderViewLightProbes::texture_count(Self) -> Int
 pub fn RenderViewLightProbes::view_light_probe_info(Self) -> EnvironmentMapViewLightProbeInfo?

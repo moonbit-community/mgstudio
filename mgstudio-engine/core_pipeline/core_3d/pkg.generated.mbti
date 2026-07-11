@@ -8,8 +8,8 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/sync_world",
   "Milky2018/mgstudio/render/view",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -189,7 +189,7 @@ pub struct Transparent3d {
   distance : Float
   pipeline : @render_resource.CachedRenderPipelineId
   entity : @core.Entity
-  main_entity : @render.MainEntity
+  main_entity : @sync_world.MainEntity
   draw_function : @material.DrawFunctionId
   batch_range_start : Int
   batch_range_end : Int
@@ -201,8 +201,8 @@ pub fn Transparent3d::draw_function(Self) -> @material.DrawFunctionId
 pub fn Transparent3d::entity(Self) -> @core.Entity
 pub fn Transparent3d::extra_index(Self) -> Int
 pub fn Transparent3d::indexed(Self) -> Bool
-pub fn Transparent3d::main_entity(Self) -> @render.MainEntity
-pub fn Transparent3d::new(sorting_info? : TransparentSortingInfo3d, distance~ : Float, pipeline~ : @render_resource.CachedRenderPipelineId, entity~ : @core.Entity, main_entity~ : @render.MainEntity, draw_function~ : @material.DrawFunctionId, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int, indexed? : Bool) -> Self
+pub fn Transparent3d::main_entity(Self) -> @sync_world.MainEntity
+pub fn Transparent3d::new(sorting_info? : TransparentSortingInfo3d, distance~ : Float, pipeline~ : @render_resource.CachedRenderPipelineId, entity~ : @core.Entity, main_entity~ : @sync_world.MainEntity, draw_function~ : @material.DrawFunctionId, batch_range_start? : Int, batch_range_end? : Int, extra_index? : Int, indexed? : Bool) -> Self
 pub fn Transparent3d::pipeline(Self) -> @render_resource.CachedRenderPipelineId
 pub fn Transparent3d::sort_key(Self) -> Float
 pub fn Transparent3d::sorting_info(Self) -> TransparentSortingInfo3d
@@ -239,7 +239,7 @@ pub(all) enum Transparent3dRenderCommandResult {
 
 pub struct Transparent3dViewPhase {
   mut items : Array[Transparent3d]
-  transient_items : Array[(@core.Entity, @render.MainEntity)]
+  transient_items : Array[(@core.Entity, @sync_world.MainEntity)]
 }
 pub fn Transparent3dViewPhase::Transparent3dViewPhase() -> Self
 pub fn Transparent3dViewPhase::add(Self, Transparent3d) -> Unit
@@ -247,7 +247,7 @@ pub fn Transparent3dViewPhase::add_transient(Self, Transparent3d) -> Unit
 pub fn Transparent3dViewPhase::clear(Self) -> Unit
 pub fn Transparent3dViewPhase::items(Self) -> Array[Transparent3d]
 pub fn Transparent3dViewPhase::len(Self) -> Int
-pub fn Transparent3dViewPhase::remove(Self, @core.Entity, @render.MainEntity) -> Unit
+pub fn Transparent3dViewPhase::remove(Self, @core.Entity, @sync_world.MainEntity) -> Unit
 
 pub enum TransparentSortingInfo3d {
   AlwaysOnTop

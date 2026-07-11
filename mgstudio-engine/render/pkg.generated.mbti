@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/render/camera_sort",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/sync_world",
   "Milky2018/mgstudio/render/texture",
   "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/window",
@@ -98,7 +99,7 @@ pub let ecs_key_capturing : @ecs.ComponentKey[Capturing]
 
 pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading]
 
-pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity]
+pub let ecs_key_main_entity : @ecs.ComponentKey[@sync_world.MainEntity]
 
 pub let ecs_key_pending_sync_entity : @ecs.ResourceKey[PendingSyncEntity]
 
@@ -895,13 +896,6 @@ pub(all) enum HostGpuPresentMode {
 } derive(Eq, @debug.Debug)
 pub fn HostGpuPresentMode::default() -> Self
 
-pub struct MainEntity {
-  entity : @core.Entity
-} derive(Eq, Hash, @debug.Debug)
-pub fn MainEntity::id(Self) -> @core.Entity
-pub fn MainEntity::new(@core.Entity) -> Self
-pub impl @ecs.Component for MainEntity
-
 pub struct Mesh3dInstanceVertexBufferData {
   buffer_id : Int
   bytes : Bytes
@@ -923,7 +917,7 @@ pub fn PendingQueues::expire_stale_views(Self, @hashset.HashSet[@view.RetainedVi
 pub fn PendingQueues::get(Self, @view.RetainedViewEntity) -> ViewPendingQueues?
 pub fn PendingQueues::prepare_for_new_frame(Self, @view.RetainedViewEntity) -> ViewPendingQueues
 pub fn PendingQueues::prev_len(Self, @view.RetainedViewEntity) -> Int
-pub fn PendingQueues::push_current(Self, @view.RetainedViewEntity, @core.Entity, MainEntity) -> Unit
+pub fn PendingQueues::push_current(Self, @view.RetainedViewEntity, @core.Entity, @sync_world.MainEntity) -> Unit
 pub fn PendingQueues::view_len(Self) -> Int
 pub fn PendingQueues::view_or_insert(Self, @view.RetainedViewEntity) -> ViewPendingQueues
 
@@ -1248,15 +1242,15 @@ pub fn[C] UniformComponentPlugin::UniformComponentPlugin() -> Self[C]
 pub impl[C : @ecs.Component + UniformComponent] @app.Plugin for UniformComponentPlugin[C]
 
 pub struct ViewPendingQueues {
-  mut current_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
-  mut prev_frame : @hashset.HashSet[(@core.Entity, MainEntity)]
+  mut current_frame : @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]
 }
 pub fn ViewPendingQueues::ViewPendingQueues() -> Self
 pub fn ViewPendingQueues::current_len(Self) -> Int
 pub fn ViewPendingQueues::prepare_for_new_frame(Self) -> Unit
-pub fn ViewPendingQueues::prev_frame(Self) -> @hashset.HashSet[(@core.Entity, MainEntity)]
+pub fn ViewPendingQueues::prev_frame(Self) -> @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]
 pub fn ViewPendingQueues::prev_len(Self) -> Int
-pub fn ViewPendingQueues::push_current(Self, @core.Entity, MainEntity) -> Unit
+pub fn ViewPendingQueues::push_current(Self, @core.Entity, @sync_world.MainEntity) -> Unit
 
 pub struct WgpuSettings {
   device_label : String?
@@ -1334,6 +1328,8 @@ pub using @renderer {type HostMesh3dPreprocessShaderWorkItem}
 pub using @renderer {type HostMesh3dPreprocessView}
 
 pub using @renderer {type HostMesh3dVolumetricFogVolume}
+
+pub using @sync_world {type MainEntity}
 
 pub using @render_target {type ManualTextureViewHandle}
 

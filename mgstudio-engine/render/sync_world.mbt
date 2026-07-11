@@ -16,6 +16,12 @@
 // Bevy source: `bevy/crates/bevy_render/src/sync_world.rs`.
 
 ///|
+pub type MainEntity = @render_sync_world.MainEntity
+
+///|
+pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity] = @render_sync_world.ecs_key_main_entity
+
+///|
 const SYNC_WORLD_PLUGIN_NAME : String = "mgstudio.render.SyncWorldPlugin"
 
 ///|
@@ -82,31 +88,6 @@ pub let ecs_key_render_entity : @ecs.ComponentKey[RenderEntity] = @ecs.register_
 ///|
 pub impl @ecs.Component for RenderEntity with fn component() {
   ecs_key_render_entity
-}
-
-///|
-pub struct MainEntity {
-  entity : @core.Entity
-} derive(Eq, Hash, Debug)
-
-///|
-pub fn MainEntity::new(entity : @core.Entity) -> MainEntity {
-  MainEntity::{ entity, }
-}
-
-///|
-pub fn MainEntity::id(self : MainEntity) -> @core.Entity {
-  self.entity
-}
-
-///|
-pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity] = @ecs.register_component(
-  debug_name="mgstudio_render::MainEntity",
-)
-
-///|
-pub impl @ecs.Component for MainEntity with fn component() {
-  ecs_key_main_entity
 }
 
 ///|

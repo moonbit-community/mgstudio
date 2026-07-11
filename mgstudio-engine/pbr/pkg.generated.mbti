@@ -32,6 +32,7 @@ import {
   "Milky2018/mgstudio/render/render_phase",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/sync_world",
   "Milky2018/mgstudio/render/texture",
   "Milky2018/mgstudio/render/view",
   "Milky2018/mgstudio/transform",
@@ -503,7 +504,7 @@ pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAcc
 
 pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@light.GlobalAmbientLight]
 
-pub fn get_mesh_instance_world_from_local(@Milky2018/mgstudio/render.MainEntity, @render_phase.InputUniformIndex, RenderMeshInstances, RenderMeshInstanceGpuBatchedInstanceBuffers?) -> @math.Affine3
+pub fn get_mesh_instance_world_from_local(@sync_world.MainEntity, @render_phase.InputUniformIndex, RenderMeshInstances, RenderMeshInstanceGpuBatchedInstanceBuffers?) -> @math.Affine3
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.PointLightShadowMap]
 
@@ -513,7 +514,7 @@ pub fn gltf_pbr_mesh_material(@asset.Handle[@material.StandardMaterial]) -> Mesh
 
 pub fn gpu_clustering_allocation_dispatch_count(Int) -> Int
 
-pub fn gpu_clustering_cluster_on_gpu_commands(@wgpu_mbt.CommandEncoder, @renderer.RenderDevice, @render_resource.PipelineCache, GpuClusteringMeshBuffers, RenderViewClusteringReadbackData, @Milky2018/mgstudio/render.MainEntity, ViewGpuClusteringBuffers, ViewGpuClusteringPipelineIds, ViewClusteringDummyTexture, ViewClusteringBindGroups, @light_probe.ViewLightProbesUniformOffset, @Milky2018/mgstudio/pbr/render.ViewLightsUniformOffset, @view.ViewUniformOffset, ExtractedClusterConfig) -> GpuClusteringReadbackRequest?
+pub fn gpu_clustering_cluster_on_gpu_commands(@wgpu_mbt.CommandEncoder, @renderer.RenderDevice, @render_resource.PipelineCache, GpuClusteringMeshBuffers, RenderViewClusteringReadbackData, @sync_world.MainEntity, ViewGpuClusteringBuffers, ViewGpuClusteringPipelineIds, ViewClusteringDummyTexture, ViewClusteringBindGroups, @light_probe.ViewLightProbesUniformOffset, @Milky2018/mgstudio/pbr/render.ViewLightsUniformOffset, @view.ViewUniformOffset, ExtractedClusterConfig) -> GpuClusteringReadbackRequest?
 
 pub fn gpu_clustering_is_enabled(@ecs.World) -> Bool
 
@@ -755,7 +756,7 @@ pub fn[M] register_material_keys(String) -> MaterialKeys[M]
 
 pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
-pub fn remove_mesh_input_uniform(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstancesGpu, @batching.InstanceInputUniformBuffer[MeshInputUniform]) -> UInt?
+pub fn remove_mesh_input_uniform(@sync_world.MainEntity, RenderMeshInstancesGpu, @batching.InstanceInputUniformBuffer[MeshInputUniform]) -> UInt?
 
 pub fn render3d_apply_queued_shadow_phase_data(@ecs.World, @view.RetainedViewEntity, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport) -> Bool
 
@@ -889,13 +890,13 @@ pub fn render3d_shadow_specialization_apply_work_item(@ecs.World, Render3dShadow
 
 pub fn render3d_shadow_specialization_apply_work_items(@ecs.World, Array[Render3dShadowSpecializationWorkItemData], @hashset.HashSet[@view.RetainedViewEntity], Bool) -> Int
 
-pub fn render3d_shadow_specialization_candidates(@ecs.World, @core.Entity, @view.RetainedViewEntity, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Array[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
+pub fn render3d_shadow_specialization_candidates(@ecs.World, @core.Entity, @view.RetainedViewEntity, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Array[(@core.Entity, @sync_world.MainEntity)]
 
-pub fn render3d_shadow_specialization_candidates_for_light(@ecs.World, Render3dLightEntity, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Array[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
+pub fn render3d_shadow_specialization_candidates_for_light(@ecs.World, Render3dLightEntity, @view.RetainedViewEntity, @Milky2018/mgstudio/render/view/visibility.DirtySpecializations, @Milky2018/mgstudio/pbr/render.PendingShadowQueues) -> Array[(@core.Entity, @sync_world.MainEntity)]
 
-pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @Milky2018/mgstudio/render.ViewPendingQueues) -> RenderMeshQueueData?
+pub fn render3d_shadow_specialization_queue_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @sync_world.MainEntity, @Milky2018/mgstudio/render.ViewPendingQueues) -> RenderMeshQueueData?
 
-pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @material.ErasedMeshPipelineKey, @Milky2018/mgstudio/render.ViewPendingQueues) -> Render3dShadowSpecializationWorkItemData?
+pub fn render3d_shadow_specialization_work_item_data(@ecs.World, @view.RetainedViewEntity, @core.Entity, @sync_world.MainEntity, @material.ErasedMeshPipelineKey, @Milky2018/mgstudio/render.ViewPendingQueues) -> Render3dShadowSpecializationWorkItemData?
 
 pub fn render3d_specialize_material_meshes_system(@ecs.World) -> Unit
 
@@ -1353,25 +1354,25 @@ pub(all) struct DfgLut {
 pub impl @app.Resource for DfgLut
 
 pub struct DirtyWireframeSpecializations {
-  changed_renderables : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
-  removed_renderables : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
+  changed_renderables : Map[UInt64, @sync_world.MainEntity]
+  removed_renderables : Map[UInt64, @sync_world.MainEntity]
   views : Map[UInt64, @core.Entity]
 }
 pub fn DirtyWireframeSpecializations::DirtyWireframeSpecializations() -> Self
-pub fn DirtyWireframeSpecializations::changed_contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn DirtyWireframeSpecializations::changed_contains(Self, @sync_world.MainEntity) -> Bool
 pub fn DirtyWireframeSpecializations::changed_len(Self) -> Int
 pub fn DirtyWireframeSpecializations::clear(Self) -> Unit
-pub fn DirtyWireframeSpecializations::entity_pair_from_visible_main_entity(Self, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, @Milky2018/mgstudio/render.MainEntity) -> (@core.Entity, @Milky2018/mgstudio/render.MainEntity)?
-pub fn DirtyWireframeSpecializations::insert_changed(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
-pub fn DirtyWireframeSpecializations::insert_removed(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn DirtyWireframeSpecializations::entity_pair_from_visible_main_entity(Self, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, @sync_world.MainEntity) -> (@core.Entity, @sync_world.MainEntity)?
+pub fn DirtyWireframeSpecializations::insert_changed(Self, @sync_world.MainEntity) -> Unit
+pub fn DirtyWireframeSpecializations::insert_removed(Self, @sync_world.MainEntity) -> Unit
 pub fn DirtyWireframeSpecializations::insert_view(Self, @core.Entity) -> Unit
-pub fn DirtyWireframeSpecializations::iter_to_dequeue(Self, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass) -> Array[@Milky2018/mgstudio/render.MainEntity]
-pub fn DirtyWireframeSpecializations::iter_to_queue(Self, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]) -> Array[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
-pub fn DirtyWireframeSpecializations::iter_to_specialize(Self, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]) -> Array[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
+pub fn DirtyWireframeSpecializations::iter_to_dequeue(Self, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass) -> Array[@sync_world.MainEntity]
+pub fn DirtyWireframeSpecializations::iter_to_queue(Self, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]) -> Array[(@core.Entity, @sync_world.MainEntity)]
+pub fn DirtyWireframeSpecializations::iter_to_specialize(Self, @core.Entity, @Milky2018/mgstudio/render/view/visibility.RenderVisibleEntitiesClass, @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]) -> Array[(@core.Entity, @sync_world.MainEntity)]
 pub fn DirtyWireframeSpecializations::must_wipe_specializations_for_view(Self, @core.Entity) -> Bool
-pub fn DirtyWireframeSpecializations::removed_contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn DirtyWireframeSpecializations::removed_contains(Self, @sync_world.MainEntity) -> Bool
 pub fn DirtyWireframeSpecializations::removed_len(Self) -> Int
-pub fn DirtyWireframeSpecializations::to_despecialize(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
+pub fn DirtyWireframeSpecializations::to_despecialize(Self) -> Array[@sync_world.MainEntity]
 pub fn DirtyWireframeSpecializations::views_len(Self) -> Int
 pub impl @app.Resource for DirtyWireframeSpecializations
 
@@ -1474,8 +1475,8 @@ pub impl @ecs.Component for ExtractedClusterConfig
 pub(all) enum ExtractedClusterableObjectElement {
   ClusterHeader(ClusterableObjectCounts3d)
   Light(@core.Entity)
-  ReflectionProbe(@Milky2018/mgstudio/render.MainEntity)
-  IrradianceVolume(@Milky2018/mgstudio/render.MainEntity)
+  ReflectionProbe(@sync_world.MainEntity)
+  IrradianceVolume(@sync_world.MainEntity)
   Decal(@core.Entity)
 } derive(Eq, @debug.Debug)
 
@@ -2069,14 +2070,14 @@ pub fn MeshTransforms::previous_world_from_local(Self) -> @math.Affine3
 pub fn MeshTransforms::world_from_local(Self) -> @math.Affine3
 
 pub struct MeshesToReextractNextFrame {
-  entries : Map[UInt64, @Milky2018/mgstudio/render.MainEntity]
+  entries : Map[UInt64, @sync_world.MainEntity]
 }
 pub fn MeshesToReextractNextFrame::MeshesToReextractNextFrame() -> Self
 pub fn MeshesToReextractNextFrame::clear(Self) -> Unit
-pub fn MeshesToReextractNextFrame::contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
-pub fn MeshesToReextractNextFrame::entities(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
-pub fn MeshesToReextractNextFrame::insert(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
-pub fn MeshesToReextractNextFrame::insert_all(Self, Array[@Milky2018/mgstudio/render.MainEntity]) -> Unit
+pub fn MeshesToReextractNextFrame::contains(Self, @sync_world.MainEntity) -> Bool
+pub fn MeshesToReextractNextFrame::entities(Self) -> Array[@sync_world.MainEntity]
+pub fn MeshesToReextractNextFrame::insert(Self, @sync_world.MainEntity) -> Unit
+pub fn MeshesToReextractNextFrame::insert_all(Self, Array[@sync_world.MainEntity]) -> Unit
 pub fn MeshesToReextractNextFrame::len(Self) -> Int
 pub impl @app.Resource for MeshesToReextractNextFrame
 
@@ -2192,7 +2193,7 @@ pub fn PendingWireframeQueues::current_len(Self, @core.Entity) -> Int
 pub fn PendingWireframeQueues::expire_stale_views(Self, Map[UInt64, Bool]) -> Unit
 pub fn PendingWireframeQueues::prepare_for_new_frame(Self, @core.Entity) -> ViewPendingWireframeQueues
 pub fn PendingWireframeQueues::prev_len(Self, @core.Entity) -> Int
-pub fn PendingWireframeQueues::push_current(Self, @core.Entity, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn PendingWireframeQueues::push_current(Self, @core.Entity, @core.Entity, @sync_world.MainEntity) -> Unit
 pub fn PendingWireframeQueues::view(Self, @core.Entity) -> ViewPendingWireframeQueues?
 pub fn PendingWireframeQueues::view_len(Self) -> Int
 pub fn PendingWireframeQueues::view_or_insert(Self, @core.Entity) -> ViewPendingWireframeQueues
@@ -2234,16 +2235,16 @@ pub fn Render3dLightEntity::shadow_map_visible_retained_view(Self, @view.Retaine
 pub fn Render3dLightEntity::shadow_phase_retained_view(Self, @view.RetainedViewEntity) -> @view.RetainedViewEntity
 
 pub struct Render3dQueuedShadowPhaseData {
-  dequeued : Array[@Milky2018/mgstudio/render.MainEntity]
+  dequeued : Array[@sync_world.MainEntity]
   items : Array[Render3dQueuedShadowPhaseItemData]
 }
 pub fn Render3dQueuedShadowPhaseData::Render3dQueuedShadowPhaseData() -> Self
-pub fn Render3dQueuedShadowPhaseData::dequeued(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
+pub fn Render3dQueuedShadowPhaseData::dequeued(Self) -> Array[@sync_world.MainEntity]
 pub fn Render3dQueuedShadowPhaseData::items(Self) -> Array[Render3dQueuedShadowPhaseItemData]
 
 pub struct Render3dQueuedShadowPhaseItemData {
   render_entity : @core.Entity
-  visible_entity : @Milky2018/mgstudio/render.MainEntity
+  visible_entity : @sync_world.MainEntity
   pipeline_id : @render_resource.CachedRenderPipelineId
   draw_function : @material.DrawFunctionId
   material_bind_group_index : Int?
@@ -2262,7 +2263,7 @@ pub fn Render3dQueuedShadowPhaseItemData::pipeline_id(Self) -> @render_resource.
 pub fn Render3dQueuedShadowPhaseItemData::render_entity(Self) -> @core.Entity
 pub fn Render3dQueuedShadowPhaseItemData::should_batch(Self) -> Bool
 pub fn Render3dQueuedShadowPhaseItemData::slabs(Self) -> @Milky2018/mgstudio/render/mesh.MeshSlabs
-pub fn Render3dQueuedShadowPhaseItemData::visible_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
+pub fn Render3dQueuedShadowPhaseItemData::visible_entity(Self) -> @sync_world.MainEntity
 
 pub struct Render3dQueuedShadowPhaseView {
   light_entity : Render3dLightEntity
@@ -2308,14 +2309,14 @@ pub fn Render3dShadowBinKeyData::mesh_asset_id(Self) -> Int
 pub fn Render3dShadowBinKeyData::new(Int) -> Self
 
 pub(all) struct Render3dShadowBinnedRenderPhaseBatchData {
-  representative_entity : (@core.Entity, @Milky2018/mgstudio/render.MainEntity)
+  representative_entity : (@core.Entity, @sync_world.MainEntity)
   instance_range : @render_phase.PhaseItemBatchRange
   extra_index : @render_phase.PhaseItemExtraIndex
 }
 pub fn Render3dShadowBinnedRenderPhaseBatchData::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
 pub fn Render3dShadowBinnedRenderPhaseBatchData::instance_range(Self) -> @render_phase.PhaseItemBatchRange
-pub fn Render3dShadowBinnedRenderPhaseBatchData::new((@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
-pub fn Render3dShadowBinnedRenderPhaseBatchData::representative_entity(Self) -> (@core.Entity, @Milky2018/mgstudio/render.MainEntity)
+pub fn Render3dShadowBinnedRenderPhaseBatchData::new((@core.Entity, @sync_world.MainEntity), @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
+pub fn Render3dShadowBinnedRenderPhaseBatchData::representative_entity(Self) -> (@core.Entity, @sync_world.MainEntity)
 
 pub(all) struct Render3dShadowBinnedRenderPhaseBatchSetData {
   first_batch : Render3dShadowBinnedRenderPhaseBatchData
@@ -2332,12 +2333,12 @@ pub fn Render3dShadowBinnedRenderPhaseBatchSetData::index(Self) -> Int
 pub fn Render3dShadowBinnedRenderPhaseBatchSetData::new(Render3dShadowBinnedRenderPhaseBatchData, Render3dShadowBinKeyData, Int, Int, Int) -> Self
 
 pub(all) struct Render3dShadowCpuRenderBinnedMeshInstance {
-  main_entity : @Milky2018/mgstudio/render.MainEntity
+  main_entity : @sync_world.MainEntity
   bin_index : Int
 } derive(Eq, @debug.Debug)
 pub fn Render3dShadowCpuRenderBinnedMeshInstance::bin_index(Self) -> Int
-pub fn Render3dShadowCpuRenderBinnedMeshInstance::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
-pub fn Render3dShadowCpuRenderBinnedMeshInstance::new(@Milky2018/mgstudio/render.MainEntity, Int) -> Self
+pub fn Render3dShadowCpuRenderBinnedMeshInstance::main_entity(Self) -> @sync_world.MainEntity
+pub fn Render3dShadowCpuRenderBinnedMeshInstance::new(@sync_world.MainEntity, Int) -> Self
 
 pub(all) struct Render3dShadowGpuRenderBinnedMeshInstance {
   input_uniform_index : UInt
@@ -2363,9 +2364,9 @@ pub fn Render3dShadowMultidrawableBatchSetData::cpu_instance_at(Self, Int) -> Re
 pub fn Render3dShadowMultidrawableBatchSetData::cpu_instance_count(Self) -> Int
 pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameter_count(Self) -> Int
 pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameters_offset_for_bin(Self, Int) -> Int?
-pub fn Render3dShadowMultidrawableBatchSetData::insert(Self, Render3dShadowBinKeyData, @Milky2018/mgstudio/render.MainEntity, UInt) -> Unit
+pub fn Render3dShadowMultidrawableBatchSetData::insert(Self, Render3dShadowBinKeyData, @sync_world.MainEntity, UInt) -> Unit
 pub fn Render3dShadowMultidrawableBatchSetData::is_empty(Self) -> Bool
-pub fn Render3dShadowMultidrawableBatchSetData::remove(Self, @Milky2018/mgstudio/render.MainEntity, Render3dShadowBinKeyData) -> Unit
+pub fn Render3dShadowMultidrawableBatchSetData::remove(Self, @sync_world.MainEntity, Render3dShadowBinKeyData) -> Unit
 
 pub(all) struct Render3dShadowMultidrawableBatchSetEntry {
   batch_set_key : Render3dShadowBatchSetKeyData
@@ -2384,7 +2385,7 @@ pub(all) struct Render3dShadowMultidrawableBin {
   entity_to_binned_mesh_instance_index : Map[UInt64, Int]
 }
 pub fn Render3dShadowMultidrawableBin::Render3dShadowMultidrawableBin() -> Self
-pub fn Render3dShadowMultidrawableBin::binned_mesh_instance_index(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn Render3dShadowMultidrawableBin::binned_mesh_instance_index(Self, @sync_world.MainEntity) -> Int?
 pub fn Render3dShadowMultidrawableBin::entity_count(Self) -> Int
 pub fn Render3dShadowMultidrawableBin::is_empty(Self) -> Bool
 
@@ -2404,7 +2405,7 @@ pub struct Render3dShadowPhaseItemData {
   batch_set_key : Render3dShadowBatchSetKeyData
   bin_key : Render3dShadowBinKeyData
   render_entity : @core.Entity
-  main_entity : @Milky2018/mgstudio/render.MainEntity
+  main_entity : @sync_world.MainEntity
   batch_range : @render_phase.PhaseItemBatchRange
   extra_index : @render_phase.PhaseItemExtraIndex
 }
@@ -2415,8 +2416,8 @@ pub fn Render3dShadowPhaseItemData::cached_pipeline(Self) -> @render_resource.Ca
 pub fn Render3dShadowPhaseItemData::draw_function(Self) -> @material.DrawFunctionId
 pub fn Render3dShadowPhaseItemData::entity(Self) -> @core.Entity
 pub fn Render3dShadowPhaseItemData::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
-pub fn Render3dShadowPhaseItemData::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
-pub fn Render3dShadowPhaseItemData::new(Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
+pub fn Render3dShadowPhaseItemData::main_entity(Self) -> @sync_world.MainEntity
+pub fn Render3dShadowPhaseItemData::new(Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, @core.Entity, @sync_world.MainEntity, @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
 
 pub struct Render3dShadowPhasesData {
   views : @hashmap.HashMap[@view.RetainedViewEntity, Render3dShadowViewPhaseData]
@@ -2434,7 +2435,7 @@ pub impl @app.Resource for Render3dShadowPhasesData
 
 pub struct Render3dShadowSpecializationWorkItemData {
   queue_data : RenderMeshQueueData
-  visible_entity : @Milky2018/mgstudio/render.MainEntity
+  visible_entity : @sync_world.MainEntity
   retained_view_entity : @view.RetainedViewEntity
   mesh_key : @material.ErasedMeshPipelineKey
   layout : @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
@@ -2447,12 +2448,12 @@ pub fn Render3dShadowSpecializationWorkItemData::mesh_key(Self) -> @material.Era
 pub fn Render3dShadowSpecializationWorkItemData::properties(Self) -> @material.MaterialProperties
 pub fn Render3dShadowSpecializationWorkItemData::queue_data(Self) -> RenderMeshQueueData
 pub fn Render3dShadowSpecializationWorkItemData::retained_view_entity(Self) -> @view.RetainedViewEntity
-pub fn Render3dShadowSpecializationWorkItemData::visible_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
+pub fn Render3dShadowSpecializationWorkItemData::visible_entity(Self) -> @sync_world.MainEntity
 
 pub(all) struct Render3dShadowUnbatchableBinnedEntities {
   batch_set_key : Render3dShadowBatchSetKeyData
   bin_key : Render3dShadowBinKeyData
-  mut entities : Array[(@Milky2018/mgstudio/render.MainEntity, @core.Entity)]
+  mut entities : Array[(@sync_world.MainEntity, @core.Entity)]
   buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
 }
 
@@ -2464,37 +2465,37 @@ pub struct Render3dShadowViewPhaseData {
   input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
   phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
-pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
+pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @sync_world.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Render3dShadowViewPhaseData::apply_queue(Self, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport) -> Unit
-pub fn Render3dShadowViewPhaseData::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.InputUniformIndex?
+pub fn Render3dShadowViewPhaseData::input_uniform_index(Self, @sync_world.MainEntity) -> @render_phase.InputUniformIndex?
 pub fn Render3dShadowViewPhaseData::items(Self) -> Array[Render3dShadowPhaseItemData]
 pub fn Render3dShadowViewPhaseData::len(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_batch_set_count(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_cpu_instance_count(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_items(Self, Bool) -> Array[Render3dShadowPhaseItemData]
 pub fn Render3dShadowViewPhaseData::new(@batching.GpuPreprocessingMode) -> Self
-pub fn Render3dShadowViewPhaseData::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.BinnedRenderPhaseType?
+pub fn Render3dShadowViewPhaseData::phase_type(Self, @sync_world.MainEntity) -> @render_phase.BinnedRenderPhaseType?
 pub fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(Self) -> Unit
 pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
 pub fn Render3dShadowViewPhaseData::prepare_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
 pub fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
-pub fn Render3dShadowViewPhaseData::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn Render3dShadowViewPhaseData::remove(Self, @sync_world.MainEntity) -> Unit
 pub fn Render3dShadowViewPhaseData::render_items(Self, Bool) -> Array[Render3dShadowPhaseItemData]
 
 pub struct RenderGpuCulledEntities {
   entities : Map[UInt64, @render_layers.RenderLayers]
-  added : Array[@Milky2018/mgstudio/render.MainEntity]
-  removed : Array[@Milky2018/mgstudio/render.MainEntity]
-  changed_layers : Array[@Milky2018/mgstudio/render.MainEntity]
+  added : Array[@sync_world.MainEntity]
+  removed : Array[@sync_world.MainEntity]
+  changed_layers : Array[@sync_world.MainEntity]
 }
 pub fn RenderGpuCulledEntities::RenderGpuCulledEntities() -> Self
 pub fn RenderGpuCulledEntities::added_len(Self) -> Int
-pub fn RenderGpuCulledEntities::contains(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn RenderGpuCulledEntities::contains(Self, @sync_world.MainEntity) -> Bool
 pub fn RenderGpuCulledEntities::prepare_for_new_frame(Self) -> Unit
-pub fn RenderGpuCulledEntities::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn RenderGpuCulledEntities::remove(Self, @sync_world.MainEntity) -> Unit
 pub fn RenderGpuCulledEntities::removed_len(Self) -> Int
-pub fn RenderGpuCulledEntities::update(Self, @Milky2018/mgstudio/render.MainEntity, @render_layers.RenderLayers, Bool) -> Unit
+pub fn RenderGpuCulledEntities::update(Self, @sync_world.MainEntity, @render_layers.RenderLayers, Bool) -> Unit
 pub impl @app.Resource for RenderGpuCulledEntities
 
 pub struct RenderMaterial3dInstances[M] {
@@ -2611,13 +2612,13 @@ pub struct RenderMeshInstanceGpuBuilder {
 }
 pub fn RenderMeshInstanceGpuBuilder::from_shared(RenderMeshInstanceSharedFlat, @math.Affine3, @math.UVec2, UInt?, @render_layers.RenderLayers?, UInt) -> Self
 pub fn RenderMeshInstanceGpuBuilder::new(RenderMeshQueueData) -> Self
-pub fn RenderMeshInstanceGpuBuilder::prepare(Self, @Milky2018/mgstudio/render.MainEntity, @Milky2018/mgstudio/render/mesh.MeshAllocator, RenderMaterialInstances, RenderMaterialBindings, @lightmap.RenderLightmaps, @Milky2018/mgstudio/pbr/render.SkinUniforms, @Milky2018/mgstudio/pbr/render.MorphIndices, UInt) -> RenderMeshInstanceGpuPrepared?
+pub fn RenderMeshInstanceGpuBuilder::prepare(Self, @sync_world.MainEntity, @Milky2018/mgstudio/render/mesh.MeshAllocator, RenderMaterialInstances, RenderMaterialBindings, @lightmap.RenderLightmaps, @Milky2018/mgstudio/pbr/render.SkinUniforms, @Milky2018/mgstudio/pbr/render.MorphIndices, UInt) -> RenderMeshInstanceGpuPrepared?
 pub fn RenderMeshInstanceGpuBuilder::render_mesh_queue_data(Self) -> RenderMeshQueueData
 pub fn RenderMeshInstanceGpuBuilder::shared(Self) -> RenderMeshInstanceSharedFlat
 
 pub struct RenderMeshInstanceGpuCpuCullingQueue {
-  changed : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder)]
-  removed : Array[@Milky2018/mgstudio/render.MainEntity]
+  changed : Array[(@sync_world.MainEntity, RenderMeshInstanceGpuBuilder)]
+  removed : Array[@sync_world.MainEntity]
 }
 pub fn RenderMeshInstanceGpuCpuCullingQueue::RenderMeshInstanceGpuCpuCullingQueue() -> Self
 
@@ -2628,9 +2629,9 @@ pub fn RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(current_uniform_inde
 pub fn RenderMeshInstanceGpuFlat::current_uniform_index(Self) -> UInt
 
 pub struct RenderMeshInstanceGpuGpuCullingQueue {
-  changed_cpu_culling : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
-  changed_gpu_culling : Array[(@Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
-  removed : Array[@Milky2018/mgstudio/render.MainEntity]
+  changed_cpu_culling : Array[(@sync_world.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
+  changed_gpu_culling : Array[(@sync_world.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData)]
+  removed : Array[@sync_world.MainEntity]
 }
 pub fn RenderMeshInstanceGpuGpuCullingQueue::RenderMeshInstanceGpuGpuCullingQueue() -> Self
 
@@ -2643,7 +2644,7 @@ pub fn RenderMeshInstanceGpuPrepared::from_shared(RenderMeshInstanceSharedFlat, 
 pub fn RenderMeshInstanceGpuPrepared::mesh_input_uniform(Self) -> MeshInputUniform
 pub fn RenderMeshInstanceGpuPrepared::new(RenderMeshQueueData) -> Self
 pub fn RenderMeshInstanceGpuPrepared::render_mesh_queue_data(Self) -> RenderMeshQueueData
-pub fn RenderMeshInstanceGpuPrepared::update(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshInstancesGpu, @batching.InstanceInputUniformBuffer[MeshInputUniform], @batching.InstanceInputUniformBuffer[MeshInputUniform]) -> UInt
+pub fn RenderMeshInstanceGpuPrepared::update(Self, @sync_world.MainEntity, RenderMeshInstancesGpu, @batching.InstanceInputUniformBuffer[MeshInputUniform], @batching.InstanceInputUniformBuffer[MeshInputUniform]) -> UInt
 
 pub struct RenderMeshInstanceGpuQueue {
   mut state : RenderMeshInstanceGpuQueueState
@@ -2653,8 +2654,8 @@ pub fn RenderMeshInstanceGpuQueue::changed_len(Self) -> Int
 pub fn RenderMeshInstanceGpuQueue::gpu_changed_cpu_culling_len(Self) -> Int
 pub fn RenderMeshInstanceGpuQueue::gpu_changed_gpu_culling_len(Self) -> Int
 pub fn RenderMeshInstanceGpuQueue::init(Self, Bool) -> Unit
-pub fn RenderMeshInstanceGpuQueue::push(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData?, Bool) -> Unit
-pub fn RenderMeshInstanceGpuQueue::remove(Self, @Milky2018/mgstudio/render.MainEntity, Bool) -> Unit
+pub fn RenderMeshInstanceGpuQueue::push(Self, @sync_world.MainEntity, RenderMeshInstanceGpuBuilder, MeshCullingData?, Bool) -> Unit
+pub fn RenderMeshInstanceGpuQueue::remove(Self, @sync_world.MainEntity, Bool) -> Unit
 pub fn RenderMeshInstanceGpuQueue::removed_len(Self) -> Int
 pub fn RenderMeshInstanceGpuQueue::state(Self) -> RenderMeshInstanceGpuQueueState
 
@@ -2697,13 +2698,13 @@ pub enum RenderMeshInstances {
   GpuBuilding(RenderMeshInstancesGpu)
 }
 pub fn RenderMeshInstances::clear(Self) -> Unit
-pub fn RenderMeshInstances::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
-pub fn RenderMeshInstances::keys(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
+pub fn RenderMeshInstances::insert(Self, @sync_world.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstances::keys(Self) -> Array[@sync_world.MainEntity]
 pub fn RenderMeshInstances::len(Self) -> Int
-pub fn RenderMeshInstances::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
+pub fn RenderMeshInstances::mesh_asset_id(Self, @sync_world.MainEntity) -> Int?
 pub fn RenderMeshInstances::new(use_gpu_instance_buffer_builder? : Bool) -> Self
-pub fn RenderMeshInstances::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
-pub fn RenderMeshInstances::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstances::remove(Self, @sync_world.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstances::render_mesh_queue_data(Self, @sync_world.MainEntity) -> RenderMeshQueueData?
 pub impl @app.Resource for RenderMeshInstances
 
 pub struct RenderMeshInstancesCpu {
@@ -2711,24 +2712,24 @@ pub struct RenderMeshInstancesCpu {
 }
 pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> Self
 pub fn RenderMeshInstancesCpu::clear(Self) -> Unit
-pub fn RenderMeshInstancesCpu::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
-pub fn RenderMeshInstancesCpu::keys(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
+pub fn RenderMeshInstancesCpu::insert(Self, @sync_world.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstancesCpu::keys(Self) -> Array[@sync_world.MainEntity]
 pub fn RenderMeshInstancesCpu::len(Self) -> Int
-pub fn RenderMeshInstancesCpu::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
-pub fn RenderMeshInstancesCpu::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
-pub fn RenderMeshInstancesCpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstancesCpu::mesh_asset_id(Self, @sync_world.MainEntity) -> Int?
+pub fn RenderMeshInstancesCpu::remove(Self, @sync_world.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstancesCpu::render_mesh_queue_data(Self, @sync_world.MainEntity) -> RenderMeshQueueData?
 
 pub struct RenderMeshInstancesGpu {
   entries : Map[UInt64, RenderMeshInstanceGpu]
 }
 pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> Self
 pub fn RenderMeshInstancesGpu::clear(Self) -> Unit
-pub fn RenderMeshInstancesGpu::insert(Self, @Milky2018/mgstudio/render.MainEntity, RenderMeshQueueData) -> Unit
-pub fn RenderMeshInstancesGpu::keys(Self) -> Array[@Milky2018/mgstudio/render.MainEntity]
+pub fn RenderMeshInstancesGpu::insert(Self, @sync_world.MainEntity, RenderMeshQueueData) -> Unit
+pub fn RenderMeshInstancesGpu::keys(Self) -> Array[@sync_world.MainEntity]
 pub fn RenderMeshInstancesGpu::len(Self) -> Int
-pub fn RenderMeshInstancesGpu::mesh_asset_id(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
-pub fn RenderMeshInstancesGpu::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
-pub fn RenderMeshInstancesGpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/render.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstancesGpu::mesh_asset_id(Self, @sync_world.MainEntity) -> Int?
+pub fn RenderMeshInstancesGpu::remove(Self, @sync_world.MainEntity) -> RenderMeshQueueData?
+pub fn RenderMeshInstancesGpu::render_mesh_queue_data(Self, @sync_world.MainEntity) -> RenderMeshQueueData?
 
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
@@ -2750,9 +2751,9 @@ pub struct RenderViewClusteringReadbackData {
   views : Map[UInt64, ViewClusteringReadbackData]
 }
 pub fn RenderViewClusteringReadbackData::RenderViewClusteringReadbackData() -> Self
-pub fn RenderViewClusteringReadbackData::contains_main_entity(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn RenderViewClusteringReadbackData::contains_main_entity(Self, @sync_world.MainEntity) -> Bool
 pub fn RenderViewClusteringReadbackData::len(Self) -> Int
-pub fn RenderViewClusteringReadbackData::view_data(Self, @Milky2018/mgstudio/render.MainEntity) -> ViewClusteringReadbackData?
+pub fn RenderViewClusteringReadbackData::view_data(Self, @sync_world.MainEntity) -> ViewClusteringReadbackData?
 pub impl @app.Resource for RenderViewClusteringReadbackData
 
 pub struct RenderWireframeAssets {
@@ -2772,10 +2773,10 @@ pub struct RenderWireframeInstances {
 }
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> Self
 pub fn RenderWireframeInstances::clear(Self) -> Unit
-pub fn RenderWireframeInstances::get(Self, @Milky2018/mgstudio/render.MainEntity) -> Int?
-pub fn RenderWireframeInstances::insert(Self, @Milky2018/mgstudio/render.MainEntity, Int) -> Unit
+pub fn RenderWireframeInstances::get(Self, @sync_world.MainEntity) -> Int?
+pub fn RenderWireframeInstances::insert(Self, @sync_world.MainEntity, Int) -> Unit
 pub fn RenderWireframeInstances::len(Self) -> Int
-pub fn RenderWireframeInstances::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn RenderWireframeInstances::remove(Self, @sync_world.MainEntity) -> Bool
 pub impl @app.Resource for RenderWireframeInstances
 
 pub struct RenderWireframeMaterial {
@@ -2894,12 +2895,12 @@ pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() ->
 pub fn SpecializedWireframePipelineCache::clear_view(Self, @core.Entity) -> Unit
 pub fn SpecializedWireframePipelineCache::contains_view(Self, @core.Entity) -> Bool
 pub fn SpecializedWireframePipelineCache::expire_stale_views(Self, Map[UInt64, Bool]) -> Unit
-pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframePipelineCache::insert(Self, @core.Entity, @sync_world.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(Self, WireframeWidePipelineCacheKey, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframePipelineCache::len(Self) -> Int
-pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> @render_resource.CachedRenderPipelineId?
-pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @Milky2018/mgstudio/render.MainEntity) -> Int
-pub fn SpecializedWireframePipelineCache::remove_from_view(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn SpecializedWireframePipelineCache::pipeline_id(Self, @core.Entity, @sync_world.MainEntity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedWireframePipelineCache::remove_entity_from_all_views(Self, @sync_world.MainEntity) -> Int
+pub fn SpecializedWireframePipelineCache::remove_from_view(Self, @core.Entity, @sync_world.MainEntity) -> Bool
 pub fn SpecializedWireframePipelineCache::view_or_insert(Self, @core.Entity) -> SpecializedWireframeViewPipelineCache
 pub fn SpecializedWireframePipelineCache::wide_len(Self) -> Int
 pub fn SpecializedWireframePipelineCache::wide_pipeline_id(Self, WireframeWidePipelineCacheKey) -> @render_resource.CachedRenderPipelineId?
@@ -2910,10 +2911,10 @@ pub struct SpecializedWireframeViewPipelineCache {
 }
 pub fn SpecializedWireframeViewPipelineCache::SpecializedWireframeViewPipelineCache() -> Self
 pub fn SpecializedWireframeViewPipelineCache::clear(Self) -> Unit
-pub fn SpecializedWireframeViewPipelineCache::get(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_resource.CachedRenderPipelineId?
-pub fn SpecializedWireframeViewPipelineCache::insert(Self, @Milky2018/mgstudio/render.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
+pub fn SpecializedWireframeViewPipelineCache::get(Self, @sync_world.MainEntity) -> @render_resource.CachedRenderPipelineId?
+pub fn SpecializedWireframeViewPipelineCache::insert(Self, @sync_world.MainEntity, @render_resource.CachedRenderPipelineId) -> Unit
 pub fn SpecializedWireframeViewPipelineCache::len(Self) -> Int
-pub fn SpecializedWireframeViewPipelineCache::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Bool
+pub fn SpecializedWireframeViewPipelineCache::remove(Self, @sync_world.MainEntity) -> Bool
 
 pub struct StandardMaterialKey {
   bits : UInt64
@@ -3158,15 +3159,15 @@ pub struct ViewKeyCacheEntry {
 } derive(Eq)
 
 pub struct ViewPendingWireframeQueues {
-  mut current_frame : @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
-  mut prev_frame : @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
+  mut current_frame : @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]
+  mut prev_frame : @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]
 }
 pub fn ViewPendingWireframeQueues::ViewPendingWireframeQueues() -> Self
 pub fn ViewPendingWireframeQueues::current_len(Self) -> Int
 pub fn ViewPendingWireframeQueues::prepare_for_new_frame(Self) -> Unit
-pub fn ViewPendingWireframeQueues::prev_frame(Self) -> @hashset.HashSet[(@core.Entity, @Milky2018/mgstudio/render.MainEntity)]
+pub fn ViewPendingWireframeQueues::prev_frame(Self) -> @hashset.HashSet[(@core.Entity, @sync_world.MainEntity)]
 pub fn ViewPendingWireframeQueues::prev_len(Self) -> Int
-pub fn ViewPendingWireframeQueues::push_current(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn ViewPendingWireframeQueues::push_current(Self, @core.Entity, @sync_world.MainEntity) -> Unit
 
 pub struct Wireframe {
 } derive(ToJson, @json.FromJson)
@@ -3177,7 +3178,7 @@ pub struct Wireframe3d {
   batch_set_key : Wireframe3dBatchSetKey
   bin_key : Wireframe3dBinKey
   render_entity : @core.Entity
-  main_entity : @Milky2018/mgstudio/render.MainEntity
+  main_entity : @sync_world.MainEntity
   batch_range : @render_phase.PhaseItemBatchRange
   extra_index : @render_phase.PhaseItemExtraIndex
 }
@@ -3188,8 +3189,8 @@ pub fn Wireframe3d::cached_pipeline(Self) -> @render_resource.CachedRenderPipeli
 pub fn Wireframe3d::draw_function(Self) -> @material.DrawFunctionId
 pub fn Wireframe3d::entity(Self) -> @core.Entity
 pub fn Wireframe3d::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
-pub fn Wireframe3d::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
-pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
+pub fn Wireframe3d::main_entity(Self) -> @sync_world.MainEntity
+pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @sync_world.MainEntity, @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
 
 pub struct Wireframe3dBatchSetKey {
   pipeline : @render_resource.CachedRenderPipelineId
@@ -3227,12 +3228,12 @@ pub struct Wireframe3dPhases {
   views : Map[UInt64, Wireframe3dViewPhase]
 }
 pub fn Wireframe3dPhases::Wireframe3dPhases() -> Self
-pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
+pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @sync_world.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dPhases::contains(Self, @core.Entity) -> Bool
 pub fn Wireframe3dPhases::len(Self) -> Int
 pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
 pub fn Wireframe3dPhases::prepare_for_new_frame(Self, @core.Entity, @batching.GpuPreprocessingMode) -> Unit
-pub fn Wireframe3dPhases::remove(Self, @core.Entity, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn Wireframe3dPhases::remove(Self, @core.Entity, @sync_world.MainEntity) -> Unit
 pub fn Wireframe3dPhases::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
 pub fn Wireframe3dPhases::retained_view_entities(Self) -> Array[@core.Entity]
 pub impl @app.Resource for Wireframe3dPhases
@@ -3312,7 +3313,7 @@ pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
 pub(all) struct Wireframe3dUnbatchableBinnedEntities {
   batch_set_key : Wireframe3dBatchSetKey
   bin_key : Wireframe3dBinKey
-  mut entities : Array[(@Milky2018/mgstudio/render.MainEntity, @core.Entity)]
+  mut entities : Array[(@sync_world.MainEntity, @core.Entity)]
   buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
 }
 
@@ -3323,16 +3324,16 @@ pub struct Wireframe3dViewPhase {
   input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
   phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
-pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
+pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @sync_world.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
-pub fn Wireframe3dViewPhase::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.InputUniformIndex?
+pub fn Wireframe3dViewPhase::input_uniform_index(Self, @sync_world.MainEntity) -> @render_phase.InputUniformIndex?
 pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
 pub fn Wireframe3dViewPhase::items(Self) -> Array[Wireframe3d]
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
-pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.BinnedRenderPhaseType?
+pub fn Wireframe3dViewPhase::phase_type(Self, @sync_world.MainEntity) -> @render_phase.BinnedRenderPhaseType?
 pub fn Wireframe3dViewPhase::prepare_for_new_frame(Self) -> Unit
-pub fn Wireframe3dViewPhase::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn Wireframe3dViewPhase::remove(Self, @sync_world.MainEntity) -> Unit
 pub fn Wireframe3dViewPhase::unbatchable_bin_count(Self) -> Int
 
 pub struct Wireframe3dWideImmediates {

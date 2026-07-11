@@ -9,9 +9,9 @@ import {
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/sync_world",
   "moonbitlang/core/debug",
 }
 
@@ -116,8 +116,8 @@ pub impl @app.Plugin for VolumetricFogPlugin
 pub struct VolumetricFogRenderWorldEntity {
   // private fields
 }
-pub fn VolumetricFogRenderWorldEntity::main_entity(Self) -> @render.MainEntity
-pub fn VolumetricFogRenderWorldEntity::new(@core.Entity, @render.MainEntity) -> Self
+pub fn VolumetricFogRenderWorldEntity::main_entity(Self) -> @sync_world.MainEntity
+pub fn VolumetricFogRenderWorldEntity::new(@core.Entity, @sync_world.MainEntity) -> Self
 pub fn VolumetricFogRenderWorldEntity::render_entity(Self) -> @core.Entity
 
 pub struct VolumetricFogRenderWorldStorageCounts {

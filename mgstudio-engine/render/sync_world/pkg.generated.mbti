@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/render/sync_world"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity]
+
+// Errors
+
+// Types and methods
+pub struct MainEntity {
+  entity : @core.Entity
+} derive(Eq, Hash, @debug.Debug)
+pub fn MainEntity::id(Self) -> @core.Entity
+pub fn MainEntity::new(@core.Entity) -> Self
+pub impl @ecs.Component for MainEntity
+
+// Type aliases
+
+// Traits
+
