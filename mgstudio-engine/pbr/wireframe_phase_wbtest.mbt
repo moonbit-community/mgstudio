@@ -18,25 +18,13 @@ fn wireframe_test_main_entity(entity : @core.Entity) -> @render.MainEntity {
 }
 
 ///|
-fn wireframe_phase_test_descriptor() -> @material.RenderPipelineDescriptor {
-  @material.RenderPipelineDescriptor::RenderPipelineDescriptor()
-  .with_vertex(
-    @material.VertexState::new(Some("base.wgsl"), [], Some("vertex"), [
-      @mesh.VertexBufferLayout::new(
-        array_stride=12,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[],
-      ),
-    ]),
-  )
-  .with_fragment(
-    Some(
-      @material.FragmentState::new(Some("base.wgsl"), [], Some("fragment"), [
-        Some(@material.ColorTargetState::new(1U, 0xffffffffffffffffUL)),
-      ]),
-    ),
-  )
-  .with_depth_stencil(Some(@material.DepthStencilState::DepthStencilState()))
+fn wireframe_phase_test_render_mesh_assets(
+  mesh_asset_id : Int,
+  render_mesh : @render_mesh.RenderMesh,
+) -> @render_mesh.RenderMeshAssets {
+  let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
+  render_meshes.insert(mesh_asset_id, render_mesh)
+  render_meshes
 }
 
 ///|
@@ -301,15 +289,55 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
     RenderMeshInstances::new(),
-    {},
+    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    0UL,
     @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
     @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
+    MeshPipeline::new(),
     @render_resource.PipelineCache::new(),
   )
 
   debug_inspect(cache.pipeline_id(view, main_entity) is None, content="true")
   debug_inspect(pending.current_len(), content="1")
+}
+
+///|
+test "pbr: wireframe mesh key comes from shared RenderMesh topology and index format" {
+  let topology_key = @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+    @mesh.Mesh3dPrimitiveTopology::LineStrip,
+    Some(@mesh.Mesh3dIndexFormat::Uint16),
+  )
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=3,
+    indexed=true,
+    index_count=3,
+    index_format=@render_mesh.RenderMeshIndexFormat::Uint16,
+    key_bits=@mesh.BaseMeshPipelineKey::new(
+      topology_key.bits() | @mesh.BaseMeshPipelineKey::morph_targets().bits(),
+    ),
+  )
+  let key = wireframe_mesh_key_for_instance(
+    4UL,
+    render_mesh,
+    RenderMeshInstanceFlags::empty(),
+    visibility_range_dither=true,
+    lightmapped=true,
+  )
+  debug_inspect(
+    key.bits() ==
+    (
+      4UL |
+      topology_key.bits() |
+      MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER |
+      MESH_PIPELINE_KEY_LIGHTMAPPED
+    ),
+    content="true",
+  )
+  debug_inspect(
+    key.bits() & @mesh.BaseMeshPipelineKey::morph_targets().bits(),
+    content="0",
+  )
 }
 
 ///|
@@ -339,15 +367,9 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     second_main_entity,
     RenderMeshQueueData::new(33, 2U, true),
   )
-  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=3)
-  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
-  pipeline_data.set(
+  let render_meshes = wireframe_phase_test_render_mesh_assets(
     33,
-    wireframe_mesh_pipeline_data_for_render_mesh(
-      render_mesh,
-      wireframe_phase_test_descriptor(),
-      view_key_bits=0UL,
-    ),
+    @render_mesh.RenderMesh::new(vertex_count=3),
   )
   let pipeline_cache = @render_resource.PipelineCache::new()
 
@@ -361,10 +383,12 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
     render_mesh_instances,
-    pipeline_data,
+    render_meshes,
+    0UL,
     @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
     @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
+    MeshPipeline::new(),
     pipeline_cache,
   )
 
@@ -419,15 +443,9 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
       flags=RenderMeshInstanceFlags::has_previous_morph(),
     ),
   )
-  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=3)
-  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
-  pipeline_data.set(
+  let render_meshes = wireframe_phase_test_render_mesh_assets(
     33,
-    wireframe_mesh_pipeline_data_for_render_mesh(
-      render_mesh,
-      wireframe_phase_test_descriptor(),
-      view_key_bits=MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS,
-    ),
+    @render_mesh.RenderMesh::new(vertex_count=3),
   )
   let pipeline_cache = @render_resource.PipelineCache::new()
 
@@ -441,10 +459,12 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
     render_mesh_instances,
-    pipeline_data,
+    render_meshes,
+    MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS,
     @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
     @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
+    MeshPipeline::new(),
     pipeline_cache,
   )
 
@@ -489,14 +509,9 @@ test "pbr: specialize wireframes derives dither and lightmap keys from render re
     lightmapped_main_entity,
     RenderMeshQueueData::new(33, 2U, true),
   )
-  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
-  pipeline_data.set(
+  let render_meshes = wireframe_phase_test_render_mesh_assets(
     33,
-    wireframe_mesh_pipeline_data_for_render_mesh(
-      @render_mesh.RenderMesh::new(vertex_count=3),
-      wireframe_phase_test_descriptor(),
-      view_key_bits=0UL,
-    ),
+    @render_mesh.RenderMesh::new(vertex_count=3),
   )
   let render_visibility_ranges = @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges()
   render_visibility_ranges.insert(
@@ -522,10 +537,12 @@ test "pbr: specialize wireframes derives dither and lightmap keys from render re
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     {},
     render_mesh_instances,
-    pipeline_data,
+    render_meshes,
+    0UL,
     render_visibility_ranges,
     render_lightmaps,
     Wireframe3dPipeline::new(),
+    MeshPipeline::new(),
     pipeline_cache,
   )
 
@@ -542,7 +559,7 @@ test "pbr: specialize wireframes derives dither and lightmap keys from render re
 }
 
 ///|
-test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" {
+test "pbr: specialize wireframes uses Bevy wide cache key with shared mesh pipeline" {
   let view = @core.Entity::new(10, 1)
   let render_entity = @core.Entity::new(20, 1)
   let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
@@ -565,15 +582,9 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
     main_entity,
     RenderMeshQueueData::new(33, 1U, true),
   )
-  let render_mesh = @render_mesh.RenderMesh::new(vertex_count=3)
-  let pipeline_data : Map[Int, WireframeRenderMeshPipelineData] = {}
-  pipeline_data.set(
+  let render_meshes = wireframe_phase_test_render_mesh_assets(
     33,
-    wireframe_mesh_pipeline_data_for_render_mesh(
-      render_mesh,
-      @material.RenderPipelineDescriptor::RenderPipelineDescriptor(),
-      view_key_bits=0UL,
-    ),
+    @render_mesh.RenderMesh::new(vertex_count=3),
   )
 
   specialize_wireframe_phase_items(
@@ -586,10 +597,12 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
     materials,
     render_mesh_instances,
-    pipeline_data,
+    render_meshes,
+    0UL,
     @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
     @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
+    MeshPipeline::new(),
     @render_resource.PipelineCache::new(),
   )
 
@@ -597,7 +610,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key and invalid fallback" 
   debug_inspect(cache.wide_len(), content="1")
   debug_inspect(
     cache.pipeline_id(view, main_entity).map(fn(id) { id.id() }),
-    content="Some(18446744073709551615)",
+    content="Some(0)",
   )
 }
 
@@ -1503,20 +1516,14 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     RenderMeshQueueData::new(33, 9U, true),
   )
   world.insert_resource(RenderMeshInstances::resource(), render_mesh_instances)
-  let pipeline_data_cache = WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache()
-  pipeline_data_cache.insert(
-    view,
-    33,
-    wireframe_mesh_pipeline_data_for_render_mesh(
+  world.insert_resource(
+    @render_mesh.RenderMeshAssets::resource(),
+    wireframe_phase_test_render_mesh_assets(
+      33,
       @render_mesh.RenderMesh::new(vertex_count=3),
-      wireframe_phase_test_descriptor(),
-      view_key_bits=0UL,
     ),
   )
-  world.insert_resource(
-    WireframeRenderMeshPipelineDataCache::resource(),
-    pipeline_data_cache,
-  )
+  world.insert_resource(MeshPipeline::resource(), MeshPipeline::new())
   world.insert_resource(
     Wireframe3dPipeline::resource(),
     Wireframe3dPipeline::new(),

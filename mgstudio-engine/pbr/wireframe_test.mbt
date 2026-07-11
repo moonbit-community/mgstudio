@@ -407,11 +407,6 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     content="true",
   )
   debug_inspect(
-    render_world.get_resource(WireframeRenderMeshPipelineDataCache::resource())
-    is Some(_),
-    content="true",
-  )
-  debug_inspect(
     render_world.get_resource(@render_mesh.MeshAllocator::resource()) is None,
     content="true",
   )

@@ -1688,36 +1688,18 @@ pub fn WireframeViewKeyCache::retain_live_views(
 }
 
 ///|
-pub struct WireframeRenderMeshPipelineData {
-  mesh_key : @material.ErasedMeshPipelineKey
-  mesh_layout : @material.MaterialMeshVertexLayout
-  base_descriptor : @material.RenderPipelineDescriptor
-}
-
-///|
-pub fn WireframeRenderMeshPipelineData::new(
-  mesh_key : @material.ErasedMeshPipelineKey,
-  mesh_layout : @material.MaterialMeshVertexLayout,
-  base_descriptor : @material.RenderPipelineDescriptor,
-) -> WireframeRenderMeshPipelineData {
-  WireframeRenderMeshPipelineData::{ mesh_key, mesh_layout, base_descriptor }
-}
-
-///|
-pub fn WireframeRenderMeshPipelineData::mesh_key(
-  self : WireframeRenderMeshPipelineData,
-) -> @material.ErasedMeshPipelineKey {
-  self.mesh_key
-}
-
-///|
-pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(
-  self : WireframeRenderMeshPipelineData,
+fn wireframe_mesh_key_for_instance(
+  view_key_bits : UInt64,
+  render_mesh : @render_mesh.RenderMesh,
   flags : RenderMeshInstanceFlags,
   visibility_range_dither? : Bool = false,
   lightmapped? : Bool = false,
 ) -> @material.ErasedMeshPipelineKey {
-  let mut mesh_key_bits = self.mesh_key.bits()
+  let mut mesh_key_bits = view_key_bits |
+    @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
+      render_mesh.primitive_topology(),
+      render_mesh.index_format(),
+    ).bits()
   if visibility_range_dither {
     mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER
   }
@@ -1732,129 +1714,7 @@ pub fn WireframeRenderMeshPipelineData::mesh_key_for_instance(
       mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_HAS_PREVIOUS_MORPH
     }
   }
-  @material.ErasedMeshPipelineKey::new(mesh_key_bits, self.mesh_key.type_tag())
-}
-
-///|
-pub fn WireframeRenderMeshPipelineData::mesh_layout(
-  self : WireframeRenderMeshPipelineData,
-) -> @material.MaterialMeshVertexLayout {
-  self.mesh_layout
-}
-
-///|
-pub fn WireframeRenderMeshPipelineData::base_descriptor(
-  self : WireframeRenderMeshPipelineData,
-) -> @material.RenderPipelineDescriptor {
-  self.base_descriptor
-}
-
-///|
-pub fn wireframe_mesh_pipeline_data_for_render_mesh(
-  render_mesh : @render_mesh.RenderMesh,
-  base_descriptor : @material.RenderPipelineDescriptor,
-  view_key_bits~ : UInt64,
-  visibility_range_dither? : Bool = false,
-  lightmapped? : Bool = false,
-) -> WireframeRenderMeshPipelineData {
-  let mut mesh_key_bits = view_key_bits | render_mesh.key_bits().bits()
-  if visibility_range_dither {
-    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_VISIBILITY_RANGE_DITHER
-  }
-  if lightmapped {
-    mesh_key_bits = mesh_key_bits | MESH_PIPELINE_KEY_LIGHTMAPPED
-  }
-  WireframeRenderMeshPipelineData::new(
-    @material.ErasedMeshPipelineKey::new(mesh_key_bits, "MeshPipelineKey"),
-    render_mesh.layout(),
-    base_descriptor,
-  )
-}
-
-///|
-pub struct WireframeRenderMeshPipelineDataCache {
-  views : Map[UInt64, Map[Int, WireframeRenderMeshPipelineData]]
-}
-
-///|
-pub fn WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache() -> WireframeRenderMeshPipelineDataCache {
-  WireframeRenderMeshPipelineDataCache::{ views: {} }
-}
-
-///|
-pub let ecs_key_wireframe_render_mesh_pipeline_data_cache : @ecs.ResourceKey[
-  WireframeRenderMeshPipelineDataCache,
-] = @ecs.register_resource(
-  debug_name="mgstudio_pbr::RenderAssets<RenderMesh>::WireframePipelineData",
-)
-
-///|
-pub impl @app.Resource for WireframeRenderMeshPipelineDataCache with fn resource() {
-  ecs_key_wireframe_render_mesh_pipeline_data_cache
-}
-
-///|
-fn WireframeRenderMeshPipelineDataCache::view_or_insert(
-  self : WireframeRenderMeshPipelineDataCache,
-  retained_view_entity : @core.Entity,
-) -> Map[Int, WireframeRenderMeshPipelineData] {
-  let view_bits = retained_view_entity.to_bits()
-  match self.views.get(view_bits) {
-    Some(entries) => entries
-    None => {
-      let entries : Map[Int, WireframeRenderMeshPipelineData] = {}
-      self.views.set(view_bits, entries)
-      entries
-    }
-  }
-}
-
-///|
-pub fn WireframeRenderMeshPipelineDataCache::insert(
-  self : WireframeRenderMeshPipelineDataCache,
-  retained_view_entity : @core.Entity,
-  mesh_asset_id : Int,
-  data : WireframeRenderMeshPipelineData,
-) -> Unit {
-  self.view_or_insert(retained_view_entity).set(mesh_asset_id, data)
-}
-
-///|
-pub fn WireframeRenderMeshPipelineDataCache::view_data(
-  self : WireframeRenderMeshPipelineDataCache,
-  retained_view_entity : @core.Entity,
-) -> Map[Int, WireframeRenderMeshPipelineData] {
-  match self.views.get(retained_view_entity.to_bits()) {
-    Some(entries) => entries
-    None => {}
-  }
-}
-
-///|
-pub fn WireframeRenderMeshPipelineDataCache::len(
-  self : WireframeRenderMeshPipelineDataCache,
-) -> Int {
-  let mut count = 0
-  for _, entries in self.views {
-    count = count + entries.length()
-  }
-  count
-}
-
-///|
-pub fn WireframeRenderMeshPipelineDataCache::retain_live_views(
-  self : WireframeRenderMeshPipelineDataCache,
-  live_views : Map[UInt64, Bool],
-) -> Unit {
-  let stale : Array[UInt64] = []
-  for view_bits, _entries in self.views {
-    if !live_views.contains(view_bits) {
-      stale.push(view_bits)
-    }
-  }
-  for view_bits in stale {
-    self.views.remove(view_bits)
-  }
+  @material.ErasedMeshPipelineKey::new(mesh_key_bits, "MeshPipelineKey")
 }
 
 ///|
@@ -1863,24 +1723,27 @@ fn specialize_wireframe_pipeline_id(
   specialized_wireframe_mesh_pipelines : SpecializedWireframeMeshPipelines,
   pipeline_cache : @render_resource.PipelineCache,
   pipeline : Wireframe3dPipeline,
-  pipeline_data : WireframeRenderMeshPipelineData,
+  mesh_pipeline : MeshPipeline,
+  view_key_bits : UInt64,
+  render_mesh : @render_mesh.RenderMesh,
   mesh_instance : RenderMeshQueueData,
   material : RenderWireframeMaterial?,
   visibility_range_dither~ : Bool,
   lightmapped~ : Bool,
 ) -> @material.CachedRenderPipelineId? {
-  let wireframe_key = WireframePipelineKey::from_material(
-    pipeline_data.mesh_key_for_instance(
-      mesh_instance.flags(),
-      visibility_range_dither~,
-      lightmapped~,
-    ),
-    material,
+  let mesh_key = wireframe_mesh_key_for_instance(
+    view_key_bits,
+    render_mesh,
+    mesh_instance.flags(),
+    visibility_range_dither~,
+    lightmapped~,
   )
+  let wireframe_key = WireframePipelineKey::from_material(mesh_key, material)
+  let mesh_layout = render_mesh.layout()
   if wireframe_key.wide() {
     let wide_key = WireframeWidePipelineCacheKey::new(
       wireframe_key.mesh_key(),
-      pipeline_data.mesh_layout(),
+      mesh_layout,
       wireframe_key.quads(),
       wireframe_key.line_mode(),
     )
@@ -1888,7 +1751,10 @@ fn specialize_wireframe_pipeline_id(
       Some(pipeline_id) => Some(pipeline_id)
       None => {
         let descriptor = Some(
-          pipeline.specialize(wireframe_key, pipeline_data.base_descriptor()),
+          pipeline.specialize(
+            wireframe_key,
+            mesh_pipeline.specialize(mesh_key, mesh_layout),
+          ),
         ) catch {
           _ => None
         }
@@ -1903,15 +1769,15 @@ fn specialize_wireframe_pipeline_id(
       }
     }
   } else {
-    let thin_key = WireframePipelineCacheKey::new(
-      wireframe_key,
-      pipeline_data.mesh_layout(),
-    )
+    let thin_key = WireframePipelineCacheKey::new(wireframe_key, mesh_layout)
     match specialized_wireframe_mesh_pipelines.pipeline_id(thin_key) {
       Some(pipeline_id) => Some(pipeline_id)
       None => {
         let descriptor = Some(
-          pipeline.specialize(wireframe_key, pipeline_data.base_descriptor()),
+          pipeline.specialize(
+            wireframe_key,
+            mesh_pipeline.specialize(mesh_key, mesh_layout),
+          ),
         ) catch {
           _ => None
         }
@@ -1935,10 +1801,12 @@ pub fn specialize_wireframe_phase_items(
   dirty_wireframe_specializations : DirtyWireframeSpecializations,
   render_wireframe_assets : Map[Int, RenderWireframeMaterial],
   render_mesh_instances : RenderMeshInstances,
-  render_mesh_pipeline_data : Map[Int, WireframeRenderMeshPipelineData],
+  render_meshes : @render_mesh.RenderMeshAssets,
+  view_key_bits : UInt64,
   render_visibility_ranges : @render_visibility.RenderVisibilityRanges,
   render_lightmaps : @lightmap.RenderLightmaps,
   pipeline : Wireframe3dPipeline,
+  mesh_pipeline : MeshPipeline,
   pipeline_cache : @render_resource.PipelineCache,
 ) -> Unit {
   despecialize_wireframe_view_cache(
@@ -1967,8 +1835,7 @@ pub fn specialize_wireframe_phase_items(
       view_pending_wireframe_queues.push_current(render_entity, visible_entity)
       continue
     }
-    guard render_mesh_pipeline_data.get(mesh_instance.mesh_asset_id())
-      is Some(pipeline_data) else {
+    guard render_meshes.get(mesh_instance.mesh_asset_id()) is Some(render_mesh) else {
       continue
     }
     let material = render_wireframe_assets.get(wireframe_asset_id)
@@ -1981,7 +1848,9 @@ pub fn specialize_wireframe_phase_items(
         specialized_wireframe_mesh_pipelines,
         pipeline_cache,
         pipeline,
-        pipeline_data,
+        mesh_pipeline,
+        view_key_bits,
+        render_mesh,
         mesh_instance,
         material,
         visibility_range_dither~,

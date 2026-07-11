@@ -321,6 +321,7 @@ pub fn RenderMesh::buffer_info(Self) -> RenderMeshBufferInfo
 pub fn RenderMesh::dimension(Self) -> RenderMeshDimension
 pub fn RenderMesh::from_mesh(@Milky2018/mgstudio/mesh.Mesh, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts, dimension? : RenderMeshDimension) -> Self
 pub fn RenderMesh::host_vertex_buffer_layout(Self, @Milky2018/mgstudio/mesh.MeshVertexBufferLayouts) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef
+pub fn RenderMesh::index_format(Self) -> @Milky2018/mgstudio/mesh.Mesh3dIndexFormat?
 pub fn RenderMesh::indexed(Self) -> Bool
 pub fn RenderMesh::key_bits(Self) -> @Milky2018/mgstudio/mesh.BaseMeshPipelineKey
 pub fn RenderMesh::layout(Self) -> @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef

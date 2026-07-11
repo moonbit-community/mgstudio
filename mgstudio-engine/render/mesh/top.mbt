@@ -358,6 +358,17 @@ pub fn RenderMesh::buffer_info(self : RenderMesh) -> RenderMeshBufferInfo {
 }
 
 ///|
+pub fn RenderMesh::index_format(
+  self : RenderMesh,
+) -> @asset_mesh.Mesh3dIndexFormat? {
+  match self.buffer_info {
+    Indexed(_, Uint16) => Some(@asset_mesh.Mesh3dIndexFormat::Uint16)
+    Indexed(_, Uint32) => Some(@asset_mesh.Mesh3dIndexFormat::Uint32)
+    NonIndexed => None
+  }
+}
+
+///|
 pub fn RenderMesh::wireframe_index_count(self : RenderMesh) -> Int {
   match self.buffer_info {
     Indexed(count, _) => count

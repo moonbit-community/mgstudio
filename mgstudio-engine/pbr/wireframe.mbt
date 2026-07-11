@@ -1413,12 +1413,12 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
         "missing RenderMeshInstances resource during pbr wireframe specialization",
       )
   }
-  let render_mesh_pipeline_data_cache = match
-    world.get_resource(WireframeRenderMeshPipelineDataCache::resource()) {
+  let render_meshes = match
+    world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
     Some(value) => value
     None =>
       abort(
-        "missing WireframeRenderMeshPipelineDataCache resource during pbr wireframe specialization",
+        "missing RenderMeshAssets resource during pbr wireframe specialization",
       )
   }
   let render_visibility_ranges = match
@@ -1443,6 +1443,11 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
       abort(
         "missing Wireframe3dPipeline resource during pbr wireframe specialization",
       )
+  }
+  let mesh_pipeline = match world.get_resource(MeshPipeline::resource()) {
+    Some(value) => value
+    None =>
+      abort("missing MeshPipeline resource during pbr wireframe specialization")
   }
   let pipeline_cache = match
     world.get_resource(@render.pipeline_cache_resource_key) {
@@ -1472,7 +1477,9 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
     )
     live_views.set(retained_view_entity.to_bits(), true)
     guard phases.contains(retained_view_entity) else { return }
-    guard view_key_cache.get(retained_view_entity) is Some(_) else { return }
+    guard view_key_cache.get(retained_view_entity) is Some(view_key_bits) else {
+      return
+    }
     guard visible_entities.value().get(mesh_visibility_class)
       is Some(render_visible_mesh_entities) else {
       return
@@ -1490,17 +1497,18 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
       dirty_wireframe_specializations,
       render_wireframe_assets.as_map(),
       render_mesh_instances,
-      render_mesh_pipeline_data_cache.view_data(retained_view_entity),
+      render_meshes,
+      view_key_bits,
       render_visibility_ranges,
       render_lightmaps,
       pipeline,
+      mesh_pipeline,
       pipeline_cache,
     )
   })
   pending_wireframe_queues.expire_stale_views(live_views)
   specialized_wireframe_pipeline_cache.expire_stale_views(live_views)
   view_key_cache.retain_live_views(live_views)
-  render_mesh_pipeline_data_cache.retain_live_views(live_views)
 }
 
 ///|
@@ -1948,13 +1956,6 @@ fn configure_wireframe_render_sub_app(
     world,
     WireframeViewKeyCache::resource(),
     fn() { WireframeViewKeyCache::WireframeViewKeyCache() },
-  )
-  wireframe_init_render_resource_if_missing(
-    world,
-    WireframeRenderMeshPipelineDataCache::resource(),
-    fn() {
-      WireframeRenderMeshPipelineDataCache::WireframeRenderMeshPipelineDataCache()
-    },
   )
   let stage = @render.render_schedule_stage()
   let extract_stage = @render.render_extract_schedule_stage()
