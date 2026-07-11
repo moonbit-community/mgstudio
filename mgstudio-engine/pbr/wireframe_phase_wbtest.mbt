@@ -394,7 +394,15 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
 
   debug_inspect(pipelines.len(), content="1")
   debug_inspect(cache.wide_len(), content="0")
-  debug_inspect(pipeline_cache.queued_pipeline_count(), content="1")
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="0")
+  debug_inspect(
+    pipeline_cache
+    .get_render_pipeline_descriptor(
+      cache.pipeline_id(view, first_main_entity).unwrap(),
+    )
+    .label(),
+    content="Some(\"wireframe_3d_pipeline\")",
+  )
   debug_inspect(
     cache.pipeline_id(view, first_main_entity).map(fn(id) { id.id() }),
     content="Some(0)",
@@ -469,7 +477,7 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
   )
 
   debug_inspect(pipelines.len(), content="2")
-  debug_inspect(pipeline_cache.queued_pipeline_count(), content="2")
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="0")
   debug_inspect(
     cache.pipeline_id(view, first_main_entity).map(fn(id) { id.id() }),
     content="Some(0)",
@@ -547,7 +555,7 @@ test "pbr: specialize wireframes derives dither and lightmap keys from render re
   )
 
   debug_inspect(pipelines.len(), content="2")
-  debug_inspect(pipeline_cache.queued_pipeline_count(), content="2")
+  debug_inspect(pipeline_cache.queued_pipeline_count(), content="0")
   debug_inspect(
     cache.pipeline_id(view, dither_main_entity).map(fn(id) { id.id() }),
     content="Some(0)",
@@ -587,6 +595,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key with shared mesh pipel
     @render_mesh.RenderMesh::new(vertex_count=3),
   )
 
+  let pipeline_cache = @render_resource.PipelineCache::new()
   specialize_wireframe_phase_items(
     view,
     visible,
@@ -603,11 +612,19 @@ test "pbr: specialize wireframes uses Bevy wide cache key with shared mesh pipel
     @lightmap.RenderLightmaps::RenderLightmaps(),
     Wireframe3dPipeline::new(),
     MeshPipeline::new(),
-    @render_resource.PipelineCache::new(),
+    pipeline_cache,
   )
 
   debug_inspect(pipelines.len(), content="0")
   debug_inspect(cache.wide_len(), content="1")
+  debug_inspect(
+    pipeline_cache
+    .get_render_pipeline_descriptor(
+      cache.pipeline_id(view, main_entity).unwrap(),
+    )
+    .label(),
+    content="Some(\"wireframe_3d_wide_pipeline\")",
+  )
   debug_inspect(
     cache.pipeline_id(view, main_entity).map(fn(id) { id.id() }),
     content="Some(0)",

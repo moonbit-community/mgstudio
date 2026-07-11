@@ -1718,6 +1718,21 @@ fn wireframe_mesh_key_for_instance(
 }
 
 ///|
+fn register_wireframe_pipeline_descriptor_for_same_frame_draw(
+  pipeline_cache : @render_resource.PipelineCache,
+  pipeline_id : @material.CachedRenderPipelineId,
+) -> Unit {
+  pipeline_cache.process_queue()
+  let descriptor = pipeline_cache.get_render_pipeline_descriptor(pipeline_id) catch {
+    _ => return
+  }
+  @render.host_gpu_register_mesh3d_material_pipeline_descriptor(
+    material_pipeline_id=pipeline_id.id(),
+    descriptor~,
+  )
+}
+
+///|
 fn specialize_wireframe_pipeline_id(
   specialized_wireframe_pipeline_cache : SpecializedWireframePipelineCache,
   specialized_wireframe_mesh_pipelines : SpecializedWireframeMeshPipelines,
@@ -1762,6 +1777,11 @@ fn specialize_wireframe_pipeline_id(
           Some(value) => pipeline_cache.queue_render_pipeline(value)
           None => @material.CachedRenderPipelineId::invalid()
         }
+        if pipeline_id.id() != @material.CachedRenderPipelineId::invalid().id() {
+          register_wireframe_pipeline_descriptor_for_same_frame_draw(
+            pipeline_cache, pipeline_id,
+          )
+        }
         specialized_wireframe_pipeline_cache.insert_wide_pipeline(
           wide_key, pipeline_id,
         )
@@ -1783,6 +1803,9 @@ fn specialize_wireframe_pipeline_id(
         }
         guard descriptor is Some(value) else { return None }
         let pipeline_id = pipeline_cache.queue_render_pipeline(value)
+        register_wireframe_pipeline_descriptor_for_same_frame_draw(
+          pipeline_cache, pipeline_id,
+        )
         specialized_wireframe_mesh_pipelines.insert(thin_key, pipeline_id)
         Some(pipeline_id)
       }
