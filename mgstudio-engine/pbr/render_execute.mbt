@@ -1528,60 +1528,10 @@ pub type Render3dShadowUnbatchableBinnedEntityIndexSetKind = @render_phase.Unbat
 pub type Render3dShadowMultidrawableBin = @render_phase.RenderMultidrawableBin
 
 ///|
-pub(all) struct Render3dShadowGpuRenderBinnedMeshInstance {
-  input_uniform_index : UInt
-  bin_index : Int
-} derive(Eq, Debug)
+pub type Render3dShadowGpuRenderBinnedMeshInstance = @render_phase.GpuRenderBinnedMeshInstance
 
 ///|
-pub fn Render3dShadowGpuRenderBinnedMeshInstance::new(
-  input_uniform_index : UInt,
-  bin_index : Int,
-) -> Render3dShadowGpuRenderBinnedMeshInstance {
-  Render3dShadowGpuRenderBinnedMeshInstance::{ input_uniform_index, bin_index }
-}
-
-///|
-pub fn Render3dShadowGpuRenderBinnedMeshInstance::input_uniform_index(
-  self : Render3dShadowGpuRenderBinnedMeshInstance,
-) -> UInt {
-  self.input_uniform_index
-}
-
-///|
-pub fn Render3dShadowGpuRenderBinnedMeshInstance::bin_index(
-  self : Render3dShadowGpuRenderBinnedMeshInstance,
-) -> Int {
-  self.bin_index
-}
-
-///|
-pub(all) struct Render3dShadowCpuRenderBinnedMeshInstance {
-  main_entity : @render.MainEntity
-  bin_index : Int
-} derive(Eq, Debug)
-
-///|
-pub fn Render3dShadowCpuRenderBinnedMeshInstance::new(
-  main_entity : @render.MainEntity,
-  bin_index : Int,
-) -> Render3dShadowCpuRenderBinnedMeshInstance {
-  Render3dShadowCpuRenderBinnedMeshInstance::{ main_entity, bin_index }
-}
-
-///|
-pub fn Render3dShadowCpuRenderBinnedMeshInstance::main_entity(
-  self : Render3dShadowCpuRenderBinnedMeshInstance,
-) -> @render.MainEntity {
-  self.main_entity
-}
-
-///|
-pub fn Render3dShadowCpuRenderBinnedMeshInstance::bin_index(
-  self : Render3dShadowCpuRenderBinnedMeshInstance,
-) -> Int {
-  self.bin_index
-}
+pub type Render3dShadowCpuRenderBinnedMeshInstance = @render_phase.CpuRenderBinnedMeshInstance
 
 ///|
 pub(all) struct Render3dShadowBinnedRenderPhaseBatchData {
@@ -1711,13 +1661,15 @@ pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::render_binned_mesh_instanc
 ///|
 pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::indirect_parameters_offset_for_bin(
   self : Render3dShadowMultidrawableBatchSetGpuBuffers,
-  bin_index : Int,
+  bin_index : @render_phase.RenderBinIndex,
 ) -> Int? {
-  if bin_index < 0 ||
-    bin_index >= self.bin_index_to_indirect_parameters_offset_buffer.length() {
+  let raw_bin_index = bin_index.to_int()
+  if raw_bin_index < 0 ||
+    raw_bin_index >=
+    self.bin_index_to_indirect_parameters_offset_buffer.length() {
     return None
   }
-  Some(self.bin_index_to_indirect_parameters_offset_buffer[bin_index])
+  Some(self.bin_index_to_indirect_parameters_offset_buffer[raw_bin_index])
 }
 
 ///|
@@ -1728,8 +1680,8 @@ fn Render3dShadowMultidrawableBatchSetGpuBuffers::insert(
     Render3dShadowCpuRenderBinnedMeshInstance,
   ],
   main_entity : @render.MainEntity,
-  input_uniform_index : UInt,
-  bin_index : Int,
+  input_uniform_index : @render_phase.InputUniformIndex,
+  bin_index : @render_phase.RenderBinIndex,
 ) -> Unit {
   let gpu_render_bin_entry = Render3dShadowGpuRenderBinnedMeshInstance::new(
     input_uniform_index, bin_index,
@@ -1741,9 +1693,11 @@ fn Render3dShadowMultidrawableBatchSetGpuBuffers::insert(
       let index = @render_phase.RenderBinnedMeshInstanceIndex::new(
         self.render_binned_mesh_instance_buffer.length().reinterpret_as_uint(),
       )
-      self.render_binned_mesh_instance_buffer.push(gpu_render_bin_entry)
+      self.render_binned_mesh_instance_buffer.push(
+        Render3dShadowGpuRenderBinnedMeshInstance::default(),
+      )
       cpu_binned_mesh_instance_buffer.push(
-        Render3dShadowCpuRenderBinnedMeshInstance::new(main_entity, bin_index),
+        Render3dShadowCpuRenderBinnedMeshInstance::default(),
       )
       bin.insert(main_entity, index)
       index
@@ -1792,10 +1746,12 @@ fn Render3dShadowMultidrawableBatchSetGpuBuffers::remove(
 ///|
 pub(all) struct Render3dShadowMultidrawableBatchSetData {
   gpu_buffers : Render3dShadowMultidrawableBatchSetGpuBuffers
-  bin_key_to_bin_index : Map[Int, Int]
+  bin_key_to_bin_index : Map[Int, @render_phase.RenderBinIndex]
   mut bins : Array[Render3dShadowMultidrawableBin?]
-  mut bin_free_list : Array[Int]
-  mut indirect_parameters_offset_to_bin_index : Array[Int]
+  mut bin_free_list : Array[@render_phase.RenderBinIndex]
+  mut indirect_parameters_offset_to_bin_index : Array[
+    @render_phase.RenderBinIndex,
+  ]
   render_binned_mesh_instances_cpu : Array[
     Render3dShadowCpuRenderBinnedMeshInstance,
   ]
@@ -1838,14 +1794,14 @@ pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameter_count(
 pub fn Render3dShadowMultidrawableBatchSetData::bin_index(
   self : Render3dShadowMultidrawableBatchSetData,
   bin_key : Render3dShadowBinKeyData,
-) -> Int? {
+) -> @render_phase.RenderBinIndex? {
   self.bin_key_to_bin_index.get(bin_key.mesh_asset_id())
 }
 
 ///|
 pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameters_offset_for_bin(
   self : Render3dShadowMultidrawableBatchSetData,
-  bin_index : Int,
+  bin_index : @render_phase.RenderBinIndex,
 ) -> Int? {
   self.gpu_buffers.indirect_parameters_offset_for_bin(bin_index)
 }
@@ -1936,29 +1892,31 @@ pub fn Render3dShadowMultidrawableBatchSetData::binned_render_phase_batch_sets(
 ///|
 fn Render3dShadowMultidrawableBatchSetData::allocate_indirect_parameters(
   self : Render3dShadowMultidrawableBatchSetData,
-  bin_index : Int,
+  bin_index : @render_phase.RenderBinIndex,
 ) -> Unit {
   let indirect_parameters_offset = self.indirect_parameters_offset_to_bin_index.length()
   self.indirect_parameters_offset_to_bin_index.push(bin_index)
-  if bin_index ==
+  let raw_bin_index = bin_index.to_int()
+  if raw_bin_index ==
     self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer.length() {
     self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer.push(
       indirect_parameters_offset,
     )
   } else {
-    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[bin_index] = indirect_parameters_offset
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[raw_bin_index] = indirect_parameters_offset
   }
 }
 
 ///|
 fn Render3dShadowMultidrawableBatchSetData::bin(
   self : Render3dShadowMultidrawableBatchSetData,
-  bin_index : Int,
+  bin_index : @render_phase.RenderBinIndex,
 ) -> Render3dShadowMultidrawableBin? {
-  if bin_index < 0 || bin_index >= self.bins.length() {
+  let raw_bin_index = bin_index.to_int()
+  if raw_bin_index < 0 || raw_bin_index >= self.bins.length() {
     return None
   }
-  self.bins[bin_index]
+  self.bins[raw_bin_index]
 }
 
 ///|
@@ -1966,7 +1924,7 @@ pub fn Render3dShadowMultidrawableBatchSetData::insert(
   self : Render3dShadowMultidrawableBatchSetData,
   bin_key : Render3dShadowBinKeyData,
   main_entity : @render.MainEntity,
-  input_uniform_index : UInt,
+  input_uniform_index : @render_phase.InputUniformIndex,
 ) -> Unit {
   let bin_key_id = bin_key.mesh_asset_id()
   let bin_index = match self.bin_key_to_bin_index.get(bin_key_id) {
@@ -1974,13 +1932,17 @@ pub fn Render3dShadowMultidrawableBatchSetData::insert(
     None => {
       let index = match self.bin_free_list.pop() {
         Some(free_index) => free_index
-        None => self.bins.length()
+        None =>
+          @render_phase.RenderBinIndex::new(
+            self.bins.length().reinterpret_as_uint(),
+          )
       }
       let bin = Render3dShadowMultidrawableBin::new()
-      if index == self.bins.length() {
+      let raw_index = index.to_int()
+      if raw_index == self.bins.length() {
         self.bins.push(Some(bin))
       } else {
-        self.bins[index] = Some(bin)
+        self.bins[raw_index] = Some(bin)
       }
       self.bin_key_to_bin_index.set(bin_key_id, index)
       self.allocate_indirect_parameters(index)
@@ -2004,7 +1966,7 @@ pub fn Render3dShadowMultidrawableBatchSetData::insert(
 fn Render3dShadowMultidrawableBatchSetData::remove_bin_if_empty(
   self : Render3dShadowMultidrawableBatchSetData,
   bin_key : Render3dShadowBinKeyData,
-  bin_index : Int,
+  bin_index : @render_phase.RenderBinIndex,
 ) -> Unit {
   let bin = match self.bin(bin_index) {
     Some(value) => value
@@ -2015,18 +1977,19 @@ fn Render3dShadowMultidrawableBatchSetData::remove_bin_if_empty(
   }
   self.bin_key_to_bin_index.remove(bin_key.mesh_asset_id())
   self.bin_free_list.push(bin_index)
-  self.bins[bin_index] = None
+  let raw_bin_index = bin_index.to_int()
+  self.bins[raw_bin_index] = None
   let indirect_parameters_offset = match
     self.gpu_buffers.indirect_parameters_offset_for_bin(bin_index) {
     Some(value) => value
     None => abort("Indirect parameters offset not present")
   }
-  self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[bin_index] = -1
+  self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[raw_bin_index] = -1
   let last_index = self.indirect_parameters_offset_to_bin_index.length() - 1
   if indirect_parameters_offset != last_index {
     let displaced_bin_index = self.indirect_parameters_offset_to_bin_index[last_index]
     self.indirect_parameters_offset_to_bin_index[indirect_parameters_offset] = displaced_bin_index
-    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[displaced_bin_index] = indirect_parameters_offset
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[displaced_bin_index.to_int()] = indirect_parameters_offset
   }
   ignore(self.indirect_parameters_offset_to_bin_index.pop())
 }
@@ -2142,17 +2105,19 @@ fn Render3dShadowMultidrawableBatchSetData::prepare_multidrawable_binned_batch_s
     work_item_buffer.non_indexed_len()
   }
   let indirect_parameters_base = preparer.indirect_parameters_index
-  let mut first_bin_key_id = -1
-  let mut first_bin_index = -1
+  let mut first_bin_entry : (Int, @render_phase.RenderBinIndex)? = None
   for bin_key_id, bin_index in self.bin_key_to_bin_index {
-    first_bin_key_id = bin_key_id
-    first_bin_index = bin_index
+    first_bin_entry = Some((bin_key_id, bin_index))
     break
   }
-  if first_bin_index < 0 {
-    return None
+  let (first_bin_key_id, first_bin_index) = match first_bin_entry {
+    Some(entry) => entry
+    None => return None
   }
-  guard self.bin(first_bin_index) is Some(first_bin) else { return None }
+  let first_bin = match self.bin(first_bin_index) {
+    Some(bin) => bin
+    None => abort("At least one bin must be present in each batch set")
+  }
   let first_bin_len = first_bin.entity_count()
   let first_bin_entity = match self.representative_entity_for_bin(first_bin) {
     Some(entity) => entity
@@ -2164,10 +2129,14 @@ fn Render3dShadowMultidrawableBatchSetData::prepare_multidrawable_binned_batch_s
   let bin_count = self.bin_count()
   ignore(phase_indirect_parameters_buffers.buffers.allocate(indexed, bin_count))
   for bin_index in self.bin_key_to_bin_index.values() {
-    guard self.bin(bin_index) is Some(bin) else { continue }
-    guard self.indirect_parameters_offset_for_bin(bin_index)
-      is Some(indirect_parameters_offset) else {
-      continue
+    let bin = match self.bin(bin_index) {
+      Some(value) => value
+      None => abort("Bin not present")
+    }
+    let indirect_parameters_offset = match
+      self.indirect_parameters_offset_for_bin(bin_index) {
+      Some(value) => value
+      None => abort("Indirect parameters offset not present")
     }
     phase_indirect_parameters_buffers.buffers.set_cpu_metadata(
       indexed,
@@ -2239,7 +2208,7 @@ fn Render3dShadowMultidrawableBatchSetEntry::insert(
   self : Render3dShadowMultidrawableBatchSetEntry,
   bin_key : Render3dShadowBinKeyData,
   main_entity : @render.MainEntity,
-  input_uniform_index : UInt,
+  input_uniform_index : @render_phase.InputUniformIndex,
 ) -> Unit {
   self.batch_set.insert(bin_key, main_entity, input_uniform_index)
 }
@@ -2999,7 +2968,7 @@ pub fn Render3dShadowViewPhaseData::add(
     self.multidrawable_meshes[batch_set_index].insert(
       bin_key,
       representative_entity.1,
-      input_uniform_index.value(),
+      input_uniform_index,
     )
     let key = representative_entity.1.id().to_bits()
     self.input_uniform_indices.set(key, input_uniform_index)

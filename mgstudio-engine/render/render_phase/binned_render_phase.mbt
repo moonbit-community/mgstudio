@@ -275,6 +275,98 @@ pub fn RenderBinnedMeshInstanceIndex::to_int(
 
 ///|
 // Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderBinIndex`.
+pub(all) struct RenderBinIndex(UInt) derive(Default, Eq, Debug)
+
+///|
+pub fn RenderBinIndex::new(index : UInt) -> RenderBinIndex {
+  RenderBinIndex(index)
+}
+
+///|
+pub fn RenderBinIndex::value(self : RenderBinIndex) -> UInt {
+  let RenderBinIndex(index) = self
+  index
+}
+
+///|
+pub fn RenderBinIndex::to_int(self : RenderBinIndex) -> Int {
+  self.value().reinterpret_as_int()
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::GpuRenderBinnedMeshInstance`.
+pub struct GpuRenderBinnedMeshInstance {
+  input_uniform_index : UInt
+  bin_index : UInt
+} derive(Default)
+
+///|
+pub fn GpuRenderBinnedMeshInstance::new(
+  input_uniform_index : InputUniformIndex,
+  bin_index : RenderBinIndex,
+) -> GpuRenderBinnedMeshInstance {
+  GpuRenderBinnedMeshInstance::{
+    input_uniform_index: input_uniform_index.value(),
+    bin_index: bin_index.value(),
+  }
+}
+
+///|
+pub fn GpuRenderBinnedMeshInstance::input_uniform_index(
+  self : GpuRenderBinnedMeshInstance,
+) -> UInt {
+  self.input_uniform_index
+}
+
+///|
+pub fn GpuRenderBinnedMeshInstance::bin_index(
+  self : GpuRenderBinnedMeshInstance,
+) -> UInt {
+  self.bin_index
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::CpuRenderBinnedMeshInstance`.
+pub struct CpuRenderBinnedMeshInstance {
+  main_entity : @render_sync_world.MainEntity
+  bin_index : RenderBinIndex
+}
+
+///|
+pub fn CpuRenderBinnedMeshInstance::default() -> CpuRenderBinnedMeshInstance {
+  CpuRenderBinnedMeshInstance::{
+    main_entity: @render_sync_world.MainEntity::new(@core.Entity::placeholder()),
+    bin_index: RenderBinIndex::default(),
+  }
+}
+
+///|
+pub fn CpuRenderBinnedMeshInstance::new(
+  main_entity : @render_sync_world.MainEntity,
+  bin_index : RenderBinIndex,
+) -> CpuRenderBinnedMeshInstance {
+  CpuRenderBinnedMeshInstance::{ main_entity, bin_index }
+}
+
+///|
+pub fn CpuRenderBinnedMeshInstance::main_entity(
+  self : CpuRenderBinnedMeshInstance,
+) -> @render_sync_world.MainEntity {
+  self.main_entity
+}
+
+///|
+pub fn CpuRenderBinnedMeshInstance::bin_index(
+  self : CpuRenderBinnedMeshInstance,
+) -> RenderBinIndex {
+  self.bin_index
+}
+
+///|
+// Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderMultidrawableBin`.
 pub struct RenderMultidrawableBin {
   entity_to_binned_mesh_instance_index : Map[

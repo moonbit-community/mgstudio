@@ -49,6 +49,23 @@ pub(all) enum BinnedRenderPhaseType {
 } derive(Eq, @debug.Debug)
 pub fn BinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
 
+pub struct CpuRenderBinnedMeshInstance {
+  main_entity : @sync_world.MainEntity
+  bin_index : RenderBinIndex
+}
+pub fn CpuRenderBinnedMeshInstance::bin_index(Self) -> RenderBinIndex
+pub fn CpuRenderBinnedMeshInstance::default() -> Self
+pub fn CpuRenderBinnedMeshInstance::main_entity(Self) -> @sync_world.MainEntity
+pub fn CpuRenderBinnedMeshInstance::new(@sync_world.MainEntity, RenderBinIndex) -> Self
+
+pub struct GpuRenderBinnedMeshInstance {
+  input_uniform_index : UInt
+  bin_index : UInt
+} derive(Default)
+pub fn GpuRenderBinnedMeshInstance::bin_index(Self) -> UInt
+pub fn GpuRenderBinnedMeshInstance::input_uniform_index(Self) -> UInt
+pub fn GpuRenderBinnedMeshInstance::new(InputUniformIndex, RenderBinIndex) -> Self
+
 pub(all) struct InputUniformIndex(UInt) derive(Default, Eq, @debug.Debug)
 pub fn InputUniformIndex::new(UInt) -> Self
 pub fn InputUniformIndex::to_int(Self) -> Int
@@ -81,6 +98,11 @@ pub struct RenderBin {
 pub fn RenderBin::entities(Self) -> ArrayView[(@sync_world.MainEntity, InputUniformIndex)]
 
 type RenderBinEntities derive(Default)
+
+pub(all) struct RenderBinIndex(UInt) derive(Default, Eq, @debug.Debug)
+pub fn RenderBinIndex::new(UInt) -> Self
+pub fn RenderBinIndex::to_int(Self) -> Int
+pub fn RenderBinIndex::value(Self) -> UInt
 
 pub(all) struct RenderBinnedMeshInstanceIndex(UInt) derive(Eq, @debug.Debug)
 pub fn RenderBinnedMeshInstanceIndex::new(UInt) -> Self

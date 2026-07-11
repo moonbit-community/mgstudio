@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/batching" @render_batching,
@@ -7,9 +8,5 @@ import {
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/sync_world" @render_sync_world,
 }
-
-import {
-  "Milky2018/mgstudio/core",
-} for "wbtest"
 
 supported_targets = "native"

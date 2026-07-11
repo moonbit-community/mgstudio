@@ -149,6 +149,27 @@ test "render_phase: multidrawable bins retain nominal instance indices" {
 }
 
 ///|
+test "render_phase: multidraw CPU and GPU records retain nominal bin indices" {
+  let default_gpu = GpuRenderBinnedMeshInstance::default()
+  inspect(default_gpu.input_uniform_index(), content="0")
+  inspect(default_gpu.bin_index(), content="0")
+  let default_cpu = CpuRenderBinnedMeshInstance::default()
+  debug_inspect(default_cpu.main_entity().id().is_placeholder(), content="true")
+  debug_inspect(default_cpu.bin_index(), content="RenderBinIndex(0)")
+  let bin_index = RenderBinIndex::new(4U)
+  let main_entity = @render_sync_world.MainEntity::new(@core.Entity::new(13, 1))
+  let gpu = GpuRenderBinnedMeshInstance::new(
+    InputUniformIndex::new(9U),
+    bin_index,
+  )
+  inspect(gpu.input_uniform_index(), content="9")
+  inspect(gpu.bin_index(), content="4")
+  let cpu = CpuRenderBinnedMeshInstance::new(main_entity, bin_index)
+  debug_inspect(cpu.main_entity() == main_entity, content="true")
+  debug_inspect(cpu.bin_index(), content="RenderBinIndex(4)")
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
