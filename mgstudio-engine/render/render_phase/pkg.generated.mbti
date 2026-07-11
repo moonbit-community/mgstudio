@@ -80,6 +80,22 @@ pub(all) enum BinnedRenderPhaseType {
 } derive(Eq, @debug.Debug)
 pub fn BinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
 
+pub struct CachedBinKey[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  phase_type : BinnedRenderPhaseType
+}
+pub fn[BatchSetKey, BinKey] CachedBinKey::batch_set_key(Self[BatchSetKey, BinKey]) -> BatchSetKey
+pub fn[BatchSetKey, BinKey] CachedBinKey::bin_key(Self[BatchSetKey, BinKey]) -> BinKey
+pub fn[BatchSetKey, BinKey] CachedBinKey::new(BatchSetKey, BinKey, BinnedRenderPhaseType) -> Self[BatchSetKey, BinKey]
+pub fn[BatchSetKey, BinKey] CachedBinKey::phase_type(Self[BatchSetKey, BinKey]) -> BinnedRenderPhaseType
+
+pub struct CachedBinnedEntity[BatchSetKey, BinKey] {
+  cached_bin_key : CachedBinKey[BatchSetKey, BinKey]?
+}
+pub fn[BatchSetKey, BinKey] CachedBinnedEntity::cached_bin_key(Self[BatchSetKey, BinKey]) -> CachedBinKey[BatchSetKey, BinKey]?
+pub fn[BatchSetKey, BinKey] CachedBinnedEntity::new(CachedBinKey[BatchSetKey, BinKey]?) -> Self[BatchSetKey, BinKey]
+
 pub struct CpuRenderBinnedMeshInstance {
   main_entity : @sync_world.MainEntity
   bin_index : RenderBinIndex

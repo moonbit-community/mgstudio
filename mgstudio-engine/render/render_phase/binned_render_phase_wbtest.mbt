@@ -261,6 +261,24 @@ test "panic render_phase: multidraw removal rejects a missing entity" {
 }
 
 ///|
+test "render_phase: cached bin keys retain exact owner and phase type" {
+  let cached_key = CachedBinKey::new(
+    TestMultidrawBinKey(406),
+    TestMultidrawBinKey(407),
+    BinnedRenderPhaseType::MultidrawableMesh,
+  )
+  let cached_entity = CachedBinnedEntity::new(Some(cached_key))
+  let retained = cached_entity.cached_bin_key().unwrap()
+  debug_inspect(retained.batch_set_key(), content="TestMultidrawBinKey(406)")
+  debug_inspect(retained.bin_key(), content="TestMultidrawBinKey(407)")
+  debug_inspect(retained.phase_type(), content="MultidrawableMesh")
+  let uncached : CachedBinnedEntity[TestMultidrawBinKey, TestMultidrawBinKey] = CachedBinnedEntity::new(
+    None,
+  )
+  debug_inspect(uncached.cached_bin_key() is None, content="true")
+}
+
+///|
 test "render_phase: binned batch records retain Bevy batch-set data" {
   let main_entity = @render_sync_world.MainEntity::new(@core.Entity::new(28, 1))
   let batch = BinnedRenderPhaseBatch::new(

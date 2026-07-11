@@ -820,6 +820,67 @@ pub fn[K] RenderMultidrawableBatchSet::for_each_cpu_instance(
 
 ///|
 // Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::CachedBinnedEntity`.
+// MoonBit represents `BinnedPhaseItem` associated types as explicit generic
+// batch-set and bin-key parameters at the package seam.
+pub struct CachedBinnedEntity[BatchSetKey, BinKey] {
+  cached_bin_key : CachedBinKey[BatchSetKey, BinKey]?
+}
+
+///|
+pub fn[BatchSetKey, BinKey] CachedBinnedEntity::new(
+  cached_bin_key : CachedBinKey[BatchSetKey, BinKey]?,
+) -> CachedBinnedEntity[BatchSetKey, BinKey] {
+  CachedBinnedEntity::{ cached_bin_key, }
+}
+
+///|
+pub fn[BatchSetKey, BinKey] CachedBinnedEntity::cached_bin_key(
+  self : CachedBinnedEntity[BatchSetKey, BinKey],
+) -> CachedBinKey[BatchSetKey, BinKey]? {
+  self.cached_bin_key
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::CachedBinKey`.
+pub struct CachedBinKey[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  phase_type : BinnedRenderPhaseType
+}
+
+///|
+pub fn[BatchSetKey, BinKey] CachedBinKey::new(
+  batch_set_key : BatchSetKey,
+  bin_key : BinKey,
+  phase_type : BinnedRenderPhaseType,
+) -> CachedBinKey[BatchSetKey, BinKey] {
+  CachedBinKey::{ batch_set_key, bin_key, phase_type }
+}
+
+///|
+pub fn[BatchSetKey, BinKey] CachedBinKey::batch_set_key(
+  self : CachedBinKey[BatchSetKey, BinKey],
+) -> BatchSetKey {
+  self.batch_set_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] CachedBinKey::bin_key(
+  self : CachedBinKey[BatchSetKey, BinKey],
+) -> BinKey {
+  self.bin_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] CachedBinKey::phase_type(
+  self : CachedBinKey[BatchSetKey, BinKey],
+) -> BinnedRenderPhaseType {
+  self.phase_type
+}
+
+///|
+// Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseBatch`.
 pub struct BinnedRenderPhaseBatch {
   representative_entity : (@core.Entity, @render_sync_world.MainEntity)

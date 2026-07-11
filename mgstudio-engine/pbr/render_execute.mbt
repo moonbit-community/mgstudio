@@ -1616,29 +1616,6 @@ fn render3d_shadow_multidrawable_binned_render_phase_batch_sets(
 }
 
 ///|
-fn render3d_shadow_multidrawable_remove_entity(
-  batch_set : Render3dShadowMultidrawableBatchSetData,
-  main_entity : @render.MainEntity,
-) -> Unit {
-  let found_bin_key : Ref[Render3dShadowBinKeyData?] = Ref(None)
-  batch_set.for_each_bin_index(fn(bin_key, bin_index) {
-    if found_bin_key.val is None {
-      let bin = match batch_set.bin(bin_index) {
-        Some(value) => value
-        None => abort("Bin not present")
-      }
-      if bin.binned_mesh_instance_index(main_entity) is Some(_) {
-        found_bin_key.val = Some(bin_key)
-      }
-    }
-  })
-  match found_bin_key.val {
-    Some(bin_key) => batch_set.remove(main_entity, bin_key)
-    None => ()
-  }
-}
-
-///|
 priv struct Render3dShadowMultidrawableBatchSetPreparer {
   mut indirect_parameters_index : Int
   mut batch_set_index : Int
@@ -1781,11 +1758,12 @@ fn Render3dShadowMultidrawableBatchSetEntry::insert(
 }
 
 ///|
-fn Render3dShadowMultidrawableBatchSetEntry::remove_entity(
+fn Render3dShadowMultidrawableBatchSetEntry::remove(
   self : Render3dShadowMultidrawableBatchSetEntry,
   main_entity : @render.MainEntity,
+  bin_key : Render3dShadowBinKeyData,
 ) -> Unit {
-  render3d_shadow_multidrawable_remove_entity(self.batch_set, main_entity)
+  self.batch_set.remove(main_entity, bin_key)
 }
 
 ///|
@@ -2146,7 +2124,13 @@ pub struct Render3dShadowViewPhaseData {
   mut multidrawable_meshes : Array[Render3dShadowMultidrawableBatchSetEntry]
   mut unbatchable_meshes : Array[Render3dShadowUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
-  phase_types : Map[UInt64, Render3dShadowBinnedRenderPhaseType]
+  cached_entity_bin_keys : Map[
+    @render.MainEntity,
+    @render_phase.CachedBinnedEntity[
+      Render3dShadowBatchSetKeyData,
+      Render3dShadowBinKeyData,
+    ],
+  ]
 }
 
 ///|
@@ -2159,8 +2143,23 @@ pub fn Render3dShadowViewPhaseData::new(
     multidrawable_meshes: [],
     unbatchable_meshes: [],
     input_uniform_indices: {},
-    phase_types: {},
+    cached_entity_bin_keys: Map([]),
   }
+}
+
+///|
+pub fn Render3dShadowViewPhaseData::update_cache(
+  self : Render3dShadowViewPhaseData,
+  main_entity : @render.MainEntity,
+  cached_bin_key : @render_phase.CachedBinKey[
+    Render3dShadowBatchSetKeyData,
+    Render3dShadowBinKeyData,
+  ]?,
+) -> Unit {
+  self.cached_entity_bin_keys.set(
+    main_entity,
+    @render_phase.CachedBinnedEntity::new(cached_bin_key),
+  )
 }
 
 ///|
@@ -2525,89 +2524,109 @@ pub fn Render3dShadowViewPhaseData::add(
     phase_type,
   )
   let input_uniform_index_int = input_uniform_index.to_int()
-  if effective_phase_type == MultidrawableMesh {
-    let mut batch_set_index = -1
-    for index in 0..<self.multidrawable_meshes.length() {
-      if self.multidrawable_meshes[index].matches(batch_set_key) {
-        batch_set_index = index
-        break
+  match effective_phase_type {
+    MultidrawableMesh => {
+      let mut batch_set_index = -1
+      for index in 0..<self.multidrawable_meshes.length() {
+        if self.multidrawable_meshes[index].matches(batch_set_key) {
+          batch_set_index = index
+          break
+        }
+      }
+      if batch_set_index < 0 {
+        self.multidrawable_meshes.push(
+          Render3dShadowMultidrawableBatchSetEntry::new(batch_set_key),
+        )
+        batch_set_index = self.multidrawable_meshes.length() - 1
+      }
+      self.multidrawable_meshes[batch_set_index].insert(
+        bin_key,
+        representative_entity.1,
+        input_uniform_index,
+      )
+    }
+    UnbatchableMesh => {
+      let mut unbatchable_index = -1
+      for index in 0..<self.unbatchable_meshes.length() {
+        if self.unbatchable_meshes[index].matches(batch_set_key, bin_key) {
+          unbatchable_index = index
+          break
+        }
+      }
+      if unbatchable_index < 0 {
+        self.unbatchable_meshes.push(
+          Render3dShadowUnbatchableBinnedEntities::new(batch_set_key, bin_key),
+        )
+        unbatchable_index = self.unbatchable_meshes.length() - 1
+      }
+      self.unbatchable_meshes[unbatchable_index].insert(
+        representative_entity.1,
+        representative_entity.0,
+        input_uniform_index.value(),
+      )
+    }
+    BatchableMesh => {
+      let mut extended = false
+      if self.items.length() > 0 {
+        let last_index = self.items.length() - 1
+        let last_item = self.items[last_index]
+        if render3d_shadow_batchable_item_can_extend(
+            last_item, batch_set_key, bin_key, input_uniform_index_int,
+          ) {
+          self.items[last_index] = Render3dShadowPhaseItemData::{
+            ..last_item,
+            batch_range: Render3dShadowBatchRange::new(
+              last_item.batch_range().start(),
+              input_uniform_index_int + 1,
+            ),
+          }
+          extended = true
+        }
+      }
+      if !extended {
+        self.items.push(
+          Render3dShadowPhaseItemData::new(
+            batch_set_key,
+            bin_key,
+            representative_entity.0,
+            representative_entity.1,
+            Render3dShadowBatchRange::new(
+              input_uniform_index_int,
+              input_uniform_index_int + 1,
+            ),
+            Render3dShadowPhaseItemExtraIndex::none(),
+          ),
+        )
       }
     }
-    if batch_set_index < 0 {
-      self.multidrawable_meshes.push(
-        Render3dShadowMultidrawableBatchSetEntry::new(batch_set_key),
-      )
-      batch_set_index = self.multidrawable_meshes.length() - 1
-    }
-    self.multidrawable_meshes[batch_set_index].insert(
-      bin_key,
-      representative_entity.1,
-      input_uniform_index,
-    )
-    let key = representative_entity.1.id().to_bits()
-    self.input_uniform_indices.set(key, input_uniform_index)
-    self.phase_types.set(key, effective_phase_type)
-    return
-  }
-  if effective_phase_type == UnbatchableMesh {
-    let mut unbatchable_index = -1
-    for index in 0..<self.unbatchable_meshes.length() {
-      if self.unbatchable_meshes[index].matches(batch_set_key, bin_key) {
-        unbatchable_index = index
-        break
-      }
-    }
-    if unbatchable_index < 0 {
-      self.unbatchable_meshes.push(
-        Render3dShadowUnbatchableBinnedEntities::new(batch_set_key, bin_key),
-      )
-      unbatchable_index = self.unbatchable_meshes.length() - 1
-    }
-    self.unbatchable_meshes[unbatchable_index].insert(
-      representative_entity.1,
-      representative_entity.0,
-      input_uniform_index.value(),
-    )
-    let key = representative_entity.1.id().to_bits()
-    self.input_uniform_indices.set(key, input_uniform_index)
-    self.phase_types.set(key, effective_phase_type)
-    return
-  }
-  if effective_phase_type == BatchableMesh && self.items.length() > 0 {
-    let last_index = self.items.length() - 1
-    let last_item = self.items[last_index]
-    if render3d_shadow_batchable_item_can_extend(
-        last_item, batch_set_key, bin_key, input_uniform_index_int,
-      ) {
-      self.items[last_index] = Render3dShadowPhaseItemData::{
-        ..last_item,
-        batch_range: Render3dShadowBatchRange::new(
-          last_item.batch_range().start(),
-          input_uniform_index_int + 1,
+    NonMesh =>
+      self.items.push(
+        Render3dShadowPhaseItemData::new(
+          batch_set_key,
+          bin_key,
+          representative_entity.0,
+          representative_entity.1,
+          Render3dShadowBatchRange::new(
+            input_uniform_index_int,
+            input_uniform_index_int + 1,
+          ),
+          Render3dShadowPhaseItemExtraIndex::none(),
         ),
-      }
-      let key = representative_entity.1.id().to_bits()
-      self.input_uniform_indices.set(key, input_uniform_index)
-      self.phase_types.set(key, effective_phase_type)
-      return
-    }
+      )
   }
-  self.items.push(
-    Render3dShadowPhaseItemData::new(
-      batch_set_key,
-      bin_key,
-      representative_entity.0,
-      representative_entity.1,
-      Render3dShadowBatchRange::new(
-        input_uniform_index_int,
-        input_uniform_index_int + 1,
+  let main_entity = representative_entity.1
+  self.input_uniform_indices.set(
+    main_entity.id().to_bits(),
+    input_uniform_index,
+  )
+  self.update_cache(
+    main_entity,
+    Some(
+      @render_phase.CachedBinKey::new(
+        batch_set_key, bin_key, effective_phase_type,
       ),
-      Render3dShadowPhaseItemExtraIndex::none(),
     ),
   )
-  let key = representative_entity.1.id().to_bits()
-  self.input_uniform_indices.set(key, input_uniform_index)
-  self.phase_types.set(key, effective_phase_type)
 }
 
 ///|
@@ -2615,35 +2634,55 @@ pub fn Render3dShadowViewPhaseData::remove(
   self : Render3dShadowViewPhaseData,
   main_entity : @render.MainEntity,
 ) -> Unit {
-  let key = main_entity.id().to_bits()
-  if !self.phase_types.contains(key) {
-    return
+  let cached_binned_entity = match
+    self.cached_entity_bin_keys.get(main_entity) {
+    Some(value) => value
+    None => return
   }
-  let retained : Array[Render3dShadowPhaseItemData] = []
-  for item in self.items {
-    if item.main_entity() != main_entity {
-      retained.push(item)
-    }
+  self.cached_entity_bin_keys.remove(main_entity)
+  match cached_binned_entity.cached_bin_key() {
+    Some(cached_bin_key) =>
+      match cached_bin_key.phase_type() {
+        MultidrawableMesh => {
+          let retained : Array[Render3dShadowMultidrawableBatchSetEntry] = []
+          for entry in self.multidrawable_meshes {
+            if entry.matches(cached_bin_key.batch_set_key()) {
+              entry.remove(main_entity, cached_bin_key.bin_key())
+            }
+            if !entry.is_empty() {
+              retained.push(entry)
+            }
+          }
+          self.multidrawable_meshes = retained
+        }
+        UnbatchableMesh => {
+          let retained : Array[Render3dShadowUnbatchableBinnedEntities] = []
+          for entities in self.unbatchable_meshes {
+            if entities.matches(
+                cached_bin_key.batch_set_key(),
+                cached_bin_key.bin_key(),
+              ) {
+              entities.remove(main_entity)
+            }
+            if !entities.is_empty() {
+              retained.push(entities)
+            }
+          }
+          self.unbatchable_meshes = retained
+        }
+        BatchableMesh | NonMesh => {
+          let retained : Array[Render3dShadowPhaseItemData] = []
+          for item in self.items {
+            if item.main_entity() != main_entity {
+              retained.push(item)
+            }
+          }
+          self.items = retained
+        }
+      }
+    None => ()
   }
-  self.items = retained
-  let retained_multidrawable : Array[Render3dShadowMultidrawableBatchSetEntry] = []
-  for entry in self.multidrawable_meshes {
-    entry.remove_entity(main_entity)
-    if !entry.is_empty() {
-      retained_multidrawable.push(entry)
-    }
-  }
-  self.multidrawable_meshes = retained_multidrawable
-  let retained_unbatchable : Array[Render3dShadowUnbatchableBinnedEntities] = []
-  for entities in self.unbatchable_meshes {
-    entities.remove(main_entity)
-    if !entities.is_empty() {
-      retained_unbatchable.push(entities)
-    }
-  }
-  self.unbatchable_meshes = retained_unbatchable
-  self.input_uniform_indices.remove(key)
-  self.phase_types.remove(key)
+  self.input_uniform_indices.remove(main_entity.id().to_bits())
 }
 
 ///|
@@ -2659,7 +2698,14 @@ pub fn Render3dShadowViewPhaseData::phase_type(
   self : Render3dShadowViewPhaseData,
   main_entity : @render.MainEntity,
 ) -> Render3dShadowBinnedRenderPhaseType? {
-  self.phase_types.get(main_entity.id().to_bits())
+  match self.cached_entity_bin_keys.get(main_entity) {
+    Some(cached_binned_entity) =>
+      match cached_binned_entity.cached_bin_key() {
+        Some(cached_bin_key) => Some(cached_bin_key.phase_type())
+        None => None
+      }
+    None => None
+  }
 }
 
 ///|

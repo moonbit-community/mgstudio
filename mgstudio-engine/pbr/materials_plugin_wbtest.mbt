@@ -748,6 +748,8 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
   debug_inspect(phase.phase_type(first_main), content="Some(MultidrawableMesh)")
   phase.remove(first_main)
   debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.multidrawable_batch_set_count(), content="1")
+  debug_inspect(phase.multidrawable_cpu_instance_count(), content="1")
   debug_inspect(phase.input_uniform_index(first_main), content="None")
   debug_inspect(
     phase.input_uniform_index(second_main),
@@ -775,6 +777,49 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
   debug_inspect(
     preprocessing_only_phase.phase_type(first_main),
     content="Some(BatchableMesh)",
+  )
+}
+
+///|
+test "render3d: shadow view phase removes only the cached multidraw bin" {
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let key = Render3dShadowBatchSetKeyData::new(
+    @material.CachedRenderPipelineId::new(913UL),
+    @material.DrawFunctionId::new(19U),
+    Some(9),
+    @render_mesh.MeshSlabs::new(71, index_slab_id=Some(72)),
+  )
+  let retained_main = @render.MainEntity::new(@core.Entity::new(181, 1))
+  let removed_main = @render.MainEntity::new(@core.Entity::new(182, 1))
+  phase.add(
+    key,
+    Render3dShadowBinKeyData::new(701),
+    (@core.Entity::new(191, 1), retained_main),
+    120U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+  phase.add(
+    key,
+    Render3dShadowBinKeyData::new(702),
+    (@core.Entity::new(192, 1), removed_main),
+    121U,
+    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+  )
+
+  phase.remove(removed_main)
+
+  debug_inspect(phase.multidrawable_batch_set_count(), content="1")
+  debug_inspect(phase.multidrawable_cpu_instance_count(), content="1")
+  debug_inspect(phase.phase_type(removed_main), content="None")
+  debug_inspect(
+    phase.input_uniform_index(retained_main),
+    content="Some(InputUniformIndex(120))",
+  )
+  debug_inspect(
+    phase.phase_type(retained_main),
+    content="Some(MultidrawableMesh)",
   )
 }
 

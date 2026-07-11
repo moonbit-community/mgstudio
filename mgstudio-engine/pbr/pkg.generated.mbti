@@ -2387,7 +2387,7 @@ pub struct Render3dShadowViewPhaseData {
   mut multidrawable_meshes : Array[Render3dShadowMultidrawableBatchSetEntry]
   mut unbatchable_meshes : Array[Render3dShadowUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
-  phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
+  cached_entity_bin_keys : Map[@sync_world.MainEntity, @render_phase.CachedBinnedEntity[Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData]]
 }
 pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @sync_world.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Render3dShadowViewPhaseData::apply_queue(Self, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport) -> Unit
@@ -2406,6 +2406,7 @@ pub fn Render3dShadowViewPhaseData::prepare_phase_buffers(Self, String, Bool, Bo
 pub fn Render3dShadowViewPhaseData::prepare_unbatchable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
 pub fn Render3dShadowViewPhaseData::remove(Self, @sync_world.MainEntity) -> Unit
 pub fn Render3dShadowViewPhaseData::render_items(Self, Bool) -> Array[Render3dShadowPhaseItemData]
+pub fn Render3dShadowViewPhaseData::update_cache(Self, @sync_world.MainEntity, @render_phase.CachedBinKey[Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData]?) -> Unit
 
 pub struct RenderGpuCulledEntities {
   entities : Map[UInt64, @render_layers.RenderLayers]
@@ -3246,7 +3247,7 @@ pub struct Wireframe3dViewPhase {
   mut items : Array[Wireframe3d]
   mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
-  phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
+  cached_entity_bin_keys : Map[@sync_world.MainEntity, @render_phase.CachedBinnedEntity[Wireframe3dBatchSetKey, Wireframe3dBinKey]]
 }
 pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @sync_world.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
@@ -3259,6 +3260,7 @@ pub fn Wireframe3dViewPhase::phase_type(Self, @sync_world.MainEntity) -> @render
 pub fn Wireframe3dViewPhase::prepare_for_new_frame(Self) -> Unit
 pub fn Wireframe3dViewPhase::remove(Self, @sync_world.MainEntity) -> Unit
 pub fn Wireframe3dViewPhase::unbatchable_bin_count(Self) -> Int
+pub fn Wireframe3dViewPhase::update_cache(Self, @sync_world.MainEntity, @render_phase.CachedBinKey[Wireframe3dBatchSetKey, Wireframe3dBinKey]?) -> Unit
 
 pub struct Wireframe3dWideImmediates {
   color : @color.Color

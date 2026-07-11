@@ -1355,8 +1355,10 @@ test "pbr: wireframe unbatchable meshes use retained Bevy bins" {
     @render_mesh.MeshSlabs::new(2, index_slab_id=Some(5)),
   )
   let bin = Wireframe3dBinKey::new(33)
+  let other_bin = Wireframe3dBinKey::new(34)
   let first_main = wireframe_test_main_entity(@core.Entity::new(21, 1))
   let second_main = wireframe_test_main_entity(@core.Entity::new(22, 1))
+  let third_main = wireframe_test_main_entity(@core.Entity::new(23, 1))
   phase.add(
     batch_set,
     bin,
@@ -1371,20 +1373,33 @@ test "pbr: wireframe unbatchable meshes use retained Bevy bins" {
     9U,
     UnbatchableMesh,
   )
+  phase.add(
+    batch_set,
+    other_bin,
+    (@core.Entity::new(33, 1), third_main),
+    11U,
+    UnbatchableMesh,
+  )
 
-  debug_inspect(phase.unbatchable_bin_count(), content="1")
-  debug_inspect(phase.len(), content="2")
+  debug_inspect(phase.unbatchable_bin_count(), content="2")
+  debug_inspect(phase.len(), content="3")
   let items = phase.items()
   debug_inspect(items[0].main_entity() == first_main, content="true")
   inspect(items[0].batch_range().start(), content="7")
   debug_inspect(items[1].main_entity() == second_main, content="true")
   inspect(items[1].batch_range().start(), content="9")
+  debug_inspect(items[2].main_entity() == third_main, content="true")
+  inspect(items[2].batch_range().start(), content="11")
 
   phase.remove(first_main)
-  debug_inspect(phase.unbatchable_bin_count(), content="1")
-  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.unbatchable_bin_count(), content="2")
+  debug_inspect(phase.len(), content="2")
   debug_inspect(phase.items()[0].main_entity() == second_main, content="true")
   phase.remove(second_main)
+  debug_inspect(phase.unbatchable_bin_count(), content="1")
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.items()[0].main_entity() == third_main, content="true")
+  phase.remove(third_main)
   debug_inspect(phase.unbatchable_bin_count(), content="0")
   debug_inspect(phase.is_empty(), content="true")
 }
