@@ -503,7 +503,7 @@ pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAcc
 
 pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@light.GlobalAmbientLight]
 
-pub fn get_mesh_instance_world_from_local(@Milky2018/mgstudio/render.MainEntity, UInt, RenderMeshInstances, RenderMeshInstanceGpuBatchedInstanceBuffers?) -> @math.Affine3
+pub fn get_mesh_instance_world_from_local(@Milky2018/mgstudio/render.MainEntity, @render_phase.InputUniformIndex, RenderMeshInstances, RenderMeshInstanceGpuBatchedInstanceBuffers?) -> @math.Affine3
 
 pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.PointLightShadowMap]
 
@@ -2248,13 +2248,13 @@ pub struct Render3dQueuedShadowPhaseItemData {
   draw_function : @material.DrawFunctionId
   material_bind_group_index : Int?
   mesh_asset_id : Int
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   should_batch : Bool
   slabs : @Milky2018/mgstudio/render/mesh.MeshSlabs
 }
 pub fn Render3dQueuedShadowPhaseItemData::batch_set_key(Self) -> Render3dShadowBatchSetKeyData
 pub fn Render3dQueuedShadowPhaseItemData::bin_key(Self) -> Render3dShadowBinKeyData
-pub fn Render3dQueuedShadowPhaseItemData::current_uniform_index(Self) -> UInt
+pub fn Render3dQueuedShadowPhaseItemData::current_uniform_index(Self) -> @render_phase.InputUniformIndex
 pub fn Render3dQueuedShadowPhaseItemData::draw_function(Self) -> @material.DrawFunctionId
 pub fn Render3dQueuedShadowPhaseItemData::material_bind_group_index(Self) -> Int?
 pub fn Render3dQueuedShadowPhaseItemData::mesh_asset_id(Self) -> Int
@@ -2461,12 +2461,12 @@ pub struct Render3dShadowViewPhaseData {
   mut items : Array[Render3dShadowPhaseItemData]
   mut multidrawable_meshes : Array[Render3dShadowMultidrawableBatchSetEntry]
   mut unbatchable_meshes : Array[Render3dShadowUnbatchableBinnedEntities]
-  input_uniform_indices : Map[UInt64, UInt]
+  input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
   phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
-pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, @render_phase.BinnedRenderPhaseType) -> Unit
+pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Render3dShadowViewPhaseData::apply_queue(Self, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport) -> Unit
-pub fn Render3dShadowViewPhaseData::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
+pub fn Render3dShadowViewPhaseData::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.InputUniformIndex?
 pub fn Render3dShadowViewPhaseData::items(Self) -> Array[Render3dShadowPhaseItemData]
 pub fn Render3dShadowViewPhaseData::len(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_batch_set_count(Self) -> Int
@@ -2690,7 +2690,7 @@ pub fn RenderMeshInstanceSharedFlat::mesh_asset_id(Self) -> Int
 pub fn RenderMeshInstanceSharedFlat::new(Int, material_bindings_index? : MaterialBindingId, lightmap_slab_index? : Int?, tag? : UInt, current_uniform_index? : UInt, flags? : RenderMeshInstanceFlags) -> Self
 pub fn RenderMeshInstanceSharedFlat::should_batch(Self) -> Bool
 pub fn RenderMeshInstanceSharedFlat::tag(Self) -> UInt
-pub fn RenderMeshInstanceSharedFlat::to_queue_data(Self, current_uniform_index? : UInt, render_layers? : @render_layers.RenderLayers?) -> RenderMeshQueueData
+pub fn RenderMeshInstanceSharedFlat::to_queue_data(Self, current_uniform_index? : @render_phase.InputUniformIndex, render_layers? : @render_layers.RenderLayers?) -> RenderMeshQueueData
 
 pub enum RenderMeshInstances {
   CpuBuilding(RenderMeshInstancesCpu)
@@ -2733,16 +2733,16 @@ pub fn RenderMeshInstancesGpu::render_mesh_queue_data(Self, @Milky2018/mgstudio/
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
   material_bindings_index : MaterialBindingId
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   should_batch : Bool
   flags : RenderMeshInstanceFlags
   render_layers : @render_layers.RenderLayers?
 }
-pub fn RenderMeshQueueData::current_uniform_index(Self) -> UInt
+pub fn RenderMeshQueueData::current_uniform_index(Self) -> @render_phase.InputUniformIndex
 pub fn RenderMeshQueueData::flags(Self) -> RenderMeshInstanceFlags
 pub fn RenderMeshQueueData::material_bindings_index(Self) -> MaterialBindingId
 pub fn RenderMeshQueueData::mesh_asset_id(Self) -> Int
-pub fn RenderMeshQueueData::new(Int, UInt, Bool, material_bindings_index? : MaterialBindingId, flags? : RenderMeshInstanceFlags, render_layers? : @render_layers.RenderLayers?) -> Self
+pub fn RenderMeshQueueData::new(Int, @render_phase.InputUniformIndex, Bool, material_bindings_index? : MaterialBindingId, flags? : RenderMeshInstanceFlags, render_layers? : @render_layers.RenderLayers?) -> Self
 pub fn RenderMeshQueueData::render_layers(Self) -> @render_layers.RenderLayers?
 pub fn RenderMeshQueueData::should_batch(Self) -> Bool
 
@@ -3227,7 +3227,7 @@ pub struct Wireframe3dPhases {
   views : Map[UInt64, Wireframe3dViewPhase]
 }
 pub fn Wireframe3dPhases::Wireframe3dPhases() -> Self
-pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, @render_phase.BinnedRenderPhaseType) -> Unit
+pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dPhases::contains(Self, @core.Entity) -> Bool
 pub fn Wireframe3dPhases::len(Self) -> Int
 pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
@@ -3320,12 +3320,12 @@ pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
   mut items : Array[Wireframe3d]
   mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
-  input_uniform_indices : Map[UInt64, UInt]
+  input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
   phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
-pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, @render_phase.BinnedRenderPhaseType) -> Unit
+pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
-pub fn Wireframe3dViewPhase::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
+pub fn Wireframe3dViewPhase::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.InputUniformIndex?
 pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
 pub fn Wireframe3dViewPhase::items(Self) -> Array[Wireframe3d]
 pub fn Wireframe3dViewPhase::len(Self) -> Int

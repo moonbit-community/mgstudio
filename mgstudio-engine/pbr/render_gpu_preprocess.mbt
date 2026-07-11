@@ -130,7 +130,7 @@ priv struct QueuedMaterialMesh3d {
   pipeline_id : @material.CachedRenderPipelineId
   distance : Float
   mesh_asset_id : Int
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   slabs : @render_mesh.MeshSlabs
   material_bind_group_index : Int
   material_bind_group_slot : Int
@@ -300,7 +300,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
 priv struct GpuPreprocessWorkItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   phase : Int
   draw_function : @material.DrawFunctionId
   pipeline_id : @material.CachedRenderPipelineId
@@ -700,7 +700,7 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
     work_item_buffers.push(
       indexed,
       @render_batching.PreprocessWorkItem::new(
-        draw_item.current_uniform_index.reinterpret_as_int(),
+        draw_item.current_uniform_index.to_int(),
         indirect_parameters_index,
       ),
     )

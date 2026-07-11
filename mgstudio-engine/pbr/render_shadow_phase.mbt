@@ -304,7 +304,7 @@ fn render3d_shadow_resolve_phase_items(
     match render_mesh_instances.render_mesh_queue_data(main_entity) {
       Some(queue_data) =>
         mesh_indices_by_uniform_index.set(
-          queue_data.current_uniform_index().reinterpret_as_int(),
+          queue_data.current_uniform_index().to_int(),
           index,
         )
       None => ()

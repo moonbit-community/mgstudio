@@ -1315,7 +1315,7 @@ pub struct Render3dQueuedShadowPhaseItemData {
   draw_function : @material.DrawFunctionId
   material_bind_group_index : Int?
   mesh_asset_id : Int
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   should_batch : Bool
   slabs : @render_mesh.MeshSlabs
 }
@@ -1365,7 +1365,7 @@ pub fn Render3dQueuedShadowPhaseItemData::mesh_asset_id(
 ///|
 pub fn Render3dQueuedShadowPhaseItemData::current_uniform_index(
   self : Render3dQueuedShadowPhaseItemData,
-) -> UInt {
+) -> @render_phase.InputUniformIndex {
   self.current_uniform_index
 }
 
@@ -2622,7 +2622,7 @@ pub struct Render3dShadowViewPhaseData {
   mut items : Array[Render3dShadowPhaseItemData]
   mut multidrawable_meshes : Array[Render3dShadowMultidrawableBatchSetEntry]
   mut unbatchable_meshes : Array[Render3dShadowUnbatchableBinnedEntities]
-  input_uniform_indices : Map[UInt64, UInt]
+  input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
   phase_types : Map[UInt64, Render3dShadowBinnedRenderPhaseType]
 }
 
@@ -2990,14 +2990,14 @@ pub fn Render3dShadowViewPhaseData::add(
   batch_set_key : Render3dShadowBatchSetKeyData,
   bin_key : Render3dShadowBinKeyData,
   representative_entity : (@core.Entity, @render.MainEntity),
-  input_uniform_index : UInt,
+  input_uniform_index : @render_phase.InputUniformIndex,
   phase_type : Render3dShadowBinnedRenderPhaseType,
 ) -> Unit {
   let effective_phase_type = render3d_shadow_effective_phase_type(
     self.gpu_preprocessing_mode,
     phase_type,
   )
-  let input_uniform_index_int = input_uniform_index.reinterpret_as_int()
+  let input_uniform_index_int = input_uniform_index.to_int()
   if effective_phase_type == MultidrawableMesh {
     let mut batch_set_index = -1
     for index in 0..<self.multidrawable_meshes.length() {
@@ -3015,7 +3015,7 @@ pub fn Render3dShadowViewPhaseData::add(
     self.multidrawable_meshes[batch_set_index].insert(
       bin_key,
       representative_entity.1,
-      input_uniform_index,
+      input_uniform_index.value(),
     )
     let key = representative_entity.1.id().to_bits()
     self.input_uniform_indices.set(key, input_uniform_index)
@@ -3039,7 +3039,7 @@ pub fn Render3dShadowViewPhaseData::add(
     self.unbatchable_meshes[unbatchable_index].insert(
       representative_entity.1,
       representative_entity.0,
-      input_uniform_index,
+      input_uniform_index.value(),
     )
     let key = representative_entity.1.id().to_bits()
     self.input_uniform_indices.set(key, input_uniform_index)
@@ -3123,7 +3123,7 @@ pub fn Render3dShadowViewPhaseData::remove(
 pub fn Render3dShadowViewPhaseData::input_uniform_index(
   self : Render3dShadowViewPhaseData,
   main_entity : @render.MainEntity,
-) -> UInt? {
+) -> @render_phase.InputUniformIndex? {
   self.input_uniform_indices.get(main_entity.id().to_bits())
 }
 

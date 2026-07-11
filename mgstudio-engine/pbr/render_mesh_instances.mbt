@@ -118,7 +118,7 @@ pub fn RenderMeshInstanceFlags::from_extraction_components(
 pub struct RenderMeshQueueData {
   mesh_asset_id : Int
   material_bindings_index : MaterialBindingId
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   should_batch : Bool
   flags : RenderMeshInstanceFlags
   render_layers : @camera_render_layers.RenderLayers?
@@ -127,7 +127,7 @@ pub struct RenderMeshQueueData {
 ///|
 pub fn RenderMeshQueueData::new(
   mesh_asset_id : Int,
-  current_uniform_index : UInt,
+  current_uniform_index : @render_phase.InputUniformIndex,
   should_batch : Bool,
   material_bindings_index? : MaterialBindingId = MaterialBindingId::MaterialBindingId(),
   flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
@@ -163,7 +163,7 @@ pub fn RenderMeshQueueData::material_bindings_index(
 ///|
 pub fn RenderMeshQueueData::current_uniform_index(
   self : RenderMeshQueueData,
-) -> UInt {
+) -> @render_phase.InputUniformIndex {
   self.current_uniform_index
 }
 
@@ -255,7 +255,7 @@ pub fn RenderMeshInstanceSharedFlat::from_queue_data(
   RenderMeshInstanceSharedFlat::new(
     data.mesh_asset_id(),
     material_bindings_index=data.material_bindings_index(),
-    current_uniform_index=data.current_uniform_index(),
+    current_uniform_index=data.current_uniform_index().value(),
     flags=data.flags(),
   )
 }
@@ -312,7 +312,9 @@ pub fn RenderMeshInstanceSharedFlat::should_batch(
 ///|
 pub fn RenderMeshInstanceSharedFlat::to_queue_data(
   self : RenderMeshInstanceSharedFlat,
-  current_uniform_index? : UInt = self.current_uniform_index,
+  current_uniform_index? : @render_phase.InputUniformIndex = @render_phase.InputUniformIndex::new(
+    self.current_uniform_index,
+  ),
   render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> RenderMeshQueueData {
   RenderMeshQueueData::new(
@@ -382,7 +384,7 @@ pub fn RenderMeshInstanceCpu::render_mesh_queue_data(
   self : RenderMeshInstanceCpu,
 ) -> RenderMeshQueueData {
   self.shared.to_queue_data(
-    current_uniform_index=0U,
+    current_uniform_index=@render_phase.InputUniformIndex::default(),
     render_layers=self.render_layers,
   )
 }
@@ -410,7 +412,7 @@ pub fn RenderMeshInstanceGpu::from_queue_data(
   RenderMeshInstanceGpu::new(
     RenderMeshInstanceSharedFlat::from_queue_data(data),
     gpu_specific=RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
-      current_uniform_index=data.current_uniform_index(),
+      current_uniform_index=data.current_uniform_index().value(),
     ),
     render_layers=data.render_layers(),
   )
@@ -428,7 +430,9 @@ pub fn RenderMeshInstanceGpu::render_mesh_queue_data(
   self : RenderMeshInstanceGpu,
 ) -> RenderMeshQueueData {
   self.shared.to_queue_data(
-    current_uniform_index=self.gpu_specific.current_uniform_index(),
+    current_uniform_index=@render_phase.InputUniformIndex::new(
+      self.gpu_specific.current_uniform_index(),
+    ),
     render_layers=self.render_layers,
   )
 }
@@ -2110,7 +2114,7 @@ pub fn RenderMeshInstances::render_mesh_queue_data(
 // `bevy/crates/bevy_pbr/src/material.rs::get_mesh_instance_world_from_local`.
 pub fn get_mesh_instance_world_from_local(
   entity : @render.MainEntity,
-  current_uniform_index : UInt,
+  current_uniform_index : @render_phase.InputUniformIndex,
   render_mesh_instances : RenderMeshInstances,
   maybe_batched_instance_buffers : RenderMeshInstanceGpuBatchedInstanceBuffers?,
 ) -> @math.Affine3 {
@@ -2129,7 +2133,7 @@ pub fn get_mesh_instance_world_from_local(
         Some(batched_instance_buffers) =>
           match
             batched_instance_buffers.buffers.current_input_buffer.get(
-              current_uniform_index.reinterpret_as_int(),
+              current_uniform_index.to_int(),
             ) {
             Some(mesh_input_uniform) => mesh_input_uniform.world_from_local
             None => @math.Affine3::identity()

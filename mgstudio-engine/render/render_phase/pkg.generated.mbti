@@ -48,6 +48,11 @@ pub(all) enum BinnedRenderPhaseType {
 } derive(Eq, @debug.Debug)
 pub fn BinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
 
+pub(all) struct InputUniformIndex(UInt) derive(Default, Eq, @debug.Debug)
+pub fn InputUniformIndex::new(UInt) -> Self
+pub fn InputUniformIndex::to_int(Self) -> Int
+pub fn InputUniformIndex::value(Self) -> UInt
+
 pub struct PhaseItemBatchRange {
   start : Int
   end : Int

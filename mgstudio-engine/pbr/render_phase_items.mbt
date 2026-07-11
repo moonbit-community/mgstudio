@@ -206,7 +206,7 @@ priv struct Render3dCameraOrderEntry {
 priv struct MeshPhaseItem3d {
   entity : PhaseEntityRef3d
   extracted_index : Int
-  current_uniform_index : UInt
+  current_uniform_index : @render_phase.InputUniformIndex
   phase : Int
   draw_function : @material.DrawFunctionId
   pipeline_id : @material.CachedRenderPipelineId

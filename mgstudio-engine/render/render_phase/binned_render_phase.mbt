@@ -129,6 +129,27 @@ pub fn BinnedRenderPhaseType::mesh(
 
 ///|
 // Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::InputUniformIndex`.
+pub(all) struct InputUniformIndex(UInt) derive(Default, Eq, Debug)
+
+///|
+pub fn InputUniformIndex::new(index : UInt) -> InputUniformIndex {
+  InputUniformIndex(index)
+}
+
+///|
+pub fn InputUniformIndex::value(self : InputUniformIndex) -> UInt {
+  let InputUniformIndex(index) = self
+  index
+}
+
+///|
+pub fn InputUniformIndex::to_int(self : InputUniformIndex) -> Int {
+  self.value().reinterpret_as_int()
+}
+
+///|
+// Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
 pub(all) struct UnbatchableBinnedEntityIndices {
   instance_index : Int

@@ -164,7 +164,7 @@ test "render3d: materials startup preserves pending queue resources" {
           debug_inspect(phase.len(), content="1")
           debug_inspect(
             phase.input_uniform_index(main_entity),
-            content="Some(7)",
+            content="Some(InputUniformIndex(7))",
           )
         }
         None => debug_inspect(false, content="true")
@@ -207,8 +207,14 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
   inspect(item.batch_range().start(), content="14")
   inspect(item.batch_range().end(), content="16")
   debug_inspect(item.extra_index(), content="None")
-  debug_inspect(phase.input_uniform_index(first_main), content="Some(14)")
-  debug_inspect(phase.input_uniform_index(second_main), content="Some(15)")
+  debug_inspect(
+    phase.input_uniform_index(first_main),
+    content="Some(InputUniformIndex(14))",
+  )
+  debug_inspect(
+    phase.input_uniform_index(second_main),
+    content="Some(InputUniformIndex(15))",
+  )
   let render_mesh_instances = RenderMeshInstances::new(
     use_gpu_instance_buffer_builder=true,
   )
@@ -509,7 +515,10 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
   phase.remove(first_main)
   debug_inspect(phase.len(), content="1")
   debug_inspect(phase.input_uniform_index(first_main), content="None")
-  debug_inspect(phase.input_uniform_index(second_main), content="Some(31)")
+  debug_inspect(
+    phase.input_uniform_index(second_main),
+    content="Some(InputUniformIndex(31))",
+  )
   debug_inspect(
     phase.items()[0].main_entity(),
     content="{ entity: { id: 52, generation: 1 } }",
@@ -517,7 +526,10 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
   phase.prepare_for_new_frame()
   debug_inspect(phase.len(), content="0")
   debug_inspect(phase.items().length(), content="0")
-  debug_inspect(phase.input_uniform_index(second_main), content="Some(31)")
+  debug_inspect(
+    phase.input_uniform_index(second_main),
+    content="Some(InputUniformIndex(31))",
+  )
   debug_inspect(phase.phase_type(second_main), content="Some(UnbatchableMesh)")
 }
 
@@ -694,7 +706,10 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
   phase.remove(first_main)
   debug_inspect(phase.len(), content="1")
   debug_inspect(phase.input_uniform_index(first_main), content="None")
-  debug_inspect(phase.input_uniform_index(second_main), content="Some(41)")
+  debug_inspect(
+    phase.input_uniform_index(second_main),
+    content="Some(InputUniformIndex(41))",
+  )
   phase.prepare_for_new_frame()
   debug_inspect(phase.len(), content="1")
   debug_inspect(phase.multidrawable_batch_set_count(), content="1")
@@ -3436,7 +3451,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   let second = queued.items()[1]
   inspect(first.pipeline_id().id(), content="801")
   debug_inspect(first.material_bind_group_index(), content="None")
-  inspect(first.current_uniform_index().reinterpret_as_int(), content="11")
+  inspect(first.current_uniform_index().to_int(), content="11")
   let first_batch_key = first.batch_set_key()
   let first_bin_key = first.bin_key()
   inspect(first_batch_key.pipeline_id().id(), content="801")
@@ -3446,7 +3461,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   inspect(first_bin_key.mesh_asset_id(), content="701")
   inspect(second.pipeline_id().id(), content="802")
   debug_inspect(second.material_bind_group_index(), content="Some(7)")
-  inspect(second.current_uniform_index().reinterpret_as_int(), content="12")
+  inspect(second.current_uniform_index().to_int(), content="12")
   let second_batch_key = second.batch_set_key()
   let second_bin_key = second.bin_key()
   inspect(second_batch_key.pipeline_id().id(), content="802")
@@ -3531,11 +3546,11 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   debug_inspect(shadow_phase.len(), content="2")
   debug_inspect(
     shadow_phase.input_uniform_index(depth_main),
-    content="Some(11)",
+    content="Some(InputUniformIndex(11))",
   )
   debug_inspect(
     shadow_phase.input_uniform_index(material_main),
-    content="Some(12)",
+    content="Some(InputUniformIndex(12))",
   )
   debug_inspect(
     shadow_phase.input_uniform_index(cache_miss_main),

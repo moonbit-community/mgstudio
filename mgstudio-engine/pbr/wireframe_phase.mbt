@@ -1404,12 +1404,12 @@ fn Wireframe3dUnbatchableBinnedEntities::insert(
   self : Wireframe3dUnbatchableBinnedEntities,
   main_entity : @render.MainEntity,
   render_entity : @core.Entity,
-  input_uniform_index : UInt,
+  input_uniform_index : @render_phase.InputUniformIndex,
 ) -> Unit {
   self.entities.push((main_entity, render_entity))
   self.buffer_indices.add(
     @render_phase.UnbatchableBinnedEntityIndices::new(
-      input_uniform_index.reinterpret_as_int(),
+      input_uniform_index.to_int(),
       WireframePhaseItemExtraIndex::none(),
     ),
   )
@@ -1487,7 +1487,7 @@ pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
   mut items : Array[Wireframe3d]
   mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
-  input_uniform_indices : Map[UInt64, UInt]
+  input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
   phase_types : Map[UInt64, WireframeBinnedRenderPhaseType]
 }
 
@@ -1578,7 +1578,7 @@ pub fn Wireframe3dViewPhase::add(
   batch_set_key : Wireframe3dBatchSetKey,
   bin_key : Wireframe3dBinKey,
   representative_entity : (@core.Entity, @render.MainEntity),
-  input_uniform_index : UInt,
+  input_uniform_index : @render_phase.InputUniformIndex,
   phase_type : WireframeBinnedRenderPhaseType,
 ) -> Unit {
   let effective_phase_type = wireframe_effective_phase_type(
@@ -1616,8 +1616,8 @@ pub fn Wireframe3dViewPhase::add(
       representative_entity.0,
       representative_entity.1,
       Wireframe3dBatchRange::new(
-        input_uniform_index.reinterpret_as_int(),
-        input_uniform_index.reinterpret_as_int() + 1,
+        input_uniform_index.to_int(),
+        input_uniform_index.to_int() + 1,
       ),
       WireframePhaseItemExtraIndex::none(),
     ),
@@ -1665,7 +1665,7 @@ pub fn Wireframe3dViewPhase::remove(
 pub fn Wireframe3dViewPhase::input_uniform_index(
   self : Wireframe3dViewPhase,
   main_entity : @render.MainEntity,
-) -> UInt? {
+) -> @render_phase.InputUniformIndex? {
   self.input_uniform_indices.get(main_entity.id().to_bits())
 }
 
@@ -1747,7 +1747,7 @@ pub fn Wireframe3dPhases::add(
   batch_set_key : Wireframe3dBatchSetKey,
   bin_key : Wireframe3dBinKey,
   representative_entity : (@core.Entity, @render.MainEntity),
-  input_uniform_index : UInt,
+  input_uniform_index : @render_phase.InputUniformIndex,
   phase_type : WireframeBinnedRenderPhaseType,
 ) -> Unit {
   match self.views.get(retained_view_entity.to_bits()) {

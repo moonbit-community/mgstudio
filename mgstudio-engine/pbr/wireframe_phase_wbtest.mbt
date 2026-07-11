@@ -1331,7 +1331,10 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
   }
   debug_inspect(phase.len(), content="1")
   debug_inspect(phase.is_empty(), content="false")
-  debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+  debug_inspect(
+    phase.input_uniform_index(main_entity),
+    content="Some(InputUniformIndex(9))",
+  )
   debug_inspect(phase.phase_type(main_entity), content="Some(BatchableMesh)")
 
   phases.remove(view, main_entity)
@@ -1418,7 +1421,10 @@ test "pbr: wireframe binned phase prepare preserves cached items" {
   let phase = phases.phase(view).unwrap()
   debug_inspect(phase.len(), content="1")
   debug_inspect(phase.gpu_preprocessing_mode(), content="PreprocessingOnly")
-  debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+  debug_inspect(
+    phase.input_uniform_index(main_entity),
+    content="Some(InputUniformIndex(9))",
+  )
 }
 
 ///|
@@ -1519,7 +1525,10 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     item.batch_set_key().slabs().morph_target_slab_id(),
     content="None",
   )
-  debug_inspect(phase.input_uniform_index(main_entity), content="Some(0)")
+  debug_inspect(
+    phase.input_uniform_index(main_entity),
+    content="Some(InputUniformIndex(0))",
+  )
   debug_inspect(phase.phase_type(main_entity), content="Some(BatchableMesh)")
   debug_inspect(pending.current_len(), content="0")
 }
@@ -1674,7 +1683,10 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     content="true",
   )
   debug_inspect(item.batch_set_key().mesh_asset_id(), content="None")
-  debug_inspect(phase.input_uniform_index(main_entity), content="Some(0)")
+  debug_inspect(
+    phase.input_uniform_index(main_entity),
+    content="Some(InputUniformIndex(0))",
+  )
 }
 
 ///|

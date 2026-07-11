@@ -80,6 +80,14 @@ test "render_phase: binned mesh type follows Bevy preprocessing support" {
 }
 
 ///|
+test "render_phase: input uniform index preserves the Bevy nominal boundary" {
+  let index = InputUniformIndex::new(17U)
+  inspect(index.value(), content="17")
+  inspect(index.to_int(), content="17")
+  debug_inspect(InputUniformIndex::default(), content="InputUniformIndex(0)")
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
