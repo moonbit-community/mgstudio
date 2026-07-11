@@ -235,21 +235,6 @@ fn custom_pipeline_override_descriptor(
 }
 
 ///|
-fn custom_material_extension_specialize(
-  _pipeline : String,
-  descriptor : @material.RenderPipelineDescriptor,
-  layout : @material.MaterialMeshVertexLayout,
-  _key : @material.ErasedMaterialPipelineKey,
-) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
-  if layout.index() < 0 {
-    raise @material.missing_vertex_attribute_error(
-      "custom instancing mesh layout",
-    )
-  }
-  custom_pipeline_override_descriptor(descriptor)
-}
-
-///|
 fn CustomPipeline::specialize(
   self : CustomPipeline,
   key : @material.ErasedMeshPipelineKey,
@@ -258,16 +243,6 @@ fn CustomPipeline::specialize(
   custom_pipeline_override_descriptor(
     self.mesh_pipeline.specialize(key, layout),
   )
-}
-
-///|
-fn custom_material_metadata() -> @material.ExtendedMaterialMetadata3d {
-  @material.ExtendedMaterialMetadata3d::new(1)
-  .with_vertex_shader_path(Some(SHADER_ASSET_PATH))
-  .with_fragment_shader_path(Some(SHADER_ASSET_PATH))
-  .with_alpha_mode_override(Some(@material.AlphaMode3d::Blend))
-  .with_disable_shadows(true)
-  .with_user_specialize(Some(custom_material_extension_specialize))
 }
 
 ///|
@@ -509,6 +484,14 @@ fn init_custom_pipeline(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn register_custom_shader_source(world : @ecs.World) -> Unit {
+  @shader_runtime_render.shader_register_wgsl_runtime_source(
+    @render.render_source_world(world),
+    SHADER_ASSET_PATH,
+  )
+}
+
+///|
 pub impl @app.Plugin for CustomMaterialPlugin with fn name(_self) {
   "mgstudio.examples.shader_advanced.CustomMaterialPlugin"
 }
@@ -556,6 +539,12 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
     )
     .add_systems(
       @render.render_schedule_stage(),
+      @app.system(register_custom_shader_source)
+      .named("custom_shader_instancing::register_custom_shader_source")
+      .in_set(@render.render_system_set_prepare_assets),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
       @app.system(queue_custom)
       .named("custom_shader_instancing::queue_custom")
       .in_set(@render.render_system_set_queue_meshes),
@@ -573,20 +562,13 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let mesh_handle = meshes.peek()
     |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
-  let material_handle = materials
-    .peek()
-    .add(@pbr.StandardMaterial::from_color(@color.Color::white()))
   let instance_material = instance_material_data()
   commands.spawn(
     (
       @mesh.Mesh3d::new(mesh_handle),
-      @pbr.MeshMaterial3d::new(material_handle).with_extended_material(
-        Some(custom_material_metadata()),
-      ),
       @transform.Transform::identity(),
       instance_material,
       @visibility.NoFrustumCulling::NoFrustumCulling(),
@@ -612,6 +594,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param2(@app.Startup, setup)
   .run()
 }

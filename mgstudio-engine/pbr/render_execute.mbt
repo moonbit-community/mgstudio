@@ -4366,6 +4366,34 @@ fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
 }
 
 ///|
+// Bevy source: `extract_render_asset<RenderMesh>` is independent of whether a
+// mesh entity also has a material. Collect every in-use `Mesh3d` handle from
+// the source world so custom phase owners can prepare materialless meshes.
+fn render3d_extracted_render_mesh_assets_from_source_world(
+  source_world : @ecs.World,
+) -> Array[@render_mesh.ExtractedRenderMeshAsset] {
+  let extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset] = []
+  let seen_mesh_assets : Map[Int, Unit] = {}
+  let meshes : @ecs.Query[@ecs.Read[@mesh.Mesh3d], @ecs.All] = @ecs.query(
+    source_world,
+  )
+  try! meshes.view(fn(_entity, mesh3d) {
+    let mesh_handle = mesh3d.value().mesh()
+    if seen_mesh_assets.contains(mesh_handle.id()) {
+      return
+    }
+    guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
+      return
+    }
+    seen_mesh_assets.set(mesh_handle.id(), ())
+    extracted_assets.push(
+      @render_mesh.ExtractedRenderMeshAsset::new(mesh_handle.id(), source_mesh),
+    )
+  })
+  extracted_assets
+}
+
+///|
 // Temporary backend adapter under Bevy's
 // `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>` owner. The host
 // draw API still consumes a mesh id, so prepare each unique render asset once;
@@ -4398,10 +4426,10 @@ fn render3d_prepare_render_mesh_backend_uploads(
 
 ///|
 // Bevy source: `bevy_render/src/render_asset.rs::prepare_assets<RenderMesh>`.
-fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
+fn render3d_prepare_render_mesh_assets_from_source_world(
   world : @ecs.World,
+  source_world : @ecs.World,
   mesh_runtime_state_value : @pbr_render.Render3dMeshRuntimeState,
-  meshes : Array[ExtractedMesh3d],
   counters : Render3dPrepareMeshesCounters,
 ) -> Unit {
   let render_mesh_assets = match
@@ -4423,8 +4451,8 @@ fn render3d_prepare_render_mesh_assets_from_extracted_meshes(
   let mesh_allocator_settings = world
     .get_resource(@render_mesh.MeshAllocatorSettings::resource())
     .unwrap_or(@render_mesh.MeshAllocatorSettings::MeshAllocatorSettings())
-  let extracted_assets = render3d_extracted_render_mesh_assets_from_extracted_meshes(
-    meshes,
+  let extracted_assets = render3d_extracted_render_mesh_assets_from_source_world(
+    source_world,
   )
   let prepared_assets = @render_mesh.prepare_render_mesh_assets(
     extracted_assets,
@@ -4737,8 +4765,8 @@ pub fn render3d_prepare_meshes_system(world : @ecs.World) -> Unit {
         })
       })
     })
-    render3d_prepare_render_mesh_assets_from_extracted_meshes(
-      world, mesh_runtime_state_value, meshes, prepare_meshes_counters,
+    render3d_prepare_render_mesh_assets_from_source_world(
+      world, source_world, mesh_runtime_state_value, prepare_meshes_counters,
     )
     if frame_config.gpu_instance_buffer_builder_enabled {
       render_mesh_instances_extract_gpu_building_resource(

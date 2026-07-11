@@ -141,7 +141,7 @@ test "custom shader instancing: render-world prepare stores InstanceBuffer" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-    .add_systems_param3(@app.Startup, setup)
+    .add_systems_param2(@app.Startup, setup)
     .run_once()
     .run_once()
     .run_once()
@@ -186,7 +186,7 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-    .add_systems_param3(@app.Startup, setup)
+    .add_systems_param2(@app.Startup, setup)
     .run_once()
     .run_once()
     .run_once()
@@ -202,9 +202,11 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
   let mut count = 0
   let mut visible = false
   let mut has_render_entity = false
+  let mut main_entity = @core.Entity::placeholder()
   try! query.view(fn(_query_entity, data) {
-    let (_entity, _instances, view_visibility, render_entity) = data
+    let (entity, _instances, view_visibility, render_entity) = data
     count = count + 1
+    main_entity = entity
     visible = view_visibility.value().is_visible()
     has_render_entity = render_entity.value() is Some(_)
   })
@@ -213,8 +215,19 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
   debug_inspect(has_render_entity, content="true")
   let render_world = app.sub_app(@app.RenderApp).world()
   debug_inspect(
-    @pbr.render3d_diagnostic_queued_visible_mesh_count(render_world),
+    render_world
+    .get_resource(@render_mesh.RenderMeshAssets::resource())
+    .unwrap()
+    .len(),
     content="1",
+  )
+  debug_inspect(
+    render_world
+    .get_resource(@pbr.RenderMeshInstances::resource())
+    .unwrap()
+    .render_mesh_queue_data(@render.MainEntity::new(main_entity))
+    is Some(_),
+    content="true",
   )
 }
 
@@ -223,7 +236,7 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-    .add_systems_param3(@app.Startup, setup)
+    .add_systems_param2(@app.Startup, setup)
     .run_once()
     .run_once()
     .run_once()
@@ -290,6 +303,7 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
     descriptor.fragment.unwrap().shader,
     content="Some(\"shaders/instancing.wgsl\")",
   )
+  debug_inspect(draw_mesh_instanced(render_world, item), content="Success")
   try! render_world.set_by_key(
     item.entity(),
     InstanceBuffer::component(),
