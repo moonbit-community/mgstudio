@@ -149,6 +149,104 @@ pub fn InputUniformIndex::to_int(self : InputUniformIndex) -> Int {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderBin`.
+struct RenderBinEntities {
+  entries : Array[(@render_sync_world.MainEntity, InputUniformIndex)]
+  indices : Map[@render_sync_world.MainEntity, Int]
+} derive(Default)
+
+///|
+fn RenderBinEntities::insert(
+  self : RenderBinEntities,
+  entity : @render_sync_world.MainEntity,
+  uniform_index : InputUniformIndex,
+) -> Unit {
+  match self.indices.get(entity) {
+    Some(index) => self.entries[index] = (entity, uniform_index)
+    None => {
+      self.indices.set(entity, self.entries.length())
+      self.entries.push((entity, uniform_index))
+    }
+  }
+}
+
+///|
+fn RenderBinEntities::swap_remove(
+  self : RenderBinEntities,
+  entity_to_remove : @render_sync_world.MainEntity,
+) -> Unit {
+  guard self.indices.get(entity_to_remove) is Some(index) else { return }
+  self.indices.remove(entity_to_remove)
+  let last_index = self.entries.length() - 1
+  if index != last_index {
+    let last_entry = self.entries[last_index]
+    self.entries[index] = last_entry
+    self.indices.set(last_entry.0, index)
+  }
+  self.entries.pop() |> ignore
+}
+
+///|
+fn RenderBinEntities::is_empty(self : RenderBinEntities) -> Bool {
+  self.entries.length() == 0
+}
+
+///|
+fn RenderBinEntities::entries(
+  self : RenderBinEntities,
+) -> ArrayView[(@render_sync_world.MainEntity, InputUniformIndex)] {
+  self.entries[:]
+}
+
+///|
+pub struct RenderBin {
+  entities : RenderBinEntities
+} derive(Default)
+
+///|
+#warnings("-unused_value")
+fn RenderBin::from_entity(
+  entity : @render_sync_world.MainEntity,
+  uniform_index : InputUniformIndex,
+) -> RenderBin {
+  let entities = RenderBinEntities::default()
+  entities.insert(entity, uniform_index)
+  RenderBin::{ entities, }
+}
+
+///|
+#warnings("-unused_value")
+fn RenderBin::insert(
+  self : RenderBin,
+  entity : @render_sync_world.MainEntity,
+  uniform_index : InputUniformIndex,
+) -> Unit {
+  self.entities.insert(entity, uniform_index)
+}
+
+///|
+#warnings("-unused_value")
+fn RenderBin::remove(
+  self : RenderBin,
+  entity_to_remove : @render_sync_world.MainEntity,
+) -> Unit {
+  self.entities.swap_remove(entity_to_remove)
+}
+
+///|
+#warnings("-unused_value")
+fn RenderBin::is_empty(self : RenderBin) -> Bool {
+  self.entities.is_empty()
+}
+
+///|
+pub fn RenderBin::entities(
+  self : RenderBin,
+) -> ArrayView[(@render_sync_world.MainEntity, InputUniformIndex)] {
+  self.entities.entries()
+}
+
+///|
 // Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
 pub(all) struct UnbatchableBinnedEntityIndices {

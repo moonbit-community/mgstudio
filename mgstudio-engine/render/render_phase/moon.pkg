@@ -5,6 +5,11 @@ import {
   "Milky2018/mgstudio/render/batching" @render_batching,
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/sync_world" @render_sync_world,
 }
+
+import {
+  "Milky2018/mgstudio/core",
+} for "wbtest"
 
 supported_targets = "native"

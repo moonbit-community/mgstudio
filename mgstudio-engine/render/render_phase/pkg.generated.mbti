@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/renderer",
+  "Milky2018/mgstudio/render/sync_world",
   "moonbitlang/core/debug",
 }
 
@@ -73,6 +74,13 @@ pub fn PhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
 pub fn PhaseItemExtraIndex::maybe_dynamic_offset(Int?) -> Self
 pub fn PhaseItemExtraIndex::maybe_indirect_parameters_index(Int?) -> Self
 pub fn PhaseItemExtraIndex::none() -> Self
+
+pub struct RenderBin {
+  entities : RenderBinEntities
+} derive(Default)
+pub fn RenderBin::entities(Self) -> ArrayView[(@sync_world.MainEntity, InputUniformIndex)]
+
+type RenderBinEntities derive(Default)
 
 pub(all) struct UnbatchableBinnedEntityIndexSet {
   mut kind : UnbatchableBinnedEntityIndexSetKind

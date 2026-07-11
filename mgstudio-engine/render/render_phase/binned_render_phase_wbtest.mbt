@@ -88,6 +88,43 @@ test "render_phase: input uniform index preserves the Bevy nominal boundary" {
 }
 
 ///|
+test "render_phase: RenderBin retains MainEntity input indices" {
+  debug_inspect(RenderBin::default().is_empty(), content="true")
+  let first = @render_sync_world.MainEntity::new(@core.Entity::new(1, 1))
+  let second = @render_sync_world.MainEntity::new(@core.Entity::new(2, 1))
+  let third = @render_sync_world.MainEntity::new(@core.Entity::new(3, 1))
+  let bin = RenderBin::from_entity(first, InputUniformIndex::new(7U))
+  bin.insert(second, InputUniformIndex::new(9U))
+  bin.insert(third, InputUniformIndex::new(11U))
+  bin.insert(first, InputUniformIndex::new(8U))
+  inspect(bin.entities().length(), content="3")
+  debug_inspect(bin.entities()[0].0 == first, content="true")
+  debug_inspect(
+    bin.entities()[0].1 == InputUniformIndex::new(8U),
+    content="true",
+  )
+  debug_inspect(bin.entities()[1].0 == second, content="true")
+  debug_inspect(
+    bin.entities()[1].1 == InputUniformIndex::new(9U),
+    content="true",
+  )
+  debug_inspect(bin.entities()[2].0 == third, content="true")
+  debug_inspect(
+    bin.entities()[2].1 == InputUniformIndex::new(11U),
+    content="true",
+  )
+  bin.remove(first)
+  inspect(bin.entities().length(), content="2")
+  debug_inspect(bin.entities()[0].0 == third, content="true")
+  debug_inspect(bin.entities()[1].0 == second, content="true")
+  bin.remove(first)
+  inspect(bin.entities().length(), content="2")
+  bin.remove(second)
+  bin.remove(third)
+  debug_inspect(bin.is_empty(), content="true")
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
