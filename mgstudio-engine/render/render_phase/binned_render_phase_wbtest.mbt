@@ -49,3 +49,49 @@ test "render_phase: phase item batch range preserves valid u32-like bounds" {
   debug_inspect(empty, content="{ start: 9, end: 4 }")
   inspect(empty.count(), content="0")
 }
+
+///|
+test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
+  let sparse = UnbatchableBinnedEntityIndexSet::new()
+  sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
+  sparse.add(UnbatchableBinnedEntityIndices::new(5, PhaseItemExtraIndex::None))
+  debug_inspect(sparse.len(), content="2")
+  debug_inspect(
+    sparse
+    .indices_for_entity_index(1)
+    .map(fn(indices) { indices.instance_index() }),
+    content="Some(5)",
+  )
+
+  let indirect = UnbatchableBinnedEntityIndexSet::new()
+  indirect.add(
+    UnbatchableBinnedEntityIndices::new(
+      8,
+      PhaseItemExtraIndex::indirect_parameters_index(20, 21),
+    ),
+  )
+  indirect.add(
+    UnbatchableBinnedEntityIndices::new(
+      9,
+      PhaseItemExtraIndex::indirect_parameters_index(21, 22),
+    ),
+  )
+  debug_inspect(
+    indirect
+    .indices_for_entity_index(1)
+    .map(fn(indices) { indices.extra_index() }),
+    content="Some(IndirectParametersIndex(21, 22, None))",
+  )
+
+  let dense = UnbatchableBinnedEntityIndexSet::new()
+  dense.add(UnbatchableBinnedEntityIndices::new(10, PhaseItemExtraIndex::None))
+  dense.add(UnbatchableBinnedEntityIndices::new(12, PhaseItemExtraIndex::None))
+  debug_inspect(
+    dense
+    .indices_for_entity_index(1)
+    .map(fn(indices) { indices.instance_index() }),
+    content="Some(12)",
+  )
+  dense.clear()
+  debug_inspect(dense.len(), content="0")
+}

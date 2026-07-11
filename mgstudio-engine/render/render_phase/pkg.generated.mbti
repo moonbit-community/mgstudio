@@ -60,6 +60,30 @@ pub fn PhaseItemExtraIndex::maybe_dynamic_offset(Int?) -> Self
 pub fn PhaseItemExtraIndex::maybe_indirect_parameters_index(Int?) -> Self
 pub fn PhaseItemExtraIndex::none() -> Self
 
+pub(all) struct UnbatchableBinnedEntityIndexSet {
+  mut kind : UnbatchableBinnedEntityIndexSetKind
+}
+pub fn UnbatchableBinnedEntityIndexSet::add(Self, UnbatchableBinnedEntityIndices) -> Unit
+pub fn UnbatchableBinnedEntityIndexSet::clear(Self) -> Unit
+pub fn UnbatchableBinnedEntityIndexSet::indices_for_entity_index(Self, Int) -> UnbatchableBinnedEntityIndices?
+pub fn UnbatchableBinnedEntityIndexSet::kind(Self) -> UnbatchableBinnedEntityIndexSetKind
+pub fn UnbatchableBinnedEntityIndexSet::len(Self) -> Int
+pub fn UnbatchableBinnedEntityIndexSet::new() -> Self
+
+pub(all) enum UnbatchableBinnedEntityIndexSetKind {
+  NoEntities
+  Sparse(PhaseItemBatchRange, Int?)
+  Dense(Array[UnbatchableBinnedEntityIndices])
+} derive(@debug.Debug)
+
+pub(all) struct UnbatchableBinnedEntityIndices {
+  instance_index : Int
+  extra_index : PhaseItemExtraIndex
+} derive(Eq, @debug.Debug)
+pub fn UnbatchableBinnedEntityIndices::extra_index(Self) -> PhaseItemExtraIndex
+pub fn UnbatchableBinnedEntityIndices::instance_index(Self) -> Int
+pub fn UnbatchableBinnedEntityIndices::new(Int, PhaseItemExtraIndex) -> Self
+
 pub struct ViewRangefinder3d {
   view_from_world_row_2 : @math.Vec4
 }

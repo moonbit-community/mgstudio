@@ -392,7 +392,7 @@ test "render3d: batchable shadow phase prepares Bevy work item buffers" {
 
 ///|
 test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense states" {
-  let sparse = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  let sparse = Render3dShadowUnbatchableBinnedEntityIndexSet::new()
   sparse.add(
     Render3dShadowUnbatchableBinnedEntityIndices::new(
       4,
@@ -421,7 +421,7 @@ test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense state
   sparse.clear()
   debug_inspect(sparse.len(), content="0")
 
-  let indirect = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  let indirect = Render3dShadowUnbatchableBinnedEntityIndexSet::new()
   indirect.add(
     Render3dShadowUnbatchableBinnedEntityIndices::new(
       8,
@@ -442,7 +442,7 @@ test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense state
     content="Some(IndirectParametersIndex(21, 22, None))",
   )
 
-  let dense = Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet()
+  let dense = Render3dShadowUnbatchableBinnedEntityIndexSet::new()
   dense.add(
     Render3dShadowUnbatchableBinnedEntityIndices::new(
       10,

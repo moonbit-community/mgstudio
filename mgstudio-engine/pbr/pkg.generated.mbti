@@ -2461,32 +2461,8 @@ pub(all) struct Render3dShadowUnbatchableBinnedEntities {
   batch_set_key : Render3dShadowBatchSetKeyData
   bin_key : Render3dShadowBinKeyData
   mut entities : Array[(@Milky2018/mgstudio/render.MainEntity, @core.Entity)]
-  buffer_indices : Render3dShadowUnbatchableBinnedEntityIndexSet
+  buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
 }
-
-pub(all) struct Render3dShadowUnbatchableBinnedEntityIndexSet {
-  mut kind : Render3dShadowUnbatchableBinnedEntityIndexSetKind
-}
-pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::Render3dShadowUnbatchableBinnedEntityIndexSet() -> Self
-pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::add(Self, Render3dShadowUnbatchableBinnedEntityIndices) -> Unit
-pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::clear(Self) -> Unit
-pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::indices_for_entity_index(Self, Int) -> Render3dShadowUnbatchableBinnedEntityIndices?
-pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::kind(Self) -> Render3dShadowUnbatchableBinnedEntityIndexSetKind
-pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::len(Self) -> Int
-
-pub(all) enum Render3dShadowUnbatchableBinnedEntityIndexSetKind {
-  NoUnbatchableBinnedEntities
-  SparseUnbatchableBinnedEntityIndices(@render_phase.PhaseItemBatchRange, Int?)
-  DenseUnbatchableBinnedEntityIndices(Array[Render3dShadowUnbatchableBinnedEntityIndices])
-} derive(@debug.Debug)
-
-pub(all) struct Render3dShadowUnbatchableBinnedEntityIndices {
-  instance_index : Int
-  extra_index : @render_phase.PhaseItemExtraIndex
-} derive(Eq, @debug.Debug)
-pub fn Render3dShadowUnbatchableBinnedEntityIndices::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
-pub fn Render3dShadowUnbatchableBinnedEntityIndices::instance_index(Self) -> Int
-pub fn Render3dShadowUnbatchableBinnedEntityIndices::new(Int, @render_phase.PhaseItemExtraIndex) -> Self
 
 pub struct Render3dShadowViewPhaseData {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
@@ -3673,6 +3649,12 @@ pub using @projection3d {type ProjectionRuntime3d}
 pub using @render_phase {type PhaseItemBatchRange as Render3dShadowBatchRange}
 
 pub using @render_phase {type PhaseItemExtraIndex as Render3dShadowPhaseItemExtraIndex}
+
+pub using @render_phase {type UnbatchableBinnedEntityIndexSet as Render3dShadowUnbatchableBinnedEntityIndexSet}
+
+pub using @render_phase {type UnbatchableBinnedEntityIndexSetKind as Render3dShadowUnbatchableBinnedEntityIndexSetKind}
+
+pub using @render_phase {type UnbatchableBinnedEntityIndices as Render3dShadowUnbatchableBinnedEntityIndices}
 
 pub using @light {type ScatteringMedium}
 

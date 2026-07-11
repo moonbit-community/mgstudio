@@ -104,3 +104,213 @@ pub fn PhaseItemBatchRange::count(self : PhaseItemBatchRange) -> Int {
     self.end - self.start
   }
 }
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
+pub(all) struct UnbatchableBinnedEntityIndices {
+  instance_index : Int
+  extra_index : PhaseItemExtraIndex
+} derive(Eq, Debug)
+
+///|
+pub fn UnbatchableBinnedEntityIndices::new(
+  instance_index : Int,
+  extra_index : PhaseItemExtraIndex,
+) -> UnbatchableBinnedEntityIndices {
+  if instance_index < 0 {
+    abort("unbatchable binned entity instance index must be non-negative")
+  }
+  UnbatchableBinnedEntityIndices::{ instance_index, extra_index }
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndices::instance_index(
+  self : UnbatchableBinnedEntityIndices,
+) -> Int {
+  self.instance_index
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndices::extra_index(
+  self : UnbatchableBinnedEntityIndices,
+) -> PhaseItemExtraIndex {
+  self.extra_index
+}
+
+///|
+// MoonBit uses a mutable wrapper around Bevy's enum so `add` and `clear` can
+// preserve the same sparse-to-dense state transitions through a shared value.
+pub(all) enum UnbatchableBinnedEntityIndexSetKind {
+  NoEntities
+  Sparse(PhaseItemBatchRange, Int?)
+  Dense(Array[UnbatchableBinnedEntityIndices])
+} derive(Debug)
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndexSet`.
+pub(all) struct UnbatchableBinnedEntityIndexSet {
+  mut kind : UnbatchableBinnedEntityIndexSetKind
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndexSet::new() -> UnbatchableBinnedEntityIndexSet {
+  UnbatchableBinnedEntityIndexSet::{
+    kind: UnbatchableBinnedEntityIndexSetKind::NoEntities,
+  }
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndexSet::len(
+  self : UnbatchableBinnedEntityIndexSet,
+) -> Int {
+  match self.kind {
+    NoEntities => 0
+    Sparse(instance_range, _) => instance_range.count()
+    Dense(indices) => indices.length()
+  }
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndexSet::kind(
+  self : UnbatchableBinnedEntityIndexSet,
+) -> UnbatchableBinnedEntityIndexSetKind {
+  self.kind
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndexSet::indices_for_entity_index(
+  self : UnbatchableBinnedEntityIndexSet,
+  entity_index : Int,
+) -> UnbatchableBinnedEntityIndices? {
+  if entity_index < 0 {
+    return None
+  }
+  match self.kind {
+    NoEntities => None
+    Sparse(instance_range, _) if entity_index >= instance_range.count() => None
+    Sparse(instance_range, None) =>
+      Some(
+        UnbatchableBinnedEntityIndices::new(
+          instance_range.start() + entity_index,
+          PhaseItemExtraIndex::None,
+        ),
+      )
+    Sparse(instance_range, Some(first_indirect_parameters_index)) => {
+      let indirect_parameters_index = first_indirect_parameters_index +
+        entity_index
+      Some(
+        UnbatchableBinnedEntityIndices::new(
+          instance_range.start() + entity_index,
+          PhaseItemExtraIndex::indirect_parameters_index(
+            indirect_parameters_index,
+            indirect_parameters_index + 1,
+          ),
+        ),
+      )
+    }
+    Dense(indices) =>
+      if entity_index < indices.length() {
+        Some(indices[entity_index])
+      } else {
+        None
+      }
+  }
+}
+
+///|
+fn unbatchable_indices_can_extend_sparse(
+  instance_range : PhaseItemBatchRange,
+  first_indirect_parameters_index : Int?,
+  indices : UnbatchableBinnedEntityIndices,
+) -> Bool {
+  if instance_range.end() != indices.instance_index() {
+    return false
+  }
+  match first_indirect_parameters_index {
+    None => indices.extra_index() == PhaseItemExtraIndex::None
+    Some(first_index) =>
+      match indices.extra_index() {
+        IndirectParametersIndex(range_start, _, _) =>
+          first_index + instance_range.count() == range_start
+        DynamicOffset(_) | PhaseItemExtraIndex::None => false
+      }
+  }
+}
+
+///|
+fn UnbatchableBinnedEntityIndexSet::demote_sparse_to_dense_with(
+  self : UnbatchableBinnedEntityIndexSet,
+  indices : UnbatchableBinnedEntityIndices,
+) -> Unit {
+  @app.log_warn(
+    "Unbatchable binned entity index set was demoted from sparse to dense. This is a bug in the renderer. Please report it.",
+  )
+  let dense : Array[UnbatchableBinnedEntityIndices] = []
+  let count = self.len()
+  for entity_index in 0..<count {
+    match self.indices_for_entity_index(entity_index) {
+      Some(existing) => dense.push(existing)
+      None => ()
+    }
+  }
+  dense.push(indices)
+  self.kind = UnbatchableBinnedEntityIndexSetKind::Dense(dense)
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndexSet::add(
+  self : UnbatchableBinnedEntityIndexSet,
+  indices : UnbatchableBinnedEntityIndices,
+) -> Unit {
+  match self.kind {
+    NoEntities =>
+      match indices.extra_index() {
+        DynamicOffset(_) =>
+          self.kind = UnbatchableBinnedEntityIndexSetKind::Dense([indices])
+        PhaseItemExtraIndex::None =>
+          self.kind = UnbatchableBinnedEntityIndexSetKind::Sparse(
+            PhaseItemBatchRange::new(
+              indices.instance_index(),
+              indices.instance_index() + 1,
+            ),
+            None,
+          )
+        IndirectParametersIndex(range_start, _, _) =>
+          self.kind = UnbatchableBinnedEntityIndexSetKind::Sparse(
+            PhaseItemBatchRange::new(
+              indices.instance_index(),
+              indices.instance_index() + 1,
+            ),
+            Some(range_start),
+          )
+      }
+    Sparse(instance_range, first_indirect_parameters_index) =>
+      if unbatchable_indices_can_extend_sparse(
+          instance_range, first_indirect_parameters_index, indices,
+        ) {
+        self.kind = UnbatchableBinnedEntityIndexSetKind::Sparse(
+          PhaseItemBatchRange::new(
+            instance_range.start(),
+            instance_range.end() + 1,
+          ),
+          first_indirect_parameters_index,
+        )
+      } else {
+        self.demote_sparse_to_dense_with(indices)
+      }
+    Dense(existing) => existing.push(indices)
+  }
+}
+
+///|
+pub fn UnbatchableBinnedEntityIndexSet::clear(
+  self : UnbatchableBinnedEntityIndexSet,
+) -> Unit {
+  match self.kind {
+    Dense(indices) => indices.clear()
+    Sparse(_, _) => self.kind = UnbatchableBinnedEntityIndexSetKind::NoEntities
+    NoEntities => ()
+  }
+}
