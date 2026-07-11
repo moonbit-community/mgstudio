@@ -13,11 +13,15 @@ import {
 // Errors
 
 // Types and methods
+type CustomDrawFunctions
+
 type CustomMaterialPlugin
 pub impl @app.Plugin for CustomMaterialPlugin
 
 type CustomPipeline
 pub fn CustomPipeline::shader(Self) -> @asset.Handle[@shader.Shader]
+
+type CustomSpecializedMeshPipelines
 
 type InstanceBuffer
 

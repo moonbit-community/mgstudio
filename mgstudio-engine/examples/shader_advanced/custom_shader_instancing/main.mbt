@@ -19,6 +19,9 @@ const SHADER_ASSET_PATH : String = "shaders/instancing.wgsl"
 const INSTANCE_VERTEX_BUFFER_ID : Int = 1
 
 ///|
+const DRAW_CUSTOM_LABEL : @material.DrawFunctionLabel = "DrawCustom"
+
+///|
 struct InstanceData {
   position : @math.Vec3
   scale : Float
@@ -54,6 +57,7 @@ struct CustomMaterialPlugin {}
 ///|
 struct CustomPipeline {
   shader : @asset.Handle[@shader.Shader]
+  mesh_pipeline : @pbr.MeshPipeline
 }
 
 ///|
@@ -61,6 +65,43 @@ pub fn CustomPipeline::shader(
   self : CustomPipeline,
 ) -> @asset.Handle[@shader.Shader] {
   self.shader
+}
+
+///|
+struct CustomSpecializedMeshPipelines {
+  pipelines : @material.SpecializedMeshPipelines
+}
+
+///|
+fn CustomSpecializedMeshPipelines::CustomSpecializedMeshPipelines() -> CustomSpecializedMeshPipelines {
+  CustomSpecializedMeshPipelines::{
+    pipelines: @material.SpecializedMeshPipelines::new(),
+  }
+}
+
+///|
+struct CustomDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  draw_custom : @material.DrawFunctionId
+}
+
+///|
+fn CustomDrawFunctions::CustomDrawFunctions() -> CustomDrawFunctions {
+  let draw_functions = @material.DrawFunctions::new()
+  let draw_custom = draw_functions.register(DRAW_CUSTOM_LABEL)
+  CustomDrawFunctions::{ draw_functions, draw_custom }
+}
+
+///|
+fn CustomDrawFunctions::draw_custom(
+  self : CustomDrawFunctions,
+) -> @material.DrawFunctionId {
+  self.draw_custom
+}
+
+///|
+fn CustomDrawFunctions::len(self : CustomDrawFunctions) -> Int {
+  self.draw_functions.len()
 }
 
 ///|
@@ -76,6 +117,28 @@ let custom_pipeline_key : @ecs.ResourceKey[CustomPipeline] = @ecs.register_resou
 ///|
 impl @app.Resource for CustomPipeline with fn resource() {
   custom_pipeline_key
+}
+
+///|
+let custom_specialized_mesh_pipelines_key : @ecs.ResourceKey[
+  CustomSpecializedMeshPipelines,
+] = @ecs.register_resource(
+  debug_name="examples.shader_advanced.custom_shader_instancing.SpecializedMeshPipelines<CustomPipeline>",
+)
+
+///|
+impl @app.Resource for CustomSpecializedMeshPipelines with fn resource() {
+  custom_specialized_mesh_pipelines_key
+}
+
+///|
+let custom_draw_functions_key : @ecs.ResourceKey[CustomDrawFunctions] = @ecs.register_resource(
+  debug_name="examples.shader_advanced.custom_shader_instancing.DrawFunctions<Transparent3d>",
+)
+
+///|
+impl @app.Resource for CustomDrawFunctions with fn resource() {
+  custom_draw_functions_key
 }
 
 ///|
@@ -180,17 +243,9 @@ fn instance_vertex_layout() -> @mesh.VertexBufferLayout {
 }
 
 ///|
-fn custom_pipeline_specialize(
-  _pipeline : String,
+fn custom_pipeline_override_descriptor(
   descriptor : @material.RenderPipelineDescriptor,
-  layout : @material.MaterialMeshVertexLayout,
-  _key : @material.ErasedMaterialPipelineKey,
-) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
-  if layout.index() < 0 {
-    raise @material.missing_vertex_attribute_error(
-      "custom instancing mesh layout",
-    )
-  }
+) -> @material.RenderPipelineDescriptor {
   let buffers = descriptor.vertex.buffers.copy()
   buffers.push(instance_vertex_layout())
   let vertex = @render_resource.VertexState::new(
@@ -215,13 +270,152 @@ fn custom_pipeline_specialize(
 }
 
 ///|
+fn custom_material_extension_specialize(
+  _pipeline : String,
+  descriptor : @material.RenderPipelineDescriptor,
+  layout : @material.MaterialMeshVertexLayout,
+  _key : @material.ErasedMaterialPipelineKey,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  if layout.index() < 0 {
+    raise @material.missing_vertex_attribute_error(
+      "custom instancing mesh layout",
+    )
+  }
+  custom_pipeline_override_descriptor(descriptor)
+}
+
+///|
+fn CustomPipeline::specialize(
+  self : CustomPipeline,
+  key : @material.ErasedMeshPipelineKey,
+  layout : @material.MaterialMeshVertexLayout,
+) -> @material.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError {
+  custom_pipeline_override_descriptor(
+    self.mesh_pipeline.specialize(key, layout),
+  )
+}
+
+///|
 fn custom_material_metadata() -> @material.ExtendedMaterialMetadata3d {
   @material.ExtendedMaterialMetadata3d::new(1)
   .with_vertex_shader_path(Some(SHADER_ASSET_PATH))
   .with_fragment_shader_path(Some(SHADER_ASSET_PATH))
   .with_alpha_mode_override(Some(@material.AlphaMode3d::Blend))
   .with_disable_shadows(true)
-  .with_user_specialize(Some(custom_pipeline_specialize))
+  .with_user_specialize(Some(custom_material_extension_specialize))
+}
+
+///|
+fn queue_custom(world : @ecs.World) -> Unit {
+  guard world.get_resource(CustomDrawFunctions::resource())
+    is Some(draw_functions) else {
+    return
+  }
+  guard world.get_resource(CustomPipeline::resource()) is Some(custom_pipeline) else {
+    return
+  }
+  guard world.get_resource(CustomSpecializedMeshPipelines::resource())
+    is Some(specialized_pipelines) else {
+    return
+  }
+  guard world.get_resource(@render.pipeline_cache_resource_key)
+    is Some(pipeline_cache) else {
+    return
+  }
+  guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
+    is Some(meshes) else {
+    return
+  }
+  guard world.get_resource(@pbr.RenderMeshInstances::resource())
+    is Some(render_mesh_instances) else {
+    return
+  }
+  guard world.get_resource(@core_3d.Transparent3dPhase::resource())
+    is Some(transparent_render_phases) else {
+    return
+  }
+  guard world.get_resource(@pbr.ViewKeyCache::resource())
+    is Some(view_key_cache) else {
+    return
+  }
+  let maybe_batched_instance_buffers = world.get_resource(
+    @pbr.RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+  )
+  let material_meshes : @ecs.Query[
+    (
+      @core.Entity,
+      @ecs.Read[@render.MainEntity],
+      @ecs.Read[InstanceMaterialData],
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  let views : @ecs.Query[@ecs.Read[@render_view.ExtractedView], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! views.view(fn(_view_entity, extracted_view_ref) {
+    let retained_view_entity = extracted_view_ref.value().retained_view_entity()
+    guard transparent_render_phases.view(retained_view_entity) is Some(_) else {
+      return
+    }
+    guard view_key_cache.get(retained_view_entity) is Some(view_key) else {
+      return
+    }
+    try! material_meshes.view(fn(_query_entity, data) {
+      let (entity, main_entity_ref, _instance_material_data) = data
+      let main_entity = main_entity_ref.value()
+      guard render_mesh_instances.render_mesh_queue_data(main_entity)
+        is Some(mesh_instance) else {
+        return
+      }
+      guard meshes.get(mesh_instance.mesh_asset_id()) is Some(mesh) else {
+        return
+      }
+      let mesh_key = @material.ErasedMeshPipelineKey::new(
+        view_key.bits() | mesh.key_bits().bits(),
+        "MeshPipelineKey",
+      )
+      let key = @material.ErasedMaterialPipelineKey::new(
+        mesh_key,
+        @material.ErasedMaterialKey::new(0UL, "CustomPipeline"),
+        "CustomPipeline",
+      )
+      let pipeline = specialized_pipelines.pipelines.specialize(
+        pipeline_cache,
+        fn(key, layout) raise @material.SpecializedMeshPipelineError {
+          custom_pipeline.specialize(key.mesh_key(), layout)
+        },
+        key,
+        mesh.layout(),
+      ) catch {
+        _ =>
+          abort("custom_shader_instancing: failed to specialize CustomPipeline")
+      }
+      let mesh_center = @pbr.get_mesh_instance_world_from_local(
+        main_entity,
+        mesh_instance.current_uniform_index(),
+        render_mesh_instances,
+        maybe_batched_instance_buffers,
+      ).transform_point3(mesh.aabb_center())
+      transparent_render_phases.add(
+        retained_view_entity,
+        @core_3d.Transparent3d::new(
+          sorting_info=@core_3d.TransparentSortingInfo3d::sorted(
+            mesh_center~,
+            depth_bias=0.0F,
+          ),
+          distance=0.0F,
+          pipeline~,
+          entity~,
+          main_entity~,
+          draw_function=draw_functions.draw_custom(),
+          batch_range_start=0,
+          batch_range_end=1,
+          extra_index=0,
+          indexed=true,
+        ),
+      )
+    })
+  })
 }
 
 ///|
@@ -264,7 +458,14 @@ fn init_custom_pipeline(world : @ecs.World) -> Unit {
   let shader : @asset.Handle[@shader.Shader] = asset_server.load(
     SHADER_ASSET_PATH,
   )
-  world.insert_resource(CustomPipeline::resource(), CustomPipeline::{ shader, })
+  let mesh_pipeline = match world.get_resource(@pbr.MeshPipeline::resource()) {
+    Some(mesh_pipeline) => mesh_pipeline
+    None => abort("custom_shader_instancing: expected MeshPipeline resource")
+  }
+  world.insert_resource(CustomPipeline::resource(), CustomPipeline::{
+    shader,
+    mesh_pipeline,
+  })
 }
 
 ///|
@@ -285,12 +486,32 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
   )
   let next = @render.extract_component_plugin_with(app, extract_plugin)
   @render.with_render_app(next, fn(render_app) {
+    let render_world = render_app.world()
+    if render_world.get_resource(CustomDrawFunctions::resource()) is None {
+      render_world.insert_resource(
+        CustomDrawFunctions::resource(),
+        CustomDrawFunctions::CustomDrawFunctions(),
+      )
+    }
+    if render_world.get_resource(CustomSpecializedMeshPipelines::resource())
+      is None {
+      render_world.insert_resource(
+        CustomSpecializedMeshPipelines::resource(),
+        CustomSpecializedMeshPipelines::CustomSpecializedMeshPipelines(),
+      )
+    }
     render_app
     .add_systems(
       @render.render_startup_schedule_stage(),
-      @app.system(init_custom_pipeline).named(
-        "custom_shader_instancing::init_custom_pipeline",
-      ),
+      @app.system(init_custom_pipeline)
+      .named("custom_shader_instancing::init_custom_pipeline")
+      .after("mgstudio_pbr::init_mesh_pipeline"),
+    )
+    .add_systems(
+      @render.render_schedule_stage(),
+      @app.system(queue_custom)
+      .named("custom_shader_instancing::queue_custom")
+      .in_set(@render.render_system_set_queue_meshes),
     )
     .add_systems(
       @render.render_schedule_stage(),

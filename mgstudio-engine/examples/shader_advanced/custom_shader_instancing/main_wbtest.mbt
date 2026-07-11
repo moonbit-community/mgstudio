@@ -217,3 +217,77 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
     content="1",
   )
 }
+
+///|
+test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item" {
+  let app = @app.App::new(@ecs.World::new())
+    .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
+    .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
+    .add_systems_param3(@app.Startup, setup)
+    .run_once()
+    .run_once()
+    .run_once()
+  let render_world = app.sub_app(@app.RenderApp).world()
+  let views : @ecs.Query[@ecs.Read[@render_view.ExtractedView], @ecs.All] = @ecs.query(
+    render_world,
+  )
+  let retained_views : Array[@render_view.RetainedViewEntity] = []
+  try! views.view(fn(_entity, view) {
+    retained_views.push(view.value().retained_view_entity())
+  })
+  debug_inspect(retained_views.length(), content="1")
+  let retained_view = retained_views[0]
+  let phases = render_world
+    .get_resource(@core_3d.Transparent3dPhase::resource())
+    .unwrap()
+  let phase = phases.view(retained_view).unwrap()
+  debug_inspect(phase.len(), content="1")
+  let item = phase.items()[0]
+  debug_inspect(item.batch_range(), content="(0, 1)")
+  debug_inspect(item.indexed(), content="true")
+  debug_inspect(item.extra_index(), content="0")
+  let draw_functions = render_world
+    .get_resource(CustomDrawFunctions::resource())
+    .unwrap()
+  debug_inspect(draw_functions.len(), content="1")
+  debug_inspect(
+    item.draw_function() == draw_functions.draw_custom(),
+    content="true",
+  )
+  debug_inspect(
+    (try! render_world.get_by_key(item.entity(), InstanceBuffer::component()))
+    is Some(_),
+    content="true",
+  )
+  match item.sorting_info() {
+    @core_3d.TransparentSortingInfo3d::Sorted(mesh_center, depth_bias) => {
+      debug_inspect(
+        custom_instancing_approx(mesh_center.x, 0.0F) &&
+        custom_instancing_approx(mesh_center.y, 0.0F) &&
+        custom_instancing_approx(mesh_center.z, 0.0F),
+        content="true",
+      )
+      debug_inspect(depth_bias, content="0")
+    }
+    @core_3d.TransparentSortingInfo3d::AlwaysOnTop =>
+      abort("expected sorted custom instancing phase item")
+  }
+  let pipeline_cache = render_world
+    .get_resource(@render.pipeline_cache_resource_key)
+    .unwrap()
+  pipeline_cache.process_queue()
+  let descriptor = pipeline_cache.get_render_pipeline_descriptor(
+    item.pipeline(),
+  ) catch {
+    _ => abort("expected processed custom instancing pipeline descriptor")
+  }
+  debug_inspect(
+    descriptor.vertex.shader,
+    content="Some(\"shaders/instancing.wgsl\")",
+  )
+  debug_inspect(descriptor.vertex.buffers.length(), content="2")
+  debug_inspect(
+    descriptor.fragment.unwrap().shader,
+    content="Some(\"shaders/instancing.wgsl\")",
+  )
+}

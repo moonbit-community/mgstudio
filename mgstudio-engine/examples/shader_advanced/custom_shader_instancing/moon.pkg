@@ -5,13 +5,16 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/mesh" @render_mesh,
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/render/view" @render_view,
   "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -19,6 +22,4 @@ import {
 
 supported_targets = "native"
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")
