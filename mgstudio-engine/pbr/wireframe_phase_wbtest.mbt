@@ -2051,10 +2051,40 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
 test "pbr: wireframe 3d render node skips empty phases before command resources" {
   let world = @ecs.World::new()
   let retained_view = @core.Entity::new(1, 1)
+  let other_retained_view = @core.Entity::new(2, 1)
+  let render_view = world.spawn_empty()
+  try! world.set_by_key(
+    render_view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(retained_view),
+    ),
+  )
+  world.insert_resource(
+    @render.current_view_resource_key,
+    @render.CurrentView::new(render_view),
+  )
   let phases = Wireframe3dPhases::Wireframe3dPhases()
   phases.prepare_for_new_frame(
     retained_view,
     @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  phases.prepare_for_new_frame(
+    other_retained_view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  phases.add(
+    other_retained_view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(3UL),
+      7,
+      Wireframe3dDrawFunctions::Wireframe3dDrawFunctions().thin(),
+      @render_mesh.MeshSlabs::new(1, index_slab_id=Some(2)),
+    ),
+    Wireframe3dBinKey::new(13),
+    (@core.Entity::new(3, 1), @render.MainEntity::new(@core.Entity::new(4, 1))),
+    9U,
+    BatchableMesh,
   )
   world.insert_resource(Wireframe3dPhases::resource(), phases)
 
@@ -2062,12 +2092,25 @@ test "pbr: wireframe 3d render node skips empty phases before command resources"
 
   let phases = world.get_resource(Wireframe3dPhases::resource()).unwrap()
   debug_inspect(phases.phase(retained_view).unwrap().is_empty(), content="true")
+  debug_inspect(phases.phase(other_retained_view).unwrap().len(), content="1")
 }
 
 ///|
 test "pbr: wireframe 3d render node requires command resources for nonempty phases" {
   let world = @ecs.World::new()
   let retained_view = @core.Entity::new(1, 1)
+  let render_view = world.spawn_empty()
+  try! world.set_by_key(
+    render_view,
+    @render_view.ExtractedView::component(),
+    @render_view.ExtractedView::new(
+      @render_view.RetainedViewEntity::new(retained_view),
+    ),
+  )
+  world.insert_resource(
+    @render.current_view_resource_key,
+    @render.CurrentView::new(render_view),
+  )
   let render_entity = @core.Entity::new(2, 1)
   let main_entity = @render.MainEntity::new(@core.Entity::new(3, 1))
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
@@ -2135,27 +2178,36 @@ test "pbr: wireframe 3d render node requires command resources for nonempty phas
 test "pbr: wireframe 3d render node is scheduled between main pass and early postprocess" {
   let log : Array[String] = []
   let graph_stage = @render.RenderGraph::schedule()
+  let core_3d_stage = @core_pipeline.Core3d::schedule()
   let render_sub_app = @app.SubApp::new(@ecs.World::new())
     .set_update_schedule(Some(graph_stage))
     .add_schedule(@render.RenderGraph::base_schedule())
+    .add_schedule(@core_pipeline.core3d_base_schedule())
+  let render_view = render_sub_app.world().spawn_empty()
   let render_sub_app = configure_wireframe_render_sub_app(render_sub_app)
     .add_systems(
-      graph_stage,
+      core_3d_stage,
       @app.system(fn(_world : @ecs.World) { log.push("main") }).in_set(
         @core_pipeline.core3d_system_set_main_pass(),
       ),
     )
     .add_systems(
-      graph_stage,
+      core_3d_stage,
       @app.system(fn(_world : @ecs.World) { log.push("wireframe") }).in_set(
         wireframe_render_set_node,
       ),
     )
     .add_systems(
-      graph_stage,
+      core_3d_stage,
       @app.system(fn(_world : @ecs.World) { log.push("early_post") }).in_set(
         @core_pipeline.core3d_system_set_early_post_process(),
       ),
+    )
+    .add_systems(
+      graph_stage,
+      @app.system(fn(world : @ecs.World) {
+        @core_pipeline.run_core3d_view_schedule(world, render_view)
+      }),
     )
 
   ignore(render_sub_app.update())

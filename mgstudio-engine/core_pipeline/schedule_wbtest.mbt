@@ -37,3 +37,42 @@ test "core pipeline: Core2dSystems includes Bevy prepass and early postprocess s
     content="true",
   )
 }
+
+///|
+test "core pipeline: Core3d view schedule installs Bevy CurrentView per camera" {
+  let seen : Array[@core.Entity] = []
+  let view_a = @core.Entity::new(10, 1)
+  let view_b = @core.Entity::new(20, 1)
+  let graph_stage = @render.RenderGraph::schedule()
+  let sub_app = @app.SubApp::new(@ecs.World::new())
+    .set_update_schedule(Some(graph_stage))
+    .add_schedule(@render.RenderGraph::base_schedule())
+    .add_schedule(core3d_base_schedule())
+    .add_systems(
+      Core3d::schedule(),
+      @app.system(fn(world : @ecs.World) {
+        let current = world
+          .get_resource(@render.current_view_resource_key)
+          .unwrap()
+        seen.push(current.entity())
+      }),
+    )
+    .add_systems(
+      graph_stage,
+      @app.system(fn(world : @ecs.World) {
+        run_core3d_view_schedule(world, view_a)
+        run_core3d_view_schedule(world, view_b)
+      }),
+    )
+
+  ignore(sub_app.update())
+
+  debug_inspect(
+    seen,
+    content="[{ id: 10, generation: 1 }, { id: 20, generation: 1 }]",
+  )
+  debug_inspect(
+    sub_app.world().get_resource(@render.current_view_resource_key) is None,
+    content="true",
+  )
+}

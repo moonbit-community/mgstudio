@@ -483,6 +483,10 @@ fn render3d_execute_camera(
     RENDER3D_CAMERA_MAIN_PASS_TRACE,
     trace_camera_main_pass_start_us,
   )
+  @core_pipeline.run_core3d_view_schedule(
+    world,
+    extracted_camera.entity.render_entity,
+  )
   @app.timeline_trace_emit_counter_int(
     "render_3d_camera_order_volumetric_fog_begin", 1,
   )

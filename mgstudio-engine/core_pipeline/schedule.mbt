@@ -34,6 +34,11 @@ pub fn Core3d::Core3d() -> Core3d {
 }
 
 ///|
+pub fn Core3d::schedule() -> @app.ScheduleStage {
+  @app.schedule_label(CORE_3D_SCHEDULE_LABEL)
+}
+
+///|
 pub fn Core2d::Core2d() -> Core2d {
   Core2d::{  }
 }
@@ -96,7 +101,7 @@ pub fn core2d_system_set_post_process() -> @app.SystemSet {
 
 ///|
 pub fn core3d_base_schedule() -> @app.Schedule {
-  @app.Schedule::new(@app.ScheduleStage::Custom(CORE_3D_SCHEDULE_LABEL))
+  @app.Schedule::new(Core3d::schedule())
 }
 
 ///|
@@ -107,12 +112,23 @@ pub fn core2d_base_schedule() -> @app.Schedule {
 ///|
 // Bevy source: `bevy/crates/bevy_core_pipeline/src/schedule.rs` (`camera_driver` entrypoint).
 pub fn camera_driver(world : @ecs.World) -> Unit {
-  @app.run_current_schedule_stage(
-    world,
-    @app.schedule_label(CORE_3D_SCHEDULE_LABEL),
-  )
+  @app.run_current_schedule_stage(world, Core3d::schedule())
   @app.run_current_schedule_stage(
     world,
     @app.schedule_label(CORE_2D_SCHEDULE_LABEL),
   )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/schedule.rs::camera_driver`.
+pub fn run_core3d_view_schedule(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+) -> Unit {
+  world.insert_resource(
+    @render.current_view_resource_key,
+    @render.CurrentView::new(view_entity),
+  )
+  @app.run_current_schedule_stage(world, Core3d::schedule())
+  ignore(world.remove_resource(@render.current_view_resource_key))
 }

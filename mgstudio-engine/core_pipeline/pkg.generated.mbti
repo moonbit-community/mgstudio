@@ -88,6 +88,8 @@ pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShade
 
 pub fn main_opaque_pass_3d_draw_skybox(@ecs.World, @core.Entity) -> Bool
 
+pub fn run_core3d_view_schedule(@ecs.World, @core.Entity) -> Unit
+
 pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.TonemappingLuts
 
 // Errors
@@ -107,6 +109,7 @@ pub(all) enum Core2dSystems {
 pub struct Core3d {
 }
 pub fn Core3d::Core3d() -> Self
+pub fn Core3d::schedule() -> @app.ScheduleStage
 
 pub(all) enum Core3dSystems {
   Prepass

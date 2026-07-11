@@ -1688,88 +1688,93 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
 
 ///|
 fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
+  guard world.get_resource(@render.current_view_resource_key)
+    is Some(current_view) else {
+    return
+  }
+  let extracted_view = try! world.get_by_key(
+    current_view.entity(),
+    @render_view.ExtractedView::component(),
+  )
+  guard extracted_view is Some(extracted_view) else { return }
+  let retained_view_entity = extracted_view.retained_view_entity().main_entity()
   guard world.get_resource(Wireframe3dPhases::resource()) is Some(phases) else {
     return
   }
-  for retained_view_entity in phases.retained_view_entities() {
-    let preflight_plan : Wireframe3dRenderNodePlan? = Some(
-      wireframe_3d_render_node_plan(phases, retained_view_entity, false),
-    ) catch {
-      _ => None
-    }
-    guard preflight_plan is Some(_) else { continue }
-    let draw_functions = match
-      world.get_resource(Wireframe3dDrawFunctions::resource()) {
-      Some(value) => value
-      None =>
-        abort(
-          "missing Wireframe3dDrawFunctions resource during pbr wireframe node",
-        )
-    }
-    let render_wireframe_instances = match
-      world.get_resource(RenderWireframeInstances::resource()) {
-      Some(value) => value
-      None =>
-        abort(
-          "missing RenderWireframeInstances resource during pbr wireframe node",
-        )
-    }
-    let render_wireframe_assets = match
-      world.get_resource(RenderWireframeAssets::resource()) {
-      Some(value) => value
-      None =>
-        abort(
-          "missing RenderWireframeAssets resource during pbr wireframe node",
-        )
-    }
-    let render_mesh_instances = match
-      world.get_resource(RenderMeshInstances::resource()) {
-      Some(value) => value
-      None =>
-        abort("missing RenderMeshInstances resource during pbr wireframe node")
-    }
-    let render_meshes = match
-      world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
-      Some(value) => value
-      None =>
-        abort("missing RenderMeshAssets resource during pbr wireframe node")
-    }
-    let mesh_allocator = match
-      world.get_resource(@render_mesh.MeshAllocator::resource()) {
-      Some(value) => value
-      None => abort("missing MeshAllocator resource during pbr wireframe node")
-    }
-    let wide_bind_groups = match
-      world.get_resource(WireframeWideBindGroups::resource()) {
-      Some(value) => value
-      None =>
-        abort(
-          "missing WireframeWideBindGroups resource during pbr wireframe node",
-        )
-    }
-    let plan = Some(
-      wireframe_3d_render_node_command_plan(
-        phases, retained_view_entity, false, draw_functions, render_wireframe_instances,
-        render_wireframe_assets, render_mesh_instances, render_meshes, mesh_allocator,
-        wide_bind_groups,
-      ),
-    ) catch {
-      _ => None
-    }
-    guard plan is Some(plan) else { continue }
-    @app.timeline_trace_emit_counter_int(
-      "wireframe_3d_render_node_command_plans",
-      plan.command_plan_count(),
-    )
-    @app.timeline_trace_emit_counter_int(
-      "wireframe_3d_render_node_command_skips",
-      plan.command_skip_count(),
-    )
-    @app.timeline_trace_emit_counter_int(
-      "wireframe_3d_render_node_command_failures",
-      plan.command_failure_count(),
-    )
+  let preflight_plan : Wireframe3dRenderNodePlan? = Some(
+    wireframe_3d_render_node_plan(phases, retained_view_entity, false),
+  ) catch {
+    _ => None
   }
+  guard preflight_plan is Some(_) else { return }
+  let draw_functions = match
+    world.get_resource(Wireframe3dDrawFunctions::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing Wireframe3dDrawFunctions resource during pbr wireframe node",
+      )
+  }
+  let render_wireframe_instances = match
+    world.get_resource(RenderWireframeInstances::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing RenderWireframeInstances resource during pbr wireframe node",
+      )
+  }
+  let render_wireframe_assets = match
+    world.get_resource(RenderWireframeAssets::resource()) {
+    Some(value) => value
+    None =>
+      abort("missing RenderWireframeAssets resource during pbr wireframe node")
+  }
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None =>
+      abort("missing RenderMeshInstances resource during pbr wireframe node")
+  }
+  let render_meshes = match
+    world.get_resource(@render_mesh.RenderMeshAssets::resource()) {
+    Some(value) => value
+    None => abort("missing RenderMeshAssets resource during pbr wireframe node")
+  }
+  let mesh_allocator = match
+    world.get_resource(@render_mesh.MeshAllocator::resource()) {
+    Some(value) => value
+    None => abort("missing MeshAllocator resource during pbr wireframe node")
+  }
+  let wide_bind_groups = match
+    world.get_resource(WireframeWideBindGroups::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing WireframeWideBindGroups resource during pbr wireframe node",
+      )
+  }
+  let plan = Some(
+    wireframe_3d_render_node_command_plan(
+      phases, retained_view_entity, false, draw_functions, render_wireframe_instances,
+      render_wireframe_assets, render_mesh_instances, render_meshes, mesh_allocator,
+      wide_bind_groups,
+    ),
+  ) catch {
+    _ => None
+  }
+  guard plan is Some(plan) else { return }
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_render_node_command_plans",
+    plan.command_plan_count(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_render_node_command_skips",
+    plan.command_skip_count(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_render_node_command_failures",
+    plan.command_failure_count(),
+  )
 }
 
 ///|
@@ -1959,10 +1964,10 @@ fn configure_wireframe_render_sub_app(
   )
   let stage = @render.render_schedule_stage()
   let extract_stage = @render.render_extract_schedule_stage()
-  let graph_stage = @render.RenderGraph::schedule()
+  let core_3d_stage = @core_pipeline.Core3d::schedule()
   sub_app
   .configure_sets(
-    graph_stage,
+    core_3d_stage,
     wireframe_render_set_node,
     after=[@core_pipeline.core3d_system_set_main_pass()],
     before=[@core_pipeline.core3d_system_set_early_post_process()],
@@ -2063,7 +2068,7 @@ fn configure_wireframe_render_sub_app(
     @app.system(queue_wireframes_system).in_set(wireframe_render_set_queue),
   )
   .add_systems(
-    graph_stage,
+    core_3d_stage,
     @app.system(wireframe_3d_render_node_system).in_set(
       wireframe_render_set_node,
     ),
