@@ -2599,25 +2599,7 @@ pub fn Render3dShadowPhaseItemData::bin_key(
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseType`.
-pub(all) enum Render3dShadowBinnedRenderPhaseType {
-  MultidrawableMesh
-  BatchableMesh
-  UnbatchableMesh
-  NonMesh
-} derive(Eq, Debug)
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseType::mesh(
-  batchable : Bool,
-  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
-) -> Render3dShadowBinnedRenderPhaseType {
-  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
-    (true, true) => MultidrawableMesh
-    (true, false) => BatchableMesh
-    (false, _) => UnbatchableMesh
-  }
-}
+pub type Render3dShadowBinnedRenderPhaseType = @render_phase.BinnedRenderPhaseType
 
 ///|
 fn render3d_shadow_effective_phase_type(

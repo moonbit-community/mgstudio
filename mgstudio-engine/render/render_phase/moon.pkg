@@ -2,6 +2,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render/batching" @render_batching,
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/render/renderer",
 }

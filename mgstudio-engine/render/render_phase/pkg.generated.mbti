@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/render/render_phase"
 
 import {
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/renderer",
   "moonbitlang/core/debug",
 }
@@ -39,6 +40,14 @@ pub fn render_phase_end_pass() -> Unit
 // Errors
 
 // Types and methods
+pub(all) enum BinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+  NonMesh
+} derive(Eq, @debug.Debug)
+pub fn BinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
+
 pub struct PhaseItemBatchRange {
   start : Int
   end : Int

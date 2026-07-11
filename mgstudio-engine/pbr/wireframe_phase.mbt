@@ -173,24 +173,7 @@ pub fn Wireframe3d::bin_key(self : Wireframe3d) -> Wireframe3dBinKey {
 }
 
 ///|
-pub(all) enum WireframeBinnedRenderPhaseType {
-  MultidrawableMesh
-  BatchableMesh
-  UnbatchableMesh
-  NonMesh
-} derive(Eq, Debug)
-
-///|
-pub fn WireframeBinnedRenderPhaseType::mesh(
-  batchable : Bool,
-  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
-) -> WireframeBinnedRenderPhaseType {
-  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
-    (true, true) => MultidrawableMesh
-    (true, false) => BatchableMesh
-    (false, _) => UnbatchableMesh
-  }
-}
+pub type WireframeBinnedRenderPhaseType = @render_phase.BinnedRenderPhaseType
 
 ///|
 pub struct WireframePipelineKey {

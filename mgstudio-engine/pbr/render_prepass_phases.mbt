@@ -24,23 +24,7 @@ priv struct Render3dRetainedMeshPhaseView {
 }
 
 ///|
-priv enum Render3dPrepassBinnedRenderPhaseType {
-  MultidrawableMesh
-  BatchableMesh
-  UnbatchableMesh
-}
-
-///|
-fn Render3dPrepassBinnedRenderPhaseType::mesh(
-  batchable : Bool,
-  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
-) -> Render3dPrepassBinnedRenderPhaseType {
-  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
-    (true, true) => MultidrawableMesh
-    (true, false) => BatchableMesh
-    (false, _) => UnbatchableMesh
-  }
-}
+type Render3dPrepassBinnedRenderPhaseType = @render_phase.BinnedRenderPhaseType
 
 ///|
 fn render3d_prepass_effective_phase_type(
@@ -53,6 +37,7 @@ fn render3d_prepass_effective_phase_type(
     (_, MultidrawableMesh) => MultidrawableMesh
     (_, BatchableMesh) => BatchableMesh
     (_, UnbatchableMesh) => UnbatchableMesh
+    (_, NonMesh) => NonMesh
   }
 }
 

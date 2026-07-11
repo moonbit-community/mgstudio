@@ -2331,14 +2331,6 @@ pub fn Render3dShadowBinnedRenderPhaseBatchSetData::first_work_item_index(Self) 
 pub fn Render3dShadowBinnedRenderPhaseBatchSetData::index(Self) -> Int
 pub fn Render3dShadowBinnedRenderPhaseBatchSetData::new(Render3dShadowBinnedRenderPhaseBatchData, Render3dShadowBinKeyData, Int, Int, Int) -> Self
 
-pub(all) enum Render3dShadowBinnedRenderPhaseType {
-  MultidrawableMesh
-  BatchableMesh
-  UnbatchableMesh
-  NonMesh
-} derive(Eq, @debug.Debug)
-pub fn Render3dShadowBinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
-
 pub(all) struct Render3dShadowCpuRenderBinnedMeshInstance {
   main_entity : @Milky2018/mgstudio/render.MainEntity
   bin_index : Int
@@ -2470,9 +2462,9 @@ pub struct Render3dShadowViewPhaseData {
   mut multidrawable_meshes : Array[Render3dShadowMultidrawableBatchSetEntry]
   mut unbatchable_meshes : Array[Render3dShadowUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, UInt]
-  phase_types : Map[UInt64, Render3dShadowBinnedRenderPhaseType]
+  phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
-pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, Render3dShadowBinnedRenderPhaseType) -> Unit
+pub fn Render3dShadowViewPhaseData::add(Self, Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Render3dShadowViewPhaseData::apply_queue(Self, Render3dQueuedShadowPhaseData, @batching.GpuPreprocessingSupport) -> Unit
 pub fn Render3dShadowViewPhaseData::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
 pub fn Render3dShadowViewPhaseData::items(Self) -> Array[Render3dShadowPhaseItemData]
@@ -2481,7 +2473,7 @@ pub fn Render3dShadowViewPhaseData::multidrawable_batch_set_count(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_cpu_instance_count(Self) -> Int
 pub fn Render3dShadowViewPhaseData::multidrawable_items(Self, Bool) -> Array[Render3dShadowPhaseItemData]
 pub fn Render3dShadowViewPhaseData::new(@batching.GpuPreprocessingMode) -> Self
-pub fn Render3dShadowViewPhaseData::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> Render3dShadowBinnedRenderPhaseType?
+pub fn Render3dShadowViewPhaseData::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.BinnedRenderPhaseType?
 pub fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
 pub fn Render3dShadowViewPhaseData::prepare_for_new_frame(Self) -> Unit
 pub fn Render3dShadowViewPhaseData::prepare_multidrawable_phase_buffers(Self, String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
@@ -3235,7 +3227,7 @@ pub struct Wireframe3dPhases {
   views : Map[UInt64, Wireframe3dViewPhase]
 }
 pub fn Wireframe3dPhases::Wireframe3dPhases() -> Self
-pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, WireframeBinnedRenderPhaseType) -> Unit
+pub fn Wireframe3dPhases::add(Self, @core.Entity, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dPhases::contains(Self, @core.Entity) -> Bool
 pub fn Wireframe3dPhases::len(Self) -> Int
 pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
@@ -3321,16 +3313,16 @@ pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
   mut items : Array[Wireframe3d]
   input_uniform_indices : Map[UInt64, UInt]
-  phase_types : Map[UInt64, WireframeBinnedRenderPhaseType]
+  phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
-pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, WireframeBinnedRenderPhaseType) -> Unit
+pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @Milky2018/mgstudio/render.MainEntity), UInt, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
 pub fn Wireframe3dViewPhase::input_uniform_index(Self, @Milky2018/mgstudio/render.MainEntity) -> UInt?
 pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
 pub fn Wireframe3dViewPhase::items(Self) -> Array[Wireframe3d]
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
-pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> WireframeBinnedRenderPhaseType?
+pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.BinnedRenderPhaseType?
 pub fn Wireframe3dViewPhase::prepare_for_new_frame(Self) -> Unit
 pub fn Wireframe3dViewPhase::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
 
@@ -3345,14 +3337,6 @@ pub fn Wireframe3dWideImmediates::float_count(Self) -> Int
 pub fn Wireframe3dWideImmediates::from_material(RenderWireframeMaterial) -> Self
 pub fn Wireframe3dWideImmediates::line_width(Self) -> Float
 pub fn Wireframe3dWideImmediates::smoothing(Self) -> Float
-
-pub(all) enum WireframeBinnedRenderPhaseType {
-  MultidrawableMesh
-  BatchableMesh
-  UnbatchableMesh
-  NonMesh
-} derive(Eq, @debug.Debug)
-pub fn WireframeBinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
 
 pub struct WireframeColor {
   color : @color.Color
@@ -3648,6 +3632,8 @@ pub using @projection3d {type ProjectionRuntime3d}
 
 pub using @render_phase {type PhaseItemBatchRange as Render3dShadowBatchRange}
 
+pub using @render_phase {type BinnedRenderPhaseType as Render3dShadowBinnedRenderPhaseType}
+
 pub using @render_phase {type PhaseItemExtraIndex as Render3dShadowPhaseItemExtraIndex}
 
 pub using @render_phase {type UnbatchableBinnedEntityIndexSet as Render3dShadowUnbatchableBinnedEntityIndexSet}
@@ -3703,6 +3689,8 @@ pub using @light {type VolumetricFog}
 pub using @light {type VolumetricLight}
 
 pub using @render_phase {type PhaseItemBatchRange as Wireframe3dBatchRange}
+
+pub using @render_phase {type BinnedRenderPhaseType as WireframeBinnedRenderPhaseType}
 
 pub using @render_phase {type PhaseItemExtraIndex as WireframePhaseItemExtraIndex}
 

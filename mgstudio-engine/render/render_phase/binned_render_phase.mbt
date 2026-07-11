@@ -107,6 +107,28 @@ pub fn PhaseItemBatchRange::count(self : PhaseItemBatchRange) -> Int {
 
 ///|
 // Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseType`.
+pub(all) enum BinnedRenderPhaseType {
+  MultidrawableMesh
+  BatchableMesh
+  UnbatchableMesh
+  NonMesh
+} derive(Eq, Debug)
+
+///|
+pub fn BinnedRenderPhaseType::mesh(
+  batchable : Bool,
+  gpu_preprocessing_support : @render_batching.GpuPreprocessingSupport,
+) -> BinnedRenderPhaseType {
+  match (batchable, gpu_preprocessing_support.is_culling_supported()) {
+    (true, true) => MultidrawableMesh
+    (true, false) => BatchableMesh
+    (false, _) => UnbatchableMesh
+  }
+}
+
+///|
+// Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
 pub(all) struct UnbatchableBinnedEntityIndices {
   instance_index : Int

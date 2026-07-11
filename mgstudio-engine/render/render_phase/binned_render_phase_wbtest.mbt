@@ -51,6 +51,35 @@ test "render_phase: phase item batch range preserves valid u32-like bounds" {
 }
 
 ///|
+test "render_phase: binned mesh type follows Bevy preprocessing support" {
+  let none = @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let preprocessing = @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  let culling = @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  debug_inspect(
+    BinnedRenderPhaseType::mesh(true, none),
+    content="BatchableMesh",
+  )
+  debug_inspect(
+    BinnedRenderPhaseType::mesh(true, preprocessing),
+    content="BatchableMesh",
+  )
+  debug_inspect(
+    BinnedRenderPhaseType::mesh(true, culling),
+    content="MultidrawableMesh",
+  )
+  debug_inspect(
+    BinnedRenderPhaseType::mesh(false, culling),
+    content="UnbatchableMesh",
+  )
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
