@@ -869,6 +869,12 @@ pub fn render3d_draw_mesh_instanced(
   draw_storage_index? : Int = -1,
   draw_count? : Int = 1,
   immediate_bytes? : Bytes? = None,
+  indirect_kind? : Int = 0,
+  indirect_parameters_index? : Int = -1,
+  wireframe_wide_params_index? : Int = -1,
+  wireframe_pulled_first_vertex? : Int = -1,
+  wireframe_pulled_vertex_count? : Int = -1,
+  wireframe_indirect_batch_set_count_offset? : Int = -1,
 ) -> Unit {
   let affine = render3d_affine3_transpose_values(world_from_local)
   @render_gpu.host_gpu_draw_mesh3d(
@@ -876,6 +882,8 @@ pub fn render3d_draw_mesh_instanced(
     preprocess_camera_key_hi~,
     preprocess_camera_key_lo~,
     draw_storage_index~,
+    indirect_kind~,
+    indirect_parameters_index~,
     indirect_draw_count=draw_count,
     instance_vertex_buffer_id~,
     x=0.0F,
@@ -949,5 +957,9 @@ pub fn render3d_draw_mesh_instanced(
     mesh_flags=0U,
     cull_mode=0,
     immediate_bytes~,
+    wireframe_wide_params_index~,
+    wireframe_pulled_first_vertex~,
+    wireframe_pulled_vertex_count~,
+    wireframe_indirect_batch_set_count_offset~,
   )
 }

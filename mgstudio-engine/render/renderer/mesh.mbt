@@ -368,12 +368,22 @@ pub fn prepare_mesh3d_allocator_asset(
   mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout,
   vertex_start~ : Int,
   index_start~ : Int,
+  extra_buffer_usages? : UInt64 = 0UL,
 ) -> Bool {
   match ensure_backend() {
     Some(backend) =>
       backend.prepare_mesh3d_allocator_asset(
-        mesh_id, plan, vertex_bytes, vertex_count, indices, uses_u32_indices, primitive_topology,
-        mesh_vertex_layout, vertex_start, index_start,
+        mesh_id,
+        plan,
+        vertex_bytes,
+        vertex_count,
+        indices,
+        uses_u32_indices,
+        primitive_topology,
+        mesh_vertex_layout,
+        vertex_start,
+        index_start,
+        extra_buffer_usages~,
       )
     None => false
   }

@@ -133,6 +133,10 @@ pub fn GpuBackend::draw_mesh3d(
   morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
   immediate_bytes? : Bytes? = None,
+  wireframe_wide_params_index? : Int = -1,
+  wireframe_pulled_first_vertex? : Int = -1,
+  wireframe_pulled_vertex_count? : Int = -1,
+  wireframe_indirect_batch_set_count_offset? : Int = -1,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(pass) else { return }
@@ -292,6 +296,7 @@ pub fn GpuBackend::draw_mesh3d(
     point_shadow_enabled, point_shadow_depth_bias, mesh_flags, cull_mode, vertex_shader_path,
     fragment_shader_path, skinning_key_hi, skinning_key_lo, morph_weights_index,
     previous_morph_weights_index, morph_targets_texture_id, material_pipeline_id,
-    transparent, material_extension_bind_group_data, immediate_bytes,
+    transparent, material_extension_bind_group_data, immediate_bytes, wireframe_wide_params_index,
+    wireframe_pulled_first_vertex, wireframe_pulled_vertex_count, wireframe_indirect_batch_set_count_offset,
   )
 }

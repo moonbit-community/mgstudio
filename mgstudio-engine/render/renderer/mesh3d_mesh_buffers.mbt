@@ -111,8 +111,9 @@ fn mesh3d_allocator_usage_kind(
 fn mesh3d_allocator_buffer_usage(
   usage : @render_mesh.MeshAllocatorBufferUsage,
   copy_src~ : Bool,
+  extra_buffer_usages : UInt64,
 ) -> @wgpu.BufferUsage {
-  let mut raw = @wgpu.BUFFER_USAGE_COPY_DST
+  let mut raw = @wgpu.BUFFER_USAGE_COPY_DST | extra_buffer_usages
   if copy_src {
     raw = raw | @wgpu.BUFFER_USAGE_COPY_SRC
   }
@@ -211,12 +212,17 @@ fn GpuBackend::mesh3d_allocator_buffer(
 fn GpuBackend::mesh3d_reallocate_allocator_slab(
   self : GpuBackend,
   plan : @render_mesh.MeshAllocatorReallocateSlabPlan,
+  extra_buffer_usages : UInt64,
 ) -> Unit {
   let usage_kind = mesh3d_allocator_usage_kind(plan.usage())
   let slab_id = plan.slab_id()
   let new_buffer = self.device.create_buffer(
     size=plan.new_size().to_uint64(),
-    usage=mesh3d_allocator_buffer_usage(plan.usage(), copy_src=true),
+    usage=mesh3d_allocator_buffer_usage(
+      plan.usage(),
+      copy_src=true,
+      extra_buffer_usages,
+    ),
   )
   new_buffer.set_label(plan.label())
   match self.mesh3d_allocator_buffer(slab_id, usage_kind) {
@@ -246,6 +252,7 @@ fn GpuBackend::mesh3d_execute_allocator_upload(
   mesh_id : Int,
   upload : @render_mesh.MeshAllocatorUploadPlan,
   bytes : Bytes,
+  extra_buffer_usages : UInt64,
 ) -> @wgpu.Buffer? {
   let usage_kind = mesh3d_allocator_usage_kind(upload.usage())
   let slab_id = upload.slab_id()
@@ -254,7 +261,11 @@ fn GpuBackend::mesh3d_execute_allocator_upload(
     None =>
       if upload.mapped_at_creation() {
         let created = self.device.create_buffer_init(
-          usage=mesh3d_allocator_buffer_usage(upload.usage(), copy_src=false),
+          usage=mesh3d_allocator_buffer_usage(
+            upload.usage(),
+            copy_src=false,
+            extra_buffer_usages,
+          ),
           mesh3d_pad_upload_bytes(bytes, upload.size()),
         )
         created.set_label(upload.label())
@@ -296,6 +307,7 @@ pub fn GpuBackend::prepare_mesh3d_allocator_asset(
   mesh_vertex_layout : @mesh.MeshVertexBufferLayout,
   vertex_start : Int,
   index_start : Int,
+  extra_buffer_usages? : UInt64 = 0UL,
 ) -> Bool {
   guard find_mesh_index(self, mesh_id) is Some(mesh_index) else { return false }
   let vertex_layout = mesh_vertex_layout.layout()
@@ -308,10 +320,10 @@ pub fn GpuBackend::prepare_mesh3d_allocator_asset(
     return false
   }
   if plan.vertex_reallocate() is Some(reallocate) {
-    self.mesh3d_reallocate_allocator_slab(reallocate)
+    self.mesh3d_reallocate_allocator_slab(reallocate, extra_buffer_usages)
   }
   guard self.mesh3d_execute_allocator_upload(
-      mesh_id, vertex_upload, vertex_bytes,
+      mesh_id, vertex_upload, vertex_bytes, extra_buffer_usages,
     )
     is Some(vertex_buffer) else {
     return false
@@ -324,10 +336,10 @@ pub fn GpuBackend::prepare_mesh3d_allocator_asset(
       return false
     }
     if plan.index_reallocate() is Some(reallocate) {
-      self.mesh3d_reallocate_allocator_slab(reallocate)
+      self.mesh3d_reallocate_allocator_slab(reallocate, extra_buffer_usages)
     }
     guard self.mesh3d_execute_allocator_upload(
-        mesh_id, index_upload, index_bytes,
+        mesh_id, index_upload, index_bytes, extra_buffer_usages,
       )
       is Some(buffer) else {
       return false
@@ -488,10 +500,12 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba(
     MESH3D_VERTEX_STRIDE_BYTES.to_int(),
   )
   if plan.vertex_reallocate() is Some(reallocate) {
-    self.mesh3d_reallocate_allocator_slab(reallocate)
+    self.mesh3d_reallocate_allocator_slab(reallocate, 0UL)
   }
   guard plan.vertex_upload() is Some(vertex_upload) else { return 0 }
-  guard self.mesh3d_execute_allocator_upload(id, vertex_upload, vertex_bytes)
+  guard self.mesh3d_execute_allocator_upload(
+      id, vertex_upload, vertex_bytes, 0UL,
+    )
     is Some(vb) else {
     return 0
   }
@@ -557,18 +571,20 @@ pub fn GpuBackend::create_mesh3d_xyznuvrgba_indexed(
     index_layout~,
   )
   if plan.vertex_reallocate() is Some(reallocate) {
-    self.mesh3d_reallocate_allocator_slab(reallocate)
+    self.mesh3d_reallocate_allocator_slab(reallocate, 0UL)
   }
   if plan.index_reallocate() is Some(reallocate) {
-    self.mesh3d_reallocate_allocator_slab(reallocate)
+    self.mesh3d_reallocate_allocator_slab(reallocate, 0UL)
   }
   guard plan.vertex_upload() is Some(vertex_upload) else { return 0 }
   guard plan.index_upload() is Some(index_upload) else { return 0 }
-  guard self.mesh3d_execute_allocator_upload(id, vertex_upload, vertex_bytes)
+  guard self.mesh3d_execute_allocator_upload(
+      id, vertex_upload, vertex_bytes, 0UL,
+    )
     is Some(vb) else {
     return 0
   }
-  guard self.mesh3d_execute_allocator_upload(id, index_upload, index_bytes)
+  guard self.mesh3d_execute_allocator_upload(id, index_upload, index_bytes, 0UL)
     is Some(ib) else {
     return 0
   }

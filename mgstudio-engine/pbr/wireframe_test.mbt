@@ -353,9 +353,14 @@ test "pbr: WireframePlugin removes internal material when Wireframe is removed" 
 
 ///|
 test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
+  let initial_render_world = @ecs.World::new()
+  initial_render_world.insert_resource(
+    @render_mesh.MeshAllocatorSettings::resource(),
+    @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),
+  )
   let app = @app.App::new(@ecs.World::new()).insert_sub_app(
     @app.RenderApp,
-    @app.SubApp::new(@ecs.World::new()).set_update_schedule(Some(@app.Main)),
+    @app.SubApp::new(initial_render_world).set_update_schedule(Some(@app.Main)),
   )
   let app = wireframe_plugin(app)
   let render_world = match app.get_sub_app(@app.RenderApp) {
@@ -409,6 +414,14 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
   debug_inspect(
     render_world.get_resource(@render_mesh.MeshAllocator::resource()) is None,
     content="true",
+  )
+  debug_inspect(
+    render_world
+    .get_resource(@render_mesh.MeshAllocatorSettings::resource())
+    .map(fn(settings) {
+      (settings.extra_buffer_usages() & @wgpu.BUFFER_USAGE_STORAGE) != 0UL
+    }),
+    content="Some(true)",
   )
   debug_inspect(
     render_world

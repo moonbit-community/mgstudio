@@ -13,6 +13,42 @@
 // limitations under the License.
 
 ///|
+fn wireframe_wide_bind_group_layout_descriptor() -> @material.BindGroupLayoutDescriptor {
+  @render_resource.BindGroupLayoutDescriptor::new(
+    "wireframe_wide_bind_group_layout",
+    [
+      @render_resource.BindGroupLayoutEntry::new(
+        0,
+        @render_resource.SHADER_STAGE_VERTEX,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
+          false,
+          0UL,
+        ),
+      ),
+      @render_resource.BindGroupLayoutEntry::new(
+        1,
+        @render_resource.SHADER_STAGE_VERTEX,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Storage(true),
+          false,
+          0UL,
+        ),
+      ),
+      @render_resource.BindGroupLayoutEntry::new(
+        2,
+        @render_resource.SHADER_STAGE_VERTEX,
+        @render_resource.BindingType::BufferBinding(
+          @render_resource.BufferBindingType::Uniform,
+          true,
+          16UL,
+        ),
+      ),
+    ],
+  )
+}
+
+///|
 pub struct Wireframe3dPipeline {
   shader : String
   wide_bind_group_layout_descriptor : @material.BindGroupLayoutDescriptor
@@ -21,7 +57,7 @@ pub struct Wireframe3dPipeline {
 ///|
 pub fn Wireframe3dPipeline::new(
   shader? : String = "pbr/render/wireframe.wgsl",
-  wide_bind_group_layout_descriptor? : @material.BindGroupLayoutDescriptor = @material.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
+  wide_bind_group_layout_descriptor? : @material.BindGroupLayoutDescriptor = wireframe_wide_bind_group_layout_descriptor(),
 ) -> Wireframe3dPipeline {
   Wireframe3dPipeline::{ shader, wide_bind_group_layout_descriptor }
 }

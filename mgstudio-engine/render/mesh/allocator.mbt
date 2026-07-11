@@ -77,6 +77,7 @@ pub struct MeshAllocatorSettings {
   max_slab_size : Int
   large_threshold : Int
   growth_factor : Float
+  extra_buffer_usages : UInt64
 }
 
 ///|
@@ -85,12 +86,14 @@ pub fn MeshAllocatorSettings::new(
   max_slab_size~ : Int,
   large_threshold~ : Int,
   growth_factor~ : Float,
+  extra_buffer_usages? : UInt64 = 0UL,
 ) -> MeshAllocatorSettings {
   MeshAllocatorSettings::{
     min_slab_size,
     max_slab_size,
     large_threshold,
     growth_factor,
+    extra_buffer_usages,
   }
 }
 
@@ -145,6 +148,21 @@ pub fn MeshAllocatorSettings::growth_factor(
   self : MeshAllocatorSettings,
 ) -> Float {
   self.growth_factor
+}
+
+///|
+pub fn MeshAllocatorSettings::extra_buffer_usages(
+  self : MeshAllocatorSettings,
+) -> UInt64 {
+  self.extra_buffer_usages
+}
+
+///|
+pub fn MeshAllocatorSettings::with_extra_buffer_usages(
+  self : MeshAllocatorSettings,
+  extra_buffer_usages : UInt64,
+) -> MeshAllocatorSettings {
+  MeshAllocatorSettings::{ ..self, extra_buffer_usages, }
 }
 
 ///|

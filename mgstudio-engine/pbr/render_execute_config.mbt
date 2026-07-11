@@ -131,12 +131,3 @@ fn render3d_default_opaque_renderer_method(
   }
   default_method
 }
-
-///|
-fn render3d_wireframe_config_or_none(world : @ecs.World) -> WireframeConfig? {
-  if world.get_resource(ecs_key_wireframe_config) is Some(config) {
-    Some(config)
-  } else {
-    None
-  }
-}

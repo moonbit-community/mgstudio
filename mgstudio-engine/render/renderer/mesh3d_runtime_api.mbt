@@ -1385,6 +1385,10 @@ pub fn draw_mesh3d(
   morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
   immediate_bytes? : Bytes? = None,
+  wireframe_wide_params_index? : Int = -1,
+  wireframe_pulled_first_vertex? : Int = -1,
+  wireframe_pulled_vertex_count? : Int = -1,
+  wireframe_indirect_batch_set_count_offset? : Int = -1,
 ) -> Unit {
   render_diagnostics_record_mesh3d_draw(mesh_id)
   if ensure_backend() is Some(backend) {
@@ -1507,6 +1511,10 @@ pub fn draw_mesh3d(
       morph_targets_texture_id~,
       skinning_matrices~,
       immediate_bytes~,
+      wireframe_wide_params_index~,
+      wireframe_pulled_first_vertex~,
+      wireframe_pulled_vertex_count~,
+      wireframe_indirect_batch_set_count_offset~,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)
     }

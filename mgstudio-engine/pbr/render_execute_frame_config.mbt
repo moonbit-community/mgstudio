@@ -22,7 +22,6 @@ priv struct Render3dExecuteFrameConfig {
   delta_seconds : Float
   default_opaque_renderer_method : OpaqueRendererMethod
   point_light_shadow_map_size : Int
-  wireframe_config : WireframeConfig?
 }
 
 ///|
@@ -49,7 +48,6 @@ fn render3d_execute_frame_config(
     source_world,
   )
   let delta_seconds = @pbr_render.render3d_default_time_or_default(source_world).delta_seconds()
-  let wireframe_config = render3d_wireframe_config_or_none(source_world)
   Render3dExecuteFrameConfig::{
     gpu_instance_buffer_builder_requested,
     gpu_culling_supported,
@@ -59,6 +57,5 @@ fn render3d_execute_frame_config(
     delta_seconds,
     default_opaque_renderer_method,
     point_light_shadow_map_size,
-    wireframe_config,
   }
 }

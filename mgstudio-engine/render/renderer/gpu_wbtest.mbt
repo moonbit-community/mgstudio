@@ -1400,6 +1400,7 @@ test "renderer: prepared render assets replace legacy buffers with allocator sla
     mesh_vertex_layout,
     first_vertex_slice.start(),
     first_index_slice.start(),
+    extra_buffer_usages=@wgpu.BUFFER_USAGE_STORAGE,
   )
   let second_plan = allocator.allocate_render_mesh(102, render_mesh, 12)
   let second_vertex_slice = allocator.mesh_vertex_slice(102).unwrap()
@@ -1415,6 +1416,7 @@ test "renderer: prepared render assets replace legacy buffers with allocator sla
     mesh_vertex_layout,
     second_vertex_slice.start(),
     second_index_slice.start(),
+    extra_buffer_usages=@wgpu.BUFFER_USAGE_STORAGE,
   )
   let first = backend.meshes[0]
   let second = backend.meshes[1]
@@ -1429,8 +1431,63 @@ test "renderer: prepared render assets replace legacy buffers with allocator sla
     first.vertex_stride_bytes == 12UL &&
     first.index_stride_bytes == 2UL &&
     !first.uses_u32_indices &&
+    (first.vertex_buf.usage_u64().raw & @wgpu.BUFFER_USAGE_STORAGE) != 0UL &&
+    (first.index_buf.usage_u64().raw & @wgpu.BUFFER_USAGE_STORAGE) != 0UL &&
     backend.mesh_allocator_buffers.length() == 2
   debug_inspect(ok, content="true")
+}
+
+///|
+test "renderer: wide wireframe bind groups prepare before surface frame activation" {
+  let backend = GpuBackend::new()
+  backend.meshes.clear()
+  let mesh_vertex_layout = @mesh.MeshVertexBufferLayout::new(
+    attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
+    layout=@mesh.VertexBufferLayout::new(
+      array_stride=12,
+      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=@mesh.MeshVertexFormat::Float32x3,
+          shader_location=0,
+        ),
+      ],
+    ),
+  )
+  let vertex_bytes = Bytes::from_array(Array::make(36, b'\x00'))
+  let indices : Array[Int] = [0, 1, 2]
+  let mesh_id = backend.create_mesh2d_vertex_buffer(
+    vertex_bytes, 3, indices, 0, mesh_vertex_layout,
+  )
+  let allocator = @render_mesh.MeshAllocator::MeshAllocator()
+  let render_mesh = @render_mesh.RenderMesh::new(
+    vertex_count=3,
+    indexed=true,
+    index_count=3,
+    index_format=@render_mesh.RenderMeshIndexFormat::Uint32,
+  )
+  let plan = allocator.allocate_render_mesh(101, render_mesh, 12)
+  let prepared = backend.prepare_mesh3d_allocator_asset(
+    mesh_id,
+    plan,
+    vertex_bytes,
+    3,
+    indices,
+    true,
+    0,
+    mesh_vertex_layout,
+    allocator.mesh_vertex_slice(101).unwrap().start(),
+    allocator.mesh_index_slice(101).unwrap().start(),
+    extra_buffer_usages=@wgpu.BUFFER_USAGE_STORAGE,
+  )
+  let wide_prepared = backend.prepare_wireframe_3d_wide_bind_groups([mesh_id], [
+    0U, 3U, 0U,
+  ])
+  debug_inspect(backend.frame is None, content="true")
+  debug_inspect(prepared, content="true")
+  debug_inspect(wide_prepared, content="true")
+  debug_inspect(backend.wireframe_3d_wide_bind_groups.length(), content="1")
 }
 
 ///|

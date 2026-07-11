@@ -19,7 +19,6 @@ fn render3d_execute_render_cameras(
   meshes : Array[ExtractedMesh3d],
   prepared_camera_queues : Array[Render3dPreparedCameraQueue?],
   camera_execution_plans : Array[Render3dCameraExecutionPlan?],
-  wireframe_config : WireframeConfig?,
   delta_seconds : Float,
 ) -> Unit {
   let trace_render_cameras_start_us = @app.timeline_trace_begin_span(
@@ -82,7 +81,7 @@ fn render3d_execute_render_cameras(
       "execute_3d_camera",
     )
     render3d_execute_camera(
-      world, extracted_camera, meshes, wireframe_config, delta_seconds, cleared_targets_this_frame,
+      world, extracted_camera, meshes, delta_seconds, cleared_targets_this_frame,
       prepared_camera_queue, execution_plan,
     )
     @app.timeline_trace_end_span(

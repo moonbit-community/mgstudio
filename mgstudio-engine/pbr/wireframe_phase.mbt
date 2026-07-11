@@ -853,6 +853,32 @@ pub fn WireframeWideBindGroups::params(
 }
 
 ///|
+pub fn WireframeWideBindGroups::params_words(
+  self : WireframeWideBindGroups,
+) -> Array[UInt] {
+  let words : Array[UInt] = []
+  for params in self.params {
+    words.push(params.index_offset())
+    words.push(params.vertex_stride_u32s())
+    words.push(params.position_offset_u32s())
+  }
+  words
+}
+
+///|
+pub fn WireframeWideBindGroups::mesh_asset_ids_in_param_order(
+  self : WireframeWideBindGroups,
+) -> Array[Int] {
+  let mesh_asset_ids = Array::make(self.params.length(), -1)
+  for mesh_asset_id, dynamic_offset in self.mesh_asset_dynamic_offsets {
+    if dynamic_offset >= 0 && dynamic_offset < mesh_asset_ids.length() {
+      mesh_asset_ids[dynamic_offset] = mesh_asset_id
+    }
+  }
+  mesh_asset_ids
+}
+
+///|
 fn wireframe_render_mesh_vertex_layout(
   render_mesh : @render_mesh.RenderMesh,
 ) -> @mesh.VertexBufferLayout {

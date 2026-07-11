@@ -274,6 +274,7 @@ pub fn Mesh3dGeometry::indices_or_sequential(Self) -> Array[Int]
 pub fn Mesh3dGeometry::insert_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Bool
 pub fn Mesh3dGeometry::insert_indices(Self, Array[Int]?) -> Unit
 pub fn Mesh3dGeometry::insert_indices_u16(Self, Array[Int]?) -> Unit
+pub fn Mesh3dGeometry::insert_indices_u32(Self, Array[Int]?) -> Unit
 pub fn Mesh3dGeometry::joint_indices(Self) -> Array[MeshJointIndices]?
 pub fn Mesh3dGeometry::joint_weights(Self) -> Array[@math.Vec4]?
 pub fn Mesh3dGeometry::morph_target_names(Self) -> Array[String]?
@@ -326,6 +327,7 @@ pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_inserted_attribute(Self, MeshVertexAttribute, VertexAttributeValues) -> Self
 pub fn Mesh3dGeometry::with_inserted_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_inserted_indices_u16(Self, Array[Int]?) -> Self
+pub fn Mesh3dGeometry::with_inserted_indices_u32(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_joint_data(Self, Array[MeshJointIndices]?, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_morph_targets(Self, Array[Array[@math.Vec3]]?, morph_target_names? : Array[String]?, morph_target_normals? : Array[Array[@math.Vec3]]?, morph_target_tangents? : Array[Array[@math.Vec3]]?) -> Self
 pub fn Mesh3dGeometry::with_normals(Self, Array[@math.Vec3]?) -> Self

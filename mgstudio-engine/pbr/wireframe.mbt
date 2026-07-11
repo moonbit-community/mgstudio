@@ -1686,6 +1686,28 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
     render_mesh_instances, render_meshes, render_wireframe_instances, render_wireframe_assets,
     mesh_allocator, wide_bind_groups,
   )
+  let mesh_runtime_state = match
+    world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing Render3dMeshRuntimeState during pbr wireframe wide bind group preparation",
+      )
+  }
+  let gpu_mesh_ids : Array[Int] = []
+  for mesh_asset_id in wide_bind_groups.mesh_asset_ids_in_param_order() {
+    gpu_mesh_ids.push(
+      @pbr_render.render3d_uploaded_mesh_id(mesh_runtime_state, mesh_asset_id).unwrap_or(
+        -1,
+      ),
+    )
+  }
+  if !@render.host_gpu_prepare_wireframe_3d_wide_bind_groups(
+      gpu_mesh_ids,
+      wide_bind_groups.params_words(),
+    ) {
+    abort("failed to prepare wireframe wide bind groups")
+  }
 }
 
 ///|
@@ -1740,6 +1762,97 @@ fn wireframe_3d_execute_thin_command(
     immediate_bytes=Some(immediates.bytes()),
   )
   true
+}
+
+///|
+fn wireframe_3d_execute_wide_command(
+  world : @ecs.World,
+  plan : Wireframe3dRenderCommandPlan,
+  retained_view_entity : @core.Entity,
+  render_mesh_instances : RenderMeshInstances,
+  pipeline_cache : @render_resource.PipelineCache,
+) -> Bool {
+  guard plan.kind() == Wireframe3dRenderCommandKind::Wide else { return false }
+  guard plan.wide_immediates() is Some(immediates) else { return false }
+  guard plan.wide_bind_group_dynamic_offset() is Some(params_index) else {
+    return false
+  }
+  guard pipeline_cache.get_render_pipeline(plan.pipeline()) is Some(_) else {
+    return false
+  }
+  let item = plan.item()
+  guard render_mesh_instances.render_mesh_queue_data(item.main_entity())
+    is Some(mesh_instance) else {
+    return false
+  }
+  guard world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource())
+    is Some(mesh_runtime_state) else {
+    return false
+  }
+  guard @pbr_render.render3d_uploaded_mesh_id(
+      mesh_runtime_state,
+      mesh_instance.mesh_asset_id(),
+    )
+    is Some(mesh_id) else {
+    return false
+  }
+  let world_from_local = get_mesh_instance_world_from_local(
+    item.main_entity(),
+    mesh_instance.current_uniform_index(),
+    render_mesh_instances,
+    world.get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource()),
+  )
+  let batch_range = plan.batch_range()
+  let draw_storage_index = match render_mesh_instances {
+    CpuBuilding(_) => -1
+    GpuBuilding(_) => batch_range.start()
+  }
+  match (plan.wide_direct_range(), plan.wide_indirect_plan()) {
+    (Some(direct_range), None) => {
+      @pbr_render.render3d_draw_mesh_instanced(
+        mesh_id~,
+        pipeline=plan.pipeline(),
+        instance_vertex_buffer_id=-1,
+        world_from_local~,
+        preprocess_camera_key_hi=retained_view_entity.id,
+        preprocess_camera_key_lo=retained_view_entity.generation,
+        draw_storage_index~,
+        draw_count=batch_range.count(),
+        immediate_bytes=Some(immediates.bytes()),
+        wireframe_wide_params_index=params_index,
+        wireframe_pulled_first_vertex=direct_range.first_vertex(),
+        wireframe_pulled_vertex_count=direct_range.vertex_end() -
+          direct_range.first_vertex(),
+      )
+      true
+    }
+    (None, Some(indirect_plan)) => {
+      let offset = indirect_plan.indirect_parameters_offset()
+      if offset % WIREFRAME_INDIRECT_PARAMETERS_NON_INDEXED_SIZE_BYTES != 0 {
+        return false
+      }
+      @pbr_render.render3d_draw_mesh_instanced(
+        mesh_id~,
+        pipeline=plan.pipeline(),
+        instance_vertex_buffer_id=-1,
+        world_from_local~,
+        preprocess_camera_key_hi=retained_view_entity.id,
+        preprocess_camera_key_lo=retained_view_entity.generation,
+        draw_storage_index~,
+        draw_count=indirect_plan.indirect_parameters_count(),
+        immediate_bytes=Some(immediates.bytes()),
+        indirect_kind=MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED,
+        indirect_parameters_index=offset /
+          WIREFRAME_INDIRECT_PARAMETERS_NON_INDEXED_SIZE_BYTES,
+        wireframe_wide_params_index=params_index,
+        wireframe_indirect_batch_set_count_offset=indirect_plan
+          .batch_set_count_offset()
+          .unwrap_or(-1),
+      )
+      true
+    }
+    _ => false
+  }
 }
 
 ///|
@@ -1832,6 +1945,7 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
   guard plan is Some(plan) else { return }
   let mut executed_thin_commands = 0
   let mut pending_or_skipped_thin_commands = 0
+  let mut executed_wide_commands = 0
   let mut pending_wide_commands = 0
   if @render.host_gpu_begin_wireframe_3d_pass() {
     let phase = phases.phase(retained_view_entity).unwrap()
@@ -1855,6 +1969,10 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
               pending_or_skipped_thin_commands = pending_or_skipped_thin_commands +
                 1
             }
+          } else if wireframe_3d_execute_wide_command(
+              world, command, retained_view_entity, render_mesh_instances, pipeline_cache,
+            ) {
+            executed_wide_commands = executed_wide_commands + 1
           } else {
             pending_wide_commands = pending_wide_commands + 1
           }
@@ -1880,6 +1998,9 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
   )
   @app.timeline_trace_emit_counter_int(
     "wireframe_3d_pending_or_skipped_thin_commands", pending_or_skipped_thin_commands,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_executed_wide_commands", executed_wide_commands,
   )
   @app.timeline_trace_emit_counter_int(
     "wireframe_3d_pending_wide_commands", pending_wide_commands,
@@ -2012,6 +2133,21 @@ fn configure_wireframe_render_sub_app(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
+  let mesh_allocator_settings = match
+    world.get_resource_mut(@render_mesh.MeshAllocatorSettings::resource()) {
+    Some(value) => value
+    None =>
+      abort(
+        "missing MeshAllocatorSettings resource during pbr wireframe initialization",
+      )
+  }
+  let current_mesh_allocator_settings = mesh_allocator_settings.peek()
+  mesh_allocator_settings.set(
+    current_mesh_allocator_settings.with_extra_buffer_usages(
+      current_mesh_allocator_settings.extra_buffer_usages() |
+      @wgpu.BUFFER_USAGE_STORAGE,
+    ),
+  )
   wireframe_init_render_resource_if_missing(
     world,
     Wireframe3dPipeline::resource(),
@@ -2203,211 +2339,5 @@ pub fn wireframe_plugin_with(
   )
   |> fn(next) {
     @render.try_with_render_app(next, configure_wireframe_render_sub_app)
-  }
-}
-
-///|
-priv struct WireframeMeshCacheEntry {
-  source_mesh_handle_id : Int
-  wireframe_mesh_id : Int
-}
-
-///|
-priv struct Render3dWireframeMeshCache {
-  mut entries : Array[WireframeMeshCacheEntry]
-}
-
-///|
-let render3d_wireframe_mesh_cache_key : @ecs.ResourceKey[
-  Render3dWireframeMeshCache,
-] = @ecs.register_resource(debug_name="mgstudio.render3d.wireframe_mesh_cache")
-
-///|
-impl @app.Resource for Render3dWireframeMeshCache with fn resource() {
-  render3d_wireframe_mesh_cache_key
-}
-
-///|
-fn render3d_wireframe_mesh_cache_mut_or_init(
-  world : @ecs.World,
-) -> @ecs.ResourceMut[Render3dWireframeMeshCache] {
-  if world.get_resource(Render3dWireframeMeshCache::resource()) is None {
-    world.insert_resource(Render3dWireframeMeshCache::resource(), {
-      entries: [],
-    })
-  }
-  match world.get_resource_mut(Render3dWireframeMeshCache::resource()) {
-    Some(cache) => cache
-    None => abort("Missing Render3dWireframeMeshCache resource")
-  }
-}
-
-///|
-fn render3d_wireframe_mesh_cache_get(
-  world : @ecs.World,
-  source_mesh_handle_id : Int,
-) -> Int? {
-  let cache = render3d_wireframe_mesh_cache_mut_or_init(world)
-  for item in cache.peek().entries {
-    if item.source_mesh_handle_id == source_mesh_handle_id {
-      return Some(item.wireframe_mesh_id)
-    }
-  }
-  None
-}
-
-///|
-fn render3d_wireframe_mesh_cache_set(
-  world : @ecs.World,
-  source_mesh_handle_id : Int,
-  wireframe_mesh_id : Int,
-) -> Unit {
-  let cache = render3d_wireframe_mesh_cache_mut_or_init(world)
-  let next : Array[WireframeMeshCacheEntry] = []
-  let mut replaced = false
-  for item in cache.peek().entries {
-    if item.source_mesh_handle_id == source_mesh_handle_id {
-      if !replaced {
-        next.push({ source_mesh_handle_id, wireframe_mesh_id })
-        replaced = true
-      }
-    } else {
-      next.push(item)
-    }
-  }
-  if !replaced {
-    next.push({ source_mesh_handle_id, wireframe_mesh_id })
-  }
-  cache.modify(fn(value) { value.entries = next })
-}
-
-///|
-fn render3d_upload_wireframe_geometry(geometry : @mesh.Mesh3dGeometry) -> Int? {
-  guard geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices()
-    is Some(vertices_double) else {
-    return None
-  }
-  let vertices = vertices_double.map(fn(value) { Float::from_double(value) })
-  let mesh_id = @render.host_gpu_create_mesh3d_xyznuvrgba(
-    vertices_xyznuvrgba=vertices,
-    primitive_topology=geometry.primitive_topology().to_int(),
-  )
-  if mesh_id <= 0 {
-    None
-  } else {
-    Some(mesh_id)
-  }
-}
-
-///|
-fn render3d_wireframe_mesh_id(
-  world : @ecs.World,
-  mesh_handle : @asset.Handle[@mesh.Mesh],
-) -> Int? {
-  let source_mesh_handle_id = mesh_handle.id()
-  if render3d_wireframe_mesh_cache_get(world, source_mesh_handle_id)
-    is Some(mesh_id) {
-    return Some(mesh_id)
-  }
-  let source_mesh = match @sprite.render_mesh_asset_get(mesh_handle) {
-    Some(mesh_asset) => mesh_asset
-    None => return None
-  }
-  match source_mesh.geometry {
-    @mesh.MeshGeometry::Geometry3d(geometry3d) =>
-      match geometry3d.primitive_topology() {
-        @mesh.Mesh3dPrimitiveTopology::TriangleList =>
-          match geometry3d.to_wireframe_line_list() {
-            Some(wireframe_geometry) => {
-              guard render3d_upload_wireframe_geometry(wireframe_geometry)
-                is Some(wireframe_mesh_id) else {
-                return None
-              }
-              render3d_wireframe_mesh_cache_set(
-                world, source_mesh_handle_id, wireframe_mesh_id,
-              )
-              Some(wireframe_mesh_id)
-            }
-            None => None
-          }
-        @mesh.Mesh3dPrimitiveTopology::LineList => {
-          guard render3d_upload_wireframe_geometry(geometry3d) is Some(mesh_id) else {
-            return None
-          }
-          render3d_wireframe_mesh_cache_set(
-            world, source_mesh_handle_id, mesh_id,
-          )
-          Some(mesh_id)
-        }
-        @mesh.Mesh3dPrimitiveTopology::LineStrip => {
-          guard render3d_upload_wireframe_geometry(geometry3d) is Some(mesh_id) else {
-            return None
-          }
-          render3d_wireframe_mesh_cache_set(
-            world, source_mesh_handle_id, mesh_id,
-          )
-          Some(mesh_id)
-        }
-      }
-    _ => None
-  }
-}
-
-///|
-fn render3d_mesh_should_draw_wireframe(
-  mesh : ExtractedMesh3d,
-  wireframe_config : WireframeConfig?,
-) -> Bool {
-  ignore(wireframe_config)
-  !mesh.payload.has_no_wireframe &&
-  mesh.payload.wireframe_asset_id is Some(_) &&
-  mesh.payload.wireframe_material is Some(_)
-}
-
-///|
-fn render3d_mesh_wireframe_color(
-  mesh : ExtractedMesh3d,
-  wireframe_config : WireframeConfig?,
-) -> @color.Color {
-  if mesh.payload.wireframe_color is Some(color_component) {
-    color_component.color
-  } else if mesh.payload.wireframe_material is Some(material) {
-    material.color
-  } else if wireframe_config is Some(config) {
-    config.default_color
-  } else {
-    @color.Color::white()
-  }
-}
-
-///|
-fn render3d_mesh_wireframe_line_width(
-  mesh : ExtractedMesh3d,
-  wireframe_config : WireframeConfig?,
-) -> Float {
-  if mesh.payload.wireframe_line_width is Some(width_component) {
-    width_component.width
-  } else if mesh.payload.wireframe_material is Some(material) {
-    material.line_width
-  } else if wireframe_config is Some(config) {
-    config.default_line_width
-  } else {
-    1.0F
-  }
-}
-
-///|
-fn render3d_mesh_wireframe_topology(
-  mesh : ExtractedMesh3d,
-  wireframe_config : WireframeConfig?,
-) -> WireframeTopology {
-  if mesh.payload.wireframe_topology is Some(topology) {
-    topology
-  } else if mesh.payload.wireframe_material is Some(material) {
-    material.topology
-  } else if wireframe_config is Some(config) {
-    config.default_topology
-  } else {
-    WireframeTopology::default()
   }
 }

@@ -3526,7 +3526,9 @@ pub fn WireframeWideBindGroups::WireframeWideBindGroups() -> Self
 pub fn WireframeWideBindGroups::clear(Self) -> Unit
 pub fn WireframeWideBindGroups::dynamic_offset(Self, Int) -> Int?
 pub fn WireframeWideBindGroups::len(Self) -> Int
+pub fn WireframeWideBindGroups::mesh_asset_ids_in_param_order(Self) -> Array[Int]
 pub fn WireframeWideBindGroups::params(Self, Int) -> WireframeVertexPullParams?
+pub fn WireframeWideBindGroups::params_words(Self) -> Array[UInt]
 pub fn WireframeWideBindGroups::push(Self, Int, WireframeVertexPullParams) -> Int
 pub impl @app.Resource for WireframeWideBindGroups
 

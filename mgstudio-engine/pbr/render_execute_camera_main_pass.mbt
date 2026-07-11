@@ -455,7 +455,6 @@ fn render3d_execute_camera_main_pass(
   transmission_enabled : Bool,
   transmission_steps : Int,
   transmission_blur_taps : Int,
-  wireframe_config : WireframeConfig?,
   prepass_depth_texture_id~ : Int,
   prepass_normal_texture_id~ : Int,
   prepass_motion_vector_texture_id~ : Int,
@@ -875,101 +874,6 @@ fn render3d_execute_camera_main_pass(
       draw_item.draw_function,
     )
   }
-  let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
-  for draw_item_index in draw_item_indices {
-    let draw_item = draw_items[draw_item_index]
-    let extracted_mesh = meshes[draw_item.extracted_index]
-    let mesh = extracted_mesh.payload
-    if !render3d_mesh_should_draw_wireframe(extracted_mesh, wireframe_config) {
-      continue
-    }
-    guard render3d_wireframe_mesh_id(world, mesh.mesh_handle)
-      is Some(wireframe_mesh_id) else {
-      continue
-    }
-    let wireframe_color = render3d_mesh_wireframe_color(
-      extracted_mesh, wireframe_config,
-    )
-    let wireframe_line_width = render3d_mesh_wireframe_line_width(
-      extracted_mesh, wireframe_config,
-    )
-    let wireframe_topology = render3d_mesh_wireframe_topology(
-      extracted_mesh, wireframe_config,
-    )
-    if wireframe_line_width <= 1.0F &&
-      wireframe_topology == WireframeTopology::Triangles {
-      continue
-    }
-    let wireframe_source_cull_mode = match
-      mesh.material_draw_data.standard_material() {
-      Some(material) => material.cull_mode
-      None => Some(@material.Face3d::Back)
-    }
-    let wireframe_material = StandardMaterial::from_color(wireframe_color)
-      .with_unlit(true)
-      .with_cull_mode(wireframe_source_cull_mode)
-    guard render3d_mesh_draw_alpha(
-        wireframe_material.alpha_mode,
-        wireframe_material.base_color.a,
-      )
-      is Some(wireframe_draw_alpha) else {
-      continue
-    }
-    wireframe_draws.push(
-      @pbr_render.render3d_build_mesh_gpu_draw_payload(
-        wireframe_mesh_id,
-        camera_entity.id,
-        camera_entity.generation,
-        draw_item_index,
-        MESH3D_DRAW_INDIRECT_KIND_NONE,
-        -1,
-        @pbr_render.Render3dDrawMaterialInput::from_standard_material(
-          wireframe_material, -1, -1, -1, -1, -1, -1, -1, -1,
-        ),
-        mesh.transform,
-        mesh.previous_transform,
-        wireframe_material.base_color.r,
-        wireframe_material.base_color.g,
-        wireframe_material.base_color.b,
-        wireframe_draw_alpha,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        0.5F,
-        0.5F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.5F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        -1,
-        0.0F,
-        @math.Quat::identity(),
-        @color.Color::white(),
-        0.0F,
-        0.0F,
-        render3d_mesh_flags(extracted_mesh),
-        render3d_mesh_draw_flags(extracted_mesh),
-        material_pipeline_id=@material.CachedRenderPipelineId::invalid(),
-        world_from_local=Some(mesh.world_from_local),
-        previous_world_from_local=Some(mesh.previous_world_from_local),
-      ),
-    )
-  }
   let batched_draw_entries = render3d_mesh_gpu_binned_phase_entries(main_phase)
   @app.timeline_trace_emit_counter_int(
     "render_3d_main_pass_input_draw_items",
@@ -994,10 +898,6 @@ fn render3d_execute_camera_main_pass(
   @app.timeline_trace_emit_counter_int(
     "render_3d_main_pass_retained_transparent_items",
     retained_transparent_items.length(),
-  )
-  @app.timeline_trace_emit_counter_int(
-    "render_3d_main_pass_wireframe_items",
-    wireframe_draws.length(),
   )
   @app.timeline_trace_emit_counter_int(
     "render_3d_main_pass_draw_entries",
@@ -1144,9 +1044,7 @@ fn render3d_execute_camera_main_pass(
       @render.host_gpu_end_active_pass_preserving_state()
     }
   }
-  if transparent_draws.length() > 0 ||
-    wireframe_draws.length() > 0 ||
-    retained_transparent_items.length() > 0 {
+  if transparent_draws.length() > 0 || retained_transparent_items.length() > 0 {
     let (
       transparent_viewport_x,
       transparent_viewport_y,
@@ -1219,9 +1117,6 @@ fn render3d_execute_camera_main_pass(
     @app.timeline_trace_emit_counter_int(
       "render_3d_main_pass_retained_transparent_draws", retained_transparent_draws,
     )
-    for wireframe_draw in wireframe_draws {
-      @pbr_render.render3d_draw_mesh_gpu_payload(wireframe_draw)
-    }
     @render.host_gpu_end_active_pass_preserving_state()
   }
 }

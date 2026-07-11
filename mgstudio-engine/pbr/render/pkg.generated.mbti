@@ -327,7 +327,7 @@ pub fn render3d_directional_light_flags(ExtractedDirectionalLight3d) -> UInt
 
 pub fn render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d) -> Unit
 
-pub fn render3d_draw_mesh_instanced(mesh_id~ : Int, pipeline~ : @render_resource.CachedRenderPipelineId, instance_vertex_buffer_id~ : Int, world_from_local~ : @math.Affine3, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, draw_count? : Int, immediate_bytes? : Bytes?) -> Unit
+pub fn render3d_draw_mesh_instanced(mesh_id~ : Int, pipeline~ : @render_resource.CachedRenderPipelineId, instance_vertex_buffer_id~ : Int, world_from_local~ : @math.Affine3, preprocess_camera_key_hi? : Int, preprocess_camera_key_lo? : Int, draw_storage_index? : Int, draw_count? : Int, immediate_bytes? : Bytes?, indirect_kind? : Int, indirect_parameters_index? : Int, wireframe_wide_params_index? : Int, wireframe_pulled_first_vertex? : Int, wireframe_pulled_vertex_count? : Int, wireframe_indirect_batch_set_count_offset? : Int) -> Unit
 
 pub fn render3d_entity_global_or_cached_transform(@ecs.World, @core.Entity, Render3dWorldTransformCache) -> @transform.Transform
 

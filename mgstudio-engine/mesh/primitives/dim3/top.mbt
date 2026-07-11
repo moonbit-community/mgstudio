@@ -91,7 +91,7 @@ fn primitive_geometry_with_normals(
     @mesh.MeshVertexAttribute::uv_0(),
     @mesh.VertexAttributeValues::Float32x2(uvs),
   )
-  .with_inserted_indices(indices)
+  .with_inserted_indices_u32(indices)
 }
 
 ///|

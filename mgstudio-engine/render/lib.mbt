@@ -1891,6 +1891,10 @@ pub fn host_gpu_draw_mesh3d(
   morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
   immediate_bytes? : Bytes? = None,
+  wireframe_wide_params_index? : Int = -1,
+  wireframe_pulled_first_vertex? : Int = -1,
+  wireframe_pulled_vertex_count? : Int = -1,
+  wireframe_indirect_batch_set_count_offset? : Int = -1,
 ) -> Unit {
   @renderer.draw_mesh3d(
     mesh_id~,
@@ -2011,6 +2015,10 @@ pub fn host_gpu_draw_mesh3d(
     morph_targets_texture_id~,
     skinning_matrices~,
     immediate_bytes~,
+    wireframe_wide_params_index~,
+    wireframe_pulled_first_vertex~,
+    wireframe_pulled_vertex_count~,
+    wireframe_indirect_batch_set_count_offset~,
   )
 }
 
@@ -2607,6 +2615,14 @@ pub fn host_gpu_begin_wireframe_3d_pass() -> Bool {
 }
 
 ///|
+pub fn host_gpu_prepare_wireframe_3d_wide_bind_groups(
+  mesh_ids : Array[Int],
+  params_words : Array[UInt],
+) -> Bool {
+  @renderer.prepare_wireframe_3d_wide_bind_groups(mesh_ids, params_words)
+}
+
+///|
 pub fn host_gpu_create_mesh_capsule(
   radius~ : Float,
   half_length~ : Float,
@@ -2697,6 +2713,7 @@ pub fn host_gpu_prepare_mesh3d_allocator_asset(
   mesh_vertex_layout~ : @mesh.MeshVertexBufferLayout,
   vertex_start~ : Int,
   index_start~ : Int,
+  extra_buffer_usages? : UInt64 = 0UL,
 ) -> Bool {
   @renderer.prepare_mesh3d_allocator_asset(
     mesh_id~,
@@ -2709,6 +2726,7 @@ pub fn host_gpu_prepare_mesh3d_allocator_asset(
     mesh_vertex_layout~,
     vertex_start~,
     index_start~,
+    extra_buffer_usages~,
   )
 }
 

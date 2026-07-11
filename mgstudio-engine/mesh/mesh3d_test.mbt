@@ -98,6 +98,25 @@ test "mesh: indexed line strip accepts Bevy u16 primitive restart" {
 }
 
 ///|
+test "mesh: explicit u32 indices preserve Bevy source index format" {
+  let geometry = Mesh3dGeometry::new(
+    [
+      @math.Vec3::new(-1.0F, -1.0F, 0.0F),
+      @math.Vec3::new(1.0F, -1.0F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ],
+    [
+      @math.Vec2::new(0.0F, 1.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      @math.Vec2::new(0.5F, 0.0F),
+    ],
+    None,
+  ).with_inserted_indices_u32(Some([0, 1, 2]))
+  debug_inspect(geometry.indices_or_sequential(), content="[0, 1, 2]")
+  debug_inspect(geometry.index_format(), content="Some(Uint32)")
+}
+
+///|
 test "mesh: Mesh3dGeometry vertex-order flatten preserves indexed source vertices" {
   let geometry = Mesh3dGeometry::new(
     [

@@ -45,7 +45,6 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
     queued_frame.meshes,
     queued_frame.prepared_camera_queues,
     queued_frame.camera_execution_plans,
-    frame_config.wireframe_config,
     frame_config.delta_seconds,
   )
   @render.sorted_cameras_clear(sorted_cameras_ref)
@@ -4515,6 +4514,7 @@ fn render3d_prepare_render_mesh_assets_from_source_world(
         mesh_vertex_layout~,
         vertex_start=vertex_slice.start(),
         index_start~,
+        extra_buffer_usages=mesh_allocator_settings.extra_buffer_usages(),
       ) else {
         abort("failed to prepare host render mesh in allocator slabs")
       }

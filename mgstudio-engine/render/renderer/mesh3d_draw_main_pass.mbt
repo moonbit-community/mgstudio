@@ -114,6 +114,10 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   transparent : Bool,
   material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
   immediate_bytes : Bytes?,
+  wireframe_wide_params_index : Int,
+  wireframe_pulled_first_vertex : Int,
+  wireframe_pulled_vertex_count : Int,
+  wireframe_indirect_batch_set_count_offset : Int,
 ) -> Unit raise GpuBackendError {
   let lightmapped = lightmap_texture_id >= 0
   vertex_shader_path |> ignore
@@ -531,7 +535,10 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     pbr_area_light_luts_texture_id=ps.pbr_area_light_luts_texture_id,
     pbr_dfg_lut_texture_id=ps.pbr_dfg_lut_texture_id,
   )
-  let material_bg = if material_descriptor is Some(_) &&
+  let wireframe_wide = wireframe_wide_params_index >= 0
+  let material_bg = if wireframe_wide {
+    None
+  } else if material_descriptor is Some(_) &&
     mesh3d_descriptor_material_layout(material_descriptor) is None {
     None
   } else {
@@ -580,7 +587,16 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       previous_morph_weights_index,
     ),
   )
-  if material_bg is Some(bind_group) {
+  if wireframe_wide {
+    guard self.wireframe_3d_wide_bind_group(mesh) is Some(bind_group) else {
+      return
+    }
+    guard self.wireframe_3d_wide_dynamic_offset(wireframe_wide_params_index)
+      is Some(dynamic_offset) else {
+      return
+    }
+    pass.set_bind_group(3U, bind_group, [dynamic_offset])
+  } else if material_bg is Some(bind_group) {
     pass.set_bind_group(3U, bind_group, [])
   }
   match immediate_bytes {
@@ -592,7 +608,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       )
     None => ()
   }
-  pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
+  if !wireframe_wide {
+    pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
+  }
   let direct_instance_count = match instance_vertex_buffer {
     Some(buffer) => {
       pass.set_vertex_buffer(1U, buffer.buffer, 0UL, buffer.byte_size)
@@ -601,6 +619,17 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     None => indirect_draw_count.reinterpret_as_uint()
   }
   render_diagnostics_record_mesh3d_executed_draw()
+  if wireframe_wide &&
+    wireframe_pulled_first_vertex >= 0 &&
+    wireframe_pulled_vertex_count > 0 {
+    pass.draw(
+      wireframe_pulled_vertex_count.reinterpret_as_uint(),
+      direct_instance_count,
+      wireframe_pulled_first_vertex.reinterpret_as_uint(),
+      draw_index,
+    )
+    return
+  }
   if use_indirect &&
     mesh3d_preprocess_camera_upload_state(
       self, preprocess_camera_key_hi, preprocess_camera_key_lo,
@@ -609,7 +638,17 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
     if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED &&
       preprocess_state.non_indexed_indirect_parameters_buffer
       is Some(non_indexed_indirect_parameters_buffer) {
-      if indirect_draw_count > 1 {
+      if wireframe_indirect_batch_set_count_offset >= 0 &&
+        preprocess_state.non_indexed_batch_set_buffer
+        is Some(non_indexed_batch_set_buffer) {
+        pass.multi_draw_indirect_count(
+          non_indexed_indirect_parameters_buffer,
+          mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
+          non_indexed_batch_set_buffer,
+          wireframe_indirect_batch_set_count_offset.to_uint64(),
+          indirect_draw_count.reinterpret_as_uint(),
+        )
+      } else if indirect_draw_count > 1 {
         pass.multi_draw_indirect(
           non_indexed_indirect_parameters_buffer,
           mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
@@ -641,6 +680,9 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
       }
       return
     }
+  }
+  if wireframe_wide {
+    return
   }
   if mesh.index_count == 0U {
     pass.draw(

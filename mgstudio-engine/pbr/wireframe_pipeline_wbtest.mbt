@@ -125,6 +125,26 @@ test "pbr: Wireframe3dPipeline wide specialization mirrors Bevy descriptor edits
     content="Some(\"fragment\")",
   )
   debug_inspect(descriptor.layout.length(), content="1")
+  let wide_layout = descriptor.layout[0]
+  debug_inspect(wide_layout.entries().length(), content="3")
+  debug_inspect(
+    wide_layout.entries()[0].kind()
+    is @render_resource.BindingType::BufferBinding(
+      @render_resource.BufferBindingType::Storage(true),
+      false,
+      0UL
+    ),
+    content="true",
+  )
+  debug_inspect(
+    wide_layout.entries()[2].kind()
+    is @render_resource.BindingType::BufferBinding(
+      @render_resource.BufferBindingType::Uniform,
+      true,
+      16UL
+    ),
+    content="true",
+  )
   debug_inspect(descriptor.primitive.polygon_mode, content="Some(1)")
 }
 

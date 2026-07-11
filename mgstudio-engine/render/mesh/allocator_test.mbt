@@ -37,6 +37,15 @@ test "render mesh allocator: default settings preserve bevy slab thresholds" {
   inspect(settings.max_slab_size(), content="536870912")
   inspect(settings.large_threshold(), content="268435456")
   inspect(settings.growth_factor(), content="1.5")
+  inspect(settings.extra_buffer_usages(), content="0")
+}
+
+///|
+test "render mesh allocator: settings preserve extra GPU buffer usages" {
+  let settings = MeshAllocatorSettings::MeshAllocatorSettings().with_extra_buffer_usages(
+    0x80UL,
+  )
+  inspect(settings.extra_buffer_usages(), content="128")
 }
 
 ///|

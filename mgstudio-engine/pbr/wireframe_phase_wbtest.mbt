@@ -38,7 +38,6 @@ fn wireframe_phase_test_frame_config() -> Render3dExecuteFrameConfig {
     delta_seconds: 0.0F,
     default_opaque_renderer_method: OpaqueRendererMethod::Forward,
     point_light_shadow_map_size: 0,
-    wireframe_config: None,
   }
 }
 
@@ -1831,8 +1830,12 @@ test "pbr: wireframe wide bind groups keep vertex pull params by mesh asset" {
     bind_groups.params(0),
     content="Some({ index_offset: 1, vertex_stride_u32s: 8, position_offset_u32s: 3 })",
   )
+  debug_inspect(bind_groups.params_words(), content="[1, 8, 3]")
+  debug_inspect(bind_groups.mesh_asset_ids_in_param_order(), content="[13]")
   bind_groups.clear()
   debug_inspect(bind_groups.len(), content="0")
+  debug_inspect(bind_groups.params_words(), content="[]")
+  debug_inspect(bind_groups.mesh_asset_ids_in_param_order(), content="[]")
 }
 
 ///|
@@ -2218,7 +2221,12 @@ test "pbr: wireframe 3d render node is scheduled between main pass and early pos
   let log : Array[String] = []
   let graph_stage = @render.RenderGraph::schedule()
   let core_3d_stage = @core_pipeline.Core3d::schedule()
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let render_world = @ecs.World::new()
+  render_world.insert_resource(
+    @render_mesh.MeshAllocatorSettings::resource(),
+    @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),
+  )
+  let render_sub_app = @app.SubApp::new(render_world)
     .set_update_schedule(Some(graph_stage))
     .add_schedule(@render.RenderGraph::base_schedule())
     .add_schedule(@core_pipeline.core3d_base_schedule())

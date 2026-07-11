@@ -1037,6 +1037,28 @@ pub fn Mesh3dGeometry::with_inserted_indices_u16(
 }
 
 ///|
+pub fn Mesh3dGeometry::insert_indices_u32(
+  self : Mesh3dGeometry,
+  indices : Array[Int]?,
+) -> Unit {
+  self.indices = indices
+  self.index_format = match indices {
+    Some(_) => Some(Mesh3dIndexFormat::Uint32)
+    None => None
+  }
+  self.tangents = None
+}
+
+///|
+pub fn Mesh3dGeometry::with_inserted_indices_u32(
+  self : Mesh3dGeometry,
+  indices : Array[Int]?,
+) -> Mesh3dGeometry {
+  self.insert_indices_u32(indices)
+  self
+}
+
+///|
 pub fn Mesh3dGeometry::with_colors(
   self : Mesh3dGeometry,
   colors : Array[@math.Vec4]?,

@@ -199,6 +199,12 @@ pub struct GpuBackend {
   mesh3d_volumetric_fog_bgls : Array[@wgpu.BindGroupLayout]
   mut mesh3d_light_probes_buf : @wgpu.Buffer?
   mut mesh3d_visibility_ranges_buf : @wgpu.Buffer?
+  mut wireframe_3d_wide_params_buf : @wgpu.Buffer?
+  mut wireframe_3d_wide_params_capacity : UInt64
+  mut wireframe_3d_wide_params_stride : UInt64
+  mut wireframe_3d_wide_params_count : Int
+  mut wireframe_3d_wide_bgl : @wgpu.BindGroupLayout?
+  wireframe_3d_wide_bind_groups : Array[Wireframe3dWidePreparedBindGroup]
   mut mesh3d_ssr_settings_buf : @wgpu.Buffer?
   mut mesh3d_contact_shadows_settings_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_pass_view_uniform_bytes : Bytes?
