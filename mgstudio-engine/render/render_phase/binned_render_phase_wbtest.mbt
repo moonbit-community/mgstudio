@@ -549,3 +549,291 @@ test "render_phase: generic binned phase downgrades multidraw and clears frame d
   phase.remove(main_entity)
   inspect(phase.batchable_meshes().length(), content="1")
 }
+
+///|
+test "render_phase: GPU binned preparation maps input indices to phase output ranges" {
+  let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  let first = @render_sync_world.MainEntity::new(@core.Entity::new(71, 1))
+  let second = @render_sync_world.MainEntity::new(@core.Entity::new(72, 1))
+  phase.add(
+    TestMultidrawBinKey(801),
+    TestMultidrawBinKey(802),
+    (@core.Entity::new(81, 1), first),
+    InputUniformIndex::new(40U),
+    BatchableMesh,
+  )
+  phase.add(
+    TestMultidrawBinKey(801),
+    TestMultidrawBinKey(802),
+    (@core.Entity::new(82, 1), second),
+    InputUniformIndex::new(41U),
+    BatchableMesh,
+  )
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.prepare_gpu_buffers(
+    "wireframe-view",
+    true,
+    false,
+    phase_instances,
+    phase_indirect,
+    fn(_entity) { None },
+    fn(_batch_set_key) { true },
+  )
+
+  inspect(phase_instances.buffers.data_buffer.len(), content="2")
+  let work_items = phase_instances.buffers.work_item_buffers
+    .get("wireframe-view")
+    .unwrap()
+    .direct_items()
+  inspect(work_items.length(), content="2")
+  inspect(work_items[0].input_index(), content="40")
+  inspect(work_items[0].output_or_indirect_parameters_index(), content="0")
+  inspect(work_items[1].input_index(), content="41")
+  inspect(work_items[1].output_or_indirect_parameters_index(), content="1")
+  match phase.batch_sets() {
+    Direct(batches) => {
+      inspect(batches.length(), content="1")
+      inspect(batches[0].instance_range().start(), content="0")
+      inspect(batches[0].instance_range().end(), content="2")
+    }
+    _ => abort("preprocessing-only phase must produce direct batches")
+  }
+}
+
+///|
+test "render_phase: GPU binned preparation preserves Bevy phase ordering" {
+  let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let unbatchable = @render_sync_world.MainEntity::new(@core.Entity::new(91, 1))
+  let first_multidraw = @render_sync_world.MainEntity::new(
+    @core.Entity::new(92, 1),
+  )
+  let second_multidraw = @render_sync_world.MainEntity::new(
+    @core.Entity::new(93, 1),
+  )
+  phase.add(
+    TestMultidrawBinKey(901),
+    TestMultidrawBinKey(902),
+    (@core.Entity::new(101, 1), unbatchable),
+    InputUniformIndex::new(50U),
+    UnbatchableMesh,
+  )
+  phase.add(
+    TestMultidrawBinKey(903),
+    TestMultidrawBinKey(904),
+    (@core.Entity::new(102, 1), first_multidraw),
+    InputUniformIndex::new(60U),
+    MultidrawableMesh,
+  )
+  phase.add(
+    TestMultidrawBinKey(903),
+    TestMultidrawBinKey(904),
+    (@core.Entity::new(103, 1), second_multidraw),
+    InputUniformIndex::new(61U),
+    MultidrawableMesh,
+  )
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.prepare_gpu_buffers(
+    "wireframe-view",
+    false,
+    true,
+    phase_instances,
+    phase_indirect,
+    fn(entity) {
+      if entity == unbatchable {
+        Some(InputUniformIndex::new(50U))
+      } else {
+        None
+      }
+    },
+    fn(_batch_set_key) { true },
+  )
+
+  inspect(phase_instances.buffers.data_buffer.len(), content="3")
+  let work_items = phase_instances.buffers.work_item_buffers
+    .get("wireframe-view")
+    .unwrap()
+  inspect(work_items.indexed_len(), content="3")
+  inspect(work_items.indexed_items()[0].input_index(), content="50")
+  inspect(work_items.indexed_items()[1].input_index(), content="-1")
+  inspect(phase_indirect.buffers.batch_count(true), content="2")
+  inspect(phase_indirect.buffers.batch_set_count(true), content="2")
+  inspect(
+    phase_indirect.buffers.cpu_metadata_at(true, 0).unwrap().batch_set_index(),
+    content="-1",
+  )
+  match phase.batch_sets() {
+    MultidrawIndirect(batch_sets) => {
+      inspect(batch_sets.length(), content="1")
+      inspect(batch_sets[0].first_batch().instance_range().start(), content="1")
+      inspect(batch_sets[0].first_batch().instance_range().end(), content="3")
+      inspect(batch_sets[0].batch_count(), content="1")
+    }
+    _ => abort("culling phase must produce multidraw-indirect batches")
+  }
+}
+
+///|
+test "render_phase: CPU binned preparation shares output storage across views" {
+  let first_phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let second_phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let first = @render_sync_world.MainEntity::new(@core.Entity::new(111, 1))
+  let skipped = @render_sync_world.MainEntity::new(@core.Entity::new(112, 1))
+  let second = @render_sync_world.MainEntity::new(@core.Entity::new(113, 1))
+  first_phase.add(
+    TestMultidrawBinKey(1001),
+    TestMultidrawBinKey(1002),
+    (@core.Entity::new(121, 1), first),
+    InputUniformIndex::new(70U),
+    BatchableMesh,
+  )
+  first_phase.add(
+    TestMultidrawBinKey(1001),
+    TestMultidrawBinKey(1002),
+    (@core.Entity::new(122, 1), skipped),
+    InputUniformIndex::new(71U),
+    BatchableMesh,
+  )
+  second_phase.add(
+    TestMultidrawBinKey(1003),
+    TestMultidrawBinKey(1004),
+    (@core.Entity::new(123, 1), second),
+    InputUniformIndex::new(72U),
+    BatchableMesh,
+  )
+  let buffer : @render_batching.BatchedInstanceBuffer[Unit] = @render_batching.BatchedInstanceBuffer::new()
+  let get_index : (@render_sync_world.MainEntity) -> InputUniformIndex? = fn(
+    entity,
+  ) {
+    if entity == skipped {
+      None
+    } else {
+      Some(InputUniformIndex::new(0U))
+    }
+  }
+  first_phase.prepare_cpu_buffers(buffer, get_index)
+  second_phase.prepare_cpu_buffers(buffer, get_index)
+
+  inspect(buffer.len(), content="2")
+  match first_phase.batch_sets() {
+    DynamicUniforms(batch_sets) => {
+      inspect(batch_sets[0][0].instance_range().start(), content="0")
+      inspect(batch_sets[0][0].instance_range().end(), content="1")
+    }
+    _ => abort("CPU phase must produce dynamic-uniform batches")
+  }
+  match second_phase.batch_sets() {
+    DynamicUniforms(batch_sets) => {
+      inspect(batch_sets[0][0].instance_range().start(), content="1")
+      inspect(batch_sets[0][0].instance_range().end(), content="2")
+    }
+    _ => abort("CPU phase must produce dynamic-uniform batches")
+  }
+}
+
+///|
+test "render_phase: indirect unbatchables reserve Bevy metadata range before filtering" {
+  let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let skipped = @render_sync_world.MainEntity::new(@core.Entity::new(131, 1))
+  let retained = @render_sync_world.MainEntity::new(@core.Entity::new(132, 1))
+  phase.add(
+    TestMultidrawBinKey(1101),
+    TestMultidrawBinKey(1102),
+    (@core.Entity::new(141, 1), retained),
+    InputUniformIndex::new(81U),
+    UnbatchableMesh,
+  )
+  phase.add(
+    TestMultidrawBinKey(1101),
+    TestMultidrawBinKey(1102),
+    (@core.Entity::new(142, 1), skipped),
+    InputUniformIndex::new(80U),
+    UnbatchableMesh,
+  )
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.prepare_gpu_buffers(
+    "wireframe-view",
+    false,
+    false,
+    phase_instances,
+    phase_indirect,
+    fn(entity) {
+      if entity == retained {
+        Some(InputUniformIndex::new(81U))
+      } else {
+        None
+      }
+    },
+    fn(_batch_set_key) { true },
+  )
+
+  inspect(phase_instances.buffers.data_buffer.len(), content="1")
+  inspect(phase_indirect.buffers.batch_count(true), content="2")
+  inspect(phase_indirect.buffers.batch_set_count(true), content="1")
+  let metadata = phase_indirect.buffers.cpu_metadata_at(true, 0).unwrap()
+  inspect(metadata.base_output_index(), content="0")
+  inspect(metadata.batch_set_index(), content="-1")
+  let indices = phase.unbatchable_meshes()[0]
+    .entities()
+    .buffer_indices()
+    .indices_for_entity_index(0)
+    .unwrap()
+  inspect(indices.instance_index(), content="0")
+}
+
+///|
+test "render_phase: indirect batchable records Bevy next batch-set index" {
+  let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let entity = @render_sync_world.MainEntity::new(@core.Entity::new(151, 1))
+  phase.add(
+    TestMultidrawBinKey(1201),
+    TestMultidrawBinKey(1202),
+    (@core.Entity::new(161, 1), entity),
+    InputUniformIndex::new(90U),
+    BatchableMesh,
+  )
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.prepare_gpu_buffers(
+    "wireframe-view",
+    false,
+    false,
+    phase_instances,
+    phase_indirect,
+    fn(_entity) { None },
+    fn(_batch_set_key) { true },
+  )
+
+  inspect(phase_indirect.buffers.batch_count(true), content="1")
+  inspect(phase_indirect.buffers.batch_set_count(true), content="0")
+  inspect(
+    phase_indirect.buffers.cpu_metadata_at(true, 0).unwrap().batch_set_index(),
+    content="0",
+  )
+  match phase.batch_sets() {
+    MultidrawIndirect(batch_sets) => inspect(batch_sets[0].index(), content="0")
+    _ => abort("culling phase must produce multidraw-indirect batch sets")
+  }
+}

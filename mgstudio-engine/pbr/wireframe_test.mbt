@@ -408,6 +408,25 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     content="true",
   )
   debug_inspect(
+    render_world.get_resource(Wireframe3dBatchedInstanceBuffer::resource())
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(
+      Wireframe3dPhaseBatchedInstanceBuffers::resource(),
+    )
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    render_world.get_resource(
+      Wireframe3dPhaseIndirectParametersBuffers::resource(),
+    )
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
     render_world.get_resource(WireframeViewKeyCache::resource()) is Some(_),
     content="true",
   )
@@ -428,5 +447,28 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     .get_resource(Wireframe3dDrawFunctions::resource())
     .map(fn(value) { value.len() }),
     content="Some(2)",
+  )
+  let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
+      name : String,
+    ) {
+      name.has_prefix("mgstudio_pbr::")
+    },
+  )
+  let render_dot = app
+    .sub_app(@app.RenderApp)
+    .schedule_graph_dot(@render.render_schedule_stage(), settings~)
+  debug_inspect(
+    render_dot.contains("\"mgstudio_pbr::prepare_wireframe_3d_phase_buffers\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains("\"mgstudio_pbr::collect_wireframe_3d_phase_buffers\""),
+    content="true",
+  )
+  debug_inspect(
+    render_dot.contains(
+      "\"mgstudio_pbr::prepare_wireframe_3d_phase_buffers\" -> \"mgstudio_pbr::collect_wireframe_3d_phase_buffers\"",
+    ),
+    content="true",
   )
 }

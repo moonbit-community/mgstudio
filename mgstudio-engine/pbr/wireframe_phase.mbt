@@ -22,6 +22,20 @@ pub struct Wireframe3dBatchSetKey {
 }
 
 ///|
+pub impl Eq for Wireframe3dBatchSetKey with fn equal(self, other) {
+  self.pipeline.id() == other.pipeline.id() &&
+  self.asset_id == other.asset_id &&
+  self.draw_function == other.draw_function &&
+  self.slabs == other.slabs &&
+  self.mesh_asset_id == other.mesh_asset_id
+}
+
+///|
+pub impl Eq for Wireframe3dBatchSetKey with fn not_equal(self, other) {
+  !(self == other)
+}
+
+///|
 pub fn Wireframe3dBatchSetKey::new(
   pipeline : @material.CachedRenderPipelineId,
   asset_id : Int,
@@ -79,7 +93,7 @@ pub fn Wireframe3dBatchSetKey::indexed(self : Wireframe3dBatchSetKey) -> Bool {
 ///|
 pub struct Wireframe3dBinKey {
   asset_id : Int
-} derive(Eq, Debug)
+} derive(Eq, Hash, Debug)
 
 ///|
 pub fn Wireframe3dBinKey::new(asset_id : Int) -> Wireframe3dBinKey {
@@ -1355,142 +1369,10 @@ pub fn despecialize_wireframe_view_cache(
 }
 
 ///|
-fn wireframe_3d_batch_set_key_eq(
-  lhs : Wireframe3dBatchSetKey,
-  rhs : Wireframe3dBatchSetKey,
-) -> Bool {
-  lhs.pipeline().id() == rhs.pipeline().id() &&
-  lhs.asset_id() == rhs.asset_id() &&
-  lhs.draw_function().id() == rhs.draw_function().id() &&
-  lhs.slabs() == rhs.slabs() &&
-  lhs.mesh_asset_id() == rhs.mesh_asset_id()
-}
-
-///|
-// Bevy source:
-// `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntities`.
-pub(all) struct Wireframe3dUnbatchableBinnedEntities {
-  batch_set_key : Wireframe3dBatchSetKey
-  bin_key : Wireframe3dBinKey
-  mut entities : Array[(@render.MainEntity, @core.Entity)]
-  buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::new(
-  batch_set_key : Wireframe3dBatchSetKey,
-  bin_key : Wireframe3dBinKey,
-) -> Wireframe3dUnbatchableBinnedEntities {
-  Wireframe3dUnbatchableBinnedEntities::{
-    batch_set_key,
-    bin_key,
-    entities: [],
-    buffer_indices: @render_phase.UnbatchableBinnedEntityIndexSet::new(),
-  }
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::matches(
-  self : Wireframe3dUnbatchableBinnedEntities,
-  batch_set_key : Wireframe3dBatchSetKey,
-  bin_key : Wireframe3dBinKey,
-) -> Bool {
-  wireframe_3d_batch_set_key_eq(self.batch_set_key, batch_set_key) &&
-  self.bin_key == bin_key
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::insert(
-  self : Wireframe3dUnbatchableBinnedEntities,
-  main_entity : @render.MainEntity,
-  render_entity : @core.Entity,
-  input_uniform_index : @render_phase.InputUniformIndex,
-) -> Unit {
-  self.entities.push((main_entity, render_entity))
-  self.buffer_indices.add(
-    @render_phase.UnbatchableBinnedEntityIndices::new(
-      input_uniform_index.to_int(),
-      WireframePhaseItemExtraIndex::none(),
-    ),
-  )
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::remove(
-  self : Wireframe3dUnbatchableBinnedEntities,
-  main_entity : @render.MainEntity,
-) -> Unit {
-  let retained : Array[(@render.MainEntity, @core.Entity)] = []
-  let retained_indices = @render_phase.UnbatchableBinnedEntityIndexSet::new()
-  for entity_index in 0..<self.entities.length() {
-    let entry = self.entities[entity_index]
-    if entry.0 != main_entity {
-      retained.push(entry)
-      match self.buffer_indices.indices_for_entity_index(entity_index) {
-        Some(indices) => retained_indices.add(indices)
-        None => ()
-      }
-    }
-  }
-  self.entities = retained
-  self.buffer_indices.clear()
-  for entity_index in 0..<retained_indices.len() {
-    match retained_indices.indices_for_entity_index(entity_index) {
-      Some(indices) => self.buffer_indices.add(indices)
-      None => ()
-    }
-  }
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::is_empty(
-  self : Wireframe3dUnbatchableBinnedEntities,
-) -> Bool {
-  self.entities.length() == 0
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::len(
-  self : Wireframe3dUnbatchableBinnedEntities,
-) -> Int {
-  self.entities.length()
-}
-
-///|
-fn Wireframe3dUnbatchableBinnedEntities::items(
-  self : Wireframe3dUnbatchableBinnedEntities,
-) -> Array[Wireframe3d] {
-  let items : Array[Wireframe3d] = []
-  for entity_index in 0..<self.entities.length() {
-    guard self.buffer_indices.indices_for_entity_index(entity_index)
-      is Some(indices) else {
-      continue
-    }
-    let entry = self.entities[entity_index]
-    let instance_index = indices.instance_index()
-    items.push(
-      Wireframe3d::new(
-        self.batch_set_key,
-        self.bin_key,
-        entry.1,
-        entry.0,
-        Wireframe3dBatchRange::new(instance_index, instance_index + 1),
-        indices.extra_index(),
-      ),
-    )
-  }
-  items
-}
-
-///|
 pub struct Wireframe3dViewPhase {
-  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
-  mut items : Array[Wireframe3d]
-  mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
-  input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
-  cached_entity_bin_keys : Map[
-    @render.MainEntity,
-    @render_phase.CachedBinnedEntity[Wireframe3dBatchSetKey, Wireframe3dBinKey],
+  phase : @render_phase.BinnedRenderPhase[
+    Wireframe3dBatchSetKey,
+    Wireframe3dBinKey,
   ]
 }
 
@@ -1499,11 +1381,7 @@ pub fn Wireframe3dViewPhase::new(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Wireframe3dViewPhase {
   Wireframe3dViewPhase::{
-    gpu_preprocessing_mode,
-    items: [],
-    unbatchable_meshes: [],
-    input_uniform_indices: {},
-    cached_entity_bin_keys: Map([]),
+    phase: @render_phase.BinnedRenderPhase::new(gpu_preprocessing_mode),
   }
 }
 
@@ -1516,78 +1394,219 @@ pub fn Wireframe3dViewPhase::update_cache(
     Wireframe3dBinKey,
   ]?,
 ) -> Unit {
-  self.cached_entity_bin_keys.set(
-    main_entity,
-    @render_phase.CachedBinnedEntity::new(cached_bin_key),
-  )
+  self.phase.update_cache(main_entity, cached_bin_key)
 }
 
 ///|
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(
   self : Wireframe3dViewPhase,
 ) -> @render_batching.GpuPreprocessingMode {
-  self.gpu_preprocessing_mode
+  self.phase.gpu_preprocessing_mode()
 }
 
 ///|
 pub fn Wireframe3dViewPhase::len(self : Wireframe3dViewPhase) -> Int {
-  let mut len = self.items.length()
-  for entities in self.unbatchable_meshes {
-    len = len + entities.len()
+  let mut count = 0
+  for entry in self.phase.multidrawable_meshes() {
+    count += entry.batch_set().cpu_instance_count()
   }
-  len
+  for entry in self.phase.batchable_meshes() {
+    count += entry.bin().entities().length()
+  }
+  for entry in self.phase.unbatchable_meshes() {
+    count += entry.entities().entities().length()
+  }
+  for entry in self.phase.non_mesh_items() {
+    count += entry.entities().entities().length()
+  }
+  count
 }
 
 ///|
 pub fn Wireframe3dViewPhase::is_empty(self : Wireframe3dViewPhase) -> Bool {
-  self.len() == 0
+  self.phase.is_empty()
 }
 
 ///|
 pub fn Wireframe3dViewPhase::unbatchable_bin_count(
   self : Wireframe3dViewPhase,
 ) -> Int {
-  self.unbatchable_meshes.length()
+  self.phase.unbatchable_meshes().length()
 }
 
 ///|
 // Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase::prepare_for_new_frame`.
 pub fn Wireframe3dViewPhase::prepare_for_new_frame(
-  _self : Wireframe3dViewPhase,
+  self : Wireframe3dViewPhase,
 ) -> Unit {
-  // The local phase does not yet materialize Bevy's transient batch sets or
-  // unbatchable buffer indices. Cached bins and phase items remain intact.
+  self.phase.prepare_for_new_frame()
+}
+
+///|
+fn Wireframe3dViewPhase::prepare_cpu_buffers_into(
+  self : Wireframe3dViewPhase,
+  batched_instance_buffer : @render_batching.BatchedInstanceBuffer[Unit],
+  render_mesh_instances : RenderMeshInstances,
+) -> Unit {
+  self.phase.prepare_cpu_buffers(batched_instance_buffer, fn(main_entity) {
+    render_mesh_instances
+    .render_mesh_queue_data(main_entity)
+    .map(fn(mesh_instance) { mesh_instance.current_uniform_index() })
+  })
+}
+
+///|
+pub fn Wireframe3dViewPhase::prepare_cpu_buffers(
+  self : Wireframe3dViewPhase,
+  render_mesh_instances : RenderMeshInstances,
+) -> Unit {
+  self.prepare_cpu_buffers_into(
+    @render_batching.BatchedInstanceBuffer::new(),
+    render_mesh_instances,
+  )
 }
 
 ///|
 pub fn Wireframe3dViewPhase::items(
   self : Wireframe3dViewPhase,
+  multi_draw_indirect_count_supported? : Bool = false,
 ) -> Array[Wireframe3d] {
   let result : Array[Wireframe3d] = []
-  for item in self.items {
-    result.push(item)
+  match self.phase.batch_sets() {
+    DynamicUniforms(batch_sets) => {
+      let entries = self.phase.batchable_meshes()
+      let count = if batch_sets.length() < entries.length() {
+        batch_sets.length()
+      } else {
+        entries.length()
+      }
+      for index in 0..<count {
+        let entry = entries[index]
+        for batch in batch_sets[index] {
+          let representative = batch.representative_entity()
+          result.push(
+            Wireframe3d::new(
+              entry.batch_set_key(),
+              entry.bin_key(),
+              representative.0,
+              representative.1,
+              batch.instance_range(),
+              batch.extra_index(),
+            ),
+          )
+        }
+      }
+    }
+    Direct(batches) => {
+      let entries = self.phase.batchable_meshes()
+      let count = if batches.length() < entries.length() {
+        batches.length()
+      } else {
+        entries.length()
+      }
+      for index in 0..<count {
+        let entry = entries[index]
+        let batch = batches[index]
+        let representative = batch.representative_entity()
+        result.push(
+          Wireframe3d::new(
+            entry.batch_set_key(),
+            entry.bin_key(),
+            representative.0,
+            representative.1,
+            batch.instance_range(),
+            batch.extra_index(),
+          ),
+        )
+      }
+    }
+    MultidrawIndirect(batch_sets) => {
+      let batch_set_keys : Array[Wireframe3dBatchSetKey] = []
+      for entry in self.phase.multidrawable_meshes() {
+        batch_set_keys.push(entry.batch_set_key())
+      }
+      for entry in self.phase.batchable_meshes() {
+        batch_set_keys.push(entry.batch_set_key())
+      }
+      let count = if batch_sets.length() < batch_set_keys.length() {
+        batch_sets.length()
+      } else {
+        batch_set_keys.length()
+      }
+      for index in 0..<count {
+        let batch_set = batch_sets[index]
+        let batch = batch_set.first_batch()
+        let representative = batch.representative_entity()
+        let extra_index = match batch.extra_index() {
+          @render_phase.PhaseItemExtraIndex::IndirectParametersIndex(
+            start,
+            _,
+            _
+          ) =>
+            @render_phase.PhaseItemExtraIndex::indirect_parameters_index(
+              start,
+              start + batch_set.batch_count(),
+              batch_set_index=if multi_draw_indirect_count_supported {
+                Some(batch_set.index())
+              } else {
+                None
+              },
+            )
+          other => other
+        }
+        result.push(
+          Wireframe3d::new(
+            batch_set_keys[index],
+            batch_set.bin_key(),
+            representative.0,
+            representative.1,
+            batch.instance_range(),
+            extra_index,
+          ),
+        )
+      }
+    }
   }
-  for entities in self.unbatchable_meshes {
-    for item in entities.items() {
-      result.push(item)
+  for entry in self.phase.unbatchable_meshes() {
+    let entities = entry.entities()
+    let retained_entities = entities.entities()
+    for entity_index in 0..<retained_entities.length() {
+      guard entities.buffer_indices().indices_for_entity_index(entity_index)
+        is Some(indices) else {
+        continue
+      }
+      let representative = retained_entities[entity_index]
+      result.push(
+        Wireframe3d::new(
+          entry.batch_set_key(),
+          entry.bin_key(),
+          representative.1,
+          representative.0,
+          Wireframe3dBatchRange::new(
+            indices.instance_index(),
+            indices.instance_index() + 1,
+          ),
+          indices.extra_index(),
+        ),
+      )
+    }
+  }
+  for entry in self.phase.non_mesh_items() {
+    for representative in entry.entities().entities() {
+      result.push(
+        Wireframe3d::new(
+          entry.batch_set_key(),
+          entry.bin_key(),
+          representative.1,
+          representative.0,
+          Wireframe3dBatchRange::new(0, 1),
+          WireframePhaseItemExtraIndex::none(),
+        ),
+      )
     }
   }
   result
-}
-
-///|
-fn wireframe_effective_phase_type(
-  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
-  phase_type : WireframeBinnedRenderPhaseType,
-) -> WireframeBinnedRenderPhaseType {
-  if gpu_preprocessing_mode ==
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly &&
-    phase_type == MultidrawableMesh {
-    BatchableMesh
-  } else {
-    phase_type
-  }
 }
 
 ///|
@@ -1599,58 +1618,8 @@ pub fn Wireframe3dViewPhase::add(
   input_uniform_index : @render_phase.InputUniformIndex,
   phase_type : WireframeBinnedRenderPhaseType,
 ) -> Unit {
-  let effective_phase_type = wireframe_effective_phase_type(
-    self.gpu_preprocessing_mode,
-    phase_type,
-  )
-  match effective_phase_type {
-    UnbatchableMesh => {
-      let mut unbatchable_index = -1
-      for index in 0..<self.unbatchable_meshes.length() {
-        if self.unbatchable_meshes[index].matches(batch_set_key, bin_key) {
-          unbatchable_index = index
-          break
-        }
-      }
-      if unbatchable_index < 0 {
-        self.unbatchable_meshes.push(
-          Wireframe3dUnbatchableBinnedEntities::new(batch_set_key, bin_key),
-        )
-        unbatchable_index = self.unbatchable_meshes.length() - 1
-      }
-      self.unbatchable_meshes[unbatchable_index].insert(
-        representative_entity.1,
-        representative_entity.0,
-        input_uniform_index,
-      )
-    }
-    MultidrawableMesh | BatchableMesh | NonMesh =>
-      self.items.push(
-        Wireframe3d::new(
-          batch_set_key,
-          bin_key,
-          representative_entity.0,
-          representative_entity.1,
-          Wireframe3dBatchRange::new(
-            input_uniform_index.to_int(),
-            input_uniform_index.to_int() + 1,
-          ),
-          WireframePhaseItemExtraIndex::none(),
-        ),
-      )
-  }
-  let main_entity = representative_entity.1
-  self.input_uniform_indices.set(
-    main_entity.id().to_bits(),
-    input_uniform_index,
-  )
-  self.update_cache(
-    main_entity,
-    Some(
-      @render_phase.CachedBinKey::new(
-        batch_set_key, bin_key, effective_phase_type,
-      ),
-    ),
+  self.phase.add(
+    batch_set_key, bin_key, representative_entity, input_uniform_index, phase_type,
   )
 }
 
@@ -1659,43 +1628,7 @@ pub fn Wireframe3dViewPhase::remove(
   self : Wireframe3dViewPhase,
   main_entity : @render.MainEntity,
 ) -> Unit {
-  let cached_binned_entity = match
-    self.cached_entity_bin_keys.get(main_entity) {
-    Some(value) => value
-    None => return
-  }
-  self.cached_entity_bin_keys.remove(main_entity)
-  match cached_binned_entity.cached_bin_key() {
-    Some(cached_bin_key) =>
-      match cached_bin_key.phase_type() {
-        UnbatchableMesh => {
-          let retained_bins : Array[Wireframe3dUnbatchableBinnedEntities] = []
-          for entities in self.unbatchable_meshes {
-            if entities.matches(
-                cached_bin_key.batch_set_key(),
-                cached_bin_key.bin_key(),
-              ) {
-              entities.remove(main_entity)
-            }
-            if !entities.is_empty() {
-              retained_bins.push(entities)
-            }
-          }
-          self.unbatchable_meshes = retained_bins
-        }
-        MultidrawableMesh | BatchableMesh | NonMesh => {
-          let retained : Array[Wireframe3d] = []
-          for item in self.items {
-            if item.main_entity() != main_entity {
-              retained.push(item)
-            }
-          }
-          self.items = retained
-        }
-      }
-    None => ()
-  }
-  self.input_uniform_indices.remove(main_entity.id().to_bits())
+  self.phase.remove(main_entity)
 }
 
 ///|
@@ -1703,7 +1636,38 @@ pub fn Wireframe3dViewPhase::input_uniform_index(
   self : Wireframe3dViewPhase,
   main_entity : @render.MainEntity,
 ) -> @render_phase.InputUniformIndex? {
-  self.input_uniform_indices.get(main_entity.id().to_bits())
+  for entry in self.phase.batchable_meshes() {
+    for entity_and_input_uniform_index in entry.bin().entities() {
+      let entity = entity_and_input_uniform_index.0
+      let input_uniform_index = entity_and_input_uniform_index.1
+      if entity == main_entity {
+        return Some(input_uniform_index)
+      }
+    }
+  }
+  for entry in self.phase.multidrawable_meshes() {
+    let batch_set = entry.batch_set()
+    for index in 0..<batch_set.cpu_instance_count() {
+      guard batch_set.cpu_instance_at(index) is Some(cpu_instance) else {
+        continue
+      }
+      if cpu_instance.main_entity() != main_entity {
+        continue
+      }
+      guard batch_set.gpu_instance_at(
+          @render_phase.RenderBinnedMeshInstanceIndex::new(
+            index.reinterpret_as_uint(),
+          ),
+        )
+        is Some(gpu_instance) else {
+        continue
+      }
+      return Some(
+        @render_phase.InputUniformIndex::new(gpu_instance.input_uniform_index()),
+      )
+    }
+  }
+  None
 }
 
 ///|
@@ -1711,14 +1675,7 @@ pub fn Wireframe3dViewPhase::phase_type(
   self : Wireframe3dViewPhase,
   main_entity : @render.MainEntity,
 ) -> WireframeBinnedRenderPhaseType? {
-  match self.cached_entity_bin_keys.get(main_entity) {
-    Some(cached_binned_entity) =>
-      match cached_binned_entity.cached_bin_key() {
-        Some(cached_bin_key) => Some(cached_bin_key.phase_type())
-        None => None
-      }
-    None => None
-  }
+  self.phase.cached_bin_key(main_entity).map(fn(key) { key.phase_type() })
 }
 
 ///|
@@ -1832,6 +1789,142 @@ pub fn Wireframe3dPhases::retained_view_entities(
     result.push(@core.Entity::from_bits(view_bits))
   }
   result
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+fn Wireframe3dPhases::prepare_phase_buffers_into(
+  self : Wireframe3dPhases,
+  render_mesh_instances : RenderMeshInstances,
+  occlusion_culling_views : Map[UInt64, Bool],
+  cpu_batched_instance_buffer : @render_batching.BatchedInstanceBuffer[Unit],
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Unit {
+  cpu_batched_instance_buffer.clear()
+  let get_binned_index = fn(main_entity : @render.MainEntity) {
+    render_mesh_instances
+    .render_mesh_queue_data(main_entity)
+    .map(fn(mesh_instance) { mesh_instance.current_uniform_index() })
+  }
+  for view_bits, phase in self.views {
+    match phase.gpu_preprocessing_mode() {
+      @render_batching.GpuPreprocessingMode::None =>
+        phase.prepare_cpu_buffers_into(
+          cpu_batched_instance_buffer, render_mesh_instances,
+        )
+      mode =>
+        phase.phase.prepare_gpu_buffers(
+          view_bits.to_string(),
+          mode == @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+          occlusion_culling_views.contains(view_bits),
+          phase_batched_instance_buffers,
+          phase_indirect_parameters_buffers,
+          get_binned_index,
+          fn(batch_set_key) { batch_set_key.indexed() },
+        )
+    }
+  }
+}
+
+///|
+pub fn Wireframe3dPhases::prepare_phase_buffers(
+  self : Wireframe3dPhases,
+  render_mesh_instances : RenderMeshInstances,
+  occlusion_culling_views : Map[UInt64, Bool],
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+) -> Unit {
+  self.prepare_phase_buffers_into(
+    render_mesh_instances,
+    occlusion_culling_views,
+    @render_batching.BatchedInstanceBuffer::new(),
+    phase_batched_instance_buffers,
+    phase_indirect_parameters_buffers,
+  )
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/no_gpu_preprocessing.rs::BatchedInstanceBuffer`.
+pub struct Wireframe3dBatchedInstanceBuffer {
+  buffer : @render_batching.BatchedInstanceBuffer[Unit]
+}
+
+///|
+pub fn Wireframe3dBatchedInstanceBuffer::Wireframe3dBatchedInstanceBuffer() -> Wireframe3dBatchedInstanceBuffer {
+  Wireframe3dBatchedInstanceBuffer::{
+    buffer: @render_batching.BatchedInstanceBuffer::new(),
+  }
+}
+
+///|
+let ecs_key_wireframe_3d_batched_instance_buffer : @ecs.ResourceKey[
+  Wireframe3dBatchedInstanceBuffer,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::BatchedInstanceBuffer<Wireframe3d>",
+)
+
+///|
+pub impl @app.Resource for Wireframe3dBatchedInstanceBuffer with fn resource() {
+  ecs_key_wireframe_3d_batched_instance_buffer
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhasePlugin<Wireframe3d>::build`.
+pub struct Wireframe3dPhaseBatchedInstanceBuffers {
+  buffers : @render_batching.PhaseBatchedInstanceBuffers[Unit]
+}
+
+///|
+pub fn Wireframe3dPhaseBatchedInstanceBuffers::Wireframe3dPhaseBatchedInstanceBuffers() -> Wireframe3dPhaseBatchedInstanceBuffers {
+  Wireframe3dPhaseBatchedInstanceBuffers::{
+    buffers: @render_batching.PhaseBatchedInstanceBuffers::new(),
+  }
+}
+
+///|
+let ecs_key_wireframe_3d_phase_batched_instance_buffers : @ecs.ResourceKey[
+  Wireframe3dPhaseBatchedInstanceBuffers,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PhaseBatchedInstanceBuffers<Wireframe3d>",
+)
+
+///|
+pub impl @app.Resource for Wireframe3dPhaseBatchedInstanceBuffers with fn resource() {
+  ecs_key_wireframe_3d_phase_batched_instance_buffers
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhasePlugin<Wireframe3d>::build`.
+pub struct Wireframe3dPhaseIndirectParametersBuffers {
+  buffers : @render_batching.PhaseIndirectParametersBuffers
+}
+
+///|
+pub fn Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers() -> Wireframe3dPhaseIndirectParametersBuffers {
+  Wireframe3dPhaseIndirectParametersBuffers::{
+    buffers: @render_batching.PhaseIndirectParametersBuffers::new(false),
+  }
+}
+
+///|
+let ecs_key_wireframe_3d_phase_indirect_parameters_buffers : @ecs.ResourceKey[
+  Wireframe3dPhaseIndirectParametersBuffers,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::PhaseIndirectParametersBuffers<Wireframe3d>",
+)
+
+///|
+pub impl @app.Resource for Wireframe3dPhaseIndirectParametersBuffers with fn resource() {
+  ecs_key_wireframe_3d_phase_indirect_parameters_buffers
 }
 
 ///|

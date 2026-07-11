@@ -1380,22 +1380,40 @@ test "pbr: wireframe unbatchable meshes use retained Bevy bins" {
     11U,
     UnbatchableMesh,
   )
+  let render_mesh_instances = RenderMeshInstances::new()
+  render_mesh_instances.insert(
+    first_main,
+    RenderMeshQueueData::new(33, 7U, false),
+  )
+  render_mesh_instances.insert(
+    second_main,
+    RenderMeshQueueData::new(33, 9U, false),
+  )
+  render_mesh_instances.insert(
+    third_main,
+    RenderMeshQueueData::new(34, 11U, false),
+  )
+  phase.prepare_cpu_buffers(render_mesh_instances)
 
   debug_inspect(phase.unbatchable_bin_count(), content="2")
   debug_inspect(phase.len(), content="3")
   let items = phase.items()
   debug_inspect(items[0].main_entity() == first_main, content="true")
-  inspect(items[0].batch_range().start(), content="7")
+  inspect(items[0].batch_range().start(), content="0")
   debug_inspect(items[1].main_entity() == second_main, content="true")
-  inspect(items[1].batch_range().start(), content="9")
+  inspect(items[1].batch_range().start(), content="1")
   debug_inspect(items[2].main_entity() == third_main, content="true")
-  inspect(items[2].batch_range().start(), content="11")
+  inspect(items[2].batch_range().start(), content="2")
 
   phase.remove(first_main)
+  phase.prepare_for_new_frame()
+  phase.prepare_cpu_buffers(render_mesh_instances)
   debug_inspect(phase.unbatchable_bin_count(), content="2")
   debug_inspect(phase.len(), content="2")
   debug_inspect(phase.items()[0].main_entity() == second_main, content="true")
   phase.remove(second_main)
+  phase.prepare_for_new_frame()
+  phase.prepare_cpu_buffers(render_mesh_instances)
   debug_inspect(phase.unbatchable_bin_count(), content="1")
   debug_inspect(phase.len(), content="1")
   debug_inspect(phase.items()[0].main_entity() == third_main, content="true")
@@ -1439,6 +1457,89 @@ test "pbr: wireframe binned phase prepare preserves cached items" {
   debug_inspect(
     phase.input_uniform_index(main_entity),
     content="Some(InputUniformIndex(9))",
+  )
+}
+
+///|
+test "pbr: wireframe phase preparation owns output ranges and collection" {
+  let view = @core.Entity::new(110, 1)
+  let render_entity = @core.Entity::new(120, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(121, 1))
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  phases.prepare_for_new_frame(
+    view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  phases.add(
+    view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(88UL),
+      18,
+      @material.DrawFunctionId::new(4U),
+      @render_mesh.MeshSlabs::new(3, index_slab_id=Some(6)),
+    ),
+    Wireframe3dBinKey::new(38),
+    (render_entity, main_entity),
+    19U,
+    BatchableMesh,
+  )
+  let render_mesh_instances = RenderMeshInstances::new(
+    use_gpu_instance_buffer_builder=true,
+  )
+  render_mesh_instances.insert(
+    main_entity,
+    RenderMeshQueueData::new(38, 19U, true),
+  )
+  let phase_instances = Wireframe3dPhaseBatchedInstanceBuffers::Wireframe3dPhaseBatchedInstanceBuffers()
+  let phase_indirect = Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers()
+  phases.prepare_phase_buffers(
+    render_mesh_instances,
+    {},
+    phase_instances.buffers,
+    phase_indirect.buffers,
+  )
+
+  let item = phases.phase(view).unwrap().items()[0]
+  inspect(item.batch_range().start(), content="0")
+  inspect(item.batch_range().end(), content="1")
+  let work_items = phase_instances.buffers.buffers.work_item_buffers
+    .get(view.to_bits().to_string())
+    .unwrap()
+    .direct_items()
+  inspect(work_items[0].input_index(), content="19")
+  inspect(work_items[0].output_or_indirect_parameters_index(), content="0")
+
+  let world = @ecs.World::new()
+  world.insert_resource(
+    Wireframe3dPhaseBatchedInstanceBuffers::resource(),
+    phase_instances,
+  )
+  world.insert_resource(
+    Wireframe3dPhaseIndirectParametersBuffers::resource(),
+    phase_indirect,
+  )
+  world.insert_resource(
+    RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.IndirectParametersBuffers::resource(),
+    @render_batching.IndirectParametersBuffers::IndirectParametersBuffers(),
+  )
+  world.insert_resource(
+    @render_batching.IndirectParametersBuffersSettings::resource(),
+    @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+  )
+  collect_wireframe_3d_phase_buffers_system(world)
+  let global_instances = world
+    .get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource())
+    .unwrap()
+  debug_inspect(
+    global_instances.buffers.phase_instance_buffers.get(
+      "mgstudio_pbr::Wireframe3d",
+    )
+    is Some(_),
+    content="true",
   )
 }
 
@@ -1527,8 +1628,9 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
   )
 
+  phase.prepare_cpu_buffers(render_mesh_instances)
   debug_inspect(phase.len(), content="1")
-  let item = phase.items[0]
+  let item = phase.items()[0]
   debug_inspect(item.main_entity() == main_entity, content="true")
   debug_inspect(item.cached_pipeline().id(), content="77")
   debug_inspect(item.draw_function().id(), content="1")
@@ -1690,7 +1792,10 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
     content="Some(0)",
   )
   debug_inspect(phase.len(), content="1")
-  let item = phase.items[0]
+  phase.prepare_cpu_buffers(
+    world.get_resource(RenderMeshInstances::resource()).unwrap(),
+  )
+  let item = phase.items()[0]
   debug_inspect(item.main_entity() == main_entity, content="true")
   debug_inspect(item.draw_function().id(), content="0")
   debug_inspect(
@@ -2006,7 +2111,15 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
   )
   let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
+    main_entity_a,
+    RenderMeshQueueData::new(13, 0U, true),
+  )
+  render_mesh_instances.insert(
     main_entity_b,
+    RenderMeshQueueData::new(13, 0U, true),
+  )
+  render_mesh_instances.insert(
+    main_entity_c,
     RenderMeshQueueData::new(13, 0U, true),
   )
   let render_meshes = @render_mesh.RenderMeshAssets::RenderMeshAssets()
@@ -2018,6 +2131,10 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
   render_meshes.insert(13, render_mesh)
   let mesh_allocator = @render_mesh.MeshAllocator::new()
   ignore(mesh_allocator.allocate_render_mesh(13, render_mesh, 80))
+  phases
+  .phase(retained_view)
+  .unwrap()
+  .prepare_cpu_buffers(render_mesh_instances)
   let plan = wireframe_3d_render_node_command_plan(
     phases,
     retained_view,

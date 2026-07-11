@@ -1556,6 +1556,119 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+pub fn prepare_wireframe_3d_phase_buffers_system(world : @ecs.World) -> Unit {
+  let phases_ref = match world.get_resource_mut(Wireframe3dPhases::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let render_mesh_instances = match
+    world.get_resource(RenderMeshInstances::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let phase_instances_ref = match
+    world.get_resource_mut(Wireframe3dPhaseBatchedInstanceBuffers::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let cpu_instances_ref = match
+    world.get_resource_mut(Wireframe3dBatchedInstanceBuffer::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let phase_indirect_ref = match
+    world.get_resource_mut(
+      Wireframe3dPhaseIndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let source_world = @render.render_source_world(world)
+  let occlusion_culling_views : Map[UInt64, Bool] = {}
+  phases_ref.modify(fn(phases) {
+    for retained_view_entity in phases.retained_view_entities() {
+      if (try! source_world.get_by_key(
+          retained_view_entity, ecs_key_occlusion_culling,
+        ))
+        is Some(_) {
+        occlusion_culling_views.set(retained_view_entity.to_bits(), true)
+      }
+    }
+    cpu_instances_ref.modify(fn(cpu_instances) {
+      phase_instances_ref.modify(fn(phase_instances) {
+        phase_indirect_ref.modify(fn(phase_indirect) {
+          phases.prepare_phase_buffers_into(
+            render_mesh_instances,
+            occlusion_culling_views,
+            cpu_instances.buffer,
+            phase_instances.buffers,
+            phase_indirect.buffers,
+          )
+        })
+      })
+    })
+  })
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::collect_buffers_for_phase`.
+pub fn collect_wireframe_3d_phase_buffers_system(world : @ecs.World) -> Unit {
+  let phase_instances_ref = match
+    world.get_resource_mut(Wireframe3dPhaseBatchedInstanceBuffers::resource()) {
+    Some(value) => value
+    None => return
+  }
+  let phase_indirect_ref = match
+    world.get_resource_mut(
+      Wireframe3dPhaseIndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let batched_instances_ref = match
+    world.get_resource_mut(
+      RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let indirect_buffers_ref = match
+    world.get_resource_mut(
+      @render_batching.IndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let settings = match
+    world.get_resource(
+      @render_batching.IndirectParametersBuffersSettings::resource(),
+    ) {
+    Some(value) => value
+    None =>
+      @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings()
+  }
+  phase_instances_ref.modify(fn(phase_instances) {
+    phase_indirect_ref.modify(fn(phase_indirect) {
+      batched_instances_ref.modify(fn(batched_instances) {
+        indirect_buffers_ref.modify(fn(indirect_buffers) {
+          @render_batching.collect_buffers_for_phase(
+            "mgstudio_pbr::Wireframe3d",
+            phase_instances.buffers,
+            phase_indirect.buffers,
+            batched_instances.buffers,
+            indirect_buffers,
+            settings,
+          )
+        })
+      })
+    })
+  })
+}
+
+///|
 fn wireframe_3d_execute_thin_command(
   world : @ecs.World,
   plan : Wireframe3dRenderCommandPlan,
@@ -2049,6 +2162,27 @@ fn configure_wireframe_render_sub_app(
   )
   wireframe_init_render_resource_if_missing(
     world,
+    Wireframe3dBatchedInstanceBuffer::resource(),
+    fn() {
+      Wireframe3dBatchedInstanceBuffer::Wireframe3dBatchedInstanceBuffer()
+    },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    Wireframe3dPhaseBatchedInstanceBuffers::resource(),
+    fn() {
+      Wireframe3dPhaseBatchedInstanceBuffers::Wireframe3dPhaseBatchedInstanceBuffers()
+    },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
+    Wireframe3dPhaseIndirectParametersBuffers::resource(),
+    fn() {
+      Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers()
+    },
+  )
+  wireframe_init_render_resource_if_missing(
+    world,
     WireframeViewKeyCache::resource(),
     fn() { WireframeViewKeyCache::WireframeViewKeyCache() },
   )
@@ -2150,6 +2284,18 @@ fn configure_wireframe_render_sub_app(
   .add_systems(
     stage,
     @app.system(queue_wireframes_system).in_set(wireframe_render_set_queue),
+  )
+  .add_systems(
+    stage,
+    @app.system(prepare_wireframe_3d_phase_buffers_system)
+    .named("mgstudio_pbr::prepare_wireframe_3d_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_batch_phases),
+  )
+  .add_systems(
+    stage,
+    @app.system(collect_wireframe_3d_phase_buffers_system)
+    .named("mgstudio_pbr::collect_wireframe_3d_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
   )
   .add_systems(
     core_3d_stage,

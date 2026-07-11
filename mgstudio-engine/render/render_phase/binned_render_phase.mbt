@@ -1829,3 +1829,300 @@ pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_for_new_frame(
     entry.entities.buffer_indices.clear()
   }
 }
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/no_gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_cpu_buffers(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  batched_instance_buffer : @render_batching.BatchedInstanceBuffer[Unit],
+  get_binned_index : (@render_sync_world.MainEntity) -> InputUniformIndex?,
+) -> Unit {
+  guard self.batch_sets is DynamicUniforms(batch_sets) else {
+    abort("CPU binned phase preparation requires dynamic-uniform batch sets")
+  }
+  for entry in self.batchable_meshes {
+    let batches : Array[BinnedRenderPhaseBatch] = []
+    let mut representative : @render_sync_world.MainEntity? = None
+    let start = batched_instance_buffer.len()
+    for entity_and_input_uniform_index in entry.bin.entities() {
+      let main_entity = entity_and_input_uniform_index.0
+      guard get_binned_index(main_entity) is Some(_) else { continue }
+      if representative is None {
+        representative = Some(main_entity)
+      }
+      batched_instance_buffer.push(())
+    }
+    if representative is Some(representative_entity) {
+      batches.push(
+        BinnedRenderPhaseBatch::new(
+          (@core.Entity::placeholder(), representative_entity),
+          PhaseItemBatchRange::new(start, batched_instance_buffer.len()),
+          PhaseItemExtraIndex::none(),
+        ),
+      )
+    }
+    batch_sets.push(batches)
+  }
+  for entry in self.unbatchable_meshes {
+    let entities = entry.entities.entities()
+    for entity_pair in entities {
+      let main_entity = entity_pair.0
+      guard get_binned_index(main_entity) is Some(_) else { continue }
+      let output_index = batched_instance_buffer.len()
+      batched_instance_buffer.push(())
+      entry.entities.buffer_indices.add(
+        UnbatchableBinnedEntityIndices::new(
+          output_index,
+          PhaseItemExtraIndex::none(),
+        ),
+      )
+    }
+  }
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+// The callback parameters are MoonBit's explicit representation of Bevy's
+// `GetFullBatchData::get_binned_index` and `BinnedPhaseItem::BatchSetKey::indexed`.
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_gpu_buffers(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  retained_view_key : String,
+  no_indirect_drawing : Bool,
+  enable_gpu_occlusion_culling : Bool,
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
+  get_binned_index : (@render_sync_world.MainEntity) -> InputUniformIndex?,
+  batch_set_key_indexed : (BatchSetKey) -> Bool,
+) -> Unit {
+  let work_item_buffer = @render_batching.get_or_create_work_item_buffer(
+    phase_batched_instance_buffers.buffers.work_item_buffers,
+    retained_view_key,
+    no_indirect_drawing,
+    enable_gpu_occlusion_culling,
+  )
+  @render_batching.init_work_item_buffers(
+    work_item_buffer,
+    phase_batched_instance_buffers.buffers.late_indexed_indirect_parameters_buffer,
+    phase_batched_instance_buffers.buffers.late_non_indexed_indirect_parameters_buffer,
+  )
+
+  // Prepare unbatchables first. CPU-authored work items must precede the
+  // multidraw work items authored by the bin-unpacking compute shader.
+  for entry in self.unbatchable_meshes {
+    let indexed = batch_set_key_indexed(entry.batch_set_key)
+    let mut indirect_parameters_index : Int? = if no_indirect_drawing {
+      None
+    } else {
+      Some(
+        phase_indirect_parameters_buffers.buffers.allocate(
+          indexed,
+          entry.entities.entities().length(),
+        ),
+      )
+    }
+    for entity_pair in entry.entities.entities() {
+      let main_entity = entity_pair.0
+      guard get_binned_index(main_entity) is Some(input_uniform_index) else {
+        continue
+      }
+      let output_index = phase_batched_instance_buffers.buffers.data_buffer.len()
+      phase_batched_instance_buffers.buffers.data_buffer.push(())
+      if no_indirect_drawing {
+        work_item_buffer.push(
+          indexed,
+          @render_batching.PreprocessWorkItem::new(
+            input_uniform_index.to_int(),
+            output_index,
+          ),
+        )
+        entry.entities.buffer_indices.add(
+          UnbatchableBinnedEntityIndices::new(
+            output_index,
+            PhaseItemExtraIndex::none(),
+          ),
+        )
+      } else {
+        let index = indirect_parameters_index.unwrap()
+        phase_indirect_parameters_buffers.buffers.set_cpu_metadata(
+          indexed,
+          index,
+          @render_batching.IndirectParametersCpuMetadata::new(output_index, -1),
+        )
+        work_item_buffer.push(
+          indexed,
+          @render_batching.PreprocessWorkItem::new(
+            input_uniform_index.to_int(),
+            index,
+          ),
+        )
+        entry.entities.buffer_indices.add(
+          UnbatchableBinnedEntityIndices::new(
+            index,
+            PhaseItemExtraIndex::indirect_parameters_index(index, index + 1),
+          ),
+        )
+        phase_indirect_parameters_buffers.buffers.add_batch_set(indexed, index)
+        indirect_parameters_index = Some(index + 1)
+      }
+    }
+  }
+
+  // Prepare batchable bins.
+  for entry in self.batchable_meshes {
+    let indexed = batch_set_key_indexed(entry.batch_set_key)
+    let entities = entry.bin.entities()
+    if entities.length() == 0 {
+      continue
+    }
+    let output_start = phase_batched_instance_buffers.buffers.data_buffer.len()
+    let indirect_parameters_index : Int? = if no_indirect_drawing {
+      None
+    } else {
+      let index = phase_indirect_parameters_buffers.buffers.allocate(indexed, 1)
+      let batch_set_index = phase_indirect_parameters_buffers.buffers
+        .get_next_batch_set_index(indexed)
+        .unwrap()
+      phase_indirect_parameters_buffers.buffers.set_cpu_metadata(
+        indexed,
+        index,
+        @render_batching.IndirectParametersCpuMetadata::new(
+          output_start, batch_set_index,
+        ),
+      )
+      Some(index)
+    }
+    let mut output_end = output_start
+    for entity_and_input_uniform_index in entities {
+      let input_uniform_index = entity_and_input_uniform_index.1
+      phase_batched_instance_buffers.buffers.data_buffer.push(())
+      work_item_buffer.push(
+        indexed,
+        @render_batching.PreprocessWorkItem::new(
+          input_uniform_index.to_int(),
+          match indirect_parameters_index {
+            Some(index) => index
+            None => output_end
+          },
+        ),
+      )
+      output_end += 1
+    }
+    let representative = entities[0].0
+    let batch = BinnedRenderPhaseBatch::new(
+      (@core.Entity::placeholder(), representative),
+      PhaseItemBatchRange::new(output_start, output_end),
+      PhaseItemExtraIndex::maybe_indirect_parameters_index(
+        indirect_parameters_index,
+      ),
+    )
+    match self.batch_sets {
+      DynamicUniforms(_) =>
+        abort("GPU binned phase preparation cannot use dynamic-uniform batches")
+      Direct(batches) => batches.push(batch)
+      MultidrawIndirect(batch_sets) => {
+        let batch_set_index = phase_indirect_parameters_buffers.buffers.batch_set_count(
+          indexed,
+        )
+        batch_sets.push(
+          BinnedRenderPhaseBatchSet::new(
+            batch,
+            entry.bin_key,
+            1,
+            batch_set_index,
+            0,
+          ),
+        )
+      }
+    }
+  }
+
+  // Prepare multidrawable batch sets. As in Bevy, these reserve work items
+  // for the GPU bin-unpacking step instead of authoring them on the CPU.
+  guard self.batch_sets is MultidrawIndirect(batch_sets) else { return }
+  for entry in self.multidrawable_meshes {
+    let indexed = batch_set_key_indexed(entry.batch_set_key)
+    let batch_set = entry.batch_set
+    guard batch_set.representative_entry()
+      is Some((first_bin_key, first_bin_index)) else {
+      continue
+    }
+    let first_bin = match batch_set.bin(first_bin_index) {
+      Some(value) => value
+      None => abort("At least one bin must be present in each batch set")
+    }
+    let representative = batch_set
+      .representative_entity()
+      .unwrap_or(
+        @render_sync_world.MainEntity::new(@core.Entity::placeholder()),
+      )
+    let output_start = phase_batched_instance_buffers.buffers.data_buffer.len()
+    let first_work_item_index = if indexed {
+      work_item_buffer.indexed_len()
+    } else {
+      work_item_buffer.non_indexed_len()
+    }
+    let batch_set_index = phase_indirect_parameters_buffers.buffers.batch_set_count(
+      indexed,
+    )
+    let bin_count = batch_set.bin_count()
+    let indirect_parameters_base = phase_indirect_parameters_buffers.buffers.allocate(
+      indexed, bin_count,
+    )
+    let cpu_metadata_offset = phase_indirect_parameters_buffers.buffers.cpu_metadata_len(
+        indexed,
+      ) -
+      bin_count
+    let work_item_count = Ref(0)
+    batch_set.for_each_bin_index(fn(_bin_key, bin_index) {
+      let bin = match batch_set.bin(bin_index) {
+        Some(value) => value
+        None => abort("Bin not present")
+      }
+      let indirect_parameters_offset = batch_set
+        .indirect_parameters_offset_for_bin(bin_index)
+        .unwrap()
+        .reinterpret_as_int()
+      phase_indirect_parameters_buffers.buffers.set_cpu_metadata(
+        indexed,
+        cpu_metadata_offset + indirect_parameters_offset,
+        @render_batching.IndirectParametersCpuMetadata::new(
+          phase_batched_instance_buffers.buffers.data_buffer.len(),
+          batch_set_index,
+        ),
+      )
+      let bin_entity_count = bin.entity_count()
+      work_item_buffer.push_multiple_uninit(indexed, bin_entity_count)
+      for _ in 0..<bin_entity_count {
+        phase_batched_instance_buffers.buffers.data_buffer.push(())
+      }
+      work_item_count.val += bin_entity_count
+    })
+    phase_indirect_parameters_buffers.buffers.add_batch_set(
+      indexed, indirect_parameters_base,
+    )
+    work_item_buffer.push_multiple_late_uninit(indexed, work_item_count.val)
+    batch_sets.push(
+      BinnedRenderPhaseBatchSet::new(
+        BinnedRenderPhaseBatch::new(
+          (@core.Entity::placeholder(), representative),
+          PhaseItemBatchRange::new(
+            output_start,
+            output_start + first_bin.entity_count(),
+          ),
+          PhaseItemExtraIndex::indirect_parameters_index(
+            indirect_parameters_base,
+            indirect_parameters_base + 1,
+          ),
+        ),
+        first_bin_key,
+        bin_count,
+        batch_set_index,
+        first_work_item_index,
+      ),
+    )
+  }
+}

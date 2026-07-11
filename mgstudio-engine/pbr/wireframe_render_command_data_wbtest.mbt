@@ -486,6 +486,7 @@ test "pbr: wireframe phase render command plans preserve item order and skips" {
   let (render_mesh_instances, render_meshes, mesh_allocator) = wireframe_render_command_test_mesh_state(
     main_entity, 13,
   )
+  phase.prepare_cpu_buffers(render_mesh_instances)
   let plans = wireframe_3d_phase_render_command_plans(
     phase,
     draw_functions,
