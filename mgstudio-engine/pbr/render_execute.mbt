@@ -1513,44 +1513,7 @@ pub fn Render3dQueuedShadowPhaseItemData::bin_key(
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::PhaseItemExtraIndex`.
-pub(all) enum Render3dShadowPhaseItemExtraIndex {
-  NoExtraIndex
-  DynamicOffset(Int)
-  IndirectParametersIndex(Int, Int, Int?)
-} derive(Eq, Debug)
-
-///|
-pub fn Render3dShadowPhaseItemExtraIndex::none() -> Render3dShadowPhaseItemExtraIndex {
-  NoExtraIndex
-}
-
-///|
-pub fn Render3dShadowPhaseItemExtraIndex::dynamic_offset(
-  offset : Int,
-) -> Render3dShadowPhaseItemExtraIndex {
-  DynamicOffset(offset)
-}
-
-///|
-pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(
-  range_start : Int,
-  range_end : Int,
-  batch_set_index? : Int? = None,
-) -> Render3dShadowPhaseItemExtraIndex {
-  IndirectParametersIndex(range_start, range_end, batch_set_index)
-}
-
-///|
-pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_range(
-  self : Render3dShadowPhaseItemExtraIndex,
-) -> (Int, Int, Int?)? {
-  match self {
-    IndirectParametersIndex(range_start, range_end, batch_set_index) =>
-      Some((range_start, range_end, batch_set_index))
-    _ => None
-  }
-}
+pub type Render3dShadowPhaseItemExtraIndex = @render_phase.PhaseItemExtraIndex
 
 ///|
 pub(all) struct Render3dShadowUnbatchableBinnedEntityIndices {
@@ -1710,7 +1673,7 @@ pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::add(
       match indices.extra_index() {
         DynamicOffset(_) =>
           self.kind = DenseUnbatchableBinnedEntityIndices([indices])
-        NoExtraIndex =>
+        Render3dShadowPhaseItemExtraIndex::None =>
           self.kind = SparseUnbatchableBinnedEntityIndices(
             Render3dShadowBatchRange::new(
               indices.instance_index(),
@@ -2526,7 +2489,8 @@ fn Render3dShadowMultidrawableBatchSetEntry::items(
       None
     }
     let extra_index = match batch.extra_index() {
-      NoExtraIndex => Render3dShadowPhaseItemExtraIndex::none()
+      Render3dShadowPhaseItemExtraIndex::None =>
+        Render3dShadowPhaseItemExtraIndex::none()
       DynamicOffset(offset) =>
         Render3dShadowPhaseItemExtraIndex::dynamic_offset(offset)
       IndirectParametersIndex(range_start, _, _) =>
@@ -2739,35 +2703,7 @@ fn Render3dShadowUnbatchableBinnedEntities::prepare_phase_buffers(
 }
 
 ///|
-pub struct Render3dShadowBatchRange {
-  start : Int
-  end : Int
-} derive(Eq, Debug)
-
-///|
-pub fn Render3dShadowBatchRange::new(
-  start : Int,
-  end : Int,
-) -> Render3dShadowBatchRange {
-  let safe_start = if start < 0 { 0 } else { start }
-  let safe_end = if end < safe_start { safe_start } else { end }
-  Render3dShadowBatchRange::{ start: safe_start, end: safe_end }
-}
-
-///|
-pub fn Render3dShadowBatchRange::start(self : Render3dShadowBatchRange) -> Int {
-  self.start
-}
-
-///|
-pub fn Render3dShadowBatchRange::end(self : Render3dShadowBatchRange) -> Int {
-  self.end
-}
-
-///|
-pub fn Render3dShadowBatchRange::count(self : Render3dShadowBatchRange) -> Int {
-  self.end - self.start
-}
+pub type Render3dShadowBatchRange = @render_phase.PhaseItemBatchRange
 
 ///|
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::Shadow`.

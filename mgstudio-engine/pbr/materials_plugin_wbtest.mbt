@@ -206,7 +206,7 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
   let item = phase.items()[0]
   inspect(item.batch_range().start(), content="14")
   inspect(item.batch_range().end(), content="16")
-  debug_inspect(item.extra_index(), content="NoExtraIndex")
+  debug_inspect(item.extra_index(), content="None")
   debug_inspect(phase.input_uniform_index(first_main), content="Some(14)")
   debug_inspect(phase.input_uniform_index(second_main), content="Some(15)")
   let render_mesh_instances = RenderMeshInstances::new(
@@ -350,7 +350,7 @@ test "render3d: batchable shadow phase prepares Bevy work item buffers" {
   debug_inspect(direct_work_items.direct_len(), content="2")
   inspect(phase.items()[0].batch_range().start(), content="0")
   inspect(phase.items()[0].batch_range().end(), content="2")
-  debug_inspect(phase.items()[0].extra_index(), content="NoExtraIndex")
+  debug_inspect(phase.items()[0].extra_index(), content="None")
 
   let indirect_phase = Render3dShadowViewPhaseData::new(
     @render_batching.GpuPreprocessingMode::None,
@@ -416,7 +416,7 @@ test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense state
     sparse
     .indices_for_entity_index(1)
     .map(fn(indices) { indices.extra_index() }),
-    content="Some(NoExtraIndex)",
+    content="Some(None)",
   )
   sparse.clear()
   debug_inspect(sparse.len(), content="0")
@@ -563,7 +563,7 @@ test "render3d: unbatchable shadow phase prepares Bevy work item buffers" {
   let direct_items = phase.items()
   inspect(direct_items[0].batch_range().start(), content="0")
   inspect(direct_items[1].batch_range().start(), content="1")
-  debug_inspect(direct_items[0].extra_index(), content="NoExtraIndex")
+  debug_inspect(direct_items[0].extra_index(), content="None")
 
   let indirect_phase = Render3dShadowViewPhaseData::new(
     @render_batching.GpuPreprocessingMode::None,

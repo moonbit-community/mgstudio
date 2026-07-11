@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/render/render_phase"
 import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/renderer",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -38,6 +39,27 @@ pub fn render_phase_end_pass() -> Unit
 // Errors
 
 // Types and methods
+pub struct PhaseItemBatchRange {
+  start : Int
+  end : Int
+} derive(Eq, @debug.Debug)
+pub fn PhaseItemBatchRange::count(Self) -> Int
+pub fn PhaseItemBatchRange::end(Self) -> Int
+pub fn PhaseItemBatchRange::new(Int, Int) -> Self
+pub fn PhaseItemBatchRange::start(Self) -> Int
+
+pub(all) enum PhaseItemExtraIndex {
+  None
+  DynamicOffset(Int)
+  IndirectParametersIndex(Int, Int, Int?)
+} derive(Eq, @debug.Debug)
+pub fn PhaseItemExtraIndex::dynamic_offset(Int) -> Self
+pub fn PhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
+pub fn PhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
+pub fn PhaseItemExtraIndex::maybe_dynamic_offset(Int?) -> Self
+pub fn PhaseItemExtraIndex::maybe_indirect_parameters_index(Int?) -> Self
+pub fn PhaseItemExtraIndex::none() -> Self
+
 pub struct ViewRangefinder3d {
   view_from_world_row_2 : @math.Vec4
 }

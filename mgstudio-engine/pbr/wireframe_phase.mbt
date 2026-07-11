@@ -92,74 +92,10 @@ pub fn Wireframe3dBinKey::asset_id(self : Wireframe3dBinKey) -> Int {
 }
 
 ///|
-pub(all) enum WireframePhaseItemExtraIndex {
-  NoExtraIndex
-  DynamicOffset(Int)
-  IndirectParametersIndex(Int, Int, Int?)
-} derive(Eq, Debug)
+pub type WireframePhaseItemExtraIndex = @render_phase.PhaseItemExtraIndex
 
 ///|
-pub fn WireframePhaseItemExtraIndex::none() -> WireframePhaseItemExtraIndex {
-  NoExtraIndex
-}
-
-///|
-pub fn WireframePhaseItemExtraIndex::dynamic_offset(
-  offset : Int,
-) -> WireframePhaseItemExtraIndex {
-  DynamicOffset(offset)
-}
-
-///|
-pub fn WireframePhaseItemExtraIndex::indirect_parameters_index(
-  range_start : Int,
-  range_end : Int,
-  batch_set_index? : Int? = None,
-) -> WireframePhaseItemExtraIndex {
-  IndirectParametersIndex(range_start, range_end, batch_set_index)
-}
-
-///|
-pub fn WireframePhaseItemExtraIndex::indirect_parameters_range(
-  self : WireframePhaseItemExtraIndex,
-) -> (Int, Int, Int?)? {
-  match self {
-    IndirectParametersIndex(range_start, range_end, batch_set_index) =>
-      Some((range_start, range_end, batch_set_index))
-    _ => None
-  }
-}
-
-///|
-pub struct Wireframe3dBatchRange {
-  start : Int
-  end : Int
-} derive(Eq, Debug)
-
-///|
-pub fn Wireframe3dBatchRange::new(
-  start : Int,
-  end : Int,
-) -> Wireframe3dBatchRange {
-  let safe_start = if start < 0 { 0 } else { start }
-  let safe_end = if end < safe_start { safe_start } else { end }
-  Wireframe3dBatchRange::{ start: safe_start, end: safe_end }
-}
-
-///|
-pub fn Wireframe3dBatchRange::start(self : Wireframe3dBatchRange) -> Int {
-  self.start
-}
-
-///|
-pub fn Wireframe3dBatchRange::end(self : Wireframe3dBatchRange) -> Int {
-  self.end
-}
-
-///|
-pub fn Wireframe3dBatchRange::count(self : Wireframe3dBatchRange) -> Int {
-  self.end - self.start
-}
+pub type Wireframe3dBatchRange = @render_phase.PhaseItemBatchRange
 
 ///|
 pub struct Wireframe3d {

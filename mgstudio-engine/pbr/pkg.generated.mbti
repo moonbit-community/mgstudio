@@ -29,6 +29,7 @@ import {
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/occlusion_culling",
+  "Milky2018/mgstudio/render/render_phase",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
   "Milky2018/mgstudio/render/texture",
@@ -2287,15 +2288,6 @@ pub fn Render3dResolvedMaterial::material_properties(Self) -> @material.Material
 pub fn Render3dResolvedMaterial::material_type_tag(Self) -> String
 pub fn Render3dResolvedMaterial::new(MaterialDrawData3d, @material.MaterialProperties, @render_resource.MaterialBindGroupResolvedData, String, material_extension? : @material.ExtendedMaterialMetadata3d?) -> Self
 
-pub struct Render3dShadowBatchRange {
-  start : Int
-  end : Int
-} derive(Eq, @debug.Debug)
-pub fn Render3dShadowBatchRange::count(Self) -> Int
-pub fn Render3dShadowBatchRange::end(Self) -> Int
-pub fn Render3dShadowBatchRange::new(Int, Int) -> Self
-pub fn Render3dShadowBatchRange::start(Self) -> Int
-
 pub struct Render3dShadowBatchSetKeyData {
   pipeline_id : @render_resource.CachedRenderPipelineId
   draw_function : @material.DrawFunctionId
@@ -2317,12 +2309,12 @@ pub fn Render3dShadowBinKeyData::new(Int) -> Self
 
 pub(all) struct Render3dShadowBinnedRenderPhaseBatchData {
   representative_entity : (@core.Entity, @Milky2018/mgstudio/render.MainEntity)
-  instance_range : Render3dShadowBatchRange
-  extra_index : Render3dShadowPhaseItemExtraIndex
+  instance_range : @render_phase.PhaseItemBatchRange
+  extra_index : @render_phase.PhaseItemExtraIndex
 }
-pub fn Render3dShadowBinnedRenderPhaseBatchData::extra_index(Self) -> Render3dShadowPhaseItemExtraIndex
-pub fn Render3dShadowBinnedRenderPhaseBatchData::instance_range(Self) -> Render3dShadowBatchRange
-pub fn Render3dShadowBinnedRenderPhaseBatchData::new((@core.Entity, @Milky2018/mgstudio/render.MainEntity), Render3dShadowBatchRange, Render3dShadowPhaseItemExtraIndex) -> Self
+pub fn Render3dShadowBinnedRenderPhaseBatchData::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
+pub fn Render3dShadowBinnedRenderPhaseBatchData::instance_range(Self) -> @render_phase.PhaseItemBatchRange
+pub fn Render3dShadowBinnedRenderPhaseBatchData::new((@core.Entity, @Milky2018/mgstudio/render.MainEntity), @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
 pub fn Render3dShadowBinnedRenderPhaseBatchData::representative_entity(Self) -> (@core.Entity, @Milky2018/mgstudio/render.MainEntity)
 
 pub(all) struct Render3dShadowBinnedRenderPhaseBatchSetData {
@@ -2421,28 +2413,18 @@ pub struct Render3dShadowPhaseItemData {
   bin_key : Render3dShadowBinKeyData
   render_entity : @core.Entity
   main_entity : @Milky2018/mgstudio/render.MainEntity
-  batch_range : Render3dShadowBatchRange
-  extra_index : Render3dShadowPhaseItemExtraIndex
+  batch_range : @render_phase.PhaseItemBatchRange
+  extra_index : @render_phase.PhaseItemExtraIndex
 }
-pub fn Render3dShadowPhaseItemData::batch_range(Self) -> Render3dShadowBatchRange
+pub fn Render3dShadowPhaseItemData::batch_range(Self) -> @render_phase.PhaseItemBatchRange
 pub fn Render3dShadowPhaseItemData::batch_set_key(Self) -> Render3dShadowBatchSetKeyData
 pub fn Render3dShadowPhaseItemData::bin_key(Self) -> Render3dShadowBinKeyData
 pub fn Render3dShadowPhaseItemData::cached_pipeline(Self) -> @render_resource.CachedRenderPipelineId
 pub fn Render3dShadowPhaseItemData::draw_function(Self) -> @material.DrawFunctionId
 pub fn Render3dShadowPhaseItemData::entity(Self) -> @core.Entity
-pub fn Render3dShadowPhaseItemData::extra_index(Self) -> Render3dShadowPhaseItemExtraIndex
+pub fn Render3dShadowPhaseItemData::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
 pub fn Render3dShadowPhaseItemData::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
-pub fn Render3dShadowPhaseItemData::new(Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, @core.Entity, @Milky2018/mgstudio/render.MainEntity, Render3dShadowBatchRange, Render3dShadowPhaseItemExtraIndex) -> Self
-
-pub(all) enum Render3dShadowPhaseItemExtraIndex {
-  NoExtraIndex
-  DynamicOffset(Int)
-  IndirectParametersIndex(Int, Int, Int?)
-} derive(Eq, @debug.Debug)
-pub fn Render3dShadowPhaseItemExtraIndex::dynamic_offset(Int) -> Self
-pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
-pub fn Render3dShadowPhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
-pub fn Render3dShadowPhaseItemExtraIndex::none() -> Self
+pub fn Render3dShadowPhaseItemData::new(Render3dShadowBatchSetKeyData, Render3dShadowBinKeyData, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
 
 pub struct Render3dShadowPhasesData {
   views : @hashmap.HashMap[@view.RetainedViewEntity, Render3dShadowViewPhaseData]
@@ -2494,17 +2476,17 @@ pub fn Render3dShadowUnbatchableBinnedEntityIndexSet::len(Self) -> Int
 
 pub(all) enum Render3dShadowUnbatchableBinnedEntityIndexSetKind {
   NoUnbatchableBinnedEntities
-  SparseUnbatchableBinnedEntityIndices(Render3dShadowBatchRange, Int?)
+  SparseUnbatchableBinnedEntityIndices(@render_phase.PhaseItemBatchRange, Int?)
   DenseUnbatchableBinnedEntityIndices(Array[Render3dShadowUnbatchableBinnedEntityIndices])
 } derive(@debug.Debug)
 
 pub(all) struct Render3dShadowUnbatchableBinnedEntityIndices {
   instance_index : Int
-  extra_index : Render3dShadowPhaseItemExtraIndex
+  extra_index : @render_phase.PhaseItemExtraIndex
 } derive(Eq, @debug.Debug)
-pub fn Render3dShadowUnbatchableBinnedEntityIndices::extra_index(Self) -> Render3dShadowPhaseItemExtraIndex
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
 pub fn Render3dShadowUnbatchableBinnedEntityIndices::instance_index(Self) -> Int
-pub fn Render3dShadowUnbatchableBinnedEntityIndices::new(Int, Render3dShadowPhaseItemExtraIndex) -> Self
+pub fn Render3dShadowUnbatchableBinnedEntityIndices::new(Int, @render_phase.PhaseItemExtraIndex) -> Self
 
 pub struct Render3dShadowViewPhaseData {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
@@ -3228,27 +3210,18 @@ pub struct Wireframe3d {
   bin_key : Wireframe3dBinKey
   render_entity : @core.Entity
   main_entity : @Milky2018/mgstudio/render.MainEntity
-  batch_range : Wireframe3dBatchRange
-  extra_index : WireframePhaseItemExtraIndex
+  batch_range : @render_phase.PhaseItemBatchRange
+  extra_index : @render_phase.PhaseItemExtraIndex
 }
-pub fn Wireframe3d::batch_range(Self) -> Wireframe3dBatchRange
+pub fn Wireframe3d::batch_range(Self) -> @render_phase.PhaseItemBatchRange
 pub fn Wireframe3d::batch_set_key(Self) -> Wireframe3dBatchSetKey
 pub fn Wireframe3d::bin_key(Self) -> Wireframe3dBinKey
 pub fn Wireframe3d::cached_pipeline(Self) -> @render_resource.CachedRenderPipelineId
 pub fn Wireframe3d::draw_function(Self) -> @material.DrawFunctionId
 pub fn Wireframe3d::entity(Self) -> @core.Entity
-pub fn Wireframe3d::extra_index(Self) -> WireframePhaseItemExtraIndex
+pub fn Wireframe3d::extra_index(Self) -> @render_phase.PhaseItemExtraIndex
 pub fn Wireframe3d::main_entity(Self) -> @Milky2018/mgstudio/render.MainEntity
-pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @Milky2018/mgstudio/render.MainEntity, Wireframe3dBatchRange, WireframePhaseItemExtraIndex) -> Self
-
-pub struct Wireframe3dBatchRange {
-  start : Int
-  end : Int
-} derive(Eq, @debug.Debug)
-pub fn Wireframe3dBatchRange::count(Self) -> Int
-pub fn Wireframe3dBatchRange::end(Self) -> Int
-pub fn Wireframe3dBatchRange::new(Int, Int) -> Self
-pub fn Wireframe3dBatchRange::start(Self) -> Int
+pub fn Wireframe3d::new(Wireframe3dBatchSetKey, Wireframe3dBinKey, @core.Entity, @Milky2018/mgstudio/render.MainEntity, @render_phase.PhaseItemBatchRange, @render_phase.PhaseItemExtraIndex) -> Self
 
 pub struct Wireframe3dBatchSetKey {
   pipeline : @render_resource.CachedRenderPipelineId
@@ -3325,7 +3298,7 @@ pub struct Wireframe3dRenderCommandPlan {
   wide_direct_range : DrawWireframeMeshPulledDirectRange?
   wide_indirect_plan : DrawWireframeMeshPulledIndirectPlan?
 }
-pub fn Wireframe3dRenderCommandPlan::batch_range(Self) -> Wireframe3dBatchRange
+pub fn Wireframe3dRenderCommandPlan::batch_range(Self) -> @render_phase.PhaseItemBatchRange
 pub fn Wireframe3dRenderCommandPlan::item(Self) -> Wireframe3d
 pub fn Wireframe3dRenderCommandPlan::kind(Self) -> Wireframe3dRenderCommandKind
 pub fn Wireframe3dRenderCommandPlan::new_thin(Wireframe3d, Wireframe3dThinImmediates) -> Self
@@ -3454,16 +3427,6 @@ pub struct WireframeMaterial {
 pub fn WireframeMaterial::WireframeMaterial() -> Self
 pub fn WireframeMaterial::new(@color.Color, Float, WireframeTopology) -> Self
 pub impl @asset.Asset for WireframeMaterial
-
-pub(all) enum WireframePhaseItemExtraIndex {
-  NoExtraIndex
-  DynamicOffset(Int)
-  IndirectParametersIndex(Int, Int, Int?)
-} derive(Eq, @debug.Debug)
-pub fn WireframePhaseItemExtraIndex::dynamic_offset(Int) -> Self
-pub fn WireframePhaseItemExtraIndex::indirect_parameters_index(Int, Int, batch_set_index? : Int?) -> Self
-pub fn WireframePhaseItemExtraIndex::indirect_parameters_range(Self) -> (Int, Int, Int?)?
-pub fn WireframePhaseItemExtraIndex::none() -> Self
 
 pub struct WireframePipelineCacheKey {
   key : WireframePipelineKey
@@ -3707,6 +3670,10 @@ pub using @projection3d {type ProjectionMatrix3d}
 
 pub using @projection3d {type ProjectionRuntime3d}
 
+pub using @render_phase {type PhaseItemBatchRange as Render3dShadowBatchRange}
+
+pub using @render_phase {type PhaseItemExtraIndex as Render3dShadowPhaseItemExtraIndex}
+
 pub using @light {type ScatteringMedium}
 
 pub using @post_process {type ScreenSpaceAmbientOcclusion}
@@ -3752,6 +3719,10 @@ pub using @effect_stack {type Vignette}
 pub using @light {type VolumetricFog}
 
 pub using @light {type VolumetricLight}
+
+pub using @render_phase {type PhaseItemBatchRange as Wireframe3dBatchRange}
+
+pub using @render_phase {type PhaseItemExtraIndex as WireframePhaseItemExtraIndex}
 
 // Traits
 pub(open) trait AutoExposureCompensationCurveSource {
