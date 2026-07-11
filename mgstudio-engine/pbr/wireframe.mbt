@@ -1141,54 +1141,6 @@ fn dirty_wireframe_specializations_mut_or_init(
 }
 
 ///|
-fn wireframe_mesh_visibility_class() -> String {
-  ecs_key_mesh3d.id().to_string()
-}
-
-///|
-fn wireframe_entity_bits(entity : @core.Entity) -> UInt64 {
-  let hi = entity.id.reinterpret_as_uint().to_uint64()
-  let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
-  (hi << 32) | lo
-}
-
-///|
-fn wireframe_main_entity_compare(
-  left : @render.MainEntity,
-  right : @render.MainEntity,
-) -> Int {
-  let left_bits = wireframe_entity_bits(left.id())
-  let right_bits = wireframe_entity_bits(right.id())
-  if left_bits < right_bits {
-    -1
-  } else if left_bits > right_bits {
-    1
-  } else {
-    0
-  }
-}
-
-///|
-fn wireframe_visible_pair_compare(
-  left : (@core.Entity, @render.MainEntity),
-  right : (@core.Entity, @render.MainEntity),
-) -> Int {
-  wireframe_main_entity_compare(left.1, right.1)
-}
-
-///|
-fn wireframe_render_entity_for_main(
-  source_world : @ecs.World,
-  main_entity : @core.Entity,
-) -> @core.Entity {
-  match
-    (try! source_world.get_by_key(main_entity, @render.ecs_key_render_entity)) {
-    Some(render_entity) => render_entity.id()
-    None => main_entity
-  }
-}
-
-///|
 fn wireframe_retained_view_entity(
   render_entity : @core.Entity,
   main_entity : @render.MainEntity?,
@@ -1196,113 +1148,6 @@ fn wireframe_retained_view_entity(
   match main_entity {
     Some(value) => value.id()
     None => render_entity
-  }
-}
-
-///|
-fn extract_wireframe_visible_mesh_pairs(
-  source_world : @ecs.World,
-  visible_entities : @camera_camera.VisibleEntities,
-) -> Array[(@core.Entity, @render.MainEntity)] {
-  let pairs : Array[(@core.Entity, @render.MainEntity)] = []
-  for main_entity in visible_entities.get(@mesh.ecs_key_mesh3d.id()) {
-    pairs.push(
-      (
-        wireframe_render_entity_for_main(source_world, main_entity),
-        @render.MainEntity::new(main_entity),
-      ),
-    )
-  }
-  pairs.sort_by(wireframe_visible_pair_compare)
-  pairs
-}
-
-///|
-fn extract_wireframe_render_visible_entities_system(world : @ecs.World) -> Unit {
-  let source_world = @render.render_source_world(world)
-  let live_render_views : Map[UInt64, Bool] = {}
-  let mesh_visibility_class = wireframe_mesh_visibility_class()
-  let extracted_views : Array[
-    (@core.Entity, @camera_camera.Camera, @camera_camera.VisibleEntities),
-  ] = []
-  let camera_query : @ecs.Query[
-    (
-      @core.Entity,
-      (
-        @ecs.Read[Camera3d],
-        @ecs.Optional[@camera_camera.Camera],
-        @ecs.Read[@camera_camera.VisibleEntities],
-      ),
-    ),
-    @ecs.All,
-  ] = @ecs.query(source_world)
-  try! camera_query.view(fn(_query_entity, data) {
-    let (main_view_entity, (_camera3d, camera_opt, visible_entities)) = data
-    let camera = match camera_opt.value() {
-      Some(value) => value
-      None => @camera_camera.Camera::Camera()
-    }
-    extracted_views.push((main_view_entity, camera, visible_entities.value()))
-  })
-  for extracted_view in extracted_views {
-    let (main_view_entity, camera, visible_entities) = extracted_view
-    let render_view_entity = wireframe_render_entity_for_main(
-      source_world, main_view_entity,
-    )
-    if !camera.is_active {
-      if world.is_alive(render_view_entity) {
-        ignore(
-          world.remove_by_key(
-            render_view_entity, @render_visibility.ecs_key_render_visible_entities,
-          ) catch {
-            _ => false
-          },
-        )
-      }
-      return
-    }
-    guard world.is_alive(render_view_entity) else { return }
-    live_render_views.set(wireframe_entity_bits(render_view_entity), true)
-    let render_visible_entities = match
-      (try! world.get_by_key(
-        render_view_entity, @render_visibility.ecs_key_render_visible_entities,
-      )) {
-      Some(value) => value
-      None => @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
-    }
-    let render_visible_mesh_entities = render_visible_entities.class_or_insert(
-      mesh_visibility_class,
-    )
-    render_visible_mesh_entities.prepare_for_new_frame()
-    render_visible_mesh_entities.update_cpu_culled_entities(
-      extract_wireframe_visible_mesh_pairs(source_world, visible_entities),
-    )
-    render_visible_mesh_entities.sort_added_entities()
-    try! world.set_by_key(
-      render_view_entity, @render_visibility.ecs_key_render_visible_entities, render_visible_entities,
-    )
-  }
-  let stale_query : @ecs.Query[
-    (@core.Entity, @ecs.Read[@render_visibility.RenderVisibleEntities]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  let stale_entities : Array[@core.Entity] = []
-  try! stale_query.view(fn(_query_entity, data) {
-    let (render_view_entity, _visible_entities) = data
-    if !live_render_views
-      .get(wireframe_entity_bits(render_view_entity))
-      .unwrap_or(false) {
-      stale_entities.push(render_view_entity)
-    }
-  })
-  for entity in stale_entities {
-    ignore(
-      world.remove_by_key(
-        entity, @render_visibility.ecs_key_render_visible_entities,
-      ) catch {
-        _ => false
-      },
-    )
   }
 }
 
@@ -1460,7 +1305,7 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
       )
   }
   let live_views : Map[UInt64, Bool] = {}
-  let mesh_visibility_class = wireframe_mesh_visibility_class()
+  let mesh_visibility_class = render3d_mesh_visibility_class()
   let view_query : @ecs.Query[
     (
       @core.Entity,
@@ -1583,7 +1428,7 @@ fn queue_wireframes_system(world : @ecs.World) -> Unit {
       )
   }
   let gpu_preprocessing_support = wireframe_3d_gpu_preprocessing_support(world)
-  let mesh_visibility_class = wireframe_mesh_visibility_class()
+  let mesh_visibility_class = render3d_mesh_visibility_class()
   let view_query : @ecs.Query[
     (
       @core.Entity,
@@ -2255,12 +2100,6 @@ fn configure_wireframe_render_sub_app(
   .add_systems(
     extract_stage,
     @app.system(extract_wireframe_3d_camera_system).in_set(render3d_set_extract),
-  )
-  .add_systems(
-    extract_stage,
-    @app.system(extract_wireframe_render_visible_entities_system).in_set(
-      render3d_set_extract,
-    ),
   )
   .add_systems(
     extract_stage,
