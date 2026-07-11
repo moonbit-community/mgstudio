@@ -820,6 +820,129 @@ pub fn[K] RenderMultidrawableBatchSet::for_each_cpu_instance(
 
 ///|
 // Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseBatch`.
+pub struct BinnedRenderPhaseBatch {
+  representative_entity : (@core.Entity, @render_sync_world.MainEntity)
+  instance_range : PhaseItemBatchRange
+  extra_index : PhaseItemExtraIndex
+}
+
+///|
+pub fn BinnedRenderPhaseBatch::new(
+  representative_entity : (@core.Entity, @render_sync_world.MainEntity),
+  instance_range : PhaseItemBatchRange,
+  extra_index : PhaseItemExtraIndex,
+) -> BinnedRenderPhaseBatch {
+  BinnedRenderPhaseBatch::{ representative_entity, instance_range, extra_index }
+}
+
+///|
+pub fn BinnedRenderPhaseBatch::representative_entity(
+  self : BinnedRenderPhaseBatch,
+) -> (@core.Entity, @render_sync_world.MainEntity) {
+  self.representative_entity
+}
+
+///|
+pub fn BinnedRenderPhaseBatch::instance_range(
+  self : BinnedRenderPhaseBatch,
+) -> PhaseItemBatchRange {
+  self.instance_range
+}
+
+///|
+pub fn BinnedRenderPhaseBatch::extra_index(
+  self : BinnedRenderPhaseBatch,
+) -> PhaseItemExtraIndex {
+  self.extra_index
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseBatchSet`.
+pub struct BinnedRenderPhaseBatchSet[BK] {
+  first_batch : BinnedRenderPhaseBatch
+  bin_key : BK
+  batch_count : Int
+  index : Int
+  first_work_item_index : Int
+}
+
+///|
+pub fn[BK] BinnedRenderPhaseBatchSet::new(
+  first_batch : BinnedRenderPhaseBatch,
+  bin_key : BK,
+  batch_count : Int,
+  index : Int,
+  first_work_item_index : Int,
+) -> BinnedRenderPhaseBatchSet[BK] {
+  BinnedRenderPhaseBatchSet::{
+    first_batch,
+    bin_key,
+    batch_count,
+    index,
+    first_work_item_index,
+  }
+}
+
+///|
+pub fn[BK] BinnedRenderPhaseBatchSet::first_batch(
+  self : BinnedRenderPhaseBatchSet[BK],
+) -> BinnedRenderPhaseBatch {
+  self.first_batch
+}
+
+///|
+pub fn[BK] BinnedRenderPhaseBatchSet::bin_key(
+  self : BinnedRenderPhaseBatchSet[BK],
+) -> BK {
+  self.bin_key
+}
+
+///|
+pub fn[BK] BinnedRenderPhaseBatchSet::batch_count(
+  self : BinnedRenderPhaseBatchSet[BK],
+) -> Int {
+  self.batch_count
+}
+
+///|
+pub fn[BK] BinnedRenderPhaseBatchSet::index(
+  self : BinnedRenderPhaseBatchSet[BK],
+) -> Int {
+  self.index
+}
+
+///|
+pub fn[BK] BinnedRenderPhaseBatchSet::first_work_item_index(
+  self : BinnedRenderPhaseBatchSet[BK],
+) -> Int {
+  self.first_work_item_index
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhaseBatchSets`.
+pub(all) enum BinnedRenderPhaseBatchSets[BK] {
+  DynamicUniforms(Array[Array[BinnedRenderPhaseBatch]])
+  Direct(Array[BinnedRenderPhaseBatch])
+  MultidrawIndirect(Array[BinnedRenderPhaseBatchSet[BK]])
+}
+
+///|
+#warnings("-unused_value")
+fn[BK] BinnedRenderPhaseBatchSets::clear(
+  self : BinnedRenderPhaseBatchSets[BK],
+) -> Unit {
+  match self {
+    DynamicUniforms(batch_sets) => batch_sets.clear()
+    Direct(batches) => batches.clear()
+    MultidrawIndirect(batch_sets) => batch_sets.clear()
+  }
+}
+
+///|
+// Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
 pub(all) struct UnbatchableBinnedEntityIndices {
   instance_index : Int

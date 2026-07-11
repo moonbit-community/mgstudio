@@ -1525,106 +1525,12 @@ pub type Render3dShadowUnbatchableBinnedEntityIndexSet = @render_phase.Unbatchab
 pub type Render3dShadowUnbatchableBinnedEntityIndexSetKind = @render_phase.UnbatchableBinnedEntityIndexSetKind
 
 ///|
-pub(all) struct Render3dShadowBinnedRenderPhaseBatchData {
-  representative_entity : (@core.Entity, @render.MainEntity)
-  instance_range : Render3dShadowBatchRange
-  extra_index : Render3dShadowPhaseItemExtraIndex
-}
+pub type Render3dShadowBinnedRenderPhaseBatchData = @render_phase.BinnedRenderPhaseBatch
 
 ///|
-pub fn Render3dShadowBinnedRenderPhaseBatchData::new(
-  representative_entity : (@core.Entity, @render.MainEntity),
-  instance_range : Render3dShadowBatchRange,
-  extra_index : Render3dShadowPhaseItemExtraIndex,
-) -> Render3dShadowBinnedRenderPhaseBatchData {
-  Render3dShadowBinnedRenderPhaseBatchData::{
-    representative_entity,
-    instance_range,
-    extra_index,
-  }
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchData::representative_entity(
-  self : Render3dShadowBinnedRenderPhaseBatchData,
-) -> (@core.Entity, @render.MainEntity) {
-  self.representative_entity
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchData::instance_range(
-  self : Render3dShadowBinnedRenderPhaseBatchData,
-) -> Render3dShadowBatchRange {
-  self.instance_range
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchData::extra_index(
-  self : Render3dShadowBinnedRenderPhaseBatchData,
-) -> Render3dShadowPhaseItemExtraIndex {
-  self.extra_index
-}
-
-///|
-pub(all) struct Render3dShadowBinnedRenderPhaseBatchSetData {
-  first_batch : Render3dShadowBinnedRenderPhaseBatchData
-  bin_key : Render3dShadowBinKeyData
-  batch_count : Int
-  index : Int
-  first_work_item_index : Int
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchSetData::new(
-  first_batch : Render3dShadowBinnedRenderPhaseBatchData,
-  bin_key : Render3dShadowBinKeyData,
-  batch_count : Int,
-  index : Int,
-  first_work_item_index : Int,
-) -> Render3dShadowBinnedRenderPhaseBatchSetData {
-  Render3dShadowBinnedRenderPhaseBatchSetData::{
-    first_batch,
-    bin_key,
-    batch_count,
-    index,
-    first_work_item_index,
-  }
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchSetData::first_batch(
-  self : Render3dShadowBinnedRenderPhaseBatchSetData,
-) -> Render3dShadowBinnedRenderPhaseBatchData {
-  self.first_batch
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchSetData::bin_key(
-  self : Render3dShadowBinnedRenderPhaseBatchSetData,
-) -> Render3dShadowBinKeyData {
-  self.bin_key
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchSetData::batch_count(
-  self : Render3dShadowBinnedRenderPhaseBatchSetData,
-) -> Int {
-  self.batch_count
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchSetData::index(
-  self : Render3dShadowBinnedRenderPhaseBatchSetData,
-) -> Int {
-  self.index
-}
-
-///|
-pub fn Render3dShadowBinnedRenderPhaseBatchSetData::first_work_item_index(
-  self : Render3dShadowBinnedRenderPhaseBatchSetData,
-) -> Int {
-  self.first_work_item_index
-}
+pub type Render3dShadowBinnedRenderPhaseBatchSetData = @render_phase.BinnedRenderPhaseBatchSet[
+  Render3dShadowBinKeyData,
+]
 
 ///|
 pub type Render3dShadowMultidrawableBatchSetData = @render_phase.RenderMultidrawableBatchSet[

@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/render/render_phase"
 
 import {
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/batching",
   "Milky2018/mgstudio/render/renderer",
@@ -41,6 +42,36 @@ pub fn render_phase_end_pass() -> Unit
 // Errors
 
 // Types and methods
+pub struct BinnedRenderPhaseBatch {
+  representative_entity : (@core.Entity, @sync_world.MainEntity)
+  instance_range : PhaseItemBatchRange
+  extra_index : PhaseItemExtraIndex
+}
+pub fn BinnedRenderPhaseBatch::extra_index(Self) -> PhaseItemExtraIndex
+pub fn BinnedRenderPhaseBatch::instance_range(Self) -> PhaseItemBatchRange
+pub fn BinnedRenderPhaseBatch::new((@core.Entity, @sync_world.MainEntity), PhaseItemBatchRange, PhaseItemExtraIndex) -> Self
+pub fn BinnedRenderPhaseBatch::representative_entity(Self) -> (@core.Entity, @sync_world.MainEntity)
+
+pub struct BinnedRenderPhaseBatchSet[BK] {
+  first_batch : BinnedRenderPhaseBatch
+  bin_key : BK
+  batch_count : Int
+  index : Int
+  first_work_item_index : Int
+}
+pub fn[BK] BinnedRenderPhaseBatchSet::batch_count(Self[BK]) -> Int
+pub fn[BK] BinnedRenderPhaseBatchSet::bin_key(Self[BK]) -> BK
+pub fn[BK] BinnedRenderPhaseBatchSet::first_batch(Self[BK]) -> BinnedRenderPhaseBatch
+pub fn[BK] BinnedRenderPhaseBatchSet::first_work_item_index(Self[BK]) -> Int
+pub fn[BK] BinnedRenderPhaseBatchSet::index(Self[BK]) -> Int
+pub fn[BK] BinnedRenderPhaseBatchSet::new(BinnedRenderPhaseBatch, BK, Int, Int, Int) -> Self[BK]
+
+pub(all) enum BinnedRenderPhaseBatchSets[BK] {
+  DynamicUniforms(Array[Array[BinnedRenderPhaseBatch]])
+  Direct(Array[BinnedRenderPhaseBatch])
+  MultidrawIndirect(Array[BinnedRenderPhaseBatchSet[BK]])
+}
+
 pub(all) enum BinnedRenderPhaseType {
   MultidrawableMesh
   BatchableMesh

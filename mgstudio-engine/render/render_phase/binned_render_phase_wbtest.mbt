@@ -261,6 +261,80 @@ test "panic render_phase: multidraw removal rejects a missing entity" {
 }
 
 ///|
+test "render_phase: binned batch records retain Bevy batch-set data" {
+  let main_entity = @render_sync_world.MainEntity::new(@core.Entity::new(28, 1))
+  let batch = BinnedRenderPhaseBatch::new(
+    (@core.Entity::new(29, 1), main_entity),
+    PhaseItemBatchRange::new(7, 11),
+    PhaseItemExtraIndex::indirect_parameters_index(
+      3,
+      5,
+      batch_set_index=Some(2),
+    ),
+  )
+  debug_inspect(batch.representative_entity().1 == main_entity, content="true")
+  debug_inspect(batch.instance_range(), content="{ start: 7, end: 11 }")
+  debug_inspect(
+    batch.extra_index(),
+    content="IndirectParametersIndex(3, 5, Some(2))",
+  )
+  let batch_set = BinnedRenderPhaseBatchSet::new(
+    batch,
+    TestMultidrawBinKey(501),
+    4,
+    6,
+    8,
+  )
+  debug_inspect(batch_set.bin_key(), content="TestMultidrawBinKey(501)")
+  inspect(batch_set.batch_count(), content="4")
+  inspect(batch_set.index(), content="6")
+  inspect(batch_set.first_work_item_index(), content="8")
+  debug_inspect(
+    batch_set.first_batch().instance_range(),
+    content="{ start: 7, end: 11 }",
+  )
+}
+
+///|
+fn[BinKey] binned_batch_sets_len_for_test(
+  batch_sets : BinnedRenderPhaseBatchSets[BinKey],
+) -> Int {
+  match batch_sets {
+    DynamicUniforms(values) => values.length()
+    Direct(values) => values.length()
+    MultidrawIndirect(values) => values.length()
+  }
+}
+
+///|
+test "render_phase: binned batch-set variants clear their matching storage" {
+  let main_entity = @render_sync_world.MainEntity::new(@core.Entity::new(30, 1))
+  let batch = BinnedRenderPhaseBatch::new(
+    (@core.Entity::new(31, 1), main_entity),
+    PhaseItemBatchRange::new(0, 1),
+    PhaseItemExtraIndex::none(),
+  )
+  let dynamic : BinnedRenderPhaseBatchSets[TestMultidrawBinKey] = DynamicUniforms([
+      [batch],
+    ],
+  )
+  let direct : BinnedRenderPhaseBatchSets[TestMultidrawBinKey] = Direct([batch])
+  let indirect : BinnedRenderPhaseBatchSets[TestMultidrawBinKey] = MultidrawIndirect([
+      BinnedRenderPhaseBatchSet::new(batch, TestMultidrawBinKey(502), 1, 0, 0),
+    ],
+  )
+  inspect(binned_batch_sets_len_for_test(dynamic), content="1")
+  inspect(binned_batch_sets_len_for_test(direct), content="1")
+  inspect(binned_batch_sets_len_for_test(indirect), content="1")
+  dynamic.clear()
+  direct.clear()
+  indirect.clear()
+  inspect(binned_batch_sets_len_for_test(dynamic), content="0")
+  inspect(binned_batch_sets_len_for_test(direct), content="0")
+  inspect(binned_batch_sets_len_for_test(indirect), content="0")
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
