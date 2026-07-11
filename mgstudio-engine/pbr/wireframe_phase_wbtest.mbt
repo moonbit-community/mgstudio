@@ -1341,6 +1341,52 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
 }
 
 ///|
+test "pbr: wireframe unbatchable meshes use retained Bevy bins" {
+  let phase = Wireframe3dViewPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let batch_set = Wireframe3dBatchSetKey::new(
+    @material.CachedRenderPipelineId::new(77UL),
+    8,
+    @material.DrawFunctionId::new(3U),
+    @render_mesh.MeshSlabs::new(2, index_slab_id=Some(5)),
+  )
+  let bin = Wireframe3dBinKey::new(33)
+  let first_main = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  let second_main = wireframe_test_main_entity(@core.Entity::new(22, 1))
+  phase.add(
+    batch_set,
+    bin,
+    (@core.Entity::new(31, 1), first_main),
+    7U,
+    UnbatchableMesh,
+  )
+  phase.add(
+    batch_set,
+    bin,
+    (@core.Entity::new(32, 1), second_main),
+    9U,
+    UnbatchableMesh,
+  )
+
+  debug_inspect(phase.unbatchable_bin_count(), content="1")
+  debug_inspect(phase.len(), content="2")
+  let items = phase.items()
+  debug_inspect(items[0].main_entity() == first_main, content="true")
+  inspect(items[0].batch_range().start(), content="7")
+  debug_inspect(items[1].main_entity() == second_main, content="true")
+  inspect(items[1].batch_range().start(), content="9")
+
+  phase.remove(first_main)
+  debug_inspect(phase.unbatchable_bin_count(), content="1")
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.items()[0].main_entity() == second_main, content="true")
+  phase.remove(second_main)
+  debug_inspect(phase.unbatchable_bin_count(), content="0")
+  debug_inspect(phase.is_empty(), content="true")
+}
+
+///|
 test "pbr: wireframe binned phase prepare preserves cached items" {
   let phases = Wireframe3dPhases::Wireframe3dPhases()
   let view = @core.Entity::new(10, 1)

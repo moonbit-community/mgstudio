@@ -3309,9 +3309,17 @@ pub fn Wireframe3dThinImmediates::color(Self) -> @color.Color
 pub fn Wireframe3dThinImmediates::float_count(Self) -> Int
 pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
 
+pub(all) struct Wireframe3dUnbatchableBinnedEntities {
+  batch_set_key : Wireframe3dBatchSetKey
+  bin_key : Wireframe3dBinKey
+  mut entities : Array[(@Milky2018/mgstudio/render.MainEntity, @core.Entity)]
+  buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
+}
+
 pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @batching.GpuPreprocessingMode
   mut items : Array[Wireframe3d]
+  mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, UInt]
   phase_types : Map[UInt64, @render_phase.BinnedRenderPhaseType]
 }
@@ -3325,6 +3333,7 @@ pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
 pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> @render_phase.BinnedRenderPhaseType?
 pub fn Wireframe3dViewPhase::prepare_for_new_frame(Self) -> Unit
 pub fn Wireframe3dViewPhase::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
+pub fn Wireframe3dViewPhase::unbatchable_bin_count(Self) -> Int
 
 pub struct Wireframe3dWideImmediates {
   color : @color.Color

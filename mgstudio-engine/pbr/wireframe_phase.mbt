@@ -1355,9 +1355,138 @@ pub fn despecialize_wireframe_view_cache(
 }
 
 ///|
+fn wireframe_3d_batch_set_key_eq(
+  lhs : Wireframe3dBatchSetKey,
+  rhs : Wireframe3dBatchSetKey,
+) -> Bool {
+  lhs.pipeline().id() == rhs.pipeline().id() &&
+  lhs.asset_id() == rhs.asset_id() &&
+  lhs.draw_function().id() == rhs.draw_function().id() &&
+  lhs.slabs() == rhs.slabs() &&
+  lhs.mesh_asset_id() == rhs.mesh_asset_id()
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntities`.
+pub(all) struct Wireframe3dUnbatchableBinnedEntities {
+  batch_set_key : Wireframe3dBatchSetKey
+  bin_key : Wireframe3dBinKey
+  mut entities : Array[(@render.MainEntity, @core.Entity)]
+  buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::new(
+  batch_set_key : Wireframe3dBatchSetKey,
+  bin_key : Wireframe3dBinKey,
+) -> Wireframe3dUnbatchableBinnedEntities {
+  Wireframe3dUnbatchableBinnedEntities::{
+    batch_set_key,
+    bin_key,
+    entities: [],
+    buffer_indices: @render_phase.UnbatchableBinnedEntityIndexSet::new(),
+  }
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::matches(
+  self : Wireframe3dUnbatchableBinnedEntities,
+  batch_set_key : Wireframe3dBatchSetKey,
+  bin_key : Wireframe3dBinKey,
+) -> Bool {
+  wireframe_3d_batch_set_key_eq(self.batch_set_key, batch_set_key) &&
+  self.bin_key == bin_key
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::insert(
+  self : Wireframe3dUnbatchableBinnedEntities,
+  main_entity : @render.MainEntity,
+  render_entity : @core.Entity,
+  input_uniform_index : UInt,
+) -> Unit {
+  self.entities.push((main_entity, render_entity))
+  self.buffer_indices.add(
+    @render_phase.UnbatchableBinnedEntityIndices::new(
+      input_uniform_index.reinterpret_as_int(),
+      WireframePhaseItemExtraIndex::none(),
+    ),
+  )
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::remove(
+  self : Wireframe3dUnbatchableBinnedEntities,
+  main_entity : @render.MainEntity,
+) -> Unit {
+  let retained : Array[(@render.MainEntity, @core.Entity)] = []
+  let retained_indices = @render_phase.UnbatchableBinnedEntityIndexSet::new()
+  for entity_index in 0..<self.entities.length() {
+    let entry = self.entities[entity_index]
+    if entry.0 != main_entity {
+      retained.push(entry)
+      match self.buffer_indices.indices_for_entity_index(entity_index) {
+        Some(indices) => retained_indices.add(indices)
+        None => ()
+      }
+    }
+  }
+  self.entities = retained
+  self.buffer_indices.clear()
+  for entity_index in 0..<retained_indices.len() {
+    match retained_indices.indices_for_entity_index(entity_index) {
+      Some(indices) => self.buffer_indices.add(indices)
+      None => ()
+    }
+  }
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::is_empty(
+  self : Wireframe3dUnbatchableBinnedEntities,
+) -> Bool {
+  self.entities.length() == 0
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::len(
+  self : Wireframe3dUnbatchableBinnedEntities,
+) -> Int {
+  self.entities.length()
+}
+
+///|
+fn Wireframe3dUnbatchableBinnedEntities::items(
+  self : Wireframe3dUnbatchableBinnedEntities,
+) -> Array[Wireframe3d] {
+  let items : Array[Wireframe3d] = []
+  for entity_index in 0..<self.entities.length() {
+    guard self.buffer_indices.indices_for_entity_index(entity_index)
+      is Some(indices) else {
+      continue
+    }
+    let entry = self.entities[entity_index]
+    let instance_index = indices.instance_index()
+    items.push(
+      Wireframe3d::new(
+        self.batch_set_key,
+        self.bin_key,
+        entry.1,
+        entry.0,
+        Wireframe3dBatchRange::new(instance_index, instance_index + 1),
+        indices.extra_index(),
+      ),
+    )
+  }
+  items
+}
+
+///|
 pub struct Wireframe3dViewPhase {
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
   mut items : Array[Wireframe3d]
+  mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
   input_uniform_indices : Map[UInt64, UInt]
   phase_types : Map[UInt64, WireframeBinnedRenderPhaseType]
 }
@@ -1369,6 +1498,7 @@ pub fn Wireframe3dViewPhase::new(
   Wireframe3dViewPhase::{
     gpu_preprocessing_mode,
     items: [],
+    unbatchable_meshes: [],
     input_uniform_indices: {},
     phase_types: {},
   }
@@ -1383,12 +1513,23 @@ pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(
 
 ///|
 pub fn Wireframe3dViewPhase::len(self : Wireframe3dViewPhase) -> Int {
-  self.items.length()
+  let mut len = self.items.length()
+  for entities in self.unbatchable_meshes {
+    len = len + entities.len()
+  }
+  len
 }
 
 ///|
 pub fn Wireframe3dViewPhase::is_empty(self : Wireframe3dViewPhase) -> Bool {
-  self.items.length() == 0
+  self.len() == 0
+}
+
+///|
+pub fn Wireframe3dViewPhase::unbatchable_bin_count(
+  self : Wireframe3dViewPhase,
+) -> Int {
+  self.unbatchable_meshes.length()
 }
 
 ///|
@@ -1408,6 +1549,11 @@ pub fn Wireframe3dViewPhase::items(
   let result : Array[Wireframe3d] = []
   for item in self.items {
     result.push(item)
+  }
+  for entities in self.unbatchable_meshes {
+    for item in entities.items() {
+      result.push(item)
+    }
   }
   result
 }
@@ -1439,6 +1585,30 @@ pub fn Wireframe3dViewPhase::add(
     self.gpu_preprocessing_mode,
     phase_type,
   )
+  if effective_phase_type == UnbatchableMesh {
+    let mut unbatchable_index = -1
+    for index in 0..<self.unbatchable_meshes.length() {
+      if self.unbatchable_meshes[index].matches(batch_set_key, bin_key) {
+        unbatchable_index = index
+        break
+      }
+    }
+    if unbatchable_index < 0 {
+      self.unbatchable_meshes.push(
+        Wireframe3dUnbatchableBinnedEntities::new(batch_set_key, bin_key),
+      )
+      unbatchable_index = self.unbatchable_meshes.length() - 1
+    }
+    self.unbatchable_meshes[unbatchable_index].insert(
+      representative_entity.1,
+      representative_entity.0,
+      input_uniform_index,
+    )
+    let key = representative_entity.1.id().to_bits()
+    self.input_uniform_indices.set(key, input_uniform_index)
+    self.phase_types.set(key, effective_phase_type)
+    return
+  }
   self.items.push(
     Wireframe3d::new(
       batch_set_key,
@@ -1466,13 +1636,27 @@ pub fn Wireframe3dViewPhase::remove(
   if !self.phase_types.contains(key) {
     return
   }
-  let retained : Array[Wireframe3d] = []
-  for item in self.items {
-    if item.main_entity() != main_entity {
-      retained.push(item)
+  match self.phase_types.get(key) {
+    Some(UnbatchableMesh) => {
+      let retained_bins : Array[Wireframe3dUnbatchableBinnedEntities] = []
+      for entities in self.unbatchable_meshes {
+        entities.remove(main_entity)
+        if !entities.is_empty() {
+          retained_bins.push(entities)
+        }
+      }
+      self.unbatchable_meshes = retained_bins
+    }
+    _ => {
+      let retained : Array[Wireframe3d] = []
+      for item in self.items {
+        if item.main_entity() != main_entity {
+          retained.push(item)
+        }
+      }
+      self.items = retained
     }
   }
-  self.items = retained
   self.input_uniform_indices.remove(key)
   self.phase_types.remove(key)
 }
