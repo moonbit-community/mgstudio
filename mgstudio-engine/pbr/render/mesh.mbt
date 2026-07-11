@@ -864,10 +864,19 @@ pub fn render3d_draw_mesh_instanced(
   pipeline~ : @material.CachedRenderPipelineId,
   instance_vertex_buffer_id~ : Int,
   world_from_local~ : @math.Affine3,
+  preprocess_camera_key_hi? : Int = 0,
+  preprocess_camera_key_lo? : Int = 0,
+  draw_storage_index? : Int = -1,
+  draw_count? : Int = 1,
+  immediate_bytes? : Bytes? = None,
 ) -> Unit {
   let affine = render3d_affine3_transpose_values(world_from_local)
   @render_gpu.host_gpu_draw_mesh3d(
     mesh_id~,
+    preprocess_camera_key_hi~,
+    preprocess_camera_key_lo~,
+    draw_storage_index~,
+    indirect_draw_count=draw_count,
     instance_vertex_buffer_id~,
     x=0.0F,
     y=0.0F,
@@ -939,5 +948,6 @@ pub fn render3d_draw_mesh_instanced(
     point_shadow_depth_bias=0.0F,
     mesh_flags=0U,
     cull_mode=0,
+    immediate_bytes~,
   )
 }

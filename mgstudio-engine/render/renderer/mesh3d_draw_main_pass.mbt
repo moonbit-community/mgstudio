@@ -113,6 +113,7 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   material_pipeline_id : UInt64,
   transparent : Bool,
   material_extension_bind_group_data : @render_resource.MaterialBindGroupResolvedData,
+  immediate_bytes : Bytes?,
 ) -> Unit raise GpuBackendError {
   let lightmapped = lightmap_texture_id >= 0
   vertex_shader_path |> ignore
@@ -581,6 +582,15 @@ pub fn GpuBackend::draw_mesh3d_main_pass(
   )
   if material_bg is Some(bind_group) {
     pass.set_bind_group(3U, bind_group, [])
+  }
+  match immediate_bytes {
+    Some(bytes) =>
+      pass.set_immediates(
+        ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT),
+        0U,
+        bytes,
+      )
+    None => ()
   }
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, mesh.vertex_buf.size())
   let direct_instance_count = match instance_vertex_buffer {

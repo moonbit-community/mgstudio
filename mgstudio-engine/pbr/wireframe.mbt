@@ -1081,11 +1081,13 @@ fn extract_wireframe_materials_from_world(
 ///|
 fn extract_wireframe_materials_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
-  let system_ticks = @app.current_system_ticks()
+  let source_this_run = source_world.read_change_tick()
   render_wireframe_instances_mut_or_init(world).modify(fn(material_instances) {
+    let system_ticks = material_instances.source_system_ticks(source_world)
     extract_wireframe_materials_from_world(
       source_world, material_instances, system_ticks,
     )
+    material_instances.set_last_source_change_tick(source_this_run)
   })
 }
 
@@ -1687,6 +1689,60 @@ fn prepare_wireframe_wide_bind_groups_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn wireframe_3d_execute_thin_command(
+  world : @ecs.World,
+  plan : Wireframe3dRenderCommandPlan,
+  retained_view_entity : @core.Entity,
+  render_mesh_instances : RenderMeshInstances,
+  pipeline_cache : @render_resource.PipelineCache,
+) -> Bool {
+  guard plan.kind() == Wireframe3dRenderCommandKind::Thin else { return false }
+  guard plan.thin_immediates() is Some(immediates) else { return false }
+  guard pipeline_cache.get_render_pipeline(plan.pipeline()) is Some(_) else {
+    return false
+  }
+  let item = plan.item()
+  guard render_mesh_instances.render_mesh_queue_data(item.main_entity())
+    is Some(mesh_instance) else {
+    return false
+  }
+  guard world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource())
+    is Some(mesh_runtime_state) else {
+    return false
+  }
+  guard @pbr_render.render3d_uploaded_mesh_id(
+      mesh_runtime_state,
+      mesh_instance.mesh_asset_id(),
+    )
+    is Some(mesh_id) else {
+    return false
+  }
+  let world_from_local = get_mesh_instance_world_from_local(
+    item.main_entity(),
+    mesh_instance.current_uniform_index(),
+    render_mesh_instances,
+    world.get_resource(RenderMeshInstanceGpuBatchedInstanceBuffers::resource()),
+  )
+  let batch_range = plan.batch_range()
+  let draw_storage_index = match render_mesh_instances {
+    CpuBuilding(_) => -1
+    GpuBuilding(_) => batch_range.start()
+  }
+  @pbr_render.render3d_draw_mesh_instanced(
+    mesh_id~,
+    pipeline=plan.pipeline(),
+    instance_vertex_buffer_id=-1,
+    world_from_local~,
+    preprocess_camera_key_hi=retained_view_entity.id,
+    preprocess_camera_key_lo=retained_view_entity.generation,
+    draw_storage_index~,
+    draw_count=batch_range.count(),
+    immediate_bytes=Some(immediates.bytes()),
+  )
+  true
+}
+
+///|
 fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
   guard world.get_resource(@render.current_view_resource_key)
     is Some(current_view) else {
@@ -1699,6 +1755,12 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
   guard extracted_view is Some(extracted_view) else { return }
   let retained_view_entity = extracted_view.retained_view_entity().main_entity()
   guard world.get_resource(Wireframe3dPhases::resource()) is Some(phases) else {
+    return
+  }
+  guard phases.phase(retained_view_entity) is Some(current_phase) else {
+    return
+  }
+  if current_phase.is_empty() {
     return
   }
   let preflight_plan : Wireframe3dRenderNodePlan? = Some(
@@ -1753,6 +1815,11 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
         "missing WireframeWideBindGroups resource during pbr wireframe node",
       )
   }
+  let pipeline_cache = match
+    world.get_resource(@render.pipeline_cache_resource_key) {
+    Some(value) => value
+    None => abort("missing PipelineCache resource during pbr wireframe node")
+  }
   let plan = Some(
     wireframe_3d_render_node_command_plan(
       phases, retained_view_entity, false, draw_functions, render_wireframe_instances,
@@ -1763,6 +1830,39 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
     _ => None
   }
   guard plan is Some(plan) else { return }
+  let mut executed_thin_commands = 0
+  let mut pending_or_skipped_thin_commands = 0
+  let mut pending_wide_commands = 0
+  if @render.host_gpu_begin_wireframe_3d_pass() {
+    let phase = phases.phase(retained_view_entity).unwrap()
+    for item in phase.items() {
+      let decision = Some(
+        wireframe_3d_render_command_decision(
+          item, draw_functions, render_wireframe_instances, render_wireframe_assets,
+          render_mesh_instances, render_meshes, mesh_allocator, wide_bind_groups,
+        ),
+      ) catch {
+        _ => None
+      }
+      match decision {
+        Some(Planned(command)) =>
+          if command.kind() == Wireframe3dRenderCommandKind::Thin {
+            if wireframe_3d_execute_thin_command(
+                world, command, retained_view_entity, render_mesh_instances, pipeline_cache,
+              ) {
+              executed_thin_commands = executed_thin_commands + 1
+            } else {
+              pending_or_skipped_thin_commands = pending_or_skipped_thin_commands +
+                1
+            }
+          } else {
+            pending_wide_commands = pending_wide_commands + 1
+          }
+        Some(Skipped) | None => ()
+      }
+    }
+    @render.host_gpu_end_active_pass_preserving_state()
+  }
   @app.timeline_trace_emit_counter_int(
     "wireframe_3d_render_node_command_plans",
     plan.command_plan_count(),
@@ -1774,6 +1874,15 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
   @app.timeline_trace_emit_counter_int(
     "wireframe_3d_render_node_command_failures",
     plan.command_failure_count(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_executed_thin_commands", executed_thin_commands,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_pending_or_skipped_thin_commands", pending_or_skipped_thin_commands,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "wireframe_3d_pending_wide_commands", pending_wide_commands,
   )
 }
 

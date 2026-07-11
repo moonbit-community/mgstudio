@@ -98,6 +98,7 @@ pub fn tonemapping_luts_from_world_or_init(@ecs.World) -> @tonemapping.Tonemappi
 pub struct Core2d {
 }
 pub fn Core2d::Core2d() -> Self
+pub fn Core2d::schedule() -> @app.ScheduleStage
 
 pub(all) enum Core2dSystems {
   Prepass

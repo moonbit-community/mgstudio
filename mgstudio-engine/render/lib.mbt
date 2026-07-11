@@ -1890,6 +1890,7 @@ pub fn host_gpu_draw_mesh3d(
   previous_morph_weights_index? : Int = -1,
   morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
+  immediate_bytes? : Bytes? = None,
 ) -> Unit {
   @renderer.draw_mesh3d(
     mesh_id~,
@@ -2009,6 +2010,7 @@ pub fn host_gpu_draw_mesh3d(
     previous_morph_weights_index~,
     morph_targets_texture_id~,
     skinning_matrices~,
+    immediate_bytes~,
   )
 }
 
@@ -2597,6 +2599,11 @@ pub fn host_gpu_end_pass() -> Unit {
 ///|
 pub fn host_gpu_end_active_pass_preserving_state() -> Unit {
   @render_phase_api.host_gpu_end_active_pass_preserving_state()
+}
+
+///|
+pub fn host_gpu_begin_wireframe_3d_pass() -> Bool {
+  @renderer.begin_wireframe_3d_pass()
 }
 
 ///|

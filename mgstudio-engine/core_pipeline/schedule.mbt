@@ -44,6 +44,11 @@ pub fn Core2d::Core2d() -> Core2d {
 }
 
 ///|
+pub fn Core2d::schedule() -> @app.ScheduleStage {
+  @app.schedule_label(CORE_2D_SCHEDULE_LABEL)
+}
+
+///|
 pub(all) enum Core3dSystems {
   Prepass
   MainPass
@@ -106,17 +111,28 @@ pub fn core3d_base_schedule() -> @app.Schedule {
 
 ///|
 pub fn core2d_base_schedule() -> @app.Schedule {
-  @app.Schedule::new(@app.ScheduleStage::Custom(CORE_2D_SCHEDULE_LABEL))
+  @app.Schedule::new(Core2d::schedule())
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_core_pipeline/src/schedule.rs` (`camera_driver` entrypoint).
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/schedule.rs::camera_driver`.
 pub fn camera_driver(world : @ecs.World) -> Unit {
-  @app.run_current_schedule_stage(world, Core3d::schedule())
-  @app.run_current_schedule_stage(
-    world,
-    @app.schedule_label(CORE_2D_SCHEDULE_LABEL),
-  )
+  let sorted_cameras = @render.sorted_cameras_or_default(world)
+  for sorted_camera in sorted_cameras.cameras() {
+    let view_entity = sorted_camera.entity()
+    guard (try! world.get_by_key(
+        view_entity, @render.ecs_key_camera_render_graph,
+      ))
+      is Some(camera_render_graph) else {
+      continue
+    }
+    world.insert_resource(
+      @render.current_view_resource_key,
+      @render.CurrentView::new(view_entity),
+    )
+    @app.run_current_schedule_stage(world, camera_render_graph.schedule())
+  }
+  ignore(world.remove_resource(@render.current_view_resource_key))
 }
 
 ///|

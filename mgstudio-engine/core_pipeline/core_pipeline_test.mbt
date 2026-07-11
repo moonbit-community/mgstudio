@@ -366,6 +366,7 @@ test "core_2d plugin owns Camera2d post-process required components" {
 ///|
 priv struct CameraDriverScheduleProbe {
   mut run_count : Int
+  mut current_view_bits : UInt64
 }
 
 ///|
@@ -377,13 +378,17 @@ let camera_driver_schedule_probe_key : @ecs.ResourceKey[
 
 ///|
 fn camera_driver_probe_tick(world : @ecs.World) -> Unit {
-  if world.resource(camera_driver_schedule_probe_key).get() is Some(probe) {
-    probe.run_count = probe.run_count + 1
+  guard world.resource(camera_driver_schedule_probe_key).get() is Some(probe) else {
+    return
+  }
+  probe.run_count = probe.run_count + 1
+  if world.get_resource(@render.current_view_resource_key) is Some(current_view) {
+    probe.current_view_bits = current_view.entity().to_bits()
   }
 }
 
 ///|
-test "camera_driver runs core pipeline camera schedules" {
+test "camera_driver runs each sorted camera's render schedule with CurrentView" {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
@@ -391,13 +396,31 @@ test "camera_driver runs core pipeline camera schedules" {
     .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   ignore(
     app.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
-      render_sub_app
-      .world()
-      .insert_resource(camera_driver_schedule_probe_key, CameraDriverScheduleProbe::{
+      let render_world = render_sub_app.world()
+      render_world.insert_resource(camera_driver_schedule_probe_key, CameraDriverScheduleProbe::{
         run_count: 0,
+        current_view_bits: 0UL,
       })
+      let camera = render_world.spawn_empty()
+      try! render_world.set_by_key(
+        camera,
+        @render.ecs_key_camera_render_graph,
+        @render.CameraRenderGraph::new(@core_pipeline.Core2d::schedule()),
+      )
+      render_world.insert_resource(
+        @render.SortedCameras::resource(),
+        @render.SortedCameras::from_array([
+          @render.SortedCamera::new(
+            camera,
+            0,
+            None,
+            false,
+            @render.CameraOutputMode::Write,
+          ),
+        ]),
+      )
       render_sub_app.add_systems(
-        @app.schedule_label(@core_pipeline.CORE_2D_SCHEDULE_LABEL),
+        @core_pipeline.Core2d::schedule(),
         @app.system(camera_driver_probe_tick),
       )
     }),
@@ -408,4 +431,9 @@ test "camera_driver runs core pipeline camera schedules" {
     .get_resource(camera_driver_schedule_probe_key)
     .unwrap()
   debug_inspect(probe.run_count, content="1")
+  debug_inspect(probe.current_view_bits > 0UL, content="true")
+  debug_inspect(
+    render_world.get_resource(@render.current_view_resource_key) is None,
+    content="true",
+  )
 }

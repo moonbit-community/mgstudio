@@ -40,6 +40,29 @@ pub fn Wireframe3dThinImmediates::float_count(
 }
 
 ///|
+fn wireframe_immediate_push_f32_le(out : Array[Byte], value : Float) -> Unit {
+  let bits = value.reinterpret_as_uint()
+  out.push((bits & 0xffU).to_byte())
+  out.push(((bits >> 8) & 0xffU).to_byte())
+  out.push(((bits >> 16) & 0xffU).to_byte())
+  out.push(((bits >> 24) & 0xffU).to_byte())
+}
+
+///|
+// Bevy source: `SetWireframe3dThinImmediates` writes the linear RGBA value as
+// one 16-byte immediate block.
+pub fn Wireframe3dThinImmediates::bytes(
+  self : Wireframe3dThinImmediates,
+) -> Bytes {
+  let out : Array[Byte] = []
+  wireframe_immediate_push_f32_le(out, self.color.r)
+  wireframe_immediate_push_f32_le(out, self.color.g)
+  wireframe_immediate_push_f32_le(out, self.color.b)
+  wireframe_immediate_push_f32_le(out, self.color.a)
+  Bytes::from_array(out)
+}
+
+///|
 pub suberror WireframeRenderCommandError {
   NoWireframeMaterialFoundForEntity
   UnknownWireframeDrawFunction
@@ -128,6 +151,22 @@ pub fn Wireframe3dWideImmediates::float_count(
 ) -> Int {
   ignore(self)
   8
+}
+
+///|
+pub fn Wireframe3dWideImmediates::bytes(
+  self : Wireframe3dWideImmediates,
+) -> Bytes {
+  let out : Array[Byte] = []
+  wireframe_immediate_push_f32_le(out, self.color.r)
+  wireframe_immediate_push_f32_le(out, self.color.g)
+  wireframe_immediate_push_f32_le(out, self.color.b)
+  wireframe_immediate_push_f32_le(out, self.color.a)
+  wireframe_immediate_push_f32_le(out, self.line_width)
+  wireframe_immediate_push_f32_le(out, self.smoothing)
+  wireframe_immediate_push_f32_le(out, 0.0F)
+  wireframe_immediate_push_f32_le(out, 0.0F)
+  Bytes::from_array(out)
 }
 
 ///|

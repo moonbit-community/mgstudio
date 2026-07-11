@@ -658,11 +658,12 @@ pub fn SpecializedWireframeMeshPipelines::insert(
 ///|
 pub struct RenderWireframeInstances {
   entries : Map[UInt64, Int]
+  mut last_source_change_tick : @core.Tick
 }
 
 ///|
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> RenderWireframeInstances {
-  RenderWireframeInstances::{ entries: {} }
+  RenderWireframeInstances::{ entries: {}, last_source_change_tick: 0 }
 }
 
 ///|
@@ -683,6 +684,25 @@ pub fn RenderWireframeInstances::len(self : RenderWireframeInstances) -> Int {
 ///|
 pub fn RenderWireframeInstances::clear(self : RenderWireframeInstances) -> Unit {
   self.entries.clear()
+}
+
+///|
+fn RenderWireframeInstances::source_system_ticks(
+  self : RenderWireframeInstances,
+  source_world : @ecs.World,
+) -> @core.SystemTicks {
+  @core.SystemTicks::new(
+    self.last_source_change_tick,
+    source_world.read_change_tick(),
+  )
+}
+
+///|
+fn RenderWireframeInstances::set_last_source_change_tick(
+  self : RenderWireframeInstances,
+  tick : @core.Tick,
+) -> Unit {
+  self.last_source_change_tick = tick
 }
 
 ///|
@@ -1427,6 +1447,16 @@ pub fn Wireframe3dViewPhase::is_empty(self : Wireframe3dViewPhase) -> Bool {
 }
 
 ///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase::prepare_for_new_frame`.
+pub fn Wireframe3dViewPhase::prepare_for_new_frame(
+  _self : Wireframe3dViewPhase,
+) -> Unit {
+  // The local phase does not yet materialize Bevy's transient batch sets or
+  // unbatchable buffer indices. Cached bins and phase items remain intact.
+}
+
+///|
 pub fn Wireframe3dViewPhase::items(
   self : Wireframe3dViewPhase,
 ) -> Array[Wireframe3d] {
@@ -1544,10 +1574,12 @@ pub fn Wireframe3dPhases::prepare_for_new_frame(
   retained_view_entity : @core.Entity,
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Unit {
-  self.views.set(
-    retained_view_entity.to_bits(),
-    Wireframe3dViewPhase::new(gpu_preprocessing_mode),
-  )
+  let key = retained_view_entity.to_bits()
+  match self.views.get(key) {
+    Some(phase) => phase.prepare_for_new_frame()
+    None =>
+      self.views.set(key, Wireframe3dViewPhase::new(gpu_preprocessing_mode))
+  }
 }
 
 ///|
@@ -1835,12 +1867,12 @@ pub fn specialize_wireframe_phase_items(
   despecialize_wireframe_view_cache(
     specialized_wireframe_pipeline_cache, dirty_wireframe_specializations, retained_view_entity,
   )
-  for
-    pair in dirty_wireframe_specializations.iter_to_specialize(
-      retained_view_entity,
-      render_mesh_visible_entities,
-      view_pending_wireframe_queues.prev_frame(),
-    ) {
+  let candidates = dirty_wireframe_specializations.iter_to_specialize(
+    retained_view_entity,
+    render_mesh_visible_entities,
+    view_pending_wireframe_queues.prev_frame(),
+  )
+  for pair in candidates {
     let render_entity = pair.0
     let visible_entity = pair.1
     if specialized_wireframe_pipeline_cache.pipeline_id(
@@ -1909,12 +1941,12 @@ pub fn queue_wireframe_phase_items(
     ) {
     wireframe_phase.remove(main_entity)
   }
-  for
-    pair in dirty_wireframe_specializations.iter_to_queue(
-      retained_view_entity,
-      render_mesh_visible_entities,
-      view_pending_wireframe_queues.prev_frame(),
-    ) {
+  let candidates = dirty_wireframe_specializations.iter_to_queue(
+    retained_view_entity,
+    render_mesh_visible_entities,
+    view_pending_wireframe_queues.prev_frame(),
+  )
+  for pair in candidates {
     let render_entity = pair.0
     let visible_entity = pair.1
     guard render_wireframe_instances.get(visible_entity)

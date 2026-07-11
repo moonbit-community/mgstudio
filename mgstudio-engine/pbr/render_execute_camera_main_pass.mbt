@@ -890,12 +890,16 @@ fn render3d_execute_camera_main_pass(
     let wireframe_color = render3d_mesh_wireframe_color(
       extracted_mesh, wireframe_config,
     )
-    let _wireframe_line_width = render3d_mesh_wireframe_line_width(
+    let wireframe_line_width = render3d_mesh_wireframe_line_width(
       extracted_mesh, wireframe_config,
     )
-    let _wireframe_topology = render3d_mesh_wireframe_topology(
+    let wireframe_topology = render3d_mesh_wireframe_topology(
       extracted_mesh, wireframe_config,
     )
+    if wireframe_line_width <= 1.0F &&
+      wireframe_topology == WireframeTopology::Triangles {
+      continue
+    }
     let wireframe_source_cull_mode = match
       mesh.material_draw_data.standard_material() {
       Some(material) => material.cull_mode

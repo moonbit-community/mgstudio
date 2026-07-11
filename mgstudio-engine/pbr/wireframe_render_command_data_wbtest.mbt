@@ -116,6 +116,12 @@ test "pbr: thin wireframe immediates carry only material color" {
   debug_inspect(immediates.color().r, content="0.25")
   debug_inspect(immediates.color().g, content="0.5")
   debug_inspect(immediates.color().b, content="0.75")
+  let bytes = immediates.bytes()
+  debug_inspect(bytes.length(), content="16")
+  debug_inspect(bytes[12], content="0x00")
+  debug_inspect(bytes[13], content="0x00")
+  debug_inspect(bytes[14], content="0x80")
+  debug_inspect(bytes[15], content="0x3f")
 }
 
 ///|
@@ -136,6 +142,12 @@ test "pbr: wide wireframe immediates follow Bevy smoothing rule" {
   debug_inspect(thin_line.smoothing(), content="0.5")
   debug_inspect(thick_line.line_width(), content="2")
   debug_inspect(thick_line.smoothing(), content="1")
+  let bytes = thick_line.bytes()
+  debug_inspect(bytes.length(), content="32")
+  debug_inspect(bytes[28], content="0x00")
+  debug_inspect(bytes[29], content="0x00")
+  debug_inspect(bytes[30], content="0x00")
+  debug_inspect(bytes[31], content="0x00")
 }
 
 ///|

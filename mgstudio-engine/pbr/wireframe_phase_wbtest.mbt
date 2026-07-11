@@ -1342,6 +1342,41 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
 }
 
 ///|
+test "pbr: wireframe binned phase prepare preserves cached items" {
+  let phases = Wireframe3dPhases::Wireframe3dPhases()
+  let view = @core.Entity::new(10, 1)
+  let render_entity = @core.Entity::new(20, 1)
+  let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
+  phases.prepare_for_new_frame(
+    view,
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  phases.add(
+    view,
+    Wireframe3dBatchSetKey::new(
+      @material.CachedRenderPipelineId::new(77UL),
+      8,
+      @material.DrawFunctionId::new(3U),
+      @render_mesh.MeshSlabs::new(2, index_slab_id=Some(5)),
+    ),
+    Wireframe3dBinKey::new(8),
+    (render_entity, main_entity),
+    9U,
+    MultidrawableMesh,
+  )
+
+  phases.prepare_for_new_frame(
+    view,
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+
+  let phase = phases.phase(view).unwrap()
+  debug_inspect(phase.len(), content="1")
+  debug_inspect(phase.gpu_preprocessing_mode(), content="PreprocessingOnly")
+  debug_inspect(phase.input_uniform_index(main_entity), content="Some(9)")
+}
+
+///|
 test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
   let view = @core.Entity::new(10, 1)
   let render_entity = @core.Entity::new(20, 1)
@@ -2166,6 +2201,10 @@ test "pbr: wireframe 3d render node requires command resources for nonempty phas
   world.insert_resource(
     WireframeWideBindGroups::resource(),
     WireframeWideBindGroups::WireframeWideBindGroups(),
+  )
+  world.insert_resource(
+    @render.pipeline_cache_resource_key,
+    @render_resource.PipelineCache::new(),
   )
 
   wireframe_3d_render_node_system(world)

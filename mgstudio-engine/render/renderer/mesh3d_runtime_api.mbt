@@ -1384,6 +1384,7 @@ pub fn draw_mesh3d(
   previous_morph_weights_index? : Int = -1,
   morph_targets_texture_id? : Int = -1,
   skinning_matrices? : Array[Float]? = None,
+  immediate_bytes? : Bytes? = None,
 ) -> Unit {
   render_diagnostics_record_mesh3d_draw(mesh_id)
   if ensure_backend() is Some(backend) {
@@ -1505,6 +1506,7 @@ pub fn draw_mesh3d(
       previous_morph_weights_index~,
       morph_targets_texture_id~,
       skinning_matrices~,
+      immediate_bytes~,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)
     }

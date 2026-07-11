@@ -2818,6 +2818,7 @@ pub impl @app.Resource for RenderWireframeAssets
 
 pub struct RenderWireframeInstances {
   entries : Map[UInt64, Int]
+  mut last_source_change_tick : Int64
 }
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> Self
 pub fn RenderWireframeInstances::clear(Self) -> Unit
@@ -3362,6 +3363,7 @@ pub fn Wireframe3dRenderNodePlan::viewport_enabled(Self) -> Bool
 pub struct Wireframe3dThinImmediates {
   color : @color.Color
 }
+pub fn Wireframe3dThinImmediates::bytes(Self) -> Bytes
 pub fn Wireframe3dThinImmediates::color(Self) -> @color.Color
 pub fn Wireframe3dThinImmediates::float_count(Self) -> Int
 pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
@@ -3380,6 +3382,7 @@ pub fn Wireframe3dViewPhase::items(Self) -> Array[Wireframe3d]
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
 pub fn Wireframe3dViewPhase::phase_type(Self, @Milky2018/mgstudio/render.MainEntity) -> WireframeBinnedRenderPhaseType?
+pub fn Wireframe3dViewPhase::prepare_for_new_frame(Self) -> Unit
 pub fn Wireframe3dViewPhase::remove(Self, @Milky2018/mgstudio/render.MainEntity) -> Unit
 
 pub struct Wireframe3dWideImmediates {
@@ -3387,6 +3390,7 @@ pub struct Wireframe3dWideImmediates {
   line_width : Float
   smoothing : Float
 }
+pub fn Wireframe3dWideImmediates::bytes(Self) -> Bytes
 pub fn Wireframe3dWideImmediates::color(Self) -> @color.Color
 pub fn Wireframe3dWideImmediates::float_count(Self) -> Int
 pub fn Wireframe3dWideImmediates::from_material(RenderWireframeMaterial) -> Self
