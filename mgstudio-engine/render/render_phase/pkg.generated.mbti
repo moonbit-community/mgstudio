@@ -42,6 +42,29 @@ pub fn render_phase_end_pass() -> Unit
 // Errors
 
 // Types and methods
+pub struct BinnedRenderPhase[BatchSetKey, BinKey] {
+  multidrawable_meshes : Array[BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey]]
+  batchable_meshes : Array[BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey]]
+  unbatchable_meshes : Array[BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey]]
+  non_mesh_items : Array[BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey]]
+  batch_sets : BinnedRenderPhaseBatchSets[BinKey]
+  cached_entity_bin_keys : Map[@sync_world.MainEntity, CachedBinnedEntity[BatchSetKey, BinKey]]
+  gpu_preprocessing_mode : @batching.GpuPreprocessingMode
+}
+pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(Self[BatchSetKey, BinKey], BatchSetKey, BinKey, (@core.Entity, @sync_world.MainEntity), InputUniformIndex, BinnedRenderPhaseType) -> Unit
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::batch_sets(Self[BatchSetKey, BinKey]) -> BinnedRenderPhaseBatchSets[BinKey]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::batchable_meshes(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey]]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::cached_bin_key(Self[BatchSetKey, BinKey], @sync_world.MainEntity) -> CachedBinKey[BatchSetKey, BinKey]?
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::gpu_preprocessing_mode(Self[BatchSetKey, BinKey]) -> @batching.GpuPreprocessingMode
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::is_empty(Self[BatchSetKey, BinKey]) -> Bool
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::multidrawable_meshes(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey]]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::new(@batching.GpuPreprocessingMode) -> Self[BatchSetKey, BinKey]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::non_mesh_items(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey]]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_for_new_frame(Self[BatchSetKey, BinKey]) -> Unit
+pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::remove(Self[BatchSetKey, BinKey], @sync_world.MainEntity) -> Unit
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::unbatchable_meshes(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey]]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::update_cache(Self[BatchSetKey, BinKey], @sync_world.MainEntity, CachedBinKey[BatchSetKey, BinKey]?) -> Unit
+
 pub struct BinnedRenderPhaseBatch {
   representative_entity : (@core.Entity, @sync_world.MainEntity)
   instance_range : PhaseItemBatchRange
@@ -72,6 +95,33 @@ pub(all) enum BinnedRenderPhaseBatchSets[BK] {
   MultidrawIndirect(Array[BinnedRenderPhaseBatchSet[BK]])
 }
 
+pub struct BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  bin : RenderBin
+}
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseBatchableEntry::batch_set_key(Self[BatchSetKey, BinKey]) -> BatchSetKey
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseBatchableEntry::bin(Self[BatchSetKey, BinKey]) -> RenderBin
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseBatchableEntry::bin_key(Self[BatchSetKey, BinKey]) -> BinKey
+
+type BinnedRenderPhaseEntities
+
+pub struct BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  batch_set : RenderMultidrawableBatchSet[BinKey]
+}
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseMultidrawableEntry::batch_set(Self[BatchSetKey, BinKey]) -> RenderMultidrawableBatchSet[BinKey]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseMultidrawableEntry::batch_set_key(Self[BatchSetKey, BinKey]) -> BatchSetKey
+
+pub struct BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  entities : NonMeshEntities
+}
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseNonMeshEntry::batch_set_key(Self[BatchSetKey, BinKey]) -> BatchSetKey
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseNonMeshEntry::bin_key(Self[BatchSetKey, BinKey]) -> BinKey
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseNonMeshEntry::entities(Self[BatchSetKey, BinKey]) -> NonMeshEntities
+
 pub(all) enum BinnedRenderPhaseType {
   MultidrawableMesh
   BatchableMesh
@@ -79,6 +129,15 @@ pub(all) enum BinnedRenderPhaseType {
   NonMesh
 } derive(Eq, @debug.Debug)
 pub fn BinnedRenderPhaseType::mesh(Bool, @batching.GpuPreprocessingSupport) -> Self
+
+pub struct BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  entities : UnbatchableBinnedEntities
+}
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseUnbatchableEntry::batch_set_key(Self[BatchSetKey, BinKey]) -> BatchSetKey
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseUnbatchableEntry::bin_key(Self[BatchSetKey, BinKey]) -> BinKey
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseUnbatchableEntry::entities(Self[BatchSetKey, BinKey]) -> UnbatchableBinnedEntities
 
 pub struct CachedBinKey[BatchSetKey, BinKey] {
   batch_set_key : BatchSetKey
@@ -117,6 +176,11 @@ pub(all) struct InputUniformIndex(UInt) derive(Default, Eq, @debug.Debug)
 pub fn InputUniformIndex::new(UInt) -> Self
 pub fn InputUniformIndex::to_int(Self) -> Int
 pub fn InputUniformIndex::value(Self) -> UInt
+
+pub struct NonMeshEntities {
+  entities : BinnedRenderPhaseEntities
+}
+pub fn NonMeshEntities::entities(Self) -> ArrayView[(@sync_world.MainEntity, @core.Entity)]
 
 pub struct PhaseItemBatchRange {
   start : Int
@@ -196,6 +260,13 @@ pub fn RenderMultidrawableBin::insert(Self, @sync_world.MainEntity, RenderBinned
 pub fn RenderMultidrawableBin::is_empty(Self) -> Bool
 pub fn RenderMultidrawableBin::new() -> Self
 pub fn RenderMultidrawableBin::remove(Self, @sync_world.MainEntity) -> RenderBinnedMeshInstanceIndex?
+
+pub struct UnbatchableBinnedEntities {
+  entities : BinnedRenderPhaseEntities
+  buffer_indices : UnbatchableBinnedEntityIndexSet
+}
+pub fn UnbatchableBinnedEntities::buffer_indices(Self) -> UnbatchableBinnedEntityIndexSet
+pub fn UnbatchableBinnedEntities::entities(Self) -> ArrayView[(@sync_world.MainEntity, @core.Entity)]
 
 pub(all) struct UnbatchableBinnedEntityIndexSet {
   mut kind : UnbatchableBinnedEntityIndexSetKind

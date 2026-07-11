@@ -397,3 +397,155 @@ test "render_phase: unbatchable indices preserve Bevy sparse and dense transitio
   dense.clear()
   debug_inspect(dense.len(), content="0")
 }
+
+///|
+test "render_phase: generic binned phase selects Bevy batch-set storage" {
+  let cpu : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  let direct : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  let indirect : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  match cpu.batch_sets() {
+    DynamicUniforms(values) => inspect(values.length(), content="0")
+    _ => abort("CPU phase must use dynamic-uniform batches")
+  }
+  match direct.batch_sets() {
+    Direct(values) => inspect(values.length(), content="0")
+    _ => abort("preprocessing-only phase must use direct batches")
+  }
+  match indirect.batch_sets() {
+    MultidrawIndirect(values) => inspect(values.length(), content="0")
+    _ => abort("culling phase must use multidraw-indirect batches")
+  }
+}
+
+///|
+test "render_phase: generic binned phase retains and removes all Bevy bin types" {
+  let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::Culling,
+  )
+  let batch_set_key = TestMultidrawBinKey(601)
+  let batchable_bin_key = TestMultidrawBinKey(602)
+  let unbatchable_bin_key = TestMultidrawBinKey(603)
+  let multidraw_bin_key = TestMultidrawBinKey(604)
+  let non_mesh_bin_key = TestMultidrawBinKey(605)
+  let first_batchable = @render_sync_world.MainEntity::new(
+    @core.Entity::new(41, 1),
+  )
+  let second_batchable = @render_sync_world.MainEntity::new(
+    @core.Entity::new(42, 1),
+  )
+  let unbatchable = @render_sync_world.MainEntity::new(@core.Entity::new(43, 1))
+  let multidraw = @render_sync_world.MainEntity::new(@core.Entity::new(44, 1))
+  let non_mesh = @render_sync_world.MainEntity::new(@core.Entity::new(45, 1))
+  phase.add(
+    batch_set_key,
+    batchable_bin_key,
+    (@core.Entity::new(51, 1), first_batchable),
+    InputUniformIndex::new(10U),
+    BatchableMesh,
+  )
+  phase.add(
+    batch_set_key,
+    batchable_bin_key,
+    (@core.Entity::new(52, 1), second_batchable),
+    InputUniformIndex::new(11U),
+    BatchableMesh,
+  )
+  phase.add(
+    batch_set_key,
+    unbatchable_bin_key,
+    (@core.Entity::new(53, 1), unbatchable),
+    InputUniformIndex::new(12U),
+    UnbatchableMesh,
+  )
+  phase.add(
+    batch_set_key,
+    multidraw_bin_key,
+    (@core.Entity::new(54, 1), multidraw),
+    InputUniformIndex::new(13U),
+    MultidrawableMesh,
+  )
+  phase.add(
+    batch_set_key,
+    non_mesh_bin_key,
+    (@core.Entity::new(55, 1), non_mesh),
+    InputUniformIndex::new(14U),
+    NonMesh,
+  )
+
+  inspect(phase.batchable_meshes().length(), content="1")
+  inspect(phase.batchable_meshes()[0].bin().entities().length(), content="2")
+  inspect(phase.unbatchable_meshes().length(), content="1")
+  inspect(
+    phase.unbatchable_meshes()[0].entities().entities().length(),
+    content="1",
+  )
+  inspect(phase.multidrawable_meshes().length(), content="1")
+  inspect(
+    phase.multidrawable_meshes()[0].batch_set().cpu_instance_count(),
+    content="1",
+  )
+  inspect(phase.non_mesh_items().length(), content="1")
+  inspect(phase.non_mesh_items()[0].entities().entities().length(), content="1")
+  debug_inspect(
+    phase.cached_bin_key(multidraw).map(fn(key) { key.phase_type() }),
+    content="Some(MultidrawableMesh)",
+  )
+
+  phase.remove(first_batchable)
+  inspect(phase.batchable_meshes().length(), content="1")
+  inspect(phase.batchable_meshes()[0].bin().entities().length(), content="1")
+  phase.remove(second_batchable)
+  inspect(phase.batchable_meshes().length(), content="0")
+  phase.remove(unbatchable)
+  inspect(phase.unbatchable_meshes().length(), content="0")
+  phase.remove(multidraw)
+  inspect(phase.multidrawable_meshes().length(), content="0")
+  phase.remove(non_mesh)
+  debug_inspect(phase.is_empty(), content="true")
+}
+
+///|
+test "render_phase: generic binned phase downgrades multidraw and clears frame data" {
+  let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+  )
+  let main_entity = @render_sync_world.MainEntity::new(@core.Entity::new(61, 1))
+  phase.add(
+    TestMultidrawBinKey(701),
+    TestMultidrawBinKey(702),
+    (@core.Entity::new(62, 1), main_entity),
+    InputUniformIndex::new(20U),
+    MultidrawableMesh,
+  )
+  inspect(phase.multidrawable_meshes().length(), content="0")
+  inspect(phase.batchable_meshes().length(), content="1")
+  debug_inspect(
+    phase.cached_bin_key(main_entity).map(fn(key) { key.phase_type() }),
+    content="Some(BatchableMesh)",
+  )
+  match phase.batch_sets() {
+    Direct(batches) =>
+      batches.push(
+        BinnedRenderPhaseBatch::new(
+          (@core.Entity::placeholder(), main_entity),
+          PhaseItemBatchRange::new(0, 1),
+          PhaseItemExtraIndex::none(),
+        ),
+      )
+    _ => abort("preprocessing-only phase must use direct batches")
+  }
+  inspect(binned_batch_sets_len_for_test(phase.batch_sets()), content="1")
+  phase.update_cache(main_entity, None)
+  phase.prepare_for_new_frame()
+  inspect(binned_batch_sets_len_for_test(phase.batch_sets()), content="0")
+  debug_inspect(phase.cached_bin_key(main_entity) is None, content="true")
+  inspect(phase.batchable_meshes().length(), content="1")
+  phase.remove(main_entity)
+  inspect(phase.batchable_meshes().length(), content="1")
+}

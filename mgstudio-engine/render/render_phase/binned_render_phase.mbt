@@ -1211,3 +1211,621 @@ pub fn UnbatchableBinnedEntityIndexSet::clear(
     NoEntities => ()
   }
 }
+
+///|
+struct BinnedRenderPhaseEntities {
+  entries : Array[(@render_sync_world.MainEntity, @core.Entity)]
+  indices : Map[@render_sync_world.MainEntity, Int]
+}
+
+///|
+fn BinnedRenderPhaseEntities::new() -> BinnedRenderPhaseEntities {
+  BinnedRenderPhaseEntities::{ entries: [], indices: Map([]) }
+}
+
+///|
+fn BinnedRenderPhaseEntities::insert(
+  self : BinnedRenderPhaseEntities,
+  main_entity : @render_sync_world.MainEntity,
+  entity : @core.Entity,
+) -> Unit {
+  match self.indices.get(main_entity) {
+    Some(index) => self.entries[index] = (main_entity, entity)
+    None => {
+      self.indices.set(main_entity, self.entries.length())
+      self.entries.push((main_entity, entity))
+    }
+  }
+}
+
+///|
+fn BinnedRenderPhaseEntities::remove(
+  self : BinnedRenderPhaseEntities,
+  main_entity : @render_sync_world.MainEntity,
+) -> Unit {
+  guard self.indices.get(main_entity) is Some(index) else { return }
+  self.indices.remove(main_entity)
+  let last_index = self.entries.length() - 1
+  if index != last_index {
+    let displaced = self.entries[last_index]
+    self.entries[index] = displaced
+    self.indices.set(displaced.0, index)
+  }
+  self.entries.pop() |> ignore
+}
+
+///|
+fn BinnedRenderPhaseEntities::is_empty(
+  self : BinnedRenderPhaseEntities,
+) -> Bool {
+  self.entries.is_empty()
+}
+
+///|
+fn BinnedRenderPhaseEntities::entries(
+  self : BinnedRenderPhaseEntities,
+) -> ArrayView[(@render_sync_world.MainEntity, @core.Entity)] {
+  self.entries[:]
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntities`.
+pub struct UnbatchableBinnedEntities {
+  entities : BinnedRenderPhaseEntities
+  buffer_indices : UnbatchableBinnedEntityIndexSet
+}
+
+///|
+fn UnbatchableBinnedEntities::new(
+  main_entity : @render_sync_world.MainEntity,
+  entity : @core.Entity,
+) -> UnbatchableBinnedEntities {
+  let entities = BinnedRenderPhaseEntities::new()
+  entities.insert(main_entity, entity)
+  UnbatchableBinnedEntities::{
+    entities,
+    buffer_indices: UnbatchableBinnedEntityIndexSet::new(),
+  }
+}
+
+///|
+pub fn UnbatchableBinnedEntities::entities(
+  self : UnbatchableBinnedEntities,
+) -> ArrayView[(@render_sync_world.MainEntity, @core.Entity)] {
+  self.entities.entries()
+}
+
+///|
+pub fn UnbatchableBinnedEntities::buffer_indices(
+  self : UnbatchableBinnedEntities,
+) -> UnbatchableBinnedEntityIndexSet {
+  self.buffer_indices
+}
+
+///|
+fn UnbatchableBinnedEntities::insert(
+  self : UnbatchableBinnedEntities,
+  main_entity : @render_sync_world.MainEntity,
+  entity : @core.Entity,
+) -> Unit {
+  self.entities.insert(main_entity, entity)
+}
+
+///|
+fn UnbatchableBinnedEntities::remove(
+  self : UnbatchableBinnedEntities,
+  main_entity : @render_sync_world.MainEntity,
+) -> Unit {
+  self.entities.remove(main_entity)
+}
+
+///|
+fn UnbatchableBinnedEntities::is_empty(
+  self : UnbatchableBinnedEntities,
+) -> Bool {
+  self.entities.is_empty()
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::NonMeshEntities`.
+pub struct NonMeshEntities {
+  entities : BinnedRenderPhaseEntities
+}
+
+///|
+fn NonMeshEntities::new(
+  main_entity : @render_sync_world.MainEntity,
+  entity : @core.Entity,
+) -> NonMeshEntities {
+  let entities = BinnedRenderPhaseEntities::new()
+  entities.insert(main_entity, entity)
+  NonMeshEntities::{ entities, }
+}
+
+///|
+pub fn NonMeshEntities::entities(
+  self : NonMeshEntities,
+) -> ArrayView[(@render_sync_world.MainEntity, @core.Entity)] {
+  self.entities.entries()
+}
+
+///|
+fn NonMeshEntities::insert(
+  self : NonMeshEntities,
+  main_entity : @render_sync_world.MainEntity,
+  entity : @core.Entity,
+) -> Unit {
+  self.entities.insert(main_entity, entity)
+}
+
+///|
+fn NonMeshEntities::remove(
+  self : NonMeshEntities,
+  main_entity : @render_sync_world.MainEntity,
+) -> Unit {
+  self.entities.remove(main_entity)
+}
+
+///|
+fn NonMeshEntities::is_empty(self : NonMeshEntities) -> Bool {
+  self.entities.is_empty()
+}
+
+///|
+pub struct BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  batch_set : RenderMultidrawableBatchSet[BinKey]
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseMultidrawableEntry::batch_set_key(
+  self : BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey],
+) -> BatchSetKey {
+  self.batch_set_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseMultidrawableEntry::batch_set(
+  self : BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey],
+) -> RenderMultidrawableBatchSet[BinKey] {
+  self.batch_set
+}
+
+///|
+pub struct BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  bin : RenderBin
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseBatchableEntry::batch_set_key(
+  self : BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey],
+) -> BatchSetKey {
+  self.batch_set_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseBatchableEntry::bin_key(
+  self : BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey],
+) -> BinKey {
+  self.bin_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseBatchableEntry::bin(
+  self : BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey],
+) -> RenderBin {
+  self.bin
+}
+
+///|
+pub struct BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  entities : UnbatchableBinnedEntities
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseUnbatchableEntry::batch_set_key(
+  self : BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey],
+) -> BatchSetKey {
+  self.batch_set_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseUnbatchableEntry::bin_key(
+  self : BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey],
+) -> BinKey {
+  self.bin_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseUnbatchableEntry::entities(
+  self : BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey],
+) -> UnbatchableBinnedEntities {
+  self.entities
+}
+
+///|
+pub struct BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey] {
+  batch_set_key : BatchSetKey
+  bin_key : BinKey
+  entities : NonMeshEntities
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseNonMeshEntry::batch_set_key(
+  self : BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey],
+) -> BatchSetKey {
+  self.batch_set_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseNonMeshEntry::bin_key(
+  self : BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey],
+) -> BinKey {
+  self.bin_key
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhaseNonMeshEntry::entities(
+  self : BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey],
+) -> NonMeshEntities {
+  self.entities
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase`.
+// MoonBit represents `BinnedPhaseItem` associated types as explicit generic
+// batch-set and bin-key parameters. Arrays retain the insertion order supplied
+// by Bevy's `IndexMap` while the entry types retain the same key ownership.
+pub struct BinnedRenderPhase[BatchSetKey, BinKey] {
+  multidrawable_meshes : Array[
+    BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey],
+  ]
+  batchable_meshes : Array[BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey]]
+  unbatchable_meshes : Array[
+    BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey],
+  ]
+  non_mesh_items : Array[BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey]]
+  batch_sets : BinnedRenderPhaseBatchSets[BinKey]
+  cached_entity_bin_keys : Map[
+    @render_sync_world.MainEntity,
+    CachedBinnedEntity[BatchSetKey, BinKey],
+  ]
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::new(
+  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
+) -> BinnedRenderPhase[BatchSetKey, BinKey] {
+  BinnedRenderPhase::{
+    multidrawable_meshes: [],
+    batchable_meshes: [],
+    unbatchable_meshes: [],
+    non_mesh_items: [],
+    batch_sets: match gpu_preprocessing_mode {
+      Culling => MultidrawIndirect([])
+      PreprocessingOnly => Direct([])
+      None => DynamicUniforms([])
+    },
+    cached_entity_bin_keys: Map([]),
+    gpu_preprocessing_mode,
+  }
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::gpu_preprocessing_mode(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> @render_batching.GpuPreprocessingMode {
+  self.gpu_preprocessing_mode
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::multidrawable_meshes(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> ArrayView[BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey]] {
+  self.multidrawable_meshes[:]
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::batchable_meshes(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> ArrayView[BinnedRenderPhaseBatchableEntry[BatchSetKey, BinKey]] {
+  self.batchable_meshes[:]
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::unbatchable_meshes(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> ArrayView[BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey]] {
+  self.unbatchable_meshes[:]
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::non_mesh_items(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> ArrayView[BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey]] {
+  self.non_mesh_items[:]
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::batch_sets(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> BinnedRenderPhaseBatchSets[BinKey] {
+  self.batch_sets
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::update_cache(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  main_entity : @render_sync_world.MainEntity,
+  cached_bin_key : CachedBinKey[BatchSetKey, BinKey]?,
+) -> Unit {
+  self.cached_entity_bin_keys.set(
+    main_entity,
+    CachedBinnedEntity::new(cached_bin_key),
+  )
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::cached_bin_key(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  main_entity : @render_sync_world.MainEntity,
+) -> CachedBinKey[BatchSetKey, BinKey]? {
+  match self.cached_entity_bin_keys.get(main_entity) {
+    Some(cached_entity) => cached_entity.cached_bin_key()
+    None => None
+  }
+}
+
+///|
+fn[BatchSetKey : Eq, BinKey] BinnedRenderPhase::find_multidrawable(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  batch_set_key : BatchSetKey,
+) -> Int {
+  for index in 0..<self.multidrawable_meshes.length() {
+    if self.multidrawable_meshes[index].batch_set_key == batch_set_key {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn[BatchSetKey : Eq, BinKey : Eq] BinnedRenderPhase::find_batchable(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  batch_set_key : BatchSetKey,
+  bin_key : BinKey,
+) -> Int {
+  for index in 0..<self.batchable_meshes.length() {
+    let entry = self.batchable_meshes[index]
+    if entry.batch_set_key == batch_set_key && entry.bin_key == bin_key {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn[BatchSetKey : Eq, BinKey : Eq] BinnedRenderPhase::find_unbatchable(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  batch_set_key : BatchSetKey,
+  bin_key : BinKey,
+) -> Int {
+  for index in 0..<self.unbatchable_meshes.length() {
+    let entry = self.unbatchable_meshes[index]
+    if entry.batch_set_key == batch_set_key && entry.bin_key == bin_key {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn[BatchSetKey : Eq, BinKey : Eq] BinnedRenderPhase::find_non_mesh(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  batch_set_key : BatchSetKey,
+  bin_key : BinKey,
+) -> Int {
+  for index in 0..<self.non_mesh_items.length() {
+    let entry = self.non_mesh_items[index]
+    if entry.batch_set_key == batch_set_key && entry.bin_key == bin_key {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  batch_set_key : BatchSetKey,
+  bin_key : BinKey,
+  representative_entity : (@core.Entity, @render_sync_world.MainEntity),
+  input_uniform_index : InputUniformIndex,
+  phase_type : BinnedRenderPhaseType,
+) -> Unit {
+  let effective_phase_type = if self.gpu_preprocessing_mode ==
+    @render_batching.GpuPreprocessingMode::PreprocessingOnly &&
+    phase_type == MultidrawableMesh {
+    BatchableMesh
+  } else {
+    phase_type
+  }
+  match effective_phase_type {
+    MultidrawableMesh => {
+      let index = self.find_multidrawable(batch_set_key)
+      if index >= 0 {
+        self.multidrawable_meshes[index].batch_set.insert(
+          bin_key,
+          representative_entity.1,
+          input_uniform_index,
+        )
+      } else {
+        let batch_set : RenderMultidrawableBatchSet[BinKey] = RenderMultidrawableBatchSet::new()
+        batch_set.insert(bin_key, representative_entity.1, input_uniform_index)
+        self.multidrawable_meshes.push(BinnedRenderPhaseMultidrawableEntry::{
+          batch_set_key,
+          batch_set,
+        })
+      }
+    }
+    BatchableMesh => {
+      let index = self.find_batchable(batch_set_key, bin_key)
+      if index >= 0 {
+        self.batchable_meshes[index].bin.insert(
+          representative_entity.1,
+          input_uniform_index,
+        )
+      } else {
+        self.batchable_meshes.push(BinnedRenderPhaseBatchableEntry::{
+          batch_set_key,
+          bin_key,
+          bin: RenderBin::from_entity(
+            representative_entity.1,
+            input_uniform_index,
+          ),
+        })
+      }
+    }
+    UnbatchableMesh => {
+      let index = self.find_unbatchable(batch_set_key, bin_key)
+      if index >= 0 {
+        self.unbatchable_meshes[index].entities.insert(
+          representative_entity.1,
+          representative_entity.0,
+        )
+      } else {
+        self.unbatchable_meshes.push(BinnedRenderPhaseUnbatchableEntry::{
+          batch_set_key,
+          bin_key,
+          entities: UnbatchableBinnedEntities::new(
+            representative_entity.1,
+            representative_entity.0,
+          ),
+        })
+      }
+    }
+    NonMesh => {
+      let index = self.find_non_mesh(batch_set_key, bin_key)
+      if index >= 0 {
+        self.non_mesh_items[index].entities.insert(
+          representative_entity.1,
+          representative_entity.0,
+        )
+      } else {
+        self.non_mesh_items.push(BinnedRenderPhaseNonMeshEntry::{
+          batch_set_key,
+          bin_key,
+          entities: NonMeshEntities::new(
+            representative_entity.1,
+            representative_entity.0,
+          ),
+        })
+      }
+    }
+  }
+  self.update_cache(
+    representative_entity.1,
+    Some(CachedBinKey::new(batch_set_key, bin_key, effective_phase_type)),
+  )
+}
+
+///|
+fn[T] binned_render_phase_swap_remove(array : Array[T], index : Int) -> Unit {
+  let last_index = array.length() - 1
+  if index != last_index {
+    array[index] = array[last_index]
+  }
+  array.pop() |> ignore
+}
+
+///|
+pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::remove(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+  main_entity : @render_sync_world.MainEntity,
+) -> Unit {
+  let cached = match self.cached_entity_bin_keys.get(main_entity) {
+    Some(value) => value
+    None => return
+  }
+  self.cached_entity_bin_keys.remove(main_entity)
+  guard cached.cached_bin_key() is Some(cached_bin_key) else { return }
+  match cached_bin_key.phase_type() {
+    MultidrawableMesh => {
+      let index = self.find_multidrawable(cached_bin_key.batch_set_key())
+      if index >= 0 {
+        let entry = self.multidrawable_meshes[index]
+        entry.batch_set.remove(main_entity, cached_bin_key.bin_key())
+        if entry.batch_set.is_empty() {
+          binned_render_phase_swap_remove(self.multidrawable_meshes, index)
+        }
+      }
+    }
+    BatchableMesh => {
+      let index = self.find_batchable(
+        cached_bin_key.batch_set_key(),
+        cached_bin_key.bin_key(),
+      )
+      if index >= 0 {
+        let entry = self.batchable_meshes[index]
+        entry.bin.remove(main_entity)
+        if entry.bin.is_empty() {
+          binned_render_phase_swap_remove(self.batchable_meshes, index)
+        }
+      }
+    }
+    UnbatchableMesh => {
+      let index = self.find_unbatchable(
+        cached_bin_key.batch_set_key(),
+        cached_bin_key.bin_key(),
+      )
+      if index >= 0 {
+        let entry = self.unbatchable_meshes[index]
+        entry.entities.remove(main_entity)
+        if entry.entities.is_empty() {
+          binned_render_phase_swap_remove(self.unbatchable_meshes, index)
+        }
+      }
+    }
+    NonMesh => {
+      let index = self.find_non_mesh(
+        cached_bin_key.batch_set_key(),
+        cached_bin_key.bin_key(),
+      )
+      if index >= 0 {
+        let entry = self.non_mesh_items[index]
+        entry.entities.remove(main_entity)
+        if entry.entities.is_empty() {
+          binned_render_phase_swap_remove(self.non_mesh_items, index)
+        }
+      }
+    }
+  }
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::is_empty(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> Bool {
+  self.multidrawable_meshes.is_empty() &&
+  self.batchable_meshes.is_empty() &&
+  self.unbatchable_meshes.is_empty() &&
+  self.non_mesh_items.is_empty()
+}
+
+///|
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_for_new_frame(
+  self : BinnedRenderPhase[BatchSetKey, BinKey],
+) -> Unit {
+  self.batch_sets.clear()
+  for entry in self.unbatchable_meshes {
+    entry.entities.buffer_indices.clear()
+  }
+}
