@@ -37,3 +37,40 @@ test "render3d: main pass skips deferred opaque materials like bevy queue_materi
     content="false",
   )
 }
+
+///|
+test "render3d: main transparent pass executes retained phase draw functions" {
+  let world = @ecs.World::new()
+  let main_view = world.spawn_empty()
+  let render_entity = world.spawn_empty()
+  let main_entity = world.spawn_empty()
+  let retained_view = @render_view.RetainedViewEntity::new(main_view)
+  let phases = @core_3d.Transparent3dPhase::Transparent3dPhase()
+  phases.prepare_for_new_frame(retained_view)
+  let draw_functions = @core_3d.Transparent3dDrawFunctions::Transparent3dDrawFunctions()
+  let seen : Array[@core.Entity] = []
+  let draw_function = draw_functions.register("DrawCustom", fn(_world, item) {
+    seen.push(item.entity())
+    @core_3d.Transparent3dRenderCommandResult::Success
+  })
+  phases.add(
+    retained_view,
+    @core_3d.Transparent3d::new(
+      distance=0.0F,
+      pipeline=@material.CachedRenderPipelineId::new(4UL),
+      entity=render_entity,
+      main_entity=@render.MainEntity::new(main_entity),
+      draw_function~,
+    ),
+  )
+  world.insert_resource(@core_3d.Transparent3dPhase::resource(), phases)
+  world.insert_resource(
+    @core_3d.Transparent3dDrawFunctions::resource(),
+    draw_functions,
+  )
+  let items = render3d_transparent_phase_items(world, main_view)
+  debug_inspect(items.length(), content="1")
+  debug_inspect(render3d_draw_transparent_phase(world, items), content="1")
+  debug_inspect(seen.length(), content="1")
+  debug_inspect(seen[0] == render_entity, content="true")
+}

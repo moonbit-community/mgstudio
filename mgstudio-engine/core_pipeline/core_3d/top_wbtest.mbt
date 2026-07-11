@@ -145,6 +145,10 @@ test "core3d: phase resources live in RenderApp" {
     render_world.get_resource(Transparent3dPhase::resource()) is Some(_),
     content="true",
   )
+  debug_inspect(
+    render_world.get_resource(Transparent3dDrawFunctions::resource()) is Some(_),
+    content="true",
+  )
 }
 
 ///|
@@ -195,4 +199,35 @@ test "core3d: active Camera3d prepares and retains transparent phase views" {
     .get_resource(Transparent3dPhase::resource())
     .unwrap()
   debug_inspect(phases.view_count(), content="0")
+}
+
+///|
+test "core3d: DrawFunctions<Transparent3d> executes the registered render command" {
+  let world = @ecs.World::new()
+  let draw_functions = Transparent3dDrawFunctions::Transparent3dDrawFunctions()
+  let seen : Array[@core.Entity] = []
+  let draw_function = draw_functions.register("DrawCustom", fn(_world, item) {
+    seen.push(item.entity())
+    Transparent3dRenderCommandResult::Success
+  })
+  let entity = @core.Entity::new(17, 2)
+  let item = Transparent3d::new(
+    distance=0.0F,
+    pipeline=@material.CachedRenderPipelineId::new(9UL),
+    entity~,
+    main_entity=@render.MainEntity::new(entity),
+    draw_function~,
+  )
+  debug_inspect(draw_functions.len(), content="1")
+  debug_inspect(draw_functions.render(world, item), content="Success")
+  debug_inspect(seen.length(), content="1")
+  debug_inspect(seen[0] == entity, content="true")
+  let unknown = Transparent3d::new(
+    distance=0.0F,
+    pipeline=@material.CachedRenderPipelineId::new(9UL),
+    entity~,
+    main_entity=@render.MainEntity::new(entity),
+    draw_function=@material.DrawFunctionId::new(99U),
+  )
+  debug_inspect(draw_functions.render(world, unknown), content="Skip")
 }

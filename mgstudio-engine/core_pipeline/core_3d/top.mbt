@@ -83,6 +83,12 @@ fn core_3d_configure_render_sub_app(
       Transparent3dPhase::Transparent3dPhase(),
     )
   }
+  if world.get_resource(Transparent3dDrawFunctions::resource()) is None {
+    world.insert_resource(
+      Transparent3dDrawFunctions::resource(),
+      Transparent3dDrawFunctions::Transparent3dDrawFunctions(),
+    )
+  }
   let stage = @render.render_schedule_stage()
   let graph_stage = @render.RenderGraph::schedule()
   let core_3d_stage = @app.schedule_label("mgstudio.core_pipeline.core_3d")
@@ -362,6 +368,72 @@ pub struct Transparent3d {
   batch_range_end : Int
   extra_index : Int
   indexed : Bool
+}
+
+///|
+// Bevy source: `bevy_render::render_phase::RenderCommandResult`.
+pub(all) enum Transparent3dRenderCommandResult {
+  Success
+  Skip
+} derive(Eq, Debug)
+
+///|
+pub type Transparent3dRenderCommand = (@ecs.World, Transparent3d) -> Transparent3dRenderCommandResult
+
+///|
+// Bevy source: `DrawFunctions<Transparent3d>` populated by
+// `AddRenderCommand::add_render_command`.
+pub struct Transparent3dDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  commands : Array[(@material.DrawFunctionId, Transparent3dRenderCommand)]
+}
+
+///|
+pub fn Transparent3dDrawFunctions::Transparent3dDrawFunctions() -> Transparent3dDrawFunctions {
+  Transparent3dDrawFunctions::{
+    draw_functions: @material.DrawFunctions::new(),
+    commands: [],
+  }
+}
+
+///|
+pub fn Transparent3dDrawFunctions::register(
+  self : Transparent3dDrawFunctions,
+  label : @material.DrawFunctionLabel,
+  command : Transparent3dRenderCommand,
+) -> @material.DrawFunctionId {
+  let id = self.draw_functions.register(label)
+  for index in 0..<self.commands.length() {
+    let (entry_id, _) = self.commands[index]
+    if entry_id == id {
+      self.commands[index] = (id, command)
+      return id
+    }
+  }
+  self.commands.push((id, command))
+  id
+}
+
+///|
+pub fn Transparent3dDrawFunctions::len(
+  self : Transparent3dDrawFunctions,
+) -> Int {
+  self.commands.length()
+}
+
+///|
+pub fn Transparent3dDrawFunctions::render(
+  self : Transparent3dDrawFunctions,
+  world : @ecs.World,
+  item : Transparent3d,
+) -> Transparent3dRenderCommandResult {
+  for entry in self.commands {
+    let (id, command) = entry
+    if id == item.draw_function() {
+      return command(world, item)
+    }
+  }
+  Transparent3dRenderCommandResult::Skip
 }
 
 ///|
@@ -733,6 +805,13 @@ pub let ecs_key_transparent3d_phase : @ecs.ResourceKey[Transparent3dPhase] = @ec
 )
 
 ///|
+pub let ecs_key_transparent3d_draw_functions : @ecs.ResourceKey[
+  Transparent3dDrawFunctions,
+] = @ecs.register_resource(
+  debug_name="core_pipeline.core_3d.DrawFunctions<Transparent3d>",
+)
+
+///|
 pub impl @app.Resource for Opaque3dPhase with fn resource() {
   ecs_key_opaque3d_phase
 }
@@ -745,4 +824,9 @@ pub impl @app.Resource for AlphaMask3dPhase with fn resource() {
 ///|
 pub impl @app.Resource for Transparent3dPhase with fn resource() {
   ecs_key_transparent3d_phase
+}
+
+///|
+pub impl @app.Resource for Transparent3dDrawFunctions with fn resource() {
+  ecs_key_transparent3d_draw_functions
 }

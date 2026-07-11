@@ -46,6 +46,8 @@ pub let ecs_key_msaa : @ecs.ComponentKey[@view.Msaa]
 
 pub let ecs_key_opaque3d_phase : @ecs.ResourceKey[Opaque3dPhase]
 
+pub let ecs_key_transparent3d_draw_functions : @ecs.ResourceKey[Transparent3dDrawFunctions]
+
 pub let ecs_key_transparent3d_phase : @ecs.ResourceKey[Transparent3dPhase]
 
 pub fn extract_core_3d_camera_phases(@ecs.World) -> Unit
@@ -205,6 +207,16 @@ pub fn Transparent3d::pipeline(Self) -> @render_resource.CachedRenderPipelineId
 pub fn Transparent3d::sort_key(Self) -> Float
 pub fn Transparent3d::sorting_info(Self) -> TransparentSortingInfo3d
 
+pub struct Transparent3dDrawFunctions {
+  draw_functions : @material.DrawFunctions
+  commands : Array[(@material.DrawFunctionId, (@ecs.World, Transparent3d) -> Transparent3dRenderCommandResult)]
+}
+pub fn Transparent3dDrawFunctions::Transparent3dDrawFunctions() -> Self
+pub fn Transparent3dDrawFunctions::len(Self) -> Int
+pub fn Transparent3dDrawFunctions::register(Self, String, (@ecs.World, Transparent3d) -> Transparent3dRenderCommandResult) -> @material.DrawFunctionId
+pub fn Transparent3dDrawFunctions::render(Self, @ecs.World, Transparent3d) -> Transparent3dRenderCommandResult
+pub impl @app.Resource for Transparent3dDrawFunctions
+
 pub struct Transparent3dPhase {
   views : @hashmap.HashMap[@view.RetainedViewEntity, Transparent3dViewPhase]
 }
@@ -218,6 +230,11 @@ pub fn Transparent3dPhase::retain_views(Self, Array[@view.RetainedViewEntity]) -
 pub fn Transparent3dPhase::view(Self, @view.RetainedViewEntity) -> Transparent3dViewPhase?
 pub fn Transparent3dPhase::view_count(Self) -> Int
 pub impl @app.Resource for Transparent3dPhase
+
+pub(all) enum Transparent3dRenderCommandResult {
+  Success
+  Skip
+} derive(Eq, @debug.Debug)
 
 pub struct Transparent3dViewPhase {
   mut items : Array[Transparent3d]
@@ -242,6 +259,8 @@ pub fn TransparentSortingInfo3d::sorted(mesh_center~ : @math.Vec3, depth_bias? :
 pub using @hdr {type Hdr}
 
 pub using @view {type Msaa}
+
+pub type Transparent3dRenderCommand = (@ecs.World, Transparent3d) -> Transparent3dRenderCommandResult
 
 // Traits
 

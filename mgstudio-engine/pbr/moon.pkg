@@ -18,6 +18,7 @@ import {
   "Milky2018/mgstudio/camera/projection3d" @camera_projection3d,
   "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf/loader" @gltf_loader,

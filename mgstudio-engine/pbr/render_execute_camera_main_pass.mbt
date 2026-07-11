@@ -381,6 +381,42 @@ fn render3d_generate_camera_environment_map_light(
 }
 
 ///|
+// Bevy source: `MainTransparentPass3dNode::run` renders the retained
+// `Transparent3d` phase with its phase-specific draw-function registry.
+fn render3d_transparent_phase_items(
+  world : @ecs.World,
+  main_view_entity : @core.Entity,
+) -> Array[@core_3d.Transparent3d] {
+  guard world.get_resource(@core_3d.Transparent3dPhase::resource())
+    is Some(phases) else {
+    return []
+  }
+  match phases.view(@render_view.RetainedViewEntity::new(main_view_entity)) {
+    Some(phase) => phase.items()
+    None => []
+  }
+}
+
+///|
+fn render3d_draw_transparent_phase(
+  world : @ecs.World,
+  items : Array[@core_3d.Transparent3d],
+) -> Int {
+  guard world.get_resource(@core_3d.Transparent3dDrawFunctions::resource())
+    is Some(draw_functions) else {
+    return 0
+  }
+  let mut executed = 0
+  for item in items {
+    if draw_functions.render(world, item)
+      is @core_3d.Transparent3dRenderCommandResult::Success {
+      executed = executed + 1
+    }
+  }
+  executed
+}
+
+///|
 fn render3d_execute_camera_main_pass(
   world : @ecs.World,
   camera_entity : @core.Entity,
@@ -427,6 +463,10 @@ fn render3d_execute_camera_main_pass(
   prepass_deferred_lighting_pass_id_texture_id~ : Int,
 ) -> Unit {
   ignore(draw_queue_entry)
+  let retained_transparent_items = render3d_transparent_phase_items(
+    world,
+    extracted_camera.entity.main_entity,
+  )
   let draw_items = render3d_main_view_phase_items_or_abort(world, camera_entity)
   let draw_item_indices = render3d_main_view_phase_draw_item_indices_or_abort(
     world, camera_entity,
@@ -948,6 +988,10 @@ fn render3d_execute_camera_main_pass(
     transparent_draws.length(),
   )
   @app.timeline_trace_emit_counter_int(
+    "render_3d_main_pass_retained_transparent_items",
+    retained_transparent_items.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
     "render_3d_main_pass_wireframe_items",
     wireframe_draws.length(),
   )
@@ -1096,7 +1140,9 @@ fn render3d_execute_camera_main_pass(
       @render.host_gpu_end_active_pass_preserving_state()
     }
   }
-  if transparent_draws.length() > 0 || wireframe_draws.length() > 0 {
+  if transparent_draws.length() > 0 ||
+    wireframe_draws.length() > 0 ||
+    retained_transparent_items.length() > 0 {
     let (
       transparent_viewport_x,
       transparent_viewport_y,
@@ -1163,6 +1209,12 @@ fn render3d_execute_camera_main_pass(
     for draw_payload in transparent_draws {
       @pbr_render.render3d_draw_mesh_gpu_payload(draw_payload)
     }
+    let retained_transparent_draws = render3d_draw_transparent_phase(
+      world, retained_transparent_items,
+    )
+    @app.timeline_trace_emit_counter_int(
+      "render_3d_main_pass_retained_transparent_draws", retained_transparent_draws,
+    )
     for wireframe_draw in wireframe_draws {
       @pbr_render.render3d_draw_mesh_gpu_payload(wireframe_draw)
     }
