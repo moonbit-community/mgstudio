@@ -109,6 +109,37 @@ pub fn RenderBinnedMeshInstanceIndex::new(UInt) -> Self
 pub fn RenderBinnedMeshInstanceIndex::to_int(Self) -> Int
 pub fn RenderBinnedMeshInstanceIndex::value(Self) -> UInt
 
+pub struct RenderMultidrawableBatchSet[K] {
+  gpu_buffers : RenderMultidrawableBatchSetGpuBuffers
+  bin_key_to_bin_index : Map[K, RenderBinIndex]
+  bins : Array[RenderMultidrawableBin?]
+  bin_free_list : Array[RenderBinIndex]
+  indirect_parameters_offset_to_bin_index : Array[RenderBinIndex]
+  render_binned_mesh_instances_cpu : Array[CpuRenderBinnedMeshInstance]
+}
+pub fn[K] RenderMultidrawableBatchSet::bin(Self[K], RenderBinIndex) -> RenderMultidrawableBin?
+pub fn[K] RenderMultidrawableBatchSet::bin_count(Self[K]) -> Int
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::bin_index(Self[K], K) -> RenderBinIndex?
+pub fn[K] RenderMultidrawableBatchSet::cpu_instance_at(Self[K], Int) -> CpuRenderBinnedMeshInstance?
+pub fn[K] RenderMultidrawableBatchSet::cpu_instance_count(Self[K]) -> Int
+pub fn[K] RenderMultidrawableBatchSet::for_each_bin_index(Self[K], (K, RenderBinIndex) -> Unit) -> Unit
+pub fn[K] RenderMultidrawableBatchSet::for_each_cpu_instance(Self[K], (CpuRenderBinnedMeshInstance) -> Unit) -> Unit
+pub fn[K] RenderMultidrawableBatchSet::gpu_instance_at(Self[K], RenderBinnedMeshInstanceIndex) -> GpuRenderBinnedMeshInstance?
+pub fn[K] RenderMultidrawableBatchSet::indirect_parameter_count(Self[K]) -> Int
+pub fn[K] RenderMultidrawableBatchSet::indirect_parameters_offset_for_bin(Self[K], RenderBinIndex) -> UInt?
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::insert(Self[K], K, @sync_world.MainEntity, InputUniformIndex) -> Unit
+pub fn[K] RenderMultidrawableBatchSet::is_empty(Self[K]) -> Bool
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::new() -> Self[K]
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::remove(Self[K], @sync_world.MainEntity, K) -> Unit
+pub fn[K] RenderMultidrawableBatchSet::render_binned_mesh_instance_len(Self[K]) -> Int
+pub fn[K] RenderMultidrawableBatchSet::representative_entity(Self[K]) -> @sync_world.MainEntity?
+pub fn[K] RenderMultidrawableBatchSet::representative_entry(Self[K]) -> (K, RenderBinIndex)?
+
+pub struct RenderMultidrawableBatchSetGpuBuffers {
+  render_binned_mesh_instance_buffer : Array[GpuRenderBinnedMeshInstance]
+  bin_index_to_indirect_parameters_offset_buffer : Array[UInt]
+}
+
 pub struct RenderMultidrawableBin {
   entity_to_binned_mesh_instance_index : Map[@sync_world.MainEntity, RenderBinnedMeshInstanceIndex]
 } derive(Default)

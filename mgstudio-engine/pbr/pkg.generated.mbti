@@ -2304,7 +2304,7 @@ pub fn Render3dShadowBatchSetKeyData::slabs(Self) -> @Milky2018/mgstudio/render/
 
 pub struct Render3dShadowBinKeyData {
   mesh_asset_id : Int
-}
+} derive(Eq, Hash)
 pub fn Render3dShadowBinKeyData::mesh_asset_id(Self) -> Int
 pub fn Render3dShadowBinKeyData::new(Int) -> Self
 
@@ -2332,38 +2332,10 @@ pub fn Render3dShadowBinnedRenderPhaseBatchSetData::first_work_item_index(Self) 
 pub fn Render3dShadowBinnedRenderPhaseBatchSetData::index(Self) -> Int
 pub fn Render3dShadowBinnedRenderPhaseBatchSetData::new(Render3dShadowBinnedRenderPhaseBatchData, Render3dShadowBinKeyData, Int, Int, Int) -> Self
 
-pub(all) struct Render3dShadowMultidrawableBatchSetData {
-  gpu_buffers : Render3dShadowMultidrawableBatchSetGpuBuffers
-  bin_key_to_bin_index : Map[Int, @render_phase.RenderBinIndex]
-  mut bins : Array[@render_phase.RenderMultidrawableBin?]
-  mut bin_free_list : Array[@render_phase.RenderBinIndex]
-  mut indirect_parameters_offset_to_bin_index : Array[@render_phase.RenderBinIndex]
-  render_binned_mesh_instances_cpu : Array[@render_phase.CpuRenderBinnedMeshInstance]
-}
-pub fn Render3dShadowMultidrawableBatchSetData::Render3dShadowMultidrawableBatchSetData() -> Self
-pub fn Render3dShadowMultidrawableBatchSetData::bin_count(Self) -> Int
-pub fn Render3dShadowMultidrawableBatchSetData::bin_index(Self, Render3dShadowBinKeyData) -> @render_phase.RenderBinIndex?
-pub fn Render3dShadowMultidrawableBatchSetData::binned_render_phase_batch_sets(Self) -> Array[Render3dShadowBinnedRenderPhaseBatchSetData]
-pub fn Render3dShadowMultidrawableBatchSetData::cpu_instance_at(Self, Int) -> @render_phase.CpuRenderBinnedMeshInstance?
-pub fn Render3dShadowMultidrawableBatchSetData::cpu_instance_count(Self) -> Int
-pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameter_count(Self) -> Int
-pub fn Render3dShadowMultidrawableBatchSetData::indirect_parameters_offset_for_bin(Self, @render_phase.RenderBinIndex) -> Int?
-pub fn Render3dShadowMultidrawableBatchSetData::insert(Self, Render3dShadowBinKeyData, @sync_world.MainEntity, @render_phase.InputUniformIndex) -> Unit
-pub fn Render3dShadowMultidrawableBatchSetData::is_empty(Self) -> Bool
-pub fn Render3dShadowMultidrawableBatchSetData::remove(Self, @sync_world.MainEntity, Render3dShadowBinKeyData) -> Unit
-
 pub(all) struct Render3dShadowMultidrawableBatchSetEntry {
   batch_set_key : Render3dShadowBatchSetKeyData
-  batch_set : Render3dShadowMultidrawableBatchSetData
+  batch_set : @render_phase.RenderMultidrawableBatchSet[Render3dShadowBinKeyData]
 }
-
-pub(all) struct Render3dShadowMultidrawableBatchSetGpuBuffers {
-  render_binned_mesh_instance_buffer : Array[@render_phase.GpuRenderBinnedMeshInstance]
-  bin_index_to_indirect_parameters_offset_buffer : Array[Int]
-}
-pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::Render3dShadowMultidrawableBatchSetGpuBuffers() -> Self
-pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::indirect_parameters_offset_for_bin(Self, @render_phase.RenderBinIndex) -> Int?
-pub fn Render3dShadowMultidrawableBatchSetGpuBuffers::render_binned_mesh_instance_len(Self) -> Int
 
 pub struct Render3dShadowPhaseBatchedInstanceBuffers {
   buffers : @batching.PhaseBatchedInstanceBuffers[Unit]
@@ -3620,11 +3592,7 @@ pub using @render_phase {type PhaseItemBatchRange as Render3dShadowBatchRange}
 
 pub using @render_phase {type BinnedRenderPhaseType as Render3dShadowBinnedRenderPhaseType}
 
-pub using @render_phase {type CpuRenderBinnedMeshInstance as Render3dShadowCpuRenderBinnedMeshInstance}
-
-pub using @render_phase {type GpuRenderBinnedMeshInstance as Render3dShadowGpuRenderBinnedMeshInstance}
-
-pub using @render_phase {type RenderMultidrawableBin as Render3dShadowMultidrawableBin}
+pub type Render3dShadowMultidrawableBatchSetData = @render_phase.RenderMultidrawableBatchSet[Render3dShadowBinKeyData]
 
 pub using @render_phase {type PhaseItemExtraIndex as Render3dShadowPhaseItemExtraIndex}
 

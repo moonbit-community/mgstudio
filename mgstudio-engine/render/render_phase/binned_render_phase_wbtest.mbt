@@ -170,6 +170,97 @@ test "render_phase: multidraw CPU and GPU records retain nominal bin indices" {
 }
 
 ///|
+struct TestMultidrawBinKey(Int) derive(Eq, Hash, Debug)
+
+///|
+test "render_phase: multidraw batch sets keep stable bins and packed instances" {
+  let batch_set : RenderMultidrawableBatchSet[TestMultidrawBinKey] = RenderMultidrawableBatchSet::new()
+  let first_key = TestMultidrawBinKey(101)
+  let second_key = TestMultidrawBinKey(202)
+  let reused_key = TestMultidrawBinKey(303)
+  let first = @render_sync_world.MainEntity::new(@core.Entity::new(21, 1))
+  let second = @render_sync_world.MainEntity::new(@core.Entity::new(22, 1))
+  let third = @render_sync_world.MainEntity::new(@core.Entity::new(23, 1))
+  let fourth = @render_sync_world.MainEntity::new(@core.Entity::new(24, 1))
+  batch_set.insert(first_key, first, InputUniformIndex::new(10U))
+  batch_set.insert(second_key, second, InputUniformIndex::new(20U))
+  batch_set.insert(second_key, third, InputUniformIndex::new(21U))
+  debug_inspect(batch_set.bin_count(), content="2")
+  debug_inspect(batch_set.cpu_instance_count(), content="3")
+  debug_inspect(batch_set.render_binned_mesh_instance_len(), content="3")
+  let first_bin_index = batch_set.bin_index(first_key).unwrap()
+  let second_bin_index = batch_set.bin_index(second_key).unwrap()
+  debug_inspect(first_bin_index, content="RenderBinIndex(0)")
+  debug_inspect(second_bin_index, content="RenderBinIndex(1)")
+  inspect(
+    batch_set.indirect_parameters_offset_for_bin(first_bin_index).unwrap(),
+    content="0",
+  )
+  inspect(
+    batch_set.indirect_parameters_offset_for_bin(second_bin_index).unwrap(),
+    content="1",
+  )
+  batch_set.remove(second, second_key)
+  debug_inspect(
+    batch_set.cpu_instance_at(1).unwrap().main_entity() == third,
+    content="true",
+  )
+  let second_bin = batch_set.bin(second_bin_index).unwrap()
+  debug_inspect(
+    second_bin.binned_mesh_instance_index(third),
+    content="Some(RenderBinnedMeshInstanceIndex(1))",
+  )
+  batch_set.remove(first, first_key)
+  inspect(
+    batch_set.indirect_parameters_offset_for_bin(first_bin_index).unwrap(),
+    content="4294967295",
+  )
+  inspect(
+    batch_set.indirect_parameters_offset_for_bin(second_bin_index).unwrap(),
+    content="0",
+  )
+  batch_set.insert(reused_key, fourth, InputUniformIndex::new(30U))
+  debug_inspect(
+    batch_set.bin_index(reused_key),
+    content="Some(RenderBinIndex(0))",
+  )
+  inspect(
+    batch_set.indirect_parameters_offset_for_bin(first_bin_index).unwrap(),
+    content="1",
+  )
+  batch_set.remove(third, second_key)
+  batch_set.remove(fourth, reused_key)
+  debug_inspect(batch_set.is_empty(), content="true")
+  debug_inspect(batch_set.bin_count(), content="0")
+  debug_inspect(batch_set.cpu_instance_count(), content="0")
+  debug_inspect(batch_set.render_binned_mesh_instance_len(), content="0")
+}
+
+///|
+test "panic render_phase: multidraw removal rejects a missing bin key" {
+  let batch_set : RenderMultidrawableBatchSet[TestMultidrawBinKey] = RenderMultidrawableBatchSet::new()
+  batch_set.remove(
+    @render_sync_world.MainEntity::new(@core.Entity::new(25, 1)),
+    TestMultidrawBinKey(404),
+  )
+}
+
+///|
+test "panic render_phase: multidraw removal rejects a missing entity" {
+  let batch_set : RenderMultidrawableBatchSet[TestMultidrawBinKey] = RenderMultidrawableBatchSet::new()
+  let bin_key = TestMultidrawBinKey(405)
+  batch_set.insert(
+    bin_key,
+    @render_sync_world.MainEntity::new(@core.Entity::new(26, 1)),
+    InputUniformIndex::new(31U),
+  )
+  batch_set.remove(
+    @render_sync_world.MainEntity::new(@core.Entity::new(27, 1)),
+    bin_key,
+  )
+}
+
+///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
   sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))

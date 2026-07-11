@@ -425,6 +425,400 @@ pub fn RenderMultidrawableBin::remove(
 }
 
 ///|
+fn RenderMultidrawableBin::representative_entity(
+  self : RenderMultidrawableBin,
+) -> @render_sync_world.MainEntity? {
+  for main_entity, _index in self.entity_to_binned_mesh_instance_index {
+    return Some(main_entity)
+  }
+  None
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderMultidrawableBatchSetGpuBuffers`.
+pub struct RenderMultidrawableBatchSetGpuBuffers {
+  render_binned_mesh_instance_buffer : Array[GpuRenderBinnedMeshInstance]
+  bin_index_to_indirect_parameters_offset_buffer : Array[UInt]
+}
+
+///|
+fn RenderMultidrawableBatchSetGpuBuffers::new() -> RenderMultidrawableBatchSetGpuBuffers {
+  RenderMultidrawableBatchSetGpuBuffers::{
+    render_binned_mesh_instance_buffer: [],
+    bin_index_to_indirect_parameters_offset_buffer: [],
+  }
+}
+
+///|
+fn RenderMultidrawableBatchSetGpuBuffers::insert(
+  self : RenderMultidrawableBatchSetGpuBuffers,
+  bin : RenderMultidrawableBin,
+  cpu_binned_mesh_instance_buffer : Array[CpuRenderBinnedMeshInstance],
+  main_entity : @render_sync_world.MainEntity,
+  input_uniform_index : InputUniformIndex,
+  bin_index : RenderBinIndex,
+) -> Unit {
+  let gpu_render_bin_entry = GpuRenderBinnedMeshInstance::new(
+    input_uniform_index, bin_index,
+  )
+  let render_binned_mesh_instance_buffer_index = match
+    bin.binned_mesh_instance_index(main_entity) {
+    Some(index) => index
+    None => {
+      let index = RenderBinnedMeshInstanceIndex::new(
+        self.render_binned_mesh_instance_buffer.length().reinterpret_as_uint(),
+      )
+      self.render_binned_mesh_instance_buffer.push(
+        GpuRenderBinnedMeshInstance::default(),
+      )
+      cpu_binned_mesh_instance_buffer.push(
+        CpuRenderBinnedMeshInstance::default(),
+      )
+      bin.insert(main_entity, index)
+      index
+    }
+  }
+  let buffer_index = render_binned_mesh_instance_buffer_index.to_int()
+  self.render_binned_mesh_instance_buffer[buffer_index] = gpu_render_bin_entry
+  cpu_binned_mesh_instance_buffer[buffer_index] = CpuRenderBinnedMeshInstance::new(
+    main_entity, bin_index,
+  )
+  if self.render_binned_mesh_instance_buffer.length() !=
+    cpu_binned_mesh_instance_buffer.length() {
+    abort("GPU and CPU binned mesh instance buffers must remain parallel")
+  }
+}
+
+///|
+fn RenderMultidrawableBatchSetGpuBuffers::remove(
+  self : RenderMultidrawableBatchSetGpuBuffers,
+  bin : RenderMultidrawableBin,
+  cpu_binned_mesh_instance_buffer : Array[CpuRenderBinnedMeshInstance],
+  entity_to_remove : @render_sync_world.MainEntity,
+) -> (RenderBinnedMeshInstanceIndex, CpuRenderBinnedMeshInstance)? {
+  let old_index = match bin.remove(entity_to_remove) {
+    Some(index) => index
+    None => abort("Entity not in bin")
+  }
+  let old_buffer_index = old_index.to_int()
+  let last_index = cpu_binned_mesh_instance_buffer.length() - 1
+  if old_buffer_index != last_index {
+    cpu_binned_mesh_instance_buffer[old_buffer_index] = cpu_binned_mesh_instance_buffer[last_index]
+    self.render_binned_mesh_instance_buffer[old_buffer_index] = self.render_binned_mesh_instance_buffer[last_index]
+  }
+  ignore(cpu_binned_mesh_instance_buffer.pop())
+  ignore(self.render_binned_mesh_instance_buffer.pop())
+  if self.render_binned_mesh_instance_buffer.length() !=
+    cpu_binned_mesh_instance_buffer.length() {
+    abort("GPU and CPU binned mesh instance buffers must remain parallel")
+  }
+  if old_buffer_index < cpu_binned_mesh_instance_buffer.length() {
+    Some((old_index, cpu_binned_mesh_instance_buffer[old_buffer_index]))
+  } else {
+    None
+  }
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/render_phase/mod.rs::RenderMultidrawableBatchSet`.
+// MoonBit uses the phase item's bin-key type directly because associated types
+// are represented at the package seam by a generic type parameter.
+pub struct RenderMultidrawableBatchSet[K] {
+  gpu_buffers : RenderMultidrawableBatchSetGpuBuffers
+  bin_key_to_bin_index : Map[K, RenderBinIndex]
+  bins : Array[RenderMultidrawableBin?]
+  bin_free_list : Array[RenderBinIndex]
+  indirect_parameters_offset_to_bin_index : Array[RenderBinIndex]
+  render_binned_mesh_instances_cpu : Array[CpuRenderBinnedMeshInstance]
+}
+
+///|
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::new() -> RenderMultidrawableBatchSet[
+  K,
+] {
+  RenderMultidrawableBatchSet::{
+    gpu_buffers: RenderMultidrawableBatchSetGpuBuffers::new(),
+    bin_key_to_bin_index: Map([]),
+    bins: [],
+    bin_free_list: [],
+    indirect_parameters_offset_to_bin_index: [],
+    render_binned_mesh_instances_cpu: [],
+  }
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::representative_entity(
+  self : RenderMultidrawableBatchSet[K],
+) -> @render_sync_world.MainEntity? {
+  guard self.representative_entry() is Some((_bin_key, bin_index)) else {
+    return None
+  }
+  let bin = match self.bin(bin_index) {
+    Some(value) => value
+    None => abort("Bin should be present")
+  }
+  bin.representative_entity()
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::representative_entry(
+  self : RenderMultidrawableBatchSet[K],
+) -> (K, RenderBinIndex)? {
+  for bin_key, bin_index in self.bin_key_to_bin_index {
+    return Some((bin_key, bin_index))
+  }
+  None
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::bin(
+  self : RenderMultidrawableBatchSet[K],
+  bin_index : RenderBinIndex,
+) -> RenderMultidrawableBin? {
+  let raw_bin_index = bin_index.to_int()
+  if raw_bin_index < 0 || raw_bin_index >= self.bins.length() {
+    return None
+  }
+  self.bins[raw_bin_index]
+}
+
+///|
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::insert(
+  self : RenderMultidrawableBatchSet[K],
+  bin_key : K,
+  main_entity : @render_sync_world.MainEntity,
+  input_uniform_index : InputUniformIndex,
+) -> Unit {
+  let bin_index = match self.bin_key_to_bin_index.get(bin_key) {
+    Some(index) => index
+    None => {
+      let index = match self.bin_free_list.pop() {
+        Some(free_index) => free_index
+        None => RenderBinIndex::new(self.bins.length().reinterpret_as_uint())
+      }
+      let raw_index = index.to_int()
+      if raw_index == self.bins.length() {
+        self.bins.push(Some(RenderMultidrawableBin::new()))
+      } else {
+        if self.bins[raw_index] is Some(_) {
+          abort("Reused bin index must refer to an empty slot")
+        }
+        self.bins[raw_index] = Some(RenderMultidrawableBin::new())
+      }
+      self.bin_key_to_bin_index.set(bin_key, index)
+      self.allocate_indirect_parameters(index)
+      index
+    }
+  }
+  let bin = match self.bin(bin_index) {
+    Some(value) => value
+    None => abort("Bin not present")
+  }
+  self.gpu_buffers.insert(
+    bin,
+    self.render_binned_mesh_instances_cpu,
+    main_entity,
+    input_uniform_index,
+    bin_index,
+  )
+}
+
+///|
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::remove(
+  self : RenderMultidrawableBatchSet[K],
+  main_entity : @render_sync_world.MainEntity,
+  bin_key : K,
+) -> Unit {
+  let bin_index = match self.bin_key_to_bin_index.get(bin_key) {
+    Some(value) => value
+    None => abort("Bin key not present")
+  }
+  let bin = match self.bin(bin_index) {
+    Some(value) => value
+    None => abort("Bin not present")
+  }
+  match
+    self.gpu_buffers.remove(
+      bin,
+      self.render_binned_mesh_instances_cpu,
+      main_entity,
+    ) {
+    Some((old_index, displaced_entity_indices)) => {
+      let displaced_bin = match self.bin(displaced_entity_indices.bin_index()) {
+        Some(value) => value
+        None => abort("Bin not present")
+      }
+      displaced_bin.insert(displaced_entity_indices.main_entity(), old_index)
+    }
+    None => ()
+  }
+  self.remove_bin_if_empty(bin_key, bin_index)
+}
+
+///|
+fn[K] RenderMultidrawableBatchSet::allocate_indirect_parameters(
+  self : RenderMultidrawableBatchSet[K],
+  bin_index : RenderBinIndex,
+) -> Unit {
+  let indirect_parameters_offset = self.indirect_parameters_offset_to_bin_index.length()
+  self.indirect_parameters_offset_to_bin_index.push(bin_index)
+  let raw_bin_index = bin_index.to_int()
+  if raw_bin_index ==
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer.length() {
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer.push(
+      indirect_parameters_offset.reinterpret_as_uint(),
+    )
+  } else {
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[raw_bin_index] = indirect_parameters_offset.reinterpret_as_uint()
+  }
+}
+
+///|
+fn[K : Hash + Eq] RenderMultidrawableBatchSet::remove_bin_if_empty(
+  self : RenderMultidrawableBatchSet[K],
+  bin_key : K,
+  bin_index : RenderBinIndex,
+) -> Unit {
+  let bin = match self.bin(bin_index) {
+    Some(value) => value
+    None => abort("Bin not present")
+  }
+  if !bin.is_empty() {
+    return
+  }
+  self.bin_key_to_bin_index.remove(bin_key)
+  self.bin_free_list.push(bin_index)
+  let raw_bin_index = bin_index.to_int()
+  self.bins[raw_bin_index] = None
+  let indirect_parameters_offset = match
+    self.indirect_parameters_offset_for_bin(bin_index) {
+    Some(value) => value
+    None => abort("Indirect parameters offset not present")
+  }
+  self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[raw_bin_index] = 0xFFFFFFFFU
+  let raw_indirect_parameters_offset = indirect_parameters_offset.reinterpret_as_int()
+  let last_index = self.indirect_parameters_offset_to_bin_index.length() - 1
+  let removed_bin_index = self.indirect_parameters_offset_to_bin_index[raw_indirect_parameters_offset]
+  if raw_indirect_parameters_offset != last_index {
+    self.indirect_parameters_offset_to_bin_index[raw_indirect_parameters_offset] = self.indirect_parameters_offset_to_bin_index[last_index]
+  }
+  ignore(self.indirect_parameters_offset_to_bin_index.pop())
+  if removed_bin_index != bin_index {
+    abort("Removed indirect parameters must belong to the removed bin")
+  }
+  if raw_indirect_parameters_offset <
+    self.indirect_parameters_offset_to_bin_index.length() {
+    let displaced_bin_index = self.indirect_parameters_offset_to_bin_index[raw_indirect_parameters_offset]
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[displaced_bin_index.to_int()] = indirect_parameters_offset
+  }
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::is_empty(
+  self : RenderMultidrawableBatchSet[K],
+) -> Bool {
+  self.bin_free_list.length() == self.bins.length()
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::bin_count(
+  self : RenderMultidrawableBatchSet[K],
+) -> Int {
+  self.bin_key_to_bin_index.length()
+}
+
+///|
+pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::bin_index(
+  self : RenderMultidrawableBatchSet[K],
+  bin_key : K,
+) -> RenderBinIndex? {
+  self.bin_key_to_bin_index.get(bin_key)
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::indirect_parameters_offset_for_bin(
+  self : RenderMultidrawableBatchSet[K],
+  bin_index : RenderBinIndex,
+) -> UInt? {
+  let raw_bin_index = bin_index.to_int()
+  if raw_bin_index < 0 ||
+    raw_bin_index >=
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer.length() {
+    return None
+  }
+  Some(
+    self.gpu_buffers.bin_index_to_indirect_parameters_offset_buffer[raw_bin_index],
+  )
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::render_binned_mesh_instance_len(
+  self : RenderMultidrawableBatchSet[K],
+) -> Int {
+  self.gpu_buffers.render_binned_mesh_instance_buffer.length()
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::cpu_instance_count(
+  self : RenderMultidrawableBatchSet[K],
+) -> Int {
+  self.render_binned_mesh_instances_cpu.length()
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::cpu_instance_at(
+  self : RenderMultidrawableBatchSet[K],
+  index : Int,
+) -> CpuRenderBinnedMeshInstance? {
+  if index < 0 || index >= self.render_binned_mesh_instances_cpu.length() {
+    return None
+  }
+  Some(self.render_binned_mesh_instances_cpu[index])
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::gpu_instance_at(
+  self : RenderMultidrawableBatchSet[K],
+  index : RenderBinnedMeshInstanceIndex,
+) -> GpuRenderBinnedMeshInstance? {
+  let raw_index = index.to_int()
+  if raw_index < 0 ||
+    raw_index >= self.gpu_buffers.render_binned_mesh_instance_buffer.length() {
+    return None
+  }
+  Some(self.gpu_buffers.render_binned_mesh_instance_buffer[raw_index])
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::indirect_parameter_count(
+  self : RenderMultidrawableBatchSet[K],
+) -> Int {
+  self.indirect_parameters_offset_to_bin_index.length()
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::for_each_bin_index(
+  self : RenderMultidrawableBatchSet[K],
+  visit : (K, RenderBinIndex) -> Unit,
+) -> Unit {
+  for bin_key, bin_index in self.bin_key_to_bin_index {
+    visit(bin_key, bin_index)
+  }
+}
+
+///|
+pub fn[K] RenderMultidrawableBatchSet::for_each_cpu_instance(
+  self : RenderMultidrawableBatchSet[K],
+  visit : (CpuRenderBinnedMeshInstance) -> Unit,
+) -> Unit {
+  for instance in self.render_binned_mesh_instances_cpu {
+    visit(instance)
+  }
+}
+
+///|
 // Bevy source:
 // `bevy/crates/bevy_render/src/render_phase/mod.rs::UnbatchableBinnedEntityIndices`.
 pub(all) struct UnbatchableBinnedEntityIndices {
