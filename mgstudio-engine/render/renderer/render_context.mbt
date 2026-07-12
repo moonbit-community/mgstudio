@@ -433,7 +433,12 @@ pub fn render_context_backend_for_test() -> GpuBackend? {
 
 ///|
 pub fn render_context_set_backend_for_test(backend : GpuBackend?) -> Unit {
-  render_context_runtime_state.backend = backend
+  let state = render_context_runtime_state
+  let previous = state.backend
+  state.backend = backend
+  if previous is Some(previous_backend) {
+    previous_backend.shutdown()
+  }
 }
 
 ///|

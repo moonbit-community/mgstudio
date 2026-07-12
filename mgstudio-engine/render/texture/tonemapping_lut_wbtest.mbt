@@ -38,7 +38,6 @@ test "render/texture: bevy tonemapping ktx2 assets upload as 3d textures" {
 ///|
 test "render/texture: bevy fog volume density asset reaches volumetric fog textured branch" {
   let backend = @renderer.GpuBackend::new(assets_base="assets")
-  let previous_backend = @renderer.render_context_backend_for_test()
   @renderer.render_context_set_backend_for_test(Some(backend))
   register_asset_texture_backend()
   let handle : @asset.Handle[@asset.Image] = @asset.asset_with_world(
@@ -69,5 +68,5 @@ test "render/texture: bevy fog volume density asset reaches volumetric fog textu
     GpuImage::from_texture_id(texture_id) is Some(_),
     content="true",
   )
-  @renderer.render_context_set_backend_for_test(previous_backend)
+  @renderer.render_context_set_backend_for_test(None)
 }

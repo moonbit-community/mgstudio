@@ -14,6 +14,7 @@
 
 ///|
 pub struct GpuBackend {
+  mut shutdown_complete : Bool
   instance : @wgpu.Instance
   adapter : @wgpu.Adapter
   device : @wgpu.Device

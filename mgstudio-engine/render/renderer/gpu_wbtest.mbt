@@ -1564,7 +1564,6 @@ test "renderer: mesh3d light scalar helpers align with Bevy-style scalar contrac
 ///|
 test "renderer: mesh3d normal map fallback texture is flat normal blue" {
   let backend = GpuBackend::new()
-  let previous_backend = render_context_backend_for_test()
   render_context_set_backend_for_test(Some(backend))
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
   debug_inspect(
@@ -1584,7 +1583,7 @@ test "renderer: mesh3d normal map fallback texture is flat normal blue" {
     }),
     content="Some([128, 128, 255, 255])",
   )
-  render_context_set_backend_for_test(previous_backend)
+  render_context_set_backend_for_test(None)
 }
 
 ///|
@@ -1800,6 +1799,58 @@ test "renderer: replacing scattering medium keeps native handles bounded" {
     after.hub_samplers_num_kept_from_user() == kept_samplers
   after.release()
   debug_inspect(bounded, content="true")
+}
+
+///|
+test "renderer: backend shutdown is idempotent" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  backend.shutdown()
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = backend.shutdown_complete &&
+    after.hub_devices_num_kept_from_user() == 0UL &&
+    after.hub_queues_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
+test "renderer: replacing global backend shuts down previous owner" {
+  render_context_set_backend_for_test(None)
+  let first = GpuBackend::new()
+  let second = GpuBackend::new()
+  render_context_set_backend_for_test(Some(first))
+  render_context_set_backend_for_test(Some(second))
+  let first_released = first.shutdown_complete
+  render_context_set_backend_for_test(None)
+  debug_inspect(first_released && second.shutdown_complete, content="true")
+}
+
+///|
+test "renderer: backend initialization rolls back acquired native handles" {
+  let mut rolled_back = true
+  for fail_stage in 1..<=3 {
+    let instance = @wgpu.Instance::create()
+    let observer = instance.add_ref()
+    let failed = try {
+      ignore(gpu_backend_new_from_instance(instance, "", fail_stage~))
+      false
+    } catch {
+      _ => true
+    }
+    observer.process_events()
+    let after = observer.generate_report()
+    rolled_back = rolled_back &&
+      failed &&
+      after.hub_devices_num_kept_from_user() == 0UL &&
+      after.hub_queues_num_kept_from_user() == 0UL
+    after.release()
+    observer.release()
+  }
+  debug_inspect(rolled_back, content="true")
 }
 
 ///|
@@ -3126,7 +3177,6 @@ test "renderer: screenshot capture swizzles bgra8 into rgba8" {
 ///|
 test "renderer: screenshot capture reads rgba8 texture bytes" {
   let backend = GpuBackend::new()
-  let previous_backend = render_context_backend_for_test()
   render_context_set_backend_for_test(Some(backend))
   let texture_id = backend.create_texture_rgba8(
     1,
@@ -3154,7 +3204,7 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
     }),
     content="Some([9, 8, 7, 255])",
   )
-  render_context_set_backend_for_test(previous_backend)
+  render_context_set_backend_for_test(None)
 }
 
 ///|

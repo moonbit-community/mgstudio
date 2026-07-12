@@ -19,9 +19,25 @@ pub fn GpuBackend::new(
   let instance = @wgpu.Instance::create() catch {
     err => fatal("wgpu: Instance::create failed: \{err.message()}")
   }
+  gpu_backend_new_from_instance(instance, assets_base, fail_stage=0)
+}
+
+///|
+fn gpu_backend_new_from_instance(
+  instance : @wgpu.Instance,
+  assets_base : String,
+  fail_stage~ : Int,
+) -> GpuBackend raise GpuBackendError {
+  let instance_owned = @ref.new(true)
+  defer (if instance_owned.val { instance.release() })
   let adapter = instance.request_adapter_sync() catch {
     err =>
       fatal("wgpu: Instance::request_adapter_sync failed: \{err.message()}")
+  }
+  let adapter_owned = @ref.new(true)
+  defer (if adapter_owned.val { adapter.release() })
+  if fail_stage == 1 {
+    fatal("wgpu: forced backend initialization failure after adapter")
   }
   let required_features : Array[UInt] = []
   if adapter.supported_features_contains_u32(
@@ -118,12 +134,23 @@ pub fn GpuBackend::new(
   ) catch {
     err => fatal("wgpu: Adapter::request_device_sync failed: \{err.message()}")
   }
+  let device_owned = @ref.new(true)
+  defer (if device_owned.val { device.release() })
+  if fail_stage == 2 {
+    fatal("wgpu: forced backend initialization failure after device")
+  }
   if @sys.get_env_var("MGSTUDIO_WGPU_UNCAPTURED_ERROR_STDERR") is Some(flag) &&
     flag == "1" {
     @wgpu.set_uncaptured_error_stderr_enabled(true)
   }
   let queue = device.queue()
-  GpuBackend::{
+  let queue_owned = @ref.new(true)
+  defer (if queue_owned.val { queue.release() })
+  if fail_stage == 3 {
+    fatal("wgpu: forced backend initialization failure after queue")
+  }
+  let backend = GpuBackend::{
+    shutdown_complete: false,
     instance,
     adapter,
     device,
@@ -646,4 +673,9 @@ pub fn GpuBackend::new(
     mesh_allocator: @render_mesh.MeshAllocator::new(),
     mesh_allocator_buffers: [],
   }
+  queue_owned.val = false
+  device_owned.val = false
+  adapter_owned.val = false
+  instance_owned.val = false
+  backend
 }
