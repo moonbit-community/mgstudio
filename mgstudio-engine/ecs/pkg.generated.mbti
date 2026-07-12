@@ -845,6 +845,7 @@ pub fn World::increment_change_tick(Self) -> Int64
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn World::insert_component_writers(Self, @core.Entity, Array[ComponentWriter], caller? : String?) -> Unit raise EcsError
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
+pub fn World::is_active(Self) -> Bool
 pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn[T] World::is_changed_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool

@@ -37,9 +37,20 @@ fn WorldLifecycle::is_closed(self : WorldLifecycle) -> Bool {
 }
 
 ///|
-fn WorldLifecycle::close(self : WorldLifecycle) -> Unit {
-  guard self.status is Active else { return }
+fn WorldLifecycle::is_active(self : WorldLifecycle) -> Bool {
+  self.status is Active
+}
+
+///|
+fn WorldLifecycle::begin_close(self : WorldLifecycle) -> Bool {
+  guard self.status is Active else { return false }
   self.status = Closing
+  true
+}
+
+///|
+fn WorldLifecycle::finish_close(self : WorldLifecycle) -> Unit {
+  guard self.status is Closing else { return }
   self.epoch = self.epoch + 1
   self.status = Closed
 }

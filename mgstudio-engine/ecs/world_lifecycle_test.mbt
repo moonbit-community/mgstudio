@@ -26,3 +26,26 @@ test "ecs: closing a World is idempotent" {
   debug_inspect(world.is_closed(), content="true")
   debug_inspect(world.lifecycle_epoch(), content="1")
 }
+
+///|
+test "ecs: World close rejects reentry while finalizers run" {
+  let world_ref : Ref[World?] = Ref(None)
+  let finalizer_count : Ref[Int] = Ref(0)
+  let key = register_resource(debug_name="tests.ecs.close_reentry", finalizer=fn(
+    _value : Unit,
+  ) {
+    finalizer_count.val = finalizer_count.val + 1
+    match world_ref.val {
+      Some(world) => world.close()
+      None => ()
+    }
+  })
+  let world = World::new()
+  world_ref.val = Some(world)
+  world.insert_resource(key, ())
+
+  world.close()
+  debug_inspect(finalizer_count.val, content="1")
+  debug_inspect(world.is_closed(), content="true")
+  debug_inspect(world.lifecycle_epoch(), content="1")
+}

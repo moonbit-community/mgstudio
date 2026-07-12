@@ -38,7 +38,7 @@ pub fn WorldLease::is_active(self : WorldLease) -> Bool {
 ///|
 pub fn WorldLease::world(self : WorldLease) -> World? {
   guard self.active && self.world is Some(world) else { return None }
-  guard !world.is_closed() &&
+  guard world.is_active() &&
     world.world_id() == self.world_id &&
     world.lifecycle_epoch() == self.epoch else {
     return None

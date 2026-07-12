@@ -347,8 +347,13 @@ pub fn World::is_closed(self : World) -> Bool {
 }
 
 ///|
+pub fn World::is_active(self : World) -> Bool {
+  self.lifecycle.is_active()
+}
+
+///|
 pub fn World::close(self : World) -> Unit {
-  guard !self.lifecycle.is_closed() else { return }
+  guard self.lifecycle.begin_close() else { return }
   self.allocator_connection.close()
   let mut resource_index = self.resource_finalizer_order.length() - 1
   while resource_index >= 0 {
@@ -362,7 +367,7 @@ pub fn World::close(self : World) -> Unit {
   self.resource_finalizers.clear()
   self.resource_finalizer_order.clear()
   finalize_world_components(self)
-  self.lifecycle.close()
+  self.lifecycle.finish_close()
 }
 
 ///|
