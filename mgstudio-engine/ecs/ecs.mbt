@@ -339,7 +339,7 @@ pub fn World::is_alive(self : World, entity : @core.Entity) -> Bool {
 
 ///|
 pub fn World::entity_count(self : World) -> Int {
-  self.entities.len()
+  self.entities.count_spawned()
 }
 
 ///|

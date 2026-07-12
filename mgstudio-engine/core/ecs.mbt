@@ -81,7 +81,13 @@ pub fn Entities::len(self : Entities) -> Int {
 
 ///|
 pub fn Entities::count_spawned(self : Entities) -> Int {
-  self.len()
+  let mut count = 0
+  for is_alive in self.alive {
+    if is_alive {
+      count = count + 1
+    }
+  }
+  count
 }
 
 ///|
