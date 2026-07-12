@@ -793,6 +793,7 @@ pub fn[T] World::changed_components(Self, ComponentKey[T], @core.SystemTicks) ->
 pub fn World::check_change_ticks(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
+pub fn World::close(Self) -> Unit
 pub fn[T] World::component_column(Self, ComponentKey[T]) -> ComponentColumn[T]?
 pub fn[T] World::component_count(Self, ComponentKey[T]) -> Int
 pub fn[T : Component] World::component_id(Self, key? : ComponentKey[T]) -> Int?
@@ -831,9 +832,11 @@ pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::is_added_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn[T] World::is_changed_by_key(Self, @core.Entity, ComponentKey[T], @core.SystemTicks) -> Bool
+pub fn World::is_closed(Self) -> Bool
 pub fn[T] World::is_resource_added(Self, ResourceKey[T], @core.SystemTicks) -> Bool
 pub fn[T] World::is_resource_changed(Self, ResourceKey[T], @core.SystemTicks) -> Bool
 pub fn World::last_change_tick(Self) -> Int64
+pub fn World::lifecycle_epoch(Self) -> Int
 pub fn[T] World::mark_resource_added(Self, ResourceKey[T], caller? : String?) -> Unit
 pub fn[T] World::mark_resource_changed(Self, ResourceKey[T], caller? : String?) -> Unit
 pub fn[T] World::message_mutator(Self, MessageKey[T], cursor? : MessageCursor[T]) -> MessageMutator[T]

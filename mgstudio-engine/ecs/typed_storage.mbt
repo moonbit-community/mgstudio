@@ -136,11 +136,11 @@ fn[T] TypedComponentStorage::swap_remove_table_row(
 fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
   let stores_by_world : Map[Int, TypedComponentStorage[T]] = Map([])
   let get_store = fn(world : World) -> TypedComponentStorage[T] {
-    match stores_by_world.get(world.world_id) {
+    match stores_by_world.get(world.world_id()) {
       Some(store) => store
       None => {
         let store : TypedComponentStorage[T] = typed_component_storage_new()
-        stores_by_world.set(world.world_id, store)
+        stores_by_world.set(world.world_id(), store)
         store
       }
     }
@@ -360,18 +360,18 @@ fn[T] ComponentKey::component_swap_remove_table_row(
 fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
   let slots_by_world : Map[Int, TypedResourceSlot[T]] = Map([])
   {
-    contains: fn(world) { slots_by_world.contains(world.world_id) },
+    contains: fn(world) { slots_by_world.contains(world.world_id()) },
     get: fn(world) {
-      match slots_by_world.get(world.world_id) {
+      match slots_by_world.get(world.world_id()) {
         Some(slot) => Some(slot.value)
         None => None
       }
     },
     set: fn(world, value) {
-      match slots_by_world.get(world.world_id) {
+      match slots_by_world.get(world.world_id()) {
         Some(slot) => slot.value = value
         None =>
-          slots_by_world.set(world.world_id, {
+          slots_by_world.set(world.world_id(), {
             value,
             added_tick: None,
             changed_tick: None,
@@ -380,17 +380,17 @@ fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
       }
     },
     remove: fn(world) {
-      match slots_by_world.get(world.world_id) {
+      match slots_by_world.get(world.world_id()) {
         Some(slot) => {
           let value = slot.value
-          slots_by_world.remove(world.world_id)
+          slots_by_world.remove(world.world_id())
           Some(value)
         }
         None => None
       }
     },
     record_added: fn(world, tick, caller) {
-      guard slots_by_world.get(world.world_id) is Some(slot) else { return }
+      guard slots_by_world.get(world.world_id()) is Some(slot) else { return }
       slot.added_tick = Some(tick)
       if slot.changed_tick is None {
         slot.changed_tick = Some(tick)
@@ -398,30 +398,30 @@ fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
       slot.changed_caller = caller
     },
     record_changed: fn(world, tick, caller) {
-      guard slots_by_world.get(world.world_id) is Some(slot) else { return }
+      guard slots_by_world.get(world.world_id()) is Some(slot) else { return }
       slot.changed_tick = Some(tick)
       slot.changed_caller = caller
     },
     added_tick: fn(world) {
-      match slots_by_world.get(world.world_id) {
+      match slots_by_world.get(world.world_id()) {
         Some(slot) => slot.added_tick
         None => None
       }
     },
     changed_tick: fn(world) {
-      match slots_by_world.get(world.world_id) {
+      match slots_by_world.get(world.world_id()) {
         Some(slot) => slot.changed_tick
         None => None
       }
     },
     changed_caller: fn(world) {
-      match slots_by_world.get(world.world_id) {
+      match slots_by_world.get(world.world_id()) {
         Some(slot) => slot.changed_caller
         None => None
       }
     },
     check_change_ticks: fn(world, present_tick) {
-      guard slots_by_world.get(world.world_id) is Some(slot) else { return }
+      guard slots_by_world.get(world.world_id()) is Some(slot) else { return }
       slot.added_tick = match slot.added_tick {
         Some(tick) => Some(@core.tick_check(tick, present_tick))
         None => None

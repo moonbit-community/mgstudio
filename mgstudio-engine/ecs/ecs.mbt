@@ -178,7 +178,7 @@ priv struct ArchetypeSignatureIndex {
 
 ///|
 pub struct World {
-  priv world_id : Int
+  priv lifecycle : WorldLifecycle
   priv mut structural_generation : Int
   priv mut entity_lifecycle_generation : Int
   priv mut component_registration_generation : Int
@@ -247,7 +247,7 @@ pub fn World::new() -> World {
   let world_id = ecs_id_allocator_state.next_world_id
   ecs_id_allocator_state.next_world_id = world_id + 1
   let world = World::{
-    world_id,
+    lifecycle: WorldLifecycle::new(world_id),
     structural_generation: 0,
     entity_lifecycle_generation: 0,
     component_registration_generation: 0,
@@ -316,7 +316,22 @@ pub fn World::new() -> World {
 
 ///|
 pub fn World::world_id(self : World) -> Int {
-  self.world_id
+  self.lifecycle.world_id
+}
+
+///|
+pub fn World::lifecycle_epoch(self : World) -> Int {
+  self.lifecycle.epoch
+}
+
+///|
+pub fn World::is_closed(self : World) -> Bool {
+  self.lifecycle.is_closed()
+}
+
+///|
+pub fn World::close(self : World) -> Unit {
+  self.lifecycle.close()
 }
 
 ///|

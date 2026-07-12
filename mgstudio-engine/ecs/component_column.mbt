@@ -774,7 +774,7 @@ pub fn[T, U] ComponentColumn::for_each_without(
   other : ComponentColumn[U],
   visit : (@core.Entity, T) -> Unit,
 ) -> Unit {
-  if self.world.world_id != other.world.world_id {
+  if self.world.world_id() != other.world.world_id() {
     self.for_each(fn(entity, value) {
       if !other.contains(entity) {
         visit(entity, value)
@@ -835,7 +835,7 @@ pub fn[T, U] ComponentColumn::for_each_with(
   other : ComponentColumn[U],
   visit : (@core.Entity, T, U) -> Unit,
 ) -> Unit {
-  if self.world.world_id != other.world.world_id {
+  if self.world.world_id() != other.world.world_id() {
     self.for_each(fn(entity, value) {
       guard other.get(entity) is Some(other_value) else { return }
       visit(entity, value, other_value)
@@ -902,7 +902,7 @@ pub fn[T, U] ComponentColumn::for_each_without_fast(
   other : ComponentColumn[U],
   visit : (@core.Entity, T) -> Unit,
 ) -> Unit {
-  if self.world.world_id != other.world.world_id {
+  if self.world.world_id() != other.world.world_id() {
     self.for_each_without(other, visit)
     return
   }
@@ -965,7 +965,7 @@ pub fn[T, U] ComponentColumn::for_each_with_fast_table_row(
   other : ComponentColumn[U],
   visit : (@core.Entity, Int, Int, T, U) -> Unit,
 ) -> Unit {
-  if self.world.world_id != other.world.world_id {
+  if self.world.world_id() != other.world.world_id() {
     self.for_each_with(other, fn(entity, left, right) {
       visit(entity, -1, -1, left, right)
     })
@@ -1019,8 +1019,8 @@ pub fn[T, U, V] ComponentColumn::for_each3_fast_table_row(
   third : ComponentColumn[V],
   visit : (@core.Entity, Int, Int, T, U, V) -> Unit,
 ) -> Unit {
-  if self.world.world_id != second.world.world_id ||
-    self.world.world_id != third.world.world_id {
+  if self.world.world_id() != second.world.world_id() ||
+    self.world.world_id() != third.world.world_id() {
     self.for_each(fn(entity, first_value) {
       guard second.get(entity) is Some(second_value) else { return }
       guard third.get(entity) is Some(third_value) else { return }
@@ -1090,8 +1090,8 @@ pub fn[T, U, V] ComponentColumn::for_each3_fast_table_row_mark_third_changed(
   tick : @core.Tick,
   visit : (@core.Entity, Int, Int, T, U, V) -> Bool,
 ) -> Unit {
-  if self.world.world_id != second.world.world_id ||
-    self.world.world_id != third.world.world_id {
+  if self.world.world_id() != second.world.world_id() ||
+    self.world.world_id() != third.world.world_id() {
     self.for_each(fn(entity, first_value) {
       guard second.get(entity) is Some(second_value) else { return }
       guard third.get(entity) is Some(third_value) else { return }
@@ -1165,9 +1165,9 @@ pub fn[T, U, M, N] ComponentColumn::for_each2_with2_markers_fast_table_row(
   marker_b : ComponentColumn[N],
   visit : (@core.Entity, Int, Int, T, U) -> Unit,
 ) -> Unit {
-  if self.world.world_id != other.world.world_id ||
-    self.world.world_id != marker_a.world.world_id ||
-    self.world.world_id != marker_b.world.world_id {
+  if self.world.world_id() != other.world.world_id() ||
+    self.world.world_id() != marker_a.world.world_id() ||
+    self.world.world_id() != marker_b.world.world_id() {
     self.for_each(fn(entity, first_value) {
       guard other.get(entity) is Some(second_value) else { return }
       guard marker_a.contains(entity) && marker_b.contains(entity) else {
@@ -1237,9 +1237,9 @@ pub fn[T, U, V, W] ComponentColumn::for_each4_fast_table_row(
   fourth : ComponentColumn[W],
   visit : (@core.Entity, Int, Int, T, U, V, W) -> Unit,
 ) -> Unit {
-  if self.world.world_id != second.world.world_id ||
-    self.world.world_id != third.world.world_id ||
-    self.world.world_id != fourth.world.world_id {
+  if self.world.world_id() != second.world.world_id() ||
+    self.world.world_id() != third.world.world_id() ||
+    self.world.world_id() != fourth.world.world_id() {
     self.for_each(fn(entity, first_value) {
       guard second.get(entity) is Some(second_value) else { return }
       guard third.get(entity) is Some(third_value) else { return }
@@ -1328,10 +1328,10 @@ pub fn[T, U, V, W, X] ComponentColumn::for_each5_fast_table_row(
   fifth : ComponentColumn[X],
   visit : (@core.Entity, Int, Int, T, U, V, W, X) -> Unit,
 ) -> Unit {
-  if self.world.world_id != second.world.world_id ||
-    self.world.world_id != third.world.world_id ||
-    self.world.world_id != fourth.world.world_id ||
-    self.world.world_id != fifth.world.world_id {
+  if self.world.world_id() != second.world.world_id() ||
+    self.world.world_id() != third.world.world_id() ||
+    self.world.world_id() != fourth.world.world_id() ||
+    self.world.world_id() != fifth.world.world_id() {
     self.for_each(fn(entity, first_value) {
       guard second.get(entity) is Some(second_value) else { return }
       guard third.get(entity) is Some(third_value) else { return }
