@@ -195,8 +195,13 @@ fn[D, F : FromWorld] query_param_query_from_state(
   state : QueryParamState,
 ) -> @ecs.Query[D, F] {
   let world = system_param_abort_missing_world()
+  let scope = current_system_param_scope_or_abort()
   let filter = F::from_world(world)
-  @ecs.query_filtered_with_cache(world, filter, state.cache)
+  @ecs.query_filtered_with_cache_and_lease(
+    scope.world_lease(),
+    filter,
+    state.cache,
+  )
 }
 
 ///|

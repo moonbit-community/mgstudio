@@ -21,14 +21,10 @@ test "app: escaped Commands retains only the World allocator connection" {
     escaped.val = Some(commands)
   })
   app = app.run_once()
-  app.world().close()
 
   guard escaped.val is Some(commands) else {
     abort("expected Commands to escape the system invocation")
   }
-  let closed_error : Ref[@ecs.EcsError?] = Ref(None)
-  ignore(commands.allocator.reserve_entity()) catch {
-    error => closed_error.val = Some(error)
-  }
-  debug_inspect(closed_error.val is Some(@ecs.WorldClosed(_)), content="true")
+  debug_inspect(commands.scope.is_active(), content="false")
+  debug_inspect(app.world().is_closed(), content="false")
 }

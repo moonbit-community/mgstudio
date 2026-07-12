@@ -52,7 +52,7 @@ fn run_registered_observer_system(
   app_execution_context_state.current_world = Some(world)
   app_execution_context_state.current_system_ticks = Some(sys_ticks)
   reset_system_execution_outcome()
-  observer_system(world)
+  with_system_param_scope(world, fn() { observer_system(world) })
   let outcome = current_system_execution_outcome()
   system_execution_runtime_state.outcome = previous_outcome
   app_execution_context_state.current_system_ticks = previous_tick

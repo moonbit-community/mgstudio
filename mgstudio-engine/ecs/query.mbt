@@ -216,7 +216,7 @@ fn QueryCache::snapshot(self : QueryCache) -> QueryCacheSnapshot {
 
 ///|
 pub struct Query[_, F] {
-  priv world : World
+  priv lease : WorldLease
   priv filter : F
   priv mut cache : QueryCache?
 }
@@ -342,7 +342,7 @@ pub fn[F] World::query_entities_filtered(
   self : World,
   filter : F,
 ) -> Query[@core.Entity, F] {
-  Query::{ world: self, filter, cache: None }
+  Query::{ lease: WorldLease::new(self), filter, cache: None }
 }
 
 ///|
@@ -396,12 +396,12 @@ pub fn QueryCache::new() -> QueryCache {
 
 ///|
 pub fn[D] query(world : World) -> Query[D, All] {
-  Query::{ world, filter: All::new(), cache: None }
+  Query::{ lease: WorldLease::new(world), filter: All::new(), cache: None }
 }
 
 ///|
 pub fn[D, F] query_filtered(world : World, filter : F) -> Query[D, F] {
-  Query::{ world, filter, cache: None }
+  Query::{ lease: WorldLease::new(world), filter, cache: None }
 }
 
 ///|
@@ -410,7 +410,26 @@ pub fn[D, F] query_filtered_with_cache(
   filter : F,
   cache : QueryCache,
 ) -> Query[D, F] {
-  Query::{ world, filter, cache: Some(cache) }
+  Query::{ lease: WorldLease::new(world), filter, cache: Some(cache) }
+}
+
+///|
+pub fn[D, F] query_filtered_with_cache_and_lease(
+  lease : WorldLease,
+  filter : F,
+  cache : QueryCache,
+) -> Query[D, F] {
+  Query::{ lease, filter, cache: Some(cache) }
+}
+
+///|
+fn[D, F] Query::world_or_abort(self : Query[D, F]) -> World {
+  self.lease.world_or_abort()
+}
+
+///|
+pub fn[D, F] Query::is_active(self : Query[D, F]) -> Bool {
+  self.lease.is_active()
 }
 
 ///|
@@ -545,7 +564,7 @@ fn[D, F] query_many_from_plan(
     sparse_anchor_entities: match plan.sparse_anchor_info {
       Some(anchor_info) =>
         query_sparse_anchor_entities(
-          query.world,
+          query.world_or_abort(),
           anchor_info,
           plan.sparse_anchor_archetype_bits,
         )
@@ -565,7 +584,7 @@ fn[D : QueryData, F : QueryFilter] Query::iteration_plan(
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = query_filter_requires_entity_check(
     self.filter,
-    self.world,
+    self.world_or_abort(),
   )
   let access_valid = query_access_valid(self.filter, D::collect_access)
   let archetype_driven = access_valid &&
@@ -579,7 +598,7 @@ fn[D : QueryData, F : QueryFilter] Query::iteration_plan(
   let entities = if archetype_driven { [] } else { self.matching_entities() }
   let dense_driven = archetype_driven &&
     query_is_dense_mode(
-      self.world,
+      self.world_or_abort(),
       self.filter,
       default_filter_component_ids,
       D::is_dense,
@@ -587,13 +606,13 @@ fn[D : QueryData, F : QueryFilter] Query::iteration_plan(
     )
   let table_row_filter_required = query_filter_requires_table_row_check(
     self.filter,
-    self.world,
+    self.world_or_abort(),
   )
   let sparse_anchor_info = if archetype_driven &&
     !dense_driven &&
     !table_row_filter_required {
     query_sparse_anchor_info(
-      self.world,
+      self.world_or_abort(),
       D::iteration_anchor_components(),
       QueryFilter::iteration_anchor_components(self.filter),
     )
@@ -601,7 +620,7 @@ fn[D : QueryData, F : QueryFilter] Query::iteration_plan(
     None
   }
   {
-    data_fetch_plan: D::prepare_fetch_plan(self.world),
+    data_fetch_plan: D::prepare_fetch_plan(self.world_or_abort()),
     default_filter_component_ids,
     entities_pre_matched: true,
     archetype_driven,
@@ -940,17 +959,19 @@ fn[D : QueryData, F : QueryFilter] query_get_with_default_filter_component_ids(
   entity : @core.Entity,
   default_filter_component_ids : Array[Int],
 ) -> D? raise EcsError {
-  guard query.world.is_alive(entity) else { raise EntityNotAlive(entity) }
+  guard query.world_or_abort().is_alive(entity) else {
+    raise EntityNotAlive(entity)
+  }
   guard query_matches_with_default_filter_component_ids(
-    query.world,
+    query.world_or_abort(),
     entity,
     query.filter,
     default_filter_component_ids,
   ) else {
     return None
   }
-  guard D::matches(query.world, entity) else { return None }
-  Some(query_fetch_entity_table_row(query.world, entity))
+  guard D::matches(query.world_or_abort(), entity) else { return None }
+  Some(query_fetch_entity_table_row(query.world_or_abort(), entity))
 }
 
 ///|
@@ -958,16 +979,16 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
   self : Query[D, F],
   f : (@core.Entity, D) -> Unit,
 ) -> Unit raise EcsError {
-  self.world.begin_query_iteration()
+  self.world_or_abort().begin_query_iteration()
   try {
     let iter = self.iter()
     while iter.fetch_next() is Some((entity, item)) {
       f(entity, item)
     }
-    self.world.end_query_iteration()
+    self.world_or_abort().end_query_iteration()
   } catch {
     err => {
-      self.world.end_query_iteration()
+      self.world_or_abort().end_query_iteration()
       raise err
     }
   }
@@ -1000,11 +1021,11 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = query_filter_requires_entity_check(
     self.filter,
-    self.world,
+    self.world_or_abort(),
   )
   let table_row_filter_required = query_filter_requires_table_row_check(
     self.filter,
-    self.world,
+    self.world_or_abort(),
   )
   let access_valid = query_access_valid(self.filter, D::collect_access)
   if access_valid &&
@@ -1013,7 +1034,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
     let dense_tables = self.matching_dense_tables()
     if dense_tables.length() > 0 {
       return query_dense_tables_count(
-        self.world,
+        self.world_or_abort(),
         dense_tables,
         self.filter,
         table_row_filter_required,
@@ -1023,14 +1044,14 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
     let cache = self.ensure_cache()
     match
       query_sparse_anchor_info(
-        self.world,
+        self.world_or_abort(),
         data_anchor_component_ids,
         filter_anchor_component_ids,
       ) {
       Some(anchor_info) if !cache.cached_is_dense =>
         if !table_row_filter_required {
           return query_sparse_anchor_count_matching(
-            self.world,
+            self.world_or_abort(),
             anchor_info,
             cache.cached_matching_archetype_bits,
           )
@@ -1040,11 +1061,11 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
     let mut count = 0
     for archetype_id in matched_archetypes {
       if table_row_filter_required {
-        match self.world.archetype_entities_view(archetype_id) {
+        match self.world_or_abort().archetype_entities_view(archetype_id) {
           Some(entities) =>
             for entity in entities {
               if query_filter_matches_entity_table_row(
-                  self.world,
+                  self.world_or_abort(),
                   self.filter,
                   entity,
                 ) {
@@ -1054,7 +1075,8 @@ pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
           None => ()
         }
       } else {
-        count = count + self.world.archetype_entity_count(archetype_id)
+        count = count +
+          self.world_or_abort().archetype_entity_count(archetype_id)
       }
     }
     return count
@@ -1073,13 +1095,13 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
   let data_requires_entity_check = D::requires_entity_check()
   let filter_requires_entity_check = query_filter_requires_entity_check(
     self.filter,
-    self.world,
+    self.world_or_abort(),
   )
   let table_row_filter_required = query_filter_requires_table_row_check(
     self.filter,
-    self.world,
+    self.world_or_abort(),
   )
-  let data_fetch_plan = D::prepare_fetch_plan(self.world)
+  let data_fetch_plan = D::prepare_fetch_plan(self.world_or_abort())
   let access_valid = query_access_valid(self.filter, D::collect_access)
   if access_valid &&
     !data_requires_entity_check &&
@@ -1087,7 +1109,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
     let dense_tables = self.matching_dense_tables()
     if dense_tables.length() > 0 {
       query_dense_tables_single(
-        self.world,
+        self.world_or_abort(),
         dense_tables,
         self.filter,
         table_row_filter_required,
@@ -1098,14 +1120,14 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
       let cache = self.ensure_cache()
       match
         query_sparse_anchor_info(
-          self.world,
+          self.world_or_abort(),
           data_anchor_component_ids,
           filter_anchor_component_ids,
         ) {
         Some(anchor_info) if !cache.cached_is_dense =>
           if !table_row_filter_required {
             return query_sparse_anchor_single_matching(
-              self.world,
+              self.world_or_abort(),
               anchor_info,
               cache.cached_matching_archetype_bits,
             )
@@ -1114,12 +1136,12 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
       }
       let mut found : @core.Entity? = None
       for archetype_id in matched_archetypes {
-        match self.world.archetype_entities_view(archetype_id) {
+        match self.world_or_abort().archetype_entities_view(archetype_id) {
           Some(entities) =>
             for entity in entities {
               guard !table_row_filter_required ||
                 query_filter_matches_entity_table_row(
-                  self.world,
+                  self.world_or_abort(),
                   self.filter,
                   entity,
                 ) else {
@@ -1137,7 +1159,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
         Some(entity) =>
           Some(
             query_fetch_entity_table_row_with_plan(
-              self.world,
+              self.world_or_abort(),
               entity,
               data_fetch_plan,
             ),
@@ -1152,7 +1174,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::single(
     }
     Some(
       query_fetch_entity_table_row_with_plan(
-        self.world,
+        self.world_or_abort(),
         entities[0],
         data_fetch_plan,
       ),
@@ -1177,7 +1199,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
 ) -> QueryMany[D, F] {
   {
     query: self,
-    data_fetch_plan: D::prepare_fetch_plan(self.world),
+    data_fetch_plan: D::prepare_fetch_plan(self.world_or_abort()),
     default_filter_component_ids: self.default_filter_component_ids(),
     entities_pre_matched: false,
     archetype_driven: false,
@@ -1241,11 +1263,13 @@ pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(
   guard D::iteration_anchor_component() is Some(anchor_component_id) else {
     return None
   }
-  guard self.world.local_component_id(anchor_component_id)
+  guard self.world_or_abort().local_component_id(anchor_component_id)
     is Some(anchor_local_component_id) else {
     return None
   }
-  guard self.world.local_component_storage_type(anchor_local_component_id)
+  guard self
+    .world_or_abort()
+    .local_component_storage_type(anchor_local_component_id)
     is Some(anchor_storage_type) else {
     return None
   }
@@ -1289,7 +1313,7 @@ fn[D : QueryData, F : QueryFilter] Query::default_filter_component_ids(
   let cache = self.ensure_cache()
   ignore(
     cache.refresh_default_filter_component_ids(
-      self.world,
+      self.world_or_abort(),
       self.filter,
       D::mentions_component,
     ),
@@ -1307,7 +1331,7 @@ fn[D : QueryData, F : QueryFilter] Query::matching_entities(
     self.filter,
   )
   cache.query_matching_entities(
-    self.world,
+    self.world_or_abort(),
     self.filter,
     data_anchor_component_ids,
     filter_anchor_component_ids,
@@ -1330,7 +1354,7 @@ fn[D : QueryData, F : QueryFilter] Query::matching_archetypes(
     self.filter,
   )
   cache.query_matching_archetypes(
-    self.world,
+    self.world_or_abort(),
     self.filter,
     data_anchor_component_ids,
     filter_anchor_component_ids,
@@ -1352,7 +1376,7 @@ fn[D : QueryData, F : QueryFilter] Query::matching_dense_tables(
   )
   ignore(
     cache.query_matching_archetypes(
-      self.world,
+      self.world_or_abort(),
       self.filter,
       data_anchor_component_ids,
       filter_anchor_component_ids,
@@ -2560,7 +2584,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
           self.dense_table_row_index = self.dense_table_row_index + 1
           let entity = self.dense_table_entities[row_index]
           if query_filter_matches_table_row_if_needed(
-              self.query.world,
+              self.query.world_or_abort(),
               self.query.filter,
               self.table_row_filter_required,
               entity,
@@ -2572,7 +2596,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
                 entity,
                 D::fetch_table_row_with_plan_offset(
                   query_data_table_row_fetch(
-                    self.query.world,
+                    self.query.world_or_abort(),
                     entity,
                     self.current_table_id,
                     row_index,
@@ -2589,7 +2613,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       self.current_table_id = self.dense_tables[self.dense_table_index]
       self.dense_table_index = self.dense_table_index + 1
       self.dense_table_entities = match
-        self.query.world.table_entities_view(self.current_table_id) {
+        self.query.world_or_abort().table_entities_view(self.current_table_id) {
         Some(entities) => entities
         None => []
       }
@@ -2603,17 +2627,16 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
         let index = self.sparse_anchor_index
         self.sparse_anchor_index = self.sparse_anchor_index + 1
         let entity = self.sparse_anchor_entities[index]
-        guard self.query.world.component_present_by_local_id(
-          entity,
-          anchor_info.local_component_id,
-        ) else {
+        guard self.query
+          .world_or_abort()
+          .component_present_by_local_id(entity, anchor_info.local_component_id) else {
           continue
         }
         return Some(
           (
             entity,
             query_fetch_with_sparse_anchor(
-              self.query.world,
+              self.query.world_or_abort(),
               entity,
               anchor_info,
               self.data_fetch_plan,
@@ -2632,7 +2655,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
         self.archetype_entity_index = self.archetype_entity_index + 1
         guard !self.table_row_filter_required ||
           query_filter_matches_entity_table_row(
-            self.query.world,
+            self.query.world_or_abort(),
             self.query.filter,
             entity,
           ) else {
@@ -2642,7 +2665,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
           (
             entity,
             query_fetch_known_table_row_with_plan(
-              self.query.world,
+              self.query.world_or_abort(),
               entity,
               self.current_table_id,
               self.data_fetch_plan,
@@ -2656,12 +2679,12 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       let archetype_id = self.archetypes[self.archetype_index]
       self.archetype_index = self.archetype_index + 1
       self.current_table_id = match
-        self.query.world.archetype_table_id(archetype_id) {
+        self.query.world_or_abort().archetype_table_id(archetype_id) {
         Some(table_id) => table_id
         None => -1
       }
       self.archetype_entities = match
-        self.query.world.archetype_entities_view(archetype_id) {
+        self.query.world_or_abort().archetype_entities_view(archetype_id) {
         Some(entities) => entities
         None => []
       }
@@ -2676,7 +2699,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
         (
           entity,
           query_fetch_entity_table_row_with_plan(
-            self.query.world,
+            self.query.world_or_abort(),
             entity,
             self.data_fetch_plan,
           ),
@@ -2711,8 +2734,11 @@ pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(
     if self.entities_pre_matched {
       return Some(
         (
-          query_fetch_entity_table_row(self.query.world, left_entity),
-          query_fetch_entity_table_row(self.query.world, right_entity),
+          query_fetch_entity_table_row(self.query.world_or_abort(), left_entity),
+          query_fetch_entity_table_row(
+            self.query.world_or_abort(),
+            right_entity,
+          ),
         ),
       )
     }
@@ -2745,7 +2771,9 @@ pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(
     let entity = self.entities[self.index]
     self.index = self.index + 1
     if self.entities_pre_matched {
-      return Some(query_fetch_entity_table_row(self.query.world, entity))
+      return Some(
+        query_fetch_entity_table_row(self.query.world_or_abort(), entity),
+      )
     }
     if query_get_with_default_filter_component_ids(
         self.query,

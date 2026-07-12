@@ -755,7 +755,7 @@ pub(open) trait Resource {
 ///|
 pub struct Res[T] {
   value : T
-  world : @ecs.World?
+  scope : SystemParamScope?
   key_id : Int?
 }
 
@@ -766,8 +766,8 @@ pub fn[T] Res::get(self : Res[T]) -> T {
 
 ///|
 fn[T] res_world_or_abort(item : Res[T]) -> @ecs.World {
-  match item.world {
-    Some(world) => world
+  match item.scope {
+    Some(scope) => scope.world_or_abort()
     None => abort("Res expected a fetched system parameter")
   }
 }
@@ -823,8 +823,16 @@ pub fn[T : Resource] Res::changed_by(self : Res[T]) -> String? {
 
 ///|
 pub struct ResMut[T] {
-  world : @ecs.World?
-  inner : @ecs.ResourceMut[T]?
+  scope : SystemParamScope?
+  key : @ecs.ResourceKey[T]?
+}
+
+///|
+pub fn[T] ResMut::is_active(self : ResMut[T]) -> Bool {
+  match self.scope {
+    Some(scope) => scope.is_active()
+    None => false
+  }
 }
 
 ///|
@@ -835,16 +843,21 @@ pub fn[T] ResMut::get(self : ResMut[T], loc~ : SourceLoc) -> T {
 
 ///|
 fn[T] res_mut_world_or_abort(item : ResMut[T]) -> @ecs.World {
-  match item.world {
-    Some(world) => world
+  match item.scope {
+    Some(scope) => scope.world_or_abort()
     None => abort("ResMut expected a fetched system parameter")
   }
 }
 
 ///|
 fn[T] res_mut_inner_or_abort(item : ResMut[T]) -> @ecs.ResourceMut[T] {
-  match item.inner {
-    Some(inner) => inner
+  let world = res_mut_world_or_abort(item)
+  match item.key {
+    Some(key) =>
+      match world.get_resource_mut(key) {
+        Some(inner) => inner
+        None => abort("ResMut expected a fetched resource")
+      }
     None => abort("ResMut expected a fetched system parameter")
   }
 }
@@ -2518,6 +2531,7 @@ priv struct AppExecutionContextState {
   mut current_system_ticks : @core.SystemTicks?
   mut current_schedule_stage : ScheduleStage?
   mut current_world : @ecs.World?
+  mut current_system_param_scope : SystemParamScope?
   mut current_app_schedule : ScheduleRegistry[@ecs.World]?
   mut current_allowed_ambiguous_components : @utils.IntBitSet?
   mut current_allowed_ambiguous_resources : @utils.IntBitSet?
@@ -2528,6 +2542,7 @@ let app_execution_context_state : AppExecutionContextState = {
   current_system_ticks: None,
   current_schedule_stage: None,
   current_world: None,
+  current_system_param_scope: None,
   current_app_schedule: None,
   current_allowed_ambiguous_components: None,
   current_allowed_ambiguous_resources: None,
@@ -2640,7 +2655,7 @@ pub impl[T : Resource] SystemParam for Res[T] with fn get(_state) {
   let world = system_param_abort_missing_world()
   Res::{
     value: world_resource_value_or_raise(world),
-    world: Some(world),
+    scope: Some(current_system_param_scope_or_abort()),
     key_id: Some(T::resource().id()),
   }
 }
@@ -2666,7 +2681,10 @@ pub impl[T : Resource] SystemParam for ResMut[T] with fn init_state(world) {
 pub impl[T : Resource] SystemParam for ResMut[T] with fn get(_state) {
   let world = system_param_abort_missing_world()
   let _resource : T = world_resource_value_or_raise(world)
-  ResMut::{ world: Some(world), inner: world.get_resource_mut(T::resource()) }
+  ResMut::{
+    scope: Some(current_system_param_scope_or_abort()),
+    key: Some(T::resource()),
+  }
 }
 
 ///|

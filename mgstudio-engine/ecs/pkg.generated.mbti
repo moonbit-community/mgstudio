@@ -49,6 +49,8 @@ pub fn[D, F] query_filtered(World, F) -> Query[D, F]
 
 pub fn[D, F] query_filtered_with_cache(World, F, QueryCache) -> Query[D, F]
 
+pub fn[D, F] query_filtered_with_cache_and_lease(WorldLease, F, QueryCache) -> Query[D, F]
+
 pub fn query_validate_data_data_compatibility(QueryDataAccess, QueryFilterAccess, QueryDataAccess, QueryFilterAccess) -> Bool
 
 pub fn query_validate_data_filter_access(QueryDataAccess, QueryFilterAccess) -> SystemParamValidationError?
@@ -558,6 +560,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> Que
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
+pub fn[D, F] Query::is_active(Self[D, F]) -> Bool
 pub fn[D : QueryData, F : QueryFilter] Query::iter(Self[D, F]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(Self[D, F]) -> QueryCombinations[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
@@ -927,6 +930,15 @@ pub(all) struct WorldComponents {
   mut storage_types_by_local_id_dense : Array[ComponentStorageType?]
   queued : WorldQueuedRegistrations
 }
+
+pub struct WorldLease {
+  // private fields
+}
+pub fn WorldLease::invalidate(Self) -> Unit
+pub fn WorldLease::is_active(Self) -> Bool
+pub fn WorldLease::new(World) -> Self
+pub fn WorldLease::world(Self) -> World?
+pub fn WorldLease::world_or_abort(Self) -> World
 
 type WorldObserverRegistry
 

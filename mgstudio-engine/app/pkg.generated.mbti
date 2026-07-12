@@ -657,6 +657,7 @@ pub fn[C] CheckParentHasComponent::new(@core.Entity, caller? : String?) -> Self[
 pub impl[C : ValidateParentHasComponentTarget] @ecs.Message for CheckParentHasComponent[C]
 
 pub struct Commands {
+  scope : SystemParamScope
   allocator : @ecs.AllocatorConnection
   tick : Int64
   queue : Array[DeferredCommandEntry]
@@ -664,6 +665,7 @@ pub struct Commands {
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : Resource] Commands::insert_resource(Self, T) -> Unit
 pub fn[T] Commands::insert_world_resource(Self, @ecs.ResourceKey[T], T) -> Unit
+pub fn Commands::is_active(Self) -> Bool
 pub fn Commands::queue(Self, (@ecs.World) -> Unit raise) -> Unit
 pub fn Commands::queue_handled(Self, (@ecs.World) -> Unit raise, (Error, ErrorContext) -> Unit) -> Unit
 pub fn Commands::register_system(Self, SystemConfig[@ecs.World]) -> SystemId
@@ -1053,7 +1055,7 @@ type QuerySystemAccess
 
 pub struct Res[T] {
   value : T
-  world : @ecs.World?
+  scope : SystemParamScope?
   key_id : Int?
 }
 pub fn[T : Resource] Res::added(Self[T]) -> Int64
@@ -1065,13 +1067,14 @@ pub fn[T : Resource] Res::last_changed(Self[T]) -> Int64
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
-  world : @ecs.World?
-  inner : @ecs.ResourceMut[T]?
+  scope : SystemParamScope?
+  key : @ecs.ResourceKey[T]?
 }
 pub fn[T] ResMut::added(Self[T]) -> Int64
 pub fn[T] ResMut::changed_by(Self[T]) -> String?
 #callsite(autofill(loc))
 pub fn[T] ResMut::get(Self[T], loc~ : SourceLoc) -> T
+pub fn[T] ResMut::is_active(Self[T]) -> Bool
 pub fn[T : Resource] ResMut::is_added(Self[T]) -> Bool
 pub fn[T : Resource] ResMut::is_changed(Self[T]) -> Bool
 pub fn[T] ResMut::last_changed(Self[T]) -> Int64
@@ -1402,6 +1405,13 @@ pub fn[W, S] SystemConfig::run_if_stateful(Self[W], S, (W, RunConditionState[S])
 pub struct SystemId {
   index : Int
 } derive(Eq, @debug.Debug)
+
+pub struct SystemParamScope {
+  // private fields
+}
+pub fn SystemParamScope::is_active(Self) -> Bool
+pub fn SystemParamScope::world_lease(Self) -> @ecs.WorldLease
+pub fn SystemParamScope::world_or_abort(Self) -> @ecs.World
 
 pub struct SystemParamState[P] {
   // private fields

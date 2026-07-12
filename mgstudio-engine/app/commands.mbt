@@ -30,6 +30,7 @@ pub struct DeferredCommandEntry {
 
 ///|
 pub struct Commands {
+  scope : SystemParamScope
   allocator : @ecs.AllocatorConnection
   tick : @core.Tick
   queue : Array[DeferredCommandEntry]
@@ -39,6 +40,17 @@ pub struct Commands {
 pub struct EntityCommands {
   commands : Commands
   entity : @core.Entity
+}
+
+///|
+pub fn Commands::is_active(self : Commands) -> Bool {
+  self.scope.is_active()
+}
+
+///|
+fn Commands::push(self : Commands, entry : DeferredCommandEntry) -> Unit {
+  ignore(self.scope.world_or_abort())
+  self.queue.push(entry)
 }
 
 ///|
@@ -189,9 +201,10 @@ fn end_deferred_command_batch(world : @ecs.World) -> Unit {
 
 ///|
 pub fn Commands::spawn_empty(self : Commands) -> @core.Entity {
+  ignore(self.scope.world_or_abort())
   let reservation = try! self.allocator.reserve_entity()
   let entity = reservation.entity()
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       ignore(world.spawn_reserved(reservation))
     },
@@ -211,10 +224,10 @@ pub fn Commands::entity(
 
 ///|
 pub fn Commands::register_system(
-  _self : Commands,
+  self : Commands,
   system : SystemConfig[@ecs.World],
 ) -> SystemId {
-  register_system(current_world_or_abort(), system)
+  register_system(self.scope.world_or_abort(), system)
 }
 
 ///|
@@ -313,7 +326,7 @@ pub fn[
 
 ///|
 pub fn Commands::run_system(self : Commands, system_id : SystemId) -> Unit {
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       run_system(world, system_id)
     },
@@ -329,9 +342,10 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
   component : T,
   loc~ : SourceLoc,
 ) -> @core.Entity {
+  ignore(self.scope.world_or_abort())
   let reservation = try! self.allocator.reserve_entity()
   let entity = reservation.entity()
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       ignore(world.spawn_reserved(reservation))
       insert_single_component(world, entity, component, loc~)
@@ -349,9 +363,10 @@ pub fn[B : @ecs.Bundle] Commands::spawn(
   bundle : B,
   loc~ : SourceLoc,
 ) -> @core.Entity {
+  ignore(self.scope.world_or_abort())
   let reservation = try! self.allocator.reserve_entity()
   let entity = reservation.entity()
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       ignore(world.spawn_reserved(reservation))
       B::insert_into(bundle, world, entity, loc~)
@@ -369,6 +384,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn_batch(
   bundles : Array[B],
   loc~ : SourceLoc,
 ) -> Array[@core.Entity] {
+  ignore(self.scope.world_or_abort())
   let entities : Array[@core.Entity] = []
   let reservations : Array[@ecs.EntityReservation] = []
   for _ in bundles {
@@ -379,7 +395,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn_batch(
   let queued_bundles = bundles
   let queued_entities = entities
   let queued_reservations = reservations
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       let count = queued_bundles.length()
       for i in 0..<count {
@@ -398,7 +414,7 @@ pub fn[T : Resource] Commands::insert_resource(
   self : Commands,
   resource : T,
 ) -> Unit {
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       world.insert_resource(T::resource(), resource)
     },
@@ -413,7 +429,7 @@ pub fn[T] Commands::insert_world_resource(
   key : @ecs.ResourceKey[T],
   resource : T,
 ) -> Unit {
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       world.insert_resource(key, resource)
     },
@@ -425,7 +441,7 @@ pub fn[T] Commands::insert_world_resource(
 ///|
 pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       ignore(world.remove_resource(key))
     },
@@ -439,7 +455,7 @@ pub fn[T] Commands::remove_world_resource(
   self : Commands,
   key : @ecs.ResourceKey[T],
 ) -> Unit {
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       ignore(world.remove_resource(key))
     },
@@ -453,7 +469,7 @@ pub fn Commands::queue(
   self : Commands,
   command : (@ecs.World) -> Unit raise,
 ) -> Unit {
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise { command(world) },
     error_handler: None,
     source: "Commands::queue",
@@ -466,7 +482,7 @@ pub fn Commands::queue_handled(
   command : (@ecs.World) -> Unit raise,
   handler : ErrorHandler,
 ) -> Unit {
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise { command(world) },
     error_handler: Some(handler),
     source: "Commands::queue_handled",
@@ -479,7 +495,7 @@ pub fn[E : @ecs.TriggerEvent] Commands::trigger(
   event : E,
 ) -> Unit {
   let source = "Commands::trigger(\{E::debug_name()})"
-  self.queue.push({
+  self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       world.trigger(event, caller=Some(source))
     },
@@ -496,7 +512,7 @@ pub fn[B : @ecs.Bundle] EntityCommands::insert(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       B::insert_into(bundle, world, entity, loc~)
     },
@@ -513,7 +529,7 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       insert_single_component(world, entity, component, loc~)
     },
@@ -526,7 +542,7 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
 #callsite(autofill(loc))
 pub fn EntityCommands::despawn(self : EntityCommands, loc~ : SourceLoc) -> Unit {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       if world.is_alive(entity) {
         world.despawn(entity, loc~)
@@ -545,7 +561,7 @@ pub fn[T] EntityCommands::remove_component(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       if world.is_alive(entity) {
         ignore(world.remove_by_key(entity, key, loc~))
@@ -572,7 +588,7 @@ pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
   observer : (OnPointer[K]) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
@@ -595,7 +611,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointe
   observer : (OnPointer[K], P2) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
@@ -618,7 +634,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityComman
   observer : (OnPointer[K], P2, P3) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
@@ -646,7 +662,7 @@ pub fn[
   observer : (OnPointer[K], P2, P3, P4) -> Unit,
 ) -> EntityCommands {
   let entity = self.entity
-  self.commands.queue.push({
+  self.commands.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
       guard world.is_alive(entity) else { return }
       register_pointer_observer_entry_in_world(
@@ -671,7 +687,9 @@ pub impl SystemParam for Commands with fn init_state(world) {
 ///|
 pub impl SystemParam for Commands with fn get(_state) {
   let world = system_param_abort_missing_world()
+  let scope = current_system_param_scope_or_abort()
   Commands::{
+    scope,
     allocator: world.allocator_connection(),
     tick: current_system_ticks().this_run,
     queue: [],
@@ -684,7 +702,7 @@ pub impl SystemParam for Commands with fn store(self, state) {
   for entry in self.queue {
     entries.push((self.tick, entry))
   }
-  append_deferred_command_entries(current_world_or_abort(), entries)
+  append_deferred_command_entries(self.scope.world_or_abort(), entries)
   self.queue.clear()
   system_param_store_no_state(self, state)
 }

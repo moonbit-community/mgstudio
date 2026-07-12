@@ -130,7 +130,7 @@ fn run_systems(
       let prev_world = app_execution_context_state.current_world
       app_execution_context_state.current_world = Some(world)
       app_execution_context_state.current_system_ticks = Some(cond_ticks)
-      let cond_result = cond.run(world)
+      let cond_result = with_system_param_scope(world, fn() { cond.run(world) })
       app_execution_context_state.current_system_ticks = None
       app_execution_context_state.current_world = prev_world
       run_conditions.run_if_last_run_ticks[cond_i] = cond_this_run
@@ -186,7 +186,9 @@ fn run_systems(
             let prev_world = app_execution_context_state.current_world
             app_execution_context_state.current_world = Some(world)
             app_execution_context_state.current_system_ticks = Some(cond_ticks)
-            let should_run = cond.run(world)
+            let should_run = with_system_param_scope(world, fn() {
+              cond.run(world)
+            })
             app_execution_context_state.current_system_ticks = None
             app_execution_context_state.current_world = prev_world
             conditions.run_if_last_run_ticks[cond_i] = cond_this_run
@@ -241,7 +243,7 @@ fn run_systems(
         app_execution_context_state.current_system_ticks = Some(sys_ticks)
         let prev_outcome = current_system_execution_outcome()
         reset_system_execution_outcome()
-        (cfg.system)(world)
+        with_system_param_scope(world, fn() { (cfg.system)(world) })
         let outcome = current_system_execution_outcome()
         system_execution_runtime_state.outcome = prev_outcome
         app_execution_context_state.current_system_ticks = prev_ticks
