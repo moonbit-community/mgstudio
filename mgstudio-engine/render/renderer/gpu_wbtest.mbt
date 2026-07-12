@@ -1625,6 +1625,27 @@ test "renderer: replacing a cube texture keeps native handle counts bounded" {
 }
 
 ///|
+test "renderer: replacing SSAO resources keeps native handle counts bounded" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let depth_format = tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT)
+  backend.replace_mesh3d_ssao_resources(8, 8, depth_format, 0.25F)
+  let before = backend.instance.generate_report()
+  let kept_buffers = before.hub_buffers_num_kept_from_user()
+  let kept_textures = before.hub_textures_num_kept_from_user()
+  let kept_views = before.hub_texture_views_num_kept_from_user()
+  before.release()
+  backend.replace_mesh3d_ssao_resources(16, 16, depth_format, 0.5F)
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let bounded = after.hub_buffers_num_kept_from_user() == kept_buffers &&
+    after.hub_textures_num_kept_from_user() == kept_textures &&
+    after.hub_texture_views_num_kept_from_user() == kept_views
+  after.release()
+  debug_inspect(bounded, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)

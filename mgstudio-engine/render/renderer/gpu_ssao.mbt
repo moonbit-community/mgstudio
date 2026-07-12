@@ -36,6 +36,22 @@ fn ssao_resource_shape_matches(
 }
 
 ///|
+fn GpuSsaoResources::release(self : GpuSsaoResources) -> Unit {
+  self.thickness_buffer.release()
+  for view in self.preprocessed_depth_mip_views {
+    view.release()
+  }
+  self.depth_differences_view.release()
+  self.screen_space_ambient_occlusion_view.release()
+  self.ssao_noisy_view.release()
+  self.preprocessed_depth_view.release()
+  self.depth_differences_texture.release()
+  self.screen_space_ambient_occlusion_texture.release()
+  self.ssao_noisy_texture.release()
+  self.preprocessed_depth_texture.release()
+}
+
+///|
 fn ssao_create_texture_2d(
   backend : GpuBackend,
   width : Int,
@@ -185,16 +201,19 @@ fn ssao_create_hilbert_index_lut(
     0U,
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(tex_info)
   let layout = @wgpu_c.texel_copy_buffer_layout_new(
     0UL,
     (SSAO_HILBERT_WIDTH * 2).reinterpret_as_uint(),
     SSAO_HILBERT_WIDTH.reinterpret_as_uint(),
   )
+  defer @wgpu_c.texel_copy_buffer_layout_free(layout)
   let extent = @wgpu_c.extent3d_new(
     SSAO_HILBERT_WIDTH.reinterpret_as_uint(),
     SSAO_HILBERT_WIDTH.reinterpret_as_uint(),
     1U,
   )
+  defer @wgpu_c.extent3d_free(extent)
   backend.queue.write_texture_ptr(
     tex_info,
     upload,
@@ -202,9 +221,6 @@ fn ssao_create_hilbert_index_lut(
     extent,
     data_size=(SSAO_HILBERT_WIDTH * SSAO_HILBERT_WIDTH * 2).to_uint64(),
   )
-  @wgpu_c.extent3d_free(extent)
-  @wgpu_c.texel_copy_buffer_layout_free(layout)
-  @wgpu_c.texel_copy_texture_info_free(tex_info)
   let view = texture.create_view_u32(
     tf(@wgpu.TEXTURE_FORMAT_R16_UINT),
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
@@ -802,6 +818,19 @@ pub fn GpuBackend::prepare_mesh3d_ssao_resources(
 ) -> Unit raise GpuBackendError {
   let depth_format = tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT)
   ensure_mesh3d_ssao_pipelines(self, depth_format)
+  self.replace_mesh3d_ssao_resources(
+    width, height, depth_format, constant_object_thickness,
+  )
+}
+
+///|
+fn GpuBackend::replace_mesh3d_ssao_resources(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  depth_format : @wgpu.TextureFormat,
+  constant_object_thickness : Float,
+) -> Unit {
   if self.mesh3d_ssao_resources is Some(resources) &&
     ssao_resource_shape_matches(
       resources, width, height, depth_format, constant_object_thickness,
@@ -835,7 +864,7 @@ pub fn GpuBackend::prepare_mesh3d_ssao_resources(
   let thickness_buffer = ssao_create_thickness_buffer(
     self, constant_object_thickness,
   )
-  self.mesh3d_ssao_resources = Some(GpuSsaoResources::{
+  let replacement = GpuSsaoResources::{
     width,
     height,
     depth_format,
@@ -851,8 +880,13 @@ pub fn GpuBackend::prepare_mesh3d_ssao_resources(
     thickness_buffer,
     constant_object_thickness,
     revision: next_revision,
-  })
+  }
+  let previous = self.mesh3d_ssao_resources
+  self.mesh3d_ssao_resources = Some(replacement)
   self.mesh3d_ssao_resource_revision = next_revision
+  if previous is Some(resources) {
+    resources.release()
+  }
   mesh3d_material_cache_clear(self)
 }
 
