@@ -113,12 +113,15 @@ fn scattering_medium_write_rgba32f_texture(
     0U,
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(tex_info)
   let layout = @wgpu_c.texel_copy_buffer_layout_new(
     0UL,
     upload_bytes_per_row.reinterpret_as_uint(),
     safe_height,
   )
+  defer @wgpu_c.texel_copy_buffer_layout_free(layout)
   let extent = @wgpu_c.extent3d_new(safe_width, safe_height, 1U)
+  defer @wgpu_c.extent3d_free(extent)
   backend.queue.write_texture_ptr(
     tex_info,
     upload,
@@ -126,9 +129,6 @@ fn scattering_medium_write_rgba32f_texture(
     extent,
     data_size=upload_size.to_uint64(),
   )
-  @wgpu_c.extent3d_free(extent)
-  @wgpu_c.texel_copy_buffer_layout_free(layout)
-  @wgpu_c.texel_copy_texture_info_free(tex_info)
 }
 
 ///|
@@ -143,6 +143,17 @@ fn scattering_medium_resource_shape_matches(
   resources.density_height == density_height &&
   resources.scattering_width == scattering_width &&
   resources.scattering_height == scattering_height
+}
+
+///|
+fn GpuScatteringMediumResources::release(
+  self : GpuScatteringMediumResources,
+) -> Unit {
+  self.sampler.release()
+  self.scattering_view.release()
+  self.density_view.release()
+  self.scattering_texture.release()
+  self.density_texture.release()
 }
 
 ///|
@@ -238,8 +249,8 @@ fn GpuBackend::mesh3d_prepare_scattering_medium_resources(
   )
   let sampler = self.device.create_sampler_linear_clamp()
   sampler.set_label("mgstudio_scattering_medium_sampler")
-  self.mesh3d_scattering_medium_resource_revision += 1
-  self.mesh3d_scattering_medium_resources = Some(GpuScatteringMediumResources::{
+  let next_revision = self.mesh3d_scattering_medium_resource_revision + 1
+  let replacement = GpuScatteringMediumResources::{
     density_texture,
     density_view,
     scattering_texture,
@@ -251,8 +262,14 @@ fn GpuBackend::mesh3d_prepare_scattering_medium_resources(
     density_height: safe_density_height,
     scattering_width: safe_scattering_width,
     scattering_height: safe_scattering_height,
-    revision: self.mesh3d_scattering_medium_resource_revision,
-  })
+    revision: next_revision,
+  }
+  let previous = self.mesh3d_scattering_medium_resources
+  self.mesh3d_scattering_medium_resources = Some(replacement)
+  self.mesh3d_scattering_medium_resource_revision = next_revision
+  if previous is Some(resources) {
+    resources.release()
+  }
 }
 
 ///|

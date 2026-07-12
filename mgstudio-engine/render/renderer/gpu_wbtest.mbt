@@ -1769,6 +1769,40 @@ test "renderer: releasing atmosphere resources returns native handles" {
 }
 
 ///|
+test "renderer: replacing scattering medium keeps native handles bounded" {
+  let backend = GpuBackend::new()
+  backend.mesh3d_prepare_scattering_medium_resources(
+    density_width=1,
+    density_height=1,
+    density_bytes=Bytes::make(16, (0).to_byte()),
+    scattering_width=1,
+    scattering_height=1,
+    scattering_bytes=Bytes::make(16, (0).to_byte()),
+  )
+  let before = backend.instance.generate_report()
+  let kept_textures = before.hub_textures_num_kept_from_user()
+  let kept_views = before.hub_texture_views_num_kept_from_user()
+  let kept_samplers = before.hub_samplers_num_kept_from_user()
+  before.release()
+  backend.mesh3d_prepare_scattering_medium_resources(
+    density_width=2,
+    density_height=1,
+    density_bytes=Bytes::make(32, (0).to_byte()),
+    scattering_width=2,
+    scattering_height=1,
+    scattering_bytes=Bytes::make(32, (0).to_byte()),
+  )
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let bounded = after.hub_textures_num_kept_from_user() == kept_textures &&
+    after.hub_texture_views_num_kept_from_user() == kept_views &&
+    after.hub_samplers_num_kept_from_user() == kept_samplers
+  after.release()
+  debug_inspect(bounded, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
