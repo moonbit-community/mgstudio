@@ -24,6 +24,9 @@ pub fn[T] World::insert_resource(
 ) -> Unit {
   let existed = key.resource_contains(self)
   key.resource_set(self, value)
+  self.resource_finalizers.set(key.id(), fn(world) {
+    key.resource_finalize_world(world)
+  })
   self.resource_tick_registry.track(key.id(), fn(present_tick) {
     key.resource_check_change_ticks(self, present_tick)
   })
@@ -48,6 +51,7 @@ pub fn[T] World::get_resource(self : World, key : ResourceKey[T]) -> T? {
 pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
   guard key.resource_remove(self) is Some(value) else { return None }
   self.resource_tick_registry.untrack(key.id())
+  self.resource_finalizers.remove(key.id())
   Some(value)
 }
 

@@ -115,11 +115,18 @@ let ecs_id_allocator_state : EcsIdAllocatorState = {
 }
 
 ///|
-pub fn[T] register_component(debug_name? : String = "") -> ComponentKey[T] {
+pub fn[T] register_component(
+  debug_name? : String = "",
+  finalizer? : (T) -> Unit = fn(_value : T) { () },
+) -> ComponentKey[T] {
   let id = ecs_id_allocator_state.next_component_id
   ecs_id_allocator_state.next_component_id = id + 1
   ignore(component_metadata_ensure(id, debug_name~))
-  let key = ComponentKey::{ id, debug_name, access: component_access_new(id) }
+  let key = ComponentKey::{
+    id,
+    debug_name,
+    access: component_access_new(id, finalizer~),
+  }
   key
 }
 
@@ -132,9 +139,12 @@ fn allocate_resource_id(debug_name? : String = "") -> Int {
 }
 
 ///|
-pub fn[T] register_resource(debug_name? : String = "") -> ResourceKey[T] {
+pub fn[T] register_resource(
+  debug_name? : String = "",
+  finalizer? : (T) -> Unit = fn(_value : T) { () },
+) -> ResourceKey[T] {
   let id = allocate_resource_id(debug_name~)
-  ResourceKey::{ id, debug_name, access: resource_access_ops_new() }
+  ResourceKey::{ id, debug_name, access: resource_access_ops_new(finalizer~) }
 }
 
 ///|
@@ -241,6 +251,7 @@ pub struct World {
   priv removed_components : Map[Int, @core.Messages[@core.Entity]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resource_tick_registry : WorldResourceTickRegistry
+  priv resource_finalizers : Map[Int, (World) -> Unit]
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
 }
@@ -304,6 +315,7 @@ pub fn World::new() -> World {
     removed_components: Map([]),
     component_hooks_registry: Map([]),
     resource_tick_registry: world_resource_tick_registry_new(),
+    resource_finalizers: Map([]),
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
@@ -336,6 +348,11 @@ pub fn World::is_closed(self : World) -> Bool {
 pub fn World::close(self : World) -> Unit {
   guard !self.lifecycle.is_closed() else { return }
   self.allocator_connection.close()
+  for entry in self.resource_finalizers.iter() {
+    (entry.1)(self)
+  }
+  self.resource_finalizers.clear()
+  finalize_world_components(self)
   self.lifecycle.close()
 }
 

@@ -55,13 +55,13 @@ pub fn query_validate_data_data_compatibility(QueryDataAccess, QueryFilterAccess
 
 pub fn query_validate_data_filter_access(QueryDataAccess, QueryFilterAccess) -> SystemParamValidationError?
 
-pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
+pub fn[T] register_component(debug_name? : String, finalizer? : (T) -> Unit) -> ComponentKey[T]
 
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
 
 pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
 
-pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
+pub fn[T] register_resource(debug_name? : String, finalizer? : (T) -> Unit) -> ResourceKey[T]
 
 // Errors
 pub(all) suberror ComponentHooksError {

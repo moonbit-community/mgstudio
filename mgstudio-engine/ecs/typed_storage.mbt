@@ -24,6 +24,7 @@ struct ComponentAccess[T] {
   move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
+  finalize_world : (World) -> Unit
 }
 
 ///|
@@ -38,6 +39,7 @@ struct ResourceAccessOps[T] {
   changed_tick : (World) -> @core.Tick?
   changed_caller : (World) -> String?
   check_change_ticks : (World, @core.Tick) -> Unit
+  finalize_world : (World) -> Unit
 }
 
 ///|
@@ -133,7 +135,10 @@ fn[T] TypedComponentStorage::swap_remove_table_row(
 }
 
 ///|
-fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
+fn[T] component_access_new(
+  component_id : Int,
+  finalizer? : (T) -> Unit = fn(_value : T) { () },
+) -> ComponentAccess[T] {
   let stores_by_world : Map[Int, TypedComponentStorage[T]] = Map([])
   let get_store = fn(world : World) -> TypedComponentStorage[T] {
     match stores_by_world.get(world.world_id()) {
@@ -180,10 +185,23 @@ fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
       let store = get_store(world)
       match table_location(world, entity) {
         Some((table_id, row_index)) => {
-          ignore(store.staged_by_entity.remove(entity))
+          match store.staged_by_entity.remove(entity) {
+            Some(staged) => finalizer(staged)
+            None => ()
+          }
+          match store.get_table_row(table_id, row_index) {
+            Some(previous) => finalizer(previous)
+            None => ()
+          }
           store.set_table_row(table_id, row_index, value)
         }
-        None => store.staged_by_entity.upsert(entity, value)
+        None => {
+          match store.staged_by_entity.get(entity) {
+            Some(previous) => finalizer(previous)
+            None => ()
+          }
+          store.staged_by_entity.upsert(entity, value)
+        }
       }
     },
     remove: fn(world, entity) {
@@ -191,10 +209,26 @@ fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
       let staged = store.staged_by_entity.remove(entity)
       match table_location(world, entity) {
         Some((table_id, row_index)) => {
-          ignore(staged)
-          store.take_table_row(table_id, row_index)
+          match staged {
+            Some(value) => finalizer(value)
+            None => ()
+          }
+          match store.take_table_row(table_id, row_index) {
+            Some(value) => {
+              finalizer(value)
+              Some(value)
+            }
+            None => None
+          }
         }
-        None => staged
+        None =>
+          match staged {
+            Some(value) => {
+              finalizer(value)
+              Some(value)
+            }
+            None => None
+          }
       }
     },
     for_each: fn(world, visit) {
@@ -217,7 +251,12 @@ fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
       get_store(world).get_table_row(table_id, row_index)
     },
     set_table_row: fn(world, table_id, row_index, value) {
-      get_store(world).set_table_row(table_id, row_index, value)
+      let store = get_store(world)
+      match store.get_table_row(table_id, row_index) {
+        Some(previous) => finalizer(previous)
+        None => ()
+      }
+      store.set_table_row(table_id, row_index, value)
     },
     move_table_row: fn(
       world,
@@ -249,6 +288,19 @@ fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
     },
     swap_remove_table_row: fn(world, table_id, row_index) {
       get_store(world).swap_remove_table_row(table_id, row_index)
+    },
+    finalize_world: fn(world) {
+      guard stores_by_world.get(world.world_id()) is Some(store) else { return }
+      store.staged_by_entity.for_each(fn(_entity, value) { finalizer(value) })
+      for entry in store.table_rows_by_table.iter() {
+        for value in entry.1 {
+          match value {
+            Some(value) => finalizer(value)
+            None => ()
+          }
+        }
+      }
+      stores_by_world.remove(world.world_id())
     },
   }
 }
@@ -357,7 +409,17 @@ fn[T] ComponentKey::component_swap_remove_table_row(
 }
 
 ///|
-fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
+fn[T] ComponentKey::component_finalize_world(
+  self : ComponentKey[T],
+  world : World,
+) -> Unit {
+  (self.access.finalize_world)(world)
+}
+
+///|
+fn[T] resource_access_ops_new(
+  finalizer? : (T) -> Unit = fn(_value : T) { () },
+) -> ResourceAccessOps[T] {
   let slots_by_world : Map[Int, TypedResourceSlot[T]] = Map([])
   {
     contains: fn(world) { slots_by_world.contains(world.world_id()) },
@@ -369,7 +431,10 @@ fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
     },
     set: fn(world, value) {
       match slots_by_world.get(world.world_id()) {
-        Some(slot) => slot.value = value
+        Some(slot) => {
+          finalizer(slot.value)
+          slot.value = value
+        }
         None =>
           slots_by_world.set(world.world_id(), {
             value,
@@ -384,6 +449,7 @@ fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
         Some(slot) => {
           let value = slot.value
           slots_by_world.remove(world.world_id())
+          finalizer(value)
           Some(value)
         }
         None => None
@@ -430,6 +496,11 @@ fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
         Some(tick) => Some(@core.tick_check(tick, present_tick))
         None => None
       }
+    },
+    finalize_world: fn(world) {
+      guard slots_by_world.get(world.world_id()) is Some(slot) else { return }
+      slots_by_world.remove(world.world_id())
+      finalizer(slot.value)
     },
   }
 }
@@ -512,4 +583,12 @@ fn[T] ResourceKey::resource_check_change_ticks(
   present_tick : @core.Tick,
 ) -> Unit {
   (self.access.check_change_ticks)(world, present_tick)
+}
+
+///|
+fn[T] ResourceKey::resource_finalize_world(
+  self : ResourceKey[T],
+  world : World,
+) -> Unit {
+  (self.access.finalize_world)(world)
 }
