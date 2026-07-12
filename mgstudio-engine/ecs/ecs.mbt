@@ -252,6 +252,7 @@ pub struct World {
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resource_tick_registry : WorldResourceTickRegistry
   priv resource_finalizers : Map[Int, (World) -> Unit]
+  priv resource_finalizer_order : Array[Int]
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
 }
@@ -316,6 +317,7 @@ pub fn World::new() -> World {
     component_hooks_registry: Map([]),
     resource_tick_registry: world_resource_tick_registry_new(),
     resource_finalizers: Map([]),
+    resource_finalizer_order: [],
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
@@ -348,10 +350,17 @@ pub fn World::is_closed(self : World) -> Bool {
 pub fn World::close(self : World) -> Unit {
   guard !self.lifecycle.is_closed() else { return }
   self.allocator_connection.close()
-  for entry in self.resource_finalizers.iter() {
-    (entry.1)(self)
+  let mut resource_index = self.resource_finalizer_order.length() - 1
+  while resource_index >= 0 {
+    let resource_id = self.resource_finalizer_order[resource_index]
+    match self.resource_finalizers.get(resource_id) {
+      Some(finalize) => finalize(self)
+      None => ()
+    }
+    resource_index = resource_index - 1
   }
   self.resource_finalizers.clear()
+  self.resource_finalizer_order.clear()
   finalize_world_components(self)
   self.lifecycle.close()
 }

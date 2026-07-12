@@ -284,11 +284,28 @@ fn[T] AssetServer::reserve_unapproved_path_handle(
 ///|
 pub let asset_server_resource_key : @ecs.ResourceKey[AssetServer] = @ecs.register_resource(
   debug_name="mgstudio_asset::AssetServer",
+  finalizer=fn(server : AssetServer) { server.cancel_pending_loads() },
 )
 
 ///|
 pub impl @app.Resource for AssetServer with fn resource() {
   asset_server_resource_key
+}
+
+///|
+fn AssetServer::cancel_pending_loads(self : AssetServer) -> Unit {
+  for pending in self.pending_acquired_loads {
+    (pending.release)()
+  }
+  self.pending_acquired_loads.clear()
+  self.pending_reload_paths.clear()
+  self.pending_load_failures.clear()
+  self.pending_processed_asset_loads.clear()
+  self.pending_typed_asset_loads.clear()
+  self.pending_loaded_folder_loads.clear()
+  self.pending_image_loads.clear()
+  self.pending_image_assets.clear()
+  self.owner_world = None
 }
 
 ///|

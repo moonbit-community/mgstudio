@@ -114,6 +114,12 @@ fn render_plugin_install_with(
     next = next.insert_sub_app(@app.RenderApp, render_sub_app)
   }
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
+  ignore(
+    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+      init_renderer_shutdown_guard_resource(render_sub_app.world())
+      render_sub_app
+    }),
+  )
   @render_texture.register_asset_texture_backend()
   ignore(insert_future_render_resources(plugin.render_creation(), next.world()))
   let asset_server = next.world().get_resource(@asset.AssetServer::resource())

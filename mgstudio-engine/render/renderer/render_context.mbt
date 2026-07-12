@@ -41,6 +41,7 @@ pub(all) struct PendingMapReadEncoder {
 ///|
 pub(all) struct PendingMapReadFuture {
   future_id : UInt64
+  queue : @wgpu.Queue
   command_buffer : @wgpu.CommandBuffer
   buffer : @wgpu.Buffer
   on_complete : PendingMapReadCallback
@@ -215,6 +216,7 @@ pub fn PendingCommandBuffers::submit(
     } else {
       inner.map_read_futures.push({
         future_id,
+        queue: queue.wgpu_queue(),
         command_buffer,
         buffer: entry.buffer,
         on_complete: entry.on_complete,
@@ -245,6 +247,38 @@ pub fn PendingCommandBuffers::length(self : PendingCommandBuffers) -> Int {
 ///|
 pub fn PendingCommandBuffers::len(self : PendingCommandBuffers) -> Int {
   self.length()
+}
+
+///|
+pub fn PendingCommandBuffers::cancel(self : PendingCommandBuffers) -> Unit {
+  let inner = self.inner.get()
+  for buffer in inner.buffers {
+    buffer.release()
+  }
+  inner.buffers = []
+  for encoder in inner.encoders {
+    encoder.release()
+  }
+  inner.encoders = []
+  for pending in inner.map_read_encoders {
+    pending.encoder.release()
+    (pending.on_complete)(
+      @wgpu.MAP_ASYNC_STATUS_ERROR,
+      Bytes::makei(0, _ => 0),
+      pending.buffer,
+    )
+  }
+  inner.map_read_encoders = []
+  for pending in inner.map_read_futures {
+    pending.queue.map_read_async_clear(pending.future_id)
+    pending.command_buffer.release()
+    (pending.on_complete)(
+      @wgpu.MAP_ASYNC_STATUS_ERROR,
+      Bytes::makei(0, _ => 0),
+      pending.buffer,
+    )
+  }
+  inner.map_read_futures = []
 }
 
 ///|
@@ -439,6 +473,11 @@ pub fn render_context_set_backend_for_test(backend : GpuBackend?) -> Unit {
   if previous is Some(previous_backend) {
     previous_backend.shutdown()
   }
+}
+
+///|
+pub fn shutdown_render_context() -> Unit {
+  render_context_set_backend_for_test(None)
 }
 
 ///|

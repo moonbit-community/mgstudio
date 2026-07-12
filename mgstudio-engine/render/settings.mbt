@@ -297,7 +297,32 @@ pub let pipeline_cache_resource_key : @ecs.ResourceKey[
 ///|
 pub let pending_command_buffers_resource_key : @ecs.ResourceKey[
   @renderer.PendingCommandBuffers,
-] = @ecs.register_resource(debug_name="mgstudio_render::PendingCommandBuffers")
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::PendingCommandBuffers",
+  finalizer=fn(pending : @renderer.PendingCommandBuffers) { pending.cancel() },
+)
+
+///|
+priv struct RendererShutdownGuard {}
+
+///|
+let renderer_shutdown_guard_resource_key : @ecs.ResourceKey[
+  RendererShutdownGuard,
+] = @ecs.register_resource(
+  debug_name="mgstudio_render::RendererShutdownGuard",
+  finalizer=fn(_guard : RendererShutdownGuard) {
+    @renderer.shutdown_render_context()
+  },
+)
+
+///|
+fn init_renderer_shutdown_guard_resource(world : @ecs.World) -> Unit {
+  if world.get_resource(renderer_shutdown_guard_resource_key) is None {
+    world.insert_resource(renderer_shutdown_guard_resource_key, RendererShutdownGuard::{
+
+    })
+  }
+}
 
 ///|
 pub struct CurrentView {
@@ -352,7 +377,6 @@ pub fn flush_pending_command_buffers(world : @ecs.World) -> Unit {
   let render_instance = world.get_resource(render_instance_resource_key)
   pending.submit(queue, render_device~, render_instance~)
   @renderer.release_frame_retired_resources()
-  world.insert_resource(pending_command_buffers_resource_key, pending)
 }
 
 ///|
@@ -362,7 +386,6 @@ pub fn prepare_active_frame_submissions(world : @ecs.World) -> Unit {
     None => return
   }
   @renderer.prepare_active_frame_submissions(pending)
-  world.insert_resource(pending_command_buffers_resource_key, pending)
 }
 
 ///|
