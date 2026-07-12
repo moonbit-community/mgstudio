@@ -894,8 +894,61 @@ fn GpuBackend::release_temporal_exposure_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_advanced_pbr_feature_owners(_self : GpuBackend) -> Unit {
-
+fn GpuBackend::release_advanced_pbr_feature_owners(self : GpuBackend) -> Unit {
+  if self.mesh3d_ssao_resources is Some(resources) {
+    resources.release()
+  }
+  self.release_mesh3d_ssao_pipeline_cache()
+  if self.mesh3d_ssao_pipelines is Some(pipelines) {
+    pipelines.release()
+  }
+  if self.mesh3d_atmosphere_resources is Some(resources) {
+    resources.release()
+  }
+  if self.mesh3d_scattering_medium_resources is Some(resources) {
+    resources.release()
+  }
+  if self.light_probe_environment_generator is Some(generator) {
+    generator.release()
+  }
+  if self.light_probe_environment_intermediate is Some(texture) {
+    texture.release()
+  }
+  if self.mesh3d_deferred_lighting_id_depth_texture is Some(texture) {
+    texture.view.release()
+    texture.texture.release()
+  }
+  if self.mesh3d_copy_deferred_lighting_id_pipeline is Some(pipeline) {
+    pipeline.release()
+  }
+  if self.mesh3d_copy_deferred_lighting_id_pipeline_layout is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_copy_deferred_lighting_id_bind_group_layout is Some(layout) {
+    layout.release()
+  }
+  for entry in self.mesh3d_deferred_lighting_pipeline_cache {
+    entry.pipeline.release()
+    entry.pipeline_layout.release()
+    entry.depth_id_bind_group_layout.release()
+  }
+  for entry in self.mesh3d_ssr_pipeline_cache {
+    entry.pipeline.release()
+    entry.pipeline_layout.release()
+  }
+  let ssr_samplers = [
+    self.mesh3d_ssr_color_sampler,
+    self.mesh3d_ssr_depth_linear_sampler,
+    self.mesh3d_ssr_depth_nearest_sampler,
+  ]
+  for sampler in ssr_samplers {
+    if sampler is Some(value) {
+      value.release()
+    }
+  }
+  if self.mesh3d_ssr_bind_group_layout is Some(layout) {
+    layout.release()
+  }
 }
 
 ///|

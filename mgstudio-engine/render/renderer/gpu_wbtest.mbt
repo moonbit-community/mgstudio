@@ -1393,6 +1393,74 @@ test "renderer: backend shutdown releases temporal exposure owners" {
 }
 
 ///|
+test "renderer: backend shutdown releases advanced pbr feature owners" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  let bgl = backend.device.create_bind_group_layout_empty()
+  let layout = backend.device.create_pipeline_layout_1(bgl)
+  let shader_source =
+    #|@compute @workgroup_size(1) fn cs_main() {}
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  backend.mesh3d_ssao_pipeline_cache.push(GpuSsaoPipelineCacheEntry::{
+    quality_level: 0,
+    slice_count: 1,
+    samples_per_slice_side: 1,
+    temporal_jitter: false,
+    pipeline: backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "cs_main",
+    ),
+  })
+  backend.mesh3d_copy_deferred_lighting_id_pipeline = Some(
+    backend.device.create_render_pipeline_rgba8(shader),
+  )
+  shader.release()
+  backend.mesh3d_ssr_bind_group_layout = Some(bgl)
+  backend.mesh3d_copy_deferred_lighting_id_pipeline_layout = Some(layout)
+  backend.mesh3d_ssr_color_sampler = Some(
+    backend.device.create_sampler_linear_clamp(),
+  )
+  let intermediate_texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  backend.light_probe_environment_intermediate = Some(GpuLightProbeIntermediateTexture::{
+    source_texture_id: 1,
+    base_size: 1,
+    mip_count: 1,
+    texture: intermediate_texture,
+    view: intermediate_texture.create_view(),
+  })
+  let deferred_texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  backend.mesh3d_deferred_lighting_id_depth_texture = Some(GpuDeferredLightingIdDepthTexture::{
+    width: 1,
+    height: 1,
+    texture: deferred_texture,
+    view: deferred_texture.create_view(),
+  })
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_textures_num_kept_from_user() == 0UL &&
+    after.hub_texture_views_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_compute_pipelines_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,

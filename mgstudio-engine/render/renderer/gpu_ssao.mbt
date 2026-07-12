@@ -52,6 +52,32 @@ fn GpuSsaoResources::release(self : GpuSsaoResources) -> Unit {
 }
 
 ///|
+fn GpuSsaoPipelines::release(self : GpuSsaoPipelines) -> Unit {
+  self.spatial_denoise_pipeline.release()
+  self.preprocess_depth_pipeline.release()
+  self.spatial_denoise_pipeline_layout.release()
+  self.ssao_pipeline_layout.release()
+  self.preprocess_depth_pipeline_layout.release()
+  self.spatial_denoise_bind_group_layout.release()
+  self.ssao_bind_group_layout.release()
+  self.preprocess_depth_bind_group_layout.release()
+  self.common_bind_group_layout.release()
+  self.linear_clamp_sampler.release()
+  self.point_clamp_sampler.release()
+  self.hilbert_index_lut_view.release()
+  self.hilbert_index_lut_texture.release()
+}
+
+///|
+fn GpuBackend::release_mesh3d_ssao_pipeline_cache(self : GpuBackend) -> Unit {
+  for entry in self.mesh3d_ssao_pipeline_cache {
+    entry.pipeline.release()
+  }
+  self.mesh3d_ssao_pipeline_cache.clear()
+  self.mesh3d_ssao_pending_pipeline = None
+}
+
+///|
 fn ssao_create_texture_2d(
   backend : GpuBackend,
   width : Int,
@@ -439,27 +465,46 @@ fn ensure_mesh3d_ssao_pipelines(
     ssao_pipelines_keepalive(pipelines)
     return
   }
+  let pending_bgls : Array[@wgpu.BindGroupLayout] = []
+  defer (for layout in pending_bgls {
+    layout.release()
+  })
+  let pending_pipeline_layouts : Array[@wgpu.PipelineLayout] = []
+  defer (for layout in pending_pipeline_layouts {
+    layout.release()
+  })
+  let pending_pipelines : Array[@wgpu.ComputePipeline] = []
+  defer (for pipeline in pending_pipelines {
+    pipeline.release()
+  })
   let common_bgl = ssao_create_common_bind_group_layout(backend)
+  pending_bgls.push(common_bgl)
   let preprocess_depth_bgl = ssao_create_preprocess_depth_bind_group_layout(
     backend, depth_format,
   )
+  pending_bgls.push(preprocess_depth_bgl)
   let ssao_bgl = ssao_create_ssao_bind_group_layout(backend, depth_format)
+  pending_bgls.push(ssao_bgl)
   let spatial_denoise_bgl = ssao_create_spatial_denoise_bind_group_layout(
     backend, depth_format,
   )
+  pending_bgls.push(spatial_denoise_bgl)
   let preprocess_depth_layout = backend.device.create_pipeline_layout_2(
     preprocess_depth_bgl, common_bgl,
   )
+  pending_pipeline_layouts.push(preprocess_depth_layout)
   preprocess_depth_layout.set_label(
     "mgstudio_ssao_preprocess_depth_pipeline_layout",
   )
   let ssao_layout = backend.device.create_pipeline_layout_2(
     ssao_bgl, common_bgl,
   )
+  pending_pipeline_layouts.push(ssao_layout)
   ssao_layout.set_label("mgstudio_ssao_pipeline_layout")
   let spatial_denoise_layout = backend.device.create_pipeline_layout_2(
     spatial_denoise_bgl, common_bgl,
   )
+  pending_pipeline_layouts.push(spatial_denoise_layout)
   spatial_denoise_layout.set_label(
     "mgstudio_ssao_spatial_denoise_pipeline_layout",
   )
@@ -473,6 +518,7 @@ fn ensure_mesh3d_ssao_pipelines(
     ssao_bool_defines(use_r16float),
     default_wgsl_value_defines(),
   )
+  pending_pipelines.push(preprocess_pipeline)
   let spatial_denoise_pipeline = ssao_create_compute_pipeline(
     backend,
     spatial_denoise_layout,
@@ -482,8 +528,9 @@ fn ensure_mesh3d_ssao_pipelines(
     ssao_bool_defines(use_r16float),
     default_wgsl_value_defines(),
   )
+  pending_pipelines.push(spatial_denoise_pipeline)
   let (hilbert_texture, hilbert_view) = ssao_create_hilbert_index_lut(backend)
-  backend.mesh3d_ssao_pipelines = Some(GpuSsaoPipelines::{
+  let replacement = GpuSsaoPipelines::{
     common_bind_group_layout: common_bgl,
     preprocess_depth_bind_group_layout: preprocess_depth_bgl,
     ssao_bind_group_layout: ssao_bgl,
@@ -498,8 +545,16 @@ fn ensure_mesh3d_ssao_pipelines(
     point_clamp_sampler: backend.device.create_sampler_nearest_clamp(),
     linear_clamp_sampler: backend.device.create_sampler_linear_clamp(),
     depth_format,
-  })
-  backend.mesh3d_ssao_pipeline_cache.clear()
+  }
+  let previous = backend.mesh3d_ssao_pipelines
+  backend.release_mesh3d_ssao_pipeline_cache()
+  backend.mesh3d_ssao_pipelines = Some(replacement)
+  pending_pipelines.clear()
+  pending_pipeline_layouts.clear()
+  pending_bgls.clear()
+  if previous is Some(pipelines) {
+    pipelines.release()
+  }
 }
 
 ///|

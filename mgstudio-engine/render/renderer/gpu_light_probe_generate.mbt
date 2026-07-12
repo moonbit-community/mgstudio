@@ -46,6 +46,31 @@ struct GpuLightProbeIntermediateTexture {
 }
 
 ///|
+fn GpuLightProbeEnvironmentGenerator::release(
+  self : GpuLightProbeEnvironmentGenerator,
+) -> Unit {
+  self.copy_pipeline.release()
+  self.irradiance_pipeline.release()
+  self.radiance_pipeline.release()
+  self.downsampling_second_pipeline.release()
+  self.downsampling_first_pipeline.release()
+  self.copy_bgl.release()
+  self.irradiance_bgl.release()
+  self.radiance_bgl.release()
+  self.downsampling_second_bgl.release()
+  self.downsampling_first_bgl.release()
+  self.sampler.release()
+}
+
+///|
+fn GpuLightProbeIntermediateTexture::release(
+  self : GpuLightProbeIntermediateTexture,
+) -> Unit {
+  self.view.release()
+  self.texture.release()
+}
+
+///|
 fn light_probe_generate_div_ceil(value : Int, divisor : Int) -> UInt {
   if value <= 0 {
     1U
@@ -426,19 +451,32 @@ fn ensure_light_probe_environment_generator(
   match backend.light_probe_environment_generator {
     Some(generator) => generator
     None => {
+      let pending_bgls : Array[@wgpu.BindGroupLayout] = []
+      defer (for layout in pending_bgls {
+        layout.release()
+      })
+      let pending_pipelines : Array[@wgpu.ComputePipeline] = []
+      defer (for pipeline in pending_pipelines {
+        pipeline.release()
+      })
       let downsampling_first_bgl = light_probe_generate_create_bgl_downsampling_first(
         backend,
       )
+      pending_bgls.push(downsampling_first_bgl)
       let downsampling_second_bgl = light_probe_generate_create_bgl_downsampling_second(
         backend,
       )
+      pending_bgls.push(downsampling_second_bgl)
       let radiance_bgl = light_probe_generate_create_bgl_filtering(
         backend, "radiance",
       )
+      pending_bgls.push(radiance_bgl)
       let irradiance_bgl = light_probe_generate_create_bgl_filtering(
         backend, "irradiance",
       )
+      pending_bgls.push(irradiance_bgl)
       let copy_bgl = light_probe_generate_create_bgl_copy(backend)
+      pending_bgls.push(copy_bgl)
       let first_source = light_probe_generate_downsample_source("FIRST_PASS")
       let second_source = light_probe_generate_downsample_source("SECOND_PASS")
       let filter_source = light_probe_generate_filter_source(backend)
@@ -451,18 +489,23 @@ fn ensure_light_probe_environment_generator(
       let downsampling_first_pipeline = light_probe_generate_create_compute_pipeline(
         backend, downsampling_first_bgl, first_source, "downsample_first", "mgstudio_light_probe_downsampling_first_pipeline",
       )
+      pending_pipelines.push(downsampling_first_pipeline)
       let downsampling_second_pipeline = light_probe_generate_create_compute_pipeline(
         backend, downsampling_second_bgl, second_source, "downsample_second", "mgstudio_light_probe_downsampling_second_pipeline",
       )
+      pending_pipelines.push(downsampling_second_pipeline)
       let radiance_pipeline = light_probe_generate_create_compute_pipeline(
         backend, radiance_bgl, filter_source, "generate_radiance_map", "mgstudio_light_probe_radiance_pipeline",
       )
+      pending_pipelines.push(radiance_pipeline)
       let irradiance_pipeline = light_probe_generate_create_compute_pipeline(
         backend, irradiance_bgl, filter_source, "generate_irradiance_map", "mgstudio_light_probe_irradiance_pipeline",
       )
+      pending_pipelines.push(irradiance_pipeline)
       let copy_pipeline = light_probe_generate_create_compute_pipeline(
         backend, copy_bgl, copy_source, "copy", "mgstudio_light_probe_copy_pipeline",
       )
+      pending_pipelines.push(copy_pipeline)
       let sampler = light_probe_generate_create_linear_mipmap_sampler(backend)
       let generator = GpuLightProbeEnvironmentGenerator::{
         downsampling_first_bgl,
@@ -478,6 +521,8 @@ fn ensure_light_probe_environment_generator(
         sampler,
       }
       backend.light_probe_environment_generator = Some(generator)
+      pending_pipelines.clear()
+      pending_bgls.clear()
       generator
     }
   }
@@ -540,7 +585,11 @@ fn light_probe_generate_create_intermediate_texture(
     texture,
     view,
   }
+  let previous = backend.light_probe_environment_intermediate
   backend.light_probe_environment_intermediate = Some(intermediate)
+  if previous is Some(old) {
+    old.release()
+  }
   intermediate
 }
 
