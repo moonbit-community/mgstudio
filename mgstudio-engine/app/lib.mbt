@@ -3188,9 +3188,8 @@ pub fn[W] App::replace_sub_app(
   self : App[W],
   label : AppLabel,
   sub_app : SubApp[W],
-) -> App[W] {
-  ignore(self.sub_apps.replace(label, sub_app))
-  self
+) -> SubApp[W]? {
+  self.sub_apps.replace(label, sub_app)
 }
 
 ///|
@@ -4805,10 +4804,21 @@ pub fn App::run_once(self : App[@ecs.World]) -> App[@ecs.World] {
 }
 
 ///|
+pub fn App::shutdown(self : App[@ecs.World]) -> App[@ecs.World] {
+  let app = self.finalize_plugins()
+  app.sub_apps = app.sub_apps.shutdown()
+  app
+}
+
+///|
 pub fn App::run(self : App[@ecs.World]) -> Unit {
   if self.is_building_plugins() {
     abort("App::run() was called while a plugin was building.")
   }
+  let shutdown_worlds = self.sub_apps.shutdown_worlds()
+  defer (for world in shutdown_worlds {
+    world.close()
+  })
   if self.runner_builder is Some(builder) {
     let runner = builder(self)
     runner()

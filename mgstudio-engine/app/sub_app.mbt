@@ -121,6 +121,12 @@ pub fn SubApp::run_once(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
 }
 
 ///|
+pub fn SubApp::shutdown(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
+  self.world.close()
+  self
+}
+
+///|
 pub fn[T : @ecs.Component] SubApp::allow_ambiguous_component(
   self : SubApp[@ecs.World],
   key? : @ecs.ComponentKey[T] = T::component(),
@@ -159,6 +165,7 @@ pub struct SubApps[W] {
   mut main : SubApp[W]
   sub_apps : @hashmap.HashMap[String, SubApp[W]]
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
+  sub_app_order : Array[String]
 }
 
 ///|
@@ -167,6 +174,7 @@ pub fn[W] SubApps::new(main : SubApp[W]) -> SubApps[W] {
     main,
     sub_apps: @hashmap.HashMap([]),
     sub_app_labels: @hashmap.HashMap([]),
+    sub_app_order: [],
   }
 }
 
@@ -177,6 +185,9 @@ pub fn[W] SubApps::insert(
   sub_app : SubApp[W],
 ) -> SubApps[W] {
   let key = app_label_storage_key(label)
+  if !self.sub_apps.contains(key) {
+    self.sub_app_order.push(key)
+  }
   self.sub_apps.set(key, sub_app)
   self.sub_app_labels.set(key, label)
   self
@@ -188,6 +199,12 @@ pub fn[W] SubApps::remove(self : SubApps[W], label : AppLabel) -> SubApp[W]? {
   let removed = self.sub_apps.get(key)
   self.sub_apps.remove(key)
   self.sub_app_labels.remove(key)
+  for index in 0..<self.sub_app_order.length() {
+    if self.sub_app_order[index] == key {
+      ignore(self.sub_app_order.remove(index))
+      break
+    }
+  }
   removed
 }
 
@@ -202,12 +219,12 @@ pub fn[W] SubApps::replace(
   self : SubApps[W],
   label : AppLabel,
   sub_app : SubApp[W],
-) -> Bool {
+) -> SubApp[W]? {
   let key = app_label_storage_key(label)
-  guard self.sub_apps.contains(key) else { return false }
+  guard self.sub_apps.get(key) is Some(previous) else { return None }
   self.sub_apps.set(key, sub_app)
   self.sub_app_labels.set(key, label)
-  true
+  Some(previous)
 }
 
 ///|
@@ -217,7 +234,7 @@ pub fn[W] SubApps::modify(
   update : (SubApp[W]) -> SubApp[W],
 ) -> Bool {
   match self.get(label) {
-    Some(sub_app) => self.replace(label, update(sub_app))
+    Some(sub_app) => self.replace(label, update(sub_app)) is Some(_)
     None => false
   }
 }
@@ -298,6 +315,30 @@ pub fn SubApps::update_sub_app_by_label(
       next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
     }
     self.sub_apps.set(key, next_sub_app.update())
+  }
+  self
+}
+
+///|
+fn SubApps::shutdown_worlds(self : SubApps[@ecs.World]) -> Array[@ecs.World] {
+  let worlds : Array[@ecs.World] = []
+  let mut index = self.sub_app_order.length() - 1
+  while index >= 0 {
+    let key = self.sub_app_order[index]
+    match self.sub_apps.get(key) {
+      Some(sub_app) => worlds.push(sub_app.world())
+      None => ()
+    }
+    index = index - 1
+  }
+  worlds.push(self.main.world())
+  worlds
+}
+
+///|
+fn SubApps::shutdown(self : SubApps[@ecs.World]) -> SubApps[@ecs.World] {
+  for world in self.shutdown_worlds() {
+    world.close()
   }
   self
 }
