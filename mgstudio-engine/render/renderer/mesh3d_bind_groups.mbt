@@ -67,6 +67,30 @@ fn mesh3d_material_cache_clear(backend : GpuBackend) -> Unit {
 }
 
 ///|
+fn mesh3d_pass_uniform_states_clear(backend : GpuBackend) -> Unit {
+  for state in backend.mesh3d_pass_uniform_states {
+    if state.shadow_view_bind_group is Some(bind_group) {
+      mesh3d_retire_or_release_bind_group(backend, bind_group)
+    }
+    mesh3d_retire_or_release_buffer(backend, state.lights_buffer)
+    mesh3d_retire_or_release_buffer(backend, state.view_buffer)
+  }
+  backend.mesh3d_pass_uniform_states.clear()
+}
+
+///|
+fn mesh3d_frame_view_bind_group_cache_clear(backend : GpuBackend) -> Unit {
+  for entry in backend.mesh3d_frame_view_bg_cache {
+    mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
+    mesh3d_retire_or_release_bind_group(
+      backend,
+      entry.binding_arrays_bind_group,
+    )
+  }
+  backend.mesh3d_frame_view_bg_cache.clear()
+}
+
+///|
 fn mesh3d_view_bind_group_cache_clear(backend : GpuBackend) -> Unit {
   for entry in backend.mesh3d_view_bg_cache {
     mesh3d_retire_or_release_bind_group(backend, entry.bind_group)
@@ -76,7 +100,7 @@ fn mesh3d_view_bind_group_cache_clear(backend : GpuBackend) -> Unit {
     )
   }
   backend.mesh3d_view_bg_cache.clear()
-  backend.mesh3d_frame_view_bg_cache.clear()
+  mesh3d_frame_view_bind_group_cache_clear(backend)
 }
 
 ///|

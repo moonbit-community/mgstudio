@@ -1897,6 +1897,99 @@ test "renderer: backend shutdown releases 2d and ui resource owners" {
 }
 
 ///|
+test "renderer: backend shutdown releases mesh3d pbr resource owners" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let observer = backend.instance.add_ref()
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  ensure_mesh3d_shadow_pipeline_layout_resources(backend)
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_bind_groups_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
+test "renderer: clearing mesh3d frame uniforms releases native handles" {
+  let backend = GpuBackend::new()
+  let layout = mesh3d_create_empty_bind_group_layout(
+    backend, "test_mesh3d_frame_uniform_layout",
+  )
+  let bind_group = mesh3d_create_empty_bind_group(
+    backend, layout, "test_mesh3d_frame_uniform_bind_group",
+  )
+  let view_buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+  )
+  let lights_buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+  )
+  backend.mesh3d_pass_uniform_states.push(Mesh3dPassUniformState::{
+    frame_count: 0U,
+    camera_key_hi: 0,
+    camera_key_lo: 0,
+    pass_kind: 0,
+    view_buffer,
+    lights_buffer,
+    shadow_view_bind_group: Some(bind_group),
+  })
+  mesh3d_pass_uniform_states_clear(backend)
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_bind_groups_num_kept_from_user() == 0UL
+  after.release()
+  layout.release()
+  backend.shutdown()
+  debug_inspect(released, content="true")
+}
+
+///|
+test "renderer: replacing mesh3d cluster buffers keeps handles bounded" {
+  let backend = GpuBackend::new()
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE)
+  let first_a = backend.device.create_buffer(size=16UL, usage~)
+  let first_b = backend.device.create_buffer(size=16UL, usage~)
+  let first_c = backend.device.create_buffer(size=16UL, usage~)
+  backend.use_mesh3d_cluster_buffers(
+    first_a, 16UL, first_b, 16UL, first_c, 16UL,
+  )
+  first_a.release()
+  first_b.release()
+  first_c.release()
+  let before = backend.instance.generate_report()
+  let kept_buffers = before.hub_buffers_num_kept_from_user()
+  before.release()
+  let second_a = backend.device.create_buffer(size=32UL, usage~)
+  let second_b = backend.device.create_buffer(size=32UL, usage~)
+  let second_c = backend.device.create_buffer(size=32UL, usage~)
+  backend.use_mesh3d_cluster_buffers(
+    second_a, 32UL, second_b, 32UL, second_c, 32UL,
+  )
+  second_a.release()
+  second_b.release()
+  second_c.release()
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let bounded = after.hub_buffers_num_kept_from_user() == kept_buffers
+  after.release()
+  backend.shutdown()
+  debug_inspect(bounded, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)

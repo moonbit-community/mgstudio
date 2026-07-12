@@ -140,6 +140,19 @@ pub fn GpuBackend::use_mesh3d_cluster_buffers(
   cluster_offsets_and_counts_buffer : @wgpu.Buffer,
   cluster_offsets_and_counts_size : UInt64,
 ) -> Unit {
+  clustered_lights_buffer.add_ref_raw()
+  clusterable_object_index_lists_buffer.add_ref_raw()
+  cluster_offsets_and_counts_buffer.add_ref_raw()
+  mesh3d_view_bind_group_cache_clear(self)
+  if self.mesh3d_clustered_lights_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_clusterable_object_index_lists_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_cluster_offsets_and_counts_buf is Some(buffer) {
+    buffer.release()
+  }
   self.mesh3d_clustered_lights_buf = Some(clustered_lights_buffer)
   self.mesh3d_clustered_lights_size = clustered_lights_size
   self.mesh3d_clusterable_object_index_lists_buf = Some(
@@ -150,8 +163,6 @@ pub fn GpuBackend::use_mesh3d_cluster_buffers(
     cluster_offsets_and_counts_buffer,
   )
   self.mesh3d_cluster_offsets_and_counts_size = cluster_offsets_and_counts_size
-  self.mesh3d_view_bg_cache.clear()
-  self.mesh3d_frame_view_bg_cache.clear()
 }
 
 ///|

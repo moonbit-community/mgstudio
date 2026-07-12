@@ -69,6 +69,8 @@ fn GpuBackend::release_frame_surface_2d_owners(self : GpuBackend) -> Unit {
   for surface in self.surfaces {
     surface.release()
   }
+  self.frame = None
+  self.pass_state = None
   if self.depth_view is Some(view) {
     view.release()
   }
@@ -81,8 +83,6 @@ fn GpuBackend::release_frame_surface_2d_owners(self : GpuBackend) -> Unit {
   if self.surface_msaa_texture is Some(texture) {
     texture.release()
   }
-  self.release_frame_retired_resources()
-
   if self.sprite_globals_bg is Some(bind_group) {
     bind_group.release()
   }
@@ -277,8 +277,174 @@ fn GpuBackend::release_frame_surface_2d_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_mesh3d_pbr_owners(_self : GpuBackend) -> Unit {
+fn Mesh3dMaterialPipelineLayoutCacheEntry::release(
+  self : Mesh3dMaterialPipelineLayoutCacheEntry,
+) -> Unit {
+  self.pipeline_layout.release()
+  self.material_bind_group_layout.release()
+  self.draw_bind_group_layout.release()
+  self.binding_arrays_bind_group_layout.release()
+  self.view_bind_group_layout.release()
+}
 
+///|
+fn GpuStorageSlot::release(self : GpuStorageSlot) -> Unit {
+  self.bind_group.release()
+  self.buffer.release()
+}
+
+///|
+fn GpuBackend::release_mesh3d_pbr_owners(self : GpuBackend) -> Unit {
+  mesh3d_pass_uniform_states_clear(self)
+  mesh3d_material_cache_clear(self)
+  mesh3d_pipeline_cache_clear(self)
+  mesh3d_custom_pipeline_cache_clear(self)
+  mesh3d_volumetric_fog_pipeline_cache_clear(self)
+
+  if self.mesh3d_binding_arrays_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  if self.mesh3d_shadow_view_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  if self.mesh3d_shadow_empty_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  for slot in self.mesh3d_draw_slots {
+    slot.release()
+  }
+  if self.mesh3d_skin_current_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  if self.mesh3d_skin_prev_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  if self.mesh3d_instance_draw_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  for entry in self.wireframe_3d_wide_bind_groups {
+    entry.bind_group.release()
+  }
+
+  for entry in self.mesh3d_material_render_pipelines {
+    entry.pipeline.release()
+  }
+  for entry in self.mesh3d_shadow_pipeline_cache {
+    entry.pipeline.release()
+  }
+  for entry in self.mesh3d_material_pipeline_layout_cache {
+    entry.release()
+  }
+  if self.mesh3d_shadow_pipeline_layout_material is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_shadow_pipeline_layout_depth_only is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_pipeline_layout is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_shadow_bgl_empty is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_shadow_bgl_view is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_bgl_skin is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_bgl_material is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_bgl_draw is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_bgl_binding_arrays is Some(layout) {
+    layout.release()
+  }
+  if self.mesh3d_bgl_view is Some(layout) {
+    layout.release()
+  }
+  for layout in self.mesh3d_volumetric_fog_bgls {
+    layout.release()
+  }
+  if self.wireframe_3d_wide_bgl is Some(layout) {
+    layout.release()
+  }
+
+  if self.mesh3d_point_shadow_compare_sampler is Some(sampler) {
+    sampler.release()
+  }
+  if self.mesh3d_directional_shadow_compare_sampler is Some(sampler) {
+    sampler.release()
+  }
+
+  if self.mesh3d_view_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_lights_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_clustered_lights_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_clusterable_object_index_lists_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_cluster_offsets_and_counts_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_clustered_decals_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_globals_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_fog_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_volumetric_fog_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_light_probes_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_visibility_ranges_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.wireframe_3d_wide_params_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_ssr_settings_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_contact_shadows_settings_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_skin_current_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_skin_prev_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_morph_current_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_morph_prev_buf is Some(buffer) {
+    buffer.release()
+  }
+  if self.mesh3d_morph_descriptor_buf is Some(buffer) {
+    buffer.release()
+  }
+  for entry in self.mesh3d_morph_target_buffers {
+    entry.buffer.release()
+  }
+  for entry in self.mesh3d_instance_vertex_buffers {
+    entry.buffer.release()
+  }
+  if self.mesh3d_instance_draw_buf is Some(buffer) {
+    buffer.release()
+  }
 }
 
 ///|
@@ -310,6 +476,7 @@ fn GpuBackend::shutdown(self : GpuBackend) -> Unit {
   self.release_preprocess_meshlet_motion_owners()
   self.release_postprocess_feature_owners()
   self.release_renderer_registry_owners()
+  self.release_frame_retired_resources()
   self.queue.release()
   self.device.release()
   self.adapter.release()

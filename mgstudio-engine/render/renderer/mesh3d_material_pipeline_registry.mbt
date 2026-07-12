@@ -103,6 +103,7 @@ fn GpuBackend::register_mesh3d_material_render_pipeline(
   for index in 0..<self.mesh3d_material_render_pipelines.length() {
     let entry = self.mesh3d_material_render_pipelines[index]
     if entry.material_pipeline_id == material_pipeline_id {
+      entry.pipeline.release()
       self.mesh3d_material_render_pipelines[index] = Mesh3dRegisteredMaterialRenderPipeline::{
         material_pipeline_id,
         pipeline: raw_pipeline,

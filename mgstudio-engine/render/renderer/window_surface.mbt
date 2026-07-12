@@ -724,8 +724,8 @@ pub fn GpuBackend::begin_frame_binding(
   guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
     return false
   }
-  self.mesh3d_pass_uniform_states.clear()
-  self.mesh3d_frame_view_bg_cache.clear()
+  mesh3d_pass_uniform_states_clear(self)
+  mesh3d_frame_view_bind_group_cache_clear(self)
   self.mesh3d_motion_vector_view_bg_cache.clear()
   self.mesh3d_prepass_attachments_used.clear()
   if self.frame_count == 4294967295U {

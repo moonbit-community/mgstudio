@@ -2239,6 +2239,8 @@ fn mesh3d_material_pipeline_layout_get_or_create(
         draw_bgl,
         material_bgl,
       )
+      draw_bgl.add_ref_raw()
+      material_bgl.add_ref_raw()
       let entry = {
         material_pipeline_id,
         view_layout_key_bits,
