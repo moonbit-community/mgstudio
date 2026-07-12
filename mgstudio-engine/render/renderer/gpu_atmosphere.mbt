@@ -111,6 +111,45 @@ fn atmosphere_resource_shape_matches(
 }
 
 ///|
+fn GpuAtmosphereResources::release(self : GpuAtmosphereResources) -> Unit {
+  if self.render_sky_msaa_pipeline is Some(pipeline) {
+    pipeline.release()
+    self.render_sky_msaa_pipeline = None
+  }
+  self.render_sky_pipeline.release()
+  self.environment_pipeline.release()
+  self.aerial_view_lut_pipeline.release()
+  self.sky_view_lut_pipeline.release()
+  self.multiscattering_lut_pipeline.release()
+  self.transmittance_lut_pipeline.release()
+  self.render_sky_msaa_pipeline_layout.release()
+  self.render_sky_pipeline_layout.release()
+  self.aerial_view_lut_pipeline_layout.release()
+  self.sky_view_lut_pipeline_layout.release()
+  self.multiscattering_lut_pipeline_layout.release()
+  self.transmittance_lut_pipeline_layout.release()
+  self.render_sky_msaa_bgl.release()
+  self.render_sky_bgl.release()
+  self.environment_bgl.release()
+  self.aerial_view_lut_bgl.release()
+  self.sky_view_lut_bgl.release()
+  self.multiscattering_lut_bgl.release()
+  self.transmittance_lut_bgl.release()
+  self.transform_buffer.release()
+  self.settings_buffer.release()
+  self.atmosphere_buffer.release()
+  self.sampler.release()
+  self.aerial_view_view.release()
+  self.sky_view_view.release()
+  self.multiscattering_view.release()
+  self.transmittance_view.release()
+  self.aerial_view_texture.release()
+  self.sky_view_texture.release()
+  self.multiscattering_texture.release()
+  self.transmittance_texture.release()
+}
+
+///|
 fn atmosphere_create_transmittance_lut_bgl(
   backend : GpuBackend,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
@@ -790,6 +829,7 @@ fn GpuBackend::mesh3d_prepare_atmosphere_resources(
     let environment_pipeline_layout = self.device.create_pipeline_layout_1(
       environment_bgl,
     )
+    defer environment_pipeline_layout.release()
     environment_pipeline_layout.set_label(
       "mgstudio_atmosphere_environment_pipeline_layout",
     )
@@ -816,8 +856,8 @@ fn GpuBackend::mesh3d_prepare_atmosphere_resources(
     render_sky_msaa_pipeline_layout.set_label(
       "mgstudio_atmosphere_render_sky_msaa_pipeline_layout",
     )
-    self.mesh3d_atmosphere_resource_revision += 1
-    self.mesh3d_atmosphere_resources = Some(GpuAtmosphereResources::{
+    let next_revision = self.mesh3d_atmosphere_resource_revision + 1
+    let replacement = GpuAtmosphereResources::{
       transmittance_texture,
       transmittance_view,
       multiscattering_texture,
@@ -860,8 +900,14 @@ fn GpuBackend::mesh3d_prepare_atmosphere_resources(
       aerial_view_width: safe_aerial_view_width,
       aerial_view_height: safe_aerial_view_height,
       aerial_view_depth: safe_aerial_view_depth,
-      revision: self.mesh3d_atmosphere_resource_revision,
-    })
+      revision: next_revision,
+    }
+    let previous = self.mesh3d_atmosphere_resources
+    self.mesh3d_atmosphere_resources = Some(replacement)
+    self.mesh3d_atmosphere_resource_revision = next_revision
+    if previous is Some(resources) {
+      resources.release()
+    }
   }
   guard self.mesh3d_atmosphere_resources is Some(resources) else { return }
   self.queue.write_buffer(

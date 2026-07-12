@@ -1646,6 +1646,129 @@ test "renderer: replacing SSAO resources keeps native handle counts bounded" {
 }
 
 ///|
+test "renderer: releasing atmosphere resources returns native handles" {
+  let backend = GpuBackend::new()
+  let before = backend.instance.generate_report()
+  let kept_buffers = before.hub_buffers_num_kept_from_user()
+  let kept_textures = before.hub_textures_num_kept_from_user()
+  let kept_views = before.hub_texture_views_num_kept_from_user()
+  let kept_samplers = before.hub_samplers_num_kept_from_user()
+  let kept_bgls = before.hub_bind_group_layouts_num_kept_from_user()
+  let kept_layouts = before.hub_pipeline_layouts_num_kept_from_user()
+  let kept_compute = before.hub_compute_pipelines_num_kept_from_user()
+  let kept_render = before.hub_render_pipelines_num_kept_from_user()
+  before.release()
+  let texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  texture.add_ref_raw()
+  texture.add_ref_raw()
+  texture.add_ref_raw()
+  let view = texture.create_view()
+  view.add_ref_raw()
+  view.add_ref_raw()
+  view.add_ref_raw()
+  let sampler = backend.device.create_sampler_linear_clamp()
+  let buffer = backend.device.create_buffer(
+    size=4UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+  )
+  buffer.add_ref_raw()
+  buffer.add_ref_raw()
+  let bgl = backend.device.create_bind_group_layout_empty()
+  for _ in 0..<6 {
+    bgl.add_ref_raw()
+  }
+  let layout = backend.device.create_pipeline_layout_1(bgl)
+  for _ in 0..<5 {
+    layout.add_ref_raw()
+  }
+  let shader_source =
+    #|@compute @workgroup_size(1)
+    #|fn cs_main() {}
+    #|
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment
+    #|fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  let compute = backend.device.create_compute_pipeline_with_layout_entry(
+    layout, shader, "cs_main",
+  )
+  for _ in 0..<4 {
+    compute.add_ref_raw()
+  }
+  let render = backend.device.create_render_pipeline_rgba8(shader)
+  render.add_ref_raw()
+  shader.release()
+  let resources = GpuAtmosphereResources::{
+    transmittance_texture: texture,
+    transmittance_view: view,
+    multiscattering_texture: texture,
+    multiscattering_view: view,
+    sky_view_texture: texture,
+    sky_view_view: view,
+    aerial_view_texture: texture,
+    aerial_view_view: view,
+    sampler,
+    atmosphere_buffer: buffer,
+    settings_buffer: buffer,
+    transform_buffer: buffer,
+    transmittance_lut_bgl: bgl,
+    transmittance_lut_pipeline_layout: layout,
+    transmittance_lut_pipeline: compute,
+    multiscattering_lut_bgl: bgl,
+    multiscattering_lut_pipeline_layout: layout,
+    multiscattering_lut_pipeline: compute,
+    sky_view_lut_bgl: bgl,
+    sky_view_lut_pipeline_layout: layout,
+    sky_view_lut_pipeline: compute,
+    aerial_view_lut_bgl: bgl,
+    aerial_view_lut_pipeline_layout: layout,
+    aerial_view_lut_pipeline: compute,
+    environment_bgl: bgl,
+    environment_pipeline: compute,
+    render_sky_bgl: bgl,
+    render_sky_pipeline_layout: layout,
+    render_sky_pipeline: render,
+    render_sky_msaa_bgl: bgl,
+    render_sky_msaa_pipeline_layout: layout,
+    render_sky_msaa_pipeline: Some(render),
+    render_sky_msaa_sample_count: 4,
+    transmittance_width: 1,
+    transmittance_height: 1,
+    multiscattering_width: 1,
+    multiscattering_height: 1,
+    sky_view_width: 1,
+    sky_view_height: 1,
+    aerial_view_width: 1,
+    aerial_view_height: 1,
+    aerial_view_depth: 1,
+    revision: 1,
+  }
+  resources.release()
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == kept_buffers &&
+    after.hub_textures_num_kept_from_user() == kept_textures &&
+    after.hub_texture_views_num_kept_from_user() == kept_views &&
+    after.hub_samplers_num_kept_from_user() == kept_samplers &&
+    after.hub_bind_group_layouts_num_kept_from_user() == kept_bgls &&
+    after.hub_pipeline_layouts_num_kept_from_user() == kept_layouts &&
+    after.hub_compute_pipelines_num_kept_from_user() == kept_compute &&
+    after.hub_render_pipelines_num_kept_from_user() == kept_render
+  after.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
