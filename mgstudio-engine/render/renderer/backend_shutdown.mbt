@@ -952,8 +952,29 @@ fn GpuBackend::release_advanced_pbr_feature_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_renderer_registry_owners(_self : GpuBackend) -> Unit {
-
+fn GpuBackend::release_renderer_registry_owners(self : GpuBackend) -> Unit {
+  for texture in self.textures {
+    texture.release_owned()
+  }
+  for texture in self.prepass_depth_textures {
+    texture.view.release()
+    texture.texture.release()
+  }
+  for mesh in self.meshes {
+    if mesh.vertex_slab_id < 0 {
+      mesh.vertex_buf.release()
+    }
+    if mesh.index_slab_id < 0 {
+      mesh.index_buf.release()
+    }
+  }
+  for allocator_buffer in self.mesh_allocator_buffers {
+    allocator_buffer.buffer.release()
+  }
+  for entry in self.sampler_cache.iter() {
+    let (_key, sampler) = entry
+    sampler.release()
+  }
 }
 
 ///|

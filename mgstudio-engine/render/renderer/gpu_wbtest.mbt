@@ -1461,6 +1461,38 @@ test "renderer: backend shutdown releases advanced pbr feature owners" {
 }
 
 ///|
+test "renderer: complete backend shutdown releases every report category" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  ignore(ensure_default_texture(backend))
+  ignore(
+    backend.create_depth_prepass_target(1, 1, IMAGE_USAGE_RENDER_ATTACHMENT_BIT),
+  )
+  ignore(backend.create_mesh_rectangle(1.0F, 1.0F))
+  backend.sampler_cache.set(
+    "shutdown-test",
+    backend.device.create_sampler_nearest_clamp(),
+  )
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_textures_num_kept_from_user() == 0UL &&
+    after.hub_texture_views_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_bind_groups_num_kept_from_user() == 0UL &&
+    after.hub_compute_pipelines_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL &&
+    after.hub_devices_num_kept_from_user() == 0UL &&
+    after.hub_queues_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,

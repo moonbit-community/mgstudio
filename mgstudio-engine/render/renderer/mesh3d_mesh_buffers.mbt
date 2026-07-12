@@ -150,9 +150,9 @@ fn GpuBackend::mesh3d_update_mesh_infos_for_allocator_buffer(
   for index in 0..<self.meshes.length() {
     let mesh = self.meshes[index]
     if usage_kind == 0 && mesh.vertex_slab_id == slab_id {
-      self.meshes[index] = GpuMeshInfo::{ ..mesh, vertex_buf: buffer.add_ref() }
+      self.meshes[index] = GpuMeshInfo::{ ..mesh, vertex_buf: buffer }
     } else if usage_kind == 1 && mesh.index_slab_id == slab_id {
-      self.meshes[index] = GpuMeshInfo::{ ..mesh, index_buf: buffer.add_ref() }
+      self.meshes[index] = GpuMeshInfo::{ ..mesh, index_buf: buffer }
     }
   }
 }
@@ -176,14 +176,14 @@ fn GpuBackend::mesh3d_store_allocator_buffer(
       self.mesh_allocator_buffers[index] = GpuMeshAllocatorBuffer::{
         slab_id,
         usage_kind,
-        buffer: buffer.add_ref(),
+        buffer,
       }
     }
     None =>
       self.mesh_allocator_buffers.push(GpuMeshAllocatorBuffer::{
         slab_id,
         usage_kind,
-        buffer: buffer.add_ref(),
+        buffer,
       })
   }
   self.mesh3d_update_mesh_infos_for_allocator_buffer(
