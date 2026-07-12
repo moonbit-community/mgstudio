@@ -529,8 +529,117 @@ fn GpuBackend::release_preprocess_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_meshlet_owners(_self : GpuBackend) -> Unit {
-
+fn GpuBackend::release_meshlet_owners(self : GpuBackend) -> Unit {
+  for resources in self.meshlet_view_visibility_buffers.values() {
+    meshlet_release_view_visibility_resources(resources)
+  }
+  let compute_pipelines = [
+    self.meshlet_clear_visibility_buffer_pipeline,
+    self.meshlet_first_instance_cull_pipeline,
+    self.meshlet_first_bvh_cull_pipeline,
+    self.meshlet_first_meshlet_cull_pipeline,
+    self.meshlet_second_instance_cull_pipeline,
+    self.meshlet_second_bvh_cull_pipeline,
+    self.meshlet_second_meshlet_cull_pipeline,
+    self.meshlet_visibility_buffer_software_raster_pipeline,
+    self.meshlet_downsample_depth_first_pipeline,
+    self.meshlet_downsample_depth_second_pipeline,
+    self.meshlet_fill_counts_pipeline,
+  ]
+  for pipeline in compute_pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  let render_pipelines = [
+    self.meshlet_visibility_buffer_hardware_raster_pipeline,
+    self.meshlet_resolve_depth_pipeline,
+    self.meshlet_resolve_material_depth_pipeline,
+  ]
+  for pipeline in render_pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  let pipeline_layouts = [
+    self.meshlet_clear_visibility_buffer_pipeline_layout,
+    self.meshlet_first_instance_cull_pipeline_layout,
+    self.meshlet_first_bvh_cull_pipeline_layout,
+    self.meshlet_first_meshlet_cull_pipeline_layout,
+    self.meshlet_second_instance_cull_pipeline_layout,
+    self.meshlet_second_bvh_cull_pipeline_layout,
+    self.meshlet_second_meshlet_cull_pipeline_layout,
+    self.meshlet_visibility_buffer_raster_pipeline_layout,
+    self.meshlet_resolve_render_targets_pipeline_layout,
+    self.meshlet_downsample_depth_pipeline_layout,
+    self.meshlet_fill_counts_pipeline_layout,
+  ]
+  for layout in pipeline_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let bind_group_layouts = [
+    self.meshlet_clear_visibility_buffer_bgl,
+    self.meshlet_first_instance_cull_bgl,
+    self.meshlet_first_bvh_cull_bgl,
+    self.meshlet_first_meshlet_cull_bgl,
+    self.meshlet_second_instance_cull_bgl,
+    self.meshlet_second_bvh_cull_bgl,
+    self.meshlet_second_meshlet_cull_bgl,
+    self.meshlet_visibility_buffer_raster_bgl,
+    self.meshlet_resolve_render_targets_bgl,
+    self.meshlet_downsample_depth_bgl,
+    self.meshlet_fill_counts_bgl,
+  ]
+  for layout in bind_group_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let buffers = [
+    self.meshlet_vertex_positions_buf,
+    self.meshlet_vertex_normals_buf,
+    self.meshlet_vertex_uvs_buf,
+    self.meshlet_indices_buf,
+    self.meshlet_bvh_nodes_buf,
+    self.meshlet_meshlets_buf,
+    self.meshlet_cull_data_buf,
+    self.meshlet_instance_uniforms_buf,
+    self.meshlet_instance_aabbs_buf,
+    self.meshlet_instance_material_ids_buf,
+    self.meshlet_instance_bvh_root_nodes_buf,
+    self.meshlet_visibility_buffer_raster_clusters_buf,
+    self.meshlet_visibility_buffer_raster_cluster_prev_counts_buf,
+    self.meshlet_software_raster_cluster_count_buf,
+    self.meshlet_bvh_traversal_queue_0_buf,
+    self.meshlet_bvh_traversal_queue_1_buf,
+    self.meshlet_cluster_cull_candidate_queue_buf,
+    self.meshlet_second_pass_candidates_buf,
+    self.meshlet_clear_visibility_buffer_constants_buf,
+    self.meshlet_first_instance_cull_constants_buf,
+    self.meshlet_first_bvh_cull_constants_buf,
+    self.meshlet_first_meshlet_cull_constants_buf,
+    self.meshlet_second_instance_cull_constants_buf,
+    self.meshlet_second_bvh_cull_constants_buf,
+    self.meshlet_second_meshlet_cull_constants_buf,
+    self.meshlet_visibility_buffer_raster_constants_buf,
+    self.meshlet_resolve_render_targets_constants_buf,
+  ]
+  for buffer in buffers {
+    if buffer is Some(value) {
+      value.release()
+    }
+  }
+  if self.meshlet_downsample_depth_dummy_view is Some(view) {
+    view.release()
+  }
+  if self.meshlet_downsample_depth_dummy_texture is Some(texture) {
+    texture.release()
+  }
+  if self.meshlet_downsample_depth_sampler is Some(sampler) {
+    sampler.release()
+  }
 }
 
 ///|

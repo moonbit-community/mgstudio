@@ -1062,6 +1062,102 @@ test "renderer: backend shutdown releases preprocessing owners" {
 }
 
 ///|
+test "renderer: clearing stale meshlet views releases native handles" {
+  let backend = GpuBackend::new()
+  backend.prepare_meshlet_view_visibility_buffer(
+    view_entity_bits=1UL,
+    view_width=4,
+    view_height=4,
+    not_shadow_view=true,
+  )
+  backend.prepare_meshlet_view_visibility_buffer(
+    view_entity_bits=2UL,
+    view_width=4,
+    view_height=4,
+    not_shadow_view=true,
+  )
+  let before = backend.instance.generate_report()
+  let buffers_before = before.hub_buffers_num_kept_from_user()
+  let textures_before = before.hub_textures_num_kept_from_user()
+  before.release()
+  backend.clear_stale_meshlet_view_visibility_buffers([1UL])
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let released = backend.meshlet_view_visibility_buffers.length() == 1 &&
+    after.hub_buffers_num_kept_from_user() < buffers_before &&
+    after.hub_textures_num_kept_from_user() < textures_before
+  after.release()
+  backend.shutdown()
+  debug_inspect(released, content="true")
+}
+
+///|
+test "renderer: backend shutdown releases meshlet owners" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  backend.prepare_meshlet_view_visibility_buffer(
+    view_entity_bits=1UL,
+    view_width=4,
+    view_height=4,
+    not_shadow_view=true,
+  )
+  backend.meshlet_vertex_positions_buf = Some(
+    backend.device.create_buffer(
+      size=16UL,
+      usage=bu(@wgpu.BUFFER_USAGE_STORAGE),
+    ),
+  )
+  let bgl = backend.device.create_bind_group_layout_empty()
+  let layout = backend.device.create_pipeline_layout_1(bgl)
+  let shader_source =
+    #|@compute @workgroup_size(1) fn cs_main() {}
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  backend.meshlet_clear_visibility_buffer_bgl = Some(bgl)
+  backend.meshlet_clear_visibility_buffer_pipeline_layout = Some(layout)
+  backend.meshlet_clear_visibility_buffer_pipeline = Some(
+    backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "cs_main",
+    ),
+  )
+  backend.meshlet_visibility_buffer_hardware_raster_pipeline = Some(
+    backend.device.create_render_pipeline_rgba8(shader),
+  )
+  shader.release()
+  let texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  backend.meshlet_downsample_depth_dummy_view = Some(texture.create_view())
+  backend.meshlet_downsample_depth_dummy_texture = Some(texture)
+  backend.meshlet_downsample_depth_sampler = Some(
+    backend.device.create_sampler_linear_clamp(),
+  )
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_textures_num_kept_from_user() == 0UL &&
+    after.hub_texture_views_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_compute_pipelines_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,
