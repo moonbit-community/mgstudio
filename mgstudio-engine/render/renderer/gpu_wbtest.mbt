@@ -1588,6 +1588,43 @@ test "renderer: mesh3d normal map fallback texture is flat normal blue" {
 }
 
 ///|
+test "renderer: replacing a cube texture keeps native handle counts bounded" {
+  let backend = GpuBackend::new()
+  let level = Bytes::makei(24, _ => (255).to_byte())
+  let texture_id = backend.create_texture_cube_with_format(
+    1,
+    1,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    [level],
+    false,
+  )
+  let before = backend.instance.generate_report()
+  let kept_textures = before.hub_textures_num_kept_from_user()
+  let kept_views = before.hub_texture_views_num_kept_from_user()
+  let kept_samplers = before.hub_samplers_num_kept_from_user()
+  let kept_bind_groups = before.hub_bind_groups_num_kept_from_user()
+  before.release()
+  let replaced_id = backend.create_texture_cube_with_format(
+    1,
+    1,
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    [level],
+    false,
+    replace_texture_id=texture_id,
+  )
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let bounded = replaced_id == texture_id &&
+    after.hub_textures_num_kept_from_user() == kept_textures &&
+    after.hub_texture_views_num_kept_from_user() == kept_views &&
+    after.hub_samplers_num_kept_from_user() == kept_samplers &&
+    after.hub_bind_groups_num_kept_from_user() == kept_bind_groups
+  after.release()
+  debug_inspect(bounded, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)

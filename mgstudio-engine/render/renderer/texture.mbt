@@ -38,6 +38,28 @@ const IMAGE_USAGE_DEFAULT_SAMPLED_BITS : Int = IMAGE_USAGE_TEXTURE_BINDING_BIT |
   IMAGE_USAGE_COPY_SRC_BIT
 
 ///|
+fn GpuTextureInfo::release_owned(self : GpuTextureInfo) -> Unit {
+  if self.bind_group is Some(bind_group) {
+    bind_group.release()
+  }
+  for view in self.layer_views {
+    view.release()
+  }
+  if self.sample_view is Some(view) {
+    view.release()
+  }
+  if self.msaa_view is Some(view) {
+    view.release()
+  }
+  self.view.release()
+  if self.msaa_texture is Some(texture) {
+    texture.release()
+  }
+  self.texture.release()
+  self.sampler.release()
+}
+
+///|
 fn texture_usage_bits_to_wgpu(usage_bits : Int) -> UInt64 {
   let usage = usage_bits.reinterpret_as_uint()
   let mut bits : UInt64 = 0UL
@@ -273,8 +295,11 @@ fn ensure_environment_map_fallback_texture(
     (255).to_byte(),
   ])
   let tex_info = @wgpu_c.texel_copy_texture_info_new(tex.raw, 0U, 0U, 0U, 0U)
+  defer @wgpu_c.texel_copy_texture_info_free(tex_info)
   let layout = @wgpu_c.texel_copy_buffer_layout_new(0UL, 4U, 1U)
+  defer @wgpu_c.texel_copy_buffer_layout_free(layout)
   let extent = @wgpu_c.extent3d_new(1U, 1U, 6U)
+  defer @wgpu_c.extent3d_free(extent)
   backend.queue.write_texture_ptr(
     tex_info,
     data,
@@ -282,9 +307,6 @@ fn ensure_environment_map_fallback_texture(
     extent,
     data_size=24UL,
   )
-  @wgpu_c.extent3d_free(extent)
-  @wgpu_c.texel_copy_buffer_layout_free(layout)
-  @wgpu_c.texel_copy_texture_info_free(tex_info)
   let face0_view = tex.create_view_u32(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     @wgpu.TEXTURE_VIEW_DIMENSION_2D,
@@ -303,6 +325,10 @@ fn ensure_environment_map_fallback_texture(
     0U,
     1U,
   )
+  default_texture.sampler.add_ref_raw()
+  if default_texture.bind_group is Some(bind_group) {
+    bind_group.add_ref_raw()
+  }
   let info = GpuTextureInfo::{
     id,
     width: 1,
@@ -548,16 +574,19 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
       0U,
       0U,
     )
+    defer @wgpu_c.texel_copy_texture_info_free(tex_info)
     let layout = @wgpu_c.texel_copy_buffer_layout_new(
       0UL,
       bytes_per_row.reinterpret_as_uint(),
       rows_per_image.reinterpret_as_uint(),
     )
+    defer @wgpu_c.texel_copy_buffer_layout_free(layout)
     let extent = @wgpu_c.extent3d_new(
       mip_width.reinterpret_as_uint(),
       mip_height_per_slice.reinterpret_as_uint(),
       slices.reinterpret_as_uint(),
     )
+    defer @wgpu_c.extent3d_free(extent)
     self.queue.write_texture_ptr(
       tex_info,
       upload_data,
@@ -565,9 +594,6 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
       extent,
       data_size=expected_bytes.to_uint64(),
     )
-    @wgpu_c.extent3d_free(extent)
-    @wgpu_c.texel_copy_buffer_layout_free(layout)
-    @wgpu_c.texel_copy_texture_info_free(tex_info)
   }
 
   let info = GpuTextureInfo::{
@@ -699,16 +725,19 @@ pub fn GpuBackend::create_texture_3d_with_format(
       0U,
       0U,
     )
+    defer @wgpu_c.texel_copy_texture_info_free(tex_info)
     let layout = @wgpu_c.texel_copy_buffer_layout_new(
       0UL,
       bytes_per_row.reinterpret_as_uint(),
       rows_per_image.reinterpret_as_uint(),
     )
+    defer @wgpu_c.texel_copy_buffer_layout_free(layout)
     let extent = @wgpu_c.extent3d_new(
       mip_width.reinterpret_as_uint(),
       mip_height.reinterpret_as_uint(),
       mip_depth.reinterpret_as_uint(),
     )
+    defer @wgpu_c.extent3d_free(extent)
     self.queue.write_texture_ptr(
       tex_info,
       upload_data,
@@ -716,12 +745,13 @@ pub fn GpuBackend::create_texture_3d_with_format(
       extent,
       data_size=expected_bytes.to_uint64(),
     )
-    @wgpu_c.extent3d_free(extent)
-    @wgpu_c.texel_copy_buffer_layout_free(layout)
-    @wgpu_c.texel_copy_texture_info_free(tex_info)
   }
 
   let default_texture = ensure_default_texture(self)
+  default_texture.sampler.add_ref_raw()
+  if default_texture.bind_group is Some(bind_group) {
+    bind_group.add_ref_raw()
+  }
   let info = GpuTextureInfo::{
     id,
     width: w,
@@ -836,12 +866,15 @@ pub fn GpuBackend::write_texture_region_rgba8(
         origin_y,
         0U,
       )
+      defer @wgpu_c.texel_copy_texture_info_free(tex_info)
       let layout = @wgpu_c.texel_copy_buffer_layout_new(
         0UL,
         aligned.reinterpret_as_uint(),
         rows_per_image.reinterpret_as_uint(),
       )
+      defer @wgpu_c.texel_copy_buffer_layout_free(layout)
       let extent = @wgpu_c.extent3d_new(w, h, 1U)
+      defer @wgpu_c.extent3d_free(extent)
       self.queue.write_texture_ptr(
         tex_info,
         upload,
@@ -849,9 +882,6 @@ pub fn GpuBackend::write_texture_region_rgba8(
         extent,
         data_size=upload_size.to_uint64(),
       )
-      @wgpu_c.extent3d_free(extent)
-      @wgpu_c.texel_copy_buffer_layout_free(layout)
-      @wgpu_c.texel_copy_texture_info_free(tex_info)
     }
   }
 }
@@ -946,12 +976,15 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
         origin_y_i.reinterpret_as_uint(),
         0U,
       )
+      defer @wgpu_c.texel_copy_texture_info_free(tex_info)
       let layout = @wgpu_c.texel_copy_buffer_layout_new(
         0UL,
         aligned.reinterpret_as_uint(),
         rows_per_image.reinterpret_as_uint(),
       )
+      defer @wgpu_c.texel_copy_buffer_layout_free(layout)
       let extent = @wgpu_c.extent3d_new(w, h, 1U)
+      defer @wgpu_c.extent3d_free(extent)
       self.queue.write_texture_ptr(
         tex_info,
         upload,
@@ -959,9 +992,6 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(
         extent,
         data_size=upload_size.to_uint64(),
       )
-      @wgpu_c.extent3d_free(extent)
-      @wgpu_c.texel_copy_buffer_layout_free(layout)
-      @wgpu_c.texel_copy_texture_info_free(tex_info)
       mesh3d_material_cache_clear(self)
     }
   }
@@ -994,6 +1024,7 @@ pub fn GpuBackend::copy_texture_to_texture(
     return
   }
   let encoder = self.device.create_command_encoder()
+  defer encoder.release()
   let src_info = @wgpu_c.texel_copy_texture_info_new(
     src.texture.raw_handle(),
     src.base_mip_level.reinterpret_as_uint(),
@@ -1001,6 +1032,7 @@ pub fn GpuBackend::copy_texture_to_texture(
     0U,
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(src_info)
   let dst_info = @wgpu_c.texel_copy_texture_info_new(
     dst.texture.raw_handle(),
     dst.base_mip_level.reinterpret_as_uint(),
@@ -1008,19 +1040,17 @@ pub fn GpuBackend::copy_texture_to_texture(
     origin_y.reinterpret_as_uint(),
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(dst_info)
   let extent = @wgpu_c.extent3d_new(
     copy_width.reinterpret_as_uint(),
     copy_height.reinterpret_as_uint(),
     1U,
   )
+  defer @wgpu_c.extent3d_free(extent)
   encoder.copy_texture_to_texture_ptr(src_info, dst_info, extent)
-  @wgpu_c.extent3d_free(extent)
-  @wgpu_c.texel_copy_texture_info_free(dst_info)
-  @wgpu_c.texel_copy_texture_info_free(src_info)
   let command_buffer = encoder.finish()
+  defer command_buffer.release()
   self.queue.submit_one(command_buffer)
-  command_buffer.release()
-  encoder.release()
 }
 
 ///|
@@ -1057,6 +1087,7 @@ pub fn GpuBackend::frame_copy_texture_to_texture(
     0U,
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(src_info)
   let dst_info = @wgpu_c.texel_copy_texture_info_new(
     dst.texture.raw_handle(),
     dst.base_mip_level.reinterpret_as_uint(),
@@ -1064,15 +1095,14 @@ pub fn GpuBackend::frame_copy_texture_to_texture(
     origin_y.reinterpret_as_uint(),
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(dst_info)
   let extent = @wgpu_c.extent3d_new(
     copy_width.reinterpret_as_uint(),
     copy_height.reinterpret_as_uint(),
     1U,
   )
+  defer @wgpu_c.extent3d_free(extent)
   frame.encoder.copy_texture_to_texture_ptr(src_info, dst_info, extent)
-  @wgpu_c.extent3d_free(extent)
-  @wgpu_c.texel_copy_texture_info_free(dst_info)
-  @wgpu_c.texel_copy_texture_info_free(src_info)
 }
 
 ///|
@@ -1113,6 +1143,8 @@ pub fn GpuBackend::create_texture_mip_view(
     1U,
   )
   let bind_group = create_cached_texture_bind_group(self, source.sampler, view)
+  source.texture.add_ref_raw()
+  source.sampler.add_ref_raw()
   let id = alloc_id(self)
   let info = GpuTextureInfo::{
     id,
@@ -1197,6 +1229,7 @@ pub fn GpuBackend::set_texture_sampler(
         self, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
         mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
       )
+      sampler.add_ref_raw()
       let bind_group = if info.texture.dimension_u32().raw ==
         @wgpu.TEXTURE_DIMENSION_2D &&
         info.texture.sample_count_u32() == 1U {
@@ -1204,6 +1237,10 @@ pub fn GpuBackend::set_texture_sampler(
       } else {
         None
       }
+      if info.bind_group is Some(old_bind_group) {
+        old_bind_group.release()
+      }
+      info.sampler.release()
       self.textures[i] = GpuTextureInfo::{
         id: info.id,
         width: info.width,
@@ -1672,6 +1709,10 @@ pub fn GpuBackend::create_point_light_shadow_target(
     0U,
     1U,
   )
+  default_texture.sampler.add_ref_raw()
+  if default_texture.bind_group is Some(bind_group) {
+    bind_group.add_ref_raw()
+  }
   let info = GpuTextureInfo::{
     id,
     width: safe_size.reinterpret_as_int(),
@@ -1738,6 +1779,11 @@ pub fn GpuBackend::create_directional_light_shadow_target(
         1U,
       ),
     )
+  }
+  array_view.add_ref_raw()
+  default_texture.sampler.add_ref_raw()
+  if default_texture.bind_group is Some(bind_group) {
+    bind_group.add_ref_raw()
   }
   let info = GpuTextureInfo::{
     id,
@@ -1854,16 +1900,19 @@ pub fn GpuBackend::create_texture_cube_with_format(
       0U,
       0U,
     )
+    defer @wgpu_c.texel_copy_texture_info_free(tex_info)
     let layout = @wgpu_c.texel_copy_buffer_layout_new(
       0UL,
       bytes_per_row.reinterpret_as_uint(),
       rows_per_image.reinterpret_as_uint(),
     )
+    defer @wgpu_c.texel_copy_buffer_layout_free(layout)
     let extent = @wgpu_c.extent3d_new(
       mip_width.reinterpret_as_uint(),
       mip_height.reinterpret_as_uint(),
       6U,
     )
+    defer @wgpu_c.extent3d_free(extent)
     self.queue.write_texture_ptr(
       tex_info,
       upload_data,
@@ -1871,9 +1920,6 @@ pub fn GpuBackend::create_texture_cube_with_format(
       extent,
       data_size=expected_bytes.to_uint64(),
     )
-    @wgpu_c.extent3d_free(extent)
-    @wgpu_c.texel_copy_buffer_layout_free(layout)
-    @wgpu_c.texel_copy_texture_info_free(tex_info)
   }
 
   let array_view = tex.create_view_u32(
@@ -1894,6 +1940,7 @@ pub fn GpuBackend::create_texture_cube_with_format(
     0U,
     1U,
   )
+  defer face0_view.release()
   let layer_views : Array[@wgpu.TextureView] = []
   for face in 0..<6 {
     layer_views.push(
@@ -1945,6 +1992,8 @@ pub fn GpuBackend::create_texture_cube_with_format(
     for texture in self.textures {
       if texture.id != id {
         kept.push(texture)
+      } else {
+        texture.release_owned()
       }
     }
     self.textures.clear()
@@ -2359,6 +2408,7 @@ fn frame_copy_view_depth_to_prepass_depth(
     0U,
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(src_info)
   let dst_info = @wgpu_c.texel_copy_texture_info_new(
     prepass_depth_texture.texture.raw_handle(),
     0U,
@@ -2366,15 +2416,14 @@ fn frame_copy_view_depth_to_prepass_depth(
     0U,
     0U,
   )
+  defer @wgpu_c.texel_copy_texture_info_free(dst_info)
   let extent = @wgpu_c.extent3d_new(
     prepass_depth_texture.width.reinterpret_as_uint(),
     prepass_depth_texture.height.reinterpret_as_uint(),
     1U,
   )
+  defer @wgpu_c.extent3d_free(extent)
   frame.encoder.copy_texture_to_texture_ptr(src_info, dst_info, extent)
-  @wgpu_c.extent3d_free(extent)
-  @wgpu_c.texel_copy_texture_info_free(dst_info)
-  @wgpu_c.texel_copy_texture_info_free(src_info)
 }
 
 ///|
