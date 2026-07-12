@@ -1238,6 +1238,72 @@ test "renderer: backend shutdown releases motion vector owners" {
 }
 
 ///|
+test "renderer: backend shutdown releases general postprocess owners" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  let bgl = backend.device.create_bind_group_layout_empty()
+  let layout = backend.device.create_pipeline_layout_1(bgl)
+  let shader_source =
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  let pipeline = backend.device.create_render_pipeline_rgba8(shader)
+  shader.release()
+  pipeline.add_ref_raw()
+  backend.effect_stack_bgl = Some(bgl)
+  backend.effect_stack_pipeline_layout = Some(layout)
+  backend.effect_stack_pipeline = Some(pipeline)
+  backend.effect_stack_sampler = Some(
+    backend.device.create_sampler_linear_clamp(),
+  )
+  backend.effect_stack_chromatic_settings_buf = Some(
+    backend.device.create_buffer(
+      size=16UL,
+      usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+    ),
+  )
+  backend.custom_postprocess3d_pipeline_cache.push(CustomPostProcessPipelineCacheEntry::{
+    shader_path: "test",
+    fragment_entry: "fs_main",
+    surface_format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    pipeline,
+  })
+  let prepared_buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+  )
+  let prepared_bg = mesh3d_create_empty_bind_group(
+    backend, bgl, "test_postprocess_prepared_bg",
+  )
+  backend.skybox_prepared_bind_groups.push(SkyboxPreparedBindGroupEntry::{
+    id: 1,
+    bind_group: prepared_bg,
+    uniform_buffer: prepared_buffer,
+  })
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_bind_groups_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,

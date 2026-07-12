@@ -698,7 +698,102 @@ fn GpuBackend::release_motion_vector_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_postprocess_feature_owners(_self : GpuBackend) -> Unit {
+fn GpuBackend::release_postprocess_feature_owners(self : GpuBackend) -> Unit {
+  self.release_general_postprocess_owners()
+  self.release_temporal_exposure_owners()
+  self.release_advanced_pbr_feature_owners()
+}
+
+///|
+fn GpuBackend::release_general_postprocess_owners(self : GpuBackend) -> Unit {
+  let pipelines = [
+    self.effect_stack_pipeline,
+    self.effect_stack_pipeline_surface,
+    self.blit_pipeline,
+    self.screenshot_to_screen_pipeline,
+    self.fxaa_pipeline,
+    self.fxaa_pipeline_surface,
+  ]
+  for pipeline in pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  for entry in self.custom_postprocess3d_pipeline_cache {
+    entry.pipeline.release()
+  }
+  for entry in self.skybox_pipeline_cache {
+    entry.pipeline.release()
+  }
+  for entry in self.cas_pipeline_cache {
+    entry.pipeline.release()
+  }
+  for entry in self.skybox_prepared_bind_groups {
+    entry.bind_group.release()
+    entry.uniform_buffer.release()
+  }
+  let pipeline_layouts = [
+    self.effect_stack_pipeline_layout,
+    self.custom_postprocess3d_pipeline_layout,
+    self.skybox_pipeline_layout,
+    self.cas_pipeline_layout,
+    self.blit_pipeline_layout,
+    self.screenshot_to_screen_pipeline_layout,
+    self.fxaa_pipeline_layout,
+  ]
+  for layout in pipeline_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let bind_group_layouts = [
+    self.effect_stack_bgl,
+    self.custom_postprocess3d_bgl,
+    self.skybox_bgl,
+    self.cas_bgl,
+    self.blit_bgl,
+    self.screenshot_to_screen_bgl,
+    self.fxaa_bgl,
+  ]
+  for layout in bind_group_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let samplers = [
+    self.effect_stack_sampler,
+    self.effect_stack_lut_sampler,
+    self.custom_postprocess3d_sampler,
+    self.cas_sampler,
+    self.blit_sampler,
+    self.fxaa_sampler,
+  ]
+  for sampler in samplers {
+    if sampler is Some(value) {
+      value.release()
+    }
+  }
+  let buffers = [
+    self.effect_stack_chromatic_settings_buf,
+    self.effect_stack_vignette_settings_buf,
+    self.custom_postprocess3d_uniform_buf,
+    self.skybox_uniform_buf,
+    self.cas_uniform_buf,
+  ]
+  for buffer in buffers {
+    if buffer is Some(value) {
+      value.release()
+    }
+  }
+}
+
+///|
+fn GpuBackend::release_temporal_exposure_owners(_self : GpuBackend) -> Unit {
+
+}
+
+///|
+fn GpuBackend::release_advanced_pbr_feature_owners(_self : GpuBackend) -> Unit {
 
 }
 
