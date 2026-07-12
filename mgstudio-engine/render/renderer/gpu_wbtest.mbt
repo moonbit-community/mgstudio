@@ -1854,6 +1854,49 @@ test "renderer: backend initialization rolls back acquired native handles" {
 }
 
 ///|
+test "renderer: backend shutdown releases 2d and ui resource owners" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let observer = backend.instance.add_ref()
+  ensure_sprite_resources(backend)
+  ensure_ui_resources(backend)
+  ensure_ui_shadow_resources(backend)
+  ensure_ui_slice_resources(backend)
+  ensure_mesh2d_resources(backend)
+  let shader_source =
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment
+    #|fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  backend.ui_pipeline = Some(
+    backend.device.create_render_pipeline_rgba8(shader),
+  )
+  shader.release()
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_textures_num_kept_from_user() == 0UL &&
+    after.hub_texture_views_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_bind_groups_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)
