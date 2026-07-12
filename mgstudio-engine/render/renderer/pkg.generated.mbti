@@ -1921,6 +1921,8 @@ pub(all) struct PendingMapReadEncoder {
 pub(all) struct PendingMapReadFuture {
   future_id : UInt64
   queue : @wgpu_mbt.Queue
+  render_device : RenderDevice?
+  render_instance : RenderInstance?
   command_buffer : @wgpu_mbt.CommandBuffer
   buffer : @wgpu_mbt.Buffer
   on_complete : (UInt, Bytes, @wgpu_mbt.Buffer) -> Unit

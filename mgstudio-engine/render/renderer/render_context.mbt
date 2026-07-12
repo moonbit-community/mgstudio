@@ -42,6 +42,8 @@ pub(all) struct PendingMapReadEncoder {
 pub(all) struct PendingMapReadFuture {
   future_id : UInt64
   queue : @wgpu.Queue
+  render_device : RenderDevice?
+  render_instance : RenderInstance?
   command_buffer : @wgpu.CommandBuffer
   buffer : @wgpu.Buffer
   on_complete : PendingMapReadCallback
@@ -217,6 +219,8 @@ pub fn PendingCommandBuffers::submit(
       inner.map_read_futures.push({
         future_id,
         queue: queue.wgpu_queue(),
+        render_device,
+        render_instance,
         command_buffer,
         buffer: entry.buffer,
         on_complete: entry.on_complete,
@@ -269,16 +273,36 @@ pub fn PendingCommandBuffers::cancel(self : PendingCommandBuffers) -> Unit {
     )
   }
   inner.map_read_encoders = []
+  let remaining : Array[PendingMapReadFuture] = []
   for pending in inner.map_read_futures {
+    match pending.render_device {
+      Some(device) => ignore(device.poll(wait=true))
+      None => ()
+    }
+    match pending.render_instance {
+      Some(instance) => {
+        let wait = instance.wgpu_instance().wait_any_one(pending.future_id)
+        if !wait.completed {
+          instance.wgpu_instance().process_events()
+        }
+      }
+      None => ()
+    }
+    let status = pending.queue.map_read_async_status_u32(pending.future_id)
+    if status == 0U {
+      remaining.push(pending)
+      continue
+    }
+    let bytes = if status == @wgpu.MAP_ASYNC_STATUS_SUCCESS {
+      pending.queue.map_read_async_read(pending.future_id)
+    } else {
+      Bytes::makei(0, _ => 0)
+    }
     pending.queue.map_read_async_clear(pending.future_id)
     pending.command_buffer.release()
-    (pending.on_complete)(
-      @wgpu.MAP_ASYNC_STATUS_ERROR,
-      Bytes::makei(0, _ => 0),
-      pending.buffer,
-    )
+    (pending.on_complete)(status, bytes, pending.buffer)
   }
-  inner.map_read_futures = []
+  inner.map_read_futures = remaining
 }
 
 ///|
