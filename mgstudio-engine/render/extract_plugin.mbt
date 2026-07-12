@@ -116,7 +116,9 @@ fn render_plugin_install_with(
   next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
   ignore(
     next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
-      init_renderer_shutdown_guard_resource(render_sub_app.world())
+      render_sub_app
+      .world()
+      .add_shutdown_hook(fn(_world) { @renderer.shutdown_render_context() })
       render_sub_app
     }),
   )

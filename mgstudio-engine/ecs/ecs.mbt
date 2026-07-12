@@ -253,6 +253,7 @@ pub struct World {
   priv resource_tick_registry : WorldResourceTickRegistry
   priv resource_finalizers : Map[Int, (World) -> Unit]
   priv resource_finalizer_order : Array[Int]
+  priv mut shutdown_hooks : Array[(World) -> Unit]
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
 }
@@ -318,6 +319,7 @@ pub fn World::new() -> World {
     resource_tick_registry: world_resource_tick_registry_new(),
     resource_finalizers: Map([]),
     resource_finalizer_order: [],
+    shutdown_hooks: [],
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
@@ -367,7 +369,22 @@ pub fn World::close(self : World) -> Unit {
   self.resource_finalizers.clear()
   self.resource_finalizer_order.clear()
   finalize_world_components(self)
+  let shutdown_hooks = self.shutdown_hooks
+  self.shutdown_hooks = []
+  let mut hook_index = shutdown_hooks.length() - 1
+  while hook_index >= 0 {
+    shutdown_hooks[hook_index](self)
+    hook_index = hook_index - 1
+  }
   self.lifecycle.finish_close()
+}
+
+///|
+pub fn World::add_shutdown_hook(self : World, hook : (World) -> Unit) -> Unit {
+  guard self.lifecycle.is_active() else {
+    abort("cannot add a shutdown hook after World closing has started")
+  }
+  self.shutdown_hooks.push(hook)
 }
 
 ///|

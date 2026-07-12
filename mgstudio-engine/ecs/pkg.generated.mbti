@@ -791,6 +791,7 @@ pub fn[C : Component] World::add_remove_component_observer(Self, (ComponentOn[Re
 pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.Entity, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_replace_component_observer(Self, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_replace_entity_component_observer(Self, @core.Entity, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle
+pub fn World::add_shutdown_hook(Self, (Self) -> Unit) -> Unit
 pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemTicks) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::alive_entities(Self) -> Array[@core.Entity]

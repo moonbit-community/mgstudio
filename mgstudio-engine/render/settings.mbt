@@ -303,28 +303,6 @@ pub let pending_command_buffers_resource_key : @ecs.ResourceKey[
 )
 
 ///|
-priv struct RendererShutdownGuard {}
-
-///|
-let renderer_shutdown_guard_resource_key : @ecs.ResourceKey[
-  RendererShutdownGuard,
-] = @ecs.register_resource(
-  debug_name="mgstudio_render::RendererShutdownGuard",
-  finalizer=fn(_guard : RendererShutdownGuard) {
-    @renderer.shutdown_render_context()
-  },
-)
-
-///|
-fn init_renderer_shutdown_guard_resource(world : @ecs.World) -> Unit {
-  if world.get_resource(renderer_shutdown_guard_resource_key) is None {
-    world.insert_resource(renderer_shutdown_guard_resource_key, RendererShutdownGuard::{
-
-    })
-  }
-}
-
-///|
 pub struct CurrentView {
   entity : @core.Entity
 } derive(Eq, Debug)
