@@ -803,7 +803,7 @@ pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
     binding_index_to_textures: [],
     cubemap_to_binding_index: @hashmap.HashMap([]),
     render_light_probes: [],
-    main_entity_to_render_light_probe_index: {},
+    main_entity_to_render_light_probe_index: Map([]),
     view_light_probe_info: None,
   }
 }

@@ -242,7 +242,7 @@ test "pbr: SpecializedWireframePipelineCache stores per-view and wide pipelines"
     content="true",
   )
 
-  let live : Map[UInt64, Bool] = {}
+  let live : Map[UInt64, Bool] = Map([])
   live.set(view.to_bits(), true)
   cache.expire_stale_views(live)
   debug_inspect(cache.contains_view(view), content="true")
@@ -286,7 +286,7 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
     pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
-    {},
+    Map([]),
     RenderMeshInstances::new(),
     @render_mesh.RenderMeshAssets::RenderMeshAssets(),
     0UL,
@@ -380,7 +380,7 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
-    {},
+    Map([]),
     render_mesh_instances,
     render_meshes,
     0UL,
@@ -464,7 +464,7 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
     pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
-    {},
+    Map([]),
     render_mesh_instances,
     render_meshes,
     MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS,
@@ -542,7 +542,7 @@ test "pbr: specialize wireframes derives dither and lightmap keys from render re
     pipelines,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
-    {},
+    Map([]),
     render_mesh_instances,
     render_meshes,
     0UL,
@@ -577,7 +577,7 @@ test "pbr: specialize wireframes uses Bevy wide cache key with shared mesh pipel
   let pipelines = SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(main_entity, 8)
-  let materials : Map[Int, RenderWireframeMaterial] = {}
+  let materials : Map[Int, RenderWireframeMaterial] = Map([])
   materials.set(
     8,
     RenderWireframeMaterial::from_material(
@@ -690,7 +690,7 @@ test "pbr: PendingWireframeQueues expires stale views" {
     @core.Entity::new(3, 1),
     wireframe_test_main_entity(@core.Entity::new(4, 1)),
   )
-  let live : Map[UInt64, Bool] = {}
+  let live : Map[UInt64, Bool] = Map([])
   live.set(live_view.to_bits(), true)
 
   queues.expire_stale_views(live)
@@ -1271,7 +1271,7 @@ test "pbr: wireframe 3d phases prepare and retain views" {
     stale_view,
     @render_batching.GpuPreprocessingMode::Culling,
   )
-  let live : Map[UInt64, Bool] = {}
+  let live : Map[UInt64, Bool] = Map([])
   live.set(live_view.to_bits(), true)
 
   phases.retain_live_views(live)
@@ -1494,7 +1494,7 @@ test "pbr: wireframe phase preparation owns output ranges and collection" {
   let phase_indirect = Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers()
   phases.prepare_phase_buffers(
     render_mesh_instances,
-    {},
+    Map([]),
     phase_instances.buffers,
     phase_indirect.buffers,
   )
@@ -1567,7 +1567,7 @@ test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
     cache,
     instances,
     DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
-    {},
+    Map([]),
     RenderMeshInstances::new(),
     @render_mesh.MeshAllocator::new(),
     Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
@@ -1590,7 +1590,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
   cache.insert(view, main_entity, @material.CachedRenderPipelineId::new(77UL))
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(main_entity, 8)
-  let render_wireframe_assets : Map[Int, RenderWireframeMaterial] = {}
+  let render_wireframe_assets : Map[Int, RenderWireframeMaterial] = Map([])
   render_wireframe_assets.set(
     8,
     RenderWireframeMaterial::from_material(

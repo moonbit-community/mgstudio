@@ -1562,7 +1562,7 @@ let physics2d_serde_runtime_state : Physics2dSerdeRuntimeState = {
 }
 
 ///|
-let physics2d_config_serde_values : Map[Int, Physics2dConfig] = {}
+let physics2d_config_serde_values : Map[Int, Physics2dConfig] = Map([])
 
 ///|
 pub impl ToJson for Physics2dConfig with fn to_json(self) {
@@ -1581,7 +1581,7 @@ pub impl @json.FromJson for Physics2dConfig with fn from_json(json, path) {
 }
 
 ///|
-let physics2d_events_serde_values : Map[Int, Physics2dEvents] = {}
+let physics2d_events_serde_values : Map[Int, Physics2dEvents] = Map([])
 
 ///|
 pub impl ToJson for Physics2dEvents with fn to_json(self) {
@@ -1598,7 +1598,7 @@ pub impl @json.FromJson for Physics2dEvents with fn from_json(json, path) {
 }
 
 ///|
-let physics2d_context_serde_values : Map[Int, Physics2dContext] = {}
+let physics2d_context_serde_values : Map[Int, Physics2dContext] = Map([])
 
 ///|
 pub impl ToJson for Physics2dContext with fn to_json(self) {

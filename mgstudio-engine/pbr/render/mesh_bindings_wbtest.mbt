@@ -32,7 +32,7 @@ test "pbr/render mesh bindings: prepare phase builds bevy mesh bind group famili
     cpu_groups is MeshBindGroups3d::CpuPreprocessing(_),
     content="true",
   )
-  let gpu_map : Map[String, MeshPhaseBindGroups3d] = {}
+  let gpu_map : Map[String, MeshPhaseBindGroups3d] = Map([])
   gpu_map.set("Opaque3d", groups)
   let gpu_groups = MeshBindGroups3d::GpuPreprocessing(gpu_map)
   debug_inspect(

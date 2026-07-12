@@ -415,7 +415,7 @@ pub struct RenderMeshAssets {
 
 ///|
 pub fn RenderMeshAssets::RenderMeshAssets() -> RenderMeshAssets {
-  RenderMeshAssets::{ assets: {} }
+  RenderMeshAssets::{ assets: Map([]) }
 }
 
 ///|

@@ -204,7 +204,7 @@ pub struct RenderLightmaps {
 ///|
 pub fn RenderLightmaps::RenderLightmaps() -> RenderLightmaps {
   RenderLightmaps::{
-    render_lightmaps: {},
+    render_lightmaps: Map([]),
     slabs: [LightmapSlab::new(false)],
     bindless_supported: false,
   }

@@ -755,7 +755,7 @@ pub fn GpuBackend::clear_stale_meshlet_view_visibility_buffers(
   self : GpuBackend,
   active_view_bits : Array[UInt64],
 ) -> Unit {
-  let active : Map[UInt64, Bool] = {}
+  let active : Map[UInt64, Bool] = Map([])
   for view_bits in active_view_bits {
     active.set(view_bits, true)
   }

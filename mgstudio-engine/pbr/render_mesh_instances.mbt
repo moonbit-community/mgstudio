@@ -646,7 +646,7 @@ pub struct RenderGpuCulledEntities {
 ///|
 pub fn RenderGpuCulledEntities::RenderGpuCulledEntities() -> RenderGpuCulledEntities {
   RenderGpuCulledEntities::{
-    entities: {},
+    entities: Map([]),
     added: [],
     removed: [],
     changed_layers: [],
@@ -1724,7 +1724,7 @@ pub struct MeshesToReextractNextFrame {
 
 ///|
 pub fn MeshesToReextractNextFrame::MeshesToReextractNextFrame() -> MeshesToReextractNextFrame {
-  MeshesToReextractNextFrame::{ entries: {} }
+  MeshesToReextractNextFrame::{ entries: Map([]) }
 }
 
 ///|
@@ -1826,7 +1826,7 @@ pub struct RenderMeshInstancesCpu {
 
 ///|
 pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> RenderMeshInstancesCpu {
-  RenderMeshInstancesCpu::{ entries: {} }
+  RenderMeshInstancesCpu::{ entries: Map([]) }
 }
 
 ///|
@@ -1836,7 +1836,7 @@ pub struct RenderMeshInstancesGpu {
 
 ///|
 pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> RenderMeshInstancesGpu {
-  RenderMeshInstancesGpu::{ entries: {} }
+  RenderMeshInstancesGpu::{ entries: Map([]) }
 }
 
 ///|
@@ -2506,7 +2506,7 @@ fn render_mesh_instances_gpu_changed_mesh_set(
   source_world : @ecs.World,
   system_ticks : @core.SystemTicks,
 ) -> Map[UInt64, @render.MainEntity] {
-  let entities : Map[UInt64, @render.MainEntity] = {}
+  let entities : Map[UInt64, @render.MainEntity] = Map([])
   render_mesh_instances_gpu_extend_changed_component_entities(
     source_world, @visibility.ecs_key_view_visibility, system_ticks, entities,
   )
@@ -2573,7 +2573,7 @@ fn render_mesh_instances_gpu_potential_reextraction_set(
   system_ticks : @core.SystemTicks,
   meshes_to_reextract : MeshesToReextractNextFrame,
 ) -> Map[UInt64, @render.MainEntity] {
-  let entities : Map[UInt64, @render.MainEntity] = {}
+  let entities : Map[UInt64, @render.MainEntity] = Map([])
   for entity in meshes_to_reextract.entities() {
     entities.set(entity.id().to_bits(), entity)
   }
@@ -2621,7 +2621,7 @@ fn render_mesh_instances_gpu_removed_mesh3d_set(
   source_world : @ecs.World,
   system_ticks : @core.SystemTicks,
 ) -> Map[UInt64, @render.MainEntity] {
-  let entities : Map[UInt64, @render.MainEntity] = {}
+  let entities : Map[UInt64, @render.MainEntity] = Map([])
   for
     entity in source_world
     .removed_components(@mesh.ecs_key_mesh3d, system_ticks)
@@ -2889,7 +2889,7 @@ fn render_mesh_instances_extract_gpu_building_resource(
   let changed_meshes_query = render_mesh_instances_gpu_changed_mesh_set(
     source_world, system_ticks,
   )
-  let changed_entities : Map[UInt64, @render.MainEntity] = {}
+  let changed_entities : Map[UInt64, @render.MainEntity] = Map([])
   let queue = queues.borrow_local_mut()
   for item in changed_meshes_query.values() {
     let bits = item.id().to_bits()

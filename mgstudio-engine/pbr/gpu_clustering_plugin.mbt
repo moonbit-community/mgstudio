@@ -1288,7 +1288,7 @@ pub fn ViewClusteringReadbackData::last_frame_statistics(
 
 ///|
 pub fn RenderViewClusteringReadbackData::RenderViewClusteringReadbackData() -> RenderViewClusteringReadbackData {
-  RenderViewClusteringReadbackData::{ views: {} }
+  RenderViewClusteringReadbackData::{ views: Map([]) }
 }
 
 ///|
@@ -2050,7 +2050,7 @@ pub fn prepare_clusters_for_gpu_clustering(world : @ecs.World) -> Unit {
     "RenderViewClusteringReadbackData",
   )
   let decal_count = gpu_clustering_render_clustered_decal_count(world)
-  let live_view_main_entities : Map[UInt64, Bool] = {}
+  let live_view_main_entities : Map[UInt64, Bool] = Map([])
   world.for_each_component(ExtractedClusterConfig::component(), fn(
     view_entity,
     extracted_cluster_config,

@@ -908,7 +908,7 @@ fn check_wireframe_entities_needing_specialization_from_world(
   entities_needing_specialization.changed.clear()
   entities_needing_specialization.removed.clear()
 
-  let changed_seen : Map[UInt64, Bool] = {}
+  let changed_seen : Map[UInt64, Bool] = Map([])
   for entity in world.changed_components(ecs_key_mesh3d, system_ticks).read() {
     wireframe_collect_unique_entity(
       entities_needing_specialization.changed,
@@ -959,7 +959,7 @@ fn check_wireframe_entities_needing_specialization_from_world(
     changed_seen,
   )
 
-  let removed_seen : Map[UInt64, Bool] = {}
+  let removed_seen : Map[UInt64, Bool] = Map([])
   for entity in world.removed_components(ecs_key_mesh3d, system_ticks).read() {
     wireframe_collect_unique_entity(
       entities_needing_specialization.removed,
@@ -1014,7 +1014,7 @@ fn wireframe_collect_changed_mesh_entities(
   source_world : @ecs.World,
   system_ticks : @core.SystemTicks,
 ) -> Map[UInt64, @core.Entity] {
-  let changed : Map[UInt64, @core.Entity] = {}
+  let changed : Map[UInt64, @core.Entity] = Map([])
   for
     entity in source_world
     .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
@@ -1169,7 +1169,7 @@ fn wireframe_view_key_cache_mut_or_init(
 
 ///|
 fn prepare_wireframe_view_key_cache_system(world : @ecs.World) -> Unit {
-  let live_views : Map[UInt64, Bool] = {}
+  let live_views : Map[UInt64, Bool] = Map([])
   wireframe_view_key_cache_mut_or_init(world).modify(fn(cache) {
     match render3d_pending_frame_snapshot(world) {
       Some(frame) =>
@@ -1304,7 +1304,7 @@ fn specialize_wireframes_system(world : @ecs.World) -> Unit {
         "missing PipelineCache resource during pbr wireframe specialization",
       )
   }
-  let live_views : Map[UInt64, Bool] = {}
+  let live_views : Map[UInt64, Bool] = Map([])
   let mesh_visibility_class = render3d_mesh_visibility_class()
   let view_query : @ecs.Query[
     (
@@ -1586,7 +1586,7 @@ pub fn prepare_wireframe_3d_phase_buffers_system(world : @ecs.World) -> Unit {
     None => return
   }
   let source_world = @render.render_source_world(world)
-  let occlusion_culling_views : Map[UInt64, Bool] = {}
+  let occlusion_culling_views : Map[UInt64, Bool] = Map([])
   phases_ref.modify(fn(phases) {
     for retained_view_entity in phases.retained_view_entities() {
       if (try! source_world.get_by_key(
@@ -2126,7 +2126,7 @@ fn wireframe_3d_gpu_preprocessing_support(
 fn extract_wireframe_3d_camera_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let gpu_preprocessing_support = wireframe_3d_gpu_preprocessing_support(world)
-  let live_views : Map[UInt64, Bool] = {}
+  let live_views : Map[UInt64, Bool] = Map([])
   wireframe_3d_phases_mut_or_init(world).modify(fn(phases) {
     let query : @ecs.Query[
       (

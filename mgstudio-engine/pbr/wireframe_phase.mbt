@@ -316,7 +316,7 @@ pub struct SpecializedWireframeViewPipelineCache {
 
 ///|
 pub fn SpecializedWireframeViewPipelineCache::SpecializedWireframeViewPipelineCache() -> SpecializedWireframeViewPipelineCache {
-  SpecializedWireframeViewPipelineCache::{ map: {} }
+  SpecializedWireframeViewPipelineCache::{ map: Map([]) }
 }
 
 ///|
@@ -372,7 +372,7 @@ pub struct SpecializedWireframePipelineCache {
 
 ///|
 pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> SpecializedWireframePipelineCache {
-  SpecializedWireframePipelineCache::{ views: {}, wide: [] }
+  SpecializedWireframePipelineCache::{ views: Map([]), wide: [] }
 }
 
 ///|
@@ -596,7 +596,7 @@ pub struct RenderWireframeInstances {
 
 ///|
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> RenderWireframeInstances {
-  RenderWireframeInstances::{ entries: {}, last_source_change_tick: 0 }
+  RenderWireframeInstances::{ entries: Map([]), last_source_change_tick: 0 }
 }
 
 ///|
@@ -676,7 +676,7 @@ pub struct RenderWireframeAssets {
 
 ///|
 pub fn RenderWireframeAssets::RenderWireframeAssets() -> RenderWireframeAssets {
-  RenderWireframeAssets::{ assets: {} }
+  RenderWireframeAssets::{ assets: Map([]) }
 }
 
 ///|
@@ -733,7 +733,7 @@ pub struct WireframeWideBindGroups {
 
 ///|
 pub fn WireframeWideBindGroups::WireframeWideBindGroups() -> WireframeWideBindGroups {
-  WireframeWideBindGroups::{ params: [], mesh_asset_dynamic_offsets: {} }
+  WireframeWideBindGroups::{ params: [], mesh_asset_dynamic_offsets: Map([]) }
 }
 
 ///|
@@ -839,7 +839,7 @@ pub fn prepare_wireframe_wide_bind_groups(
   wide_bind_groups : WireframeWideBindGroups,
 ) -> Unit {
   wide_bind_groups.clear()
-  let seen : Map[Int, Bool] = {}
+  let seen : Map[Int, Bool] = Map([])
   for entity_bits, wireframe_asset_id in render_wireframe_instances.entries {
     guard render_wireframe_assets.get(wireframe_asset_id) is Some(material) else {
       continue
@@ -988,7 +988,7 @@ pub struct PendingWireframeQueues {
 
 ///|
 pub fn PendingWireframeQueues::PendingWireframeQueues() -> PendingWireframeQueues {
-  PendingWireframeQueues::{ views: {} }
+  PendingWireframeQueues::{ views: Map([]) }
 }
 
 ///|
@@ -1108,9 +1108,9 @@ pub struct DirtyWireframeSpecializations {
 ///|
 pub fn DirtyWireframeSpecializations::DirtyWireframeSpecializations() -> DirtyWireframeSpecializations {
   DirtyWireframeSpecializations::{
-    changed_renderables: {},
-    removed_renderables: {},
-    views: {},
+    changed_renderables: Map([]),
+    removed_renderables: Map([]),
+    views: Map([]),
   }
 }
 
@@ -1685,7 +1685,7 @@ pub struct Wireframe3dPhases {
 
 ///|
 pub fn Wireframe3dPhases::Wireframe3dPhases() -> Wireframe3dPhases {
-  Wireframe3dPhases::{ views: {} }
+  Wireframe3dPhases::{ views: Map([]) }
 }
 
 ///|
@@ -1934,7 +1934,7 @@ pub struct WireframeViewKeyCache {
 
 ///|
 pub fn WireframeViewKeyCache::WireframeViewKeyCache() -> WireframeViewKeyCache {
-  WireframeViewKeyCache::{ views: {} }
+  WireframeViewKeyCache::{ views: Map([]) }
 }
 
 ///|

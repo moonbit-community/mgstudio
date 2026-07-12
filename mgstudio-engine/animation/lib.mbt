@@ -1860,10 +1860,10 @@ fn AnimationRuntimeScratch::AnimationRuntimeScratch() -> AnimationRuntimeScratch
     prepared_player_generations: [],
     prepared_player_stamps: [],
     frame_curve_cache: animation_frame_curve_cache_new(),
-    target_mask_cache: {},
-    graph_cache: {},
-    clip_cache: {},
-    threaded_graph_cache: {},
+    target_mask_cache: Map([]),
+    graph_cache: Map([]),
+    clip_cache: Map([]),
+    threaded_graph_cache: Map([]),
   }
 }
 
@@ -2683,7 +2683,7 @@ pub fn animation_plugin_with(
   @asset.init_asset(@asset.init_asset(app, fn() { AnimationClip::new() }), fn() {
     AnimationGraph::new()
   })
-  .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: {} } })
+  .init_resource(fn() { ThreadedAnimationGraphs::{ graphs: Map([]) } })
   .add_post_update_system_config(
     @app.system_config_param3(thread_animation_graphs).in_set(
       animation_set_thread,

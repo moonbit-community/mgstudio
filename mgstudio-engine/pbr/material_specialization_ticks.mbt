@@ -50,7 +50,7 @@ pub struct EntitySpecializationTicks {
 
 ///|
 pub fn EntitySpecializationTicks::EntitySpecializationTicks() -> EntitySpecializationTicks {
-  EntitySpecializationTicks::{ entities: {} }
+  EntitySpecializationTicks::{ entities: Map([]) }
 }
 
 ///|
@@ -147,7 +147,7 @@ pub struct SpecializedMaterialViewPipelineCache {
 
 ///|
 pub fn SpecializedMaterialViewPipelineCache::SpecializedMaterialViewPipelineCache() -> SpecializedMaterialViewPipelineCache {
-  SpecializedMaterialViewPipelineCache::{ entries: {} }
+  SpecializedMaterialViewPipelineCache::{ entries: Map([]) }
 }
 
 ///|

@@ -978,7 +978,7 @@ fn get_render_state_resource(
 }
 
 ///|
-let render_state_serde_values : Map[Int, RenderState] = {}
+let render_state_serde_values : Map[Int, RenderState] = Map([])
 
 ///|
 pub impl ToJson for RenderState with fn to_json(self) {

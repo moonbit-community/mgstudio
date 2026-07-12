@@ -160,9 +160,9 @@ pub struct SkinUniforms {
 ///|
 pub fn SkinUniforms::new() -> SkinUniforms {
   SkinUniforms::{
-    skin_uniform_info: {},
+    skin_uniform_info: Map([]),
     allocator: SkinOffsetAllocator::new(),
-    joint_to_skins: {},
+    joint_to_skins: Map([]),
     current_skins: @hashset.HashSet([]),
     previous_skins: @hashset.HashSet([]),
     current_staging_buffer: [],

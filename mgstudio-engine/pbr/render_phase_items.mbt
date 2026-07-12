@@ -155,19 +155,12 @@ priv struct Mesh3dExtractedPayload {
   has_no_frustum_culling : Bool
   has_no_cpu_culling : Bool
   layers : @camera_render_layers.RenderLayers
-  has_no_wireframe : Bool
-  wireframe_asset_id : Int?
-  wireframe_material : RenderWireframeMaterial?
-  wireframe_color : WireframeColor?
-  wireframe_line_width : WireframeLineWidth?
-  wireframe_topology : WireframeTopology?
   skinning_key_hi : Int
   has_previous_skin : Bool
   morph_weights_index : Int
   previous_morph_weights_index : Int
   morph_targets_texture_id : Int
   instance_vertex_buffer_id : Int
-  motion_vector_enabled : Bool
 }
 
 ///|
@@ -230,7 +223,7 @@ priv struct Render3dMainViewDrawItems {
 
 ///|
 fn Render3dMainViewDrawItems::Render3dMainViewDrawItems() -> Render3dMainViewDrawItems {
-  Render3dMainViewDrawItems::{ views: {} }
+  Render3dMainViewDrawItems::{ views: Map([]) }
 }
 
 ///|
@@ -374,7 +367,7 @@ priv struct Render3dMainViewPhaseIndexStore {
 
 ///|
 fn Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore() -> Render3dMainViewPhaseIndexStore {
-  Render3dMainViewPhaseIndexStore::{ views: {} }
+  Render3dMainViewPhaseIndexStore::{ views: Map([]) }
 }
 
 ///|
@@ -656,7 +649,7 @@ fn render3d_retain_live_main_view_phases(
   world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
 ) -> Unit {
-  let live_views : Map[UInt64, Bool] = {}
+  let live_views : Map[UInt64, Bool] = Map([])
   for camera in cameras {
     live_views.set(camera.entity.main_entity.to_bits(), true)
   }

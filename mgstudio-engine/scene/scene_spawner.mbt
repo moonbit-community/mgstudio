@@ -91,8 +91,8 @@ priv struct SceneRuntimeState {
 fn SceneRuntimeState::SceneRuntimeState() -> SceneRuntimeState {
   SceneRuntimeState::{
     next_instance_id: 1,
-    instances_by_id: {},
-    spawned_instances_by_scene_id: {},
+    instances_by_id: Map([]),
+    spawned_instances_by_scene_id: Map([]),
     roots_to_spawn: [],
     instances_ready: [],
   }
@@ -896,7 +896,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
       }
     }
 
-    let next_debounced_scene_asset_ages : Map[Int, Int] = {}
+    let next_debounced_scene_asset_ages : Map[Int, Int] = Map([])
     for entry in debounced_scene_asset_ages.iter() {
       let (scene_id, age) = entry
       if age <= 2 {
@@ -936,8 +936,8 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
-  let seen : Map[UInt64, Bool] = {}
-  let force_respawn_map : Map[UInt64, Bool] = {}
+  let seen : Map[UInt64, Bool] = Map([])
+  let force_respawn_map : Map[UInt64, Bool] = Map([])
   let roots_to_process : Array[(@core.Entity, SceneRoot)] = []
   fn push_root_if_needed(
     world : @ecs.World,

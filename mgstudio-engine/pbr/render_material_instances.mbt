@@ -54,7 +54,7 @@ pub struct RenderMaterialInstances {
 ///|
 pub fn RenderMaterialInstances::RenderMaterialInstances() -> RenderMaterialInstances {
   RenderMaterialInstances::{
-    instances: {},
+    instances: Map([]),
     current_change_tick: 0,
     last_source_change_tick: 0,
   }
@@ -72,7 +72,7 @@ priv struct RenderMaterialShaderPaths {
 
 ///|
 fn RenderMaterialShaderPaths::RenderMaterialShaderPaths() -> RenderMaterialShaderPaths {
-  RenderMaterialShaderPaths::{ paths: {} }
+  RenderMaterialShaderPaths::{ paths: Map([]) }
 }
 
 ///|
@@ -172,7 +172,7 @@ fn RenderMaterialInstances::material_asset_ids(
   self : RenderMaterialInstances,
 ) -> Array[Int] {
   let material_ids : Array[Int] = []
-  let seen : Map[Int, Bool] = {}
+  let seen : Map[Int, Bool] = Map([])
   for _, instance in self.instances {
     let material_id = instance.asset_id()
     if material_id == DUMMY_MESH_MATERIAL_ID {

@@ -327,7 +327,7 @@ priv struct SceneModifiedEventsCursorState {
 fn SceneModifiedEventsCursorState::SceneModifiedEventsCursorState() -> SceneModifiedEventsCursorState {
   SceneModifiedEventsCursorState::{
     modified_event_cursor: @ecs.MessageCursor::MessageCursor(),
-    debounced_scene_asset_ages: {},
+    debounced_scene_asset_ages: Map([]),
   }
 }
 

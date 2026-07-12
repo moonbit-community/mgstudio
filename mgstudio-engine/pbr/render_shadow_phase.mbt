@@ -295,8 +295,8 @@ fn render3d_shadow_resolve_phase_items(
   render_mesh_instances : RenderMeshInstances,
   items : Array[Render3dShadowPhaseItemData],
 ) -> Array[Render3dResolvedShadowPhaseItem] {
-  let mesh_indices_by_main_entity : Map[UInt64, Int] = {}
-  let mesh_indices_by_uniform_index : Map[Int, Int] = {}
+  let mesh_indices_by_main_entity : Map[UInt64, Int] = Map([])
+  let mesh_indices_by_uniform_index : Map[Int, Int] = Map([])
   for index in 0..<meshes.length() {
     let main_entity = @render.MainEntity::new(meshes[index].entity.main_entity)
     let main_bits = main_entity.id().to_bits()

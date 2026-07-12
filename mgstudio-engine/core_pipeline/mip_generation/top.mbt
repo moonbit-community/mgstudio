@@ -278,7 +278,7 @@ fn downsample_shaders_from_world(world : @ecs.World) -> DownsampleShaders {
     DOWNSAMPLE_DEPTH_SHADER_PATH,
   )
   let asset_server = world.get_resource(@asset.AssetServer::resource()).unwrap()
-  let general : Map[String, @asset.Handle[@shader.Shader]] = {}
+  let general : Map[String, @asset.Handle[@shader.Shader]] = Map([])
   for entry in downsample_texture_formats() {
     let (target_format, identifier) = entry
     let source = downsample_specialized_wgsl_source(identifier)
@@ -395,7 +395,7 @@ pub struct MipGenerationJobs {
 
 ///|
 pub fn MipGenerationJobs::MipGenerationJobs() -> MipGenerationJobs {
-  MipGenerationJobs::{ phases: {} }
+  MipGenerationJobs::{ phases: Map([]) }
 }
 
 ///|

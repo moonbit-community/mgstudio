@@ -226,7 +226,7 @@ priv struct EcsTextEntry {
 let text_ecs_entries : Array[EcsTextEntry] = []
 
 ///|
-let text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = {}
+let text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = Map([])
 
 ///|
 priv struct UiEcsTextEntry {
@@ -242,7 +242,7 @@ priv struct UiEcsTextEntry {
 let ui_text_ecs_entries : Array[UiEcsTextEntry] = []
 
 ///|
-let ui_text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = {}
+let ui_text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = Map([])
 
 ///|
 priv struct TextEcsRuntimeState {
@@ -709,7 +709,7 @@ fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
   if text_ecs_index_by_world_id.get(world_id) is Some(index_by_entity_id) {
     return index_by_entity_id
   }
-  let index_by_entity_id : Map[Int, Int] = {}
+  let index_by_entity_id : Map[Int, Int] = Map([])
   let count = text_ecs_entries.length()
   for i in 0..<count {
     let entry = text_ecs_entries[i]
@@ -1467,7 +1467,7 @@ fn ui_text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
   if ui_text_ecs_index_by_world_id.get(world_id) is Some(index_by_entity_id) {
     return index_by_entity_id
   }
-  let index_by_entity_id : Map[Int, Int] = {}
+  let index_by_entity_id : Map[Int, Int] = Map([])
   let count = ui_text_ecs_entries.length()
   for i in 0..<count {
     let entry = ui_text_ecs_entries[i]

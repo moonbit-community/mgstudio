@@ -855,7 +855,7 @@ fn render3d_extract_render_visible_entities(
   world : @ecs.World,
   source_world : @ecs.World,
 ) -> Unit {
-  let live_render_views : Map[UInt64, Bool] = {}
+  let live_render_views : Map[UInt64, Bool] = Map([])
   let mesh_visibility_class = render3d_mesh_visibility_class()
   let extracted_views : Array[
     (@core.Entity, @camera_camera.Camera, @camera_camera.VisibleEntities),
@@ -2142,7 +2142,7 @@ pub fn Render3dShadowViewPhaseData::new(
     items: [],
     multidrawable_meshes: [],
     unbatchable_meshes: [],
-    input_uniform_indices: {},
+    input_uniform_indices: Map([]),
     cached_entity_bin_keys: Map([]),
   }
 }
@@ -3638,39 +3638,16 @@ pub fn render3d_shadow_specialization_work_item_data(
   })
 }
 
-///|
-// Temporary producer adapter for the remaining legacy `ExtractedMesh3d` array.
-// The `RenderMesh` preparation owner itself lives in `render/mesh`.
-fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
-  meshes : Array[ExtractedMesh3d],
-) -> Array[@render_mesh.ExtractedRenderMeshAsset] {
-  let extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset] = []
-  let seen_mesh_assets : Map[Int, Unit] = {}
-  for extracted_mesh in meshes {
-    let mesh_handle = extracted_mesh.payload.mesh_handle
-    if seen_mesh_assets.contains(mesh_handle.id()) {
-      continue
-    }
-    guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
-      continue
-    }
-    seen_mesh_assets.set(mesh_handle.id(), ())
-    extracted_assets.push(
-      @render_mesh.ExtractedRenderMeshAsset::new(mesh_handle.id(), source_mesh),
-    )
-  }
-  extracted_assets
-}
-
-///|
 // Bevy source: `extract_render_asset<RenderMesh>` is independent of whether a
 // mesh entity also has a material. Collect every in-use `Mesh3d` handle from
 // the source world so custom phase owners can prepare materialless meshes.
+
+///|
 fn render3d_extracted_render_mesh_assets_from_source_world(
   source_world : @ecs.World,
 ) -> Array[@render_mesh.ExtractedRenderMeshAsset] {
   let extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset] = []
-  let seen_mesh_assets : Map[Int, Unit] = {}
+  let seen_mesh_assets : Map[Int, Unit] = Map([])
   let meshes : @ecs.Query[@ecs.Read[@mesh.Mesh3d], @ecs.All] = @ecs.query(
     source_world,
   )
@@ -4104,7 +4081,7 @@ pub fn render3d_specialize_material_meshes_system(world : @ecs.World) -> Unit {
 ///|
 pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
   if render3d_queue_frame_snapshot(world) is Some(frame) {
-    let prepared_material_bind_groups : Map[String, Bool] = {}
+    let prepared_material_bind_groups : Map[String, Bool] = Map([])
     let material_instances = world.get_resource(
       ecs_key_render_material_instances,
     )

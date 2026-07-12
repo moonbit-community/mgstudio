@@ -364,7 +364,7 @@ let physics3d_serde_runtime_state : Physics3dSerdeRuntimeState = {
 }
 
 ///|
-let physics3d_config_serde_values : Map[Int, Physics3dConfig] = {}
+let physics3d_config_serde_values : Map[Int, Physics3dConfig] = Map([])
 
 ///|
 pub impl ToJson for Physics3dConfig with fn to_json(self) {
@@ -383,7 +383,7 @@ pub impl @json.FromJson for Physics3dConfig with fn from_json(json, path) {
 }
 
 ///|
-let physics3d_events_serde_values : Map[Int, Physics3dEvents] = {}
+let physics3d_events_serde_values : Map[Int, Physics3dEvents] = Map([])
 
 ///|
 pub impl ToJson for Physics3dEvents with fn to_json(self) {
@@ -400,7 +400,7 @@ pub impl @json.FromJson for Physics3dEvents with fn from_json(json, path) {
 }
 
 ///|
-let physics3d_context_serde_values : Map[Int, Physics3dContext] = {}
+let physics3d_context_serde_values : Map[Int, Physics3dContext] = Map([])
 
 ///|
 pub impl ToJson for Physics3dContext with fn to_json(self) {

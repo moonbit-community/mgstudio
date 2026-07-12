@@ -192,9 +192,9 @@ pub fn InstanceManager::InstanceManager() -> InstanceManager {
     instance_material_asset_ids: [],
     instance_material_keys: [],
     instance_bvh_root_nodes: [],
-    view_instance_visibility: {},
+    view_instance_visibility: Map([]),
     next_material_id: 0,
-    material_id_lookup: {},
+    material_id_lookup: Map([]),
     material_keys: [],
     material_ids_present_in_scene: @utils.IntBitSet::new(),
   }
@@ -289,7 +289,7 @@ pub fn InstanceManager::reset(
   self : InstanceManager,
   active_views? : Array[@core.Entity] = [],
 ) -> Unit {
-  let retained_visibility : Map[UInt64, Array[Int]] = {}
+  let retained_visibility : Map[UInt64, Array[Int]] = Map([])
   for view_entity in active_views {
     let key = view_entity.to_bits()
     match self.view_instance_visibility.get(key) {

@@ -3380,7 +3380,7 @@ pub fn ui_build_a11y_tree_update(
 pub fn ui_a11y_update_system(world : @ecs.World) -> Unit {
   let update = ui_build_a11y_tree_update(world)
   let root_id = @moon_accesskit.NodeId::root()
-  let synced : Map[UInt64, Bool] = {}
+  let synced : Map[UInt64, Bool] = Map([])
   for nu in update.nodes() {
     let node_id = nu.id()
     if node_id == root_id {

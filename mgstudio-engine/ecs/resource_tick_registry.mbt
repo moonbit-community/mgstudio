@@ -19,7 +19,7 @@ priv struct WorldResourceTickRegistry {
 
 ///|
 fn world_resource_tick_registry_new() -> WorldResourceTickRegistry {
-  { check_change_ticks_by_key_id: {} }
+  { check_change_ticks_by_key_id: Map([]) }
 }
 
 ///|

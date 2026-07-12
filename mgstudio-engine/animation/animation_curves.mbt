@@ -256,7 +256,7 @@ pub fn AnimationClip::new() -> AnimationClip {
   AnimationClip::{
     duration_seconds: 0.0F,
     targets: [],
-    target_index_by_key: {},
+    target_index_by_key: Map([]),
     events: [],
   }
 }

@@ -29,7 +29,7 @@ priv struct ComponentWriteSet {
 fn component_write_set_new() -> ComponentWriteSet {
   {
     entries: [],
-    indices_by_local_component_id: {},
+    indices_by_local_component_id: Map([]),
     presence: @utils.IntBitSet::new(),
   }
 }

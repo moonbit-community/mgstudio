@@ -111,7 +111,7 @@ pub fn MeshletMeshManager::MeshletMeshManager() -> MeshletMeshManager {
     pending_mesh_writes: 0,
     committed_mesh_writes: 0,
     pending_upload_asset_ids: [],
-    meshlet_mesh_slices: {},
+    meshlet_mesh_slices: Map([]),
   }
 }
 

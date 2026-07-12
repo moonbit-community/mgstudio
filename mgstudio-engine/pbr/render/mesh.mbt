@@ -28,8 +28,8 @@ pub struct Render3dMeshRuntimeState {
 ///|
 pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
   Render3dMeshRuntimeState::{
-    mesh_upload_cache: {},
-    morph_target_texture_cache: {},
+    mesh_upload_cache: Map([]),
+    morph_target_texture_cache: Map([]),
     mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
     clustered_decals_are_usable: @render_gpu.host_gpu_mesh3d_binding_arrays_are_usable(

@@ -57,9 +57,9 @@ fn world_queued_registrations_new() -> WorldQueuedRegistrations {
 ///|
 fn world_components_new() -> WorldComponents {
   {
-    local_ids_by_definition_id: {},
-    definition_ids_by_local_id: {},
-    storage_types_by_local_id: {},
+    local_ids_by_definition_id: Map([]),
+    definition_ids_by_local_id: Map([]),
+    storage_types_by_local_id: Map([]),
     local_ids_by_definition_id_dense: [],
     definition_ids_by_local_id_dense: [],
     storage_types_by_local_id_dense: [],

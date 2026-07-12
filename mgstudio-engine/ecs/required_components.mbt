@@ -69,7 +69,7 @@ pub fn RequiredComponents::contains(
 
 ///|
 fn required_components_state_new() -> RequiredComponentsState {
-  { direct_order: [], direct: {}, all: [], required_by: [] }
+  { direct_order: [], direct: Map([]), all: [], required_by: [] }
 }
 
 ///|

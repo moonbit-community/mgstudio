@@ -79,9 +79,9 @@ pub struct RenderClusteredDecals {
 pub fn RenderClusteredDecals::RenderClusteredDecals() -> RenderClusteredDecals {
   RenderClusteredDecals::{
     binding_index_to_textures: [],
-    texture_to_binding_index: {},
+    texture_to_binding_index: Map([]),
     decals: [],
-    entity_to_decal_index: {},
+    entity_to_decal_index: Map([]),
   }
 }
 

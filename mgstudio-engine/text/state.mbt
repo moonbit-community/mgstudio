@@ -355,7 +355,7 @@ let text_state : TextState = TextState::{
   next_text_id: 0,
   next_span_id: 0,
   texts: [],
-  text_index_by_id: {},
+  text_index_by_id: Map([]),
 }
 
 ///|

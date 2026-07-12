@@ -620,9 +620,9 @@ pub fn ResourceManager::new(cluster_buffer_slots : Int) -> ResourceManager {
       safe_slots - 1
     },
     meshlet_buffer_count: 0,
-    previous_depth_pyramids: {},
-    prepared_view_resources: {},
-    prepared_view_bind_groups: {},
+    previous_depth_pyramids: Map([]),
+    prepared_view_resources: Map([]),
+    prepared_view_bind_groups: Map([]),
     clear_visibility_buffer_bind_group_layout_id: -1,
     clear_visibility_buffer_shadow_view_bind_group_layout_id: -1,
     first_instance_cull_bind_group_layout_id: -1,
@@ -923,7 +923,7 @@ pub fn ResourceManager::clear_stale_prepared_view_resources(
   self : ResourceManager,
   active_view_entities : Array[@core.Entity],
 ) -> Unit {
-  let active : Map[UInt64, Bool] = {}
+  let active : Map[UInt64, Bool] = Map([])
   for view_entity in active_view_entities {
     active.set(view_entity.to_bits(), true)
   }
@@ -1001,7 +1001,7 @@ pub fn ResourceManager::clear_stale_prepared_view_bind_groups(
   self : ResourceManager,
   active_view_entities : Array[@core.Entity],
 ) -> Unit {
-  let active : Map[UInt64, Bool] = {}
+  let active : Map[UInt64, Bool] = Map([])
   for view_entity in active_view_entities {
     active.set(view_entity.to_bits(), true)
   }

@@ -161,7 +161,7 @@ pub fn AnimationGraph::new() -> AnimationGraph {
     root,
     nodes: [animation_graph_node_new(AnimationNodeType::Blend, 0U, 1.0F, [])],
     mask_groups: [],
-    target_mask_index_by_key: {},
+    target_mask_index_by_key: Map([]),
   }
 }
 

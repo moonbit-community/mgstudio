@@ -58,7 +58,7 @@ pub(open) trait GpuComponentArrayBufferComponent: @ecs.Component {
 pub fn[C] GpuComponentArrayBufferState::new() -> GpuComponentArrayBufferState[C] {
   GpuComponentArrayBufferState::{
     buffer: @render_resource.GpuArrayBuffer::new(),
-    indices: {},
+    indices: Map([]),
   }
 }
 

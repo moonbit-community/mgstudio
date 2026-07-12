@@ -1851,19 +1851,12 @@ fn material_test_extracted_mesh_payload(
     has_no_frustum_culling: false,
     has_no_cpu_culling: false,
     layers: @camera_render_layers.RenderLayers::RenderLayers(),
-    has_no_wireframe: false,
-    wireframe_asset_id: None,
-    wireframe_material: None,
-    wireframe_color: None,
-    wireframe_line_width: None,
-    wireframe_topology: None,
     skinning_key_hi: -1,
     has_previous_skin: false,
     morph_weights_index: -1,
     previous_morph_weights_index: -1,
     morph_targets_texture_id: -1,
     instance_vertex_buffer_id: -1,
-    motion_vector_enabled: false,
   }
 }
 

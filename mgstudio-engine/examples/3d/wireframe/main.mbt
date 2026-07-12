@@ -24,22 +24,12 @@ let color_toggle_cube_component_key : @ecs.ComponentKey[ColorToggleCube] = @ecs.
 )
 
 ///|
-impl @ecs.Component for ColorToggleCube with fn component() {
-  color_toggle_cube_component_key
-}
-
-///|
 priv struct ControlsText {}
 
 ///|
 let controls_text_component_key : @ecs.ComponentKey[ControlsText] = @ecs.register_component(
   debug_name="examples.3d.wireframe.ControlsText",
 )
-
-///|
-impl @ecs.Component for ControlsText with fn component() {
-  controls_text_component_key
-}
 
 ///|
 fn color_white() -> @color.Color {

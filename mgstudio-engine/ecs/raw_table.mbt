@@ -249,7 +249,7 @@ fn raw_table_new(
   table_id : Int,
   component_local_ids : Array[Int],
 ) -> RawTable {
-  let component_indices : Map[Int, Int] = {}
+  let component_indices : Map[Int, Int] = Map([])
   let columns : Array[RawTableColumn] = []
   for index in 0..<component_local_ids.length() {
     let component_local_id = component_local_ids[index]

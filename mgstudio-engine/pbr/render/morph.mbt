@@ -24,7 +24,7 @@ pub struct MorphIndices {
 
 ///|
 pub fn MorphIndices::new() -> MorphIndices {
-  MorphIndices::{ current: {}, prev: {} }
+  MorphIndices::{ current: Map([]), prev: Map([]) }
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn morph_uniforms_mut_or_abort(
 ///|
 pub fn morph_indices_swap_and_reset(morph_indices_value : MorphIndices) -> Unit {
   morph_indices_value.prev = morph_indices_value.current
-  morph_indices_value.current = {}
+  morph_indices_value.current = Map([])
 }
 
 ///|

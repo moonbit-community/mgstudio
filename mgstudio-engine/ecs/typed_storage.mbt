@@ -56,7 +56,10 @@ priv struct TypedComponentStorage[T] {
 
 ///|
 fn[T] typed_component_storage_new() -> TypedComponentStorage[T] {
-  { staged_by_entity: @core.ComponentStore::new(), table_rows_by_table: {} }
+  {
+    staged_by_entity: @core.ComponentStore::new(),
+    table_rows_by_table: Map([]),
+  }
 }
 
 ///|
@@ -131,7 +134,7 @@ fn[T] TypedComponentStorage::swap_remove_table_row(
 
 ///|
 fn[T] component_access_new(component_id : Int) -> ComponentAccess[T] {
-  let stores_by_world : Map[Int, TypedComponentStorage[T]] = {}
+  let stores_by_world : Map[Int, TypedComponentStorage[T]] = Map([])
   let get_store = fn(world : World) -> TypedComponentStorage[T] {
     match stores_by_world.get(world.world_id) {
       Some(store) => store
@@ -355,7 +358,7 @@ fn[T] ComponentKey::component_swap_remove_table_row(
 
 ///|
 fn[T] resource_access_ops_new() -> ResourceAccessOps[T] {
-  let slots_by_world : Map[Int, TypedResourceSlot[T]] = {}
+  let slots_by_world : Map[Int, TypedResourceSlot[T]] = Map([])
   {
     contains: fn(world) { slots_by_world.contains(world.world_id) },
     get: fn(world) {

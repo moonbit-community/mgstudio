@@ -424,8 +424,8 @@ pub fn MeshPhaseBindGroups3d::new() -> MeshPhaseBindGroups3d {
   MeshPhaseBindGroups3d::{
     model_only: None,
     skinned: None,
-    morph_targets: {},
-    lightmaps: {},
+    morph_targets: Map([]),
+    lightmaps: Map([]),
   }
 }
 
@@ -433,8 +433,8 @@ pub fn MeshPhaseBindGroups3d::new() -> MeshPhaseBindGroups3d {
 pub fn MeshPhaseBindGroups3d::reset(self : MeshPhaseBindGroups3d) -> Unit {
   self.model_only = None
   self.skinned = None
-  self.morph_targets = {}
-  self.lightmaps = {}
+  self.morph_targets = Map([])
+  self.lightmaps = Map([])
 }
 
 ///|

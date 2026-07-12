@@ -1497,7 +1497,7 @@ fn[M] collect_entities_needing_typed_material_specialization(
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  let seen : Map[UInt64, Bool] = {}
+  let seen : Map[UInt64, Bool] = Map([])
   for
     entity in source_world
     .changed_components(@mesh.ecs_key_mesh3d, system_ticks)
@@ -1524,7 +1524,7 @@ fn[M] collect_entities_needing_typed_material_specialization_removed(
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  let seen : Map[UInt64, Bool] = {}
+  let seen : Map[UInt64, Bool] = Map([])
   for
     entity in source_world
     .removed_components(@mesh.ecs_key_mesh3d, system_ticks)
@@ -1545,7 +1545,7 @@ fn[M] mark_typed_material_meshes_as_changed_if_their_materials_changed(
   system_ticks : @core.SystemTicks,
 ) -> Unit {
   let changed : Array[@core.Entity] = []
-  let seen : Map[UInt64, Bool] = {}
+  let seen : Map[UInt64, Bool] = Map([])
   for entity in world.changed_components(material_key, system_ticks).read() {
     collect_unique_material_specialization_entity(changed, seen, entity)
   }
@@ -1608,7 +1608,7 @@ fn[M] collect_changed_typed_mesh_material_entities(
   material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
   system_ticks : @core.SystemTicks,
 ) -> Map[UInt64, @core.Entity] {
-  let changed_entities : Map[UInt64, @core.Entity] = {}
+  let changed_entities : Map[UInt64, @core.Entity] = Map([])
   for
     entity in source_world
     .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
@@ -1628,7 +1628,7 @@ fn[M] collect_removed_typed_mesh_material_entities(
   material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
-  let removed_entities : Map[UInt64, @core.Entity] = {}
+  let removed_entities : Map[UInt64, @core.Entity] = Map([])
   for
     entity in source_world.removed_components(material_key, system_ticks).read() {
     removed_entities.set(entity.to_bits(), entity)

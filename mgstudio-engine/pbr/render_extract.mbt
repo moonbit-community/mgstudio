@@ -148,7 +148,7 @@ fn collect_changed_mesh_material_entities(
   source_world : @ecs.World,
   system_ticks : @core.SystemTicks,
 ) -> Map[UInt64, @core.Entity] {
-  let changed_entities : Map[UInt64, @core.Entity] = {}
+  let changed_entities : Map[UInt64, @core.Entity] = Map([])
   for
     entity in source_world
     .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
@@ -170,7 +170,7 @@ fn collect_removed_mesh_material_entities(
   key : @ecs.ComponentKey[MeshMaterial3d],
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
-  let removed_entities : Map[UInt64, @core.Entity] = {}
+  let removed_entities : Map[UInt64, @core.Entity] = Map([])
   for entity in source_world.removed_components(key, system_ticks).read() {
     removed_entities.set(entity.to_bits(), entity)
   }
@@ -186,7 +186,7 @@ fn collect_removed_mesh3d_entities(
   source_world : @ecs.World,
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
-  let removed_entities : Map[UInt64, @core.Entity] = {}
+  let removed_entities : Map[UInt64, @core.Entity] = Map([])
   for
     entity in source_world
     .removed_components(ecs_key_mesh3d, system_ticks)
@@ -221,7 +221,7 @@ fn collect_entities_needing_material_specialization(
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  let seen : Map[UInt64, Bool] = {}
+  let seen : Map[UInt64, Bool] = Map([])
   for
     entity in source_world
     .changed_components(ecs_key_mesh3d, system_ticks)
@@ -251,7 +251,7 @@ fn collect_entities_needing_material_specialization_removed(
   system_ticks : @core.SystemTicks,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  let seen : Map[UInt64, Bool] = {}
+  let seen : Map[UInt64, Bool] = Map([])
   for
     entity in source_world
     .removed_components(ecs_key_mesh3d, system_ticks)

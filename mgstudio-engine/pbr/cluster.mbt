@@ -256,7 +256,7 @@ pub fn GlobalClusterableObjectMeta::new(
 ) -> GlobalClusterableObjectMeta {
   GlobalClusterableObjectMeta::{
     gpu_clustered_lights: GpuClusteredLights::from_binding_type(binding_type),
-    entity_to_index: {},
+    entity_to_index: Map([]),
   }
 }
 

@@ -68,7 +68,7 @@ fn visibility_effective(visibility : Visibility, parent_visible : Bool) -> Bool 
 ///|
 fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
   let roots : Array[@core.Entity] = []
-  let parent_children : Map[UInt64, Array[@core.Entity]] = {}
+  let parent_children : Map[UInt64, Array[@core.Entity]] = Map([])
   world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
     let parent_key = parent.entity().to_bits()
     match parent_children.get(parent_key) {

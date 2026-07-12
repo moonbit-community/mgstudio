@@ -83,7 +83,7 @@ priv struct UiSerdeRuntimeState {
 let ui_serde_runtime_state : UiSerdeRuntimeState = { context_next_id: 1 }
 
 ///|
-let ui_context_serde_values : Map[Int, UiContext] = {}
+let ui_context_serde_values : Map[Int, UiContext] = Map([])
 
 ///|
 pub impl ToJson for UiContext with fn to_json(self) {

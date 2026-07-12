@@ -39,8 +39,8 @@ let event_ops_registry : @hashmap.HashMap[Int, EventOps] = @hashmap.HashMap([])
 
 ///|
 fn[T] event_access_ops_new() -> EventAccessOps[T] {
-  let slots_by_world : Map[Int, EventQueueSlot[T]] = {}
-  let current_trigger_by_world : Map[Int, T] = {}
+  let slots_by_world : Map[Int, EventQueueSlot[T]] = Map([])
+  let current_trigger_by_world : Map[Int, T] = Map([])
   let slot = fn(world : World) -> EventQueueSlot[T] {
     match slots_by_world.get(world.world_id()) {
       Some(slot) => slot

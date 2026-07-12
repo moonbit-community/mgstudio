@@ -409,7 +409,7 @@ pub fn FontAtlas::new(
   FontAtlas::{
     dynamic_texture_atlas_builder: builder,
     glyph_locations: [],
-    glyph_location_map: {},
+    glyph_location_map: Map([]),
     texture_atlas,
     texture,
   }

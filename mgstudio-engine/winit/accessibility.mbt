@@ -91,7 +91,7 @@ fn winit_build_accessibility_tree_update(
     return None
   }
 
-  let node_entities : Map[UInt64, Bool] = {}
+  let node_entities : Map[UInt64, Bool] = Map([])
   for pair in nodes_snapshot {
     let entity = pair.0
     node_entities.set(entity.to_bits(), true)

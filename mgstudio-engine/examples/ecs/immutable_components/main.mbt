@@ -44,7 +44,7 @@ pub impl @app.Resource for NameIndex with fn resource() {
 
 ///|
 fn setup(commands : @app.Commands) -> Unit {
-  commands.insert_resource(NameIndex::{ entries: {} })
+  commands.insert_resource(NameIndex::{ entries: Map([]) })
   commands.spawn_component(Name::{ value: "Alyssa" }) |> ignore
   commands.spawn_component(Name::{ value: "Javier" }) |> ignore
 }
@@ -54,7 +54,7 @@ fn rebuild_name_index(
   names : @ecs.Query[(@core.Entity, @ecs.Read[Name]), @ecs.All],
   index : @app.ResMut[NameIndex],
 ) -> Unit {
-  index.set(NameIndex::{ entries: {} })
+  index.set(NameIndex::{ entries: Map([]) })
   try! names.view(fn(_query_entity, data) {
     let (entity, name) = data
     index.modify(fn(value) { value.entries[name.value().value] = entity })

@@ -489,7 +489,7 @@ pub struct RenderMaterialBindings {
 
 ///|
 pub fn RenderMaterialBindings::RenderMaterialBindings() -> RenderMaterialBindings {
-  RenderMaterialBindings::{ bindings: {} }
+  RenderMaterialBindings::{ bindings: Map([]) }
 }
 
 ///|
@@ -916,7 +916,7 @@ pub struct MaterialBindGroupAllocators {
 
 ///|
 pub fn MaterialBindGroupAllocators::MaterialBindGroupAllocators() -> MaterialBindGroupAllocators {
-  MaterialBindGroupAllocators::{ allocators: {} }
+  MaterialBindGroupAllocators::{ allocators: Map([]) }
 }
 
 ///|

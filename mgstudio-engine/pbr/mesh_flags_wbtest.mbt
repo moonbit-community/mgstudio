@@ -630,19 +630,12 @@ fn render3d_test_extracted_mesh_for_flags(
       has_no_frustum_culling,
       has_no_cpu_culling: false,
       layers: @camera_render_layers.RenderLayers::RenderLayers(),
-      has_no_wireframe: false,
-      wireframe_asset_id: None,
-      wireframe_material: None,
-      wireframe_color: None,
-      wireframe_line_width: None,
-      wireframe_topology: None,
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
       instance_vertex_buffer_id: -1,
-      motion_vector_enabled: false,
     },
   }
 }
@@ -686,21 +679,36 @@ fn render3d_test_transparent_mesh_for_queue(
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
       layers: @camera_render_layers.RenderLayers::RenderLayers(),
-      has_no_wireframe: false,
-      wireframe_asset_id: None,
-      wireframe_material: None,
-      wireframe_color: None,
-      wireframe_line_width: None,
-      wireframe_topology: None,
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
       instance_vertex_buffer_id: -1,
-      motion_vector_enabled: false,
     },
   }
+}
+
+///|
+fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
+  meshes : Array[ExtractedMesh3d],
+) -> Array[@render_mesh.ExtractedRenderMeshAsset] {
+  let extracted_assets : Array[@render_mesh.ExtractedRenderMeshAsset] = []
+  let seen_mesh_assets : Map[Int, Unit] = Map([])
+  for extracted_mesh in meshes {
+    let mesh_handle = extracted_mesh.payload.mesh_handle
+    if seen_mesh_assets.contains(mesh_handle.id()) {
+      continue
+    }
+    guard @sprite.render_mesh_asset_get(mesh_handle) is Some(source_mesh) else {
+      continue
+    }
+    seen_mesh_assets.set(mesh_handle.id(), ())
+    extracted_assets.push(
+      @render_mesh.ExtractedRenderMeshAsset::new(mesh_handle.id(), source_mesh),
+    )
+  }
+  extracted_assets
 }
 
 ///|
@@ -735,12 +743,10 @@ test "render3d: render asset preparation deduplicates shared mesh instances" {
       @math.Vec3::splat(1.0F),
     )
     let first = ExtractedMesh3d::{
-      ..base,
       entity: phase_entity_ref3d_for_main(@core.Entity::new(301, 0)),
       payload: Mesh3dExtractedPayload::{ ..base.payload, mesh_handle, },
     }
     let second = ExtractedMesh3d::{
-      ..base,
       entity: phase_entity_ref3d_for_main(@core.Entity::new(302, 0)),
       payload: Mesh3dExtractedPayload::{ ..base.payload, mesh_handle, },
     }
@@ -1664,19 +1670,12 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
       layers: @camera_render_layers.RenderLayers::RenderLayers(),
-      has_no_wireframe: false,
-      wireframe_asset_id: None,
-      wireframe_material: None,
-      wireframe_color: None,
-      wireframe_line_width: None,
-      wireframe_topology: None,
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
       previous_morph_weights_index: -1,
       morph_targets_texture_id: -1,
       instance_vertex_buffer_id: -1,
-      motion_vector_enabled: false,
     },
   }
   let (view, cache) = render3d_test_queue_pipeline_cache([mesh])

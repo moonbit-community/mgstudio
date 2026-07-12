@@ -29,7 +29,7 @@ fn archetype_sorted_unique_local_component_ids(
 
 ///|
 fn archetype_signature_trie_node_new() -> ArchetypeSignatureTrieNode {
-  { children: {}, value: None }
+  { children: Map([]), value: None }
 }
 
 ///|
@@ -641,7 +641,7 @@ fn World::ensure_archetype_for_local_components(
       self.archetype_ids_by_signature.insert(normalized, archetype_id)
       self.archetype_table_ids.set(archetype_id, table_id)
       self.archetype_component_local_ids.set(archetype_id, normalized)
-      let local_component_indices : Map[Int, Int] = {}
+      let local_component_indices : Map[Int, Int] = Map([])
       let local_component_presence = @utils.IntBitSet::new()
       let definition_component_ids : Array[Int] = []
       let definition_component_presence = @utils.IntBitSet::new()
@@ -690,12 +690,12 @@ fn World::cache_archetype_add_edge(
 ) -> Unit {
   let add_edges = self.archetype_add_edges_by_component_local_id.get_or_init(
     from_archetype_id,
-    fn() { {} },
+    fn() { Map([]) },
   )
   add_edges.set(component_local_id, to_archetype_id)
   let remove_edges = self.archetype_remove_edges_by_component_local_id.get_or_init(
     to_archetype_id,
-    fn() { {} },
+    fn() { Map([]) },
   )
   remove_edges.set(component_local_id, from_archetype_id)
 }
@@ -709,12 +709,12 @@ fn World::cache_archetype_remove_edge(
 ) -> Unit {
   let remove_edges = self.archetype_remove_edges_by_component_local_id.get_or_init(
     from_archetype_id,
-    fn() { {} },
+    fn() { Map([]) },
   )
   remove_edges.set(component_local_id, to_archetype_id)
   let add_edges = self.archetype_add_edges_by_component_local_id.get_or_init(
     to_archetype_id,
-    fn() { {} },
+    fn() { Map([]) },
   )
   add_edges.set(component_local_id, from_archetype_id)
 }
@@ -740,7 +740,7 @@ fn World::cache_archetype_insert_bundle_edge(
 ) -> Unit {
   let edges = self.archetype_insert_bundle_edges_by_id.get_or_init(
     from_archetype_id,
-    fn() { {} },
+    fn() { Map([]) },
   )
   edges.set(bundle_id, to_archetype_id)
 }
