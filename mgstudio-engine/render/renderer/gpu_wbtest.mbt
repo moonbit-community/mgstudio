@@ -1304,6 +1304,95 @@ test "renderer: backend shutdown releases general postprocess owners" {
 }
 
 ///|
+test "renderer: backend shutdown releases temporal exposure owners" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  let bgl = backend.device.create_bind_group_layout_empty()
+  let layout = backend.device.create_pipeline_layout_1(bgl)
+  let shader_source =
+    #|@compute @workgroup_size(1) fn cs_main() {}
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  let render_pipeline = backend.device.create_render_pipeline_rgba8(shader)
+  let compute_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    layout, shader, "cs_main",
+  )
+  shader.release()
+  let history_texture_0 = backend.device.create_texture_rgba8_2d(1U, 1U)
+  let history_view_0 = history_texture_0.create_view()
+  let history_texture_1 = backend.device.create_texture_rgba8_2d(1U, 1U)
+  let history_view_1 = history_texture_1.create_view()
+  backend.taa_history_textures.push(GpuTaaHistoryTextures::{
+    camera_key_hi: 1,
+    camera_key_lo: 2,
+    width: 1,
+    height: 1,
+    format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    texture_0: history_texture_0,
+    view_0: history_view_0,
+    texture_1: history_texture_1,
+    view_1: history_view_1,
+    next_write_index: 0,
+  })
+  backend.taa_pipeline_cache.push(GpuTaaPipelineCacheEntry::{
+    format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    tonemap: false,
+    reset: false,
+    pipeline: render_pipeline,
+  })
+  backend.taa_bgl = Some(bgl)
+  backend.taa_pipeline_layout = Some(layout)
+  backend.bloom_sampler = Some(backend.device.create_sampler_linear_clamp())
+  backend.bloom_settings_buf = Some(
+    backend.device.create_buffer(
+      size=16UL,
+      usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
+    ),
+  )
+  let bloom_texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  backend.bloom_mip_views.push(bloom_texture.create_view())
+  backend.bloom_mip_texture = Some(bloom_texture)
+  let curve_texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  backend.auto_exposure_curve_view = Some(curve_texture.create_view())
+  backend.auto_exposure_curve_texture = Some(curve_texture)
+  backend.auto_exposure_histogram_pipeline = Some(compute_pipeline)
+  let state_buf = backend.device.create_buffer(
+    size=4UL,
+    usage=bu(@wgpu.BUFFER_USAGE_STORAGE),
+  )
+  backend.auto_exposure_view_states.push(GpuAutoExposureViewState::{
+    key_hi: 1,
+    key_lo: 2,
+    state_buf,
+  })
+  backend.auto_exposure_active_state_buf = Some(state_buf)
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_textures_num_kept_from_user() == 0UL &&
+    after.hub_texture_views_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_compute_pipelines_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,

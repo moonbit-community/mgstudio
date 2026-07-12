@@ -788,8 +788,109 @@ fn GpuBackend::release_general_postprocess_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_temporal_exposure_owners(_self : GpuBackend) -> Unit {
-
+fn GpuBackend::release_temporal_exposure_owners(self : GpuBackend) -> Unit {
+  for history in self.taa_history_textures {
+    history.view_0.release()
+    history.view_1.release()
+    history.texture_0.release()
+    history.texture_1.release()
+  }
+  for entry in self.taa_pipeline_cache {
+    entry.pipeline.release()
+  }
+  let render_pipelines = [
+    self.bloom_downsample_first_pipeline,
+    self.bloom_downsample_first_no_threshold_pipeline,
+    self.bloom_downsample_first_uniform_pipeline,
+    self.bloom_downsample_first_no_threshold_uniform_pipeline,
+    self.bloom_downsample_pipeline,
+    self.bloom_downsample_uniform_pipeline,
+    self.bloom_upsample_pipeline_energy,
+    self.bloom_upsample_pipeline_additive,
+    self.bloom_upsample_final_pipeline_energy,
+    self.bloom_upsample_final_pipeline_additive,
+  ]
+  for pipeline in render_pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  for entry in self.tonemapping_pipeline_cache {
+    match entry.state {
+      RenderPipelineOk(pipeline) => pipeline.release()
+      RenderPipelineErr(message) => ignore(message)
+    }
+  }
+  let compute_pipelines = [
+    self.auto_exposure_histogram_pipeline,
+    self.auto_exposure_average_pipeline,
+  ]
+  for pipeline in compute_pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  let pipeline_layouts = [
+    self.taa_pipeline_layout,
+    self.bloom_intermediate_pipeline_layout,
+    self.tonemapping_pipeline_layout,
+    self.auto_exposure_compute_pipeline_layout,
+  ]
+  for layout in pipeline_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let bind_group_layouts = [
+    self.taa_bgl,
+    self.bloom_intermediate_bgl,
+    self.tonemapping_bgl,
+    self.auto_exposure_compute_bgl,
+  ]
+  for layout in bind_group_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  for view in self.bloom_mip_views {
+    view.release()
+  }
+  if self.bloom_mip_texture is Some(texture) {
+    texture.release()
+  }
+  if self.auto_exposure_curve_view is Some(view) {
+    view.release()
+  }
+  if self.auto_exposure_curve_texture is Some(texture) {
+    texture.release()
+  }
+  let samplers = [
+    self.taa_nearest_sampler,
+    self.taa_linear_sampler,
+    self.bloom_sampler,
+    self.tonemapping_sampler,
+  ]
+  for sampler in samplers {
+    if sampler is Some(value) {
+      value.release()
+    }
+  }
+  let buffers = [
+    self.bloom_settings_buf,
+    self.tonemapping_view_buf,
+    self.auto_exposure_globals_buf,
+    self.auto_exposure_settings_buf,
+    self.auto_exposure_curve_extents_buf,
+    self.auto_exposure_histogram_buf,
+  ]
+  for buffer in buffers {
+    if buffer is Some(value) {
+      value.release()
+    }
+  }
+  for entry in self.auto_exposure_view_states {
+    entry.state_buf.release()
+  }
 }
 
 ///|

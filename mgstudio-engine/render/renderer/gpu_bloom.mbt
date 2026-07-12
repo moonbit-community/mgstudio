@@ -747,6 +747,10 @@ fn ensure_bloom_pipeline_rgba8(
       is Some(intermediate_pipeline_layout) else {
       return
     }
+    let pending_pipelines : Array[@wgpu.RenderPipeline] = []
+    defer (for pipeline in pending_pipelines {
+      pipeline.release()
+    })
     let vertex_source = load_fullscreen_vertex_wgsl_required(backend)
     let downsample_first_source = load_postprocess_fragment_wgsl_with_defines_required(
       backend,
@@ -793,6 +797,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first",
     )
+    pending_pipelines.push(downsample_first_pipeline)
     let downsample_first_no_threshold_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -803,6 +808,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first_no_threshold",
     )
+    pending_pipelines.push(downsample_first_no_threshold_pipeline)
     let downsample_first_uniform_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -813,6 +819,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first_uniform",
     )
+    pending_pipelines.push(downsample_first_uniform_pipeline)
     let downsample_first_no_threshold_uniform_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -823,6 +830,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_first_no_threshold_uniform",
     )
+    pending_pipelines.push(downsample_first_no_threshold_uniform_pipeline)
     let downsample_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -833,6 +841,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline",
     )
+    pending_pipelines.push(downsample_pipeline)
     let downsample_uniform_pipeline = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -843,6 +852,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom_downsampling_pipeline_uniform",
     )
+    pending_pipelines.push(downsample_uniform_pipeline)
     let upsample_pipeline_energy = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -853,6 +863,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
       "mgstudio_bloom_upsampling_pipeline_energy",
     )
+    pending_pipelines.push(upsample_pipeline_energy)
     let upsample_pipeline_additive = create_postprocess_pipeline_split_modules(
       backend,
       intermediate_pipeline_layout,
@@ -863,6 +874,7 @@ fn ensure_bloom_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
       "mgstudio_bloom_upsampling_pipeline_additive",
     )
+    pending_pipelines.push(upsample_pipeline_additive)
     backend.bloom_downsample_first_pipeline = Some(downsample_first_pipeline)
     backend.bloom_downsample_first_no_threshold_pipeline = Some(
       downsample_first_no_threshold_pipeline,
@@ -879,6 +891,7 @@ fn ensure_bloom_pipeline_rgba8(
     )
     backend.bloom_upsample_pipeline_energy = Some(upsample_pipeline_energy)
     backend.bloom_upsample_pipeline_additive = Some(upsample_pipeline_additive)
+    pending_pipelines.clear()
   }
 }
 
@@ -904,6 +917,10 @@ fn ensure_bloom_final_upsample_pipeline(
     is Some(intermediate_pipeline_layout) else {
     return
   }
+  let pending_pipelines : Array[@wgpu.RenderPipeline] = []
+  defer (for pipeline in pending_pipelines {
+    pipeline.release()
+  })
   let vertex_source = load_fullscreen_vertex_wgsl_required(backend)
   let upsample_source = load_postprocess_fragment_wgsl_with_defines_required(
     backend,
@@ -920,6 +937,7 @@ fn ensure_bloom_final_upsample_pipeline(
     POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
     "mgstudio_bloom_upsampling_final_pipeline_energy",
   )
+  pending_pipelines.push(energy_pipeline)
   let additive_pipeline = create_postprocess_pipeline_split_modules(
     backend,
     intermediate_pipeline_layout,
@@ -930,9 +948,11 @@ fn ensure_bloom_final_upsample_pipeline(
     POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
     "mgstudio_bloom_upsampling_final_pipeline_additive",
   )
+  pending_pipelines.push(additive_pipeline)
   backend.bloom_upsample_final_pipeline_energy = Some(energy_pipeline)
   backend.bloom_upsample_final_pipeline_additive = Some(additive_pipeline)
   backend.bloom_upsample_final_pipeline_format = Some(format)
+  pending_pipelines.clear()
 }
 
 ///|
