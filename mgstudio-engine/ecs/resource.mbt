@@ -22,6 +22,9 @@ pub fn[T] World::insert_resource(
   key : ResourceKey[T],
   value : T,
 ) -> Unit {
+  guard self.is_active() else {
+    abort("cannot insert a resource after World closing has started")
+  }
   let existed = key.resource_contains(self)
   key.resource_set(self, value)
   if !self.resource_finalizers.contains(key.id()) {
@@ -52,6 +55,9 @@ pub fn[T] World::get_resource(self : World, key : ResourceKey[T]) -> T? {
 
 ///|
 pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
+  guard self.is_active() else {
+    abort("cannot remove a resource after World closing has started")
+  }
   guard key.resource_remove(self) is Some(value) else { return None }
   self.resource_tick_registry.untrack(key.id())
   self.resource_finalizers.remove(key.id())

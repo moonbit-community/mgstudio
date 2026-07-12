@@ -417,6 +417,7 @@ pub fn World::spawn_empty_at(
   self : World,
   entity : @core.Entity,
 ) -> @core.Entity raise EcsError {
+  self.ensure_active()
   self.abort_if_query_iteration_would_be_invalidated("spawn entity")
   self.entities.spawn_at(entity) catch {
     err => raise EntityStateError(err)
@@ -632,9 +633,15 @@ fn World::ensure_entity_alive(
   self : World,
   entity : @core.Entity,
 ) -> Unit raise EcsError {
+  self.ensure_active()
   if !self.entities.is_alive(entity) {
     raise EntityNotAlive(entity)
   }
+}
+
+///|
+fn World::ensure_active(self : World) -> Unit raise EcsError {
+  guard self.lifecycle.is_active() else { raise WorldClosed(self.world_id()) }
 }
 
 ///|

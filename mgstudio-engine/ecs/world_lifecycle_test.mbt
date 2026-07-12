@@ -49,3 +49,14 @@ test "ecs: World close rejects reentry while finalizers run" {
   debug_inspect(world.is_closed(), content="true")
   debug_inspect(world.lifecycle_epoch(), content="1")
 }
+
+///|
+test "ecs: a closed World rejects raw entity mutation" {
+  let world = World::new()
+  world.close()
+  let mutation_error : Ref[EcsError?] = Ref(None)
+  ignore(world.spawn_empty_at(@core.Entity::new(99, 1))) catch {
+    error => mutation_error.val = Some(error)
+  }
+  debug_inspect(mutation_error.val is Some(WorldClosed(_)), content="true")
+}
