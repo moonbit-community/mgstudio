@@ -156,6 +156,9 @@ pub(all) suberror EcsError {
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
+  WorldClosed(Int)
+  ForeignEntityReservation(@core.Entity, Int, Int)
+  StaleEntityReservation(@core.Entity)
 }
 
 ///|
@@ -193,7 +196,7 @@ pub struct World {
   priv mut current_component_observer_context : ComponentObserverContext?
   priv mut current_trigger_observer_context : TriggerObserverContext?
   priv entities : @core.Entities
-  priv entity_allocator : @core.EntityAllocator
+  priv allocator_connection : AllocatorConnection
   priv mut change_tick : @core.Tick
   priv mut last_change_tick_check : @core.Tick
   priv mut system_tick_context : @core.SystemTickContext
@@ -259,7 +262,7 @@ pub fn World::new() -> World {
     current_component_observer_context: None,
     current_trigger_observer_context: None,
     entities: @core.Entities::new(),
-    entity_allocator: @core.EntityAllocator::new(),
+    allocator_connection: AllocatorConnection::new(world_id, 0),
     change_tick: 0,
     last_change_tick_check: 0,
     system_tick_context: @core.SystemTickContext::new(),
@@ -331,14 +334,34 @@ pub fn World::is_closed(self : World) -> Bool {
 
 ///|
 pub fn World::close(self : World) -> Unit {
+  guard !self.lifecycle.is_closed() else { return }
+  self.allocator_connection.close()
   self.lifecycle.close()
 }
 
 ///|
 pub fn World::spawn(self : World) -> @core.Entity {
-  let entity = self.entity_allocator.alloc()
-  ignore(try! self.spawn_empty_at(entity))
-  entity
+  let reservation = try! self.reserve_entity()
+  try! self.spawn_reserved(reservation)
+}
+
+///|
+pub fn World::reserve_entity(self : World) -> EntityReservation raise EcsError {
+  self.allocator_connection.reserve_entity()
+}
+
+///|
+pub fn World::spawn_reserved(
+  self : World,
+  reservation : EntityReservation,
+) -> @core.Entity raise EcsError {
+  let entity = self.allocator_connection.claim(reservation)
+  self.spawn_empty_at(entity) catch {
+    error => {
+      self.allocator_connection.free_spawned(entity)
+      raise error
+    }
+  }
 }
 
 ///|
@@ -362,8 +385,13 @@ pub fn World::spawn_empty(self : World) -> @core.Entity {
 }
 
 ///|
-pub fn World::entity_allocator(self : World) -> @core.EntityAllocator {
-  self.entity_allocator
+pub fn World::pending_entity_reservation_count(self : World) -> Int {
+  self.allocator_connection.pending_count()
+}
+
+///|
+fn World::free_spawned_entity(self : World, entity : @core.Entity) -> Unit {
+  self.allocator_connection.free_spawned(entity)
 }
 
 ///|

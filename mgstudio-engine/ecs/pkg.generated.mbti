@@ -77,6 +77,9 @@ pub(all) suberror EcsError {
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
+  WorldClosed(Int)
+  ForeignEntityReservation(@core.Entity, Int, Int)
+  StaleEntityReservation(@core.Entity)
 }
 
 pub(all) suberror RequiredComponentsError {
@@ -116,6 +119,11 @@ pub struct All {
 }
 pub fn All::new() -> Self
 pub impl QueryFilter for All
+
+pub struct AllocatorConnection {
+  // private fields
+}
+pub fn AllocatorConnection::reserve_entity(Self) -> EntityReservation raise EcsError
 
 pub struct Allow[T] {
   // private fields
@@ -394,6 +402,11 @@ pub fn[T : Component] EntityRef::get(Self) -> T? raise EcsError
 pub fn[D : QueryData] EntityRef::get_components(Self) -> D? raise EcsError
 pub fn EntityRef::id(Self) -> @core.Entity
 pub impl QueryData for EntityRef
+
+pub struct EntityReservation {
+  // private fields
+}
+pub fn EntityReservation::entity(Self) -> @core.Entity
 
 type EventAccessOps[T]
 
@@ -808,7 +821,6 @@ pub fn[E : TriggerEvent] World::current_observer(Self) -> On[E]
 #callsite(autofill(loc))
 pub fn World::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::entity(Self, @core.Entity) -> EntityRef raise EcsError
-pub fn World::entity_allocator(Self) -> @core.EntityAllocator
 pub fn World::entity_archetype_id(Self, @core.Entity) -> Int?
 pub fn World::entity_count(Self) -> Int
 pub fn World::entity_mut(Self, @core.Entity) -> EntityMut raise EcsError
@@ -843,6 +855,7 @@ pub fn[T] World::message_mutator(Self, MessageKey[T], cursor? : MessageCursor[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], cursor? : MessageCursor[T]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
 pub fn World::new() -> Self
+pub fn World::pending_entity_reservation_count(Self) -> Int
 pub fn[D] World::query(Self) -> QueryState[D, All]
 pub fn[F] World::query_entities_filtered(Self, F) -> Query[@core.Entity, F]
 pub fn[D, F] World::query_filtered(Self, F) -> QueryState[D, F]
@@ -865,6 +878,7 @@ pub fn[T] World::remove_resource(Self, ResourceKey[T]) -> T?
 pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
 #callsite(autofill(loc))
 pub fn[T] World::replace(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Bool raise EcsError
+pub fn World::reserve_entity(Self) -> EntityReservation raise EcsError
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T] World::resource_added_since(Self, ResourceKey[T], Int64) -> Bool
 pub fn[T] World::resource_added_tick(Self, ResourceKey[T]) -> Int64?
@@ -884,6 +898,7 @@ pub fn World::spawn(Self) -> @core.Entity
 pub fn[B : Bundle] World::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity raise EcsError
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn World::spawn_empty_at(Self, @core.Entity) -> @core.Entity raise EcsError
+pub fn World::spawn_reserved(Self, EntityReservation) -> @core.Entity raise EcsError
 pub fn World::structural_generation(Self) -> Int
 #callsite(autofill(loc))
 pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError

@@ -188,7 +188,7 @@ fn World::commit_component_despawn_transaction(
   let freed = self.entities.despawn(transaction.entity) catch {
     err => raise EntityStateError(err)
   }
-  self.entity_allocator().free(freed)
+  self.free_spawned_entity(freed)
   self.clear_entity_archetype_tracking(transaction.entity)
   self.mark_entity_lifecycle_changed()
   self.mark_structure_changed()

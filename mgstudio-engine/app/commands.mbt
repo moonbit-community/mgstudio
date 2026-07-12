@@ -189,10 +189,11 @@ fn end_deferred_command_batch(world : @ecs.World) -> Unit {
 
 ///|
 pub fn Commands::spawn_empty(self : Commands) -> @core.Entity {
-  let entity = self.world.entity_allocator().alloc()
+  let reservation = try! self.world.reserve_entity()
+  let entity = reservation.entity()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
-      ignore(world.spawn_empty_at(entity))
+      ignore(world.spawn_reserved(reservation))
     },
     error_handler: None,
     source: "Commands::spawn_empty",
@@ -328,10 +329,11 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
   component : T,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let entity = self.world.entity_allocator().alloc()
+  let reservation = try! self.world.reserve_entity()
+  let entity = reservation.entity()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
-      ignore(world.spawn_empty_at(entity))
+      ignore(world.spawn_reserved(reservation))
       insert_single_component(world, entity, component, loc~)
     },
     error_handler: None,
@@ -347,10 +349,11 @@ pub fn[B : @ecs.Bundle] Commands::spawn(
   bundle : B,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let entity = self.world.entity_allocator().alloc()
+  let reservation = try! self.world.reserve_entity()
+  let entity = reservation.entity()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
-      ignore(world.spawn_empty_at(entity))
+      ignore(world.spawn_reserved(reservation))
       B::insert_into(bundle, world, entity, loc~)
     },
     error_handler: None,
@@ -367,17 +370,20 @@ pub fn[B : @ecs.Bundle] Commands::spawn_batch(
   loc~ : SourceLoc,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
+  let reservations : Array[@ecs.EntityReservation] = []
   for _ in bundles {
-    let entity = self.world.entity_allocator().alloc()
-    entities.push(entity)
+    let reservation = try! self.world.reserve_entity()
+    reservations.push(reservation)
+    entities.push(reservation.entity())
   }
   let queued_bundles = bundles
   let queued_entities = entities
+  let queued_reservations = reservations
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       let count = queued_bundles.length()
       for i in 0..<count {
-        ignore(world.spawn_empty_at(queued_entities[i]))
+        ignore(world.spawn_reserved(queued_reservations[i]))
         B::insert_into(queued_bundles[i], world, queued_entities[i], loc~)
       }
     },
