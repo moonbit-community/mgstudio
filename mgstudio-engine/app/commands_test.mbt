@@ -252,6 +252,38 @@ test "app: Commands spawn_empty reserves an entity without queued components" {
 }
 
 ///|
+test "app: Commands spawn reserves an entity until deferred flush" {
+  let spawned : Ref[@core.Entity?] = Ref(None)
+  let counts : Array[Int] = []
+  let alive : Array[Bool] = []
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    counts.push(commands.world.entity_count())
+    let entity = commands.spawn(
+      (CommandsPosition::{ x: 3, y: 4 }, CommandsMarker::{  }),
+    )
+    spawned.val = Some(entity)
+    counts.push(commands.world.entity_count())
+    alive.push(commands.world.is_alive(entity))
+  })
+
+  app = app.run_once()
+
+  debug_inspect(counts, content="[0, 0]")
+  debug_inspect(alive, content="[false]")
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn to return an entity")
+  }
+  debug_inspect(app.world().entity_count(), content="1")
+  debug_inspect(app.world().is_alive(entity), content="true")
+  debug_inspect(
+    try! app.world().get_by_key(entity, commands_position_key),
+    content="Some({ x: 3, y: 4 })",
+  )
+}
+
+///|
 test "app: Commands insert_resource defers resource writes until after the system" {
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
     commands : Commands,
@@ -533,7 +565,7 @@ test "app: Commands entity despawn defers entity removal until flush" {
 
   app = app.run_once()
 
-  debug_inspect(alive_counts, content="[1, 1, 1]")
+  debug_inspect(alive_counts, content="[0, 0, 0]")
   guard spawned.val is Some(entity) else {
     abort("expected Commands::spawn to return an entity")
   }

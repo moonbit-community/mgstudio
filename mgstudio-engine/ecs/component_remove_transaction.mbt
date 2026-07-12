@@ -185,9 +185,10 @@ fn World::commit_component_despawn_transaction(
   self.run_component_remove_transaction_replace_remove_phase(transaction)
   self.run_component_remove_transaction_remove_observer_phase(transaction)
   self.commit_removed_component_effects(transaction)
-  self.entities.despawn(transaction.entity) catch {
+  let freed = self.entities.despawn(transaction.entity) catch {
     err => raise EntityStateError(err)
   }
+  self.entity_allocator().free(freed)
   self.clear_entity_archetype_tracking(transaction.entity)
   self.mark_entity_lifecycle_changed()
   self.mark_structure_changed()

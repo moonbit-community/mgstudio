@@ -26,6 +26,7 @@ pub(all) suberror EntityError {
   InvalidId(Int)
   NotSpawned(Entity)
   GenerationMismatch(Entity, Int)
+  AlreadySpawned(Entity)
 }
 
 // Types and methods
@@ -80,11 +81,11 @@ pub fn Duration::zero() -> Self
 type Entities
 pub fn Entities::alive_entities(Self) -> Array[Entity]
 pub fn Entities::count_spawned(Self) -> Int
-pub fn Entities::despawn(Self, Entity) -> Unit raise EntityError
+pub fn Entities::despawn(Self, Entity) -> Entity raise EntityError
 pub fn Entities::is_alive(Self, Entity) -> Bool
 pub fn Entities::len(Self) -> Int
 pub fn Entities::new() -> Self
-pub fn Entities::spawn(Self) -> Entity
+pub fn Entities::spawn_at(Self, Entity) -> Unit raise EntityError
 
 pub struct Entity {
   id : Int
@@ -95,6 +96,13 @@ pub fn Entity::is_placeholder(Self) -> Bool
 pub fn Entity::new(Int, Int) -> Self
 pub fn Entity::placeholder() -> Self
 pub fn Entity::to_bits(Self) -> UInt64
+
+pub struct EntityAllocator {
+  // private fields
+}
+pub fn EntityAllocator::alloc(Self) -> Entity
+pub fn EntityAllocator::free(Self, Entity) -> Unit
+pub fn EntityAllocator::new() -> Self
 
 pub struct Instant {
   nanos_since_start : Int64

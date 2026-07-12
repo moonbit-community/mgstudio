@@ -193,6 +193,7 @@ pub struct World {
   priv mut current_component_observer_context : ComponentObserverContext?
   priv mut current_trigger_observer_context : TriggerObserverContext?
   priv entities : @core.Entities
+  priv entity_allocator : @core.EntityAllocator
   priv mut change_tick : @core.Tick
   priv mut last_change_tick_check : @core.Tick
   priv mut system_tick_context : @core.SystemTickContext
@@ -258,6 +259,7 @@ pub fn World::new() -> World {
     current_component_observer_context: None,
     current_trigger_observer_context: None,
     entities: @core.Entities::new(),
+    entity_allocator: @core.EntityAllocator::new(),
     change_tick: 0,
     last_change_tick_check: 0,
     system_tick_context: @core.SystemTickContext::new(),
@@ -319,8 +321,20 @@ pub fn World::world_id(self : World) -> Int {
 
 ///|
 pub fn World::spawn(self : World) -> @core.Entity {
+  let entity = self.entity_allocator.alloc()
+  ignore(try! self.spawn_empty_at(entity))
+  entity
+}
+
+///|
+pub fn World::spawn_empty_at(
+  self : World,
+  entity : @core.Entity,
+) -> @core.Entity raise EcsError {
   self.abort_if_query_iteration_would_be_invalidated("spawn entity")
-  let entity = self.entities.spawn()
+  self.entities.spawn_at(entity) catch {
+    err => raise EntityStateError(err)
+  }
   self.initialize_entity_archetype_tracking(entity)
   self.mark_entity_lifecycle_changed()
   self.mark_structure_changed()
@@ -330,6 +344,11 @@ pub fn World::spawn(self : World) -> @core.Entity {
 ///|
 pub fn World::spawn_empty(self : World) -> @core.Entity {
   self.spawn()
+}
+
+///|
+pub fn World::entity_allocator(self : World) -> @core.EntityAllocator {
+  self.entity_allocator
 }
 
 ///|

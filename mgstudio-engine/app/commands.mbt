@@ -189,7 +189,15 @@ fn end_deferred_command_batch(world : @ecs.World) -> Unit {
 
 ///|
 pub fn Commands::spawn_empty(self : Commands) -> @core.Entity {
-  self.world.spawn_empty()
+  let entity = self.world.entity_allocator().alloc()
+  self.queue.push({
+    run: fn(world : @ecs.World, _tick : @core.Tick) raise {
+      ignore(world.spawn_empty_at(entity))
+    },
+    error_handler: None,
+    source: "Commands::spawn_empty",
+  })
+  entity
 }
 
 ///|
@@ -320,9 +328,10 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
   component : T,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let entity = self.world.spawn_empty()
+  let entity = self.world.entity_allocator().alloc()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
+      ignore(world.spawn_empty_at(entity))
       insert_single_component(world, entity, component, loc~)
     },
     error_handler: None,
@@ -338,9 +347,10 @@ pub fn[B : @ecs.Bundle] Commands::spawn(
   bundle : B,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let entity = self.world.spawn_empty()
+  let entity = self.world.entity_allocator().alloc()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
+      ignore(world.spawn_empty_at(entity))
       B::insert_into(bundle, world, entity, loc~)
     },
     error_handler: None,
@@ -358,7 +368,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn_batch(
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
   for _ in bundles {
-    let entity = self.world.spawn_empty()
+    let entity = self.world.entity_allocator().alloc()
     entities.push(entity)
   }
   let queued_bundles = bundles
@@ -367,6 +377,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn_batch(
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
       let count = queued_bundles.length()
       for i in 0..<count {
+        ignore(world.spawn_empty_at(queued_entities[i]))
         B::insert_into(queued_bundles[i], world, queued_entities[i], loc~)
       }
     },

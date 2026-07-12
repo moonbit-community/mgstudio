@@ -807,6 +807,7 @@ pub fn[E : TriggerEvent] World::current_observer(Self) -> On[E]
 #callsite(autofill(loc))
 pub fn World::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::entity(Self, @core.Entity) -> EntityRef raise EcsError
+pub fn World::entity_allocator(Self) -> @core.EntityAllocator
 pub fn World::entity_archetype_id(Self, @core.Entity) -> Int?
 pub fn World::entity_count(Self) -> Int
 pub fn World::entity_mut(Self, @core.Entity) -> EntityMut raise EcsError
@@ -879,6 +880,7 @@ pub fn World::spawn(Self) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[B : Bundle] World::spawn_bundle(Self, B, loc~ : SourceLoc) -> @core.Entity raise EcsError
 pub fn World::spawn_empty(Self) -> @core.Entity
+pub fn World::spawn_empty_at(Self, @core.Entity) -> @core.Entity raise EcsError
 pub fn World::structural_generation(Self) -> Int
 #callsite(autofill(loc))
 pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError

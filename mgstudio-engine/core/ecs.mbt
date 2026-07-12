@@ -57,13 +57,13 @@ pub(all) suberror EntityError {
   InvalidId(Int)
   NotSpawned(Entity)
   GenerationMismatch(Entity, Int)
+  AlreadySpawned(Entity)
 }
 
 ///|
 struct Entities {
   generations : Array[Int]
   alive : Array[Bool]
-  free : Array[Int]
 }
 
 ///|
@@ -71,7 +71,37 @@ const FIRST_GENERATION : Int = 1
 
 ///|
 pub fn Entities::new() -> Entities {
-  { generations: [], alive: [], free: [] }
+  { generations: [], alive: [] }
+}
+
+///|
+/// Allocates valid entity IDs that are not spawned until inserted into a
+/// world's entity storage.
+pub struct EntityAllocator {
+  priv mut next_id : Int
+  priv free : Array[Entity]
+}
+
+///|
+pub fn EntityAllocator::new() -> EntityAllocator {
+  { next_id: 0, free: [] }
+}
+
+///|
+pub fn EntityAllocator::alloc(self : EntityAllocator) -> Entity {
+  match self.free.pop() {
+    Some(entity) => entity
+    None => {
+      let entity = Entity::{ id: self.next_id, generation: FIRST_GENERATION }
+      self.next_id = self.next_id + 1
+      entity
+    }
+  }
+}
+
+///|
+pub fn EntityAllocator::free(self : EntityAllocator, entity : Entity) -> Unit {
+  self.free.push(entity)
 }
 
 ///|
@@ -103,19 +133,32 @@ pub fn Entities::alive_entities(self : Entities) -> Array[Entity] {
 }
 
 ///|
-pub fn Entities::spawn(self : Entities) -> Entity {
-  match self.free.pop() {
-    Some(id) => {
-      self.alive[id] = true
-      Entity::{ id, generation: self.generations[id] }
-    }
-    None => {
-      let id = self.generations.length()
-      self.generations.push(FIRST_GENERATION)
-      self.alive.push(true)
-      Entity::{ id, generation: FIRST_GENERATION }
-    }
+pub fn Entities::spawn_at(
+  self : Entities,
+  entity : Entity,
+) -> Unit raise EntityError {
+  if entity.id < 0 {
+    raise InvalidId(entity.id)
   }
+  if entity.id >= self.generations.length() {
+    while self.generations.length() < entity.id {
+      self.generations.push(FIRST_GENERATION)
+      self.alive.push(false)
+    }
+    self.generations.push(entity.generation)
+    self.alive.push(true)
+    return
+  }
+  guard self.generations.get(entity.id) is Some(generation) else {
+    raise NotSpawned(entity)
+  }
+  if generation != entity.generation {
+    raise GenerationMismatch(entity, generation)
+  }
+  if self.alive[entity.id] {
+    raise AlreadySpawned(entity)
+  }
+  self.alive[entity.id] = true
 }
 
 ///|
@@ -133,7 +176,7 @@ pub fn Entities::is_alive(self : Entities, entity : Entity) -> Bool {
 pub fn Entities::despawn(
   self : Entities,
   entity : Entity,
-) -> Unit raise EntityError {
+) -> Entity raise EntityError {
   if entity.id < 0 {
     raise InvalidId(entity.id)
   }
@@ -150,28 +193,33 @@ pub fn Entities::despawn(
     raise GenerationMismatch(entity, gen)
   }
   self.alive[entity.id] = false
-  self.generations[entity.id] = gen + 1
-  self.free.push(entity.id)
+  let freed = Entity::{ id: entity.id, generation: gen + 1 }
+  self.generations[entity.id] = freed.generation
+  freed
 }
 
 ///|
 struct World {
   entities : Entities
+  entity_allocator : EntityAllocator
 }
 
 ///|
 pub fn World::new() -> World {
-  { entities: Entities::new() }
+  { entities: Entities::new(), entity_allocator: EntityAllocator::new() }
 }
 
 ///|
 pub fn World::spawn_empty(self : World) -> Entity {
-  self.entities.spawn()
+  let entity = self.entity_allocator.alloc()
+  try! self.entities.spawn_at(entity)
+  entity
 }
 
 ///|
 pub fn World::despawn(self : World, entity : Entity) -> Unit raise EntityError {
-  self.entities.despawn(entity)
+  let freed = self.entities.despawn(entity)
+  self.entity_allocator.free(freed)
 }
 
 ///|
