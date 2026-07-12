@@ -390,6 +390,11 @@ pub fn World::pending_entity_reservation_count(self : World) -> Int {
 }
 
 ///|
+pub fn World::allocator_connection(self : World) -> AllocatorConnection {
+  self.allocator_connection
+}
+
+///|
 fn World::free_spawned_entity(self : World, entity : @core.Entity) -> Unit {
   self.allocator_connection.free_spawned(entity)
 }

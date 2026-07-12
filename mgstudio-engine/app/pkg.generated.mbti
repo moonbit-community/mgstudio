@@ -657,7 +657,7 @@ pub fn[C] CheckParentHasComponent::new(@core.Entity, caller? : String?) -> Self[
 pub impl[C : ValidateParentHasComponentTarget] @ecs.Message for CheckParentHasComponent[C]
 
 pub struct Commands {
-  world : @ecs.World
+  allocator : @ecs.AllocatorConnection
   tick : Int64
   queue : Array[DeferredCommandEntry]
 }

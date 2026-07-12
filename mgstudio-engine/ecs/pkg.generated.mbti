@@ -791,6 +791,7 @@ pub fn[C : Component] World::add_replace_entity_component_observer(Self, @core.E
 pub fn[T] World::added_components(Self, ComponentKey[T], @core.SystemTicks) -> AddedComponents[T]
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::alive_entities(Self) -> Array[@core.Entity]
+pub fn World::allocator_connection(Self) -> AllocatorConnection
 pub fn World::apply_queued_component_registrations(Self) -> Unit
 pub fn World::archetype_component_ids(Self, Int) -> Array[Int]?
 pub fn World::archetype_component_local_index(Self, Int, Int) -> Int?

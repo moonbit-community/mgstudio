@@ -256,16 +256,17 @@ test "app: Commands spawn reserves an entity until deferred flush" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let counts : Array[Int] = []
   let alive : Array[Bool] = []
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
     commands : Commands,
+    entities : @ecs.Query[@core.Entity, @ecs.All],
   ) {
-    counts.push(commands.world.entity_count())
+    counts.push(entities.count())
     let entity = commands.spawn(
       (CommandsPosition::{ x: 3, y: 4 }, CommandsMarker::{  }),
     )
     spawned.val = Some(entity)
-    counts.push(commands.world.entity_count())
-    alive.push(commands.world.is_alive(entity))
+    counts.push(entities.count())
+    alive.push((try! entities.get(entity)) is Some(_))
   })
 
   app = app.run_once()
@@ -546,14 +547,29 @@ test "app: Commands entity despawn defers entity removal until flush" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let alive_counts : Array[Int] = []
   let mut app = App::new(@ecs.World::new())
-    .add_system_param(fn(commands : Commands) {
+    .add_system_param2(fn(
+      commands : Commands,
+      entities : @ecs.Query[@core.Entity, @ecs.All],
+    ) {
       let entity = commands.spawn(
         (CommandsPosition::{ x: 11, y: 12 }, CommandsMarker::{  }),
       )
       spawned.val = Some(entity)
-      alive_counts.push(if commands.world.is_alive(entity) { 1 } else { 0 })
+      alive_counts.push(
+        if (try! entities.get(entity)) is Some(_) {
+          1
+        } else {
+          0
+        },
+      )
       commands.entity(entity).despawn()
-      alive_counts.push(if commands.world.is_alive(entity) { 1 } else { 0 })
+      alive_counts.push(
+        if (try! entities.get(entity)) is Some(_) {
+          1
+        } else {
+          0
+        },
+      )
     })
     .add_system(fn(world : @ecs.World) {
       guard spawned.val is Some(entity) else {

@@ -30,7 +30,7 @@ pub struct DeferredCommandEntry {
 
 ///|
 pub struct Commands {
-  world : @ecs.World
+  allocator : @ecs.AllocatorConnection
   tick : @core.Tick
   queue : Array[DeferredCommandEntry]
 }
@@ -189,7 +189,7 @@ fn end_deferred_command_batch(world : @ecs.World) -> Unit {
 
 ///|
 pub fn Commands::spawn_empty(self : Commands) -> @core.Entity {
-  let reservation = try! self.world.reserve_entity()
+  let reservation = try! self.allocator.reserve_entity()
   let entity = reservation.entity()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
@@ -211,10 +211,10 @@ pub fn Commands::entity(
 
 ///|
 pub fn Commands::register_system(
-  self : Commands,
+  _self : Commands,
   system : SystemConfig[@ecs.World],
 ) -> SystemId {
-  register_system(self.world, system)
+  register_system(current_world_or_abort(), system)
 }
 
 ///|
@@ -329,7 +329,7 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
   component : T,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let reservation = try! self.world.reserve_entity()
+  let reservation = try! self.allocator.reserve_entity()
   let entity = reservation.entity()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
@@ -349,7 +349,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn(
   bundle : B,
   loc~ : SourceLoc,
 ) -> @core.Entity {
-  let reservation = try! self.world.reserve_entity()
+  let reservation = try! self.allocator.reserve_entity()
   let entity = reservation.entity()
   self.queue.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) raise {
@@ -372,7 +372,7 @@ pub fn[B : @ecs.Bundle] Commands::spawn_batch(
   let entities : Array[@core.Entity] = []
   let reservations : Array[@ecs.EntityReservation] = []
   for _ in bundles {
-    let reservation = try! self.world.reserve_entity()
+    let reservation = try! self.allocator.reserve_entity()
     reservations.push(reservation)
     entities.push(reservation.entity())
   }
@@ -670,8 +670,9 @@ pub impl SystemParam for Commands with fn init_state(world) {
 
 ///|
 pub impl SystemParam for Commands with fn get(_state) {
+  let world = system_param_abort_missing_world()
   Commands::{
-    world: system_param_abort_missing_world(),
+    allocator: world.allocator_connection(),
     tick: current_system_ticks().this_run,
     queue: [],
   }
@@ -683,7 +684,7 @@ pub impl SystemParam for Commands with fn store(self, state) {
   for entry in self.queue {
     entries.push((self.tick, entry))
   }
-  append_deferred_command_entries(self.world, entries)
+  append_deferred_command_entries(current_world_or_abort(), entries)
   self.queue.clear()
   system_param_store_no_state(self, state)
 }
