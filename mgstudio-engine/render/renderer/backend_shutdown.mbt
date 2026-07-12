@@ -643,8 +643,58 @@ fn GpuBackend::release_meshlet_owners(self : GpuBackend) -> Unit {
 }
 
 ///|
-fn GpuBackend::release_motion_vector_owners(_self : GpuBackend) -> Unit {
-
+fn GpuBackend::release_motion_vector_owners(self : GpuBackend) -> Unit {
+  if self.mesh3d_motion_vector_view_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  if self.mesh3d_motion_vector_empty_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  for slot in self.mesh3d_motion_vector_mesh_slots {
+    slot.release()
+  }
+  if self.mesh3d_motion_vector_instance_mesh_bg is Some(bind_group) {
+    bind_group.release()
+  }
+  let fixed_pipelines = [
+    self.mesh3d_motion_vector_pipeline,
+    self.mesh3d_motion_vector_pipeline_skinned,
+    self.mesh3d_motion_vector_pipeline_skinned_prev,
+  ]
+  for pipeline in fixed_pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  for entry in self.mesh3d_motion_vector_pipeline_cache {
+    entry.pipeline.release()
+    entry.mesh_bind_group_layout.release()
+  }
+  if self.mesh3d_motion_vector_pipeline_layout is Some(layout) {
+    layout.release()
+  }
+  let bind_group_layouts = [
+    self.mesh3d_motion_vector_bgl_view,
+    self.mesh3d_motion_vector_bgl_empty,
+    self.mesh3d_motion_vector_bgl_mesh,
+  ]
+  for layout in bind_group_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let buffers = [
+    self.mesh3d_motion_vector_view_buf,
+    self.mesh3d_motion_vector_globals_buf,
+    self.mesh3d_motion_vector_previous_view_buf,
+    self.mesh3d_motion_vector_visibility_ranges_buf,
+    self.mesh3d_motion_vector_instance_mesh_buf,
+  ]
+  for buffer in buffers {
+    if buffer is Some(value) {
+      value.release()
+    }
+  }
 }
 
 ///|

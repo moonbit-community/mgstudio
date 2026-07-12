@@ -1158,6 +1158,86 @@ test "renderer: backend shutdown releases meshlet owners" {
 }
 
 ///|
+test "renderer: backend shutdown releases motion vector owners" {
+  let backend = GpuBackend::new()
+  let observer = backend.instance.add_ref()
+  let view_bgl = backend.device.create_bind_group_layout_empty()
+  let empty_bgl = backend.device.create_bind_group_layout_empty()
+  let mesh_bgl = backend.device.create_bind_group_layout_empty()
+  let layout = create_pipeline_layout_4(
+    backend.device,
+    view_bgl,
+    empty_bgl,
+    mesh_bgl,
+    mesh_bgl,
+  )
+  let shader_source =
+    #|struct VsOut { @builtin(position) position: vec4<f32> };
+    #|@vertex
+    #|fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
+    #|  var out: VsOut;
+    #|  out.position = vec4<f32>(f32(index), 0.0, 0.0, 1.0);
+    #|  return out;
+    #|}
+    #|@fragment fn fs_main() -> @location(0) vec4<f32> {
+    #|  return vec4<f32>(1.0);
+    #|}
+    #|
+  let shader = backend.device.create_shader_module_wgsl(shader_source)
+  backend.mesh3d_motion_vector_pipeline = Some(
+    backend.device.create_render_pipeline_rgba8(shader),
+  )
+  shader.release()
+  backend.mesh3d_motion_vector_bgl_view = Some(view_bgl)
+  backend.mesh3d_motion_vector_bgl_empty = Some(empty_bgl)
+  backend.mesh3d_motion_vector_bgl_mesh = Some(mesh_bgl)
+  backend.mesh3d_motion_vector_pipeline_layout = Some(layout)
+  backend.mesh3d_motion_vector_view_bg = Some(
+    mesh3d_create_empty_bind_group(
+      backend, view_bgl, "test_motion_vector_view_bg",
+    ),
+  )
+  backend.mesh3d_motion_vector_empty_bg = Some(
+    mesh3d_create_empty_bind_group(
+      backend, empty_bgl, "test_motion_vector_empty_bg",
+    ),
+  )
+  let slot_buffer = backend.device.create_buffer(
+    size=16UL,
+    usage=bu(@wgpu.BUFFER_USAGE_STORAGE),
+  )
+  let slot_bg = mesh3d_create_empty_bind_group(
+    backend, mesh_bgl, "test_motion_vector_slot_bg",
+  )
+  backend.mesh3d_motion_vector_mesh_slots.push(GpuStorageSlot::{
+    buffer: slot_buffer,
+    bind_group: slot_bg,
+  })
+  backend.mesh3d_motion_vector_instance_mesh_buf = Some(
+    backend.device.create_buffer(
+      size=16UL,
+      usage=bu(@wgpu.BUFFER_USAGE_STORAGE),
+    ),
+  )
+  backend.mesh3d_motion_vector_instance_mesh_bg = Some(
+    mesh3d_create_empty_bind_group(
+      backend, mesh_bgl, "test_motion_vector_instance_bg",
+    ),
+  )
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_bind_groups_num_kept_from_user() == 0UL &&
+    after.hub_render_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,
