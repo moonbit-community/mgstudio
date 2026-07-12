@@ -994,6 +994,74 @@ test "renderer: mesh3d preprocess upload state is isolated by render phase" {
 }
 
 ///|
+test "renderer: deleting old preprocess states releases native handles" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let payload = wbtest_mesh3d_preprocess_payload()
+  backend.upload_mesh3d_preprocess_camera_payload(7, 9, payload)
+  backend.upload_mesh3d_preprocess_camera_payload(11, 13, payload)
+  let before = backend.instance.generate_report()
+  let buffers_before = before.hub_buffers_num_kept_from_user()
+  let textures_before = before.hub_textures_num_kept_from_user()
+  before.release()
+  backend.delete_old_mesh3d_preprocess_work_item_buffers([
+    mesh3d_preprocess_camera_key(7, 9),
+  ])
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let after = backend.instance.generate_report()
+  let released = backend.mesh3d_preprocess_camera_upload_states.length() == 1 &&
+    after.hub_buffers_num_kept_from_user() < buffers_before &&
+    after.hub_textures_num_kept_from_user() < textures_before
+  after.release()
+  backend.shutdown()
+  debug_inspect(released, content="true")
+}
+
+///|
+test "renderer: backend shutdown releases preprocessing owners" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let observer = backend.instance.add_ref()
+  backend.upload_mesh3d_preprocess_camera_payload(
+    7,
+    9,
+    wbtest_mesh3d_preprocess_payload(),
+  )
+  let bgl = backend.device.create_bind_group_layout_empty()
+  let layout = backend.device.create_pipeline_layout_1(bgl)
+  let shader = backend.device.create_shader_module_wgsl(
+    "@compute @workgroup_size(1) fn cs_main() {}",
+  )
+  let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+    layout, shader, "cs_main",
+  )
+  shader.release()
+  backend.mesh3d_preprocess_reset_batch_sets_bgl = Some(bgl)
+  backend.mesh3d_preprocess_reset_batch_sets_pipeline_layout = Some(layout)
+  backend.mesh3d_preprocess_reset_batch_sets_pipeline = Some(pipeline)
+  let texture = backend.device.create_texture_rgba8_2d(1U, 1U)
+  backend.mesh3d_preprocess_depth_pyramid_dummy_view = Some(
+    texture.create_view(),
+  )
+  backend.mesh3d_preprocess_depth_pyramid_dummy_texture = Some(texture)
+  backend.mesh3d_preprocess_depth_pyramid_sampler = Some(
+    backend.device.create_sampler_linear_clamp(),
+  )
+  backend.shutdown()
+  observer.process_events()
+  let after = observer.generate_report()
+  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
+    after.hub_textures_num_kept_from_user() == 0UL &&
+    after.hub_texture_views_num_kept_from_user() == 0UL &&
+    after.hub_samplers_num_kept_from_user() == 0UL &&
+    after.hub_bind_group_layouts_num_kept_from_user() == 0UL &&
+    after.hub_pipeline_layouts_num_kept_from_user() == 0UL &&
+    after.hub_compute_pipelines_num_kept_from_user() == 0UL
+  after.release()
+  observer.release()
+  debug_inspect(released, content="true")
+}
+
+///|
 test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,

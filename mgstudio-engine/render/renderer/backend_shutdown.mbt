@@ -449,8 +449,92 @@ fn GpuBackend::release_mesh3d_pbr_owners(self : GpuBackend) -> Unit {
 
 ///|
 fn GpuBackend::release_preprocess_meshlet_motion_owners(
-  _self : GpuBackend,
+  self : GpuBackend,
 ) -> Unit {
+  self.release_preprocess_owners()
+  self.release_meshlet_owners()
+  self.release_motion_vector_owners()
+}
+
+///|
+fn GpuBackend::release_preprocess_owners(self : GpuBackend) -> Unit {
+  for state in self.mesh3d_preprocess_camera_upload_states {
+    state.release()
+  }
+  let pipelines = [
+    self.mesh3d_preprocess_reset_batch_sets_pipeline,
+    self.mesh3d_preprocess_direct_pipeline,
+    self.mesh3d_preprocess_indirect_pipeline,
+    self.mesh3d_preprocess_indirect_early_occlusion_pipeline,
+    self.mesh3d_preprocess_indirect_late_occlusion_pipeline,
+    self.mesh3d_preprocess_build_indexed_indirect_pipeline,
+    self.mesh3d_preprocess_build_indexed_indirect_early_pipeline,
+    self.mesh3d_preprocess_build_indexed_indirect_late_pipeline,
+    self.mesh3d_preprocess_build_indexed_indirect_main_pipeline,
+    self.mesh3d_preprocess_build_non_indexed_indirect_pipeline,
+    self.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline,
+    self.mesh3d_preprocess_build_non_indexed_indirect_late_pipeline,
+    self.mesh3d_preprocess_build_non_indexed_indirect_main_pipeline,
+    self.mesh3d_preprocess_downsample_depth_first_pipeline,
+    self.mesh3d_preprocess_downsample_depth_second_pipeline,
+    self.mesh3d_preprocess_downsample_depth_first_multisample_pipeline,
+    self.mesh3d_preprocess_downsample_depth_second_multisample_pipeline,
+  ]
+  for pipeline in pipelines {
+    if pipeline is Some(value) {
+      value.release()
+    }
+  }
+  let pipeline_layouts = [
+    self.mesh3d_preprocess_reset_batch_sets_pipeline_layout,
+    self.mesh3d_preprocess_direct_pipeline_layout,
+    self.mesh3d_preprocess_indirect_pipeline_layout,
+    self.mesh3d_preprocess_indirect_early_occlusion_pipeline_layout,
+    self.mesh3d_preprocess_indirect_late_occlusion_pipeline_layout,
+    self.mesh3d_preprocess_build_indexed_indirect_pipeline_layout,
+    self.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout,
+    self.mesh3d_preprocess_downsample_depth_pipeline_layout,
+    self.mesh3d_preprocess_downsample_depth_multisample_pipeline_layout,
+  ]
+  for layout in pipeline_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  let bind_group_layouts = [
+    self.mesh3d_preprocess_reset_batch_sets_bgl,
+    self.mesh3d_preprocess_direct_bgl,
+    self.mesh3d_preprocess_indirect_bgl,
+    self.mesh3d_preprocess_indirect_early_occlusion_bgl,
+    self.mesh3d_preprocess_indirect_late_occlusion_bgl,
+    self.mesh3d_preprocess_build_indexed_indirect_bgl,
+    self.mesh3d_preprocess_build_non_indexed_indirect_bgl,
+    self.mesh3d_preprocess_downsample_depth_bgl,
+    self.mesh3d_preprocess_downsample_depth_multisample_bgl,
+  ]
+  for layout in bind_group_layouts {
+    if layout is Some(value) {
+      value.release()
+    }
+  }
+  if self.mesh3d_preprocess_depth_pyramid_dummy_view is Some(view) {
+    view.release()
+  }
+  if self.mesh3d_preprocess_depth_pyramid_dummy_texture is Some(texture) {
+    texture.release()
+  }
+  if self.mesh3d_preprocess_depth_pyramid_sampler is Some(sampler) {
+    sampler.release()
+  }
+}
+
+///|
+fn GpuBackend::release_meshlet_owners(_self : GpuBackend) -> Unit {
+
+}
+
+///|
+fn GpuBackend::release_motion_vector_owners(_self : GpuBackend) -> Unit {
 
 }
 

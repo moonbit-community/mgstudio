@@ -211,6 +211,72 @@ fn mesh3d_preprocess_camera_upload_state_get_or_create(
 }
 
 ///|
+fn GpuMesh3dPreprocessCameraUploadState::release(
+  self : GpuMesh3dPreprocessCameraUploadState,
+) -> Unit {
+  for entry in self.phase_draw_bind_groups {
+    entry.bind_group.release()
+  }
+  let bind_groups = [
+    self.motion_vector_mesh_bind_group,
+    self.preprocess_main_direct_bind_group,
+    self.preprocess_main_indexed_bind_group,
+    self.preprocess_main_non_indexed_bind_group,
+    self.preprocess_early_indexed_bind_group,
+    self.preprocess_early_non_indexed_bind_group,
+    self.preprocess_late_indexed_bind_group,
+    self.preprocess_late_non_indexed_bind_group,
+    self.build_indirect_reset_indexed_bind_group,
+    self.build_indirect_reset_non_indexed_bind_group,
+    self.build_indirect_indexed_bind_group,
+    self.build_indirect_non_indexed_bind_group,
+  ]
+  for bind_group in bind_groups {
+    if bind_group is Some(value) {
+      value.release()
+    }
+  }
+  for view in self.depth_pyramid_mips {
+    view.release()
+  }
+  if self.depth_pyramid_all_mips_view is Some(view) {
+    view.release()
+  }
+  if self.depth_pyramid_texture is Some(texture) {
+    texture.release()
+  }
+  let buffers = [
+    self.mesh_input_buffer,
+    self.previous_mesh_input_buffer,
+    self.output_buffer,
+    self.preprocess_view_buffer,
+    self.previous_view_buffer,
+    self.mesh_culling_data_buffer,
+    self.direct_work_item_buffer,
+    self.indexed_work_item_buffer,
+    self.non_indexed_work_item_buffer,
+    self.late_indexed_work_item_buffer,
+    self.late_non_indexed_work_item_buffer,
+    self.late_indexed_dispatch_indirect_buffer,
+    self.late_non_indexed_dispatch_indirect_buffer,
+    self.indexed_cpu_metadata_buffer,
+    self.indexed_gpu_metadata_buffer,
+    self.indexed_batch_set_buffer,
+    self.indexed_indirect_parameters_buffer,
+    self.non_indexed_cpu_metadata_buffer,
+    self.non_indexed_gpu_metadata_buffer,
+    self.non_indexed_batch_set_buffer,
+    self.non_indexed_indirect_parameters_buffer,
+    self.dispatch_metadata_buffer,
+  ]
+  for buffer in buffers {
+    if buffer is Some(value) {
+      value.release()
+    }
+  }
+}
+
+///|
 pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
   self : GpuBackend,
   retained_camera_keys : Array[UInt64],
@@ -224,6 +290,8 @@ pub fn GpuBackend::delete_old_mesh3d_preprocess_work_item_buffers(
     let key = mesh3d_preprocess_camera_key(state.key_hi, state.key_lo)
     if retained.contains(key) {
       kept_states.push(state)
+    } else {
+      state.release()
     }
   }
   self.mesh3d_preprocess_camera_upload_states.clear()
