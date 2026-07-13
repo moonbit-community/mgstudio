@@ -789,6 +789,7 @@ pub fn[C : Component] World::add_despawn_entity_component_observer(Self, @core.E
 pub fn[E : ComponentObserverEvent, C : Component] World::add_entity_component_observer(Self, @core.Entity, (ComponentOn[E, C]) -> Unit) -> ObserverHandle
 pub fn[E : TriggerEvent] World::add_entity_observer(Self, @core.Entity, (On[E]) -> Unit) -> ObserverHandle
 pub fn[E : TriggerEvent] World::add_observer(Self, (On[E]) -> Unit) -> ObserverHandle
+pub fn World::add_pre_close_hook(Self, (Self) -> Unit) -> Unit
 pub fn[C : Component] World::add_remove_component_observer(Self, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.Entity, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_replace_component_observer(Self, (ComponentOn[Replace, C]) -> Unit) -> ObserverHandle

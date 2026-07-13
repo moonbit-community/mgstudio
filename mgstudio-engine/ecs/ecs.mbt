@@ -256,6 +256,7 @@ pub struct World {
   priv removed_components : Map[Int, @core.Messages[@core.Entity]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resource_tick_registry : WorldResourceTickRegistry
+  priv mut pre_close_hooks : Array[(World) -> Unit]
   priv mut shutdown_hooks : Array[(World) -> Unit]
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
@@ -324,6 +325,7 @@ pub fn World::new() -> World {
     removed_components: Map([]),
     component_hooks_registry: Map([]),
     resource_tick_registry: world_resource_tick_registry_new(),
+    pre_close_hooks: [],
     shutdown_hooks: [],
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
@@ -362,6 +364,13 @@ pub fn World::is_active(self : World) -> Bool {
 pub fn World::close(self : World) -> Unit {
   guard self.lifecycle.begin_close() else { return }
   self.allocator_connection.close()
+  let pre_close_hooks = self.pre_close_hooks
+  self.pre_close_hooks = []
+  let mut pre_close_index = pre_close_hooks.length() - 1
+  while pre_close_index >= 0 {
+    pre_close_hooks[pre_close_index](self)
+    pre_close_index = pre_close_index - 1
+  }
   self.cleanup_registry.drain()
   let shutdown_hooks = self.shutdown_hooks
   self.shutdown_hooks = []
@@ -371,6 +380,15 @@ pub fn World::close(self : World) -> Unit {
     hook_index = hook_index - 1
   }
   self.lifecycle.finish_close()
+}
+
+///|
+/// Adds a hook that runs before World-owned values are finalized.
+pub fn World::add_pre_close_hook(self : World, hook : (World) -> Unit) -> Unit {
+  guard self.lifecycle.is_active() else {
+    abort("cannot add a pre-close hook after World closing has started")
+  }
+  self.pre_close_hooks.push(hook)
 }
 
 ///|

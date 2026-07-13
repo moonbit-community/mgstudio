@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "ecs: shutdown hooks run after LIFO resource and component cleanup" {
+test "ecs: close hooks bracket LIFO value cleanup" {
   let order : Array[Int] = []
   let resource_key = register_resource(
     debug_name="tests.ecs.shutdown_order_resource",
@@ -25,11 +25,12 @@ test "ecs: shutdown hooks run after LIFO resource and component cleanup" {
   )
   let world = World::new()
   defer world.close()
+  world.add_pre_close_hook(fn(_world) { order.push(0) })
   world.insert_resource(resource_key, ())
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, component_key, ())
   world.add_shutdown_hook(fn(_world) { order.push(3) })
 
   world.close()
-  debug_inspect(order, content="[2, 1, 3]")
+  debug_inspect(order, content="[0, 2, 1, 3]")
 }

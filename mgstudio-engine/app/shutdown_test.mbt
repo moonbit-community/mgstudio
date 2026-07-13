@@ -13,6 +13,22 @@
 // limitations under the License.
 
 ///|
+test "app: closing the main World closes currently owned SubApps" {
+  let main_world = @ecs.World::new()
+  defer main_world.close()
+  let render_world = @ecs.World::new()
+  defer render_world.close()
+  let app = App::new(main_world).insert_sub_app(
+    RenderApp,
+    SubApp::new(render_world),
+  )
+  ignore(app)
+
+  main_world.close()
+  debug_inspect(render_world.is_closed(), content="true")
+}
+
+///|
 test "app: shutdown closes owned Worlds while remove and replace transfer ownership" {
   let main_world = @ecs.World::new()
   defer main_world.close()

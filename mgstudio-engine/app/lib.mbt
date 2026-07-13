@@ -2998,8 +2998,10 @@ pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
   let main_sub_app = SubApp::new(world)
     .add_message(app_exit_key)
     .set_update_schedule(Some(Main))
+  let sub_apps = SubApps::new(main_sub_app)
+  world.add_pre_close_hook(fn(_world) { sub_apps.shutdown() |> ignore })
   App::{
-    sub_apps: SubApps::new(main_sub_app),
+    sub_apps,
     plugin_names: [],
     plugin_registry: [],
     plugins_state: Adding,
