@@ -14,8 +14,8 @@
 
 ///|
 test "component_store: insert/set/remove" {
-  let entities = Entities::new()
-  let e = entities.spawn()
+  let allocator = EntityAllocator::new()
+  let e = allocator.alloc()
   let store : ComponentStore[Int] = ComponentStore::new()
   store.insert(e, 1)
   debug_inspect(store.get(e).unwrap() == 1, content="true")
@@ -27,9 +27,9 @@ test "component_store: insert/set/remove" {
 
 ///|
 test "component_store: swap-remove keeps other entity accessible" {
-  let entities = Entities::new()
-  let e1 = entities.spawn()
-  let e2 = entities.spawn()
+  let allocator = EntityAllocator::new()
+  let e1 = allocator.alloc()
+  let e2 = allocator.alloc()
   let store : ComponentStore[Int] = ComponentStore::new()
   store.insert(e1, 1)
   store.insert(e2, 2)
@@ -40,8 +40,8 @@ test "component_store: swap-remove keeps other entity accessible" {
 
 ///|
 test "component_store: update and upsert" {
-  let entities = Entities::new()
-  let e = entities.spawn()
+  let allocator = EntityAllocator::new()
+  let e = allocator.alloc()
   let store : ComponentStore[Int] = ComponentStore::new()
   debug_inspect(!store.update(e, fn(v) { v + 1 }), content="true")
   store.upsert(e, 10)
@@ -52,9 +52,9 @@ test "component_store: update and upsert" {
 
 ///|
 test "component_store: dense index access follows sparse-set order" {
-  let entities = Entities::new()
-  let e0 = entities.spawn()
-  let e1 = entities.spawn()
+  let allocator = EntityAllocator::new()
+  let e0 = allocator.alloc()
+  let e1 = allocator.alloc()
   let store : ComponentStore[Int] = ComponentStore::new()
   store.insert(e0, 10)
   store.insert(e1, 20)

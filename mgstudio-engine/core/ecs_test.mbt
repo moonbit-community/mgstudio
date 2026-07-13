@@ -15,15 +15,17 @@
 ///|
 test "ecs: Entities generation prevents ABA" {
   let entities = Entities::new()
-  let e0 = entities.spawn()
+  let allocator = EntityAllocator::new()
+  let e0 = allocator.alloc()
+  try! entities.spawn_at(e0)
   debug_inspect(entities.is_alive(e0), content="true")
-  entities.despawn(e0) catch {
-    _ => debug_inspect(false, content="false")
-  }
+  let freed = try! entities.despawn(e0)
+  allocator.free(freed)
   debug_inspect(entities.is_alive(e0), content="false")
 
   // Reuse the same id with a bumped generation.
-  let e1 = entities.spawn()
+  let e1 = allocator.alloc()
+  try! entities.spawn_at(e1)
   debug_inspect(e1.id == e0.id, content="true")
   debug_inspect(e1.generation != e0.generation, content="true")
   debug_inspect(entities.is_alive(e1), content="true")
@@ -31,9 +33,9 @@ test "ecs: Entities generation prevents ABA" {
 
 ///|
 test "ecs: SparseSet insert/get/remove swap-remove" {
-  let entities = Entities::new()
-  let e0 = entities.spawn()
-  let e1 = entities.spawn()
+  let allocator = EntityAllocator::new()
+  let e0 = allocator.alloc()
+  let e1 = allocator.alloc()
   let set = SparseSet::new()
   set.insert(e0, 10)
   set.insert(e1, 20)
