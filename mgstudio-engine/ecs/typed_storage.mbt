@@ -418,10 +418,11 @@ fn[T] resource_access_ops_new(
   finalizer? : (T) -> Unit = fn(_value : T) { () },
 ) -> ResourceAccessOps[T] {
   let slots_by_world : Map[Int, TypedResourceSlot[T]] = Map([])
-  let finalize_world_id = fn(world_id : Int) {
-    guard slots_by_world.get(world_id) is Some(slot) else { return }
+  let drop_world_id = fn(world_id : Int) -> Bool {
+    guard slots_by_world.get(world_id) is Some(slot) else { return false }
     slots_by_world.remove(world_id)
     finalizer(slot.value)
+    true
   }
   {
     contains: fn(world) { slots_by_world.contains(world.world_id()) },
@@ -441,7 +442,7 @@ fn[T] resource_access_ops_new(
           let world_id = world.world_id()
           world.register_cleanup_once(
             resource_storage_cleanup_key(resource_id),
-            fn() { finalize_world_id(world_id) },
+            fn() { drop_world_id(world_id) |> ignore },
           )
           slots_by_world.set(world_id, {
             value,
@@ -462,17 +463,7 @@ fn[T] resource_access_ops_new(
         None => None
       }
     },
-    drop: fn(world) {
-      match slots_by_world.get(world.world_id()) {
-        Some(slot) => {
-          let value = slot.value
-          slots_by_world.remove(world.world_id())
-          finalizer(value)
-          true
-        }
-        None => false
-      }
-    },
+    drop: fn(world) { drop_world_id(world.world_id()) },
     record_added: fn(world, tick, caller) {
       guard slots_by_world.get(world.world_id()) is Some(slot) else { return }
       slot.added_tick = Some(tick)
