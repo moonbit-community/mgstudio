@@ -115,9 +115,6 @@ pub fn winit_plugin_with(
   .add_systems(
     @app.PreUpdate,
     (
-      @app.system(winit_create_monitors_system).named(
-        "mgstudio_winit::create_monitors",
-      ),
       @app.system(winit_create_windows_system).named(
         "mgstudio_winit::create_windows",
       ),

@@ -65,6 +65,17 @@ fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
 }
 
 ///|
+test "winit: monitor synchronization is owned by the event loop" {
+  let world = @ecs.World::new()
+  defer world.close()
+  let app = winit_plugin(@window.window_plugin(@app.App::new(world)))
+  let pre_update = app.schedule_graph_dot(@app.PreUpdate)
+
+  assert_false(pre_update.contains("mgstudio_winit::create_monitors"))
+  assert_true(pre_update.contains("mgstudio_winit::create_windows"))
+}
+
+///|
 fn read_keyboard_focus_lost(
   world : @ecs.World,
 ) -> Array[@window.KeyboardFocusLost] {
