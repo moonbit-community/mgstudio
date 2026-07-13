@@ -103,6 +103,7 @@ pub impl Component for RequiredCounter with fn component() {
 ///|
 test "ecs: required components insert recursively on set_component" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.register_required_components(required_a_key, required_b_key)
@@ -122,6 +123,7 @@ test "ecs: required components insert recursively on set_component" {
 ///|
 test "ecs: batch insert keeps indirect required components when direct required is explicit" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.register_required_components(required_a_key, required_b_key)
@@ -144,6 +146,7 @@ test "ecs: batch insert keeps indirect required components when direct required 
 ///|
 test "ecs: direct required constructor overrides indirect constructor" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.register_required_components(required_a_key, required_b_key)
@@ -168,6 +171,7 @@ test "ecs: direct required constructor overrides indirect constructor" {
 ///|
 test "ecs: explicit component value beats required insertion" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.register_required_components(required_a_key, required_b_key)
@@ -184,6 +188,7 @@ test "ecs: explicit component value beats required insertion" {
 ///|
 test "ecs: required component auto insertion is visible to Added filter" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.register_required_components(required_a_key, required_b_key)
@@ -203,6 +208,7 @@ test "ecs: required component auto insertion is visible to Added filter" {
 ///|
 test "ecs: get_required_components returns recursive ids" {
   let world = World::new()
+  defer world.close()
 
   try! world.register_required_components(required_a_key, required_b_key)
   try! world.register_required_components(required_b_key, required_c_key)
@@ -216,6 +222,7 @@ test "ecs: get_required_components returns recursive ids" {
 ///|
 test "ecs: get_required_by_components returns transitive requirees" {
   let world = World::new()
+  defer world.close()
 
   try! world.register_required_components(required_a_key, required_b_key)
   try! world.register_required_components(required_b_key, required_c_key)
@@ -233,6 +240,7 @@ test "ecs: get_required_by_components returns transitive requirees" {
 ///|
 test "ecs: try register required components reports duplicate cycle and archetype usage" {
   let duplicate_world = World::new()
+  defer duplicate_world.close()
   try! duplicate_world.register_required_components(
     required_a_key, required_b_key,
   )
@@ -259,6 +267,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   )
 
   let cycle_world = World::new()
+  defer cycle_world.close()
   try! cycle_world.register_required_components(required_a_key, required_b_key)
   let mut cycle_pair : (Int, Int)? = None
   cycle_world.try_register_required_components_with(
@@ -282,6 +291,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   debug_inspect(a1 == cycle_world_b && b1 == cycle_world_a, content="true")
 
   let archetype_world = World::new()
+  defer archetype_world.close()
   let entity = archetype_world.spawn()
   try! (archetype_world.entity_mut(entity).insert_component(RequiredA::{  })
   |> ignore)
@@ -305,6 +315,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
 ///|
 test "ecs: required_by stays consistent after transitive rebuild and constructor override" {
   let world = World::new()
+  defer world.close()
 
   try! world.register_required_components(required_a_key, required_b_key)
   try! world.register_required_components(required_b_key, required_c_key)
@@ -339,7 +350,9 @@ test "ecs: required_by stays consistent after transitive rebuild and constructor
 ///|
 test "ecs: late required registration is pre-use-only and world-local" {
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
 
   let entity = world0.spawn()
   try! (world0.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)

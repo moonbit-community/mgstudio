@@ -55,6 +55,7 @@ pub impl Default for TestDefaultRuntimeMessage with fn default() {
 ///|
 test "ecs message: mutator reads unread messages as in-place refs" {
   let world = World::new()
+  defer world.close()
   let key : MessageKey[TestRuntimeMessage] = Message::message()
   world.init_message(key)
 
@@ -79,6 +80,7 @@ test "ecs message: mutator reads unread messages as in-place refs" {
 ///|
 test "ecs message: writer write_default sends default message" {
   let world = World::new()
+  defer world.close()
   let key : MessageKey[TestDefaultRuntimeMessage] = Message::message()
   world.init_message(key)
 

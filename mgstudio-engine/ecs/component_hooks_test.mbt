@@ -222,6 +222,7 @@ fn hook_remove_commands_test_install_hooks(world : World) -> Unit {
 test "ecs component hooks: first insert fires add then insert with readable payload" {
   hook_test_reset()
   let world = World::new()
+  defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -240,6 +241,7 @@ test "ecs component hooks: first insert fires add then insert with readable payl
 test "ecs component hooks: replace fires replace then insert around the new payload" {
   hook_test_reset()
   let world = World::new()
+  defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -263,6 +265,7 @@ test "ecs component hooks: replace fires replace then insert around the new payl
 test "ecs component hooks: remove keeps the old payload visible through replace and remove" {
   hook_test_reset()
   let world = World::new()
+  defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -290,6 +293,7 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
 test "ecs component hooks: despawn fires despawn replace remove before entity teardown" {
   hook_test_reset()
   let world = World::new()
+  defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -315,6 +319,7 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
 test "ecs component hooks: component access mutation paths preserve caller provenance" {
   hook_test_reset()
   let world = World::new()
+  defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -336,6 +341,7 @@ test "ecs component hooks: component access mutation paths preserve caller prove
 ///|
 test "ecs component hooks: deferred hook commands flush after callback" {
   let world = World::new()
+  defer world.close()
   hook_commands_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -351,6 +357,7 @@ test "ecs component hooks: deferred hook commands flush after callback" {
 ///|
 test "ecs component hooks: deferred remove commands flush after callback" {
   let world = World::new()
+  defer world.close()
   hook_remove_commands_test_install_hooks(world)
   let entity = world.spawn()
 
@@ -378,6 +385,7 @@ test "ecs component hooks: deferred remove commands flush after callback" {
 test "ecs component hooks: duplicate builder registration fails per hook kind" {
   ignore(DuplicateHookTestComponent::{  })
   let world = World::new()
+  defer world.close()
   let builder = world.register_component_hooks_for_key(
     duplicate_hook_test_component_key,
   )
@@ -404,7 +412,9 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
 test "ecs component hooks: world-scoped registration rejects late hooks and keeps worlds isolated" {
   ignore(LateRegistrationHookTestComponent::{  })
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
   let entity = world0.spawn()
 
   try! world0.set_by_key(entity, late_registration_hook_test_component_key, LateRegistrationHookTestComponent::{
@@ -451,6 +461,7 @@ test "ecs component hooks: world-scoped registration rejects late hooks and keep
 test "ecs component hooks: register_component_hooks_with merges disjoint hooks and rejects duplicate kinds" {
   ignore(HooksWithRegistrationTestComponent::{  })
   let world = World::new()
+  defer world.close()
 
   try! world.register_component_hooks_with(
     hooks_with_registration_test_component_key,
@@ -481,7 +492,9 @@ test "ecs component hooks: register_component_hooks_with merges disjoint hooks a
 test "ecs component hooks: register_component_hooks_with enforces pre-use-only per world" {
   ignore(HooksWithLateRegistrationTestComponent::{  })
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
   let entity = world0.spawn()
   try! world0.set_by_key(
     entity,

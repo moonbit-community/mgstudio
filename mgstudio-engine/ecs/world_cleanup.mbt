@@ -79,3 +79,11 @@ fn World::register_cleanup_once(
   }
   self.cleanup_registry.register_once(key, cleanup)
 }
+
+///|
+/// Runs `body` with a fresh World and closes it when the body returns or raises.
+pub fn[R] with_world(body : (World) -> R raise?) -> R raise? {
+  let world = World::new()
+  defer world.close()
+  body(world)
+}

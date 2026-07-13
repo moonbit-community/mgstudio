@@ -15,6 +15,7 @@
 ///|
 test "ecs: entity_count tracks spawned entities across despawn and id reuse" {
   let world = World::new()
+  defer world.close()
   let first = world.spawn_empty()
   let second = world.spawn_empty()
   debug_inspect(world.entity_count(), content="2")

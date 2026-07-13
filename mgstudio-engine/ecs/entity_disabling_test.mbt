@@ -43,6 +43,7 @@ pub impl Component for CustomDisabled with fn component() {
 ///|
 test "ecs entity disabling: default queries skip disabled entities" {
   let world = World::new()
+  defer world.close()
   let enabled = world.spawn()
   let disabled = world.spawn()
 
@@ -88,6 +89,7 @@ test "ecs entity disabling: default queries skip disabled entities" {
 ///|
 test "ecs entity disabling: has counts as explicit mention but optional does not" {
   let world = World::new()
+  defer world.close()
   let enabled = world.spawn()
   let disabled = world.spawn()
 
@@ -118,6 +120,7 @@ test "ecs entity disabling: has counts as explicit mention but optional does not
 ///|
 test "ecs entity disabling: multiple disabling components require explicit mention of all" {
   let world = World::new()
+  defer world.close()
   world.register_disabling_component(custom_disabled_key)
 
   let plain = world.spawn()

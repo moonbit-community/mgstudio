@@ -15,7 +15,9 @@
 ///|
 test "ecs: entity reservations are scoped to an active World lifecycle" {
   let first_world = World::new()
+  defer first_world.close()
   let second_world = World::new()
+  defer second_world.close()
   let reservation = try! first_world.reserve_entity()
   debug_inspect(first_world.pending_entity_reservation_count(), content="1")
 

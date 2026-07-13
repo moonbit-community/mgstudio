@@ -24,6 +24,7 @@ test "ecs: World close releases every typed per-world storage" {
     debug_name="tests.ecs.cleanup.event",
   )
   let world = World::new()
+  defer world.close()
   let bootstrap_cleanup_count = world.cleanup_registry.entries.length()
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, component_key, 1)

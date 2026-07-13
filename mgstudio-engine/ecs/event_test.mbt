@@ -25,6 +25,7 @@ struct BrokenEvent {
 ///|
 test "ecs event: read includes previous and current frame" {
   let world = World::new()
+  defer world.close()
   let event_runtime : EventKey[RuntimeEvent] = register_event(
     debug_name="runtime_event",
   )
@@ -51,6 +52,7 @@ test "ecs event: read includes previous and current frame" {
 ///|
 test "ecs event: clear removes both previous and current queues" {
   let world = World::new()
+  defer world.close()
   let event_runtime : EventKey[RuntimeEvent] = register_event(
     debug_name="runtime_event_clear",
   )
@@ -66,6 +68,7 @@ test "ecs event: clear removes both previous and current queues" {
 ///|
 test "ecs event: typed keys keep queues isolated" {
   let world = World::new()
+  defer world.close()
   let event_runtime : EventKey[RuntimeEvent] = register_event(
     debug_name="runtime_event_isolated",
   )

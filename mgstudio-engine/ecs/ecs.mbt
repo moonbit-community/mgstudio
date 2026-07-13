@@ -262,6 +262,9 @@ pub struct World {
 }
 
 ///|
+/// Creates a World with an explicit lifecycle.
+///
+/// The owner must call `World::close`. Prefer `with_world` for lexical scopes.
 pub fn World::new() -> World {
   let world_id = ecs_id_allocator_state.next_world_id
   ecs_id_allocator_state.next_world_id = world_id + 1

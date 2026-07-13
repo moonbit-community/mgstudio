@@ -129,6 +129,7 @@ fn ecs_bench_make_sparse_tag(index : Int) -> BenchSparseTag {
 ///|
 fn ecs_bench_seed_dense_world(entity_count : Int) -> World raise EcsError {
   let world = World::new()
+  defer world.close()
   for index = 0; index < entity_count; index = index + 1 {
     ignore(
       world.spawn_bundle(
@@ -149,6 +150,7 @@ fn ecs_bench_seed_insert_world(
   entity_count : Int,
 ) -> (World, Array[@core.Entity]) raise EcsError {
   let world = World::new()
+  defer world.close()
   let entities = []
   for index = 0; index < entity_count; index = index + 1 {
     let entity = world.spawn_bundle(
@@ -167,6 +169,7 @@ fn ecs_bench_seed_insert_world(
 fn ecs_bench_seed_sparse_world(entity_count : Int) -> World raise EcsError {
   ecs_bench_ensure_sparse_tag_metadata_registered()
   let world = World::new()
+  defer world.close()
   for index = 0; index < entity_count; index = index + 1 {
     let entity = world.spawn_bundle(
       (

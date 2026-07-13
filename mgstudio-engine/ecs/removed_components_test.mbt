@@ -20,6 +20,7 @@ struct TestMarker {
 ///|
 test "ecs removed components: remove emits entity in tick range" {
   let world = World::new()
+  defer world.close()
   let key : ComponentKey[TestMarker] = register_component(
     debug_name="removed_components_remove",
   )
@@ -39,6 +40,7 @@ test "ecs removed components: remove emits entity in tick range" {
 ///|
 test "ecs removed components: despawn emits removed entity for attached component" {
   let world = World::new()
+  defer world.close()
   let key : ComponentKey[TestMarker] = register_component(
     debug_name="removed_components_despawn",
   )
@@ -58,6 +60,7 @@ test "ecs removed components: despawn emits removed entity for attached componen
 ///|
 test "ecs removed components: len, is_empty and clear match unread messages" {
   let world = World::new()
+  defer world.close()
   let key : ComponentKey[TestMarker] = register_component(
     debug_name="removed_components_len_clear",
   )

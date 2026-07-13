@@ -30,6 +30,7 @@ pub impl Component for ChangedMarker with fn component() {
 ///|
 test "ecs changed components: insert emits entity in tick range" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
@@ -44,6 +45,7 @@ test "ecs changed components: insert emits entity in tick range" {
 ///|
 test "ecs changed components: replace and update emit changed events" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
@@ -69,6 +71,7 @@ test "ecs changed components: replace and update emit changed events" {
 ///|
 test "ecs changed components: Write::set emits changed event" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
@@ -90,6 +93,7 @@ test "ecs changed components: Write::set emits changed event" {
 ///|
 test "ecs changed components: Write::modify marks changed on explicit mutation" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
@@ -111,6 +115,7 @@ test "ecs changed components: Write::modify marks changed on explicit mutation" 
 ///|
 test "ecs changed components: Write::value does not mark changed by itself" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })

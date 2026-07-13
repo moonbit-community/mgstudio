@@ -282,7 +282,9 @@ pub impl TriggerEvent for ObserverAttack with fn debug_name() {
 ///|
 test "ecs observer: world add_component_observer is world-scoped and fires on replace" {
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
   let seen_entities : Array[Int] = []
   let first_hits : Ref[Int] = Ref(0)
   let second_hits : Ref[Int] = Ref(0)
@@ -327,6 +329,7 @@ test "ecs observer: world add_component_observer is world-scoped and fires on re
 ///|
 test "ecs observer: add_entity_component_observer only fires for the bound entity" {
   let world = World::new()
+  defer world.close()
   let entity0 = world.spawn()
   let entity1 = world.spawn()
   let seen_entities : Array[Int] = []
@@ -358,6 +361,7 @@ test "ecs observer: add_entity_component_observer only fires for the bound entit
 ///|
 test "ecs observer: world add_component_observer fires on remove" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   let seen_entities : Array[Int] = []
   let hits : Ref[Int] = Ref(0)
@@ -390,6 +394,7 @@ test "ecs observer: world add_component_observer fires on remove" {
 ///|
 test "ecs observer: remove observer can still read the removed component" {
   let world = World::new()
+  defer world.close()
   let remove_values : Array[Int] = []
   let despawn_values : Array[Int] = []
 
@@ -440,6 +445,7 @@ test "ecs observer: remove observer can still read the removed component" {
 ///|
 test "ecs observer: add observers only fire on first insertion" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   let hits : Ref[Int] = Ref(0)
 
@@ -463,6 +469,7 @@ test "ecs observer: add observers only fire on first insertion" {
 ///|
 test "ecs observer: replace observers fire on replace and remove paths" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   let hits : Ref[Int] = Ref(0)
 
@@ -493,6 +500,7 @@ test "ecs observer: replace observers fire on replace and remove paths" {
 ///|
 test "ecs observer: despawn observers fire only during despawn" {
   let world = World::new()
+  defer world.close()
   let keep_entity = world.spawn()
   let despawn_entity = world.spawn()
   let hits : Ref[Int] = Ref(0)
@@ -520,6 +528,7 @@ test "ecs observer: despawn observers fire only during despawn" {
 ///|
 test "ecs observer: lifecycle observer ordering is deterministic" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   let add_order : Array[String] = []
   let insert_order : Array[String] = []
@@ -639,6 +648,7 @@ test "ecs observer: lifecycle observer ordering is deterministic" {
 ///|
 test "ecs observer: world add_observer and add_entity_observer handle custom events" {
   let world = World::new()
+  defer world.close()
   let entity0 = world.spawn()
   let entity1 = world.spawn()
   let global_entities : Array[Int] = []
@@ -674,6 +684,7 @@ test "ecs observer: world add_observer and add_entity_observer handle custom eve
 ///|
 test "ecs observer: trigger propagation bubbles to parent and carries payload mutations" {
   let world = World::new()
+  defer world.close()
   let parent = world.spawn()
   let child = world.spawn()
   let order : Array[String] = []
@@ -702,6 +713,7 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
 ///|
 test "ecs observer: trigger propagation can be halted early" {
   let world = World::new()
+  defer world.close()
   let parent = world.spawn()
   let child = world.spawn()
   let order : Array[String] = []
@@ -730,6 +742,7 @@ test "ecs observer: trigger propagation can be halted early" {
 ///|
 test "ecs observer: parent lookup cache refreshes after late relationship registration" {
   let world = World::new()
+  defer world.close()
   let parent = world.spawn()
   let child = world.spawn()
   let parent_hits : Ref[Int] = Ref(0)
@@ -753,6 +766,7 @@ test "ecs observer: parent lookup cache refreshes after late relationship regist
 ///|
 test "ecs observer: parent lookup accessor is captured per-world registration" {
   let world0 = World::new()
+  defer world0.close()
   let parent0 = world0.spawn()
   let child0 = world0.spawn()
   let world0_hits : Ref[Int] = Ref(0)
@@ -777,6 +791,7 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
   )
 
   let world1 = World::new()
+  defer world1.close()
   let parent1 = world1.spawn()
   let child1 = world1.spawn()
   let world1_hits : Ref[Int] = Ref(0)
@@ -813,6 +828,7 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
 ///|
 test "ecs observer: parent lookup cache tracks archetype register and unregister transitions" {
   let world = World::new()
+  defer world.close()
   let parent = world.spawn()
   let child = world.spawn()
   let parent_hits : Ref[Int] = Ref(0)
@@ -852,7 +868,9 @@ test "ecs observer: parent lookup cache tracks archetype register and unregister
 ///|
 test "ecs observer: parent lookup cache isolates archetype activity per world" {
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
   reset_observer_parent_lookup_probe_counters(
     world0.world_id(),
     world1.world_id(),
@@ -904,6 +922,7 @@ test "ecs observer: parent lookup cache isolates archetype activity per world" {
 ///|
 test "ecs observer: add_remove_entity_component_observer only fires for the bound entity" {
   let world = World::new()
+  defer world.close()
   let entity0 = world.spawn()
   let entity1 = world.spawn()
   let seen_entities : Array[Int] = []

@@ -30,6 +30,7 @@ pub impl Component for AddedMarker with fn component() {
 ///|
 test "ecs added components: insert emits entity in tick range" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
@@ -44,6 +45,7 @@ test "ecs added components: insert emits entity in tick range" {
 ///|
 test "ecs added components: replace and update do not emit new add events" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
@@ -69,6 +71,7 @@ test "ecs added components: replace and update do not emit new add events" {
 ///|
 test "ecs added components: remove then reinsert emits a fresh add event" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })

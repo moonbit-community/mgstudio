@@ -63,6 +63,8 @@ pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
 
 pub fn[T] register_resource(debug_name? : String, finalizer? : (T) -> Unit) -> ResourceKey[T]
 
+pub fn[R] with_world((World) -> R raise?) -> R raise?
+
 // Errors
 pub(all) suberror ComponentHooksError {
   DuplicateRegistration(Int)

@@ -347,6 +347,7 @@ pub impl QueryFilter for GenericTagFilter with fn depends_on_ticks(self) {
 ///|
 test "ecs query: query1 view and for_each" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -383,6 +384,7 @@ test "ecs query: query1 view and for_each" {
 ///|
 test "ecs query: single returns only for exactly one match" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let e0 = world.spawn()
@@ -424,6 +426,7 @@ test "ecs query: single returns only for exactly one match" {
 ///|
 test "ecs query: query2 view intersection and for_each" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let e_match = world.spawn()
@@ -498,6 +501,7 @@ test "ecs query: query2 view intersection and for_each" {
 ///|
 test "ecs query: query3 smallest-store driven iteration and for_each" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let comp_accel = acceleration_key
@@ -616,6 +620,7 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
 ///|
 test "ecs query: filtered query supports with/without tuples and entity counts" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let comp_accel = acceleration_key
@@ -685,6 +690,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
 ///|
 test "ecs query: component ref exposes live component values" {
   let world = World::new()
+  defer world.close()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_component_ref",
   )
@@ -715,6 +721,7 @@ test "ecs query: component ref exposes live component values" {
 ///|
 test "ecs query: structural filters compose without change detection" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let e0 = world.spawn()
@@ -759,6 +766,7 @@ test "ecs query: structural filters compose without change detection" {
 ///|
 test "ecs query: added filter only matches entities inserted in the current tick window" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -799,6 +807,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
 ///|
 test "ecs query: Read exposes change detection metadata" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
@@ -845,6 +854,7 @@ test "ecs query: Read exposes change detection metadata" {
 ///|
 test "ecs query_state: default query filter cache invalidates on resource updates" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
   try! world.set_by_key(entity, ecs_key_disabled, Disabled::new())
@@ -895,6 +905,7 @@ test "ecs query: filter tick dependency flags match filter semantics" {
 ///|
 test "ecs query cache: archetype fast path keeps entity cache lazy" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
@@ -931,6 +942,7 @@ test "ecs query cache: archetype fast path keeps entity cache lazy" {
 ///|
 test "ecs query cache: sparse entity-check path materializes entity cache" {
   let world = World::new()
+  defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -957,6 +969,7 @@ test "ecs query cache: sparse entity-check path materializes entity cache" {
 ///|
 test "ecs query cache: dense mode tracks matched tables cache" {
   let world = World::new()
+  defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -982,6 +995,7 @@ test "ecs query cache: dense mode tracks matched tables cache" {
 ///|
 test "ecs query cache: table tick filter uses dense matched tables" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
@@ -1006,6 +1020,7 @@ test "ecs query cache: table tick filter uses dense matched tables" {
 ///|
 test "ecs query cache: sparse non-dense mode keeps matched tables cache empty" {
   let world = World::new()
+  defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -1030,6 +1045,7 @@ test "ecs query cache: sparse non-dense mode keeps matched tables cache empty" {
 ///|
 test "ecs query cache: optional sparse data disables dense mode" {
   let world = World::new()
+  defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
@@ -1059,6 +1075,7 @@ test "ecs query cache: optional sparse data disables dense mode" {
 ///|
 test "ecs query cache: tuple data anchors choose minimal membership candidate" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -1090,6 +1107,7 @@ test "ecs query cache: tuple data anchors choose minimal membership candidate" {
 ///|
 test "ecs query cache: tuple filter anchors choose minimal membership candidate" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -1121,6 +1139,7 @@ test "ecs query cache: tuple filter anchors choose minimal membership candidate"
 ///|
 test "ecs query_state cache: dependency generation invalidates entity cache without archetype generation change" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -1180,6 +1199,7 @@ test "ecs query_state cache: dependency generation invalidates entity cache with
 ///|
 test "ecs query_state cache: table tick-dependent filters stay dense across runs" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
@@ -1220,6 +1240,7 @@ test "ecs query_state cache: table tick-dependent filters stay dense across runs
 ///|
 test "ecs query_state cache: archetype matching updates incrementally and keeps iter archetype-driven" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
@@ -1275,6 +1296,7 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
 ///|
 test "ecs query_state cache: archetype generation remains stable across non-empty churn" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
 
@@ -1321,6 +1343,7 @@ test "ecs query_state cache: archetype generation remains stable across non-empt
 ///|
 test "ecs query_state cache: dense tables update incrementally on matching archetype additions" {
   let world = World::new()
+  defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
@@ -1426,6 +1449,7 @@ test "ecs query access validation: detects query data and filter conflicts" {
 ///|
 test "ecs query: iter_many_ref preserves filter order without change state" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let e0 = world.spawn()
@@ -1462,6 +1486,7 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
 ///|
 test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let e0 = world.spawn()
@@ -1510,6 +1535,7 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
 ///|
 test "ecs query: require_single raises skipped unless exactly one match exists" {
   let world = World::new()
+  defer world.close()
   let comp_position = position_key
   let comp_velocity = velocity_key
   let e0 = world.spawn()
@@ -1560,6 +1586,7 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
 ///|
 test "ecs query: generic query supports wrappers and disabled mentions" {
   let world = World::new()
+  defer world.close()
   let enabled = world.spawn()
   let disabled = world.spawn()
 
@@ -1613,6 +1640,7 @@ test "ecs query: generic query supports wrappers and disabled mentions" {
 ///|
 test "ecs query: generic query supports named reusable data, filters and iterators" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -1705,6 +1733,7 @@ test "ecs query: generic query supports named reusable data, filters and iterato
 ///|
 test "ecs query: iter_combinations returns pairwise combinations in anchor order" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -1743,6 +1772,7 @@ test "ecs query: iter_combinations returns pairwise combinations in anchor order
 ///|
 test "ecs query: iter_combinations supports mut query data across distinct entities" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()

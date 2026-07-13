@@ -30,6 +30,7 @@ test "ecs: finalizers distinguish value transfer from destruction" {
     finalizer=fn(value : FinalizerProbe) { component_finalized.push(value.id) },
   )
   let world = World::new()
+  defer world.close()
 
   world.insert_resource(resource_key, { id: 1 })
   world.insert_resource(resource_key, { id: 2 })

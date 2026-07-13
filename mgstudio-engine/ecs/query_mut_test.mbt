@@ -124,6 +124,7 @@ test "ecs batching strategy: calc batch size respects limits" {
 ///|
 test "ecs mut query: generic Query applies disabled filters and updates components" {
   let world = World::new()
+  defer world.close()
   let enabled = world.spawn()
   let disabled = world.spawn()
 
@@ -171,6 +172,7 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
 ///|
 test "ecs query: view permits non-structural replacement but rejects structural insertion" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
     x: 1,
@@ -213,6 +215,7 @@ test "ecs query: view permits non-structural replacement but rejects structural 
 ///|
 test "ecs query: view rejects structural removal" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
     x: 1,
@@ -243,6 +246,7 @@ test "ecs query: view rejects structural removal" {
 ///|
 test "ecs mut query: detect changes helpers support explicit mutation and marking" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
@@ -289,6 +293,7 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
 ///|
 test "ecs mut query: Write::modify persists method-style mutations" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, mut_query_method_value_key, MutQueryMethodValue::{
     value: 1,
@@ -305,6 +310,7 @@ test "ecs mut query: Write::modify persists method-style mutations" {
 ///|
 test "ecs mut query: QueryState supports get, require_single, iter_many_unique and mixed data" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -387,6 +393,7 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
 ///|
 test "ecs mut query: contiguous_iter and par_iter work with generic Write query data" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -467,6 +474,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Write query 
 ///|
 test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   let other = world.spawn()
 

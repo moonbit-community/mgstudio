@@ -25,6 +25,7 @@ struct BrokenConfig {
 ///|
 test "ecs resource: insert/get/update" {
   let world = World::new()
+  defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="runtime_config",
   )
@@ -46,6 +47,7 @@ test "ecs resource: insert/get/update" {
 ///|
 test "ecs resource: update missing returns false" {
   let world = World::new()
+  defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="missing_runtime_config",
   )
@@ -61,6 +63,7 @@ test "ecs resource: update missing returns false" {
 ///|
 test "ecs resource: get_resource reads world storage" {
   let world = World::new()
+  defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="ref_runtime_config",
   )
@@ -74,6 +77,7 @@ test "ecs resource: get_resource reads world storage" {
 ///|
 test "ecs resource: ResourceMut updates live world storage" {
   let world = World::new()
+  defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="ref_mut_runtime_config",
   )
@@ -88,6 +92,7 @@ test "ecs resource: ResourceMut updates live world storage" {
 ///|
 test "ecs resource: ResourceMut exposes detect changes metadata" {
   let world = World::new()
+  defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="resource_mut_detect_runtime_config",
   )
@@ -130,6 +135,7 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
 ///|
 test "ecs resource: ResourceMut acquisition and peek do not mark changed" {
   let world = World::new()
+  defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="resource_mut_acquire_runtime_config",
   )

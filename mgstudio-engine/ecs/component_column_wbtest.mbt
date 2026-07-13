@@ -45,6 +45,7 @@ pub impl Component for ComponentColumnMigrationMarker with fn component() {
 ///|
 test "ecs component column: cached table values write through typed storage" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
     x: 1,
@@ -78,6 +79,7 @@ test "ecs component column: cached table values write through typed storage" {
 ///|
 test "ecs component column: hot table row value write updates typed storage and change tick" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
     x: 5,
@@ -123,6 +125,7 @@ test "ecs component column: hot table row value write updates typed storage and 
 ///|
 test "ecs component column: table migration moves canonical typed rows" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
     x: 10,
@@ -188,6 +191,7 @@ test "ecs component column: table migration moves canonical typed rows" {
 ///|
 test "ecs component column: table storage iteration does not retain staged duplicates" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
     x: 30,
@@ -213,6 +217,7 @@ test "ecs component column: table storage iteration does not retain staged dupli
 ///|
 test "ecs mut query: cached table values write through typed storage" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
     x: 3,

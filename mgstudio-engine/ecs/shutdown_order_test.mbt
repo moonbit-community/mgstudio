@@ -24,6 +24,7 @@ test "ecs: shutdown hooks run after LIFO resource and component cleanup" {
     finalizer=fn(_value : Unit) { order.push(2) },
   )
   let world = World::new()
+  defer world.close()
   world.insert_resource(resource_key, ())
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, component_key, ())

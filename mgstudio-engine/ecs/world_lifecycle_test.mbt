@@ -13,8 +13,32 @@
 // limitations under the License.
 
 ///|
+suberror ScopedWorldTestError {
+  Stop
+}
+
+///|
+test "ecs: with_world closes after a raising body" {
+  let finalized : Array[Int] = []
+  let key = register_resource(debug_name="tests.ecs.scoped_world", finalizer=fn(
+    value : Int,
+  ) {
+    finalized.push(value)
+  })
+  with_world(fn(world) raise {
+    world.insert_resource(key, 7)
+    raise ScopedWorldTestError::Stop
+  }) catch {
+    ScopedWorldTestError::Stop => ()
+    error => fail("unexpected error: \{error}")
+  }
+  debug_inspect(finalized, content="[7]")
+}
+
+///|
 test "ecs: closing a World is idempotent" {
   let world = World::new()
+  defer world.close()
   debug_inspect(world.is_closed(), content="false")
   debug_inspect(world.lifecycle_epoch(), content="0")
 
@@ -41,6 +65,7 @@ test "ecs: World close rejects reentry while finalizers run" {
     }
   })
   let world = World::new()
+  defer world.close()
   world_ref.val = Some(world)
   world.insert_resource(key, ())
 
@@ -53,6 +78,7 @@ test "ecs: World close rejects reentry while finalizers run" {
 ///|
 test "ecs: a closed World rejects raw entity mutation" {
   let world = World::new()
+  defer world.close()
   world.close()
   let mutation_error : Ref[EcsError?] = Ref(None)
   ignore(world.spawn_empty_at(@core.Entity::new(99, 1))) catch {

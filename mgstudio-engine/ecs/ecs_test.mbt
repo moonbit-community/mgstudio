@@ -326,6 +326,7 @@ test "ecs: register key ids are monotonic" {
 ///|
 test "ecs: world bootstrap ordering for lifecycle pseudo-components is fixed" {
   let world = World::new()
+  defer world.close()
   ignore(world)
   debug_inspect(ecs_builtin_component_definition_add, content="1")
   debug_inspect(ecs_builtin_component_definition_insert, content="2")
@@ -360,6 +361,7 @@ test "ecs: register_message allocates a fresh typed key for repeated debug_name"
 ///|
 test "ecs: fetched mutable component retains the explicit typed key" {
   let world = World::new()
+  defer world.close()
   let explicit_key : ComponentKey[TypedCounter] = register_component(
     debug_name="tests.ecs.explicit_typed_counter",
   )
@@ -377,6 +379,7 @@ test "ecs: fetched mutable component retains the explicit typed key" {
 ///|
 test "ecs: spawn set get update and despawn cleanup" {
   let world = World::new()
+  defer world.close()
   let comp_counter : ComponentKey[Counter] = register_component(
     debug_name="counter",
   )
@@ -406,6 +409,7 @@ test "ecs: spawn set get update and despawn cleanup" {
 ///|
 test "ecs: dead entity fails fast" {
   let world = World::new()
+  defer world.close()
   let comp_counter : ComponentKey[Counter] = register_component(
     debug_name="counter_dead",
   )
@@ -423,6 +427,7 @@ test "ecs: dead entity fails fast" {
 ///|
 test "ecs: typed component api uses component ownership" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let counter_key : ComponentKey[TypedCounter] = Component::component()
@@ -484,6 +489,7 @@ test "ecs: typed component api uses component ownership" {
 test "ecs: spawn_bundle supports flat bundles and empty bundles" {
   ensure_sparse_storage_metadata_registered()
   let world = World::new()
+  defer world.close()
 
   let empty = try! world.spawn_bundle(())
   let nested = try! world.spawn_bundle(
@@ -517,6 +523,7 @@ test "ecs: spawn_bundle supports flat bundles and empty bundles" {
 ///|
 test "ecs: for_each_component tolerates structural changes during iteration" {
   let world = World::new()
+  defer world.close()
   let visited : Array[Int] = []
 
   for i in 0..<32 {
@@ -542,6 +549,7 @@ test "ecs: for_each_component tolerates structural changes during iteration" {
 test "ecs: bundle migration paths follow archetype/table topology" {
   ensure_sparse_storage_metadata_registered()
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   let empty_archetype_id = world.entity_archetype_id(entity).unwrap_or(-1)
@@ -602,6 +610,7 @@ test "ecs: bundle migration paths follow archetype/table topology" {
 test "ecs: bundle migration execution keeps path boundaries and row consistency" {
   ensure_sparse_storage_metadata_registered()
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -759,6 +768,7 @@ test "ecs: bundle migration execution keeps path boundaries and row consistency"
 test "ecs: structural mutations keep archetype membership deterministic" {
   ensure_sparse_storage_metadata_registered()
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -919,6 +929,7 @@ test "ecs: structural mutations keep archetype membership deterministic" {
 ///|
 test "ecs: archetype tracking follows structural mutations" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -984,6 +995,7 @@ test "ecs: archetype tracking follows structural mutations" {
 ///|
 test "ecs: archetype swap-remove keeps row tracking consistent" {
   let world = World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -1031,7 +1043,9 @@ test "ecs: archetype swap-remove keeps row tracking consistent" {
 ///|
 test "ecs: component runtime ids are world-local and isolated" {
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
   let e0 = world0.spawn()
   let e1 = world1.spawn()
 
@@ -1060,6 +1074,7 @@ test "ecs: component runtime ids are world-local and isolated" {
 test "ecs: queued registration flush preserves deterministic queue order and local ids" {
   ensure_queued_require_metadata_registered()
   let world = World::new()
+  defer world.close()
   let registrator = world.components_registrator()
   let queued = registrator.as_queued()
 
@@ -1092,7 +1107,9 @@ test "ecs: queued registration flush preserves deterministic queue order and loc
 test "ecs: queued registration ids stay stable across worlds with identical queue order" {
   ensure_queued_require_metadata_registered()
   let world0 = World::new()
+  defer world0.close()
   let world1 = World::new()
+  defer world1.close()
 
   let registrator0 = world0.components_registrator()
   let registrator1 = world1.components_registrator()
@@ -1133,6 +1150,7 @@ test "ecs: queued registration ids stay stable across worlds with identical queu
 test "ecs: queued component registration preserves local ids and required-components semantics" {
   ensure_queued_require_metadata_registered()
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
 
   let queued_a_id = world.queue_register_component_by_key(queued_require_a_key)
@@ -1162,6 +1180,7 @@ test "ecs: queued component registration preserves local ids and required-compon
 test "ecs: apply_queued_component_registrations materializes pending components" {
   ensure_queued_require_metadata_registered()
   let world = World::new()
+  defer world.close()
   let queued_a_id = world.queue_register_component_by_key(queued_require_a_key)
   let queued_b_id = world.queue_register_component_by_key(queued_require_b_key)
 
@@ -1181,6 +1200,7 @@ test "ecs: apply_queued_component_registrations materializes pending components"
 test "ecs: components registrator queued registration preserves ids" {
   ensure_queued_require_metadata_registered()
   let world = World::new()
+  defer world.close()
   let registrator = world.components_registrator()
   let queued = registrator.as_queued()
   let queued_a_id = queued.register_component_by_key(queued_require_a_key)
@@ -1204,6 +1224,7 @@ test "ecs: components registrator queued registration preserves ids" {
 test "ecs: sparse-set storage metadata routes through world storage split" {
   ensure_sparse_storage_metadata_registered()
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, sparse_storage_counter_key, SparseStorageCounter::{
     value: 7,
@@ -1227,6 +1248,7 @@ test "ecs: world-local storage type remains stable after metadata mutation" {
   ignore(component_metadata_builder(storage_mode_probe_key).storage_table())
 
   let world0 = World::new()
+  defer world0.close()
   let entity0 = world0.spawn()
   try! world0.set_by_key(entity0, storage_mode_probe_key, StorageModeProbe::{
     value: 10,
@@ -1238,6 +1260,7 @@ test "ecs: world-local storage type remains stable after metadata mutation" {
   )
 
   let world1 = World::new()
+  defer world1.close()
   let entity1 = world1.spawn()
   try! world1.set_by_key(entity1, storage_mode_probe_key, StorageModeProbe::{
     value: 20,
@@ -1264,6 +1287,7 @@ test "ecs: world-local storage type remains stable after metadata mutation" {
 ///|
 test "ecs parity wave2: duplicate hook kind registration fails in-world" {
   let world = World::new()
+  defer world.close()
   let builder = world.register_component_hooks_for_key(
     parity_hook_registration_probe_key,
   )
@@ -1289,6 +1313,7 @@ test "ecs parity wave2: duplicate hook kind registration fails in-world" {
 ///|
 test "ecs parity wave2: late hook registration after archetype use fails" {
   let world = World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, parity_hook_registration_probe_key, ParityHookRegistrationProbe::{
 
@@ -1314,6 +1339,7 @@ test "ecs parity wave2: late hook registration after archetype use fails" {
 ///|
 test "ecs parity wave2: required_by tracks transitive closure and cycle registration fails" {
   let world = World::new()
+  defer world.close()
 
   try! world.register_required_components_with(
     parity_required_a_key,
