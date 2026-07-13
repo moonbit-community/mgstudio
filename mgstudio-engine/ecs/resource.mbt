@@ -48,6 +48,10 @@ pub fn[T] World::get_resource(self : World, key : ResourceKey[T]) -> T? {
 }
 
 ///|
+/// Removes a resource and transfers its value to the caller.
+///
+/// The registered finalizer is not called. Use `World::drop_resource` when the
+/// value should be destroyed instead of transferred.
 pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
   guard self.is_active() else {
     abort("cannot remove a resource after World closing has started")
@@ -55,6 +59,17 @@ pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
   guard key.resource_remove(self) is Some(value) else { return None }
   self.resource_tick_registry.untrack(key.id())
   Some(value)
+}
+
+///|
+/// Removes and destroys a resource by calling its registered finalizer.
+pub fn[T] World::drop_resource(self : World, key : ResourceKey[T]) -> Bool {
+  guard self.is_active() else {
+    abort("cannot drop a resource after World closing has started")
+  }
+  guard key.resource_drop(self) else { return false }
+  self.resource_tick_registry.untrack(key.id())
+  true
 }
 
 ///|

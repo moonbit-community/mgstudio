@@ -360,7 +360,7 @@ fn[S : States] run_pending_enter(world : @ecs.World, state : S) -> Unit {
 ///|
 fn[S : States] clear_pending_event(world : @ecs.World, state : S) -> Unit {
   let key = pending_state_transition_event_resource_key(state)
-  ignore(world.remove_resource(key))
+  ignore(world.drop_resource(key))
 }
 
 ///|
@@ -492,7 +492,7 @@ fn[S : States] internal_apply_state_transition(
         }
         None => {
           world.insert_resource(current_key, State::new(entered))
-          ignore(world.remove_resource(previous_key))
+          ignore(world.drop_resource(previous_key))
           let event = StateTransitionEvent::{
             exited: None,
             entered: Some(entered),
@@ -505,7 +505,7 @@ fn[S : States] internal_apply_state_transition(
       match current_state {
         Some(current) => {
           let exited = current.get()
-          ignore(world.remove_resource(current_key))
+          ignore(world.drop_resource(current_key))
           world.insert_resource(previous_key, PreviousState::{ value: exited })
           let event = StateTransitionEvent::{
             exited: Some(exited),

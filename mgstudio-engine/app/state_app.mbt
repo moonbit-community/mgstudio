@@ -77,7 +77,7 @@ pub fn[S : States] insert_state_app(
     entered: Some(state),
     allow_same_state_transitions: true,
   })
-  ignore(app.world().remove_resource(previous_state_resource_key(state)))
+  ignore(app.world().drop_resource(previous_state_resource_key(state)))
   app
 }
 

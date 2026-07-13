@@ -18,7 +18,7 @@ struct FinalizerProbe {
 }
 
 ///|
-test "ecs: registered finalizers run exactly once on replacement removal and close" {
+test "ecs: finalizers distinguish value transfer from destruction" {
   let resource_finalized : Array[Int] = []
   let component_finalized : Array[Int] = []
   let resource_key = register_resource(
@@ -33,19 +33,23 @@ test "ecs: registered finalizers run exactly once on replacement removal and clo
 
   world.insert_resource(resource_key, { id: 1 })
   world.insert_resource(resource_key, { id: 2 })
-  ignore(world.remove_resource(resource_key))
+  let removed_resource = world.remove_resource(resource_key)
+  debug_inspect(removed_resource.map(fn(value) { value.id }), content="Some(2)")
   let first = world.spawn_empty()
   try! world.set_by_key(first, component_key, { id: 3 })
   try! world.set_by_key(first, component_key, { id: 4 })
   try! world.despawn(first)
-  debug_inspect(resource_finalized, content="[1, 2]")
+  debug_inspect(resource_finalized, content="[1]")
   debug_inspect(component_finalized, content="[3, 4]")
 
   world.insert_resource(resource_key, { id: 5 })
+  debug_inspect(world.drop_resource(resource_key), content="true")
+  debug_inspect(resource_finalized, content="[1, 5]")
+  world.insert_resource(resource_key, { id: 7 })
   let second = world.spawn_empty()
   try! world.set_by_key(second, component_key, { id: 6 })
   world.close()
   world.close()
-  debug_inspect(resource_finalized, content="[1, 2, 5]")
+  debug_inspect(resource_finalized, content="[1, 5, 7]")
   debug_inspect(component_finalized, content="[3, 4, 6]")
 }

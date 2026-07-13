@@ -32,6 +32,7 @@ struct ResourceAccessOps[T] {
   get : (World) -> T?
   set : (World, T) -> Unit
   remove : (World) -> T?
+  drop : (World) -> Bool
   record_added : (World, @core.Tick, String?) -> Unit
   record_changed : (World, @core.Tick, String?) -> Unit
   added_tick : (World) -> @core.Tick?
@@ -456,10 +457,20 @@ fn[T] resource_access_ops_new(
         Some(slot) => {
           let value = slot.value
           slots_by_world.remove(world.world_id())
-          finalizer(value)
           Some(value)
         }
         None => None
+      }
+    },
+    drop: fn(world) {
+      match slots_by_world.get(world.world_id()) {
+        Some(slot) => {
+          let value = slot.value
+          slots_by_world.remove(world.world_id())
+          finalizer(value)
+          true
+        }
+        None => false
       }
     },
     record_added: fn(world, tick, caller) {
@@ -532,6 +543,11 @@ fn[T] ResourceKey::resource_set(
 ///|
 fn[T] ResourceKey::resource_remove(self : ResourceKey[T], world : World) -> T? {
   (self.access.remove)(world)
+}
+
+///|
+fn[T] ResourceKey::resource_drop(self : ResourceKey[T], world : World) -> Bool {
+  (self.access.drop)(world)
 }
 
 ///|

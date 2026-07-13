@@ -530,7 +530,7 @@ test "render startup: gpu resources can be initialized repeatedly" {
     render_world.resource(pending_command_buffers_resource_key).is_present(),
     content="true",
   )
-  render_world.remove_resource(pending_command_buffers_resource_key) |> ignore
+  render_world.drop_resource(pending_command_buffers_resource_key) |> ignore
   debug_inspect(
     render_world.resource(pending_command_buffers_resource_key).is_present(),
     content="false",

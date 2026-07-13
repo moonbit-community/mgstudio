@@ -255,8 +255,7 @@ fn take_future_render_resources(main_world : @ecs.World) -> RenderResources? {
     Some(future_resources) => {
       let resources = future_resources.modify(fn(value) { value.take() })
       if resources is Some(_) {
-        main_world.remove_resource(future_render_resources_resource_key)
-        |> ignore
+        main_world.drop_resource(future_render_resources_resource_key) |> ignore
       }
       resources
     }

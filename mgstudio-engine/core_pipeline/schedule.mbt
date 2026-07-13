@@ -132,7 +132,7 @@ pub fn camera_driver(world : @ecs.World) -> Unit {
     )
     @app.run_current_schedule_stage(world, camera_render_graph.schedule())
   }
-  ignore(world.remove_resource(@render.current_view_resource_key))
+  ignore(world.drop_resource(@render.current_view_resource_key))
 }
 
 ///|
@@ -146,5 +146,5 @@ pub fn run_core3d_view_schedule(
     @render.CurrentView::new(view_entity),
   )
   @app.run_current_schedule_stage(world, Core3d::schedule())
-  ignore(world.remove_resource(@render.current_view_resource_key))
+  ignore(world.drop_resource(@render.current_view_resource_key))
 }

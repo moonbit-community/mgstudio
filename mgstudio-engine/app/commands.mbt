@@ -443,7 +443,7 @@ pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
   self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
-      ignore(world.remove_resource(key))
+      ignore(world.drop_resource(key))
     },
     error_handler: None,
     source: "Commands::remove_resource",
@@ -457,7 +457,7 @@ pub fn[T] Commands::remove_world_resource(
 ) -> Unit {
   self.push({
     run: fn(world : @ecs.World, _tick : @core.Tick) {
-      ignore(world.remove_resource(key))
+      ignore(world.drop_resource(key))
     },
     error_handler: None,
     source: "Commands::remove_world_resource",
