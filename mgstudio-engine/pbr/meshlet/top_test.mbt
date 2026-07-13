@@ -186,6 +186,7 @@ test "pbr meshlet: view resources use camera physical viewport size" {
 ///|
 test "pbr meshlet: configure views inserts prepass and deferred bins by view flags" {
   let world = @ecs.World::new()
+  defer world.close()
   let view_entity = world.spawn()
   try! world.set_by_key(
     view_entity,
@@ -234,6 +235,7 @@ test "pbr meshlet: configure views inserts prepass and deferred bins by view fla
 ///|
 test "pbr meshlet: configure views mirrors Bevy prepass bin insertion" {
   let world = @ecs.World::new()
+  defer world.close()
   let view_entity = world.spawn()
   try! world.set_by_key(
     view_entity,
@@ -263,6 +265,7 @@ test "pbr meshlet: configure views mirrors Bevy prepass bin insertion" {
 ///|
 test "panic pbr meshlet: configure views rejects msaa-enabled views" {
   let world = @ecs.World::new()
+  defer world.close()
   let view_entity = world.spawn()
   try! world.set_by_key(
     view_entity,
@@ -280,6 +283,7 @@ test "panic pbr meshlet: configure views rejects msaa-enabled views" {
 ///|
 test "pbr meshlet: material prepare system creates empty per-view material bins" {
   let world = @ecs.World::new()
+  defer world.close()
   let view_entity = world.spawn()
   try! world.set_by_key(
     view_entity,

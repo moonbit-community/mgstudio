@@ -289,6 +289,7 @@ test "skybox: pipeline descriptor matches Bevy layout and depth anchors" {
 ///|
 test "skybox: prepare pipelines writes render-world view component" {
   let world = @ecs.World::new()
+  defer world.close()
   let render_entity = world.spawn()
   try! world.set_by_key(
     render_entity,
@@ -336,6 +337,7 @@ test "skybox: prepare pipelines writes render-world view component" {
 ///|
 test "skybox: prepare pipelines requires Bevy render-view components" {
   let world = @ecs.World::new()
+  defer world.close()
   let render_entity = world.spawn()
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(19)
   let skybox = @light.Skybox::new(image, 1.0F)

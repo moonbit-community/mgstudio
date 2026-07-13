@@ -97,6 +97,7 @@ fn window_runtime_wbtest_prepare_native_event_loop() -> Unit {
 test "window runtime: create pass is separated from prepare pass" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
 
@@ -114,6 +115,7 @@ test "window runtime: create pass is separated from prepare pass" {
 test "window runtime: centered monitor entity drives window position on create" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let monitor_entity = world.spawn()
   try! world.set_by_key(monitor_entity, ecs_key_monitor, Monitor::{
     name: Some("test-monitor"),
@@ -145,6 +147,7 @@ test "window runtime: centered monitor entity drives window position on create" 
 test "window runtime: minimize request is consumed during apply" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
 
@@ -172,6 +175,7 @@ test "window runtime: minimize request is consumed during apply" {
 test "window runtime: cursor hit-test options are applied on create and update" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
   try! (world
@@ -203,6 +207,7 @@ test "window runtime: cursor hit-test options are applied on create and update" 
 test "window runtime: unsupported transparent and canvas updates are reverted" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let initial_window = Window::Window()
   initial_window.canvas = Some("#existing")
@@ -233,6 +238,7 @@ test "window runtime: unsupported transparent and canvas updates are reverted" {
 test "window runtime: unsupported create-only name taskbar and clip updates are reverted" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let initial_window = Window::Window()
   initial_window.name = Some("main-window")
@@ -267,6 +273,7 @@ test "window runtime: unsupported create-only name taskbar and clip updates are 
 test "window runtime: iOS preference fields remain mutable at runtime" {
   window_runtime_wbtest_prepare_native_event_loop()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Window::Window()) |> ignore)
 

@@ -354,6 +354,7 @@ test "pbr: WireframePlugin removes internal material when Wireframe is removed" 
 ///|
 test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
   let initial_render_world = @ecs.World::new()
+  defer initial_render_world.close()
   initial_render_world.insert_resource(
     @render_mesh.MeshAllocatorSettings::resource(),
     @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),

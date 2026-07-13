@@ -428,6 +428,7 @@ test "app: run condition combinators short-circuit and compose" {
 ///|
 test "app: Query and ResMut compose in a single system signature" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(entity, query_position_key, QueryPosition::{
     x: 3,

@@ -15,6 +15,7 @@
 ///|
 test "visibility: inherited child is hidden when parent is hidden" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
@@ -62,6 +63,7 @@ test "visibility: inherited child is hidden when parent is hidden" {
 ///|
 test "visibility: incrementally added child inherits hidden parent after initial propagation" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   let initial_ctx = @core.SystemTickContext::new()
   initial_ctx.set(@core.SystemTicks::new(0, 1))
@@ -118,6 +120,7 @@ test "visibility: incrementally added child inherits hidden parent after initial
 ///|
 test "visibility: incrementally added child honors hidden parent before parent propagation" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   let initial_ctx = @core.SystemTickContext::new()
   initial_ctx.set(@core.SystemTicks::new(0, 1))
@@ -176,6 +179,7 @@ test "visibility: incrementally added child honors hidden parent before parent p
 ///|
 test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
@@ -223,6 +227,7 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
 ///|
 test "visibility: Inherited falls back to visible when parent lacks components" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
@@ -417,6 +422,7 @@ test "visibility: view visibility tracks current and previous frame bits" {
 ///|
 test "visibility: no-cpu-culling marker has stable default and ecs key" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,

@@ -15,6 +15,7 @@
 ///|
 test "picking: hover map coalesces PointerHits by order and Pickable blocking" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   world.init_message(pointer_hits_message_key())
   let lower = world.spawn_empty()
@@ -45,6 +46,7 @@ test "picking: hover map coalesces PointerHits by order and Pickable blocking" {
 ///|
 test "picking: hover map stops at default blocking entity" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   world.init_message(pointer_hits_message_key())
   let lower = world.spawn_empty()
@@ -74,6 +76,7 @@ test "picking: hover map stops at default blocking entity" {
 ///|
 test "picking: pointer events use HoverMap as hit source" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   world.init_message(pointer_input_message_key())
   world.send_message(
@@ -102,6 +105,7 @@ test "picking: pointer events use HoverMap as hit source" {
 ///|
 test "picking: pointer events can be generated from PointerInput messages" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   world.init_message(pointer_input_message_key())
   get_picking_state_resource(world).insert(PickingState::PickingState())
@@ -138,6 +142,7 @@ test "picking: pointer events can be generated from PointerInput messages" {
 ///|
 test "picking: hover pipeline updates PointerInteraction on pointer entity" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   world.init_message(pointer_hits_message_key())
   let pointer_entity = world.spawn_empty()

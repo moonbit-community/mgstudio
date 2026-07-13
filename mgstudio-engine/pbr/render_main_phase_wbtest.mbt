@@ -38,6 +38,7 @@ fn render3d_main_phase_test_item(
 ///|
 test "pbr: main view phases prepare retained views from queued material meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = @core.Entity::new(10, 0)
   let draw_items = [render3d_main_phase_test_item(20, RENDER3D_PHASE_OPAQUE)]
 
@@ -67,6 +68,7 @@ test "pbr: main view phases prepare retained views from queued material meshes" 
 ///|
 test "pbr: main view phases store Bevy phase buckets in render order" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = @core.Entity::new(22, 0)
   let draw_items = [
     render3d_main_phase_test_item(20, RENDER3D_PHASE_OPAQUE),
@@ -88,6 +90,7 @@ test "pbr: main view phases store Bevy phase buckets in render order" {
 ///|
 test "pbr: main view phases apply Bevy dequeue and incremental queue" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = @core.Entity::new(24, 0)
   render3d_prepare_main_view_phase(world, view, [
     render3d_main_phase_test_item(1, RENDER3D_PHASE_OPAQUE),
@@ -120,6 +123,7 @@ test "pbr: main view phases apply Bevy dequeue and incremental queue" {
 ///|
 test "pbr: main view phases retain only live cameras" {
   let world = @ecs.World::new()
+  defer world.close()
   let live_view = @core.Entity::new(30, 0)
   let stale_view = @core.Entity::new(31, 0)
   render3d_prepare_main_view_phase(world, live_view, [

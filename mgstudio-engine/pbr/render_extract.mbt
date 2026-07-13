@@ -270,6 +270,7 @@ fn collect_entities_needing_material_specialization_removed(
 ///|
 test "pbr render extract: material specialization collector follows mesh and material changes" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let changed_with_material = source_world.spawn()
   let mesh_without_material = source_world.spawn()
 
@@ -331,6 +332,7 @@ test "pbr render extract: material specialization collector follows mesh and mat
 ///|
 test "pbr render extract: material specialization collector ignores despawned mesh changes" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   try! source_world.set_by_key(
     entity,
@@ -354,6 +356,7 @@ test "pbr render extract: material specialization collector ignores despawned me
 ///|
 test "pbr render extract: material specialization collector follows mesh and material removals" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let mesh_removed = source_world.spawn()
   let material_removed = source_world.spawn()
   let duplicate_removed = source_world.spawn()

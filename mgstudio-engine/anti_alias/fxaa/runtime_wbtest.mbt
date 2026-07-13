@@ -52,6 +52,7 @@ test "anti_alias/fxaa: runtime state counts only camera entities with Fxaa" {
 ///|
 test "anti_alias/fxaa: node requires camera component and enabled=true" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = fxaa_test_spawn_camera(world)
   let non_camera_entity = world.spawn_empty()
   try! world.set_by_key(

@@ -67,6 +67,7 @@ test "pbr light probe: gather records render probe index by main entity" {
 ///|
 test "pbr light probe: light probe info skips unloaded or incomplete assets" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let main_entity = @render.MainEntity::new(entity)
   let light_probe = @light.LightProbe::LightProbe()
@@ -147,6 +148,7 @@ test "pbr light probe: light probe infos sort by camera distance" {
 ///|
 test "pbr light probe: gather uses visible clusterable probes and skips unloaded assets" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   let render_view = world.spawn()
   let reflection_probe = world.spawn()
@@ -253,6 +255,7 @@ test "pbr light probe: view environment map creates Bevy view light probe info" 
 test "pbr light probe: gather includes view environment maps without visible probes" {
   @render_texture.register_asset_texture_backend()
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   let render_view = world.spawn()
   let diffuse = @asset.asset_create_dynamic_texture_with_mips(
@@ -306,6 +309,7 @@ test "pbr light probe: gather includes view environment maps without visible pro
 test "pbr light probe: gather ignores non-Camera3d source views like Bevy" {
   @render_texture.register_asset_texture_backend()
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   let render_view = world.spawn()
   let diffuse = @asset.asset_create_dynamic_texture_with_mips(
@@ -342,6 +346,7 @@ test "pbr light probe: gather ignores non-Camera3d source views like Bevy" {
 ///|
 test "pbr light probe: gather removes stale inactive view components" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   let render_view = world.spawn()
   try! world.set_by_key(
@@ -490,6 +495,7 @@ test "pbr light probe: uniform carries Bevy view environment map fields" {
 ///|
 test "pbr light probe: upload_light_probes writes render-world offsets" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   try! world.set_by_key(
     view,
@@ -613,6 +619,7 @@ test "pbr light probe: plugin initializes main state and render buffer resource"
 ///|
 test "pbr light probe: resource and component keys round-trip through ecs APIs" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_light_probe_plugin_state,
     LightProbePluginState::LightProbePluginState(),

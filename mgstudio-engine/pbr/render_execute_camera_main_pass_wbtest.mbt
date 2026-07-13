@@ -41,6 +41,7 @@ test "render3d: main pass skips deferred opaque materials like bevy queue_materi
 ///|
 test "render3d: main transparent pass executes retained phase draw functions" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_view = world.spawn_empty()
   let render_entity = world.spawn_empty()
   let main_entity = world.spawn_empty()

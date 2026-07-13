@@ -41,6 +41,7 @@ test "render view window: WindowRenderPlugin tolerates missing RenderApp" {
 test "render view window: ExtractedWindows tracks primary and removes it with entity" {
   let windows = ExtractedWindows::ExtractedWindows()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let handle = @window_pkg.RawHandleWrapper::new(
     @window_pkg.WindowWrapper::new(11),
@@ -68,6 +69,7 @@ test "render view window: ExtractedWindows tracks primary and removes it with en
 test "render view window: WindowSurfaces remove clears configured window state" {
   let surfaces = WindowSurfaces::WindowSurfaces()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   ignore(surfaces.configured_windows.add(entity))
   debug_inspect(surfaces.is_configured(entity), content="true")
@@ -108,7 +110,9 @@ fn spawn_extractable_window(
 ///|
 test "render view window: extract_windows copies primary window into render world" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   init_extracted_windows(render_world)
   init_window_surfaces(render_world)
   let entity = spawn_extractable_window(
@@ -134,7 +138,9 @@ test "render view window: extract_windows copies primary window into render worl
 ///|
 test "render view window: extract_windows updates size and present-mode change flags" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   init_extracted_windows(render_world)
   init_window_surfaces(render_world)
   let entity = spawn_extractable_window(
@@ -166,6 +172,7 @@ test "render view window: extract_windows removes closing windows and consumes c
   )
   let main_world = main_app.world()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   init_extracted_windows(render_world)
   init_window_surfaces(render_world)
   let entity = spawn_extractable_window(
@@ -213,6 +220,7 @@ test "render view window: need_surface_configuration follows configured and chan
   let windows = ExtractedWindows::ExtractedWindows()
   let surfaces = WindowSurfaces::WindowSurfaces()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let extracted = ExtractedWindow::new(
     entity,
@@ -237,6 +245,7 @@ test "render view window: need_surface_configuration follows configured and chan
 test "render view window: camera target gating follows Bevy prepare_windows condition" {
   let windows = ExtractedWindows::ExtractedWindows()
   let world = @ecs.World::new()
+  defer world.close()
   let primary_entity = world.spawn()
   let secondary_entity = world.spawn()
   let primary = ExtractedWindow::new(
@@ -367,6 +376,7 @@ test "render view window: present mode fallbacks follow Bevy ordering" {
 ///|
 test "render view window: present_mode_raw chooses first supported fallback" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let window = ExtractedWindow::new(
     entity,
@@ -433,6 +443,7 @@ test "render view window: texture view format mirrors Bevy add_srgb_suffix path"
 ///|
 test "render view window: surface configuration uses Bevy window fields" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let window = ExtractedWindow::new(
     entity,
@@ -478,6 +489,7 @@ test "render view window: surface configuration uses Bevy window fields" {
 ///|
 test "render view window: create_surface_for_window reports missing content view" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let window = ExtractedWindow::new(
     entity,

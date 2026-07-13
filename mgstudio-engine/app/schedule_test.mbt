@@ -1701,6 +1701,7 @@ pub impl @ecs.Component for EcsVelocity with fn component() {
 ///|
 test "app: SystemParam Query2 injects typed query into update system" {
   let world = @ecs.World::new()
+  defer world.close()
 
   let app = App::new(world)
     .add_startup_system(fn(startup_world) {

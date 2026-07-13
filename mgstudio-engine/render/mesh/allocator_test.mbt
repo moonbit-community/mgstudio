@@ -551,6 +551,7 @@ test "render mesh allocator plugin initializes resource owners without overwriti
 
   let seeded = MeshAllocator::new(general_vertex_slabs_supported=false)
   let seeded_world = @ecs.World::new()
+  defer seeded_world.close()
   seeded_world.insert_resource(MeshAllocator::resource(), seeded)
   let app = @app.App::new(@ecs.World::new())
     .insert_sub_app(@app.RenderApp, @app.SubApp::new(seeded_world))

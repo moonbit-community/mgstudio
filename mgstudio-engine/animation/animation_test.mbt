@@ -416,6 +416,7 @@ test "animation transitions: play updates main animation and starts new clip" {
 ///|
 test "animation transitions: zero-duration switch expires via transition systems" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   fn set_delta(delta_seconds : Float) -> Unit {
     let time = @time.Time::new_with(()).advance_by(
@@ -455,6 +456,7 @@ test "animation transitions: zero-duration switch expires via transition systems
 ///|
 test "animation transitions: remaining weight is not clamped like bevy" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   fn set_delta(delta_seconds : Float) -> Unit {
     let time = @time.Time::new_with(()).advance_by(
@@ -501,6 +503,7 @@ test "animation transitions: remaining weight is not clamped like bevy" {
 ///|
 test "animation transitions: advance/expire keep frame-snapshot weight decline semantics" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   fn set_delta(delta_seconds : Float) -> Unit {
     let time = @time.Time::new_with(()).advance_by(

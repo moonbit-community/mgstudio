@@ -662,6 +662,7 @@ test "light plugin: updates visible shadow-mapped directional light cascades fru
 ///|
 test "light: WithLight matches point, spot, directional, and rect lights" {
   let world = @ecs.World::new()
+  defer world.close()
   let point = world.spawn()
   let spot = world.spawn()
   let directional = world.spawn()

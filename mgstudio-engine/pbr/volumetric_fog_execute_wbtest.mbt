@@ -111,6 +111,7 @@ fn render3d_volumetric_fog_wbtest_u32_at(
 ///|
 test "pbr volumetric fog execute: prepare consumes extracted render-world state" {
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let view_entity = render_world.spawn()
   try! render_world.set_by_key(
     view_entity,
@@ -161,7 +162,9 @@ test "pbr volumetric fog execute: prepare consumes extracted render-world state"
 ///|
 test "pbr volumetric fog execute: pre-main prepare state consumes prepared render-world data" {
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let main_entity = @core.Entity::new(91, 1)
   let view_entity = render_world.spawn()
   try! render_world.set_by_key(
@@ -236,6 +239,7 @@ test "pbr volumetric fog execute: pre-main prepare state consumes prepared rende
 ///|
 test "pbr volumetric fog execute: extracts lights and precomputes local-from-world fog volume transforms" {
   let world = @ecs.World::new()
+  defer world.close()
   let light_entity = world.spawn()
   try! (world.set_by_key(
     light_entity,
@@ -301,6 +305,7 @@ test "pbr volumetric fog execute: converts clip projection columns without trans
 ///|
 test "pbr volumetric fog execute: standalone uniform prepare clears stale data for empty inputs" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(
     render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(buffer) {
       @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
@@ -331,6 +336,7 @@ test "pbr volumetric fog execute: standalone uniform prepare clears stale data f
 ///|
 test "pbr volumetric fog execute: standalone uniform prepare keeps zero-volume views empty" {
   let world = @ecs.World::new()
+  defer world.close()
   let view_entity = world.spawn()
   let output = render3d_prepare_volumetric_fog_uniform_buffer(world, [
     Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
@@ -354,6 +360,7 @@ test "pbr volumetric fog execute: standalone uniform prepare keeps zero-volume v
 ///|
 test "pbr volumetric fog execute: standalone uniform prepare derives count from views times render-world volumes" {
   let world = @ecs.World::new()
+  defer world.close()
   let first_volume = world.spawn()
   try! world.set_by_key(
     first_volume,
@@ -433,6 +440,7 @@ test "pbr volumetric fog execute: standalone uniform prepare derives count from 
 ///|
 test "pbr volumetric fog execute: standalone uniform prepare inserts per-view fog metadata" {
   let world = @ecs.World::new()
+  defer world.close()
   let density_texture : @asset.Handle[@asset.Image] = @asset.Handle::new(77)
   let volume = world.spawn()
   try! world.set_by_key(
@@ -485,6 +493,7 @@ test "pbr volumetric fog execute: standalone uniform prepare inserts per-view fo
 ///|
 test "pbr volumetric fog execute: clears shared uniform buffer" {
   let world = @ecs.World::new()
+  defer world.close()
   let buffer = render3d_volumetric_fog_uniform_buffer_mut(world)
   ignore(
     buffer.modify(fn(uniform_buffer) {
@@ -617,6 +626,7 @@ test "pbr volumetric fog execute: pipeline keys preserve Bevy texture variants a
 ///|
 test "pbr volumetric fog execute: prepares depth texture usage from sampled depth users" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera3d = Camera3d::Camera3d()
   assert_false(camera3d.depth_texture_usages().has_texture_binding())
   assert_false(render3d_world_has_volumetric_fog_views(world))

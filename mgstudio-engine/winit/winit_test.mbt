@@ -252,6 +252,7 @@ test "winit: windows resource mirrors host window runtime mapping" {
 ///|
 test "winit: windows resource supports remove by entity" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity_a = world.spawn()
   let entity_b = world.spawn()
   let windows = @winit.WinitWindows::WinitWindows()
@@ -268,6 +269,7 @@ test "winit: windows resource supports remove by entity" {
 ///|
 test "winit: monitors resource provides nth and find_entity accessors" {
   let world = @ecs.World::new()
+  defer world.close()
   let missing_entity = world.spawn()
   let monitors = @winit.WinitMonitors::WinitMonitors()
   debug_inspect(monitors.nth(0) is None, content="true")
@@ -285,6 +287,7 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
   }
 
   let world = @ecs.World::new()
+  defer world.close()
   let entity_a = world.spawn()
   let entity_b = world.spawn()
   let monitor_a = native_monitors[0]
@@ -460,6 +463,7 @@ test "winit: monitor sync mirrors native monitor snapshot" {
 test "winit: create pass consumes initial window mode requests" {
   @windowing.set_event_loop_any_thread(true)
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   let window = @window.Window::Window()
   window.mode = @window.WindowMode::BorderlessFullscreen(
@@ -545,6 +549,7 @@ test "winit: keyboard press reaches update input readers" {
   keyboard_press_probe_button_ref.val = false
 
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
@@ -596,6 +601,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
   ignore(@windowing.take_accessibility_actions())
 
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   let window = @window.Window::Window()
   window.focused = false
@@ -676,6 +682,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
 ///|
 test "winit: close request follows bevy two-frame close lifecycle" {
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
@@ -716,6 +723,7 @@ test "winit: close request follows bevy two-frame close lifecycle" {
 ///|
 test "winit: native close request keeps host open until ECS closes window" {
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
@@ -759,6 +767,7 @@ test "winit: native close request keeps host open until ECS closes window" {
 ///|
 test "winit: app exit emits WindowClosing for all open windows" {
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)

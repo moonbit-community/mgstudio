@@ -161,6 +161,7 @@ test "input_focus runtime sets initial focus to primary window" {
 ///|
 test "input_focus runtime dispatches and clears stale focus" {
   let world = @ecs.World::new()
+  defer world.close()
   let primary = world.spawn()
   try! (world.entity_mut(primary).insert_component(@window.Window::Window())
   |> ignore)
@@ -213,6 +214,7 @@ test "input_focus runtime dispatches and clears stale focus" {
 ///|
 test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
   let world = @ecs.World::new()
+  defer world.close()
   let primary = world.spawn()
   try! (world.entity_mut(primary).insert_component(@window.Window::Window())
   |> ignore)

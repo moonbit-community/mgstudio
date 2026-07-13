@@ -44,6 +44,7 @@ pub impl GpuComponentArrayBufferComponent for TestGpuComponentArrayBufferCompone
 ///|
 test "render gpu component array buffer: prepare populates buffer and entity index mapping" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity0 = world.spawn()
   let entity1 = world.spawn()
   try! world.set_by_key(
@@ -75,6 +76,7 @@ test "render gpu component array buffer: prepare populates buffer and entity ind
 ///|
 test "render gpu component array buffer: prepare clears stale component indices" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,

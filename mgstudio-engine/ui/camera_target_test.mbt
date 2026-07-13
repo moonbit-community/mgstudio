@@ -52,6 +52,7 @@ fn camera_with_target_info(
 ///|
 test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = seed_ui_context(world)
   ignore(tick)
 
@@ -84,6 +85,7 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
 ///|
 test "ui: multiple default markers fall back to highest-order primary-window camera" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = seed_ui_context(world)
   ignore(tick)
 
@@ -164,6 +166,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
 ///|
 test "ui: explicit UiTargetCamera propagates from root and drives logical render target info" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(2.0F))
@@ -239,6 +242,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
 ///|
 test "ui: propagated target info falls back to camera target when computed info is empty" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(1.0F))
@@ -285,6 +289,7 @@ test "ui: propagated target info falls back to camera target when computed info 
 ///|
 test "ui: perspective target camera keeps overlays in screen space" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
 
@@ -324,6 +329,7 @@ test "ui: perspective target camera keeps overlays in screen space" {
 ///|
 test "ui: layout resolves each root against its propagated target viewport" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
 

@@ -42,6 +42,7 @@ fn visibility_bounds_test_skinned_mesh() -> @mesh.Mesh {
 ///|
 test "camera/primitives: calculate_bounds inserts Mesh3d Aabb" {
   let world = @ecs.World::new()
+  defer world.close()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
   let mesh_handle = meshes.add(visibility_bounds_test_mesh())
@@ -65,6 +66,7 @@ test "camera/primitives: calculate_bounds inserts Mesh3d Aabb" {
 ///|
 test "camera/primitives: update_skinned_mesh_bounds follows joint transforms" {
   let world = @ecs.World::new()
+  defer world.close()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let inverse_bindposes_assets_key : @ecs.ResourceKey[
     @asset.Assets[@mesh.SkinnedMeshInverseBindposes],
@@ -146,6 +148,7 @@ test "camera/primitives: light frusta containers default to Bevy empty shape" {
 
   let cascades = CascadesFrusta::CascadesFrusta()
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   debug_inspect(cascades.get(view).length(), content="0")
   cascades.set(view, [Frustum::default_2d()])

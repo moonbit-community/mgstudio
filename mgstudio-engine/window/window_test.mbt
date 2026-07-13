@@ -316,6 +316,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
   configured_window.resolution.set_scale_factor(2.0F)
   configured_window.position = WindowPosition::new(3, 4)
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(configured_window) |> ignore)
   try! (world.entity_mut(entity).insert_component(PrimaryWindow::{  }) |> ignore)
@@ -440,6 +441,7 @@ test "window: window refs resolve entity-backed metrics" {
   secondary_window.resolution.set_scale_factor_override(Some(2.0F))
 
   let world = @ecs.World::new()
+  defer world.close()
   let primary = world.spawn()
   try! (world.entity_mut(primary).insert_component(primary_window) |> ignore)
   try! (world.entity_mut(primary).insert_component(PrimaryWindow::{  })
@@ -478,6 +480,7 @@ test "window: primary refs do not fall back to secondary windows" {
   secondary_window.resolution.set_scale_factor_override(Some(2.0F))
 
   let world = @ecs.World::new()
+  defer world.close()
   let secondary = world.spawn()
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
@@ -500,6 +503,7 @@ test "window: primary refs do not fall back to secondary windows" {
 ///|
 test "window: singleton helpers no-op when no primary window exists" {
   let world = @ecs.World::new()
+  defer world.close()
   let secondary = world.spawn()
   let secondary_window = @window.Window::Window()
   secondary_window.title = "Secondary"
@@ -602,6 +606,7 @@ test "window: plugin does not own backend window synchronization" {
 ///|
 test "window: close_when_requested marks windows without immediate despawn" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(@window.Window::Window())
   |> ignore)
@@ -639,6 +644,7 @@ test "window: exit_on_all_closed sends AppExit when no windows remain" {
 ///|
 test "window: exit_on_primary_closed only exits after primary window disappears" {
   let world = @ecs.World::new()
+  defer world.close()
   let primary = world.spawn()
   let secondary = world.spawn()
   try! (world.entity_mut(primary).insert_component(@window.Window::Window())
@@ -678,6 +684,7 @@ test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
 ///|
 test "window: monitor ECS types align with bevy monitor data model" {
   let world = @ecs.World::new()
+  defer world.close()
   let monitor_entity = world.spawn()
   let video_mode = VideoMode::new(@math.UVec2::new(1920, 1080), 24, 60000)
   let monitor = Monitor::{
@@ -783,6 +790,7 @@ test "window: resolution scale factor accessors preserve raw bevy values" {
 ///|
 test "window: cursor events write back window cursor state like bevy winit" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let window = @window.Window::Window()
   window.resolution = WindowResolution::new(800, 600)
@@ -807,6 +815,7 @@ test "window: cursor events write back window cursor state like bevy winit" {
 ///|
 test "window: aggregate event bus mirrors window-owned emit helpers" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(@window.Window::Window())
   |> ignore)

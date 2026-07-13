@@ -152,6 +152,7 @@ fn enqueue_a11y_action(
 ///|
 test "picking: generates enter/leave and click events (single pointer)" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::PickingState())
@@ -259,6 +260,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
 ///|
 test "picking: generates drag start drag and drag end events" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::PickingState())
@@ -321,6 +323,7 @@ test "picking: generates drag start drag and drag end events" {
 ///|
 test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::PickingState())
@@ -429,6 +432,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
 ///|
 test "picking: non-hoverable non-blocking Pickable allows lower hit" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   get_picking_state_resource(world).insert(PickingState::PickingState())
   @app.get_picking_events_resource(world).insert(
@@ -458,6 +462,7 @@ test "picking: non-hoverable non-blocking Pickable allows lower hit" {
 ///|
 test "picking: non-hoverable blocking Pickable suppresses lower hits" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   get_picking_state_resource(world).insert(PickingState::PickingState())
   @app.get_picking_events_resource(world).insert(
@@ -487,6 +492,7 @@ test "picking: non-hoverable blocking Pickable suppresses lower hits" {
 ///|
 test "picking: window backend populates fallback hit for active pointers" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   send_test_pointer_inputs(
     world,
@@ -527,6 +533,7 @@ test "picking: window backend populates fallback hit for active pointers" {
 ///|
 test "picking: window backend reads PointerLocation components" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   ensure_test_messages(world)
   let pointer = world.spawn_empty()
@@ -565,6 +572,7 @@ test "picking: window backend reads PointerLocation components" {
 ///|
 test "picking: handles multiple pointers independently" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::PickingState())
@@ -603,6 +611,7 @@ test "picking: handles multiple pointers independently" {
 ///|
 test "picking: ui hit test respects transformed ui node" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   send_test_pointer_inputs(
     world,
@@ -669,6 +678,7 @@ test "picking: ui hit test respects transformed ui node" {
 ///|
 test "picking: ui hit test keeps top and bottom rows distinct" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   ensure_test_messages(world)
   @ui.get_ui_context_resource(world).insert(
@@ -747,6 +757,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
 ///|
 test "picking: ui hit test still matches button with Interaction component" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   send_test_pointer_inputs(
     world,
@@ -808,6 +819,7 @@ test "picking: ui hit test still matches button with Interaction component" {
 ///|
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   world.insert_resource(
@@ -834,6 +846,7 @@ test "picking: a11y focus action maps to hovered interaction" {
 ///|
 test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   @app.get_picking_events_resource(world).insert(
@@ -904,6 +917,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 ///|
 test "picking: a11y set-value action updates Text content" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   @app.get_picking_events_resource(world).insert(
@@ -931,6 +945,7 @@ test "picking: a11y set-value action updates Text content" {
 ///|
 test "picking: ignores a11y actions targeting non-alive entities" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   world.insert_resource(

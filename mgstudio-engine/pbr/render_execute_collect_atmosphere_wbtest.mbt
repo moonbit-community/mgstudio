@@ -75,6 +75,7 @@ fn atmosphere_collect_attach_render_atmosphere_payload(
 ///|
 test "render3d collect cameras: volumetric fog depth usage is prepared from render world without source mutation" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
   let camera_entity = source_world.spawn()
   try! (source_world.set_by_key(
@@ -109,6 +110,7 @@ test "render3d collect cameras: volumetric fog depth usage is prepared from rend
   |> ignore)
 
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let render_view = render_world.spawn()
   try! (render_world.set_by_key(
     render_view,
@@ -145,6 +147,7 @@ test "render3d collect cameras: volumetric fog depth usage is prepared from rend
 ///|
 test "render3d collect cameras: atmosphere example keeps Bevy camera and planet transforms" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   atmosphere_collect_insert_primary_window(source_world, 2048, 1024)
 
   let atmosphere = Atmosphere::earth(@asset.Handle::new(6))
@@ -206,6 +209,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
   |> ignore)
 
   let render_world = @ecs.World::new()
+  defer render_world.close()
   ignore(
     atmosphere_collect_attach_render_atmosphere_payload(
       source_world,
@@ -327,6 +331,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
   |> ignore)
 
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let atmosphere_global_transform = (try! source_world.get_by_key(
     atmosphere_entity, @transform.ecs_key_global_transform,
   )).unwrap()
@@ -372,6 +377,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
 ///|
 test "render3d collect cameras: default deferred method enables deferred prepass view" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
 
   let camera_entity = source_world.spawn()
@@ -409,6 +415,7 @@ test "render3d collect cameras: default deferred method enables deferred prepass
   |> ignore)
 
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
       cache,
     ) {
@@ -433,6 +440,7 @@ test "render3d collect cameras: default deferred method enables deferred prepass
 ///|
 test "render3d collect cameras: Bevy component requirements enable prepass views" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
 
   let camera_entity = source_world.spawn()
@@ -490,6 +498,7 @@ test "render3d collect cameras: Bevy component requirements enable prepass views
   |> ignore)
 
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
       cache,
     ) {

@@ -48,6 +48,7 @@ pub impl @app.States for TestState with fn state_resource_keys() {
 ///|
 test "state boundary re-exports state resources and transitions" {
   let world = @ecs.World::new()
+  defer world.close()
   let app = @app.App::new(world).add_plugins(@app.StatesPlugin::StatesPlugin())
   let app = @state.insert_state_app(app, TestState::Idle)
   let world = app.world()

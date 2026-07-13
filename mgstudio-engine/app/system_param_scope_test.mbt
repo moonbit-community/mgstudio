@@ -33,6 +33,7 @@ test "app: escaped system parameters lose their World lease after invocation" {
   let escaped_query : Ref[@ecs.Query[@core.Entity, @ecs.All]?] = Ref(None)
   let escaped_resource : Ref[ResMut[ScopeProbeResource]?] = Ref(None)
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(scope_probe_resource_key, { value: 1 })
   let mut app = App::new(world).add_system_param3(fn(
     commands : Commands,

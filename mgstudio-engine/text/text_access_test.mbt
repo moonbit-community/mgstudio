@@ -31,6 +31,7 @@ fn text_access_test_insert_style(
 ///|
 test "text writer addresses root and TextSpan children by Bevy flattened index" {
   let world = @ecs.World::new()
+  defer world.close()
   let root = world.spawn_empty()
   let first = world.spawn_empty()
   let nested = world.spawn_empty()

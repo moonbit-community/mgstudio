@@ -65,6 +65,7 @@ fn prepare_transform_world(world : @ecs.World) -> Unit {
 ///|
 test "transform ecs: root global matches local" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
@@ -100,6 +101,7 @@ test "transform affine2: translation after scale preserves full affine uv transf
 ///|
 test "transform ecs: parent translation affects child global translation" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
@@ -144,6 +146,7 @@ test "transform ecs: parent translation affects child global translation" {
 ///|
 test "transform ecs: propagate preserves global transform until inputs change" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
@@ -196,6 +199,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
 ///|
 test "transform ecs: propagation does not mark unchanged root global changed" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
@@ -252,6 +256,7 @@ test "transform ecs: propagation does not mark unchanged root global changed" {
 ///|
 test "transform ecs: sync simple transforms updates orphaned entity once parent is removed" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
@@ -299,6 +304,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
 ///|
 test "transform ecs: removing parent updates orphaned parent and child globals" {
   let world = @ecs.World::new()
+  defer world.close()
   let root = world.spawn_empty()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
@@ -375,6 +381,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
 ///|
 test "transform ecs: inserting Transform auto-inserts required components" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
@@ -402,6 +409,7 @@ test "transform ecs: inserting Transform auto-inserts required components" {
 ///|
 test "transform ecs: component access insert also inserts required components" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
@@ -429,6 +437,7 @@ test "transform ecs: component access insert also inserts required components" {
 ///|
 test "transform ecs: mark_dirty_trees marks ancestor chain" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 
@@ -490,6 +499,7 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
 ///|
 test "transform ecs: mark_dirty_trees disables static optimization above threshold" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity_a = world.spawn_empty()
   let entity_b = world.spawn_empty()
 
@@ -704,6 +714,7 @@ test "transform plugin: post update reflects hierarchy root transform writes" {
 ///|
 test "transform ecs: reparenting in the same frame preserves global transform" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn_empty()
   let child = world.spawn_empty()
 

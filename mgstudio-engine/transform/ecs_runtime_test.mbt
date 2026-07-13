@@ -62,6 +62,7 @@ fn prepare_transform_world_ecs(world : @ecs.World) -> Unit {
 ///|
 test "transform ecs world: child global uses parent and local transforms" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn()
   let child = world.spawn()
 
@@ -113,6 +114,7 @@ test "transform ecs world: child global uses parent and local transforms" {
 ///|
 test "transform ecs world: hierarchy hooks clear stale Children components" {
   let world = @ecs.World::new()
+  defer world.close()
   let parent = world.spawn()
   let child = world.spawn()
 
@@ -156,6 +158,7 @@ test "transform plugin: sync_simple_transforms skips dead entities from removed 
 ///|
 test "transform ecs query: Write::modify persists rotate_y mutations" {
   let world = @ecs.World::new()
+  defer world.close()
   prepare_transform_world_ecs(world)
   let entity = world.spawn()
   try! world.set_by_key(entity, ecs_key_transform, Transform::identity())

@@ -15,6 +15,7 @@
 ///|
 test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
 

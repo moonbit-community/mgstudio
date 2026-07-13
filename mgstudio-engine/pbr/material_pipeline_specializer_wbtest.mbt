@@ -1339,6 +1339,7 @@ test "pbr material pipeline carries Bevy primitive state from mesh key" {
 ///|
 test "pbr material base specialization caches descriptors from real material properties" {
   let world = @ecs.World::new()
+  defer world.close()
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
@@ -1787,6 +1788,7 @@ test "pbr material specialization keeps tangent defs for forward decal meshes" {
 ///|
 test "pbr material prepass specialization caches descriptors separately" {
   let world = @ecs.World::new()
+  defer world.close()
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
@@ -1838,6 +1840,7 @@ test "pbr material prepass specialization caches descriptors separately" {
 ///|
 test "pbr material pipeline capability changes invalidate specialized descriptors" {
   let world = @ecs.World::new()
+  defer world.close()
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(

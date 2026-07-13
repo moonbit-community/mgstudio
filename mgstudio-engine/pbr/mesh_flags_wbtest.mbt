@@ -714,6 +714,7 @@ fn render3d_extracted_render_mesh_assets_from_extracted_meshes(
 ///|
 test "render3d: render asset preparation deduplicates shared mesh instances" {
   let world = @ecs.World::new()
+  defer world.close()
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   world.insert_resource(mesh_assets_key, @asset.Assets::new())
   let extracted_asset_count = Ref(-1)

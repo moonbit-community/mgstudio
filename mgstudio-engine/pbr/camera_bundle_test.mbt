@@ -92,6 +92,7 @@ impl @camera_projection3d.CameraProjection3d for CameraBundleCustomProjection3d 
 ///|
 test "render3d: Camera3dBundle stores window render target" {
   let world = @ecs.World::new()
+  defer world.close()
   let target_window = @core.Entity::new(11, 3)
   let bundle = Camera3dBundle::new(
     @camera_camera.Camera::Camera(),
@@ -125,6 +126,7 @@ test "render3d: Camera3dBundle stores window render target" {
 ///|
 test "render3d: Camera3dBundle stores custom projection behavior" {
   let world = @ecs.World::new()
+  defer world.close()
   let bundle = Camera3dBundle::new_with_projection(
     @camera_camera.Camera::Camera(),
     Projection::custom(CameraBundleCustomProjection3d::{ marker: 42.0F }),
@@ -150,6 +152,7 @@ test "render3d: Camera3dBundle stores custom projection behavior" {
 ///|
 test "render3d: Commands::spawn accepts Camera3dBundle" {
   let world = @ecs.World::new()
+  defer world.close()
   let spawned : Ref[@core.Entity?] = Ref(None)
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,
@@ -185,6 +188,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
 ///|
 test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = Camera3dBundle::new(
     @camera_camera.Camera::Camera(),
     @transform.Transform::identity(),
@@ -206,6 +210,7 @@ test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
 ///|
 test "render3d: required components align PBR-owned Camera3d authoring" {
   let world = @ecs.World::new()
+  defer world.close()
   try! register_render3d_required_components(world)
   let entity = world.spawn_empty()
 
@@ -282,6 +287,7 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
 test "render3d: spawn_component(Camera3d) uses required component defaults" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let world = @ecs.World::new()
+  defer world.close()
   try! register_render3d_required_components(world)
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,
@@ -327,6 +333,7 @@ test "render3d: spawn_component(Camera3d) uses required component defaults" {
 test "render3d: ScreenSpaceReflections requires depth and deferred prepasses" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let world = @ecs.World::new()
+  defer world.close()
   try! register_render3d_required_components(world)
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,
@@ -360,6 +367,7 @@ test "render3d: ScreenSpaceReflections requires depth and deferred prepasses" {
 test "render3d: AtmosphereSettings requires HDR" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let world = @ecs.World::new()
+  defer world.close()
   try! register_render3d_required_components(world)
   let mut app = @app.App::new(world).add_system_param(fn(
     commands : @app.Commands,

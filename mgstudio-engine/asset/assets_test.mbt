@@ -171,6 +171,7 @@ test "asset app: registering loader does not initialize Assets resource" {
 ///|
 test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
@@ -229,6 +230,7 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
 ///|
 test "asset system forwards asset events to ECS messages" {
   let world = @ecs.World::new()
+  defer world.close()
   let key : @ecs.ResourceKey[Assets[StoreTestAsset]] = assets_resource_key()
   world.insert_resource(key, Assets::new())
 
@@ -775,6 +777,7 @@ test "default asset source builder path override is world-scoped per app world" 
 test "asset server load without registered loader emits typed/untyped AssetLoadFailedEvent instead of aborting" {
   MissingLoaderAsset::{  } |> ignore
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
   let missing_assets : Assets[MissingLoaderAsset] = Assets::new()
@@ -1110,6 +1113,7 @@ test "typed asset loaders are world-scoped per app world" {
 ///|
 test "asset system forwards image load completion to ECS messages" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
@@ -1212,6 +1216,7 @@ test "asset system forwards image load completion to ECS messages" {
 ///|
 test "asset system preserves image loader settings in stored image assets" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
@@ -1265,6 +1270,7 @@ test "asset system preserves image loader settings in stored image assets" {
 ///|
 test "asset system preserves texture bytes srgb setting" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
@@ -1308,6 +1314,7 @@ test "asset system preserves texture bytes srgb setting" {
 ///|
 test "asset system releases load_acquire guard after asset becomes ready" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
@@ -1412,6 +1419,7 @@ test "asset server reuses the first handle for repeated image loads" {
 ///|
 test "asset system skips MAIN_WORLD image asset sync when asset usage is render-only" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(loaded_folder_assets_resource_key, Assets::new())
@@ -1533,6 +1541,7 @@ test "web asset reader fetches remote Blob bytes through AssetServer::load_bytes
 ///|
 test "Assets<Image>::get_mut exposes in-place mutation and emits a modified event" {
   let world = @ecs.World::new()
+  defer world.close()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(key, Assets::new())
@@ -1645,6 +1654,7 @@ fn asset_usage_has_bits(usage_bits : Int, required_bits : Int) -> Bool {
 ///|
 test "Assets<Image>::add creates a target texture image asset" {
   let world = @ecs.World::new()
+  defer world.close()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(key, Assets::new())
@@ -1687,6 +1697,7 @@ test "Assets<Image>::add creates a target texture image asset" {
 ///|
 test "Assets<Image>::add preserves explicit storage texture usage" {
   let world = @ecs.World::new()
+  defer world.close()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
   world.insert_resource(asset_server_resource_key, AssetServer::new())
   world.insert_resource(key, Assets::new())

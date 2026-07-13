@@ -420,6 +420,7 @@ test "material boundary carries bevy specialize callbacks in material properties
     mesh_key, material_key, "PipelineKey",
   )
   let world = @ecs.World::new()
+  defer world.close()
   let properties = @material.MaterialProperties::MaterialProperties()
     .with_base_specialize(Some(material_test_base_specialize))
     .with_prepass_specialize(Some(material_test_prepass_specialize))

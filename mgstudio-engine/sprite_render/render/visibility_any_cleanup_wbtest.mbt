@@ -15,6 +15,7 @@
 ///|
 test "render2d: visibility helper reads typed ViewVisibility component after Any switch" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
 
   debug_inspect(render2d_entity_visible_ecs(world, entity), content="true")

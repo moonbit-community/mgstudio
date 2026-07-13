@@ -15,6 +15,7 @@
 ///|
 test "examples ecs component_hooks: hooks keep index and message queue in sync" {
   let world = @ecs.World::new()
+  defer world.close()
   world
   .resource(my_component_index_key)
   .insert(MyComponentIndex::MyComponentIndex())

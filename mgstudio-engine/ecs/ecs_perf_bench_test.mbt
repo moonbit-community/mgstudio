@@ -129,7 +129,6 @@ fn ecs_bench_make_sparse_tag(index : Int) -> BenchSparseTag {
 ///|
 fn ecs_bench_seed_dense_world(entity_count : Int) -> World raise EcsError {
   let world = World::new()
-  defer world.close()
   for index = 0; index < entity_count; index = index + 1 {
     ignore(
       world.spawn_bundle(
@@ -150,7 +149,6 @@ fn ecs_bench_seed_insert_world(
   entity_count : Int,
 ) -> (World, Array[@core.Entity]) raise EcsError {
   let world = World::new()
-  defer world.close()
   let entities = []
   for index = 0; index < entity_count; index = index + 1 {
     let entity = world.spawn_bundle(
@@ -169,7 +167,6 @@ fn ecs_bench_seed_insert_world(
 fn ecs_bench_seed_sparse_world(entity_count : Int) -> World raise EcsError {
   ecs_bench_ensure_sparse_tag_metadata_registered()
   let world = World::new()
-  defer world.close()
   for index = 0; index < entity_count; index = index + 1 {
     let entity = world.spawn_bundle(
       (
@@ -286,6 +283,7 @@ test "bench ecs: spawn dense bundle" (b : @bench.T) {
   let entity_count = 5_000
   b.bench(name="spawn_bundle dense x5000", count=10U, () => {
     let world = try! ecs_bench_seed_dense_world(entity_count)
+    defer world.close()
     b.keep(world.entity_count())
     b.keep(world.structural_generation())
   })
@@ -296,6 +294,7 @@ test "bench ecs: insert component migration" (b : @bench.T) {
   let entity_count = 5_000
   b.bench(name="insert velocity migration x5000", count=10U, () => {
     let (world, entities) = try! ecs_bench_seed_insert_world(entity_count)
+    defer world.close()
     for index = 0; index < entities.length(); index = index + 1 {
       let entity = entities[index]
       let entity_mut = try! world.entity_mut(entity)
@@ -309,6 +308,7 @@ test "bench ecs: insert component migration" (b : @bench.T) {
 ///|
 test "bench ecs: query dense cached" (b : @bench.T) {
   let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
   let cache = QueryCache::new()
   b.bench(name="query dense cached x20000", count=100U, () => {
     b.keep(try! ecs_bench_dense_query_sum(world, cache))
@@ -318,6 +318,7 @@ test "bench ecs: query dense cached" (b : @bench.T) {
 ///|
 test "bench ecs: query dense state iter cached" (b : @bench.T) {
   let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
   let state : QueryState[
     (
       Read[BenchPosition],
@@ -335,6 +336,7 @@ test "bench ecs: query dense state iter cached" (b : @bench.T) {
 ///|
 test "bench ecs: query sparse filter cached" (b : @bench.T) {
   let world = try! ecs_bench_seed_sparse_world(20_000)
+  defer world.close()
   let cache = QueryCache::new()
   b.bench(name="query sparse filter cached x20000", count=100U, () => {
     b.keep(try! ecs_bench_sparse_query_sum(world, cache))
@@ -344,6 +346,7 @@ test "bench ecs: query sparse filter cached" (b : @bench.T) {
 ///|
 test "bench ecs: mut query modify cached" (b : @bench.T) {
   let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
   let state : QueryState[(Write[BenchPosition], Read[BenchVelocity]), All] = world.query()
   b.bench(name="query mut modify cached x20000", count=100U, () => {
     b.keep(ecs_bench_mut_query_apply(world, state))

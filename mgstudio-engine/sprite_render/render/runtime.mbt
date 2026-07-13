@@ -4181,6 +4181,7 @@ test "render2d: CAS alone uses Bevy postprocess source path" {
 ///|
 test "render2d: queue counts keep overlay UI isolated per camera pass" {
   let world = @ecs.World::new()
+  defer world.close()
   ensure_render_state_resource(world)
   @ui_render_runtime.clear_extracted_ui_nodes(world)
   let layers = RenderLayers::RenderLayers()
@@ -4299,6 +4300,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
 ///|
 test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   let world = @ecs.World::new()
+  defer world.close()
   ensure_render_state_resource(world)
   @ui_render_runtime.clear_extracted_ui_nodes(world)
   let layers = RenderLayers::RenderLayers()

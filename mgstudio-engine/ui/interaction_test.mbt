@@ -15,6 +15,7 @@
 ///|
 test "ui: interaction updates component state" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
@@ -116,6 +117,7 @@ test "ui: RelativeCursorPosition default reports cursor outside" {
 ///|
 test "ui: interaction hit test respects node transform rotation" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -158,6 +160,7 @@ test "ui: interaction hit test respects node transform rotation" {
 ///|
 test "ui: interaction keeps top and bottom rows distinct" {
   let world = @ecs.World::new()
+  defer world.close()
   ignore(world.increment_change_tick())
   let ctx_top = UiContext::new(
     @asset.Handle::new(1),

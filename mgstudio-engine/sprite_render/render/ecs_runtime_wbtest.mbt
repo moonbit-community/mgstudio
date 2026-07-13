@@ -359,6 +359,7 @@ test "render2d: Commands can spawn Sprite component tuples" {
 ///|
 test "render2d: Camera2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
+  defer world.close()
   ensure_camera2d_authoring_required_components(world)
   let transform = @transform.Transform::identity()
   let entity = try! world.spawn_bundle(
@@ -422,6 +423,7 @@ test "render2d: Camera2d tuple spawn inserts expected components" {
 ///|
 test "render2d: Commands::spawn accepts Camera2d tuples" {
   let world = @ecs.World::new()
+  defer world.close()
   let spawned : Ref[@core.Entity?] = Ref(None)
 
   let mut app = @app.App::new(world)
@@ -473,6 +475,7 @@ test "render2d: Commands::spawn accepts Camera2d tuples" {
 ///|
 test "render2d: tonemapping and deband components share post_process ownership" {
   let world = @ecs.World::new()
+  defer world.close()
   ensure_camera2d_authoring_required_components(world)
   let entity = try! world.spawn_bundle(
     (
@@ -507,6 +510,7 @@ test "render2d: tonemapping and deband components share post_process ownership" 
 ///|
 test "render2d: bloom component shares post_process ownership" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = try! world.spawn_bundle(
     (
       @camera_components2d.Camera2d::Camera2d(),
@@ -527,6 +531,7 @@ test "render2d: bloom component shares post_process ownership" {
 ///|
 test "render2d: required components align Camera2d and Bloom with Bevy camera authoring" {
   let world = @ecs.World::new()
+  defer world.close()
   try! @camera_components2d.register_camera2d_required_components(world)
   try! @post_process.register_post_process_required_components(world)
   let entity = world.spawn_empty()
@@ -594,6 +599,7 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
 ///|
 test "render2d: Camera2d tuple stores window render target" {
   let world = @ecs.World::new()
+  defer world.close()
   ensure_camera2d_authoring_required_components(world)
   let target_window = @core.Entity::new(7, 2)
   let entity = try! world.spawn_bundle(
@@ -624,6 +630,7 @@ test "render2d: Camera2d tuple stores window render target" {
 ///|
 test "render2d: Mesh2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity_ref : Ref[@core.Entity?] = Ref(None)
   let expected_transform = @transform.Transform::identity()
 
@@ -1186,7 +1193,9 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
 ///|
 test "render2d: custom Mesh2d pipeline extraction writes entity slots" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let descriptor = CustomMesh2dPipelineDescriptor::new(
     "examples/2d/mesh2d_manual/colored_mesh2d.wgsl",
   )

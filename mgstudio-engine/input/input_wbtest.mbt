@@ -223,6 +223,7 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
   @gilrs.gamepad_test_reset_state()
 
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   let window = @window.Window::Window()
   window.focused = false
@@ -274,6 +275,7 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
   @gilrs.gamepad_test_reset_state()
 
   let world = @ecs.World::new()
+  defer world.close()
   let window_entity = world.spawn()
   try! (world
   .entity_mut(window_entity)
@@ -386,6 +388,7 @@ test "input: accumulated mouse resources follow bevy-style message accumulation"
 ///|
 test "input: common conditions mirror ButtonInput pressed edge semantics" {
   let world = @ecs.World::new()
+  defer world.close()
   let idle : ButtonInput[TestButton] = ButtonInput::new()
   let just_pressed : ButtonInput[TestButton] = ButtonInput::new()
   just_pressed.press(Toggle)
@@ -412,6 +415,7 @@ test "input: common conditions mirror ButtonInput pressed edge semantics" {
 ///|
 test "input: input_toggle_active keeps independent state across frames" {
   let world = @ecs.World::new()
+  defer world.close()
   let toggle = input_toggle_active(false, Toggle)
   let other = input_toggle_active(true, Alt)
   let idle : ButtonInput[TestButton] = ButtonInput::new()

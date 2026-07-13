@@ -277,6 +277,7 @@ test "pbr volumetric fog: prepares view volume metadata and uniforms" {
 ///|
 test "pbr volumetric fog: render-world storage uses typed synced components" {
   let render_world = @ecs.World::new()
+  defer render_world.close()
   @volumetric_fog.register_volumetric_fog_render_world_components(render_world)
 
   let main_view_entity = @core.Entity::new(20, 1)

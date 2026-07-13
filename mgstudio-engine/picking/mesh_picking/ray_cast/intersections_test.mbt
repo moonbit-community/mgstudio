@@ -43,6 +43,7 @@ fn test_mesh_ray_cast_2d_mesh_handle(
 ///|
 test "mesh ray cast includes Mesh2d front and back faces" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
   let handle = test_mesh_ray_cast_2d_mesh_handle(world)
   try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, @mesh.Mesh2d::new(handle))
@@ -71,6 +72,7 @@ test "mesh ray cast includes Mesh2d front and back faces" {
 ///|
 test "mesh ray cast filters invisible Mesh2d unless configured" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn_empty()
   let handle = test_mesh_ray_cast_2d_mesh_handle(world)
   try! world.set_by_key(entity, @mesh.ecs_key_mesh2d, @mesh.Mesh2d::new(handle))

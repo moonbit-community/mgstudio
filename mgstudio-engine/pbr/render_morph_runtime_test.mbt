@@ -25,6 +25,7 @@ fn morph_runtime_approx_eq(lhs : Float, rhs : Float) -> Bool {
 ///|
 test "render3d morph runtime: extract swaps previous state and clears current when no morph entities" {
   let world = @ecs.World::new()
+  defer world.close()
   let morph_indices = @pbr_render.morph_indices_mut_or_abort(world)
   let morph_uniforms = @pbr_render.morph_uniforms_mut_or_abort(world)
   let prev_contains = Ref(false)
@@ -51,6 +52,7 @@ test "render3d morph runtime: extract swaps previous state and clears current wh
 ///|
 test "render3d morph runtime: extract writes 256-byte aligned morph weight slab per entity" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,

@@ -557,6 +557,7 @@ fn spawn_light_test_camera(
 ///|
 test "shadow LOD origin selection follows Bevy priority order" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_camera = spawn_light_test_camera(
     world,
     1.0F,
@@ -612,6 +613,7 @@ test "shadow LOD origin selection follows Bevy priority order" {
 ///|
 test "shadow LOD origin selection returns none without cameras or explicit origin" {
   let world = @ecs.World::new()
+  defer world.close()
   debug_inspect(get_shadow_lod_origin(world) is None, content="true")
 }
 
@@ -669,6 +671,7 @@ test "directional cascade calculation follows Bevy stable texel snapping" {
 ///|
 test "directional cascade builder filters active cameras and writes cascades" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     @light.ecs_key_directional_light_shadow_map,
     @light.DirectionalLightShadowMap::new(1024),

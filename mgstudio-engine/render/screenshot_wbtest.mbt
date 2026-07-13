@@ -15,6 +15,7 @@
 ///|
 test "screenshot: duplicate screenshot targets are despawned during extraction" {
   let world = @ecs.World::new()
+  defer world.close()
   let primary_window = world.spawn()
   try! (world
   .entity_mut(primary_window)
@@ -55,6 +56,7 @@ test "screenshot: duplicate screenshot targets are despawned during extraction" 
 ///|
 test "screenshot: non-primary window screenshot target still deduplicates" {
   let world = @ecs.World::new()
+  defer world.close()
   let secondary_window = world.spawn()
   try! (world
   .entity_mut(secondary_window)
@@ -82,6 +84,7 @@ test "screenshot: non-primary window screenshot target still deduplicates" {
 ///|
 test "screenshot: duplicate texture-view targets are despawned during extraction" {
   let world = @ecs.World::new()
+  defer world.close()
 
   let first_request = world.spawn()
   try! (world
@@ -165,6 +168,7 @@ test "screenshot: ScreenshotPlugin tolerates missing RenderApp" {
 ///|
 test "screenshot: pending capture state self-initializes as world resource" {
   let world = @ecs.World::new()
+  defer world.close()
   debug_inspect(
     world.resource(pending_screenshot_entity_captures_resource_key).is_present(),
     content="false",
@@ -179,6 +183,7 @@ test "screenshot: pending capture state self-initializes as world resource" {
 ///|
 test "screenshot: trigger_screenshots drains captured resource and triggers entity event" {
   let world = @ecs.World::new()
+  defer world.close()
   let screenshot_entity = world.spawn()
   let observed : Array[String] = []
   ignore(

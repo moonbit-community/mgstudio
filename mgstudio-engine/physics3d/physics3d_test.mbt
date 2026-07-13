@@ -37,6 +37,7 @@ fn run_fixed_step(world : @ecs.World) -> Unit {
 ///|
 test "physics3d: falling body collides and writes back transform" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let cfg_res = get_physics3d_config_resource(world)
@@ -86,6 +87,7 @@ test "physics3d: falling body collides and writes back transform" {
 ///|
 test "physics3d: sensor collision events are emitted" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let cfg_res = get_physics3d_config_resource(world)
@@ -139,6 +141,7 @@ test "physics3d: sensor collision events are emitted" {
 ///|
 test "physics3d: contact force events are emitted" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let cfg_res = get_physics3d_config_resource(world)
@@ -191,6 +194,7 @@ test "physics3d: contact force events are emitted" {
 ///|
 test "physics3d: active collision type and hook components are accepted" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let body = world.spawn()
@@ -225,6 +229,7 @@ test "physics3d: active collision type and hook components are accepted" {
 ///|
 test "physics3d: query context returns entity-mapped hits and supports exclude filter" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let floor = world.spawn()
@@ -265,6 +270,7 @@ test "physics3d: query context returns entity-mapped hits and supports exclude f
 ///|
 test "physics3d: impulse joint handles are created and cleaned up" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
 
@@ -312,6 +318,7 @@ test "physics3d: impulse joint handles are created and cleaned up" {
 ///|
 test "physics3d: kinematic character controller applies translation and writes output" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
 

@@ -22,6 +22,7 @@ test "asset: World close cancels pending acquired loads exactly once" {
     release: fn() { release_count.val = release_count.val + 1 },
   })
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(asset_server_resource_key, server)
 
   world.close()

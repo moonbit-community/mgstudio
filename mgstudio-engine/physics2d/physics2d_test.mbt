@@ -32,6 +32,7 @@ let ecs_key_transform : @ecs.ComponentKey[@transform.Transform] = @transform.ecs
 ///|
 test "physics2d: falling body collides and writes back transform" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   // Make the test converge quickly.
@@ -109,6 +110,7 @@ test "physics2d: falling body collides and writes back transform" {
 ///|
 test "physics2d: gravity scale 0 disables gravity" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -178,6 +180,7 @@ test "physics2d: gravity scale 0 disables gravity" {
 ///|
 test "physics2d: damping reduces velocity" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -227,6 +230,7 @@ test "physics2d: damping reduces velocity" {
 ///|
 test "physics2d: external impulse applies once and clears" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -269,6 +273,7 @@ test "physics2d: external impulse applies once and clears" {
 ///|
 test "physics2d: default collider density yields non-zero mass" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -317,6 +322,7 @@ test "physics2d: default collider density yields non-zero mass" {
 ///|
 test "physics2d: external force persists" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -364,6 +370,7 @@ test "physics2d: external force persists" {
 test "physics2d: CCD prevents tunneling through thin floor" {
   fn run(ccd_enabled : Bool) -> Float {
     let world = @ecs.World::new()
+    defer world.close()
     configure_fixed_time(world, 1.0F / 10.0F)
     physics2d_init_resources_system(world)
     let cfg_res = get_physics2d_config_resource(world)
@@ -428,6 +435,7 @@ test "physics2d: CCD prevents tunneling through thin floor" {
 ///|
 test "physics2d: collision groups filter collision events" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -488,6 +496,7 @@ test "physics2d: collision groups filter collision events" {
 ///|
 test "physics2d: collider material and active event properties sync to rapier" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -607,6 +616,7 @@ test "physics2d: collider material and active event properties sync to rapier" {
 ///|
 test "physics2d: query pipeline sees inserted colliders" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -718,6 +728,7 @@ test "physics2d: query pipeline sees inserted colliders" {
 ///|
 test "physics2d: convex polygon and compound colliders can be inserted" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -813,6 +824,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
 ///|
 test "physics2d: hooks filter_contact_pair can disable contacts" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let old_hooks = physics2d_hooks_config(world)
@@ -895,6 +907,7 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
 ///|
 test "physics2d: impulse joint is inserted and cleaned up" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -966,6 +979,7 @@ test "physics2d: impulse joint is inserted and cleaned up" {
 ///|
 test "physics2d: child collider attaches to parent body" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -1023,6 +1037,7 @@ test "physics2d: child collider attaches to parent body" {
 ///|
 test "physics2d: multiple child colliders aggregate parent mass" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -1145,6 +1160,7 @@ test "physics2d: multiple child colliders aggregate parent mass" {
 ///|
 test "physics2d: collision events use child collider entity mapping" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)
@@ -1233,6 +1249,7 @@ test "physics2d: collision events use child collider entity mapping" {
 ///|
 test "physics2d: kinematic character controller moves and outputs" {
   let world = @ecs.World::new()
+  defer world.close()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let cfg_res = get_physics2d_config_resource(world)

@@ -89,6 +89,7 @@ test "screenshot: ScreenshotPlugin owns screenshot systems" {
 ///|
 test "screenshot: ScreenshotCaptured is an entity trigger event" {
   let world = @ecs.World::new()
+  defer world.close()
   let screenshot_entity = world.spawn()
   let observed : Array[String] = []
   ignore(

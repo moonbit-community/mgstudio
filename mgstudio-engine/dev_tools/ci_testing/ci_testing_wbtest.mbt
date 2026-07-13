@@ -15,6 +15,7 @@
 ///|
 test "ci testing: MoveCamera inserts CameraMovement component" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ci_testing_config_resource_key,
     CiTestingConfig::CiTestingConfig().with_event(

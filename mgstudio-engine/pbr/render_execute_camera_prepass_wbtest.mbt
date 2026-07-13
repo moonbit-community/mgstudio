@@ -41,6 +41,7 @@ fn render3d_prepass_consumer_test_item(
 ///|
 test "pbr prepass: consumer reads retained prepass and deferred phase items" {
   let world = @ecs.World::new()
+  defer world.close()
   ensure_render3d_prepass_phase_resources(world)
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(40, 0),

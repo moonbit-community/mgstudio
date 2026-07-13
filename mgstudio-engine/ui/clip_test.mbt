@@ -15,6 +15,7 @@
 ///|
 test "ui: clip respects overflow_clip_margin visual_box and margin" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
 
@@ -107,6 +108,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
 ///|
 test "ui: overflow Visible disables clipping per-axis" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(

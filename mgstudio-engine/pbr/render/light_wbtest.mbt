@@ -82,7 +82,9 @@ fn light_wbtest_f32_bits(value : Float) -> UInt {
 ///|
 test "pbr/render light: extract_lights mirrors Bevy shadow map resources into render world" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   source_world.insert_resource(
     @light.ecs_key_point_light_shadow_map,
     @light.PointLightShadowMap::new(512),
@@ -565,6 +567,7 @@ test "pbr/render light: volumetric cascade shader reads map to Bevy host fields"
 ///|
 test "pbr/render light: directional shadow flags respect texture array layer cap" {
   let world = @ecs.World::new()
+  defer world.close()
 
   let first = world.spawn()
   let first_config = @light.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()

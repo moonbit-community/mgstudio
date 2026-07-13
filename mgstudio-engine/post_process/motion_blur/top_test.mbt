@@ -51,6 +51,7 @@ test "motion blur: uniform bytes match WGSL layout size" {
 ///|
 test "motion blur: render resources skip inactive uniforms before GPU lookups" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
@@ -81,6 +82,7 @@ test "motion blur: sample helper stays tied to component settings" {
 ///|
 test "motion blur: extract only writes uniforms for camera views" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = world.spawn()
   let render_camera_entity = world.spawn()
   try! world.set_by_key(
@@ -136,6 +138,7 @@ test "motion blur: prepare uniforms writes GPU buffer and per-view offsets" {
   let render_device = @render.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
   let first = world.spawn()
@@ -187,6 +190,7 @@ test "motion blur: prepare uniforms writes GPU buffer and per-view offsets" {
 ///|
 test "motion blur: prepare view depth texture usages adds texture binding" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,

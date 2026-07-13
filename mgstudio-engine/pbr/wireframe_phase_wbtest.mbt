@@ -719,6 +719,7 @@ test "pbr: render wireframe instance resources track Bevy render asset ids" {
 ///|
 test "pbr: extract_wireframe_materials mirrors visible Mesh3dWireframe changes" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   let visible_entity = source_world.spawn()
   let hidden_entity = source_world.spawn()
@@ -764,6 +765,7 @@ test "pbr: extract_wireframe_materials mirrors visible Mesh3dWireframe changes" 
 ///|
 test "pbr: extract_wireframe_materials removes stale removed components" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   let entity = source_world.spawn()
   try! source_world.set_by_key(
@@ -804,6 +806,7 @@ test "pbr: extract_wireframe_materials removes stale removed components" {
 ///|
 test "pbr: extract_wireframe_materials preserves same-frame readded material" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   let entity = source_world.spawn()
   try! source_world.set_by_key(
@@ -849,6 +852,7 @@ test "pbr: extract_wireframe_materials preserves same-frame readded material" {
 ///|
 test "pbr: wireframe specialization check collects changed source entities" {
   let world = @ecs.World::new()
+  defer world.close()
   let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
   let mesh_entity = world.spawn()
   let material_entity = world.spawn()
@@ -888,6 +892,7 @@ test "pbr: wireframe specialization check collects changed source entities" {
 ///|
 test "pbr: wireframe specialization check tracks material asset changes once" {
   let world = @ecs.World::new()
+  defer world.close()
   init_wireframe_resources(world)
   let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
   let source_assets : @asset.Assets[WireframeMaterial] = @asset.Assets::new()
@@ -950,6 +955,7 @@ test "pbr: wireframe specialization check tracks material asset changes once" {
 ///|
 test "pbr: wireframe specialization check tracks mesh asset changes once" {
   let world = @ecs.World::new()
+  defer world.close()
   init_wireframe_resources(world)
   let asset_key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
   let source_assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
@@ -1010,6 +1016,7 @@ test "pbr: wireframe specialization check tracks mesh asset changes once" {
 ///|
 test "pbr: wireframe specialization check collects removed source entities" {
   let world = @ecs.World::new()
+  defer world.close()
   let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
   let mesh_entity = world.spawn()
   let material_entity = world.spawn()
@@ -1224,6 +1231,7 @@ test "pbr: dirty wireframe specializations iterate Bevy dequeue and queue lists"
 ///|
 test "pbr: wireframe dirty extraction writes changed and removed render tables" {
   let world = @ecs.World::new()
+  defer world.close()
   let changed_entity = @core.Entity::new(3, 1)
   let removed_entity = @core.Entity::new(4, 1)
   let needs = WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization()
@@ -1510,6 +1518,7 @@ test "pbr: wireframe phase preparation owns output ranges and collection" {
   inspect(work_items[0].output_or_indirect_parameters_index(), content="0")
 
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     Wireframe3dPhaseBatchedInstanceBuffers::resource(),
     phase_instances,
@@ -1653,6 +1662,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
 ///|
 test "pbr: render wireframe assets mirror source WireframeMaterial assets" {
   let world = @ecs.World::new()
+  defer world.close()
   let asset_key : @ecs.ResourceKey[@asset.Assets[WireframeMaterial]] = @asset.assets_resource_key()
   let source_assets : @asset.Assets[WireframeMaterial] = @asset.Assets::new()
   let handle = source_assets.add(
@@ -1680,6 +1690,7 @@ test "pbr: render wireframe assets mirror source WireframeMaterial assets" {
 ///|
 test "pbr: wireframe render systems specialize and queue visible Mesh3d phase items" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = world.spawn()
   let render_entity = @core.Entity::new(20, 1)
   let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
@@ -1812,6 +1823,7 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
 ///|
 test "pbr: wireframe view key cache follows pending render camera view bits" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = @core.Entity::new(51, 1)
   let stale_view = @core.Entity::new(52, 1)
   let cache = WireframeViewKeyCache::WireframeViewKeyCache()
@@ -1839,6 +1851,7 @@ test "pbr: wireframe view key cache follows pending render camera view bits" {
 ///|
 test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
   let world = @ecs.World::new()
+  defer world.close()
   let active_camera = world.spawn()
   let inactive_camera = world.spawn()
   let stale_view = @core.Entity::new(12, 1)
@@ -2158,6 +2171,7 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
 ///|
 test "pbr: wireframe 3d render node skips empty phases before command resources" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @core.Entity::new(1, 1)
   let other_retained_view = @core.Entity::new(2, 1)
   let render_view = world.spawn_empty()
@@ -2206,6 +2220,7 @@ test "pbr: wireframe 3d render node skips empty phases before command resources"
 ///|
 test "pbr: wireframe 3d render node requires command resources for nonempty phases" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @core.Entity::new(1, 1)
   let render_view = world.spawn_empty()
   try! world.set_by_key(
@@ -2292,6 +2307,7 @@ test "pbr: wireframe 3d render node is scheduled between main pass and early pos
   let graph_stage = @render.RenderGraph::schedule()
   let core_3d_stage = @core_pipeline.Core3d::schedule()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   render_world.insert_resource(
     @render_mesh.MeshAllocatorSettings::resource(),
     @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),

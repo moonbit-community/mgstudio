@@ -15,6 +15,7 @@
 ///|
 test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   fn layout_dummy() -> UiLayout {

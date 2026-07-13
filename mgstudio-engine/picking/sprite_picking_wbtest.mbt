@@ -15,6 +15,7 @@
 ///|
 test "sprite picking alpha threshold samples rgba8 pixels" {
   let world = @ecs.World::new()
+  defer world.close()
   let images : @asset.Assets[@asset.Image] = @asset.Assets::new()
   let image_handle : @asset.Handle[@asset.Image] = @asset.Handle::new(0)
   ignore(
@@ -62,6 +63,7 @@ test "sprite picking alpha threshold samples rgba8 pixels" {
 ///|
 test "sprite picking bounding box ignores transparent pixels" {
   let world = @ecs.World::new()
+  defer world.close()
   let images : @asset.Assets[@asset.Image] = @asset.Assets::new()
   let image_handle : @asset.Handle[@asset.Image] = @asset.Handle::new(0)
   ignore(
@@ -98,6 +100,7 @@ test "sprite picking bounding box ignores transparent pixels" {
 ///|
 test "sprite picking camera marker requirement filters cameras" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = world.spawn_empty()
   try! world.set_by_key(
     camera_entity,

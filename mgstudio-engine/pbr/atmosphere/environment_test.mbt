@@ -31,6 +31,7 @@ fn test_image_has_usage(image : @asset.Image, usage_bits : Int) -> Bool {
 ///|
 test "pbr atmosphere: probe component system creates Bevy-shaped generated cubemap" {
   let world = @ecs.World::new()
+  defer world.close()
   let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
   world.insert_resource(
     @asset.asset_server_resource_key,

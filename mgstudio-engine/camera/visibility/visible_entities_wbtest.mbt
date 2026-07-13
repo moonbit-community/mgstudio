@@ -15,6 +15,7 @@
 ///|
 test "camera visibility: check visibility fills camera VisibleEntities by visibility class" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let visible_mesh = world.spawn()
   let hidden_layer_mesh = world.spawn()
@@ -100,6 +101,7 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
 ///|
 test "camera visibility: frustum culls Aabb unless disabled" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let inside = world.spawn()
   let outside = world.spawn()
@@ -184,6 +186,7 @@ test "camera visibility: frustum culls Aabb unless disabled" {
 ///|
 test "camera visibility: VisibilityRange filters entities before frustum culling" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_visible_entity_ranges,
     VisibleEntityRanges::VisibleEntityRanges(),
@@ -260,6 +263,7 @@ test "camera visibility: VisibilityRange filters entities before frustum culling
 ///|
 test "camera visibility: light visible entity containers mirror Bevy defaults" {
   let world = @ecs.World::new()
+  defer world.close()
   let first = world.spawn()
   let second = world.spawn()
 

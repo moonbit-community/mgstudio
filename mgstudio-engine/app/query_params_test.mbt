@@ -171,6 +171,7 @@ pub impl FromWorld for QueryMarkerFilter with fn from_world(_world) {
 ///|
 test "app: Query1 system param exposes plain mutable query" {
   let world = @ecs.World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
@@ -203,6 +204,7 @@ test "app: Query1 system param exposes plain mutable query" {
 ///|
 test "app: Query system param refreshes after initially empty match" {
   let world = @ecs.World::new()
+  defer world.close()
   let inserted : Ref[@core.Entity?] = Ref(None)
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param2(fn(
@@ -237,6 +239,7 @@ test "app: Query system param refreshes after initially empty match" {
 ///|
 test "app: filtered query system param builds filters from component owners" {
   let world = @ecs.World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -284,6 +287,7 @@ test "app: filtered query system param builds filters from component owners" {
 ///|
 test "app: optional query system param preserves some and none branches" {
   let world = @ecs.World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -330,6 +334,7 @@ test "app: optional query system param preserves some and none branches" {
 ///|
 test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
   let world = @ecs.World::new()
+  defer world.close()
   let enabled = world.spawn()
   let disabled = world.spawn()
 
@@ -382,6 +387,7 @@ test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
 ///|
 test "app: validated single query params expose strict single access" {
   let read_world = @ecs.World::new()
+  defer read_world.close()
   let read_entity = read_world.spawn()
   let read_other = read_world.spawn()
 
@@ -423,6 +429,7 @@ test "app: validated single query params expose strict single access" {
   debug_inspect(xs, content="[1]")
 
   let write_world = @ecs.World::new()
+  defer write_world.close()
   let write_entity = write_world.spawn()
   let write_other = write_world.spawn()
 
@@ -469,6 +476,7 @@ test "app: validated single query params expose strict single access" {
 ///|
 test "app: generic Query[D, F] system param supports named data and named filters" {
   let world = @ecs.World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -501,6 +509,7 @@ test "app: generic Query[D, F] system param supports named data and named filter
 ///|
 test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
   let world = @ecs.World::new()
+  defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 

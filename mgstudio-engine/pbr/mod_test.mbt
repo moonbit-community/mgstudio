@@ -702,6 +702,7 @@ test "render3d: gpu clustering pipelines specialize Bevy-shaped descriptors" {
 ///|
 test "render3d: gpu clustering prepare queues per-view pipeline ids" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     @render.pipeline_cache_resource_key,
     @render_resource.PipelineCache::new(),
@@ -812,6 +813,7 @@ test "render3d: gpu clustering prepare queues per-view pipeline ids" {
 ///|
 test "render3d: gpu clustering run condition follows global cluster settings" {
   let world = @ecs.World::new()
+  defer world.close()
   debug_inspect(gpu_clustering_is_enabled(world), content="false")
   world.insert_resource(
     @light_cluster.GlobalClusterSettings::resource(),
@@ -827,6 +829,7 @@ test "render3d: gpu clustering prepare creates dummy textures per extracted view
   let device = adapter.request_device_sync(instance)
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(
     @render_texture.TextureCache::resource(),
@@ -891,6 +894,7 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
   world.insert_resource(
@@ -1008,6 +1012,7 @@ test "render3d: prepare_lights uses extracted view viewport for cluster factors"
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
   world.insert_resource(
@@ -1085,6 +1090,7 @@ test "render3d: NoIndirectDrawing reuses render view owner key" {
     content="true",
   )
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
@@ -1308,6 +1314,7 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
   world.insert_resource(
@@ -1528,6 +1535,7 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
 ///|
 test "render3d: gpu clustering extract writes configs and syncs readback statistics" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_view = world.spawn()
   let render_view = world.spawn()
   let clusters = @light_cluster.Clusters::new(120, 120, 2, 3, 4, 0.5F, 96.0F)
@@ -1596,6 +1604,7 @@ test "render3d: cpu clustering prepare writes Bevy-shaped view cluster bindings"
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
   world.insert_resource(
@@ -2441,6 +2450,7 @@ test "render3d: pbr sync target cleanup removes directional light render target 
 ///|
 test "render3d: pbr light sync target removers match point spot and rect target bundles" {
   let world = @ecs.World::new()
+  defer world.close()
   let point_entity = world.spawn()
   try! world.set_by_key(
     point_entity,

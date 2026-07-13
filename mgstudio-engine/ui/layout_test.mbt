@@ -29,6 +29,7 @@ fn seed_text_assets(world : @ecs.World) -> Unit {
 ///|
 test "ui: layout computes rect and camera-compensated transform" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
 
@@ -101,6 +102,7 @@ test "ui: layout computes rect and camera-compensated transform" {
 ///|
 test "ui: layout stores Bevy-style resolved node geometry" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_context_resource(world).insert(
@@ -209,6 +211,7 @@ test "ui: pointer conversion to viewport space" {
 ///|
 test "ui: hidden overflow axis ignores stale scroll offset" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
@@ -269,6 +272,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
 ///|
 test "ui: ghost node children layout as direct descendants" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
@@ -346,6 +350,7 @@ test "ui: ghost node children layout as direct descendants" {
 ///|
 test "ui: effective children flatten ghost nodes and skip non-ui children" {
   let world = @ecs.World::new()
+  defer world.close()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -459,6 +464,7 @@ test "ui: effective children flatten ghost nodes and skip non-ui children" {
 ///|
 test "ui: flex row cross-axis stretch fills child height" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_context_resource(world).insert(
@@ -513,6 +519,7 @@ test "ui: flex row cross-axis stretch fills child height" {
 ///|
 test "ui: vertical slider shaped nested flex keeps track visible" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   get_ui_context_resource(world).insert(
@@ -651,6 +658,7 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
 ///|
 test "ui: editable text transform stays in input content box and in front" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
@@ -726,6 +734,7 @@ test "ui: editable text transform stays in input content box and in front" {
 ///|
 test "ui: editable status text renders in front of editable background (z-order)" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
@@ -791,6 +800,7 @@ test "ui: editable status text renders in front of editable background (z-order)
 ///|
 test "ui: editable label node is laid out above input box node" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(
@@ -865,6 +875,7 @@ test "ui: editable label node is laid out above input box node" {
 ///|
 test "ui: scroll panel text inherits clip rect from overflow parent" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)
@@ -953,6 +964,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
 ///|
 test "ui: panel text scissor stays above editable title block" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   seed_text_assets(world)

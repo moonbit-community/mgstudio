@@ -89,6 +89,7 @@ test "pbr render fog: prepare writes offsets and off mode for missing fog" {
 ///|
 test "pbr render fog: apply offsets writes component and meta resource initializes" {
   let world = @ecs.World::new()
+  defer world.close()
   let fog_meta = render3d_fog_meta_mut_or_init(world)
   inspect(fog_meta.peek().len(), content="0")
 

@@ -52,6 +52,7 @@ fn implicit_root_camera_with_target_info(
 ///|
 test "ui: unparented node acts as implicit root for layout" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
   let root = world.spawn_empty()
@@ -81,6 +82,7 @@ test "ui: unparented node acts as implicit root for layout" {
 ///|
 test "ui: unparented ghost node acts as implicit root for layout" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
   let ghost_root = world.spawn_empty()
@@ -117,6 +119,7 @@ test "ui: unparented ghost node acts as implicit root for layout" {
 ///|
 test "ui: unparented node acts as implicit root for target camera propagation" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(2.0F))
@@ -171,6 +174,7 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
 ///|
 test "ui: unparented ghost node exposes descendant root for target camera propagation" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
   get_ui_scale_resource(world).insert(UiScale::new(2.0F))

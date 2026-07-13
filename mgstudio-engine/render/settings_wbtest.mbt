@@ -368,6 +368,7 @@ test "render schedule: pipeline queue is chained inside render set" {
 ///|
 test "render settings: descriptor registration observes pipeline cache waiting ids" {
   let world = @ecs.World::new()
+  defer world.close()
   let cache = @render_resource.PipelineCache::new()
   ignore(
     cache.queue_render_pipeline(
@@ -386,6 +387,7 @@ test "render settings: descriptor registration observes pipeline cache waiting i
 ///|
 test "render settings: compute pipeline descriptors are materialized when backend exists" {
   let world = @ecs.World::new()
+  defer world.close()
   let cache = @render_resource.PipelineCache::new()
   let pipeline_id = cache.queue_compute_pipeline(
     @render_resource.ComputePipelineDescriptor::ComputePipelineDescriptor()
@@ -563,11 +565,13 @@ test "render plugin: installs render asset byte budget resources" {
 ///|
 test "render asset byte budget: extract updates limiter and cleanup resets writes" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   main_world.insert_resource(
     render_asset_bytes_per_frame_resource_key,
     RenderAssetBytesPerFrame::new(64),
   )
   let render_world = @ecs.World::new()
+  defer render_world.close()
   render_world.insert_resource(
     render_asset_bytes_per_frame_limiter_resource_key,
     RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
@@ -697,6 +701,7 @@ test "render recovery: reinitializing consumes future render resources before st
   let backend = @renderer.GpuBackend::new()
   let resources = RenderResources::from_backend(backend)
   let main_world = @ecs.World::new()
+  defer main_world.close()
   debug_inspect(
     insert_future_render_resources(
       RenderCreation::manual_resources(resources),
@@ -756,7 +761,9 @@ test "render recovery: reinitializing consumes future render resources before st
 ///|
 test "render error handler: ignore policy marks renderer ready" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
@@ -779,6 +786,7 @@ test "render error handler: recover policy creates future resources and restarts
   let backend = @renderer.GpuBackend::new()
   let resources = RenderResources::from_backend(backend)
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let render_sub_app = @app.SubApp::new(@ecs.World::new())
     .add_schedule(@app.Schedule::new(render_startup_schedule_stage()))
     .add_systems(
@@ -842,7 +850,9 @@ test "render error handler: recover policy creates future resources and restarts
 ///|
 test "render error handler: recover default creation enters reinitializing" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
@@ -870,7 +880,9 @@ test "render error handler: recover default creation enters reinitializing" {
 ///|
 test "render error handler: default handler sends app exit from main world" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::RenderErrorHandler(),

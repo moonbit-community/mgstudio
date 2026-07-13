@@ -399,6 +399,7 @@ test "pbr material plugin: prepared typed material carries bevy draw functions" 
 ///|
 test "pbr material plugin: prepared custom material can specialize a mesh pipeline" {
   let world = @ecs.World::new()
+  defer world.close()
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
@@ -534,6 +535,7 @@ test "pbr material plugin: render startup installs typed bind group allocator" {
 ///|
 test "pbr material plugin: typed material extraction fills Bevy render material tables" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -612,6 +614,7 @@ test "pbr material plugin: typed material extraction fills Bevy render material 
 ///|
 test "pbr material plugin: removed typed material unloads prepared binding" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -723,6 +726,7 @@ test "pbr material plugin: removed typed material unloads prepared binding" {
 ///|
 test "pbr material plugin: typed material removal sweeps Bevy render material tables" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -785,6 +789,7 @@ test "pbr material plugin: typed material removal sweeps Bevy render material ta
 ///|
 test "pbr material plugin: typed material extraction marks specialization dirty" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -869,6 +874,7 @@ test "pbr material plugin: typed material extraction marks specialization dirty"
 ///|
 test "pbr material plugin: typed specialization collector ignores despawned mesh changes" {
   let world = @ecs.World::new()
+  defer world.close()
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
     ParityCustomMaterial::ParityCustomMaterial(),
@@ -900,6 +906,7 @@ test "pbr material plugin: typed specialization collector ignores despawned mesh
 ///|
 test "pbr material plugin: first prepared typed material marks specialization dirty" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -947,6 +954,7 @@ test "pbr material plugin: first prepared typed material marks specialization di
 ///|
 test "pbr material plugin: changed typed material asset marks specialization dirty once" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -1017,6 +1025,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
 ///|
 test "pbr material plugin: typed extraction writes resolved material slots" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
   let material_handle = material_assets.add(
@@ -1075,6 +1084,7 @@ test "pbr material plugin: typed extraction writes resolved material slots" {
 ///|
 test "pbr material plugin: prepared typed material prewarms and queues mesh draw" {
   let world = @ecs.World::new()
+  defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material = ParityCustomMaterial::ParityCustomMaterial()
   let material_handle : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(

@@ -174,6 +174,7 @@ fn skin_test_extract_skin_bindings(
 ///|
 test "pbr render skin: add_skin falls back to cached local transform when GlobalTransform is absent" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
   ])
@@ -213,6 +214,7 @@ test "pbr render skin: allocator reuses freed allocation units" {
 ///|
 test "pbr render skin: add_skin writes staging rows and identity fallback" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
   ])
@@ -238,6 +240,7 @@ test "pbr render skin: add_skin writes staging rows and identity fallback" {
 ///|
 test "pbr render skin: missing inverse bindpose asset initializes identity rows" {
   let world = @ecs.World::new()
+  defer world.close()
   let assets : @asset.Assets[@mesh.SkinnedMeshInverseBindposes] = @asset.Assets::new()
   world.insert_resource(skin_test_inverse_assets_key(), assets)
   let missing_handle : @asset.Handle[@mesh.SkinnedMeshInverseBindposes] = @asset.Handle::new(
@@ -260,6 +263,7 @@ test "pbr render skin: missing inverse bindpose asset initializes identity rows"
 ///|
 test "pbr render skin: remove and re-add reuses the same offset" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
   ])
@@ -291,6 +295,7 @@ test "pbr render skin: remove and re-add reuses the same offset" {
 ///|
 test "pbr render skin: invisible changed skin frees allocation" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
   ])
@@ -323,6 +328,7 @@ test "pbr render skin: invisible changed skin frees allocation" {
 ///|
 test "pbr render skin: dirty joint extraction updates only mapped skins" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
     @mesh.SkinningMat4::identity(),
@@ -366,6 +372,7 @@ test "pbr render skin: dirty joint extraction updates only mapped skins" {
 ///|
 test "pbr render skin: dirty joint extraction uses tick metadata without changed messages" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
   ])
@@ -399,6 +406,7 @@ test "pbr render skin: dirty joint extraction uses tick metadata without changed
 ///|
 test "pbr render skin: frame begin captures previous-skin flags" {
   let world = @ecs.World::new()
+  defer world.close()
   let handle = skin_test_insert_inverse_bindposes_assets(world, [
     @mesh.SkinningMat4::identity(),
   ])

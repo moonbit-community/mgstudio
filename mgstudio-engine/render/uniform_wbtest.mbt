@@ -45,6 +45,7 @@ impl UniformComponent for TestUniformComponent with fn uniform_component_keys() 
 ///|
 test "render uniform: prepares component uniforms and dynamic indices" {
   let world = @ecs.World::new()
+  defer world.close()
   let first = world.spawn()
   let second = world.spawn()
   let component_key : @ecs.ComponentKey[TestUniformComponent] = TestUniformComponent::component()

@@ -107,6 +107,7 @@ test "winit: runner maps window desired maximum frame latency" {
 ///|
 test "winit: runner keeps event loop alive for logical windows awaiting host creation" {
   let world = @ecs.World::new()
+  defer world.close()
   debug_inspect(runner_has_logical_windows(world), content="false")
 
   let entity = world.spawn()

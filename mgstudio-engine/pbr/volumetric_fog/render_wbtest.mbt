@@ -230,7 +230,9 @@ fn volumetric_fog_wbtest_link_render_entity(
 ///|
 test "pbr volumetric fog: extract copies Bevy render-world components" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let view_entity = source_world.spawn()
   let render_view = volumetric_fog_wbtest_link_render_entity(
     source_world, render_world, view_entity,
@@ -295,7 +297,9 @@ test "pbr volumetric fog: extract copies Bevy render-world components" {
 ///|
 test "pbr volumetric fog: no-light extract cleans render-world fog state only" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let view_entity = source_world.spawn()
   let render_view = volumetric_fog_wbtest_link_render_entity(
     source_world, render_world, view_entity,
@@ -375,7 +379,9 @@ test "pbr volumetric fog: no-light extract cleans render-world fog state only" {
 ///|
 test "pbr volumetric fog: last-light removal follows Bevy extract cleanup boundary" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let view_entity = source_world.spawn()
   let render_view = volumetric_fog_wbtest_link_render_entity(
     source_world, render_world, view_entity,

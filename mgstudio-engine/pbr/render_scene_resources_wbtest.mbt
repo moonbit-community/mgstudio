@@ -15,6 +15,7 @@
 ///|
 test "render3d: light probe gather uses camera visible cluster list" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let visible_probe = world.spawn()
   let hidden_probe = world.spawn()

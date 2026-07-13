@@ -263,6 +263,7 @@ test "volumetric_fog: AppSettings and help text match Bevy defaults" {
   debug_inspect(settings.volumetric_pointlight, content="true")
 
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(app_settings_resource_key, settings)
   setup_instructions(world)
 
@@ -349,6 +350,7 @@ test "volumetric_fog: AppSettings toggles follow Bevy P and L keys" {
 ///|
 test "volumetric_fog: VolumetricLight sync inserts and removes components" {
   let disable_world = @ecs.World::new()
+  defer disable_world.close()
   let point_light = disable_world.spawn_empty()
   try! disable_world.set_by_key(
     point_light,
@@ -376,6 +378,7 @@ test "volumetric_fog: VolumetricLight sync inserts and removes components" {
   )
 
   let enable_world = @ecs.World::new()
+  defer enable_world.close()
   let spot_light = enable_world.spawn_empty()
   try! enable_world.set_by_key(
     spot_light,
@@ -401,6 +404,7 @@ test "volumetric_fog: VolumetricLight sync inserts and removes components" {
 ///|
 test "volumetric_fog: toggles update render-visible VolumetricLight count" {
   let world = @ecs.World::new()
+  defer world.close()
   setup_lights(world)
   debug_inspect(
     @pbr_volumetric_fog.volumetric_fog_render_world_storage_counts(world).light_count(),
@@ -463,6 +467,7 @@ test "volumetric_fog: toggles update render-visible VolumetricLight count" {
 ///|
 test "volumetric_fog: camera skybox and volumetric fog setup matches Bevy" {
   let world = @ecs.World::new()
+  defer world.close()
   setup_camera(world)
 
   let camera_count = Ref(0)
@@ -1605,6 +1610,7 @@ test "volumetric_fog: clustered point and spot light GPU values match Bevy packi
 ///|
 test "volumetric_fog: static lights and fog volume match Bevy" {
   let world = @ecs.World::new()
+  defer world.close()
   setup_lights(world)
 
   let point_light_count = Ref(0)
@@ -1712,6 +1718,7 @@ test "volumetric_fog: static lights and fog volume match Bevy" {
 ///|
 test "volumetric_fog: camera and fog volume prepare Bevy interior view fog" {
   let world = @ecs.World::new()
+  defer world.close()
   setup_camera(world)
   setup_lights(world)
 
@@ -2855,6 +2862,7 @@ test "volumetric_fog: directional light rotation delta uses Bevy XZY euler order
 ///|
 test "volumetric_fog: tweak_scene shadows and volumetric-lights changed directional lights" {
   let world = @ecs.World::new()
+  defer world.close()
   let directional = world.spawn_empty()
   try! world.set_by_key(
     directional,

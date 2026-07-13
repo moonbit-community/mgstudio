@@ -53,6 +53,7 @@ test "core3d: graph systems run main pass before early postprocess" {
 ///|
 test "core3d: main opaque pass skybox draw requires prepared skybox state" {
   let world = @ecs.World::new()
+  defer world.close()
   let render_entity = @core.Entity::new(1, 1)
 
   debug_inspect(
@@ -85,6 +86,7 @@ fn transparent_test_item(
 ///|
 test "core3d: sorted transparent phases preserve stable items and expire transient items" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @render_view.RetainedViewEntity::new(world.spawn_empty())
   let stale_view = @render_view.RetainedViewEntity::new(world.spawn_empty())
   let stable_render_entity = world.spawn_empty()
@@ -204,6 +206,7 @@ test "core3d: active Camera3d prepares and retains transparent phase views" {
 ///|
 test "core3d: DrawFunctions<Transparent3d> executes the registered render command" {
   let world = @ecs.World::new()
+  defer world.close()
   let draw_functions = Transparent3dDrawFunctions::Transparent3dDrawFunctions()
   let seen : Array[@core.Entity] = []
   let draw_function = draw_functions.register("DrawCustom", fn(_world, item) {

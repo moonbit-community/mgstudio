@@ -202,6 +202,7 @@ test "core_2d extracts active Camera2d phase views and retains live views" {
 ///|
 test "core_2d phase resources store items per retained view" {
   let world = @ecs.World::new()
+  defer world.close()
   let view_a = @render_view.RetainedViewEntity::new(world.spawn_empty())
   let view_b = @render_view.RetainedViewEntity::new(world.spawn_empty())
 

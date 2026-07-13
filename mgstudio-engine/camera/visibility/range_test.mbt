@@ -60,6 +60,7 @@ fn spawn_visibility_entity(
 ///|
 test "camera visibility range: entity in range of camera" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_visible_entity_ranges,
     VisibleEntityRanges::VisibleEntityRanges(),
@@ -80,6 +81,7 @@ test "camera visibility range: entity in range of camera" {
 ///|
 test "camera visibility range: entity out of range of camera" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_visible_entity_ranges,
     VisibleEntityRanges::VisibleEntityRanges(),
@@ -103,6 +105,7 @@ test "camera visibility range: entity out of range of camera" {
 ///|
 test "camera visibility range: use_aabb uses transformed aabb center" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_visible_entity_ranges,
     VisibleEntityRanges::VisibleEntityRanges(),
@@ -131,6 +134,7 @@ test "camera visibility range: use_aabb uses transformed aabb center" {
 ///|
 test "camera visibility range: no cpu culling entities are excluded" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_visible_entity_ranges,
     VisibleEntityRanges::VisibleEntityRanges(),
@@ -159,6 +163,7 @@ test "camera visibility range: no cpu culling entities are excluded" {
 ///|
 test "camera visibility range: shadow lod origin participates as a view" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_visible_entity_ranges,
     VisibleEntityRanges::VisibleEntityRanges(),

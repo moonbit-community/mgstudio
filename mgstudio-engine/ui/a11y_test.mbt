@@ -45,6 +45,7 @@ fn ui_a11y_test_read_node(
 ///|
 test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
   let world = @ecs.World::new()
+  defer world.close()
   ui_a11y_test_setup_context(world)
 
   let button = world.spawn_empty()
@@ -90,6 +91,7 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
 ///|
 test "ui: a11y label role/value are synced into AccessibilityNode" {
   let world = @ecs.World::new()
+  defer world.close()
   ui_a11y_test_setup_context(world)
 
   let entity = world.spawn_empty()
@@ -121,6 +123,7 @@ test "ui: a11y label role/value are synced into AccessibilityNode" {
 ///|
 test "ui: a11y visibility and clip metadata are synced into AccessibilityNode" {
   let world = @ecs.World::new()
+  defer world.close()
   ui_a11y_test_setup_context(world)
 
   let entity = world.spawn_empty()
@@ -200,6 +203,7 @@ test "ui: interaction state observers update AccessibilityNode like Bevy" {
 ///|
 test "ui: a11y focus in tree update follows InputFocus resource" {
   let world = @ecs.World::new()
+  defer world.close()
   ui_a11y_test_setup_context(world)
   world.insert_resource(
     @input_focus.InputFocus::resource(),
@@ -233,6 +237,7 @@ test "ui: a11y focus in tree update follows InputFocus resource" {
 ///|
 test "ui: editable label exports text input role and SetValue action" {
   let world = @ecs.World::new()
+  defer world.close()
   ui_a11y_test_setup_context(world)
 
   let editable = world.spawn_empty()

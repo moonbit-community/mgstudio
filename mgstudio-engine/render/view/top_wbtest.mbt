@@ -43,6 +43,7 @@ test "render view: window BGRA8 SRGB target format normalizes like Bevy" {
 ///|
 test "render view: NoIndirectDrawing marker is owned by render view" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set_by_key(
     entity,

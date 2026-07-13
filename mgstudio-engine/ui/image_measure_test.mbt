@@ -15,6 +15,7 @@
 ///|
 test "ui: measure uses intrinsic aspect ratio when only width is specified" {
   let world = @ecs.World::new()
+  defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
   let ctx = UiContext::new(

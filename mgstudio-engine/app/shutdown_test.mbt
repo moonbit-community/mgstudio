@@ -15,8 +15,11 @@
 ///|
 test "app: shutdown closes owned Worlds while remove and replace transfer ownership" {
   let main_world = @ecs.World::new()
+  defer main_world.close()
   let transferred_world = @ecs.World::new()
+  defer transferred_world.close()
   let replacement_world = @ecs.World::new()
+  defer replacement_world.close()
   let mut app = App::new(main_world).insert_sub_app(
     RenderApp,
     SubApp::new(transferred_world),

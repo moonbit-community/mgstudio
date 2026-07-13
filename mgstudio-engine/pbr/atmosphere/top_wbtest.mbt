@@ -76,7 +76,9 @@ fn atmosphere_top_spawn_camera(
 ///|
 test "pbr atmosphere: extract_atmosphere writes nearest Bevy atmosphere to render camera" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   ignore(atmosphere_top_spawn_atmosphere(source_world, -10.0F, 3.0F, 10))
   ignore(atmosphere_top_spawn_atmosphere(source_world, 2.0F, 7.0F, 11))
   let (_source_entity, render_entity) = atmosphere_top_spawn_camera(
@@ -115,7 +117,9 @@ test "pbr atmosphere: extract_atmosphere writes nearest Bevy atmosphere to rende
 ///|
 test "pbr atmosphere: extract_atmosphere removes stale render payload when scene has no atmosphere" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let render_world = @ecs.World::new()
+  defer render_world.close()
   let (_source_entity, render_entity) = atmosphere_top_spawn_camera(
     source_world, render_world, 1.0F,
   )

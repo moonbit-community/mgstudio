@@ -299,6 +299,7 @@ fn shadow_view_test_directional_entry(
 ///|
 test "pbr directional shadow binding carries cascades for volumetric fog pass" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let light = world.spawn()
   let render_light = world.spawn()
@@ -364,6 +365,7 @@ test "pbr directional shadow binding carries cascades for volumetric fog pass" {
 ///|
 test "pbr directional shadow pass attaches Bevy-shaped target layers" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let light = world.spawn()
   let render_light = world.spawn()
@@ -427,6 +429,7 @@ test "pbr directional shadow pass attaches Bevy-shaped target layers" {
 ///|
 test "pbr directional shadow pass accumulates multiple Bevy directional lights" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let first_light = world.spawn()
   let first_render_light = world.spawn()
@@ -550,6 +553,7 @@ test "pbr directional shadow pass accumulates multiple Bevy directional lights" 
 ///|
 test "pbr directional shadow frame identity reaches volumetric view binding" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = world.spawn()
   let light = world.spawn()
   let render_light = world.spawn()
@@ -651,6 +655,7 @@ test "pbr point shadow target layer follows Bevy cubemap array indexing" {
 ///|
 test "pbr lighting state uses global clusterable point light index" {
   let world = @ecs.World::new()
+  defer world.close()
   let point_entity = world.spawn()
   let meta = GlobalClusterableObjectMeta::new(0U)
   meta.insert_entity_index(point_entity, 3)

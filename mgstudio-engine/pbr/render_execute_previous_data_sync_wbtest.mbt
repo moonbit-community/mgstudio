@@ -21,6 +21,7 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 ///|
 test "render3d preupdate sync: writes previous view and global transform" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = world.spawn()
   let camera_transform = @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F)
   try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::Camera3d())
@@ -129,6 +130,7 @@ test "render3d preupdate sync: writes previous view and global transform" {
 ///|
 test "render3d preupdate sync: mesh sync is gated by active camera" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = world.spawn()
   try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::Camera3d())
   |> ignore)
@@ -206,6 +208,7 @@ test "render3d preupdate sync: mesh sync is gated by active camera" {
 ///|
 test "render3d preupdate sync: existing previous transform updates only after global transform changes" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = world.spawn()
   try! (world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d::Camera3d())
   |> ignore)

@@ -33,6 +33,7 @@ fn entity_in_list(
 ///|
 test "ui.experimental: UiChildren iter flattens ghost hierarchy and skips non-ui children" {
   let world = @ecs.World::new()
+  defer world.close()
   let root = world.spawn()
   let ghost_a = world.spawn()
   let ghost_b = world.spawn()
@@ -106,6 +107,7 @@ test "ui.experimental: UiChildren iter flattens ghost hierarchy and skips non-ui
 ///|
 test "ui.experimental: UiRootNodes iter includes root nodes and root ghost descendants" {
   let world = @ecs.World::new()
+  defer world.close()
   let root_node = world.spawn()
   let root_ghost = world.spawn()
   let root_ghost_leaf = world.spawn()

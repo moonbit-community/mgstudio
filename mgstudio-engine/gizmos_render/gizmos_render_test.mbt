@@ -68,6 +68,7 @@ test "gizmos_render boundary exposes render systems and plugin entry" {
 ///|
 test "extract_line_gizmos spawns Bevy-shaped temporary render entities" {
   let world = @ecs.World::new()
+  defer world.close()
   let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
   world.insert_resource(assets_key, @asset.Assets::new())
   let asset = @gizmos.GizmoAsset::GizmoAsset()
@@ -132,6 +133,7 @@ test "extract_line_gizmos spawns Bevy-shaped temporary render entities" {
 ///|
 test "extract_line_gizmos preserves dashed scale values" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set(
     entity,
@@ -160,6 +162,7 @@ test "extract_line_gizmos preserves dashed scale values" {
 ///|
 test "line gizmo uniform bytes match Bevy ShaderType layout" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set(
     entity,
@@ -221,6 +224,7 @@ test "line gizmo uniform bytes match Bevy ShaderType layout" {
 ///|
 test "queue_line_gizmos consumes extracted GizmoMeshConfig-backed assets" {
   let world = @ecs.World::new()
+  defer world.close()
   let assets_key : @ecs.ResourceKey[@asset.Assets[@gizmos.GizmoAsset]] = @asset.assets_resource_key()
   world.insert_resource(assets_key, @asset.Assets::new())
   let asset = @gizmos.GizmoAsset::GizmoAsset()
@@ -465,6 +469,7 @@ test "draw line joint gizmo plan mirrors Bevy joint draw conditions" {
 ///|
 test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
   let world = @ecs.World::new()
+  defer world.close()
   let entities = @gizmos_render.ensure_line_gizmo_entities(world)
   let draw_functions = @gizmos_render.ensure_line_gizmo_draw_functions(world)
   let handle = @asset.Handle::new(7)
@@ -515,6 +520,7 @@ test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
 ///|
 test "line gizmo phase planning skips joints without enough strip vertices" {
   let world = @ecs.World::new()
+  defer world.close()
   let entities = @gizmos_render.ensure_line_gizmo_entities(world)
   let draw_functions = @gizmos_render.ensure_line_gizmo_draw_functions(world)
   let handle = @asset.Handle::new(9)
@@ -547,6 +553,7 @@ test "line gizmo phase planning skips joints without enough strip vertices" {
 ///|
 test "line gizmo render command plan combines Bevy command tuple inputs" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! world.set(
     entity,

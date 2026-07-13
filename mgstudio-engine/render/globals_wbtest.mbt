@@ -37,6 +37,7 @@ test "globals: uniform bytes match Bevy std140 layout" {
 ///|
 test "globals: init system inserts render-world resource once" {
   let world = @ecs.World::new()
+  defer world.close()
   init_globals_buffer(world)
   inspect(
     world.resource(GlobalsBuffer::resource()).is_present(),
@@ -52,6 +53,7 @@ test "globals: init system inserts render-world resource once" {
 ///|
 test "globals: prepare tolerates missing GPU resources" {
   let world = @ecs.World::new()
+  defer world.close()
   prepare_globals_buffer(world)
   inspect(
     world.resource(GlobalsBuffer::resource()).is_present(),

@@ -81,6 +81,7 @@ test "pbr: RenderMeshInstances has Bevy CPU and GPU building variants" {
 test "pbr: RenderMeshInstances clear preserves persistent render resource variant" {
   let entity = @render.MainEntity::new(@core.Entity::new(222, 1))
   let cpu_world = @ecs.World::new()
+  defer cpu_world.close()
   let cpu_instances = RenderMeshInstances::new()
   cpu_instances.insert(entity, RenderMeshQueueData::new(43, 0U, false))
   cpu_world.insert_resource(RenderMeshInstances::resource(), cpu_instances)
@@ -99,6 +100,7 @@ test "pbr: RenderMeshInstances clear preserves persistent render resource varian
   debug_inspect(cpu_after.len(), content="0")
 
   let gpu_world = @ecs.World::new()
+  defer gpu_world.close()
   let gpu_instances = RenderMeshInstances::new(
     use_gpu_instance_buffer_builder=true,
   )
@@ -124,6 +126,7 @@ test "pbr: RenderMeshInstances motion-vector flags follow Bevy skin and morph ta
   let skin_entity = @core.Entity::new(223, 1)
   let morph_entity = @core.Entity::new(224, 1)
   let cpu_world = @ecs.World::new()
+  defer cpu_world.close()
   let cpu_instances = RenderMeshInstances::new()
   cpu_instances.insert(
     @render.MainEntity::new(skin_entity),
@@ -168,6 +171,7 @@ test "pbr: RenderMeshInstances motion-vector flags follow Bevy skin and morph ta
   )
 
   let gpu_world = @ecs.World::new()
+  defer gpu_world.close()
   let gpu_instances = RenderMeshInstances::new(
     use_gpu_instance_buffer_builder=true,
   )
@@ -223,7 +227,9 @@ test "pbr: RenderMeshInstances motion-vector flags follow Bevy skin and morph ta
 ///|
 test "pbr: CPU-building extraction reads Bevy source query rows" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   try! source_world.set_by_key(
     entity,
@@ -383,7 +389,9 @@ test "pbr: CPU-building extraction reads Bevy source query rows" {
 ///|
 test "pbr: CPU-building extraction skips invisible source rows" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   try! source_world.set_by_key(
     entity,
@@ -918,6 +926,7 @@ test "pbr: collect_gpu_culled_meshes_for_subview mirrors Bevy changed layer hand
 ///|
 test "pbr: collect_gpu_culled_meshes transfers resource state into render views" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_entity = world.spawn()
   let shadow_entity = world.spawn()
   let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
@@ -1204,7 +1213,9 @@ fn render_mesh_instances_test_insert_gpu_source_mesh(
 ///|
 test "pbr: GPU-building extraction does not remove stale meshes without source removal" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let first = source_world.spawn()
   let second = source_world.spawn()
   render_mesh_instances_test_insert_gpu_source_mesh(source_world, first, 110)
@@ -1240,7 +1251,9 @@ test "pbr: GPU-building extraction does not remove stale meshes without source r
 ///|
 test "pbr: GPU-building extraction preserves previous input index and lightmap packing" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let source_entity = source_world.spawn()
   let entity = @render.MainEntity::new(source_entity)
   render_mesh_instances_test_insert_gpu_source_mesh(
@@ -1288,7 +1301,9 @@ test "pbr: GPU-building extraction preserves previous input index and lightmap p
 ///|
 test "pbr: GPU-building extraction skips unchanged known meshes until reextract" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let source_entity = source_world.spawn()
   let entity = @render.MainEntity::new(source_entity)
   render_mesh_instances_test_insert_gpu_source_mesh(
@@ -1327,7 +1342,9 @@ test "pbr: GPU-building extraction skips unchanged known meshes until reextract"
 ///|
 test "pbr: GPU-building extraction queues source changed meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   ignore(source_world.increment_change_tick())
   render_mesh_instances_test_insert_gpu_source_mesh(source_world, entity, 214)
@@ -1351,7 +1368,9 @@ test "pbr: GPU-building extraction queues source changed meshes" {
 ///|
 test "pbr: GPU-building extraction removes changed hidden meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   render_mesh_instances_test_insert_gpu_source_mesh(
     source_world,
@@ -1379,7 +1398,9 @@ test "pbr: GPU-building extraction removes changed hidden meshes" {
 ///|
 test "pbr: GPU-building extraction keeps material-unready meshes for reextract" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   render_mesh_instances_test_insert_gpu_source_mesh(source_world, entity, 216)
   world.insert_resource(
@@ -1435,6 +1456,7 @@ test "pbr: GPU-building extraction keeps material-unready meshes for reextract" 
 ///|
 test "pbr: GPU-building extraction reads source removed Mesh3d entities" {
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   try! source_world.set_by_key(
     entity,
@@ -1498,7 +1520,9 @@ test "pbr: material bind group preparation records bindless material bindings" {
 ///|
 test "pbr: runtime GPU-building collect consumes queued meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let source_world = @ecs.World::new()
+  defer source_world.close()
   let entity = source_world.spawn()
   render_mesh_instances_test_insert_gpu_source_mesh(source_world, entity, 130)
   world.insert_resource(

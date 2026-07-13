@@ -42,6 +42,7 @@ test "pbr prepass: plugin initializes marker and core prepass view state" {
 ///|
 test "pbr prepass: update pipeline state becomes ready when prepass components exist" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(ecs_key_prepass_view_state, PrepassViewState())
   world.insert_resource(
     ecs_key_prepass_pipeline_state,

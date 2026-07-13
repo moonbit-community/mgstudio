@@ -30,6 +30,7 @@ pub impl Resource for OneShotCounterResource with fn resource() {
 ///|
 test "app: world run_system_once supports system params" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(one_shot_counter_resource_key, { value: 0 })
 
   try! run_system_once_param(world, fn(
@@ -47,6 +48,7 @@ test "app: world run_system_once supports system params" {
 ///|
 test "app: registered systems preserve local state across runs" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(one_shot_counter_resource_key, { value: 0 })
 
   let system_id = register_system_param2(world, fn(
@@ -70,6 +72,7 @@ test "app: registered systems preserve local state across runs" {
 ///|
 test "app: commands can register and run one-shot systems" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(one_shot_counter_resource_key, { value: 0 })
 
   let mut app = App::new(world).add_system_param(fn(commands : Commands) {

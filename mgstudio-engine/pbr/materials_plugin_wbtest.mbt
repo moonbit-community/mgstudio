@@ -25,6 +25,7 @@ fn material_test_insert_gpu_preprocessing_support(world : @ecs.World) -> Unit {
 ///|
 test "render3d: materials startup initializes bevy material render resources" {
   let world = @ecs.World::new()
+  defer world.close()
 
   init_materials_resources(world)
 
@@ -81,6 +82,7 @@ test "render3d: materials startup initializes bevy material render resources" {
 ///|
 test "render3d: materials startup preserves existing material render resources" {
   let world = @ecs.World::new()
+  defer world.close()
   let entity_ticks = EntitySpecializationTicks::EntitySpecializationTicks()
   let entity = @core.Entity::new(12, 0)
   entity_ticks.insert(entity, EntitySpecializationTickPair::new(5, 6))
@@ -101,6 +103,7 @@ test "render3d: materials startup preserves existing material render resources" 
 ///|
 test "render3d: materials startup preserves pending queue resources" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = @render_view.RetainedViewEntity::new(@core.Entity::new(10, 1))
   let main_entity = @render.MainEntity::new(@core.Entity::new(11, 1))
   let mesh_queues = PendingMeshMaterialQueues::PendingMeshMaterialQueues()
@@ -1037,6 +1040,7 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
 ///|
 test "render3d: shadow phase buffer prepare system consumes phase resource" {
   let world = @ecs.World::new()
+  defer world.close()
   let phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(301, 1),
@@ -1094,6 +1098,7 @@ test "render3d: shadow phase buffer prepare system consumes phase resource" {
 ///|
 test "render3d: shadow phase buffers collect into global preprocessing tables" {
   let world = @ecs.World::new()
+  defer world.close()
   let phase_instances = Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers()
   phase_instances.buffers.buffers.data_buffer.push(())
   let phase_indirect = Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers()
@@ -1151,6 +1156,7 @@ test "render3d: shadow phase buffers collect into global preprocessing tables" {
 ///|
 test "render3d: shadow phase prepare and collect bridge fills global preprocessing tables" {
   let world = @ecs.World::new()
+  defer world.close()
   let phases = Render3dShadowPhasesData::Render3dShadowPhasesData()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(302, 1),
@@ -1230,6 +1236,7 @@ test "render3d: shadow phase prepare and collect bridge fills global preprocessi
 ///|
 test "render3d: shadow phase preparation mirrors Bevy retained light views" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = @core.Entity::new(201, 1)
   let extracted_retained_view = @render_view.RetainedViewEntity::new(
     camera,
@@ -1348,6 +1355,7 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
 ///|
 test "render3d: camera shadow phase preparation retains all Bevy light views once" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_a = @core.Entity::new(301, 1)
   let camera_b = @core.Entity::new(302, 1)
   let directional_light = @core.Entity::new(310, 1)
@@ -1546,6 +1554,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
 ///|
 test "render3d: shadow visible indices populate Bevy shadow map visibility" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera = @core.Entity::new(401, 1)
   let point_light = world.spawn_empty()
   let point_light_main = world.spawn_empty()
@@ -1863,6 +1872,7 @@ fn material_test_extracted_mesh_payload(
 ///|
 test "render3d: extract render visible entities mirrors camera visible Mesh3d pairs" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_camera = world.spawn()
   let render_camera = world.spawn()
   let main_mesh = world.spawn()
@@ -1940,6 +1950,7 @@ test "render3d: extract render visible entities mirrors camera visible Mesh3d pa
 ///|
 test "render3d: material specialization candidates come from visible dirty and pending meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_view = @core.Entity::new(41, 1)
   let render_view = world.spawn()
   let unchanged_main = @core.Entity::new(42, 1)
@@ -2010,6 +2021,7 @@ test "render3d: material specialization candidates come from visible dirty and p
 ///|
 test "render3d: view key cache marks material views dirty when pipeline capabilities change" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_view = @core.Entity::new(410, 1)
   let render_view = world.spawn()
   world.insert_resource(
@@ -2055,6 +2067,7 @@ test "render3d: view key cache marks material views dirty when pipeline capabili
 ///|
 test "render3d: shadow specialization candidates come from visible dirty and pending meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_view = @core.Entity::new(451, 1)
   let shadow_light = world.spawn()
   let camera_retained_view = @render_view.RetainedViewEntity::new(
@@ -2143,6 +2156,7 @@ test "render3d: shadow specialization candidates come from visible dirty and pen
 ///|
 test "render3d: shadow specialization skips cached entities before readiness checks" {
   let world = @ecs.World::new()
+  defer world.close()
   let camera_retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(461, 1),
   )
@@ -2232,6 +2246,7 @@ test "render3d: shadow specialization skips cached entities before readiness che
 ///|
 test "render3d: shadow depth clip control support mirrors render device features" {
   let empty_world = @ecs.World::new()
+  defer empty_world.close()
   debug_inspect(
     render3d_shadow_depth_clip_control_supported(empty_world),
     content="false",
@@ -2247,6 +2262,7 @@ test "render3d: shadow depth clip control support mirrors render device features
   )
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   let expected = render_device.supports_rust_features_u64(
     @wgpu.FEATURES_DEPTH_CLIP_CONTROL,
@@ -2260,6 +2276,7 @@ test "render3d: shadow depth clip control support mirrors render device features
 ///|
 test "render3d: missing material specialization mesh returns to pending queue" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(50, 1),
   )
@@ -2285,6 +2302,7 @@ test "render3d: missing material specialization mesh returns to pending queue" {
 ///|
 test "render3d: material specialization readiness follows Bevy resources" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(53, 1),
   )
@@ -2951,6 +2969,7 @@ test "render3d: shadow specialization mesh key mirrors Bevy work item assembly" 
 ///|
 test "render3d: shadow specialization work item selects Bevy draw function" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(73, 1),
   )
@@ -3003,6 +3022,7 @@ test "render3d: shadow specialization work item selects Bevy draw function" {
 ///|
 test "render3d: shadow specialization uses material draw when prepass reads material" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(75, 1),
   )
@@ -3058,6 +3078,7 @@ test "render3d: shadow specialization uses material draw when prepass reads mate
 ///|
 test "render3d: shadow specialization drains work items and expires stale views" {
   let world = @ecs.World::new()
+  defer world.close()
   let live_view = @render_view.RetainedViewEntity::new(@core.Entity::new(77, 1))
   let stale_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(78, 1),
@@ -3143,6 +3164,7 @@ test "render3d: shadow specialization drains work items and expires stale views"
 ///|
 test "render3d: queue shadows checks cache and pending queues before empty visible class" {
   let world = @ecs.World::new()
+  defer world.close()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(85, 1),
   )
@@ -3729,6 +3751,7 @@ test "render3d: queue shadows skips missing shadow phase before pending queue lo
 ///|
 test "render3d: missing prepared render mesh does not return to pending queue" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_view = @core.Entity::new(61, 1)
   let render_view = world.spawn()
   let render_entity = @core.Entity::new(62, 1)
@@ -3805,6 +3828,7 @@ test "render3d: missing prepared render mesh does not return to pending queue" {
 ///|
 test "render3d: material specialization reads resolved material slots without extracted meshes" {
   let world = @ecs.World::new()
+  defer world.close()
   let main_view = @core.Entity::new(610, 1)
   let render_view = world.spawn()
   let render_entity = @core.Entity::new(611, 1)
@@ -3896,6 +3920,7 @@ test "render3d: material specialization reads resolved material slots without ex
 ///|
 test "render3d: material specialization reads prepared RenderMeshAssets only" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
     SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
@@ -3963,6 +3988,7 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
 ///|
 test "render3d: material specialization key consumes render resources" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
     SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
@@ -4026,6 +4052,7 @@ test "render3d: material specialization key consumes render resources" {
 ///|
 test "render3d: material specialization key preserves resolved material type" {
   let world = @ecs.World::new()
+  defer world.close()
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
     SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
@@ -4072,6 +4099,7 @@ test "render3d: material specialization key preserves resolved material type" {
 ///|
 test "render3d: materials startup preserves shadow specialization caches" {
   let world = @ecs.World::new()
+  defer world.close()
   let view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(10, 1),
     auxiliary_entity=Some(@core.Entity::new(20, 1)),

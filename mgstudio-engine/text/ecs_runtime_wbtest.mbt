@@ -60,6 +60,7 @@ test "text plugin inserts text runtime resources" {
 test "font asset Added events force text rerender on next update" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   let text_handle = text_spawn(
     Text2dBundle::new(
       Text2d::new("Font Event"),
@@ -108,6 +109,7 @@ test "font asset Added events force text rerender on next update" {
 test "font asset non-Added events follow Bevy and do not rerender text" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   let text_handle = text_spawn(
     Text2dBundle::new(
       Text2d::new("Font Event"),
@@ -166,6 +168,7 @@ test "font asset non-Added events follow Bevy and do not rerender text" {
 test "ecs text bridge resolves a world-space bundle from ECS components" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let base_font = TextFont::TextFont()
   let local_transform = @transform.Transform::from_xyz(0.0F, 125.0F, 0.0F)
@@ -245,6 +248,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
 test "ecs text bridge treats NoCpuCulling as no-frustum-culling opt-out" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   let font = TextFont::TextFont()
   let transform = @transform.Transform::identity()
@@ -273,6 +277,7 @@ test "ecs text bridge treats NoCpuCulling as no-frustum-culling opt-out" {
 test "ecs text cleanup removes dead entity entries" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Text2d::new("Cleanup"))
   |> ignore)
@@ -308,6 +313,7 @@ test "ecs text cleanup removes dead entity entries" {
 ///|
 test "text ecs registers required components for Text2d" {
   let world = @ecs.World::new()
+  defer world.close()
   try! register_text_required_components(world)
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Text2d::new("Auto transform"))
@@ -355,6 +361,7 @@ test "text ecs registers required components for Text2d" {
 test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   try! register_text_required_components(world)
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Text2d::new("Visibility"))
@@ -399,6 +406,7 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
 test "ui text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
+  defer world.close()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(Text::new("Hidden UI"))
   |> ignore)
@@ -433,6 +441,7 @@ test "ui text ecs bridge syncs ViewVisibility into runtime visibility gating" {
 ///|
 test "ecs text bridge collects TextSpan children in hierarchy order" {
   let world = @ecs.World::new()
+  defer world.close()
   let root = world.spawn()
   let first = world.spawn()
   let second = world.spawn()
