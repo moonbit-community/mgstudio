@@ -45,6 +45,32 @@ fn next_system_ticks(world : @ecs.World) -> @core.SystemTicks {
 }
 
 ///|
+test "text ecs sync ignores unrelated changed component streams" {
+  reset_text_ecs_test_state()
+  let world = @ecs.World::new()
+  defer world.close()
+  ignore(next_system_ticks(world))
+  for i in 0..<32 {
+    let entity = world.spawn()
+    try! (world
+    .entity_mut(entity)
+    .insert_component(
+      @transform.Transform::from_xyz(Float::from_int(i), 0.0F, 0.0F),
+    )
+    |> ignore)
+    try! (world
+    .entity_mut(entity)
+    .insert_component(@visibility.ViewVisibility::new(true))
+    |> ignore)
+  }
+
+  text_sync_ecs_system(world)
+  debug_inspect(text_ecs_sync_candidate_entity_count.val, content="0")
+  ui_text_sync_ecs_system(world)
+  debug_inspect(text_ecs_sync_candidate_entity_count.val, content="0")
+}
+
+///|
 test "text plugin inserts text runtime resources" {
   let lifecycle_world_47_0 = @ecs.World::new()
   defer lifecycle_world_47_0.close()
