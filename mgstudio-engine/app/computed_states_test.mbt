@@ -220,7 +220,9 @@ fn compute_optional_state(
 
 ///|
 test "app computed state: follows source transitions" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_221_0 = @ecs.World::new()
+  defer lifecycle_world_221_0.close()
+  let app = App::new(lifecycle_world_221_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_computed_state(
@@ -260,7 +262,9 @@ test "app computed state: follows source transitions" {
 
 ///|
 test "app computed state: supports two source states" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_261_0 = @ecs.World::new()
+  defer lifecycle_world_261_0.close()
+  let app = App::new(lifecycle_world_261_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .insert_state(PairState::Disabled)
@@ -297,7 +301,9 @@ test "app computed state: supports two source states" {
 
 ///|
 test "app computed state: supports optional source states" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_298_0 = @ecs.World::new()
+  defer lifecycle_world_298_0.close()
+  let app = App::new(lifecycle_world_298_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .insert_state(PairState::Enabled)

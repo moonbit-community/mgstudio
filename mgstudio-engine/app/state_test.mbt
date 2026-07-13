@@ -76,7 +76,9 @@ fn current_stage_label() -> String {
 ///|
 test "app state: queued next state applies on next frame after PreUpdate" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_76_0 = @ecs.World::new()
+  defer lifecycle_world_76_0.close()
+  let app = App::new(lifecycle_world_76_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_config(
@@ -111,7 +113,9 @@ test "app state: queued next state applies on next frame after PreUpdate" {
 ///|
 test "app state: exit transition enter hooks run in bevy order" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_111_0 = @ecs.World::new()
+  defer lifecycle_world_111_0.close()
+  let app = App::new(lifecycle_world_111_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_config(
@@ -148,7 +152,9 @@ test "app state: exit transition enter hooks run in bevy order" {
 ///|
 test "app state: startup enter hook runs in state transition stage" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_148_0 = @ecs.World::new()
+  defer lifecycle_world_148_0.close()
+  let app = App::new(lifecycle_world_148_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_on_enter_system(TestState::A, fn(_world : @ecs.World) {
@@ -166,7 +172,9 @@ test "app state: startup enter hook runs in state transition stage" {
 ///|
 test "app startup: pre startup startup and post startup run in order" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_166_0 = @ecs.World::new()
+  defer lifecycle_world_166_0.close()
+  let app = App::new(lifecycle_world_166_0)
     .add_pre_startup_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())
     })
@@ -184,7 +192,9 @@ test "app startup: pre startup startup and post startup run in order" {
 ///|
 test "app update: spawn scene runs between update and post update" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_184_0 = @ecs.World::new()
+  defer lifecycle_world_184_0.close()
+  let app = App::new(lifecycle_world_184_0)
     .add_system(fn(_world : @ecs.World) { log.push(current_stage_label()) })
     .add_spawn_scene_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())
@@ -199,7 +209,9 @@ test "app update: spawn scene runs between update and post update" {
 
 ///|
 test "states plugin: inserts state transition into schedule order resources" {
-  let app = App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_200_0 = @ecs.World::new()
+  defer lifecycle_world_200_0.close()
+  let app = App::new(lifecycle_world_200_0).add_plugins(
     @app.StatesPlugin::StatesPlugin(),
   )
   ignore(app)
@@ -223,7 +235,9 @@ test "states plugin: inserts state transition into schedule order resources" {
 ///|
 test "main schedule order resource drives startup and main stage execution order" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_223_0 = @ecs.World::new()
+  defer lifecycle_world_223_0.close()
+  let app = App::new(lifecycle_world_223_0)
   app
   .world()
   .insert_resource(
@@ -265,7 +279,9 @@ test "main schedule order resource drives startup and main stage execution order
 ///|
 test "app state: state_changed matches bevy resource change detection" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_265_0 = @ecs.World::new()
+  defer lifecycle_world_265_0.close()
+  let app = App::new(lifecycle_world_265_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_config(

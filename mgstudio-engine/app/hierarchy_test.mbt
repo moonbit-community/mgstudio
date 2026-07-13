@@ -40,7 +40,9 @@ pub impl ValidateParentHasComponentTarget for HierarchyValidationMarker with fn 
 ///|
 test "app hierarchy: validate-parent plugin queues a check when parent lacks component" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
-  let app = App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_40_0 = @ecs.World::new()
+  defer lifecycle_world_40_0.close()
+  let app = App::new(lifecycle_world_40_0).add_plugins(
     validate_parent_has_component_plugin(plugin),
   )
   let world = app.world()
@@ -69,7 +71,9 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
 ///|
 test "app hierarchy: validate-parent plugin skips checks when parent already has component" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
-  let app = App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_69_0 = @ecs.World::new()
+  defer lifecycle_world_69_0.close()
+  let app = App::new(lifecycle_world_69_0).add_plugins(
     validate_parent_has_component_plugin(plugin),
   )
   let world = app.world()
@@ -98,7 +102,9 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
 ///|
 test "app hierarchy: validate-parent plugin rechecks on component replace" {
   let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
-  let app = App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_98_0 = @ecs.World::new()
+  defer lifecycle_world_98_0.close()
+  let app = App::new(lifecycle_world_98_0).add_plugins(
     validate_parent_has_component_plugin(plugin),
   )
   let world = app.world()

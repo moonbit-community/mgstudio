@@ -14,7 +14,9 @@
 
 ///|
 test "light plugin: initializes default light resources" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = @app.App::new(lifecycle_world_15_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let scattering_medium_assets_key : @ecs.ResourceKey[
@@ -40,7 +42,9 @@ test "light plugin: initializes default light resources" {
 
 ///|
 test "light plugin: atmosphere required GlobalTransform matches bevy on_add default" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_41_0 = @ecs.World::new()
+  defer lifecycle_world_41_0.close()
+  let app = @app.App::new(lifecycle_world_41_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -64,7 +68,9 @@ test "light plugin: atmosphere required GlobalTransform matches bevy on_add defa
 
 ///|
 test "light plugin: automatically adds default parallax correction to reflection probes" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_65_0 = @ecs.World::new()
+  defer lifecycle_world_65_0.close()
+  let mut app = @app.App::new(lifecycle_world_65_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
   let world = app.world()
@@ -111,7 +117,9 @@ test "light plugin: automatically adds default parallax correction to reflection
 
 ///|
 test "light plugin: light probe required components match bevy probe requirements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_112_0 = @ecs.World::new()
+  defer lifecycle_world_112_0.close()
+  let app = @app.App::new(lifecycle_world_112_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -154,7 +162,9 @@ test "light plugin: light probe required components match bevy probe requirement
 
 ///|
 test "light plugin: point light required components match bevy point requirements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_155_0 = @ecs.World::new()
+  defer lifecycle_world_155_0.close()
+  let app = @app.App::new(lifecycle_world_155_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -196,7 +206,9 @@ test "light plugin: point light required components match bevy point requirement
 
 ///|
 test "light plugin: spot light required components match bevy spot requirements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_197_0 = @ecs.World::new()
+  defer lifecycle_world_197_0.close()
+  let app = @app.App::new(lifecycle_world_197_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -238,7 +250,9 @@ test "light plugin: spot light required components match bevy spot requirements"
 
 ///|
 test "light plugin: directional light required components match bevy directional requirements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_239_0 = @ecs.World::new()
+  defer lifecycle_world_239_0.close()
+  let app = @app.App::new(lifecycle_world_239_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -289,7 +303,9 @@ test "light plugin: directional light required components match bevy directional
 
 ///|
 test "light plugin: light texture and sun disk components require owner lights" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_290_0 = @ecs.World::new()
+  defer lifecycle_world_290_0.close()
+  let app = @app.App::new(lifecycle_world_290_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -351,7 +367,9 @@ test "light plugin: light texture and sun disk components require owner lights" 
 
 ///|
 test "light plugin: cluster visibility hook preserves existing visibility classes" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_352_0 = @ecs.World::new()
+  defer lifecycle_world_352_0.close()
+  let app = @app.App::new(lifecycle_world_352_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -386,7 +404,9 @@ test "light plugin: cluster visibility hook preserves existing visibility classe
 
 ///|
 test "light plugin: ambient light requires camera component" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_387_0 = @ecs.World::new()
+  defer lifecycle_world_387_0.close()
+  let app = @app.App::new(lifecycle_world_387_0).add_plugins(
     @light.LightPlugin::LightPlugin(),
   )
   let world = app.world()
@@ -431,7 +451,9 @@ test "light plugin: exposes Bevy simulation light system sets" {
 
 ///|
 test "light plugin: updates point and spot light bounding spheres" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_432_0 = @ecs.World::new()
+  defer lifecycle_world_432_0.close()
+  let mut app = @app.App::new(lifecycle_world_432_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
   let world = app.world()
@@ -495,7 +517,9 @@ test "light plugin: updates point and spot light bounding spheres" {
 
 ///|
 test "light plugin: updates visible shadow-mapped spot light frusta" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_496_0 = @ecs.World::new()
+  defer lifecycle_world_496_0.close()
+  let mut app = @app.App::new(lifecycle_world_496_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
   let world = app.world()
@@ -538,7 +562,9 @@ test "light plugin: updates visible shadow-mapped spot light frusta" {
 
 ///|
 test "light plugin: updates visible shadow-mapped point light cubemap frusta" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_539_0 = @ecs.World::new()
+  defer lifecycle_world_539_0.close()
+  let mut app = @app.App::new(lifecycle_world_539_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
   let world = app.world()
@@ -592,7 +618,9 @@ test "light plugin: updates visible shadow-mapped point light cubemap frusta" {
 
 ///|
 test "light plugin: updates visible shadow-mapped directional light cascades frusta" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_593_0 = @ecs.World::new()
+  defer lifecycle_world_593_0.close()
+  let mut app = @app.App::new(lifecycle_world_593_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
   let world = app.world()

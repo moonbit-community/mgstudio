@@ -163,7 +163,9 @@ test "ui: a11y visibility and clip metadata are synced into AccessibilityNode" {
 
 ///|
 test "ui: interaction state observers update AccessibilityNode like Bevy" {
-  let app = ui_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_164_0 = @ecs.World::new()
+  defer lifecycle_world_164_0.close()
+  let app = ui_plugin(@app.App::new(lifecycle_world_164_0))
   let world = app.world()
 
   let entity = world.spawn_empty()

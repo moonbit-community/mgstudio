@@ -24,13 +24,17 @@ test "pbr prepass: any_enabled reflects individual flags" {
 
 ///|
 test "pbr prepass: pipeline plugin initializes pipeline state resource" {
-  let app = prepass_pipeline_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_25_0 = @ecs.World::new()
+  defer lifecycle_world_25_0.close()
+  let app = prepass_pipeline_plugin(@app.App::new(lifecycle_world_25_0))
   inspect(app.contains_resource(ecs_key_prepass_pipeline_state), content="true")
 }
 
 ///|
 test "pbr prepass: plugin initializes marker and core prepass view state" {
-  let app = prepass_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_31_0 = @ecs.World::new()
+  defer lifecycle_world_31_0.close()
+  let app = prepass_plugin(@app.App::new(lifecycle_world_31_0))
   inspect(
     app.contains_resource(ecs_key_any_prepass_plugin_loaded),
     content="true",

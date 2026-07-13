@@ -106,7 +106,9 @@ test "screenshot: duplicate texture-view targets are despawned during extraction
 
 ///|
 test "screenshot: RenderPlugin initializes pending capture state resource" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_107_0 = @ecs.World::new()
+  defer lifecycle_world_107_0.close()
+  let app = @app.App::new(lifecycle_world_107_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   debug_inspect(
@@ -155,7 +157,9 @@ test "screenshot: RenderPlugin initializes pending capture state resource" {
 
 ///|
 test "screenshot: ScreenshotPlugin tolerates missing RenderApp" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_156_0 = @ecs.World::new()
+  defer lifecycle_world_156_0.close()
+  let app = @app.App::new(lifecycle_world_156_0).add_plugins(
     ScreenshotPlugin::ScreenshotPlugin(),
   )
   debug_inspect(

@@ -532,7 +532,9 @@ test "pbr light probe: upload_light_probes writes render-world offsets" {
 
 ///|
 test "pbr light probe: plugin schedules upload in render prepare resources" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_533_0 = @ecs.World::new()
+  defer lifecycle_world_533_0.close()
+  let app = @app.App::new(lifecycle_world_533_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(LightProbePlugin::LightProbePlugin())
   let render_sub_app = app
@@ -593,7 +595,9 @@ test "pbr light probe: uniform mirrors Bevy light probe capacities" {
 
 ///|
 test "pbr light probe: plugin initializes main state and render buffer resource" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_594_0 = @ecs.World::new()
+  defer lifecycle_world_594_0.close()
+  let app = @app.App::new(lifecycle_world_594_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(LightProbePlugin::LightProbePlugin())
   inspect(

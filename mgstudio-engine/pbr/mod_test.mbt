@@ -90,7 +90,9 @@ fn read_default_standard_material(
 
 ///|
 test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_91_0 = @ecs.World::new()
+  defer lifecycle_world_91_0.close()
+  let app = @app.App::new(lifecycle_world_91_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -311,7 +313,9 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
 
 ///|
 test "pbr: plugin installs render resources required by wireframe specialization" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_312_0 = @ecs.World::new()
+  defer lifecycle_world_312_0.close()
+  let app = @app.App::new(lifecycle_world_312_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -426,8 +430,10 @@ fn prepare_clustered_decals_schedule_seed(world : @ecs.World) -> Unit {
 ///|
 test "render3d: pbr plugin registers dummy meshlet visibility resolve shader" {
   @shader_source.clear_embedded_shader_sources()
+  let lifecycle_world_426_0 = @ecs.World::new()
+  defer lifecycle_world_426_0.close()
   ignore(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_426_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -451,8 +457,10 @@ test "render3d: pbr plugin registers dummy meshlet visibility resolve shader" {
 ///|
 test "render3d: pbr plugin registers deferred shader libraries when deferred plugin is disabled" {
   @shader_source.clear_embedded_shader_sources()
+  let lifecycle_world_451_0 = @ecs.World::new()
+  defer lifecycle_world_451_0.close()
   ignore(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_451_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -500,8 +508,10 @@ fn assert_embedded_shader_source_exists(path : String) -> Unit {
 ///|
 test "render3d: pbr plugin registers bevy pbr shader library list" {
   @shader_source.clear_embedded_shader_sources()
+  let lifecycle_world_500_0 = @ecs.World::new()
+  defer lifecycle_world_500_0.close()
   ignore(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_500_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -538,7 +548,9 @@ test "render3d: pbr plugin registers bevy pbr shader library list" {
 ///|
 test "render3d: screen space transmission plugin registers shader and camera requirements" {
   @shader_source.clear_embedded_shader_sources()
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_538_0 = @ecs.World::new()
+  defer lifecycle_world_538_0.close()
+  let app = @app.App::new(lifecycle_world_538_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(ScreenSpaceTransmissionPlugin::ScreenSpaceTransmissionPlugin())
@@ -569,8 +581,10 @@ test "render3d: screen space transmission plugin registers shader and camera req
 ///|
 test "render3d: gpu clustering plugin registers build shader library" {
   @shader_source.clear_embedded_shader_sources()
+  let lifecycle_world_569_0 = @ecs.World::new()
+  defer lifecycle_world_569_0.close()
   ignore(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_569_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin()),
@@ -1106,7 +1120,9 @@ test "render3d: NoIndirectDrawing reuses render view owner key" {
 
 ///|
 test "render3d: prepare_lights packs render-world extracted lights" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1107_0 = @ecs.World::new()
+  defer lifecycle_world_1107_0.close()
+  let app0 = @app.App::new(lifecycle_world_1107_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
@@ -1175,7 +1191,9 @@ test "render3d: prepare_lights runs after the camera driver set" {
   let device = adapter.request_device_sync(instance)
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1171_0 = @ecs.World::new()
+  defer lifecycle_world_1171_0.close()
+  let app0 = @app.App::new(lifecycle_world_1171_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
@@ -1243,7 +1261,9 @@ test "render3d: clustered decals prepare after prepare_lights" {
   let device = adapter.request_device_sync(instance)
   let render_device = @renderer.RenderDevice::from_wgpu(device)
   let render_queue = render_device.queue()
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1239_0 = @ecs.World::new()
+  defer lifecycle_world_1239_0.close()
+  let app0 = @app.App::new(lifecycle_world_1239_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
@@ -1792,7 +1812,9 @@ test "render3d: gpu clustering plugin finish initializes render resources" {
   let adapter = instance.request_adapter_sync()
   let device = adapter.request_device_sync(instance)
   let storage_buffers = device.limits_max_storage_buffers_per_shader_stage_u32()
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1789_0 = @ecs.World::new()
+  defer lifecycle_world_1789_0.close()
+  let app0 = @app.App::new(lifecycle_world_1789_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin())
@@ -1973,8 +1995,10 @@ test "render3d: non-modified Mesh asset events do not mark Mesh3d as changed" {
 
 ///|
 test "render3d: default pbr plugin installs bevy-style runtime config defaults" {
+  let lifecycle_world_1974_0 = @ecs.World::new()
+  defer lifecycle_world_1974_0.close()
   let app = pbr_plugin(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_1974_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin()),
   )
@@ -2048,7 +2072,9 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
 
 ///|
 test "render3d: pbr plugin forwards gpu preprocess builder setting" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2049_0 = @ecs.World::new()
+  defer lifecycle_world_2049_0.close()
+  let app = @app.App::new(lifecycle_world_2049_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::{
@@ -2071,7 +2097,9 @@ test "render3d: pbr plugin finish initializes global cluster settings" {
   let expected_clustered_decals = @render.host_gpu_mesh3d_binding_arrays_are_usable(
     required_storage_textures_per_shader_stage=0U,
   )
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2062_0 = @ecs.World::new()
+  defer lifecycle_world_2062_0.close()
+  let app0 = @app.App::new(lifecycle_world_2062_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
   ignore(
@@ -2130,7 +2158,9 @@ test "render3d: pbr plugin installs Bevy-shaped render startup resources" {
   let expected_binding_type = device.get_supported_read_only_binding_type_u32(
     CLUSTERED_FORWARD_STORAGE_BUFFER_COUNT,
   )
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2125_0 = @ecs.World::new()
+  defer lifecycle_world_2125_0.close()
+  let app = @app.App::new(lifecycle_world_2125_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
@@ -2185,7 +2215,9 @@ test "render3d: pbr plugin installs Bevy-shaped render startup resources" {
 
 ///|
 test "render3d: pbr plugin initializes Bevy-shaped render resources" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2186_0 = @ecs.World::new()
+  defer lifecycle_world_2186_0.close()
+  let app = @app.App::new(lifecycle_world_2186_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
@@ -2212,7 +2244,9 @@ test "render3d: pbr plugin initializes Bevy-shaped render resources" {
 
 ///|
 test "render3d: pbr plugin extracts global ambient light through render schedule" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2213_0 = @ecs.World::new()
+  defer lifecycle_world_2213_0.close()
+  let app0 = @app.App::new(lifecycle_world_2213_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -2269,7 +2303,9 @@ test "render3d: pbr plugin extracts global ambient light through render schedule
 
 ///|
 test "render3d: pbr plugin extracts shadow filtering method through render schedule" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2270_0 = @ecs.World::new()
+  defer lifecycle_world_2270_0.close()
+  let app0 = @app.App::new(lifecycle_world_2270_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -2320,7 +2356,9 @@ test "render3d: pbr plugin extracts shadow filtering method through render sched
 
 ///|
 test "render3d: pbr plugin extracts ambient light through render schedule" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2321_0 = @ecs.World::new()
+  defer lifecycle_world_2321_0.close()
+  let app0 = @app.App::new(lifecycle_world_2321_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
@@ -2374,7 +2412,9 @@ test "render3d: pbr plugin extracts ambient light through render schedule" {
 
 ///|
 test "render3d: pbr sync target cleanup removes directional light render target components" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2375_0 = @ecs.World::new()
+  defer lifecycle_world_2375_0.close()
+  let app0 = @app.App::new(lifecycle_world_2375_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
@@ -2513,7 +2553,9 @@ test "render3d: pbr light sync target removers match point spot and rect target 
 
 ///|
 test "render3d: pbr installs light view entity observers in render world" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2514_0 = @ecs.World::new()
+  defer lifecycle_world_2514_0.close()
+  let app0 = @app.App::new(lifecycle_world_2514_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
@@ -2583,7 +2625,9 @@ test "render3d: pbr installs light view entity observers in render world" {
 
 ///|
 test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2584_0 = @ecs.World::new()
+  defer lifecycle_world_2584_0.close()
+  let app0 = @app.App::new(lifecycle_world_2584_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -2663,7 +2707,9 @@ fn pbr_extract_material_instance_or_abort(
 
 ///|
 test "render3d: pbr plugin extracts and sweeps material instances through render schedule" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2664_0 = @ecs.World::new()
+  defer lifecycle_world_2664_0.close()
+  let app0 = @app.App::new(lifecycle_world_2664_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -2748,7 +2794,9 @@ test "render3d: pbr plugin extracts and sweeps material instances through render
 
 ///|
 test "render3d: Mesh3d tuple insert receives visibility required components" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2749_0 = @ecs.World::new()
+  defer lifecycle_world_2749_0.close()
+  let app = @app.App::new(lifecycle_world_2749_0)
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
   let world = app.world()
@@ -2780,7 +2828,9 @@ test "render3d: Mesh3d tuple insert receives visibility required components" {
 
 ///|
 test "render3d: pbr plugin extracts lights through render schedule" {
-  let app0 = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2781_0 = @ecs.World::new()
+  defer lifecycle_world_2781_0.close()
+  let app0 = @app.App::new(lifecycle_world_2781_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -2830,7 +2880,9 @@ test "render3d: pbr plugin extracts lights through render schedule" {
 
 ///|
 test "render3d: pbr plugin does not cache internal LUTs before renderer backend" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2831_0 = @ecs.World::new()
+  defer lifecycle_world_2831_0.close()
+  let app = @app.App::new(lifecycle_world_2831_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
@@ -2898,8 +2950,10 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     pbr_anisotropy_texture=true,
     pbr_specular_textures=true,
   )
+  let lifecycle_world_2895_0 = @ecs.World::new()
+  defer lifecycle_world_2895_0.close()
   let _app = pbr_plugin_with(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_2895_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin()),
     PbrPlugin::{
@@ -2972,8 +3026,10 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     content="true",
   )
 
+  let lifecycle_world_2895_1 = @ecs.World::new()
+  defer lifecycle_world_2895_1.close()
   let _reset = pbr_plugin(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_2895_1)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin()),
   )
@@ -3025,7 +3081,9 @@ test "render3d: root pbr exposes deferred lighting planning surface" {
 
 ///|
 test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_3026_0 = @ecs.World::new()
+  defer lifecycle_world_3026_0.close()
+  let app = @app.App::new(lifecycle_world_3026_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(
@@ -3084,8 +3142,10 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
 
 ///|
 test "render3d: render3d_plugin alias maps to pbr plugin" {
+  let lifecycle_world_3085_0 = @ecs.World::new()
+  defer lifecycle_world_3085_0.close()
   let app = render3d_plugin(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_3085_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin()),
   )

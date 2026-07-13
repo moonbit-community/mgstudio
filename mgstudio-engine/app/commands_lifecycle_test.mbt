@@ -15,7 +15,9 @@
 ///|
 test "app: escaped Commands retains only the World allocator connection" {
   let escaped : Ref[Commands?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let mut app = App::new(lifecycle_world_15_0).add_system_param(fn(
     commands : Commands,
   ) {
     escaped.val = Some(commands)

@@ -154,7 +154,9 @@ test "pbr atmosphere: extract_atmosphere removes stale render payload when scene
 
 ///|
 test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
-  let app_before_finish = @app.App::new(@ecs.World::new())
+  let lifecycle_world_155_0 = @ecs.World::new()
+  defer lifecycle_world_155_0.close()
+  let app_before_finish = @app.App::new(lifecycle_world_155_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(AtmospherePlugin::AtmospherePlugin())
   let update_settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(

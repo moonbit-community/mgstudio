@@ -57,7 +57,9 @@ test "app error handling: default handler captures fallible system body errors" 
   touch_error_handling_types()
   let kinds : Array[ErrorContextKind] = []
   let sources : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_55_0 = @ecs.World::new()
+  defer lifecycle_world_55_0.close()
+  let mut app = App::new(lifecycle_world_55_0)
     .set_error_handler(fn(_error, context) {
       kinds.push(context.kind())
       sources.push(context.source())
@@ -78,7 +80,9 @@ test "app error handling: default handler captures fallible system body errors" 
 test "app error handling: missing Res routes invalid validation through default handler" {
   let kinds : Array[ErrorContextKind] = []
   let ran = Ref(false)
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_77_0 = @ecs.World::new()
+  defer lifecycle_world_77_0.close()
+  let mut app = App::new(lifecycle_world_77_0)
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_systems(
       Update,
@@ -98,7 +102,9 @@ test "app error handling: missing Res routes invalid validation through default 
 test "app error handling: skipped validated params do not invoke error handlers" {
   let errors : Array[String] = []
   let ran = Ref(false)
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_97_0 = @ecs.World::new()
+  defer lifecycle_world_97_0.close()
+  let mut app = App::new(lifecycle_world_97_0)
     .set_error_handler(fn(error, _context) { errors.push(error.to_string()) })
     .add_systems(
       Update,
@@ -120,7 +126,9 @@ test "app error handling: per-system handler captures body errors" {
   let default_count = Ref(0)
   let local_count = Ref(0)
   let local_kinds : Array[ErrorContextKind] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_118_0 = @ecs.World::new()
+  defer lifecycle_world_118_0.close()
+  let mut app = App::new(lifecycle_world_118_0)
     .set_error_handler(fn(_error, _context) {
       default_count.val = default_count.val + 1
     })
@@ -148,7 +156,9 @@ test "app error handling: per-system handler captures body errors" {
 test "app error handling: per-system handler does not intercept validation failures" {
   let default_kinds : Array[ErrorContextKind] = []
   let local_kinds : Array[ErrorContextKind] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_147_0 = @ecs.World::new()
+  defer lifecycle_world_147_0.close()
+  let mut app = App::new(lifecycle_world_147_0)
     .set_error_handler(fn(_error, context) {
       default_kinds.push(context.kind())
     })

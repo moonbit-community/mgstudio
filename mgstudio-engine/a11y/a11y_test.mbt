@@ -14,7 +14,9 @@
 
 ///|
 test "a11y: accessibility plugin initializes resources and ambiguous allowance" {
-  let app = accessibility_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = accessibility_plugin(@app.App::new(lifecycle_world_15_0))
   let world = app.world()
 
   let requested = get_accessibility_requested_resource(world).get().unwrap()
@@ -61,7 +63,9 @@ test "a11y: plugin init_resource keeps existing resource values" {
   requested.set(true)
   let updates = @a11y.ManageAccessibilityUpdates::ManageAccessibilityUpdates()
   updates.set(false)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_58_0 = @ecs.World::new()
+  defer lifecycle_world_58_0.close()
+  let app = @app.App::new(lifecycle_world_58_0)
     .insert_world_resource(ecs_res_key_accessibility_requested, requested)
     .insert_world_resource(ecs_res_key_manage_accessibility_updates, updates)
   let app = accessibility_plugin(app)

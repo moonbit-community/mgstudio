@@ -34,7 +34,9 @@ fn read_counter_resource(world : @ecs.World) -> CounterResource? {
 
 ///|
 test "app: insert_resource and ResMut parameter updates value" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_35_0 = @ecs.World::new()
+  defer lifecycle_world_35_0.close()
+  let app = App::new(lifecycle_world_35_0)
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_param(fn(resource : ResMut[CounterResource]) {
       resource.modify(fn(value) { value.value = value.value + 2 })
@@ -51,7 +53,9 @@ test "app: insert_resource and ResMut parameter updates value" {
 ///|
 test "app: Res parameter reads inserted resource value" {
   let observed : Ref[Int] = Ref(-1)
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_51_0 = @ecs.World::new()
+  defer lifecycle_world_51_0.close()
+  let app = App::new(lifecycle_world_51_0)
     .insert_resource(CounterResource::{ value: 7 })
     .add_system_param(fn(resource : Res[CounterResource]) {
       observed.val = resource.get().value
@@ -68,7 +72,9 @@ test "app: ResMut access does not mark resources changed until mutation" {
   let observed_callers : Array[Bool] = []
   let mutate_set = system_set("app.resource_param_test.mutate")
 
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_63_0 = @ecs.World::new()
+  defer lifecycle_world_63_0.close()
+  let app = App::new(lifecycle_world_63_0)
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_config(
       system_config_param2(fn(
@@ -109,7 +115,9 @@ test "app: ResMut access does not mark resources changed until mutation" {
 ///|
 test "app: schedule rebuild preserves system last run for change detection" {
   let observed_changed : Array[Bool] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_109_0 = @ecs.World::new()
+  defer lifecycle_world_109_0.close()
+  let mut app = App::new(lifecycle_world_109_0)
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_config(
       system_config_param(fn(resource : Res[CounterResource]) {
@@ -131,7 +139,9 @@ test "app: ResMut::get does not mark resources changed until mutation" {
   let observed_values : Array[Int] = []
   let mutate_set = system_set("app.resource_param_test.read_only_then_write")
 
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_128_0 = @ecs.World::new()
+  defer lifecycle_world_128_0.close()
+  let app = App::new(lifecycle_world_128_0)
     .insert_resource(CounterResource::{ value: 10 })
     .add_system_config(
       system_config_param2(fn(
@@ -162,7 +172,9 @@ test "app: ResMut::get does not mark resources changed until mutation" {
 
 ///|
 test "app: init_resource inserts only when missing" {
-  let app = App::new(@ecs.World::new()).init_resource(fn() {
+  let lifecycle_world_163_0 = @ecs.World::new()
+  defer lifecycle_world_163_0.close()
+  let app = App::new(lifecycle_world_163_0).init_resource(fn() {
     CounterResource::{ value: 11 }
   })
   debug_inspect(
@@ -189,7 +201,9 @@ test "app: init_resource inserts only when missing" {
 
 ///|
 test "app: resource_remove clears custom resource" {
-  let app = App::new(@ecs.World::new()).insert_resource(CounterResource::{
+  let lifecycle_world_190_0 = @ecs.World::new()
+  defer lifecycle_world_190_0.close()
+  let app = App::new(lifecycle_world_190_0).insert_resource(CounterResource::{
     value: 9,
   })
   debug_inspect(
@@ -209,7 +223,9 @@ test "app: resource_remove clears custom resource" {
 ///|
 test "app: resource_exists gates system execution on resource presence" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_209_0 = @ecs.World::new()
+  defer lifecycle_world_209_0.close()
+  let app = App::new(lifecycle_world_209_0).add_system_config(
     system(fn(_world : @ecs.World) { log.push(1) }).run_if(
       resource_exists(CounterResource::resource()),
     ),
@@ -226,7 +242,9 @@ test "app: resource_exists gates system execution on resource presence" {
 ///|
 test "app: any_with_component gates system execution on component presence" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_226_0 = @ecs.World::new()
+  defer lifecycle_world_226_0.close()
+  let app = App::new(lifecycle_world_226_0).add_system_config(
     system(fn(_world : @ecs.World) { log.push(log.length()) }).run_if(
       any_with_component(query_position_key),
     ),
@@ -248,7 +266,9 @@ test "app: any_with_component gates system execution on component presence" {
 ///|
 test "app: resource_added tracks added events" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_248_0 = @ecs.World::new()
+  defer lifecycle_world_248_0.close()
+  let app = App::new(lifecycle_world_248_0).add_system_config(
     system(fn(_world : @ecs.World) { log.push(log.length()) }).run_if(
       resource_added(CounterResource::resource()),
     ),
@@ -269,7 +289,9 @@ test "app: resource_added tracks added events" {
 ///|
 test "app: resource_exists_and_changed tracks change events" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_269_0 = @ecs.World::new()
+  defer lifecycle_world_269_0.close()
+  let app = App::new(lifecycle_world_269_0)
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_config(
       system(fn(world : @ecs.World) {
@@ -296,7 +318,9 @@ test "app: resource_exists_and_changed tracks change events" {
 ///|
 test "app: resource_changed tracks change events" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_296_0 = @ecs.World::new()
+  defer lifecycle_world_296_0.close()
+  let app = App::new(lifecycle_world_296_0)
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_config(
       system(fn(world : @ecs.World) {
@@ -323,7 +347,9 @@ test "app: resource_changed tracks change events" {
 ///|
 test "app: Res exposes stable resource values across runs" {
   let observed : Array[Int] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_323_0 = @ecs.World::new()
+  defer lifecycle_world_323_0.close()
+  let app = App::new(lifecycle_world_323_0)
     .insert_resource(CounterResource::{ value: 2 })
     .add_system_param(fn(resource : Res[CounterResource]) {
       observed.push(resource.get().value)
@@ -340,7 +366,9 @@ test "app: Res exposes stable resource values across runs" {
 ///|
 test "app: Res can read inserted State resource" {
   let observed : Ref[String] = Ref("unset")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_340_0 = @ecs.World::new()
+  defer lifecycle_world_340_0.close()
+  let app = App::new(lifecycle_world_340_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_param(fn(state : Res[State[TestState]]) {
@@ -355,7 +383,9 @@ test "app: Res can read inserted State resource" {
 
 ///|
 test "app: ResMut can update NextState resource" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_356_0 = @ecs.World::new()
+  defer lifecycle_world_356_0.close()
+  let app = App::new(lifecycle_world_356_0)
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_param(fn(next_state : ResMut[NextState[TestState]]) {
@@ -378,7 +408,9 @@ test "app: run condition combinators short-circuit and compose" {
   let and_runs = Ref(0)
   let and_rhs_calls = Ref(0)
   let not_log : Array[Int] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_374_0 = @ecs.World::new()
+  defer lifecycle_world_374_0.close()
+  let app = App::new(lifecycle_world_374_0)
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_config(
       system(fn(_world : @ecs.World) { or_runs.val = or_runs.val + 1 }).run_if(

@@ -292,7 +292,9 @@ test "volumetric_fog: AppSettings and help text match Bevy defaults" {
 
 ///|
 test "volumetric_fog: app resources match Bevy clear and ambient defaults" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_293_0 = @ecs.World::new()
+  defer lifecycle_world_293_0.close()
+  let mut app = @app.App::new(lifecycle_world_293_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(
       @camera.ClearColor::new(@color.Color::srgba(0.02F, 0.02F, 0.02F, 1.0F)),
@@ -544,7 +546,9 @@ test "volumetric_fog: camera skybox texture reaches render texture storage" {
   let skybox_asset_loaded = Ref(false)
   let skybox_render_texture_loaded = Ref(false)
 
-  @app.App::new(@ecs.World::new())
+  let lifecycle_world_541_0 = @ecs.World::new()
+  defer lifecycle_world_541_0.close()
+  @app.App::new(lifecycle_world_541_0)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_system(fn(world : @ecs.World) { setup_camera(world) })
   .add_system(fn(world : @ecs.World) {
@@ -580,7 +584,9 @@ test "volumetric_fog: camera render entity prepares Bevy skybox draw state" {
   let camera_entity = Ref(@core.Entity::placeholder())
   let render_entity = Ref(@core.Entity::placeholder())
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_578_0 = @ecs.World::new()
+  defer lifecycle_world_578_0.close()
+  let mut app = @app.App::new(lifecycle_world_578_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, setup)
@@ -629,7 +635,9 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   @app.set_timeline_trace_counter_sink(
     Some(fn(counter) { counters.push(counter) }),
   )
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_626_0 = @ecs.World::new()
+  defer lifecycle_world_626_0.close()
+  let mut app = @app.App::new(lifecycle_world_626_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, setup)
@@ -1038,7 +1046,9 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
 
 ///|
 test "volumetric_fog: directional and ambient GPU lights match Bevy prepare_lights" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1039_0 = @ecs.World::new()
+  defer lifecycle_world_1039_0.close()
+  let mut app = @app.App::new(lifecycle_world_1039_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, setup)
@@ -1140,7 +1150,9 @@ test "volumetric_fog: directional shadow cascade scalar inputs match Bevy order"
   @app.set_timeline_trace_counter_sink(
     Some(fn(counter) { counters.push(counter) }),
   )
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1137_0 = @ecs.World::new()
+  defer lifecycle_world_1137_0.close()
+  let mut app = @app.App::new(lifecycle_world_1137_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, setup)
@@ -1196,7 +1208,9 @@ test "volumetric_fog: directional shadow cascade scalar inputs match Bevy order"
 
 ///|
 test "volumetric_fog: directional shadow cascade records match Bevy packing" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1197_0 = @ecs.World::new()
+  defer lifecycle_world_1197_0.close()
+  let mut app = @app.App::new(lifecycle_world_1197_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, setup)
@@ -1259,7 +1273,9 @@ test "volumetric_fog: directional shadow cascade records match Bevy packing" {
 
 ///|
 test "volumetric_fog: clustered point and spot light GPU values match Bevy packing" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1260_0 = @ecs.World::new()
+  defer lifecycle_world_1260_0.close()
+  let mut app = @app.App::new(lifecycle_world_1260_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, setup)
@@ -1871,7 +1887,9 @@ test "volumetric_fog: GLB scene contributor is the inherited-visible Cube mesh" 
   let scene_root_name = Ref("")
   let scene_root_index = Ref(-1)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1820_0 = @ecs.World::new()
+  defer lifecycle_world_1820_0.close()
+  let mut app = @app.App::new(lifecycle_world_1820_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
     .add_systems_world(@app.Startup, fn(world : @ecs.World) {
@@ -2345,7 +2363,9 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
   let cube_has_aabb = Ref(false)
   let camera_entity = Ref(@core.Entity::placeholder())
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2337_0 = @ecs.World::new()
+  defer lifecycle_world_2337_0.close()
+  let mut app = @app.App::new(lifecycle_world_2337_0)
     .add_plugins(
       @mgstudio.DefaultPlugins::set(
         @pbr.PbrPlugin::PbrPlugin().with_gpu_instance_buffer_builder(false),
@@ -2571,7 +2591,9 @@ test "volumetric_fog: GLB Sun node imports Bevy-shaped directional light child" 
   let sun_light_illuminance_matches = Ref(false)
   let sun_light_shadow_maps_enabled = Ref(true)
 
-  @app.App::new(@ecs.World::new())
+  let lifecycle_world_2551_0 = @ecs.World::new()
+  defer lifecycle_world_2551_0.close()
+  @app.App::new(lifecycle_world_2551_0)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(AppSettings::AppSettings())
   .add_system(fn(world : @ecs.World) {

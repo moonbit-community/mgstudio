@@ -193,7 +193,9 @@ fn commands_install_hook_test_hooks(world : @ecs.World) -> Unit {
 test "app: Commands spawn defers component tuple insertion until after system" {
   let counts : Array[Int] = []
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+  let lifecycle_world_192_0 = @ecs.World::new()
+  defer lifecycle_world_192_0.close()
+  let mut app = App::new(lifecycle_world_192_0).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
   ) {
@@ -233,7 +235,9 @@ test "app: Commands spawn defers component tuple insertion until after system" {
 ///|
 test "app: Commands spawn_empty reserves an entity without queued components" {
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_233_0 = @ecs.World::new()
+  defer lifecycle_world_233_0.close()
+  let mut app = App::new(lifecycle_world_233_0).add_system_param(fn(
     commands : Commands,
   ) {
     spawned.val = Some(commands.spawn_empty())
@@ -256,7 +260,9 @@ test "app: Commands spawn reserves an entity until deferred flush" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let counts : Array[Int] = []
   let alive : Array[Bool] = []
-  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+  let lifecycle_world_254_0 = @ecs.World::new()
+  defer lifecycle_world_254_0.close()
+  let mut app = App::new(lifecycle_world_254_0).add_system_param2(fn(
     commands : Commands,
     entities : @ecs.Query[@core.Entity, @ecs.All],
   ) {
@@ -286,7 +292,9 @@ test "app: Commands spawn reserves an entity until deferred flush" {
 
 ///|
 test "app: Commands insert_resource defers resource writes until after the system" {
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_287_0 = @ecs.World::new()
+  defer lifecycle_world_287_0.close()
+  let mut app = App::new(lifecycle_world_287_0).add_system_param(fn(
     commands : Commands,
   ) {
     commands.insert_resource(CommandsCounterResource::{ value: 7 })
@@ -304,7 +312,9 @@ test "app: Commands insert_resource defers resource writes until after the syste
 test "app: Commands spawn_component defers single component insertion until after system" {
   let counts : Array[Int] = []
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+  let lifecycle_world_303_0 = @ecs.World::new()
+  defer lifecycle_world_303_0.close()
+  let mut app = App::new(lifecycle_world_303_0).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
   ) {
@@ -330,7 +340,9 @@ test "app: Commands spawn_component defers single component insertion until afte
 ///|
 test "app: Commands spawn supports eight-component tuples" {
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_330_0 = @ecs.World::new()
+  defer lifecycle_world_330_0.close()
+  let mut app = App::new(lifecycle_world_330_0).add_system_param(fn(
     commands : Commands,
   ) {
     spawned.val = Some(
@@ -392,7 +404,9 @@ test "app: Commands spawn supports eight-component tuples" {
 test "app: Commands spawn accepts ecs bundle tuples and unit bundles" {
   let nested_spawned : Ref[@core.Entity?] = Ref(None)
   let empty_spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_391_0 = @ecs.World::new()
+  defer lifecycle_world_391_0.close()
+  let mut app = App::new(lifecycle_world_391_0).add_system_param(fn(
     commands : Commands,
   ) {
     nested_spawned.val = Some(
@@ -438,7 +452,9 @@ test "app: Commands spawn accepts ecs bundle tuples and unit bundles" {
 test "app: Commands spawn_batch defers all batch insertions until flush" {
   let counts : Array[Int] = []
   let spawned : Ref[Array[@core.Entity]] = Ref([])
-  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+  let lifecycle_world_437_0 = @ecs.World::new()
+  defer lifecycle_world_437_0.close()
+  let mut app = App::new(lifecycle_world_437_0).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Read[CommandsPosition], @ecs.All],
   ) {
@@ -485,7 +501,9 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
 test "app: Commands entity insert defers component insertion until flush" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let counts : Array[Int] = []
-  let mut app = App::new(@ecs.World::new()).add_system_param2(fn(
+  let lifecycle_world_484_0 = @ecs.World::new()
+  defer lifecycle_world_484_0.close()
+  let mut app = App::new(lifecycle_world_484_0).add_system_param2(fn(
     commands : Commands,
     query : @ecs.Query[@ecs.Read[CommandsVelocity], @ecs.All],
   ) {
@@ -519,7 +537,9 @@ test "app: Commands entity insert defers component insertion until flush" {
 ///|
 test "app: Commands entity insert_component queues a single component" {
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_519_0 = @ecs.World::new()
+  defer lifecycle_world_519_0.close()
+  let mut app = App::new(lifecycle_world_519_0).add_system_param(fn(
     commands : Commands,
   ) {
     let entity = commands.spawn(
@@ -546,7 +566,9 @@ test "app: Commands entity insert_component queues a single component" {
 test "app: Commands entity despawn defers entity removal until flush" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let alive_counts : Array[Int] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_545_0 = @ecs.World::new()
+  defer lifecycle_world_545_0.close()
+  let mut app = App::new(lifecycle_world_545_0)
     .add_system_param2(fn(
       commands : Commands,
       entities : @ecs.Query[@core.Entity, @ecs.All],
@@ -591,7 +613,9 @@ test "app: Commands entity despawn defers entity removal until flush" {
 ///|
 test "app: Commands entity remove and remove_component defer component removal until flush" {
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_591_0 = @ecs.World::new()
+  defer lifecycle_world_591_0.close()
+  let mut app = App::new(lifecycle_world_591_0).add_system_param(fn(
     commands : Commands,
   ) {
     let entity = commands.spawn(
@@ -629,7 +653,9 @@ test "app: Commands entity remove and remove_component defer component removal u
 test "app: Commands preserve hook caller provenance across deferred spawn and remove" {
   commands_hook_test_reset()
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_628_0 = @ecs.World::new()
+  defer lifecycle_world_628_0.close()
+  let mut app = App::new(lifecycle_world_628_0)
   commands_install_hook_test_hooks(app.world())
   app = app.add_system_param(fn(commands : Commands) {
     let entity = commands.spawn(
@@ -664,7 +690,9 @@ test "app: Commands preserve hook caller provenance across deferred spawn and re
 test "app: failing built-in queued commands route through the default error handler" {
   let kinds : Array[ErrorContextKind] = []
   let sources : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_663_0 = @ecs.World::new()
+  defer lifecycle_world_663_0.close()
+  let mut app = App::new(lifecycle_world_663_0)
     .set_error_handler(fn(_error, context) {
       kinds.push(context.kind())
       sources.push(context.source())
@@ -687,7 +715,9 @@ test "app: Commands::queue_handled uses the command-local handler" {
   let default_count = Ref(0)
   let local_count = Ref(0)
   let local_sources : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_685_0 = @ecs.World::new()
+  defer lifecycle_world_685_0.close()
+  let mut app = App::new(lifecycle_world_685_0)
     .set_error_handler(fn(_error, _context) {
       default_count.val = default_count.val + 1
     })
@@ -713,7 +743,9 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
   let hits : Array[String] = []
   let target_ref : Ref[@core.Entity?] = Ref(None)
   let other_ref : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_711_0 = @ecs.World::new()
+  defer lifecycle_world_711_0.close()
+  let mut app = App::new(lifecycle_world_711_0).add_system_param(fn(
     commands : Commands,
   ) {
     let target = commands.spawn(
@@ -780,7 +812,9 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
 test "app: EntityCommands::observe_pointer4 accepts normal system params" {
   let hits : Array[String] = []
   let target_ref : Ref[@core.Entity?] = Ref(None)
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_779_0 = @ecs.World::new()
+  defer lifecycle_world_779_0.close()
+  let mut app = App::new(lifecycle_world_779_0).add_system_param(fn(
     commands : Commands,
   ) {
     commands.insert_resource(CommandsCounterResource::{ value: 42 })

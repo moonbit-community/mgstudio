@@ -385,7 +385,9 @@ test "pbr decal forward: material handle maps to forward decal family" {
 
 ///|
 test "pbr decal forward: component hook assigns plugin decal mesh" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_386_0 = @ecs.World::new()
+  defer lifecycle_world_386_0.close()
+  let app = @app.App::new(lifecycle_world_386_0).add_plugins(
     ForwardDecalPlugin::ForwardDecalPlugin(),
   )
   let world = app.world()

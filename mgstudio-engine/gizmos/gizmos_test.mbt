@@ -14,8 +14,10 @@
 
 ///|
 test "gizmos boundary re-exports configuration and plugin surface" {
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
   let app = @gizmos.init_gizmo_group(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_15_0),
     @gizmos.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   )
   let _ = @gizmos.gizmo_plugin(app)
@@ -86,8 +88,10 @@ impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_cel
 ///|
 test "custom gizmo groups expose config through store and system param" {
   let seen_width = Ref(-1.0F)
+  let lifecycle_world_86_0 = @ecs.World::new()
+  defer lifecycle_world_86_0.close()
   let app = @gizmos.init_gizmo_group(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_86_0),
     TestRoundGizmos::TestRoundGizmos(),
   ).add_systems(
     @app.Update,
@@ -114,7 +118,9 @@ test "custom gizmo groups expose config through store and system param" {
 
 ///|
 test "retained gizmo component installs Bevy required Transform and asset store" {
-  let app = @gizmos.gizmo_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_115_0 = @ecs.World::new()
+  defer lifecycle_world_115_0.close()
+  let app = @gizmos.gizmo_plugin(@app.App::new(lifecycle_world_115_0))
   let world = app.world()
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(@gizmos.Gizmo::Gizmo())

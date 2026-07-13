@@ -95,8 +95,10 @@ test "sprite 2d clear keeps 3d axes lines for the 3d pass" {
 ///|
 test "gizmos system param queues into world storage before render drain" {
   gizmos_reset()
+  let lifecycle_world_95_0 = @ecs.World::new()
+  defer lifecycle_world_95_0.close()
   let app = init_gizmo_group(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_95_0),
     DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   ).add_systems(
     @app.Update,
@@ -125,8 +127,10 @@ test "gizmos system param queues into world storage before render drain" {
 ///|
 test "global gizmo buffer flushes through last schedule into default storage" {
   gizmos_reset()
+  let lifecycle_world_125_0 = @ecs.World::new()
+  defer lifecycle_world_125_0.close()
   let app = init_gizmo_group(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_125_0),
     DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   ).add_last_system_config(@app.system_config_param(flush_global_gizmos))
 

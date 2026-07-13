@@ -38,7 +38,9 @@ test "asset host io: save_rgba8_png writes a valid png file" {
 
 ///|
 test "asset host io: palette png preserves transparent background" {
-  let path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_39_0 = @ecs.World::new()
+  defer lifecycle_world_39_0.close()
+  let path = asset_with_world(lifecycle_world_39_0, fn() {
     resolve_asset_path("textures/simplespace/ship_C.png")
   })
   let bytes = @fs.read_file_to_bytes(path)
@@ -694,7 +696,9 @@ test "asset host io: texture dimensions parse gif/webp/tiff headers" {
 
 ///|
 test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
-  let path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_695_0 = @ecs.World::new()
+  defer lifecycle_world_695_0.close()
+  let path = asset_with_world(lifecycle_world_695_0, fn() {
     resolve_asset_path("textures/tonemapping/tony_mc_mapface.ktx2")
   })
   let bytes = @fs.read_file_to_bytes(path)
@@ -714,7 +718,9 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
   )
   debug_inspect(payload.pixels.length(), content="442368")
 
-  let agx_path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_695_1 = @ecs.World::new()
+  defer lifecycle_world_695_1.close()
+  let agx_path = asset_with_world(lifecycle_world_695_1, fn() {
     resolve_asset_path("textures/tonemapping/AgX-default_contrast.ktx2")
   })
   let agx_payload = ktx2_decode_3d_payload(@fs.read_file_to_bytes(agx_path)).unwrap()
@@ -756,7 +762,9 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
     content="true",
   )
 
-  let cornell_path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_695_2 = @ecs.World::new()
+  defer lifecycle_world_695_2.close()
+  let cornell_path = asset_with_world(lifecycle_world_695_2, fn() {
     resolve_asset_path("lightmaps/CornellBox-Large.zstd.ktx2")
   })
   let cornell_payload = ktx2_decode_2d_payload(
@@ -774,7 +782,9 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
 
 ///|
 test "asset host io: bevy pisa specular environment map decodes as rgb9e5 cubemap" {
-  let path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_775_0 = @ecs.World::new()
+  defer lifecycle_world_775_0.close()
+  let path = asset_with_world(lifecycle_world_775_0, fn() {
     resolve_asset_path("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")
   })
   let bytes = @fs.read_file_to_bytes(path)
@@ -798,7 +808,9 @@ test "asset host io: bevy pisa specular environment map decodes as rgb9e5 cubema
 
 ///|
 test "asset host io: bevy scrolling fog ktx2 density texture decodes as 3d r32f" {
-  let path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_799_0 = @ecs.World::new()
+  defer lifecycle_world_799_0.close()
+  let path = asset_with_world(lifecycle_world_799_0, fn() {
     resolve_asset_path("volumes/fog_noise.ktx2")
   })
   let bytes = @fs.read_file_to_bytes(path)
@@ -816,7 +828,9 @@ test "asset host io: bevy scrolling fog ktx2 density texture decodes as 3d r32f"
 
 ///|
 test "asset host io: bevy fog volumes bunny ktx2 density texture decodes as 3d r32f" {
-  let path = asset_with_world(@ecs.World::new(), fn() {
+  let lifecycle_world_817_0 = @ecs.World::new()
+  defer lifecycle_world_817_0.close()
+  let path = asset_with_world(lifecycle_world_817_0, fn() {
     resolve_asset_path("volumes/bunny.ktx2")
   })
   let bytes = @fs.read_file_to_bytes(path)

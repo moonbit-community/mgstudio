@@ -248,8 +248,12 @@ test "gpu preprocessing: indirect parameter settings default to no readback copi
 
 ///|
 test "gpu preprocessing: plugin writes indirect parameter settings into render app" {
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_249_0 = @ecs.World::new()
+  defer lifecycle_world_249_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_249_0)
+  let lifecycle_world_249_1 = @ecs.World::new()
+  defer lifecycle_world_249_1.close()
+  let app = @app.App::new(lifecycle_world_249_1)
     .insert_sub_app(@app.RenderApp, render_sub_app)
     .add_plugins(
       GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode::Culling).with_allow_copies_from_indirect_parameter_buffers(

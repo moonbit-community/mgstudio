@@ -261,7 +261,9 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
 
 ///|
 test "visibility plugin: Mesh2d and Mesh3d require visibility components" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_262_0 = @ecs.World::new()
+  defer lifecycle_world_262_0.close()
+  let app = @app.App::new(lifecycle_world_262_0)
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
   let world = app.world()
@@ -297,7 +299,9 @@ test "visibility plugin: Mesh2d and Mesh3d require visibility components" {
 
 ///|
 test "visibility plugin: hidden parent clears child view visibility" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_298_0 = @ecs.World::new()
+  defer lifecycle_world_298_0.close()
+  let mut app = @app.App::new(lifecycle_world_298_0)
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
   let world = app.world()

@@ -28,7 +28,9 @@ fn skybox_test_approx(a : Float, b : Float) -> Bool {
 
 ///|
 test "skybox: render sub app configuration installs Bevy-shaped resources" {
-  let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
+  let lifecycle_world_29_0 = @ecs.World::new()
+  defer lifecycle_world_29_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_29_0).set_update_schedule(
     Some(@render.render_schedule_stage()),
   )
   let render_sub_app = configure_skybox_render_sub_app(render_sub_app)
@@ -46,7 +48,9 @@ test "skybox: render sub app configuration installs Bevy-shaped resources" {
 
 ///|
 test "skybox: plugin installs Bevy-shaped uniform component preparation" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_47_0 = @ecs.World::new()
+  defer lifecycle_world_47_0.close()
+  let app = @app.App::new(lifecycle_world_47_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(SkyboxPlugin::SkyboxPlugin())
   let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
@@ -366,7 +370,9 @@ test "skybox: prepare pipelines requires Bevy render-view components" {
 
 ///|
 test "skybox: extract_skybox writes Bevy component and uniform payload to render entity" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_367_0 = @ecs.World::new()
+  defer lifecycle_world_367_0.close()
+  let app = @app.App::new(lifecycle_world_367_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(SkyboxPlugin::SkyboxPlugin())
   let source_world = app.world()

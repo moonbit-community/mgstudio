@@ -46,8 +46,10 @@ fn next_system_ticks(world : @ecs.World) -> @core.SystemTicks {
 
 ///|
 test "text plugin inserts text runtime resources" {
+  let lifecycle_world_47_0 = @ecs.World::new()
+  defer lifecycle_world_47_0.close()
   let app = text_plugin(
-    @app.App::new(@ecs.World::new()).add_plugins(
+    @app.App::new(lifecycle_world_47_0).add_plugins(
       @render.RenderPlugin::RenderPlugin(),
     ),
   )
@@ -518,7 +520,9 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
 ///|
 test "ui text bridge preserves runtime-owned placement during sync" {
   reset_text_ecs_test_state()
-  let app = @asset.asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_518_0 = @ecs.World::new()
+  defer lifecycle_world_518_0.close()
+  let app = @asset.asset_plugin(@app.App::new(lifecycle_world_518_0))
   let world = app.world()
   let entity = world.spawn()
   let bundle = Text2dBundle::{

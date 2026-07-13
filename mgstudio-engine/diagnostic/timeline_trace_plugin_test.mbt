@@ -25,7 +25,9 @@ test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
     .with_categories([@app.TimelineTraceCategory::System])
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_20_0 = @ecs.World::new()
+  defer lifecycle_world_20_0.close()
+  let mut app = @app.App::new(lifecycle_world_20_0).add_plugins(
     TimelineTracePlugin::with_config(config),
   )
   app = app.add_system_config(
@@ -56,7 +58,9 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
     .with_categories([@app.TimelineTraceCategory::RenderQueue])
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_51_0 = @ecs.World::new()
+  defer lifecycle_world_51_0.close()
+  let mut app = @app.App::new(lifecycle_world_51_0).add_plugins(
     TimelineTracePlugin::with_config(config),
   )
   app = app.add_system_config(
@@ -87,7 +91,9 @@ test "diagnostics: timeline trace plugin captures direct counters" {
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
     .with_categories([@app.TimelineTraceCategory::Counter])
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_82_0 = @ecs.World::new()
+  defer lifecycle_world_82_0.close()
+  let mut app = @app.App::new(lifecycle_world_82_0).add_plugins(
     TimelineTracePlugin::with_config(config),
   )
   app = app.add_system_config(
@@ -109,7 +115,9 @@ test "diagnostics: timeline trace plugin captures direct counters" {
 
 ///|
 test "diagnostics: stress diagnostics plugin installs lightweight metrics by default" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_110_0 = @ecs.World::new()
+  defer lifecycle_world_110_0.close()
+  let app = @app.App::new(lifecycle_world_110_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(StressDiagnosticsPlugin::StressDiagnosticsPlugin())
     .update()

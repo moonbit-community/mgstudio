@@ -47,7 +47,9 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let ready_event_count = Ref(0)
   let ready_entity_matches_root = Ref(false)
 
-  @app.App::new(@ecs.World::new())
+  let lifecycle_world_26_0 = @ecs.World::new()
+  defer lifecycle_world_26_0.close()
+  @app.App::new(lifecycle_world_26_0)
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
@@ -186,7 +188,9 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   let new_child_count = Ref(0)
   let new_child_x = Ref(0.0)
 
-  @app.App::new(@ecs.World::new())
+  let lifecycle_world_179_0 = @ecs.World::new()
+  defer lifecycle_world_179_0.close()
+  @app.App::new(lifecycle_world_179_0)
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   .add_plugins(@shader.ShaderPlugin::ShaderPlugin())

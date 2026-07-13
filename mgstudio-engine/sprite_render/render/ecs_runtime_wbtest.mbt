@@ -260,7 +260,9 @@ fn test_image_material_handle(
 
 ///|
 test "render2d: Sprite tuple spawn inserts required components" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_261_0 = @ecs.World::new()
+  defer lifecycle_world_261_0.close()
+  let app = @app.App::new(lifecycle_world_261_0).add_plugins(
     @visibility.VisibilityPlugin::VisibilityPlugin(),
   )
   let world = app.world()
@@ -319,7 +321,9 @@ test "render2d: Commands can spawn Sprite component tuples" {
   let spawned : Ref[@core.Entity?] = Ref(None)
   let transform = @transform.Transform::identity()
   let layers = @camera_render_layers.RenderLayers::layer(2)
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_317_0 = @ecs.World::new()
+  defer lifecycle_world_317_0.close()
+  let mut app = @app.App::new(lifecycle_world_317_0).add_plugins(
     @visibility.VisibilityPlugin::VisibilityPlugin(),
   )
   ensure_render2d_required_components(app.world())
@@ -675,7 +679,9 @@ test "render2d: Mesh2d tuple spawn inserts expected components" {
 
 ///|
 test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache component" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_676_0 = @ecs.World::new()
+  defer lifecycle_world_676_0.close()
+  let mut app = @app.App::new(lifecycle_world_676_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -734,7 +740,9 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
 
 ///|
 test "render2d: bloom2d scene queues bright sprite and color material meshes" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_735_0 = @ecs.World::new()
+  defer lifecycle_world_735_0.close()
+  let mut app = @app.App::new(lifecycle_world_735_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -816,7 +824,9 @@ test "render2d: bloom2d scene queues bright sprite and color material meshes" {
 
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_817_0 = @ecs.World::new()
+  defer lifecycle_world_817_0.close()
+  let mut app = @app.App::new(lifecycle_world_817_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@sprite.SpritePlugin::SpritePlugin())
@@ -855,7 +865,9 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Mesh2d" {
 
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_856_0 = @ecs.World::new()
+  defer lifecycle_world_856_0.close()
+  let mut app = @app.App::new(lifecycle_world_856_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@sprite.SpritePlugin::SpritePlugin())
@@ -889,7 +901,9 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
 
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_890_0 = @ecs.World::new()
+  defer lifecycle_world_890_0.close()
+  let mut app = @app.App::new(lifecycle_world_890_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@sprite.SpritePlugin::SpritePlugin())
@@ -926,7 +940,9 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
 
 ///|
 test "sprite: Sprite and @sprite.SpriteMesh install Bevy required components" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_927_0 = @ecs.World::new()
+  defer lifecycle_world_927_0.close()
+  let mut app = @app.App::new(lifecycle_world_927_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@sprite.SpritePlugin::SpritePlugin())
@@ -970,7 +986,9 @@ test "sprite: Sprite and @sprite.SpriteMesh install Bevy required components" {
 
 ///|
 test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for @sprite.SpriteMesh" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_971_0 = @ecs.World::new()
+  defer lifecycle_world_971_0.close()
+  let mut app = @app.App::new(lifecycle_world_971_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@sprite.SpritePlugin::SpritePlugin())
@@ -1003,7 +1021,9 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for @sprite.SpriteMe
 
 ///|
 test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1004_0 = @ecs.World::new()
+  defer lifecycle_world_1004_0.close()
+  let mut app = @app.App::new(lifecycle_world_1004_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1044,7 +1064,9 @@ test "render2d: SpriteMeshPlugin adds quad Mesh2d and SpriteMaterial" {
 
 ///|
 test "sprite: compute_pixel_space_point follows Bevy texture-coordinate convention" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_1045_0 = @ecs.World::new()
+  defer lifecycle_world_1045_0.close()
+  let app = @app.App::new(lifecycle_world_1045_0).add_plugins(
     @asset.AssetPlugin::AssetPlugin(),
   )
   let world = app.world()
@@ -1090,7 +1112,9 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
 ///|
 test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d stores the material handle directly" {
   let matched : Ref[Bool?] = Ref(None)
-  @app.App::new(@ecs.World::new())
+  let lifecycle_world_1090_0 = @ecs.World::new()
+  defer lifecycle_world_1090_0.close()
+  @app.App::new(lifecycle_world_1090_0)
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1110,7 +1134,9 @@ test "render2d: @sprite_render_mesh2d_material.MeshMaterial2d stores the materia
 
 ///|
 test "render2d: ColorMaterialPlugin initializes the Bevy default material handle" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1111_0 = @ecs.World::new()
+  defer lifecycle_world_1111_0.close()
+  let app = @app.App::new(lifecycle_world_1111_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1143,7 +1169,9 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1138_0 = @ecs.World::new()
+  defer lifecycle_world_1138_0.close()
+  let app = @app.App::new(lifecycle_world_1138_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1238,7 +1266,9 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     .with_asset_init(fn() { dummy_material_asset() })
     .with_vertex_shader("sprite_render/mesh2d/mesh2d.wgsl")
     .with_fragment_shader("shaders/custom_material_2d.wgsl")
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1226_0 = @ecs.World::new()
+  defer lifecycle_world_1226_0.close()
+  let mut app = @app.App::new(lifecycle_world_1226_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1404,7 +1434,9 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
     @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial]?,
   ] = Ref(None)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1400_0 = @ecs.World::new()
+  defer lifecycle_world_1400_0.close()
+  let mut app = @app.App::new(lifecycle_world_1400_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1447,7 +1479,9 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     @asset.Handle[@sprite_render_mesh2d_color_material.ColorMaterial]?,
   ] = Ref(None)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1444_0 = @ecs.World::new()
+  defer lifecycle_world_1444_0.close()
+  let mut app = @app.App::new(lifecycle_world_1444_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
@@ -1550,7 +1584,9 @@ test "render2d: @sprite_render_mesh2d_color_material.ColorMaterial constructors 
     None,
   )
 
-  @app.App::new(@ecs.World::new())
+  let lifecycle_world_1541_0 = @ecs.World::new()
+  defer lifecycle_world_1541_0.close()
+  @app.App::new(lifecycle_world_1541_0)
   .add_plugins(@asset.AssetPlugin::AssetPlugin())
   .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   .add_plugins(@renderer.RenderPlugin::RenderPlugin())

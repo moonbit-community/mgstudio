@@ -15,8 +15,10 @@
 ///|
 test "render/texture: bevy tonemapping ktx2 assets upload as 3d textures" {
   register_asset_texture_backend()
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
   let handle : @asset.Handle[@asset.Image] = @asset.asset_with_world(
-    @ecs.World::new(),
+    lifecycle_world_15_0,
     fn() {
       @asset.AssetServer::new().load(
         "textures/tonemapping/AgX-default_contrast.ktx2",
@@ -40,8 +42,10 @@ test "render/texture: bevy fog volume density asset reaches volumetric fog textu
   let backend = @renderer.GpuBackend::new(assets_base="assets")
   @renderer.render_context_set_backend_for_test(Some(backend))
   register_asset_texture_backend()
+  let lifecycle_world_38_0 = @ecs.World::new()
+  defer lifecycle_world_38_0.close()
   let handle : @asset.Handle[@asset.Image] = @asset.asset_with_world(
-    @ecs.World::new(),
+    lifecycle_world_38_0,
     fn() { @asset.AssetServer::new().load("volumes/bunny.ktx2") },
   )
   let texture_id = handle.id()

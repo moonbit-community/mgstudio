@@ -22,7 +22,9 @@ test "pbr deferred: depth id clamps to byte range" {
 
 ///|
 test "pbr deferred: plugin inserts default depth id for deferred prepass entity" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_23_0 = @ecs.World::new()
+  defer lifecycle_world_23_0.close()
+  let mut app = @app.App::new(lifecycle_world_23_0).add_plugins(
     @deferred.DeferredPbrLightingPlugin::DeferredPbrLightingPlugin(),
   )
   let world = app.world()
@@ -43,7 +45,9 @@ test "pbr deferred: plugin inserts default depth id for deferred prepass entity"
 
 ///|
 test "pbr deferred: plugin keeps explicit depth id value" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_44_0 = @ecs.World::new()
+  defer lifecycle_world_44_0.close()
+  let mut app = @app.App::new(lifecycle_world_44_0).add_plugins(
     @deferred.DeferredPbrLightingPlugin::DeferredPbrLightingPlugin(),
   )
   let world = app.world()

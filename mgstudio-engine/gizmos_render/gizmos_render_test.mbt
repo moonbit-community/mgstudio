@@ -53,7 +53,9 @@ test "gizmos_render embedded wgsl sources are registered" {
 
 ///|
 test "gizmos_render boundary exposes render systems and plugin entry" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_54_0 = @ecs.World::new()
+  defer lifecycle_world_54_0.close()
+  let app = @app.App::new(lifecycle_world_54_0)
   let _ = @gizmos_render.gizmo_render_plugin(app)
   let _set2d = @gizmos_render.gizmo_render_system_set(
     @gizmos_render.GizmoRenderSystems::QueueLineGizmos2d,

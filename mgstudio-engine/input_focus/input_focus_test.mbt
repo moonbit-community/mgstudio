@@ -114,7 +114,9 @@ fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
 
 ///|
 test "input_focus runtime plugin initializes resources and focused message queues" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_115_0 = @ecs.World::new()
+  defer lifecycle_world_115_0.close()
+  let app = @app.App::new(lifecycle_world_115_0)
     .add_message(@input.KeyboardInput::message())
     .add_message(@input.GamepadButtonChangedEvent::message())
     .add_message(@input.MouseWheel::message())
@@ -140,8 +142,10 @@ test "input_focus runtime plugin initializes resources and focused message queue
 
 ///|
 test "input_focus runtime sets initial focus to primary window" {
+  let lifecycle_world_141_0 = @ecs.World::new()
+  defer lifecycle_world_141_0.close()
   let app = @window.window_plugin_with(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_141_0)
     .add_message(@input.KeyboardInput::message())
     .add_message(@input.GamepadButtonChangedEvent::message())
     .add_message(@input.MouseWheel::message())

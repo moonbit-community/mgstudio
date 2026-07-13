@@ -15,7 +15,9 @@
 ///|
 test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig can be accessed through ResMut" {
   let observed : Ref[Bool?] = Ref(None)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = @app.App::new(lifecycle_world_15_0)
     .insert_resource(
       @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::Wireframe2dConfig(),
     )
@@ -43,7 +45,9 @@ test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig can be accesse
 ///|
 test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin applies @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe material handles" {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_43_0 = @ecs.World::new()
+  defer lifecycle_world_43_0.close()
+  let app = @app.App::new(lifecycle_world_43_0)
     .insert_resource(
       @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::new(
         true,
@@ -88,7 +92,9 @@ test "sprite: @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin applies @sprit
 ///|
 test "sprite: explicit @sprite_render_mesh2d_wireframe2d.Wireframe2d inserts material after query iteration" {
   let entity_ref : Ref[@core.Entity?] = Ref(None)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_88_0 = @ecs.World::new()
+  defer lifecycle_world_88_0.close()
+  let app = @app.App::new(lifecycle_world_88_0)
     .insert_resource(
       @sprite_render_mesh2d_wireframe2d.Wireframe2dConfig::new(
         false,

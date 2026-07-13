@@ -173,7 +173,9 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_cursor.visible = false
   configured_cursor.grab_mode = CursorGrabMode::GrabLocked
 
-  let app = window_plugin_with(@app.App::new(@ecs.World::new()), WindowPlugin::{
+  let lifecycle_world_151_0 = @ecs.World::new()
+  defer lifecycle_world_151_0.close()
+  let app = window_plugin_with(@app.App::new(lifecycle_world_151_0), WindowPlugin::{
     primary_window: Some(configured_window),
     primary_cursor_options: Some(configured_cursor),
     exit_condition: ExitCondition::DontExit,
@@ -572,7 +574,9 @@ test "window: scale-factor helper prefers override over observed host scale" {
   configured_window.resolution.set_scale_factor_override(Some(1.0F))
   let seen_scale_factor : Ref[Float] = Ref(0.0F)
 
-  let app = window_plugin_with(@app.App::new(@ecs.World::new()), WindowPlugin::{
+  let lifecycle_world_568_0 = @ecs.World::new()
+  defer lifecycle_world_568_0.close()
+  let app = window_plugin_with(@app.App::new(lifecycle_world_568_0), WindowPlugin::{
     primary_window: Some(configured_window),
     primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
     exit_condition: ExitCondition::DontExit,
@@ -599,7 +603,9 @@ test "window: scale-factor helper prefers override over observed host scale" {
 
 ///|
 test "window: plugin does not own backend window synchronization" {
-  let app = window_plugin(@app.App::new(@ecs.World::new())).run_once()
+  let lifecycle_world_600_0 = @ecs.World::new()
+  defer lifecycle_world_600_0.close()
+  let app = window_plugin(@app.App::new(lifecycle_world_600_0)).run_once()
   debug_inspect(read_window_created(app.world()).length(), content="0")
 }
 
@@ -633,7 +639,9 @@ test "window: close_when_requested marks windows without immediate despawn" {
 
 ///|
 test "window: exit_on_all_closed sends AppExit when no windows remain" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_634_0 = @ecs.World::new()
+  defer lifecycle_world_634_0.close()
+  let mut app = @app.App::new(lifecycle_world_634_0)
     .add_message(@app.AppExit::message())
     .add_systems(@app.PostUpdate, @app.system_config_param2(exit_on_all_closed))
 

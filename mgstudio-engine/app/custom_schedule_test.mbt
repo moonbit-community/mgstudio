@@ -22,7 +22,9 @@ test "app: custom schedules can be inserted into main schedule order" {
   let update_schedule = Schedule::new(single_threaded_update).set_executor_kind(
     SingleThreaded,
   )
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let mut app = App::new(lifecycle_world_15_0)
     .add_schedule(update_schedule)
     .add_schedule(startup_schedule)
 
@@ -80,7 +82,9 @@ test "app: schedule surface keeps configured executor kind" {
 
 ///|
 test "app: main/fixed main/run fixed loop default to single threaded executors" {
-  let sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_81_0 = @ecs.World::new()
+  defer lifecycle_world_81_0.close()
+  let sub_app = SubApp::new(lifecycle_world_81_0)
   debug_inspect(
     sub_app.get_schedule_executor_kind(Main),
     content="SingleThreaded",
@@ -127,7 +131,9 @@ pub impl Resource for MissingRunIfParityResource with fn resource() {
 test "app: multithreaded schedules defer Commands until the compatible batch ends" {
   let stage = schedule_label("DeferredBatchingUpdate")
   let observed : Array[Int] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_126_0 = @ecs.World::new()
+  defer lifecycle_world_126_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_126_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(MultiThreaded))
     .add_systems(
@@ -159,7 +165,9 @@ test "app: multithreaded schedules defer Commands until the compatible batch end
 test "app: single-threaded schedules do not auto-apply Commands without deferred dependencies" {
   let stage = schedule_label("ImmediateBatchingUpdate")
   let observed : Array[Int] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_158_0 = @ecs.World::new()
+  defer lifecycle_world_158_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_158_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -201,7 +209,9 @@ test "app: auto_insert_apply_deferred inserts apply boundary for chained deferre
   ) {
     observed.push(query.count())
   })
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_190_0 = @ecs.World::new()
+  defer lifecycle_world_190_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_190_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(stage, chain((deferred_system, read_system)))
@@ -233,7 +243,9 @@ test "app: disabling auto_insert_apply_deferred removes automatic apply boundari
   ) {
     observed.push(query.count())
   })
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_219_0 = @ecs.World::new()
+  defer lifecycle_world_219_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_219_0)
     .set_update_schedule(Some(stage))
     .add_schedule(
       Schedule::new(stage)
@@ -266,7 +278,9 @@ test "app: chain_ignore_deferred keeps chained deferred systems in one buffer ep
   ) {
     observed.push(query.count())
   })
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_255_0 = @ecs.World::new()
+  defer lifecycle_world_255_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_255_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -301,7 +315,9 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
   ) {
     observed.push(query.count())
   })
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_287_0 = @ecs.World::new()
+  defer lifecycle_world_287_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_287_0)
     .set_update_schedule(Some(stage))
     .add_schedule(
       Schedule::new(stage)
@@ -327,13 +343,17 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
 test "app: deferred command batches are scoped to the executing world" {
   let outer_stage = schedule_label("DeferredBatchOuterWorld")
   let inner_stage = schedule_label("DeferredBatchInnerWorld")
+  let lifecycle_world_326_0 = @ecs.World::new()
+  defer lifecycle_world_326_0.close()
   let nested_ref : Ref[SubApp[@ecs.World]] = Ref(
-    SubApp::new(@ecs.World::new())
+    SubApp::new(lifecycle_world_326_0)
     .set_update_schedule(Some(inner_stage))
     .add_schedule(Schedule::new(inner_stage).set_executor_kind(SingleThreaded))
     .add_systems(inner_stage, system(fn(_world : @ecs.World) { () })),
   )
-  let mut outer_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_326_1 = @ecs.World::new()
+  defer lifecycle_world_326_1.close()
+  let mut outer_app = SubApp::new(lifecycle_world_326_1)
     .set_update_schedule(Some(outer_stage))
     .add_schedule(Schedule::new(outer_stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -382,7 +402,9 @@ test "app: configure_sets before_ignore_deferred preserves order without forcing
   ) {
     observed.push(query.count())
   }).in_set(set_b)
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_369_0 = @ecs.World::new()
+  defer lifecycle_world_369_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_369_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(stage, deferred_system)
@@ -405,7 +427,9 @@ test "app: do_not_consider_ignore_deferred_before_exclusive_system" {
   let observed : Array[Int] = []
   let set_a = system_set("IgnoreDeferredExclusive.A")
   let set_b = system_set("IgnoreDeferredExclusive.B")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_402_0 = @ecs.World::new()
+  defer lifecycle_world_402_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_402_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -437,7 +461,9 @@ test "app: bubble_sync_point_through_ignore_deferred_node" {
   let set_a = system_set("BubbleSync.A")
   let set_b = system_set("BubbleSync.B")
   let set_c = system_set("BubbleSync.C")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_433_0 = @ecs.World::new()
+  defer lifecycle_world_433_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_433_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -470,7 +496,9 @@ test "app: explicit_sync_point_used_as_auto_sync_point" {
   let set_a = system_set("ExplicitSyncReuse.A")
   let set_b = system_set("ExplicitSyncReuse.B")
   let set_c = system_set("ExplicitSyncReuse.C")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_466_0 = @ecs.World::new()
+  defer lifecycle_world_466_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_466_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -513,7 +541,9 @@ test "app: conditional_explicit_sync_point_not_used_as_auto_sync_point" {
   let set_a = system_set("ConditionalSync.A")
   let set_b = system_set("ConditionalSync.B")
   let set_c = system_set("ConditionalSync.C")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_509_0 = @ecs.World::new()
+  defer lifecycle_world_509_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_509_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -562,7 +592,9 @@ test "app: conditional explicit sync point in child set is not reused as auto sy
   let set_b = system_set("ConditionalNestedSync.B")
   let set_c = system_set("ConditionalNestedSync.C")
   let parent_set = system_set("ConditionalNestedSync.Parent")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_557_0 = @ecs.World::new()
+  defer lifecycle_world_557_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_557_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -605,7 +637,9 @@ test "app: set run_if evaluates once per run and gates all systems in the set" {
   let gated_set = system_set("SetRunIf.Once")
   let condition_eval_count = Ref(0)
   let executed : Array[String] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_602_0 = @ecs.World::new()
+  defer lifecycle_world_602_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_602_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -636,7 +670,9 @@ test "app: set run_if evaluates once per run and gates all systems in the set" {
 test "app: disabling apply_final_deferred keeps deferred commands pending until a later apply" {
   let enqueue_stage = schedule_label("NoFinalDeferredFlush.Enqueue")
   let flush_stage = schedule_label("NoFinalDeferredFlush.Flush")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_635_0 = @ecs.World::new()
+  defer lifecycle_world_635_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_635_0)
     .set_update_schedule(Some(enqueue_stage))
     .add_schedule(
       Schedule::new(enqueue_stage)
@@ -670,7 +706,9 @@ test "app: disabling apply_final_deferred keeps deferred commands pending until 
 ///|
 test "app: add_schedule reinserts and replaces previous schedule content" {
   let stage = schedule_label("ReinsertScheduleReplacesContent")
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_670_0 = @ecs.World::new()
+  defer lifecycle_world_670_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_670_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -703,7 +741,9 @@ test "app: add_schedule reinserts and replaces previous schedule content" {
 test "app: system run_if evaluates all conditions without short-circuiting" {
   let second_condition_seen : Array[Int] = []
   let system_runs = Ref(0)
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_702_0 = @ecs.World::new()
+  defer lifecycle_world_702_0.close()
+  let app = App::new(lifecycle_world_702_0).add_system_config(
     system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
     .run_if(fn(_world : @ecs.World) { false })
     .run_if_stateful(0, fn(
@@ -730,7 +770,9 @@ test "app: set run_if evaluates all conditions without short-circuiting and cach
   let set_a = system_set("SetRunIf.NoShortCircuit")
   let second_condition_seen : Array[Int] = []
   let system_runs : Array[String] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_727_0 = @ecs.World::new()
+  defer lifecycle_world_727_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_727_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -773,7 +815,9 @@ test "app: failed set run_if does not skip other set or system conditions" {
   let set_b_condition_hits : Array[Int] = []
   let system_condition_hits : Array[Int] = []
   let system_runs : Array[String] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_768_0 = @ecs.World::new()
+  defer lifecycle_world_768_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_768_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -821,7 +865,9 @@ test "app: failed set run_if marks remaining set systems completed" {
   let first_system_condition_hits : Array[Int] = []
   let second_system_condition_hits : Array[Int] = []
   let system_runs : Array[String] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_817_0 = @ecs.World::new()
+  defer lifecycle_world_817_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_817_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -871,7 +917,9 @@ test "app: runtime-invalid system is still scheduled and validated during execut
   let run_if_hits = Ref(0)
   let body_runs = Ref(0)
   let follower_runs = Ref(0)
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_867_0 = @ecs.World::new()
+  defer lifecycle_world_867_0.close()
+  let app = App::new(lifecycle_world_867_0)
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
     })
@@ -907,7 +955,9 @@ test "app: statically invalid system stays in order and evaluates conditions bef
   let run_if_hits = Ref(0)
   let body_runs = Ref(0)
   let follower_runs = Ref(0)
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_904_0 = @ecs.World::new()
+  defer lifecycle_world_904_0.close()
+  let app = App::new(lifecycle_world_904_0)
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
     })
@@ -958,7 +1008,9 @@ test "app: consecutive deferred chain inserts one sync point per deferred edge" 
   ) {
     ()
   }).named("tests.reader")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_943_0 = @ecs.World::new()
+  defer lifecycle_world_943_0.close()
+  let app = App::new(lifecycle_world_943_0)
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(stage, chain((command_a, command_b, reader)))
 
@@ -982,7 +1034,9 @@ test "app: chain run_if is a collective set condition evaluated once" {
   let stage = schedule_label("ChainCollectiveRunIf")
   let condition_hits = Ref(0)
   let system_runs : Array[String] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_980_0 = @ecs.World::new()
+  defer lifecycle_world_980_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_980_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -1011,7 +1065,9 @@ test "app: parent set run_if is evaluated before child set run_if" {
   let parent = system_set("ParentBeforeChild.Parent")
   let child = system_set("ParentBeforeChild.Child")
   let log : Array[String] = []
-  let mut sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_1008_0 = @ecs.World::new()
+  defer lifecycle_world_1008_0.close()
+  let mut sub_app = SubApp::new(lifecycle_world_1008_0)
     .set_update_schedule(Some(stage))
     .add_schedule(Schedule::new(stage).set_executor_kind(SingleThreaded))
     .add_systems(
@@ -1042,7 +1098,9 @@ test "app: ordered overlapping sets fail schedule build" {
   let set_a = system_set("OrderedOverlappingSets.A")
   let set_b = system_set("OrderedOverlappingSets.B")
   let validation_kinds : Array[ErrorContextKind] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1039_0 = @ecs.World::new()
+  defer lifecycle_world_1039_0.close()
+  let mut app = App::new(lifecycle_world_1039_0)
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
     })
@@ -1071,7 +1129,9 @@ test "app: hierarchy redundancy can be promoted to build error" {
   let settings = ScheduleBuildSettings::new().set_hierarchy_detection(
     ScheduleBuildError,
   )
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1064_0 = @ecs.World::new()
+  defer lifecycle_world_1064_0.close()
+  let mut app = App::new(lifecycle_world_1064_0)
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
     })
@@ -1099,7 +1159,9 @@ test "app: ambiguity detection can be promoted to build error" {
   let settings = ScheduleBuildSettings::new().set_ambiguity_detection(
     ScheduleBuildError,
   )
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1095_0 = @ecs.World::new()
+  defer lifecycle_world_1095_0.close()
+  let mut app = App::new(lifecycle_world_1095_0)
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
     })
@@ -1138,7 +1200,9 @@ test "app: allowed ambiguous resource suppresses resource ambiguity" {
     ScheduleBuildError,
   )
   let key : @ecs.ResourceKey[MissingRunIfParityResource] = MissingRunIfParityResource::resource()
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1133_0 = @ecs.World::new()
+  defer lifecycle_world_1133_0.close()
+  let mut app = App::new(lifecycle_world_1133_0)
     .set_error_handler(fn(_error, context) {
       validation_kinds.push(context.kind())
     })

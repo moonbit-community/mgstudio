@@ -40,7 +40,9 @@ test "app: Local persists independently per system instance" {
   let seen_first : Array[Int] = []
   let seen_second : Array[Int] = []
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_38_0 = @ecs.World::new()
+  defer lifecycle_world_38_0.close()
+  let mut app = App::new(lifecycle_world_38_0)
     .add_system_param(fn(local_state : Local[LocalCounter]) {
       let state = local_state.get()
       state.value = state.value + 1
@@ -65,7 +67,9 @@ test "app: Local persists independently per system instance" {
 test "app: Local Array FromWorld starts empty and persists" {
   let lengths : Array[Int] = []
 
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_64_0 = @ecs.World::new()
+  defer lifecycle_world_64_0.close()
+  let mut app = App::new(lifecycle_world_64_0).add_system_param(fn(
     local_state : Local[Array[Int]],
   ) {
     let state = local_state.get()
@@ -86,7 +90,9 @@ test "app: Local primitive FromWorld defaults are available" {
   let seen_elapsed_ok : Array[Bool] = []
   let seen_labels : Array[String] = []
 
-  let mut app = App::new(@ecs.World::new()).add_system_param3(fn(
+  let lifecycle_world_83_0 = @ecs.World::new()
+  defer lifecycle_world_83_0.close()
+  let mut app = App::new(lifecycle_world_83_0).add_system_param3(fn(
     counter : Local[Int],
     elapsed : Local[Float],
     label : Local[String],
@@ -114,7 +120,9 @@ test "app: Local primitive FromWorld defaults are available" {
 test "app: ParamSet2 keeps each nested SystemParam state independently" {
   let seen : Array[(Int, Int)] = []
 
-  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_113_0 = @ecs.World::new()
+  defer lifecycle_world_113_0.close()
+  let mut app = App::new(lifecycle_world_113_0).add_system_param(fn(
     params : ParamSet2[Local[LocalCounter], Local[LocalCounter]],
   ) {
     let first = params.p0()
@@ -140,7 +148,9 @@ test "app: RemovedComponents typed system param observes fresh removals" {
   let observed_lengths : Array[Int] = []
   let observed_entities : Array[Bool] = []
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_137_0 = @ecs.World::new()
+  defer lifecycle_world_137_0.close()
+  let mut app = App::new(lifecycle_world_137_0)
     .add_startup_system(fn(world) {
       let entity = world.spawn()
       entity_ref.val = entity

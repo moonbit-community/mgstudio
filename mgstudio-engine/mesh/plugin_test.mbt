@@ -59,7 +59,9 @@ fn test_mesh2d_asset(width : Float, height : Float) -> Mesh {
 
 ///|
 test "mesh plugin: initializes mesh and skinned-inverse-bindposes asset resources" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_60_0 = @ecs.World::new()
+  defer lifecycle_world_60_0.close()
+  let app = @app.App::new(lifecycle_world_60_0).add_plugins(
     @mesh.MeshPlugin::MeshPlugin(),
   )
   let mesh_assets_key : @ecs.ResourceKey[@asset.Assets[Mesh]] = @asset.assets_resource_key()
@@ -75,7 +77,9 @@ test "mesh plugin: initializes mesh and skinned-inverse-bindposes asset resource
 
 ///|
 test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh changed" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_76_0 = @ecs.World::new()
+  defer lifecycle_world_76_0.close()
+  let mut app = @app.App::new(lifecycle_world_76_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
@@ -121,7 +125,9 @@ test "mesh plugin: modified SkinnedMeshInverseBindposes marks SkinnedMesh change
 
 ///|
 test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark SkinnedMesh changed" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_122_0 = @ecs.World::new()
+  defer lifecycle_world_122_0.close()
+  let mut app = @app.App::new(lifecycle_world_122_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
@@ -152,7 +158,9 @@ test "mesh plugin: non-modified SkinnedMeshInverseBindposes does not mark Skinne
 
 ///|
 test "mesh plugin: modified Mesh marks Mesh2d changed" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_153_0 = @ecs.World::new()
+  defer lifecycle_world_153_0.close()
+  let mut app = @app.App::new(lifecycle_world_153_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
@@ -183,7 +191,9 @@ test "mesh plugin: modified Mesh marks Mesh2d changed" {
 
 ///|
 test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_184_0 = @ecs.World::new()
+  defer lifecycle_world_184_0.close()
+  let mut app = @app.App::new(lifecycle_world_184_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
@@ -207,7 +217,9 @@ test "mesh plugin: non-modified Mesh does not mark Mesh2d changed" {
 
 ///|
 test "mesh plugin: Mesh2d and Mesh3d require Transform" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_208_0 = @ecs.World::new()
+  defer lifecycle_world_208_0.close()
+  let app = @app.App::new(lifecycle_world_208_0).add_plugins(
     @mesh.MeshPlugin::MeshPlugin(),
   )
   let world = app.world()
@@ -229,7 +241,9 @@ test "mesh plugin: Mesh2d and Mesh3d require Transform" {
 
 ///|
 test "mesh plugin: Mesh3d transform requirement cascades to GlobalTransform" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_230_0 = @ecs.World::new()
+  defer lifecycle_world_230_0.close()
+  let app = @app.App::new(lifecycle_world_230_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()
@@ -257,7 +271,9 @@ test "mesh plugin: Mesh3d transform requirement cascades to GlobalTransform" {
 
 ///|
 test "mesh plugin: batch writers keep explicit Transform requirements" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_258_0 = @ecs.World::new()
+  defer lifecycle_world_258_0.close()
+  let app = @app.App::new(lifecycle_world_258_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
   let world = app.world()

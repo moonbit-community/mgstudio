@@ -14,7 +14,9 @@
 
 ///|
 test "examples ecs state_scoped: scheduled update queues UI overlay for Camera3d" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let mut app = @app.App::new(lifecycle_world_15_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_state(GameState::default())
     .insert_resource(TickTock::{

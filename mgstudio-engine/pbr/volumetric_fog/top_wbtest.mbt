@@ -16,7 +16,9 @@
 test "pbr volumetric fog: Bevy Core3d order is MainPass then volumetric_fog then EarlyPostProcess" {
   let log : Array[String] = []
   let graph_stage = @render.RenderGraph::schedule()
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_15_0)
     .set_update_schedule(Some(graph_stage))
     .add_schedule(@render.RenderGraph::base_schedule())
   let fog_assets = FogAssets::new(@asset.Handle::new(1), @asset.Handle::new(2))

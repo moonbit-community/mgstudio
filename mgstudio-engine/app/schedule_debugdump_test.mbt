@@ -14,7 +14,9 @@
 
 ///|
 test "app schedule graph dot includes filtered system order for stage" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = App::new(lifecycle_world_15_0)
     .add_systems(
       PostUpdate,
       system(fn(_world : @ecs.World) { () }).named("tests.a"),
@@ -52,7 +54,9 @@ test "app schedule graph dot includes auto apply deferred system node" {
   let reader_system = system(fn(_world : @ecs.World) { () }).named(
     "tests.reader",
   )
-  let app = App::new(@ecs.World::new()).add_systems(
+  let lifecycle_world_45_0 = @ecs.World::new()
+  defer lifecycle_world_45_0.close()
+  let app = App::new(lifecycle_world_45_0).add_systems(
     PostUpdate,
     chain((deferred_system, reader_system)),
   )

@@ -14,7 +14,9 @@
 
 ///|
 test "camera plugin: installs visibility and visibility-range plugins" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let mut app = @app.App::new(lifecycle_world_15_0).add_plugins(
     CameraPlugin::CameraPlugin(),
   )
   debug_inspect(
@@ -45,7 +47,9 @@ test "camera plugin: installs visibility and visibility-range plugins" {
 
 ///|
 test "camera plugin: owns Camera3d color grading and exposure requirements" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_46_0 = @ecs.World::new()
+  defer lifecycle_world_46_0.close()
+  let app = @app.App::new(lifecycle_world_46_0).add_plugins(
     CameraPlugin::CameraPlugin(),
   )
   let world = app.world()
@@ -65,7 +69,9 @@ test "camera plugin: owns Camera3d color grading and exposure requirements" {
 
 ///|
 test "camera plugin: owns Camera2d authoring required components" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_66_0 = @ecs.World::new()
+  defer lifecycle_world_66_0.close()
+  let app = @app.App::new(lifecycle_world_66_0).add_plugins(
     CameraPlugin::CameraPlugin(),
   )
   let world = app.world()
@@ -105,7 +111,9 @@ test "camera plugin: owns Camera2d authoring required components" {
 
 ///|
 test "camera plugin: owns Camera required components" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_106_0 = @ecs.World::new()
+  defer lifecycle_world_106_0.close()
+  let app = @app.App::new(lifecycle_world_106_0).add_plugins(
     CameraPlugin::CameraPlugin(),
   )
   let world = app.world()
@@ -158,7 +166,9 @@ test "camera plugin: owns Camera required components" {
 
 ///|
 test "camera projection plugin: updates frustum when transform changes" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_159_0 = @ecs.World::new()
+  defer lifecycle_world_159_0.close()
+  let mut app = @app.App::new(lifecycle_world_159_0).add_plugins(
     CameraProjectionPlugin::CameraProjectionPlugin(),
   )
   let world = app.world()

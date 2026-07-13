@@ -447,7 +447,9 @@ pub fn compute_slices_on_asset_event_system(
 ///|
 test "sprite: computed texture slice insertion is deferred until after sprite query" {
   let spawned : Ref[@core.Entity?] = Ref(None)
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_447_0 = @ecs.World::new()
+  defer lifecycle_world_447_0.close()
+  let mut app = @app.App::new(lifecycle_world_447_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_startup_system_param2(fn(
       commands : @app.Commands,

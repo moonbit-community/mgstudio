@@ -38,7 +38,9 @@ fn read_log_diagnostics_state_test_resource(
 
 ///|
 test "diagnostics: log diagnostics timer advances with real time" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_39_0 = @ecs.World::new()
+  defer lifecycle_world_39_0.close()
+  let mut app = @app.App::new(lifecycle_world_39_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(LogDiagnosticsPlugin::LogDiagnosticsPlugin())
@@ -67,9 +69,11 @@ test "diagnostics: log diagnostics timer advances with real time" {
 
 ///|
 test "diagnostics: log diagnostics sorts output by path lexicographically" {
+  let lifecycle_world_68_0 = @ecs.World::new()
+  defer lifecycle_world_68_0.close()
   let app = register_diagnostic(
     register_diagnostic(
-      @app.App::new(@ecs.World::new()).add_plugins(
+      @app.App::new(lifecycle_world_68_0).add_plugins(
         DiagnosticsPlugin::DiagnosticsPlugin(),
       ),
       Diagnostic::new(DiagnosticPath::const_new("z.path")),

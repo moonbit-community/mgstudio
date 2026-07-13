@@ -14,7 +14,9 @@
 
 ///|
 test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = @app.App::new(lifecycle_world_15_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())

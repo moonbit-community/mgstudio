@@ -15,7 +15,9 @@
 ///|
 test "pbr: WireframeConfig can be accessed through ResMut" {
   let observed : Ref[Bool?] = Ref(None)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = @app.App::new(lifecycle_world_15_0)
     .insert_resource(WireframeConfig::WireframeConfig())
     .add_system_param(fn(config : @app.ResMut[WireframeConfig]) {
       observed.val = Some(config.get().global)
@@ -74,7 +76,9 @@ test "pbr: WireframeMaterial is an asset-backed authoring material" {
 
 ///|
 test "pbr: WireframePlugin initializes config and specialization resources" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_75_0 = @ecs.World::new()
+  defer lifecycle_world_75_0.close()
+  let app = @app.App::new(lifecycle_world_75_0).add_plugins(
     WireframePlugin::WireframePlugin(),
   )
   app.run_startup() |> ignore
@@ -122,7 +126,9 @@ fn wireframe_material_for_entity(
 
 ///|
 test "pbr: WireframePlugin applies explicit wireframe material in PostUpdate" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_123_0 = @ecs.World::new()
+  defer lifecycle_world_123_0.close()
+  let app = @app.App::new(lifecycle_world_123_0).add_plugins(
     WireframePlugin::WireframePlugin(),
   )
   app.run_startup() |> ignore
@@ -158,7 +164,9 @@ test "pbr: WireframePlugin applies explicit wireframe material in PostUpdate" {
 
 ///|
 test "pbr: WireframePlugin applies global wireframe material to Mesh3d entities" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_159_0 = @ecs.World::new()
+  defer lifecycle_world_159_0.close()
+  let app = @app.App::new(lifecycle_world_159_0)
     .insert_resource(
       WireframeConfig::new(
         true,
@@ -189,7 +197,9 @@ test "pbr: WireframePlugin applies global wireframe material to Mesh3d entities"
 
 ///|
 test "pbr: WireframePlugin removes Mesh3dWireframe for NoWireframe entities" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_190_0 = @ecs.World::new()
+  defer lifecycle_world_190_0.close()
+  let app = @app.App::new(lifecycle_world_190_0)
     .insert_resource(
       WireframeConfig::new(
         true,
@@ -224,7 +234,9 @@ test "pbr: WireframePlugin removes Mesh3dWireframe for NoWireframe entities" {
 ///|
 test "pbr: WireframePlugin refreshes global material when config changes" {
   let frame = Ref(0)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_224_0 = @ecs.World::new()
+  defer lifecycle_world_224_0.close()
+  let app = @app.App::new(lifecycle_world_224_0)
     .insert_resource(
       WireframeConfig::new(
         true,
@@ -274,7 +286,9 @@ test "pbr: WireframePlugin refreshes explicit material when color changes" {
   let frame = Ref(0)
   let target : Ref[@core.Entity?] = Ref(None)
   let updated_seen = Ref(false)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_272_0 = @ecs.World::new()
+  defer lifecycle_world_272_0.close()
+  let app = @app.App::new(lifecycle_world_272_0)
     .add_plugins(WireframePlugin::WireframePlugin())
     .add_systems_world(@app.Update, fn(world) {
       if frame.val == 1 {
@@ -319,7 +333,9 @@ test "pbr: WireframePlugin removes internal material when Wireframe is removed" 
   let frame = Ref(0)
   let target : Ref[@core.Entity?] = Ref(None)
   let removed_seen = Ref(false)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_317_0 = @ecs.World::new()
+  defer lifecycle_world_317_0.close()
+  let app = @app.App::new(lifecycle_world_317_0)
     .add_plugins(WireframePlugin::WireframePlugin())
     .add_systems_world(@app.Update, fn(world) {
       if frame.val == 1 {
@@ -359,7 +375,9 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     @render_mesh.MeshAllocatorSettings::resource(),
     @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),
   )
-  let app = @app.App::new(@ecs.World::new()).insert_sub_app(
+  let lifecycle_world_354_0 = @ecs.World::new()
+  defer lifecycle_world_354_0.close()
+  let app = @app.App::new(lifecycle_world_354_0).insert_sub_app(
     @app.RenderApp,
     @app.SubApp::new(initial_render_world).set_update_schedule(Some(@app.Main)),
   )

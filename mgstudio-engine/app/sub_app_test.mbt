@@ -15,10 +15,14 @@
 ///|
 test "app: render sub app runs with main app update" {
   let log : Array[String] = []
-  let render_sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let render_sub_app = SubApp::new(lifecycle_world_15_0)
     .set_update_schedule(Some(Main))
     .add_systems(Update, system(fn(_world : @ecs.World) { log.push("render") }))
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_15_1 = @ecs.World::new()
+  defer lifecycle_world_15_1.close()
+  let app = App::new(lifecycle_world_15_1)
     .add_system(fn(_world : @ecs.World) { log.push("main") })
     .insert_sub_app(RenderApp, render_sub_app)
   app.run_once() |> ignore
@@ -31,9 +35,13 @@ test "app: render sub app runs with main app update" {
 ///|
 test "app: sub app modifier writes back to app" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).insert_sub_app(
+  let lifecycle_world_31_0 = @ecs.World::new()
+  defer lifecycle_world_31_0.close()
+  let lifecycle_world_31_1 = @ecs.World::new()
+  defer lifecycle_world_31_1.close()
+  let app = App::new(lifecycle_world_31_0).insert_sub_app(
     RenderApp,
-    SubApp::new(@ecs.World::new()).set_update_schedule(Some(Main)),
+    SubApp::new(lifecycle_world_31_1).set_update_schedule(Some(Main)),
   )
   ignore(
     app.modify_sub_app(RenderApp, fn(sub_app) {
@@ -49,9 +57,13 @@ test "app: sub app modifier writes back to app" {
 
 ///|
 test "app: sub app extractor updates both main and render worlds" {
-  let app = App::new(@ecs.World::new()).insert_sub_app(
+  let lifecycle_world_50_0 = @ecs.World::new()
+  defer lifecycle_world_50_0.close()
+  let lifecycle_world_50_1 = @ecs.World::new()
+  defer lifecycle_world_50_1.close()
+  let app = App::new(lifecycle_world_50_0).insert_sub_app(
     RenderApp,
-    SubApp::new(@ecs.World::new()).set_update_schedule(Some(Main)),
+    SubApp::new(lifecycle_world_50_1).set_update_schedule(Some(Main)),
   )
   let app = app.set_sub_app_extract(RenderApp, fn(
     main_world : @ecs.World,
@@ -77,11 +89,15 @@ test "app: sub app extractor updates both main and render worlds" {
 test "app: sub app extractor can run the sub app schedule" {
   let log : Array[String] = []
   let stage = schedule_label("mgstudio.app.test.extract.stage")
-  let sub_app = SubApp::new(@ecs.World::new())
+  let lifecycle_world_76_0 = @ecs.World::new()
+  defer lifecycle_world_76_0.close()
+  let sub_app = SubApp::new(lifecycle_world_76_0)
     .set_update_schedule(Some(Main))
     .add_schedule(Schedule::new(stage))
     .add_systems(stage, system(fn(_world : @ecs.World) { log.push("stage") }))
-  let app = App::new(@ecs.World::new()).insert_sub_app(RenderApp, sub_app)
+  let lifecycle_world_76_1 = @ecs.World::new()
+  defer lifecycle_world_76_1.close()
+  let app = App::new(lifecycle_world_76_1).insert_sub_app(RenderApp, sub_app)
   let app = app.set_sub_app_extract(RenderApp, fn(
     main_world : @ecs.World,
     sub_world : @ecs.World,

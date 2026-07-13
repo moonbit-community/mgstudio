@@ -14,7 +14,9 @@
 
 ///|
 test "diagnostics: render snapshot records render measurements" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = @app.App::new(lifecycle_world_15_0)
     .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
   let tick = 7

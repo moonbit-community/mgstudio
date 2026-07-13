@@ -973,7 +973,9 @@ test "picking: ignores a11y actions targeting non-alive entities" {
 ///|
 test "picking: pointer observers dispatch generated move enter and leave events" {
   let seen : Array[String] = []
-  let mut app = @app.App::new(@ecs.World::new()).add_pointer_observer(fn(
+  let lifecycle_world_973_0 = @ecs.World::new()
+  defer lifecycle_world_973_0.close()
+  let mut app = @app.App::new(lifecycle_world_973_0).add_pointer_observer(fn(
     pointer : @app.OnPointer[@app.PointerMove],
   ) {
     if pointer.target() is Some(target) {
@@ -1035,7 +1037,9 @@ test "picking: pointer observers dispatch generated move enter and leave events"
 test "picking: entity pointer observers dispatch drag events with delta" {
   let seen : Array[String] = []
   let target_ref : Ref[@core.Entity?] = Ref(None)
-  let mut app = @app.App::new(@ecs.World::new()).add_system_param(fn(
+  let lifecycle_world_1034_0 = @ecs.World::new()
+  defer lifecycle_world_1034_0.close()
+  let mut app = @app.App::new(lifecycle_world_1034_0).add_system_param(fn(
     commands : @app.Commands,
   ) {
     let entity = commands.spawn_empty()

@@ -15,8 +15,10 @@
 ///|
 test "shader runtime wesl registration defers until imported wesl modules are loaded" {
   let registered_sources : Array[String] = []
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
   let mut app = shader_plugin(
-    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+    @asset.asset_plugin(@app.App::new(lifecycle_world_15_0)),
   )
   app = app.add_systems(
     @app.Startup,
@@ -62,8 +64,10 @@ test "shader runtime wesl registration defers until imported wesl modules are lo
 ///|
 test "shader runtime wesl registration compiles after imported module is loaded as shader asset" {
   let registered_sources : Array[String] = []
+  let lifecycle_world_62_0 = @ecs.World::new()
+  defer lifecycle_world_62_0.close()
   let mut app = shader_plugin(
-    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+    @asset.asset_plugin(@app.App::new(lifecycle_world_62_0)),
   )
   app = app.add_systems(
     @app.Startup,
@@ -139,8 +143,10 @@ test "shader runtime loaded wgsl sources include quoted file import dependencies
   )
   let source_paths : Array[String] = []
   let source_texts : Array[String] = []
+  let lifecycle_world_120_0 = @ecs.World::new()
+  defer lifecycle_world_120_0.close()
   let mut app = shader_plugin(
-    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+    @asset.asset_plugin(@app.App::new(lifecycle_world_120_0)),
   )
   app = app.add_systems(
     @app.Startup,
@@ -202,8 +208,10 @@ test "shader runtime loaded wgsl sources include quoted file import dependencies
 ///|
 test "shader runtime loads Bevy-style custom material file import dependencies" {
   let source_paths : Array[String] = []
+  let lifecycle_world_202_0 = @ecs.World::new()
+  defer lifecycle_world_202_0.close()
   let mut app = shader_plugin(
-    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+    @asset.asset_plugin(@app.App::new(lifecycle_world_202_0)),
   )
   app = app.add_systems(
     @app.Startup,

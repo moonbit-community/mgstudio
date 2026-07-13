@@ -16,7 +16,9 @@
 test "core3d: graph systems run main pass before early postprocess" {
   let log : Array[String] = []
   let core_3d_stage = @app.schedule_label("mgstudio.core_pipeline.core_3d")
-  let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_15_0).set_update_schedule(
     Some(core_3d_stage),
   )
   let render_sub_app = core_3d_configure_render_sub_app(render_sub_app)
@@ -133,7 +135,9 @@ test "core3d: sorted transparent phases preserve stable items and expire transie
 
 ///|
 test "core3d: phase resources live in RenderApp" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_134_0 = @ecs.World::new()
+  defer lifecycle_world_134_0.close()
+  let app = @app.App::new(lifecycle_world_134_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -155,7 +159,9 @@ test "core3d: phase resources live in RenderApp" {
 
 ///|
 test "core3d: active Camera3d prepares and retains transparent phase views" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_156_0 = @ecs.World::new()
+  defer lifecycle_world_156_0.close()
+  let mut app = @app.App::new(lifecycle_world_156_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())

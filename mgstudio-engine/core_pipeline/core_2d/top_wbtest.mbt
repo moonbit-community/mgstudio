@@ -16,7 +16,9 @@
 test "core2d: graph systems include Bevy prepass and early postprocess" {
   let log : Array[String] = []
   let core_2d_stage = @app.schedule_label(CORE_2D_SCHEDULE_NAME)
-  let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_15_0).set_update_schedule(
     Some(core_2d_stage),
   )
   let render_sub_app = core_2d_configure_render_sub_app(render_sub_app)

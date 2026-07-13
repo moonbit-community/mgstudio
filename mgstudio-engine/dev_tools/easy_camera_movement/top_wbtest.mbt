@@ -14,7 +14,9 @@
 
 ///|
 test "easy camera movement: nudges camera transform toward target" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let mut app = @app.App::new(lifecycle_world_15_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(EasyCameraMovementPlugin::EasyCameraMovementPlugin())
     .insert_resource(@time.TimeUpdateStrategy::FixedTimesteps(60))

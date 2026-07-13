@@ -120,8 +120,10 @@ test "winit: plugin identity name is stable" {
 ///|
 test "winit: plugin forwards run_on_any_thread setting to native backend" {
   @windowing.set_event_loop_any_thread(false)
+  let lifecycle_world_120_0 = @ecs.World::new()
+  defer lifecycle_world_120_0.close()
   let _app = winit_plugin_with(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_120_0)),
     WinitPlugin::{ run_on_any_thread: true },
   ).run_once()
   debug_inspect(@windowing.event_loop_any_thread_requested(), content="true")
@@ -130,16 +132,20 @@ test "winit: plugin forwards run_on_any_thread setting to native backend" {
 
 ///|
 test "winit: backend sync is owned by winit plugin" {
+  let lifecycle_world_131_0 = @ecs.World::new()
+  defer lifecycle_world_131_0.close()
   let app_without_winit = @window.window_plugin(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_131_0),
   ).run_once()
   debug_inspect(
     read_window_created(app_without_winit.world()).length(),
     content="0",
   )
 
+  let lifecycle_world_131_1 = @ecs.World::new()
+  defer lifecycle_world_131_1.close()
   let app_with_winit = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_131_1)),
   ).run_once()
   debug_inspect(
     read_window_created(app_with_winit.world()).length(),
@@ -151,8 +157,10 @@ test "winit: backend sync is owned by winit plugin" {
 test "winit: startup systems see the primary host window" {
   let startup_host_count = Ref(-1)
   let startup_primary_width = Ref(-1)
+  let lifecycle_world_150_0 = @ecs.World::new()
+  defer lifecycle_world_150_0.close()
   let _app = winit_plugin(
-      @window.window_plugin(@app.App::new(@ecs.World::new())),
+      @window.window_plugin(@app.App::new(lifecycle_world_150_0)),
     )
     .add_startup_system(fn(world : @ecs.World) {
       startup_host_count.val = @window.window_host_entries(world).length()
@@ -168,8 +176,10 @@ test "winit: startup systems see the primary host window" {
 
 ///|
 test "winit: plugin initializes bevy-aligned default settings resource" {
+  let lifecycle_world_169_0 = @ecs.World::new()
+  defer lifecycle_world_169_0.close()
   let app_with_winit = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_169_0)),
   ).run_once()
   let settings = match read_winit_settings(app_with_winit.world()) {
     Some(settings) => settings
@@ -194,8 +204,10 @@ test "winit: plugin initializes bevy-aligned default settings resource" {
 ///|
 test "winit: plugin initializes bevy-aligned monitors resource" {
   let native_monitor_count = @windowing.available_monitors().length()
+  let lifecycle_world_194_0 = @ecs.World::new()
+  defer lifecycle_world_194_0.close()
   let app_with_winit = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_194_0)),
   ).run_once()
   let monitors = match read_winit_monitors(app_with_winit.world()) {
     Some(monitors) => monitors
@@ -212,8 +224,10 @@ test "winit: plugin initializes bevy-aligned monitors resource" {
 
 ///|
 test "winit: plugin initializes bevy-aligned windows resource" {
+  let lifecycle_world_213_0 = @ecs.World::new()
+  defer lifecycle_world_213_0.close()
   let app_with_winit = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_213_0)),
   ).run_once()
   let windows = match read_winit_windows(app_with_winit.world()) {
     Some(windows) => windows
@@ -225,8 +239,10 @@ test "winit: plugin initializes bevy-aligned windows resource" {
 
 ///|
 test "winit: windows resource mirrors host window runtime mapping" {
+  let lifecycle_world_226_0 = @ecs.World::new()
+  defer lifecycle_world_226_0.close()
   let app = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_226_0)),
   ).run_once()
   let world = app.world()
   let windows = match read_winit_windows(world) {
@@ -414,8 +430,10 @@ test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
 test "winit: monitor sync mirrors native monitor snapshot" {
   let native_monitors = @windowing.available_monitors()
   let native_primary = @windowing.primary_monitor()
+  let lifecycle_world_413_0 = @ecs.World::new()
+  defer lifecycle_world_413_0.close()
   let app = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_413_0)),
   ).run_once()
   let world = app.world()
   let monitors = match read_winit_monitors(world) {
@@ -510,8 +528,10 @@ test "winit: update mode constructors align with bevy settings semantics" {
 
 ///|
 test "winit: typed raw winit events are published as messages" {
+  let lifecycle_world_511_0 = @ecs.World::new()
+  defer lifecycle_world_511_0.close()
   let app = winit_plugin(
-    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    @window.window_plugin(@app.App::new(lifecycle_world_511_0)),
   ).run_once()
   let world = app.world()
   let cursor : @ecs.MessageCursor[RawWinitWindowEvent] = @ecs.MessageCursor::MessageCursor()
@@ -799,6 +819,8 @@ test "winit: app exit emits WindowClosing for all open windows" {
 test "winit: plugin owns accessibility action propagation" {
   @windowing.set_accessibility_requested(false)
   ignore(@windowing.take_accessibility_actions())
+  let lifecycle_world_798_0 = @ecs.World::new()
+  defer lifecycle_world_798_0.close()
 
   let target = @moon_accesskit.NodeId::from_u64(42UL)
   let request = @moon_accesskit.ActionRequest::ActionRequest(
@@ -809,7 +831,7 @@ test "winit: plugin owns accessibility action propagation" {
 
   let mut app = winit_plugin(
     @a11y.accessibility_plugin(
-      @window.window_plugin(@app.App::new(@ecs.World::new())),
+      @window.window_plugin(@app.App::new(lifecycle_world_798_0)),
     ),
   )
   app = app.run_once()
@@ -834,9 +856,11 @@ test "winit: plugin owns accessibility update commit" {
   @windowing.set_accessibility_requested(true)
   ignore(@windowing.take_accessibility_actions())
 
+  let lifecycle_world_832_0 = @ecs.World::new()
+  defer lifecycle_world_832_0.close()
   let mut app = winit_plugin(
     @a11y.accessibility_plugin(
-      @window.window_plugin(@app.App::new(@ecs.World::new())),
+      @window.window_plugin(@app.App::new(lifecycle_world_832_0)),
     ),
   )
   app = app.run_once()

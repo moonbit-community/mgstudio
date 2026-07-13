@@ -25,7 +25,9 @@ fn dlss_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_26_0 = @ecs.World::new()
+  defer lifecycle_world_26_0.close()
+  let app = @app.App::new(lifecycle_world_26_0).add_plugins(
     DlssPlugin::DlssPlugin(),
   )
   let camera_entity = dlss_test_spawn_camera(app.world())
@@ -66,7 +68,9 @@ test "anti_alias/dlss: runtime state counts camera-only DLSS components" {
 
 ///|
 test "anti_alias/dlss: required camera components mirror Bevy" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_67_0 = @ecs.World::new()
+  defer lifecycle_world_67_0.close()
+  let app = @app.App::new(lifecycle_world_67_0).add_plugins(
     DlssPlugin::DlssPlugin(),
   )
   let entity = app.world().spawn_empty()

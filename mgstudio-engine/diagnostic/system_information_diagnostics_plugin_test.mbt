@@ -23,7 +23,9 @@ fn system_information_diagnostic_registered(
 
 ///|
 test "diagnostics: diagnostics plugin initializes system info resource" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_24_0 = @ecs.World::new()
+  defer lifecycle_world_24_0.close()
+  let app = @app.App::new(lifecycle_world_24_0).add_plugins(
     DiagnosticsPlugin::DiagnosticsPlugin(),
   )
   debug_inspect(
@@ -34,7 +36,9 @@ test "diagnostics: diagnostics plugin initializes system info resource" {
 
 ///|
 test "diagnostics: system information plugin registers diagnostic paths" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_35_0 = @ecs.World::new()
+  defer lifecycle_world_35_0.close()
+  let app = @app.App::new(lifecycle_world_35_0)
     .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(
       SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin(),

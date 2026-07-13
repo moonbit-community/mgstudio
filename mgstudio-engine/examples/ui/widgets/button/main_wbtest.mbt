@@ -61,7 +61,9 @@ fn run_ui_extract_pipeline(world : @ecs.World) -> Unit {
 
 ///|
 test "examples ui button: seeded ui context produces queued ui draw items" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_62_0 = @ecs.World::new()
+  defer lifecycle_world_62_0.close()
+  let app = @app.App::new(lifecycle_world_62_0).add_plugins(
     @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   let world = app.world()
@@ -98,7 +100,9 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
 
 ///|
 test "examples ui button: runtime ui context also produces queued ui draw items" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_99_0 = @ecs.World::new()
+  defer lifecycle_world_99_0.close()
+  let app = @app.App::new(lifecycle_world_99_0).add_plugins(
     @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   let world = app.world()
@@ -126,7 +130,9 @@ test "examples ui button: runtime ui context also produces queued ui draw items"
 
 ///|
 test "examples ui button: scheduled update queues ui draw items" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_127_0 = @ecs.World::new()
+  defer lifecycle_world_127_0.close()
+  let mut app = @app.App::new(lifecycle_world_127_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_systems_world(@app.Startup, setup)
   app = app.update()

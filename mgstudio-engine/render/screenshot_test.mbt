@@ -14,7 +14,9 @@
 
 ///|
 test "screenshot: RenderPlugin owns main-world screenshot systems" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = @app.App::new(lifecycle_world_15_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let update_dot = app.schedule_graph_dot(@app.Update)
@@ -51,7 +53,9 @@ test "screenshot: RenderPlugin owns main-world screenshot systems" {
 
 ///|
 test "screenshot: ScreenshotPlugin owns screenshot systems" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_52_0 = @ecs.World::new()
+  defer lifecycle_world_52_0.close()
+  let app = @app.App::new(lifecycle_world_52_0).add_plugins(
     ScreenshotPlugin::ScreenshotPlugin(),
   )
   let update_dot = app.schedule_graph_dot(@app.Update)

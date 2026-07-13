@@ -25,7 +25,9 @@ fn read_diagnostic_value(
 test "diagnostics: render diagnostics plugin records native gpu frame counters" {
   @render.render_diagnostics_reset_current_frame_counters()
 
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_24_0 = @ecs.World::new()
+  defer lifecycle_world_24_0.close()
+  let app = @app.App::new(lifecycle_world_24_0)
     .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
 
@@ -141,7 +143,9 @@ test "diagnostics: render diagnostics plugin records native gpu frame counters" 
 
 ///|
 test "diagnostics: render diagnostics plugin reports zero scene counters without render work" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_142_0 = @ecs.World::new()
+  defer lifecycle_world_142_0.close()
+  let app = @app.App::new(lifecycle_world_142_0)
     .add_plugins(DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
   app.run_once() |> ignore

@@ -141,7 +141,9 @@ test "assets: iter_mut returns live assets and marks them modified" {
 
 ///|
 test "asset plugin initializes world-owned asset resources" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_142_0 = @ecs.World::new()
+  defer lifecycle_world_142_0.close()
+  let app = asset_plugin(@app.App::new(lifecycle_world_142_0))
   let world = app.world()
   debug_inspect(
     world.get_resource(asset_server_resource_key) is Some(_),
@@ -160,8 +162,10 @@ test "asset plugin initializes world-owned asset resources" {
 
 ///|
 test "asset app: registering loader does not initialize Assets resource" {
+  let lifecycle_world_161_0 = @ecs.World::new()
+  defer lifecycle_world_161_0.close()
   let app = init_asset_loader(
-    asset_plugin(@app.App::new(@ecs.World::new())),
+    asset_plugin(@app.App::new(lifecycle_world_161_0)),
     AssetLoader::new(["custom"], missing_loader_asset_loader),
   )
   let key : @ecs.ResourceKey[Assets[MissingLoaderAsset]] = assets_resource_key()
@@ -361,8 +365,10 @@ fn named_processor_scope_run_two(
 ///|
 test "legacy loader, ready_checker and reload_hook are world-scoped per app world" {
   RegistryScopedLegacyAsset::{  } |> ignore
+  let lifecycle_world_361_0 = @ecs.World::new()
+  defer lifecycle_world_361_0.close()
   let app_a = init_asset(
-    @app.App::new(@ecs.World::new()).add_plugins(
+    @app.App::new(lifecycle_world_361_0).add_plugins(
       AssetPlugin::AssetPlugin().with_unapproved_path_mode(
         UnapprovedPathMode::Allow,
       ),
@@ -410,8 +416,10 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   asset_with_world(world_a, fn() { asset_system(world_a) })
   debug_inspect(reload_calls_a.val.length(), content="1")
 
+  let lifecycle_world_361_1 = @ecs.World::new()
+  defer lifecycle_world_361_1.close()
   let app_b = init_asset(
-    @app.App::new(@ecs.World::new()).add_plugins(
+    @app.App::new(lifecycle_world_361_1).add_plugins(
       AssetPlugin::AssetPlugin().with_unapproved_path_mode(
         UnapprovedPathMode::Allow,
       ),
@@ -469,11 +477,13 @@ test "asset processor registry is world-scoped per app world" {
   )
 
   let processor = LoadTransformAndSave::new(["pscope"], processor_scope_run)
+  let lifecycle_world_462_0 = @ecs.World::new()
+  defer lifecycle_world_462_0.close()
   let app_a = set_default_asset_processor(
     register_asset_processor(
       init_asset_loader(
         init_asset(
-          @app.App::new(@ecs.World::new()).add_plugins(
+          @app.App::new(lifecycle_world_462_0).add_plugins(
             @asset.AssetPlugin::AssetPlugin()
             .with_mode(AssetMode::Processed)
             .with_unapproved_path_mode(UnapprovedPathMode::Allow),
@@ -513,9 +523,11 @@ test "asset processor registry is world-scoped per app world" {
     content="true",
   )
 
+  let lifecycle_world_462_1 = @ecs.World::new()
+  defer lifecycle_world_462_1.close()
   let app_b = init_asset_loader(
     init_asset(
-      @app.App::new(@ecs.World::new()).add_plugins(
+      @app.App::new(lifecycle_world_462_1).add_plugins(
         @asset.AssetPlugin::AssetPlugin()
         .with_mode(AssetMode::Processed)
         .with_unapproved_path_mode(UnapprovedPathMode::Allow),
@@ -561,12 +573,14 @@ test "asset processor default can be selected by processor name" {
     bytes=Bytes::from_array([(5).to_byte()]),
   )
 
+  let lifecycle_world_555_0 = @ecs.World::new()
+  defer lifecycle_world_555_0.close()
   let app = set_default_asset_processor_by_name(
     register_asset_processor_named(
       register_asset_processor_named(
         init_asset_loader(
           init_asset(
-            @app.App::new(@ecs.World::new()).add_plugins(
+            @app.App::new(lifecycle_world_555_0).add_plugins(
               @asset.AssetPlugin::AssetPlugin()
               .with_mode(AssetMode::Processed)
               .with_unapproved_path_mode(UnapprovedPathMode::Allow),
@@ -622,12 +636,14 @@ test "asset processor default by name keeps previous selection when name is ambi
     bytes=Bytes::from_array([(6).to_byte()]),
   )
 
+  let lifecycle_world_616_0 = @ecs.World::new()
+  defer lifecycle_world_616_0.close()
   let app = set_default_asset_processor_by_name(
     register_asset_processor_named(
       register_asset_processor_named(
         init_asset_loader(
           init_asset(
-            @app.App::new(@ecs.World::new()).add_plugins(
+            @app.App::new(lifecycle_world_616_0).add_plugins(
               @asset.AssetPlugin::AssetPlugin()
               .with_mode(AssetMode::Processed)
               .with_unapproved_path_mode(UnapprovedPathMode::Allow),
@@ -680,9 +696,11 @@ test "asset source builder registration is world-scoped per app world" {
   let scoped_path = AssetPath::from_path("bevy_pixel_dark_with_meta.png").with_source(
     AssetSourceId::Named("scoped_source_builder"),
   )
+  let lifecycle_world_678_0 = @ecs.World::new()
+  defer lifecycle_world_678_0.close()
   let app_a = asset_plugin(
     register_asset_source(
-      @app.App::new(@ecs.World::new()),
+      @app.App::new(lifecycle_world_678_0),
       AssetSourceId::Named("scoped_source_builder"),
       AssetSourceBuilder::platform_default("examples/asset/files", None),
     ),
@@ -698,7 +716,9 @@ test "asset source builder registration is world-scoped per app world" {
   })
   debug_inspect(bytes_a.length() > 0, content="true")
 
-  let app_b = asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_678_1 = @ecs.World::new()
+  defer lifecycle_world_678_1.close()
+  let app_b = asset_plugin(@app.App::new(lifecycle_world_678_1))
   let world_b = app_b.world()
   let server_b = match world_b.get_resource(asset_server_resource_key) {
     Some(server) => server
@@ -732,9 +752,11 @@ test "default asset source builder path override is world-scoped per app world" 
   @fs.write_bytes_to_file(file_a, Bytes::from_array([(11).to_byte()]))
   @fs.write_bytes_to_file(file_b, Bytes::from_array([(22).to_byte()]))
 
+  let lifecycle_world_719_0 = @ecs.World::new()
+  defer lifecycle_world_719_0.close()
   let app_a = asset_plugin(
     register_asset_source(
-      @app.App::new(@ecs.World::new()),
+      @app.App::new(lifecycle_world_719_0),
       AssetSourceId::Default,
       AssetSourceBuilder::platform_default(dir_a, None),
     ),
@@ -748,9 +770,11 @@ test "default asset source builder path override is world-scoped per app world" 
     content="true",
   )
 
+  let lifecycle_world_719_1 = @ecs.World::new()
+  defer lifecycle_world_719_1.close()
   let app_b = asset_plugin(
     register_asset_source(
-      @app.App::new(@ecs.World::new()),
+      @app.App::new(lifecycle_world_719_1),
       AssetSourceId::Default,
       AssetSourceBuilder::platform_default(dir_b, None),
     ),
@@ -866,7 +890,9 @@ test "asset path approval matches Bevy unapproved path shape" {
 
 ///|
 test "asset plugin forbids unapproved paths by default and explicit Allow loads them" {
-  let forbidden_app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_867_0 = @ecs.World::new()
+  defer lifecycle_world_867_0.close()
+  let forbidden_app = @app.App::new(lifecycle_world_867_0).add_plugins(
     AssetPlugin::AssetPlugin().with_file_path("assets/pixel"),
   )
   let forbidden_world = forbidden_app.world()
@@ -887,7 +913,9 @@ test "asset plugin forbids unapproved paths by default and explicit Allow loads 
     content="true",
   )
 
-  let allowed_app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_867_1 = @ecs.World::new()
+  defer lifecycle_world_867_1.close()
+  let allowed_app = @app.App::new(lifecycle_world_867_1).add_plugins(
     AssetPlugin::AssetPlugin()
     .with_file_path("assets/pixel")
     .with_unapproved_path_mode(UnapprovedPathMode::Allow),
@@ -918,7 +946,9 @@ test "asset plugin forbids unapproved paths by default and explicit Allow loads 
 
 ///|
 test "asset server retries failed typed loads with the same handle after loader registration" {
-  let app = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+  let lifecycle_world_919_0 = @ecs.World::new()
+  defer lifecycle_world_919_0.close()
+  let app = init_asset(asset_plugin(@app.App::new(lifecycle_world_919_0)), fn() {
     MissingLoaderAsset::{  }
   })
   let world = app.world()
@@ -1051,8 +1081,10 @@ test "asset server retries failed typed loads with the same handle after loader 
 
 ///|
 test "typed asset loaders are world-scoped per app world" {
+  let lifecycle_world_1052_0 = @ecs.World::new()
+  defer lifecycle_world_1052_0.close()
   let app_a = init_asset_loader(
-    init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    init_asset(asset_plugin(@app.App::new(lifecycle_world_1052_0)), fn() {
       MissingLoaderAsset::{  }
     }),
     AssetLoader::new(["custom"], missing_loader_asset_loader),
@@ -1083,7 +1115,9 @@ test "typed asset loaders are world-scoped per app world" {
     content="true",
   )
 
-  let app_b = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+  let lifecycle_world_1052_1 = @ecs.World::new()
+  defer lifecycle_world_1052_1.close()
+  let app_b = init_asset(asset_plugin(@app.App::new(lifecycle_world_1052_1)), fn() {
     MissingLoaderAsset::{  }
   })
   let world_b = app_b.world()
@@ -1353,7 +1387,9 @@ test "asset system releases load_acquire guard after asset becomes ready" {
 ///|
 test "asset system releases load_acquire guard when load fails" {
   MissingLoaderAsset::{  } |> ignore
-  let app = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+  let lifecycle_world_1353_0 = @ecs.World::new()
+  defer lifecycle_world_1353_0.close()
+  let app = init_asset(asset_plugin(@app.App::new(lifecycle_world_1353_0)), fn() {
     MissingLoaderAsset::{  }
   })
   let world = app.world()
@@ -1382,7 +1418,9 @@ test "asset system releases load_acquire guard when load fails" {
 
 ///|
 test "asset load_acquire releases guard for Blob loads without Assets<Blob> storage" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_1383_0 = @ecs.World::new()
+  defer lifecycle_world_1383_0.close()
+  let app = asset_plugin(@app.App::new(lifecycle_world_1383_0))
   let world = app.world()
   let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
@@ -1454,8 +1492,10 @@ test "asset system skips MAIN_WORLD image asset sync when asset usage is render-
 
 ///|
 test "asset server loads embedded image assets from in-memory source" {
+  let lifecycle_world_1455_0 = @ecs.World::new()
+  defer lifecycle_world_1455_0.close()
   let app = embedded_asset(
-    asset_plugin(@app.App::new(@ecs.World::new())),
+    asset_plugin(@app.App::new(lifecycle_world_1455_0)),
     AssetPath::from_path("embedded_asset/files/bevy_pixel_light.png").with_source(
       AssetSourceId::from("embedded"),
     ),
@@ -1488,8 +1528,10 @@ test "web asset reader fetches remote PNG bytes" {
     debug_inspect(true, content="true")
     return
   }
+  let lifecycle_world_1485_0 = @ecs.World::new()
+  defer lifecycle_world_1485_0.close()
   let app = asset_plugin(
-    web_asset_plugin(@app.App::new(@ecs.World::new()), plugin=WebAssetPlugin::{
+    web_asset_plugin(@app.App::new(lifecycle_world_1485_0), plugin=WebAssetPlugin::{
       silence_startup_warning: true,
     }),
   )
@@ -1516,8 +1558,10 @@ test "web asset reader fetches remote Blob bytes through AssetServer::load_bytes
     debug_inspect(true, content="true")
     return
   }
+  let lifecycle_world_1513_0 = @ecs.World::new()
+  defer lifecycle_world_1513_0.close()
   let app = asset_plugin(
-    web_asset_plugin(@app.App::new(@ecs.World::new()), plugin=WebAssetPlugin::{
+    web_asset_plugin(@app.App::new(lifecycle_world_1513_0), plugin=WebAssetPlugin::{
       silence_startup_warning: true,
     }),
   )
@@ -1976,8 +2020,10 @@ fn test_custom_asset_loader(
 
 ///|
 test "asset server loads typed custom assets into Assets<T> and reuses handles" {
+  let lifecycle_world_1977_0 = @ecs.World::new()
+  defer lifecycle_world_1977_0.close()
   let app = init_asset_loader(
-    init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+    init_asset(asset_plugin(@app.App::new(lifecycle_world_1977_0)), fn() {
       TestCustomAsset::{ value: 0 }
     }),
     AssetLoader::new(["custom"], test_custom_asset_loader),
@@ -2013,9 +2059,11 @@ test "asset server loads typed custom assets into Assets<T> and reuses handles" 
 
 ///|
 test "typed asset loaders resolve by full extension, secondary extension, then latest fallback" {
+  let lifecycle_world_2014_0 = @ecs.World::new()
+  defer lifecycle_world_2014_0.close()
   let app = init_asset_loader(
     init_asset_loader(
-      init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+      init_asset(asset_plugin(@app.App::new(lifecycle_world_2014_0)), fn() {
         MultiLoaderAsset::{ loader_tag: 0 }
       }),
       AssetLoader::new(["bar"], multi_loader_secondary_extension_loader),
@@ -2079,7 +2127,9 @@ test "typed asset loaders resolve by full extension, secondary extension, then l
 
 ///|
 test "asset server add inserts a typed asset into Assets<T>" {
-  let app = init_asset(asset_plugin(@app.App::new(@ecs.World::new())), fn() {
+  let lifecycle_world_2080_0 = @ecs.World::new()
+  defer lifecycle_world_2080_0.close()
+  let app = init_asset(asset_plugin(@app.App::new(lifecycle_world_2080_0)), fn() {
     TestCustomAsset::{ value: 0 }
   })
   let world = app.world()
@@ -2127,7 +2177,9 @@ test "gzip helper decompresses the Bevy sample image payload" {
 
 ///|
 test "asset server load_direct decodes decompressed image bytes" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_2128_0 = @ecs.World::new()
+  defer lifecycle_world_2128_0.close()
+  let app = asset_plugin(@app.App::new(lifecycle_world_2128_0))
   let world = app.world()
   let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
@@ -2149,7 +2201,9 @@ test "asset server load_direct decodes decompressed image bytes" {
 
 ///|
 test "asset server stores gltf loader settings per asset path" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_2150_0 = @ecs.World::new()
+  defer lifecycle_world_2150_0.close()
+  let app = asset_plugin(@app.App::new(lifecycle_world_2150_0))
   let world = app.world()
   let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server
@@ -2200,7 +2254,9 @@ test "asset server stores gltf loader settings per asset path" {
 
 ///|
 test "asset server gltf loader settings are shared across sub asset labels" {
-  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_2201_0 = @ecs.World::new()
+  defer lifecycle_world_2201_0.close()
+  let app = asset_plugin(@app.App::new(lifecycle_world_2201_0))
   let world = app.world()
   let asset_server = match world.get_resource(asset_server_resource_key) {
     Some(server) => server

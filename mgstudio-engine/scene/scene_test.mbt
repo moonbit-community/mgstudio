@@ -162,7 +162,9 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
   let source_is_none = Ref(false)
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_154_0 = @ecs.World::new()
+  defer lifecycle_world_154_0.close()
+  let mut app = @app.App::new(lifecycle_world_154_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
@@ -231,7 +233,9 @@ test "scene: root gltf asset loads default scene through Assets<Gltf>" {
 
 ///|
 test "scene: child batch writers preserve required transform and visibility components" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_232_0 = @ecs.World::new()
+  defer lifecycle_world_232_0.close()
+  let app = @app.App::new(lifecycle_world_232_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@camera.CameraPlugin::CameraPlugin())
@@ -285,7 +289,9 @@ test "scene: child batch writers preserve required transform and visibility comp
 ///|
 test "scene: child batch writers preserve requirements inside schedule" {
   let child_ref : Ref[@core.Entity?] = Ref(None)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_285_0 = @ecs.World::new()
+  defer lifecycle_world_285_0.close()
+  let app = @app.App::new(lifecycle_world_285_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@camera.CameraPlugin::CameraPlugin())
@@ -358,7 +364,9 @@ test "scene: terrain glb scene spawns mesh children" {
   let terrain_material_normal_texture_linear_ok = Ref(false)
   let terrain_material_metallic_roughness_texture_linear_ok = Ref(false)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_330_0 = @ecs.World::new()
+  defer lifecycle_world_330_0.close()
+  let mut app = @app.App::new(lifecycle_world_330_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
@@ -615,7 +623,9 @@ test "scene: root gltf include_source keeps source payload" {
   let source_included = Ref(false)
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_612_0 = @ecs.World::new()
+  defer lifecycle_world_612_0.close()
+  let mut app = @app.App::new(lifecycle_world_612_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
@@ -671,7 +681,9 @@ test "scene: root gltf asset collects materials and named_materials" {
   let trunk_material_cull_none = Ref(false)
   let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref(None)
 
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_664_0 = @ecs.World::new()
+  defer lifecycle_world_664_0.close()
+  let mut app = @app.App::new(lifecycle_world_664_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@mesh.MeshPlugin::MeshPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())

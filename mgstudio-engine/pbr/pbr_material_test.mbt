@@ -666,7 +666,9 @@ test "pbr material: generic standard material normal map flag uses render image 
 
 ///|
 test "pbr material: standard material plugin installs render startup allocator" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_667_0 = @ecs.World::new()
+  defer lifecycle_world_667_0.close()
+  let app = @app.App::new(lifecycle_world_667_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(MaterialsPlugin::MaterialsPlugin())
     .add_plugins(StandardMaterialPlugin::StandardMaterialPlugin())

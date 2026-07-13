@@ -383,7 +383,9 @@ pub impl Plugin for DeferredFinishProbePlugin with fn finish(_self, app) {
 ///|
 test "app: run_if skips system execution" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_383_0 = @ecs.World::new()
+  defer lifecycle_world_383_0.close()
+  let app = App::new(lifecycle_world_383_0).add_system_config(
     system(fn(_world : @ecs.World) { log.push(1) }).run_if(fn(
       _world : @ecs.World,
     ) {
@@ -398,7 +400,9 @@ test "app: run_if skips system execution" {
 test "app: run_if evaluates with condition system tick" {
   let observed : Array[(@core.Tick, @core.Tick)] = []
   let system_ran = Ref(false)
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_397_0 = @ecs.World::new()
+  defer lifecycle_world_397_0.close()
+  let app = App::new(lifecycle_world_397_0).add_system_config(
     system(fn(_world : @ecs.World) { system_ran.val = true }).run_if(fn(
       _world : @ecs.World,
     ) {
@@ -420,7 +424,9 @@ test "app: run_if evaluates with condition system tick" {
 ///|
 test "app: repeated run_if composes without short-circuiting" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_420_0 = @ecs.World::new()
+  defer lifecycle_world_420_0.close()
+  let app = App::new(lifecycle_world_420_0).add_system_config(
     system(fn(_world : @ecs.World) { log.push("system") })
     .run_if(fn(_world : @ecs.World) {
       log.push("first")
@@ -442,7 +448,9 @@ test "app: repeated run_if_stateful keeps independent condition state" {
   let first_seen : Array[Int] = []
   let second_seen : Array[Int] = []
   let system_runs = Ref(0)
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_440_0 = @ecs.World::new()
+  defer lifecycle_world_440_0.close()
+  let app = App::new(lifecycle_world_440_0).add_system_config(
     system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
     .run_if_stateful(0, fn(
       _world : @ecs.World,
@@ -480,7 +488,9 @@ test "app: add_plugins registers grouped plugins" {
     .add(PluginGroupTestPlugin3::{  })
     .add(PluginGroupTestPlugin4::{  })
   }
-  let app = App::new(@ecs.World::new()).add_plugins(group())
+  let lifecycle_world_475_0 = @ecs.World::new()
+  defer lifecycle_world_475_0.close()
+  let app = App::new(lifecycle_world_475_0).add_plugins(group())
   app.run_once() |> ignore
   debug_inspect(
     plugin_group_test_log_ref.val.length() == 2 &&
@@ -499,7 +509,9 @@ test "app: plugin group set_plugin and disable preserve configured plugins" {
   debug_inspect(group.contains(PluginGroupTestPlugin1::{  }), content="true")
   debug_inspect(group.enabled(PluginGroupTestPlugin2::{  }), content="true")
 
-  let app = App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_493_0 = @ecs.World::new()
+  defer lifecycle_world_493_0.close()
+  let app = App::new(lifecycle_world_493_0).add_plugins(
     group
     .set(PluginGroupTestPlugin1Override::{  })
     .disable(PluginGroupTestPlugin2::{  }),
@@ -629,7 +641,9 @@ test "app: plugin group add_group deduplicates by final ordering" {
 test "app: noop plugin group adds no plugins" {
   let group = test_build_plugin_group(@app.NoopPluginGroup::NoopPluginGroup())
   debug_inspect(group.build_entries().length(), content="0")
-  let app = App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_628_0 = @ecs.World::new()
+  defer lifecycle_world_628_0.close()
+  let app = App::new(lifecycle_world_628_0).add_plugins(
     @app.NoopPluginGroup::NoopPluginGroup(),
   )
   debug_inspect(app.plugin_names().length(), content="1")
@@ -642,7 +656,9 @@ test "app: noop plugin group adds no plugins" {
 ///|
 test "app: plugin lifecycle finish/cleanup run on first update, not add_plugin" {
   plugin_lifecycle_test_reset_log()
-  let mut app = App::new(@ecs.World::new()).add_plugins(PluginLifecycleTestPlugin::{
+  let lifecycle_world_642_0 = @ecs.World::new()
+  defer lifecycle_world_642_0.close()
+  let mut app = App::new(lifecycle_world_642_0).add_plugins(PluginLifecycleTestPlugin::{
 
   })
   debug_inspect(app.plugins_state() == Ready, content="true")
@@ -657,7 +673,9 @@ test "app: schedules do not run before plugin ready lifecycle finalizes" {
   plugin_lifecycle_test_reset_log()
   plugin_lifecycle_ready_ref.val = false
   let run_log : Array[Int] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_655_0 = @ecs.World::new()
+  defer lifecycle_world_655_0.close()
+  let mut app = App::new(lifecycle_world_655_0)
     .add_plugins(PluginLifecycleTestPlugin::{  })
     .add_system(fn(_world : @ecs.World) { run_log.push(1) })
   app = app.run_once()
@@ -673,7 +691,9 @@ test "app: schedules do not run before plugin ready lifecycle finalizes" {
 ///|
 test "app: explicit finish/cleanup follow bevy lifecycle ordering" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugins(PluginLifecycleTestPlugin::{
+  let lifecycle_world_673_0 = @ecs.World::new()
+  defer lifecycle_world_673_0.close()
+  let app = App::new(lifecycle_world_673_0).add_plugins(PluginLifecycleTestPlugin::{
 
   })
   let app = app.finish()
@@ -687,7 +707,9 @@ test "app: explicit finish/cleanup follow bevy lifecycle ordering" {
 ///|
 test "app: nested plugin registry preserves parent before child lifecycle" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugins(NestedParentPlugin::{  })
+  let lifecycle_world_687_0 = @ecs.World::new()
+  defer lifecycle_world_687_0.close()
+  let app = App::new(lifecycle_world_687_0).add_plugins(NestedParentPlugin::{  })
   debug_inspect(nested_plugin_lifecycle_log_ref.val, content="[1, 2]")
   debug_inspect(app.plugin_names().length(), content="2")
   let app = app.finish()
@@ -702,7 +724,9 @@ test "app: nested plugin registry preserves parent before child lifecycle" {
 ///|
 test "app: plugin build depth is visible only during plugin build" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugins(PluginBuildDepthProbePlugin::{
+  let lifecycle_world_702_0 = @ecs.World::new()
+  defer lifecycle_world_702_0.close()
+  let app = App::new(lifecycle_world_702_0).add_plugins(PluginBuildDepthProbePlugin::{
 
   })
   debug_inspect(plugin_build_depth_probe_ref.val, content="true")
@@ -711,7 +735,9 @@ test "app: plugin build depth is visible only during plugin build" {
 
 ///|
 test "app: plugin can add another plugin during finish" {
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_712_0 = @ecs.World::new()
+  defer lifecycle_world_712_0.close()
+  let app = App::new(lifecycle_world_712_0)
     .add_plugins(PluginGroupTestPlugin1::{  })
     .add_plugins(FinishAddsPluginPlugin::{  })
     .finish()
@@ -728,7 +754,9 @@ test "app: plugin can add another plugin during finish" {
 ///|
 test "app: plugin added during finish is not finished in same pass" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugins(FinishAddsDeferredFinishPlugin::{
+  let lifecycle_world_728_0 = @ecs.World::new()
+  defer lifecycle_world_728_0.close()
+  let app = App::new(lifecycle_world_728_0).add_plugins(FinishAddsDeferredFinishPlugin::{
 
   })
   let app = app.finish()
@@ -739,7 +767,9 @@ test "app: plugin added during finish is not finished in same pass" {
 ///|
 test "app: is_plugin_added is available during finish and cleanup" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_739_0 = @ecs.World::new()
+  defer lifecycle_world_739_0.close()
+  let app = App::new(lifecycle_world_739_0)
     .add_plugins(PluginGroupTestPlugin1::{  })
     .add_plugins(PluginAddedProbePlugin::{  })
   debug_inspect(
@@ -760,7 +790,11 @@ test "app: is_plugin_added is available during finish and cleanup" {
 ///|
 test "app: plugins_state query does not transition out of adding" {
   plugin_lifecycle_test_reset_log()
-  let app = App::new(@ecs.World::new()).add_plugins(PluginReadyCountPlugin::{  })
+  let lifecycle_world_760_0 = @ecs.World::new()
+  defer lifecycle_world_760_0.close()
+  let app = App::new(lifecycle_world_760_0).add_plugins(PluginReadyCountPlugin::{
+
+  })
   debug_inspect(plugin_ready_count_ref.val, content="0")
   debug_inspect(app.plugins_state() == Ready, content="true")
   debug_inspect(app.plugins_state() == Ready, content="true")
@@ -772,7 +806,9 @@ test "app: schedule sets order and preserve insertion within a set" {
   let log : Array[Int] = []
   let set_a = system_set("A")
   let set_b = system_set("B")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_770_0 = @ecs.World::new()
+  defer lifecycle_world_770_0.close()
+  let app = App::new(lifecycle_world_770_0)
   app
   .add_systems(
     Update,
@@ -800,7 +836,9 @@ test "app: system before and after are node dependencies, not whole-set dependen
   let log : Array[String] = []
   let set_a = system_set("NodeDependency.A")
   let set_b = system_set("NodeDependency.B")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_798_0 = @ecs.World::new()
+  defer lifecycle_world_798_0.close()
+  let app = App::new(lifecycle_world_798_0)
     .add_systems(
       Update,
       system(fn(_world : @ecs.World) { log.push("first") })
@@ -828,7 +866,9 @@ test "app: parent set conditions apply to child set systems" {
   let log : Array[String] = []
   let child_set = system_set("Hierarchy.Child")
   let parent_set = system_set("Hierarchy.Parent")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_826_0 = @ecs.World::new()
+  defer lifecycle_world_826_0.close()
+  let app = App::new(lifecycle_world_826_0)
     .add_systems(
       Update,
       system(fn(_world : @ecs.World) { log.push("child") }).in_set(child_set),
@@ -849,7 +889,9 @@ test "app: parent set ordering applies to child set systems" {
   let child_set = system_set("Hierarchy.Order.Child")
   let parent_set = system_set("Hierarchy.Order.Parent")
   let after_set = system_set("Hierarchy.Order.After")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_846_0 = @ecs.World::new()
+  defer lifecycle_world_846_0.close()
+  let app = App::new(lifecycle_world_846_0)
     .add_systems(
       Update,
       system(fn(_world : @ecs.World) { log.push("after") }).in_set(after_set),
@@ -872,7 +914,9 @@ test "app: cyclic set hierarchy reports validation error and skips stage executi
   let kinds : Array[ErrorContextKind] = []
   let set_a = system_set("HierarchyCycle.A")
   let set_b = system_set("HierarchyCycle.B")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_869_0 = @ecs.World::new()
+  defer lifecycle_world_869_0.close()
+  let app = App::new(lifecycle_world_869_0)
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_systems(
       Update,
@@ -895,7 +939,9 @@ test "app: cyclic set ordering reports validation error and skips stage executio
   let kinds : Array[ErrorContextKind] = []
   let set_a = system_set("CycleA")
   let set_b = system_set("CycleB")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_892_0 = @ecs.World::new()
+  defer lifecycle_world_892_0.close()
+  let app = App::new(lifecycle_world_892_0)
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_systems(
       Update,
@@ -918,7 +964,9 @@ test "app: cyclic set ordering reports validation error and skips stage executio
 ///|
 test "app: chained tuple system configs run in declared order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_systems(
+  let lifecycle_world_918_0 = @ecs.World::new()
+  defer lifecycle_world_918_0.close()
+  let app = App::new(lifecycle_world_918_0).add_systems(
     Update,
     (
       system(fn(_world : @ecs.World) { log.push(1) }),
@@ -934,7 +982,9 @@ test "app: chained tuple system configs run in declared order" {
 ///|
 test "app: chained tuple preserves per-system run_if evaluation" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new()).add_systems(
+  let lifecycle_world_934_0 = @ecs.World::new()
+  defer lifecycle_world_934_0.close()
+  let app = App::new(lifecycle_world_934_0).add_systems(
     Update,
     (
       system(fn(_world : @ecs.World) { log.push("first") }).run_if(fn(
@@ -958,7 +1008,9 @@ test "app: chained tuple preserves per-system run_if evaluation" {
 test "app: chained tuple in_set preserves order and set boundaries" {
   let log : Array[String] = []
   let propagate_set = system_set("test.chain.propagate")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_957_0 = @ecs.World::new()
+  defer lifecycle_world_957_0.close()
+  let app = App::new(lifecycle_world_957_0)
     .add_systems(
       Update,
       system(fn(_world : @ecs.World) { log.push("before") }).before(
@@ -987,7 +1039,9 @@ test "app: chained tuple in_set preserves order and set boundaries" {
 test "app: chained tuple in_set applies set run conditions" {
   let log : Array[String] = []
   let gated_set = system_set("test.chain.gated")
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_986_0 = @ecs.World::new()
+  defer lifecycle_world_986_0.close()
+  let app = App::new(lifecycle_world_986_0)
     .add_systems(
       Update,
       (
@@ -1007,7 +1061,9 @@ test "app: chained tuple in_set applies set run conditions" {
 ///|
 test "app: Last stage runs after PostUpdate" {
   let log : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_1007_0 = @ecs.World::new()
+  defer lifecycle_world_1007_0.close()
+  let app = App::new(lifecycle_world_1007_0)
     .add_pre_update_system(fn(_world : @ecs.World) { log.push("pre") })
     .add_system(fn(_world : @ecs.World) { log.push("update") })
     .add_post_update_system(fn(_world : @ecs.World) { log.push("post") })
@@ -1019,7 +1075,9 @@ test "app: Last stage runs after PostUpdate" {
 ///|
 test "app: update runs startup once and update every frame" {
   let log : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1019_0 = @ecs.World::new()
+  defer lifecycle_world_1019_0.close()
+  let mut app = App::new(lifecycle_world_1019_0)
     .add_systems(
       PreStartup,
       system(fn(_world : @ecs.World) { log.push("pre_startup") }),
@@ -1281,7 +1339,9 @@ impl @ecs.Message for TestMessage with fn message() {
 ///|
 test "app: add_system_param4 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_param4(fn(
+  let lifecycle_world_1281_0 = @ecs.World::new()
+  defer lifecycle_world_1281_0.close()
+  let app = App::new(lifecycle_world_1281_0).add_system_param4(fn(
     p1 : Param1,
     p2 : Param2,
     p3 : Param3,
@@ -1306,7 +1366,9 @@ test "app: add_system_param4 injects parameters in order" {
 ///|
 test "app: system_config_param5 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_1306_0 = @ecs.World::new()
+  defer lifecycle_world_1306_0.close()
+  let app = App::new(lifecycle_world_1306_0).add_system_config(
     system_config_param5(fn(
       p1 : Param1,
       p2 : Param2,
@@ -1336,7 +1398,9 @@ test "app: system_config_param5 injects parameters in order" {
 ///|
 test "app: system_config_param6 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_1336_0 = @ecs.World::new()
+  defer lifecycle_world_1336_0.close()
+  let app = App::new(lifecycle_world_1336_0).add_system_config(
     system_config_param6(fn(
       p1 : Param1,
       p2 : Param2,
@@ -1369,7 +1433,9 @@ test "app: system_config_param6 injects parameters in order" {
 ///|
 test "app: system_config_param8 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_1369_0 = @ecs.World::new()
+  defer lifecycle_world_1369_0.close()
+  let app = App::new(lifecycle_world_1369_0).add_system_config(
     system_config_param8(fn(
       p1 : Param1,
       p2 : Param2,
@@ -1408,7 +1474,9 @@ test "app: system_config_param8 injects parameters in order" {
 ///|
 test "app: system_config_param10 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_config(
+  let lifecycle_world_1408_0 = @ecs.World::new()
+  defer lifecycle_world_1408_0.close()
+  let app = App::new(lifecycle_world_1408_0).add_system_config(
     system_config_param10(fn(
       p1 : Param1,
       p2 : Param2,
@@ -1453,7 +1521,9 @@ test "app: system_config_param10 injects parameters in order" {
 ///|
 test "app: add_system_param8 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_param8(fn(
+  let lifecycle_world_1453_0 = @ecs.World::new()
+  defer lifecycle_world_1453_0.close()
+  let app = App::new(lifecycle_world_1453_0).add_system_param8(fn(
     p1 : Param1,
     p2 : Param2,
     p3 : Param3,
@@ -1490,7 +1560,9 @@ test "app: add_system_param8 injects parameters in order" {
 ///|
 test "app: add_system_param10 injects parameters in order" {
   let log : Array[Int] = []
-  let app = App::new(@ecs.World::new()).add_system_param10(fn(
+  let lifecycle_world_1490_0 = @ecs.World::new()
+  defer lifecycle_world_1490_0.close()
+  let app = App::new(lifecycle_world_1490_0).add_system_param10(fn(
     p1 : Param1,
     p2 : Param2,
     p3 : Param3,
@@ -1533,7 +1605,9 @@ test "app: add_system_param10 injects parameters in order" {
 ///|
 test "app: add_systems_param8 injects parameters for explicit stages" {
   let log : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1533_0 = @ecs.World::new()
+  defer lifecycle_world_1533_0.close()
+  let mut app = App::new(lifecycle_world_1533_0)
     .add_systems_param8(Startup, fn(
       p1 : Param1,
       p2 : Param2,
@@ -1589,7 +1663,9 @@ test "app: add_systems_param8 injects parameters for explicit stages" {
 ///|
 test "app: add_systems_param10 injects parameters for explicit stages" {
   let log : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_1589_0 = @ecs.World::new()
+  defer lifecycle_world_1589_0.close()
+  let mut app = App::new(lifecycle_world_1589_0)
     .add_systems_param10(Startup, fn(
       p1 : Param1,
       p2 : Param2,
@@ -1635,7 +1711,9 @@ test "app: add_systems_param10 injects parameters for explicit stages" {
 ///|
 test "app: system param can read current system tick" {
   let log : Array[(@core.Tick, @core.Tick)] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_1635_0 = @ecs.World::new()
+  defer lifecycle_world_1635_0.close()
+  let app = App::new(lifecycle_world_1635_0)
   app
   .add_system_param(fn(param : SequenceParam) {
     log.push((param.tick.last_run, param.tick.this_run))
@@ -1653,7 +1731,9 @@ test "app: system param can read current system tick" {
 ///|
 test "app: MessageWriter system param writes messages for MessageReader" {
   let observed : Ref[Int] = Ref(-1)
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_1653_0 = @ecs.World::new()
+  defer lifecycle_world_1653_0.close()
+  let app = App::new(lifecycle_world_1653_0)
     .add_message(test_message_key)
     .add_system_param(fn(writer : @ecs.MessageWriter[TestMessage]) {
       ignore(writer.write({ value: 42 }))
@@ -1740,7 +1820,9 @@ test "app: SystemParam Query2 injects typed query into update system" {
 test "app: schedule reports conflicting query params during execution validation" {
   let kinds : Array[ErrorContextKind] = []
   let ran = Ref(false)
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_1739_0 = @ecs.World::new()
+  defer lifecycle_world_1739_0.close()
+  let app = App::new(lifecycle_world_1739_0)
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_system_param2(fn(
       _lhs : @ecs.Query[@ecs.Write[EcsPosition], @ecs.All],
@@ -1765,7 +1847,9 @@ test "app: schedule reports conflicting query params during execution validation
 test "app: add_system_param5 reports conflicting query params during execution validation" {
   let kinds : Array[ErrorContextKind] = []
   let ran = Ref(false)
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_1764_0 = @ecs.World::new()
+  defer lifecycle_world_1764_0.close()
+  let app = App::new(lifecycle_world_1764_0)
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_system_param5(fn(
       _p1 : Param1,

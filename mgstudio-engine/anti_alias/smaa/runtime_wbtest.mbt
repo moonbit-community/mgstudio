@@ -25,7 +25,9 @@ fn smaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_26_0 = @ecs.World::new()
+  defer lifecycle_world_26_0.close()
+  let app = @app.App::new(lifecycle_world_26_0).add_plugins(
     SmaaPlugin::SmaaPlugin(),
   )
   let camera_entity = smaa_test_spawn_camera(app.world())
@@ -42,7 +44,9 @@ test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
 
 ///|
 test "anti_alias/smaa: plugin registers embedded wgsl source" {
-  let _app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_43_0 = @ecs.World::new()
+  defer lifecycle_world_43_0.close()
+  let _app = @app.App::new(lifecycle_world_43_0).add_plugins(
     SmaaPlugin::SmaaPlugin(),
   )
   let source = match
@@ -58,7 +62,9 @@ test "anti_alias/smaa: plugin registers embedded wgsl source" {
 
 ///|
 test "anti_alias/smaa: plugin registers Bevy lookup table assets" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_59_0 = @ecs.World::new()
+  defer lifecycle_world_59_0.close()
+  let app = @app.App::new(lifecycle_world_59_0).add_plugins(
     SmaaPlugin::SmaaPlugin(),
   )
   debug_inspect(

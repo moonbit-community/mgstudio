@@ -29,7 +29,9 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
 
 ///|
 test "mip_generation plugin initializes downsample shader registry resource" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_30_0 = @ecs.World::new()
+  defer lifecycle_world_30_0.close()
+  let mut app = @app.App::new(lifecycle_world_30_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -51,7 +53,9 @@ test "mip_generation plugin initializes downsample shader registry resource" {
 
 ///|
 test "mip_generation dynamic shaders keep AssetServer shader handles in sync" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_52_0 = @ecs.World::new()
+  defer lifecycle_world_52_0.close()
+  let mut app = @app.App::new(lifecycle_world_52_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -88,7 +92,9 @@ test "mip_generation texture format table follows bevy list shape" {
 
 ///|
 test "mip_generation plugin initializes finish-stage resources in render sub-app" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_89_0 = @ecs.World::new()
+  defer lifecycle_world_89_0.close()
+  let app = @app.App::new(lifecycle_world_89_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -106,7 +112,9 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
 
 ///|
 test "core_2d plugin initializes phase resources in render sub-app only" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_107_0 = @ecs.World::new()
+  defer lifecycle_world_107_0.close()
+  let app = @app.App::new(lifecycle_world_107_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -141,7 +149,9 @@ test "core_2d plugin initializes phase resources in render sub-app only" {
 
 ///|
 test "core_2d extracts active Camera2d phase views and retains live views" {
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_142_0 = @ecs.World::new()
+  defer lifecycle_world_142_0.close()
+  let mut app = @app.App::new(lifecycle_world_142_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -331,7 +341,9 @@ test "core_2d phase resources store items per retained view" {
 
 ///|
 test "core_2d plugin owns Camera2d post-process required components" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_332_0 = @ecs.World::new()
+  defer lifecycle_world_332_0.close()
+  let app = @app.App::new(lifecycle_world_332_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -390,7 +402,9 @@ fn camera_driver_probe_tick(world : @ecs.World) -> Unit {
 
 ///|
 test "camera_driver runs each sorted camera's render schedule with CurrentView" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_391_0 = @ecs.World::new()
+  defer lifecycle_world_391_0.close()
+  let app = @app.App::new(lifecycle_world_391_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())

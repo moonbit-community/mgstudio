@@ -123,7 +123,9 @@ fn current_stage_label() -> String {
 
 ///|
 test "time: manual instant keeps first update delta at zero" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_124_0 = @ecs.World::new()
+  defer lifecycle_world_124_0.close()
+  let mut app = @app.App::new(lifecycle_world_124_0).add_plugins(
     @time.TimePlugin::TimePlugin(),
   )
   app = set_virtual_max_delta_seconds(app, 10.0F)
@@ -183,7 +185,9 @@ test "time: automatic update uses render world sent instant" {
   let channels = create_time_channels()
   let sender = channels.0
   let receiver = channels.1
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_181_0 = @ecs.World::new()
+  defer lifecycle_world_181_0.close()
+  let mut app = @app.App::new(lifecycle_world_181_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(receiver)
 
@@ -206,7 +210,9 @@ test "time: automatic update uses render world sent instant" {
 
 ///|
 test "time: virtual time clamps large deltas by default" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_207_0 = @ecs.World::new()
+  defer lifecycle_world_207_0.close()
+  let mut app = @app.App::new(lifecycle_world_207_0).add_plugins(
     @time.TimePlugin::TimePlugin(),
   )
 
@@ -233,7 +239,9 @@ test "time: virtual time clamps large deltas by default" {
 
 ///|
 test "time: pause and relative speed follow bevy virtual semantics" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_234_0 = @ecs.World::new()
+  defer lifecycle_world_234_0.close()
+  let mut app = @app.App::new(lifecycle_world_234_0).add_plugins(
     @time.TimePlugin::TimePlugin(),
   )
   app = set_virtual_max_delta_seconds(app, 10.0F)
@@ -288,7 +296,9 @@ test "time: pause and relative speed follow bevy virtual semantics" {
 ///|
 test "time: fixed timesteps strategy drives fixed update loop" {
   let counter : Ref[Int] = Ref(0)
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_288_0 = @ecs.World::new()
+  defer lifecycle_world_288_0.close()
+  let mut app = @app.App::new(lifecycle_world_288_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(Time::from_seconds(0.125F))
     .add_fixed_update_system(fn(_world : @ecs.World) {
@@ -319,7 +329,9 @@ test "time: fixed timesteps strategy drives fixed update loop" {
 ///|
 test "time: generic time switches to fixed during fixed update and restores after loop" {
   let fixed_log : Array[String] = []
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_319_0 = @ecs.World::new()
+  defer lifecycle_world_319_0.close()
+  let mut app = @app.App::new(lifecycle_world_319_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(Time::from_seconds(0.125F))
     .add_fixed_update_system(fn(world : @ecs.World) {
@@ -356,7 +368,9 @@ test "time: generic time switches to fixed during fixed update and restores afte
 ///|
 test "time: fixed resource timestep changes affect later steps in the same frame" {
   let steps : Ref[Int] = Ref(0)
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_356_0 = @ecs.World::new()
+  defer lifecycle_world_356_0.close()
+  let mut app = @app.App::new(lifecycle_world_356_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(Time::from_seconds(0.2F))
     .add_fixed_update_system_param(fn(fixed_time : @app.ResMut[Time[Fixed]]) {
@@ -390,7 +404,9 @@ test "time: fixed resource timestep changes affect later steps in the same frame
 ///|
 test "time: fixed main schedule runs substages in bevy order" {
   let log : Array[String] = []
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_390_0 = @ecs.World::new()
+  defer lifecycle_world_390_0.close()
+  let mut app = @app.App::new(lifecycle_world_390_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(Time::from_seconds(0.25F))
     .add_fixed_first_system(fn(_world : @ecs.World) {
@@ -423,7 +439,9 @@ test "time: fixed main schedule runs substages in bevy order" {
 ///|
 test "time: run fixed main loop system sets order before fixed and after hooks" {
   let log : Array[String] = []
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_423_0 = @ecs.World::new()
+  defer lifecycle_world_423_0.close()
+  let mut app = @app.App::new(lifecycle_world_423_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(Time::from_seconds(0.25F))
     .add_run_fixed_main_loop_system_config(
@@ -458,7 +476,9 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
 ///|
 test "time: fixed main schedule order resource drives fixed substage order" {
   let log : Array[String] = []
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_458_0 = @ecs.World::new()
+  defer lifecycle_world_458_0.close()
+  let mut app = @app.App::new(lifecycle_world_458_0)
     .add_plugins(@time.TimePlugin::TimePlugin())
     .insert_resource(Time::from_seconds(0.25F))
     .insert_world_resource(

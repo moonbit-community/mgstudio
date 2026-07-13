@@ -114,7 +114,9 @@ test "render plugin: debug flags configure batching indirect parameter readback 
   let debug_flags = RenderDebugFlags::RenderDebugFlags().with_allow_copies_from_indirect_parameters(
     true,
   )
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_112_0 = @ecs.World::new()
+  defer lifecycle_world_112_0.close()
+  let app = @app.App::new(lifecycle_world_112_0).add_plugins(
     RenderPlugin::RenderPlugin().with_debug_flags(debug_flags),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
@@ -158,7 +160,9 @@ test "render schedule: render graph is a distinct root graph schedule" {
 ///|
 test "render schedule: recovery drives render and render graph phases once" {
   let log : Array[String] = []
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_158_0 = @ecs.World::new()
+  defer lifecycle_world_158_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_158_0)
     .set_update_schedule(Some(render_recovery_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_schedule_stage()))
     .add_schedule(RenderGraph::base_schedule())
@@ -229,7 +233,9 @@ test "render schedule: order inserts stages around render" {
 ///|
 test "render schedule: view and specialization sets match bevy order" {
   let log : Array[String] = []
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_229_0 = @ecs.World::new()
+  defer lifecycle_world_229_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_229_0)
     .set_update_schedule(Some(render_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_schedule_stage()))
   let render_sub_app = configure_base_render_sets(render_sub_app)
@@ -273,7 +279,9 @@ test "render schedule: view and specialization sets match bevy order" {
 ///|
 test "render schedule: prepare resource sets match bevy order" {
   let log : Array[String] = []
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_273_0 = @ecs.World::new()
+  defer lifecycle_world_273_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_273_0)
     .set_update_schedule(Some(render_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_schedule_stage()))
   let render_sub_app = configure_base_render_sets(render_sub_app)
@@ -329,7 +337,9 @@ test "render schedule: pipeline queue is chained inside render set" {
       @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
     ),
   )
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_323_0 = @ecs.World::new()
+  defer lifecycle_world_323_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_323_0)
     .set_update_schedule(Some(render_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_schedule_stage()))
   render_sub_app.world().insert_resource(pipeline_cache_resource_key, cache)
@@ -422,7 +432,9 @@ test "render recovery: render schedule only runs when renderer is ready" {
   let time_channels = @time.create_time_channels()
   let time_sender = time_channels.0
   let time_receiver = time_channels.1
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_419_0 = @ecs.World::new()
+  defer lifecycle_world_419_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_419_0)
     .set_update_schedule(Some(render_recovery_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_schedule_stage()))
     .add_schedule(@app.Schedule::new(render_recovery_schedule_stage()))
@@ -481,7 +493,9 @@ test "render settings: current view stores the render entity" {
 
 ///|
 test "render plugin: initializes pending command buffers from render startup" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_482_0 = @ecs.World::new()
+  defer lifecycle_world_482_0.close()
+  let app = @app.App::new(lifecycle_world_482_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let render_sub_app = app
@@ -502,7 +516,9 @@ test "render plugin: initializes pending command buffers from render startup" {
 
 ///|
 test "render plugin: copies AssetServer resource into RenderApp" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_503_0 = @ecs.World::new()
+  defer lifecycle_world_503_0.close()
+  let app = @app.App::new(lifecycle_world_503_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(RenderPlugin::RenderPlugin())
   let render_server = app
@@ -519,7 +535,9 @@ test "render plugin: copies AssetServer resource into RenderApp" {
 
 ///|
 test "render startup: gpu resources can be initialized repeatedly" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_520_0 = @ecs.World::new()
+  defer lifecycle_world_520_0.close()
+  let app = @app.App::new(lifecycle_world_520_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let render_sub_app = app
@@ -546,7 +564,9 @@ test "render startup: gpu resources can be initialized repeatedly" {
 
 ///|
 test "render plugin: installs render asset byte budget resources" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_547_0 = @ecs.World::new()
+  defer lifecycle_world_547_0.close()
+  let app = @app.App::new(lifecycle_world_547_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let main_budget = app
@@ -591,7 +611,9 @@ test "render asset byte budget: extract updates limiter and cleanup resets write
 
 ///|
 test "render extract schedule: runs before render and defers commands to ExtractCommands" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_592_0 = @ecs.World::new()
+  defer lifecycle_world_592_0.close()
+  let app = @app.App::new(lifecycle_world_592_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   ignore(
@@ -632,7 +654,9 @@ test "render extract schedule: runs before render and defers commands to Extract
 
 ///|
 test "render plugin: initializes render state as not ready" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_633_0 = @ecs.World::new()
+  defer lifecycle_world_633_0.close()
+  let app = @app.App::new(lifecycle_world_633_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
@@ -645,7 +669,9 @@ test "render plugin: initializes render state as not ready" {
 
 ///|
 test "render plugin: future resources unpack during plugin finish" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_646_0 = @ecs.World::new()
+  defer lifecycle_world_646_0.close()
+  let app = @app.App::new(lifecycle_world_646_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   debug_inspect(
@@ -676,7 +702,9 @@ test "render plugin: future resources unpack during plugin finish" {
 
 ///|
 test "render plugin: initializes manual texture views in main and render worlds" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_677_0 = @ecs.World::new()
+  defer lifecycle_world_677_0.close()
+  let app = @app.App::new(lifecycle_world_677_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   debug_inspect(
@@ -709,7 +737,9 @@ test "render recovery: reinitializing consumes future render resources before st
     ),
     content="true",
   )
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_699_0 = @ecs.World::new()
+  defer lifecycle_world_699_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_699_0)
     .add_schedule(@app.Schedule::new(render_startup_schedule_stage()))
     .add_systems(
       render_startup_schedule_stage(),
@@ -787,7 +817,9 @@ test "render error handler: recover policy creates future resources and restarts
   let resources = RenderResources::from_backend(backend)
   let main_world = @ecs.World::new()
   defer main_world.close()
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
+  let lifecycle_world_784_0 = @ecs.World::new()
+  defer lifecycle_world_784_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_784_0)
     .add_schedule(@app.Schedule::new(render_startup_schedule_stage()))
     .add_systems(
       render_startup_schedule_stage(),
@@ -904,7 +936,9 @@ test "render error handler: default handler sends app exit from main world" {
 
 ///|
 test "render plugin: installs window render resources in render world" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_905_0 = @ecs.World::new()
+  defer lifecycle_world_905_0.close()
+  let app = @app.App::new(lifecycle_world_905_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()

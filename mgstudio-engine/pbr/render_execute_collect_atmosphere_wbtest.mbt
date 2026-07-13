@@ -277,7 +277,9 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
 
 ///|
 test "render3d collect cameras: atmosphere default transform follows Bevy on_add hook" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_278_0 = @ecs.World::new()
+  defer lifecycle_world_278_0.close()
+  let app = @app.App::new(lifecycle_world_278_0)
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
     .add_plugins(@light.LightPlugin::LightPlugin())
   let source_world = app.world()

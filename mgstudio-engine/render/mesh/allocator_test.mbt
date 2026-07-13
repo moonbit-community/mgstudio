@@ -530,8 +530,12 @@ test "render mesh allocator: webgl-style vertex allocation uses large slabs" {
 
 ///|
 test "render mesh allocator plugin initializes resource owners without overwriting" {
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_531_0 = @ecs.World::new()
+  defer lifecycle_world_531_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_531_0)
+  let lifecycle_world_531_1 = @ecs.World::new()
+  defer lifecycle_world_531_1.close()
+  let app = @app.App::new(lifecycle_world_531_1)
     .insert_sub_app(@app.RenderApp, render_sub_app)
     .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
   let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
@@ -553,7 +557,9 @@ test "render mesh allocator plugin initializes resource owners without overwriti
   let seeded_world = @ecs.World::new()
   defer seeded_world.close()
   seeded_world.insert_resource(MeshAllocator::resource(), seeded)
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_531_2 = @ecs.World::new()
+  defer lifecycle_world_531_2.close()
+  let app = @app.App::new(lifecycle_world_531_2)
     .insert_sub_app(@app.RenderApp, @app.SubApp::new(seeded_world))
     .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
   guard app
@@ -573,7 +579,9 @@ test "render mesh allocator plugin initializes resource owners without overwriti
 
 ///|
 test "render mesh allocator plugin tolerates missing render app" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_574_0 = @ecs.World::new()
+  defer lifecycle_world_574_0.close()
+  let app = @app.App::new(lifecycle_world_574_0).add_plugins(
     MeshAllocatorPlugin::MeshAllocatorPlugin(),
   )
   inspect(app.contains_resource(MeshAllocator::resource()), content="false")

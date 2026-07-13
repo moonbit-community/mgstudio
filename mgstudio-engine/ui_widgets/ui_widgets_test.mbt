@@ -36,7 +36,9 @@ test "ui_widgets: owner widget surface exposes core event and marker types" {
 
 ///|
 test "ui_widgets: plugin entry installs widget plugins on top of ui plugin" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_37_0 = @ecs.World::new()
+  defer lifecycle_world_37_0.close()
+  let app = @app.App::new(lifecycle_world_37_0)
   @ui_widgets.ui_widgets_plugin(app) |> ignore
   debug_inspect(true, content="true")
 }

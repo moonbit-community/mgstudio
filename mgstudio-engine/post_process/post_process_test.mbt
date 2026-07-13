@@ -107,7 +107,9 @@ test "post_process registers Bevy root gaussian blur shader library" {
 
 ///|
 test "post_process plugin owns Bloom Hdr required component" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_108_0 = @ecs.World::new()
+  defer lifecycle_world_108_0.close()
+  let app = @app.App::new(lifecycle_world_108_0).add_plugins(
     @post_process.PostProcessPlugin::PostProcessPlugin(),
   )
   let world = app.world()

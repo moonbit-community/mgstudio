@@ -83,9 +83,13 @@ test "pbr/lightmap: plugin state keeps bevy-shaped defaults" {
 
 ///|
 test "pbr/lightmap: plugin initializes render-lightmaps in render world" {
-  let app = @app.App::new(@ecs.World::new()).insert_sub_app(
+  let lifecycle_world_84_0 = @ecs.World::new()
+  defer lifecycle_world_84_0.close()
+  let lifecycle_world_84_1 = @ecs.World::new()
+  defer lifecycle_world_84_1.close()
+  let app = @app.App::new(lifecycle_world_84_0).insert_sub_app(
     @app.RenderApp,
-    @app.SubApp::new(@ecs.World::new()).set_update_schedule(Some(@app.Main)),
+    @app.SubApp::new(lifecycle_world_84_1).set_update_schedule(Some(@app.Main)),
   )
   let app = lightmap_plugin_install(app)
   let render_world = app.sub_app(@app.RenderApp).world()

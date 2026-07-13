@@ -253,7 +253,9 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
     1.0F,
   )
 
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_248_0 = @ecs.World::new()
+  defer lifecycle_world_248_0.close()
+  let app = @app.App::new(lifecycle_world_248_0).add_plugins(
     DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window),
       primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
@@ -298,7 +300,9 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
 
 ///|
 test "default plugins: set(AssetPlugin::nearest()) replaces default asset plugin config" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_299_0 = @ecs.World::new()
+  defer lifecycle_world_299_0.close()
+  let app = @app.App::new(lifecycle_world_299_0).add_plugins(
     DefaultPlugins::set(@asset.AssetPlugin::nearest()),
   )
 
@@ -313,7 +317,9 @@ test "default plugins: set(AssetPlugin::nearest()) replaces default asset plugin
 
 ///|
 test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_314_0 = @ecs.World::new()
+  defer lifecycle_world_314_0.close()
+  let app = @app.App::new(lifecycle_world_314_0).add_plugins(
     DefaultPlugins::set(
       @asset.AssetPlugin::AssetPlugin().with_file_path("examples/asset/files"),
     ),
@@ -339,8 +345,10 @@ test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root"
 
 ///|
 test "default plugins: register_asset_source adds a named Bevy-style extra source" {
+  let lifecycle_world_340_0 = @ecs.World::new()
+  defer lifecycle_world_340_0.close()
   let app = @asset.register_asset_source(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_340_0),
     @asset.AssetSourceId::Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
   ).add_plugins(DefaultPlugins::build())
@@ -374,8 +382,10 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
   let directories : Ref[Array[String]] = Ref([])
   let dir_checks : Ref[Array[String]] = Ref([])
 
+  let lifecycle_world_370_0 = @ecs.World::new()
+  defer lifecycle_world_370_0.close()
   let app = @asset.register_asset_source(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_370_0),
     @asset.AssetSourceId::Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None).with_reader(fn(
         base_reader,
@@ -448,8 +458,10 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
 test "default plugins: register_asset_source can wrap the default source reader" {
   let reads : Ref[Array[String]] = Ref([])
 
+  let lifecycle_world_447_0 = @ecs.World::new()
+  defer lifecycle_world_447_0.close()
   let app = @asset.register_asset_source(
-    @app.App::new(@ecs.World::new()),
+    @app.App::new(lifecycle_world_447_0),
     @asset.AssetSourceId::Default,
     @asset.AssetSourceBuilder::platform_default("", None).with_reader(fn(
       base_reader,

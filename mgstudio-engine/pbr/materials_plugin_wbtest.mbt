@@ -2578,7 +2578,9 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial()
     },
   )
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_2571_0 = @ecs.World::new()
+  defer lifecycle_world_2571_0.close()
+  let app = @app.App::new(lifecycle_world_2571_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
     .add_plugins(no_shadow_plugin)
@@ -3201,7 +3203,9 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
       ParityCustomMaterial::ParityCustomMaterial()
     },
   )
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_3198_0 = @ecs.World::new()
+  defer lifecycle_world_3198_0.close()
+  let app = @app.App::new(lifecycle_world_3198_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let world = app.sub_app(@app.RenderApp).world()
@@ -3711,7 +3715,9 @@ test "render3d: queue shadows skips missing shadow phase before pending queue lo
       ParityCustomMaterial::ParityCustomMaterial()
     },
   )
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_3708_0 = @ecs.World::new()
+  defer lifecycle_world_3708_0.close()
+  let app = @app.App::new(lifecycle_world_3708_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let world = app.sub_app(@app.RenderApp).world()

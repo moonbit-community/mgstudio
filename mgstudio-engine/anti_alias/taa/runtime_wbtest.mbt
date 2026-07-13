@@ -25,7 +25,9 @@ fn taa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 
 ///|
 test "anti_alias/taa: runtime state tracks camera-only and reset count" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_26_0 = @ecs.World::new()
+  defer lifecycle_world_26_0.close()
+  let app = @app.App::new(lifecycle_world_26_0).add_plugins(
     TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
   )
   let camera_entity = taa_test_spawn_camera(app.world())
@@ -60,7 +62,9 @@ test "anti_alias/taa: runtime state tracks camera-only and reset count" {
 
 ///|
 test "anti_alias/taa: plugin registers embedded wgsl source" {
-  let _app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_61_0 = @ecs.World::new()
+  defer lifecycle_world_61_0.close()
+  let _app = @app.App::new(lifecycle_world_61_0).add_plugins(
     TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
   )
   let source = match
@@ -73,7 +77,9 @@ test "anti_alias/taa: plugin registers embedded wgsl source" {
 
 ///|
 test "anti_alias/taa: required components mirror Bevy camera prerequisites" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_74_0 = @ecs.World::new()
+  defer lifecycle_world_74_0.close()
+  let app = @app.App::new(lifecycle_world_74_0).add_plugins(
     TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
   )
   let entity = app.world().spawn_empty()
@@ -104,7 +110,9 @@ test "anti_alias/taa: required components mirror Bevy camera prerequisites" {
 
 ///|
 test "anti_alias/taa: prepare_taa_jitter follows Bevy Halton sequence" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_105_0 = @ecs.World::new()
+  defer lifecycle_world_105_0.close()
+  let app = @app.App::new(lifecycle_world_105_0)
     .add_plugins(@diagnostic.FrameCountPlugin::FrameCountPlugin())
     .add_plugins(TemporalAntiAliasPlugin::TemporalAntiAliasPlugin())
   let entity = taa_test_spawn_camera(app.world())

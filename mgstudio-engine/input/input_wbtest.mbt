@@ -167,7 +167,11 @@ test "input: InputSystems set gates pre-update polling systems" {
   @gilrs.gamepad_test_reset_state()
   @gilrs.gamepad_test_use_ff_mock(1)
 
-  let app = input_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
+  let lifecycle_world_164_0 = @ecs.World::new()
+  defer lifecycle_world_164_0.close()
+  let app = input_plugin(
+      @time.time_plugin(@app.App::new(lifecycle_world_164_0)),
+    )
     .add_pre_update_system_config(
       @app.system(input_probe_before_system).in_set(input_probe_before_set),
     )
@@ -200,7 +204,11 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
   ]
   gamepad_input_runtime_state.previous_gamepads = []
 
-  let app = input_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
+  let lifecycle_world_193_0 = @ecs.World::new()
+  defer lifecycle_world_193_0.close()
+  let app = input_plugin(
+      @time.time_plugin(@app.App::new(lifecycle_world_193_0)),
+    )
     .add_system(input_probe_update_system)
     .run_once()
 
@@ -331,7 +339,11 @@ test "input: accumulated mouse resources follow bevy-style message accumulation"
   reset_input_runtime_state()
   @gilrs.gamepad_test_reset_state()
 
-  let app = input_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
+  let lifecycle_world_329_0 = @ecs.World::new()
+  defer lifecycle_world_329_0.close()
+  let app = input_plugin(
+    @time.time_plugin(@app.App::new(lifecycle_world_329_0)),
+  )
   let world = app.world()
   world.insert_resource(
     AccumulatedMouseMotion::resource(),

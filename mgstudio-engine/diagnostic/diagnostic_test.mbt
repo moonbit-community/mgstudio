@@ -55,8 +55,10 @@ test "diagnostic: duration tracks instant span" {
 ///|
 test "diagnostics: system param buffers and keeps last value per path" {
   let path = DiagnosticPath::new("test/deferred")
+  let lifecycle_world_55_0 = @ecs.World::new()
+  defer lifecycle_world_55_0.close()
   let mut app = register_diagnostic(
-    @app.App::new(@ecs.World::new()).add_plugins(
+    @app.App::new(lifecycle_world_55_0).add_plugins(
       DiagnosticsPlugin::DiagnosticsPlugin(),
     ),
     Diagnostic::new(path),

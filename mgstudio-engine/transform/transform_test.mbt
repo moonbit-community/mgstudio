@@ -538,7 +538,9 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
 
 ///|
 test "transform plugin: post startup populates hierarchy globals" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_539_0 = @ecs.World::new()
+  defer lifecycle_world_539_0.close()
+  let app = @app.App::new(lifecycle_world_539_0).add_plugins(
     @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
@@ -577,7 +579,9 @@ test "transform plugin: post startup populates hierarchy globals" {
 
 ///|
 test "transform plugin: queues parent validation for missing parent GlobalTransform" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_578_0 = @ecs.World::new()
+  defer lifecycle_world_578_0.close()
+  let app = @app.App::new(lifecycle_world_578_0).add_plugins(
     @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
@@ -608,7 +612,9 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 
 ///|
 test "transform plugin: keeps preinserted static optimization resource" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_609_0 = @ecs.World::new()
+  defer lifecycle_world_609_0.close()
+  let app = @app.App::new(lifecycle_world_609_0)
     .insert_resource(StaticTransformOptimizations::disabled())
     .add_plugins(@transform.TransformPlugin::TransformPlugin())
   let value = app
@@ -621,7 +627,9 @@ test "transform plugin: keeps preinserted static optimization resource" {
 ///|
 test "transform plugin: post update reflects update stage transform writes" {
   let entity_ref = Ref(@core.Entity::new(0, 0))
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_621_0 = @ecs.World::new()
+  defer lifecycle_world_621_0.close()
+  let app = @app.App::new(lifecycle_world_621_0).add_plugins(
     @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()
@@ -659,7 +667,9 @@ test "transform plugin: post update reflects update stage transform writes" {
 ///|
 test "transform plugin: post update reflects hierarchy root transform writes" {
   let parent_ref = Ref(@core.Entity::new(0, 0))
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_659_0 = @ecs.World::new()
+  defer lifecycle_world_659_0.close()
+  let app = @app.App::new(lifecycle_world_659_0).add_plugins(
     @transform.TransformPlugin::TransformPlugin(),
   )
   let world = app.world()

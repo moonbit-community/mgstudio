@@ -123,7 +123,9 @@ test "light cluster: cluster config helper semantics match bevy shape" {
 ///|
 test "light cluster: assignment is scheduled after transform camera and visibility like bevy" {
   let camera_update_set = @app.system_set("mgstudio.camera.update")
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_123_0 = @ecs.World::new()
+  defer lifecycle_world_123_0.close()
+  let app = @app.App::new(lifecycle_world_123_0)
     .add_systems(
       @app.PostUpdate,
       @app.system(fn(_world : @ecs.World) { () })

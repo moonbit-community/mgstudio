@@ -14,7 +14,11 @@
 
 ///|
 test "shader plugin initializes Assets<Shader> resource" {
-  let app = shader_plugin(@asset.asset_plugin(@app.App::new(@ecs.World::new())))
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = shader_plugin(
+    @asset.asset_plugin(@app.App::new(lifecycle_world_15_0)),
+  )
   let world = app.world()
   let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
   debug_inspect(
@@ -25,8 +29,10 @@ test "shader plugin initializes Assets<Shader> resource" {
 
 ///|
 test "shader plugin can be installed more than once without resetting shader assets" {
+  let lifecycle_world_26_0 = @ecs.World::new()
+  defer lifecycle_world_26_0.close()
   let mut app = shader_plugin(
-    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+    @asset.asset_plugin(@app.App::new(lifecycle_world_26_0)),
   )
   let shader_assets_key : @ecs.ResourceKey[@asset.Assets[Shader]] = @asset.assets_resource_key()
   let handle = match app.world().get_resource_mut(shader_assets_key) {
@@ -86,8 +92,10 @@ test "shader loader stores typed shader assets and direct file dependencies" {
   let dep_dependency_lengths : Array[Int] = []
   let root_paths : Array[String] = []
   let dep_paths : Array[String] = []
+  let lifecycle_world_59_0 = @ecs.World::new()
+  defer lifecycle_world_59_0.close()
   let mut app = shader_plugin(
-    @asset.asset_plugin(@app.App::new(@ecs.World::new())),
+    @asset.asset_plugin(@app.App::new(lifecycle_world_59_0)),
   )
   app = app.add_systems(
     @app.Startup,

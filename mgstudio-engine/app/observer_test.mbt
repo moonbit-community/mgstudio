@@ -139,7 +139,9 @@ fn write_trigger_message(
 ///|
 test "app observer: add_observer2 exposes On<E> with MessageWriter" {
   let message_key = trigger_observer_triggered_key()
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_139_0 = @ecs.World::new()
+  defer lifecycle_world_139_0.close()
+  let app = App::new(lifecycle_world_139_0)
     .add_message(message_key)
     .add_observer2(write_trigger_message)
   let world = app.world()
@@ -155,7 +157,9 @@ test "app observer: add_observer2 exposes On<E> with MessageWriter" {
 ///|
 test "app observer: add_component_observer2 exposes ComponentOn<Insert, C> with MessageWriter" {
   let message_key = observer_triggered_key()
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_155_0 = @ecs.World::new()
+  defer lifecycle_world_155_0.close()
+  let app = App::new(lifecycle_world_155_0)
     .add_message(message_key)
     .add_component_observer2(write_insert_message)
   let world = app.world()
@@ -175,7 +179,9 @@ test "app observer: add_component_observer2 exposes ComponentOn<Insert, C> with 
 ///|
 test "app observer: add_component_observer2 exposes ComponentOn<Remove, C> with MessageWriter" {
   let message_key = observer_triggered_key()
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_175_0 = @ecs.World::new()
+  defer lifecycle_world_175_0.close()
+  let app = App::new(lifecycle_world_175_0)
     .add_message(message_key)
     .add_component_observer2(write_remove_message)
   let world = app.world()
@@ -197,7 +203,9 @@ test "app observer: add_component_observer2 exposes ComponentOn<Remove, C> with 
 test "app observer: fallible component insert observers route errors through the default handler" {
   let kinds : Array[ErrorContextKind] = []
   let sources : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_196_0 = @ecs.World::new()
+  defer lifecycle_world_196_0.close()
+  let app = App::new(lifecycle_world_196_0)
     .set_error_handler(fn(_error, context) {
       kinds.push(context.kind())
       sources.push(context.source())
@@ -222,7 +230,9 @@ test "app observer: fallible component insert observers route errors through the
 ///|
 test "app observer: fallible component remove observers route errors through the default handler" {
   let kinds : Array[ErrorContextKind] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_222_0 = @ecs.World::new()
+  defer lifecycle_world_222_0.close()
+  let app = App::new(lifecycle_world_222_0)
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
     .add_component_observer_fallible(fn(
       _event : @ecs.ComponentOn[@ecs.Remove, ObserverMarker],
@@ -245,7 +255,9 @@ test "app observer: fallible component remove observers route errors through the
 test "app observer: fallible trigger observers route errors through the default handler" {
   let kinds : Array[ErrorContextKind] = []
   let sources : Array[String] = []
-  let app = App::new(@ecs.World::new())
+  let lifecycle_world_244_0 = @ecs.World::new()
+  defer lifecycle_world_244_0.close()
+  let app = App::new(lifecycle_world_244_0)
     .set_error_handler(fn(_error, context) {
       kinds.push(context.kind())
       sources.push(context.source())

@@ -94,7 +94,9 @@ test "app: add_message wires MessageWriter and MessageReader through world queue
   let seen : Array[Int] = []
   let key : @ecs.MessageKey[TestAppMessage] = @ecs.Message::message()
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_91_0 = @ecs.World::new()
+  defer lifecycle_world_91_0.close()
+  let mut app = App::new(lifecycle_world_91_0)
     .add_message(key)
     .add_systems(
       Update,
@@ -129,7 +131,9 @@ test "app: on_message consumes unread messages once per condition state" {
   let triggered = Ref(0)
   let key : @ecs.MessageKey[TestAppMessage] = @ecs.Message::message()
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_126_0 = @ecs.World::new()
+  defer lifecycle_world_126_0.close()
+  let mut app = App::new(lifecycle_world_126_0)
     .add_message(key)
     .add_systems(
       Update,
@@ -163,7 +167,9 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
   let seen : Array[Int] = []
   let key : @ecs.MessageKey[TestDefaultAppMessage] = @ecs.Message::message()
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_160_0 = @ecs.World::new()
+  defer lifecycle_world_160_0.close()
+  let mut app = App::new(lifecycle_world_160_0)
     .add_message(key)
     .add_systems(
       Update,
@@ -215,7 +221,9 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
   let seen : Array[Int] = []
   let key : @ecs.MessageKey[TestCursorAppMessage] = @ecs.Message::message()
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_212_0 = @ecs.World::new()
+  defer lifecycle_world_212_0.close()
+  let mut app = App::new(lifecycle_world_212_0)
     .add_message(key)
     .add_systems(
       Update,

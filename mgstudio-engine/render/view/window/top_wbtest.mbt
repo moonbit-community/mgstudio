@@ -14,8 +14,12 @@
 
 ///|
 test "render view window: WindowRenderPlugin initializes render-world window resources" {
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_15_0)
+  let lifecycle_world_15_1 = @ecs.World::new()
+  defer lifecycle_world_15_1.close()
+  let app = @app.App::new(lifecycle_world_15_1)
     .insert_sub_app(@app.RenderApp, render_sub_app)
     .add_plugins(WindowRenderPlugin::WindowRenderPlugin())
   let render_world = app.sub_app(@app.RenderApp).world()
@@ -31,7 +35,9 @@ test "render view window: WindowRenderPlugin initializes render-world window res
 
 ///|
 test "render view window: WindowRenderPlugin tolerates missing RenderApp" {
-  let app = @app.App::new(@ecs.World::new()).add_plugins(
+  let lifecycle_world_32_0 = @ecs.World::new()
+  defer lifecycle_world_32_0.close()
+  let app = @app.App::new(lifecycle_world_32_0).add_plugins(
     WindowRenderPlugin::WindowRenderPlugin(),
   )
   debug_inspect(app.get_sub_app(@app.RenderApp) is None, content="true")
@@ -167,7 +173,9 @@ test "render view window: extract_windows updates size and present-mode change f
 
 ///|
 test "render view window: extract_windows removes closing windows and consumes cursor once" {
-  let main_app = @app.App::new(@ecs.World::new()).add_message(
+  let lifecycle_world_168_0 = @ecs.World::new()
+  defer lifecycle_world_168_0.close()
+  let main_app = @app.App::new(lifecycle_world_168_0).add_message(
     @window_pkg.ecs_key_window_closing,
   )
   let main_world = main_app.world()

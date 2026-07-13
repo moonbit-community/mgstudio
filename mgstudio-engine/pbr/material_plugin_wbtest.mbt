@@ -462,7 +462,9 @@ test "pbr material plugin: plugin registers assets typed component and render re
       ParityCustomMaterial::ParityCustomMaterial()
     },
   )
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_459_0 = @ecs.World::new()
+  defer lifecycle_world_459_0.close()
+  let app = @app.App::new(lifecycle_world_459_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let main_assets_key : @ecs.ResourceKey[@asset.Assets[ParityCustomMaterial]] = @asset.assets_resource_key()
@@ -504,7 +506,9 @@ test "pbr material plugin: render startup installs typed bind group allocator" {
       ParityCustomMaterial::ParityCustomMaterial()
     },
   )
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_501_0 = @ecs.World::new()
+  defer lifecycle_world_501_0.close()
+  let app = @app.App::new(lifecycle_world_501_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let render_sub_app = app

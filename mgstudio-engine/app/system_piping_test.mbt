@@ -87,7 +87,9 @@ fn clone_piped_message_system(message : Res[SystemPipingMessage]) -> String {
 ///|
 test "app system piping: pipe passes output into handler" {
   let log : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_87_0 = @ecs.World::new()
+  defer lifecycle_world_87_0.close()
+  let mut app = App::new(lifecycle_world_87_0)
   app.world().insert_resource(system_piping_message_key, { value: "42" })
   app = app.add_systems(
     Update,
@@ -115,7 +117,9 @@ test "app system piping: map and pipe_param can use additional system params" {
     counter.modify(fn(value) { value.value = value.value + output.length() })
     log.push("pipe:\{output}")
   })
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_105_0 = @ecs.World::new()
+  defer lifecycle_world_105_0.close()
+  let mut app = App::new(lifecycle_world_105_0)
   app.world().insert_resource(system_piping_message_key, { value: "hello" })
   app.world().insert_resource(system_piping_counter_key, { value: 0 })
   app = app.add_systems(Update, (map_config, pipe_config) |> chain())
@@ -134,7 +138,9 @@ test "app system piping: source validation skip prevents downstream handler" {
   touch_system_piping_types()
   let ran = Ref(false)
   let errors : Array[String] = []
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_132_0 = @ecs.World::new()
+  defer lifecycle_world_132_0.close()
+  let mut app = App::new(lifecycle_world_132_0)
     .set_error_handler(fn(error, _context) { errors.push(error.to_string()) })
     .add_systems(
       Update,

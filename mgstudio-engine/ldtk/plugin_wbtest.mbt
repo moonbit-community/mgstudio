@@ -14,7 +14,9 @@
 
 ///|
 test "plugin: ldtk_plugin installs its schedule after Update" {
-  let app = ldtk_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = ldtk_plugin(@app.App::new(lifecycle_world_15_0))
   let world = app.world()
 
   let main_schedule_order = match
@@ -44,7 +46,9 @@ test "plugin: ldtk_plugin installs its schedule after Update" {
 
 ///|
 test "plugin: ldtk_plugin initializes runtime resources" {
-  let app = ldtk_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_45_0 = @ecs.World::new()
+  defer lifecycle_world_45_0.close()
+  let app = ldtk_plugin(@app.App::new(lifecycle_world_45_0))
   let world = app.world()
 
   debug_inspect(

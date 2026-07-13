@@ -30,7 +30,11 @@ fn cas_test_spawn_camera(world : @ecs.World) -> @core.Entity {
 ///|
 test "anti_alias/cas: runtime state counts camera-only CAS components" {
   cas_register_camera_component_key(cas_test_camera_key)
-  let app = @app.App::new(@ecs.World::new()).add_plugins(CasPlugin::CasPlugin())
+  let lifecycle_world_30_0 = @ecs.World::new()
+  defer lifecycle_world_30_0.close()
+  let app = @app.App::new(lifecycle_world_30_0).add_plugins(
+    CasPlugin::CasPlugin(),
+  )
   let camera_entity = cas_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
   try! app

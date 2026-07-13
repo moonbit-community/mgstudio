@@ -46,7 +46,9 @@ test "ci testing: MoveCamera inserts CameraMovement component" {
 ///|
 test "ci testing: send_events runs before screenshot trigger set" {
   let observed : Array[String] = []
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_46_0 = @ecs.World::new()
+  defer lifecycle_world_46_0.close()
+  let app = @app.App::new(lifecycle_world_46_0)
     .insert_world_resource(
       ci_testing_config_resource_key,
       CiTestingConfig::CiTestingConfig().with_event(0, Custom("same-frame")),

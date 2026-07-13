@@ -14,7 +14,9 @@
 
 ///|
 test "audio source asset registry stores bytes" {
-  let app = audio_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_15_0 = @ecs.World::new()
+  defer lifecycle_world_15_0.close()
+  let app = audio_plugin(@app.App::new(lifecycle_world_15_0))
   let world = app.world()
   let source = AudioSource::new(b"abc")
   let handle = audio_source_add(world, source)
@@ -25,7 +27,9 @@ test "audio source asset registry stores bytes" {
 test "audio source AssetServer loader registers direct handle flow" {
   let loaded_handle_ids : Array[Int] = []
   let loaded_lengths : Array[Int] = []
-  let mut app = @asset.asset_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_24_0 = @ecs.World::new()
+  defer lifecycle_world_24_0.close()
+  let mut app = @asset.asset_plugin(@app.App::new(lifecycle_world_24_0))
   app = audio_plugin(app)
   app = app.add_systems(
     @app.Startup,
@@ -56,7 +60,9 @@ test "audio source AssetServer loader registers direct handle flow" {
 
 ///|
 test "pitch asset registry stores pitch data" {
-  let app = audio_plugin(@app.App::new(@ecs.World::new()))
+  let lifecycle_world_57_0 = @ecs.World::new()
+  defer lifecycle_world_57_0.close()
+  let app = audio_plugin(@app.App::new(lifecycle_world_57_0))
   let world = app.world()
   let handle = pitch_add(world, Pitch::new(440.0F, 1.0F))
   debug_inspect(pitch_get(world, handle) is Some(_), content="true")

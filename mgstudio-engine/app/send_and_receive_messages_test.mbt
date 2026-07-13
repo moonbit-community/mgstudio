@@ -80,7 +80,9 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
   let observed : Array[(Bool, Int)] = []
   let key : @ecs.MessageKey[TestCursorMessage] = @ecs.Message::message()
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_77_0 = @ecs.World::new()
+  defer lifecycle_world_77_0.close()
+  let mut app = App::new(lifecycle_world_77_0)
     .add_message(key)
     .add_systems(
       Update,
@@ -138,7 +140,9 @@ test "app: ParamSet2 can read and write the same message type in one system" {
   let observed : Array[Int] = []
   let key : @ecs.MessageKey[TestParamSetMessage] = @ecs.Message::message()
 
-  let mut app = App::new(@ecs.World::new())
+  let lifecycle_world_135_0 = @ecs.World::new()
+  defer lifecycle_world_135_0.close()
+  let mut app = App::new(lifecycle_world_135_0)
     .add_message(key)
     .add_systems(
       Update,

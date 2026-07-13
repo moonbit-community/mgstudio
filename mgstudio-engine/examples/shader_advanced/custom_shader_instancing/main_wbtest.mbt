@@ -92,7 +92,9 @@ test "custom shader instancing: instance vertex payload uses Bevy stride" {
 
 ///|
 test "custom shader instancing: extraction clones instance array for render world" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_93_0 = @ecs.World::new()
+  defer lifecycle_world_93_0.close()
+  let app = @app.App::new(lifecycle_world_93_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -138,7 +140,9 @@ test "custom shader instancing: extraction clones instance array for render worl
 
 ///|
 test "custom shader instancing: render-world prepare stores InstanceBuffer" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_139_0 = @ecs.World::new()
+  defer lifecycle_world_139_0.close()
+  let app = @app.App::new(lifecycle_world_139_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .add_systems_param2(@app.Startup, setup)
@@ -166,7 +170,9 @@ test "custom shader instancing: render-world prepare stores InstanceBuffer" {
 
 ///|
 test "custom shader instancing: custom pipeline startup loads shader asset" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_167_0 = @ecs.World::new()
+  defer lifecycle_world_167_0.close()
+  let app = @app.App::new(lifecycle_world_167_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .run_once()
@@ -183,7 +189,9 @@ test "custom shader instancing: custom pipeline startup loads shader asset" {
 
 ///|
 test "custom shader instancing: source mesh reaches visible render extraction" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_184_0 = @ecs.World::new()
+  defer lifecycle_world_184_0.close()
+  let app = @app.App::new(lifecycle_world_184_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .add_systems_param2(@app.Startup, setup)
@@ -233,7 +241,9 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
 
 ///|
 test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_234_0 = @ecs.World::new()
+  defer lifecycle_world_234_0.close()
+  let app = @app.App::new(lifecycle_world_234_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .add_systems_param2(@app.Startup, setup)

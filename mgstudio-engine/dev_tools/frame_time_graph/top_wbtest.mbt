@@ -23,5 +23,7 @@ test "dev_tools frame_time_graph: uniform follows Bevy dt range" {
 
 ///|
 test "panic dev_tools frame_time_graph: plugin requires frame time diagnostics" {
-  ignore(frame_time_graph_plugin(@app.App::new(@ecs.World::new())))
+  let lifecycle_world_24_0 = @ecs.World::new()
+  defer lifecycle_world_24_0.close()
+  ignore(frame_time_graph_plugin(@app.App::new(lifecycle_world_24_0)))
 }

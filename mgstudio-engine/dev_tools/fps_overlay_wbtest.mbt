@@ -90,7 +90,9 @@ test "dev_tools: fps overlay installs frame time graph plugin" {
 
 ///|
 test "dev_tools: frame time graph plugin does not install fps overlay" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_91_0 = @ecs.World::new()
+  defer lifecycle_world_91_0.close()
+  let app = @app.App::new(lifecycle_world_91_0)
     .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(
       @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
@@ -104,8 +106,10 @@ test "dev_tools: frame time graph plugin does not install fps overlay" {
 
 ///|
 test "dev_tools: frame time graph plugin registers embedded wgsl shader" {
+  let lifecycle_world_105_0 = @ecs.World::new()
+  defer lifecycle_world_105_0.close()
   ignore(
-    @app.App::new(@ecs.World::new())
+    @app.App::new(lifecycle_world_105_0)
     .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(
       @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
@@ -120,7 +124,9 @@ test "dev_tools: frame time graph plugin registers embedded wgsl shader" {
 
 ///|
 test "dev_tools: frame time graph values mirror diagnostics history in seconds" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_121_0 = @ecs.World::new()
+  defer lifecycle_world_121_0.close()
+  let app = @app.App::new(lifecycle_world_121_0)
     .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(
       @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
@@ -160,7 +166,9 @@ test "dev_tools: frame time graph values mirror diagnostics history in seconds" 
 
 ///|
 test "dev_tools: frame time graph material buffers mirror diagnostics history" {
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_161_0 = @ecs.World::new()
+  defer lifecycle_world_161_0.close()
+  let app = @app.App::new(lifecycle_world_161_0)
     .add_plugins(@diagnostic.DiagnosticsPlugin::DiagnosticsPlugin())
     .add_plugins(
       @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),

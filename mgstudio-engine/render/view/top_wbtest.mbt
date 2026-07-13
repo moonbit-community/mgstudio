@@ -144,8 +144,12 @@ test "render view: ViewUniforms offsets advance by shader layout size" {
 
 ///|
 test "render view: ViewPlugin finish initializes view target attachments resource" {
-  let render_sub_app = @app.SubApp::new(@ecs.World::new())
-  let app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_145_0 = @ecs.World::new()
+  defer lifecycle_world_145_0.close()
+  let render_sub_app = @app.SubApp::new(lifecycle_world_145_0)
+  let lifecycle_world_145_1 = @ecs.World::new()
+  defer lifecycle_world_145_1.close()
+  let app = @app.App::new(lifecycle_world_145_1)
     .insert_sub_app(@app.RenderApp, render_sub_app)
     .add_plugins(ViewPlugin::ViewPlugin())
     .finish()

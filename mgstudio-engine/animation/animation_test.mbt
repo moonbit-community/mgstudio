@@ -880,7 +880,9 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
 ///|
 test "animation runtime: animate_targets applies sampled transform and weights" {
   let default_time : @time.Time[Unit] = @time.Time::Time()
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_880_0 = @ecs.World::new()
+  defer lifecycle_world_880_0.close()
+  let mut app = @app.App::new(lifecycle_world_880_0)
     .insert_resource(default_time)
     .add_plugins(AnimationPlugin::AnimationPlugin())
   let world = app.world()
@@ -944,7 +946,9 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
 ///|
 test "animation runtime: unchanged target output keeps transform change tick" {
   let default_time : @time.Time[Unit] = @time.Time::Time()
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_944_0 = @ecs.World::new()
+  defer lifecycle_world_944_0.close()
+  let mut app = @app.App::new(lifecycle_world_944_0)
     .insert_resource(default_time)
     .add_plugins(AnimationPlugin::AnimationPlugin())
   let world = app.world()
@@ -1013,7 +1017,9 @@ test "animation runtime: unchanged target output keeps transform change tick" {
 ///|
 test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
   let default_time : @time.Time[Unit] = @time.Time::Time()
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1013_0 = @ecs.World::new()
+  defer lifecycle_world_1013_0.close()
+  let mut app = @app.App::new(lifecycle_world_1013_0)
     .insert_resource(default_time)
     .add_plugins(AnimationPlugin::AnimationPlugin())
   let world = app.world()
@@ -1073,7 +1079,9 @@ test "animation runtime: trigger_events emits root and target messages" {
   let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(250L),
   )
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1070_0 = @ecs.World::new()
+  defer lifecycle_world_1070_0.close()
+  let mut app = @app.App::new(lifecycle_world_1070_0)
     .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
     .add_post_update_system_config(
@@ -1145,7 +1153,9 @@ test "animation runtime: targeted events are emitted in animate_targets stage" {
   let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(250L),
   )
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1141_0 = @ecs.World::new()
+  defer lifecycle_world_1141_0.close()
+  let mut app = @app.App::new(lifecycle_world_1141_0)
     .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
     .add_post_update_system_config(
@@ -1211,7 +1221,9 @@ test "animation runtime: trigger_events dispatches typed root and target observe
   let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(250L),
   )
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1209_0 = @ecs.World::new()
+  defer lifecycle_world_1209_0.close()
+  let mut app = @app.App::new(lifecycle_world_1209_0)
     .add_plugins(AnimationPlugin::AnimationPlugin())
     .add_observer2(observe_typed_animation_event)
     .insert_resource(delta_time)
@@ -1271,7 +1283,9 @@ test "animation runtime: animate_targets updates text color" {
   let delta_time : @time.Time[Unit] = @time.Time::Time().advance_by(
     @core.Duration::from_millis(500L),
   )
-  let mut app = @app.App::new(@ecs.World::new())
+  let lifecycle_world_1269_0 = @ecs.World::new()
+  defer lifecycle_world_1269_0.close()
+  let mut app = @app.App::new(lifecycle_world_1269_0)
     .add_plugins(AnimationPlugin::AnimationPlugin())
     .insert_resource(delta_time)
   let world = app.world()
