@@ -63,7 +63,7 @@ fn[T] message_queue_resource_key(
   id : Int,
   debug_name : String,
 ) -> ResourceKey[Messages[T]] {
-  ResourceKey::{ id, debug_name, access: resource_access_ops_new() }
+  ResourceKey::{ id, debug_name, access: resource_access_ops_new(id) }
 }
 
 ///|

@@ -24,7 +24,6 @@ struct ComponentAccess[T] {
   move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
-  finalize_world : (World) -> Unit
 }
 
 ///|
@@ -39,7 +38,6 @@ struct ResourceAccessOps[T] {
   changed_tick : (World) -> @core.Tick?
   changed_caller : (World) -> String?
   check_change_ticks : (World, @core.Tick) -> Unit
-  finalize_world : (World) -> Unit
 }
 
 ///|
@@ -140,12 +138,30 @@ fn[T] component_access_new(
   finalizer? : (T) -> Unit = fn(_value : T) { () },
 ) -> ComponentAccess[T] {
   let stores_by_world : Map[Int, TypedComponentStorage[T]] = Map([])
+  let finalize_world_id = fn(world_id : Int) {
+    guard stores_by_world.get(world_id) is Some(store) else { return }
+    stores_by_world.remove(world_id)
+    store.staged_by_entity.for_each(fn(_entity, value) { finalizer(value) })
+    for entry in store.table_rows_by_table.iter() {
+      for value in entry.1 {
+        match value {
+          Some(value) => finalizer(value)
+          None => ()
+        }
+      }
+    }
+  }
   let get_store = fn(world : World) -> TypedComponentStorage[T] {
     match stores_by_world.get(world.world_id()) {
       Some(store) => store
       None => {
         let store : TypedComponentStorage[T] = typed_component_storage_new()
-        stores_by_world.set(world.world_id(), store)
+        let world_id = world.world_id()
+        world.register_cleanup_once(
+          component_storage_cleanup_key(component_id),
+          fn() { finalize_world_id(world_id) },
+        )
+        stores_by_world.set(world_id, store)
         store
       }
     }
@@ -289,19 +305,6 @@ fn[T] component_access_new(
     swap_remove_table_row: fn(world, table_id, row_index) {
       get_store(world).swap_remove_table_row(table_id, row_index)
     },
-    finalize_world: fn(world) {
-      guard stores_by_world.get(world.world_id()) is Some(store) else { return }
-      store.staged_by_entity.for_each(fn(_entity, value) { finalizer(value) })
-      for entry in store.table_rows_by_table.iter() {
-        for value in entry.1 {
-          match value {
-            Some(value) => finalizer(value)
-            None => ()
-          }
-        }
-      }
-      stores_by_world.remove(world.world_id())
-    },
   }
 }
 
@@ -409,18 +412,16 @@ fn[T] ComponentKey::component_swap_remove_table_row(
 }
 
 ///|
-fn[T] ComponentKey::component_finalize_world(
-  self : ComponentKey[T],
-  world : World,
-) -> Unit {
-  (self.access.finalize_world)(world)
-}
-
-///|
 fn[T] resource_access_ops_new(
+  resource_id : Int,
   finalizer? : (T) -> Unit = fn(_value : T) { () },
 ) -> ResourceAccessOps[T] {
   let slots_by_world : Map[Int, TypedResourceSlot[T]] = Map([])
+  let finalize_world_id = fn(world_id : Int) {
+    guard slots_by_world.get(world_id) is Some(slot) else { return }
+    slots_by_world.remove(world_id)
+    finalizer(slot.value)
+  }
   {
     contains: fn(world) { slots_by_world.contains(world.world_id()) },
     get: fn(world) {
@@ -435,13 +436,19 @@ fn[T] resource_access_ops_new(
           finalizer(slot.value)
           slot.value = value
         }
-        None =>
-          slots_by_world.set(world.world_id(), {
+        None => {
+          let world_id = world.world_id()
+          world.register_cleanup_once(
+            resource_storage_cleanup_key(resource_id),
+            fn() { finalize_world_id(world_id) },
+          )
+          slots_by_world.set(world_id, {
             value,
             added_tick: None,
             changed_tick: None,
             changed_caller: None,
           })
+        }
       }
     },
     remove: fn(world) {
@@ -496,11 +503,6 @@ fn[T] resource_access_ops_new(
         Some(tick) => Some(@core.tick_check(tick, present_tick))
         None => None
       }
-    },
-    finalize_world: fn(world) {
-      guard slots_by_world.get(world.world_id()) is Some(slot) else { return }
-      slots_by_world.remove(world.world_id())
-      finalizer(slot.value)
     },
   }
 }
@@ -583,12 +585,4 @@ fn[T] ResourceKey::resource_check_change_ticks(
   present_tick : @core.Tick,
 ) -> Unit {
   (self.access.check_change_ticks)(world, present_tick)
-}
-
-///|
-fn[T] ResourceKey::resource_finalize_world(
-  self : ResourceKey[T],
-  world : World,
-) -> Unit {
-  (self.access.finalize_world)(world)
 }

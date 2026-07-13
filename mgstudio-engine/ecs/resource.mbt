@@ -27,12 +27,6 @@ pub fn[T] World::insert_resource(
   }
   let existed = key.resource_contains(self)
   key.resource_set(self, value)
-  if !self.resource_finalizers.contains(key.id()) {
-    self.resource_finalizer_order.push(key.id())
-  }
-  self.resource_finalizers.set(key.id(), fn(world) {
-    key.resource_finalize_world(world)
-  })
   self.resource_tick_registry.track(key.id(), fn(present_tick) {
     key.resource_check_change_ticks(self, present_tick)
   })
@@ -60,13 +54,6 @@ pub fn[T] World::remove_resource(self : World, key : ResourceKey[T]) -> T? {
   }
   guard key.resource_remove(self) is Some(value) else { return None }
   self.resource_tick_registry.untrack(key.id())
-  self.resource_finalizers.remove(key.id())
-  for index in 0..<self.resource_finalizer_order.length() {
-    if self.resource_finalizer_order[index] == key.id() {
-      ignore(self.resource_finalizer_order.remove(index))
-      break
-    }
-  }
   Some(value)
 }
 

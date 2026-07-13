@@ -22,7 +22,6 @@ struct ComponentOps {
   move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
-  finalize_world : (World) -> Unit
 }
 
 ///|
@@ -59,7 +58,6 @@ fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
     swap_remove_table_row: fn(world, table_id, row_index) {
       key.component_swap_remove_table_row(world, table_id, row_index)
     },
-    finalize_world: fn(world) { key.component_finalize_world(world) },
   }
 }
 
@@ -84,12 +82,5 @@ fn component_ops(component_id : Int) -> ComponentOps {
       abort(
         "Missing component ops for component definition \{component_id.to_string()}",
       )
-  }
-}
-
-///|
-fn finalize_world_components(world : World) -> Unit {
-  for entry in component_ops_registry.iter() {
-    (entry.1.finalize_world)(world)
   }
 }

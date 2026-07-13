@@ -144,14 +144,18 @@ pub fn[T] register_resource(
   finalizer? : (T) -> Unit = fn(_value : T) { () },
 ) -> ResourceKey[T] {
   let id = allocate_resource_id(debug_name~)
-  ResourceKey::{ id, debug_name, access: resource_access_ops_new(finalizer~) }
+  ResourceKey::{
+    id,
+    debug_name,
+    access: resource_access_ops_new(id, finalizer~),
+  }
 }
 
 ///|
 pub fn[T] register_event(debug_name? : String = "") -> EventKey[T] {
   let id = ecs_id_allocator_state.next_event_id
   ecs_id_allocator_state.next_event_id = id + 1
-  let key = EventKey::{ id, debug_name, access: event_access_ops_new() }
+  let key = EventKey::{ id, debug_name, access: event_access_ops_new(id) }
   register_event_ops(id, key)
   key
 }
@@ -192,6 +196,7 @@ priv struct ArchetypeSignatureIndex {
 ///|
 pub struct World {
   priv lifecycle : WorldLifecycle
+  priv cleanup_registry : WorldCleanupRegistry
   priv mut structural_generation : Int
   priv mut entity_lifecycle_generation : Int
   priv mut component_registration_generation : Int
@@ -251,8 +256,6 @@ pub struct World {
   priv removed_components : Map[Int, @core.Messages[@core.Entity]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resource_tick_registry : WorldResourceTickRegistry
-  priv resource_finalizers : Map[Int, (World) -> Unit]
-  priv resource_finalizer_order : Array[Int]
   priv mut shutdown_hooks : Array[(World) -> Unit]
   priv mut deferred_hook_command_depth : Int
   priv deferred_hook_commands : Array[DeferredHookCommand]
@@ -264,6 +267,7 @@ pub fn World::new() -> World {
   ecs_id_allocator_state.next_world_id = world_id + 1
   let world = World::{
     lifecycle: WorldLifecycle::new(world_id),
+    cleanup_registry: world_cleanup_registry_new(),
     structural_generation: 0,
     entity_lifecycle_generation: 0,
     component_registration_generation: 0,
@@ -317,8 +321,6 @@ pub fn World::new() -> World {
     removed_components: Map([]),
     component_hooks_registry: Map([]),
     resource_tick_registry: world_resource_tick_registry_new(),
-    resource_finalizers: Map([]),
-    resource_finalizer_order: [],
     shutdown_hooks: [],
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
@@ -357,18 +359,7 @@ pub fn World::is_active(self : World) -> Bool {
 pub fn World::close(self : World) -> Unit {
   guard self.lifecycle.begin_close() else { return }
   self.allocator_connection.close()
-  let mut resource_index = self.resource_finalizer_order.length() - 1
-  while resource_index >= 0 {
-    let resource_id = self.resource_finalizer_order[resource_index]
-    match self.resource_finalizers.get(resource_id) {
-      Some(finalize) => finalize(self)
-      None => ()
-    }
-    resource_index = resource_index - 1
-  }
-  self.resource_finalizers.clear()
-  self.resource_finalizer_order.clear()
-  finalize_world_components(self)
+  self.cleanup_registry.drain()
   let shutdown_hooks = self.shutdown_hooks
   self.shutdown_hooks = []
   let mut hook_index = shutdown_hooks.length() - 1

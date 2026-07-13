@@ -38,14 +38,22 @@ priv struct EventOps {
 let event_ops_registry : @hashmap.HashMap[Int, EventOps] = @hashmap.HashMap([])
 
 ///|
-fn[T] event_access_ops_new() -> EventAccessOps[T] {
+fn[T] event_access_ops_new(event_id : Int) -> EventAccessOps[T] {
   let slots_by_world : Map[Int, EventQueueSlot[T]] = Map([])
   let current_trigger_by_world : Map[Int, T] = Map([])
+  let ensure_cleanup = fn(world : World) {
+    let world_id = world.world_id()
+    world.register_cleanup_once(event_storage_cleanup_key(event_id), fn() {
+      slots_by_world.remove(world_id)
+      current_trigger_by_world.remove(world_id)
+    })
+  }
   let slot = fn(world : World) -> EventQueueSlot[T] {
     match slots_by_world.get(world.world_id()) {
       Some(slot) => slot
       None => {
         let slot : EventQueueSlot[T] = { previous: [], current: [] }
+        ensure_cleanup(world)
         slots_by_world.set(world.world_id(), slot)
         slot
       }
@@ -78,6 +86,7 @@ fn[T] event_access_ops_new() -> EventAccessOps[T] {
       current_trigger_by_world.get(world.world_id())
     },
     set_current_trigger: fn(world, event) {
+      ensure_cleanup(world)
       current_trigger_by_world.set(world.world_id(), event)
     },
     clear_current_trigger: fn(world) {

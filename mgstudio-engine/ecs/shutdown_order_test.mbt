@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "ecs: shutdown hooks run after resource and component finalizers" {
+test "ecs: shutdown hooks run after LIFO resource and component cleanup" {
   let order : Array[Int] = []
   let resource_key = register_resource(
     debug_name="tests.ecs.shutdown_order_resource",
@@ -30,5 +30,5 @@ test "ecs: shutdown hooks run after resource and component finalizers" {
   world.add_shutdown_hook(fn(_world) { order.push(3) })
 
   world.close()
-  debug_inspect(order, content="[1, 2, 3]")
+  debug_inspect(order, content="[2, 1, 3]")
 }
