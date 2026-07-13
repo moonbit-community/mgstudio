@@ -2416,13 +2416,19 @@ test "renderer: backend shutdown releases mesh3d pbr resource owners" {
 }
 
 ///|
-test "renderer: clearing mesh3d frame uniforms releases native handles" {
+test "renderer: clearing mesh3d frame caches preserves transient owners" {
   let backend = GpuBackend::new()
   let layout = mesh3d_create_empty_bind_group_layout(
     backend, "test_mesh3d_frame_uniform_layout",
   )
-  let bind_group = mesh3d_create_empty_bind_group(
+  let pass_bind_group = mesh3d_create_empty_bind_group(
     backend, layout, "test_mesh3d_frame_uniform_bind_group",
+  )
+  let frame_bind_group = mesh3d_create_empty_bind_group(
+    backend, layout, "test_mesh3d_frame_view_bind_group",
+  )
+  let binding_arrays_bind_group = mesh3d_create_empty_bind_group(
+    backend, layout, "test_mesh3d_frame_binding_arrays_bind_group",
   )
   let view_buffer = backend.device.create_buffer(
     size=16UL,
@@ -2439,18 +2445,63 @@ test "renderer: clearing mesh3d frame uniforms releases native handles" {
     pass_kind: 0,
     view_buffer,
     lights_buffer,
-    shadow_view_bind_group: Some(bind_group),
+    shadow_view_bind_group: Some(pass_bind_group),
   })
+  backend.mesh3d_frame_view_bg_cache.push(Mesh3dFrameViewBindGroupCacheEntry::{
+    material_pipeline_id: 0UL,
+    view_layout_key_bits: 0U,
+    tonemap_in_shader: false,
+    frame_count: 0U,
+    camera_key_hi: 0,
+    camera_key_lo: 0,
+    pass_kind: 0,
+    transmission_source_texture_id: -1,
+    point_shadow_texture_id: -1,
+    directional_shadow_texture_id: -1,
+    environment_diffuse_texture_id: -1,
+    environment_specular_texture_id: -1,
+    environment_texture_ids_signature: "",
+    irradiance_volume_texture_ids_signature: "",
+    prepass_depth_texture_id: -1,
+    prepass_normal_texture_id: -1,
+    prepass_motion_vector_texture_id: -1,
+    prepass_deferred_texture_id: -1,
+    tonemapping_lut_texture_id: -1,
+    pbr_blue_noise_texture_id: -1,
+    pbr_area_light_luts_texture_id: -1,
+    pbr_dfg_lut_texture_id: -1,
+    atmosphere_resource_revision: 0,
+    ssao_resource_revision: 0,
+    clustered_decals_revision: 0,
+    bind_group: frame_bind_group,
+    main_offsets: [],
+    binding_arrays_bind_group,
+  })
+  backend.instance.process_events()
+  ignore(backend.device.poll(wait=true))
+  let before = backend.instance.generate_report()
+  let before_buffers = before.hub_buffers_num_kept_from_user()
+  let before_bind_groups = before.hub_bind_groups_num_kept_from_user()
+  before.release()
   mesh3d_pass_uniform_states_clear(backend)
+  mesh3d_frame_view_bind_group_cache_clear(backend)
   backend.instance.process_events()
   ignore(backend.device.poll(wait=true))
   let after = backend.instance.generate_report()
-  let released = after.hub_buffers_num_kept_from_user() == 0UL &&
-    after.hub_bind_groups_num_kept_from_user() == 0UL
+  let transient_owners_preserved = after.hub_buffers_num_kept_from_user() ==
+    before_buffers &&
+    after.hub_bind_groups_num_kept_from_user() == before_bind_groups
   after.release()
+  if transient_owners_preserved {
+    pass_bind_group.release()
+    frame_bind_group.release()
+    binding_arrays_bind_group.release()
+    view_buffer.release()
+    lights_buffer.release()
+  }
   layout.release()
   backend.shutdown()
-  debug_inspect(released, content="true")
+  debug_inspect(transient_owners_preserved, content="true")
 }
 
 ///|
