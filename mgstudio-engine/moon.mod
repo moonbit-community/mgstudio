@@ -17,7 +17,7 @@ import {
   "Milky2018/moon_wgsl@0.15.3",
   "Milky2018/wgpu_mbt@0.14.8",
   "moonbitlang/x@0.4.45",
-  "Milky2018/window@0.5.1",
+  "Milky2018/window@0.5.2",
   "gmlewis/image@0.17.9",
   "gmlewis/io@0.23.12",
   "Milky2018/sysinfo@0.1.2",
