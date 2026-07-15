@@ -22,6 +22,7 @@ struct ComponentOps {
   move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
+  table_row_count : (World, Int) -> Int
 }
 
 ///|
@@ -57,6 +58,9 @@ fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
     },
     swap_remove_table_row: fn(world, table_id, row_index) {
       key.component_swap_remove_table_row(world, table_id, row_index)
+    },
+    table_row_count: fn(world, table_id) {
+      key.component_table_row_count(world, table_id)
     },
   }
 }

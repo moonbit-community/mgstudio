@@ -43,6 +43,23 @@ pub impl Component for ComponentColumnMigrationMarker with fn component() {
 }
 
 ///|
+fn assert_component_table_storage_invariants(world : World) -> Unit raise {
+  for table_entry in world.tables.iter() {
+    let table_id = table_entry.0
+    let table_ref = table_entry.1
+    let row_count = table_ref.row_count()
+    assert_eq(table_ref.table_id, table_id)
+    for column_ref in table_ref.columns {
+      assert_eq(raw_table_column_kernel_len(column_ref.storage), row_count)
+      assert_eq(
+        (column_ref.component_ops.table_row_count)(world, table_id),
+        row_count,
+      )
+    }
+  }
+}
+
+///|
 test "ecs component column: cached table values write through typed storage" {
   let world = World::new()
   defer world.close()
@@ -185,6 +202,41 @@ test "ecs component column: table migration moves canonical typed rows" {
   debug_inspect(
     try! world.get_by_key(entity, component_column_cache_value_key),
     content="Some({ x: 10 })",
+  )
+}
+
+///|
+test "ecs component column: structural changes preserve table column lengths" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(first, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 1,
+  })
+  try! world.set_by_key(second, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 2,
+  })
+  assert_component_table_storage_invariants(world)
+
+  try! world.set_by_key(first, component_column_migration_marker_key, ComponentColumnMigrationMarker::{
+    y: 3,
+  })
+  assert_component_table_storage_invariants(world)
+
+  try! world.set_by_key(first, component_column_cache_value_key, ComponentColumnCacheValue::{
+    x: 4,
+  })
+  assert_component_table_storage_invariants(world)
+
+  ignore(try! world.remove_by_key(first, component_column_migration_marker_key))
+  assert_component_table_storage_invariants(world)
+
+  try! world.despawn(second)
+  assert_component_table_storage_invariants(world)
+  debug_inspect(
+    try! world.get_by_key(first, component_column_cache_value_key),
+    content="Some({ x: 4 })",
   )
 }
 
