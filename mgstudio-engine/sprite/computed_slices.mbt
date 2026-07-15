@@ -379,12 +379,15 @@ pub type ComputedSlicesAssetParams = @app.ParamSet2[
 
 ///|
 pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[
-  @ecs.Read[Sprite],
+  @ecs.ReadValue[Sprite],
   @ecs.Changed[Sprite],
 ]
 
 ///|
-pub type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Read[Sprite], @ecs.All]
+pub type ComputedSlicesAllSpritesQuery = @ecs.Query[
+  @ecs.ReadValue[Sprite],
+  @ecs.All,
+]
 
 ///|
 pub type ComputedSlicesAssetEventParams = @app.ParamSet2[
