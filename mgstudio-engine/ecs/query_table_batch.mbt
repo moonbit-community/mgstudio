@@ -41,6 +41,17 @@ pub struct QueryTableBatch {
 }
 
 ///|
+/// Exact matching rows for one dense query table.
+///
+/// The row matcher is bound once for the table and retains the query's full
+/// per-row filter semantics, including `Changed`, `Added`, and `Or`. Row
+/// indices are physical indices into the accompanying `QueryTableBatch`.
+pub struct QueryTableRows {
+  priv scope : QueryTableBatchScope
+  priv matches : (@core.Entity, Int) -> Bool
+}
+
+///|
 /// A read-only typed column bound once for a query table.
 pub struct TableBatchRead[T] {
   priv scope : QueryTableBatchScope
@@ -164,6 +175,23 @@ pub fn QueryTableBatch::entity(
   row_index : Int,
 ) -> @core.Entity {
   self.scope.entity_or_abort(row_index)
+}
+
+///|
+/// Visits the physical table rows that satisfy the query filter.
+///
+/// This row set is valid only for the duration of its
+/// `Query::for_each_filtered_table` callback.
+pub fn QueryTableRows::for_each(
+  self : QueryTableRows,
+  visit : (Int) -> Unit raise EcsError,
+) -> Unit raise EcsError {
+  let entities = self.scope.entities_or_abort()
+  for row_index in 0..<entities.length() {
+    if (self.matches)(entities[row_index], row_index) {
+      visit(row_index)
+    }
+  }
 }
 
 ///|
@@ -543,6 +571,16 @@ fn query_visit_table_batch(
 }
 
 ///|
+fn query_visit_filtered_table_batch(
+  batch : QueryTableBatch,
+  rows : QueryTableRows,
+  visit : (QueryTableBatch, QueryTableRows) -> Unit raise EcsError,
+) -> Unit raise EcsError {
+  defer batch.invalidate()
+  visit(batch, rows)
+}
+
+///|
 /// Visits each matching dense table once.
 ///
 /// This is the MoonBit batch counterpart of Bevy's table-bound contiguous
@@ -594,5 +632,60 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(
       cleanups: [],
     }
     query_visit_table_batch(batch, visit)
+  }
+}
+
+///|
+/// Visits each matching dense table once with an exact per-row filter view.
+///
+/// Unlike `Query::for_each_table`, this API accepts dense filters that require
+/// row evaluation. The filter binds its table-local state once, and callers
+/// must traverse `QueryTableRows` to preserve `Changed`, `Added`, `Or`, and
+/// custom row-filter semantics.
+pub fn[D : QueryData, F : QueryFilter] Query::for_each_filtered_table(
+  self : Query[D, F],
+  visit : (QueryTableBatch, QueryTableRows) -> Unit raise EcsError,
+) -> Unit raise EcsError {
+  let world = self.world_or_abort()
+  let plan = self.iteration_plan(self.default_filter_component_ids())
+  if !plan.dense_driven {
+    raise TableBatchUnavailable(
+      "Query::for_each_filtered_table requires conflict-free dense query data and a dense filter",
+    )
+  }
+  let data_access = QueryDataAccess::new()
+  D::collect_access(data_access)
+  D::collect_required_components(data_access)
+  world.begin_query_iteration()
+  defer world.end_query_iteration()
+  for table_id in plan.dense_tables {
+    guard world.table_entities_view(table_id) is Some(entities) else {
+      continue
+    }
+    if entities.length() == 0 {
+      continue
+    }
+    let filter = self.filter
+    let scope = QueryTableBatchScope::{
+      lease: WorldLease::new(world),
+      table_id,
+      entities: Some(entities),
+    }
+    let batch = QueryTableBatch::{
+      scope,
+      data_access,
+      data_mentions_component: fn(component_id) {
+        D::mentions_component(component_id)
+      },
+      filter_mentions_component: fn(component_id) {
+        QueryFilter::mentions_component(filter, component_id)
+      },
+      cleanups: [],
+    }
+    let rows = QueryTableRows::{
+      scope,
+      matches: QueryFilter::bind_table_row_matcher(filter, world, table_id),
+    }
+    query_visit_filtered_table_batch(batch, rows, visit)
   }
 }

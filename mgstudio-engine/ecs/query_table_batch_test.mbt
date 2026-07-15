@@ -140,11 +140,9 @@ test "ecs table batch: writes preserve component replacement finalizers" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    table_batch_finalized_key,
-    TableBatchFinalized::{ id: 1 },
-  )
+  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
+    id: 1,
+  })
   let query : Query[Write[TableBatchFinalized], All] = query(world)
 
   try! query.for_each_table(fn(batch) {
@@ -160,4 +158,59 @@ test "ecs table batch: writes preserve component replacement finalizers" {
     content="Some({ id: 3 })",
   )
   debug_inspect(table_batch_finalized_values, content="[1, 2]")
+}
+
+///|
+test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
+  let world = World::new()
+  defer world.close()
+  let changed_entity = try! world.spawn_bundle(
+    (TableBatchPosition::{ value: 1 }, TableBatchVelocity::{ value: 10 }),
+  )
+  let added_entity = world.spawn()
+  try! world.set_by_key(added_entity, table_batch_position_key, TableBatchPosition::{
+    value: 2,
+  })
+  let unchanged_entity = try! world.spawn_bundle(
+    (TableBatchPosition::{ value: 3 }, TableBatchVelocity::{ value: 30 }),
+  )
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  try! world.set_by_key(changed_entity, table_batch_position_key, TableBatchPosition::{
+    value: 11,
+  })
+  try! world.set_by_key(added_entity, table_batch_velocity_key, TableBatchVelocity::{
+    value: 20,
+  })
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(tick_context)
+  let query : Query[
+    (ReadValue[TableBatchPosition], ReadValue[TableBatchVelocity]),
+    Or[(Changed[TableBatchPosition], Added[TableBatchVelocity])],
+  ] = query_filtered(
+    world,
+    Or::new(
+      (
+        Changed::new(table_batch_position_key),
+        Added::new(table_batch_velocity_key),
+      ),
+    ),
+  )
+  let seen : Array[@core.Entity] = []
+
+  try! query.for_each_filtered_table(fn(batch, rows) {
+    let positions = batch.read(table_batch_position_key).unwrap()
+    let velocities = batch.read(table_batch_velocity_key).unwrap()
+    try! rows.for_each(fn(row_index) {
+      ignore(positions.value(row_index))
+      ignore(velocities.value(row_index))
+      seen.push(batch.entity(row_index))
+    })
+  })
+
+  debug_inspect(seen.contains(changed_entity), content="true")
+  debug_inspect(seen.contains(added_entity), content="true")
+  debug_inspect(seen.contains(unchanged_entity), content="false")
+  debug_inspect(seen.length(), content="2")
 }

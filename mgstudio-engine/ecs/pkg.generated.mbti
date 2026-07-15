@@ -562,6 +562,7 @@ pub fn[D, F] Query::cache_state(Self[D, F]) -> QueryCache
 pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
+pub fn[D : QueryData, F : QueryFilter] Query::for_each_filtered_table(Self[D, F], (QueryTableBatch, QueryTableRows) -> Unit raise EcsError) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(Self[D, F], (QueryTableBatch) -> Unit raise EcsError) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
 pub fn[D, F] Query::is_active(Self[D, F]) -> Bool
@@ -684,6 +685,11 @@ pub fn[T] QueryTableBatch::has(Self, ComponentKey[T]) -> Bool
 pub fn QueryTableBatch::length(Self) -> Int
 pub fn[T] QueryTableBatch::read(Self, ComponentKey[T]) -> TableBatchRead[T]?
 pub fn[T] QueryTableBatch::write(Self, ComponentKey[T]) -> TableBatchWrite[T]?
+
+pub struct QueryTableRows {
+  // private fields
+}
+pub fn QueryTableRows::for_each(Self, (Int) -> Unit raise EcsError) -> Unit raise EcsError
 
 type RawTable
 
@@ -1102,6 +1108,7 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData, E : QueryDa
 pub(open) trait QueryFilter {
   fn matches(Self, World, @core.Entity) -> Bool
   fn matches_table_row(Self, World, @core.Entity, Int, Int) -> Bool = _
+  fn bind_table_row_matcher(Self, World, Int) -> (@core.Entity, Int) -> Bool = _
   fn mentions_component(Self, Int) -> Bool
   fn matches_component_set(Self, (Int) -> Bool) -> Bool
   fn collect_access(Self, QueryFilterAccess) -> Unit = _
@@ -1123,6 +1130,7 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter, D : QueryFilter, E :
 pub(open) trait QueryFilterDisjunction {
   fn matches_any(Self, World, @core.Entity) -> Bool
   fn matches_table_row_any(Self, World, @core.Entity, Int, Int) -> Bool = _
+  fn bind_table_row_matcher_any(Self, World, Int) -> (@core.Entity, Int) -> Bool = _
   fn mentions_component_any(Self, Int) -> Bool
   fn matches_component_set_any(Self, (Int) -> Bool) -> Bool
   fn collect_access_any(Self, QueryFilterAccess) -> Unit = _
