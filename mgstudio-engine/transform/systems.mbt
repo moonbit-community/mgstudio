@@ -194,10 +194,22 @@ fn read_static_transform_optimizations(
 
 ///|
 fn sync_simple_transforms_changed(query : SimpleTransformChangedQuery) -> Unit {
-  try! query.for_each(fn(_entity, data) {
-    let (transform, global_transform) = data
-    global_transform.set(GlobalTransform::from_transform(transform.value()))
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    let transforms = batch.read(ecs_key_transform).unwrap()
+    let global_transforms = batch.write(ecs_key_global_transform).unwrap()
+    try! rows.for_each(fn(row_index) {
+      global_transforms.set(
+        row_index,
+        GlobalTransform::from_transform(transforms.value(row_index)),
+      )
+    })
   })
+  if !used_batch {
+    try! query.for_each(fn(_entity, data) {
+      let (transform, global_transform) = data
+      global_transform.set(GlobalTransform::from_transform(transform.value()))
+    })
+  }
 }
 
 ///|
