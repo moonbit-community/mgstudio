@@ -426,24 +426,36 @@ fn picking_sprite_collect_sorted(
     ),
     @ecs.All,
   ] = @ecs.query(world)
-  try! query.view(fn(entity, data) {
-    let ((sprite, global_transform, anchor, pickable), (visibility, layers)) = data
-    if global_transform.value().affine().is_nan() ||
-      !visibility.value().is_visible() {
-      return
+  try! query.for_each_table(fn(batch) {
+    let sprite = batch.read(@sprite.ecs_key_sprite).unwrap()
+    let global_transform = batch
+      .read(@transform.ecs_key_global_transform)
+      .unwrap()
+    let anchor = batch.read(@sprite.ecs_key_anchor).unwrap()
+    let pickable = batch.read(ecs_key_pickable).unwrap()
+    let visibility = batch
+      .read(@visibility.ecs_key_view_visibility)
+      .unwrap()
+    let layers = batch.read(@camera_render_layers.ecs_key_render_layers)
+    for row_index in 0..<batch.length() {
+      if global_transform.value(row_index).affine().is_nan() ||
+        !visibility.value(row_index).is_visible() {
+        continue
+      }
+      sprites.push(
+        (
+          batch.entity(row_index),
+          sprite.value(row_index),
+          global_transform.value(row_index).to_transform_approx(),
+          anchor.value(row_index),
+          pickable.value(row_index),
+          match layers {
+            Some(column) => column.value(row_index)
+            None => @camera_render_layers.RenderLayers::RenderLayers()
+          },
+        ),
+      )
     }
-    sprites.push(
-      (
-        entity,
-        sprite.value(),
-        global_transform.value().to_transform_approx(),
-        anchor.value(),
-        pickable.value(),
-        layers
-        .value()
-        .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers()),
-      ),
-    )
   })
   picking_sprite_stable_radix_sort(sprites)
 }
