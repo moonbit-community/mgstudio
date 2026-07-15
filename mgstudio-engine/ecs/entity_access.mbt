@@ -49,16 +49,12 @@ fn[T] mut_value_or_abort(item : Write[T]) -> T {
   match item.world.local_component_storage_type(item.local_component_id) {
     Some(Table) => {
       if item.table_id >= 0 && item.row_index >= 0 {
-        match
-          item.world.component_value_by_table_row_fast(
-            item.key,
-            item.local_component_id,
-            item.table_id,
-            item.row_index,
-          ) {
-          Some(value) => return value
-          None => abort("Write expected table component value at fetched row")
-        }
+        return item.world.component_value_by_table_row_unchecked(
+          item.key,
+          item.local_component_id,
+          item.table_id,
+          item.row_index,
+        )
       }
       guard item.world.component_write_transaction_contains(
         item.entity,

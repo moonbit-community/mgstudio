@@ -212,6 +212,25 @@ fn[T] QueryDataFetchPlan::value_at_table_row(
 }
 
 ///|
+fn[T] QueryDataFetchPlan::value_at_table_row_unchecked(
+  self : QueryDataFetchPlan,
+  world : World,
+  key : ComponentKey[T],
+  offset : Int,
+  table_id : Int,
+  row_index : Int,
+) -> T {
+  guard self.cached_table_column(world, offset, table_id) is Some(column_ref) else {
+    abort("Required planned fetch used a missing table column")
+  }
+  if row_index < 0 ||
+    row_index >= raw_table_column_kernel_len(column_ref.storage) {
+    abort("Required planned fetch row is out of bounds")
+  }
+  key.component_get_table_row_unchecked(world, table_id, row_index)
+}
+
+///|
 pub(open) trait QueryData {
   fn matches(World, @core.Entity) -> Bool
   fn fetch(World, @core.Entity) -> Self raise EcsError
@@ -621,19 +640,12 @@ fn[T] query_data_component_value_at_fetch_location(
   match
     query_data_component_storage_type_or_abort(fetch.world, local_component_id) {
     Table =>
-      match
-        fetch.world.component_value_by_table_row_fast(
-          key,
-          local_component_id,
-          fetch.table_id,
-          fetch.row_index,
-        ) {
-        Some(value) => value
-        None =>
-          abort(
-            "QueryData::fetch expected table component value at query table row",
-          )
-      }
+      fetch.world.component_value_by_table_row_unchecked(
+        key,
+        local_component_id,
+        fetch.table_id,
+        fetch.row_index,
+      )
     SparseSet => query_data_require_component(fetch.world, fetch.entity, key)
   }
 }
@@ -650,20 +662,13 @@ fn[T] query_data_component_value_at_planned_fetch_location(
       local_component_id,
     ) {
     Table =>
-      match
-        fetch.plan.value_at_table_row(
-          fetch.row.world,
-          key,
-          fetch.offset,
-          fetch.row.table_id,
-          fetch.row.row_index,
-        ) {
-        Some(value) => value
-        None =>
-          abort(
-            "QueryData::fetch expected planned table component value at query table row",
-          )
-      }
+      fetch.plan.value_at_table_row_unchecked(
+        fetch.row.world,
+        key,
+        fetch.offset,
+        fetch.row.table_id,
+        fetch.row.row_index,
+      )
     SparseSet =>
       query_data_require_component(fetch.row.world, fetch.row.entity, key)
   }

@@ -843,6 +843,29 @@ fn[T] World::component_value_by_table_row_fast(
 }
 
 ///|
+fn[T] World::component_value_by_table_row_unchecked(
+  self : World,
+  key : ComponentKey[T],
+  local_component_id : Int,
+  table_id : Int,
+  row_index : Int,
+) -> T {
+  if self.local_component_storage_type(local_component_id) != Some(Table) {
+    abort("Required table fetch used a non-table component")
+  }
+  guard self.table_storage(table_id) is Some(table_ref) else {
+    abort("Required table fetch used a missing table")
+  }
+  guard table_ref.column(local_component_id) is Some(_) else {
+    abort("Required table fetch used a table without the component")
+  }
+  if row_index < 0 || row_index >= table_ref.row_count() {
+    abort("Required table fetch row is out of bounds")
+  }
+  key.component_get_table_row_unchecked(self, table_id, row_index)
+}
+
+///|
 fn World::record_table_component_added_by_local_id(
   self : World,
   entity : @core.Entity,

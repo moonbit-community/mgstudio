@@ -21,6 +21,7 @@ struct ComponentAccess[T] {
   take : (World, @core.Entity) -> T?
   for_each : (World, (@core.Entity, T) -> Unit) -> Unit
   get_table_row : (World, Int, Int) -> T?
+  get_table_row_unchecked : (World, Int, Int) -> T
   set_table_row : (World, Int, Int, T) -> Unit
   move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
@@ -91,6 +92,21 @@ fn[T] TypedComponentStorage::get_table_row(
   }
   guard row_index < column.values.length() else { return None }
   Some(column.values[row_index])
+}
+
+///|
+fn[T] TypedComponentStorage::get_table_row_unchecked(
+  self : TypedComponentStorage[T],
+  table_id : Int,
+  row_index : Int,
+) -> T {
+  guard self.dense_columns_by_table.get(table_id) is Some(column) else {
+    abort("Missing dense component column for a matched table")
+  }
+  if row_index < 0 || row_index >= column.values.length() {
+    abort("Dense component row is out of bounds for a matched table")
+  }
+  column.values[row_index]
 }
 
 ///|
@@ -280,6 +296,9 @@ fn[T] component_access_new(
     get_table_row: fn(world, table_id, row_index) {
       get_store(world).get_table_row(table_id, row_index)
     },
+    get_table_row_unchecked: fn(world, table_id, row_index) {
+      get_store(world).get_table_row_unchecked(table_id, row_index)
+    },
     set_table_row: fn(world, table_id, row_index, value) {
       let store = get_store(world)
       match store.get_table_row(table_id, row_index) {
@@ -395,6 +414,16 @@ fn[T] ComponentKey::component_get_table_row(
   row_index : Int,
 ) -> T? {
   (self.access.get_table_row)(world, table_id, row_index)
+}
+
+///|
+fn[T] ComponentKey::component_get_table_row_unchecked(
+  self : ComponentKey[T],
+  world : World,
+  table_id : Int,
+  row_index : Int,
+) -> T {
+  (self.access.get_table_row_unchecked)(world, table_id, row_index)
 }
 
 ///|
