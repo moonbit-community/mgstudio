@@ -295,9 +295,12 @@ fn mark_newly_hidden_entities_invisible_system(world : @ecs.World) -> Unit {
     world,
     @ecs.Without::new(ecs_key_no_cpu_culling),
   )
-  try! query.view(fn(_entity, view_visibility) {
-    if view_visibility.peek().was_visible_now_hidden() {
-      view_visibility.set(ViewVisibility::hidden())
+  try! query.for_each_table(fn(batch) {
+    let view_visibility = batch.write(ecs_key_view_visibility).unwrap()
+    for row_index in 0..<batch.length() {
+      if view_visibility.peek(row_index).was_visible_now_hidden() {
+        view_visibility.set(row_index, ViewVisibility::hidden())
+      }
     }
   })
 }
