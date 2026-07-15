@@ -279,6 +279,22 @@ pub fn[T, R] Write::modify(
 }
 
 ///|
+/// Replaces the component through an update closure without marking it changed.
+///
+/// This is the MoonBit equivalent of Bevy's
+/// `DetectChangesMut::bypass_change_detection`. Use it only for internal state
+/// changes that must not be observed as a semantic component change. The
+/// closure returns the value to store so this works for both reference and
+/// value types.
+pub fn[T] Write::bypass_change_detection(
+  self : Write[T],
+  update : (T) -> T,
+) -> Unit {
+  let value = mut_value_or_abort(self)
+  mut_assign_value_or_abort(self, update(value))
+}
+
+///|
 #callsite(autofill(loc))
 pub fn[T : Eq] Write::set_if_neq(
   self : Write[T],

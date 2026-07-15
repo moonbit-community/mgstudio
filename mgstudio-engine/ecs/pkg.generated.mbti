@@ -958,6 +958,7 @@ pub struct Write[T] {
   // private fields
 }
 pub fn[T] Write::added(Self[T]) -> Int64
+pub fn[T] Write::bypass_change_detection(Self[T], (T) -> T) -> Unit
 pub fn[T] Write::changed_by(Self[T]) -> String?
 pub fn[T] Write::is_added(Self[T]) -> Bool
 pub fn[T] Write::is_changed(Self[T]) -> Bool

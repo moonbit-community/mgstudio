@@ -113,6 +113,36 @@ test "ecs changed components: Write::modify marks changed on explicit mutation" 
 }
 
 ///|
+test "ecs changed components: Write::bypass_change_detection preserves tick" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+
+  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
+  let item = match maybe_mut {
+    Some(item) => item
+    None => abort("expected mutable component")
+  }
+  item.bypass_change_detection(fn(value) {
+    value.value = 11
+    value
+  })
+
+  debug_inspect(item.last_changed(), content="1")
+  debug_inspect(
+    try! world.get_by_key(entity, changed_marker_key),
+    content="Some({ value: 11 })",
+  )
+  let changed = world
+    .changed_components(changed_marker_key, @core.SystemTicks::new(1, 2))
+    .read()
+  debug_inspect(changed.contains(entity), content="false")
+}
+
+///|
 test "ecs changed components: Write::value does not mark changed by itself" {
   let world = World::new()
   defer world.close()
