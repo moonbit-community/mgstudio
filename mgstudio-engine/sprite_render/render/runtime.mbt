@@ -2256,101 +2256,129 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     let texture_atlas_layouts = source_world.get_resource(
       texture_atlas_layouts_key,
     )
-    let sprite_query : @ecs.Query[@ecs.Read[Sprite], @ecs.All] = @ecs.query(
-      source_world,
-    )
-    try! sprite_query.view(fn(entity, sprite) {
-      if !render2d_entity_visible_ecs(source_world, entity) {
-        return
-      }
-      let sprite = sprite.value()
-      let anchor = (try! source_world.get_by_key(entity, ecs_key_anchor)).unwrap_or(
-        Anchor::Anchor(),
-      )
-      let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-        RenderLayers::RenderLayers(),
-      )
-      let transform = render2d_resolve_transform_ecs(source_world, entity)
-      let mut uv_min = default_uv_min()
-      let mut uv_max = default_uv_max()
-      let mut region_size = @math.Vec2::new(1.0F, 1.0F)
-      let mut image_size = @math.Vec2::new(1.0F, 1.0F)
-      if sprite_uv_from_sprite(sprite, texture_atlas_layouts) is Some(info) {
-        uv_min = info.uv_min
-        uv_max = info.uv_max
-        image_size = info.image_size
-        region_size = info.region_size
-      }
-      let draw_scale = sprite_draw_scale(
-        sprite,
-        @math.Vec2::new(transform.scale.x, transform.scale.y),
-        region_size,
-      )
-      let scissor = match
-        (try! source_world.get_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
-        Some(v) => Some(v.rect)
-        None => None
-      }
-      let has_custom_size = match sprite.custom_size {
-        Some(_) => true
-        None => false
-      }
-      let (
-        uv_draw_min,
-        uv_draw_max,
-        draw_scale_for_host,
-        local_offset,
-        needs_repeat_sampler,
-      ) = apply_sprite_image_mode(
-        uv_min,
-        uv_max,
-        draw_scale,
-        region_size,
-        sprite.image_mode,
-        has_custom_size,
-      )
-      let anchor_offset = sprite_anchor_offset(
-        anchor,
-        transform.rotation_z(),
-        draw_scale_for_host,
-        region_size,
-        local_offset,
-      )
-      if needs_repeat_sampler {
-        @asset.asset_set_texture_sampler(
-          sprite.image,
-          @asset.ImageSampler::Descriptor(
-            @asset.ImageSamplerDescriptor::linear().set_address_mode(
-              @asset.ImageAddressMode::Repeat,
-            ),
-          ),
-        )
-      }
-      if !append_computed_sprite_slices(
-          rs.sprite_slice_batches,
-          entity,
+    let sprite_query : @ecs.Query[
+      (
+        (
+          @ecs.Read[Sprite],
+          @ecs.Read[@visibility.ViewVisibility],
+          @ecs.Read[@transform.GlobalTransform],
+          @ecs.Read[Anchor],
+        ),
+        (
+          @ecs.Optional[ComputedTextureSlices],
+          @ecs.Optional[RenderLayers],
+          @ecs.Optional[@ui_clip.ScissorRect],
+        ),
+      ),
+      @ecs.All,
+    ] = @ecs.query(source_world)
+    try! sprite_query.for_each_table(fn(batch) {
+      let sprites = batch.read(@sprite.ecs_key_sprite).unwrap()
+      let view_visibilities = batch
+        .read(@visibility.ecs_key_view_visibility)
+        .unwrap()
+      let global_transforms = batch
+        .read(@transform.ecs_key_global_transform)
+        .unwrap()
+      let anchors = batch.read(ecs_key_anchor).unwrap()
+      let computed_slices = batch.read(ecs_key_computed_texture_slices)
+      let render_layers = batch.read(ecs_key_render_layers)
+      let scissors = batch.read(@ui_clip.ecs_key_scissor_rect)
+      for row_index in 0..<batch.length() {
+        if !view_visibilities.value(row_index).is_visible() {
+          continue
+        }
+        let entity = batch.entity(row_index)
+        let sprite = sprites.value(row_index)
+        let anchor = anchors.value(row_index)
+        let layers = match render_layers {
+          Some(column) => column.value(row_index)
+          None => RenderLayers::RenderLayers()
+        }
+        let transform = global_transforms.value(row_index).to_transform_approx()
+        let mut uv_min = default_uv_min()
+        let mut uv_max = default_uv_max()
+        let mut region_size = @math.Vec2::new(1.0F, 1.0F)
+        let mut image_size = @math.Vec2::new(1.0F, 1.0F)
+        if sprite_uv_from_sprite(sprite, texture_atlas_layouts) is Some(info) {
+          uv_min = info.uv_min
+          uv_max = info.uv_max
+          image_size = info.image_size
+          region_size = info.region_size
+        }
+        let draw_scale = sprite_draw_scale(
           sprite,
-          try! source_world.get_by_key(entity, ecs_key_computed_texture_slices),
+          @math.Vec2::new(transform.scale.x, transform.scale.y),
+          region_size,
+        )
+        let scissor = match scissors {
+          Some(column) => Some(column.value(row_index).rect)
+          None => None
+        }
+        let has_custom_size = match sprite.custom_size {
+          Some(_) => true
+          None => false
+        }
+        let (
+          uv_draw_min,
+          uv_draw_max,
+          draw_scale_for_host,
+          local_offset,
+          needs_repeat_sampler,
+        ) = apply_sprite_image_mode(
+          uv_min,
+          uv_max,
+          draw_scale,
+          region_size,
+          sprite.image_mode,
+          has_custom_size,
+        )
+        let anchor_offset = sprite_anchor_offset(
           anchor,
-          transform,
-          layers,
-          scissor,
-          image_size,
-        ) {
-        rs.sprites.push(ExtractedSprite::{
-          entity: phase_entity_ref_for_main(entity),
-          payload: SpriteDrawPayload::{
+          transform.rotation_z(),
+          draw_scale_for_host,
+          region_size,
+          local_offset,
+        )
+        if needs_repeat_sampler {
+          @asset.asset_set_texture_sampler(
+            sprite.image,
+            @asset.ImageSampler::Descriptor(
+              @asset.ImageSamplerDescriptor::linear().set_address_mode(
+                @asset.ImageAddressMode::Repeat,
+              ),
+            ),
+          )
+        }
+        if !append_computed_sprite_slices(
+            rs.sprite_slice_batches,
+            entity,
+            sprite,
+            match computed_slices {
+              Some(column) => Some(column.value(row_index))
+              None => None
+            },
+            anchor,
             transform,
-            anchor_offset,
-            draw_scale: draw_scale_for_host,
-            color: sprite.color,
-            texture: sprite.image,
             layers,
-            uv_min: uv_draw_min,
-            uv_max: uv_draw_max,
             scissor,
-          },
-        })
+            image_size,
+          ) {
+          rs.sprites.push(ExtractedSprite::{
+            entity: phase_entity_ref_for_main(entity),
+            payload: SpriteDrawPayload::{
+              transform,
+              anchor_offset,
+              draw_scale: draw_scale_for_host,
+              color: sprite.color,
+              texture: sprite.image,
+              layers,
+              uv_min: uv_draw_min,
+              uv_max: uv_draw_max,
+              scissor,
+            },
+          })
+        }
       }
     })
     // ECS mesh components.
@@ -4667,6 +4695,127 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     sprite_slice_batches[0].payload.slices[0].texture_rect.min.x == 0.0F &&
     sprite_slice_batches[0].payload.slices[0].texture_rect.max.x == 8.0F
   debug_inspect(ok, content="true")
+}
+
+///|
+test "render2d: ecs sprite extraction preserves required and optional columns" {
+  let world = @ecs.World::new()
+  defer world.close()
+  ensure_render_state_resource(world)
+
+  let plain_entity = world.spawn_empty()
+  let plain_transform = @transform.Transform::from_xyz(2.0F, 3.0F, 4.0F)
+  try! world.set_by_key(
+    plain_entity,
+    @sprite.ecs_key_sprite,
+    Sprite::from_color(@color.Color::white(), @math.Vec2::new(8.0F, 4.0F)),
+  )
+  try! world.set_by_key(
+    plain_entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::visible(),
+  )
+  try! world.set_by_key(
+    plain_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(plain_transform),
+  )
+  try! world.set_by_key(plain_entity, ecs_key_anchor, Anchor::center())
+
+  let sliced_entity = world.spawn_empty()
+  let sliced_sprite = Sprite::from_image(@asset.Handle::new(7))
+    .with_image_mode(
+      SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
+    )
+    .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
+  guard compute_sprite_slices_from_rect(
+      sliced_sprite,
+      @math.Vec2::new(32.0F, 32.0F),
+      @math.Rect::new(@math.Vec2::zero(), @math.Vec2::new(32.0F, 32.0F)),
+    )
+    is Some(computed_slices) else {
+    debug_inspect(false, content="true")
+    return
+  }
+  try! world.set_by_key(sliced_entity, @sprite.ecs_key_sprite, sliced_sprite)
+  try! world.set_by_key(
+    sliced_entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::visible(),
+  )
+  try! world.set_by_key(
+    sliced_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  try! world.set_by_key(sliced_entity, ecs_key_anchor, Anchor::center())
+  try! world.set_by_key(
+    sliced_entity, ecs_key_computed_texture_slices, computed_slices,
+  )
+  try! world.set_by_key(
+    sliced_entity,
+    ecs_key_render_layers,
+    RenderLayers::layer(3),
+  )
+  try! world.set_by_key(
+    sliced_entity,
+    @ui_clip.ecs_key_scissor_rect,
+    @ui_clip.ScissorRect::new(
+      @math.Rect::new(@math.Vec2::new(1.0F, 2.0F), @math.Vec2::new(9.0F, 10.0F)),
+    ),
+  )
+
+  let hidden_entity = world.spawn_empty()
+  try! world.set_by_key(
+    hidden_entity,
+    @sprite.ecs_key_sprite,
+    Sprite::from_color(@color.Color::white(), @math.Vec2::new(16.0F, 16.0F)),
+  )
+  try! world.set_by_key(
+    hidden_entity,
+    @visibility.ecs_key_view_visibility,
+    @visibility.ViewVisibility::hidden(),
+  )
+  try! world.set_by_key(
+    hidden_entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  try! world.set_by_key(hidden_entity, ecs_key_anchor, Anchor::center())
+
+  render_extract_system_ecs(world)
+
+  let rs = render_state_ref(world).unwrap()
+  let plain_ok = rs.sprites.length() == 1 &&
+    phase_entity_ref_cmp(
+      rs.sprites[0].entity,
+      phase_entity_ref_for_main(plain_entity),
+    ) ==
+    0 &&
+    rs.sprites[0].payload.transform.translation.x == 2.0F &&
+    rs.sprites[0].payload.transform.translation.y == 3.0F &&
+    rs.sprites[0].payload.transform.translation.z == 4.0F &&
+    rs.sprites[0].payload.layers.mask() == 1 &&
+    rs.sprites[0].payload.scissor is None
+  let sliced_scissor_ok = match rs.sprite_slice_batches[0].payload.scissor {
+    Some(rect) =>
+      rect.min.x == 1.0F &&
+      rect.min.y == 2.0F &&
+      rect.max.x == 9.0F &&
+      rect.max.y == 10.0F
+    None => false
+  }
+  let sliced_ok = rs.sprite_slice_batches.length() == 1 &&
+    phase_entity_ref_cmp(
+      rs.sprite_slice_batches[0].entity,
+      phase_entity_ref_for_main(sliced_entity),
+    ) ==
+    0 &&
+    rs.sprite_slice_batches[0].payload.texture.id() == 7 &&
+    rs.sprite_slice_batches[0].payload.layers.mask() == 8 &&
+    rs.sprite_slice_batches[0].payload.slices.length() == 9 &&
+    sliced_scissor_ok
+  debug_inspect(plain_ok && sliced_ok, content="true")
 }
 
 ///|

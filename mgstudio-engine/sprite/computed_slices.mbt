@@ -238,7 +238,7 @@ pub let ecs_key_computed_texture_slices : @ecs.ComponentKey[
 )
 
 ///|
-impl @ecs.Component for ComputedTextureSlices with fn component() {
+pub impl @ecs.Component for ComputedTextureSlices with fn component() {
   ecs_key_computed_texture_slices
 }
 
