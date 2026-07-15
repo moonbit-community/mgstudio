@@ -171,6 +171,7 @@ pub(all) suberror EcsError {
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
   WorldClosed(Int)
+  TableBatchUnavailable(String)
   ForeignEntityReservation(@core.Entity, Int, Int)
   StaleEntityReservation(@core.Entity)
 }

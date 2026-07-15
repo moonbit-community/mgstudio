@@ -82,6 +82,7 @@ pub(all) suberror EcsError {
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
   WorldClosed(Int)
+  TableBatchUnavailable(String)
   ForeignEntityReservation(@core.Entity, Int, Int)
   StaleEntityReservation(@core.Entity)
 }
@@ -561,6 +562,7 @@ pub fn[D, F] Query::cache_state(Self[D, F]) -> QueryCache
 pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
+pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(Self[D, F], (QueryTableBatch) -> Unit raise EcsError) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
 pub fn[D, F] Query::is_active(Self[D, F]) -> Bool
 pub fn[D : QueryData, F : QueryFilter] Query::iter(Self[D, F]) -> QueryMany[D, F]
@@ -674,6 +676,15 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(Self[D, F], World, 
 pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
 pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> D? raise EcsError
 
+pub struct QueryTableBatch {
+  // private fields
+}
+pub fn QueryTableBatch::entity(Self, Int) -> @core.Entity
+pub fn[T] QueryTableBatch::has(Self, ComponentKey[T]) -> Bool
+pub fn QueryTableBatch::length(Self) -> Int
+pub fn[T] QueryTableBatch::read(Self, ComponentKey[T]) -> TableBatchRead[T]?
+pub fn[T] QueryTableBatch::write(Self, ComponentKey[T]) -> TableBatchWrite[T]?
+
 type RawTable
 
 pub(all) struct RawTableColumn {
@@ -774,6 +785,40 @@ pub fn[T] ResourceMut::set_changed(Self[T], loc~ : SourceLoc) -> Unit
 pub fn[T : Eq] ResourceMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
+
+pub struct TableBatchRead[T] {
+  // private fields
+}
+pub fn[T] TableBatchRead::added(Self[T], Int) -> Int64
+pub fn[T] TableBatchRead::changed_by(Self[T], Int) -> String?
+pub fn[T] TableBatchRead::is_added(Self[T], Int) -> Bool
+pub fn[T] TableBatchRead::is_changed(Self[T], Int) -> Bool
+pub fn[T] TableBatchRead::key(Self[T]) -> ComponentKey[T]
+pub fn[T] TableBatchRead::last_changed(Self[T], Int) -> Int64
+pub fn[T] TableBatchRead::value(Self[T], Int) -> T
+
+pub struct TableBatchWrite[T] {
+  // private fields
+}
+pub fn[T] TableBatchWrite::added(Self[T], Int) -> Int64
+pub fn[T] TableBatchWrite::bypass_change_detection(Self[T], Int, (T) -> T) -> Unit
+pub fn[T] TableBatchWrite::changed_by(Self[T], Int) -> String?
+pub fn[T] TableBatchWrite::is_added(Self[T], Int) -> Bool
+pub fn[T] TableBatchWrite::is_changed(Self[T], Int) -> Bool
+pub fn[T] TableBatchWrite::key(Self[T]) -> ComponentKey[T]
+pub fn[T] TableBatchWrite::last_changed(Self[T], Int) -> Int64
+#callsite(autofill(loc))
+pub fn[T, R] TableBatchWrite::modify(Self[T], Int, (T) -> R, loc~ : SourceLoc) -> R
+pub fn[T] TableBatchWrite::peek(Self[T], Int) -> T
+#callsite(autofill(loc))
+pub fn[T] TableBatchWrite::set(Self[T], Int, T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component] TableBatchWrite::set_added(Self[T], Int, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Component] TableBatchWrite::set_changed(Self[T], Int, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : Eq] TableBatchWrite::set_if_neq(Self[T], Int, T, loc~ : SourceLoc) -> Bool
+pub fn[T] TableBatchWrite::value(Self[T], Int) -> T
 
 type TriggerObserverContext
 

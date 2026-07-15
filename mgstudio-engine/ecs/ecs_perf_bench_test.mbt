@@ -307,6 +307,57 @@ fn ecs_bench_mut_query_apply(
 }
 
 ///|
+fn ecs_bench_mut_query_for_each_apply(
+  world : World,
+  cache : QueryCache,
+) -> Int raise EcsError {
+  let query : Query[(Write[BenchPosition], Read[BenchVelocity]), All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    cache,
+  )
+  let total = Ref(0)
+  query.for_each(fn(_entity, data) {
+    let (position, velocity) = data
+    let v = velocity.value()
+    position.modify(fn(p) {
+      p.x = p.x + v.dx
+      p.y = p.y + v.dy
+    })
+    let p = position.value()
+    total.val = total.val + p.x + p.y
+  })
+  total.val
+}
+
+///|
+fn ecs_bench_mut_query_table_batch_apply(
+  world : World,
+  cache : QueryCache,
+) -> Int raise EcsError {
+  let query : Query[(Write[BenchPosition], Read[BenchVelocity]), All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    cache,
+  )
+  let total = Ref(0)
+  query.for_each_table(fn(batch) {
+    let positions = batch.write(bench_position_key).unwrap()
+    let velocities = batch.read(bench_velocity_key).unwrap()
+    for row_index in 0..<batch.length() {
+      let v = velocities.value(row_index)
+      positions.modify(row_index, fn(p) {
+        p.x = p.x + v.dx
+        p.y = p.y + v.dy
+      })
+      let p = positions.peek(row_index)
+      total.val = total.val + p.x + p.y
+    }
+  })
+  total.val
+}
+
+///|
 test "bench ecs: spawn dense bundle" (b : @bench.T) {
   let entity_count = 5_000
   b.bench(name="spawn_bundle dense x5000", count=10U, () => {
@@ -388,5 +439,25 @@ test "bench ecs: mut query modify cached" (b : @bench.T) {
   let state : QueryState[(Write[BenchPosition], Read[BenchVelocity]), All] = world.query()
   b.bench(name="query mut modify cached x20000", count=100U, () => {
     b.keep(ecs_bench_mut_query_apply(world, state))
+  })
+}
+
+///|
+test "bench ecs: mut query for_each cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="query mut for_each cached x20000", count=100U, () => {
+    b.keep(try! ecs_bench_mut_query_for_each_apply(world, cache))
+  })
+}
+
+///|
+test "bench ecs: mut query table batch cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="query mut table batch cached x20000", count=100U, () => {
+    b.keep(try! ecs_bench_mut_query_table_batch_apply(world, cache))
   })
 }
