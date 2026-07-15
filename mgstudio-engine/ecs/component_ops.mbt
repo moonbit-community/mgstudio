@@ -19,7 +19,7 @@ struct ComponentOps {
   contains : (World, @core.Entity) -> Bool
   for_each_entity : (World, (@core.Entity) -> Unit) -> Unit
   remove : (World, @core.Entity) -> Bool
-  move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
+  move_table_row_and_swap_remove : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
   table_row_count : (World, Int) -> Int
@@ -41,7 +41,7 @@ fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
       key.component_for_each(world, fn(entity, _value) { visit(entity) })
     },
     remove: fn(world, entity) { key.component_remove(world, entity) },
-    move_table_row: fn(
+    move_table_row_and_swap_remove: fn(
       world,
       entity,
       source_table_id,
@@ -49,7 +49,7 @@ fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
       target_table_id,
       target_row_index,
     ) {
-      key.component_move_table_row(
+      key.component_move_table_row_and_swap_remove(
         world, entity, source_table_id, source_row_index, target_table_id, target_row_index,
       )
     },

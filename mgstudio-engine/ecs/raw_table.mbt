@@ -250,6 +250,14 @@ fn raw_table_column_swap_remove(
 }
 
 ///|
+fn raw_table_column_metadata_swap_remove(
+  column_ref : RawTableColumn,
+  row_index : Int,
+) -> Bool {
+  raw_table_column_kernel_swap_remove(column_ref.storage, row_index)
+}
+
+///|
 fn raw_table_new(
   world : World,
   table_id : Int,
@@ -399,48 +407,54 @@ fn RawTable::append_row_from_source_table(
 ) -> TableRow? {
   let row = raw_table_row_kernel_push(self.rows, entity)
   let row_index = row
+  // Table component ids inherit the sorted, unique archetype signature, so
+  // source and target columns can be merged without a lookup or allocation.
+  let mut source_column_index = 0
   for column_index in 0..<self.columns.length() {
     let component_local_id = self.component_local_ids[column_index]
     let column = self.columns[column_index]
     let mut added_tick : @core.Tick? = None
     let mut changed_tick : @core.Tick? = None
     let mut changed_caller : String? = None
-    let mut source_table_id : Int? = None
-    let mut source_row_index : Int? = None
     let appended = match source_table {
       Some(source_table_ref) =>
         match source_row {
-          Some(source_row) =>
-            match source_table_ref.column(component_local_id) {
-              Some(source_column_ref) => {
-                source_table_id = Some(source_table_ref.table_id)
-                source_row_index = Some(source_row.index())
-                added_tick = source_column_ref.added_tick_at_row(
-                  source_row.index(),
-                )
-                changed_tick = source_column_ref.changed_tick_at_row(
-                  source_row.index(),
-                )
-                changed_caller = source_column_ref.changed_caller_at_row(
-                  source_row.index(),
-                )
-                column.append_from_row(source_column_ref, source_row.index())
-              }
-              None =>
-                if component_writes.contains(component_local_id) {
-                  match component_writes.metadata(component_local_id) {
-                    Some(metadata) => {
-                      added_tick = metadata.added_tick
-                      changed_tick = metadata.changed_tick
-                      changed_caller = metadata.changed_caller
-                    }
-                    None => ()
-                  }
-                  column.append_row()
-                } else {
-                  false
-                }
+          Some(source_row) => {
+            while source_column_index <
+                  source_table_ref.component_local_ids.length() &&
+                  source_table_ref.component_local_ids[source_column_index] <
+                  component_local_id {
+              source_column_index = source_column_index + 1
             }
+            if source_column_index <
+              source_table_ref.component_local_ids.length() &&
+              source_table_ref.component_local_ids[source_column_index] ==
+              component_local_id {
+              let source_column_ref = source_table_ref.columns[source_column_index]
+              added_tick = source_column_ref.added_tick_at_row(
+                source_row.index(),
+              )
+              changed_tick = source_column_ref.changed_tick_at_row(
+                source_row.index(),
+              )
+              changed_caller = source_column_ref.changed_caller_at_row(
+                source_row.index(),
+              )
+              column.append_from_row(source_column_ref, source_row.index())
+            } else if component_writes.contains(component_local_id) {
+              match component_writes.metadata(component_local_id) {
+                Some(metadata) => {
+                  added_tick = metadata.added_tick
+                  changed_tick = metadata.changed_tick
+                  changed_caller = metadata.changed_caller
+                }
+                None => ()
+              }
+              column.append_row()
+            } else {
+              false
+            }
+          }
           None =>
             if component_writes.contains(component_local_id) {
               match component_writes.metadata(component_local_id) {
@@ -501,16 +515,41 @@ fn RawTable::append_row_from_source_table(
       ignore(raw_table_row_kernel_swap_remove(self.rows, row_index))
       return None
     }
-    let moved_value = match (source_table_id, source_row_index) {
-      (Some(source_table_id), Some(source_row_index)) =>
-        (column.component_ops.move_table_row)(
-          world,
-          entity,
-          source_table_id,
-          source_row_index,
-          self.table_id,
-          row_index,
-        )
+  }
+  // Raw target rows are fully prepared before typed ownership changes. No
+  // callbacks or public world access occur until the source row is finalized.
+  source_column_index = 0
+  for column_index in 0..<self.columns.length() {
+    let component_local_id = self.component_local_ids[column_index]
+    let column = self.columns[column_index]
+    let moved_value = match (source_table, source_row) {
+      (Some(source_table_ref), Some(source_row)) => {
+        while source_column_index <
+              source_table_ref.component_local_ids.length() &&
+              source_table_ref.component_local_ids[source_column_index] <
+              component_local_id {
+          source_column_index = source_column_index + 1
+        }
+        if source_column_index < source_table_ref.component_local_ids.length() &&
+          source_table_ref.component_local_ids[source_column_index] ==
+          component_local_id {
+          (column.component_ops.move_table_row_and_swap_remove)(
+            world,
+            entity,
+            source_table_ref.table_id,
+            source_row.index(),
+            self.table_id,
+            row_index,
+          )
+        } else {
+          (column.component_ops.move_staged_to_table_row)(
+            world,
+            entity,
+            self.table_id,
+            row_index,
+          )
+        }
+      }
       _ =>
         (column.component_ops.move_staged_to_table_row)(
           world,
@@ -533,6 +572,7 @@ fn RawTable::swap_remove_row(
   self : RawTable,
   world : World,
   row : TableRow,
+  target_component_local_ids : Array[Int],
 ) -> RawTableSwapRemoveResult? {
   let row_index = row.index()
   let len = self.row_count()
@@ -549,10 +589,27 @@ fn RawTable::swap_remove_row(
   } else {
     raw_table_row_kernel_entity_at(self.rows, last_row_index)
   }
-  for column_ref in self.columns {
-    ignore(
-      raw_table_column_swap_remove(world, self.table_id, column_ref, row_index),
-    )
+  let mut target_column_index = 0
+  for column_index in 0..<self.columns.length() {
+    let component_local_id = self.component_local_ids[column_index]
+    while target_column_index < target_component_local_ids.length() &&
+          target_component_local_ids[target_column_index] < component_local_id {
+      target_column_index = target_column_index + 1
+    }
+    let column_ref = self.columns[column_index]
+    if target_column_index < target_component_local_ids.length() &&
+      target_component_local_ids[target_column_index] == component_local_id {
+      ignore(raw_table_column_metadata_swap_remove(column_ref, row_index))
+    } else {
+      ignore(
+        raw_table_column_swap_remove(
+          world,
+          self.table_id,
+          column_ref,
+          row_index,
+        ),
+      )
+    }
   }
   guard raw_table_row_kernel_swap_remove(self.rows, row_index) else {
     return None

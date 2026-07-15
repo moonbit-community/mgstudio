@@ -920,6 +920,7 @@ fn World::swap_remove_entity_from_table(
   self : World,
   entity : @core.Entity,
   table_id : Int,
+  target_component_local_ids : Array[Int],
 ) -> Unit {
   guard self.entity_table_row(entity) is Some(row) else {
     if entity.id >= 0 &&
@@ -934,7 +935,7 @@ fn World::swap_remove_entity_from_table(
     self.entity_storage.entity_table_rows[entity.id] = -1
     return
   }
-  match table_ref.swap_remove_row(self, row) {
+  match table_ref.swap_remove_row(self, row, target_component_local_ids) {
     Some(result) => {
       if result.swapped_entity is Some(swapped_entity) &&
         result.swapped_row is Some(swapped_row) {
@@ -1004,7 +1005,9 @@ fn World::bundle_migrate_new_archetype_new_table(
     None
   }
   if from_table_id >= 0 {
-    self.swap_remove_entity_from_table(entity, from_table_id)
+    self.swap_remove_entity_from_table(
+      entity, from_table_id, target_component_local_ids,
+    )
   } else if entity.id >= 0 &&
     entity.id < self.entity_storage.entity_table_rows.length() {
     self.entity_storage.entity_table_ids[entity.id] = -1

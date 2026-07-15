@@ -24,7 +24,7 @@ struct ComponentAccess[T] {
   get_table_row_unchecked : (World, Int, Int) -> T
   bind_table_values : (World, Int) -> Array[T]?
   set_table_row : (World, Int, Int, T) -> Unit
-  move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
+  move_table_row_and_swap_remove : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
   table_row_count : (World, Int) -> Int
@@ -314,7 +314,7 @@ fn[T] component_access_new(
       }
       store.set_table_row(table_id, row_index, value)
     },
-    move_table_row: fn(
+    move_table_row_and_swap_remove: fn(
       world,
       entity,
       source_table_id,
@@ -327,9 +327,10 @@ fn[T] component_access_new(
       match store.get_table_row(source_table_id, source_row_index) {
         Some(value) => {
           // This is the GC-language equivalent of Bevy's owning row move. The
-          // enclosing table migration immediately swap-removes the source row
-          // without finalizing it, so ownership is transferred exactly once.
+          // source row is swap-removed in the same typed storage operation, so
+          // ownership is transferred exactly once.
           store.set_table_row(target_table_id, target_row_index, value)
+          store.swap_remove_table_row(source_table_id, source_row_index)
           true
         }
         None => false
@@ -454,7 +455,7 @@ fn[T] ComponentKey::component_set_table_row(
 }
 
 ///|
-fn[T] ComponentKey::component_move_table_row(
+fn[T] ComponentKey::component_move_table_row_and_swap_remove(
   self : ComponentKey[T],
   world : World,
   entity : @core.Entity,
@@ -463,7 +464,7 @@ fn[T] ComponentKey::component_move_table_row(
   target_table_id : Int,
   target_row_index : Int,
 ) -> Bool {
-  (self.access.move_table_row)(
+  (self.access.move_table_row_and_swap_remove)(
     world, entity, source_table_id, source_row_index, target_table_id, target_row_index,
   )
 }
