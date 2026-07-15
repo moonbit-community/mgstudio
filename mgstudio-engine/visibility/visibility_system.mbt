@@ -254,23 +254,6 @@ fn reset_view_visibility_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-// Temporary compatibility producer while all Bevy view-specific visibility
-// producers are being ported. Remove once camera and light producers cover
-// every CPU-culled renderable.
-pub fn check_visibility_system(world : @ecs.World) -> Unit {
-  let query : @ecs.Query[
-    (@ecs.Write[ViewVisibility], @ecs.Read[InheritedVisibility]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! query.view(fn(_entity, data) {
-    let (view_visibility, inherited_visibility) = data
-    if inherited_visibility.value().get() {
-      SetViewVisibility::set_visible(view_visibility)
-    }
-  })
-}
-
-///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility_gpu_culling`.
 fn check_visibility_gpu_culling_system(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
@@ -381,11 +364,6 @@ pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_post_update_system_config(
     @app.system(check_visibility_gpu_culling_system)
     .named("mgstudio.visibility.check_visibility_gpu_culling")
-    .in_set(visibility_set_check_visibility),
-  )
-  .add_post_update_system_config(
-    @app.system(check_visibility_system)
-    .named("mgstudio.visibility.check_visibility_compatibility")
     .in_set(visibility_set_check_visibility),
   )
   .add_post_update_system_config(

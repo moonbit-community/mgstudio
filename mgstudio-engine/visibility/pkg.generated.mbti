@@ -9,8 +9,6 @@ import {
 }
 
 // Values
-pub fn check_visibility_system(@ecs.World) -> Unit
-
 pub let ecs_key_inherited_visibility : @ecs.ComponentKey[InheritedVisibility]
 
 pub let ecs_key_no_auto_aabb : @ecs.ComponentKey[NoAutoAabb]

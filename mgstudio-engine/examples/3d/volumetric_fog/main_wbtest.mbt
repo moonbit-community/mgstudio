@@ -2380,7 +2380,6 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
       @scene.scene_spawn_roots_system(world)
       @transform.propagate_transforms_system(world)
       @visibility.visibility_propagate_system(world)
-      @visibility.check_visibility_system(world)
 
       let mesh_query : @ecs.Query[
         (
