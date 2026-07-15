@@ -436,6 +436,25 @@ fn[T] TableBatchWrite::mark_changed(
 }
 
 ///|
+fn[T] TableBatchWrite::assign(
+  self : TableBatchWrite[T],
+  row_index : Int,
+  value : T,
+) -> Unit {
+  ignore(self.scope.entity_or_abort(row_index))
+  let world = self.scope.world_or_abort()
+  if !world.replace_component_value_at_table_row(
+      self.key,
+      self.local_component_id,
+      self.scope.table_id,
+      row_index,
+      value,
+    ) {
+    abort("table batch write expected a writable table component row")
+  }
+}
+
+///|
 #callsite(autofill(loc))
 pub fn[T : Component] TableBatchWrite::set_changed(
   self : TableBatchWrite[T],
@@ -483,9 +502,7 @@ pub fn[T] TableBatchWrite::bypass_change_detection(
   row_index : Int,
   update : (T) -> T,
 ) -> Unit {
-  let values = self.binding.values_or_abort()
-  ignore(self.scope.entity_or_abort(row_index))
-  values[row_index] = update(values[row_index])
+  self.assign(row_index, update(self.peek(row_index)))
 }
 
 ///|
@@ -513,7 +530,7 @@ pub fn[T] TableBatchWrite::set(
   loc~ : SourceLoc,
 ) -> Unit {
   self.mark_changed(row_index, hook_caller_from_loc(loc))
-  self.binding.values_or_abort()[row_index] = value
+  self.assign(row_index, value)
 }
 
 ///|

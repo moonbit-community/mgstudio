@@ -26,6 +26,14 @@ struct TableBatchVelocity {
 struct TableBatchExcluded {}
 
 ///|
+struct TableBatchFinalized {
+  id : Int
+} derive(Eq, Debug)
+
+///|
+let table_batch_finalized_values : Array[Int] = []
+
+///|
 let table_batch_position_key : ComponentKey[TableBatchPosition] = register_component(
   debug_name="ecs.test.TableBatchPosition",
 )
@@ -41,6 +49,12 @@ let table_batch_excluded_key : ComponentKey[TableBatchExcluded] = register_compo
 )
 
 ///|
+let table_batch_finalized_key : ComponentKey[TableBatchFinalized] = register_component(
+  debug_name="ecs.test.TableBatchFinalized",
+  finalizer=fn(value) { table_batch_finalized_values.push(value.id) },
+)
+
+///|
 pub impl Component for TableBatchPosition with fn component() {
   table_batch_position_key
 }
@@ -53,6 +67,11 @@ pub impl Component for TableBatchVelocity with fn component() {
 ///|
 pub impl Component for TableBatchExcluded with fn component() {
   table_batch_excluded_key
+}
+
+///|
+pub impl Component for TableBatchFinalized with fn component() {
+  table_batch_finalized_key
 }
 
 ///|
@@ -113,4 +132,32 @@ test "ecs table batch: dense write preserves filters and change detection" {
   debug_inspect(changed.contains(changed_entity), content="true")
   debug_inspect(changed.contains(bypassed_entity), content="false")
   debug_inspect(changed.contains(excluded_entity), content="false")
+}
+
+///|
+test "ecs table batch: writes preserve component replacement finalizers" {
+  table_batch_finalized_values.clear()
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    table_batch_finalized_key,
+    TableBatchFinalized::{ id: 1 },
+  )
+  let query : Query[Write[TableBatchFinalized], All] = query(world)
+
+  try! query.for_each_table(fn(batch) {
+    let values = batch.write(table_batch_finalized_key).unwrap()
+    values.set(0, { id: 2 })
+    values.bypass_change_detection(0, fn(_value) {
+      TableBatchFinalized::{ id: 3 }
+    })
+  })
+
+  debug_inspect(
+    try! world.get_by_key(entity, table_batch_finalized_key),
+    content="Some({ id: 3 })",
+  )
+  debug_inspect(table_batch_finalized_values, content="[1, 2]")
 }
