@@ -219,7 +219,7 @@ pub struct World {
   priv mut system_tick_context : @core.SystemTickContext
   priv component_write_transactions : ComponentWriteTransactionState
   priv query_iterations : WorldQueryIterationState
-  priv tables : Map[Int, RawTable]
+  priv tables : Array[RawTable?]
   priv sparse_component_metadata : Map[
     Int,
     @core.ComponentStore[ComponentTickMetadata],
@@ -291,7 +291,7 @@ pub fn World::new(track_change_locations? : Bool = false) -> World {
     system_tick_context: @core.SystemTickContext::new(),
     component_write_transactions: component_write_transaction_state_new(),
     query_iterations: world_query_iteration_state_new(),
-    tables: Map([]),
+    tables: [],
     sparse_component_metadata: Map([]),
     next_archetype_id: 1,
     next_table_id: 1,
@@ -987,8 +987,10 @@ pub fn World::set_tick_context(
 pub fn World::check_change_ticks(self : World) -> Unit {
   let present_tick = self.read_change_tick()
   self.resource_tick_registry.check_change_ticks(present_tick)
-  for entry in self.tables.iter() {
-    entry.1.check_change_ticks(present_tick)
+  for table in self.tables {
+    if table is Some(table_ref) {
+      table_ref.check_change_ticks(present_tick)
+    }
   }
   for entry in self.sparse_component_metadata.iter() {
     let metadata_store = entry.1

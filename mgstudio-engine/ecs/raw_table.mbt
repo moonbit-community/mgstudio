@@ -570,17 +570,31 @@ fn RawTable::swap_remove_row(
 
 ///|
 fn World::ensure_table_storage(self : World, table_id : Int) -> RawTable {
+  if table_id < 0 {
+    abort("Cannot ensure table storage for negative table id")
+  }
   let component_local_ids = self.table_component_local_ids
     .get(table_id)
     .unwrap_or([])
-  self.tables.get_or_init(table_id, fn() {
-    raw_table_new(self, table_id, component_local_ids)
-  })
+  while self.tables.length() <= table_id {
+    self.tables.push(None)
+  }
+  match self.tables[table_id] {
+    Some(table_ref) => table_ref
+    None => {
+      let table_ref = raw_table_new(self, table_id, component_local_ids)
+      self.tables[table_id] = Some(table_ref)
+      table_ref
+    }
+  }
 }
 
 ///|
 fn World::table_storage(self : World, table_id : Int) -> RawTable? {
-  self.tables.get(table_id)
+  if table_id < 0 || table_id >= self.tables.length() {
+    return None
+  }
+  self.tables[table_id]
 }
 
 ///|

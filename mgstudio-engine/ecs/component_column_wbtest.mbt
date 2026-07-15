@@ -44,9 +44,8 @@ pub impl Component for ComponentColumnMigrationMarker with fn component() {
 
 ///|
 fn assert_component_table_storage_invariants(world : World) -> Unit raise {
-  for table_entry in world.tables.iter() {
-    let table_id = table_entry.0
-    let table_ref = table_entry.1
+  for table_id in 0..<world.tables.length() {
+    guard world.tables[table_id] is Some(table_ref) else { continue }
     let row_count = table_ref.row_count()
     assert_eq(table_ref.table_id, table_id)
     for column_ref in table_ref.columns {
