@@ -239,6 +239,7 @@ priv struct QueryIterationPlan {
 ///|
 pub struct QueryMany[D, F] {
   priv query : Query[D, F]
+  priv structural_generation : Int
   priv data_fetch_plan : QueryDataFetchPlan
   priv default_filter_component_ids : Array[Int]
   priv entities_pre_matched : Bool
@@ -545,6 +546,7 @@ fn[D, F] query_many_from_plan(
 ) -> QueryMany[D, F] {
   {
     query,
+    structural_generation: query.world_or_abort().structural_generation(),
     data_fetch_plan: plan.data_fetch_plan,
     default_filter_component_ids: plan.default_filter_component_ids,
     entities_pre_matched: plan.entities_pre_matched,
@@ -1199,6 +1201,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
 ) -> QueryMany[D, F] {
   {
     query: self,
+    structural_generation: self.world_or_abort().structural_generation(),
     data_fetch_plan: D::prepare_fetch_plan(self.world_or_abort()),
     default_filter_component_ids: self.default_filter_component_ids(),
     entities_pre_matched: false,
@@ -2072,6 +2075,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
   let query : Query[D, F] = query_filtered(world, self.filter)
   {
     query,
+    structural_generation: world.structural_generation(),
     data_fetch_plan: self.data_fetch_plan(world),
     default_filter_component_ids: self.default_filter_component_ids(world),
     entities_pre_matched: false,
@@ -2651,6 +2655,10 @@ fn[D : QueryData, F : QueryFilter] QueryMany::for_each_remaining(
 pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
   self : QueryMany[D, F],
 ) -> (@core.Entity, D)? raise EcsError {
+  let world = self.query.world_or_abort()
+  if world.structural_generation() != self.structural_generation {
+    abort("QueryMany used after a structural World change")
+  }
   if self.dense_driven {
     return match self.dense_next_entity() {
       Some(entity) => Some((entity, self.fetch_dense_current(entity)))

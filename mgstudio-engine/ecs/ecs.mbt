@@ -374,6 +374,7 @@ pub fn World::is_active(self : World) -> Bool {
 
 ///|
 pub fn World::close(self : World) -> Unit {
+  self.abort_if_query_iteration_would_be_invalidated("close world")
   guard self.lifecycle.begin_close() else { return }
   self.allocator_connection.close()
   let pre_close_hooks = self.pre_close_hooks

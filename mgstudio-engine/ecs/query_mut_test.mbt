@@ -244,6 +244,85 @@ test "ecs query: view rejects structural removal" {
 }
 
 ///|
+test "panic ecs query: escaped iterator rejects an invalidated World lease" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  let lease = WorldLease::new(world)
+  let query : Query[ReadValue[MutQueryPosition], All] = query_filtered_with_cache_and_lease(
+    lease,
+    All::new(),
+    QueryCache::new(),
+  )
+  let iter = query.iter()
+  lease.invalidate()
+  ignore(try! iter.fetch_next())
+}
+
+///|
+test "panic ecs query: active view rejects World close" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  let query : Query[ReadValue[MutQueryPosition], All] = query(world)
+  try! query.view(fn(_entity, _position) { world.close() })
+}
+
+///|
+test "panic ecs query: escaped iterator rejects structural invalidation" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  try! world.set_by_key(first, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  let second = world.spawn()
+  try! world.set_by_key(second, mut_query_position_key, MutQueryPosition::{
+    x: 3,
+    y: 4,
+  })
+  let query : Query[ReadValue[MutQueryPosition], All] = query(world)
+  let iter = query.iter()
+  ignore(try! iter.fetch_next())
+  ignore(world.spawn())
+  ignore(try! iter.fetch_next())
+}
+
+///|
+test "ecs query: nested read-only views keep the outer scope active" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  try! world.set_by_key(first, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  let second = world.spawn()
+  try! world.set_by_key(second, mut_query_position_key, MutQueryPosition::{
+    x: 3,
+    y: 4,
+  })
+  let outer : Query[ReadValue[MutQueryPosition], All] = query(world)
+  let inner : Query[ReadValue[MutQueryPosition], All] = query(world)
+  let visits = Ref(0)
+  try! outer.view(fn(_outer_entity, _outer_position) {
+    try! inner.view(fn(_inner_entity, _inner_position) {
+      visits.val = visits.val + 1
+    })
+  })
+  debug_inspect(visits.val, content="4")
+}
+
+///|
 test "ecs mut query: detect changes helpers support explicit mutation and marking" {
   let world = World::new(track_change_locations=true)
   defer world.close()

@@ -575,6 +575,7 @@ graph TD
   ISS_456["ISS-456: Migrate trace-proven dense query hotspots to table batches"]
   ISS_457["ISS-457: Restore delayed-frame visibility in many animated sprites"]
   ISS_458["ISS-458: Restore sprite_slice texture rendering"]
+  ISS_459["ISS-459: Reject query cursors invalidated by World lifecycle changes"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004
