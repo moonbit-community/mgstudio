@@ -158,10 +158,24 @@ fn sprite_set_or_replace_aabb(
   entity : @core.Entity,
   aabb : @camera_primitives.Aabb,
 ) -> Unit {
-  if (try! world.contains_by_key(entity, @camera_primitives.ecs_key_aabb)) {
-    try! (world.replace(entity, @camera_primitives.ecs_key_aabb, aabb) |> ignore)
-  } else {
-    try! world.set_by_key(entity, @camera_primitives.ecs_key_aabb, aabb)
+  match (try! world.get_by_key(entity, @camera_primitives.ecs_key_aabb)) {
+    Some(current) => {
+      let current_center = current.center()
+      let next_center = aabb.center()
+      let current_half_size = current.half_size()
+      let next_half_size = aabb.half_size()
+      if current_center.x == next_center.x &&
+        current_center.y == next_center.y &&
+        current_center.z == next_center.z &&
+        current_half_size.x == next_half_size.x &&
+        current_half_size.y == next_half_size.y &&
+        current_half_size.z == next_half_size.z {
+        return
+      }
+      try! (world.replace(entity, @camera_primitives.ecs_key_aabb, aabb)
+      |> ignore)
+    }
+    None => try! world.set_by_key(entity, @camera_primitives.ecs_key_aabb, aabb)
   }
 }
 
@@ -219,6 +233,9 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       world,
     )
     try! mesh2d_query.view(fn(entity, mesh2d_comp) {
+      if (try! world.contains_by_key(entity, ecs_key_sprite_mesh)) {
+        return
+      }
       if (try! world.contains_by_key(
           entity, @visibility.ecs_key_no_frustum_culling,
         )) {
@@ -230,6 +247,9 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       let has_aabb = try! world.contains_by_key(
         entity, @camera_primitives.ecs_key_aabb,
       )
+      if has_aabb && (try! world.contains_by_key(entity, ecs_key_sprite)) {
+        return
+      }
       if !first_run &&
         has_aabb &&
         !changed_mesh2d_entities.contains(sprite_entity_key(entity)) {
@@ -248,9 +268,6 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       @ecs.All,
     ] = @ecs.query(world)
     try! sprite_query.view(fn(entity, data) {
-      if (try! world.contains_by_key(entity, @mesh.ecs_key_mesh2d)) {
-        return
-      }
       if (try! world.contains_by_key(
           entity, @visibility.ecs_key_no_frustum_culling,
         )) {
@@ -262,6 +279,9 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       let has_aabb = try! world.contains_by_key(
         entity, @camera_primitives.ecs_key_aabb,
       )
+      if has_aabb && (try! world.contains_by_key(entity, @mesh.ecs_key_mesh2d)) {
+        return
+      }
       if !first_run &&
         has_aabb &&
         !changed_sprite_or_anchor_entities.contains(sprite_entity_key(entity)) {
