@@ -245,11 +245,14 @@ fn reset_view_visibility_system(world : @ecs.World) -> Unit {
     world,
     @ecs.Without::new(ecs_key_no_cpu_culling),
   )
-  try! query.view(fn(_entity, view_visibility) {
-    view_visibility.bypass_change_detection(fn(value) {
-      value.update()
-      value
-    })
+  try! query.for_each_table(fn(batch) {
+    let view_visibility = batch.write(ecs_key_view_visibility).unwrap()
+    for row_index in 0..<batch.length() {
+      view_visibility.bypass_change_detection(row_index, fn(value) {
+        value.update()
+        value
+      })
+    }
   })
 }
 
