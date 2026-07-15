@@ -212,19 +212,6 @@ fn visibility_cull_sphere(
 
 ///|
 fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
-  let visible_rows : Array[
-    (
-      @core.Entity,
-      @root_visibility.InheritedVisibility,
-      @camera_render_layers.RenderLayers,
-      @root_visibility.VisibilityClass?,
-      @camera_primitives.Aabb?,
-      @camera_primitives.Sphere?,
-      @transform.GlobalTransform,
-      Bool,
-      Bool,
-    ),
-  ] = []
   let visible_query : @ecs.Query[
     (
       @core.Entity,
@@ -239,45 +226,14 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
       ),
       (
         @ecs.Has[@root_visibility.NoFrustumCulling],
-        @ecs.Has[@root_visibility.NoCpuCulling],
         @ecs.Has[@root_visibility.VisibilityRange],
       ),
     ),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! visible_query.view(fn(_query_entity, data) {
-    let (
-      entity,
-      (
-        inherited_visibility,
-        _view_visibility,
-        visibility_class,
-        render_layers,
-        aabb,
-        sphere,
-        global_transform,
-      ),
-      (no_frustum_culling, no_cpu_culling, has_visibility_range),
-    ) = data
-    if no_cpu_culling.present() {
-      return
-    }
-    visible_rows.push(
-      (
-        entity,
-        inherited_visibility.value(),
-        render_layers
-        .value()
-        .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers()),
-        visibility_class.value(),
-        aabb.value(),
-        sphere.value(),
-        global_transform.value(),
-        no_frustum_culling.present(),
-        has_visibility_range.present(),
-      ),
-    )
-  })
+    @ecs.Without[@root_visibility.NoCpuCulling],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.Without::new(@root_visibility.ecs_key_no_cpu_culling),
+  )
   let visible_entity_ranges = world.get_resource(ecs_key_visible_entity_ranges)
   let view_query : @ecs.Query[
     (
@@ -303,78 +259,71 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
     let view_mask = view_layers
       .value()
       .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
-    let accepted : Array[(@core.Entity, Int)] = []
-    for row in visible_rows {
-      let (
-        entity,
-        inherited_visibility,
-        entity_layers,
-        visibility_class,
-        aabb,
-        sphere,
-        global_transform,
-        no_frustum_culling,
-        has_visibility_range,
-      ) = row
-      if !inherited_visibility.get() {
-        continue
-      }
-      if !view_mask.intersects(entity_layers) {
-        continue
-      }
-      if has_visibility_range {
-        match visible_entity_ranges {
-          Some(ranges) =>
-            if !ranges.entity_is_in_range_of_view(entity, view_entity) {
-              continue
-            }
-          None => continue
-        }
-      }
-      if !no_frustum_culling && !no_cpu_culling_camera.present() {
-        match aabb {
-          Some(model_aabb) =>
-            if visibility_cull_aabb(
-                frustum.value(),
-                model_aabb,
-                global_transform,
-              ) {
-              continue
-            }
-          None =>
-            match sphere {
-              Some(model_sphere) =>
-                if visibility_cull_sphere(frustum.value(), model_sphere) {
-                  continue
-                }
-              None => ()
-            }
-        }
-      }
-      match visibility_class {
-        Some(classes) =>
-          for class_id in classes.iter() {
-            accepted.push((entity, class_id))
-          }
-        None => ()
-      }
-    }
     visible_entities.modify(fn(value) {
       value.clear_all()
-      for item in accepted {
-        let (entity, class_id) = item
-        value.push(entity, class_id)
-      }
+      try! visible_query.view(fn(_candidate_entity, candidate_data) {
+        let (
+          entity,
+          (
+            inherited_visibility,
+            view_visibility,
+            visibility_class,
+            render_layers,
+            aabb,
+            sphere,
+            global_transform,
+          ),
+          (no_frustum_culling, has_visibility_range),
+        ) = candidate_data
+        if !inherited_visibility.value().get() {
+          return
+        }
+        let entity_layers = render_layers
+          .value()
+          .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+        if !view_mask.intersects(entity_layers) {
+          return
+        }
+        if has_visibility_range.present() {
+          match visible_entity_ranges {
+            Some(ranges) =>
+              if !ranges.entity_is_in_range_of_view(entity, view_entity) {
+                return
+              }
+            None => ()
+          }
+        }
+        if !no_frustum_culling.present() && !no_cpu_culling_camera.present() {
+          match aabb.value() {
+            Some(model_aabb) =>
+              if visibility_cull_aabb(
+                  frustum.value(),
+                  model_aabb,
+                  global_transform.value(),
+                ) {
+                return
+              }
+            None =>
+              match sphere.value() {
+                Some(model_sphere) =>
+                  if visibility_cull_sphere(frustum.value(), model_sphere) {
+                    return
+                  }
+                None => ()
+              }
+          }
+        }
+        @root_visibility.SetViewVisibility::set_visible(view_visibility)
+        match visibility_class.value() {
+          Some(classes) =>
+            for class_id in classes.iter() {
+              value.push(entity, class_id)
+            }
+          None => ()
+        }
+      })
       value.sort_all()
     })
-    for item in accepted {
-      let (entity, _class_id) = item
-      let view_visibility = (try! world.get_mut(
-        entity,
-        key=@root_visibility.ecs_key_view_visibility,
-      )).unwrap()
-      @root_visibility.SetViewVisibility::set_visible(view_visibility)
-    }
   })
 }
 
