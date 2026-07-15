@@ -14,7 +14,7 @@
 
 ///|
 type SimpleTransformChangedQuery = @ecs.Query[
-  (@ecs.Read[Transform], @ecs.Write[GlobalTransform]),
+  (@ecs.ReadValue[Transform], @ecs.Write[GlobalTransform]),
   (
     @ecs.Without[@hierarchy.Parent],
     @ecs.Without[@hierarchy.Children],
