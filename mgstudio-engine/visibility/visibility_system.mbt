@@ -254,7 +254,9 @@ fn reset_view_visibility_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
+// Temporary compatibility producer while all Bevy view-specific visibility
+// producers are being ported. Remove once camera and light producers cover
+// every CPU-culled renderable.
 pub fn check_visibility_system(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
     (@ecs.Write[ViewVisibility], @ecs.Read[InheritedVisibility]),
@@ -265,6 +267,38 @@ pub fn check_visibility_system(world : @ecs.World) -> Unit {
     if inherited_visibility.value().get() {
       SetViewVisibility::set_visible(view_visibility)
     }
+  })
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility_gpu_culling`.
+fn check_visibility_gpu_culling_system(world : @ecs.World) -> Unit {
+  let query : @ecs.Query[
+    (@ecs.Write[ViewVisibility], @ecs.Read[InheritedVisibility]),
+    (
+      @ecs.With[NoCpuCulling],
+      @ecs.Or[(@ecs.Changed[InheritedVisibility], @ecs.Added[NoCpuCulling])],
+    ),
+  ] = @ecs.query_filtered(
+    world,
+    (
+      @ecs.With::new(ecs_key_no_cpu_culling),
+      @ecs.Or::new(
+        (
+          @ecs.Changed::new(ecs_key_inherited_visibility),
+          @ecs.Added::new(ecs_key_no_cpu_culling),
+        ),
+      ),
+    ),
+  )
+  try! query.view(fn(_entity, data) {
+    let (view_visibility, inherited_visibility) = data
+    let next = if inherited_visibility.value().get() {
+      ViewVisibility::visible()
+    } else {
+      ViewVisibility::hidden()
+    }
+    view_visibility.set_if_neq(next) |> ignore
   })
 }
 
@@ -345,8 +379,13 @@ pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .in_set(visibility_set_visibility_propagate),
   )
   .add_post_update_system_config(
+    @app.system(check_visibility_gpu_culling_system)
+    .named("mgstudio.visibility.check_visibility_gpu_culling")
+    .in_set(visibility_set_check_visibility),
+  )
+  .add_post_update_system_config(
     @app.system(check_visibility_system)
-    .named("mgstudio.visibility.check_visibility")
+    .named("mgstudio.visibility.check_visibility_compatibility")
     .in_set(visibility_set_check_visibility),
   )
   .add_post_update_system_config(
