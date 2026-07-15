@@ -261,65 +261,93 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
       .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
     visible_entities.modify(fn(value) {
       value.clear_all()
-      try! visible_query.view(fn(_candidate_entity, candidate_data) {
-        let (
-          entity,
-          (
-            inherited_visibility,
-            view_visibility,
-            visibility_class,
-            render_layers,
-            aabb,
-            sphere,
-            global_transform,
-          ),
-          (no_frustum_culling, has_visibility_range),
-        ) = candidate_data
-        if !inherited_visibility.value().get() {
-          return
-        }
-        let entity_layers = render_layers
-          .value()
-          .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
-        if !view_mask.intersects(entity_layers) {
-          return
-        }
-        if has_visibility_range.present() {
-          match visible_entity_ranges {
-            Some(ranges) =>
-              if !ranges.entity_is_in_range_of_view(entity, view_entity) {
-                return
+      try! visible_query.for_each_table(fn(batch) {
+        let inherited_visibility = batch
+          .read(@root_visibility.ecs_key_inherited_visibility)
+          .unwrap()
+        let view_visibility = batch
+          .write(@root_visibility.ecs_key_view_visibility)
+          .unwrap()
+        let visibility_class = batch.read(
+          @root_visibility.ecs_key_visibility_class,
+        )
+        let render_layers = batch.read(
+          @camera_render_layers.ecs_key_render_layers,
+        )
+        let aabb = batch.read(@camera_primitives.ecs_key_aabb)
+        let sphere = batch.read(@camera_primitives.ecs_key_sphere)
+        let global_transform = batch
+          .read(@transform.ecs_key_global_transform)
+          .unwrap()
+        let no_frustum_culling = batch.has(
+          @root_visibility.ecs_key_no_frustum_culling,
+        )
+        let has_visibility_range = batch.has(
+          @root_visibility.ecs_key_visibility_range,
+        )
+        for row_index in 0..<batch.length() {
+          if !inherited_visibility.value(row_index).get() {
+            continue
+          }
+          let entity_layers = match render_layers {
+            Some(column) => column.value(row_index)
+            None => @camera_render_layers.RenderLayers::RenderLayers()
+          }
+          if !view_mask.intersects(entity_layers) {
+            continue
+          }
+          let entity = batch.entity(row_index)
+          if has_visibility_range {
+            match visible_entity_ranges {
+              Some(ranges) =>
+                if !ranges.entity_is_in_range_of_view(entity, view_entity) {
+                  continue
+                }
+              None => ()
+            }
+          }
+          if !no_frustum_culling && !no_cpu_culling_camera.present() {
+            match aabb {
+              Some(column) =>
+                if visibility_cull_aabb(
+                    frustum.value(),
+                    column.value(row_index),
+                    global_transform.value(row_index),
+                  ) {
+                  continue
+                }
+              None =>
+                match sphere {
+                  Some(column) =>
+                    if visibility_cull_sphere(
+                        frustum.value(), column.value(row_index),
+                      ) {
+                      continue
+                    }
+                  None => ()
+                }
+            }
+          }
+          let current_visibility = view_visibility.peek(row_index)
+          if !current_visibility.get() {
+            if current_visibility.was_visible_now_hidden() {
+              view_visibility.bypass_change_detection(row_index, fn(_value) {
+                @root_visibility.ViewVisibility::visible()
+              })
+            } else {
+              view_visibility.set(
+                row_index,
+                @root_visibility.ViewVisibility::new(true),
+              )
+            }
+          }
+          match visibility_class {
+            Some(column) =>
+              for class_id in column.value(row_index).iter() {
+                value.push(entity, class_id)
               }
             None => ()
           }
-        }
-        if !no_frustum_culling.present() && !no_cpu_culling_camera.present() {
-          match aabb.value() {
-            Some(model_aabb) =>
-              if visibility_cull_aabb(
-                  frustum.value(),
-                  model_aabb,
-                  global_transform.value(),
-                ) {
-                return
-              }
-            None =>
-              match sphere.value() {
-                Some(model_sphere) =>
-                  if visibility_cull_sphere(frustum.value(), model_sphere) {
-                    return
-                  }
-                None => ()
-              }
-          }
-        }
-        @root_visibility.SetViewVisibility::set_visible(view_visibility)
-        match visibility_class.value() {
-          Some(classes) =>
-            for class_id in classes.iter() {
-              value.push(entity, class_id)
-            }
-          None => ()
         }
       })
       value.sort_all()
