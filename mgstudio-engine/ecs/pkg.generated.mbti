@@ -562,7 +562,6 @@ pub fn[D, F] Query::cache_state(Self[D, F]) -> QueryCache
 pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> QueryContiguousIter[D, F]?
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
-pub fn[D : QueryData, F : QueryFilter] Query::for_each_filtered_table(Self[D, F], (QueryTableBatch, QueryTableRows) -> Unit raise EcsError) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(Self[D, F], (QueryTableBatch) -> Unit raise EcsError) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
 pub fn[D, F] Query::is_active(Self[D, F]) -> Bool
@@ -574,6 +573,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(Self[D, F]
 pub fn[D, F] Query::par_iter(Self[D, F]) -> QueryParallel[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::require_single(Self[D, F]) -> D raise
 pub fn[D : QueryData, F : QueryFilter] Query::single(Self[D, F]) -> D? raise EcsError
+pub fn[D : QueryData, F : QueryFilter] Query::try_for_each_filtered_table(Self[D, F], (QueryTableBatch, QueryTableRows) -> Unit raise EcsError) -> Bool raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 
 pub struct QueryCache {

@@ -199,7 +199,7 @@ test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
   )
   let seen : Array[@core.Entity] = []
 
-  try! query.for_each_filtered_table(fn(batch, rows) {
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
     let positions = batch.read(table_batch_position_key).unwrap()
     let velocities = batch.read(table_batch_velocity_key).unwrap()
     try! rows.for_each(fn(row_index) {
@@ -209,8 +209,52 @@ test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
     })
   })
 
+  debug_inspect(used_batch, content="true")
   debug_inspect(seen.contains(changed_entity), content="true")
   debug_inspect(seen.contains(added_entity), content="true")
   debug_inspect(seen.contains(unchanged_entity), content="false")
   debug_inspect(seen.length(), content="2")
+}
+
+///|
+test "ecs table batch: unavailable dense filter preserves row fallback" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
+    value: 1,
+  })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
+    value: 2,
+  })
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(tick_context)
+  let query : Query[
+    @core.Entity,
+    Or[(Changed[TableBatchPosition], Changed[TableBatchExcluded])],
+  ] = query_filtered(
+    world,
+    Or::new(
+      (
+        Changed::new(table_batch_position_key),
+        Changed::new(table_batch_excluded_key),
+      ),
+    ),
+  )
+  let seen : Array[@core.Entity] = []
+  let mut callback_invoked = false
+
+  let used_batch = try! query.try_for_each_filtered_table(fn(_batch, _rows) {
+    callback_invoked = true
+  })
+  if !used_batch {
+    try! query.for_each(fn(_entity, value) { seen.push(value) })
+  }
+
+  debug_inspect(used_batch, content="false")
+  debug_inspect(callback_invoked, content="false")
+  debug_inspect(seen, content="[{ id: 0, generation: 1 }]")
 }

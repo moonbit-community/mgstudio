@@ -181,7 +181,7 @@ pub fn QueryTableBatch::entity(
 /// Visits the physical table rows that satisfy the query filter.
 ///
 /// This row set is valid only for the duration of its
-/// `Query::for_each_filtered_table` callback.
+/// `Query::try_for_each_filtered_table` callback.
 pub fn QueryTableRows::for_each(
   self : QueryTableRows,
   visit : (Int) -> Unit raise EcsError,
@@ -642,16 +642,14 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(
 /// row evaluation. The filter binds its table-local state once, and callers
 /// must traverse `QueryTableRows` to preserve `Changed`, `Added`, `Or`, and
 /// custom row-filter semantics.
-pub fn[D : QueryData, F : QueryFilter] Query::for_each_filtered_table(
+pub fn[D : QueryData, F : QueryFilter] Query::try_for_each_filtered_table(
   self : Query[D, F],
   visit : (QueryTableBatch, QueryTableRows) -> Unit raise EcsError,
-) -> Unit raise EcsError {
+) -> Bool raise EcsError {
   let world = self.world_or_abort()
   let plan = self.iteration_plan(self.default_filter_component_ids())
   if !plan.dense_driven {
-    raise TableBatchUnavailable(
-      "Query::for_each_filtered_table requires conflict-free dense query data and a dense filter",
-    )
+    return false
   }
   let data_access = QueryDataAccess::new()
   D::collect_access(data_access)
@@ -688,4 +686,5 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each_filtered_table(
     }
     query_visit_filtered_table_batch(batch, rows, visit)
   }
+  true
 }

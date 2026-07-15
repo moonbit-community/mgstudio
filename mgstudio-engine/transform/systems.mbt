@@ -302,11 +302,19 @@ pub fn mark_dirty_trees_system(
   let transforms = query_set.p0()
   let parents = query_set.p1()
 
-  try! changed_transforms.for_each_filtered_table(fn(batch, rows) {
+  let used_batch = try! changed_transforms.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
     try! rows.for_each(fn(row_index) {
       mark_dirty_tree_chain(transforms, parents, batch.entity(row_index))
     })
   })
+  if !used_batch {
+    try! changed_transforms.for_each(fn(_entity, changed_entity) {
+      mark_dirty_tree_chain(transforms, parents, changed_entity)
+    })
+  }
   for entity in orphaned.read() {
     mark_dirty_tree_chain(transforms, parents, entity)
   }
@@ -336,11 +344,19 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
   let transforms : TransformTreeChangedMutQuery = @ecs.query(world)
   let parents : TransformParentQuery = @ecs.query(world)
 
-  try! changed_transforms.for_each_filtered_table(fn(batch, rows) {
+  let used_batch = try! changed_transforms.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
     try! rows.for_each(fn(row_index) {
       mark_dirty_tree_chain(transforms, parents, batch.entity(row_index))
     })
   })
+  if !used_batch {
+    try! changed_transforms.for_each(fn(_entity, changed_entity) {
+      mark_dirty_tree_chain(transforms, parents, changed_entity)
+    })
+  }
   for entity in orphaned_entities {
     mark_dirty_tree_chain(transforms, parents, entity)
   }
