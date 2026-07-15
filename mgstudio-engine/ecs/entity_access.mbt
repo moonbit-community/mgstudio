@@ -697,11 +697,7 @@ pub fn[T : Component] EntityMut::remove_component(
   self : EntityMut,
   loc~ : SourceLoc,
 ) -> T? raise EcsError {
-  let previous = self.world.get_by_key(self.entity, T::component())
-  if previous is Some(_) {
-    self.world.remove_by_key(self.entity, T::component(), loc~) |> ignore
-  }
-  previous
+  self.world.take(self.entity, T::component(), loc~)
 }
 
 ///|

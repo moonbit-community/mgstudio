@@ -40,7 +40,7 @@ fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {
     for_each_entity: fn(world, visit) {
       key.component_for_each(world, fn(entity, _value) { visit(entity) })
     },
-    remove: fn(world, entity) { key.component_remove(world, entity) is Some(_) },
+    remove: fn(world, entity) { key.component_remove(world, entity) },
     move_table_row: fn(
       world,
       entity,

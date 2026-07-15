@@ -17,7 +17,8 @@ struct ComponentAccess[T] {
   contains : (World, @core.Entity) -> Bool
   get : (World, @core.Entity) -> T?
   set : (World, @core.Entity, T) -> Unit
-  remove : (World, @core.Entity) -> T?
+  remove : (World, @core.Entity) -> Bool
+  take : (World, @core.Entity) -> T?
   for_each : (World, (@core.Entity, T) -> Unit) -> Unit
   get_table_row : (World, Int, Int) -> T?
   set_table_row : (World, Int, Int, T) -> Unit
@@ -230,19 +231,35 @@ fn[T] component_access_new(
               // The structural transaction swap-removes this dense row after
               // running removal hooks. Only finalize the discarded value here.
               finalizer(value)
-              Some(value)
+              true
             }
-            None => None
+            None => false
           }
         }
         None =>
           match staged {
             Some(value) => {
               finalizer(value)
-              Some(value)
+              true
             }
-            None => None
+            None => false
           }
+      }
+    },
+    take: fn(world, entity) {
+      let store = get_store(world)
+      let staged = store.staged_by_entity.remove(entity)
+      match table_location(world, entity) {
+        Some((table_id, row_index)) => {
+          match staged {
+            Some(value) => finalizer(value)
+            None => ()
+          }
+          // The caller receives ownership. The structural transaction only
+          // forgets the source row and must not run the component finalizer.
+          store.get_table_row(table_id, row_index)
+        }
+        None => staged
       }
     },
     for_each: fn(world, visit) {
@@ -348,8 +365,17 @@ fn[T] ComponentKey::component_remove(
   self : ComponentKey[T],
   world : World,
   entity : @core.Entity,
-) -> T? {
+) -> Bool {
   (self.access.remove)(world, entity)
+}
+
+///|
+fn[T] ComponentKey::component_take(
+  self : ComponentKey[T],
+  world : World,
+  entity : @core.Entity,
+) -> T? {
+  (self.access.take)(world, entity)
 }
 
 ///|

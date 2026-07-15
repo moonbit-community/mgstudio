@@ -164,6 +164,15 @@ fn World::commit_component_remove_transaction(
       removal.local_id,
     ),
   )
+  self.finish_component_remove_transaction(transaction, removal)
+}
+
+///|
+fn World::finish_component_remove_transaction(
+  self : World,
+  transaction : ComponentRemoveTransaction,
+  removal : ComponentRemoval,
+) -> Unit {
   self.entity_remove_component_local_id(transaction.entity, removal.local_id)
   self.refresh_entity_archetype_after_component_remove(
     transaction.entity,
@@ -174,6 +183,30 @@ fn World::commit_component_remove_transaction(
   .ensure_removed_component_messages(removal.definition_id)
   .send(component_write_tick(self), transaction.entity)
   self.clear_component_tick_records(transaction.entity, removal.definition_id)
+}
+
+///|
+fn[T] World::commit_component_take_transaction(
+  self : World,
+  transaction : ComponentRemoveTransaction,
+  key : ComponentKey[T],
+) -> T? {
+  if transaction.is_empty() {
+    return None
+  }
+  let removal = transaction.removals[0]
+  if removal.definition_id != key.id() {
+    abort("Component take transaction key does not match its removal")
+  }
+  self.run_component_remove_transaction_replace_remove_phase(transaction)
+  self.run_component_remove_transaction_remove_observer_phase(transaction)
+  let taken = key.component_take(self, transaction.entity)
+  self.clear_sparse_component_metadata_by_local_id(
+    transaction.entity,
+    removal.local_id,
+  )
+  self.finish_component_remove_transaction(transaction, removal)
+  taken
 }
 
 ///|

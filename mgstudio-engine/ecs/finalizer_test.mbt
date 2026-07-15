@@ -57,6 +57,13 @@ test "ecs: finalizers distinguish value transfer from destruction" {
   world.insert_resource(resource_key, { id: 7 })
   let second = world.spawn_empty()
   try! world.set_by_key(second, component_key, { id: 6 })
+  let transferred = world.spawn_empty()
+  try! world.set_by_key(transferred, component_key, { id: 9 })
+  debug_inspect(
+    (try! world.take(transferred, component_key)).map(fn(value) { value.id }),
+    content="Some(9)",
+  )
+  debug_inspect(component_finalized, content="[3, 4, 8]")
   world.close()
   world.close()
   debug_inspect(resource_finalized, content="[1, 5, 7]")
