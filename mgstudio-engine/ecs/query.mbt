@@ -984,9 +984,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::view(
   self.world_or_abort().begin_query_iteration()
   try {
     let iter = self.iter()
-    while iter.fetch_next() is Some((entity, item)) {
-      f(entity, item)
-    }
+    iter.for_each_remaining(f)
     self.world_or_abort().end_query_iteration()
   } catch {
     err => {
@@ -2577,51 +2575,86 @@ fn[D : QueryData, F : QueryFilter] QueryState::query_matching_tables(
 }
 
 ///|
+fn[D : QueryData, F : QueryFilter] QueryMany::dense_next_entity(
+  self : QueryMany[D, F],
+) -> @core.Entity? {
+  while true {
+    if self.current_table_id >= 0 {
+      while self.dense_table_row_index < self.dense_table_row_count {
+        let row_index = self.dense_table_row_index
+        self.dense_table_row_index = self.dense_table_row_index + 1
+        let entity = self.dense_table_entities[row_index]
+        if query_filter_matches_table_row_if_needed(
+            self.query.world_or_abort(),
+            self.query.filter,
+            self.table_row_filter_required,
+            entity,
+            self.current_table_id,
+            row_index,
+          ) {
+          return Some(entity)
+        }
+      }
+    }
+    if self.dense_table_index >= self.dense_tables.length() {
+      return None
+    }
+    self.current_table_id = self.dense_tables[self.dense_table_index]
+    self.dense_table_index = self.dense_table_index + 1
+    self.dense_table_entities = match
+      self.query.world_or_abort().table_entities_view(self.current_table_id) {
+      Some(entities) => entities
+      None => []
+    }
+    self.dense_table_row_count = self.dense_table_entities.length()
+    self.dense_table_row_index = 0
+    self.dense_table_fetch = Some(
+      D::bind_table_fetch({
+        world: self.query.world_or_abort(),
+        table_id: self.current_table_id,
+        plan: self.data_fetch_plan,
+        offset: 0,
+      }),
+    )
+  }
+  abort("Dense query cursor unexpectedly terminated")
+}
+
+///|
+fn[D, F] QueryMany::fetch_dense_current(
+  self : QueryMany[D, F],
+  entity : @core.Entity,
+) -> D raise EcsError {
+  guard self.dense_table_fetch is Some(fetch_row) else {
+    abort("Dense query table fetch was not bound")
+  }
+  fetch_row(entity, self.dense_table_row_index - 1)
+}
+
+///|
+fn[D : QueryData, F : QueryFilter] QueryMany::for_each_remaining(
+  self : QueryMany[D, F],
+  f : (@core.Entity, D) -> Unit,
+) -> Unit raise EcsError {
+  if self.dense_driven {
+    while self.dense_next_entity() is Some(entity) {
+      f(entity, self.fetch_dense_current(entity))
+    }
+    return
+  }
+  while self.fetch_next() is Some((entity, item)) {
+    f(entity, item)
+  }
+}
+
+///|
 pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
   self : QueryMany[D, F],
 ) -> (@core.Entity, D)? raise EcsError {
   if self.dense_driven {
-    while true {
-      if self.current_table_id >= 0 {
-        while self.dense_table_row_index < self.dense_table_row_count {
-          let row_index = self.dense_table_row_index
-          self.dense_table_row_index = self.dense_table_row_index + 1
-          let entity = self.dense_table_entities[row_index]
-          if query_filter_matches_table_row_if_needed(
-              self.query.world_or_abort(),
-              self.query.filter,
-              self.table_row_filter_required,
-              entity,
-              self.current_table_id,
-              row_index,
-            ) {
-            guard self.dense_table_fetch is Some(fetch_row) else {
-              abort("Dense query table fetch was not bound")
-            }
-            return Some((entity, fetch_row(entity, row_index)))
-          }
-        }
-      }
-      if self.dense_table_index >= self.dense_tables.length() {
-        return None
-      }
-      self.current_table_id = self.dense_tables[self.dense_table_index]
-      self.dense_table_index = self.dense_table_index + 1
-      self.dense_table_entities = match
-        self.query.world_or_abort().table_entities_view(self.current_table_id) {
-        Some(entities) => entities
-        None => []
-      }
-      self.dense_table_row_count = self.dense_table_entities.length()
-      self.dense_table_row_index = 0
-      self.dense_table_fetch = Some(
-        D::bind_table_fetch({
-          world: self.query.world_or_abort(),
-          table_id: self.current_table_id,
-          plan: self.data_fetch_plan,
-          offset: 0,
-        }),
-      )
+    return match self.dense_next_entity() {
+      Some(entity) => Some((entity, self.fetch_dense_current(entity)))
+      None => None
     }
   }
   match self.sparse_anchor_info {
