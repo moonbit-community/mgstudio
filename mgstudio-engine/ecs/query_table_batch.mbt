@@ -450,7 +450,7 @@ fn[T] TableBatchWrite::mark_changed(
   row_index : Int,
   caller : String?,
 ) -> Unit {
-  let entity = self.scope.entity_or_abort(row_index)
+  ignore(self.scope.entity_or_abort(row_index))
   let world = self.scope.world_or_abort()
   let tick = component_write_tick(world)
   if !self.binding
@@ -458,9 +458,6 @@ fn[T] TableBatchWrite::mark_changed(
     .record_changed_at_row(row_index, tick, caller) {
     abort("table batch write expected change tick metadata")
   }
-  world
-  .ensure_changed_component_messages_by_local_id(self.local_component_id)
-  .send(tick, entity)
 }
 
 ///|

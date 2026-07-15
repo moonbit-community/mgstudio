@@ -14,29 +14,31 @@
 
 ///|
 pub struct ChangedComponents[_] {
-  priv reader : @core.MessageReader[@core.Entity]
+  priv entities : Array[@core.Entity]
 }
 
 ///|
 pub fn[T] ChangedComponents::read(
   self : ChangedComponents[T],
 ) -> Array[@core.Entity] {
-  self.reader.read()
+  let entities = self.entities.copy()
+  self.entities.clear()
+  entities
 }
 
 ///|
 pub fn[T] ChangedComponents::len(self : ChangedComponents[T]) -> Int {
-  self.reader.len()
+  self.entities.length()
 }
 
 ///|
 pub fn[T] ChangedComponents::is_empty(self : ChangedComponents[T]) -> Bool {
-  self.reader.is_empty()
+  self.entities.is_empty()
 }
 
 ///|
 pub fn[T] ChangedComponents::clear(self : ChangedComponents[T]) -> Unit {
-  self.reader.clear()
+  self.entities.clear()
 }
 
 ///|
@@ -45,11 +47,16 @@ pub fn[T] World::changed_components(
   key : ComponentKey[T],
   system : @core.SystemTicks,
 ) -> ChangedComponents[T] {
-  let reader = match self.changed_component_messages(key.id()) {
-    Some(messages) => messages.reader(system)
-    None => @core.Messages::new().reader(system)
+  let entities : Array[@core.Entity] = []
+  guard self.local_component_id(key.id()) is Some(local_component_id) else {
+    return ChangedComponents::{ entities, }
   }
-  ChangedComponents::{ reader, }
+  key.component_for_each(self, fn(entity, _value) {
+    if self.is_changed_by_local_id(entity, local_component_id, system) {
+      entities.push(entity)
+    }
+  })
+  ChangedComponents::{ entities, }
 }
 
 ///|

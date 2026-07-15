@@ -155,9 +155,6 @@ fn[T] mut_mark_changed(item : Write[T], caller? : String? = None) -> Unit {
       caller,
     )
   }
-  item.world
-  .ensure_changed_component_messages_by_local_id(item.local_component_id)
-  .send(tick, item.entity)
 }
 
 ///|

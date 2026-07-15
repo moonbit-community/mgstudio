@@ -1433,9 +1433,6 @@ pub fn[T] ComponentColumn::set(
   if !self.set_tick_only(entity, value) {
     return false
   }
-  self.world
-  .ensure_changed_component_messages(self.key.id())
-  .send(component_write_tick(self.world), entity)
   true
 }
 

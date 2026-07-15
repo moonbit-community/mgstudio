@@ -253,7 +253,6 @@ pub struct World {
   priv required_components : Map[Int, RequiredComponentsState]
   priv used_components : @utils.IntBitSet
   priv added_components : Map[Int, @core.Messages[@core.Entity]]
-  priv changed_components : Map[Int, @core.Messages[@core.Entity]]
   priv removed_components : Map[Int, @core.Messages[@core.Entity]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resource_tick_registry : WorldResourceTickRegistry
@@ -322,7 +321,6 @@ pub fn World::new() -> World {
     required_components: Map([]),
     used_components: @utils.IntBitSet::new(),
     added_components: Map([]),
-    changed_components: Map([]),
     removed_components: Map([]),
     component_hooks_registry: Map([]),
     resource_tick_registry: world_resource_tick_registry_new(),
@@ -710,30 +708,6 @@ fn World::ensure_added_component_messages(
 }
 
 ///|
-fn World::ensure_changed_component_messages(
-  self : World,
-  key_id : Int,
-) -> @core.Messages[@core.Entity] {
-  let local_id = self.ensure_component_registered(key_id)
-  self.ensure_changed_component_messages_by_local_id(local_id)
-}
-
-///|
-fn World::ensure_changed_component_messages_by_local_id(
-  self : World,
-  local_id : Int,
-) -> @core.Messages[@core.Entity] {
-  match self.changed_components.get(local_id) {
-    Some(messages) => messages
-    None => {
-      let messages = @core.Messages::new()
-      self.changed_components.set(local_id, messages)
-      messages
-    }
-  }
-}
-
-///|
 fn World::ensure_sparse_component_metadata_store_for_local_id(
   self : World,
   local_id : Int,
@@ -804,9 +778,6 @@ fn World::record_component_changed_with_caller(
   self.record_component_changed_by_local_id_with_tick(
     entity, local_id, tick, caller,
   )
-  self
-  .ensure_changed_component_messages_by_local_id(local_id)
-  .send(tick, entity)
 }
 
 ///|
@@ -911,17 +882,6 @@ fn World::added_component_tick_by_local_id(
   }
   match self.active_component_write_metadata(entity_id, local_id) {
     Some(metadata) => metadata.added_tick
-    None => None
-  }
-}
-
-///|
-fn World::changed_component_messages(
-  self : World,
-  key_id : Int,
-) -> @core.Messages[@core.Entity]? {
-  match self.local_component_id(key_id) {
-    Some(local_id) => self.changed_components.get(local_id)
     None => None
   }
 }
