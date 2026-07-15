@@ -229,34 +229,42 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   }
 
   if has_mesh2d {
-    let mesh2d_query : @ecs.Query[@ecs.Read[Mesh2d], @ecs.All] = @ecs.query(
+    let mesh2d_query : @ecs.Query[
+      ((@ecs.Read[Mesh2d], @ecs.Has[@camera_primitives.Aabb]), @ecs.Has[Sprite]),
+      (
+        (
+          @ecs.Without[@visibility.NoFrustumCulling],
+          @ecs.Without[@visibility.NoAutoAabb],
+        ),
+        @ecs.Without[SpriteMesh],
+      ),
+    ] = @ecs.query_filtered(
       world,
+      (
+        (
+          @ecs.Without::new(@visibility.ecs_key_no_frustum_culling),
+          @ecs.Without::new(@visibility.ecs_key_no_auto_aabb),
+        ),
+        @ecs.Without::new(ecs_key_sprite_mesh),
+      ),
     )
-    try! mesh2d_query.view(fn(entity, mesh2d_comp) {
-      if (try! world.contains_by_key(entity, ecs_key_sprite_mesh)) {
-        return
-      }
-      if (try! world.contains_by_key(
-          entity, @visibility.ecs_key_no_frustum_culling,
-        )) {
-        return
-      }
-      if (try! world.contains_by_key(entity, @visibility.ecs_key_no_auto_aabb)) {
-        return
-      }
-      let has_aabb = try! world.contains_by_key(
-        entity, @camera_primitives.ecs_key_aabb,
-      )
-      if has_aabb && (try! world.contains_by_key(entity, ecs_key_sprite)) {
-        return
-      }
-      if !first_run &&
-        has_aabb &&
-        !changed_mesh2d_entities.contains(sprite_entity_key(entity)) {
-        return
-      }
-      if sprite_mesh2d_aabb(mesh2d_comp.value()) is Some(aabb) {
-        pending_aabbs.push((entity, aabb))
+    try! mesh2d_query.for_each_table(fn(batch) {
+      let mesh2d = batch.read(@mesh.ecs_key_mesh2d).unwrap()
+      let table_has_aabb = batch.has(@camera_primitives.ecs_key_aabb)
+      let table_has_sprite = batch.has(ecs_key_sprite)
+      for row_index in 0..<batch.length() {
+        let entity = batch.entity(row_index)
+        if table_has_aabb && table_has_sprite {
+          continue
+        }
+        if !first_run &&
+          table_has_aabb &&
+          !changed_mesh2d_entities.contains(sprite_entity_key(entity)) {
+          continue
+        }
+        if sprite_mesh2d_aabb(mesh2d.value(row_index)) is Some(aabb) {
+          pending_aabbs.push((entity, aabb))
+        }
       }
     })
   }
@@ -264,73 +272,86 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   if has_sprite {
     let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
     let sprite_query : @ecs.Query[
-      (@ecs.Read[Sprite], @ecs.Read[Anchor]),
-      @ecs.All,
-    ] = @ecs.query(world)
-    try! sprite_query.view(fn(entity, data) {
-      if (try! world.contains_by_key(
-          entity, @visibility.ecs_key_no_frustum_culling,
-        )) {
-        return
-      }
-      if (try! world.contains_by_key(entity, @visibility.ecs_key_no_auto_aabb)) {
-        return
-      }
-      let has_aabb = try! world.contains_by_key(
-        entity, @camera_primitives.ecs_key_aabb,
-      )
-      if has_aabb && (try! world.contains_by_key(entity, @mesh.ecs_key_mesh2d)) {
-        return
-      }
-      if !first_run &&
-        has_aabb &&
-        !changed_sprite_or_anchor_entities.contains(sprite_entity_key(entity)) {
-        return
-      }
-      let (sprite_comp, anchor_comp) = data
-      if sprite_sprite_aabb(
-          sprite_comp.value(),
-          anchor_comp.value(),
-          atlas_layout_assets,
-        )
-        is Some(aabb) {
-        pending_aabbs.push((entity, aabb))
+      (
+        (@ecs.Read[Sprite], @ecs.Read[Anchor]),
+        (@ecs.Has[@camera_primitives.Aabb], @ecs.Has[Mesh2d]),
+      ),
+      (
+        @ecs.Without[@visibility.NoFrustumCulling],
+        @ecs.Without[@visibility.NoAutoAabb],
+      ),
+    ] = @ecs.query_filtered(
+      world,
+      (
+        @ecs.Without::new(@visibility.ecs_key_no_frustum_culling),
+        @ecs.Without::new(@visibility.ecs_key_no_auto_aabb),
+      ),
+    )
+    try! sprite_query.for_each_table(fn(batch) {
+      let sprites = batch.read(ecs_key_sprite).unwrap()
+      let anchors = batch.read(ecs_key_anchor).unwrap()
+      let table_has_aabb = batch.has(@camera_primitives.ecs_key_aabb)
+      let table_has_mesh2d = batch.has(@mesh.ecs_key_mesh2d)
+      for row_index in 0..<batch.length() {
+        let entity = batch.entity(row_index)
+        if table_has_aabb && table_has_mesh2d {
+          continue
+        }
+        if !first_run &&
+          table_has_aabb &&
+          !changed_sprite_or_anchor_entities.contains(sprite_entity_key(entity)) {
+          continue
+        }
+        if sprite_sprite_aabb(
+            sprites.value(row_index),
+            anchors.value(row_index),
+            atlas_layout_assets,
+          )
+          is Some(aabb) {
+          pending_aabbs.push((entity, aabb))
+        }
       }
     })
   }
   if has_sprite_mesh {
     let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
     let sprite_mesh_query : @ecs.Query[
-      (@ecs.Read[SpriteMesh], @ecs.Read[Anchor]),
-      @ecs.All,
-    ] = @ecs.query(world)
-    try! sprite_mesh_query.view(fn(entity, data) {
-      if (try! world.contains_by_key(
-          entity, @visibility.ecs_key_no_frustum_culling,
-        )) {
-        return
-      }
-      if (try! world.contains_by_key(entity, @visibility.ecs_key_no_auto_aabb)) {
-        return
-      }
-      let has_aabb = try! world.contains_by_key(
-        entity, @camera_primitives.ecs_key_aabb,
-      )
-      if !first_run &&
-        has_aabb &&
-        !changed_sprite_mesh_or_anchor_entities.contains(
-          sprite_entity_key(entity),
-        ) {
-        return
-      }
-      let (sprite_mesh_comp, anchor_comp) = data
-      if sprite_mesh_aabb(
-          sprite_mesh_comp.value(),
-          anchor_comp.value(),
-          atlas_layout_assets,
-        )
-        is Some(aabb) {
-        pending_aabbs.push((entity, aabb))
+      (
+        (@ecs.Read[SpriteMesh], @ecs.Read[Anchor]),
+        @ecs.Has[@camera_primitives.Aabb],
+      ),
+      (
+        @ecs.Without[@visibility.NoFrustumCulling],
+        @ecs.Without[@visibility.NoAutoAabb],
+      ),
+    ] = @ecs.query_filtered(
+      world,
+      (
+        @ecs.Without::new(@visibility.ecs_key_no_frustum_culling),
+        @ecs.Without::new(@visibility.ecs_key_no_auto_aabb),
+      ),
+    )
+    try! sprite_mesh_query.for_each_table(fn(batch) {
+      let sprite_meshes = batch.read(ecs_key_sprite_mesh).unwrap()
+      let anchors = batch.read(ecs_key_anchor).unwrap()
+      let table_has_aabb = batch.has(@camera_primitives.ecs_key_aabb)
+      for row_index in 0..<batch.length() {
+        let entity = batch.entity(row_index)
+        if !first_run &&
+          table_has_aabb &&
+          !changed_sprite_mesh_or_anchor_entities.contains(
+            sprite_entity_key(entity),
+          ) {
+          continue
+        }
+        if sprite_mesh_aabb(
+            sprite_meshes.value(row_index),
+            anchors.value(row_index),
+            atlas_layout_assets,
+          )
+          is Some(aabb) {
+          pending_aabbs.push((entity, aabb))
+        }
       }
     })
   }
