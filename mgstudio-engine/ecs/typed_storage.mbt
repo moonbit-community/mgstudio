@@ -22,6 +22,7 @@ struct ComponentAccess[T] {
   for_each : (World, (@core.Entity, T) -> Unit) -> Unit
   get_table_row : (World, Int, Int) -> T?
   get_table_row_unchecked : (World, Int, Int) -> T
+  bind_table_values : (World, Int) -> Array[T]?
   set_table_row : (World, Int, Int, T) -> Unit
   move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
@@ -299,6 +300,12 @@ fn[T] component_access_new(
     get_table_row_unchecked: fn(world, table_id, row_index) {
       get_store(world).get_table_row_unchecked(table_id, row_index)
     },
+    bind_table_values: fn(world, table_id) {
+      match get_store(world).dense_columns_by_table.get(table_id) {
+        Some(column) => Some(column.values)
+        None => None
+      }
+    },
     set_table_row: fn(world, table_id, row_index, value) {
       let store = get_store(world)
       match store.get_table_row(table_id, row_index) {
@@ -424,6 +431,15 @@ fn[T] ComponentKey::component_get_table_row_unchecked(
   row_index : Int,
 ) -> T {
   (self.access.get_table_row_unchecked)(world, table_id, row_index)
+}
+
+///|
+fn[T] ComponentKey::component_bind_table_values(
+  self : ComponentKey[T],
+  world : World,
+  table_id : Int,
+) -> Array[T]? {
+  (self.access.bind_table_values)(world, table_id)
 }
 
 ///|

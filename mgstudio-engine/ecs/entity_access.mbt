@@ -32,6 +32,7 @@ pub struct Write[T] {
   priv table_id : Int
   priv row_index : Int
   priv local_component_id : Int
+  priv bound_table_values : Array[T]?
 }
 
 ///|
@@ -46,6 +47,15 @@ pub(open) trait Bundle {
 
 ///|
 fn[T] mut_value_or_abort(item : Write[T]) -> T {
+  match item.bound_table_values {
+    Some(values) if item.table_id >= 0 && item.row_index >= 0 => {
+      if item.row_index >= values.length() {
+        abort("Write expected bound table component row")
+      }
+      return values[item.row_index]
+    }
+    _ => ()
+  }
   match item.world.local_component_storage_type(item.local_component_id) {
     Some(Table) => {
       if item.table_id >= 0 && item.row_index >= 0 {
@@ -326,8 +336,17 @@ fn[T] mut_from_component_location(
   local_component_id : Int,
   table_id : Int,
   row_index : Int,
+  bound_table_values? : Array[T]? = None,
 ) -> Write[T] {
-  { world, entity, key, table_id, row_index, local_component_id }
+  {
+    world,
+    entity,
+    key,
+    table_id,
+    row_index,
+    local_component_id,
+    bound_table_values,
+  }
 }
 
 ///|

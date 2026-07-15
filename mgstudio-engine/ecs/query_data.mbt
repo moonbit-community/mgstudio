@@ -44,6 +44,14 @@ pub(all) struct QueryDataSparseAnchorFetch {
 }
 
 ///|
+pub(all) struct QueryDataTableBinding {
+  priv world : World
+  priv table_id : Int
+  priv plan : QueryDataFetchPlan
+  priv offset : Int
+}
+
+///|
 fn query_data_table_row_fetch(
   world : World,
   entity : @core.Entity,
@@ -91,6 +99,14 @@ fn QueryDataSparseAnchorFetch::with_offset(
     plan: self.plan,
     offset,
   }
+}
+
+///|
+fn QueryDataTableBinding::with_offset(
+  self : QueryDataTableBinding,
+  offset : Int,
+) -> QueryDataTableBinding {
+  { world: self.world, table_id: self.table_id, plan: self.plan, offset }
 }
 
 ///|
@@ -240,6 +256,7 @@ pub(open) trait QueryData {
   fn fetch_table_row(QueryDataTableRowFetch) -> Self raise EcsError = _
   fn fetch_table_row_with_plan_offset(QueryDataPlannedFetch) -> Self raise EcsError = _
   fn fetch_sparse_anchor_with_plan_offset(QueryDataSparseAnchorFetch) -> Self raise EcsError = _
+  fn bind_table_fetch(QueryDataTableBinding) -> (@core.Entity, Int) -> Self raise EcsError = _
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _
@@ -300,6 +317,20 @@ impl QueryData with fn fetch_sparse_anchor_with_plan_offset(fetch) {
     plan: fetch.plan,
     offset: fetch.offset,
   })
+}
+
+///|
+impl QueryData with fn bind_table_fetch(binding) {
+  fn(entity, row_index) raise EcsError {
+    Self::fetch_table_row_with_plan_offset(
+      query_data_table_row_fetch(
+        binding.world,
+        entity,
+        binding.table_id,
+        row_index,
+      ).planned(binding.plan, binding.offset),
+    )
+  }
 }
 
 ///|
@@ -696,6 +727,29 @@ fn[T] query_data_component_value_at_planned_fetch_location(
 }
 
 ///|
+fn[T] query_data_bind_required_table_values(
+  binding : QueryDataTableBinding,
+  key : ComponentKey[T],
+) -> (Int, Array[T], RawTableColumn) {
+  let local_component_id = query_data_component_local_id_or_abort(
+    query_data_local_component_id_from_plan(binding.plan, binding.offset),
+  )
+  guard binding.plan.cached_table_column(
+      binding.world,
+      binding.offset,
+      binding.table_id,
+    )
+    is Some(column) else {
+    abort("Required query table binding used a missing raw column")
+  }
+  guard key.component_bind_table_values(binding.world, binding.table_id)
+    is Some(values) else {
+    abort("Required query table binding used a missing typed column")
+  }
+  (local_component_id, values, column)
+}
+
+///|
 fn[T] query_data_optional_component_value_by_entity(
   world : World,
   entity : @core.Entity,
@@ -933,6 +987,38 @@ pub impl[T : Component] QueryData for Read[T] with fn fetch_plan_size() {
 }
 
 ///|
+pub impl[T : Component] QueryData for Read[T] with fn bind_table_fetch(binding) {
+  let key = T::component()
+  let (local_component_id, values, column) = query_data_bind_required_table_values(
+    binding, key,
+  )
+  ignore(local_component_id)
+  let system_ticks = binding.world.get_tick_context().ticks()
+  fn(_entity, row_index) {
+    if row_index < 0 || row_index >= values.length() {
+      abort("Read query bound table row is out of bounds")
+    }
+    let added_tick = query_data_tick_or_abort(
+      column.added_tick_at_row(row_index),
+      "added",
+    )
+    let changed_tick = query_data_tick_or_abort(
+      column.changed_tick_at_row(row_index),
+      "changed",
+    )
+    {
+      key,
+      value: values[row_index],
+      added_tick,
+      changed_tick,
+      changed_by: column.changed_caller_at_row(row_index),
+      is_added: system_ticks.contains(added_tick),
+      is_changed: system_ticks.contains(changed_tick),
+    }
+  }
+}
+
+///|
 pub impl[T : Component] QueryData for Read[T] with fn fetch_table_row(fetch) {
   let key = T::component()
   let local_component_id = query_data_component_local_id_or_abort(
@@ -1058,6 +1144,22 @@ pub impl[T : Component] QueryData for ReadValue[T] with fn append_fetch_plan(
 ///|
 pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_plan_size() {
   1
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn bind_table_fetch(
+  binding,
+) {
+  let key = T::component()
+  let (_local_component_id, values, _column) = query_data_bind_required_table_values(
+    binding, key,
+  )
+  fn(_entity, row_index) {
+    if row_index < 0 || row_index >= values.length() {
+      abort("ReadValue query bound table row is out of bounds")
+    }
+    ReadValue::{ key, value: values[row_index] }
+  }
 }
 
 ///|
@@ -1191,6 +1293,28 @@ pub impl[T : Component] QueryData for Write[T] with fn append_fetch_plan(
 ///|
 pub impl[T : Component] QueryData for Write[T] with fn fetch_plan_size() {
   1
+}
+
+///|
+pub impl[T : Component] QueryData for Write[T] with fn bind_table_fetch(binding) {
+  let key = T::component()
+  let (local_component_id, values, _column) = query_data_bind_required_table_values(
+    binding, key,
+  )
+  fn(entity, row_index) {
+    if row_index < 0 || row_index >= values.length() {
+      abort("Write query bound table row is out of bounds")
+    }
+    mut_from_component_location(
+      binding.world,
+      entity,
+      key,
+      local_component_id,
+      binding.table_id,
+      row_index,
+      bound_table_values=Some(values),
+    )
+  }
 }
 
 ///|
@@ -1810,6 +1934,18 @@ pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch_plan_s
 }
 
 ///|
+pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn bind_table_fetch(
+  binding,
+) {
+  let b_offset = binding.offset + A::fetch_plan_size()
+  let fetch_a = A::bind_table_fetch(binding)
+  let fetch_b = B::bind_table_fetch(binding.with_offset(b_offset))
+  fn(entity, row_index) raise EcsError {
+    (fetch_a(entity, row_index), fetch_b(entity, row_index))
+  }
+}
+
+///|
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B) with fn fetch_table_row(
   fetch,
 ) {
@@ -1939,6 +2075,24 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
 ///|
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn fetch_plan_size() {
   A::fetch_plan_size() + B::fetch_plan_size() + C::fetch_plan_size()
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) with fn bind_table_fetch(
+  binding,
+) {
+  let b_offset = binding.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let fetch_a = A::bind_table_fetch(binding)
+  let fetch_b = B::bind_table_fetch(binding.with_offset(b_offset))
+  let fetch_c = C::bind_table_fetch(binding.with_offset(c_offset))
+  fn(entity, row_index) raise EcsError {
+    (
+      fetch_a(entity, row_index),
+      fetch_b(entity, row_index),
+      fetch_c(entity, row_index),
+    )
+  }
 }
 
 ///|
@@ -2117,6 +2271,30 @@ pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData f
   B::fetch_plan_size() +
   C::fetch_plan_size() +
   D::fetch_plan_size()
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fn bind_table_fetch(binding) {
+  let b_offset = binding.offset + A::fetch_plan_size()
+  let c_offset = b_offset + B::fetch_plan_size()
+  let d_offset = c_offset + C::fetch_plan_size()
+  let fetch_a = A::bind_table_fetch(binding)
+  let fetch_b = B::bind_table_fetch(binding.with_offset(b_offset))
+  let fetch_c = C::bind_table_fetch(binding.with_offset(c_offset))
+  let fetch_d = D::bind_table_fetch(binding.with_offset(d_offset))
+  fn(entity, row_index) raise EcsError {
+    (
+      fetch_a(entity, row_index),
+      fetch_b(entity, row_index),
+      fetch_c(entity, row_index),
+      fetch_d(entity, row_index),
+    )
+  }
 }
 
 ///|

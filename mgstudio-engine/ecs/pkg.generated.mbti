@@ -631,6 +631,10 @@ pub(all) struct QueryDataSparseAnchorFetch {
   // private fields
 }
 
+pub(all) struct QueryDataTableBinding {
+  // private fields
+}
+
 pub(all) struct QueryDataTableRowFetch {
   // private fields
 }
@@ -1028,6 +1032,7 @@ pub(open) trait QueryData {
   fn fetch_table_row(QueryDataTableRowFetch) -> Self raise EcsError = _
   fn fetch_table_row_with_plan_offset(QueryDataPlannedFetch) -> Self raise EcsError = _
   fn fetch_sparse_anchor_with_plan_offset(QueryDataSparseAnchorFetch) -> Self raise EcsError = _
+  fn bind_table_fetch(QueryDataTableBinding) -> (@core.Entity, Int) -> Self raise EcsError = _
   fn mentions_component(Int) -> Bool
   fn matches_component_set((Int) -> Bool) -> Bool
   fn collect_access(QueryDataAccess) -> Unit = _

@@ -255,6 +255,7 @@ pub struct QueryMany[D, F] {
   priv mut dense_table_entities : Array[@core.Entity]
   priv mut dense_table_row_count : Int
   priv mut dense_table_row_index : Int
+  priv mut dense_table_fetch : ((@core.Entity, Int) -> D raise EcsError)?
   priv sparse_anchor_info : QuerySparseAnchorInfo?
   priv sparse_anchor_entities : Array[@core.Entity]
   priv mut sparse_anchor_index : Int
@@ -560,6 +561,7 @@ fn[D, F] query_many_from_plan(
     dense_table_entities: [],
     dense_table_row_count: 0,
     dense_table_row_index: 0,
+    dense_table_fetch: None,
     sparse_anchor_info: plan.sparse_anchor_info,
     sparse_anchor_entities: match plan.sparse_anchor_info {
       Some(anchor_info) =>
@@ -1215,6 +1217,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
     dense_table_entities: [],
     dense_table_row_count: 0,
     dense_table_row_index: 0,
+    dense_table_fetch: None,
     sparse_anchor_info: None,
     sparse_anchor_entities: [],
     sparse_anchor_index: 0,
@@ -2087,6 +2090,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
     dense_table_entities: [],
     dense_table_row_count: 0,
     dense_table_row_index: 0,
+    dense_table_fetch: None,
     sparse_anchor_info: None,
     sparse_anchor_entities: [],
     sparse_anchor_index: 0,
@@ -2591,19 +2595,10 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
               self.current_table_id,
               row_index,
             ) {
-            return Some(
-              (
-                entity,
-                D::fetch_table_row_with_plan_offset(
-                  query_data_table_row_fetch(
-                    self.query.world_or_abort(),
-                    entity,
-                    self.current_table_id,
-                    row_index,
-                  ).planned(self.data_fetch_plan, 0),
-                ),
-              ),
-            )
+            guard self.dense_table_fetch is Some(fetch_row) else {
+              abort("Dense query table fetch was not bound")
+            }
+            return Some((entity, fetch_row(entity, row_index)))
           }
         }
       }
@@ -2619,6 +2614,14 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
       }
       self.dense_table_row_count = self.dense_table_entities.length()
       self.dense_table_row_index = 0
+      self.dense_table_fetch = Some(
+        D::bind_table_fetch({
+          world: self.query.world_or_abort(),
+          table_id: self.current_table_id,
+          plan: self.data_fetch_plan,
+          offset: 0,
+        }),
+      )
     }
   }
   match self.sparse_anchor_info {

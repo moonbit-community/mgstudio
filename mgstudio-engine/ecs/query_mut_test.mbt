@@ -308,6 +308,46 @@ test "ecs mut query: Write::modify persists method-style mutations" {
 }
 
 ///|
+test "ecs mut query: table-bound Write set replaces values and marks changes" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(first, mut_query_position_key, MutQueryPosition::{
+    x: 1,
+    y: 2,
+  })
+  try! world.set_by_key(second, mut_query_position_key, MutQueryPosition::{
+    x: 3,
+    y: 4,
+  })
+  world.increment_change_tick() |> ignore
+  set_test_tick(world, 0, 1)
+
+  let query : Query[Write[MutQueryPosition], All] = query(world)
+  try! query.for_each(fn(entity, position) {
+    position.set(MutQueryPosition::{ x: entity.id + 10, y: entity.id + 20 })
+  })
+
+  debug_inspect(
+    try! world.get_by_key(first, mut_query_position_key),
+    content="Some({ x: 10, y: 20 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(second, mut_query_position_key),
+    content="Some({ x: 11, y: 21 })",
+  )
+  debug_inspect(
+    world.is_changed_by_key(
+      first,
+      mut_query_position_key,
+      @core.SystemTicks::new(0, 1),
+    ),
+    content="true",
+  )
+}
+
+///|
 test "ecs mut query: QueryState supports get, require_single, iter_many_unique and mixed data" {
   let world = World::new()
   defer world.close()
