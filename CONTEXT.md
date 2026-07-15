@@ -88,30 +88,6 @@ _Avoid_: Bevy fork, source port, semantic dependency
 A disposable Bevy measurement patch or script saved under `.private/` because the same performance gap needs repeated remeasurement.
 _Avoid_: committed Bevy patch, permanent baseline fork
 
-**ECS-A Component**:
-A component whose value may be any MoonBit type and whose query access mode is declared explicitly by the user.
-_Avoid_: reference component, legacy component
-
-**ECS-B Component**:
-A component restricted to a MoonBit valtype, so read access returns an independent value and write access replaces the stored value through an API-enforced boundary.
-_Avoid_: second ECS, mutable valtype component
-
-**Unified ECS World**:
-The single entity and lifecycle domain in which ECS-A Components and ECS-B Components coexist as different component categories.
-_Avoid_: dual worlds, synchronized ECS runtimes
-
-**Mixed Component Query**:
-A single query whose component set may include both ECS-A Components and ECS-B Components while preserving each component category's access semantics.
-_Avoid_: cross-ECS query, synchronized query
-
-**Explicit ECS-B Enrollment**:
-The rule that a valtype is eligible for ECS-B but becomes an ECS-B Component only through an explicit, permanent component-definition choice.
-_Avoid_: automatic valtype promotion, runtime component-category switching
-
-**ECS-B Query Batch**:
-A query result segment covering one contiguous table range, through which ECS-B component columns are read or replaced without gathering values across tables.
-_Avoid_: flat cross-table view, gathered component array
-
 ## Relationships
 
 - **Bevy Replication** excludes every **Out-of-Scope Bevy Surface**.
@@ -134,11 +110,6 @@ _Avoid_: flat cross-table view, gathered component array
 - **Trace-First Performance Diagnosis** should produce **Reusable Profiling Evidence** whenever the measurement will support future parity work.
 - A **Disposable Bevy Measurement Patch** may be used to collect Bevy-side evidence for **Trace-First Performance Diagnosis**.
 - A **Disposable Bevy Measurement Patch** is documented by summary and artifact paths by default; it becomes a **Repeated Measurement Patch** only when repeated remeasurement is expected.
-- An **ECS-A Component** and an **ECS-B Component** share the same **Unified ECS World** rather than belonging to separate ECS runtimes.
-- An **ECS-B Component** relies on value-copy and replacement semantics to make read and write access enforceable by the API.
-- A **Mixed Component Query** operates within one **Unified ECS World** and may select both component categories without synchronizing separate runtimes.
-- **Explicit ECS-B Enrollment** keeps valtype eligibility separate from component category and fixes that category for the component definition's lifetime.
-- A **Mixed Component Query** traverses one or more **ECS-B Query Batches** and never constructs a flat cross-table component view.
 
 ## Example dialogue
 
