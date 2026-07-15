@@ -40,8 +40,16 @@ test "ecs: finalizers distinguish value transfer from destruction" {
   try! world.set_by_key(first, component_key, { id: 3 })
   try! world.set_by_key(first, component_key, { id: 4 })
   try! world.despawn(first)
+  let rejected = world.spawn_empty()
+  try! world.despawn(rejected)
+  try world.set_by_key(rejected, component_key, { id: 8 }) catch {
+    EntityNotAlive(_) => ()
+    _ => fail("expected stale entity insertion to be rejected")
+  } noraise {
+    _ => fail("expected stale entity insertion to fail")
+  }
   debug_inspect(resource_finalized, content="[1]")
-  debug_inspect(component_finalized, content="[3, 4]")
+  debug_inspect(component_finalized, content="[3, 4, 8]")
 
   world.insert_resource(resource_key, { id: 5 })
   debug_inspect(world.drop_resource(resource_key), content="true")
@@ -52,5 +60,5 @@ test "ecs: finalizers distinguish value transfer from destruction" {
   world.close()
   world.close()
   debug_inspect(resource_finalized, content="[1, 5, 7]")
-  debug_inspect(component_finalized, content="[3, 4, 6]")
+  debug_inspect(component_finalized, content="[3, 4, 8, 6]")
 }

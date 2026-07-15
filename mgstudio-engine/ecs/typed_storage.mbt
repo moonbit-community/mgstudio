@@ -25,6 +25,7 @@ struct ComponentAccess[T] {
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
   table_row_count : (World, Int) -> Int
+  finalize_value : (T) -> Unit
 }
 
 ///|
@@ -313,6 +314,7 @@ fn[T] component_access_new(
         None => 0
       }
     },
+    finalize_value: finalizer,
   }
 }
 
@@ -426,6 +428,14 @@ fn[T] ComponentKey::component_table_row_count(
   table_id : Int,
 ) -> Int {
   (self.access.table_row_count)(world, table_id)
+}
+
+///|
+fn[T] ComponentKey::component_finalize_value(
+  self : ComponentKey[T],
+  value : T,
+) -> Unit {
+  (self.access.finalize_value)(value)
 }
 
 ///|
