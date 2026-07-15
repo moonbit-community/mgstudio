@@ -173,7 +173,7 @@ fn World::finish_component_remove_transaction(
   transaction : ComponentRemoveTransaction,
   removal : ComponentRemoval,
 ) -> Unit {
-  self.entity_remove_component_local_id(transaction.entity, removal.local_id)
+  self.record_entity_component_removed_local_id(removal.local_id)
   self.refresh_entity_archetype_after_component_remove(
     transaction.entity,
     removal.local_id,

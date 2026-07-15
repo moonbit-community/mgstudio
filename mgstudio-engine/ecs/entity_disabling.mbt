@@ -111,7 +111,7 @@ fn entity_has_component_id(
   }
   match world.local_component_id(component_id) {
     Some(local_component_id) =>
-      world.entity_local_components(entity).contains(local_component_id)
+      world.entity_has_component_local_id(entity, local_component_id)
     None => false
   }
 }

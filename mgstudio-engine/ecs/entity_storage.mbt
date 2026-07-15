@@ -19,8 +19,6 @@ priv struct WorldEntityStorageState {
   entity_table_ids : Array[Int]
   entity_table_rows : Array[Int]
   entity_archetype_rows : Array[Int]
-  entity_component_local_ids : Array[Array[Int]]
-  entity_component_local_id_presence : Array[@utils.IntBitSet]
 }
 
 ///|
@@ -31,7 +29,5 @@ fn world_entity_storage_state_new() -> WorldEntityStorageState {
     entity_table_ids: [],
     entity_table_rows: [],
     entity_archetype_rows: [],
-    entity_component_local_ids: [],
-    entity_component_local_id_presence: [],
   }
 }

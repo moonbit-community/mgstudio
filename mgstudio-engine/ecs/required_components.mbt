@@ -462,9 +462,7 @@ fn World::insert_component_writes_with_requirements(
   let assume_no_existing_components = !has_existing_transaction &&
     entity.id >= 0 &&
     entity.id < self.entity_storage.entity_archetype_ids.length() &&
-    self.entity_storage.entity_archetype_ids[entity.id] == 0 &&
-    entity.id < self.entity_storage.entity_component_local_ids.length() &&
-    self.entity_storage.entity_component_local_ids[entity.id].length() == 0
+    self.entity_storage.entity_archetype_ids[entity.id] == 0
   let component_writes = self
     .active_component_write_set_for_entity(entity)
     .unwrap_or(component_write_set_new())
@@ -542,7 +540,7 @@ fn World::insert_component_with_requirements_unchecked(
   )
 
   if !replacing {
-    self.entity_add_component_local_id(entity, component_local_id)
+    self.record_entity_component_added_local_id(component_local_id)
     transaction.mark_structural_changed()
     self.record_component_added_with_caller(
       entity, component_definition_id, caller,

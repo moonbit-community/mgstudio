@@ -167,59 +167,6 @@ fn archetype_insert_sorted_unique_by_binary_search(
 }
 
 ///|
-fn archetype_check_single_add(
-  current_component_local_ids : Array[Int],
-  previous_component_local_ids : Array[Int],
-  previous_presence : @utils.IntBitSet,
-) -> Int? {
-  let mut added_component_local_id : Int? = None
-  for component_local_id in current_component_local_ids {
-    if !previous_presence.contains(component_local_id) {
-      match added_component_local_id {
-        Some(_) => return None
-        None => added_component_local_id = Some(component_local_id)
-      }
-    }
-  }
-  guard added_component_local_id is Some(component_local_id) else {
-    return None
-  }
-  if current_component_local_ids.length() !=
-    previous_component_local_ids.length() + 1 {
-    return None
-  }
-  Some(component_local_id)
-}
-
-///|
-fn archetype_check_single_remove(
-  current_component_local_ids : Array[Int],
-  previous_component_local_ids : Array[Int],
-  previous_presence : @utils.IntBitSet,
-  current_presence : @utils.IntBitSet,
-) -> Int? {
-  if previous_component_local_ids.length() !=
-    current_component_local_ids.length() + 1 {
-    return None
-  }
-  for component_local_id in current_component_local_ids {
-    if !previous_presence.contains(component_local_id) {
-      return None
-    }
-  }
-  let mut removed_component_local_id : Int? = None
-  for component_local_id in previous_component_local_ids {
-    if !current_presence.contains(component_local_id) {
-      match removed_component_local_id {
-        Some(_) => return None
-        None => removed_component_local_id = Some(component_local_id)
-      }
-    }
-  }
-  removed_component_local_id
-}
-
-///|
 fn archetype_insert_sorted_unique(ids : Array[Int], archetype_id : Int) -> Bool {
   if ids.length() == 0 || ids[ids.length() - 1] < archetype_id {
     ids.push(archetype_id)
@@ -432,15 +379,6 @@ fn World::ensure_entity_archetype_capacity(
   }
   while self.entity_storage.entity_archetype_ids.length() <= entity_id {
     self.entity_storage.entity_archetype_ids.push(-1)
-  }
-  while self.entity_storage.entity_component_local_ids.length() <= entity_id {
-    self.entity_storage.entity_component_local_ids.push([])
-  }
-  while self.entity_storage.entity_component_local_id_presence.length() <=
-        entity_id {
-    self.entity_storage.entity_component_local_id_presence.push(
-      @utils.IntBitSet::new(),
-    )
   }
   while self.entity_storage.entity_table_ids.length() <= entity_id {
     self.entity_storage.entity_table_ids.push(-1)
@@ -1189,23 +1127,10 @@ fn World::entity_local_components(
   self : World,
   entity : @core.Entity,
 ) -> Array[Int] {
-  if entity.id < 0 ||
-    entity.id >= self.entity_storage.entity_component_local_ids.length() {
+  guard self.entity_archetype_id(entity) is Some(archetype_id) else {
     return []
   }
-  self.entity_storage.entity_component_local_ids[entity.id]
-}
-
-///|
-fn World::entity_component_local_presence(
-  self : World,
-  entity : @core.Entity,
-) -> @utils.IntBitSet? {
-  if entity.id < 0 ||
-    entity.id >= self.entity_storage.entity_component_local_id_presence.length() {
-    return None
-  }
-  Some(self.entity_storage.entity_component_local_id_presence[entity.id])
+  self.archetype_component_local_ids.get(archetype_id).unwrap_or([])
 }
 
 ///|
@@ -1214,24 +1139,12 @@ fn World::entity_has_component_local_id(
   entity : @core.Entity,
   component_local_id : Int,
 ) -> Bool {
-  match self.entity_component_local_presence(entity) {
+  guard self.entity_archetype_id(entity) is Some(archetype_id) else {
+    return false
+  }
+  match self.archetype_component_local_id_presence.get(archetype_id) {
     Some(presence) => presence.contains(component_local_id)
     None => false
-  }
-}
-
-///|
-fn World::entity_replace_component_local_ids_without_membership_update(
-  self : World,
-  entity : @core.Entity,
-  component_local_ids : Array[Int],
-) -> Unit {
-  self.ensure_entity_archetype_capacity(entity.id)
-  self.entity_storage.entity_component_local_ids[entity.id] = component_local_ids.copy()
-  let presence = self.entity_storage.entity_component_local_id_presence[entity.id]
-  presence.clear()
-  for component_local_id in component_local_ids {
-    presence.insert(component_local_id)
   }
 }
 
@@ -1242,7 +1155,6 @@ fn World::initialize_entity_archetype_tracking(
 ) -> Unit {
   self.ensure_entity_archetype_capacity(entity.id)
   let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
-  self.entity_replace_component_local_ids_without_membership_update(entity, [])
   ignore(
     self.migrate_entity_bundle(
       entity,
@@ -1263,7 +1175,7 @@ fn World::clear_entity_archetype_tracking(
     return
   }
   let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
-  let component_local_ids = self.entity_storage.entity_component_local_ids[entity.id]
+  let component_local_ids = self.entity_local_components(entity)
   for component_local_id in component_local_ids {
     self.decrement_component_membership_count_local(component_local_id)
     self.bump_component_membership_generation_local(component_local_id)
@@ -1276,56 +1188,22 @@ fn World::clear_entity_archetype_tracking(
       component_write_set_new(),
     ),
   )
-  self.entity_replace_component_local_ids_without_membership_update(entity, [])
 }
 
 ///|
-fn World::entity_add_component_local_id(
+fn World::record_entity_component_added_local_id(
   self : World,
-  entity : @core.Entity,
   component_local_id : Int,
 ) -> Unit {
-  self.ensure_entity_archetype_capacity(entity.id)
-  let component_local_ids = self.entity_storage.entity_component_local_ids[entity.id]
-  if !self.entity_storage.entity_component_local_id_presence[entity.id].contains(
-      component_local_id,
-    ) {
-    component_local_ids.push(component_local_id)
-    self.entity_storage.entity_component_local_id_presence[entity.id].insert(
-      component_local_id,
-    )
-    self.increment_component_membership_count_local(component_local_id)
-    self.bump_component_membership_generation_local(component_local_id)
-  }
+  self.increment_component_membership_count_local(component_local_id)
+  self.bump_component_membership_generation_local(component_local_id)
 }
 
 ///|
-fn World::entity_remove_component_local_id(
+fn World::record_entity_component_removed_local_id(
   self : World,
-  entity : @core.Entity,
   component_local_id : Int,
 ) -> Unit {
-  if entity.id < 0 ||
-    entity.id >= self.entity_storage.entity_component_local_ids.length() {
-    return
-  }
-  let component_local_ids = self.entity_storage.entity_component_local_ids[entity.id]
-  let mut remove_index : Int? = None
-  for index in 0..<component_local_ids.length() {
-    if component_local_ids[index] == component_local_id {
-      remove_index = Some(index)
-      break
-    }
-  }
-  guard remove_index is Some(index) else { return }
-  let last_index = component_local_ids.length() - 1
-  if index != last_index {
-    component_local_ids[index] = component_local_ids[last_index]
-  }
-  ignore(component_local_ids.pop())
-  self.entity_storage.entity_component_local_id_presence[entity.id].remove(
-    component_local_id,
-  )
   self.decrement_component_membership_count_local(component_local_id)
   self.bump_component_membership_generation_local(component_local_id)
 }
@@ -1342,9 +1220,7 @@ fn World::refresh_entity_archetype_with_bundle_info(
   }
   self.ensure_entity_archetype_capacity(entity.id)
   let previous_archetype_id = self.entity_storage.entity_archetype_ids[entity.id]
-  let current_component_local_ids = self.entity_local_components(entity)
   let mut next_archetype_id : Int? = None
-  let mut normalized_components : Array[Int]? = None
   match bundle_info {
     Some(bundle_info) if previous_archetype_id >= 0 =>
       if archetype_bundle_info_covers_component_writes(
@@ -1360,63 +1236,33 @@ fn World::refresh_entity_archetype_with_bundle_info(
   }
   if next_archetype_id is None &&
     previous_archetype_id >= 0 &&
-    self.archetype_component_local_ids.get(previous_archetype_id)
-    is Some(previous_component_local_ids) {
-    let previous_len = previous_component_local_ids.length()
-    let current_len = current_component_local_ids.length()
+    component_writes.entries.length() == 1 {
+    next_archetype_id = Some(
+      self.ensure_archetype_add_edge_target(
+        previous_archetype_id,
+        component_writes.entries[0].local_component_id,
+      ),
+    )
+  }
+  if next_archetype_id is None {
+    let previous_component_local_ids = self.archetype_component_local_ids
+      .get(previous_archetype_id)
+      .unwrap_or([])
     let previous_presence = self.archetype_component_local_id_presence
       .get(previous_archetype_id)
       .unwrap_or(@utils.IntBitSet::new())
-    let current_presence = self.entity_storage.entity_component_local_id_presence[entity.id]
-    if current_len == previous_len + 1 {
-      match
-        archetype_check_single_add(
-          current_component_local_ids, previous_component_local_ids, previous_presence,
-        ) {
-        Some(component_local_id) =>
-          next_archetype_id = Some(
-            self.ensure_archetype_add_edge_target(
-              previous_archetype_id, component_local_id,
-            ),
-          )
-        None => ()
-      }
-    } else if previous_len == current_len + 1 {
-      match
-        archetype_check_single_remove(
-          current_component_local_ids, previous_component_local_ids, previous_presence,
-          current_presence,
-        ) {
-        Some(component_local_id) =>
-          next_archetype_id = Some(
-            self.ensure_archetype_remove_edge_target(
-              previous_archetype_id, component_local_id,
-            ),
-          )
-        None => ()
-      }
+    let added_component_local_ids : Array[Int] = []
+    for entry in component_writes.entries {
+      added_component_local_ids.push(entry.local_component_id)
     }
-  }
-  if next_archetype_id is None {
-    let normalized = archetype_sorted_unique_local_component_ids(
-      current_component_local_ids,
+    let target_component_local_ids = archetype_union_sorted_unique_local_component_ids_with_presence(
+      previous_component_local_ids, previous_presence, added_component_local_ids,
     )
-    normalized_components = Some(normalized)
     next_archetype_id = Some(
-      self.ensure_archetype_for_local_components(normalized),
+      self.ensure_archetype_for_local_components(target_component_local_ids),
     )
   }
   guard next_archetype_id is Some(next_archetype_id) else { return }
-  if self.archetype_component_local_ids.get(next_archetype_id)
-    is Some(next_component_local_ids) {
-    self.entity_replace_component_local_ids_without_membership_update(
-      entity, next_component_local_ids,
-    )
-  } else if normalized_components is Some(normalized) {
-    self.entity_replace_component_local_ids_without_membership_update(
-      entity, normalized,
-    )
-  }
   ignore(
     self.migrate_entity_bundle(
       entity, previous_archetype_id, next_archetype_id, component_writes,
@@ -1459,19 +1305,6 @@ fn World::refresh_entity_archetype_after_component_remove(
   let next_archetype_id = self.ensure_archetype_remove_edge_target(
     previous_archetype_id, removed_component_local_id,
   )
-  if self.archetype_component_local_ids.get(next_archetype_id)
-    is Some(next_component_local_ids) {
-    self.entity_replace_component_local_ids_without_membership_update(
-      entity, next_component_local_ids,
-    )
-  } else {
-    self.entity_replace_component_local_ids_without_membership_update(
-      entity,
-      archetype_sorted_unique_local_component_ids(
-        self.entity_local_components(entity),
-      ),
-    )
-  }
   ignore(
     self.migrate_entity_bundle(
       entity,
