@@ -56,6 +56,7 @@ pub struct CascadesFrusta {
 pub fn CascadesFrusta::CascadesFrusta() -> Self
 pub fn CascadesFrusta::clear(Self) -> Unit
 pub fn CascadesFrusta::get(Self, @core.Entity) -> Array[Frustum]
+pub fn CascadesFrusta::iter(Self) -> Array[(@core.Entity, Array[Frustum])]
 pub fn CascadesFrusta::set(Self, @core.Entity, Array[Frustum]) -> Unit
 pub impl @ecs.Component for CascadesFrusta
 
@@ -94,6 +95,7 @@ pub struct Sphere {
 }
 pub fn Sphere::Sphere() -> Self
 pub fn Sphere::center(Self) -> @math.Vec3
+pub fn Sphere::intersects_obb(Self, Aabb, @math.Affine3) -> Bool
 pub fn Sphere::new(@math.Vec3, Float) -> Self
 pub fn Sphere::radius(Self) -> Float
 pub impl @ecs.Component for Sphere

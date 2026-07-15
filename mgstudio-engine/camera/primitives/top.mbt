@@ -90,6 +90,23 @@ pub fn Sphere::radius(self : Sphere) -> Float {
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Sphere::intersects_obb`.
+pub fn Sphere::intersects_obb(
+  self : Sphere,
+  aabb : Aabb,
+  world_from_local : @math.Affine3,
+) -> Bool {
+  let aabb_center_world = world_from_local.transform_point3(aabb.center())
+  let offset = aabb_center_world.sub(self.center)
+  let distance_squared = offset.length_squared()
+  let distance = offset.length()
+  let relative_radius = camera_primitives_relative_radius(
+    aabb, offset, world_from_local,
+  )
+  distance_squared <= self.radius * distance + relative_radius
+}
+
+///|
 pub type HalfSpace = @math.HalfSpace
 
 ///|
@@ -319,6 +336,17 @@ pub fn CascadesFrusta::get(
   view : @core.Entity,
 ) -> Array[Frustum] {
   self.frusta.get(view).unwrap_or([])
+}
+
+///|
+pub fn CascadesFrusta::iter(
+  self : CascadesFrusta,
+) -> Array[(@core.Entity, Array[Frustum])] {
+  let entries : Array[(@core.Entity, Array[Frustum])] = []
+  for view, frusta in self.frusta {
+    entries.push((view, frusta))
+  }
+  entries
 }
 
 ///|

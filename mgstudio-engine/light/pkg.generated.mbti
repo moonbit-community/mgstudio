@@ -26,6 +26,10 @@ pub fn build_directional_light_cascades(@ecs.World) -> Unit
 
 pub fn calculate_directional_light_cascade(Array[@math.Vec3], Float, @math.Mat4, @math.Mat4) -> Cascade
 
+pub fn check_dir_light_mesh_visibility(@ecs.World) -> Unit
+
+pub fn check_point_light_mesh_visibility(@ecs.World) -> Unit
+
 pub fn cluster_visibility_class_id() -> Int
 
 pub fn directional_light_validated_shadow_map_size(Int) -> Int
