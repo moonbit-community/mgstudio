@@ -108,6 +108,10 @@ _Avoid_: cross-ECS query, synchronized query
 The rule that a valtype is eligible for ECS-B but becomes an ECS-B Component only through an explicit, permanent component-definition choice.
 _Avoid_: automatic valtype promotion, runtime component-category switching
 
+**ECS-B Query Batch**:
+A query result segment covering one contiguous table range, through which ECS-B component columns are read or replaced without gathering values across tables.
+_Avoid_: flat cross-table view, gathered component array
+
 ## Relationships
 
 - **Bevy Replication** excludes every **Out-of-Scope Bevy Surface**.
@@ -134,6 +138,7 @@ _Avoid_: automatic valtype promotion, runtime component-category switching
 - An **ECS-B Component** relies on value-copy and replacement semantics to make read and write access enforceable by the API.
 - A **Mixed Component Query** operates within one **Unified ECS World** and may select both component categories without synchronizing separate runtimes.
 - **Explicit ECS-B Enrollment** keeps valtype eligibility separate from component category and fixes that category for the component definition's lifetime.
+- A **Mixed Component Query** traverses one or more **ECS-B Query Batches** and never constructs a flat cross-table component view.
 
 ## Example dialogue
 
