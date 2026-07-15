@@ -695,6 +695,13 @@ pub fn[T] Read::last_changed(Self[T]) -> Int64
 pub fn[T] Read::value(Self[T]) -> T
 pub impl[T : Component] QueryData for Read[T]
 
+pub struct ReadValue[T] {
+  // private fields
+}
+pub fn[T] ReadValue::key(Self[T]) -> ComponentKey[T]
+pub fn[T] ReadValue::value(Self[T]) -> T
+pub impl[T : Component] QueryData for ReadValue[T]
+
 pub struct Remove {
 }
 pub impl ComponentObserverEvent for Remove

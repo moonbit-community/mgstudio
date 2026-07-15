@@ -211,6 +211,34 @@ fn ecs_bench_dense_query_sum(
 }
 
 ///|
+fn ecs_bench_dense_value_query_sum(
+  world : World,
+  cache : QueryCache,
+) -> Int raise EcsError {
+  let query : Query[
+    (
+      ReadValue[BenchPosition],
+      ReadValue[BenchVelocity],
+      ReadValue[BenchHealth],
+      ReadValue[BenchMass],
+    ),
+    All,
+  ] = query_filtered_with_cache(world, All::new(), cache)
+  let total = Ref(0)
+  query.for_each(fn(_entity, data) {
+    let (position, velocity, health, mass) = data
+    total.val = total.val +
+      position.value().x +
+      position.value().y +
+      velocity.value().dx +
+      velocity.value().dy +
+      health.value().hp +
+      mass.value().value
+  })
+  total.val
+}
+
+///|
 fn ecs_bench_dense_query_state_iter_sum(
   world : World,
   state : QueryState[
@@ -312,6 +340,16 @@ test "bench ecs: query dense cached" (b : @bench.T) {
   let cache = QueryCache::new()
   b.bench(name="query dense cached x20000", count=100U, () => {
     b.keep(try! ecs_bench_dense_query_sum(world, cache))
+  })
+}
+
+///|
+test "bench ecs: query dense value-only cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="query dense value-only cached x20000", count=100U, () => {
+    b.keep(try! ecs_bench_dense_value_query_sum(world, cache))
   })
 }
 

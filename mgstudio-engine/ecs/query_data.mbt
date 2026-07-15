@@ -319,6 +319,12 @@ pub struct Read[T] {
 }
 
 ///|
+pub struct ReadValue[T] {
+  priv key : ComponentKey[T]
+  priv value : T
+}
+
+///|
 priv struct QueryComponentTickSnapshot {
   added_tick : @core.Tick
   changed_tick : @core.Tick
@@ -392,6 +398,21 @@ pub fn[T] Read::last_changed(self : Read[T]) -> @core.Tick {
 ///|
 pub fn[T] Read::changed_by(self : Read[T]) -> String? {
   self.changed_by
+}
+
+///|
+pub fn[T] ReadValue::key(self : ReadValue[T]) -> ComponentKey[T] {
+  self.key
+}
+
+///|
+/// Returns a queried component value without loading change metadata.
+///
+/// `ReadValue[T]` corresponds to Bevy's ordinary `&T` query item. Use
+/// `Read[T]` when the system also needs added ticks, changed ticks, or the
+/// changed caller.
+pub fn[T] ReadValue::value(self : ReadValue[T]) -> T {
+  self.value
 }
 
 ///|
@@ -1009,6 +1030,143 @@ pub impl[T : Component] QueryData for Read[T] with fn iteration_anchor_component
 
 ///|
 pub impl[T : Component] QueryData for Read[T] with fn contiguous_compatible() {
+  true
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn matches(
+  world,
+  entity,
+) {
+  query_data_component_matches(world, entity, T::component())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn fetch(world, entity) {
+  let key = T::component()
+  ReadValue::{ key, value: query_data_require_component(world, entity, key) }
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn append_fetch_plan(
+  world,
+  plan,
+) {
+  plan.push_component_id(world, T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_plan_size() {
+  1
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_table_row(
+  fetch,
+) {
+  let key = T::component()
+  let local_component_id = query_data_component_local_id_or_abort(
+    fetch.world.local_component_id(key.id()),
+  )
+  ReadValue::{
+    key,
+    value: query_data_component_value_at_fetch_location(
+      fetch, key, local_component_id,
+    ),
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_table_row_with_plan_offset(
+  fetch,
+) {
+  let key = T::component()
+  let local_component_id = query_data_component_local_id_or_abort(
+    query_data_local_component_id_from_plan(fetch.plan, fetch.offset),
+  )
+  ReadValue::{
+    key,
+    value: query_data_component_value_at_planned_fetch_location(
+      fetch, key, local_component_id,
+    ),
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_sparse_anchor_with_plan_offset(
+  fetch,
+) {
+  let key = T::component()
+  match query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
+    Some(local_component_id) if local_component_id ==
+      fetch.anchor_local_component_id =>
+      ReadValue::{
+        key,
+        value: query_data_require_component(
+          fetch.row.world,
+          fetch.row.entity,
+          key,
+        ),
+      }
+    _ =>
+      ReadValue::fetch_table_row_with_plan_offset({
+        row: fetch.row,
+        plan: fetch.plan,
+        offset: fetch.offset,
+      })
+  }
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn mentions_component(
+  component_id,
+) {
+  component_id == T::component().id()
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn matches_component_set(
+  set_contains_id,
+) {
+  set_contains_id(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn collect_access(
+  access,
+) {
+  access.add_read_component(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn collect_required_components(
+  access,
+) {
+  access.add_required_component(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn requires_entity_check() {
+  false
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn is_dense(world) {
+  query_data_component_is_dense(world, T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn iteration_anchor_component() {
+  Some(T::component().id())
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn iteration_anchor_components() {
+  [T::component().id()]
+}
+
+///|
+pub impl[T : Component] QueryData for ReadValue[T] with fn contiguous_compatible() {
   true
 }
 

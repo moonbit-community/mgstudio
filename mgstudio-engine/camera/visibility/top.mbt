@@ -216,13 +216,13 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
     (
       @core.Entity,
       (
-        @ecs.Read[@root_visibility.InheritedVisibility],
+        @ecs.ReadValue[@root_visibility.InheritedVisibility],
         @ecs.Write[@root_visibility.ViewVisibility],
         @ecs.Optional[@root_visibility.VisibilityClass],
         @ecs.Optional[@camera_render_layers.RenderLayers],
         @ecs.Optional[@camera_primitives.Aabb],
         @ecs.Optional[@camera_primitives.Sphere],
-        @ecs.Read[@transform.GlobalTransform],
+        @ecs.ReadValue[@transform.GlobalTransform],
       ),
       (
         @ecs.Has[@root_visibility.NoFrustumCulling],
@@ -241,8 +241,8 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
       (
         @ecs.Write[@camera_camera.VisibleEntities],
         @ecs.Optional[@camera_render_layers.RenderLayers],
-        @ecs.Read[@camera_camera.Camera],
-        @ecs.Read[@camera_primitives.Frustum],
+        @ecs.ReadValue[@camera_camera.Camera],
+        @ecs.ReadValue[@camera_primitives.Frustum],
         @ecs.Has[@root_visibility.NoCpuCulling],
       ),
     ),

@@ -18,11 +18,11 @@
 ///|
 type DirectionalLightVisibilityQuery = @ecs.Query[
   (
-    @ecs.Read[DirectionalLight],
-    @ecs.Read[@camera_primitives.CascadesFrusta],
+    @ecs.ReadValue[DirectionalLight],
+    @ecs.ReadValue[@camera_primitives.CascadesFrusta],
     @ecs.Write[@camera_visibility.CascadesVisibleEntities],
     @ecs.Optional[@camera_render_layers.RenderLayers],
-    @ecs.Read[@visibility.ViewVisibility],
+    @ecs.ReadValue[@visibility.ViewVisibility],
   ),
   @ecs.Without[SpotLight],
 ]
@@ -31,7 +31,7 @@ type DirectionalLightVisibilityQuery = @ecs.Query[
 type ShadowCasterVisibilityQuery = @ecs.Query[
   (
     @core.Entity,
-    @ecs.Read[@visibility.InheritedVisibility],
+    @ecs.ReadValue[@visibility.InheritedVisibility],
     @ecs.Write[@visibility.ViewVisibility],
     @ecs.Optional[@camera_render_layers.RenderLayers],
     @ecs.Optional[@camera_primitives.Aabb],
@@ -50,9 +50,9 @@ type ShadowCasterVisibilityQuery = @ecs.Query[
 ///|
 type PointLightVisibilityQuery = @ecs.Query[
   (
-    @ecs.Read[PointLight],
-    @ecs.Read[@transform.GlobalTransform],
-    @ecs.Read[@camera_primitives.CubemapFrusta],
+    @ecs.ReadValue[PointLight],
+    @ecs.ReadValue[@transform.GlobalTransform],
+    @ecs.ReadValue[@camera_primitives.CubemapFrusta],
     @ecs.Write[@camera_visibility.CubemapVisibleEntities],
     @ecs.Optional[@camera_render_layers.RenderLayers],
   ),
@@ -62,9 +62,9 @@ type PointLightVisibilityQuery = @ecs.Query[
 ///|
 type SpotLightVisibilityQuery = @ecs.Query[
   (
-    @ecs.Read[SpotLight],
-    @ecs.Read[@transform.GlobalTransform],
-    @ecs.Read[@camera_primitives.Frustum],
+    @ecs.ReadValue[SpotLight],
+    @ecs.ReadValue[@transform.GlobalTransform],
+    @ecs.ReadValue[@camera_primitives.Frustum],
     @ecs.Write[@camera_visibility.VisibleMeshEntities],
     @ecs.Optional[@camera_render_layers.RenderLayers],
   ),
@@ -208,7 +208,7 @@ fn shadow_visible_light_entities(world : @ecs.World) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
   let checked : Map[UInt64, Bool] = Map([])
   let visible_lights : @ecs.Query[
-    @ecs.Read[@camera_camera.VisibleEntities],
+    @ecs.ReadValue[@camera_camera.VisibleEntities],
     @ecs.All,
   ] = @ecs.query(world)
   try! visible_lights.view(fn(_view, visible_entities) {
@@ -246,9 +246,9 @@ fn check_point_light_visibility(
   visible_entity_ranges : @camera_visibility.VisibleEntityRanges?,
   shadow_lod_origin : @core.Entity?,
   item : (
-    @ecs.Read[PointLight],
-    @ecs.Read[@transform.GlobalTransform],
-    @ecs.Read[@camera_primitives.CubemapFrusta],
+    @ecs.ReadValue[PointLight],
+    @ecs.ReadValue[@transform.GlobalTransform],
+    @ecs.ReadValue[@camera_primitives.CubemapFrusta],
     @ecs.Write[@camera_visibility.CubemapVisibleEntities],
     @ecs.Optional[@camera_render_layers.RenderLayers],
   ),
@@ -332,9 +332,9 @@ fn check_spot_light_visibility(
   visible_entity_ranges : @camera_visibility.VisibleEntityRanges?,
   shadow_lod_origin : @core.Entity?,
   item : (
-    @ecs.Read[SpotLight],
-    @ecs.Read[@transform.GlobalTransform],
-    @ecs.Read[@camera_primitives.Frustum],
+    @ecs.ReadValue[SpotLight],
+    @ecs.ReadValue[@transform.GlobalTransform],
+    @ecs.ReadValue[@camera_primitives.Frustum],
     @ecs.Write[@camera_visibility.VisibleMeshEntities],
     @ecs.Optional[@camera_render_layers.RenderLayers],
   ),

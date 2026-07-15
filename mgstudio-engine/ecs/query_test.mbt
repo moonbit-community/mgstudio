@@ -852,6 +852,19 @@ test "ecs query: Read exposes change detection metadata" {
 }
 
 ///|
+test "ecs query: ReadValue returns the value without change metadata" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, position_key, Position::{ x: 3, y: 5 })
+
+  let query : Query[ReadValue[Position], All] = query(world)
+  let position = try! query.require_single()
+  debug_inspect(position.key().id() == position_key.id(), content="true")
+  debug_inspect(position.value(), content="{ x: 3, y: 5 }")
+}
+
+///|
 test "ecs query_state: default query filter cache invalidates on resource updates" {
   let world = World::new()
   defer world.close()
