@@ -76,8 +76,8 @@ pub fn ViewVisibility::get(Self) -> Bool
 pub fn ViewVisibility::hidden() -> Self
 pub fn ViewVisibility::is_visible(Self) -> Bool
 pub fn ViewVisibility::new(Bool) -> Self
-pub fn ViewVisibility::set_visible(Self) -> Unit
 pub fn ViewVisibility::update(Self) -> Unit
+pub fn ViewVisibility::visible() -> Self
 pub fn ViewVisibility::was_visible_now_hidden(Self) -> Bool
 pub impl @ecs.Component for ViewVisibility
 pub impl ToJson for ViewVisibility
@@ -137,4 +137,8 @@ pub impl @json.FromJson for VisibilityRange
 // Type aliases
 
 // Traits
+pub(open) trait SetViewVisibility {
+  fn set_visible(Self) -> Unit
+}
+pub impl SetViewVisibility for @ecs.Write[ViewVisibility]
 

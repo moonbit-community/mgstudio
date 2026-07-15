@@ -369,14 +369,11 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
     })
     for item in accepted {
       let (entity, _class_id) = item
-      let view_visibility = (try! world.get_by_key(
-        entity, @root_visibility.ecs_key_view_visibility,
+      let view_visibility = (try! world.get_mut(
+        entity,
+        key=@root_visibility.ecs_key_view_visibility,
       )).unwrap()
-      view_visibility.set_visible()
-      try! (world.replace(
-        entity, @root_visibility.ecs_key_view_visibility, view_visibility,
-      )
-      |> ignore)
+      @root_visibility.SetViewVisibility::set_visible(view_visibility)
     }
   })
 }

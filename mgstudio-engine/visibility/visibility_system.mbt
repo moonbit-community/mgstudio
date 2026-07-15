@@ -246,7 +246,10 @@ fn reset_view_visibility_system(world : @ecs.World) -> Unit {
     @ecs.Without::new(ecs_key_no_cpu_culling),
   )
   try! query.view(fn(_entity, view_visibility) {
-    view_visibility.modify(fn(value) { value.update() })
+    view_visibility.bypass_change_detection(fn(value) {
+      value.update()
+      value
+    })
   })
 }
 
@@ -260,7 +263,7 @@ pub fn check_visibility_system(world : @ecs.World) -> Unit {
   try! query.view(fn(_entity, data) {
     let (view_visibility, inherited_visibility) = data
     if inherited_visibility.value().get() {
-      view_visibility.modify(fn(value) { value.set_visible() })
+      SetViewVisibility::set_visible(view_visibility)
     }
   })
 }
@@ -273,11 +276,9 @@ fn mark_newly_hidden_entities_invisible_system(world : @ecs.World) -> Unit {
     @ecs.Without::new(ecs_key_no_cpu_culling),
   )
   try! query.view(fn(_entity, view_visibility) {
-    view_visibility.modify(fn(value) {
-      if value.was_visible_now_hidden() {
-        value.bits = 0
-      }
-    })
+    if view_visibility.peek().was_visible_now_hidden() {
+      view_visibility.set(ViewVisibility::hidden())
+    }
   })
 }
 
@@ -313,7 +314,7 @@ fn register_visibility_required_components(
   world.register_required_components_with(
     ecs_key_visibility,
     ecs_key_view_visibility,
-    fn() { ViewVisibility::new(true) },
+    fn() { ViewVisibility::hidden() },
   )
 }
 

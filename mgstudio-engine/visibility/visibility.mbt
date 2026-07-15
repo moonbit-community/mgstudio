@@ -148,6 +148,13 @@ pub fn ViewVisibility::hidden() -> ViewVisibility {
 }
 
 ///|
+/// Returns the state used by entities that are visible in both the current and
+/// previous frame.
+pub fn ViewVisibility::visible() -> ViewVisibility {
+  ViewVisibility::{ bits: 3 }
+}
+
+///|
 pub fn ViewVisibility::get(self : ViewVisibility) -> Bool {
   (self.bits & 1) != 0
 }
@@ -170,10 +177,25 @@ pub fn ViewVisibility::update(self : ViewVisibility) -> Unit {
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility::set_visible`.
-pub fn ViewVisibility::set_visible(self : ViewVisibility) -> Unit {
-  if (self.bits & 1) == 0 {
-    self.bits = self.bits | 1
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility`.
+pub(open) trait SetViewVisibility {
+  fn set_visible(Self) -> Unit
+}
+
+///|
+pub impl SetViewVisibility for @ecs.Write[ViewVisibility] with fn set_visible(
+  self,
+) {
+  let current = self.peek()
+  if (current.bits & 1) == 0 {
+    if (current.bits & 2) != 0 {
+      self.bypass_change_detection(fn(value) {
+        value.bits = value.bits | 1
+        value
+      })
+    } else {
+      self.set(ViewVisibility::{ bits: current.bits | 1 })
+    }
   }
 }
 

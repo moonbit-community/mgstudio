@@ -408,6 +408,7 @@ test "visibility: inherited visibility visible-hidden helpers match bevy semanti
 test "visibility: view visibility hidden/get helpers match bevy semantics" {
   debug_inspect(@visibility.ViewVisibility::new(true).get(), content="true")
   debug_inspect(@visibility.ViewVisibility::hidden().get(), content="false")
+  debug_inspect(@visibility.ViewVisibility::visible().get(), content="true")
 }
 
 ///|
@@ -418,9 +419,6 @@ test "visibility: view visibility tracks current and previous frame bits" {
   view_visibility.update()
   debug_inspect(view_visibility.get(), content="false")
   debug_inspect(view_visibility.was_visible_now_hidden(), content="true")
-  view_visibility.set_visible()
-  debug_inspect(view_visibility.get(), content="true")
-  debug_inspect(view_visibility.was_visible_now_hidden(), content="false")
 }
 
 ///|
