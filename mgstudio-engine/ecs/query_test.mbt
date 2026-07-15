@@ -806,7 +806,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
 
 ///|
 test "ecs query: Read exposes change detection metadata" {
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   let entity = world.spawn()
 

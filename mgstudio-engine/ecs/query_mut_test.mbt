@@ -245,7 +245,7 @@ test "ecs query: view rejects structural removal" {
 
 ///|
 test "ecs mut query: detect changes helpers support explicit mutation and marking" {
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   let entity = world.spawn()
 

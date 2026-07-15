@@ -92,8 +92,14 @@ priv struct RawTableSwapRemoveResult {
 }
 
 ///|
-fn raw_table_column_new(component_ops : ComponentOps) -> RawTableColumn {
-  { component_ops, storage: raw_table_column_kernel_new() }
+fn raw_table_column_new(
+  component_ops : ComponentOps,
+  track_change_locations : Bool,
+) -> RawTableColumn {
+  {
+    component_ops,
+    storage: raw_table_column_kernel_new(track_change_locations),
+  }
 }
 
 ///|
@@ -263,7 +269,7 @@ fn raw_table_new(
         )
     }
     let ops = component_ops(definition_id)
-    columns.push(raw_table_column_new(ops))
+    columns.push(raw_table_column_new(ops, world.tracks_change_locations()))
   }
   {
     table_id,

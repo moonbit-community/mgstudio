@@ -198,6 +198,7 @@ priv struct ArchetypeSignatureIndex {
 pub struct World {
   priv lifecycle : WorldLifecycle
   priv cleanup_registry : WorldCleanupRegistry
+  priv track_change_locations : Bool
   priv mut structural_generation : Int
   priv mut entity_lifecycle_generation : Int
   priv mut component_registration_generation : Int
@@ -266,12 +267,13 @@ pub struct World {
 /// Creates a World with an explicit lifecycle.
 ///
 /// The owner must call `World::close`. Prefer `with_world` for lexical scopes.
-pub fn World::new() -> World {
+pub fn World::new(track_change_locations? : Bool = false) -> World {
   let world_id = ecs_id_allocator_state.next_world_id
   ecs_id_allocator_state.next_world_id = world_id + 1
   let world = World::{
     lifecycle: WorldLifecycle::new(world_id),
     cleanup_registry: world_cleanup_registry_new(),
+    track_change_locations,
     structural_generation: 0,
     entity_lifecycle_generation: 0,
     component_registration_generation: 0,
@@ -337,6 +339,17 @@ pub fn World::new() -> World {
     default_query_filters_bootstrap_resource(),
   )
   world
+}
+
+///|
+/// Returns whether this world records component and resource change locations.
+///
+/// This is disabled by default, matching Bevy without its non-default
+/// `track_location` feature. Enable it at construction time with
+/// `World::new(track_change_locations=true)` when change-location diagnostics
+/// are required.
+pub fn World::tracks_change_locations(self : World) -> Bool {
+  self.track_change_locations
 }
 
 ///|
@@ -484,7 +497,7 @@ pub fn World::despawn(
   self.ensure_entity_alive(entity)
   self.ensure_query_iteration_can_change_structure("despawn entity")
   let outermost = self.begin_deferred_hook_command_scope()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   let transaction = self.component_remove_transaction_for_despawn(
     entity, caller,
   )
@@ -505,7 +518,7 @@ pub fn[T] World::set_by_key(
     entity,
     key.id(),
     component_writer_for_key(key, value),
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(self, loc),
   )
 }
 
@@ -513,8 +526,8 @@ pub fn[T] World::set_by_key(
 /// Returns the component value for read-only use.
 ///
 /// MoonBit cannot enforce that the returned value is not mutated through an
-/// alias. Code that wants ECS change detection, changed-component messages, or
-/// replacement hooks must use `World::get_mut`, `World::update_by_key`,
+/// alias. Code that wants ECS change detection or replacement hooks must use
+/// `World::get_mut`, `World::update_by_key`,
 /// `Write::modify` or `Write::set` instead of mutating the value
 /// returned here.
 pub fn[T] World::get_by_key(
@@ -547,7 +560,7 @@ pub fn[T] World::update_by_key(
     return false
   }
   let new_value = update(old_value)
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
   ignore(self.replace_component_value_by_key(entity, key, new_value))
@@ -568,7 +581,7 @@ pub fn[T] World::remove_by_key(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   guard self.component_remove_transaction_for_key(entity, key.id(), caller)
     is Some(transaction) else {
     self.end_deferred_hook_command_scope(outermost)
@@ -744,6 +757,7 @@ fn World::record_component_added_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
+  let caller = self.tracked_change_caller(caller)
   let tick = component_write_tick(self)
   let local_id = self.ensure_component_registered(key_id)
   let recorded = match self.local_component_storage_type(local_id) {
@@ -773,6 +787,7 @@ fn World::record_component_changed_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
+  let caller = self.tracked_change_caller(caller)
   let tick = component_write_tick(self)
   let local_id = self.ensure_component_registered(key_id)
   self.record_component_changed_by_local_id_with_tick(

@@ -701,7 +701,7 @@ pub(all) struct RawTableColumn {
 pub(all) struct RawTableColumnKernel {
   mut added_ticks : Array[Int64]
   mut changed_ticks : Array[Int64]
-  mut changed_caller_ids : Array[Int]
+  changed_caller_ids : Array[Int]?
 }
 
 pub struct Read[T] {
@@ -926,7 +926,7 @@ pub fn[T] World::mark_resource_changed(Self, ResourceKey[T], caller? : String?) 
 pub fn[T] World::message_mutator(Self, MessageKey[T], cursor? : MessageCursor[T]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], cursor? : MessageCursor[T]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
-pub fn World::new() -> Self
+pub fn World::new(track_change_locations? : Bool) -> Self
 pub fn World::pending_entity_reservation_count(Self) -> Int
 pub fn[D] World::query(Self) -> QueryState[D, All]
 pub fn[F] World::query_entities_filtered(Self, F) -> Query[@core.Entity, F]
@@ -974,6 +974,7 @@ pub fn World::spawn_reserved(Self, EntityReservation) -> @core.Entity raise EcsE
 pub fn World::structural_generation(Self) -> Int
 #callsite(autofill(loc))
 pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
+pub fn World::tracks_change_locations(Self) -> Bool
 pub fn[E : TriggerEvent] World::trigger(Self, E, caller? : String?) -> Unit
 pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
 pub fn[T, R] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError

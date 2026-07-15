@@ -487,7 +487,10 @@ pub fn[T : Component] TableBatchWrite::set_changed(
   loc~ : SourceLoc,
 ) -> Unit {
   ignore(T::component())
-  self.mark_changed(row_index, hook_caller_from_loc(loc))
+  self.mark_changed(
+    row_index,
+    hook_caller_from_loc(self.scope.world_or_abort(), loc),
+  )
 }
 
 ///|
@@ -500,7 +503,7 @@ pub fn[T : Component] TableBatchWrite::set_added(
   ignore(T::component())
   let entity = self.scope.entity_or_abort(row_index)
   let world = self.scope.world_or_abort()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(world, loc)
   world.record_component_added_with_caller(entity, self.key.id(), caller)
   world
   .ensure_added_component_messages(self.key.id())
@@ -517,7 +520,10 @@ pub fn[T, R] TableBatchWrite::modify(
   loc~ : SourceLoc,
 ) -> R {
   let result = f(self.peek(row_index))
-  self.mark_changed(row_index, hook_caller_from_loc(loc))
+  self.mark_changed(
+    row_index,
+    hook_caller_from_loc(self.scope.world_or_abort(), loc),
+  )
   result
 }
 
@@ -554,7 +560,10 @@ pub fn[T] TableBatchWrite::set(
   value : T,
   loc~ : SourceLoc,
 ) -> Unit {
-  self.mark_changed(row_index, hook_caller_from_loc(loc))
+  self.mark_changed(
+    row_index,
+    hook_caller_from_loc(self.scope.world_or_abort(), loc),
+  )
   self.assign(row_index, value)
 }
 

@@ -241,7 +241,7 @@ pub fn[T : Component] Write::set_changed(
   loc~ : SourceLoc,
 ) -> Unit {
   ignore(T::component())
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_mark_changed(self, caller=hook_caller_from_loc(self.world, loc))
 }
 
 ///|
@@ -254,7 +254,7 @@ pub fn[T : Component] Write::set_added(
   let world = self.world
   let entity = self.entity
   let key_id = self.key.id()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(world, loc)
   world.record_component_added_with_caller(entity, key_id, caller)
   world
   .ensure_added_component_messages(key_id)
@@ -277,7 +277,7 @@ pub fn[T, R] Write::modify(
 ) -> R {
   let value = self.peek(loc~)
   let result = f(value)
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_mark_changed(self, caller=hook_caller_from_loc(self.world, loc))
   result
 }
 
@@ -317,11 +317,10 @@ pub fn[T : Eq] Write::set_if_neq(
 /// Replaces the component and marks it changed.
 ///
 /// Prefer `Write::set` over mutating values returned by read-only APIs. This
-/// keeps change ticks and changed-component messages in sync with the stored
-/// value.
+/// keeps change ticks in sync with the stored value.
 #callsite(autofill(loc))
 pub fn[T] Write::set(self : Write[T], value : T, loc~ : SourceLoc) -> Unit {
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_mark_changed(self, caller=hook_caller_from_loc(self.world, loc))
   mut_assign_value_or_abort(self, value)
 }
 
@@ -510,7 +509,7 @@ pub impl[A : Component, B : Component] Bundle for (A, B) with fn insert_into(
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -530,7 +529,7 @@ pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with 
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -551,7 +550,7 @@ pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for 
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -574,7 +573,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -599,7 +598,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -631,7 +630,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -665,7 +664,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
