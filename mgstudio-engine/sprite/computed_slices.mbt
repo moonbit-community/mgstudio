@@ -403,15 +403,36 @@ pub fn compute_slices_on_sprite_change_system(
 ) -> Unit {
   let images = assets.p0().get()
   let texture_atlas_layouts = assets.p1().get()
-  try! changed_sprites.view(fn(entity, sprite_comp) {
-    let sprite = sprite_comp.value()
-    if !sprite.image_mode.uses_slices() {
-      return
-    }
-    insert_computed_texture_slices_for_sprite(
-      commands, entity, sprite, images, texture_atlas_layouts,
-    )
+  let used_batch = try! changed_sprites.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
+    let sprites = batch.read(ecs_key_sprite).unwrap()
+    try! rows.for_each(fn(row_index) {
+      let sprite = sprites.value(row_index)
+      if !sprite.image_mode.uses_slices() {
+        return
+      }
+      insert_computed_texture_slices_for_sprite(
+        commands,
+        batch.entity(row_index),
+        sprite,
+        images,
+        texture_atlas_layouts,
+      )
+    })
   })
+  if !used_batch {
+    try! changed_sprites.view(fn(entity, sprite_comp) {
+      let sprite = sprite_comp.value()
+      if !sprite.image_mode.uses_slices() {
+        return
+      }
+      insert_computed_texture_slices_for_sprite(
+        commands, entity, sprite, images, texture_atlas_layouts,
+      )
+    })
+  }
 }
 
 ///|
