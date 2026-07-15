@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,
+  "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
   "Milky2018/moon_accesskit",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/input",

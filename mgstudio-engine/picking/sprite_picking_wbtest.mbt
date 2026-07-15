@@ -98,6 +98,111 @@ test "sprite picking bounding box ignores transparent pixels" {
 }
 
 ///|
+test "sprite picking collection matches bevy required query and stable depth sort" {
+  let world = @ecs.World::new()
+  defer world.close()
+  let entities : Array[@core.Entity] = []
+  let nan = 0.0F / 0.0F
+  for
+    candidate in [
+      (1.0F, true, true, None),
+      (1.0F, true, true, Some(3)),
+      (3.0F, true, true, None),
+      (4.0F, false, true, None),
+      (5.0F, true, false, None),
+      (nan, true, true, None),
+    ] {
+    let entity = world.spawn_empty()
+    entities.push(entity)
+    try! world.set_by_key(
+      entity,
+      @sprite.ecs_key_sprite,
+      @sprite.Sprite::sized(@math.Vec2::new(8.0F, 8.0F)),
+    )
+    try! world.set_by_key(
+      entity,
+      @transform.ecs_key_global_transform,
+      @transform.GlobalTransform::from_transform(
+        @transform.Transform::from_xyz(0.0F, 0.0F, candidate.0),
+      ),
+    )
+    try! world.set_by_key(
+      entity,
+      @sprite.ecs_key_anchor,
+      @sprite.Anchor::center(),
+    )
+    try! world.set_by_key(
+      entity,
+      @visibility.ecs_key_view_visibility,
+      @visibility.ViewVisibility::new(candidate.1),
+    )
+    if candidate.2 {
+      try! world.set_by_key(entity, ecs_key_pickable, Pickable::Pickable())
+    }
+    match candidate.3 {
+      Some(layer) =>
+        try! world.set_by_key(
+          entity,
+          @camera_render_layers.ecs_key_render_layers,
+          @camera_render_layers.RenderLayers::layer(layer),
+        )
+      None => ()
+    }
+  }
+
+  let sorted = picking_sprite_collect_sorted(world)
+  let ok = sorted.length() == 3 &&
+    sorted[0].0 == entities[2] &&
+    sorted[1].0 == entities[0] &&
+    sorted[2].0 == entities[1] &&
+    sorted[0].5.mask() == 1 &&
+    sorted[1].5.mask() == 1 &&
+    sorted[2].5.mask() == 8
+  debug_inspect(ok, content="true")
+}
+
+///|
+test "sprite picking hit data uses camera entity and camera-space depth" {
+  let world = @ecs.World::new()
+  defer world.close()
+  let entity = @core.Entity::new(7, 0)
+  let camera_entity = @core.Entity::new(11, 0)
+  let sprite_transform = @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F)
+  let camera_transform = @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F)
+  let entry : SpritePickingEntry = (
+    entity,
+    @sprite.Sprite::sized(@math.Vec2::new(2.0F, 2.0F)),
+    sprite_transform,
+    @sprite.Anchor::center(),
+    Pickable::Pickable(),
+    @camera_render_layers.RenderLayers::RenderLayers(),
+  )
+  let hit = picking_sprite_hit_from_local_pos(
+    world,
+    entry,
+    @math.Vec2::zero(),
+    SpritePickingSettings::new(false, BoundingBox),
+    camera_entity,
+    camera_transform,
+    -1.0F,
+  )
+  guard hit is Some((hit_entity, hit_data)) else {
+    debug_inspect(false, content="true")
+    return
+  }
+  let position_ok = match hit_data.position {
+    Some(position) =>
+      position.x == 0.0F && position.y == 0.0F && position.z == 2.0F
+    None => false
+  }
+  let ok = hit_entity == entity &&
+    hit_data.camera == camera_entity &&
+    hit_data.depth == 9.0F &&
+    position_ok
+  debug_inspect(ok, content="true")
+}
+
+///|
 test "sprite picking camera marker requirement filters cameras" {
   let world = @ecs.World::new()
   defer world.close()

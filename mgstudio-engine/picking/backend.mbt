@@ -158,6 +158,7 @@ fn picking_insert_sprite_camera_sorted(
       @camera.Projection,
       @transform.Transform,
       Bool,
+      @camera_render_layers.RenderLayers,
     ),
   ],
   camera : (
@@ -166,6 +167,7 @@ fn picking_insert_sprite_camera_sorted(
     @camera.Projection,
     @transform.Transform,
     Bool,
+    @camera_render_layers.RenderLayers,
   ),
 ) -> Unit {
   let mut insert_at = cameras.length()
@@ -266,6 +268,7 @@ fn picking_sprite_cameras(
     @camera.Projection,
     @transform.Transform,
     Bool,
+    @camera_render_layers.RenderLayers,
   ),
 ] {
   let cameras : Array[
@@ -275,6 +278,7 @@ fn picking_sprite_cameras(
       @camera.Projection,
       @transform.Transform,
       Bool,
+      @camera_render_layers.RenderLayers,
     ),
   ] = []
   world.for_each_component(@camera_components2d.ecs_key_camera2d, fn(
@@ -300,9 +304,12 @@ fn picking_sprite_cameras(
       None => @camera.Projection::default()
     }
     let transform = picking_camera_transform(world, entity)
+    let render_layers = (try! world.get_by_key(
+      entity, @camera_render_layers.ecs_key_render_layers,
+    )).unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
     picking_insert_sprite_camera_sorted(
       cameras,
-      (entity, camera, projection, transform, has_marker),
+      (entity, camera, projection, transform, has_marker, render_layers),
     )
   })
   cameras
@@ -335,56 +342,110 @@ fn picking_sprite_ray_local_hit(
 }
 
 ///|
-fn picking_sprite_collect_sorted(
-  world : @ecs.World,
-) -> Array[
-  (@core.Entity, @sprite.Sprite, @transform.Transform, @sprite.Anchor, Pickable),
-] {
-  let sorted_sprites : Array[
-    (
-      @core.Entity,
-      @sprite.Sprite,
-      @transform.Transform,
-      @sprite.Anchor,
-      Pickable,
-    ),
-  ] = []
-  world.for_each_component(@sprite.ecs_key_sprite, fn(entity, sprite) {
-    if (try! world.get_by_key(entity, @visibility.ecs_key_view_visibility))
-      is Some(vv) &&
-      !vv.is_visible() {
-      return
+type SpritePickingEntry = (
+  @core.Entity,
+  @sprite.Sprite,
+  @transform.Transform,
+  @sprite.Anchor,
+  Pickable,
+  @camera_render_layers.RenderLayers,
+)
+
+///|
+fn picking_sprite_depth_radix_key(entry : SpritePickingEntry) -> UInt {
+  let bits = (-entry.2.translation.z).reinterpret_as_uint()
+  let flip_negative_mask = if (bits & 0x8000_0000U) != 0U {
+    0xffff_ffffU
+  } else {
+    0U
+  }
+  bits ^ (flip_negative_mask | 0x8000_0000U)
+}
+
+///|
+// Bevy source: `radsort::sort_by_key(..., |(_, _, transform, ..)|
+// -transform.translation().z)` in `bevy_sprite::picking_backend::sprite_picking`.
+fn picking_sprite_stable_radix_sort(
+  entries : Array[SpritePickingEntry],
+) -> Array[SpritePickingEntry] {
+  if entries.length() < 2 {
+    return entries
+  }
+  let mut current = entries
+  for digit in 0..<4 {
+    let offsets = FixedArray::make(256, 0)
+    let shift = digit * 8
+    for entry in current {
+      let bucket = ((picking_sprite_depth_radix_key(entry) >> shift) & 0xffU).reinterpret_as_int()
+      offsets[bucket] = offsets[bucket] + 1
     }
-    let transform = match
-      (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
-      Some(gt) => gt.to_transform_approx()
-      None =>
-        match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
-          Some(t) => t
-          None => @transform.Transform::identity()
-        }
-    }
-    let anchor = match (try! world.get_by_key(entity, @sprite.ecs_key_anchor)) {
-      Some(a) => a
-      None => @sprite.Anchor::Anchor()
-    }
-    let pickable = match (try! world.get_by_key(entity, ecs_key_pickable)) {
-      Some(value) => value
-      None => Pickable::Pickable()
-    }
-    let mut insert_at = sorted_sprites.length()
-    for i in 0..<sorted_sprites.length() {
-      if transform.translation.z > sorted_sprites[i].2.translation.z {
-        insert_at = i
-        break
+    let mut non_empty_buckets = 0
+    for bucket in 0..<256 {
+      if offsets[bucket] != 0 {
+        non_empty_buckets = non_empty_buckets + 1
       }
     }
-    sorted_sprites.insert(
-      insert_at,
-      (entity, sprite, transform, anchor, pickable),
+    if non_empty_buckets <= 1 {
+      continue
+    }
+    let mut offset = 0
+    for bucket in 0..<256 {
+      let count = offsets[bucket]
+      offsets[bucket] = offset
+      offset = offset + count
+    }
+    let next = Array::make(current.length(), current[0])
+    for entry in current {
+      let bucket = ((picking_sprite_depth_radix_key(entry) >> shift) & 0xffU).reinterpret_as_int()
+      let index = offsets[bucket]
+      next[index] = entry
+      offsets[bucket] = index + 1
+    }
+    current = next
+  }
+  current
+}
+
+///|
+fn picking_sprite_collect_sorted(
+  world : @ecs.World,
+) -> Array[SpritePickingEntry] {
+  let sprites : Array[SpritePickingEntry] = []
+  let query : @ecs.Query[
+    (
+      (
+        @ecs.Read[@sprite.Sprite],
+        @ecs.Read[@transform.GlobalTransform],
+        @ecs.Read[@sprite.Anchor],
+        @ecs.Read[Pickable],
+      ),
+      (
+        @ecs.Read[@visibility.ViewVisibility],
+        @ecs.Optional[@camera_render_layers.RenderLayers],
+      ),
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let ((sprite, global_transform, anchor, pickable), (visibility, layers)) = data
+    if global_transform.value().affine().is_nan() ||
+      !visibility.value().is_visible() {
+      return
+    }
+    sprites.push(
+      (
+        entity,
+        sprite.value(),
+        global_transform.value().to_transform_approx(),
+        anchor.value(),
+        pickable.value(),
+        layers
+        .value()
+        .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers()),
+      ),
     )
   })
-  sorted_sprites
+  picking_sprite_stable_radix_sort(sprites)
 }
 
 ///|
@@ -396,10 +457,13 @@ fn picking_sprite_hit_from_local_pos(
     @transform.Transform,
     @sprite.Anchor,
     Pickable,
+    @camera_render_layers.RenderLayers,
   ),
   local_pos : @math.Vec2,
   settings : SpritePickingSettings,
-  depth : Float,
+  camera_entity : @core.Entity,
+  camera_transform : @transform.Transform,
+  camera_near : Float,
 ) -> (@core.Entity, HitData)? {
   let entity = entry.0
   let sprite = entry.1
@@ -438,10 +502,22 @@ fn picking_sprite_hit_from_local_pos(
     let position = transform.transform_point(
       @math.Vec3::new(local_pos.x, local_pos.y, 0.0F),
     )
+    guard @pbr_render.render3d_inverse_transform_point(
+        camera_transform, position,
+      )
+      is Some(camera_position) else {
+      return None
+    }
+    let depth = -camera_near - camera_position.z
     Some(
       (
         entity,
-        HitData::new(entity, depth, Some(position), Some(transform.back())),
+        HitData::new(
+          camera_entity,
+          depth,
+          Some(position),
+          Some(transform.back()),
+        ),
       ),
     )
   } else {
@@ -549,6 +625,10 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
         let camera = camera_entry.1
         let projection = camera_entry.2
         let camera_transform = camera_entry.3
+        let camera_layers = camera_entry.5
+        guard projection is @camera.Projection::Orthographic(orthographic) else {
+          continue
+        }
         let target_size = picking_camera_target_size(
           camera, window_width, window_height,
         )
@@ -559,7 +639,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
           is Some((origin, direction)) else {
           continue
         }
-        let max_distance = projection.far().max(1.0F)
+        let max_distance = orthographic.far() - orthographic.near()
         let picks : Array[(@core.Entity, HitData)] = []
         let mut blocked = false
         for entry in sorted_sprites {
@@ -568,14 +648,23 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
           }
           let transform = entry.2
           let pickable = entry.4
+          if !camera_layers.intersects(entry.5) {
+            continue
+          }
           guard picking_sprite_ray_local_hit(
               origin, direction, transform, max_distance,
             )
-            is Some((local_pos, depth)) else {
+            is Some((local_pos, _depth)) else {
             continue
           }
           guard picking_sprite_hit_from_local_pos(
-              world, entry, local_pos, settings, depth,
+              world,
+              entry,
+              local_pos,
+              settings,
+              camera_entry.0,
+              camera_transform,
+              orthographic.near(),
             )
             is Some(payload) else {
             continue
