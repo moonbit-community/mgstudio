@@ -893,13 +893,6 @@ priv struct QueuedCameraDrawItems {
 }
 
 ///|
-priv struct RuntimeRenderTargetInfo {
-  id : Int
-  width : Int
-  height : Int
-}
-
-///|
 priv struct PostProcessIntermediateTargetInfo {
   camera : @core.Entity
   slot : Int
@@ -918,7 +911,6 @@ struct RenderState {
   extra_sprite_slice_batches : Array[ExtractedSpriteSliceBatch]
   cameras : Array[ExtractedCamera2d]
   meshes : Array[ExtractedMesh2d]
-  render_targets : Array[RuntimeRenderTargetInfo]
   postprocess_intermediate_targets : Array[PostProcessIntermediateTargetInfo]
   // Prepare stage output: stable camera iteration order for the frame.
   mut prepared_camera_indices : Array[Int]
@@ -957,7 +949,6 @@ fn RenderState::new() -> RenderState {
     extra_sprite_slice_batches: [],
     cameras: [],
     meshes: [],
-    render_targets: [],
     postprocess_intermediate_targets: [],
     prepared_camera_indices: [],
     queued_draw_item_counts: [],
@@ -1231,14 +1222,8 @@ pub fn render2d_create_render_target(
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
+  world |> ignore
   let id = @renderer.host_gpu_create_render_target(width~, height~, nearest~)
-  ensure_render_state_resource(world)
-  let res = get_render_state_resource(world)
-  if res.get() is Some(state_value) {
-    let rs = state_value
-    rs.render_targets.push(RuntimeRenderTargetInfo::{ id, width, height })
-    res.insert(rs)
-  }
   @asset.Handle::new(id)
 }
 
@@ -1449,19 +1434,6 @@ pub fn render2d_clear_overlay_ui_sprites(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn render2d_find_render_target_size(
-  state : RenderState,
-  id : Int,
-) -> RuntimeRenderTargetInfo? {
-  for target in state.render_targets {
-    if target.id == id {
-      return Some(target)
-    }
-  }
-  None
-}
-
-///|
 priv struct RenderTargetComputed {
   size : @math.IVec2
   scale_factor : Float
@@ -1499,22 +1471,22 @@ fn render2d_window_target_info(
 ///|
 fn render2d_target_info(
   world : @ecs.World,
-  state : RenderState,
   target : @camera_camera.RenderTarget,
 ) -> RenderTargetComputed? {
   match target {
     Screen => render2d_window_target_info(world, @window.WindowRef::Primary)
     Window(window_ref) => render2d_window_target_info(world, window_ref)
     Image(handle) => {
-      let target_id = handle.id()
-      if render2d_find_render_target_size(state, target_id) is Some(info) {
+      let images_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
+      if world.get_resource(images_key) is Some(images) &&
+        images.get(handle) is Some(image) {
         Some(RenderTargetComputed::{
-          size: @math.IVec2::new(info.width, info.height),
+          size: @math.IVec2::new(image.width(), image.height()),
           scale_factor: 1.0F,
         })
       } else {
-        let width = @renderer.asset_texture_width(texture_id=target_id)
-        let height = @renderer.asset_texture_height(texture_id=target_id)
+        let width = @asset.asset_texture_width(handle)
+        let height = @asset.asset_texture_height(handle)
         if width > 0 && height > 0 {
           Some(RenderTargetComputed::{
             size: @math.IVec2::new(width, height),
@@ -1586,11 +1558,6 @@ fn render2d_get_or_create_postprocess_intermediate_target(
     nearest=false,
   )
   let handle : @asset.Handle[@asset.Image] = @asset.Handle::new(id)
-  state.render_targets.push(RuntimeRenderTargetInfo::{
-    id,
-    width: safe_width,
-    height: safe_height,
-  })
   for i in 0..<state.postprocess_intermediate_targets.length() {
     let entry = state.postprocess_intermediate_targets[i]
     if render2d_same_entity(entry.camera, camera) && entry.slot == slot {
@@ -1875,9 +1842,7 @@ fn camera_color_grading(
 
 ///|
 pub fn render2d_camera_system(world : @ecs.World) -> Unit {
-  guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let ecs_world = world
-  let render_state = render_state_ref_value
   ecs_world.for_each_component(@camera_components2d.ecs_key_camera2d, fn(
     entity,
     _marker,
@@ -1897,7 +1862,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
     .unwrap_or(@camera_projection2d.Projection::orthographic_2d())
     |> ignore)
 
-    let target_info = render2d_target_info(world, render_state, target)
+    let target_info = render2d_target_info(world, target)
     let next_target_info = render2d_camera_target_info_from_render_target(
       target_info,
     )
@@ -1999,8 +1964,6 @@ fn render2d_entity_visible_ecs(
 
 ///|
 pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
-  guard render_state_ref(world) is Some(render_state_ref_value) else { return }
-  let render_state = render_state_ref_value
   let cameras : Array[@core.Entity] = []
   let camera2d_query : @ecs.Query[
     @ecs.Read[@camera_components2d.Camera2d],
@@ -2018,7 +1981,7 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
       @camera_projection2d.Projection::orthographic_2d(),
     )
     |> ignore
-    let target_info = render2d_target_info(world, render_state, target)
+    let target_info = render2d_target_info(world, target)
     let next_target_info = render2d_camera_target_info_from_render_target(
       target_info,
     )
@@ -2125,7 +2088,7 @@ fn render2d_extract_camera_entity_ecs(
       target_size: target_info.physical_size,
       scale_factor,
     }
-  } else if render2d_target_info(world, rs, target) is Some(info) {
+  } else if render2d_target_info(world, target) is Some(info) {
     let scale_factor = if info.scale_factor <= 0.0F {
       1.0F
     } else {
@@ -2183,7 +2146,7 @@ fn render2d_extract_ui_only_cameras_ecs(
 
 ///|
 pub let camera_update_systems : @app.SystemSet = @app.system_set(
-  "mgstudio.camera.update_systems",
+  "mgstudio.camera.update",
 )
 
 ///|

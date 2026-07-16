@@ -24,6 +24,11 @@ let visibility_set_update_skinned_mesh_bounds : @app.SystemSet = @app.system_set
 )
 
 ///|
+let camera_update_frusta_systems : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.update_frusta",
+)
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibleMeshEntities`.
 pub struct VisibleMeshEntities {
   entities : Array[@core.Entity]
@@ -375,6 +380,11 @@ pub fn visibility_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   @root_visibility.visibility_plugin(app)
+  .configure_set(
+    @app.PostUpdate,
+    @root_visibility.visibility_set_check_visibility,
+    after=[camera_update_frusta_systems],
+  )
   .configure_set(
     @app.PostUpdate,
     @root_visibility.visibility_set_calculate_bounds,

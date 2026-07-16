@@ -632,6 +632,37 @@ test "render2d: Camera2d tuple stores window render target" {
 }
 
 ///|
+test "render2d: camera system updates screen target without RenderState" {
+  let world = @ecs.World::new()
+  defer world.close()
+  ensure_camera2d_authoring_required_components(world)
+  let window = @window.Window::Window()
+  window.resolution = @window.WindowResolution::new(1280, 720).with_scale_factor_override(
+    2.0F,
+  )
+  ignore(try! world.spawn_bundle((window, @window.PrimaryWindow::{  })))
+  let camera_entity = world.spawn_empty()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  |> ignore)
+
+  render2d_camera_system_ecs(world)
+
+  let camera = (try! world.get_by_key(
+    camera_entity, @camera_camera.ecs_key_camera,
+  )).unwrap()
+  let target_info = camera.computed.target_info.unwrap()
+  debug_inspect(target_info.physical_size.x, content="1280")
+  debug_inspect(target_info.physical_size.y, content="720")
+  debug_inspect(target_info.scale_factor, content="2")
+  debug_inspect(camera.logical_viewport_size().unwrap().x, content="640")
+  debug_inspect(camera.logical_viewport_size().unwrap().y, content="360")
+}
+
+///|
 test "render2d: Mesh2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
   defer world.close()

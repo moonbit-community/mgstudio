@@ -27,6 +27,60 @@ pub let camera_update_systems : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let camera_update_frusta_systems : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.update_frusta",
+)
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::update_frusta`.
+// The current 2D projection surface is the WindowSize orthographic subset, so
+// reuse the source-aligned orthographic implementation with the 2D defaults.
+pub fn update_frusta_2d_system(world : @ecs.World) -> Unit {
+  let updates : Array[(@core.Entity, @camera_primitives.Frustum)] = []
+  world.for_each_component(@camera_projection2d.ecs_key_projection, fn(
+    entity,
+    projection,
+  ) {
+    guard (try! world.get_by_key(entity, @camera_camera.ecs_key_camera))
+      is Some(camera) else {
+      return
+    }
+    guard camera.logical_viewport_size() is Some(logical_size) else { return }
+    if logical_size.x <= 0.0F || logical_size.y <= 0.0F {
+      return
+    }
+    guard (try! world.get_by_key(entity, @transform.ecs_key_global_transform))
+      is Some(global_transform) else {
+      return
+    }
+    let orthographic = match projection {
+      @camera_projection2d.Projection::Orthographic(value) => value
+    }
+    let projection_3d = @camera_projection3d.OrthographicProjection3d::default_2d()
+      .with_scale(orthographic.scale)
+      .update(logical_size.x, logical_size.y)
+    let next = @camera_projection3d.render3d_orthographic_projection_compute_frustum(
+      projection_3d,
+      global_transform.to_transform_approx(),
+    )
+    match (try! world.get_by_key(entity, @camera_primitives.ecs_key_frustum)) {
+      Some(current) => if current != next { updates.push((entity, next)) }
+      None => updates.push((entity, next))
+    }
+  })
+  for update in updates {
+    let (entity, frustum) = update
+    if (try! world.get_by_key(entity, @camera_primitives.ecs_key_frustum))
+      is Some(_) {
+      try! (world.replace(entity, @camera_primitives.ecs_key_frustum, frustum)
+      |> ignore)
+    } else {
+      try! world.set_by_key(entity, @camera_primitives.ecs_key_frustum, frustum)
+    }
+  }
+}
+
+///|
 pub struct CameraProjectionPlugin {}
 
 ///|
@@ -67,6 +121,12 @@ pub fn camera_projection_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
+  .configure_set(@app.PostUpdate, camera_update_systems, after=[
+    @transform.transform_set_propagate,
+  ])
+  .configure_set(@app.PostUpdate, camera_update_frusta_systems, after=[
+    camera_update_systems, @transform.transform_set_propagate,
+  ])
   .add_post_update_system_config(
     @app.system(@pbr.render3d_camera_system)
     .named("mgstudio.pbr.render3d_camera_system")
@@ -76,9 +136,12 @@ pub fn camera_projection_plugin(
   .add_post_update_system_config(
     @app.system(@pbr.render3d_update_frusta_system)
     .named("mgstudio.pbr.render3d_update_frusta")
-    .in_set(camera_update_systems)
-    .after("mgstudio.pbr.render3d_camera_system")
-    .after(@transform.transform_set_propagate),
+    .in_set(camera_update_frusta_systems),
+  )
+  .add_post_update_system_config(
+    @app.system(update_frusta_2d_system)
+    .named("mgstudio.camera.update_frusta_2d")
+    .in_set(camera_update_frusta_systems),
   )
 }
 

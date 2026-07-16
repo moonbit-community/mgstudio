@@ -197,3 +197,55 @@ test "camera projection plugin: updates frustum when transform changes" {
   }
   debug_inspect(frustum_after_transform_ok, content="true")
 }
+
+///|
+test "camera projection plugin: updates Camera2d frustum from logical viewport" {
+  let lifecycle_world_199_0 = @ecs.World::new()
+  defer lifecycle_world_199_0.close()
+  let mut app = @app.App::new(lifecycle_world_199_0).add_plugins(
+    CameraPlugin::CameraPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::identity(),
+  )
+  let camera = (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)).unwrap()
+  let computed = @camera_computed.ComputedCameraValues::new(
+    @math.Mat4::identity(),
+    Some(
+      @camera_computed.RenderTargetInfo::new(@math.IVec2::new(1280, 720), 2.0F),
+    ),
+    None,
+    None,
+  )
+  try! (world.replace(
+    entity,
+    @camera_camera.ecs_key_camera,
+    camera.with_computed(computed),
+  )
+  |> ignore)
+
+  app = app.update()
+
+  let frustum = (try! app
+  .world()
+  .get_by_key(entity, @camera_primitives.ecs_key_frustum)).unwrap()
+  let inside = @camera_primitives.Sphere::new(
+    @math.Vec3::new(300.0F, 0.0F, 0.0F),
+    1.0F,
+  )
+  let outside = @camera_primitives.Sphere::new(
+    @math.Vec3::new(400.0F, 0.0F, 0.0F),
+    1.0F,
+  )
+  debug_inspect(frustum.intersects_sphere(inside, false), content="true")
+  debug_inspect(frustum.intersects_sphere(outside, false), content="false")
+}
