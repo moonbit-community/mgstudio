@@ -13,15 +13,6 @@
 // limitations under the License.
 
 ///|
-const GRID_HALF_X : Int = 160
-
-///|
-const GRID_HALF_Y : Int = 160
-
-///|
-const TILE_SIZE : Float = 64.0F
-
-///|
 const CAMERA_SPEED : Float = 1000.0F
 
 ///|
@@ -40,28 +31,50 @@ pub impl @ecs.Component for AnimationTimer with fn component() {
 }
 
 ///|
-struct PrintTimer {
-  mut seconds : Float
+struct PrintingTimer {
+  timer : @time.Timer
 }
 
 ///|
-let print_timer_key : @ecs.ResourceKey[PrintTimer] = @ecs.register_resource(
-  debug_name="examples.stress_tests.many_animated_sprites.PrintTimer",
-)
-
-///|
-impl @app.Resource for PrintTimer with fn resource() {
-  print_timer_key
+fn PrintingTimer::PrintingTimer() -> PrintingTimer {
+  PrintingTimer::{
+    timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
+  }
 }
 
 ///|
-fn PrintTimer::PrintTimer() -> PrintTimer {
-  { seconds: 0.0F }
+impl @app.FromWorld for PrintingTimer with fn from_world(_world) {
+  PrintingTimer::PrintingTimer()
 }
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+fn configured_window() -> @window.Window {
+  let window = @window.Window::Window()
+  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
+    1.0F,
+  )
+  window
+}
+
+///|
+fn animation_timer(elapsed_seconds : Float) -> AnimationTimer {
+  AnimationTimer::{
+    timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating).set_elapsed(
+      @core.Duration::from_secs_f32(elapsed_seconds),
+    ),
+  }
+}
+
+///|
+fn advance_camera_transform(
+  transform : @transform.Transform,
+  delta_seconds : Float,
+) -> Unit {
+  transform.rotate(@math.Quat::from_rotation_z(delta_seconds * 0.5F))
+  transform.translation = transform.transform_point(
+    @math.Vec3::new(CAMERA_SPEED * delta_seconds, 0.0F, 0.0F),
+  )
 }
 
 ///|
@@ -70,6 +83,16 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
+  @app.log_record(
+    @app.Warn,
+    message="This is a stress test used to push Mgstudio to its limit and debug performance issues. It is not representative of an actual game. It must be run in release mode using --release or it will be very slow.",
+    target="many_animated_sprites",
+  )
+  let rng = @random.Rand::new()
+  let tile_size = @math.Vec2::splat(64.0F)
+  let map_size = @math.Vec2::splat(320.0F)
+  let half_x = (map_size.x / 2.0F).to_int()
+  let half_y = (map_size.y / 2.0F).to_int()
   let texture = asset_server
     .get()
     .load("textures/rpg/chars/gabe/gabe-idle-run.png")
@@ -78,34 +101,26 @@ fn setup(
     .add(@asset.TextureAtlasLayout::from_grid(@math.UVec2::new(24, 24), 7, 1))
   ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
 
-  for y in -GRID_HALF_Y..<GRID_HALF_Y {
-    for x in -GRID_HALF_X..<GRID_HALF_X {
-      let idx = (y + GRID_HALF_Y) * (GRID_HALF_X * 2) + (x + GRID_HALF_X)
-      let rotation = @math.Quat::from_rotation_z(
-        float_from_int(idx % 360) * 0.017453292519943295F,
+  for y in -half_y..<half_y {
+    for x in -half_x..<half_x {
+      let translation = @math.Vec3::new(
+        Float::from_int(x) * tile_size.x,
+        Float::from_int(y) * tile_size.y,
+        rng.float(),
       )
-      let scale = 0.6F + float_from_int(idx % 5) * 0.3F
-      let fps = 10.0F + float_from_int(idx % 11)
+      let rotation = @math.Quat::from_rotation_z(rng.float())
+      let scale = @math.Vec3::splat(rng.float() * 2.0F)
       ignore(
         commands.spawn(
           (
             @sprite.Sprite::from_atlas_image(
               texture,
-              @asset.TextureAtlas::new(atlas_layout, idx % 7),
-            ).with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
-            @transform.Transform::from_xyz(
-              float_from_int(x) * TILE_SIZE,
-              float_from_int(y) * TILE_SIZE,
-              float_from_int(idx % 100) / 100.0F,
-            )
+              @asset.TextureAtlas::new(atlas_layout, 0),
+            ).with_custom_size(Some(tile_size)),
+            @transform.Transform::from_translation(translation)
             .with_rotation(rotation)
-            .with_scale(@math.Vec3::splat(scale)),
-            AnimationTimer::{
-              timer: @time.Timer::from_seconds(
-                1.0F / fps,
-                @time.TimerMode::Repeating,
-              ),
-            },
+            .with_scale(scale),
+            animation_timer(rng.float()),
           ),
         ),
       )
@@ -116,6 +131,7 @@ fn setup(
 ///|
 fn animate_sprites(
   time : @app.Res[@time.Time[Unit]],
+  texture_atlas_layouts : @app.Res[@asset.Assets[@asset.TextureAtlasLayout]],
   sprites : @ecs.Query[
     (@ecs.Write[AnimationTimer], @ecs.Write[@sprite.Sprite]),
     @ecs.All,
@@ -132,7 +148,12 @@ fn animate_sprites(
     }
     sprite.modify(fn(value) {
       guard value.texture_atlas is Some(atlas) else { return }
-      value.texture_atlas = Some(atlas.with_index((atlas.index + 1) % 7))
+      guard texture_atlas_layouts.get().get(atlas.layout) is Some(layout) else {
+        abort("many_animated_sprites texture atlas layout must remain loaded")
+      }
+      value.texture_atlas = Some(
+        atlas.with_index((atlas.index + 1) % layout.len()),
+      )
     })
   })
 }
@@ -142,17 +163,12 @@ fn move_camera(
   time : @app.Res[@time.Time[Unit]],
   camera : @ecs.Query[
     @ecs.Write[@transform.Transform],
-    @ecs.With[@camera_components2d.Camera2d],
+    @ecs.With[@camera_camera.Camera],
   ],
 ) -> Unit {
   try! camera.for_each(fn(_entity, transform) {
     transform.modify(fn(value) {
-      value.rotation = @math.Quat::from_rotation_z(
-        time.get().elapsed_secs() * 0.5F,
-      )
-      value.translation = value.translation.add(
-        @math.Vec3::new(CAMERA_SPEED * time.get().delta_secs(), 0.0F, 0.0F),
-      )
+      advance_camera_transform(value, time.get().delta_secs())
     })
   })
 }
@@ -160,34 +176,48 @@ fn move_camera(
 ///|
 fn print_sprite_count(
   time : @app.Res[@time.Time[Unit]],
-  timer : @app.ResMut[PrintTimer],
-  sprites : @ecs.Query[@ecs.Read[AnimationTimer], @ecs.All],
+  timer : @app.Local[PrintingTimer],
+  sprites : @ecs.Query[@ecs.Read[@sprite.Sprite], @ecs.All],
 ) -> Unit {
-  let should_print = timer.modify(fn(value) {
-    value.seconds += time.get().delta_secs()
-    if value.seconds < 1.0F {
-      false
-    } else {
-      value.seconds -= 1.0F
-      true
-    }
-  })
-  if !should_print {
+  let next_timer = timer.get().timer.tick(time.get().delta())
+  timer.set(PrintingTimer::{ timer: next_timer })
+  if !next_timer.just_finished() {
     return
   }
-  println("Animated sprites: \{sprites.count()}")
+  println("Sprites: \{sprites.count()}")
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .insert_resource(PrintTimer::PrintTimer())
+  .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
+  .add_plugins(
+    @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
+  )
+  .add_plugins(
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    }),
+  )
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
   .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_sprites)
-  .add_systems_param2(@app.Update, move_camera)
-  .add_systems_param3(@app.Update, print_sprite_count)
+  .add_systems_param3(@app.Update, animate_sprites)
+  .add_systems(
+    @app.Update,
+    @app.system_config_param3(print_sprite_count).named(
+      "examples.stress_tests.many_animated_sprites.print_sprite_count",
+    ),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system_config_param2(move_camera).after(
+      @app.system_set(
+        "examples.stress_tests.many_animated_sprites.print_sprite_count",
+      ),
+    ),
+  )
   .run()
 }
