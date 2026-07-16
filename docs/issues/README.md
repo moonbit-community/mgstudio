@@ -571,6 +571,7 @@ graph TD
   ISS_457["ISS-457: Restore delayed-frame visibility in many animated sprites"]
   ISS_458["ISS-458: Restore sprite_slice texture rendering"]
   ISS_459["ISS-459: Reject query cursors invalidated by World lifecycle changes"]
+  ISS_460["ISS-460: Preserve render-world cluster buffer ownership"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004

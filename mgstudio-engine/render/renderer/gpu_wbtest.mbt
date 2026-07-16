@@ -2540,6 +2540,40 @@ test "renderer: replacing mesh3d cluster buffers keeps handles bounded" {
 }
 
 ///|
+test "renderer: source-owned mesh3d cluster buffers reject legacy uploads" {
+  let backend = GpuBackend::new()
+  ensure_mesh3d_pipeline_layout_resources(backend)
+  let usage = bu(
+    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+  )
+  let clustered_lights = backend.device.create_buffer(size=16UL, usage~)
+  let object_indices = backend.device.create_buffer(size=16UL, usage~)
+  let offsets_and_counts = backend.device.create_buffer(size=16UL, usage~)
+  backend.use_mesh3d_cluster_buffers(
+    clustered_lights,
+    16UL,
+    object_indices,
+    16UL,
+    offsets_and_counts,
+    16UL,
+  )
+  clustered_lights.release()
+  object_indices.release()
+  offsets_and_counts.release()
+
+  backend.device.push_error_scope(@wgpu.ERROR_FILTER_VALIDATION)
+  backend.prepare_mesh3d_cluster_buffers(
+    Bytes::make(32, (0).to_byte()),
+    Bytes::make(32, (0).to_byte()),
+    Bytes::make(32, (0).to_byte()),
+  )
+  let result = backend.device.pop_error_scope_sync_result(backend.instance)
+  let no_legacy_overwrite = result.error_type == @wgpu.ERROR_TYPE_NO_ERROR
+  backend.shutdown()
+  debug_inspect(no_legacy_overwrite, content="true")
+}
+
+///|
 test "renderer: mesh3d runtime flags infer two-component normal map format" {
   let backend = GpuBackend::new()
   let fallback_texture = ensure_normal_map_fallback_texture(backend)

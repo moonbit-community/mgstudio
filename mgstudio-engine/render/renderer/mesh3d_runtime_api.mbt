@@ -109,6 +109,9 @@ pub fn GpuBackend::prepare_mesh3d_cluster_buffers(
   clusterable_object_index_lists_bytes : Bytes,
   cluster_offsets_and_counts_bytes : Bytes,
 ) -> Unit {
+  if self.mesh3d_cluster_buffers_source_owned {
+    return
+  }
   ensure_mesh3d_view_binding_buffers(self)
   guard self.mesh3d_clustered_lights_buf is Some(clustered_lights_buf) else {
     return
@@ -163,6 +166,7 @@ pub fn GpuBackend::use_mesh3d_cluster_buffers(
     cluster_offsets_and_counts_buffer,
   )
   self.mesh3d_cluster_offsets_and_counts_size = cluster_offsets_and_counts_size
+  self.mesh3d_cluster_buffers_source_owned = true
 }
 
 ///|

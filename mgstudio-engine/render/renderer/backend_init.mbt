@@ -317,6 +317,7 @@ fn gpu_backend_new_from_instance(
     mesh3d_clusterable_object_index_lists_size: 0UL,
     mesh3d_cluster_offsets_and_counts_buf: None,
     mesh3d_cluster_offsets_and_counts_size: 0UL,
+    mesh3d_cluster_buffers_source_owned: false,
     mesh3d_clustered_decals_buf: None,
     mesh3d_clustered_decals_capacity: 0UL,
     mesh3d_clustered_decals_revision: 0,
