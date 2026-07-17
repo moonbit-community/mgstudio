@@ -181,16 +181,45 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     start_entities.push((entity, parent_visible))
   }
 
-  for entity in world.changed_components(ecs_key_visibility, tick).read() {
-    add_start_entity(world, start_entities, start_seen, entity)
+  let changed_query : @ecs.Query[
+    @core.Entity,
+    (
+      @ecs.With[Visibility],
+      @ecs.With[InheritedVisibility],
+      @ecs.Or[(@ecs.Changed[Visibility], @ecs.Changed[@hierarchy.Parent])],
+    ),
+  ] = @ecs.query_filtered(
+    world,
+    (
+      @ecs.With::new(ecs_key_visibility),
+      @ecs.With::new(ecs_key_inherited_visibility),
+      @ecs.Or::new(
+        (
+          @ecs.Changed::new(ecs_key_visibility),
+          @ecs.Changed::new(@hierarchy.ecs_key_parent),
+        ),
+      ),
+    ),
+  )
+  let used_batch = try! changed_query.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
+    try! rows.for_each(fn(row_index) {
+      add_start_entity(
+        world,
+        start_entities,
+        start_seen,
+        batch.entity(row_index),
+      )
+    })
+  })
+  if !used_batch {
+    try! changed_query.for_each(fn(_entity, changed_entity) {
+      add_start_entity(world, start_entities, start_seen, changed_entity)
+    })
   }
-  for entity in world.added_components(ecs_key_visibility, tick).read() {
-    add_start_entity(world, start_entities, start_seen, entity)
-  }
-  for entity in world.changed_components(@hierarchy.ecs_key_parent, tick).read() {
-    add_start_entity(world, start_entities, start_seen, entity)
-  }
-  for entity in world.added_components(@hierarchy.ecs_key_parent, tick).read() {
+  for entity in world.removed_components(@hierarchy.ecs_key_parent, tick).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
   if start_entities.length() == 0 {
