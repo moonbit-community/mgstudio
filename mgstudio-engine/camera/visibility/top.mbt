@@ -185,11 +185,27 @@ pub impl @ecs.Component for CascadesVisibleEntities with fn component() {
 }
 
 ///|
-fn visibility_radius_vec3(
+fn visibility_radius_aabb(
   world_from_local : @math.Affine3,
-  extents : @math.Vec3,
+  aabb : @camera_primitives.Aabb,
 ) -> Float {
-  world_from_local.matrix3.mul_vec3(extents).length()
+  let half_x = aabb.half_extents_x()
+  let half_y = aabb.half_extents_y()
+  let half_z = aabb.half_extents_z()
+  let transformed_x = world_from_local.matrix3.x_axis.x * half_x +
+    world_from_local.matrix3.y_axis.x * half_y +
+    world_from_local.matrix3.z_axis.x * half_z
+  let transformed_y = world_from_local.matrix3.x_axis.y * half_x +
+    world_from_local.matrix3.y_axis.y * half_y +
+    world_from_local.matrix3.z_axis.y * half_z
+  let transformed_z = world_from_local.matrix3.x_axis.z * half_x +
+    world_from_local.matrix3.y_axis.z * half_y +
+    world_from_local.matrix3.z_axis.z * half_z
+  @math.sqrt(
+    transformed_x * transformed_x +
+    transformed_y * transformed_y +
+    transformed_z * transformed_z,
+  )
 }
 
 ///|
@@ -199,9 +215,23 @@ fn visibility_cull_aabb(
   global_transform : @transform.GlobalTransform,
 ) -> Bool {
   let world_from_local = global_transform.affine()
-  let model_sphere = @camera_primitives.Sphere::new(
-    world_from_local.transform_point3(aabb.center()),
-    visibility_radius_vec3(world_from_local, aabb.half_size()),
+  let center_x = world_from_local.matrix3.x_axis.x * aabb.center_x() +
+    world_from_local.matrix3.y_axis.x * aabb.center_y() +
+    world_from_local.matrix3.z_axis.x * aabb.center_z() +
+    world_from_local.translation.x
+  let center_y = world_from_local.matrix3.x_axis.y * aabb.center_x() +
+    world_from_local.matrix3.y_axis.y * aabb.center_y() +
+    world_from_local.matrix3.z_axis.y * aabb.center_z() +
+    world_from_local.translation.y
+  let center_z = world_from_local.matrix3.x_axis.z * aabb.center_x() +
+    world_from_local.matrix3.y_axis.z * aabb.center_y() +
+    world_from_local.matrix3.z_axis.z * aabb.center_z() +
+    world_from_local.translation.z
+  let model_sphere = @camera_primitives.Sphere::from_xyz(
+    center_x,
+    center_y,
+    center_z,
+    visibility_radius_aabb(world_from_local, aabb),
   )
   !frustum.intersects_sphere(model_sphere, false) ||
   !frustum.intersects_obb(aabb, world_from_local, true, false)

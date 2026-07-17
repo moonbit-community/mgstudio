@@ -156,3 +156,30 @@ test "camera/primitives: light frusta containers default to Bevy empty shape" {
   cascades.clear()
   debug_inspect(cascades.get(view).length(), content="0")
 }
+
+///|
+test "camera/primitives: Sphere intersects transformed Aabb" {
+  let aabb = Aabb::from_min_max_xyz(
+    -1.0F,
+    -1.0F,
+    -1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+  )
+  let world_from_local = @math.Affine3::from_translation(
+    @math.Vec3::new(2.0F, 0.0F, 0.0F),
+  )
+  debug_inspect(
+    Sphere::from_xyz(4.0F, 0.0F, 0.0F, 1.0F).intersects_obb(
+      aabb, world_from_local,
+    ),
+    content="true",
+  )
+  debug_inspect(
+    Sphere::from_xyz(7.0F, 0.0F, 0.0F, 1.0F).intersects_obb(
+      aabb, world_from_local,
+    ),
+    content="false",
+  )
+}

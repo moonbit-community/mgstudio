@@ -50,10 +50,16 @@ pub struct Aabb {
   half_extents_z : Float
 } derive(Eq, @debug.Debug)
 pub fn Aabb::center(Self) -> @math.Vec3
+pub fn Aabb::center_x(Self) -> Float
+pub fn Aabb::center_y(Self) -> Float
+pub fn Aabb::center_z(Self) -> Float
 pub fn Aabb::equals(Self, Self) -> Bool
 pub fn Aabb::from_math(@math.Aabb3d) -> Self
 pub fn Aabb::from_min_max(@math.Vec3, @math.Vec3) -> Self
 pub fn Aabb::from_min_max_xyz(Float, Float, Float, Float, Float, Float) -> Self
+pub fn Aabb::half_extents_x(Self) -> Float
+pub fn Aabb::half_extents_y(Self) -> Float
+pub fn Aabb::half_extents_z(Self) -> Float
 pub fn Aabb::half_size(Self) -> @math.Vec3
 pub fn Aabb::to_math(Self) -> @math.Aabb3d
 pub impl @ecs.Component for Aabb
@@ -98,11 +104,14 @@ pub fn Frustum::view_frustum(Self) -> ViewFrustum
 pub impl @ecs.Component for Frustum
 
 pub struct Sphere {
-  center : @math.Vec3
+  center_x : Float
+  center_y : Float
+  center_z : Float
   radius : Float
 }
 pub fn Sphere::Sphere() -> Self
 pub fn Sphere::center(Self) -> @math.Vec3
+pub fn Sphere::from_xyz(Float, Float, Float, Float) -> Self
 pub fn Sphere::intersects_obb(Self, Aabb, @math.Affine3) -> Bool
 pub fn Sphere::new(@math.Vec3, Float) -> Self
 pub fn Sphere::radius(Self) -> Float
