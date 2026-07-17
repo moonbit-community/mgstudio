@@ -33,11 +33,6 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
   )
   try! world.set_by_key(
     camera,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::layer(0),
-  )
-  try! world.set_by_key(
-    camera,
     @camera_primitives.ecs_key_frustum,
     @camera_primitives.Frustum::default_2d(),
   )
@@ -71,11 +66,6 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
       ),
     )
   }
-  try! world.set_by_key(
-    visible_mesh,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::layer(0),
-  )
   try! world.set_by_key(
     hidden_layer_mesh,
     @camera_render_layers.ecs_key_render_layers,

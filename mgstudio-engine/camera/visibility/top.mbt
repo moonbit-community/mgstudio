@@ -293,7 +293,7 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
     }
     let view_mask = view_layers
       .value()
-      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+      .unwrap_or(@camera_render_layers.default_layers)
     visible_entities.modify(fn(value) {
       value.clear_all()
       try! visible_query.for_each_table(fn(batch) {
@@ -326,7 +326,7 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
           }
           let entity_layers = match render_layers {
             Some(column) => column.value(row_index)
-            None => @camera_render_layers.RenderLayers::RenderLayers()
+            None => @camera_render_layers.default_layers
           }
           if !view_mask.intersects(entity_layers) {
             continue
