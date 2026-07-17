@@ -236,6 +236,32 @@ test "ecs table batch: read view exposes complete live column" {
 }
 
 ///|
+test "ecs table batch: entity view exposes complete live table" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(first, table_batch_velocity_key, TableBatchVelocity::{
+    value: 10,
+  })
+  try! world.set_by_key(second, table_batch_velocity_key, TableBatchVelocity::{
+    value: 20,
+  })
+  let query : Query[ReadValue[TableBatchVelocity], All] = query(world)
+  let seen : Array[Int] = []
+
+  try! query.for_each_table(fn(batch) {
+    batch.with_entities(fn(entities) {
+      for entity in entities {
+        seen.push(entity.id)
+      }
+    })
+  })
+
+  debug_inspect(seen, content="[0, 1]")
+}
+
+///|
 test "ecs table batch: update_inplace replaces value components and marks changed" {
   let world = World::new()
   defer world.close()
@@ -406,6 +432,26 @@ test "panic ecs table batch: read view rejects filtered row batches" {
       batch.read(table_batch_velocity_key).unwrap().with_values(fn(_values) {
         ()
       })
+    }),
+  )
+}
+
+///|
+test "panic ecs table batch: entity view rejects filtered row batches" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_velocity_key, TableBatchVelocity::{
+    value: 10,
+  })
+  let query : Query[ReadValue[TableBatchVelocity], Changed[TableBatchVelocity]] = query_filtered(
+    world,
+    Changed::new(table_batch_velocity_key),
+  )
+
+  ignore(
+    try! query.try_for_each_filtered_table(fn(batch, _rows) {
+      batch.with_entities(fn(_entities) { () })
     }),
   )
 }

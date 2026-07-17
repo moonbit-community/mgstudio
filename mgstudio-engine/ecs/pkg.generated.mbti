@@ -684,6 +684,7 @@ pub fn QueryTableBatch::entity(Self, Int) -> @core.Entity
 pub fn[T] QueryTableBatch::has(Self, ComponentKey[T]) -> Bool
 pub fn QueryTableBatch::length(Self) -> Int
 pub fn[T] QueryTableBatch::read(Self, ComponentKey[T]) -> TableBatchRead[T]?
+pub fn QueryTableBatch::with_entities(Self, (ArrayView[@core.Entity]) -> Unit) -> Unit
 pub fn[T] QueryTableBatch::write(Self, ComponentKey[T]) -> TableBatchWrite[T]?
 
 pub struct QueryTableRows {

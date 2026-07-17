@@ -215,6 +215,24 @@ pub fn QueryTableBatch::entity(
 }
 
 ///|
+/// Provides one callback-scoped view of this complete table's entity column.
+///
+/// The view covers only live entity rows and is valid only during `read`.
+/// Retaining it after the callback is invalid. This operation is available
+/// only from `Query::for_each_table`; filtered row batches must preserve their
+/// exact row matcher and use `QueryTableBatch::entity`.
+pub fn QueryTableBatch::with_entities(
+  self : QueryTableBatch,
+  read : (ArrayView[@core.Entity]) -> Unit,
+) -> Unit {
+  if !self.scope.whole_table {
+    abort("QueryTableBatch::with_entities requires Query::for_each_table")
+  }
+  let entities = self.scope.entities_or_abort()
+  read(entities[:])
+}
+
+///|
 /// Visits the physical table rows that satisfy the query filter.
 ///
 /// This row set is valid only for the duration of its
