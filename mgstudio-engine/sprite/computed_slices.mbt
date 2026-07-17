@@ -294,7 +294,7 @@ fn compute_sprite_slices(
 ) -> ComputedTextureSlices? {
   let (image_size, texture_rect) = match sprite.texture_atlas {
     Some(atlas) =>
-      match texture_atlas_layouts.get(atlas.layout()) {
+      match atlas.layout_asset(texture_atlas_layouts) {
         Some(layout) =>
           match atlas.texture_rect(texture_atlas_layouts) {
             Some(rect) => (layout.size().to_vec2(), rect.as_rect())

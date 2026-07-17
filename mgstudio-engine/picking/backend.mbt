@@ -95,7 +95,7 @@ fn sprite_region_size(sprite : @sprite.Sprite) -> @math.Vec2 {
   )
   let atlas_rect = match sprite.texture_atlas {
     Some(atlas) =>
-      match @asset.asset_get_texture_atlas_layout(atlas.layout) {
+      match @asset.asset_get_texture_atlas_layout(atlas.layout()) {
         Some(layout_value) =>
           if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
             Some(layout_value.textures[atlas.index].as_rect())

@@ -661,11 +661,12 @@ pub fn[T] SavedAssetBuilder::build(Self, T) -> SavedAsset[T]
 pub fn SavedAssetBuilder::new(AssetServer, AssetPath) -> Self
 
 pub struct TextureAtlas {
-  layout : Handle[TextureAtlasLayout]
   index : Int
+  // private fields
 }
 pub fn TextureAtlas::index(Self) -> Int
 pub fn TextureAtlas::layout(Self) -> Handle[TextureAtlasLayout]
+pub fn TextureAtlas::layout_asset(Self, Assets[TextureAtlasLayout]) -> TextureAtlasLayout?
 pub fn TextureAtlas::new(Handle[TextureAtlasLayout], Int) -> Self
 pub fn TextureAtlas::texture_rect(Self, Assets[TextureAtlasLayout]) -> @math.URect?
 pub fn TextureAtlas::with_index(Self, Int) -> Self

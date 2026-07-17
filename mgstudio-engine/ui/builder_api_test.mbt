@@ -63,7 +63,7 @@ test "ui: atlas image builder keeps image and atlas together" {
   let image_node = ImageNode::from_atlas_image(image, texture_atlas)
   debug_inspect(image_node.image.id() == image.id(), content="true")
   let has_matching_atlas = match image_node.texture_atlas {
-    Some(atlas) => atlas.index == 3 && atlas.layout.id() == 9
+    Some(atlas) => atlas.index == 3 && atlas.layout().id() == 9
     None => false
   }
   debug_inspect(has_matching_atlas, content="true")

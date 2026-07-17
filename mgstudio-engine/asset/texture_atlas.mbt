@@ -131,23 +131,25 @@ pub fn TextureAtlasLayout::texture(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_image/src/texture_atlas.rs::TextureAtlas`.
+// Bevy stores this as an inline component field. MoonBit value types cannot
+// contain the current generic reference-typed Handle, so preserve the same
+// value semantics by storing its scalar asset id.
+#valtype
 pub struct TextureAtlas {
-  layout : Handle[TextureAtlasLayout]
+  priv layout_id : Int
   index : Int
 }
 
 ///|
 pub impl ToJson for TextureAtlas with fn to_json(self) {
-  (self.layout, self.index).to_json()
+  (self.layout_id, self.index).to_json()
 }
 
 ///|
 pub impl @json.FromJson for TextureAtlas with fn from_json(json, path) {
-  let (layout, index) : (Handle[TextureAtlasLayout], Int) = @json.from_json(
-    json,
-    path~,
-  )
-  TextureAtlas::{ layout, index }
+  let (layout_id, index) : (Int, Int) = @json.from_json(json, path~)
+  TextureAtlas::{ layout_id, index }
 }
 
 ///|
@@ -155,7 +157,7 @@ pub fn TextureAtlas::new(
   layout : Handle[TextureAtlasLayout],
   index : Int,
 ) -> TextureAtlas {
-  TextureAtlas::{ layout, index }
+  TextureAtlas::{ layout_id: layout.id(), index }
 }
 
 ///|
@@ -171,12 +173,12 @@ pub fn TextureAtlas::with_layout(
   self : TextureAtlas,
   layout : Handle[TextureAtlasLayout],
 ) -> TextureAtlas {
-  TextureAtlas::{ ..self, layout, }
+  TextureAtlas::{ ..self, layout_id: layout.id() }
 }
 
 ///|
 pub fn TextureAtlas::layout(self : TextureAtlas) -> Handle[TextureAtlasLayout] {
-  self.layout
+  Handle::new(self.layout_id)
 }
 
 ///|
@@ -185,11 +187,19 @@ pub fn TextureAtlas::index(self : TextureAtlas) -> Int {
 }
 
 ///|
+pub fn TextureAtlas::layout_asset(
+  self : TextureAtlas,
+  layouts : Assets[TextureAtlasLayout],
+) -> TextureAtlasLayout? {
+  layouts.get_by_id(self.layout_id)
+}
+
+///|
 pub fn TextureAtlas::texture_rect(
   self : TextureAtlas,
   layouts : Assets[TextureAtlasLayout],
 ) -> @math.URect? {
-  if layouts.get(self.layout) is Some(layout_value) {
+  if self.layout_asset(layouts) is Some(layout_value) {
     if self.index >= 0 && self.index < layout_value.textures.length() {
       return Some(layout_value.textures[self.index])
     }
@@ -224,7 +234,7 @@ pub fn TextureAtlasSources::handle(
   texture : Handle[Image],
 ) -> TextureAtlas? {
   if self.texture_index(texture) is Some(index) {
-    Some(TextureAtlas::{ layout, index })
+    Some(TextureAtlas::new(layout, index))
   } else {
     None
   }

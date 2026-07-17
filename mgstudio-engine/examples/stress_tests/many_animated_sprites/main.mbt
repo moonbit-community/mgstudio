@@ -152,7 +152,7 @@ fn animate_sprites(
           }
           let sprite = sprite_values.peek(row_index)
           guard sprite.texture_atlas is Some(atlas) else { continue }
-          guard layouts.get(atlas.layout) is Some(layout) else {
+          guard atlas.layout_asset(layouts) is Some(layout) else {
             abort(
               "many_animated_sprites texture atlas layout must remain loaded",
             )

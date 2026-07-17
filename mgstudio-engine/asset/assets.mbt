@@ -164,7 +164,11 @@ pub fn[T] Assets::reserve_handle(self : Assets[T]) -> Handle[T] {
 
 ///|
 pub fn[T] Assets::get(self : Assets[T], handle : Handle[T]) -> T? {
-  let id = handle.id()
+  self.get_by_id(handle.id())
+}
+
+///|
+fn[T] Assets::get_by_id(self : Assets[T], id : Int) -> T? {
   if id < 0 || id >= self.items.length() {
     None
   } else {

@@ -126,7 +126,7 @@ fn encode_image_handle(handle : @asset.Handle[@asset.Image]) -> Json {
 
 ///|
 fn encode_texture_atlas(texture_atlas : @asset.TextureAtlas) -> Json {
-  (texture_atlas.layout.id(), texture_atlas.index).to_json()
+  (texture_atlas.layout().id(), texture_atlas.index).to_json()
 }
 
 ///|

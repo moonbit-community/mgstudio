@@ -1615,7 +1615,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   }
 
   fn atlas_rect_for(atlas : @asset.TextureAtlas) -> @math.Rect? {
-    match @asset.asset_get_texture_atlas_layout(atlas.layout) {
+    match @asset.asset_get_texture_atlas_layout(atlas.layout()) {
       Some(layout_value) =>
         if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
           Some(layout_value.textures[atlas.index].as_rect())
