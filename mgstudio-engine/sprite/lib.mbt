@@ -198,6 +198,10 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   )
   let changed_sprite_mesh_or_anchor_entities : @hashset.HashSet[UInt64] = @hashset.HashSet([],
   )
+  let collect_changes_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.collect_changes",
+  )
   if !first_run {
     let tick = world.get_tick_context().ticks()
     for entity in world.added_components(@mesh.ecs_key_mesh2d, tick).read() {
@@ -227,7 +231,16 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       sprite_insert_entity_key(changed_sprite_mesh_or_anchor_entities, entity)
     }
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.collect_changes",
+    collect_changes_trace_start_us,
+  )
 
+  let scan_mesh2d_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.scan_mesh2d",
+  )
   if has_mesh2d {
     let mesh2d_query : @ecs.Query[
       ((@ecs.Read[Mesh2d], @ecs.Has[@camera_primitives.Aabb]), @ecs.Has[Sprite]),
@@ -268,7 +281,16 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       }
     })
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.scan_mesh2d",
+    scan_mesh2d_trace_start_us,
+  )
 
+  let scan_sprites_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.scan_sprites",
+  )
   if has_sprite {
     let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
     let sprite_query : @ecs.Query[
@@ -313,6 +335,15 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       }
     })
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.scan_sprites",
+    scan_sprites_trace_start_us,
+  )
+  let scan_sprite_mesh_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.scan_sprite_mesh",
+  )
   if has_sprite_mesh {
     let atlas_layout_assets : @asset.Assets[@asset.TextureAtlasLayout] = @asset.asset_assets_or_abort()
     let sprite_mesh_query : @ecs.Query[
@@ -355,9 +386,39 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
       }
     })
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.scan_sprite_mesh",
+    scan_sprite_mesh_trace_start_us,
+  )
+  let apply_aabbs_trace_start_us = @app.timeline_trace_begin_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.apply_aabbs",
+  )
   for entry in pending_aabbs {
     sprite_set_or_replace_aabb(world, entry.0, entry.1)
   }
+  @app.timeline_trace_end_span(
+    @app.TimelineTraceCategory::System,
+    "sprite_bounds.apply_aabbs",
+    apply_aabbs_trace_start_us,
+  )
+  @app.timeline_trace_emit_counter_int(
+    "sprite_bounds.changed_mesh2d_entities",
+    changed_mesh2d_entities.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "sprite_bounds.changed_sprite_or_anchor_entities",
+    changed_sprite_or_anchor_entities.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "sprite_bounds.changed_sprite_mesh_or_anchor_entities",
+    changed_sprite_mesh_or_anchor_entities.length(),
+  )
+  @app.timeline_trace_emit_counter_int(
+    "sprite_bounds.pending_aabbs",
+    pending_aabbs.length(),
+  )
 }
 
 ///|
