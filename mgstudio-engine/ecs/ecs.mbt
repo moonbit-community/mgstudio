@@ -117,15 +117,19 @@ let ecs_id_allocator_state : EcsIdAllocatorState = {
 ///|
 pub fn[T] register_component(
   debug_name? : String = "",
-  finalizer? : (T) -> Unit = fn(_value : T) { () },
+  finalizer? : (T) -> Unit,
 ) -> ComponentKey[T] {
   let id = ecs_id_allocator_state.next_component_id
   ecs_id_allocator_state.next_component_id = id + 1
   ignore(component_metadata_ensure(id, debug_name~))
+  let (finalize_value, has_custom_finalizer) = match finalizer {
+    Some(finalize_value) => (finalize_value, true)
+    None => (fn(_value : T) { () }, false)
+  }
   let key = ComponentKey::{
     id,
     debug_name,
-    access: component_access_new(id, finalizer~),
+    access: component_access_new(id, finalize_value, has_custom_finalizer),
   }
   key
 }

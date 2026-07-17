@@ -16,8 +16,9 @@
 const CAMERA_SPEED : Float = 1000.0F
 
 ///|
+#valtype
 struct AnimationTimer {
-  mut timer : @time.Timer
+  timer : @time.Timer
 }
 
 ///|
@@ -137,23 +138,28 @@ fn animate_sprites(
     @ecs.All,
   ],
 ) -> Unit {
-  try! sprites.for_each(fn(_entity, data) {
-    let (timer, sprite) = data
-    let next_timer = timer.modify(fn(value) {
-      value.timer = value.timer.tick(time.get().delta())
-      value.timer
-    })
-    if !next_timer.just_finished() {
-      return
-    }
-    sprite.modify(fn(value) {
-      guard value.texture_atlas is Some(atlas) else { return }
-      guard texture_atlas_layouts.get().get(atlas.layout) is Some(layout) else {
-        abort("many_animated_sprites texture atlas layout must remain loaded")
+  let delta = time.get().delta()
+  let layouts = texture_atlas_layouts.get()
+  try! sprites.for_each_table(fn(batch) {
+    let timers = batch.write(animation_timer_key).unwrap()
+    let sprite_values = batch.write(@sprite.ecs_key_sprite).unwrap()
+    timers.update_inplace(fn(timer_values) {
+      for row_index in 0..<timer_values.length() {
+        let next_timer = timer_values[row_index].timer.tick(delta)
+        timer_values[row_index] = AnimationTimer::{ timer: next_timer }
+        if !next_timer.just_finished() {
+          continue
+        }
+        let sprite = sprite_values.peek(row_index)
+        guard sprite.texture_atlas is Some(atlas) else { continue }
+        guard layouts.get(atlas.layout) is Some(layout) else {
+          abort("many_animated_sprites texture atlas layout must remain loaded")
+        }
+        sprite.texture_atlas = Some(
+          atlas.with_index((atlas.index + 1) % layout.len()),
+        )
+        sprite_values.set_changed(row_index)
       }
-      value.texture_atlas = Some(
-        atlas.with_index((atlas.index + 1) % layout.len()),
-      )
     })
   })
 }

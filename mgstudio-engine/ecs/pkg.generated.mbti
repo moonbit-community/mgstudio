@@ -824,6 +824,8 @@ pub fn[T : Component] TableBatchWrite::set_added(Self[T], Int, loc~ : SourceLoc)
 pub fn[T : Component] TableBatchWrite::set_changed(Self[T], Int, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : Eq] TableBatchWrite::set_if_neq(Self[T], Int, T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] TableBatchWrite::update_inplace(Self[T], (MutArrayView[T]) -> Unit, loc~ : SourceLoc) -> Unit
 pub fn[T] TableBatchWrite::value(Self[T], Int) -> T
 
 type TriggerObserverContext

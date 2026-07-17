@@ -29,6 +29,7 @@ struct ComponentAccess[T] {
   swap_remove_table_row : (World, Int, Int) -> Unit
   table_row_count : (World, Int) -> Int
   finalize_value : (T) -> Unit
+  has_custom_finalizer : Bool
 }
 
 ///|
@@ -152,7 +153,8 @@ fn[T] TypedComponentStorage::swap_remove_table_row(
 ///|
 fn[T] component_access_new(
   component_id : Int,
-  finalizer? : (T) -> Unit = fn(_value : T) { () },
+  finalizer : (T) -> Unit,
+  has_custom_finalizer : Bool,
 ) -> ComponentAccess[T] {
   let stores_by_world : Map[Int, TypedComponentStorage[T]] = Map([])
   let finalize_world_id = fn(world_id : Int) {
@@ -356,6 +358,7 @@ fn[T] component_access_new(
       }
     },
     finalize_value: finalizer,
+    has_custom_finalizer,
   }
 }
 
@@ -505,6 +508,13 @@ fn[T] ComponentKey::component_finalize_value(
   value : T,
 ) -> Unit {
   (self.access.finalize_value)(value)
+}
+
+///|
+fn[T] ComponentKey::component_has_custom_finalizer(
+  self : ComponentKey[T],
+) -> Bool {
+  self.access.has_custom_finalizer
 }
 
 ///|

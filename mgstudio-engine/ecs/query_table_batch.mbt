@@ -17,6 +17,7 @@ priv struct QueryTableBatchScope {
   lease : WorldLease
   table_id : Int
   mut entities : Array[@core.Entity]?
+  whole_table : Bool
 }
 
 ///|
@@ -528,6 +529,43 @@ pub fn[T, R] TableBatchWrite::modify(
 }
 
 ///|
+/// Updates every row in this writable table column through one mutable view.
+///
+/// The view covers only the live entity rows and is valid only during
+/// `update`. Retaining it after the callback is invalid. Every row is marked
+/// changed after the callback returns. This operation is available only from
+/// `Query::for_each_table`; a filtered row batch cannot safely update its
+/// whole physical column. Components with custom finalizers must use `set` so
+/// replaced values are finalized.
+#callsite(autofill(loc))
+pub fn[T] TableBatchWrite::update_inplace(
+  self : TableBatchWrite[T],
+  update : (MutArrayView[T]) -> Unit,
+  loc~ : SourceLoc,
+) -> Unit {
+  if !self.scope.whole_table {
+    abort("TableBatchWrite::update_inplace requires Query::for_each_table")
+  }
+  if self.key.component_has_custom_finalizer() {
+    abort(
+      "TableBatchWrite::update_inplace does not support components with custom finalizers",
+    )
+  }
+  let row_count = self.scope.entities_or_abort().length()
+  let values = self.binding.values_or_abort()
+  update(values.mut_view(end=row_count))
+  let world = self.scope.world_or_abort()
+  let tick = component_write_tick(world)
+  let caller = hook_caller_from_loc(world, loc)
+  let column = self.binding.column_or_abort()
+  for row_index in 0..<row_count {
+    if !column.record_changed_at_row(row_index, tick, caller) {
+      abort("table batch write expected change tick metadata")
+    }
+  }
+}
+
+///|
 pub fn[T] TableBatchWrite::bypass_change_detection(
   self : TableBatchWrite[T],
   row_index : Int,
@@ -627,6 +665,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(
         lease: WorldLease::new(world),
         table_id,
         entities: Some(entities),
+        whole_table: true,
       },
       data_access,
       data_mentions_component: fn(component_id) {
@@ -674,6 +713,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::try_for_each_filtered_table(
       lease: WorldLease::new(world),
       table_id,
       entities: Some(entities),
+      whole_table: false,
     }
     let batch = QueryTableBatch::{
       scope,

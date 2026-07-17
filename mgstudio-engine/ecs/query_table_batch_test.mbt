@@ -23,6 +23,12 @@ struct TableBatchVelocity {
 } derive(Eq, Debug)
 
 ///|
+#valtype
+struct TableBatchValuePosition {
+  value : Int
+} derive(Eq, Debug)
+
+///|
 struct TableBatchExcluded {}
 
 ///|
@@ -44,6 +50,11 @@ let table_batch_velocity_key : ComponentKey[TableBatchVelocity] = register_compo
 )
 
 ///|
+let table_batch_value_position_key : ComponentKey[TableBatchValuePosition] = register_component(
+  debug_name="ecs.test.TableBatchValuePosition",
+)
+
+///|
 let table_batch_excluded_key : ComponentKey[TableBatchExcluded] = register_component(
   debug_name="ecs.test.TableBatchExcluded",
 )
@@ -62,6 +73,11 @@ pub impl Component for TableBatchPosition with fn component() {
 ///|
 pub impl Component for TableBatchVelocity with fn component() {
   table_batch_velocity_key
+}
+
+///|
+pub impl Component for TableBatchValuePosition with fn component() {
+  table_batch_value_position_key
 }
 
 ///|
@@ -135,6 +151,51 @@ test "ecs table batch: dense write preserves filters and change detection" {
 }
 
 ///|
+test "ecs table batch: update_inplace replaces value components and marks changed" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(first, table_batch_value_position_key, TableBatchValuePosition::{
+    value: 1,
+  })
+  try! world.set_by_key(second, table_batch_value_position_key, TableBatchValuePosition::{
+    value: 2,
+  })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  let query : Query[Write[TableBatchValuePosition], All] = query(world)
+
+  try! query.for_each_table(fn(batch) {
+    let positions = batch.write(table_batch_value_position_key).unwrap()
+    positions.update_inplace(fn(values) {
+      for row_index in 0..<values.length() {
+        values[row_index] = TableBatchValuePosition::{
+          value: values[row_index].value + 10,
+        }
+      }
+    })
+  })
+
+  debug_inspect(
+    try! world.get_by_key(first, table_batch_value_position_key),
+    content="Some({ value: 11 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(second, table_batch_value_position_key),
+    content="Some({ value: 12 })",
+  )
+  let changed = world
+    .changed_components(
+      table_batch_value_position_key,
+      @core.SystemTicks::new(1, 2),
+    )
+    .read()
+  debug_inspect(changed.contains(first), content="true")
+  debug_inspect(changed.contains(second), content="true")
+}
+
+///|
 test "ecs table batch: writes preserve component replacement finalizers" {
   table_batch_finalized_values.clear()
   let world = World::new()
@@ -158,6 +219,43 @@ test "ecs table batch: writes preserve component replacement finalizers" {
     content="Some({ id: 3 })",
   )
   debug_inspect(table_batch_finalized_values, content="[1, 2]")
+}
+
+///|
+test "panic ecs table batch: update_inplace rejects custom finalizers" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
+    id: 1,
+  })
+  let query : Query[Write[TableBatchFinalized], All] = query(world)
+
+  try! query.for_each_table(fn(batch) {
+    let values = batch.write(table_batch_finalized_key).unwrap()
+    values.update_inplace(fn(_items) { () })
+  })
+}
+
+///|
+test "panic ecs table batch: update_inplace rejects filtered row batches" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
+    value: 1,
+  })
+  let query : Query[Write[TableBatchPosition], Changed[TableBatchPosition]] = query_filtered(
+    world,
+    Changed::new(table_batch_position_key),
+  )
+
+  ignore(
+    try! query.try_for_each_filtered_table(fn(batch, _rows) {
+      let values = batch.write(table_batch_position_key).unwrap()
+      values.update_inplace(fn(_items) { () })
+    }),
+  )
 }
 
 ///|
