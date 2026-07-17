@@ -307,12 +307,7 @@ fn query_filter_bind_table_added_matcher(
   guard table_ref.column(local_component_id) is Some(column) else {
     return fn(_entity, _row_index) { false }
   }
-  fn(_entity, row_index) {
-    match column.added_tick_at_row(row_index) {
-      Some(tick) => ticks.contains(tick)
-      None => false
-    }
-  }
+  fn(_entity, row_index) { column.added_tick_is_in(row_index, ticks) }
 }
 
 ///|
@@ -334,12 +329,7 @@ fn query_filter_bind_table_changed_matcher(
   guard table_ref.column(local_component_id) is Some(column) else {
     return fn(_entity, _row_index) { false }
   }
-  fn(_entity, row_index) {
-    match column.changed_tick_at_row(row_index) {
-      Some(tick) => ticks.contains(tick)
-      None => false
-    }
-  }
+  fn(_entity, row_index) { column.changed_tick_is_in(row_index, ticks) }
 }
 
 ///|

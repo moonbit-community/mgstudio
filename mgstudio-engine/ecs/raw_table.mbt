@@ -167,6 +167,26 @@ fn RawTableColumn::changed_tick_at_row(
 }
 
 ///|
+fn RawTableColumn::added_tick_is_in(
+  self : RawTableColumn,
+  row_index : Int,
+  ticks : @core.SystemTicks,
+) -> Bool {
+  let tick = raw_table_column_kernel_added(self.storage, row_index)
+  tick >= 0 && ticks.contains(tick)
+}
+
+///|
+fn RawTableColumn::changed_tick_is_in(
+  self : RawTableColumn,
+  row_index : Int,
+  ticks : @core.SystemTicks,
+) -> Bool {
+  let tick = raw_table_column_kernel_changed(self.storage, row_index)
+  tick >= 0 && ticks.contains(tick)
+}
+
+///|
 fn RawTableColumn::changed_caller_at_row(
   self : RawTableColumn,
   row_index : Int,
