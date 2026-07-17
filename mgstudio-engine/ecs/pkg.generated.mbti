@@ -802,6 +802,7 @@ pub fn[T] TableBatchRead::is_changed(Self[T], Int) -> Bool
 pub fn[T] TableBatchRead::key(Self[T]) -> ComponentKey[T]
 pub fn[T] TableBatchRead::last_changed(Self[T], Int) -> Int64
 pub fn[T] TableBatchRead::value(Self[T], Int) -> T
+pub fn[T] TableBatchRead::with_values(Self[T], (ArrayView[T]) -> Unit) -> Unit
 
 pub struct TableBatchWrite[T] {
   // private fields

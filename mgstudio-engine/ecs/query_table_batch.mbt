@@ -301,6 +301,24 @@ pub fn[T] TableBatchRead::value(self : TableBatchRead[T], row_index : Int) -> T 
 }
 
 ///|
+/// Provides one callback-scoped read-only view of this complete table column.
+///
+/// The view covers only live entity rows and is valid only during `read`.
+/// Retaining it after the callback is invalid. This operation is available
+/// only from `Query::for_each_table`; filtered row batches must preserve their
+/// exact row matcher and use `TableBatchRead::value`.
+pub fn[T] TableBatchRead::with_values(
+  self : TableBatchRead[T],
+  read : (ArrayView[T]) -> Unit,
+) -> Unit {
+  if !self.scope.whole_table {
+    abort("TableBatchRead::with_values requires Query::for_each_table")
+  }
+  let row_count = self.scope.entities_or_abort().length()
+  read(self.binding.values_or_abort()[:row_count])
+}
+
+///|
 pub fn[T] TableBatchRead::key(self : TableBatchRead[T]) -> ComponentKey[T] {
   self.key
 }

@@ -461,3 +461,37 @@ test "bench ecs: mut query table batch cached" (b : @bench.T) {
     b.keep(try! ecs_bench_mut_query_table_batch_apply(world, cache))
   })
 }
+
+///|
+test "bench ecs: table batch read view cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(102_400)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="table batch value accessor x102400", count=50U, () => {
+    let query : Query[ReadValue[BenchPosition], All] = query_filtered_with_cache(
+      world, All::new(), cache,
+    )
+    let total = Ref(0)
+    try! query.for_each_table(fn(batch) {
+      let positions = batch.read(bench_position_key).unwrap()
+      for row_index in 0..<batch.length() {
+        total.val = total.val + positions.value(row_index).x
+      }
+    })
+    b.keep(total.val)
+  })
+  b.bench(name="table batch read view x102400", count=50U, () => {
+    let query : Query[ReadValue[BenchPosition], All] = query_filtered_with_cache(
+      world, All::new(), cache,
+    )
+    let total = Ref(0)
+    try! query.for_each_table(fn(batch) {
+      batch.read(bench_position_key).unwrap().with_values(fn(positions) {
+        for position in positions {
+          total.val = total.val + position.x
+        }
+      })
+    })
+    b.keep(total.val)
+  })
+}
