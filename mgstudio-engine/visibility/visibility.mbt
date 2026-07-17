@@ -81,6 +81,7 @@ pub fn Visibility::toggle_visible_hidden(self : Visibility) -> Visibility {
 }
 
 ///|
+#valtype
 pub struct InheritedVisibility {
   visible : Bool
 } derive(Eq, Debug)
@@ -122,8 +123,9 @@ pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
 }
 
 ///|
+#valtype
 pub struct ViewVisibility {
-  mut bits : Int
+  bits : Int
 } derive(Eq, Debug)
 
 ///|
@@ -172,8 +174,8 @@ pub fn ViewVisibility::was_visible_now_hidden(self : ViewVisibility) -> Bool {
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::ViewVisibility::update`.
-pub fn ViewVisibility::update(self : ViewVisibility) -> Unit {
-  self.bits = (self.bits & 1) << 1
+pub fn ViewVisibility::update(self : ViewVisibility) -> ViewVisibility {
+  ViewVisibility::{ bits: (self.bits & 1) << 1 }
 }
 
 ///|
@@ -190,8 +192,7 @@ pub impl SetViewVisibility for @ecs.Write[ViewVisibility] with fn set_visible(
   if (current.bits & 1) == 0 {
     if (current.bits & 2) != 0 {
       self.bypass_change_detection(fn(value) {
-        value.bits = value.bits | 1
-        value
+        ViewVisibility::{ bits: value.bits | 1 }
       })
     } else {
       self.set(ViewVisibility::{ bits: current.bits | 1 })

@@ -566,6 +566,30 @@ pub fn[T] TableBatchWrite::update_inplace(
 }
 
 ///|
+/// Updates every row in this writable table column without recording change
+/// ticks, matching Bevy's `bypass_change_detection` semantics for bulk state.
+///
+/// Like `update_inplace`, this is valid only for a complete table column and
+/// rejects components with custom finalizers.
+pub fn[T] TableBatchWrite::update_inplace_bypass_change_detection(
+  self : TableBatchWrite[T],
+  update : (MutArrayView[T]) -> Unit,
+) -> Unit {
+  if !self.scope.whole_table {
+    abort(
+      "TableBatchWrite::update_inplace_bypass_change_detection requires Query::for_each_table",
+    )
+  }
+  if self.key.component_has_custom_finalizer() {
+    abort(
+      "TableBatchWrite::update_inplace_bypass_change_detection does not support components with custom finalizers",
+    )
+  }
+  let row_count = self.scope.entities_or_abort().length()
+  update(self.binding.values_or_abort().mut_view(end=row_count))
+}
+
+///|
 pub fn[T] TableBatchWrite::bypass_change_detection(
   self : TableBatchWrite[T],
   row_index : Int,
