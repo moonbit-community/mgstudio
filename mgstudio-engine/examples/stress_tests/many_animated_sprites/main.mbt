@@ -142,23 +142,27 @@ fn animate_sprites(
   try! sprites.for_each_table(fn(batch) {
     let timers = batch.write(animation_timer_key).unwrap()
     let sprite_values = batch.write(@sprite.ecs_key_sprite).unwrap()
-    timers.update_inplace(fn(timer_values) {
-      for row_index in 0..<timer_values.length() {
-        let next_timer = timer_values[row_index].timer.tick(delta)
-        timer_values[row_index].timer = next_timer
-        if !next_timer.just_finished() {
-          continue
+    sprite_values.with_change_writer(fn(sprite_changes) {
+      timers.update_inplace(fn(timer_values) {
+        for row_index in 0..<timer_values.length() {
+          let next_timer = timer_values[row_index].timer.tick(delta)
+          timer_values[row_index].timer = next_timer
+          if !next_timer.just_finished() {
+            continue
+          }
+          let sprite = sprite_values.peek(row_index)
+          guard sprite.texture_atlas is Some(atlas) else { continue }
+          guard layouts.get(atlas.layout) is Some(layout) else {
+            abort(
+              "many_animated_sprites texture atlas layout must remain loaded",
+            )
+          }
+          sprite.texture_atlas = Some(
+            atlas.with_index((atlas.index + 1) % layout.len()),
+          )
+          sprite_changes.set_changed(row_index)
         }
-        let sprite = sprite_values.peek(row_index)
-        guard sprite.texture_atlas is Some(atlas) else { continue }
-        guard layouts.get(atlas.layout) is Some(layout) else {
-          abort("many_animated_sprites texture atlas layout must remain loaded")
-        }
-        sprite.texture_atlas = Some(
-          atlas.with_index((atlas.index + 1) % layout.len()),
-        )
-        sprite_values.set_changed(row_index)
-      }
+      })
     })
   })
 }

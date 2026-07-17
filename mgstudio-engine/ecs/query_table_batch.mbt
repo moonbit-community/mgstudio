@@ -74,6 +74,42 @@ pub struct TableBatchWrite[T] {
 }
 
 ///|
+/// Callback-scoped change metadata writer for one bound table column.
+///
+/// The table column, change tick, and optional caller location are resolved
+/// once when the writer is created. Use this when reference-typed component
+/// values are mutated in place and only selected rows should be marked changed.
+/// The writer becomes invalid when its callback returns.
+pub struct TableBatchChangeWriter {
+  priv mut active : Bool
+  priv row_count : Int
+  priv column : RawTableColumn
+  priv tick : @core.Tick
+  priv caller_id : Int
+}
+
+///|
+fn TableBatchChangeWriter::invalidate(self : TableBatchChangeWriter) -> Unit {
+  self.active = false
+}
+
+///|
+pub fn TableBatchChangeWriter::set_changed(
+  self : TableBatchChangeWriter,
+  row_index : Int,
+) -> Unit {
+  if !self.active {
+    abort("table batch change writer used outside its callback")
+  }
+  if row_index < 0 || row_index >= self.row_count {
+    abort("table batch change writer row is out of bounds")
+  }
+  if !self.column.record_changed_id_at_row(row_index, self.tick, self.caller_id) {
+    abort("table batch change writer expected change tick metadata")
+  }
+}
+
+///|
 fn QueryTableBatchScope::world_or_abort(self : QueryTableBatchScope) -> World {
   self.lease.world_or_abort()
 }
@@ -510,6 +546,32 @@ pub fn[T : Component] TableBatchWrite::set_changed(
     row_index,
     hook_caller_from_loc(self.scope.world_or_abort(), loc),
   )
+}
+
+///|
+/// Binds change metadata once for selected in-place row mutations.
+///
+/// This preserves ordinary component change detection. It only removes the
+/// repeated table, world-tick, and call-site resolution otherwise performed by
+/// one `set_changed` call per row.
+#callsite(autofill(loc))
+pub fn[T : Component] TableBatchWrite::with_change_writer(
+  self : TableBatchWrite[T],
+  write : (TableBatchChangeWriter) -> Unit,
+  loc~ : SourceLoc,
+) -> Unit {
+  ignore(T::component())
+  let row_count = self.scope.entities_or_abort().length()
+  let world = self.scope.world_or_abort()
+  let writer = TableBatchChangeWriter::{
+    active: true,
+    row_count,
+    column: self.binding.column_or_abort(),
+    tick: component_write_tick(world),
+    caller_id: raw_table_store_changed_caller(hook_caller_from_loc(world, loc)),
+  }
+  defer writer.invalidate()
+  write(writer)
 }
 
 ///|

@@ -204,11 +204,25 @@ fn RawTableColumn::record_changed_at_row(
   tick : @core.Tick,
   caller : String?,
 ) -> Bool {
+  self.record_changed_id_at_row(
+    row_index,
+    tick,
+    raw_table_store_changed_caller(caller),
+  )
+}
+
+///|
+fn RawTableColumn::record_changed_id_at_row(
+  self : RawTableColumn,
+  row_index : Int,
+  tick : @core.Tick,
+  caller_id : Int,
+) -> Bool {
   raw_table_column_kernel_set_changed(
     self.storage,
     row_index,
     raw_table_store_tick(Some(tick)),
-    raw_table_store_changed_caller(caller),
+    caller_id,
   )
 }
 

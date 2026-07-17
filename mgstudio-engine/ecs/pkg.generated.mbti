@@ -792,6 +792,11 @@ pub fn[T : Eq] ResourceMut::set_if_neq(Self[T], T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
 pub fn[T] ResourceMut::update(Self[T], (T) -> T, loc~ : SourceLoc) -> Unit
 
+pub struct TableBatchChangeWriter {
+  // private fields
+}
+pub fn TableBatchChangeWriter::set_changed(Self, Int) -> Unit
+
 pub struct TableBatchRead[T] {
   // private fields
 }
@@ -829,6 +834,8 @@ pub fn[T : Eq] TableBatchWrite::set_if_neq(Self[T], Int, T, loc~ : SourceLoc) ->
 pub fn[T] TableBatchWrite::update_inplace(Self[T], (MutArrayView[T]) -> Unit, loc~ : SourceLoc) -> Unit
 pub fn[T] TableBatchWrite::update_inplace_bypass_change_detection(Self[T], (MutArrayView[T]) -> Unit) -> Unit
 pub fn[T] TableBatchWrite::value(Self[T], Int) -> T
+#callsite(autofill(loc))
+pub fn[T : Component] TableBatchWrite::with_change_writer(Self[T], (TableBatchChangeWriter) -> Unit, loc~ : SourceLoc) -> Unit
 
 type TriggerObserverContext
 

@@ -151,6 +151,65 @@ test "ecs table batch: dense write preserves filters and change detection" {
 }
 
 ///|
+test "ecs table batch: bound change writer marks only selected rows" {
+  let world = World::new(track_change_locations=true)
+  defer world.close()
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(first, table_batch_position_key, TableBatchPosition::{
+    value: 1,
+  })
+  try! world.set_by_key(second, table_batch_position_key, TableBatchPosition::{
+    value: 2,
+  })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  let write_query : Query[Write[TableBatchPosition], All] = query(world)
+
+  try! write_query.for_each_table(fn(batch) {
+    let positions = batch.write(table_batch_position_key).unwrap()
+    positions.with_change_writer(fn(changes) {
+      for row_index in 0..<batch.length() {
+        if batch.entity(row_index) == first {
+          positions.peek(row_index).value += 10
+          changes.set_changed(row_index)
+        }
+      }
+    })
+  })
+
+  let changed = world
+    .changed_components(table_batch_position_key, @core.SystemTicks::new(1, 2))
+    .read()
+  debug_inspect(changed.contains(first), content="true")
+  debug_inspect(changed.contains(second), content="false")
+  let read_query : Query[Read[TableBatchPosition], All] = query(world)
+  let first_value = (try! read_query.get(first)).unwrap()
+  debug_inspect(first_value.value(), content="{ value: 11 }")
+  debug_inspect(first_value.changed_by() is Some(_), content="true")
+}
+
+///|
+test "panic ecs table batch: escaped change writer is invalid" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
+    value: 1,
+  })
+  let query : Query[Write[TableBatchPosition], All] = query(world)
+  let mut escaped : TableBatchChangeWriter? = None
+
+  try! query.for_each_table(fn(batch) {
+    batch
+    .write(table_batch_position_key)
+    .unwrap()
+    .with_change_writer(fn(changes) { escaped = Some(changes) })
+  })
+  escaped.unwrap().set_changed(0)
+}
+
+///|
 test "ecs table batch: read view exposes complete live column" {
   let world = World::new()
   defer world.close()
