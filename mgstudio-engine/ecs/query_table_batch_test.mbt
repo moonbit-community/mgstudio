@@ -519,7 +519,7 @@ test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
   tick_context.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(tick_context)
   let query : Query[
-    (ReadValue[TableBatchPosition], ReadValue[TableBatchVelocity]),
+    (Write[TableBatchPosition], ReadValue[TableBatchVelocity]),
     Or[(Changed[TableBatchPosition], Added[TableBatchVelocity])],
   ] = query_filtered(
     world,
@@ -533,12 +533,16 @@ test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
   let seen : Array[@core.Entity] = []
 
   let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
-    let positions = batch.read(table_batch_position_key).unwrap()
+    let positions = batch.write(table_batch_position_key).unwrap()
     let velocities = batch.read(table_batch_velocity_key).unwrap()
-    try! rows.for_each(fn(row_index) {
-      ignore(positions.value(row_index))
-      ignore(velocities.value(row_index))
-      seen.push(batch.entity(row_index))
+    rows.with_write_values(positions, fn(position_values) {
+      rows.with_read_values(velocities, fn(velocity_values) {
+        try! rows.for_each(fn(row_index) {
+          ignore(position_values[row_index])
+          ignore(velocity_values[row_index])
+          seen.push(batch.entity(row_index))
+        })
+      })
     })
   })
 

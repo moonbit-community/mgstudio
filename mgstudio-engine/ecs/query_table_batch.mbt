@@ -250,6 +250,44 @@ pub fn QueryTableRows::for_each(
 }
 
 ///|
+/// Provides a callback-scoped read view bound to this filtered row set.
+///
+/// The callback still must iterate with `QueryTableRows::for_each`; the view is
+/// the complete physical table column so matching row indices can be resolved
+/// without repeating batch lease and entity validation. The column and rows
+/// must originate from the same batch callback.
+pub fn[T] QueryTableRows::with_read_values(
+  self : QueryTableRows,
+  column : TableBatchRead[T],
+  read : (ArrayView[T]) -> Unit,
+) -> Unit {
+  if !physical_equal(self.scope, column.scope) {
+    abort("filtered table rows and read column must belong to the same batch")
+  }
+  let row_count = self.scope.entities_or_abort().length()
+  read(column.binding.values_or_abort()[:row_count])
+}
+
+///|
+/// Provides a callback-scoped read view of a writable column bound to this
+/// filtered row set.
+///
+/// The returned `ArrayView` cannot replace values. Mutations must still use
+/// `TableBatchWrite` so change ticks, callers, messages, and finalizers remain
+/// synchronized. The callback must iterate with `QueryTableRows::for_each`.
+pub fn[T] QueryTableRows::with_write_values(
+  self : QueryTableRows,
+  column : TableBatchWrite[T],
+  read : (ArrayView[T]) -> Unit,
+) -> Unit {
+  if !physical_equal(self.scope, column.scope) {
+    abort("filtered table rows and write column must belong to the same batch")
+  }
+  let row_count = self.scope.entities_or_abort().length()
+  read(column.binding.values_or_abort()[:row_count])
+}
+
+///|
 pub fn[T] QueryTableBatch::read(
   self : QueryTableBatch,
   key : ComponentKey[T],

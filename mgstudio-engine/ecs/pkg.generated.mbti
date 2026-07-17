@@ -691,6 +691,8 @@ pub struct QueryTableRows {
   // private fields
 }
 pub fn QueryTableRows::for_each(Self, (Int) -> Unit raise EcsError) -> Unit raise EcsError
+pub fn[T] QueryTableRows::with_read_values(Self, TableBatchRead[T], (ArrayView[T]) -> Unit) -> Unit
+pub fn[T] QueryTableRows::with_write_values(Self, TableBatchWrite[T], (ArrayView[T]) -> Unit) -> Unit
 
 type RawTable
 

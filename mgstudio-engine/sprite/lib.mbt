@@ -368,17 +368,23 @@ fn sprite_update_sprite_aabbs(
     let sprites = batch.read(ecs_key_sprite).unwrap()
     let aabbs = batch.write(@camera_primitives.ecs_key_aabb).unwrap()
     let anchors = batch.read(ecs_key_anchor).unwrap()
-    try! rows.for_each(fn(row_index) {
-      changed_count.val = changed_count.val + 1
-      if sprite_sprite_aabb(
-          sprites.value(row_index),
-          anchors.value(row_index),
-          atlas_layout_assets,
-        )
-        is Some(next) &&
-        !sprite_aabbs_equal(aabbs.peek(row_index), next) {
-        aabbs.set(row_index, next)
-      }
+    rows.with_read_values(sprites, fn(sprite_values) {
+      rows.with_read_values(anchors, fn(anchor_values) {
+        rows.with_write_values(aabbs, fn(aabb_values) {
+          try! rows.for_each(fn(row_index) {
+            changed_count.val = changed_count.val + 1
+            if sprite_sprite_aabb(
+                sprite_values[row_index],
+                anchor_values[row_index],
+                atlas_layout_assets,
+              )
+              is Some(next) &&
+              !sprite_aabbs_equal(aabb_values[row_index], next) {
+              aabbs.set(row_index, next)
+            }
+          })
+        })
+      })
     })
   })
   if !used_batch {
