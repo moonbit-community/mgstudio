@@ -165,7 +165,7 @@ test "camera plugin: owns Camera required components" {
 }
 
 ///|
-test "camera projection plugin: updates frustum when transform changes" {
+test "camera projection plugin: updates frustum when transform or projection changes" {
   let lifecycle_world_159_0 = @ecs.World::new()
   defer lifecycle_world_159_0.close()
   let mut app = @app.App::new(lifecycle_world_159_0).add_plugins(
@@ -196,6 +196,26 @@ test "camera projection plugin: updates frustum when transform changes" {
     None => false
   }
   debug_inspect(frustum_after_transform_ok, content="true")
+
+  let updated_projection = @pbr.Projection::Perspective(
+    @pbr.PerspectiveProjection3d::PerspectiveProjection3d().with_far(250.0F),
+  )
+  try! (app
+  .world()
+  .replace(entity, @pbr.ecs_key_projection, updated_projection)
+  |> ignore)
+  app = app.update()
+
+  let frustum_after_projection : @camera_primitives.Frustum? = try! app
+    .world()
+    .get_by_key(entity, @camera_primitives.ecs_key_frustum)
+  let expected_after_projection = updated_projection.compute_frustum(
+    moved_transform,
+  )
+  debug_inspect(
+    frustum_after_projection == Some(expected_after_projection),
+    content="true",
+  )
 }
 
 ///|
