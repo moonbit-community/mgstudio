@@ -1603,26 +1603,6 @@ fn[M : Material] check_typed_entities_needing_specialization_system(
 }
 
 ///|
-fn[M] collect_changed_typed_mesh_material_entities(
-  source_world : @ecs.World,
-  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
-  system_ticks : @core.SystemTicks,
-) -> Map[UInt64, @core.Entity] {
-  let changed_entities : Map[UInt64, @core.Entity] = Map([])
-  for
-    entity in source_world
-    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
-    .read() {
-    changed_entities.set(entity.to_bits(), entity)
-  }
-  for
-    entity in source_world.changed_components(material_key, system_ticks).read() {
-    changed_entities.set(entity.to_bits(), entity)
-  }
-  changed_entities
-}
-
-///|
 fn[M] collect_removed_typed_mesh_material_entities(
   source_world : @ecs.World,
   material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
@@ -1886,61 +1866,94 @@ fn[M : Material] extract_mesh_materials_system(
   }
   instances.modify(fn(value) {
     material_shader_paths.modify(fn(paths) {
-      let changed_entities = collect_changed_typed_mesh_material_entities(
-        source_world, material_key, system_ticks,
-      )
-      for _, entity in changed_entities {
-        if !source_world.is_alive(entity) {
-          continue
-        }
-        guard (try! source_world.get_by_key(entity, material_key))
-          is Some(material) else {
-          continue
-        }
-        let view_visible = match
-          (try! source_world.get_by_key(
-            entity, @visibility.ecs_key_view_visibility,
-          )) {
-          Some(view_visibility) => view_visibility.is_visible()
-          None => false
-        }
-        value.set(entity, material.handle())
-        match
-          world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
-          Some(resolved_slots) =>
-            resolved_slots.modify(fn(slots) {
-              if view_visible {
-                let prepared_handle = PreparedMaterial::prepared_handle(
-                  material.handle(),
-                )
-                match prepared_material_get(prepared_assets, prepared_handle) {
-                  Some(prepared) =>
-                    slots.set_resolved(entity, prepared.resolved_material())
-                  None => slots.set_pending(entity)
+      with_source_world_system_ticks(source_world, system_ticks, fn() {
+        let query : @ecs.Query[
+          (
+            @ecs.ReadValue[@visibility.ViewVisibility],
+            @ecs.ReadValue[MeshMaterial3dTyped[M]],
+          ),
+          @ecs.Or[
+            (
+              @ecs.Changed[@visibility.ViewVisibility],
+              @ecs.Changed[MeshMaterial3dTyped[M]],
+            ),
+          ],
+        ] = @ecs.query_filtered(
+          source_world,
+          @ecs.Or::new(
+            (
+              @ecs.Changed::new(@visibility.ecs_key_view_visibility),
+              @ecs.Changed::new(material_key),
+            ),
+          ),
+        )
+        fn extract_entity(
+          entity : @core.Entity,
+          view_visibility : @visibility.ViewVisibility,
+          material : MeshMaterial3dTyped[M],
+        ) -> Unit {
+          let view_visible = view_visibility.is_visible()
+          value.set(entity, material.handle())
+          match
+            world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
+            Some(resolved_slots) =>
+              resolved_slots.modify(fn(slots) {
+                if view_visible {
+                  let prepared_handle = PreparedMaterial::prepared_handle(
+                    material.handle(),
+                  )
+                  match
+                    prepared_material_get(prepared_assets, prepared_handle) {
+                    Some(prepared) =>
+                      slots.set_resolved(entity, prepared.resolved_material())
+                    None => slots.set_pending(entity)
+                  }
+                } else {
+                  slots.remove(entity)
                 }
-              } else {
-                slots.remove(entity)
-              }
-            })
-          None => ()
-        }
-        if view_visible {
-          for path in shader_paths {
-            paths.insert(Some(path))
+              })
+            None => ()
+          }
+          if view_visible {
+            for path in shader_paths {
+              paths.insert(Some(path))
+            }
+          }
+          match global_instances {
+            Some(global) =>
+              global.modify(fn(global_value) {
+                global_value.extract_mesh_material_id(
+                  entity,
+                  view_visible,
+                  material.handle().id(),
+                )
+              })
+            None => ()
           }
         }
-        match global_instances {
-          Some(global) =>
-            global.modify(fn(global_value) {
-              global_value.extract_mesh_material_id(
-                entity,
-                view_visible,
-                material.handle().id(),
-              )
-            })
-          None => ()
+        let used_batch = try! query.try_for_each_filtered_table(fn(
+          batch,
+          rows,
+        ) {
+          let view_visibilities = batch
+            .read(@visibility.ecs_key_view_visibility)
+            .unwrap()
+          let materials = batch.read(material_key).unwrap()
+          try! rows.for_each(fn(row_index) {
+            extract_entity(
+              batch.entity(row_index),
+              view_visibilities.value(row_index),
+              materials.value(row_index),
+            )
+          })
+        })
+        if !used_batch {
+          try! query.for_each(fn(entity, data) {
+            let (view_visibility, material) = data
+            extract_entity(entity, view_visibility.value(), material.value())
+          })
         }
-      }
+      })
     })
   })
 }
