@@ -58,19 +58,39 @@ test "sprite bounds: new Sprite with Mesh2d still receives the sprite Aabb" {
 test "sprite bounds: equal Aabb replacement preserves change ticks" {
   let world = @ecs.World::new()
   defer world.close()
+  let mut app = @app.App::new(world).add_plugins(SpritePlugin::SpritePlugin())
+  let atlases : @asset.Assets[@asset.TextureAtlasLayout] = @asset.Assets::new()
+  world.insert_resource(@asset.assets_resource_key(), atlases)
+  let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+  world.insert_resource(@asset.assets_resource_key(), meshes)
   let entity = world.spawn()
-  let aabb = @camera_primitives.Aabb::from_min_max(
-    @math.Vec3::new(-2.0F, -3.0F, 0.0F),
-    @math.Vec3::new(2.0F, 3.0F, 0.0F),
+  try! world.set_by_key(
+    entity,
+    ecs_key_sprite,
+    Sprite::sized(@math.Vec2::new(4.0F, 6.0F)),
   )
-  try! world.set_by_key(entity, @camera_primitives.ecs_key_aabb, aabb)
-  world.increment_change_tick() |> ignore
-  world.increment_change_tick() |> ignore
+  try! world.set_by_key(entity, ecs_key_anchor, Anchor::center())
+  let replace_with_equal_sprite = Ref(false)
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if replace_with_equal_sprite.val {
+        try! (world.replace(
+          entity,
+          ecs_key_sprite,
+          Sprite::sized(@math.Vec2::new(4.0F, 6.0F)),
+        )
+        |> ignore)
+        replace_with_equal_sprite.val = false
+      }
+    }),
+  )
+
+  app = app.update()
   let before = world.read_change_tick()
-
-  sprite_set_or_replace_aabb(world, entity, aabb)
-
-  let after = world.increment_change_tick()
+  replace_with_equal_sprite.val = true
+  app = app.update()
+  let after = world.read_change_tick()
   let changed = world
     .changed_components(
       @camera_primitives.ecs_key_aabb,

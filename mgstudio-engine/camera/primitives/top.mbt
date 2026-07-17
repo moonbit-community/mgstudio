@@ -14,11 +14,19 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/primitives.rs`.
+// Bevy stores two inline Vec3A values. MoonBit value types cannot contain the
+// current reference-typed Vec3, so the same six scalars are flattened here.
 
 ///|
+#valtype
 pub struct Aabb {
-  inner : @math.Aabb3d
-}
+  center_x : Float
+  center_y : Float
+  center_z : Float
+  half_extents_x : Float
+  half_extents_y : Float
+  half_extents_z : Float
+} derive(Eq, Debug)
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Sphere`.
@@ -509,27 +517,61 @@ pub impl @ecs.Component for CascadesFrusta with fn component() {
 
 ///|
 pub fn Aabb::from_math(inner : @math.Aabb3d) -> Aabb {
-  Aabb::{ inner, }
+  let center = inner.center()
+  let half_extents = inner.half_size()
+  Aabb::{
+    center_x: center.x,
+    center_y: center.y,
+    center_z: center.z,
+    half_extents_x: half_extents.x,
+    half_extents_y: half_extents.y,
+    half_extents_z: half_extents.z,
+  }
 }
 
 ///|
 pub fn Aabb::to_math(self : Aabb) -> @math.Aabb3d {
-  self.inner
+  @math.Aabb3d::new(self.center(), self.half_size())
+}
+
+///|
+/// Scalar form of Bevy's `Aabb::from_min_max` for allocation-free value paths.
+pub fn Aabb::from_min_max_xyz(
+  min_x : Float,
+  min_y : Float,
+  min_z : Float,
+  max_x : Float,
+  max_y : Float,
+  max_z : Float,
+) -> Aabb {
+  Aabb::{
+    center_x: (max_x + min_x) * 0.5F,
+    center_y: (max_y + min_y) * 0.5F,
+    center_z: (max_z + min_z) * 0.5F,
+    half_extents_x: (max_x - min_x) * 0.5F,
+    half_extents_y: (max_y - min_y) * 0.5F,
+    half_extents_z: (max_z - min_z) * 0.5F,
+  }
 }
 
 ///|
 pub fn Aabb::from_min_max(min : @math.Vec3, max : @math.Vec3) -> Aabb {
-  Aabb::from_math(@math.Aabb3d::from_min_max(min, max))
+  Aabb::from_min_max_xyz(min.x, min.y, min.z, max.x, max.y, max.z)
 }
 
 ///|
 pub fn Aabb::center(self : Aabb) -> @math.Vec3 {
-  self.inner.center()
+  @math.Vec3::new(self.center_x, self.center_y, self.center_z)
 }
 
 ///|
 pub fn Aabb::half_size(self : Aabb) -> @math.Vec3 {
-  self.inner.half_size()
+  @math.Vec3::new(self.half_extents_x, self.half_extents_y, self.half_extents_z)
+}
+
+///|
+pub fn Aabb::equals(self : Aabb, other : Aabb) -> Bool {
+  self == other
 }
 
 ///|
@@ -567,12 +609,7 @@ fn mesh2d_geometry_compute_aabb(geometry : @mesh.Mesh2dGeometry) -> Aabb? {
     }
     index = index + 2
   }
-  Some(
-    Aabb::from_min_max(
-      @math.Vec3::new(min_x, min_y, 0.0F),
-      @math.Vec3::new(max_x, max_y, 0.0F),
-    ),
-  )
+  Some(Aabb::from_min_max_xyz(min_x, min_y, 0.0F, max_x, max_y, 0.0F))
 }
 
 ///|
@@ -609,12 +646,7 @@ fn mesh3d_geometry_compute_aabb(geometry : @mesh.Mesh3dGeometry) -> Aabb? {
       max_z = position.z
     }
   }
-  Some(
-    Aabb::from_min_max(
-      @math.Vec3::new(min_x, min_y, min_z),
-      @math.Vec3::new(max_x, max_y, max_z),
-    ),
-  )
+  Some(Aabb::from_min_max_xyz(min_x, min_y, min_z, max_x, max_y, max_z))
 }
 
 ///|
@@ -665,14 +697,8 @@ fn visibility_write_aabb(
 }
 
 ///|
-fn visibility_vec3_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
-  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
-}
-
-///|
 fn visibility_aabb_eq(lhs : Aabb, rhs : Aabb) -> Bool {
-  visibility_vec3_eq(lhs.center(), rhs.center()) &&
-  visibility_vec3_eq(lhs.half_size(), rhs.half_size())
+  lhs.equals(rhs)
 }
 
 ///|

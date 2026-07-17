@@ -104,9 +104,13 @@ fn sprite_sprite_aabb(
   let half_x = size.x * 0.5F
   let half_y = size.y * 0.5F
   Some(
-    @camera_primitives.Aabb::from_min_max(
-      @math.Vec3::new(center_x - half_x, center_y - half_y, 0.0F),
-      @math.Vec3::new(center_x + half_x, center_y + half_y, 0.0F),
+    @camera_primitives.Aabb::from_min_max_xyz(
+      center_x - half_x,
+      center_y - half_y,
+      0.0F,
+      center_x + half_x,
+      center_y + half_y,
+      0.0F,
     ),
   )
 }
@@ -126,9 +130,13 @@ fn sprite_mesh_aabb(
   let half_x = size.x * 0.5F
   let half_y = size.y * 0.5F
   Some(
-    @camera_primitives.Aabb::from_min_max(
-      @math.Vec3::new(center_x - half_x, center_y - half_y, 0.0F),
-      @math.Vec3::new(center_x + half_x, center_y + half_y, 0.0F),
+    @camera_primitives.Aabb::from_min_max_xyz(
+      center_x - half_x,
+      center_y - half_y,
+      0.0F,
+      center_x + half_x,
+      center_y + half_y,
+      0.0F,
     ),
   )
 }
@@ -138,16 +146,7 @@ fn sprite_aabbs_equal(
   current : @camera_primitives.Aabb,
   next : @camera_primitives.Aabb,
 ) -> Bool {
-  let current_center = current.center()
-  let next_center = next.center()
-  let current_half_size = current.half_size()
-  let next_half_size = next.half_size()
-  current_center.x == next_center.x &&
-  current_center.y == next_center.y &&
-  current_center.z == next_center.z &&
-  current_half_size.x == next_half_size.x &&
-  current_half_size.y == next_half_size.y &&
-  current_half_size.z == next_half_size.z
+  current.equals(next)
 }
 
 ///|

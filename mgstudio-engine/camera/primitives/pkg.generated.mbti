@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
@@ -41,11 +42,18 @@ pub fn update_skinned_mesh_bounds_system(@ecs.World) -> Unit
 
 // Types and methods
 pub struct Aabb {
-  inner : @math.Aabb3d
-}
+  center_x : Float
+  center_y : Float
+  center_z : Float
+  half_extents_x : Float
+  half_extents_y : Float
+  half_extents_z : Float
+} derive(Eq, @debug.Debug)
 pub fn Aabb::center(Self) -> @math.Vec3
+pub fn Aabb::equals(Self, Self) -> Bool
 pub fn Aabb::from_math(@math.Aabb3d) -> Self
 pub fn Aabb::from_min_max(@math.Vec3, @math.Vec3) -> Self
+pub fn Aabb::from_min_max_xyz(Float, Float, Float, Float, Float, Float) -> Self
 pub fn Aabb::half_size(Self) -> @math.Vec3
 pub fn Aabb::to_math(Self) -> @math.Aabb3d
 pub impl @ecs.Component for Aabb
