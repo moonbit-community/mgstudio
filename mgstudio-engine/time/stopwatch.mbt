@@ -17,29 +17,30 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
+#valtype
 pub struct Stopwatch {
-  elapsed : @core.Duration
+  elapsed_nanos : Int64
   paused : Bool
 } derive(Eq, Debug)
 
 ///|
 pub fn Stopwatch::new() -> Stopwatch {
-  Stopwatch::{ elapsed: @core.Duration::zero(), paused: false }
+  Stopwatch::{ elapsed_nanos: 0L, paused: false }
 }
 
 ///|
 pub fn Stopwatch::elapsed(self : Stopwatch) -> @core.Duration {
-  self.elapsed
+  @core.Duration::from_nanos(self.elapsed_nanos)
 }
 
 ///|
 pub fn Stopwatch::elapsed_secs(self : Stopwatch) -> Float {
-  self.elapsed.as_secs_f32()
+  self.elapsed().as_secs_f32()
 }
 
 ///|
 pub fn Stopwatch::elapsed_secs_f64(self : Stopwatch) -> Double {
-  self.elapsed.as_secs_f64()
+  self.elapsed().as_secs_f64()
 }
 
 ///|
@@ -52,7 +53,7 @@ pub fn Stopwatch::set_elapsed(
   self : Stopwatch,
   elapsed : @core.Duration,
 ) -> Stopwatch {
-  Stopwatch::{ ..self, elapsed, }
+  Stopwatch::{ ..self, elapsed_nanos: elapsed.as_nanos() }
 }
 
 ///|
@@ -68,7 +69,10 @@ pub fn Stopwatch::tick(self : Stopwatch, delta : @core.Duration) -> Stopwatch {
   if self.paused || delta.is_zero() {
     self
   } else {
-    Stopwatch::{ ..self, elapsed: self.elapsed.saturating_add(delta) }
+    Stopwatch::{
+      ..self,
+      elapsed_nanos: self.elapsed().saturating_add(delta).as_nanos(),
+    }
   }
 }
 
@@ -89,5 +93,5 @@ pub fn Stopwatch::is_paused(self : Stopwatch) -> Bool {
 
 ///|
 pub fn Stopwatch::reset(self : Stopwatch) -> Stopwatch {
-  Stopwatch::{ ..self, elapsed: @core.Duration::zero() }
+  Stopwatch::{ ..self, elapsed_nanos: 0L }
 }

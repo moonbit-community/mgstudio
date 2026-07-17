@@ -16,9 +16,8 @@
 const CAMERA_SPEED : Float = 1000.0F
 
 ///|
-#valtype
 struct AnimationTimer {
-  timer : @time.Timer
+  mut timer : @time.Timer
 }
 
 ///|
@@ -146,7 +145,7 @@ fn animate_sprites(
     timers.update_inplace(fn(timer_values) {
       for row_index in 0..<timer_values.length() {
         let next_timer = timer_values[row_index].timer.tick(delta)
-        timer_values[row_index] = AnimationTimer::{ timer: next_timer }
+        timer_values[row_index].timer = next_timer
         if !next_timer.just_finished() {
           continue
         }
