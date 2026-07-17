@@ -96,11 +96,10 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
   let tick_context = @core.SystemTickContext::new()
   tick_context.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(tick_context)
-  (try! world.get_by_key(
-    visible_mesh, @root_visibility.ecs_key_view_visibility,
-  ))
-  .unwrap()
-  .update()
+  let view_visibility = (try! world.get_mut(
+    visible_mesh, key=@root_visibility.ecs_key_view_visibility,
+  )).unwrap()
+  view_visibility.bypass_change_detection(fn(value) { value.update() })
 
   check_visibility_visible_entities_system(world)
 
