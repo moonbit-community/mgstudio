@@ -337,6 +337,7 @@ pub fn World::new(track_change_locations? : Bool = false) -> World {
   }
   world.archetype_ids_by_signature.insert([], 0)
   world.table_ids_by_signature.insert([], 0)
+  ignore(world.ensure_table_storage(0))
   world.bootstrap_component_registrations()
   world.insert_resource(
     ecs_key_default_query_filters,

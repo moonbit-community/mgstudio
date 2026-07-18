@@ -986,8 +986,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   } else {
     []
   }
-  let target_row = if to_table_id >= 0 &&
-    target_component_local_ids.length() > 0 {
+  let target_row = if to_table_id >= 0 {
     let appended_row = match
       self
       .ensure_table_storage(to_table_id)
@@ -1022,8 +1021,7 @@ fn World::bundle_migrate_new_archetype_new_table(
   } else {
     self.entity_storage.entity_archetype_rows[entity.id] = -1
   }
-  self.entity_storage.entity_table_ids[entity.id] = if to_table_id >= 0 &&
-    target_component_local_ids.length() > 0 {
+  self.entity_storage.entity_table_ids[entity.id] = if to_table_id >= 0 {
     to_table_id
   } else {
     -1

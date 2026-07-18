@@ -91,6 +91,134 @@ pub impl Component for TableBatchFinalized with fn component() {
 }
 
 ///|
+test "ecs table batch: Entity visits empty table entities" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn_empty()
+  let second = world.spawn_empty()
+  let query : Query[@core.Entity, All] = query(world)
+  let seen : Array[@core.Entity] = []
+
+  try! query.for_each_table(fn(batch) {
+    for row_index in 0..<batch.length() {
+      seen.push(batch.entity(row_index))
+    }
+  })
+
+  debug_inspect(
+    (seen.contains(first), seen.contains(second), seen.length()),
+    content="(true, true, 2)",
+  )
+}
+
+///|
+test "ecs table batch: Has visits absent and present table rows" {
+  let world = World::new()
+  defer world.close()
+  let absent = world.spawn_empty()
+  let present = world.spawn()
+  try! world.set_by_key(present, table_batch_position_key, { value: 1 })
+  let query : Query[Has[TableBatchPosition], All] = query(world)
+  let mut absent_value : Bool? = None
+  let mut present_value : Bool? = None
+  let mut seen_count = 0
+
+  try! query.for_each_table(fn(batch) {
+    let has_position = batch.has(table_batch_position_key)
+    for row_index in 0..<batch.length() {
+      let entity = batch.entity(row_index)
+      if entity == absent {
+        absent_value = Some(has_position)
+      }
+      if entity == present {
+        present_value = Some(has_position)
+      }
+      seen_count = seen_count + 1
+    }
+  })
+
+  debug_inspect(
+    (absent_value, present_value, seen_count),
+    content="(Some(false), Some(true), 2)",
+  )
+}
+
+///|
+test "ecs table batch: filtered traversal visits empty table entities" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn_empty()
+  let query : Query[@core.Entity, All] = query(world)
+  let seen : Array[@core.Entity] = []
+
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    try! rows.for_each(fn(row_index) { seen.push(batch.entity(row_index)) })
+  })
+
+  debug_inspect(
+    (used_batch, seen.contains(entity), seen.length()),
+    content="(true, true, 1)",
+  )
+}
+
+///|
+test "ecs table batch: empty table rows survive component table migration" {
+  let world = World::new()
+  defer world.close()
+  let migrating = world.spawn_empty()
+  let stable = world.spawn_empty()
+  try! world.set_by_key(migrating, table_batch_position_key, { value: 1 })
+  debug_inspect(
+    try! world.remove_by_key(migrating, table_batch_position_key),
+    content="true",
+  )
+  let query : Query[Has[TableBatchPosition], All] = query(world)
+  let seen : Array[@core.Entity] = []
+  let values : Array[Bool] = []
+
+  try! query.for_each_table(fn(batch) {
+    let has_position = batch.has(table_batch_position_key)
+    for row_index in 0..<batch.length() {
+      seen.push(batch.entity(row_index))
+      values.push(has_position)
+    }
+  })
+
+  debug_inspect(
+    (seen.contains(migrating), seen.contains(stable), seen.length(), values),
+    content="(true, true, 2, [false, false])",
+  )
+}
+
+///|
+test "ecs table batch: empty table despawn preserves swapped row" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn_empty()
+  let removed = world.spawn_empty()
+  let last = world.spawn_empty()
+  try! world.despawn(removed)
+  let query : Query[@core.Entity, All] = query(world)
+  let seen : Array[@core.Entity] = []
+
+  try! query.for_each_table(fn(batch) {
+    for row_index in 0..<batch.length() {
+      seen.push(batch.entity(row_index))
+    }
+  })
+
+  debug_inspect(
+    (
+      seen.contains(first),
+      seen.contains(removed),
+      seen.contains(last),
+      seen.length(),
+    ),
+    content="(true, false, true, 2)",
+  )
+}
+
+///|
 test "ecs table batch: dense write preserves filters and change detection" {
   let world = World::new()
   defer world.close()
