@@ -572,6 +572,7 @@ graph TD
   ISS_462["ISS-462: Align many_animated_sprites with pinned Bevy source"]
   ISS_463["ISS-463: Diagnose the many_animated_sprites severe performance gap"]
   ISS_464["ISS-464: Make ViewVisibility value updates migration-safe"]
+  ISS_465["ISS-465: Preserve exact affine transforms in sprite picking"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004

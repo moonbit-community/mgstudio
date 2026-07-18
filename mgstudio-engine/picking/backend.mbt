@@ -77,50 +77,7 @@ fn picking_write_pointer_hits(
 }
 
 ///|
-fn sprite_region_size(sprite : @sprite.Sprite) -> @math.Vec2 {
-  let texture_id = sprite.image.id()
-  let mut image_width = @asset.host_asset_texture_width(texture_id)
-  let mut image_height = @asset.host_asset_texture_height(texture_id)
-  if image_width <= 0 || image_height <= 0 {
-    // Avoid division by zero for not-yet-loaded textures.
-    image_width = 1
-    image_height = 1
-  }
-  let image_rect = @math.Rect::new(
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(
-      Float::from_double(image_width.to_double()),
-      Float::from_double(image_height.to_double()),
-    ),
-  )
-  let atlas_rect = match sprite.texture_atlas {
-    Some(atlas) =>
-      match @asset.asset_get_texture_atlas_layout(atlas.layout()) {
-        Some(layout_value) =>
-          if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
-            Some(layout_value.textures[atlas.index].as_rect())
-          } else {
-            None
-          }
-        None => None
-      }
-    None => None
-  }
-  let texture_rect = match (atlas_rect, sprite.rect) {
-    (None, None) => image_rect
-    (None, Some(r)) => r
-    (Some(ar), None) => ar
-    (Some(ar), Some(r)) => {
-      let min = @math.Vec2::new(r.min.x + ar.min.x, r.min.y + ar.min.y)
-      let max = @math.Vec2::new(r.max.x + ar.min.x, r.max.y + ar.min.y)
-      @math.Rect::new(min, max)
-    }
-  }
-  texture_rect.size()
-}
-
-///|
-fn picking_camera_transform(
+fn picking_mesh_camera_transform(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @transform.Transform {
@@ -132,6 +89,44 @@ fn picking_camera_transform(
         None => @transform.Transform::identity()
       }
   }
+}
+
+///|
+fn picking_camera_affine(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @math.Affine3 {
+  match (try! world.get_by_key(entity, @transform.ecs_key_global_transform)) {
+    Some(global_transform) => global_transform.affine()
+    None =>
+      match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
+        Some(transform) =>
+          @transform.GlobalTransform::from_transform(transform).affine()
+        None => @math.Affine3::identity()
+      }
+  }
+}
+
+///|
+fn picking_affine_inverse(affine : @math.Affine3) -> @math.Affine3? {
+  let cofactor_x = affine.matrix3.y_axis.cross(affine.matrix3.z_axis)
+  let cofactor_y = affine.matrix3.z_axis.cross(affine.matrix3.x_axis)
+  let cofactor_z = affine.matrix3.x_axis.cross(affine.matrix3.y_axis)
+  let determinant = affine.matrix3.z_axis.dot(cofactor_z)
+  if determinant == 0.0F {
+    return None
+  }
+  let inverse_matrix3 = @math.Mat3::from_cols(
+      cofactor_x, cofactor_y, cofactor_z,
+    )
+    .transpose()
+    .mul_scalar(1.0F / determinant)
+  Some(
+    @math.Affine3::from_mat3_translation(
+      inverse_matrix3,
+      inverse_matrix3.mul_vec3(affine.translation).neg(),
+    ),
+  )
 }
 
 ///|
@@ -156,7 +151,7 @@ fn picking_insert_sprite_camera_sorted(
       @core.Entity,
       @camera_camera.Camera,
       @camera.Projection,
-      @transform.Transform,
+      @math.Affine3,
       Bool,
       @camera_render_layers.RenderLayers,
     ),
@@ -165,7 +160,7 @@ fn picking_insert_sprite_camera_sorted(
     @core.Entity,
     @camera_camera.Camera,
     @camera.Projection,
-    @transform.Transform,
+    @math.Affine3,
     Bool,
     @camera_render_layers.RenderLayers,
   ),
@@ -266,7 +261,7 @@ fn picking_sprite_cameras(
     @core.Entity,
     @camera_camera.Camera,
     @camera.Projection,
-    @transform.Transform,
+    @math.Affine3,
     Bool,
     @camera_render_layers.RenderLayers,
   ),
@@ -276,7 +271,7 @@ fn picking_sprite_cameras(
       @core.Entity,
       @camera_camera.Camera,
       @camera.Projection,
-      @transform.Transform,
+      @math.Affine3,
       Bool,
       @camera_render_layers.RenderLayers,
     ),
@@ -303,13 +298,13 @@ fn picking_sprite_cameras(
       Some(value) => value
       None => @camera.Projection::default()
     }
-    let transform = picking_camera_transform(world, entity)
+    let affine = picking_camera_affine(world, entity)
     let render_layers = (try! world.get_by_key(
       entity, @camera_render_layers.ecs_key_render_layers,
     )).unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
     picking_insert_sprite_camera_sorted(
       cameras,
-      (entity, camera, projection, transform, has_marker, render_layers),
+      (entity, camera, projection, affine, has_marker, render_layers),
     )
   })
   cameras
@@ -319,33 +314,96 @@ fn picking_sprite_cameras(
 fn picking_sprite_ray_local_hit(
   origin : @math.Vec3,
   direction : @math.Vec3,
-  transform : @transform.Transform,
+  affine : @math.Affine3,
   max_distance : Float,
 ) -> (@math.Vec2, Float)? {
-  guard @pbr_render.render3d_inverse_transform_point(transform, origin)
-    is Some(local_origin) else {
+  guard picking_affine_inverse(affine) is Some(world_to_sprite) else {
     return None
   }
-  guard @pbr_render.render3d_inverse_transform_direction(transform, direction)
-    is Some(local_direction) else {
+  let cursor_start_sprite = world_to_sprite.transform_point3(origin)
+  let cursor_end_sprite = world_to_sprite.transform_point3(
+    origin.add(direction.mul_scalar(max_distance)),
+  )
+  if cursor_start_sprite.z == cursor_end_sprite.z {
     return None
   }
-  if @pbr_render.absf(local_direction.z) <= 1.0e-9F {
+  let lerp_factor = -cursor_start_sprite.z /
+    (cursor_end_sprite.z - cursor_start_sprite.z)
+  if !(lerp_factor >= 0.0F && lerp_factor <= 1.0F) {
     return None
   }
-  let distance = -local_origin.z / local_direction.z
-  if distance < 0.0F || distance > max_distance {
+  let local_hit = cursor_start_sprite.add(
+    cursor_end_sprite.sub(cursor_start_sprite).mul_scalar(lerp_factor),
+  )
+  Some((@math.Vec2::new(local_hit.x, local_hit.y), lerp_factor * max_distance))
+}
+
+///|
+fn picking_sprite_camera_viewport_to_world_ray(
+  screen : @math.Vec2,
+  camera : @camera_camera.Camera,
+  projection : @camera.Projection,
+  camera_affine : @math.Affine3,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (@math.Vec3, @math.Vec3)? {
+  guard @pbr_render.render3d_camera_viewport_rect_logical(
+      camera, target_size, scale_factor,
+    )
+    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
     return None
   }
-  let local_hit = local_origin.add(local_direction.mul_scalar(distance))
-  Some((@math.Vec2::new(local_hit.x, local_hit.y), distance))
+  if screen.x < viewport_x ||
+    screen.y < viewport_y ||
+    screen.x > viewport_x + viewport_width ||
+    screen.y > viewport_y + viewport_height {
+    return None
+  }
+  let ndc_x = (screen.x - viewport_x) / viewport_width * 2.0F - 1.0F
+  let ndc_y = 1.0F - (screen.y - viewport_y) / viewport_height * 2.0F
+  let clip_from_view = projection
+    .update(viewport_width, viewport_height)
+    .get_clip_from_view()
+  guard @pbr_render.render3d_projection_matrix_inverse(clip_from_view)
+    is Some(view_from_clip) else {
+    return None
+  }
+  let near_view_h = view_from_clip.mul_vec4(
+    @math.Vec4::new(ndc_x, ndc_y, 1.0F, 1.0F),
+  )
+  let far_view_h = view_from_clip.mul_vec4(
+    @math.Vec4::new(ndc_x, ndc_y, 1.1920929e-7F, 1.0F),
+  )
+  if near_view_h.w == 0.0F || far_view_h.w == 0.0F {
+    return None
+  }
+  let near_view = @math.Vec3::new(
+    near_view_h.x / near_view_h.w,
+    near_view_h.y / near_view_h.w,
+    near_view_h.z / near_view_h.w,
+  )
+  let far_view = @math.Vec3::new(
+    far_view_h.x / far_view_h.w,
+    far_view_h.y / far_view_h.w,
+    far_view_h.z / far_view_h.w,
+  )
+  let direction = camera_affine.matrix3
+    .mul_vec3(far_view.sub(near_view))
+    .normalize_or_zero()
+  if direction.length_squared() <= 1.0e-12F ||
+    direction.x.is_nan() ||
+    direction.y.is_nan() ||
+    direction.z.is_nan() {
+    return None
+  }
+  Some((camera_affine.transform_point3(near_view), direction))
 }
 
 ///|
 type SpritePickingEntry = (
   @core.Entity,
   @sprite.Sprite,
-  @transform.Transform,
+  @math.Affine3,
   @sprite.Anchor,
   Pickable,
   @camera_render_layers.RenderLayers,
@@ -433,9 +491,7 @@ fn picking_sprite_collect_sorted(
       .unwrap()
     let anchor = batch.read(@sprite.ecs_key_anchor).unwrap()
     let pickable = batch.read(ecs_key_pickable).unwrap()
-    let visibility = batch
-      .read(@visibility.ecs_key_view_visibility)
-      .unwrap()
+    let visibility = batch.read(@visibility.ecs_key_view_visibility).unwrap()
     let layers = batch.read(@camera_render_layers.ecs_key_render_layers)
     for row_index in 0..<batch.length() {
       if global_transform.value(row_index).affine().is_nan() ||
@@ -446,7 +502,7 @@ fn picking_sprite_collect_sorted(
         (
           batch.entity(row_index),
           sprite.value(row_index),
-          global_transform.value(row_index).to_transform_approx(),
+          global_transform.value(row_index).affine(),
           anchor.value(row_index),
           pickable.value(row_index),
           match layers {
@@ -466,7 +522,7 @@ fn picking_sprite_hit_from_local_pos(
   entry : (
     @core.Entity,
     @sprite.Sprite,
-    @transform.Transform,
+    @math.Affine3,
     @sprite.Anchor,
     Pickable,
     @camera_render_layers.RenderLayers,
@@ -474,52 +530,27 @@ fn picking_sprite_hit_from_local_pos(
   local_pos : @math.Vec2,
   settings : SpritePickingSettings,
   camera_entity : @core.Entity,
-  camera_transform : @transform.Transform,
+  camera_affine : @math.Affine3,
   camera_near : Float,
 ) -> (@core.Entity, HitData)? {
   let entity = entry.0
   let sprite = entry.1
-  let transform = entry.2
+  let affine = entry.2
   let anchor = entry.3
-  let region = sprite_region_size(sprite)
-  let denom_x = if region.x == 0.0F { 1.0F } else { region.x }
-  let denom_y = if region.y == 0.0F { 1.0F } else { region.y }
-  let mut scale = @math.Vec2::new(transform.scale.x, transform.scale.y)
-  match sprite.custom_size {
-    Some(custom) =>
-      scale = @math.Vec2::new(
-        scale.x * (custom.x / denom_x),
-        scale.y * (custom.y / denom_y),
-      )
-    None => ()
-  }
-  let half = @math.Vec2::new(
-    scale.x * region.x / 2.0F,
-    scale.y * region.y / 2.0F,
-  )
-  if half.x <= 0.0F || half.y <= 0.0F {
-    return None
-  }
-  let abs_x = if local_pos.x < 0.0F { -local_pos.x } else { local_pos.x }
-  let abs_y = if local_pos.y < 0.0F { -local_pos.y } else { local_pos.y }
-  if abs_x <= half.x &&
-    abs_y <= half.y &&
-    picking_sprite_pixel_is_valid(
+  if picking_sprite_pixel_is_valid(
       world,
       sprite,
       anchor,
       local_pos,
       settings.picking_mode,
     ) {
-    let position = transform.transform_point(
+    let position = affine.transform_point3(
       @math.Vec3::new(local_pos.x, local_pos.y, 0.0F),
     )
-    guard @pbr_render.render3d_inverse_transform_point(
-        camera_transform, position,
-      )
-      is Some(camera_position) else {
+    guard picking_affine_inverse(camera_affine) is Some(world_to_camera) else {
       return None
     }
+    let camera_position = world_to_camera.transform_point3(position)
     let depth = -camera_near - camera_position.z
     Some(
       (
@@ -528,7 +559,7 @@ fn picking_sprite_hit_from_local_pos(
           camera_entity,
           depth,
           Some(position),
-          Some(transform.back()),
+          Some(affine.matrix3.z_axis.normalize()),
         ),
       ),
     )
@@ -572,7 +603,9 @@ pub fn picking_mesh3d_hit_test_system(world : @ecs.World) -> Unit {
         let camera_entity = entry.0
         let camera = entry.1
         let projection = entry.2
-        let camera_transform = picking_camera_transform(world, camera_entity)
+        let camera_transform = picking_mesh_camera_transform(
+          world, camera_entity,
+        )
         let target_size = picking_camera_target_size(
           camera, window_width, window_height,
         )
@@ -636,7 +669,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
       for camera_entry in cameras {
         let camera = camera_entry.1
         let projection = camera_entry.2
-        let camera_transform = camera_entry.3
+        let camera_affine = camera_entry.3
         let camera_layers = camera_entry.5
         guard projection is @camera.Projection::Orthographic(orthographic) else {
           continue
@@ -644,9 +677,8 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
         let target_size = picking_camera_target_size(
           camera, window_width, window_height,
         )
-        guard @camera.camera_viewport_to_world_ray(
-            pointer_window_pos, camera, projection, camera_transform, target_size,
-            scale_factor,
+        guard picking_sprite_camera_viewport_to_world_ray(
+            pointer_window_pos, camera, projection, camera_affine, target_size, scale_factor,
           )
           is Some((origin, direction)) else {
           continue
@@ -658,13 +690,13 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
           if blocked {
             break
           }
-          let transform = entry.2
+          let affine = entry.2
           let pickable = entry.4
           if !camera_layers.intersects(entry.5) {
             continue
           }
           guard picking_sprite_ray_local_hit(
-              origin, direction, transform, max_distance,
+              origin, direction, affine, max_distance,
             )
             is Some((local_pos, _depth)) else {
             continue
@@ -675,7 +707,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
               local_pos,
               settings,
               camera_entry.0,
-              camera_transform,
+              camera_affine,
               orthographic.near(),
             )
             is Some(payload) else {
