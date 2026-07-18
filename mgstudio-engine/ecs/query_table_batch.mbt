@@ -74,6 +74,61 @@ pub struct TableBatchWrite[T] {
 }
 
 ///|
+/// A revocable mutable view of one complete table component column.
+///
+/// Values can be read and replaced with indexed syntax during the callback
+/// that receives this view. Every operation aborts after that callback returns;
+/// retaining the view never retains usable write access to the ECS column.
+pub struct TableBatchMutValues[T] {
+  priv mut active : Bool
+  priv values : Array[T]
+  priv row_count : Int
+}
+
+///|
+fn[T] TableBatchMutValues::invalidate(self : TableBatchMutValues[T]) -> Unit {
+  self.active = false
+}
+
+///|
+fn[T] TableBatchMutValues::ensure_active(self : TableBatchMutValues[T]) -> Unit {
+  if !self.active {
+    abort("table batch mutable values used outside its callback")
+  }
+}
+
+///|
+pub fn[T] TableBatchMutValues::length(self : TableBatchMutValues[T]) -> Int {
+  self.ensure_active()
+  self.row_count
+}
+
+///|
+pub fn[T] TableBatchMutValues::op_get(
+  self : TableBatchMutValues[T],
+  row_index : Int,
+) -> T {
+  self.ensure_active()
+  if row_index < 0 || row_index >= self.row_count {
+    abort("table batch mutable values row is out of bounds")
+  }
+  self.values[row_index]
+}
+
+///|
+pub fn[T] TableBatchMutValues::op_set(
+  self : TableBatchMutValues[T],
+  row_index : Int,
+  value : T,
+) -> Unit {
+  self.ensure_active()
+  if row_index < 0 || row_index >= self.row_count {
+    abort("table batch mutable values row is out of bounds")
+  }
+  self.values[row_index] = value
+}
+
+///|
 /// Callback-scoped change metadata writer for one bound table column.
 ///
 /// The table column, change tick, and optional caller location are resolved
@@ -668,15 +723,16 @@ pub fn[T, R] TableBatchWrite::modify(
 /// Updates every row in this writable table column through one mutable view.
 ///
 /// The view covers only the live entity rows and is valid only during
-/// `update`. Retaining it after the callback is invalid. Every row is marked
-/// changed after the callback returns. This operation is available only from
-/// `Query::for_each_table`; a filtered row batch cannot safely update its
-/// whole physical column. Components with custom finalizers must use `set` so
-/// replaced values are finalized.
+/// `update`. Retaining it after the callback does not retain access: all
+/// subsequent operations abort. Every row is marked changed after the callback
+/// returns. This operation is available only from `Query::for_each_table`; a
+/// filtered row batch cannot safely update its whole physical column.
+/// Components with custom finalizers must use `set` so replaced values are
+/// finalized.
 #callsite(autofill(loc))
 pub fn[T] TableBatchWrite::update_inplace(
   self : TableBatchWrite[T],
-  update : (MutArrayView[T]) -> Unit,
+  update : (TableBatchMutValues[T]) -> Unit,
   loc~ : SourceLoc,
 ) -> Unit {
   if !self.scope.whole_table {
@@ -689,7 +745,9 @@ pub fn[T] TableBatchWrite::update_inplace(
   }
   let row_count = self.scope.entities_or_abort().length()
   let values = self.binding.values_or_abort()
-  update(values.mut_view(end=row_count))
+  let mut_values = TableBatchMutValues::{ active: true, values, row_count }
+  defer mut_values.invalidate()
+  update(mut_values)
   let world = self.scope.world_or_abort()
   let tick = component_write_tick(world)
   let caller = hook_caller_from_loc(world, loc)
@@ -709,7 +767,7 @@ pub fn[T] TableBatchWrite::update_inplace(
 /// rejects components with custom finalizers.
 pub fn[T] TableBatchWrite::update_inplace_bypass_change_detection(
   self : TableBatchWrite[T],
-  update : (MutArrayView[T]) -> Unit,
+  update : (TableBatchMutValues[T]) -> Unit,
 ) -> Unit {
   if !self.scope.whole_table {
     abort(
@@ -722,7 +780,13 @@ pub fn[T] TableBatchWrite::update_inplace_bypass_change_detection(
     )
   }
   let row_count = self.scope.entities_or_abort().length()
-  update(self.binding.values_or_abort().mut_view(end=row_count))
+  let mut_values = TableBatchMutValues::{
+    active: true,
+    values: self.binding.values_or_abort(),
+    row_count,
+  }
+  defer mut_values.invalidate()
+  update(mut_values)
 }
 
 ///|

@@ -480,6 +480,80 @@ test "ecs table batch: update_inplace bypass preserves change ticks" {
 }
 
 ///|
+test "panic ecs table batch: escaped update view cannot write after callback" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_value_position_key, { value: 1 })
+  let query : Query[Write[TableBatchValuePosition], All] = query(world)
+  let mut escaped : TableBatchMutValues[TableBatchValuePosition]? = None
+
+  try! query.for_each_table(fn(batch) {
+    let positions = batch.write(table_batch_value_position_key).unwrap()
+    positions.update_inplace(fn(values) { escaped = Some(values) })
+    escaped.unwrap()[0] = { value: 99 }
+  })
+}
+
+///|
+test "panic ecs table batch: escaped update view cannot write a reused row" {
+  let world = World::new()
+  defer world.close()
+  let original = world.spawn()
+  try! world.set_by_key(original, table_batch_value_position_key, { value: 1 })
+  let query : Query[Write[TableBatchValuePosition], All] = query(world)
+  let mut escaped : TableBatchMutValues[TableBatchValuePosition]? = None
+
+  try! query.for_each_table(fn(batch) {
+    let positions = batch.write(table_batch_value_position_key).unwrap()
+    positions.update_inplace(fn(values) { escaped = Some(values) })
+  })
+  debug_inspect(
+    try! world.remove_by_key(original, table_batch_value_position_key),
+    content="true",
+  )
+  let replacement = world.spawn()
+  try! world.set_by_key(replacement, table_batch_value_position_key, {
+    value: 2,
+  })
+  escaped.unwrap()[0] = { value: 99 }
+}
+
+///|
+test "panic ecs table batch: escaped update view cannot read after callback" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_value_position_key, { value: 1 })
+  let query : Query[Write[TableBatchValuePosition], All] = query(world)
+  let mut escaped : TableBatchMutValues[TableBatchValuePosition]? = None
+
+  try! query.for_each_table(fn(batch) {
+    let positions = batch.write(table_batch_value_position_key).unwrap()
+    positions.update_inplace(fn(values) { escaped = Some(values) })
+  })
+  ignore(escaped.unwrap()[0])
+}
+
+///|
+test "panic ecs table batch: escaped bypass update view is invalid" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_value_position_key, { value: 1 })
+  let query : Query[Write[TableBatchValuePosition], All] = query(world)
+  let mut escaped : TableBatchMutValues[TableBatchValuePosition]? = None
+
+  try! query.for_each_table(fn(batch) {
+    let positions = batch.write(table_batch_value_position_key).unwrap()
+    positions.update_inplace_bypass_change_detection(fn(values) {
+      escaped = Some(values)
+    })
+  })
+  escaped.unwrap()[0] = { value: 99 }
+}
+
+///|
 test "ecs table batch: writes preserve component replacement finalizers" {
   table_batch_finalized_values.clear()
   let world = World::new()

@@ -154,6 +154,36 @@ bindless allocation is requested from a non-bindless allocator.
 bound. Concrete projection components that already implement `Component` need
 no source change.
 
+## Table-Batch Mutable Column Scope
+
+`TableBatchWrite::update_inplace` and
+`update_inplace_bypass_change_detection` now pass
+`TableBatchMutValues[T]` instead of a raw `MutArrayView[T]`. The old view could
+escape its callback and continue replacing ECS column values without a valid
+lease, change ticks, or finalizer handling. A retained `TableBatchMutValues`
+becomes inactive when the callback returns, and every subsequent indexed read
+or write aborts.
+
+Callbacks with inferred parameter types keep the same source shape:
+
+```mbt nocheck
+values.update_inplace(fn(items) {
+  for index in 0..<items.length() {
+    items[index] = update(items[index])
+  }
+})
+```
+
+Explicit callback parameter annotations must change:
+
+| Previous source | Replacement |
+| --- | --- |
+| `fn(items : MutArrayView[T]) { ... }` | `fn(items : TableBatchMutValues[T]) { ... }` |
+| Retain `items` and write after the callback | Perform every indexed read and write inside the callback |
+
+The controlled view deliberately exposes only `length()` and indexed
+`op_get`/`op_set`; it does not expose its backing array or a raw mutable view.
+
 ## Source-Compatible Interface Changes
 
 The generated-interface audit also found additive changes that do not require
