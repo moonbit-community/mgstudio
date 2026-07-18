@@ -578,6 +578,7 @@ graph TD
   ISS_468["ISS-468: Prevent same-reference bypass replacement destruction"]
   ISS_469["ISS-469: Retain zero-column table entity rows"]
   ISS_470["ISS-470: Revoke escaped table-batch mutable views"]
+  ISS_471["ISS-471: Optimize revocable table-batch value access"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004
@@ -1129,6 +1130,7 @@ graph TD
   ISS_452 --> ISS_453
   ISS_453 --> ISS_454
   ISS_449 --> ISS_456
+  ISS_470 --> ISS_471
 ```
 
 ## Warnings

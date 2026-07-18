@@ -183,6 +183,9 @@ Explicit callback parameter annotations must change:
 
 The controlled view deliberately exposes only `length()` and indexed
 `op_get`/`op_set`; it does not expose its backing array or a raw mutable view.
+Internally it keeps a private `MutArrayView` already bounded to the live rows,
+so indexed access retains one bounds check without making the raw capability
+escapable.
 
 ## Source-Compatible Interface Changes
 

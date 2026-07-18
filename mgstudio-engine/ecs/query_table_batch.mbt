@@ -81,8 +81,7 @@ pub struct TableBatchWrite[T] {
 /// retaining the view never retains usable write access to the ECS column.
 pub struct TableBatchMutValues[T] {
   priv mut active : Bool
-  priv values : Array[T]
-  priv row_count : Int
+  priv values : MutArrayView[T]
 }
 
 ///|
@@ -100,7 +99,7 @@ fn[T] TableBatchMutValues::ensure_active(self : TableBatchMutValues[T]) -> Unit 
 ///|
 pub fn[T] TableBatchMutValues::length(self : TableBatchMutValues[T]) -> Int {
   self.ensure_active()
-  self.row_count
+  self.values.length()
 }
 
 ///|
@@ -109,9 +108,6 @@ pub fn[T] TableBatchMutValues::op_get(
   row_index : Int,
 ) -> T {
   self.ensure_active()
-  if row_index < 0 || row_index >= self.row_count {
-    abort("table batch mutable values row is out of bounds")
-  }
   self.values[row_index]
 }
 
@@ -122,9 +118,6 @@ pub fn[T] TableBatchMutValues::op_set(
   value : T,
 ) -> Unit {
   self.ensure_active()
-  if row_index < 0 || row_index >= self.row_count {
-    abort("table batch mutable values row is out of bounds")
-  }
   self.values[row_index] = value
 }
 
@@ -745,7 +738,10 @@ pub fn[T] TableBatchWrite::update_inplace(
   }
   let row_count = self.scope.entities_or_abort().length()
   let values = self.binding.values_or_abort()
-  let mut_values = TableBatchMutValues::{ active: true, values, row_count }
+  let mut_values = TableBatchMutValues::{
+    active: true,
+    values: values.mut_view(end=row_count),
+  }
   defer mut_values.invalidate()
   update(mut_values)
   let world = self.scope.world_or_abort()
@@ -782,8 +778,7 @@ pub fn[T] TableBatchWrite::update_inplace_bypass_change_detection(
   let row_count = self.scope.entities_or_abort().length()
   let mut_values = TableBatchMutValues::{
     active: true,
-    values: self.binding.values_or_abort(),
-    row_count,
+    values: self.binding.values_or_abort().mut_view(end=row_count),
   }
   defer mut_values.invalidate()
   update(mut_values)
