@@ -261,6 +261,10 @@ test "app: any_with_component gates system execution on component presence" {
 
   debug_inspect(log.length(), content="1")
   debug_inspect(log[0], content="0")
+
+  try! app.world().despawn(entity)
+  app.run_once() |> ignore
+  debug_inspect(log.length(), content="1")
 }
 
 ///|
