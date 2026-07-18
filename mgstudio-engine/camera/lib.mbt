@@ -32,9 +32,30 @@ pub let camera_update_frusta_systems : @app.SystemSet = @app.system_set(
 )
 
 ///|
+fn camera2d_frustum_render_transform(
+  global_transform : @transform.GlobalTransform,
+) -> @transform.Transform {
+  let camera_transform = global_transform.to_transform_approx()
+  let scale_x = if camera_transform.scale.x < 0.0F {
+    -camera_transform.scale.x
+  } else if camera_transform.scale.x == 0.0F {
+    1.0F
+  } else {
+    camera_transform.scale.x
+  }
+  camera_transform.with_scale(
+    @math.Vec3::new(scale_x, scale_x, camera_transform.scale.z),
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::update_frusta`.
 // The current 2D projection surface is the WindowSize orthographic subset, so
 // reuse the source-aligned orthographic implementation with the 2D defaults.
+// Bevy feeds rendering and frustum extraction the same camera affine. The
+// current native 2D backend uses absolute non-zero scale.x for both view axes,
+// so the 2D frustum must apply that same transform convention before entering
+// the shared 3D projection code.
 pub fn update_frusta_2d_system(world : @ecs.World) -> Unit {
   let updates : Array[(@core.Entity, @camera_primitives.Frustum)] = []
   world.for_each_component(@camera_projection2d.ecs_key_projection, fn(
@@ -61,7 +82,7 @@ pub fn update_frusta_2d_system(world : @ecs.World) -> Unit {
       .update(logical_size.x, logical_size.y)
     let next = @camera_projection3d.render3d_orthographic_projection_compute_frustum(
       projection_3d,
-      global_transform.to_transform_approx(),
+      camera2d_frustum_render_transform(global_transform),
     )
     match (try! world.get_by_key(entity, @camera_primitives.ecs_key_frustum)) {
       Some(current) => if current != next { updates.push((entity, next)) }

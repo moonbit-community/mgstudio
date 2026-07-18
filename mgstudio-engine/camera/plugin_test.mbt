@@ -269,3 +269,92 @@ test "camera projection plugin: updates Camera2d frustum from logical viewport" 
   debug_inspect(frustum.intersects_sphere(inside, false), content="true")
   debug_inspect(frustum.intersects_sphere(outside, false), content="false")
 }
+
+///|
+test "camera projection plugin: Camera2d frustum matches uniform X render scale" {
+  let lifecycle_world = @ecs.World::new()
+  defer lifecycle_world.close()
+  let mut app = @app.App::new(lifecycle_world).add_plugins(
+    CameraPlugin::CameraPlugin(),
+  )
+  let world = app.world()
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  let camera_transform = @transform.Transform::identity().with_scale(
+    @math.Vec3::new(2.0F, 1.0F, 1.0F),
+  )
+  try! world.set_by_key(
+    entity,
+    @transform.ecs_key_global_transform,
+    @transform.GlobalTransform::from_transform(camera_transform),
+  )
+  let camera = (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)).unwrap()
+  let computed = @camera_computed.ComputedCameraValues::new(
+    @math.Mat4::identity(),
+    Some(
+      @camera_computed.RenderTargetInfo::new(@math.IVec2::new(100, 100), 1.0F),
+    ),
+    None,
+    None,
+  )
+  try! (world.replace(
+    entity,
+    @camera_camera.ecs_key_camera,
+    camera.with_computed(computed),
+  )
+  |> ignore)
+  let projection = match
+    (try! world.get_by_key(entity, @camera_projection2d.ecs_key_projection)).unwrap() {
+    @camera_projection2d.Projection::Orthographic(value) => value
+  }
+  let vertically_visible = @math.Vec2::new(0.0F, 75.0F)
+  let vertically_hidden = @math.Vec2::new(0.0F, 125.0F)
+  debug_inspect(
+    camera.world_to_viewport_2d(
+      camera_transform,
+      vertically_visible,
+      projection,
+      @math.IVec2::new(100, 100),
+      1.0F,
+    )
+    is Some(_),
+    content="true",
+  )
+  debug_inspect(
+    camera.world_to_viewport_2d(
+      camera_transform,
+      vertically_hidden,
+      projection,
+      @math.IVec2::new(100, 100),
+      1.0F,
+    )
+    is Some(_),
+    content="false",
+  )
+
+  app = app.update()
+
+  let frustum = (try! app
+  .world()
+  .get_by_key(entity, @camera_primitives.ecs_key_frustum)).unwrap()
+  let visible_sphere = @camera_primitives.Sphere::new(
+    @math.Vec3::new(vertically_visible.x, vertically_visible.y, 0.0F),
+    1.0F,
+  )
+  let hidden_sphere = @camera_primitives.Sphere::new(
+    @math.Vec3::new(vertically_hidden.x, vertically_hidden.y, 0.0F),
+    1.0F,
+  )
+  debug_inspect(
+    frustum.intersects_sphere(visible_sphere, false),
+    content="true",
+  )
+  debug_inspect(
+    frustum.intersects_sphere(hidden_sphere, false),
+    content="false",
+  )
+}

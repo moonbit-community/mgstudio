@@ -580,6 +580,7 @@ graph TD
   ISS_470["ISS-470: Revoke escaped table-batch mutable views"]
   ISS_471["ISS-471: Optimize revocable table-batch value access"]
   ISS_472["ISS-472: Restrict filtered table batches to matching rows"]
+  ISS_473["ISS-473: Align Camera2d frustum with uniform render scale"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004
@@ -1133,6 +1134,7 @@ graph TD
   ISS_449 --> ISS_456
   ISS_470 --> ISS_471
   ISS_456 --> ISS_472
+  ISS_457 --> ISS_473
 ```
 
 ## Warnings
