@@ -210,6 +210,7 @@ test "sprite picking hit data uses camera entity and camera-space depth" {
 test "sprite picking preserves sheared global transform affine semantics" {
   let world = @ecs.World::new()
   defer world.close()
+  @camera_components2d.ensure_camera2d_required_components(world)
   let parent = @transform.GlobalTransform::from_transform(
     @transform.Transform::identity()
     .with_translation(@math.Vec3::new(3.0F, -2.0F, 5.0F))
@@ -246,16 +247,6 @@ test "sprite picking preserves sheared global transform affine semantics" {
     camera_entity,
     @camera_components2d.ecs_key_camera2d,
     @camera_components2d.Camera2d::Camera2d(),
-  )
-  try! world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  try! world.set_by_key(
-    camera_entity,
-    @camera.ecs_key_projection,
-    @camera.Projection::default(),
   )
   try! world.set_by_key(
     camera_entity,
@@ -316,26 +307,12 @@ test "sprite picking preserves sheared global transform affine semantics" {
 test "sprite picking camera marker requirement filters cameras" {
   let world = @ecs.World::new()
   defer world.close()
+  @camera_components2d.ensure_camera2d_required_components(world)
   let camera_entity = world.spawn_empty()
   try! world.set_by_key(
     camera_entity,
     @camera_components2d.ecs_key_camera2d,
     @camera_components2d.Camera2d::Camera2d(),
-  )
-  try! world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  try! world.set_by_key(
-    camera_entity,
-    @camera.ecs_key_projection,
-    @camera.Projection::default(),
-  )
-  try! world.set_by_key(
-    camera_entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::identity(),
   )
   debug_inspect(
     picking_sprite_cameras(world, SpritePickingSettings::new(true, BoundingBox)).length(),
@@ -348,4 +325,61 @@ test "sprite picking camera marker requirement filters cameras" {
     picking_sprite_cameras(world, SpritePickingSettings::new(true, BoundingBox)).length(),
     content="1",
   )
+}
+
+///|
+test "sprite picking collects standard Camera2d orthographic projection" {
+  let world = @ecs.World::new()
+  defer world.close()
+  @camera_components2d.ensure_camera2d_required_components(world)
+  let camera_entity = world.spawn_empty()
+  try! world.set_by_key(
+    camera_entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  ignore(
+    try! world.replace(
+      camera_entity,
+      @camera_projection2d.ecs_key_projection,
+      @camera_projection2d.Projection::Orthographic(
+        @camera_projection2d.OrthographicProjection::new(2.0F),
+      ),
+    ),
+  )
+  let cameras = picking_sprite_cameras(
+    world,
+    SpritePickingSettings::new(false, BoundingBox),
+  )
+  assert_eq(cameras.length(), 1)
+  let projection_matches_camera2d = match cameras[0].2 {
+    @camera.Projection::Orthographic(orthographic) =>
+      orthographic.scale() == 2.0F &&
+      orthographic.near() == -1000.0F &&
+      orthographic.far() == 1000.0F
+    _ => false
+  }
+  assert_eq(projection_matches_camera2d, true)
+  guard picking_sprite_camera_viewport_to_world_ray(
+      @math.Vec2::new(50.0F, 50.0F),
+      cameras[0].1,
+      cameras[0].2,
+      cameras[0].3,
+      @math.IVec2::new(100, 100),
+      1.0F,
+    )
+    is Some((origin, direction)) else {
+    fail("expected standard Camera2d viewport ray")
+  }
+  guard picking_sprite_ray_local_hit(
+      origin,
+      direction,
+      @math.Affine3::identity(),
+      2000.0F,
+    )
+    is Some((local_hit, _)) else {
+    fail("expected standard Camera2d ray to intersect the sprite plane")
+  }
+  assert_eq(@pbr_render.absf(local_hit.x) <= 1.0e-5F, true)
+  assert_eq(@pbr_render.absf(local_hit.y) <= 1.0e-5F, true)
 }

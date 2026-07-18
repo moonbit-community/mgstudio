@@ -293,11 +293,20 @@ fn picking_sprite_cameras(
     if settings.require_markers && !has_marker {
       return
     }
-    let projection = match
-      (try! world.get_by_key(entity, @camera.ecs_key_projection)) {
-      Some(value) => value
-      None => @camera.Projection::default()
+    guard (try! world.get_by_key(
+        entity, @camera_projection2d.ecs_key_projection,
+      ))
+      is Some(@camera_projection2d.Projection::Orthographic(projection_2d)) else {
+      return
     }
+    // Mgstudio stores the implemented 2D authoring subset separately from the
+    // full runtime projection. Reconstruct Bevy's Camera2d-required
+    // `OrthographicProjection::default_2d()` before the viewport update below.
+    let projection = @camera.Projection::Orthographic(
+      @camera.OrthographicProjection3d::default_2d().with_scale(
+        projection_2d.scale,
+      ),
+    )
     let affine = picking_camera_affine(world, entity)
     let render_layers = (try! world.get_by_key(
       entity, @camera_render_layers.ecs_key_render_layers,
