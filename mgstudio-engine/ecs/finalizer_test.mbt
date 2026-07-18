@@ -18,6 +18,63 @@ struct FinalizerProbe {
 }
 
 ///|
+struct BypassFinalizerProbe {
+  id : Int
+}
+
+///|
+let bypass_finalized_values : Array[Int] = []
+
+///|
+let bypass_finalizer_probe_key : ComponentKey[BypassFinalizerProbe] = register_component(
+  debug_name="tests.ecs.bypass_finalizer_component",
+  finalizer=fn(value) { bypass_finalized_values.push(value.id) },
+)
+
+///|
+pub impl Component for BypassFinalizerProbe with fn component() {
+  bypass_finalizer_probe_key
+}
+
+///|
+test "ecs: bypass change detection preserves same-reference ownership" {
+  bypass_finalized_values.clear()
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, bypass_finalizer_probe_key, { id: 1 })
+  let component = (try! world.get_mut(entity, key=bypass_finalizer_probe_key)).unwrap()
+
+  component.bypass_change_detection(fn(value) { value })
+  let finalized_before_close = bypass_finalized_values.length()
+  world.close()
+
+  debug_inspect(
+    (finalized_before_close, bypass_finalized_values),
+    content="(0, [1])",
+  )
+}
+
+///|
+test "ecs: bypass change detection finalizes a distinct replacement" {
+  bypass_finalized_values.clear()
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, bypass_finalizer_probe_key, { id: 1 })
+  let component = (try! world.get_mut(entity, key=bypass_finalizer_probe_key)).unwrap()
+
+  component.bypass_change_detection(fn(_value) {
+    BypassFinalizerProbe::{ id: 2 }
+  })
+  let finalized_before_close = bypass_finalized_values.copy()
+  world.close()
+
+  debug_inspect(
+    (finalized_before_close, bypass_finalized_values),
+    content="([1], [1, 2])",
+  )
+}
+
+///|
 test "ecs: finalizers distinguish value transfer from destruction" {
   let resource_finalized : Array[Int] = []
   let component_finalized : Array[Int] = []

@@ -575,6 +575,7 @@ graph TD
   ISS_465["ISS-465: Preserve exact affine transforms in sprite picking"]
   ISS_466["ISS-466: Restore standard Camera2d sprite picking"]
   ISS_467["ISS-467: Restore component membership updates on despawn"]
+  ISS_468["ISS-468: Prevent same-reference bypass replacement destruction"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004

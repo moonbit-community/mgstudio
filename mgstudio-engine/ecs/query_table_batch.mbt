@@ -726,12 +726,20 @@ pub fn[T] TableBatchWrite::update_inplace_bypass_change_detection(
 }
 
 ///|
+/// Updates one row without marking it changed.
+///
+/// Returning the same reference preserves its ownership; returning a different
+/// value replaces and finalizes the displaced component normally.
 pub fn[T] TableBatchWrite::bypass_change_detection(
   self : TableBatchWrite[T],
   row_index : Int,
   update : (T) -> T,
 ) -> Unit {
-  self.assign(row_index, update(self.peek(row_index)))
+  let value = self.peek(row_index)
+  let replacement = update(value)
+  if !physical_equal(value, replacement) {
+    self.assign(row_index, replacement)
+  }
 }
 
 ///|

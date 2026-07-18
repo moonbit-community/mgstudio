@@ -378,6 +378,29 @@ test "ecs table batch: writes preserve component replacement finalizers" {
 }
 
 ///|
+test "ecs table batch: bypass preserves same-reference ownership" {
+  table_batch_finalized_values.clear()
+  let world = World::new()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
+    id: 1,
+  })
+  let query : Query[Write[TableBatchFinalized], All] = query(world)
+
+  try! query.for_each_table(fn(batch) {
+    let values = batch.write(table_batch_finalized_key).unwrap()
+    values.bypass_change_detection(0, fn(value) { value })
+  })
+  let finalized_before_close = table_batch_finalized_values.length()
+  world.close()
+
+  debug_inspect(
+    (finalized_before_close, table_batch_finalized_values),
+    content="(0, [1])",
+  )
+}
+
+///|
 test "panic ecs table batch: update_inplace rejects custom finalizers" {
   let world = World::new()
   defer world.close()
