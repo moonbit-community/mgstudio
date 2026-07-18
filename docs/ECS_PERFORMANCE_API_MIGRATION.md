@@ -70,19 +70,31 @@ paths, but callers should not construct the flattened representation directly.
 `InheritedVisibility` is now a value type with otherwise unchanged constructor
 and getter APIs.
 
-`ViewVisibility.bits` is no longer mutable and `ViewVisibility::update` now
-returns the replacement state instead of mutating the receiver and returning
-`Unit`.
+`ViewVisibility.bits` is no longer mutable. The former mutating
+`ViewVisibility::update` method is deliberately not retained with a
+value-returning signature: an old `view.update()` call would still compile,
+discard the returned value, and silently preserve the old state. The
+replacement is named `advance_frame` so unmigrated calls fail at compile time.
 
 | Previous source | Replacement |
 | --- | --- |
-| `view.update()` | `view = view.update()` |
-| `view.bits = bits` | Use `ViewVisibility::new`, `visible`, `hidden`, or `update` |
+| `view.update()` | `view = view.advance_frame()` |
+| `view.set_visible()` | `view = view.with_visible()` |
+| `view.bits = bits` | Use `ViewVisibility::new`, `visible`, `hidden`, `with_visible`, or `advance_frame` |
 | Component mutation through direct field access | Use `Write::set`, `Write::update`, or the `SetViewVisibility` API |
 
 Code using ECS change detection must choose ordinary mutation or the explicit
 bypass-change-detection API according to the same semantics as before; do not
 replace every visibility write with a bypass update.
+
+The former public `check_visibility_system` blanket producer was removed. It
+marked every inherited-visible renderable as view-visible without applying the
+camera-, layer-, range-, light-, or frustum-specific visibility owners. Normal
+applications should install the root visibility plugin together with the
+camera visibility plugin and relevant light plugins. A custom visibility
+producer should set `ViewVisibility` through `SetViewVisibility` and run in
+`visibility_set_check_visibility`; there is no source-faithful one-function
+replacement for the old blanket scan.
 
 ## Texture Atlas
 

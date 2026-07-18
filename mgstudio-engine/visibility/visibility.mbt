@@ -174,8 +174,17 @@ pub fn ViewVisibility::was_visible_now_hidden(self : ViewVisibility) -> Bool {
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::ViewVisibility::update`.
-pub fn ViewVisibility::update(self : ViewVisibility) -> ViewVisibility {
+// This value-returning API intentionally does not keep Bevy's mutating method
+// name: an old `value.update()` call would otherwise compile and discard the
+// replacement value after the MoonBit value-type migration.
+pub fn ViewVisibility::advance_frame(self : ViewVisibility) -> ViewVisibility {
   ViewVisibility::{ bits: (self.bits & 1) << 1 }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility::set_visible`.
+pub fn ViewVisibility::with_visible(self : ViewVisibility) -> ViewVisibility {
+  ViewVisibility::{ bits: self.bits | 1 }
 }
 
 ///|
@@ -191,11 +200,9 @@ pub impl SetViewVisibility for @ecs.Write[ViewVisibility] with fn set_visible(
   let current = self.peek()
   if (current.bits & 1) == 0 {
     if (current.bits & 2) != 0 {
-      self.bypass_change_detection(fn(value) {
-        ViewVisibility::{ bits: value.bits | 1 }
-      })
+      self.bypass_change_detection(fn(value) { value.with_visible() })
     } else {
-      self.set(ViewVisibility::{ bits: current.bits | 1 })
+      self.set(current.with_visible())
     }
   }
 }

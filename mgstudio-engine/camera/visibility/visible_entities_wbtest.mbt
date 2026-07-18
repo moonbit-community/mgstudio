@@ -89,7 +89,7 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
   let view_visibility = (try! world.get_mut(
     visible_mesh, key=@root_visibility.ecs_key_view_visibility,
   )).unwrap()
-  view_visibility.bypass_change_detection(fn(value) { value.update() })
+  view_visibility.bypass_change_detection(fn(value) { value.advance_frame() })
 
   check_visibility_visible_entities_system(world)
 

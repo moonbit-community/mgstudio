@@ -474,9 +474,12 @@ test "visibility: view visibility tracks current and previous frame bits" {
   let mut view_visibility = @visibility.ViewVisibility::new(true)
   debug_inspect(view_visibility.get(), content="true")
   debug_inspect(view_visibility.was_visible_now_hidden(), content="false")
-  view_visibility = view_visibility.update()
+  view_visibility = view_visibility.advance_frame()
   debug_inspect(view_visibility.get(), content="false")
   debug_inspect(view_visibility.was_visible_now_hidden(), content="true")
+  view_visibility = view_visibility.with_visible()
+  debug_inspect(view_visibility.get(), content="true")
+  debug_inspect(view_visibility.was_visible_now_hidden(), content="false")
 }
 
 ///|

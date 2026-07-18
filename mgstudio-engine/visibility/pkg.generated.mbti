@@ -70,13 +70,14 @@ pub impl @ecs.Component for NoFrustumCulling
 pub struct ViewVisibility {
   bits : Int
 } derive(Eq, @debug.Debug)
+pub fn ViewVisibility::advance_frame(Self) -> Self
 pub fn ViewVisibility::get(Self) -> Bool
 pub fn ViewVisibility::hidden() -> Self
 pub fn ViewVisibility::is_visible(Self) -> Bool
 pub fn ViewVisibility::new(Bool) -> Self
-pub fn ViewVisibility::update(Self) -> Self
 pub fn ViewVisibility::visible() -> Self
 pub fn ViewVisibility::was_visible_now_hidden(Self) -> Bool
+pub fn ViewVisibility::with_visible(Self) -> Self
 pub impl @ecs.Component for ViewVisibility
 pub impl ToJson for ViewVisibility
 pub impl @json.FromJson for ViewVisibility

@@ -278,7 +278,7 @@ fn reset_view_visibility_system(world : @ecs.World) -> Unit {
     let view_visibility = batch.write(ecs_key_view_visibility).unwrap()
     view_visibility.update_inplace_bypass_change_detection(fn(values) {
       for row_index in 0..<values.length() {
-        values[row_index] = values[row_index].update()
+        values[row_index] = values[row_index].advance_frame()
       }
     })
   })
