@@ -7,9 +7,12 @@ import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/utils",
   "Milky2018/mgstudio/visibility",
-  "moonbitlang/core/bench",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
+
+import {
+  "moonbitlang/core/bench",
+} for "test"
 
 supported_targets = "native"

@@ -9,8 +9,11 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility" @root_visibility,
-  "moonbitlang/core/bench",
   "moonbitlang/core/hashmap",
 }
+
+import {
+  "moonbitlang/core/bench",
+} for "wbtest"
 
 supported_targets = "native"
