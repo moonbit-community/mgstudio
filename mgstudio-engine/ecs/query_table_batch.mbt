@@ -18,6 +18,7 @@ priv struct QueryTableBatchScope {
   table_id : Int
   mut entities : Array[@core.Entity]?
   whole_table : Bool
+  mut authorized_row : Int
 }
 
 ///|
@@ -131,6 +132,7 @@ pub fn[T] TableBatchMutValues::op_set(
 pub struct TableBatchChangeWriter {
   priv mut active : Bool
   priv row_count : Int
+  priv scope : QueryTableBatchScope
   priv column : RawTableColumn
   priv tick : @core.Tick
   priv caller_id : Int
@@ -152,6 +154,7 @@ pub fn TableBatchChangeWriter::set_changed(
   if row_index < 0 || row_index >= self.row_count {
     abort("table batch change writer row is out of bounds")
   }
+  ignore(self.scope.entity_or_abort(row_index))
   if !self.column.record_changed_id_at_row(row_index, self.tick, self.caller_id) {
     abort("table batch change writer expected change tick metadata")
   }
@@ -182,7 +185,26 @@ fn QueryTableBatchScope::entity_or_abort(
   if row_index < 0 || row_index >= entities.length() {
     abort("table batch row is out of bounds")
   }
+  if !self.whole_table && self.authorized_row != row_index {
+    abort(
+      "filtered table row access requires the matching QueryTableRows::for_each callback",
+    )
+  }
   entities[row_index]
+}
+
+///|
+fn QueryTableBatchScope::with_authorized_row(
+  self : QueryTableBatchScope,
+  row_index : Int,
+  visit : (Int) -> Unit raise EcsError,
+) -> Unit raise EcsError {
+  let previous_row = self.authorized_row
+  self.authorized_row = row_index
+  defer {
+    self.authorized_row = previous_row
+  }
+  visit(row_index)
 }
 
 ///|
@@ -292,7 +314,7 @@ pub fn QueryTableRows::for_each(
   let entities = self.scope.entities_or_abort()
   for row_index in 0..<entities.length() {
     if (self.matches)(entities[row_index], row_index) {
-      visit(row_index)
+      self.scope.with_authorized_row(row_index, visit)
     }
   }
 }
@@ -670,6 +692,7 @@ pub fn[T : Component] TableBatchWrite::with_change_writer(
   let writer = TableBatchChangeWriter::{
     active: true,
     row_count,
+    scope: self.scope,
     column: self.binding.column_or_abort(),
     tick: component_write_tick(world),
     caller_id: raw_table_store_changed_caller(hook_caller_from_loc(world, loc)),
@@ -893,6 +916,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::for_each_table(
         table_id,
         entities: Some(entities),
         whole_table: true,
+        authorized_row: -1,
       },
       data_access,
       data_mentions_component: fn(component_id) {
@@ -941,6 +965,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::try_for_each_filtered_table(
       table_id,
       entities: Some(entities),
       whole_table: false,
+      authorized_row: -1,
     }
     let batch = QueryTableBatch::{
       scope,

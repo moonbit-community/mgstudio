@@ -735,6 +735,148 @@ test "panic ecs table batch: update_inplace bypass rejects filtered row batches"
 }
 
 ///|
+test "panic ecs table batch: filtered write rejects an unmatched physical row" {
+  let world = World::new()
+  defer world.close()
+  let changed_entity = world.spawn()
+  let unchanged_entity = world.spawn()
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 1 })
+  try! world.set_by_key(unchanged_entity, table_batch_position_key, { value: 2 })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 11 })
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(tick_context)
+  let query : Query[Write[TableBatchPosition], Changed[TableBatchPosition]] = query_filtered(
+    world,
+    Changed::new(table_batch_position_key),
+  )
+  ignore(
+    try! query.try_for_each_filtered_table(fn(batch, rows) {
+      let positions = batch.write(table_batch_position_key).unwrap()
+      try! rows.for_each(fn(row_index) {
+        let unmatched_row = if row_index == 0 { 1 } else { 0 }
+        positions.set(unmatched_row, { value: 99 })
+      })
+    }),
+  )
+}
+
+///|
+test "ecs table batch: filtered write permits the matching physical row" {
+  let world = World::new()
+  defer world.close()
+  let changed_entity = world.spawn()
+  let unchanged_entity = world.spawn()
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 1 })
+  try! world.set_by_key(unchanged_entity, table_batch_position_key, { value: 2 })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 11 })
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(tick_context)
+  let query : Query[Write[TableBatchPosition], Changed[TableBatchPosition]] = query_filtered(
+    world,
+    Changed::new(table_batch_position_key),
+  )
+  let visited = Ref(0)
+
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    let positions = batch.write(table_batch_position_key).unwrap()
+    try! rows.for_each(fn(row_index) {
+      visited.val = visited.val + 1
+      positions.set(row_index, { value: 21 })
+    })
+  })
+
+  debug_inspect(used_batch, content="true")
+  debug_inspect(visited.val, content="1")
+  debug_inspect(
+    try! world.get_by_key(changed_entity, table_batch_position_key),
+    content="Some({ value: 21 })",
+  )
+  debug_inspect(
+    try! world.get_by_key(unchanged_entity, table_batch_position_key),
+    content="Some({ value: 2 })",
+  )
+}
+
+///|
+test "panic ecs table batch: filtered change writer rejects an unmatched row" {
+  let world = World::new()
+  defer world.close()
+  let changed_entity = world.spawn()
+  let unchanged_entity = world.spawn()
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 1 })
+  try! world.set_by_key(unchanged_entity, table_batch_position_key, { value: 2 })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 11 })
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(tick_context)
+  let query : Query[Write[TableBatchPosition], Changed[TableBatchPosition]] = query_filtered(
+    world,
+    Changed::new(table_batch_position_key),
+  )
+
+  ignore(
+    try! query.try_for_each_filtered_table(fn(batch, rows) {
+      let positions = batch.write(table_batch_position_key).unwrap()
+      positions.with_change_writer(fn(writer) {
+        try! rows.for_each(fn(row_index) {
+          let unmatched_row = if row_index == 0 { 1 } else { 0 }
+          writer.set_changed(unmatched_row)
+        })
+      })
+    }),
+  )
+}
+
+///|
+test "ecs table batch: filtered row authorization restores after nested exit" {
+  let world = World::new()
+  defer world.close()
+  let first = world.spawn()
+  let second = world.spawn()
+  try! world.set_by_key(first, table_batch_position_key, { value: 1 })
+  try! world.set_by_key(second, table_batch_position_key, { value: 2 })
+  let query : Query[Write[TableBatchPosition], All] = query(world)
+  let outer_visits = Ref(0)
+  let nested_visits = Ref(0)
+
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    let positions = batch.write(table_batch_position_key).unwrap()
+    try! rows.for_each(outer_row => {
+      ignore(positions.peek(outer_row))
+      try! rows.for_each(fn(inner_row) {
+        ignore(positions.peek(inner_row))
+        nested_visits.val = nested_visits.val + 1
+      })
+      ignore(positions.peek(outer_row))
+      try
+        rows.for_each(_inner_row => {
+          raise TableBatchUnavailable("nested authorization test")
+        })
+      catch {
+        TableBatchUnavailable(_) => ()
+        _ => abort("nested filtered traversal raised an unexpected ECS error")
+      } noraise {
+        _ => abort("nested filtered traversal should raise")
+      }
+      ignore(positions.peek(outer_row))
+      outer_visits.val = outer_visits.val + 1
+    })
+  })
+
+  debug_inspect(used_batch, content="true")
+  debug_inspect(outer_visits.val, content="2")
+  debug_inspect(nested_visits.val, content="4")
+}
+
+///|
 test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
   let world = World::new()
   defer world.close()

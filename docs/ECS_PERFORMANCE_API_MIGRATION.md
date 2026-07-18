@@ -187,6 +187,32 @@ Internally it keeps a private `MutArrayView` already bounded to the live rows,
 so indexed access retains one bounds check without making the raw capability
 escapable.
 
+## Filtered Table Row Scope
+
+`Query::try_for_each_filtered_table` exposes the complete physical table and a
+separate `QueryTableRows` matcher. Row-indexed access through
+`QueryTableBatch`, `TableBatchRead`, `TableBatchWrite`, or
+`TableBatchChangeWriter` is valid only while `QueryTableRows::for_each` is
+invoking the callback for that exact matching row. Use the yielded physical
+row index directly:
+
+```mbt nocheck
+ignore(query.try_for_each_filtered_table(fn(batch, rows) {
+  let positions = batch.write(position_key).unwrap()
+  rows.for_each(fn(row_index) {
+    positions.set(row_index, update(positions.peek(row_index)))
+  })
+}))
+```
+
+Code that indexed a different physical row from inside the callback could
+previously read or mutate an entity rejected by `Changed`, `Added`, `Or`, or a
+custom filter. That out-of-filter access now aborts. Whole-table batches from
+`Query::for_each_table` retain unrestricted access to every live physical row.
+The callback-scoped `with_read_values` and `with_write_values` helpers still
+provide complete read-only column views; callers must use them only with row
+indices yielded by the associated `QueryTableRows` traversal.
+
 ## Source-Compatible Interface Changes
 
 The generated-interface audit also found additive changes that do not require
