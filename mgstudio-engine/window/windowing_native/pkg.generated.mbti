@@ -6,6 +6,7 @@ import {
   "Milky2018/window/core",
   "Milky2018/window/dpi",
   "Milky2018/window/macos",
+  "Milky2018/windowing",
   "moonbitlang/core/ref",
 }
 
@@ -29,6 +30,8 @@ pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bytes?, Bool, Bool, 
 pub fn current_monitor(Int) -> @core.MonitorHandle?
 
 pub fn cursor_hittest(Int) -> Bool
+
+pub fn display_handle(Int) -> @windowing.DisplayHandle?
 
 pub fn drag_resize_window(Int, direction~ : @core.ResizeDirection) -> Bool
 
@@ -283,6 +286,8 @@ pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest]
 pub fn take_raw_winit_window_events() -> Array[RawWinitWindowEventSnapshot]
 
 pub fn width(Int) -> Int
+
+pub fn window_handle(Int) -> @windowing.WindowHandle?
 
 // Errors
 

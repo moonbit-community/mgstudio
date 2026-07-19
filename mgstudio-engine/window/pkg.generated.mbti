@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
+  "Milky2018/windowing",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -486,8 +487,10 @@ pub(all) struct RawHandleWrapper {
   window : Int
 } derive(Eq, @debug.Debug)
 pub fn RawHandleWrapper::content_view_handle(Self) -> UInt64?
+pub fn RawHandleWrapper::display_handle(Self) -> @windowing.DisplayHandle?
 pub fn RawHandleWrapper::new(WindowWrapper) -> Self
 pub fn RawHandleWrapper::window(Self) -> Int
+pub fn RawHandleWrapper::window_handle(Self) -> @windowing.WindowHandle?
 pub impl @ecs.Component for RawHandleWrapper
 
 pub(all) struct RawHandleWrapperHolder {

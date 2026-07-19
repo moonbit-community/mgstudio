@@ -578,13 +578,18 @@ pub fn GpuBackend::create_surface_binding(
   if surface_state_index_by_surface_id(self, surface_id) is Some(_) {
     return
   }
-  let ns_view = match @windowing.content_view_handle(window) {
+  let window_handle = match @windowing.window_handle(window) {
     Some(handle) => handle
-    None => abort("wgpu: failed to get macOS window content view handle")
+    None => abort("wgpu: failed to get window handle")
   }
-  let surface = self.instance.create_surface_macos_ns_view_u64(ns_view) catch {
-    err =>
-      abort("wgpu: failed to create macOS window surface: \{err.message()}")
+  let display_handle = match @windowing.display_handle(window) {
+    Some(handle) => handle
+    None => abort("wgpu: failed to get display handle")
+  }
+  let surface = self.instance.create_surface_from_window_handles(
+    window_handle, display_handle,
+  ) catch {
+    err => abort("wgpu: failed to create window surface: \{err.message()}")
   }
   self.surfaces.push(GpuSurfaceState::{
     surface_id,
@@ -624,6 +629,20 @@ pub fn GpuBackend::configure_surface_binding(
     return
   }
   let state = self.surfaces[index]
+  let window = match find_surface_binding(surface_id) {
+    Some(binding) => binding.window
+    None => abort("wgpu: missing host window for surface \{surface_id}")
+  }
+  let window_handle = match @windowing.window_handle(window) {
+    Some(handle) => handle
+    None => abort("wgpu: failed to get window handle for surface \{surface_id}")
+  }
+  state.surface.sync_macos_window_handle(window_handle) catch {
+    err =>
+      abort(
+        "wgpu: failed to synchronize macOS window surface: \{err.message()}",
+      )
+  }
   let present_mode_u32 = surface_present_mode_resolve(
     state.surface,
     self.adapter,

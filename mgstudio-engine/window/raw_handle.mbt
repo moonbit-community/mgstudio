@@ -45,6 +45,20 @@ pub fn RawHandleWrapper::content_view_handle(
 }
 
 ///|
+pub fn RawHandleWrapper::window_handle(
+  self : RawHandleWrapper,
+) -> @raw_windowing.WindowHandle? {
+  @windowing.window_handle(self.window)
+}
+
+///|
+pub fn RawHandleWrapper::display_handle(
+  self : RawHandleWrapper,
+) -> @raw_windowing.DisplayHandle? {
+  @windowing.display_handle(self.window)
+}
+
+///|
 pub(all) struct RawHandleWrapperHolder {
   handle : Ref[RawHandleWrapper?]
 }

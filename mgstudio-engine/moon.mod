@@ -15,9 +15,9 @@ import {
   "Milky2018/moon_rodio@0.3.3",
   "Milky2018/moon_wesl@0.1.2",
   "Milky2018/moon_wgsl@0.15.3",
-  "Milky2018/wgpu_mbt@0.14.8",
+  "Milky2018/wgpu_mbt@0.15.0",
   "moonbitlang/x@0.4.45",
-  "Milky2018/window@0.5.2",
+  "Milky2018/window@0.6.0",
   "gmlewis/image@0.17.9",
   "gmlewis/io@0.23.12",
   "Milky2018/sysinfo@0.1.2",
@@ -29,6 +29,7 @@ import {
   "Milky2018/wgsl@0.15.3",
   "Milky2018/moon_wgsl_naga@0.15.3",
   "Milky2018/moon_wgsl_naga_oil@0.15.3",
+  "Milky2018/windowing@0.1.0",
 }
 
 readme = "README.mbt.md"

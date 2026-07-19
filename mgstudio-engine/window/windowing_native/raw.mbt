@@ -1920,6 +1920,22 @@ pub fn content_view_handle(window : NativeWindowHandle) -> UInt64? {
 }
 
 ///|
+pub fn window_handle(window : NativeWindowHandle) -> @windowing.WindowHandle? {
+  match native_window_ref(window) {
+    Some(window_ref) => Some(window_ref.val.window_handle())
+    None => None
+  }
+}
+
+///|
+pub fn display_handle(window : NativeWindowHandle) -> @windowing.DisplayHandle? {
+  match native_window_ref(window) {
+    Some(window_ref) => Some(window_ref.val.display_handle())
+    None => None
+  }
+}
+
+///|
 pub fn native_backend_available() -> Bool {
   @window_macos.EventLoopBuilder() |> ignore
   true
