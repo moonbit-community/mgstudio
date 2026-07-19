@@ -717,13 +717,7 @@ pub fn GpuBackend::ensure_surface_configured(
 }
 
 ///|
-pub fn GpuBackend::begin_frame_binding(
-  self : GpuBackend,
-  surface_id : Int,
-) -> Bool {
-  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
-    return false
-  }
+fn GpuBackend::prepare_render_frame(self : GpuBackend) -> Unit {
   mesh3d_pass_uniform_states_clear(self)
   mesh3d_frame_view_bind_group_cache_clear(self)
   self.mesh3d_motion_vector_view_bg_cache.clear()
@@ -733,11 +727,6 @@ pub fn GpuBackend::begin_frame_binding(
   } else {
     self.frame_count = self.frame_count + 1U
   }
-  let target_id = self.surfaces[index].target_id
-  self.set_active_surface_target(target_id)
-  self.surfaces[index].cleared_this_frame = false
-  sync_active_surface_state(self)
-
   self.mesh2d_instance_used = 0
   self.sprite_flush_count_this_frame = 0
   mesh2d_reset_pending_batch(self)
@@ -749,6 +738,21 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh3d_prepared_draw_count = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
   self.mesh3d_motion_vector_instance_mesh_used = 0
+}
+
+///|
+pub fn GpuBackend::begin_frame_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Bool {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return false
+  }
+  let target_id = self.surfaces[index].target_id
+  self.set_active_surface_target(target_id)
+  self.surfaces[index].cleared_this_frame = false
+  sync_active_surface_state(self)
+
   let acquired = match self.acquire_surface_texture_once(index) {
     SurfaceAcquired(st, tex) => Some((st, tex))
     SurfaceOutdated => {
@@ -1082,7 +1086,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
   if surface <= 0 {
     return false
   }
-  render_diagnostics_begin_frame()
+  prepare_render_frame()
   if ensure_backend() is Some(backend) {
     guard backend.begin_frame_binding(surface) else { return false }
     record_active_frame(surface, surface_target_id_from_surface_id(surface))
@@ -1092,7 +1096,19 @@ pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
 }
 
 ///|
+fn prepare_render_frame() -> Unit {
+  render_diagnostics_begin_frame()
+  if ensure_backend() is Some(backend) {
+    backend.prepare_render_frame()
+  }
+}
+
+///|
 pub fn prepare_initial_surface_frames() -> Unit {
+  // Bevy's `prepare_windows` starts the logical render frame before the render
+  // graph runs. Host surface acquisition can remain lazy after the initial
+  // present, but frame-local GPU allocators must still reset at this boundary.
+  prepare_render_frame()
   if ensure_backend() is Some(backend) {
     backend.prepare_initial_surface_frames()
   }
