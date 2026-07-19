@@ -1060,10 +1060,17 @@ pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with
 }
 
 ///|
+fn[M : @asset.Asset] material2d_plugin_asset_debug_name(
+  _plugin : Material2dPlugin[M],
+) -> String {
+  M::asset_debug_name()
+}
+
+///|
 pub impl[M : Material2d + @asset.Asset] @app.Plugin for Material2dPlugin[M] with fn name(
-  _self,
+  self,
 ) {
-  "mgstudio.sprite_render.Material2dPlugin<\{M::asset_debug_name()}>"
+  "mgstudio.sprite_render.Material2dPlugin<\{material2d_plugin_asset_debug_name(self)}>"
 }
 
 ///|

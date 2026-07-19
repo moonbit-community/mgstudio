@@ -1393,7 +1393,7 @@ pub impl Extrudable for RingMeshBuilder with fn perimeter(self) {
 
 ///|
 pub impl[P : ExtrudablePrimitive] Meshable for @math.Ring[P] with fn mesh(self) {
-  ring_mesh(self.outer_shape.mesh(), self.inner_shape.mesh())
+  ring_mesh(Meshable::mesh(self.outer_shape), Meshable::mesh(self.inner_shape))
 }
 
 ///|
@@ -1403,7 +1403,7 @@ pub impl[P : ExtrudablePrimitive] ExtrudablePrimitive for @math.Ring[P] with fn 
   ring_perimeter(
     self.outer_shape.mesh_perimeter(),
     self.inner_shape.mesh_perimeter(),
-    self.outer_shape.mesh().vertex_count(),
+    Meshable::mesh(self.outer_shape).vertex_count(),
   )
 }
 

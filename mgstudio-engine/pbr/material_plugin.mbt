@@ -1370,10 +1370,17 @@ pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M] with fn 
 }
 
 ///|
+fn[M : @asset.Asset] material_plugin_asset_debug_name(
+  _plugin : MaterialPlugin[M],
+) -> String {
+  M::asset_debug_name()
+}
+
+///|
 pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M] with fn name(
-  _self,
+  self,
 ) {
-  "mgstudio.pbr.MaterialPlugin<\{M::asset_debug_name()}>"
+  "mgstudio.pbr.MaterialPlugin<\{material_plugin_asset_debug_name(self)}>"
 }
 
 ///|
@@ -1392,6 +1399,20 @@ fn[M : Material] material_pipeline_from_material_hooks(
     M::meshlet_prepass_fragment_shader(),
     M::meshlet_deferred_fragment_shader(),
   )
+}
+
+///|
+fn[M : Material] material_register_shader_sources_for_handle(
+  _probe : @asset.Handle[M],
+) -> Bool {
+  M::register_shader_sources()
+}
+
+///|
+fn[M : Material] material_debug_name_for_handle(
+  _probe : @asset.Handle[M],
+) -> String {
+  M::material_debug_name()
 }
 
 ///|
@@ -1739,7 +1760,7 @@ fn[M : Material + @asset.Asset] material_plugin_build(
   plugin : MaterialPlugin[M],
 ) -> @app.App[@ecs.World] {
   let probe : @asset.Handle[M] = @asset.Handle::new(0)
-  let shader_paths = if M::register_shader_sources() {
+  let shader_paths = if material_register_shader_sources_for_handle(probe) {
     material_shader_asset_paths(probe)
   } else {
     []
@@ -1777,7 +1798,7 @@ fn[M : Material + @asset.Asset] material_plugin_build(
       @app.system(fn(world : @ecs.World) {
         add_material_bind_group_allocator_system(world, probe)
       }).named(
-        "mgstudio_pbr::add_material_bind_group_allocator<\{M::material_debug_name()}>",
+        "mgstudio_pbr::add_material_bind_group_allocator<\{material_debug_name_for_handle(probe)}>",
       ),
     )
     .add_systems(
@@ -2156,7 +2177,7 @@ fn[M : Material + @asset.Asset] material_asset_changed_ids_since_last_prepare(
     return changed_ids
   }
   ensure_material_asset_event_cursor_resource_in_world(render_world, _probe)
-  let cursor_key = M::material_keys().material_asset_event_cursor
+  let cursor_key = Material::material_keys().material_asset_event_cursor
   guard render_world.get_resource_mut(cursor_key) is Some(cursor_resource) else {
     return changed_ids
   }

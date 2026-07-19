@@ -136,7 +136,7 @@ pub fn[T : @ecs.Message + Default] ResMut::write_default(
   self : ResMut[@ecs.Messages[T]],
 ) -> Int {
   let key : @ecs.MessageKey[T] = @ecs.Message::message()
-  res_mut_world_or_abort(self).send_message(key, T::default())
+  res_mut_world_or_abort(self).send_message(key, Default::default())
 }
 
 ///|
