@@ -453,7 +453,10 @@ fn wireframe_material_assets_mut_or_abort(
 fn global_wireframe_material_or_abort(
   world : @ecs.World,
 ) -> GlobalWireframeMaterial {
-  match world.get_resource(GlobalWireframeMaterial::resource()) {
+  match
+    world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[GlobalWireframeMaterial]),
+    ) {
     Some(material) => material
     None =>
       abort(
@@ -477,9 +480,10 @@ fn setup_global_wireframe_material(world : @ecs.World) -> Unit {
       ),
     )
   })
-  world.insert_resource(GlobalWireframeMaterial::resource(), GlobalWireframeMaterial::{
-    handle,
-  })
+  world.insert_resource(
+    (@app.Resource::resource() : @ecs.ResourceKey[GlobalWireframeMaterial]),
+    GlobalWireframeMaterial::{ handle, },
+  )
 }
 
 ///|

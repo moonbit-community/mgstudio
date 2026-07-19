@@ -1832,11 +1832,17 @@ fn ensure_input_resources(world : @ecs.World) -> Unit {
 
 ///|
 fn input_event_cursors(world : @ecs.World) -> InputEventCursors {
-  match world.get_resource(InputEventCursors::resource()) {
+  match
+    world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[InputEventCursors]),
+    ) {
     Some(cursors) => cursors
     None => {
       let cursors = InputEventCursors::InputEventCursors()
-      world.insert_resource(InputEventCursors::resource(), cursors)
+      world.insert_resource(
+        (@app.Resource::resource() : @ecs.ResourceKey[InputEventCursors]),
+        cursors,
+      )
       cursors
     }
   }

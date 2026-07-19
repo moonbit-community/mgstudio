@@ -86,15 +86,24 @@ impl @app.Resource for Render3dSceneTargetsState with fn resource() {
 fn render3d_scene_targets_state_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dSceneTargetsState] {
-  if world.get_resource(Render3dSceneTargetsState::resource()) is None {
-    world.insert_resource(Render3dSceneTargetsState::resource(), {
-      motion_blur_targets: [],
-      prepass_targets: [],
-      transmission_source_targets: [],
-      postprocess_ping_targets: [],
-    })
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dSceneTargetsState]),
+    )
+    is None {
+    world.insert_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dSceneTargetsState]),
+      {
+        motion_blur_targets: [],
+        prepass_targets: [],
+        transmission_source_targets: [],
+        postprocess_ping_targets: [],
+      },
+    )
   }
-  match world.get_resource_mut(Render3dSceneTargetsState::resource()) {
+  match
+    world.get_resource_mut(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dSceneTargetsState]),
+    ) {
     Some(state) => state
     None => abort("Missing Render3dSceneTargetsState resource")
   }

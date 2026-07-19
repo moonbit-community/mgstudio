@@ -76,25 +76,47 @@ fn render3d_queue_prepass_material_meshes(
     .get_resource(@render_batching.GpuPreprocessingSupport::resource())
     .unwrap()
   let specialized_cache = world
-    .get_resource(SpecializedPrepassMaterialPipelineCache::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[SpecializedPrepassMaterialPipelineCache]),
+    )
     .unwrap()
   let pending_queues = world
-    .get_resource(PendingPrepassMeshMaterialQueues::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[PendingPrepassMeshMaterialQueues]),
+    )
     .unwrap()
   let dirty_specializations = world
     .get_resource(@render_visibility.DirtySpecializations::resource())
     .unwrap()
   let opaque_prepass_phases = world
-    .get_resource(Render3dOpaquePrepassPhases::resource())
+    .get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+    )
     .unwrap()
   let alpha_mask_prepass_phases = world
-    .get_resource(Render3dAlphaMaskPrepassPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+    )
     .unwrap()
   let opaque_deferred_phases = world
-    .get_resource(Render3dOpaqueDeferredPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+    )
     .unwrap()
   let alpha_mask_deferred_phases = world
-    .get_resource(Render3dAlphaMaskDeferredPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+    )
     .unwrap()
   let extracted_indices = render3d_prepass_extracted_index_by_entity(meshes)
   for camera in cameras {

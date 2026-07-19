@@ -280,29 +280,35 @@ fn configure_pbr_render_world_resources(
   )
   pbr_init_render_resource_if_missing(
     world,
-    Render3dMainViewDrawItems::resource(),
+    (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
     fn() { Render3dMainViewDrawItems::Render3dMainViewDrawItems() },
   )
   pbr_init_render_resource_if_missing(
     world,
-    Render3dOpaqueMainViewPhases::resource(),
+    (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
     fn() { Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases() },
   )
   pbr_init_render_resource_if_missing(
     world,
-    Render3dAlphaMaskMainViewPhases::resource(),
+    (
+      @app.Resource::resource() :
+      @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
     fn() { Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases() },
   )
   pbr_init_render_resource_if_missing(
     world,
-    Render3dTransmissiveMainViewPhases::resource(),
+    (
+      @app.Resource::resource() :
+      @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
     fn() {
       Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases()
     },
   )
   pbr_init_render_resource_if_missing(
     world,
-    Render3dTransparentMainViewPhases::resource(),
+    (
+      @app.Resource::resource() :
+      @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
     fn() {
       Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases()
     },

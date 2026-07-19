@@ -112,9 +112,12 @@ impl @app.Resource for Render3dExecuteQueueState with fn resource() {
 
 ///|
 fn ensure_render3d_execute_queue_state(world : @ecs.World) -> Unit {
-  if world.get_resource(Render3dExecuteQueueState::resource()) is None {
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dExecuteQueueState]),
+    )
+    is None {
     world.insert_resource(
-      Render3dExecuteQueueState::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dExecuteQueueState]),
       render3d_execute_queue_state_default(),
     )
   }
@@ -125,7 +128,10 @@ fn render3d_execute_queue_state_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dExecuteQueueState] {
   ensure_render3d_execute_queue_state(world)
-  match world.get_resource_mut(Render3dExecuteQueueState::resource()) {
+  match
+    world.get_resource_mut(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dExecuteQueueState]),
+    ) {
     Some(state) => state
     None => abort("Missing Render3dExecuteQueueState resource in render world")
   }

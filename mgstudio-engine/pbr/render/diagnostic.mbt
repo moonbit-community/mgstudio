@@ -46,13 +46,19 @@ impl @app.Resource for Render3dDiagnosticsState with fn resource() {
 fn render3d_diagnostics_state_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dDiagnosticsState] {
-  if world.get_resource(Render3dDiagnosticsState::resource()) is None {
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dDiagnosticsState]),
+    )
+    is None {
     world.insert_resource(
-      Render3dDiagnosticsState::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dDiagnosticsState]),
       render3d_diagnostics_state_default(),
     )
   }
-  match world.get_resource_mut(Render3dDiagnosticsState::resource()) {
+  match
+    world.get_resource_mut(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dDiagnosticsState]),
+    ) {
     Some(state) => state
     None => abort("Missing Render3dDiagnosticsState resource")
   }

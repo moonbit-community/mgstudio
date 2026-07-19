@@ -174,16 +174,30 @@ fn render3d_retained_prepass_phase_items(
   let prepass_items : Array[MeshPhaseItem3d] = []
   let deferred_items : Array[MeshPhaseItem3d] = []
   let opaque_prepass = world
-    .get_resource(Render3dOpaquePrepassPhases::resource())
+    .get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+    )
     .unwrap()
   let alpha_mask_prepass = world
-    .get_resource(Render3dAlphaMaskPrepassPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+    )
     .unwrap()
   let opaque_deferred = world
-    .get_resource(Render3dOpaqueDeferredPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+    )
     .unwrap()
   let alpha_mask_deferred = world
-    .get_resource(Render3dAlphaMaskDeferredPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+    )
     .unwrap()
   render3d_append_retained_prepass_phase_items(
     prepass_items,
@@ -302,27 +316,51 @@ impl @app.Resource for Render3dAlphaMaskDeferredPhases with fn resource() {
 
 ///|
 fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
-  if world.get_resource(Render3dOpaquePrepassPhases::resource()) is None {
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dOpaquePrepassPhases::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
       Render3dOpaquePrepassPhases::Render3dOpaquePrepassPhases(),
     )
   }
-  if world.get_resource(Render3dAlphaMaskPrepassPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dAlphaMaskPrepassPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
       Render3dAlphaMaskPrepassPhases::Render3dAlphaMaskPrepassPhases(),
     )
   }
-  if world.get_resource(Render3dOpaqueDeferredPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dOpaqueDeferredPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
       Render3dOpaqueDeferredPhases::Render3dOpaqueDeferredPhases(),
     )
   }
-  if world.get_resource(Render3dAlphaMaskDeferredPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dAlphaMaskDeferredPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
       Render3dAlphaMaskDeferredPhases::Render3dAlphaMaskDeferredPhases(),
     )
   }
@@ -363,14 +401,24 @@ fn render3d_extract_camera_prepass_phases(
       camera.payload.normal_prepass_enabled ||
       camera.payload.motion_vector_prepass_enabled
     if has_prepass {
-      match world.get_resource(Render3dOpaquePrepassPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+        ) {
         Some(phases) =>
           phases.phases.prepare_for_new_frame(
             retained_view_entity, gpu_preprocessing_mode,
           )
         None => abort("Missing Opaque3dPrepass phases during extraction")
       }
-      match world.get_resource(Render3dAlphaMaskPrepassPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+        ) {
         Some(phases) =>
           phases.phases.prepare_for_new_frame(
             retained_view_entity, gpu_preprocessing_mode,
@@ -378,24 +426,44 @@ fn render3d_extract_camera_prepass_phases(
         None => abort("Missing AlphaMask3dPrepass phases during extraction")
       }
     } else {
-      match world.get_resource(Render3dOpaquePrepassPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+        ) {
         Some(phases) => phases.phases.remove(retained_view_entity)
         None => abort("Missing Opaque3dPrepass phases during extraction")
       }
-      match world.get_resource(Render3dAlphaMaskPrepassPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+        ) {
         Some(phases) => phases.phases.remove(retained_view_entity)
         None => abort("Missing AlphaMask3dPrepass phases during extraction")
       }
     }
     if camera.payload.deferred_prepass_enabled {
-      match world.get_resource(Render3dOpaqueDeferredPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+        ) {
         Some(phases) =>
           phases.phases.prepare_for_new_frame(
             retained_view_entity, gpu_preprocessing_mode,
           )
         None => abort("Missing Opaque3dDeferred phases during extraction")
       }
-      match world.get_resource(Render3dAlphaMaskDeferredPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+        ) {
         Some(phases) =>
           phases.phases.prepare_for_new_frame(
             retained_view_entity, gpu_preprocessing_mode,
@@ -403,30 +471,58 @@ fn render3d_extract_camera_prepass_phases(
         None => abort("Missing AlphaMask3dDeferred phases during extraction")
       }
     } else {
-      match world.get_resource(Render3dOpaqueDeferredPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+        ) {
         Some(phases) => phases.phases.remove(retained_view_entity)
         None => abort("Missing Opaque3dDeferred phases during extraction")
       }
-      match world.get_resource(Render3dAlphaMaskDeferredPhases::resource()) {
+      match
+        world.get_resource(
+          (
+            @app.Resource::resource() :
+            @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+        ) {
         Some(phases) => phases.phases.remove(retained_view_entity)
         None => abort("Missing AlphaMask3dDeferred phases during extraction")
       }
     }
     live_views.add(retained_view_entity)
   }
-  match world.get_resource(Render3dOpaquePrepassPhases::resource()) {
+  match
+    world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+    ) {
     Some(phases) => phases.phases.retain_live_views(live_views)
     None => abort("Missing Opaque3dPrepass phases during extraction")
   }
-  match world.get_resource(Render3dAlphaMaskPrepassPhases::resource()) {
+  match
+    world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+    ) {
     Some(phases) => phases.phases.retain_live_views(live_views)
     None => abort("Missing AlphaMask3dPrepass phases during extraction")
   }
-  match world.get_resource(Render3dOpaqueDeferredPhases::resource()) {
+  match
+    world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+    ) {
     Some(phases) => phases.phases.retain_live_views(live_views)
     None => abort("Missing Opaque3dDeferred phases during extraction")
   }
-  match world.get_resource(Render3dAlphaMaskDeferredPhases::resource()) {
+  match
+    world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+    ) {
     Some(phases) => phases.phases.retain_live_views(live_views)
     None => abort("Missing AlphaMask3dDeferred phases during extraction")
   }

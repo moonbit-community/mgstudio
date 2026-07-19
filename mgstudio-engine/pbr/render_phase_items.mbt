@@ -501,33 +501,64 @@ impl @app.Resource for Render3dTransparentMainViewPhases with fn resource() {
 
 ///|
 fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
-  if world.get_resource(Render3dMainViewDrawItems::resource()) is None {
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
+    )
+    is None {
     world.insert_resource(
-      Render3dMainViewDrawItems::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
       Render3dMainViewDrawItems::Render3dMainViewDrawItems(),
     )
   }
-  if world.get_resource(Render3dOpaqueMainViewPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dOpaqueMainViewPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
       Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases(),
     )
   }
-  if world.get_resource(Render3dAlphaMaskMainViewPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dAlphaMaskMainViewPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
       Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases(),
     )
   }
-  if world.get_resource(Render3dTransmissiveMainViewPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dTransmissiveMainViewPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
       Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases(),
     )
   }
-  if world.get_resource(Render3dTransparentMainViewPhases::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
+    )
+    is None {
     world.insert_resource(
-      Render3dTransparentMainViewPhases::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
       Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases(),
     )
   }
@@ -538,7 +569,10 @@ fn render3d_main_view_draw_items_mut_or_abort(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dMainViewDrawItems] {
   ensure_render3d_main_view_phase_resources(world)
-  match world.get_resource_mut(Render3dMainViewDrawItems::resource()) {
+  match
+    world.get_resource_mut(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
+    ) {
     Some(draw_items) => draw_items
     None => abort("Missing Render3dMainViewDrawItems resource in render world")
   }
@@ -587,21 +621,33 @@ fn render3d_prepare_main_view_phase(
   draw_items_resource.modify(fn(value) {
     value.set_draw_items(retained_view_entity, draw_items)
   })
-  guard world.get_resource_mut(Render3dOpaqueMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
+    )
     is Some(opaque_phases) else {
     abort("Missing Render3dOpaqueMainViewPhases resource in render world")
   }
   opaque_phases.modify(fn(value) {
     value.store.set_indices(retained_view_entity, opaque_draw_item_indices)
   })
-  guard world.get_resource_mut(Render3dAlphaMaskMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
+    )
     is Some(alpha_mask_phases) else {
     abort("Missing Render3dAlphaMaskMainViewPhases resource in render world")
   }
   alpha_mask_phases.modify(fn(value) {
     value.store.set_indices(retained_view_entity, alpha_mask_draw_item_indices)
   })
-  guard world.get_resource_mut(Render3dTransmissiveMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
+    )
     is Some(transmissive_phases) else {
     abort("Missing Render3dTransmissiveMainViewPhases resource in render world")
   }
@@ -610,7 +656,11 @@ fn render3d_prepare_main_view_phase(
       retained_view_entity, transmissive_draw_item_indices,
     )
   })
-  guard world.get_resource_mut(Render3dTransparentMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
+    )
     is Some(transparent_phases) else {
     abort("Missing Render3dTransparentMainViewPhases resource in render world")
   }
@@ -629,7 +679,9 @@ fn render3d_apply_main_view_phase_queue(
 ) -> Array[MeshPhaseItem3d] {
   ensure_render3d_main_view_phase_resources(world)
   let existing = match
-    world.get_resource(Render3dMainViewDrawItems::resource()) {
+    world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
+    ) {
     Some(draw_items) =>
       match draw_items.items(retained_view_entity) {
         Some(items) => items.copy()
@@ -656,26 +708,42 @@ fn render3d_retain_live_main_view_phases(
   ensure_render3d_main_view_phase_resources(world)
   let draw_items = render3d_main_view_draw_items_mut_or_abort(world)
   draw_items.modify(fn(value) { value.retain_live_views(live_views) })
-  guard world.get_resource_mut(Render3dOpaqueMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
+    )
     is Some(opaque_phases) else {
     abort("Missing Render3dOpaqueMainViewPhases resource in render world")
   }
   opaque_phases.modify(fn(value) { value.store.retain_live_views(live_views) })
-  guard world.get_resource_mut(Render3dAlphaMaskMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
+    )
     is Some(alpha_mask_phases) else {
     abort("Missing Render3dAlphaMaskMainViewPhases resource in render world")
   }
   alpha_mask_phases.modify(fn(value) {
     value.store.retain_live_views(live_views)
   })
-  guard world.get_resource_mut(Render3dTransmissiveMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
+    )
     is Some(transmissive_phases) else {
     abort("Missing Render3dTransmissiveMainViewPhases resource in render world")
   }
   transmissive_phases.modify(fn(value) {
     value.store.retain_live_views(live_views)
   })
-  guard world.get_resource_mut(Render3dTransparentMainViewPhases::resource())
+  guard world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
+    )
     is Some(transparent_phases) else {
     abort("Missing Render3dTransparentMainViewPhases resource in render world")
   }
@@ -689,7 +757,9 @@ fn render3d_main_view_phase_items_or_abort(
   world : @ecs.World,
   retained_view_entity : @core.Entity,
 ) -> Array[MeshPhaseItem3d] {
-  guard world.get_resource(Render3dMainViewDrawItems::resource())
+  guard world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
+    )
     is Some(draw_items) else {
     abort("Missing Render3dMainViewDrawItems resource during pbr main pass")
   }
@@ -704,23 +774,39 @@ fn render3d_main_view_phase_draw_item_indices_or_abort(
   world : @ecs.World,
   retained_view_entity : @core.Entity,
 ) -> Array[Int] {
-  guard world.get_resource(Render3dOpaqueMainViewPhases::resource())
+  guard world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
+    )
     is Some(opaque_phases) else {
     abort("Missing Render3dOpaqueMainViewPhases resource during pbr main pass")
   }
-  guard world.get_resource(Render3dAlphaMaskMainViewPhases::resource())
+  guard world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
+    )
     is Some(alpha_mask_phases) else {
     abort(
       "Missing Render3dAlphaMaskMainViewPhases resource during pbr main pass",
     )
   }
-  guard world.get_resource(Render3dTransmissiveMainViewPhases::resource())
+  guard world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
+    )
     is Some(transmissive_phases) else {
     abort(
       "Missing Render3dTransmissiveMainViewPhases resource during pbr main pass",
     )
   }
-  guard world.get_resource(Render3dTransparentMainViewPhases::resource())
+  guard world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
+    )
     is Some(transparent_phases) else {
     abort(
       "Missing Render3dTransparentMainViewPhases resource during pbr main pass",
@@ -763,7 +849,9 @@ fn render3d_main_view_phase_item_count_or_abort(
   world : @ecs.World,
   retained_view_entity : @core.Entity,
 ) -> Int {
-  guard world.get_resource(Render3dMainViewDrawItems::resource())
+  guard world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
+    )
     is Some(draw_items) else {
     abort(
       "Missing Render3dMainViewDrawItems resource during pbr draw storage reservation",
