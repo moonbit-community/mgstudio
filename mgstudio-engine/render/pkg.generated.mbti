@@ -385,6 +385,8 @@ pub fn host_gpu_register_mesh3d_material_pipeline_descriptor(material_pipeline_i
 
 pub fn host_gpu_release_skybox_bind_group(bind_group_id~ : Int) -> Bool
 
+pub fn host_gpu_release_surface(Int) -> Unit
+
 pub fn host_gpu_request_device() -> Int
 
 pub fn host_gpu_reserve_mesh3d_draw_storage(count~ : Int) -> Int

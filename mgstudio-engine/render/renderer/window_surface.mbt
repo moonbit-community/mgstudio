@@ -72,6 +72,31 @@ fn find_surface_binding(surface_id : NativeGpuSurface) -> SurfaceBinding? {
 }
 
 ///|
+fn remove_surface_runtime_bindings(surface_id : NativeGpuSurface) -> Unit {
+  let state = window_surface_runtime_state
+  let next_surfaces : Array[SurfaceBinding] = []
+  for binding in state.surfaces {
+    if binding.surface_id != surface_id {
+      next_surfaces.push(binding)
+    }
+  }
+  state.surfaces.clear()
+  for binding in next_surfaces {
+    state.surfaces.push(binding)
+  }
+  let next_frames : Array[FrameBinding] = []
+  for binding in state.frames {
+    if binding.surface_id != surface_id {
+      next_frames.push(binding)
+    }
+  }
+  state.frames.clear()
+  for binding in next_frames {
+    state.frames.push(binding)
+  }
+}
+
+///|
 fn find_surface_binding_by_window(window : Int) -> SurfaceBinding? {
   let state = window_surface_runtime_state
   for binding in state.surfaces {
@@ -616,6 +641,29 @@ pub fn GpuBackend::create_surface(self : GpuBackend, window : Int) -> Unit {
 }
 
 ///|
+fn GpuBackend::release_surface_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Unit {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
+  let target_id = self.surfaces[index].target_id
+  self.release_frame_binding(surface_id)
+  let removed = self.surfaces.remove(index)
+  removed.release()
+  if self.active_surface_target_id == target_id {
+    self.active_surface_target_id = match default_surface_target_id(self) {
+      Some(next_target_id) => next_target_id
+      None => -1
+    }
+    self.frame = None
+    self.pass_state = None
+  }
+  sync_active_surface_state(self)
+}
+
+///|
 pub fn GpuBackend::configure_surface_binding(
   self : GpuBackend,
   surface_id : Int,
@@ -1054,6 +1102,17 @@ pub fn create_surface(window : Int) -> NativeGpuSurface {
     backend.create_surface_binding(surface_id, target_id, window)
   }
   surface_id
+}
+
+///|
+pub fn release_surface(surface : NativeGpuSurface) -> Unit {
+  if surface <= 0 {
+    return
+  }
+  if render_context_runtime_state.backend is Some(backend) {
+    backend.release_surface_binding(surface)
+  }
+  remove_surface_runtime_bindings(surface)
 }
 
 ///|

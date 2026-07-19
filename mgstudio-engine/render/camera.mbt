@@ -89,6 +89,11 @@ pub fn host_gpu_surface_target_id_for_window(window : Int) -> Int {
 }
 
 ///|
+pub fn host_gpu_release_surface(surface : HostGpuSurface) -> Unit {
+  @renderer.release_surface(surface)
+}
+
+///|
 pub fn host_gpu_configure_surface(
   device~ : HostGpuDevice,
   surface~ : HostGpuSurface,

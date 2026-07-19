@@ -459,6 +459,8 @@ pub fn release_frame_retired_resources() -> Unit
 
 pub fn release_skybox_prepared_bind_group(bind_group_id~ : Int) -> Bool
 
+pub fn release_surface(Int) -> Unit
+
 pub fn render_context_backend_for_test() -> GpuBackend?
 
 pub fn render_context_set_backend_for_test(GpuBackend?) -> Unit

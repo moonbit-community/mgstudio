@@ -251,6 +251,9 @@ pub fn WindowSurfaces::remove(
   self : WindowSurfaces,
   entity : @core.Entity,
 ) -> Unit {
+  if self.surfaces.get(entity) is Some(data) {
+    data.surface.release()
+  }
   self.surfaces.remove(entity)
   self.configured_windows.remove(entity)
 }

@@ -38,6 +38,28 @@ fn runner_surface_binding_find(
 }
 
 ///|
+fn runner_host_entry_is_closing(
+  world : @ecs.World,
+  entry : @window.WindowHostEntry,
+) -> Bool {
+  (try! world.get_by_key(entry.entity, @window.ecs_key_closing_window))
+  is Some(_)
+}
+
+///|
+fn runner_surface_binding_has_host_entry(
+  binding : RunnerSurfaceBinding,
+  entries : Array[@window.WindowHostEntry],
+) -> Bool {
+  for entry in entries {
+    if entry.host_window == binding.host_window {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn runner_surface_binding_ordered(
   bindings : Array[RunnerSurfaceBinding],
   primary_window : @window.HostWindow,
@@ -405,9 +427,27 @@ fn WinitAppRunnerState::mark_app_update_complete(
   if self.frame_limit > 0 {
     self.frame_count_ref.val = self.frame_count_ref.val + 1
     if self.frame_count_ref.val >= self.frame_limit {
-      @window.window_request_close_all_hosts(self.app_ref.val.world())
+      self.close_all_host_windows()
     }
   }
+}
+
+///|
+fn WinitAppRunnerState::release_all_surfaces(
+  self : WinitAppRunnerState,
+) -> Unit {
+  for binding in self.runner_surfaces {
+    @render.host_gpu_release_surface(binding.surface)
+  }
+  self.runner_surfaces.clear()
+}
+
+///|
+fn WinitAppRunnerState::close_all_host_windows(
+  self : WinitAppRunnerState,
+) -> Unit {
+  self.release_all_surfaces()
+  @window.window_request_close_all_hosts(self.app_ref.val.world())
 }
 
 ///|
@@ -427,13 +467,23 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     @app.TimelineTraceCategory::System,
     "mgstudio_winit::runner.surface_bindings",
   )
-  let host_entries = @window.window_host_entries(world)
+  let host_entries : Array[@window.WindowHostEntry] = []
+  for entry in @window.window_host_entries(world) {
+    if !runner_host_entry_is_closing(world, entry) {
+      host_entries.push(entry)
+    }
+  }
   @app.timeline_trace_emit_counter_int(
     "winit.runner.host_windows",
     host_entries.length(),
   )
   let next_surfaces : Array[RunnerSurfaceBinding] = []
   let previous_surfaces = self.runner_surfaces
+  for previous in previous_surfaces {
+    if !runner_surface_binding_has_host_entry(previous, host_entries) {
+      @render.host_gpu_release_surface(previous.surface)
+    }
+  }
   for entry in host_entries {
     let host_window = entry.host_window
     let window_component = try! world.get_by_key(
@@ -583,17 +633,17 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       )
       self.debug_screenshot_saved = true
       if self.debug_screenshot_exit_on_save {
-        @window.window_request_close_all_hosts(self.app_ref.val.world())
+        self.close_all_host_windows()
         return
       }
     }
   }
   if @render.screenshot_parity_capture_completed() {
-    @window.window_request_close_all_hosts(self.app_ref.val.world())
+    self.close_all_host_windows()
     return
   }
   if self.app_ref.val.should_exit() is Some(_) {
-    @window.window_request_close_all_hosts(self.app_ref.val.world())
+    self.close_all_host_windows()
     return
   }
 }
@@ -698,7 +748,7 @@ fn WinitAppRunnerState::redraw_requested(
   }
 
   if self.app_ref.val.should_exit() is Some(_) {
-    @window.window_request_close_all_hosts(self.app_ref.val.world())
+    self.close_all_host_windows()
     @app.timeline_trace_end_span(
       @app.TimelineTraceCategory::System,
       "mgstudio_winit::redraw_requested",
