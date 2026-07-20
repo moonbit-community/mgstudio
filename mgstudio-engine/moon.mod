@@ -14,7 +14,7 @@ import {
   "Milky2018/moon_cpal@0.11.7",
   "Milky2018/moon_rodio@0.3.3",
   "Milky2018/moon_wesl@0.1.2",
-  "Milky2018/moon_wgsl@0.15.3",
+  "Milky2018/moon_wgsl@0.16.0",
   "Milky2018/wgpu_mbt@0.15.0",
   "moonbitlang/x@0.4.45",
   "Milky2018/window@0.6.0",
@@ -26,9 +26,9 @@ import {
   "gmlewis/flate@0.36.9",
   "Milky2018/metis@0.1.1",
   "Milky2018/meshopt_mbt@0.1.1",
-  "Milky2018/wgsl@0.15.3",
-  "Milky2018/moon_wgsl_naga@0.15.3",
-  "Milky2018/moon_wgsl_naga_oil@0.15.3",
+  "Milky2018/wgsl@0.16.0",
+  "Milky2018/moon_wgsl_naga@0.16.0",
+  "Milky2018/moon_wgsl_naga_oil@0.16.0",
   "Milky2018/windowing@0.1.0",
 }
 

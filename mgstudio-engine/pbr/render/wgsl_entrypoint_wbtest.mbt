@@ -30,7 +30,7 @@ test "pbr render: item-imported entrypoints are tree-shaken when unused" {
   )
   let source = composer.compose_wgsl("entry.wgsl", @wgsl_common.WgslComposeOptions::{
     defines: Map([]),
-    value_defines: @wgsl_common.default_wgsl_value_defines(),
+    value_defines: @wgsl_common.bevy_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
   }) catch {
@@ -67,7 +67,7 @@ test "pbr render: module alias global binding access composes" {
   )
   let source = composer.compose_wgsl("view_transformations.wgsl", @wgsl_common.WgslComposeOptions::{
     defines: Map([]),
-    value_defines: @wgsl_common.default_wgsl_value_defines(),
+    value_defines: @wgsl_common.bevy_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
   }) catch {

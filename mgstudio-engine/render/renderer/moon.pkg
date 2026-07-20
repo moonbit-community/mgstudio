@@ -13,7 +13,7 @@ import {
   "Milky2018/mgstudio/window" @window_pkg,
   "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/wgpu_mbt/c" @wgpu_c,
-  "Milky2018/wgsl/common" @wgsl_common,
+  "Milky2018/moon_wgsl" @wgsl_common,
   "moonbitlang/core/ref",
   "moonbitlang/core/math" @coremath,
   "moonbitlang/core/string",

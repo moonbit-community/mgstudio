@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "compile external blocker: fully qualified module function call fails IR lowering" {
+test "compile: fully qualified module function call is flattened" {
   clear_registered_shader_sources()
   register_shader_source(
     "shader/compile/fog_blocker.wgsl", "#define_import_path test::fog\nfn linear_fog(value: f32) -> f32 { return value; }\n",
@@ -21,7 +21,7 @@ test "compile external blocker: fully qualified module function call fails IR lo
   register_shader_source(
     "shader/compile/fog_blocker_root.wgsl", "#define_import_path test::root\nfn fragment() -> f32 { return test::fog::linear_fog(1.0); }\n",
   )
-  let message = try
+  let source = try
     load_preprocessed_wgsl(
       "",
       "shader/compile/fog_blocker_root.wgsl",
@@ -29,12 +29,13 @@ test "compile external blocker: fully qualified module function call fails IR lo
       default_shader_value_defines(),
     )
   catch {
-    err => err.message()
+    err =>
+      fail(
+        "expected qualified module function compose success: \{err.message()}",
+      )
   } noraise {
-    _ => ""
+    source => source
   }
-  debug_inspect(
-    message,
-    content="\"invalid WGSL IR pipeline: IR lowering failed: unsupported WGSL type: test::fog::linear_fog\"",
-  )
+  assert_true(source.contains("fn fragment"))
+  assert_false(source.contains("test::fog::linear_fog"))
 }

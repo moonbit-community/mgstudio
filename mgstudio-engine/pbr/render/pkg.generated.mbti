@@ -27,8 +27,8 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_wgsl_naga_oil/compose",
+  "Milky2018/moon_wgsl_naga_oil/contract",
   "Milky2018/wgpu_mbt",
-  "Milky2018/wgsl/common",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/hashset",
@@ -1369,7 +1369,7 @@ pub using @projection3d {type OrthographicProjection3d}
 
 pub using @projection3d {type OrthographicScalingMode3d}
 
-pub using @common {type WgslComposeOptions as PbrRenderWgslComposeOptions}
+pub using @contract {type WgslComposeOptions as PbrRenderWgslComposeOptions}
 
 pub using @compose {type Composer as PbrRenderWgslComposer}
 
