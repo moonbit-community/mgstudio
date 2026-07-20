@@ -85,7 +85,6 @@ pub let window_surfaces_resource_key : @ecs.ResourceKey[WindowSurfaces]
 
 // Errors
 pub suberror WindowSurfaceCreateError {
-  MissingContentViewHandle(@core.Entity, Int)
   NativeSurfaceCreateFailed(@core.Entity, String)
   NativeSurfaceConfigureFailed(@core.Entity, String)
 }

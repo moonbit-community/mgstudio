@@ -21,6 +21,7 @@
 priv struct SurfaceBinding {
   surface_id : NativeGpuSurface
   window : Int
+  handle : @window_pkg.RawHandleWrapper
   target_id : Int
   mut needs_initial_present : Bool
 }
@@ -598,22 +599,12 @@ pub fn GpuBackend::create_surface_binding(
   self : GpuBackend,
   surface_id : Int,
   target_id : Int,
-  window : Int,
+  handle : @window_pkg.RawHandleWrapper,
 ) -> Unit {
   if surface_state_index_by_surface_id(self, surface_id) is Some(_) {
     return
   }
-  let window_handle = match @windowing.window_handle(window) {
-    Some(handle) => handle
-    None => abort("wgpu: failed to get window handle")
-  }
-  let display_handle = match @windowing.display_handle(window) {
-    Some(handle) => handle
-    None => abort("wgpu: failed to get display handle")
-  }
-  let surface = self.instance.create_surface_from_window_handles(
-    window_handle, display_handle,
-  ) catch {
+  let surface = self.instance.create_surface_from_window(handle) catch {
     err => abort("wgpu: failed to create window surface: \{err.message()}")
   }
   self.surfaces.push(GpuSurfaceState::{
@@ -636,8 +627,11 @@ pub fn GpuBackend::create_surface_binding(
 }
 
 ///|
-pub fn GpuBackend::create_surface(self : GpuBackend, window : Int) -> Unit {
-  self.create_surface_binding(1, -1, window)
+pub fn GpuBackend::create_surface(
+  self : GpuBackend,
+  handle : @window_pkg.RawHandleWrapper,
+) -> Unit {
+  self.create_surface_binding(1, -1, handle)
 }
 
 ///|
@@ -677,13 +671,9 @@ pub fn GpuBackend::configure_surface_binding(
     return
   }
   let state = self.surfaces[index]
-  let window = match find_surface_binding(surface_id) {
-    Some(binding) => binding.window
-    None => abort("wgpu: missing host window for surface \{surface_id}")
-  }
-  let window_handle = match @windowing.window_handle(window) {
-    Some(handle) => handle
-    None => abort("wgpu: failed to get window handle for surface \{surface_id}")
+  let window_handle = match find_surface_binding(surface_id) {
+    Some(binding) => binding.handle.window_handle()
+    None => abort("wgpu: missing window handle for surface \{surface_id}")
   }
   state.surface.sync_macos_window_handle(window_handle) catch {
     err =>
@@ -1088,18 +1078,21 @@ pub fn release_frame_retired_resources() -> Unit {
 }
 
 ///|
-pub fn create_surface(window : Int) -> NativeGpuSurface {
+pub fn create_surface(
+  handle : @window_pkg.RawHandleWrapper,
+) -> NativeGpuSurface {
   let surface_id = next_surface_id()
   let target_id = surface_target_id_from_surface_id(surface_id)
   let state = window_surface_runtime_state
   state.surfaces.push(SurfaceBinding::{
     surface_id,
-    window,
+    window: handle.window(),
+    handle,
     target_id,
     needs_initial_present: true,
   })
   if ensure_backend() is Some(backend) {
-    backend.create_surface_binding(surface_id, target_id, window)
+    backend.create_surface_binding(surface_id, target_id, handle)
   }
   surface_id
 }

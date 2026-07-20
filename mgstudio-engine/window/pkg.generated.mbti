@@ -483,15 +483,18 @@ pub(all) struct PrimaryWindow {
 } derive(Eq, @debug.Debug)
 pub impl @ecs.Component for PrimaryWindow
 
-pub(all) struct RawHandleWrapper {
+pub struct RawHandleWrapper {
   window : Int
-} derive(Eq, @debug.Debug)
-pub fn RawHandleWrapper::content_view_handle(Self) -> UInt64?
-pub fn RawHandleWrapper::display_handle(Self) -> @windowing.DisplayHandle?
-pub fn RawHandleWrapper::new(WindowWrapper) -> Self
+  window_handle_ : @windowing.WindowHandle
+  display_handle_ : @windowing.DisplayHandle
+} derive(@debug.Debug)
+pub fn RawHandleWrapper::display_handle(Self) -> @windowing.DisplayHandle
+pub fn RawHandleWrapper::new(Int, @windowing.WindowHandle, @windowing.DisplayHandle) -> Self
 pub fn RawHandleWrapper::window(Self) -> Int
-pub fn RawHandleWrapper::window_handle(Self) -> @windowing.WindowHandle?
+pub fn RawHandleWrapper::window_handle(Self) -> @windowing.WindowHandle
 pub impl @ecs.Component for RawHandleWrapper
+pub impl @windowing.HasDisplayHandle for RawHandleWrapper
+pub impl @windowing.HasWindowHandle for RawHandleWrapper
 
 pub(all) struct RawHandleWrapperHolder {
   handle : @ref.Ref[RawHandleWrapper?]
@@ -802,11 +805,6 @@ pub(all) struct WindowThemeChanged {
   theme : @Milky2018/window/core.Theme
 } derive(Eq)
 pub impl @ecs.Message for WindowThemeChanged
-
-pub(all) struct WindowWrapper {
-  window : Int
-} derive(Eq, @debug.Debug)
-pub fn WindowWrapper::new(Int) -> Self
 
 // Type aliases
 pub using @events {type ButtonState}

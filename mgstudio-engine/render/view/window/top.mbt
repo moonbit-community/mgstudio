@@ -20,7 +20,6 @@ pub struct WindowRenderPlugin {}
 
 ///|
 pub suberror WindowSurfaceCreateError {
-  MissingContentViewHandle(@core.Entity, Int)
   NativeSurfaceCreateFailed(@core.Entity, String)
   NativeSurfaceConfigureFailed(@core.Entity, String)
 }
@@ -30,8 +29,6 @@ pub fn WindowSurfaceCreateError::message(
   self : WindowSurfaceCreateError,
 ) -> String {
   match self {
-    MissingContentViewHandle(entity, window) =>
-      "missing content view handle for window entity \{entity.to_bits()} host window \{window}"
     NativeSurfaceCreateFailed(entity, message) =>
       "failed to create surface for window entity \{entity.to_bits()}: \{message}"
     NativeSurfaceConfigureFailed(entity, message) =>
@@ -678,15 +675,7 @@ fn configure_surface_for_window(
   render_adapter : @renderer.RenderAdapter,
   render_device : @renderer.RenderDevice,
 ) -> Unit raise WindowSurfaceCreateError {
-  let window_handle = match window.handle.window_handle() {
-    Some(handle) => handle
-    None =>
-      raise WindowSurfaceCreateError::MissingContentViewHandle(
-        window.entity,
-        window.handle.window(),
-      )
-  }
-  surface.sync_macos_window_handle(window_handle) catch {
+  surface.sync_macos_window_handle(window.handle.window_handle()) catch {
     err =>
       raise WindowSurfaceCreateError::NativeSurfaceConfigureFailed(
         window.entity,
@@ -711,25 +700,7 @@ pub fn create_surface_for_window(
   window : ExtractedWindow,
   render_instance : @renderer.RenderInstance,
 ) -> @wgpu.Surface raise WindowSurfaceCreateError {
-  let window_handle = match window.handle.window_handle() {
-    Some(handle) => handle
-    None =>
-      raise WindowSurfaceCreateError::MissingContentViewHandle(
-        window.entity,
-        window.handle.window(),
-      )
-  }
-  let display_handle = match window.handle.display_handle() {
-    Some(handle) => handle
-    None =>
-      raise WindowSurfaceCreateError::MissingContentViewHandle(
-        window.entity,
-        window.handle.window(),
-      )
-  }
-  render_instance
-  .wgpu_instance()
-  .create_surface_from_window_handles(window_handle, display_handle) catch {
+  render_instance.wgpu_instance().create_surface_from_window(window.handle) catch {
     err =>
       raise WindowSurfaceCreateError::NativeSurfaceCreateFailed(
         window.entity,

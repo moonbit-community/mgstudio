@@ -90,6 +90,22 @@ fn capture_system(
 }
 
 ///|
+fn raw_handle_for_host(
+  world : @ecs.World,
+  host_window : @window.HostWindow,
+) -> @window.RawHandleWrapper? {
+  for entry in @window.window_host_entries(world) {
+    if entry.host_window == host_window {
+      return try! world.get_by_key(
+        entry.entity,
+        @window.ecs_key_raw_handle_wrapper,
+      )
+    }
+  }
+  None
+}
+
+///|
 fn externally_driven_runner_builder(
   app : @app.App[@ecs.World],
 ) -> @app.RunnerFn {
@@ -98,7 +114,11 @@ fn externally_driven_runner_builder(
       return
     }
     let device = @render.host_gpu_request_device()
-    let surface = @render.host_gpu_create_surface(window)
+    let raw_handle = match raw_handle_for_host(app.world(), window) {
+      Some(handle) => handle
+      None => return
+    }
+    let surface = @render.host_gpu_create_surface(raw_handle)
     let width = @window.host_window_get_width(window)
     let height = @window.host_window_get_height(window)
     @render.host_gpu_configure_surface(device~, surface~, width~, height~)

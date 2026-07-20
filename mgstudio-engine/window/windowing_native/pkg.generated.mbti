@@ -21,8 +21,6 @@ pub fn bind_accessibility_requested(@ref.Ref[Bool]) -> Unit
 
 pub fn commit_pending_accessibility_update() -> Bool
 
-pub fn content_view_handle(Int) -> UInt64?
-
 pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, name? : String?, visible~ : Bool, resizable~ : Bool, decorations~ : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool, skip_taskbar? : Bool, clip_children? : Bool) -> Int
 
 pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bytes?, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Float, Float, Float?, Float?, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> Int
@@ -30,8 +28,6 @@ pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bytes?, Bool, Bool, 
 pub fn current_monitor(Int) -> @core.MonitorHandle?
 
 pub fn cursor_hittest(Int) -> Bool
-
-pub fn display_handle(Int) -> @windowing.DisplayHandle?
 
 pub fn drag_resize_window(Int, direction~ : @core.ResizeDirection) -> Bool
 
@@ -46,6 +42,8 @@ pub fn event_loop_any_thread_requested() -> Bool
 pub fn focus_window(Int) -> Unit
 
 pub fn focused(Int) -> Bool
+
+pub fn handles(Int) -> (@windowing.WindowHandle, @windowing.DisplayHandle)?
 
 pub fn height(Int) -> Int
 
@@ -286,8 +284,6 @@ pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest]
 pub fn take_raw_winit_window_events() -> Array[RawWinitWindowEventSnapshot]
 
 pub fn width(Int) -> Int
-
-pub fn window_handle(Int) -> @windowing.WindowHandle?
 
 // Errors
 

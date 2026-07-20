@@ -229,7 +229,7 @@ pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~
 
 pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
-pub fn host_gpu_create_surface(Int) -> Int
+pub fn host_gpu_create_surface(@window.RawHandleWrapper) -> Int
 
 pub fn host_gpu_create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
 

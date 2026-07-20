@@ -534,7 +534,12 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
       continue
     }
 
-    let surface = @render.host_gpu_create_surface(host_window)
+    let raw_handle = match
+      (try! world.get_by_key(entry.entity, @window.ecs_key_raw_handle_wrapper)) {
+      Some(handle) => handle
+      None => abort("winit: host window has no typed raw handle wrapper")
+    }
+    let surface = @render.host_gpu_create_surface(raw_handle)
     let target_id = @render.host_gpu_surface_target_id(surface)
     if width > 0 && height > 0 {
       @render.host_gpu_configure_surface(

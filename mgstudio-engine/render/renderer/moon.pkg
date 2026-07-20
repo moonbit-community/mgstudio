@@ -10,7 +10,7 @@ import {
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/shader/compile" @shader_compile,
   "Milky2018/mgstudio/time",
-  "Milky2018/mgstudio/window/windowing_native" @windowing,
+  "Milky2018/mgstudio/window" @window_pkg,
   "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/wgpu_mbt/c" @wgpu_c,
   "Milky2018/wgsl/common" @wgsl_common,

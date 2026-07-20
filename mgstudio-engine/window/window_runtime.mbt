@@ -782,8 +782,12 @@ fn window_create_runtime_for_entity(
   )
   let cursor_options = window_current_cursor_options(world, entity)
   let cursor_icon = window_current_cursor_icon(world, entity)
+  let (window_handle, display_handle) = match @windowing.handles(host_window) {
+    Some(handles) => handles
+    None => abort("window: newly created host window has no native handles")
+  }
   let raw_handle_wrapper = RawHandleWrapper::new(
-    WindowWrapper::new(host_window),
+    host_window, window_handle, display_handle,
   )
   host_window_set_visible(host_window, visible=window.visible)
   if window.visible && window.focused {

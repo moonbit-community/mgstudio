@@ -13,6 +13,37 @@
 // limitations under the License.
 
 ///|
+priv struct UnavailableHandleProvider {}
+
+///|
+impl @windowing.WindowHandleProvider for UnavailableHandleProvider with fn raw_window_handle(
+  _self,
+) {
+  raise @windowing.HandleError::Unavailable
+}
+
+///|
+impl @windowing.DisplayHandleProvider for UnavailableHandleProvider with fn raw_display_handle(
+  _self,
+) {
+  raise @windowing.HandleError::Unavailable
+}
+
+///|
+fn test_raw_handle(window : Int) -> @window_pkg.RawHandleWrapper {
+  let provider = UnavailableHandleProvider::{  }
+  @window_pkg.RawHandleWrapper::new(
+    window,
+    @windowing.WindowHandle::from_provider(
+      provider as &@windowing.WindowHandleProvider,
+    ),
+    @windowing.DisplayHandle::from_provider(
+      provider as &@windowing.DisplayHandleProvider,
+    ),
+  )
+}
+
+///|
 test "render view window: WindowRenderPlugin initializes render-world window resources" {
   let lifecycle_world_15_0 = @ecs.World::new()
   defer lifecycle_world_15_0.close()
@@ -49,9 +80,7 @@ test "render view window: ExtractedWindows tracks primary and removes it with en
   let world = @ecs.World::new()
   defer world.close()
   let entity = world.spawn()
-  let handle = @window_pkg.RawHandleWrapper::new(
-    @window_pkg.WindowWrapper::new(11),
-  )
+  let handle = test_raw_handle(11)
   let extracted = ExtractedWindow::new(
     entity,
     handle,
@@ -98,12 +127,7 @@ fn spawn_extractable_window(
 ) -> @core.Entity {
   let entity = world.spawn()
   try! (world.entity_mut(entity).insert_component(window) |> ignore)
-  try! (world
-  .entity_mut(entity)
-  .insert_component(
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
-  )
-  |> ignore)
+  try! (world.entity_mut(entity).insert_component(test_raw_handle(17)) |> ignore)
   if primary {
     try! (world
     .entity_mut(entity)
@@ -232,7 +256,7 @@ test "render view window: need_surface_configuration follows configured and chan
   let entity = world.spawn()
   let extracted = ExtractedWindow::new(
     entity,
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    test_raw_handle(17),
     640,
     360,
     @window_pkg.PresentMode::Fifo,
@@ -258,7 +282,7 @@ test "render view window: camera target gating follows Bevy prepare_windows cond
   let secondary_entity = world.spawn()
   let primary = ExtractedWindow::new(
     primary_entity,
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    test_raw_handle(17),
     640,
     360,
     @window_pkg.PresentMode::Fifo,
@@ -267,7 +291,7 @@ test "render view window: camera target gating follows Bevy prepare_windows cond
   )
   let secondary = ExtractedWindow::new(
     secondary_entity,
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(18)),
+    test_raw_handle(18),
     640,
     360,
     @window_pkg.PresentMode::Fifo,
@@ -388,7 +412,7 @@ test "render view window: present_mode_raw chooses first supported fallback" {
   let entity = world.spawn()
   let window = ExtractedWindow::new(
     entity,
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    test_raw_handle(17),
     640,
     360,
     @window_pkg.PresentMode::AutoNoVsync,
@@ -455,7 +479,7 @@ test "render view window: surface configuration uses Bevy window fields" {
   let entity = world.spawn()
   let window = ExtractedWindow::new(
     entity,
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(17)),
+    test_raw_handle(17),
     640,
     360,
     @window_pkg.PresentMode::AutoNoVsync,
@@ -495,13 +519,13 @@ test "render view window: surface configuration uses Bevy window fields" {
 }
 
 ///|
-test "render view window: create_surface_for_window reports missing content view" {
+test "render view window: create_surface_for_window reports unavailable typed handle" {
   let world = @ecs.World::new()
   defer world.close()
   let entity = world.spawn()
   let window = ExtractedWindow::new(
     entity,
-    @window_pkg.RawHandleWrapper::new(@window_pkg.WindowWrapper::new(-1)),
+    test_raw_handle(-1),
     640,
     360,
     @window_pkg.PresentMode::Fifo,
@@ -515,8 +539,8 @@ test "render view window: create_surface_for_window reports missing content view
     create_surface_for_window(window, render_instance) |> ignore
     debug_inspect(false, content="true")
   } catch {
-    WindowSurfaceCreateError::MissingContentViewHandle(_, host_window) =>
-      debug_inspect(host_window, content="-1")
+    WindowSurfaceCreateError::NativeSurfaceCreateFailed(_, message) =>
+      debug_inspect(message, content="\"window handle is unavailable\"")
     _ => debug_inspect(false, content="true")
   }
 }
