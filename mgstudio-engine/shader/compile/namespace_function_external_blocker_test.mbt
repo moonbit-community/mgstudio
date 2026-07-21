@@ -13,19 +13,76 @@
 // limitations under the License.
 
 ///|
-test "compile: fully qualified module function call is flattened" {
+test "compile: transitive fully qualified module function call is flattened" {
   clear_registered_shader_sources()
   register_shader_source(
-    "shader/compile/fog_blocker.wgsl", "#define_import_path test::fog\nfn linear_fog(value: f32) -> f32 { return value; }\n",
+    "shader/compile/types_blocker.wgsl",
+    (
+      #|#define_import_path test::types
+      #|struct Fog { mode: u32 }
+      #|
+    ),
   )
   register_shader_source(
-    "shader/compile/fog_blocker_root.wgsl", "#define_import_path test::root\nfn fragment() -> f32 { return test::fog::linear_fog(1.0); }\n",
+    "shader/compile/fog_blocker.wgsl",
+    (
+      #|#define_import_path test::fog
+      #|#import test::types::Fog
+      #|fn linear_fog(
+      #|  fog_params: Fog,
+      #|  input_color: vec4<f32>,
+      #|  distance: f32,
+      #|  scattering: vec3<f32>,
+      #|) -> vec4<f32> {
+      #|  return input_color;
+      #|}
+      #|
+    ),
+  )
+  register_shader_source(
+    "shader/compile/pbr_functions_blocker.wgsl",
+    (
+      #|#define_import_path test::pbr_functions
+      #|#import test::types
+      #|#ifdef DISTANCE_FOG
+      #|fn apply_fog(
+      #|  fog_params: types::Fog,
+      #|  input_color: vec4<f32>,
+      #|  distance: f32,
+      #|  scattering: vec3<f32>,
+      #|) -> vec4<f32> {
+      #|  return test::fog::linear_fog(
+      #|    fog_params, input_color, distance, scattering,
+      #|  );
+      #|}
+      #|#endif
+      #|
+    ),
+  )
+  register_shader_source(
+    "shader/compile/fog_blocker_root.wgsl",
+    (
+      #|#define_import_path test::root
+      #|#import test::pbr_functions
+      #|#import test::types
+      #|fn fragment(
+      #|  fog_params: types::Fog,
+      #|  input_color: vec4<f32>,
+      #|  distance: f32,
+      #|  scattering: vec3<f32>,
+      #|) -> vec4<f32> {
+      #|  return pbr_functions::apply_fog(
+      #|    fog_params, input_color, distance, scattering,
+      #|  );
+      #|}
+      #|
+    ),
   )
   let source = try
     load_preprocessed_wgsl(
       "",
       "shader/compile/fog_blocker_root.wgsl",
-      @hashmap.HashMap([]),
+      @hashmap.HashMap([("DISTANCE_FOG", true)]),
       default_shader_value_defines(),
     )
   catch {

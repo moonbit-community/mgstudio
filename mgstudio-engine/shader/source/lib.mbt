@@ -16,9 +16,6 @@
 pub type ShaderSourceFile = @wgsl_common.WgslSourceFile
 
 ///|
-pub type ShaderSourceScanOptions = @wgsl_common.WgslSourceScanOptions
-
-///|
 let embedded_shader_source_paths : Array[String] = []
 
 ///|
@@ -295,12 +292,4 @@ pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[
     embedded_shader_source_files_with_import_path(),
   )
   @hashmap.HashMap(registry.copy_import_module_paths().to_array())
-}
-
-///|
-pub fn scan_shader_source_files(
-  root : String,
-  options : ShaderSourceScanOptions,
-) -> Array[ShaderSourceFile] raise @fs.IOError {
-  @wgsl_common.scan_wgsl_source_files(root, options)
 }

@@ -341,6 +341,7 @@ fn compose_options(
     value_defines: shader_def_hashmap_to_map(value_defines),
     redirects: [],
     additional_imports: [],
+    immediate_specializations: [],
   }
 }
 

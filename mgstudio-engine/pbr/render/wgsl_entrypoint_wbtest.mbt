@@ -33,6 +33,7 @@ test "pbr render: item-imported entrypoints are tree-shaken when unused" {
     value_defines: @wgsl_common.bevy_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
+    immediate_specializations: [],
   }) catch {
     err =>
       abort(
@@ -70,6 +71,7 @@ test "pbr render: module alias global binding access composes" {
     value_defines: @wgsl_common.bevy_wgsl_value_defines(),
     redirects: [],
     additional_imports: [],
+    immediate_specializations: [],
   }) catch {
     err =>
       abort(
