@@ -239,17 +239,19 @@ fn[ShaderModule, RenderDevice] shader_cache_compiled_source(
             cache.module_path_to_asset_id,
             cache.shaders,
           )
-          let mut compiler_options = @wesl.CompileOptions::default()
-            .with_imports(true)
-            .with_condcomp(true)
-            .with_lower(true)
+          let features = @wesl.Features::default()
           for shader_def in shader_defs {
             match shader_def {
               Bool(key, value) =>
-                compiler_options = compiler_options.with_feature(key, value)
+                features.set_feature(key, @wesl.Feature::from_bool(value))
               Int(_, _) => ()
               UInt(_, _) => ()
             }
+          }
+          let compiler_options = {
+            ..@wesl.CompileOptions::default(),
+            lower: true,
+            features,
           }
           let compiled = @wesl.compile(
             module_path,

@@ -13,7 +13,7 @@ import {
   "Milky2018/gamepad@0.4.6",
   "Milky2018/moon_cpal@0.11.7",
   "Milky2018/moon_rodio@0.3.3",
-  "Milky2018/moon_wesl@0.1.2",
+  "Milky2018/moon_wesl@0.17.0",
   "Milky2018/moon_wgsl@0.17.0",
   "Milky2018/wgpu_mbt@0.15.0",
   "moonbitlang/x@0.4.45",
