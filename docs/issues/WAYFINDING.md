@@ -23,4 +23,3 @@ Markdown tracker under `docs/issues`.
 - Regenerate `docs/issues/README.md` after every tracker mutation.
 
 Use ticket titles, not bare `ISS` identifiers, in developer-facing narration.
-
