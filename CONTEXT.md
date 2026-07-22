@@ -134,7 +134,7 @@ _Avoid_: committed Bevy patch, permanent baseline fork
 > **Dev:** "Should bridge packages own behavior just because code lives there?"
 > **Domain expert:** "No — **Runtime Owner Semantics** stays with the **Bevy Source Owner**; bridges only keep the port buildable and traceable."
 >
-> **Dev:** "If `moon_taffy` lacks a Bevy-required layout capability, is that a mgstudio parity gap?"
+> **Dev:** "If `chicle` lacks a Bevy-required layout capability, is that a mgstudio parity gap?"
 > **Domain expert:** "No — that is an **External Blocker** and should be tracked so the community can build the missing dependency capability."
 >
 > **Dev:** "If MoonBit cannot express the typed system parameter shape Bevy uses, can we encode the state as JSON?"

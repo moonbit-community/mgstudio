@@ -7,7 +7,6 @@ import {
   "Milky2018/moon_rapier@0.5.1",
   "Milky2018/moon_swash@0.1.10",
   "Milky2018/moon_zeno@0.1.3",
-  "Milky2018/moon_taffy@0.5.2",
   "Milky2018/moon_accesskit@0.3.0",
   "Milky2018/moon_skrifa@0.1.8",
   "Milky2018/gamepad@0.4.6",
@@ -30,6 +29,7 @@ import {
   "Milky2018/moon_wgsl_naga@0.17.0",
   "Milky2018/moon_wgsl_naga_oil@0.17.0",
   "Milky2018/windowing@0.1.0",
+  "Milky2018/chicle@0.6.0",
 }
 
 readme = "README.mbt.md"

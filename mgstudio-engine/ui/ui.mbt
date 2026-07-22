@@ -1754,20 +1754,20 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   let mut root_viewport_size = @math.Vec2::new(0.0F, 0.0F)
 
-  fn dim_for_val(val : Val) -> @taffy_style.Dimension {
+  fn dim_for_val(val : Val) -> @chicle_style.Dimension {
     match val {
-      Auto => @taffy_helpers.auto()
-      Px(px) => @taffy_helpers.length(f2d(px))
-      Percent(p) => @taffy_helpers.percent(f2d(p / 100.0F))
-      Vw(p) => @taffy_helpers.length(f2d(root_viewport_size.x * (p / 100.0F)))
-      Vh(p) => @taffy_helpers.length(f2d(root_viewport_size.y * (p / 100.0F)))
+      Auto => @chicle_helpers.auto()
+      Px(px) => @chicle_helpers.length(f2d(px))
+      Percent(p) => @chicle_helpers.percent(f2d(p / 100.0F))
+      Vw(p) => @chicle_helpers.length(f2d(root_viewport_size.x * (p / 100.0F)))
+      Vh(p) => @chicle_helpers.length(f2d(root_viewport_size.y * (p / 100.0F)))
       VMin(p) => {
         let m = if root_viewport_size.x < root_viewport_size.y {
           root_viewport_size.x
         } else {
           root_viewport_size.y
         }
-        @taffy_helpers.length(f2d(m * (p / 100.0F)))
+        @chicle_helpers.length(f2d(m * (p / 100.0F)))
       }
       VMax(p) => {
         let m = if root_viewport_size.x > root_viewport_size.y {
@@ -1775,7 +1775,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         } else {
           root_viewport_size.y
         }
-        @taffy_helpers.length(f2d(m * (p / 100.0F)))
+        @chicle_helpers.length(f2d(m * (p / 100.0F)))
       }
     }
   }
@@ -1820,8 +1820,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   fn rect_for_uirect(
     r : UiRect,
-  ) -> @taffy_geometry.Rect[@taffy_style.Dimension] {
-    @taffy_geometry.Rect(
+  ) -> @chicle_geometry.Rect[@chicle_style.Dimension] {
+    @chicle_geometry.Rect(
       left=dim_for_val(r.left),
       right=dim_for_val(r.right),
       top=dim_for_val(r.top),
@@ -1832,259 +1832,265 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn size_for_vals(
     w : Val,
     h : Val,
-  ) -> @taffy_geometry.Size[@taffy_style.Dimension] {
-    @taffy_geometry.Size(width=dim_for_val(w), height=dim_for_val(h))
+  ) -> @chicle_geometry.Size[@chicle_style.Dimension] {
+    @chicle_geometry.Size(width=dim_for_val(w), height=dim_for_val(h))
   }
 
-  fn grid_track_to_taffy(track : GridTrack) -> @taffy_style.Dimension {
+  fn grid_track_to_chicle(track : GridTrack) -> @chicle_style.Dimension {
     match track {
-      GridTrack::Auto => @taffy_helpers.auto()
-      GridTrack::Px(px) => @taffy_helpers.length(f2d(px))
-      GridTrack::Percent(p) => @taffy_helpers.percent(f2d(p))
-      GridTrack::Fr(w) => @taffy_helpers.fr(f2d(w))
-      GridTrack::MinContent => @taffy_helpers.grid_min_content()
-      GridTrack::MaxContent => @taffy_helpers.grid_max_content()
+      GridTrack::Auto => @chicle_helpers.auto()
+      GridTrack::Px(px) => @chicle_helpers.length(f2d(px))
+      GridTrack::Percent(p) => @chicle_helpers.percent(f2d(p))
+      GridTrack::Fr(w) => @chicle_helpers.fr(f2d(w))
+      GridTrack::MinContent => @chicle_helpers.grid_min_content()
+      GridTrack::MaxContent => @chicle_helpers.grid_max_content()
     }
   }
 
-  fn grid_track_repetition_to_taffy(
+  fn grid_track_repetition_to_chicle(
     repetition : GridTrackRepetition,
-  ) -> @taffy_style.GridTrackRepetition {
+  ) -> @chicle_style.GridTrackRepetition {
     match repetition {
-      GridTrackRepetition::Count(n) => @taffy_helpers.repeat_count(n)
-      GridTrackRepetition::AutoFill => @taffy_helpers.repeat_auto_fill()
-      GridTrackRepetition::AutoFit => @taffy_helpers.repeat_auto_fit()
+      GridTrackRepetition::Count(n) => @chicle_helpers.repeat_count(n)
+      GridTrackRepetition::AutoFill => @chicle_helpers.repeat_auto_fill()
+      GridTrackRepetition::AutoFit => @chicle_helpers.repeat_auto_fit()
     }
   }
 
-  fn repeated_grid_track_to_taffy(
+  fn repeated_grid_track_to_chicle(
     rep : RepeatedGridTrack,
-  ) -> @taffy_style.Dimension {
-    let tracks : Array[@taffy_style.Dimension] = []
+  ) -> @chicle_style.Dimension {
+    let tracks : Array[@chicle_style.Dimension] = []
     for track in rep.tracks {
-      tracks.push(grid_track_to_taffy(track))
+      tracks.push(grid_track_to_chicle(track))
     }
     match rep.repetition {
       GridTrackRepetition::Count(1) =>
         if tracks.length() == 1 {
           tracks[0]
         } else {
-          @taffy_helpers.repeat(
-            grid_track_repetition_to_taffy(rep.repetition),
+          @chicle_helpers.repeat(
+            grid_track_repetition_to_chicle(rep.repetition),
             tracks,
           )
         }
       _ =>
-        @taffy_helpers.repeat(
-          grid_track_repetition_to_taffy(rep.repetition),
+        @chicle_helpers.repeat(
+          grid_track_repetition_to_chicle(rep.repetition),
           tracks,
         )
     }
   }
 
-  fn grid_template_to_taffy(
+  fn grid_template_to_chicle(
     template : Array[RepeatedGridTrack],
-  ) -> Array[@taffy_style.Dimension] {
-    let dims : Array[@taffy_style.Dimension] = []
+  ) -> Array[@chicle_style.Dimension] {
+    let dims : Array[@chicle_style.Dimension] = []
     for rep in template {
-      dims.push(repeated_grid_track_to_taffy(rep))
+      dims.push(repeated_grid_track_to_chicle(rep))
     }
     dims
   }
 
-  fn grid_tracks_to_taffy(
+  fn grid_tracks_to_chicle(
     tracks : Array[GridTrack],
-  ) -> Array[@taffy_style.Dimension] {
-    let dims : Array[@taffy_style.Dimension] = []
+  ) -> Array[@chicle_style.Dimension] {
+    let dims : Array[@chicle_style.Dimension] = []
     for track in tracks {
-      dims.push(grid_track_to_taffy(track))
+      dims.push(grid_track_to_chicle(track))
     }
     dims
   }
 
-  fn overflow_axis_to_taffy(axis : OverflowAxis) -> @taffy_style.Overflow {
+  fn overflow_axis_to_chicle(axis : OverflowAxis) -> @chicle_style.Overflow {
     match axis {
-      OverflowAxis::Visible => @taffy_helpers.overflow_visible()
-      OverflowAxis::Hidden => @taffy_helpers.overflow_hidden()
-      OverflowAxis::Scroll => @taffy_helpers.overflow_scroll()
-      OverflowAxis::Clip => @taffy_helpers.overflow_clip()
+      OverflowAxis::Visible => @chicle_helpers.overflow_visible()
+      OverflowAxis::Hidden => @chicle_helpers.overflow_hidden()
+      OverflowAxis::Scroll => @chicle_helpers.overflow_scroll()
+      OverflowAxis::Clip => @chicle_helpers.overflow_clip()
     }
   }
 
-  fn overflow_to_taffy(
+  fn overflow_to_chicle(
     overflow : Overflow,
-  ) -> @taffy_geometry.Point[@taffy_style.Overflow] {
-    @taffy_geometry.Point(
-      x=overflow_axis_to_taffy(overflow.x),
-      y=overflow_axis_to_taffy(overflow.y),
+  ) -> @chicle_geometry.Point[@chicle_style.Overflow] {
+    @chicle_geometry.Point(
+      x=overflow_axis_to_chicle(overflow.x),
+      y=overflow_axis_to_chicle(overflow.y),
     )
   }
 
-  fn display_to_taffy(display : Display) -> @taffy_style.Display {
+  fn display_to_chicle(display : Display) -> @chicle_style.Display {
     match display {
-      Display::Block => @taffy_helpers.display_block()
-      Display::Flex => @taffy_helpers.display_flex()
-      Display::Grid => @taffy_helpers.display_grid()
-      Display::None => @taffy_helpers.display_none()
+      Display::Block => @chicle_helpers.display_block()
+      Display::Flex => @chicle_helpers.display_flex()
+      Display::Grid => @chicle_helpers.display_grid()
+      Display::None => @chicle_helpers.display_none()
     }
   }
 
-  fn position_to_taffy(position_type : PositionType) -> @taffy_style.Position {
+  fn position_to_chicle(
+    position_type : PositionType,
+  ) -> @chicle_style.Position {
     match position_type {
-      PositionType::Relative => @taffy_helpers.position_relative()
-      PositionType::Absolute => @taffy_helpers.position_absolute()
+      PositionType::Relative => @chicle_helpers.position_relative()
+      PositionType::Absolute => @chicle_helpers.position_absolute()
     }
   }
 
-  fn flex_direction_to_taffy(
+  fn flex_direction_to_chicle(
     dir : FlexDirection,
-  ) -> @taffy_style.FlexDirection {
+  ) -> @chicle_style.FlexDirection {
     match dir {
-      FlexDirection::Row => @taffy_helpers.flex_direction_row()
-      FlexDirection::RowReverse => @taffy_helpers.flex_direction_row_reverse()
-      FlexDirection::Column => @taffy_helpers.flex_direction_column()
+      FlexDirection::Row => @chicle_helpers.flex_direction_row()
+      FlexDirection::RowReverse => @chicle_helpers.flex_direction_row_reverse()
+      FlexDirection::Column => @chicle_helpers.flex_direction_column()
       FlexDirection::ColumnReverse =>
-        @taffy_helpers.flex_direction_column_reverse()
+        @chicle_helpers.flex_direction_column_reverse()
     }
   }
 
-  fn flex_wrap_to_taffy(wrap : FlexWrap) -> @taffy_style.FlexWrap {
+  fn flex_wrap_to_chicle(wrap : FlexWrap) -> @chicle_style.FlexWrap {
     match wrap {
-      FlexWrap::NoWrap => @taffy_helpers.flex_wrap_no_wrap()
-      FlexWrap::Wrap => @taffy_helpers.flex_wrap_wrap()
-      FlexWrap::WrapReverse => @taffy_helpers.flex_wrap_wrap_reverse()
+      FlexWrap::NoWrap => @chicle_helpers.flex_wrap_no_wrap()
+      FlexWrap::Wrap => @chicle_helpers.flex_wrap_wrap()
+      FlexWrap::WrapReverse => @chicle_helpers.flex_wrap_wrap_reverse()
     }
   }
 
-  fn align_items_to_taffy(items : AlignItems) -> @taffy_style.AlignItems? {
+  fn align_items_to_chicle(items : AlignItems) -> @chicle_style.AlignItems? {
     match items {
       AlignItems::Default => None
-      AlignItems::Baseline => Some(@taffy_helpers.align_items_baseline())
-      AlignItems::Center => Some(@taffy_helpers.align_items_center())
-      AlignItems::End => Some(@taffy_helpers.align_items_end())
-      AlignItems::FlexEnd => Some(@taffy_helpers.align_items_flex_end())
-      AlignItems::FlexStart => Some(@taffy_helpers.align_items_flex_start())
-      AlignItems::Start => Some(@taffy_helpers.align_items_start())
-      AlignItems::Stretch => Some(@taffy_helpers.align_items_stretch())
+      AlignItems::Baseline => Some(@chicle_helpers.align_items_baseline())
+      AlignItems::Center => Some(@chicle_helpers.align_items_center())
+      AlignItems::End => Some(@chicle_helpers.align_items_end())
+      AlignItems::FlexEnd => Some(@chicle_helpers.align_items_flex_end())
+      AlignItems::FlexStart => Some(@chicle_helpers.align_items_flex_start())
+      AlignItems::Start => Some(@chicle_helpers.align_items_start())
+      AlignItems::Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
-  fn justify_items_to_taffy(
+  fn justify_items_to_chicle(
     items : JustifyItems,
-  ) -> @taffy_style.JustifyItems? {
+  ) -> @chicle_style.JustifyItems? {
     match items {
       JustifyItems::Default => None
-      JustifyItems::Baseline => Some(@taffy_helpers.align_items_baseline())
-      JustifyItems::Center => Some(@taffy_helpers.align_items_center())
-      JustifyItems::End => Some(@taffy_helpers.align_items_end())
-      JustifyItems::Start => Some(@taffy_helpers.align_items_start())
-      JustifyItems::Stretch => Some(@taffy_helpers.align_items_stretch())
+      JustifyItems::Baseline => Some(@chicle_helpers.align_items_baseline())
+      JustifyItems::Center => Some(@chicle_helpers.align_items_center())
+      JustifyItems::End => Some(@chicle_helpers.align_items_end())
+      JustifyItems::Start => Some(@chicle_helpers.align_items_start())
+      JustifyItems::Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
-  fn align_self_to_taffy(align_self : AlignSelf) -> @taffy_style.AlignSelf? {
+  fn align_self_to_chicle(align_self : AlignSelf) -> @chicle_style.AlignSelf? {
     match align_self {
       AlignSelf::Auto => None
-      AlignSelf::Baseline => Some(@taffy_helpers.align_items_baseline())
-      AlignSelf::Center => Some(@taffy_helpers.align_items_center())
-      AlignSelf::End => Some(@taffy_helpers.align_items_end())
-      AlignSelf::FlexEnd => Some(@taffy_helpers.align_items_flex_end())
-      AlignSelf::FlexStart => Some(@taffy_helpers.align_items_flex_start())
-      AlignSelf::Start => Some(@taffy_helpers.align_items_start())
-      AlignSelf::Stretch => Some(@taffy_helpers.align_items_stretch())
+      AlignSelf::Baseline => Some(@chicle_helpers.align_items_baseline())
+      AlignSelf::Center => Some(@chicle_helpers.align_items_center())
+      AlignSelf::End => Some(@chicle_helpers.align_items_end())
+      AlignSelf::FlexEnd => Some(@chicle_helpers.align_items_flex_end())
+      AlignSelf::FlexStart => Some(@chicle_helpers.align_items_flex_start())
+      AlignSelf::Start => Some(@chicle_helpers.align_items_start())
+      AlignSelf::Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
-  fn justify_self_to_taffy(
+  fn justify_self_to_chicle(
     justify_self : JustifySelf,
-  ) -> @taffy_style.JustifySelf? {
+  ) -> @chicle_style.JustifySelf? {
     match justify_self {
       JustifySelf::Auto => None
-      JustifySelf::Baseline => Some(@taffy_helpers.align_items_baseline())
-      JustifySelf::Center => Some(@taffy_helpers.align_items_center())
-      JustifySelf::End => Some(@taffy_helpers.align_items_end())
-      JustifySelf::Start => Some(@taffy_helpers.align_items_start())
-      JustifySelf::Stretch => Some(@taffy_helpers.align_items_stretch())
+      JustifySelf::Baseline => Some(@chicle_helpers.align_items_baseline())
+      JustifySelf::Center => Some(@chicle_helpers.align_items_center())
+      JustifySelf::End => Some(@chicle_helpers.align_items_end())
+      JustifySelf::Start => Some(@chicle_helpers.align_items_start())
+      JustifySelf::Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
-  fn align_content_to_taffy(
+  fn align_content_to_chicle(
     content : AlignContent,
-  ) -> @taffy_style.AlignContent? {
+  ) -> @chicle_style.AlignContent? {
     match content {
       AlignContent::Default => None
-      AlignContent::Center => Some(@taffy_helpers.align_content_center())
-      AlignContent::End => Some(@taffy_helpers.align_content_end())
-      AlignContent::FlexEnd => Some(@taffy_helpers.align_content_flex_end())
-      AlignContent::FlexStart => Some(@taffy_helpers.align_content_flex_start())
+      AlignContent::Center => Some(@chicle_helpers.align_content_center())
+      AlignContent::End => Some(@chicle_helpers.align_content_end())
+      AlignContent::FlexEnd => Some(@chicle_helpers.align_content_flex_end())
+      AlignContent::FlexStart =>
+        Some(@chicle_helpers.align_content_flex_start())
       AlignContent::SpaceAround =>
-        Some(@taffy_helpers.align_content_space_around())
+        Some(@chicle_helpers.align_content_space_around())
       AlignContent::SpaceBetween =>
-        Some(@taffy_helpers.align_content_space_between())
+        Some(@chicle_helpers.align_content_space_between())
       AlignContent::SpaceEvenly =>
-        Some(@taffy_helpers.align_content_space_evenly())
-      AlignContent::Start => Some(@taffy_helpers.align_content_start())
-      AlignContent::Stretch => Some(@taffy_helpers.align_content_stretch())
+        Some(@chicle_helpers.align_content_space_evenly())
+      AlignContent::Start => Some(@chicle_helpers.align_content_start())
+      AlignContent::Stretch => Some(@chicle_helpers.align_content_stretch())
     }
   }
 
-  fn justify_content_to_taffy(
+  fn justify_content_to_chicle(
     content : JustifyContent,
-  ) -> @taffy_style.JustifyContent? {
+  ) -> @chicle_style.JustifyContent? {
     match content {
       JustifyContent::Default => None
-      JustifyContent::Center => Some(@taffy_helpers.justify_content_center())
-      JustifyContent::End => Some(@taffy_helpers.justify_content_end())
-      JustifyContent::FlexEnd => Some(@taffy_helpers.justify_content_flex_end())
+      JustifyContent::Center => Some(@chicle_helpers.justify_content_center())
+      JustifyContent::End => Some(@chicle_helpers.justify_content_end())
+      JustifyContent::FlexEnd =>
+        Some(@chicle_helpers.justify_content_flex_end())
       JustifyContent::FlexStart =>
-        Some(@taffy_helpers.justify_content_flex_start())
+        Some(@chicle_helpers.justify_content_flex_start())
       JustifyContent::SpaceAround =>
-        Some(@taffy_helpers.justify_content_space_around())
+        Some(@chicle_helpers.justify_content_space_around())
       JustifyContent::SpaceBetween =>
-        Some(@taffy_helpers.justify_content_space_between())
+        Some(@chicle_helpers.justify_content_space_between())
       JustifyContent::SpaceEvenly =>
-        Some(@taffy_helpers.justify_content_space_evenly())
-      JustifyContent::Start => Some(@taffy_helpers.justify_content_start())
-      JustifyContent::Stretch => Some(@taffy_helpers.justify_content_stretch())
+        Some(@chicle_helpers.justify_content_space_evenly())
+      JustifyContent::Start => Some(@chicle_helpers.justify_content_start())
+      JustifyContent::Stretch => Some(@chicle_helpers.justify_content_stretch())
     }
   }
 
-  fn grid_auto_flow_to_taffy(flow : GridAutoFlow) -> @taffy_style.GridAutoFlow {
+  fn grid_auto_flow_to_chicle(
+    flow : GridAutoFlow,
+  ) -> @chicle_style.GridAutoFlow {
     match flow {
-      GridAutoFlow::Row => @taffy_helpers.grid_auto_flow_row()
-      GridAutoFlow::RowDense => @taffy_helpers.grid_auto_flow_row_dense()
-      GridAutoFlow::Column => @taffy_helpers.grid_auto_flow_column()
-      GridAutoFlow::ColumnDense => @taffy_helpers.grid_auto_flow_column_dense()
+      GridAutoFlow::Row => @chicle_helpers.grid_auto_flow_row()
+      GridAutoFlow::RowDense => @chicle_helpers.grid_auto_flow_row_dense()
+      GridAutoFlow::Column => @chicle_helpers.grid_auto_flow_column()
+      GridAutoFlow::ColumnDense => @chicle_helpers.grid_auto_flow_column_dense()
     }
   }
 
-  fn grid_placement_to_taffy(
+  fn grid_placement_to_chicle(
     value : GridPlacement,
-  ) -> @taffy_geometry.Line[@taffy_style.GridPlacement] {
+  ) -> @chicle_geometry.Line[@chicle_style.GridPlacement] {
     let span = match value.span {
       Some(v) => if v == 0 { 1 } else { v }
       None => 1
     }
     match (value.start, value.end) {
       (Some(start), Some(end)) =>
-        @taffy_geometry.Line(
-          start=@taffy_helpers.line(start),
-          end=@taffy_helpers.line(end),
+        @chicle_geometry.Line(
+          start=@chicle_helpers.line(start),
+          end=@chicle_helpers.line(end),
         )
       (Some(start), None) =>
-        @taffy_geometry.Line(
-          start=@taffy_helpers.line(start),
-          end=@taffy_helpers.span(span),
+        @chicle_geometry.Line(
+          start=@chicle_helpers.line(start),
+          end=@chicle_helpers.span(span),
         )
       (None, Some(end)) =>
-        @taffy_geometry.Line(
-          start=@taffy_helpers.span(span),
-          end=@taffy_helpers.line(end),
+        @chicle_geometry.Line(
+          start=@chicle_helpers.span(span),
+          end=@chicle_helpers.line(end),
         )
       (None, None) =>
-        @taffy_geometry.Line(
-          start=@taffy_helpers.span(span),
-          end=@taffy_helpers.place_auto(),
+        @chicle_geometry.Line(
+          start=@chicle_helpers.span(span),
+          end=@chicle_helpers.place_auto(),
         )
     }
   }
@@ -2096,16 +2102,16 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn style_for_entity(
     entity : @core.Entity,
     is_root : Bool,
-  ) -> @taffy_style.Style {
+  ) -> @chicle_style.Style {
     let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
       None => Node::Node()
     }
-    let mut style = @taffy_style.Style::default()
-      .with_display(display_to_taffy(node.display))
-      .with_position(position_to_taffy(node.position_type))
+    let mut style = @chicle_style.Style::default()
+      .with_display(display_to_chicle(node.display))
+      .with_position(position_to_chicle(node.position_type))
       .with_inset(
-        @taffy_geometry.Rect(
+        @chicle_geometry.Rect(
           left=dim_for_val(node.left),
           right=dim_for_val(node.right),
           top=dim_for_val(node.top),
@@ -2118,62 +2124,62 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       .with_size(size_for_vals(node.width, node.height))
       .with_min_size(size_for_vals(node.min_width, node.min_height))
       .with_max_size(size_for_vals(node.max_width, node.max_height))
-      .with_flex_direction(flex_direction_to_taffy(node.flex_direction))
-      .with_flex_wrap(flex_wrap_to_taffy(node.flex_wrap))
+      .with_flex_direction(flex_direction_to_chicle(node.flex_direction))
+      .with_flex_wrap(flex_wrap_to_chicle(node.flex_wrap))
       .with_flex_grow(node.flex_grow.to_double())
       .with_flex_shrink(node.flex_shrink.to_double())
       .with_flex_basis(dim_for_val(node.flex_basis))
-      .with_grid_template_rows(grid_template_to_taffy(node.grid_template_rows))
+      .with_grid_template_rows(grid_template_to_chicle(node.grid_template_rows))
       .with_grid_template_columns(
-        grid_template_to_taffy(node.grid_template_columns),
+        grid_template_to_chicle(node.grid_template_columns),
       )
-      .with_grid_auto_rows(grid_tracks_to_taffy(node.grid_auto_rows))
-      .with_grid_auto_columns(grid_tracks_to_taffy(node.grid_auto_columns))
-      .with_grid_auto_flow(grid_auto_flow_to_taffy(node.grid_auto_flow))
-      .with_grid_row(grid_placement_to_taffy(node.grid_row))
-      .with_grid_column(grid_placement_to_taffy(node.grid_column))
+      .with_grid_auto_rows(grid_tracks_to_chicle(node.grid_auto_rows))
+      .with_grid_auto_columns(grid_tracks_to_chicle(node.grid_auto_columns))
+      .with_grid_auto_flow(grid_auto_flow_to_chicle(node.grid_auto_flow))
+      .with_grid_row(grid_placement_to_chicle(node.grid_row))
+      .with_grid_column(grid_placement_to_chicle(node.grid_column))
       .with_gap(
-        @taffy_geometry.Size(
+        @chicle_geometry.Size(
           width=dim_for_val(node.column_gap),
           height=dim_for_val(node.row_gap),
         ),
       )
-      .with_overflow(overflow_to_taffy(node.overflow))
+      .with_overflow(overflow_to_chicle(node.overflow))
       .with_scrollbar_width(node.scrollbar_width.to_double())
     if node.aspect_ratio is Some(r) {
       style = style.with_aspect_ratio(r.to_double())
     }
-    match align_items_to_taffy(node.align_items) {
+    match align_items_to_chicle(node.align_items) {
       Some(v) => style = style.with_align_items(v)
       None => ()
     }
-    match justify_items_to_taffy(node.justify_items) {
+    match justify_items_to_chicle(node.justify_items) {
       Some(v) => style = style.with_justify_items(v)
       None => ()
     }
-    match align_content_to_taffy(node.align_content) {
+    match align_content_to_chicle(node.align_content) {
       Some(v) => style = style.with_align_content(v)
       None => ()
     }
-    match justify_content_to_taffy(node.justify_content) {
+    match justify_content_to_chicle(node.justify_content) {
       Some(v) => style = style.with_justify_content(v)
       None => ()
     }
-    match align_self_to_taffy(node.align_self) {
+    match align_self_to_chicle(node.align_self) {
       Some(v) => style = style.with_align_self(v)
       None => ()
     }
-    match justify_self_to_taffy(node.justify_self) {
+    match justify_self_to_chicle(node.justify_self) {
       Some(v) => style = style.with_justify_self(v)
       None => ()
     }
     if is_root {
       style = style
-        .with_position(@taffy_helpers.position_relative())
+        .with_position(@chicle_helpers.position_relative())
         .with_size(
-          @taffy_geometry.Size(
-            width=@taffy_helpers.length(f2d(root_viewport_size.x)),
-            height=@taffy_helpers.length(f2d(root_viewport_size.y)),
+          @chicle_geometry.Size(
+            width=@chicle_helpers.length(f2d(root_viewport_size.x)),
+            height=@chicle_helpers.length(f2d(root_viewport_size.y)),
           ),
         )
     }
@@ -2188,7 +2194,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
-    let taffy = @taffy_tree.TaffyTree()
+    let chicle = @chicle_tree.ChicleTree()
     let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap([])
     fn build(entity : @core.Entity, is_root : Bool) -> Array[Int] {
       let child_ids : Array[Int] = []
@@ -2202,13 +2208,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       }
       let style = style_for_entity(entity, is_root)
       let id = if child_ids.length() == 0 {
-        taffy.new_leaf(style)
+        chicle.new_leaf(style)
       } else {
-        taffy.new_with_children(style, child_ids)
+        chicle.new_with_children(style, child_ids)
       }
       if (try! world.contains_by_key(entity, ecs_key_content_size)) ||
         (try! world.contains_by_key(entity, @text.ecs_key_text)) {
-        try! taffy.set_node_context(id, entity)
+        try! chicle.set_node_context(id, entity)
       }
       entity_to_node.set(entity_key(entity), id)
       [id]
@@ -2223,38 +2229,38 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       root_children.length() == 1 {
       root_children[0]
     } else {
-      let viewport_root_style = @taffy_style.Style::default()
-        .with_position(@taffy_helpers.position_relative())
+      let viewport_root_style = @chicle_style.Style::default()
+        .with_position(@chicle_helpers.position_relative())
         .with_size(
-          @taffy_geometry.Size(
-            width=@taffy_helpers.length(f2d(root_ctx.viewport_size.x)),
-            height=@taffy_helpers.length(f2d(root_ctx.viewport_size.y)),
+          @chicle_geometry.Size(
+            width=@chicle_helpers.length(f2d(root_ctx.viewport_size.x)),
+            height=@chicle_helpers.length(f2d(root_ctx.viewport_size.y)),
           ),
         )
-      taffy.new_with_children(viewport_root_style, root_children)
+      chicle.new_with_children(viewport_root_style, root_children)
     }
-    let avail = @taffy_geometry.Size(
-      width=@taffy_helpers.available_space_definite(
+    let avail = @chicle_geometry.Size(
+      width=@chicle_helpers.available_space_definite(
         f2d(root_ctx.viewport_size.x),
       ),
-      height=@taffy_helpers.available_space_definite(
+      height=@chicle_helpers.available_space_definite(
         f2d(root_ctx.viewport_size.y),
       ),
     )
-    fn available_to_option(v : @taffy_geometry.AvailableSpace) -> Double? {
+    fn available_to_option(v : @chicle_geometry.AvailableSpace) -> Double? {
       match v {
-        @taffy_geometry.AvailDefinite(x) => Some(x)
+        @chicle_geometry.AvailDefinite(x) => Some(x)
         _ => None
       }
     }
 
     fn resolve_dimension(
-      dim : @taffy_style.Dimension,
+      dim : @chicle_style.Dimension,
       parent : Double?,
     ) -> Double? {
       match dim {
-        @taffy_style.DimLength(x) => Some(x)
-        @taffy_style.DimPercent(p) =>
+        @chicle_style.DimLength(x) => Some(x)
+        @chicle_style.DimPercent(p) =>
           match parent {
             Some(base) => Some(base * p)
             None => None
@@ -2288,12 +2294,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     }
 
     fn measure(
-      known : @taffy_geometry.Size[Double?],
-      available : @taffy_geometry.Size[@taffy_geometry.AvailableSpace],
+      known : @chicle_geometry.Size[Double?],
+      available : @chicle_geometry.Size[@chicle_geometry.AvailableSpace],
       _node_id : Int,
       ctx : @core.Entity?,
-      style : @taffy_style.Style,
-    ) -> @taffy_geometry.Size[Double] {
+      style : @chicle_style.Style,
+    ) -> @chicle_geometry.Size[Double] {
       match ctx {
         Some(entity) => {
           let intrinsic = auto_size_for_entity(entity)
@@ -2345,13 +2351,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           }
           let out_w = clamp_f64(width.unwrap_or(intrinsic_w), s_min_w, s_max_w)
           let out_h = clamp_f64(height.unwrap_or(intrinsic_h), s_min_h, s_max_h)
-          @taffy_geometry.Size(width=out_w, height=out_h)
+          @chicle_geometry.Size(width=out_w, height=out_h)
         }
-        None => @taffy_geometry.Size::zero()
+        None => @chicle_geometry.Size::zero()
       }
     }
 
-    taffy.compute_layout_with_measure(root_node_id, avail, measure) catch {
+    chicle.compute_layout_with_measure(root_node_id, avail, measure) catch {
       _ => return
     }
     fn apply_layout(entity : @core.Entity, parent_rect : @math.Rect) -> Unit {
@@ -2367,7 +2373,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       guard entity_to_node.get(entity_key(entity)) is Some(node_id) else {
         return
       }
-      let tl = taffy.layout(node_id) catch { _ => return }
+      let tl = chicle.layout(node_id) catch { _ => return }
       let parent_origin = parent_rect.min
       let loc = @math.Vec2::new(d2f(tl.location.x), d2f(tl.location.y))
       let size = @math.Vec2::new(d2f(tl.size.width), d2f(tl.size.height))
