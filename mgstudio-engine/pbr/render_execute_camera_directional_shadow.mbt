@@ -535,14 +535,25 @@ impl @app.Resource for Render3dDirectionalLightShadowTargets with fn resource() 
 fn render3d_directional_light_shadow_targets_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dDirectionalLightShadowTargets] {
-  if world.get_resource(Render3dDirectionalLightShadowTargets::resource())
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dDirectionalLightShadowTargets]),
+    )
     is None {
-    world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
-      entries: [],
-    })
+    world.insert_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dDirectionalLightShadowTargets]),
+      { entries: [] },
+    )
   }
   match
-    world.get_resource_mut(Render3dDirectionalLightShadowTargets::resource()) {
+    world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dDirectionalLightShadowTargets]),
+    ) {
     Some(state) => state
     None => abort("Missing Render3dDirectionalLightShadowTargets resource")
   }

@@ -806,7 +806,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
 
 ///|
 test "ecs query: Read exposes change detection metadata" {
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   let entity = world.spawn()
 
@@ -849,6 +849,19 @@ test "ecs query: Read exposes change detection metadata" {
     content="true",
   )
   debug_inspect(second_position.value(), content="{ x: 6, y: 7 }")
+}
+
+///|
+test "ecs query: ReadValue returns the value without change metadata" {
+  let world = World::new()
+  defer world.close()
+  let entity = world.spawn()
+  try! world.set_by_key(entity, position_key, Position::{ x: 3, y: 5 })
+
+  let query : Query[ReadValue[Position], All] = query(world)
+  let position = try! query.require_single()
+  debug_inspect(position.key().id() == position_key.id(), content="true")
+  debug_inspect(position.value(), content="{ x: 3, y: 5 }")
 }
 
 ///|

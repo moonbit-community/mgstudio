@@ -16,53 +16,24 @@
 pub type ShaderSourceFile = @wgsl_common.WgslSourceFile
 
 ///|
-pub type ShaderSourceScanOptions = @wgsl_common.WgslSourceScanOptions
-
-///|
 let embedded_shader_source_paths : Array[String] = []
 
 ///|
 fn shader_source_collect_import_targets(
   source : String,
-  out : Array[@wgsl_common.WgslImportTarget],
+  out : Array[String],
 ) -> Unit {
-  for
-    item in @wgsl_directive.parse_wgsl_directive_scan_items(
-      source,
-      include_glsl_version=false,
-    ) {
-    match item.kind() {
-      @wgsl_directive.WgslDirectiveScanItemKind::Directive(directive) =>
-        if @wgsl_directive.wgsl_effective_directive_kind(directive) ==
-          @wgsl_ast.WgslDirectiveKind::Import {
-          @wgsl_resolver.collect_wgsl_import_targets(
-            @wgsl_directive.wgsl_effective_directive_tail(directive),
-            "",
-            out,
-          )
-        }
-      _ => ()
-    }
+  let metadata = @wgsl_common.get_preprocessor_metadata(source) catch {
+    _ => return
+  }
+  for import_binding in metadata.imports {
+    out.push(import_binding.definition.import_path)
   }
 }
 
 ///|
 fn shader_source_has_define_import_path(source : String) -> Bool {
-  for
-    item in @wgsl_directive.parse_wgsl_directive_scan_items(
-      source,
-      include_glsl_version=false,
-    ) {
-    match item.kind() {
-      @wgsl_directive.WgslDirectiveScanItemKind::Directive(directive) =>
-        if @wgsl_directive.wgsl_effective_directive_kind(directive) ==
-          @wgsl_ast.WgslDirectiveKind::DefineImportPath {
-          return true
-        }
-      _ => ()
-    }
-  }
-  false
+  @wgsl_common.wgsl_source_define_import_path(source) is Some(_)
 }
 
 ///|
@@ -83,7 +54,7 @@ pub fn clear_embedded_shader_sources() -> Unit {
 
 ///|
 pub fn load_embedded_shader_source(rel_path : String, source : String) -> Unit {
-  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
+  let normalized = @wgsl_common.normalize_shader_rel_path(rel_path)
   upsert_embedded_shader_source_path(normalized)
   @embedded_asset.register_embedded_asset_virtual_bytes(
     normalized,
@@ -135,9 +106,9 @@ fn shader_source_file_by_rel_path(
   files : Array[ShaderSourceFile],
   rel_path : String,
 ) -> ShaderSourceFile? {
-  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
+  let normalized = @wgsl_common.normalize_shader_rel_path(rel_path)
   for file in files {
-    if @wgsl_resolver.normalize_shader_rel_path(file.rel_path) == normalized {
+    if @wgsl_common.normalize_shader_rel_path(file.rel_path) == normalized {
       return Some(file)
     }
   }
@@ -168,19 +139,17 @@ fn shader_source_extract_quoted_target_path(raw_path : String) -> String? {
 
 ///|
 fn shader_source_resolve_file_import_target(
-  registry : @wgsl_resolver.WgslSourceRegistry,
+  registry : @wgsl_common.WgslSourceRegistry,
   importer_rel_path : String,
-  target : @wgsl_common.WgslImportTarget,
+  target : String,
 ) -> String? {
   match
     @wgsl_resolver.resolve_wgsl_import_file_path_from_registry(
-      registry,
-      importer_rel_path,
-      target.raw_path,
+      registry, importer_rel_path, target,
     ) {
     Some(path) => Some(path)
     None =>
-      match shader_source_extract_quoted_target_path(target.raw_path) {
+      match shader_source_extract_quoted_target_path(target) {
         Some(path) =>
           @wgsl_resolver.resolve_wgsl_import_file_path_from_registry(
             registry,
@@ -198,7 +167,7 @@ fn shader_source_push_dependency_path(
   pending_paths : Array[String],
   rel_path : String,
 ) -> Unit {
-  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
+  let normalized = @wgsl_common.normalize_shader_rel_path(rel_path)
   if normalized == "" || included_paths.contains(normalized) {
     return
   }
@@ -209,14 +178,14 @@ fn shader_source_push_dependency_path(
 
 ///|
 fn shader_source_collect_dependency_paths(
-  registry : @wgsl_resolver.WgslSourceRegistry,
+  registry : @wgsl_common.WgslSourceRegistry,
   modules : Map[String, String],
   importer_rel_path : String,
   importer_source : String,
   included_paths : Array[String],
   pending_paths : Array[String],
 ) -> Unit {
-  let targets : Array[@wgsl_common.WgslImportTarget] = []
+  let targets : Array[String] = []
   shader_source_collect_import_targets(importer_source, targets)
   for target in targets {
     match
@@ -230,9 +199,7 @@ fn shader_source_collect_dependency_paths(
       None =>
         match
           @wgsl_resolver.resolve_wgsl_import_module_in_registry(
-            registry,
-            target.raw_path,
-            modules,
+            registry, target, modules,
           ) {
           Some(resolved) =>
             shader_source_push_dependency_path(
@@ -250,9 +217,9 @@ fn shader_source_collect_dependency_paths(
 fn embedded_shader_composer_source_files_for_root(
   root_rel_path : String,
 ) -> Array[ShaderSourceFile] {
-  let root = @wgsl_resolver.normalize_shader_rel_path(root_rel_path)
+  let root = @wgsl_common.normalize_shader_rel_path(root_rel_path)
   let files = embedded_shader_source_files()
-  let registry = @wgsl_resolver.WgslSourceRegistry::default()
+  let registry = @wgsl_common.WgslSourceRegistry::default()
   registry.register_source_files(files)
   let modules = registry.copy_import_module_paths()
   let included_paths : Array[String] = []
@@ -284,7 +251,7 @@ fn embedded_shader_composer_source_files_for_root(
   let composer_files : Array[ShaderSourceFile] = []
   for file in files {
     if included_paths.contains(
-        @wgsl_resolver.normalize_shader_rel_path(file.rel_path),
+        @wgsl_common.normalize_shader_rel_path(file.rel_path),
       ) {
       composer_files.push(file)
     }
@@ -304,10 +271,10 @@ pub fn embedded_shader_composer_source_files(
 
 ///|
 fn upsert_embedded_shader_source_path(rel_path : String) -> Unit {
-  let normalized = @wgsl_resolver.normalize_shader_rel_path(rel_path)
+  let normalized = @wgsl_common.normalize_shader_rel_path(rel_path)
   let paths = embedded_shader_source_paths
   for i in 0..<paths.length() {
-    if @wgsl_resolver.normalize_shader_rel_path(paths[i]) == normalized {
+    if @wgsl_common.normalize_shader_rel_path(paths[i]) == normalized {
       paths[i] = normalized
       return
     }
@@ -320,17 +287,9 @@ pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[
   String,
   String,
 ] {
-  let registry = @wgsl_resolver.WgslSourceRegistry::default()
+  let registry = @wgsl_common.WgslSourceRegistry::default()
   registry.register_source_files(
     embedded_shader_source_files_with_import_path(),
   )
   @hashmap.HashMap(registry.copy_import_module_paths().to_array())
-}
-
-///|
-pub fn scan_shader_source_files(
-  root : String,
-  options : ShaderSourceScanOptions,
-) -> Array[ShaderSourceFile] raise @fs.IOError {
-  @wgsl_resolver.scan_wgsl_source_files(root, options)
 }

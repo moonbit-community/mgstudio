@@ -221,7 +221,7 @@ fn hook_remove_commands_test_install_hooks(world : World) -> Unit {
 ///|
 test "ecs component hooks: first insert fires add then insert with readable payload" {
   hook_test_reset()
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
@@ -240,7 +240,7 @@ test "ecs component hooks: first insert fires add then insert with readable payl
 ///|
 test "ecs component hooks: replace fires replace then insert around the new payload" {
   hook_test_reset()
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
@@ -264,7 +264,7 @@ test "ecs component hooks: replace fires replace then insert around the new payl
 ///|
 test "ecs component hooks: remove keeps the old payload visible through replace and remove" {
   hook_test_reset()
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
@@ -292,7 +292,7 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
 ///|
 test "ecs component hooks: despawn fires despawn replace remove before entity teardown" {
   hook_test_reset()
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()
@@ -318,7 +318,7 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
 ///|
 test "ecs component hooks: component access mutation paths preserve caller provenance" {
   hook_test_reset()
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   hook_test_install_hooks(world)
   let entity = world.spawn()

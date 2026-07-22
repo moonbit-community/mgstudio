@@ -74,8 +74,10 @@ fn host_gpu_composite_alpha_mode_kind(mode : HostGpuCompositeAlphaMode) -> Int {
 }
 
 ///|
-pub fn host_gpu_create_surface(window : Int) -> HostGpuSurface {
-  @renderer.create_surface(window)
+pub fn host_gpu_create_surface(
+  handle : @window.RawHandleWrapper,
+) -> HostGpuSurface {
+  @renderer.create_surface(handle)
 }
 
 ///|
@@ -86,6 +88,11 @@ pub fn host_gpu_surface_target_id(surface : HostGpuSurface) -> Int {
 ///|
 pub fn host_gpu_surface_target_id_for_window(window : Int) -> Int {
   @renderer.surface_target_id_for_window(window)
+}
+
+///|
+pub fn host_gpu_release_surface(surface : HostGpuSurface) -> Unit {
+  @renderer.release_surface(surface)
 }
 
 ///|

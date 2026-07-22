@@ -6,6 +6,7 @@ import {
   "Milky2018/window/core",
   "Milky2018/window/dpi",
   "Milky2018/window/macos",
+  "Milky2018/windowing",
   "moonbitlang/core/ref",
 }
 
@@ -19,8 +20,6 @@ pub fn available_monitors() -> Array[@core.MonitorHandle]
 pub fn bind_accessibility_requested(@ref.Ref[Bool]) -> Unit
 
 pub fn commit_pending_accessibility_update() -> Bool
-
-pub fn content_view_handle(Int) -> UInt64?
 
 pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, name? : String?, visible~ : Bool, resizable~ : Bool, decorations~ : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool, skip_taskbar? : Bool, clip_children? : Bool) -> Int
 
@@ -43,6 +42,8 @@ pub fn event_loop_any_thread_requested() -> Bool
 pub fn focus_window(Int) -> Unit
 
 pub fn focused(Int) -> Bool
+
+pub fn handles(Int) -> (@windowing.WindowHandle, @windowing.DisplayHandle)?
 
 pub fn height(Int) -> Int
 

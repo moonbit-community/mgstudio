@@ -267,21 +267,6 @@ fn render3d_queue_shadow_phase_views(
 }
 
 ///|
-fn render3d_shadow_phase_items_for_view(
-  world : @ecs.World,
-  retained_view_entity : @render_view.RetainedViewEntity,
-) -> Array[Render3dShadowPhaseItemData] {
-  match world.get_resource(Render3dShadowPhasesData::resource()) {
-    Some(phases) =>
-      match phases.get(retained_view_entity) {
-        Some(phase) => phase.render_items(false)
-        None => []
-      }
-    None => []
-  }
-}
-
-///|
 fn render3d_extracted_shadow_mesh_matches_bin(
   mesh : ExtractedMesh3d,
   bin_key : Render3dShadowBinKeyData,
@@ -292,55 +277,41 @@ fn render3d_extracted_shadow_mesh_matches_bin(
 ///|
 fn render3d_shadow_resolve_phase_items(
   meshes : Array[ExtractedMesh3d],
-  render_mesh_instances : RenderMeshInstances,
-  items : Array[Render3dShadowPhaseItemData],
+  phase : Render3dShadowViewPhaseData,
 ) -> Array[Render3dResolvedShadowPhaseItem] {
-  let mesh_indices_by_main_entity : Map[UInt64, Int] = Map([])
-  let mesh_indices_by_uniform_index : Map[Int, Int] = Map([])
+  // Bevy phase preparation rewrites `batch_range` from input-uniform indices
+  // to GPU output/indirect-buffer indices. Those ranges cannot identify the
+  // source entities here; the retained binned-phase cache remains the exact
+  // source of entity membership for the backend's per-entity draw bridge.
+  let resolved : Array[Render3dResolvedShadowPhaseItem] = []
   for index in 0..<meshes.length() {
     let main_entity = @render.MainEntity::new(meshes[index].entity.main_entity)
-    let main_bits = main_entity.id().to_bits()
-    mesh_indices_by_main_entity.set(main_bits, index)
-    match render_mesh_instances.render_mesh_queue_data(main_entity) {
-      Some(queue_data) =>
-        mesh_indices_by_uniform_index.set(
-          queue_data.current_uniform_index().to_int(),
-          index,
-        )
-      None => ()
+    guard phase.cached_bin_key(main_entity) is Some(cached_bin_key) else {
+      continue
     }
-  }
-  let resolved : Array[Render3dResolvedShadowPhaseItem] = []
-  for item in items {
-    let extracted_indices : Array[Int] = []
-    let batch_range = item.batch_range()
-    for uniform_index in batch_range.start()..<batch_range.end() {
-      match mesh_indices_by_uniform_index.get(uniform_index) {
-        Some(extracted_index) =>
-          if render3d_extracted_shadow_mesh_matches_bin(
-              meshes[extracted_index],
-              item.bin_key(),
-            ) {
-            extracted_indices.push(extracted_index)
-          }
-        None => ()
-      }
+    guard render3d_extracted_shadow_mesh_matches_bin(
+        meshes[index],
+        cached_bin_key.bin_key(),
+      ) else {
+      continue
     }
-    if extracted_indices.length() == 0 {
-      match mesh_indices_by_main_entity.get(item.main_entity().id().to_bits()) {
-        Some(extracted_index) =>
-          if render3d_extracted_shadow_mesh_matches_bin(
-              meshes[extracted_index],
-              item.bin_key(),
-            ) {
-            extracted_indices.push(extracted_index)
-          }
-        None => ()
-      }
+    guard phase.input_uniform_index(main_entity) is Some(input_uniform_index) else {
+      continue
     }
-    if extracted_indices.length() > 0 {
-      resolved.push(Render3dResolvedShadowPhaseItem::{ item, extracted_indices })
-    }
+    let item = Render3dShadowPhaseItemData::new(
+      cached_bin_key.batch_set_key(),
+      cached_bin_key.bin_key(),
+      meshes[index].entity.render_entity,
+      main_entity,
+      Render3dShadowBatchRange::new(
+        input_uniform_index.to_int(),
+        input_uniform_index.to_int() + 1,
+      ),
+      Render3dShadowPhaseItemExtraIndex::none(),
+    )
+    resolved.push(
+      Render3dResolvedShadowPhaseItem::{ item, extracted_indices: [index] },
+    )
   }
   resolved
 }
@@ -514,16 +485,17 @@ fn render3d_execute_shadow_phase_view(
   let retained_view_entity = phase_view.shadow_view.light_entity.shadow_phase_retained_view(
     @render_view.RetainedViewEntity::new(camera_entity),
   )
-  let phase_items = render3d_shadow_phase_items_for_view(
-    world, retained_view_entity,
-  )
-  let render_mesh_instances = match
-    world.get_resource(RenderMeshInstances::resource()) {
-    Some(value) => value
+  let shadow_phase = match
+    world.get_resource(Render3dShadowPhasesData::resource()) {
+    Some(phases) =>
+      match phases.get(retained_view_entity) {
+        Some(phase) => phase
+        None => return
+      }
     None => return
   }
   let resolved_phase_items = render3d_shadow_resolve_phase_items(
-    meshes, render_mesh_instances, phase_items,
+    meshes, shadow_phase,
   )
   @app.timeline_trace_emit_counter_int(
     "render_3d_shadow_phase_items",

@@ -406,10 +406,12 @@ pub fn material_bind_group_allocator_for_support(
   bindless_supported : Bool,
   bindless_slot_count : Int?,
 ) -> MaterialBindGroupAllocator {
-  if material_uses_bindless_resources(bindless_supported, bindless_slot_count) {
-    MaterialBindGroupAllocator::default_bindless()
-  } else {
-    MaterialBindGroupAllocator::default_non_bindless()
+  match bindless_slot_count {
+    Some(slot_count) if bindless_supported && slot_count > 1 =>
+      MaterialBindGroupAllocator::Bindless(
+        MaterialBindGroupBindlessAllocator::with_slab_capacity(slot_count),
+      )
+    _ => MaterialBindGroupAllocator::default_non_bindless()
   }
 }
 
@@ -757,31 +759,22 @@ pub fn MaterialBindGroupBindlessAllocator::with_slab_capacity(
 pub fn MaterialBindGroupBindlessAllocator::allocate(
   self : MaterialBindGroupBindlessAllocator,
   material_id : Int,
-) -> MaterialBindingId? {
-  match self.free_slots.pop() {
+) -> MaterialBindingId {
+  let index = match self.free_slots.pop() {
     Some(slot) => {
       self.slots[slot] = Some(material_id)
-      Some(
-        MaterialBindingId::new(
-          MaterialBindGroupIndex::new(0),
-          MaterialBindGroupSlot::new(slot),
-        ),
-      )
+      slot
     }
-    None =>
-      if self.slots.length() >= self.slab_capacity {
-        None
-      } else {
-        let slot = self.slots.length()
-        self.slots.push(Some(material_id))
-        Some(
-          MaterialBindingId::new(
-            MaterialBindGroupIndex::new(0),
-            MaterialBindGroupSlot::new(slot),
-          ),
-        )
-      }
+    None => {
+      let slot = self.slots.length()
+      self.slots.push(Some(material_id))
+      slot
+    }
   }
+  MaterialBindingId::new(
+    MaterialBindGroupIndex::new(index / self.slab_capacity),
+    MaterialBindGroupSlot::new(index % self.slab_capacity),
+  )
 }
 
 ///|
@@ -789,13 +782,18 @@ pub fn MaterialBindGroupBindlessAllocator::free(
   self : MaterialBindGroupBindlessAllocator,
   binding_id : MaterialBindingId,
 ) -> Unit {
+  let group = binding_id.group().to_int()
   let slot = binding_id.slot().to_int()
-  if slot < 0 || slot >= self.slots.length() {
+  if group < 0 || slot < 0 || slot >= self.slab_capacity {
     return
   }
-  if self.slots[slot] is Some(_) {
-    self.slots[slot] = None
-    self.free_slots.push(slot)
+  let index = group * self.slab_capacity + slot
+  if index < 0 || index >= self.slots.length() {
+    return
+  }
+  if self.slots[index] is Some(_) {
+    self.slots[index] = None
+    self.free_slots.push(index)
   }
 }
 
@@ -893,7 +891,7 @@ pub fn MaterialBindGroupAllocator::allocate_bindless_material(
   material_id : Int,
 ) -> MaterialBindingId? {
   match self {
-    Bindless(allocator) => allocator.allocate(material_id)
+    Bindless(allocator) => Some(allocator.allocate(material_id))
     NonBindless(_) => None
   }
 }
@@ -972,11 +970,9 @@ pub fn MaterialBindGroupAllocators::install_standard_material(
   )
   self.insert(
     plan.material_label(),
-    if plan.uses_bindless_resources() {
-      MaterialBindGroupAllocator::default_bindless()
-    } else {
-      MaterialBindGroupAllocator::default_non_bindless()
-    },
+    material_bind_group_allocator_for_support(
+      bindless_supported, bindless_slot_count,
+    ),
   )
   plan
 }

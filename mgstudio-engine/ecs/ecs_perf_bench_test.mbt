@@ -211,6 +211,34 @@ fn ecs_bench_dense_query_sum(
 }
 
 ///|
+fn ecs_bench_dense_value_query_sum(
+  world : World,
+  cache : QueryCache,
+) -> Int raise EcsError {
+  let query : Query[
+    (
+      ReadValue[BenchPosition],
+      ReadValue[BenchVelocity],
+      ReadValue[BenchHealth],
+      ReadValue[BenchMass],
+    ),
+    All,
+  ] = query_filtered_with_cache(world, All::new(), cache)
+  let total = Ref(0)
+  query.for_each(fn(_entity, data) {
+    let (position, velocity, health, mass) = data
+    total.val = total.val +
+      position.value().x +
+      position.value().y +
+      velocity.value().dx +
+      velocity.value().dy +
+      health.value().hp +
+      mass.value().value
+  })
+  total.val
+}
+
+///|
 fn ecs_bench_dense_query_state_iter_sum(
   world : World,
   state : QueryState[
@@ -279,6 +307,57 @@ fn ecs_bench_mut_query_apply(
 }
 
 ///|
+fn ecs_bench_mut_query_for_each_apply(
+  world : World,
+  cache : QueryCache,
+) -> Int raise EcsError {
+  let query : Query[(Write[BenchPosition], Read[BenchVelocity]), All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    cache,
+  )
+  let total = Ref(0)
+  query.for_each(fn(_entity, data) {
+    let (position, velocity) = data
+    let v = velocity.value()
+    position.modify(fn(p) {
+      p.x = p.x + v.dx
+      p.y = p.y + v.dy
+    })
+    let p = position.value()
+    total.val = total.val + p.x + p.y
+  })
+  total.val
+}
+
+///|
+fn ecs_bench_mut_query_table_batch_apply(
+  world : World,
+  cache : QueryCache,
+) -> Int raise EcsError {
+  let query : Query[(Write[BenchPosition], Read[BenchVelocity]), All] = query_filtered_with_cache(
+    world,
+    All::new(),
+    cache,
+  )
+  let total = Ref(0)
+  query.for_each_table(fn(batch) {
+    let positions = batch.write(bench_position_key).unwrap()
+    let velocities = batch.read(bench_velocity_key).unwrap()
+    for row_index in 0..<batch.length() {
+      let v = velocities.value(row_index)
+      positions.modify(row_index, fn(p) {
+        p.x = p.x + v.dx
+        p.y = p.y + v.dy
+      })
+      let p = positions.peek(row_index)
+      total.val = total.val + p.x + p.y
+    }
+  })
+  total.val
+}
+
+///|
 test "bench ecs: spawn dense bundle" (b : @bench.T) {
   let entity_count = 5_000
   b.bench(name="spawn_bundle dense x5000", count=10U, () => {
@@ -312,6 +391,16 @@ test "bench ecs: query dense cached" (b : @bench.T) {
   let cache = QueryCache::new()
   b.bench(name="query dense cached x20000", count=100U, () => {
     b.keep(try! ecs_bench_dense_query_sum(world, cache))
+  })
+}
+
+///|
+test "bench ecs: query dense value-only cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="query dense value-only cached x20000", count=100U, () => {
+    b.keep(try! ecs_bench_dense_value_query_sum(world, cache))
   })
 }
 
@@ -350,5 +439,59 @@ test "bench ecs: mut query modify cached" (b : @bench.T) {
   let state : QueryState[(Write[BenchPosition], Read[BenchVelocity]), All] = world.query()
   b.bench(name="query mut modify cached x20000", count=100U, () => {
     b.keep(ecs_bench_mut_query_apply(world, state))
+  })
+}
+
+///|
+test "bench ecs: mut query for_each cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="query mut for_each cached x20000", count=100U, () => {
+    b.keep(try! ecs_bench_mut_query_for_each_apply(world, cache))
+  })
+}
+
+///|
+test "bench ecs: mut query table batch cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(20_000)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="query mut table batch cached x20000", count=100U, () => {
+    b.keep(try! ecs_bench_mut_query_table_batch_apply(world, cache))
+  })
+}
+
+///|
+test "bench ecs: table batch read view cached" (b : @bench.T) {
+  let world = try! ecs_bench_seed_dense_world(102_400)
+  defer world.close()
+  let cache = QueryCache::new()
+  b.bench(name="table batch value accessor x102400", count=50U, () => {
+    let query : Query[ReadValue[BenchPosition], All] = query_filtered_with_cache(
+      world, All::new(), cache,
+    )
+    let total = Ref(0)
+    try! query.for_each_table(fn(batch) {
+      let positions = batch.read(bench_position_key).unwrap()
+      for row_index in 0..<batch.length() {
+        total.val = total.val + positions.value(row_index).x
+      }
+    })
+    b.keep(total.val)
+  })
+  b.bench(name="table batch read view x102400", count=50U, () => {
+    let query : Query[ReadValue[BenchPosition], All] = query_filtered_with_cache(
+      world, All::new(), cache,
+    )
+    let total = Ref(0)
+    try! query.for_each_table(fn(batch) {
+      batch.read(bench_position_key).unwrap().with_values(fn(positions) {
+        for position in positions {
+          total.val = total.val + position.x
+        }
+      })
+    })
+    b.keep(total.val)
   })
 }

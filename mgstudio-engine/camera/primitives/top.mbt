@@ -14,16 +14,27 @@
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/primitives.rs`.
+// Bevy stores two inline Vec3A values. MoonBit value types cannot contain the
+// current reference-typed Vec3, so the same six scalars are flattened here.
 
 ///|
+#valtype
 pub struct Aabb {
-  inner : @math.Aabb3d
-}
+  center_x : Float
+  center_y : Float
+  center_z : Float
+  half_extents_x : Float
+  half_extents_y : Float
+  half_extents_z : Float
+} derive(Eq, Debug)
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Sphere`.
+#valtype
 pub struct Sphere {
-  center : @math.Vec3
+  center_x : Float
+  center_y : Float
+  center_z : Float
   radius : Float
 }
 
@@ -71,22 +82,64 @@ pub fn SubCameraView3d::with_offset(
 
 ///|
 pub fn Sphere::Sphere() -> Sphere {
-  Sphere::{ center: @math.Vec3::zero(), radius: 0.0F }
+  Sphere::{ center_x: 0.0F, center_y: 0.0F, center_z: 0.0F, radius: 0.0F }
 }
 
 ///|
 pub fn Sphere::new(center : @math.Vec3, radius : Float) -> Sphere {
-  Sphere::{ center, radius }
+  Sphere::from_xyz(center.x, center.y, center.z, radius)
+}
+
+///|
+pub fn Sphere::from_xyz(
+  center_x : Float,
+  center_y : Float,
+  center_z : Float,
+  radius : Float,
+) -> Sphere {
+  Sphere::{ center_x, center_y, center_z, radius }
 }
 
 ///|
 pub fn Sphere::center(self : Sphere) -> @math.Vec3 {
-  self.center
+  @math.Vec3::new(self.center_x, self.center_y, self.center_z)
 }
 
 ///|
 pub fn Sphere::radius(self : Sphere) -> Float {
   self.radius
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/primitives.rs::Sphere::intersects_obb`.
+pub fn Sphere::intersects_obb(
+  self : Sphere,
+  aabb : Aabb,
+  world_from_local : @math.Affine3,
+) -> Bool {
+  let center_x = world_from_local.matrix3.x_axis.x * aabb.center_x +
+    world_from_local.matrix3.y_axis.x * aabb.center_y +
+    world_from_local.matrix3.z_axis.x * aabb.center_z +
+    world_from_local.translation.x
+  let center_y = world_from_local.matrix3.x_axis.y * aabb.center_x +
+    world_from_local.matrix3.y_axis.y * aabb.center_y +
+    world_from_local.matrix3.z_axis.y * aabb.center_z +
+    world_from_local.translation.y
+  let center_z = world_from_local.matrix3.x_axis.z * aabb.center_x +
+    world_from_local.matrix3.y_axis.z * aabb.center_y +
+    world_from_local.matrix3.z_axis.z * aabb.center_z +
+    world_from_local.translation.z
+  let offset_x = center_x - self.center_x
+  let offset_y = center_y - self.center_y
+  let offset_z = center_z - self.center_z
+  let distance_squared = offset_x * offset_x +
+    offset_y * offset_y +
+    offset_z * offset_z
+  let distance = @math.sqrt(distance_squared)
+  let relative_radius = camera_primitives_relative_radius_xyz(
+    aabb, offset_x, offset_y, offset_z, world_from_local,
+  )
+  distance_squared <= self.radius * distance + relative_radius
 }
 
 ///|
@@ -322,6 +375,17 @@ pub fn CascadesFrusta::get(
 }
 
 ///|
+pub fn CascadesFrusta::iter(
+  self : CascadesFrusta,
+) -> Array[(@core.Entity, Array[Frustum])] {
+  let entries : Array[(@core.Entity, Array[Frustum])] = []
+  for view, frusta in self.frusta {
+    entries.push((view, frusta))
+  }
+  entries
+}
+
+///|
 pub fn CascadesFrusta::set(
   self : CascadesFrusta,
   view : @core.Entity,
@@ -345,28 +409,39 @@ fn camera_primitives_abs(value : Float) -> Float {
 }
 
 ///|
-fn camera_primitives_relative_radius(
+fn camera_primitives_relative_radius_xyz(
   aabb : Aabb,
-  plane_normal : @math.Vec3,
+  normal_x : Float,
+  normal_y : Float,
+  normal_z : Float,
   world_from_local : @math.Affine3,
 ) -> Float {
-  let half_extents = aabb.half_size()
-  let transformed = @math.Vec3::new(
-    plane_normal.dot(world_from_local.matrix3.x_axis),
-    plane_normal.dot(world_from_local.matrix3.y_axis),
-    plane_normal.dot(world_from_local.matrix3.z_axis),
-  )
-  camera_primitives_abs(transformed.x) * half_extents.x +
-  camera_primitives_abs(transformed.y) * half_extents.y +
-  camera_primitives_abs(transformed.z) * half_extents.z
+  let transformed_x = normal_x * world_from_local.matrix3.x_axis.x +
+    normal_y * world_from_local.matrix3.x_axis.y +
+    normal_z * world_from_local.matrix3.x_axis.z
+  let transformed_y = normal_x * world_from_local.matrix3.y_axis.x +
+    normal_y * world_from_local.matrix3.y_axis.y +
+    normal_z * world_from_local.matrix3.y_axis.z
+  let transformed_z = normal_x * world_from_local.matrix3.z_axis.x +
+    normal_y * world_from_local.matrix3.z_axis.y +
+    normal_z * world_from_local.matrix3.z_axis.z
+  camera_primitives_abs(transformed_x) * aabb.half_extents_x +
+  camera_primitives_abs(transformed_y) * aabb.half_extents_y +
+  camera_primitives_abs(transformed_z) * aabb.half_extents_z
 }
 
 ///|
-fn camera_primitives_signed_distance(
+fn camera_primitives_signed_distance_xyz(
   half_space : HalfSpace,
-  point : @math.Vec3,
+  point_x : Float,
+  point_y : Float,
+  point_z : Float,
 ) -> Float {
-  half_space.normal().dot(point) + half_space.d()
+  let normal_d = half_space.normal_d()
+  normal_d.x * point_x +
+  normal_d.y * point_y +
+  normal_d.z * point_z +
+  normal_d.w
 }
 
 ///|
@@ -391,7 +466,12 @@ pub fn Frustum::intersects_sphere(
   }
   for index in 0..<=last {
     let half_space = self.half_spaces[index]
-    if camera_primitives_signed_distance(half_space, sphere.center()) +
+    if camera_primitives_signed_distance_xyz(
+        half_space,
+        sphere.center_x,
+        sphere.center_y,
+        sphere.center_z,
+      ) +
       sphere.radius() <=
       0.0F {
       return false
@@ -409,18 +489,35 @@ pub fn Frustum::intersects_obb(
   intersect_near : Bool,
   intersect_far : Bool,
 ) -> Bool {
-  let center_world = world_from_local.transform_point3(aabb.center())
+  let center_x = world_from_local.matrix3.x_axis.x * aabb.center_x +
+    world_from_local.matrix3.y_axis.x * aabb.center_y +
+    world_from_local.matrix3.z_axis.x * aabb.center_z +
+    world_from_local.translation.x
+  let center_y = world_from_local.matrix3.x_axis.y * aabb.center_x +
+    world_from_local.matrix3.y_axis.y * aabb.center_y +
+    world_from_local.matrix3.z_axis.y * aabb.center_z +
+    world_from_local.translation.y
+  let center_z = world_from_local.matrix3.x_axis.z * aabb.center_x +
+    world_from_local.matrix3.y_axis.z * aabb.center_y +
+    world_from_local.matrix3.z_axis.z * aabb.center_z +
+    world_from_local.translation.z
   for index in 0..<self.half_spaces.length() {
     if (index == VIEW_FRUSTUM_NEAR_PLANE_IDX && !intersect_near) ||
       (index == VIEW_FRUSTUM_FAR_PLANE_IDX && !intersect_far) {
       continue
     }
     let half_space = self.half_spaces[index]
-    let plane_normal = half_space.normal()
-    let relative_radius = camera_primitives_relative_radius(
-      aabb, plane_normal, world_from_local,
+    let normal_d = half_space.normal_d()
+    let relative_radius = camera_primitives_relative_radius_xyz(
+      aabb,
+      normal_d.x,
+      normal_d.y,
+      normal_d.z,
+      world_from_local,
     )
-    if camera_primitives_signed_distance(half_space, center_world) +
+    if camera_primitives_signed_distance_xyz(
+        half_space, center_x, center_y, center_z,
+      ) +
       relative_radius <=
       0.0F {
       return false
@@ -481,27 +578,91 @@ pub impl @ecs.Component for CascadesFrusta with fn component() {
 
 ///|
 pub fn Aabb::from_math(inner : @math.Aabb3d) -> Aabb {
-  Aabb::{ inner, }
+  let center = inner.center()
+  let half_extents = inner.half_size()
+  Aabb::{
+    center_x: center.x,
+    center_y: center.y,
+    center_z: center.z,
+    half_extents_x: half_extents.x,
+    half_extents_y: half_extents.y,
+    half_extents_z: half_extents.z,
+  }
 }
 
 ///|
 pub fn Aabb::to_math(self : Aabb) -> @math.Aabb3d {
-  self.inner
+  @math.Aabb3d::new(self.center(), self.half_size())
+}
+
+///|
+/// Scalar form of Bevy's `Aabb::from_min_max` for allocation-free value paths.
+pub fn Aabb::from_min_max_xyz(
+  min_x : Float,
+  min_y : Float,
+  min_z : Float,
+  max_x : Float,
+  max_y : Float,
+  max_z : Float,
+) -> Aabb {
+  Aabb::{
+    center_x: (max_x + min_x) * 0.5F,
+    center_y: (max_y + min_y) * 0.5F,
+    center_z: (max_z + min_z) * 0.5F,
+    half_extents_x: (max_x - min_x) * 0.5F,
+    half_extents_y: (max_y - min_y) * 0.5F,
+    half_extents_z: (max_z - min_z) * 0.5F,
+  }
 }
 
 ///|
 pub fn Aabb::from_min_max(min : @math.Vec3, max : @math.Vec3) -> Aabb {
-  Aabb::from_math(@math.Aabb3d::from_min_max(min, max))
+  Aabb::from_min_max_xyz(min.x, min.y, min.z, max.x, max.y, max.z)
 }
 
 ///|
 pub fn Aabb::center(self : Aabb) -> @math.Vec3 {
-  self.inner.center()
+  @math.Vec3::new(self.center_x, self.center_y, self.center_z)
+}
+
+///|
+pub fn Aabb::center_x(self : Aabb) -> Float {
+  self.center_x
+}
+
+///|
+pub fn Aabb::center_y(self : Aabb) -> Float {
+  self.center_y
+}
+
+///|
+pub fn Aabb::center_z(self : Aabb) -> Float {
+  self.center_z
 }
 
 ///|
 pub fn Aabb::half_size(self : Aabb) -> @math.Vec3 {
-  self.inner.half_size()
+  @math.Vec3::new(self.half_extents_x, self.half_extents_y, self.half_extents_z)
+}
+
+///|
+pub fn Aabb::half_extents_x(self : Aabb) -> Float {
+  self.half_extents_x
+}
+
+///|
+pub fn Aabb::half_extents_y(self : Aabb) -> Float {
+  self.half_extents_y
+}
+
+///|
+pub fn Aabb::half_extents_z(self : Aabb) -> Float {
+  self.half_extents_z
+}
+
+///|
+pub fn Aabb::equals(self : Aabb, other : Aabb) -> Bool {
+  self == other
 }
 
 ///|
@@ -539,12 +700,7 @@ fn mesh2d_geometry_compute_aabb(geometry : @mesh.Mesh2dGeometry) -> Aabb? {
     }
     index = index + 2
   }
-  Some(
-    Aabb::from_min_max(
-      @math.Vec3::new(min_x, min_y, 0.0F),
-      @math.Vec3::new(max_x, max_y, 0.0F),
-    ),
-  )
+  Some(Aabb::from_min_max_xyz(min_x, min_y, 0.0F, max_x, max_y, 0.0F))
 }
 
 ///|
@@ -581,12 +737,7 @@ fn mesh3d_geometry_compute_aabb(geometry : @mesh.Mesh3dGeometry) -> Aabb? {
       max_z = position.z
     }
   }
-  Some(
-    Aabb::from_min_max(
-      @math.Vec3::new(min_x, min_y, min_z),
-      @math.Vec3::new(max_x, max_y, max_z),
-    ),
-  )
+  Some(Aabb::from_min_max_xyz(min_x, min_y, min_z, max_x, max_y, max_z))
 }
 
 ///|
@@ -637,14 +788,8 @@ fn visibility_write_aabb(
 }
 
 ///|
-fn visibility_vec3_eq(lhs : @math.Vec3, rhs : @math.Vec3) -> Bool {
-  lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z
-}
-
-///|
 fn visibility_aabb_eq(lhs : Aabb, rhs : Aabb) -> Bool {
-  visibility_vec3_eq(lhs.center(), rhs.center()) &&
-  visibility_vec3_eq(lhs.half_size(), rhs.half_size())
+  lhs.equals(rhs)
 }
 
 ///|

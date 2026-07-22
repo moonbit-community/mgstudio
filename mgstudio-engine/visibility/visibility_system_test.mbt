@@ -118,6 +118,64 @@ test "visibility: incrementally added child inherits hidden parent after initial
 }
 
 ///|
+test "visibility: removing Parent restores inherited visibility" {
+  let world = @ecs.World::new()
+  defer world.close()
+  ignore(world.increment_change_tick())
+  let initial_ctx = @core.SystemTickContext::new()
+  initial_ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_tick_context(initial_ctx)
+  let parent = world.spawn_empty()
+  try! world.set_by_key(
+    parent,
+    ecs_key_visibility,
+    @visibility.Visibility::Hidden,
+  )
+  try! world.set_by_key(
+    parent,
+    ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_visibility,
+    @visibility.Visibility::Inherited,
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_inherited_visibility,
+    @visibility.InheritedVisibility::new(true),
+  )
+  @visibility.visibility_propagate_system(world)
+  debug_inspect(
+    (try! world.get_by_key(child, ecs_key_inherited_visibility))
+    .unwrap()
+    .is_visible(),
+    content="false",
+  )
+
+  ignore(world.increment_change_tick())
+  let removed_ctx = @core.SystemTickContext::new()
+  removed_ctx.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(removed_ctx)
+  try! (world.remove_by_key(child, @hierarchy.ecs_key_parent) |> ignore)
+  @visibility.visibility_propagate_system(world)
+
+  debug_inspect(
+    (try! world.get_by_key(child, ecs_key_inherited_visibility))
+    .unwrap()
+    .is_visible(),
+    content="true",
+  )
+}
+
+///|
 test "visibility: incrementally added child honors hidden parent before parent propagation" {
   let world = @ecs.World::new()
   defer world.close()
@@ -408,17 +466,18 @@ test "visibility: inherited visibility visible-hidden helpers match bevy semanti
 test "visibility: view visibility hidden/get helpers match bevy semantics" {
   debug_inspect(@visibility.ViewVisibility::new(true).get(), content="true")
   debug_inspect(@visibility.ViewVisibility::hidden().get(), content="false")
+  debug_inspect(@visibility.ViewVisibility::visible().get(), content="true")
 }
 
 ///|
 test "visibility: view visibility tracks current and previous frame bits" {
-  let view_visibility = @visibility.ViewVisibility::new(true)
+  let mut view_visibility = @visibility.ViewVisibility::new(true)
   debug_inspect(view_visibility.get(), content="true")
   debug_inspect(view_visibility.was_visible_now_hidden(), content="false")
-  view_visibility.update()
+  view_visibility = view_visibility.advance_frame()
   debug_inspect(view_visibility.get(), content="false")
   debug_inspect(view_visibility.was_visible_now_hidden(), content="true")
-  view_visibility.set_visible()
+  view_visibility = view_visibility.with_visible()
   debug_inspect(view_visibility.get(), content="true")
   debug_inspect(view_visibility.was_visible_now_hidden(), content="false")
 }

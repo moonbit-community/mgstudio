@@ -181,16 +181,45 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     start_entities.push((entity, parent_visible))
   }
 
-  for entity in world.changed_components(ecs_key_visibility, tick).read() {
-    add_start_entity(world, start_entities, start_seen, entity)
+  let changed_query : @ecs.Query[
+    @core.Entity,
+    (
+      @ecs.With[Visibility],
+      @ecs.With[InheritedVisibility],
+      @ecs.Or[(@ecs.Changed[Visibility], @ecs.Changed[@hierarchy.Parent])],
+    ),
+  ] = @ecs.query_filtered(
+    world,
+    (
+      @ecs.With::new(ecs_key_visibility),
+      @ecs.With::new(ecs_key_inherited_visibility),
+      @ecs.Or::new(
+        (
+          @ecs.Changed::new(ecs_key_visibility),
+          @ecs.Changed::new(@hierarchy.ecs_key_parent),
+        ),
+      ),
+    ),
+  )
+  let used_batch = try! changed_query.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
+    try! rows.for_each(fn(row_index) {
+      add_start_entity(
+        world,
+        start_entities,
+        start_seen,
+        batch.entity(row_index),
+      )
+    })
+  })
+  if !used_batch {
+    try! changed_query.for_each(fn(_entity, changed_entity) {
+      add_start_entity(world, start_entities, start_seen, changed_entity)
+    })
   }
-  for entity in world.added_components(ecs_key_visibility, tick).read() {
-    add_start_entity(world, start_entities, start_seen, entity)
-  }
-  for entity in world.changed_components(@hierarchy.ecs_key_parent, tick).read() {
-    add_start_entity(world, start_entities, start_seen, entity)
-  }
-  for entity in world.added_components(@hierarchy.ecs_key_parent, tick).read() {
+  for entity in world.removed_components(@hierarchy.ecs_key_parent, tick).read() {
     add_start_entity(world, start_entities, start_seen, entity)
   }
   if start_entities.length() == 0 {
@@ -245,23 +274,45 @@ fn reset_view_visibility_system(world : @ecs.World) -> Unit {
     world,
     @ecs.Without::new(ecs_key_no_cpu_culling),
   )
-  try! query.view(fn(_entity, view_visibility) {
-    view_visibility.modify(fn(value) { value.update() })
+  try! query.for_each_table(fn(batch) {
+    let view_visibility = batch.write(ecs_key_view_visibility).unwrap()
+    view_visibility.update_inplace_bypass_change_detection(fn(values) {
+      for row_index in 0..<values.length() {
+        values[row_index] = values[row_index].advance_frame()
+      }
+    })
   })
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility`.
-pub fn check_visibility_system(world : @ecs.World) -> Unit {
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::check_visibility_gpu_culling`.
+fn check_visibility_gpu_culling_system(world : @ecs.World) -> Unit {
   let query : @ecs.Query[
     (@ecs.Write[ViewVisibility], @ecs.Read[InheritedVisibility]),
-    @ecs.All,
-  ] = @ecs.query(world)
+    (
+      @ecs.With[NoCpuCulling],
+      @ecs.Or[(@ecs.Changed[InheritedVisibility], @ecs.Added[NoCpuCulling])],
+    ),
+  ] = @ecs.query_filtered(
+    world,
+    (
+      @ecs.With::new(ecs_key_no_cpu_culling),
+      @ecs.Or::new(
+        (
+          @ecs.Changed::new(ecs_key_inherited_visibility),
+          @ecs.Added::new(ecs_key_no_cpu_culling),
+        ),
+      ),
+    ),
+  )
   try! query.view(fn(_entity, data) {
     let (view_visibility, inherited_visibility) = data
-    if inherited_visibility.value().get() {
-      view_visibility.modify(fn(value) { value.set_visible() })
+    let next = if inherited_visibility.value().get() {
+      ViewVisibility::visible()
+    } else {
+      ViewVisibility::hidden()
     }
+    view_visibility.set_if_neq(next) |> ignore
   })
 }
 
@@ -272,12 +323,13 @@ fn mark_newly_hidden_entities_invisible_system(world : @ecs.World) -> Unit {
     world,
     @ecs.Without::new(ecs_key_no_cpu_culling),
   )
-  try! query.view(fn(_entity, view_visibility) {
-    view_visibility.modify(fn(value) {
-      if value.was_visible_now_hidden() {
-        value.bits = 0
+  try! query.for_each_table(fn(batch) {
+    let view_visibility = batch.write(ecs_key_view_visibility).unwrap()
+    for row_index in 0..<batch.length() {
+      if view_visibility.peek(row_index).was_visible_now_hidden() {
+        view_visibility.set(row_index, ViewVisibility::hidden())
       }
-    })
+    }
   })
 }
 
@@ -313,7 +365,7 @@ fn register_visibility_required_components(
   world.register_required_components_with(
     ecs_key_visibility,
     ecs_key_view_visibility,
-    fn() { ViewVisibility::new(true) },
+    fn() { ViewVisibility::hidden() },
   )
 }
 
@@ -344,8 +396,8 @@ pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .in_set(visibility_set_visibility_propagate),
   )
   .add_post_update_system_config(
-    @app.system(check_visibility_system)
-    .named("mgstudio.visibility.check_visibility")
+    @app.system(check_visibility_gpu_culling_system)
+    .named("mgstudio.visibility.check_visibility_gpu_culling")
     .in_set(visibility_set_check_visibility),
   )
   .add_post_update_system_config(

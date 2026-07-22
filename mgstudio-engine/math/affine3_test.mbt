@@ -40,3 +40,23 @@ test "math: affine decomposition matches glam negative determinant scale" {
     content="true",
   )
 }
+
+///|
+test "math: affine is_nan checks matrix and translation" {
+  let nan = 0.0F / 0.0F
+  let matrix_nan = Affine3::from_mat3_translation(
+    Mat3::from_cols(
+      Vec3::new(1.0F, 0.0F, 0.0F),
+      Vec3::new(0.0F, nan, 0.0F),
+      Vec3::new(0.0F, 0.0F, 1.0F),
+    ),
+    Vec3::zero(),
+  )
+  let translation_nan = Affine3::from_translation(Vec3::new(0.0F, 0.0F, nan))
+  inspect(
+    !Affine3::identity().is_nan() &&
+    matrix_nan.is_nan() &&
+    translation_nan.is_nan(),
+    content="true",
+  )
+}

@@ -202,22 +202,38 @@ impl @app.Resource for PendingPrepassMeshMaterialQueues with fn resource() {
 
 ///|
 fn ensure_render3d_prepass_specialization_resources(world : @ecs.World) -> Unit {
-  if world.get_resource(SpecializedPrepassMaterialPipelineCache::resource())
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[SpecializedPrepassMaterialPipelineCache]),
+    )
     is None {
     world.insert_resource(
-      SpecializedPrepassMaterialPipelineCache::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[SpecializedPrepassMaterialPipelineCache]),
       SpecializedPrepassMaterialPipelineCache::new(),
     )
   }
-  if world.get_resource(ViewKeyPrepassCache::resource()) is None {
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ViewKeyPrepassCache]),
+    )
+    is None {
     world.insert_resource(
-      ViewKeyPrepassCache::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[ViewKeyPrepassCache]),
       ViewKeyPrepassCache::new(),
     )
   }
-  if world.get_resource(PendingPrepassMeshMaterialQueues::resource()) is None {
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[PendingPrepassMeshMaterialQueues]),
+    )
+    is None {
     world.insert_resource(
-      PendingPrepassMeshMaterialQueues::resource(),
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[PendingPrepassMeshMaterialQueues]),
       PendingPrepassMeshMaterialQueues::new(),
     )
   }
@@ -255,7 +271,9 @@ fn render3d_check_prepass_views_need_specialization(
       )
   }
   let view_key_cache = world
-    .get_resource(ViewKeyPrepassCache::resource())
+    .get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ViewKeyPrepassCache]),
+    )
     .unwrap()
   for camera in cameras {
     if !camera.payload.camera.is_active {
@@ -302,16 +320,30 @@ fn render3d_prepass_phases_contain_view(
   retained_view_entity : @render_view.RetainedViewEntity,
 ) -> Bool {
   let opaque_prepass = world
-    .get_resource(Render3dOpaquePrepassPhases::resource())
+    .get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
+    )
     .unwrap()
   let alpha_mask_prepass = world
-    .get_resource(Render3dAlphaMaskPrepassPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
+    )
     .unwrap()
   let opaque_deferred = world
-    .get_resource(Render3dOpaqueDeferredPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
+    )
     .unwrap()
   let alpha_mask_deferred = world
-    .get_resource(Render3dAlphaMaskDeferredPhases::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
+    )
     .unwrap()
   opaque_prepass.phases.contains(retained_view_entity) ||
   alpha_mask_prepass.phases.contains(retained_view_entity) ||
@@ -460,7 +492,11 @@ fn render3d_specialize_prepass_work_item(
     }
   }
   let cache = world
-    .get_resource(SpecializedPrepassMaterialPipelineCache::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[SpecializedPrepassMaterialPipelineCache]),
+    )
     .unwrap()
   cache
   .view_or_insert(item.retained_view_entity)
@@ -486,13 +522,23 @@ fn render3d_specialize_prepass_material_meshes(
     .get_resource(@render_visibility.DirtySpecializations::resource())
     .unwrap()
   let view_key_cache = world
-    .get_resource(ViewKeyPrepassCache::resource())
+    .get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ViewKeyPrepassCache]),
+    )
     .unwrap()
   let specialized_cache = world
-    .get_resource(SpecializedPrepassMaterialPipelineCache::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[SpecializedPrepassMaterialPipelineCache]),
+    )
     .unwrap()
   let pending_queues = world
-    .get_resource(PendingPrepassMeshMaterialQueues::resource())
+    .get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[PendingPrepassMeshMaterialQueues]),
+    )
     .unwrap()
   for camera in cameras {
     let retained_view_entity = @render_view.RetainedViewEntity::new(

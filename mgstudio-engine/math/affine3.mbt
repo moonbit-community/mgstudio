@@ -24,6 +24,22 @@ pub fn Affine3::identity() -> Affine3 {
 }
 
 ///|
+pub fn Affine3::is_nan(self : Affine3) -> Bool {
+  self.matrix3.x_axis.x.is_nan() ||
+  self.matrix3.x_axis.y.is_nan() ||
+  self.matrix3.x_axis.z.is_nan() ||
+  self.matrix3.y_axis.x.is_nan() ||
+  self.matrix3.y_axis.y.is_nan() ||
+  self.matrix3.y_axis.z.is_nan() ||
+  self.matrix3.z_axis.x.is_nan() ||
+  self.matrix3.z_axis.y.is_nan() ||
+  self.matrix3.z_axis.z.is_nan() ||
+  self.translation.x.is_nan() ||
+  self.translation.y.is_nan() ||
+  self.translation.z.is_nan()
+}
+
+///|
 pub fn Affine3::from_mat3_translation(
   matrix3 : Mat3,
   translation : Vec3,

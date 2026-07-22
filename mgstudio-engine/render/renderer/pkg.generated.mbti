@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/render/renderer"
 
 import {
   "Milky2018/mgstudio/render/render_resource",
+  "Milky2018/mgstudio/window",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -149,7 +150,7 @@ pub fn create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool
 
 pub fn create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format~ : @wgpu_mbt.TextureFormat, sample_format~ : @wgpu_mbt.TextureFormat?, sample_count? : Int) -> Int
 
-pub fn create_surface(Int) -> Int
+pub fn create_surface(@window.RawHandleWrapper) -> Int
 
 pub fn create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
 
@@ -458,6 +459,8 @@ pub fn register_wgsl_source(String, String) -> Unit
 pub fn release_frame_retired_resources() -> Unit
 
 pub fn release_skybox_prepared_bind_group(bind_group_id~ : Int) -> Bool
+
+pub fn release_surface(Int) -> Unit
 
 pub fn render_context_backend_for_test() -> GpuBackend?
 
@@ -1116,8 +1119,8 @@ pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBa
 pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool, sample_count? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_with_formats(Self, Int, Int, Bool, @wgpu_mbt.TextureFormat, @wgpu_mbt.TextureFormat?, sample_count? : Int) -> Int raise GpuBackendError
-pub fn GpuBackend::create_surface(Self, Int) -> Unit
-pub fn GpuBackend::create_surface_binding(Self, Int, Int, Int) -> Unit
+pub fn GpuBackend::create_surface(Self, @window.RawHandleWrapper) -> Unit
+pub fn GpuBackend::create_surface_binding(Self, Int, Int, @window.RawHandleWrapper) -> Unit
 pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], label? : String?) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_cube_with_format(Self, Int, Int, @wgpu_mbt.TextureFormat, Array[Bytes], Bool, usage_bits? : Int, label? : String?, replace_texture_id? : Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
@@ -2124,4 +2127,3 @@ pub type NativeGpuSurface = Int
 pub type PendingMapReadCallback = (UInt, Bytes, @wgpu_mbt.Buffer) -> Unit
 
 // Traits
-

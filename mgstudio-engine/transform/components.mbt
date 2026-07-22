@@ -555,31 +555,31 @@ pub impl Default for TransformTreeChanged with fn default() {
 }
 
 ///|
-pub struct StaticTransformOptimizations {
-  threshold : Float
-  mut enabled : Bool
+pub enum StaticTransformOptimizations {
+  Enabled
+  Disabled
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub fn StaticTransformOptimizations::from_threshold(
-  threshold : Float,
-) -> StaticTransformOptimizations {
-  { threshold, enabled: true }
-}
-
-///|
 pub fn StaticTransformOptimizations::disabled() -> StaticTransformOptimizations {
-  { threshold: 0.0F, enabled: false }
+  StaticTransformOptimizations::Disabled
 }
 
 ///|
 pub fn StaticTransformOptimizations::enabled() -> StaticTransformOptimizations {
-  { threshold: 1.0F, enabled: true }
+  StaticTransformOptimizations::Enabled
 }
 
 ///|
 pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> StaticTransformOptimizations {
-  { threshold: 0.3F, enabled: true }
+  StaticTransformOptimizations::Enabled
+}
+
+///|
+pub fn StaticTransformOptimizations::is_enabled(
+  self : StaticTransformOptimizations,
+) -> Bool {
+  self == StaticTransformOptimizations::Enabled
 }
 
 ///|

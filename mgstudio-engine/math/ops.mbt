@@ -43,7 +43,7 @@ pub fn sin(value : Float) -> Float {
 
 ///|
 pub fn sqrt(value : Float) -> Float {
-  @coremath.powf(value, 0.5F)
+  value.sqrt()
 }
 
 ///|

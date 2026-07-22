@@ -665,8 +665,8 @@ pub fn[T] ComponentColumn::for_each_changed_table_entity(
   visit : (@core.Entity, Int, Int) -> Bool,
 ) -> Bool {
   guard self.storage_type == Table else { return true }
-  for entry in self.world.tables.iter() {
-    let (table_id, table_ref) = entry
+  for table_id in 0..<self.world.tables.length() {
+    guard self.world.tables[table_id] is Some(table_ref) else { continue }
     guard self.cached_table_column(table_id) is Some(column_ref) else {
       continue
     }
@@ -1433,9 +1433,6 @@ pub fn[T] ComponentColumn::set(
   if !self.set_tick_only(entity, value) {
     return false
   }
-  self.world
-  .ensure_changed_component_messages(self.key.id())
-  .send(component_write_tick(self.world), entity)
   true
 }
 

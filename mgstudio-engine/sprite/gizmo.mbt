@@ -125,7 +125,7 @@ fn[Config : GizmoConfigGroup + Default] gizmos_from_world(
   let store : GizmoConfigStore? = world.get_resource(
     GizmoConfigStore::resource(),
   )
-  let group = Config::default()
+  let group : Config = Default::default()
   let store = match store {
     Some(store) => store
     None => raise @ecs.Invalid("Missing resource for system parameter")

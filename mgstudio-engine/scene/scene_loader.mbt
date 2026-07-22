@@ -62,7 +62,8 @@ fn scene_init_gltf_assets(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 fn scene_registry_from_world(world : @ecs.World) -> SceneAssetRegistryState? {
-  let key : @ecs.ResourceKey[SceneAssetRegistryState] = SceneAssetRegistryState::resource()
+  let key : @ecs.ResourceKey[SceneAssetRegistryState] = (
+    @app.Resource::resource() : @ecs.ResourceKey[SceneAssetRegistryState])
   world.get_resource(key)
 }
 

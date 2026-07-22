@@ -13,23 +13,23 @@
 // limitations under the License.
 
 ///|
-pub(all) struct WindowWrapper {
+pub struct RawHandleWrapper {
   window : HostWindow
-} derive(Eq, Debug)
+  window_handle_ : @raw_windowing.WindowHandle
+  display_handle_ : @raw_windowing.DisplayHandle
+} derive(Debug)
 
 ///|
-pub fn WindowWrapper::new(window : HostWindow) -> WindowWrapper {
-  WindowWrapper::{ window, }
-}
-
-///|
-pub(all) struct RawHandleWrapper {
-  window : HostWindow
-} derive(Eq, Debug)
-
-///|
-pub fn RawHandleWrapper::new(window : WindowWrapper) -> RawHandleWrapper {
-  RawHandleWrapper::{ window: window.window }
+pub fn RawHandleWrapper::new(
+  window : HostWindow,
+  window_handle : @raw_windowing.WindowHandle,
+  display_handle : @raw_windowing.DisplayHandle,
+) -> RawHandleWrapper {
+  RawHandleWrapper::{
+    window,
+    window_handle_: window_handle,
+    display_handle_: display_handle,
+  }
 }
 
 ///|
@@ -38,10 +38,31 @@ pub fn RawHandleWrapper::window(self : RawHandleWrapper) -> HostWindow {
 }
 
 ///|
-pub fn RawHandleWrapper::content_view_handle(
+pub fn RawHandleWrapper::window_handle(
   self : RawHandleWrapper,
-) -> UInt64? {
-  @windowing.content_view_handle(self.window)
+) -> @raw_windowing.WindowHandle {
+  self.window_handle_
+}
+
+///|
+pub fn RawHandleWrapper::display_handle(
+  self : RawHandleWrapper,
+) -> @raw_windowing.DisplayHandle {
+  self.display_handle_
+}
+
+///|
+pub impl @raw_windowing.HasWindowHandle for RawHandleWrapper with fn window_handle(
+  self,
+) {
+  self.window_handle()
+}
+
+///|
+pub impl @raw_windowing.HasDisplayHandle for RawHandleWrapper with fn display_handle(
+  self,
+) {
+  self.display_handle()
 }
 
 ///|

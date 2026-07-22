@@ -12,7 +12,7 @@ import {
   "Milky2018/mgstudio/shader",
   "Milky2018/mgstudio/shader/compile" @shader_compile,
   "Milky2018/mgstudio/shader/source" @shader_source,
-  "Milky2018/wgsl/common" @wgsl_common,
+  "Milky2018/moon_wgsl" @wgsl_common,
   "Milky2018/wgpu_mbt" @wgpu,
 }
 

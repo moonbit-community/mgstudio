@@ -83,7 +83,7 @@ fn preprocess_shader_imports(
   source : String,
   path : String,
 ) -> (ShaderImport, Array[ShaderImport]) {
-  let metadata = @wgsl_metadata.get_preprocessor_metadata(source) catch {
+  let metadata = @wgsl_common.get_preprocessor_metadata(source) catch {
     _ =>
       @wgsl_common.PreprocessorMetaData::PreprocessorMetaData(
         None,

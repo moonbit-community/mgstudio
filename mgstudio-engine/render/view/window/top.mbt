@@ -20,7 +20,6 @@ pub struct WindowRenderPlugin {}
 
 ///|
 pub suberror WindowSurfaceCreateError {
-  MissingContentViewHandle(@core.Entity, Int)
   NativeSurfaceCreateFailed(@core.Entity, String)
   NativeSurfaceConfigureFailed(@core.Entity, String)
 }
@@ -30,8 +29,6 @@ pub fn WindowSurfaceCreateError::message(
   self : WindowSurfaceCreateError,
 ) -> String {
   match self {
-    MissingContentViewHandle(entity, window) =>
-      "missing content view handle for window entity \{entity.to_bits()} host window \{window}"
     NativeSurfaceCreateFailed(entity, message) =>
       "failed to create surface for window entity \{entity.to_bits()}: \{message}"
     NativeSurfaceConfigureFailed(entity, message) =>
@@ -251,6 +248,9 @@ pub fn WindowSurfaces::remove(
   self : WindowSurfaces,
   entity : @core.Entity,
 ) -> Unit {
+  if self.surfaces.get(entity) is Some(data) {
+    data.surface.release()
+  }
   self.surfaces.remove(entity)
   self.configured_windows.remove(entity)
 }
@@ -398,7 +398,7 @@ pub fn prepare_windows(
     } else if status == @wgpu.SURFACE_GET_CURRENT_TEXTURE_STATUS_OUTDATED {
       frame.release()
       configure_surface_for_window(
-        window.entity,
+        window,
         surface_data.surface,
         surface_data.configuration,
         render_adapter,
@@ -669,12 +669,19 @@ fn surface_configuration_from_surface(
 
 ///|
 fn configure_surface_for_window(
-  entity : @core.Entity,
+  window : ExtractedWindow,
   surface : @wgpu.Surface,
   configuration : @wgpu.SurfaceConfiguration,
   render_adapter : @renderer.RenderAdapter,
   render_device : @renderer.RenderDevice,
 ) -> Unit raise WindowSurfaceCreateError {
+  surface.sync_macos_window_handle(window.handle.window_handle()) catch {
+    err =>
+      raise WindowSurfaceCreateError::NativeSurfaceConfigureFailed(
+        window.entity,
+        err.message(),
+      )
+  }
   surface.configure_with_or_raise(
     render_adapter.wgpu_adapter(),
     render_device.wgpu_device(),
@@ -682,7 +689,7 @@ fn configure_surface_for_window(
   ) catch {
     err =>
       raise WindowSurfaceCreateError::NativeSurfaceConfigureFailed(
-        entity,
+        window.entity,
         err.message(),
       )
   }
@@ -693,15 +700,7 @@ pub fn create_surface_for_window(
   window : ExtractedWindow,
   render_instance : @renderer.RenderInstance,
 ) -> @wgpu.Surface raise WindowSurfaceCreateError {
-  let ns_view = match window.handle.content_view_handle() {
-    Some(handle) => handle
-    None =>
-      raise WindowSurfaceCreateError::MissingContentViewHandle(
-        window.entity,
-        window.handle.window(),
-      )
-  }
-  render_instance.wgpu_instance().create_surface_macos_ns_view_u64(ns_view) catch {
+  render_instance.wgpu_instance().create_surface_from_window(window.handle) catch {
     err =>
       raise WindowSurfaceCreateError::NativeSurfaceCreateFailed(
         window.entity,
@@ -722,11 +721,7 @@ fn surface_data_for_window(
     window, surface, render_adapter,
   )
   configure_surface_for_window(
-    window.entity,
-    surface,
-    configuration,
-    render_adapter,
-    render_device,
+    window, surface, configuration, render_adapter, render_device,
   )
   SurfaceData::{
     surface,
@@ -748,7 +743,7 @@ fn reconfigured_surface_data_for_window(
     render_adapter,
   )
   configure_surface_for_window(
-    window.entity,
+    window,
     data.surface,
     configuration,
     render_adapter,

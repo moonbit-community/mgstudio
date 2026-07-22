@@ -768,7 +768,7 @@ fn sprite_material_with_atlas_layout(
 ) -> SpriteMaterial {
   match texture_atlas {
     Some(atlas) =>
-      match texture_atlas_layouts.get(atlas.layout()) {
+      match atlas.layout_asset(texture_atlas_layouts) {
         Some(layout) =>
           material.with_texture_atlas_layout(Some(layout), atlas.index())
         None => material

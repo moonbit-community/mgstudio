@@ -54,14 +54,14 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
   time : Float,
   event : T,
 ) -> AnimationClipEvent {
-  event.animation_event_marker()
+  AnimationEvent::animation_event_marker(event)
   let trigger : AnimationEventTriggerFn = fn(
     world : @ecs.World,
     entity : @core.Entity,
     _time : Float,
     _weight : Float,
   ) {
-    let event_value = T::set_observer_entity(event, entity)
+    let event_value = @ecs.TriggerEvent::set_observer_entity(event, entity)
     world.trigger(event_value, caller=Some("mgstudio.animation.trigger_events"))
   }
   AnimationClipEvent::{ time, label: "", payload: "", trigger: Some(trigger) }

@@ -8,7 +8,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/moon_wesl",
   "Milky2018/moon_wgsl_naga_oil/compose",
-  "Milky2018/wgsl/common",
+  "Milky2018/moon_wgsl_naga_oil/contract",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
@@ -53,16 +53,16 @@ pub(all) struct ComposableModuleDescriptor {
   file_path : String
   language : ShaderLanguage
   as_name : String?
-  additional_imports : Array[@common.ImportDefinition]
-  shader_defs : @hashmap.HashMap[String, @common.ShaderDefValue]
+  additional_imports : Array[@contract.ImportDefinition]
+  shader_defs : @hashmap.HashMap[String, @contract.ShaderDefValue]
 } derive(Eq)
 
 pub(all) struct NagaModuleDescriptor {
   source : String
   file_path : String
   shader_type : ShaderType
-  shader_defs : @hashmap.HashMap[String, @common.ShaderDefValue]
-  additional_imports : Array[@common.ImportDefinition]
+  shader_defs : @hashmap.HashMap[String, @contract.ShaderDefValue]
+  additional_imports : Array[@contract.ImportDefinition]
 } derive(Eq)
 
 pub(all) struct Shader {
@@ -70,7 +70,7 @@ pub(all) struct Shader {
   source : Source
   import_path : ShaderImport
   imports : Array[ShaderImport]
-  additional_imports : Array[@common.ImportDefinition]
+  additional_imports : Array[@contract.ImportDefinition]
   shader_defs : Array[ShaderDefVal]
   file_dependencies : Array[@asset.Handle[Shader]]
   validate_shader : ValidateShader

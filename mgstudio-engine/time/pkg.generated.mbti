@@ -119,7 +119,7 @@ pub impl TimeContext for Real
 pub impl Default for Real
 
 pub struct Stopwatch {
-  elapsed : @core.Duration
+  elapsed_nanos : Int64
   paused : Bool
 } derive(Eq, @debug.Debug)
 pub fn Stopwatch::elapsed(Self) -> @core.Duration
@@ -249,9 +249,10 @@ pub fn TimeUpdateStrategy::default() -> Self
 pub impl @app.Resource for TimeUpdateStrategy
 
 pub struct Timer {
-  stopwatch : Stopwatch
-  duration : @core.Duration
-  mode : TimerMode
+  stopwatch_elapsed_nanos : Int64
+  stopwatch_paused : Bool
+  duration_nanos : Int64
+  mode_repeating : Bool
   finished : Bool
   times_finished_this_tick : Int
 } derive(Eq, @debug.Debug)

@@ -616,13 +616,19 @@ fn skybox_pipeline_state_mut_or_init(
 fn extracted_skyboxes_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[ExtractedSkyboxes] {
-  if world.get_resource(ExtractedSkyboxes::resource()) is None {
+  if world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
+    )
+    is None {
     world.insert_resource(
-      ExtractedSkyboxes::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
       ExtractedSkyboxes::ExtractedSkyboxes(),
     )
   }
-  match world.get_resource_mut(ExtractedSkyboxes::resource()) {
+  match
+    world.get_resource_mut(
+      (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
+    ) {
     Some(value) => value
     None => abort("Missing ExtractedSkyboxes resource")
   }
@@ -753,9 +759,11 @@ fn configure_skybox_render_sub_app(
       SkyboxPipelineState::SkyboxPipelineState(),
     )
   }
-  if !world.resource(ExtractedSkyboxes::resource()).is_present() {
+  if !world
+    .resource((@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]))
+    .is_present() {
     world.insert_resource(
-      ExtractedSkyboxes::resource(),
+      (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
       ExtractedSkyboxes::ExtractedSkyboxes(),
     )
   }
@@ -806,7 +814,7 @@ fn extract_skybox(world : @ecs.World) -> Unit {
       )
       try! world.set_by_key(
         render_entity_ref.value().id(),
-        SkyboxUniforms::component(),
+        (@ecs.Component::component() : @ecs.ComponentKey[SkyboxUniforms]),
         uniforms,
       )
       extracted.push(
@@ -837,7 +845,10 @@ fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
     })
     return
   }
-  match world.get_resource(ExtractedSkyboxes::resource()) {
+  match
+    world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
+    ) {
     Some(extracted) => {
       remove_stale_skybox_pipeline_components(world, extracted)
       for entry in extracted.entries {
@@ -879,7 +890,10 @@ fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
 ///|
 fn prepare_skybox_bind_groups(world : @ecs.World) -> Unit {
   let mut bind_group_count = 0
-  match world.get_resource(ExtractedSkyboxes::resource()) {
+  match
+    world.get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
+    ) {
     Some(extracted) => {
       remove_stale_skybox_bind_group_components(world, extracted)
       for entry in extracted.entries {

@@ -26,6 +26,8 @@ pub fn camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn camera_projection_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub let camera_update_frusta_systems : String
+
 pub let camera_update_systems : String
 
 pub fn camera_viewport_clamp_to_size(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
@@ -65,6 +67,8 @@ pub fn perspective_projection_3d_default() -> @projection3d.PerspectiveProjectio
 pub fn perspective_projection_3d_update(@projection3d.PerspectiveProjection3d, Float, Float) -> @projection3d.PerspectiveProjection3d
 
 pub fn perspective_projection_3d_with_aspect_ratio(@projection3d.PerspectiveProjection3d, Float) -> @projection3d.PerspectiveProjection3d
+
+pub fn update_frusta_2d_system(@ecs.World) -> Unit
 
 // Errors
 

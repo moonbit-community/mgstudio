@@ -168,7 +168,11 @@ pub fn[T] World::mark_resource_changed(
   key : ResourceKey[T],
   caller? : String? = None,
 ) -> Unit {
-  key.resource_record_changed(self, resource_write_tick(self), caller)
+  key.resource_record_changed(
+    self,
+    resource_write_tick(self),
+    self.tracked_change_caller(caller),
+  )
 }
 
 ///|
@@ -178,6 +182,7 @@ pub fn[T] World::mark_resource_added(
   caller? : String? = None,
 ) -> Unit {
   let tick = resource_write_tick(self)
+  let caller = self.tracked_change_caller(caller)
   key.resource_record_added(self, tick, caller)
   key.resource_record_changed(self, tick, caller)
 }

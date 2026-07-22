@@ -91,7 +91,7 @@ test "ecs resource: ResourceMut updates live world storage" {
 
 ///|
 test "ecs resource: ResourceMut exposes detect changes metadata" {
-  let world = World::new()
+  let world = World::new(track_change_locations=true)
   defer world.close()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="resource_mut_detect_runtime_config",

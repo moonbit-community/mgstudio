@@ -218,17 +218,15 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
     phase.input_uniform_index(second_main),
     content="Some(InputUniformIndex(15))",
   )
-  let render_mesh_instances = RenderMeshInstances::new(
-    use_gpu_instance_buffer_builder=true,
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
   )
-  render_mesh_instances.insert(
-    first_main,
-    RenderMeshQueueData::new(77, 14U, true),
+  phase.prepare_batchable_phase_buffers(
+    "shadow-resolve-view", true, false, phase_instances, phase_indirect,
   )
-  render_mesh_instances.insert(
-    second_main,
-    RenderMeshQueueData::new(77, 15U, true),
-  )
+  inspect(phase.items()[0].batch_range().start(), content="0")
+  inspect(phase.items()[0].batch_range().end(), content="2")
   let meshes = [
     ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(first_main.id()),
@@ -245,17 +243,14 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
       ),
     },
   ]
-  let resolved = render3d_shadow_resolve_phase_items(
-    meshes,
-    render_mesh_instances,
-    phase.items(),
-  )
-  debug_inspect(resolved.length(), content="1")
+  let resolved = render3d_shadow_resolve_phase_items(meshes, phase)
+  debug_inspect(resolved.length(), content="2")
   debug_inspect(
     render3d_resolved_shadow_phase_draw_count(resolved),
     content="2",
   )
-  debug_inspect(resolved[0].extracted_indices.length(), content="2")
+  debug_inspect(resolved[0].extracted_indices.length(), content="1")
+  debug_inspect(resolved[1].extracted_indices.length(), content="1")
 }
 
 ///|
@@ -268,24 +263,15 @@ test "render3d: shadow phase resolve keeps Bevy mesh bins isolated" {
   )
   let first_main = @render.MainEntity::new(@core.Entity::new(51, 1))
   let second_main = @render.MainEntity::new(@core.Entity::new(52, 1))
-  let item = Render3dShadowPhaseItemData::new(
+  let phase = Render3dShadowViewPhaseData::new(
+    @render_batching.GpuPreprocessingMode::None,
+  )
+  phase.add(
     key,
     Render3dShadowBinKeyData::new(77),
-    @core.Entity::new(61, 1),
-    first_main,
-    Render3dShadowBatchRange::new(14, 16),
-    Render3dShadowPhaseItemExtraIndex::none(),
-  )
-  let render_mesh_instances = RenderMeshInstances::new(
-    use_gpu_instance_buffer_builder=true,
-  )
-  render_mesh_instances.insert(
-    first_main,
-    RenderMeshQueueData::new(77, 14U, true),
-  )
-  render_mesh_instances.insert(
-    second_main,
-    RenderMeshQueueData::new(78, 15U, true),
+    (@core.Entity::new(61, 1), first_main),
+    14U,
+    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
   )
   let meshes = [
     ExtractedMesh3d::{
@@ -303,11 +289,7 @@ test "render3d: shadow phase resolve keeps Bevy mesh bins isolated" {
       ),
     },
   ]
-  let resolved = render3d_shadow_resolve_phase_items(
-    meshes,
-    render_mesh_instances,
-    [item],
-  )
+  let resolved = render3d_shadow_resolve_phase_items(meshes, phase)
   debug_inspect(resolved.length(), content="1")
   debug_inspect(
     render3d_resolved_shadow_phase_draw_count(resolved),

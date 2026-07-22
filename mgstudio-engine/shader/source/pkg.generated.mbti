@@ -3,7 +3,8 @@ package "Milky2018/mgstudio/shader/source"
 
 import {
   "Milky2018/moon_wgsl_naga_oil/compose",
-  "Milky2018/wgsl/common",
+  "Milky2018/moon_wgsl_naga_oil/contract",
+  "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
   "moonbitlang/x/fs",
 }
@@ -13,28 +14,32 @@ pub fn clear_embedded_shader_sources() -> Unit
 
 pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[String, String]
 
-pub fn embedded_shader_composer_source_files(String?) -> Array[@common.WgslSourceFile]
+pub fn embedded_shader_composer_source_files(String?) -> Array[@contract.WgslSourceFile]
 
 pub fn embedded_shader_source(String) -> String?
 
-pub fn embedded_shader_source_files() -> Array[@common.WgslSourceFile]
+pub fn embedded_shader_source_files() -> Array[@contract.WgslSourceFile]
 
 pub fn embedded_shader_source_required(String) -> String raise @compose.ComposerError
 
 pub fn load_embedded_shader_source(String, String) -> Unit
 
-pub fn load_embedded_shader_source_files(Array[@common.WgslSourceFile]) -> Unit
+pub fn load_embedded_shader_source_files(Array[@contract.WgslSourceFile]) -> Unit
 
-pub fn scan_shader_source_files(String, @common.WgslSourceScanOptions) -> Array[@common.WgslSourceFile] raise @fs.IOError
+pub fn scan_shader_source_files(String, ShaderSourceScanOptions) -> Array[@contract.WgslSourceFile] raise @fs.IOError
 
 // Errors
 
 // Types and methods
+pub(all) struct ShaderSourceScanOptions {
+  recursive : Bool
+  extensions : Array[String]
+  exclude_prefixes : Array[String]
+} derive(Eq, @debug.Debug)
+pub fn ShaderSourceScanOptions::default() -> Self
 
 // Type aliases
-pub using @common {type WgslSourceFile as ShaderSourceFile}
-
-pub using @common {type WgslSourceScanOptions as ShaderSourceScanOptions}
+pub using @contract {type WgslSourceFile as ShaderSourceFile}
 
 // Traits
 

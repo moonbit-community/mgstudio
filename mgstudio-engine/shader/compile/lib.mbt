@@ -125,7 +125,7 @@ let shader_compile_runtime_state : ShaderCompileRuntimeState = {
 
 ///|
 pub fn normalize_shader_rel_path(rel : String) -> String {
-  @wgsl_resolver.normalize_shader_rel_path(rel)
+  @wgsl_common.normalize_shader_rel_path(rel)
 }
 
 ///|
@@ -326,7 +326,7 @@ pub fn default_shader_value_defines() -> @hashmap.HashMap[
   String,
   @wgsl_common.ShaderDefValue,
 ] {
-  shader_def_map_to_hashmap(@wgsl_common.default_wgsl_value_defines())
+  shader_def_map_to_hashmap(@wgsl_common.bevy_wgsl_value_defines())
 }
 
 ///|
@@ -341,6 +341,7 @@ fn compose_options(
     value_defines: shader_def_hashmap_to_map(value_defines),
     redirects: [],
     additional_imports: [],
+    immediate_specializations: [],
   }
 }
 
@@ -386,8 +387,8 @@ pub fn load_preprocessed_wgsl(
     return cached
   }
   let options = compose_options(assets_base, defines, value_defines)
-  let composer = shader_compile_composer(Some(rel))
-  let composed = composer.compose_wgsl(rel, options) catch {
+  let composer = shader_compile_composer(None)
+  let composed = composer.compose_wgsl_runtime_valid(rel, options) catch {
     err => raise shader_compile_error_from_composer(err)
   }
   shader_compile_cache_insert(key, composed)

@@ -54,6 +54,13 @@ fn vec3_within_half_size(value : Vec3, half_size : Vec3) -> Bool {
 }
 
 ///|
+test "math: sqrt preserves Float square-root semantics" {
+  debug_inspect(sqrt(0.0F) == 0.0F, content="true")
+  debug_inspect(sqrt(4.0F) == 2.0F, content="true")
+  debug_inspect(sqrt(-1.0F).is_nan(), content="true")
+}
+
+///|
 test "math: cuboid constructors preserve Bevy full-size semantics" {
   let cuboid = Cuboid::new(3.0F, 7.0F, 2.0F)
   debug_inspect(

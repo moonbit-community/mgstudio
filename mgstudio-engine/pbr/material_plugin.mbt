@@ -1370,10 +1370,17 @@ pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M] with fn 
 }
 
 ///|
+fn[M : @asset.Asset] material_plugin_asset_debug_name(
+  _plugin : MaterialPlugin[M],
+) -> String {
+  M::asset_debug_name()
+}
+
+///|
 pub impl[M : Material + @asset.Asset] @app.Plugin for MaterialPlugin[M] with fn name(
-  _self,
+  self,
 ) {
-  "mgstudio.pbr.MaterialPlugin<\{M::asset_debug_name()}>"
+  "mgstudio.pbr.MaterialPlugin<\{material_plugin_asset_debug_name(self)}>"
 }
 
 ///|
@@ -1392,6 +1399,20 @@ fn[M : Material] material_pipeline_from_material_hooks(
     M::meshlet_prepass_fragment_shader(),
     M::meshlet_deferred_fragment_shader(),
   )
+}
+
+///|
+fn[M : Material] material_register_shader_sources_for_handle(
+  _probe : @asset.Handle[M],
+) -> Bool {
+  M::register_shader_sources()
+}
+
+///|
+fn[M : Material] material_debug_name_for_handle(
+  _probe : @asset.Handle[M],
+) -> String {
+  M::material_debug_name()
 }
 
 ///|
@@ -1603,26 +1624,6 @@ fn[M : Material] check_typed_entities_needing_specialization_system(
 }
 
 ///|
-fn[M] collect_changed_typed_mesh_material_entities(
-  source_world : @ecs.World,
-  material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
-  system_ticks : @core.SystemTicks,
-) -> Map[UInt64, @core.Entity] {
-  let changed_entities : Map[UInt64, @core.Entity] = Map([])
-  for
-    entity in source_world
-    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
-    .read() {
-    changed_entities.set(entity.to_bits(), entity)
-  }
-  for
-    entity in source_world.changed_components(material_key, system_ticks).read() {
-    changed_entities.set(entity.to_bits(), entity)
-  }
-  changed_entities
-}
-
-///|
 fn[M] collect_removed_typed_mesh_material_entities(
   source_world : @ecs.World,
   material_key : @ecs.ComponentKey[MeshMaterial3dTyped[M]],
@@ -1759,7 +1760,7 @@ fn[M : Material + @asset.Asset] material_plugin_build(
   plugin : MaterialPlugin[M],
 ) -> @app.App[@ecs.World] {
   let probe : @asset.Handle[M] = @asset.Handle::new(0)
-  let shader_paths = if M::register_shader_sources() {
+  let shader_paths = if material_register_shader_sources_for_handle(probe) {
     material_shader_asset_paths(probe)
   } else {
     []
@@ -1797,7 +1798,7 @@ fn[M : Material + @asset.Asset] material_plugin_build(
       @app.system(fn(world : @ecs.World) {
         add_material_bind_group_allocator_system(world, probe)
       }).named(
-        "mgstudio_pbr::add_material_bind_group_allocator<\{M::material_debug_name()}>",
+        "mgstudio_pbr::add_material_bind_group_allocator<\{material_debug_name_for_handle(probe)}>",
       ),
     )
     .add_systems(
@@ -1886,61 +1887,94 @@ fn[M : Material] extract_mesh_materials_system(
   }
   instances.modify(fn(value) {
     material_shader_paths.modify(fn(paths) {
-      let changed_entities = collect_changed_typed_mesh_material_entities(
-        source_world, material_key, system_ticks,
-      )
-      for _, entity in changed_entities {
-        if !source_world.is_alive(entity) {
-          continue
-        }
-        guard (try! source_world.get_by_key(entity, material_key))
-          is Some(material) else {
-          continue
-        }
-        let view_visible = match
-          (try! source_world.get_by_key(
-            entity, @visibility.ecs_key_view_visibility,
-          )) {
-          Some(view_visibility) => view_visibility.is_visible()
-          None => false
-        }
-        value.set(entity, material.handle())
-        match
-          world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
-          Some(resolved_slots) =>
-            resolved_slots.modify(fn(slots) {
-              if view_visible {
-                let prepared_handle = PreparedMaterial::prepared_handle(
-                  material.handle(),
-                )
-                match prepared_material_get(prepared_assets, prepared_handle) {
-                  Some(prepared) =>
-                    slots.set_resolved(entity, prepared.resolved_material())
-                  None => slots.set_pending(entity)
+      with_source_world_system_ticks(source_world, system_ticks, fn() {
+        let query : @ecs.Query[
+          (
+            @ecs.ReadValue[@visibility.ViewVisibility],
+            @ecs.ReadValue[MeshMaterial3dTyped[M]],
+          ),
+          @ecs.Or[
+            (
+              @ecs.Changed[@visibility.ViewVisibility],
+              @ecs.Changed[MeshMaterial3dTyped[M]],
+            ),
+          ],
+        ] = @ecs.query_filtered(
+          source_world,
+          @ecs.Or::new(
+            (
+              @ecs.Changed::new(@visibility.ecs_key_view_visibility),
+              @ecs.Changed::new(material_key),
+            ),
+          ),
+        )
+        fn extract_entity(
+          entity : @core.Entity,
+          view_visibility : @visibility.ViewVisibility,
+          material : MeshMaterial3dTyped[M],
+        ) -> Unit {
+          let view_visible = view_visibility.is_visible()
+          value.set(entity, material.handle())
+          match
+            world.get_resource_mut(RenderMaterial3dResolvedSlots::resource()) {
+            Some(resolved_slots) =>
+              resolved_slots.modify(fn(slots) {
+                if view_visible {
+                  let prepared_handle = PreparedMaterial::prepared_handle(
+                    material.handle(),
+                  )
+                  match
+                    prepared_material_get(prepared_assets, prepared_handle) {
+                    Some(prepared) =>
+                      slots.set_resolved(entity, prepared.resolved_material())
+                    None => slots.set_pending(entity)
+                  }
+                } else {
+                  slots.remove(entity)
                 }
-              } else {
-                slots.remove(entity)
-              }
-            })
-          None => ()
-        }
-        if view_visible {
-          for path in shader_paths {
-            paths.insert(Some(path))
+              })
+            None => ()
+          }
+          if view_visible {
+            for path in shader_paths {
+              paths.insert(Some(path))
+            }
+          }
+          match global_instances {
+            Some(global) =>
+              global.modify(fn(global_value) {
+                global_value.extract_mesh_material_id(
+                  entity,
+                  view_visible,
+                  material.handle().id(),
+                )
+              })
+            None => ()
           }
         }
-        match global_instances {
-          Some(global) =>
-            global.modify(fn(global_value) {
-              global_value.extract_mesh_material_id(
-                entity,
-                view_visible,
-                material.handle().id(),
-              )
-            })
-          None => ()
+        let used_batch = try! query.try_for_each_filtered_table(fn(
+          batch,
+          rows,
+        ) {
+          let view_visibilities = batch
+            .read(@visibility.ecs_key_view_visibility)
+            .unwrap()
+          let materials = batch.read(material_key).unwrap()
+          try! rows.for_each(fn(row_index) {
+            extract_entity(
+              batch.entity(row_index),
+              view_visibilities.value(row_index),
+              materials.value(row_index),
+            )
+          })
+        })
+        if !used_batch {
+          try! query.for_each(fn(entity, data) {
+            let (view_visibility, material) = data
+            extract_entity(entity, view_visibility.value(), material.value())
+          })
         }
-      }
+      })
     })
   })
 }
@@ -2143,7 +2177,7 @@ fn[M : Material + @asset.Asset] material_asset_changed_ids_since_last_prepare(
     return changed_ids
   }
   ensure_material_asset_event_cursor_resource_in_world(render_world, _probe)
-  let cursor_key = M::material_keys().material_asset_event_cursor
+  let cursor_key = Material::material_keys().material_asset_event_cursor
   guard render_world.get_resource_mut(cursor_key) is Some(cursor_resource) else {
     return changed_ids
   }

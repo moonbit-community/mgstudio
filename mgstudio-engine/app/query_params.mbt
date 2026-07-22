@@ -196,7 +196,7 @@ fn[D, F : FromWorld] query_param_query_from_state(
 ) -> @ecs.Query[D, F] {
   let world = system_param_abort_missing_world()
   let scope = current_system_param_scope_or_abort()
-  let filter = F::from_world(world)
+  let filter : F = FromWorld::from_world(world)
   @ecs.query_filtered_with_cache_and_lease(
     scope.world_lease(),
     filter,
@@ -247,7 +247,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @
   F,
 ] with fn access(world) {
   let access = SystemAccess::new()
-  let filter = F::from_world(world)
+  let filter : F = FromWorld::from_world(world)
   let (data_access, filter_access) = @ecs.query_access_descriptor(
     filter,
     fn(data_access : @ecs.QueryDataAccess) { D::collect_access(data_access) },
@@ -321,7 +321,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
   F,
 ] with fn access(world) {
   let access = SystemAccess::new()
-  let filter = F::from_world(world)
+  let filter : F = FromWorld::from_world(world)
   let (data_access, filter_access) = @ecs.query_access_descriptor(
     filter,
     fn(data_access : @ecs.QueryDataAccess) { D::collect_access(data_access) },
@@ -376,7 +376,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
   F,
 ] with fn access(world) {
   let access = SystemAccess::new()
-  let filter = F::from_world(world)
+  let filter : F = FromWorld::from_world(world)
   let (data_access, filter_access) = @ecs.query_access_descriptor(
     filter,
     fn(data_access : @ecs.QueryDataAccess) { D::collect_access(data_access) },

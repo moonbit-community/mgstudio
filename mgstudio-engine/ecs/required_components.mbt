@@ -442,6 +442,9 @@ fn World::insert_component_writes_with_requirements(
   writes : Array[(Int, ComponentWriter)],
   caller? : String? = None,
 ) -> Unit raise EcsError {
+  defer (for write in writes {
+    write.1.drop_unconsumed()
+  })
   self.ensure_entity_alive(entity)
   if self.has_active_query_iteration() {
     for write in writes {
@@ -451,6 +454,7 @@ fn World::insert_component_writes_with_requirements(
     }
   }
   let outermost = self.begin_deferred_hook_command_scope()
+  defer self.end_deferred_hook_command_scope(outermost)
   let bundle_info = self.ensure_bundle_info_for_writes(writes)
   let has_existing_transaction = self.has_active_component_write_transaction_for_entity(
     entity,
@@ -458,15 +462,14 @@ fn World::insert_component_writes_with_requirements(
   let assume_no_existing_components = !has_existing_transaction &&
     entity.id >= 0 &&
     entity.id < self.entity_storage.entity_archetype_ids.length() &&
-    self.entity_storage.entity_archetype_ids[entity.id] == 0 &&
-    entity.id < self.entity_storage.entity_component_local_ids.length() &&
-    self.entity_storage.entity_component_local_ids[entity.id].length() == 0
+    self.entity_storage.entity_archetype_ids[entity.id] == 0
   let component_writes = self
     .active_component_write_set_for_entity(entity)
     .unwrap_or(component_write_set_new())
   let previous_transaction = self.begin_component_write_transaction(
     entity, component_writes,
   )
+  defer self.restore_component_write_transaction(previous_transaction)
   let transaction = ComponentInsertTransaction(
     entity, component_writes, assume_no_existing_components, caller,
   )
@@ -485,8 +488,6 @@ fn World::insert_component_writes_with_requirements(
     )
     self.mark_structure_changed()
   }
-  self.restore_component_write_transaction(previous_transaction)
-  self.end_deferred_hook_command_scope(outermost)
 }
 
 ///|
@@ -539,7 +540,7 @@ fn World::insert_component_with_requirements_unchecked(
   )
 
   if !replacing {
-    self.entity_add_component_local_id(entity, component_local_id)
+    self.record_entity_component_added_local_id(component_local_id)
     transaction.mark_structural_changed()
     self.record_component_added_with_caller(
       entity, component_definition_id, caller,

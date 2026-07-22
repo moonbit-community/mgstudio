@@ -497,43 +497,15 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
 }
 
 ///|
-test "transform ecs: mark_dirty_trees disables static optimization above threshold" {
-  let world = @ecs.World::new()
-  defer world.close()
-  let entity_a = world.spawn_empty()
-  let entity_b = world.spawn_empty()
-
-  prepare_transform_world(world)
-  world.insert_resource(
-    static_transform_optimizations_resource_key,
-    StaticTransformOptimizations::from_threshold(0.3F),
+test "transform ecs: static optimization mode is explicit" {
+  debug_inspect(
+    StaticTransformOptimizations::StaticTransformOptimizations().is_enabled(),
+    content="true",
   )
-  next_system_ticks(world) |> ignore
-  try! world.set_by_key(
-    entity_a,
-    ecs_key_transform,
-    Transform::from_xy_rotation_scale(
-      @math.Vec2::new(1.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
+  debug_inspect(
+    StaticTransformOptimizations::disabled().is_enabled(),
+    content="false",
   )
-  try! world.set_by_key(
-    entity_b,
-    ecs_key_transform,
-    Transform::from_xy_rotation_scale(
-      @math.Vec2::new(2.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  )
-
-  mark_dirty_trees(world)
-
-  let state = world
-    .get_resource(static_transform_optimizations_resource_key)
-    .unwrap()
-  debug_inspect(state.enabled, content="false")
 }
 
 ///|
@@ -621,7 +593,7 @@ test "transform plugin: keeps preinserted static optimization resource" {
     .world()
     .get_resource(static_transform_optimizations_resource_key)
     .unwrap()
-  debug_inspect(value.threshold == 0.0F && !value.enabled, content="true")
+  debug_inspect(value.is_enabled(), content="false")
 }
 
 ///|

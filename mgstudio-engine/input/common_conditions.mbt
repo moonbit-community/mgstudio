@@ -20,14 +20,18 @@
 pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_pressed(
   input : T,
 ) -> @app.RunConditionFn[@ecs.World] {
-  fn(_world : @ecs.World) -> Bool { T::read_button_input().pressed(input) }
+  fn(_world : @ecs.World) -> Bool {
+    ButtonInputSnapshotProvider::read_button_input().pressed(input)
+  }
 }
 
 ///|
 pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_just_pressed(
   input : T,
 ) -> @app.RunConditionFn[@ecs.World] {
-  fn(_world : @ecs.World) -> Bool { T::read_button_input().just_pressed(input) }
+  fn(_world : @ecs.World) -> Bool {
+    ButtonInputSnapshotProvider::read_button_input().just_pressed(input)
+  }
 }
 
 ///|
@@ -35,7 +39,7 @@ pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_just_released(
   input : T,
 ) -> @app.RunConditionFn[@ecs.World] {
   fn(_world : @ecs.World) -> Bool {
-    T::read_button_input().just_released(input)
+    ButtonInputSnapshotProvider::read_button_input().just_released(input)
   }
 }
 
@@ -46,7 +50,7 @@ pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_toggle_active(
 ) -> @app.RunConditionFn[@ecs.World] {
   let mut active = initial_active
   fn(_world : @ecs.World) -> Bool {
-    let button_input = T::read_button_input()
+    let button_input = ButtonInputSnapshotProvider::read_button_input()
     if button_input.just_pressed(input) {
       active = !active
     }

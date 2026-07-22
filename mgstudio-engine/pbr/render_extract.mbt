@@ -144,24 +144,21 @@ let late_sweep_material_instances_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
-fn collect_changed_mesh_material_entities(
+fn[R] with_source_world_system_ticks(
   source_world : @ecs.World,
   system_ticks : @core.SystemTicks,
-) -> Map[UInt64, @core.Entity] {
-  let changed_entities : Map[UInt64, @core.Entity] = Map([])
-  for
-    entity in source_world
-    .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
-    .read() {
-    changed_entities.set(entity.to_bits(), entity)
+  run : () -> R,
+) -> R {
+  let previous_ticks = source_world.get_tick_context().ticks()
+  let query_context = @core.SystemTickContext::new()
+  query_context.set(system_ticks)
+  source_world.set_tick_context(query_context)
+  defer {
+    let previous_context = @core.SystemTickContext::new()
+    previous_context.set(previous_ticks)
+    source_world.set_tick_context(previous_context)
   }
-  for
-    entity in source_world
-    .changed_components(ecs_key_mesh_material3d, system_ticks)
-    .read() {
-    changed_entities.set(entity.to_bits(), entity)
-  }
-  changed_entities
+  run()
 }
 
 ///|
@@ -506,9 +503,6 @@ fn extract_mesh_materials(render_world : @ecs.World) -> Unit {
     Some(instances) => instances.source_system_ticks(source_world)
     None => @core.SystemTicks::new(0, source_world.read_change_tick())
   }
-  let changed_entities = collect_changed_mesh_material_entities(
-    source_world, system_ticks,
-  )
   let material_instances = match
     render_world.get_resource_mut(ecs_key_render_material_instances) {
     Some(value) => value
@@ -527,30 +521,64 @@ fn extract_mesh_materials(render_world : @ecs.World) -> Unit {
   }
   material_instances.modify(fn(instances) {
     material_shader_paths.modify(fn(shader_paths) {
-      for _, entity in changed_entities {
-        if !source_world.is_alive(entity) {
-          continue
-        }
-        match
+      with_source_world_system_ticks(source_world, system_ticks, fn() {
+        let query : @ecs.Query[
           (
-            try! source_world.get_by_key(
-              entity, @visibility.ecs_key_view_visibility,
+            @ecs.ReadValue[@visibility.ViewVisibility],
+            @ecs.ReadValue[MeshMaterial3d],
+          ),
+          @ecs.Or[
+            (
+              @ecs.Changed[@visibility.ViewVisibility],
+              @ecs.Changed[MeshMaterial3d],
             ),
-            try! source_world.get_by_key(entity, ecs_key_mesh_material3d),
-          ) {
-          (Some(view_visibility), Some(material)) => {
-            instances.extract_mesh_material(
-              entity,
-              view_visibility.is_visible(),
-              material,
-            )
-            if view_visibility.is_visible() {
-              shader_paths.extract_mesh_material(material)
-            }
+          ],
+        ] = @ecs.query_filtered(
+          source_world,
+          @ecs.Or::new(
+            (
+              @ecs.Changed::new(@visibility.ecs_key_view_visibility),
+              @ecs.Changed::new(ecs_key_mesh_material3d),
+            ),
+          ),
+        )
+        fn extract_entity(
+          entity : @core.Entity,
+          view_visibility : @visibility.ViewVisibility,
+          material : MeshMaterial3d,
+        ) -> Unit {
+          instances.extract_mesh_material(
+            entity,
+            view_visibility.is_visible(),
+            material,
+          )
+          if view_visibility.is_visible() {
+            shader_paths.extract_mesh_material(material)
           }
-          _ => ()
         }
-      }
+        let used_batch = try! query.try_for_each_filtered_table(fn(
+          batch,
+          rows,
+        ) {
+          let view_visibilities = batch
+            .read(@visibility.ecs_key_view_visibility)
+            .unwrap()
+          let materials = batch.read(ecs_key_mesh_material3d).unwrap()
+          try! rows.for_each(fn(row_index) {
+            extract_entity(
+              batch.entity(row_index),
+              view_visibilities.value(row_index),
+              materials.value(row_index),
+            )
+          })
+        })
+        if !used_batch {
+          try! query.for_each(fn(entity, data) {
+            let (view_visibility, material) = data
+            extract_entity(entity, view_visibility.value(), material.value())
+          })
+        }
+      })
     })
   })
 }

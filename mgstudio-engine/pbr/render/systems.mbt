@@ -35,58 +35,47 @@ pub fn render3d_system_labels() -> Array[String] {
 }
 
 ///|
-pub fn[T] render3d_update_frusta_system_by_projection_key(
+pub fn[T : @ecs.Component] render3d_update_frusta_system_by_projection_key(
   world : @ecs.World,
   projection_key : @ecs.ComponentKey[T],
   compute_frustum : (T, @transform.Transform) -> Frustum,
 ) -> Unit {
-  let tick = world.get_tick_context().ticks()
-  let processed = @hashset.HashSet([])
-  fn entity_key(entity : @core.Entity) -> UInt64 {
-    let hi = entity.id.reinterpret_as_uint().to_uint64()
-    let lo = entity.generation.reinterpret_as_uint().to_uint64() & 0xFFFF_FFFFUL
-    (hi << 32) | lo
-  }
-  fn update_entity(
-    world : @ecs.World,
-    entity : @core.Entity,
-    projection_key : @ecs.ComponentKey[T],
-    compute_frustum : (T, @transform.Transform) -> Frustum,
-  ) -> Unit {
-    guard world.is_alive(entity) else { return }
-    guard (try! world.get_by_key(entity, @transform.ecs_key_transform))
-      is Some(transform) else {
-      return
-    }
-    guard (try! world.get_by_key(entity, projection_key)) is Some(projection) else {
-      return
-    }
-    let next = compute_frustum(projection, transform)
-    if (try! world.get_by_key(entity, ecs_key_frustum)) is Some(current) {
-      if current != next {
-        try! (world.replace(entity, ecs_key_frustum, next) |> ignore)
+  let query : @ecs.Query[
+    (
+      @ecs.ReadValue[@transform.Transform],
+      @ecs.ReadValue[T],
+      @ecs.Write[Frustum],
+    ),
+    @ecs.Or[(@ecs.Changed[@transform.Transform], @ecs.Changed[T])],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.Or::new(
+      (
+        @ecs.Changed::new(@transform.ecs_key_transform),
+        @ecs.Changed::new(projection_key),
+      ),
+    ),
+  )
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    let transforms = batch.read(@transform.ecs_key_transform).unwrap()
+    let projections = batch.read(projection_key).unwrap()
+    let frusta = batch.write(ecs_key_frustum).unwrap()
+    try! rows.for_each(fn(row_index) {
+      let next = compute_frustum(
+        projections.value(row_index), transforms.value(row_index),
+      )
+      if frusta.peek(row_index) != next {
+        frusta.set(row_index, next)
       }
-    } else {
-      try! world.set_by_key(entity, ecs_key_frustum, next)
-    }
-  }
-  for
-    entity in world
-    .changed_components(@transform.ecs_key_transform, tick)
-    .read() {
-    let key = entity_key(entity)
-    if processed.contains(key) {
-      continue
-    }
-    processed.add(key)
-    update_entity(world, entity, projection_key, compute_frustum)
-  }
-  for entity in world.changed_components(projection_key, tick).read() {
-    let key = entity_key(entity)
-    if processed.contains(key) {
-      continue
-    }
-    processed.add(key)
-    update_entity(world, entity, projection_key, compute_frustum)
+    })
+  })
+  if !used_batch {
+    try! query.for_each(fn(_entity, data) {
+      let (transform, projection, frustum) = data
+      let next = compute_frustum(projection.value(), transform.value())
+      if frustum.peek() != next {
+        frustum.set(next)
+      }
+    })
   }
 }

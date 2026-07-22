@@ -183,12 +183,25 @@ impl @app.Resource for Render3dPointLightShadowTargets with fn resource() {
 fn render3d_point_light_shadow_targets_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Render3dPointLightShadowTargets] {
-  if world.get_resource(Render3dPointLightShadowTargets::resource()) is None {
-    world.insert_resource(Render3dPointLightShadowTargets::resource(), {
-      entries: [],
-    })
+  if world.get_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dPointLightShadowTargets]),
+    )
+    is None {
+    world.insert_resource(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dPointLightShadowTargets]),
+      { entries: [] },
+    )
   }
-  match world.get_resource_mut(Render3dPointLightShadowTargets::resource()) {
+  match
+    world.get_resource_mut(
+      (
+        @app.Resource::resource() :
+        @ecs.ResourceKey[Render3dPointLightShadowTargets]),
+    ) {
     Some(state) => state
     None => abort("Missing Render3dPointLightShadowTargets resource")
   }

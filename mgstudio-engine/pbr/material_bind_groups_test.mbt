@@ -30,23 +30,26 @@ test "render3d: non-bindless allocator reuses freed indices" {
 }
 
 ///|
-test "render3d: bindless allocator respects slab capacity" {
+test "render3d: bindless allocator grows across slabs" {
   let allocator = MaterialBindGroupBindlessAllocator::with_slab_capacity(2)
   let first = allocator.allocate(1001)
   let second = allocator.allocate(1002)
   let third = allocator.allocate(1003)
 
-  debug_inspect(first is Some(_), content="true")
-  debug_inspect(second is Some(_), content="true")
-  debug_inspect(third is None, content="true")
-  debug_inspect(allocator.len(), content="2")
+  debug_inspect(first.group().to_int(), content="0")
+  debug_inspect(second.slot().to_int(), content="1")
+  debug_inspect(third.group().to_int(), content="1")
+  debug_inspect(third.slot().to_int(), content="0")
+  debug_inspect(allocator.len(), content="3")
+  debug_inspect(allocator.slab_count(), content="2")
 
-  match first {
-    Some(binding) => allocator.free(binding)
-    None => ()
-  }
-  debug_inspect(allocator.len(), content="1")
-  debug_inspect(allocator.allocate(1004) is Some(_), content="true")
+  allocator.free(first)
+  debug_inspect(allocator.len(), content="2")
+  let reused = allocator.allocate(1004)
+  debug_inspect(
+    (reused.group().to_int(), reused.slot().to_int()),
+    content="(0, 0)",
+  )
 }
 
 ///|
@@ -97,7 +100,13 @@ test "render3d: material allocator allocates bindless material bindings only" {
     Some(binding) => debug_inspect(binding.slot().to_int(), content="1")
     None => abort("expected second bindless material binding")
   }
-  debug_inspect(bindless.allocate_bindless_material(12) is None, content="true")
+  match bindless.allocate_bindless_material(12) {
+    Some(binding) => {
+      debug_inspect(binding.group().to_int(), content="1")
+      debug_inspect(binding.slot().to_int(), content="0")
+    }
+    None => abort("expected allocation in a second bindless slab")
+  }
 
   let non_bindless = MaterialBindGroupAllocator::default_non_bindless()
   debug_inspect(
@@ -169,8 +178,17 @@ test "render3d: standard material allocator install chooses bindless mode from b
   debug_inspect(bindless_plan.uses_bindless_resources(), content="true")
   debug_inspect(bindless_allocators.len(), content="1")
   match bindless_allocators.get("StandardMaterial") {
-    Some(MaterialBindGroupAllocator::Bindless(_)) =>
+    Some(MaterialBindGroupAllocator::Bindless(allocator)) => {
       debug_inspect(true, content="true")
+      for material_id in 0..<8 {
+        ignore(allocator.allocate(material_id))
+      }
+      let ninth = allocator.allocate(8)
+      debug_inspect(
+        (ninth.group().to_int(), ninth.slot().to_int()),
+        content="(1, 0)",
+      )
+    }
     _ => debug_inspect(false, content="true")
   }
 

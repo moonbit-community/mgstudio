@@ -13,7 +13,7 @@ import {
 type AnimationTimer
 pub impl @ecs.Component for AnimationTimer
 
-type PrintTimer
+type PrintingTimer
 
 // Type aliases
 

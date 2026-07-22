@@ -19,6 +19,7 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
   let camera = world.spawn()
   let visible_mesh = world.spawn()
   let hidden_layer_mesh = world.spawn()
+  let newly_visible_mesh = world.spawn()
   let mesh3d_class = 123456
   try! world.set_by_key(
     camera,
@@ -32,15 +33,10 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
   )
   try! world.set_by_key(
     camera,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::layer(0),
-  )
-  try! world.set_by_key(
-    camera,
     @camera_primitives.ecs_key_frustum,
     @camera_primitives.Frustum::default_2d(),
   )
-  for entity in [visible_mesh, hidden_layer_mesh] {
+  for entity in [visible_mesh, hidden_layer_mesh, newly_visible_mesh] {
     try! world.set_by_key(
       entity,
       @root_visibility.ecs_key_inherited_visibility,
@@ -71,23 +67,38 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
     )
   }
   try! world.set_by_key(
-    visible_mesh,
-    @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::layer(0),
-  )
-  try! world.set_by_key(
     hidden_layer_mesh,
     @camera_render_layers.ecs_key_render_layers,
     @camera_render_layers.RenderLayers::layer(1),
   )
+  try! world.set_by_key(
+    newly_visible_mesh,
+    @camera_render_layers.ecs_key_render_layers,
+    @camera_render_layers.RenderLayers::layer(0),
+  )
+  try! (world.replace(
+    visible_mesh,
+    @root_visibility.ecs_key_view_visibility,
+    @root_visibility.ViewVisibility::visible(),
+  ) |> ignore)
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  let tick_context = @core.SystemTickContext::new()
+  tick_context.set(@core.SystemTicks::new(1, 2))
+  world.set_tick_context(tick_context)
+  let view_visibility = (try! world.get_mut(
+    visible_mesh, key=@root_visibility.ecs_key_view_visibility,
+  )).unwrap()
+  view_visibility.bypass_change_detection(fn(value) { value.advance_frame() })
 
   check_visibility_visible_entities_system(world)
 
   let visible_entities = (try! world.get_by_key(
     camera, @camera_camera.ecs_key_visible_entities,
   )).unwrap()
-  debug_inspect(visible_entities.len(mesh3d_class), content="1")
+  debug_inspect(visible_entities.len(mesh3d_class), content="2")
   debug_inspect(visible_entities.get(mesh3d_class)[0].id, content="1")
+  debug_inspect(visible_entities.get(mesh3d_class)[1].id, content="3")
   debug_inspect(
     (try! world.get_by_key(
       visible_mesh, @root_visibility.ecs_key_view_visibility,
@@ -96,6 +107,14 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
     .is_visible(),
     content="true",
   )
+  let changed = world
+    .changed_components(
+      @root_visibility.ecs_key_view_visibility,
+      @core.SystemTicks::new(1, 2),
+    )
+    .read()
+  debug_inspect(changed.contains(visible_mesh), content="false")
+  debug_inspect(changed.contains(newly_visible_mesh), content="true")
 }
 
 ///|

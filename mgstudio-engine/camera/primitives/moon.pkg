@@ -11,4 +11,8 @@ import {
   "moonbitlang/core/json",
 }
 
+import {
+  "moonbitlang/core/bench",
+} for "test"
+
 supported_targets = "native"

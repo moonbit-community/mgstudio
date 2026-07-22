@@ -21,6 +21,16 @@ fn rects_overlap(a : @math.URect, b : @math.URect) -> Bool {
 }
 
 ///|
+test "texture atlas: with_index preserves inline value semantics" {
+  let atlas = TextureAtlas::new(Handle::new(9), 3)
+  let next = atlas.with_index(4)
+  debug_inspect(atlas.layout().id(), content="9")
+  debug_inspect(atlas.index(), content="3")
+  debug_inspect(next.layout().id(), content="9")
+  debug_inspect(next.index(), content="4")
+}
+
+///|
 test "dynamic texture atlas: packs non-overlapping rects" {
   let atlas_size = @math.UVec2::new(8, 8)
   let builder = DynamicTextureAtlasBuilder::new(atlas_size, 1)

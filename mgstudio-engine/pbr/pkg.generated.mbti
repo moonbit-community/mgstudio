@@ -1750,7 +1750,7 @@ pub struct MaterialBindGroupBindlessAllocator {
   free_slots : Array[Int]
 }
 pub fn MaterialBindGroupBindlessAllocator::MaterialBindGroupBindlessAllocator() -> Self
-pub fn MaterialBindGroupBindlessAllocator::allocate(Self, Int) -> MaterialBindingId?
+pub fn MaterialBindGroupBindlessAllocator::allocate(Self, Int) -> MaterialBindingId
 pub fn MaterialBindGroupBindlessAllocator::allocations(Self) -> UInt
 pub fn MaterialBindGroupBindlessAllocator::free(Self, MaterialBindingId) -> Unit
 pub fn MaterialBindGroupBindlessAllocator::len(Self) -> Int
@@ -3733,4 +3733,3 @@ pub(open) trait StandardMaterialExtension {
   fn enable_shadows_ref() -> Bool
   fn specialize_ref() -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
 }
-

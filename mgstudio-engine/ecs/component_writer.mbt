@@ -18,6 +18,8 @@ pub struct ComponentWriter {
   priv component_debug_name : String
   priv value_type_name : String
   priv apply_fn : (World, @core.Entity) -> Unit
+  priv consumed : Ref[Bool]
+  priv drop_unconsumed_fn : () -> Unit
 }
 
 ///|
@@ -28,6 +30,7 @@ fn[T] component_writer_for_key(
   ensure_component_ops_for_key(key)
   let component_definition_id = key.id()
   let component_debug_name = key.debug_name()
+  let consumed = Ref(false)
   {
     component_definition_id,
     component_debug_name,
@@ -37,6 +40,8 @@ fn[T] component_writer_for_key(
       "component#\{component_definition_id.to_string()}"
     },
     apply_fn: fn(world, entity) { key.component_set(world, entity, value) },
+    consumed,
+    drop_unconsumed_fn: fn() { key.component_finalize_value(value) },
   }
 }
 
@@ -51,7 +56,22 @@ fn ComponentWriter::apply(
   world : World,
   entity : @core.Entity,
 ) -> Unit {
+  if self.consumed.val {
+    abort(
+      "ComponentWriter for {self.value_type_name} was consumed more than once",
+    )
+  }
+  self.consumed.val = true
   (self.apply_fn)(world, entity)
+}
+
+///|
+fn ComponentWriter::drop_unconsumed(self : ComponentWriter) -> Unit {
+  if self.consumed.val {
+    return
+  }
+  self.consumed.val = true
+  (self.drop_unconsumed_fn)()
 }
 
 ///|

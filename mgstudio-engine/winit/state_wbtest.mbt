@@ -116,3 +116,15 @@ test "winit: runner keeps event loop alive for logical windows awaiting host cre
 
   debug_inspect(runner_has_logical_windows(world), content="true")
 }
+
+///|
+test "winit: runner excludes closing windows before releasing their surfaces" {
+  let world = @ecs.World::new()
+  defer world.close()
+  let entity = world.spawn()
+  let entry = @window.WindowHostEntry::new(entity, 17)
+  debug_inspect(runner_host_entry_is_closing(world, entry), content="false")
+  try! (world.entity_mut(entity).insert_component(@window.ClosingWindow::{  })
+  |> ignore)
+  debug_inspect(runner_host_entry_is_closing(world, entry), content="true")
+}

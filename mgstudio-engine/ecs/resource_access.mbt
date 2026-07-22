@@ -173,7 +173,10 @@ pub fn[T] ResourceMut::set_changed(
   self : ResourceMut[T],
   loc~ : SourceLoc,
 ) -> Unit {
-  self.world.mark_resource_changed(self.key, caller=Some(loc.to_string()))
+  self.world.mark_resource_changed(
+    self.key,
+    caller=hook_caller_from_loc(self.world, loc),
+  )
 }
 
 ///|
@@ -182,7 +185,10 @@ pub fn[T] ResourceMut::set_added(
   self : ResourceMut[T],
   loc~ : SourceLoc,
 ) -> Unit {
-  self.world.mark_resource_added(self.key, caller=Some(loc.to_string()))
+  self.world.mark_resource_added(
+    self.key,
+    caller=hook_caller_from_loc(self.world, loc),
+  )
 }
 
 ///|

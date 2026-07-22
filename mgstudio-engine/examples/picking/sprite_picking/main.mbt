@@ -58,6 +58,7 @@ fn setup(commands : @app.Commands) -> Unit {
               colors.normal,
             ),
             @transform.Transform::from_xyz(x, y, 0.0F),
+            @picking.Pickable::Pickable(),
             PickableSpriteColors::{ ..colors },
           ),
         ),

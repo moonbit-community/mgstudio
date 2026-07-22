@@ -117,15 +117,19 @@ let ecs_id_allocator_state : EcsIdAllocatorState = {
 ///|
 pub fn[T] register_component(
   debug_name? : String = "",
-  finalizer? : (T) -> Unit = fn(_value : T) { () },
+  finalizer? : (T) -> Unit,
 ) -> ComponentKey[T] {
   let id = ecs_id_allocator_state.next_component_id
   ecs_id_allocator_state.next_component_id = id + 1
   ignore(component_metadata_ensure(id, debug_name~))
+  let (finalize_value, has_custom_finalizer) = match finalizer {
+    Some(finalize_value) => (finalize_value, true)
+    None => (fn(_value : T) { () }, false)
+  }
   let key = ComponentKey::{
     id,
     debug_name,
-    access: component_access_new(id, finalizer~),
+    access: component_access_new(id, finalize_value, has_custom_finalizer),
   }
   key
 }
@@ -171,6 +175,7 @@ pub(all) suberror EcsError {
   EventTypeMismatch(Int, String, Int, String)
   MessageTypeMismatch(Int, String, Int, String)
   WorldClosed(Int)
+  TableBatchUnavailable(String)
   ForeignEntityReservation(@core.Entity, Int, Int)
   StaleEntityReservation(@core.Entity)
 }
@@ -197,6 +202,7 @@ priv struct ArchetypeSignatureIndex {
 pub struct World {
   priv lifecycle : WorldLifecycle
   priv cleanup_registry : WorldCleanupRegistry
+  priv track_change_locations : Bool
   priv mut structural_generation : Int
   priv mut entity_lifecycle_generation : Int
   priv mut component_registration_generation : Int
@@ -217,7 +223,7 @@ pub struct World {
   priv mut system_tick_context : @core.SystemTickContext
   priv component_write_transactions : ComponentWriteTransactionState
   priv query_iterations : WorldQueryIterationState
-  priv tables : Map[Int, RawTable]
+  priv tables : Array[RawTable?]
   priv sparse_component_metadata : Map[
     Int,
     @core.ComponentStore[ComponentTickMetadata],
@@ -252,7 +258,6 @@ pub struct World {
   priv required_components : Map[Int, RequiredComponentsState]
   priv used_components : @utils.IntBitSet
   priv added_components : Map[Int, @core.Messages[@core.Entity]]
-  priv changed_components : Map[Int, @core.Messages[@core.Entity]]
   priv removed_components : Map[Int, @core.Messages[@core.Entity]]
   priv component_hooks_registry : Map[Int, ComponentHooks]
   priv resource_tick_registry : WorldResourceTickRegistry
@@ -266,12 +271,13 @@ pub struct World {
 /// Creates a World with an explicit lifecycle.
 ///
 /// The owner must call `World::close`. Prefer `with_world` for lexical scopes.
-pub fn World::new() -> World {
+pub fn World::new(track_change_locations? : Bool = false) -> World {
   let world_id = ecs_id_allocator_state.next_world_id
   ecs_id_allocator_state.next_world_id = world_id + 1
   let world = World::{
     lifecycle: WorldLifecycle::new(world_id),
     cleanup_registry: world_cleanup_registry_new(),
+    track_change_locations,
     structural_generation: 0,
     entity_lifecycle_generation: 0,
     component_registration_generation: 0,
@@ -289,7 +295,7 @@ pub fn World::new() -> World {
     system_tick_context: @core.SystemTickContext::new(),
     component_write_transactions: component_write_transaction_state_new(),
     query_iterations: world_query_iteration_state_new(),
-    tables: Map([]),
+    tables: [],
     sparse_component_metadata: Map([]),
     next_archetype_id: 1,
     next_table_id: 1,
@@ -321,7 +327,6 @@ pub fn World::new() -> World {
     required_components: Map([]),
     used_components: @utils.IntBitSet::new(),
     added_components: Map([]),
-    changed_components: Map([]),
     removed_components: Map([]),
     component_hooks_registry: Map([]),
     resource_tick_registry: world_resource_tick_registry_new(),
@@ -332,12 +337,24 @@ pub fn World::new() -> World {
   }
   world.archetype_ids_by_signature.insert([], 0)
   world.table_ids_by_signature.insert([], 0)
+  ignore(world.ensure_table_storage(0))
   world.bootstrap_component_registrations()
   world.insert_resource(
     ecs_key_default_query_filters,
     default_query_filters_bootstrap_resource(),
   )
   world
+}
+
+///|
+/// Returns whether this world records component and resource change locations.
+///
+/// This is disabled by default, matching Bevy without its non-default
+/// `track_location` feature. Enable it at construction time with
+/// `World::new(track_change_locations=true)` when change-location diagnostics
+/// are required.
+pub fn World::tracks_change_locations(self : World) -> Bool {
+  self.track_change_locations
 }
 
 ///|
@@ -362,6 +379,7 @@ pub fn World::is_active(self : World) -> Bool {
 
 ///|
 pub fn World::close(self : World) -> Unit {
+  self.abort_if_query_iteration_would_be_invalidated("close world")
   guard self.lifecycle.begin_close() else { return }
   self.allocator_connection.close()
   let pre_close_hooks = self.pre_close_hooks
@@ -485,7 +503,7 @@ pub fn World::despawn(
   self.ensure_entity_alive(entity)
   self.ensure_query_iteration_can_change_structure("despawn entity")
   let outermost = self.begin_deferred_hook_command_scope()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   let transaction = self.component_remove_transaction_for_despawn(
     entity, caller,
   )
@@ -506,7 +524,7 @@ pub fn[T] World::set_by_key(
     entity,
     key.id(),
     component_writer_for_key(key, value),
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(self, loc),
   )
 }
 
@@ -514,8 +532,8 @@ pub fn[T] World::set_by_key(
 /// Returns the component value for read-only use.
 ///
 /// MoonBit cannot enforce that the returned value is not mutated through an
-/// alias. Code that wants ECS change detection, changed-component messages, or
-/// replacement hooks must use `World::get_mut`, `World::update_by_key`,
+/// alias. Code that wants ECS change detection or replacement hooks must use
+/// `World::get_mut`, `World::update_by_key`,
 /// `Write::modify` or `Write::set` instead of mutating the value
 /// returned here.
 pub fn[T] World::get_by_key(
@@ -548,7 +566,7 @@ pub fn[T] World::update_by_key(
     return false
   }
   let new_value = update(old_value)
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   self.run_replace_observers(entity, key.id())
   ignore(self.replace_component_value_by_key(entity, key, new_value))
@@ -569,7 +587,7 @@ pub fn[T] World::remove_by_key(
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   let outermost = self.begin_deferred_hook_command_scope()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   guard self.component_remove_transaction_for_key(entity, key.id(), caller)
     is Some(transaction) else {
     self.end_deferred_hook_command_scope(outermost)
@@ -709,30 +727,6 @@ fn World::ensure_added_component_messages(
 }
 
 ///|
-fn World::ensure_changed_component_messages(
-  self : World,
-  key_id : Int,
-) -> @core.Messages[@core.Entity] {
-  let local_id = self.ensure_component_registered(key_id)
-  self.ensure_changed_component_messages_by_local_id(local_id)
-}
-
-///|
-fn World::ensure_changed_component_messages_by_local_id(
-  self : World,
-  local_id : Int,
-) -> @core.Messages[@core.Entity] {
-  match self.changed_components.get(local_id) {
-    Some(messages) => messages
-    None => {
-      let messages = @core.Messages::new()
-      self.changed_components.set(local_id, messages)
-      messages
-    }
-  }
-}
-
-///|
 fn World::ensure_sparse_component_metadata_store_for_local_id(
   self : World,
   local_id : Int,
@@ -769,6 +763,7 @@ fn World::record_component_added_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
+  let caller = self.tracked_change_caller(caller)
   let tick = component_write_tick(self)
   let local_id = self.ensure_component_registered(key_id)
   let recorded = match self.local_component_storage_type(local_id) {
@@ -798,14 +793,12 @@ fn World::record_component_changed_with_caller(
   key_id : Int,
   caller : String?,
 ) -> Unit {
+  let caller = self.tracked_change_caller(caller)
   let tick = component_write_tick(self)
   let local_id = self.ensure_component_registered(key_id)
   self.record_component_changed_by_local_id_with_tick(
     entity, local_id, tick, caller,
   )
-  self
-  .ensure_changed_component_messages_by_local_id(local_id)
-  .send(tick, entity)
 }
 
 ///|
@@ -915,17 +908,6 @@ fn World::added_component_tick_by_local_id(
 }
 
 ///|
-fn World::changed_component_messages(
-  self : World,
-  key_id : Int,
-) -> @core.Messages[@core.Entity]? {
-  match self.local_component_id(key_id) {
-    Some(local_id) => self.changed_components.get(local_id)
-    None => None
-  }
-}
-
-///|
 fn World::changed_component_tick(
   self : World,
   key_id : Int,
@@ -1011,8 +993,10 @@ pub fn World::set_tick_context(
 pub fn World::check_change_ticks(self : World) -> Unit {
   let present_tick = self.read_change_tick()
   self.resource_tick_registry.check_change_ticks(present_tick)
-  for entry in self.tables.iter() {
-    entry.1.check_change_ticks(present_tick)
+  for table in self.tables {
+    if table is Some(table_ref) {
+      table_ref.check_change_ticks(present_tick)
+    }
   }
   for entry in self.sparse_component_metadata.iter() {
     let metadata_store = entry.1

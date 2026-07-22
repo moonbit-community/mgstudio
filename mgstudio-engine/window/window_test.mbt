@@ -90,9 +90,52 @@ fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
 }
 
 ///|
-test "window: RawHandleWrapper exposes host-owned content view handle lookup" {
-  let raw_handle = RawHandleWrapper::new(WindowWrapper::new(-1))
-  debug_inspect(raw_handle.content_view_handle() is None, content="true")
+priv struct UnavailableHandleProvider {}
+
+///|
+impl @raw_windowing.WindowHandleProvider for UnavailableHandleProvider with fn raw_window_handle(
+  _self,
+) {
+  raise @raw_windowing.HandleError::Unavailable
+}
+
+///|
+impl @raw_windowing.DisplayHandleProvider for UnavailableHandleProvider with fn raw_display_handle(
+  _self,
+) {
+  raise @raw_windowing.HandleError::Unavailable
+}
+
+///|
+fn test_raw_handle(window : HostWindow) -> RawHandleWrapper {
+  let provider = UnavailableHandleProvider::{  }
+  RawHandleWrapper::new(
+    window,
+    @raw_windowing.WindowHandle::from_provider(
+      provider as &@raw_windowing.WindowHandleProvider,
+    ),
+    @raw_windowing.DisplayHandle::from_provider(
+      provider as &@raw_windowing.DisplayHandleProvider,
+    ),
+  )
+}
+
+///|
+test "window: RawHandleWrapper owns typed window and display handles" {
+  let raw_handle = test_raw_handle(-1)
+  debug_inspect(raw_handle.window(), content="-1")
+  try raw_handle.window_handle().as_raw() catch {
+    @raw_windowing.HandleError::Unavailable =>
+      debug_inspect(true, content="true")
+  } noraise {
+    _ => debug_inspect(false, content="true")
+  }
+  try raw_handle.display_handle().as_raw() catch {
+    @raw_windowing.HandleError::Unavailable =>
+      debug_inspect(true, content="true")
+  } noraise {
+    _ => debug_inspect(false, content="true")
+  }
 }
 
 ///|

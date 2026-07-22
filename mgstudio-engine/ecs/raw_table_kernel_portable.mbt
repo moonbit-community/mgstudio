@@ -68,12 +68,22 @@ fn raw_table_row_kernel_swap_remove(
 pub(all) struct RawTableColumnKernel {
   mut added_ticks : Array[@core.Tick]
   mut changed_ticks : Array[@core.Tick]
-  mut changed_caller_ids : Array[Int]
+  changed_caller_ids : Array[Int]?
 }
 
 ///|
-fn raw_table_column_kernel_new() -> RawTableColumnKernel {
-  { added_ticks: [], changed_ticks: [], changed_caller_ids: [] }
+fn raw_table_column_kernel_new(
+  track_change_locations : Bool,
+) -> RawTableColumnKernel {
+  {
+    added_ticks: [],
+    changed_ticks: [],
+    changed_caller_ids: if track_change_locations {
+      Some([])
+    } else {
+      None
+    },
+  }
 }
 
 ///|
@@ -90,7 +100,9 @@ fn raw_table_column_kernel_push(
 ) -> Bool {
   kernel.added_ticks.push(added_tick)
   kernel.changed_ticks.push(changed_tick)
-  kernel.changed_caller_ids.push(changed_caller_id)
+  if kernel.changed_caller_ids is Some(changed_caller_ids) {
+    changed_caller_ids.push(changed_caller_id)
+  }
   true
 }
 
@@ -107,7 +119,9 @@ fn raw_table_column_kernel_set_metadata(
   }
   kernel.added_ticks[row] = added_tick
   kernel.changed_ticks[row] = changed_tick
-  kernel.changed_caller_ids[row] = changed_caller_id
+  if kernel.changed_caller_ids is Some(changed_caller_ids) {
+    changed_caller_ids[row] = changed_caller_id
+  }
   true
 }
 
@@ -122,7 +136,9 @@ fn raw_table_column_kernel_set_changed(
     return false
   }
   kernel.changed_ticks[row] = changed_tick
-  kernel.changed_caller_ids[row] = changed_caller_id
+  if kernel.changed_caller_ids is Some(changed_caller_ids) {
+    changed_caller_ids[row] = changed_caller_id
+  }
   true
 }
 
@@ -153,10 +169,15 @@ fn raw_table_column_kernel_changed_caller_id(
   kernel : RawTableColumnKernel,
   row : Int,
 ) -> Int {
-  if row < 0 || row >= kernel.changed_caller_ids.length() {
-    return 0
+  match kernel.changed_caller_ids {
+    Some(changed_caller_ids) => {
+      if row < 0 || row >= changed_caller_ids.length() {
+        return 0
+      }
+      changed_caller_ids[row]
+    }
+    None => 0
   }
-  kernel.changed_caller_ids[row]
 }
 
 ///|
@@ -171,10 +192,14 @@ fn raw_table_column_kernel_swap_remove(
   if row != last_index {
     kernel.added_ticks[row] = kernel.added_ticks[last_index]
     kernel.changed_ticks[row] = kernel.changed_ticks[last_index]
-    kernel.changed_caller_ids[row] = kernel.changed_caller_ids[last_index]
+    if kernel.changed_caller_ids is Some(changed_caller_ids) {
+      changed_caller_ids[row] = changed_caller_ids[last_index]
+    }
   }
   ignore(kernel.added_ticks.pop())
   ignore(kernel.changed_ticks.pop())
-  ignore(kernel.changed_caller_ids.pop())
+  if kernel.changed_caller_ids is Some(changed_caller_ids) {
+    ignore(changed_caller_ids.pop())
+  }
   true
 }

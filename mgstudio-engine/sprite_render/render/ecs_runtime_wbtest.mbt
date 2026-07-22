@@ -632,6 +632,37 @@ test "render2d: Camera2d tuple stores window render target" {
 }
 
 ///|
+test "render2d: camera system updates screen target without RenderState" {
+  let world = @ecs.World::new()
+  defer world.close()
+  ensure_camera2d_authoring_required_components(world)
+  let window = @window.Window::Window()
+  window.resolution = @window.WindowResolution::new(1280, 720).with_scale_factor_override(
+    2.0F,
+  )
+  ignore(try! world.spawn_bundle((window, @window.PrimaryWindow::{  })))
+  let camera_entity = world.spawn_empty()
+  try! (world.set_by_key(
+    camera_entity,
+    @camera_components2d.ecs_key_camera2d,
+    @camera_components2d.Camera2d::Camera2d(),
+  )
+  |> ignore)
+
+  render2d_camera_system_ecs(world)
+
+  let camera = (try! world.get_by_key(
+    camera_entity, @camera_camera.ecs_key_camera,
+  )).unwrap()
+  let target_info = camera.computed.target_info.unwrap()
+  debug_inspect(target_info.physical_size.x, content="1280")
+  debug_inspect(target_info.physical_size.y, content="720")
+  debug_inspect(target_info.scale_factor, content="2")
+  debug_inspect(camera.logical_viewport_size().unwrap().x, content="640")
+  debug_inspect(camera.logical_viewport_size().unwrap().y, content="360")
+}
+
+///|
 test "render2d: Mesh2d tuple spawn inserts expected components" {
   let world = @ecs.World::new()
   defer world.close()
@@ -936,6 +967,53 @@ test "sprite: SpritePlugin calculate_bounds_2d inserts Aabb for Sprite" {
     debug_inspect(half_size.y.to_double(), content="10")
     debug_inspect(half_size.z.to_double(), content="0")
   }
+}
+
+///|
+test "sprite: SpritePlugin calculate_bounds_2d updates changed Sprite Aabb" {
+  let world = @ecs.World::new()
+  defer world.close()
+  let mut app = @app.App::new(world)
+    .add_plugins(@asset.AssetPlugin::AssetPlugin())
+    .add_plugins(@mesh.MeshPlugin::MeshPlugin())
+    .add_plugins(@sprite.SpritePlugin::SpritePlugin())
+  let entity = world.spawn()
+  try! world.set_by_key(
+    entity,
+    @sprite.ecs_key_sprite,
+    Sprite::from_color(@color.Color::white(), @math.Vec2::new(40.0F, 20.0F)),
+  )
+  let should_resize = Ref(false)
+  app = app.add_systems(
+    @app.Update,
+    @app.system(fn(world : @ecs.World) {
+      if should_resize.val {
+        let replaced = world.replace(
+          entity,
+          @sprite.ecs_key_sprite,
+          Sprite::from_color(
+            @color.Color::white(),
+            @math.Vec2::new(60.0F, 30.0F),
+          ),
+        ) catch {
+          _ => false
+        }
+        if !replaced {
+          abort("test Sprite must remain replaceable")
+        }
+        should_resize.val = false
+      }
+    }),
+  )
+
+  app = app.update()
+  should_resize.val = true
+  app = app.update()
+
+  let aabb = (try! world.get_by_key(entity, @camera_primitives.ecs_key_aabb)).unwrap()
+  let half_size = aabb.half_size()
+  debug_inspect(half_size.x.to_double(), content="30")
+  debug_inspect(half_size.y.to_double(), content="15")
 }
 
 ///|

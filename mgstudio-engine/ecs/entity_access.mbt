@@ -32,6 +32,7 @@ pub struct Write[T] {
   priv table_id : Int
   priv row_index : Int
   priv local_component_id : Int
+  priv bound_table_values : Array[T]?
 }
 
 ///|
@@ -46,19 +47,24 @@ pub(open) trait Bundle {
 
 ///|
 fn[T] mut_value_or_abort(item : Write[T]) -> T {
+  match item.bound_table_values {
+    Some(values) if item.table_id >= 0 && item.row_index >= 0 => {
+      if item.row_index >= values.length() {
+        abort("Write expected bound table component row")
+      }
+      return values[item.row_index]
+    }
+    _ => ()
+  }
   match item.world.local_component_storage_type(item.local_component_id) {
     Some(Table) => {
       if item.table_id >= 0 && item.row_index >= 0 {
-        match
-          item.world.component_value_by_table_row_fast(
-            item.key,
-            item.local_component_id,
-            item.table_id,
-            item.row_index,
-          ) {
-          Some(value) => return value
-          None => abort("Write expected table component value at fetched row")
-        }
+        return item.world.component_value_by_table_row_unchecked(
+          item.key,
+          item.local_component_id,
+          item.table_id,
+          item.row_index,
+        )
       }
       guard item.world.component_write_transaction_contains(
         item.entity,
@@ -149,9 +155,6 @@ fn[T] mut_mark_changed(item : Write[T], caller? : String? = None) -> Unit {
       caller,
     )
   }
-  item.world
-  .ensure_changed_component_messages_by_local_id(item.local_component_id)
-  .send(tick, item.entity)
 }
 
 ///|
@@ -238,7 +241,7 @@ pub fn[T : Component] Write::set_changed(
   loc~ : SourceLoc,
 ) -> Unit {
   ignore(T::component())
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_mark_changed(self, caller=hook_caller_from_loc(self.world, loc))
 }
 
 ///|
@@ -251,7 +254,7 @@ pub fn[T : Component] Write::set_added(
   let world = self.world
   let entity = self.entity
   let key_id = self.key.id()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(world, loc)
   world.record_component_added_with_caller(entity, key_id, caller)
   world
   .ensure_added_component_messages(key_id)
@@ -274,8 +277,27 @@ pub fn[T, R] Write::modify(
 ) -> R {
   let value = self.peek(loc~)
   let result = f(value)
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_mark_changed(self, caller=hook_caller_from_loc(self.world, loc))
   result
+}
+
+///|
+/// Updates the component through a closure without marking it changed.
+///
+/// This is the MoonBit equivalent of Bevy's
+/// `DetectChangesMut::bypass_change_detection`. Use it only for internal state
+/// changes that must not be observed as a semantic component change. Returning
+/// the same reference preserves its ownership; returning a different value
+/// replaces and finalizes the displaced component normally.
+pub fn[T] Write::bypass_change_detection(
+  self : Write[T],
+  update : (T) -> T,
+) -> Unit {
+  let value = mut_value_or_abort(self)
+  let replacement = update(value)
+  if !physical_equal(value, replacement) {
+    mut_assign_value_or_abort(self, replacement)
+  }
 }
 
 ///|
@@ -298,11 +320,10 @@ pub fn[T : Eq] Write::set_if_neq(
 /// Replaces the component and marks it changed.
 ///
 /// Prefer `Write::set` over mutating values returned by read-only APIs. This
-/// keeps change ticks and changed-component messages in sync with the stored
-/// value.
+/// keeps change ticks in sync with the stored value.
 #callsite(autofill(loc))
 pub fn[T] Write::set(self : Write[T], value : T, loc~ : SourceLoc) -> Unit {
-  mut_mark_changed(self, caller=hook_caller_from_loc(loc))
+  mut_mark_changed(self, caller=hook_caller_from_loc(self.world, loc))
   mut_assign_value_or_abort(self, value)
 }
 
@@ -314,8 +335,17 @@ fn[T] mut_from_component_location(
   local_component_id : Int,
   table_id : Int,
   row_index : Int,
+  bound_table_values? : Array[T]? = None,
 ) -> Write[T] {
-  { world, entity, key, table_id, row_index, local_component_id }
+  {
+    world,
+    entity,
+    key,
+    table_id,
+    row_index,
+    local_component_id,
+    bound_table_values,
+  }
 }
 
 ///|
@@ -482,7 +512,7 @@ pub impl[A : Component, B : Component] Bundle for (A, B) with fn insert_into(
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -502,7 +532,7 @@ pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C) with 
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -523,7 +553,7 @@ pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for 
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -546,7 +576,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -571,7 +601,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -603,7 +633,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -637,7 +667,7 @@ pub impl[
   try! world.insert_component_writes_with_requirements(
     entity,
     writes,
-    caller=hook_caller_from_loc(loc),
+    caller=hook_caller_from_loc(world, loc),
   )
 }
 
@@ -681,11 +711,7 @@ pub fn[T : Component] EntityMut::remove_component(
   self : EntityMut,
   loc~ : SourceLoc,
 ) -> T? raise EcsError {
-  let previous = self.world.get_by_key(self.entity, T::component())
-  if previous is Some(_) {
-    self.world.remove_by_key(self.entity, T::component(), loc~) |> ignore
-  }
-  previous
+  self.world.take(self.entity, T::component(), loc~)
 }
 
 ///|

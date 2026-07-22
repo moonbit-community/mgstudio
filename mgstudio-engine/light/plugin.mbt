@@ -368,4 +368,22 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .after(simulation_light_set_assign_lights_to_clusters)
     .in_set(simulation_light_set_update_light_frusta),
   )
+  .add_post_update_system_config(
+    @app.system(check_dir_light_mesh_visibility)
+    .after(@visibility.visibility_set_calculate_bounds)
+    .after(@transform.transform_set_propagate)
+    .after(simulation_light_set_update_light_frusta)
+    .after(@visibility.visibility_set_check_visibility)
+    .before(@visibility.visibility_set_mark_newly_hidden_entities_invisible)
+    .in_set(simulation_light_set_check_light_visibility),
+  )
+  .add_post_update_system_config(
+    @app.system(check_point_light_mesh_visibility)
+    .after(@visibility.visibility_set_calculate_bounds)
+    .after(@transform.transform_set_propagate)
+    .after(simulation_light_set_update_light_frusta)
+    .after(@visibility.visibility_set_check_visibility)
+    .before(@visibility.visibility_set_mark_newly_hidden_entities_invisible)
+    .in_set(simulation_light_set_check_light_visibility),
+  )
 }

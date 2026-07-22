@@ -229,7 +229,7 @@ pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~
 
 pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool, sample_count? : Int) -> Int
 
-pub fn host_gpu_create_surface(Int) -> Int
+pub fn host_gpu_create_surface(@window.RawHandleWrapper) -> Int
 
 pub fn host_gpu_create_transmission_source_texture_rgba16f(width~ : Int, height~ : Int) -> Int
 
@@ -384,6 +384,8 @@ pub fn host_gpu_register_mesh2d_pipeline_descriptor(pipeline_id~ : UInt64, shade
 pub fn host_gpu_register_mesh3d_material_pipeline_descriptor(material_pipeline_id~ : UInt64, descriptor~ : @render_resource.RenderPipelineDescriptor) -> Unit
 
 pub fn host_gpu_release_skybox_bind_group(bind_group_id~ : Int) -> Bool
+
+pub fn host_gpu_release_surface(Int) -> Unit
 
 pub fn host_gpu_request_device() -> Int
 

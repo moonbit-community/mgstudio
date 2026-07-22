@@ -181,13 +181,20 @@ pub impl[C : @ecs.Component + UniformComponent] @app.Plugin for UniformComponent
 }
 
 ///|
+fn[C : UniformComponent] uniform_component_debug_name_for_key(
+  _key : @ecs.ComponentKey[C],
+) -> String {
+  C::uniform_component_debug_name()
+}
+
+///|
 pub fn[C : @ecs.Component + UniformComponent] uniform_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : UniformComponentPlugin[C],
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   let uniform_key : @ecs.ResourceKey[ComponentUniforms[C]] = ComponentUniforms::resource()
-  let component_key : @ecs.ComponentKey[C] = C::component()
+  let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
   let index_key : @ecs.ComponentKey[DynamicUniformIndex[C]] = DynamicUniformIndex::component()
   try_with_render_app(app, fn(render_app : @app.SubApp[@ecs.World]) {
     if render_app.world().get_resource(uniform_key) is None {
@@ -201,7 +208,7 @@ pub fn[C : @ecs.Component + UniformComponent] uniform_component_plugin_with(
         prepare_uniform_components(world, component_key, index_key, uniform_key)
       })
       .named(
-        "mgstudio_render::uniform::prepare_uniform_components<\{C::uniform_component_debug_name()}>",
+        "mgstudio_render::uniform::prepare_uniform_components<\{uniform_component_debug_name_for_key(component_key)}>",
       )
       .in_set(render_system_set_prepare_resources),
     )

@@ -220,7 +220,9 @@ fn forward_decal_set_mesh(
   world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  guard world.resource(ForwardDecalMesh::resource()).get()
+  guard world
+    .resource((@app.Resource::resource() : @ecs.ResourceKey[ForwardDecalMesh]))
+    .get()
     is Some(forward_decal_mesh) else {
     return
   }
@@ -285,7 +287,7 @@ pub impl @app.Plugin for ForwardDecalPlugin with fn build(self, app) {
   app
   .world()
   .insert_resource(
-    ForwardDecalMesh::resource(),
+    (@app.Resource::resource() : @ecs.ResourceKey[ForwardDecalMesh]),
     ForwardDecalMesh::new(decal_mesh),
   )
   ensure_forward_decal_required_components_registered()
@@ -391,7 +393,11 @@ test "pbr decal forward: component hook assigns plugin decal mesh" {
     ForwardDecalPlugin::ForwardDecalPlugin(),
   )
   let world = app.world()
-  let decal_mesh = world.get_resource(ForwardDecalMesh::resource()).unwrap()
+  let decal_mesh = world
+    .get_resource(
+      (@app.Resource::resource() : @ecs.ResourceKey[ForwardDecalMesh]),
+    )
+    .unwrap()
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,

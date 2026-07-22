@@ -27,7 +27,7 @@ pub fn[T] World::replace(
     return false
   }
   let outermost = self.begin_deferred_hook_command_scope()
-  let caller = hook_caller_from_loc(loc)
+  let caller = hook_caller_from_loc(self, loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
   ignore(
     self.replace_component_value_by_local_id(
@@ -48,11 +48,16 @@ pub fn[T] World::take(
   key : ComponentKey[T],
   loc~ : SourceLoc,
 ) -> T? raise EcsError {
-  let previous = self.get_by_key(entity, key)
-  if previous is Some(_) {
-    self.remove_by_key(entity, key, loc~) |> ignore
+  self.ensure_entity_alive(entity)
+  let outermost = self.begin_deferred_hook_command_scope()
+  defer self.end_deferred_hook_command_scope(outermost)
+  let caller = hook_caller_from_loc(self, loc)
+  guard self.component_remove_transaction_for_key(entity, key.id(), caller)
+    is Some(transaction) else {
+    return None
   }
-  previous
+  self.ensure_query_iteration_can_change_structure("take component")
+  self.commit_component_take_transaction(transaction, key)
 }
 
 ///|

@@ -81,6 +81,7 @@ pub fn Visibility::toggle_visible_hidden(self : Visibility) -> Visibility {
 }
 
 ///|
+#valtype
 pub struct InheritedVisibility {
   visible : Bool
 } derive(Eq, Debug)
@@ -122,8 +123,9 @@ pub fn InheritedVisibility::is_visible(self : InheritedVisibility) -> Bool {
 }
 
 ///|
+#valtype
 pub struct ViewVisibility {
-  mut bits : Int
+  bits : Int
 } derive(Eq, Debug)
 
 ///|
@@ -148,6 +150,13 @@ pub fn ViewVisibility::hidden() -> ViewVisibility {
 }
 
 ///|
+/// Returns the state used by entities that are visible in both the current and
+/// previous frame.
+pub fn ViewVisibility::visible() -> ViewVisibility {
+  ViewVisibility::{ bits: 3 }
+}
+
+///|
 pub fn ViewVisibility::get(self : ViewVisibility) -> Bool {
   (self.bits & 1) != 0
 }
@@ -165,15 +174,36 @@ pub fn ViewVisibility::was_visible_now_hidden(self : ViewVisibility) -> Bool {
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::ViewVisibility::update`.
-pub fn ViewVisibility::update(self : ViewVisibility) -> Unit {
-  self.bits = (self.bits & 1) << 1
+// This value-returning API intentionally does not keep Bevy's mutating method
+// name: an old `value.update()` call would otherwise compile and discard the
+// replacement value after the MoonBit value-type migration.
+pub fn ViewVisibility::advance_frame(self : ViewVisibility) -> ViewVisibility {
+  ViewVisibility::{ bits: (self.bits & 1) << 1 }
 }
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility::set_visible`.
-pub fn ViewVisibility::set_visible(self : ViewVisibility) -> Unit {
-  if (self.bits & 1) == 0 {
-    self.bits = self.bits | 1
+pub fn ViewVisibility::with_visible(self : ViewVisibility) -> ViewVisibility {
+  ViewVisibility::{ bits: self.bits | 1 }
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility`.
+pub(open) trait SetViewVisibility {
+  fn set_visible(Self) -> Unit
+}
+
+///|
+pub impl SetViewVisibility for @ecs.Write[ViewVisibility] with fn set_visible(
+  self,
+) {
+  let current = self.peek()
+  if (current.bits & 1) == 0 {
+    if (current.bits & 2) != 0 {
+      self.bypass_change_detection(fn(value) { value.with_visible() })
+    } else {
+      self.set(current.with_visible())
+    }
   }
 }
 

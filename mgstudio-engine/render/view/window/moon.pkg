@@ -13,6 +13,10 @@ import {
   "Milky2018/wgpu_mbt" @wgpu,
 }
 
+import {
+  "Milky2018/windowing",
+} for "wbtest"
+
 supported_targets = "native"
 
 options(

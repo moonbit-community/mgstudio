@@ -14,7 +14,7 @@
 
 ///|
 type SimpleTransformChangedQuery = @ecs.Query[
-  (@ecs.Read[Transform], @ecs.Write[GlobalTransform]),
+  (@ecs.ReadValue[Transform], @ecs.Write[GlobalTransform]),
   (
     @ecs.Without[@hierarchy.Parent],
     @ecs.Without[@hierarchy.Children],
@@ -193,19 +193,23 @@ fn read_static_transform_optimizations(
 }
 
 ///|
-fn write_static_transform_optimizations(
-  world : @ecs.World,
-  value : StaticTransformOptimizations,
-) -> Unit {
-  world.insert_resource(static_transform_optimizations_resource_key, value)
-}
-
-///|
 fn sync_simple_transforms_changed(query : SimpleTransformChangedQuery) -> Unit {
-  try! query.for_each(fn(_entity, data) {
-    let (transform, global_transform) = data
-    global_transform.set(GlobalTransform::from_transform(transform.value()))
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    let transforms = batch.read(ecs_key_transform).unwrap()
+    let global_transforms = batch.write(ecs_key_global_transform).unwrap()
+    try! rows.for_each(fn(row_index) {
+      global_transforms.set(
+        row_index,
+        GlobalTransform::from_transform(transforms.value(row_index)),
+      )
+    })
   })
+  if !used_batch {
+    try! query.for_each(fn(_entity, data) {
+      let (transform, global_transform) = data
+      global_transform.set(GlobalTransform::from_transform(transform.value()))
+    })
+  }
 }
 
 ///|
@@ -278,17 +282,6 @@ pub fn sync_simple_transforms_world(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn clamp_static_transform_threshold(threshold : Float) -> Float {
-  if threshold < 0.0F {
-    0.0F
-  } else if threshold > 1.0F {
-    1.0F
-  } else {
-    threshold
-  }
-}
-
-///|
 fn mark_dirty_tree_chain(
   transforms : TransformTreeChangedMutQuery,
   parents : TransformParentQuery,
@@ -309,53 +302,31 @@ fn mark_dirty_tree_chain(
 }
 
 ///|
-fn mark_dirty_trees_enabled_state(
-  static_optimizations : StaticTransformOptimizations,
-  dynamic_count : () -> Int,
-  total : () -> Int,
-) -> StaticTransformOptimizations {
-  let threshold = clamp_static_transform_threshold(
-    static_optimizations.threshold,
-  )
-  if threshold == 0.0F {
-    static_optimizations.enabled = false
-  } else if threshold == 1.0F {
-    static_optimizations.enabled = true
-  } else {
-    static_optimizations.enabled = true
-    let total_count = total()
-    if total_count > 0 {
-      if Float::from_int(dynamic_count()) / Float::from_int(total_count) >
-        threshold {
-        static_optimizations.enabled = false
-      }
-    }
-  }
-  static_optimizations
-}
-
-///|
 pub fn mark_dirty_trees_system(
   changed_transforms : TransformDirtyTriggerQuery,
   orphaned : @ecs.RemovedComponents[@hierarchy.Parent],
   query_set : @app.ParamSet2[TransformTreeChangedMutQuery, TransformParentQuery],
-  static_optimizations_ref : @app.ResMut[StaticTransformOptimizations],
+  static_optimizations : @app.Res[StaticTransformOptimizations],
 ) -> Unit {
-  let transforms = query_set.p0()
-  let parents = query_set.p1()
-  let static_optimizations = mark_dirty_trees_enabled_state(
-    static_optimizations_ref.peek(),
-    fn() { changed_transforms.count() },
-    fn() { transforms.count() },
-  )
-  ignore(static_optimizations_ref.set_if_neq(static_optimizations))
-  if !static_optimizations.enabled {
+  if !static_optimizations.get().is_enabled() {
     return
   }
+  let transforms = query_set.p0()
+  let parents = query_set.p1()
 
-  try! changed_transforms.for_each(fn(_entity, changed_entity) {
-    mark_dirty_tree_chain(transforms, parents, changed_entity)
+  let used_batch = try! changed_transforms.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
+    try! rows.for_each(fn(row_index) {
+      mark_dirty_tree_chain(transforms, parents, batch.entity(row_index))
+    })
   })
+  if !used_batch {
+    try! changed_transforms.for_each(fn(_entity, changed_entity) {
+      mark_dirty_tree_chain(transforms, parents, changed_entity)
+    })
+  }
   for entity in orphaned.read() {
     mark_dirty_tree_chain(transforms, parents, entity)
   }
@@ -363,6 +334,9 @@ pub fn mark_dirty_trees_system(
 
 ///|
 pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
+  if !read_static_transform_optimizations(world).is_enabled() {
+    return
+  }
   let changed_transforms : TransformDirtyTriggerQuery = @ecs.query_filtered(
     world,
     @ecs.Or::new(
@@ -382,19 +356,19 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
   let transforms : TransformTreeChangedMutQuery = @ecs.query(world)
   let parents : TransformParentQuery = @ecs.query(world)
 
-  let static_optimizations = mark_dirty_trees_enabled_state(
-    read_static_transform_optimizations(world),
-    fn() { changed_transforms.count() },
-    fn() { transforms.count() },
-  )
-  write_static_transform_optimizations(world, static_optimizations)
-  if !static_optimizations.enabled {
-    return
-  }
-
-  try! changed_transforms.for_each(fn(_entity, changed_entity) {
-    mark_dirty_tree_chain(transforms, parents, changed_entity)
+  let used_batch = try! changed_transforms.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
+    try! rows.for_each(fn(row_index) {
+      mark_dirty_tree_chain(transforms, parents, batch.entity(row_index))
+    })
   })
+  if !used_batch {
+    try! changed_transforms.for_each(fn(_entity, changed_entity) {
+      mark_dirty_tree_chain(transforms, parents, changed_entity)
+    })
+  }
   for entity in orphaned_entities {
     mark_dirty_tree_chain(transforms, parents, entity)
   }
@@ -715,7 +689,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   propagate_parent_transforms_dense(
     world,
     columns,
-    static_optimizations.enabled,
+    static_optimizations.is_enabled(),
   )
 }
 

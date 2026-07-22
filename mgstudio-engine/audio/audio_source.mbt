@@ -177,7 +177,7 @@ pub fn audio_source_load(
   let canonical_path = @asset.asset_canonical_path(path)
   let paths = audio_resource_ensure_mut(
     world,
-    AudioSourceAssetPaths::resource(),
+    (@app.Resource::resource() : @ecs.ResourceKey[AudioSourceAssetPaths]),
     fn() { AudioSourceAssetPaths::new() },
   )
   match paths.peek().find_path_handle(canonical_path) {

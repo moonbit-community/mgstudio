@@ -24,6 +24,11 @@ let visibility_set_update_skinned_mesh_bounds : @app.SystemSet = @app.system_set
 )
 
 ///|
+let camera_update_frusta_systems : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.update_frusta",
+)
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::VisibleMeshEntities`.
 pub struct VisibleMeshEntities {
   entities : Array[@core.Entity]
@@ -180,11 +185,27 @@ pub impl @ecs.Component for CascadesVisibleEntities with fn component() {
 }
 
 ///|
-fn visibility_radius_vec3(
+fn visibility_radius_aabb(
   world_from_local : @math.Affine3,
-  extents : @math.Vec3,
+  aabb : @camera_primitives.Aabb,
 ) -> Float {
-  world_from_local.matrix3.mul_vec3(extents).length()
+  let half_x = aabb.half_extents_x()
+  let half_y = aabb.half_extents_y()
+  let half_z = aabb.half_extents_z()
+  let transformed_x = world_from_local.matrix3.x_axis.x * half_x +
+    world_from_local.matrix3.y_axis.x * half_y +
+    world_from_local.matrix3.z_axis.x * half_z
+  let transformed_y = world_from_local.matrix3.x_axis.y * half_x +
+    world_from_local.matrix3.y_axis.y * half_y +
+    world_from_local.matrix3.z_axis.y * half_z
+  let transformed_z = world_from_local.matrix3.x_axis.z * half_x +
+    world_from_local.matrix3.y_axis.z * half_y +
+    world_from_local.matrix3.z_axis.z * half_z
+  @math.sqrt(
+    transformed_x * transformed_x +
+    transformed_y * transformed_y +
+    transformed_z * transformed_z,
+  )
 }
 
 ///|
@@ -194,9 +215,23 @@ fn visibility_cull_aabb(
   global_transform : @transform.GlobalTransform,
 ) -> Bool {
   let world_from_local = global_transform.affine()
-  let model_sphere = @camera_primitives.Sphere::new(
-    world_from_local.transform_point3(aabb.center()),
-    visibility_radius_vec3(world_from_local, aabb.half_size()),
+  let center_x = world_from_local.matrix3.x_axis.x * aabb.center_x() +
+    world_from_local.matrix3.y_axis.x * aabb.center_y() +
+    world_from_local.matrix3.z_axis.x * aabb.center_z() +
+    world_from_local.translation.x
+  let center_y = world_from_local.matrix3.x_axis.y * aabb.center_x() +
+    world_from_local.matrix3.y_axis.y * aabb.center_y() +
+    world_from_local.matrix3.z_axis.y * aabb.center_z() +
+    world_from_local.translation.y
+  let center_z = world_from_local.matrix3.x_axis.z * aabb.center_x() +
+    world_from_local.matrix3.y_axis.z * aabb.center_y() +
+    world_from_local.matrix3.z_axis.z * aabb.center_z() +
+    world_from_local.translation.z
+  let model_sphere = @camera_primitives.Sphere::from_xyz(
+    center_x,
+    center_y,
+    center_z,
+    visibility_radius_aabb(world_from_local, aabb),
   )
   !frustum.intersects_sphere(model_sphere, false) ||
   !frustum.intersects_obb(aabb, world_from_local, true, false)
@@ -211,73 +246,40 @@ fn visibility_cull_sphere(
 }
 
 ///|
+fn[T] with_optional_table_values(
+  column : @ecs.TableBatchRead[T]?,
+  read : (ArrayView[T]?) -> Unit,
+) -> Unit {
+  match column {
+    Some(column) => column.with_values(fn(values) { read(Some(values)) })
+    None => read(None)
+  }
+}
+
+///|
 fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
-  let visible_rows : Array[
-    (
-      @core.Entity,
-      @root_visibility.InheritedVisibility,
-      @camera_render_layers.RenderLayers,
-      @root_visibility.VisibilityClass?,
-      @camera_primitives.Aabb?,
-      @camera_primitives.Sphere?,
-      @transform.GlobalTransform,
-      Bool,
-      Bool,
-    ),
-  ] = []
   let visible_query : @ecs.Query[
     (
       @core.Entity,
       (
-        @ecs.Read[@root_visibility.InheritedVisibility],
+        @ecs.ReadValue[@root_visibility.InheritedVisibility],
         @ecs.Write[@root_visibility.ViewVisibility],
         @ecs.Optional[@root_visibility.VisibilityClass],
         @ecs.Optional[@camera_render_layers.RenderLayers],
         @ecs.Optional[@camera_primitives.Aabb],
         @ecs.Optional[@camera_primitives.Sphere],
-        @ecs.Read[@transform.GlobalTransform],
+        @ecs.ReadValue[@transform.GlobalTransform],
       ),
       (
         @ecs.Has[@root_visibility.NoFrustumCulling],
-        @ecs.Has[@root_visibility.NoCpuCulling],
         @ecs.Has[@root_visibility.VisibilityRange],
       ),
     ),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! visible_query.view(fn(_query_entity, data) {
-    let (
-      entity,
-      (
-        inherited_visibility,
-        _view_visibility,
-        visibility_class,
-        render_layers,
-        aabb,
-        sphere,
-        global_transform,
-      ),
-      (no_frustum_culling, no_cpu_culling, has_visibility_range),
-    ) = data
-    if no_cpu_culling.present() {
-      return
-    }
-    visible_rows.push(
-      (
-        entity,
-        inherited_visibility.value(),
-        render_layers
-        .value()
-        .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers()),
-        visibility_class.value(),
-        aabb.value(),
-        sphere.value(),
-        global_transform.value(),
-        no_frustum_culling.present(),
-        has_visibility_range.present(),
-      ),
-    )
-  })
+    @ecs.Without[@root_visibility.NoCpuCulling],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.Without::new(@root_visibility.ecs_key_no_cpu_culling),
+  )
   let visible_entity_ranges = world.get_resource(ecs_key_visible_entity_ranges)
   let view_query : @ecs.Query[
     (
@@ -285,8 +287,8 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
       (
         @ecs.Write[@camera_camera.VisibleEntities],
         @ecs.Optional[@camera_render_layers.RenderLayers],
-        @ecs.Read[@camera_camera.Camera],
-        @ecs.Read[@camera_primitives.Frustum],
+        @ecs.ReadValue[@camera_camera.Camera],
+        @ecs.ReadValue[@camera_primitives.Frustum],
         @ecs.Has[@root_visibility.NoCpuCulling],
       ),
     ),
@@ -302,82 +304,120 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
     }
     let view_mask = view_layers
       .value()
-      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
-    let accepted : Array[(@core.Entity, Int)] = []
-    for row in visible_rows {
-      let (
-        entity,
-        inherited_visibility,
-        entity_layers,
-        visibility_class,
-        aabb,
-        sphere,
-        global_transform,
-        no_frustum_culling,
-        has_visibility_range,
-      ) = row
-      if !inherited_visibility.get() {
-        continue
-      }
-      if !view_mask.intersects(entity_layers) {
-        continue
-      }
-      if has_visibility_range {
-        match visible_entity_ranges {
-          Some(ranges) =>
-            if !ranges.entity_is_in_range_of_view(entity, view_entity) {
-              continue
-            }
-          None => continue
-        }
-      }
-      if !no_frustum_culling && !no_cpu_culling_camera.present() {
-        match aabb {
-          Some(model_aabb) =>
-            if visibility_cull_aabb(
-                frustum.value(),
-                model_aabb,
-                global_transform,
-              ) {
-              continue
-            }
-          None =>
-            match sphere {
-              Some(model_sphere) =>
-                if visibility_cull_sphere(frustum.value(), model_sphere) {
-                  continue
-                }
-              None => ()
-            }
-        }
-      }
-      match visibility_class {
-        Some(classes) =>
-          for class_id in classes.iter() {
-            accepted.push((entity, class_id))
-          }
-        None => ()
-      }
-    }
+      .unwrap_or(@camera_render_layers.default_layers)
     visible_entities.modify(fn(value) {
       value.clear_all()
-      for item in accepted {
-        let (entity, class_id) = item
-        value.push(entity, class_id)
-      }
+      try! visible_query.for_each_table(fn(batch) {
+        let inherited_visibility = batch
+          .read(@root_visibility.ecs_key_inherited_visibility)
+          .unwrap()
+        let view_visibility = batch
+          .write(@root_visibility.ecs_key_view_visibility)
+          .unwrap()
+        let visibility_class = batch.read(
+          @root_visibility.ecs_key_visibility_class,
+        )
+        let render_layers = batch.read(
+          @camera_render_layers.ecs_key_render_layers,
+        )
+        let aabb = batch.read(@camera_primitives.ecs_key_aabb)
+        let sphere = batch.read(@camera_primitives.ecs_key_sphere)
+        let global_transform = batch
+          .read(@transform.ecs_key_global_transform)
+          .unwrap()
+        let no_frustum_culling = batch.has(
+          @root_visibility.ecs_key_no_frustum_culling,
+        )
+        let has_visibility_range = batch.has(
+          @root_visibility.ecs_key_visibility_range,
+        )
+        batch.with_entities(fn(entities) {
+          with_optional_table_values(visibility_class, fn(visibility_classes) {
+            with_optional_table_values(render_layers, fn(render_layer_values) {
+              with_optional_table_values(aabb, fn(aabbs) {
+                with_optional_table_values(sphere, fn(spheres) {
+                  inherited_visibility.with_values(fn(inherited_values) {
+                    global_transform.with_values(fn(global_transforms) {
+                      for row_index in 0..<inherited_values.length() {
+                        if !inherited_values[row_index].get() {
+                          continue
+                        }
+                        let entity_layers = match render_layer_values {
+                          Some(values) => values[row_index]
+                          None => @camera_render_layers.default_layers
+                        }
+                        if !view_mask.intersects(entity_layers) {
+                          continue
+                        }
+                        let entity = entities[row_index]
+                        if has_visibility_range {
+                          match visible_entity_ranges {
+                            Some(ranges) =>
+                              if !ranges.entity_is_in_range_of_view(
+                                  entity, view_entity,
+                                ) {
+                                continue
+                              }
+                            None => ()
+                          }
+                        }
+                        if !no_frustum_culling &&
+                          !no_cpu_culling_camera.present() {
+                          match aabbs {
+                            Some(values) =>
+                              if visibility_cull_aabb(
+                                  frustum.value(),
+                                  values[row_index],
+                                  global_transforms[row_index],
+                                ) {
+                                continue
+                              }
+                            None =>
+                              match spheres {
+                                Some(values) =>
+                                  if visibility_cull_sphere(
+                                      frustum.value(),
+                                      values[row_index],
+                                    ) {
+                                    continue
+                                  }
+                                None => ()
+                              }
+                          }
+                        }
+                        let current_visibility = view_visibility.peek(row_index)
+                        if !current_visibility.get() {
+                          if current_visibility.was_visible_now_hidden() {
+                            view_visibility.bypass_change_detection(row_index, fn(
+                              _value,
+                            ) {
+                              @root_visibility.ViewVisibility::visible()
+                            })
+                          } else {
+                            view_visibility.set(
+                              row_index,
+                              @root_visibility.ViewVisibility::new(true),
+                            )
+                          }
+                        }
+                        match visibility_classes {
+                          Some(values) =>
+                            for class_id in values[row_index].iter() {
+                              value.push(entity, class_id)
+                            }
+                          None => ()
+                        }
+                      }
+                    })
+                  })
+                })
+              })
+            })
+          })
+        })
+      })
       value.sort_all()
     })
-    for item in accepted {
-      let (entity, _class_id) = item
-      let view_visibility = (try! world.get_by_key(
-        entity, @root_visibility.ecs_key_view_visibility,
-      )).unwrap()
-      view_visibility.set_visible()
-      try! (world.replace(
-        entity, @root_visibility.ecs_key_view_visibility, view_visibility,
-      )
-      |> ignore)
-    }
   })
 }
 
@@ -401,6 +441,11 @@ pub fn visibility_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   @root_visibility.visibility_plugin(app)
+  .configure_set(
+    @app.PostUpdate,
+    @root_visibility.visibility_set_check_visibility,
+    after=[camera_update_frusta_systems],
+  )
   .configure_set(
     @app.PostUpdate,
     @root_visibility.visibility_set_calculate_bounds,

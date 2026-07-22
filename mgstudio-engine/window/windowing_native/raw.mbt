@@ -1907,14 +1907,12 @@ pub fn position_y(window : Int) -> Int {
 }
 
 ///|
-pub fn content_view_handle(window : NativeWindowHandle) -> UInt64? {
+pub fn handles(
+  window : NativeWindowHandle,
+) -> (@windowing.WindowHandle, @windowing.DisplayHandle)? {
   match native_window_ref(window) {
-    Some(window_ref) => {
-      let handle = window_ref.val.content_view_handle() catch {
-        _ => return None
-      }
-      Some(handle)
-    }
+    Some(window_ref) =>
+      Some((window_ref.val.window_handle(), window_ref.val.display_handle()))
     None => None
   }
 }

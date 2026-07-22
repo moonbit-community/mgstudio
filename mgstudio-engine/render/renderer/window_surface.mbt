@@ -21,6 +21,7 @@
 priv struct SurfaceBinding {
   surface_id : NativeGpuSurface
   window : Int
+  handle : @window_pkg.RawHandleWrapper
   target_id : Int
   mut needs_initial_present : Bool
 }
@@ -69,6 +70,31 @@ fn find_surface_binding(surface_id : NativeGpuSurface) -> SurfaceBinding? {
     }
   }
   None
+}
+
+///|
+fn remove_surface_runtime_bindings(surface_id : NativeGpuSurface) -> Unit {
+  let state = window_surface_runtime_state
+  let next_surfaces : Array[SurfaceBinding] = []
+  for binding in state.surfaces {
+    if binding.surface_id != surface_id {
+      next_surfaces.push(binding)
+    }
+  }
+  state.surfaces.clear()
+  for binding in next_surfaces {
+    state.surfaces.push(binding)
+  }
+  let next_frames : Array[FrameBinding] = []
+  for binding in state.frames {
+    if binding.surface_id != surface_id {
+      next_frames.push(binding)
+    }
+  }
+  state.frames.clear()
+  for binding in next_frames {
+    state.frames.push(binding)
+  }
 }
 
 ///|
@@ -573,18 +599,13 @@ pub fn GpuBackend::create_surface_binding(
   self : GpuBackend,
   surface_id : Int,
   target_id : Int,
-  window : Int,
+  handle : @window_pkg.RawHandleWrapper,
 ) -> Unit {
   if surface_state_index_by_surface_id(self, surface_id) is Some(_) {
     return
   }
-  let ns_view = match @windowing.content_view_handle(window) {
-    Some(handle) => handle
-    None => abort("wgpu: failed to get macOS window content view handle")
-  }
-  let surface = self.instance.create_surface_macos_ns_view_u64(ns_view) catch {
-    err =>
-      abort("wgpu: failed to create macOS window surface: \{err.message()}")
+  let surface = self.instance.create_surface_from_window(handle) catch {
+    err => abort("wgpu: failed to create window surface: \{err.message()}")
   }
   self.surfaces.push(GpuSurfaceState::{
     surface_id,
@@ -606,8 +627,34 @@ pub fn GpuBackend::create_surface_binding(
 }
 
 ///|
-pub fn GpuBackend::create_surface(self : GpuBackend, window : Int) -> Unit {
-  self.create_surface_binding(1, -1, window)
+pub fn GpuBackend::create_surface(
+  self : GpuBackend,
+  handle : @window_pkg.RawHandleWrapper,
+) -> Unit {
+  self.create_surface_binding(1, -1, handle)
+}
+
+///|
+fn GpuBackend::release_surface_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Unit {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
+  let target_id = self.surfaces[index].target_id
+  self.release_frame_binding(surface_id)
+  let removed = self.surfaces.remove(index)
+  removed.release()
+  if self.active_surface_target_id == target_id {
+    self.active_surface_target_id = match default_surface_target_id(self) {
+      Some(next_target_id) => next_target_id
+      None => -1
+    }
+    self.frame = None
+    self.pass_state = None
+  }
+  sync_active_surface_state(self)
 }
 
 ///|
@@ -624,6 +671,16 @@ pub fn GpuBackend::configure_surface_binding(
     return
   }
   let state = self.surfaces[index]
+  let window_handle = match find_surface_binding(surface_id) {
+    Some(binding) => binding.handle.window_handle()
+    None => abort("wgpu: missing window handle for surface \{surface_id}")
+  }
+  state.surface.sync_macos_window_handle(window_handle) catch {
+    err =>
+      abort(
+        "wgpu: failed to synchronize macOS window surface: \{err.message()}",
+      )
+  }
   let present_mode_u32 = surface_present_mode_resolve(
     state.surface,
     self.adapter,
@@ -717,13 +774,7 @@ pub fn GpuBackend::ensure_surface_configured(
 }
 
 ///|
-pub fn GpuBackend::begin_frame_binding(
-  self : GpuBackend,
-  surface_id : Int,
-) -> Bool {
-  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
-    return false
-  }
+fn GpuBackend::prepare_render_frame(self : GpuBackend) -> Unit {
   mesh3d_pass_uniform_states_clear(self)
   mesh3d_frame_view_bind_group_cache_clear(self)
   self.mesh3d_motion_vector_view_bg_cache.clear()
@@ -733,11 +784,6 @@ pub fn GpuBackend::begin_frame_binding(
   } else {
     self.frame_count = self.frame_count + 1U
   }
-  let target_id = self.surfaces[index].target_id
-  self.set_active_surface_target(target_id)
-  self.surfaces[index].cleared_this_frame = false
-  sync_active_surface_state(self)
-
   self.mesh2d_instance_used = 0
   self.sprite_flush_count_this_frame = 0
   mesh2d_reset_pending_batch(self)
@@ -749,6 +795,21 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh3d_prepared_draw_count = 0
   self.mesh3d_motion_vector_mesh_slot_used = 0
   self.mesh3d_motion_vector_instance_mesh_used = 0
+}
+
+///|
+pub fn GpuBackend::begin_frame_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Bool {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return false
+  }
+  let target_id = self.surfaces[index].target_id
+  self.set_active_surface_target(target_id)
+  self.surfaces[index].cleared_this_frame = false
+  sync_active_surface_state(self)
+
   let acquired = match self.acquire_surface_texture_once(index) {
     SurfaceAcquired(st, tex) => Some((st, tex))
     SurfaceOutdated => {
@@ -1017,20 +1078,34 @@ pub fn release_frame_retired_resources() -> Unit {
 }
 
 ///|
-pub fn create_surface(window : Int) -> NativeGpuSurface {
+pub fn create_surface(
+  handle : @window_pkg.RawHandleWrapper,
+) -> NativeGpuSurface {
   let surface_id = next_surface_id()
   let target_id = surface_target_id_from_surface_id(surface_id)
   let state = window_surface_runtime_state
   state.surfaces.push(SurfaceBinding::{
     surface_id,
-    window,
+    window: handle.window(),
+    handle,
     target_id,
     needs_initial_present: true,
   })
   if ensure_backend() is Some(backend) {
-    backend.create_surface_binding(surface_id, target_id, window)
+    backend.create_surface_binding(surface_id, target_id, handle)
   }
   surface_id
+}
+
+///|
+pub fn release_surface(surface : NativeGpuSurface) -> Unit {
+  if surface <= 0 {
+    return
+  }
+  if render_context_runtime_state.backend is Some(backend) {
+    backend.release_surface_binding(surface)
+  }
+  remove_surface_runtime_bindings(surface)
 }
 
 ///|
@@ -1082,7 +1157,7 @@ pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
   if surface <= 0 {
     return false
   }
-  render_diagnostics_begin_frame()
+  prepare_render_frame()
   if ensure_backend() is Some(backend) {
     guard backend.begin_frame_binding(surface) else { return false }
     record_active_frame(surface, surface_target_id_from_surface_id(surface))
@@ -1092,7 +1167,19 @@ pub fn begin_frame(surface : NativeGpuSurface) -> Bool {
 }
 
 ///|
+fn prepare_render_frame() -> Unit {
+  render_diagnostics_begin_frame()
+  if ensure_backend() is Some(backend) {
+    backend.prepare_render_frame()
+  }
+}
+
+///|
 pub fn prepare_initial_surface_frames() -> Unit {
+  // Bevy's `prepare_windows` starts the logical render frame before the render
+  // graph runs. Host surface acquisition can remain lazy after the initial
+  // present, but frame-local GPU allocators must still reset at this boundary.
+  prepare_render_frame()
   if ensure_backend() is Some(backend) {
     backend.prepare_initial_surface_frames()
   }

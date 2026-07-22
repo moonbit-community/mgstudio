@@ -25,6 +25,7 @@ const NANOS_PER_SEC : Int64 = 1_000_000_000L
 const DURATION_MAX_NANOS : Int64 = 9_223_372_036_854_775_807L
 
 ///|
+#valtype
 pub struct Duration {
   nanos : Int64
 } derive(Eq, Debug, ToJson, FromJson)

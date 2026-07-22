@@ -40,7 +40,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   ) -> @math.Rect? {
     match layouts {
       Some(layout_assets) =>
-        match layout_assets.get(atlas.layout) {
+        match atlas.layout_asset(layout_assets) {
           Some(layout_value) =>
             if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
               Some(layout_value.textures[atlas.index].as_rect())

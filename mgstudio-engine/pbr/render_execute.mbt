@@ -2694,6 +2694,20 @@ pub fn Render3dShadowViewPhaseData::input_uniform_index(
 }
 
 ///|
+fn Render3dShadowViewPhaseData::cached_bin_key(
+  self : Render3dShadowViewPhaseData,
+  main_entity : @render.MainEntity,
+) -> @render_phase.CachedBinKey[
+  Render3dShadowBatchSetKeyData,
+  Render3dShadowBinKeyData,
+]? {
+  match self.cached_entity_bin_keys.get(main_entity) {
+    Some(cached_entity) => cached_entity.cached_bin_key()
+    None => None
+  }
+}
+
+///|
 pub fn Render3dShadowViewPhaseData::phase_type(
   self : Render3dShadowViewPhaseData,
   main_entity : @render.MainEntity,

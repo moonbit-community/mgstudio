@@ -17,13 +17,19 @@ struct ComponentAccess[T] {
   contains : (World, @core.Entity) -> Bool
   get : (World, @core.Entity) -> T?
   set : (World, @core.Entity, T) -> Unit
-  remove : (World, @core.Entity) -> T?
+  remove : (World, @core.Entity) -> Bool
+  take : (World, @core.Entity) -> T?
   for_each : (World, (@core.Entity, T) -> Unit) -> Unit
   get_table_row : (World, Int, Int) -> T?
+  get_table_row_unchecked : (World, Int, Int) -> T
+  bind_table_values : (World, Int) -> Array[T]?
   set_table_row : (World, Int, Int, T) -> Unit
-  move_table_row : (World, @core.Entity, Int, Int, Int, Int) -> Bool
+  move_table_row_and_swap_remove : (World, @core.Entity, Int, Int, Int, Int) -> Bool
   move_staged_to_table_row : (World, @core.Entity, Int, Int) -> Bool
   swap_remove_table_row : (World, Int, Int) -> Unit
+  table_row_count : (World, Int) -> Int
+  finalize_value : (T) -> Unit
+  has_custom_finalizer : Bool
 }
 
 ///|
@@ -50,30 +56,30 @@ priv struct TypedResourceSlot[T] {
 }
 
 ///|
+priv struct DenseComponentColumn[T] {
+  values : Array[T]
+}
+
+///|
 priv struct TypedComponentStorage[T] {
   staged_by_entity : @core.ComponentStore[T]
-  table_rows_by_table : Map[Int, Array[T?]]
+  dense_columns_by_table : Map[Int, DenseComponentColumn[T]]
 }
 
 ///|
 fn[T] typed_component_storage_new() -> TypedComponentStorage[T] {
   {
     staged_by_entity: @core.ComponentStore::new(),
-    table_rows_by_table: Map([]),
+    dense_columns_by_table: Map([]),
   }
 }
 
 ///|
-fn[T] TypedComponentStorage::ensure_table_rows(
+fn[T] TypedComponentStorage::ensure_dense_column(
   self : TypedComponentStorage[T],
   table_id : Int,
-  row_index : Int,
-) -> Array[T?] {
-  let rows = self.table_rows_by_table.get_or_init(table_id, fn() { [] })
-  while rows.length() <= row_index {
-    rows.push(None)
-  }
-  rows
+) -> DenseComponentColumn[T] {
+  self.dense_columns_by_table.get_or_init(table_id, fn() { { values: [] } })
 }
 
 ///|
@@ -83,11 +89,26 @@ fn[T] TypedComponentStorage::get_table_row(
   row_index : Int,
 ) -> T? {
   guard row_index >= 0 else { return None }
-  guard self.table_rows_by_table.get(table_id) is Some(rows) else {
+  guard self.dense_columns_by_table.get(table_id) is Some(column) else {
     return None
   }
-  guard row_index < rows.length() else { return None }
-  rows[row_index]
+  guard row_index < column.values.length() else { return None }
+  Some(column.values[row_index])
+}
+
+///|
+fn[T] TypedComponentStorage::get_table_row_unchecked(
+  self : TypedComponentStorage[T],
+  table_id : Int,
+  row_index : Int,
+) -> T {
+  guard self.dense_columns_by_table.get(table_id) is Some(column) else {
+    abort("Missing dense component column for a matched table")
+  }
+  if row_index < 0 || row_index >= column.values.length() {
+    abort("Dense component row is out of bounds for a matched table")
+  }
+  column.values[row_index]
 }
 
 ///|
@@ -97,25 +118,19 @@ fn[T] TypedComponentStorage::set_table_row(
   row_index : Int,
   value : T,
 ) -> Unit {
-  guard row_index >= 0 else { return }
-  let rows = self.ensure_table_rows(table_id, row_index)
-  rows[row_index] = Some(value)
-}
-
-///|
-fn[T] TypedComponentStorage::take_table_row(
-  self : TypedComponentStorage[T],
-  table_id : Int,
-  row_index : Int,
-) -> T? {
-  guard row_index >= 0 else { return None }
-  guard self.table_rows_by_table.get(table_id) is Some(rows) else {
-    return None
+  if row_index < 0 {
+    abort("Dense component column row index must be non-negative")
   }
-  guard row_index < rows.length() else { return None }
-  let value = rows[row_index]
-  rows[row_index] = None
-  value
+  let column = self.ensure_dense_column(table_id)
+  if row_index == column.values.length() {
+    column.values.push(value)
+  } else if row_index < column.values.length() {
+    column.values[row_index] = value
+  } else {
+    abort(
+      "Dense component column cannot initialize row \{row_index.to_string()} after length \{column.values.length().to_string()}",
+    )
+  }
 }
 
 ///|
@@ -124,31 +139,31 @@ fn[T] TypedComponentStorage::swap_remove_table_row(
   table_id : Int,
   row_index : Int,
 ) -> Unit {
-  guard self.table_rows_by_table.get(table_id) is Some(rows) else { return }
-  guard row_index >= 0 && row_index < rows.length() else { return }
-  let last_index = rows.length() - 1
-  if row_index != last_index {
-    rows[row_index] = rows[last_index]
+  guard self.dense_columns_by_table.get(table_id) is Some(column) else {
+    return
   }
-  ignore(rows.pop())
+  guard row_index >= 0 && row_index < column.values.length() else { return }
+  let last_index = column.values.length() - 1
+  if row_index != last_index {
+    column.values[row_index] = column.values[last_index]
+  }
+  ignore(column.values.pop())
 }
 
 ///|
 fn[T] component_access_new(
   component_id : Int,
-  finalizer? : (T) -> Unit = fn(_value : T) { () },
+  finalizer : (T) -> Unit,
+  has_custom_finalizer : Bool,
 ) -> ComponentAccess[T] {
   let stores_by_world : Map[Int, TypedComponentStorage[T]] = Map([])
   let finalize_world_id = fn(world_id : Int) {
     guard stores_by_world.get(world_id) is Some(store) else { return }
     stores_by_world.remove(world_id)
     store.staged_by_entity.for_each(fn(_entity, value) { finalizer(value) })
-    for entry in store.table_rows_by_table.iter() {
-      for value in entry.1 {
-        match value {
-          Some(value) => finalizer(value)
-          None => ()
-        }
+    for entry in store.dense_columns_by_table.iter() {
+      for value in entry.1.values {
+        finalizer(value)
       }
     }
   }
@@ -230,42 +245,68 @@ fn[T] component_access_new(
             Some(value) => finalizer(value)
             None => ()
           }
-          match store.take_table_row(table_id, row_index) {
+          match store.get_table_row(table_id, row_index) {
             Some(value) => {
+              // The structural transaction swap-removes this dense row after
+              // running removal hooks. Only finalize the discarded value here.
               finalizer(value)
-              Some(value)
+              true
             }
-            None => None
+            None => false
           }
         }
         None =>
           match staged {
             Some(value) => {
               finalizer(value)
-              Some(value)
+              true
             }
-            None => None
+            None => false
           }
+      }
+    },
+    take: fn(world, entity) {
+      let store = get_store(world)
+      let staged = store.staged_by_entity.remove(entity)
+      match table_location(world, entity) {
+        Some((table_id, row_index)) => {
+          match staged {
+            Some(value) => finalizer(value)
+            None => ()
+          }
+          // The caller receives ownership. The structural transaction only
+          // forgets the source row and must not run the component finalizer.
+          store.get_table_row(table_id, row_index)
+        }
+        None => staged
       }
     },
     for_each: fn(world, visit) {
       let store = get_store(world)
-      for table_entry in store.table_rows_by_table.iter() {
+      for table_entry in store.dense_columns_by_table.iter() {
         let table_id = table_entry.0
-        let rows = table_entry.1
+        let values = table_entry.1.values
         guard world.table_entities_view(table_id) is Some(entities) else {
           continue
         }
-        for row_index in 0..<rows.length() {
-          guard rows[row_index] is Some(value) else { continue }
+        for row_index in 0..<values.length() {
           guard row_index < entities.length() else { continue }
-          visit(entities[row_index], value)
+          visit(entities[row_index], values[row_index])
         }
       }
       store.staged_by_entity.for_each(visit)
     },
     get_table_row: fn(world, table_id, row_index) {
       get_store(world).get_table_row(table_id, row_index)
+    },
+    get_table_row_unchecked: fn(world, table_id, row_index) {
+      get_store(world).get_table_row_unchecked(table_id, row_index)
+    },
+    bind_table_values: fn(world, table_id) {
+      match get_store(world).dense_columns_by_table.get(table_id) {
+        Some(column) => Some(column.values)
+        None => None
+      }
     },
     set_table_row: fn(world, table_id, row_index, value) {
       let store = get_store(world)
@@ -275,7 +316,7 @@ fn[T] component_access_new(
       }
       store.set_table_row(table_id, row_index, value)
     },
-    move_table_row: fn(
+    move_table_row_and_swap_remove: fn(
       world,
       entity,
       source_table_id,
@@ -285,9 +326,13 @@ fn[T] component_access_new(
     ) {
       let store = get_store(world)
       ignore(store.staged_by_entity.remove(entity))
-      match store.take_table_row(source_table_id, source_row_index) {
+      match store.get_table_row(source_table_id, source_row_index) {
         Some(value) => {
+          // This is the GC-language equivalent of Bevy's owning row move. The
+          // source row is swap-removed in the same typed storage operation, so
+          // ownership is transferred exactly once.
           store.set_table_row(target_table_id, target_row_index, value)
+          store.swap_remove_table_row(source_table_id, source_row_index)
           true
         }
         None => false
@@ -306,6 +351,14 @@ fn[T] component_access_new(
     swap_remove_table_row: fn(world, table_id, row_index) {
       get_store(world).swap_remove_table_row(table_id, row_index)
     },
+    table_row_count: fn(world, table_id) {
+      match get_store(world).dense_columns_by_table.get(table_id) {
+        Some(column) => column.values.length()
+        None => 0
+      }
+    },
+    finalize_value: finalizer,
+    has_custom_finalizer,
   }
 }
 
@@ -342,8 +395,17 @@ fn[T] ComponentKey::component_remove(
   self : ComponentKey[T],
   world : World,
   entity : @core.Entity,
-) -> T? {
+) -> Bool {
   (self.access.remove)(world, entity)
+}
+
+///|
+fn[T] ComponentKey::component_take(
+  self : ComponentKey[T],
+  world : World,
+  entity : @core.Entity,
+) -> T? {
+  (self.access.take)(world, entity)
 }
 
 ///|
@@ -366,6 +428,25 @@ fn[T] ComponentKey::component_get_table_row(
 }
 
 ///|
+fn[T] ComponentKey::component_get_table_row_unchecked(
+  self : ComponentKey[T],
+  world : World,
+  table_id : Int,
+  row_index : Int,
+) -> T {
+  (self.access.get_table_row_unchecked)(world, table_id, row_index)
+}
+
+///|
+fn[T] ComponentKey::component_bind_table_values(
+  self : ComponentKey[T],
+  world : World,
+  table_id : Int,
+) -> Array[T]? {
+  (self.access.bind_table_values)(world, table_id)
+}
+
+///|
 fn[T] ComponentKey::component_set_table_row(
   self : ComponentKey[T],
   world : World,
@@ -377,7 +458,7 @@ fn[T] ComponentKey::component_set_table_row(
 }
 
 ///|
-fn[T] ComponentKey::component_move_table_row(
+fn[T] ComponentKey::component_move_table_row_and_swap_remove(
   self : ComponentKey[T],
   world : World,
   entity : @core.Entity,
@@ -386,7 +467,7 @@ fn[T] ComponentKey::component_move_table_row(
   target_table_id : Int,
   target_row_index : Int,
 ) -> Bool {
-  (self.access.move_table_row)(
+  (self.access.move_table_row_and_swap_remove)(
     world, entity, source_table_id, source_row_index, target_table_id, target_row_index,
   )
 }
@@ -410,6 +491,30 @@ fn[T] ComponentKey::component_swap_remove_table_row(
   row_index : Int,
 ) -> Unit {
   (self.access.swap_remove_table_row)(world, table_id, row_index)
+}
+
+///|
+fn[T] ComponentKey::component_table_row_count(
+  self : ComponentKey[T],
+  world : World,
+  table_id : Int,
+) -> Int {
+  (self.access.table_row_count)(world, table_id)
+}
+
+///|
+fn[T] ComponentKey::component_finalize_value(
+  self : ComponentKey[T],
+  value : T,
+) -> Unit {
+  (self.access.finalize_value)(value)
+}
+
+///|
+fn[T] ComponentKey::component_has_custom_finalizer(
+  self : ComponentKey[T],
+) -> Bool {
+  self.access.has_custom_finalizer
 }
 
 ///|

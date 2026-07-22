@@ -189,6 +189,97 @@ pub fn standard_material_extension_default_specialize_ref() -> @material.UserSpe
 }
 
 ///|
+fn[E : StandardMaterialExtension] standard_material_extension_asset_debug_name(
+  _witness : E?,
+) -> String {
+  E::extended_material_asset_debug_name()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_vertex_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::vertex_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_fragment_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::fragment_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_prepass_vertex_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::prepass_vertex_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_prepass_fragment_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::prepass_fragment_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_deferred_vertex_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::deferred_vertex_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_deferred_fragment_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::deferred_fragment_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_meshlet_fragment_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::meshlet_fragment_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_meshlet_prepass_fragment_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::meshlet_prepass_fragment_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_meshlet_deferred_fragment_shader_ref(
+  _witness : E?,
+) -> String? {
+  E::meshlet_deferred_fragment_shader_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_enable_prepass(
+  _witness : E?,
+) -> Bool {
+  E::enable_prepass_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_enable_shadows(
+  _witness : E?,
+) -> Bool {
+  E::enable_shadows_ref()
+}
+
+///|
+fn[E : StandardMaterialExtension] standard_material_extension_specialize(
+  _witness : E?,
+) -> @material.UserSpecializeFn? {
+  E::specialize_ref()
+}
+
+///|
 pub fn[T : MaterialExtension] material_extension_metadata_from_extension(
   extension : T,
 ) -> ExtendedMaterialMetadata3d {
@@ -406,7 +497,8 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn material_debug_name() {
-  E::extended_material_asset_debug_name()
+  let witness : E? = None
+  standard_material_extension_asset_debug_name(witness)
 }
 
 ///|
@@ -414,7 +506,7 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn material_keys() {
-  E::extended_material_keys()
+  StandardMaterialExtension::extended_material_keys()
 }
 
 ///|
@@ -422,8 +514,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn vertex_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::vertex_shader_ref(),
+    standard_material_extension_vertex_shader_ref(witness),
     extended_material_standard_vertex_shader(),
   )
 }
@@ -433,8 +526,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn fragment_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::fragment_shader_ref(),
+    standard_material_extension_fragment_shader_ref(witness),
     extended_material_standard_fragment_shader(),
   )
 }
@@ -444,8 +538,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn prepass_vertex_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::prepass_vertex_shader_ref(),
+    standard_material_extension_prepass_vertex_shader_ref(witness),
     extended_material_standard_prepass_vertex_shader(),
   )
 }
@@ -455,8 +550,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn prepass_fragment_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::prepass_fragment_shader_ref(),
+    standard_material_extension_prepass_fragment_shader_ref(witness),
     extended_material_standard_prepass_fragment_shader(),
   )
 }
@@ -466,8 +562,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn deferred_vertex_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::deferred_vertex_shader_ref(),
+    standard_material_extension_deferred_vertex_shader_ref(witness),
     extended_material_standard_deferred_vertex_shader(),
   )
 }
@@ -477,8 +574,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn deferred_fragment_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::deferred_fragment_shader_ref(),
+    standard_material_extension_deferred_fragment_shader_ref(witness),
     extended_material_standard_deferred_fragment_shader(),
   )
 }
@@ -488,8 +586,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn meshlet_fragment_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::meshlet_fragment_shader_ref(),
+    standard_material_extension_meshlet_fragment_shader_ref(witness),
     extended_material_standard_meshlet_fragment_shader(),
   )
 }
@@ -499,8 +598,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn meshlet_prepass_fragment_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::meshlet_prepass_fragment_shader_ref(),
+    standard_material_extension_meshlet_prepass_fragment_shader_ref(witness),
     extended_material_standard_meshlet_prepass_fragment_shader(),
   )
 }
@@ -510,8 +610,9 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn meshlet_deferred_fragment_shader() {
+  let witness : E? = None
   extended_material_shader_override(
-    E::meshlet_deferred_fragment_shader_ref(),
+    standard_material_extension_meshlet_deferred_fragment_shader_ref(witness),
     extended_material_standard_meshlet_deferred_fragment_shader(),
   )
 }
@@ -529,7 +630,7 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn alpha_mode(self) {
-  match self.extension.alpha_mode() {
+  match MaterialExtension::alpha_mode(self.extension) {
     Some(value) => value
     None => self.base.alpha_mode
   }
@@ -580,7 +681,8 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn enable_prepass() {
-  E::enable_prepass_ref()
+  let witness : E? = None
+  standard_material_extension_enable_prepass(witness)
 }
 
 ///|
@@ -588,7 +690,8 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn enable_shadows() {
-  E::enable_shadows_ref()
+  let witness : E? = None
+  standard_material_extension_enable_shadows(witness)
 }
 
 ///|
@@ -623,11 +726,14 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   let base = standard_material_bind_group_layout_descriptor(
     features=context.standard_material_texture_features(),
   )
-  let extension_entries = self.extension.bind_group_layout_entries()
+  let extension_entries = MaterialExtension::bind_group_layout_entries(
+    self.extension,
+  )
+  let witness : E? = None
   extended_material_bind_group_layout_descriptor(
     base,
     extension_entries,
-    E::extended_material_asset_debug_name(),
+    standard_material_extension_asset_debug_name(witness),
   )
 }
 
@@ -648,7 +754,7 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   E,
 ] with fn renderer_extra_bind_group_data(self, _context) {
   let entries : Array[@render_resource.MaterialBindGroupResolvedEntry] = []
-  for binding in self.extension.bind_group_bindings() {
+  for binding in MaterialExtension::bind_group_bindings(self.extension) {
     let material_binding = extended_material_binding_from_extension_binding(
       binding,
     )
@@ -662,9 +768,10 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn material_key(self) {
+  let witness : E? = None
   @material.ErasedMaterialKey::new(
     self.bind_group_data().hash64(),
-    "MaterialExtensionBindGroupData<\{E::extended_material_asset_debug_name()}>",
+    "MaterialExtensionBindGroupData<\{standard_material_extension_asset_debug_name(witness)}>",
   )
 }
 
@@ -688,16 +795,17 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
       "StandardMaterial",
     ),
   )
-  match E::specialize_ref() {
+  let witness : E? = None
+  match standard_material_extension_specialize(witness) {
     Some(user_specialize) =>
       user_specialize(
-        E::extended_material_asset_debug_name(),
+        standard_material_extension_asset_debug_name(witness),
         base_descriptor,
         layout,
         @material.ErasedMaterialPipelineKey::new(
           key.mesh_key(),
           key.material_key(),
-          E::extended_material_asset_debug_name(),
+          standard_material_extension_asset_debug_name(witness),
         ),
       )
     None => base_descriptor

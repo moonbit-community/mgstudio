@@ -26,6 +26,13 @@ than external paths such as:
 
 This preserves runtime asset provenance for example parity claims.
 
+### `gate_bevy_asset_mirror.sh`
+
+Checks the SHA-256 manifest for every tracked non-WGSL resource copied from the
+pinned Bevy baseline. The gate runs without a local Bevy checkout; use
+`scripts/sync_bevy_assets.py --check` when the pinned checkout is available to
+verify both the mirrors and the checked-in manifest against their source files.
+
 ### `gate_visual_runtime.sh`
 
 Runs a small visual screenshot gate over representative 3D examples. The gate
@@ -63,9 +70,10 @@ Related scripts:
 the parity gate set:
 
 1. `gate_no_mgstudio_shader.sh`
-2. `gate_asset_provenance.sh`
-3. `gate_visual_runtime.sh`
-4. `gate_stress_performance.sh` (optional; enabled by env flag)
+2. `gate_bevy_asset_mirror.sh`
+3. `gate_asset_provenance.sh`
+4. `gate_visual_runtime.sh`
+5. `gate_stress_performance.sh` (optional; enabled by env flag)
 
 For environments that should only run the static subset, set:
 

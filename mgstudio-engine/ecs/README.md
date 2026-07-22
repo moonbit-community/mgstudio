@@ -224,6 +224,10 @@ mutable fields, so mgstudio treats read access as an API contract:
   component messages, or changed resource ticks must go through `Write[T]`,
   `ResourceMut[T]`, `EntityMut` write methods, or explicit world set/update
   APIs.
+- `Write::bypass_change_detection` replaces a component without updating its
+  change tick or sending changed-component messages. It is reserved for
+  source-owned internal bookkeeping whose mutation is not a semantic component
+  change; ordinary component writes must not use it.
 - Fetching a mutable-capable handle does not mark a value changed by itself.
   The change tick advances only when the caller invokes a write method such as
   `Write::set`, `Write::modify`, `ResourceMut::set`, `ResourceMut::modify`,

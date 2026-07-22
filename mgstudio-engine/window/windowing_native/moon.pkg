@@ -3,6 +3,7 @@ import {
   "Milky2018/window/core" @window_core,
   "Milky2018/window/dpi" @window_dpi,
   "Milky2018/window/macos" @window_macos,
+  "Milky2018/windowing",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/ref",
 }

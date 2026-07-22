@@ -238,7 +238,7 @@ pub let ecs_key_computed_texture_slices : @ecs.ComponentKey[
 )
 
 ///|
-impl @ecs.Component for ComputedTextureSlices with fn component() {
+pub impl @ecs.Component for ComputedTextureSlices with fn component() {
   ecs_key_computed_texture_slices
 }
 
@@ -294,7 +294,7 @@ fn compute_sprite_slices(
 ) -> ComputedTextureSlices? {
   let (image_size, texture_rect) = match sprite.texture_atlas {
     Some(atlas) =>
-      match texture_atlas_layouts.get(atlas.layout()) {
+      match atlas.layout_asset(texture_atlas_layouts) {
         Some(layout) =>
           match atlas.texture_rect(texture_atlas_layouts) {
             Some(rect) => (layout.size().to_vec2(), rect.as_rect())
@@ -379,12 +379,15 @@ pub type ComputedSlicesAssetParams = @app.ParamSet2[
 
 ///|
 pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[
-  @ecs.Read[Sprite],
+  @ecs.ReadValue[Sprite],
   @ecs.Changed[Sprite],
 ]
 
 ///|
-pub type ComputedSlicesAllSpritesQuery = @ecs.Query[@ecs.Read[Sprite], @ecs.All]
+pub type ComputedSlicesAllSpritesQuery = @ecs.Query[
+  @ecs.ReadValue[Sprite],
+  @ecs.All,
+]
 
 ///|
 pub type ComputedSlicesAssetEventParams = @app.ParamSet2[
@@ -400,15 +403,36 @@ pub fn compute_slices_on_sprite_change_system(
 ) -> Unit {
   let images = assets.p0().get()
   let texture_atlas_layouts = assets.p1().get()
-  try! changed_sprites.view(fn(entity, sprite_comp) {
-    let sprite = sprite_comp.value()
-    if !sprite.image_mode.uses_slices() {
-      return
-    }
-    insert_computed_texture_slices_for_sprite(
-      commands, entity, sprite, images, texture_atlas_layouts,
-    )
+  let used_batch = try! changed_sprites.try_for_each_filtered_table(fn(
+    batch,
+    rows,
+  ) {
+    let sprites = batch.read(ecs_key_sprite).unwrap()
+    try! rows.for_each(fn(row_index) {
+      let sprite = sprites.value(row_index)
+      if !sprite.image_mode.uses_slices() {
+        return
+      }
+      insert_computed_texture_slices_for_sprite(
+        commands,
+        batch.entity(row_index),
+        sprite,
+        images,
+        texture_atlas_layouts,
+      )
+    })
   })
+  if !used_batch {
+    try! changed_sprites.view(fn(entity, sprite_comp) {
+      let sprite = sprite_comp.value()
+      if !sprite.image_mode.uses_slices() {
+        return
+      }
+      insert_computed_texture_slices_for_sprite(
+        commands, entity, sprite, images, texture_atlas_layouts,
+      )
+    })
+  }
 }
 
 ///|

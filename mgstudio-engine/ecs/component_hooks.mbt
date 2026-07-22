@@ -355,8 +355,21 @@ fn World::component_hooks(self : World, component_id : Int) -> ComponentHooks? {
 }
 
 ///|
-fn hook_caller_from_loc(loc : SourceLoc) -> String? {
-  Some(loc.to_string())
+fn hook_caller_from_loc(world : World, loc : SourceLoc) -> String? {
+  if world.tracks_change_locations() {
+    Some(loc.to_string())
+  } else {
+    None
+  }
+}
+
+///|
+fn World::tracked_change_caller(self : World, caller : String?) -> String? {
+  if self.tracks_change_locations() {
+    caller
+  } else {
+    None
+  }
 }
 
 ///|

@@ -96,7 +96,7 @@ pub fn[P : ExtrudablePrimitive] extrusion_mesh(
 ) -> @mesh.Mesh3dGeometry {
   let shape = extrusion.base_shape
   ExtrusionBuilder::new(
-    shape.mesh(),
+    Meshable::mesh(shape),
     shape.mesh_perimeter(),
     extrusion.half_depth * 2.0F,
   ).build()
