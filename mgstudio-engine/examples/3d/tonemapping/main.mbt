@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend ColorGradientMaterial with @asset.Asset::{asset_debug_name}
+
+///|
 const PI : Float = 3.141592653589793F
 
 ///|

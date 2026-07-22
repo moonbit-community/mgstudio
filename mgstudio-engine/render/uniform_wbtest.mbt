@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend TestUniformComponent with @ecs.Component::{component}
+
+///|
 struct TestUniformComponent {
   value : Int
 } derive(Eq, Debug)

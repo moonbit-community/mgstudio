@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend LineMaterial with @asset.Asset::{asset_debug_name}
+
+///|
 const SHADER_ASSET_PATH : String = "shaders/line_material.wgsl"
 
 ///|

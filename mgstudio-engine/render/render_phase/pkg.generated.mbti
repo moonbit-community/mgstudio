@@ -60,7 +60,9 @@ pub fn[BatchSetKey, BinKey] BinnedRenderPhase::is_empty(Self[BatchSetKey, BinKey
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::multidrawable_meshes(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseMultidrawableEntry[BatchSetKey, BinKey]]
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::new(@batching.GpuPreprocessingMode) -> Self[BatchSetKey, BinKey]
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::non_mesh_items(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseNonMeshEntry[BatchSetKey, BinKey]]
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_cpu_buffers(Self[BatchSetKey, BinKey], @batching.BatchedInstanceBuffer[Unit], (@sync_world.MainEntity) -> InputUniformIndex?) -> Unit
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_for_new_frame(Self[BatchSetKey, BinKey]) -> Unit
+pub fn[BatchSetKey, BinKey] BinnedRenderPhase::prepare_gpu_buffers(Self[BatchSetKey, BinKey], String, Bool, Bool, @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers, (@sync_world.MainEntity) -> InputUniformIndex?, (BatchSetKey) -> Bool) -> Unit
 pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::remove(Self[BatchSetKey, BinKey], @sync_world.MainEntity) -> Unit
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::unbatchable_meshes(Self[BatchSetKey, BinKey]) -> ArrayView[BinnedRenderPhaseUnbatchableEntry[BatchSetKey, BinKey]]
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::update_cache(Self[BatchSetKey, BinKey], @sync_world.MainEntity, CachedBinKey[BatchSetKey, BinKey]?) -> Unit

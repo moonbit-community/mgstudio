@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend DummyMaterialAsset with @asset.Asset::{asset_debug_name}
+
+///|
 fn[T] ecs_has_non_null_payload(
   world : @ecs.World,
   entity : @core.Entity,

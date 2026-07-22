@@ -200,9 +200,7 @@ test "camera projection plugin: updates frustum when transform or projection cha
   let updated_projection = @pbr.Projection::Perspective(
     @pbr.PerspectiveProjection3d::PerspectiveProjection3d().with_far(250.0F),
   )
-  try! (app
-  .world()
-  .replace(entity, @pbr.ecs_key_projection, updated_projection)
+  try! (app.world().replace(entity, @pbr.ecs_key_projection, updated_projection)
   |> ignore)
   app = app.update()
 

@@ -13,6 +13,27 @@
 // limitations under the License.
 
 ///|
+extend Mode with @app.Resource::{resource}
+
+///|
+extend MousePressed with @app.Resource::{resource}
+
+///|
+extend PointMaterial with @app.Resource::{resource}
+
+///|
+extend PointMesh with @app.Resource::{resource}
+
+///|
+extend RandomSource with @app.Resource::{resource}
+
+///|
+extend SampledShape with @app.Resource::{resource}
+
+///|
+extend SamplePoint with @ecs.Component::{component}
+
+///|
 pub(all) enum Mode {
   Interior
   Boundary

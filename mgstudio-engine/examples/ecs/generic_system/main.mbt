@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend AppState with Default::{default}
+
+///|
 pub(all) enum AppState {
   MainMenu
   InGame

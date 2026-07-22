@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend CyclingMode with Default::{default}
+
+///|
+extend SplineMode with Default::{default}
+
+///|
 enum SplineMode {
   Hermite
   Cardinal

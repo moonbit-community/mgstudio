@@ -159,14 +159,7 @@ test "camera/primitives: light frusta containers default to Bevy empty shape" {
 
 ///|
 test "camera/primitives: Sphere intersects transformed Aabb" {
-  let aabb = Aabb::from_min_max_xyz(
-    -1.0F,
-    -1.0F,
-    -1.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-  )
+  let aabb = Aabb::from_min_max_xyz(-1.0F, -1.0F, -1.0F, 1.0F, 1.0F, 1.0F)
   let world_from_local = @math.Affine3::from_translation(
     @math.Vec3::new(2.0F, 0.0F, 0.0F),
   )

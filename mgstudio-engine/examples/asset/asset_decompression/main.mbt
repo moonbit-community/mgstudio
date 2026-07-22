@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend GzAsset with @asset.Asset::{asset_debug_name}
+
+///|
 struct GzAsset {
   uncompressed_bytes : Bytes
   uncompressed_path : @asset.AssetPath

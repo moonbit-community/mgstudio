@@ -13,6 +13,51 @@
 // limitations under the License.
 
 ///|
+extend CameraRig with @ecs.Component::{component}
+
+///|
+extend DespawningPoint with @ecs.Component::{component}
+
+///|
+extend FireflyLights with @ecs.Component::{component}
+
+///|
+extend InstructionText with @app.Resource::{resource}
+
+///|
+extend MousePressed with @app.Resource::{resource}
+
+///|
+extend PointCounter with @app.Resource::{resource}
+
+///|
+extend PointMaterial with @app.Resource::{resource}
+
+///|
+extend PointMesh with @app.Resource::{resource}
+
+///|
+extend RandomSource with @app.Resource::{resource}
+
+///|
+extend SampledShapes with @app.Resource::{resource}
+
+///|
+extend SamplePoint with @ecs.Component::{component}
+
+///|
+extend SamplingMode with @app.Resource::{resource}
+
+///|
+extend SpawningMode with @app.Resource::{resource}
+
+///|
+extend SpawningPoint with @ecs.Component::{component}
+
+///|
+extend SpawnQueue with @app.Resource::{resource}
+
+///|
 const MAX_CAMERA_DISTANCE : Float = 12.0F
 
 ///|

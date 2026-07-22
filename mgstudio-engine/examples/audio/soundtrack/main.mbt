@@ -13,6 +13,18 @@
 // limitations under the License.
 
 ///|
+extend GameState with @app.Resource::{resource}
+
+///|
+extend GameStateTimer with @app.Resource::{resource}
+
+///|
+extend SoundtrackPlayer with @app.Resource::{resource}
+
+///|
+extend TrackChangePending with @app.Resource::{resource}
+
+///|
 const STATE_CHANGE_SECONDS : Float = 10.0F
 
 ///|

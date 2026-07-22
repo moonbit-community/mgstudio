@@ -28,6 +28,9 @@ impl Resource for CounterResource with fn resource() {
 }
 
 ///|
+extend CounterResource with Resource::{resource}
+
+///|
 fn read_counter_resource(world : @ecs.World) -> CounterResource? {
   world.get_resource(counter_resource_key)
 }

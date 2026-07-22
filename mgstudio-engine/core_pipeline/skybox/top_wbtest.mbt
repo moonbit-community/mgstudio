@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend ExtractedSkyboxes with @app.Resource::{resource}
+
+///|
+extend SkyboxUniforms with @ecs.Component::{component}
+
+///|
 fn skybox_test_abs(value : Float) -> Float {
   if value < 0.0F {
     -value

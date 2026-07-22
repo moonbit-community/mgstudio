@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend ShadowReadinessNoShadowMaterial with @asset.Asset::{asset_debug_name}
+
+///|
 fn material_test_insert_gpu_preprocessing_support(world : @ecs.World) -> Unit {
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),

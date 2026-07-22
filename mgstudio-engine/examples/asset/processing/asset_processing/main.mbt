@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend Text with @asset.Asset::{asset_debug_name}
+
+///|
 struct Text {
   value : String
 }

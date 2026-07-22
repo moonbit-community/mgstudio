@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend RenderExtractDeferredMarker with @app.Resource::{resource}
+
+///|
+extend RenderExtractDirectMarker with @app.Resource::{resource}
+
+///|
 struct RenderExtractDirectMarker {} derive(Eq, Debug)
 
 ///|

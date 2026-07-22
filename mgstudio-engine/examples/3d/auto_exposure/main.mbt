@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+extend ExampleDisplay with @ecs.Component::{component}
+
+///|
+extend ExampleResources with @app.Resource::{resource}
+
+///|
+extend MeteringMaskOverlay with @ecs.Component::{component}
+
+///|
 ///
 /// Bevy source: `bevy/examples/3d/auto_exposure.rs`.
 
