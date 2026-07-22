@@ -125,3 +125,85 @@ test "mixed_lighting: scene-ready event installs lightmaps and dynamic light sta
   debug_inspect(realtime_directional_lights.val, content="1")
   debug_inspect(ignored_pickable_spheres.val, content="1")
 }
+
+///|
+test "mixed_lighting: clicking the scene moves the sphere" {
+  let mut app = mixed_lighting_test_app()
+  for _ in 0..<180 {
+    app = app.run_once()
+  }
+  let host_entries = @window.window_host_entries(app.world())
+  guard host_entries.length() == 1 else { abort("expected one host window") }
+  let host_window = host_entries[0].host_window
+  let physical_width = @windowing.width(host_window)
+  let physical_height = @windowing.height(host_window)
+  let hit_position : Ref[@math.Vec3?] = Ref(None)
+  let click_position : Ref[(Double, Double)?] = Ref(None)
+  for grid_y in 1..<10 {
+    for grid_x in 1..<10 {
+      if hit_position.val is None {
+        let raw_x = (physical_width * grid_x / 10).to_double()
+        let raw_y = (physical_height * grid_y / 10).to_double()
+        let candidate = @window_dpi.PhysicalPositionF64::PhysicalPositionF64(
+          raw_x, raw_y,
+        )
+        @windowing.runner_process_window_event(
+          host_window,
+          PointerMoved(None, candidate, true, Mouse),
+        )
+        app = app.run_once()
+        app
+        .world()
+        .for_each_component(@picking.PointerInteraction::component(), fn(
+          _entity,
+          interaction,
+        ) {
+          if interaction.get_nearest_hit() is Some((_hit_entity, hit)) &&
+            hit.position is Some(position) {
+            hit_position.val = Some(position)
+            click_position.val = Some((raw_x, raw_y))
+          }
+        })
+      }
+    }
+  }
+  guard hit_position.val is Some(expected_position) &&
+    click_position.val is Some((click_x, click_y)) else {
+    abort("expected a positioned 3D picking hit")
+  }
+  let position = @window_dpi.PhysicalPositionF64::PhysicalPositionF64(
+    click_x, click_y,
+  )
+  defer @windowing.runner_process_window_event(
+    host_window,
+    PointerButton(None, Released, position, true, Mouse(Left)),
+  )
+  @windowing.runner_process_window_event(
+    host_window,
+    PointerButton(None, Pressed, position, true, Mouse(Left)),
+  )
+  app = app.run_once()
+  let actual_position : Ref[@math.Vec3?] = Ref(None)
+  app
+  .world()
+  .for_each_component(@gltf.GltfMeshName::component(), fn(entity, name) {
+    if name.as_str() == "Sphere" &&
+      (try! app.world().get_by_key(entity, @hierarchy.Parent::component()))
+      is Some(parent) &&
+      (try! app
+      .world()
+      .get_by_key(parent.entity(), @transform.Transform::component()))
+      is Some(transform) {
+      actual_position.val = Some(transform.translation)
+    }
+  })
+  guard actual_position.val is Some(actual) else {
+    abort("expected sphere parent transform")
+  }
+  let expected = expected_position.add(
+    @math.Vec3::new(0.0F, SPHERE_OFFSET, 0.0F),
+  )
+  assert_eq(actual.x, expected.x)
+  assert_eq(actual.y, expected.y)
+  assert_eq(actual.z, expected.z)
+}

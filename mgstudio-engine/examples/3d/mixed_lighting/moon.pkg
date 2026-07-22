@@ -23,7 +23,10 @@ import {
 }
 
 import {
+  "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/window/windowing_native" @windowing,
   "Milky2018/mgstudio/visibility",
+  "Milky2018/window/dpi" @window_dpi,
 } for "wbtest"
 
 supported_targets = "native"

@@ -305,7 +305,7 @@ pub fn render3d_camera_viewport_to_world_ray(
     @math.Vec4::new(ndc_x, ndc_y, 1.0F, 1.0F),
   )
   let far_view_h = view_from_clip.mul_vec4(
-    @math.Vec4::new(ndc_x, ndc_y, 0.0F, 1.0F),
+    @math.Vec4::new(ndc_x, ndc_y, 1.1920929e-7F, 1.0F),
   )
   if near_view_h.w == 0.0F || far_view_h.w == 0.0F {
     return None

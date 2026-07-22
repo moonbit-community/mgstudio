@@ -85,6 +85,31 @@ test "render3d: perspective with_near keeps default clip plane in sync and prese
 }
 
 ///|
+test "render3d: perspective viewport center produces forward ray" {
+  let target_size = @math.IVec2::new(1600, 900)
+  debug_inspect(
+    render3d_camera_viewport_to_world_ray(
+      @math.Vec2::new(800.0F, 450.0F),
+      Camera(),
+      Projection::default(),
+      @transform.Transform::identity(),
+      target_size,
+      1.0F,
+    ).map(fn(ray) {
+      let origin = ray.0
+      let direction = ray.1
+      projection_approx_eq(origin.x, 0.0F) &&
+      projection_approx_eq(origin.y, 0.0F) &&
+      projection_approx_eq(origin.z, -0.1F) &&
+      projection_approx_eq(direction.x, 0.0F) &&
+      projection_approx_eq(direction.y, 0.0F) &&
+      projection_approx_eq(direction.z, -1.0F)
+    }),
+    content="Some(true)",
+  )
+}
+
+///|
 test "render3d: custom projection default stores perspective behavior" {
   let custom = CustomProjection3d::CustomProjection3d()
   let perspective = PerspectiveProjection3d::PerspectiveProjection3d()
