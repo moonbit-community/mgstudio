@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend Render3dAlphaMaskPrepassPhases with @app.Resource::{resource}
+
+///|
+extend Render3dOpaqueDeferredPhases with @app.Resource::{resource}
+
+///|
 fn render3d_prepass_phase_test_camera(
   entity_id : Int,
   depth_prepass_enabled? : Bool = false,

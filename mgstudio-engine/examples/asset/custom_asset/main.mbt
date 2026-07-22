@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend Blob with @asset.Asset::{asset_debug_name}
+
+///|
+extend CustomAsset with @asset.Asset::{asset_debug_name}
+
+///|
 struct CustomAsset {
   value : Int
 }

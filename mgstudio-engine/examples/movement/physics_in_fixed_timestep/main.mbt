@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend DidFixedTimestepRunThisFrame with @app.Resource::{resource}
+
+///|
 const PLAYER_SPEED : Float = 4.0F
 
 ///|

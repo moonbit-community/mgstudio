@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend GameState with Default::{default}
+
+///|
 pub(all) enum GameState {
   A
   B

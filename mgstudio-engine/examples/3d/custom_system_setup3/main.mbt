@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend DespawnTarget with @ecs.Component::{component}
+
+///|
 priv struct DespawnTarget {}
 
 ///|

@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend RealTime with @ecs.Component::{component}
+
+///|
+extend VirtualTime with @ecs.Component::{component}
+
+///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
   if value < min_value {
     min_value

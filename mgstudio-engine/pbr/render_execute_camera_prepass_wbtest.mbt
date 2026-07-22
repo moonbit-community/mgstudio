@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend Render3dAlphaMaskDeferredPhases with @app.Resource::{resource}
+
+///|
+extend Render3dOpaquePrepassPhases with @app.Resource::{resource}
+
+///|
 fn render3d_prepass_consumer_test_item(
   entity_id : Int,
   pipeline_id : UInt64,

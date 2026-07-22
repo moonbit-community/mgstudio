@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend CustomMaterialAsset with @asset.Asset::{asset_debug_name}
+
+///|
 struct CustomMaterialAsset {
   color : @color.Color
   color_texture : @asset.Handle[@asset.Image]?

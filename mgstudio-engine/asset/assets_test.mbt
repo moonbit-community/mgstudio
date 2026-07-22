@@ -13,6 +13,27 @@
 // limitations under the License.
 
 ///|
+extend MissingLoaderAsset with Asset::{asset_debug_name}
+
+///|
+extend MultiLoaderAsset with Asset::{asset_debug_name}
+
+///|
+extend NamedProcessorScopeAsset with Asset::{asset_debug_name}
+
+///|
+extend ProcessorScopeAsset with Asset::{asset_debug_name}
+
+///|
+extend RegistryScopedLegacyAsset with Asset::{asset_debug_name}
+
+///|
+extend StoreTestAsset with Asset::{asset_debug_name}
+
+///|
+extend TestCustomAsset with Asset::{asset_debug_name}
+
+///|
 struct CountingLoadGuard {
   releases : Ref[Int]
 }

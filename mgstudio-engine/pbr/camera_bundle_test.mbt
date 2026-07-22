@@ -13,6 +13,11 @@
 // limitations under the License.
 
 ///|
+extend CameraBundleCustomProjection3d with @camera_projection3d.CameraProjection3d::{
+  get_clip_from_view,
+}
+
+///|
 fn camera_bundle_projection_approx_eq(a : Float, b : Float) -> Bool {
   let delta = a - b
   if delta < 0.0F {

@@ -30,7 +30,8 @@ pub fn[A : LevelMetadataAccessor + RawLevelAccessor] get_raw_level_by_iid(
   accessor : A,
   iid : String,
 ) -> Level? {
-  guard accessor.get_level_metadata_by_iid(iid) is Some(metadata) else {
+  guard LevelMetadataAccessor::get_level_metadata_by_iid(accessor, iid)
+    is Some(metadata) else {
     return None
   }
   get_raw_level_at_indices(accessor, metadata.indices)

@@ -13,6 +13,9 @@
 // limitations under the License.
 
 ///|
+extend InstanceMaterialData with @ecs.Component::{component}
+
+///|
 fn custom_instancing_abs(value : Float) -> Float {
   if value < 0.0F {
     -value

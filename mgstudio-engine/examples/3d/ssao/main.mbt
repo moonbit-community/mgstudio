@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+extend SphereMarker with @ecs.Component::{component}
+
+///|
+extend SsaoCamera with @ecs.Component::{component}
+
+///|
 const PI : Float = 3.141592653589793F
 
 ///|

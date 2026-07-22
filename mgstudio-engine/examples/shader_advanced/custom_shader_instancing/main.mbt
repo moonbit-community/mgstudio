@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+extend CustomPipeline with @app.Resource::{resource}
+
+///|
+extend CustomSpecializedMeshPipelines with @app.Resource::{resource}
+
+///|
+extend InstanceBuffer with @ecs.Component::{component}
+
+///|
 const SHADER_ASSET_PATH : String = "shaders/instancing.wgsl"
 
 ///|

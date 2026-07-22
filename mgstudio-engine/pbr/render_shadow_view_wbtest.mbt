@@ -1,4 +1,7 @@
 ///|
+extend Render3dDirectionalLightShadowTargets with @app.Resource::{resource}
+
+///|
 fn shadow_view_approx_eq(a : Float, b : Float) -> Bool {
   let delta = a - b
   if delta < 0.0F {

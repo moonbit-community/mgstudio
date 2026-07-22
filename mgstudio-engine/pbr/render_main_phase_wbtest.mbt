@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+extend Render3dAlphaMaskMainViewPhases with @app.Resource::{resource}
+
+///|
+extend Render3dMainViewDrawItems with @app.Resource::{resource}
+
+///|
+extend Render3dOpaqueMainViewPhases with @app.Resource::{resource}
+
+///|
 fn render3d_main_phase_test_item(
   entity_id : Int,
   phase : Int,

@@ -13,6 +13,30 @@
 // limitations under the License.
 
 ///|
+extend AppSettings with @app.Resource::{resource}
+
+///|
+extend CapsuleModel with @ecs.Component::{component}
+
+///|
+extend CapsulesParent with @ecs.Component::{component}
+
+///|
+extend CubeModel with @ecs.Component::{component}
+
+///|
+extend FlightHelmetModel with @ecs.Component::{component}
+
+///|
+extend MetallicBaseModel with @ecs.Component::{component}
+
+///|
+extend RedPlaneBaseModel with @ecs.Component::{component}
+
+///|
+extend WaterModel with @ecs.Component::{component}
+
+///|
 ///
 /// Baseline parity: deferred SSR controls and upstream scene interaction flow are
 /// mapped to mgstudio APIs.

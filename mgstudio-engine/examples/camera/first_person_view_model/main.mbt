@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+extend CameraSensitivity with @ecs.Component::{component}
+
+///|
+extend Player with @ecs.Component::{component}
+
+///|
+extend WorldModelCamera with @ecs.Component::{component}
+
+///|
 priv struct Player {}
 
 ///|

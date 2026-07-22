@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+extend ParityCustomMaterial with @asset.Asset::{asset_debug_name}
+
+///|
+extend ParityCustomMaterial with Material::{
+  bind_group,
+  bind_group_data,
+  material_debug_name,
+}
+
+///|
 struct ParityCustomMaterial {
   color : Bytes
   texture : @asset.Handle[@asset.Image]?

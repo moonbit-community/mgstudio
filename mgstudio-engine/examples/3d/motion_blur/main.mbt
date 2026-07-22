@@ -13,6 +13,18 @@
 // limitations under the License.
 
 ///|
+extend CameraMode with @app.Resource::{resource}
+
+///|
+extend CameraTracked with @ecs.Component::{component}
+
+///|
+extend Moves with @ecs.Component::{component}
+
+///|
+extend Rotates with @ecs.Component::{component}
+
+///|
 ///
 /// Parity target: keep upstream camera controls (`shutter_angle`, `samples`),
 /// camera-mode switching, scene geometry, generated ground texture, and
