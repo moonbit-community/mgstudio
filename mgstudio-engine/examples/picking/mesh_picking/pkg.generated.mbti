@@ -6,7 +6,7 @@ package "Milky2018/mgstudio/examples/picking/mesh_picking"
 // Errors
 
 // Types and methods
-type PickableMesh
+type Shape
 
 // Type aliases
 
