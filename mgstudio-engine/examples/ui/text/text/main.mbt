@@ -62,6 +62,7 @@ fn main {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
@@ -80,13 +81,11 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let animated = world.spawn_empty()
@@ -107,28 +106,20 @@ fn setup(world : @ecs.World) -> Unit {
     .with_font(bold_font)
     .with_font_size(@mgtext.FontSize::Vh(20.0F)),
   )
-  try! world.set_by_key(
-    animated,
-    @mgtext.ecs_key_text_underline,
-    @mgtext.Underline::Underline(),
-  )
-  try! world.set_by_key(
-    animated,
-    @mgtext.ecs_key_text_shadow,
-    @mgtext.TextShadow::TextShadow(),
-  )
+  try! world.set_by_key(animated, @mgtext.ecs_key_text_underline, Underline())
+  try! world.set_by_key(animated, @mgtext.ecs_key_text_shadow, TextShadow())
   try! world.set_by_key(
     animated,
     @mgtext.ecs_key_text_layout,
-    @mgtext.TextLayout::new_with_justify(@mgtext.Justify::Center),
+    @mgtext.TextLayout::new_with_justify(Center),
   )
   try! world.set_by_key(
     animated,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(5.0F))
-    .with_right(@ui.Val::Px(5.0F)),
+    .with_position_type(Absolute)
+    .with_bottom(Px(5.0F))
+    .with_right(Px(5.0F)),
   )
   try! world.set_by_key(animated, animated_text_key, AnimatedText::{  })
 
@@ -154,9 +145,9 @@ fn setup(world : @ecs.World) -> Unit {
     fps_root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(5.0F))
-    .with_left(@ui.Val::Px(15.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(5.0F))
+    .with_left(Px(15.0F)),
   )
 
   let fps_span = world.spawn_empty()
@@ -165,11 +156,7 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(fps_root),
   )
-  try! world.set_by_key(
-    fps_span,
-    @mgtext.ecs_key_text_span,
-    @mgtext.TextSpan::TextSpan(),
-  )
+  try! world.set_by_key(fps_span, @mgtext.ecs_key_text_span, TextSpan())
   try! world.set_by_key(
     fps_span,
     @mgtext.ecs_key_text_font,
@@ -194,10 +181,10 @@ fn setup(world : @ecs.World) -> Unit {
     opentype,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(5.0F))
-    .with_right(@ui.Val::Px(5.0F))
-    .with_margin(@ui.UiRect::all(@ui.Val::Px(12.0F))),
+    .with_position_type(Absolute)
+    .with_top(Px(5.0F))
+    .with_right(Px(5.0F))
+    .with_margin(@ui.UiRect::all(Px(12.0F))),
   )
   try! world.set_by_key(
     opentype,
@@ -213,21 +200,13 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let text_rows : Array[(String, @mgtext.FontFeatureTag, String)] = [
-    ("Smallcaps: ", @mgtext.FontFeatureTag::SMALL_CAPS, "Hello World"),
-    (
-      "Ligatures: ",
-      @mgtext.FontFeatureTag::STANDARD_LIGATURES,
-      "fi fl ff ffi ffl",
-    ),
-    ("Fractions: ", @mgtext.FontFeatureTag::FRACTIONS, "12/134"),
-    ("Superscript: ", @mgtext.FontFeatureTag::SUPERSCRIPT, "Up here!"),
-    ("Subscript: ", @mgtext.FontFeatureTag::SUBSCRIPT, "Down here!"),
-    (
-      "Oldstyle figures: ",
-      @mgtext.FontFeatureTag::OLDSTYLE_FIGURES,
-      "1234567890",
-    ),
-    ("Lining figures: ", @mgtext.FontFeatureTag::LINING_FIGURES, "1234567890"),
+    ("Smallcaps: ", SMALL_CAPS, "Hello World"),
+    ("Ligatures: ", STANDARD_LIGATURES, "fi fl ff ffi ffl"),
+    ("Fractions: ", FRACTIONS, "12/134"),
+    ("Superscript: ", SUPERSCRIPT, "Up here!"),
+    ("Subscript: ", SUBSCRIPT, "Down here!"),
+    ("Oldstyle figures: ", OLDSTYLE_FIGURES, "1234567890"),
+    ("Lining figures: ", LINING_FIGURES, "1234567890"),
   ]
   for row in text_rows {
     let title_span = world.spawn_empty()
@@ -280,9 +259,9 @@ fn setup(world : @ecs.World) -> Unit {
     default_font_text,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(5.0F))
-    .with_left(@ui.Val::Px(15.0F)),
+    .with_position_type(Absolute)
+    .with_bottom(Px(5.0F))
+    .with_left(Px(15.0F)),
   )
   try! world.set_by_key(
     default_font_text,

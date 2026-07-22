@@ -284,12 +284,8 @@ test "ecs table batch: bound change writer marks only selected rows" {
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, table_batch_position_key, TableBatchPosition::{
-    value: 1,
-  })
-  try! world.set_by_key(second, table_batch_position_key, TableBatchPosition::{
-    value: 2,
-  })
+  try! world.set_by_key(first, table_batch_position_key, { value: 1 })
+  try! world.set_by_key(second, table_batch_position_key, { value: 2 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let write_query : Query[Write[TableBatchPosition], All] = query(world)
@@ -322,9 +318,7 @@ test "panic ecs table batch: escaped change writer is invalid" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, table_batch_position_key, { value: 1 })
   let query : Query[Write[TableBatchPosition], All] = query(world)
   let mut escaped : TableBatchChangeWriter? = None
 
@@ -343,12 +337,8 @@ test "ecs table batch: read view exposes complete live column" {
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, table_batch_velocity_key, TableBatchVelocity::{
-    value: 10,
-  })
-  try! world.set_by_key(second, table_batch_velocity_key, TableBatchVelocity::{
-    value: 20,
-  })
+  try! world.set_by_key(first, table_batch_velocity_key, { value: 10 })
+  try! world.set_by_key(second, table_batch_velocity_key, { value: 20 })
   let query : Query[ReadValue[TableBatchVelocity], All] = query(world)
   let seen : Array[Int] = []
 
@@ -372,12 +362,8 @@ test "ecs table batch: entity view exposes complete live table" {
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, table_batch_velocity_key, TableBatchVelocity::{
-    value: 10,
-  })
-  try! world.set_by_key(second, table_batch_velocity_key, TableBatchVelocity::{
-    value: 20,
-  })
+  try! world.set_by_key(first, table_batch_velocity_key, { value: 10 })
+  try! world.set_by_key(second, table_batch_velocity_key, { value: 20 })
   let query : Query[ReadValue[TableBatchVelocity], All] = query(world)
   let seen : Array[Int] = []
 
@@ -398,12 +384,8 @@ test "ecs table batch: update_inplace replaces value components and marks change
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, table_batch_value_position_key, TableBatchValuePosition::{
-    value: 1,
-  })
-  try! world.set_by_key(second, table_batch_value_position_key, TableBatchValuePosition::{
-    value: 2,
-  })
+  try! world.set_by_key(first, table_batch_value_position_key, { value: 1 })
+  try! world.set_by_key(second, table_batch_value_position_key, { value: 2 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let query : Query[Write[TableBatchValuePosition], All] = query(world)
@@ -412,9 +394,7 @@ test "ecs table batch: update_inplace replaces value components and marks change
     let positions = batch.write(table_batch_value_position_key).unwrap()
     positions.update_inplace(fn(values) {
       for row_index in 0..<values.length() {
-        values[row_index] = TableBatchValuePosition::{
-          value: values[row_index].value + 10,
-        }
+        values[row_index] = { value: values[row_index].value + 10 }
       }
     })
   })
@@ -443,12 +423,8 @@ test "ecs table batch: update_inplace bypass preserves change ticks" {
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, table_batch_value_position_key, TableBatchValuePosition::{
-    value: 1,
-  })
-  try! world.set_by_key(second, table_batch_value_position_key, TableBatchValuePosition::{
-    value: 2,
-  })
+  try! world.set_by_key(first, table_batch_value_position_key, { value: 1 })
+  try! world.set_by_key(second, table_batch_value_position_key, { value: 2 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let query : Query[Write[TableBatchValuePosition], All] = query(world)
@@ -457,9 +433,7 @@ test "ecs table batch: update_inplace bypass preserves change ticks" {
     let positions = batch.write(table_batch_value_position_key).unwrap()
     positions.update_inplace_bypass_change_detection(fn(values) {
       for row_index in 0..<values.length() {
-        values[row_index] = TableBatchValuePosition::{
-          value: values[row_index].value + 10,
-        }
+        values[row_index] = { value: values[row_index].value + 10 }
       }
     })
   })
@@ -578,17 +552,13 @@ test "ecs table batch: writes preserve component replacement finalizers" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
-    id: 1,
-  })
+  try! world.set_by_key(entity, table_batch_finalized_key, { id: 1 })
   let query : Query[Write[TableBatchFinalized], All] = query(world)
 
   try! query.for_each_table(fn(batch) {
     let values = batch.write(table_batch_finalized_key).unwrap()
     values.set(0, { id: 2 })
-    values.bypass_change_detection(0, fn(_value) {
-      TableBatchFinalized::{ id: 3 }
-    })
+    values.bypass_change_detection(0, fn(_value) { { id: 3 } })
   })
 
   debug_inspect(
@@ -603,9 +573,7 @@ test "ecs table batch: bypass preserves same-reference ownership" {
   table_batch_finalized_values.clear()
   let world = World::new()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
-    id: 1,
-  })
+  try! world.set_by_key(entity, table_batch_finalized_key, { id: 1 })
   let query : Query[Write[TableBatchFinalized], All] = query(world)
 
   try! query.for_each_table(fn(batch) {
@@ -626,9 +594,7 @@ test "panic ecs table batch: update_inplace rejects custom finalizers" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
-    id: 1,
-  })
+  try! world.set_by_key(entity, table_batch_finalized_key, { id: 1 })
   let query : Query[Write[TableBatchFinalized], All] = query(world)
 
   try! query.for_each_table(fn(batch) {
@@ -642,9 +608,7 @@ test "panic ecs table batch: update_inplace rejects filtered row batches" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, table_batch_position_key, { value: 1 })
   let query : Query[Write[TableBatchPosition], Changed[TableBatchPosition]] = query_filtered(
     world,
     Changed::new(table_batch_position_key),
@@ -663,9 +627,7 @@ test "panic ecs table batch: read view rejects filtered row batches" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_velocity_key, TableBatchVelocity::{
-    value: 10,
-  })
+  try! world.set_by_key(entity, table_batch_velocity_key, { value: 10 })
   let query : Query[ReadValue[TableBatchVelocity], Changed[TableBatchVelocity]] = query_filtered(
     world,
     Changed::new(table_batch_velocity_key),
@@ -686,9 +648,7 @@ test "panic ecs table batch: entity view rejects filtered row batches" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_velocity_key, TableBatchVelocity::{
-    value: 10,
-  })
+  try! world.set_by_key(entity, table_batch_velocity_key, { value: 10 })
   let query : Query[ReadValue[TableBatchVelocity], Changed[TableBatchVelocity]] = query_filtered(
     world,
     Changed::new(table_batch_velocity_key),
@@ -706,9 +666,7 @@ test "panic ecs table batch: update_inplace bypass rejects custom finalizers" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_finalized_key, TableBatchFinalized::{
-    id: 1,
-  })
+  try! world.set_by_key(entity, table_batch_finalized_key, { id: 1 })
   let query : Query[Write[TableBatchFinalized], All] = query(world)
 
   try! query.for_each_table(fn(batch) {
@@ -722,9 +680,7 @@ test "panic ecs table batch: update_inplace bypass rejects filtered row batches"
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, table_batch_position_key, { value: 1 })
   let query : Query[Write[TableBatchPosition], Changed[TableBatchPosition]] = query_filtered(
     world,
     Changed::new(table_batch_position_key),
@@ -888,20 +844,14 @@ test "ecs table batch: filtered rows preserve Changed Added Or semantics" {
     (TableBatchPosition::{ value: 1 }, TableBatchVelocity::{ value: 10 }),
   )
   let added_entity = world.spawn()
-  try! world.set_by_key(added_entity, table_batch_position_key, TableBatchPosition::{
-    value: 2,
-  })
+  try! world.set_by_key(added_entity, table_batch_position_key, { value: 2 })
   let unchanged_entity = try! world.spawn_bundle(
     (TableBatchPosition::{ value: 3 }, TableBatchVelocity::{ value: 30 }),
   )
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
-  try! world.set_by_key(changed_entity, table_batch_position_key, TableBatchPosition::{
-    value: 11,
-  })
-  try! world.set_by_key(added_entity, table_batch_velocity_key, TableBatchVelocity::{
-    value: 20,
-  })
+  try! world.set_by_key(changed_entity, table_batch_position_key, { value: 11 })
+  try! world.set_by_key(added_entity, table_batch_velocity_key, { value: 20 })
   let tick_context = @core.SystemTickContext::new()
   tick_context.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(tick_context)
@@ -945,14 +895,10 @@ test "ecs table batch: unavailable dense filter preserves row fallback" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, table_batch_position_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
-  try! world.set_by_key(entity, table_batch_position_key, TableBatchPosition::{
-    value: 2,
-  })
+  try! world.set_by_key(entity, table_batch_position_key, { value: 2 })
   let tick_context = @core.SystemTickContext::new()
   tick_context.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(tick_context)

@@ -19,6 +19,7 @@
 pub struct AlphaPatternMaterial {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AlphaPatternMaterial::AlphaPatternMaterial() -> AlphaPatternMaterial {
   AlphaPatternMaterial::{  }
 }
@@ -38,7 +39,7 @@ pub struct AlphaPattern {} derive(Default, Debug)
 
 ///|
 pub fn AlphaPatternResource::AlphaPatternResource() -> AlphaPatternResource {
-  AlphaPatternResource::{ material_id: -1 }
+  { material_id: -1 }
 }
 
 ///|
@@ -58,11 +59,13 @@ let alpha_pattern_plugin_marker_key : @ecs.ResourceKey[AlphaPatternPluginMarker]
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AlphaPatternPlugin::AlphaPatternPlugin() -> AlphaPatternPlugin {
   AlphaPatternPlugin::{  }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn alpha_pattern_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if app.contains_resource(alpha_pattern_plugin_marker_key) {
     app

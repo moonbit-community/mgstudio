@@ -125,9 +125,9 @@ let light_probe_blending_state : Ref[LightProbeBlendingState] = Ref({
   sphere: None,
   prism: None,
   help_text: None,
-  gizmos_enabled: GizmosEnabled::On,
-  object_to_show: ObjectToShow::Sphere,
-  camera_mode: CameraMode::Orbit,
+  gizmos_enabled: On,
+  object_to_show: Sphere,
+  camera_mode: Orbit,
   orbit_radius: 3.0F,
   orbit_inclination: 7.0F * FRAC_PI_4,
   orbit_azimuth: FRAC_PI_4,
@@ -181,7 +181,7 @@ fn set_entity_visibility(
   let visibility = if visible {
     @visibility.Visibility::Inherited
   } else {
-    @visibility.Visibility::Hidden
+    Hidden
   }
   if (try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
     try! (world.replace(entity, @visibility.ecs_key_visibility, visibility)
@@ -215,8 +215,7 @@ fn set_entities_visibility(
 
 ///|
 fn apply_object_visibility(world : @ecs.World) -> Unit {
-  let show_sphere = light_probe_blending_state.val.object_to_show ==
-    ObjectToShow::Sphere
+  let show_sphere = light_probe_blending_state.val.object_to_show == Sphere
   set_optional_visibility(
     world,
     light_probe_blending_state.val.sphere,
@@ -234,26 +233,23 @@ fn apply_gizmo_visibility(world : @ecs.World) -> Unit {
   set_entities_visibility(
     world,
     light_probe_blending_state.val.gizmo_entities,
-    light_probe_blending_state.val.gizmos_enabled == GizmosEnabled::On,
+    light_probe_blending_state.val.gizmos_enabled == On,
   )
 }
 
 ///|
 fn help_text_content() -> String {
-  let camera_mode_text = if light_probe_blending_state.val.camera_mode ==
-    CameraMode::Orbit {
+  let camera_mode_text = if light_probe_blending_state.val.camera_mode == Orbit {
     "Orbit"
   } else {
     "Free"
   }
-  let object_text = if light_probe_blending_state.val.object_to_show ==
-    ObjectToShow::Sphere {
+  let object_text = if light_probe_blending_state.val.object_to_show == Sphere {
     "Sphere"
   } else {
     "Prism"
   }
-  let gizmos_text = if light_probe_blending_state.val.gizmos_enabled ==
-    GizmosEnabled::On {
+  let gizmos_text = if light_probe_blending_state.val.gizmos_enabled == On {
     "On"
   } else {
     "Off"
@@ -421,7 +417,7 @@ fn switch_to_free_camera(world : @ecs.World) -> Unit {
     direction.x * direction.x + direction.z * direction.z,
   )
 
-  light_probe_blending_state.val.camera_mode = CameraMode::Free
+  light_probe_blending_state.val.camera_mode = Free
   light_probe_blending_state.val.free_position = camera_transform.translation
   light_probe_blending_state.val.free_pitch = @math.atan2(
     direction.y,
@@ -448,7 +444,7 @@ fn switch_to_orbit_camera(world : @ecs.World) -> Unit {
   let radius = maxf(relative.length(), 0.01F)
   let horizontal = @math.sqrt(relative.x * relative.x + relative.z * relative.z)
 
-  light_probe_blending_state.val.camera_mode = CameraMode::Orbit
+  light_probe_blending_state.val.camera_mode = Orbit
   light_probe_blending_state.val.orbit_radius = radius
   if radius > 1.0e-6F {
     light_probe_blending_state.val.orbit_inclination = @math.atan2(
@@ -509,7 +505,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.prism = Some(prism)
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   light_probe_blending_state.val.camera = Some(camera)
@@ -554,9 +550,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     probe_1,
     @pbr.ecs_key_parallax_correction,
-    @pbr.ParallaxCorrection::Custom(
-      @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
-    ),
+    Custom(@math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH)),
   )
   try! world.set_by_key(
     probe_1,
@@ -588,9 +582,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     probe_2,
     @pbr.ecs_key_parallax_correction,
-    @pbr.ParallaxCorrection::Custom(
-      @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
-    ),
+    Custom(@math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH)),
   )
   try! world.set_by_key(
     probe_2,
@@ -608,7 +600,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       @color.Color::new(0.82F, 0.71F, 0.55F, 0.16F),
     )
     .with_unlit(true)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
@@ -617,7 +609,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       @color.Color::new(0.86F, 0.14F, 0.22F, 0.18F),
     )
     .with_unlit(true)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
@@ -626,7 +618,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       @color.Color::new(0.39F, 0.58F, 0.93F, 0.18F),
     )
     .with_unlit(true)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
@@ -684,11 +676,11 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(
       @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   light_probe_blending_state.val.help_text = Some(help_text)
 }
@@ -699,9 +691,9 @@ fn setup(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.sphere = None
   light_probe_blending_state.val.prism = None
   light_probe_blending_state.val.help_text = None
-  light_probe_blending_state.val.gizmos_enabled = GizmosEnabled::On
-  light_probe_blending_state.val.object_to_show = ObjectToShow::Sphere
-  light_probe_blending_state.val.camera_mode = CameraMode::Orbit
+  light_probe_blending_state.val.gizmos_enabled = On
+  light_probe_blending_state.val.object_to_show = Sphere
+  light_probe_blending_state.val.camera_mode = Orbit
   light_probe_blending_state.val.orbit_radius = 3.0F
   light_probe_blending_state.val.orbit_inclination = 7.0F * FRAC_PI_4
   light_probe_blending_state.val.orbit_azimuth = FRAC_PI_4
@@ -748,28 +740,28 @@ fn move_sphere(world : @ecs.World) -> Unit {
 fn handle_keyboard_actions(world : @ecs.World) -> Unit {
   let mut changed = false
 
-  if @input.key_just_pressed(@window.KeyCode::Tab) {
-    if light_probe_blending_state.val.object_to_show == ObjectToShow::Sphere {
-      light_probe_blending_state.val.object_to_show = ObjectToShow::Prism
+  if @input.key_just_pressed(Tab) {
+    if light_probe_blending_state.val.object_to_show == Sphere {
+      light_probe_blending_state.val.object_to_show = Prism
     } else {
-      light_probe_blending_state.val.object_to_show = ObjectToShow::Sphere
+      light_probe_blending_state.val.object_to_show = Sphere
     }
     apply_object_visibility(world)
     changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyG) {
-    if light_probe_blending_state.val.gizmos_enabled == GizmosEnabled::On {
-      light_probe_blending_state.val.gizmos_enabled = GizmosEnabled::Off
+  if @input.key_just_pressed(KeyG) {
+    if light_probe_blending_state.val.gizmos_enabled == On {
+      light_probe_blending_state.val.gizmos_enabled = Off
     } else {
-      light_probe_blending_state.val.gizmos_enabled = GizmosEnabled::On
+      light_probe_blending_state.val.gizmos_enabled = On
     }
     apply_gizmo_visibility(world)
     changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    if light_probe_blending_state.val.camera_mode == CameraMode::Orbit {
+  if @input.key_just_pressed(KeyC) {
+    if light_probe_blending_state.val.camera_mode == Orbit {
       switch_to_free_camera(world)
     } else {
       switch_to_orbit_camera(world)
@@ -785,7 +777,7 @@ fn handle_keyboard_actions(world : @ecs.World) -> Unit {
 
 ///|
 fn orbit_camera(world : @ecs.World) -> Unit {
-  if light_probe_blending_state.val.camera_mode != CameraMode::Orbit {
+  if light_probe_blending_state.val.camera_mode != Orbit {
     return
   }
 
@@ -812,7 +804,7 @@ fn orbit_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn free_camera(world : @ecs.World) -> Unit {
-  if light_probe_blending_state.val.camera_mode != CameraMode::Free {
+  if light_probe_blending_state.val.camera_mode != Free {
     return
   }
 
@@ -838,22 +830,22 @@ fn free_camera(world : @ecs.World) -> Unit {
   let right = @math.Vec3::new(forward_flat.z, 0.0F, -forward_flat.x)
 
   let mut movement = @math.Vec3::zero()
-  if @input.key_pressed(@window.KeyCode::KeyW) {
+  if @input.key_pressed(KeyW) {
     movement = movement.add(forward_flat)
   }
-  if @input.key_pressed(@window.KeyCode::KeyS) {
+  if @input.key_pressed(KeyS) {
     movement = movement.sub(forward_flat)
   }
-  if @input.key_pressed(@window.KeyCode::KeyD) {
+  if @input.key_pressed(KeyD) {
     movement = movement.add(right)
   }
-  if @input.key_pressed(@window.KeyCode::KeyA) {
+  if @input.key_pressed(KeyA) {
     movement = movement.sub(right)
   }
-  if @input.key_pressed(@window.KeyCode::KeyE) {
+  if @input.key_pressed(KeyE) {
     movement = movement.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
   }
-  if @input.key_pressed(@window.KeyCode::KeyQ) {
+  if @input.key_pressed(KeyQ) {
     movement = movement.sub(@math.Vec3::new(0.0F, 1.0F, 0.0F))
   }
 
@@ -872,10 +864,10 @@ fn free_camera(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, move_sphere)
-  .add_systems_world(@app.Update, handle_keyboard_actions)
-  .add_systems_world(@app.Update, orbit_camera)
-  .add_systems_world(@app.Update, free_camera)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, move_sphere)
+  .add_systems_world(Update, handle_keyboard_actions)
+  .add_systems_world(Update, orbit_camera)
+  .add_systems_world(Update, free_camera)
   .run()
 }

@@ -34,7 +34,7 @@ pub(all) enum JumpAt {
 
 ///|
 pub impl Default for JumpAt with fn default() {
-  JumpAt::End
+  End
 }
 
 ///|
@@ -82,7 +82,7 @@ pub(all) enum EaseFunction {
 
 ///|
 pub impl Default for EaseFunction with fn default() {
-  EaseFunction::Linear
+  Linear
 }
 
 ///|
@@ -137,7 +137,7 @@ pub fn[T] EasingCurve::new(
   end : T,
   ease_fn : EaseFunction,
 ) -> EasingCurve[T] {
-  EasingCurve::{ start, end, ease_fn }
+  { start, end, ease_fn }
 }
 
 ///|

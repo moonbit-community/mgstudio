@@ -23,7 +23,7 @@ pub struct HalfSpace {
 
 ///|
 pub fn HalfSpace::new(normal_d : Vec4) -> HalfSpace {
-  HalfSpace::{ normal_d: half_space_normalize(normal_d) }
+  { normal_d: half_space_normalize(normal_d) }
 }
 
 ///|

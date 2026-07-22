@@ -52,7 +52,7 @@ pub fn register_render2d_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(ecs_key_sprite, ecs_key_anchor, fn() {
-    Anchor::Anchor()
+    Anchor()
   })
   world.register_required_components_with(
     ecs_key_sprite,
@@ -62,15 +62,15 @@ pub fn register_render2d_required_components(
   world.register_required_components_with(
     ecs_key_sprite,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_sprite,
     @render.ecs_key_sync_to_render_world,
-    fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
+    fn() { SyncToRenderWorld() },
   )
   world.register_required_components_with(ecs_key_sprite_mesh, ecs_key_anchor, fn() {
-    Anchor::Anchor()
+    Anchor()
   })
   world.register_required_components_with(
     ecs_key_sprite_mesh,
@@ -80,15 +80,15 @@ pub fn register_render2d_required_components(
   world.register_required_components_with(
     ecs_key_sprite_mesh,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
 }
 
 ///|
 pub fn ensure_render2d_required_components(world : @ecs.World) -> Unit {
   register_render2d_required_components(world) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(_) => ()
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(_) => ()
     _ => abort("failed to register render2d required components")
   }
 }
@@ -313,7 +313,7 @@ fn decode_sprite(json : Json) -> Sprite {
   ) : (Json, Json?, Json, Bool, Bool, Json?, Json?, Json) = try! @json.from_json(
     json,
   )
-  Sprite::{
+  {
     image: decode_image_handle(image_json),
     texture_atlas: atlas_json.map(fn(value) { decode_texture_atlas(value) }),
     color: decode_color(color_json),

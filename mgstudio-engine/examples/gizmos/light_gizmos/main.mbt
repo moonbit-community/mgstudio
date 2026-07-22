@@ -176,7 +176,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -200,9 +200,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   ignore(instructions)
 
@@ -218,9 +218,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   light_gizmos_state.val.color_text = Some(color_text)
 }
@@ -238,7 +238,7 @@ fn configure_light_gizmos(
       enabled: true,
       line: { ..config.val.line, width: 2.0F },
     }
-    group.val = { ..group.val, draw_all: true, color: @light.MatchLightColor }
+    group.val = { ..group.val, draw_all: true, color: MatchLightColor }
     update_color_text(group.val)
   })
 }
@@ -275,7 +275,7 @@ fn update_config(
     let (config, group) = store.config_mut(
       @light.LightGizmoConfigGroup::LightGizmoConfigGroup(),
     )
-    if @input.key_just_pressed(@window.KeyCode::KeyD) {
+    if @input.key_just_pressed(KeyD) {
       config.val = {
         ..config.val,
         depth_bias: if config.val.depth_bias == 0.0F {
@@ -285,7 +285,7 @@ fn update_config(
         },
       }
     }
-    if @input.key_pressed(@window.KeyCode::ArrowRight) {
+    if @input.key_pressed(ArrowRight) {
       config.val = {
         ..config.val,
         line: {
@@ -298,7 +298,7 @@ fn update_config(
         },
       }
     }
-    if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+    if @input.key_pressed(ArrowLeft) {
       config.val = {
         ..config.val,
         line: {
@@ -311,17 +311,17 @@ fn update_config(
         },
       }
     }
-    if @input.key_just_pressed(@window.KeyCode::KeyA) {
+    if @input.key_just_pressed(KeyA) {
       config.val = { ..config.val, enabled: !config.val.enabled }
     }
-    if @input.key_just_pressed(@window.KeyCode::KeyC) {
+    if @input.key_just_pressed(KeyC) {
       group.val = {
         ..group.val,
         color: match group.val.color {
-          Manual(_) => @light.Varied
-          Varied => @light.MatchLightColor
-          MatchLightColor => @light.ByLightType
-          ByLightType => @light.Manual(@color.Color::srgb(0.5F, 0.5F, 0.5F))
+          Manual(_) => Varied
+          Varied => MatchLightColor
+          MatchLightColor => ByLightType
+          ByLightType => Manual(@color.Color::srgb(0.5F, 0.5F, 0.5F))
         },
       }
       update_color_text(group.val)
@@ -337,11 +337,11 @@ fn main {
     ),
     @light.LightGizmoConfigGroup::LightGizmoConfigGroup(),
   )
-  .add_systems_world(@app.Startup, setup_scene)
-  .add_systems_param(@app.Startup, configure_light_gizmos)
-  .add_systems_param(@app.Update, rotate_camera)
-  .add_systems_param2(@app.Update, update_config)
-  .add_systems_param5(@app.Update, @light.draw_light_gizmos)
-  .add_systems_param5(@app.Update, @light.draw_all_light_gizmos)
+  .add_systems_world(Startup, setup_scene)
+  .add_systems_param(Startup, configure_light_gizmos)
+  .add_systems_param(Update, rotate_camera)
+  .add_systems_param2(Update, update_config)
+  .add_systems_param5(Update, @light.draw_light_gizmos)
+  .add_systems_param5(Update, @light.draw_all_light_gizmos)
   .run()
 }

@@ -29,7 +29,7 @@ fn pressed_button_color() -> @color.Color {
 
 ///|
 fn focus_outline() -> @ui.Outline {
-  @ui.Outline::new(@ui.Val::Px(2.0F), @ui.Val::Px(2.0F), @color.Color::white())
+  @ui.Outline::new(Px(2.0F), Px(2.0F), @color.Color::white())
 }
 
 ///|
@@ -46,11 +46,11 @@ fn spawn_tab_button(
       @ui.Button::Button(),
       @input_focus.TabIndex::new(tab_index),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(200.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(200.0F))
+      .with_height(Px(65.0F))
+      .with_border(@ui.UiRect::all(Px(5.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BorderColor::new(@color.Color::black()),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
@@ -102,16 +102,9 @@ fn spawn_tab_group(
       @hierarchy.Parent::new(root),
       tab_group,
       @ui.Node::Node()
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_column_gap(@ui.Val::Px(6.0F))
-      .with_margin(
-        @ui.UiRect::new(
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(10.0F),
-        ),
-      ),
+      .with_flex_direction(Row)
+      .with_column_gap(Px(6.0F))
+      .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(10.0F))),
     ),
   )
 
@@ -145,12 +138,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_row_gap(@ui.Val::Px(6.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_row_gap(Px(6.0F)),
     ),
   )
   ignore(
@@ -211,14 +204,14 @@ fn button_system(world : @ecs.World) -> Unit {
   try! query.view(fn(_entity, data) {
     let (interaction, background, border) = data
     let next_background = match interaction.value() {
-      @ui.Interaction::Pressed => pressed_button_color()
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None => normal_button_color()
+      Pressed => pressed_button_color()
+      Hovered => hovered_button_color()
+      None => normal_button_color()
     }
     let next_border = match interaction.value() {
-      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.0F, 0.0F)
-      @ui.Interaction::Hovered => @color.Color::white()
-      @ui.Interaction::None => @color.Color::black()
+      Pressed => @color.Color::srgb(1.0F, 0.0F, 0.0F)
+      Hovered => @color.Color::white()
+      None => @color.Color::black()
     }
     background.set(@ui.BackgroundColor::new(next_background))
     border.set(@ui.BorderColor::new(next_border))
@@ -267,8 +260,8 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
   .add_plugins(@input_focus.TabNavigationPlugin::TabNavigationPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_world(@app.Update, button_system)
-  .add_systems_world(@app.Update, focus_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_world(Update, button_system)
+  .add_systems_world(Update, focus_system)
   .run()
 }

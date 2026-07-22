@@ -230,7 +230,7 @@ fn GpuBackend::mesh3d_prepare_scattering_medium_resources(
       )
     }
     self.mesh3d_scattering_medium_resource_revision += 1
-    self.mesh3d_scattering_medium_resources = Some(GpuScatteringMediumResources::{
+    self.mesh3d_scattering_medium_resources = Some({
       ..resources,
       density_bytes,
       scattering_bytes,

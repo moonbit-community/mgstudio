@@ -108,8 +108,7 @@ fn radio_button_on_key_input(
   group_query : @ecs.Query[@ecs.Has[RadioGroup], @ecs.All],
   commands : @app.Commands,
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Enter) &&
-    !keyboard.just_pressed(@window.KeyCode::Space) {
+  if !keyboard.just_pressed(Enter) && !keyboard.just_pressed(Space) {
     return
   }
   guard focus.get().get() is Some(entity) else { return }
@@ -119,9 +118,6 @@ fn radio_button_on_key_input(
 ///|
 pub fn radio_group_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(
-    @app.Update,
-    @app.system_config_param5(radio_button_on_key_input),
-  )
+  .add_systems(Update, @app.system_config_param5(radio_button_on_key_input))
   .add_pointer_observer4(radio_button_on_pointer_click)
 }

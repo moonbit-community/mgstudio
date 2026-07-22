@@ -150,7 +150,7 @@ test "input_focus runtime sets initial focus to primary window" {
     .add_message(@input.GamepadButtonChangedEvent::message())
     .add_message(@input.MouseWheel::message())
     .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin()),
-    @window.WindowPlugin::WindowPlugin(),
+    WindowPlugin(),
   ).run_once()
   let primary = match primary_window_entity(app.world()) {
     Some(entity) => entity
@@ -180,11 +180,9 @@ test "input_focus runtime dispatches and clears stale focus" {
   let app = @app.App::new(world)
     .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
     .add_systems(
-      @app.PreUpdate,
+      PreUpdate,
       @app.system_config_param2(dispatch_mock_input).in_set(
-        @input_focus.input_focus_system_set_name(
-          @input_focus.InputFocusSystems::Dispatch,
-        ),
+        @input_focus.input_focus_system_set_name(Dispatch),
       ),
     )
     .run_once()
@@ -193,7 +191,7 @@ test "input_focus runtime dispatches and clears stale focus" {
   app.world().init_message(focused_key)
   let focus_ref = input_focus_resource_ref_mut(app.world())
   focus_ref.modify(fn(value) { value.set(focused) })
-  ignore(app.world().send_message(MockInput::message(), MockInput::{ id: 7 }))
+  ignore(app.world().send_message(MockInput::message(), { id: 7 }))
 
   let app = app.update()
   let focused_messages = read_focused_mock_inputs(app.world())
@@ -204,7 +202,7 @@ test "input_focus runtime dispatches and clears stale focus" {
 
   app.world().clear_messages(focused_key)
   app.world().despawn(focused)
-  ignore(app.world().send_message(MockInput::message(), MockInput::{ id: 11 }))
+  ignore(app.world().send_message(MockInput::message(), { id: 11 }))
 
   let app = app.update()
   let focused_messages = read_focused_mock_inputs(app.world())
@@ -240,7 +238,7 @@ test "input_focus runtime IsFocusedHelper follows hierarchy and visibility" {
   let app = @app.App::new(world)
     .add_plugins(@input_focus.InputDispatchPlugin::InputDispatchPlugin())
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param(fn(helper : @input_focus.IsFocusedHelper) {
         helper_focus_within_parent.val = helper.is_focus_within(parent)
         helper_focus_visible_parent.val = helper.is_focus_within_visible(parent)

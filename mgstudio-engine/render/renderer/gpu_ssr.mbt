@@ -162,7 +162,7 @@ fn mesh3d_ssr_shader_defines(
   pass_state : GpuPassState,
   atmosphere : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   defines.set("DEPTH_PREPASS", true)
   defines.set("DEFERRED_PREPASS", true)
   defines.set("SCREEN_SPACE_REFLECTIONS", true)

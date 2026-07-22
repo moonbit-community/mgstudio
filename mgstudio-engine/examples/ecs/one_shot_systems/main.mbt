@@ -109,8 +109,8 @@ fn main {
 
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems(@app.Startup, startup_chain)
-    .add_systems(@app.Update, update_chain)
+    .add_systems(Startup, startup_chain)
+    .add_systems(Update, update_chain)
   app.run()
 }
 
@@ -130,14 +130,14 @@ fn setup_ui(
           "Press A or B to trigger a one-shot system.\nThe label below updates when a registered callback runs.",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          left: @ui.Val::Px(16.0F),
-          top: @ui.Val::Px(16.0F),
+          ..Node(),
+          position_type: Absolute,
+          left: Px(16.0F),
+          top: Px(16.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -147,14 +147,14 @@ fn setup_ui(
       (
         @text.Text::new("Last Triggered: -"),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          left: @ui.Val::Px(16.0F),
-          top: @ui.Val::Px(96.0F),
+          ..Node(),
+          position_type: Absolute,
+          left: Px(16.0F),
+          top: Px(96.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(22.0F),
         @text.TextColor::new(@color.Color::srgb(1.0F, 0.55F, 0.2F)),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
         LastTriggeredLabel::{  },
       ),
     ),
@@ -185,10 +185,10 @@ fn trigger_system(
   callback_b : @app.Single[@core.Entity, @ecs.With[CallbackB]],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
-  if keyboard_input.just_pressed(@window.KeyCode::KeyA) {
+  if keyboard_input.just_pressed(KeyA) {
     commands.entity(callback_a.get()).insert_component(Triggered::{  })
   }
-  if keyboard_input.just_pressed(@window.KeyCode::KeyB) {
+  if keyboard_input.just_pressed(KeyB) {
     commands.entity(callback_b.get()).insert_component(Triggered::{  })
   }
 }

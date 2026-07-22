@@ -82,7 +82,7 @@ fn setup(
     .peek()
     .add(
       @sprite_render_mesh2d_color_material.ColorMaterial::from_image(texture).with_alpha_mode(
-        @sprite_render.AlphaMode2d::Mask(0.5F),
+        Mask(0.5F),
       ),
     )
 
@@ -137,10 +137,10 @@ fn print_count(
 ) -> Unit {
   let next_seconds = timer.get().seconds + time.get().delta_secs()
   if next_seconds < 1.0F {
-    timer.set(PrintTimer::{ seconds: next_seconds })
+    timer.set({ seconds: next_seconds })
     return
   }
-  timer.set(PrintTimer::{ seconds: next_seconds - 1.0F })
+  timer.set({ seconds: next_seconds - 1.0F })
   println("Sprite meshes: \{sprites.count()}")
 }
 
@@ -151,8 +151,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, move_camera)
-  .add_systems_param3(@app.Update, print_count)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, move_camera)
+  .add_systems_param3(Update, print_count)
   .run()
 }

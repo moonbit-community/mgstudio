@@ -1,6 +1,6 @@
 import {
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/camera" @_,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
@@ -13,7 +13,6 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
-  "Milky2018/mgstudio/window",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,
 }

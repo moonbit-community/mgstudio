@@ -146,6 +146,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@camera_controller.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems_param5(@app.Startup, setup)
+  .add_systems_param5(Startup, setup)
   .run()
 }

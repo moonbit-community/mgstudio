@@ -22,7 +22,7 @@ pub struct SceneRoot {
 
 ///|
 pub fn SceneRoot::new(scene : @asset.Handle[Scene]) -> SceneRoot {
-  SceneRoot::{ scene, }
+  { scene, }
 }
 
 ///|
@@ -33,7 +33,7 @@ pub struct WorldAssetRoot {
 
 ///|
 pub fn WorldAssetRoot::new(scene : @asset.Handle[Scene]) -> WorldAssetRoot {
-  WorldAssetRoot::{ scene, }
+  { scene, }
 }
 
 ///|
@@ -53,7 +53,7 @@ pub struct SceneInstance {
 
 ///|
 pub fn SceneInstance::new(instance_id : Int) -> SceneInstance {
-  SceneInstance::{ instance_id, }
+  { instance_id, }
 }
 
 ///|
@@ -67,7 +67,7 @@ pub fn SceneInstanceReady::new(
   entity : @core.Entity?,
   instance_id : Int,
 ) -> SceneInstanceReady {
-  SceneInstanceReady::{ entity, instance_id }
+  { entity, instance_id }
 }
 
 ///|

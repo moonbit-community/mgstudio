@@ -28,12 +28,7 @@ pub fn Viewport::new(
   physical_position : @math.IVec2,
   physical_size : @math.IVec2,
 ) -> Viewport {
-  Viewport::{
-    physical_position,
-    physical_size,
-    depth_min: 0.0F,
-    depth_max: 1.0F,
-  }
+  { physical_position, physical_size, depth_min: 0.0F, depth_max: 1.0F }
 }
 
 ///|
@@ -57,7 +52,7 @@ pub fn Viewport::new_with_depth(
   if max_depth > 1.0F {
     max_depth = 1.0F
   }
-  Viewport::{
+  {
     physical_position,
     physical_size,
     depth_min: min_depth,

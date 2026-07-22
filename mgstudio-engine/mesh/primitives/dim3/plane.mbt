@@ -30,7 +30,7 @@ pub(all) struct PlaneMeshBuilder {
 
 ///|
 pub fn PlaneMeshBuilder::PlaneMeshBuilder() -> PlaneMeshBuilder {
-  { plane: @math.Plane3d::Plane3d(), subdivisions: 0 }
+  { plane: Plane3d(), subdivisions: 0 }
 }
 
 ///|

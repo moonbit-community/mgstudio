@@ -27,7 +27,7 @@ pub struct Render3dGpuPreprocessState {
 
 ///|
 pub fn Render3dGpuPreprocessState::Render3dGpuPreprocessState() -> Render3dGpuPreprocessState {
-  Render3dGpuPreprocessState::{
+  {
     enabled: true,
     use_gpu_instance_buffer_builder: true,
     indirect_enabled: true,
@@ -47,7 +47,7 @@ pub fn render3d_gpu_preprocess_state(
   let indirect_enabled = render3d_gpu_preprocess_camera_indirect_enabled(
     use_gpu_instance_buffer_builder, no_indirect_drawing,
   )
-  Render3dGpuPreprocessState::{
+  {
     enabled,
     use_gpu_instance_buffer_builder: builder_enabled,
     indirect_enabled,
@@ -60,7 +60,7 @@ pub fn render3d_gpu_preprocess_state_with_dispatch_count(
   state : Render3dGpuPreprocessState,
   dispatch_count : Int,
 ) -> Render3dGpuPreprocessState {
-  Render3dGpuPreprocessState::{
+  {
     ..state,
     last_dispatch_count: if dispatch_count < 0 {
       0
@@ -148,14 +148,14 @@ pub struct GpuMeshPreprocessPlugin {
 
 ///|
 pub fn GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin() -> GpuMeshPreprocessPlugin {
-  GpuMeshPreprocessPlugin::{ use_gpu_instance_buffer_builder: true }
+  { use_gpu_instance_buffer_builder: true }
 }
 
 ///|
 pub fn GpuMeshPreprocessPlugin::new(
   use_gpu_instance_buffer_builder : Bool,
 ) -> GpuMeshPreprocessPlugin {
-  GpuMeshPreprocessPlugin::{ use_gpu_instance_buffer_builder, }
+  { use_gpu_instance_buffer_builder, }
 }
 
 ///|
@@ -184,10 +184,7 @@ pub impl @app.Resource for Render3dGpuPreprocessState with fn resource() {
 pub fn gpu_mesh_preprocess_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  gpu_mesh_preprocess_plugin_install_with(
-    app,
-    GpuMeshPreprocessPlugin::GpuMeshPreprocessPlugin(),
-  )
+  gpu_mesh_preprocess_plugin_install_with(app, GpuMeshPreprocessPlugin())
 }
 
 ///|
@@ -215,11 +212,7 @@ pub fn PreprocessPipeline::new(
   bind_group_layout_label : String,
   shader_path : String,
 ) -> PreprocessPipeline {
-  PreprocessPipeline::{
-    bind_group_layout_label,
-    shader_path,
-    pipeline_id: None,
-  }
+  { bind_group_layout_label, shader_path, pipeline_id: None }
 }
 
 ///|
@@ -234,11 +227,7 @@ pub fn ResetIndirectBatchSetsPipeline::new(
   bind_group_layout_label : String,
   shader_path : String,
 ) -> ResetIndirectBatchSetsPipeline {
-  ResetIndirectBatchSetsPipeline::{
-    bind_group_layout_label,
-    shader_path,
-    pipeline_id: None,
-  }
+  { bind_group_layout_label, shader_path, pipeline_id: None }
 }
 
 ///|
@@ -253,11 +242,7 @@ pub fn BuildIndirectParametersPipeline::new(
   bind_group_layout_label : String,
   shader_path : String,
 ) -> BuildIndirectParametersPipeline {
-  BuildIndirectParametersPipeline::{
-    bind_group_layout_label,
-    shader_path,
-    pipeline_id: None,
-  }
+  { bind_group_layout_label, shader_path, pipeline_id: None }
 }
 
 ///|
@@ -271,7 +256,7 @@ pub struct PreprocessPhasePipelines {
 pub fn preprocess_phase_pipelines_default(
   label_prefix : String,
 ) -> PreprocessPhasePipelines {
-  PreprocessPhasePipelines::{
+  {
     reset_indirect_batch_sets: ResetIndirectBatchSetsPipeline::new(
       "\{label_prefix}_reset_indirect_batch_sets_layout",
       "pbr/render/reset_indirect_batch_sets.wgsl",
@@ -302,7 +287,7 @@ pub struct PreprocessPipelines {
 
 ///|
 pub fn preprocess_pipelines_default() -> PreprocessPipelines {
-  PreprocessPipelines::{
+  {
     direct_preprocess: PreprocessPipeline::new(
       "direct_preprocess_layout", "pbr/render/mesh_preprocess.wgsl",
     ),
@@ -334,7 +319,7 @@ pub struct PreprocessPipelineKey {
 
 ///|
 pub fn PreprocessPipelineKey::PreprocessPipelineKey() -> PreprocessPipelineKey {
-  PreprocessPipelineKey::{ bits: 0U }
+  { bits: 0U }
 }
 
 ///|
@@ -343,7 +328,7 @@ pub fn preprocess_pipeline_key(
   occlusion_culling : Bool,
   early_phase : Bool,
 ) -> PreprocessPipelineKey {
-  PreprocessPipelineKey::{
+  {
     bits: (if frustum_culling {
       PREPROCESS_PIPELINE_KEY_FRUSTUM_CULLING
     } else {
@@ -390,7 +375,7 @@ pub struct BuildIndirectParametersPipelineKey {
 
 ///|
 pub fn BuildIndirectParametersPipelineKey::BuildIndirectParametersPipelineKey() -> BuildIndirectParametersPipelineKey {
-  BuildIndirectParametersPipelineKey::{ bits: 0U }
+  { bits: 0U }
 }
 
 ///|
@@ -402,7 +387,7 @@ pub fn build_indirect_parameters_pipeline_key(
   late_phase : Bool,
   main_phase : Bool,
 ) -> BuildIndirectParametersPipelineKey {
-  BuildIndirectParametersPipelineKey::{
+  {
     bits: (if indexed { BUILD_INDIRECT_KEY_INDEXED } else { 0U }) |
     (if multi_draw_indirect_count_supported {
       BUILD_INDIRECT_KEY_MULTI_DRAW_INDIRECT_COUNT_SUPPORTED
@@ -470,7 +455,7 @@ pub fn render3d_prepare_preprocess_pipeline(
     pipeline.bind_group_layout_label,
     pipeline.shader_path,
   )
-  PreprocessPipeline::{ ..pipeline, pipeline_id: Some(pipeline_id) }
+  { ..pipeline, pipeline_id: Some(pipeline_id) }
 }
 
 ///|
@@ -481,7 +466,7 @@ pub fn render3d_prepare_reset_indirect_batch_sets_pipeline(
     pipeline.bind_group_layout_label,
     pipeline.shader_path,
   )
-  ResetIndirectBatchSetsPipeline::{ ..pipeline, pipeline_id: Some(pipeline_id) }
+  { ..pipeline, pipeline_id: Some(pipeline_id) }
 }
 
 ///|
@@ -492,17 +477,14 @@ pub fn render3d_prepare_build_indirect_parameters_pipeline(
     pipeline.bind_group_layout_label,
     pipeline.shader_path,
   )
-  BuildIndirectParametersPipeline::{
-    ..pipeline,
-    pipeline_id: Some(pipeline_id),
-  }
+  { ..pipeline, pipeline_id: Some(pipeline_id) }
 }
 
 ///|
 pub fn render3d_prepare_preprocess_phase_pipelines(
   phase_pipelines : PreprocessPhasePipelines,
 ) -> PreprocessPhasePipelines {
-  PreprocessPhasePipelines::{
+  {
     reset_indirect_batch_sets: render3d_prepare_reset_indirect_batch_sets_pipeline(
       phase_pipelines.reset_indirect_batch_sets,
     ),
@@ -519,7 +501,7 @@ pub fn render3d_prepare_preprocess_phase_pipelines(
 pub fn render3d_prepare_preprocess_pipelines(
   pipelines : PreprocessPipelines,
 ) -> PreprocessPipelines {
-  PreprocessPipelines::{
+  {
     direct_preprocess: render3d_prepare_preprocess_pipeline(
       pipelines.direct_preprocess,
     ),

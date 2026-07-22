@@ -113,7 +113,7 @@ pub impl @app.Resource for GameRules with fn resource() {
 
 ///|
 fn GameState::GameState() -> GameState {
-  GameState::{ current_round: 0, total_players: 0, winning_player: None }
+  { current_round: 0, total_players: 0, winning_player: None }
 }
 
 ///|
@@ -217,10 +217,10 @@ fn game_over_system(
 ) -> Unit {
   if game_state.get().winning_player is Some(player) {
     println("\{player} won the game!")
-    ignore(app_exit_writer.write(@app.AppExit::Success))
+    ignore(app_exit_writer.write(Success))
   } else if game_state.get().current_round >= game_rules.get().max_rounds {
     println("Ran out of rounds. Nobody wins!")
-    ignore(app_exit_writer.write(@app.AppExit::Success))
+    ignore(app_exit_writer.write(Success))
   }
 }
 
@@ -241,11 +241,7 @@ fn startup_system(
         Score::{ value: 0 },
         PlayerStreak::{ state: None },
       ),
-      (
-        Player::{ name: "Bob" },
-        Score::{ value: 0 },
-        PlayerStreak::{ state: None },
-      ),
+      ({ name: "Bob" }, { value: 0 }, { state: None }),
     ]),
   )
   game_state.modify(fn(value) { value.total_players = 2 })
@@ -338,20 +334,20 @@ fn main {
   @app.App::new(@ecs.World::new())
   .init_resource(fn() { GameState::GameState() })
   .add_plugins(@app.ScheduleRunnerPlugin::run_loop(0.05F))
-  .add_systems_param2(@app.Startup, startup_system)
-  .add_systems_fn(@app.Update, print_message_system)
-  .add_systems_param(@app.Last, print_at_end_round)
-  .configure_set(@app.Update, before_round_set, before=[round_set])
-  .configure_set(@app.Update, round_set, before=[after_round_set])
-  .add_systems(@app.Update, before_round_chain.in_set(before_round_set))
+  .add_systems_param2(Startup, startup_system)
+  .add_systems_fn(Update, print_message_system)
+  .add_systems_param(Last, print_at_end_round)
+  .configure_set(Update, before_round_set, before=[round_set])
+  .configure_set(Update, round_set, before=[after_round_set])
+  .add_systems(Update, before_round_chain.in_set(before_round_set))
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(exclusive_player_system).in_set(before_round_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(score_system).in_set(round_set),
   )
-  .add_systems(@app.Update, after_round_chain.in_set(after_round_set))
+  .add_systems(Update, after_round_chain.in_set(after_round_set))
   .run()
 }

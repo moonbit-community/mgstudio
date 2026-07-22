@@ -39,9 +39,9 @@ fn setup(
       "textures/fantasy_ui_borders/panel-border-010-repeated.png",
       fn(settings) {
         let descriptor = @asset.ImageSamplerDescriptor::ImageSamplerDescriptor()
-        descriptor.address_mode_u = @asset.ImageAddressMode::Repeat
-        descriptor.address_mode_v = @asset.ImageAddressMode::Repeat
-        settings.sampler = @asset.ImageSampler::Descriptor(descriptor)
+        descriptor.address_mode_u = Repeat
+        descriptor.address_mode_v = Repeat
+        settings.sampler = Descriptor(descriptor)
       },
     )
 
@@ -156,6 +156,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(Startup, setup)
   .run()
 }

@@ -34,7 +34,7 @@ pub fn CustomCursorImage::new(
   flip_y? : Bool = false,
   rect? : @math.URect? = None,
 ) -> CustomCursorImage {
-  CustomCursorImage::{ handle, texture_atlas, flip_x, flip_y, rect, hotspot }
+  { handle, texture_atlas, flip_x, flip_y, rect, hotspot }
 }
 
 ///|
@@ -48,7 +48,7 @@ pub fn CustomCursorUrl::new(
   url : String,
   hotspot : (Int, Int),
 ) -> CustomCursorUrl {
-  CustomCursorUrl::{ url, hotspot }
+  { url, hotspot }
 }
 
 ///|

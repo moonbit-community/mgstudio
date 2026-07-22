@@ -55,17 +55,14 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
     ),
   )
   let text_entity = commands.spawn(
-    (
-      @text.Text::Text(),
-      @text.TextLayout::new_with_justify(@text.Justify::Center),
-    ),
+    (@text.Text::Text(), @text.TextLayout::new_with_justify(Center)),
   )
   commands.entity(text_entity).insert_component(@hierarchy.Parent::new(root))
 

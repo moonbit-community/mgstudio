@@ -20,6 +20,7 @@
 pub struct TimePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TimePlugin::TimePlugin() -> TimePlugin {
   TimePlugin::{  }
 }
@@ -164,7 +165,7 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
     world,
     virtual_time_resource_key,
     fn() {
-      let time : Time[Virtual] = Time::Time()
+      let time : Time[Virtual] = Time()
       time
     },
   )
@@ -174,7 +175,7 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
 ///|
 fn ensure_time_resources(world : @ecs.World) -> Unit {
   if world_time_resource(world, default_time_resource_key) is None {
-    let time : Time[Unit] = Time::Time()
+    let time : Time[Unit] = Time()
     world.insert_resource(default_time_resource_key, time)
   }
   if world_time_resource(world, real_time_resource_key) is None {
@@ -184,11 +185,11 @@ fn ensure_time_resources(world : @ecs.World) -> Unit {
     )
   }
   if world_time_resource(world, virtual_time_resource_key) is None {
-    let time : Time[Virtual] = Time::Time()
+    let time : Time[Virtual] = Time()
     world.insert_resource(virtual_time_resource_key, time)
   }
   if world_time_resource(world, fixed_time_resource_key) is None {
-    let time : Time[Fixed] = Time::Time()
+    let time : Time[Fixed] = Time()
     world.insert_resource(fixed_time_resource_key, time)
   }
   if world_time_resource(world, time_update_strategy_resource_key) is None {
@@ -256,26 +257,24 @@ pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let startup_instant = host_time_now_instant()
   app
   .init_resource(fn() {
-    let time : Time[Unit] = Time::Time()
+    let time : Time[Unit] = Time()
     time
   })
   .init_resource(fn() { Time::new(startup_instant) })
   .init_resource(fn() {
-    let time : Time[Virtual] = Time::Time()
+    let time : Time[Virtual] = Time()
     time
   })
   .init_resource(fn() {
-    let time : Time[Fixed] = Time::Time()
+    let time : Time[Fixed] = Time()
     time
   })
   .init_resource(fn() { TimeUpdateStrategy::default() })
-  .add_systems(@app.First, @app.system(time_update_resource_system))
+  .add_systems(First, @app.system(time_update_resource_system))
   .add_systems(
-    @app.RunFixedMainLoop,
+    RunFixedMainLoop,
     @app.system(time_run_fixed_main_schedule).in_set(
-      @app.run_fixed_main_loop_system_set_name(
-        @app.RunFixedMainLoopSystems::FixedMainLoop,
-      ),
+      @app.run_fixed_main_loop_system_set_name(FixedMainLoop),
     ),
   )
 }

@@ -23,7 +23,7 @@ priv struct GilrsEventRuntimeState {
 }
 
 ///|
-let gilrs_event_runtime_state : GilrsEventRuntimeState = GilrsEventRuntimeState::{
+let gilrs_event_runtime_state : GilrsEventRuntimeState = {
   startup_polled: false,
   poll_count: 0,
 }

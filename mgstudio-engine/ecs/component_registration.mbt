@@ -396,7 +396,7 @@ fn World::install_component_metadata(
           "Duplicate static on_despawn hook registration for linked-spawn relationship target `\{component_debug_name}`",
         )
       }
-      hooks = ComponentHooks::{
+      hooks = {
         ..hooks,
         on_despawn: Some(fn(world, context) {
           let source_entities = linked_entities(world, context.entity).copy()

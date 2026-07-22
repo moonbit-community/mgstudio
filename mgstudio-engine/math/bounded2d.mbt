@@ -26,7 +26,7 @@ pub struct Aabb2d {
 
 ///|
 pub fn Aabb2d::new(center : Vec2, half_size : Vec2) -> Aabb2d {
-  Aabb2d::{ min: center.sub(half_size), max: center.add(half_size) }
+  { min: center.sub(half_size), max: center.add(half_size) }
 }
 
 ///|
@@ -49,7 +49,7 @@ pub fn Aabb2d::from_point_cloud(
     max_x = bounded_max(max_x, transformed.x)
     max_y = bounded_max(max_y, transformed.y)
   }
-  Aabb2d::{ min: Vec2::new(min_x, min_y), max: Vec2::new(max_x, max_y) }
+  { min: Vec2::new(min_x, min_y), max: Vec2::new(max_x, max_y) }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn Aabb2d::contains(self : Aabb2d, other : Aabb2d) -> Bool {
 
 ///|
 pub fn Aabb2d::merge(self : Aabb2d, other : Aabb2d) -> Aabb2d {
-  Aabb2d::{
+  {
     min: Vec2::new(
       bounded_min(self.min.x, other.min.x),
       bounded_min(self.min.y, other.min.y),
@@ -92,12 +92,12 @@ pub fn Aabb2d::merge(self : Aabb2d, other : Aabb2d) -> Aabb2d {
 
 ///|
 pub fn Aabb2d::grow(self : Aabb2d, amount : Vec2) -> Aabb2d {
-  Aabb2d::{ min: self.min.sub(amount), max: self.max.add(amount) }
+  { min: self.min.sub(amount), max: self.max.add(amount) }
 }
 
 ///|
 pub fn Aabb2d::shrink(self : Aabb2d, amount : Vec2) -> Aabb2d {
-  Aabb2d::{ min: self.min.add(amount), max: self.max.sub(amount) }
+  { min: self.min.add(amount), max: self.max.sub(amount) }
 }
 
 ///|
@@ -112,7 +112,7 @@ pub fn Aabb2d::scale_around_center(self : Aabb2d, scale : Vec2) -> Aabb2d {
 
 ///|
 pub fn Aabb2d::translated_by(self : Aabb2d, translation : Vec2) -> Aabb2d {
-  Aabb2d::{ min: self.min.add(translation), max: self.max.add(translation) }
+  { min: self.min.add(translation), max: self.max.add(translation) }
 }
 
 ///|
@@ -178,7 +178,7 @@ pub struct BoundingCircle {
 
 ///|
 pub fn BoundingCircle::new(center : Vec2, radius : Float) -> BoundingCircle {
-  BoundingCircle::{ center, circle: Circle::new(radius) }
+  { center, circle: Circle::new(radius) }
 }
 
 ///|

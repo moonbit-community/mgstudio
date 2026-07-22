@@ -269,8 +269,8 @@ pub fn render3d_material_cull_mode_base(cull_mode : @material.Face3d?) -> Int {
     None => 0
     Some(face) =>
       match face {
-        @material.Face3d::Front => 1
-        @material.Face3d::Back => 2
+        Front => 1
+        Back => 2
       }
   }
 }

@@ -22,11 +22,11 @@ fn render3d_execute_render_cameras(
   delta_seconds : Float,
 ) -> Unit {
   let trace_render_cameras_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_render_cameras",
   )
   let trace_camera_phase_items_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_phase_items",
   )
   let camera_phase_items = match
@@ -35,7 +35,7 @@ fn render3d_execute_render_cameras(
     None => render3d_queue_camera_phase_items(cameras)
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_phase_items",
     trace_camera_phase_items_start_us,
   )
@@ -77,7 +77,7 @@ fn render3d_execute_render_cameras(
     let prepared_camera_queue = ordered_prepared_camera_queues[i]
     let execution_plan = ordered_camera_execution_plans[i]
     let trace_camera_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
+      RenderQueue,
       "execute_3d_camera",
     )
     render3d_execute_camera(
@@ -85,14 +85,14 @@ fn render3d_execute_render_cameras(
       prepared_camera_queue, execution_plan,
     )
     @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
+      RenderQueue,
       "execute_3d_camera",
       trace_camera_start_us,
     )
   }
   @sprite.gizmos_clear_3d()
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_render_cameras",
     trace_render_cameras_start_us,
   )
@@ -106,7 +106,7 @@ fn render3d_prepare_camera_execution_plans_for_pending_frame(
   frame_config : Render3dExecuteFrameConfig,
 ) -> (Array[Render3dCameraExecutionPlan?], Array[Render3dQueuedShadowPhaseView]) {
   let trace_collect_lighting_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "queue_3d_collect_lighting",
   )
   let lighting = render3d_lighting_with_clusterable_indices(
@@ -114,7 +114,7 @@ fn render3d_prepare_camera_execution_plans_for_pending_frame(
     @pbr_render.render3d_collect_lighting(world),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "queue_3d_collect_lighting",
     trace_collect_lighting_start_us,
   )
@@ -143,7 +143,7 @@ fn render3d_prepare_camera_execution_plans_for_pending_frame(
 // Bevy source: `bevy/crates/bevy_pbr/src/render/light.rs::prepare_lights`.
 pub fn render3d_prepare_shadow_phase_views_system(world : @ecs.World) -> Unit {
   let trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_shadow_phase_views",
   )
   let lighting = render3d_lighting_with_clusterable_indices(
@@ -162,7 +162,7 @@ pub fn render3d_prepare_shadow_phase_views_system(world : @ecs.World) -> Unit {
     ),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_shadow_phase_views",
     trace_start_us,
   )
@@ -185,7 +185,7 @@ fn render3d_shadow_phase_light_entities_for_camera(
     point_light_shadow_map_size > 0 {
     for face_index in 0..<6 {
       light_entities.push(
-        Render3dLightEntity::Point(
+        Point(
           light_entity=point_render_entity,
           main_entity=point_entity,
           face_index~,
@@ -199,7 +199,7 @@ fn render3d_shadow_phase_light_entities_for_camera(
     ) {
     for cascade_index in 0..<light_pass.cascades.length() {
       light_entities.push(
-        Render3dLightEntity::Directional(
+        Directional(
           light_entity=light_pass.render_entity,
           main_entity=light_pass.main_entity,
           cascade_index~,
@@ -212,10 +212,7 @@ fn render3d_shadow_phase_light_entities_for_camera(
     lighting.spot_render_entity is Some(spot_render_entity) &&
     lighting.spot_range > 0.0F {
     light_entities.push(
-      Render3dLightEntity::Spot(
-        light_entity=spot_render_entity,
-        main_entity=light_entity,
-      ),
+      Spot(light_entity=spot_render_entity, main_entity=light_entity),
     )
   }
   light_entities
@@ -266,10 +263,10 @@ fn render3d_prepare_shadow_phase_views_for_cameras(
 ) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
   let live_shadow_mapping_lights : @hashset.HashSet[
     @render_view.RetainedViewEntity,
-  ] = @hashset.HashSet([])
+  ] = HashSet([])
   let gpu_preprocessing_mode = match
     world.get_resource(@render_batching.GpuPreprocessingSupport::resource()) {
-    Some(value) => value.min(@render_batching.GpuPreprocessingMode::Culling)
+    Some(value) => value.min(Culling)
     None =>
       abort(
         "missing GpuPreprocessingSupport resource during pbr shadow phase preparation",
@@ -344,7 +341,7 @@ fn render3d_lighting_with_clusterable_indices(
       }
     None => lighting.spot_light_index
   }
-  Render3dLightingState::{ ..lighting, point_light_index, spot_light_index }
+  { ..lighting, point_light_index, spot_light_index }
 }
 
 ///|
@@ -379,20 +376,10 @@ fn render3d_normalized_render_target(
   target : @camera_camera.RenderTarget,
 ) -> @camera_render_target.NormalizedRenderTarget? {
   match target {
-    Screen =>
-      Some(
-        @camera_render_target.NormalizedRenderTarget::Window(
-          @window.WindowRef::Primary,
-        ),
-      )
-    Window(window_ref) =>
-      Some(@camera_render_target.NormalizedRenderTarget::Window(window_ref))
+    Screen => Some(Window(Primary))
+    Window(window_ref) => Some(Window(window_ref))
     Image(handle) =>
-      Some(
-        @camera_render_target.NormalizedRenderTarget::Image(
-          @camera_render_target.ImageRenderTarget::from_handle(handle),
-        ),
-      )
+      Some(Image(@camera_render_target.ImageRenderTarget::from_handle(handle)))
   }
 }
 
@@ -414,8 +401,8 @@ fn render3d_sorted_camera_target_key(
   target : @camera_render_target.NormalizedRenderTarget?,
 ) -> Int {
   match target {
-    Some(Window(@window.WindowRef::Primary)) => -1
-    Some(Window(@window.WindowRef::Entity(entity))) => entity.id
+    Some(Window(Primary)) => -1
+    Some(Window(Entity(entity))) => entity.id
     Some(Image(handle)) => handle.handle_id()
     Some(TextureView(handle)) => handle.value()
     Some(None(width, height)) => width * 65536 + height
@@ -432,7 +419,7 @@ fn render3d_sorted_camera_entries(
     let camera = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(value) => value
-      None => @camera_camera.Camera::Camera()
+      None => Camera()
     }
     if !camera.is_active {
       return
@@ -445,9 +432,9 @@ fn render3d_sorted_camera_entries(
     let target = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
       Some(value) => value
-      None => @camera_camera.RenderTarget::Screen
+      None => Screen
     }
-    entries.push(Render3dCameraOrderEntry::{
+    entries.push({
       entity: render_entity.id(),
       order,
       target: render3d_normalized_render_target(target),
@@ -486,7 +473,7 @@ fn render3d_sorted_camera_entries(
         entry.order,
         entry.target,
         false,
-        @render.CameraOutputMode::Write,
+        Write,
       ),
     )
   }
@@ -529,7 +516,7 @@ fn render3d_prepared_camera_phase_items(
       return None
     }
     let camera = cameras[found_index]
-    items.push(CameraPhaseItem3d::{
+    items.push({
       entity: camera.entity,
       extracted_index: found_index,
       order: camera.payload.camera.order,

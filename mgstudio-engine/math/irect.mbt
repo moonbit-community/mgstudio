@@ -20,7 +20,7 @@ pub struct IRect {
 
 ///|
 pub fn IRect::new(min : IVec2, max : IVec2) -> IRect {
-  IRect::{ min, max }
+  { min, max }
 }
 
 ///|

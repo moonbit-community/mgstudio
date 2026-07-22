@@ -16,6 +16,7 @@
 pub struct UiRenderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn UiRenderPlugin::UiRenderPlugin() -> UiRenderPlugin {
   UiRenderPlugin::{  }
 }

@@ -38,7 +38,7 @@ fn exit_system(
   app_exit : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
   if input.get().value == "exit" {
-    ignore(app_exit.write(@app.AppExit::Success))
+    ignore(app_exit.write(Success))
   }
 }
 
@@ -67,7 +67,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(Input::{ value: "" })
   .set_runner(my_runner_builder)
-  .add_systems_param(@app.Update, print_system)
-  .add_systems_param2(@app.Update, exit_system)
+  .add_systems_param(Update, print_system)
+  .add_systems_param2(Update, exit_system)
   .run()
 }

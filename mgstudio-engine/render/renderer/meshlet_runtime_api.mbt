@@ -80,11 +80,7 @@ pub fn host_meshlet_material_shade_draw_entry(
   material_pipeline_id~ : UInt64,
   draw_entry~ : HostMesh3dMainPassDrawEntry,
 ) -> HostMeshletMaterialShadeDrawEntry {
-  HostMeshletMaterialShadeDrawEntry::{
-    material_id,
-    material_pipeline_id,
-    draw_entry,
-  }
+  { material_id, material_pipeline_id, draw_entry }
 }
 
 ///|
@@ -485,7 +481,7 @@ fn meshlet_create_view_visibility_resources(
   ) = meshlet_create_depth_pyramid(backend, view_width, view_height)
   let storage_copy = @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST
   let storage_copy_indirect = storage_copy | @wgpu.BUFFER_USAGE_INDIRECT
-  MeshletViewVisibilityBuffer::{
+  {
     buffer: meshlet_create_visibility_buffer(backend, required_size, label),
     capacity: required_size,
     view_width,
@@ -913,7 +909,7 @@ fn meshlet_visibility_buffer_raster_defines() -> @hashmap.HashMap[String, Bool] 
 
 ///|
 fn meshlet_fill_counts_defines() -> @hashmap.HashMap[String, Bool] {
-  @hashmap.HashMap([])
+  HashMap([])
 }
 
 ///|

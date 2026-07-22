@@ -51,7 +51,7 @@ pub fn ScheduleBuildSettings::set_ambiguity_detection(
   self : ScheduleBuildSettings,
   ambiguity_detection : ScheduleBuildLogLevel,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, ambiguity_detection, }
+  { ..self, ambiguity_detection, }
 }
 
 ///|
@@ -66,7 +66,7 @@ pub fn ScheduleBuildSettings::set_hierarchy_detection(
   self : ScheduleBuildSettings,
   hierarchy_detection : ScheduleBuildLogLevel,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, hierarchy_detection, }
+  { ..self, hierarchy_detection, }
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn ScheduleBuildSettings::set_auto_insert_apply_deferred(
   self : ScheduleBuildSettings,
   auto_insert_apply_deferred : Bool,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, auto_insert_apply_deferred, }
+  { ..self, auto_insert_apply_deferred, }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn ScheduleBuildSettings::set_use_shortnames(
   self : ScheduleBuildSettings,
   use_shortnames : Bool,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, use_shortnames, }
+  { ..self, use_shortnames, }
 }
 
 ///|
@@ -109,7 +109,7 @@ pub fn ScheduleBuildSettings::set_report_sets(
   self : ScheduleBuildSettings,
   report_sets : Bool,
 ) -> ScheduleBuildSettings {
-  ScheduleBuildSettings::{ ..self, report_sets, }
+  { ..self, report_sets, }
 }
 
 ///|
@@ -199,7 +199,7 @@ pub fn Schedule::configure_set(
   after_ignore_deferred? : Array[SystemSet] = [],
   in_sets? : Array[SystemSet] = [],
 ) -> Schedule {
-  self.set_configs.push(ScheduleSetConfig::{
+  self.set_configs.push({
     set,
     before,
     after,
@@ -372,7 +372,7 @@ fn[W] ScheduleGraph::new() -> ScheduleGraph[W] {
     set_edges: [],
     set_edges_ignore_deferred: [],
     set_hierarchy_edges: [],
-    set_run_conditions: @hashmap.HashMap([]),
+    set_run_conditions: HashMap([]),
     changed: false,
     generation: 0,
     settings,
@@ -491,7 +491,7 @@ fn[W] schedule_entry_for_stage(
 
 ///|
 fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
-  let schedule = ScheduleRegistry::{ entries: @hashmap.HashMap([]) }
+  let schedule = ScheduleRegistry::{ entries: HashMap([]) }
   for stage in default_schedule_labels() {
     ignore(schedule_entry_for_stage(schedule, stage))
   }
@@ -925,7 +925,7 @@ fn[W] schedule_build_graph_plan(
   schedule_entry : ScheduleEntry[W],
   stage : ScheduleStage,
 ) -> ScheduleGraphPlan {
-  let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap([])
+  let seen : @hashmap.HashMap[SystemSet, Bool] = HashMap([])
   let set_order : Array[SystemSet] = []
   fn push_unique(
     seen : @hashmap.HashMap[SystemSet, Bool],
@@ -940,7 +940,7 @@ fn[W] schedule_build_graph_plan(
 
   let system_count = schedule_entry.graph.systems.length()
   let groups : Array[SystemSet] = []
-  let membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]] = @hashmap.HashMap([],
+  let membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]] = HashMap([],
   )
   fn add_membership_group(
     membership_groups : @hashmap.HashMap[SystemSet, Array[SystemSet]],
@@ -1048,7 +1048,7 @@ fn[W] schedule_build_graph_plan(
     }
   }
   let set_count = set_order.length()
-  let set_index : @hashmap.HashMap[SystemSet, Int] = @hashmap.HashMap([])
+  let set_index : @hashmap.HashMap[SystemSet, Int] = HashMap([])
   for i in 0..<set_count {
     set_index.set(set_order[i], i)
   }
@@ -2289,7 +2289,7 @@ fn[W] schedule_chain_inherit_config(
   for _ in wrapper.run_if_last_run_ticks {
     run_if_last_run_ticks.push(0)
   }
-  SystemConfig::{
+  {
     ..child,
     error_handler: inherited_error_handler,
     run_ifs,

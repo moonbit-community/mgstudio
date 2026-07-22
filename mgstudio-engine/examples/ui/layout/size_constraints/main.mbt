@@ -69,12 +69,7 @@ pub impl @app.Resource for ConstraintSettings with fn resource() {
 
 ///|
 fn ConstraintSettings::ConstraintSettings() -> ConstraintSettings {
-  ConstraintSettings::{
-    flex_basis: @ui.Val::Percent(100.0F),
-    width: @ui.Val::Auto,
-    min_width: @ui.Val::Auto,
-    max_width: @ui.Val::Auto,
-  }
+  { flex_basis: Percent(100.0F), width: Auto, min_width: Auto, max_width: Auto }
 }
 
 ///|
@@ -141,23 +136,23 @@ fn apply_constraint(
   button : ConstraintButton,
 ) -> ConstraintSettings {
   match button.kind {
-    FlexBasis => ConstraintSettings::{ ..settings, flex_basis: button.value }
-    Width => ConstraintSettings::{ ..settings, width: button.value }
-    MinWidth => ConstraintSettings::{ ..settings, min_width: button.value }
-    MaxWidth => ConstraintSettings::{ ..settings, max_width: button.value }
+    FlexBasis => { ..settings, flex_basis: button.value }
+    Width => { ..settings, width: button.value }
+    MinWidth => { ..settings, min_width: button.value }
+    MaxWidth => { ..settings, max_width: button.value }
   }
 }
 
 ///|
 fn button_values() -> Array[(@ui.Val, String)] {
   [
-    (@ui.Val::Auto, "Auto"),
-    (@ui.Val::Percent(0.0F), "0%"),
-    (@ui.Val::Percent(25.0F), "25%"),
-    (@ui.Val::Percent(50.0F), "50%"),
-    (@ui.Val::Percent(75.0F), "75%"),
-    (@ui.Val::Percent(100.0F), "100%"),
-    (@ui.Val::Percent(125.0F), "125%"),
+    (Auto, "Auto"),
+    (Percent(0.0F), "0%"),
+    (Percent(25.0F), "25%"),
+    (Percent(50.0F), "50%"),
+    (Percent(75.0F), "75%"),
+    (Percent(100.0F), "100%"),
+    (Percent(125.0F), "125%"),
   ]
 }
 
@@ -205,25 +200,11 @@ fn spawn_button(
         @ui.Button::Button(),
         ConstraintButton::{ kind, value },
         @ui.Node::Node()
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-        .with_padding(
-          @ui.UiRect::new(
-            @ui.Val::Px(10.0F),
-            @ui.Val::Px(5.0F),
-            @ui.Val::Px(10.0F),
-            @ui.Val::Px(5.0F),
-          ),
-        )
-        .with_margin(
-          @ui.UiRect::new(
-            @ui.Val::Px(2.0F),
-            @ui.Val::Px(2.0F),
-            @ui.Val::Px(2.0F),
-            @ui.Val::Px(2.0F),
-          ),
-        ),
+        .with_align_items(Center)
+        .with_justify_content(Center)
+        .with_border(@ui.UiRect::all(Px(2.0F)))
+        .with_padding(@ui.UiRect::new(Px(10.0F), Px(5.0F), Px(10.0F), Px(5.0F)))
+        .with_margin(@ui.UiRect::new(Px(2.0F), Px(2.0F), Px(2.0F), Px(2.0F))),
         @ui.BackgroundColor::new(inactive_button_color()),
       ),
     ),
@@ -251,16 +232,9 @@ fn spawn_button_row(
       (
         @hierarchy.Parent::new(parent),
         @ui.Node::Node()
-        .with_flex_direction(@ui.FlexDirection::Row)
-        .with_align_items(@ui.AlignItems::Center)
-        .with_margin(
-          @ui.UiRect::new(
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(2.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(2.0F),
-          ),
-        ),
+        .with_flex_direction(Row)
+        .with_align_items(Center)
+        .with_margin(@ui.UiRect::new(Px(0.0F), Px(2.0F), Px(0.0F), Px(2.0F))),
         @ui.BackgroundColor::new(@color.Color::black()),
       ),
     ),
@@ -272,11 +246,7 @@ fn spawn_button_row(
     .insert(
       (
         @hierarchy.Parent::new(row),
-        @ui.Node::{
-          ..@ui.Node(),
-          min_width: @ui.Val::Px(180.0F),
-          max_width: @ui.Val::Px(180.0F),
-        },
+        @ui.Node::{ ..Node(), min_width: Px(180.0F), max_width: Px(180.0F) },
       ),
     ),
   )
@@ -296,10 +266,7 @@ fn spawn_button_row(
     try! world
     .entity_mut(buttons)
     .insert(
-      (
-        @hierarchy.Parent::new(row),
-        @ui.Node::Node().with_flex_direction(@ui.FlexDirection::Row),
-      ),
+      (@hierarchy.Parent::new(row), @ui.Node::Node().with_flex_direction(Row)),
     ),
   )
 
@@ -334,10 +301,10 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F))
+        .with_justify_content(Center)
+        .with_align_items(Center),
         @ui.BackgroundColor::new(@color.Color::black()),
       ),
     ),
@@ -351,9 +318,9 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center),
+        .with_flex_direction(Column)
+        .with_align_items(Center)
+        .with_justify_content(Center),
       ),
     ),
   )
@@ -377,16 +344,9 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(content),
         @ui.Node::Node()
-        .with_flex_basis(@ui.Val::Percent(100.0F))
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
-        .with_margin(
-          @ui.UiRect::new(
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(25.0F),
-          ),
-        ),
+        .with_flex_basis(Percent(100.0F))
+        .with_padding(@ui.UiRect::all(Px(10.0F)))
+        .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(25.0F))),
         @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F)),
       ),
     ),
@@ -400,9 +360,9 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(outer_bar),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Px(100.0F))
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(4.0F))),
+        .with_width(Percent(100.0F))
+        .with_height(Px(100.0F))
+        .with_padding(@ui.UiRect::all(Px(4.0F))),
         @ui.BackgroundColor::new(@color.Color::black()),
       ),
     ),
@@ -430,16 +390,9 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(content),
         @ui.Node::Node()
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
-        .with_margin(
-          @ui.UiRect::new(
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(50.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-          ),
-        ),
+        .with_flex_direction(Column)
+        .with_padding(@ui.UiRect::all(Px(10.0F)))
+        .with_margin(@ui.UiRect::new(Px(0.0F), Px(50.0F), Px(0.0F), Px(0.0F))),
         @ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F)),
       ),
     ),
@@ -465,7 +418,7 @@ fn update_buttons(
     let ((background_mut, border_mut), (interaction_comp, button_comp)) = data
     let interaction = interaction_comp.value()
     let button = button_comp.value()
-    let current_settings = if interaction == @ui.Interaction::Pressed {
+    let current_settings = if interaction == Pressed {
       let next_settings = apply_constraint(settings.peek(), button)
       settings.set(next_settings)
       next_settings
@@ -474,9 +427,9 @@ fn update_buttons(
     }
     let active = settings_value(current_settings, button.kind) == button.value
     let background_color = match interaction {
-      @ui.Interaction::Pressed => active_button_color()
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None =>
+      Pressed => active_button_color()
+      Hovered => hovered_button_color()
+      None =>
         if active {
           active_button_color()
         } else {
@@ -501,7 +454,7 @@ fn apply_settings(
   let current = settings.get()
   try! bars.view(fn(_entity, node_mut) {
     let node = node_mut.value()
-    node_mut.set(@ui.Node::{
+    node_mut.set({
       ..node,
       flex_basis: current.flex_basis,
       width: current.width,
@@ -516,8 +469,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(ConstraintSettings::ConstraintSettings())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update_buttons)
-  .add_systems_param2(@app.Update, apply_settings)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, update_buttons)
+  .add_systems_param2(Update, apply_settings)
   .run()
 }

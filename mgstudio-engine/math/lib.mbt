@@ -20,7 +20,7 @@ pub(all) struct Vec2 {
 
 ///|
 pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
-  Vec2::{ x, y }
+  { x, y }
 }
 
 ///|
@@ -101,7 +101,7 @@ pub(all) struct Vec3 {
 
 ///|
 pub fn Vec3::new(x : Float, y : Float, z : Float) -> Vec3 {
-  Vec3::{ x, y, z }
+  { x, y, z }
 }
 
 ///|
@@ -302,7 +302,7 @@ pub(all) struct Vec4 {
 
 ///|
 pub fn Vec4::new(x : Float, y : Float, z : Float, w : Float) -> Vec4 {
-  Vec4::{ x, y, z, w }
+  { x, y, z, w }
 }
 
 ///|
@@ -351,7 +351,7 @@ pub fn Mat4::from_cols(
   z_axis : Vec4,
   w_axis : Vec4,
 ) -> Mat4 {
-  Mat4::{ x_axis, y_axis, z_axis, w_axis }
+  { x_axis, y_axis, z_axis, w_axis }
 }
 
 ///|
@@ -498,7 +498,7 @@ pub struct IVec2 {
 
 ///|
 pub fn IVec2::new(x : Int, y : Int) -> IVec2 {
-  IVec2::{ x, y }
+  { x, y }
 }
 
 ///|
@@ -509,7 +509,7 @@ pub struct UVec2 {
 
 ///|
 pub fn UVec2::new(x : Int, y : Int) -> UVec2 {
-  UVec2::{ x, y }
+  { x, y }
 }
 
 ///|
@@ -660,7 +660,7 @@ pub(all) struct Quat {
 /// This is primarily for engine integrations (e.g. 3D physics) that need to
 /// convert from external quaternion representations.
 pub fn Quat::new(x : Float, y : Float, z : Float, w : Float) -> Quat {
-  Quat::{ x, y, z, w }
+  { x, y, z, w }
 }
 
 ///|
@@ -745,26 +745,26 @@ pub impl @json.FromJson for Quat with fn from_json(json, path) {
 
 ///|
 pub fn Quat::identity() -> Quat {
-  Quat::{ x: 0.0F, y: 0.0F, z: 0.0F, w: 1.0F }
+  { x: 0.0F, y: 0.0F, z: 0.0F, w: 1.0F }
 }
 
 ///|
 /// Rotation around Z axis (radians).
 pub fn Quat::from_rotation_z(angle : Float) -> Quat {
   let half = angle / 2.0F
-  Quat::{ x: 0.0F, y: 0.0F, z: sin(half), w: cos(half) }
+  { x: 0.0F, y: 0.0F, z: sin(half), w: cos(half) }
 }
 
 ///|
 pub fn Quat::from_rotation_x(angle : Float) -> Quat {
   let half = angle / 2.0F
-  Quat::{ x: sin(half), y: 0.0F, z: 0.0F, w: cos(half) }
+  { x: sin(half), y: 0.0F, z: 0.0F, w: cos(half) }
 }
 
 ///|
 pub fn Quat::from_rotation_y(angle : Float) -> Quat {
   let half = angle / 2.0F
-  Quat::{ x: 0.0F, y: sin(half), z: 0.0F, w: cos(half) }
+  { x: 0.0F, y: sin(half), z: 0.0F, w: cos(half) }
 }
 
 ///|
@@ -775,42 +775,42 @@ pub fn Quat::from_euler(
   third : Float,
 ) -> Quat {
   match order {
-    EulerRot::XYZ =>
+    XYZ =>
       Quat::from_rotation_x(first)
       .mul(Quat::from_rotation_y(second))
       .mul(Quat::from_rotation_z(third))
       .normalize()
-    EulerRot::XZY =>
+    XZY =>
       Quat::from_rotation_x(first)
       .mul(Quat::from_rotation_z(second))
       .mul(Quat::from_rotation_y(third))
       .normalize()
-    EulerRot::YXZ =>
+    YXZ =>
       Quat::from_rotation_y(first)
       .mul(Quat::from_rotation_x(second))
       .mul(Quat::from_rotation_z(third))
       .normalize()
-    EulerRot::YZX =>
+    YZX =>
       Quat::from_rotation_y(first)
       .mul(Quat::from_rotation_z(second))
       .mul(Quat::from_rotation_x(third))
       .normalize()
-    EulerRot::ZXY =>
+    ZXY =>
       Quat::from_rotation_z(first)
       .mul(Quat::from_rotation_x(second))
       .mul(Quat::from_rotation_y(third))
       .normalize()
-    EulerRot::ZYX =>
+    ZYX =>
       Quat::from_rotation_z(first)
       .mul(Quat::from_rotation_y(second))
       .mul(Quat::from_rotation_x(third))
       .normalize()
-    EulerRot::XYZEx => Quat::from_euler(EulerRot::ZYX, third, second, first)
-    EulerRot::XZYEx => Quat::from_euler(EulerRot::YZX, third, second, first)
-    EulerRot::YXZEx => Quat::from_euler(EulerRot::ZXY, third, second, first)
-    EulerRot::YZXEx => Quat::from_euler(EulerRot::XZY, third, second, first)
-    EulerRot::ZXYEx => Quat::from_euler(EulerRot::YXZ, third, second, first)
-    EulerRot::ZYXEx => Quat::from_euler(EulerRot::XYZ, third, second, first)
+    XYZEx => Quat::from_euler(ZYX, third, second, first)
+    XZYEx => Quat::from_euler(YZX, third, second, first)
+    YXZEx => Quat::from_euler(ZXY, third, second, first)
+    YZXEx => Quat::from_euler(XZY, third, second, first)
+    ZXYEx => Quat::from_euler(YXZ, third, second, first)
+    ZYXEx => Quat::from_euler(XYZ, third, second, first)
   }
 }
 
@@ -822,12 +822,7 @@ pub fn Quat::from_axis_angle(axis : Vec3, angle : Float) -> Quat {
   }
   let half = angle / 2.0F
   let s = sin(half)
-  Quat::{
-    x: unit_axis.x * s,
-    y: unit_axis.y * s,
-    z: unit_axis.z * s,
-    w: cos(half),
-  }
+  { x: unit_axis.x * s, y: unit_axis.y * s, z: unit_axis.z * s, w: cos(half) }
 }
 
 ///|
@@ -865,12 +860,12 @@ pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
     self.x * other.x -
     self.y * other.y -
     self.z * other.z
-  Quat::{ x, y, z, w }
+  { x, y, z, w }
 }
 
 ///|
 pub fn Quat::inverse(self : Quat) -> Quat {
-  Quat::{ x: -self.x, y: -self.y, z: -self.z, w: self.w }
+  { x: -self.x, y: -self.y, z: -self.z, w: self.w }
 }
 
 ///|
@@ -911,7 +906,7 @@ pub fn Quat::normalize(self : Quat) -> Quat {
     return Quat::identity()
   }
   let inv_len = 1.0F / sqrt(len_sq)
-  Quat::{
+  {
     x: self.x * inv_len,
     y: self.y * inv_len,
     z: self.z * inv_len,
@@ -972,51 +967,47 @@ pub fn Quat::slerp(self : Quat, other : Quat, s : Float) -> Quat {
 ///|
 pub fn Quat::to_euler(self : Quat, order : EulerRot) -> (Float, Float, Float) {
   match order {
-    EulerRot::XYZ
-    | EulerRot::XZY
-    | EulerRot::YXZ
-    | EulerRot::YZX
-    | EulerRot::ZXY
-    | EulerRot::ZYX => quat_to_euler_intrinsic(self.normalize(), order)
-    EulerRot::XYZEx => {
+    XYZ | XZY | YXZ | YZX | ZXY | ZYX =>
+      quat_to_euler_intrinsic(self.normalize(), order)
+    XYZEx => {
       let (third, second, first) = quat_to_euler_intrinsic(
         self.normalize(),
-        EulerRot::ZYX,
+        ZYX,
       )
       (first, second, third)
     }
-    EulerRot::XZYEx => {
+    XZYEx => {
       let (third, second, first) = quat_to_euler_intrinsic(
         self.normalize(),
-        EulerRot::YZX,
+        YZX,
       )
       (first, second, third)
     }
-    EulerRot::YXZEx => {
+    YXZEx => {
       let (third, second, first) = quat_to_euler_intrinsic(
         self.normalize(),
-        EulerRot::ZXY,
+        ZXY,
       )
       (first, second, third)
     }
-    EulerRot::YZXEx => {
+    YZXEx => {
       let (third, second, first) = quat_to_euler_intrinsic(
         self.normalize(),
-        EulerRot::XZY,
+        XZY,
       )
       (first, second, third)
     }
-    EulerRot::ZXYEx => {
+    ZXYEx => {
       let (third, second, first) = quat_to_euler_intrinsic(
         self.normalize(),
-        EulerRot::YXZ,
+        YXZ,
       )
       (first, second, third)
     }
-    EulerRot::ZYXEx => {
+    ZYXEx => {
       let (third, second, first) = quat_to_euler_intrinsic(
         self.normalize(),
-        EulerRot::XYZ,
+        XYZ,
       )
       (first, second, third)
     }
@@ -1083,7 +1074,7 @@ fn quat_to_euler_intrinsic(
   )
   let epsilon = 0.9999999F
   match order {
-    EulerRot::XYZ => {
+    XYZ => {
       let second = Float::from_double(
         @coremath.asin(quat_clamp(m02, -1.0F, 1.0F).to_double()),
       )
@@ -1093,7 +1084,7 @@ fn quat_to_euler_intrinsic(
         (atan2(m21, m11), second, 0.0F)
       }
     }
-    EulerRot::XZY => {
+    XZY => {
       let second = Float::from_double(
         @coremath.asin(quat_clamp(-m01, -1.0F, 1.0F).to_double()),
       )
@@ -1103,7 +1094,7 @@ fn quat_to_euler_intrinsic(
         (atan2(-m12, m22), second, 0.0F)
       }
     }
-    EulerRot::YXZ => {
+    YXZ => {
       let second = Float::from_double(
         @coremath.asin(quat_clamp(-m12, -1.0F, 1.0F).to_double()),
       )
@@ -1113,7 +1104,7 @@ fn quat_to_euler_intrinsic(
         (atan2(-m20, m00), second, 0.0F)
       }
     }
-    EulerRot::YZX => {
+    YZX => {
       let second = Float::from_double(
         @coremath.asin(quat_clamp(m10, -1.0F, 1.0F).to_double()),
       )
@@ -1123,7 +1114,7 @@ fn quat_to_euler_intrinsic(
         (atan2(m02, m22), second, 0.0F)
       }
     }
-    EulerRot::ZXY => {
+    ZXY => {
       let second = Float::from_double(
         @coremath.asin(quat_clamp(m21, -1.0F, 1.0F).to_double()),
       )
@@ -1133,7 +1124,7 @@ fn quat_to_euler_intrinsic(
         (atan2(m10, m00), second, 0.0F)
       }
     }
-    EulerRot::ZYX => {
+    ZYX => {
       let second = Float::from_double(
         @coremath.asin(quat_clamp(-m20, -1.0F, 1.0F).to_double()),
       )

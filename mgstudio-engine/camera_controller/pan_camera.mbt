@@ -42,22 +42,22 @@ pub struct PanCamera {
 
 ///|
 pub fn PanCamera::PanCamera() -> PanCamera {
-  PanCamera::{
+  {
     enabled: true,
     zoom_factor: 1.0F,
     min_zoom: 0.1F,
     max_zoom: 5.0F,
     zoom_speed: 0.1F,
-    key_zoom_in: Some(@window.KeyCode::Equal),
-    key_zoom_out: Some(@window.KeyCode::Minus),
+    key_zoom_in: Some(Equal),
+    key_zoom_out: Some(Minus),
     pan_speed: 500.0F,
-    key_up: Some(@window.KeyCode::KeyW),
-    key_down: Some(@window.KeyCode::KeyS),
-    key_left: Some(@window.KeyCode::KeyA),
-    key_right: Some(@window.KeyCode::KeyD),
+    key_up: Some(KeyW),
+    key_down: Some(KeyS),
+    key_left: Some(KeyA),
+    key_right: Some(KeyD),
     rotation_speed: 3.141592653589793F,
-    key_rotate_ccw: Some(@window.KeyCode::KeyQ),
-    key_rotate_cw: Some(@window.KeyCode::KeyE),
+    key_rotate_ccw: Some(KeyQ),
+    key_rotate_cw: Some(KeyE),
   }
 }
 
@@ -130,9 +130,8 @@ fn pan_camera_zoom_bounds(controller : PanCamera) -> (Float, Float) {
 ///|
 fn pan_camera_scroll_delta(scroll : @input.AccumulatedMouseScroll) -> Float {
   match scroll.unit {
-    @input.MouseScrollUnit::Line => scroll.delta.y
-    @input.MouseScrollUnit::Pixel =>
-      scroll.delta.y / PAN_CAMERA_SCROLL_UNIT_CONVERSION_FACTOR
+    Line => scroll.delta.y
+    Pixel => scroll.delta.y / PAN_CAMERA_SCROLL_UNIT_CONVERSION_FACTOR
   }
 }
 
@@ -253,11 +252,9 @@ pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
 ///|
 pub fn pan_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app.add_systems(
-    @app.RunFixedMainLoop,
+    RunFixedMainLoop,
     @app.system(run_pancamera_controller).in_set(
-      @app.run_fixed_main_loop_system_set_name(
-        @app.RunFixedMainLoopSystems::BeforeFixedMainLoop,
-      ),
+      @app.run_fixed_main_loop_system_set_name(BeforeFixedMainLoop),
     ),
   )
 }
@@ -266,6 +263,7 @@ pub fn pan_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub struct PanCameraPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PanCameraPlugin::PanCameraPlugin() -> PanCameraPlugin {
   PanCameraPlugin::{  }
 }

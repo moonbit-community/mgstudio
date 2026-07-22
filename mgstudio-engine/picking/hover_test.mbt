@@ -34,9 +34,7 @@ test "picking: hover map coalesces PointerHits by order and Pickable blocking" {
   )
   |> ignore
   picking_generate_hovermap_system(world)
-  let hover = get_hover_map_resource(world)
-    .get()
-    .unwrap_or(HoverMap::HoverMap())
+  let hover = get_hover_map_resource(world).get().unwrap_or(HoverMap())
   let entries = hover.get(0)
   debug_inspect(entries.length(), content="2")
   debug_inspect(hover.is_hovering(0, top), content="true")
@@ -64,9 +62,7 @@ test "picking: hover map stops at default blocking entity" {
   )
   |> ignore
   picking_generate_hovermap_system(world)
-  let hover = get_hover_map_resource(world)
-    .get()
-    .unwrap_or(HoverMap::HoverMap())
+  let hover = get_hover_map_resource(world).get().unwrap_or(HoverMap())
   let entries = hover.get(0)
   debug_inspect(entries.length(), content="1")
   debug_inspect(hover.is_hovering(0, top), content="true")
@@ -84,10 +80,8 @@ test "picking: pointer events use HoverMap as hit source" {
     PointerInput::new(0, Some(@math.Vec2::new(5.0F, 6.0F)), false, false, false),
   )
   |> ignore
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   let target = world.spawn_empty()
   get_hover_map_resource(world).insert(
     HoverMap::from_array([
@@ -96,7 +90,7 @@ test "picking: pointer events use HoverMap as hit source" {
   )
   picking_generate_events_system(world)
   let events_res = @app.get_picking_events_resource(world)
-  let events = events_res.get().unwrap_or(@app.PickingEvents::PickingEvents())
+  let events = events_res.get().unwrap_or(PickingEvents())
   let out = @app.PickingEvents::drain(events)
   debug_inspect(out.length(), content="2")
   debug_inspect(out[1].target.unwrap().id == target.id, content="true")
@@ -108,10 +102,8 @@ test "picking: pointer events can be generated from PointerInput messages" {
   defer world.close()
   ignore(world.increment_change_tick())
   world.init_message(pointer_input_message_key())
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   let target = world.spawn_empty()
   get_hover_map_resource(world).insert(
     HoverMap::from_array([
@@ -125,17 +117,11 @@ test "picking: pointer events can be generated from PointerInput messages" {
   |> ignore
   picking_generate_events_system(world)
   let events_res = @app.get_picking_events_resource(world)
-  let events = events_res.get().unwrap_or(@app.PickingEvents::PickingEvents())
+  let events = events_res.get().unwrap_or(PickingEvents())
   let out = @app.PickingEvents::drain(events)
   debug_inspect(out.length(), content="2")
-  debug_inspect(
-    out[0].kind == @pointer_events.PointerEventKind::Move,
-    content="true",
-  )
-  debug_inspect(
-    out[1].kind == @pointer_events.PointerEventKind::Enter,
-    content="true",
-  )
+  debug_inspect(out[0].kind == Move, content="true")
+  debug_inspect(out[1].kind == Enter, content="true")
   debug_inspect(out[1].target.unwrap().id == target.id, content="true")
 }
 
@@ -150,7 +136,7 @@ test "picking: hover pipeline updates PointerInteraction on pointer entity" {
   try! world.set_by_key(
     pointer_entity,
     ecs_key_pointer_interaction,
-    PointerInteraction::PointerInteraction(),
+    PointerInteraction(),
   )
   let target = world.spawn_empty()
   world.send_message(

@@ -29,7 +29,7 @@ pub fn GlyphCacheKey::new(
   font_weight : Int,
   flags : UInt,
 ) -> GlyphCacheKey {
-  GlyphCacheKey::{ glyph_id, subpixel_x, subpixel_y, font_weight, flags }
+  { glyph_id, subpixel_x, subpixel_y, font_weight, flags }
 }
 
 ///|
@@ -58,12 +58,10 @@ priv struct SwashFontCache {
 }
 
 ///|
-let swash_font_cache : Ref[SwashFontCache] = Ref(SwashFontCache::{ entries: [] })
+let swash_font_cache : Ref[SwashFontCache] = Ref({ entries: [] })
 
 ///|
-let swash_scale_context : Ref[@swash_scale.ScaleContext] = Ref(
-  @swash_scale.ScaleContext::ScaleContext(),
-)
+let swash_scale_context : Ref[@swash_scale.ScaleContext] = Ref(ScaleContext())
 
 ///|
 let cosmic_swash_cache : Ref[@cosmic.SwashCache] = Ref(
@@ -189,16 +187,16 @@ pub fn font_rasterize_glyph_id_subpixel(
   let entry = if entry_opt is Some(v) { v } else { return None }
   let gid = glyph_id.to_uint16()
   let hint = match smoothing {
-    FontSmoothing::None => false
-    FontSmoothing::AntiAliased => true
+    None => false
+    AntiAliased => true
   }
   let scaler = swash_scale_context.val
     .builder(entry.font)
     .size(font_size.to_double())
     .hint(hint)
     .build()
-  let render = @swash_scale.Render::Render([@swash_scale.Source::Outline]).offset(
-    @moon_zeno.Vector(
+  let render = @swash_scale.Render::Render([Outline]).offset(
+    Vector(
       subpixel_bin_as_double(subpixel_x),
       subpixel_bin_as_double(subpixel_y),
     ),
@@ -226,8 +224,8 @@ pub fn font_rasterize_glyph_id_subpixel(
 
   fn alpha_for_smoothing(alpha : Int, smoothing : FontSmoothing) -> Int {
     match smoothing {
-      FontSmoothing::None => if alpha > 127 { 255 } else { 0 }
-      FontSmoothing::AntiAliased => alpha
+      None => if alpha > 127 { 255 } else { 0 }
+      AntiAliased => alpha
     }
   }
 
@@ -237,7 +235,7 @@ pub fn font_rasterize_glyph_id_subpixel(
   // - Color: pass through RGBA.
   let src = img.data()
   let pixels = match img.content() {
-    @swash_scale.Content::Mask => {
+    Mask => {
       if src.length() < pixel_count {
         return None
       }
@@ -255,7 +253,7 @@ pub fn font_rasterize_glyph_id_subpixel(
         }
       })
     }
-    @swash_scale.Content::SubpixelMask => {
+    SubpixelMask => {
       if src.length() < pixel_count * 4 {
         return None
       }
@@ -276,14 +274,14 @@ pub fn font_rasterize_glyph_id_subpixel(
         }
       })
     }
-    @swash_scale.Content::Color => {
+    Color => {
       if src.length() < pixel_count * 4 {
         return None
       }
       src
     }
   }
-  Some(GlyphRaster::{
+  Some({
     glyph_id: gid.to_int(),
     size: @math.UVec2::new(width, height),
     offset: @math.IVec2::new(placement.left, placement.top),
@@ -325,13 +323,13 @@ pub fn font_rasterize_cache_key(
 
   fn alpha_for_smoothing(alpha : Int, smoothing : FontSmoothing) -> Int {
     match smoothing {
-      FontSmoothing::None => if alpha > 127 { 255 } else { 0 }
-      FontSmoothing::AntiAliased => alpha
+      None => if alpha > 127 { 255 } else { 0 }
+      AntiAliased => alpha
     }
   }
 
   let pixels = match image.content() {
-    @swash_scale.Content::Mask => {
+    Mask => {
       if src.length() < pixel_count {
         return None
       }
@@ -346,7 +344,7 @@ pub fn font_rasterize_cache_key(
         }
       })
     }
-    @swash_scale.Content::SubpixelMask => {
+    SubpixelMask => {
       if src.length() < pixel_count * 4 {
         return None
       }
@@ -367,14 +365,14 @@ pub fn font_rasterize_cache_key(
         }
       })
     }
-    @swash_scale.Content::Color => {
+    Color => {
       if src.length() < pixel_count * 4 {
         return None
       }
       src
     }
   }
-  Some(GlyphRaster::{
+  Some({
     glyph_id: cache_key.glyph_id,
     size: @math.UVec2::new(width, height),
     offset: @math.IVec2::new(placement.left, placement.top),
@@ -397,8 +395,8 @@ pub fn FontAtlas::new(
   font_smoothing : FontSmoothing,
 ) -> FontAtlas {
   let nearest = match font_smoothing {
-    FontSmoothing::None => true
-    FontSmoothing::AntiAliased => false
+    None => true
+    AntiAliased => false
   }
   let texture = @asset.asset_create_dynamic_texture(size, nearest)
   let texture_atlas_layout = @asset.TextureAtlasLayout::new_empty(size)
@@ -406,7 +404,7 @@ pub fn FontAtlas::new(
   let texture_atlas = @asset.asset_add_texture_atlas_layout(
     texture_atlas_layout,
   )
-  FontAtlas::{
+  {
     dynamic_texture_atlas_builder: builder,
     glyph_locations: [],
     glyph_location_map: Map([]),
@@ -459,12 +457,9 @@ pub fn FontAtlas::add_glyph(
     raster.pixels_rgba8,
   )
   self.glyph_locations.push(
-    (
-      cache_key,
-      GlyphAtlasLocation::{ glyph_index: index, offset: raster.offset },
-    ),
+    (cache_key, { glyph_index: index, offset: raster.offset }),
   )
-  self.glyph_location_map.set(glyph_cache_key_map_key(cache_key), GlyphAtlasLocation::{
+  self.glyph_location_map.set(glyph_cache_key_map_key(cache_key), {
     glyph_index: index,
     offset: raster.offset,
   })
@@ -480,7 +475,7 @@ pub fn get_glyph_atlas_info(
   for i in 0..<count {
     let atlas = atlases[i]
     if atlas.get_glyph_index(cache_key) is Some(location) {
-      return Some(GlyphAtlasInfo::{
+      return Some({
         texture: atlas.texture,
         texture_atlas: atlas.texture_atlas,
         location,
@@ -501,7 +496,7 @@ pub fn add_glyph_to_atlas(
   for i in 0..<count {
     let atlas = font_atlases[i]
     if atlas.get_glyph_index(cache_key) is Some(location) {
-      return Some(GlyphAtlasInfo::{
+      return Some({
         texture: atlas.texture,
         texture_atlas: atlas.texture_atlas,
         location,
@@ -510,7 +505,7 @@ pub fn add_glyph_to_atlas(
     if atlas.add_glyph(cache_key, raster) {
       font_atlases[i] = atlas
       if atlas.get_glyph_index(cache_key) is Some(location) {
-        return Some(GlyphAtlasInfo::{
+        return Some({
           texture: atlas.texture,
           texture_atlas: atlas.texture_atlas,
           location,
@@ -538,7 +533,7 @@ pub fn add_glyph_to_atlas(
       None => return None
     }
     font_atlases.push(new_atlas)
-    return Some(GlyphAtlasInfo::{
+    return Some({
       texture: new_atlas.texture,
       texture_atlas: new_atlas.texture_atlas,
       location,

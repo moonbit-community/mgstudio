@@ -65,7 +65,7 @@ pub fn TestDefaultAppMessage::TestDefaultAppMessage() -> TestDefaultAppMessage {
 
 ///|
 pub impl Default for TestDefaultAppMessage with fn default() {
-  TestDefaultAppMessage::TestDefaultAppMessage()
+  TestDefaultAppMessage()
 }
 
 ///|
@@ -102,7 +102,7 @@ test "app: add_message wires MessageWriter and MessageReader through world queue
       Update,
       system_config_param(fn(writer : @ecs.MessageWriter[TestAppMessage]) {
         if !sent.val {
-          ignore(writer.write(TestAppMessage::{ value: 7 }))
+          ignore(writer.write({ value: 7 }))
           sent.val = true
         }
       }).in_set(test_message_writer_set),
@@ -139,7 +139,7 @@ test "app: on_message consumes unread messages once per condition state" {
       Update,
       system_config_param(fn(writer : @ecs.MessageWriter[TestAppMessage]) {
         if !sent.val {
-          ignore(writer.write(TestAppMessage::{ value: 1 }))
+          ignore(writer.write({ value: 1 }))
           sent.val = true
         }
       }).in_set(test_message_writer_set),
@@ -231,12 +231,7 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
         writer : @ecs.MessageWriter[TestCursorAppMessage],
       ) {
         frame.val = frame.val + 1
-        ignore(
-          writer.write(TestCursorAppMessage::{
-            resend: frame.val == 1,
-            times_sent: frame.val,
-          }),
-        )
+        ignore(writer.write({ resend: frame.val == 1, times_sent: frame.val }))
       }).in_set(test_message_writer_set),
     )
     .add_systems(
@@ -248,7 +243,7 @@ test "app: Messages resource and Local MessageCursor resend unread messages in B
         for message in cursor.read(messages) {
           if message.resend {
             ignore(
-              messages.write(TestCursorAppMessage::{
+              messages.write({
                 resend: message.resend,
                 times_sent: message.times_sent + 10,
               }),

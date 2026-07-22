@@ -27,22 +27,22 @@ pub struct RigidBody3d {
 
 ///|
 pub fn RigidBody3d::dynamic() -> RigidBody3d {
-  { body_type: @dynamics.RigidBodyType::Dynamic }
+  { body_type: Dynamic }
 }
 
 ///|
 pub fn RigidBody3d::fixed() -> RigidBody3d {
-  { body_type: @dynamics.RigidBodyType::Fixed }
+  { body_type: Fixed }
 }
 
 ///|
 pub fn RigidBody3d::kinematic_position_based() -> RigidBody3d {
-  { body_type: @dynamics.RigidBodyType::KinematicPositionBased }
+  { body_type: KinematicPositionBased }
 }
 
 ///|
 pub fn RigidBody3d::kinematic_velocity_based() -> RigidBody3d {
-  { body_type: @dynamics.RigidBodyType::KinematicVelocityBased }
+  { body_type: KinematicVelocityBased }
 }
 
 ///|
@@ -185,7 +185,7 @@ pub fn Collider3d::new(shape : ColliderShape3d) -> Collider3d {
 
 ///|
 pub fn Collider3d::sensor(self : Collider3d, sensor : Bool) -> Collider3d {
-  Collider3d::{ ..self, sensor, }
+  { ..self, sensor, }
 }
 
 ///|
@@ -308,7 +308,7 @@ pub fn LockedAxes3d::new(
 
 ///|
 pub fn LockedAxes3d::locked() -> LockedAxes3d {
-  LockedAxes3d::{
+  {
     lock_translation_x: true,
     lock_translation_y: true,
     lock_translation_z: true,
@@ -620,7 +620,7 @@ pub fn Physics3dConfig::Physics3dConfig() -> Physics3dConfig {
 
 ///|
 pub fn Physics3dConfig::new(gravity : @math.Vec3) -> Physics3dConfig {
-  Physics3dConfig::{ ..Physics3dConfig(), gravity, }
+  { ..Physics3dConfig(), gravity, }
 }
 
 ///|
@@ -628,7 +628,7 @@ pub fn Physics3dConfig::with_gravity(
   self : Physics3dConfig,
   gravity : @math.Vec3,
 ) -> Physics3dConfig {
-  Physics3dConfig::{ ..self, gravity, }
+  { ..self, gravity, }
 }
 
 ///|
@@ -636,7 +636,7 @@ pub fn Physics3dConfig::with_physics_pipeline_active(
   self : Physics3dConfig,
   active : Bool,
 ) -> Physics3dConfig {
-  Physics3dConfig::{ ..self, physics_pipeline_active: active }
+  { ..self, physics_pipeline_active: active }
 }
 
 ///|
@@ -644,7 +644,7 @@ pub fn Physics3dConfig::with_integration_parameters(
   self : Physics3dConfig,
   integration : @dynamics.IntegrationParameters,
 ) -> Physics3dConfig {
-  Physics3dConfig::{ ..self, integration, }
+  { ..self, integration, }
 }
 
 ///|
@@ -683,29 +683,29 @@ pub fn Physics3dContext::new() -> Physics3dContext {
   let rigid_bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
   let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let query_pipeline = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
+    QueryFilter3DReal(),
     rigid_bodies,
     colliders,
   )
-  Physics3dContext::{
+  {
     rigid_bodies,
     colliders,
-    islands: @dynamics.IslandManager3D::IslandManager3D(),
-    broad_phase: @collision.BroadPhase3D::BroadPhase3D(),
-    narrow_phase: @collision.NarrowPhase3D::NarrowPhase3D(),
-    rope_joints: @dynamics.RopeJointSet3DReal::RopeJointSet3DReal(),
-    impulse_joints: @dynamics.JointSet3DReal::JointSet3DReal(),
-    multibody_joints: @dynamics.MultibodyJointSet3DReal::MultibodyJointSet3DReal(),
-    pipeline: @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal(),
+    islands: IslandManager3D(),
+    broad_phase: BroadPhase3D(),
+    narrow_phase: NarrowPhase3D(),
+    rope_joints: RopeJointSet3DReal(),
+    impulse_joints: JointSet3DReal(),
+    multibody_joints: MultibodyJointSet3DReal(),
+    pipeline: PhysicsPipeline3DReal(),
     integration: @dynamics.IntegrationParameters::default(),
-    hooks: @pipeline.PhysicsHooks3D::PhysicsHooks3D(),
-    event_handler: @pipeline.EventHandler3D::EventHandler3D(),
+    hooks: PhysicsHooks3D(),
+    event_handler: EventHandler3D(),
     query_pipeline,
-    entity_to_body: @hashmap.HashMap([]),
-    entity_to_collider: @hashmap.HashMap([]),
-    entity_to_impulse_joint: @hashmap.HashMap([]),
-    entity_to_multibody_joint: @hashmap.HashMap([]),
-    collider_to_entity: @hashmap.HashMap([]),
+    entity_to_body: HashMap([]),
+    entity_to_collider: HashMap([]),
+    entity_to_impulse_joint: HashMap([]),
+    entity_to_multibody_joint: HashMap([]),
+    collider_to_entity: HashMap([]),
   }
 }
 
@@ -770,7 +770,7 @@ pub fn physics3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .named("mgstudio.physics3d.cleanup")
     .in_set(physics3d_set_cleanup),
   )
-  .configure_set(@app.PreUpdate, physics3d_set_clear_events, before=[
+  .configure_set(PreUpdate, physics3d_set_clear_events, before=[
     physics3d_set_cleanup,
   ])
   .add_fixed_update_system_config(
@@ -803,19 +803,19 @@ pub fn physics3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .named("mgstudio.physics3d.writeback")
     .in_set(physics3d_set_writeback),
   )
-  .configure_set(@app.FixedUpdate, physics3d_set_sync_insertions, before=[
+  .configure_set(FixedUpdate, physics3d_set_sync_insertions, before=[
     physics3d_set_sync_joints,
   ])
-  .configure_set(@app.FixedUpdate, physics3d_set_sync_joints, before=[
+  .configure_set(FixedUpdate, physics3d_set_sync_joints, before=[
     physics3d_set_sync_world_to_rapier,
   ])
-  .configure_set(@app.FixedUpdate, physics3d_set_sync_world_to_rapier, before=[
+  .configure_set(FixedUpdate, physics3d_set_sync_world_to_rapier, before=[
     physics3d_set_character_controller,
   ])
-  .configure_set(@app.FixedUpdate, physics3d_set_character_controller, before=[
+  .configure_set(FixedUpdate, physics3d_set_character_controller, before=[
     physics3d_set_step,
   ])
-  .configure_set(@app.FixedUpdate, physics3d_set_step, before=[
+  .configure_set(FixedUpdate, physics3d_set_step, before=[
     physics3d_set_writeback,
   ])
 }

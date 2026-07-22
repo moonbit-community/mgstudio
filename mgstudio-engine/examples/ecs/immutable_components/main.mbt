@@ -54,7 +54,7 @@ fn rebuild_name_index(
   names : @ecs.Query[(@core.Entity, @ecs.Read[Name]), @ecs.All],
   index : @app.ResMut[NameIndex],
 ) -> Unit {
-  index.set(NameIndex::{ entries: Map([]) })
+  index.set({ entries: Map([]) })
   try! names.view(fn(_query_entity, data) {
     let (entity, name) = data
     index.modify(fn(value) { value.entries[name.value().value] = entity })
@@ -96,9 +96,9 @@ fn print_index(index : @app.Res[NameIndex]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_world(@app.Update, rename_one_entity)
-  .add_systems_param2(@app.Update, rebuild_name_index)
-  .add_systems_param(@app.Update, print_index)
+  .add_systems_param(Startup, setup)
+  .add_systems_world(Update, rename_one_entity)
+  .add_systems_param2(Update, rebuild_name_index)
+  .add_systems_param(Update, print_index)
   .run()
 }

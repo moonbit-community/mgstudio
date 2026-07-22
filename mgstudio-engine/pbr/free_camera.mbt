@@ -36,17 +36,17 @@ pub(all) struct FreeCamera {
 
 ///|
 pub fn FreeCamera::FreeCamera() -> FreeCamera {
-  FreeCamera::{
+  {
     sensitivity: 0.2F,
-    key_forward: @window.KeyCode::KeyW,
-    key_back: @window.KeyCode::KeyS,
-    key_left: @window.KeyCode::KeyA,
-    key_right: @window.KeyCode::KeyD,
-    key_up: @window.KeyCode::KeyE,
-    key_down: @window.KeyCode::KeyQ,
-    key_run: @window.KeyCode::ShiftLeft,
-    mouse_key_cursor_grab: @window.MouseButton::Left,
-    keyboard_key_toggle_cursor_grab: @window.KeyCode::KeyM,
+    key_forward: KeyW,
+    key_back: KeyS,
+    key_left: KeyA,
+    key_right: KeyD,
+    key_up: KeyE,
+    key_down: KeyQ,
+    key_run: ShiftLeft,
+    mouse_key_cursor_grab: Left,
+    keyboard_key_toggle_cursor_grab: KeyM,
     walk_speed: 5.0F,
     run_speed: 15.0F,
     scroll_factor: 0.5F,
@@ -67,7 +67,7 @@ pub(all) struct FreeCameraState {
 
 ///|
 pub fn FreeCameraState::FreeCameraState() -> FreeCameraState {
-  FreeCameraState::{
+  {
     enabled: true,
     initialized: false,
     pitch: 0.0F,
@@ -104,7 +104,7 @@ fn free_camera_system_state_mut_or_init(
     is None {
     world.insert_resource(
       (@app.Resource::resource() : @ecs.ResourceKey[FreeCameraSystemState]),
-      FreeCameraSystemState::{
+      {
         toggle_cursor_grab: false,
         mouse_cursor_grab: false,
         last_mouse_position: None,
@@ -193,17 +193,17 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
 
   if !state.initialized {
     let (yaw, pitch) = free_camera_angles_from_transform(transform)
-    state = FreeCameraState::{ ..state, initialized: true, pitch, yaw }
+    state = { ..state, initialized: true, pitch, yaw }
   }
 
   if !state.enabled {
     if system_state.toggle_cursor_grab || system_state.mouse_cursor_grab {
-      system_state = FreeCameraSystemState::{
+      system_state = {
         toggle_cursor_grab: false,
         mouse_cursor_grab: false,
         last_mouse_position: None,
       }
-      @window.window_set_cursor_grab_mode(mode=@window.CursorGrabMode::GrabNone)
+      @window.window_set_cursor_grab_mode(mode=GrabNone)
       @window.window_set_cursor_visible(visible=true)
     }
     system_state_mut.set(system_state)
@@ -218,7 +218,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   if speed_multiplier < 0.0F {
     speed_multiplier = 0.0F
   }
-  state = FreeCameraState::{ ..state, speed_multiplier, }
+  state = { ..state, speed_multiplier, }
 
   let mut axis_input = @math.Vec3::zero()
   if @input.key_pressed(config.key_forward) {
@@ -242,24 +242,18 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
 
   let mut cursor_grab_change = false
   if @input.key_just_pressed(config.keyboard_key_toggle_cursor_grab) {
-    system_state = FreeCameraSystemState::{
+    system_state = {
       ..system_state,
       toggle_cursor_grab: !system_state.toggle_cursor_grab,
     }
     cursor_grab_change = true
   }
   if @input.mouse_button_just_pressed(config.mouse_key_cursor_grab) {
-    system_state = FreeCameraSystemState::{
-      ..system_state,
-      mouse_cursor_grab: true,
-    }
+    system_state = { ..system_state, mouse_cursor_grab: true }
     cursor_grab_change = true
   }
   if @input.mouse_button_just_released(config.mouse_key_cursor_grab) {
-    system_state = FreeCameraSystemState::{
-      ..system_state,
-      mouse_cursor_grab: false,
-    }
+    system_state = { ..system_state, mouse_cursor_grab: false }
     cursor_grab_change = true
   }
   let cursor_grab = system_state.toggle_cursor_grab ||
@@ -283,7 +277,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
       velocity = @math.Vec3::zero()
     }
   }
-  state = FreeCameraState::{ ..state, velocity, }
+  state = { ..state, velocity, }
 
   if velocity.length_squared() > 0.0F {
     let forward = @pbr_render.render3d_transform_forward(transform)
@@ -302,12 +296,10 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
 
   if cursor_grab_change {
     if cursor_grab {
-      @window.window_set_cursor_grab_mode(
-        mode=@window.CursorGrabMode::GrabLocked,
-      )
+      @window.window_set_cursor_grab_mode(mode=GrabLocked)
       @window.window_set_cursor_visible(visible=false)
     } else {
-      @window.window_set_cursor_grab_mode(mode=@window.CursorGrabMode::GrabNone)
+      @window.window_set_cursor_grab_mode(mode=GrabNone)
       @window.window_set_cursor_visible(visible=true)
     }
   }
@@ -319,7 +311,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
           Some(last_position) => mouse_position.sub(last_position)
           None => @math.Vec2::new(0.0F, 0.0F)
         }
-        system_state = FreeCameraSystemState::{
+        system_state = {
           ..system_state,
           last_mouse_position: Some(mouse_position),
         }
@@ -334,20 +326,13 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
             .mul(@math.Quat::from_rotation_x(pitch))
             .normalize()
           transform = transform.with_rotation(rotation)
-          state = FreeCameraState::{ ..state, pitch, yaw }
+          state = { ..state, pitch, yaw }
         }
       }
-      None =>
-        system_state = FreeCameraSystemState::{
-          ..system_state,
-          last_mouse_position: None,
-        }
+      None => system_state = { ..system_state, last_mouse_position: None }
     }
   } else {
-    system_state = FreeCameraSystemState::{
-      ..system_state,
-      last_mouse_position: None,
-    }
+    system_state = { ..system_state, last_mouse_position: None }
   }
 
   system_state_mut.set(system_state)
@@ -363,6 +348,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
 pub struct FreeCameraPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FreeCameraPlugin::FreeCameraPlugin() -> FreeCameraPlugin {
   FreeCameraPlugin::{  }
 }

@@ -15,14 +15,14 @@
 ///|
 test "render3d: main pass skips deferred opaque materials like bevy queue_material_meshes" {
   let deferred_opaque = @material.MaterialProperties::MaterialProperties()
-    .with_render_phase_type(@material.RenderPhaseType::Opaque)
-    .with_render_method(OpaqueRendererMethod::Deferred)
+    .with_render_phase_type(Opaque)
+    .with_render_method(Deferred)
   let forward_opaque = @material.MaterialProperties::MaterialProperties()
-    .with_render_phase_type(@material.RenderPhaseType::Opaque)
-    .with_render_method(OpaqueRendererMethod::Forward)
+    .with_render_phase_type(Opaque)
+    .with_render_method(Forward)
   let deferred_alpha_mask = @material.MaterialProperties::MaterialProperties()
-    .with_render_phase_type(@material.RenderPhaseType::AlphaMask)
-    .with_render_method(OpaqueRendererMethod::Deferred)
+    .with_render_phase_type(AlphaMask)
+    .with_render_method(Deferred)
 
   debug_inspect(
     render3d_main_pass_skips_deferred_opaque(deferred_opaque),
@@ -52,7 +52,7 @@ test "render3d: main transparent pass executes retained phase draw functions" {
   let seen : Array[@core.Entity] = []
   let draw_function = draw_functions.register("DrawCustom", fn(_world, item) {
     seen.push(item.entity())
-    @core_3d.Transparent3dRenderCommandResult::Success
+    Success
   })
   phases.add(
     retained_view,

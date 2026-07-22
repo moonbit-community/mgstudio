@@ -56,7 +56,7 @@ pub(all) suberror ImageLoaderError {
 
 ///|
 pub fn ImageLoader::new(supported_compressed_formats : Int) -> ImageLoader {
-  ImageLoader::{ supported_compressed_formats, }
+  { supported_compressed_formats, }
 }
 
 ///|
@@ -89,10 +89,10 @@ pub fn file_texture_error_message(error : FileTextureError) -> String {
 ///|
 pub fn image_loader_error_message(error : ImageLoaderError) -> String {
   match error {
-    ImageLoaderError::Io(message) => "Failed to load image bytes: \{message}"
-    ImageLoaderError::FileTexture(file_error) =>
+    Io(message) => "Failed to load image bytes: \{message}"
+    FileTexture(file_error) =>
       "Could not load texture file: \{file_texture_error_message(file_error)}"
-    ImageLoaderError::ArrayLayout(message) => "Invalid array layout: \{message}"
+    ArrayLayout(message) => "Invalid array layout: \{message}"
   }
 }
 
@@ -101,30 +101,30 @@ pub fn image_container_format_from_extension(
   extension : String,
 ) -> ImageContainerFormat {
   match extension {
-    "basis" => ImageContainerFormat::Basis
-    "bmp" => ImageContainerFormat::Bmp
-    "dds" => ImageContainerFormat::Dds
-    "exr" => ImageContainerFormat::Exr
-    "ff" => ImageContainerFormat::Farbfeld
-    "farbfeld" => ImageContainerFormat::Farbfeld
-    "gif" => ImageContainerFormat::Gif
-    "hdr" => ImageContainerFormat::Hdr
-    "ico" => ImageContainerFormat::Ico
-    "jpg" => ImageContainerFormat::Jpeg
-    "jpeg" => ImageContainerFormat::Jpeg
-    "ktx2" => ImageContainerFormat::Ktx2
-    "png" => ImageContainerFormat::Png
-    "pnm" => ImageContainerFormat::Pnm
-    "ppm" => ImageContainerFormat::Pnm
-    "pgm" => ImageContainerFormat::Pnm
-    "pbm" => ImageContainerFormat::Pnm
-    "pam" => ImageContainerFormat::Pnm
-    "qoi" => ImageContainerFormat::Qoi
-    "tga" => ImageContainerFormat::Tga
-    "tif" => ImageContainerFormat::Tiff
-    "tiff" => ImageContainerFormat::Tiff
-    "webp" => ImageContainerFormat::Webp
-    _ => ImageContainerFormat::Unknown(extension)
+    "basis" => Basis
+    "bmp" => Bmp
+    "dds" => Dds
+    "exr" => Exr
+    "ff" => Farbfeld
+    "farbfeld" => Farbfeld
+    "gif" => Gif
+    "hdr" => Hdr
+    "ico" => Ico
+    "jpg" => Jpeg
+    "jpeg" => Jpeg
+    "ktx2" => Ktx2
+    "png" => Png
+    "pnm" => Pnm
+    "ppm" => Pnm
+    "pgm" => Pnm
+    "pbm" => Pnm
+    "pam" => Pnm
+    "qoi" => Qoi
+    "tga" => Tga
+    "tif" => Tiff
+    "tiff" => Tiff
+    "webp" => Webp
+    _ => Unknown(extension)
   }
 }
 
@@ -156,7 +156,7 @@ pub(all) enum ImageFormatSetting {
 
 ///|
 pub fn ImageFormatSetting::default() -> ImageFormatSetting {
-  ImageFormatSetting::FromExtension
+  FromExtension
 }
 
 ///|
@@ -171,7 +171,7 @@ pub(all) struct ImageLoaderSettings {
 
 ///|
 pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
-  ImageLoaderSettings::{
+  {
     format: ImageFormatSetting::default(),
     texture_format: None,
     texture_descriptor_label: None,
@@ -184,22 +184,22 @@ pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
 ///|
 pub fn image_loader_supported_formats() -> Array[ImageContainerFormat] {
   [
-    ImageContainerFormat::Basis,
-    ImageContainerFormat::Bmp,
-    ImageContainerFormat::Dds,
-    ImageContainerFormat::Exr,
-    ImageContainerFormat::Farbfeld,
-    ImageContainerFormat::Gif,
-    ImageContainerFormat::Hdr,
-    ImageContainerFormat::Ico,
-    ImageContainerFormat::Jpeg,
-    ImageContainerFormat::Ktx2,
-    ImageContainerFormat::Png,
-    ImageContainerFormat::Pnm,
-    ImageContainerFormat::Qoi,
-    ImageContainerFormat::Tga,
-    ImageContainerFormat::Tiff,
-    ImageContainerFormat::Webp,
+    Basis,
+    Bmp,
+    Dds,
+    Exr,
+    Farbfeld,
+    Gif,
+    Hdr,
+    Ico,
+    Jpeg,
+    Ktx2,
+    Png,
+    Pnm,
+    Qoi,
+    Tga,
+    Tiff,
+    Webp,
   ]
 }
 
@@ -208,23 +208,23 @@ fn image_container_format_extensions(
   format : ImageContainerFormat,
 ) -> Array[String] {
   match format {
-    ImageContainerFormat::Basis => ["basis"]
-    ImageContainerFormat::Bmp => ["bmp"]
-    ImageContainerFormat::Dds => ["dds"]
-    ImageContainerFormat::Exr => ["exr"]
-    ImageContainerFormat::Farbfeld => ["ff", "farbfeld"]
-    ImageContainerFormat::Gif => ["gif"]
-    ImageContainerFormat::Hdr => ["hdr"]
-    ImageContainerFormat::Ico => ["ico"]
-    ImageContainerFormat::Jpeg => ["jpg", "jpeg"]
-    ImageContainerFormat::Ktx2 => ["ktx2"]
-    ImageContainerFormat::Png => ["png"]
-    ImageContainerFormat::Pnm => ["pnm", "ppm", "pgm", "pbm", "pam"]
-    ImageContainerFormat::Qoi => ["qoi"]
-    ImageContainerFormat::Tga => ["tga"]
-    ImageContainerFormat::Tiff => ["tif", "tiff"]
-    ImageContainerFormat::Webp => ["webp"]
-    ImageContainerFormat::Unknown(extension) => [extension]
+    Basis => ["basis"]
+    Bmp => ["bmp"]
+    Dds => ["dds"]
+    Exr => ["exr"]
+    Farbfeld => ["ff", "farbfeld"]
+    Gif => ["gif"]
+    Hdr => ["hdr"]
+    Ico => ["ico"]
+    Jpeg => ["jpg", "jpeg"]
+    Ktx2 => ["ktx2"]
+    Png => ["png"]
+    Pnm => ["pnm", "ppm", "pgm", "pbm", "pam"]
+    Qoi => ["qoi"]
+    Tga => ["tga"]
+    Tiff => ["tif", "tiff"]
+    Webp => ["webp"]
+    Unknown(extension) => [extension]
   }
 }
 
@@ -293,55 +293,55 @@ pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? 
   if image_bytes_starts_with(bytes, [
       0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
     ]) {
-    return Some(ImageContainerFormat::Png)
+    return Some(Png)
   }
   if image_bytes_starts_with(bytes, [0xFF, 0xD8]) {
-    return Some(ImageContainerFormat::Jpeg)
+    return Some(Jpeg)
   }
   if image_bytes_starts_with(bytes, [0x44, 0x44, 0x53, 0x20]) {
-    return Some(ImageContainerFormat::Dds)
+    return Some(Dds)
   }
   if image_bytes_starts_with(bytes, [
       0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
     ]) {
-    return Some(ImageContainerFormat::Ktx2)
+    return Some(Ktx2)
   }
   if image_bytes_starts_with(bytes, [0x76, 0x2F, 0x31, 0x01]) {
-    return Some(ImageContainerFormat::Exr)
+    return Some(Exr)
   }
   if image_bytes_starts_with(bytes, [
       0x23, 0x3F, 0x52, 0x41, 0x44, 0x49, 0x41, 0x4E, 0x43, 0x45,
     ]) ||
     image_bytes_starts_with(bytes, [0x23, 0x3F, 0x52, 0x47, 0x42, 0x45]) {
-    return Some(ImageContainerFormat::Hdr)
+    return Some(Hdr)
   }
   if image_bytes_starts_with(bytes, [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]) ||
     image_bytes_starts_with(bytes, [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]) {
-    return Some(ImageContainerFormat::Gif)
+    return Some(Gif)
   }
   if image_bytes_starts_with(bytes, [0x42, 0x4D]) {
-    return Some(ImageContainerFormat::Bmp)
+    return Some(Bmp)
   }
   if image_bytes_starts_with(bytes, [0x00, 0x00, 0x01, 0x00]) {
-    return Some(ImageContainerFormat::Ico)
+    return Some(Ico)
   }
   if image_bytes_starts_with(bytes, [
       0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64,
     ]) {
-    return Some(ImageContainerFormat::Farbfeld)
+    return Some(Farbfeld)
   }
   if image_bytes_starts_with(bytes, [0x71, 0x6F, 0x69, 0x66]) {
-    return Some(ImageContainerFormat::Qoi)
+    return Some(Qoi)
   }
   if image_bytes_starts_with(bytes, [0x49, 0x49, 0x2A, 0x00]) ||
     image_bytes_starts_with(bytes, [0x4D, 0x4D, 0x00, 0x2A]) {
-    return Some(ImageContainerFormat::Tiff)
+    return Some(Tiff)
   }
   if bytes.length() >= 2 &&
     image_blob_u8_at(bytes, 0) == 0x50 &&
     image_blob_u8_at(bytes, 1) >= 0x31 &&
     image_blob_u8_at(bytes, 1) <= 0x37 {
-    return Some(ImageContainerFormat::Pnm)
+    return Some(Pnm)
   }
   if bytes.length() >= 12 &&
     image_bytes_starts_with(bytes, [0x52, 0x49, 0x46, 0x46]) &&
@@ -349,7 +349,7 @@ pub fn image_guess_container_from_bytes(bytes : Bytes) -> ImageContainerFormat? 
     image_blob_u8_at(bytes, 9) == 0x45 &&
     image_blob_u8_at(bytes, 10) == 0x42 &&
     image_blob_u8_at(bytes, 11) == 0x50 {
-    return Some(ImageContainerFormat::Webp)
+    return Some(Webp)
   }
   None
 }
@@ -380,17 +380,17 @@ pub fn image_loader_container_from_input(
   format_setting : ImageFormatSetting,
 ) -> ImageContainerFormat? {
   match format_setting {
-    ImageFormatSetting::Format(format) => Some(format)
-    ImageFormatSetting::Guess =>
+    Format(format) => Some(format)
+    Guess =>
       match bytes {
         Some(blob) => image_guess_container_from_bytes(blob)
         None => None
       }
-    ImageFormatSetting::FromExtension =>
+    FromExtension =>
       match image_extension_from_path(path) {
         Some(extension) =>
           match image_container_format_from_extension(extension) {
-            ImageContainerFormat::Unknown(_) => None
+            Unknown(_) => None
             known => Some(known)
           }
         None => None
@@ -415,8 +415,8 @@ pub fn image_array_layout_layers(
     return None
   }
   match layout {
-    ImageArrayLayout::RowCount(rows) => if rows > 0 { Some(rows) } else { None }
-    ImageArrayLayout::RowHeight(row_height) =>
+    RowCount(rows) => if rows > 0 { Some(rows) } else { None }
+    RowHeight(row_height) =>
       if row_height > 0 && image_height % row_height == 0 {
         Some(image_height / row_height)
       } else {

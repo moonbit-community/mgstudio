@@ -253,10 +253,7 @@ test "physics3d: query context returns entity-mapped hits and supports exclude f
     true,
   )
   debug_inspect(hit is Some(_), content="true")
-  let filter = ctx.query_filter_exclude_entity(
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
-    floor,
-  )
+  let filter = ctx.query_filter_exclude_entity(QueryFilter3DReal(), floor)
   let excluded_hit = ctx.cast_ray_entity_with_filter(
     @math.Vec3::new(0.0F, 2.0F, 0.0F),
     @math.Vec3::new(0.0F, -1.0F, 0.0F),

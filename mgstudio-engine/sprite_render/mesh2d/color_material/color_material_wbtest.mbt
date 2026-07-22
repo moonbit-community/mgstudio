@@ -27,7 +27,7 @@ test "color material: add_material stores color authoring values" {
       color_material_close(material.color.r, expected_color.r) &&
       color_material_close(material.color.g, expected_color.g) &&
       color_material_close(material.color.b, expected_color.b) &&
-      material.alpha_mode is @sprite_render_mesh2d_material.AlphaMode2d::Opaque
+      material.alpha_mode is Opaque
     None => false
   }
   debug_inspect(ok, content="true")

@@ -21,6 +21,7 @@ let despawn_membership_marker_key : ComponentKey[DespawnMembershipMarker] = regi
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 test "despawn updates component membership count and generation" {
   let world = World::new()
   defer world.close()

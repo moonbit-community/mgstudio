@@ -342,11 +342,7 @@ fn auto_exposure_view_state_buffer(
     usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
   )
   backend.queue.write_buffer(state_buf, 0UL, f32le_pack([initial_state]))
-  backend.auto_exposure_view_states.push(GpuAutoExposureViewState::{
-    key_hi,
-    key_lo,
-    state_buf,
-  })
+  backend.auto_exposure_view_states.push({ key_hi, key_lo, state_buf })
   state_buf
 }
 

@@ -23,7 +23,7 @@ fn render3d_extract_ssao_settings(
     Some(value) => value
     None => Msaa::default()
   }
-  if effective_msaa != Msaa::Off {
+  if effective_msaa != Off {
     @app.log_error(
       "SSAO is being used which requires Msaa::Off, but camera \{entity.id} has Msaa::\{render3d_msaa_variant_name(effective_msaa)}",
     )
@@ -102,7 +102,7 @@ fn render3d_execute_collect_cameras(
   default_opaque_renderer_method : OpaqueRendererMethod,
 ) -> Array[ExtractedCamera3d] {
   let trace_collect_cameras_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_collect_cameras",
   )
   fn entity_key(entity : @core.Entity) -> UInt64 {
@@ -166,7 +166,7 @@ fn render3d_execute_collect_cameras(
     ) = data
     let camera = match camera_opt.value() {
       Some(v) => v
-      None => @camera_camera.Camera::Camera()
+      None => Camera()
     }
     if !camera.is_active {
       return
@@ -269,7 +269,7 @@ fn render3d_execute_collect_cameras(
       (
         (try! source_world.get_by_key(entity, ecs_key_deferred_prepass))
         is Some(_) ||
-        default_opaque_renderer_method is OpaqueRendererMethod::Deferred ||
+        default_opaque_renderer_method is Deferred ||
         screen_space_reflections is Some(_)
       )
     let depth_prepass_enabled = prepass_enabled &&
@@ -317,11 +317,11 @@ fn render3d_execute_collect_cameras(
     }
     let target = match target_opt.value() {
       Some(v) => v
-      None => @camera_camera.RenderTarget::Screen
+      None => Screen
     }
     let layers = match layers_opt.value() {
       Some(v) => v
-      None => @camera_render_layers.RenderLayers::RenderLayers()
+      None => RenderLayers()
     }
     let transform = @pbr_render.render3d_entity_world_transform_cached(
       source_world, entity, world_transform_cache_value,
@@ -369,9 +369,9 @@ fn render3d_execute_collect_cameras(
         cluster_projection_updates.push(
           (entity, render3d_cluster_camera_projection(projection)),
         )
-        cameras.push(ExtractedCamera3d::{
+        cameras.push({
           entity: phase_entity,
-          payload: Camera3dViewPayload::{
+          payload: {
             decal_config,
             deferred_config,
             distance_fog,
@@ -456,7 +456,7 @@ fn render3d_execute_collect_cameras(
     try! (source_world.take(entity, ecs_key_projection_runtime3d) |> ignore)
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_collect_cameras",
     trace_collect_cameras_start_us,
   )

@@ -88,7 +88,7 @@ pub impl @app.Resource for State with fn resource() {
 
 ///|
 fn State::State() -> State {
-  State::{
+  {
     handle: @asset.Handle::new(-1),
     other_handle: @asset.Handle::new(-1),
     blob: @asset.Handle::new(-1),
@@ -183,7 +183,7 @@ fn load_custom_asset(
   _path : @asset.AssetPath,
   bytes : Bytes,
 ) -> CustomAsset {
-  CustomAsset::{ value: parse_int_after_label(bytes_to_text(bytes), "value:") }
+  { value: parse_int_after_label(bytes_to_text(bytes), "value:") }
 }
 
 ///|
@@ -192,7 +192,7 @@ fn load_blob_asset(
   _path : @asset.AssetPath,
   bytes : Bytes,
 ) -> Blob {
-  Blob::{ bytes, }
+  { bytes, }
 }
 
 ///|
@@ -260,7 +260,7 @@ fn main {
     ),
   )
   .init_resource(fn() { State::State() })
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, print_on_load)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, print_on_load)
   .run()
 }

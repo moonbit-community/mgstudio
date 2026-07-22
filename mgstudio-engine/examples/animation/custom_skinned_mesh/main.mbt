@@ -29,7 +29,7 @@ pub impl @ecs.Component for AnimatedJoint with fn component() {
 
 ///|
 fn AnimatedJoint::AnimatedJoint(index : Int) -> AnimatedJoint {
-  AnimatedJoint::{ index, }
+  { index, }
 }
 
 ///|
@@ -122,7 +122,7 @@ fn setup(
   ignore(
     commands.spawn(
       @camera.Camera3dBundle::new(
-        @camera_camera.Camera::Camera(),
+        Camera(),
         @transform.Transform::from_xyz(2.5F, 2.5F, 9.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -254,7 +254,7 @@ fn joint_animation(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param3(@app.Update, joint_animation)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param3(Update, joint_animation)
   .run()
 }

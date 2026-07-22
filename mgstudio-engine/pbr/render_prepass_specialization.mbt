@@ -31,7 +31,7 @@ priv struct SpecializedPrepassMaterialViewPipelineCache {
 
 ///|
 fn SpecializedPrepassMaterialViewPipelineCache::new() -> SpecializedPrepassMaterialViewPipelineCache {
-  SpecializedPrepassMaterialViewPipelineCache::{ entries: Map([]) }
+  { entries: Map([]) }
 }
 
 ///|
@@ -65,11 +65,7 @@ fn SpecializedPrepassMaterialViewPipelineCache::insert(
   pipeline_id : @material.CachedRenderPipelineId,
   draw_function : @material.DrawFunctionId,
 ) -> Unit {
-  self.entries.set(entity.to_bits(), SpecializedPrepassMaterialPipelineCacheEntry::{
-    tick,
-    pipeline_id,
-    draw_function,
-  })
+  self.entries.set(entity.to_bits(), { tick, pipeline_id, draw_function })
 }
 
 ///|
@@ -90,7 +86,7 @@ priv struct SpecializedPrepassMaterialPipelineCache {
 
 ///|
 fn SpecializedPrepassMaterialPipelineCache::new() -> SpecializedPrepassMaterialPipelineCache {
-  SpecializedPrepassMaterialPipelineCache::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|
@@ -163,7 +159,7 @@ priv struct ViewKeyPrepassCache {
 
 ///|
 fn ViewKeyPrepassCache::new() -> ViewKeyPrepassCache {
-  ViewKeyPrepassCache::{ keys: @hashmap.HashMap([]) }
+  { keys: HashMap([]) }
 }
 
 ///|
@@ -183,9 +179,7 @@ priv struct PendingPrepassMeshMaterialQueues {
 
 ///|
 fn PendingPrepassMeshMaterialQueues::new() -> PendingPrepassMeshMaterialQueues {
-  PendingPrepassMeshMaterialQueues::{
-    queues: @render.PendingQueues::PendingQueues(),
-  }
+  { queues: PendingQueues() }
 }
 
 ///|
@@ -453,13 +447,9 @@ fn render3d_prepass_specialization_work_item(
         material_type_tag: material.material_type_tag(),
         draw_function: plan.draw_function(),
       }
-      Some(Render3dPrepassSpecializationOutcome::{
-        decision,
-        work_item: Some(work_item),
-      })
+      Some({ decision, work_item: Some(work_item) })
     }
-    _ =>
-      Some(Render3dPrepassSpecializationOutcome::{ decision, work_item: None })
+    _ => Some({ decision, work_item: None })
   }
 }
 
@@ -516,8 +506,7 @@ fn render3d_specialize_prepass_material_meshes(
   ensure_render3d_prepass_specialization_resources(world)
   let work_items : Array[Render3dPrepassSpecializationWorkItem] = []
   let removals : Array[(@render_view.RetainedViewEntity, @core.Entity)] = []
-  let all_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let all_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   let dirty_specializations = world
     .get_resource(@render_visibility.DirtySpecializations::resource())
     .unwrap()

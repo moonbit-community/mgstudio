@@ -286,9 +286,9 @@ fn main {
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     (move_target_system, move_follower_system) |> @app.chain(),
   )
   .run()

@@ -29,12 +29,12 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
-    @app.FixedUpdate,
+    FixedUpdate,
     @app.system_config_world(physics2d_showcase_player_controls_fixed),
   )
-  .add_systems_world(@app.Startup, physics2d_showcase_setup)
-  .add_systems_world(@app.Update, physics2d_showcase_spawn_ball_on_click)
-  .add_systems_world(@app.Update, physics2d_showcase_print_events)
+  .add_systems_world(Startup, physics2d_showcase_setup)
+  .add_systems_world(Update, physics2d_showcase_spawn_ball_on_click)
+  .add_systems_world(Update, physics2d_showcase_print_events)
   .run()
 }
 
@@ -47,7 +47,7 @@ priv struct ShowcaseEntities {
 }
 
 ///|
-let showcase_entities : Ref[ShowcaseEntities] = Ref(ShowcaseEntities::{
+let showcase_entities : Ref[ShowcaseEntities] = Ref({
   player: None,
   sensor_zone: None,
   ghost_a: None,
@@ -82,11 +82,11 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
   )
   .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .with_layout(@text.TextLayout::new_with_justify(Left))
   .with_color(
     @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 }
@@ -268,7 +268,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     @physics2d.ecs_key_kinematic_character_controller2d,
-    @physics2d.KinematicCharacterController2d::KinematicCharacterController2d(),
+    KinematicCharacterController2d(),
   )
   try! world.set_by_key(
     player,
@@ -516,7 +516,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
       _ => true
     }
   })
-  showcase_entities.val = ShowcaseEntities::{
+  showcase_entities.val = {
     player: Some(player),
     sensor_zone: Some(sensor_zone),
     ghost_a: Some(ghost_a),
@@ -530,12 +530,12 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 ///|
 fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
   let dt = @time.time_fixed_timestep_seconds()
-  if @input.key_just_pressed(@window.KeyCode::KeyG) {
+  if @input.key_just_pressed(KeyG) {
     let enabled = @physics2d.physics2d_debug_render_config().enabled
     @physics2d.physics2d_debug_render_set_enabled(!enabled)
     println("[physics2d_showcase] debug_render enabled=\{!enabled}")
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyH) {
+  if @input.key_just_pressed(KeyH) {
     showcase_ghost_nocollide_enabled.val = !showcase_ghost_nocollide_enabled.val
     println(
       "[physics2d_showcase] ghost_pair no-collision enabled=\{showcase_ghost_nocollide_enabled.val}",
@@ -549,20 +549,16 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
     return
   }
   let mut axis = @math.Vec2::new(0.0F, 0.0F)
-  if @input.key_pressed(@window.KeyCode::KeyA) ||
-    @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.key_pressed(KeyA) || @input.key_pressed(ArrowLeft) {
     axis = @math.Vec2::new(axis.x - 1.0F, axis.y)
   }
-  if @input.key_pressed(@window.KeyCode::KeyD) ||
-    @input.key_pressed(@window.KeyCode::ArrowRight) {
+  if @input.key_pressed(KeyD) || @input.key_pressed(ArrowRight) {
     axis = @math.Vec2::new(axis.x + 1.0F, axis.y)
   }
-  if @input.key_pressed(@window.KeyCode::KeyW) ||
-    @input.key_pressed(@window.KeyCode::ArrowUp) {
+  if @input.key_pressed(KeyW) || @input.key_pressed(ArrowUp) {
     axis = @math.Vec2::new(axis.x, axis.y + 1.0F)
   }
-  if @input.key_pressed(@window.KeyCode::KeyS) ||
-    @input.key_pressed(@window.KeyCode::ArrowDown) {
+  if @input.key_pressed(KeyS) || @input.key_pressed(ArrowDown) {
     axis = @math.Vec2::new(axis.x, axis.y - 1.0F)
   }
   let speed = 320.0F
@@ -576,7 +572,7 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
 
 ///|
 fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
-  if !@input.mouse_button_just_pressed(@window.MouseButton::Left) {
+  if !@input.mouse_button_just_pressed(Left) {
     return
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
@@ -628,11 +624,11 @@ fn physics2d_showcase_print_events(world : @ecs.World) -> Unit {
   guard ev_res.get() is Some(events) else { return }
   for ev in events.collisions {
     match ev {
-      @physics2d.CollisionEvent2d::Started(a, b, sensor) =>
+      Started(a, b, sensor) =>
         if sensor {
           println("[physics2d_showcase] sensor started: \{a.id} <-> \{b.id}")
         }
-      @physics2d.CollisionEvent2d::Stopped(a, b, sensor) =>
+      Stopped(a, b, sensor) =>
         if sensor {
           println("[physics2d_showcase] sensor stopped: \{a.id} <-> \{b.id}")
         }

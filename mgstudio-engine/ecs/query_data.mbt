@@ -1130,7 +1130,7 @@ pub impl[T : Component] QueryData for ReadValue[T] with fn matches(
 ///|
 pub impl[T : Component] QueryData for ReadValue[T] with fn fetch(world, entity) {
   let key = T::component()
-  ReadValue::{ key, value: query_data_require_component(world, entity, key) }
+  { key, value: query_data_require_component(world, entity, key) }
 }
 
 ///|
@@ -1158,7 +1158,7 @@ pub impl[T : Component] QueryData for ReadValue[T] with fn bind_table_fetch(
     if row_index < 0 || row_index >= values.length() {
       abort("ReadValue query bound table row is out of bounds")
     }
-    ReadValue::{ key, value: values[row_index] }
+    { key, value: values[row_index] }
   }
 }
 
@@ -1170,7 +1170,7 @@ pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_table_row(
   let local_component_id = query_data_component_local_id_or_abort(
     fetch.world.local_component_id(key.id()),
   )
-  ReadValue::{
+  {
     key,
     value: query_data_component_value_at_fetch_location(
       fetch, key, local_component_id,
@@ -1186,7 +1186,7 @@ pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_table_row_with_
   let local_component_id = query_data_component_local_id_or_abort(
     query_data_local_component_id_from_plan(fetch.plan, fetch.offset),
   )
-  ReadValue::{
+  {
     key,
     value: query_data_component_value_at_planned_fetch_location(
       fetch, key, local_component_id,
@@ -1202,7 +1202,7 @@ pub impl[T : Component] QueryData for ReadValue[T] with fn fetch_sparse_anchor_w
   match query_data_local_component_id_from_plan(fetch.plan, fetch.offset) {
     Some(local_component_id) if local_component_id ==
       fetch.anchor_local_component_id =>
-      ReadValue::{
+      {
         key,
         value: query_data_require_component(
           fetch.row.world,
@@ -1423,7 +1423,7 @@ pub impl QueryData for EntityRef with fn fetch(world, entity) {
 
 ///|
 pub impl QueryData for EntityRef with fn fetch_table_row(fetch) {
-  EntityRef::{ world: fetch.world, entity: fetch.entity }
+  { world: fetch.world, entity: fetch.entity }
 }
 
 ///|
@@ -1473,7 +1473,7 @@ pub impl QueryData for EntityMut with fn fetch(world, entity) {
 
 ///|
 pub impl QueryData for EntityMut with fn fetch_table_row(fetch) {
-  EntityMut::{ world: fetch.world, entity: fetch.entity }
+  { world: fetch.world, entity: fetch.entity }
 }
 
 ///|

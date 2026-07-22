@@ -23,7 +23,7 @@ pub struct BindGroup {
 
 ///|
 pub fn BindGroup::new(value : @wgpu.BindGroup) -> BindGroup {
-  BindGroup::{ id: next_bind_group_id(), value }
+  { id: next_bind_group_id(), value }
 }
 
 ///|

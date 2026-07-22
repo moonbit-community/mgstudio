@@ -21,11 +21,13 @@ pub struct ThreadExecutor {}
 pub struct ThreadExecutorTicker {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ThreadExecutor::new() -> ThreadExecutor {
   ThreadExecutor::{  }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ThreadExecutor::ticker(self : ThreadExecutor) -> ThreadExecutorTicker {
   ignore(self)
   ThreadExecutorTicker::{  }

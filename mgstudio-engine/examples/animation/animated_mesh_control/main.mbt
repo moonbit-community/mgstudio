@@ -43,7 +43,7 @@ fn setup(world : @ecs.World) -> Unit {
     asset_server.load(@gltf.GltfAssetLabel::Animation(0).from_asset(FOX_PATH)),
   ])
   let graph_handle = @animation.animation_graph_add(graph)
-  world.insert_resource(animations_resource_key, Animations::{
+  world.insert_resource(animations_resource_key, {
     animations: animation_indices,
     graph_handle,
   })
@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -99,7 +99,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
+          @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
         @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
         @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
@@ -130,8 +130,8 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F)),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F)),
       ),
     ),
   )
@@ -149,9 +149,9 @@ fn setup(world : @ecs.World) -> Unit {
           asset_server.load_font("fonts/FiraSans-Bold.ttf"),
         ),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
       ),
     ),
   )
@@ -205,7 +205,7 @@ fn keyboard_control(
   }
   let playing_animation_index = playing[0].0
 
-  if keyboard_input.just_pressed(@window.KeyCode::Space) {
+  if keyboard_input.just_pressed(Space) {
     let active = playing[0].1
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
@@ -218,7 +218,7 @@ fn keyboard_control(
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) {
+  if keyboard_input.just_pressed(ArrowUp) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
         ignore(animation_entry.set_speed(playing[0].1.speed() * 1.2F))
@@ -226,7 +226,7 @@ fn keyboard_control(
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
+  if keyboard_input.just_pressed(ArrowDown) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
         ignore(animation_entry.set_speed(playing[0].1.speed() * 0.8F))
@@ -234,7 +234,7 @@ fn keyboard_control(
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowLeft) {
+  if keyboard_input.just_pressed(ArrowLeft) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
         ignore(animation_entry.seek_to(playing[0].1.seek_time() - 0.1F))
@@ -242,7 +242,7 @@ fn keyboard_control(
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowRight) {
+  if keyboard_input.just_pressed(ArrowRight) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
         ignore(animation_entry.seek_to(playing[0].1.seek_time() + 0.1F))
@@ -250,7 +250,7 @@ fn keyboard_control(
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::Enter) {
+  if keyboard_input.just_pressed(Enter) {
     let next_index = (current_animation.get() + 1) %
       animations.get().animations.length()
     current_animation.set(next_index)
@@ -265,46 +265,34 @@ fn keyboard_control(
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::Digit1) {
+  if keyboard_input.just_pressed(Digit1) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
-        ignore(
-          animation_entry
-          .set_repeat(@animation.RepeatAnimation::Count(1))
-          .replay(),
-        )
+        ignore(animation_entry.set_repeat(Count(1)).replay())
       }
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::Digit2) {
+  if keyboard_input.just_pressed(Digit2) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
-        ignore(
-          animation_entry
-          .set_repeat(@animation.RepeatAnimation::Count(2))
-          .replay(),
-        )
+        ignore(animation_entry.set_repeat(Count(2)).replay())
       }
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::Digit3) {
+  if keyboard_input.just_pressed(Digit3) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
-        ignore(
-          animation_entry
-          .set_repeat(@animation.RepeatAnimation::Count(3))
-          .replay(),
-        )
+        ignore(animation_entry.set_repeat(Count(3)).replay())
       }
     })
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::KeyL) {
+  if keyboard_input.just_pressed(KeyL) {
     player_mut.modify(fn(player) {
       if player.animation_mut(playing_animation_index) is Some(animation_entry) {
-        ignore(animation_entry.set_repeat(@animation.RepeatAnimation::Forever))
+        ignore(animation_entry.set_repeat(Forever))
       }
     })
   }
@@ -314,7 +302,7 @@ fn keyboard_control(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param4(@app.Update, keyboard_control)
+  .add_systems_world(Startup, setup)
+  .add_systems_param4(Update, keyboard_control)
   .run()
 }

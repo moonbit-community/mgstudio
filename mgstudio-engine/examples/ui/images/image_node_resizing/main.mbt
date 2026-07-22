@@ -152,7 +152,7 @@ pub impl @ecs.TriggerEvent for TextUpdate with fn set_observer_entity(
   self,
   entity,
 ) {
-  TextUpdate::{ change: self.change, direction: self.direction, entity }
+  { change: self.change, direction: self.direction, entity }
 }
 
 ///|
@@ -202,9 +202,7 @@ fn resize_group_node(
         Percent(value) =>
           node_mut.set(
             node.with_height(
-              @ui.Val::Percent(
-                (value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_HEIGHT),
-              ),
+              Percent((value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_HEIGHT)),
             ),
           )
         _ => ()
@@ -214,9 +212,7 @@ fn resize_group_node(
         Percent(value) =>
           node_mut.set(
             node.with_height(
-              @ui.Val::Percent(
-                (value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_HEIGHT),
-              ),
+              Percent((value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_HEIGHT)),
             ),
           )
         _ => ()
@@ -226,9 +222,7 @@ fn resize_group_node(
         Percent(value) =>
           node_mut.set(
             node.with_width(
-              @ui.Val::Percent(
-                (value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_WIDTH),
-              ),
+              Percent((value + MIN_RESIZE_VAL).min(IMAGE_GROUP_BOX_MAX_WIDTH)),
             ),
           )
         _ => ()
@@ -238,9 +232,7 @@ fn resize_group_node(
         Percent(value) =>
           node_mut.set(
             node.with_width(
-              @ui.Val::Percent(
-                (value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_WIDTH),
-              ),
+              Percent((value - MIN_RESIZE_VAL).max(IMAGE_GROUP_BOX_MIN_WIDTH)),
             ),
           )
         _ => ()
@@ -272,7 +264,7 @@ fn spawn_label(
       .with_font(font)
       .with_font_size(@text.FontSize::Px(22.0F)),
       @text.TextColor::new(text_color()),
-      @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(10.0F))),
+      @ui.Node::Node().with_margin(@ui.UiRect::all(Px(10.0F))),
     ),
   )
   ignore(commands.entity(label).observe2_fallible(update_text))
@@ -291,9 +283,9 @@ fn spawn_image_group(
       @hierarchy.Parent::new(parent),
       ImageGroup::{  },
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(IMAGE_GROUP_BOX_INIT_WIDTH))
-      .with_height(@ui.Val::Percent(IMAGE_GROUP_BOX_INIT_HEIGHT))
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(IMAGE_GROUP_BOX_INIT_WIDTH))
+      .with_height(Percent(IMAGE_GROUP_BOX_INIT_HEIGHT))
+      .with_align_items(Center),
       @ui.BackgroundColor::new(group_background()),
     ),
   )
@@ -305,7 +297,7 @@ fn spawn_image_group(
             (
               @hierarchy.Parent::new(group),
               @ui.Node::Node(),
-              @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Auto),
+              @ui.ImageNode::new(image).with_mode(Auto),
             ),
           ),
         )
@@ -318,9 +310,9 @@ fn spawn_image_group(
             (
               @hierarchy.Parent::new(group),
               @ui.Node::Node()
-              .with_width(@ui.Val::Percent(width))
-              .with_height(@ui.Val::Percent(100.0F)),
-              @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Stretch),
+              .with_width(Percent(width))
+              .with_height(Percent(100.0F)),
+              @ui.ImageNode::new(image).with_mode(Stretch),
             ),
           ),
         )
@@ -352,11 +344,11 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_justify_content(@ui.JustifyContent::SpaceAround)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_justify_content(SpaceAround)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(root_background()),
     ),
   )
@@ -367,16 +359,16 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_justify_content(@ui.JustifyContent::SpaceAround)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_justify_content(SpaceAround)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(panel_background()),
     ),
   )
 
-  ignore(spawn_image_group(commands, panel, icon, @ui.NodeImageMode::Auto))
-  ignore(spawn_image_group(commands, panel, icon, @ui.NodeImageMode::Stretch))
+  ignore(spawn_image_group(commands, panel, icon, Auto))
+  ignore(spawn_image_group(commands, panel, icon, Stretch))
 }
 
 ///|

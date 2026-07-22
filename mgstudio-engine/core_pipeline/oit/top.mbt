@@ -23,6 +23,7 @@ const OIT_PLUGIN_NAME : String = "mgstudio.core_pipeline.oit.OrderIndependentTra
 pub struct OrderIndependentTransparencyPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn OrderIndependentTransparencyPlugin::OrderIndependentTransparencyPlugin() -> OrderIndependentTransparencyPlugin {
   OrderIndependentTransparencyPlugin::{  }
 }
@@ -36,7 +37,7 @@ pub struct OrderIndependentTransparencySettings {
 
 ///|
 pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{
+  {
     alpha_threshold: 0.001F,
     fragments_per_pixel_average: 1.0F,
     sorted_fragment_max_count: 64,

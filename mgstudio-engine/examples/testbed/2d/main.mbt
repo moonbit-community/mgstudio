@@ -90,7 +90,7 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, move_camera)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, move_camera)
   .run()
 }

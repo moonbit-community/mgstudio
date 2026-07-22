@@ -132,9 +132,7 @@ fn create_transparent_material(
   color : @color.Color,
 ) -> @asset.Handle[@pbr.StandardMaterial] {
   @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(color).with_alpha_mode(
-      @pbr.AlphaMode3d::Blend,
-    ),
+    @pbr.StandardMaterial::from_color(color).with_alpha_mode(Blend),
   )
 }
 
@@ -201,7 +199,7 @@ fn spawn_scene_spheres(
       layers,
     ),
   )
-  SpawnedScene::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -276,7 +274,7 @@ fn spawn_scene_quads(
       layers,
     ),
   )
-  SpawnedScene::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -361,7 +359,7 @@ fn spawn_scene_occlusion(
     ),
   )
 
-  SpawnedScene::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -378,7 +376,7 @@ fn spawn_scene_instancing(
   )
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::StandardMaterial()
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
     .with_base_color_texture(
       Some(asset_server.load("textures/slice_square.png")),
     ),
@@ -402,7 +400,7 @@ fn spawn_scene_instancing(
       }
     }
   }
-  SpawnedScene::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -411,7 +409,7 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
     let visibility = if i == oit_state.val.scene_index {
       @visibility.Visibility::Inherited
     } else {
-      @visibility.Visibility::Hidden
+      Hidden
     }
     for entity in entities {
       try! (world.replace(entity, @visibility.ecs_key_visibility, visibility)
@@ -423,12 +421,12 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 ///|
 fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
-    try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+    try! world.set_by_key(camera, @pbr.ecs_key_msaa, Off)
     if oit_state.val.oit_enabled {
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_order_independent_transparency_settings,
-        @pbr.OrderIndependentTransparencySettings::OrderIndependentTransparencySettings(),
+        OrderIndependentTransparencySettings(),
       )
     } else {
       try! (world.take(
@@ -451,7 +449,7 @@ fn setup(world : @ecs.World) -> Unit {
   oit_state.val.scene_entities = []
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -460,11 +458,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera, @camera_render_layers.ecs_key_render_layers, layer,
   )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::DepthPrepass(),
-  )
+  try! world.set_by_key(camera, @pbr.ecs_key_depth_prepass, DepthPrepass())
   oit_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
@@ -501,11 +495,11 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(
       @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   oit_state.val.help_text = Some(help_text)
 
@@ -528,12 +522,12 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn controls(world : @ecs.World) -> Unit {
   let mut updated = false
-  if @input.key_just_pressed(@window.KeyCode::KeyT) {
+  if @input.key_just_pressed(KeyT) {
     oit_state.val.oit_enabled = !oit_state.val.oit_enabled
     apply_oit_mode(world)
     updated = true
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
+  if @input.key_just_pressed(KeyC) {
     let scene_count = oit_state.val.scene_entities.length()
     if scene_count > 0 {
       oit_state.val.scene_index = (oit_state.val.scene_index + 1) % scene_count
@@ -550,7 +544,7 @@ fn controls(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, controls)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, controls)
   .run()
 }

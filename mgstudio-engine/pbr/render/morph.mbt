@@ -24,7 +24,7 @@ pub struct MorphIndices {
 
 ///|
 pub fn MorphIndices::new() -> MorphIndices {
-  MorphIndices::{ current: Map([]), prev: Map([]) }
+  { current: Map([]), prev: Map([]) }
 }
 
 ///|
@@ -35,7 +35,7 @@ pub struct MorphUniforms {
 
 ///|
 pub fn MorphUniforms::new() -> MorphUniforms {
-  MorphUniforms::{ current_buffer: [], prev_buffer: [] }
+  { current_buffer: [], prev_buffer: [] }
 }
 
 ///|
@@ -127,13 +127,13 @@ pub struct Render3dMorphState {
 
 ///|
 pub fn Render3dMorphState::Render3dMorphState() -> Render3dMorphState {
-  Render3dMorphState::{ weights: [], normalized: true }
+  { weights: [], normalized: true }
 }
 
 ///|
 pub fn render3d_morph_state(weights : Array[Float]) -> Render3dMorphState {
   let normalized_weights = render3d_normalize_morph_weights(weights)
-  Render3dMorphState::{ normalized: true, weights: normalized_weights }
+  { normalized: true, weights: normalized_weights }
 }
 
 ///|

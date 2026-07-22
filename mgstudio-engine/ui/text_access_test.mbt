@@ -37,16 +37,8 @@ test "ui text writer addresses root and TextSpan children by Bevy flattened inde
     @text.TextSpan::new("second"),
   )
   for entity in [root, first, nested, second] {
-    try! world.set_by_key(
-      entity,
-      @text.ecs_key_text_font,
-      @text.TextFont::TextFont(),
-    )
-    try! world.set_by_key(
-      entity,
-      @text.ecs_key_text_color,
-      @text.TextColor::TextColor(),
-    )
+    try! world.set_by_key(entity, @text.ecs_key_text_font, TextFont())
+    try! world.set_by_key(entity, @text.ecs_key_text_color, TextColor())
     try! world.set_by_key(
       entity,
       @text.ecs_key_text_line_height,
@@ -93,10 +85,7 @@ test "ui text writer addresses root and TextSpan children by Bevy flattened inde
   debug_inspect(writer.set_text(root, 2, "B"), content="true")
   debug_inspect(writer.set_text(root, 3, "C"), content="true")
   debug_inspect(writer.set_text(root, 4, "missing"), content="false")
-  debug_inspect(
-    writer.set_line_height(root, 2, @text.LineHeight::Px(7.0F)),
-    content="true",
-  )
+  debug_inspect(writer.set_line_height(root, 2, Px(7.0F)), content="true")
 
   let updated = TextUiReader::new(world)
   debug_inspect(updated.text(root, 0), content="\"R\"")

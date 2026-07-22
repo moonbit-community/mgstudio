@@ -200,27 +200,17 @@ pub impl @pbr.MaterialExtension for Water with fn bind_group_layout_entries(
     @render_resource.BindGroupLayoutEntry::new(
       100,
       fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
+      TextureBinding(Float(true), D2, false),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       101,
       fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
+      SamplerBinding(Filtering),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       102,
       fragment,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        64UL,
-      ),
+      BufferBinding(Uniform, false, 64UL),
     ),
   ]
 }
@@ -435,10 +425,10 @@ impl @app.Resource for AppSettings with fn resource() {
 
 ///|
 fn AppSettings::AppSettings() -> AppSettings {
-  AppSettings::{
+  {
     ssr_on: true,
-    displayed_model: DisplayedModel::Cube,
-    displayed_base: DisplayedBase::Water,
+    displayed_model: Cube,
+    displayed_base: Water,
     min_roughness_start: 0.0F,
     min_roughness_end: 0.01F,
     max_roughness_start: 0.99F,
@@ -491,9 +481,9 @@ fn set_entity_visibility(
       value,
       @visibility.ecs_key_visibility,
       if visible {
-        @visibility.Visibility::Visible
+        Visible
       } else {
-        @visibility.Visibility::Hidden
+        Hidden
       },
     )
     |> ignore)
@@ -519,7 +509,7 @@ fn[T] set_component_visibility(
 fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
   let settings = match world.get_resource(AppSettings::resource()) {
     Some(value) => value
-    None => AppSettings::AppSettings()
+    None => AppSettings()
   }
   let model = settings.displayed_model
   let base = settings.displayed_base
@@ -666,6 +656,7 @@ fn ssr_standard_material_add(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let material = ssr_standard_material_add(
     world,
@@ -682,6 +673,7 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_flight_helmet(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
@@ -705,17 +697,14 @@ fn spawn_flight_helmet(
     @transform.ecs_key_transform,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(2.5F)),
   )
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(entity, @visibility.ecs_key_visibility, Hidden)
   try! world.set_by_key(entity, FlightHelmetModel::component(), FlightHelmetModel::{
 
   })
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_capsules(world : @ecs.World) -> Unit {
   let capsule_mesh = @mesh.Mesh3d::new(
     ssr_add_mesh(world, @math.Capsule3d::new(0.4F, 0.5F)),
@@ -726,11 +715,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     @transform.ecs_key_transform,
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   )
-  try! world.set_by_key(
-    parent,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, @visibility.ecs_key_visibility, Hidden)
   try! world.set_by_key(parent, CapsulesParent::component(), CapsulesParent::{
 
   })
@@ -752,11 +737,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
       ),
     ).spawn(world)
 
-    try! (world.replace(
-      entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Hidden,
-    )
+    try! (world.replace(entity, @visibility.ecs_key_visibility, Hidden)
     |> ignore)
     @transform.set_parent_in_place(world, entity, parent)
     try! world.set_by_key(entity, CapsuleModel::component(), CapsuleModel::{  })
@@ -764,6 +745,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_metallic_base(world : @ecs.World) -> Unit {
   let metallic_material = ssr_standard_material_add(
     world,
@@ -785,11 +767,7 @@ fn spawn_metallic_base(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dTyped::new(metallic_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
-  try! (world.replace(
-    metallic,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! (world.replace(metallic, @visibility.ecs_key_visibility, Hidden)
   |> ignore)
   try! world.set_by_key(metallic, MetallicBaseModel::component(), MetallicBaseModel::{
 
@@ -797,6 +775,7 @@ fn spawn_metallic_base(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
   let red_material = ssr_standard_material_add(
     world,
@@ -818,33 +797,27 @@ fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dTyped::new(red_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(100.0F)),
   ).spawn(world)
-  try! (world.replace(
-    red,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
-  |> ignore)
+  try! (world.replace(red, @visibility.ecs_key_visibility, Hidden) |> ignore)
   try! world.set_by_key(red, RedPlaneBaseModel::component(), RedPlaneBaseModel::{
 
   })
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let water_normals = asset_server.load_with_settings(
     "textures/water_normals.png",
     fn(settings) {
       settings.is_srgb = false
-      settings.sampler = @asset.ImageSampler::Descriptor(
-        @asset.ImageSamplerDescriptor::linear().set_address_mode(
-          @asset.ImageAddressMode::Repeat,
-        ),
+      settings.sampler = Descriptor(
+        @asset.ImageSamplerDescriptor::linear().set_address_mode(Repeat),
       )
     },
   )
   let water_extension = Water::{
     normals: water_normals,
-    settings: WaterSettings::{
+    settings: {
       octave_vectors: [
         @math.Vec4::new(0.080F, 0.059F, 0.073F, -0.062F),
         @math.Vec4::new(0.153F, 0.138F, -0.149F, -0.195F),
@@ -886,13 +859,9 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   try! world.set_by_key(
     water,
     @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::RenderLayers(),
+    RenderLayers(),
   )
-  try! world.set_by_key(
-    water,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(water, @visibility.ecs_key_visibility, Inherited)
   try! world.set_by_key(
     water,
     @visibility.ecs_key_inherited_visibility,
@@ -910,7 +879,7 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn spawn_camera(world : @ecs.World, app_settings : AppSettings) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -919,17 +888,17 @@ fn spawn_camera(world : @ecs.World, app_settings : AppSettings) -> Unit {
     .with_screen_space_reflections(Some(build_ssr_settings(app_settings)))
     .spawn(world)
 
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, Hdr())
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+    TemporalAntiAliasing(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+    ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
@@ -1027,17 +996,17 @@ fn range_value(settings : AppSettings, marker : RangeValueText) -> Float {
 
 ///|
 fn ssr_button_border() -> @ui.UiRect {
-  @ui.UiRect::all(@ui.Val::Px(1.0F))
+  @ui.UiRect::all(Px(1.0F))
 }
 
 ///|
 fn ssr_button_border_radius_size() -> @ui.Val {
-  @ui.Val::Px(6.0F)
+  Px(6.0F)
 }
 
 ///|
 fn ssr_button_padding() -> @ui.UiRect {
-  @ui.UiRect::axes(@ui.Val::Px(12.0F), @ui.Val::Px(6.0F))
+  @ui.UiRect::axes(Px(12.0F), Px(6.0F))
 }
 
 ///|
@@ -1057,16 +1026,16 @@ fn spawn_adjustment_button(
       @hierarchy.Parent::new(parent),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_height(@ui.Val::Px(33.0F))
+      .with_height(Px(33.0F))
       .with_border(
         if is_left {
-          ssr_button_border().with_right(@ui.Val::Px(0.0F))
+          ssr_button_border().with_right(Px(0.0F))
         } else {
-          ssr_button_border().with_left(@ui.Val::Px(0.0F))
+          ssr_button_border().with_left(Px(0.0F))
         },
       )
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
+      .with_justify_content(Center)
+      .with_align_items(Center)
       .with_padding(ssr_button_padding())
       .with_border_radius(
         if is_left {
@@ -1109,10 +1078,7 @@ fn spawn_range_controls(
   increase_setting : ExampleSetting,
 ) -> Unit {
   let row = commands.spawn(
-    (
-      @hierarchy.Parent::new(parent),
-      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
-    ),
+    (@hierarchy.Parent::new(parent), @ui.Node::Node().with_align_items(Center)),
   )
   ignore(spawn_adjustment_button(commands, row, decrease_setting, "<", true))
   let (text, text_font, text_color) = @widgets_lib.ui_text(
@@ -1123,15 +1089,11 @@ fn spawn_range_controls(
     (
       @hierarchy.Parent::new(row),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(50.0F))
-      .with_height(@ui.Val::Px(33.0F))
-      .with_border(
-        ssr_button_border()
-        .with_left(@ui.Val::Px(0.0F))
-        .with_right(@ui.Val::Px(0.0F)),
-      )
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(50.0F))
+      .with_height(Px(33.0F))
+      .with_border(ssr_button_border().with_left(Px(0.0F)).with_right(Px(0.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(@color.Color::white()),
       @ui.BorderColor::new(@color.Color::white()),
       marker,
@@ -1160,10 +1122,7 @@ fn spawn_range_row(
   end_increase : ExampleSetting,
 ) -> Unit {
   let row = commands.spawn(
-    (
-      @hierarchy.Parent::new(parent),
-      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
-    ),
+    (@hierarchy.Parent::new(parent), @ui.Node::Node().with_align_items(Center)),
   )
   let (title_text, title_font, title_color) = @widgets_lib.ui_text(
     title,
@@ -1173,7 +1132,7 @@ fn spawn_range_row(
     commands.spawn(
       (
         @hierarchy.Parent::new(row),
-        @ui.Node::Node().with_width(@ui.Val::Px(150.0F)),
+        @ui.Node::Node().with_width(Px(150.0F)),
         title_text,
         title_font,
         title_color,
@@ -1192,12 +1151,7 @@ fn spawn_range_row(
       (
         @hierarchy.Parent::new(row),
         @ui.Node::Node().with_margin(
-          @ui.UiRect::new(
-            @ui.Val::Px(10.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(10.0F),
-            @ui.Val::Px(0.0F),
-          ),
+          @ui.UiRect::new(Px(10.0F), Px(0.0F), Px(10.0F), Px(0.0F)),
         ),
         to_text,
         to_font,
@@ -1225,9 +1179,7 @@ fn spawn_buttons(commands : @app.Commands, app_settings : AppSettings) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -1450,16 +1402,16 @@ fn move_camera(
 ) -> Unit {
   let mut distance_delta = 0.0F
   let mut theta_delta = 0.0F
-  if keyboard_input.pressed(@window.KeyCode::KeyW) {
+  if keyboard_input.pressed(KeyW) {
     distance_delta = distance_delta - CAMERA_KEYBOARD_ZOOM_SPEED
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyS) {
+  if keyboard_input.pressed(KeyS) {
     distance_delta = distance_delta + CAMERA_KEYBOARD_ZOOM_SPEED
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyA) {
+  if keyboard_input.pressed(KeyA) {
     theta_delta = theta_delta + CAMERA_KEYBOARD_ORBIT_SPEED
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyD) {
+  if keyboard_input.pressed(KeyD) {
     theta_delta = theta_delta - CAMERA_KEYBOARD_ORBIT_SPEED
   }
   for mouse_wheel in mouse_wheel_reader.read() {
@@ -1539,44 +1491,44 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(AppSettings::AppSettings())
   .add_message(widget_click_message_key)
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_widget_interactions).in_set(
       ssr_set_handle_widgets,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(adjust_app_settings)
     .in_set(ssr_set_adjust_settings)
     .run_if_on_message(widget_click_message_key),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system(apply_app_settings)
     .in_set(ssr_set_apply_settings)
     .run_if_on_message(widget_click_message_key),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_radio_buttons)
     .in_set(ssr_set_apply_settings)
     .run_if_on_message(widget_click_message_key),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(update_range_value_text)
     .in_set(ssr_set_apply_settings)
     .run_if_on_message(widget_click_message_key),
   )
-  .configure_set(@app.Update, ssr_set_handle_widgets, before=[
+  .configure_set(Update, ssr_set_handle_widgets, before=[
     ssr_set_adjust_settings,
   ])
-  .configure_set(@app.Update, ssr_set_adjust_settings, before=[
+  .configure_set(Update, ssr_set_adjust_settings, before=[
     ssr_set_apply_settings,
   ])
-  .add_systems_param3(@app.Update, move_camera)
-  .add_systems_world(@app.Update, rotate_models)
+  .add_systems_param3(Update, move_camera)
+  .add_systems_world(Update, rotate_models)
   .run()
 }

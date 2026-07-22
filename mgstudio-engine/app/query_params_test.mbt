@@ -164,6 +164,7 @@ pub impl @ecs.QueryFilter for QueryMarkerFilter with fn depends_on_ticks(self) {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl FromWorld for QueryMarkerFilter with fn from_world(_world) {
   QueryMarkerFilter::{  }
 }
@@ -174,8 +175,8 @@ test "app: Query1 system param exposes plain mutable query" {
   defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
-  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 3, y: 4 })
+  try! world.set_by_key(e0, query_position_key, { x: 1, y: 2 })
+  try! world.set_by_key(e1, query_position_key, { x: 3, y: 4 })
 
   let counts : Array[Int] = []
   let mut app = App::new(world).add_system_param(fn(
@@ -237,22 +238,17 @@ test "app: Query system param refreshes after initially empty match" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app: filtered query system param builds filters from component owners" {
   let world = @ecs.World::new()
   defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
-  try! world.set_by_key(e0, query_velocity_key, QueryVelocity::{
-    dx: 10,
-    dy: 20,
-  })
-  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, query_velocity_key, QueryVelocity::{
-    dx: 30,
-    dy: 40,
-  })
+  try! world.set_by_key(e0, query_position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e0, query_velocity_key, { dx: 10, dy: 20 })
+  try! world.set_by_key(e1, query_position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e1, query_velocity_key, { dx: 30, dy: 40 })
   try! world.set_by_key(e1, query_marker_key, QueryMarker::{  })
 
   let hit_counts : Array[Int] = []
@@ -285,17 +281,18 @@ test "app: filtered query system param builds filters from component owners" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app: optional query system param preserves some and none branches" {
   let world = @ecs.World::new()
   defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set_by_key(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
+  try! world.set_by_key(e0, query_position_key, { x: 1, y: 2 })
+  try! world.set_by_key(e0, query_velocity_key, { dx: 3, dy: 4 })
   try! world.set_by_key(e0, query_marker_key, QueryMarker::{  })
-  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
-  try! world.set_by_key(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
+  try! world.set_by_key(e1, query_position_key, { x: 5, y: 6 })
+  try! world.set_by_key(e1, query_velocity_key, { dx: 7, dy: 8 })
 
   let seen : Array[(Int, Bool)] = []
   let counts : Array[Int] = []
@@ -338,14 +335,8 @@ test "app: Allow, Query2Has and nullable query data honor disabling semantics" {
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set_by_key(enabled, query_position_key, QueryPosition::{
-    x: 1,
-    y: 1,
-  })
-  try! world.set_by_key(disabled, query_position_key, QueryPosition::{
-    x: 2,
-    y: 2,
-  })
+  try! world.set_by_key(enabled, query_position_key, { x: 1, y: 1 })
+  try! world.set_by_key(disabled, query_position_key, { x: 2, y: 2 })
   try! world.set_by_key(disabled, @ecs.ecs_key_disabled, @ecs.Disabled::new())
 
   let entity_counts : Array[Int] = []
@@ -391,18 +382,9 @@ test "app: validated single query params expose strict single access" {
   let read_entity = read_world.spawn()
   let read_other = read_world.spawn()
 
-  try! read_world.set_by_key(read_entity, query_position_key, QueryPosition::{
-    x: 1,
-    y: 2,
-  })
-  try! read_world.set_by_key(read_entity, query_velocity_key, QueryVelocity::{
-    dx: 3,
-    dy: 4,
-  })
-  try! read_world.set_by_key(read_other, query_position_key, QueryPosition::{
-    x: 10,
-    y: 20,
-  })
+  try! read_world.set_by_key(read_entity, query_position_key, { x: 1, y: 2 })
+  try! read_world.set_by_key(read_entity, query_velocity_key, { dx: 3, dy: 4 })
+  try! read_world.set_by_key(read_other, query_position_key, { x: 10, y: 20 })
 
   let entity_ids : Array[Int] = []
   let xs : Array[Int] = []
@@ -433,18 +415,9 @@ test "app: validated single query params expose strict single access" {
   let write_entity = write_world.spawn()
   let write_other = write_world.spawn()
 
-  try! write_world.set_by_key(write_entity, query_position_key, QueryPosition::{
-    x: 1,
-    y: 2,
-  })
-  try! write_world.set_by_key(write_entity, query_velocity_key, QueryVelocity::{
-    dx: 3,
-    dy: 4,
-  })
-  try! write_world.set_by_key(write_other, query_position_key, QueryPosition::{
-    x: 10,
-    y: 20,
-  })
+  try! write_world.set_by_key(write_entity, query_position_key, { x: 1, y: 2 })
+  try! write_world.set_by_key(write_entity, query_velocity_key, { dx: 3, dy: 4 })
+  try! write_world.set_by_key(write_other, query_position_key, { x: 10, y: 20 })
 
   let mut write_app = App::new(write_world).add_systems(
     Update,
@@ -474,6 +447,7 @@ test "app: validated single query params expose strict single access" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app: generic Query[D, F] system param supports named data and named filters" {
   let world = @ecs.World::new()
   defer world.close()
@@ -481,9 +455,9 @@ test "app: generic Query[D, F] system param supports named data and named filter
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
-  try! world.set_by_key(e2, query_position_key, QueryPosition::{ x: 3, y: 3 })
+  try! world.set_by_key(e0, query_position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, query_position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e2, query_position_key, { x: 3, y: 3 })
   try! world.set_by_key(e0, query_marker_key, QueryMarker::{  })
   try! world.set_by_key(e1, query_marker_key, QueryMarker::{  })
   try! world.set_by_key(e1, @ecs.ecs_key_disabled, @ecs.Disabled::new())
@@ -513,10 +487,10 @@ test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set_by_key(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
-  try! world.set_by_key(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
-  try! world.set_by_key(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
-  try! world.set_by_key(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
+  try! world.set_by_key(e0, query_position_key, { x: 1, y: 2 })
+  try! world.set_by_key(e0, query_velocity_key, { dx: 3, dy: 4 })
+  try! world.set_by_key(e1, query_position_key, { x: 5, y: 6 })
+  try! world.set_by_key(e1, query_velocity_key, { dx: 7, dy: 8 })
 
   let counts : Array[Int] = []
   let mut app = App::new(world).add_systems(

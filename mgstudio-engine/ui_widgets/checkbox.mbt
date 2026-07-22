@@ -52,7 +52,7 @@ pub impl @ecs.TriggerEvent for SetChecked with fn set_observer_entity(
   self,
   entity,
 ) {
-  SetChecked::{ entity, checked: self.checked }
+  { entity, checked: self.checked }
 }
 
 ///|
@@ -90,7 +90,7 @@ pub impl @ecs.TriggerEvent for ToggleChecked with fn set_observer_entity(
   _self,
   entity,
 ) {
-  ToggleChecked::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -113,8 +113,7 @@ fn checkbox_on_key_input(
   ],
   commands : @app.Commands,
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Enter) &&
-    !keyboard.just_pressed(@window.KeyCode::Space) {
+  if !keyboard.just_pressed(Enter) && !keyboard.just_pressed(Space) {
     return
   }
   guard focus.get().get() is Some(entity) else { return }
@@ -216,7 +215,7 @@ pub fn checkbox_self_update(
 ///|
 pub fn checkbox_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(@app.Update, @app.system_config_param4(checkbox_on_key_input))
+  .add_systems(Update, @app.system_config_param4(checkbox_on_key_input))
   .add_pointer_observer3(checkbox_on_pointer_click)
   .add_observer3(checkbox_on_set_checked)
   .add_observer3(checkbox_on_toggle_checked)

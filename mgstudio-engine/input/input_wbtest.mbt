@@ -43,9 +43,9 @@ let input_probe_update_previous_snapshot_count_ref : Ref[Int] = Ref(-1)
 ///|
 fn current_stage_label() -> String {
   match @app.current_schedule_stage() {
-    Some(@app.PreUpdate) => "pre_update"
-    Some(@app.Update) => "update"
-    Some(@app.PostUpdate) => "post_update"
+    Some(PreUpdate) => "pre_update"
+    Some(Update) => "update"
+    Some(PostUpdate) => "post_update"
     Some(_) => "other"
     None => "none"
   }
@@ -178,12 +178,8 @@ test "input: InputSystems set gates pre-update polling systems" {
     .add_pre_update_system_config(
       @app.system(input_probe_after_system).in_set(input_probe_after_set),
     )
-    .configure_set(@app.PreUpdate, input_probe_before_set, before=[
-      input_systems_set,
-    ])
-    .configure_set(@app.PreUpdate, input_probe_after_set, after=[
-      input_systems_set,
-    ])
+    .configure_set(PreUpdate, input_probe_before_set, before=[input_systems_set])
+    .configure_set(PreUpdate, input_probe_after_set, after=[input_systems_set])
     .run_once()
 
   debug_inspect(input_probe_before_ran_ref.val, content="true")
@@ -247,7 +243,7 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
   ignore(
     app
     .world()
-    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+    .send_message(@window.WindowFocused::message(), {
       window: window_entity,
       focused: false,
     }),
@@ -270,7 +266,7 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
   let mut aggregate_focus_lost_count = 0
   let window_events = window_event_reader.read()
   for event in window_events {
-    if event is @window.WindowEvent::KeyboardFocusLost(_) {
+    if event is KeyboardFocusLost(_) {
       aggregate_focus_lost_count = aggregate_focus_lost_count + 1
     }
   }
@@ -296,7 +292,7 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
   ignore(
     app
     .world()
-    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+    .send_message(@window.WindowFocused::message(), {
       window: window_entity,
       focused: false,
     }),
@@ -304,7 +300,7 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
   ignore(
     app
     .world()
-    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+    .send_message(@window.WindowFocused::message(), {
       window: window_entity,
       focused: true,
     }),
@@ -327,7 +323,7 @@ test "input: keyboard focus-loss helper ignores loss when focus is regained in s
   let mut aggregate_focus_lost_count = 0
   let window_events = window_event_reader.read()
   for event in window_events {
-    if event is @window.WindowEvent::KeyboardFocusLost(_) {
+    if event is KeyboardFocusLost(_) {
       aggregate_focus_lost_count = aggregate_focus_lost_count + 1
     }
   }
@@ -354,25 +350,25 @@ test "input: accumulated mouse resources follow bevy-style message accumulation"
     AccumulatedMouseScroll::new(),
   )
   ignore(
-    world.send_message(mouse_motion_message_key(), MouseMotion::{
+    world.send_message(mouse_motion_message_key(), {
       delta: @math.Vec2::new(1.5, -2.0),
     }),
   )
   ignore(
-    world.send_message(mouse_motion_message_key(), MouseMotion::{
+    world.send_message(mouse_motion_message_key(), {
       delta: @math.Vec2::new(-0.25, 3.25),
     }),
   )
   ignore(
-    world.send_message(mouse_wheel_message_key(), MouseWheel::{
-      unit: MouseScrollUnit::Line,
+    world.send_message(mouse_wheel_message_key(), {
+      unit: Line,
       x: 2.0,
       y: -1.0,
     }),
   )
   ignore(
-    world.send_message(mouse_wheel_message_key(), MouseWheel::{
-      unit: MouseScrollUnit::Pixel,
+    world.send_message(mouse_wheel_message_key(), {
+      unit: Pixel,
       x: 4.5,
       y: 8.0,
     }),
@@ -392,7 +388,7 @@ test "input: accumulated mouse resources follow bevy-style message accumulation"
     Some(value) => value
     None => abort("missing accumulated mouse scroll resource")
   }
-  debug_inspect(scroll.unit is MouseScrollUnit::Pixel, content="true")
+  debug_inspect(scroll.unit is Pixel, content="true")
   debug_inspect(scroll.delta.x, content="6.5")
   debug_inspect(scroll.delta.y, content="7")
 }
@@ -532,7 +528,7 @@ test "input: touches helper api matches bevy touch state operations" {
 ///|
 test "input: touch moved events keep previous_position at frame boundary snapshot" {
   let active : Array[Touch] = [
-    Touch::{
+    {
       id: 42,
       start_position: @math.Vec2::new(1.0, 1.0),
       previous_position: @math.Vec2::new(1.0, 1.0),

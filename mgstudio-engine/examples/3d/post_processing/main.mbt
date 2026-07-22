@@ -175,16 +175,14 @@ fn update_help_text() -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_chromatic_aberration(
-      Some(@post_process.ChromaticAberration::ChromaticAberration()),
-    )
-    .with_vignette(Some(@post_process.Vignette::Vignette()))
+    .with_chromatic_aberration(Some(ChromaticAberration()))
+    .with_vignette(Some(Vignette()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -200,7 +198,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     )
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, Hdr())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_environment_map_light,
@@ -282,11 +280,11 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(
       @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   post_processing_state.val.help_text = Some(handle)
 }
@@ -308,12 +306,12 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn handle_keyboard_input(world : @ecs.World) -> Unit {
   let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::ArrowUp) &&
+  if @input.key_just_pressed(ArrowUp) &&
     post_processing_state.val.settings.selected > 0 {
     post_processing_state.val.settings.selected = post_processing_state.val.settings.selected -
       1
     changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::ArrowDown) &&
+  } else if @input.key_just_pressed(ArrowDown) &&
     post_processing_state.val.settings.selected < SETTING_COUNT - 1 {
     post_processing_state.val.settings.selected = post_processing_state.val.settings.selected +
       1
@@ -321,9 +319,9 @@ fn handle_keyboard_input(world : @ecs.World) -> Unit {
   }
 
   let mut delta = 0.0F
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.key_pressed(ArrowLeft) {
     delta = delta - ADJUSTMENT_SPEED
-  } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  } else if @input.key_pressed(ArrowRight) {
     delta = delta + ADJUSTMENT_SPEED
   }
   if delta != 0.0F {
@@ -385,7 +383,7 @@ fn handle_keyboard_input(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, handle_keyboard_input)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, handle_keyboard_input)
   .run()
 }

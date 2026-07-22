@@ -63,7 +63,7 @@ pub fn[T] EvenCore::new(
   if !domain.is_bounded() {
     raise UnboundedDomain
   }
-  EvenCore::{ domain_: domain, samples }
+  { domain_: domain, samples }
 }
 
 ///|
@@ -142,7 +142,7 @@ pub fn[T] UnevenCore::new(
       raise NonIncreasingSampleTimes
     }
   }
-  UnevenCore::{ sample_points, }
+  { sample_points, }
 }
 
 ///|

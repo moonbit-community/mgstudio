@@ -27,7 +27,7 @@ priv struct RenderPassTraceRuntimeState {
 
 ///|
 fn render_pass_trace_runtime_state_default() -> RenderPassTraceRuntimeState {
-  RenderPassTraceRuntimeState::{ active_span: None }
+  { active_span: None }
 }
 
 ///|
@@ -64,7 +64,7 @@ pub fn render_pass_trace_end_active_span() -> Unit {
   let state = render_pass_trace_runtime_state()
   if state.active_span is Some(active_pass) {
     @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderPass,
+      RenderPass,
       active_pass.name,
       active_pass.ts_us,
     )
@@ -76,12 +76,9 @@ pub fn render_pass_trace_end_active_span() -> Unit {
 pub fn render_pass_trace_begin_span(name : String) -> Unit {
   let state = render_pass_trace_runtime_state()
   render_pass_trace_end_active_span()
-  let ts_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderPass,
-    name,
-  )
+  let ts_us = @app.timeline_trace_begin_span(RenderPass, name)
   if ts_us >= 0L {
-    state.active_span = Some(RenderPassTraceActiveSpan::{ name, ts_us })
+    state.active_span = Some({ name, ts_us })
   }
 }
 

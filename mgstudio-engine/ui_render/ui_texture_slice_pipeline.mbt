@@ -58,8 +58,8 @@ fn compute_tiled_subaxis(
   mode : @ui.SliceScaleMode,
 ) -> Float {
   match mode {
-    @ui.SliceScaleMode::Stretch => 1.0F
-    @ui.SliceScaleMode::Tile(stretch_value) => {
+    Stretch => 1.0F
+    Tile(stretch_value) => {
       let denom = image_extent * clamp_stretch_value(stretch_value)
       if denom == 0.0F {
         1.0F
@@ -77,7 +77,7 @@ fn compute_texture_slices(
   mode : @ui.NodeImageMode,
 ) -> (@math.Vec4, @math.Vec4, @math.Vec4) {
   match mode {
-    @ui.NodeImageMode::Sliced(slicer) => {
+    Sliced(slicer) => {
       let denom_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
       let denom_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
       let tdenom_x = if target_size.x == 0.0F { 1.0F } else { target_size.x }
@@ -131,7 +131,7 @@ fn compute_texture_slices(
         ),
       )
     }
-    @ui.NodeImageMode::Tiled(tile_x, tile_y, stretch_value) => {
+    Tiled(tile_x, tile_y, stretch_value) => {
       let rx = compute_tiled_axis(
         tile_x,
         image_size.x,

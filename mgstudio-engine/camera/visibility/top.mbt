@@ -36,7 +36,7 @@ pub struct VisibleMeshEntities {
 
 ///|
 pub fn VisibleMeshEntities::VisibleMeshEntities() -> VisibleMeshEntities {
-  VisibleMeshEntities::{ entities: [] }
+  { entities: [] }
 }
 
 ///|
@@ -77,14 +77,14 @@ pub struct CubemapVisibleEntities {
 
 ///|
 pub fn CubemapVisibleEntities::CubemapVisibleEntities() -> CubemapVisibleEntities {
-  CubemapVisibleEntities::{
+  {
     data: [
-      VisibleMeshEntities::VisibleMeshEntities(),
-      VisibleMeshEntities::VisibleMeshEntities(),
-      VisibleMeshEntities::VisibleMeshEntities(),
-      VisibleMeshEntities::VisibleMeshEntities(),
-      VisibleMeshEntities::VisibleMeshEntities(),
-      VisibleMeshEntities::VisibleMeshEntities(),
+      VisibleMeshEntities(),
+      VisibleMeshEntities(),
+      VisibleMeshEntities(),
+      VisibleMeshEntities(),
+      VisibleMeshEntities(),
+      VisibleMeshEntities(),
     ],
   }
 }
@@ -127,7 +127,7 @@ pub struct CascadesVisibleEntities {
 
 ///|
 pub fn CascadesVisibleEntities::CascadesVisibleEntities() -> CascadesVisibleEntities {
-  CascadesVisibleEntities::{ entities: @hashmap.HashMap([]) }
+  { entities: HashMap([]) }
 }
 
 ///|
@@ -425,13 +425,14 @@ fn check_visibility_visible_entities_system(world : @ecs.World) -> Unit {
 pub struct VisibilityPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn VisibilityPlugin::VisibilityPlugin() -> VisibilityPlugin {
   VisibilityPlugin::{  }
 }
 
 ///|
 pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  visibility_plugin_with(app, VisibilityPlugin::VisibilityPlugin())
+  visibility_plugin_with(app, VisibilityPlugin())
 }
 
 ///|
@@ -441,17 +442,14 @@ pub fn visibility_plugin_with(
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
   @root_visibility.visibility_plugin(app)
-  .configure_set(
-    @app.PostUpdate,
-    @root_visibility.visibility_set_check_visibility,
-    after=[camera_update_frusta_systems],
-  )
-  .configure_set(
-    @app.PostUpdate,
-    @root_visibility.visibility_set_calculate_bounds,
-    after=[@transform.transform_set_propagate, @asset.asset_event_system_set()],
-  )
-  .configure_set(@app.PostUpdate, visibility_set_update_skinned_mesh_bounds, after=[
+  .configure_set(PostUpdate, @root_visibility.visibility_set_check_visibility, after=[
+    camera_update_frusta_systems,
+  ])
+  .configure_set(PostUpdate, @root_visibility.visibility_set_calculate_bounds, after=[
+    @transform.transform_set_propagate,
+    @asset.asset_event_system_set(),
+  ])
+  .configure_set(PostUpdate, visibility_set_update_skinned_mesh_bounds, after=[
     @root_visibility.visibility_set_calculate_bounds,
   ])
   .add_post_update_system_config(
@@ -495,7 +493,7 @@ pub fn visibility_component_keys() -> (
 
 ///|
 pub fn default_visibility() -> @root_visibility.Visibility {
-  @root_visibility.Visibility::Inherited
+  Inherited
 }
 
 ///|
@@ -512,15 +510,15 @@ pub fn view_visibility(visible : Bool) -> @root_visibility.ViewVisibility {
 
 ///|
 pub fn no_frustum_culling() -> @root_visibility.NoFrustumCulling {
-  @root_visibility.NoFrustumCulling::NoFrustumCulling()
+  NoFrustumCulling()
 }
 
 ///|
 pub fn no_auto_aabb() -> @root_visibility.NoAutoAabb {
-  @root_visibility.NoAutoAabb::NoAutoAabb()
+  NoAutoAabb()
 }
 
 ///|
 pub fn no_cpu_culling() -> @root_visibility.NoCpuCulling {
-  @root_visibility.NoCpuCulling::NoCpuCulling()
+  NoCpuCulling()
 }

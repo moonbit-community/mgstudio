@@ -38,11 +38,11 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(10.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F))),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_row_gap(Px(10.0F))
+      .with_padding(@ui.UiRect::all(Px(20.0F))),
       @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
@@ -52,9 +52,9 @@ fn setup(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_height(@ui.Val::Px(90.0F))
-        .with_display(@ui.Display::Flex)
-        .with_flex_direction(@ui.FlexDirection::Row),
+        .with_height(Px(90.0F))
+        .with_display(Flex)
+        .with_flex_direction(Row),
       ),
     )
     for i in 0..<24 {
@@ -64,8 +64,8 @@ fn setup(commands : @app.Commands) -> Unit {
           @hierarchy.Parent::new(row),
           GradientStop::{ t, },
           @ui.Node::Node()
-          .with_width(@ui.Val::Percent(100.0F / 24.0F))
-          .with_height(@ui.Val::Percent(100.0F)),
+          .with_width(Percent(100.0F / 24.0F))
+          .with_height(Percent(100.0F)),
           @ui.BackgroundColor::new(
             match band {
               0 => @color.Color::srgb(1.0F - t * 0.8F, 0.15F + t * 0.8F, 0.2F)
@@ -119,7 +119,7 @@ fn animate_gradients(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_gradients)
+  .add_systems_param(Startup, setup)
+  .add_systems_param2(Update, animate_gradients)
   .run()
 }

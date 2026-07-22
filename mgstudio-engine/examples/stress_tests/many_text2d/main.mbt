@@ -134,7 +134,7 @@ fn random_font_size(idx : Int, args : Args) -> Float {
 ///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::Window()
-  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.present_mode = AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
   )
@@ -172,11 +172,7 @@ fn setup(
       )
       let rotation = @math.Quat::from_rotation_z(pseudo_rand(idx + 23))
       let scale = @math.Vec3::splat(pseudo_rand(idx + 37) * 2.0F)
-      let justify = if args.center {
-        @text.Justify::Center
-      } else {
-        @text.Justify::Left
-      }
+      let justify = if args.center { @text.Justify::Center } else { Left }
       text_entities.push(
         (
           @text.Text2d::new(random_text(idx, args)),
@@ -212,14 +208,7 @@ fn setup(
     for bundle in text_entities {
       let (text, font, color, layout, transform) = bundle
       uncullable.push(
-        (
-          text,
-          font,
-          color,
-          layout,
-          transform,
-          @visibility.NoFrustumCulling::NoFrustumCulling(),
-        ),
+        (text, font, color, layout, transform, NoFrustumCulling()),
       )
     }
     ignore(commands.spawn_batch(uncullable))
@@ -300,16 +289,16 @@ fn main {
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
         primary_window: Some(configured_window()),
         primary_cursor_options: None,
-        exit_condition: @window.ExitCondition::OnAllClosed,
+        exit_condition: OnAllClosed,
         close_when_requested: true,
       }),
     )
     .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-    .add_systems_param3(@app.Startup, setup)
-    .add_systems_param2(@app.Update, move_camera)
-    .add_systems_param4(@app.Update, print_counts)
+    .add_systems_param3(Startup, setup)
+    .add_systems_param2(Update, move_camera)
+    .add_systems_param4(Update, print_counts)
   if args.recompute {
-    app.add_systems_param(@app.Update, recompute) |> ignore
+    app.add_systems_param(Update, recompute) |> ignore
   }
   app.run()
 }

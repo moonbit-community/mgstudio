@@ -56,11 +56,11 @@ fn spawn_text(
 ///|
 fn panel_node(width : Float, height : Float) -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Px(width))
-  .with_height(@ui.Val::Px(height))
-  .with_margin(@ui.UiRect::all(@ui.Val::Px(8.0F)))
-  .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
-  .with_flex_direction(@ui.FlexDirection::Column)
+  .with_width(Px(width))
+  .with_height(Px(height))
+  .with_margin(@ui.UiRect::all(Px(8.0F)))
+  .with_padding(@ui.UiRect::all(Px(8.0F)))
+  .with_flex_direction(Column)
 }
 
 ///|
@@ -70,31 +70,26 @@ fn scroll_container(
   overflow : @ui.Overflow,
 ) -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Px(width))
-  .with_height(@ui.Val::Px(height))
-  .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F)))
+  .with_width(Px(width))
+  .with_height(Px(height))
+  .with_padding(@ui.UiRect::all(Px(6.0F)))
   .with_overflow(overflow)
 }
 
 ///|
 fn row_item_node(width : Float) -> @ui.Node {
-  @ui.Node::{
-    ..@ui.Node(),
-    width: @ui.Val::Px(width),
-    min_height: @ui.Val::Px(56.0F),
-    margin: @ui.UiRect::new(
-      @ui.Val::Px(0.0F),
-      @ui.Val::Px(8.0F),
-      @ui.Val::Px(0.0F),
-      @ui.Val::Px(0.0F),
-    ),
-    padding: @ui.UiRect::all(@ui.Val::Px(10.0F)),
+  {
+    ..Node(),
+    width: Px(width),
+    min_height: Px(56.0F),
+    margin: @ui.UiRect::new(Px(0.0F), Px(8.0F), Px(0.0F), Px(0.0F)),
+    padding: @ui.UiRect::all(Px(10.0F)),
   }
 }
 
 ///|
 fn column_item_node() -> @ui.Node {
-  @ui.Node::{ ..@ui.Node(), min_height: @ui.Val::Px(30.0F) }
+  { ..Node(), min_height: Px(30.0F) }
 }
 
 ///|
@@ -112,31 +107,23 @@ fn spawn_vertical_panel(
   )
   let title = "Vertical scroll"
   let hint = "Use MouseWheel while hovering this list."
-  spawn_text(commands, panel, title, title_font(asset_server), @ui.Node::Node())
-  |> ignore
+  spawn_text(commands, panel, title, title_font(asset_server), Node()) |> ignore
   spawn_text(
     commands,
     panel,
     hint,
     body_font(asset_server),
     @ui.Node::Node().with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(8.0F),
-      ),
+      @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(8.0F)),
     ),
   )
   |> ignore
   let list = commands.spawn(
     (
       @hierarchy.Parent::new(panel),
-      scroll_container(
-        248.0F,
-        280.0F,
-        @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
-      ).with_flex_direction(@ui.FlexDirection::Column),
+      scroll_container(248.0F, 280.0F, @ui.Overflow::new(Hidden, Scroll)).with_flex_direction(
+        Column,
+      ),
       @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.09F, 0.11F)),
     ),
   )
@@ -170,17 +157,15 @@ fn spawn_horizontal_panel(
     panel,
     "Horizontal scroll",
     title_font(asset_server),
-    @ui.Node::Node(),
+    Node(),
   )
   |> ignore
   let list = commands.spawn(
     (
       @hierarchy.Parent::new(panel),
-      scroll_container(
-        488.0F,
-        112.0F,
-        @ui.Overflow::new(@ui.OverflowAxis::Scroll, @ui.OverflowAxis::Hidden),
-      ).with_flex_direction(@ui.FlexDirection::Row),
+      scroll_container(488.0F, 112.0F, @ui.Overflow::new(Scroll, Hidden)).with_flex_direction(
+        Row,
+      ),
       @ui.BackgroundColor::new(@color.Color::srgb(0.10F, 0.08F, 0.06F)),
     ),
   )
@@ -199,7 +184,7 @@ fn spawn_horizontal_panel(
       item,
       "Card \{i.to_string()}",
       body_font(asset_server),
-      @ui.Node::Node(),
+      Node(),
     )
     |> ignore
   }
@@ -223,27 +208,19 @@ fn spawn_bidirectional_panel(
     panel,
     "Bidirectional scroll",
     title_font(asset_server),
-    @ui.Node::Node(),
+    Node(),
   )
   |> ignore
   let grid = commands.spawn(
     (
       @hierarchy.Parent::new(panel),
-      scroll_container(
-        488.0F,
-        280.0F,
-        @ui.Overflow::new(@ui.OverflowAxis::Scroll, @ui.OverflowAxis::Scroll),
-      )
-      .with_display(@ui.Display::Grid)
+      scroll_container(488.0F, 280.0F, @ui.Overflow::new(Scroll, Scroll))
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(10), [
-          @ui.GridTrack::Px(120.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(10), [Px(120.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(8), [
-          @ui.GridTrack::Px(72.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(8), [Px(72.0F)]),
       ]),
       @ui.BackgroundColor::new(@color.Color::srgb(0.06F, 0.10F, 0.08F)),
     ),
@@ -254,10 +231,10 @@ fn spawn_bidirectional_panel(
         (
           @hierarchy.Parent::new(grid),
           @ui.Node::{
-            ..@ui.Node(),
+            ..Node(),
             grid_column: @ui.GridPlacement::start(x + 1),
             grid_row: @ui.GridPlacement::start(y + 1),
-            padding: @ui.UiRect::all(@ui.Val::Px(8.0F)),
+            padding: @ui.UiRect::all(Px(8.0F)),
           },
           @ui.BackgroundColor::new(
             @color.Color::hsl(Float::from_int(x * 20 + y * 12), 0.55F, 0.45F),
@@ -269,7 +246,7 @@ fn spawn_bidirectional_panel(
         cell,
         "Cell \{x.to_string()},\{y.to_string()}",
         body_font(asset_server),
-        @ui.Node::Node(),
+        Node(),
       )
       |> ignore
     }
@@ -289,22 +266,14 @@ fn spawn_nested_panel(
       @ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.13F, 0.18F)),
     ),
   )
-  spawn_text(
-    commands,
-    panel,
-    "Nested scroll",
-    title_font(asset_server),
-    @ui.Node::Node(),
-  )
+  spawn_text(commands, panel, "Nested scroll", title_font(asset_server), Node())
   |> ignore
   let outer = commands.spawn(
     (
       @hierarchy.Parent::new(panel),
-      scroll_container(
-        248.0F,
-        280.0F,
-        @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
-      ).with_flex_direction(@ui.FlexDirection::Column),
+      scroll_container(248.0F, 280.0F, @ui.Overflow::new(Hidden, Scroll)).with_flex_direction(
+        Column,
+      ),
       @ui.BackgroundColor::new(@color.Color::srgb(0.09F, 0.07F, 0.10F)),
     ),
   )
@@ -314,15 +283,10 @@ fn spawn_nested_panel(
       outer,
       "Outer row \{i.to_string()}",
       body_font(asset_server),
-      @ui.Node::{
-        ..@ui.Node(),
-        min_height: @ui.Val::Px(28.0F),
-        margin: @ui.UiRect::new(
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(6.0F),
-        ),
+      {
+        ..Node(),
+        min_height: Px(28.0F),
+        margin: @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(6.0F)),
       },
     )
     |> ignore
@@ -330,20 +294,9 @@ fn spawn_nested_panel(
   let inner = commands.spawn(
     (
       @hierarchy.Parent::new(outer),
-      scroll_container(
-        220.0F,
-        120.0F,
-        @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
-      )
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_margin(
-        @ui.UiRect::new(
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(10.0F),
-          @ui.Val::Px(10.0F),
-        ),
-      ),
+      scroll_container(220.0F, 120.0F, @ui.Overflow::new(Hidden, Scroll))
+      .with_flex_direction(Column)
+      .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(10.0F), Px(10.0F))),
       @ui.BackgroundColor::new(@color.Color::srgb(0.13F, 0.11F, 0.16F)),
     ),
   )
@@ -363,15 +316,10 @@ fn spawn_nested_panel(
       outer,
       "Outer row \{i.to_string()}",
       body_font(asset_server),
-      @ui.Node::{
-        ..@ui.Node(),
-        min_height: @ui.Val::Px(28.0F),
-        margin: @ui.UiRect::new(
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(0.0F),
-          @ui.Val::Px(6.0F),
-        ),
+      {
+        ..Node(),
+        min_height: Px(28.0F),
+        margin: @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(6.0F)),
       },
     )
     |> ignore
@@ -392,20 +340,14 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
-      .with_display(@ui.Display::Grid)
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_padding(@ui.UiRect::all(Px(16.0F)))
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(2), [Fr(1.0F)]),
       ])
-      .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
-          @ui.GridTrack::Auto,
-        ]),
-      ]),
+      .with_grid_template_rows([@ui.RepeatedGridTrack::new(Count(2), [Auto])]),
       @ui.BackgroundColor::new(@color.Color::srgb(0.05F, 0.05F, 0.06F)),
     ),
   )
@@ -420,6 +362,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

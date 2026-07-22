@@ -20,7 +20,7 @@ pub struct Isometry2d {
 
 ///|
 pub fn Isometry2d::identity() -> Isometry2d {
-  Isometry2d::{ translation: @math.Vec2::new(0.0F, 0.0F), rotation: 0.0F }
+  { translation: @math.Vec2::new(0.0F, 0.0F), rotation: 0.0F }
 }
 
 ///|
@@ -28,7 +28,7 @@ pub fn Isometry2d::new(
   translation : @math.Vec2,
   rotation : Float,
 ) -> Isometry2d {
-  Isometry2d::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
@@ -74,11 +74,11 @@ const DEFAULT_GIZMO_LINE_WIDTH : Float = 2.0F
 
 ///|
 pub fn GizmoLineConfig::GizmoLineConfig() -> GizmoLineConfig {
-  GizmoLineConfig::{
+  {
     width: DEFAULT_GIZMO_LINE_WIDTH,
     perspective: false,
-    style: GizmoLineStyle::Solid,
-    joints: GizmoLineJoint::None,
+    style: Solid,
+    joints: None,
   }
 }
 
@@ -92,11 +92,11 @@ pub(all) struct GizmoConfig {
 
 ///|
 pub fn GizmoConfig::GizmoConfig() -> GizmoConfig {
-  GizmoConfig::{
+  {
     enabled: true,
-    line: GizmoLineConfig::GizmoLineConfig(),
+    line: GizmoLineConfig(),
     depth_bias: 0.0F,
-    render_layers: RenderLayers::RenderLayers(),
+    render_layers: RenderLayers(),
   }
 }
 
@@ -128,18 +128,18 @@ fn[Config : GizmoConfigGroup + Default] gizmos_from_world(
   let group : Config = Default::default()
   let store = match store {
     Some(store) => store
-    None => raise @ecs.Invalid("Missing resource for system parameter")
+    None => raise Invalid("Missing resource for system parameter")
   }
   let configs : (GizmoConfig, Config)? = store.get_config(group)
   match configs {
     Some((config, config_group)) =>
-      Gizmos::{
+      {
         config,
         config_group,
         state: Ref(GizmoState::new()),
         world: Some(world),
       }
-    None => raise @ecs.Invalid(gizmo_group_missing_message(group))
+    None => raise Invalid(gizmo_group_missing_message(group))
   }
 }
 
@@ -519,7 +519,7 @@ pub(all) struct GizmoState {
 
 ///|
 fn GizmoState::new() -> GizmoState {
-  GizmoState::{
+  {
     lines: [],
     lines_3d: [],
     pending_ellipses: [],
@@ -576,7 +576,7 @@ fn GizmoState::append_from_with_config(
   let line_config = config.line
   let width = positive_or(line_config.width, DEFAULT_GIZMO_LINE_WIDTH)
   for item in other.lines {
-    self.lines.push(GizmoLine::{
+    self.lines.push({
       start: item.start,
       end: item.end,
       start_color: item.start_color,
@@ -587,7 +587,7 @@ fn GizmoState::append_from_with_config(
     })
   }
   for item in other.lines_3d {
-    self.lines_3d.push(GizmoLine3d::{
+    self.lines_3d.push({
       start: item.start,
       end: item.end,
       start_color: item.start_color,
@@ -620,7 +620,7 @@ pub struct GizmoStorage[Config] {
 
 ///|
 pub fn[Config] GizmoStorage::new() -> GizmoStorage[Config] {
-  GizmoStorage::{ state: GizmoState::new(), phantom: None }
+  { state: GizmoState::new(), phantom: None }
 }
 
 ///|
@@ -630,7 +630,7 @@ pub fn[Config] GizmoStorage::GizmoStorage() -> GizmoStorage[Config] {
 
 ///|
 pub impl[Config] Default for GizmoStorage[Config] with fn default() {
-  GizmoStorage::GizmoStorage()
+  GizmoStorage()
 }
 
 ///|
@@ -661,7 +661,7 @@ pub fn DrainedGizmoStorage::state(self : DrainedGizmoStorage) -> GizmoState {
 type GizmoStorageDrain = (@ecs.World) -> DrainedGizmoStorage?
 
 ///|
-let gizmo_storage_drain_registry : @hashmap.HashMap[String, GizmoStorageDrain] = @hashmap.HashMap([],
+let gizmo_storage_drain_registry : @hashmap.HashMap[String, GizmoStorageDrain] = HashMap([],
 )
 
 ///|
@@ -699,9 +699,9 @@ fn[Config : GizmoConfigGroup] register_gizmo_storage_drain(
       Some(store) =>
         match store.get_config(group) {
           Some((config, _)) => config
-          None => GizmoConfig::GizmoConfig()
+          None => GizmoConfig()
         }
-      None => GizmoConfig::GizmoConfig()
+      None => GizmoConfig()
     }
     match world.get_resource_mut(key) {
       Some(storage_ref) =>
@@ -710,11 +710,7 @@ fn[Config : GizmoConfigGroup] register_gizmo_storage_drain(
             let drained = GizmoState::new()
             drained.append_from(storage.state)
             storage.state.clear()
-            DrainedGizmoStorage::{
-              group_type_name: type_name,
-              config,
-              state: drained,
-            }
+            { group_type_name: type_name, config, state: drained }
           }),
         )
       None => None
@@ -764,9 +760,9 @@ let global_gizmo_state : Ref[GizmoState] = Ref(GizmoState::new())
 
 ///|
 pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup] {
-  Gizmos::{
-    config: GizmoConfig::GizmoConfig(),
-    config_group: DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
+  {
+    config: GizmoConfig(),
+    config_group: DefaultGizmoConfigGroup(),
     state: global_gizmo_state,
     world: None,
   }
@@ -803,7 +799,7 @@ fn gizmos_add_line_with_config(
   }
   let line_config = config.line
   let width = positive_or(line_config.width, DEFAULT_GIZMO_LINE_WIDTH)
-  state.val.lines.push(GizmoLine::{
+  state.val.lines.push({
     start,
     end,
     start_color,
@@ -891,7 +887,7 @@ fn gizmos_add_line_3d_with_config(
   if effective_layers.mask == 0 {
     return
   }
-  state.val.lines_3d.push(GizmoLine3d::{
+  state.val.lines_3d.push({
     start,
     end,
     start_color,
@@ -1340,7 +1336,7 @@ pub fn gizmos_mesh_id_3d(layers : RenderLayers) -> Int? {
     uvs,
     colors,
     None,
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
   guard geometry.flatten_interleaved_xyz_normal_uv_rgba_joints_weights_vertices()
     is Some(vertices_double) else {
@@ -1633,7 +1629,7 @@ pub fn[Config] Gizmos::rounded_rect_2d(
   }
   let id = self.state.val.pending_rounded_rects.length()
   self.state.val.pending_rounded_rects.push(entry)
-  RoundedRectBuilder::{ id, state: self.state }
+  { id, state: self.state }
 }
 
 ///|
@@ -1669,7 +1665,7 @@ pub fn[Config] Gizmos::circle_2d(
   }
   let id = self.state.val.pending_ellipses.length()
   self.state.val.pending_ellipses.push(entry)
-  Ellipse2dBuilder::{ id, state: self.state }
+  { id, state: self.state }
 }
 
 ///|
@@ -1688,7 +1684,7 @@ pub fn[Config] Gizmos::ellipse_2d(
   }
   let id = self.state.val.pending_ellipses.length()
   self.state.val.pending_ellipses.push(entry)
-  Ellipse2dBuilder::{ id, state: self.state }
+  { id, state: self.state }
 }
 
 ///|
@@ -1728,7 +1724,7 @@ pub fn[Config] Gizmos::arc_2d(
   }
   let id = self.state.val.pending_arcs.length()
   self.state.val.pending_arcs.push(entry)
-  Arc2dBuilder::{ id, state: self.state }
+  { id, state: self.state }
 }
 
 ///|
@@ -1810,7 +1806,7 @@ pub fn[Config] Gizmos::arrow_2d(
   }
   let id = self.state.val.pending_arrows.length()
   self.state.val.pending_arrows.push(entry)
-  ArrowBuilder::{ id, state: self.state }
+  { id, state: self.state }
 }
 
 ///|
@@ -2082,7 +2078,7 @@ pub fn[Config] Gizmos::grid_2d(
   }
   let id = self.state.val.pending_grids.length()
   self.state.val.pending_grids.push(entry)
-  Grid2dBuilder::{ id, state: self.state }
+  { id, state: self.state }
 }
 
 ///|

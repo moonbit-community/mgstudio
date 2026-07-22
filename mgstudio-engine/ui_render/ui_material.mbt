@@ -28,9 +28,9 @@ fn button_color_for_state(
   match state {
     Some(s) =>
       match s {
-        @ui.Interaction::Pressed => colors.pressed
-        @ui.Interaction::Hovered => colors.hovered
-        @ui.Interaction::None => colors.normal
+        Pressed => colors.pressed
+        Hovered => colors.hovered
+        None => colors.normal
       }
     None => colors.normal
   }

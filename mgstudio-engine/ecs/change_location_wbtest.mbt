@@ -47,7 +47,7 @@ test "ecs change locations: default omits storage and opt-in records caller" {
   try! default_world.set_by_key(
     default_entity,
     change_location_marker_key,
-    ChangeLocationMarker::Marker,
+    Marker,
   )
   debug_inspect(
     change_location_marker_column(default_world, default_entity).storage.changed_caller_ids
@@ -69,7 +69,7 @@ test "ecs change locations: default omits storage and opt-in records caller" {
   try! tracked_world.set_by_key(
     tracked_entity,
     change_location_marker_key,
-    ChangeLocationMarker::Marker,
+    Marker,
   )
   debug_inspect(
     change_location_marker_column(tracked_world, tracked_entity).storage.changed_caller_ids

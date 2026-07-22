@@ -472,6 +472,7 @@ pub impl Plugin for PluginGroupBuilder[@ecs.World] with fn build(self, app) {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoopPluginGroup::NoopPluginGroup() -> NoopPluginGroup {
   NoopPluginGroup::{  }
 }
@@ -572,7 +573,7 @@ pub fn[W] RunConditionConfig::clone(
 
 ///|
 pub fn[W] run_condition(cond : RunConditionFn[W]) -> RunConditionConfig[W] {
-  RunConditionConfig::{
+  {
     condition: fn(world : W) { cond(world) },
     clone_condition: fn() { run_condition(cond) },
   }
@@ -580,7 +581,7 @@ pub fn[W] run_condition(cond : RunConditionFn[W]) -> RunConditionConfig[W] {
 
 ///|
 pub fn[W] run_condition_fn(cond : () -> Bool) -> RunConditionConfig[W] {
-  RunConditionConfig::{
+  {
     condition: fn(_world : W) { cond() },
     clone_condition: fn() { run_condition_fn(cond) },
   }
@@ -593,7 +594,7 @@ pub fn[W, S] stateful_run_condition(
 ) -> RunConditionConfig[W] {
   let cell = RunConditionStateCell::{ value: init_state }
   let state = RunConditionState::{ cell, }
-  RunConditionConfig::{
+  {
     condition: fn(world : W) { cond(world, state) },
     clone_condition: fn() { stateful_run_condition(init_state, cond) },
   }
@@ -945,7 +946,7 @@ pub fn[T : Eq] ResMut::set_if_neq(
 
 ///|
 fn[T] system_param_raise_invalid_missing_resource() -> T raise @ecs.SystemParamValidationError {
-  raise @ecs.Invalid("Missing resource for system parameter")
+  raise Invalid("Missing resource for system parameter")
 }
 
 ///|
@@ -1033,10 +1034,7 @@ pub struct OutputSystemConfig[W, O] {
 
 ///|
 pub fn[W, O] system_output(system : (W) -> O) -> OutputSystemConfig[W, O] {
-  OutputSystemConfig::{
-    system: fn(world : W) { Some(system(world)) },
-    access_factory: None,
-  }
+  { system: fn(world : W) { Some(system(world)) }, access_factory: None }
 }
 
 ///|
@@ -1044,7 +1042,7 @@ pub fn[W, P : SystemParam, O] system_param_output(
   system : (P) -> O,
 ) -> OutputSystemConfig[W, O] {
   let state = system_param_state_slot_new()
-  OutputSystemConfig::{
+  {
     system: fn(_world : W) {
       let param_state = state.get_or_init(system_param_abort_missing_world())
       let param_opt : P? = system_param_get_or_record(param_state)
@@ -1084,7 +1082,7 @@ pub fn[W, O] OutputSystemConfig::pipe(
   system_config_with_access(
     fn(world : W) {
       guard (self.system)(world) is Some(output) else { return }
-      handler(In::{ value: output })
+      handler({ value: output })
     },
     fn(world : @ecs.World) { self.output_system_base_access(world) },
   )
@@ -1103,7 +1101,7 @@ pub fn[W, O, P : SystemParam] OutputSystemConfig::pipe_param(
       let param_state = state.get_or_init(current_world)
       let param_opt : P? = system_param_get_or_record(param_state)
       guard param_opt is Some(param) else { return }
-      handler(In::{ value: output }, param)
+      handler({ value: output }, param)
       P::store(param, param_state)
     },
     fn(world : @ecs.World) {
@@ -1167,7 +1165,7 @@ fn[W] system_config_with_access(
   access_factory : (@ecs.World) -> SystemAccess,
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
-  SystemConfig::{
+  {
     system,
     name: None,
     debug_name: Some(loc.to_string()),
@@ -1783,7 +1781,7 @@ pub fn[W] fallible_system(
   loc~ : SourceLoc,
 ) -> SystemConfig[W] {
   let wrapped = fn(world : W) { run_fallible_system_body(() => system(world)) }
-  SystemConfig::{
+  {
     system: wrapped,
     name: None,
     debug_name: Some(loc.to_string()),
@@ -2653,7 +2651,7 @@ pub impl[T : Resource] SystemParam for Res[T] with fn init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for Res[T] with fn get(_state) {
   let world = system_param_abort_missing_world()
-  Res::{
+  {
     value: world_resource_value_or_raise(world),
     scope: Some(current_system_param_scope_or_abort()),
     key_id: Some(T::resource().id()),
@@ -2681,7 +2679,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with fn init_state(world) {
 pub impl[T : Resource] SystemParam for ResMut[T] with fn get(_state) {
   let world = system_param_abort_missing_world()
   let _resource : T = world_resource_value_or_raise(world)
-  ResMut::{
+  {
     scope: Some(current_system_param_scope_or_abort()),
     key: Some(T::resource()),
   }
@@ -2723,7 +2721,7 @@ pub struct SystemConfig[W] {
 ///|
 #callsite(autofill(loc))
 pub fn[W] system(system : SystemFn[W], loc~ : SourceLoc) -> SystemConfig[W] {
-  SystemConfig::{
+  {
     system,
     name: None,
     debug_name: Some(loc.to_string()),
@@ -2758,7 +2756,7 @@ pub fn[W] SystemConfig::named(
   self : SystemConfig[W],
   name : String,
 ) -> SystemConfig[W] {
-  SystemConfig::{ ..self, name: Some(name) }
+  { ..self, name: Some(name) }
 }
 
 ///|
@@ -2766,7 +2764,7 @@ pub fn[W] SystemConfig::handle_error_with(
   self : SystemConfig[W],
   handler : ErrorHandler,
 ) -> SystemConfig[W] {
-  SystemConfig::{ ..self, error_handler: Some(handler) }
+  { ..self, error_handler: Some(handler) }
 }
 
 ///|
@@ -2804,7 +2802,7 @@ pub fn[W, S] SystemConfig::run_if_stateful(
 pub fn[W] SystemConfig::chain_ignore_deferred(
   self : SystemConfig[W],
 ) -> SystemConfig[W] {
-  SystemConfig::{ ..self, chain_ignore_deferred: true }
+  { ..self, chain_ignore_deferred: true }
 }
 
 ///|
@@ -2819,7 +2817,7 @@ pub fn[W] SystemConfig::in_set(
     Some(current) => Some(current)
     None => Some(set)
   }
-  SystemConfig::{ ..self, set: primary_set }
+  { ..self, set: primary_set }
 }
 
 ///|
@@ -2864,7 +2862,7 @@ pub fn apply_deferred_system() -> SystemConfig[@ecs.World] {
     end_deferred_command_batch(world)
     begin_deferred_command_batch(world)
   })
-  SystemConfig::{
+  {
     ..config,
     name: Some("bevy_ecs::apply_deferred"),
     is_apply_deferred_node: true,
@@ -2879,7 +2877,7 @@ fn[W] auto_apply_deferred_system(sync_i : Int) -> SystemConfig[W] {
     end_deferred_command_batch(world)
     begin_deferred_command_batch(world)
   })
-  SystemConfig::{
+  {
     ..config,
     name: Some("bevy_ecs::apply_deferred#auto\{sync_i.to_string()}"),
     is_apply_deferred_node: true,
@@ -2902,7 +2900,7 @@ fn chain_group_config(
   members : Array[SystemConfig[@ecs.World]],
 ) -> SystemConfig[@ecs.World] {
   let config = system(fn(_world : @ecs.World) -> Unit {  })
-  SystemConfig::{
+  {
     ..config,
     chain_members: Some(members),
     // This wrapper is expanded in schedule_push_config and never executed directly.
@@ -3000,7 +2998,7 @@ pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
     .set_update_schedule(Some(Main))
   let sub_apps = SubApps::new(main_sub_app)
   world.add_pre_close_hook(fn(_world) { sub_apps.shutdown() |> ignore })
-  App::{
+  {
     sub_apps,
     plugin_names: [],
     plugin_registry: [],
@@ -4720,7 +4718,7 @@ fn run_schedule_stage(
   stage : ScheduleStage,
 ) -> Unit {
   let stage_trace_start_us = timeline_trace_begin_span(
-    TimelineTraceCategory::ScheduleStage,
+    ScheduleStage,
     to_repr(stage).to_string(),
   )
   app_execution_context_state.current_schedule_stage = Some(stage)
@@ -4738,7 +4736,7 @@ fn run_schedule_stage(
           world,
           @ecs.Invalid(message),
           ErrorContext::new(
-            ErrorContextKind::Validation,
+            Validation,
             "\{to_repr(stage).to_string()}::<schedule>",
             stage=Some(stage),
           ),
@@ -4746,7 +4744,7 @@ fn run_schedule_stage(
       }
       app_execution_context_state.current_schedule_stage = None
       timeline_trace_end_span(
-        TimelineTraceCategory::ScheduleStage,
+        ScheduleStage,
         to_repr(stage).to_string(),
         stage_trace_start_us,
       )
@@ -4768,7 +4766,7 @@ fn run_schedule_stage(
   )
   app_execution_context_state.current_schedule_stage = None
   timeline_trace_end_span(
-    TimelineTraceCategory::ScheduleStage,
+    ScheduleStage,
     to_repr(stage).to_string(),
     stage_trace_start_us,
   )
@@ -4831,5 +4829,5 @@ pub fn App::run(self : App[@ecs.World]) -> Unit {
 
 ///|
 pub fn[W] App::set_runner(self : App[W], builder : RunnerBuilder[W]) -> App[W] {
-  App::{ ..self, runner_builder: Some(builder) }
+  { ..self, runner_builder: Some(builder) }
 }

@@ -34,14 +34,14 @@ pub struct PrepassPlugin {
 
 ///|
 pub fn PrepassPlugin::PrepassPlugin() -> PrepassPlugin {
-  PrepassPlugin::{ debug_flags: @render.RenderDebugFlags::RenderDebugFlags() }
+  { debug_flags: RenderDebugFlags() }
 }
 
 ///|
 pub fn PrepassPlugin::new(
   debug_flags : @render.RenderDebugFlags,
 ) -> PrepassPlugin {
-  PrepassPlugin::{ debug_flags, }
+  { debug_flags, }
 }
 
 ///|
@@ -65,6 +65,7 @@ pub impl @app.Plugin for PrepassPlugin with fn build(self, app) {
 pub struct PrepassPipelinePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PrepassPipelinePlugin::PrepassPipelinePlugin() -> PrepassPipelinePlugin {
   PrepassPipelinePlugin::{  }
 }
@@ -102,9 +103,7 @@ pub struct AnyPrepassPluginLoaded {
 
 ///|
 pub fn AnyPrepassPluginLoaded::AnyPrepassPluginLoaded() -> AnyPrepassPluginLoaded {
-  AnyPrepassPluginLoaded::{
-    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
-  }
+  { debug_flags: RenderDebugFlags() }
 }
 
 ///|
@@ -122,7 +121,7 @@ pub struct PrepassPipelineState {
 
 ///|
 pub fn PrepassPipelineState::PrepassPipelineState() -> PrepassPipelineState {
-  PrepassPipelineState::{ pipeline_ready: false, view_bind_group_ready: false }
+  { pipeline_ready: false, view_bind_group_ready: false }
 }
 
 ///|
@@ -152,23 +151,21 @@ pub struct PreviousGlobalTransform {
 pub fn PreviousGlobalTransform::new(
   transform : @transform.Transform,
 ) -> PreviousGlobalTransform {
-  PreviousGlobalTransform::{
-    affine: @transform.GlobalTransform::from_transform(transform).affine(),
-  }
+  { affine: @transform.GlobalTransform::from_transform(transform).affine() }
 }
 
 ///|
 pub fn PreviousGlobalTransform::from_affine(
   affine : @math.Affine3,
 ) -> PreviousGlobalTransform {
-  PreviousGlobalTransform::{ affine, }
+  { affine, }
 }
 
 ///|
 pub fn PreviousGlobalTransform::from_global_transform(
   transform : @transform.GlobalTransform,
 ) -> PreviousGlobalTransform {
-  PreviousGlobalTransform::{ affine: transform.affine() }
+  { affine: transform.affine() }
 }
 
 ///|
@@ -191,7 +188,7 @@ pub fn PreviousViewData::new(
   transform : @transform.Transform,
   clip_from_world : @pbr_render.ProjectionMatrix3d,
 ) -> PreviousViewData {
-  PreviousViewData::{ transform, clip_from_world }
+  { transform, clip_from_world }
 }
 
 ///|
@@ -288,7 +285,7 @@ fn prepass_pipeline_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_prepass_pipeline_state,
-      PrepassPipelineState::PrepassPipelineState(),
+      PrepassPipelineState(),
     )
   }
   app.add_pre_update_system(prepass_update_pipeline_state)
@@ -296,7 +293,7 @@ fn prepass_pipeline_plugin_install_with(
 
 ///|
 pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  prepass_plugin_with(app, PrepassPlugin::PrepassPlugin())
+  prepass_plugin_with(app, PrepassPlugin())
 }
 
 ///|
@@ -308,14 +305,11 @@ pub fn prepass_plugin_with(
   let app = if app.contains_resource(ecs_key_any_prepass_plugin_loaded) {
     app
   } else {
-    app.insert_world_resource(ecs_key_any_prepass_plugin_loaded, AnyPrepassPluginLoaded::{
+    app.insert_world_resource(ecs_key_any_prepass_plugin_loaded, {
       debug_flags: plugin.debug_flags,
     })
   }
-  @core_prepass.prepass_plugin_with(
-    app,
-    @core_prepass.PrepassPlugin::PrepassPlugin(),
-  )
+  @core_prepass.prepass_plugin_with(app, PrepassPlugin())
 }
 
 ///|

@@ -22,7 +22,7 @@ pub struct PipelineSpecializer[T] {
 
 ///|
 pub fn[T] PipelineSpecializer::new() -> PipelineSpecializer[T] {
-  PipelineSpecializer::{ entries: [] }
+  { entries: [] }
 }
 
 ///|

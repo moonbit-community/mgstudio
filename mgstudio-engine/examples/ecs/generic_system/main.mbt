@@ -80,7 +80,7 @@ impl @app.States for AppState with fn state_resource_keys() {
 
 ///|
 impl Default for AppState with fn default() {
-  AppState::MainMenu
+  MainMenu
 }
 
 ///|
@@ -107,9 +107,7 @@ impl @ecs.Component for LevelUnload with fn component() {
 fn setup_system(commands : @app.Commands) -> Unit {
   commands.spawn(
     (
-      PrinterTick::{
-        timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
-      },
+      PrinterTick::{ timer: @time.Timer::from_seconds(1.0F, Repeating) },
       TextToPrint::{ text: "I will print until you press space." },
       MenuClose::{  },
     ),
@@ -118,9 +116,7 @@ fn setup_system(commands : @app.Commands) -> Unit {
 
   commands.spawn(
     (
-      PrinterTick::{
-        timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
-      },
+      PrinterTick::{ timer: @time.Timer::from_seconds(1.0F, Repeating) },
       TextToPrint::{ text: "I will always print" },
       LevelUnload::{  },
     ),
@@ -151,7 +147,7 @@ fn print_text_system(
 fn transition_to_in_game_system(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
-  if keyboard_input.pressed(@window.KeyCode::Space) {
+  if keyboard_input.pressed(Space) {
     @app.set_state(AppState::InGame)
   }
 }
@@ -181,10 +177,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(AppState::default())
-  .add_systems_param(@app.Startup, setup_system)
-  .add_systems_param2(@app.Update, print_text_system)
+  .add_systems_param(Startup, setup_system)
+  .add_systems_param2(Update, print_text_system)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(transition_to_in_game_system).run_if(
       @app.in_state(AppState::MainMenu),
     ),

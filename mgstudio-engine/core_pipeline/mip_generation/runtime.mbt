@@ -150,7 +150,7 @@ fn mip_generation_compile_pipeline_source(
   let source = downsample_specialized_wgsl_source(identifier)
   let defines = @hashmap.HashMap([])
   let value_defines = @shader_compile.default_shader_value_defines()
-  value_defines.set(shader_def, @wgsl_common.ShaderDefValue::Int(1))
+  value_defines.set(shader_def, Int(1))
   let compiled = @shader_compile.preprocess_shader_source(
     "", source, defines, value_defines,
   ) catch {
@@ -380,7 +380,7 @@ fn mip_generation_storage_view(
     view.set_label(
       "mip downsampling storage view \{mip_level}/\{gpu_image.mip_level_count()}",
     )
-    Some(MipGenerationStorageView::{ view, dummy_texture: None })
+    Some({ view, dummy_texture: None })
   } else {
     let texture = render_device
       .wgpu_device()
@@ -402,7 +402,7 @@ fn mip_generation_storage_view(
     view.set_label(
       "mip downsampling dummy storage view \{mip_level}/\{gpu_image.mip_level_count()}",
     )
-    Some(MipGenerationStorageView::{ view, dummy_texture: Some(texture) })
+    Some({ view, dummy_texture: Some(texture) })
   }
 }
 
@@ -587,7 +587,7 @@ fn mip_generation_create_job_bind_groups(
       return None
     }
   }
-  Some(MipGenerationJobBindGroups::{
+  Some({
     bind_group_pass_1,
     bind_group_pass_2,
     constants_buffer,

@@ -43,7 +43,7 @@ fn read_fixed_time_test_resource(app : @app.App[@ecs.World]) -> Time[Fixed] {
 ///|
 fn send_time_test_instant(sender : TimeSender, instant : @core.Instant) -> Unit {
   sender.try_send(instant) catch {
-    TimeSendError::Full => abort("time channel unexpectedly full")
+    Full => abort("time channel unexpectedly full")
   }
 }
 
@@ -98,25 +98,25 @@ fn set_virtual_relative_speed(
 ///|
 fn current_stage_label() -> String {
   match @app.current_schedule_stage() {
-    Some(@app.Main) => "Main"
-    Some(@app.PreStartup) => "PreStartup"
-    Some(@app.Startup) => "Startup"
-    Some(@app.PostStartup) => "PostStartup"
-    Some(@app.First) => "First"
-    Some(@app.PreUpdate) => "PreUpdate"
-    Some(@app.StateTransition) => "StateTransition"
-    Some(@app.RunFixedMainLoop) => "RunFixedMainLoop"
-    Some(@app.FixedFirst) => "FixedFirst"
-    Some(@app.FixedPreUpdate) => "FixedPreUpdate"
-    Some(@app.FixedUpdate) => "FixedUpdate"
-    Some(@app.FixedPostUpdate) => "FixedPostUpdate"
-    Some(@app.FixedLast) => "FixedLast"
-    Some(@app.FixedMain) => "FixedMain"
-    Some(@app.Update) => "Update"
-    Some(@app.SpawnScene) => "SpawnScene"
-    Some(@app.PostUpdate) => "PostUpdate"
-    Some(@app.Last) => "Last"
-    Some(@app.Custom(name)) => name
+    Some(Main) => "Main"
+    Some(PreStartup) => "PreStartup"
+    Some(Startup) => "Startup"
+    Some(PostStartup) => "PostStartup"
+    Some(First) => "First"
+    Some(PreUpdate) => "PreUpdate"
+    Some(StateTransition) => "StateTransition"
+    Some(RunFixedMainLoop) => "RunFixedMainLoop"
+    Some(FixedFirst) => "FixedFirst"
+    Some(FixedPreUpdate) => "FixedPreUpdate"
+    Some(FixedUpdate) => "FixedUpdate"
+    Some(FixedPostUpdate) => "FixedPostUpdate"
+    Some(FixedLast) => "FixedLast"
+    Some(FixedMain) => "FixedMain"
+    Some(Update) => "Update"
+    Some(SpawnScene) => "SpawnScene"
+    Some(PostUpdate) => "PostUpdate"
+    Some(Last) => "Last"
+    Some(Custom(name)) => name
     None => "None"
   }
 }
@@ -446,9 +446,7 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
     .insert_resource(Time::from_seconds(0.25F))
     .add_run_fixed_main_loop_system_config(
       @app.system(fn(_world : @ecs.World) { log.push("before") }).in_set(
-        @app.run_fixed_main_loop_system_set_name(
-          @app.RunFixedMainLoopSystems::BeforeFixedMainLoop,
-        ),
+        @app.run_fixed_main_loop_system_set_name(BeforeFixedMainLoop),
       ),
     )
     .add_fixed_update_system(fn(_world : @ecs.World) {
@@ -456,9 +454,7 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
     })
     .add_run_fixed_main_loop_system_config(
       @app.system(fn(_world : @ecs.World) { log.push("after") }).in_set(
-        @app.run_fixed_main_loop_system_set_name(
-          @app.RunFixedMainLoopSystems::AfterFixedMainLoop,
-        ),
+        @app.run_fixed_main_loop_system_set_name(AfterFixedMainLoop),
       ),
     )
   app = set_virtual_max_delta_seconds(app, 1.0F)
@@ -483,7 +479,7 @@ test "time: fixed main schedule order resource drives fixed substage order" {
     .insert_resource(Time::from_seconds(0.25F))
     .insert_world_resource(
       @app.fixed_main_schedule_order_resource_key,
-      @app.FixedMainScheduleOrder::new([@app.FixedLast, @app.FixedUpdate]),
+      @app.FixedMainScheduleOrder::new([FixedLast, FixedUpdate]),
     )
     .add_fixed_last_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())

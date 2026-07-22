@@ -46,13 +46,7 @@ pub fn Mesh2dGeometry::new(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> Mesh2dGeometry {
-  Mesh2dGeometry::{
-    positions,
-    uvs: Some(uvs),
-    colors: None,
-    custom_attributes: [],
-    indices,
-  }
+  { positions, uvs: Some(uvs), colors: None, custom_attributes: [], indices }
 }
 
 ///|
@@ -62,7 +56,7 @@ pub fn Mesh2dGeometry::new_with_colors(
   colors : Array[@math.Vec4],
   indices : Array[Int]?,
 ) -> Mesh2dGeometry {
-  Mesh2dGeometry::{
+  {
     positions,
     uvs: Some(uvs),
     colors: Some(colors),
@@ -76,13 +70,7 @@ pub fn Mesh2dGeometry::new_with_positions(
   positions : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> Mesh2dGeometry {
-  Mesh2dGeometry::{
-    positions,
-    uvs: None,
-    colors: None,
-    custom_attributes: [],
-    indices,
-  }
+  { positions, uvs: None, colors: None, custom_attributes: [], indices }
 }
 
 ///|
@@ -129,21 +117,17 @@ pub fn Mesh2dGeometry::insert_attribute(
   }
   let id = attribute.id()
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::position().id()) {
-    guard values is VertexAttributeValues::Float32x3(positions) else {
-      return false
-    }
+    guard values is Float32x3(positions) else { return false }
     mesh2d_assign_positions_from_vec3(self.positions, positions)
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_0().id()) {
-    guard values is VertexAttributeValues::Float32x2(uvs) else { return false }
+    guard values is Float32x2(uvs) else { return false }
     self.uvs = Some(uvs)
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::color().id()) {
-    guard values is VertexAttributeValues::Float32x4(colors) else {
-      return false
-    }
+    guard values is Float32x4(colors) else { return false }
     self.colors = Some(colors)
     return true
   }
@@ -180,15 +164,13 @@ pub fn Mesh2dGeometry::validate(
 ) -> Mesh2dValidationError? {
   let vertex_count = self.positions.length()
   if vertex_count <= 0 {
-    return Some(Mesh2dValidationError::EmptyVertices)
+    return Some(EmptyVertices)
   }
   match self.uvs {
     Some(uvs) => {
       let uv_count = uvs.length()
       if uv_count != vertex_count {
-        return Some(
-          Mesh2dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
-        )
+        return Some(AttributeLengthMismatch(vertex_count, uv_count))
       }
     }
     None => ()
@@ -196,18 +178,14 @@ pub fn Mesh2dGeometry::validate(
   if self.colors is Some(colors) {
     let color_count = colors.length()
     if color_count != vertex_count {
-      return Some(
-        Mesh2dValidationError::ColorAttributeLengthMismatch(
-          vertex_count, color_count,
-        ),
-      )
+      return Some(ColorAttributeLengthMismatch(vertex_count, color_count))
     }
   }
   for custom_attribute in self.custom_attributes {
     let attribute_count = custom_attribute.values().len()
     if attribute_count != vertex_count {
       return Some(
-        Mesh2dValidationError::CustomAttributeLengthMismatch(
+        CustomAttributeLengthMismatch(
           custom_attribute.attribute().name(),
           vertex_count,
           attribute_count,
@@ -218,29 +196,21 @@ pub fn Mesh2dGeometry::validate(
   match self.indices {
     None => {
       if vertex_count % 3 != 0 {
-        return Some(
-          Mesh2dValidationError::NonIndexedVertexCountNotMultipleOf3(
-            vertex_count,
-          ),
-        )
+        return Some(NonIndexedVertexCountNotMultipleOf3(vertex_count))
       }
       None
     }
     Some(indices) => {
       let index_count = indices.length()
       if index_count <= 0 {
-        return Some(Mesh2dValidationError::IndicesEmpty)
+        return Some(IndicesEmpty)
       }
       if index_count % 3 != 0 {
-        return Some(
-          Mesh2dValidationError::IndicesCountNotMultipleOf3(index_count),
-        )
+        return Some(IndicesCountNotMultipleOf3(index_count))
       }
       for idx in indices {
         if idx < 0 || idx >= vertex_count {
-          return Some(
-            Mesh2dValidationError::IndexOutOfBounds(idx, vertex_count),
-          )
+          return Some(IndexOutOfBounds(idx, vertex_count))
         }
       }
       None

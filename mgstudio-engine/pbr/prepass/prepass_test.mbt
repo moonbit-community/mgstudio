@@ -16,10 +16,7 @@
 test "pbr prepass: any_enabled reflects individual flags" {
   let bindings = render3d_prepass_bindings(true, false, false, false)
   inspect(bindings.any_enabled(), content="true")
-  inspect(
-    render3d_prepass_any_enabled(PrepassBindings3d::PrepassBindings3d()),
-    content="false",
-  )
+  inspect(render3d_prepass_any_enabled(PrepassBindings3d()), content="false")
 }
 
 ///|
@@ -48,10 +45,7 @@ test "pbr prepass: update pipeline state becomes ready when prepass components e
   let world = @ecs.World::new()
   defer world.close()
   world.insert_resource(ecs_key_prepass_view_state, PrepassViewState())
-  world.insert_resource(
-    ecs_key_prepass_pipeline_state,
-    PrepassPipelineState::PrepassPipelineState(),
-  )
+  world.insert_resource(ecs_key_prepass_pipeline_state, PrepassPipelineState())
   let entity = world.spawn()
   try! (world.set_by_key(entity, ecs_key_depth_prepass, DepthPrepass())
   |> ignore)
@@ -69,11 +63,8 @@ test "pbr prepass: run plan is exposed from core prepass node owner" {
     has_motion_vectors_attachment=true,
     has_prepass_depth_attachment=true,
   )
-  let plan = prepass_run_plan(PrepassRunKind::Early, state)
-  inspect(
-    prepass_run_kind_label(PrepassRunKind::Early),
-    content="early prepass",
-  )
+  let plan = prepass_run_plan(Early, state)
+  inspect(prepass_run_kind_label(Early), content="early prepass")
   inspect(plan.should_run, content="true")
   inspect(plan.color_attachments.slot_count, content="4")
   inspect(plan.color_attachments.normal, content="true")

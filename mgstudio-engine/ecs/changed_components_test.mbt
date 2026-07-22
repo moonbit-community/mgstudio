@@ -33,7 +33,7 @@ test "ecs changed components: insert emits entity in tick range" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  try! world.set_by_key(entity, changed_marker_key, { value: 1 })
 
   let changed = world
     .changed_components(changed_marker_key, @core.SystemTicks::new(0, 1))
@@ -48,16 +48,16 @@ test "ecs changed components: replace and update emit changed events" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  try! world.set_by_key(entity, changed_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   debug_inspect(
-    try! world.replace(entity, changed_marker_key, ChangedMarker::{ value: 2 }),
+    try! world.replace(entity, changed_marker_key, { value: 2 }),
     content="true",
   )
   debug_inspect(
     try! world.update_by_key(entity, changed_marker_key, fn(marker) {
-      ChangedMarker::{ value: marker.value + 1 }
+      { value: marker.value + 1 }
     }),
     content="true",
   )
@@ -74,7 +74,7 @@ test "ecs changed components: Write::set emits changed event" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  try! world.set_by_key(entity, changed_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
@@ -82,7 +82,7 @@ test "ecs changed components: Write::set emits changed event" {
     Some(item) => item
     None => abort("expected mutable component")
   }
-  item.set(ChangedMarker::{ value: 9 })
+  item.set({ value: 9 })
 
   let changed = world
     .changed_components(changed_marker_key, @core.SystemTicks::new(1, 2))
@@ -96,7 +96,7 @@ test "ecs changed components: Write::modify marks changed on explicit mutation" 
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  try! world.set_by_key(entity, changed_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
@@ -118,7 +118,7 @@ test "ecs changed components: Write::bypass_change_detection preserves tick" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  try! world.set_by_key(entity, changed_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)
@@ -148,7 +148,7 @@ test "ecs changed components: Write::value does not mark changed by itself" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, changed_marker_key, ChangedMarker::{ value: 1 })
+  try! world.set_by_key(entity, changed_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let maybe_mut = try! world.get_mut(entity, key=changed_marker_key)

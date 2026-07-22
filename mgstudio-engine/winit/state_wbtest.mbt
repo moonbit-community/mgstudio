@@ -15,26 +15,20 @@
 ///|
 test "winit: runner maps window present mode to render host mode" {
   let window = @window.Window::Window()
-  window.present_mode = @window.PresentMode::AutoVsync
-  let auto_vsync_ok = runner_surface_present_mode(Some(window)) ==
-    @render.HostGpuPresentMode::AutoVsync
-  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.present_mode = AutoVsync
+  let auto_vsync_ok = runner_surface_present_mode(Some(window)) == AutoVsync
+  window.present_mode = AutoNoVsync
   let auto_no_vsync_ok = runner_surface_present_mode(Some(window)) ==
-    @render.HostGpuPresentMode::AutoNoVsync
-  window.present_mode = @window.PresentMode::Fifo
-  let fifo_ok = runner_surface_present_mode(Some(window)) ==
-    @render.HostGpuPresentMode::Fifo
-  window.present_mode = @window.PresentMode::FifoRelaxed
-  let fifo_relaxed_ok = runner_surface_present_mode(Some(window)) ==
-    @render.HostGpuPresentMode::FifoRelaxed
-  window.present_mode = @window.PresentMode::Immediate
-  let immediate_ok = runner_surface_present_mode(Some(window)) ==
-    @render.HostGpuPresentMode::Immediate
-  window.present_mode = @window.PresentMode::Mailbox
-  let mailbox_ok = runner_surface_present_mode(Some(window)) ==
-    @render.HostGpuPresentMode::Mailbox
-  let none_fallback_ok = runner_surface_present_mode(None) ==
-    @render.HostGpuPresentMode::Fifo
+    AutoNoVsync
+  window.present_mode = Fifo
+  let fifo_ok = runner_surface_present_mode(Some(window)) == Fifo
+  window.present_mode = FifoRelaxed
+  let fifo_relaxed_ok = runner_surface_present_mode(Some(window)) == FifoRelaxed
+  window.present_mode = Immediate
+  let immediate_ok = runner_surface_present_mode(Some(window)) == Immediate
+  window.present_mode = Mailbox
+  let mailbox_ok = runner_surface_present_mode(Some(window)) == Mailbox
+  let none_fallback_ok = runner_surface_present_mode(None) == Fifo
   debug_inspect(
     auto_vsync_ok &&
     auto_no_vsync_ok &&
@@ -50,23 +44,19 @@ test "winit: runner maps window present mode to render host mode" {
 ///|
 test "winit: runner maps window composite alpha mode to render host mode" {
   let window = @window.Window::Window()
-  window.composite_alpha_mode = @window.CompositeAlphaMode::Auto
-  let auto_ok = runner_surface_composite_alpha_mode(Some(window)) ==
-    @render.HostGpuCompositeAlphaMode::Auto
-  window.composite_alpha_mode = @window.CompositeAlphaMode::Opaque
-  let opaque_ok = runner_surface_composite_alpha_mode(Some(window)) ==
-    @render.HostGpuCompositeAlphaMode::Opaque
-  window.composite_alpha_mode = @window.CompositeAlphaMode::PreMultiplied
+  window.composite_alpha_mode = Auto
+  let auto_ok = runner_surface_composite_alpha_mode(Some(window)) == Auto
+  window.composite_alpha_mode = Opaque
+  let opaque_ok = runner_surface_composite_alpha_mode(Some(window)) == Opaque
+  window.composite_alpha_mode = PreMultiplied
   let pre_ok = runner_surface_composite_alpha_mode(Some(window)) ==
-    @render.HostGpuCompositeAlphaMode::PreMultiplied
-  window.composite_alpha_mode = @window.CompositeAlphaMode::PostMultiplied
+    PreMultiplied
+  window.composite_alpha_mode = PostMultiplied
   let post_ok = runner_surface_composite_alpha_mode(Some(window)) ==
-    @render.HostGpuCompositeAlphaMode::PostMultiplied
-  window.composite_alpha_mode = @window.CompositeAlphaMode::Inherit
-  let inherit_ok = runner_surface_composite_alpha_mode(Some(window)) ==
-    @render.HostGpuCompositeAlphaMode::Inherit
-  let none_fallback_ok = runner_surface_composite_alpha_mode(None) ==
-    @render.HostGpuCompositeAlphaMode::Auto
+    PostMultiplied
+  window.composite_alpha_mode = Inherit
+  let inherit_ok = runner_surface_composite_alpha_mode(Some(window)) == Inherit
+  let none_fallback_ok = runner_surface_composite_alpha_mode(None) == Auto
   debug_inspect(
     auto_ok && opaque_ok && pre_ok && post_ok && inherit_ok && none_fallback_ok,
     content="true",

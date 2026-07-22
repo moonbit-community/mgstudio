@@ -16,6 +16,7 @@
 pub struct Physics3dPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Physics3dPlugin::Physics3dPlugin() -> Physics3dPlugin {
   Physics3dPlugin::{  }
 }

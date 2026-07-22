@@ -42,18 +42,18 @@ pub fn Interval::new(
   if start_ >= end_ || interval_is_nan(start_) || interval_is_nan(end_) {
     raise Invalid
   } else {
-    Interval::{ start_, end_ }
+    { start_, end_ }
   }
 }
 
 ///|
 pub fn Interval::unit() -> Interval {
-  Interval::{ start_: 0.0F, end_: 1.0F }
+  { start_: 0.0F, end_: 1.0F }
 }
 
 ///|
 pub fn Interval::everywhere() -> Interval {
-  Interval::{ start_: interval_neg_infinity(), end_: interval_infinity() }
+  { start_: interval_neg_infinity(), end_: interval_infinity() }
 }
 
 ///|

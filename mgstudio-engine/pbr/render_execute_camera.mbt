@@ -117,7 +117,7 @@ fn render3d_camera_view_pass_lighting(
     ),
     render_layers=camera.layers,
   )
-  Render3dLightingState::{ ..pass_lighting, gpu_lights: Some(gpu_lights) }
+  { ..pass_lighting, gpu_lights: Some(gpu_lights) }
 }
 
 ///|
@@ -148,7 +148,7 @@ fn render3d_prepare_camera_execution_plan(
   let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
   let camera_deferred_config = match camera.deferred_config {
     Some(value) => value
-    None => CameraDeferredConfig3d::CameraDeferredConfig3d()
+    None => CameraDeferredConfig3d()
   }
   let camera_deferred_mode = render3d_camera_deferred_mode(
     camera_deferred_config, default_opaque_renderer_method, deferred_lighting_enabled,
@@ -167,7 +167,7 @@ fn render3d_prepare_camera_execution_plan(
     pass_config.point_shadow_pass_kind,
     pass_config.directional_shadow_pass_kind,
   )
-  Render3dCameraExecutionPlan::{ pass_lighting, pass_config, shadow_pass_plan }
+  { pass_lighting, pass_config, shadow_pass_plan }
 }
 
 ///|
@@ -203,7 +203,7 @@ fn render3d_prepare_camera_shadow_passes(
     queued_phase_views.push(queued_phase_view)
   }
   {
-    bindings: Render3dViewShadowBindings::{
+    bindings: {
       point: point_shadow_plan.binding,
       directional: directional_shadow_plan.binding,
     },
@@ -414,7 +414,7 @@ fn render3d_execute_camera(
     scene_target_id = scene_id
   }
   let trace_camera_main_pass_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     RENDER3D_CAMERA_MAIN_PASS_TRACE,
   )
   render3d_dispatch_camera_preprocess_main(
@@ -477,7 +477,7 @@ fn render3d_execute_camera(
     "render_3d_camera_order_main_pass_complete", 1,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     RENDER3D_CAMERA_MAIN_PASS_TRACE,
     trace_camera_main_pass_start_us,
   )
@@ -489,7 +489,7 @@ fn render3d_execute_camera(
     "render_3d_camera_order_volumetric_fog_begin", 1,
   )
   let trace_camera_volumetric_fog_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE,
   )
   render3d_execute_camera_volumetric_fog_pass(
@@ -501,7 +501,7 @@ fn render3d_execute_camera(
     camera.atmosphere is Some(_),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     RENDER3D_CAMERA_VOLUMETRIC_FOG_PASS_TRACE,
     trace_camera_volumetric_fog_start_us,
   )
@@ -571,7 +571,7 @@ fn render3d_execute_camera(
     },
   )
   let trace_camera_postprocess_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE,
   )
   render3d_execute_camera_postprocess(
@@ -610,7 +610,7 @@ fn render3d_execute_camera(
     cleared_targets_this_frame,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     RENDER3D_CAMERA_EARLY_POSTPROCESS_TRACE,
     trace_camera_postprocess_start_us,
   )

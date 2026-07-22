@@ -42,7 +42,7 @@ pub impl Asset for TextureAtlasLayout with fn asset_resource_keys() {
 pub fn TextureAtlasLayout::new_empty(
   dimensions : @math.UVec2,
 ) -> TextureAtlasLayout {
-  TextureAtlasLayout::{ size: dimensions, textures: [] }
+  { size: dimensions, textures: [] }
 }
 
 ///|
@@ -93,10 +93,7 @@ pub fn TextureAtlasLayout::from_grid(
     current_padding.x
   let size_y = (tile_size.y + current_padding.y) * grid_size.y -
     current_padding.y
-  TextureAtlasLayout::{
-    size: @math.UVec2::new(size_x, size_y),
-    textures: sprites,
-  }
+  { size: @math.UVec2::new(size_x, size_y), textures: sprites }
 }
 
 ///|
@@ -149,7 +146,7 @@ pub impl ToJson for TextureAtlas with fn to_json(self) {
 ///|
 pub impl @json.FromJson for TextureAtlas with fn from_json(json, path) {
   let (layout_id, index) : (Int, Int) = @json.from_json(json, path~)
-  TextureAtlas::{ layout_id, index }
+  { layout_id, index }
 }
 
 ///|
@@ -157,7 +154,7 @@ pub fn TextureAtlas::new(
   layout : Handle[TextureAtlasLayout],
   index : Int,
 ) -> TextureAtlas {
-  TextureAtlas::{ layout_id: layout.id(), index }
+  { layout_id: layout.id(), index }
 }
 
 ///|
@@ -165,7 +162,7 @@ pub fn TextureAtlas::with_index(
   self : TextureAtlas,
   index : Int,
 ) -> TextureAtlas {
-  TextureAtlas::{ ..self, index, }
+  { ..self, index, }
 }
 
 ///|
@@ -173,7 +170,7 @@ pub fn TextureAtlas::with_layout(
   self : TextureAtlas,
   layout : Handle[TextureAtlasLayout],
 ) -> TextureAtlas {
-  TextureAtlas::{ ..self, layout_id: layout.id() }
+  { ..self, layout_id: layout.id() }
 }
 
 ///|
@@ -259,11 +256,7 @@ pub fn DynamicTextureAtlasBuilder::new(
 ) -> DynamicTextureAtlasBuilder {
   let padding_value = if padding < 0 { 0 } else { padding }
   let rect = @math.URect::new(@math.UVec2::zero(), size)
-  DynamicTextureAtlasBuilder::{
-    size,
-    padding: padding_value,
-    free_rects: [rect],
-  }
+  { size, padding: padding_value, free_rects: [rect] }
 }
 
 ///|
@@ -446,7 +439,7 @@ pub struct TextureAtlasBuilder {
 
 ///|
 pub fn TextureAtlasBuilder::TextureAtlasBuilder() -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
+  {
     padding: @math.UVec2::zero(),
     initial_size: @math.UVec2::splat(256),
     max_size: @math.UVec2::splat(2048),
@@ -460,7 +453,7 @@ pub fn TextureAtlasBuilder::padding(
   self : TextureAtlasBuilder,
   padding : @math.UVec2,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
+  {
     padding,
     initial_size: self.initial_size,
     max_size: self.max_size,
@@ -474,7 +467,7 @@ pub fn TextureAtlasBuilder::initial_size(
   self : TextureAtlasBuilder,
   size : @math.UVec2,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
+  {
     padding: self.padding,
     initial_size: size,
     max_size: self.max_size,
@@ -488,7 +481,7 @@ pub fn TextureAtlasBuilder::max_size(
   self : TextureAtlasBuilder,
   size : @math.UVec2,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
+  {
     padding: self.padding,
     initial_size: self.initial_size,
     max_size: size,
@@ -502,7 +495,7 @@ pub fn TextureAtlasBuilder::sampler_nearest(
   self : TextureAtlasBuilder,
   nearest : Bool,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
+  {
     padding: self.padding,
     initial_size: self.initial_size,
     max_size: self.max_size,
@@ -545,7 +538,7 @@ fn texture_atlas_pack_section(
   height : Int,
   depth : Int,
 ) -> TextureAtlasPackSection {
-  TextureAtlasPackSection::{ x, y, z, width, height, depth }
+  { x, y, z, width, height, depth }
 }
 
 ///|
@@ -856,7 +849,7 @@ fn TextureAtlasPackSection::try_place(
     ],
   ]
   combinations.sort_by(texture_atlas_pack_compare_container_sets)
-  Some((TextureAtlasPackedLocation::{ x: self.x, y: self.y }, combinations[5]))
+  Some(({ x: self.x, y: self.y }, combinations[5]))
 }
 
 ///|

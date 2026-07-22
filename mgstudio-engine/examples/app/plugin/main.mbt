@@ -43,7 +43,7 @@ impl @app.Resource for PrintMessageState with fn resource() {
 fn print_message_plugin(
   config : PrintMessagePluginConfig,
 ) -> PrintMessagePlugin {
-  PrintMessagePlugin::{ config, }
+  { config, }
 }
 
 ///|
@@ -53,10 +53,10 @@ impl @app.Plugin for PrintMessagePlugin with fn build(self, app) {
     message: self.config.message,
     timer: @time.Timer::from_seconds(
       self.config.wait_duration_seconds,
-      @time.TimerMode::Repeating,
+      Repeating,
     ),
   })
-  .add_systems_param2(@app.Update, print_message_system)
+  .add_systems_param2(Update, print_message_system)
 }
 
 ///|

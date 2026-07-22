@@ -90,7 +90,7 @@ pub fn AccessibilityRequested::handle(
 pub fn AccessibilityRequested::clone(
   self : AccessibilityRequested,
 ) -> AccessibilityRequested {
-  AccessibilityRequested::{ requested: self.requested }
+  { requested: self.requested }
 }
 
 ///|
@@ -325,6 +325,4 @@ pub fn accessibility_system_set_name(
 }
 
 ///|
-pub let a11y_set : @app.SystemSet = accessibility_system_set_name(
-  AccessibilitySystems::Update,
-)
+pub let a11y_set : @app.SystemSet = accessibility_system_set_name(Update)

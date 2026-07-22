@@ -26,12 +26,12 @@ pub struct Aabb3d {
 
 ///|
 pub fn Aabb3d::new(center : Vec3, half_size : Vec3) -> Aabb3d {
-  Aabb3d::{ min: center.sub(half_size), max: center.add(half_size) }
+  { min: center.sub(half_size), max: center.add(half_size) }
 }
 
 ///|
 pub fn Aabb3d::from_min_max(min : Vec3, max : Vec3) -> Aabb3d {
-  Aabb3d::{ min, max }
+  { min, max }
 }
 
 ///|
@@ -58,10 +58,7 @@ pub fn Aabb3d::from_point_cloud(
     max_y = bounded3d_max(max_y, transformed.y)
     max_z = bounded3d_max(max_z, transformed.z)
   }
-  Aabb3d::{
-    min: Vec3::new(min_x, min_y, min_z),
-    max: Vec3::new(max_x, max_y, max_z),
-  }
+  { min: Vec3::new(min_x, min_y, min_z), max: Vec3::new(max_x, max_y, max_z) }
 }
 
 ///|
@@ -113,7 +110,7 @@ pub struct BoundingSphere {
 
 ///|
 pub fn BoundingSphere::new(center : Vec3, radius : Float) -> BoundingSphere {
-  BoundingSphere::{ center, sphere: Sphere::new(radius) }
+  { center, sphere: Sphere::new(radius) }
 }
 
 ///|

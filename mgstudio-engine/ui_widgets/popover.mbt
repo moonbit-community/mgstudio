@@ -23,7 +23,7 @@ pub(all) enum PopoverSide {
 
 ///|
 pub fn PopoverSide::default() -> PopoverSide {
-  PopoverSide::Bottom
+  Bottom
 }
 
 ///|
@@ -45,7 +45,7 @@ pub(all) enum PopoverAlign {
 
 ///|
 pub fn PopoverAlign::default() -> PopoverAlign {
-  PopoverAlign::Start
+  Start
 }
 
 ///|
@@ -57,11 +57,7 @@ pub struct PopoverPlacement {
 
 ///|
 pub fn PopoverPlacement::PopoverPlacement() -> PopoverPlacement {
-  PopoverPlacement::{
-    side: PopoverSide::default(),
-    align: PopoverAlign::default(),
-    gap: 0.0F,
-  }
+  { side: PopoverSide::default(), align: PopoverAlign::default(), gap: 0.0F }
 }
 
 ///|
@@ -72,10 +68,7 @@ pub struct Popover {
 
 ///|
 pub fn Popover::Popover() -> Popover {
-  Popover::{
-    positions: [PopoverPlacement::PopoverPlacement()],
-    window_margin: 0.0F,
-  }
+  { positions: [PopoverPlacement()], window_margin: 0.0F }
 }
 
 ///|
@@ -237,11 +230,11 @@ fn position_popover_system(world : @ecs.World) -> Unit {
     )
     let parent_rect = parent_layout.rect()
     let next_node = node
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(best_rect.min.x - parent_rect.min.x))
-      .with_top(@ui.Val::Px(best_rect.min.y - parent_rect.min.y))
-      .with_right(@ui.Val::Auto)
-      .with_bottom(@ui.Val::Auto)
+      .with_position_type(Absolute)
+      .with_left(Px(best_rect.min.x - parent_rect.min.x))
+      .with_top(Px(best_rect.min.y - parent_rect.min.y))
+      .with_right(Auto)
+      .with_bottom(Auto)
     if !(world.replace(entity, @ui.ecs_key_node, next_node) catch {
         _ => false
       }) {

@@ -38,7 +38,7 @@ pub struct LdtkEntityMap {
 
 ///|
 pub fn LdtkEntityMap::LdtkEntityMap() -> LdtkEntityMap {
-  LdtkEntityMap::{ entries: @hashmap.HashMap([]) }
+  { entries: HashMap([]) }
 }
 
 ///|
@@ -48,7 +48,7 @@ pub struct LdtkIntCellMap {
 
 ///|
 pub fn LdtkIntCellMap::LdtkIntCellMap() -> LdtkIntCellMap {
-  LdtkIntCellMap::{ entries: @hashmap.HashMap([]) }
+  { entries: HashMap([]) }
 }
 
 ///|
@@ -76,7 +76,7 @@ fn ldtk_ensure_entity_map(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[LdtkEntityMap] {
   if world.get_resource(ldtk_entity_map_key) is None {
-    world.insert_resource(ldtk_entity_map_key, LdtkEntityMap::LdtkEntityMap())
+    world.insert_resource(ldtk_entity_map_key, LdtkEntityMap())
   }
   match world.get_resource_mut(ldtk_entity_map_key) {
     Some(value) => value
@@ -89,10 +89,7 @@ fn ldtk_ensure_int_cell_map(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[LdtkIntCellMap] {
   if world.get_resource(ldtk_int_cell_map_key) is None {
-    world.insert_resource(
-      ldtk_int_cell_map_key,
-      LdtkIntCellMap::LdtkIntCellMap(),
-    )
+    world.insert_resource(ldtk_int_cell_map_key, LdtkIntCellMap())
   }
   match world.get_resource_mut(ldtk_int_cell_map_key) {
     Some(value) => value

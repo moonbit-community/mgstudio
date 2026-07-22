@@ -54,7 +54,7 @@ test "camera plugin: owns Camera3d color grading and exposure requirements" {
   )
   let world = app.world()
   let entity = world.spawn()
-  try! world.set_by_key(entity, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(entity, ecs_key_camera3d, Camera3d())
 
   debug_inspect(
     (try! world.get_by_key(entity, @post_process.ecs_key_color_grading))
@@ -79,7 +79,7 @@ test "camera plugin: owns Camera2d authoring required components" {
   try! world.set_by_key(
     entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
 
   debug_inspect(
@@ -118,11 +118,7 @@ test "camera plugin: owns Camera required components" {
   )
   let world = app.world()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_camera, Camera())
 
   debug_inspect(
     (try! world.get_by_key(entity, @camera_primitives.ecs_key_frustum))
@@ -228,7 +224,7 @@ test "camera projection plugin: updates Camera2d frustum from logical viewport" 
   try! world.set_by_key(
     entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
   try! world.set_by_key(
     entity,
@@ -280,7 +276,7 @@ test "camera projection plugin: Camera2d frustum matches uniform X render scale"
   try! world.set_by_key(
     entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
   let camera_transform = @transform.Transform::identity().with_scale(
     @math.Vec3::new(2.0F, 1.0F, 1.0F),
@@ -307,7 +303,7 @@ test "camera projection plugin: Camera2d frustum matches uniform X render scale"
   |> ignore)
   let projection = match
     (try! world.get_by_key(entity, @camera_projection2d.ecs_key_projection)).unwrap() {
-    @camera_projection2d.Projection::Orthographic(value) => value
+    Orthographic(value) => value
   }
   let vertically_visible = @math.Vec2::new(0.0F, 75.0F)
   let vertically_hidden = @math.Vec2::new(0.0F, 125.0F)

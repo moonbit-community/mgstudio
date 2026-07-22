@@ -22,7 +22,7 @@ pub struct ExtractedInstances[EI] {
 
 ///|
 pub fn[EI] ExtractedInstances::new() -> ExtractedInstances[EI] {
-  ExtractedInstances::{ items: [] }
+  { items: [] }
 }
 
 ///|

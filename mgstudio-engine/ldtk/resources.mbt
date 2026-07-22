@@ -126,7 +126,7 @@ pub(all) enum SetClearColor {
 
 ///|
 pub fn SetClearColor::default() -> SetClearColor {
-  SetClearColor::No
+  No
 }
 
 ///|
@@ -137,7 +137,7 @@ pub(all) enum LevelSpawnBehavior {
 
 ///|
 pub fn LevelSpawnBehavior::default() -> LevelSpawnBehavior {
-  LevelSpawnBehavior::UseZeroTranslation
+  UseZeroTranslation
 }
 
 ///|
@@ -148,7 +148,7 @@ pub(all) enum IntGridRendering {
 
 ///|
 pub fn IntGridRendering::default() -> IntGridRendering {
-  IntGridRendering::Colorful
+  Colorful
 }
 
 ///|
@@ -159,7 +159,7 @@ pub(all) enum LevelBackground {
 
 ///|
 pub fn LevelBackground::default() -> LevelBackground {
-  LevelBackground::Rendered
+  Rendered
 }
 
 ///|
@@ -169,7 +169,7 @@ pub struct SpawnExclusions {
 
 ///|
 pub fn SpawnExclusions::SpawnExclusions() -> SpawnExclusions {
-  SpawnExclusions::{ layer_identifiers: [] }
+  { layer_identifiers: [] }
 }
 
 ///|
@@ -183,12 +183,12 @@ pub struct LdtkSettings {
 
 ///|
 pub fn LdtkSettings::LdtkSettings() -> LdtkSettings {
-  LdtkSettings::{
+  {
     level_spawn_behavior: LevelSpawnBehavior::default(),
     set_clear_color: SetClearColor::default(),
     int_grid_rendering: IntGridRendering::default(),
     level_background: LevelBackground::default(),
-    exclusions: SpawnExclusions::SpawnExclusions(),
+    exclusions: SpawnExclusions(),
   }
 }
 
@@ -202,7 +202,7 @@ pub struct LdtkRuntimeState {
 
 ///|
 pub fn LdtkRuntimeState::LdtkRuntimeState() -> LdtkRuntimeState {
-  LdtkRuntimeState::{ spawned_levels_by_world: @hashmap.HashMap([]) }
+  { spawned_levels_by_world: HashMap([]) }
 }
 
 ///|
@@ -212,7 +212,7 @@ pub struct LdtkSpawnedLevelIids {
 
 ///|
 pub fn LdtkSpawnedLevelIids::LdtkSpawnedLevelIids() -> LdtkSpawnedLevelIids {
-  LdtkSpawnedLevelIids::{ iids: [] }
+  { iids: [] }
 }
 
 ///|
@@ -233,7 +233,7 @@ pub fn LdtkRuntimeState::world_spawned_levels(
   world_entity : @core.Entity,
 ) -> @hashmap.HashMap[String, @core.Entity] {
   self.spawned_levels_by_world.get_or_init(ldtk_entity_key(world_entity), fn() {
-    @hashmap.HashMap([])
+    HashMap([])
   })
 }
 

@@ -48,16 +48,11 @@ pub fn ExtractedAtmosphere::ExtractedAtmosphere(
   medium : @asset.Handle[@light.ScatteringMedium],
   world_to_atmosphere : @math.Affine3,
 ) -> ExtractedAtmosphere {
-  ExtractedAtmosphere::{
-    inner_radius,
-    outer_radius,
-    ground_albedo,
-    medium,
-    world_to_atmosphere,
-  }
+  { inner_radius, outer_radius, ground_albedo, medium, world_to_atmosphere }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AtmospherePlugin::AtmospherePlugin() -> AtmospherePlugin {
   AtmospherePlugin::{  }
 }
@@ -80,14 +75,14 @@ pub impl @app.Plugin for AtmospherePlugin with fn finish(self, app) {
 
 ///|
 pub fn atmosphere_plugin() -> AtmospherePlugin {
-  AtmospherePlugin::AtmospherePlugin()
+  AtmospherePlugin()
 }
 
 ///|
 pub fn atmosphere_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  atmosphere_plugin_install_with(app, AtmospherePlugin::AtmospherePlugin())
+  atmosphere_plugin_install_with(app, AtmospherePlugin())
 }
 
 ///|
@@ -99,15 +94,15 @@ pub fn atmosphere_plugin_install_with(
   let environment_map_extract : @render.ExtractComponentPlugin[
     AtmosphereEnvironmentMap,
     AtmospherePlugin,
-  ] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
+  ] = ExtractComponentPlugin()
   let atmosphere_settings_sync : @render.SyncComponentPlugin[
     AtmosphereSettings,
     AtmospherePlugin,
-  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
-  let gpu_atmosphere_uniform : @render.UniformComponentPlugin[GpuAtmosphere] = @render.UniformComponentPlugin::UniformComponentPlugin()
+  ] = SyncComponentPlugin()
+  let gpu_atmosphere_uniform : @render.UniformComponentPlugin[GpuAtmosphere] = UniformComponentPlugin()
   let gpu_atmosphere_settings_uniform : @render.UniformComponentPlugin[
     GpuAtmosphereSettings,
-  ] = @render.UniformComponentPlugin::UniformComponentPlugin()
+  ] = UniformComponentPlugin()
   let next = @render.extract_component_plugin_with(app, environment_map_extract)
   let next = @render.sync_component_plugin_with(next, atmosphere_settings_sync)
   let next = @render.uniform_component_plugin_with(next, gpu_atmosphere_uniform)
@@ -116,7 +111,7 @@ pub fn atmosphere_plugin_install_with(
   )
   @render.try_with_render_app(
     next.add_systems(
-      @app.Update,
+      Update,
       @app.system(prepare_atmosphere_probe_components).named(
         "mgstudio_pbr::atmosphere::prepare_atmosphere_probe_components",
       ),
@@ -164,7 +159,7 @@ fn atmosphere_write_extracted(
   world_to_atmosphere : @math.Affine3,
   settings : AtmosphereSettings,
 ) -> Unit {
-  try! render_world.set_by_key(render_entity, ecs_key_extracted_atmosphere, ExtractedAtmosphere::{
+  try! render_world.set_by_key(render_entity, ecs_key_extracted_atmosphere, {
     inner_radius: atmosphere.inner_radius,
     outer_radius: atmosphere.outer_radius,
     ground_albedo: atmosphere.ground_albedo,

@@ -56,34 +56,25 @@ pub fn Mesh3dGeometry::attributes(
     attributes,
     MeshAttributeData::new(
       MeshVertexAttribute::position(),
-      VertexAttributeValues::Float32x3(self.positions),
+      Float32x3(self.positions),
     ),
   )
   if self.normals is Some(normals) {
     mesh_attribute_data_insert_sorted(
       attributes,
-      MeshAttributeData::new(
-        MeshVertexAttribute::normal(),
-        VertexAttributeValues::Float32x3(normals),
-      ),
+      MeshAttributeData::new(MeshVertexAttribute::normal(), Float32x3(normals)),
     )
   }
   if self.uvs is Some(uvs) {
     mesh_attribute_data_insert_sorted(
       attributes,
-      MeshAttributeData::new(
-        MeshVertexAttribute::uv_0(),
-        VertexAttributeValues::Float32x2(uvs),
-      ),
+      MeshAttributeData::new(MeshVertexAttribute::uv_0(), Float32x2(uvs)),
     )
   }
   if self.uv1s is Some(uv1s) {
     mesh_attribute_data_insert_sorted(
       attributes,
-      MeshAttributeData::new(
-        MeshVertexAttribute::uv_1(),
-        VertexAttributeValues::Float32x2(uv1s),
-      ),
+      MeshAttributeData::new(MeshVertexAttribute::uv_1(), Float32x2(uv1s)),
     )
   }
   if self.tangents is Some(tangents) {
@@ -91,17 +82,14 @@ pub fn Mesh3dGeometry::attributes(
       attributes,
       MeshAttributeData::new(
         MeshVertexAttribute::tangent(),
-        VertexAttributeValues::Float32x4(tangents),
+        Float32x4(tangents),
       ),
     )
   }
   if self.colors is Some(colors) {
     mesh_attribute_data_insert_sorted(
       attributes,
-      MeshAttributeData::new(
-        MeshVertexAttribute::color(),
-        VertexAttributeValues::Float32x4(colors),
-      ),
+      MeshAttributeData::new(MeshVertexAttribute::color(), Float32x4(colors)),
     )
   }
   if self.joint_weights is Some(weights) {
@@ -109,7 +97,7 @@ pub fn Mesh3dGeometry::attributes(
       attributes,
       MeshAttributeData::new(
         MeshVertexAttribute::joint_weight(),
-        VertexAttributeValues::Float32x4(weights),
+        Float32x4(weights),
       ),
     )
   }
@@ -118,7 +106,7 @@ pub fn Mesh3dGeometry::attributes(
       attributes,
       MeshAttributeData::new(
         MeshVertexAttribute::joint_index(),
-        VertexAttributeValues::Uint16x4(indices),
+        Uint16x4(indices),
       ),
     )
   }
@@ -127,7 +115,7 @@ pub fn Mesh3dGeometry::attributes(
       attributes,
       MeshAttributeData::new(
         custom_attribute.attribute(),
-        VertexAttributeValues::Float32x3(custom_attribute.values()),
+        Float32x3(custom_attribute.values()),
       ),
     )
   }
@@ -154,27 +142,19 @@ pub fn Mesh2dGeometry::attributes(
     attributes,
     MeshAttributeData::new(
       MeshVertexAttribute::position(),
-      VertexAttributeValues::Float32x3(
-        mesh2d_positions_as_float32x3(self.positions),
-      ),
+      Float32x3(mesh2d_positions_as_float32x3(self.positions)),
     ),
   )
   if self.uvs is Some(uvs) {
     mesh_attribute_data_insert_sorted(
       attributes,
-      MeshAttributeData::new(
-        MeshVertexAttribute::uv_0(),
-        VertexAttributeValues::Float32x2(uvs),
-      ),
+      MeshAttributeData::new(MeshVertexAttribute::uv_0(), Float32x2(uvs)),
     )
   }
   if self.colors is Some(colors) {
     mesh_attribute_data_insert_sorted(
       attributes,
-      MeshAttributeData::new(
-        MeshVertexAttribute::color(),
-        VertexAttributeValues::Float32x4(colors),
-      ),
+      MeshAttributeData::new(MeshVertexAttribute::color(), Float32x4(colors)),
     )
   }
   for custom_attribute in self.custom_attributes {
@@ -186,8 +166,8 @@ pub fn Mesh2dGeometry::attributes(
 ///|
 pub fn Mesh::attributes(self : Mesh) -> Array[MeshAttributeData] {
   match self.geometry {
-    MeshGeometry::Geometry3d(geometry) => geometry.attributes()
-    MeshGeometry::Geometry2d(geometry) => geometry.attributes()
+    Geometry3d(geometry) => geometry.attributes()
+    Geometry2d(geometry) => geometry.attributes()
   }
 }
 
@@ -244,7 +224,7 @@ pub fn Mesh::get_mesh_vertex_buffer_layout(
       attribute_ids~,
       layout=VertexBufferLayout::new(
         array_stride=accumulated_offset,
-        step_mode=MeshVertexStepMode::Vertex,
+        step_mode=Vertex,
         attributes~,
       ),
     ),

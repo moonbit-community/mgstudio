@@ -42,8 +42,8 @@ fn setup(
       @asset.Image::new_target_texture(
         768,
         768,
-        @asset.TextureFormat::Rgba8Unorm,
-        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+        Rgba8Unorm,
+        Some(Rgba8UnormSrgb),
       ),
     )
 
@@ -144,7 +144,7 @@ fn spin_offscreen_object(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, spin_offscreen_object)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, spin_offscreen_object)
   .run()
 }

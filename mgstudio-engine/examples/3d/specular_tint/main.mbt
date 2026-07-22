@@ -48,7 +48,7 @@ impl @app.Resource for AppStatus with fn resource() {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ tint_type: TintType::Solid, hue: 0.0F }
+  { tint_type: Solid, hue: 0.0F }
 }
 
 ///|
@@ -68,7 +68,7 @@ impl @app.Resource for AppAssets with fn resource() {
 
 ///|
 fn AppAssets::from_asset_server(asset_server : @asset.AssetServer) -> AppAssets {
-  AppAssets::{ noise_texture: asset_server.load("textures/AlphaNoise.png") }
+  { noise_texture: asset_server.load("textures/AlphaNoise.png") }
 }
 
 ///|
@@ -95,9 +95,9 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 
 ///|
 fn sphere_mesh() -> @mesh.Mesh {
-  let geometry = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
-    @math.Sphere::Sphere(),
-  ).uv(32, 18)
+  let geometry = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(Sphere()).uv(
+    32, 18,
+  )
   @mesh.Mesh::from_3d_geometry(geometry)
 }
 
@@ -171,7 +171,7 @@ fn setup(
     commands.spawn(
       (
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
         app_status.get().create_text(),
@@ -211,7 +211,7 @@ fn shift_hue(
   standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let status = app_status.peek()
-  if status.tint_type != TintType::Solid {
+  if status.tint_type != Solid {
     return
   }
 
@@ -242,14 +242,14 @@ fn toggle_specular_map(
   objects_with_materials : @ecs.Query[@ecs.Read[@pbr.MeshMaterial3d], @ecs.All],
   standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Space) {
+  if !keyboard.just_pressed(Space) {
     return
   }
 
   let status = app_status.peek()
   status.tint_type = match status.tint_type {
-    Solid => TintType::Map
-    Map => TintType::Solid
+    Solid => Map
+    Map => Solid
   }
   app_status.set(status)
 
@@ -302,12 +302,12 @@ fn main {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     @mgstudio.DefaultPlugins::build()
     .set(@window.WindowPlugin::{
-      ..@window.WindowPlugin::WindowPlugin(),
+      ..WindowPlugin(),
       primary_window: Some(configured_window()),
     })
     .set(
       @pbr.PbrPlugin::PbrPlugin().with_standard_material_texture_features(
-        @pbr.StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+        StandardMaterialTextureFeatureSet(
           pbr_anisotropy_texture=true,
           pbr_specular_textures=true,
         ),
@@ -329,12 +329,12 @@ fn main {
   .insert_resource(app_assets)
   .init_resource(fn() { AppStatus::AppStatus() })
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::black(), 0.0F))
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param(@app.Update, rotate_camera)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param(Update, rotate_camera)
   .add_systems(
-    @app.Update,
+    Update,
     (toggle_specular_map_system, update_text_system) |> @app.chain(),
   )
-  .add_systems(@app.Update, shift_hue_system)
+  .add_systems(Update, shift_hue_system)
   .run()
 }

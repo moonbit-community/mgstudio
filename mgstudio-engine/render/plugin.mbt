@@ -20,7 +20,7 @@ pub struct RenderDebugFlags {
 
 ///|
 pub fn RenderDebugFlags::RenderDebugFlags() -> RenderDebugFlags {
-  RenderDebugFlags::{ allow_copies_from_indirect_parameters: false }
+  { allow_copies_from_indirect_parameters: false }
 }
 
 ///|
@@ -35,7 +35,7 @@ pub fn RenderDebugFlags::with_allow_copies_from_indirect_parameters(
   _self : RenderDebugFlags,
   allow : Bool,
 ) -> RenderDebugFlags {
-  RenderDebugFlags::{ allow_copies_from_indirect_parameters: allow }
+  { allow_copies_from_indirect_parameters: allow }
 }
 
 ///|
@@ -48,10 +48,10 @@ pub struct RenderPlugin {
 
 ///|
 pub fn RenderPlugin::RenderPlugin() -> RenderPlugin {
-  RenderPlugin::{
+  {
     render_creation: RenderCreation::default(),
     synchronous_pipeline_compilation: false,
-    debug_flags: RenderDebugFlags::RenderDebugFlags(),
+    debug_flags: RenderDebugFlags(),
   }
 }
 
@@ -77,7 +77,7 @@ pub fn RenderPlugin::with_render_creation(
   self : RenderPlugin,
   render_creation : RenderCreation,
 ) -> RenderPlugin {
-  RenderPlugin::{ ..self, render_creation, }
+  { ..self, render_creation, }
 }
 
 ///|
@@ -85,7 +85,7 @@ pub fn RenderPlugin::with_synchronous_pipeline_compilation(
   self : RenderPlugin,
   synchronous_pipeline_compilation : Bool,
 ) -> RenderPlugin {
-  RenderPlugin::{ ..self, synchronous_pipeline_compilation, }
+  { ..self, synchronous_pipeline_compilation, }
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn RenderPlugin::with_debug_flags(
   self : RenderPlugin,
   debug_flags : RenderDebugFlags,
 ) -> RenderPlugin {
-  RenderPlugin::{ ..self, debug_flags, }
+  { ..self, debug_flags, }
 }
 
 ///|

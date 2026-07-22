@@ -16,7 +16,7 @@
 fn render3d_execute_impl(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
   let execute_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d",
   )
   fn finish_execute() -> Unit {
@@ -25,7 +25,7 @@ fn render3d_execute_impl(world : @ecs.World) -> Unit {
       (@time.host_time_now() - execute_start) * 1000.0F,
     )
     @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
+      RenderQueue,
       "execute_3d",
       execute_trace_start_us,
     )
@@ -67,17 +67,17 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
     )
   })
   let cameras_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "extract_3d_cameras",
   )
   render3d_refresh_sorted_cameras(source_world, sorted_cameras_ref)
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "extract_3d_cameras",
     cameras_trace_start_us,
   )
   let morphs_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "extract_3d_morphs",
   )
   morph_indices.modify(fn(morph_indices_value) {
@@ -88,12 +88,12 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
     })
   })
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "extract_3d_morphs",
     morphs_trace_start_us,
   )
   let skins_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "extract_3d_skins",
   )
   skin_uniforms.modify(fn(skin_uniforms_value) {
@@ -104,7 +104,7 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
     })
   })
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "extract_3d_skins",
     skins_trace_start_us,
   )
@@ -508,7 +508,7 @@ fn ViewKeyCacheEntry::new(
   binding_arrays_are_usable : Bool,
   clustered_decals_are_usable : Bool,
 ) -> ViewKeyCacheEntry {
-  ViewKeyCacheEntry::{
+  {
     view_key_bits: render3d_camera_mesh_pipeline_view_key_bits(camera),
     binding_arrays_are_usable,
     clustered_decals_are_usable,
@@ -522,7 +522,7 @@ pub struct ViewKeyCache {
 
 ///|
 pub fn ViewKeyCache::ViewKeyCache() -> ViewKeyCache {
-  ViewKeyCache::{ keys: @hashmap.HashMap([]) }
+  { keys: HashMap([]) }
 }
 
 ///|
@@ -557,10 +557,7 @@ fn render3d_view_key_cache_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[ViewKeyCache] {
   if world.get_resource(ViewKeyCache::resource()) is None {
-    world.insert_resource(
-      ViewKeyCache::resource(),
-      ViewKeyCache::ViewKeyCache(),
-    )
+    world.insert_resource(ViewKeyCache::resource(), ViewKeyCache())
   }
   match world.get_resource_mut(ViewKeyCache::resource()) {
     Some(value) => value
@@ -584,8 +581,7 @@ fn render3d_check_views_need_specialization(
         "missing DirtySpecializations resource during pbr view specialization check",
       )
   }
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   render3d_view_key_cache_mut_or_init(world).modify(fn(view_key_cache) {
     for camera in cameras {
       let retained_view_entity = @render_view.RetainedViewEntity::new(
@@ -684,7 +680,7 @@ fn render3d_material_specialization_work_item_data(
     lightmap_bicubic_sampling~,
     material_type_tag~,
   ).mesh_key()
-  Some(Render3dMaterialSpecializationWorkItemData::{
+  Some({
     visible_entity,
     retained_view_entity,
     mesh_key,
@@ -875,7 +871,7 @@ fn render3d_extract_render_visible_entities(
     let (main_view_entity, (_camera3d, camera_opt, visible_entities)) = data
     let camera = match camera_opt.value() {
       Some(value) => value
-      None => @camera_camera.Camera::Camera()
+      None => Camera()
     }
     extracted_views.push((main_view_entity, camera, visible_entities.value()))
   })
@@ -903,7 +899,7 @@ fn render3d_extract_render_visible_entities(
         render_view_entity, @render_visibility.ecs_key_render_visible_entities,
       )) {
       Some(value) => value
-      None => @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
+      None => RenderVisibleEntities()
     }
     let render_visible_mesh_entities = render_visible_entities.class_or_insert(
       mesh_visibility_class,
@@ -943,7 +939,7 @@ fn render3d_extract_render_visible_entities(
 fn render3d_retained_view_entities(
   cameras : Array[ExtractedCamera3d],
 ) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
-  let retained_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  let retained_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([],
   )
   for camera in cameras {
     retained_views.add(
@@ -1399,12 +1395,7 @@ pub fn Render3dShadowBatchSetKeyData::new(
   material_bind_group_index : Int?,
   slabs : @render_mesh.MeshSlabs,
 ) -> Render3dShadowBatchSetKeyData {
-  Render3dShadowBatchSetKeyData::{
-    pipeline_id,
-    draw_function,
-    material_bind_group_index,
-    slabs,
-  }
+  { pipeline_id, draw_function, material_bind_group_index, slabs }
 }
 
 ///|
@@ -1473,7 +1464,7 @@ pub struct Render3dShadowBinKeyData {
 pub fn Render3dShadowBinKeyData::new(
   mesh_asset_id : Int,
 ) -> Render3dShadowBinKeyData {
-  Render3dShadowBinKeyData::{ mesh_asset_id, }
+  { mesh_asset_id, }
 }
 
 ///|
@@ -1627,7 +1618,7 @@ fn Render3dShadowMultidrawableBatchSetPreparer::new(
   initial_indirect_parameters_index : Int,
   initial_batch_set_index : Int,
 ) -> Render3dShadowMultidrawableBatchSetPreparer {
-  Render3dShadowMultidrawableBatchSetPreparer::{
+  {
     indirect_parameters_index: initial_indirect_parameters_index,
     batch_set_index: initial_batch_set_index,
     work_item_count: 0,
@@ -1733,10 +1724,7 @@ pub(all) struct Render3dShadowMultidrawableBatchSetEntry {
 fn Render3dShadowMultidrawableBatchSetEntry::new(
   batch_set_key : Render3dShadowBatchSetKeyData,
 ) -> Render3dShadowMultidrawableBatchSetEntry {
-  Render3dShadowMultidrawableBatchSetEntry::{
-    batch_set_key,
-    batch_set: @render_phase.RenderMultidrawableBatchSet::new(),
-  }
+  { batch_set_key, batch_set: @render_phase.RenderMultidrawableBatchSet::new() }
 }
 
 ///|
@@ -1797,8 +1785,7 @@ fn Render3dShadowMultidrawableBatchSetEntry::items(
       None
     }
     let extra_index = match batch.extra_index() {
-      Render3dShadowPhaseItemExtraIndex::None =>
-        Render3dShadowPhaseItemExtraIndex::none()
+      None => Render3dShadowPhaseItemExtraIndex::none()
       DynamicOffset(offset) =>
         Render3dShadowPhaseItemExtraIndex::dynamic_offset(offset)
       IndirectParametersIndex(range_start, _, _) =>
@@ -1836,7 +1823,7 @@ fn Render3dShadowUnbatchableBinnedEntities::new(
   batch_set_key : Render3dShadowBatchSetKeyData,
   bin_key : Render3dShadowBinKeyData,
 ) -> Render3dShadowUnbatchableBinnedEntities {
-  Render3dShadowUnbatchableBinnedEntities::{
+  {
     batch_set_key,
     bin_key,
     entities: [],
@@ -2033,7 +2020,7 @@ pub fn Render3dShadowPhaseItemData::new(
   batch_range : Render3dShadowBatchRange,
   extra_index : Render3dShadowPhaseItemExtraIndex,
 ) -> Render3dShadowPhaseItemData {
-  Render3dShadowPhaseItemData::{
+  {
     batch_set_key,
     bin_key,
     render_entity,
@@ -2107,8 +2094,7 @@ fn render3d_shadow_effective_phase_type(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
   phase_type : Render3dShadowBinnedRenderPhaseType,
 ) -> Render3dShadowBinnedRenderPhaseType {
-  if gpu_preprocessing_mode ==
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly &&
+  if gpu_preprocessing_mode == PreprocessingOnly &&
     phase_type == MultidrawableMesh {
     BatchableMesh
   } else {
@@ -2137,7 +2123,7 @@ pub struct Render3dShadowViewPhaseData {
 pub fn Render3dShadowViewPhaseData::new(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Render3dShadowViewPhaseData {
-  Render3dShadowViewPhaseData::{
+  {
     gpu_preprocessing_mode,
     items: [],
     multidrawable_meshes: [],
@@ -2312,7 +2298,7 @@ fn Render3dShadowViewPhaseData::prepare_batchable_phase_buffers_with_work_item_b
       }
       None => Render3dShadowPhaseItemExtraIndex::none()
     }
-    self.items[item_index] = Render3dShadowPhaseItemData::{
+    self.items[item_index] = {
       ..item,
       batch_range: Render3dShadowBatchRange::new(output_start, output_end),
       extra_index,
@@ -2573,7 +2559,7 @@ pub fn Render3dShadowViewPhaseData::add(
         if render3d_shadow_batchable_item_can_extend(
             last_item, batch_set_key, bin_key, input_uniform_index_int,
           ) {
-          self.items[last_index] = Render3dShadowPhaseItemData::{
+          self.items[last_index] = {
             ..last_item,
             batch_range: Render3dShadowBatchRange::new(
               last_item.batch_range().start(),
@@ -2757,7 +2743,7 @@ pub struct Render3dShadowPhasesData {
 
 ///|
 pub fn Render3dShadowPhasesData::Render3dShadowPhasesData() -> Render3dShadowPhasesData {
-  Render3dShadowPhasesData::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|
@@ -2777,7 +2763,7 @@ pub fn Render3dShadowPhasesData::get(
 pub fn Render3dShadowPhasesData::view_or_insert(
   self : Render3dShadowPhasesData,
   view : @render_view.RetainedViewEntity,
-  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = None,
 ) -> Render3dShadowViewPhaseData {
   match self.views.get(view) {
     Some(phase) => phase
@@ -2794,7 +2780,7 @@ pub fn Render3dShadowPhasesData::view_or_insert(
 pub fn Render3dShadowPhasesData::prepare_for_new_frame(
   self : Render3dShadowPhasesData,
   view : @render_view.RetainedViewEntity,
-  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = None,
 ) -> Render3dShadowViewPhaseData {
   let phase = self.view_or_insert(view, gpu_preprocessing_mode~)
   phase.prepare_for_new_frame()
@@ -2901,9 +2887,7 @@ pub struct Render3dShadowPhaseBatchedInstanceBuffers {
 
 ///|
 pub fn Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers() -> Render3dShadowPhaseBatchedInstanceBuffers {
-  Render3dShadowPhaseBatchedInstanceBuffers::{
-    buffers: @render_batching.PhaseBatchedInstanceBuffers::new(),
-  }
+  { buffers: @render_batching.PhaseBatchedInstanceBuffers::new() }
 }
 
 ///|
@@ -2926,9 +2910,7 @@ pub struct Render3dShadowPhaseIndirectParametersBuffers {
 
 ///|
 pub fn Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers() -> Render3dShadowPhaseIndirectParametersBuffers {
-  Render3dShadowPhaseIndirectParametersBuffers::{
-    buffers: @render_batching.PhaseIndirectParametersBuffers::new(false),
-  }
+  { buffers: @render_batching.PhaseIndirectParametersBuffers::new(false) }
 }
 
 ///|
@@ -3021,8 +3003,7 @@ pub fn render3d_collect_shadow_phase_buffers_system(world : @ecs.World) -> Unit 
       @render_batching.IndirectParametersBuffersSettings::resource(),
     ) {
     Some(value) => value
-    None =>
-      @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings()
+    None => IndirectParametersBuffersSettings()
   }
   phase_instances_ref.modify(fn(phase_instances) {
     phase_indirect_ref.modify(fn(phase_indirect) {
@@ -3048,11 +3029,11 @@ pub fn render3d_prepare_shadow_phase_views(
   world : @ecs.World,
   extracted_retained_view : @render_view.RetainedViewEntity,
   light_entities : Array[Render3dLightEntity],
-  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = @render_batching.GpuPreprocessingMode::None,
+  gpu_preprocessing_mode? : @render_batching.GpuPreprocessingMode = None,
 ) -> @hashset.HashSet[@render_view.RetainedViewEntity] {
   let live_shadow_mapping_lights : @hashset.HashSet[
     @render_view.RetainedViewEntity,
-  ] = @hashset.HashSet([])
+  ] = HashSet([])
   let shadow_render_phases = match
     world.get_resource_mut(Render3dShadowPhasesData::resource()) {
     Some(value) => value
@@ -3088,7 +3069,7 @@ pub struct Render3dQueuedShadowPhaseData {
 
 ///|
 pub fn Render3dQueuedShadowPhaseData::Render3dQueuedShadowPhaseData() -> Render3dQueuedShadowPhaseData {
-  Render3dQueuedShadowPhaseData::{ dequeued: [], items: [] }
+  { dequeued: [], items: [] }
 }
 
 ///|
@@ -3184,7 +3165,7 @@ fn render3d_shadow_resolve_standard_material(
   let default_opaque_renderer_method = match
     world.get_resource(ecs_key_default_opaque_renderer_method) {
     Some(resource) => resource.renderer_method()
-    None => OpaqueRendererMethod::Forward
+    None => Forward
   }
   let properties = render3d_material_properties_for_standard_material(
     material,
@@ -3197,9 +3178,9 @@ fn render3d_shadow_resolve_standard_material(
   )
   Some(
     Render3dResolvedMaterial::new(
-      MaterialDrawData3d::Standard(material),
+      Standard(material),
       properties,
-      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      MaterialBindGroupResolvedData(),
       "StandardMaterial",
     ),
   )
@@ -3262,9 +3243,7 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
     Some(value) => value
     None => abort("missing MeshAllocator resource during pbr shadow queueing")
   }
-  let resolved_view_layers = view_render_layers.unwrap_or(
-    @camera_render_layers.RenderLayers::RenderLayers(),
-  )
+  let resolved_view_layers = view_render_layers.unwrap_or(RenderLayers())
   let candidates = dirty_specializations.iter_to_queue(
     retained_view_entity,
     render_visible_mesh_entities,
@@ -3287,9 +3266,7 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
     if !mesh_instance.flags().contains(RenderMeshInstanceFlags::shadow_caster()) {
       continue
     }
-    let mesh_layers = mesh_instance
-      .render_layers()
-      .unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+    let mesh_layers = mesh_instance.render_layers().unwrap_or(RenderLayers())
     if !resolved_view_layers.intersects(mesh_layers) {
       continue
     }
@@ -3322,7 +3299,7 @@ pub fn render3d_queue_shadow_phase_data_for_visible_entities(
       is Some(slabs) else {
       continue
     }
-    result.items.push(Render3dQueuedShadowPhaseItemData::{
+    result.items.push({
       render_entity,
       visible_entity: main_entity,
       pipeline_id,
@@ -3414,11 +3391,7 @@ pub fn Render3dQueuedShadowPhaseView::new(
   retained_view_entity : @render_view.RetainedViewEntity,
   view_render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> Render3dQueuedShadowPhaseView {
-  Render3dQueuedShadowPhaseView::{
-    light_entity,
-    retained_view_entity,
-    view_render_layers,
-  }
+  { light_entity, retained_view_entity, view_render_layers }
 }
 
 ///|
@@ -3641,7 +3614,7 @@ pub fn render3d_shadow_specialization_work_item_data(
   let mesh_key = render3d_shadow_specialization_mesh_key(
     light_key, render_mesh, properties, render_lightmaps, visible_entity,
   )
-  Some(Render3dShadowSpecializationWorkItemData::{
+  Some({
     queue_data,
     visible_entity,
     retained_view_entity,
@@ -3738,7 +3711,7 @@ fn render3d_prepare_render_mesh_assets_from_source_world(
   }
   let mesh_allocator_settings = world
     .get_resource(@render_mesh.MeshAllocatorSettings::resource())
-    .unwrap_or(@render_mesh.MeshAllocatorSettings::MeshAllocatorSettings())
+    .unwrap_or(MeshAllocatorSettings())
   let extracted_assets = render3d_extracted_render_mesh_assets_from_source_world(
     source_world,
   )
@@ -3766,15 +3739,12 @@ fn render3d_prepare_render_mesh_assets_from_source_world(
       let source_mesh = extracted_assets[prepared_index].mesh()
       let indices = source_mesh.indices().unwrap_or([])
       let uses_u32_indices = match render_mesh.buffer_info() {
-        @render_mesh.RenderMeshBufferInfo::Indexed(
-          _,
-          @render_mesh.RenderMeshIndexFormat::Uint32
-        ) => true
+        Indexed(_, Uint32) => true
         _ => false
       }
       let primitive_topology = source_mesh
         .primitive_topology()
-        .unwrap_or(@mesh.Mesh3dPrimitiveTopology::TriangleList)
+        .unwrap_or(TriangleList)
         .to_int()
       guard allocator.mesh_vertex_slice(prepared_asset.mesh_asset_id())
         is Some(vertex_slice) else {
@@ -4125,7 +4095,7 @@ pub fn render3d_prepare_bind_groups_system(world : @ecs.World) -> Unit {
 pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
   let queue_start = @time.host_time_now()
   let queue_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "queue_3d",
   )
   fn finish_queue() -> Unit {
@@ -4133,11 +4103,7 @@ pub fn render3d_queue_meshes_system(world : @ecs.World) -> Unit {
       world,
       (@time.host_time_now() - queue_start) * 1000.0F,
     )
-    @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
-      "queue_3d",
-      queue_trace_start_us,
-    )
+    @app.timeline_trace_end_span(RenderQueue, "queue_3d", queue_trace_start_us)
   }
   match render3d_queue_take_pending_frame(world) {
     Some(frame) => {

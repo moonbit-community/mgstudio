@@ -64,12 +64,12 @@ priv struct TargetDepth {
 
 ///|
 fn TargetDepth::TargetDepth() -> TargetDepth {
-  TargetDepth::{ value: 0.09F }
+  { value: 0.09F }
 }
 
 ///|
 impl @app.FromWorld for TargetDepth with fn from_world(_world) {
-  TargetDepth::TargetDepth()
+  TargetDepth()
 }
 
 ///|
@@ -79,12 +79,12 @@ priv struct TargetLayers {
 
 ///|
 fn TargetLayers::TargetLayers() -> TargetLayers {
-  TargetLayers::{ value: 5.0F }
+  { value: 5.0F }
 }
 
 ///|
 impl @app.FromWorld for TargetLayers with fn from_world(_world) {
-  TargetLayers::TargetLayers()
+  TargetLayers()
 }
 
 ///|
@@ -94,12 +94,12 @@ priv struct CurrentMethod {
 
 ///|
 fn CurrentMethod::CurrentMethod() -> CurrentMethod {
-  CurrentMethod::{ value: @pbr.ParallaxMappingMethod::Relief(4) }
+  { value: Relief(4) }
 }
 
 ///|
 impl @app.FromWorld for CurrentMethod with fn from_world(_world) {
-  CurrentMethod::CurrentMethod()
+  CurrentMethod()
 }
 
 ///|
@@ -116,14 +116,14 @@ fn CurrentMethod::next_method(self : CurrentMethod) -> CurrentMethod {
     Occlusion => @pbr.ParallaxMappingMethod::Relief(2)
     Relief(max_steps) =>
       if max_steps < 3 {
-        @pbr.ParallaxMappingMethod::Relief(4)
+        Relief(4)
       } else if max_steps < 5 {
-        @pbr.ParallaxMappingMethod::Relief(8)
+        Relief(8)
       } else {
-        @pbr.ParallaxMappingMethod::Occlusion
+        Occlusion
       }
   }
-  CurrentMethod::{ value: next }
+  { value: next }
 }
 
 ///|
@@ -404,7 +404,7 @@ fn setup(
     (
       @text.Text::Text(),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
+      .with_position_type(Absolute)
       .with_top(@ui.px(12.0F))
       .with_left(@ui.px(12.0F)),
     ),
@@ -453,7 +453,7 @@ fn update_parallax_depth_scale(
 ) -> Unit {
   let target = target_depth.get()
   let mut update = depth_update.get()
-  if input.just_pressed(@window.KeyCode::Digit1) {
+  if input.just_pressed(Digit1) {
     target.value = if target.value - DEPTH_UPDATE_STEP < 0.0F {
       0.0F
     } else {
@@ -461,7 +461,7 @@ fn update_parallax_depth_scale(
     }
     update = true
   }
-  if input.just_pressed(@window.KeyCode::Digit2) {
+  if input.just_pressed(Digit2) {
     target.value = if target.value + DEPTH_UPDATE_STEP > MAX_DEPTH {
       MAX_DEPTH
     } else {
@@ -505,7 +505,7 @@ fn switch_method(
   writer : @ui.TextUiWriter,
   current : @app.Local[CurrentMethod],
 ) -> Unit {
-  if !input.just_pressed(@window.KeyCode::Space) {
+  if !input.just_pressed(Space) {
     return
   }
   let next = current.get().next_method()
@@ -531,13 +531,13 @@ fn update_parallax_layers(
   writer : @ui.TextUiWriter,
 ) -> Unit {
   let target = target_layers.get()
-  if input.just_pressed(@window.KeyCode::Digit3) {
+  if input.just_pressed(Digit3) {
     target.value = if target.value - 1.0F < 0.0F {
       0.0F
     } else {
       target.value - 1.0F
     }
-  } else if input.just_pressed(@window.KeyCode::Digit4) {
+  } else if input.just_pressed(Digit4) {
     target.value = target.value + 1.0F
   } else {
     return
@@ -584,7 +584,7 @@ fn move_camera(
   button : @input.ButtonInput[@window.MouseButton],
 ) -> Unit {
   let mut view = current_view.get()
-  if button.just_pressed(@window.MouseButton::Left) {
+  if button.just_pressed(Left) {
     view = (view + 1) % camera_positions_len()
     current_view.set(view)
   }
@@ -608,11 +608,11 @@ fn move_camera(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, spin)
-  .add_systems_param3(@app.Update, move_camera)
-  .add_systems_param6(@app.Update, update_parallax_depth_scale)
-  .add_systems_param5(@app.Update, update_parallax_layers)
-  .add_systems_param5(@app.Update, switch_method)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, spin)
+  .add_systems_param3(Update, move_camera)
+  .add_systems_param6(Update, update_parallax_depth_scale)
+  .add_systems_param5(Update, update_parallax_layers)
+  .add_systems_param5(Update, switch_method)
   .run()
 }

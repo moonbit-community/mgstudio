@@ -20,7 +20,6 @@ import {
   "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/ui",
-  "Milky2018/mgstudio/window",
 }
 
 import {

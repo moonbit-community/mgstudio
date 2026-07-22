@@ -157,7 +157,7 @@ fn scene_clone_mesh3d_geometry(
     .with_normals(normals)
     .with_uvs(uvs)
     .with_colors(colors)
-  if geometry.index_format() is Some(@mesh.Mesh3dIndexFormat::Uint16) {
+  if geometry.index_format() is Some(Uint16) {
     cloned.insert_indices_u16(indices)
   }
   if geometry.joint_indices is Some(joint_indices) {
@@ -244,7 +244,7 @@ fn scene_clone_mesh3d_geometry(
     }
     cloned = cloned.with_inserted_attribute(
       attribute.attribute(),
-      @mesh.VertexAttributeValues::Float32x3(values),
+      Float32x3(values),
     )
   }
   if geometry.tangents is Some(existing) {
@@ -260,9 +260,8 @@ fn scene_clone_mesh3d_geometry(
 ///|
 fn scene_clone_mesh_asset(mesh_asset : @mesh.Mesh) -> @mesh.Mesh {
   match mesh_asset.geometry {
-    @mesh.MeshGeometry::Geometry2d(geometry2d) =>
-      @mesh.Mesh::from_2d_geometry(geometry2d)
-    @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+    Geometry2d(geometry2d) => @mesh.Mesh::from_2d_geometry(geometry2d)
+    Geometry3d(geometry3d) =>
       @mesh.Mesh::from_3d_geometry(scene_clone_mesh3d_geometry(geometry3d))
   }
 }
@@ -325,8 +324,8 @@ priv struct SceneModifiedEventsCursorState {
 
 ///|
 fn SceneModifiedEventsCursorState::SceneModifiedEventsCursorState() -> SceneModifiedEventsCursorState {
-  SceneModifiedEventsCursorState::{
-    modified_event_cursor: @ecs.MessageCursor::MessageCursor(),
+  {
+    modified_event_cursor: MessageCursor(),
     debounced_scene_asset_ages: Map([]),
   }
 }
@@ -370,15 +369,13 @@ pub fn scene_set_gltf_lod_visibility_policy(
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy {
   match scene_registry_if_present() {
     Some(state) => state.lod_visibility_policy
-    None => GltfLodVisibilityPolicy::GltfLodVisibilityPolicy()
+    None => GltfLodVisibilityPolicy()
   }
 }
 
 ///|
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit {
-  scene_set_gltf_lod_visibility_policy(
-    GltfLodVisibilityPolicy::GltfLodVisibilityPolicy(),
-  )
+  scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy())
 }
 
 ///|
@@ -544,9 +541,7 @@ let scene_asset_hooks_installed_state_resource_key : @ecs.ResourceKey[
 pub fn scene_install_asset_hooks(world : @ecs.World) -> Unit {
   let key = scene_asset_hooks_installed_state_resource_key
   if world.get_resource(key) is None {
-    world.insert_resource(key, SceneAssetHooksInstalledState::{
-      installed: false,
-    })
+    world.insert_resource(key, { installed: false })
   }
   let state = match world.get_resource_mut(key) {
     Some(state) => state

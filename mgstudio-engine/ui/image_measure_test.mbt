@@ -30,14 +30,14 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Percent(100.0F))
-    .with_height(Val::Percent(100.0F))
-    .with_align_items(AlignItems::FlexStart),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_align_items(FlexStart),
   )
   let child = world.spawn_empty()
   try! world.set_by_key(
@@ -48,7 +48,7 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
   try! world.set_by_key(
     child,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(200.0F)),
+    Node::Node().with_width(Px(200.0F)),
   )
   // Intrinsic content size: 100x50 -> aspect ratio 2.0.
   try! world.set_by_key(

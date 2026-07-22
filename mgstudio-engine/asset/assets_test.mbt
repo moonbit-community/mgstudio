@@ -52,20 +52,20 @@ pub impl AssetLoadGuard for CountingLoadGuard with fn release(self) {
 test "assets: insert/get/set/remove and events" {
   let assets : Assets[StoreTestAsset] = Assets::new()
   debug_inspect(assets.is_empty(), content="true")
-  let h = assets.add(StoreTestAsset::{ value: 10 })
+  let h = assets.add({ value: 10 })
   debug_inspect(assets.get(h).unwrap().value, content="10")
   let ev1 = assets.drain_events()
   debug_inspect(ev1.length(), content="1")
   match ev1[0] {
-    AssetEvent::Added(h1) => debug_inspect(h1.id() == h.id(), content="true")
+    Added(h1) => debug_inspect(h1.id() == h.id(), content="true")
     _ => debug_inspect(false, content="false")
   }
-  debug_inspect(assets.set(h, StoreTestAsset::{ value: 11 }), content="true")
+  debug_inspect(assets.set(h, { value: 11 }), content="true")
   debug_inspect(assets.get(h).unwrap().value, content="11")
   let ev2 = assets.drain_events()
   debug_inspect(ev2.length(), content="1")
   match ev2[0] {
-    AssetEvent::Modified(h1) => debug_inspect(h1.id() == h.id(), content="true")
+    Modified(h1) => debug_inspect(h1.id() == h.id(), content="true")
     _ => debug_inspect(false, content="false")
   }
   let removed = assets.remove(h).unwrap()
@@ -74,7 +74,7 @@ test "assets: insert/get/set/remove and events" {
   let ev3 = assets.drain_events()
   debug_inspect(ev3.length(), content="1")
   match ev3[0] {
-    AssetEvent::Removed(h1) => debug_inspect(h1.id() == h.id(), content="true")
+    Removed(h1) => debug_inspect(h1.id() == h.id(), content="true")
     _ => debug_inspect(false, content="false")
   }
 }
@@ -83,13 +83,11 @@ test "assets: insert/get/set/remove and events" {
 test "asset event: Bevy-shaped event id helpers" {
   let h0 : Handle[StoreTestAsset] = Handle::new(1)
   let h1 : Handle[StoreTestAsset] = Handle::new(2)
-  let added : AssetEvent[StoreTestAsset] = AssetEvent::Added(h0)
-  let modified : AssetEvent[StoreTestAsset] = AssetEvent::Modified(h0)
-  let removed : AssetEvent[StoreTestAsset] = AssetEvent::Removed(h0)
-  let unused : AssetEvent[StoreTestAsset] = AssetEvent::Unused(h0)
-  let loaded : AssetEvent[StoreTestAsset] = AssetEvent::LoadedWithDependencies(
-    h0,
-  )
+  let added : AssetEvent[StoreTestAsset] = Added(h0)
+  let modified : AssetEvent[StoreTestAsset] = Modified(h0)
+  let removed : AssetEvent[StoreTestAsset] = Removed(h0)
+  let unused : AssetEvent[StoreTestAsset] = Unused(h0)
+  let loaded : AssetEvent[StoreTestAsset] = LoadedWithDependencies(h0)
 
   debug_inspect(added.is_added(h0), content="true")
   debug_inspect(added.is_added(h1), content="false")
@@ -104,20 +102,20 @@ test "asset event: Bevy-shaped event id helpers" {
 test "assets: insert with explicit handle id grows storage" {
   let assets : Assets[StoreTestAsset] = Assets::new()
   let h = Handle::new(10)
-  debug_inspect(assets.insert(h, StoreTestAsset::{ value: 42 }), content="true")
+  debug_inspect(assets.insert(h, { value: 42 }), content="true")
   debug_inspect(assets.get(h).unwrap().value, content="42")
   let ev = assets.drain_events()
   debug_inspect(ev.length(), content="1")
   match ev[0] {
-    AssetEvent::Added(h1) => debug_inspect(h1.id() == 10, content="true")
+    Added(h1) => debug_inspect(h1.id() == 10, content="true")
     _ => debug_inspect(false, content="false")
   }
-  debug_inspect(assets.insert(h, StoreTestAsset::{ value: 43 }), content="true")
+  debug_inspect(assets.insert(h, { value: 43 }), content="true")
   debug_inspect(assets.get(h).unwrap().value, content="43")
   let ev2 = assets.drain_events()
   debug_inspect(ev2.length(), content="1")
   match ev2[0] {
-    AssetEvent::Modified(h1) => debug_inspect(h1.id() == 10, content="true")
+    Modified(h1) => debug_inspect(h1.id() == 10, content="true")
     _ => debug_inspect(false, content="false")
   }
 }
@@ -127,16 +125,12 @@ test "assets: reserve handle stays empty until a later insert" {
   let assets : Assets[StoreTestAsset] = Assets::new()
   let reserved = assets.reserve_handle()
   debug_inspect(assets.get(reserved) is None, content="true")
-  debug_inspect(
-    assets.insert(reserved, StoreTestAsset::{ value: 7 }),
-    content="true",
-  )
+  debug_inspect(assets.insert(reserved, { value: 7 }), content="true")
   debug_inspect(assets.get(reserved).unwrap().value, content="7")
   let events = assets.drain_events()
   debug_inspect(events.length(), content="1")
   match events[0] {
-    AssetEvent::Added(handle) =>
-      debug_inspect(handle.id() == reserved.id(), content="true")
+    Added(handle) => debug_inspect(handle.id() == reserved.id(), content="true")
     _ => debug_inspect(false, content="false")
   }
 }
@@ -144,9 +138,9 @@ test "assets: reserve handle stays empty until a later insert" {
 ///|
 test "assets: iter_mut returns live assets and marks them modified" {
   let assets : Assets[StoreTestAsset] = Assets::new()
-  let first = assets.add(StoreTestAsset::{ value: 10 })
+  let first = assets.add({ value: 10 })
   ignore(assets.reserve_handle())
-  let third = assets.add(StoreTestAsset::{ value: 30 })
+  let third = assets.add({ value: 30 })
   ignore(assets.drain_events())
   let entries = assets.iter_mut()
   debug_inspect(entries.length(), content="2")
@@ -261,29 +255,25 @@ test "asset system forwards asset events to ECS messages" {
 
   match world.get_resource_mut(key) {
     Some(assets) => {
-      ignore(
-        assets.modify(fn(value) { value.add(StoreTestAsset::{ value: 42 }) }),
-      )
-      ignore(
-        assets.modify(fn(value) { value.add(StoreTestAsset::{ value: 43 }) }),
-      )
+      ignore(assets.modify(fn(value) { value.add({ value: 42 }) }))
+      ignore(assets.modify(fn(value) { value.add({ value: 43 }) }))
     }
     None => abort("expected Assets<Int> resource")
   }
 
   asset_update_event_messages(world)
 
-  let cursor_ref : @ecs.MessageCursor[AssetEvent[StoreTestAsset]] = @ecs.MessageCursor::MessageCursor()
+  let cursor_ref : @ecs.MessageCursor[AssetEvent[StoreTestAsset]] = MessageCursor()
   let key : @ecs.MessageKey[AssetEvent[StoreTestAsset]] = @ecs.Message::message()
   let reader = world.message_reader(key, cursor=cursor_ref)
   let events = reader.read()
   debug_inspect(events.length(), content="2")
   match events[0] {
-    AssetEvent::Added(handle) => debug_inspect(handle.id() == 0, content="true")
+    Added(handle) => debug_inspect(handle.id() == 0, content="true")
     _ => debug_inspect(false, content="false")
   }
   match events[1] {
-    AssetEvent::Added(handle) => debug_inspect(handle.id() == 1, content="true")
+    Added(handle) => debug_inspect(handle.id() == 1, content="true")
     _ => debug_inspect(false, content="false")
   }
 }
@@ -292,6 +282,7 @@ test "asset system forwards asset events to ECS messages" {
 struct MissingLoaderAsset {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn missing_loader_asset_loader(
   _asset_server : AssetServer,
   _path : AssetPath,
@@ -330,7 +321,7 @@ fn processor_scope_typed_loader(
   _path : AssetPath,
   _bytes : Bytes,
 ) -> ProcessorScopeAsset {
-  ProcessorScopeAsset::{ from_processor: false }
+  { from_processor: false }
 }
 
 ///|
@@ -340,9 +331,9 @@ fn processor_scope_run(
   _bytes : Bytes,
 ) -> ProcessedAsset[ProcessorScopeAsset] raise AssetProcessError {
   if false {
-    raise AssetProcessError::Message("unreachable")
+    raise Message("unreachable")
   }
-  ProcessedAsset::new(ProcessorScopeAsset::{ from_processor: true })
+  ProcessedAsset::new({ from_processor: true })
 }
 
 ///|
@@ -356,7 +347,7 @@ fn named_processor_scope_typed_loader(
   _path : AssetPath,
   _bytes : Bytes,
 ) -> NamedProcessorScopeAsset {
-  NamedProcessorScopeAsset::{ marker: 0 }
+  { marker: 0 }
 }
 
 ///|
@@ -366,9 +357,9 @@ fn named_processor_scope_run_one(
   _bytes : Bytes,
 ) -> ProcessedAsset[NamedProcessorScopeAsset] raise AssetProcessError {
   if false {
-    raise AssetProcessError::Message("unreachable")
+    raise Message("unreachable")
   }
-  ProcessedAsset::new(NamedProcessorScopeAsset::{ marker: 1 })
+  ProcessedAsset::new({ marker: 1 })
 }
 
 ///|
@@ -378,9 +369,9 @@ fn named_processor_scope_run_two(
   _bytes : Bytes,
 ) -> ProcessedAsset[NamedProcessorScopeAsset] raise AssetProcessError {
   if false {
-    raise AssetProcessError::Message("unreachable")
+    raise Message("unreachable")
   }
-  ProcessedAsset::new(NamedProcessorScopeAsset::{ marker: 2 })
+  ProcessedAsset::new({ marker: 2 })
 }
 
 ///|
@@ -390,9 +381,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   defer lifecycle_world_361_0.close()
   let app_a = init_asset(
     @app.App::new(lifecycle_world_361_0).add_plugins(
-      AssetPlugin::AssetPlugin().with_unapproved_path_mode(
-        UnapprovedPathMode::Allow,
-      ),
+      AssetPlugin::AssetPlugin().with_unapproved_path_mode(Allow),
     ),
     fn() { RegistryScopedLegacyAsset::{  } },
   )
@@ -441,9 +430,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
   defer lifecycle_world_361_1.close()
   let app_b = init_asset(
     @app.App::new(lifecycle_world_361_1).add_plugins(
-      AssetPlugin::AssetPlugin().with_unapproved_path_mode(
-        UnapprovedPathMode::Allow,
-      ),
+      AssetPlugin::AssetPlugin().with_unapproved_path_mode(Allow),
     ),
     fn() { RegistryScopedLegacyAsset::{  } },
   )
@@ -464,7 +451,7 @@ test "legacy loader, ready_checker and reload_hook are world-scoped per app worl
 
   let cursor : @ecs.MessageCursor[
     AssetLoadFailedEvent[RegistryScopedLegacyAsset],
-  ] = @ecs.MessageCursor::MessageCursor()
+  ] = MessageCursor()
   let key : @ecs.MessageKey[AssetLoadFailedEvent[RegistryScopedLegacyAsset]] = @ecs.Message::message()
   let reader = world_b.message_reader(key, cursor~)
   let failures = reader.read()
@@ -506,8 +493,8 @@ test "asset processor registry is world-scoped per app world" {
         init_asset(
           @app.App::new(lifecycle_world_462_0).add_plugins(
             @asset.AssetPlugin::AssetPlugin()
-            .with_mode(AssetMode::Processed)
-            .with_unapproved_path_mode(UnapprovedPathMode::Allow),
+            .with_mode(Processed)
+            .with_unapproved_path_mode(Allow),
           ),
           fn() { ProcessorScopeAsset::{ from_processor: false } },
         ),
@@ -550,8 +537,8 @@ test "asset processor registry is world-scoped per app world" {
     init_asset(
       @app.App::new(lifecycle_world_462_1).add_plugins(
         @asset.AssetPlugin::AssetPlugin()
-        .with_mode(AssetMode::Processed)
-        .with_unapproved_path_mode(UnapprovedPathMode::Allow),
+        .with_mode(Processed)
+        .with_unapproved_path_mode(Allow),
       ),
       fn() { ProcessorScopeAsset::{ from_processor: false } },
     ),
@@ -603,8 +590,8 @@ test "asset processor default can be selected by processor name" {
           init_asset(
             @app.App::new(lifecycle_world_555_0).add_plugins(
               @asset.AssetPlugin::AssetPlugin()
-              .with_mode(AssetMode::Processed)
-              .with_unapproved_path_mode(UnapprovedPathMode::Allow),
+              .with_mode(Processed)
+              .with_unapproved_path_mode(Allow),
             ),
             fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
@@ -666,8 +653,8 @@ test "asset processor default by name keeps previous selection when name is ambi
           init_asset(
             @app.App::new(lifecycle_world_616_0).add_plugins(
               @asset.AssetPlugin::AssetPlugin()
-              .with_mode(AssetMode::Processed)
-              .with_unapproved_path_mode(UnapprovedPathMode::Allow),
+              .with_mode(Processed)
+              .with_unapproved_path_mode(Allow),
             ),
             fn() { NamedProcessorScopeAsset::{ marker: 0 } },
           ),
@@ -715,14 +702,14 @@ test "asset processor default by name keeps previous selection when name is ambi
 ///|
 test "asset source builder registration is world-scoped per app world" {
   let scoped_path = AssetPath::from_path("bevy_pixel_dark_with_meta.png").with_source(
-    AssetSourceId::Named("scoped_source_builder"),
+    Named("scoped_source_builder"),
   )
   let lifecycle_world_678_0 = @ecs.World::new()
   defer lifecycle_world_678_0.close()
   let app_a = asset_plugin(
     register_asset_source(
       @app.App::new(lifecycle_world_678_0),
-      AssetSourceId::Named("scoped_source_builder"),
+      Named("scoped_source_builder"),
       AssetSourceBuilder::platform_default("examples/asset/files", None),
     ),
   )
@@ -778,7 +765,7 @@ test "default asset source builder path override is world-scoped per app world" 
   let app_a = asset_plugin(
     register_asset_source(
       @app.App::new(lifecycle_world_719_0),
-      AssetSourceId::Default,
+      Default,
       AssetSourceBuilder::platform_default(dir_a, None),
     ),
   )
@@ -796,7 +783,7 @@ test "default asset source builder path override is world-scoped per app world" 
   let app_b = asset_plugin(
     register_asset_source(
       @app.App::new(lifecycle_world_719_1),
-      AssetSourceId::Default,
+      Default,
       AssetSourceBuilder::platform_default(dir_b, None),
     ),
   )
@@ -848,7 +835,7 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
 
   asset_with_world(world, fn() { asset_system(world) })
 
-  let untyped_cursor : @ecs.MessageCursor[UntypedAssetLoadFailedEvent] = @ecs.MessageCursor::MessageCursor()
+  let untyped_cursor : @ecs.MessageCursor[UntypedAssetLoadFailedEvent] = MessageCursor()
   let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
   let untyped_reader = world.message_reader(untyped_key, cursor=untyped_cursor)
   let failures = untyped_reader.read()
@@ -867,7 +854,7 @@ test "asset server load without registered loader emits typed/untyped AssetLoadF
 
   let typed_cursor : @ecs.MessageCursor[
     AssetLoadFailedEvent[MissingLoaderAsset],
-  ] = @ecs.MessageCursor::MessageCursor()
+  ] = MessageCursor()
   let typed_key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
   let typed_reader = world.message_reader(typed_key, cursor=typed_cursor)
   let typed_failures = typed_reader.read()
@@ -923,14 +910,14 @@ test "asset plugin forbids unapproved paths by default and explicit Allow loads 
     None => abort("expected AssetServer resource")
   }
   debug_inspect(
-    forbidden_server.unapproved_path_mode() == UnapprovedPathMode::Forbid,
+    forbidden_server.unapproved_path_mode() == Forbid,
     content="true",
   )
   let forbidden_handle : Handle[Image] = asset_with_world(forbidden_world, fn() {
     forbidden_server.load("../pixel/bevy_pixel_dark.png")
   })
   debug_inspect(
-    forbidden_server.load_state(forbidden_handle) is LoadState::Failed(_),
+    forbidden_server.load_state(forbidden_handle) is Failed(_),
     content="true",
   )
 
@@ -939,7 +926,7 @@ test "asset plugin forbids unapproved paths by default and explicit Allow loads 
   let allowed_app = @app.App::new(lifecycle_world_867_1).add_plugins(
     AssetPlugin::AssetPlugin()
     .with_file_path("assets/pixel")
-    .with_unapproved_path_mode(UnapprovedPathMode::Allow),
+    .with_unapproved_path_mode(Allow),
   )
   let allowed_world = allowed_app.world()
   let allowed_server = match
@@ -947,10 +934,7 @@ test "asset plugin forbids unapproved paths by default and explicit Allow loads 
     Some(server) => server
     None => abort("expected AssetServer resource")
   }
-  debug_inspect(
-    allowed_server.unapproved_path_mode() == UnapprovedPathMode::Allow,
-    content="true",
-  )
+  debug_inspect(allowed_server.unapproved_path_mode() == Allow, content="true")
   let allowed_handle : Handle[Image] = asset_with_world(allowed_world, fn() {
     allowed_server.load_image("../pixel/bevy_pixel_dark.png")
   })
@@ -982,28 +966,24 @@ test "asset server retries failed typed loads with the same handle after loader 
     asset_server.load("data/asset.custom")
   })
   debug_inspect(
+    asset_with_world(world, fn() { asset_server.load_state(first) is Failed(_) }),
+    content="true",
+  )
+  debug_inspect(
     asset_with_world(world, fn() {
-      asset_server.load_state(first) is LoadState::Failed(_)
+      asset_server.dependency_load_state(first) is Failed(_)
     }),
     content="true",
   )
   debug_inspect(
     asset_with_world(world, fn() {
-      asset_server.dependency_load_state(first)
-      is DependencyLoadState::Failed(_)
-    }),
-    content="true",
-  )
-  debug_inspect(
-    asset_with_world(world, fn() {
-      asset_server.recursive_dependency_load_state(first)
-      is RecursiveDependencyLoadState::Failed(_)
+      asset_server.recursive_dependency_load_state(first) is Failed(_)
     }),
     content="true",
   )
   asset_with_world(world, fn() { asset_system(world) })
 
-  let untyped_cursor : @ecs.MessageCursor[UntypedAssetLoadFailedEvent] = @ecs.MessageCursor::MessageCursor()
+  let untyped_cursor : @ecs.MessageCursor[UntypedAssetLoadFailedEvent] = MessageCursor()
   let untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent] = @ecs.Message::message()
   let untyped_reader = world.message_reader(untyped_key, cursor=untyped_cursor)
   let failures = untyped_reader.read()
@@ -1020,21 +1000,18 @@ test "asset server retries failed typed loads with the same handle after loader 
   })
   debug_inspect(first.id() == second.id(), content="true")
   debug_inspect(
+    asset_with_world(world, fn() { asset_server.load_state(second) == Loading }),
+    content="true",
+  )
+  debug_inspect(
     asset_with_world(world, fn() {
-      asset_server.load_state(second) == LoadState::Loading
+      asset_server.dependency_load_state(second) == Loading
     }),
     content="true",
   )
   debug_inspect(
     asset_with_world(world, fn() {
-      asset_server.dependency_load_state(second) == DependencyLoadState::Loading
-    }),
-    content="true",
-  )
-  debug_inspect(
-    asset_with_world(world, fn() {
-      asset_server.recursive_dependency_load_state(second) ==
-      RecursiveDependencyLoadState::Loading
+      asset_server.recursive_dependency_load_state(second) == Loading
     }),
     content="true",
   )
@@ -1057,27 +1034,24 @@ test "asset server retries failed typed loads with the same handle after loader 
     content="true",
   )
   debug_inspect(
+    asset_with_world(world, fn() { asset_server.load_state(second) == Loaded }),
+    content="true",
+  )
+  debug_inspect(
     asset_with_world(world, fn() {
-      asset_server.load_state(second) == LoadState::Loaded
+      asset_server.dependency_load_state(second) == Loaded
     }),
     content="true",
   )
   debug_inspect(
     asset_with_world(world, fn() {
-      asset_server.dependency_load_state(second) == DependencyLoadState::Loaded
-    }),
-    content="true",
-  )
-  debug_inspect(
-    asset_with_world(world, fn() {
-      asset_server.recursive_dependency_load_state(second) ==
-      RecursiveDependencyLoadState::Loaded
+      asset_server.recursive_dependency_load_state(second) == Loaded
     }),
     content="true",
   )
 
   asset_update_event_messages(world)
-  let event_cursor : @ecs.MessageCursor[AssetEvent[MissingLoaderAsset]] = @ecs.MessageCursor::MessageCursor()
+  let event_cursor : @ecs.MessageCursor[AssetEvent[MissingLoaderAsset]] = MessageCursor()
   let event_key : @ecs.MessageKey[AssetEvent[MissingLoaderAsset]] = @ecs.Message::message()
   let event_reader = world.message_reader(event_key, cursor=event_cursor)
   let events = event_reader.read()
@@ -1085,11 +1059,11 @@ test "asset server retries failed typed loads with the same handle after loader 
   let added_count = Ref(0)
   for event in events {
     match event {
-      AssetEvent::LoadedWithDependencies(handle) =>
+      LoadedWithDependencies(handle) =>
         if handle.id() == second.id() {
           loaded_count.val = loaded_count.val + 1
         }
-      AssetEvent::Added(handle) =>
+      Added(handle) =>
         if handle.id() == second.id() {
           added_count.val = added_count.val + 1
         }
@@ -1157,7 +1131,7 @@ test "typed asset loaders are world-scoped per app world" {
     },
     content="false",
   )
-  let cursor : @ecs.MessageCursor[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.MessageCursor::MessageCursor()
+  let cursor : @ecs.MessageCursor[AssetLoadFailedEvent[MissingLoaderAsset]] = MessageCursor()
   let key : @ecs.MessageKey[AssetLoadFailedEvent[MissingLoaderAsset]] = @ecs.Message::message()
   let reader = world_b.message_reader(key, cursor~)
   let failures = reader.read()
@@ -1179,17 +1153,13 @@ test "asset system forwards image load completion to ECS messages" {
     None => abort("expected AssetServer resource")
   }
   let image = asset_server.load_image("branding/bevy_logo_dark_big.png")
+  debug_inspect(asset_server.load_state(image) == Loading, content="true")
   debug_inspect(
-    asset_server.load_state(image) == LoadState::Loading,
+    asset_server.dependency_load_state(image) == Loading,
     content="true",
   )
   debug_inspect(
-    asset_server.dependency_load_state(image) == DependencyLoadState::Loading,
-    content="true",
-  )
-  debug_inspect(
-    asset_server.recursive_dependency_load_state(image) ==
-    RecursiveDependencyLoadState::Loading,
+    asset_server.recursive_dependency_load_state(image) == Loading,
     content="true",
   )
   debug_inspect(
@@ -1215,24 +1185,20 @@ test "asset system forwards image load completion to ECS messages" {
           Some(stored) =>
             stored.width > 0 &&
             stored.height > 0 &&
-            stored.format == TextureFormat::Rgba8UnormSrgb
+            stored.format == Rgba8UnormSrgb
           None => false
         }
       None => false
     },
     content="true",
   )
+  debug_inspect(asset_server.load_state(image) == Loaded, content="true")
   debug_inspect(
-    asset_server.load_state(image) == LoadState::Loaded,
+    asset_server.dependency_load_state(image) == Loaded,
     content="true",
   )
   debug_inspect(
-    asset_server.dependency_load_state(image) == DependencyLoadState::Loaded,
-    content="true",
-  )
-  debug_inspect(
-    asset_server.recursive_dependency_load_state(image) ==
-    RecursiveDependencyLoadState::Loaded,
+    asset_server.recursive_dependency_load_state(image) == Loaded,
     content="true",
   )
   // `asset_sync_loaded_image_assets` queues events; they are dispatched on the next
@@ -1240,7 +1206,7 @@ test "asset system forwards image load completion to ECS messages" {
   asset_with_world(world, fn() { asset_system(world) })
   asset_update_event_messages(world)
 
-  let cursor_ref : @ecs.MessageCursor[AssetEvent[Image]] = @ecs.MessageCursor::MessageCursor()
+  let cursor_ref : @ecs.MessageCursor[AssetEvent[Image]] = MessageCursor()
   let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
   let reader = world.message_reader(message_key, cursor=cursor_ref)
   let events = reader.read()
@@ -1250,11 +1216,11 @@ test "asset system forwards image load completion to ECS messages" {
   let added_count = Ref(0)
   for event in events {
     match event {
-      AssetEvent::LoadedWithDependencies(handle) =>
+      LoadedWithDependencies(handle) =>
         if handle.id() == image.id() {
           loaded_count.val = loaded_count.val + 1
         }
-      AssetEvent::Added(handle) => {
+      Added(handle) => {
         added_count.val = added_count.val + 1
         if handle.id() == image.id() {
           found.val = true
@@ -1301,8 +1267,7 @@ test "asset system preserves image loader settings in stored image assets" {
       Some(images) =>
         match images.get(image) {
           Some(stored) =>
-            stored.format == TextureFormat::Rgba8Unorm &&
-            stored.view_format is None
+            stored.format == Rgba8Unorm && stored.view_format is None
           None => false
         }
       None => false
@@ -1355,7 +1320,7 @@ test "asset system preserves texture bytes srgb setting" {
     match world.get_resource(image_assets_key) {
       Some(images) =>
         match images.get(image) {
-          Some(stored) => stored.format == TextureFormat::Rgba8Unorm
+          Some(stored) => stored.format == Rgba8Unorm
           None => false
         }
       None => false
@@ -1430,7 +1395,7 @@ test "asset system releases load_acquire guard when load fails" {
   debug_inspect(release_count.val, content="1")
   debug_inspect(
     match asset_server.load_state(handle) {
-      LoadState::Failed(_) => true
+      Failed(_) => true
       _ => false
     },
     content="true",
@@ -1455,10 +1420,7 @@ test "asset load_acquire releases guard for Blob loads without Assets<Blob> stor
   })
 
   debug_inspect(release_count.val, content="1")
-  debug_inspect(
-    asset_server.load_state(handle) is LoadState::Loaded,
-    content="true",
-  )
+  debug_inspect(asset_server.load_state(handle) is Loaded, content="true")
 }
 
 ///|
@@ -1552,7 +1514,7 @@ test "web asset reader fetches remote PNG bytes" {
   let lifecycle_world_1485_0 = @ecs.World::new()
   defer lifecycle_world_1485_0.close()
   let app = asset_plugin(
-    web_asset_plugin(@app.App::new(lifecycle_world_1485_0), plugin=WebAssetPlugin::{
+    web_asset_plugin(@app.App::new(lifecycle_world_1485_0), plugin={
       silence_startup_warning: true,
     }),
   )
@@ -1582,7 +1544,7 @@ test "web asset reader fetches remote Blob bytes through AssetServer::load_bytes
   let lifecycle_world_1513_0 = @ecs.World::new()
   defer lifecycle_world_1513_0.close()
   let app = asset_plugin(
-    web_asset_plugin(@app.App::new(lifecycle_world_1513_0), plugin=WebAssetPlugin::{
+    web_asset_plugin(@app.App::new(lifecycle_world_1513_0), plugin={
       silence_startup_warning: true,
     }),
   )
@@ -1666,8 +1628,7 @@ test "Assets<Image>::get_mut exposes in-place mutation and emits a modified even
           }),
           events.length(),
           match events[1] {
-            AssetEvent::Modified(modified_handle) =>
-              modified_handle.id() == handle.id()
+            Modified(modified_handle) => modified_handle.id() == handle.id()
             _ => false
           },
         )
@@ -1683,17 +1644,12 @@ test "Assets<Image>::get_mut exposes in-place mutation and emits a modified even
 
 ///|
 test "Image::new_target_texture preserves Bevy-style target texture descriptor" {
-  let image = Image::new_target_texture(
-    512,
-    512,
-    TextureFormat::Bgra8UnormSrgb,
-    None,
-  )
+  let image = Image::new_target_texture(512, 512, Bgra8UnormSrgb, None)
   debug_inspect(image.width, content="512")
   debug_inspect(image.height, content="512")
   debug_inspect(image.pixels.length(), content="0")
   debug_inspect(image.is_target_texture(), content="true")
-  debug_inspect(image.format == TextureFormat::Bgra8UnormSrgb, content="true")
+  debug_inspect(image.format == Bgra8UnormSrgb, content="true")
   debug_inspect(image.view_format == None, content="true")
   debug_inspect(image.mip_level_count(), content="1")
   debug_inspect(
@@ -1732,8 +1688,8 @@ test "Assets<Image>::add creates a target texture image asset" {
             Image::new_target_texture(
               256,
               128,
-              TextureFormat::Rgba8Unorm,
-              Some(TextureFormat::Rgba8UnormSrgb),
+              Rgba8Unorm,
+              Some(Rgba8UnormSrgb),
             ),
           )
           (handle, value.get(handle))
@@ -1950,7 +1906,7 @@ fn multi_loader_full_extension_loader(
   _path : AssetPath,
   _bytes : Bytes,
 ) -> MultiLoaderAsset {
-  MultiLoaderAsset::{ loader_tag: 11 }
+  { loader_tag: 11 }
 }
 
 ///|
@@ -1959,7 +1915,7 @@ fn multi_loader_secondary_extension_loader(
   _path : AssetPath,
   _bytes : Bytes,
 ) -> MultiLoaderAsset {
-  MultiLoaderAsset::{ loader_tag: 22 }
+  { loader_tag: 22 }
 }
 
 ///|
@@ -2036,7 +1992,7 @@ fn test_custom_asset_loader(
       break
     }
   }
-  TestCustomAsset::{ value: parse_decimal_or_abort(digits) }
+  { value: parse_decimal_or_abort(digits) }
 }
 
 ///|
@@ -2238,8 +2194,8 @@ test "asset server stores gltf loader settings per asset path" {
       settings.load_animations = false
       settings.override_sampler = true
       let sampler = ImageSamplerDescriptor::nearest()
-      sampler.set_address_mode(ImageAddressMode::ClampToEdge) |> ignore
-      settings.sampler = ImageSampler::Descriptor(sampler)
+      sampler.set_address_mode(ClampToEdge) |> ignore
+      settings.sampler = Descriptor(sampler)
     })
   })
 
@@ -2255,19 +2211,10 @@ test "asset server stores gltf loader settings per asset path" {
   debug_inspect(!stored.load_animations, content="true")
   debug_inspect(stored.override_sampler, content="true")
   match stored.sampler {
-    ImageSampler::Descriptor(descriptor) => {
-      debug_inspect(
-        descriptor.min_filter == ImageFilterMode::Nearest,
-        content="true",
-      )
-      debug_inspect(
-        descriptor.address_mode_u == ImageAddressMode::ClampToEdge,
-        content="true",
-      )
-      debug_inspect(
-        descriptor.address_mode_v == ImageAddressMode::ClampToEdge,
-        content="true",
-      )
+    Descriptor(descriptor) => {
+      debug_inspect(descriptor.min_filter == Nearest, content="true")
+      debug_inspect(descriptor.address_mode_u == ClampToEdge, content="true")
+      debug_inspect(descriptor.address_mode_v == ClampToEdge, content="true")
     }
     _ => abort("expected descriptor sampler")
   }

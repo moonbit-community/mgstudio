@@ -114,7 +114,7 @@ fn spawn_text(
   font : @asset.Handle[@asset.Font],
   font_size : Float,
   color : @color.Color,
-  node? : @ui.Node = @ui.Node::Node(),
+  node? : @ui.Node = Node(),
 ) -> @core.Entity {
   let entity = world.spawn_empty()
   try! world.set_by_key(
@@ -180,10 +180,10 @@ fn display_text(display : @ui.Display) -> String {
 ///|
 fn next_display(display : @ui.Display) -> @ui.Display {
   match display {
-    Flex => @ui.Display::None
-    None => @ui.Display::Flex
-    Block => @ui.Display::None
-    Grid => @ui.Display::None
+    Flex => None
+    None => Flex
+    Block => None
+    Grid => None
   }
 }
 
@@ -201,9 +201,9 @@ fn next_visibility(
   visibility : @visibility.Visibility,
 ) -> @visibility.Visibility {
   match visibility {
-    Inherited => @visibility.Visibility::Visible
-    Visible => @visibility.Visibility::Hidden
-    Hidden => @visibility.Visibility::Inherited
+    Inherited => Visible
+    Visible => Hidden
+    Hidden => Inherited
   }
 }
 
@@ -225,7 +225,7 @@ fn find_target_entity(world : @ecs.World, target_index : Int) -> @core.Entity? {
 ///|
 fn button_label_text(world : @ecs.World, action : ToggleButtonAction) -> String {
   guard find_target_entity(world, action.target_index) is Some(target_entity) else {
-    return if action.kind == ToggleKind::DisplayTarget {
+    return if action.kind == DisplayTarget {
       "Display::<missing>"
     } else {
       "Visibility::<missing>"
@@ -276,14 +276,14 @@ fn update_button_visuals(
   interaction : @ui.Interaction,
 ) -> Unit {
   let bg = match interaction {
-    @ui.Interaction::Pressed => pressed_button_color()
-    @ui.Interaction::Hovered => hovered_button_color()
-    @ui.Interaction::None => normal_button_color()
+    Pressed => pressed_button_color()
+    Hovered => hovered_button_color()
+    None => normal_button_color()
   }
   let border = match interaction {
-    @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.2F, 0.2F)
-    @ui.Interaction::Hovered => @color.Color::white()
-    @ui.Interaction::None => @color.Color::black()
+    Pressed => @color.Color::srgb(1.0F, 0.2F, 0.2F)
+    Hovered => @color.Color::white()
+    None => @color.Color::black()
   }
   ignore(
     try! world.replace(
@@ -324,25 +324,23 @@ fn spawn_button(
     world,
     Some(parent),
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(240.0F))
-    .with_height(@ui.Val::Px(42.0F))
-    .with_border(@ui.UiRect::all(@ui.Val::Px(3.0F)))
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+    .with_width(Px(240.0F))
+    .with_height(Px(42.0F))
+    .with_border(@ui.UiRect::all(Px(3.0F)))
+    .with_padding(@ui.UiRect::all(Px(8.0F)))
+    .with_align_items(Center)
+    .with_justify_content(Center)
+    .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
     Some(@ui.BackgroundColor::new(normal_button_color())),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(button, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
     @ui.BorderColor::new(@color.Color::black()),
   )
   try! world.set_by_key(button, toggle_button_action_key, action)
-  try! world.set_by_key(button, button_press_state_key, ButtonPressState::{
-    pressed: false,
-  })
+  try! world.set_by_key(button, button_press_state_key, { pressed: false })
   ignore(spawn_text(world, button, "", font, 15.0F, text_color()))
 }
 
@@ -358,20 +356,16 @@ fn spawn_target_panel(
     world,
     parent,
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(size))
-    .with_height(@ui.Val::Px(size))
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(18.0F)))
-    .with_align_items(@ui.AlignItems::FlexEnd)
-    .with_justify_content(@ui.JustifyContent::FlexEnd)
-    .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F))),
+    .with_width(Px(size))
+    .with_height(Px(size))
+    .with_padding(@ui.UiRect::all(Px(18.0F)))
+    .with_align_items(FlexEnd)
+    .with_justify_content(FlexEnd)
+    .with_border(@ui.UiRect::all(Px(4.0F))),
     Some(@ui.BackgroundColor::new(panel_color(index))),
   )
-  try! world.set_by_key(panel, target_panel_key, TargetPanel::{ index, })
-  try! world.set_by_key(
-    panel,
-    @visibility.Visibility::component(),
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(panel, target_panel_key, { index, })
+  try! world.set_by_key(panel, @visibility.Visibility::component(), Inherited)
   try! world.set_by_key(
     panel,
     @ui.ecs_key_border_color,
@@ -390,9 +384,9 @@ fn spawn_target_panel(
         @color.Color::white()
       },
       node=@ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(10.0F))
-        .with_top(@ui.Val::Px(10.0F)),
+        .with_position_type(Absolute)
+        .with_left(Px(10.0F))
+        .with_top(Px(10.0F)),
     ),
   )
   panel
@@ -416,14 +410,14 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     None,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
-    .with_row_gap(@ui.Val::Px(12.0F)),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Column)
+    .with_padding(@ui.UiRect::all(Px(16.0F)))
+    .with_row_gap(Px(12.0F)),
     Some(@ui.BackgroundColor::new(@color.Color::black())),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
 
   ignore(
     spawn_text(
@@ -440,10 +434,10 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     Some(root),
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Row)
-    .with_column_gap(@ui.Val::Px(18.0F)),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Row)
+    .with_column_gap(Px(18.0F)),
     None,
   )
 
@@ -451,21 +445,21 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     Some(content),
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(60.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center),
+    .with_width(Percent(60.0F))
+    .with_height(Percent(100.0F))
+    .with_align_items(Center)
+    .with_justify_content(Center),
     Some(@ui.BackgroundColor::new(@color.Color::srgb(0.04F, 0.04F, 0.04F))),
   )
   let right = spawn_node(
     world,
     Some(content),
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(320.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F)))
-    .with_row_gap(@ui.Val::Px(12.0F)),
+    .with_width(Px(320.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Column)
+    .with_padding(@ui.UiRect::all(Px(12.0F)))
+    .with_row_gap(Px(12.0F)),
     Some(@ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.08F))),
   )
 
@@ -479,29 +473,16 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       Some(right),
       @ui.Node::Node()
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(6.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F))),
+      .with_flex_direction(Column)
+      .with_row_gap(Px(6.0F))
+      .with_padding(@ui.UiRect::all(Px(10.0F))),
       Some(@ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.12F))),
     )
     ignore(
       spawn_text(world, row, target_name(i), font, 18.0F, @color.Color::white()),
     )
-    spawn_button(
-      world,
-      row,
-      ToggleButtonAction::{ target_index: i, kind: ToggleKind::DisplayTarget },
-      font,
-    )
-    spawn_button(
-      world,
-      row,
-      ToggleButtonAction::{
-        target_index: i,
-        kind: ToggleKind::VisibilityTarget,
-      },
-      font,
-    )
+    spawn_button(world, row, { target_index: i, kind: DisplayTarget }, font)
+    spawn_button(world, row, { target_index: i, kind: VisibilityTarget }, font)
   }
 
   ignore(
@@ -531,7 +512,7 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
   ] = @ecs.query_filtered(world, @ecs.With::new(@ui.Button::component()))
   try! edge_query.view(fn(_entity, data) {
     let (action, interaction, button_state) = data
-    let is_pressed = interaction.value() == @ui.Interaction::Pressed
+    let is_pressed = interaction.value() == Pressed
     if is_pressed && !button_state.value().pressed {
       triggered.push(action.value())
     }
@@ -568,7 +549,7 @@ fn display_and_visibility_system(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .add_system_config(
     @app.system_config_world(display_and_visibility_system).after(
       @ui.ui_set_focus,

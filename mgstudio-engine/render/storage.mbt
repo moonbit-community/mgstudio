@@ -22,7 +22,7 @@ pub struct RenderStorage[K, V] {
 
 ///|
 pub fn[K : Hash + Eq, V] RenderStorage::new() -> RenderStorage[K, V] {
-  RenderStorage::{ values: @hashmap.HashMap([]) }
+  { values: HashMap([]) }
 }
 
 ///|

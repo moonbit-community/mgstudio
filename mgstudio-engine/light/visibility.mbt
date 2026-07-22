@@ -90,7 +90,7 @@ fn shadow_caster_visibility_query(
 fn shadow_visibility_layers(
   layers : @ecs.Optional[@camera_render_layers.RenderLayers],
 ) -> @camera_render_layers.RenderLayers {
-  layers.value().unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+  layers.value().unwrap_or(RenderLayers())
 }
 
 ///|
@@ -145,9 +145,7 @@ pub fn check_dir_light_mesh_visibility(world : @ecs.World) -> Unit {
           @camera_visibility.VisibleMeshEntities,
         ] = []
         for _ in view_frusta {
-          cascade_visible_entities.push(
-            @camera_visibility.VisibleMeshEntities::VisibleMeshEntities(),
-          )
+          cascade_visible_entities.push(VisibleMeshEntities())
         }
         try! visible_entity_query.view(fn(_candidate_entity, candidate) {
           let (

@@ -39,9 +39,8 @@ fn sampler_descriptor_or_abort(
   sampler : @asset.ImageSampler,
 ) -> @asset.ImageSamplerDescriptor {
   match sampler {
-    @asset.ImageSampler::Default =>
-      abort("expected gltf texture sampler descriptor")
-    @asset.ImageSampler::Descriptor(descriptor) => descriptor
+    Default => abort("expected gltf texture sampler descriptor")
+    Descriptor(descriptor) => descriptor
   }
 }
 
@@ -185,74 +184,32 @@ test "scene gltf wb: parse sampler and texture mapping" {
   debug_inspect(doc.samplers[1].wrap_s, content="Some(33071)")
   debug_inspect(doc.samplers[1].wrap_t, content="Some(33071)")
   let default_sampler = @image.ImageSamplerDescriptor::linear()
-  default_sampler.set_address_mode(@image.ImageAddressMode::Repeat) |> ignore
+  default_sampler.set_address_mode(Repeat) |> ignore
   let descriptor0 = sampler_descriptor_or_abort(
     gltf_texture_image_sampler(doc, 0, default_sampler, false),
   )
-  debug_inspect(
-    descriptor0.address_mode_u == @asset.ImageAddressMode::Repeat,
-    content="true",
-  )
-  debug_inspect(
-    descriptor0.address_mode_v == @asset.ImageAddressMode::MirrorRepeat,
-    content="true",
-  )
-  debug_inspect(
-    descriptor0.mag_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
-  debug_inspect(
-    descriptor0.min_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
-  debug_inspect(
-    descriptor0.mipmap_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
+  debug_inspect(descriptor0.address_mode_u == Repeat, content="true")
+  debug_inspect(descriptor0.address_mode_v == MirrorRepeat, content="true")
+  debug_inspect(descriptor0.mag_filter == Nearest, content="true")
+  debug_inspect(descriptor0.min_filter == Linear, content="true")
+  debug_inspect(descriptor0.mipmap_filter == Linear, content="true")
 
   let descriptor1 = sampler_descriptor_or_abort(
     gltf_texture_image_sampler(doc, 1, default_sampler, false),
   )
-  debug_inspect(
-    descriptor1.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
-  debug_inspect(
-    descriptor1.address_mode_v == @asset.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
-  debug_inspect(
-    descriptor1.mag_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
-  debug_inspect(
-    descriptor1.min_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
-  debug_inspect(
-    descriptor1.mipmap_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
+  debug_inspect(descriptor1.address_mode_u == ClampToEdge, content="true")
+  debug_inspect(descriptor1.address_mode_v == ClampToEdge, content="true")
+  debug_inspect(descriptor1.mag_filter == Linear, content="true")
+  debug_inspect(descriptor1.min_filter == Nearest, content="true")
+  debug_inspect(descriptor1.mipmap_filter == Nearest, content="true")
 
   let descriptor2 = sampler_descriptor_or_abort(
     gltf_texture_image_sampler(doc, 2, default_sampler, false),
   )
-  debug_inspect(
-    descriptor2.address_mode_u == @asset.ImageAddressMode::Repeat,
-    content="true",
-  )
-  debug_inspect(
-    descriptor2.address_mode_v == @asset.ImageAddressMode::Repeat,
-    content="true",
-  )
-  debug_inspect(
-    descriptor2.mag_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
-  debug_inspect(
-    descriptor2.min_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
+  debug_inspect(descriptor2.address_mode_u == Repeat, content="true")
+  debug_inspect(descriptor2.address_mode_v == Repeat, content="true")
+  debug_inspect(descriptor2.mag_filter == Linear, content="true")
+  debug_inspect(descriptor2.min_filter == Linear, content="true")
 }
 
 ///|
@@ -260,31 +217,16 @@ test "scene gltf wb: anisotropic default sampler skips gltf filters" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"samplers\":[{\"magFilter\":9728,\"minFilter\":9984,\"wrapS\":33071,\"wrapT\":33071}],\"textures\":[{\"sampler\":0}]}"
   let doc = gltf_parse_document(source).unwrap()
   let default_sampler = @image.ImageSamplerDescriptor::linear()
-  default_sampler.set_address_mode(@image.ImageAddressMode::Repeat) |> ignore
+  default_sampler.set_address_mode(Repeat) |> ignore
   default_sampler.set_anisotropic_filter(4) |> ignore
   let descriptor = sampler_descriptor_or_abort(
     gltf_texture_image_sampler(doc, 0, default_sampler, false),
   )
-  debug_inspect(
-    descriptor.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.address_mode_v == @asset.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.mag_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.min_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.mipmap_filter == @asset.ImageFilterMode::Linear,
-    content="true",
-  )
+  debug_inspect(descriptor.address_mode_u == ClampToEdge, content="true")
+  debug_inspect(descriptor.address_mode_v == ClampToEdge, content="true")
+  debug_inspect(descriptor.mag_filter == Linear, content="true")
+  debug_inspect(descriptor.min_filter == Linear, content="true")
+  debug_inspect(descriptor.mipmap_filter == Linear, content="true")
 }
 
 ///|
@@ -292,39 +234,22 @@ test "scene gltf wb: override sampler ignores gltf sampler payload" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"samplers\":[{\"magFilter\":9728,\"minFilter\":9984,\"wrapS\":10497,\"wrapT\":33648}],\"textures\":[{\"sampler\":0}]}"
   let doc = gltf_parse_document(source).unwrap()
   let default_sampler = @image.ImageSamplerDescriptor::nearest()
-  default_sampler.set_address_mode(@image.ImageAddressMode::ClampToEdge)
-  |> ignore
+  default_sampler.set_address_mode(ClampToEdge) |> ignore
   let descriptor = sampler_descriptor_or_abort(
     gltf_texture_image_sampler(doc, 0, default_sampler, true),
   )
-  debug_inspect(
-    descriptor.address_mode_u == @asset.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.address_mode_v == @asset.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.mag_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.min_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.mipmap_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
+  debug_inspect(descriptor.address_mode_u == ClampToEdge, content="true")
+  debug_inspect(descriptor.address_mode_v == ClampToEdge, content="true")
+  debug_inspect(descriptor.mag_filter == Nearest, content="true")
+  debug_inspect(descriptor.min_filter == Nearest, content="true")
+  debug_inspect(descriptor.mipmap_filter == Nearest, content="true")
 }
 
 ///|
 test "scene gltf wb: texture sampler fallback uses gltf default sampler" {
   let original_default_sampler = @gltf.gltf_default_image_sampler()
   let custom_default_sampler = @image.ImageSamplerDescriptor::nearest()
-  custom_default_sampler.set_address_mode(@image.ImageAddressMode::ClampToEdge)
-  |> ignore
+  custom_default_sampler.set_address_mode(ClampToEdge) |> ignore
   @gltf.gltf_set_default_image_sampler(custom_default_sampler)
 
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"textures\":[{}]}"
@@ -337,22 +262,10 @@ test "scene gltf wb: texture sampler fallback uses gltf default sampler" {
       false,
     ),
   )
-  debug_inspect(
-    descriptor.address_mode_u == @asset.ImageAddressMode::Repeat,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.address_mode_v == @asset.ImageAddressMode::Repeat,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.min_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
-  debug_inspect(
-    descriptor.mag_filter == @asset.ImageFilterMode::Nearest,
-    content="true",
-  )
+  debug_inspect(descriptor.address_mode_u == Repeat, content="true")
+  debug_inspect(descriptor.address_mode_v == Repeat, content="true")
+  debug_inspect(descriptor.min_filter == Nearest, content="true")
+  debug_inspect(descriptor.mag_filter == Nearest, content="true")
 
   @gltf.gltf_set_default_image_sampler(original_default_sampler)
 }
@@ -438,8 +351,8 @@ test "scene gltf wb: material cull mode follows Bevy inverted scale rule" {
   let inverted = gltf_material_cull_mode(false, true)
   let double_sided_regular = gltf_material_cull_mode(true, false)
   let double_sided_inverted = gltf_material_cull_mode(true, true)
-  debug_inspect(regular is Some(@pbr.Face3d::Back), content="true")
-  debug_inspect(inverted is Some(@pbr.Face3d::Front), content="true")
+  debug_inspect(regular is Some(Back), content="true")
+  debug_inspect(inverted is Some(Front), content="true")
   debug_inspect(double_sided_regular is None, content="true")
   debug_inspect(double_sided_inverted is None, content="true")
 }
@@ -452,9 +365,7 @@ test "scene gltf wb: loader settings resolve convert_coordinates overrides" {
     rotate_meshes: false,
   })
 
-  let inherited = gltf_loader_convert_coordinates(
-    @asset.ImageLoaderSettings::ImageLoaderSettings(),
-  )
+  let inherited = gltf_loader_convert_coordinates(ImageLoaderSettings())
   debug_inspect(inherited.rotate_scene_entity, content="true")
   debug_inspect(inherited.rotate_meshes, content="false")
 
@@ -471,31 +382,24 @@ test "scene gltf wb: loader settings resolve convert_coordinates overrides" {
 ///|
 test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
   let original_default = @gltf.gltf_default_skinned_mesh_bounds_policy()
-  @gltf.gltf_set_default_skinned_mesh_bounds_policy(
-    @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
-  )
+  @gltf.gltf_set_default_skinned_mesh_bounds_policy(NoFrustumCulling)
 
   let inherited = gltf_loader_skinned_mesh_bounds_policy_from_settings(
-    @asset.ImageLoaderSettings::ImageLoaderSettings(),
+    ImageLoaderSettings(),
   )
-  debug_inspect(
-    inherited == @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
-    content="true",
-  )
+  debug_inspect(inherited == NoFrustumCulling, content="true")
 
   let bind_pose = @asset.ImageLoaderSettings::ImageLoaderSettings()
   bind_pose.skinned_mesh_bounds_policy = Some(0)
   debug_inspect(
-    gltf_loader_skinned_mesh_bounds_policy_from_settings(bind_pose) ==
-    @gltf.GltfSkinnedMeshBoundsPolicy::BindPose,
+    gltf_loader_skinned_mesh_bounds_policy_from_settings(bind_pose) == BindPose,
     content="true",
   )
 
   let dynamic = @asset.ImageLoaderSettings::ImageLoaderSettings()
   dynamic.skinned_mesh_bounds_policy = Some(1)
   debug_inspect(
-    gltf_loader_skinned_mesh_bounds_policy_from_settings(dynamic) ==
-    @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic,
+    gltf_loader_skinned_mesh_bounds_policy_from_settings(dynamic) == Dynamic,
     content="true",
   )
 
@@ -503,7 +407,7 @@ test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
   no_frustum.skinned_mesh_bounds_policy = Some(2)
   debug_inspect(
     gltf_loader_skinned_mesh_bounds_policy_from_settings(no_frustum) ==
-    @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    NoFrustumCulling,
     content="true",
   )
 
@@ -511,7 +415,7 @@ test "scene gltf wb: loader settings resolve skinned mesh bounds policy" {
   unknown.skinned_mesh_bounds_policy = Some(999)
   debug_inspect(
     gltf_loader_skinned_mesh_bounds_policy_from_settings(unknown) ==
-    @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    NoFrustumCulling,
     content="true",
   )
 
@@ -539,7 +443,7 @@ test "scene gltf wb: mesh primitive builder applies coordinate conversion" {
     buffer_bytes,
     0,
     0,
-    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+    GltfConvertCoordinates(),
   ).unwrap()
   let geometry_unconverted = mesh_unconverted.as_3d_geometry().unwrap()
   debug_inspect(
@@ -556,10 +460,7 @@ test "scene gltf wb: mesh primitive builder applies coordinate conversion" {
     buffer_bytes,
     0,
     0,
-    @gltf.GltfConvertCoordinates::{
-      rotate_scene_entity: false,
-      rotate_meshes: true,
-    },
+    { rotate_scene_entity: false, rotate_meshes: true },
   ).unwrap()
   let geometry_converted = mesh_converted.as_3d_geometry().unwrap()
   debug_inspect(
@@ -618,10 +519,7 @@ test "scene gltf wb: mesh primitive builder converts normals and tangents" {
     ],
     0,
     0,
-    @gltf.GltfConvertCoordinates::{
-      rotate_scene_entity: false,
-      rotate_meshes: true,
-    },
+    { rotate_scene_entity: false, rotate_meshes: true },
   ).unwrap()
   let geometry = mesh.as_3d_geometry().unwrap()
   let normal = geometry.normal(0).unwrap()
@@ -649,7 +547,7 @@ test "scene gltf wb: primitive aabb uses accessor bounds and coordinate conversi
   let unconverted = scene_gltf_primitive_aabb(
     doc,
     primitive,
-    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+    GltfConvertCoordinates(),
   ).unwrap()
   let unconverted_center = unconverted.center()
   let unconverted_half_size = unconverted.half_size()
@@ -670,7 +568,7 @@ test "scene gltf wb: primitive aabb uses accessor bounds and coordinate conversi
     content="(2.5, 4, 5.5)",
   )
 
-  let converted = scene_gltf_primitive_aabb(doc, primitive, @gltf.GltfConvertCoordinates::{
+  let converted = scene_gltf_primitive_aabb(doc, primitive, {
     rotate_scene_entity: false,
     rotate_meshes: true,
   }).unwrap()
@@ -733,7 +631,7 @@ test "scene gltf wb: mesh primitive builder computes missing flat normals like B
     [Bytes::from_array(positions), Bytes::from_array(uvs), indices],
     0,
     0,
-    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+    GltfConvertCoordinates(),
   ).unwrap()
   let geometry = mesh.as_3d_geometry().unwrap()
   debug_inspect(geometry.positions.length(), content="6")
@@ -784,7 +682,7 @@ test "scene gltf wb: mesh primitive builder generates missing tangents when mate
     ],
     0,
     0,
-    @gltf.GltfConvertCoordinates::GltfConvertCoordinates(),
+    GltfConvertCoordinates(),
   ).unwrap()
   let geometry = mesh.as_3d_geometry().unwrap()
   debug_inspect(geometry.has_tangents(), content="true")
@@ -906,7 +804,7 @@ test "scene gltf wb: camera and light helpers respect loader gates" {
     Some(camera_components) => {
       debug_inspect(camera_components.camera.is_active, content="true")
       let is_perspective = match camera_components.projection {
-        @camera.Projection::Perspective(_) => true
+        Perspective(_) => true
         _ => false
       }
       debug_inspect(is_perspective, content="true")

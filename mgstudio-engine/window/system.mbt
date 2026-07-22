@@ -56,7 +56,7 @@ pub fn close_when_requested(
 }
 
 ///|
-let window_app_exit_event_cursor : @ecs.MessageCursor[@app.AppExit] = @ecs.MessageCursor::MessageCursor()
+let window_app_exit_event_cursor : @ecs.MessageCursor[@app.AppExit] = MessageCursor()
 
 ///|
 fn window_has_app_exit_message(world : @ecs.World) -> Bool {
@@ -79,7 +79,7 @@ pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
     .view(fn(_query_entity, entity) { open_window_entities.push(entity) })
     for entity in open_window_entities {
       if world.is_alive(entity) {
-        window_emit_window_closing(world, WindowClosing::{ window: entity })
+        window_emit_window_closing(world, { window: entity })
       }
     }
   }
@@ -92,7 +92,7 @@ pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
     if !world.is_alive(entity) {
       continue
     }
-    window_emit_window_closing(world, WindowClosing::{ window: entity })
+    window_emit_window_closing(world, { window: entity })
   }
 }
 
@@ -102,7 +102,7 @@ pub fn exit_on_all_closed(
   windows : @ecs.Query[@core.Entity, @ecs.With[Window]],
 ) -> Unit {
   if windows.count() == 0 {
-    ignore(app_exit.write(@app.AppExit::Success))
+    ignore(app_exit.write(Success))
   }
 }
 
@@ -115,6 +115,6 @@ pub fn exit_on_primary_closed(
   ],
 ) -> Unit {
   if windows.count() == 0 {
-    ignore(app_exit.write(@app.AppExit::Success))
+    ignore(app_exit.write(Success))
   }
 }

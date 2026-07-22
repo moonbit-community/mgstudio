@@ -77,7 +77,7 @@ fn setup(
             materials,
             @pbr.StandardMaterial::from_color(
               @color.Color::srgba(0.2F, 0.7F, 0.1F, 0.0F),
-            ).with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F)),
+            ).with_alpha_mode(Mask(0.5F)),
           ),
         ),
         @transform.Transform::from_xyz(1.0F, 0.5F, -1.5F),
@@ -96,7 +96,7 @@ fn setup(
             @pbr.StandardMaterial::from_color(
               @color.Color::srgba(0.2F, 0.7F, 0.1F, 0.0F),
             )
-            .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.1F))
+            .with_alpha_mode(Mask(0.1F))
             .with_unlit(true),
           ),
         ),
@@ -138,7 +138,7 @@ fn setup(
             materials,
             @pbr.StandardMaterial::from_color(
               @color.Color::srgba(0.5F, 1.0F, 0.5F, 0.0F),
-            ).with_alpha_mode(@pbr.AlphaMode3d::AlphaToCoverage),
+            ).with_alpha_mode(AlphaToCoverage),
           ),
         ),
         @transform.Transform::from_xyz(-1.5F, 0.5F, 0.0F),
@@ -213,7 +213,7 @@ fn fade_transparency(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, fade_transparency)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, fade_transparency)
   .run()
 }

@@ -98,7 +98,7 @@ pub fn[T : Default] Time::Time() -> Time[T] {
 
 ///|
 pub impl[T : Default] Default for Time[T] with fn default() {
-  Time::Time()
+  Time()
 }
 
 ///|

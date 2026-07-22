@@ -15,7 +15,7 @@
 ///|
 test "pbr light probe env map: array mode pads entries" {
   let entries = pbr_environment_map_bind_group_entries(
-    [EnvironmentMapIds::EnvironmentMapIds()],
+    [EnvironmentMapIds()],
     true,
     4,
   )

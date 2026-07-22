@@ -99,7 +99,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @mesh.Mesh3d {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -179,6 +179,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 60.0F))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

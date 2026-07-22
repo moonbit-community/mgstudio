@@ -80,9 +80,7 @@ fn spawn_key_row(
   let row = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @ui.Node::Node()
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_column_gap(@ui.Val::Px(4.0F)),
+      @ui.Node::Node().with_flex_direction(Row).with_column_gap(Px(4.0F)),
     ),
   )
   for key in keys {
@@ -93,11 +91,11 @@ fn spawn_key_row(
         KeyCap::{ value: key },
         WasPressed::{ down: false },
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(48.0F))
-        .with_height(@ui.Val::Px(34.0F))
-        .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center),
+        .with_width(Px(48.0F))
+        .with_height(Px(34.0F))
+        .with_border(@ui.UiRect::all(Px(1.0F)))
+        .with_align_items(Center)
+        .with_justify_content(Center),
         @ui.BorderColor::new(@color.Color::srgb(0.82F, 0.82F, 0.92F)),
         @ui.BackgroundColor::new(@color.Color::srgb(0.18F, 0.18F, 0.24F)),
       ),
@@ -130,11 +128,11 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::End)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F))),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(End)
+      .with_padding(@ui.UiRect::all(Px(20.0F))),
       @ui.BackgroundColor::new(@color.Color::srgb(0.06F, 0.08F, 0.18F)),
     ),
   )
@@ -143,10 +141,10 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(6.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F))),
+      .with_flex_direction(Column)
+      .with_row_gap(Px(6.0F))
+      .with_padding(@ui.UiRect::all(Px(10.0F)))
+      .with_border(@ui.UiRect::all(Px(2.0F))),
       @ui.BorderColor::new(@color.Color::white()),
       @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.12F, 0.26F)),
     ),
@@ -182,7 +180,7 @@ fn keyboard_input_system(
 ) -> Unit {
   try! buttons.view(fn(_entity, data) {
     let (key_cap, interaction, was_pressed, background) = data
-    let pressed = interaction.value() == @ui.Interaction::Pressed
+    let pressed = interaction.value() == Pressed
     if pressed && !was_pressed.value().down {
       buffer.modify(fn(value) {
         value.value = value.value + key_cap.value().value
@@ -215,8 +213,8 @@ fn keyboard_display_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, keyboard_input_system)
-  .add_systems_param2(@app.Update, keyboard_display_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, keyboard_input_system)
+  .add_systems_param2(Update, keyboard_display_system)
   .run()
 }

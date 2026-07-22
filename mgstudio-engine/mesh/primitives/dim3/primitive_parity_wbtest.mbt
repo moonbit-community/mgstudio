@@ -29,10 +29,7 @@ fn primitive_parity_assert_triangle_winding_matches_normals(
   name : String,
   geometry : @mesh.Mesh3dGeometry,
 ) -> Unit {
-  guard geometry.primitive_topology() ==
-    @mesh.Mesh3dPrimitiveTopology::TriangleList else {
-    return
-  }
+  guard geometry.primitive_topology() == TriangleList else { return }
   let normals = match geometry.normals() {
     Some(values) => values
     None => abort("\{name}: missing normal attribute")
@@ -109,27 +106,27 @@ test "dim3 primitives: triangle winding matches generated normals" {
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "tetrahedron",
-    tetrahedron_mesh(@math.Tetrahedron::Tetrahedron()),
+    tetrahedron_mesh(Tetrahedron()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "capsule3d",
-    capsule3d_mesh(@math.Capsule3d::Capsule3d()),
+    capsule3d_mesh(Capsule3d()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "torus",
-    torus_mesh(@math.Torus::Torus()),
+    torus_mesh(Torus()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "cylinder",
-    cylinder_mesh(@math.Cylinder::Cylinder()),
+    cylinder_mesh(Cylinder()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "cone",
-    cone_mesh(@math.Cone::Cone()),
+    cone_mesh(Cone()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "conical_frustum",
-    conical_frustum_mesh(@math.ConicalFrustum::ConicalFrustum()),
+    conical_frustum_mesh(ConicalFrustum()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "icosphere",
@@ -145,7 +142,7 @@ test "dim3 primitives: triangle winding matches generated normals" {
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "triangle3d",
-    triangle3d_mesh(@math.Triangle3d::Triangle3d()),
+    triangle3d_mesh(Triangle3d()),
   )
 }
 
@@ -311,25 +308,25 @@ test "dim3 primitives: remaining mesh builders match direct mesh functions" {
 test "dim3 primitives: cone and cylinder anchors match builder offsets" {
   primitive_parity_assert_y_bounds(
     "cone_tip_anchor",
-    cone_mesh_with_anchor(@math.Cone::Cone(), 32, Tip),
+    cone_mesh_with_anchor(Cone(), 32, Tip),
     -1.0F,
     0.0F,
   )
   primitive_parity_assert_y_bounds(
     "cone_base_anchor",
-    cone_mesh_with_anchor(@math.Cone::Cone(), 32, Base),
+    cone_mesh_with_anchor(Cone(), 32, Base),
     0.0F,
     1.0F,
   )
   primitive_parity_assert_y_bounds(
     "cylinder_top_anchor",
-    cylinder_mesh_with_anchor(@math.Cylinder::Cylinder(), 32, 1, true, Top),
+    cylinder_mesh_with_anchor(Cylinder(), 32, 1, true, Top),
     -1.0F,
     0.0F,
   )
   primitive_parity_assert_y_bounds(
     "cylinder_bottom_anchor",
-    cylinder_mesh_with_anchor(@math.Cylinder::Cylinder(), 32, 1, true, Bottom),
+    cylinder_mesh_with_anchor(Cylinder(), 32, 1, true, Bottom),
     0.0F,
     1.0F,
   )

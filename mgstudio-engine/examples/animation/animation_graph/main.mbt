@@ -62,7 +62,7 @@ pub fn ExampleAnimationWeights::ExampleAnimationWeights() -> ExampleAnimationWei
 
 ///|
 pub impl Default for ExampleAnimationWeights with fn default() {
-  ExampleAnimationWeights::ExampleAnimationWeights()
+  ExampleAnimationWeights()
 }
 
 ///|
@@ -148,11 +148,11 @@ fn spawn_line(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(left))
-      .with_bottom(@ui.Val::Px(bottom))
-      .with_width(@ui.Val::Px(width))
-      .with_height(@ui.Val::Px(height)),
+      .with_position_type(Absolute)
+      .with_left(Px(left))
+      .with_bottom(Px(bottom))
+      .with_width(Px(width))
+      .with_height(Px(height)),
       @ui.BackgroundColor::new(@color.Color::white()),
     ),
   )
@@ -176,14 +176,14 @@ fn spawn_clip_node(
       @ui.RelativeCursorPosition::RelativeCursorPosition(),
       ClipNode::{ index, },
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(rect.left))
-      .with_bottom(@ui.Val::Px(rect.bottom))
-      .with_width(@ui.Val::Px(NODE_WIDTH))
-      .with_height(@ui.Val::Px(NODE_HEIGHT))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_position_type(Absolute)
+      .with_left(Px(rect.left))
+      .with_bottom(Px(rect.bottom))
+      .with_width(Px(NODE_WIDTH))
+      .with_height(Px(NODE_HEIGHT))
+      .with_border(@ui.UiRect::all(Px(1.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BorderColor::new(@color.Color::white()),
     ),
   )
@@ -192,11 +192,11 @@ fn spawn_clip_node(
       @hierarchy.Parent::new(container),
       ClipNodeFill::{ index, },
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(0.0F))
-      .with_bottom(@ui.Val::Px(0.0F))
-      .with_width(@ui.Val::Px(NODE_WIDTH))
-      .with_height(@ui.Val::Px(NODE_HEIGHT)),
+      .with_position_type(Absolute)
+      .with_left(Px(0.0F))
+      .with_bottom(Px(0.0F))
+      .with_width(Px(NODE_WIDTH))
+      .with_height(Px(NODE_HEIGHT)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.0F, 0.39F, 0.0F)),
     ),
   )
@@ -209,7 +209,7 @@ fn spawn_clip_node(
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
       @text.TextColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
-      @text.TextLayout::new_with_justify(@text.Justify::Center),
+      @text.TextLayout::new_with_justify(Center),
       @ui.Node::Node(),
     ),
   )
@@ -230,14 +230,14 @@ fn spawn_blend_node(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(left))
-      .with_bottom(@ui.Val::Px(bottom))
-      .with_width(@ui.Val::Px(NODE_WIDTH))
-      .with_height(@ui.Val::Px(NODE_HEIGHT))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_position_type(Absolute)
+      .with_left(Px(left))
+      .with_bottom(Px(bottom))
+      .with_width(Px(NODE_WIDTH))
+      .with_height(Px(NODE_HEIGHT))
+      .with_border(@ui.UiRect::all(Px(1.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BorderColor::new(@color.Color::white()),
     ),
   )
@@ -249,7 +249,7 @@ fn spawn_blend_node(
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
       @text.TextColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
-      @text.TextLayout::new_with_justify(@text.Justify::Center),
+      @text.TextLayout::new_with_justify(Center),
       @ui.Node::Node(),
     ),
   )
@@ -352,9 +352,7 @@ fn setup_ui(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
 
@@ -367,9 +365,9 @@ fn setup_ui(
       .with_font_size(@text.FontSize::Px(16.0F)),
       @text.TextColor::new(@color.Color::white()),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(12.0F))
-      .with_left(@ui.Val::Px(12.0F)),
+      .with_position_type(Absolute)
+      .with_top(Px(12.0F))
+      .with_left(Px(12.0F)),
     ),
   )
   |> ignore
@@ -445,7 +443,7 @@ fn handle_weight_drag(
   }
   try! controls.view(fn(_entity, data) {
     let (interaction, relative_cursor_position, clip_node) = data
-    if interaction.value() != @ui.Interaction::Pressed {
+    if interaction.value() != Pressed {
       return
     }
     guard relative_cursor_position.value().normalized is Some(normalized) else {
@@ -480,10 +478,7 @@ fn update_ui(
   try! fills.view(fn(_entity, data) {
     let (fill, node) = data
     let current = node.value()
-    node.set(@ui.Node::{
-      ..current,
-      width: @ui.Val::Px(NODE_WIDTH * weights[fill.value().index]),
-    })
+    node.set({ ..current, width: Px(NODE_WIDTH * weights[fill.value().index]) })
   })
 }
 
@@ -517,12 +512,12 @@ fn sync_weights(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup_assets)
-  .add_systems_param4(@app.Startup, setup_scene)
-  .add_systems_param2(@app.Startup, setup_ui)
-  .add_systems_param4(@app.Update, init_animations)
-  .add_systems_param2(@app.Update, handle_weight_drag)
-  .add_systems_param3(@app.Update, update_ui)
-  .add_systems_param2(@app.Update, sync_weights)
+  .add_systems_param2(Startup, setup_assets)
+  .add_systems_param4(Startup, setup_scene)
+  .add_systems_param2(Startup, setup_ui)
+  .add_systems_param4(Update, init_animations)
+  .add_systems_param2(Update, handle_weight_drag)
+  .add_systems_param3(Update, update_ui)
+  .add_systems_param2(Update, sync_weights)
   .run()
 }

@@ -68,7 +68,7 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
   let count_state = P1::init_state(world)
   @app.SystemParamState::new(
     fn() raise {
-      PlayerCounter::{
+      {
         players: P0::get(players_state),
         count: P1::get(count_state),
         players_state,
@@ -101,7 +101,7 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
 ///|
 fn PlayerCounterParam::count_players(self : PlayerCounterParam) -> Int {
   let count = self.players.count()
-  self.count.set(PlayerCount::{ value: count })
+  self.count.set({ value: count })
   self.count.get().value()
 }
 
@@ -127,7 +127,7 @@ fn count_players(counter : PlayerCounterParam) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(PlayerCount::{ value: 0 })
-  .add_systems_param(@app.Startup, spawn)
-  .add_systems_param(@app.Update, count_players)
+  .add_systems_param(Startup, spawn)
+  .add_systems_param(Update, count_players)
   .run()
 }

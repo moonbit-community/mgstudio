@@ -46,7 +46,7 @@ test "ui: layout computes rect and camera-compensated transform" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let node = world.spawn_empty()
   try! world.set_by_key(
     node,
@@ -57,11 +57,11 @@ test "ui: layout computes rect and camera-compensated transform" {
     node,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(40.0F))
-    .with_top(Val::Px(50.0F))
-    .with_width(Val::Px(200.0F))
-    .with_height(Val::Px(60.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(40.0F))
+    .with_top(Px(50.0F))
+    .with_width(Px(200.0F))
+    .with_height(Px(60.0F)),
   )
 
   // Build Children from Parent before layout.
@@ -118,7 +118,7 @@ test "ui: layout stores Bevy-style resolved node geometry" {
     ),
   )
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let node = world.spawn_empty()
   try! world.set_by_key(
     node,
@@ -129,26 +129,21 @@ test "ui: layout stores Bevy-style resolved node geometry" {
     node,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(40.0F))
-    .with_top(Val::Px(50.0F))
-    .with_width(Val::Px(200.0F))
-    .with_height(Val::Px(60.0F))
+    .with_position_type(Absolute)
+    .with_left(Px(40.0F))
+    .with_top(Px(50.0F))
+    .with_width(Px(200.0F))
+    .with_height(Px(60.0F))
     .with_border(UiRect::px(2.0F, 4.0F, 6.0F, 8.0F))
     .with_padding(UiRect::px(10.0F, 12.0F, 14.0F, 16.0F))
     .with_border_radius(
-      BorderRadius::new(
-        Val::Px(12.0F),
-        Val::Percent(50.0F),
-        Val::Px(200.0F),
-        Val::Auto,
-      ),
+      BorderRadius::new(Px(12.0F), Percent(50.0F), Px(200.0F), Auto),
     ),
   )
   try! world.set_by_key(
     node,
     ecs_key_outline,
-    Outline::new(Val::Px(3.0F), Val::Px(5.0F), @color.Color::white()),
+    Outline::new(Px(3.0F), Px(5.0F), @color.Color::white()),
   )
   ui_layout_system(world)
   let layout = try! world.get_by_key(node, ecs_key_ui_layout).unwrap()
@@ -226,7 +221,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let panel = world.spawn_empty()
   try! world.set_by_key(
     panel,
@@ -237,9 +232,9 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
     panel,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(200.0F))
-    .with_height(Val::Px(120.0F))
-    .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll)),
+    .with_width(Px(200.0F))
+    .with_height(Px(120.0F))
+    .with_overflow(Overflow::new(Hidden, Scroll)),
   )
   try! world.set_by_key(
     panel,
@@ -256,11 +251,11 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
     child,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(0.0F))
-    .with_top(Val::Px(0.0F))
-    .with_width(Val::Px(100.0F))
-    .with_height(Val::Px(20.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(0.0F))
+    .with_top(Px(0.0F))
+    .with_width(Px(100.0F))
+    .with_height(Px(20.0F)),
   )
   ui_layout_system(world)
   let panel_rect = try! world.get_by_key(panel, ecs_key_ui_layout).unwrap().rect
@@ -287,7 +282,7 @@ test "ui: ghost node children layout as direct descendants" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let container = world.spawn_empty()
   try! world.set_by_key(
     container,
@@ -298,9 +293,9 @@ test "ui: ghost node children layout as direct descendants" {
     container,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(300.0F))
-    .with_height(Val::Px(80.0F))
-    .with_flex_direction(FlexDirection::Row),
+    .with_width(Px(300.0F))
+    .with_height(Px(80.0F))
+    .with_flex_direction(Row),
   )
   let first = world.spawn_empty()
   try! world.set_by_key(
@@ -311,7 +306,7 @@ test "ui: ghost node children layout as direct descendants" {
   try! world.set_by_key(
     first,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Px(100.0F)).with_height(Px(80.0F)),
   )
   let ghost = world.spawn_empty()
   try! world.set_by_key(
@@ -319,7 +314,7 @@ test "ui: ghost node children layout as direct descendants" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode::GhostNode())
+  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode())
   let second = world.spawn_empty()
   try! world.set_by_key(
     second,
@@ -329,7 +324,7 @@ test "ui: ghost node children layout as direct descendants" {
   try! world.set_by_key(
     second,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Px(100.0F)).with_height(Px(80.0F)),
   )
 
   ui_layout_system(world)
@@ -363,7 +358,7 @@ test "ui: effective children flatten ghost nodes and skip non-ui children" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let container = world.spawn_empty()
   let direct_node = world.spawn_empty()
   let ghost = world.spawn_empty()
@@ -379,25 +374,25 @@ test "ui: effective children flatten ghost nodes and skip non-ui children" {
     container,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(300.0F))
-    .with_height(Val::Px(80.0F))
-    .with_flex_direction(FlexDirection::Row),
+    .with_width(Px(300.0F))
+    .with_height(Px(80.0F))
+    .with_flex_direction(Row),
   )
   try! world.set_by_key(
     direct_node,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Px(100.0F)).with_height(Px(80.0F)),
   )
-  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode::GhostNode())
+  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode())
   try! world.set_by_key(
     ghost_node,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Px(100.0F)).with_height(Px(80.0F)),
   )
   try! world.set_by_key(
     stray_node,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+    Node::Node().with_width(Px(100.0F)).with_height(Px(80.0F)),
   )
   try! world.set_by_key(
     root,
@@ -480,7 +475,7 @@ test "ui: flex row cross-axis stretch fills child height" {
     ),
   )
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let container = world.spawn_empty()
   try! world.set_by_key(
     container,
@@ -491,10 +486,10 @@ test "ui: flex row cross-axis stretch fills child height" {
     container,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(12.0F))
-    .with_height(Val::Px(200.0F))
-    .with_flex_direction(FlexDirection::Row)
-    .with_align_items(AlignItems::Stretch),
+    .with_width(Px(12.0F))
+    .with_height(Px(200.0F))
+    .with_flex_direction(Row)
+    .with_align_items(Stretch),
   )
   let child = world.spawn_empty()
   try! world.set_by_key(
@@ -502,11 +497,7 @@ test "ui: flex row cross-axis stretch fills child height" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_node,
-    Node::Node().with_width(Val::Px(6.0F)),
-  )
+  try! world.set_by_key(child, ecs_key_node, Node::Node().with_width(Px(6.0F)))
   ui_layout_system(world)
   let child_size = try! world
     .get_by_key(child, ecs_key_ui_layout)
@@ -535,16 +526,16 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
     ),
   )
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Percent(100.0F))
-    .with_height(Val::Percent(100.0F))
-    .with_flex_direction(FlexDirection::Row)
-    .with_align_items(AlignItems::Center)
-    .with_justify_content(JustifyContent::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Row)
+    .with_align_items(Center)
+    .with_justify_content(Center),
   )
   let column = world.spawn_empty()
   try! world.set_by_key(
@@ -556,9 +547,9 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
     column,
     ecs_key_node,
     Node::Node()
-    .with_flex_direction(FlexDirection::Column)
-    .with_align_items(AlignItems::Center)
-    .with_row_gap(Val::Px(10.0F)),
+    .with_flex_direction(Column)
+    .with_align_items(Center)
+    .with_row_gap(Px(10.0F)),
   )
   let title = world.spawn_empty()
   try! world.set_by_key(
@@ -569,7 +560,7 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
   try! world.set_by_key(
     title,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(100.0F)).with_height(Val::Px(20.0F)),
+    Node::Node().with_width(Px(100.0F)).with_height(Px(20.0F)),
   )
   let label = world.spawn_empty()
   try! world.set_by_key(
@@ -580,7 +571,7 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
   try! world.set_by_key(
     label,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(30.0F)).with_height(Val::Px(24.0F)),
+    Node::Node().with_width(Px(30.0F)).with_height(Px(24.0F)),
   )
   let slider = world.spawn_empty()
   try! world.set_by_key(
@@ -592,11 +583,11 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
     slider,
     ecs_key_node,
     Node::Node()
-    .with_flex_direction(FlexDirection::Row)
-    .with_justify_content(JustifyContent::Center)
-    .with_align_items(AlignItems::Stretch)
-    .with_width(Val::Px(12.0F))
-    .with_height(Val::Px(200.0F)),
+    .with_flex_direction(Row)
+    .with_justify_content(Center)
+    .with_align_items(Stretch)
+    .with_width(Px(12.0F))
+    .with_height(Px(200.0F)),
   )
   let track = world.spawn_empty()
   try! world.set_by_key(
@@ -604,11 +595,7 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(slider),
   )
-  try! world.set_by_key(
-    track,
-    ecs_key_node,
-    Node::Node().with_width(Val::Px(6.0F)),
-  )
+  try! world.set_by_key(track, ecs_key_node, Node::Node().with_width(Px(6.0F)))
   let thumb_container = world.spawn_empty()
   try! world.set_by_key(
     thumb_container,
@@ -619,11 +606,11 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
     thumb_container,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_top(Val::Px(12.0F))
-    .with_bottom(Val::Px(0.0F))
-    .with_left(Val::Px(0.0F))
-    .with_right(Val::Px(0.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_bottom(Px(0.0F))
+    .with_left(Px(0.0F))
+    .with_right(Px(0.0F)),
   )
   let thumb = world.spawn_empty()
   try! world.set_by_key(
@@ -635,10 +622,10 @@ test "ui: vertical slider shaped nested flex keeps track visible" {
     thumb,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(12.0F))
-    .with_height(Val::Px(12.0F))
-    .with_position_type(PositionType::Absolute)
-    .with_bottom(Val::Percent(50.0F)),
+    .with_width(Px(12.0F))
+    .with_height(Px(12.0F))
+    .with_position_type(Absolute)
+    .with_bottom(Percent(50.0F)),
   )
   ui_layout_system(world)
   let track_size = try! world
@@ -674,7 +661,7 @@ test "ui: editable text transform stays in input content box and in front" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let editable = world.spawn_empty()
   try! world.set_by_key(
     editable,
@@ -685,12 +672,12 @@ test "ui: editable text transform stays in input content box and in front" {
     editable,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(120.0F))
-    .with_top(Val::Px(360.0F))
-    .with_width(Val::Px(420.0F))
-    .with_height(Val::Px(48.0F))
-    .with_padding(UiRect::all(Val::Px(8.0F))),
+    .with_position_type(Absolute)
+    .with_left(Px(120.0F))
+    .with_top(Px(360.0F))
+    .with_width(Px(420.0F))
+    .with_height(Px(48.0F))
+    .with_padding(UiRect::all(Px(8.0F))),
   )
   try! world.set_by_key(
     editable,
@@ -750,7 +737,7 @@ test "ui: editable status text renders in front of editable background (z-order)
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let editable = world.spawn_empty()
   try! world.set_by_key(
     editable,
@@ -761,12 +748,12 @@ test "ui: editable status text renders in front of editable background (z-order)
     editable,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(40.0F))
-    .with_top(Val::Px(420.0F))
-    .with_width(Val::Px(420.0F))
-    .with_height(Val::Px(48.0F))
-    .with_padding(UiRect::all(Val::Px(8.0F))),
+    .with_position_type(Absolute)
+    .with_left(Px(40.0F))
+    .with_top(Px(420.0F))
+    .with_width(Px(420.0F))
+    .with_height(Px(48.0F))
+    .with_padding(UiRect::all(Px(8.0F))),
   )
   try! world.set_by_key(
     editable,
@@ -815,7 +802,7 @@ test "ui: editable label node is laid out above input box node" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let group = world.spawn_empty()
   try! world.set_by_key(
     group,
@@ -826,12 +813,12 @@ test "ui: editable label node is laid out above input box node" {
     group,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(120.0F))
-    .with_top(Val::Px(360.0F))
-    .with_width(Val::Px(420.0F))
-    .with_flex_direction(FlexDirection::Column)
-    .with_row_gap(Val::Px(8.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(120.0F))
+    .with_top(Px(360.0F))
+    .with_width(Px(420.0F))
+    .with_flex_direction(Column)
+    .with_row_gap(Px(8.0F)),
   )
   let label = world.spawn_empty()
   try! world.set_by_key(
@@ -842,7 +829,7 @@ test "ui: editable label node is laid out above input box node" {
   try! world.set_by_key(
     label,
     ecs_key_node,
-    Node::Node().with_width(Val::Auto).with_height(Val::Auto),
+    Node::Node().with_width(Auto).with_height(Auto),
   )
   let editable = world.spawn_empty()
   try! world.set_by_key(
@@ -854,9 +841,9 @@ test "ui: editable label node is laid out above input box node" {
     editable,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(420.0F))
-    .with_height(Val::Px(48.0F))
-    .with_padding(UiRect::all(Val::Px(8.0F))),
+    .with_width(Px(420.0F))
+    .with_height(Px(48.0F))
+    .with_padding(UiRect::all(Px(8.0F))),
   )
   try! world.set_by_key(
     label,
@@ -891,7 +878,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let panel = world.spawn_empty()
   try! world.set_by_key(
     panel,
@@ -902,13 +889,13 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     panel,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(40.0F))
-    .with_top(Val::Px(80.0F))
-    .with_width(Val::Px(420.0F))
-    .with_height(Val::Px(190.0F))
-    .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll))
-    .with_padding(UiRect::all(Val::Px(10.0F))),
+    .with_position_type(Absolute)
+    .with_left(Px(40.0F))
+    .with_top(Px(80.0F))
+    .with_width(Px(420.0F))
+    .with_height(Px(190.0F))
+    .with_overflow(Overflow::new(Hidden, Scroll))
+    .with_padding(UiRect::all(Px(10.0F))),
   )
   let panel_content = world.spawn_empty()
   try! world.set_by_key(
@@ -920,9 +907,9 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     panel_content,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(760.0F))
-    .with_height(Val::Px(420.0F))
-    .with_padding(UiRect::all(Val::Px(12.0F))),
+    .with_width(Px(760.0F))
+    .with_height(Px(420.0F))
+    .with_padding(UiRect::all(Px(12.0F))),
   )
   let panel_text = world.spawn_empty()
   try! world.set_by_key(
@@ -933,7 +920,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
   try! world.set_by_key(
     panel_text,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(720.0F)).with_height(Val::Auto),
+    Node::Node().with_width(Px(720.0F)).with_height(Auto),
   )
   world.set_by_key(
     panel_text,
@@ -980,16 +967,16 @@ test "ui: panel text scissor stays above editable title block" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(800.0F))
-    .with_height(Val::Px(600.0F))
-    .with_flex_direction(FlexDirection::Column)
-    .with_row_gap(Val::Px(18.0F))
-    .with_padding(UiRect::all(Val::Px(24.0F))),
+    .with_width(Px(800.0F))
+    .with_height(Px(600.0F))
+    .with_flex_direction(Column)
+    .with_row_gap(Px(18.0F))
+    .with_padding(UiRect::all(Px(24.0F))),
   )
   let panel = world.spawn_empty()
   try! world.set_by_key(
@@ -1001,10 +988,10 @@ test "ui: panel text scissor stays above editable title block" {
     panel,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(420.0F))
-    .with_height(Val::Px(190.0F))
-    .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll))
-    .with_padding(UiRect::all(Val::Px(10.0F))),
+    .with_width(Px(420.0F))
+    .with_height(Px(190.0F))
+    .with_overflow(Overflow::new(Hidden, Scroll))
+    .with_padding(UiRect::all(Px(10.0F))),
   )
   let panel_content = world.spawn_empty()
   try! world.set_by_key(
@@ -1016,9 +1003,9 @@ test "ui: panel text scissor stays above editable title block" {
     panel_content,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(760.0F))
-    .with_height(Val::Px(420.0F))
-    .with_padding(UiRect::all(Val::Px(12.0F))),
+    .with_width(Px(760.0F))
+    .with_height(Px(420.0F))
+    .with_padding(UiRect::all(Px(12.0F))),
   )
   let panel_text = world.spawn_empty()
   try! world.set_by_key(
@@ -1029,7 +1016,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     panel_text,
     ecs_key_node,
-    Node::Node().with_width(Val::Px(720.0F)).with_height(Val::Auto),
+    Node::Node().with_width(Px(720.0F)).with_height(Auto),
   )
   world.set_by_key(
     panel_text,
@@ -1053,9 +1040,9 @@ test "ui: panel text scissor stays above editable title block" {
     editable_section,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Px(420.0F))
-    .with_flex_direction(FlexDirection::Column)
-    .with_row_gap(Val::Px(8.0F)),
+    .with_width(Px(420.0F))
+    .with_flex_direction(Column)
+    .with_row_gap(Px(8.0F)),
   )
   let editable_title = world.spawn_empty()
   try! world.set_by_key(
@@ -1066,7 +1053,7 @@ test "ui: panel text scissor stays above editable title block" {
   try! world.set_by_key(
     editable_title,
     ecs_key_node,
-    Node::Node().with_width(Val::Auto).with_height(Val::Px(32.0F)),
+    Node::Node().with_width(Auto).with_height(Px(32.0F)),
   )
   try! world.set_by_key(
     editable_title,

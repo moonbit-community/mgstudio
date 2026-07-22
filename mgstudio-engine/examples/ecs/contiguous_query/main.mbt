@@ -76,12 +76,7 @@ fn finish_off_first(
 fn setup(commands : @app.Commands) -> Unit {
   let batch : Array[(Health, HealthDecay)] = []
   for i in 1..<10000 {
-    batch.push(
-      (
-        Health::{ value: Float::from_int(i) * 5.0F },
-        HealthDecay::{ factor: 0.9F },
-      ),
-    )
+    batch.push(({ value: Float::from_int(i) * 5.0F }, { factor: 0.9F }))
   }
   commands.spawn_batch(batch) |> ignore
 }
@@ -100,7 +95,7 @@ fn main {
     |> @app.chain()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems(@app.Update, update_chain)
+  .add_systems_param(Startup, setup)
+  .add_systems(Update, update_chain)
   .run()
 }

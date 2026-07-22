@@ -45,9 +45,9 @@ pub fn physics3d_sync_joints_system(world : @ecs.World) -> Unit {
   }
   ctx.entity_to_impulse_joint.clear()
   ctx.entity_to_multibody_joint.clear()
-  ctx.impulse_joints = @dynamics.JointSet3DReal::JointSet3DReal()
-  ctx.multibody_joints = @dynamics.MultibodyJointSet3DReal::MultibodyJointSet3DReal()
-  ctx.rope_joints = @dynamics.RopeJointSet3DReal::RopeJointSet3DReal()
+  ctx.impulse_joints = JointSet3DReal()
+  ctx.multibody_joints = MultibodyJointSet3DReal()
+  ctx.rope_joints = RopeJointSet3DReal()
 
   ecs_world.for_each_component(ecs_key_impulse_joint3d, fn(e, j) {
     guard (try! ecs_world.get_by_key(e, ecs_key_rapier_body_handle3d))

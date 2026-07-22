@@ -32,7 +32,7 @@ test "pbr deferred: plugin inserts default depth id for deferred prepass entity"
   try! world.set_by_key(
     entity,
     @core_pipeline.ecs_key_deferred_prepass,
-    @core_pipeline.DeferredPrepass::DeferredPrepass(),
+    DeferredPrepass(),
   )
   app = app.run_once()
   let depth = match
@@ -55,7 +55,7 @@ test "pbr deferred: plugin keeps explicit depth id value" {
   try! world.set_by_key(
     entity,
     @core_pipeline.ecs_key_deferred_prepass,
-    @core_pipeline.DeferredPrepass::DeferredPrepass(),
+    DeferredPrepass(),
   )
   try! world.set_by_key(
     entity,
@@ -83,9 +83,9 @@ test "pbr deferred: deferred prepass run plan is exposed from core node owner" {
     has_prepass_depth_attachment=true,
     occlusion_culling_enabled=true,
   )
-  let early = deferred_prepass_run_plan(DeferredPrepassRunKind::Early, state)
+  let early = deferred_prepass_run_plan(Early, state)
   inspect(
-    deferred_prepass_run_kind_label(DeferredPrepassRunKind::Early),
+    deferred_prepass_run_kind_label(Early),
     content="early deferred prepass",
   )
   inspect(early.should_run, content="true")
@@ -98,7 +98,7 @@ test "pbr deferred: deferred prepass run plan is exposed from core node owner" {
   inspect(early.draw_alpha_mask_phase, content="true")
   inspect(early.copy_depth_to_prepass_depth, content="true")
 
-  let late = deferred_prepass_run_plan(DeferredPrepassRunKind::Late, state)
+  let late = deferred_prepass_run_plan(Late, state)
   inspect(late.should_run, content="true")
   inspect(late.is_late, content="true")
   inspect(
@@ -131,9 +131,9 @@ test "pbr deferred: prepare plan removes stale pipeline without deferred prepass
 test "pbr deferred: shader defs mirror deferred lighting specialization key" {
   let state = DeferredLightingViewState::new(
     hdr=false,
-    tonemapping=Some(Tonemapping::AgX),
-    deband_dither=Some(DebandDither::Enabled),
-    shadow_filter_method=Some(DeferredLightingShadowFilteringMethod::Temporal),
+    tonemapping=Some(AgX),
+    deband_dither=Some(Enabled),
+    shadow_filter_method=Some(Temporal),
     screen_space_ambient_occlusion=true,
     screen_space_reflections=true,
     distance_fog=true,
@@ -174,8 +174,8 @@ test "pbr deferred: shader defs mirror deferred lighting specialization key" {
 test "pbr deferred: hdr lighting skips tonemap-in-shader defs" {
   let state = DeferredLightingViewState::new(
     hdr=true,
-    tonemapping=Some(Tonemapping::Reinhard),
-    deband_dither=Some(DebandDither::Enabled),
+    tonemapping=Some(Reinhard),
+    deband_dither=Some(Enabled),
     deferred_prepass=true,
   )
   let descriptor = deferred_lighting_pipeline_descriptor_plan(state)

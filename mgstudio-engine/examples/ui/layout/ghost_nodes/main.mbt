@@ -60,18 +60,18 @@ fn pressed_button_color() -> @color.Color {
 ///|
 fn button_color(interaction : @ui.Interaction) -> @color.Color {
   match interaction {
-    @ui.Interaction::Pressed => pressed_button_color()
-    @ui.Interaction::Hovered => hovered_button_color()
-    @ui.Interaction::None => normal_button_color()
+    Pressed => pressed_button_color()
+    Hovered => hovered_button_color()
+    None => normal_button_color()
   }
 }
 
 ///|
 fn border_color(interaction : @ui.Interaction) -> @color.Color {
   match interaction {
-    @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.2F, 0.2F)
-    @ui.Interaction::Hovered => @color.Color::white()
-    @ui.Interaction::None => @color.Color::black()
+    Pressed => @color.Color::srgb(1.0F, 0.2F, 0.2F)
+    Hovered => @color.Color::white()
+    None => @color.Color::black()
   }
 }
 
@@ -83,7 +83,7 @@ fn spawn_text(
   font : @asset.Handle[@asset.Font],
   font_size : Float,
   color : @color.Color,
-  node? : @ui.Node = @ui.Node::Node(),
+  node? : @ui.Node = Node(),
 ) -> @core.Entity {
   commands.spawn(
     (
@@ -108,12 +108,12 @@ fn spawn_button(
       @ui.Button::Button(),
       ButtonPressState::{ pressed: false },
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(150.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+      .with_width(Px(150.0F))
+      .with_height(Px(65.0F))
+      .with_border(@ui.UiRect::all(Px(5.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center)
+      .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
       @ui.BorderColor::new(@color.Color::black()),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
@@ -143,10 +143,10 @@ fn setup(
     (
       @hierarchy.Parent::new(ghost_root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(24.0F))
-      .with_top(@ui.Val::Px(24.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
+      .with_position_type(Absolute)
+      .with_left(Px(24.0F))
+      .with_top(Px(24.0F))
+      .with_padding(@ui.UiRect::all(Px(12.0F))),
       @ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.24F, 0.35F)),
     ),
   )
@@ -165,20 +165,20 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
     ),
   )
   let panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(24.0F)))
-      .with_row_gap(@ui.Val::Px(16.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_flex_direction(@ui.FlexDirection::Column),
+      .with_padding(@ui.UiRect::all(Px(24.0F)))
+      .with_row_gap(Px(16.0F))
+      .with_align_items(Center)
+      .with_flex_direction(Column),
       @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.10F, 0.14F)),
     ),
   )
@@ -197,9 +197,9 @@ fn setup(
       @hierarchy.Parent::new(panel),
       Counter::{ value: 0 },
       @ui.Node::Node()
-      .with_column_gap(@ui.Val::Px(16.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_flex_direction(@ui.FlexDirection::Row),
+      .with_column_gap(Px(16.0F))
+      .with_align_items(Center)
+      .with_flex_direction(Row),
     ),
   )
   let ghost_parent = commands.spawn(
@@ -252,7 +252,7 @@ fn button_system(world : @ecs.World) -> Unit {
       is Some(parent) else {
       return
     }
-    let next_pressed = interaction == @ui.Interaction::Pressed
+    let next_pressed = interaction == Pressed
     let was_pressed = match
       (try! world.get_by_key(entity, button_press_state_key)) {
       Some(state) => state.pressed
@@ -262,12 +262,12 @@ fn button_system(world : @ecs.World) -> Unit {
       increment_counter(world, parent.entity)
     }
     if (try! world.contains_by_key(entity, button_press_state_key)) {
-      try! (world.replace(entity, button_press_state_key, ButtonPressState::{
+      try! (world.replace(entity, button_press_state_key, {
         pressed: next_pressed,
       })
       |> ignore)
     } else {
-      try! world.set_by_key(entity, button_press_state_key, ButtonPressState::{
+      try! world.set_by_key(entity, button_press_state_key, {
         pressed: next_pressed,
       })
     }
@@ -306,7 +306,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system_param2(setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(button_system).after(@ui.ui_set_focus),
   )
   .run()

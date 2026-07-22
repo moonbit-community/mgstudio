@@ -26,14 +26,14 @@ pub struct HoverMap {
 
 ///|
 pub fn HoverMap::HoverMap() -> HoverMap {
-  HoverMap::{ inner: @hashmap.HashMap([]) }
+  { inner: HashMap([]) }
 }
 
 ///|
 pub fn HoverMap::from_array(
   entries : Array[(@pointer_events.PointerId, Array[(@core.Entity, HitData)])],
 ) -> HoverMap {
-  HoverMap::{ inner: @hashmap.HashMap::from_array(entries) }
+  { inner: @hashmap.HashMap::from_array(entries) }
 }
 
 ///|
@@ -84,7 +84,7 @@ pub struct PreviousHoverMap {
 
 ///|
 pub fn PreviousHoverMap::PreviousHoverMap() -> PreviousHoverMap {
-  PreviousHoverMap::{ inner: @hashmap.HashMap([]) }
+  { inner: HashMap([]) }
 }
 
 ///|
@@ -101,11 +101,11 @@ pub impl @app.Resource for PreviousHoverMap with fn resource() {
 pub fn ensure_hover_maps_system(world : @ecs.World) -> Unit {
   let hover_res = get_hover_map_resource(world)
   if hover_res.get() is None {
-    hover_res.insert(HoverMap::HoverMap())
+    hover_res.insert(HoverMap())
   }
   let previous_res = get_previous_hover_map_resource(world)
   if previous_res.get() is None {
-    previous_res.insert(PreviousHoverMap::PreviousHoverMap())
+    previous_res.insert(PreviousHoverMap())
   }
 }
 
@@ -116,7 +116,7 @@ priv struct PickingPointerHitsReaderState {
 
 ///|
 fn PickingPointerHitsReaderState::PickingPointerHitsReaderState() -> PickingPointerHitsReaderState {
-  { cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
@@ -130,7 +130,7 @@ let picking_pointer_hits_reader_state_resource_key : @ecs.ResourceKey[
 fn ensure_picking_pointer_hits_reader_state(world : @ecs.World) -> Unit {
   let res = world.resource(picking_pointer_hits_reader_state_resource_key)
   if !res.is_present() {
-    res.insert(PickingPointerHitsReaderState::PickingPointerHitsReaderState())
+    res.insert(PickingPointerHitsReaderState())
   }
 }
 
@@ -211,7 +211,7 @@ pub fn picking_generate_hovermap_system(world : @ecs.World) -> Unit {
   let hover_res = get_hover_map_resource(world)
   let previous = match hover_res.get() {
     Some(current) => PreviousHoverMap::{ inner: current.inner.copy() }
-    None => PreviousHoverMap::PreviousHoverMap()
+    None => PreviousHoverMap()
   }
   let flat_hits : Array[
     (@pointer_events.PointerId, Float, @core.Entity, HitData),
@@ -223,8 +223,7 @@ pub fn picking_generate_hovermap_system(world : @ecs.World) -> Unit {
   }
   flat_hits.sort_by(picking_pointer_hit_cmp)
   let next = @hashmap.HashMap([])
-  let blocked_pointers : @hashset.HashSet[@pointer_events.PointerId] = @hashset.HashSet([],
-  )
+  let blocked_pointers : @hashset.HashSet[@pointer_events.PointerId] = HashSet([])
   for entry in flat_hits {
     let pointer = entry.0
     if blocked_pointers.contains(pointer) {
@@ -253,7 +252,7 @@ pub fn picking_generate_hovermap_system(world : @ecs.World) -> Unit {
     }
   }
   previous_res.insert(previous)
-  hover_res.insert(HoverMap::{ inner: next })
+  hover_res.insert({ inner: next })
 }
 
 ///|
@@ -307,7 +306,7 @@ pub struct PickingState {
 
 ///|
 pub fn PickingState::PickingState() -> PickingState {
-  PickingState::{
+  {
     hovered: [],
     pressed: [],
     pressed_position: [],
@@ -513,7 +512,7 @@ pub impl @app.Resource for PickingState with fn resource() {
 pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
   let res = get_picking_state_resource(world)
   if res.get() is None {
-    res.insert(PickingState::PickingState())
+    res.insert(PickingState())
   }
 }
 

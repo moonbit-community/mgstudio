@@ -53,7 +53,7 @@ fn mesh3d_test_line_strip() -> Mesh3dGeometry {
       @math.Vec2::zero(),
     ],
     None,
-    Mesh3dPrimitiveTopology::LineStrip,
+    LineStrip,
   )
 }
 
@@ -198,13 +198,13 @@ test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::normal(),
-      VertexAttributeValues::Float32x3([@math.Vec3::new(0.0F, 1.0F, 0.0F)]),
+      Float32x3([@math.Vec3::new(0.0F, 1.0F, 0.0F)]),
     ),
   )
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::uv_0(),
-      VertexAttributeValues::Float32x2([@math.Vec2::new(0.25F, 0.75F)]),
+      Float32x2([@math.Vec2::new(0.25F, 0.75F)]),
     ),
   )
   debug_inspect(
@@ -220,7 +220,7 @@ test "mesh: Mesh3dGeometry standard attributes use vertex attribute ids" {
     content="true",
   )
   guard geometry.attribute(MeshVertexAttribute::normal().id())
-    is Some(VertexAttributeValues::Float32x3(normals)) else {
+    is Some(Float32x3(normals)) else {
     abort("missing normal attribute")
   }
   debug_inspect(normals[0].y.to_double(), content="1")
@@ -253,16 +253,13 @@ test "mesh: attributes and packed vertex buffer follow Bevy attribute id order" 
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::uv_0(),
-      VertexAttributeValues::Float32x2([
-        @math.Vec2::new(0.25F, 0.5F),
-        @math.Vec2::new(0.75F, 1.0F),
-      ]),
+      Float32x2([@math.Vec2::new(0.25F, 0.5F), @math.Vec2::new(0.75F, 1.0F)]),
     ),
   )
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::normal(),
-      VertexAttributeValues::Float32x3([
+      Float32x3([
         @math.Vec3::new(0.0F, 0.0F, 1.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ]),
@@ -326,13 +323,13 @@ test "mesh: vertex buffer layout mirrors Bevy attribute id order" {
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::uv_0(),
-      VertexAttributeValues::Float32x2([@math.Vec2::new(0.25F, 0.5F)]),
+      Float32x2([@math.Vec2::new(0.25F, 0.5F)]),
     ),
   )
   ignore(
     geometry.insert_attribute(
       MeshVertexAttribute::normal(),
-      VertexAttributeValues::Float32x3([@math.Vec3::new(0.0F, 0.0F, 1.0F)]),
+      Float32x3([@math.Vec3::new(0.0F, 0.0F, 1.0F)]),
     ),
   )
   let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
@@ -347,7 +344,7 @@ test "mesh: vertex buffer layout mirrors Bevy attribute id order" {
   debug_inspect(mesh_layout.attribute_ids()[1].value(), content="1")
   debug_inspect(mesh_layout.attribute_ids()[2].value(), content="2")
   debug_inspect(layout.array_stride, content="32")
-  debug_inspect(layout.step_mode is MeshVertexStepMode::Vertex, content="true")
+  debug_inspect(layout.step_mode is Vertex, content="true")
   debug_inspect(layout.attributes[0].offset, content="0")
   debug_inspect(layout.attributes[0].shader_location, content="0")
   debug_inspect(layout.attributes[1].offset, content="12")
@@ -368,27 +365,11 @@ test "mesh: specialized vertex buffer layout remaps shader locations" {
       MeshVertexAttribute::normal().id(),
       MeshVertexAttribute::uv_0().id(),
     ],
-    layout=VertexBufferLayout::new(
-      array_stride=32,
-      step_mode=MeshVertexStepMode::Vertex,
-      attributes=[
-        VertexAttribute::new(
-          offset=0,
-          format=MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-        VertexAttribute::new(
-          offset=12,
-          format=MeshVertexFormat::Float32x3,
-          shader_location=1,
-        ),
-        VertexAttribute::new(
-          offset=24,
-          format=MeshVertexFormat::Float32x2,
-          shader_location=2,
-        ),
-      ],
-    ),
+    layout=VertexBufferLayout::new(array_stride=32, step_mode=Vertex, attributes=[
+      VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+      VertexAttribute::new(offset=12, format=Float32x3, shader_location=1),
+      VertexAttribute::new(offset=24, format=Float32x2, shader_location=2),
+    ]),
   )
   let vertex_layout = layout.get_layout([
     VertexAttributeDescriptor::new(
@@ -416,17 +397,9 @@ test "mesh: specialized vertex buffer layout remaps shader locations" {
 test "mesh: specialized vertex buffer layout reports missing attributes" {
   let layout = MeshVertexBufferLayout::new(
     attribute_ids=[MeshVertexAttribute::position().id()],
-    layout=VertexBufferLayout::new(
-      array_stride=12,
-      step_mode=MeshVertexStepMode::Vertex,
-      attributes=[
-        VertexAttribute::new(
-          offset=0,
-          format=MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-      ],
-    ),
+    layout=VertexBufferLayout::new(array_stride=12, step_mode=Vertex, attributes=[
+      VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+    ]),
   )
   let missing_attribute = try {
     ignore(
@@ -452,17 +425,9 @@ test "mesh: vertex buffer layout store deduplicates structural layouts" {
   let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let layout = MeshVertexBufferLayout::new(
     attribute_ids=[MeshVertexAttribute::position().id()],
-    layout=VertexBufferLayout::new(
-      array_stride=12,
-      step_mode=MeshVertexStepMode::Vertex,
-      attributes=[
-        VertexAttribute::new(
-          offset=0,
-          format=MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-      ],
-    ),
+    layout=VertexBufferLayout::new(array_stride=12, step_mode=Vertex, attributes=[
+      VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+    ]),
   )
   let first = layouts.insert(layout)
   let second = layouts.insert(first.layout())

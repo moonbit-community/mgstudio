@@ -15,7 +15,7 @@
 ///|
 test "color target state carries bevy-shaped blend state" {
   let blend = BlendState::BlendState(
-    color=BlendComponent::BlendComponent(
+    color=BlendComponent(
       src_factor=@wgpu.BLEND_FACTOR_DST,
       dst_factor=@wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
       operation=@wgpu.BLEND_OPERATION_ADD,

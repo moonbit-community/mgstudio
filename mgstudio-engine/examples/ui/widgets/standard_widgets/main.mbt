@@ -96,12 +96,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_row_gap(@ui.Val::Px(12.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_row_gap(Px(12.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.12F)),
     ),
   )
@@ -112,11 +112,11 @@ fn setup(
       ToggleButton::{  },
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(220.0F))
-      .with_height(@ui.Val::Px(56.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Px(220.0F))
+      .with_height(Px(56.0F))
+      .with_border(@ui.UiRect::all(Px(2.0F)))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BorderColor::new(@color.Color::srgb(0.7F, 0.7F, 0.76F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.2F, 0.2F, 0.25F)),
     ),
@@ -137,9 +137,9 @@ fn setup(
       @hierarchy.Parent::new(root),
       WidgetSlider::{  },
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(300.0F))
-      .with_height(@ui.Val::Px(20.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
+      .with_width(Px(300.0F))
+      .with_height(Px(20.0F))
+      .with_border(@ui.UiRect::all(Px(1.0F))),
       @ui.BorderColor::new(@color.Color::srgb(0.72F, 0.72F, 0.8F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.14F)),
     ),
@@ -148,9 +148,7 @@ fn setup(
     (
       @hierarchy.Parent::new(slider),
       WidgetSliderFill::{  },
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(50.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(50.0F)).with_height(Percent(100.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.32F, 0.72F, 0.32F)),
     ),
   )
@@ -162,17 +160,17 @@ fn input_system(
   keyboard : @input.ButtonInput[@window.KeyCode],
   widget_state : @app.ResMut[WidgetState],
 ) -> Unit {
-  if keyboard.just_pressed(@window.KeyCode::Space) ||
-    keyboard.pressed(@window.KeyCode::ArrowLeft) ||
-    keyboard.pressed(@window.KeyCode::ArrowRight) {
+  if keyboard.just_pressed(Space) ||
+    keyboard.pressed(ArrowLeft) ||
+    keyboard.pressed(ArrowRight) {
     widget_state.modify(fn(value) {
-      if keyboard.just_pressed(@window.KeyCode::Space) {
+      if keyboard.just_pressed(Space) {
         value.enabled = !value.enabled
       }
-      if keyboard.pressed(@window.KeyCode::ArrowLeft) {
+      if keyboard.pressed(ArrowLeft) {
         value.slider = (value.slider - 0.01F).max(0.0F)
       }
-      if keyboard.pressed(@window.KeyCode::ArrowRight) {
+      if keyboard.pressed(ArrowRight) {
         value.slider = (value.slider + 0.01F).min(1.0F)
       }
     })
@@ -206,9 +204,7 @@ fn update_widget_styles(
     label.set(@text.Text::new(if enabled { "Enabled" } else { "Disabled" }))
   })
   try! fill_query.view(fn(_entity, fill_node) {
-    fill_node.set(
-      fill_node.value().with_width(@ui.Val::Percent(slider * 100.0F)),
-    )
+    fill_node.set(fill_node.value().with_width(Percent(slider * 100.0F)))
   })
 }
 
@@ -216,8 +212,8 @@ fn update_widget_styles(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, input_system)
-  .add_systems_param4(@app.Update, update_widget_styles)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, input_system)
+  .add_systems_param4(Update, update_widget_styles)
   .run()
 }

@@ -34,18 +34,12 @@ test "pbr/meshlet: mesh manager produces Bevy-shaped GPU buffer payloads" {
     indices=[0, 2, 1],
     bvh=[BvhNode::BvhNode().with_child_count(0, 2)],
     meshlets=[Meshlet::new(0, 0, 0, 3, 1)],
-    meshlet_cull_data=[MeshletCullData::MeshletCullData()],
+    meshlet_cull_data=[MeshletCullData()],
   )
   ignore(manager.queue_upload_if_needed(11, meshlet_mesh))
   ignore(manager.perform_pending_mesh_writes())
   let instance_manager = InstanceManager::InstanceManager()
-  instance_manager.add_instance(
-    @core.Entity::new(1, 0),
-    7,
-    0,
-    MeshletAabb::MeshletAabb(),
-    0,
-  )
+  instance_manager.add_instance(@core.Entity::new(1, 0), 7, 0, MeshletAabb(), 0)
   ignore(instance_manager.get_material_id(7))
   ignore(queue_material_meshlet_meshes(instance_manager))
   let payload = manager.gpu_buffer_payload(instance_manager)

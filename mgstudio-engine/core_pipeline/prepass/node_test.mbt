@@ -14,9 +14,7 @@
 
 ///|
 test "core prepass node: color attachment plan preserves Bevy slots" {
-  let empty = prepass_color_attachment_plan(
-    PrepassViewState::PrepassViewState(),
-  )
+  let empty = prepass_color_attachment_plan(PrepassViewState())
   inspect(empty.slot_count, content="0")
   let with_normal_and_motion = prepass_color_attachment_plan(
     PrepassViewState::new(
@@ -37,7 +35,7 @@ test "core prepass node: early run plan mirrors render pass gating" {
     has_alpha_mask_prepass_phase=true,
     has_prepass_depth_attachment=true,
   )
-  let plan = prepass_run_plan(PrepassRunKind::Early, state)
+  let plan = prepass_run_plan(Early, state)
   inspect(plan.label, content="early prepass")
   inspect(plan.should_run, content="true")
   inspect(plan.has_depth_stencil_attachment, content="true")
@@ -52,28 +50,19 @@ test "core prepass node: late run plan requires occlusion and indirect drawing" 
     has_opaque_prepass_phase=true,
     occlusion_culling_enabled=false,
   )
-  inspect(
-    prepass_run_plan(PrepassRunKind::Late, early_state).should_run,
-    content="false",
-  )
+  inspect(prepass_run_plan(Late, early_state).should_run, content="false")
   let late_state = PrepassViewState::new(
     has_opaque_prepass_phase=true,
     occlusion_culling_enabled=true,
     no_indirect_drawing=false,
   )
-  inspect(
-    prepass_run_plan(PrepassRunKind::Late, late_state).should_run,
-    content="true",
-  )
+  inspect(prepass_run_plan(Late, late_state).should_run, content="true")
   let no_indirect = PrepassViewState::new(
     has_opaque_prepass_phase=true,
     occlusion_culling_enabled=true,
     no_indirect_drawing=true,
   )
-  inspect(
-    prepass_run_plan(PrepassRunKind::Late, no_indirect).should_run,
-    content="false",
-  )
+  inspect(prepass_run_plan(Late, no_indirect).should_run, content="false")
 }
 
 ///|
@@ -84,7 +73,7 @@ test "core prepass node: deferred prepass suppresses normal prepass and depth co
     has_prepass_depth_attachment=true,
     has_normal_attachment=true,
   )
-  let plan = prepass_run_plan(PrepassRunKind::Early, state)
+  let plan = prepass_run_plan(Early, state)
   inspect(plan.should_run, content="false")
   inspect(plan.skip_due_to_deferred, content="true")
   inspect(plan.color_attachments.slot_count, content="4")
@@ -96,7 +85,7 @@ test "core prepass node: deferred prepass suppresses normal prepass and depth co
 test "core prepass node: skybox draw needs pipeline bind group previous view and cache hit" {
   let state = PrepassViewState::new(has_opaque_prepass_phase=true)
   let missing_cache = prepass_run_plan(
-    PrepassRunKind::Early,
+    Early,
     state,
     has_skybox_prepass_pipeline=true,
     has_skybox_prepass_bind_group=true,
@@ -105,7 +94,7 @@ test "core prepass node: skybox draw needs pipeline bind group previous view and
   )
   inspect(missing_cache.draw_skybox, content="false")
   let ready = prepass_run_plan(
-    PrepassRunKind::Early,
+    Early,
     state,
     has_skybox_prepass_pipeline=true,
     has_skybox_prepass_bind_group=true,

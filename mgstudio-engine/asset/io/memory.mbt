@@ -23,7 +23,7 @@ pub struct MemoryAssetSource {
 
 ///|
 pub fn MemoryAssetSource::new(name : String) -> MemoryAssetSource {
-  MemoryAssetSource::{ name, blobs: [] }
+  { name, blobs: [] }
 }
 
 ///|

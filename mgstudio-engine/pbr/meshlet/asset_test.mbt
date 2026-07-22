@@ -94,7 +94,7 @@ fn test_meshlet_asset_fixture() -> MeshletMesh {
     indices=[0, 1, 2, 255],
     bvh=[bvh],
     meshlets=[meshlet],
-    meshlet_cull_data=[MeshletCullData::MeshletCullData()],
+    meshlet_cull_data=[MeshletCullData()],
     aabb~,
     bvh_depth=5,
   )
@@ -148,10 +148,7 @@ test "pbr/meshlet: materialized mesh uses the first bvh lod branch only" {
     indices=[0, 1, 2, 0, 1, 2],
     bvh=[root],
     meshlets=[Meshlet::new(0, 0, 0, 3, 1), Meshlet::new(0, 3, 3, 3, 1)],
-    meshlet_cull_data=[
-      MeshletCullData::MeshletCullData(),
-      MeshletCullData::MeshletCullData(),
-    ],
+    meshlet_cull_data=[MeshletCullData(), MeshletCullData()],
     bvh_depth=1,
   )
   let geometry = meshlet_mesh.to_mesh3d_geometry()

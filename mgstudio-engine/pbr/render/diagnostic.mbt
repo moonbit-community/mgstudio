@@ -23,7 +23,7 @@ pub struct Render3dDiagnosticsState {
 
 ///|
 fn render3d_diagnostics_state_default() -> Render3dDiagnosticsState {
-  Render3dDiagnosticsState::{
+  {
     runtime_initialized: false,
     queued_visible_mesh_count: 0,
     prepared_camera_count: 0,

@@ -53,15 +53,8 @@ fn spawn_text_block(
     entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(4.0F),
-      ),
-    ),
+    .with_width(Percent(100.0F))
+    .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(4.0F))),
   )
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
   try! world.set_by_key(
@@ -72,7 +65,7 @@ fn spawn_text_block(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new(@text.Justify::Left, linebreak),
+    @text.TextLayout::new(Left, linebreak),
   )
   try! world.set_by_key(
     entity,
@@ -132,26 +125,26 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     None,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Column),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Column),
     Some(@ui.BackgroundColor::new(@color.Color::black())),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
 
   let linebreaks : Array[@text.LineBreak] = [
-    @text.LineBreak::AnyCharacter,
-    @text.LineBreak::WordBoundary,
-    @text.LineBreak::WordOrCharacter,
-    @text.LineBreak::NoWrap,
+    AnyCharacter,
+    WordBoundary,
+    WordOrCharacter,
+    NoWrap,
   ]
   let justifications : Array[@ui.JustifyContent] = [
-    @ui.JustifyContent::Center,
-    @ui.JustifyContent::FlexStart,
-    @ui.JustifyContent::FlexEnd,
-    @ui.JustifyContent::SpaceAround,
-    @ui.JustifyContent::SpaceBetween,
-    @ui.JustifyContent::SpaceEvenly,
+    Center,
+    FlexStart,
+    FlexEnd,
+    SpaceAround,
+    SpaceBetween,
+    SpaceEvenly,
   ]
   let messages : Array[String] = [
     "Line 1\nLine 2", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas auctor, nunc ac faucibus fringilla.",
@@ -164,12 +157,12 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       Some(root),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
+      .with_width(Percent(100.0F))
       .with_flex_grow(1.0F)
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_justify_content(@ui.JustifyContent::SpaceAround)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+      .with_flex_direction(Row)
+      .with_justify_content(SpaceAround)
+      .with_align_items(Center)
+      .with_padding(@ui.UiRect::all(Px(6.0F))),
       None,
     )
 
@@ -180,14 +173,12 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         Some(row_entity),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(16.0F))
-        .with_height(@ui.Val::Percent(95.0F))
-        .with_flex_direction(@ui.FlexDirection::Column)
+        .with_width(Percent(16.0F))
+        .with_height(Percent(95.0F))
+        .with_flex_direction(Column)
         .with_justify_content(justification)
-        .with_overflow(
-          @ui.Overflow::new(@ui.OverflowAxis::Clip, @ui.OverflowAxis::Visible),
-        )
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+        .with_overflow(@ui.Overflow::new(Clip, Visible))
+        .with_padding(@ui.UiRect::all(Px(6.0F))),
         Some(
           @ui.BackgroundColor::new(
             @color.Color::srgb(0.35F, 0.25F + mix * 0.35F, 0.95F - mix * 0.45F),
@@ -229,6 +220,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

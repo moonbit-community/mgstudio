@@ -209,7 +209,7 @@ fn create_sprite_render_pipeline(
   guard backend.sprite_render_pipeline_layout is Some(layout) else {
     fatal("wgpu: sprite pipeline layout is None")
   }
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   let wgsl = load_wgsl_preprocessed(
     "", "sprite_render/render/sprite.wgsl", defines, value_defines,
@@ -660,7 +660,7 @@ pub fn GpuBackend::draw_sprite_uv(
       1].instance_count +
       1U
   } else {
-    self.sprite_batches.push(SpriteBatch::{
+    self.sprite_batches.push({
       texture_id: tex.id,
       first_instance,
       instance_count: 1U,
@@ -766,7 +766,7 @@ pub fn GpuBackend::draw_sprite_uv_slices(
       1].instance_count +
       batch_instance_count
   } else {
-    self.sprite_batches.push(SpriteBatch::{
+    self.sprite_batches.push({
       texture_id: tex.id,
       first_instance: batch_first_instance,
       instance_count: batch_instance_count,

@@ -88,7 +88,7 @@ pub struct MeshletDebugMaterial {
 
 ///|
 pub fn MeshletDebugMaterial::MeshletDebugMaterial() -> MeshletDebugMaterial {
-  MeshletDebugMaterial::{ dummy: () }
+  { dummy: () }
 }
 
 ///|
@@ -118,7 +118,7 @@ pub fn MeshletMesh::new(
   meshlet_count : Int,
   bvh_node_count : Int,
 ) -> MeshletMesh {
-  MeshletMesh::{
+  {
     vertex_positions: [],
     vertex_normals: [],
     vertex_uvs: [],
@@ -126,7 +126,7 @@ pub fn MeshletMesh::new(
     bvh: meshlet_default_bvh_nodes(bvh_node_count),
     meshlets: meshlet_default_meshlets(meshlet_count),
     meshlet_cull_data: meshlet_default_cull_data(meshlet_count),
-    aabb: MeshletAabb::MeshletAabb(),
+    aabb: MeshletAabb(),
     bvh_depth: 0,
   }
 }
@@ -153,7 +153,7 @@ fn meshlet_zero_words(word_count : Int) -> Array[Int] {
 fn meshlet_default_uvs(uv_count : Int) -> Array[MeshletVertexUv] {
   let values : Array[MeshletVertexUv] = []
   for _ in 0..<meshlet_non_negative(uv_count) {
-    values.push(MeshletVertexUv::MeshletVertexUv())
+    values.push(MeshletVertexUv())
   }
   values
 }
@@ -162,7 +162,7 @@ fn meshlet_default_uvs(uv_count : Int) -> Array[MeshletVertexUv] {
 fn meshlet_default_bvh_nodes(node_count : Int) -> Array[BvhNode] {
   let values : Array[BvhNode] = []
   for _ in 0..<meshlet_non_negative(node_count) {
-    values.push(BvhNode::BvhNode())
+    values.push(BvhNode())
   }
   values
 }
@@ -180,7 +180,7 @@ fn meshlet_default_meshlets(meshlet_count : Int) -> Array[Meshlet] {
 fn meshlet_default_cull_data(meshlet_count : Int) -> Array[MeshletCullData] {
   let values : Array[MeshletCullData] = []
   for _ in 0..<meshlet_non_negative(meshlet_count) {
-    values.push(MeshletCullData::MeshletCullData())
+    values.push(MeshletCullData())
   }
   values
 }
@@ -193,7 +193,7 @@ pub fn MeshletMesh::with_vertex_buffers(
   vertex_uv_count : Int,
   index_count : Int,
 ) -> MeshletMesh {
-  MeshletMesh::{
+  {
     ..self,
     vertex_positions: meshlet_zero_words(vertex_position_word_count),
     vertex_normals: meshlet_zero_words(vertex_normal_word_count),
@@ -211,10 +211,10 @@ pub fn MeshletMesh::from_parts(
   bvh~ : Array[BvhNode],
   meshlets~ : Array[Meshlet],
   meshlet_cull_data~ : Array[MeshletCullData],
-  aabb? : MeshletAabb = MeshletAabb::MeshletAabb(),
+  aabb? : MeshletAabb = MeshletAabb(),
   bvh_depth? : Int = 0,
 ) -> MeshletMesh {
-  MeshletMesh::{
+  {
     vertex_positions,
     vertex_normals,
     vertex_uvs,
@@ -232,7 +232,7 @@ pub fn MeshletMesh::with_bvh_depth(
   self : MeshletMesh,
   bvh_depth : Int,
 ) -> MeshletMesh {
-  MeshletMesh::{ ..self, bvh_depth: meshlet_non_negative(bvh_depth) }
+  { ..self, bvh_depth: meshlet_non_negative(bvh_depth) }
 }
 
 ///|
@@ -240,7 +240,7 @@ pub fn MeshletMesh::with_aabb(
   self : MeshletMesh,
   aabb : MeshletAabb,
 ) -> MeshletMesh {
-  MeshletMesh::{ ..self, aabb, }
+  { ..self, aabb, }
 }
 
 ///|
@@ -626,11 +626,11 @@ pub fn BvhNode::BvhNode() -> BvhNode {
   let lod_bounds : Array[MeshletBoundingSphere] = []
   let child_counts : Array[Int] = []
   for _ in 0..<8 {
-    aabbs.push(MeshletAabbErrorOffset::MeshletAabbErrorOffset())
-    lod_bounds.push(MeshletBoundingSphere::MeshletBoundingSphere())
+    aabbs.push(MeshletAabbErrorOffset())
+    lod_bounds.push(MeshletBoundingSphere())
     child_counts.push(0)
   }
-  BvhNode::{ aabbs, lod_bounds, child_counts, padding: [0, 0] }
+  { aabbs, lod_bounds, child_counts, padding: [0, 0] }
 }
 
 ///|
@@ -643,7 +643,7 @@ pub fn BvhNode::with_child_count(
   if child_index >= 0 && child_index < child_counts.length() {
     child_counts[child_index] = meshlet_non_negative(child_count)
   }
-  BvhNode::{ ..self, child_counts, }
+  { ..self, child_counts, }
 }
 
 ///|
@@ -671,7 +671,7 @@ pub fn Meshlet::new(
   vertex_count : Int,
   triangle_count : Int,
 ) -> Meshlet {
-  Meshlet::{
+  {
     start_vertex_position_bit: meshlet_non_negative(start_vertex_position_bit),
     start_vertex_attribute_id: meshlet_non_negative(start_vertex_attribute_id),
     start_index_id: meshlet_non_negative(start_index_id),
@@ -705,7 +705,7 @@ pub fn Meshlet::with_quantization(
   bits_z : Int,
   factor : Int,
 ) -> Meshlet {
-  Meshlet::{
+  {
     ..self,
     bits_per_vertex_position_channel_x: meshlet_non_negative(bits_x),
     bits_per_vertex_position_channel_y: meshlet_non_negative(bits_y),
@@ -721,7 +721,7 @@ pub fn Meshlet::with_min_vertex_position_channels(
   y : Float,
   z : Float,
 ) -> Meshlet {
-  Meshlet::{
+  {
     ..self,
     min_vertex_position_channel_x: x,
     min_vertex_position_channel_y: y,
@@ -737,12 +737,12 @@ pub struct MeshletVertexUv {
 
 ///|
 pub fn MeshletVertexUv::new(x : Float, y : Float) -> MeshletVertexUv {
-  MeshletVertexUv::{ x, y }
+  { x, y }
 }
 
 ///|
 pub fn MeshletVertexUv::MeshletVertexUv() -> MeshletVertexUv {
-  MeshletVertexUv::{ x: 0.0, y: 0.0 }
+  { x: 0.0, y: 0.0 }
 }
 
 ///|
@@ -753,10 +753,7 @@ pub struct MeshletCullData {
 
 ///|
 pub fn MeshletCullData::MeshletCullData() -> MeshletCullData {
-  MeshletCullData::{
-    aabb: MeshletAabbErrorOffset::MeshletAabbErrorOffset(),
-    lod_group_sphere: MeshletBoundingSphere::MeshletBoundingSphere(),
-  }
+  { aabb: MeshletAabbErrorOffset(), lod_group_sphere: MeshletBoundingSphere() }
 }
 
 ///|
@@ -778,19 +775,12 @@ pub fn MeshletAabb::new(
   half_extent_y~ : Float,
   half_extent_z~ : Float,
 ) -> MeshletAabb {
-  MeshletAabb::{
-    center_x,
-    center_y,
-    center_z,
-    half_extent_x,
-    half_extent_y,
-    half_extent_z,
-  }
+  { center_x, center_y, center_z, half_extent_x, half_extent_y, half_extent_z }
 }
 
 ///|
 pub fn MeshletAabb::MeshletAabb() -> MeshletAabb {
-  MeshletAabb::{
+  {
     center_x: 0.0,
     center_y: 0.0,
     center_z: 0.0,
@@ -814,7 +804,7 @@ pub struct MeshletAabbErrorOffset {
 
 ///|
 pub fn MeshletAabbErrorOffset::MeshletAabbErrorOffset() -> MeshletAabbErrorOffset {
-  MeshletAabbErrorOffset::{
+  {
     center_x: 0.0,
     center_y: 0.0,
     center_z: 0.0,
@@ -836,18 +826,14 @@ pub struct MeshletBoundingSphere {
 
 ///|
 pub fn MeshletBoundingSphere::MeshletBoundingSphere() -> MeshletBoundingSphere {
-  MeshletBoundingSphere::{
-    center_x: 0.0,
-    center_y: 0.0,
-    center_z: 0.0,
-    radius: 0.0,
-  }
+  { center_x: 0.0, center_y: 0.0, center_z: 0.0, radius: 0.0 }
 }
 
 ///|
 pub struct MeshletMeshSaver {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn meshlet_mesh_saver() -> MeshletMeshSaver {
   MeshletMeshSaver::{  }
 }
@@ -856,6 +842,7 @@ pub fn meshlet_mesh_saver() -> MeshletMeshSaver {
 pub struct MeshletMeshLoader {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn meshlet_mesh_loader() -> MeshletMeshLoader {
   MeshletMeshLoader::{  }
 }
@@ -1043,20 +1030,14 @@ fn meshlet_push_bvh_node(out : Array[Byte], node : BvhNode) -> Unit {
     if index < node.aabbs.length() {
       meshlet_push_aabb_error_offset(out, node.aabbs[index])
     } else {
-      meshlet_push_aabb_error_offset(
-        out,
-        MeshletAabbErrorOffset::MeshletAabbErrorOffset(),
-      )
+      meshlet_push_aabb_error_offset(out, MeshletAabbErrorOffset())
     }
   }
   for index in 0..<8 {
     if index < node.lod_bounds.length() {
       meshlet_push_bounding_sphere(out, node.lod_bounds[index])
     } else {
-      meshlet_push_bounding_sphere(
-        out,
-        MeshletBoundingSphere::MeshletBoundingSphere(),
-      )
+      meshlet_push_bounding_sphere(out, MeshletBoundingSphere())
     }
   }
   for index in 0..<8 {
@@ -1338,7 +1319,7 @@ fn MeshletByteReader::read_aabb_error_offset(
   guard self.read_f32_le() is Some(half_extent_y) else { return None }
   guard self.read_f32_le() is Some(half_extent_z) else { return None }
   guard self.read_u32_le() is Some(child_offset) else { return None }
-  Some(MeshletAabbErrorOffset::{
+  Some({
     center_x,
     center_y,
     center_z,
@@ -1358,7 +1339,7 @@ fn MeshletByteReader::read_bounding_sphere(
   guard self.read_f32_le() is Some(center_y) else { return None }
   guard self.read_f32_le() is Some(center_z) else { return None }
   guard self.read_f32_le() is Some(radius) else { return None }
-  Some(MeshletBoundingSphere::{ center_x, center_y, center_z, radius })
+  Some({ center_x, center_y, center_z, radius })
 }
 
 ///|
@@ -1380,7 +1361,7 @@ fn MeshletByteReader::read_bvh_node(self : MeshletByteReader) -> BvhNode? {
   }
   guard self.read_u32_le() is Some(padding0) else { return None }
   guard self.read_u32_le() is Some(padding1) else { return None }
-  Some(BvhNode::{
+  Some({
     aabbs,
     lod_bounds,
     child_counts,
@@ -1421,7 +1402,7 @@ fn MeshletByteReader::read_meshlet(self : MeshletByteReader) -> Meshlet? {
   guard self.read_f32_le() is Some(min_vertex_position_channel_z) else {
     return None
   }
-  Some(Meshlet::{
+  Some({
     start_vertex_position_bit: start_vertex_position_bit.reinterpret_as_int(),
     start_vertex_attribute_id: start_vertex_attribute_id.reinterpret_as_int(),
     start_index_id: start_index_id.reinterpret_as_int(),
@@ -1446,7 +1427,7 @@ fn MeshletByteReader::read_cull_data(
   guard self.read_bounding_sphere() is Some(lod_group_sphere) else {
     return None
   }
-  Some(MeshletCullData::{ aabb, lod_group_sphere })
+  Some({ aabb, lod_group_sphere })
 }
 
 ///|

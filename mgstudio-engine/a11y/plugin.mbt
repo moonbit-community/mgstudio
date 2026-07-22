@@ -19,6 +19,7 @@ pub(all) struct AccessibilityPlugin {}
 const ACCESSIBILITY_PLUGIN_NAME : String = "mgstudio.a11y.AccessibilityPlugin"
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AccessibilityPlugin::AccessibilityPlugin() -> AccessibilityPlugin {
   AccessibilityPlugin::{  }
 }
@@ -35,7 +36,7 @@ pub impl @app.Plugin for AccessibilityPlugin with fn build(self, app) {
 
 ///|
 pub fn accessibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  accessibility_plugin_with(app, AccessibilityPlugin::AccessibilityPlugin())
+  accessibility_plugin_with(app, AccessibilityPlugin())
 }
 
 ///|

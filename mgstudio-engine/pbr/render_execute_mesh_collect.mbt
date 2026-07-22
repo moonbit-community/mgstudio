@@ -45,8 +45,7 @@ fn render3d_resolve_standard_material(
 fn render3d_resolve_forward_decal_material(
   material_handle : MeshMaterial3d,
 ) -> @pbr_decal.ForwardDecalMaterial? {
-  if !(material_handle.material_family
-    is @material.Material3dFamily::ForwardDecal) {
+  if !(material_handle.material_family is ForwardDecal) {
     return None
   }
   @pbr_decal.forward_decal_material_get(
@@ -129,7 +128,7 @@ fn render3d_resolve_mesh_material(
   }
   let (base_material, material_extension, forward_decal_material_ext) = match
     material_handle.material_family {
-    @material.Material3dFamily::Standard => {
+    Standard => {
       let base_material = match
         render3d_resolve_standard_material(
           material_handle, standard_material_frame_cache,
@@ -139,7 +138,7 @@ fn render3d_resolve_mesh_material(
       }
       (base_material, material_handle.extended_material, None)
     }
-    @material.Material3dFamily::ForwardDecal => {
+    ForwardDecal => {
       let forward_decal_material = match
         render3d_resolve_forward_decal_material(material_handle) {
         Some(v) => v
@@ -152,7 +151,7 @@ fn render3d_resolve_mesh_material(
         Some(ext),
       )
     }
-    @material.Material3dFamily::MeshletDebug => return None
+    MeshletDebug => return None
   }
   let material = @pbr_render.render3d_apply_extended_material_metadata(
     base_material, material_extension,
@@ -165,7 +164,7 @@ fn render3d_resolve_mesh_material(
     standard_material_texture_features~,
   )
   let resolved = Render3dResolvedMeshMaterial::{
-    material_draw_data: MaterialDrawData3d::Standard(material),
+    material_draw_data: Standard(material),
     material_extension,
     material_properties,
     material_bind_group_data: @pbr_render.render3d_resolve_material_extension_bind_group_data(
@@ -173,7 +172,7 @@ fn render3d_resolve_mesh_material(
     ),
     forward_decal_material_ext,
   }
-  if material_handle.material_family is @material.Material3dFamily::Standard &&
+  if material_handle.material_family is Standard &&
     material_handle.extended_material is None {
     resolved_material_frame_cache.set(material_handle_id, resolved)
   }
@@ -365,7 +364,7 @@ fn render3d_extract_mesh_for_entity(
     None =>
       match material_slots.get(entity) {
         Some(Resolved(value)) =>
-          Render3dResolvedMeshMaterial::{
+          {
             material_draw_data: value.material_draw_data(),
             material_extension: value.material_extension(),
             material_properties: value.material_properties(),
@@ -382,7 +381,7 @@ fn render3d_extract_mesh_for_entity(
   let material_bind_group_data = resolved_material.material_bind_group_data
   let layers = match prefetched_layers {
     Some(v) => v
-    None => @camera_render_layers.RenderLayers::RenderLayers()
+    None => RenderLayers()
   }
   // Bevy `bevy_pbr::render::mesh::extract_meshes_for_cpu_building` reads
   // `&GlobalTransform` directly and derives render instance transforms from it.
@@ -457,9 +456,9 @@ fn render3d_extract_mesh_for_entity(
   }
   counters.prepared_meshes = counters.prepared_meshes + 1
   (
-    Some(ExtractedMesh3d::{
+    Some({
       entity: phase_entity_ref3d_for_world_main(source_world, entity),
-      payload: Mesh3dExtractedPayload::{
+      payload: {
         mesh_handle: mesh3d.mesh(),
         world_from_local,
         previous_world_from_local,
@@ -506,7 +505,7 @@ fn render3d_execute_collect_meshes(
   counters : Render3dPrepareMeshesCounters,
 ) -> Array[ExtractedMesh3d] {
   let trace_collect_meshes_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_collect_meshes",
   )
   let standard_material_frame_cache : Map[Int, StandardMaterial] = Map([])
@@ -584,7 +583,7 @@ fn render3d_execute_collect_meshes(
       default_opaque_renderer_method,
       material_prepass_enabled,
       standard_material_texture_features,
-      Some(Render3dExtractMeshRequiredComponents::{
+      Some({
         mesh3d: mesh3d.value(),
         material_handle: material.value(),
         view_visibility: view_visibility.value(),
@@ -617,7 +616,7 @@ fn render3d_execute_collect_meshes(
     meshes.length(),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_collect_meshes",
     trace_collect_meshes_start_us,
   )

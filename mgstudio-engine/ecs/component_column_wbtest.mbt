@@ -63,9 +63,7 @@ test "ecs component column: cached table values write through typed storage" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 1,
-  })
+  try! world.set_by_key(entity, component_column_cache_value_key, { x: 1 })
   guard world.table_id_for_entity(entity) is Some(table_id) else {
     fail("expected table entity")
   }
@@ -81,9 +79,7 @@ test "ecs component column: cached table values write through typed storage" {
   }
   debug_inspect(values[table_row.index()], content="{ x: 1 }")
 
-  ignore(
-    component_column.set_tick_only(entity, ComponentColumnCacheValue::{ x: 2 }),
-  )
+  ignore(component_column.set_tick_only(entity, { x: 2 }))
 
   let value_opt = try! world.get_by_key(
     entity, component_column_cache_value_key,
@@ -97,9 +93,7 @@ test "ecs component column: hot table row value write updates typed storage and 
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 5,
-  })
+  try! world.set_by_key(entity, component_column_cache_value_key, { x: 5 })
   guard world.table_id_for_entity(entity) is Some(table_id) else {
     fail("expected table entity")
   }
@@ -114,7 +108,7 @@ test "ecs component column: hot table row value write updates typed storage and 
   let wrote = component_column.set_tick_only_hot_at_table_row_value(
     table_id,
     table_row.index(),
-    ComponentColumnCacheValue::{ x: 6 },
+    { x: 6 },
     tick,
   )
   debug_inspect(wrote, content="true")
@@ -143,9 +137,7 @@ test "ecs component column: table migration moves canonical typed rows" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 10,
-  })
+  try! world.set_by_key(entity, component_column_cache_value_key, { x: 10 })
   guard world.table_id_for_entity(entity) is Some(old_table_id) else {
     fail("expected initial table entity")
   }
@@ -161,9 +153,7 @@ test "ecs component column: table migration moves canonical typed rows" {
     content="Some({ x: 10 })",
   )
 
-  try! world.set_by_key(entity, component_column_migration_marker_key, ComponentColumnMigrationMarker::{
-    y: 20,
-  })
+  try! world.set_by_key(entity, component_column_migration_marker_key, { y: 20 })
   guard world.table_id_for_entity(entity) is Some(new_table_id) else {
     fail("expected migrated table entity")
   }
@@ -210,22 +200,14 @@ test "ecs component column: structural changes preserve table column lengths" {
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 1,
-  })
-  try! world.set_by_key(second, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 2,
-  })
+  try! world.set_by_key(first, component_column_cache_value_key, { x: 1 })
+  try! world.set_by_key(second, component_column_cache_value_key, { x: 2 })
   assert_component_table_storage_invariants(world)
 
-  try! world.set_by_key(first, component_column_migration_marker_key, ComponentColumnMigrationMarker::{
-    y: 3,
-  })
+  try! world.set_by_key(first, component_column_migration_marker_key, { y: 3 })
   assert_component_table_storage_invariants(world)
 
-  try! world.set_by_key(first, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 4,
-  })
+  try! world.set_by_key(first, component_column_cache_value_key, { x: 4 })
   assert_component_table_storage_invariants(world)
 
   ignore(try! world.remove_by_key(first, component_column_migration_marker_key))
@@ -244,15 +226,9 @@ test "ecs component column: table storage iteration does not retain staged dupli
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 30,
-  })
-  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 31,
-  })
-  try! world.set_by_key(entity, component_column_migration_marker_key, ComponentColumnMigrationMarker::{
-    y: 32,
-  })
+  try! world.set_by_key(entity, component_column_cache_value_key, { x: 30 })
+  try! world.set_by_key(entity, component_column_cache_value_key, { x: 31 })
+  try! world.set_by_key(entity, component_column_migration_marker_key, { y: 32 })
   let seen : Array[(Int, Int)] = []
   component_column_cache_value_key.component_for_each(world, fn(
     seen_entity,
@@ -270,9 +246,7 @@ test "ecs mut query: cached table values write through typed storage" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, component_column_cache_value_key, ComponentColumnCacheValue::{
-    x: 3,
-  })
+  try! world.set_by_key(entity, component_column_cache_value_key, { x: 3 })
   guard world.table_id_for_entity(entity) is Some(table_id) else {
     fail("expected table entity")
   }
@@ -289,9 +263,7 @@ test "ecs mut query: cached table values write through typed storage" {
   debug_inspect(values[table_row.index()], content="{ x: 3 }")
 
   let query : Query[Write[ComponentColumnCacheValue], All] = query(world)
-  try! query.view(fn(_entity, value_mut) {
-    value_mut.set(ComponentColumnCacheValue::{ x: 4 })
-  })
+  try! query.view(fn(_entity, value_mut) { value_mut.set({ x: 4 }) })
 
   let value_opt = try! world.get_by_key(
     entity, component_column_cache_value_key,

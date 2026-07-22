@@ -14,7 +14,7 @@
 
 ///|
 test "camera render target: normalized render targets keep Bevy target variants distinct" {
-  let window = NormalizedRenderTarget::Window(@window.WindowRef::Primary)
+  let window = NormalizedRenderTarget::Window(Primary)
   let image = NormalizedRenderTarget::Image(
     ImageRenderTarget::from_handle(@asset.Handle::new(42)),
   )

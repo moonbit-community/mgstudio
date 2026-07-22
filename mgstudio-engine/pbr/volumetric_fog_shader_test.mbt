@@ -19,21 +19,15 @@ fn render3d_volumetric_fog_test_value_defines() -> @hashmap.HashMap[
 ] {
   let value_defines = @shader_compile.default_shader_value_defines()
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
-  value_defines.set(
-    "MAX_DIRECTIONAL_LIGHTS",
-    @wgsl_common.ShaderDefValue::UInt(10U),
-  )
-  value_defines.set(
-    "MAX_CASCADES_PER_LIGHT",
-    @wgsl_common.ShaderDefValue::UInt(4U),
-  )
-  value_defines.set("MAX_RECT_LIGHTS", @wgsl_common.ShaderDefValue::UInt(8U))
+  value_defines.set("MAX_DIRECTIONAL_LIGHTS", UInt(10U))
+  value_defines.set("MAX_CASCADES_PER_LIGHT", UInt(4U))
+  value_defines.set("MAX_RECT_LIGHTS", UInt(8U))
   value_defines
 }
 
 ///|
 fn render3d_volumetric_fog_test_shader_defs() -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   defines.set("SHADOW_FILTER_METHOD_HARDWARE_2X2", true)
   defines.set("DENSITY_TEXTURE", true)
   defines

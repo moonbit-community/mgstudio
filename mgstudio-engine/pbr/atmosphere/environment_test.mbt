@@ -75,19 +75,9 @@ test "pbr atmosphere: probe component system creates Bevy-shaped generated cubem
   inspect(stored_image.width(), content="512")
   inspect(stored_image.height(), content="3072")
   inspect(stored_image.pixel_byte_len(), content="12582912")
-  inspect(
-    stored_image.format() == @asset.TextureFormat::Rgba16Float,
-    content="true",
-  )
-  inspect(
-    stored_image.array_layout() == Some(@asset.ImageArrayLayout::RowCount(6)),
-    content="true",
-  )
-  inspect(
-    stored_image.texture_view_dimension() ==
-    Some(@asset.ImageTextureViewDimension::Cube),
-    content="true",
-  )
+  inspect(stored_image.format() == Rgba16Float, content="true")
+  inspect(stored_image.array_layout() == Some(RowCount(6)), content="true")
+  inspect(stored_image.texture_view_dimension() == Some(Cube), content="true")
   inspect(
     test_image_has_usage(stored_image, @asset.IMAGE_USAGE_STORAGE_BINDING),
     content="true",

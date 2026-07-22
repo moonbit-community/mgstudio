@@ -72,7 +72,7 @@ test "sprite bounds: equal Aabb replacement preserves change ticks" {
   try! world.set_by_key(entity, ecs_key_anchor, Anchor::center())
   let replace_with_equal_sprite = Ref(false)
   app = app.add_systems(
-    @app.Update,
+    Update,
     @app.system(fn(world : @ecs.World) {
       if replace_with_equal_sprite.val {
         try! (world.replace(

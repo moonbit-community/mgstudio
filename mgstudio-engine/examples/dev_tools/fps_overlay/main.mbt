@@ -25,12 +25,12 @@ fn overlay_green() -> @color.Color {
 ///|
 fn main {
   let overlay_plugin = @dev_tools.FpsOverlayPlugin::{
-    config: @dev_tools.FpsOverlayConfig::{
+    config: {
       text_config: @text.TextFont::from_font_size(42.0F),
       text_color: overlay_green(),
       refresh_interval: @core.Duration::from_millis(100),
       enabled: true,
-      frame_time_graph_config: @dev_tools.FrameTimeGraphConfig::{
+      frame_time_graph_config: {
         enabled: true,
         min_fps: 30.0F,
         target_fps: 144.0F,
@@ -41,8 +41,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(overlay_plugin)
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, customize_config)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, customize_config)
   .run()
 }
 
@@ -60,13 +60,11 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   ignore(tick)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
   let text_entity = world.spawn_empty()
   try! world.set_by_key(
@@ -78,9 +76,9 @@ fn setup(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_bottom(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -102,7 +100,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
 }
 
@@ -117,7 +115,7 @@ fn color_is_green(color : @color.Color) -> Bool {
 ///|
 fn overlay_font_size_px(config : @dev_tools.FpsOverlayConfig) -> Float {
   match config.text_config.font_size {
-    @text.FontSize::Px(value) => value
+    Px(value) => value
     _ => 42.0F
   }
 }
@@ -139,15 +137,13 @@ fn customize_config(
     if input.just_pressed(Digit2) {
       let next_size = overlay_font_size_px(value) - 2.0F
       if next_size < 2.0F {
-        value.text_config.font_size = @text.FontSize::Px(2.0F)
+        value.text_config.font_size = Px(2.0F)
       } else {
-        value.text_config.font_size = @text.FontSize::Px(next_size)
+        value.text_config.font_size = Px(next_size)
       }
     }
     if input.just_pressed(Digit3) {
-      value.text_config.font_size = @text.FontSize::Px(
-        overlay_font_size_px(value) + 2.0F,
-      )
+      value.text_config.font_size = Px(overlay_font_size_px(value) + 2.0F)
     }
     if input.just_pressed(Digit4) {
       value.enabled = !value.enabled

@@ -17,5 +17,5 @@
 
 ///|
 pub fn gltf_texture_asset_label(texture_index : Int) -> GltfAssetLabel {
-  GltfAssetLabel::Texture(texture_index)
+  Texture(texture_index)
 }

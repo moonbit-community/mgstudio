@@ -71,8 +71,8 @@ let progress_text_entity : Ref[@core.Entity?] = Ref(None)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param(@app.Update, display_curves)
+  .add_systems_world(Startup, setup)
+  .add_systems_param(Update, display_curves)
   .run()
 }
 
@@ -144,7 +144,7 @@ fn setup(world : @ecs.World) -> Unit {
         @hierarchy.ecs_key_parent,
         @hierarchy.Parent::new(plot_entity),
       )
-      try! world.set_by_key(plot_entity, ease_function_plot_key, EaseFunctionPlot::{
+      try! world.set_by_key(plot_entity, ease_function_plot_key, {
         function: spec.function,
         color,
         value_bar_entity,
@@ -283,13 +283,11 @@ fn spawn_progress_overlay(
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
@@ -307,9 +305,9 @@ fn spawn_progress_overlay(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_top(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -325,9 +323,9 @@ fn spawn_progress_overlay(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_top(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -353,9 +351,9 @@ fn spawn_progress_overlay(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_top(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -375,7 +373,7 @@ fn spawn_progress_overlay(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   progress_text_entity.val = Some(text_entity)
 }
@@ -384,73 +382,61 @@ fn spawn_progress_overlay(
 fn easing_rows() -> Array[Array[EaseSpec]] {
   [
     [
-      ease_spec(@math.EaseFunction::SineIn, "SineIn"),
-      ease_spec(@math.EaseFunction::QuadraticIn, "QuadraticIn"),
-      ease_spec(@math.EaseFunction::CubicIn, "CubicIn"),
-      ease_spec(@math.EaseFunction::QuarticIn, "QuarticIn"),
-      ease_spec(@math.EaseFunction::QuinticIn, "QuinticIn"),
-      ease_spec(@math.EaseFunction::SmoothStepIn, "SmoothStepIn"),
-      ease_spec(@math.EaseFunction::SmootherStepIn, "SmootherStepIn"),
-      ease_spec(@math.EaseFunction::CircularIn, "CircularIn"),
-      ease_spec(@math.EaseFunction::ExponentialIn, "ExponentialIn"),
-      ease_spec(@math.EaseFunction::ElasticIn, "ElasticIn"),
-      ease_spec(@math.EaseFunction::BackIn, "BackIn"),
-      ease_spec(@math.EaseFunction::BounceIn, "BounceIn"),
+      ease_spec(SineIn, "SineIn"),
+      ease_spec(QuadraticIn, "QuadraticIn"),
+      ease_spec(CubicIn, "CubicIn"),
+      ease_spec(QuarticIn, "QuarticIn"),
+      ease_spec(QuinticIn, "QuinticIn"),
+      ease_spec(SmoothStepIn, "SmoothStepIn"),
+      ease_spec(SmootherStepIn, "SmootherStepIn"),
+      ease_spec(CircularIn, "CircularIn"),
+      ease_spec(ExponentialIn, "ExponentialIn"),
+      ease_spec(ElasticIn, "ElasticIn"),
+      ease_spec(BackIn, "BackIn"),
+      ease_spec(BounceIn, "BounceIn"),
     ],
     [
-      ease_spec(@math.EaseFunction::SineOut, "SineOut"),
-      ease_spec(@math.EaseFunction::QuadraticOut, "QuadraticOut"),
-      ease_spec(@math.EaseFunction::CubicOut, "CubicOut"),
-      ease_spec(@math.EaseFunction::QuarticOut, "QuarticOut"),
-      ease_spec(@math.EaseFunction::QuinticOut, "QuinticOut"),
-      ease_spec(@math.EaseFunction::SmoothStepOut, "SmoothStepOut"),
-      ease_spec(@math.EaseFunction::SmootherStepOut, "SmootherStepOut"),
-      ease_spec(@math.EaseFunction::CircularOut, "CircularOut"),
-      ease_spec(@math.EaseFunction::ExponentialOut, "ExponentialOut"),
-      ease_spec(@math.EaseFunction::ElasticOut, "ElasticOut"),
-      ease_spec(@math.EaseFunction::BackOut, "BackOut"),
-      ease_spec(@math.EaseFunction::BounceOut, "BounceOut"),
+      ease_spec(SineOut, "SineOut"),
+      ease_spec(QuadraticOut, "QuadraticOut"),
+      ease_spec(CubicOut, "CubicOut"),
+      ease_spec(QuarticOut, "QuarticOut"),
+      ease_spec(QuinticOut, "QuinticOut"),
+      ease_spec(SmoothStepOut, "SmoothStepOut"),
+      ease_spec(SmootherStepOut, "SmootherStepOut"),
+      ease_spec(CircularOut, "CircularOut"),
+      ease_spec(ExponentialOut, "ExponentialOut"),
+      ease_spec(ElasticOut, "ElasticOut"),
+      ease_spec(BackOut, "BackOut"),
+      ease_spec(BounceOut, "BounceOut"),
     ],
     [
-      ease_spec(@math.EaseFunction::SineInOut, "SineInOut"),
-      ease_spec(@math.EaseFunction::QuadraticInOut, "QuadraticInOut"),
-      ease_spec(@math.EaseFunction::CubicInOut, "CubicInOut"),
-      ease_spec(@math.EaseFunction::QuarticInOut, "QuarticInOut"),
-      ease_spec(@math.EaseFunction::QuinticInOut, "QuinticInOut"),
-      ease_spec(@math.EaseFunction::SmoothStep, "SmoothStep"),
-      ease_spec(@math.EaseFunction::SmootherStep, "SmootherStep"),
-      ease_spec(@math.EaseFunction::CircularInOut, "CircularInOut"),
-      ease_spec(@math.EaseFunction::ExponentialInOut, "ExponentialInOut"),
-      ease_spec(@math.EaseFunction::ElasticInOut, "ElasticInOut"),
-      ease_spec(@math.EaseFunction::BackInOut, "BackInOut"),
-      ease_spec(@math.EaseFunction::BounceInOut, "BounceInOut"),
+      ease_spec(SineInOut, "SineInOut"),
+      ease_spec(QuadraticInOut, "QuadraticInOut"),
+      ease_spec(CubicInOut, "CubicInOut"),
+      ease_spec(QuarticInOut, "QuarticInOut"),
+      ease_spec(QuinticInOut, "QuinticInOut"),
+      ease_spec(SmoothStep, "SmoothStep"),
+      ease_spec(SmootherStep, "SmootherStep"),
+      ease_spec(CircularInOut, "CircularInOut"),
+      ease_spec(ExponentialInOut, "ExponentialInOut"),
+      ease_spec(ElasticInOut, "ElasticInOut"),
+      ease_spec(BackInOut, "BackInOut"),
+      ease_spec(BounceInOut, "BounceInOut"),
     ],
     [
-      ease_spec(@math.EaseFunction::Linear, "Linear"),
-      ease_spec(
-        @math.EaseFunction::Steps(4, @math.JumpAt::End),
-        "Steps(4, End)",
-      ),
-      ease_spec(
-        @math.EaseFunction::Steps(4, @math.JumpAt::Start),
-        "Steps(4, Start)",
-      ),
-      ease_spec(
-        @math.EaseFunction::Steps(4, @math.JumpAt::Both),
-        "Steps(4, Both)",
-      ),
-      ease_spec(
-        @math.EaseFunction::Steps(4, @math.JumpAt::None),
-        "Steps(4, None)",
-      ),
-      ease_spec(@math.EaseFunction::Elastic(50.0F), "Elastic(50.0)"),
+      ease_spec(Linear, "Linear"),
+      ease_spec(Steps(4, End), "Steps(4, End)"),
+      ease_spec(Steps(4, Start), "Steps(4, Start)"),
+      ease_spec(Steps(4, Both), "Steps(4, Both)"),
+      ease_spec(Steps(4, None), "Steps(4, None)"),
+      ease_spec(Elastic(50.0F), "Elastic(50.0)"),
     ],
   ]
 }
 
 ///|
 fn ease_spec(function : @math.EaseFunction, label : String) -> EaseSpec {
-  EaseSpec::{ function, label }
+  { function, label }
 }
 
 ///|
@@ -493,7 +479,7 @@ fn spawn_label(
     transform_from_position(position, LABEL_Z),
   )
   .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+  .with_layout(@text.TextLayout::new_with_justify(Center))
   .spawn()
   |> ignore
 }

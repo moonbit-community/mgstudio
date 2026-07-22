@@ -48,7 +48,7 @@ pub impl @ecs.TriggerEvent for MenuEvent with fn set_observer_entity(
   self,
   entity,
 ) {
-  MenuEvent::{ source: entity, action: self.action }
+  { source: entity, action: self.action }
 }
 
 ///|
@@ -70,7 +70,7 @@ pub(all) enum MenuLayout {
 
 ///|
 pub fn MenuLayout::default() -> MenuLayout {
-  MenuLayout::Column
+  Column
 }
 
 ///|
@@ -80,7 +80,7 @@ pub struct MenuPopup {
 
 ///|
 pub fn MenuPopup::MenuPopup() -> MenuPopup {
-  MenuPopup::{ layout: MenuLayout::default() }
+  { layout: MenuLayout::default() }
 }
 
 ///|
@@ -127,24 +127,15 @@ fn menu_on_key_input(
     None => false
   }
   if is_menu_item &&
-    (
-      keyboard.just_pressed(@window.KeyCode::Enter) ||
-      keyboard.just_pressed(@window.KeyCode::Space)
-    ) {
+    (keyboard.just_pressed(Enter) || keyboard.just_pressed(Space)) {
     commands.trigger(Activate::{ entity, })
-    commands.trigger(MenuEvent::{
-      source: entity,
-      action: MenuAction::FocusRoot,
-    })
-    commands.trigger(MenuEvent::{ source: entity, action: MenuAction::CloseAll })
+    commands.trigger(MenuEvent::{ source: entity, action: FocusRoot })
+    commands.trigger(MenuEvent::{ source: entity, action: CloseAll })
     return
   }
-  if is_menu_popup && keyboard.just_pressed(@window.KeyCode::Escape) {
-    commands.trigger(MenuEvent::{
-      source: entity,
-      action: MenuAction::FocusRoot,
-    })
-    commands.trigger(MenuEvent::{ source: entity, action: MenuAction::CloseAll })
+  if is_menu_popup && keyboard.just_pressed(Escape) {
+    commands.trigger(MenuEvent::{ source: entity, action: FocusRoot })
+    commands.trigger(MenuEvent::{ source: entity, action: CloseAll })
   }
 }
 
@@ -202,14 +193,14 @@ fn menu_item_on_pointer_click(
     return
   }
   commands.trigger(Activate::{ entity, })
-  commands.trigger(MenuEvent::{ source: entity, action: MenuAction::FocusRoot })
-  commands.trigger(MenuEvent::{ source: entity, action: MenuAction::CloseAll })
+  commands.trigger(MenuEvent::{ source: entity, action: FocusRoot })
+  commands.trigger(MenuEvent::{ source: entity, action: CloseAll })
 }
 
 ///|
 pub fn menu_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(@app.Update, @app.system_config_param5(menu_on_key_input))
+  .add_systems(Update, @app.system_config_param5(menu_on_key_input))
   .add_pointer_observer3(menu_item_on_pointer_down)
   .add_pointer_observer3(menu_item_on_pointer_up)
   .add_pointer_observer3(menu_item_on_pointer_click)

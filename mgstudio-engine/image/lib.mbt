@@ -77,14 +77,14 @@ fn image_mip_count_sanitize(mip_level_count : Int) -> Int {
 
 ///|
 pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
-  Image::{
+  {
     width,
     height,
     pixels,
-    format: TextureFormat::Rgba8Unorm,
+    format: Rgba8Unorm,
     view_format: None,
     sampler: ImageSampler::default(),
-    kind: ImageKind::Data,
+    kind: Data,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_SAMPLED,
     texture_descriptor_label: None,
@@ -95,7 +95,7 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
 
 ///|
 pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -113,7 +113,7 @@ pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
 
 ///|
 pub fn Image::with_sampler(self : Image, sampler : ImageSampler) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -134,7 +134,7 @@ pub fn Image::with_mip_level_count(
   self : Image,
   mip_level_count : Int,
 ) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -152,7 +152,7 @@ pub fn Image::with_mip_level_count(
 
 ///|
 pub fn Image::with_texture_usage_bits(self : Image, usage_bits : Int) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -233,7 +233,7 @@ pub fn Image::with_texture_descriptor_label(
   self : Image,
   label : String?,
 ) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -266,7 +266,7 @@ pub fn Image::with_array_layout(
   self : Image,
   array_layout : ImageArrayLayout?,
 ) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -295,7 +295,7 @@ pub fn Image::with_texture_view_dimension(
   self : Image,
   texture_view_dimension : ImageTextureViewDimension?,
 ) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,
@@ -319,7 +319,7 @@ pub fn Image::reinterpret_stacked_2d_as_array(
   if layers <= 0 || self.height <= 0 || self.height % layers != 0 {
     false
   } else {
-    self.array_layout = Some(ImageArrayLayout::RowCount(layers))
+    self.array_layout = Some(RowCount(layers))
     true
   }
 }
@@ -338,7 +338,7 @@ pub(all) enum TextureFormat {
 
 ///|
 pub fn TextureFormat::default() -> TextureFormat {
-  TextureFormat::Rgba8Unorm
+  Rgba8Unorm
 }
 
 ///|
@@ -354,14 +354,14 @@ pub fn Image::new_target_texture(
   format : TextureFormat,
   view_format : TextureFormat?,
 ) -> Image {
-  Image::{
+  {
     width,
     height,
     pixels: Bytes::new(0),
     format,
     view_format,
     sampler: ImageSampler::default(),
-    kind: ImageKind::TargetTexture,
+    kind: TargetTexture,
     mip_level_count: 1,
     usage_bits: IMAGE_USAGE_DEFAULT_TARGET,
     texture_descriptor_label: None,
@@ -372,28 +372,27 @@ pub fn Image::new_target_texture(
 
 ///|
 pub fn Image::is_target_texture(self : Image) -> Bool {
-  self.kind == ImageKind::TargetTexture
+  self.kind == TargetTexture
 }
 
 ///|
 pub fn texture_format(format : TextureFormat) -> @wgpu.TextureFormat {
   match format {
-    TextureFormat::Rgba8Unorm =>
+    Rgba8Unorm =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
-    TextureFormat::Rgba8UnormSrgb =>
+    Rgba8UnormSrgb =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB)
-    TextureFormat::Bgra8Unorm =>
+    Bgra8Unorm =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM)
-    TextureFormat::Bgra8UnormSrgb =>
+    Bgra8UnormSrgb =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB)
-    TextureFormat::Rgba16Uint =>
+    Rgba16Uint =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_UINT)
-    TextureFormat::Rgba16Float =>
+    Rgba16Float =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
-    TextureFormat::Rgba32Float =>
+    Rgba32Float =>
       @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA32_FLOAT)
-    TextureFormat::Rg16Float =>
-      @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_FLOAT)
+    Rg16Float => @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_FLOAT)
   }
 }
 
@@ -423,7 +422,7 @@ pub(all) enum ImageAddressMode {
 
 ///|
 pub fn ImageAddressMode::default() -> ImageAddressMode {
-  ImageAddressMode::ClampToEdge
+  ClampToEdge
 }
 
 ///|
@@ -434,7 +433,7 @@ pub(all) enum ImageFilterMode {
 
 ///|
 pub fn ImageFilterMode::default() -> ImageFilterMode {
-  ImageFilterMode::Nearest
+  Nearest
 }
 
 ///|
@@ -475,7 +474,7 @@ pub(all) struct ImageSamplerDescriptor {
 
 ///|
 pub fn ImageSamplerDescriptor::ImageSamplerDescriptor() -> ImageSamplerDescriptor {
-  ImageSamplerDescriptor::{
+  {
     label: None,
     address_mode_u: ImageAddressMode::default(),
     address_mode_v: ImageAddressMode::default(),
@@ -494,15 +493,15 @@ pub fn ImageSamplerDescriptor::ImageSamplerDescriptor() -> ImageSamplerDescripto
 ///|
 pub fn ImageSamplerDescriptor::linear() -> ImageSamplerDescriptor {
   let descriptor = ImageSamplerDescriptor::ImageSamplerDescriptor()
-  descriptor.mag_filter = ImageFilterMode::Linear
-  descriptor.min_filter = ImageFilterMode::Linear
-  descriptor.mipmap_filter = ImageFilterMode::Linear
+  descriptor.mag_filter = Linear
+  descriptor.min_filter = Linear
+  descriptor.mipmap_filter = Linear
   descriptor
 }
 
 ///|
 pub fn ImageSamplerDescriptor::nearest() -> ImageSamplerDescriptor {
-  ImageSamplerDescriptor::ImageSamplerDescriptor()
+  ImageSamplerDescriptor()
 }
 
 ///|
@@ -532,9 +531,9 @@ pub fn ImageSamplerDescriptor::set_anisotropic_filter(
   self : ImageSamplerDescriptor,
   anisotropy_clamp : Int,
 ) -> ImageSamplerDescriptor {
-  self.mag_filter = ImageFilterMode::Linear
-  self.min_filter = ImageFilterMode::Linear
-  self.mipmap_filter = ImageFilterMode::Linear
+  self.mag_filter = Linear
+  self.min_filter = Linear
+  self.mipmap_filter = Linear
   self.anisotropy_clamp = anisotropy_clamp
   self
 }
@@ -547,17 +546,17 @@ pub(all) enum ImageSampler {
 
 ///|
 pub fn ImageSampler::default() -> ImageSampler {
-  ImageSampler::Default
+  Default
 }
 
 ///|
 pub fn ImageSampler::linear() -> ImageSampler {
-  ImageSampler::Descriptor(ImageSamplerDescriptor::linear())
+  Descriptor(ImageSamplerDescriptor::linear())
 }
 
 ///|
 pub fn ImageSampler::nearest() -> ImageSampler {
-  ImageSampler::Descriptor(ImageSamplerDescriptor::nearest())
+  Descriptor(ImageSamplerDescriptor::nearest())
 }
 
 ///|
@@ -710,9 +709,8 @@ pub fn image_sampler_runtime_args(
 ///|
 pub fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
   match sampler {
-    ImageSampler::Default => false
-    ImageSampler::Descriptor(descriptor) =>
-      descriptor.mag_filter == ImageFilterMode::Nearest &&
-      descriptor.min_filter == ImageFilterMode::Nearest
+    Default => false
+    Descriptor(descriptor) =>
+      descriptor.mag_filter == Nearest && descriptor.min_filter == Nearest
   }
 }

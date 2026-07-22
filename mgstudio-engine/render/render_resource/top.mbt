@@ -59,7 +59,7 @@ priv struct RenderResourceIdState {
 
 ///|
 fn render_resource_id_state_default() -> RenderResourceIdState {
-  RenderResourceIdState::{
+  {
     buffer_id_seed: 0,
     texture_id_seed: 0,
     texture_view_id_seed: 0,

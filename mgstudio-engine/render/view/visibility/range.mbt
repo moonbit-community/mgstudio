@@ -28,6 +28,7 @@ const RENDER_VISIBILITY_RANGE_PLUGIN_NAME : String = "mgstudio.render.view.visib
 pub struct RenderVisibilityRangePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn RenderVisibilityRangePlugin::RenderVisibilityRangePlugin() -> RenderVisibilityRangePlugin {
   RenderVisibilityRangePlugin::{  }
 }
@@ -36,10 +37,7 @@ pub fn RenderVisibilityRangePlugin::RenderVisibilityRangePlugin() -> RenderVisib
 pub fn render_visibility_range_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_visibility_range_plugin_with(
-    app,
-    RenderVisibilityRangePlugin::RenderVisibilityRangePlugin(),
-  )
+  render_visibility_range_plugin_with(app, RenderVisibilityRangePlugin())
 }
 
 ///|
@@ -93,9 +91,9 @@ pub struct RenderVisibilityRanges {
 
 ///|
 pub fn RenderVisibilityRanges::RenderVisibilityRanges() -> RenderVisibilityRanges {
-  RenderVisibilityRanges::{
-    entities: @hashmap.HashMap([]),
-    range_to_index: @hashmap.HashMap([]),
+  {
+    entities: HashMap([]),
+    range_to_index: HashMap([]),
     buffer: [],
     entity_count: 0,
     range_count: 0,
@@ -148,7 +146,7 @@ pub fn RenderVisibilityRanges::insert(
       next_index
     }
   }
-  self.entities.set(entity_id, RenderVisibilityEntityInfo::{
+  self.entities.set(entity_id, {
     buffer_index,
     is_abrupt: visibility_range.is_abrupt(),
   })
@@ -214,7 +212,7 @@ fn ensure_render_visibility_ranges_resource(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_render_visibility_ranges) is None {
     world.insert_resource(
       ecs_key_render_visibility_ranges,
-      RenderVisibilityRanges::RenderVisibilityRanges(),
+      RenderVisibilityRanges(),
     )
   }
 }

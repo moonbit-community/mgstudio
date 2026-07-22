@@ -17,15 +17,13 @@ const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let projection = @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+  let projection = @camera.Projection::Orthographic({
     ..@camera.OrthographicProjection3d::default_3d(),
-    scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
-      FIXED_VIEWPORT_HEIGHT,
-    ),
+    scaling_mode: FixedVertical(FIXED_VIEWPORT_HEIGHT),
   })
 
   @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     projection,
     @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
@@ -105,16 +103,8 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
+  try! world.set_by_key(light, @pbr.ecs_key_point_light, PointLight())
+  try! world.set_by_key(light, @pbr.ecs_key_point_light, PointLight())
   try! world.set_by_key(
     light,
     @transform.ecs_key_transform,
@@ -126,6 +116,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

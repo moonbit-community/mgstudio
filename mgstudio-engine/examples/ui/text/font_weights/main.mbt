@@ -45,11 +45,7 @@ fn spawn_text_line(
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
   try! world.set_by_key(entity, @text.ecs_key_text_font, font)
   if underline {
-    try! world.set_by_key(
-      entity,
-      @text.ecs_key_text_underline,
-      @text.Underline::Underline(),
-    )
+    try! world.set_by_key(entity, @text.ecs_key_text_underline, Underline())
   }
   entity
 }
@@ -70,25 +66,25 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(Center)
+    .with_align_items(Center),
   )
 
   let panel = spawn_node(
     world,
     root,
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
-    .with_row_gap(@ui.Val::Px(8.0F)),
+    .with_flex_direction(Column)
+    .with_align_items(Center)
+    .with_padding(@ui.UiRect::all(Px(16.0F)))
+    .with_row_gap(Px(8.0F)),
   )
 
   ignore(
@@ -115,7 +111,7 @@ fn setup(world : @ecs.World) -> Unit {
         @text.TextFont::TextFont()
         .with_font(variable_font)
         .with_font_size(@text.FontSize::Px(32.0F))
-        .with_weight(@text.FontWeight::VALUE(weight)),
+        .with_weight(VALUE(weight)),
       ),
     )
   }
@@ -125,6 +121,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

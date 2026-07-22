@@ -29,6 +29,7 @@ pub fn sprite_plugin_with(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SpritePlugin::SpritePlugin() -> SpritePlugin {
   SpritePlugin::{  }
 }

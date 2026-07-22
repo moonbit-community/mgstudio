@@ -84,7 +84,7 @@ priv struct MirrorImage {
 
 ///|
 fn MirrorImage::new(image : @asset.Handle[@asset.Image]) -> MirrorImage {
-  MirrorImage::{ image, }
+  { image, }
 }
 
 ///|
@@ -130,7 +130,7 @@ pub(all) struct ScreenSpaceTextureExtension {
 
 ///|
 fn ScreenSpaceTextureExtension::ScreenSpaceTextureExtension() -> ScreenSpaceTextureExtension {
-  ScreenSpaceTextureExtension::{ dummy: 0.0F }
+  { dummy: 0.0F }
 }
 
 ///|
@@ -236,11 +236,7 @@ pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn bind_gro
     @render_resource.BindGroupLayoutEntry::new(
       100,
       @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        4UL,
-      ),
+      BufferBinding(Uniform, false, 4UL),
     ),
   ]
 }
@@ -264,7 +260,7 @@ priv struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ drag_action: DragAction::MoveCamera }
+  { drag_action: MoveCamera }
 }
 
 ///|
@@ -464,8 +460,8 @@ fn spawn_main_camera(
 
   let camera = commands.spawn(
     @camera.Camera3dBundle::new_with_projection(
-      @camera_camera.Camera::Camera(),
-      @camera.Projection::Perspective(camera_projection),
+      Camera(),
+      Perspective(camera_projection),
       camera_transform,
     ),
   )
@@ -607,7 +603,7 @@ fn spawn_mirror_camera(
     @camera_camera.Camera::new(@color.Color::black())
     .with_order(-1)
     .with_invert_culling(true),
-    @camera.Projection::Perspective(mirror_camera_projection),
+    Perspective(mirror_camera_projection),
     mirror_camera_transform,
   )
   let mirror_camera = commands.spawn(mirror_camera)
@@ -636,9 +632,7 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -648,18 +642,14 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Drag Action", [
       (DragAction::MoveCamera, "Move Camera"),
-      (DragAction::MoveFox, "Move Fox"),
+      (MoveFox, "Move Fox"),
     ]),
   )
 }
 
 ///|
 fn create_help_string(app_status : AppStatus) -> String {
-  let mode = if app_status.drag_action == DragAction::MoveCamera {
-    "camera"
-  } else {
-    "fox"
-  }
+  let mode = if app_status.drag_action == MoveCamera { "camera" } else { "fox" }
   "Click and drag to move the \{mode}"
 }
 
@@ -673,9 +663,9 @@ fn spawn_help_text(
       (
         @text.Text::new(create_help_string(app_status.get())),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         HelpText::{  },
       ),
     ),
@@ -718,7 +708,7 @@ fn pointer_over_ui(
 ) -> Bool {
   let over : Ref[Bool] = Ref(false)
   try! interactions_query.view(fn(_entity, interaction) {
-    if interaction.value() != @ui.Interaction::None {
+    if interaction.value() != None {
       over.val = true
     }
   })
@@ -762,7 +752,7 @@ fn handle_window_resize_messages(
     resource.image = image
   })
   try! mirror_cameras_query.view(fn(_entity, target) {
-    target.set(@camera_camera.RenderTarget::Image(image))
+    target.set(Image(image))
   })
   try! mirrors_query.view(fn(_entity, material) {
     let handle = material.value().material_asset_id()
@@ -811,8 +801,8 @@ fn move_fox_on_mouse_down(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   app_status : @app.Res[AppStatus],
 ) -> Unit {
-  if app_status.get().drag_action != DragAction::MoveFox ||
-    !mouse_buttons.pressed(@window.MouseButton::Left) ||
+  if app_status.get().drag_action != MoveFox ||
+    !mouse_buttons.pressed(Left) ||
     pointer_over_ui(interactions_query) {
     return
   }
@@ -928,8 +918,8 @@ fn move_camera_on_mouse_down(
   mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
   app_status : @app.Res[AppStatus],
 ) -> Unit {
-  if app_status.get().drag_action != DragAction::MoveCamera ||
-    !mouse_buttons.pressed(@window.MouseButton::Left) ||
+  if app_status.get().drag_action != MoveCamera ||
+    !mouse_buttons.pressed(Left) ||
     pointer_over_ui(interactions_query) {
     return
   }
@@ -938,14 +928,14 @@ fn move_camera_on_mouse_down(
   let delta_yaw = delta.x * CAMERA_YAW_SPEED
   try! main_cameras_query.view(fn(_entity, main_camera_transform) {
     let value = main_camera_transform.value()
-    let (yaw, pitch, _roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
+    let (yaw, pitch, _roll) = value.rotation.to_euler(YXZ)
     let pitch = clampf(
       pitch + delta_pitch,
       -CAMERA_PITCH_LIMIT,
       CAMERA_PITCH_LIMIT,
     )
     let yaw = yaw + delta_yaw
-    let rotation = @math.Quat::from_euler(@math.EulerRot::YXZ, yaw, pitch, 0.0F)
+    let rotation = @math.Quat::from_euler(YXZ, yaw, pitch, 0.0F)
     let forward = quat_rotate_vec3(rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F))
     main_camera_transform.set(
       value
@@ -1005,7 +995,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
   try! mirror_cameras_query.view(fn(_entity, data) {
     let (transform, projection) = data
     transform.set(mirror_camera_transform)
-    projection.set(@camera.Projection::Perspective(mirror_camera_projection))
+    projection.set(Perspective(mirror_camera_projection))
   })
 }
 
@@ -1077,66 +1067,63 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
+  .add_systems(Startup, @app.system_config_param6(setup).named("mirror.setup"))
   .add_systems(
-    @app.Startup,
-    @app.system_config_param6(setup).named("mirror.setup"),
-  )
-  .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param6(handle_window_resize_messages).named(
       "mirror.handle_window_resize_messages",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param5(move_camera_on_mouse_down).named(
       "mirror.move_camera_on_mouse_down",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param6(move_fox_on_mouse_down).named(
       "mirror.move_fox_on_mouse_down",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_ui_interactions).named(
       "mirror.handle_ui_interactions",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_mouse_action_change)
     .named("mirror.handle_mouse_action_change")
     .run_if_on_message(widget_click_message_key),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_radio_buttons).named(
       "mirror.update_radio_buttons",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(
       update_mirror_camera_on_main_camera_transform_change,
     ).named("mirror.update_mirror_camera_on_main_camera_transform_change"),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(play_fox_animation).named(
       "mirror.play_fox_animation",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(update_help_text).named("mirror.update_help_text"),
   )
   .run()

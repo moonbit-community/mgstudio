@@ -19,7 +19,7 @@ pub struct Name {
 
 ///|
 pub fn Name::new(name : String) -> Name {
-  Name::{ name, }
+  { name, }
 }
 
 ///|

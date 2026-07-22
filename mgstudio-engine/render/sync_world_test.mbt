@@ -41,15 +41,13 @@ fn synced_render_entities(render_world : @ecs.World) -> Array[@core.Entity] {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "render sync world: add/remove syncs entities between main world and render world" {
   let mut main_world = @ecs.World::new()
   defer main_world.close()
   let mut render_world = @ecs.World::new()
   defer render_world.close()
-  main_world.insert_resource(
-    ecs_key_pending_sync_entity,
-    PendingSyncEntity::PendingSyncEntity(),
-  )
+  main_world.insert_resource(ecs_key_pending_sync_entity, PendingSyncEntity())
 
   for _ in 0..<99 {
     ignore(main_world.spawn_empty())
@@ -64,7 +62,7 @@ test "render sync world: add/remove syncs entities between main world and render
   try! main_world.set_by_key(
     main_entity,
     ecs_key_sync_to_render_world,
-    SyncToRenderWorld::SyncToRenderWorld(),
+    SyncToRenderWorld(),
   )
 
   let synced = sync_world(main_world, render_world)

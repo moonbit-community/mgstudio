@@ -133,7 +133,7 @@ test "pbr: WireframePlugin applies explicit wireframe material in PostUpdate" {
   )
   app.run_startup() |> ignore
   let entity = app.world().spawn()
-  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe::Wireframe())
+  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe())
   try! app
   .world()
   .set_by_key(
@@ -220,9 +220,7 @@ test "pbr: WireframePlugin removes Mesh3dWireframe for NoWireframe entities" {
     content="true",
   )
 
-  try! app
-  .world()
-  .set_by_key(entity, ecs_key_no_wireframe, NoWireframe::NoWireframe())
+  try! app.world().set_by_key(entity, ecs_key_no_wireframe, NoWireframe())
   app.run_once() |> ignore
 
   debug_inspect(
@@ -246,7 +244,7 @@ test "pbr: WireframePlugin refreshes global material when config changes" {
       ),
     )
     .add_plugins(WireframePlugin::WireframePlugin())
-    .add_systems_world(@app.Update, fn(world) {
+    .add_systems_world(Update, fn(world) {
       if frame.val == 1 {
         world
         .get_resource_mut(WireframeConfig::resource())
@@ -290,7 +288,7 @@ test "pbr: WireframePlugin refreshes explicit material when color changes" {
   defer lifecycle_world_272_0.close()
   let app = @app.App::new(lifecycle_world_272_0)
     .add_plugins(WireframePlugin::WireframePlugin())
-    .add_systems_world(@app.Update, fn(world) {
+    .add_systems_world(Update, fn(world) {
       if frame.val == 1 {
         if target.val is Some(entity) {
           let updated = world.update_by_key(entity, ecs_key_wireframe_color, fn(
@@ -308,7 +306,7 @@ test "pbr: WireframePlugin refreshes explicit material when color changes" {
   app.run_startup() |> ignore
   let entity = app.world().spawn()
   target.val = Some(entity)
-  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe::Wireframe())
+  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe())
   try! app
   .world()
   .set_by_key(
@@ -337,7 +335,7 @@ test "pbr: WireframePlugin removes internal material when Wireframe is removed" 
   defer lifecycle_world_317_0.close()
   let app = @app.App::new(lifecycle_world_317_0)
     .add_plugins(WireframePlugin::WireframePlugin())
-    .add_systems_world(@app.Update, fn(world) {
+    .add_systems_world(Update, fn(world) {
       if frame.val == 1 {
         if target.val is Some(entity) {
           let removed = world.remove_by_key(entity, ecs_key_wireframe) catch {
@@ -351,7 +349,7 @@ test "pbr: WireframePlugin removes internal material when Wireframe is removed" 
   app.run_startup() |> ignore
   let entity = app.world().spawn()
   target.val = Some(entity)
-  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe::Wireframe())
+  try! app.world().set_by_key(entity, ecs_key_wireframe, Wireframe())
   app.run_once() |> ignore
   debug_inspect(
     try! (app.world().get_by_key(entity, ecs_key_mesh3d_wireframe) is Some(_)),
@@ -373,16 +371,16 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
   defer initial_render_world.close()
   initial_render_world.insert_resource(
     @render_mesh.MeshAllocatorSettings::resource(),
-    @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),
+    MeshAllocatorSettings(),
   )
   let lifecycle_world_354_0 = @ecs.World::new()
   defer lifecycle_world_354_0.close()
   let app = @app.App::new(lifecycle_world_354_0).insert_sub_app(
-    @app.RenderApp,
-    @app.SubApp::new(initial_render_world).set_update_schedule(Some(@app.Main)),
+    RenderApp,
+    @app.SubApp::new(initial_render_world).set_update_schedule(Some(Main)),
   )
   let app = wireframe_plugin(app)
-  let render_world = match app.get_sub_app(@app.RenderApp) {
+  let render_world = match app.get_sub_app(RenderApp) {
     Some(sub_app) => sub_app.world()
     None => abort("missing RenderApp")
   }
@@ -474,7 +472,7 @@ test "pbr: WireframePlugin initializes Bevy-shaped render-world resources" {
     },
   )
   let render_dot = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .schedule_graph_dot(@render.render_schedule_stage(), settings~)
   debug_inspect(
     render_dot.contains("\"mgstudio_pbr::prepare_wireframe_3d_phase_buffers\""),

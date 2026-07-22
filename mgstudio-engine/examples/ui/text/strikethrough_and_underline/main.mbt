@@ -27,12 +27,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_row_gap(@ui.Val::Px(16.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_justify_content(Center)
+      .with_align_items(Center)
+      .with_row_gap(Px(16.0F)),
     ),
   )
 
@@ -44,12 +44,12 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(67.0F)),
-      @text.TextLayout::new_with_justify(@text.Justify::Center),
+      @text.TextLayout::new_with_justify(Center),
       @text.TextBackgroundColor::black(),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_bottom(@ui.Val::Px(5.0F))
-      .with_right(@ui.Val::Px(5.0F)),
+      .with_position_type(Absolute)
+      .with_bottom(Px(5.0F))
+      .with_right(Px(5.0F)),
     ),
   )
   ignore(corner)
@@ -58,9 +58,9 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_row_gap(@ui.Val::Px(12.0F)),
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_row_gap(Px(12.0F)),
     ),
   )
 
@@ -72,7 +72,7 @@ fn setup(
         @text.Strikethrough::Strikethrough(),
         @text.StrikethroughColor::new(@color.Color::srgb(0.9F, 0.1F, 0.1F)),
         @text.TextBackgroundColor::new(@color.Color::srgb(0.2F, 0.75F, 0.35F)),
-        @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+        @ui.Node::Node().with_margin(@ui.UiRect::all(Px(6.0F))),
       ),
     ),
   )
@@ -83,7 +83,7 @@ fn setup(
         @hierarchy.Parent::new(group),
         @text.Text::new("underline"),
         @text.Underline::Underline(),
-        @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+        @ui.Node::Node().with_margin(@ui.UiRect::all(Px(6.0F))),
       ),
     ),
   )
@@ -94,7 +94,7 @@ fn setup(
       @text.Text::new("struck"),
       @text.Strikethrough::Strikethrough(),
       @text.TextBackgroundColor::new(@color.Color::srgb(0.2F, 0.75F, 0.35F)),
-      @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+      @ui.Node::Node().with_margin(@ui.UiRect::all(Px(6.0F))),
     ),
   )
   ignore(
@@ -123,7 +123,7 @@ fn setup(
         @text.Text::new("struck struck"),
         @text.Strikethrough::Strikethrough(),
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(67.0F)),
-        @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+        @ui.Node::Node().with_margin(@ui.UiRect::all(Px(6.0F))),
       ),
     ),
   )
@@ -132,7 +132,7 @@ fn setup(
     (
       @hierarchy.Parent::new(group),
       @text.Text::Text(),
-      @ui.Node::Node().with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+      @ui.Node::Node().with_margin(@ui.UiRect::all(Px(6.0F))),
     ),
   )
   ignore(
@@ -193,6 +193,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

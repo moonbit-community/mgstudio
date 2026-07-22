@@ -33,7 +33,7 @@ test "ecs added components: insert emits entity in tick range" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
+  try! world.set_by_key(entity, added_marker_key, { value: 1 })
 
   let added = world
     .added_components(added_marker_key, @core.SystemTicks::new(0, 1))
@@ -48,16 +48,16 @@ test "ecs added components: replace and update do not emit new add events" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
+  try! world.set_by_key(entity, added_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   debug_inspect(
-    try! world.replace(entity, added_marker_key, AddedMarker::{ value: 2 }),
+    try! world.replace(entity, added_marker_key, { value: 2 }),
     content="true",
   )
   debug_inspect(
     try! world.update_by_key(entity, added_marker_key, fn(marker) {
-      AddedMarker::{ value: marker.value + 1 }
+      { value: marker.value + 1 }
     }),
     content="true",
   )
@@ -74,14 +74,14 @@ test "ecs added components: remove then reinsert emits a fresh add event" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 1 })
+  try! world.set_by_key(entity, added_marker_key, { value: 1 })
   world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.remove_by_key(entity, added_marker_key),
     content="true",
   )
   world.increment_change_tick() |> ignore
-  try! world.set_by_key(entity, added_marker_key, AddedMarker::{ value: 3 })
+  try! world.set_by_key(entity, added_marker_key, { value: 3 })
 
   let added = world
     .added_components(added_marker_key, @core.SystemTicks::new(1, 2))

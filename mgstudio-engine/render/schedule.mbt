@@ -20,6 +20,7 @@
 pub struct RenderGraph {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn RenderGraph::RenderGraph() -> RenderGraph {
   RenderGraph::{  }
 }
@@ -53,7 +54,7 @@ pub struct CameraRenderGraph {
 pub fn CameraRenderGraph::new(
   schedule : @app.ScheduleStage,
 ) -> CameraRenderGraph {
-  CameraRenderGraph::{ schedule, }
+  { schedule, }
 }
 
 ///|
@@ -69,7 +70,7 @@ pub fn CameraRenderGraph::with_schedule(
   schedule : @app.ScheduleStage,
 ) -> CameraRenderGraph {
   self |> ignore
-  CameraRenderGraph::{ schedule, }
+  { schedule, }
 }
 
 ///|
@@ -144,7 +145,7 @@ pub struct RenderScheduleOrder {
 
 ///|
 pub fn RenderScheduleOrder::RenderScheduleOrder() -> RenderScheduleOrder {
-  RenderScheduleOrder::{ labels: [render_schedule_stage()] }
+  { labels: [render_schedule_stage()] }
 }
 
 ///|
@@ -329,7 +330,7 @@ fn render_system(world : @ecs.World) -> Unit {
 fn run_render_schedule(world : @ecs.World) -> Unit {
   let order = match world.get_resource(render_schedule_order_resource_key) {
     Some(value) => value
-    None => RenderScheduleOrder::RenderScheduleOrder()
+    None => RenderScheduleOrder()
   }
   for stage in order.labels() {
     @app.run_current_schedule_stage(world, stage)
@@ -342,7 +343,7 @@ fn send_time(world : @ecs.World) -> Unit {
     return
   }
   sender.try_send(@core.Instant::now()) catch {
-    @time.TimeSendError::Full =>
+    Full =>
       abort(
         "The TimeSender channel should always be empty during render. You might need to add the mgstudio::core::time_system to your app.",
       )

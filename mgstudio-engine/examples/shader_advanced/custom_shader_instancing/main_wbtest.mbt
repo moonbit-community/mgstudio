@@ -108,7 +108,7 @@ test "custom shader instancing: extraction clones instance array for render worl
   try! source_world.set_by_key(
     source_entity,
     @render.SyncToRenderWorld::component(),
-    @render.SyncToRenderWorld::SyncToRenderWorld(),
+    SyncToRenderWorld(),
   )
   try! source_world.set_by_key(
     source_entity,
@@ -116,7 +116,7 @@ test "custom shader instancing: extraction clones instance array for render worl
     source_data,
   )
 
-  @render.mark_renderer_ready(app.sub_app(@app.RenderApp).world())
+  @render.mark_renderer_ready(app.sub_app(RenderApp).world())
   let app = app.run_once()
   source_data.instances[0] = instance_data_new(1.0F, 1.0F)
 
@@ -125,7 +125,7 @@ test "custom shader instancing: extraction clones instance array for render worl
     .get_by_key(source_entity, @render.RenderEntity::component()))
     .unwrap()
     .id()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   guard (try! render_world.get_by_key(
       render_entity,
       InstanceMaterialData::component(),
@@ -148,11 +148,11 @@ test "custom shader instancing: render-world prepare stores InstanceBuffer" {
   let app = @app.App::new(lifecycle_world_139_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-    .add_systems_param2(@app.Startup, setup)
+    .add_systems_param2(Startup, setup)
     .run_once()
     .run_once()
     .run_once()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let query : @ecs.Query[
     (@ecs.Read[InstanceMaterialData], @ecs.Read[InstanceBuffer]),
     @ecs.All,
@@ -180,7 +180,7 @@ test "custom shader instancing: custom pipeline startup loads shader asset" {
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
     .run_once()
     .run_once()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   guard render_world.get_resource(CustomPipeline::resource()) is Some(pipeline) else {
     abort("expected CustomPipeline resource")
   }
@@ -197,7 +197,7 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
   let app = @app.App::new(lifecycle_world_184_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-    .add_systems_param2(@app.Startup, setup)
+    .add_systems_param2(Startup, setup)
     .run_once()
     .run_once()
     .run_once()
@@ -224,7 +224,7 @@ test "custom shader instancing: source mesh reaches visible render extraction" {
   debug_inspect(count, content="1")
   debug_inspect(visible, content="true")
   debug_inspect(has_render_entity, content="true")
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   debug_inspect(
     render_world
     .get_resource(@render_mesh.RenderMeshAssets::resource())
@@ -249,11 +249,11 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
   let app = @app.App::new(lifecycle_world_234_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-    .add_systems_param2(@app.Startup, setup)
+    .add_systems_param2(Startup, setup)
     .run_once()
     .run_once()
     .run_once()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let views : @ecs.Query[@ecs.Read[@render_view.ExtractedView], @ecs.All] = @ecs.query(
     render_world,
   )
@@ -286,7 +286,7 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
     content="true",
   )
   match item.sorting_info() {
-    @core_3d.TransparentSortingInfo3d::Sorted(mesh_center, depth_bias) => {
+    Sorted(mesh_center, depth_bias) => {
       debug_inspect(
         custom_instancing_approx(mesh_center.x, 0.0F) &&
         custom_instancing_approx(mesh_center.y, 0.0F) &&
@@ -295,8 +295,7 @@ test "custom shader instancing: queue_custom inserts the Bevy Transparent3d item
       )
       debug_inspect(depth_bias, content="0")
     }
-    @core_3d.TransparentSortingInfo3d::AlwaysOnTop =>
-      abort("expected sorted custom instancing phase item")
+    AlwaysOnTop => abort("expected sorted custom instancing phase item")
   }
   let pipeline_cache = render_world
     .get_resource(@render.pipeline_cache_resource_key)

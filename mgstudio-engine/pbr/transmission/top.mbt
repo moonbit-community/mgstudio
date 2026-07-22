@@ -25,7 +25,7 @@ pub(all) enum ScreenSpaceTransmissionQuality {
 
 ///|
 pub fn ScreenSpaceTransmissionQuality::default() -> ScreenSpaceTransmissionQuality {
-  ScreenSpaceTransmissionQuality::Medium
+  Medium
 }
 
 ///|
@@ -36,10 +36,7 @@ pub struct ScreenSpaceTransmission {
 
 ///|
 pub fn ScreenSpaceTransmission::ScreenSpaceTransmission() -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{
-    quality: ScreenSpaceTransmissionQuality::default(),
-    steps: 1,
-  }
+  { quality: ScreenSpaceTransmissionQuality::default(), steps: 1 }
 }
 
 ///|
@@ -47,16 +44,7 @@ pub fn ScreenSpaceTransmission::new(
   quality : ScreenSpaceTransmissionQuality,
   steps : Int,
 ) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{
-    quality,
-    steps: if steps < 0 {
-      0
-    } else if steps > 4 {
-      4
-    } else {
-      steps
-    },
-  }
+  { quality, steps: if steps < 0 { 0 } else if steps > 4 { 4 } else { steps } }
 }
 
 ///|
@@ -64,7 +52,7 @@ pub fn ScreenSpaceTransmission::with_quality(
   self : ScreenSpaceTransmission,
   quality : ScreenSpaceTransmissionQuality,
 ) -> ScreenSpaceTransmission {
-  ScreenSpaceTransmission::{ ..self, quality, }
+  { ..self, quality, }
 }
 
 ///|

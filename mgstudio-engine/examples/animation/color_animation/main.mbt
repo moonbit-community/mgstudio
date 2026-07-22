@@ -184,13 +184,13 @@ impl @ecs.Component for MixedOklcha with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, color_animation_setup)
-  .add_systems_param2(@app.Update, animate_curve_linear)
-  .add_systems_param2(@app.Update, animate_curve_xyza)
-  .add_systems_param2(@app.Update, animate_curve_oklaba)
-  .add_systems_param2(@app.Update, animate_mixed_hsla)
-  .add_systems_param2(@app.Update, animate_mixed_srgba)
-  .add_systems_param2(@app.Update, animate_mixed_oklcha)
+  .add_systems_world(Startup, color_animation_setup)
+  .add_systems_param2(Update, animate_curve_linear)
+  .add_systems_param2(Update, animate_curve_xyza)
+  .add_systems_param2(Update, animate_curve_oklaba)
+  .add_systems_param2(Update, animate_mixed_hsla)
+  .add_systems_param2(Update, animate_mixed_srgba)
+  .add_systems_param2(Update, animate_mixed_oklcha)
   .run()
 }
 
@@ -462,10 +462,10 @@ fn animate_mixed_oklcha(
 ///|
 fn default_linear_control_points() -> Array[LinearRgba] {
   [
-    LinearRgba::{ r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F },
-    LinearRgba::{ r: 1.0F, g: 1.0F, b: 0.0F, a: 1.0F },
-    LinearRgba::{ r: 1.0F, g: 0.0F, b: 0.0F, a: 1.0F },
-    LinearRgba::{ r: 0.0F, g: 0.0F, b: 0.0F, a: 1.0F },
+    { r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F },
+    { r: 1.0F, g: 1.0F, b: 0.0F, a: 1.0F },
+    { r: 1.0F, g: 0.0F, b: 0.0F, a: 1.0F },
+    { r: 0.0F, g: 0.0F, b: 0.0F, a: 1.0F },
   ]
 }
 
@@ -548,13 +548,13 @@ fn cubic_bezier_scalar(
 ///|
 fn bezier_linear(points : Array[LinearRgba], t : Float) -> LinearRgba {
   if points.length() < 4 {
-    return LinearRgba::{ r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
+    return { r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
   }
   let p0 = points[0]
   let p1 = points[1]
   let p2 = points[2]
   let p3 = points[3]
-  LinearRgba::{
+  {
     r: cubic_bezier_scalar(p0.r, p1.r, p2.r, p3.r, t),
     g: cubic_bezier_scalar(p0.g, p1.g, p2.g, p3.g, t),
     b: cubic_bezier_scalar(p0.b, p1.b, p2.b, p3.b, t),
@@ -565,13 +565,13 @@ fn bezier_linear(points : Array[LinearRgba], t : Float) -> LinearRgba {
 ///|
 fn bezier_xyza(points : Array[Xyza], t : Float) -> Xyza {
   if points.length() < 4 {
-    return Xyza::{ x: 0.0F, y: 0.0F, z: 0.0F, a: 1.0F }
+    return { x: 0.0F, y: 0.0F, z: 0.0F, a: 1.0F }
   }
   let p0 = points[0]
   let p1 = points[1]
   let p2 = points[2]
   let p3 = points[3]
-  Xyza::{
+  {
     x: cubic_bezier_scalar(p0.x, p1.x, p2.x, p3.x, t),
     y: cubic_bezier_scalar(p0.y, p1.y, p2.y, p3.y, t),
     z: cubic_bezier_scalar(p0.z, p1.z, p2.z, p3.z, t),
@@ -582,13 +582,13 @@ fn bezier_xyza(points : Array[Xyza], t : Float) -> Xyza {
 ///|
 fn bezier_oklaba(points : Array[Oklaba], t : Float) -> Oklaba {
   if points.length() < 4 {
-    return Oklaba::{ l: 1.0F, a_channel: 0.0F, b_channel: 0.0F, alpha: 1.0F }
+    return { l: 1.0F, a_channel: 0.0F, b_channel: 0.0F, alpha: 1.0F }
   }
   let p0 = points[0]
   let p1 = points[1]
   let p2 = points[2]
   let p3 = points[3]
-  Oklaba::{
+  {
     l: cubic_bezier_scalar(p0.l, p1.l, p2.l, p3.l, t),
     a_channel: cubic_bezier_scalar(
       p0.a_channel,
@@ -623,12 +623,12 @@ fn mixed_interval(t : Float) -> (Int, Float) {
 ///|
 fn mix_hsla_points(points : Array[Hsla], t : Float) -> LinearRgba {
   if points.length() < 4 {
-    return LinearRgba::{ r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
+    return { r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
   }
   let (start_i, local_t) = mixed_interval(t)
   let start_color = points[start_i]
   let end_color = points[start_i + 1]
-  hsla_to_linear(Hsla::{
+  hsla_to_linear({
     h: lerp_hue_degrees(start_color.h, end_color.h, local_t),
     s: lerp(start_color.s, end_color.s, local_t),
     l: lerp(start_color.l, end_color.l, local_t),
@@ -639,12 +639,12 @@ fn mix_hsla_points(points : Array[Hsla], t : Float) -> LinearRgba {
 ///|
 fn mix_srgba_points(points : Array[Srgba], t : Float) -> LinearRgba {
   if points.length() < 4 {
-    return LinearRgba::{ r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
+    return { r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
   }
   let (start_i, local_t) = mixed_interval(t)
   let start_color = points[start_i]
   let end_color = points[start_i + 1]
-  srgba_to_linear(Srgba::{
+  srgba_to_linear({
     r: lerp(start_color.r, end_color.r, local_t),
     g: lerp(start_color.g, end_color.g, local_t),
     b: lerp(start_color.b, end_color.b, local_t),
@@ -655,12 +655,12 @@ fn mix_srgba_points(points : Array[Srgba], t : Float) -> LinearRgba {
 ///|
 fn mix_oklcha_points(points : Array[Oklcha], t : Float) -> LinearRgba {
   if points.length() < 4 {
-    return LinearRgba::{ r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
+    return { r: 1.0F, g: 1.0F, b: 1.0F, a: 1.0F }
   }
   let (start_i, local_t) = mixed_interval(t)
   let start_color = points[start_i]
   let end_color = points[start_i + 1]
-  oklcha_to_linear(Oklcha::{
+  oklcha_to_linear({
     l: lerp(start_color.l, end_color.l, local_t),
     c: lerp(start_color.c, end_color.c, local_t),
     h: lerp_hue_degrees(start_color.h, end_color.h, local_t),
@@ -670,7 +670,7 @@ fn mix_oklcha_points(points : Array[Oklcha], t : Float) -> LinearRgba {
 
 ///|
 fn linear_to_xyza(color : LinearRgba) -> Xyza {
-  Xyza::{
+  {
     x: 0.4124564F * color.r + 0.3575761F * color.g + 0.1804375F * color.b,
     y: 0.2126729F * color.r + 0.7151522F * color.g + 0.0721750F * color.b,
     z: 0.0193339F * color.r + 0.1191920F * color.g + 0.9503041F * color.b,
@@ -680,7 +680,7 @@ fn linear_to_xyza(color : LinearRgba) -> Xyza {
 
 ///|
 fn xyza_to_linear(color : Xyza) -> LinearRgba {
-  LinearRgba::{
+  {
     r: 3.2404542F * color.x - 1.5371385F * color.y - 0.4985314F * color.z,
     g: -0.9692660F * color.x + 1.8760108F * color.y + 0.0415560F * color.z,
     b: 0.0556434F * color.x - 0.2040259F * color.y + 1.0572252F * color.z,
@@ -718,7 +718,7 @@ fn linear_to_oklaba(color : LinearRgba) -> Oklaba {
   let m_ = cbrt_signed(m)
   let s_ = cbrt_signed(s)
 
-  Oklaba::{
+  {
     l: 0.2104542553F * l_ + 0.7936177850F * m_ - 0.0040720468F * s_,
     a_channel: 1.9779984951F * l_ - 2.4285922050F * m_ + 0.4505937099F * s_,
     b_channel: 0.0259040371F * l_ + 0.7827717662F * m_ - 0.8086757660F * s_,
@@ -742,7 +742,7 @@ fn oklaba_to_linear(color : Oklaba) -> LinearRgba {
   let m = cube(m_)
   let s = cube(s_)
 
-  LinearRgba::{
+  {
     r: 4.0767416621F * l - 3.3077115913F * m + 0.2309699292F * s,
     g: -1.2684380046F * l + 2.6097574011F * m - 0.3413193965F * s,
     b: -0.0041960863F * l - 0.7034186147F * m + 1.7076147010F * s,
@@ -823,7 +823,7 @@ fn linear_to_hsla(color : LinearRgba) -> Hsla {
   let lightness = (max_v + min_v) / 2.0F
 
   if delta == 0.0F {
-    return Hsla::{ h: 0.0F, s: 0.0F, l: lightness, a: color.a }
+    return { h: 0.0F, s: 0.0F, l: lightness, a: color.a }
   }
 
   let saturation = delta / (1.0F - absf(2.0F * lightness - 1.0F))
@@ -836,23 +836,18 @@ fn linear_to_hsla(color : LinearRgba) -> Hsla {
     hue = 60.0F * ((r - g) / delta + 4.0F)
   }
 
-  Hsla::{ h: wrap_degrees(hue), s: saturation, l: lightness, a: color.a }
+  { h: wrap_degrees(hue), s: saturation, l: lightness, a: color.a }
 }
 
 ///|
 fn hsla_to_linear(color : Hsla) -> LinearRgba {
   let linear_color = @color.Color::hsla(color.h, color.s, color.l, color.a)
-  LinearRgba::{
-    r: linear_color.r,
-    g: linear_color.g,
-    b: linear_color.b,
-    a: linear_color.a,
-  }
+  { r: linear_color.r, g: linear_color.g, b: linear_color.b, a: linear_color.a }
 }
 
 ///|
 fn linear_to_srgba(color : LinearRgba) -> Srgba {
-  Srgba::{
+  {
     r: linear_channel_to_srgb(color.r),
     g: linear_channel_to_srgb(color.g),
     b: linear_channel_to_srgb(color.b),
@@ -862,7 +857,7 @@ fn linear_to_srgba(color : LinearRgba) -> Srgba {
 
 ///|
 fn srgba_to_linear(color : Srgba) -> LinearRgba {
-  LinearRgba::{
+  {
     r: srgb_channel_to_linear(color.r),
     g: srgb_channel_to_linear(color.g),
     b: srgb_channel_to_linear(color.b),
@@ -881,13 +876,13 @@ fn linear_to_oklcha(color : LinearRgba) -> Oklcha {
   } else {
     wrap_degrees(@math.atan2(oklab.b_channel, oklab.a_channel) * RAD_TO_DEG)
   }
-  Oklcha::{ l: oklab.l, c: chroma, h: hue, alpha: color.a }
+  { l: oklab.l, c: chroma, h: hue, alpha: color.a }
 }
 
 ///|
 fn oklcha_to_linear(color : Oklcha) -> LinearRgba {
   let hue_radians = color.h * DEG_TO_RAD
-  oklaba_to_linear(Oklaba::{
+  oklaba_to_linear({
     l: color.l,
     a_channel: color.c * @math.cos(hue_radians),
     b_channel: color.c * @math.sin(hue_radians),

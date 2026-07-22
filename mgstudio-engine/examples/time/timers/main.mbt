@@ -48,8 +48,8 @@ impl @app.Resource for Countdown with fn resource() {
 ///|
 fn Countdown::Countdown() -> Countdown {
   {
-    percent_trigger: @time.Timer::from_seconds(4.0F, @time.TimerMode::Repeating),
-    main_timer: @time.Timer::from_seconds(20.0F, @time.TimerMode::Once),
+    percent_trigger: @time.Timer::from_seconds(4.0F, Repeating),
+    main_timer: @time.Timer::from_seconds(20.0F, Once),
   }
 }
 
@@ -59,7 +59,7 @@ fn setup(commands : @app.Commands) -> Unit {
   commands
   .entity(timer_entity)
   .insert_component(PrintOnCompletionTimer::{
-    timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),
+    timer: @time.Timer::from_seconds(5.0F, Once),
   })
 }
 
@@ -112,8 +112,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { Countdown::Countdown() })
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param2(@app.Update, countdown)
-  .add_systems_param2(@app.Update, print_when_completed)
+  .add_systems_param(Startup, setup)
+  .add_systems_param2(Update, countdown)
+  .add_systems_param2(Update, print_when_completed)
   .run()
 }

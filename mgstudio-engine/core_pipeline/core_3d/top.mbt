@@ -51,13 +51,14 @@ let core_3d_set_extract : @app.SystemSet = @app.system_set(
 pub struct Core3dPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Core3dPlugin::Core3dPlugin() -> Core3dPlugin {
   Core3dPlugin::{  }
 }
 
 ///|
 pub fn core_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  core_3d_plugin_with(app, Core3dPlugin::Core3dPlugin())
+  core_3d_plugin_with(app, Core3dPlugin())
 }
 
 ///|
@@ -66,27 +67,18 @@ fn core_3d_configure_render_sub_app(
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
   if world.get_resource(Opaque3dPhase::resource()) is None {
-    world.insert_resource(
-      Opaque3dPhase::resource(),
-      Opaque3dPhase::Opaque3dPhase(),
-    )
+    world.insert_resource(Opaque3dPhase::resource(), Opaque3dPhase())
   }
   if world.get_resource(AlphaMask3dPhase::resource()) is None {
-    world.insert_resource(
-      AlphaMask3dPhase::resource(),
-      AlphaMask3dPhase::AlphaMask3dPhase(),
-    )
+    world.insert_resource(AlphaMask3dPhase::resource(), AlphaMask3dPhase())
   }
   if world.get_resource(Transparent3dPhase::resource()) is None {
-    world.insert_resource(
-      Transparent3dPhase::resource(),
-      Transparent3dPhase::Transparent3dPhase(),
-    )
+    world.insert_resource(Transparent3dPhase::resource(), Transparent3dPhase())
   }
   if world.get_resource(Transparent3dDrawFunctions::resource()) is None {
     world.insert_resource(
       Transparent3dDrawFunctions::resource(),
-      Transparent3dDrawFunctions::Transparent3dDrawFunctions(),
+      Transparent3dDrawFunctions(),
     )
   }
   let stage = @render.render_schedule_stage()
@@ -183,7 +175,7 @@ pub fn Opaque3dBatchSetKey::new(
   index_slab_id? : Int? = None,
   lightmap_slab_id? : Int? = None,
 ) -> Opaque3dBatchSetKey {
-  Opaque3dBatchSetKey::{
+  {
     pipeline_id,
     draw_function_id,
     material_bind_group_index,
@@ -205,7 +197,7 @@ pub struct Opaque3dBinKey {
 
 ///|
 pub fn Opaque3dBinKey::new(asset_id~ : Int) -> Opaque3dBinKey {
-  Opaque3dBinKey::{ asset_id, }
+  { asset_id, }
 }
 
 ///|
@@ -225,7 +217,7 @@ pub fn OpaqueNoLightmap3dBatchSetKey::new(
   vertex_slab_id? : Int = 0,
   index_slab_id? : Int? = None,
 ) -> OpaqueNoLightmap3dBatchSetKey {
-  OpaqueNoLightmap3dBatchSetKey::{
+  {
     pipeline_id,
     draw_function_id,
     material_bind_group_index,
@@ -250,7 +242,7 @@ pub struct OpaqueNoLightmap3dBinKey {
 pub fn OpaqueNoLightmap3dBinKey::new(
   asset_id~ : Int,
 ) -> OpaqueNoLightmap3dBinKey {
-  OpaqueNoLightmap3dBinKey::{ asset_id, }
+  { asset_id, }
 }
 
 ///|
@@ -274,7 +266,7 @@ pub fn Opaque3d::new(
   batch_range_end? : Int = 0,
   extra_index? : Int = 0,
 ) -> Opaque3d {
-  Opaque3d::{
+  {
     batch_set_key,
     bin_key,
     representative_entity_id,
@@ -316,7 +308,7 @@ pub fn AlphaMask3d::new(
   batch_range_end? : Int = 0,
   extra_index? : Int = 0,
 ) -> AlphaMask3d {
-  AlphaMask3d::{
+  {
     batch_set_key,
     bin_key,
     representative_entity_id,
@@ -390,10 +382,7 @@ pub struct Transparent3dDrawFunctions {
 
 ///|
 pub fn Transparent3dDrawFunctions::Transparent3dDrawFunctions() -> Transparent3dDrawFunctions {
-  Transparent3dDrawFunctions::{
-    draw_functions: @material.DrawFunctions::new(),
-    commands: [],
-  }
+  { draw_functions: @material.DrawFunctions::new(), commands: [] }
 }
 
 ///|
@@ -441,7 +430,7 @@ pub fn Transparent3dDrawFunctions::render(
       return command(world, item)
     }
   }
-  Transparent3dRenderCommandResult::Skip
+  Skip
 }
 
 ///|
@@ -457,7 +446,7 @@ pub fn Transparent3d::new(
   extra_index? : Int = 0,
   indexed? : Bool = false,
 ) -> Transparent3d {
-  Transparent3d::{
+  {
     sorting_info,
     distance,
     pipeline,
@@ -529,7 +518,7 @@ pub struct Opaque3dPhase {
 
 ///|
 pub fn Opaque3dPhase::Opaque3dPhase() -> Opaque3dPhase {
-  Opaque3dPhase::{ items: [] }
+  { items: [] }
 }
 
 ///|
@@ -554,7 +543,7 @@ pub struct AlphaMask3dPhase {
 
 ///|
 pub fn AlphaMask3dPhase::AlphaMask3dPhase() -> AlphaMask3dPhase {
-  AlphaMask3dPhase::{ items: [] }
+  { items: [] }
 }
 
 ///|
@@ -583,7 +572,7 @@ pub struct Transparent3dViewPhase {
 
 ///|
 pub fn Transparent3dViewPhase::Transparent3dViewPhase() -> Transparent3dViewPhase {
-  Transparent3dViewPhase::{ items: [], transient_items: [] }
+  { items: [], transient_items: [] }
 }
 
 ///|
@@ -672,7 +661,7 @@ pub struct Transparent3dPhase {
 
 ///|
 pub fn Transparent3dPhase::Transparent3dPhase() -> Transparent3dPhase {
-  Transparent3dPhase::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|
@@ -697,11 +686,7 @@ pub fn Transparent3dPhase::prepare_for_new_frame(
 ) -> Unit {
   match self.views.get(retained_view_entity) {
     Some(phase) => phase.prepare_for_new_frame()
-    None =>
-      self.views.set(
-        retained_view_entity,
-        Transparent3dViewPhase::Transparent3dViewPhase(),
-      )
+    None => self.views.set(retained_view_entity, Transparent3dViewPhase())
   }
 }
 

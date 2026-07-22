@@ -46,7 +46,7 @@ struct InstanceMaterialData {
 fn InstanceMaterialData::clone(
   self : InstanceMaterialData,
 ) -> InstanceMaterialData {
-  InstanceMaterialData::{ instances: self.instances.copy() }
+  { instances: self.instances.copy() }
 }
 
 ///|
@@ -57,7 +57,7 @@ struct InstanceBuffer {
 
 ///|
 fn InstanceBuffer::new(buffer_id : Int, length : Int) -> InstanceBuffer {
-  InstanceBuffer::{ buffer_id, length }
+  { buffer_id, length }
 }
 
 ///|
@@ -83,12 +83,11 @@ struct CustomSpecializedMeshPipelines {
 
 ///|
 fn CustomSpecializedMeshPipelines::CustomSpecializedMeshPipelines() -> CustomSpecializedMeshPipelines {
-  CustomSpecializedMeshPipelines::{
-    pipelines: @material.SpecializedMeshPipelines::new(),
-  }
+  { pipelines: @material.SpecializedMeshPipelines::new() }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn CustomMaterialPlugin::CustomMaterialPlugin() -> CustomMaterialPlugin {
   CustomMaterialPlugin::{  }
 }
@@ -137,7 +136,7 @@ impl @ecs.Component for InstanceBuffer with fn component() {
 
 ///|
 fn instance_data_new(x : Float, y : Float) -> InstanceData {
-  InstanceData::{
+  {
     position: @math.Vec3::new(x * 10.0F - 5.0F, y * 10.0F - 5.0F, 0.0F),
     scale: 1.0F,
     color: @color.Color::hsla(x * 360.0F, y, 0.5F, 1.0F).as_linear_rgba(),
@@ -157,7 +156,7 @@ fn instance_material_data() -> InstanceMaterialData {
       )
     }
   }
-  InstanceMaterialData::{ instances, }
+  { instances, }
 }
 
 ///|
@@ -198,22 +197,10 @@ fn instance_data_bytes(data : InstanceMaterialData) -> Bytes {
 
 ///|
 fn instance_vertex_layout() -> @mesh.VertexBufferLayout {
-  @mesh.VertexBufferLayout::new(
-    array_stride=32,
-    step_mode=@mesh.MeshVertexStepMode::Instance,
-    attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x4,
-        shader_location=3,
-      ),
-      @mesh.VertexAttribute::new(
-        offset=16,
-        format=@mesh.MeshVertexFormat::Float32x4,
-        shader_location=4,
-      ),
-    ],
-  )
+  @mesh.VertexBufferLayout::new(array_stride=32, step_mode=Instance, attributes=[
+    @mesh.VertexAttribute::new(offset=0, format=Float32x4, shader_location=3),
+    @mesh.VertexAttribute::new(offset=16, format=Float32x4, shader_location=4),
+  ])
 }
 
 ///|
@@ -262,52 +249,50 @@ fn draw_mesh_instanced(
 ) -> @core_3d.Transparent3dRenderCommandResult {
   guard world.get_resource(@render_mesh.RenderMeshAssets::resource())
     is Some(meshes) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   guard world.get_resource(@pbr.RenderMeshInstances::resource())
     is Some(render_mesh_instances) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   guard world.get_resource(@render_mesh.MeshAllocator::resource())
     is Some(mesh_allocator) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   if !world.is_alive(item.entity()) {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   guard (try! world.get_by_key(item.entity(), InstanceBuffer::component()))
     is Some(instance_buffer) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   guard render_mesh_instances.render_mesh_queue_data(item.main_entity())
     is Some(mesh_instance) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   let mesh_asset_id = mesh_instance.mesh_asset_id()
-  guard meshes.get(mesh_asset_id) is Some(mesh) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
-  }
+  guard meshes.get(mesh_asset_id) is Some(mesh) else { return Skip }
   guard mesh_allocator.mesh_vertex_slice(mesh_asset_id) is Some(_) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   match mesh.buffer_info() {
-    @render_mesh.RenderMeshBufferInfo::Indexed(_, _) => {
+    Indexed(_, _) => {
       guard mesh_allocator.mesh_index_slice(mesh_asset_id) is Some(_) else {
-        return @core_3d.Transparent3dRenderCommandResult::Skip
+        return Skip
       }
     }
-    @render_mesh.RenderMeshBufferInfo::NonIndexed => ()
+    NonIndexed => ()
   }
   if instance_buffer.length == 0 {
-    return @core_3d.Transparent3dRenderCommandResult::Success
+    return Success
   }
   guard world.get_resource(@pbr_render.Render3dMeshRuntimeState::resource())
     is Some(mesh_runtime_state) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   guard @pbr_render.render3d_uploaded_mesh_id(mesh_runtime_state, mesh_asset_id)
     is Some(mesh_id) else {
-    return @core_3d.Transparent3dRenderCommandResult::Skip
+    return Skip
   }
   let world_from_local = @pbr.get_mesh_instance_world_from_local(
     item.main_entity(),
@@ -323,7 +308,7 @@ fn draw_mesh_instanced(
     instance_vertex_buffer_id=instance_buffer.buffer_id,
     world_from_local~,
   )
-  @core_3d.Transparent3dRenderCommandResult::Success
+  Success
 }
 
 ///|
@@ -486,10 +471,7 @@ fn init_custom_pipeline(world : @ecs.World) -> Unit {
     Some(mesh_pipeline) => mesh_pipeline
     None => abort("custom_shader_instancing: expected MeshPipeline resource")
   }
-  world.insert_resource(CustomPipeline::resource(), CustomPipeline::{
-    shader,
-    mesh_pipeline,
-  })
+  world.insert_resource(CustomPipeline::resource(), { shader, mesh_pipeline })
 }
 
 ///|
@@ -536,7 +518,7 @@ pub impl @app.Plugin for CustomMaterialPlugin with fn build(_self, app) {
       is None {
       render_world.insert_resource(
         CustomSpecializedMeshPipelines::resource(),
-        CustomSpecializedMeshPipelines::CustomSpecializedMeshPipelines(),
+        CustomSpecializedMeshPipelines(),
       )
     }
     render_app
@@ -603,6 +585,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(CustomMaterialPlugin::CustomMaterialPlugin())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

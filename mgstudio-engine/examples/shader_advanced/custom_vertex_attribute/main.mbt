@@ -143,7 +143,7 @@ fn rotate_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_cube)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, rotate_cube)
   .run()
 }

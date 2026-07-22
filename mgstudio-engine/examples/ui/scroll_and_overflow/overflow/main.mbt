@@ -14,22 +14,17 @@
 
 ///|
 fn margin_x(value : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(value, value, @ui.Val::Px(0.0F), @ui.Val::Px(0.0F))
+  @ui.UiRect::new(value, value, Px(0.0F), Px(0.0F))
 }
 
 ///|
 fn margin_bottom(value : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(
-    @ui.Val::Px(0.0F),
-    @ui.Val::Px(0.0F),
-    @ui.Val::Px(0.0F),
-    value,
-  )
+  @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), value)
 }
 
 ///|
 fn padding_left_top(left : @ui.Val, top : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(left, @ui.Val::Px(0.0F), top, @ui.Val::Px(0.0F))
+  @ui.UiRect::new(left, Px(0.0F), top, Px(0.0F))
 }
 
 ///|
@@ -41,10 +36,10 @@ fn transparent() -> @color.Color {
 fn overflow_label(overflow : @ui.Overflow) -> String {
   let axis = fn(value : @ui.OverflowAxis) -> String {
     match value {
-      @ui.OverflowAxis::Visible => "Visible"
-      @ui.OverflowAxis::Clip => "Clip"
-      @ui.OverflowAxis::Hidden => "Hidden"
-      @ui.OverflowAxis::Scroll => "Scroll"
+      Visible => "Visible"
+      Clip => "Clip"
+      Hidden => "Hidden"
+      Scroll => "Scroll"
     }
   }
   "(\{axis(overflow.x)}, \{axis(overflow.y)})"
@@ -66,15 +61,15 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_align_items(Center)
+    .with_justify_content(Center),
   )
   try! world.set_by_key(
     root,
@@ -83,10 +78,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let overflows : Array[@ui.Overflow] = [
-    @ui.Overflow::new(@ui.OverflowAxis::Visible, @ui.OverflowAxis::Visible),
-    @ui.Overflow::new(@ui.OverflowAxis::Clip, @ui.OverflowAxis::Visible),
-    @ui.Overflow::new(@ui.OverflowAxis::Visible, @ui.OverflowAxis::Clip),
-    @ui.Overflow::new(@ui.OverflowAxis::Clip, @ui.OverflowAxis::Clip),
+    @ui.Overflow::new(Visible, Visible),
+    @ui.Overflow::new(Clip, Visible),
+    @ui.Overflow::new(Visible, Clip),
+    @ui.Overflow::new(Clip, Clip),
   ]
 
   for overflow in overflows {
@@ -100,9 +95,9 @@ fn setup(world : @ecs.World) -> Unit {
       column,
       @ui.ecs_key_node,
       @ui.Node::Node()
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_margin(margin_x(@ui.Val::Px(25.0F))),
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_margin(margin_x(Px(25.0F))),
     )
 
     let label_box = world.spawn_empty()
@@ -115,8 +110,8 @@ fn setup(world : @ecs.World) -> Unit {
       label_box,
       @ui.ecs_key_node,
       @ui.Node::Node()
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
-      .with_margin(margin_bottom(@ui.Val::Px(25.0F))),
+      .with_padding(@ui.UiRect::all(Px(10.0F)))
+      .with_margin(margin_bottom(Px(25.0F))),
     )
     try! world.set_by_key(
       label_box,
@@ -135,11 +130,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.ecs_key_text,
       @text.Text::new(overflow_label(overflow)),
     )
-    try! world.set_by_key(
-      label,
-      @text.ecs_key_text_font,
-      @text.TextFont::TextFont(),
-    )
+    try! world.set_by_key(label, @text.ecs_key_text_font, TextFont())
 
     let panel = world.spawn_empty()
     try! world.set_by_key(
@@ -151,10 +142,10 @@ fn setup(world : @ecs.World) -> Unit {
       panel,
       @ui.ecs_key_node,
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(100.0F))
-      .with_height(@ui.Val::Px(100.0F))
-      .with_padding(padding_left_top(@ui.Val::Px(25.0F), @ui.Val::Px(25.0F)))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
+      .with_width(Px(100.0F))
+      .with_height(Px(100.0F))
+      .with_padding(padding_left_top(Px(25.0F), Px(25.0F)))
+      .with_border(@ui.UiRect::all(Px(5.0F)))
       .with_overflow(overflow),
     )
     try! world.set_by_key(
@@ -174,18 +165,18 @@ fn setup(world : @ecs.World) -> Unit {
       @hierarchy.ecs_key_parent,
       @hierarchy.Parent::new(panel),
     )
-    try! world.set_by_key(image, @ui.ecs_key_node, @ui.Node::{
-      ..@ui.Node(),
-      min_width: @ui.Val::Px(100.0F),
-      min_height: @ui.Val::Px(100.0F),
+    try! world.set_by_key(image, @ui.ecs_key_node, {
+      ..Node(),
+      min_width: Px(100.0F),
+      min_height: Px(100.0F),
     })
     try! world.set_by_key(
       image,
       @ui.ecs_key_image_node,
       @ui.ImageNode::new(icon),
     )
-    try! world.set_by_key(image, @ui.ecs_key_interaction, @ui.Interaction::None)
-    try! world.set_by_key(image, @ui.ecs_key_outline, @ui.Outline::Outline())
+    try! world.set_by_key(image, @ui.ecs_key_interaction, None)
+    try! world.set_by_key(image, @ui.ecs_key_outline, Outline())
   }
 }
 
@@ -200,11 +191,11 @@ fn update_outlines(
     let outline = value.0
     let interaction = value.1.value()
     let color = match interaction {
-      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.0F, 0.0F)
-      @ui.Interaction::Hovered => @color.Color::white()
-      @ui.Interaction::None => transparent()
+      Pressed => @color.Color::srgb(1.0F, 0.0F, 0.0F)
+      Hovered => @color.Color::white()
+      None => transparent()
     }
-    outline.set(@ui.Outline::new(@ui.Val::Px(2.0F), @ui.Val::Px(2.0F), color))
+    outline.set(@ui.Outline::new(Px(2.0F), Px(2.0F), color))
   })
 }
 
@@ -213,6 +204,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
-  .add_systems_param(@app.Update, update_outlines)
+  .add_systems_param(Update, update_outlines)
   .run()
 }

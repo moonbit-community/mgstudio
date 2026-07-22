@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_events2_setup)
-  .add_systems_world(@app.Update, rapier2d_events2_print)
+  .add_systems_world(Startup, rapier2d_events2_setup)
+  .add_systems_world(Update, rapier2d_events2_print)
   .run()
 }
 
@@ -164,9 +164,9 @@ fn rapier2d_events2_print(world : @ecs.World) -> Unit {
   guard ev_res.get() is Some(events) else { return }
   for ev in events.collisions {
     match ev {
-      @physics2d.CollisionEvent2d::Started(a, b, sensor) =>
+      Started(a, b, sensor) =>
         println("[events2] collision started: \{a.id} \{b.id} sensor=\{sensor}")
-      @physics2d.CollisionEvent2d::Stopped(a, b, sensor) =>
+      Stopped(a, b, sensor) =>
         println("[events2] collision stopped: \{a.id} \{b.id} sensor=\{sensor}")
     }
   }

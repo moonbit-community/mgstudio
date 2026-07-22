@@ -23,7 +23,7 @@ pub struct ConstantCurve[T] {
 
 ///|
 pub fn[T] ConstantCurve::new(domain : Interval, value : T) -> ConstantCurve[T] {
-  ConstantCurve::{ domain_: domain, value }
+  { domain_: domain, value }
 }
 
 ///|
@@ -72,7 +72,7 @@ pub fn[T] FunctionCurve::new(
   domain : Interval,
   f : (Float) -> T,
 ) -> FunctionCurve[T] {
-  FunctionCurve::{ domain_: domain, f }
+  { domain_: domain, f }
 }
 
 ///|

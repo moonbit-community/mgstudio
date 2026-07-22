@@ -21,7 +21,7 @@ pub struct Wireframe3dThinImmediates {
 pub fn Wireframe3dThinImmediates::from_material(
   material : RenderWireframeMaterial,
 ) -> Wireframe3dThinImmediates {
-  Wireframe3dThinImmediates::{ color: material.color }
+  { color: material.color }
 }
 
 ///|
@@ -81,10 +81,10 @@ fn wireframe_render_command_material(
   wireframe_assets : RenderWireframeAssets,
 ) -> RenderWireframeMaterial raise WireframeRenderCommandError {
   guard wireframe_instances.get(item.main_entity()) is Some(material_asset_id) else {
-    raise WireframeRenderCommandError::NoWireframeMaterialFoundForEntity
+    raise NoWireframeMaterialFoundForEntity
   }
   guard wireframe_assets.get(material_asset_id) is Some(material) else {
-    raise WireframeRenderCommandError::NoWireframeMaterialFoundForEntity
+    raise NoWireframeMaterialFoundForEntity
   }
   material
 }
@@ -113,7 +113,7 @@ pub struct Wireframe3dWideImmediates {
 pub fn Wireframe3dWideImmediates::from_material(
   material : RenderWireframeMaterial,
 ) -> Wireframe3dWideImmediates {
-  Wireframe3dWideImmediates::{
+  {
     color: material.color,
     line_width: material.line_width,
     smoothing: if material.line_width <= 1.0F {
@@ -195,11 +195,7 @@ pub fn WireframeVertexPullParams::new(
   vertex_stride_u32s : UInt,
   position_offset_u32s : UInt,
 ) -> WireframeVertexPullParams {
-  WireframeVertexPullParams::{
-    index_offset,
-    vertex_stride_u32s,
-    position_offset_u32s,
-  }
+  { index_offset, vertex_stride_u32s, position_offset_u32s }
 }
 
 ///|
@@ -251,12 +247,7 @@ pub fn DrawWireframeMeshPulledDirectRange::new(
   batch_start : Int,
   batch_end : Int,
 ) -> DrawWireframeMeshPulledDirectRange {
-  DrawWireframeMeshPulledDirectRange::{
-    first_vertex,
-    vertex_end,
-    batch_start,
-    batch_end,
-  }
+  { first_vertex, vertex_end, batch_start, batch_end }
 }
 
 ///|
@@ -330,7 +321,7 @@ pub fn DrawWireframeMeshPulledIndirectPlan::new(
   indirect_parameters_count : Int,
   batch_set_count_offset? : Int? = None,
 ) -> DrawWireframeMeshPulledIndirectPlan {
-  DrawWireframeMeshPulledIndirectPlan::{
+  {
     indirect_parameters_offset,
     indirect_parameters_count,
     batch_set_count_offset,
@@ -407,7 +398,7 @@ pub fn Wireframe3dRenderCommandPlan::new_thin(
   item : Wireframe3d,
   immediates : Wireframe3dThinImmediates,
 ) -> Wireframe3dRenderCommandPlan {
-  Wireframe3dRenderCommandPlan::{
+  {
     kind: Thin,
     item,
     thin_immediates: Some(immediates),
@@ -426,7 +417,7 @@ pub fn Wireframe3dRenderCommandPlan::new_wide(
   direct_range : DrawWireframeMeshPulledDirectRange?,
   indirect_plan : DrawWireframeMeshPulledIndirectPlan?,
 ) -> Wireframe3dRenderCommandPlan {
-  Wireframe3dRenderCommandPlan::{
+  {
     kind: Wide,
     item,
     thin_immediates: None,
@@ -549,7 +540,7 @@ pub fn wireframe_3d_render_command_decision(
       ),
     )
   }
-  raise WireframeRenderCommandError::UnknownWireframeDrawFunction
+  raise UnknownWireframeDrawFunction
 }
 
 ///|

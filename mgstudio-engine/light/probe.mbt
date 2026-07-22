@@ -69,7 +69,7 @@ pub struct Skybox {
 
 ///|
 pub fn Skybox::Skybox() -> Skybox {
-  Skybox::{ image: None, brightness: 0.0F, rotation: @math.Quat::identity() }
+  { image: None, brightness: 0.0F, rotation: @math.Quat::identity() }
 }
 
 ///|
@@ -77,7 +77,7 @@ pub fn Skybox::new(
   image : @asset.Handle[@asset.Image],
   brightness : Float,
 ) -> Skybox {
-  Skybox::{ ..Skybox(), image: Some(image), brightness }
+  { ..Skybox(), image: Some(image), brightness }
 }
 
 ///|
@@ -85,17 +85,17 @@ pub fn Skybox::with_image(
   self : Skybox,
   image : @asset.Handle[@asset.Image]?,
 ) -> Skybox {
-  Skybox::{ ..self, image, }
+  { ..self, image, }
 }
 
 ///|
 pub fn Skybox::with_brightness(self : Skybox, brightness : Float) -> Skybox {
-  Skybox::{ ..self, brightness, }
+  { ..self, brightness, }
 }
 
 ///|
 pub fn Skybox::with_rotation(self : Skybox, rotation : @math.Quat) -> Skybox {
-  Skybox::{ ..self, rotation, }
+  { ..self, rotation, }
 }
 
 ///|

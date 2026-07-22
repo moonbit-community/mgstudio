@@ -49,12 +49,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(24.0F)))
-      .with_row_gap(@ui.Val::Px(16.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_display(Flex)
+      .with_flex_direction(Column)
+      .with_padding(@ui.UiRect::all(Px(24.0F)))
+      .with_row_gap(Px(16.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.11F, 0.13F, 0.18F)),
     ),
   )
@@ -74,21 +74,17 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_display(@ui.Display::Grid)
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
+      .with_display(Grid)
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(COLS), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(COLS), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(ROWS), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(ROWS), [Fr(1.0F)]),
       ])
-      .with_column_gap(@ui.Val::Px(8.0F))
-      .with_row_gap(@ui.Val::Px(8.0F)),
+      .with_column_gap(Px(8.0F))
+      .with_row_gap(Px(8.0F)),
     ),
   )
 
@@ -102,9 +98,9 @@ fn setup(
           @ui.Button::Button(),
           IdleColor::{ color: idle },
           @ui.Node::Node()
-          .with_width(@ui.Val::Percent(100.0F))
-          .with_height(@ui.Val::Percent(100.0F))
-          .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
+          .with_width(Percent(100.0F))
+          .with_height(Percent(100.0F))
+          .with_border(@ui.UiRect::all(Px(1.0F))),
           @ui.BackgroundColor::new(idle),
           @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.25F)),
         ),
@@ -127,8 +123,8 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, background, idle) = data
     let next_color = match interaction.value() {
-      @ui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.35F, 0.0F)
-      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.12F, 0.0F)
+      Hovered => @color.Color::srgb(1.0F, 0.35F, 0.0F)
+      Pressed => @color.Color::srgb(1.0F, 0.12F, 0.0F)
       _ => idle.value().color
     }
     background.set(@ui.BackgroundColor::new(next_color))
@@ -144,7 +140,7 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param(@app.Update, button_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param(Update, button_system)
   .run()
 }

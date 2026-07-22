@@ -38,8 +38,8 @@ fn setup(
       @asset.Image::new_target_texture(
         512,
         512,
-        @asset.TextureFormat::Rgba8Unorm,
-        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+        Rgba8Unorm,
+        Some(Rgba8UnormSrgb),
       ),
     )
 
@@ -89,10 +89,10 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.12F)),
     ),
   )
@@ -100,10 +100,10 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(260.0F))
-      .with_height(@ui.Val::Px(260.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F))),
+      .with_width(Px(260.0F))
+      .with_height(Px(260.0F))
+      .with_border(@ui.UiRect::all(Px(4.0F)))
+      .with_padding(@ui.UiRect::all(Px(8.0F))),
       @ui.BorderColor::new(@color.Color::srgb(0.9F, 0.9F, 0.95F)),
       @ui.ImageNode::new(target),
     ),
@@ -129,7 +129,7 @@ fn rotate_mesh(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_mesh)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, rotate_mesh)
   .run()
 }

@@ -22,6 +22,7 @@ extend RenderExtractDirectMarker with @app.Resource::{resource}
 struct RenderExtractDirectMarker {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 fn RenderExtractDirectMarker::RenderExtractDirectMarker() -> RenderExtractDirectMarker {
   RenderExtractDirectMarker::{  }
 }
@@ -42,6 +43,7 @@ impl @app.Resource for RenderExtractDirectMarker with fn resource() {
 struct RenderExtractDeferredMarker {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 fn RenderExtractDeferredMarker::RenderExtractDeferredMarker() -> RenderExtractDeferredMarker {
   RenderExtractDeferredMarker::{  }
 }
@@ -125,7 +127,7 @@ test "render plugin: debug flags configure batching indirect parameter readback 
   let app = @app.App::new(lifecycle_world_112_0).add_plugins(
     RenderPlugin::RenderPlugin().with_debug_flags(debug_flags),
   )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let settings = render_world
     .get_resource(@batching.IndirectParametersBuffersSettings::resource())
     .unwrap()
@@ -174,10 +176,7 @@ test "render schedule: recovery drives render and render graph phases once" {
     .add_schedule(RenderGraph::base_schedule())
   render_sub_app
   .world()
-  .insert_resource(
-    render_schedule_order_resource_key,
-    RenderScheduleOrder::RenderScheduleOrder(),
-  )
+  .insert_resource(render_schedule_order_resource_key, RenderScheduleOrder())
   let render_sub_app = configure_base_render_sets(render_sub_app)
   let render_sub_app = render_sub_app
     .add_systems(
@@ -338,11 +337,7 @@ test "render schedule: prepare resource sets match bevy order" {
 test "render schedule: pipeline queue is chained inside render set" {
   let log : Array[String] = []
   let cache = @render_resource.PipelineCache::new()
-  ignore(
-    cache.queue_render_pipeline(
-      @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
-    ),
-  )
+  ignore(cache.queue_render_pipeline(RenderPipelineDescriptor()))
   let lifecycle_world_323_0 = @ecs.World::new()
   defer lifecycle_world_323_0.close()
   let render_sub_app = @app.SubApp::new(lifecycle_world_323_0)
@@ -386,11 +381,7 @@ test "render settings: descriptor registration observes pipeline cache waiting i
   let world = @ecs.World::new()
   defer world.close()
   let cache = @render_resource.PipelineCache::new()
-  ignore(
-    cache.queue_render_pipeline(
-      @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
-    ),
-  )
+  ignore(cache.queue_render_pipeline(RenderPipelineDescriptor()))
   world.insert_resource(pipeline_cache_resource_key, cache)
   process_pipeline_queue_system(world)
   let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
@@ -454,10 +445,7 @@ test "render recovery: render schedule only runs when renderer is ready" {
     )
   render_sub_app
   .world()
-  .insert_resource(
-    render_schedule_order_resource_key,
-    RenderScheduleOrder::RenderScheduleOrder(),
-  )
+  .insert_resource(render_schedule_order_resource_key, RenderScheduleOrder())
   render_sub_app
   .world()
   .insert_resource(@time.time_sender_resource_key, time_sender)
@@ -505,7 +493,7 @@ test "render plugin: initializes pending command buffers from render startup" {
     RenderPlugin::RenderPlugin(),
   )
   let render_sub_app = app
-    .get_sub_app(@app.RenderApp)
+    .get_sub_app(RenderApp)
     .unwrap()
     .set_update_schedule(Some(render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
@@ -528,15 +516,12 @@ test "render plugin: copies AssetServer resource into RenderApp" {
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(RenderPlugin::RenderPlugin())
   let render_server = app
-    .get_sub_app(@app.RenderApp)
+    .get_sub_app(RenderApp)
     .unwrap()
     .world()
     .get_resource(@asset.AssetServer::resource())
     .unwrap()
-  debug_inspect(
-    render_server.unapproved_path_mode() == @asset.UnapprovedPathMode::Forbid,
-    content="true",
-  )
+  debug_inspect(render_server.unapproved_path_mode() == Forbid, content="true")
 }
 
 ///|
@@ -547,7 +532,7 @@ test "render startup: gpu resources can be initialized repeatedly" {
     RenderPlugin::RenderPlugin(),
   )
   let render_sub_app = app
-    .get_sub_app(@app.RenderApp)
+    .get_sub_app(RenderApp)
     .unwrap()
     .set_update_schedule(Some(render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
@@ -580,7 +565,7 @@ test "render plugin: installs render asset byte budget resources" {
     .get_resource(render_asset_bytes_per_frame_resource_key)
     .unwrap()
   debug_inspect(main_budget.max_bytes() is None, content="true")
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let limiter = render_world
     .get_resource(render_asset_bytes_per_frame_limiter_resource_key)
     .unwrap()
@@ -600,7 +585,7 @@ test "render asset byte budget: extract updates limiter and cleanup resets write
   defer render_world.close()
   render_world.insert_resource(
     render_asset_bytes_per_frame_limiter_resource_key,
-    RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
+    RenderAssetBytesPerFrameLimiter(),
   )
   let synced = render_sub_app_extract(main_world, render_world)
   let render_world = synced.1
@@ -623,14 +608,14 @@ test "render extract schedule: runs before render and defers commands to Extract
     RenderPlugin::RenderPlugin(),
   )
   ignore(
-    app.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    app.modify_sub_app(RenderApp, fn(render_sub_app) {
       render_sub_app
       .add_systems(
         render_extract_schedule_stage(),
         @app.system(fn(world : @ecs.World) {
           world.insert_resource(
             RenderExtractDirectMarker::resource(),
-            RenderExtractDirectMarker::RenderExtractDirectMarker(),
+            RenderExtractDirectMarker(),
           )
         }),
       )
@@ -644,10 +629,10 @@ test "render extract schedule: runs before render and defers commands to Extract
       )
     }),
   )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   mark_renderer_ready(render_world)
   let app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     render_world.resource(RenderExtractDirectMarker::resource()).is_present(),
     content="true",
@@ -665,7 +650,7 @@ test "render plugin: initializes render state as not ready" {
   let app = @app.App::new(lifecycle_world_633_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let state = render_world.get_resource(render_state_resource_key).unwrap()
   debug_inspect(state.is_ready(), content="false")
   debug_inspect(renderer_is_ready(render_world), content="false")
@@ -684,7 +669,7 @@ test "render plugin: future resources unpack during plugin finish" {
     app.world().resource(future_render_resources_resource_key).is_present(),
     content="true",
   )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     render_world.resource(render_device_resource_key).is_present(),
     content="false",
@@ -695,7 +680,7 @@ test "render plugin: future resources unpack during plugin finish" {
     app.world().resource(future_render_resources_resource_key).is_present(),
     content="false",
   )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     render_world.resource(render_device_resource_key).is_present(),
     content="true",
@@ -721,7 +706,7 @@ test "render plugin: initializes manual texture views in main and render worlds"
     content="true",
   )
   let app = app.finish()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     render_world
     .resource(@render_texture.ManualTextureViews::resource())
@@ -757,8 +742,8 @@ test "render recovery: reinitializing consumes future render resources before st
     RenderState::reinitializing(),
   )
   let app = @app.App::new(main_world)
-    .insert_sub_app(@app.RenderApp, render_sub_app)
-    .set_sub_app_extract(@app.RenderApp, fn(
+    .insert_sub_app(RenderApp, render_sub_app)
+    .set_sub_app_extract(RenderApp, fn(
       main_world : @ecs.World,
       render_world : @ecs.World,
     ) {
@@ -767,7 +752,7 @@ test "render recovery: reinitializing consumes future render resources before st
     })
 
   let app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     app.world().resource(future_render_resources_resource_key).is_present(),
     content="false",
@@ -786,7 +771,7 @@ test "render recovery: reinitializing consumes future render resources before st
   )
 
   let app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(renderer_is_ready(render_world), content="true")
   debug_inspect(
     render_world.resource(pending_command_buffers_resource_key).is_present(),
@@ -802,15 +787,11 @@ test "render error handler: ignore policy marks renderer ready" {
   defer render_world.close()
   main_world.insert_resource(
     render_error_handler_resource_key,
-    RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
-      RenderErrorPolicy::Ignore
-    }),
+    RenderErrorHandler::new(fn(_error, _main_world, _render_world) { Ignore }),
   )
   render_world.insert_resource(
     render_state_resource_key,
-    RenderState::errored(
-      RenderError::new(RenderErrorType::Validation, "validation"),
-    ),
+    RenderState::errored(RenderError::new(Validation, "validation")),
   )
 
   update_render_state(main_world, render_world)
@@ -835,18 +816,16 @@ test "render error handler: recover policy creates future resources and restarts
   main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
-      RenderErrorPolicy::Recover(RenderCreation::manual_resources(resources))
+      Recover(RenderCreation::manual_resources(resources))
     }),
   )
   render_world.insert_resource(
     render_state_resource_key,
-    RenderState::errored(
-      RenderError::new(RenderErrorType::DeviceLost, "device lost"),
-    ),
+    RenderState::errored(RenderError::new(DeviceLost, "device lost")),
   )
   let app = @app.App::new(main_world)
-    .insert_sub_app(@app.RenderApp, render_sub_app)
-    .set_sub_app_extract(@app.RenderApp, fn(
+    .insert_sub_app(RenderApp, render_sub_app)
+    .set_sub_app_extract(RenderApp, fn(
       main_world : @ecs.World,
       render_world : @ecs.World,
     ) {
@@ -855,7 +834,7 @@ test "render error handler: recover policy creates future resources and restarts
     })
 
   let app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let state_after_error = render_world
     .get_resource(render_state_resource_key)
     .unwrap()
@@ -866,7 +845,7 @@ test "render error handler: recover policy creates future resources and restarts
   )
 
   let app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let state_after_reinit = render_world
     .get_resource(render_state_resource_key)
     .unwrap()
@@ -877,7 +856,7 @@ test "render error handler: recover policy creates future resources and restarts
   )
 
   let app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(renderer_is_ready(render_world), content="true")
   debug_inspect(
     render_world.resource(pending_command_buffers_resource_key).is_present(),
@@ -894,14 +873,12 @@ test "render error handler: recover default creation enters reinitializing" {
   main_world.insert_resource(
     render_error_handler_resource_key,
     RenderErrorHandler::new(fn(_error, _main_world, _render_world) {
-      RenderErrorPolicy::Recover(RenderCreation::default())
+      Recover(RenderCreation::default())
     }),
   )
   render_world.insert_resource(
     render_state_resource_key,
-    RenderState::errored(
-      RenderError::new(RenderErrorType::DeviceLost, "device lost"),
-    ),
+    RenderState::errored(RenderError::new(DeviceLost, "device lost")),
   )
 
   update_render_state(main_world, render_world)
@@ -923,13 +900,11 @@ test "render error handler: default handler sends app exit from main world" {
   defer render_world.close()
   main_world.insert_resource(
     render_error_handler_resource_key,
-    RenderErrorHandler::RenderErrorHandler(),
+    RenderErrorHandler(),
   )
   render_world.insert_resource(
     render_state_resource_key,
-    RenderState::errored(
-      RenderError::new(RenderErrorType::Validation, "validation"),
-    ),
+    RenderState::errored(RenderError::new(Validation, "validation")),
   )
 
   update_render_state(main_world, render_world)
@@ -947,7 +922,7 @@ test "render plugin: installs window render resources in render world" {
   let app = @app.App::new(lifecycle_world_905_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     render_world
     .resource(@render_view_window.extracted_windows_resource_key)

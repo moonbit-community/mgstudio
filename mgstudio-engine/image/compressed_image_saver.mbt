@@ -23,7 +23,7 @@ pub struct CompressedImageSaveOptions {
 
 ///|
 pub fn CompressedImageSaveOptions::CompressedImageSaveOptions() -> CompressedImageSaveOptions {
-  CompressedImageSaveOptions::{ format_hint: "", quality: 90 }
+  { format_hint: "", quality: 90 }
 }
 
 ///|
@@ -31,7 +31,7 @@ pub fn CompressedImageSaveOptions::with_format_hint(
   self : CompressedImageSaveOptions,
   format_hint : String,
 ) -> CompressedImageSaveOptions {
-  CompressedImageSaveOptions::{ ..self, format_hint, }
+  { ..self, format_hint, }
 }
 
 ///|
@@ -46,19 +46,19 @@ pub fn CompressedImageSaveOptions::with_quality(
   } else {
     quality
   }
-  CompressedImageSaveOptions::{ ..self, quality: clamped }
+  { ..self, quality: clamped }
 }
 
 ///|
 pub fn image_can_use_compressed_saver(format : TextureFormat) -> Bool {
   match format {
-    TextureFormat::Rgba8Unorm => true
-    TextureFormat::Rgba8UnormSrgb => true
-    TextureFormat::Bgra8Unorm => false
-    TextureFormat::Bgra8UnormSrgb => false
-    TextureFormat::Rgba16Uint => false
-    TextureFormat::Rgba16Float => false
-    TextureFormat::Rgba32Float => false
-    TextureFormat::Rg16Float => false
+    Rgba8Unorm => true
+    Rgba8UnormSrgb => true
+    Bgra8Unorm => false
+    Bgra8UnormSrgb => false
+    Rgba16Uint => false
+    Rgba16Float => false
+    Rgba32Float => false
+    Rg16Float => false
   }
 }

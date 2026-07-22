@@ -43,7 +43,7 @@ pub struct WgpuSettings {
 
 ///|
 pub fn WgpuSettings::WgpuSettings() -> WgpuSettings {
-  WgpuSettings::{
+  {
     device_label: None,
     backends: Some("all"),
     power_preference: "high_performance",
@@ -62,7 +62,7 @@ pub fn WgpuSettings::with_priority(
   self : WgpuSettings,
   priority : WgpuSettingsPriority,
 ) -> WgpuSettings {
-  WgpuSettings::{ ..self, priority, }
+  { ..self, priority, }
 }
 
 ///|
@@ -70,7 +70,7 @@ pub fn WgpuSettings::with_backends(
   self : WgpuSettings,
   backends : String?,
 ) -> WgpuSettings {
-  WgpuSettings::{ ..self, backends, }
+  { ..self, backends, }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn WgpuSettings::with_power_preference(
   self : WgpuSettings,
   power_preference : String,
 ) -> WgpuSettings {
-  WgpuSettings::{ ..self, power_preference, }
+  { ..self, power_preference, }
 }
 
 ///|
@@ -86,7 +86,7 @@ pub fn WgpuSettings::with_adapter_name(
   self : WgpuSettings,
   adapter_name : String?,
 ) -> WgpuSettings {
-  WgpuSettings::{ ..self, adapter_name, }
+  { ..self, adapter_name, }
 }
 
 ///|
@@ -94,7 +94,7 @@ pub fn WgpuSettings::with_force_fallback_adapter(
   self : WgpuSettings,
   force_fallback_adapter : Bool,
 ) -> WgpuSettings {
-  WgpuSettings::{ ..self, force_fallback_adapter, }
+  { ..self, force_fallback_adapter, }
 }
 
 ///|
@@ -114,7 +114,7 @@ pub fn RenderResources::new(
   render_adapter : @renderer.RenderAdapter,
   instance : @renderer.RenderInstance,
 ) -> RenderResources {
-  RenderResources::{ device, queue, adapter_info, render_adapter, instance }
+  { device, queue, adapter_info, render_adapter, instance }
 }
 
 ///|
@@ -194,7 +194,7 @@ fn insert_future_render_resources(
   main_world : @ecs.World,
 ) -> Bool {
   fn insert_resources(resources : RenderResources) -> Unit {
-    main_world.insert_resource(future_render_resources_resource_key, FutureRenderResources::{
+    main_world.insert_resource(future_render_resources_resource_key, {
       resources: Some(resources),
     })
   }
@@ -308,7 +308,7 @@ pub struct CurrentView {
 
 ///|
 pub fn CurrentView::new(entity : @core.Entity) -> CurrentView {
-  CurrentView::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -336,7 +336,7 @@ fn[T] render_world_resource_present(
 pub fn init_pending_command_buffers_resource(world : @ecs.World) -> Unit {
   world.insert_resource(
     pending_command_buffers_resource_key,
-    @renderer.PendingCommandBuffers::PendingCommandBuffers(),
+    PendingCommandBuffers(),
   )
 }
 
@@ -401,7 +401,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
       continue
     }
     match cached_pipeline.descriptor() {
-      @render_resource.PipelineDescriptor::RenderPipelineDescriptor(descriptor) => {
+      RenderPipelineDescriptor(descriptor) => {
         @renderer.register_mesh3d_material_pipeline_descriptor(
           material_pipeline_id=pipeline_id,
           descriptor~,
@@ -426,7 +426,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             None => ()
           }
         } catch {
-          @renderer.ShaderNotReady(message) =>
+          ShaderNotReady(message) =>
             cache.mark_pipeline_retryable_error(pipeline_id, message) catch {
               _ => ()
             }
@@ -436,7 +436,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             }
         }
       }
-      @render_resource.PipelineDescriptor::ComputePipelineDescriptor(descriptor) =>
+      ComputePipelineDescriptor(descriptor) =>
         try {
           let cached_id = @render_resource.CachedComputePipelineId::new(
             pipeline_id,
@@ -452,7 +452,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             None => ()
           }
         } catch {
-          @renderer.ShaderNotReady(message) =>
+          ShaderNotReady(message) =>
             cache.mark_pipeline_retryable_error(pipeline_id, message) catch {
               _ => ()
             }
@@ -592,7 +592,7 @@ pub fn RenderCreation::automatic(settings : WgpuSettings) -> RenderCreation {
 
 ///|
 pub fn RenderCreation::default() -> RenderCreation {
-  Automatic(WgpuSettings::WgpuSettings())
+  Automatic(WgpuSettings())
 }
 
 ///|

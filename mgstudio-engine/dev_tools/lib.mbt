@@ -44,6 +44,7 @@ pub type EasyCameraMovementPlugin = @dev_tools_easy_camera_movement.EasyCameraMo
 pub struct DevToolsDiagnosticsOverlayPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DevToolsDiagnosticsOverlayPlugin::DevToolsDiagnosticsOverlayPlugin() -> DevToolsDiagnosticsOverlayPlugin {
   DevToolsDiagnosticsOverlayPlugin::{  }
 }
@@ -65,6 +66,7 @@ pub impl @app.Plugin for DevToolsDiagnosticsOverlayPlugin with fn build(
 pub struct DevToolsFpsOverlayPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DevToolsFpsOverlayPlugin::DevToolsFpsOverlayPlugin() -> DevToolsFpsOverlayPlugin {
   DevToolsFpsOverlayPlugin::{  }
 }
@@ -83,6 +85,7 @@ pub impl @app.Plugin for DevToolsFpsOverlayPlugin with fn build(_self, app) {
 pub struct DevToolsPickingDebugPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DevToolsPickingDebugPlugin::DevToolsPickingDebugPlugin() -> DevToolsPickingDebugPlugin {
   DevToolsPickingDebugPlugin::{  }
 }
@@ -101,6 +104,7 @@ pub impl @app.Plugin for DevToolsPickingDebugPlugin with fn build(_self, app) {
 pub struct DevToolsEasyScreenshotPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DevToolsEasyScreenshotPlugin::DevToolsEasyScreenshotPlugin() -> DevToolsEasyScreenshotPlugin {
   DevToolsEasyScreenshotPlugin::{  }
 }
@@ -119,6 +123,7 @@ pub impl @app.Plugin for DevToolsEasyScreenshotPlugin with fn build(_self, app) 
 pub struct DevToolsPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DevToolsPlugins::DevToolsPlugins() -> DevToolsPlugins {
   DevToolsPlugins::{  }
 }
@@ -145,5 +150,5 @@ pub impl @app.Plugin for DevToolsPlugins with fn build(_self, app) {
 
 ///|
 pub fn dev_tools_plugins() -> DevToolsPlugins {
-  DevToolsPlugins::DevToolsPlugins()
+  DevToolsPlugins()
 }

@@ -41,7 +41,7 @@ pub fn RayCast2d::from_ray(ray : Ray2d, max : Float) -> RayCast2d {
   } else {
     1.0F / direction.y
   }
-  RayCast2d::{ ray, max, direction_recip: Vec2::new(recip_x, recip_y) }
+  { ray, max, direction_recip: Vec2::new(recip_x, recip_y) }
 }
 
 ///|
@@ -114,7 +114,7 @@ pub fn AabbCast2d::from_ray(
   ray : Ray2d,
   max : Float,
 ) -> AabbCast2d {
-  AabbCast2d::{ ray: RayCast2d::from_ray(ray, max), aabb }
+  { ray: RayCast2d::from_ray(ray, max), aabb }
 }
 
 ///|
@@ -151,7 +151,7 @@ pub fn BoundingCircleCast::from_ray(
   ray : Ray2d,
   max : Float,
 ) -> BoundingCircleCast {
-  BoundingCircleCast::{ ray: RayCast2d::from_ray(ray, max), circle }
+  { ray: RayCast2d::from_ray(ray, max), circle }
 }
 
 ///|

@@ -61,7 +61,7 @@ fn timer_is_elapsed(
 
 ///|
 pub fn Timer::new(duration : @core.Duration, mode : TimerMode) -> Timer {
-  Timer::{
+  {
     stopwatch_elapsed_nanos: 0L,
     stopwatch_paused: false,
     duration_nanos: duration.as_nanos(),
@@ -79,7 +79,7 @@ pub fn Timer::from_seconds(seconds : Float, mode : TimerMode) -> Timer {
 ///|
 pub fn Timer::tick(self : Timer, delta : @core.Duration) -> Timer {
   if self.stopwatch_paused {
-    return Timer::{
+    return {
       ..self,
       times_finished_this_tick: 0,
       finished: if self.mode_repeating {
@@ -91,7 +91,7 @@ pub fn Timer::tick(self : Timer, delta : @core.Duration) -> Timer {
   }
 
   if !self.mode_repeating && self.finished {
-    return Timer::{ ..self, times_finished_this_tick: 0 }
+    return { ..self, times_finished_this_tick: 0 }
   }
 
   let stopwatch = Stopwatch::{
@@ -103,7 +103,7 @@ pub fn Timer::tick(self : Timer, delta : @core.Duration) -> Timer {
   let finished = timer_is_elapsed(elapsed, duration)
 
   if !finished {
-    return Timer::{
+    return {
       ..self,
       stopwatch_elapsed_nanos: elapsed.as_nanos(),
       finished: false,
@@ -124,14 +124,14 @@ pub fn Timer::tick(self : Timer, delta : @core.Duration) -> Timer {
     } else {
       @core.Duration::from_nanos(elapsed_nanos % duration_nanos)
     }
-    Timer::{
+    {
       ..self,
       stopwatch_elapsed_nanos: wrapped.as_nanos(),
       finished: times_finished > 0,
       times_finished_this_tick: times_finished,
     }
   } else {
-    Timer::{
+    {
       ..self,
       stopwatch_elapsed_nanos: duration.as_nanos(),
       finished: true,
@@ -142,12 +142,12 @@ pub fn Timer::tick(self : Timer, delta : @core.Duration) -> Timer {
 
 ///|
 pub fn Timer::pause(self : Timer) -> Timer {
-  Timer::{ ..self, stopwatch_paused: true, times_finished_this_tick: 0 }
+  { ..self, stopwatch_paused: true, times_finished_this_tick: 0 }
 }
 
 ///|
 pub fn Timer::unpause(self : Timer) -> Timer {
-  Timer::{ ..self, stopwatch_paused: false }
+  { ..self, stopwatch_paused: false }
 }
 
 ///|
@@ -161,7 +161,7 @@ pub fn Timer::toggle(self : Timer) -> Timer {
 
 ///|
 pub fn Timer::reset(self : Timer) -> Timer {
-  Timer::{
+  {
     ..self,
     stopwatch_elapsed_nanos: 0L,
     finished: false,
@@ -182,7 +182,7 @@ pub fn Timer::mode(self : Timer) -> TimerMode {
 pub fn Timer::set_mode(self : Timer, mode : TimerMode) -> Timer {
   let mode_repeating = mode == Repeating
   if !self.mode_repeating && mode_repeating && self.finished {
-    Timer::{
+    {
       ..self,
       mode_repeating,
       stopwatch_elapsed_nanos: 0L,
@@ -190,7 +190,7 @@ pub fn Timer::set_mode(self : Timer, mode : TimerMode) -> Timer {
       times_finished_this_tick: 0,
     }
   } else {
-    Timer::{ ..self, mode_repeating, }
+    { ..self, mode_repeating, }
   }
 }
 
@@ -231,7 +231,7 @@ pub fn Timer::elapsed_seconds(self : Timer) -> Float {
 
 ///|
 pub fn Timer::set_elapsed(self : Timer, elapsed : @core.Duration) -> Timer {
-  Timer::{ ..self, stopwatch_elapsed_nanos: elapsed.as_nanos() }
+  { ..self, stopwatch_elapsed_nanos: elapsed.as_nanos() }
 }
 
 ///|
@@ -246,7 +246,7 @@ pub fn Timer::duration_seconds(self : Timer) -> Float {
 
 ///|
 pub fn Timer::set_duration(self : Timer, duration : @core.Duration) -> Timer {
-  Timer::{ ..self, duration_nanos: duration.as_nanos() }
+  { ..self, duration_nanos: duration.as_nanos() }
 }
 
 ///|

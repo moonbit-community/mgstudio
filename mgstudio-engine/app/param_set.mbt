@@ -38,12 +38,7 @@ pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1] w
   let state1 = P1::init_state(world)
   SystemParamState::new(
     fn() raise {
-      ParamSet2::{
-        param0: P0::get(state0),
-        param1: P1::get(state1),
-        state0,
-        state1,
-      }
+      { param0: P0::get(state0), param1: P1::get(state1), state0, state1 }
     },
     fn(value : ParamSet2[P0, P1]) {
       P0::store(value.param0, value.state0)

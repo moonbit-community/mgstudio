@@ -50,11 +50,11 @@ let bubble_lines_ref : Ref[Array[BubbleLine]] = Ref([])
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup_scene)
-  .add_systems_param(@app.Update, toggle_ime_system)
-  .add_systems_param(@app.Update, listen_ime_events_system)
-  .add_systems_param(@app.Update, listen_keyboard_input_events_system)
-  .add_systems_world(@app.Update, bubbling_text_system)
+  .add_systems_world(Startup, setup_scene)
+  .add_systems_param(Update, toggle_ime_system)
+  .add_systems_param(Update, listen_ime_events_system)
+  .add_systems_param(Update, listen_keyboard_input_events_system)
+  .add_systems_world(Update, bubbling_text_system)
   .run()
 }
 
@@ -77,15 +77,15 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_font_size(100.0F)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F))
-    .with_flex_direction(@ui.FlexDirection::Column),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F))
+    .with_flex_direction(Column),
   )
 
   ignore(
@@ -102,21 +102,14 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world, root, "IME Active:  false\n", ui_font,
   )
   let ime_buffer = spawn_ui_text_line(world, root, "IME Buffer:  \n", ui_font)
-  status_text_handles_ref.val = Some(StatusTextHandles::{
-    ime_enabled,
-    ime_active,
-    ime_buffer,
-  })
+  status_text_handles_ref.val = Some({ ime_enabled, ime_active, ime_buffer })
 
   let edit_handle = @text.Text2dBundle::new(
     @text.Text2d::new(""),
     edit_font,
     @transform.Transform::identity(),
   ).spawn()
-  edit_text_state_ref.val = Some(EditTextState::{
-    handle: edit_handle,
-    font: edit_font,
-  })
+  edit_text_state_ref.val = Some({ handle: edit_handle, font: edit_font })
   bubble_lines_ref.val.clear()
 }
 
@@ -133,7 +126,7 @@ fn spawn_ui_text_line(
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(text_entity, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(text_entity, @ui.ecs_key_node, Node())
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text,
@@ -267,8 +260,8 @@ fn listen_keyboard_input_events_system(
       continue
     }
     match keyboard_input.logical_key {
-      @input.Key::Enter => commit_text_line()
-      @input.Key::Backspace => remove_last_character()
+      Enter => commit_text_line()
+      Backspace => remove_last_character()
       _ =>
         if keyboard_input.text is Some(inserted_text) &&
           is_printable_text(inserted_text) {
@@ -302,11 +295,7 @@ fn bubbling_text_system(world : @ecs.World) -> Unit {
       bubble_line.handle,
       @transform.Transform::from_xyz(0.0F, next_y, 0.0F),
     )
-    next_lines.push(BubbleLine::{
-      handle: bubble_line.handle,
-      timer: next_timer,
-      y: next_y,
-    })
+    next_lines.push({ handle: bubble_line.handle, timer: next_timer, y: next_y })
   }
   bubble_lines_ref.val = next_lines
 }
@@ -323,9 +312,9 @@ fn commit_text_line() -> Unit {
     edit_state.font,
     @transform.Transform::identity(),
   ).spawn()
-  bubble_lines_ref.val.push(BubbleLine::{
+  bubble_lines_ref.val.push({
     handle,
-    timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),
+    timer: @time.Timer::from_seconds(5.0F, Once),
     y: 0.0F,
   })
   set_edit_text_content("")

@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Update, gamepad_system)
+  .add_systems_param2(Update, gamepad_system)
   .run()
 }
 
@@ -27,13 +27,13 @@ fn gamepad_system(
 ) -> Unit {
   try! gamepads.view(fn(entity, gamepad) {
     let gamepad = gamepad.value()
-    if gamepad.just_pressed(@input.GamepadButton::North) {
+    if gamepad.just_pressed(North) {
       log_line(
         "North face button: strong (low-frequency) with low intensity for rumble for 5 seconds. Press multiple times to increase intensity.",
       )
       ignore(
         rumble_requests.write(
-          @input.GamepadRumbleRequest::Add(
+          Add(
             gamepad=entity,
             intensity=@input.GamepadRumbleIntensity::strong_motor(0.1F),
             duration=@core.Duration::from_secs(5L),
@@ -42,11 +42,11 @@ fn gamepad_system(
       )
     }
 
-    if gamepad.just_pressed(@input.GamepadButton::East) {
+    if gamepad.just_pressed(East) {
       log_line("East face button: maximum rumble on both motors for 5 seconds")
       ignore(
         rumble_requests.write(
-          @input.GamepadRumbleRequest::Add(
+          Add(
             gamepad=entity,
             duration=@core.Duration::from_secs(5L),
             intensity=@input.GamepadRumbleIntensity::max(),
@@ -55,13 +55,13 @@ fn gamepad_system(
       )
     }
 
-    if gamepad.just_pressed(@input.GamepadButton::South) {
+    if gamepad.just_pressed(South) {
       log_line(
         "South face button: low-intensity rumble on the weak motor for 0.5 seconds",
       )
       ignore(
         rumble_requests.write(
-          @input.GamepadRumbleRequest::Add(
+          Add(
             gamepad=entity,
             duration=@core.Duration::from_secs_f32(0.5F),
             intensity=@input.GamepadRumbleIntensity::weak_motor(0.25F),
@@ -70,27 +70,22 @@ fn gamepad_system(
       )
     }
 
-    if gamepad.just_pressed(@input.GamepadButton::West) {
+    if gamepad.just_pressed(West) {
       log_line("West face button: custom rumble intensity for 5 second")
       ignore(
         rumble_requests.write(
-          @input.GamepadRumbleRequest::Add(
+          Add(
             gamepad=entity,
-            intensity=@input.GamepadRumbleIntensity::{
-              strong_motor: 0.5F,
-              weak_motor: 0.25F,
-            },
+            intensity={ strong_motor: 0.5F, weak_motor: 0.25F },
             duration=@core.Duration::from_secs(5L),
           ),
         ),
       )
     }
 
-    if gamepad.just_pressed(@input.GamepadButton::Start) {
+    if gamepad.just_pressed(Start) {
       log_line("Start button: Interrupt the current rumble")
-      ignore(
-        rumble_requests.write(@input.GamepadRumbleRequest::Stop(gamepad=entity)),
-      )
+      ignore(rumble_requests.write(Stop(gamepad=entity)))
     }
   })
 }

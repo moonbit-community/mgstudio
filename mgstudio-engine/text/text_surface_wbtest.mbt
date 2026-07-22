@@ -45,7 +45,7 @@ test "text: font size units and selectors follow the Bevy-shaped surface" {
   debug_inspect(FontWidth::SEMI_EXPANDED.percentage(), content="112.5")
   debug_inspect(
     match FontStyle::Oblique(Some(17.5F)) {
-      FontStyle::Oblique(Some(angle)) => angle == 17.5F
+      Oblique(Some(angle)) => angle == 17.5F
       _ => false
     },
     content="true",
@@ -55,8 +55,8 @@ test "text: font size units and selectors follow the Bevy-shaped surface" {
 ///|
 test "text: font features and family mapping cover the Bevy-facing selectors" {
   let features = FontFeatures::builder()
-    .enable(FontFeatureTag::SMALL_CAPS)
-    .set(FontFeatureTag::FRACTIONS, 3U)
+    .enable(SMALL_CAPS)
+    .set(FRACTIONS, 3U)
     .build()
   let cosmic_features = font_features_to_cosmic(features)
   let feature_list = cosmic_features.features()
@@ -71,13 +71,11 @@ test "text: font features and family mapping cover the Bevy-facing selectors" {
     content="true",
   )
   debug_inspect(
-    text_font_source_family(FontSource::UiSansSerif)
-    is Some(@cosmic.Family::UiSansSerif),
+    text_font_source_family(UiSansSerif) is Some(UiSansSerif),
     content="true",
   )
   debug_inspect(
-    text_font_source_family(FontSource::FangSong)
-    is Some(@cosmic.Family::FangSong),
+    text_font_source_family(FangSong) is Some(FangSong),
     content="true",
   )
 }
@@ -85,41 +83,25 @@ test "text: font features and family mapping cover the Bevy-facing selectors" {
 ///|
 test "text: justify start end expose Bevy text alignment variants" {
   debug_inspect(
-    TextLayout::new_with_justify(Justify::Start).justify is Justify::Start,
+    TextLayout::new_with_justify(Start).justify is Start,
     content="true",
   )
   debug_inspect(
-    TextLayout::new_with_justify(Justify::End).justify is Justify::End,
+    TextLayout::new_with_justify(End).justify is End,
     content="true",
   )
-  debug_inspect(
-    justify_to_cosmic_align(Justify::End) is @cosmic.Align::End,
-    content="true",
-  )
-  debug_inspect(
-    justify_to_cosmic_align(Justify::Start) is @cosmic.Align::Start,
-    content="true",
-  )
+  debug_inspect(justify_to_cosmic_align(End) is End, content="true")
+  debug_inspect(justify_to_cosmic_align(Start) is Start, content="true")
 }
 
 ///|
 test "text: font hinting follows Bevy component and atlas-key semantics" {
-  debug_inspect(FontHinting::default() is FontHinting::Disabled, content="true")
+  debug_inspect(FontHinting::default() is Disabled, content="true")
   debug_inspect(FontHinting::Disabled.should_hint(), content="false")
   debug_inspect(FontHinting::Enabled.should_hint(), content="true")
 
-  let disabled_key = FontAtlasKey::new(
-    1,
-    12.0F,
-    FontHinting::Disabled,
-    FontSmoothing::AntiAliased,
-  )
-  let enabled_key = FontAtlasKey::new(
-    1,
-    12.0F,
-    FontHinting::Enabled,
-    FontSmoothing::AntiAliased,
-  )
+  let disabled_key = FontAtlasKey::new(1, 12.0F, Disabled, AntiAliased)
+  let enabled_key = FontAtlasKey::new(1, 12.0F, Enabled, AntiAliased)
   debug_inspect(
     font_atlas_key_equals(disabled_key, enabled_key),
     content="false",
@@ -131,17 +113,17 @@ test "text: font hinting follows Bevy component and atlas-key semantics" {
       Text2d::new("Hinted"),
       TextFont::from_font_size(0.0F),
       @transform.Transform::identity(),
-    ).with_font_hinting(FontHinting::Enabled),
+    ).with_font_hinting(Enabled),
   )
   text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
-    text_state.texts[0].computed.font_hinting is FontHinting::Enabled,
+    text_state.texts[0].computed.font_hinting is Enabled,
     content="true",
   )
-  text_set_font_hinting(handle, FontHinting::Disabled)
+  text_set_font_hinting(handle, Disabled)
   text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
-    text_state.texts[0].computed.font_hinting is FontHinting::Disabled,
+    text_state.texts[0].computed.font_hinting is Disabled,
     content="true",
   )
 }
@@ -151,13 +133,13 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
   reset_text_ecs_test_state()
   let viewport_font = TextFont::{
     ..TextFont(),
-    font: FontSource::UiSansSerif,
-    font_size: FontSize::Vh(10.0F),
+    font: UiSansSerif,
+    font_size: Vh(10.0F),
   }
   let rem_font = TextFont::{
     ..TextFont(),
-    font: FontSource::UiSansSerif,
-    font_size: FontSize::Rem(1.5F),
+    font: UiSansSerif,
+    font_size: Rem(1.5F),
   }
 
   let viewport_handle = text_spawn(

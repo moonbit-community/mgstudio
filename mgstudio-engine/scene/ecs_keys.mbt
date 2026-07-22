@@ -62,7 +62,7 @@ pub impl @ecs.TriggerEvent for SceneInstanceReady with fn set_observer_entity(
   self,
   entity,
 ) {
-  SceneInstanceReady::{ ..self, entity: Some(entity) }
+  { ..self, entity: Some(entity) }
 }
 
 ///|
@@ -98,9 +98,7 @@ pub fn scene_install_component_metadata() -> Unit {
     .require_with(@transform.ecs_key_transform, fn() {
       @transform.Transform::identity()
     })
-    .require_with(@visibility.ecs_key_visibility, fn() {
-      @visibility.Visibility::Inherited
-    }),
+    .require_with(@visibility.ecs_key_visibility, fn() { Inherited }),
   )
   ignore(
     @ecs.component_metadata_builder(ecs_key_world_asset_root)
@@ -110,9 +108,7 @@ pub fn scene_install_component_metadata() -> Unit {
     .require_with(@transform.ecs_key_transform, fn() {
       @transform.Transform::identity()
     })
-    .require_with(@visibility.ecs_key_visibility, fn() {
-      @visibility.Visibility::Inherited
-    }),
+    .require_with(@visibility.ecs_key_visibility, fn() { Inherited }),
   )
   ignore(
     @ecs.component_metadata_builder(ecs_key_scene_instance).on_remove(

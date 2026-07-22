@@ -132,8 +132,8 @@ fn bounce_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, spawn_system)
-  .add_systems_param(@app.Update, move_system)
-  .add_systems_param2(@app.Update, bounce_system)
+  .add_systems_param2(Startup, spawn_system)
+  .add_systems_param(Update, move_system)
+  .add_systems_param2(Update, bounce_system)
   .run()
 }

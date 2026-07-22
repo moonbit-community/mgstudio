@@ -19,7 +19,7 @@ pub struct DespawnMarker {
 
 ///|
 pub fn DespawnMarker::new() -> DespawnMarker {
-  DespawnMarker::{ value: true }
+  { value: true }
 }
 
 ///|
@@ -44,8 +44,8 @@ let despawn_state : Ref[DespawnState] = Ref({ timer: 5.0F })
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, despawn)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, despawn)
   .run()
 }
 

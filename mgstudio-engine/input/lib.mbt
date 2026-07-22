@@ -205,7 +205,7 @@ pub fn[T] ButtonInput::ButtonInput() -> ButtonInput[T] {
 
 ///|
 pub impl[T] Default for ButtonInput[T] with fn default() {
-  ButtonInput::ButtonInput()
+  ButtonInput()
 }
 
 ///|
@@ -223,7 +223,7 @@ pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T] with fn from_json
     Array[(String, T)],
     Array[(String, T)],
   ) = @json.from_json(json, path~)
-  ButtonInput::{ pressed, just_pressed, just_released }
+  { pressed, just_pressed, just_released }
 }
 
 ///|
@@ -249,7 +249,7 @@ pub fn[T] Axis::Axis() -> Axis[T] {
 
 ///|
 pub impl[T] Default for Axis[T] with fn default() {
-  Axis::Axis()
+  Axis()
 }
 
 ///|
@@ -263,7 +263,7 @@ pub impl[T : @json.FromJson] @json.FromJson for Axis[T] with fn from_json(
   path,
 ) {
   let axis_data : Array[(T, Float)] = @json.from_json(json, path~)
-  Axis::{ axis_data, }
+  { axis_data, }
 }
 
 ///|
@@ -900,7 +900,7 @@ pub struct AccumulatedMouseScroll {
 
 ///|
 pub fn AccumulatedMouseScroll::new() -> AccumulatedMouseScroll {
-  { unit: MouseScrollUnit::Line, delta: @math.Vec2::new(0.0F, 0.0F) }
+  { unit: Line, delta: @math.Vec2::new(0.0F, 0.0F) }
 }
 
 ///|
@@ -949,9 +949,9 @@ priv struct InputEventCursors {
 ///|
 fn InputEventCursors::InputEventCursors() -> InputEventCursors {
   {
-    mouse_motion: @ecs.MessageCursor::MessageCursor(),
-    mouse_wheel: @ecs.MessageCursor::MessageCursor(),
-    window_focused: @ecs.MessageCursor::MessageCursor(),
+    mouse_motion: MessageCursor(),
+    mouse_wheel: MessageCursor(),
+    window_focused: MessageCursor(),
   }
 }
 
@@ -1305,33 +1305,33 @@ fn logical_key_from_keycode(code : @window.KeyCode) -> Key {
     Digit8 => Character("8")
     Digit9 => Character("9")
     Digit0 => Character("0")
-    F1 => Key::Function(1)
-    F2 => Key::Function(2)
-    F3 => Key::Function(3)
-    F4 => Key::Function(4)
-    F5 => Key::Function(5)
-    F6 => Key::Function(6)
-    F7 => Key::Function(7)
-    F8 => Key::Function(8)
-    F9 => Key::Function(9)
-    F10 => Key::Function(10)
-    F11 => Key::Function(11)
-    F12 => Key::Function(12)
-    Tab => Key::Tab
-    Enter => Key::Enter
-    Backspace => Key::Backspace
-    ShiftLeft => Key::Shift
-    ShiftRight => Key::Shift
-    ControlLeft => Key::Control
-    ControlRight => Key::Control
-    ArrowUp => Key::ArrowUp
-    ArrowDown => Key::ArrowDown
-    ArrowLeft => Key::ArrowLeft
-    ArrowRight => Key::ArrowRight
-    PageUp => Key::PageUp
-    PageDown => Key::PageDown
+    F1 => Function(1)
+    F2 => Function(2)
+    F3 => Function(3)
+    F4 => Function(4)
+    F5 => Function(5)
+    F6 => Function(6)
+    F7 => Function(7)
+    F8 => Function(8)
+    F9 => Function(9)
+    F10 => Function(10)
+    F11 => Function(11)
+    F12 => Function(12)
+    Tab => Tab
+    Enter => Enter
+    Backspace => Backspace
+    ShiftLeft => Shift
+    ShiftRight => Shift
+    ControlLeft => Control
+    ControlRight => Control
+    ArrowUp => ArrowUp
+    ArrowDown => ArrowDown
+    ArrowLeft => ArrowLeft
+    ArrowRight => ArrowRight
+    PageUp => PageUp
+    PageDown => PageDown
     Space => Character(" ")
-    Escape => Key::Escape
+    Escape => Escape
     Semicolon => Character(";")
     Comma => Character(",")
     Period => Character(".")
@@ -1513,7 +1513,7 @@ pub fn primary_pointer_position() -> @math.Vec2? {
 
 ///|
 pub fn primary_pointer_pressed() -> Bool {
-  if mouse_button_pressed(@window.MouseButton::Left) {
+  if mouse_button_pressed(Left) {
     return true
   }
   if input_resource_get(Touches::resource()) is Some(touches) {
@@ -1524,7 +1524,7 @@ pub fn primary_pointer_pressed() -> Bool {
 
 ///|
 pub fn primary_pointer_just_pressed() -> Bool {
-  if mouse_button_just_pressed(@window.MouseButton::Left) {
+  if mouse_button_just_pressed(Left) {
     return true
   }
   if input_resource_get(Touches::resource()) is Some(touches) {
@@ -1535,7 +1535,7 @@ pub fn primary_pointer_just_pressed() -> Bool {
 
 ///|
 pub fn primary_pointer_just_released() -> Bool {
-  if mouse_button_just_released(@window.MouseButton::Left) {
+  if mouse_button_just_released(Left) {
     return true
   }
   if input_resource_get(Touches::resource()) is Some(touches) {
@@ -1638,7 +1638,7 @@ fn input_ime_event_at(world : @ecs.World, index : Int) -> @window.Ime? {
     is Some(entity) {
     Some(entity)
   } else {
-    @window.window_entity_for_ref(world, @window.WindowRef::Primary)
+    @window.window_entity_for_ref(world, Primary)
   }
   guard window_entity is Some(window_entity0) else { return None }
   let kind = host_input_ime_event_kind(index~)
@@ -1646,21 +1646,18 @@ fn input_ime_event_at(world : @ecs.World, index : Int) -> @window.Ime? {
   let cursor_start = host_input_ime_event_cursor_start(index~)
   let cursor_end = host_input_ime_event_cursor_end(index~)
   match kind {
-    1 => Some(@window.Ime::Enabled(window_entity0))
+    1 => Some(Enabled(window_entity0))
     2 => {
       let cursor = if cursor_start >= 0 && cursor_end >= cursor_start {
         Some(@window.ImeCursorRange::new(cursor_start, cursor_end))
       } else {
         None
       }
-      Some(@window.Ime::Preedit(window_entity0, text, cursor))
+      Some(Preedit(window_entity0, text, cursor))
     }
-    3 => Some(@window.Ime::Commit(window_entity0, text))
-    4 => Some(@window.Ime::Disabled(window_entity0))
-    5 =>
-      Some(
-        @window.Ime::DeleteSurrounding(window_entity0, cursor_start, cursor_end),
-      )
+    3 => Some(Commit(window_entity0, text))
+    4 => Some(Disabled(window_entity0))
+    5 => Some(DeleteSurrounding(window_entity0, cursor_start, cursor_end))
     _ => None
   }
 }
@@ -1700,22 +1697,23 @@ fn input_drag_and_drop_event_at(
   match kind {
     0 =>
       if input_drag_and_drop_event_text(index) is Some(path) {
-        Some(@window.FileDragAndDrop::DroppedFile(window_entity, path))
+        Some(DroppedFile(window_entity, path))
       } else {
         None
       }
     1 =>
       if input_drag_and_drop_event_text(index) is Some(path) {
-        Some(@window.FileDragAndDrop::HoveredFile(window_entity, path))
+        Some(HoveredFile(window_entity, path))
       } else {
         None
       }
-    2 => Some(@window.FileDragAndDrop::HoveredFileCanceled(window_entity))
+    2 => Some(HoveredFileCanceled(window_entity))
     _ => None
   }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
   if !world.contains_message(@window.WindowFocused::message()) {
     return
@@ -1743,10 +1741,10 @@ pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
     // synthesize released events for currently-pressed keys when keyboard
     // focus is lost to avoid stuck key state across window focus transitions.
     for key_code in read_keycode_button_input().get_pressed() {
-      @window.window_emit_keyboard_input(world, @window.KeyboardInput::{
+      @window.window_emit_keyboard_input(world, {
         key_code,
         logical_key: logical_key_from_keycode(key_code),
-        state: ButtonState::Released,
+        state: Released,
         repeat: false,
         text: None,
       })
@@ -1765,7 +1763,7 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
     let state = if host_input_keyboard_event_state(index=i) == 1 {
       ButtonState::Pressed
     } else {
-      ButtonState::Released
+      Released
     }
     let logical_key = logical_key_from_keycode(code)
     let text = if state.is_pressed() {
@@ -1773,7 +1771,7 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
-    @window.window_emit_keyboard_input(world, @window.KeyboardInput::{
+    @window.window_emit_keyboard_input(world, {
       key_code: code,
       logical_key,
       state,
@@ -1784,7 +1782,7 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
   let text_event_count = host_input_text_event_count()
   for i in 0..<text_event_count {
     if input_text_event_at(i) is Some(text) {
-      ignore(character_writer.write(KeyboardCharacter::{ character: text }))
+      ignore(character_writer.write({ character: text }))
     }
   }
   let ime_event_count = host_input_ime_event_count()
@@ -1851,10 +1849,10 @@ fn input_event_cursors(world : @ecs.World) -> InputEventCursors {
 ///|
 fn touch_phase_from_host(value : Int) -> TouchPhase {
   match value {
-    0 => TouchPhase::Started
-    1 => TouchPhase::Moved
-    2 => TouchPhase::Ended
-    _ => TouchPhase::Canceled
+    0 => Started
+    1 => Moved
+    2 => Ended
+    _ => Canceled
   }
 }
 
@@ -1862,7 +1860,7 @@ fn touch_phase_from_host(value : Int) -> TouchPhase {
 fn active_touches_begin_frame(active : Array[Touch]) -> Unit {
   for i in 0..<active.length() {
     let touch = active[i]
-    active[i] = Touch::{
+    active[i] = {
       id: touch.id,
       start_position: touch.start_position,
       previous_position: touch.position,
@@ -1892,7 +1890,7 @@ fn active_touches_move(
   for i in 0..<active.length() {
     if active[i].id == id {
       let touch = active[i]
-      active[i] = Touch::{
+      active[i] = {
         id: touch.id,
         start_position: touch.start_position,
         previous_position: touch.previous_position,
@@ -1921,21 +1919,16 @@ fn active_touches_take(active : Array[Touch], id : Int) -> Touch? {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   ensure_input_resources(world)
 
   for button in mouse_event_buttons {
     if mouse_button_just_pressed(button) {
-      @window.window_emit_mouse_button_input(world, @window.MouseButtonInput::{
-        button,
-        state: Pressed,
-      })
+      @window.window_emit_mouse_button_input(world, { button, state: Pressed })
     }
     if mouse_button_just_released(button) {
-      @window.window_emit_mouse_button_input(world, @window.MouseButtonInput::{
-        button,
-        state: Released,
-      })
+      @window.window_emit_mouse_button_input(world, { button, state: Released })
     }
   }
 
@@ -1943,18 +1936,14 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   if entered_host_window >= 0 {
     if @window.window_entity_for_host(world, entered_host_window)
       is Some(window_entity) {
-      @window.window_emit_cursor_entered(world, @window.CursorEntered::{
-        window: window_entity,
-      })
+      @window.window_emit_cursor_entered(world, { window: window_entity })
     }
   }
   let left_host_window = host_input_cursor_left_window()
   if left_host_window >= 0 {
     if @window.window_entity_for_host(world, left_host_window)
       is Some(window_entity) {
-      @window.window_emit_cursor_left(world, @window.CursorLeft::{
-        window: window_entity,
-      })
+      @window.window_emit_cursor_left(world, { window: window_entity })
     }
   }
   let current_position_opt = mouse_position()
@@ -1973,41 +1962,41 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
     }
     if @window.window_entity_for_host(world, cursor_host_window)
       is Some(window_entity) {
-      @window.window_emit_cursor_moved(world, @window.CursorMoved::{
+      @window.window_emit_cursor_moved(world, {
         window: window_entity,
         position: current_position,
         delta: delta_opt,
       })
     }
     if delta_opt is Some(delta) {
-      @window.window_emit_mouse_motion(world, @window.MouseMotion::{ delta, })
+      @window.window_emit_mouse_motion(world, { delta, })
     }
   }
   input_host_runtime_state.last_mouse_position = current_position_opt
 
   let wheel_delta = mouse_wheel_delta()
   if !vec2_is_zero(wheel_delta) {
-    @window.window_emit_mouse_wheel(world, @window.MouseWheel::{
-      unit: MouseScrollUnit::Line,
+    @window.window_emit_mouse_wheel(world, {
+      unit: Line,
       x: wheel_delta.x,
       y: wheel_delta.y,
     })
   }
   let pinch_gesture_event_count = host_input_pinch_gesture_event_count()
   for i in 0..<pinch_gesture_event_count {
-    @window.window_emit_pinch_gesture(world, @window.PinchGesture::{
+    @window.window_emit_pinch_gesture(world, {
       delta: host_input_pinch_gesture_event_delta(index=i),
     })
   }
   let rotation_gesture_event_count = host_input_rotation_gesture_event_count()
   for i in 0..<rotation_gesture_event_count {
-    @window.window_emit_rotation_gesture(world, @window.RotationGesture::{
+    @window.window_emit_rotation_gesture(world, {
       delta: host_input_rotation_gesture_event_delta(index=i),
     })
   }
   let pan_gesture_event_count = host_input_pan_gesture_event_count()
   for i in 0..<pan_gesture_event_count {
-    @window.window_emit_pan_gesture(world, @window.PanGesture::{
+    @window.window_emit_pan_gesture(world, {
       delta: @math.Vec2::new(
         host_input_pan_gesture_event_x(index=i),
         host_input_pan_gesture_event_y(index=i),
@@ -2047,24 +2036,23 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       position,
     }
     match touch_phase {
-      TouchPhase::Started => {
+      Started => {
         active_touches_start(active_touches, touch)
         touches.just_pressed.push(touch)
       }
-      TouchPhase::Moved =>
-        active_touches_move(active_touches, touch_id, position)
-      TouchPhase::Ended =>
+      Moved => active_touches_move(active_touches, touch_id, position)
+      Ended =>
         match active_touches_take(active_touches, touch_id) {
           Some(active_touch) => touches.just_released.push(active_touch)
           None => touches.just_released.push(touch)
         }
-      TouchPhase::Canceled =>
+      Canceled =>
         match active_touches_take(active_touches, touch_id) {
           Some(active_touch) => touches.just_canceled.push(active_touch)
           None => touches.just_canceled.push(touch)
         }
     }
-    @window.window_emit_touch_input(world, @window.TouchInput::{
+    @window.window_emit_touch_input(world, {
       id: touch_id,
       phase: touch_phase,
       position,
@@ -2113,7 +2101,7 @@ pub fn input_accumulate_mouse_motion_system(world : @ecs.World) -> Unit {
   }
   if world.get_resource_mut(AccumulatedMouseMotion::resource())
     is Some(motion_ref) {
-    motion_ref.set(AccumulatedMouseMotion::{ delta, })
+    motion_ref.set({ delta, })
   }
 }
 
@@ -2134,7 +2122,7 @@ pub fn input_accumulate_mouse_scroll_system(world : @ecs.World) -> Unit {
   }
   if world.get_resource_mut(AccumulatedMouseScroll::resource())
     is Some(scroll_ref) {
-    scroll_ref.set(AccumulatedMouseScroll::{ unit, delta })
+    scroll_ref.set({ unit, delta })
   }
 }
 
@@ -2265,7 +2253,7 @@ pub impl @app.Resource for Touches with fn resource() {
 
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  input_plugin_with(app, InputPlugin::InputPlugin())
+  input_plugin_with(app, InputPlugin())
 }
 
 ///|
@@ -2275,6 +2263,7 @@ pub(all) struct InputPlugin {}
 const INPUT_PLUGIN_NAME : String = "mgstudio.input.InputPlugin"
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn InputPlugin::InputPlugin() -> InputPlugin {
   InputPlugin::{  }
 }
@@ -2311,7 +2300,7 @@ pub fn input_plugin_with(
   .add_message(pan_gesture_message_key())
   .add_message(touch_input_message_key())
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     (
       @app.system(input_poll_keyboard_system).in_set(input_systems_set),
       @app.system(input_poll_drag_and_drop_system).in_set(input_systems_set),

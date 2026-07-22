@@ -25,6 +25,7 @@ pub const LIGHTMAPS_PER_SLAB : Int = 4
 pub struct LightmapPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn lightmap_plugin() -> LightmapPlugin {
   LightmapPlugin::{  }
 }
@@ -48,18 +49,12 @@ pub struct LightmapPluginState {
 
 ///|
 pub fn LightmapPluginState::LightmapPluginState() -> LightmapPluginState {
-  LightmapPluginState::{
-    bindless_supported: false,
-    lightmaps_per_slab: LIGHTMAPS_PER_SLAB,
-  }
+  { bindless_supported: false, lightmaps_per_slab: LIGHTMAPS_PER_SLAB }
 }
 
 ///|
 pub fn lightmap_plugin_state(bindless_supported : Bool) -> LightmapPluginState {
-  LightmapPluginState::{
-    bindless_supported,
-    lightmaps_per_slab: LIGHTMAPS_PER_SLAB,
-  }
+  { bindless_supported, lightmaps_per_slab: LIGHTMAPS_PER_SLAB }
 }
 
 ///|
@@ -72,7 +67,7 @@ pub struct Lightmap {
 
 ///|
 pub fn Lightmap::Lightmap() -> Lightmap {
-  Lightmap::{
+  {
     image: @asset.Handle::new(-1),
     uv_rect: @math.Rect::new(@math.Vec2::zero(), @math.Vec2::new(1.0F, 1.0F)),
     bicubic_sampling: false,
@@ -81,7 +76,7 @@ pub fn Lightmap::Lightmap() -> Lightmap {
 
 ///|
 pub fn Lightmap::new(image : @asset.Handle[@asset.Image]) -> Lightmap {
-  Lightmap::{ ..Lightmap(), image, }
+  { ..Lightmap(), image, }
 }
 
 ///|
@@ -89,7 +84,7 @@ pub fn Lightmap::with_uv_rect(
   self : Lightmap,
   uv_rect : @math.Rect,
 ) -> Lightmap {
-  Lightmap::{ ..self, uv_rect, }
+  { ..self, uv_rect, }
 }
 
 ///|
@@ -97,7 +92,7 @@ pub fn Lightmap::with_bicubic_sampling(
   self : Lightmap,
   bicubic_sampling : Bool,
 ) -> Lightmap {
-  Lightmap::{ ..self, bicubic_sampling, }
+  { ..self, bicubic_sampling, }
 }
 
 ///|
@@ -121,12 +116,12 @@ fn non_negative(value : Int) -> Int {
 
 ///|
 pub fn LightmapSlabIndex::new(value : Int) -> LightmapSlabIndex {
-  LightmapSlabIndex::{ value: non_negative(value) }
+  { value: non_negative(value) }
 }
 
 ///|
 pub fn LightmapSlotIndex::new(value : Int) -> LightmapSlotIndex {
-  LightmapSlotIndex::{ value: non_negative(value) }
+  { value: non_negative(value) }
 }
 
 ///|
@@ -154,7 +149,7 @@ pub fn RenderLightmap::new(
   slot_index : LightmapSlotIndex,
   bicubic_sampling : Bool,
 ) -> RenderLightmap {
-  RenderLightmap::{ uv_rect, slab_index, slot_index, bicubic_sampling }
+  { uv_rect, slab_index, slot_index, bicubic_sampling }
 }
 
 ///|
@@ -176,7 +171,7 @@ pub fn LightmapSlab::new(bindless_supported : Bool) -> LightmapSlab {
   for _ in 0..<capacity {
     lightmap_texture_ids.push(-1)
   }
-  LightmapSlab::{ capacity, allocated: 0, lightmap_texture_ids }
+  { capacity, allocated: 0, lightmap_texture_ids }
 }
 
 ///|
@@ -203,7 +198,7 @@ pub struct RenderLightmaps {
 
 ///|
 pub fn RenderLightmaps::RenderLightmaps() -> RenderLightmaps {
-  RenderLightmaps::{
+  {
     render_lightmaps: Map([]),
     slabs: [LightmapSlab::new(false)],
     bindless_supported: false,
@@ -234,7 +229,7 @@ fn render_lightmaps_allocate_slot(
       if slot >= 0 && slot < texture_ids.length() {
         texture_ids[slot] = lightmap_texture_id
       }
-      render_lightmaps.slabs[index] = LightmapSlab::{
+      render_lightmaps.slabs[index] = {
         ..slab,
         allocated: slab.allocated + 1,
         lightmap_texture_ids: texture_ids,
@@ -252,7 +247,7 @@ fn render_lightmaps_allocate_slot(
   if slot >= 0 && slot < texture_ids.length() {
     texture_ids[slot] = lightmap_texture_id
   }
-  render_lightmaps.slabs[new_index] = LightmapSlab::{
+  render_lightmaps.slabs[new_index] = {
     ..slab,
     allocated: slab.allocated + 1,
     lightmap_texture_ids: texture_ids,
@@ -325,7 +320,7 @@ pub fn RenderLightmaps::remove(
         if slot_index >= 0 && slot_index < texture_ids.length() {
           texture_ids[slot_index] = -1
         }
-        self.slabs[slab_index] = LightmapSlab::{
+        self.slabs[slab_index] = {
           ..slab,
           allocated: if slab.allocated <= 0 {
             0
@@ -393,6 +388,7 @@ pub impl @app.Resource for RenderLightmaps with fn resource() {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn lightmap_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
@@ -408,17 +404,14 @@ pub fn lightmap_plugin_install_with(
   let mut next = @render.with_render_app(app, fn(render_app) {
     let render_world = render_app.world()
     if render_world.get_resource(ecs_key_render_lightmaps) is None {
-      render_world.insert_resource(
-        ecs_key_render_lightmaps,
-        RenderLightmaps::RenderLightmaps(),
-      )
+      render_world.insert_resource(ecs_key_render_lightmaps, RenderLightmaps())
     }
     render_app
   })
   if !next.contains_resource(ecs_key_lightmap_plugin_state) {
     next = next.insert_world_resource(
       ecs_key_lightmap_plugin_state,
-      LightmapPluginState::LightmapPluginState(),
+      LightmapPluginState(),
     )
   }
   next

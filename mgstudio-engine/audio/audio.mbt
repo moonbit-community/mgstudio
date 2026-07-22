@@ -40,8 +40,8 @@ pub fn PlaybackSettings::PlaybackSettings() -> PlaybackSettings {
 
 ///|
 pub fn PlaybackSettings::once() -> PlaybackSettings {
-  PlaybackSettings::{
-    mode: PlaybackMode::Once,
+  {
+    mode: Once,
     volume: Volume::default(),
     speed: 1.0F,
     paused: false,
@@ -55,27 +55,27 @@ pub fn PlaybackSettings::once() -> PlaybackSettings {
 
 ///|
 pub fn PlaybackSettings::looped() -> PlaybackSettings {
-  PlaybackSettings::{ ..PlaybackSettings::once(), mode: PlaybackMode::Loop }
+  { ..PlaybackSettings::once(), mode: Loop }
 }
 
 ///|
 pub fn PlaybackSettings::despawn() -> PlaybackSettings {
-  PlaybackSettings::{ ..PlaybackSettings::once(), mode: PlaybackMode::Despawn }
+  { ..PlaybackSettings::once(), mode: Despawn }
 }
 
 ///|
 pub fn PlaybackSettings::remove() -> PlaybackSettings {
-  PlaybackSettings::{ ..PlaybackSettings::once(), mode: PlaybackMode::Remove }
+  { ..PlaybackSettings::once(), mode: Remove }
 }
 
 ///|
 pub fn PlaybackSettings::paused(self : PlaybackSettings) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, paused: true }
+  { ..self, paused: true }
 }
 
 ///|
 pub fn PlaybackSettings::muted(self : PlaybackSettings) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, muted: true }
+  { ..self, muted: true }
 }
 
 ///|
@@ -83,7 +83,7 @@ pub fn PlaybackSettings::with_volume(
   self : PlaybackSettings,
   volume : Volume,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, volume, }
+  { ..self, volume, }
 }
 
 ///|
@@ -91,7 +91,7 @@ pub fn PlaybackSettings::with_speed(
   self : PlaybackSettings,
   speed : Float,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, speed, }
+  { ..self, speed, }
 }
 
 ///|
@@ -99,7 +99,7 @@ pub fn PlaybackSettings::with_spatial(
   self : PlaybackSettings,
   spatial : Bool,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, spatial, }
+  { ..self, spatial, }
 }
 
 ///|
@@ -107,7 +107,7 @@ pub fn PlaybackSettings::with_spatial_scale(
   self : PlaybackSettings,
   spatial_scale : SpatialScale,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, spatial_scale: Some(spatial_scale) }
+  { ..self, spatial_scale: Some(spatial_scale) }
 }
 
 ///|
@@ -115,7 +115,7 @@ pub fn PlaybackSettings::with_start_position(
   self : PlaybackSettings,
   start_position : @core.Duration,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, start_position: Some(start_position) }
+  { ..self, start_position: Some(start_position) }
 }
 
 ///|
@@ -123,7 +123,7 @@ pub fn PlaybackSettings::with_duration(
   self : PlaybackSettings,
   duration : @core.Duration,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, duration: Some(duration) }
+  { ..self, duration: Some(duration) }
 }
 
 ///|
@@ -135,7 +135,7 @@ pub struct SpatialListener {
 ///|
 pub fn SpatialListener::new(gap : Float) -> SpatialListener {
   let half_gap = gap / 2.0F
-  SpatialListener::{
+  {
     left_ear_offset: @math.Vec3::new(0.0F - half_gap, 0.0F, 0.0F),
     right_ear_offset: @math.Vec3::new(half_gap, 0.0F, 0.0F),
   }
@@ -153,12 +153,12 @@ pub struct SpatialScale {
 
 ///|
 pub fn SpatialScale::new(scale : Float) -> SpatialScale {
-  SpatialScale::{ scale: @math.Vec3::splat(scale) }
+  { scale: @math.Vec3::splat(scale) }
 }
 
 ///|
 pub fn SpatialScale::new_2d(scale : Float) -> SpatialScale {
-  SpatialScale::{ scale: @math.Vec3::new(scale, scale, 0.0F) }
+  { scale: @math.Vec3::new(scale, scale, 0.0F) }
 }
 
 ///|
@@ -173,12 +173,12 @@ pub struct DefaultSpatialScale {
 
 ///|
 pub fn DefaultSpatialScale::new(scale : SpatialScale) -> DefaultSpatialScale {
-  DefaultSpatialScale::{ scale, }
+  { scale, }
 }
 
 ///|
 pub fn DefaultSpatialScale::DefaultSpatialScale() -> DefaultSpatialScale {
-  DefaultSpatialScale::new(SpatialScale::SpatialScale())
+  DefaultSpatialScale::new(SpatialScale())
 }
 
 ///|
@@ -228,7 +228,7 @@ pub struct AudioPlayer[Source] {
 pub fn[Source] AudioPlayer::new(
   source : @asset.Handle[Source],
 ) -> AudioPlayer[Source] {
-  AudioPlayer::{ source, }
+  { source, }
 }
 
 ///|
@@ -248,7 +248,7 @@ pub impl[Source] @json.FromJson for AudioPlayer[Source] with fn from_json(
   json,
   path,
 ) {
-  AudioPlayer::{ source: @json.from_json(json, path~) }
+  { source: @json.from_json(json, path~) }
 }
 
 ///|
@@ -259,10 +259,7 @@ pub struct AudioPlugin {
 
 ///|
 pub fn AudioPlugin::AudioPlugin() -> AudioPlugin {
-  AudioPlugin::{
-    global_volume: GlobalVolume::GlobalVolume(),
-    default_spatial_scale: SpatialScale::SpatialScale(),
-  }
+  { global_volume: GlobalVolume(), default_spatial_scale: SpatialScale() }
 }
 
 ///|
@@ -277,7 +274,7 @@ pub impl @app.Plugin for AudioPlugin with fn build(self, app) {
 
 ///|
 pub fn audio_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  audio_plugin_with(app, AudioPlugin::AudioPlugin())
+  audio_plugin_with(app, AudioPlugin())
 }
 
 ///|

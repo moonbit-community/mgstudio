@@ -178,8 +178,8 @@ fn render3d_prepare_camera_screen_space_reflections_settings(
 fn render3d_main_pass_skips_deferred_opaque(
   material_properties : @material.MaterialProperties,
 ) -> Bool {
-  material_properties.render_phase_type is @material.RenderPhaseType::Opaque &&
-  material_properties.render_method is OpaqueRendererMethod::Deferred
+  material_properties.render_phase_type is Opaque &&
+  material_properties.render_method is Deferred
 }
 
 ///|
@@ -246,7 +246,7 @@ fn render3d_prepare_scattering_medium_asset(
   }
   let next = PreparedGpuScatteringMedium::from_medium(
     medium,
-    ScatteringMediumSampler::ScatteringMediumSampler(),
+    ScatteringMediumSampler(),
   )
   render3d_scattering_medium_assets_mut_or_init(world).modify(fn(cache) {
     cache.insert(handle_id, next)
@@ -266,7 +266,7 @@ fn render3d_prepare_camera_atmosphere_resources(
   }
   let gpu_settings = match camera.atmosphere_settings {
     Some(value) => value
-    None => @pbr_atmosphere.GpuAtmosphereSettings::GpuAtmosphereSettings()
+    None => GpuAtmosphereSettings()
   }
   let gpu_medium = render3d_prepare_scattering_medium_asset(
     world,
@@ -408,8 +408,7 @@ fn render3d_draw_transparent_phase(
   }
   let mut executed = 0
   for item in items {
-    if draw_functions.render(world, item)
-      is @core_3d.Transparent3dRenderCommandResult::Success {
+    if draw_functions.render(world, item) is Success {
       executed = executed + 1
     }
   }
@@ -488,12 +487,12 @@ fn render3d_execute_camera_main_pass(
   let render_decals = match
     world.get_resource(@pbr_decal.ecs_key_render_clustered_decals) {
     Some(decals) => decals
-    None => @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
+    None => RenderClusteredDecals()
   }
   let decals_buffer = match
     world.get_resource(@pbr_decal.DecalsBuffer::resource()) {
     Some(buffer) => buffer
-    None => @pbr_decal.DecalsBuffer::DecalsBuffer()
+    None => DecalsBuffer()
   }
   @render.host_gpu_prepare_mesh3d_clustered_decals(
     decal_words=decals_buffer.gpu_words(),
@@ -666,7 +665,7 @@ fn render3d_execute_camera_main_pass(
     )
   }
   let main_phase_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "render_3d_main_pass_construction",
   )
   let main_phase = render3d_mesh_gpu_binned_phase_new()
@@ -739,7 +738,7 @@ fn render3d_execute_camera_main_pass(
     let draw_render_phase_type = material_properties.render_phase_type
     let draw_thickness = material_fields.thickness
     let draw_ior = material_fields.ior
-    if draw_render_phase_type is @material.RenderPhaseType::Transparent &&
+    if draw_render_phase_type is Transparent &&
       camera.oit_settings is Some(oit_settings) &&
       draw_alpha < oit_settings.alpha_threshold {
       continue
@@ -855,13 +854,12 @@ fn render3d_execute_camera_main_pass(
       previous_world_from_local=Some(mesh.previous_world_from_local),
       instance_vertex_buffer_id=mesh.instance_vertex_buffer_id,
     )
-    if draw_render_phase_type is @material.RenderPhaseType::Transparent {
+    if draw_render_phase_type is Transparent {
       transparent_draws.push(draw_payload)
       continue
     }
-    if transmission_enabled &&
-      draw_render_phase_type is @material.RenderPhaseType::Transmissive {
-      transmissive_phase_items.push(TransmissivePhaseItem3d::{
+    if transmission_enabled && draw_render_phase_type is Transmissive {
+      transmissive_phase_items.push({
         entity: extracted_mesh.entity,
         distance: draw_item.distance,
         payload: draw_payload,
@@ -904,7 +902,7 @@ fn render3d_execute_camera_main_pass(
     batched_draw_entries.length(),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "render_3d_main_pass_construction",
     main_phase_trace_start_us,
   )
@@ -1029,7 +1027,7 @@ fn render3d_execute_camera_main_pass(
       for i in transmission_range.0..<transmission_range.1 {
         let transmissive_draw = transmissive_draws[i]
         transmissive_draw.entity |> ignore
-        @pbr_render.render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
+        @pbr_render.render3d_draw_mesh_gpu_payload({
           ..transmissive_draw.payload,
           transmission_source_texture_id,
           transmission_blur_taps: Float::from_double(

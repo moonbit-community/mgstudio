@@ -37,7 +37,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   try! world.set_by_key(
     light,
@@ -50,7 +50,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for primary window
   let first_window_camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -67,17 +67,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for secondary window
   let second_window_camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_target(
-      @camera_camera.RenderTarget::Window(
-        @window.WindowRef::Entity(second_window),
-      ),
-    )
+    .with_target(Window(Entity(second_window)))
     .spawn(world)
 
   spawn_label(world, first_window_camera, "First window")
@@ -93,14 +89,14 @@ fn spawn_label(
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     root,
@@ -125,17 +121,13 @@ fn spawn_label(
     @text.ecs_key_text_color,
     @text.TextColor::new(@color.Color::white()),
   )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_shadow,
-    @text.TextShadow::TextShadow(),
-  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_shadow, TextShadow())
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup_scene)
+  .add_systems_world(Startup, setup_scene)
   .run()
 }

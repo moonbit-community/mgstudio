@@ -57,7 +57,7 @@ fn prepare_transform_world(world : @ecs.World) -> Unit {
   if !world.resource(static_transform_optimizations_resource_key).is_present() {
     world.insert_resource(
       static_transform_optimizations_resource_key,
-      StaticTransformOptimizations::StaticTransformOptimizations(),
+      StaticTransformOptimizations(),
     )
   }
 }
@@ -577,7 +577,7 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
 
   let reader = world.message_reader(
     @app.check_parent_has_component_message_key(ecs_key_global_transform),
-    cursor=@ecs.MessageCursor::MessageCursor(),
+    cursor=MessageCursor(),
   )
   debug_inspect(reader.len(), content="1")
 }

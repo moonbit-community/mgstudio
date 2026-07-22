@@ -58,7 +58,7 @@ priv struct SceneGltfPendingRequestsState {
 
 ///|
 fn SceneGltfPendingRequestsState::SceneGltfPendingRequestsState() -> SceneGltfPendingRequestsState {
-  SceneGltfPendingRequestsState::{
+  {
     pending_scene_requests: [],
     pending_animation_requests: [],
     pending_mesh_requests: [],
@@ -418,7 +418,7 @@ fn scene_gltf_parse_material_label(label : String) -> (Int, Bool)? {
 ///|
 fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
   if label == "DefaultMaterial" {
-    return Some(GltfAssetLabel::DefaultMaterial)
+    return Some(DefaultMaterial)
   }
   if label.has_suffix(SCENE_GLTF_ASSET_LABEL_MORPH_TARGET_SUFFIX) {
     let end = label.length() -
@@ -429,12 +429,12 @@ fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
     let primitive_label = label[0:end].to_owned()
     if scene_gltf_parse_mesh_primitive_label(primitive_label)
       is Some((mesh, primitive)) {
-      return Some(GltfAssetLabel::MorphTarget(mesh, primitive))
+      return Some(MorphTarget(mesh, primitive))
     }
     return None
   }
   if scene_gltf_parse_mesh_primitive_label(label) is Some((mesh, primitive)) {
-    return Some(GltfAssetLabel::Primitive(mesh, primitive))
+    return Some(Primitive(mesh, primitive))
   }
   if label.has_suffix(SCENE_GLTF_ASSET_LABEL_INVERSE_BIND_MATRICES_SUFFIX) &&
     label.has_prefix(SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX) {
@@ -445,30 +445,30 @@ fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
     }
     let index_payload = label[SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length():end].to_owned()
     if scene_gltf_parse_non_negative_int(index_payload) is Some(index) {
-      return Some(GltfAssetLabel::InverseBindMatrices(index))
+      return Some(InverseBindMatrices(index))
     }
     return None
   }
   if scene_gltf_parse_material_label(label) is Some((index, is_scale_inverted)) {
-    return Some(GltfAssetLabel::Material(index, is_scale_inverted))
+    return Some(Material(index, is_scale_inverted))
   }
   if scene_gltf_parse_prefixed_index(label, "Scene") is Some(index) {
-    return Some(GltfAssetLabel::Scene(index))
+    return Some(Scene(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Node") is Some(index) {
-    return Some(GltfAssetLabel::Node(index))
+    return Some(Node(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Mesh") is Some(index) {
-    return Some(GltfAssetLabel::Mesh(index))
+    return Some(Mesh(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Texture") is Some(index) {
-    return Some(GltfAssetLabel::Texture(index))
+    return Some(Texture(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Animation") is Some(index) {
-    return Some(GltfAssetLabel::Animation(index))
+    return Some(Animation(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Skin") is Some(index) {
-    return Some(GltfAssetLabel::Skin(index))
+    return Some(Skin(index))
   }
   None
 }
@@ -476,26 +476,26 @@ fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
 ///|
 fn scene_touch_gltf_asset_label(label : GltfAssetLabel?) -> Unit {
   match label {
-    Some(GltfAssetLabel::Scene(index)) => ignore(index)
-    Some(GltfAssetLabel::Node(index)) => ignore(index)
-    Some(GltfAssetLabel::Mesh(index)) => ignore(index)
-    Some(GltfAssetLabel::Primitive(mesh, primitive)) => {
+    Some(Scene(index)) => ignore(index)
+    Some(Node(index)) => ignore(index)
+    Some(Mesh(index)) => ignore(index)
+    Some(Primitive(mesh, primitive)) => {
       ignore(mesh)
       ignore(primitive)
     }
-    Some(GltfAssetLabel::MorphTarget(mesh, primitive)) => {
+    Some(MorphTarget(mesh, primitive)) => {
       ignore(mesh)
       ignore(primitive)
     }
-    Some(GltfAssetLabel::Texture(index)) => ignore(index)
-    Some(GltfAssetLabel::Material(index, is_scale_inverted)) => {
+    Some(Texture(index)) => ignore(index)
+    Some(Material(index, is_scale_inverted)) => {
       ignore(index)
       ignore(is_scale_inverted)
     }
-    Some(GltfAssetLabel::DefaultMaterial) => ()
-    Some(GltfAssetLabel::Animation(index)) => ignore(index)
-    Some(GltfAssetLabel::Skin(index)) => ignore(index)
-    Some(GltfAssetLabel::InverseBindMatrices(index)) => ignore(index)
+    Some(DefaultMaterial) => ()
+    Some(Animation(index)) => ignore(index)
+    Some(Skin(index)) => ignore(index)
+    Some(InverseBindMatrices(index)) => ignore(index)
     None => ()
   }
 }
@@ -577,7 +577,7 @@ fn scene_queue_gltf_request(
   scene_pending_remove_scene_handle(world, scene_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(scene_asset_path)
   let scene_index = match label {
-    Some(GltfAssetLabel::Scene(index)) => index
+    Some(Scene(index)) => index
     _ => 0
   }
   scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
@@ -606,7 +606,7 @@ fn scene_queue_gltf_animation_request(
   scene_pending_remove_animation_handle(world, clip_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(animation_asset_path)
   let animation_index = match label {
-    Some(GltfAssetLabel::Animation(index)) => index
+    Some(Animation(index)) => index
     _ => 0
   }
   scene_gltf_pending_requests_state_ref_or_abort(world).modify(fn(state) {
@@ -635,7 +635,7 @@ fn scene_queue_gltf_mesh_request(
   scene_pending_remove_mesh_handle(world, mesh_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(mesh_asset_path)
   let (mesh_index, primitive_index) = match label {
-    Some(GltfAssetLabel::Primitive(mesh, primitive)) => (mesh, primitive)
+    Some(Primitive(mesh, primitive)) => (mesh, primitive)
     _ =>
       abort(
         "Mesh asset loading requires a glTF primitive label such as Mesh0/Primitive0",
@@ -1000,18 +1000,18 @@ fn gltf_parse_texture_transform(
 ///|
 fn gltf_parse_material_alpha_mode(obj : Map[String, Json]) -> @pbr.AlphaMode3d {
   guard json_get_string(obj, "alphaMode") is Some(alpha_mode) else {
-    return @pbr.AlphaMode3d::Opaque
+    return Opaque
   }
   match alpha_mode {
-    "BLEND" => @pbr.AlphaMode3d::Blend
+    "BLEND" => Blend
     "MASK" => {
       let cutoff = match json_get_float(obj, "alphaCutoff") {
         Some(value) => value
         None => 0.5F
       }
-      @pbr.AlphaMode3d::Mask(cutoff)
+      Mask(cutoff)
     }
-    _ => @pbr.AlphaMode3d::Opaque
+    _ => Opaque
   }
 }
 
@@ -1134,8 +1134,8 @@ fn gltf_parse_material_ior(obj : Map[String, Json]) -> Float {
 ///|
 fn gltf_sampler_mag_filter(filter : Int) -> @image.ImageFilterMode? {
   match filter {
-    9728 => Some(@image.ImageFilterMode::Nearest)
-    9729 => Some(@image.ImageFilterMode::Linear)
+    9728 => Some(Nearest)
+    9729 => Some(Linear)
     _ => None
   }
 }
@@ -1143,12 +1143,12 @@ fn gltf_sampler_mag_filter(filter : Int) -> @image.ImageFilterMode? {
 ///|
 fn gltf_sampler_min_filter(filter : Int) -> @image.ImageFilterMode? {
   match filter {
-    9728 => Some(@image.ImageFilterMode::Nearest)
-    9729 => Some(@image.ImageFilterMode::Linear)
-    9984 => Some(@image.ImageFilterMode::Nearest)
-    9985 => Some(@image.ImageFilterMode::Linear)
-    9986 => Some(@image.ImageFilterMode::Nearest)
-    9987 => Some(@image.ImageFilterMode::Linear)
+    9728 => Some(Nearest)
+    9729 => Some(Linear)
+    9984 => Some(Nearest)
+    9985 => Some(Linear)
+    9986 => Some(Nearest)
+    9987 => Some(Linear)
     _ => None
   }
 }
@@ -1156,12 +1156,12 @@ fn gltf_sampler_min_filter(filter : Int) -> @image.ImageFilterMode? {
 ///|
 fn gltf_sampler_mipmap_filter(filter : Int) -> @image.ImageFilterMode? {
   match filter {
-    9728 => Some(@image.ImageFilterMode::Nearest)
-    9729 => Some(@image.ImageFilterMode::Nearest)
-    9984 => Some(@image.ImageFilterMode::Nearest)
-    9985 => Some(@image.ImageFilterMode::Nearest)
-    9986 => Some(@image.ImageFilterMode::Linear)
-    9987 => Some(@image.ImageFilterMode::Linear)
+    9728 => Some(Nearest)
+    9729 => Some(Nearest)
+    9984 => Some(Nearest)
+    9985 => Some(Nearest)
+    9986 => Some(Linear)
+    9987 => Some(Linear)
     _ => None
   }
 }
@@ -1169,9 +1169,9 @@ fn gltf_sampler_mipmap_filter(filter : Int) -> @image.ImageFilterMode? {
 ///|
 fn gltf_sampler_address_mode(wrap_mode : Int) -> @image.ImageAddressMode {
   match wrap_mode {
-    33071 => @image.ImageAddressMode::ClampToEdge
-    33648 => @image.ImageAddressMode::MirrorRepeat
-    _ => @image.ImageAddressMode::Repeat
+    33071 => ClampToEdge
+    33648 => MirrorRepeat
+    _ => Repeat
   }
 }
 
@@ -1315,9 +1315,9 @@ fn gltf_parse_lights(root : Map[String, Json]) -> Array[GltfLightDef] {
             }
           None => @math.pi() / 4.0F
         }
-        GltfLightKindDef::Spot(inner_cone_angle, outer_cone_angle)
+        Spot(inner_cone_angle, outer_cone_angle)
       } else {
-        GltfLightKindDef::Point
+        Point
       }
       let color = match obj.get("color") {
         Some(value) => gltf_parse_srgb_color(value, @color.Color::white())
@@ -1341,7 +1341,7 @@ fn gltf_parse_lights(root : Map[String, Json]) -> Array[GltfLightDef] {
         color: @color.Color::white(),
         intensity: 1.0F,
         range: None,
-        kind: GltfLightKindDef::Point,
+        kind: Point,
       })
     }
   }
@@ -1524,13 +1524,13 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 is Some(target_entries) {
                 for target_entry in target_entries {
                   if json_object(target_entry) is Some(target_obj) {
-                    morph_targets.push(GltfMorphTargetDef::{
+                    morph_targets.push({
                       position: json_get_int(target_obj, "POSITION"),
                       normal: json_get_int(target_obj, "NORMAL"),
                       tangent: json_get_int(target_obj, "TANGENT"),
                     })
                   } else {
-                    morph_targets.push(GltfMorphTargetDef::{
+                    morph_targets.push({
                       position: None,
                       normal: None,
                       tangent: None,
@@ -1823,7 +1823,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           metallic: 1.0F,
           roughness: 1.0F,
           emissive: @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-          alpha_mode: @pbr.AlphaMode3d::Opaque,
+          alpha_mode: Opaque,
           unlit: false,
         })
       }
@@ -2664,18 +2664,16 @@ fn scene_try_resolve_request_buffers(
           if data_uri_decode_bytes(uri) is Some(decoded) {
             buffer_bytes[i] = Some(decoded)
           } else {
-            return GltfResolveBuffersState::Fatal
+            return Fatal
           }
         } else {
           let resolved_path = path_join(base_dir, uri)
           if buffer_blobs[i] is None {
             buffer_blobs[i] = Some(asset_server.load_bytes(resolved_path))
           }
-          guard buffer_blobs[i] is Some(blob) else {
-            return GltfResolveBuffersState::Pending
-          }
+          guard buffer_blobs[i] is Some(blob) else { return Pending }
           guard @asset.asset_blob_read_bytes(blob) is Some(bytes) else {
-            return GltfResolveBuffersState::Pending
+            return Pending
           }
           buffer_bytes[i] = Some(bytes)
         }
@@ -2683,19 +2681,17 @@ fn scene_try_resolve_request_buffers(
         if buffer.byte_length == 0 {
           buffer_bytes[i] = Some(Bytes::new(0))
         } else {
-          return GltfResolveBuffersState::Fatal
+          return Fatal
         }
     }
   }
 
   let resolved_buffers : Array[Bytes] = []
   for maybe_bytes in buffer_bytes {
-    guard maybe_bytes is Some(bytes) else {
-      return GltfResolveBuffersState::Pending
-    }
+    guard maybe_bytes is Some(bytes) else { return Pending }
     resolved_buffers.push(bytes)
   }
-  GltfResolveBuffersState::Ready(resolved_buffers)
+  Ready(resolved_buffers)
 }
 
 ///|
@@ -2719,7 +2715,7 @@ fn gltf_loader_default_sampler_descriptor(
   settings : @asset.ImageLoaderSettings,
 ) -> @image.ImageSamplerDescriptor {
   match settings.sampler {
-    @asset.ImageSampler::Descriptor(descriptor) => descriptor
+    Descriptor(descriptor) => descriptor
     _ => @gltf.gltf_default_image_sampler()
   }
 }
@@ -2729,7 +2725,7 @@ fn gltf_loader_convert_coordinates(
   settings : @asset.ImageLoaderSettings,
 ) -> @gltf.GltfConvertCoordinates {
   let default_convert_coordinates = @gltf.gltf_default_convert_coordinates()
-  @gltf.GltfConvertCoordinates::{
+  {
     rotate_scene_entity: match
       settings.convert_coordinates_rotate_scene_entity {
       Some(value) => value
@@ -2750,9 +2746,9 @@ fn gltf_loader_skinned_mesh_bounds_policy_from_settings(
   match settings.skinned_mesh_bounds_policy {
     // Keep enum ordinal mapping aligned with Bevy's serialized
     // `GltfSkinnedMeshBoundsPolicy` variant order.
-    Some(0) => @gltf.GltfSkinnedMeshBoundsPolicy::BindPose
-    Some(1) => @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic
-    Some(2) => @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling
+    Some(0) => BindPose
+    Some(1) => Dynamic
+    Some(2) => NoFrustumCulling
     Some(_) => default_policy
     None => default_policy
   }
@@ -2780,16 +2776,14 @@ fn gltf_camera_projection_from_def(
       if aspect_ratio is Some(aspect) {
         projection = projection.with_aspect_ratio(aspect)
       }
-      @camera.Projection::Perspective(projection)
+      Perspective(projection)
     }
     Orthographic(xmag, znear, zfar) =>
-      @camera.Projection::Orthographic(
+      Orthographic(
         @camera.OrthographicProjection3d::default_3d()
         .with_near(znear)
         .with_far(zfar)
-        .with_scaling_mode(
-          @camera.OrthographicScalingMode3d::FixedHorizontal(xmag),
-        ),
+        .with_scaling_mode(FixedHorizontal(xmag)),
       )
   }
 }
@@ -2906,10 +2900,10 @@ fn gltf_texture_image_sampler(
   override_sampler : Bool,
 ) -> @image.ImageSampler {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
-    return @image.ImageSampler::Descriptor(default_sampler)
+    return Descriptor(default_sampler)
   }
   if override_sampler {
-    return @image.ImageSampler::Descriptor(default_sampler)
+    return Descriptor(default_sampler)
   }
 
   let descriptor = @image.ImageSamplerDescriptor::{
@@ -2937,17 +2931,17 @@ fn gltf_texture_image_sampler(
     Some(value) =>
       match value.wrap_s {
         Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
-        None => @image.ImageAddressMode::Repeat
+        None => Repeat
       }
-    None => @image.ImageAddressMode::Repeat
+    None => Repeat
   }
   descriptor.address_mode_v = match sampler {
     Some(value) =>
       match value.wrap_t {
         Some(wrap_mode) => gltf_sampler_address_mode(wrap_mode)
-        None => @image.ImageAddressMode::Repeat
+        None => Repeat
       }
-    None => @image.ImageAddressMode::Repeat
+    None => Repeat
   }
   if descriptor.anisotropy_clamp == 1 && sampler is Some(value) {
     if value.mag_filter is Some(mag_filter) &&
@@ -2963,7 +2957,7 @@ fn gltf_texture_image_sampler(
       }
     }
   }
-  @image.ImageSampler::Descriptor(descriptor)
+  Descriptor(descriptor)
 }
 
 ///|
@@ -3284,9 +3278,9 @@ fn gltf_material_cull_mode(
   if double_sided {
     None
   } else if is_scale_inverted {
-    Some(@pbr.Face3d::Front)
+    Some(Front)
   } else {
-    Some(@pbr.Face3d::Back)
+    Some(Back)
   }
 }
 
@@ -3482,8 +3476,7 @@ fn scene_build_animation_clip_from_gltf(
 fn scene_compute_missing_gltf_flat_normals(
   geometry : @mesh.Mesh3dGeometry,
 ) -> @mesh.Mesh3dGeometry? {
-  if geometry.has_normals() ||
-    geometry.primitive_topology() != @mesh.Mesh3dPrimitiveTopology::TriangleList {
+  if geometry.has_normals() || geometry.primitive_topology() != TriangleList {
     return Some(geometry)
   }
   guard geometry.with_duplicated_vertices() is Some(duplicated) else {
@@ -3797,7 +3790,7 @@ fn scene_build_from_gltf(
   }
 
   let default_material_component = @pbr.MeshMaterial3dTyped::new(
-    @pbr.standard_material_add(@pbr.StandardMaterial::StandardMaterial()),
+    @pbr.standard_material_add(StandardMaterial()),
   )
   let should_load_meshes = gltf_loader_should_load_meshes(
     request.loader_settings,
@@ -3981,8 +3974,7 @@ fn scene_build_from_gltf(
           is Some(mesh_asset) else {
           continue
         }
-        if skinned_mesh_bounds_policy ==
-          @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic &&
+        if skinned_mesh_bounds_policy == Dynamic &&
           mesh_index >= 0 &&
           mesh_index < meshes_on_skinned_nodes.length() &&
           meshes_on_skinned_nodes[mesh_index] {
@@ -4162,7 +4154,7 @@ fn scene_build_from_gltf(
     }
   }
 
-  Scene::{ nodes3d: nodes, gltf_scene_extras: None, ready: true }
+  { nodes3d: nodes, gltf_scene_extras: None, ready: true }
 }
 
 ///|
@@ -4197,9 +4189,9 @@ fn scene_try_resolve_scene_request(
       updated.buffer_blobs,
       updated.buffer_bytes,
     ) {
-    GltfResolveBuffersState::Pending => (updated, None)
-    GltfResolveBuffersState::Fatal => (updated, Some(Scene::new([])))
-    GltfResolveBuffersState::Ready(resolved_buffers) =>
+    Pending => (updated, None)
+    Fatal => (updated, Some(Scene::new([])))
+    Ready(resolved_buffers) =>
       (
         updated,
         Some(
@@ -4247,10 +4239,9 @@ fn scene_try_resolve_animation_request(
       updated.buffer_blobs,
       updated.buffer_bytes,
     ) {
-    GltfResolveBuffersState::Pending => (updated, None)
-    GltfResolveBuffersState::Fatal =>
-      (updated, Some(@animation.AnimationClip::new()))
-    GltfResolveBuffersState::Ready(resolved_buffers) =>
+    Pending => (updated, None)
+    Fatal => (updated, Some(@animation.AnimationClip::new()))
+    Ready(resolved_buffers) =>
       (
         updated,
         Some(
@@ -4299,9 +4290,9 @@ fn scene_try_resolve_mesh_request(
       updated.buffer_blobs,
       updated.buffer_bytes,
     ) {
-    GltfResolveBuffersState::Pending => (updated, None)
-    GltfResolveBuffersState::Fatal => (updated, None)
-    GltfResolveBuffersState::Ready(resolved_buffers) =>
+    Pending => (updated, None)
+    Fatal => (updated, None)
+    Ready(resolved_buffers) =>
       (
         updated,
         scene_build_mesh_primitive_from_gltf(

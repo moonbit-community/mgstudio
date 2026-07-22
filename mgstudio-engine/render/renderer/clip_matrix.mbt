@@ -51,7 +51,7 @@ pub fn gpu_clip_matrix(
   w_axis_z : Float,
   w_axis_w : Float,
 ) -> GpuClipMatrix {
-  GpuClipMatrix::{
+  {
     x_axis_x,
     x_axis_y,
     x_axis_z,

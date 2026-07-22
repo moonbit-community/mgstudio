@@ -13,7 +13,6 @@ import {
   "Milky2018/mgstudio/physics2d",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/window",
   "Milky2018/moon_rapier/collision",
 }
 

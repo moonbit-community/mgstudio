@@ -37,7 +37,7 @@ pub fn Laba::new(
   b : Float,
   alpha : Float,
 ) -> Laba {
-  Laba::{ lightness, a, b, alpha: color_clamp_unit(alpha) }
+  { lightness, a, b, alpha: color_clamp_unit(alpha) }
 }
 
 ///|

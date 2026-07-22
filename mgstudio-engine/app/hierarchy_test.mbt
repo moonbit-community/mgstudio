@@ -38,8 +38,9 @@ pub impl ValidateParentHasComponentTarget for HierarchyValidationMarker with fn 
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app hierarchy: validate-parent plugin queues a check when parent lacks component" {
-  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
+  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin()
   let lifecycle_world_40_0 = @ecs.World::new()
   defer lifecycle_world_40_0.close()
   let app = App::new(lifecycle_world_40_0).add_plugins(
@@ -60,7 +61,7 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
 
   let reader = world.message_reader(
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
-    cursor=@ecs.MessageCursor::MessageCursor(),
+    cursor=MessageCursor(),
   )
   debug_inspect(reader.len(), content="1")
   let pending = reader.read()
@@ -69,8 +70,9 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app hierarchy: validate-parent plugin skips checks when parent already has component" {
-  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
+  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin()
   let lifecycle_world_69_0 = @ecs.World::new()
   defer lifecycle_world_69_0.close()
   let app = App::new(lifecycle_world_69_0).add_plugins(
@@ -94,14 +96,15 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
 
   let reader = world.message_reader(
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
-    cursor=@ecs.MessageCursor::MessageCursor(),
+    cursor=MessageCursor(),
   )
   debug_inspect(reader.len(), content="0")
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app hierarchy: validate-parent plugin rechecks on component replace" {
-  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
+  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin()
   let lifecycle_world_98_0 = @ecs.World::new()
   defer lifecycle_world_98_0.close()
   let app = App::new(lifecycle_world_98_0).add_plugins(
@@ -125,7 +128,7 @@ test "app hierarchy: validate-parent plugin rechecks on component replace" {
 
   let reader = world.message_reader(
     check_parent_has_component_message_key(hierarchy_validation_marker_key),
-    cursor=@ecs.MessageCursor::MessageCursor(),
+    cursor=MessageCursor(),
   )
   debug_inspect(reader.len(), content="2")
 }

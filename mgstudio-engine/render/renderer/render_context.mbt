@@ -79,7 +79,7 @@ pub fn PendingCommandBuffers::PendingCommandBuffers() -> PendingCommandBuffers {
 
 ///|
 pub fn PendingCommandBuffers::new() -> PendingCommandBuffers {
-  PendingCommandBuffers::PendingCommandBuffers()
+  PendingCommandBuffers()
 }
 
 ///|
@@ -331,7 +331,7 @@ pub fn RenderContextState::RenderContextState() -> RenderContextState {
 
 ///|
 pub fn RenderContextState::new() -> RenderContextState {
-  RenderContextState::RenderContextState()
+  RenderContextState()
 }
 
 ///|
@@ -442,7 +442,7 @@ priv struct RenderContextRuntimeState {
 
 ///|
 fn render_context_runtime_state_default() -> RenderContextRuntimeState {
-  RenderContextRuntimeState::{ backend: None }
+  { backend: None }
 }
 
 ///|

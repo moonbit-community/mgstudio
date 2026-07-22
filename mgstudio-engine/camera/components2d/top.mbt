@@ -19,6 +19,7 @@
 pub struct Camera2d {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Camera2d::Camera2d() -> Camera2d {
   Camera2d::{  }
 }
@@ -40,7 +41,7 @@ fn encode_camera2d(_camera2d : Camera2d) -> Json {
 
 ///|
 fn decode_camera2d(_json : Json) -> Camera2d {
-  Camera2d::Camera2d()
+  Camera2d()
 }
 
 ///|
@@ -65,7 +66,7 @@ pub fn register_camera2d_required_components(
   world.register_required_components_with(
     ecs_key_camera2d,
     @camera_camera.ecs_key_camera,
-    fn() { @camera_camera.Camera::Camera() },
+    fn() { Camera() },
   )
   world.register_required_components_with(
     ecs_key_camera2d,
@@ -80,19 +81,19 @@ pub fn register_camera2d_required_components(
   world.register_required_components_with(
     ecs_key_camera2d,
     @camera_camera.ecs_key_render_target,
-    fn() { @camera_camera.RenderTarget::Screen },
+    fn() { Screen },
   )
 }
 
 ///|
 pub fn ensure_camera2d_required_components(world : @ecs.World) -> Unit {
   register_camera2d_required_components(world) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "Camera2d required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "Camera2d required-component cycle detected: \{requiree} -> \{required}",
       )

@@ -26,7 +26,7 @@ priv struct StateTransitionRegistration {
 let state_transition_registrations : Array[StateTransitionRegistration] = []
 
 ///|
-let state_transition_registration_indices : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
+let state_transition_registration_indices : @hashmap.HashMap[String, Int] = HashMap([],
 )
 
 ///|
@@ -52,7 +52,7 @@ pub struct OnEnter[S] {
 
 ///|
 pub fn[S] OnEnter::new(state : S) -> OnEnter[S] {
-  OnEnter::{ state, }
+  { state, }
 }
 
 ///|
@@ -67,7 +67,7 @@ pub struct OnExit[S] {
 
 ///|
 pub fn[S] OnExit::new(state : S) -> OnExit[S] {
-  OnExit::{ state, }
+  { state, }
 }
 
 ///|
@@ -83,7 +83,7 @@ pub struct OnTransition[S] {
 
 ///|
 pub fn[S] OnTransition::new(exited : S, entered : S) -> OnTransition[S] {
-  OnTransition::{ exited, entered }
+  { exited, entered }
 }
 
 ///|
@@ -274,7 +274,7 @@ fn run_state_transition_hooks(
           @ecs.Invalid(message),
           system_context(
             matched_configs[i],
-            ErrorContextKind::Validation,
+            Validation,
             current_schedule_stage(),
           ),
         )
@@ -482,7 +482,7 @@ fn[S : States] internal_apply_state_transition(
             return
           }
           world.insert_resource(current_key, State::new(entered))
-          world.insert_resource(previous_key, PreviousState::{ value: exited })
+          world.insert_resource(previous_key, { value: exited })
           let event = StateTransitionEvent::{
             exited: Some(exited),
             entered: Some(entered),
@@ -506,7 +506,7 @@ fn[S : States] internal_apply_state_transition(
         Some(current) => {
           let exited = current.get()
           ignore(world.drop_resource(current_key))
-          world.insert_resource(previous_key, PreviousState::{ value: exited })
+          world.insert_resource(previous_key, { value: exited })
           let event = StateTransitionEvent::{
             exited: Some(exited),
             entered: None,
@@ -528,7 +528,7 @@ fn[S : States] apply_state_transition(world : @ecs.World, state : S) -> Unit {
     is Some((queued_state, allow_same_state_transitions)) else {
     return
   }
-  world.insert_resource(next_key, NextState::Unchanged)
+  world.insert_resource(next_key, Unchanged)
   let current_state : State[S]? = read_world_resource(world, current_key)
   internal_apply_state_transition(
     world,

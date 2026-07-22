@@ -136,17 +136,17 @@ fn Mesh3dDownsampleDepthPipeline::new(
 
 ///|
 fn Mesh3dPreprocessPipelineKey::direct() -> Mesh3dPreprocessPipelineKey {
-  Mesh3dPreprocessPipelineKey::{ bits: 0U }
+  { bits: 0U }
 }
 
 ///|
 fn Mesh3dPreprocessPipelineKey::frustum_culling() -> Mesh3dPreprocessPipelineKey {
-  Mesh3dPreprocessPipelineKey::{ bits: MESH3D_PREPROCESS_KEY_FRUSTUM_CULLING }
+  { bits: MESH3D_PREPROCESS_KEY_FRUSTUM_CULLING }
 }
 
 ///|
 fn Mesh3dPreprocessPipelineKey::early_occlusion_culling() -> Mesh3dPreprocessPipelineKey {
-  Mesh3dPreprocessPipelineKey::{
+  {
     bits: MESH3D_PREPROCESS_KEY_FRUSTUM_CULLING |
     MESH3D_PREPROCESS_KEY_OCCLUSION_CULLING |
     MESH3D_PREPROCESS_KEY_EARLY_PHASE,
@@ -155,7 +155,7 @@ fn Mesh3dPreprocessPipelineKey::early_occlusion_culling() -> Mesh3dPreprocessPip
 
 ///|
 fn Mesh3dPreprocessPipelineKey::late_occlusion_culling() -> Mesh3dPreprocessPipelineKey {
-  Mesh3dPreprocessPipelineKey::{
+  {
     bits: MESH3D_PREPROCESS_KEY_FRUSTUM_CULLING |
     MESH3D_PREPROCESS_KEY_OCCLUSION_CULLING,
   }
@@ -216,7 +216,7 @@ fn mesh3d_build_indirect_parameters_pipeline_key(
   late_phase : Bool,
   main_phase : Bool,
 ) -> Mesh3dBuildIndirectParametersPipelineKey {
-  Mesh3dBuildIndirectParametersPipelineKey::{
+  {
     bits: (if indexed { MESH3D_BUILD_INDIRECT_KEY_INDEXED } else { 0U }) |
     (if multi_draw_indirect_count_supported {
       MESH3D_BUILD_INDIRECT_KEY_MULTI_DRAW_INDIRECT_COUNT_SUPPORTED
@@ -287,7 +287,7 @@ fn mesh3d_downsample_depth_pipeline_key(
   multisampled : Bool,
   second_phase : Bool,
 ) -> Mesh3dDownsampleDepthPipelineKey {
-  Mesh3dDownsampleDepthPipelineKey::{
+  {
     bits: (if multisampled {
       MESH3D_DOWNSAMPLE_DEPTH_KEY_MULTISAMPLE
     } else {
@@ -398,7 +398,7 @@ fn Mesh3dPreprocessPipeline::specialize(
   self : Mesh3dPreprocessPipeline,
   key : Mesh3dPreprocessPipelineKey,
 ) -> Mesh3dComputePipelineDescriptor {
-  Mesh3dComputePipelineDescriptor::{
+  {
     label: key.label(),
     layout: self.layout,
     shader_path: MESH3D_PREPROCESS_SHADER_PATH,
@@ -411,7 +411,7 @@ fn Mesh3dPreprocessPipeline::specialize(
 fn Mesh3dResetIndirectBatchSetsPipeline::specialize(
   self : Mesh3dResetIndirectBatchSetsPipeline,
 ) -> Mesh3dComputePipelineDescriptor {
-  Mesh3dComputePipelineDescriptor::{
+  {
     label: "mgstudio reset indirect batch sets",
     layout: self.layout,
     shader_path: MESH3D_RESET_INDIRECT_BATCH_SETS_SHADER_PATH,
@@ -425,7 +425,7 @@ fn Mesh3dBuildIndirectParametersPipeline::specialize(
   self : Mesh3dBuildIndirectParametersPipeline,
   key : Mesh3dBuildIndirectParametersPipelineKey,
 ) -> Mesh3dComputePipelineDescriptor {
-  Mesh3dComputePipelineDescriptor::{
+  {
     label: key.label(),
     layout: self.layout,
     shader_path: MESH3D_BUILD_INDIRECT_PARAMS_SHADER_PATH,
@@ -439,7 +439,7 @@ fn Mesh3dDownsampleDepthPipeline::specialize(
   self : Mesh3dDownsampleDepthPipeline,
   key : Mesh3dDownsampleDepthPipelineKey,
 ) -> Mesh3dComputePipelineDescriptor {
-  Mesh3dComputePipelineDescriptor::{
+  {
     label: key.label(),
     layout: self.layout,
     shader_path: MESH3D_DOWNSAMPLE_DEPTH_SHADER_PATH,
@@ -452,7 +452,7 @@ fn Mesh3dDownsampleDepthPipeline::specialize(
 fn mesh3d_shader_defs_to_bool_map(
   shader_defs : Array[String],
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   for shader_def in shader_defs {
     defines.set(shader_def, true)
   }

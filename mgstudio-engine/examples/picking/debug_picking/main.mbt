@@ -22,18 +22,18 @@ pub(all) enum DebugPickingMode {
 ///|
 fn DebugPickingMode::next(self : DebugPickingMode) -> DebugPickingMode {
   match self {
-    DebugPickingMode::Disabled => DebugPickingMode::Normal
-    DebugPickingMode::Normal => DebugPickingMode::Noisy
-    DebugPickingMode::Noisy => DebugPickingMode::Disabled
+    Disabled => Normal
+    Normal => Noisy
+    Noisy => Disabled
   }
 }
 
 ///|
 fn debug_mode_name(mode : DebugPickingMode) -> String {
   match mode {
-    DebugPickingMode::Disabled => "Disabled"
-    DebugPickingMode::Normal => "Normal"
-    DebugPickingMode::Noisy => "Noisy"
+    Disabled => "Disabled"
+    Normal => "Normal"
+    Noisy => "Noisy"
   }
 }
 
@@ -120,16 +120,16 @@ fn setup(
   let label = commands.spawn(
     (
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(12.0F))
-      .with_top(@ui.Val::Px(12.0F)),
+      .with_position_type(Absolute)
+      .with_left(Px(12.0F))
+      .with_top(Px(12.0F)),
       @text.Text::new(""),
       @text.TextColor::new(@color.Color::white()),
       @text.TextFont::from_font_size(@text.FontSize::Px(20.0F)),
     ),
   )
   commands.insert_resource({
-    mode: DebugPickingMode::Normal,
+    mode: Normal,
     label_entity: label,
     last_event: "none",
   })
@@ -137,7 +137,7 @@ fn setup(
 
 ///|
 fn update_debug_mode(state : @app.ResMut[DebugPickingState]) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::F3) {
+  if @input.key_just_pressed(F3) {
     state.modify(fn(value) { value.mode = value.mode.next() })
   }
 }
@@ -147,7 +147,7 @@ fn on_pointer_move(
   pointer : @app.OnPointer[@app.PointerMove],
   state : @app.ResMut[DebugPickingState],
 ) -> Unit {
-  if state.peek().mode is DebugPickingMode::Noisy {
+  if state.peek().mode is Noisy {
     let target_text = match pointer.target() {
       Some(entity) => entity.id.to_string()
       None => "none"
@@ -161,7 +161,7 @@ fn on_pointer_click(
   pointer : @app.OnPointer[@app.PointerClick],
   state : @app.ResMut[DebugPickingState],
 ) -> Unit {
-  if state.peek().mode is DebugPickingMode::Disabled {
+  if state.peek().mode is Disabled {
     return
   }
   let target_text = match pointer.target() {

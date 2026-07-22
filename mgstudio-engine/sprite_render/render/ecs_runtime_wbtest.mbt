@@ -86,8 +86,8 @@ test "sprite: default trait mirrors bevy component defaults" {
   let anchor = @sprite.Anchor::Anchor()
   let clear_color = @camera_clear_color.ClearColor::ClearColor()
   debug_inspect(sprite.image.id(), content="0")
-  debug_inspect(image_mode is SpriteImageMode::Auto, content="true")
-  debug_inspect(scaling_mode is SpriteScalingMode::FillCenter, content="true")
+  debug_inspect(image_mode is Auto, content="true")
+  debug_inspect(scaling_mode is FillCenter, content="true")
   debug_inspect(anchor.as_vec().x.to_double(), content="0")
   debug_inspect(anchor.as_vec().y.to_double(), content="0")
   debug_inspect(clear_color.color.r.to_double(), content="0.024157630279660225")
@@ -95,12 +95,9 @@ test "sprite: default trait mirrors bevy component defaults" {
 
 ///|
 test "sprite: image mode scale accessor mirrors bevy" {
-  let scaled = SpriteImageMode::Scale(SpriteScalingMode::FitEnd)
+  let scaled = SpriteImageMode::Scale(FitEnd)
   let auto = SpriteImageMode::Auto
-  debug_inspect(
-    scaled.scale() is Some(SpriteScalingMode::FitEnd),
-    content="true",
-  )
+  debug_inspect(scaled.scale() is Some(FitEnd), content="true")
   debug_inspect(auto.scale() is None, content="true")
 }
 
@@ -135,7 +132,7 @@ fn dummy_material_asset(
   color? : @color.Color = @color.Color::white(),
   color_texture? : @asset.Handle[@asset.Image]? = None,
 ) -> DummyMaterialAsset {
-  DummyMaterialAsset::{ color, color_texture }
+  { color, color_texture }
 }
 
 ///|
@@ -217,9 +214,7 @@ pub impl @sprite_render_mesh2d_material.Material2d for DummyMaterialAsset with f
   layout |> ignore
   key |> ignore
   let vertex = descriptor.vertex
-  vertex.shader_defs.push(
-    @renderer.ShaderDefVal::Flag("DUMMY_MATERIAL_SPECIALIZE"),
-  )
+  vertex.shader_defs.push(Flag("DUMMY_MATERIAL_SPECIALIZE"))
   descriptor.with_vertex(vertex)
 }
 
@@ -496,17 +491,17 @@ test "render2d: tonemapping and deband components share post_process ownership" 
   )
 
   let compositing_ok = match camera_compositing_space(world, entity) {
-    Some(@camera_compositing_space.CompositingSpace::Oklab) => true
+    Some(Oklab) => true
     _ => false
   }
   let tonemapping_ok = match
     (try! world.get_by_key(entity, @post_process.ecs_key_tonemapping)) {
-    Some(@post_process.Tonemapping::AgX) => true
+    Some(AgX) => true
     _ => false
   }
   let deband_ok = match
     (try! world.get_by_key(entity, @post_process.ecs_key_deband_dither)) {
-    Some(@post_process.DebandDither::Enabled) => true
+    Some(Enabled) => true
     _ => false
   }
   debug_inspect(compositing_ok, content="true")
@@ -546,7 +541,7 @@ test "render2d: required components align Camera2d and Bloom with Bevy camera au
   try! (world.set_by_key(
     entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -614,9 +609,7 @@ test "render2d: Camera2d tuple stores window render target" {
       @camera_components2d.Camera2d::Camera2d(),
       @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
-      @camera_camera.RenderTarget::Window(
-        @window.WindowRef::Entity(target_window),
-      ),
+      @camera_camera.RenderTarget::Window(Entity(target_window)),
     ),
   )
 
@@ -626,9 +619,7 @@ test "render2d: Camera2d tuple stores window render target" {
   debug_inspect(
     target.map(fn(value) {
       value.to_json() ==
-      @camera_camera.RenderTarget::Window(
-        @window.WindowRef::Entity(target_window),
-      ).to_json()
+      @camera_camera.RenderTarget::Window(Entity(target_window)).to_json()
     }),
     content="Some(true)",
   )
@@ -648,7 +639,7 @@ test "render2d: camera system updates screen target without RenderState" {
   try! (world.set_by_key(
     camera_entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
   |> ignore)
 
@@ -721,7 +712,7 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
     .add_plugins(Render2dPlugin::Render2dPlugin())
     .add_systems(
-      @app.Startup,
+      Startup,
       @app.system_config_param3(fn(
         commands : @app.Commands,
         meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
@@ -782,7 +773,7 @@ test "render2d: bloom2d scene queues bright sprite and color material meshes" {
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
     .add_plugins(Render2dPlugin::Render2dPlugin())
     .add_systems(
-      @app.Startup,
+      Startup,
       @app.system_config_param3(fn(
         commands : @app.Commands,
         meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
@@ -919,11 +910,7 @@ test "sprite: SpritePlugin calculate_bounds_2d respects NoAutoAabb marker" {
     @mesh.ecs_key_mesh2d,
     @mesh.Mesh2d::new(mesh_handle),
   )
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_no_auto_aabb,
-    @visibility.NoAutoAabb::NoAutoAabb(),
-  )
+  try! world.set_by_key(entity, @visibility.ecs_key_no_auto_aabb, NoAutoAabb())
 
   app = app.update()
 
@@ -988,7 +975,7 @@ test "sprite: SpritePlugin calculate_bounds_2d updates changed Sprite Aabb" {
   )
   let should_resize = Ref(false)
   app = app.add_systems(
-    @app.Update,
+    Update,
     @app.system(fn(world : @ecs.World) {
       if should_resize.val {
         let replaced = world.replace(
@@ -1175,18 +1162,18 @@ test "sprite: compute_pixel_space_point follows Bevy texture-coordinate conventi
     atlas_assets,
   )
   match inside {
-    @sprite.SpritePixelSpacePoint::Inside(point) => {
+    Inside(point) => {
       debug_inspect(point.x.to_double(), content="9")
       debug_inspect(point.y.to_double(), content="1")
     }
-    @sprite.SpritePixelSpacePoint::Outside(_) => abort("expected inside point")
+    Outside(_) => abort("expected inside point")
   }
   match outside {
-    @sprite.SpritePixelSpacePoint::Outside(point) => {
+    Outside(point) => {
       debug_inspect(point.x.to_double(), content="11")
       debug_inspect(point.y.to_double(), content="10")
     }
-    @sprite.SpritePixelSpacePoint::Inside(_) => abort("expected outside point")
+    Inside(_) => abort("expected outside point")
   }
 }
 
@@ -1257,7 +1244,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@renderer.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
     @renderer.RenderAssets[
@@ -1300,6 +1287,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "render2d: custom Mesh2d pipeline extraction writes entity slots" {
   let source_world = @ecs.World::new()
   defer source_world.close()
@@ -1386,7 +1374,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   })
   app = app.run_once()
 
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let pending_entity = pending_entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
@@ -1436,10 +1424,10 @@ fn render2d_test_shader_defs_contain(
   flag : String,
 ) -> Bool {
   for shader_def in shader_defs {
-    if shader_def is @renderer.ShaderDefVal::Flag(value) && value == flag {
+    if shader_def is Flag(value) && value == flag {
       return true
     }
-    if shader_def is @renderer.ShaderDefVal::UInt(value, _) && value == flag {
+    if shader_def is UInt(value, _) && value == flag {
       return true
     }
   }
@@ -1450,17 +1438,9 @@ fn render2d_test_shader_defs_contain(
 fn render2d_test_mesh_vertex_layout() -> @mesh.MeshVertexBufferLayout {
   @mesh.MeshVertexBufferLayout::new(
     attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
-    layout=@mesh.VertexBufferLayout::new(
-      array_stride=12,
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
-      attributes=[
-        @mesh.VertexAttribute::new(
-          offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-      ],
-    ),
+    layout=@mesh.VertexBufferLayout::new(array_stride=12, step_mode=Vertex, attributes=[
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+    ]),
   )
 }
 
@@ -1477,8 +1457,8 @@ test "render2d: Material2dPipeline specialize calls material hook" {
   )
   let key = pipeline.key_for(material, material.bind_group())
   let descriptor = @renderer.RenderPipelineDescriptor::RenderPipelineDescriptor()
-    .with_vertex(@renderer.VertexState::VertexState())
-    .with_fragment(Some(@renderer.FragmentState::FragmentState()))
+    .with_vertex(VertexState())
+    .with_fragment(Some(FragmentState()))
   let specialized = pipeline.specialize(
     descriptor,
     render2d_test_mesh_vertex_layout(),
@@ -1536,7 +1516,7 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
     )
   })
   app = app.run_once()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
 
@@ -1581,7 +1561,7 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   })
   app = app.run_once()
   let world = app.world()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let source_key : @ecs.ResourceKey[
     @asset.Assets[@sprite_render_mesh2d_color_material.ColorMaterial],

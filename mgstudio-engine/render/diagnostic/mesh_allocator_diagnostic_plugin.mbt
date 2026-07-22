@@ -25,14 +25,14 @@ pub struct MeshAllocatorDiagnosticPlugin {
 
 ///|
 pub fn MeshAllocatorDiagnosticPlugin::MeshAllocatorDiagnosticPlugin() -> MeshAllocatorDiagnosticPlugin {
-  MeshAllocatorDiagnosticPlugin::{ suffix: " meshes" }
+  { suffix: " meshes" }
 }
 
 ///|
 pub fn MeshAllocatorDiagnosticPlugin::new(
   suffix : String,
 ) -> MeshAllocatorDiagnosticPlugin {
-  MeshAllocatorDiagnosticPlugin::{ suffix, }
+  { suffix, }
 }
 
 ///|
@@ -74,9 +74,9 @@ pub impl @app.Resource for MeshAllocatorDiagnosticState with fn resource() {
 pub fn MeshAllocatorDiagnosticState::new(
   suffix : String,
 ) -> MeshAllocatorDiagnosticState {
-  MeshAllocatorDiagnosticState::{
+  {
     suffix,
-    snapshot: @renderer.RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
+    snapshot: RenderDiagnosticsSnapshot(),
     sample_count: 0,
     last_sample_us: 0.0F,
   }
@@ -101,10 +101,7 @@ fn mesh_allocator_diagnostic_sample_system(world : @ecs.World) -> Unit {
 pub fn mesh_allocator_diagnostic_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  mesh_allocator_diagnostic_plugin_with(
-    app,
-    MeshAllocatorDiagnosticPlugin::MeshAllocatorDiagnosticPlugin(),
-  )
+  mesh_allocator_diagnostic_plugin_with(app, MeshAllocatorDiagnosticPlugin())
 }
 
 ///|

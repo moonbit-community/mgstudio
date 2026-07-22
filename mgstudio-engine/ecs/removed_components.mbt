@@ -49,5 +49,5 @@ pub fn[T] World::removed_components(
     Some(messages) => messages.reader(system)
     None => @core.Messages::new().reader(system)
   }
-  RemovedComponents::{ reader, }
+  { reader, }
 }

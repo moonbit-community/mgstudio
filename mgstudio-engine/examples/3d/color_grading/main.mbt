@@ -53,7 +53,7 @@ pub(all) enum SelectedColorGradingOption {
 
 ///|
 fn SelectedColorGradingOption::default() -> SelectedColorGradingOption {
-  SelectedColorGradingOption::Global(SelectedGlobalColorGradingOption::Exposure)
+  Global(Exposure)
 }
 
 ///|
@@ -319,27 +319,13 @@ fn attach_to_parent(
 ///|
 fn button_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-  .with_width(@ui.Val::Px(BUTTON_WIDTH))
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_align_items(@ui.AlignItems::Center)
-  .with_padding(
-    @ui.UiRect::new(
-      @ui.Val::Px(12.0F),
-      @ui.Val::Px(6.0F),
-      @ui.Val::Px(12.0F),
-      @ui.Val::Px(6.0F),
-    ),
-  )
-  .with_margin(
-    @ui.UiRect::new(
-      @ui.Val::Px(0.0F),
-      @ui.Val::Px(0.0F),
-      @ui.Val::Px(12.0F),
-      @ui.Val::Px(0.0F),
-    ),
-  )
-  .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
+  .with_border(@ui.UiRect::all(Px(1.0F)))
+  .with_width(Px(BUTTON_WIDTH))
+  .with_justify_content(Center)
+  .with_align_items(Center)
+  .with_padding(@ui.UiRect::new(Px(12.0F), Px(6.0F), Px(12.0F), Px(6.0F)))
+  .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(12.0F), Px(0.0F)))
+  .with_border_radius(@ui.BorderRadius::all(Percent(100.0F)))
 }
 
 ///|
@@ -366,12 +352,7 @@ fn spawn_row_label(
     @color.Color::white(),
   )
   let label_entity = commands.spawn(
-    (
-      text_value,
-      text_font,
-      text_color,
-      @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
-    ),
+    (text_value, text_font, text_color, @ui.Node::Node().with_width(Px(125.0F))),
   )
   attach_to_parent(commands, label_entity, row)
 }
@@ -390,10 +371,7 @@ fn button_for_value(
       button_node(),
       @ui.BorderColor::new(@color.Color::white()),
       @ui.BackgroundColor::new(@color.Color::black()),
-      ColorGradingOptionWidget::{
-        widget_type: ColorGradingOptionWidgetType::Button,
-        option,
-      },
+      ColorGradingOptionWidget::{ widget_type: Button, option },
     ),
   )
   attach_to_parent(commands, button, parent)
@@ -408,10 +386,7 @@ fn button_for_value(
       label_text,
       label_font,
       label_color,
-      ColorGradingOptionWidget::{
-        widget_type: ColorGradingOptionWidgetType::Label,
-        option,
-      },
+      ColorGradingOptionWidget::{ widget_type: Label, option },
     ),
   )
   attach_to_parent(commands, label_entity, button)
@@ -429,10 +404,7 @@ fn button_for_value(
       value_text,
       value_font,
       value_color,
-      ColorGradingOptionWidget::{
-        widget_type: ColorGradingOptionWidgetType::Value,
-        option,
-      },
+      ColorGradingOptionWidget::{ widget_type: Value, option },
     ),
   )
   attach_to_parent(commands, value_entity, button)
@@ -445,29 +417,20 @@ fn buttons_for_global_controls(
   color_grading : @post_process.ColorGrading,
   font : @asset.Handle[@asset.Font],
 ) -> @core.Entity {
-  let row = spawn_row(commands, parent, @ui.Node::Node())
+  let row = spawn_row(commands, parent, Node())
   ignore(
     commands.spawn(
-      (
-        @ui.Node::Node().with_width(@ui.Val::Px(125.0F)),
-        @hierarchy.Parent::new(row),
-      ),
+      (@ui.Node::Node().with_width(Px(125.0F)), @hierarchy.Parent::new(row)),
     ),
   )
   for
     option in [
       SelectedGlobalColorGradingOption::Exposure,
-      SelectedGlobalColorGradingOption::Temperature,
-      SelectedGlobalColorGradingOption::Tint,
-      SelectedGlobalColorGradingOption::Hue,
+      Temperature,
+      Tint,
+      Hue,
     ] {
-    button_for_value(
-      commands,
-      row,
-      SelectedColorGradingOption::Global(option),
-      color_grading,
-      font,
-    )
+    button_for_value(commands, row, Global(option), color_grading, font)
   }
   row
 }
@@ -483,21 +446,21 @@ fn buttons_for_section(
   let row = spawn_row(
     commands,
     parent,
-    @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
+    @ui.Node::Node().with_align_items(Center),
   )
   spawn_row_label(commands, row, font, section_name(section))
   for
     option in [
       SelectedSectionColorGradingOption::Saturation,
-      SelectedSectionColorGradingOption::Contrast,
-      SelectedSectionColorGradingOption::Gamma,
-      SelectedSectionColorGradingOption::Gain,
-      SelectedSectionColorGradingOption::Lift,
+      Contrast,
+      Gamma,
+      Gain,
+      Lift,
     ] {
     button_for_value(
       commands,
       row,
-      SelectedColorGradingOption::Section(section, option),
+      Section(section, option),
       color_grading,
       font,
     )
@@ -513,40 +476,16 @@ fn add_buttons(
 ) -> Unit {
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_row_gap(@ui.Val::Px(6.0F))
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
+    .with_flex_direction(Column)
+    .with_position_type(Absolute)
+    .with_row_gap(Px(6.0F))
+    .with_left(Px(12.0F))
+    .with_bottom(Px(12.0F)),
   )
   ignore(buttons_for_global_controls(commands, root, color_grading, font))
-  ignore(
-    buttons_for_section(
-      commands,
-      root,
-      SelectedColorGradingSection::Highlights,
-      color_grading,
-      font,
-    ),
-  )
-  ignore(
-    buttons_for_section(
-      commands,
-      root,
-      SelectedColorGradingSection::Midtones,
-      color_grading,
-      font,
-    ),
-  )
-  ignore(
-    buttons_for_section(
-      commands,
-      root,
-      SelectedColorGradingSection::Shadows,
-      color_grading,
-      font,
-    ),
-  )
+  ignore(buttons_for_section(commands, root, Highlights, color_grading, font))
+  ignore(buttons_for_section(commands, root, Midtones, color_grading, font))
+  ignore(buttons_for_section(commands, root, Shadows, color_grading, font))
 }
 
 ///|
@@ -561,9 +500,9 @@ fn add_help_text(
         @text.Text::new(create_help_text(currently_selected_option)),
         @text.TextFont::TextFont().with_font(font),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_left(Px(12.0F))
+        .with_top(Px(12.0F)),
         HelpText::{  },
       ),
     ),
@@ -647,12 +586,7 @@ fn add_basic_scene(
         .with_first_cascade_far_bound(0.9F)
         .build(),
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(
-            @math.EulerRot::ZYX,
-            0.0F,
-            PI * -0.15F,
-            PI * -0.15F,
-          ),
+          @math.Quat::from_euler(ZYX, 0.0F, PI * -0.15F, PI * -0.15F),
         ),
       ),
     ),
@@ -686,8 +620,7 @@ fn handle_button_presses(
   try! interactions.view(fn(_entity, data) {
     let (interaction, widget) = data
     let widget_value = widget.value()
-    if widget_value.widget_type == ColorGradingOptionWidgetType::Button &&
-      interaction.value() == @ui.Interaction::Pressed {
+    if widget_value.widget_type == Button && interaction.value() == Pressed {
       currently_selected_option.set(widget_value.option)
     }
   })
@@ -774,8 +707,7 @@ fn update_ui_state(
       @color.Color::white()
     }
     ignore(writer.set_color(entity, 0, @text.TextColor::new(color)))
-    if widget_value.widget_type == ColorGradingOptionWidgetType::Value &&
-      selected == widget_value.option {
+    if widget_value.widget_type == Value && selected == widget_value.option {
       ignore(writer.set_text(entity, 0, value_label))
     }
   })
@@ -787,21 +719,21 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(SelectedColorGradingOption::default())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_button_presses)
     .after(@ui.ui_set_focus)
     .in_set(color_grading_button_press_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(adjust_color_grading_option)
     .in_set(color_grading_adjust_set)
     .after(color_grading_button_press_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param6(update_ui_state).after(color_grading_adjust_set),
   )
   .run()

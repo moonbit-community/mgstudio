@@ -168,10 +168,7 @@ fn transform_abort_malformed_hierarchy() -> Unit {
 fn ensure_transform_runtime_resources(world : @ecs.World) -> Unit {
   let key = static_transform_optimizations_resource_key
   if !world.resource(key).is_present() {
-    world.insert_resource(
-      key,
-      StaticTransformOptimizations::StaticTransformOptimizations(),
-    )
+    world.insert_resource(key, StaticTransformOptimizations())
   }
   if world.get_resource(ecs_key_transform_propagation_scratch) is None {
     world.insert_resource(
@@ -189,7 +186,7 @@ fn read_static_transform_optimizations(
   world
   .resource(static_transform_optimizations_resource_key)
   .get()
-  .unwrap_or(StaticTransformOptimizations::StaticTransformOptimizations())
+  .unwrap_or(StaticTransformOptimizations())
 }
 
 ///|
@@ -432,7 +429,7 @@ fn transform_fetch_node_at_row(
   if require_parent && parent is None {
     return None
   }
-  Some(TransformPropagationNode::{
+  Some({
     transform,
     global,
     tree_changed_column: table_columns.tree_changed,
@@ -499,7 +496,7 @@ fn propagate_descendants_dense(
       Some(location) => location
       None => (-1, -1)
     }
-    scratch.dense_stack.push(TransformPropagationStackItem::{
+    scratch.dense_stack.push({
       entity: root_children[reverse_index],
       table_id,
       row_index,
@@ -561,7 +558,7 @@ fn propagate_descendants_dense(
             Some(location) => location
             None => (-1, -1)
           }
-          scratch.dense_stack.push(TransformPropagationStackItem::{
+          scratch.dense_stack.push({
             entity: grandchildren[reverse_index],
             table_id,
             row_index,
@@ -596,7 +593,7 @@ fn propagate_parent_transforms_dense(
   let scratch = scratch_ref.peek()
   let trace_enabled = @app.timeline_trace_enabled()
   let trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "transform_propagate_dense",
   )
   let mut descendants_trace_first_us = -1L
@@ -652,13 +649,13 @@ fn propagate_parent_transforms_dense(
     }
   })
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "transform_propagate_dense",
     trace_start_us,
   )
   if descendants_trace_first_us >= 0L {
     @app.timeline_trace_emit_complete_span(
-      @app.TimelineTraceCategory::RenderQueue,
+      RenderQueue,
       "transform_propagate_descendants",
       descendants_trace_first_us,
       descendants_trace_total_us,

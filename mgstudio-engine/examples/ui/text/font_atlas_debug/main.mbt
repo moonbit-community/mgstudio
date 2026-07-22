@@ -60,10 +60,10 @@ fn glyph_at(index : Int) -> String {
 
 ///|
 fn atlas_debug_state_default() -> AtlasDebugState {
-  AtlasDebugState::{
+  {
     atlas_count: 0,
     next_glyph_index: 0,
-    timer: @time.Timer::from_seconds(0.05F, @time.TimerMode::Repeating),
+    timer: @time.Timer::from_seconds(0.05F, Repeating),
     atlas_panel: None,
   }
 }
@@ -87,28 +87,26 @@ fn setup(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
   let atlas_panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(0.0F))
-      .with_top(@ui.Val::Px(0.0F))
-      .with_height(@ui.Val::Px(512.0F)),
+      .with_position_type(Absolute)
+      .with_left(Px(0.0F))
+      .with_top(Px(0.0F))
+      .with_height(Px(512.0F)),
     ),
   )
   let text_panel = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(0.0F))
-      .with_bottom(@ui.Val::Px(0.0F)),
+      .with_position_type(Absolute)
+      .with_left(Px(0.0F))
+      .with_bottom(Px(0.0F)),
     ),
   )
   ignore(
@@ -189,9 +187,9 @@ fn atlas_render_system(
         @hierarchy.Parent::new(panel),
         @ui.ImageNode::new(atlas.texture),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(0.0F))
-        .with_left(@ui.Val::Px(x_offset)),
+        .with_position_type(Absolute)
+        .with_top(Px(0.0F))
+        .with_left(Px(x_offset)),
       ),
     ),
   )
@@ -201,8 +199,8 @@ fn atlas_render_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, text_update_system)
-  .add_systems_param4(@app.Update, atlas_render_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, text_update_system)
+  .add_systems_param4(Update, atlas_render_system)
   .run()
 }

@@ -31,7 +31,7 @@ fn persistent_buffer_safe_slice_range(
 ) -> PersistentBufferSliceRange {
   let safe_start = if start < 0 { 0 } else { start }
   let safe_end = if end_ < safe_start { safe_start } else { end_ }
-  PersistentBufferSliceRange::{ start: safe_start, end_: safe_end }
+  { start: safe_start, end_: safe_end }
 }
 
 ///|
@@ -59,7 +59,7 @@ pub fn[T] PersistentGpuBuffer::new(
   label? : String = "meshlet_persistent_buffer",
   element_byte_size? : Int = 1,
 ) -> PersistentGpuBuffer[T] {
-  PersistentGpuBuffer::{
+  {
     label,
     element_byte_size: persistent_buffer_safe_element_byte_size(
       element_byte_size,

@@ -126,9 +126,7 @@ test "app state: exit transition enter hooks run in bevy order" {
     .add_on_exit_system(TestState::A, fn(_world : @ecs.World) {
       log.push("exit@\{current_stage_label()}")
     })
-    .add_on_transition_system(TestState::A, TestState::B, fn(
-      _world : @ecs.World,
-    ) {
+    .add_on_transition_system(TestState::A, B, fn(_world : @ecs.World) {
       log.push("transition@\{current_stage_label()}")
     })
     .add_on_enter_system(TestState::B, fn(_world : @ecs.World) {

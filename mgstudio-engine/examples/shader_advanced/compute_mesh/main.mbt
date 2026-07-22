@@ -132,7 +132,7 @@ fn compute_mesh_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, compute_mesh_system)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, compute_mesh_system)
   .run()
 }

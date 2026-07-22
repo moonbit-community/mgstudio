@@ -31,7 +31,7 @@ pub fn AssetSaveError::message(self : AssetSaveError) -> String {
 
 ///|
 pub fn Writer::new() -> Writer {
-  Writer::{ buffer: [] }
+  { buffer: [] }
 }
 
 ///|
@@ -54,7 +54,7 @@ pub struct SavedAsset[T] {
 
 ///|
 pub fn[T] SavedAsset::from_asset(asset : T) -> SavedAsset[T] {
-  SavedAsset::{ asset, handle_labels: [] }
+  { asset, handle_labels: [] }
 }
 
 ///|
@@ -89,12 +89,7 @@ pub fn SavedAssetBuilder::new(
   asset_server : AssetServer,
   path : AssetPath,
 ) -> SavedAssetBuilder {
-  SavedAssetBuilder::{
-    asset_server,
-    path,
-    handle_labels: [],
-    next_handle_id: 0,
-  }
+  { asset_server, path, handle_labels: [], next_handle_id: 0 }
 }
 
 ///|
@@ -117,7 +112,7 @@ pub fn[T] SavedAssetBuilder::build(
   self : SavedAssetBuilder,
   asset : T,
 ) -> SavedAsset[T] {
-  SavedAsset::{ asset, handle_labels: self.handle_labels }
+  { asset, handle_labels: self.handle_labels }
 }
 
 ///|
@@ -129,7 +124,7 @@ pub struct AssetSaver[T, Settings] {
 pub fn[T, Settings] AssetSaver::new(
   save : (Writer, SavedAsset[T], Settings) -> Unit raise AssetSaveError,
 ) -> AssetSaver[T, Settings] {
-  AssetSaver::{ save, }
+  { save, }
 }
 
 ///|

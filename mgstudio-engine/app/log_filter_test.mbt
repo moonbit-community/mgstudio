@@ -22,13 +22,13 @@ test "app log: target filter specificity follows Bevy EnvFilter shape" {
   defer lifecycle_world_15_0.close()
   let _app = App::new(lifecycle_world_15_0).add_plugins(
     @app.LogPlugin::LogPlugin()
-    .with_level(LogLevel::Trace)
+    .with_level(Trace)
     .with_filter("warn,target_a=trace,target_a::child=error")
     .with_fmt_layer(layer),
   )
-  log_record(LogLevel::Info, message="global-info", target="other")
-  log_record(LogLevel::Debug, message="target-debug", target="target_a")
-  log_record(LogLevel::Warn, message="child-warn", target="target_a::child")
-  log_record(LogLevel::Error, message="child-error", target="target_a::child")
+  log_record(Info, message="global-info", target="other")
+  log_record(Debug, message="target-debug", target="target_a")
+  log_record(Warn, message="child-warn", target="target_a::child")
+  log_record(Error, message="child-error", target="target_a::child")
   debug_inspect(records, content="[\"target-debug\", \"child-error\"]")
 }

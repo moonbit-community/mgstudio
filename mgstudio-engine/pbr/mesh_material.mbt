@@ -26,10 +26,7 @@ pub(all) struct MeshRenderPlugin {
 
 ///|
 pub fn MeshRenderPlugin::MeshRenderPlugin() -> MeshRenderPlugin {
-  MeshRenderPlugin::{
-    use_gpu_instance_buffer_builder: true,
-    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
-  }
+  { use_gpu_instance_buffer_builder: true, debug_flags: RenderDebugFlags() }
 }
 
 ///|
@@ -42,7 +39,7 @@ pub struct MeshRenderPluginState {
 pub fn MeshRenderPluginState::from_plugin(
   plugin : MeshRenderPlugin,
 ) -> MeshRenderPluginState {
-  MeshRenderPluginState::{
+  {
     use_gpu_instance_buffer_builder: plugin.use_gpu_instance_buffer_builder,
     debug_flags: plugin.debug_flags,
   }
@@ -83,10 +80,7 @@ fn init_auto_exposure_compensation_curve_asset(
     )
     curves_ref.modify(fn(curves) {
       if !curves.contains(default_curve_handle) {
-        curves.insert(
-          default_curve_handle,
-          AutoExposureCompensationCurve::AutoExposureCompensationCurve(),
-        )
+        curves.insert(default_curve_handle, AutoExposureCompensationCurve())
         |> ignore
       }
     })
@@ -348,10 +342,11 @@ pub impl @app.Plugin for MeshRenderPlugin with fn build(self, app) {
 
 ///|
 pub fn mesh_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  mesh_render_plugin_with(app, MeshRenderPlugin::MeshRenderPlugin())
+  mesh_render_plugin_with(app, MeshRenderPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn mesh_render_plugin_with(
   app : @app.App[@ecs.World],
   plugin : MeshRenderPlugin,

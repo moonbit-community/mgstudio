@@ -21,7 +21,7 @@ pub struct RelativeCursorPosition {
 
 ///|
 pub fn RelativeCursorPosition::RelativeCursorPosition() -> RelativeCursorPosition {
-  RelativeCursorPosition::{
+  {
     normalized_visible_node_rect: @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
@@ -44,6 +44,7 @@ pub fn RelativeCursorPosition::cursor_over(
 pub struct InteractionDisabled {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn InteractionDisabled::InteractionDisabled() -> InteractionDisabled {
   InteractionDisabled::{  }
 }
@@ -52,6 +53,7 @@ pub fn InteractionDisabled::InteractionDisabled() -> InteractionDisabled {
 pub struct Pressed {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Pressed::Pressed() -> Pressed {
   Pressed::{  }
 }
@@ -60,6 +62,7 @@ pub fn Pressed::Pressed() -> Pressed {
 pub struct Checkable {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Checkable::Checkable() -> Checkable {
   Checkable::{  }
 }
@@ -68,6 +71,7 @@ pub fn Checkable::Checkable() -> Checkable {
 pub struct Checked {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Checked::Checked() -> Checked {
   Checked::{  }
 }
@@ -129,7 +133,7 @@ pub fn on_remove_checkable(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
 ///|
 pub fn on_add_checked(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
   update_accessibility_node(add.world(), add.entity(), fn(accessibility) {
-    accessibility.set_toggled(@moon_accesskit.Toggled::True)
+    accessibility.set_toggled(True)
   })
 }
 
@@ -138,6 +142,6 @@ pub fn on_remove_checked(
   remove : @ecs.ComponentOn[@ecs.Remove, Checked],
 ) -> Unit {
   update_accessibility_node(remove.world(), remove.entity(), fn(accessibility) {
-    accessibility.set_toggled(@moon_accesskit.Toggled::False)
+    accessibility.set_toggled(False)
   })
 }

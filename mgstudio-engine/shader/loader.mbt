@@ -16,6 +16,7 @@
 pub struct ShaderLoader {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ShaderLoader::ShaderLoader() -> ShaderLoader {
   ShaderLoader::{  }
 }
@@ -133,9 +134,7 @@ fn shader_bytes_read_text_or_error(
     }
   }
   if chars.length() == 0 {
-    raise ShaderLoaderError::Parse(
-      "failed to decode shader text: \{canonical_path}",
-    )
+    raise Parse("failed to decode shader text: \{canonical_path}")
   }
   String::from_array(chars)
 }
@@ -147,10 +146,7 @@ fn shader_blob_read_bytes_or_error(
 ) -> Bytes raise ShaderLoaderError {
   match @asset.asset_blob_read_bytes(blob) {
     Some(bytes) => bytes
-    None =>
-      raise ShaderLoaderError::Io(
-        "failed to read shader bytes: \{canonical_path}",
-      )
+    None => raise Io("failed to read shader bytes: \{canonical_path}")
   }
 }
 
@@ -208,19 +204,19 @@ pub fn ShaderLoader::load_from_bytes(
     "vert" =>
       Shader::from_glsl(
         shader_bytes_read_text_or_error(bytes, canonical_path),
-        ShaderStage::Vertex,
+        Vertex,
         canonical_path,
       )
     "frag" =>
       Shader::from_glsl(
         shader_bytes_read_text_or_error(bytes, canonical_path),
-        ShaderStage::Fragment,
+        Fragment,
         canonical_path,
       )
     "comp" =>
       Shader::from_glsl(
         shader_bytes_read_text_or_error(bytes, canonical_path),
-        ShaderStage::Compute,
+        Compute,
         canonical_path,
       )
     _ => abort("unhandled extension: \{extension}")
@@ -249,7 +245,7 @@ fn shader_load_typed(
     asset_server,
     canonical_path,
     bytes,
-    ShaderSettings::ShaderSettings(),
+    ShaderSettings(),
   ) catch {
     error => abort(error.message())
   }
@@ -269,6 +265,7 @@ pub fn shader_record_asset_path(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn shader_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if app.contains_resource(shader_plugin_marker_key) {
     return app

@@ -22,7 +22,7 @@ pub struct ManualTextureViewHandle {
 
 ///|
 pub fn ManualTextureViewHandle::new(value : Int) -> ManualTextureViewHandle {
-  ManualTextureViewHandle::{ value, }
+  { value, }
 }
 
 ///|
@@ -37,7 +37,7 @@ pub struct ImageRenderTarget {
 
 ///|
 pub fn ImageRenderTarget::new(handle_id : Int) -> ImageRenderTarget {
-  ImageRenderTarget::{ handle_id, }
+  { handle_id, }
 }
 
 ///|

@@ -31,17 +31,17 @@ pub fn BoxShadow::new(
   spread_radius : Val,
   blur_radius : Val,
 ) -> BoxShadow {
-  BoxShadow::{ color, x_offset, y_offset, spread_radius, blur_radius }
+  { color, x_offset, y_offset, spread_radius, blur_radius }
 }
 
 ///|
 pub fn BoxShadow::BoxShadow() -> BoxShadow {
-  BoxShadow::{
+  {
     color: @color.Color::black(),
-    x_offset: Val::Percent(20.0F),
-    y_offset: Val::Percent(20.0F),
-    spread_radius: Val::Px(0.0F),
-    blur_radius: Val::Percent(10.0F),
+    x_offset: Percent(20.0F),
+    y_offset: Percent(20.0F),
+    spread_radius: Px(0.0F),
+    blur_radius: Percent(10.0F),
   }
 }
 
@@ -52,7 +52,7 @@ pub struct BackgroundColor {
 
 ///|
 pub fn BackgroundColor::new(color : @color.Color) -> BackgroundColor {
-  BackgroundColor::{ color, }
+  { color, }
 }
 
 ///|

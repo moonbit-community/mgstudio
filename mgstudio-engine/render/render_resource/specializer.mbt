@@ -23,7 +23,7 @@ pub struct Specializer[T] {
 
 ///|
 pub fn[T] Specializer::new(key : T, label : String) -> Specializer[T] {
-  Specializer::{ key, label }
+  { key, label }
 }
 
 ///|

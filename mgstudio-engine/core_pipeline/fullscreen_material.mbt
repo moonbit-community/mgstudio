@@ -23,6 +23,7 @@ const FULLSCREEN_MATERIAL_PLUGIN_NAME : String = "mgstudio.core_pipeline.fullscr
 pub struct FullscreenMaterialPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FullscreenMaterialPlugin::FullscreenMaterialPlugin() -> FullscreenMaterialPlugin {
   FullscreenMaterialPlugin::{  }
 }
@@ -31,10 +32,7 @@ pub fn FullscreenMaterialPlugin::FullscreenMaterialPlugin() -> FullscreenMateria
 pub fn fullscreen_material_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  fullscreen_material_plugin_with(
-    app,
-    FullscreenMaterialPlugin::FullscreenMaterialPlugin(),
-  )
+  fullscreen_material_plugin_with(app, FullscreenMaterialPlugin())
 }
 
 ///|
@@ -60,7 +58,7 @@ pub fn fullscreen_material_plugin_with(
 
 ///|
 pub fn fullscreen_material_shader() -> @fullscreen_vertex_shader.FullscreenShader {
-  @fullscreen_vertex_shader.FullscreenShader::FullscreenShader()
+  FullscreenShader()
 }
 
 ///|
@@ -86,12 +84,7 @@ pub fn FullscreenMaterialPipelineState::new(
   ldr_pipeline_id? : Int = -1,
   hdr_pipeline_id? : Int = -1,
 ) -> FullscreenMaterialPipelineState {
-  FullscreenMaterialPipelineState::{
-    has_bind_group_layout,
-    has_sampler,
-    ldr_pipeline_id,
-    hdr_pipeline_id,
-  }
+  { has_bind_group_layout, has_sampler, ldr_pipeline_id, hdr_pipeline_id }
 }
 
 ///|
@@ -139,10 +132,7 @@ pub fn FullscreenMaterialBindGroupState::new(
   source_a_texture_view_id~ : Int,
   source_b_texture_view_id~ : Int,
 ) -> FullscreenMaterialBindGroupState {
-  FullscreenMaterialBindGroupState::{
-    source_a_texture_view_id,
-    source_b_texture_view_id,
-  }
+  { source_a_texture_view_id, source_b_texture_view_id }
 }
 
 ///|
@@ -189,11 +179,7 @@ pub fn FullscreenMaterialPrepareViewState::new(
   main_texture_other_view_id~ : Int,
   has_existing_bind_groups? : Bool = false,
 ) -> FullscreenMaterialPrepareViewState {
-  FullscreenMaterialPrepareViewState::{
-    main_texture_view_id,
-    main_texture_other_view_id,
-    has_existing_bind_groups,
-  }
+  { main_texture_view_id, main_texture_other_view_id, has_existing_bind_groups }
 }
 
 ///|

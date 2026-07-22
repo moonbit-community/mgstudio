@@ -99,7 +99,7 @@ pub impl @json.FromJson for InheritedVisibility with fn from_json(json, _path) {
 
 ///|
 pub fn InheritedVisibility::new(visible : Bool) -> InheritedVisibility {
-  InheritedVisibility::{ visible, }
+  { visible, }
 }
 
 ///|
@@ -141,7 +141,7 @@ pub impl @json.FromJson for ViewVisibility with fn from_json(json, _path) {
 
 ///|
 pub fn ViewVisibility::new(visible : Bool) -> ViewVisibility {
-  ViewVisibility::{ bits: if visible { 1 } else { 0 } }
+  { bits: if visible { 1 } else { 0 } }
 }
 
 ///|
@@ -153,7 +153,7 @@ pub fn ViewVisibility::hidden() -> ViewVisibility {
 /// Returns the state used by entities that are visible in both the current and
 /// previous frame.
 pub fn ViewVisibility::visible() -> ViewVisibility {
-  ViewVisibility::{ bits: 3 }
+  { bits: 3 }
 }
 
 ///|
@@ -178,13 +178,13 @@ pub fn ViewVisibility::was_visible_now_hidden(self : ViewVisibility) -> Bool {
 // name: an old `value.update()` call would otherwise compile and discard the
 // replacement value after the MoonBit value-type migration.
 pub fn ViewVisibility::advance_frame(self : ViewVisibility) -> ViewVisibility {
-  ViewVisibility::{ bits: (self.bits & 1) << 1 }
+  { bits: (self.bits & 1) << 1 }
 }
 
 ///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::SetViewVisibility::set_visible`.
 pub fn ViewVisibility::with_visible(self : ViewVisibility) -> ViewVisibility {
-  ViewVisibility::{ bits: self.bits | 1 }
+  { bits: self.bits | 1 }
 }
 
 ///|
@@ -217,12 +217,12 @@ pub struct VisibilityClass {
 pub fn VisibilityClass::VisibilityClass(
   classes? : Array[Int] = [],
 ) -> VisibilityClass {
-  VisibilityClass::{ classes, }
+  { classes, }
 }
 
 ///|
 pub fn VisibilityClass::single(class_id : Int) -> VisibilityClass {
-  VisibilityClass::{ classes: [class_id] }
+  { classes: [class_id] }
 }
 
 ///|
@@ -249,6 +249,7 @@ pub fn VisibilityClass::is_empty(self : VisibilityClass) -> Bool {
 pub struct NoFrustumCulling {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoFrustumCulling::NoFrustumCulling() -> NoFrustumCulling {
   NoFrustumCulling::{  }
 }
@@ -259,6 +260,7 @@ pub fn NoFrustumCulling::NoFrustumCulling() -> NoFrustumCulling {
 pub struct NoAutoAabb {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoAutoAabb::NoAutoAabb() -> NoAutoAabb {
   NoAutoAabb::{  }
 }
@@ -270,6 +272,7 @@ pub fn NoAutoAabb::NoAutoAabb() -> NoAutoAabb {
 pub struct NoCpuCulling {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoCpuCulling::NoCpuCulling() -> NoCpuCulling {
   NoCpuCulling::{  }
 }
@@ -297,7 +300,7 @@ pub fn VisibilityRange::new(
   end_margin_max : Float,
   use_aabb : Bool,
 ) -> VisibilityRange {
-  VisibilityRange::{
+  {
     start_margin_min,
     start_margin_max,
     end_margin_min,

@@ -57,11 +57,7 @@ priv struct Render3dExecuteQueueState {
 
 ///|
 fn render3d_execute_queue_state_default() -> Render3dExecuteQueueState {
-  Render3dExecuteQueueState::{
-    pending_frame: None,
-    shadow_execution_data: None,
-    queued_frame: None,
-  }
+  { pending_frame: None, shadow_execution_data: None, queued_frame: None }
 }
 
 ///|
@@ -73,11 +69,7 @@ fn render3d_queue_store_pending_frame(
 ) -> Unit {
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
-    value.pending_frame = Some(Render3dPendingFrame::{
-      frame_config,
-      cameras,
-      meshes,
-    })
+    value.pending_frame = Some({ frame_config, cameras, meshes })
     value.shadow_execution_data = None
   })
 }
@@ -156,7 +148,7 @@ fn render3d_queue_store_frame(
   }
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
-    value.queued_frame = Some(Render3dQueuedFrame::{
+    value.queued_frame = Some({
       frame_config,
       cameras,
       meshes,
@@ -192,7 +184,7 @@ fn render3d_queue_store_shadow_execution_data(
 ) -> Unit {
   let state = render3d_execute_queue_state_mut_or_abort(world)
   state.modify(fn(value) {
-    value.shadow_execution_data = Some(Render3dShadowExecutionData::{
+    value.shadow_execution_data = Some({
       camera_execution_plans,
       queued_shadow_phase_views,
     })

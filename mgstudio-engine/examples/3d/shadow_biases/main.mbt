@@ -64,9 +64,9 @@ fn format_fixed(value : Float, decimals : Int) -> String {
 ///|
 fn filter_method_name(filter_method : @pbr.ShadowFilteringMethod) -> String {
   match filter_method {
-    @pbr.ShadowFilteringMethod::Hardware2x2 => "Hardware2x2"
-    @pbr.ShadowFilteringMethod::Gaussian => "Gaussian"
-    @pbr.ShadowFilteringMethod::Temporal => "Temporal"
+    Hardware2x2 => "Hardware2x2"
+    Gaussian => "Gaussian"
+    Temporal => "Temporal"
   }
 }
 
@@ -187,7 +187,7 @@ fn setup(
   let panel = commands.spawn(
     (
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
+      .with_position_type(Absolute)
       .with_padding(@ui.UiRect::all(@ui.px(5.0F))),
       @ui.BackgroundColor::new(@color.Color::black().with_alpha(0.75F)),
       @ui.GlobalZIndex::new(2_147_483_647),
@@ -200,7 +200,7 @@ fn setup(
       @text.Text::Text(),
       @text.TextFont::TextFont().with_font(font).with_font_size(15.0F),
       @text.TextColor::new(@color.Color::white()),
-      @text.TextLayout::new_with_justify(@text.Justify::Left),
+      @text.TextLayout::new_with_justify(Left),
     ),
   )
   ignore(spawn_text_span(commands, text, "Controls:\n"))
@@ -282,7 +282,7 @@ fn toggle_light(
   example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
   writer : @ui.TextUiWriter,
 ) -> Unit {
-  if input.just_pressed(@window.KeyCode::KeyL) {
+  if input.just_pressed(KeyL) {
     let text = example_text.get()
     try! point_lights.for_each(fn(_entity, light) {
       let current = light.value()
@@ -315,22 +315,22 @@ fn adjust_light_position(
   writer : @ui.TextUiWriter,
 ) -> Unit {
   let mut offset = @math.Vec3::zero()
-  if input.just_pressed(@window.KeyCode::ArrowLeft) {
+  if input.just_pressed(ArrowLeft) {
     offset = offset.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
   }
-  if input.just_pressed(@window.KeyCode::ArrowRight) {
+  if input.just_pressed(ArrowRight) {
     offset = offset.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
   }
-  if input.just_pressed(@window.KeyCode::ArrowUp) {
+  if input.just_pressed(ArrowUp) {
     offset = offset.add(@math.Vec3::new(0.0F, 0.0F, -1.0F))
   }
-  if input.just_pressed(@window.KeyCode::ArrowDown) {
+  if input.just_pressed(ArrowDown) {
     offset = offset.add(@math.Vec3::new(0.0F, 0.0F, 1.0F))
   }
-  if input.just_pressed(@window.KeyCode::PageDown) {
+  if input.just_pressed(PageDown) {
     offset = offset.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
   }
-  if input.just_pressed(@window.KeyCode::PageUp) {
+  if input.just_pressed(PageUp) {
     offset = offset.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
   }
   if offset.length_squared() > 0.0F {
@@ -365,16 +365,13 @@ fn cycle_filter_methods(
   example_text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
   writer : @ui.TextUiWriter,
 ) -> Unit {
-  if input.just_pressed(@window.KeyCode::KeyF) {
+  if input.just_pressed(KeyF) {
     let text = example_text.get()
     try! filter_methods.for_each(fn(_entity, filter_method) {
       let next = match filter_method.value() {
-        @pbr.ShadowFilteringMethod::Hardware2x2 =>
-          @pbr.ShadowFilteringMethod::Gaussian
-        @pbr.ShadowFilteringMethod::Gaussian =>
-          @pbr.ShadowFilteringMethod::Temporal
-        @pbr.ShadowFilteringMethod::Temporal =>
-          @pbr.ShadowFilteringMethod::Hardware2x2
+        Hardware2x2 => @pbr.ShadowFilteringMethod::Gaussian
+        Gaussian => Temporal
+        Temporal => Hardware2x2
       }
       filter_method.set(next)
       ignore(writer.set_text(text, 7, filter_method_name(next)))
@@ -394,33 +391,33 @@ fn adjust_point_light_biases(
   let text = example_text.get()
   try! query.for_each(fn(_entity, light) {
     let mut next = light.value()
-    if input.just_pressed(@window.KeyCode::Digit1) {
+    if input.just_pressed(Digit1) {
       next = next.with_shadow_depth_bias(
         next.shadow_depth_bias - depth_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::Digit2) {
+    if input.just_pressed(Digit2) {
       next = next.with_shadow_depth_bias(
         next.shadow_depth_bias + depth_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::Digit3) {
+    if input.just_pressed(Digit3) {
       next = next.with_shadow_normal_bias(
         next.shadow_normal_bias - normal_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::Digit4) {
+    if input.just_pressed(Digit4) {
       next = next.with_shadow_normal_bias(
         next.shadow_normal_bias + normal_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::KeyR) {
+    if input.just_pressed(KeyR) {
       let defaults = @pbr.PointLight::PointLight()
       next = next
         .with_shadow_depth_bias(defaults.shadow_depth_bias)
         .with_shadow_normal_bias(defaults.shadow_normal_bias)
     }
-    if input.just_pressed(@window.KeyCode::KeyZ) {
+    if input.just_pressed(KeyZ) {
       next = next.with_shadow_depth_bias(0.0F).with_shadow_normal_bias(0.0F)
     }
 
@@ -442,33 +439,33 @@ fn adjust_directional_light_biases(
   let text = example_text.get()
   try! query.for_each(fn(_entity, light) {
     let mut next = light.value()
-    if input.just_pressed(@window.KeyCode::Digit5) {
+    if input.just_pressed(Digit5) {
       next = next.with_shadow_depth_bias(
         next.shadow_depth_bias - depth_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::Digit6) {
+    if input.just_pressed(Digit6) {
       next = next.with_shadow_depth_bias(
         next.shadow_depth_bias + depth_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::Digit7) {
+    if input.just_pressed(Digit7) {
       next = next.with_shadow_normal_bias(
         next.shadow_normal_bias - normal_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::Digit8) {
+    if input.just_pressed(Digit8) {
       next = next.with_shadow_normal_bias(
         next.shadow_normal_bias + normal_bias_step_size,
       )
     }
-    if input.just_pressed(@window.KeyCode::KeyR) {
+    if input.just_pressed(KeyR) {
       let defaults = @pbr.DirectionalLight::DirectionalLight()
       next = next
         .with_shadow_depth_bias(defaults.shadow_depth_bias)
         .with_shadow_normal_bias(defaults.shadow_normal_bias)
     }
-    if input.just_pressed(@window.KeyCode::KeyZ) {
+    if input.just_pressed(KeyZ) {
       next = next.with_shadow_depth_bias(0.0F).with_shadow_normal_bias(0.0F)
     }
 
@@ -483,11 +480,11 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param4(@app.Update, cycle_filter_methods)
-  .add_systems_param4(@app.Update, adjust_light_position)
-  .add_systems_param4(@app.Update, adjust_point_light_biases)
-  .add_systems_param5(@app.Update, toggle_light)
-  .add_systems_param4(@app.Update, adjust_directional_light_biases)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param4(Update, cycle_filter_methods)
+  .add_systems_param4(Update, adjust_light_position)
+  .add_systems_param4(Update, adjust_point_light_biases)
+  .add_systems_param5(Update, toggle_light)
+  .add_systems_param4(Update, adjust_directional_light_biases)
   .run()
 }

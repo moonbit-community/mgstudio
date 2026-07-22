@@ -37,7 +37,7 @@ test "mip_generation plugin initializes downsample shader registry resource" {
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
   app = app.update()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let shaders = render_world
     .get_resource(@mip_generation.ecs_key_downsample_shaders)
     .unwrap()
@@ -100,7 +100,7 @@ test "mip_generation plugin initializes finish-stage resources in render sub-app
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@mip_generation.MipGenerationPlugin::MipGenerationPlugin())
     .finish()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let resources = render_world
     .get_resource(@mip_generation.ecs_key_mip_generation_resources)
     .unwrap()
@@ -120,7 +120,7 @@ test "core_2d plugin initializes phase resources in render sub-app only" {
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   let main_world = app.world()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     main_world.get_resource(@core_2d.ecs_key_opaque2d_phase) is Some(_),
     content="false",
@@ -161,15 +161,11 @@ test "core_2d extracts active Camera2d phase views and retains live views" {
   try! world.set_by_key(
     camera_entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
-  try! world.set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(camera_entity, @camera_camera.ecs_key_camera, Camera())
   app = app.update()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let retained_view = @render_view.RetainedViewEntity::new(camera_entity)
   let opaque_phase = render_world
     .get_resource(@core_2d.ecs_key_opaque2d_phase)
@@ -194,7 +190,7 @@ test "core_2d extracts active Camera2d phase views and retains live views" {
     @camera_camera.Camera::Camera().with_is_active(false),
   )
   app = app.update()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let opaque_phase = render_world
     .get_resource(@core_2d.ecs_key_opaque2d_phase)
     .unwrap()
@@ -353,16 +349,16 @@ test "core_2d plugin owns Camera2d post-process required components" {
   try! world.set_by_key(
     entity,
     @camera_components2d.ecs_key_camera2d,
-    @camera_components2d.Camera2d::Camera2d(),
+    Camera2d(),
   )
   let tonemapping_ok = match
     (try! world.get_by_key(entity, @core_2d.ecs_key_tonemapping)) {
-    Some(@core_2d.Tonemapping::None) => true
+    Some(None) => true
     _ => false
   }
   let deband_ok = match
     (try! world.get_by_key(entity, @core_2d.ecs_key_deband_dither)) {
-    Some(@core_2d.DebandDither::Disabled) => true
+    Some(Disabled) => true
     _ => false
   }
   debug_inspect(tonemapping_ok, content="true")
@@ -410,9 +406,9 @@ test "camera_driver runs each sorted camera's render schedule with CurrentView" 
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(@core_pipeline.CorePipelinePlugin::CorePipelinePlugin())
   ignore(
-    app.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    app.modify_sub_app(RenderApp, fn(render_sub_app) {
       let render_world = render_sub_app.world()
-      render_world.insert_resource(camera_driver_schedule_probe_key, CameraDriverScheduleProbe::{
+      render_world.insert_resource(camera_driver_schedule_probe_key, {
         run_count: 0,
         current_view_bits: 0UL,
       })
@@ -425,13 +421,7 @@ test "camera_driver runs each sorted camera's render schedule with CurrentView" 
       render_world.insert_resource(
         @render.SortedCameras::resource(),
         @render.SortedCameras::from_array([
-          @render.SortedCamera::new(
-            camera,
-            0,
-            None,
-            false,
-            @render.CameraOutputMode::Write,
-          ),
+          @render.SortedCamera::new(camera, 0, None, false, Write),
         ]),
       )
       render_sub_app.add_systems(
@@ -441,7 +431,7 @@ test "camera_driver runs each sorted camera's render schedule with CurrentView" 
     }),
   )
   let app = app.update()
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let probe = render_world
     .get_resource(camera_driver_schedule_probe_key)
     .unwrap()

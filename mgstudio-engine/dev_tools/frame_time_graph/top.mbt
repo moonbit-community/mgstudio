@@ -44,10 +44,10 @@ pub fn frame_time_graph_plugin_with(
 
 ///|
 pub fn frame_time_graph_default_config() -> @dev_tools.FrameTimeGraphConfig {
-  @dev_tools.FrameTimeGraphConfig::FrameTimeGraphConfig()
+  FrameTimeGraphConfig()
 }
 
 ///|
 pub fn fps_overlay_default_config() -> @dev_tools.FpsOverlayConfig {
-  @dev_tools.FpsOverlayConfig::FpsOverlayConfig()
+  FpsOverlayConfig()
 }

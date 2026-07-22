@@ -65,9 +65,9 @@ pub(all) struct NagaModuleDescriptor {
 ///|
 pub fn Source::language(self : Source) -> ShaderLanguage {
   match self {
-    Wgsl(_) => ShaderLanguage::Wgsl
+    Wgsl(_) => Wgsl
     Wesl(_) => abort("wesl source does not have a naga_oil language")
-    Glsl(_, _) => ShaderLanguage::Glsl
+    Glsl(_, _) => Glsl
     SpirV(_) => abort("spirv source does not have a composable source language")
   }
 }
@@ -75,11 +75,11 @@ pub fn Source::language(self : Source) -> ShaderLanguage {
 ///|
 pub fn Source::shader_type(self : Source) -> ShaderType {
   match self {
-    Wgsl(_) => ShaderType::Wgsl
+    Wgsl(_) => Wgsl
     Wesl(_) => abort("wesl source does not have a naga_oil shader type")
-    Glsl(_, ShaderStage::Vertex) => ShaderType::GlslVertex
-    Glsl(_, ShaderStage::Fragment) => ShaderType::GlslFragment
-    Glsl(_, ShaderStage::Compute) =>
+    Glsl(_, Vertex) => GlslVertex
+    Glsl(_, Fragment) => GlslFragment
+    Glsl(_, Compute) =>
       abort("GLSL compute shader type is not yet supported in naga_oil")
     SpirV(_) => abort("spirv source does not have a composable shader type")
   }

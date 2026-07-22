@@ -19,7 +19,7 @@ pub struct GlobalVolume {
 
 ///|
 pub fn GlobalVolume::new(volume : Volume) -> GlobalVolume {
-  GlobalVolume::{ volume, }
+  { volume, }
 }
 
 ///|
@@ -45,12 +45,12 @@ pub(all) enum Volume {
 
 ///|
 pub fn Volume::default() -> Volume {
-  Volume::Linear(1.0F)
+  Linear(1.0F)
 }
 
 ///|
 pub fn Volume::silent() -> Volume {
-  Volume::Linear(0.0F)
+  Linear(0.0F)
 }
 
 ///|
@@ -80,7 +80,7 @@ pub fn Volume::increase_by_percentage(
   percentage : Float,
 ) -> Volume {
   let factor = 1.0F + percentage / 100.0F
-  Volume::Linear(self.to_linear() * factor)
+  Linear(self.to_linear() * factor)
 }
 
 ///|
@@ -96,12 +96,12 @@ pub fn Volume::decrease_by_percentage(
     percentage
   }
   let factor = 1.0F - clamped / 100.0F
-  Volume::Linear(self.to_linear() * factor)
+  Linear(self.to_linear() * factor)
 }
 
 ///|
 pub fn Volume::scale_to_factor(self : Volume, factor : Float) -> Volume {
-  Volume::Linear(self.to_linear() * factor)
+  Linear(self.to_linear() * factor)
 }
 
 ///|
@@ -119,14 +119,12 @@ pub fn Volume::fade_towards(
   }
   let current_linear = self.to_linear()
   let target_linear = target.to_linear()
-  Volume::Linear(
-    current_linear + (target_linear - current_linear) * factor_clamped,
-  )
+  Linear(current_linear + (target_linear - current_linear) * factor_clamped)
 }
 
 ///|
 pub fn Volume::mul(self : Volume, other : Volume) -> Volume {
-  Volume::Linear(self.to_linear() * other.to_linear())
+  Linear(self.to_linear() * other.to_linear())
 }
 
 ///|
@@ -141,9 +139,9 @@ pub impl ToJson for Volume with fn to_json(self) {
 pub impl @json.FromJson for Volume with fn from_json(json, path) {
   let (kind, value) : (String, Float) = @json.from_json(json, path~)
   match kind {
-    "linear" => Volume::Linear(value)
-    "decibels" => Volume::Decibels(value)
-    _ => Volume::Linear(value)
+    "linear" => Linear(value)
+    "decibels" => Decibels(value)
+    _ => Linear(value)
   }
 }
 
@@ -154,5 +152,5 @@ pub impl ToJson for GlobalVolume with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for GlobalVolume with fn from_json(json, path) {
-  GlobalVolume::{ volume: @json.from_json(json, path~) }
+  { volume: @json.from_json(json, path~) }
 }

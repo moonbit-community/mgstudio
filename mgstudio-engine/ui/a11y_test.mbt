@@ -49,7 +49,7 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
   ui_a11y_test_setup_context(world)
 
   let button = world.spawn_empty()
-  try! world.set_by_key(button, ecs_key_button, Button::Button())
+  try! world.set_by_key(button, ecs_key_button, Button())
   try! world.set_by_key(
     button,
     ecs_key_ui_layout,
@@ -63,12 +63,8 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
 
   let label = world.spawn_empty()
   try! world.set_by_key(label, @text.ecs_key_text, @text.Text::new("OK"))
-  try! world.set_by_key(label, ecs_key_node, Node::Node())
-  try! world.set_by_key(
-    label,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
+  try! world.set_by_key(label, ecs_key_node, Node())
+  try! world.set_by_key(label, @text.ecs_key_text_font, TextFont())
   try! world.set_by_key(
     label,
     @hierarchy.ecs_key_parent,
@@ -83,9 +79,9 @@ test "ui: a11y button role/label/actions are synced into AccessibilityNode" {
   ui_stack_system(world)
   ui_a11y_update_system(world)
   let node = ui_a11y_test_read_node(world, button)
-  assert_eq(node.role(), @moon_accesskit.Role::Button)
+  assert_eq(node.role(), Button)
   debug_inspect(node.label() == Some("OK"), content="true")
-  assert_true(node.supports_action(@moon_accesskit.Action::Click))
+  assert_true(node.supports_action(Click))
 }
 
 ///|
@@ -95,7 +91,7 @@ test "ui: a11y label role/value are synced into AccessibilityNode" {
   ui_a11y_test_setup_context(world)
 
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, ecs_key_label, Label::Label())
+  try! world.set_by_key(entity, ecs_key_label, Label())
   try! world.set_by_key(
     entity,
     ecs_key_ui_layout,
@@ -107,16 +103,12 @@ test "ui: a11y label role/value are synced into AccessibilityNode" {
     ),
   )
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Hello"))
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
+  try! world.set_by_key(entity, @text.ecs_key_text_font, TextFont())
 
   ui_stack_system(world)
   ui_a11y_update_system(world)
   let node = ui_a11y_test_read_node(world, entity)
-  assert_eq(node.role(), @moon_accesskit.Role::Label)
+  assert_eq(node.role(), Label)
   debug_inspect(node.value() == Some("Hello"), content="true")
 }
 
@@ -127,7 +119,7 @@ test "ui: a11y visibility and clip metadata are synced into AccessibilityNode" {
   ui_a11y_test_setup_context(world)
 
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, ecs_key_button, Button::Button())
+  try! world.set_by_key(entity, ecs_key_button, Button())
   try! world.set_by_key(
     entity,
     ecs_key_ui_layout,
@@ -172,32 +164,28 @@ test "ui: interaction state observers update AccessibilityNode like Bevy" {
   try! world.set_by_key(
     entity,
     @a11y.ecs_key_accessibility_node,
-    @a11y.AccessibilityNode::new(
-      @moon_accesskit.Node::Node(@moon_accesskit.Role::Button),
-    ),
+    @a11y.AccessibilityNode::new(Node(Button)),
   )
 
   try! world.set_by_key(
     entity,
     ecs_key_interaction_disabled,
-    InteractionDisabled::InteractionDisabled(),
+    InteractionDisabled(),
   )
   assert_true(ui_a11y_test_read_node(world, entity).is_disabled())
 
   ignore(try! world.remove_by_key(entity, ecs_key_interaction_disabled))
   assert_false(ui_a11y_test_read_node(world, entity).is_disabled())
 
-  try! world.set_by_key(entity, ecs_key_checked, Checked::Checked())
+  try! world.set_by_key(entity, ecs_key_checked, Checked())
   debug_inspect(
-    ui_a11y_test_read_node(world, entity).toggled()
-    is Some(@moon_accesskit.Toggled::True),
+    ui_a11y_test_read_node(world, entity).toggled() is Some(True),
     content="true",
   )
 
   ignore(try! world.remove_by_key(entity, ecs_key_checked))
   debug_inspect(
-    ui_a11y_test_read_node(world, entity).toggled()
-    is Some(@moon_accesskit.Toggled::False),
+    ui_a11y_test_read_node(world, entity).toggled() is Some(False),
     content="true",
   )
 }
@@ -207,13 +195,10 @@ test "ui: a11y focus in tree update follows InputFocus resource" {
   let world = @ecs.World::new()
   defer world.close()
   ui_a11y_test_setup_context(world)
-  world.insert_resource(
-    @input_focus.InputFocus::resource(),
-    @input_focus.InputFocus::InputFocus(),
-  )
+  world.insert_resource(@input_focus.InputFocus::resource(), InputFocus())
 
   let back = world.spawn_empty()
-  try! world.set_by_key(back, ecs_key_button, Button::Button())
+  try! world.set_by_key(back, ecs_key_button, Button())
   try! world.set_by_key(
     back,
     ecs_key_ui_layout,
@@ -243,7 +228,7 @@ test "ui: editable label exports text input role and SetValue action" {
   ui_a11y_test_setup_context(world)
 
   let editable = world.spawn_empty()
-  try! world.set_by_key(editable, ecs_key_label, Label::Label())
+  try! world.set_by_key(editable, ecs_key_label, Label())
   try! world.set_by_key(
     editable,
     ecs_key_accessibility_label,
@@ -264,18 +249,14 @@ test "ui: editable label exports text input role and SetValue action" {
     @text.ecs_key_text,
     @text.Text::new("Editable status"),
   )
-  try! world.set_by_key(
-    editable,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
+  try! world.set_by_key(editable, @text.ecs_key_text_font, TextFont())
 
   ui_stack_system(world)
   ui_a11y_update_system(world)
   let node = ui_a11y_test_read_node(world, editable)
-  assert_eq(node.role(), @moon_accesskit.Role::TextInput)
+  assert_eq(node.role(), TextInput)
   debug_inspect(node.label() == Some("Status input"), content="true")
   debug_inspect(node.value() == Some("Editable status"), content="true")
-  assert_true(node.supports_action(@moon_accesskit.Action::SetValue))
-  assert_true(node.supports_action(@moon_accesskit.Action::Focus))
+  assert_true(node.supports_action(SetValue))
+  assert_true(node.supports_action(Focus))
 }

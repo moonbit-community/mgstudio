@@ -134,17 +134,14 @@ fn spawn_converted_mesh(
       ),
     ),
   )
-  state.set(ConvertedMeshState::{
-    source_handle: state_value.source_handle,
-    spawned: true,
-  })
+  state.set({ source_handle: state_value.source_handle, spawned: true })
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param4(@app.Update, spawn_converted_mesh)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param4(Update, spawn_converted_mesh)
   .run()
 }

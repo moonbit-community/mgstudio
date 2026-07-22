@@ -62,9 +62,7 @@ test "ecs: bypass change detection finalizes a distinct replacement" {
   try! world.set_by_key(entity, bypass_finalizer_probe_key, { id: 1 })
   let component = (try! world.get_mut(entity, key=bypass_finalizer_probe_key)).unwrap()
 
-  component.bypass_change_detection(fn(_value) {
-    BypassFinalizerProbe::{ id: 2 }
-  })
+  component.bypass_change_detection(fn(_value) { { id: 2 } })
   let finalized_before_close = bypass_finalized_values.copy()
   world.close()
 

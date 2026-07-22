@@ -51,11 +51,11 @@ pub(all) struct PbrPlugin {
 
 ///|
 pub fn PbrPlugin::PbrPlugin() -> PbrPlugin {
-  PbrPlugin::{
+  {
     prepass_enabled: true,
     add_default_deferred_lighting_plugin: true,
     use_gpu_instance_buffer_builder: true,
-    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+    debug_flags: RenderDebugFlags(),
     gltf_render_enabled: true,
     standard_material_texture_features: standard_material_default_texture_feature_set(),
   }
@@ -66,7 +66,7 @@ pub fn PbrPlugin::with_standard_material_texture_features(
   self : PbrPlugin,
   standard_material_texture_features : StandardMaterialTextureFeatureSet,
 ) -> PbrPlugin {
-  PbrPlugin::{ ..self, standard_material_texture_features, }
+  { ..self, standard_material_texture_features, }
 }
 
 ///|
@@ -74,7 +74,7 @@ pub fn PbrPlugin::with_gpu_instance_buffer_builder(
   self : PbrPlugin,
   use_gpu_instance_buffer_builder : Bool,
 ) -> PbrPlugin {
-  PbrPlugin::{ ..self, use_gpu_instance_buffer_builder, }
+  { ..self, use_gpu_instance_buffer_builder, }
 }
 
 ///|
@@ -91,7 +91,7 @@ pub struct PbrPluginRuntimeConfig {
 pub fn PbrPluginRuntimeConfig::from_plugin(
   plugin : PbrPlugin,
 ) -> PbrPluginRuntimeConfig {
-  PbrPluginRuntimeConfig::{
+  {
     prepass_enabled: plugin.prepass_enabled,
     add_default_deferred_lighting_plugin: plugin.add_default_deferred_lighting_plugin,
     use_gpu_instance_buffer_builder: plugin.use_gpu_instance_buffer_builder,
@@ -103,7 +103,7 @@ pub fn PbrPluginRuntimeConfig::from_plugin(
 
 ///|
 fn pbr_default_runtime_config() -> PbrPluginRuntimeConfig {
-  PbrPluginRuntimeConfig::from_plugin(PbrPlugin::PbrPlugin())
+  PbrPluginRuntimeConfig::from_plugin(PbrPlugin())
 }
 
 ///|
@@ -287,7 +287,7 @@ fn pbr_load_bluenoise(world : @ecs.World) -> @asset.Handle[@asset.Image] {
     settings,
   ) {
     settings.is_srgb = false
-    settings.sampler = @asset.ImageSampler::Default
+    settings.sampler = Default
     settings.texture_descriptor_label = Some("bluenoise")
     settings.asset_usage = @asset.RenderAssetUsages::render_world()
   })
@@ -300,13 +300,11 @@ fn pbr_load_area_light_luts(world : @ecs.World) -> @asset.Handle[@asset.Image] {
       @asset.asset_world_add(
         world,
         @asset.Image::new(1, 2, Bytes::new(16))
-        .with_format(@asset.TextureFormat::Rgba16Float)
+        .with_format(Rgba16Float)
         .with_texture_usage_bits(@asset.IMAGE_USAGE_TEXTURE_BINDING)
         .with_texture_descriptor_label(Some("area_light_luts_placeholder"))
-        .with_array_layout(Some(@asset.ImageArrayLayout::RowHeight(1)))
-        .with_texture_view_dimension(
-          Some(@asset.ImageTextureViewDimension::D2Array),
-        ),
+        .with_array_layout(Some(RowHeight(1)))
+        .with_texture_view_dimension(Some(D2Array)),
       )
     })
   }
@@ -365,15 +363,13 @@ pub fn pbr_ensure_render_world_internal_luts(
     None
   }
   if bluenoise is Some(texture) && texture.id() > 0 {
-    render_world.insert_resource(ecs_key_bluenoise, Bluenoise::{ texture, })
+    render_world.insert_resource(ecs_key_bluenoise, { texture, })
   }
   if area_light_luts is Some(image) && image.id() > 0 {
-    render_world.insert_resource(ecs_key_area_light_luts, AreaLightLuts::{
-      image,
-    })
+    render_world.insert_resource(ecs_key_area_light_luts, { image, })
   }
   if dfg_lut is Some(texture) && texture.id() > 0 {
-    render_world.insert_resource(ecs_key_dfg_lut, DfgLut::{ texture, })
+    render_world.insert_resource(ecs_key_dfg_lut, { texture, })
   }
 }
 
@@ -395,7 +391,7 @@ fn pbr_plugin_sync_mesh_render_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  mesh_render_plugin_with(app, MeshRenderPlugin::{
+  mesh_render_plugin_with(app, {
     use_gpu_instance_buffer_builder: runtime_config.use_gpu_instance_buffer_builder,
     debug_flags: runtime_config.debug_flags,
   })
@@ -469,7 +465,7 @@ fn pbr_plugin_sync_standard_material_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  standard_material_plugin_with(app, StandardMaterialPlugin::{
+  standard_material_plugin_with(app, {
     prepass_enabled: runtime_config.prepass_enabled,
     debug_flags: runtime_config.debug_flags,
     standard_material_texture_features: runtime_config.standard_material_texture_features,
@@ -555,6 +551,7 @@ pub fn pbr_plugin_with(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn pbr_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : PbrPlugin,
@@ -567,43 +564,43 @@ fn pbr_plugin_install_with(
     let distance_fog_extract_plugin : @render.ExtractComponentPlugin[
       DistanceFog,
       Unit,
-    ] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
+    ] = ExtractComponentPlugin()
     next = @render.extract_component_plugin_with(
       next, distance_fog_extract_plugin,
     )
     let shadow_filtering_method_sync : @render.SyncComponentPlugin[
       ShadowFilteringMethod,
       PbrPlugin,
-    ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    ] = SyncComponentPlugin()
     next = @render.sync_component_plugin_with(
       next, shadow_filtering_method_sync,
     )
     let directional_light_sync : @render.SyncComponentPlugin[
       DirectionalLight,
       PbrPlugin,
-    ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    ] = SyncComponentPlugin()
     next = @render.sync_component_plugin_with_target_removal(
       next, directional_light_sync, @pbr_render.remove_directional_light_sync_target,
     )
-    let point_light_sync : @render.SyncComponentPlugin[PointLight, PbrPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    let point_light_sync : @render.SyncComponentPlugin[PointLight, PbrPlugin] = SyncComponentPlugin()
     next = @render.sync_component_plugin_with_target_removal(
       next, point_light_sync, @pbr_render.remove_point_light_sync_target,
     )
-    let spot_light_sync : @render.SyncComponentPlugin[SpotLight, PbrPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    let spot_light_sync : @render.SyncComponentPlugin[SpotLight, PbrPlugin] = SyncComponentPlugin()
     next = @render.sync_component_plugin_with_target_removal(
       next, spot_light_sync, @pbr_render.remove_spot_light_sync_target,
     )
     let rect_light_sync : @render.SyncComponentPlugin[
       @light.RectLight,
       PbrPlugin,
-    ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    ] = SyncComponentPlugin()
     next = @render.sync_component_plugin_with_target_removal(
       next, rect_light_sync, @pbr_render.remove_rect_light_sync_target,
     )
     let ambient_light_sync : @render.SyncComponentPlugin[
       AmbientLight,
       PbrPlugin,
-    ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+    ] = SyncComponentPlugin()
     next = @render.sync_component_plugin_with(next, ambient_light_sync)
     next = next
       .insert_world_resource(ecs_key_pbr_plugin_marker, PbrPluginMarker::{  })
@@ -630,7 +627,7 @@ fn pbr_plugin_finish_with(
   app : @app.App[@ecs.World],
   _plugin : PbrPlugin,
 ) -> @app.App[@ecs.World] {
-  match app.get_sub_app(@app.RenderApp) {
+  match app.get_sub_app(RenderApp) {
     Some(render_app) =>
       match
         pbr_make_global_cluster_settings_from_render_world(render_app.world()) {

@@ -73,11 +73,11 @@ pub struct MeshletResourceBindGroupLayoutDescriptor {
 ///|
 fn meshlet_resource_layout_entry(
   binding_kind : MeshletResourceBindingKind,
-  texture_format? : MeshletResourceTextureFormat = MeshletResourceTextureFormat::NoTextureFormat,
-  storage_texture_access? : MeshletResourceStorageTextureAccess = MeshletResourceStorageTextureAccess::NoStorageTextureAccess,
+  texture_format? : MeshletResourceTextureFormat = NoTextureFormat,
+  storage_texture_access? : MeshletResourceStorageTextureAccess = NoStorageTextureAccess,
   uniform_dynamic_offset? : Bool = false,
 ) -> MeshletResourceBindGroupLayoutEntry {
-  MeshletResourceBindGroupLayoutEntry::{
+  {
     binding_kind,
     texture_format,
     storage_texture_access,
@@ -87,7 +87,7 @@ fn meshlet_resource_layout_entry(
 
 ///|
 fn meshlet_resource_texture_2d_float() -> MeshletResourceBindGroupLayoutEntry {
-  meshlet_resource_layout_entry(MeshletResourceBindingKind::Texture2dFloat)
+  meshlet_resource_layout_entry(Texture2dFloat)
 }
 
 ///|
@@ -96,7 +96,7 @@ fn meshlet_resource_storage_texture_2d(
   access : MeshletResourceStorageTextureAccess,
 ) -> MeshletResourceBindGroupLayoutEntry {
   meshlet_resource_layout_entry(
-    MeshletResourceBindingKind::StorageTexture2d,
+    StorageTexture2d,
     texture_format~,
     storage_texture_access=access,
   )
@@ -104,34 +104,27 @@ fn meshlet_resource_storage_texture_2d(
 
 ///|
 fn meshlet_resource_uniform_buffer_dynamic() -> MeshletResourceBindGroupLayoutEntry {
-  meshlet_resource_layout_entry(
-    MeshletResourceBindingKind::UniformBuffer,
-    uniform_dynamic_offset=true,
-  )
+  meshlet_resource_layout_entry(UniformBuffer, uniform_dynamic_offset=true)
 }
 
 ///|
 fn meshlet_resource_uniform_buffer() -> MeshletResourceBindGroupLayoutEntry {
-  meshlet_resource_layout_entry(MeshletResourceBindingKind::UniformBuffer)
+  meshlet_resource_layout_entry(UniformBuffer)
 }
 
 ///|
 fn meshlet_resource_storage_read_only() -> MeshletResourceBindGroupLayoutEntry {
-  meshlet_resource_layout_entry(
-    MeshletResourceBindingKind::StorageBufferReadOnly,
-  )
+  meshlet_resource_layout_entry(StorageBufferReadOnly)
 }
 
 ///|
 fn meshlet_resource_storage_read_write() -> MeshletResourceBindGroupLayoutEntry {
-  meshlet_resource_layout_entry(
-    MeshletResourceBindingKind::StorageBufferReadWrite,
-  )
+  meshlet_resource_layout_entry(StorageBufferReadWrite)
 }
 
 ///|
 fn meshlet_resource_sampler_non_filtering() -> MeshletResourceBindGroupLayoutEntry {
-  meshlet_resource_layout_entry(MeshletResourceBindingKind::SamplerNonFiltering)
+  meshlet_resource_layout_entry(SamplerNonFiltering)
 }
 
 ///|
@@ -144,7 +137,7 @@ fn meshlet_resource_bind_group_layout_descriptor(
   optional? : Bool = false,
   enabled? : Bool = true,
 ) -> MeshletResourceBindGroupLayoutDescriptor {
-  MeshletResourceBindGroupLayoutDescriptor::{
+  {
     label,
     compute_stage,
     vertex_stage,
@@ -317,32 +310,14 @@ fn meshlet_resource_downsample_depth_entries(
   visibility_format : MeshletResourceTextureFormat,
 ) -> Array[MeshletResourceBindGroupLayoutEntry] {
   let entries = [
-    meshlet_resource_storage_texture_2d(
-      visibility_format,
-      MeshletResourceStorageTextureAccess::ReadOnly,
-    ),
+    meshlet_resource_storage_texture_2d(visibility_format, ReadOnly),
   ]
   for _ in 0..<5 {
-    entries.push(
-      meshlet_resource_storage_texture_2d(
-        MeshletResourceTextureFormat::R32Float,
-        MeshletResourceStorageTextureAccess::WriteOnly,
-      ),
-    )
+    entries.push(meshlet_resource_storage_texture_2d(R32Float, WriteOnly))
   }
-  entries.push(
-    meshlet_resource_storage_texture_2d(
-      MeshletResourceTextureFormat::R32Float,
-      MeshletResourceStorageTextureAccess::ReadWrite,
-    ),
-  )
+  entries.push(meshlet_resource_storage_texture_2d(R32Float, ReadWrite))
   for _ in 0..<6 {
-    entries.push(
-      meshlet_resource_storage_texture_2d(
-        MeshletResourceTextureFormat::R32Float,
-        MeshletResourceStorageTextureAccess::WriteOnly,
-      ),
-    )
+    entries.push(meshlet_resource_storage_texture_2d(R32Float, WriteOnly))
   }
   entries.push(meshlet_resource_sampler_non_filtering())
   entries
@@ -356,12 +331,7 @@ fn meshlet_resource_visibility_buffer_raster_entries(
   for _ in 0..<7 {
     entries.push(meshlet_resource_storage_read_only())
   }
-  entries.push(
-    meshlet_resource_storage_texture_2d(
-      visibility_format,
-      MeshletResourceStorageTextureAccess::Atomic,
-    ),
-  )
+  entries.push(meshlet_resource_storage_texture_2d(visibility_format, Atomic))
   entries.push(meshlet_resource_uniform_buffer_dynamic())
   entries
 }
@@ -370,12 +340,7 @@ fn meshlet_resource_visibility_buffer_raster_entries(
 fn meshlet_resource_material_shade_entries() -> Array[
   MeshletResourceBindGroupLayoutEntry,
 ] {
-  let entries = [
-    meshlet_resource_storage_texture_2d(
-      MeshletResourceTextureFormat::R64Uint,
-      MeshletResourceStorageTextureAccess::ReadOnly,
-    ),
-  ]
+  let entries = [meshlet_resource_storage_texture_2d(R64Uint, ReadOnly)]
   for _ in 0..<7 {
     entries.push(meshlet_resource_storage_read_only())
   }
@@ -394,22 +359,12 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_clear_visibility_buffer_bind_group_layout",
       compute_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R64Uint,
-          MeshletResourceStorageTextureAccess::WriteOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_texture_2d(R64Uint, WriteOnly)],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_clear_visibility_buffer_shadow_view_bind_group_layout",
       compute_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R32Uint,
-          MeshletResourceStorageTextureAccess::WriteOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_texture_2d(R32Uint, WriteOnly)],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_first_instance_culling_bind_group_layout",
@@ -444,63 +399,42 @@ pub fn meshlet_resource_bind_group_layout_descriptors(
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_downsample_depth_bind_group_layout",
       compute_stage=true,
-      entries=meshlet_resource_downsample_depth_entries(
-        MeshletResourceTextureFormat::R64Uint,
-      ),
+      entries=meshlet_resource_downsample_depth_entries(R64Uint),
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_downsample_depth_shadow_view_bind_group_layout",
       compute_stage=true,
-      entries=meshlet_resource_downsample_depth_entries(
-        MeshletResourceTextureFormat::R32Uint,
-      ),
+      entries=meshlet_resource_downsample_depth_entries(R32Uint),
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_visibility_buffer_raster_bind_group_layout",
       compute_stage=true,
       vertex_stage=true,
       fragment_stage=true,
-      entries=meshlet_resource_visibility_buffer_raster_entries(
-        MeshletResourceTextureFormat::R64Uint,
-      ),
+      entries=meshlet_resource_visibility_buffer_raster_entries(R64Uint),
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_visibility_buffer_raster_shadow_view_bind_group_layout",
       compute_stage=true,
       vertex_stage=true,
       fragment_stage=true,
-      entries=meshlet_resource_visibility_buffer_raster_entries(
-        MeshletResourceTextureFormat::R32Uint,
-      ),
+      entries=meshlet_resource_visibility_buffer_raster_entries(R32Uint),
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_depth_bind_group_layout",
       fragment_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R64Uint,
-          MeshletResourceStorageTextureAccess::ReadOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_texture_2d(R64Uint, ReadOnly)],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_depth_shadow_view_bind_group_layout",
       fragment_stage=true,
-      entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R32Uint,
-          MeshletResourceStorageTextureAccess::ReadOnly,
-        ),
-      ],
+      entries=[meshlet_resource_storage_texture_2d(R32Uint, ReadOnly)],
     ),
     meshlet_resource_bind_group_layout_descriptor(
       "meshlet_resolve_material_depth_bind_group_layout",
       fragment_stage=true,
       entries=[
-        meshlet_resource_storage_texture_2d(
-          MeshletResourceTextureFormat::R64Uint,
-          MeshletResourceStorageTextureAccess::ReadOnly,
-        ),
+        meshlet_resource_storage_texture_2d(R64Uint, ReadOnly),
         meshlet_resource_storage_read_only(),
         meshlet_resource_storage_read_only(),
       ],
@@ -556,10 +490,7 @@ pub fn MeshletResourceBindGroupLayoutDescriptor::uses_storage_texture(
   access : MeshletResourceStorageTextureAccess,
 ) -> Bool {
   for entry in self.entries {
-    if meshlet_resource_binding_kind_equal(
-        entry.binding_kind,
-        MeshletResourceBindingKind::StorageTexture2d,
-      ) &&
+    if meshlet_resource_binding_kind_equal(entry.binding_kind, StorageTexture2d) &&
       meshlet_resource_texture_format_equal(
         entry.texture_format,
         texture_format,
@@ -611,7 +542,7 @@ pub fn ResourceManager::ResourceManager() -> ResourceManager {
 ///|
 pub fn ResourceManager::new(cluster_buffer_slots : Int) -> ResourceManager {
   let safe_slots = meshlet_resource_non_negative(cluster_buffer_slots)
-  ResourceManager::{
+  {
     frame_index: 0,
     cluster_buffer_slots: safe_slots,
     cull_queue_rightmost_slot: if safe_slots <= 0 {
@@ -788,7 +719,7 @@ pub fn MeshletViewResources::new(
   not_shadow_view? : Bool = true,
   has_material_depth? : Bool = true,
 ) -> MeshletViewResources {
-  MeshletViewResources::{
+  {
     view_entity,
     meshlet_count: meshlet_resource_non_negative(meshlet_count),
     scene_instance_count: meshlet_resource_non_negative(scene_instance_count),
@@ -956,7 +887,7 @@ pub fn MeshletViewBindGroups::new(
   bind_group_count : Int,
   has_material_shade_bind_group? : Bool = true,
 ) -> MeshletViewBindGroups {
-  MeshletViewBindGroups::{
+  {
     view_entity,
     bind_group_count: meshlet_resource_non_negative(bind_group_count),
     has_material_shade_bind_group,

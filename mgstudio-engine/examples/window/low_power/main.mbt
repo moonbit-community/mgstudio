@@ -37,7 +37,7 @@ fn cycle_modes(
   mode : @app.ResMut[ExampleMode],
   keyboard : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Space) {
+  if !keyboard.just_pressed(Space) {
     return
   }
   mode.set(
@@ -50,6 +50,7 @@ fn cycle_modes(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn update_winit(
   mode : @app.Res[ExampleMode],
   settings : @app.ResMut[@winit.WinitSettings],
@@ -73,7 +74,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::desktop_app())
   .insert_resource(ExampleMode::Game)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Update, cycle_modes)
-  .add_systems_param3(@app.Update, update_winit)
+  .add_systems_param2(Update, cycle_modes)
+  .add_systems_param3(Update, update_winit)
   .run()
 }

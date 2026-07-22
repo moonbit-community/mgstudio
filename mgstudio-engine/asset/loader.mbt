@@ -57,9 +57,9 @@ fn asset_loader_registry_state_for_world(
 ) -> AssetLoaderRegistryState {
   let key = asset_loader_registry_state_resource_key
   if world.get_resource(key) is None {
-    world.insert_resource(key, AssetLoaderRegistryState::{
-      loaders: @hashmap.HashMap([]),
-      ready_checkers: @hashmap.HashMap([]),
+    world.insert_resource(key, {
+      loaders: HashMap([]),
+      ready_checkers: HashMap([]),
       reload_hooks: [],
       builtin_registered: false,
     })
@@ -128,7 +128,7 @@ pub fn[T : Asset] asset_register_loader(
 ) -> Unit {
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
-  asset_loader_registry_active().set(type_name, AssetLoaderEntry::{
+  asset_loader_registry_active().set(type_name, {
     load: fn(asset_server, path) { load(asset_server, path).id() },
   })
 }
@@ -147,25 +147,25 @@ pub fn[T : Asset] asset_register_ready_checker(
 ///|
 fn asset_loader_kind_to_raw(kind : AssetLoaderKind) -> Int {
   match kind {
-    AssetLoaderKind::Texture => NATIVE_LOADER_KIND_TEXTURE
-    AssetLoaderKind::Wgsl => NATIVE_LOADER_KIND_WGSL
-    AssetLoaderKind::Bytes => NATIVE_LOADER_KIND_BYTES
-    AssetLoaderKind::Font => NATIVE_LOADER_KIND_FONT
+    Texture => NATIVE_LOADER_KIND_TEXTURE
+    Wgsl => NATIVE_LOADER_KIND_WGSL
+    Bytes => NATIVE_LOADER_KIND_BYTES
+    Font => NATIVE_LOADER_KIND_FONT
   }
 }
 
 ///|
 fn asset_loader_kind_from_raw(raw : Int) -> AssetLoaderKind {
   if raw == NATIVE_LOADER_KIND_TEXTURE {
-    return AssetLoaderKind::Texture
+    return Texture
   }
   if raw == NATIVE_LOADER_KIND_WGSL {
-    return AssetLoaderKind::Wgsl
+    return Wgsl
   }
   if raw == NATIVE_LOADER_KIND_FONT {
-    return AssetLoaderKind::Font
+    return Font
   }
-  AssetLoaderKind::Bytes
+  Bytes
 }
 
 ///|

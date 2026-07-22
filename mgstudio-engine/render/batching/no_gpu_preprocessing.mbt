@@ -22,7 +22,7 @@ pub struct BatchedInstanceBuffer[T] {
 
 ///|
 pub fn[T] BatchedInstanceBuffer::new() -> BatchedInstanceBuffer[T] {
-  BatchedInstanceBuffer::{ values: @render_resource.GpuArrayBuffer::new() }
+  { values: @render_resource.GpuArrayBuffer::new() }
 }
 
 ///|

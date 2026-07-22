@@ -19,10 +19,7 @@ priv struct RuntimeState {
 }
 
 ///|
-let runtime_state : RuntimeState = RuntimeState::{
-  close_requested: false,
-  stdin_line: None,
-}
+let runtime_state : RuntimeState = { close_requested: false, stdin_line: None }
 
 ///|
 fn host_app_run_loop(step : FuncRef[() -> Unit], interval_ms~ : Int) -> Unit {

@@ -29,17 +29,17 @@ pub struct TonemappingNode {
 
 ///|
 pub fn TonemappingNode::new(label~ : String) -> TonemappingNode {
-  TonemappingNode::{ label, }
+  { label, }
 }
 
 ///|
 pub fn TonemappingNode::pass_2d() -> TonemappingNode {
-  TonemappingNode::{ label: TONEMAPPING_PASS_2D_LABEL }
+  { label: TONEMAPPING_PASS_2D_LABEL }
 }
 
 ///|
 pub fn TonemappingNode::pass_3d() -> TonemappingNode {
-  TonemappingNode::{ label: TONEMAPPING_PASS_3D_LABEL }
+  { label: TONEMAPPING_PASS_3D_LABEL }
 }
 
 ///|
@@ -60,11 +60,7 @@ pub fn TonemappingNodeState::new(
   view_target_is_hdr? : Bool = false,
   has_specialized_pipeline? : Bool = false,
 ) -> TonemappingNodeState {
-  TonemappingNodeState::{
-    tonemapping_enabled,
-    view_target_is_hdr,
-    has_specialized_pipeline,
-  }
+  { tonemapping_enabled, view_target_is_hdr, has_specialized_pipeline }
 }
 
 ///|
@@ -93,7 +89,7 @@ pub fn TonemappingBindGroupCacheState::new(
   has_last_tonemapping_method? : Bool = false,
   last_tonemapping_method? : String = "",
 ) -> TonemappingBindGroupCacheState {
-  TonemappingBindGroupCacheState::{
+  {
     has_cached_bind_group,
     cached_view_uniform_buffer_id,
     cached_source_texture_view_id,
@@ -137,7 +133,7 @@ pub fn tonemapping_bind_group_cache_record(
   lut_texture_view_id~ : Int,
   tonemapping_method : String,
 ) -> TonemappingBindGroupCacheState {
-  TonemappingBindGroupCacheState::{
+  {
     has_cached_bind_group: true,
     cached_view_uniform_buffer_id: view_uniform_buffer_id,
     cached_source_texture_view_id: source_texture_view_id,

@@ -45,10 +45,7 @@ fn setup(
     (
       PipelineText::{  },
       @text.Text2d::Text2d(),
-      @text.TextLayout::new(
-        @text.Justify::Center,
-        @text.LineBreak::AnyCharacter,
-      ),
+      @text.TextLayout::new(Center, AnyCharacter),
       @text.TextBounds::TextBounds(),
     ),
   )
@@ -101,7 +98,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update_text_pipeline)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, update_text_pipeline)
   .run()
 }

@@ -25,7 +25,7 @@ pub struct LoadedLevel {
 ///|
 pub fn LoadedLevel::try_from(level : Level) -> LoadedLevel raise LevelLoadError {
   guard level.layer_instances is Some(_) else { raise LevelNotLoaded }
-  LoadedLevel::{ level, }
+  { level, }
 }
 
 ///|

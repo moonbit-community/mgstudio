@@ -49,14 +49,14 @@ pub fn[T] World::changed_components(
 ) -> ChangedComponents[T] {
   let entities : Array[@core.Entity] = []
   guard self.local_component_id(key.id()) is Some(local_component_id) else {
-    return ChangedComponents::{ entities, }
+    return { entities, }
   }
   key.component_for_each(self, fn(entity, _value) {
     if self.is_changed_by_local_id(entity, local_component_id, system) {
       entities.push(entity)
     }
   })
-  ChangedComponents::{ entities, }
+  { entities, }
 }
 
 ///|

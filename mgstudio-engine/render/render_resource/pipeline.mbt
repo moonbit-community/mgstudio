@@ -29,7 +29,7 @@ pub struct ComputePipeline {
 
 ///|
 pub fn RenderPipeline::new(value : @wgpu.RenderPipeline) -> RenderPipeline {
-  RenderPipeline::{ id: next_render_pipeline_id(), value }
+  { id: next_render_pipeline_id(), value }
 }
 
 ///|
@@ -66,7 +66,7 @@ pub fn RenderPipeline::into_inner(
 
 ///|
 pub fn ComputePipeline::new(value : @wgpu.ComputePipeline) -> ComputePipeline {
-  ComputePipeline::{ id: next_compute_pipeline_id(), value }
+  { id: next_compute_pipeline_id(), value }
 }
 
 ///|

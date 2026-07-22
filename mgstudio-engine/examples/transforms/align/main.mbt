@@ -155,8 +155,8 @@ fn handle_keys(
     @ecs.All,
   ],
 ) -> Unit {
-  let randomize = keyboard.just_pressed(@window.KeyCode::KeyR)
-  let toggle_motion = keyboard.just_pressed(@window.KeyCode::KeyT)
+  let randomize = keyboard.just_pressed(KeyR)
+  let toggle_motion = keyboard.just_pressed(KeyT)
   if !randomize && !toggle_motion {
     return
   }
@@ -206,8 +206,8 @@ fn spin_ship(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, handle_keys)
-  .add_systems_param2(@app.Update, spin_ship)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, handle_keys)
+  .add_systems_param2(Update, spin_ship)
   .run()
 }

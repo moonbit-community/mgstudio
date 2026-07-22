@@ -164,7 +164,7 @@ fn fog_falloff_atmospheric_from_colors(
     inscattering_alpha,
   )
 
-  FogFalloff3d::Atmospheric(extinction, inscattering)
+  Atmospheric(extinction, inscattering)
 }
 
 ///|
@@ -184,19 +184,19 @@ pub fn FogFalloff3d::koschmieder(
 pub fn FogFalloff3d::linear(start : Float, end_ : Float) -> FogFalloff3d {
   let safe_start = if start < 0.0F { 0.0F } else { start }
   let safe_end = if end_ < safe_start { safe_start } else { end_ }
-  FogFalloff3d::Linear(safe_start, safe_end)
+  Linear(safe_start, safe_end)
 }
 
 ///|
 pub fn FogFalloff3d::exponential(density : Float) -> FogFalloff3d {
   let safe_density = fog_falloff_sanitize_density(density)
-  FogFalloff3d::Exponential(safe_density)
+  Exponential(safe_density)
 }
 
 ///|
 pub fn FogFalloff3d::exponential_squared(density : Float) -> FogFalloff3d {
   let safe_density = fog_falloff_sanitize_density(density)
-  FogFalloff3d::ExponentialSquared(safe_density)
+  ExponentialSquared(safe_density)
 }
 
 ///|
@@ -214,7 +214,7 @@ pub fn FogFalloff3d::atmospheric(
     fog_falloff_sanitize_density(inscattering.y),
     fog_falloff_sanitize_density(inscattering.z),
   )
-  FogFalloff3d::Atmospheric(safe_extinction, safe_inscattering)
+  Atmospheric(safe_extinction, safe_inscattering)
 }
 
 ///|
@@ -230,9 +230,7 @@ pub fn FogFalloff3d::from_visibility_contrast(
   visibility : Float,
   contrast_threshold : Float,
 ) -> FogFalloff3d {
-  FogFalloff3d::Exponential(
-    fog_falloff_koschmieder(visibility, contrast_threshold),
-  )
+  Exponential(fog_falloff_koschmieder(visibility, contrast_threshold))
 }
 
 ///|
@@ -255,7 +253,7 @@ pub fn FogFalloff3d::from_visibility_contrast_squared(
     fog_falloff_koschmieder(safe_visibility, contrast_threshold) /
     safe_visibility,
   )
-  FogFalloff3d::ExponentialSquared(fog_falloff_sanitize_density(density))
+  ExponentialSquared(fog_falloff_sanitize_density(density))
 }
 
 ///|
@@ -318,7 +316,7 @@ pub struct DistanceFog {
 
 ///|
 pub fn DistanceFog::DistanceFog() -> DistanceFog {
-  DistanceFog::{
+  {
     color: @color.Color::white(),
     directional_light_color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_exponent: 8.0F,
@@ -331,7 +329,7 @@ pub fn DistanceFog::new(
   color : @color.Color,
   falloff : FogFalloff3d,
 ) -> DistanceFog {
-  DistanceFog::{
+  {
     color,
     directional_light_color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_exponent: 8.0F,
@@ -344,7 +342,7 @@ pub fn DistanceFog::with_color(
   self : DistanceFog,
   color : @color.Color,
 ) -> DistanceFog {
-  DistanceFog::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -352,7 +350,7 @@ pub fn DistanceFog::with_directional_light_color(
   self : DistanceFog,
   directional_light_color : @color.Color,
 ) -> DistanceFog {
-  DistanceFog::{ ..self, directional_light_color, }
+  { ..self, directional_light_color, }
 }
 
 ///|
@@ -360,7 +358,7 @@ pub fn DistanceFog::with_directional_light_exponent(
   self : DistanceFog,
   directional_light_exponent : Float,
 ) -> DistanceFog {
-  DistanceFog::{
+  {
     ..self,
     directional_light_exponent: if directional_light_exponent < 0.0F {
       0.0F
@@ -375,7 +373,7 @@ pub fn DistanceFog::with_falloff(
   self : DistanceFog,
   falloff : FogFalloff3d,
 ) -> DistanceFog {
-  DistanceFog::{ ..self, falloff, }
+  { ..self, falloff, }
 }
 
 ///|
@@ -384,10 +382,10 @@ fn render3d_distance_fog_enabled(fog : DistanceFog) -> Bool {
     return false
   }
   match fog.falloff {
-    FogFalloff3d::Linear(start, end_) => end_ > start
-    FogFalloff3d::Exponential(density) => density > 0.0F
-    FogFalloff3d::ExponentialSquared(density) => density > 0.0F
-    FogFalloff3d::Atmospheric(extinction, inscattering) =>
+    Linear(start, end_) => end_ > start
+    Exponential(density) => density > 0.0F
+    ExponentialSquared(density) => density > 0.0F
+    Atmospheric(extinction, inscattering) =>
       extinction.x +
       extinction.y +
       extinction.z +
@@ -483,13 +481,11 @@ fn render3d_view_fog_falloff(
   falloff : FogFalloff3d,
 ) -> @pbr_render.Render3dFogFalloff {
   match falloff {
-    FogFalloff3d::Linear(start, end_) =>
-      @pbr_render.Render3dFogFalloff::linear(start, end_)
-    FogFalloff3d::Exponential(density) =>
-      @pbr_render.Render3dFogFalloff::exponential(density)
-    FogFalloff3d::ExponentialSquared(density) =>
+    Linear(start, end_) => @pbr_render.Render3dFogFalloff::linear(start, end_)
+    Exponential(density) => @pbr_render.Render3dFogFalloff::exponential(density)
+    ExponentialSquared(density) =>
       @pbr_render.Render3dFogFalloff::exponential_squared(density)
-    FogFalloff3d::Atmospheric(extinction, inscattering) =>
+    Atmospheric(extinction, inscattering) =>
       @pbr_render.Render3dFogFalloff::atmospheric(extinction, inscattering)
   }
 }

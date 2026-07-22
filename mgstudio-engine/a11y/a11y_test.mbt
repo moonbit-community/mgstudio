@@ -84,12 +84,12 @@ test "a11y: plugin init_resource keeps existing resource values" {
 test "a11y: ActionRequest wrapper forwards accesskit payload" {
   let target = @moon_accesskit.NodeId::from_u64(42UL)
   let request = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::Focus,
+    Focus,
     @moon_accesskit.TreeId::root(),
     target,
   )
   let wrapped = ActionRequest::new(request)
-  assert_eq(wrapped.action(), @moon_accesskit.Action::Focus)
+  assert_eq(wrapped.action(), Focus)
   assert_eq(wrapped.target_tree(), @moon_accesskit.TreeId::root())
   assert_eq(wrapped.target_node(), target)
   assert_true(wrapped.data() is None)
@@ -105,13 +105,13 @@ test "a11y: node_id_for_entity is stable and roundtrips entity bits" {
 
 ///|
 test "a11y: AccessibilityNode mutators forward to accesskit node" {
-  let node = @moon_accesskit.Node::Node(@moon_accesskit.Role::Button)
+  let node = @moon_accesskit.Node::Node(Button)
   let wrapped = AccessibilityNode::new(node)
-  assert_eq(wrapped.role(), @moon_accesskit.Role::Button)
+  assert_eq(wrapped.role(), Button)
   wrapped.set_label("play")
   wrapped.set_value("enabled")
-  wrapped.set_bounds(@moon_accesskit.Rect::Rect(1.0, 2.0, 3.0, 4.0))
-  wrapped.add_action(@moon_accesskit.Action::Focus)
+  wrapped.set_bounds(Rect(1.0, 2.0, 3.0, 4.0))
+  wrapped.add_action(Focus)
 
   let labels = wrapped.label()
   assert_true(labels is Some("play"))
@@ -119,15 +119,15 @@ test "a11y: AccessibilityNode mutators forward to accesskit node" {
   assert_true(values is Some("enabled"))
   let bounds = wrapped.bounds()
   assert_true(bounds is Some(_))
-  assert_true(wrapped.supports_action(@moon_accesskit.Action::Focus))
+  assert_true(wrapped.supports_action(Focus))
 
   wrapped.set_disabled()
   assert_true(wrapped.is_disabled())
   wrapped.clear_disabled()
   assert_false(wrapped.is_disabled())
 
-  wrapped.set_toggled(@moon_accesskit.Toggled::True)
-  assert_true(wrapped.toggled() is Some(@moon_accesskit.Toggled::True))
+  wrapped.set_toggled(True)
+  assert_true(wrapped.toggled() is Some(True))
   wrapped.clear_toggled()
   assert_true(wrapped.toggled() is None)
 }

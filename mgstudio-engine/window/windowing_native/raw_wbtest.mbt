@@ -47,14 +47,8 @@ test "windowing_native wbtest: gesture event queues expose host deltas and clear
 
 ///|
 test "windowing_native wbtest: cursor grab mode setter reports unknown window failure" {
-  debug_inspect(
-    set_cursor_grab_mode(-1, mode=@window_core.CursorGrabMode::Locked),
-    content="false",
-  )
-  debug_inspect(
-    set_cursor_grab_mode(-1, mode=@window_core.CursorGrabMode::Confined),
-    content="false",
-  )
+  debug_inspect(set_cursor_grab_mode(-1, mode=Locked), content="false")
+  debug_inspect(set_cursor_grab_mode(-1, mode=Confined), content="false")
 }
 
 ///|
@@ -82,22 +76,16 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
 
   process_window_event(
     7,
-    ScaleFactorChanged(
-      2.0,
-      @window_core.SurfaceSizeWriter(@window_dpi.PhysicalSize(640, 360)),
-    ),
+    ScaleFactorChanged(2.0, SurfaceSizeWriter(PhysicalSize(640, 360))),
   )
   process_window_event(
     9,
     DragEntered(
       ["/tmp/winit_a.txt", "/tmp/winit_b.txt"],
-      @window_dpi.PhysicalPositionF64(10.0, 20.0),
+      PhysicalPositionF64(10.0, 20.0),
     ),
   )
-  process_window_event(
-    9,
-    DragMoved(@window_dpi.PhysicalPositionF64(12.0, 22.0)),
-  )
+  process_window_event(9, DragMoved(PhysicalPositionF64(12.0, 22.0)))
 
   let events = take_raw_winit_window_events()
   assert_eq(events.length(), 3)
@@ -105,7 +93,7 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
   match events[0].event {
     ScaleFactorChanged(scale_factor, surface_size) => {
       assert_eq(scale_factor, 2.0)
-      assert_eq(surface_size, @window_dpi.PhysicalSize(640, 360))
+      assert_eq(surface_size, PhysicalSize(640, 360))
     }
     _ => abort("expected ScaleFactorChanged snapshot")
   }

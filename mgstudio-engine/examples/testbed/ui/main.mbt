@@ -45,20 +45,14 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @mgui.UiRoot::UiRoot(),
       @mgui.Node::Node()
-      .with_width(@mgui.Val::Percent(100.0F))
-      .with_height(@mgui.Val::Percent(100.0F))
-      .with_display(@mgui.Display::Grid)
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_display(Grid)
       .with_grid_template_columns([
-        @mgui.RepeatedGridTrack::new(
-          @mgui.GridTrackRepetition::Count(GRID_COLUMNS),
-          [@mgui.GridTrack::Fr(1.0F)],
-        ),
+        @mgui.RepeatedGridTrack::new(Count(GRID_COLUMNS), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @mgui.RepeatedGridTrack::new(
-          @mgui.GridTrackRepetition::Count(GRID_ROWS),
-          [@mgui.GridTrack::Fr(1.0F)],
-        ),
+        @mgui.RepeatedGridTrack::new(Count(GRID_ROWS), [Fr(1.0F)]),
       ]),
     ),
   )
@@ -74,11 +68,9 @@ fn setup(commands : @app.Commands) -> Unit {
           @mgui.Button::Button(),
           IdleColor::{ color: bg },
           @mgui.Node::Node()
-          .with_width(@mgui.Val::Percent(100.0F))
-          .with_height(@mgui.Val::Percent(100.0F))
-          .with_border(
-            @mgui.UiRect::all(@mgui.Val::VMin(0.1F * 96.0F / cell_count_f)),
-          ),
+          .with_width(Percent(100.0F))
+          .with_height(Percent(100.0F))
+          .with_border(@mgui.UiRect::all(VMin(0.1F * 96.0F / cell_count_f))),
           @mgui.BackgroundColor::new(bg),
           @mgui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.4F)),
         ),
@@ -101,7 +93,7 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, color, idle_color) = data
     let next = match interaction.value() {
-      @mgui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.33F, 0.0F)
+      Hovered => @color.Color::srgb(1.0F, 0.33F, 0.0F)
       _ => idle_color.value().color
     }
     color.set(@mgui.BackgroundColor::new(next))
@@ -117,7 +109,7 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param(@app.Update, button_system)
+  .add_systems_param(Startup, setup)
+  .add_systems_param(Update, button_system)
   .run()
 }

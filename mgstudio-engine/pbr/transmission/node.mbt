@@ -32,11 +32,7 @@ pub struct MainTransmissivePass3dConfig {
 
 ///|
 pub fn MainTransmissivePass3dConfig::MainTransmissivePass3dConfig() -> MainTransmissivePass3dConfig {
-  MainTransmissivePass3dConfig::{
-    enabled: true,
-    steps: 1,
-    should_copy_main_texture: false,
-  }
+  { enabled: true, steps: 1, should_copy_main_texture: false }
 }
 
 ///|
@@ -44,11 +40,7 @@ pub fn MainTransmissivePass3dConfig::from_transmission(
   transmission : ScreenSpaceTransmission,
 ) -> MainTransmissivePass3dConfig {
   let safe_steps = if transmission.steps <= 0 { 1 } else { transmission.steps }
-  MainTransmissivePass3dConfig::{
-    enabled: true,
-    steps: safe_steps,
-    should_copy_main_texture: safe_steps > 1,
-  }
+  { enabled: true, steps: safe_steps, should_copy_main_texture: safe_steps > 1 }
 }
 
 ///|
@@ -56,7 +48,7 @@ pub fn MainTransmissivePass3dConfig::with_enabled(
   self : MainTransmissivePass3dConfig,
   enabled : Bool,
 ) -> MainTransmissivePass3dConfig {
-  MainTransmissivePass3dConfig::{ ..self, enabled, }
+  { ..self, enabled, }
 }
 
 ///|
@@ -65,11 +57,7 @@ pub fn MainTransmissivePass3dConfig::with_steps(
   steps : Int,
 ) -> MainTransmissivePass3dConfig {
   let safe_steps = if steps <= 0 { 1 } else { steps }
-  MainTransmissivePass3dConfig::{
-    ..self,
-    steps: safe_steps,
-    should_copy_main_texture: safe_steps > 1,
-  }
+  { ..self, steps: safe_steps, should_copy_main_texture: safe_steps > 1 }
 }
 
 ///|

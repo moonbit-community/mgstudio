@@ -26,17 +26,17 @@ pub struct AspectRatio {
 
 ///|
 pub fn AspectRatio::sixteen_nine() -> AspectRatio {
-  AspectRatio::{ value: 16.0F / 9.0F }
+  { value: 16.0F / 9.0F }
 }
 
 ///|
 pub fn AspectRatio::four_three() -> AspectRatio {
-  AspectRatio::{ value: 4.0F / 3.0F }
+  { value: 4.0F / 3.0F }
 }
 
 ///|
 pub fn AspectRatio::ultrawide() -> AspectRatio {
-  AspectRatio::{ value: 21.0F / 9.0F }
+  { value: 21.0F / 9.0F }
 }
 
 ///|
@@ -45,15 +45,15 @@ pub fn AspectRatio::try_new(
   height : Float,
 ) -> AspectRatio raise AspectRatioError {
   if width == 0.0F || height == 0.0F {
-    raise AspectRatioError::Zero
+    raise Zero
   }
   if width.is_nan() || height.is_nan() {
-    raise AspectRatioError::NaN
+    raise NaN
   }
   if width.is_inf() || height.is_inf() {
-    raise AspectRatioError::Infinite
+    raise Infinite
   }
-  AspectRatio::{ value: width / height }
+  { value: width / height }
 }
 
 ///|
@@ -74,7 +74,7 @@ pub fn AspectRatio::ratio(self : AspectRatio) -> Float {
 
 ///|
 pub fn AspectRatio::inverse(self : AspectRatio) -> AspectRatio {
-  AspectRatio::{ value: 1.0F / self.value }
+  { value: 1.0F / self.value }
 }
 
 ///|

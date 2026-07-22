@@ -41,8 +41,8 @@ pub impl @app.Resource for RenderDiagnosticsModuleState with fn resource() {
 
 ///|
 pub fn RenderDiagnosticsModuleState::RenderDiagnosticsModuleState() -> RenderDiagnosticsModuleState {
-  RenderDiagnosticsModuleState::{
-    last_snapshot: @renderer.RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
+  {
+    last_snapshot: RenderDiagnosticsSnapshot(),
     last_sample_us: 0.0F,
     sample_count: 0,
   }
@@ -76,7 +76,7 @@ pub fn render_diagnostics_module_plugin(
   if !next.contains_resource(render_diagnostics_module_state_key) {
     next = next.insert_world_resource(
       render_diagnostics_module_state_key,
-      RenderDiagnosticsModuleState::RenderDiagnosticsModuleState(),
+      RenderDiagnosticsModuleState(),
     )
   }
   next.add_post_update_system(render_diagnostics_module_refresh_system)

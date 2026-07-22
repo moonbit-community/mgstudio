@@ -93,7 +93,7 @@ fn mesh3d_view_bind_group_cache_clear(backend : GpuBackend) -> Unit {
 
 ///|
 fn mesh3d_extension_bind_group_data_empty() -> @render_resource.MaterialBindGroupResolvedData {
-  @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+  MaterialBindGroupResolvedData()
 }
 
 ///|
@@ -116,19 +116,19 @@ fn mesh3d_add_material_extension_bindings(
     if ok {
       let binding = entry.binding().reinterpret_as_uint()
       match entry.resource() {
-        @render_resource.MaterialBindGroupResolvedResource::Texture(texture_id) => {
+        Texture(texture_id) => {
           guard resolve_mesh3d_texture(backend, texture_id) is Some(texture) else {
             return false
           }
           ok = builder.add_texture_view(binding, texture.view)
         }
-        @render_resource.MaterialBindGroupResolvedResource::Sampler(texture_id) => {
+        Sampler(texture_id) => {
           guard resolve_mesh3d_texture(backend, texture_id) is Some(texture) else {
             return false
           }
           ok = builder.add_sampler(binding, texture.sampler)
         }
-        @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) => {
+        Uniform(bytes) => {
           let size = bytes.length().to_uint64()
           let buffer = backend.device.create_buffer(
             size~,
@@ -1296,7 +1296,7 @@ fn mesh3d_view_bg_cache_get_or_create(
     fallback_decal_texture.sampler,
     "wgpu: failed to build mesh3d binding-array bind group",
   )
-  backend.mesh3d_view_bg_cache.push(Mesh3dViewBindGroupCacheEntry::{
+  backend.mesh3d_view_bg_cache.push({
     material_pipeline_id,
     view_layout_key_bits,
     tonemap_in_shader,
@@ -1603,7 +1603,7 @@ fn mesh3d_frame_view_bg_cache_get_or_create(
   )
   frame.transient_bind_groups.push(bind_group)
   frame.transient_bind_groups.push(binding_arrays_bind_group)
-  backend.mesh3d_frame_view_bg_cache.push(Mesh3dFrameViewBindGroupCacheEntry::{
+  backend.mesh3d_frame_view_bg_cache.push({
     material_pipeline_id,
     view_layout_key_bits,
     tonemap_in_shader,
@@ -1655,7 +1655,7 @@ fn mesh3d_material_cache_get_or_create(
   clearcoat_normal_texture : GpuTextureInfo,
   material_uniform_bytes : Bytes,
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
-  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = MaterialBindGroupResolvedData(),
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let material_layout = mesh3d_descriptor_material_layout(material_descriptor)
   let uses_forward_decal_uniform = match material_layout {
@@ -1704,7 +1704,7 @@ fn mesh3d_material_cache_get_or_create(
       layout_entry.material_bind_group_layout,
       "mgstudio_mesh3d_empty_material_bg",
     )
-    backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
+    backend.mesh3d_material_bg_cache.push({
       material_pipeline_id,
       base_texture_id: -2,
       normal_texture_id: -2,
@@ -1781,7 +1781,7 @@ fn mesh3d_material_cache_get_or_create(
       size=4UL,
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
     )
-    backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
+    backend.mesh3d_material_bg_cache.push({
       material_pipeline_id,
       base_texture_id: -3,
       normal_texture_id: -3,
@@ -1962,7 +1962,7 @@ fn mesh3d_material_cache_get_or_create(
   let bind_group = mesh3d_finish_bind_group_checked(
     backend, builder, layout, "mgstudio_mesh3d_material_bg", "wgpu: failed to build mesh3d material bind group",
   )
-  backend.mesh3d_material_bg_cache.push(Mesh3dMaterialBindGroupCacheEntry::{
+  backend.mesh3d_material_bg_cache.push({
     material_pipeline_id,
     base_texture_id: base_texture.id,
     normal_texture_id: normal_texture.id,
@@ -2384,7 +2384,7 @@ pub fn GpuBackend::prepare_mesh3d_light_probes(
   irradiance_volume_texture_ids : Array[Int],
 ) -> Unit {
   guard self.pass_state is Some(pass_state) else { return }
-  self.pass_state = Some(GpuPassState::{
+  self.pass_state = Some({
     ..pass_state,
     environment_diffuse_texture_ids: diffuse_texture_ids,
     environment_specular_texture_ids: specular_texture_ids,

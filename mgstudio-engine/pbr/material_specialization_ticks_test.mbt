@@ -176,8 +176,7 @@ test "pbr material specialization: cache clears dirty views and expires stale re
     content="Some(32)",
   )
 
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   live_views.add(live_view)
   cache.expire_stale_views(live_views)
   debug_inspect(cache.pipeline_id(stale_view, entity) is None, content="true")

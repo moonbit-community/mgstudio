@@ -52,12 +52,12 @@ pub struct DeferredPrepassRunPlan {
 
 ///|
 pub fn DeferredPrepassNode::early() -> DeferredPrepassNode {
-  DeferredPrepassNode::{ label: DEFERRED_PREPASS_EARLY_LABEL }
+  { label: DEFERRED_PREPASS_EARLY_LABEL }
 }
 
 ///|
 pub fn DeferredPrepassNode::late() -> DeferredPrepassNode {
-  DeferredPrepassNode::{ label: DEFERRED_PREPASS_LATE_LABEL }
+  { label: DEFERRED_PREPASS_LATE_LABEL }
 }
 
 ///|
@@ -98,7 +98,7 @@ pub fn DeferredPrepassViewState::new(
   occlusion_culling_enabled? : Bool = false,
   no_indirect_drawing? : Bool = false,
 ) -> DeferredPrepassViewState {
-  DeferredPrepassViewState::{
+  {
     has_opaque_deferred_phase,
     has_alpha_mask_deferred_phase,
     has_normal_attachment,
@@ -170,7 +170,7 @@ pub fn deferred_prepass_color_attachment_plan(
     state.has_deferred_attachment ||
     state.has_deferred_lighting_pass_id_attachment
   let is_late = deferred_prepass_run_kind_is_late(kind)
-  DeferredPrepassColorAttachmentPlan::{
+  {
     normal: state.has_normal_attachment,
     motion_vectors: state.has_motion_vectors_attachment,
     deferred: state.has_deferred_attachment,
@@ -195,7 +195,7 @@ pub fn deferred_prepass_run_plan(
 ) -> DeferredPrepassRunPlan {
   let should_run = deferred_prepass_run_kind_should_run(kind, state)
   let is_late = deferred_prepass_run_kind_is_late(kind)
-  DeferredPrepassRunPlan::{
+  {
     label: deferred_prepass_run_kind_label(kind),
     should_run,
     is_late,

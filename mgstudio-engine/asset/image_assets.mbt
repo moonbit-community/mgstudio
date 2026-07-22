@@ -20,11 +20,9 @@ fn image_asset_usage_bits(image : Image) -> Int {
 ///|
 fn image_asset_is_srgb(image : Image) -> Bool {
   match image.view_format {
-    Some(TextureFormat::Rgba8UnormSrgb) => true
-    Some(TextureFormat::Bgra8UnormSrgb) => true
-    _ =>
-      image.format == TextureFormat::Rgba8UnormSrgb ||
-      image.format == TextureFormat::Bgra8UnormSrgb
+    Some(Rgba8UnormSrgb) => true
+    Some(Bgra8UnormSrgb) => true
+    _ => image.format == Rgba8UnormSrgb || image.format == Bgra8UnormSrgb
   }
 }
 
@@ -81,14 +79,14 @@ fn[T] image_asset_allocate_handle(
 ///|
 fn image_asset_pixel_size(format : TextureFormat) -> Int {
   match format {
-    TextureFormat::Rgba8Unorm => 4
-    TextureFormat::Rgba8UnormSrgb => 4
-    TextureFormat::Bgra8Unorm => 4
-    TextureFormat::Bgra8UnormSrgb => 4
-    TextureFormat::Rgba16Uint => 8
-    TextureFormat::Rgba16Float => 8
-    TextureFormat::Rgba32Float => 16
-    TextureFormat::Rg16Float => 4
+    Rgba8Unorm => 4
+    Rgba8UnormSrgb => 4
+    Bgra8Unorm => 4
+    Bgra8UnormSrgb => 4
+    Rgba16Uint => 8
+    Rgba16Float => 8
+    Rgba32Float => 16
+    Rg16Float => 4
   }
 }
 
@@ -157,7 +155,7 @@ fn image_asset_create_gpu_texture_with_array_layout(
       }
     None => (image.height, 1)
   }
-  if image.texture_view_dimension == Some(ImageTextureViewDimension::Cube) &&
+  if image.texture_view_dimension == Some(Cube) &&
     slice_count == 6 &&
     height_per_slice == image.width {
     let id = asset_texture_backend_create_texture_cube_with_format(
@@ -217,7 +215,7 @@ fn image_asset_replace_gpu_texture_if_needed(
       }
     None => (image.height, 1)
   }
-  if image.texture_view_dimension == Some(ImageTextureViewDimension::Cube) &&
+  if image.texture_view_dimension == Some(Cube) &&
     slice_count == 6 &&
     height_per_slice == image.width {
     asset_texture_backend_replace_texture_cube_with_format(
@@ -316,10 +314,10 @@ fn[T] assets_store_insert(
   }
   assets.items[id] = Some(value)
   if existed {
-    assets.events.push(AssetEvent::Modified(handle))
+    assets.events.push(Modified(handle))
   } else {
     assets.alive = assets.alive + 1
-    assets.events.push(AssetEvent::Added(handle))
+    assets.events.push(Added(handle))
   }
   true
 }

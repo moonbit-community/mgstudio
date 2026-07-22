@@ -23,6 +23,7 @@ const TONEMAPPING_PLUGIN_NAME : String = "mgstudio.core_pipeline.tonemapping.Ton
 pub struct TonemappingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TonemappingPlugin::TonemappingPlugin() -> TonemappingPlugin {
   TonemappingPlugin::{  }
 }
@@ -59,7 +60,7 @@ pub struct TonemappingLuts {
 pub fn TonemappingLuts::from_asset_server(
   asset_server : @asset.AssetServer,
 ) -> TonemappingLuts {
-  TonemappingLuts::{
+  {
     blender_filmic: asset_server.load(TONEMAPPING_LUT_BLENDER_FILMIC_PATH),
     agx: asset_server.load(TONEMAPPING_LUT_AGX_PATH),
     tony_mc_mapface: asset_server.load(TONEMAPPING_LUT_TONY_MC_MAPFACE_PATH),
@@ -111,7 +112,7 @@ pub fn tonemapping_luts_from_world_or_init(
 
 ///|
 pub fn tonemapping_is_enabled(tonemapping : Tonemapping) -> Bool {
-  tonemapping != Tonemapping::None
+  tonemapping != None
 }
 
 ///|
@@ -123,11 +124,7 @@ pub struct TonemappingPipelineKeyFlags {
 
 ///|
 pub fn TonemappingPipelineKeyFlags::TonemappingPipelineKeyFlags() -> TonemappingPipelineKeyFlags {
-  TonemappingPipelineKeyFlags::{
-    hue_rotate: false,
-    white_balance: false,
-    sectional_color_grading: false,
-  }
+  { hue_rotate: false, white_balance: false, sectional_color_grading: false }
 }
 
 ///|
@@ -136,11 +133,7 @@ pub fn TonemappingPipelineKeyFlags::new(
   white_balance? : Bool = false,
   sectional_color_grading? : Bool = false,
 ) -> TonemappingPipelineKeyFlags {
-  TonemappingPipelineKeyFlags::{
-    hue_rotate,
-    white_balance,
-    sectional_color_grading,
-  }
+  { hue_rotate, white_balance, sectional_color_grading }
 }
 
 ///|
@@ -154,9 +147,9 @@ pub struct TonemappingPipelineKey {
 pub fn TonemappingPipelineKey::new(
   deband_dither? : DebandDither = DebandDither::default(),
   tonemapping? : Tonemapping = Tonemapping::default(),
-  flags? : TonemappingPipelineKeyFlags = TonemappingPipelineKeyFlags::TonemappingPipelineKeyFlags(),
+  flags? : TonemappingPipelineKeyFlags = TonemappingPipelineKeyFlags(),
 ) -> TonemappingPipelineKey {
-  TonemappingPipelineKey::{ deband_dither, tonemapping, flags }
+  { deband_dither, tonemapping, flags }
 }
 
 ///|
@@ -172,7 +165,7 @@ pub fn tonemapping_pipeline_key_shader_defs(
   shader_defs.push("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX=3")
   shader_defs.push("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX=4")
 
-  if key.deband_dither == DebandDither::Enabled {
+  if key.deband_dither == Enabled {
     shader_defs.push("DEBAND_DITHER")
   }
   if key.flags.hue_rotate {

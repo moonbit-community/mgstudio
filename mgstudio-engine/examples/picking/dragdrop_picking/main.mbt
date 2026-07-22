@@ -82,13 +82,13 @@ fn dragdrop_node_style(
   height : Float,
 ) -> @ui.Node {
   @ui.Node::Node()
-  .with_position_type(@ui.PositionType::Absolute)
-  .with_left(@ui.Val::Px(left))
-  .with_top(@ui.Val::Px(top))
-  .with_width(@ui.Val::Px(width))
-  .with_height(@ui.Val::Px(height))
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_align_items(@ui.AlignItems::Center)
+  .with_position_type(Absolute)
+  .with_left(Px(left))
+  .with_top(Px(top))
+  .with_width(Px(width))
+  .with_height(Px(height))
+  .with_justify_content(Center)
+  .with_align_items(Center)
 }
 
 ///|
@@ -106,9 +106,7 @@ fn setup(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.09F)),
     ),
   )
@@ -199,8 +197,8 @@ fn on_drag_move(
     (ghost_nodes.get(ghost) catch { _ => None }) is Some(node) {
     let next = node
       .value()
-      .with_left(@ui.Val::Px(pointer.position().x - 15.0F))
-      .with_top(@ui.Val::Px(pointer.position().y - 15.0F))
+      .with_left(Px(pointer.position().x - 15.0F))
+      .with_top(Px(pointer.position().y - 15.0F))
     node.set(next)
   }
 }

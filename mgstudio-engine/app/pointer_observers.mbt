@@ -19,7 +19,7 @@ pub struct PickingEvents {
 
 ///|
 pub fn PickingEvents::PickingEvents() -> PickingEvents {
-  PickingEvents::{ events: [] }
+  { events: [] }
 }
 
 ///|
@@ -98,7 +98,7 @@ pub(open) trait PointerObserverKind {
 ///|
 pub impl PointerObserverKind for PointerMove with fn event_kind() {
   ignore(PointerMove::{  })
-  @pointer_events.PointerEventKind::Move
+  Move
 }
 
 ///|
@@ -109,7 +109,7 @@ pub impl PointerObserverKind for PointerMove with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerEnter with fn event_kind() {
   ignore(PointerEnter::{  })
-  @pointer_events.PointerEventKind::Enter
+  Enter
 }
 
 ///|
@@ -120,7 +120,7 @@ pub impl PointerObserverKind for PointerEnter with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerOver with fn event_kind() {
   ignore(PointerOver::{  })
-  @pointer_events.PointerEventKind::Enter
+  Enter
 }
 
 ///|
@@ -131,7 +131,7 @@ pub impl PointerObserverKind for PointerOver with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerLeave with fn event_kind() {
   ignore(PointerLeave::{  })
-  @pointer_events.PointerEventKind::Leave
+  Leave
 }
 
 ///|
@@ -142,7 +142,7 @@ pub impl PointerObserverKind for PointerLeave with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerOut with fn event_kind() {
   ignore(PointerOut::{  })
-  @pointer_events.PointerEventKind::Leave
+  Leave
 }
 
 ///|
@@ -153,7 +153,7 @@ pub impl PointerObserverKind for PointerOut with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerDown with fn event_kind() {
   ignore(PointerDown::{  })
-  @pointer_events.PointerEventKind::Down
+  Down
 }
 
 ///|
@@ -164,7 +164,7 @@ pub impl PointerObserverKind for PointerDown with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerUp with fn event_kind() {
   ignore(PointerUp::{  })
-  @pointer_events.PointerEventKind::Up
+  Up
 }
 
 ///|
@@ -175,7 +175,7 @@ pub impl PointerObserverKind for PointerUp with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerClick with fn event_kind() {
   ignore(PointerClick::{  })
-  @pointer_events.PointerEventKind::Click
+  Click
 }
 
 ///|
@@ -186,7 +186,7 @@ pub impl PointerObserverKind for PointerClick with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerDragStart with fn event_kind() {
   ignore(PointerDragStart::{  })
-  @pointer_events.PointerEventKind::DragStart
+  DragStart
 }
 
 ///|
@@ -197,7 +197,7 @@ pub impl PointerObserverKind for PointerDragStart with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerDrag with fn event_kind() {
   ignore(PointerDrag::{  })
-  @pointer_events.PointerEventKind::Drag
+  Drag
 }
 
 ///|
@@ -208,7 +208,7 @@ pub impl PointerObserverKind for PointerDrag with fn source_label() {
 ///|
 pub impl PointerObserverKind for PointerDragEnd with fn event_kind() {
   ignore(PointerDragEnd::{  })
-  @pointer_events.PointerEventKind::DragEnd
+  DragEnd
 }
 
 ///|
@@ -276,7 +276,7 @@ pub impl[K] SystemParam for OnPointer[K] with fn init_state(world) {
 
 ///|
 pub impl[K] SystemParam for OnPointer[K] with fn get(_state) {
-  OnPointer::{ event: current_pointer_event_abort_missing() }
+  { event: current_pointer_event_abort_missing() }
 }
 
 ///|

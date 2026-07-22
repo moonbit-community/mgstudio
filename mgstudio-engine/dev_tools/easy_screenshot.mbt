@@ -23,7 +23,7 @@ pub struct EasyScreenshotConfig {
 
 ///|
 pub fn EasyScreenshotConfig::EasyScreenshotConfig() -> EasyScreenshotConfig {
-  EasyScreenshotConfig::{ enabled: true, delay_frames: 0 }
+  { enabled: true, delay_frames: 0 }
 }
 
 ///|
@@ -39,7 +39,7 @@ pub(all) struct EasyScreenshotState {
 
 ///|
 fn EasyScreenshotState::EasyScreenshotState() -> EasyScreenshotState {
-  EasyScreenshotState::{ next_capture_index: 0, pending_capture_frames: -1 }
+  { next_capture_index: 0, pending_capture_frames: -1 }
 }
 
 ///|
@@ -89,7 +89,7 @@ fn easy_screenshot_schedule_capture_system(
   if state.peek().pending_capture_frames >= 0 {
     return
   }
-  if !input.just_pressed(@window.KeyCode::F12) {
+  if !input.just_pressed(F12) {
     return
   }
   let delay = if config.get().delay_frames < 0 {
@@ -135,6 +135,7 @@ fn easy_screenshot_flush_capture_system(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn dev_tools_easy_screenshot_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
@@ -148,13 +149,13 @@ pub fn dev_tools_easy_screenshot_plugin(
   if !next.contains_resource(ecs_res_key_easy_screenshot_config) {
     next = next.insert_world_resource(
       ecs_res_key_easy_screenshot_config,
-      EasyScreenshotConfig::EasyScreenshotConfig(),
+      EasyScreenshotConfig(),
     )
   }
   if !next.contains_resource(ecs_res_key_easy_screenshot_state) {
     next = next.insert_world_resource(
       ecs_res_key_easy_screenshot_state,
-      EasyScreenshotState::EasyScreenshotState(),
+      EasyScreenshotState(),
     )
   }
   next

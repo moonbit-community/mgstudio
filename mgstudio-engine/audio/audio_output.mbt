@@ -20,9 +20,9 @@ struct AudioOutput {
 ///|
 pub fn AudioOutput::AudioOutput() -> AudioOutput {
   let stream = open_default_output_stream() catch {
-    _ => return AudioOutput::{ stream: None }
+    _ => return { stream: None }
   }
-  AudioOutput::{ stream: Some(stream) }
+  { stream: Some(stream) }
 }
 
 ///|
@@ -150,7 +150,7 @@ fn audio_playback_config(
 ) -> NativeAudioPlaybackConfig {
   let mut config = NativeAudioPlaybackConfig::NativeAudioPlaybackConfig().looped(
     match settings.mode {
-      PlaybackMode::Loop => true
+      Loop => true
       _ => false
     },
   )
@@ -245,7 +245,7 @@ fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
 fn audio_default_spatial_scale(world : @ecs.World) -> SpatialScale {
   match audio_resource_get(world, DefaultSpatialScale::resource()) {
     Some(scale) => scale.scale
-    None => SpatialScale::SpatialScale()
+    None => SpatialScale()
   }
 }
 
@@ -253,7 +253,7 @@ fn audio_default_spatial_scale(world : @ecs.World) -> SpatialScale {
 fn audio_global_volume(world : @ecs.World) -> GlobalVolume {
   match audio_resource_get(world, GlobalVolume::resource()) {
     Some(value) => value
-    None => GlobalVolume::GlobalVolume()
+    None => GlobalVolume()
   }
 }
 
@@ -264,7 +264,7 @@ fn audio_playback_settings_for_entity(
 ) -> PlaybackSettings {
   match (try! world.get_by_key(entity, ecs_key_playback_settings)) {
     Some(settings) => settings
-    None => PlaybackSettings::PlaybackSettings()
+    None => PlaybackSettings()
   }
 }
 
@@ -276,12 +276,10 @@ fn audio_insert_audio_sink(
   mode : PlaybackMode,
 ) -> Unit {
   match mode {
-    PlaybackMode::Once | PlaybackMode::Loop =>
-      commands.entity(entity).insert_component(sink)
-    PlaybackMode::Despawn =>
+    Once | Loop => commands.entity(entity).insert_component(sink)
+    Despawn =>
       commands.entity(entity).insert((sink, PlaybackDespawnMarker::{  }))
-    PlaybackMode::Remove =>
-      commands.entity(entity).insert((sink, PlaybackRemoveMarker::{  }))
+    Remove => commands.entity(entity).insert((sink, PlaybackRemoveMarker::{  }))
   }
 }
 
@@ -293,12 +291,10 @@ fn audio_insert_spatial_audio_sink(
   mode : PlaybackMode,
 ) -> Unit {
   match mode {
-    PlaybackMode::Once | PlaybackMode::Loop =>
-      commands.entity(entity).insert_component(sink)
-    PlaybackMode::Despawn =>
+    Once | Loop => commands.entity(entity).insert_component(sink)
+    Despawn =>
       commands.entity(entity).insert((sink, PlaybackDespawnMarker::{  }))
-    PlaybackMode::Remove =>
-      commands.entity(entity).insert((sink, PlaybackRemoveMarker::{  }))
+    Remove => commands.entity(entity).insert((sink, PlaybackRemoveMarker::{  }))
   }
 }
 
@@ -394,7 +390,7 @@ fn audio_play_pitch_entity(
       pitch.frequency,
       pitch.duration_seconds,
       looped=match settings.mode {
-        PlaybackMode::Loop => true
+        Loop => true
         _ => false
       },
     )
@@ -415,7 +411,7 @@ fn audio_play_pitch_entity(
       pitch.frequency,
       pitch.duration_seconds,
       looped=match settings.mode {
-        PlaybackMode::Loop => true
+        Loop => true
         _ => false
       },
     )

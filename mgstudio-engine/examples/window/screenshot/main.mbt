@@ -16,9 +16,9 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, screenshot_on_spacebar)
-  .add_systems_world(@app.Update, screenshot_saving)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, screenshot_on_spacebar)
+  .add_systems_world(Update, screenshot_saving)
   .run()
 }
 
@@ -83,7 +83,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -107,13 +107,11 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
@@ -131,9 +129,9 @@ fn spawn_ui(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -159,9 +157,9 @@ fn spawn_ui(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -181,7 +179,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
 }
 
@@ -215,8 +213,7 @@ fn screenshot_on_spacebar(
 
 ///|
 fn screenshot_saving(world : @ecs.World) -> Unit {
-  guard @window.window_entity_for_ref(world, @window.WindowRef::Primary)
-    is Some(window) else {
+  guard @window.window_entity_for_ref(world, Primary) is Some(window) else {
     return
   }
 
@@ -228,6 +225,6 @@ fn screenshot_saving(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     window,
     @window.ecs_key_cursor_icon,
-    @window.CursorIcon::from(@window.SystemCursorIcon::Progress),
+    @window.CursorIcon::from(Progress),
   )
 }

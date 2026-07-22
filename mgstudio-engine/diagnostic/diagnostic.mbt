@@ -23,7 +23,7 @@ pub struct DiagnosticPath {
 
 ///|
 pub fn DiagnosticPath::const_new(path : String) -> DiagnosticPath {
-  DiagnosticPath::{ path, }
+  { path, }
 }
 
 ///|
@@ -40,7 +40,7 @@ pub fn DiagnosticPath::new(path : String) -> DiagnosticPath {
   if path.contains("//") {
     abort("DiagnosticPath must not contain empty components")
   }
-  DiagnosticPath::{ path, }
+  { path, }
 }
 
 ///|
@@ -75,7 +75,7 @@ pub fn DiagnosticMeasurement::new(
   time : @core.Instant,
   value : Float,
 ) -> DiagnosticMeasurement {
-  DiagnosticMeasurement::{ time, value }
+  { time, value }
 }
 
 ///|
@@ -108,10 +108,10 @@ fn diagnostic_clamp01(value : Float) -> Float {
 
 ///|
 pub fn Diagnostic::new(path : DiagnosticPath) -> Diagnostic {
-  Diagnostic::{
+  {
     path,
     suffix: "",
-    history: @deque.Deque([], capacity=DEFAULT_MAX_HISTORY_LENGTH),
+    history: Deque([], capacity=DEFAULT_MAX_HISTORY_LENGTH),
     sum: 0.0F,
     ema: 0.0F,
     ema_smoothing_factor: 2.0F / 21.0F,
@@ -125,7 +125,7 @@ pub fn Diagnostic::with_max_history_length(
   self : Diagnostic,
   max_history_length : Int,
 ) -> Diagnostic {
-  Diagnostic::{ ..self, max_history_length, }
+  { ..self, max_history_length, }
 }
 
 ///|
@@ -133,7 +133,7 @@ pub fn Diagnostic::with_suffix(
   self : Diagnostic,
   suffix : String,
 ) -> Diagnostic {
-  Diagnostic::{ ..self, suffix, }
+  { ..self, suffix, }
 }
 
 ///|
@@ -141,7 +141,7 @@ pub fn Diagnostic::with_smoothing_factor(
   self : Diagnostic,
   smoothing_factor : Float,
 ) -> Diagnostic {
-  Diagnostic::{ ..self, ema_smoothing_factor: smoothing_factor }
+  { ..self, ema_smoothing_factor: smoothing_factor }
 }
 
 ///|
@@ -281,7 +281,7 @@ pub struct DiagnosticsStore {
 
 ///|
 pub fn DiagnosticsStore::DiagnosticsStore() -> DiagnosticsStore {
-  DiagnosticsStore::{ diagnostics: @hashmap.HashMap([]) }
+  { diagnostics: HashMap([]) }
 }
 
 ///|
@@ -368,7 +368,7 @@ fn diagnostics_store(world : @ecs.World) -> DiagnosticsStore? {
 pub impl @app.SystemParam for Diagnostics with fn get(_state) {
   let world = @app.current_world().unwrap()
   match diagnostics_store(world) {
-    Some(store) => Diagnostics::{ store, buffer: @hashmap.HashMap([]) }
+    Some(store) => { store, buffer: HashMap([]) }
     None => abort("Missing DiagnosticsStore resource")
   }
 }
@@ -432,7 +432,7 @@ fn diagnostics_store_has_enabled_path(
 
 ///|
 fn diagnostics_measurement_now(value : () -> Float) -> DiagnosticMeasurement {
-  DiagnosticMeasurement::{ time: @core.Instant::now(), value: value() }
+  { time: @core.Instant::now(), value: value() }
 }
 
 ///|
@@ -466,10 +466,7 @@ pub fn register_diagnostic(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   if world.get_resource(DiagnosticsStore::resource()) is None {
-    world.insert_resource(
-      DiagnosticsStore::resource(),
-      DiagnosticsStore::DiagnosticsStore(),
-    )
+    world.insert_resource(DiagnosticsStore::resource(), DiagnosticsStore())
   }
   match diagnostics_store_mut(world) {
     Some(store_mut) => store_mut.modify(fn(store) { store.add(diagnostic) })

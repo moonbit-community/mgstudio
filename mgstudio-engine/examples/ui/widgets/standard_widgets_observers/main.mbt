@@ -56,12 +56,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(10.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_flex_direction(Column)
+      .with_row_gap(Px(10.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.12F, 0.12F, 0.14F)),
     ),
   )
@@ -71,11 +71,11 @@ fn setup(
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(220.0F))
-      .with_height(@ui.Val::Px(60.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Px(220.0F))
+      .with_height(Px(60.0F))
+      .with_border(@ui.UiRect::all(Px(2.0F)))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BorderColor::new(@color.Color::white()),
       @ui.BackgroundColor::new(@color.Color::srgb(0.2F, 0.28F, 0.44F)),
     ),
@@ -108,7 +108,7 @@ fn setup(
       _pointer : @app.OnPointer[@app.PointerClick],
       counter : @app.ResMut[ClickCounter],
     ) {
-      counter.set(ClickCounter::{ value: counter.get().value + 1 })
+      counter.set({ value: counter.get().value + 1 })
     }),
   )
 }
@@ -127,7 +127,7 @@ fn update_counter_label(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update_counter_label)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, update_counter_label)
   .run()
 }

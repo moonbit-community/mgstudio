@@ -16,7 +16,7 @@
 fn ldtk_find_tileset_definition_map(
   project : LdtkProject,
 ) -> @hashmap.HashMap[Int, TilesetDefinition] {
-  let map : @hashmap.HashMap[Int, TilesetDefinition] = @hashmap.HashMap([])
+  let map : @hashmap.HashMap[Int, TilesetDefinition] = HashMap([])
   for tileset_definition in project.json_data().defs.tilesets {
     map.set(tileset_definition.uid, tileset_definition)
   }
@@ -37,7 +37,7 @@ fn ldtk_settings_or_default(world : @ecs.World) -> LdtkSettings {
   let key : @ecs.ResourceKey[LdtkSettings] = LdtkSettings::resource()
   match world.get_resource(key) {
     Some(value) => value
-    None => LdtkSettings::LdtkSettings()
+    None => LdtkSettings()
   }
 }
 
@@ -47,7 +47,7 @@ fn ldtk_runtime_state_ref_or_init(
 ) -> @ecs.ResourceMut[LdtkRuntimeState] {
   let key : @ecs.ResourceKey[LdtkRuntimeState] = LdtkRuntimeState::resource()
   if world.get_resource(key) is None {
-    world.insert_resource(key, LdtkRuntimeState::LdtkRuntimeState())
+    world.insert_resource(key, LdtkRuntimeState())
   }
   match world.get_resource_mut(key) {
     Some(value) => value
@@ -97,7 +97,7 @@ fn ldtk_set_clear_color_from_editor_background(
   ldtk_settings : LdtkSettings,
 ) -> Bool {
   match ldtk_settings.set_clear_color {
-    SetClearColor::FromEditorBackground => true
+    FromEditorBackground => true
     _ => false
   }
 }
@@ -107,7 +107,7 @@ fn ldtk_set_clear_color_from_level_background(
   ldtk_settings : LdtkSettings,
 ) -> Bool {
   match ldtk_settings.set_clear_color {
-    SetClearColor::FromLevelBackground => true
+    FromLevelBackground => true
     _ => false
   }
 }
@@ -128,6 +128,7 @@ fn ldtk_level_set_equal(a : LevelSet, b : LevelSet) -> Bool {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ldtk_pre_spawn_level(
   world : @ecs.World,
   level : Level,
@@ -156,11 +157,7 @@ fn ldtk_pre_spawn_level(
     @transform.ecs_key_global_transform,
     @transform.GlobalTransform::from_transform(transform),
   )
-  try! world.set_by_key(
-    level_entity,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(level_entity, @visibility.ecs_key_visibility, Inherited)
   try! world.set_by_key(
     level_entity,
     @ecs.ecs_key_name,
@@ -187,7 +184,7 @@ fn ldtk_apply_level_set_for_world(
   guard project_assets.get(project_handle.handle()) is Some(project) else {
     return false
   }
-  let desired_iid_lookup : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let desired_iid_lookup : @hashmap.HashMap[String, Bool] = HashMap([])
   for level_iid in level_set.iids() {
     desired_iid_lookup.set(level_iid.get(), true)
   }
@@ -238,6 +235,7 @@ fn ldtk_apply_level_set_for_world(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   let ldtk_settings = ldtk_settings_or_default(world)
   let assets_ref = ldtk_project_assets_ref_or_abort(world)
@@ -246,12 +244,11 @@ pub fn process_ldtk_assets(world : @ecs.World) -> Unit {
   let changed_handles = @utils.IntBitSet::new()
   for event in events {
     match event {
-      @asset.AssetEvent::Added(handle) => changed_handles.insert(handle.id())
-      @asset.AssetEvent::Modified(handle) => changed_handles.insert(handle.id())
-      @asset.AssetEvent::LoadedWithDependencies(handle) =>
-        changed_handles.insert(handle.id())
-      @asset.AssetEvent::Removed(handle) => changed_handles.remove(handle.id())
-      @asset.AssetEvent::Unused(handle) => changed_handles.remove(handle.id())
+      Added(handle) => changed_handles.insert(handle.id())
+      Modified(handle) => changed_handles.insert(handle.id())
+      LoadedWithDependencies(handle) => changed_handles.insert(handle.id())
+      Removed(handle) => changed_handles.remove(handle.id())
+      Unused(handle) => changed_handles.remove(handle.id())
     }
   }
   if changed_handles.is_empty() {
@@ -481,7 +478,7 @@ pub fn detect_level_spawned_events(
       _ => ()
     }
   }
-  spawned_level_iids.set(LdtkSpawnedLevelIids::{ iids: spawned_iids })
+  spawned_level_iids.set({ iids: spawned_iids })
 }
 
 ///|
@@ -492,7 +489,7 @@ pub fn fire_level_transformed_events(
   for iid in spawned_level_iids.peek().iids() {
     ignore(level_events.write(Transformed(iid)))
   }
-  spawned_level_iids.set(LdtkSpawnedLevelIids::LdtkSpawnedLevelIids())
+  spawned_level_iids.set(LdtkSpawnedLevelIids())
 }
 
 ///|

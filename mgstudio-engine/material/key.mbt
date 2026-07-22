@@ -26,7 +26,7 @@ pub fn ErasedMeshPipelineKey::new(
   bits : UInt64,
   type_tag : String,
 ) -> ErasedMeshPipelineKey {
-  ErasedMeshPipelineKey::{ bits, type_tag }
+  { bits, type_tag }
 }
 
 ///|
@@ -38,7 +38,7 @@ pub fn ErasedMeshPipelineKey::new_untyped(
 
 ///|
 pub fn ErasedMeshPipelineKey::ErasedMeshPipelineKey() -> ErasedMeshPipelineKey {
-  ErasedMeshPipelineKey::{ bits: 0UL, type_tag: "()" }
+  { bits: 0UL, type_tag: "()" }
 }
 
 ///|
@@ -79,11 +79,7 @@ pub fn ErasedMaterialKey::new(
   bits : UInt64,
   type_tag : String,
 ) -> ErasedMaterialKey {
-  ErasedMaterialKey::{
-    type_tag,
-    hash: erased_material_key_hash(type_tag, bits),
-    bits,
-  }
+  { type_tag, hash: erased_material_key_hash(type_tag, bits), bits }
 }
 
 ///|
@@ -124,7 +120,7 @@ pub fn ErasedMaterialPipelineKey::new(
   material_key : ErasedMaterialKey,
   type_tag : String,
 ) -> ErasedMaterialPipelineKey {
-  ErasedMaterialPipelineKey::{ mesh_key, material_key, type_tag }
+  { mesh_key, material_key, type_tag }
 }
 
 ///|

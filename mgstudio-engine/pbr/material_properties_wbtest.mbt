@@ -15,23 +15,17 @@
 ///|
 test "render3d: extracted material properties carry core bevy runtime fields" {
   let material = @material.StandardMaterial::StandardMaterial()
-    .with_alpha_mode(@material.AlphaMode3d::Mask(0.6F))
+    .with_alpha_mode(Mask(0.6F))
     .with_depth_bias(5.0F)
     .with_specular_transmission(0.4F)
   let props = render3d_material_properties_for_standard_material(
     material,
     None,
-    OpaqueRendererMethod::Deferred,
+    Deferred,
     true,
   )
-  debug_inspect(
-    props.render_method is OpaqueRendererMethod::Deferred,
-    content="true",
-  )
-  debug_inspect(
-    props.render_phase_type is @material.RenderPhaseType::Transmissive,
-    content="true",
-  )
+  debug_inspect(props.render_method is Deferred, content="true")
+  debug_inspect(props.render_phase_type is Transmissive, content="true")
   debug_inspect(
     props.reads_view_transmission_texture &&
     props.depth_bias == 5.0F &&
@@ -44,9 +38,9 @@ test "render3d: extracted material properties carry core bevy runtime fields" {
 ///|
 test "render3d: standard material properties carry bevy material bind group layout" {
   let props = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   guard props.material_layout is Some(layout) else {
@@ -62,31 +56,21 @@ test "render3d: standard material properties carry bevy material bind group layo
   debug_inspect(layout.entries[14].binding(), content="14")
   debug_inspect(
     match layout.entries[0].kind() {
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        192UL
-      ) => true
+      BufferBinding(Uniform, false, 192UL) => true
       _ => false
     },
     content="true",
   )
   debug_inspect(
     match layout.entries[1].kind() {
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false
-      ) => true
+      TextureBinding(Float(true), D2, false) => true
       _ => false
     },
     content="true",
   )
   debug_inspect(
     match layout.entries[2].kind() {
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering
-      ) => true
+      SamplerBinding(Filtering) => true
       _ => false
     },
     content="true",
@@ -102,7 +86,7 @@ test "render3d: extended material metadata is reflected into extracted propertie
   let props = render3d_material_properties_for_standard_material(
     material,
     Some(extension),
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   debug_inspect(!props.shadows_enabled, content="true")
@@ -116,6 +100,7 @@ test "render3d: extended material metadata is reflected into extracted propertie
 struct ParityMaterialExtension {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ParityMaterialExtension::ParityMaterialExtension() -> ParityMaterialExtension {
   ParityMaterialExtension::{  }
 }
@@ -299,6 +284,7 @@ impl StandardMaterialExtension for ParityMaterialExtension with fn specialize_re
 struct ParityNoPrepassMaterialExtension {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ParityNoPrepassMaterialExtension::ParityNoPrepassMaterialExtension() -> ParityNoPrepassMaterialExtension {
   ParityNoPrepassMaterialExtension::{  }
 }
@@ -410,9 +396,9 @@ test "render3d: material extension prepass flag does not require camera prepasse
   inspect(metadata.requires_deferred_prepass, content="false")
   inspect(metadata.prepass_enabled, content="true")
   let props = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     Some(metadata),
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   inspect(props.prepass_enabled, content="true")
@@ -438,7 +424,7 @@ test "pbr material plugin: prepared extended material preserves runtime metadata
     material_handle,
     material,
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Deferred,
+    Deferred,
   )
   let resolved = prepared.resolved_material()
   guard resolved.material_extension() is Some(metadata) else {
@@ -464,9 +450,9 @@ test "render3d: material extension prepass disabled follows Bevy prepared materi
   inspect(metadata.requires_deferred_prepass, content="false")
   inspect(metadata.prepass_enabled, content="false")
   let props = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     Some(metadata),
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   inspect(props.prepass_enabled, content="false")
@@ -476,17 +462,17 @@ test "render3d: material extension prepass disabled follows Bevy prepared materi
       0UL,
       MESH_PIPELINE_KEY_DEPTH_PREPASS,
     )
-    is PbrPrepassMaterialSpecializationDecision::Remove,
+    is Remove,
     content="true",
   )
   let disabled_by_plugin = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     Some(
       material_extension_metadata_from_extension(
         ParityMaterialExtension::ParityMaterialExtension(),
       ),
     ),
-    OpaqueRendererMethod::Forward,
+    Forward,
     false,
   )
   inspect(disabled_by_plugin.prepass_enabled, content="false")
@@ -502,23 +488,14 @@ test "render3d: forward decal material extension metadata matches Bevy hooks" {
     ForwardDecalMaterialExt::new(1.0F),
   )
   let props = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     Some(metadata),
-    OpaqueRendererMethod::Deferred,
+    Deferred,
     true,
   )
-  debug_inspect(
-    props.alpha_mode is @material.AlphaMode3d::Blend,
-    content="true",
-  )
-  debug_inspect(
-    props.render_phase_type is @material.RenderPhaseType::Transparent,
-    content="true",
-  )
-  debug_inspect(
-    props.render_method is OpaqueRendererMethod::Forward,
-    content="true",
-  )
+  debug_inspect(props.alpha_mode is Blend, content="true")
+  debug_inspect(props.render_phase_type is Transparent, content="true")
+  debug_inspect(props.render_method is Forward, content="true")
   debug_inspect(!props.shadows_enabled, content="true")
   debug_inspect(props.prepass_enabled, content="true")
 }
@@ -529,7 +506,7 @@ fn shader_defs_has_flag(
   expected : String,
 ) -> Bool {
   for shader_def in shader_defs {
-    if shader_def is @material.ShaderDefVal::Flag(name) && name == expected {
+    if shader_def is Flag(name) && name == expected {
       return true
     }
   }
@@ -558,7 +535,7 @@ test "render3d: forward decal extension specialize mutates descriptor like Bevy"
     .with_vertex(
       @render_resource.VertexState::new(
         Some("pbr/render/mesh.wgsl"),
-        [@material.ShaderDefVal::Flag("VERTEX_TANGENTS")],
+        [Flag("VERTEX_TANGENTS")],
         None,
         [],
       ),
@@ -567,7 +544,7 @@ test "render3d: forward decal extension specialize mutates descriptor like Bevy"
       Some(
         @render_resource.FragmentState::new(
           Some("pbr/render/pbr.wgsl"),
-          [@material.ShaderDefVal::Flag("VERTEX_TANGENTS")],
+          [Flag("VERTEX_TANGENTS")],
           None,
           [],
         ),
@@ -610,9 +587,9 @@ test "render3d: forward decal extension specialize mutates descriptor like Bevy"
 ///|
 test "render3d: standard material properties carry Bevy meshlet shader labels" {
   let props = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   debug_inspect(
@@ -635,9 +612,9 @@ test "render3d: material extension can override Bevy meshlet shader labels" {
     Some("pbr/meshlet/meshlet_mesh_material.wgsl"),
   )
   let props = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     Some(extension),
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   debug_inspect(
@@ -652,13 +629,13 @@ test "render3d: extracted material properties prepass flag follows plugin runtim
   let enabled_props = render3d_material_properties_for_standard_material(
     material,
     None,
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let disabled_props = render3d_material_properties_for_standard_material(
     material,
     None,
-    OpaqueRendererMethod::Forward,
+    Forward,
     false,
   )
   debug_inspect(enabled_props.prepass_enabled, content="true")
@@ -687,10 +664,7 @@ test "render3d: pbr material properties can carry bevy draw function ids" {
   let draw_functions = @material.DrawFunctions::new()
   let ids = pbr_material_register_draw_functions(draw_functions)
   inspect(draw_functions.len(), content="11")
-  let properties = pbr_material_apply_draw_functions(
-    @material.MaterialProperties::MaterialProperties(),
-    ids,
-  )
+  let properties = pbr_material_apply_draw_functions(MaterialProperties(), ids)
   debug_inspect(
     properties
     .get_draw_function(MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL)
@@ -714,9 +688,9 @@ test "render3d: pbr material properties can carry bevy draw function ids" {
 ///|
 test "render3d: standard material properties carry default bevy draw functions" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    OpaqueRendererMethod::Deferred,
+    Deferred,
     true,
   )
   debug_inspect(

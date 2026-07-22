@@ -52,16 +52,14 @@ test "pbr light probe generate: generated cubemap creates Bevy-shaped environmen
     .modify(fn(images) {
       images.add(
         @asset.Image::new(64, 64 * 6, Bytes::new(64 * 64 * 6 * 8))
-        .with_format(@asset.TextureFormat::Rgba16Float)
+        .with_format(Rgba16Float)
         .with_texture_usage_bits(
           @asset.IMAGE_USAGE_TEXTURE_BINDING |
           @asset.IMAGE_USAGE_STORAGE_BINDING |
           @asset.IMAGE_USAGE_COPY_SRC,
         )
-        .with_array_layout(Some(@asset.ImageArrayLayout::RowCount(6)))
-        .with_texture_view_dimension(
-          Some(@asset.ImageTextureViewDimension::Cube),
-        ),
+        .with_array_layout(Some(RowCount(6)))
+        .with_texture_view_dimension(Some(Cube)),
       )
     })
   })
@@ -90,24 +88,13 @@ test "pbr light probe generate: generated cubemap creates Bevy-shaped environmen
   inspect(diffuse.width(), content="32")
   inspect(diffuse.height(), content="192")
   inspect(diffuse.mip_level_count(), content="1")
-  inspect(diffuse.format() == @asset.TextureFormat::Rgba16Float, content="true")
-  inspect(
-    diffuse.texture_view_dimension() ==
-    Some(@asset.ImageTextureViewDimension::Cube),
-    content="true",
-  )
+  inspect(diffuse.format() == Rgba16Float, content="true")
+  inspect(diffuse.texture_view_dimension() == Some(Cube), content="true")
   inspect(specular.width(), content="64")
   inspect(specular.height(), content="384")
   inspect(specular.mip_level_count(), content="7")
-  inspect(
-    specular.format() == @asset.TextureFormat::Rgba16Float,
-    content="true",
-  )
-  inspect(
-    specular.texture_view_dimension() ==
-    Some(@asset.ImageTextureViewDimension::Cube),
-    content="true",
-  )
+  inspect(specular.format() == Rgba16Float, content="true")
+  inspect(specular.texture_view_dimension() == Some(Cube), content="true")
   inspect(
     test_image_has_usage(diffuse, @asset.IMAGE_USAGE_STORAGE_BINDING),
     content="true",

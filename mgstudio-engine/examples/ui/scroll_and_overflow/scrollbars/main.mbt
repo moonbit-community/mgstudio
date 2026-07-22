@@ -40,10 +40,10 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.1F, 0.12F)),
     ),
   )
@@ -52,11 +52,11 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(360.0F))
-      .with_height(@ui.Val::Px(260.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(6.0F)),
+      .with_width(Px(360.0F))
+      .with_height(Px(260.0F))
+      .with_padding(@ui.UiRect::all(Px(8.0F)))
+      .with_flex_direction(Column)
+      .with_row_gap(Px(6.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.16F, 0.22F)),
     ),
   )
@@ -65,10 +65,10 @@ fn setup(
     (
       @hierarchy.Parent::new(panel),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Px(210.0F))
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_column_gap(@ui.Val::Px(6.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Px(210.0F))
+      .with_flex_direction(Row)
+      .with_column_gap(Px(6.0F)),
     ),
   )
 
@@ -78,14 +78,12 @@ fn setup(
       AutoScrollArea::{  },
       @ui.ScrollPosition::new(0.0F, 0.0F),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(320.0F))
-      .with_height(@ui.Val::Px(210.0F))
-      .with_overflow(
-        @ui.Overflow::new(@ui.OverflowAxis::Scroll, @ui.OverflowAxis::Scroll),
-      )
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(4.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+      .with_width(Px(320.0F))
+      .with_height(Px(210.0F))
+      .with_overflow(@ui.Overflow::new(Scroll, Scroll))
+      .with_flex_direction(Column)
+      .with_row_gap(Px(4.0F))
+      .with_padding(@ui.UiRect::all(Px(6.0F))),
       @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.1F)),
     ),
   )
@@ -105,9 +103,9 @@ fn setup(
     (
       @hierarchy.Parent::new(content_row),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(12.0F))
-      .with_height(@ui.Val::Px(210.0F))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
+      .with_width(Px(12.0F))
+      .with_height(Px(210.0F))
+      .with_border_radius(@ui.BorderRadius::all(Px(6.0F))),
       @ui.BackgroundColor::new(@color.Color::srgb(0.3F, 0.3F, 0.36F)),
     ),
   )
@@ -117,9 +115,9 @@ fn setup(
     (
       @hierarchy.Parent::new(panel),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(320.0F))
-      .with_height(@ui.Val::Px(12.0F))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
+      .with_width(Px(320.0F))
+      .with_height(Px(12.0F))
+      .with_border_radius(@ui.BorderRadius::all(Px(6.0F))),
       @ui.BackgroundColor::new(@color.Color::srgb(0.3F, 0.3F, 0.36F)),
     ),
   )
@@ -139,7 +137,7 @@ fn auto_scroll(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param(@app.Update, auto_scroll)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param(Update, auto_scroll)
   .run()
 }

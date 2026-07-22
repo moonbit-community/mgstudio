@@ -26,6 +26,7 @@ pub const OIT_RESOLVE_PASS_LABEL : String = "oit_resolve"
 pub struct OitResolvePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn OitResolvePlugin::OitResolvePlugin() -> OitResolvePlugin {
   OitResolvePlugin::{  }
 }
@@ -77,10 +78,7 @@ pub fn OitSupportState::new(
   has_fragment_writable_storage? : Bool = false,
   max_storage_buffers_per_shader_stage? : Int = 0,
 ) -> OitSupportState {
-  OitSupportState::{
-    has_fragment_writable_storage,
-    max_storage_buffers_per_shader_stage,
-  }
+  { has_fragment_writable_storage, max_storage_buffers_per_shader_stage }
 }
 
 ///|
@@ -96,7 +94,7 @@ pub struct OitResolveBindGroup {
 
 ///|
 pub fn OitResolveBindGroup::new(bind_group_id~ : Int) -> OitResolveBindGroup {
-  OitResolveBindGroup::{ bind_group_id, }
+  { bind_group_id, }
 }
 
 ///|
@@ -112,10 +110,7 @@ pub fn OitResolvePipeline::OitResolvePipeline() -> OitResolvePipeline {
 
 ///|
 pub fn OitResolvePipeline::new() -> OitResolvePipeline {
-  OitResolvePipeline::{
-    has_view_bind_group_layout: true,
-    has_depth_bind_group_layout: true,
-  }
+  { has_view_bind_group_layout: true, has_depth_bind_group_layout: true }
 }
 
 ///|
@@ -135,7 +130,7 @@ pub struct OitResolvePipelineId {
 
 ///|
 pub fn OitResolvePipelineId::new(pipeline_id~ : Int) -> OitResolvePipelineId {
-  OitResolvePipelineId::{ pipeline_id, }
+  { pipeline_id, }
 }
 
 ///|
@@ -156,7 +151,7 @@ pub fn OitResolvePipelineKey::new(
   } else {
     sorted_fragment_max_count
   }
-  OitResolvePipelineKey::{ hdr, sorted_fragment_max_count, depth_prepass }
+  { hdr, sorted_fragment_max_count, depth_prepass }
 }
 
 ///|

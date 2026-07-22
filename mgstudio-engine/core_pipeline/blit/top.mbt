@@ -26,6 +26,7 @@ pub const BLIT_PASS_LABEL : String = "blit"
 pub struct BlitPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn BlitPlugin::BlitPlugin() -> BlitPlugin {
   BlitPlugin::{  }
 }
@@ -88,7 +89,7 @@ pub fn BlitPipeline::new(
   has_fullscreen_shader? : Bool = false,
   has_fragment_shader? : Bool = false,
 ) -> BlitPipeline {
-  BlitPipeline::{
+  {
     has_bind_group_layout,
     has_sampler,
     has_fullscreen_shader,
@@ -128,7 +129,7 @@ pub fn BlitPipelineKey::new(
   samples? : Int = 1,
 ) -> BlitPipelineKey {
   let samples = if samples <= 0 { 1 } else { samples }
-  BlitPipelineKey::{ texture_format, blend_state, samples }
+  { texture_format, blend_state, samples }
 }
 
 ///|
@@ -138,7 +139,7 @@ pub struct BlitBindGroup {
 
 ///|
 pub fn BlitBindGroup::new(source_texture_view_id~ : Int) -> BlitBindGroup {
-  BlitBindGroup::{ source_texture_view_id, }
+  { source_texture_view_id, }
 }
 
 ///|

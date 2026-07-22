@@ -16,6 +16,7 @@
 pub struct SpriteRenderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SpriteRenderPlugin::SpriteRenderPlugin() -> SpriteRenderPlugin {
   SpriteRenderPlugin::{  }
 }

@@ -16,10 +16,10 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup_physics)
-  .add_systems_world(@app.Startup, setup_graphics)
+  .add_systems_world(Startup, setup_physics)
+  .add_systems_world(Startup, setup_graphics)
   .add_systems(
-    @app.FixedUpdate,
+    FixedUpdate,
     @app.system_config_param2(display_nb_colliders).after(
       @physics3d.physics3d_set_writeback,
     ),
@@ -37,7 +37,7 @@ fn display_nb_colliders(
   if nb_colliders <= 0 {
     abort("Expected at least one collider in rapier_context_component.")
   }
-  ignore(exit.write(@app.AppExit::Success))
+  ignore(exit.write(Success))
 }
 
 ///|

@@ -52,7 +52,7 @@ test "pbr medium: chromatic texture image resolves to chromatic curve" {
       @math.Vec4::new(1.0F, 2.0F, 3.0F, 0.0F),
       @math.Vec4::new(4.0F, 5.0F, 6.0F, 0.0F),
     ]),
-  ).with_format(@asset.TextureFormat::Rgba32Float)
+  ).with_format(Rgba32Float)
   guard pbr_scattering_medium_chromatic_curve_from_image(image) is Some(curve) else {
     abort("expected Rgba32Float image to produce chromatic curve")
   }
@@ -84,7 +84,7 @@ test "pbr medium: chromatic texture image resolves to chromatic curve" {
   guard media.get(medium_handle) is Some(medium) else {
     abort("expected scattering medium")
   }
-  guard medium.terms[0].phase is @light.PhaseFunction::ChromaticCurve(resolved) else {
+  guard medium.terms[0].phase is ChromaticCurve(resolved) else {
     abort("expected chromatic texture phase to resolve to chromatic curve")
   }
   guard resolved.sample(1.0F) is Some(resolved_last) else {

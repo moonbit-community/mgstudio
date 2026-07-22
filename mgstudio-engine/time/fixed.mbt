@@ -34,7 +34,7 @@ pub fn Fixed::Fixed() -> Fixed {
 
 ///|
 pub impl Default for Fixed with fn default() {
-  Fixed::Fixed()
+  Fixed()
 }
 
 ///|
@@ -49,7 +49,7 @@ pub impl TimeContext for Fixed with fn time_resource_key() {
 
 ///|
 pub fn Time::from_duration(timestep : @core.Duration) -> Time[Fixed] {
-  let fixed_time : Time[Fixed] = Time::Time()
+  let fixed_time : Time[Fixed] = Time()
   fixed_time.set_timestep(timestep)
 }
 
@@ -186,7 +186,7 @@ priv struct FixedFrameState {
 }
 
 ///|
-let fixed_frame_state : Ref[FixedFrameState] = Ref(FixedFrameState::{
+let fixed_frame_state : Ref[FixedFrameState] = Ref({
   did_run_this_frame: false,
   steps_ran_this_frame: 0,
 })
@@ -240,9 +240,7 @@ pub fn time_fixed_steps_ran_this_frame() -> Int {
 
 ///|
 fn world_fixed_or_default(world : @ecs.World) -> Time[Fixed] {
-  world_time_resource_or_default(world, fixed_time_resource_key, fn() {
-    Time::Time()
-  })
+  world_time_resource_or_default(world, fixed_time_resource_key, fn() { Time() })
 }
 
 ///|

@@ -180,31 +180,31 @@ priv struct AssetLoaderEntry {
 
 ///|
 fn asset_server_standalone() -> AssetServer {
-  AssetServer::{
+  {
     paths: [],
     pending_reload_paths: [],
-    typed_asset_paths: @hashmap.HashMap([]),
-    typed_asset_next_ids: @hashmap.HashMap([]),
-    typed_asset_load_states: @hashmap.HashMap([]),
-    typed_asset_dependency_load_states: @hashmap.HashMap([]),
-    typed_asset_recursive_dependency_load_states: @hashmap.HashMap([]),
+    typed_asset_paths: HashMap([]),
+    typed_asset_next_ids: HashMap([]),
+    typed_asset_load_states: HashMap([]),
+    typed_asset_dependency_load_states: HashMap([]),
+    typed_asset_recursive_dependency_load_states: HashMap([]),
     pending_load_failures: [],
     pending_processed_asset_loads: [],
     pending_typed_asset_loads: [],
     pending_loaded_folder_loads: [],
     pending_acquired_loads: [],
     image_paths: [],
-    pending_image_loads: @hashmap.HashMap([]),
-    pending_image_assets: @hashmap.HashMap([]),
+    pending_image_loads: HashMap([]),
+    pending_image_assets: HashMap([]),
     image_array_layouts: [],
     image_render_asset_usages: [],
     image_srgb_settings: [],
     image_usage_settings: [],
     gltf_loader_settings: [],
     default_sampler_nearest: false,
-    mode: AssetMode::Unprocessed,
+    mode: Unprocessed,
     processed_file_path: None,
-    unapproved_path_mode: UnapprovedPathMode::Forbid,
+    unapproved_path_mode: Forbid,
     owner_world: None,
   }
 }
@@ -262,9 +262,9 @@ fn AssetServer::unapproved_asset_load_allowed(
     return true
   }
   match self.unapproved_path_mode {
-    UnapprovedPathMode::Allow => true
-    UnapprovedPathMode::Deny => override_unapproved
-    UnapprovedPathMode::Forbid => false
+    Allow => true
+    Deny => override_unapproved
+    Forbid => false
   }
 }
 
@@ -662,9 +662,9 @@ fn asset_image_usage_sanitize(usage_bits : Int) -> Int {
 ///|
 fn image_data_texture_format(is_srgb : Bool) -> TextureFormat {
   if is_srgb {
-    TextureFormat::Rgba8UnormSrgb
+    Rgba8UnormSrgb
   } else {
-    TextureFormat::Rgba8Unorm
+    Rgba8Unorm
   }
 }
 
@@ -673,9 +673,9 @@ fn image_container_supports_rgba_decode(
   container : ImageContainerFormat,
 ) -> Bool {
   match container {
-    ImageContainerFormat::Basis => false
-    ImageContainerFormat::Dds => false
-    ImageContainerFormat::Ktx2 => false
+    Basis => false
+    Dds => false
+    Ktx2 => false
     _ => true
   }
 }
@@ -742,7 +742,7 @@ fn AssetServer::set_image_usage_bits(
 fn image_loader_settings_clone(
   settings : ImageLoaderSettings,
 ) -> ImageLoaderSettings {
-  ImageLoaderSettings::{
+  {
     format: settings.format,
     texture_format: settings.texture_format,
     texture_descriptor_label: settings.texture_descriptor_label,
@@ -791,7 +791,7 @@ pub fn AssetServer::gltf_loader_settings_for_asset_path(
       return image_loader_settings_clone(entry.1)
     }
   }
-  ImageLoaderSettings::ImageLoaderSettings()
+  ImageLoaderSettings()
 }
 
 ///|
@@ -1271,7 +1271,7 @@ fn AssetServer::image_sampler_uses_nearest(
   sampler : ImageSampler,
 ) -> Bool {
   match sampler {
-    ImageSampler::Default => self.default_sampler_nearest
+    Default => self.default_sampler_nearest
     _ => image_sampler_is_nearest(sampler)
   }
 }
@@ -1430,17 +1430,9 @@ pub fn AssetServer::set_typed_loading_states(
   type_name : String,
   handle_id : Int,
 ) -> Unit {
-  self.set_typed_load_state(type_name, handle_id, LoadState::Loading)
-  self.set_typed_dependency_load_state(
-    type_name,
-    handle_id,
-    DependencyLoadState::Loading,
-  )
-  self.set_typed_recursive_dependency_load_state(
-    type_name,
-    handle_id,
-    RecursiveDependencyLoadState::Loading,
-  )
+  self.set_typed_load_state(type_name, handle_id, Loading)
+  self.set_typed_dependency_load_state(type_name, handle_id, Loading)
+  self.set_typed_recursive_dependency_load_state(type_name, handle_id, Loading)
 }
 
 ///|
@@ -1449,17 +1441,9 @@ pub fn AssetServer::set_typed_loaded_states(
   type_name : String,
   handle_id : Int,
 ) -> Unit {
-  self.set_typed_load_state(type_name, handle_id, LoadState::Loaded)
-  self.set_typed_dependency_load_state(
-    type_name,
-    handle_id,
-    DependencyLoadState::Loaded,
-  )
-  self.set_typed_recursive_dependency_load_state(
-    type_name,
-    handle_id,
-    RecursiveDependencyLoadState::Loaded,
-  )
+  self.set_typed_load_state(type_name, handle_id, Loaded)
+  self.set_typed_dependency_load_state(type_name, handle_id, Loaded)
+  self.set_typed_recursive_dependency_load_state(type_name, handle_id, Loaded)
 }
 
 ///|
@@ -1469,16 +1453,12 @@ pub fn AssetServer::set_typed_failed_states(
   handle_id : Int,
   error : String,
 ) -> Unit {
-  self.set_typed_load_state(type_name, handle_id, LoadState::Failed(error))
-  self.set_typed_dependency_load_state(
-    type_name,
-    handle_id,
-    DependencyLoadState::Failed(error),
-  )
+  self.set_typed_load_state(type_name, handle_id, Failed(error))
+  self.set_typed_dependency_load_state(type_name, handle_id, Failed(error))
   self.set_typed_recursive_dependency_load_state(
     type_name,
     handle_id,
-    RecursiveDependencyLoadState::Failed(error),
+    Failed(error),
   )
 }
 
@@ -1491,7 +1471,7 @@ fn AssetServer::typed_load_state(
   match
     self.typed_asset_load_states.get(asset_load_state_key(type_name, handle_id)) {
     Some(state) => state
-    None => LoadState::NotLoaded
+    None => NotLoaded
   }
 }
 
@@ -1506,7 +1486,7 @@ fn AssetServer::typed_dependency_load_state(
       asset_load_state_key(type_name, handle_id),
     ) {
     Some(state) => state
-    None => DependencyLoadState::NotLoaded
+    None => NotLoaded
   }
 }
 
@@ -1521,7 +1501,7 @@ fn AssetServer::typed_recursive_dependency_load_state(
       asset_load_state_key(type_name, handle_id),
     ) {
     Some(state) => state
-    None => RecursiveDependencyLoadState::NotLoaded
+    None => NotLoaded
   }
 }
 
@@ -1557,10 +1537,9 @@ pub fn[T : Asset] AssetServer::is_loaded_with_dependencies(
   self : AssetServer,
   handle : Handle[T],
 ) -> Bool {
-  self.load_state(handle) is LoadState::Loaded &&
-  self.dependency_load_state(handle) is DependencyLoadState::Loaded &&
-  self.recursive_dependency_load_state(handle)
-  is RecursiveDependencyLoadState::Loaded
+  self.load_state(handle) is Loaded &&
+  self.dependency_load_state(handle) is Loaded &&
+  self.recursive_dependency_load_state(handle) is Loaded
 }
 
 ///|
@@ -1659,13 +1638,12 @@ pub fn[T : Asset, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acqui
           if ready(world, handle_id) {
             true
           } else {
-            self.typed_load_state(asset_type_name, handle_id)
-            is LoadState::Failed(_)
+            self.typed_load_state(asset_type_name, handle_id) is Failed(_)
           }
         None =>
           match self.typed_load_state(asset_type_name, handle_id) {
-            LoadState::Loaded => true
-            LoadState::Failed(_) => true
+            Loaded => true
+            Failed(_) => true
             _ => false
           }
       }
@@ -1676,7 +1654,7 @@ pub fn[T : Asset, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acqui
         if ready_or_failed(world, handle.id()) {
           release()
         } else {
-          self.pending_acquired_loads.push(PendingAcquiredLoad::{
+          self.pending_acquired_loads.push({
             handle_id: handle.id(),
             is_ready: ready_or_failed,
             release,
@@ -1734,7 +1712,7 @@ pub fn AssetServer::load_texture_bytes(
     "",
     bytes,
     is_srgb,
-    ImageFormatSetting::Guess,
+    Guess,
     None,
   )
   let id = match decoded_image {
@@ -1769,7 +1747,7 @@ pub fn AssetServer::load_texture_bytes(
         "",
         bytes,
         is_srgb,
-        ImageFormatSetting::Guess,
+        Guess,
         None,
       )
   }
@@ -2063,7 +2041,7 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
           ignore(
             images_ref.modify(fn(store) {
               let existed = store.get(handle) is Some(_)
-              store.push_event(AssetEvent::LoadedWithDependencies(handle))
+              store.push_event(LoadedWithDependencies(handle))
               assets_store_insert(store, handle, image, existed)
             }),
           )

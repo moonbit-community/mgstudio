@@ -28,10 +28,10 @@ fn configured_window() -> @window.Window {
   window.title = "I am a window!"
   window.name = Some("mgstudio.app")
   window.resolution.set_physical_resolution(500, 300)
-  window.present_mode = @window.PresentMode::AutoVsync
+  window.present_mode = AutoVsync
   window.fit_canvas_to_parent = true
   window.prevent_default_event_handling = false
-  window.window_theme = Some(@window.WindowTheme::Dark)
+  window.window_theme = Some(Dark)
   window.enabled_buttons.maximize = false
   window.visible = false
   window
@@ -77,7 +77,7 @@ fn update_primary_cursor_options(
   let options = match
     (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) {
     Some(options) => options
-    None => @window.CursorOptions::CursorOptions()
+    None => CursorOptions()
   }
   update(options)
   if (try! world.get_by_key(entity, @window.ecs_key_cursor_options)) is Some(_) {
@@ -121,15 +121,12 @@ fn toggle_vsync(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let present_mode_ref : Ref[@window.PresentMode] = Ref(
-    @window.PresentMode::AutoVsync,
-  )
+  let present_mode_ref : Ref[@window.PresentMode] = Ref(AutoVsync)
   update_primary_window(world, fn(window) {
-    window.present_mode = if window.present_mode ==
-      @window.PresentMode::AutoVsync {
-      @window.PresentMode::AutoNoVsync
+    window.present_mode = if window.present_mode == AutoVsync {
+      AutoNoVsync
     } else {
-      @window.PresentMode::AutoVsync
+      AutoVsync
     }
     present_mode_ref.val = window.present_mode
   })
@@ -142,12 +139,12 @@ fn switch_level(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let level_ref : Ref[@window.WindowLevel] = Ref(@window.WindowLevel::Normal)
+  let level_ref : Ref[@window.WindowLevel] = Ref(Normal)
   update_primary_window(world, fn(window) {
     window.window_level = match window.window_level {
-      @window.WindowLevel::AlwaysOnBottom => @window.WindowLevel::Normal
-      @window.WindowLevel::Normal => @window.WindowLevel::AlwaysOnTop
-      @window.WindowLevel::AlwaysOnTop => @window.WindowLevel::AlwaysOnBottom
+      AlwaysOnBottom => Normal
+      Normal => AlwaysOnTop
+      AlwaysOnTop => AlwaysOnBottom
     }
     level_ref.val = window.window_level
   })
@@ -198,9 +195,9 @@ fn toggle_cursor(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
   update_primary_cursor_options(world, fn(options) {
     options.visible = !options.visible
     options.grab_mode = match options.grab_mode {
-      @window.CursorGrabMode::GrabNone => @window.CursorGrabMode::GrabLocked
-      @window.CursorGrabMode::GrabLocked => @window.CursorGrabMode::GrabNone
-      @window.CursorGrabMode::GrabConfined => @window.CursorGrabMode::GrabNone
+      GrabNone => GrabLocked
+      GrabLocked => GrabNone
+      GrabConfined => GrabNone
     }
   })
 }
@@ -213,10 +210,8 @@ fn toggle_theme(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   update_primary_window(world, fn(window) {
     match window.window_theme {
-      Some(@window.WindowTheme::Light) =>
-        window.window_theme = Some(@window.WindowTheme::Dark)
-      Some(@window.WindowTheme::Dark) =>
-        window.window_theme = Some(@window.WindowTheme::Light)
+      Some(Light) => window.window_theme = Some(Dark)
+      Some(Dark) => window.window_theme = Some(Light)
       None => ()
     }
   })
@@ -226,10 +221,10 @@ fn toggle_theme(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
 fn init_cursor_icons(world : @ecs.World) -> Unit {
   let icons = CursorIcons::{
     icons: [
-      @window.CursorIcon::from(@window.SystemCursorIcon::Default),
-      @window.CursorIcon::from(@window.SystemCursorIcon::Pointer),
-      @window.CursorIcon::from(@window.SystemCursorIcon::Wait),
-      @window.CursorIcon::from(@window.SystemCursorIcon::Text),
+      @window.CursorIcon::from(Default),
+      @window.CursorIcon::from(Pointer),
+      @window.CursorIcon::from(Wait),
+      @window.CursorIcon::from(Text),
     ],
   }
   set_primary_cursor_icon(world, icons.icons[0])
@@ -284,8 +279,8 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
@@ -293,15 +288,15 @@ fn main {
   .add_plugins(
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
-  .add_systems_world(@app.Startup, setup_camera)
-  .add_systems_world(@app.Startup, init_cursor_icons)
-  .add_systems_param(@app.Update, toggle_vsync)
-  .add_systems_param(@app.Update, switch_level)
-  .add_systems_param(@app.Update, toggle_window_controls)
-  .add_systems_world(@app.Update, change_title)
-  .add_systems_param(@app.Update, toggle_cursor)
-  .add_systems_param(@app.Update, toggle_theme)
-  .add_systems_param2(@app.Update, cycle_cursor_icon)
-  .add_systems_param(@app.Update, make_visible)
+  .add_systems_world(Startup, setup_camera)
+  .add_systems_world(Startup, init_cursor_icons)
+  .add_systems_param(Update, toggle_vsync)
+  .add_systems_param(Update, switch_level)
+  .add_systems_param(Update, toggle_window_controls)
+  .add_systems_world(Update, change_title)
+  .add_systems_param(Update, toggle_cursor)
+  .add_systems_param(Update, toggle_theme)
+  .add_systems_param2(Update, cycle_cursor_icon)
+  .add_systems_param(Update, make_visible)
   .run()
 }

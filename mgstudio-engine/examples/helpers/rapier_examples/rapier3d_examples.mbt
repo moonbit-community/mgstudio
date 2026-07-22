@@ -16,6 +16,7 @@
 pub struct Rapier3dDebugRenderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Rapier3dDebugRenderPlugin::Rapier3dDebugRenderPlugin() -> Rapier3dDebugRenderPlugin {
   Rapier3dDebugRenderPlugin::{  }
 }
@@ -44,7 +45,7 @@ pub fn rapier3d_camera(
   target : @math.Vec3,
 ) -> Unit {
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(eye.x, eye.y, eye.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

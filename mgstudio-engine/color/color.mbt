@@ -22,7 +22,7 @@ pub struct Color {
 
 ///|
 pub fn Color::new(r : Float, g : Float, b : Float, a : Float) -> Color {
-  Color::{ r, g, b, a }
+  { r, g, b, a }
 }
 
 ///|

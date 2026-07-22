@@ -20,7 +20,7 @@ pub struct AssetId[_] {
 
 ///|
 pub fn[T] AssetId::new(id : Int) -> AssetId[T] {
-  AssetId::{ id, }
+  { id, }
 }
 
 ///|

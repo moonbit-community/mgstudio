@@ -21,6 +21,7 @@ pub const EXECUTOR_BACKEND : String = "single_threaded"
 pub struct Executor {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Executor::new() -> Executor {
   Executor::{  }
 }

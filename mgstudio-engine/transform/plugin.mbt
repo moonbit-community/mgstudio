@@ -16,6 +16,7 @@
 pub struct TransformPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TransformPlugin::TransformPlugin() -> TransformPlugin {
   TransformPlugin::{  }
 }

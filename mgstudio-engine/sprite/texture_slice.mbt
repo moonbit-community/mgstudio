@@ -109,7 +109,7 @@ pub fn TextureSlice::tiled(
         },
       )
       let texture_size = texture_slice_module_rect_size(self.texture_rect)
-      slices.push(TextureSlice::{
+      slices.push({
         texture_rect: @math.Rect::new(
           self.texture_rect.min,
           @math.Vec2::new(

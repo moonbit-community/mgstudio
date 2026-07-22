@@ -45,7 +45,7 @@ pub fn Physics2dDebugRenderConfig::Physics2dDebugRenderConfig() -> Physics2dDebu
 
 ///|
 let physics2d_debug_render_state : Ref[Physics2dDebugRenderConfig] = Ref(
-  Physics2dDebugRenderConfig::Physics2dDebugRenderConfig(),
+  Physics2dDebugRenderConfig(),
 )
 
 ///|
@@ -63,10 +63,7 @@ pub fn physics2d_debug_render_set_config(
 ///|
 pub fn physics2d_debug_render_set_enabled(enabled : Bool) -> Unit {
   let c = physics2d_debug_render_state.val
-  physics2d_debug_render_state.val = Physics2dDebugRenderConfig::{
-    ..c,
-    enabled,
-  }
+  physics2d_debug_render_state.val = { ..c, enabled, }
 }
 
 ///|

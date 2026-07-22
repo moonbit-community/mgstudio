@@ -21,10 +21,7 @@ test "shader: settings default to empty shader defs" {
 ///|
 test "shader: settings preserve configured shader defs" {
   let settings = @shader.ShaderSettings::{
-    shader_defs: [
-      @shader.shader_def("HDR"),
-      @shader.ShaderDefVal::UInt("MODE", 2U),
-    ],
+    shader_defs: [@shader.shader_def("HDR"), UInt("MODE", 2U)],
   }
   debug_inspect(settings.shader_defs.length(), content="2")
   debug_inspect(settings.shader_defs[0], content="Bool(\"HDR\", true)")

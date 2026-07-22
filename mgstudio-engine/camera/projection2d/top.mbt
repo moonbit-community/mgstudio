@@ -25,7 +25,7 @@ pub struct OrthographicProjection {
 ///|
 pub fn OrthographicProjection::new(scale : Float) -> OrthographicProjection {
   let safe = if scale == 0.0F { 1.0F } else { scale }
-  OrthographicProjection::{ scale: safe }
+  { scale: safe }
 }
 
 ///|

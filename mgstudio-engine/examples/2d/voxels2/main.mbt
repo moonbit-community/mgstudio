@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_voxels2_setup)
+  .add_systems_world(Startup, rapier2d_voxels2_setup)
   .run()
 }
 

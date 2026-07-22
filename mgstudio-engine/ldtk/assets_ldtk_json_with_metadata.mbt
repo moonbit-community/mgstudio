@@ -23,7 +23,7 @@ pub fn LdtkJsonWithMetadata::new(
   json_data : LdtkJson,
   level_map : @hashmap.HashMap[String, LevelMetadata],
 ) -> LdtkJsonWithMetadata {
-  LdtkJsonWithMetadata::{ json_data, level_map }
+  { json_data, level_map }
 }
 
 ///|

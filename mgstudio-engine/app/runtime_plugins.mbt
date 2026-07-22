@@ -82,7 +82,7 @@ pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
         return Some(exit)
       }
     }
-    Some(AppExit::Success)
+    Some(Success)
   }
 }
 
@@ -99,7 +99,7 @@ pub struct ScheduleRunnerPlugin {
 
 ///|
 pub fn ScheduleRunnerPlugin::run_once() -> ScheduleRunnerPlugin {
-  ScheduleRunnerPlugin::{ mode: RunOnce }
+  { mode: RunOnce }
 }
 
 ///|
@@ -107,7 +107,7 @@ pub fn ScheduleRunnerPlugin::run_loop(
   interval_seconds : Float,
 ) -> ScheduleRunnerPlugin {
   let clamped = if interval_seconds < 0.0F { 0.0F } else { interval_seconds }
-  ScheduleRunnerPlugin::{ mode: RunLoop(clamped) }
+  { mode: RunLoop(clamped) }
 }
 
 ///|
@@ -116,9 +116,7 @@ priv struct ScheduleRunnerState {
 }
 
 ///|
-let schedule_runner_state : ScheduleRunnerState = ScheduleRunnerState::{
-  tick: None,
-}
+let schedule_runner_state : ScheduleRunnerState = { tick: None }
 
 ///|
 fn schedule_runner_tick() -> Unit {
@@ -242,8 +240,8 @@ pub struct LogPlugin {
 
 ///|
 pub fn LogPlugin::LogPlugin() -> LogPlugin {
-  LogPlugin::{
-    level: LogLevel::Info,
+  {
+    level: Info,
     filter: DEFAULT_LOG_FILTER,
     custom_layer: None,
     fmt_layer: None,
@@ -252,12 +250,12 @@ pub fn LogPlugin::LogPlugin() -> LogPlugin {
 
 ///|
 pub fn LogPlugin::with_level(self : LogPlugin, level : LogLevel) -> LogPlugin {
-  LogPlugin::{ ..self, level, }
+  { ..self, level, }
 }
 
 ///|
 pub fn LogPlugin::with_filter(self : LogPlugin, filter : String) -> LogPlugin {
-  LogPlugin::{ ..self, filter, }
+  { ..self, filter, }
 }
 
 ///|
@@ -265,7 +263,7 @@ pub fn LogPlugin::with_custom_layer(
   self : LogPlugin,
   custom_layer : LogLayer,
 ) -> LogPlugin {
-  LogPlugin::{ ..self, custom_layer: Some(custom_layer) }
+  { ..self, custom_layer: Some(custom_layer) }
 }
 
 ///|
@@ -273,7 +271,7 @@ pub fn LogPlugin::with_fmt_layer(
   self : LogPlugin,
   fmt_layer : LogLayer,
 ) -> LogPlugin {
-  LogPlugin::{ ..self, fmt_layer: Some(fmt_layer) }
+  { ..self, fmt_layer: Some(fmt_layer) }
 }
 
 ///|
@@ -283,10 +281,7 @@ priv struct LogState {
 }
 
 ///|
-let log_state : LogState = LogState::{
-  config: LogPlugin::LogPlugin(),
-  once_keys: @hashmap.HashMap([]),
-}
+let log_state : LogState = { config: LogPlugin(), once_keys: HashMap([]) }
 
 ///|
 fn log_level_rank(level : LogLevel) -> Int {
@@ -313,12 +308,12 @@ fn log_level_label(level : LogLevel) -> String {
 ///|
 fn log_level_from_filter_value(value : String) -> LogLevel? {
   match value.trim().to_owned().to_lower() {
-    "error" => Some(LogLevel::Error)
-    "warn" => Some(LogLevel::Warn)
-    "warning" => Some(LogLevel::Warn)
-    "info" => Some(LogLevel::Info)
-    "debug" => Some(LogLevel::Debug)
-    "trace" => Some(LogLevel::Trace)
+    "error" => Some(Error)
+    "warn" => Some(Warn)
+    "warning" => Some(Warn)
+    "info" => Some(Info)
+    "debug" => Some(Debug)
+    "trace" => Some(Trace)
     _ => None
   }
 }
@@ -426,52 +421,52 @@ pub fn log_once_with(
 
 ///|
 pub fn log_error(message : String) -> Unit {
-  log_record(LogLevel::Error, message~)
+  log_record(Error, message~)
 }
 
 ///|
 pub fn log_warn(message : String) -> Unit {
-  log_record(LogLevel::Warn, message~)
+  log_record(Warn, message~)
 }
 
 ///|
 pub fn log_info(message : String) -> Unit {
-  log_record(LogLevel::Info, message~)
+  log_record(Info, message~)
 }
 
 ///|
 pub fn log_debug(message : String) -> Unit {
-  log_record(LogLevel::Debug, message~)
+  log_record(Debug, message~)
 }
 
 ///|
 pub fn log_trace(message : String) -> Unit {
-  log_record(LogLevel::Trace, message~)
+  log_record(Trace, message~)
 }
 
 ///|
 pub fn log_error_once(callsite : String, message : String) -> Unit {
-  log_once(LogLevel::Error, callsite~, message~)
+  log_once(Error, callsite~, message~)
 }
 
 ///|
 pub fn log_warn_once(callsite : String, message : String) -> Unit {
-  log_once(LogLevel::Warn, callsite~, message~)
+  log_once(Warn, callsite~, message~)
 }
 
 ///|
 pub fn log_info_once(callsite : String, message : String) -> Unit {
-  log_once(LogLevel::Info, callsite~, message~)
+  log_once(Info, callsite~, message~)
 }
 
 ///|
 pub fn log_debug_once(callsite : String, message : String) -> Unit {
-  log_once(LogLevel::Debug, callsite~, message~)
+  log_once(Debug, callsite~, message~)
 }
 
 ///|
 pub fn log_trace_once(callsite : String, message : String) -> Unit {
-  log_once(LogLevel::Trace, callsite~, message~)
+  log_once(Trace, callsite~, message~)
 }
 
 ///|
@@ -482,6 +477,6 @@ pub impl Plugin for LogPlugin with fn name(_self) {
 ///|
 pub impl Plugin for LogPlugin with fn build(self, app) {
   log_state.config = self
-  log_state.once_keys = @hashmap.HashMap([])
+  log_state.once_keys = HashMap([])
   app
 }

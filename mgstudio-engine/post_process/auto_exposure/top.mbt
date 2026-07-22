@@ -29,7 +29,7 @@ pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
 
 ///|
 pub fn auto_exposure_default() -> @pbr.AutoExposure {
-  @pbr.AutoExposure::AutoExposure()
+  AutoExposure()
 }
 
 ///|
@@ -51,7 +51,7 @@ pub fn auto_exposure_with_range(
 
 ///|
 pub fn auto_exposure_compensation_curve_default() -> @pbr.AutoExposureCompensationCurve {
-  @pbr.AutoExposureCompensationCurve::AutoExposureCompensationCurve()
+  AutoExposureCompensationCurve()
 }
 
 ///|
@@ -63,7 +63,7 @@ pub fn[T : @pbr.AutoExposureCompensationCurveSource] auto_exposure_compensation_
 
 ///|
 pub fn physical_camera_parameters_default() -> @pbr.PhysicalCameraParameters {
-  @pbr.PhysicalCameraParameters::PhysicalCameraParameters()
+  PhysicalCameraParameters()
 }
 
 ///|

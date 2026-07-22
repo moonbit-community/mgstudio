@@ -42,16 +42,12 @@ pub fn TilemapChunkMaterial::new(
   tile_data : @asset.Handle[@asset.Image],
   alpha_mode : @mesh2d_material.AlphaMode2d,
 ) -> TilemapChunkMaterial {
-  TilemapChunkMaterial::{ alpha_mode, tileset, tile_data }
+  { alpha_mode, tileset, tile_data }
 }
 
 ///|
 pub fn TilemapChunkMaterial::TilemapChunkMaterial() -> TilemapChunkMaterial {
-  TilemapChunkMaterial::new(
-    @asset.Handle::new(0),
-    @asset.Handle::new(0),
-    @mesh2d_material.AlphaMode2d::Blend,
-  )
+  TilemapChunkMaterial::new(@asset.Handle::new(0), @asset.Handle::new(0), Blend)
 }
 
 ///|
@@ -85,15 +81,15 @@ fn tilemap_chunk_material_bind_group(
     @mesh2d_material.Material2dBinding::texture_with_layout(
       0,
       Some(tileset),
-      @mesh2d_material.Material2dTextureSampleType::Float,
-      @mesh2d_material.Material2dTextureViewDimension::D2Array,
+      Float,
+      D2Array,
     ),
     @mesh2d_material.Material2dBinding::sampler(1, Some(tileset)),
     @mesh2d_material.Material2dBinding::texture_with_layout(
       2,
       Some(tile_data),
-      @mesh2d_material.Material2dTextureSampleType::UInt,
-      @mesh2d_material.Material2dTextureViewDimension::D2,
+      UInt,
+      D2,
     ),
   ])
 }
@@ -144,6 +140,7 @@ pub impl @mesh2d_material.Material2d for TilemapChunkMaterial with fn specialize
 pub struct TilemapChunkMaterialPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TilemapChunkMaterialPlugin::TilemapChunkMaterialPlugin() -> TilemapChunkMaterialPlugin {
   TilemapChunkMaterialPlugin::{  }
 }
@@ -172,7 +169,7 @@ pub(all) struct PackedTileData {
 
 ///|
 pub fn PackedTileData::empty() -> PackedTileData {
-  PackedTileData::{
+  {
     tileset_index: 0xFFFF,
     color: @color.Color::srgba(0.0F, 0.0F, 0.0F, 0.0F),
     flags: 0,
@@ -181,7 +178,7 @@ pub fn PackedTileData::empty() -> PackedTileData {
 
 ///|
 pub fn PackedTileData::from_tile_data(tile : TileData) -> PackedTileData {
-  PackedTileData::{
+  {
     tileset_index: tile.tileset_index,
     color: tile.color,
     flags: (if tile.visible { 1 } else { 0 }) | (tile.orientation.to_int() << 1),
@@ -263,7 +260,7 @@ pub fn make_chunk_tile_data_image(
   }
   Some(
     @asset.Image::new(size.x, size.y, packed_tile_data_bytes(data))
-    .with_format(@asset.TextureFormat::Rgba16Uint)
+    .with_format(Rgba16Uint)
     .with_sampler(@asset.ImageSampler::nearest()),
   )
 }
@@ -290,7 +287,7 @@ test "tilemap chunk material makes nearest Rgba16Uint tile data image" {
     7,
     color=@color.Color::srgba(0.25F, 0.5F, 0.75F, 1.0F),
     visible=true,
-    orientation=TileOrientation::Rotate90,
+    orientation=Rotate90,
   )
   let image = make_chunk_tile_data_image(@math.UVec2::new(2, 1), [
     PackedTileData::from_tile_data(tile),
@@ -298,8 +295,8 @@ test "tilemap chunk material makes nearest Rgba16Uint tile data image" {
   ]).unwrap()
   let ok = image.width == 2 &&
     image.height == 1 &&
-    image.format == @asset.TextureFormat::Rgba16Uint &&
-    image.sampler is @asset.ImageSampler::Descriptor(_) &&
+    image.format == Rgba16Uint &&
+    image.sampler is Descriptor(_) &&
     image.pixels.length() == 16 &&
     image.pixels[0].to_int() == 7 &&
     image.pixels[1].to_int() == 0 &&

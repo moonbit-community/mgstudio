@@ -24,7 +24,7 @@ fn main {
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(toggle).run_if(
       @time.on_timer(@core.Duration::from_secs_f32(TOGGLE_INTERVAL_SECONDS)),
     ),
@@ -37,7 +37,7 @@ fn toggle(store : @app.ResMut[@diagnostic.DiagnosticsStore]) -> Unit {
   store.modify(fn(value) {
     for diagnostic in value.iter_mut() {
       let message = "toggling diagnostic \{diagnostic.path().as_str()}"
-      @app.log_record(@app.Info, message~)
+      @app.log_record(Info, message~)
       diagnostic.set_enabled(!diagnostic.is_enabled())
     }
   })

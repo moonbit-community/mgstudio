@@ -23,10 +23,7 @@ pub struct GltfExtensionHandlerPbrState {
 
 ///|
 pub fn GltfExtensionHandlerPbrState::GltfExtensionHandlerPbrState() -> GltfExtensionHandlerPbrState {
-  GltfExtensionHandlerPbrState::{
-    default_material_label: "DefaultMaterial/std",
-    material_suffix: "/std",
-  }
+  { default_material_label: "DefaultMaterial/std", material_suffix: "/std" }
 }
 
 ///|

@@ -60,14 +60,14 @@ fn play_when_decoded(
     (@audio.AudioPlayer::new(handle), @audio.PlaybackSettings::despawn()),
   )
   |> ignore
-  state.set(DecodableState::{ ..state_value, played: true })
+  state.set({ ..state_value, played: true })
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, play_when_decoded)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, play_when_decoded)
   .run()
 }

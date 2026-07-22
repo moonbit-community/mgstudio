@@ -26,8 +26,7 @@ struct ComponentOps {
 }
 
 ///|
-let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = @hashmap.HashMap([],
-)
+let component_ops_registry : @hashmap.HashMap[Int, ComponentOps] = HashMap([])
 
 ///|
 fn[T] component_ops_for_key(key : ComponentKey[T]) -> ComponentOps {

@@ -10,7 +10,6 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio",
-  "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/transform",
 }
 

@@ -382,7 +382,7 @@ pub fn World::get_required_components_by_id(
           component_ids.push(definition_id)
         }
       }
-      Some(RequiredComponents::{ component_ids, })
+      Some({ component_ids, })
     }
     None => None
   }
@@ -414,7 +414,7 @@ pub fn World::get_required_by_components_by_id(
           component_ids.push(definition_id)
         }
       }
-      Some(RequiredComponents::{ component_ids, })
+      Some({ component_ids, })
     }
     None => None
   }

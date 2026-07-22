@@ -37,10 +37,11 @@ priv struct MessageSystemParamState[M] {
 
 ///|
 fn[M] message_system_param_state_new() -> MessageSystemParamState[M] {
-  { cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn SubApp::install_message_update_system(
   self : SubApp[@ecs.World],
 ) -> SubApp[@ecs.World] {
@@ -92,7 +93,7 @@ pub fn[M] SystemConfig::run_if_on_message(
   self : SystemConfig[@ecs.World],
   key : @ecs.MessageKey[M],
 ) -> SystemConfig[@ecs.World] {
-  let initial_cursor : @ecs.MessageCursor[M] = @ecs.MessageCursor::MessageCursor()
+  let initial_cursor : @ecs.MessageCursor[M] = MessageCursor()
   SystemConfig::run_if_stateful(self, initial_cursor, fn(
     world : @ecs.World,
     state : RunConditionState[@ecs.MessageCursor[M]],
@@ -109,7 +110,7 @@ pub impl[T : @ecs.Message] Resource for @ecs.Messages[T] with fn resource() {
 
 ///|
 pub impl[T] FromWorld for @ecs.MessageCursor[T] with fn from_world(_world) {
-  @ecs.MessageCursor::MessageCursor()
+  MessageCursor()
 }
 
 ///|

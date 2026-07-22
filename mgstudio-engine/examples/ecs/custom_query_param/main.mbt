@@ -118,8 +118,8 @@ fn print_positions(query : @ecs.Query[@ecs.Read[Position], @ecs.All]) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
-  .add_systems_param(@app.Startup, spawn)
-  .add_systems_param(@app.Update, run_custom_query_param)
-  .add_systems_param(@app.Update, print_positions)
+  .add_systems_param(Startup, spawn)
+  .add_systems_param(Update, run_custom_query_param)
+  .add_systems_param(Update, print_positions)
   .run()
 }

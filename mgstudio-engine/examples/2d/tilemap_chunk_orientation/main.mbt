@@ -19,7 +19,7 @@ fn main {
   .insert_resource(
     @camera_clear_color.ClearColor::new(@color.Color::srgb(0.5F, 0.5F, 0.9F)),
   )
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }
 
@@ -31,14 +31,14 @@ fn setup(
   let chunk_size = @math.UVec2::splat(8)
   let tile_display_size = @math.UVec2::splat(64)
   let orientations : Array[@sprite_tilemap_chunk.TileOrientation] = [
-    @sprite_tilemap_chunk.TileOrientation::Default,
-    @sprite_tilemap_chunk.TileOrientation::Rotate90,
-    @sprite_tilemap_chunk.TileOrientation::Rotate180,
-    @sprite_tilemap_chunk.TileOrientation::Rotate270,
-    @sprite_tilemap_chunk.TileOrientation::MirrorH,
-    @sprite_tilemap_chunk.TileOrientation::MirrorHRotate90,
-    @sprite_tilemap_chunk.TileOrientation::MirrorHRotate180,
-    @sprite_tilemap_chunk.TileOrientation::MirrorHRotate270,
+    Default,
+    Rotate90,
+    Rotate180,
+    Rotate270,
+    MirrorH,
+    MirrorHRotate90,
+    MirrorHRotate180,
+    MirrorHRotate270,
   ]
   let colors : Array[@color.Color] = [
     @color.Color::white(),
@@ -68,7 +68,7 @@ fn setup(
   let tileset = asset_server
     .get()
     .load_with_settings("textures/arrow.png", fn(settings) {
-      settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(2))
+      settings.array_layout = Some(RowCount(2))
     })
   ignore(
     commands.spawn(
@@ -77,7 +77,7 @@ fn setup(
           chunk_size,
           tile_display_size,
           tileset,
-          alpha_mode=@sprite_render.AlphaMode2d::Blend,
+          alpha_mode=Blend,
         ),
         @sprite_tilemap_chunk.TilemapChunkTileData::new(tile_data),
       ),

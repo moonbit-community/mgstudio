@@ -62,6 +62,7 @@ pub impl @ecs.Component for MeshPickingCamera with fn component() {
 pub struct MeshPickingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MeshPickingPlugin::MeshPickingPlugin() -> MeshPickingPlugin {
   MeshPickingPlugin::{  }
 }

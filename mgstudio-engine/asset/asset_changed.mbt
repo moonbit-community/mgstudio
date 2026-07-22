@@ -20,13 +20,11 @@ pub fn[T] asset_events_include_change(
 ) -> Bool {
   for event in events {
     match event {
-      AssetEvent::Added(changed)
-      | AssetEvent::Modified(changed)
-      | AssetEvent::LoadedWithDependencies(changed) =>
+      Added(changed) | Modified(changed) | LoadedWithDependencies(changed) =>
         if changed.id() == handle.id() {
           return true
         }
-      AssetEvent::Removed(_) | AssetEvent::Unused(_) => ()
+      Removed(_) | Unused(_) => ()
     }
   }
   false
@@ -38,7 +36,7 @@ pub fn[T] asset_events_include_removal(
   handle : Handle[T],
 ) -> Bool {
   for event in events {
-    if event is AssetEvent::Removed(changed) && changed.id() == handle.id() {
+    if event is Removed(changed) && changed.id() == handle.id() {
       return true
     }
   }

@@ -148,11 +148,7 @@ pub fn[T] register_resource(
   finalizer? : (T) -> Unit = fn(_value : T) { () },
 ) -> ResourceKey[T] {
   let id = allocate_resource_id(debug_name~)
-  ResourceKey::{
-    id,
-    debug_name,
-    access: resource_access_ops_new(id, finalizer~),
-  }
+  { id, debug_name, access: resource_access_ops_new(id, finalizer~) }
 }
 
 ///|

@@ -88,12 +88,7 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
       Update,
       system_config_param(fn(writer : @ecs.MessageWriter[TestCursorMessage]) {
         frame.val = frame.val + 1
-        ignore(
-          writer.write(TestCursorMessage::{
-            resend: frame.val == 1,
-            times_sent: frame.val,
-          }),
-        )
+        ignore(writer.write({ resend: frame.val == 1, times_sent: frame.val }))
       }).in_set(cursor_send_set),
     )
     .add_systems(
@@ -105,7 +100,7 @@ test "app: Local MessageCursor with ResMut Messages reads unread messages and ca
         for message in cursor.read(messages) {
           if message.resend {
             ignore(
-              messages.write(TestCursorMessage::{
+              messages.write({
                 resend: message.resend,
                 times_sent: message.times_sent + 10,
               }),
@@ -148,12 +143,8 @@ test "app: ParamSet2 can read and write the same message type in one system" {
       Update,
       system_config_param(fn(writer : @ecs.MessageWriter[TestParamSetMessage]) {
         if !sent.val {
-          ignore(
-            writer.write(TestParamSetMessage::{ resend: false, times_sent: 1 }),
-          )
-          ignore(
-            writer.write(TestParamSetMessage::{ resend: true, times_sent: 1 }),
-          )
+          ignore(writer.write({ resend: false, times_sent: 1 }))
+          ignore(writer.write({ resend: true, times_sent: 1 }))
           sent.val = true
         }
       }).in_set(param_send_set),
@@ -176,7 +167,7 @@ test "app: ParamSet2 can read and write the same message type in one system" {
           ignore(
             param_set
             .p1()
-            .write(TestParamSetMessage::{
+            .write({
               resend: message.resend,
               times_sent: message.times_sent + 1,
             }),

@@ -25,6 +25,7 @@ pub type ScreenSpaceReflections = @post_process.ScreenSpaceReflections
 pub struct ScreenSpaceReflectionsPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin() -> ScreenSpaceReflectionsPlugin {
   ScreenSpaceReflectionsPlugin::{  }
 }
@@ -47,7 +48,7 @@ pub struct ScreenSpaceReflectionsPipelineId {
 
 ///|
 pub fn ScreenSpaceReflectionsPipelineId::ScreenSpaceReflectionsPipelineId() -> ScreenSpaceReflectionsPipelineId {
-  ScreenSpaceReflectionsPipelineId::{ id: -1 }
+  { id: -1 }
 }
 
 ///|
@@ -59,11 +60,7 @@ pub struct ScreenSpaceReflectionsPipelineKey {
 
 ///|
 pub fn ScreenSpaceReflectionsPipelineKey::ScreenSpaceReflectionsPipelineKey() -> ScreenSpaceReflectionsPipelineKey {
-  ScreenSpaceReflectionsPipelineKey::{
-    is_hdr: false,
-    has_environment_maps: false,
-    has_atmosphere: false,
-  }
+  { is_hdr: false, has_environment_maps: false, has_atmosphere: false }
 }
 
 ///|
@@ -74,10 +71,7 @@ pub struct ScreenSpaceReflectionsPluginState {
 
 ///|
 pub fn ScreenSpaceReflectionsPluginState::ScreenSpaceReflectionsPluginState() -> ScreenSpaceReflectionsPluginState {
-  ScreenSpaceReflectionsPluginState::{
-    enabled: true,
-    pipeline_id: ScreenSpaceReflectionsPipelineId::ScreenSpaceReflectionsPipelineId(),
-  }
+  { enabled: true, pipeline_id: ScreenSpaceReflectionsPipelineId() }
 }
 
 ///|
@@ -109,7 +103,7 @@ pub struct ScreenSpaceReflectionsUniform {
 
 ///|
 pub fn ScreenSpaceReflectionsUniform::ScreenSpaceReflectionsUniform() -> ScreenSpaceReflectionsUniform {
-  ScreenSpaceReflectionsUniform::{
+  {
     min_perceptual_roughness_start: 0.08F,
     min_perceptual_roughness_end: 0.12F,
     max_perceptual_roughness_start: 0.55F,
@@ -129,14 +123,7 @@ pub fn pbr_ssr_uniform_with_linear_steps(
   uniform : ScreenSpaceReflectionsUniform,
   linear_steps : Int,
 ) -> ScreenSpaceReflectionsUniform {
-  ScreenSpaceReflectionsUniform::{
-    ..uniform,
-    linear_steps: if linear_steps <= 0 {
-      1
-    } else {
-      linear_steps
-    },
-  }
+  { ..uniform, linear_steps: if linear_steps <= 0 { 1 } else { linear_steps } }
 }
 
 ///|
@@ -144,7 +131,7 @@ pub fn pbr_ssr_uniform_with_bisection_steps(
   uniform : ScreenSpaceReflectionsUniform,
   bisection_steps : Int,
 ) -> ScreenSpaceReflectionsUniform {
-  ScreenSpaceReflectionsUniform::{
+  {
     ..uniform,
     bisection_steps: if bisection_steps < 0 {
       0
@@ -161,10 +148,7 @@ pub fn pbr_ssr_default() -> ScreenSpaceReflections {
 
 ///|
 pub fn ssr_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ssr_plugin_install_with(
-    app,
-    ScreenSpaceReflectionsPlugin::ScreenSpaceReflectionsPlugin(),
-  )
+  ssr_plugin_install_with(app, ScreenSpaceReflectionsPlugin())
 }
 
 ///|
@@ -178,7 +162,7 @@ pub fn ssr_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_ssr_plugin_state,
-      ScreenSpaceReflectionsPluginState::ScreenSpaceReflectionsPluginState(),
+      ScreenSpaceReflectionsPluginState(),
     )
   }
 }

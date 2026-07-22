@@ -409,7 +409,7 @@ test "directional light setters preserve Bevy plain field semantics" {
 ///|
 test "show light gizmo stores optional color override" {
   let gizmo = @light.ShowLightGizmo::ShowLightGizmo().with_color(
-    Some(@light.LightGizmoColor::ByLightType),
+    Some(ByLightType),
   )
   debug_inspect(
     if gizmo.color is Some(ByLightType) {
@@ -538,11 +538,7 @@ fn spawn_light_test_camera(
   target : @camera_camera.RenderTarget,
 ) -> @core.Entity {
   let entity = world.spawn_empty()
-  try! world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(entity, @camera_camera.ecs_key_render_target, target)
   try! world.set_by_key(
     entity,
@@ -563,20 +559,14 @@ test "shadow LOD origin selection follows Bevy priority order" {
     1.0F,
     0.0F,
     0.0F,
-    @camera_camera.RenderTarget::Image(@asset.Handle::new(1)),
+    Image(@asset.Handle::new(1)),
   )
-  let screen_camera = spawn_light_test_camera(
-    world,
-    2.0F,
-    0.0F,
-    0.0F,
-    @camera_camera.RenderTarget::Screen,
-  )
+  let screen_camera = spawn_light_test_camera(world, 2.0F, 0.0F, 0.0F, Screen)
   let explicit_origin = world.spawn_empty()
   try! world.set_by_key(
     explicit_origin,
     @camera_visibility.ecs_key_shadow_lod_origin,
-    @camera_visibility.ShadowLodOrigin::ShadowLodOrigin(),
+    ShadowLodOrigin(),
   )
 
   let selected = get_shadow_lod_origin(world).unwrap()
@@ -601,7 +591,7 @@ test "shadow LOD origin selection follows Bevy priority order" {
   try! world.set_by_key(
     screen_camera,
     @camera_camera.ecs_key_render_target,
-    @camera_camera.RenderTarget::Image(@asset.Handle::new(2)),
+    Image(@asset.Handle::new(2)),
   )
   let fallback_selected = get_shadow_lod_origin(world).unwrap()
   debug_inspect(
@@ -679,11 +669,7 @@ test "directional cascade builder filters active cameras and writes cascades" {
   let active_view = world.spawn()
   let inactive_view = world.spawn()
   let light = world.spawn()
-  try! world.set_by_key(
-    active_view,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(active_view, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     active_view,
     @camera_projection3d.ecs_key_projection,
@@ -734,11 +720,7 @@ test "directional cascade builder filters active cameras and writes cascades" {
     .with_maximum_distance(16.0F)
     .build(),
   )
-  try! world.set_by_key(
-    light,
-    @light.ecs_key_cascades,
-    @light.Cascades::Cascades(),
-  )
+  try! world.set_by_key(light, @light.ecs_key_cascades, Cascades())
 
   @light.build_directional_light_cascades(world)
 

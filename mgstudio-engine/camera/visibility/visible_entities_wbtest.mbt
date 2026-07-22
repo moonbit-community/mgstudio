@@ -21,15 +21,11 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
   let hidden_layer_mesh = world.spawn()
   let newly_visible_mesh = world.spawn()
   let mesh3d_class = 123456
-  try! world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(camera, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     camera,
     @camera_camera.ecs_key_visible_entities,
-    @camera_camera.VisibleEntities::VisibleEntities(),
+    VisibleEntities(),
   )
   try! world.set_by_key(
     camera,
@@ -128,15 +124,11 @@ test "camera visibility: frustum culls Aabb unless disabled" {
   let outside = world.spawn()
   let outside_no_frustum_culling = world.spawn()
   let mesh3d_class = 123456
-  try! world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(camera, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     camera,
     @camera_camera.ecs_key_visible_entities,
-    @camera_camera.VisibleEntities::VisibleEntities(),
+    VisibleEntities(),
   )
   try! world.set_by_key(
     camera,
@@ -190,7 +182,7 @@ test "camera visibility: frustum culls Aabb unless disabled" {
   try! world.set_by_key(
     outside_no_frustum_culling,
     @root_visibility.ecs_key_no_frustum_culling,
-    @root_visibility.NoFrustumCulling::NoFrustumCulling(),
+    NoFrustumCulling(),
   )
 
   check_visibility_visible_entities_system(world)
@@ -208,23 +200,16 @@ test "camera visibility: frustum culls Aabb unless disabled" {
 test "camera visibility: VisibilityRange filters entities before frustum culling" {
   let world = @ecs.World::new()
   defer world.close()
-  world.insert_resource(
-    ecs_key_visible_entity_ranges,
-    VisibleEntityRanges::VisibleEntityRanges(),
-  )
+  world.insert_resource(ecs_key_visible_entity_ranges, VisibleEntityRanges())
   let camera = world.spawn()
   let near_entity = world.spawn()
   let far_entity = world.spawn()
   let mesh3d_class = 123456
-  try! world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(camera, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     camera,
     @camera_camera.ecs_key_visible_entities,
-    @camera_camera.VisibleEntities::VisibleEntities(),
+    VisibleEntities(),
   )
   try! world.set_by_key(
     camera,

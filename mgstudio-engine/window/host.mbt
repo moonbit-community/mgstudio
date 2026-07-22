@@ -231,9 +231,9 @@ fn cursor_grab_mode_to_native(
   mode : CursorGrabMode,
 ) -> @window_core.CursorGrabMode {
   match mode {
-    GrabNone => @window_core.CursorGrabMode::None
-    GrabConfined => @window_core.CursorGrabMode::Confined
-    GrabLocked => @window_core.CursorGrabMode::Locked
+    GrabNone => None
+    GrabConfined => Confined
+    GrabLocked => Locked
   }
 }
 
@@ -241,7 +241,7 @@ fn cursor_grab_mode_to_native(
 fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
   match icon {
     System(system_icon) => system_icon.to_native()
-    Custom(_) => @window_core.CursorIcon::Default
+    Custom(_) => Default
   }
 }
 
@@ -304,14 +304,14 @@ fn compass_octant_to_resize_direction(
   direction : @math.CompassOctant,
 ) -> @window_core.ResizeDirection {
   match direction {
-    North => @window_core.ResizeDirection::North
-    NorthEast => @window_core.ResizeDirection::NorthEast
-    East => @window_core.ResizeDirection::East
-    SouthEast => @window_core.ResizeDirection::SouthEast
-    South => @window_core.ResizeDirection::South
-    SouthWest => @window_core.ResizeDirection::SouthWest
-    West => @window_core.ResizeDirection::West
-    NorthWest => @window_core.ResizeDirection::NorthWest
+    North => North
+    NorthEast => NorthEast
+    East => East
+    SouthEast => SouthEast
+    South => South
+    SouthWest => SouthWest
+    West => West
+    NorthWest => NorthWest
   }
 }
 
@@ -323,9 +323,7 @@ pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
       @windowing.set_fullscreen(
         window,
         fullscreen=Some(
-          @window_core.Fullscreen::Borderless(
-            monitor_selection_to_native(window, monitor_selection),
-          ),
+          Borderless(monitor_selection_to_native(window, monitor_selection)),
         ),
       )
     Fullscreen(monitor_selection, video_mode_selection) =>
@@ -335,9 +333,7 @@ pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
             Some(video_mode) =>
               @windowing.set_fullscreen(
                 window,
-                fullscreen=Some(
-                  @window_core.Fullscreen::Exclusive(monitor, video_mode),
-                ),
+                fullscreen=Some(Exclusive(monitor, video_mode)),
               )
             None =>
               host_debug_string(
@@ -408,12 +404,12 @@ pub fn host_window_set_prefers_status_bar_hidden(
 ///|
 fn screen_edge_to_native(edge : ScreenEdge) -> @window_core.ScreenEdge {
   match edge {
-    ScreenEdge::None => @window_core.ScreenEdge::none()
-    ScreenEdge::Top => @window_core.ScreenEdge::top()
-    ScreenEdge::Left => @window_core.ScreenEdge::left()
-    ScreenEdge::Bottom => @window_core.ScreenEdge::bottom()
-    ScreenEdge::Right => @window_core.ScreenEdge::right()
-    ScreenEdge::All => @window_core.ScreenEdge::all()
+    None => @window_core.ScreenEdge::none()
+    Top => @window_core.ScreenEdge::top()
+    Left => @window_core.ScreenEdge::left()
+    Bottom => @window_core.ScreenEdge::bottom()
+    Right => @window_core.ScreenEdge::right()
+    All => @window_core.ScreenEdge::all()
   }
 }
 

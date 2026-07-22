@@ -22,6 +22,7 @@ const EXTRACT_RESOURCE_PLUGIN_NAME : String = "mgstudio.render.ExtractResourcePl
 pub struct ExtractResourcePlugin[_, _] {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn[R, F] ExtractResourcePlugin::ExtractResourcePlugin() -> ExtractResourcePlugin[
   R,
   F,
@@ -54,7 +55,7 @@ pub struct ExtractedResourceState[R] {
 pub fn[R] ExtractedResourceState::ExtractedResourceState() -> ExtractedResourceState[
   R,
 ] {
-  ExtractedResourceState::{ has_value: false, value: None }
+  { has_value: false, value: None }
 }
 
 ///|

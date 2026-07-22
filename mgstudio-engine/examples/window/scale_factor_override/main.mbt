@@ -35,19 +35,20 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, display_override)
-  .add_systems_param(@app.Update, toggle_override)
-  .add_systems_param(@app.Update, change_scale_factor)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, display_override)
+  .add_systems_param(Update, toggle_override)
+  .add_systems_param(Update, change_scale_factor)
   .run()
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
   try! (world.spawn_bundle(
     (
@@ -62,14 +63,14 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::SpaceBetween),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(SpaceBetween),
   )
 
   let panel = world.spawn_empty()
@@ -82,10 +83,10 @@ fn setup(world : @ecs.World) -> Unit {
     panel,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(300.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-    .with_align_items(@ui.AlignItems::FlexEnd),
+    .with_width(Px(300.0F))
+    .with_height(Percent(100.0F))
+    .with_border(@ui.UiRect::all(Px(2.0F)))
+    .with_align_items(FlexEnd),
   )
   try! world.set_by_key(
     panel,
@@ -102,7 +103,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(Auto).with_height(Auto),
   )
   try! world.set_by_key(
     label,

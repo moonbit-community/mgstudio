@@ -55,10 +55,10 @@ impl @ecs.Component for AnimateScale with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_translation)
-  .add_systems_param2(@app.Update, animate_rotation)
-  .add_systems_param2(@app.Update, animate_scale)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, animate_translation)
+  .add_systems_param2(Update, animate_rotation)
+  .add_systems_param2(Update, animate_scale)
   .run()
 }
 
@@ -125,7 +125,7 @@ fn setup(
     medium_font,
     @math.Vec2::new(0.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
-    @text.LineBreak::WordBoundary,
+    WordBoundary,
     "this text wraps in the box\n(Unicode linebreaks)",
     box_color,
     text_shadow_color,
@@ -136,7 +136,7 @@ fn setup(
     medium_font,
     @math.Vec2::new(320.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
-    @text.LineBreak::AnyCharacter,
+    AnyCharacter,
     "this text wraps in the box\n(AnyCharacter linebreaks)",
     box_color,
     text_shadow_color,
@@ -149,8 +149,8 @@ fn setup(
         @text.Text2d::new(
           "This text has\nFontSmoothing::None\nAnd Justify::Center",
         ),
-        medium_font.with_font_smoothing(@text.FontSmoothing::None),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        medium_font.with_font_smoothing(None),
+        @text.TextLayout::new_with_justify(Center),
         @transform.Transform::from_xyz(-400.0F, -250.0F, 0.0F),
         @text.Text2dShadow::Text2dShadow(),
       ),
@@ -222,7 +222,7 @@ fn spawn_wrapped_text_box(
       @hierarchy.Parent::new(box_entity),
       @text.Text2d::new(content),
       font,
-      @text.TextLayout::new(@text.Justify::Left, linebreak),
+      @text.TextLayout::new(Left, linebreak),
       @text.TextBounds::new(size.x, size.y),
       @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
       @text.Text2dShadow::Text2dShadow().with_color(shadow_color),

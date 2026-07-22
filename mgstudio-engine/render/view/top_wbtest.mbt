@@ -48,7 +48,7 @@ test "render view: NoIndirectDrawing marker is owned by render view" {
   try! world.set_by_key(
     entity,
     ecs_key_no_indirect_drawing,
-    NoIndirectDrawing::NoIndirectDrawing(),
+    NoIndirectDrawing(),
   )
   inspect(
     (try! world.get_by_key(entity, NoIndirectDrawing::component())) is Some(_),
@@ -62,7 +62,7 @@ test "render view: extracted target format follows Bevy HDR and compositing rule
     extracted_view_target_format_raw(
       output_texture_format_raw=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB,
       hdr=true,
-      compositing_space=Some(@camera_compositing_space.CompositingSpace::Srgb),
+      compositing_space=Some(Srgb),
     ) ==
     @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
     content="true",
@@ -70,7 +70,7 @@ test "render view: extracted target format follows Bevy HDR and compositing rule
   inspect(
     extracted_view_target_format_raw(
       output_texture_format_raw=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB,
-      compositing_space=Some(@camera_compositing_space.CompositingSpace::Srgb),
+      compositing_space=Some(Srgb),
     ) ==
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     content="true",
@@ -78,7 +78,7 @@ test "render view: extracted target format follows Bevy HDR and compositing rule
   inspect(
     extracted_view_target_format_raw(
       output_texture_format_raw=@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
-      compositing_space=Some(@camera_compositing_space.CompositingSpace::Oklab),
+      compositing_space=Some(Oklab),
     ) ==
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
     content="true",
@@ -135,8 +135,8 @@ test "render view: default view uniform preserves Bevy color grading defaults" {
 test "render view: ViewUniforms offsets advance by shader layout size" {
   let uniforms = ViewUniforms::ViewUniforms()
   inspect(uniforms.len(), content="0")
-  inspect(uniforms.push(ViewUniform::ViewUniform()), content="0")
-  inspect(uniforms.push(ViewUniform::ViewUniform()), content="784")
+  inspect(uniforms.push(ViewUniform()), content="0")
+  inspect(uniforms.push(ViewUniform()), content="784")
   inspect(uniforms.len(), content="2")
   let offset = ViewUniformOffset::new(784U)
   inspect(offset.offset(), content="784")
@@ -150,10 +150,10 @@ test "render view: ViewPlugin finish initializes view target attachments resourc
   let lifecycle_world_145_1 = @ecs.World::new()
   defer lifecycle_world_145_1.close()
   let app = @app.App::new(lifecycle_world_145_1)
-    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .insert_sub_app(RenderApp, render_sub_app)
     .add_plugins(ViewPlugin::ViewPlugin())
     .finish()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   inspect(
     render_world.resource(view_uniforms_resource_key).is_present(),
     content="true",
@@ -210,7 +210,7 @@ test "render view: ViewUniforms writes real GPU buffer binding" {
   let uniforms = ViewUniforms::ViewUniforms()
   uniforms.write_buffer(device, queue)
   inspect(uniforms.binding() is None, content="true")
-  ignore(uniforms.push(ViewUniform::ViewUniform()))
+  ignore(uniforms.push(ViewUniform()))
   uniforms.write_buffer(device, queue)
   inspect(uniforms.binding() is Some(_), content="true")
   inspect(

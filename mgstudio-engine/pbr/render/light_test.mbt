@@ -73,7 +73,7 @@ fn light_test_set_camera3d(
   try! (world.set_by_key(
     entity,
     @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
+    Camera3d(),
   )
   |> ignore)
 }
@@ -98,7 +98,7 @@ test "pbr render light: gpu lights uniform bytes match mesh_view_types native la
   try! (world.set_by_key(
     directional,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   let rect = world.spawn()
@@ -322,8 +322,7 @@ test "pbr render light: shadow material pipeline cache supports Bevy specializat
   debug_inspect(first_view_cache.len(), content="0")
   debug_inspect(cache.len(), content="2")
 
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   live_views.add(second_view)
   cache.expire_stale_views(live_views)
   debug_inspect(cache.get(first_view) is Some(_), content="false")
@@ -433,12 +432,12 @@ fn light_test_insert_shadow_map_visible_components(
   try! world.set_by_key(
     entity,
     @render_view_visibility.ecs_key_render_shadow_map_visible_entities,
-    @render_view_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities(),
+    RenderShadowMapVisibleEntities(),
   )
   try! world.set_by_key(
     entity,
     @render_view_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
-    @render_view_visibility.RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities(),
+    RenderExtractedShadowMapVisibleEntities(),
   )
 }
 
@@ -462,28 +461,19 @@ test "pbr render light: extraction clears shadow map visible components when sha
   let world = @ecs.World::new()
   defer world.close()
   let point = world.spawn()
-  try! (world.set_by_key(
-    point,
-    @light.ecs_key_point_light,
-    @light.PointLight::PointLight(),
-  )
+  try! (world.set_by_key(point, @light.ecs_key_point_light, PointLight())
   |> ignore)
   light_test_insert_shadow_map_visible_components(world, point)
 
   let spot = world.spawn()
-  try! (world.set_by_key(
-    spot,
-    @light.ecs_key_spot_light,
-    @light.SpotLight::SpotLight(),
-  )
-  |> ignore)
+  try! (world.set_by_key(spot, @light.ecs_key_spot_light, SpotLight()) |> ignore)
   light_test_insert_shadow_map_visible_components(world, spot)
 
   let directional = world.spawn()
   try! (world.set_by_key(
     directional,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   light_test_insert_shadow_map_visible_components(world, directional)
@@ -919,17 +909,12 @@ test "pbr render light: directional light uses propagated required GlobalTransfo
   defer world.close()
   let entity = world.spawn()
   let transform = @transform.Transform::from_rotation(
-    @math.Quat::from_euler(
-      @math.EulerRot::ZYX,
-      0.0F,
-      1.0F,
-      -3.141592653589793F / 4.0F,
-    ),
+    @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -3.141592653589793F / 4.0F),
   )
   try! (world.set_by_key(
     entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   try! (world.set_by_key(entity, @transform.ecs_key_transform, transform)
@@ -970,11 +955,7 @@ test "pbr render light: extracted lights skip ViewVisibility(false)" {
   let world = @ecs.World::new()
   defer world.close()
   let hidden_point = world.spawn()
-  try! (world.set_by_key(
-    hidden_point,
-    @light.ecs_key_point_light,
-    @light.PointLight::PointLight(),
-  )
+  try! (world.set_by_key(hidden_point, @light.ecs_key_point_light, PointLight())
   |> ignore)
   try! (world.set_by_key(
     hidden_point,
@@ -986,7 +967,7 @@ test "pbr render light: extracted lights skip ViewVisibility(false)" {
   try! (world.set_by_key(
     hidden_directional,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -1124,7 +1105,7 @@ test "pbr render light: directional cascade overlap propagates to gpu lights" {
   try! (world.set_by_key(
     entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   try! (world.set_by_key(entity, @light.ecs_key_cascade_shadow_config, updated)
@@ -1158,7 +1139,7 @@ test "pbr render light: directional without shadows keeps zero cascades" {
   try! (world.set_by_key(
     entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
 
@@ -1273,7 +1254,7 @@ test "pbr render light: directional extraction order follows bevy key" {
   try! (world.set_by_key(
     shadow_and_volumetric,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
 
@@ -1287,7 +1268,7 @@ test "pbr render light: directional extraction order follows bevy key" {
   try! (world.set_by_key(
     no_shadow,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
 
@@ -1313,7 +1294,7 @@ test "pbr render light: scrolling fog directional light keeps shadow and volumet
   try! (world.set_by_key(
     directional,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -1342,7 +1323,7 @@ test "pbr render light: mixed directional GPU list preserves Bevy bool key flag 
   try! (world.set_by_key(
     shadow_and_volumetric,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -1354,7 +1335,7 @@ test "pbr render light: mixed directional GPU list preserves Bevy bool key flag 
   try! (world.set_by_key(
     no_shadow,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
 
@@ -1484,13 +1465,13 @@ test "pbr render light: directional extraction reads render occlusion culling ma
   try! (world.set_by_key(
     entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   try! (world.set_by_key(
     entity,
     @render_occlusion_culling.ecs_key_occlusion_culling,
-    @render_occlusion_culling.OcclusionCulling::OcclusionCulling(),
+    OcclusionCulling(),
   )
   |> ignore)
 
@@ -1511,15 +1492,12 @@ test "pbr render light: directional light reads decal index from clustered decal
   try! (world.set_by_key(
     directional,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
 
   let decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
-  let inserted_decal_index = decals.insert_decal(
-    directional,
-    @pbr_decal.ClusteredDecal::ClusteredDecal(),
-  )
+  let inserted_decal_index = decals.insert_decal(directional, ClusteredDecal())
   world.insert_resource(@pbr_decal.ecs_key_render_clustered_decals, decals)
 
   light_test_extract_lights(world)
@@ -1537,18 +1515,11 @@ test "pbr render light: clustered point light reads decal index" {
   defer world.close()
 
   let point = world.spawn()
-  try! (world.set_by_key(
-    point,
-    @light.ecs_key_point_light,
-    @light.PointLight::PointLight(),
-  )
+  try! (world.set_by_key(point, @light.ecs_key_point_light, PointLight())
   |> ignore)
 
   let decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
-  let inserted_decal_index = decals.insert_decal(
-    point,
-    @pbr_decal.ClusteredDecal::ClusteredDecal(),
-  )
+  let inserted_decal_index = decals.insert_decal(point, ClusteredDecal())
   world.insert_resource(@pbr_decal.ecs_key_render_clustered_decals, decals)
 
   light_test_extract_lights(world)
@@ -1569,12 +1540,7 @@ test "pbr render light: clustered spot light sets Bevy spot flag bit" {
   defer world.close()
 
   let spot = world.spawn()
-  try! (world.set_by_key(
-    spot,
-    @light.ecs_key_spot_light,
-    @light.SpotLight::SpotLight(),
-  )
-  |> ignore)
+  try! (world.set_by_key(spot, @light.ecs_key_spot_light, SpotLight()) |> ignore)
 
   light_test_extract_lights(world)
   let lighting = render3d_collect_lighting(world)
@@ -1602,7 +1568,7 @@ test "pbr render light: clustered light shadow flags respect texture cube cap" {
     try! (world.set_by_key(
       point,
       @light.ecs_key_volumetric_light,
-      @light.VolumetricLight::VolumetricLight(),
+      VolumetricLight(),
     )
     |> ignore)
   }
@@ -1624,11 +1590,7 @@ test "pbr render light: point extraction order follows entity id" {
   let world = @ecs.World::new()
   defer world.close()
   let no_shadow = world.spawn()
-  try! (world.set_by_key(
-    no_shadow,
-    @light.ecs_key_point_light,
-    @light.PointLight::PointLight(),
-  )
+  try! (world.set_by_key(no_shadow, @light.ecs_key_point_light, PointLight())
   |> ignore)
 
   let shadow_only = world.spawn()
@@ -1649,7 +1611,7 @@ test "pbr render light: point extraction order follows entity id" {
   try! (world.set_by_key(
     shadow_and_vol,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
 
@@ -1666,11 +1628,7 @@ test "pbr render light: spot extraction order follows entity id" {
   let world = @ecs.World::new()
   defer world.close()
   let no_shadow = world.spawn()
-  try! (world.set_by_key(
-    no_shadow,
-    @light.ecs_key_spot_light,
-    @light.SpotLight::SpotLight(),
-  )
+  try! (world.set_by_key(no_shadow, @light.ecs_key_spot_light, SpotLight())
   |> ignore)
 
   let shadow_only = world.spawn()
@@ -1691,7 +1649,7 @@ test "pbr render light: spot extraction order follows entity id" {
   try! (world.set_by_key(
     shadow_and_vol,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
 
@@ -1717,11 +1675,7 @@ test "pbr render light: clusterable point-light ordering keeps points before spo
   |> ignore)
 
   let point = world.spawn()
-  try! (world.set_by_key(
-    point,
-    @light.ecs_key_point_light,
-    @light.PointLight::PointLight(),
-  )
+  try! (world.set_by_key(point, @light.ecs_key_point_light, PointLight())
   |> ignore)
 
   let point_shadow = world.spawn()
@@ -1786,7 +1740,7 @@ test "pbr render light: gpu directional array is padded to max while count stays
   try! (world.set_by_key(
     directional,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -1924,7 +1878,7 @@ test "pbr render light: storage cluster buffers include clustered decal ranges" 
   try! (world.set_by_key(
     decal,
     @light.ecs_key_clustered_decal,
-    @light.ClusteredDecal::ClusteredDecal(),
+    ClusteredDecal(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -1939,10 +1893,7 @@ test "pbr render light: storage cluster buffers include clustered decal ranges" 
   light_test_propagate_transforms(world)
   @light_cluster.cluster_assign_lights_system(world)
   let render_decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
-  let decal_index = render_decals.insert_decal(
-    decal,
-    @pbr_decal.ClusteredDecal::ClusteredDecal(),
-  )
+  let decal_index = render_decals.insert_decal(decal, ClusteredDecal())
   world.insert_resource(
     @pbr_decal.ecs_key_render_clustered_decals, render_decals,
   )
@@ -2062,14 +2013,14 @@ test "pbr render light: cluster factors zw follow orthographic projection runtim
   let world = @ecs.World::new()
   defer world.close()
   let camera = world.spawn()
-  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, camera, Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
     @light_cluster.ClusterConfig::default(),
   )
   |> ignore)
-  try! (world.set_by_key(camera, ecs_key_projection_runtime3d, ProjectionRuntime3d::{
+  try! (world.set_by_key(camera, ecs_key_projection_runtime3d, {
     last_view_width: 1280.0F,
     last_view_height: 720.0F,
     is_orthographic: true,
@@ -2145,7 +2096,7 @@ test "pbr render light: cluster far ignores non-camera visible cluster list" {
   let world = @ecs.World::new()
   defer world.close()
   let camera = world.spawn()
-  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, camera, Camera())
   let small_light = world.spawn()
   try! (world.set_by_key(
     small_light,
@@ -2188,7 +2139,7 @@ test "pbr render light: cluster far fallback prefers camera visible cluster list
   let world = @ecs.World::new()
   defer world.close()
   let camera = world.spawn()
-  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, camera, Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2235,7 +2186,7 @@ test "pbr render light: cluster far fallback includes camera view depth" {
   let world = @ecs.World::new()
   defer world.close()
   let camera = world.spawn()
-  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, camera, Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
@@ -2292,11 +2243,11 @@ test "pbr render light: single-z perspective cluster near pins to far" {
   let world = @ecs.World::new()
   defer world.close()
   let camera = world.spawn()
-  light_test_set_camera3d(world, camera, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, camera, Camera())
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
-    @light_cluster.ClusterConfig::Single,
+    Single,
   )
   |> ignore)
   let point = world.spawn()
@@ -2327,17 +2278,11 @@ test "pbr render light: gpu lights cluster dimensions follow cluster config comp
   let world = @ecs.World::new()
   defer world.close()
   let entity = world.spawn()
-  light_test_set_camera3d(world, entity, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, entity, Camera())
   try! (world.set_by_key(
     entity,
     @light_cluster.ClusterConfig::component(),
-    @light_cluster.ClusterConfig::XYZ(
-      8,
-      4,
-      12,
-      @light_cluster.ClusterZConfig::ClusterZConfig(),
-      false,
-    ),
+    XYZ(8, 4, 12, ClusterZConfig(), false),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2356,13 +2301,7 @@ test "pbr render light: cluster config is sourced from camera entities" {
   try! (world.set_by_key(
     non_camera_entity,
     @light_cluster.ClusterConfig::component(),
-    @light_cluster.ClusterConfig::XYZ(
-      2,
-      2,
-      2,
-      @light_cluster.ClusterZConfig::ClusterZConfig(),
-      false,
-    ),
+    XYZ(2, 2, 2, ClusterZConfig(), false),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2377,11 +2316,11 @@ test "pbr render light: cluster config none yields zero cluster payload" {
   let world = @ecs.World::new()
   defer world.close()
   let entity = world.spawn()
-  light_test_set_camera3d(world, entity, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, entity, Camera())
   try! (world.set_by_key(
     entity,
     @light_cluster.ClusterConfig::component(),
-    @light_cluster.ClusterConfig::None,
+    None,
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2417,7 +2356,7 @@ test "pbr render light: inactive camera clusters are ignored" {
   )
   |> ignore)
   let active = world.spawn()
-  light_test_set_camera3d(world, active, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, active, Camera())
 
   light_test_extract_lights(world)
   let gpu_lights = render3d_collect_gpu_lights(world)
@@ -2432,7 +2371,7 @@ test "pbr render light: cluster payload prefers runtime clusters component" {
   let world = @ecs.World::new()
   defer world.close()
   let entity = world.spawn()
-  light_test_set_camera3d(world, entity, @camera_camera.Camera::Camera())
+  light_test_set_camera3d(world, entity, Camera())
   try! (world.set_by_key(
     entity,
     @light_cluster.Clusters::component(),
@@ -2486,13 +2425,7 @@ test "pbr render light: cluster factors xy prefer camera viewport size when pres
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
-    @light_cluster.ClusterConfig::XYZ(
-      16,
-      9,
-      24,
-      @light_cluster.ClusterZConfig::ClusterZConfig(),
-      false,
-    ),
+    XYZ(16, 9, 24, ClusterZConfig(), false),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2515,7 +2448,7 @@ test "pbr render light: cluster factors xy use extracted physical viewport" {
   try! (world.set_by_key(
     camera,
     @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
+    Camera3d(),
   )
   |> ignore)
   light_test_set_camera3d(
@@ -2543,13 +2476,7 @@ test "pbr render light: cluster factors xy use extracted physical viewport" {
   try! (world.set_by_key(
     camera,
     @light_cluster.ClusterConfig::component(),
-    @light_cluster.ClusterConfig::XYZ(
-      16,
-      9,
-      24,
-      @light_cluster.ClusterZConfig::ClusterZConfig(),
-      false,
-    ),
+    XYZ(16, 9, 24, ClusterZConfig(), false),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2570,16 +2497,12 @@ test "pbr render light: volumetric flags require shadow maps for point and direc
   defer world.close()
 
   let point_entity = world.spawn()
-  try! (world.set_by_key(
-    point_entity,
-    @light.ecs_key_point_light,
-    @light.PointLight::PointLight(),
-  )
+  try! (world.set_by_key(point_entity, @light.ecs_key_point_light, PointLight())
   |> ignore)
   try! (world.set_by_key(
     point_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2607,13 +2530,13 @@ test "pbr render light: volumetric flags require shadow maps for point and direc
   try! (world.set_by_key(
     directional_entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   try! (world.set_by_key(
     directional_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
   light_test_extract_lights(world)
@@ -2651,7 +2574,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   try! (world.set_by_key(
     entity_default,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
 
@@ -2680,7 +2603,7 @@ test "pbr render light: directional sun disk defaults and component override pro
   try! (world.set_by_key(
     entity_override,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -2732,7 +2655,7 @@ test "pbr render light: LightMeta uploads view gpu lights to gpu binding" {
   let light_meta = LightMeta::LightMeta()
   light_meta.write_view_gpu_lights_buffer(device, queue)
   inspect(light_meta.view_gpu_lights_binding() is None, content="true")
-  let offset = light_meta.push_view_gpu_lights(GpuLights3d::GpuLights3d())
+  let offset = light_meta.push_view_gpu_lights(GpuLights3d())
   inspect(offset, content="0")
 
   light_meta.write_view_gpu_lights_buffer(device, queue)

@@ -59,15 +59,12 @@ fn animation_config_new(
   increment : Int,
   fps : Int,
 ) -> AnimationConfig {
-  AnimationConfig::{
+  {
     first_sprite_index: first,
     last_sprite_index: last,
     increment,
     fps,
-    frame_timer: @time.Timer::from_seconds(
-      1.0F / Float::from_int(fps),
-      @time.TimerMode::Once,
-    ),
+    frame_timer: @time.Timer::from_seconds(1.0F / Float::from_int(fps), Once),
   }
 }
 
@@ -137,11 +134,7 @@ fn setup_cursor_icon(
   )
   commands
   .entity(window_entity.get())
-  .insert_component(
-    @window.CursorIcon::from_custom(
-      @window.CustomCursor::Image(custom_cursor_image),
-    ),
-  )
+  .insert_component(@window.CursorIcon::from_custom(Image(custom_cursor_image)))
   commands.entity(window_entity.get()).insert_component(animation_config)
 }
 
@@ -160,7 +153,7 @@ fn execute_animation(
     config.modify(fn(value) { value.frame_timer = ticked_timer })
     guard ticked_timer.just_finished() else { return }
     let next_cursor_icon = match cursor_icon.value() {
-      @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) =>
+      Custom(Image(image)) =>
         match image.texture_atlas {
           Some(atlas) => {
             let next_index = if atlas.index + current_config.increment >
@@ -173,9 +166,7 @@ fn execute_animation(
               image,
               texture_atlas=Some(atlas.with_index(next_index)),
             )
-            @window.CursorIcon::from_custom(
-              @window.CustomCursor::Image(next_image),
-            )
+            @window.CursorIcon::from_custom(Image(next_image))
           }
           None => cursor_icon.value()
         }
@@ -185,7 +176,7 @@ fn execute_animation(
     config.modify(fn(value) {
       value.frame_timer = @time.Timer::from_seconds(
         1.0F / Float::from_int(current_config.fps),
-        @time.TimerMode::Once,
+        Once,
       )
     })
   })
@@ -197,20 +188,18 @@ fn toggle_texture_atlas(
   state : @app.ResMut[CursorImageExampleState],
   query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::KeyT) {
+  if !keyboard.just_pressed(KeyT) {
     return
   }
   try! query.for_each(fn(_entity, cursor_icon) {
     let current_cursor_icon = cursor_icon.value()
     let next_cursor_icon = match current_cursor_icon {
-      @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) =>
+      Custom(Image(image)) =>
         match image.texture_atlas {
           Some(atlas) => {
             state.modify(fn(value) { value.cached_texture_atlas = Some(atlas) })
             let next_image = cursor_image_with(image, texture_atlas=None)
-            @window.CursorIcon::from_custom(
-              @window.CustomCursor::Image(next_image),
-            )
+            @window.CursorIcon::from_custom(Image(next_image))
           }
           None =>
             match state.peek().cached_texture_atlas {
@@ -219,9 +208,7 @@ fn toggle_texture_atlas(
                   image,
                   texture_atlas=Some(cached),
                 )
-                @window.CursorIcon::from_custom(
-                  @window.CustomCursor::Image(next_image),
-                )
+                @window.CursorIcon::from_custom(Image(next_image))
               }
               None => current_cursor_icon
             }
@@ -237,17 +224,15 @@ fn toggle_flip_x(
   keyboard : @input.ButtonInput[@window.KeyCode],
   query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::KeyX) {
+  if !keyboard.just_pressed(KeyX) {
     return
   }
   try! query.for_each(fn(_entity, cursor_icon) {
     cursor_icon_update(cursor_icon, fn(current_cursor_icon) {
       match current_cursor_icon {
-        @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
+        Custom(Image(image)) => {
           let next_image = cursor_image_with(image, flip_x=!image.flip_x)
-          @window.CursorIcon::from_custom(
-            @window.CustomCursor::Image(next_image),
-          )
+          @window.CursorIcon::from_custom(Image(next_image))
         }
         _ => current_cursor_icon
       }
@@ -260,17 +245,15 @@ fn toggle_flip_y(
   keyboard : @input.ButtonInput[@window.KeyCode],
   query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::KeyY) {
+  if !keyboard.just_pressed(KeyY) {
     return
   }
   try! query.for_each(fn(_entity, cursor_icon) {
     cursor_icon_update(cursor_icon, fn(current_cursor_icon) {
       match current_cursor_icon {
-        @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
+        Custom(Image(image)) => {
           let next_image = cursor_image_with(image, flip_y=!image.flip_y)
-          @window.CursorIcon::from_custom(
-            @window.CustomCursor::Image(next_image),
-          )
+          @window.CursorIcon::from_custom(Image(next_image))
         }
         _ => current_cursor_icon
       }
@@ -315,7 +298,7 @@ fn cycle_rect(
   state : @app.ResMut[CursorImageExampleState],
   query : @ecs.Query[@ecs.Write[@window.CursorIcon], @ecs.With[@window.Window]],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::KeyC) {
+  if !keyboard.just_pressed(KeyC) {
     return
   }
   let next_rect = state.modify(fn(value) {
@@ -325,9 +308,9 @@ fn cycle_rect(
   try! query.for_each(fn(_entity, cursor_icon) {
     let current_cursor_icon = cursor_icon.value()
     let next_cursor_icon = match current_cursor_icon {
-      @window.CursorIcon::Custom(@window.CustomCursor::Image(image)) => {
+      Custom(Image(image)) => {
         let next_image = cursor_image_with(image, rect=next_rect)
-        @window.CursorIcon::from_custom(@window.CustomCursor::Image(next_image))
+        @window.CursorIcon::from_custom(Image(next_image))
       }
       _ => current_cursor_icon
     }
@@ -339,12 +322,12 @@ fn cycle_rect(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup_cursor_image_state)
-  .add_systems_param4(@app.Startup, setup_cursor_icon)
-  .add_systems_param2(@app.Update, execute_animation)
-  .add_systems_param3(@app.Update, toggle_texture_atlas)
-  .add_systems_param2(@app.Update, toggle_flip_x)
-  .add_systems_param2(@app.Update, toggle_flip_y)
-  .add_systems_param3(@app.Update, cycle_rect)
+  .add_systems_param(Startup, setup_cursor_image_state)
+  .add_systems_param4(Startup, setup_cursor_icon)
+  .add_systems_param2(Update, execute_animation)
+  .add_systems_param3(Update, toggle_texture_atlas)
+  .add_systems_param2(Update, toggle_flip_x)
+  .add_systems_param2(Update, toggle_flip_y)
+  .add_systems_param3(Update, cycle_rect)
   .run()
 }

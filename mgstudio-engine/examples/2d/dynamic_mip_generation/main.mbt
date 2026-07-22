@@ -104,7 +104,7 @@ impl @app.Resource for AppStatus with fn resource() {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{
+  {
     enable_mip_generation: On,
     image_width: Size640,
     image_height: Size480,
@@ -214,7 +214,7 @@ impl @app.Resource for AppAssets with fn resource() {
 ///|
 fn AppAssets::new(asset_server : @asset.AssetServer) -> AppAssets {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  AppAssets::{
+  {
     text_font: @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(FONT_SIZE),
@@ -279,7 +279,7 @@ impl @app.Resource for MipmapSourceImage with fn resource() {
 fn MipmapSourceImage::new(
   handle : @asset.Handle[@asset.Image],
 ) -> MipmapSourceImage {
-  MipmapSourceImage::{ handle, }
+  { handle, }
 }
 
 ///|
@@ -314,19 +314,19 @@ fn main {
     .init_resource(fn() { AppStatus::AppStatus() })
     .add_message(regenerate_image_key)
     .add_message(widget_click_message_key)
-    .add_systems(@app.Startup, setup_system)
+    .add_systems(Startup, setup_system)
     .add_systems(
-      @app.Update,
+      Update,
       (
         handle_widget_interactions_system, handle_app_setting_change_system, update_radio_buttons_system,
       )
       |> @app.chain(),
     )
     .add_systems(
-      @app.Update,
+      Update,
       (handle_resize_system, regenerate_system) |> @app.chain(),
     )
-    .add_systems(@app.Update, animate_system)
+    .add_systems(Update, animate_system)
   let app = @render.with_render_app(app, fn(render_app) {
     render_app
     .add_systems(
@@ -346,6 +346,7 @@ fn main {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
@@ -372,25 +373,25 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, root, "Mip Generation", [
       (AppSetting::EnableMipGeneration(On), "On"),
-      (AppSetting::EnableMipGeneration(Off), "Off"),
+      (EnableMipGeneration(Off), "Off"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, root, "Image Width", [
       (AppSetting::ImageWidth(Size240), "240"),
-      (AppSetting::ImageWidth(Size480), "480"),
-      (AppSetting::ImageWidth(Size640), "640"),
-      (AppSetting::ImageWidth(Size1080), "1080"),
-      (AppSetting::ImageWidth(Size1920), "1920"),
+      (ImageWidth(Size480), "480"),
+      (ImageWidth(Size640), "640"),
+      (ImageWidth(Size1080), "1080"),
+      (ImageWidth(Size1920), "1920"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, root, "Image Height", [
       (AppSetting::ImageHeight(Size240), "240"),
-      (AppSetting::ImageHeight(Size480), "480"),
-      (AppSetting::ImageHeight(Size640), "640"),
-      (AppSetting::ImageHeight(Size1080), "1080"),
-      (AppSetting::ImageHeight(Size1920), "1920"),
+      (ImageHeight(Size480), "480"),
+      (ImageHeight(Size640), "640"),
+      (ImageHeight(Size1080), "1080"),
+      (ImageHeight(Size1920), "1920"),
     ]),
   )
 }
@@ -451,16 +452,16 @@ fn update_radio_buttons(
 ///|
 fn app_setting_selected(setting : AppSetting, app_status : AppStatus) -> Bool {
   match setting {
-    AppSetting::RegenerateTopMipLevel => false
-    AppSetting::EnableMipGeneration(enable_mip_generation) =>
+    RegenerateTopMipLevel => false
+    EnableMipGeneration(enable_mip_generation) =>
       enable_mip_generation == app_status.enable_mip_generation
-    AppSetting::ImageWidth(image_width) => image_width == app_status.image_width
-    AppSetting::ImageHeight(image_height) =>
-      image_height == app_status.image_height
+    ImageWidth(image_width) => image_width == app_status.image_width
+    ImageHeight(image_height) => image_height == app_status.image_height
   }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn handle_app_setting_change(
   events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[AppSetting]],
   app_status : @app.ResMut[AppStatus],
@@ -470,17 +471,17 @@ fn handle_app_setting_change(
     let mut should_regenerate = false
     for event in events.read() {
       match event.get() {
-        AppSetting::RegenerateTopMipLevel => should_regenerate = true
-        AppSetting::EnableMipGeneration(enable_mip_generation) =>
+        RegenerateTopMipLevel => should_regenerate = true
+        EnableMipGeneration(enable_mip_generation) =>
           if value.enable_mip_generation != enable_mip_generation {
             value.enable_mip_generation = enable_mip_generation
           }
-        AppSetting::ImageWidth(image_size) =>
+        ImageWidth(image_size) =>
           if value.image_width != image_size {
             value.image_width = image_size
             should_regenerate = true
           }
-        AppSetting::ImageHeight(image_size) =>
+        ImageHeight(image_size) =>
           if value.image_height != image_size {
             value.image_height = image_size
             should_regenerate = true
@@ -496,6 +497,7 @@ fn handle_app_setting_change(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn handle_window_resize_events(
   resized_events : @ecs.MessageReader[@window.WindowResized],
   regenerate_writer : @ecs.MessageWriter[RegenerateImage],
@@ -644,7 +646,7 @@ fn spawn_mip_level_views(
         (
           @text.Text2d::new(mip_level_label(i, mip_size)),
           app_assets.text_font,
-          @text.TextLayout::new_with_justify(@text.Justify::Center),
+          @text.TextLayout::new_with_justify(Center),
           @text.Text2dShadow::Text2dShadow(),
           @transform.Transform::from_xy_rotation_scale(
             @math.Vec2::new(label_x, y_center),

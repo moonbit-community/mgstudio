@@ -30,10 +30,10 @@ pub fn gltf_node_index(node_index : Int) -> GltfNodeIndex {
 
 ///|
 pub fn gltf_scene_asset_label(scene_index : Int) -> GltfAssetLabel {
-  GltfAssetLabel::Scene(scene_index)
+  Scene(scene_index)
 }
 
 ///|
 pub fn gltf_node_asset_label(node_index : Int) -> GltfAssetLabel {
-  GltfAssetLabel::Node(node_index)
+  Node(node_index)
 }

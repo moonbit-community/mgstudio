@@ -39,7 +39,7 @@ fn ExampleControls::ExampleControls(
   unlit~ : Bool,
   color~ : Bool,
 ) -> ExampleControls {
-  ExampleControls::{ unlit, color }
+  { unlit, color }
 }
 
 ///|
@@ -59,7 +59,7 @@ impl @ecs.Component for ExampleLabel with fn component() {
 
 ///|
 fn ExampleLabel::ExampleLabel(entity : @core.Entity) -> ExampleLabel {
-  ExampleLabel::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -84,7 +84,7 @@ priv struct ExampleState {
 
 ///|
 fn ExampleState::ExampleState() -> ExampleState {
-  ExampleState::{
+  {
     alpha: 0.9F,
     unlit: false,
     rng: @chacha_rng.ChaCha8Rng::seed_from_u64(19878367467712UL),
@@ -93,7 +93,7 @@ fn ExampleState::ExampleState() -> ExampleState {
 
 ///|
 impl @app.FromWorld for ExampleState with fn from_world(_world) {
-  ExampleState::ExampleState()
+  ExampleState()
 }
 
 ///|
@@ -221,7 +221,7 @@ fn spawn_label(
 ) -> Unit {
   let label_node = commands.spawn(
     (
-      @ui.Node::Node().with_position_type(@ui.PositionType::Absolute),
+      @ui.Node::Node().with_position_type(Absolute),
       ExampleLabel::ExampleLabel(entity),
     ),
   )
@@ -232,9 +232,7 @@ fn spawn_label(
         @text.Text::new(label),
         @text.TextFont::TextFont().with_font(font),
         @text.TextColor::new(@color.Color::srgb(1.0F, 0.65F, 0.0F)),
-        @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_bottom(@ui.Val::Px(0.0F)),
+        @ui.Node::Node().with_position_type(Absolute).with_bottom(Px(0.0F)),
         @text.TextLayout::new_with_no_wrap(),
       ),
     ),
@@ -265,9 +263,7 @@ fn setup(
     icosphere_mesh,
     add_standard_material(
       materials,
-      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-        @pbr.AlphaMode3d::Opaque,
-      ),
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(Opaque),
     ),
     @math.Vec3::new(-4.0F, 0.0F, 0.0F),
   )
@@ -277,9 +273,7 @@ fn setup(
     icosphere_mesh,
     add_standard_material(
       materials,
-      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-        @pbr.AlphaMode3d::Blend,
-      ),
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(Blend),
     ),
     @math.Vec3::new(-2.0F, 0.0F, 0.0F),
   )
@@ -290,7 +284,7 @@ fn setup(
     add_standard_material(
       materials,
       @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-        @pbr.AlphaMode3d::Premultiplied,
+        Premultiplied,
       ),
     ),
     @math.Vec3::zero(),
@@ -301,9 +295,7 @@ fn setup(
     icosphere_mesh,
     add_standard_material(
       materials,
-      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-        @pbr.AlphaMode3d::Add,
-      ),
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(Add),
     ),
     @math.Vec3::new(2.0F, 0.0F, 0.0F),
   )
@@ -313,9 +305,7 @@ fn setup(
     icosphere_mesh,
     add_standard_material(
       materials,
-      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
-        @pbr.AlphaMode3d::Multiply,
-      ),
+      @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(Multiply),
     ),
     @math.Vec3::new(4.0F, 0.0F, 0.0F),
   )
@@ -364,7 +354,7 @@ fn setup(
 
   let camera = commands.spawn(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -380,9 +370,9 @@ fn setup(
         @text.Text::new(CONTROL_TEXT),
         @text.TextFont::TextFont().with_font(font),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
       ),
     ),
   )
@@ -392,9 +382,9 @@ fn setup(
         @text.Text::Text(),
         @text.TextFont::TextFont().with_font(font),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_right(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_right(Px(12.0F)),
         ExampleDisplay::{  },
       ),
     ),
@@ -469,8 +459,8 @@ fn update_labels(
     node.set(
       node
       .value()
-      .with_top(@ui.Val::Px(viewport_position.y))
-      .with_left(@ui.Val::Px(viewport_position.x)),
+      .with_top(Px(viewport_position.y))
+      .with_left(Px(viewport_position.x)),
     )
   })
 }
@@ -503,17 +493,17 @@ fn example_control_system(
 ) -> Unit {
   let delta = time.get().delta_seconds()
   let state = state_param.get()
-  if input.pressed(@window.KeyCode::ArrowUp) {
+  if input.pressed(ArrowUp) {
     state.alpha = min_float(state.alpha + delta, 1.0F)
-  } else if input.pressed(@window.KeyCode::ArrowDown) {
+  } else if input.pressed(ArrowDown) {
     state.alpha = max_float(state.alpha - delta, 0.0F)
   }
 
-  if input.just_pressed(@window.KeyCode::Space) {
+  if input.just_pressed(Space) {
     state.unlit = !state.unlit
   }
 
-  let randomize_colors = input.just_pressed(@window.KeyCode::KeyC)
+  let randomize_colors = input.just_pressed(KeyC)
   update_materials(materials, controllable, state, randomize_colors)
 
   let camera_data = camera.get()
@@ -526,7 +516,7 @@ fn example_control_system(
     hdr,
   ) = camera_data
   let hdr_enabled = hdr.present()
-  if input.just_pressed(@window.KeyCode::KeyH) {
+  if input.just_pressed(KeyH) {
     if hdr_enabled {
       commands.entity(camera_entity).remove(@pbr.ecs_key_hdr)
     } else {
@@ -534,9 +524,9 @@ fn example_control_system(
     }
   }
 
-  let rotation = if input.pressed(@window.KeyCode::ArrowLeft) {
+  let rotation = if input.pressed(ArrowLeft) {
     delta
-  } else if input.pressed(@window.KeyCode::ArrowRight) {
+  } else if input.pressed(ArrowRight) {
     -delta
   } else {
     0.0F
@@ -571,7 +561,7 @@ fn example_control_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param10(@app.Update, example_control_system)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param10(Update, example_control_system)
   .run()
 }

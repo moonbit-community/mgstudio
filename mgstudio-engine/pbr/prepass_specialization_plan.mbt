@@ -70,13 +70,8 @@ pub fn PbrPrepassMaterialSpecializationPlan::material_bind_group_required(
 ///|
 fn pbr_prepass_alpha_mode_allowed(alpha_mode : @material.AlphaMode3d) -> Bool {
   match alpha_mode {
-    @material.AlphaMode3d::Opaque
-    | @material.AlphaMode3d::AlphaToCoverage
-    | @material.AlphaMode3d::Mask(_) => true
-    @material.AlphaMode3d::Blend
-    | @material.AlphaMode3d::Premultiplied
-    | @material.AlphaMode3d::Add
-    | @material.AlphaMode3d::Multiply => false
+    Opaque | AlphaToCoverage | Mask(_) => true
+    Blend | Premultiplied | Add | Multiply => false
   }
 }
 
@@ -88,7 +83,7 @@ fn pbr_prepass_draw_function_label(
   emulate_unclipped_depth : Bool,
 ) -> @material.DrawFunctionLabel? {
   match properties.render_phase_type {
-    @material.RenderPhaseType::Opaque =>
+    Opaque =>
       if deferred {
         Some(DEFERRED_OPAQUE_DRAW_FUNCTION_LABEL)
       } else if pbr_prepass_is_depth_only_opaque(mesh_key_bits) &&
@@ -97,14 +92,13 @@ fn pbr_prepass_draw_function_label(
       } else {
         Some(PREPASS_OPAQUE_DRAW_FUNCTION_LABEL)
       }
-    @material.RenderPhaseType::AlphaMask =>
+    AlphaMask =>
       if deferred {
         Some(DEFERRED_ALPHA_MASK_DRAW_FUNCTION_LABEL)
       } else {
         Some(PREPASS_ALPHA_MASK_DRAW_FUNCTION_LABEL)
       }
-    @material.RenderPhaseType::Transmissive
-    | @material.RenderPhaseType::Transparent => None
+    Transmissive | Transparent => None
   }
 }
 
@@ -123,13 +117,13 @@ pub fn pbr_prepass_material_specialization_decision(
   emulate_unclipped_depth? : Bool = false,
 ) -> PbrPrepassMaterialSpecializationDecision {
   if !properties.prepass_enabled {
-    return PbrPrepassMaterialSpecializationDecision::Remove
+    return Remove
   }
   if !pbr_prepass_alpha_mode_allowed(properties.alpha_mode) ||
     properties.reads_view_transmission_texture {
-    return PbrPrepassMaterialSpecializationDecision::Remove
+    return Remove
   }
-  let forward = properties.render_method is OpaqueRendererMethod::Forward
+  let forward = properties.render_method is Forward
   let deferred = has_deferred_prepass && !forward
   let mut mesh_key_bits = view_key_bits |
     base_mesh_key_bits |
@@ -160,14 +154,14 @@ pub fn pbr_prepass_material_specialization_decision(
       properties, mesh_key_bits, deferred, emulate_unclipped_depth,
     )
     is Some(draw_function_label) else {
-    return PbrPrepassMaterialSpecializationDecision::Skip
+    return Skip
   }
   guard properties.get_draw_function(draw_function_label) is Some(draw_function) else {
-    return PbrPrepassMaterialSpecializationDecision::Skip
+    return Skip
   }
   let material_bind_group_required = draw_function_label !=
     PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL
-  PbrPrepassMaterialSpecializationDecision::Queue(PbrPrepassMaterialSpecializationPlan::{
+  Queue({
     mesh_key_bits,
     draw_function_label,
     draw_function,

@@ -27,7 +27,7 @@ enum SplineMode {
 
 ///|
 impl Default for SplineMode with fn default() {
-  SplineMode::Hermite
+  Hermite
 }
 
 ///|
@@ -38,7 +38,7 @@ enum CyclingMode {
 
 ///|
 impl Default for CyclingMode with fn default() {
-  CyclingMode::NotCyclic
+  NotCyclic
 }
 
 ///|
@@ -179,56 +179,54 @@ let cubic_splines_draw_set : @app.SystemSet = @app.system_set(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .configure_set(@app.Update, cubic_splines_curve_set, after=[
+  .configure_set(Update, cubic_splines_curve_set, after=[
     cubic_splines_input_set,
   ])
-  .configure_set(@app.Update, cubic_splines_ui_set, after=[
-    cubic_splines_input_set,
-  ])
-  .configure_set(@app.Update, cubic_splines_draw_set, after=[
+  .configure_set(Update, cubic_splines_ui_set, after=[cubic_splines_input_set])
+  .configure_set(Update, cubic_splines_draw_set, after=[
     cubic_splines_curve_set, cubic_splines_ui_set,
   ])
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(handle_keypress).in_set(cubic_splines_input_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_mouse_move).in_set(cubic_splines_input_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(handle_mouse_press).in_set(
       cubic_splines_input_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(update_curve).in_set(cubic_splines_curve_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(update_spline_mode_text).in_set(
       cubic_splines_ui_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(update_cycling_mode_text).in_set(
       cubic_splines_ui_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(draw_edit_move).in_set(cubic_splines_draw_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(draw_curve).in_set(cubic_splines_draw_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(draw_control_points).in_set(
       cubic_splines_draw_set,
     ),
@@ -247,12 +245,8 @@ fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(cycling_mode_resource_key, cycling_mode)
   world.insert_resource(control_points_resource_key, control_points)
   world.insert_resource(curve_resource_key, curve)
-  world.insert_resource(mouse_position_resource_key, MousePosition::{
-    position: None,
-  })
-  world.insert_resource(mouse_edit_move_resource_key, MouseEditMove::{
-    start: None,
-  })
+  world.insert_resource(mouse_position_resource_key, { position: None })
+  world.insert_resource(mouse_edit_move_resource_key, { start: None })
 
   try! (world.spawn_bundle(
     (
@@ -270,16 +264,16 @@ fn setup(world : @ecs.World) -> Unit {
     .with_font_size(18.0F)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_row_gap(@ui.Val::Px(20.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F))
+    .with_flex_direction(Column)
+    .with_row_gap(Px(20.0F)),
   )
 
   spawn_ui_text_line(world, root, text_font, instructions_text()) |> ignore
@@ -296,10 +290,10 @@ fn setup(world : @ecs.World) -> Unit {
     text_font,
     cycling_mode_label(cycling_mode),
   )
-  world.insert_resource(spline_mode_text_handle_resource_key, SplineModeTextHandle::{
+  world.insert_resource(spline_mode_text_handle_resource_key, {
     entity: spline_handle,
   })
-  world.insert_resource(cycling_mode_text_handle_resource_key, CyclingModeTextHandle::{
+  world.insert_resource(cycling_mode_text_handle_resource_key, {
     entity: cycling_handle,
   })
 }
@@ -342,7 +336,7 @@ fn draw_control_points(
     let tangent = pair.1
     gizmos.circle_2d(@sprite.Isometry2d::new(point, 0.0F), 10.0F, green)
     |> ignore
-    if spline_mode.get() == SplineMode::Hermite {
+    if spline_mode.get() == Hermite {
       gizmos.arrow_2d(point, point.add(tangent), red) |> ignore
     }
   }
@@ -364,41 +358,41 @@ fn form_curve(
     Hermite => {
       let spline = @math.CubicHermite::new(points, tangents)
       let curve = try {
-        if cycling_mode == CyclingMode::Cyclic {
+        if cycling_mode == Cyclic {
           spline.to_curve_cyclic()
         } else {
           spline.to_curve()
         }
       } catch {
-        _ => return Curve::{ value: None }
+        _ => return { value: None }
       }
-      Curve::{ value: Some(curve) }
+      { value: Some(curve) }
     }
     Cardinal => {
       let spline = @math.CubicCardinalSpline::new_catmull_rom(points)
       let curve = try {
-        if cycling_mode == CyclingMode::Cyclic {
+        if cycling_mode == Cyclic {
           spline.to_curve_cyclic()
         } else {
           spline.to_curve()
         }
       } catch {
-        _ => return Curve::{ value: None }
+        _ => return { value: None }
       }
-      Curve::{ value: Some(curve) }
+      { value: Some(curve) }
     }
     B => {
       let spline = @math.CubicBSpline::new(points)
       let curve = try {
-        if cycling_mode == CyclingMode::Cyclic {
+        if cycling_mode == Cyclic {
           spline.to_curve_cyclic()
         } else {
           spline.to_curve()
         }
       } catch {
-        _ => return Curve::{ value: None }
+        _ => return { value: None }
       }
-      Curve::{ value: Some(curve) }
+      { value: Some(curve) }
     }
   }
 }
@@ -449,7 +443,7 @@ fn handle_mouse_move(
   mouse_position : @app.ResMut[MousePosition],
 ) -> Unit {
   for event in cursor_moved_reader.read() {
-    mouse_position.set(MousePosition::{ position: Some(event.position) })
+    mouse_position.set({ position: Some(event.position) })
   }
 }
 
@@ -467,7 +461,7 @@ fn handle_mouse_press(
         match event.state {
           Pressed =>
             if edit_move.get().start is None {
-              edit_move.set(MouseEditMove::{ start: Some(mouse_pos) })
+              edit_move.set({ start: Some(mouse_pos) })
             }
           Released =>
             if edit_move.get().start is Some(start) {
@@ -478,7 +472,7 @@ fn handle_mouse_press(
                       (point, end_point.sub(point)),
                     )
                   })
-                  edit_move.set(MouseEditMove::{ start: None })
+                  edit_move.set({ start: None })
                 }
               }
             }
@@ -566,7 +560,7 @@ fn cycling_mode_label(mode : CyclingMode) -> String {
 
 ///|
 fn default_control_points() -> ControlPoints {
-  ControlPoints::{
+  {
     points_and_tangents: [
       (@math.Vec2::new(-500.0F, -200.0F), @math.Vec2::new(0.0F, 200.0F)),
       (@math.Vec2::new(-250.0F, 250.0F), @math.Vec2::new(200.0F, 0.0F)),
@@ -592,7 +586,7 @@ fn spawn_ui_text_line(
   try! world.set_by_key(
     entity,
     @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(Auto).with_height(Auto),
   )
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
   try! world.set_by_key(entity, @text.ecs_key_text_font, font)
@@ -610,7 +604,7 @@ fn spawn_ui_text_line(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   entity
 }

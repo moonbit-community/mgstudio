@@ -24,20 +24,20 @@ pub struct TextBounds {
 
 ///|
 pub fn TextBounds::TextBounds() -> TextBounds {
-  TextBounds::{ width: None, height: None }
+  { width: None, height: None }
 }
 
 ///|
 pub fn TextBounds::new(width : Float, height : Float) -> TextBounds {
-  TextBounds::{ width: Some(width), height: Some(height) }
+  { width: Some(width), height: Some(height) }
 }
 
 ///|
 pub fn TextBounds::new_horizontal(width : Float) -> TextBounds {
-  TextBounds::{ width: Some(width), height: None }
+  { width: Some(width), height: None }
 }
 
 ///|
 pub fn TextBounds::new_vertical(height : Float) -> TextBounds {
-  TextBounds::{ width: None, height: Some(height) }
+  { width: None, height: Some(height) }
 }

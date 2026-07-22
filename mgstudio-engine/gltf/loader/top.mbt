@@ -186,7 +186,7 @@ pub fn GltfPlugin::GltfPlugin() -> GltfPlugin {
   {
     pbr_material_handler_enabled: true,
     default_image_sampler: @image.ImageSamplerDescriptor::linear(),
-    convert_coordinates: GltfConvertCoordinates::GltfConvertCoordinates(),
+    convert_coordinates: GltfConvertCoordinates(),
     custom_vertex_attributes: [],
     extension_handlers: [],
     skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::default(),
@@ -271,7 +271,7 @@ priv struct GltfLoaderPluginRuntimeState {
 
 ///|
 fn GltfLoaderPluginRuntimeState::from_bootstrap() -> GltfLoaderPluginRuntimeState {
-  GltfLoaderPluginRuntimeState::{
+  {
     registration: gltf_loader_bootstrap_state.registration,
     registered: gltf_loader_bootstrap_state.registered,
   }
@@ -291,7 +291,7 @@ fn GltfLoaderRuntimeState::from_bootstrap() -> GltfLoaderRuntimeState {
   for attribute in gltf_custom_vertex_attributes_bootstrap {
     custom_vertex_attributes.push(attribute)
   }
-  GltfLoaderRuntimeState::{
+  {
     default_image_sampler: gltf_loader_bootstrap_state.default_image_sampler,
     default_convert_coordinates: gltf_loader_bootstrap_state.default_convert_coordinates,
     default_skinned_mesh_bounds_policy: gltf_loader_bootstrap_state.default_skinned_mesh_bounds_policy,
@@ -313,7 +313,7 @@ let gltf_loader_bootstrap_state : GltfLoaderBootstrapState = {
   registration: None,
   registered: false,
   default_image_sampler: @image.ImageSamplerDescriptor::linear(),
-  default_convert_coordinates: GltfConvertCoordinates::GltfConvertCoordinates(),
+  default_convert_coordinates: GltfConvertCoordinates(),
   default_skinned_mesh_bounds_policy: GltfSkinnedMeshBoundsPolicy::default(),
 }
 
@@ -373,7 +373,7 @@ pub fn gltf_loader_runtime_plugin(
     )
     gltf_custom_vertex_attributes_bootstrap.clear()
     gltf_loader_bootstrap_state.default_image_sampler = @image.ImageSamplerDescriptor::linear()
-    gltf_loader_bootstrap_state.default_convert_coordinates = GltfConvertCoordinates::GltfConvertCoordinates()
+    gltf_loader_bootstrap_state.default_convert_coordinates = GltfConvertCoordinates()
     gltf_loader_bootstrap_state.default_skinned_mesh_bounds_policy = GltfSkinnedMeshBoundsPolicy::default()
     next
   }
@@ -520,7 +520,7 @@ pub fn gltf_plugin_finish(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn gltf_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gltf_plugin_with(app, GltfPlugin::GltfPlugin())
+  gltf_plugin_with(app, GltfPlugin())
 }
 
 ///|

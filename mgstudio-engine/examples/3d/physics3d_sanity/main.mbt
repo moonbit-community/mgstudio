@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, physics3d_sanity_setup)
-  .add_systems_world(@app.Update, physics3d_sanity_print)
+  .add_systems_world(Startup, physics3d_sanity_setup)
+  .add_systems_world(Update, physics3d_sanity_print)
   .run()
 }
 
@@ -146,9 +146,9 @@ fn physics3d_sanity_print(world : @ecs.World) -> Unit {
         Some(events) =>
           for ev in events.collisions {
             match ev {
-              @physics3d.CollisionEvent3d::Started(a, b, sensor) =>
+              Started(a, b, sensor) =>
                 println("Collision Started: \{a.id}, \{b.id}, sensor=\{sensor}")
-              @physics3d.CollisionEvent3d::Stopped(a, b, sensor) =>
+              Stopped(a, b, sensor) =>
                 println("Collision Stopped: \{a.id}, \{b.id}, sensor=\{sensor}")
             }
           }

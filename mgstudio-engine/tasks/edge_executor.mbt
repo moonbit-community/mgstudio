@@ -21,6 +21,7 @@ pub const EDGE_EXECUTOR_BACKEND : String = "edge_executor"
 pub struct EdgeExecutor {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn EdgeExecutor::new() -> EdgeExecutor {
   EdgeExecutor::{  }
 }

@@ -26,7 +26,7 @@ pub struct SkyboxPrepassNode {
 
 ///|
 pub fn SkyboxPrepassNode::SkyboxPrepassNode() -> SkyboxPrepassNode {
-  SkyboxPrepassNode::{ label: SKYBOX_PREPASS_LABEL }
+  { label: SKYBOX_PREPASS_LABEL }
 }
 
 ///|
@@ -52,7 +52,7 @@ pub fn SkyboxPrepassPipelineKey::new(
   normal_prepass~ : Bool,
 ) -> SkyboxPrepassPipelineKey {
   let samples = if samples <= 0 { 1 } else { samples }
-  SkyboxPrepassPipelineKey::{ samples, normal_prepass }
+  { samples, normal_prepass }
 }
 
 ///|
@@ -64,7 +64,7 @@ pub struct RenderSkyboxPrepassPipeline {
 pub fn RenderSkyboxPrepassPipeline::new(
   pipeline_id~ : Int,
 ) -> RenderSkyboxPrepassPipeline {
-  RenderSkyboxPrepassPipeline::{ pipeline_id, }
+  { pipeline_id, }
 }
 
 ///|
@@ -76,7 +76,7 @@ pub struct SkyboxPrepassBindGroup {
 pub fn SkyboxPrepassBindGroup::new(
   bind_group_id~ : Int,
 ) -> SkyboxPrepassBindGroup {
-  SkyboxPrepassBindGroup::{ bind_group_id, }
+  { bind_group_id, }
 }
 
 ///|
@@ -98,7 +98,7 @@ pub fn SkyboxPrepassViewState::new(
   has_view_uniform_binding? : Bool = false,
   has_previous_view_uniform_binding? : Bool = false,
 ) -> SkyboxPrepassViewState {
-  SkyboxPrepassViewState::{
+  {
     has_skybox,
     has_motion_vector_prepass,
     has_normal_prepass,

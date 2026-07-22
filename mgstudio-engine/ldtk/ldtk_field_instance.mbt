@@ -24,12 +24,5 @@ pub fn FieldInstance::new(
   def_uid : Int,
   real_editor_values : Array[Json?],
 ) -> FieldInstance {
-  LdtkFieldInstance::{
-    identifier,
-    tile,
-    field_instance_type,
-    value,
-    def_uid,
-    real_editor_values,
-  }
+  { identifier, tile, field_instance_type, value, def_uid, real_editor_values }
 }

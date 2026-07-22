@@ -14,46 +14,31 @@
 
 ///|
 fn centered_horizontal_margin() -> @ui.UiRect {
-  @ui.UiRect::new(
-    @ui.Val::Auto,
-    @ui.Val::Px(0.0F),
-    @ui.Val::Auto,
-    @ui.Val::Px(0.0F),
-  )
+  @ui.UiRect::new(Auto, Px(0.0F), Auto, Px(0.0F))
 }
 
 ///|
 fn centered_vertical_margin() -> @ui.UiRect {
-  @ui.UiRect::new(
-    @ui.Val::Px(0.0F),
-    @ui.Val::Auto,
-    @ui.Val::Px(0.0F),
-    @ui.Val::Auto,
-  )
+  @ui.UiRect::new(Px(0.0F), Auto, Px(0.0F), Auto)
 }
 
 ///|
 fn margin() -> @ui.Val {
-  @ui.Val::Px(12.0F)
+  Px(12.0F)
 }
 
 ///|
 fn cell_node() -> @ui.Node {
-  @ui.Node::Node()
+  Node()
 }
 
 ///|
 fn anchored_label_node(node : @ui.Node) -> @ui.Node {
-  @ui.Node::{
+  {
     ..node,
-    display: @ui.Display::Block,
-    position_type: @ui.PositionType::Absolute,
-    padding: @ui.UiRect::new(
-      @ui.Val::Px(5.0F),
-      @ui.Val::Px(1.0F),
-      @ui.Val::Px(5.0F),
-      @ui.Val::Px(1.0F),
-    ),
+    display: Block,
+    position_type: Absolute,
+    padding: @ui.UiRect::new(Px(5.0F), Px(1.0F), Px(5.0F), Px(1.0F)),
   }
 }
 
@@ -120,21 +105,17 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
       .with_padding(@ui.UiRect::all(margin()))
       .with_row_gap(margin())
       .with_column_gap(margin())
-      .with_display(@ui.Display::Grid)
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(3), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(3), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(3), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(3), [Fr(1.0F)]),
       ]),
       @ui.BackgroundColor::new(@color.Color::black()),
     ),
@@ -143,95 +124,63 @@ fn setup(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      left: @ui.Val::Px(10.0F),
-      top: @ui.Val::Px(10.0F),
-    },
+    { ..cell_node(), left: Px(10.0F), top: Px(10.0F) },
     "left: 10px\ntop: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      margin: centered_horizontal_margin(),
-      top: @ui.Val::Px(10.0F),
-    },
+    { ..cell_node(), margin: centered_horizontal_margin(), top: Px(10.0F) },
     "center: 10px\ntop: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      right: @ui.Val::Px(10.0F),
-      top: @ui.Val::Px(10.0F),
-    },
+    { ..cell_node(), right: Px(10.0F), top: Px(10.0F) },
     "right: 10px\ntop: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      left: @ui.Val::Px(10.0F),
-      margin: centered_vertical_margin(),
-    },
+    { ..cell_node(), left: Px(10.0F), margin: centered_vertical_margin() },
     "left: 10px\ncenter: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{ ..cell_node(), margin: @ui.UiRect::all(@ui.Val::Auto) },
+    { ..cell_node(), margin: @ui.UiRect::all(Auto) },
     "center: 10px\ncenter: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      right: @ui.Val::Px(10.0F),
-      margin: centered_vertical_margin(),
-    },
+    { ..cell_node(), right: Px(10.0F), margin: centered_vertical_margin() },
     "right: 10px\ncenter: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      left: @ui.Val::Px(10.0F),
-      bottom: @ui.Val::Px(10.0F),
-    },
+    { ..cell_node(), left: Px(10.0F), bottom: Px(10.0F) },
     "left: 10px\nbottom: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      margin: centered_horizontal_margin(),
-      bottom: @ui.Val::Px(10.0F),
-    },
+    { ..cell_node(), margin: centered_horizontal_margin(), bottom: Px(10.0F) },
     "center: 10px\nbottom: 10px",
   )
   spawn_anchored_cell(
     commands,
     root,
     font,
-    @ui.Node::{
-      ..cell_node(),
-      right: @ui.Val::Px(10.0F),
-      bottom: @ui.Val::Px(10.0F),
-    },
+    { ..cell_node(), right: Px(10.0F), bottom: Px(10.0F) },
     "right: 10px\nbottom: 10px",
   )
 }
@@ -240,6 +189,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

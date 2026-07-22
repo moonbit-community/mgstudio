@@ -71,10 +71,7 @@ test "pbr/meshlet: cull descriptors carry bevy shader defs and immediates" {
 test "pbr/meshlet: raster and resolve descriptors expose render target depth state" {
   let descriptors = meshlet_pipeline_descriptors()
   let hardware_raster = descriptors[14]
-  debug_inspect(
-    hardware_raster.kind is MeshletPipelineKind::Render,
-    content="true",
-  )
+  debug_inspect(hardware_raster.kind is Render, content="true")
   debug_inspect(hardware_raster.immediate_size, content="4")
   debug_inspect(hardware_raster.color_target_r8uint, content="true")
   debug_inspect(hardware_raster.color_write_mask_empty, content="true")
@@ -86,8 +83,7 @@ test "pbr/meshlet: raster and resolve descriptors expose render target depth sta
   )
   let resolve_material_depth = descriptors[19]
   debug_inspect(
-    resolve_material_depth.depth_format
-    is MeshletPipelineDepthFormat::Depth16Unorm,
+    resolve_material_depth.depth_format is Depth16Unorm,
     content="true",
   )
   debug_inspect(resolve_material_depth.depth_write_enabled, content="true")

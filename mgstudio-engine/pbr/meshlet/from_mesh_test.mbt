@@ -18,7 +18,7 @@ test "pbr meshlet: conversion reports native processor availability" {
   let error = meshlet_conversion_error_for_counts(
     10,
     10,
-    MeshToMeshletMeshConversionConfig::MeshToMeshletMeshConversionConfig(),
+    MeshToMeshletMeshConversionConfig(),
   )
   inspect(error is None, content="true")
 }
@@ -35,7 +35,7 @@ test "pbr meshlet: input summary validation checks topology and attributes" {
   )
   inspect(
     meshlet_validate_input_mesh_summary(wrong_topology, config, true)
-    is Some(MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology),
+    is Some(WrongMeshPrimitiveTopology),
     content="true",
   )
   let wrong_attributes = MeshToMeshletInputMeshSummary::new(
@@ -47,7 +47,7 @@ test "pbr meshlet: input summary validation checks topology and attributes" {
   )
   inspect(
     meshlet_validate_input_mesh_summary(wrong_attributes, config, true)
-    is Some(MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(_)),
+    is Some(WrongMeshVertexAttributes(_)),
     content="true",
   )
 }
@@ -64,7 +64,7 @@ test "pbr meshlet: input summary validation checks indices and limits" {
   )
   inspect(
     meshlet_validate_input_mesh_summary(missing_indices, config, true)
-    is Some(MeshToMeshletMeshConversionError::MeshMissingIndices),
+    is Some(MeshMissingIndices),
     content="true",
   )
   let over_limit = MeshToMeshletInputMeshSummary::new(
@@ -76,7 +76,7 @@ test "pbr meshlet: input summary validation checks indices and limits" {
   )
   inspect(
     meshlet_validate_input_mesh_summary(over_limit, config, true)
-    is Some(MeshToMeshletMeshConversionError::TooManyVertices),
+    is Some(TooManyVertices),
     content="true",
   )
 }
@@ -126,15 +126,13 @@ test "pbr meshlet: mesh input extraction mirrors required Bevy attributes" {
 ///|
 test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and missing indices" {
   let wrong_topology = @mesh.Mesh::from_3d_geometry(
-    meshlet_test_triangle_geometry().with_topology(
-      @mesh.Mesh3dPrimitiveTopology::LineList,
-    ),
+    meshlet_test_triangle_geometry().with_topology(LineList),
   )
   let wrong_topology_rejected = try {
     ignore(meshlet_extract_mesh_input(wrong_topology))
     false
   } catch {
-    MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology => true
+    WrongMeshPrimitiveTopology => true
     _ => false
   }
   inspect(wrong_topology_rejected, content="true")
@@ -145,7 +143,7 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
     ignore(meshlet_extract_mesh_input(missing_indices))
     false
   } catch {
-    MeshToMeshletMeshConversionError::MeshMissingIndices => true
+    MeshMissingIndices => true
     _ => false
   }
   inspect(missing_indices_rejected, content="true")
@@ -162,7 +160,7 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
     ignore(meshlet_extract_mesh_input(extra_attribute))
     false
   } catch {
-    MeshToMeshletMeshConversionError::WrongMeshVertexAttributes(_) => true
+    WrongMeshVertexAttributes(_) => true
     _ => false
   }
   inspect(extra_attribute_rejected, content="true")
@@ -171,15 +169,13 @@ test "pbr meshlet: mesh input extraction rejects wrong topology, attributes, and
 ///|
 test "pbr meshlet: from_mesh validates mesh before running processor" {
   let wrong_topology = @mesh.Mesh::from_3d_geometry(
-    meshlet_test_triangle_geometry().with_topology(
-      @mesh.Mesh3dPrimitiveTopology::LineList,
-    ),
+    meshlet_test_triangle_geometry().with_topology(LineList),
   )
   let wrong_topology_rejected = try {
     ignore(MeshletMesh::from_mesh(wrong_topology))
     false
   } catch {
-    MeshToMeshletMeshConversionError::WrongMeshPrimitiveTopology => true
+    WrongMeshPrimitiveTopology => true
     _ => false
   }
   inspect(wrong_topology_rejected, content="true")

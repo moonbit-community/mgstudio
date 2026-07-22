@@ -86,11 +86,11 @@ fn toggle_mode(
   keyboard : @input.ButtonInput[@window.KeyCode],
   state : @app.ResMut[MenuState],
 ) -> Unit {
-  if keyboard.just_pressed(@window.KeyCode::Enter) {
-    state.set(MenuState::{ playing: true })
+  if keyboard.just_pressed(Enter) {
+    state.set({ playing: true })
   }
-  if keyboard.just_pressed(@window.KeyCode::Escape) {
-    state.set(MenuState::{ playing: false })
+  if keyboard.just_pressed(Escape) {
+    state.set({ playing: false })
   }
 }
 
@@ -126,8 +126,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param2(@app.Update, toggle_mode)
-  .add_systems_param4(@app.Update, update_visuals)
+  .add_systems_param(Startup, setup)
+  .add_systems_param2(Update, toggle_mode)
+  .add_systems_param4(Update, update_visuals)
   .run()
 }

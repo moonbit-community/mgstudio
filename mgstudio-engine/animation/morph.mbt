@@ -33,7 +33,7 @@ pub impl @json.FromJson for AnimationWeights with fn from_json(json, path) {
 
 ///|
 pub fn AnimationWeights::new(values : Array[Float]) -> AnimationWeights {
-  AnimationWeights::{ values, }
+  { values, }
 }
 
 ///|

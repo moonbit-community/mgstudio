@@ -28,7 +28,7 @@ fn[Source : States, Derived : SubStates] apply_sub_state_transition(
     Some(next_state) =>
       match take_next_state(next_state) {
         Some(queued) => {
-          world.insert_resource(next_key, NextState::Unchanged)
+          world.insert_resource(next_key, Unchanged)
           Some(queued)
         }
         None => None
@@ -105,12 +105,10 @@ pub fn[Source : States, Derived : SubStates] App::add_sub_state(
   require_states_plugin_installed(self.world())
   register_sub_state(source_state, state, should_exist)
   if world_next_state(self.world(), state) is None {
-    self
-    .world()
-    .insert_resource(next_state_resource_key(state), NextState::Unchanged)
+    self.world().insert_resource(next_state_resource_key(state), Unchanged)
   }
   if world_state(self.world(), state) is Some(current_state) {
-    enqueue_transition_event(self.world(), state, StateTransitionEvent::{
+    enqueue_transition_event(self.world(), state, {
       exited: None,
       entered: Some(current_state.get()),
       allow_same_state_transitions: true,

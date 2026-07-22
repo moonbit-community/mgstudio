@@ -97,14 +97,14 @@ test "light plugin: automatically adds default parallax correction to reflection
 
   let auto_inserted = match
     (try! app.world().get_by_key(auto_probe, ecs_key_parallax_correction)) {
-    Some(ParallaxCorrection::Auto) => true
+    Some(Auto) => true
     _ => false
   }
   debug_inspect(auto_inserted, content="true")
 
   let custom_preserved = match
     (try! app.world().get_by_key(custom_probe, ecs_key_parallax_correction)) {
-    Some(ParallaxCorrection::Custom(_)) => true
+    Some(Custom(_)) => true
     _ => false
   }
   debug_inspect(custom_preserved, content="true")
@@ -422,29 +422,23 @@ test "light plugin: ambient light requires camera component" {
 ///|
 test "light plugin: exposes Bevy simulation light system sets" {
   debug_inspect(
-    simulation_light_system_set_name(SimulationLightSystems::UpdateBounds),
+    simulation_light_system_set_name(UpdateBounds),
     content="\"mgstudio.light.SimulationLightSystems.UpdateBounds\"",
   )
   debug_inspect(
-    simulation_light_system_set_name(
-      SimulationLightSystems::AssignLightsToClusters,
-    ),
+    simulation_light_system_set_name(AssignLightsToClusters),
     content="\"mgstudio.light.SimulationLightSystems.AssignLightsToClusters\"",
   )
   debug_inspect(
-    simulation_light_system_set_name(
-      SimulationLightSystems::UpdateDirectionalLightCascades,
-    ),
+    simulation_light_system_set_name(UpdateDirectionalLightCascades),
     content="\"mgstudio.light.SimulationLightSystems.UpdateDirectionalLightCascades\"",
   )
   debug_inspect(
-    simulation_light_system_set_name(SimulationLightSystems::UpdateLightFrusta),
+    simulation_light_system_set_name(UpdateLightFrusta),
     content="\"mgstudio.light.SimulationLightSystems.UpdateLightFrusta\"",
   )
   debug_inspect(
-    simulation_light_system_set_name(
-      SimulationLightSystems::CheckLightVisibility,
-    ),
+    simulation_light_system_set_name(CheckLightVisibility),
     content="\"mgstudio.light.SimulationLightSystems.CheckLightVisibility\"",
   )
 }
@@ -626,11 +620,7 @@ test "light plugin: updates visible shadow-mapped directional light cascades fru
   let world = app.world()
   let view = world.spawn()
   let light = world.spawn()
-  try! world.set_by_key(
-    view,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(view, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     view,
     @camera_projection3d.ecs_key_projection,

@@ -503,7 +503,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
   let mut changed_sprite_mesh_count = 0
 
   let scan_mesh2d_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.scan_mesh2d",
   )
   if has_mesh2d {
@@ -511,13 +511,13 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     changed_mesh2d_count = sprite_update_mesh_aabbs(world)
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.scan_mesh2d",
     scan_mesh2d_trace_start_us,
   )
 
   let scan_sprites_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.scan_sprites",
   )
   if has_sprite {
@@ -528,13 +528,13 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     )
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.scan_sprites",
     scan_sprites_trace_start_us,
   )
 
   let scan_sprite_mesh_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.scan_sprite_mesh",
   )
   if has_sprite_mesh {
@@ -547,20 +547,20 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
     )
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.scan_sprite_mesh",
     scan_sprite_mesh_trace_start_us,
   )
 
   let apply_aabbs_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.apply_aabbs",
   )
   for entry in pending_aabbs {
     sprite_insert_or_replace_new_aabb(world, entry.0, entry.1)
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "sprite_bounds.apply_aabbs",
     apply_aabbs_trace_start_us,
   )
@@ -580,6 +580,7 @@ fn sprite_calculate_bounds_2d(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn sprite_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if app.contains_resource(ecs_res_key_sprite_plugin_marker) {
     return app

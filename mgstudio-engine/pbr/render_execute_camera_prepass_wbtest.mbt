@@ -24,7 +24,7 @@ fn render3d_prepass_consumer_test_item(
   pipeline_id : UInt64,
   phase? : Int = RENDER3D_PHASE_OPAQUE,
 ) -> MeshPhaseItem3d {
-  MeshPhaseItem3d::{
+  {
     entity: phase_entity_ref3d(
       @core.Entity::new(entity_id, 0),
       @core.Entity::new(entity_id + 100, 0),
@@ -67,7 +67,7 @@ test "pbr prepass: consumer reads retained prepass and deferred phase items" {
     .unwrap()
   opaque_prepass.add(
     render3d_prepass_consumer_test_item(1, 101UL),
-    Render3dPrepassBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   alpha_mask_deferred.add(
     render3d_prepass_consumer_test_item(
@@ -75,7 +75,7 @@ test "pbr prepass: consumer reads retained prepass and deferred phase items" {
       102UL,
       phase=RENDER3D_PHASE_ALPHA_MASK,
     ),
-    Render3dPrepassBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   let (prepass_items, deferred_items) = render3d_retained_prepass_phase_items(
     world, retained_view,

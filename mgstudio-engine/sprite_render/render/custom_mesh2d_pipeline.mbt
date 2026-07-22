@@ -41,11 +41,7 @@ pub fn CustomMesh2dPipelineDescriptor::new(
   shader_path : String,
   phase? : Int = 1,
 ) -> CustomMesh2dPipelineDescriptor {
-  CustomMesh2dPipelineDescriptor::{
-    pipeline_id: next_custom_mesh2d_pipeline_id(),
-    shader_path,
-    phase,
-  }
+  { pipeline_id: next_custom_mesh2d_pipeline_id(), shader_path, phase }
 }
 
 ///|
@@ -82,7 +78,7 @@ struct CustomMesh2dPipelineRegistrations {
 
 ///|
 pub fn CustomMesh2dPipelineRegistrations::new() -> CustomMesh2dPipelineRegistrations {
-  CustomMesh2dPipelineRegistrations::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -145,7 +141,7 @@ pub struct CustomMesh2dPipelineSlots {
 
 ///|
 pub fn CustomMesh2dPipelineSlots::new() -> CustomMesh2dPipelineSlots {
-  CustomMesh2dPipelineSlots::{ slots: @hashmap.HashMap([]) }
+  { slots: HashMap([]) }
 }
 
 ///|
@@ -241,10 +237,7 @@ pub fn[T] register_custom_mesh2d_pipeline_world(
   if world.get_resource_mut(CustomMesh2dPipelineRegistrations::resource())
     is Some(registrations) {
     registrations.modify(fn(value) {
-      value.register(CustomMesh2dPipelineRegistrationEntry::{
-        type_name,
-        extract_slots_fn: extract_slots,
-      })
+      value.register({ type_name, extract_slots_fn: extract_slots })
     })
   }
 }

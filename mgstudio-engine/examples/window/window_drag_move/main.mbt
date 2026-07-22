@@ -55,14 +55,14 @@ impl @app.Resource for ResizeDir with fn resource() {
 ///|
 fn direction_by_index(index : Int) -> @math.CompassOctant {
   match index {
-    0 => @math.CompassOctant::North
-    1 => @math.CompassOctant::NorthEast
-    2 => @math.CompassOctant::East
-    3 => @math.CompassOctant::SouthEast
-    4 => @math.CompassOctant::South
-    5 => @math.CompassOctant::SouthWest
-    6 => @math.CompassOctant::West
-    _ => @math.CompassOctant::NorthWest
+    0 => North
+    1 => NorthEast
+    2 => East
+    3 => SouthEast
+    4 => South
+    5 => SouthWest
+    6 => West
+    _ => NorthWest
   }
 }
 
@@ -114,11 +114,11 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
-  @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
-    @transform.Transform::identity(),
-  ).spawn(world)
+  @camera.Camera3dBundle::new(Camera(), @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
   let overlay_camera = try! world.spawn_bundle(
     (
@@ -132,38 +132,35 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
+    IsDefaultUiCamera(),
   )
 
-  let content = instruction_text(
-    LeftClickAction::Move,
-    @math.CompassOctant::NorthWest,
-  )
+  let content = instruction_text(Move, NorthWest)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(0.0F))
-    .with_left(@ui.Val::Px(0.0F))
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(5.0F))),
+    .with_position_type(Absolute)
+    .with_top(Px(0.0F))
+    .with_left(Px(0.0F))
+    .with_padding(@ui.UiRect::all(Px(5.0F))),
   )
   try! world.set_by_key(
     root,
     @ui.GlobalZIndex::component(),
     @ui.GlobalZIndex::new(2147483647),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(0.0F))
-    .with_left(@ui.Val::Px(0.0F))
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(5.0F))),
+    .with_position_type(Absolute)
+    .with_top(Px(0.0F))
+    .with_left(Px(0.0F))
+    .with_padding(@ui.UiRect::all(Px(5.0F))),
   )
   try! world.set_by_key(
     root,
@@ -206,11 +203,7 @@ fn setup(world : @ecs.World) -> Unit {
     @text.ecs_key_text,
     @text.Text::new(content),
   )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_font, TextFont())
   try! world.set_by_key(
     text_entity,
     @hierarchy.ecs_key_parent,
@@ -221,11 +214,7 @@ fn setup(world : @ecs.World) -> Unit {
     @text.ecs_key_text,
     @text.Text::new(content),
   )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_font, TextFont())
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
@@ -241,11 +230,7 @@ fn setup(world : @ecs.World) -> Unit {
     @text.ecs_key_text,
     @text.Text::new(content),
   )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_font, TextFont())
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_color,
@@ -254,7 +239,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   try! world.set_by_key(text_entity, example_text_key, ExampleText::{  })
 }
@@ -332,13 +317,13 @@ fn main {
           window
         },
       ),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param3(@app.Update, handle_input)
-  .add_systems_param3(@app.Update, move_or_resize_windows)
+  .add_systems_world(Startup, setup)
+  .add_systems_param3(Update, handle_input)
+  .add_systems_param3(Update, move_or_resize_windows)
   .run()
 }

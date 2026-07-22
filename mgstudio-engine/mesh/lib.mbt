@@ -111,11 +111,11 @@ pub fn BaseMeshPipelineKey::primitive_topology(
     ) &
     BASE_MESH_PIPELINE_KEY_PRIMITIVE_TOPOLOGY_MASK_BITS
   if primitive_topology_bits == 1UL {
-    Mesh3dPrimitiveTopology::LineList
+    LineList
   } else if primitive_topology_bits == 2UL {
-    Mesh3dPrimitiveTopology::LineStrip
+    LineStrip
   } else {
-    Mesh3dPrimitiveTopology::TriangleList
+    TriangleList
   }
 }
 
@@ -129,9 +129,9 @@ pub fn BaseMeshPipelineKey::strip_index_format(
       BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_SHIFT_BITS
     )
   if index_bits == BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U16 {
-    Some(Mesh3dIndexFormat::Uint16)
+    Some(Uint16)
   } else if index_bits == BASE_MESH_PIPELINE_KEY_STRIP_INDEX_FORMAT_U32 {
-    Some(Mesh3dIndexFormat::Uint32)
+    Some(Uint32)
   } else {
     None
   }
@@ -141,6 +141,7 @@ pub fn BaseMeshPipelineKey::strip_index_format(
 pub struct MeshPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MeshPlugin::MeshPlugin() -> MeshPlugin {
   MeshPlugin::{  }
 }
@@ -163,9 +164,9 @@ fn mark_skinned_meshes_as_changed_if_their_assets_changed(
     @asset.AssetEvent[SkinnedMeshInverseBindposes],
   ],
 ) -> Unit {
-  let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_asset_ids : @hashset.HashSet[Int] = HashSet([])
   for inverse_bindposes_asset_event in inverse_bindposes_asset_events.read() {
-    if inverse_bindposes_asset_event is @asset.AssetEvent::Modified(handle) {
+    if inverse_bindposes_asset_event is Modified(handle) {
       changed_asset_ids.add(handle.id())
     }
   }
@@ -188,9 +189,9 @@ fn mark_3d_meshes_as_changed_if_their_assets_changed(
   meshes_3d : @ecs.Query[@ecs.Read[Mesh3d], @ecs.All],
   mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
 ) -> Unit {
-  let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_asset_ids : @hashset.HashSet[Int] = HashSet([])
   for mesh_asset_event in mesh_asset_events.read() {
-    if mesh_asset_event is @asset.AssetEvent::Modified(handle) {
+    if mesh_asset_event is Modified(handle) {
       changed_asset_ids.add(handle.id())
     }
   }
@@ -213,9 +214,9 @@ fn mark_2d_meshes_as_changed_if_their_assets_changed(
   meshes_2d : @ecs.Query[@ecs.Read[Mesh2d], @ecs.All],
   mesh_asset_events : @ecs.MessageReader[@asset.AssetEvent[Mesh]],
 ) -> Unit {
-  let changed_asset_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_asset_ids : @hashset.HashSet[Int] = HashSet([])
   for mesh_asset_event in mesh_asset_events.read() {
-    if mesh_asset_event is @asset.AssetEvent::Modified(handle) {
+    if mesh_asset_event is Modified(handle) {
       changed_asset_ids.add(handle.id())
     }
   }
@@ -273,8 +274,8 @@ fn register_mesh_required_components(
 ///|
 pub fn ensure_mesh_required_components(world : @ecs.World) -> Unit {
   register_mesh_required_components(world) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(_) => ()
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(_) => ()
     _ => abort("failed to register mesh required components")
   }
 }

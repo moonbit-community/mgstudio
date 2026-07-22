@@ -149,12 +149,12 @@ pub impl @app.Resource for PressedControls with fn resource() {
 
 ///|
 fn AnimationMaskState::AnimationMaskState() -> AnimationMaskState {
-  AnimationMaskState::{ group_clips: [0, 0, 0, 0, 0, 0] }
+  { group_clips: [0, 0, 0, 0, 0, 0] }
 }
 
 ///|
 fn PressedControls::PressedControls() -> PressedControls {
-  PressedControls::{ entities: [] }
+  { entities: [] }
 }
 
 ///|
@@ -270,7 +270,7 @@ fn build_animation_mask_setup(
     }
   }
 
-  AnimationMaskSetup::{
+  {
     graph_handle: @animation.animation_graph_add(graph),
     included_targets,
     initialized: false,
@@ -335,18 +335,13 @@ fn spawn_animation_button(
     .insert_component(
       @ui.Node::Node()
       .with_flex_grow(1.0F)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
+      .with_justify_content(Center)
+      .with_align_items(Center)
       .with_border(
         if first {
-          @ui.UiRect::UiRect()
+          UiRect()
         } else {
-          @ui.UiRect::new(
-            @ui.Val::Px(1.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-          )
+          @ui.UiRect::new(Px(1.0F), Px(0.0F), Px(0.0F), Px(0.0F))
         },
       ),
     ),
@@ -384,11 +379,11 @@ fn spawn_mask_group_control(
       (
         @hierarchy.Parent::new(parent),
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(width))
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
+        .with_width(Px(width))
+        .with_flex_direction(Column)
+        .with_align_items(Center)
+        .with_justify_content(Center)
+        .with_border(@ui.UiRect::all(Px(1.0F))),
         @ui.BorderColor::new(white()),
         @ui.BackgroundColor::new(black()),
       ),
@@ -403,9 +398,9 @@ fn spawn_mask_group_control(
       (
         @hierarchy.Parent::new(container),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center),
+        .with_width(Percent(100.0F))
+        .with_justify_content(Center)
+        .with_align_items(Center),
         @ui.BackgroundColor::new(black()),
       ),
     ),
@@ -420,18 +415,11 @@ fn spawn_mask_group_control(
       (
         @hierarchy.Parent::new(container),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_flex_direction(@ui.FlexDirection::Row)
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center)
-        .with_border(
-          @ui.UiRect::new(
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(1.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-          ),
-        ),
+        .with_width(Percent(100.0F))
+        .with_flex_direction(Row)
+        .with_justify_content(Center)
+        .with_align_items(Center)
+        .with_border(@ui.UiRect::new(Px(0.0F), Px(1.0F), Px(0.0F), Px(0.0F))),
         @ui.BorderColor::new(white()),
       ),
     ),
@@ -451,14 +439,8 @@ fn setup(world : @ecs.World) -> Unit {
     animation_mask_setup_key,
     build_animation_mask_setup(asset_server),
   )
-  world.insert_resource(
-    animation_mask_state_key,
-    AnimationMaskState::AnimationMaskState(),
-  )
-  world.insert_resource(
-    pressed_controls_key,
-    PressedControls::PressedControls(),
-  )
+  world.insert_resource(animation_mask_state_key, AnimationMaskState())
+  world.insert_resource(pressed_controls_key, PressedControls())
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(white(), 100.0F),
@@ -466,7 +448,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(-15.0F, 10.0F, 20.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -538,8 +520,8 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F)),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F)),
       ),
     ),
   )
@@ -559,9 +541,9 @@ fn setup(world : @ecs.World) -> Unit {
           font,
         ),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_left(Px(12.0F))
+        .with_top(Px(12.0F)),
       ),
     ),
   )
@@ -574,11 +556,11 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_bottom(@ui.Val::Px(12.0F))
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_row_gap(@ui.Val::Px(6.0F)),
+        .with_position_type(Absolute)
+        .with_left(Px(12.0F))
+        .with_bottom(Px(12.0F))
+        .with_flex_direction(Column)
+        .with_row_gap(Px(6.0F)),
       ),
     ),
   )
@@ -601,9 +583,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(panel),
-        @ui.Node::Node()
-        .with_flex_direction(@ui.FlexDirection::Row)
-        .with_column_gap(@ui.Val::Px(6.0F)),
+        @ui.Node::Node().with_flex_direction(Row).with_column_gap(Px(6.0F)),
       ),
     ),
   )
@@ -635,9 +615,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @hierarchy.Parent::new(panel),
-        @ui.Node::Node()
-        .with_flex_direction(@ui.FlexDirection::Row)
-        .with_column_gap(@ui.Val::Px(6.0F)),
+        @ui.Node::Node().with_flex_direction(Row).with_column_gap(Px(6.0F)),
       ),
     ),
   )
@@ -767,7 +745,7 @@ fn handle_button_toggles(world : @ecs.World) -> Unit {
   ] = @ecs.query(world)
   try! controls.view(fn(entity, pair) {
     let (interaction, control) = pair
-    let is_pressed = interaction.value() == @ui.Interaction::Pressed
+    let is_pressed = interaction.value() == Pressed
     if is_pressed {
       next_pressed.push(entity)
     }
@@ -829,9 +807,9 @@ fn update_ui(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, setup_animation_graph_once_loaded)
-  .add_systems_world(@app.Update, handle_button_toggles)
-  .add_systems_world(@app.Update, update_ui)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, setup_animation_graph_once_loaded)
+  .add_systems_world(Update, handle_button_toggles)
+  .add_systems_world(Update, update_ui)
   .run()
 }

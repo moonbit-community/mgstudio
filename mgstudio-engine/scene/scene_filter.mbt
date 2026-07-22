@@ -21,17 +21,17 @@ pub enum SceneFilter {
 
 ///|
 pub fn SceneFilter::default() -> SceneFilter {
-  SceneFilter::Unset
+  Unset
 }
 
 ///|
 pub fn SceneFilter::allow_all() -> SceneFilter {
-  SceneFilter::Denylist(@hashmap.HashMap([]))
+  Denylist(HashMap([]))
 }
 
 ///|
 pub fn SceneFilter::deny_all() -> SceneFilter {
-  SceneFilter::Allowlist(@hashmap.HashMap([]))
+  Allowlist(HashMap([]))
 }
 
 ///|
@@ -50,18 +50,18 @@ fn scene_filter_allow_token(
   token : String,
 ) -> SceneFilter {
   match filter {
-    SceneFilter::Unset => {
-      let entries : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+    Unset => {
+      let entries : @hashmap.HashMap[String, Bool] = HashMap([])
       entries.set(token, true)
-      SceneFilter::Allowlist(entries)
+      Allowlist(entries)
     }
-    SceneFilter::Allowlist(entries) => {
+    Allowlist(entries) => {
       entries.set(token, true)
-      SceneFilter::Allowlist(entries)
+      Allowlist(entries)
     }
-    SceneFilter::Denylist(entries) => {
+    Denylist(entries) => {
       entries.remove(token)
-      SceneFilter::Denylist(entries)
+      Denylist(entries)
     }
   }
 }
@@ -69,18 +69,18 @@ fn scene_filter_allow_token(
 ///|
 fn scene_filter_deny_token(filter : SceneFilter, token : String) -> SceneFilter {
   match filter {
-    SceneFilter::Unset => {
-      let entries : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+    Unset => {
+      let entries : @hashmap.HashMap[String, Bool] = HashMap([])
       entries.set(token, true)
-      SceneFilter::Denylist(entries)
+      Denylist(entries)
     }
-    SceneFilter::Allowlist(entries) => {
+    Allowlist(entries) => {
       entries.remove(token)
-      SceneFilter::Allowlist(entries)
+      Allowlist(entries)
     }
-    SceneFilter::Denylist(entries) => {
+    Denylist(entries) => {
       entries.set(token, true)
-      SceneFilter::Denylist(entries)
+      Denylist(entries)
     }
   }
 }
@@ -88,9 +88,9 @@ fn scene_filter_deny_token(filter : SceneFilter, token : String) -> SceneFilter 
 ///|
 fn scene_filter_is_allowed_token(filter : SceneFilter, token : String) -> Bool {
   match filter {
-    SceneFilter::Unset => true
-    SceneFilter::Allowlist(entries) => entries.contains(token)
-    SceneFilter::Denylist(entries) => !entries.contains(token)
+    Unset => true
+    Allowlist(entries) => entries.contains(token)
+    Denylist(entries) => !entries.contains(token)
   }
 }
 
@@ -173,9 +173,9 @@ pub fn SceneFilter::is_resource_denied_by_id(
 ///|
 pub fn SceneFilter::len(self : SceneFilter) -> Int {
   match self {
-    SceneFilter::Unset => 0
-    SceneFilter::Allowlist(entries) => scene_filter_len(entries)
-    SceneFilter::Denylist(entries) => scene_filter_len(entries)
+    Unset => 0
+    Allowlist(entries) => scene_filter_len(entries)
+    Denylist(entries) => scene_filter_len(entries)
   }
 }
 
@@ -187,8 +187,8 @@ pub fn SceneFilter::is_empty(self : SceneFilter) -> Bool {
 ///|
 pub fn SceneFilter::iter_tokens(self : SceneFilter) -> Array[String] {
   match self {
-    SceneFilter::Unset => []
-    SceneFilter::Allowlist(entries) => {
+    Unset => []
+    Allowlist(entries) => {
       let tokens : Array[String] = []
       for entry in entries.iter() {
         let (token, _) = entry
@@ -196,7 +196,7 @@ pub fn SceneFilter::iter_tokens(self : SceneFilter) -> Array[String] {
       }
       tokens
     }
-    SceneFilter::Denylist(entries) => {
+    Denylist(entries) => {
       let tokens : Array[String] = []
       for entry in entries.iter() {
         let (token, _) = entry

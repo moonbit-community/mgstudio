@@ -29,6 +29,7 @@ pub struct SkinnedMeshBoundsGizmoPlugin {}
 const SKINNED_MESH_BOUNDS_GIZMO_PLUGIN_NAME : String = "mgstudio.gizmos.SkinnedMeshBoundsGizmoPlugin"
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin() -> SkinnedMeshBoundsGizmoPlugin {
   SkinnedMeshBoundsGizmoPlugin::{  }
 }
@@ -41,15 +42,12 @@ pub struct SkinnedMeshBoundsGizmoConfigGroup {
 
 ///|
 pub fn SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup() -> SkinnedMeshBoundsGizmoConfigGroup {
-  SkinnedMeshBoundsGizmoConfigGroup::{
-    draw_all: false,
-    default_color: @color.Color::white(),
-  }
+  { draw_all: false, default_color: @color.Color::white() }
 }
 
 ///|
 pub impl Default for SkinnedMeshBoundsGizmoConfigGroup with fn default() {
-  SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup()
+  SkinnedMeshBoundsGizmoConfigGroup()
 }
 
 ///|
@@ -84,7 +82,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 ///|
 pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   SkinnedMeshBoundsGizmoConfigGroupCell(
-    Ref(SkinnedMeshBoundsGizmoConfigGroup::SkinnedMeshBoundsGizmoConfigGroup()),
+    Ref(SkinnedMeshBoundsGizmoConfigGroup()),
   )
 }
 
@@ -105,7 +103,7 @@ pub struct ShowSkinnedMeshBoundsGizmo {
 
 ///|
 pub fn ShowSkinnedMeshBoundsGizmo::ShowSkinnedMeshBoundsGizmo() -> ShowSkinnedMeshBoundsGizmo {
-  ShowSkinnedMeshBoundsGizmo::{ color: None }
+  { color: None }
 }
 
 ///|
@@ -117,10 +115,7 @@ pub impl @ecs.Component for ShowSkinnedMeshBoundsGizmo with fn component() {
 pub fn skinned_mesh_bounds_gizmo_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  skinned_mesh_bounds_gizmo_plugin_with(
-    app,
-    SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin(),
-  )
+  skinned_mesh_bounds_gizmo_plugin_with(app, SkinnedMeshBoundsGizmoPlugin())
 }
 
 ///|

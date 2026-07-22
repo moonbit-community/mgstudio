@@ -30,7 +30,7 @@ pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 ///|
 pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
   view_frustum_assert_half_spaces(half_spaces)
-  ViewFrustum::{ half_spaces, }
+  { half_spaces, }
 }
 
 ///|

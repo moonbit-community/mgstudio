@@ -139,7 +139,7 @@ fn render3d_prepass_targets_get_or_create(
             item.deferred_lighting_pass_id_target_id >= 0
           )
         ) {
-        return Render3dPrepassTargetIds::{
+        return {
           depth_texture_id: item.depth_target_id,
           normal_texture_id: if normal_prepass_enabled {
             item.normal_target_id
@@ -230,7 +230,7 @@ fn render3d_prepass_targets_get_or_create(
     })
   }
   scene_targets_state.modify(fn(state) { state.prepass_targets = next })
-  Render3dPrepassTargetIds::{
+  {
     depth_texture_id: depth_target_id,
     normal_texture_id: normal_target_id,
     deferred_texture_id: deferred_target_id,
@@ -626,7 +626,7 @@ fn render3d_camera_environment_map_state(
       is Some(diffuse_texture_id) &&
       render3d_loaded_image_texture_id(environment_map_light.specular_map)
       is Some(specular_texture_id) {
-      state = Render3dEnvironmentMapState::{
+      state = {
         diffuse_texture_id,
         specular_texture_id,
         smallest_specular_mip_level: render3d_texture_smallest_specular_mip_level(
@@ -647,7 +647,7 @@ fn render3d_camera_environment_map_state(
     specular_texture_id = diffuse_texture_id
   }
   if diffuse_texture_id < 0 || specular_texture_id < 0 {
-    Render3dEnvironmentMapState::{
+    {
       diffuse_texture_id: -1,
       specular_texture_id: -1,
       smallest_specular_mip_level: 0,
@@ -656,7 +656,7 @@ fn render3d_camera_environment_map_state(
       affects_lightmapped_mesh_diffuse: true,
     }
   } else {
-    Render3dEnvironmentMapState::{
+    {
       ..state,
       diffuse_texture_id,
       specular_texture_id,
@@ -779,9 +779,9 @@ fn render3d_light_probe_parallax_bounds(
   parallax_correction : @light.ParallaxCorrection?,
 ) -> @math.Vec3 {
   match parallax_correction {
-    Some(@light.ParallaxCorrection::Auto) => @math.Vec3::splat(0.5F)
-    Some(@light.ParallaxCorrection::Custom(bounds)) => bounds
-    Some(@light.ParallaxCorrection::None) => @math.Vec3::zero()
+    Some(Auto) => @math.Vec3::splat(0.5F)
+    Some(Custom(bounds)) => bounds
+    Some(None) => @math.Vec3::zero()
     None => @math.Vec3::zero()
   }
 }
@@ -799,13 +799,12 @@ fn render3d_light_probe_flags(
     )
   }
   match parallax_correction {
-    Some(@light.ParallaxCorrection::Auto)
-    | Some(@light.ParallaxCorrection::Custom(_)) =>
+    Some(Auto) | Some(Custom(_)) =>
       flags = @pbr_light_probe.render_light_probe_flags_insert(
         flags,
         @pbr_light_probe.RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION,
       )
-    Some(@light.ParallaxCorrection::None) | None => ()
+    Some(None) | None => ()
   }
   flags
 }
@@ -864,7 +863,7 @@ fn render3d_light_probe_entry(
   let parallax_correction = try! world.get_by_key(
     entity, @light.ecs_key_parallax_correction,
   )
-  Some(Render3dLightProbeEntry::{
+  Some({
     entity,
     distance_squared: world_from_light.translation
     .sub(camera_transform.translation)
@@ -915,7 +914,7 @@ fn render3d_irradiance_volume_entry(
   }
   let world_from_light = render3d_light_probe_entity_affine(world, entity)
   let light_from_world = world_from_light.inverse()
-  Some(Render3dLightProbeEntry::{
+  Some({
     entity,
     distance_squared: world_from_light.translation
     .sub(camera_transform.translation)
@@ -1167,7 +1166,7 @@ fn render3d_camera_light_probe_state(
     binding_arrays_are_usable,
     @pbr_light_probe.MAX_VIEW_LIGHT_PROBES,
   )
-  Render3dLightProbeState::{
+  {
     uniform_bytes,
     uniform_offset,
     diffuse_texture_ids: environment_diffuse_texture_ids,

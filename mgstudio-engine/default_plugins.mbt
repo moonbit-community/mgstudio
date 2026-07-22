@@ -16,6 +16,7 @@
 pub struct DefaultPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn default_plugins_marker() -> DefaultPlugins {
   DefaultPlugins::{  }
 }
@@ -60,6 +61,7 @@ pub fn DefaultPlugins::set_window(
 pub struct MinimalPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn minimal_plugins_marker() -> MinimalPlugins {
   MinimalPlugins::{  }
 }

@@ -34,28 +34,28 @@ pub fn TileOrientation::from_bools(
   mirror_d : Bool,
 ) -> TileOrientation {
   match (mirror_h, mirror_v, mirror_d) {
-    (false, false, false) => TileOrientation::Default
-    (false, true, true) => TileOrientation::Rotate90
-    (true, true, false) => TileOrientation::Rotate180
-    (true, false, true) => TileOrientation::Rotate270
-    (true, false, false) => TileOrientation::MirrorH
-    (false, false, true) => TileOrientation::MirrorHRotate90
-    (false, true, false) => TileOrientation::MirrorHRotate180
-    (true, true, true) => TileOrientation::MirrorHRotate270
+    (false, false, false) => Default
+    (false, true, true) => Rotate90
+    (true, true, false) => Rotate180
+    (true, false, true) => Rotate270
+    (true, false, false) => MirrorH
+    (false, false, true) => MirrorHRotate90
+    (false, true, false) => MirrorHRotate180
+    (true, true, true) => MirrorHRotate270
   }
 }
 
 ///|
 pub fn TileOrientation::to_int(self : TileOrientation) -> Int {
   match self {
-    TileOrientation::Default => 0
-    TileOrientation::Rotate90 => 3
-    TileOrientation::Rotate180 => 6
-    TileOrientation::Rotate270 => 5
-    TileOrientation::MirrorH => 4
-    TileOrientation::MirrorHRotate90 => 1
-    TileOrientation::MirrorHRotate180 => 2
-    TileOrientation::MirrorHRotate270 => 7
+    Default => 0
+    Rotate90 => 3
+    Rotate180 => 6
+    Rotate270 => 5
+    MirrorH => 4
+    MirrorHRotate90 => 1
+    MirrorHRotate180 => 2
+    MirrorHRotate270 => 7
   }
 }
 
@@ -77,14 +77,14 @@ pub fn TileOrientation::mirror_d(self : TileOrientation) -> Bool {
 ///|
 pub fn TileOrientation::inverse(self : TileOrientation) -> TileOrientation {
   match self {
-    TileOrientation::Default => TileOrientation::Default
-    TileOrientation::Rotate90 => TileOrientation::Rotate270
-    TileOrientation::Rotate180 => TileOrientation::Rotate180
-    TileOrientation::Rotate270 => TileOrientation::Rotate90
-    TileOrientation::MirrorH => TileOrientation::MirrorH
-    TileOrientation::MirrorHRotate90 => TileOrientation::MirrorHRotate90
-    TileOrientation::MirrorHRotate180 => TileOrientation::MirrorHRotate180
-    TileOrientation::MirrorHRotate270 => TileOrientation::MirrorHRotate270
+    Default => Default
+    Rotate90 => Rotate270
+    Rotate180 => Rotate180
+    Rotate270 => Rotate90
+    MirrorH => MirrorH
+    MirrorHRotate90 => MirrorHRotate90
+    MirrorHRotate180 => MirrorHRotate180
+    MirrorHRotate270 => MirrorHRotate270
   }
 }
 
@@ -135,28 +135,28 @@ pub fn TileOrientation::and_then(
 ///|
 pub fn TileOrientation::to_string(self : TileOrientation) -> String {
   match self {
-    TileOrientation::Default => "Default"
-    TileOrientation::Rotate90 => "Rotate90"
-    TileOrientation::Rotate180 => "Rotate180"
-    TileOrientation::Rotate270 => "Rotate270"
-    TileOrientation::MirrorH => "MirrorX"
-    TileOrientation::MirrorHRotate90 => "MirrorXRotate90"
-    TileOrientation::MirrorHRotate180 => "MirrorXRotate180"
-    TileOrientation::MirrorHRotate270 => "MirrorXRotate270"
+    Default => "Default"
+    Rotate90 => "Rotate90"
+    Rotate180 => "Rotate180"
+    Rotate270 => "Rotate270"
+    MirrorH => "MirrorX"
+    MirrorHRotate90 => "MirrorXRotate90"
+    MirrorHRotate180 => "MirrorXRotate180"
+    MirrorHRotate270 => "MirrorXRotate270"
   }
 }
 
 ///|
 test "tile orientation bit flags match Bevy" {
   let cases : Array[(TileOrientation, Bool, Bool, Bool, Int)] = [
-    (TileOrientation::Default, false, false, false, 0),
-    (TileOrientation::Rotate90, false, true, true, 3),
-    (TileOrientation::Rotate180, true, true, false, 6),
-    (TileOrientation::Rotate270, true, false, true, 5),
-    (TileOrientation::MirrorH, true, false, false, 4),
-    (TileOrientation::MirrorHRotate90, false, false, true, 1),
-    (TileOrientation::MirrorHRotate180, false, true, false, 2),
-    (TileOrientation::MirrorHRotate270, true, true, true, 7),
+    (Default, false, false, false, 0),
+    (Rotate90, false, true, true, 3),
+    (Rotate180, true, true, false, 6),
+    (Rotate270, true, false, true, 5),
+    (MirrorH, true, false, false, 4),
+    (MirrorHRotate90, false, false, true, 1),
+    (MirrorHRotate180, false, true, false, 2),
+    (MirrorHRotate270, true, true, true, 7),
   ]
   let mut ok = true
   for entry in cases {
@@ -174,20 +174,20 @@ test "tile orientation bit flags match Bevy" {
 ///|
 test "tile orientation inverse composes to default" {
   let cases : Array[TileOrientation] = [
-    TileOrientation::Default,
-    TileOrientation::Rotate90,
-    TileOrientation::Rotate180,
-    TileOrientation::Rotate270,
-    TileOrientation::MirrorH,
-    TileOrientation::MirrorHRotate90,
-    TileOrientation::MirrorHRotate180,
-    TileOrientation::MirrorHRotate270,
+    Default,
+    Rotate90,
+    Rotate180,
+    Rotate270,
+    MirrorH,
+    MirrorHRotate90,
+    MirrorHRotate180,
+    MirrorHRotate270,
   ]
   let mut ok = true
   for orientation in cases {
     ok = ok &&
-      orientation.and_then(orientation.inverse()) == TileOrientation::Default &&
-      orientation.inverse().and_then(orientation) == TileOrientation::Default
+      orientation.and_then(orientation.inverse()) == Default &&
+      orientation.inverse().and_then(orientation) == Default
   }
   debug_inspect(ok, content="true")
 }
@@ -195,14 +195,14 @@ test "tile orientation inverse composes to default" {
 ///|
 test "tile orientation transforms integer coordinates like Bevy" {
   let cases : Array[(TileOrientation, @math.IVec2)] = [
-    (TileOrientation::Default, @math.IVec2::new(1, 2)),
-    (TileOrientation::Rotate90, @math.IVec2::new(-2, 1)),
-    (TileOrientation::Rotate180, @math.IVec2::new(-1, -2)),
-    (TileOrientation::Rotate270, @math.IVec2::new(2, -1)),
-    (TileOrientation::MirrorH, @math.IVec2::new(-1, 2)),
-    (TileOrientation::MirrorHRotate90, @math.IVec2::new(-2, -1)),
-    (TileOrientation::MirrorHRotate180, @math.IVec2::new(1, -2)),
-    (TileOrientation::MirrorHRotate270, @math.IVec2::new(2, 1)),
+    (Default, @math.IVec2::new(1, 2)),
+    (Rotate90, @math.IVec2::new(-2, 1)),
+    (Rotate180, @math.IVec2::new(-1, -2)),
+    (Rotate270, @math.IVec2::new(2, -1)),
+    (MirrorH, @math.IVec2::new(-1, 2)),
+    (MirrorHRotate90, @math.IVec2::new(-2, -1)),
+    (MirrorHRotate180, @math.IVec2::new(1, -2)),
+    (MirrorHRotate270, @math.IVec2::new(2, 1)),
   ]
   let mut ok = true
   for entry in cases {

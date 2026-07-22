@@ -28,32 +28,32 @@ fn mixed_lighting_test_app() -> @app.App[@ecs.World] {
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
   .add_message(lighting_mode_changed_message_key)
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param6(update_lightmaps).run_if_on_message(
       lighting_mode_changed_message_key,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_directional_light).run_if_on_message(
       lighting_mode_changed_message_key,
     ),
   )
-  .add_systems_param2(@app.Update, make_sphere_nonpickable)
-  .add_systems_param3(@app.Update, update_radio_buttons)
-  .add_systems_param3(@app.Update, handle_lighting_mode_change)
-  .add_systems_param2(@app.Update, handle_widget_interactions)
+  .add_systems_param2(Update, make_sphere_nonpickable)
+  .add_systems_param3(Update, update_radio_buttons)
+  .add_systems_param3(Update, handle_lighting_mode_change)
+  .add_systems_param2(Update, handle_widget_interactions)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(reset_sphere_position).run_if_on_message(
       lighting_mode_changed_message_key,
     ),
   )
-  .add_systems_param4(@app.Update, move_sphere)
+  .add_systems_param4(Update, move_sphere)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(adjust_help_text).run_if_on_message(
       lighting_mode_changed_message_key,
     ),

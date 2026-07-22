@@ -74,7 +74,7 @@ fn GpuBackend::register_mesh3d_material_pipeline_descriptor(
   for index in 0..<self.mesh3d_material_pipeline_descriptors.length() {
     let entry = self.mesh3d_material_pipeline_descriptors[index]
     if entry.material_pipeline_id == material_pipeline_id {
-      self.mesh3d_material_pipeline_descriptors[index] = Mesh3dRegisteredMaterialPipelineDescriptor::{
+      self.mesh3d_material_pipeline_descriptors[index] = {
         material_pipeline_id,
         descriptor,
       }
@@ -104,7 +104,7 @@ fn GpuBackend::register_mesh3d_material_render_pipeline(
     let entry = self.mesh3d_material_render_pipelines[index]
     if entry.material_pipeline_id == material_pipeline_id {
       entry.pipeline.release()
-      self.mesh3d_material_render_pipelines[index] = Mesh3dRegisteredMaterialRenderPipeline::{
+      self.mesh3d_material_render_pipelines[index] = {
         material_pipeline_id,
         pipeline: raw_pipeline,
       }

@@ -19,7 +19,7 @@ test "screenshot: RenderPlugin owns main-world screenshot systems" {
   let app = @app.App::new(lifecycle_world_15_0).add_plugins(
     RenderPlugin::RenderPlugin(),
   )
-  let update_dot = app.schedule_graph_dot(@app.Update)
+  let update_dot = app.schedule_graph_dot(Update)
   debug_inspect(
     update_dot.contains("\"mgstudio_render::extract_screenshots\""),
     content="true",
@@ -44,7 +44,7 @@ test "screenshot: RenderPlugin owns main-world screenshot systems" {
     update_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
     content="false",
   )
-  let first_dot = app.schedule_graph_dot(@app.First)
+  let first_dot = app.schedule_graph_dot(First)
   debug_inspect(
     first_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
     content="true",
@@ -58,7 +58,7 @@ test "screenshot: ScreenshotPlugin owns screenshot systems" {
   let app = @app.App::new(lifecycle_world_52_0).add_plugins(
     ScreenshotPlugin::ScreenshotPlugin(),
   )
-  let update_dot = app.schedule_graph_dot(@app.Update)
+  let update_dot = app.schedule_graph_dot(Update)
   debug_inspect(
     update_dot.contains("\"mgstudio_render::extract_screenshots\""),
     content="true",
@@ -83,7 +83,7 @@ test "screenshot: ScreenshotPlugin owns screenshot systems" {
     update_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
     content="false",
   )
-  let first_dot = app.schedule_graph_dot(@app.First)
+  let first_dot = app.schedule_graph_dot(First)
   debug_inspect(
     first_dot.contains("\"mgstudio_render::screenshot_clear_system\""),
     content="true",

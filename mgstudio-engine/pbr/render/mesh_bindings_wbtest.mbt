@@ -28,25 +28,16 @@ test "pbr/render mesh bindings: prepare phase builds bevy mesh bind group famili
   inspect(groups.morph_target_count(), content="2")
   inspect(groups.lightmap_count(), content="2")
   let cpu_groups = MeshBindGroups3d::CpuPreprocessing(groups)
-  debug_inspect(
-    cpu_groups is MeshBindGroups3d::CpuPreprocessing(_),
-    content="true",
-  )
+  debug_inspect(cpu_groups is CpuPreprocessing(_), content="true")
   let gpu_map : Map[String, MeshPhaseBindGroups3d] = Map([])
   gpu_map.set("Opaque3d", groups)
   let gpu_groups = MeshBindGroups3d::GpuPreprocessing(gpu_map)
-  debug_inspect(
-    gpu_groups is MeshBindGroups3d::GpuPreprocessing(_),
-    content="true",
-  )
+  debug_inspect(gpu_groups is GpuPreprocessing(_), content="true")
   let morphed = groups.get(7, None, false, true, false).unwrap()
   inspect(morphed.label(), content="morphed_mesh_bind_group")
   inspect(morphed.layout_name(), content="morphed_mesh_layout")
-  inspect(
-    morphed.has_slot(MeshBindingSlot3d::MorphWeightsCurrent),
-    content="true",
-  )
-  inspect(morphed.has_slot(MeshBindingSlot3d::MorphTargets), content="true")
+  inspect(morphed.has_slot(MorphWeightsCurrent), content="true")
+  inspect(morphed.has_slot(MorphTargets), content="true")
   let morphed_skinned_motion = groups.get(9, None, true, true, true).unwrap()
   inspect(
     morphed_skinned_motion.label(),
@@ -92,23 +83,17 @@ test "pbr/render mesh bindings: bindless lightmap layouts keep bevy slab counts"
     lightmapped=true,
     motion_vectors=false,
   )
-  inspect(
-    default_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapTexture),
-    content="0",
-  )
-  inspect(
-    default_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapSampler),
-    content="0",
-  )
+  inspect(default_lightmapped.binding_array_count(LightmapTexture), content="0")
+  inspect(default_lightmapped.binding_array_count(LightmapSampler), content="0")
   let bindless_lightmapped = render3d_mesh_layouts(
     binding_arrays_are_usable=true,
   ).select(skinned=false, morphed=false, lightmapped=true, motion_vectors=false)
   inspect(
-    bindless_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapTexture),
+    bindless_lightmapped.binding_array_count(LightmapTexture),
     content="4",
   )
   inspect(
-    bindless_lightmapped.binding_array_count(MeshBindingSlot3d::LightmapSampler),
+    bindless_lightmapped.binding_array_count(LightmapSampler),
     content="4",
   )
   inspect(bindless_lightmapped.bindings()[1].1, content="4")

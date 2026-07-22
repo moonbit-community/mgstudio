@@ -32,12 +32,12 @@ let progress_text_marker_component_key : @ecs.ComponentKey[ProgressTextMarker] =
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update_progress_text)
-  .add_systems_world(@app.Update, update_speed)
-  .add_systems_world(@app.Update, pause)
-  .add_systems_world(@app.Update, mute)
-  .add_systems_world(@app.Update, volume)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, update_progress_text)
+  .add_systems_world(Update, update_speed)
+  .add_systems_world(Update, pause)
+  .add_systems_world(Update, mute)
+  .add_systems_world(Update, volume)
   .run()
 }
 
@@ -93,13 +93,13 @@ fn spawn_ui_text(
     @hierarchy.Parent::new(root),
   )
   let mut node = @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
   if top is Some(value) {
-    node = node.with_top(@ui.Val::Px(value))
+    node = node.with_top(Px(value))
   }
   if bottom is Some(value) {
-    node = node.with_bottom(@ui.Val::Px(value))
+    node = node.with_bottom(Px(value))
   }
   try! world.set_by_key(entity, @ui.ecs_key_node, node)
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new(content))
@@ -116,7 +116,7 @@ fn spawn_ui_text(
   try! world.set_by_key(
     entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   if marker is Some(progress_text_marker) {
     try! world.set_by_key(
@@ -126,15 +126,14 @@ fn spawn_ui_text(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_ui_overlay(world : @ecs.World) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   spawn_ui_text(
@@ -156,6 +155,7 @@ fn spawn_ui_overlay(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let track : @asset.Handle[@audio.AudioSource] = asset_server.load(
@@ -173,7 +173,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_ui_overlay(world)
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   |> ignore
@@ -225,7 +225,7 @@ fn update_speed(world : @ecs.World) -> Unit {
 
 ///|
 fn pause(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   guard find_music_entity(world) is Some(music) else { return }
@@ -237,7 +237,7 @@ fn pause(world : @ecs.World) -> Unit {
 
 ///|
 fn mute(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::KeyM) {
+  if !@input.key_just_pressed(KeyM) {
     return
   }
   guard find_music_entity(world) is Some(music) else { return }
@@ -251,9 +251,9 @@ fn mute(world : @ecs.World) -> Unit {
 
 ///|
 fn volume(world : @ecs.World) -> Unit {
-  let direction = if @input.key_just_pressed(@window.KeyCode::Equal) {
+  let direction = if @input.key_just_pressed(Equal) {
     10.0F
-  } else if @input.key_just_pressed(@window.KeyCode::Minus) {
+  } else if @input.key_just_pressed(Minus) {
     -10.0F
   } else {
     return

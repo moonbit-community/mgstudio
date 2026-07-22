@@ -180,8 +180,8 @@ impl States for OptionalDerivedState with fn state_resource_keys() {
 ///|
 fn compute_derived_state(source : TestState) -> DerivedState? {
   match source {
-    TestState::A => Some(DerivedState::Active)
-    TestState::B => None
+    A => Some(Active)
+    B => None
   }
 }
 
@@ -190,7 +190,7 @@ fn compute_pair_state(
   inputs : (TestState, PairState),
 ) -> MultiSourceDerivedState? {
   match inputs {
-    (TestState::A, PairState::Enabled) => Some(MultiSourceDerivedState::Ready)
+    (A, Enabled) => Some(Ready)
     _ => None
   }
 }
@@ -200,8 +200,8 @@ fn optional_child_should_exist(
   source : OptionalParentState,
 ) -> OptionalChildState? {
   match source {
-    OptionalParentState::Enabled => Some(OptionalChildState::Present)
-    OptionalParentState::Disabled => None
+    Enabled => Some(Present)
+    Disabled => None
   }
 }
 
@@ -210,10 +210,8 @@ fn compute_optional_state(
   inputs : (TestState, PairState, OptionalChildState?),
 ) -> OptionalDerivedState? {
   match inputs {
-    (TestState::A, PairState::Enabled, Some(OptionalChildState::Present)) =>
-      Some(OptionalDerivedState::Present)
-    (TestState::A, PairState::Enabled, None) =>
-      Some(OptionalDerivedState::Missing)
+    (A, Enabled, Some(Present)) => Some(Present)
+    (A, Enabled, None) => Some(Missing)
     _ => None
   }
 }

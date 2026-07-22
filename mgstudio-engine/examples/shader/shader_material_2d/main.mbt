@@ -46,11 +46,9 @@ impl @asset.Asset for CustomMaterial with fn asset_resource_keys() {
 fn custom_material(
   color : @color.Color,
   color_texture : @asset.Handle[@asset.Image]?,
-  alpha_mode? : @sprite_render.AlphaMode2d = @sprite_render.AlphaMode2d::Mask(
-    0.5F,
-  ),
+  alpha_mode? : @sprite_render.AlphaMode2d = Mask(0.5F),
 ) -> CustomMaterial {
-  CustomMaterial::{ color, color_texture, alpha_mode }
+  { color, color_texture, alpha_mode }
 }
 
 ///|
@@ -204,6 +202,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(shader_material_2d_plugin())
-  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(Startup, setup)
   .run()
 }

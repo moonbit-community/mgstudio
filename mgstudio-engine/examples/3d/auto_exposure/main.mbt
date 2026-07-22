@@ -72,9 +72,9 @@ fn auto_exposure_curve_error_message(
   err : @pbr.AutoExposureCompensationCurveError,
 ) -> String {
   match err {
-    @pbr.InvalidCurve => "invalid curve"
-    @pbr.DiscontinuityFound => "discontinuity found"
-    @pbr.NotMonotonic => "not monotonic"
+    InvalidCurve => "invalid curve"
+    DiscontinuityFound => "discontinuity found"
+    NotMonotonic => "not monotonic"
   }
 }
 
@@ -208,7 +208,7 @@ fn camera_auto_exposure_or_default(
 ) -> @pbr.AutoExposure {
   match (try! world.get_by_key(camera, @pbr.ecs_key_auto_exposure)) {
     Some(auto_exposure) => auto_exposure
-    None => @pbr.AutoExposure::AutoExposure()
+    None => AutoExposure()
   }
 }
 
@@ -303,6 +303,7 @@ fn spawn_walls(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_mask_overlay(
   world : @ecs.World,
   metering_mask : @asset.Handle[@asset.Image],
@@ -317,9 +318,9 @@ fn spawn_mask_overlay(
     entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_display(@ui.Display::None),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_display(None),
   )
   try! world.set_by_key(entity, MeteringMaskOverlay::component(), MeteringMaskOverlay::{
 
@@ -333,9 +334,9 @@ fn spawn_instruction_text(world : @ecs.World) -> Unit {
     entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     entity,
@@ -344,50 +345,27 @@ fn spawn_instruction_text(world : @ecs.World) -> Unit {
       "Left / Right - Rotate Camera\nC - Toggle Compensation Curve\nM - Toggle Metering Mask\nV - Visualize Metering Mask",
     ),
   )
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::TextColor(),
-  )
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::TextLayout(),
-  )
+  try! world.set_by_key(entity, @text.ecs_key_text_font, TextFont())
+  try! world.set_by_key(entity, @text.ecs_key_text_color, TextColor())
+  try! world.set_by_key(entity, @text.ecs_key_text_layout, TextLayout())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_display_text(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_right(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_right(Px(12.0F)),
   )
-  try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::Text())
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::TextColor(),
-  )
-  try! world.set_by_key(
-    entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::TextLayout(),
-  )
+  try! world.set_by_key(entity, @text.ecs_key_text, Text())
+  try! world.set_by_key(entity, @text.ecs_key_text_font, TextFont())
+  try! world.set_by_key(entity, @text.ecs_key_text_color, TextColor())
+  try! world.set_by_key(entity, @text.ecs_key_text_layout, TextLayout())
   try! world.set_by_key(entity, ExampleDisplay::component(), ExampleDisplay::{
 
   })
@@ -408,7 +386,7 @@ fn setup(world : @ecs.World) -> Unit {
   let basic_compensation_curve = build_basic_compensation_curve(world)
 
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -431,7 +409,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  world.insert_resource(ExampleResources::resource(), ExampleResources::{
+  world.insert_resource(ExampleResources::resource(), {
     basic_compensation_curve,
     basic_metering_mask: metering_mask,
   })
@@ -491,12 +469,12 @@ fn update_auto_exposure_toggles(
 ) -> Unit {
   let auto_exposure = camera_auto_exposure_or_default(world, camera)
   let mut next = auto_exposure
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
+  if @input.key_just_pressed(KeyC) {
     next = next.with_compensation_curve(
       toggle_handle(next.compensation_curve, resources.basic_compensation_curve),
     )
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyM) {
+  if @input.key_just_pressed(KeyM) {
     next = next.with_metering_mask(
       toggle_handle(next.metering_mask, resources.basic_metering_mask),
     )
@@ -510,10 +488,10 @@ fn update_metering_mask_overlay(world : @ecs.World) -> Unit {
   guard (try! world.get_by_key(overlay, @ui.ecs_key_node)) is Some(node) else {
     return
   }
-  let next_display = if @input.key_pressed(@window.KeyCode::KeyV) {
+  let next_display = if @input.key_pressed(KeyV) {
     @ui.Display::Flex
   } else {
-    @ui.Display::None
+    None
   }
   if node.display != next_display {
     try! (world.replace(
@@ -529,9 +507,9 @@ fn update_metering_mask_overlay(world : @ecs.World) -> Unit {
 fn example_control_system(world : @ecs.World) -> Unit {
   guard first_auto_exposure_camera(world) is Some(camera) else { return }
   let delta = world_time(world).delta_seconds()
-  let rotation = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  let rotation = if @input.key_pressed(ArrowLeft) {
     delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  } else if @input.key_pressed(ArrowRight) {
     -delta
   } else {
     0.0F
@@ -547,7 +525,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, example_control_system)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, example_control_system)
   .run()
 }

@@ -25,14 +25,10 @@ test "ci testing: MoveCamera inserts CameraMovement component" {
   )
   world.insert_resource(
     ci_testing_runtime_state_resource_key,
-    CiTestingRuntimeState::CiTestingRuntimeState(),
+    CiTestingRuntimeState(),
   )
   let camera = world.spawn()
-  try! world.set_by_key(
-    camera,
-    @camera.Camera::component(),
-    @camera.Camera::Camera(),
-  )
+  try! world.set_by_key(camera, @camera.Camera::component(), Camera())
   ci_testing_send_events_system(world)
   debug_inspect(
     (try! world.get_by_key(
@@ -55,17 +51,17 @@ test "ci testing: send_events runs before screenshot trigger set" {
     )
     .insert_world_resource(
       ci_testing_runtime_state_resource_key,
-      CiTestingRuntimeState::CiTestingRuntimeState(),
+      CiTestingRuntimeState(),
     )
     .add_message(ci_testing_custom_event_message_key)
     .add_systems(
-      @app.Update,
+      Update,
       @app.system(ci_testing_send_events_system)
       .in_set(ci_testing_event_sender_system_set)
       .before(@render.screenshot_trigger_system_set),
     )
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param(fn(
         reader : @ecs.MessageReader[CiTestingCustomEvent],
       ) {

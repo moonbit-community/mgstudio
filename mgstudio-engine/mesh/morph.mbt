@@ -19,16 +19,16 @@
 ///|
 pub fn Mesh::morph_target_names(self : Mesh) -> Array[String]? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => None
-    MeshGeometry::Geometry3d(geometry3d) => geometry3d.morph_target_names()
+    Geometry2d(_) => None
+    Geometry3d(geometry3d) => geometry3d.morph_target_names()
   }
 }
 
 ///|
 pub fn Mesh::has_morph_targets(self : Mesh) -> Bool {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => false
-    MeshGeometry::Geometry3d(geometry3d) =>
+    Geometry2d(_) => false
+    Geometry3d(geometry3d) =>
       geometry3d.morph_target_positions() is Some(_) ||
       geometry3d.morph_target_normals() is Some(_) ||
       geometry3d.morph_target_tangents() is Some(_)
@@ -41,8 +41,7 @@ pub fn Mesh::custom_attribute_vec3(
   name : String,
 ) -> Array[@math.Vec3]? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => None
-    MeshGeometry::Geometry3d(geometry3d) =>
-      geometry3d.custom_attribute_vec3(name)
+    Geometry2d(_) => None
+    Geometry3d(geometry3d) => geometry3d.custom_attribute_vec3(name)
   }
 }

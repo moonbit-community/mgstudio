@@ -77,7 +77,7 @@ fn load_gzip_asset(
   guard @asset.gzip_decompress(bytes) is Some(uncompressed_bytes) else {
     abort("Failed to decompress gzip asset bytes")
   }
-  GzAsset::{
+  {
     uncompressed_bytes,
     uncompressed_path: @asset.AssetPath::from_path(
       path_without_gzip_suffix(path.path),
@@ -146,7 +146,7 @@ fn main {
       @mgstudio.DefaultPlugins::DefaultPlugins(),
     ),
   )
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param4(@app.Update, decompress)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param4(Update, decompress)
   .run()
 }

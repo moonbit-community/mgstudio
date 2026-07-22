@@ -27,9 +27,6 @@ test "pbr transmission: texture prepare preconditions" {
 ///|
 test "pbr transmission: default matches Bevy" {
   let transmission = ScreenSpaceTransmission::ScreenSpaceTransmission()
-  inspect(
-    transmission.quality is ScreenSpaceTransmissionQuality::Medium,
-    content="true",
-  )
+  inspect(transmission.quality is Medium, content="true")
   inspect(transmission.steps, content="1")
 }

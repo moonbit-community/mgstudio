@@ -195,8 +195,7 @@ test "render visibility: DirtySpecializations queues added changed and pending v
   let changed_render = @core.Entity::new(182, 1)
   let pending_render = @core.Entity::new(183, 1)
   let invisible_pending_render = @core.Entity::new(184, 1)
-  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = @hashset.HashSet([],
-  )
+  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = HashSet([])
 
   visible.update_cpu_culled_entities([
     (changed_render, changed_main),
@@ -241,8 +240,7 @@ test "render visibility: DirtySpecializations view wipe queues and dequeues all 
   let visible = RenderVisibleEntitiesClass::RenderVisibleEntitiesClass()
   let first_main = test_main_entity(91)
   let second_main = test_main_entity(92)
-  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = @hashset.HashSet([],
-  )
+  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = HashSet([])
 
   visible.update_cpu_culled_entities([(@core.Entity::new(191, 1), first_main)])
   visible.insert_gpu_culled_entity(second_main, @core.Entity::new(192, 1))
@@ -261,8 +259,7 @@ test "render visibility: DirtySpecializations clears and expires stale views" {
   let live_view = test_retained_view(100)
   let stale_view = test_retained_view(101)
   let main_entity = test_main_entity(102)
-  let live : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
 
   dirty.insert_changed(main_entity)
   dirty.insert_removed(test_main_entity(103))

@@ -22,7 +22,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Update, touch_event_system)
+  .add_systems_param(Update, touch_event_system)
   .run()
 }
 
@@ -43,10 +43,10 @@ fn format_touch_input(touch_input : @input.TouchInput) -> String {
 ///|
 fn format_touch_phase(phase : @input.TouchPhase) -> String {
   match phase {
-    @input.TouchPhase::Started => "Started"
-    @input.TouchPhase::Moved => "Moved"
-    @input.TouchPhase::Ended => "Ended"
-    @input.TouchPhase::Canceled => "Canceled"
+    Started => "Started"
+    Moved => "Moved"
+    Ended => "Ended"
+    Canceled => "Canceled"
   }
 }
 

@@ -33,7 +33,7 @@ test "pbr volumetric fog: plugin creates Bevy fog hull mesh assets" {
     None => -1
   }
   inspect(after_count - before_count, content="2")
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   match render_world.get_resource(@volumetric_fog.FogAssets::resource()) {
     Some(fog_assets) => {
       let meshes = app.world().get_resource(mesh_assets_key).unwrap()

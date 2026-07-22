@@ -28,10 +28,7 @@ test "ui_widgets: owner widget surface exposes core event and marker types" {
   ignore(@ui_widgets.ecs_key_radio_group.id())
   ignore(@ui_widgets.ecs_key_radio_button.id())
   ignore(@ui_widgets.ecs_key_menu_item.id())
-  debug_inspect(
-    @ui_widgets.MenuLayout::default() == @ui_widgets.MenuLayout::Column,
-    content="true",
-  )
+  debug_inspect(@ui_widgets.MenuLayout::default() == Column, content="true")
 }
 
 ///|

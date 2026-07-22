@@ -40,7 +40,7 @@ pub fn convert_winit_monitor(
   for mode in monitor.video_modes() {
     video_modes.push(convert_winit_video_mode(mode))
   }
-  @window.Monitor::{
+  {
     name: monitor.name(),
     physical_height: size.height(),
     physical_width: size.width(),

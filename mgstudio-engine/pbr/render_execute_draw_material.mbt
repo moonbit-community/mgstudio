@@ -89,7 +89,7 @@ fn render3d_resolve_mesh_lightmap_draw_fields(
           })
         None => (-1, 0, [lightmap.image.id()])
       }
-      Render3dMeshLightmapDrawFields::{
+      {
         lightmap_texture_id: lightmap.image.id(),
         lightmap_slab_index: slab_index,
         lightmap_slot_index: slot_index,
@@ -101,7 +101,7 @@ fn render3d_resolve_mesh_lightmap_draw_fields(
       }
     }
     _ =>
-      Render3dMeshLightmapDrawFields::{
+      {
         lightmap_texture_id: -1,
         lightmap_slab_index: -1,
         lightmap_slot_index: -1,
@@ -145,7 +145,7 @@ fn render3d_resolve_mesh_draw_material_fields(
     world, extracted_mesh,
   )
   guard mesh.material_draw_data.standard_material() is Some(material) else {
-    return Render3dMeshDrawMaterialFields::{
+    return {
       draw_material_input: @pbr_render.Render3dDrawMaterialInput::from_material_properties(
         mesh.material_properties,
       ),
@@ -267,7 +267,7 @@ fn render3d_resolve_mesh_draw_material_fields(
   let forward_decal_inv_depth_fade_factor = render3d_forward_decal_inv_depth_fade_factor(
     mesh,
   )
-  Render3dMeshDrawMaterialFields::{
+  {
     draw_material_input: @pbr_render.Render3dDrawMaterialInput::from_standard_material(
       material,
       texture_id,

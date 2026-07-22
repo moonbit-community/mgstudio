@@ -23,12 +23,12 @@ pub struct UniformBuffer[T] {
 
 ///|
 pub fn[T] UniformBuffer::new() -> UniformBuffer[T] {
-  UniformBuffer::{ value: None, dirty: false }
+  { value: None, dirty: false }
 }
 
 ///|
 pub fn[T] UniformBuffer::with_value(value : T) -> UniformBuffer[T] {
-  UniformBuffer::{ value: Some(value), dirty: true }
+  { value: Some(value), dirty: true }
 }
 
 ///|
@@ -59,7 +59,7 @@ pub struct DynamicUniformBuffer[T] {
 
 ///|
 pub fn[T] DynamicUniformBuffer::new() -> DynamicUniformBuffer[T] {
-  DynamicUniformBuffer::{ values: [] }
+  { values: [] }
 }
 
 ///|

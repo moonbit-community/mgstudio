@@ -54,10 +54,10 @@ let asset_io_runtime_state_resource_key : @ecs.ResourceKey[AssetIoRuntimeState] 
 fn asset_io_runtime_state_for_world(world : @ecs.World) -> AssetIoRuntimeState {
   let key = asset_io_runtime_state_resource_key
   if world.get_resource(key) is None {
-    world.insert_resource(key, AssetIoRuntimeState::{
+    world.insert_resource(key, {
       assets_dir_override: None,
-      source_dir_overrides: @hashmap.HashMap([]),
-      source_readers: @hashmap.HashMap([]),
+      source_dir_overrides: HashMap([]),
+      source_readers: HashMap([]),
     })
   }
   match world.get_resource(key) {
@@ -286,8 +286,8 @@ fn asset_source_reader_key(source_name : String?) -> String {
 ///|
 fn asset_source_reader_source_name(source_id : AssetSourceId) -> String? {
   match source_id {
-    AssetSourceId::Default => None
-    AssetSourceId::Named(name) => Some(name)
+    Default => None
+    Named(name) => Some(name)
   }
 }
 
@@ -406,9 +406,9 @@ fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
     } else {
       ""
     }
-    ParsedVirtualAssetPath::{ source_name: Some(source_name), relative_path }
+    { source_name: Some(source_name), relative_path }
   } else {
-    ParsedVirtualAssetPath::{ source_name: None, relative_path: without_label }
+    { source_name: None, relative_path: without_label }
   }
 }
 
@@ -584,11 +584,11 @@ fn find_blob(records : Array[BlobRecord], blob_id : Int) -> BlobRecord? {
 fn set_texture_pixels(texture_id : Int, bytes : Bytes) -> Unit {
   for i in 0..<texture_pixel_records.length() {
     if texture_pixel_records[i].id == texture_id {
-      texture_pixel_records[i] = BlobRecord::{ id: texture_id, bytes }
+      texture_pixel_records[i] = { id: texture_id, bytes }
       return
     }
   }
-  texture_pixel_records.push(BlobRecord::{ id: texture_id, bytes })
+  texture_pixel_records.push({ id: texture_id, bytes })
 }
 
 ///|
@@ -951,7 +951,7 @@ fn bmp_decode_info(bytes : Bytes) -> BmpDecodeInfo? {
   } else {
     false
   }
-  Some(BmpDecodeInfo::{
+  Some({
     width,
     height,
     top_down,
@@ -991,7 +991,7 @@ fn decode_texture_image_from_bmp(bytes : Bytes) -> DecodedTextureImage? {
       out_index += 4
     }
   }
-  Some(DecodedTextureImage::{
+  Some({
     width: info.width,
     height: info.height,
     pixels: Bytes::from_array(pixels),
@@ -1017,7 +1017,7 @@ fn decoded_texture_image_from_gm_image(
       out_index += 4
     }
   }
-  DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) }
+  { width, height, pixels: Bytes::from_array(pixels) }
 }
 
 ///|
@@ -1165,7 +1165,7 @@ fn decode_texture_image_from_tga(bytes : Bytes) -> DecodedTextureImage? {
       out_index += 4
     }
   }
-  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+  Some({ width, height, pixels: Bytes::from_array(pixels) })
 }
 
 ///|
@@ -1198,7 +1198,7 @@ fn decode_texture_image_from_farbfeld(bytes : Bytes) -> DecodedTextureImage? {
     pixels[dst + 2] = (blob_u16_be_at(bytes, src + 4) >> 8).to_byte()
     pixels[dst + 3] = (blob_u16_be_at(bytes, src + 6) >> 8).to_byte()
   }
-  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+  Some({ width, height, pixels: Bytes::from_array(pixels) })
 }
 
 ///|
@@ -1255,11 +1255,7 @@ fn decode_texture_image_from_ico(bytes : Bytes) -> DecodedTextureImage? {
   guard bytes_slice_copy(bytes, image_offset, image_size) is Some(payload) else {
     return None
   }
-  if decode_texture_image_with_container(
-      payload,
-      Some(@image.ImageContainerFormat::Png),
-    )
-    is Some(decoded) {
+  if decode_texture_image_with_container(payload, Some(Png)) is Some(decoded) {
     return Some(decoded)
   }
   if decode_texture_image_from_ico_dib_bgra32(payload) is Some(decoded) {
@@ -1335,7 +1331,7 @@ fn decode_texture_image_from_ico_dib_bgra32(
       out = out + 4
     }
   }
-  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+  Some({ width, height, pixels: Bytes::from_array(pixels) })
 }
 
 ///|
@@ -1350,12 +1346,7 @@ fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
   }
   let pixel_count = width * height
   let pixels = Array::make(rgba8_len(width, height), b'\x00')
-  let index : Array[QoiPixel] = Array::make(64, QoiPixel::{
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 0,
-  })
+  let index : Array[QoiPixel] = Array::make(64, { r: 0, g: 0, b: 0, a: 0 })
   let mut previous = QoiPixel::{ r: 0, g: 0, b: 0, a: 255 }
   let mut source = 14
   let mut decoded = 0
@@ -1381,7 +1372,7 @@ fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
       if source + 2 >= bytes.length() {
         return None
       }
-      write_pixel(QoiPixel::{
+      write_pixel({
         r: blob_u8_at(bytes, source),
         g: blob_u8_at(bytes, source + 1),
         b: blob_u8_at(bytes, source + 2),
@@ -1394,7 +1385,7 @@ fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
       if source + 3 >= bytes.length() {
         return None
       }
-      write_pixel(QoiPixel::{
+      write_pixel({
         r: blob_u8_at(bytes, source),
         g: blob_u8_at(bytes, source + 1),
         b: blob_u8_at(bytes, source + 2),
@@ -1412,7 +1403,7 @@ fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
       let dr = ((tag >> 4) & 0x03) - 2
       let dg = ((tag >> 2) & 0x03) - 2
       let db = (tag & 0x03) - 2
-      write_pixel(QoiPixel::{
+      write_pixel({
         r: (previous.r + dr) & 0xFF,
         g: (previous.g + dg) & 0xFF,
         b: (previous.b + db) & 0xFF,
@@ -1429,7 +1420,7 @@ fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
       let dg = (tag & 0x3F) - 32
       let dr = dg + ((b2 >> 4) & 0x0F) - 8
       let db = dg + (b2 & 0x0F) - 8
-      write_pixel(QoiPixel::{
+      write_pixel({
         r: (previous.r + dr) & 0xFF,
         g: (previous.g + dg) & 0xFF,
         b: (previous.b + db) & 0xFF,
@@ -1445,7 +1436,7 @@ fn decode_texture_image_from_qoi(bytes : Bytes) -> DecodedTextureImage? {
       write_pixel(previous)
     }
   }
-  Some(DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) })
+  Some({ width, height, pixels: Bytes::from_array(pixels) })
 }
 
 ///|
@@ -1700,11 +1691,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
         pixels[dst + 3] = (255).to_byte()
       }
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   guard pnm_read_uint_token(bytes, index1) is Some((width_raw, index2)) else {
     return None
@@ -1754,11 +1741,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       pixels[dst + 2] = pnm_scale_channel(b, max_value).to_byte()
       pixels[dst + 3] = (255).to_byte()
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   if magic == 0x35 {
     let sample_width = pnm_sample_width_bytes(max_value)
@@ -1782,11 +1765,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       pixels[dst + 2] = gray
       pixels[dst + 3] = (255).to_byte()
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   if magic == 0x34 {
     let row_bytes = (width + 7) / 8
@@ -1807,11 +1786,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
         pixels[dst + 3] = (255).to_byte()
       }
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   if magic == 0x33 {
     for i in 0..<pixel_count {
@@ -1831,11 +1806,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       pixels[dst + 2] = pnm_scale_channel(b_raw, max_value).to_byte()
       pixels[dst + 3] = (255).to_byte()
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   if magic == 0x32 {
     for i in 0..<pixel_count {
@@ -1850,11 +1821,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       pixels[dst + 2] = gray
       pixels[dst + 3] = (255).to_byte()
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   if magic == 0x31 {
     for i in 0..<pixel_count {
@@ -1869,11 +1836,7 @@ fn decode_texture_image_from_pnm(bytes : Bytes) -> DecodedTextureImage? {
       pixels[dst + 2] = gray
       pixels[dst + 3] = (255).to_byte()
     }
-    return Some(DecodedTextureImage::{
-      width,
-      height,
-      pixels: Bytes::from_array(pixels),
-    })
+    return Some({ width, height, pixels: Bytes::from_array(pixels) })
   }
   None
 }
@@ -1883,27 +1846,27 @@ fn decode_texture_image_with_container(
   bytes : Bytes,
   container : @image.ImageContainerFormat?,
 ) -> DecodedTextureImage? {
-  if container is Some(@image.ImageContainerFormat::Tga) {
+  if container is Some(Tga) {
     if decode_texture_image_from_tga(bytes) is Some(decoded) {
       return Some(decoded)
     }
   }
-  if container is Some(@image.ImageContainerFormat::Pnm) {
+  if container is Some(Pnm) {
     if decode_texture_image_from_pnm(bytes) is Some(decoded) {
       return Some(decoded)
     }
   }
-  if container is Some(@image.ImageContainerFormat::Farbfeld) {
+  if container is Some(Farbfeld) {
     if decode_texture_image_from_farbfeld(bytes) is Some(decoded) {
       return Some(decoded)
     }
   }
-  if container is Some(@image.ImageContainerFormat::Qoi) {
+  if container is Some(Qoi) {
     if decode_texture_image_from_qoi(bytes) is Some(decoded) {
       return Some(decoded)
     }
   }
-  if container is Some(@image.ImageContainerFormat::Ico) {
+  if container is Some(Ico) {
     if decode_texture_image_from_ico(bytes) is Some(decoded) {
       return Some(decoded)
     }
@@ -2298,7 +2261,7 @@ fn ktx2_is_3d_texture(bytes : Bytes) -> Bool {
 ///|
 fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
   if vulkan_format == KTX2_VK_FORMAT_R8_UNORM {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_R8_UNORM),
       block_width: 1,
       block_height: 1,
@@ -2306,7 +2269,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R32_SFLOAT {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
       block_width: 1,
       block_height: 1,
@@ -2314,7 +2277,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R16G16_SFLOAT {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RG16_FLOAT),
       block_width: 1,
       block_height: 1,
@@ -2322,7 +2285,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R16G16B16A16_SFLOAT {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
       block_width: 1,
       block_height: 1,
@@ -2330,7 +2293,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R32G32B32A32_SFLOAT {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA32_FLOAT),
       block_width: 1,
       block_height: 1,
@@ -2338,7 +2301,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT),
       block_width: 1,
       block_height: 1,
@@ -2346,7 +2309,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_B10G11R11_UFLOAT_PACK32 {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT,
       ),
@@ -2356,7 +2319,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_BC7_UNORM_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM),
       block_width: 4,
       block_height: 4,
@@ -2364,7 +2327,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_BC7_SRGB_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB,
       ),
@@ -2374,7 +2337,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM,
       ),
@@ -2384,7 +2347,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB,
       ),
@@ -2394,7 +2357,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM,
       ),
@@ -2404,7 +2367,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB,
       ),
@@ -2414,7 +2377,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM,
       ),
@@ -2424,7 +2387,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB,
       ),
@@ -2434,7 +2397,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_UNORM_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM),
       block_width: 4,
       block_height: 4,
@@ -2442,7 +2405,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_SRGB_BLOCK {
-    return Some(Ktx2FormatInfo::{
+    return Some({
       format: @wgpu.TextureFormat::from_u32(
         @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB,
       ),
@@ -2560,13 +2523,7 @@ fn ktx2_decode_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
     }
     clipped
   }
-  Some(Ktx2TexturePayload::{
-    width,
-    height,
-    depth,
-    format: format_info.format,
-    pixels,
-  })
+  Some({ width, height, depth, format: format_info.format, pixels })
 }
 
 ///|
@@ -2650,7 +2607,7 @@ fn ktx2_decode_2d_payload(bytes : Bytes) -> Ktx2Texture2dPayload? {
       levels.push(clipped)
     }
   }
-  Some(Ktx2Texture2dPayload::{
+  Some({
     width,
     height,
     is_cube,
@@ -3035,7 +2992,7 @@ fn load_texture(
   let bytes = load_asset_file_bytes(path)
   let container = if @image.image_extension_from_path(path) is Some(extension) {
     match @image.image_container_format_from_extension(extension) {
-      @image.ImageContainerFormat::Unknown(_) => None
+      Unknown(_) => None
       known => Some(known)
     }
   } else {
@@ -3147,14 +3104,14 @@ fn load_texture_bytes_with_container(
 ///|
 fn load_wgsl(path~ : String) -> Int {
   let id = next_id()
-  blobs.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
+  blobs.push({ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
 ///|
 fn load_bytes(path~ : String) -> Int {
   let id = next_id()
-  blobs.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
+  blobs.push({ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
@@ -3489,7 +3446,7 @@ fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
 ///|
 fn load_font(path~ : String) -> Int {
   let id = next_id()
-  fonts.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
+  fonts.push({ id, bytes: load_asset_file_bytes(path) })
   id
 }
 

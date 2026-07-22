@@ -22,6 +22,7 @@ const VIEW_PLUGIN_NAME : String = "mgstudio.render.view.ViewPlugin"
 pub struct ViewPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ViewPlugin::ViewPlugin() -> ViewPlugin {
   ViewPlugin::{  }
 }
@@ -40,7 +41,7 @@ pub impl @app.Plugin for ViewPlugin with fn build(_self, app) {
 pub impl @app.Plugin for ViewPlugin with fn finish(_self, app) {
   let next = app
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_app) {
+    next.modify_sub_app(RenderApp, fn(render_app) {
       init_view_uniforms(render_app.world())
       init_view_target_attachments(render_app.world())
       render_app
@@ -60,7 +61,7 @@ pub(all) enum Msaa {
 
 ///|
 pub fn Msaa::default() -> Msaa {
-  Msaa::Sample4
+  Sample4
 }
 
 ///|
@@ -76,10 +77,10 @@ pub fn Msaa::samples(self : Msaa) -> Int {
 ///|
 pub fn Msaa::from_samples(samples : Int) -> Msaa {
   match samples {
-    1 => Msaa::Off
-    2 => Msaa::Sample2
-    4 => Msaa::Sample4
-    8 => Msaa::Sample8
+    1 => Off
+    2 => Sample2
+    4 => Sample4
+    8 => Sample8
     _ => abort("Unsupported MSAA sample count: \{samples}")
   }
 }
@@ -91,12 +92,12 @@ pub struct RenderShadowLodOrigin {
 
 ///|
 pub fn RenderShadowLodOrigin::RenderShadowLodOrigin() -> RenderShadowLodOrigin {
-  RenderShadowLodOrigin::{ origin: @math.Vec3::zero() }
+  { origin: @math.Vec3::zero() }
 }
 
 ///|
 pub fn RenderShadowLodOrigin::new(origin : @math.Vec3) -> RenderShadowLodOrigin {
-  RenderShadowLodOrigin::{ origin, }
+  { origin, }
 }
 
 ///|
@@ -126,7 +127,7 @@ pub(all) struct ViewUniformMat3 {
 
 ///|
 pub fn ViewUniformMat3::identity() -> ViewUniformMat3 {
-  ViewUniformMat3::{
+  {
     x_axis: @math.Vec3::new(1.0F, 0.0F, 0.0F),
     y_axis: @math.Vec3::new(0.0F, 1.0F, 0.0F),
     z_axis: @math.Vec3::new(0.0F, 0.0F, 1.0F),
@@ -143,7 +144,7 @@ pub(all) struct ViewUniformMat4 {
 
 ///|
 pub fn ViewUniformMat4::identity() -> ViewUniformMat4 {
-  ViewUniformMat4::{
+  {
     x_axis: @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
     y_axis: @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
     z_axis: @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
@@ -167,7 +168,7 @@ pub(all) struct ColorGradingUniform {
 
 ///|
 pub fn ColorGradingUniform::ColorGradingUniform() -> ColorGradingUniform {
-  ColorGradingUniform::{
+  {
     balance: ViewUniformMat3::identity(),
     saturation: @math.Vec3::splat(1.0F),
     contrast: @math.Vec3::splat(1.0F),
@@ -203,7 +204,7 @@ pub(all) struct ViewUniform {
 
 ///|
 pub fn ViewUniform::ViewUniform() -> ViewUniform {
-  ViewUniform::{
+  {
     clip_from_world: ViewUniformMat4::identity(),
     unjittered_clip_from_world: ViewUniformMat4::identity(),
     world_from_clip: ViewUniformMat4::identity(),
@@ -224,7 +225,7 @@ pub fn ViewUniform::ViewUniform() -> ViewUniform {
       @math.Vec4::splat(0.0F),
     ],
     lod_view_world_position: @math.Vec3::zero(),
-    color_grading: ColorGradingUniform::ColorGradingUniform(),
+    color_grading: ColorGradingUniform(),
     mip_bias: 0.0F,
     frame_count: 0U,
   }
@@ -347,7 +348,7 @@ pub(all) struct ViewUniforms {
 
 ///|
 pub fn ViewUniforms::ViewUniforms() -> ViewUniforms {
-  ViewUniforms::{
+  {
     uniforms: @render_resource.DynamicUniformBuffer::new(),
     gpu_buffer: None,
     gpu_capacity: 0UL,
@@ -443,10 +444,7 @@ pub fn init_view_uniforms(world : @ecs.World) -> Unit {
   if world.resource(view_uniforms_resource_key).is_present() {
     return
   }
-  world.insert_resource(
-    view_uniforms_resource_key,
-    ViewUniforms::ViewUniforms(),
-  )
+  world.insert_resource(view_uniforms_resource_key, ViewUniforms())
 }
 
 ///|
@@ -469,7 +467,7 @@ pub struct ViewTargetAttachments {
 
 ///|
 pub fn ViewTargetAttachments::ViewTargetAttachments() -> ViewTargetAttachments {
-  ViewTargetAttachments::{ attachments: @hashmap.HashMap([]) }
+  { attachments: HashMap([]) }
 }
 
 ///|
@@ -516,7 +514,7 @@ pub fn init_view_target_attachments(world : @ecs.World) -> Unit {
   }
   world.insert_resource(
     view_target_attachments_resource_key,
-    ViewTargetAttachments::ViewTargetAttachments(),
+    ViewTargetAttachments(),
   )
 }
 
@@ -532,7 +530,7 @@ pub(all) struct ViewUniformOffset {
 
 ///|
 pub fn ViewUniformOffset::new(offset : UInt) -> ViewUniformOffset {
-  ViewUniformOffset::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -574,6 +572,7 @@ pub impl @ecs.Component for Msaa with fn component() {
 pub struct NoIndirectDrawing {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoIndirectDrawing::NoIndirectDrawing() -> NoIndirectDrawing {
   NoIndirectDrawing::{  }
 }
@@ -609,7 +608,7 @@ pub fn ExtractedView::new(
   viewport_w? : Int = 0,
   invert_culling? : Bool = false,
 ) -> ExtractedView {
-  ExtractedView::{
+  {
     retained_view_entity,
     target_format_raw,
     viewport_x,
@@ -680,7 +679,7 @@ pub fn RetainedViewEntity::new(
   auxiliary_entity? : @core.Entity? = None,
   subview_index? : Int = 0,
 ) -> RetainedViewEntity {
-  RetainedViewEntity::{
+  {
     main_entity,
     auxiliary_entity: auxiliary_entity.unwrap_or(@core.Entity::placeholder()),
     subview_index,
@@ -753,8 +752,7 @@ pub fn extracted_view_target_format_raw(
     @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT
   } else {
     match compositing_space {
-      Some(@camera_compositing_space.CompositingSpace::Srgb) =>
-        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
+      Some(Srgb) => @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
       _ => output_texture_format_raw
     }
   }

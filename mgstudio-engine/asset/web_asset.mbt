@@ -22,7 +22,7 @@ pub(all) struct WebAssetPlugin {
 
 ///|
 pub fn WebAssetPlugin::WebAssetPlugin() -> WebAssetPlugin {
-  WebAssetPlugin::{ silence_startup_warning: false }
+  { silence_startup_warning: false }
 }
 
 ///|
@@ -30,7 +30,7 @@ pub fn WebAssetPlugin::with_silence_startup_warning(
   _self : WebAssetPlugin,
   enabled : Bool,
 ) -> WebAssetPlugin {
-  WebAssetPlugin::{ silence_startup_warning: enabled }
+  { silence_startup_warning: enabled }
 }
 
 ///|
@@ -53,7 +53,7 @@ fn web_asset_source_builder(scheme : String) -> AssetSourceBuilder {
 ///|
 pub fn web_asset_plugin(
   app : @app.App[@ecs.World],
-  plugin? : WebAssetPlugin = WebAssetPlugin::WebAssetPlugin(),
+  plugin? : WebAssetPlugin = WebAssetPlugin(),
 ) -> @app.App[@ecs.World] {
   if !plugin.silence_startup_warning {
     println(
@@ -61,12 +61,8 @@ pub fn web_asset_plugin(
     )
   }
   register_asset_source(
-    register_asset_source(
-      app,
-      AssetSourceId::Named("http"),
-      web_asset_source_builder("http"),
-    ),
-    AssetSourceId::Named("https"),
+    register_asset_source(app, Named("http"), web_asset_source_builder("http")),
+    Named("https"),
     web_asset_source_builder("https"),
   )
 }

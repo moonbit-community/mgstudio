@@ -101,26 +101,26 @@ pub impl ButtonInputButton for GamepadButton with fn button_id(self) {
 ///|
 fn gamepad_button_from_index(index : Int) -> GamepadButton {
   match index {
-    0 => GamepadButton::South
-    1 => GamepadButton::East
-    2 => GamepadButton::C
-    3 => GamepadButton::North
-    4 => GamepadButton::West
-    5 => GamepadButton::Z
-    6 => GamepadButton::LeftTrigger
-    7 => GamepadButton::RightTrigger
-    8 => GamepadButton::LeftTrigger2
-    9 => GamepadButton::RightTrigger2
-    10 => GamepadButton::Select
-    11 => GamepadButton::Start
-    12 => GamepadButton::Mode
-    13 => GamepadButton::LeftThumb
-    14 => GamepadButton::RightThumb
-    15 => GamepadButton::DPadUp
-    16 => GamepadButton::DPadDown
-    17 => GamepadButton::DPadLeft
-    18 => GamepadButton::DPadRight
-    _ => GamepadButton::Other(index)
+    0 => South
+    1 => East
+    2 => C
+    3 => North
+    4 => West
+    5 => Z
+    6 => LeftTrigger
+    7 => RightTrigger
+    8 => LeftTrigger2
+    9 => RightTrigger2
+    10 => Select
+    11 => Start
+    12 => Mode
+    13 => LeftThumb
+    14 => RightThumb
+    15 => DPadUp
+    16 => DPadDown
+    17 => DPadLeft
+    18 => DPadRight
+    _ => Other(index)
   }
 }
 
@@ -156,13 +156,13 @@ pub fn GamepadAxis::all() -> Array[GamepadAxis] {
 ///|
 fn gamepad_axis_from_index(index : Int) -> GamepadAxis {
   match index {
-    0 => GamepadAxis::LeftStickX
-    1 => GamepadAxis::LeftStickY
-    2 => GamepadAxis::LeftZ
-    3 => GamepadAxis::RightStickX
-    4 => GamepadAxis::RightStickY
-    5 => GamepadAxis::RightZ
-    _ => GamepadAxis::Other(index)
+    0 => LeftStickX
+    1 => LeftStickY
+    2 => LeftZ
+    3 => RightStickX
+    4 => RightStickY
+    5 => RightZ
+    _ => Other(index)
   }
 }
 
@@ -184,12 +184,12 @@ pub impl IntoGamepadInput for GamepadInput with fn into_gamepad_input(self) {
 
 ///|
 pub impl IntoGamepadInput for GamepadButton with fn into_gamepad_input(self) {
-  GamepadInput::Button(self)
+  Button(self)
 }
 
 ///|
 pub impl IntoGamepadInput for GamepadAxis with fn into_gamepad_input(self) {
-  GamepadInput::Axis(self)
+  Axis(self)
 }
 
 ///|
@@ -365,7 +365,7 @@ pub fn GamepadConnectionInfo::new(
   vendor_id : Int?,
   product_id : Int?,
 ) -> GamepadConnectionInfo {
-  GamepadConnectionInfo::{ name, vendor_id, product_id }
+  { name, vendor_id, product_id }
 }
 
 ///|
@@ -385,7 +385,7 @@ pub fn GamepadConnectionEvent::new(
   gamepad : @core.Entity,
   connection : GamepadConnection,
 ) -> GamepadConnectionEvent {
-  GamepadConnectionEvent::{ gamepad, connection }
+  { gamepad, connection }
 }
 
 ///|
@@ -416,7 +416,7 @@ pub fn RawGamepadButtonChangedEvent::new(
   button : GamepadButton,
   value : Float,
 ) -> RawGamepadButtonChangedEvent {
-  RawGamepadButtonChangedEvent::{ gamepad, button, value }
+  { gamepad, button, value }
 }
 
 ///|
@@ -432,7 +432,7 @@ pub fn RawGamepadAxisChangedEvent::new(
   axis : GamepadAxis,
   value : Float,
 ) -> RawGamepadAxisChangedEvent {
-  RawGamepadAxisChangedEvent::{ gamepad, axis, value }
+  { gamepad, axis, value }
 }
 
 ///|
@@ -457,7 +457,7 @@ pub fn GamepadButtonChangedEvent::new(
   state : ButtonState,
   value : Float,
 ) -> GamepadButtonChangedEvent {
-  GamepadButtonChangedEvent::{ entity, button, state, value }
+  { entity, button, state, value }
 }
 
 ///|
@@ -473,7 +473,7 @@ pub fn GamepadAxisChangedEvent::new(
   axis : GamepadAxis,
   value : Float,
 ) -> GamepadAxisChangedEvent {
-  GamepadAxisChangedEvent::{ entity, axis, value }
+  { entity, axis, value }
 }
 
 ///|
@@ -489,7 +489,7 @@ pub fn GamepadButtonStateChangedEvent::new(
   button : GamepadButton,
   state : ButtonState,
 ) -> GamepadButtonStateChangedEvent {
-  GamepadButtonStateChangedEvent::{ entity, button, state }
+  { entity, button, state }
 }
 
 ///|
@@ -507,31 +507,31 @@ pub(all) struct GamepadRumbleIntensity {
 
 ///|
 pub fn GamepadRumbleIntensity::max() -> GamepadRumbleIntensity {
-  GamepadRumbleIntensity::{ strong_motor: 1.0F, weak_motor: 1.0F }
+  { strong_motor: 1.0F, weak_motor: 1.0F }
 }
 
 ///|
 pub fn GamepadRumbleIntensity::weak_max() -> GamepadRumbleIntensity {
-  GamepadRumbleIntensity::{ strong_motor: 0.0F, weak_motor: 1.0F }
+  { strong_motor: 0.0F, weak_motor: 1.0F }
 }
 
 ///|
 pub fn GamepadRumbleIntensity::strong_max() -> GamepadRumbleIntensity {
-  GamepadRumbleIntensity::{ strong_motor: 1.0F, weak_motor: 0.0F }
+  { strong_motor: 1.0F, weak_motor: 0.0F }
 }
 
 ///|
 pub fn GamepadRumbleIntensity::weak_motor(
   intensity : Float,
 ) -> GamepadRumbleIntensity {
-  GamepadRumbleIntensity::{ strong_motor: 0.0F, weak_motor: intensity }
+  { strong_motor: 0.0F, weak_motor: intensity }
 }
 
 ///|
 pub fn GamepadRumbleIntensity::strong_motor(
   intensity : Float,
 ) -> GamepadRumbleIntensity {
-  GamepadRumbleIntensity::{ strong_motor: intensity, weak_motor: 0.0F }
+  { strong_motor: intensity, weak_motor: 0.0F }
 }
 
 ///|
@@ -580,12 +580,12 @@ pub struct ButtonSettings {
 
 ///|
 pub fn ButtonSettings::ButtonSettings() -> ButtonSettings {
-  ButtonSettings::{ press_threshold: 0.75F, release_threshold: 0.65F }
+  { press_threshold: 0.75F, release_threshold: 0.65F }
 }
 
 ///|
 pub impl Default for ButtonSettings with fn default() {
-  ButtonSettings::ButtonSettings()
+  ButtonSettings()
 }
 
 ///|
@@ -594,15 +594,15 @@ pub fn ButtonSettings::new(
   release_threshold : Float,
 ) -> ButtonSettings raise ButtonSettingsError {
   if release_threshold < 0.0F || release_threshold > 1.0F {
-    raise ButtonSettingsError::ReleaseThresholdOutOfRange(release_threshold)
+    raise ReleaseThresholdOutOfRange(release_threshold)
   } else if press_threshold < 0.0F || press_threshold > 1.0F {
-    raise ButtonSettingsError::PressThresholdOutOfRange(press_threshold)
+    raise PressThresholdOutOfRange(press_threshold)
   } else if release_threshold > press_threshold {
-    raise ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
+    raise ReleaseThresholdGreaterThanPressThreshold(
       press_threshold, release_threshold,
     )
   } else {
-    ButtonSettings::{ press_threshold, release_threshold }
+    { press_threshold, release_threshold }
   }
 }
 
@@ -633,9 +633,9 @@ pub fn ButtonSettings::try_set_press_threshold(
     self.press_threshold = value
     ()
   } else if value < 0.0F || value > 1.0F {
-    raise ButtonSettingsError::PressThresholdOutOfRange(value)
+    raise PressThresholdOutOfRange(value)
   } else {
-    raise ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
+    raise ReleaseThresholdGreaterThanPressThreshold(
       value,
       self.release_threshold,
     )
@@ -667,12 +667,9 @@ pub fn ButtonSettings::try_set_release_threshold(
     self.release_threshold = value
     ()
   } else if value < 0.0F || value > 1.0F {
-    raise ButtonSettingsError::ReleaseThresholdOutOfRange(value)
+    raise ReleaseThresholdOutOfRange(value)
   } else {
-    raise ButtonSettingsError::ReleaseThresholdGreaterThanPressThreshold(
-      self.press_threshold,
-      value,
-    )
+    raise ReleaseThresholdGreaterThanPressThreshold(self.press_threshold, value)
   }
 }
 
@@ -698,7 +695,7 @@ pub struct AxisSettings {
 
 ///|
 pub fn AxisSettings::AxisSettings() -> AxisSettings {
-  AxisSettings::{
+  {
     livezone_upperbound: 1.0F,
     deadzone_upperbound: 0.05F,
     deadzone_lowerbound: -0.05F,
@@ -709,7 +706,7 @@ pub fn AxisSettings::AxisSettings() -> AxisSettings {
 
 ///|
 pub impl Default for AxisSettings with fn default() {
-  AxisSettings::AxisSettings()
+  AxisSettings()
 }
 
 ///|
@@ -721,25 +718,25 @@ pub fn AxisSettings::new(
   threshold : Float,
 ) -> AxisSettings raise AxisSettingsError {
   if livezone_lowerbound < -1.0F || livezone_lowerbound > 0.0F {
-    raise AxisSettingsError::LiveZoneLowerBoundOutOfRange(livezone_lowerbound)
+    raise LiveZoneLowerBoundOutOfRange(livezone_lowerbound)
   } else if deadzone_lowerbound < -1.0F || deadzone_lowerbound > 0.0F {
-    raise AxisSettingsError::DeadZoneLowerBoundOutOfRange(deadzone_lowerbound)
+    raise DeadZoneLowerBoundOutOfRange(deadzone_lowerbound)
   } else if deadzone_upperbound < 0.0F || deadzone_upperbound > 1.0F {
-    raise AxisSettingsError::DeadZoneUpperBoundOutOfRange(deadzone_upperbound)
+    raise DeadZoneUpperBoundOutOfRange(deadzone_upperbound)
   } else if livezone_upperbound < 0.0F || livezone_upperbound > 1.0F {
-    raise AxisSettingsError::LiveZoneUpperBoundOutOfRange(livezone_upperbound)
+    raise LiveZoneUpperBoundOutOfRange(livezone_upperbound)
   } else if livezone_lowerbound > deadzone_lowerbound {
-    raise AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
+    raise LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
       livezone_lowerbound, deadzone_lowerbound,
     )
   } else if deadzone_upperbound > livezone_upperbound {
-    raise AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
+    raise DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
       livezone_upperbound, deadzone_upperbound,
     )
   } else if threshold < 0.0F || threshold > 2.0F {
-    raise AxisSettingsError::Threshold(threshold)
+    raise Threshold(threshold)
   } else {
-    AxisSettings::{
+    {
       livezone_upperbound,
       deadzone_upperbound,
       deadzone_lowerbound,
@@ -760,9 +757,9 @@ pub fn AxisSettings::try_set_livezone_upperbound(
   value : Float,
 ) -> Unit raise AxisSettingsError {
   if value < 0.0F || value > 1.0F {
-    raise AxisSettingsError::LiveZoneUpperBoundOutOfRange(value)
+    raise LiveZoneUpperBoundOutOfRange(value)
   } else if value < self.deadzone_upperbound {
-    raise AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
+    raise DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
       value,
       self.deadzone_upperbound,
     )
@@ -794,9 +791,9 @@ pub fn AxisSettings::try_set_deadzone_upperbound(
   value : Float,
 ) -> Unit raise AxisSettingsError {
   if value < 0.0F || value > 1.0F {
-    raise AxisSettingsError::DeadZoneUpperBoundOutOfRange(value)
+    raise DeadZoneUpperBoundOutOfRange(value)
   } else if self.livezone_upperbound < value {
-    raise AxisSettingsError::DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
+    raise DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(
       self.livezone_upperbound,
       value,
     )
@@ -828,9 +825,9 @@ pub fn AxisSettings::try_set_livezone_lowerbound(
   value : Float,
 ) -> Unit raise AxisSettingsError {
   if value < -1.0F || value > 0.0F {
-    raise AxisSettingsError::LiveZoneLowerBoundOutOfRange(value)
+    raise LiveZoneLowerBoundOutOfRange(value)
   } else if value > self.deadzone_lowerbound {
-    raise AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
+    raise LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
       value,
       self.deadzone_lowerbound,
     )
@@ -862,9 +859,9 @@ pub fn AxisSettings::try_set_deadzone_lowerbound(
   value : Float,
 ) -> Unit raise AxisSettingsError {
   if value < -1.0F || value > 0.0F {
-    raise AxisSettingsError::DeadZoneLowerBoundOutOfRange(value)
+    raise DeadZoneLowerBoundOutOfRange(value)
   } else if self.livezone_lowerbound > value {
-    raise AxisSettingsError::LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
+    raise LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(
       self.livezone_lowerbound,
       value,
     )
@@ -896,7 +893,7 @@ pub fn AxisSettings::try_set_threshold(
   value : Float,
 ) -> Unit raise AxisSettingsError {
   if value < 0.0F || value > 2.0F {
-    raise AxisSettingsError::Threshold(value)
+    raise Threshold(value)
   } else {
     self.threshold = value
     ()
@@ -920,12 +917,12 @@ pub struct ButtonAxisSettings {
 
 ///|
 pub fn ButtonAxisSettings::ButtonAxisSettings() -> ButtonAxisSettings {
-  ButtonAxisSettings::{ high: 0.95F, low: 0.05F, threshold: 0.01F }
+  { high: 0.95F, low: 0.05F, threshold: 0.01F }
 }
 
 ///|
 pub impl Default for ButtonAxisSettings with fn default() {
-  ButtonAxisSettings::ButtonAxisSettings()
+  ButtonAxisSettings()
 }
 
 ///|
@@ -940,10 +937,10 @@ pub struct GamepadSettings {
 
 ///|
 pub fn GamepadSettings::GamepadSettings() -> GamepadSettings {
-  GamepadSettings::{
-    default_button_settings: ButtonSettings::ButtonSettings(),
-    default_axis_settings: AxisSettings::AxisSettings(),
-    default_button_axis_settings: ButtonAxisSettings::ButtonAxisSettings(),
+  {
+    default_button_settings: ButtonSettings(),
+    default_axis_settings: AxisSettings(),
+    default_button_axis_settings: ButtonAxisSettings(),
     button_settings: [],
     axis_settings: [],
     button_axis_settings: [],
@@ -952,7 +949,7 @@ pub fn GamepadSettings::GamepadSettings() -> GamepadSettings {
 
 ///|
 pub impl Default for GamepadSettings with fn default() {
-  GamepadSettings::GamepadSettings()
+  GamepadSettings()
 }
 
 ///|
@@ -1127,13 +1124,13 @@ fn AxisSettings::get_axis_position_from_value(
   value : Float,
 ) -> ScaledAxisWithDeadZonePosition {
   if value < self.deadzone_upperbound && value > self.deadzone_lowerbound {
-    ScaledAxisWithDeadZonePosition::Dead
+    Dead
   } else if value > self.livezone_upperbound {
-    ScaledAxisWithDeadZonePosition::AboveHigh
+    AboveHigh
   } else if value < self.livezone_lowerbound {
-    ScaledAxisWithDeadZonePosition::BelowLow
+    BelowLow
   } else if value >= self.deadzone_upperbound {
-    ScaledAxisWithDeadZonePosition::High(
+    High(
       linear_remapping(
         value,
         self.deadzone_upperbound,
@@ -1143,7 +1140,7 @@ fn AxisSettings::get_axis_position_from_value(
       ),
     )
   } else if value <= self.deadzone_lowerbound {
-    ScaledAxisWithDeadZonePosition::Low(
+    Low(
       linear_remapping(
         value,
         self.livezone_lowerbound,
@@ -1153,7 +1150,7 @@ fn AxisSettings::get_axis_position_from_value(
       ),
     )
   } else {
-    ScaledAxisWithDeadZonePosition::Dead
+    Dead
   }
 }
 
@@ -1165,7 +1162,7 @@ fn AxisSettings::filter(
 ) -> FilteredAxisPosition? {
   let clamped_unscaled = self.clamp(new_raw_value)
   if self.should_register_change(clamped_unscaled, old_raw_value) {
-    Some(FilteredAxisPosition::{
+    Some({
       scaled: self.get_axis_position_from_value(clamped_unscaled),
       raw: new_raw_value,
     })
@@ -1206,13 +1203,11 @@ fn ButtonAxisSettings::get_axis_position_from_value(
   value : Float,
 ) -> ScaledAxisPosition {
   if value <= self.low {
-    ScaledAxisPosition::ClampedLow
+    ClampedLow
   } else if value >= self.high {
-    ScaledAxisPosition::ClampedHigh
+    ClampedHigh
   } else {
-    ScaledAxisPosition::Scaled(
-      linear_remapping(value, self.low, self.high, 0.0F, 1.0F),
-    )
+    Scaled(linear_remapping(value, self.low, self.high, 0.0F, 1.0F))
   }
 }
 
@@ -1224,7 +1219,7 @@ fn ButtonAxisSettings::filter(
 ) -> FilteredButtonAxisPosition? {
   let clamped_unscaled = self.clamp(new_raw_value)
   if self.should_register_change(clamped_unscaled, old_raw_value) {
-    Some(FilteredButtonAxisPosition::{
+    Some({
       scaled: self.get_axis_position_from_value(clamped_unscaled),
       raw: new_raw_value,
     })
@@ -1237,17 +1232,17 @@ fn ButtonAxisSettings::filter(
 fn default_gamepad_analog() -> Axis[GamepadInput] {
   let analog : Axis[GamepadInput] = Axis::new()
   for button in GamepadButton::all() {
-    analog.set(GamepadInput::Button(button), 0.0F) |> ignore
+    analog.set(Button(button), 0.0F) |> ignore
   }
   for axis in GamepadAxis::all() {
-    analog.set(GamepadInput::Axis(axis), 0.0F) |> ignore
+    analog.set(Axis(axis), 0.0F) |> ignore
   }
   analog
 }
 
 ///|
 pub fn Gamepad::Gamepad() -> Gamepad {
-  Gamepad::{
+  {
     vendor_id: None,
     product_id: None,
     digital: ButtonInput::new(),
@@ -1257,7 +1252,7 @@ pub fn Gamepad::Gamepad() -> Gamepad {
 
 ///|
 pub impl Default for Gamepad with fn default() {
-  Gamepad::Gamepad()
+  Gamepad()
 }
 
 ///|
@@ -1307,7 +1302,7 @@ struct RunningRumbleEffects {
 
 ///|
 fn RunningRumbleEffects::RunningRumbleEffects() -> RunningRumbleEffects {
-  RunningRumbleEffects::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -1595,11 +1590,7 @@ fn ensure_running_rumble_entry_index(
   match running_rumble_entry_index(effects, entity) {
     Some(index) => index
     None => {
-      effects.entries.push(RunningRumbleEntry::{
-        entity,
-        rumbles: [],
-        last_applied: None,
-      })
+      effects.entries.push({ entity, rumbles: [], last_applied: None })
       effects.entries.length() - 1
     }
   }
@@ -1635,7 +1626,7 @@ fn desired_rumble(entry : RunningRumbleEntry) -> AppliedRumble? {
     }
   }
 
-  Some(AppliedRumble::{ strong_motor, weak_motor, deadline_ms })
+  Some({ strong_motor, weak_motor, deadline_ms })
 }
 
 ///|
@@ -1653,7 +1644,7 @@ fn read_gamepad_snapshot(
   for i in 0..<GAMEPAD_AXIS_COUNT {
     axis_values.push(host_input_gamepad_axis_value(gamepad_id=host_id, axis=i))
   }
-  GamepadSnapshot::{
+  {
     host_id,
     entity,
     name: host_gamepad_name(host_id),
@@ -1700,11 +1691,7 @@ fn emit_raw_connection_event(
   event : GamepadConnectionEvent,
 ) -> Unit {
   world.send_message(gamepad_connection_event_message_key, event) |> ignore
-  world.send_message(
-    raw_gamepad_event_message_key,
-    RawGamepadEvent::Connection(event),
-  )
-  |> ignore
+  world.send_message(raw_gamepad_event_message_key, Connection(event)) |> ignore
 }
 
 ///|
@@ -1714,11 +1701,7 @@ fn emit_raw_button_changed_event(
 ) -> Unit {
   world.send_message(raw_gamepad_button_changed_event_message_key, event)
   |> ignore
-  world.send_message(
-    raw_gamepad_event_message_key,
-    RawGamepadEvent::Button(event),
-  )
-  |> ignore
+  world.send_message(raw_gamepad_event_message_key, Button(event)) |> ignore
 }
 
 ///|
@@ -1728,11 +1711,7 @@ fn emit_raw_axis_changed_event(
 ) -> Unit {
   world.send_message(raw_gamepad_axis_changed_event_message_key, event)
   |> ignore
-  world.send_message(
-    raw_gamepad_event_message_key,
-    RawGamepadEvent::Axis(event),
-  )
-  |> ignore
+  world.send_message(raw_gamepad_event_message_key, Axis(event)) |> ignore
 }
 
 ///|
@@ -1829,7 +1808,7 @@ fn rebuild_gamepad_events(
           world,
           GamepadConnectionEvent::new(
             current.entity,
-            GamepadConnection::Connected(
+            Connected(
               GamepadConnectionInfo::new(
                 current.name,
                 current.vendor_id,
@@ -1848,10 +1827,7 @@ fn rebuild_gamepad_events(
       find_gamepad_snapshot(current_gamepads, previous.host_id) is None {
       emit_raw_connection_event(
         world,
-        GamepadConnectionEvent::new(
-          previous.entity,
-          GamepadConnection::Disconnected,
-        ),
+        GamepadConnectionEvent::new(previous.entity, Disconnected),
       )
     }
   }
@@ -1920,7 +1896,7 @@ impl @app.SystemParam for GamepadProcessedEventWriters with fn init_state(world)
 ///|
 impl @app.SystemParam for GamepadProcessedEventWriters with fn get(_state) {
   let world = current_gamepad_world_abort_missing()
-  GamepadProcessedEventWriters::{
+  {
     gamepad_events: world.message_writer(gamepad_event_message_key),
     axis_events: world.message_writer(gamepad_axis_changed_event_message_key),
     button_events: world.message_writer(
@@ -1957,24 +1933,18 @@ fn gamepad_event_processing_system(
   for raw_event in raw_events.read() {
     match raw_event {
       Connection(connection_event) =>
-        outputs.gamepad_events.write(GamepadEvent::Connection(connection_event))
-        |> ignore
+        outputs.gamepad_events.write(Connection(connection_event)) |> ignore
       Axis(axis_event) =>
         if (gamepads.get(axis_event.gamepad) catch { _ => None })
           is Some((settings, gamepad_mut)) {
           let settings = settings.value()
           gamepad_mut.modify(fn(gamepad) {
-            let old_value = gamepad.analog.get(
-              GamepadInput::Axis(axis_event.axis),
-            )
+            let old_value = gamepad.analog.get(Axis(axis_event.axis))
             if settings
               .get_axis_settings(axis_event.axis)
               .filter(axis_event.value, old_value)
               is Some(filtered_value) {
-              gamepad.analog.set(
-                GamepadInput::Axis(axis_event.axis),
-                filtered_value.raw,
-              )
+              gamepad.analog.set(Axis(axis_event.axis), filtered_value.raw)
               |> ignore
               let event = GamepadAxisChangedEvent::new(
                 axis_event.gamepad,
@@ -1982,7 +1952,7 @@ fn gamepad_event_processing_system(
                 filtered_value.scaled.to_f32(),
               )
               outputs.axis_events.write(event) |> ignore
-              outputs.gamepad_events.write(GamepadEvent::Axis(event)) |> ignore
+              outputs.gamepad_events.write(Axis(event)) |> ignore
             }
           })
         }
@@ -1991,9 +1961,7 @@ fn gamepad_event_processing_system(
           is Some((settings, gamepad_mut)) {
           let settings = settings.value()
           gamepad_mut.modify(fn(gamepad) {
-            let old_value = gamepad.analog.get(
-              GamepadInput::Button(button_event.button),
-            )
+            let old_value = gamepad.analog.get(Button(button_event.button))
             if settings
               .get_button_axis_settings(button_event.button)
               .filter(button_event.value, old_value)
@@ -2002,7 +1970,7 @@ fn gamepad_event_processing_system(
                 button_event.button,
               )
               gamepad.analog.set(
-                GamepadInput::Button(button_event.button),
+                Button(button_event.button),
                 filtered_value.raw,
               )
               |> ignore
@@ -2014,7 +1982,7 @@ fn gamepad_event_processing_system(
                     GamepadButtonStateChangedEvent::new(
                       button_event.gamepad,
                       button_event.button,
-                      ButtonState::Released,
+                      Released,
                     ),
                   )
                   |> ignore
@@ -2026,7 +1994,7 @@ fn gamepad_event_processing_system(
                     GamepadButtonStateChangedEvent::new(
                       button_event.gamepad,
                       button_event.button,
-                      ButtonState::Pressed,
+                      Pressed,
                     ),
                   )
                   |> ignore
@@ -2037,7 +2005,7 @@ fn gamepad_event_processing_system(
               let button_state = if gamepad.digital.pressed(button_event.button) {
                 ButtonState::Pressed
               } else {
-                ButtonState::Released
+                Released
               }
               let event = GamepadButtonChangedEvent::new(
                 button_event.gamepad,
@@ -2046,8 +2014,7 @@ fn gamepad_event_processing_system(
                 filtered_value.scaled.to_f32(),
               )
               outputs.button_events.write(event) |> ignore
-              outputs.gamepad_events.write(GamepadEvent::Button(event))
-              |> ignore
+              outputs.gamepad_events.write(Button(event)) |> ignore
             }
           })
         }
@@ -2087,9 +2054,9 @@ fn gamepad_rumble_system(
             !host_input_gamepad_ff_supported(host_id) {
             continue
           }
-          entry.rumbles.push(RunningRumble::{
+          entry.rumbles.push({
             deadline_ms: deadline_after(now_ms, duration),
-            intensity: GamepadRumbleIntensity::{
+            intensity: {
               strong_motor: clamp_rumble_motor(intensity.strong_motor),
               weak_motor: clamp_rumble_motor(intensity.weak_motor),
             },
@@ -2132,10 +2099,8 @@ fn gamepad_rumble_system(
               desired.weak_motor,
               duration_ms,
             ) {
-            @gilrs.GamepadRumbleResult::Applied =>
-              entry.last_applied = Some(desired)
-            @gilrs.GamepadRumbleResult::Unsupported
-            | @gilrs.GamepadRumbleResult::NotFound => {
+            Applied => entry.last_applied = Some(desired)
+            Unsupported | NotFound => {
               entry.rumbles.clear()
               entry.last_applied = None
             }

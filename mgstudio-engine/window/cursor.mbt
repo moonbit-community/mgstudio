@@ -62,40 +62,40 @@ pub fn SystemCursorIcon::to_native(
   self : SystemCursorIcon,
 ) -> @window_core.CursorIcon {
   match self {
-    Default => @window_core.CursorIcon::Default
-    ContextMenu => @window_core.CursorIcon::ContextMenu
-    Help => @window_core.CursorIcon::Help
-    Pointer => @window_core.CursorIcon::Pointer
-    Progress => @window_core.CursorIcon::Progress
-    Wait => @window_core.CursorIcon::Wait
-    Cell => @window_core.CursorIcon::Cell
-    Crosshair => @window_core.CursorIcon::Crosshair
-    Text => @window_core.CursorIcon::Text
-    VerticalText => @window_core.CursorIcon::VerticalText
-    Alias => @window_core.CursorIcon::Alias
-    Copy => @window_core.CursorIcon::Copy
-    Move => @window_core.CursorIcon::Move
-    NoDrop => @window_core.CursorIcon::NoDrop
-    NotAllowed => @window_core.CursorIcon::NotAllowed
-    Grab => @window_core.CursorIcon::Grab
-    Grabbing => @window_core.CursorIcon::Grabbing
-    EResize => @window_core.CursorIcon::EResize
-    NResize => @window_core.CursorIcon::NResize
-    NeResize => @window_core.CursorIcon::NeResize
-    NwResize => @window_core.CursorIcon::NwResize
-    SResize => @window_core.CursorIcon::SResize
-    SeResize => @window_core.CursorIcon::SeResize
-    SwResize => @window_core.CursorIcon::SwResize
-    WResize => @window_core.CursorIcon::WResize
-    EwResize => @window_core.CursorIcon::EwResize
-    NsResize => @window_core.CursorIcon::NsResize
-    NeswResize => @window_core.CursorIcon::NeswResize
-    NwseResize => @window_core.CursorIcon::NwseResize
-    ColResize => @window_core.CursorIcon::ColResize
-    RowResize => @window_core.CursorIcon::RowResize
-    AllScroll => @window_core.CursorIcon::AllScroll
-    ZoomIn => @window_core.CursorIcon::ZoomIn
-    ZoomOut => @window_core.CursorIcon::ZoomOut
+    Default => Default
+    ContextMenu => ContextMenu
+    Help => Help
+    Pointer => Pointer
+    Progress => Progress
+    Wait => Wait
+    Cell => Cell
+    Crosshair => Crosshair
+    Text => Text
+    VerticalText => VerticalText
+    Alias => Alias
+    Copy => Copy
+    Move => Move
+    NoDrop => NoDrop
+    NotAllowed => NotAllowed
+    Grab => Grab
+    Grabbing => Grabbing
+    EResize => EResize
+    NResize => NResize
+    NeResize => NeResize
+    NwResize => NwResize
+    SResize => SResize
+    SeResize => SeResize
+    SwResize => SwResize
+    WResize => WResize
+    EwResize => EwResize
+    NsResize => NsResize
+    NeswResize => NeswResize
+    NwseResize => NwseResize
+    ColResize => ColResize
+    RowResize => RowResize
+    AllScroll => AllScroll
+    ZoomIn => ZoomIn
+    ZoomOut => ZoomOut
   }
 }
 
@@ -104,40 +104,40 @@ pub fn SystemCursorIcon::from_native(
   icon : @window_core.CursorIcon,
 ) -> SystemCursorIcon {
   match icon {
-    @window_core.CursorIcon::Default => Default
-    @window_core.CursorIcon::ContextMenu => ContextMenu
-    @window_core.CursorIcon::Help => Help
-    @window_core.CursorIcon::Pointer => Pointer
-    @window_core.CursorIcon::Progress => Progress
-    @window_core.CursorIcon::Wait => Wait
-    @window_core.CursorIcon::Cell => Cell
-    @window_core.CursorIcon::Crosshair => Crosshair
-    @window_core.CursorIcon::Text => Text
-    @window_core.CursorIcon::VerticalText => VerticalText
-    @window_core.CursorIcon::Alias => Alias
-    @window_core.CursorIcon::Copy => Copy
-    @window_core.CursorIcon::Move => Move
-    @window_core.CursorIcon::NoDrop => NoDrop
-    @window_core.CursorIcon::NotAllowed => NotAllowed
-    @window_core.CursorIcon::Grab => Grab
-    @window_core.CursorIcon::Grabbing => Grabbing
-    @window_core.CursorIcon::EResize => EResize
-    @window_core.CursorIcon::NResize => NResize
-    @window_core.CursorIcon::NeResize => NeResize
-    @window_core.CursorIcon::NwResize => NwResize
-    @window_core.CursorIcon::SResize => SResize
-    @window_core.CursorIcon::SeResize => SeResize
-    @window_core.CursorIcon::SwResize => SwResize
-    @window_core.CursorIcon::WResize => WResize
-    @window_core.CursorIcon::EwResize => EwResize
-    @window_core.CursorIcon::NsResize => NsResize
-    @window_core.CursorIcon::NeswResize => NeswResize
-    @window_core.CursorIcon::NwseResize => NwseResize
-    @window_core.CursorIcon::ColResize => ColResize
-    @window_core.CursorIcon::RowResize => RowResize
-    @window_core.CursorIcon::AllScroll => AllScroll
-    @window_core.CursorIcon::ZoomIn => ZoomIn
-    @window_core.CursorIcon::ZoomOut => ZoomOut
+    Default => Default
+    ContextMenu => ContextMenu
+    Help => Help
+    Pointer => Pointer
+    Progress => Progress
+    Wait => Wait
+    Cell => Cell
+    Crosshair => Crosshair
+    Text => Text
+    VerticalText => VerticalText
+    Alias => Alias
+    Copy => Copy
+    Move => Move
+    NoDrop => NoDrop
+    NotAllowed => NotAllowed
+    Grab => Grab
+    Grabbing => Grabbing
+    EResize => EResize
+    NResize => NResize
+    NeResize => NeResize
+    NwResize => NwResize
+    SResize => SResize
+    SeResize => SeResize
+    SwResize => SwResize
+    WResize => WResize
+    EwResize => EwResize
+    NsResize => NsResize
+    NeswResize => NeswResize
+    NwseResize => NwseResize
+    ColResize => ColResize
+    RowResize => RowResize
+    AllScroll => AllScroll
+    ZoomIn => ZoomIn
+    ZoomOut => ZoomOut
   }
 }
 
@@ -160,7 +160,7 @@ pub fn CustomCursorImage::new(
   flip_y? : Bool = false,
   rect? : @math.URect? = None,
 ) -> CustomCursorImage {
-  CustomCursorImage::{ handle, texture_atlas, flip_x, flip_y, rect, hotspot }
+  { handle, texture_atlas, flip_x, flip_y, rect, hotspot }
 }
 
 ///|
@@ -174,7 +174,7 @@ pub fn CustomCursorUrl::new(
   url : String,
   hotspot : (Int, Int),
 ) -> CustomCursorUrl {
-  CustomCursorUrl::{ url, hotspot }
+  { url, hotspot }
 }
 
 ///|
@@ -209,7 +209,7 @@ pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
 
 ///|
 pub impl Default for CursorIcon with fn default() {
-  System(SystemCursorIcon::Default)
+  System(Default)
 }
 
 ///|
@@ -221,7 +221,7 @@ pub(all) struct CursorOptions {
 
 ///|
 pub fn CursorOptions::CursorOptions() -> CursorOptions {
-  CursorOptions::{ visible: true, grab_mode: GrabNone, hit_test: true }
+  { visible: true, grab_mode: GrabNone, hit_test: true }
 }
 
 ///|

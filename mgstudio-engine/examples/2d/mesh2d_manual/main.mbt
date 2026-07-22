@@ -61,6 +61,7 @@ const YELLOW_U32 : UInt = 0xFF00FFFFU
 struct ColoredMesh2d {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ColoredMesh2d::ColoredMesh2d() -> ColoredMesh2d {
   ColoredMesh2d::{  }
 }
@@ -79,6 +80,7 @@ pub impl @ecs.Component for ColoredMesh2d with fn component() {
 struct ColoredMesh2dPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ColoredMesh2dPlugin::ColoredMesh2dPlugin() -> ColoredMesh2dPlugin {
   ColoredMesh2dPlugin::{  }
 }
@@ -158,17 +160,13 @@ fn build_star_mesh() -> @mesh.Mesh {
   ignore(
     geometry.insert_attribute(
       @mesh.MeshVertexAttribute::position(),
-      @mesh.VertexAttributeValues::Float32x3(positions),
+      Float32x3(positions),
     ),
   )
   ignore(
     geometry.insert_attribute(
-      @mesh.MeshVertexAttribute::new(
-        "Vertex_Color",
-        1UL,
-        @mesh.MeshVertexFormat::Uint32,
-      ),
-      @mesh.VertexAttributeValues::Uint32(colors),
+      @mesh.MeshVertexAttribute::new("Vertex_Color", 1UL, Uint32),
+      Uint32(colors),
     ),
   )
   geometry.insert_indices(Some(indices))
@@ -180,6 +178,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(ColoredMesh2dPlugin::ColoredMesh2dPlugin())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

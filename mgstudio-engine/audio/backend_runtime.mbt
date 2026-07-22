@@ -36,11 +36,7 @@ priv struct NativeAudioPlaybackConfig {
 
 ///|
 fn NativeAudioPlaybackConfig::NativeAudioPlaybackConfig() -> NativeAudioPlaybackConfig {
-  NativeAudioPlaybackConfig::{
-    looped: false,
-    start_position_seconds: None,
-    duration_seconds: None,
-  }
+  { looped: false, start_position_seconds: None, duration_seconds: None }
 }
 
 ///|
@@ -48,7 +44,7 @@ fn NativeAudioPlaybackConfig::looped(
   self : NativeAudioPlaybackConfig,
   enabled : Bool,
 ) -> NativeAudioPlaybackConfig {
-  NativeAudioPlaybackConfig::{ ..self, looped: enabled }
+  { ..self, looped: enabled }
 }
 
 ///|
@@ -56,7 +52,7 @@ fn NativeAudioPlaybackConfig::with_start_position_seconds(
   self : NativeAudioPlaybackConfig,
   seconds : Float,
 ) -> NativeAudioPlaybackConfig {
-  NativeAudioPlaybackConfig::{
+  {
     ..self,
     start_position_seconds: Some(native_audio_non_negative_seconds(seconds)),
   }
@@ -67,10 +63,7 @@ fn NativeAudioPlaybackConfig::with_duration_seconds(
   self : NativeAudioPlaybackConfig,
   seconds : Float,
 ) -> NativeAudioPlaybackConfig {
-  NativeAudioPlaybackConfig::{
-    ..self,
-    duration_seconds: Some(native_audio_non_negative_seconds(seconds)),
-  }
+  { ..self, duration_seconds: Some(native_audio_non_negative_seconds(seconds)) }
 }
 
 ///|
@@ -205,14 +198,12 @@ fn native_audio_append_sine_to_spatial_player(
 
 ///|
 fn open_default_output_stream() -> NativeAudioStream raise @rodio.StreamError {
-  NativeAudioStream::{
-    stream: @rodio.OutputStreamBuilder::open_default_stream(),
-  }
+  { stream: @rodio.OutputStreamBuilder::open_default_stream() }
 }
 
 ///|
 fn NativeAudioStream::new_player(self : NativeAudioStream) -> NativeAudioPlayer {
-  NativeAudioPlayer::{ player: @rodio.Player::connect_new(self.stream.mixer()) }
+  { player: @rodio.Player::connect_new(self.stream.mixer()) }
 }
 
 ///|
@@ -222,7 +213,7 @@ fn NativeAudioStream::new_spatial_player(
   left_ear : (Double, Double, Double),
   right_ear : (Double, Double, Double),
 ) -> NativeSpatialAudioPlayer {
-  NativeSpatialAudioPlayer::{
+  {
     player: @rodio.SpatialPlayer::connect_new(
       self.stream.mixer(),
       vec3_to_native(emitter),
@@ -236,7 +227,7 @@ fn NativeAudioStream::new_spatial_player(
 fn NativeAudioPlayer::append_bytes(
   self : NativeAudioPlayer,
   bytes : Bytes,
-  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::NativeAudioPlaybackConfig(),
+  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig(),
 ) -> Unit raise @rodio.DecoderError {
   native_audio_append_bytes_to_player(self, bytes, config)
 }
@@ -319,7 +310,7 @@ fn NativeAudioPlayer::try_seek_seconds(
 fn NativeSpatialAudioPlayer::append_bytes(
   self : NativeSpatialAudioPlayer,
   bytes : Bytes,
-  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::NativeAudioPlaybackConfig(),
+  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig(),
 ) -> Unit raise @rodio.DecoderError {
   native_audio_append_bytes_to_spatial_player(self, bytes, config)
 }

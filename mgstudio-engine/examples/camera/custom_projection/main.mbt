@@ -25,7 +25,7 @@ fn oblique_clip_from_view(
   horizontal_obliqueness : Float,
   vertical_obliqueness : Float,
 ) -> @camera.ProjectionMatrix3d {
-  @camera.ProjectionMatrix3d::{
+  {
     ..base,
     z_axis: @math.Vec4::new(
       horizontal_obliqueness,
@@ -120,7 +120,7 @@ fn setup(
       @camera.Projection::custom(ObliquePerspectiveProjection::{
         horizontal_obliqueness: 0.2F,
         vertical_obliqueness: 0.6F,
-        perspective: @camera.PerspectiveProjection3d::PerspectiveProjection3d(),
+        perspective: PerspectiveProjection3d(),
       }),
       @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
         @math.Vec3::zero(),
@@ -162,6 +162,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .run()
 }

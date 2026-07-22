@@ -21,6 +21,7 @@ let cas_test_camera_key : @ecs.ComponentKey[CasTestCamera] = @ecs.register_compo
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 fn cas_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, cas_test_camera_key, CasTestCamera::{  })
@@ -42,14 +43,14 @@ test "anti_alias/cas: runtime state counts camera-only CAS components" {
   .set_by_key(
     camera_entity,
     ContrastAdaptiveSharpening::component(),
-    ContrastAdaptiveSharpening::ContrastAdaptiveSharpening(),
+    ContrastAdaptiveSharpening(),
   )
   try! app
   .world()
   .set_by_key(
     non_camera_entity,
     ContrastAdaptiveSharpening::component(),
-    ContrastAdaptiveSharpening::ContrastAdaptiveSharpening(),
+    ContrastAdaptiveSharpening(),
   )
   let app = app.update()
   let runtime = app.world().get_resource(ecs_key_cas_runtime_state).unwrap()

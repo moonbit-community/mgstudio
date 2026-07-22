@@ -23,13 +23,14 @@ const UPSCALING_PLUGIN_NAME : String = "mgstudio.core_pipeline.upscaling.Upscali
 pub struct UpscalingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn UpscalingPlugin::UpscalingPlugin() -> UpscalingPlugin {
   UpscalingPlugin::{  }
 }
 
 ///|
 pub fn upscaling_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  upscaling_plugin_with(app, UpscalingPlugin::UpscalingPlugin())
+  upscaling_plugin_with(app, UpscalingPlugin())
 }
 
 ///|
@@ -58,12 +59,12 @@ pub struct ViewUpscalingPipeline {
 
 ///|
 pub fn ViewUpscalingPipeline::ViewUpscalingPipeline() -> ViewUpscalingPipeline {
-  ViewUpscalingPipeline::{ pipeline_id: -1 }
+  { pipeline_id: -1 }
 }
 
 ///|
 pub fn ViewUpscalingPipeline::new(pipeline_id~ : Int) -> ViewUpscalingPipeline {
-  ViewUpscalingPipeline::{ pipeline_id, }
+  { pipeline_id, }
 }
 
 ///|
@@ -91,7 +92,7 @@ pub fn UpscalingPrepareViewState::new(
   output_texture_seen_before? : Bool = false,
   camera_has_explicit_output_blend_state? : Bool = false,
 ) -> UpscalingPrepareViewState {
-  UpscalingPrepareViewState::{
+  {
     out_texture_id,
     camera_output_mode_skip,
     output_texture_seen_before,

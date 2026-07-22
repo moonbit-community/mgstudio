@@ -21,12 +21,12 @@ pub struct Capsule2d {
 
 ///|
 pub fn Capsule2d::new(radius : Float, length : Float) -> Capsule2d {
-  Capsule2d::{ radius, half_length: length / 2.0F, segments: 16 }
+  { radius, half_length: length / 2.0F, segments: 16 }
 }
 
 ///|
 pub fn Capsule2d::with_segments(self : Capsule2d, segments : Int) -> Capsule2d {
-  Capsule2d::{ ..self, segments, }
+  { ..self, segments, }
 }
 
 ///|
@@ -41,17 +41,17 @@ pub struct Rectangle {
 
 ///|
 pub fn Rectangle::new(width : Float, height : Float) -> Rectangle {
-  Rectangle::{ half_size: Vec2::new(width / 2.0F, height / 2.0F) }
+  { half_size: Vec2::new(width / 2.0F, height / 2.0F) }
 }
 
 ///|
 pub fn Rectangle::from_size(size : Vec2) -> Rectangle {
-  Rectangle::{ half_size: Vec2::new(size.x / 2.0F, size.y / 2.0F) }
+  { half_size: Vec2::new(size.x / 2.0F, size.y / 2.0F) }
 }
 
 ///|
 pub fn Rectangle::Rectangle() -> Rectangle {
-  Rectangle::{ half_size: Vec2::new(0.5F, 0.5F) }
+  { half_size: Vec2::new(0.5F, 0.5F) }
 }
 
 ///|
@@ -62,12 +62,12 @@ pub struct Circle {
 
 ///|
 pub fn Circle::new(radius : Float) -> Circle {
-  Circle::{ radius, vertices: 32 }
+  { radius, vertices: 32 }
 }
 
 ///|
 pub fn Circle::with_vertices(self : Circle, vertices : Int) -> Circle {
-  Circle::{ ..self, vertices, }
+  { ..self, vertices, }
 }
 
 ///|
@@ -88,12 +88,12 @@ pub struct Arc2d {
 
 ///|
 pub fn Arc2d::new(radius : Float, half_angle : Float) -> Arc2d {
-  Arc2d::{ radius, half_angle }
+  { radius, half_angle }
 }
 
 ///|
 pub fn Arc2d::from_radians(radius : Float, angle : Float) -> Arc2d {
-  Arc2d::{ radius, half_angle: angle / 2.0F }
+  { radius, half_angle: angle / 2.0F }
 }
 
 ///|
@@ -103,7 +103,7 @@ pub fn Arc2d::from_degrees(radius : Float, angle : Float) -> Arc2d {
 
 ///|
 pub fn Arc2d::from_turns(radius : Float, fraction : Float) -> Arc2d {
-  Arc2d::{ radius, half_angle: fraction * pi() }
+  { radius, half_angle: fraction * pi() }
 }
 
 ///|
@@ -149,12 +149,12 @@ pub struct Ellipse {
 
 ///|
 pub fn Ellipse::new(half_width : Float, half_height : Float) -> Ellipse {
-  Ellipse::{ half_size: Vec2::new(half_width, half_height), vertices: 32 }
+  { half_size: Vec2::new(half_width, half_height), vertices: 32 }
 }
 
 ///|
 pub fn Ellipse::with_vertices(self : Ellipse, vertices : Int) -> Ellipse {
-  Ellipse::{ ..self, vertices, }
+  { ..self, vertices, }
 }
 
 ///|
@@ -171,12 +171,12 @@ pub struct Annulus {
 
 ///|
 pub fn Annulus::new(inner_radius : Float, outer_radius : Float) -> Annulus {
-  Annulus::{ inner_radius, outer_radius, vertices: 48 }
+  { inner_radius, outer_radius, vertices: 48 }
 }
 
 ///|
 pub fn Annulus::with_vertices(self : Annulus, vertices : Int) -> Annulus {
-  Annulus::{ ..self, vertices, }
+  { ..self, vertices, }
 }
 
 ///|
@@ -192,12 +192,12 @@ pub struct Line2d {
 ///|
 pub fn Line2d::new(direction : Vec2) -> Line2d {
   let safe_direction = Dir2::new(direction) catch { _ => Dir2::x() }
-  Line2d::{ direction: safe_direction }
+  { direction: safe_direction }
 }
 
 ///|
 pub fn Line2d::from_dir(direction : Dir2) -> Line2d {
-  Line2d::{ direction, }
+  { direction, }
 }
 
 ///|
@@ -208,12 +208,12 @@ pub struct Plane2d {
 ///|
 pub fn Plane2d::new(normal : Vec2) -> Plane2d {
   let safe_normal = Dir2::new(normal) catch { _ => Dir2::y() }
-  Plane2d::{ normal: safe_normal }
+  { normal: safe_normal }
 }
 
 ///|
 pub fn Plane2d::from_normal(normal : Dir2) -> Plane2d {
-  Plane2d::{ normal, }
+  { normal, }
 }
 
 ///|
@@ -223,7 +223,7 @@ pub struct Rhombus {
 
 ///|
 pub fn Rhombus::new(width : Float, height : Float) -> Rhombus {
-  Rhombus::{ half_diagonal: Vec2::new(width / 2.0F, height / 2.0F) }
+  { half_diagonal: Vec2::new(width / 2.0F, height / 2.0F) }
 }
 
 ///|
@@ -239,7 +239,7 @@ pub struct RegularPolygon {
 
 ///|
 pub fn RegularPolygon::new(radius : Float, sides : Int) -> RegularPolygon {
-  RegularPolygon::{ radius, sides }
+  { radius, sides }
 }
 
 ///|
@@ -256,12 +256,12 @@ pub struct Triangle2d {
 
 ///|
 pub fn Triangle2d::new(a : Vec2, b : Vec2, c : Vec2) -> Triangle2d {
-  Triangle2d::{ a, b, c }
+  { a, b, c }
 }
 
 ///|
 pub fn Triangle2d::Triangle2d() -> Triangle2d {
-  Triangle2d::{
+  {
     a: Vec2::new(0.0F, 0.5F),
     b: Vec2::new(-0.5F, -0.5F),
     c: Vec2::new(0.5F, -0.5F),
@@ -277,7 +277,7 @@ pub struct Segment2d {
 
 ///|
 pub fn Segment2d::new(start : Vec2, end : Vec2) -> Segment2d {
-  Segment2d::{ start, end, half_thickness: 2.5F }
+  { start, end, half_thickness: 2.5F }
 }
 
 ///|
@@ -285,7 +285,7 @@ pub fn Segment2d::with_half_thickness(
   self : Segment2d,
   half_thickness : Float,
 ) -> Segment2d {
-  Segment2d::{ ..self, half_thickness, }
+  { ..self, half_thickness, }
 }
 
 ///|
@@ -296,7 +296,7 @@ pub struct Polyline2d {
 
 ///|
 pub fn Polyline2d::new(points : Array[Vec2]) -> Polyline2d {
-  Polyline2d::{ points, half_thickness: 2.5F }
+  { points, half_thickness: 2.5F }
 }
 
 ///|
@@ -304,7 +304,7 @@ pub fn Polyline2d::with_half_thickness(
   self : Polyline2d,
   half_thickness : Float,
 ) -> Polyline2d {
-  Polyline2d::{ ..self, half_thickness, }
+  { ..self, half_thickness, }
 }
 
 ///|
@@ -314,7 +314,7 @@ pub struct Polygon {
 
 ///|
 pub fn Polygon::new(vertices : Array[Vec2]) -> Polygon {
-  Polygon::{ vertices, }
+  { vertices, }
 }
 
 ///|
@@ -324,7 +324,7 @@ pub struct ConvexPolygon {
 
 ///|
 pub fn ConvexPolygon::new(vertices : Array[Vec2]) -> ConvexPolygon {
-  ConvexPolygon::{ vertices, }
+  { vertices, }
 }
 
 ///|
@@ -345,7 +345,7 @@ pub fn CircularSector::new(
   radius : Float,
   half_angle : Float,
 ) -> CircularSector {
-  CircularSector::{ radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
+  { radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
 }
 
 ///|
@@ -361,7 +361,7 @@ pub fn CircularSector::with_vertices(
   self : CircularSector,
   vertices : Int,
 ) -> CircularSector {
-  CircularSector::{ ..self, vertices, }
+  { ..self, vertices, }
 }
 
 ///|
@@ -369,7 +369,7 @@ pub fn CircularSector::with_uv_mode(
   self : CircularSector,
   uv_mode : CircularMeshUvMode,
 ) -> CircularSector {
-  CircularSector::{ ..self, uv_mode, }
+  { ..self, uv_mode, }
 }
 
 ///|
@@ -408,7 +408,7 @@ pub fn CircularSegment::new(
   radius : Float,
   half_angle : Float,
 ) -> CircularSegment {
-  CircularSegment::{ radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
+  { radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
 }
 
 ///|
@@ -424,7 +424,7 @@ pub fn CircularSegment::with_vertices(
   self : CircularSegment,
   vertices : Int,
 ) -> CircularSegment {
-  CircularSegment::{ ..self, vertices, }
+  { ..self, vertices, }
 }
 
 ///|
@@ -432,7 +432,7 @@ pub fn CircularSegment::with_uv_mode(
   self : CircularSegment,
   uv_mode : CircularMeshUvMode,
 ) -> CircularSegment {
-  CircularSegment::{ ..self, uv_mode, }
+  { ..self, uv_mode, }
 }
 
 ///|
@@ -466,5 +466,5 @@ pub struct Ring[P] {
 
 ///|
 pub fn[P] Ring::new(outer_shape : P, inner_shape : P) -> Ring[P] {
-  Ring::{ outer_shape, inner_shape }
+  { outer_shape, inner_shape }
 }

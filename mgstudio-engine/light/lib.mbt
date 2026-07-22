@@ -37,9 +37,9 @@ fn light_min_entity(
 ///|
 fn light_render_target_is_window(target : @camera_camera.RenderTarget) -> Bool {
   match target {
-    @camera_camera.RenderTarget::Screen => true
-    @camera_camera.RenderTarget::Window(_) => true
-    @camera_camera.RenderTarget::Image(_) => false
+    Screen => true
+    Window(_) => true
+    Image(_) => false
   }
 }
 
@@ -63,6 +63,7 @@ fn light_has_point_or_spot_light(world : @ecs.World) -> Bool {
 pub struct ClusterVisibilityClass {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ClusterVisibilityClass::ClusterVisibilityClass() -> ClusterVisibilityClass {
   ClusterVisibilityClass::{  }
 }
@@ -100,7 +101,7 @@ pub fn get_shadow_lod_origin(world : @ecs.World) -> @core.Entity? {
     let target = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
       Some(value) => value
-      None => @camera_camera.RenderTarget::Screen
+      None => Screen
     }
     if light_render_target_is_window(target) {
       lod_origin = light_min_entity(lod_origin, entity)
@@ -130,6 +131,7 @@ pub fn get_shadow_lod_origin(world : @ecs.World) -> @core.Entity? {
 pub struct NotShadowCaster {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NotShadowCaster::NotShadowCaster() -> NotShadowCaster {
   NotShadowCaster::{  }
 }
@@ -139,6 +141,7 @@ pub fn NotShadowCaster::NotShadowCaster() -> NotShadowCaster {
 pub struct NotShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NotShadowReceiver::NotShadowReceiver() -> NotShadowReceiver {
   NotShadowReceiver::{  }
 }
@@ -148,6 +151,7 @@ pub fn NotShadowReceiver::NotShadowReceiver() -> NotShadowReceiver {
 pub struct TransmittedShadowReceiver {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TransmittedShadowReceiver::TransmittedShadowReceiver() -> TransmittedShadowReceiver {
   TransmittedShadowReceiver::{  }
 }
@@ -162,7 +166,7 @@ pub(all) enum ShadowFilteringMethod {
 
 ///|
 pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
-  ShadowFilteringMethod::Gaussian
+  Gaussian
 }
 
 ///|
@@ -170,6 +174,7 @@ pub fn ShadowFilteringMethod::default() -> ShadowFilteringMethod {
 pub struct VolumetricLight {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn VolumetricLight::VolumetricLight() -> VolumetricLight {
   VolumetricLight::{  }
 }
@@ -185,7 +190,7 @@ pub struct VolumetricFog {
 
 ///|
 pub fn VolumetricFog::VolumetricFog() -> VolumetricFog {
-  VolumetricFog::{
+  {
     ambient_color: @color.Color::white(),
     ambient_intensity: 0.1F,
     jitter: 0.0F,
@@ -198,7 +203,7 @@ pub fn VolumetricFog::with_ambient_color(
   self : VolumetricFog,
   ambient_color : @color.Color,
 ) -> VolumetricFog {
-  VolumetricFog::{ ..self, ambient_color, }
+  { ..self, ambient_color, }
 }
 
 ///|
@@ -206,7 +211,7 @@ pub fn VolumetricFog::with_ambient_intensity(
   self : VolumetricFog,
   ambient_intensity : Float,
 ) -> VolumetricFog {
-  VolumetricFog::{ ..self, ambient_intensity, }
+  { ..self, ambient_intensity, }
 }
 
 ///|
@@ -214,7 +219,7 @@ pub fn VolumetricFog::with_jitter(
   self : VolumetricFog,
   jitter : Float,
 ) -> VolumetricFog {
-  VolumetricFog::{ ..self, jitter, }
+  { ..self, jitter, }
 }
 
 ///|
@@ -222,7 +227,7 @@ pub fn VolumetricFog::with_step_count(
   self : VolumetricFog,
   step_count : Int,
 ) -> VolumetricFog {
-  VolumetricFog::{ ..self, step_count, }
+  { ..self, step_count, }
 }
 
 ///|
@@ -241,7 +246,7 @@ pub struct FogVolume {
 
 ///|
 pub fn FogVolume::FogVolume() -> FogVolume {
-  FogVolume::{
+  {
     fog_color: @color.Color::white(),
     density_factor: 0.1F,
     density_texture: None,
@@ -259,7 +264,7 @@ pub fn FogVolume::with_fog_color(
   self : FogVolume,
   fog_color : @color.Color,
 ) -> FogVolume {
-  FogVolume::{ ..self, fog_color, }
+  { ..self, fog_color, }
 }
 
 ///|
@@ -267,7 +272,7 @@ pub fn FogVolume::with_density_factor(
   self : FogVolume,
   density_factor : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, density_factor, }
+  { ..self, density_factor, }
 }
 
 ///|
@@ -275,7 +280,7 @@ pub fn FogVolume::with_density_texture(
   self : FogVolume,
   density_texture : @asset.Handle[@asset.Image]?,
 ) -> FogVolume {
-  FogVolume::{ ..self, density_texture, }
+  { ..self, density_texture, }
 }
 
 ///|
@@ -283,7 +288,7 @@ pub fn FogVolume::with_density_texture_offset(
   self : FogVolume,
   density_texture_offset : @math.Vec3,
 ) -> FogVolume {
-  FogVolume::{ ..self, density_texture_offset, }
+  { ..self, density_texture_offset, }
 }
 
 ///|
@@ -291,7 +296,7 @@ pub fn FogVolume::with_absorption(
   self : FogVolume,
   absorption : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, absorption, }
+  { ..self, absorption, }
 }
 
 ///|
@@ -299,7 +304,7 @@ pub fn FogVolume::with_scattering(
   self : FogVolume,
   scattering : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, scattering, }
+  { ..self, scattering, }
 }
 
 ///|
@@ -307,7 +312,7 @@ pub fn FogVolume::with_scattering_asymmetry(
   self : FogVolume,
   scattering_asymmetry : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, scattering_asymmetry, }
+  { ..self, scattering_asymmetry, }
 }
 
 ///|
@@ -315,7 +320,7 @@ pub fn FogVolume::with_light_tint(
   self : FogVolume,
   light_tint : @color.Color,
 ) -> FogVolume {
-  FogVolume::{ ..self, light_tint, }
+  { ..self, light_tint, }
 }
 
 ///|
@@ -323,7 +328,7 @@ pub fn FogVolume::with_light_intensity(
   self : FogVolume,
   light_intensity : Float,
 ) -> FogVolume {
-  FogVolume::{ ..self, light_intensity, }
+  { ..self, light_intensity, }
 }
 
 ///|
@@ -334,7 +339,7 @@ pub(all) enum AtmosphereMode {
 
 ///|
 pub fn AtmosphereMode::default() -> AtmosphereMode {
-  AtmosphereMode::LookupTexture
+  LookupTexture
 }
 
 ///|
@@ -356,7 +361,7 @@ pub struct AtmosphereSettings {
 
 ///|
 pub fn AtmosphereSettings::AtmosphereSettings() -> AtmosphereSettings {
-  AtmosphereSettings::{
+  {
     transmittance_lut_size: @math.UVec2::new(256, 128),
     multiscattering_lut_size: @math.UVec2::new(32, 32),
     sky_view_lut_size: @math.UVec2::new(400, 200),
@@ -368,7 +373,7 @@ pub fn AtmosphereSettings::AtmosphereSettings() -> AtmosphereSettings {
     aerial_view_lut_samples: 10,
     aerial_view_lut_max_distance: 32_000.0F,
     sky_max_samples: 16,
-    rendering_method: AtmosphereMode::LookupTexture,
+    rendering_method: LookupTexture,
   }
 }
 
@@ -377,7 +382,7 @@ pub fn AtmosphereSettings::with_transmittance_lut_size(
   self : AtmosphereSettings,
   transmittance_lut_size : @math.UVec2,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, transmittance_lut_size, }
+  { ..self, transmittance_lut_size, }
 }
 
 ///|
@@ -385,7 +390,7 @@ pub fn AtmosphereSettings::with_multiscattering_lut_size(
   self : AtmosphereSettings,
   multiscattering_lut_size : @math.UVec2,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, multiscattering_lut_size, }
+  { ..self, multiscattering_lut_size, }
 }
 
 ///|
@@ -393,7 +398,7 @@ pub fn AtmosphereSettings::with_sky_view_lut_size(
   self : AtmosphereSettings,
   sky_view_lut_size : @math.UVec2,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, sky_view_lut_size, }
+  { ..self, sky_view_lut_size, }
 }
 
 ///|
@@ -401,7 +406,7 @@ pub fn AtmosphereSettings::with_aerial_view_lut_size(
   self : AtmosphereSettings,
   aerial_view_lut_size : (@math.UVec2, Int),
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, aerial_view_lut_size, }
+  { ..self, aerial_view_lut_size, }
 }
 
 ///|
@@ -409,7 +414,7 @@ pub fn AtmosphereSettings::with_transmittance_lut_samples(
   self : AtmosphereSettings,
   transmittance_lut_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, transmittance_lut_samples, }
+  { ..self, transmittance_lut_samples, }
 }
 
 ///|
@@ -417,7 +422,7 @@ pub fn AtmosphereSettings::with_multiscattering_lut_dirs(
   self : AtmosphereSettings,
   multiscattering_lut_dirs : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, multiscattering_lut_dirs, }
+  { ..self, multiscattering_lut_dirs, }
 }
 
 ///|
@@ -425,7 +430,7 @@ pub fn AtmosphereSettings::with_multiscattering_lut_samples(
   self : AtmosphereSettings,
   multiscattering_lut_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, multiscattering_lut_samples, }
+  { ..self, multiscattering_lut_samples, }
 }
 
 ///|
@@ -433,7 +438,7 @@ pub fn AtmosphereSettings::with_sky_view_lut_samples(
   self : AtmosphereSettings,
   sky_view_lut_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, sky_view_lut_samples, }
+  { ..self, sky_view_lut_samples, }
 }
 
 ///|
@@ -441,7 +446,7 @@ pub fn AtmosphereSettings::with_aerial_view_lut_samples(
   self : AtmosphereSettings,
   aerial_view_lut_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, aerial_view_lut_samples, }
+  { ..self, aerial_view_lut_samples, }
 }
 
 ///|
@@ -449,7 +454,7 @@ pub fn AtmosphereSettings::with_aerial_view_lut_max_distance(
   self : AtmosphereSettings,
   aerial_view_lut_max_distance : Float,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, aerial_view_lut_max_distance, }
+  { ..self, aerial_view_lut_max_distance, }
 }
 
 ///|
@@ -457,7 +462,7 @@ pub fn AtmosphereSettings::with_sky_max_samples(
   self : AtmosphereSettings,
   sky_max_samples : Int,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, sky_max_samples, }
+  { ..self, sky_max_samples, }
 }
 
 ///|
@@ -465,7 +470,7 @@ pub fn AtmosphereSettings::with_rendering_method(
   self : AtmosphereSettings,
   rendering_method : AtmosphereMode,
 ) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, rendering_method, }
+  { ..self, rendering_method, }
 }
 
 ///|
@@ -526,7 +531,7 @@ pub fn SampledFloatCurve::new(
   domain_end : Float,
   samples : Array[Float],
 ) -> SampledFloatCurve {
-  SampledFloatCurve::{ domain_start, domain_end, samples }
+  { domain_start, domain_end, samples }
 }
 
 ///|
@@ -535,7 +540,7 @@ pub fn SampledVec3Curve::new(
   domain_end : Float,
   samples : Array[@math.Vec3],
 ) -> SampledVec3Curve {
-  SampledVec3Curve::{ domain_start, domain_end, samples }
+  { domain_start, domain_end, samples }
 }
 
 ///|
@@ -710,7 +715,7 @@ pub fn ScatteringTerm::new(
   falloff : Falloff,
   phase : PhaseFunction,
 ) -> ScatteringTerm {
-  ScatteringTerm::{ absorption, scattering, falloff, phase }
+  { absorption, scattering, falloff, phase }
 }
 
 ///|
@@ -718,8 +723,8 @@ pub fn ScatteringTerm::ScatteringTerm() -> ScatteringTerm {
   ScatteringTerm::new(
     @math.Vec3::zero(),
     @math.Vec3::zero(),
-    Falloff::Falloff(),
-    PhaseFunction::PhaseFunction(),
+    Falloff(),
+    PhaseFunction(),
   )
 }
 
@@ -729,7 +734,7 @@ pub fn ScatteringMedium::new(
   phase_resolution : Int,
   terms : Array[ScatteringTerm],
 ) -> ScatteringMedium {
-  ScatteringMedium::{ label: None, falloff_resolution, phase_resolution, terms }
+  { label: None, falloff_resolution, phase_resolution, terms }
 }
 
 ///|
@@ -737,7 +742,7 @@ pub fn ScatteringMedium::with_label(
   self : ScatteringMedium,
   label : String,
 ) -> ScatteringMedium {
-  ScatteringMedium::{ ..self, label: Some(label) }
+  { ..self, label: Some(label) }
 }
 
 ///|
@@ -745,7 +750,7 @@ pub fn ScatteringMedium::with_terms(
   self : ScatteringMedium,
   terms : Array[ScatteringTerm],
 ) -> ScatteringMedium {
-  ScatteringMedium::{ ..self, terms, }
+  { ..self, terms, }
 }
 
 ///|
@@ -830,13 +835,13 @@ pub fn ScatteringMedium::with_density_multiplier(
 ) -> ScatteringMedium {
   let terms : Array[ScatteringTerm] = []
   for term in self.terms {
-    terms.push(ScatteringTerm::{
+    terms.push({
       ..term,
       absorption: term.absorption.mul_scalar(multiplier),
       scattering: term.scattering.mul_scalar(multiplier),
     })
   }
-  ScatteringMedium::{ ..self, terms, }
+  { ..self, terms, }
 }
 
 ///|
@@ -921,7 +926,7 @@ pub fn Atmosphere::Atmosphere() -> Atmosphere {
 pub fn Atmosphere::earth(
   medium : @asset.Handle[ScatteringMedium],
 ) -> Atmosphere {
-  Atmosphere::{
+  {
     inner_radius: 6_360_000.0F,
     outer_radius: 6_460_000.0F,
     ground_albedo: @math.Vec3::new(0.3F, 0.3F, 0.3F),
@@ -931,7 +936,7 @@ pub fn Atmosphere::earth(
 
 ///|
 pub fn Atmosphere::mars(medium : @asset.Handle[ScatteringMedium]) -> Atmosphere {
-  Atmosphere::{
+  {
     inner_radius: 3_389_500.0F,
     outer_radius: 3_509_500.0F,
     ground_albedo: @math.Vec3::new(0.1F, 0.1F, 0.1F),
@@ -945,7 +950,7 @@ pub fn Atmosphere::with_radii(
   inner_radius : Float,
   outer_radius : Float,
 ) -> Atmosphere {
-  Atmosphere::{ ..self, inner_radius, outer_radius }
+  { ..self, inner_radius, outer_radius }
 }
 
 ///|
@@ -953,7 +958,7 @@ pub fn Atmosphere::with_ground_albedo(
   self : Atmosphere,
   ground_albedo : @math.Vec3,
 ) -> Atmosphere {
-  Atmosphere::{ ..self, ground_albedo, }
+  { ..self, ground_albedo, }
 }
 
 ///|
@@ -961,7 +966,7 @@ pub fn Atmosphere::with_medium(
   self : Atmosphere,
   medium : @asset.Handle[ScatteringMedium],
 ) -> Atmosphere {
-  Atmosphere::{ ..self, medium, }
+  { ..self, medium, }
 }
 
 ///|
@@ -974,7 +979,7 @@ pub struct AtmosphereEnvironmentMapLight {
 
 ///|
 pub fn AtmosphereEnvironmentMapLight::AtmosphereEnvironmentMapLight() -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{
+  {
     intensity: 1.0F,
     affects_lightmapped_mesh_diffuse: true,
     size: @math.UVec2::new(512, 512),
@@ -987,11 +992,7 @@ pub fn AtmosphereEnvironmentMapLight::new(
   affects_lightmapped_mesh_diffuse : Bool,
   size : @math.UVec2,
 ) -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{
-    intensity,
-    affects_lightmapped_mesh_diffuse,
-    size,
-  }
+  { intensity, affects_lightmapped_mesh_diffuse, size }
 }
 
 ///|
@@ -999,7 +1000,7 @@ pub fn AtmosphereEnvironmentMapLight::with_intensity(
   self : AtmosphereEnvironmentMapLight,
   intensity : Float,
 ) -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -1007,7 +1008,7 @@ pub fn AtmosphereEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
   self : AtmosphereEnvironmentMapLight,
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+  { ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -1015,7 +1016,7 @@ pub fn AtmosphereEnvironmentMapLight::with_size(
   self : AtmosphereEnvironmentMapLight,
   size : @math.UVec2,
 ) -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{ ..self, size, }
+  { ..self, size, }
 }
 
 ///|
@@ -1062,7 +1063,7 @@ pub struct PointLight {
 
 ///|
 pub fn PointLight::PointLight() -> PointLight {
-  PointLight::{
+  {
     color: @color.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
@@ -1084,7 +1085,7 @@ pub fn PointLight::new(
   range : Float,
   shadow_maps_enabled : Bool,
 ) -> PointLight {
-  PointLight::{
+  {
     color,
     intensity,
     range,
@@ -1104,12 +1105,12 @@ pub fn PointLight::with_color(
   self : PointLight,
   color : @color.Color,
 ) -> PointLight {
-  PointLight::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
 pub fn PointLight::with_range(self : PointLight, range : Float) -> PointLight {
-  PointLight::{ ..self, range, }
+  { ..self, range, }
 }
 
 ///|
@@ -1117,12 +1118,12 @@ pub fn PointLight::with_intensity(
   self : PointLight,
   intensity : Float,
 ) -> PointLight {
-  PointLight::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
 pub fn PointLight::with_radius(self : PointLight, radius : Float) -> PointLight {
-  PointLight::{ ..self, radius, }
+  { ..self, radius, }
 }
 
 ///|
@@ -1130,7 +1131,7 @@ pub fn PointLight::with_contact_shadows_enabled(
   self : PointLight,
   contact_shadows_enabled : Bool,
 ) -> PointLight {
-  PointLight::{ ..self, contact_shadows_enabled, }
+  { ..self, contact_shadows_enabled, }
 }
 
 ///|
@@ -1138,7 +1139,7 @@ pub fn PointLight::with_soft_shadows_enabled(
   self : PointLight,
   soft_shadows_enabled : Bool,
 ) -> PointLight {
-  PointLight::{ ..self, soft_shadows_enabled, }
+  { ..self, soft_shadows_enabled, }
 }
 
 ///|
@@ -1146,7 +1147,7 @@ pub fn PointLight::with_shadow_maps_enabled(
   self : PointLight,
   shadow_maps_enabled : Bool,
 ) -> PointLight {
-  PointLight::{ ..self, shadow_maps_enabled, }
+  { ..self, shadow_maps_enabled, }
 }
 
 ///|
@@ -1154,7 +1155,7 @@ pub fn PointLight::with_affects_lightmapped_mesh_diffuse(
   self : PointLight,
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> PointLight {
-  PointLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+  { ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -1162,7 +1163,7 @@ pub fn PointLight::with_shadow_depth_bias(
   self : PointLight,
   shadow_depth_bias : Float,
 ) -> PointLight {
-  PointLight::{ ..self, shadow_depth_bias, }
+  { ..self, shadow_depth_bias, }
 }
 
 ///|
@@ -1170,7 +1171,7 @@ pub fn PointLight::with_shadow_normal_bias(
   self : PointLight,
   shadow_normal_bias : Float,
 ) -> PointLight {
-  PointLight::{ ..self, shadow_normal_bias, }
+  { ..self, shadow_normal_bias, }
 }
 
 ///|
@@ -1178,7 +1179,7 @@ pub fn PointLight::with_shadow_map_near_z(
   self : PointLight,
   shadow_map_near_z : Float,
 ) -> PointLight {
-  PointLight::{ ..self, shadow_map_near_z, }
+  { ..self, shadow_map_near_z, }
 }
 
 ///|
@@ -1189,12 +1190,12 @@ pub struct PointLightShadowMap {
 
 ///|
 pub fn PointLightShadowMap::PointLightShadowMap() -> PointLightShadowMap {
-  PointLightShadowMap::{ size: 1024 }
+  { size: 1024 }
 }
 
 ///|
 pub fn PointLightShadowMap::new(size : Int) -> PointLightShadowMap {
-  PointLightShadowMap::{ size, }
+  { size, }
 }
 
 ///|
@@ -1203,7 +1204,7 @@ pub fn PointLightShadowMap::with_size(
   size : Int,
 ) -> PointLightShadowMap {
   self |> ignore
-  PointLightShadowMap::{ size, }
+  { size, }
 }
 
 ///|
@@ -1215,12 +1216,12 @@ pub struct DirectionalLightShadowMap {
 
 ///|
 pub fn DirectionalLightShadowMap::DirectionalLightShadowMap() -> DirectionalLightShadowMap {
-  DirectionalLightShadowMap::{ size: 2048 }
+  { size: 2048 }
 }
 
 ///|
 pub fn DirectionalLightShadowMap::new(size : Int) -> DirectionalLightShadowMap {
-  DirectionalLightShadowMap::{ size, }
+  { size, }
 }
 
 ///|
@@ -1229,7 +1230,7 @@ pub fn DirectionalLightShadowMap::with_size(
   size : Int,
 ) -> DirectionalLightShadowMap {
   self |> ignore
-  DirectionalLightShadowMap::{ size, }
+  { size, }
 }
 
 ///|
@@ -1270,7 +1271,7 @@ fn cascade_shadow_config_calculate_bounds(
 
 ///|
 pub fn CascadeShadowConfigBuilder::CascadeShadowConfigBuilder() -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
+  {
     num_cascades: 4,
     minimum_distance: 0.1F,
     maximum_distance: 150.0F,
@@ -1281,7 +1282,7 @@ pub fn CascadeShadowConfigBuilder::CascadeShadowConfigBuilder() -> CascadeShadow
 
 ///|
 pub fn CascadeShadowConfigBuilder::new() -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
+  CascadeShadowConfigBuilder()
 }
 
 ///|
@@ -1289,7 +1290,7 @@ pub fn CascadeShadowConfigBuilder::with_num_cascades(
   self : CascadeShadowConfigBuilder,
   num_cascades : Int,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{ ..self, num_cascades, }
+  { ..self, num_cascades, }
 }
 
 ///|
@@ -1297,7 +1298,7 @@ pub fn CascadeShadowConfigBuilder::with_minimum_distance(
   self : CascadeShadowConfigBuilder,
   minimum_distance : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{ ..self, minimum_distance, }
+  { ..self, minimum_distance, }
 }
 
 ///|
@@ -1305,7 +1306,7 @@ pub fn CascadeShadowConfigBuilder::with_maximum_distance(
   self : CascadeShadowConfigBuilder,
   maximum_distance : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{ ..self, maximum_distance, }
+  { ..self, maximum_distance, }
 }
 
 ///|
@@ -1313,7 +1314,7 @@ pub fn CascadeShadowConfigBuilder::with_first_cascade_far_bound(
   self : CascadeShadowConfigBuilder,
   first_cascade_far_bound : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{ ..self, first_cascade_far_bound, }
+  { ..self, first_cascade_far_bound, }
 }
 
 ///|
@@ -1321,7 +1322,7 @@ pub fn CascadeShadowConfigBuilder::with_overlap_proportion(
   self : CascadeShadowConfigBuilder,
   overlap_proportion : Float,
 ) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{ ..self, overlap_proportion, }
+  { ..self, overlap_proportion, }
 }
 
 ///|
@@ -1352,7 +1353,7 @@ pub fn CascadeShadowConfigBuilder::build(
       "overlap_proportion must be in [0.0, 1.0) but was \{self.overlap_proportion}",
     )
   }
-  CascadeShadowConfig::{
+  {
     bounds: cascade_shadow_config_calculate_bounds(
       self.num_cascades,
       self.first_cascade_far_bound,
@@ -1379,7 +1380,7 @@ pub struct Cascade {
 
 ///|
 pub fn Cascade::Cascade() -> Cascade {
-  Cascade::{
+  {
     world_from_cascade: @math.Mat4::identity(),
     clip_from_cascade: @math.Mat4::identity(),
     clip_from_world: @math.Mat4::identity(),
@@ -1394,12 +1395,7 @@ pub fn Cascade::new(
   clip_from_world : @math.Mat4,
   texel_size : Float,
 ) -> Cascade {
-  Cascade::{
-    world_from_cascade,
-    clip_from_cascade,
-    clip_from_world,
-    texel_size,
-  }
+  { world_from_cascade, clip_from_cascade, clip_from_world, texel_size }
 }
 
 ///|
@@ -1477,7 +1473,7 @@ pub fn calculate_directional_light_cascade(
     @math.Vec4::new(0.0F, 0.0F, r, 0.0F),
     @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
   )
-  Cascade::{
+  {
     world_from_cascade,
     clip_from_cascade,
     clip_from_world: clip_from_cascade.mul(cascade_from_world),
@@ -1493,7 +1489,7 @@ pub struct Cascades {
 
 ///|
 pub fn Cascades::Cascades() -> Cascades {
-  Cascades::{ cascades: @hashmap.HashMap([]) }
+  { cascades: HashMap([]) }
 }
 
 ///|
@@ -1538,7 +1534,7 @@ pub struct DirectionalLight {
 
 ///|
 pub fn DirectionalLight::DirectionalLight() -> DirectionalLight {
-  DirectionalLight::{
+  {
     color: @color.Color::white(),
     illuminance: 10000.0F,
     shadow_maps_enabled: false,
@@ -1556,7 +1552,7 @@ pub fn DirectionalLight::new(
   illuminance : Float,
   shadow_maps_enabled : Bool,
 ) -> DirectionalLight {
-  DirectionalLight::{
+  {
     color,
     illuminance,
     shadow_maps_enabled,
@@ -1573,7 +1569,7 @@ pub fn DirectionalLight::with_illuminance(
   self : DirectionalLight,
   illuminance : Float,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, illuminance, }
+  { ..self, illuminance, }
 }
 
 ///|
@@ -1581,7 +1577,7 @@ pub fn DirectionalLight::with_contact_shadows_enabled(
   self : DirectionalLight,
   contact_shadows_enabled : Bool,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, contact_shadows_enabled, }
+  { ..self, contact_shadows_enabled, }
 }
 
 ///|
@@ -1589,7 +1585,7 @@ pub fn DirectionalLight::with_shadow_maps_enabled(
   self : DirectionalLight,
   shadow_maps_enabled : Bool,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, shadow_maps_enabled, }
+  { ..self, shadow_maps_enabled, }
 }
 
 ///|
@@ -1597,7 +1593,7 @@ pub fn DirectionalLight::with_affects_lightmapped_mesh_diffuse(
   self : DirectionalLight,
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+  { ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -1605,7 +1601,7 @@ pub fn DirectionalLight::with_soft_shadow_size(
   self : DirectionalLight,
   soft_shadow_size : Float?,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, soft_shadow_size, }
+  { ..self, soft_shadow_size, }
 }
 
 ///|
@@ -1613,7 +1609,7 @@ pub fn DirectionalLight::with_shadow_depth_bias(
   self : DirectionalLight,
   shadow_depth_bias : Float,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, shadow_depth_bias, }
+  { ..self, shadow_depth_bias, }
 }
 
 ///|
@@ -1621,7 +1617,7 @@ pub fn DirectionalLight::with_shadow_normal_bias(
   self : DirectionalLight,
   shadow_normal_bias : Float,
 ) -> DirectionalLight {
-  DirectionalLight::{ ..self, shadow_normal_bias, }
+  { ..self, shadow_normal_bias, }
 }
 
 ///|
@@ -1643,7 +1639,7 @@ pub fn SunDisk::SunDisk() -> SunDisk {
 
 ///|
 pub fn SunDisk::earth() -> SunDisk {
-  SunDisk::{
+  {
     angular_size: SUN_DISK_EARTH_ANGULAR_SIZE,
     intensity: SUN_DISK_EARTH_INTENSITY,
   }
@@ -1651,12 +1647,12 @@ pub fn SunDisk::earth() -> SunDisk {
 
 ///|
 pub fn SunDisk::off() -> SunDisk {
-  SunDisk::{ angular_size: 0.0F, intensity: 0.0F }
+  { angular_size: 0.0F, intensity: 0.0F }
 }
 
 ///|
 pub fn SunDisk::new(angular_size : Float, intensity : Float) -> SunDisk {
-  SunDisk::{ angular_size, intensity }
+  { angular_size, intensity }
 }
 
 ///|
@@ -1664,12 +1660,12 @@ pub fn SunDisk::with_angular_size(
   self : SunDisk,
   angular_size : Float,
 ) -> SunDisk {
-  SunDisk::{ ..self, angular_size, }
+  { ..self, angular_size, }
 }
 
 ///|
 pub fn SunDisk::with_intensity(self : SunDisk, intensity : Float) -> SunDisk {
-  SunDisk::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -1691,7 +1687,7 @@ pub struct SpotLight {
 
 ///|
 pub fn SpotLight::SpotLight() -> SpotLight {
-  SpotLight::{
+  {
     color: @color.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
@@ -1717,7 +1713,7 @@ pub fn SpotLight::new(
   outer_angle : Float,
   shadow_maps_enabled : Bool,
 ) -> SpotLight {
-  SpotLight::{
+  {
     color,
     intensity,
     range,
@@ -1739,7 +1735,7 @@ pub fn SpotLight::with_intensity(
   self : SpotLight,
   intensity : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -1747,7 +1743,7 @@ pub fn SpotLight::with_inner_angle(
   self : SpotLight,
   inner_angle : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, inner_angle, }
+  { ..self, inner_angle, }
 }
 
 ///|
@@ -1755,12 +1751,12 @@ pub fn SpotLight::with_outer_angle(
   self : SpotLight,
   outer_angle : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, outer_angle, }
+  { ..self, outer_angle, }
 }
 
 ///|
 pub fn SpotLight::with_radius(self : SpotLight, radius : Float) -> SpotLight {
-  SpotLight::{ ..self, radius, }
+  { ..self, radius, }
 }
 
 ///|
@@ -1768,7 +1764,7 @@ pub fn SpotLight::with_contact_shadows_enabled(
   self : SpotLight,
   contact_shadows_enabled : Bool,
 ) -> SpotLight {
-  SpotLight::{ ..self, contact_shadows_enabled, }
+  { ..self, contact_shadows_enabled, }
 }
 
 ///|
@@ -1776,7 +1772,7 @@ pub fn SpotLight::with_shadow_maps_enabled(
   self : SpotLight,
   shadow_maps_enabled : Bool,
 ) -> SpotLight {
-  SpotLight::{ ..self, shadow_maps_enabled, }
+  { ..self, shadow_maps_enabled, }
 }
 
 ///|
@@ -1784,7 +1780,7 @@ pub fn SpotLight::with_soft_shadows_enabled(
   self : SpotLight,
   soft_shadows_enabled : Bool,
 ) -> SpotLight {
-  SpotLight::{ ..self, soft_shadows_enabled, }
+  { ..self, soft_shadows_enabled, }
 }
 
 ///|
@@ -1792,7 +1788,7 @@ pub fn SpotLight::with_affects_lightmapped_mesh_diffuse(
   self : SpotLight,
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> SpotLight {
-  SpotLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+  { ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -1800,7 +1796,7 @@ pub fn SpotLight::with_shadow_depth_bias(
   self : SpotLight,
   shadow_depth_bias : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, shadow_depth_bias, }
+  { ..self, shadow_depth_bias, }
 }
 
 ///|
@@ -1808,7 +1804,7 @@ pub fn SpotLight::with_shadow_normal_bias(
   self : SpotLight,
   shadow_normal_bias : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, shadow_normal_bias, }
+  { ..self, shadow_normal_bias, }
 }
 
 ///|
@@ -1816,7 +1812,7 @@ pub fn SpotLight::with_shadow_map_near_z(
   self : SpotLight,
   shadow_map_near_z : Float,
 ) -> SpotLight {
-  SpotLight::{ ..self, shadow_map_near_z, }
+  { ..self, shadow_map_near_z, }
 }
 
 ///|
@@ -1831,7 +1827,7 @@ pub(all) enum CubemapLayout3d {
 
 ///|
 pub fn CubemapLayout3d::default() -> CubemapLayout3d {
-  CubemapLayout3d::CrossVertical
+  CrossVertical
 }
 
 ///|
@@ -1842,7 +1838,7 @@ pub struct DirectionalLightTexture {
 
 ///|
 pub fn DirectionalLightTexture::DirectionalLightTexture() -> DirectionalLightTexture {
-  DirectionalLightTexture::{ image: None, tiled: false }
+  { image: None, tiled: false }
 }
 
 ///|
@@ -1850,7 +1846,7 @@ pub fn DirectionalLightTexture::new(
   image : @asset.Handle[@asset.Image]?,
   tiled : Bool,
 ) -> DirectionalLightTexture {
-  DirectionalLightTexture::{ image, tiled }
+  { image, tiled }
 }
 
 ///|
@@ -1858,7 +1854,7 @@ pub fn DirectionalLightTexture::with_image(
   self : DirectionalLightTexture,
   image : @asset.Handle[@asset.Image]?,
 ) -> DirectionalLightTexture {
-  DirectionalLightTexture::{ ..self, image, }
+  { ..self, image, }
 }
 
 ///|
@@ -1866,7 +1862,7 @@ pub fn DirectionalLightTexture::with_tiled(
   self : DirectionalLightTexture,
   tiled : Bool,
 ) -> DirectionalLightTexture {
-  DirectionalLightTexture::{ ..self, tiled, }
+  { ..self, tiled, }
 }
 
 ///|
@@ -1876,14 +1872,14 @@ pub struct SpotLightTexture {
 
 ///|
 pub fn SpotLightTexture::SpotLightTexture() -> SpotLightTexture {
-  SpotLightTexture::{ image: None }
+  { image: None }
 }
 
 ///|
 pub fn SpotLightTexture::new(
   image : @asset.Handle[@asset.Image]?,
 ) -> SpotLightTexture {
-  SpotLightTexture::{ image, }
+  { image, }
 }
 
 ///|
@@ -1892,7 +1888,7 @@ pub fn SpotLightTexture::with_image(
   image : @asset.Handle[@asset.Image]?,
 ) -> SpotLightTexture {
   self |> ignore
-  SpotLightTexture::{ image, }
+  { image, }
 }
 
 ///|
@@ -1903,10 +1899,7 @@ pub struct PointLightTexture {
 
 ///|
 pub fn PointLightTexture::PointLightTexture() -> PointLightTexture {
-  PointLightTexture::{
-    image: None,
-    cubemap_layout: CubemapLayout3d::CrossVertical,
-  }
+  { image: None, cubemap_layout: CrossVertical }
 }
 
 ///|
@@ -1914,7 +1907,7 @@ pub fn PointLightTexture::new(
   image : @asset.Handle[@asset.Image]?,
   cubemap_layout : CubemapLayout3d,
 ) -> PointLightTexture {
-  PointLightTexture::{ image, cubemap_layout }
+  { image, cubemap_layout }
 }
 
 ///|
@@ -1922,7 +1915,7 @@ pub fn PointLightTexture::with_image(
   self : PointLightTexture,
   image : @asset.Handle[@asset.Image]?,
 ) -> PointLightTexture {
-  PointLightTexture::{ ..self, image, }
+  { ..self, image, }
 }
 
 ///|
@@ -1930,7 +1923,7 @@ pub fn PointLightTexture::with_cubemap_layout(
   self : PointLightTexture,
   cubemap_layout : CubemapLayout3d,
 ) -> PointLightTexture {
-  PointLightTexture::{ ..self, cubemap_layout, }
+  { ..self, cubemap_layout, }
 }
 
 ///|
@@ -1940,12 +1933,12 @@ pub struct LightProbe {
 
 ///|
 pub fn LightProbe::LightProbe() -> LightProbe {
-  LightProbe::{ falloff: @math.Vec3::zero() }
+  { falloff: @math.Vec3::zero() }
 }
 
 ///|
 pub fn LightProbe::new() -> LightProbe {
-  LightProbe::LightProbe()
+  LightProbe()
 }
 
 ///|
@@ -1954,7 +1947,7 @@ pub fn LightProbe::with_falloff(
   falloff : @math.Vec3,
 ) -> LightProbe {
   self |> ignore
-  LightProbe::{ falloff, }
+  { falloff, }
 }
 
 ///|
@@ -1968,7 +1961,7 @@ pub struct EnvironmentMapLight {
 
 ///|
 pub fn EnvironmentMapLight::EnvironmentMapLight() -> EnvironmentMapLight {
-  EnvironmentMapLight::{
+  {
     diffuse_map: None,
     specular_map: None,
     intensity: 0.0F,
@@ -1994,7 +1987,7 @@ pub fn EnvironmentMapLight::with_diffuse_map(
   self : EnvironmentMapLight,
   diffuse_map : @asset.Handle[@asset.Image]?,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, diffuse_map, }
+  { ..self, diffuse_map, }
 }
 
 ///|
@@ -2002,7 +1995,7 @@ pub fn EnvironmentMapLight::with_specular_map(
   self : EnvironmentMapLight,
   specular_map : @asset.Handle[@asset.Image]?,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, specular_map, }
+  { ..self, specular_map, }
 }
 
 ///|
@@ -2010,7 +2003,7 @@ pub fn EnvironmentMapLight::with_intensity(
   self : EnvironmentMapLight,
   intensity : Float,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -2018,7 +2011,7 @@ pub fn EnvironmentMapLight::with_rotation(
   self : EnvironmentMapLight,
   rotation : @math.Quat,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, rotation, }
+  { ..self, rotation, }
 }
 
 ///|
@@ -2026,7 +2019,7 @@ pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
   self : EnvironmentMapLight,
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+  { ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -2039,7 +2032,7 @@ pub struct GeneratedEnvironmentMapLight {
 
 ///|
 pub fn GeneratedEnvironmentMapLight::GeneratedEnvironmentMapLight() -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{
+  {
     environment_map: None,
     intensity: 0.0F,
     rotation: @math.Quat::identity(),
@@ -2062,7 +2055,7 @@ pub fn GeneratedEnvironmentMapLight::with_environment_map(
   self : GeneratedEnvironmentMapLight,
   environment_map : @asset.Handle[@asset.Image]?,
 ) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, environment_map, }
+  { ..self, environment_map, }
 }
 
 ///|
@@ -2070,7 +2063,7 @@ pub fn GeneratedEnvironmentMapLight::with_intensity(
   self : GeneratedEnvironmentMapLight,
   intensity : Float,
 ) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -2078,7 +2071,7 @@ pub fn GeneratedEnvironmentMapLight::with_rotation(
   self : GeneratedEnvironmentMapLight,
   rotation : @math.Quat,
 ) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, rotation, }
+  { ..self, rotation, }
 }
 
 ///|
@@ -2086,7 +2079,7 @@ pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
   self : GeneratedEnvironmentMapLight,
   affects_lightmapped_mesh_diffuse : Bool,
 ) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
+  { ..self, affects_lightmapped_mesh_diffuse, }
 }
 
 ///|
@@ -2098,7 +2091,7 @@ pub(all) enum ParallaxCorrection {
 
 ///|
 pub fn ParallaxCorrection::default() -> ParallaxCorrection {
-  ParallaxCorrection::Auto
+  Auto
 }
 
 ///|
@@ -2110,11 +2103,7 @@ pub struct IrradianceVolume {
 
 ///|
 pub fn IrradianceVolume::IrradianceVolume() -> IrradianceVolume {
-  IrradianceVolume::{
-    voxels: None,
-    intensity: 0.0F,
-    affects_lightmapped_meshes: true,
-  }
+  { voxels: None, intensity: 0.0F, affects_lightmapped_meshes: true }
 }
 
 ///|
@@ -2122,7 +2111,7 @@ pub fn IrradianceVolume::new(
   voxels : @asset.Handle[@asset.Image]?,
   intensity : Float,
 ) -> IrradianceVolume {
-  IrradianceVolume::{ voxels, intensity, affects_lightmapped_meshes: true }
+  { voxels, intensity, affects_lightmapped_meshes: true }
 }
 
 ///|
@@ -2130,7 +2119,7 @@ pub fn IrradianceVolume::with_voxels(
   self : IrradianceVolume,
   voxels : @asset.Handle[@asset.Image]?,
 ) -> IrradianceVolume {
-  IrradianceVolume::{ ..self, voxels, }
+  { ..self, voxels, }
 }
 
 ///|
@@ -2138,7 +2127,7 @@ pub fn IrradianceVolume::with_intensity(
   self : IrradianceVolume,
   intensity : Float,
 ) -> IrradianceVolume {
-  IrradianceVolume::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -2146,7 +2135,7 @@ pub fn IrradianceVolume::with_affects_lightmapped_meshes(
   self : IrradianceVolume,
   affects_lightmapped_meshes : Bool,
 ) -> IrradianceVolume {
-  IrradianceVolume::{ ..self, affects_lightmapped_meshes, }
+  { ..self, affects_lightmapped_meshes, }
 }
 
 ///|
@@ -2161,7 +2150,7 @@ pub struct ClusteredDecal {
 
 ///|
 pub fn ClusteredDecal::ClusteredDecal() -> ClusteredDecal {
-  ClusteredDecal::{
+  {
     base_color_texture: None,
     normal_map_texture: None,
     metallic_roughness_texture: None,
@@ -2172,7 +2161,7 @@ pub fn ClusteredDecal::ClusteredDecal() -> ClusteredDecal {
 
 ///|
 pub fn ClusteredDecal::new() -> ClusteredDecal {
-  ClusteredDecal::ClusteredDecal()
+  ClusteredDecal()
 }
 
 ///|
@@ -2180,7 +2169,7 @@ pub fn ClusteredDecal::with_base_color_texture(
   self : ClusteredDecal,
   base_color_texture : @asset.Handle[@asset.Image]?,
 ) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, base_color_texture, }
+  { ..self, base_color_texture, }
 }
 
 ///|
@@ -2188,7 +2177,7 @@ pub fn ClusteredDecal::with_normal_map_texture(
   self : ClusteredDecal,
   normal_map_texture : @asset.Handle[@asset.Image]?,
 ) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, normal_map_texture, }
+  { ..self, normal_map_texture, }
 }
 
 ///|
@@ -2196,7 +2185,7 @@ pub fn ClusteredDecal::with_metallic_roughness_texture(
   self : ClusteredDecal,
   metallic_roughness_texture : @asset.Handle[@asset.Image]?,
 ) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, metallic_roughness_texture, }
+  { ..self, metallic_roughness_texture, }
 }
 
 ///|
@@ -2204,7 +2193,7 @@ pub fn ClusteredDecal::with_emissive_texture(
   self : ClusteredDecal,
   emissive_texture : @asset.Handle[@asset.Image]?,
 ) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, emissive_texture, }
+  { ..self, emissive_texture, }
 }
 
 ///|
@@ -2212,7 +2201,7 @@ pub fn ClusteredDecal::with_tag(
   self : ClusteredDecal,
   tag : UInt,
 ) -> ClusteredDecal {
-  ClusteredDecal::{ ..self, tag, }
+  { ..self, tag, }
 }
 
 ///|
@@ -2246,7 +2235,7 @@ pub struct AmbientLight {
 
 ///|
 pub fn AmbientLight::AmbientLight() -> AmbientLight {
-  AmbientLight::{
+  {
     color: @color.Color::white(),
     brightness: 80.0F,
     affects_lightmapped_meshes: true,
@@ -2258,7 +2247,7 @@ pub fn AmbientLight::new(
   color : @color.Color,
   brightness : Float,
 ) -> AmbientLight {
-  AmbientLight::{ color, brightness, affects_lightmapped_meshes: true }
+  { color, brightness, affects_lightmapped_meshes: true }
 }
 
 ///|
@@ -2266,7 +2255,7 @@ pub fn AmbientLight::with_affects_lightmapped_meshes(
   self : AmbientLight,
   affects_lightmapped_meshes : Bool,
 ) -> AmbientLight {
-  AmbientLight::{ ..self, affects_lightmapped_meshes, }
+  { ..self, affects_lightmapped_meshes, }
 }
 
 ///|
@@ -2278,7 +2267,7 @@ pub struct GlobalAmbientLight {
 
 ///|
 pub fn GlobalAmbientLight::GlobalAmbientLight() -> GlobalAmbientLight {
-  GlobalAmbientLight::{
+  {
     color: @color.Color::white(),
     brightness: 80.0F,
     affects_lightmapped_meshes: true,
@@ -2287,7 +2276,7 @@ pub fn GlobalAmbientLight::GlobalAmbientLight() -> GlobalAmbientLight {
 
 ///|
 pub fn GlobalAmbientLight::none() -> GlobalAmbientLight {
-  GlobalAmbientLight::{
+  {
     color: @color.Color::white(),
     brightness: 0.0F,
     affects_lightmapped_meshes: true,
@@ -2299,7 +2288,7 @@ pub fn GlobalAmbientLight::new(
   color : @color.Color,
   brightness : Float,
 ) -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color, brightness, affects_lightmapped_meshes: true }
+  { color, brightness, affects_lightmapped_meshes: true }
 }
 
 ///|
@@ -2307,7 +2296,7 @@ pub fn GlobalAmbientLight::with_affects_lightmapped_meshes(
   self : GlobalAmbientLight,
   affects_lightmapped_meshes : Bool,
 ) -> GlobalAmbientLight {
-  GlobalAmbientLight::{ ..self, affects_lightmapped_meshes, }
+  { ..self, affects_lightmapped_meshes, }
 }
 
 ///|

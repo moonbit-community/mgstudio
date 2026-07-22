@@ -84,7 +84,7 @@ impl @app.Resource for AppStatus with fn resource() {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ lighting_mode: MixedIndirect }
+  { lighting_mode: MixedIndirect }
 }
 
 ///|
@@ -219,7 +219,7 @@ fn spawn_camera(commands : @app.Commands) -> Unit {
   commands.queue(fn(world) {
     ignore(
       @camera.Camera3dBundle::new(
-        @camera_camera.Camera::Camera(),
+        Camera(),
         @transform.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
           @math.Vec3::new(0.0F, 0.3F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -230,6 +230,7 @@ fn spawn_camera(commands : @app.Commands) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn send_lighting_mode_changed_when_scene_ready(
   _event : @ecs.On[@scene.SceneInstanceReady],
   writer : @ecs.MessageWriter[LightingModeChanged],
@@ -301,9 +302,9 @@ fn spawn_help_text(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(12.0F))
-      .with_left(@ui.Val::Px(12.0F)),
+      .with_position_type(Absolute)
+      .with_top(Px(12.0F))
+      .with_left(Px(12.0F)),
       create_help_text(app_status),
       @text.TextFont::TextFont(),
       @text.TextColor::TextColor(),
@@ -330,9 +331,7 @@ fn spawn_ui(commands : @app.Commands, app_status : AppStatus) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -480,6 +479,7 @@ fn update_radio_buttons(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn handle_lighting_mode_change(
   events : @ecs.MessageReader[@widgets_lib.WidgetClickEvent[LightingMode]],
   writer : @ecs.MessageWriter[LightingModeChanged],
@@ -530,7 +530,7 @@ fn move_sphere(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   if app_status.get().lighting_mode == Baked ||
-    !@input.mouse_button_pressed(@window.MouseButton::Left) {
+    !@input.mouse_button_pressed(Left) {
     return
   }
   let sphere_parent : Ref[@core.Entity?] = Ref(None)
@@ -583,32 +583,32 @@ fn main {
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
   .add_message(lighting_mode_changed_message_key)
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param6(update_lightmaps).run_if_on_message(
       lighting_mode_changed_message_key,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_directional_light).run_if_on_message(
       lighting_mode_changed_message_key,
     ),
   )
-  .add_systems_param2(@app.Update, make_sphere_nonpickable)
-  .add_systems_param3(@app.Update, update_radio_buttons)
-  .add_systems_param3(@app.Update, handle_lighting_mode_change)
-  .add_systems_param2(@app.Update, handle_widget_interactions)
+  .add_systems_param2(Update, make_sphere_nonpickable)
+  .add_systems_param3(Update, update_radio_buttons)
+  .add_systems_param3(Update, handle_lighting_mode_change)
+  .add_systems_param2(Update, handle_widget_interactions)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(reset_sphere_position).run_if_on_message(
       lighting_mode_changed_message_key,
     ),
   )
-  .add_systems_param4(@app.Update, move_sphere)
+  .add_systems_param4(Update, move_sphere)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(adjust_help_text).run_if_on_message(
       lighting_mode_changed_message_key,
     ),

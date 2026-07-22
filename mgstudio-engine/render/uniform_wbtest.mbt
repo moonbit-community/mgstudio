@@ -54,10 +54,8 @@ test "render uniform: prepares component uniforms and dynamic indices" {
   let component_key : @ecs.ComponentKey[TestUniformComponent] = TestUniformComponent::component()
   let uniform_key : @ecs.ResourceKey[ComponentUniforms[TestUniformComponent]] = ComponentUniforms::resource()
   let index_key : @ecs.ComponentKey[DynamicUniformIndex[TestUniformComponent]] = DynamicUniformIndex::component()
-  try! world.set_by_key(first, component_key, TestUniformComponent::{ value: 7 })
-  try! world.set_by_key(second, component_key, TestUniformComponent::{
-    value: 11,
-  })
+  try! world.set_by_key(first, component_key, { value: 7 })
+  try! world.set_by_key(second, component_key, { value: 11 })
 
   prepare_uniform_components(world, component_key, index_key, uniform_key)
 

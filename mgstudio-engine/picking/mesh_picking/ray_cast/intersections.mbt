@@ -49,7 +49,7 @@ pub fn MeshRayCastIntersectionSettings::with_max_distance(
   self : MeshRayCastIntersectionSettings,
   max_distance : Float,
 ) -> MeshRayCastIntersectionSettings {
-  MeshRayCastIntersectionSettings::{ ..self, max_distance, }
+  { ..self, max_distance, }
 }
 
 ///|
@@ -57,7 +57,7 @@ pub fn MeshRayCastIntersectionSettings::with_ray_epsilon(
   self : MeshRayCastIntersectionSettings,
   ray_epsilon : Float,
 ) -> MeshRayCastIntersectionSettings {
-  MeshRayCastIntersectionSettings::{ ..self, ray_epsilon, }
+  { ..self, ray_epsilon, }
 }
 
 ///|
@@ -65,7 +65,7 @@ pub fn MeshRayCastIntersectionSettings::with_max_hits(
   self : MeshRayCastIntersectionSettings,
   max_hits : Int,
 ) -> MeshRayCastIntersectionSettings {
-  MeshRayCastIntersectionSettings::{ ..self, max_hits, }
+  { ..self, max_hits, }
 }
 
 ///|
@@ -73,7 +73,7 @@ pub fn MeshRayCastIntersectionSettings::with_include_invisible(
   self : MeshRayCastIntersectionSettings,
   include_invisible : Bool,
 ) -> MeshRayCastIntersectionSettings {
-  MeshRayCastIntersectionSettings::{ ..self, include_invisible, }
+  { ..self, include_invisible, }
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn MeshRayCastIntersectionSettings::with_only_entities(
   self : MeshRayCastIntersectionSettings,
   only_entities : Array[@core.Entity]?,
 ) -> MeshRayCastIntersectionSettings {
-  MeshRayCastIntersectionSettings::{ ..self, only_entities, }
+  { ..self, only_entities, }
 }
 
 ///|
@@ -127,9 +127,7 @@ fn mesh_ray_cast_local_aabb(
   guard mesh_ray_cast_mesh_asset(world, mesh3d.mesh()) is Some(mesh_asset) else {
     return None
   }
-  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {
-    return None
-  }
+  guard mesh_asset.geometry is Geometry3d(geometry3d) else { return None }
   guard geometry3d.positions.length() > 0 else { return None }
   let mut min_x = geometry3d.positions[0].x
   let mut min_y = geometry3d.positions[0].y
@@ -159,9 +157,7 @@ fn mesh_ray_cast_local_aabb_2d(
   guard mesh_ray_cast_mesh_asset(world, mesh2d.mesh()) is Some(mesh_asset) else {
     return None
   }
-  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry2d(geometry2d) else {
-    return None
-  }
+  guard mesh_asset.geometry is Geometry2d(geometry2d) else { return None }
   guard geometry2d.positions.length() > 0 else { return None }
   let mut min_x = geometry2d.positions[0].x
   let mut min_y = geometry2d.positions[0].y
@@ -309,9 +305,7 @@ fn mesh_ray_cast_2d_hit_local(
   guard mesh_ray_cast_mesh_asset(world, mesh2d.mesh()) is Some(mesh_asset) else {
     return None
   }
-  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry2d(geometry2d) else {
-    return None
-  }
+  guard mesh_asset.geometry is Geometry2d(geometry2d) else { return None }
   let local_hit = local_origin.add(local_direction.mul_scalar(distance))
   let hit_2d = @math.Vec2::new(local_hit.x, local_hit.y)
   let indices = geometry2d.indices_or_sequential()

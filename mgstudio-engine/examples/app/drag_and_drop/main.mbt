@@ -18,11 +18,11 @@ fn file_drag_and_drop_system(
 ) -> Unit {
   for event in reader.read() {
     match event {
-      @window.FileDragAndDrop::DroppedFile(window, path) =>
+      DroppedFile(window, path) =>
         println("DroppedFile(window=\{window.id}, \"\{path}\")")
-      @window.FileDragAndDrop::HoveredFile(window, path) =>
+      HoveredFile(window, path) =>
         println("HoveredFile(window=\{window.id}, \"\{path}\")")
-      @window.FileDragAndDrop::HoveredFileCanceled(window) =>
+      HoveredFileCanceled(window) =>
         println("HoveredFileCanceled(window=\{window.id})")
     }
   }
@@ -32,6 +32,6 @@ fn file_drag_and_drop_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Update, file_drag_and_drop_system)
+  .add_systems_param(Update, file_drag_and_drop_system)
   .run()
 }

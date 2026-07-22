@@ -28,11 +28,7 @@ test "ecs changed components: tick scan preserves first and repeated reads" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(
-    entity,
-    demand_driven_changed_marker_key,
-    DemandDrivenChangedMarker::Marker,
-  )
+  try! world.set_by_key(entity, demand_driven_changed_marker_key, Marker)
 
   let first = world
     .changed_components(
@@ -52,11 +48,7 @@ test "ecs changed components: tick scan preserves first and repeated reads" {
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   debug_inspect(
-    try! world.replace(
-      entity,
-      demand_driven_changed_marker_key,
-      DemandDrivenChangedMarker::Marker,
-    ),
+    try! world.replace(entity, demand_driven_changed_marker_key, Marker),
     content="true",
   )
   let second = world

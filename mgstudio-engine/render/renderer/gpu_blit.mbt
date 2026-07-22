@@ -21,7 +21,7 @@ fn load_blit_wgsl_required(
     "core_pipeline/blit/blit.wgsl",
     [],
   )
-  FullscreenPostprocessWgslSources::{
+  {
     vertex_source: load_fullscreen_vertex_wgsl_required(backend),
     fragment_source,
   }

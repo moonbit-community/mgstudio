@@ -157,7 +157,7 @@ fn spawn_on_click(
   assets : @app.Res[BirdAssets],
   counter : @app.ResMut[BirdCounter],
 ) -> Unit {
-  if !@input.mouse_button_just_pressed(@input_events.MouseButton::Left) {
+  if !@input.mouse_button_just_pressed(Left) {
     return
   }
   counter.modify(fn(value) {
@@ -229,9 +229,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, spawn_on_click)
-  .add_systems_param2(@app.Update, movement_system)
-  .add_systems_param2(@app.Update, counter_system)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, spawn_on_click)
+  .add_systems_param2(Update, movement_system)
+  .add_systems_param2(Update, counter_system)
   .run()
 }

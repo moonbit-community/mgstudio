@@ -26,13 +26,14 @@ pub const LATE_PREPASS_LABEL : String = "late prepass"
 pub struct PrepassPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PrepassPlugin::PrepassPlugin() -> PrepassPlugin {
   PrepassPlugin::{  }
 }
 
 ///|
 pub fn prepass_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  prepass_plugin_with(app, PrepassPlugin::PrepassPlugin())
+  prepass_plugin_with(app, PrepassPlugin())
 }
 
 ///|
@@ -59,6 +60,7 @@ pub fn prepass_plugin_with(
 pub struct DepthPrepass {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DepthPrepass::DepthPrepass() -> DepthPrepass {
   DepthPrepass::{  }
 }
@@ -68,6 +70,7 @@ pub fn DepthPrepass::DepthPrepass() -> DepthPrepass {
 pub struct NormalPrepass {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NormalPrepass::NormalPrepass() -> NormalPrepass {
   NormalPrepass::{  }
 }
@@ -77,6 +80,7 @@ pub fn NormalPrepass::NormalPrepass() -> NormalPrepass {
 pub struct MotionVectorPrepass {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MotionVectorPrepass::MotionVectorPrepass() -> MotionVectorPrepass {
   MotionVectorPrepass::{  }
 }

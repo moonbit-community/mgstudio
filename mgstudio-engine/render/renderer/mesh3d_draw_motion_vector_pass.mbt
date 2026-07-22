@@ -89,7 +89,7 @@ fn mesh3d_motion_vector_descriptor_view_bind_groups_get_or_create(
   )
   frame.transient_bind_groups.push(view_bg)
   frame.transient_bind_groups.push(empty_bg)
-  backend.mesh3d_motion_vector_view_bg_cache.push(Mesh3dMotionVectorViewBindGroupCacheEntry::{
+  backend.mesh3d_motion_vector_view_bg_cache.push({
     material_pipeline_id,
     frame_count: backend.frame_count,
     view_bind_group: view_bg,

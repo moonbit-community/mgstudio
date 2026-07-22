@@ -177,7 +177,7 @@ fn animate_materials(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param3(@app.Update, animate_materials)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param3(Update, animate_materials)
   .run()
 }

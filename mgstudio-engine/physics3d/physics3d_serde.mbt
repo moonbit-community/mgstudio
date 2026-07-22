@@ -18,12 +18,10 @@ const ACTIVE_COLLISION_TYPES_ALL_BITS : Int = 0xEE2F
 ///|
 fn rigid_body_type_to_json(body_type : @dynamics.RigidBodyType) -> Json {
   match body_type {
-    @dynamics.RigidBodyType::Dynamic => "dynamic".to_json()
-    @dynamics.RigidBodyType::Fixed => "fixed".to_json()
-    @dynamics.RigidBodyType::KinematicPositionBased =>
-      "kinematic_position_based".to_json()
-    @dynamics.RigidBodyType::KinematicVelocityBased =>
-      "kinematic_velocity_based".to_json()
+    Dynamic => "dynamic".to_json()
+    Fixed => "fixed".to_json()
+    KinematicPositionBased => "kinematic_position_based".to_json()
+    KinematicVelocityBased => "kinematic_velocity_based".to_json()
   }
 }
 
@@ -34,13 +32,13 @@ fn rigid_body_type_from_json(
 ) -> @dynamics.RigidBodyType raise @json.JsonDecodeError {
   let tag : String = @json.from_json(json, path~)
   if tag == "fixed" {
-    @dynamics.RigidBodyType::Fixed
+    Fixed
   } else if tag == "kinematic_position_based" {
-    @dynamics.RigidBodyType::KinematicPositionBased
+    KinematicPositionBased
   } else if tag == "kinematic_velocity_based" {
-    @dynamics.RigidBodyType::KinematicVelocityBased
+    KinematicVelocityBased
   } else {
-    @dynamics.RigidBodyType::Dynamic
+    Dynamic
   }
 }
 
@@ -147,7 +145,7 @@ pub impl ToJson for RigidBody3d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for RigidBody3d with fn from_json(json, path) {
-  RigidBody3d::{ body_type: rigid_body_type_from_json(json, path) }
+  { body_type: rigid_body_type_from_json(json, path) }
 }
 
 ///|
@@ -270,7 +268,7 @@ pub impl ToJson for Collider3d with fn to_json(self) {
 ///|
 pub impl @json.FromJson for Collider3d with fn from_json(json, path) {
   let (shape, sensor) : (ColliderShape3d, Bool) = @json.from_json(json, path~)
-  Collider3d::{ shape, sensor }
+  { shape, sensor }
 }
 
 ///|
@@ -280,7 +278,7 @@ pub impl ToJson for ActiveEvents3d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for ActiveEvents3d with fn from_json(json, path) {
-  ActiveEvents3d::{ events: active_events_from_json(json, path) }
+  { events: active_events_from_json(json, path) }
 }
 
 ///|
@@ -293,7 +291,7 @@ pub impl @json.FromJson for ContactForceEventThreshold3d with fn from_json(
   json,
   path,
 ) {
-  ContactForceEventThreshold3d::{ threshold: @json.from_json(json, path~) }
+  { threshold: @json.from_json(json, path~) }
 }
 
 ///|
@@ -303,9 +301,7 @@ pub impl ToJson for ActiveCollisionTypes3d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for ActiveCollisionTypes3d with fn from_json(json, path) {
-  ActiveCollisionTypes3d::{
-    types: active_collision_types_from_json(json, path),
-  }
+  { types: active_collision_types_from_json(json, path) }
 }
 
 ///|
@@ -315,7 +311,7 @@ pub impl ToJson for ActiveHooks3d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for ActiveHooks3d with fn from_json(json, path) {
-  ActiveHooks3d::{ hooks: active_hooks_from_json(json, path) }
+  { hooks: active_hooks_from_json(json, path) }
 }
 
 ///|
@@ -326,7 +322,7 @@ pub impl ToJson for Velocity3d with fn to_json(self) {
 ///|
 pub impl @json.FromJson for Velocity3d with fn from_json(json, path) {
   let (linvel, angvel) : (@math.Vec3, @math.Vec3) = @json.from_json(json, path~)
-  Velocity3d::{ linvel, angvel }
+  { linvel, angvel }
 }
 
 ///|
@@ -336,7 +332,7 @@ pub impl ToJson for RapierBodyHandle3d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for RapierBodyHandle3d with fn from_json(json, path) {
-  RapierBodyHandle3d::{ handle: rigid_body_handle_from_json(json, path) }
+  { handle: rigid_body_handle_from_json(json, path) }
 }
 
 ///|
@@ -346,7 +342,7 @@ pub impl ToJson for RapierColliderHandle3d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for RapierColliderHandle3d with fn from_json(json, path) {
-  RapierColliderHandle3d::{ handle: collider_handle3d_from_json(json, path) }
+  { handle: collider_handle3d_from_json(json, path) }
 }
 
 ///|
@@ -377,9 +373,7 @@ pub impl ToJson for Physics3dConfig with fn to_json(self) {
 ///|
 pub impl @json.FromJson for Physics3dConfig with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
-  physics3d_config_serde_values
-  .get(id)
-  .unwrap_or(Physics3dConfig::Physics3dConfig())
+  physics3d_config_serde_values.get(id).unwrap_or(Physics3dConfig())
 }
 
 ///|

@@ -26,7 +26,7 @@ pub fn[T] VirtualKeyPressed::new(
   entity_id : Int,
   key : T,
 ) -> VirtualKeyPressed[T] {
-  VirtualKeyPressed::{ entity_id, key }
+  { entity_id, key }
 }
 
 ///|

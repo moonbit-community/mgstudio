@@ -50,13 +50,13 @@ pub fn Physics3dHooksConfig::Physics3dHooksConfig() -> Physics3dHooksConfig {
 ///|
 let physics3d_hook_collider_to_entity : Ref[
   @hashmap.HashMap[(Int, Int), @core.Entity],
-] = Ref(@hashmap.HashMap([]))
+] = Ref(HashMap([]))
 
 ///|
 pub fn physics3d_hooks_config(world : @ecs.World) -> Physics3dHooksConfig {
   match get_physics3d_hooks_config_resource(world).get() {
     Some(cfg) => cfg
-    None => Physics3dHooksConfig::Physics3dHooksConfig()
+    None => Physics3dHooksConfig()
   }
 }
 
@@ -79,19 +79,13 @@ pub fn physics3d_set_filter_contact_pair(
   ) -> Bool,
 ) -> Unit {
   let c = physics3d_hooks_config(world)
-  physics3d_hooks_set_config(world, Physics3dHooksConfig::{
-    ..c,
-    filter_contact_pair: Some(f),
-  })
+  physics3d_hooks_set_config(world, { ..c, filter_contact_pair: Some(f) })
 }
 
 ///|
 pub fn physics3d_clear_filter_contact_pair(world : @ecs.World) -> Unit {
   let c = physics3d_hooks_config(world)
-  physics3d_hooks_set_config(world, Physics3dHooksConfig::{
-    ..c,
-    filter_contact_pair: None,
-  })
+  physics3d_hooks_set_config(world, { ..c, filter_contact_pair: None })
 }
 
 ///|
@@ -105,19 +99,13 @@ pub fn physics3d_set_filter_intersection_pair(
   ) -> Bool,
 ) -> Unit {
   let c = physics3d_hooks_config(world)
-  physics3d_hooks_set_config(world, Physics3dHooksConfig::{
-    ..c,
-    filter_intersection_pair: Some(f),
-  })
+  physics3d_hooks_set_config(world, { ..c, filter_intersection_pair: Some(f) })
 }
 
 ///|
 pub fn physics3d_clear_filter_intersection_pair(world : @ecs.World) -> Unit {
   let c = physics3d_hooks_config(world)
-  physics3d_hooks_set_config(world, Physics3dHooksConfig::{
-    ..c,
-    filter_intersection_pair: None,
-  })
+  physics3d_hooks_set_config(world, { ..c, filter_intersection_pair: None })
 }
 
 ///|
@@ -132,19 +120,13 @@ pub fn physics3d_set_modify_solver_contacts(
   ) -> (Bool, @rapier_core.Vec3?),
 ) -> Unit {
   let c = physics3d_hooks_config(world)
-  physics3d_hooks_set_config(world, Physics3dHooksConfig::{
-    ..c,
-    modify_solver_contacts: Some(f),
-  })
+  physics3d_hooks_set_config(world, { ..c, modify_solver_contacts: Some(f) })
 }
 
 ///|
 pub fn physics3d_clear_modify_solver_contacts(world : @ecs.World) -> Unit {
   let c = physics3d_hooks_config(world)
-  physics3d_hooks_set_config(world, Physics3dHooksConfig::{
-    ..c,
-    modify_solver_contacts: None,
-  })
+  physics3d_hooks_set_config(world, { ..c, modify_solver_contacts: None })
 }
 
 ///|
@@ -163,7 +145,7 @@ pub fn physics3d_hooks_set_current_collider_map(
 
 ///|
 pub fn physics3d_hooks_clear_current_collider_map() -> Unit {
-  physics3d_hook_collider_to_entity.val = @hashmap.HashMap([])
+  physics3d_hook_collider_to_entity.val = HashMap([])
 }
 
 ///|

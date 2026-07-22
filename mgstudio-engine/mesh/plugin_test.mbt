@@ -307,35 +307,18 @@ test "mesh plugin: batch writers keep explicit Transform requirements" {
 
 ///|
 test "mesh: base mesh pipeline key primitive topology roundtrip" {
-  let triangle = BaseMeshPipelineKey::from_primitive_topology(
-    Mesh3dPrimitiveTopology::TriangleList,
-  )
-  let line_list = BaseMeshPipelineKey::from_primitive_topology(
-    Mesh3dPrimitiveTopology::LineList,
-  )
-  let line_strip = BaseMeshPipelineKey::from_primitive_topology(
-    Mesh3dPrimitiveTopology::LineStrip,
-  )
-  debug_inspect(
-    triangle.primitive_topology() == Mesh3dPrimitiveTopology::TriangleList,
-    content="true",
-  )
-  debug_inspect(
-    line_list.primitive_topology() == Mesh3dPrimitiveTopology::LineList,
-    content="true",
-  )
-  debug_inspect(
-    line_strip.primitive_topology() == Mesh3dPrimitiveTopology::LineStrip,
-    content="true",
-  )
+  let triangle = BaseMeshPipelineKey::from_primitive_topology(TriangleList)
+  let line_list = BaseMeshPipelineKey::from_primitive_topology(LineList)
+  let line_strip = BaseMeshPipelineKey::from_primitive_topology(LineStrip)
+  debug_inspect(triangle.primitive_topology() == TriangleList, content="true")
+  debug_inspect(line_list.primitive_topology() == LineList, content="true")
+  debug_inspect(line_strip.primitive_topology() == LineStrip, content="true")
 }
 
 ///|
 test "mesh: base mesh pipeline key morph targets bit detection" {
   let morph = BaseMeshPipelineKey::morph_targets()
-  let line_list = BaseMeshPipelineKey::from_primitive_topology(
-    Mesh3dPrimitiveTopology::LineList,
-  )
+  let line_list = BaseMeshPipelineKey::from_primitive_topology(LineList)
   debug_inspect(morph.contains_morph_targets(), content="true")
   debug_inspect(line_list.contains_morph_targets(), content="false")
 }

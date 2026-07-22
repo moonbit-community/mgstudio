@@ -69,28 +69,30 @@ pub impl @app.Resource for DamageTimer with fn resource() {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DamageReceived::DamageReceived() -> DamageReceived {
   DamageReceived::{  }
 }
 
 ///|
 pub impl Default for DamageReceived with fn default() {
-  DamageReceived::DamageReceived()
+  DamageReceived()
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ArmorBlockedDamage::ArmorBlockedDamage() -> ArmorBlockedDamage {
   ArmorBlockedDamage::{  }
 }
 
 ///|
 pub impl Default for ArmorBlockedDamage with fn default() {
-  ArmorBlockedDamage::ArmorBlockedDamage()
+  ArmorBlockedDamage()
 }
 
 ///|
 pub fn DamageTimer::DamageTimer() -> DamageTimer {
-  { timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating) }
+  { timer: @time.Timer::from_seconds(1.0F, Repeating) }
 }
 
 ///|
@@ -115,13 +117,14 @@ fn deal_damage_over_time(
   deal_damage_writer : @ecs.MessageWriter[DealDamage],
 ) -> Unit {
   let next_timer = state.get().timer.tick(time.get().delta())
-  state.set(DamageTimer::{ timer: next_timer })
+  state.set({ timer: next_timer })
   if next_timer.is_finished() {
-    ignore(deal_damage_writer.write(DealDamage::{ amount: 10 }))
+    ignore(deal_damage_writer.write({ amount: 10 }))
   }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn apply_armor_to_damage(
   dmg_messages : @ecs.MessageMutator[DealDamage],
   armor_messages : @ecs.MessageWriter[ArmorBlockedDamage],
@@ -174,30 +177,30 @@ fn main {
   .add_message(damage_received_key)
   .init_resource(fn() { DamageTimer::DamageTimer() })
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(deal_damage_over_time).in_set(
       deal_damage_over_time_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(apply_armor_to_damage).in_set(
       apply_armor_to_damage_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(apply_damage_to_health).in_set(
       apply_damage_to_health_set,
     ),
   )
-  .configure_set(@app.Update, deal_damage_over_time_set, before=[
+  .configure_set(Update, deal_damage_over_time_set, before=[
     apply_armor_to_damage_set,
   ])
-  .configure_set(@app.Update, apply_armor_to_damage_set, before=[
+  .configure_set(Update, apply_armor_to_damage_set, before=[
     apply_damage_to_health_set,
   ])
-  .add_systems_param(@app.Update, play_damage_received_sound)
-  .add_systems_param(@app.Update, play_damage_received_particle_effect)
+  .add_systems_param(Update, play_damage_received_sound)
+  .add_systems_param(Update, play_damage_received_particle_effect)
   .run()
 }

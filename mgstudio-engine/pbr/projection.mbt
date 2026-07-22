@@ -218,7 +218,7 @@ pub fn render3d_camera_system(world : @ecs.World) -> Unit {
     let (entity, camera_read, projection_read, target_opt) = data
     let target = match target_opt.value() {
       Some(v) => v
-      None => @camera_camera.RenderTarget::Screen
+      None => Screen
     }
     match @pbr_render.render3d_target_info(world, target) {
       Some(target_info) => {

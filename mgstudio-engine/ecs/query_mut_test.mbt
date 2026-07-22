@@ -128,14 +128,8 @@ test "ecs mut query: generic Query applies disabled filters and updates componen
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set_by_key(enabled, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 1,
-  })
-  try! world.set_by_key(disabled, mut_query_position_key, MutQueryPosition::{
-    x: 2,
-    y: 2,
-  })
+  try! world.set_by_key(enabled, mut_query_position_key, { x: 1, y: 1 })
+  try! world.set_by_key(disabled, mut_query_position_key, { x: 2, y: 2 })
   try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   set_test_tick(world, 0, 1)
@@ -174,18 +168,12 @@ test "ecs query: view permits non-structural replacement but rejects structural 
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
+  try! world.set_by_key(entity, mut_query_position_key, { x: 1, y: 2 })
   let query : Query[Read[MutQueryPosition], All] = query(world)
   let replace_succeeded : Ref[Bool] = Ref(false)
   let replace_failed : Ref[Bool] = Ref(false)
   try! query.view(fn(entity, _position) {
-    world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-      x: 3,
-      y: 4,
-    }) catch {
+    world.set_by_key(entity, mut_query_position_key, { x: 3, y: 4 }) catch {
       _ => replace_failed.val = true
     }
     replace_succeeded.val = true
@@ -199,10 +187,7 @@ test "ecs query: view permits non-structural replacement but rejects structural 
 
   let insert_error : Ref[EcsError?] = Ref(None)
   try! query.view(fn(entity, _position) {
-    world.set_by_key(entity, mut_query_velocity_key, MutQueryVelocity::{
-      dx: 1,
-      dy: 1,
-    }) catch {
+    world.set_by_key(entity, mut_query_velocity_key, { dx: 1, dy: 1 }) catch {
       err => insert_error.val = Some(err)
     }
   })
@@ -217,10 +202,7 @@ test "ecs query: view rejects structural removal" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
+  try! world.set_by_key(entity, mut_query_position_key, { x: 1, y: 2 })
   let query : Query[Read[MutQueryPosition], All] = query(world)
   let remove_error : Ref[EcsError?] = Ref(None)
   try! query.view(fn(entity, _position) {
@@ -248,10 +230,7 @@ test "panic ecs query: escaped iterator rejects an invalidated World lease" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
+  try! world.set_by_key(entity, mut_query_position_key, { x: 1, y: 2 })
   let lease = WorldLease::new(world)
   let query : Query[ReadValue[MutQueryPosition], All] = query_filtered_with_cache_and_lease(
     lease,
@@ -268,10 +247,7 @@ test "panic ecs query: active view rejects World close" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
+  try! world.set_by_key(entity, mut_query_position_key, { x: 1, y: 2 })
   let query : Query[ReadValue[MutQueryPosition], All] = query(world)
   try! query.view(fn(_entity, _position) { world.close() })
 }
@@ -281,15 +257,9 @@ test "panic ecs query: escaped iterator rejects structural invalidation" {
   let world = World::new()
   defer world.close()
   let first = world.spawn()
-  try! world.set_by_key(first, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
+  try! world.set_by_key(first, mut_query_position_key, { x: 1, y: 2 })
   let second = world.spawn()
-  try! world.set_by_key(second, mut_query_position_key, MutQueryPosition::{
-    x: 3,
-    y: 4,
-  })
+  try! world.set_by_key(second, mut_query_position_key, { x: 3, y: 4 })
   let query : Query[ReadValue[MutQueryPosition], All] = query(world)
   let iter = query.iter()
   ignore(try! iter.fetch_next())
@@ -302,15 +272,9 @@ test "ecs query: nested read-only views keep the outer scope active" {
   let world = World::new()
   defer world.close()
   let first = world.spawn()
-  try! world.set_by_key(first, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
+  try! world.set_by_key(first, mut_query_position_key, { x: 1, y: 2 })
   let second = world.spawn()
-  try! world.set_by_key(second, mut_query_position_key, MutQueryPosition::{
-    x: 3,
-    y: 4,
-  })
+  try! world.set_by_key(second, mut_query_position_key, { x: 3, y: 4 })
   let outer : Query[ReadValue[MutQueryPosition], All] = query(world)
   let inner : Query[ReadValue[MutQueryPosition], All] = query(world)
   let visits = Ref(0)
@@ -328,10 +292,7 @@ test "ecs mut query: detect changes helpers support explicit mutation and markin
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, mut_query_position_key, MutQueryPosition::{
-    x: 2,
-    y: 3,
-  })
+  try! world.set_by_key(entity, mut_query_position_key, { x: 2, y: 3 })
   world.increment_change_tick() |> ignore
   set_test_tick(world, 0, 1)
 
@@ -374,9 +335,7 @@ test "ecs mut query: Write::modify persists method-style mutations" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, mut_query_method_value_key, MutQueryMethodValue::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, mut_query_method_value_key, { value: 1 })
   let query : Query[Write[MutQueryMethodValue], All] = query(world)
   let component_mut = try! query.require_single()
   component_mut.modify(fn(value) { value.bump() })
@@ -392,20 +351,14 @@ test "ecs mut query: table-bound Write set replaces values and marks changes" {
   defer world.close()
   let first = world.spawn()
   let second = world.spawn()
-  try! world.set_by_key(first, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 2,
-  })
-  try! world.set_by_key(second, mut_query_position_key, MutQueryPosition::{
-    x: 3,
-    y: 4,
-  })
+  try! world.set_by_key(first, mut_query_position_key, { x: 1, y: 2 })
+  try! world.set_by_key(second, mut_query_position_key, { x: 3, y: 4 })
   world.increment_change_tick() |> ignore
   set_test_tick(world, 0, 1)
 
   let query : Query[Write[MutQueryPosition], All] = query(world)
   try! query.for_each(fn(entity, position) {
-    position.set(MutQueryPosition::{ x: entity.id + 10, y: entity.id + 20 })
+    position.set({ x: entity.id + 10, y: entity.id + 20 })
   })
 
   debug_inspect(
@@ -434,26 +387,11 @@ test "ecs mut query: QueryState supports get, require_single, iter_many_unique a
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, mut_query_position_key, MutQueryPosition::{
-    x: 2,
-    y: 3,
-  })
-  try! world.set_by_key(e0, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 10,
-    dy: 20,
-  })
-  try! world.set_by_key(e1, mut_query_position_key, MutQueryPosition::{
-    x: 7,
-    y: 8,
-  })
-  try! world.set_by_key(e1, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 30,
-    dy: 40,
-  })
-  try! world.set_by_key(e1, mut_query_acceleration_key, MutQueryAcceleration::{
-    ax: 1,
-    ay: 1,
-  })
+  try! world.set_by_key(e0, mut_query_position_key, { x: 2, y: 3 })
+  try! world.set_by_key(e0, mut_query_velocity_key, { dx: 10, dy: 20 })
+  try! world.set_by_key(e1, mut_query_position_key, { x: 7, y: 8 })
+  try! world.set_by_key(e1, mut_query_velocity_key, { dx: 30, dy: 40 })
+  try! world.set_by_key(e1, mut_query_acceleration_key, { ax: 1, ay: 1 })
 
   set_test_tick(world, 0, 1)
 
@@ -518,34 +456,13 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Write query 
   let e2 = world.spawn()
   let e3 = world.spawn()
 
-  try! world.set_by_key(e0, mut_query_position_key, MutQueryPosition::{
-    x: 1,
-    y: 1,
-  })
-  try! world.set_by_key(e1, mut_query_position_key, MutQueryPosition::{
-    x: 2,
-    y: 2,
-  })
-  try! world.set_by_key(e3, mut_query_position_key, MutQueryPosition::{
-    x: 4,
-    y: 4,
-  })
-  try! world.set_by_key(e0, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 10,
-    dy: 0,
-  })
-  try! world.set_by_key(e1, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 20,
-    dy: 0,
-  })
-  try! world.set_by_key(e2, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 30,
-    dy: 0,
-  })
-  try! world.set_by_key(e3, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 40,
-    dy: 0,
-  })
+  try! world.set_by_key(e0, mut_query_position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, mut_query_position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e3, mut_query_position_key, { x: 4, y: 4 })
+  try! world.set_by_key(e0, mut_query_velocity_key, { dx: 10, dy: 0 })
+  try! world.set_by_key(e1, mut_query_velocity_key, { dx: 20, dy: 0 })
+  try! world.set_by_key(e2, mut_query_velocity_key, { dx: 30, dy: 0 })
+  try! world.set_by_key(e3, mut_query_velocity_key, { dx: 40, dy: 0 })
 
   set_test_tick(world, 0, 1)
 
@@ -591,6 +508,7 @@ test "ecs mut query: contiguous_iter and par_iter work with generic Write query 
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
   let world = World::new()
   defer world.close()
@@ -598,14 +516,8 @@ test "ecs mut query: EntityMut query data provides Bevy-style entity access" {
   let other = world.spawn()
 
   try! world.set_by_key(entity, mut_query_marker_key, MutQueryMarker::{  })
-  try! world.set_by_key(entity, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 3,
-    dy: 4,
-  })
-  try! world.set_by_key(other, mut_query_velocity_key, MutQueryVelocity::{
-    dx: 9,
-    dy: 10,
-  })
+  try! world.set_by_key(entity, mut_query_velocity_key, { dx: 3, dy: 4 })
+  try! world.set_by_key(other, mut_query_velocity_key, { dx: 9, dy: 10 })
 
   set_test_tick(world, 0, 1)
 

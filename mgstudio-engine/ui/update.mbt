@@ -30,7 +30,7 @@ pub struct UiContext {
 
 ///|
 pub fn UiContext::UiContext() -> UiContext {
-  UiContext::{
+  {
     white_texture: @asset.Handle::new(-1),
     viewport_origin: @math.Vec2::new(0.0F, 0.0F),
     viewport_size: @math.Vec2::new(0.0F, 0.0F),
@@ -59,7 +59,7 @@ pub fn UiContext::new(
   pointer_just_released? : Bool = false,
   wheel_delta? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
 ) -> UiContext {
-  UiContext::{
+  {
     white_texture,
     viewport_origin,
     viewport_size,
@@ -96,7 +96,7 @@ pub impl ToJson for UiContext with fn to_json(self) {
 ///|
 pub impl @json.FromJson for UiContext with fn from_json(json, path) {
   let id : Int = @json.from_json(json, path~)
-  ui_context_serde_values.get(id).unwrap_or(UiContext::UiContext())
+  ui_context_serde_values.get(id).unwrap_or(UiContext())
 }
 
 ///|

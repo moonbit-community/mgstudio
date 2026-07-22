@@ -49,27 +49,27 @@ pub struct TextLayout {
 
 ///|
 pub fn TextLayout::TextLayout() -> TextLayout {
-  TextLayout::{ justify: Justify::Left, linebreak: LineBreak::WordBoundary }
+  { justify: Left, linebreak: WordBoundary }
 }
 
 ///|
 pub fn TextLayout::new(justify : Justify, linebreak : LineBreak) -> TextLayout {
-  TextLayout::{ justify, linebreak }
+  { justify, linebreak }
 }
 
 ///|
 pub fn TextLayout::new_with_justify(justify : Justify) -> TextLayout {
-  TextLayout::{ ..TextLayout(), justify, }
+  { ..TextLayout(), justify, }
 }
 
 ///|
 pub fn TextLayout::new_with_linebreak(linebreak : LineBreak) -> TextLayout {
-  TextLayout::{ ..TextLayout(), linebreak, }
+  { ..TextLayout(), linebreak, }
 }
 
 ///|
 pub fn TextLayout::new_with_no_wrap() -> TextLayout {
-  TextLayout::new_with_linebreak(LineBreak::NoWrap)
+  TextLayout::new_with_linebreak(NoWrap)
 }
 
 ///|
@@ -77,7 +77,7 @@ pub fn TextLayout::with_justify(
   self : TextLayout,
   justify : Justify,
 ) -> TextLayout {
-  TextLayout::{ ..self, justify, }
+  { ..self, justify, }
 }
 
 ///|
@@ -85,12 +85,12 @@ pub fn TextLayout::with_linebreak(
   self : TextLayout,
   linebreak : LineBreak,
 ) -> TextLayout {
-  TextLayout::{ ..self, linebreak, }
+  { ..self, linebreak, }
 }
 
 ///|
 pub fn TextLayout::with_no_wrap(self : TextLayout) -> TextLayout {
-  TextLayout::{ ..self, linebreak: LineBreak::NoWrap }
+  { ..self, linebreak: NoWrap }
 }
 
 ///|
@@ -101,7 +101,7 @@ pub(all) enum FontSmoothing {
 
 ///|
 pub fn FontSmoothing::default() -> FontSmoothing {
-  FontSmoothing::AntiAliased
+  AntiAliased
 }
 
 ///|
@@ -112,7 +112,7 @@ pub(all) enum FontHinting {
 
 ///|
 pub fn FontHinting::default() -> FontHinting {
-  FontHinting::Disabled
+  Disabled
 }
 
 ///|
@@ -154,17 +154,17 @@ pub(all) enum FontSource {
 
 ///|
 pub fn FontSource::default() -> FontSource {
-  FontSource::Handle(@asset.Handle::new(-1))
+  Handle(@asset.Handle::new(-1))
 }
 
 ///|
 pub fn FontSource::from_font(font : @asset.Handle[@asset.Font]) -> FontSource {
-  FontSource::Handle(font)
+  Handle(font)
 }
 
 ///|
 pub fn FontSource::from_family(family : String) -> FontSource {
-  FontSource::Family(family)
+  Family(family)
 }
 
 ///|
@@ -176,12 +176,12 @@ pub impl IntoFontSource for FontSource with fn into_font_source(self) {
 pub impl IntoFontSource for @asset.Handle[@asset.Font] with fn into_font_source(
   self,
 ) {
-  FontSource::Handle(self)
+  Handle(self)
 }
 
 ///|
 pub impl IntoFontSource for String with fn into_font_source(self) {
-  FontSource::Family(self)
+  Family(self)
 }
 
 ///|
@@ -196,7 +196,7 @@ pub(all) enum FontSize {
 
 ///|
 pub fn FontSize::default() -> FontSize {
-  FontSize::Px(20.0)
+  Px(20.0)
 }
 
 ///|
@@ -255,7 +255,7 @@ pub impl IntoFontSize for FontSize with fn into_font_size(self) {
 
 ///|
 pub impl IntoFontSize for Float with fn into_font_size(self) {
-  FontSize::Px(self)
+  Px(self)
 }
 
 ///|
@@ -265,12 +265,12 @@ pub struct RemSize {
 
 ///|
 pub fn RemSize::RemSize() -> RemSize {
-  RemSize::{ value: 20.0 }
+  { value: 20.0 }
 }
 
 ///|
 pub fn RemSize::new(value : Float) -> RemSize {
-  RemSize::{ value, }
+  { value, }
 }
 
 ///|
@@ -285,7 +285,7 @@ pub struct FontCx {
 
 ///|
 pub fn FontCx::new() -> FontCx {
-  FontCx::{ font_system: @cosmic.FontSystem::new() }
+  { font_system: @cosmic.FontSystem::new() }
 }
 
 ///|
@@ -319,7 +319,7 @@ pub(all) enum FontWeight {
 
 ///|
 pub fn FontWeight::default() -> FontWeight {
-  FontWeight::NORMAL
+  NORMAL
 }
 
 ///|
@@ -343,12 +343,12 @@ pub fn FontWeight::raw_value(self : FontWeight) -> Int {
 pub fn FontWeight::clamp(self : FontWeight) -> FontWeight {
   let raw = self.raw_value()
   if raw <= 0 {
-    return FontWeight::NORMAL
+    return NORMAL
   }
   if raw > 1000 {
-    return FontWeight::VALUE(1000)
+    return VALUE(1000)
   }
-  FontWeight::VALUE(raw)
+  VALUE(raw)
 }
 
 ///|
@@ -367,7 +367,7 @@ pub(all) enum FontWidth {
 
 ///|
 pub fn FontWidth::default() -> FontWidth {
-  FontWidth::NORMAL
+  NORMAL
 }
 
 ///|
@@ -395,7 +395,7 @@ pub(all) enum FontStyle {
 
 ///|
 pub fn FontStyle::default() -> FontStyle {
-  FontStyle::Normal
+  Normal
 }
 
 ///|
@@ -459,17 +459,17 @@ pub struct FontFeatures {
 
 ///|
 pub fn FontFeatures::FontFeatures() -> FontFeatures {
-  FontFeatures::{ features: [] }
+  { features: [] }
 }
 
 ///|
 pub fn FontFeatures::new() -> FontFeatures {
-  FontFeatures::FontFeatures()
+  FontFeatures()
 }
 
 ///|
 pub fn FontFeatures::builder() -> FontFeaturesBuilder {
-  FontFeaturesBuilder::FontFeaturesBuilder()
+  FontFeaturesBuilder()
 }
 
 ///|
@@ -485,7 +485,7 @@ pub fn FontFeatures::from_tags(tags : Array[FontFeatureTag]) -> FontFeatures {
   for tag in tags {
     features.push((tag, 1U))
   }
-  FontFeatures::{ features, }
+  { features, }
 }
 
 ///|
@@ -495,7 +495,7 @@ pub struct FontFeaturesBuilder {
 
 ///|
 pub fn FontFeaturesBuilder::FontFeaturesBuilder() -> FontFeaturesBuilder {
-  FontFeaturesBuilder::{ features: [] }
+  { features: [] }
 }
 
 ///|
@@ -526,7 +526,7 @@ pub fn FontFeaturesBuilder::set(
 
 ///|
 pub fn FontFeaturesBuilder::build(self : FontFeaturesBuilder) -> FontFeatures {
-  FontFeatures::{ features: self.features }
+  { features: self.features }
 }
 
 ///|
@@ -542,20 +542,20 @@ pub(all) struct TextFont {
 
 ///|
 pub fn TextFont::TextFont() -> TextFont {
-  TextFont::{
+  {
     font: FontSource::default(),
     font_size: FontSize::default(),
     weight: FontWeight::default(),
     width: FontWidth::default(),
     style: FontStyle::default(),
     font_smoothing: FontSmoothing::default(),
-    font_features: FontFeatures::FontFeatures(),
+    font_features: FontFeatures(),
   }
 }
 
 ///|
 pub fn[S : IntoFontSize] TextFont::from_font_size(font_size : S) -> TextFont {
-  TextFont::{ ..TextFont(), font_size: font_size.into_font_size() }
+  { ..TextFont(), font_size: font_size.into_font_size() }
 }
 
 ///|
@@ -563,12 +563,12 @@ pub fn TextFont::with_font(
   self : TextFont,
   font : @asset.Handle[@asset.Font],
 ) -> TextFont {
-  TextFont::{ ..self, font: FontSource::Handle(font) }
+  { ..self, font: Handle(font) }
 }
 
 ///|
 pub fn TextFont::with_family(self : TextFont, family : String) -> TextFont {
-  TextFont::{ ..self, font: FontSource::Family(family) }
+  { ..self, font: Family(family) }
 }
 
 ///|
@@ -576,22 +576,22 @@ pub fn[S : IntoFontSize] TextFont::with_font_size(
   self : TextFont,
   font_size : S,
 ) -> TextFont {
-  TextFont::{ ..self, font_size: font_size.into_font_size() }
+  { ..self, font_size: font_size.into_font_size() }
 }
 
 ///|
 pub fn TextFont::with_weight(self : TextFont, weight : FontWeight) -> TextFont {
-  TextFont::{ ..self, weight, }
+  { ..self, weight, }
 }
 
 ///|
 pub fn TextFont::with_width(self : TextFont, width : FontWidth) -> TextFont {
-  TextFont::{ ..self, width, }
+  { ..self, width, }
 }
 
 ///|
 pub fn TextFont::with_style(self : TextFont, style : FontStyle) -> TextFont {
-  TextFont::{ ..self, style, }
+  { ..self, style, }
 }
 
 ///|
@@ -599,7 +599,7 @@ pub fn TextFont::with_font_smoothing(
   self : TextFont,
   font_smoothing : FontSmoothing,
 ) -> TextFont {
-  TextFont::{ ..self, font_smoothing, }
+  { ..self, font_smoothing, }
 }
 
 ///|
@@ -607,27 +607,27 @@ pub fn TextFont::with_font_features(
   self : TextFont,
   font_features : FontFeatures,
 ) -> TextFont {
-  TextFont::{ ..self, font_features, }
+  { ..self, font_features, }
 }
 
 ///|
 fn font_source_to_cosmic_family(source : FontSource) -> @cosmic.Family? {
   match source {
-    FontSource::Family(name) => Some(@cosmic.Family::Name(name))
-    FontSource::Serif => Some(@cosmic.Family::Serif)
-    FontSource::SansSerif => Some(@cosmic.Family::SansSerif)
-    FontSource::Cursive => Some(@cosmic.Family::Cursive)
-    FontSource::Fantasy => Some(@cosmic.Family::Fantasy)
-    FontSource::Monospace => Some(@cosmic.Family::Monospace)
-    FontSource::SystemUi => Some(@cosmic.Family::SystemUi)
-    FontSource::UiSerif => Some(@cosmic.Family::UiSerif)
-    FontSource::UiSansSerif => Some(@cosmic.Family::UiSansSerif)
-    FontSource::UiMonospace => Some(@cosmic.Family::UiMonospace)
-    FontSource::UiRounded => Some(@cosmic.Family::UiRounded)
-    FontSource::Emoji => Some(@cosmic.Family::Emoji)
-    FontSource::Math => Some(@cosmic.Family::Math)
-    FontSource::FangSong => Some(@cosmic.Family::FangSong)
-    FontSource::Handle(_) => None
+    Family(name) => Some(Name(name))
+    Serif => Some(Serif)
+    SansSerif => Some(SansSerif)
+    Cursive => Some(Cursive)
+    Fantasy => Some(Fantasy)
+    Monospace => Some(Monospace)
+    SystemUi => Some(SystemUi)
+    UiSerif => Some(UiSerif)
+    UiSansSerif => Some(UiSansSerif)
+    UiMonospace => Some(UiMonospace)
+    UiRounded => Some(UiRounded)
+    Emoji => Some(Emoji)
+    Math => Some(Math)
+    FangSong => Some(FangSong)
+    Handle(_) => None
   }
 }
 
@@ -649,48 +649,44 @@ fn font_features_to_cosmic(features : FontFeatures) -> @cosmic.FontFeatures {
 ///|
 fn font_weight_to_cosmic(weight : FontWeight) -> @cosmic.Weight {
   match weight.clamp() {
-    FontWeight::THIN => @cosmic.Weight::new(100)
-    FontWeight::EXTRA_LIGHT => @cosmic.Weight::new(200)
-    FontWeight::LIGHT => @cosmic.Weight::new(300)
-    FontWeight::NORMAL => @cosmic.Weight::normal()
-    FontWeight::MEDIUM => @cosmic.Weight::new(500)
-    FontWeight::SEMIBOLD => @cosmic.Weight::new(600)
-    FontWeight::BOLD => @cosmic.Weight::bold()
-    FontWeight::EXTRA_BOLD => @cosmic.Weight::new(800)
-    FontWeight::BLACK => @cosmic.Weight::new(900)
-    FontWeight::EXTRA_BLACK => @cosmic.Weight::new(950)
-    FontWeight::VALUE(value) => @cosmic.Weight::new(value)
+    THIN => @cosmic.Weight::new(100)
+    EXTRA_LIGHT => @cosmic.Weight::new(200)
+    LIGHT => @cosmic.Weight::new(300)
+    NORMAL => @cosmic.Weight::normal()
+    MEDIUM => @cosmic.Weight::new(500)
+    SEMIBOLD => @cosmic.Weight::new(600)
+    BOLD => @cosmic.Weight::bold()
+    EXTRA_BOLD => @cosmic.Weight::new(800)
+    BLACK => @cosmic.Weight::new(900)
+    EXTRA_BLACK => @cosmic.Weight::new(950)
+    VALUE(value) => @cosmic.Weight::new(value)
   }
 }
 
 ///|
 fn font_width_to_swash(width : FontWidth) -> @swash.Stretch {
   match width {
-    FontWidth::ULTRA_CONDENSED => @swash.Stretch::ultra_condensed()
-    FontWidth::EXTRA_CONDENSED => @swash.Stretch::extra_condensed()
-    FontWidth::CONDENSED => @swash.Stretch::condensed()
-    FontWidth::SEMI_CONDENSED => @swash.Stretch::semi_condensed()
-    FontWidth::NORMAL => @swash.Stretch::normal()
-    FontWidth::SEMI_EXPANDED => @swash.Stretch::semi_expanded()
-    FontWidth::EXPANDED => @swash.Stretch::expanded()
-    FontWidth::EXTRA_EXPANDED => @swash.Stretch::extra_expanded()
-    FontWidth::ULTRA_EXPANDED => @swash.Stretch::ultra_expanded()
-    FontWidth::VALUE(value) =>
-      @swash.Stretch::from_percentage(value.to_double())
+    ULTRA_CONDENSED => @swash.Stretch::ultra_condensed()
+    EXTRA_CONDENSED => @swash.Stretch::extra_condensed()
+    CONDENSED => @swash.Stretch::condensed()
+    SEMI_CONDENSED => @swash.Stretch::semi_condensed()
+    NORMAL => @swash.Stretch::normal()
+    SEMI_EXPANDED => @swash.Stretch::semi_expanded()
+    EXPANDED => @swash.Stretch::expanded()
+    EXTRA_EXPANDED => @swash.Stretch::extra_expanded()
+    ULTRA_EXPANDED => @swash.Stretch::ultra_expanded()
+    VALUE(value) => @swash.Stretch::from_percentage(value.to_double())
   }
 }
 
 ///|
 fn font_style_to_swash(style : FontStyle) -> @swash.Style {
   match style {
-    FontStyle::Normal => @swash.Style::Normal
-    FontStyle::Italic => @swash.Style::Italic
-    FontStyle::Oblique(None) =>
-      @swash.Style::Oblique(@swash.ObliqueAngle::from_degrees(14.0))
-    FontStyle::Oblique(Some(value)) =>
-      @swash.Style::Oblique(
-        @swash.ObliqueAngle::from_degrees(value.to_double()),
-      )
+    Normal => Normal
+    Italic => Italic
+    Oblique(None) => Oblique(@swash.ObliqueAngle::from_degrees(14.0))
+    Oblique(Some(value)) =>
+      Oblique(@swash.ObliqueAngle::from_degrees(value.to_double()))
   }
 }
 
@@ -701,7 +697,7 @@ pub(all) struct TextColor {
 
 ///|
 pub fn TextColor::new(color : @color.Color) -> TextColor {
-  TextColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -726,7 +722,7 @@ pub(all) struct TextBackgroundColor {
 
 ///|
 pub fn TextBackgroundColor::new(color : @color.Color) -> TextBackgroundColor {
-  TextBackgroundColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -751,7 +747,7 @@ pub(all) struct UnderlineColor {
 
 ///|
 pub fn UnderlineColor::new(color : @color.Color) -> UnderlineColor {
-  UnderlineColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -766,7 +762,7 @@ pub(all) struct StrikethroughColor {
 
 ///|
 pub fn StrikethroughColor::new(color : @color.Color) -> StrikethroughColor {
-  StrikethroughColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -778,6 +774,7 @@ pub fn StrikethroughColor::StrikethroughColor() -> StrikethroughColor {
 pub struct Underline {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Underline::Underline() -> Underline {
   Underline::{  }
 }
@@ -786,6 +783,7 @@ pub fn Underline::Underline() -> Underline {
 pub struct Strikethrough {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Strikethrough::Strikethrough() -> Strikethrough {
   Strikethrough::{  }
 }
@@ -798,7 +796,7 @@ pub(all) enum LineHeight {
 
 ///|
 pub fn LineHeight::default() -> LineHeight {
-  LineHeight::RelativeToFont(1.2F)
+  RelativeToFont(1.2F)
 }
 
 ///|
@@ -817,7 +815,7 @@ pub(all) struct TextShadow {
 
 ///|
 pub fn TextShadow::new(offset : @math.Vec2, color : @color.Color) -> TextShadow {
-  TextShadow::{ offset, color }
+  { offset, color }
 }
 
 ///|
@@ -830,7 +828,7 @@ pub fn TextShadow::with_offset(
   self : TextShadow,
   offset : @math.Vec2,
 ) -> TextShadow {
-  TextShadow::{ ..self, offset, }
+  { ..self, offset, }
 }
 
 ///|
@@ -838,7 +836,7 @@ pub fn TextShadow::with_color(
   self : TextShadow,
   color : @color.Color,
 ) -> TextShadow {
-  TextShadow::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -852,7 +850,7 @@ pub fn Text2dShadow::new(
   offset : @math.Vec2,
   color : @color.Color,
 ) -> Text2dShadow {
-  Text2dShadow::{ offset, color }
+  { offset, color }
 }
 
 ///|
@@ -865,7 +863,7 @@ pub fn Text2dShadow::with_offset(
   self : Text2dShadow,
   offset : @math.Vec2,
 ) -> Text2dShadow {
-  Text2dShadow::{ ..self, offset, }
+  { ..self, offset, }
 }
 
 ///|
@@ -873,5 +871,5 @@ pub fn Text2dShadow::with_color(
   self : Text2dShadow,
   color : @color.Color,
 ) -> Text2dShadow {
-  Text2dShadow::{ ..self, color, }
+  { ..self, color, }
 }

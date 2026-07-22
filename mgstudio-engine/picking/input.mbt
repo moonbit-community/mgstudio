@@ -24,7 +24,7 @@ pub struct PointerInputSettings {
 
 ///|
 pub fn PointerInputSettings::PointerInputSettings() -> PointerInputSettings {
-  PointerInputSettings::{ is_touch_enabled: true, is_mouse_enabled: true }
+  { is_touch_enabled: true, is_mouse_enabled: true }
 }
 
 ///|
@@ -32,7 +32,7 @@ pub fn PointerInputSettings::new(
   is_touch_enabled : Bool,
   is_mouse_enabled : Bool,
 ) -> PointerInputSettings {
-  PointerInputSettings::{ is_touch_enabled, is_mouse_enabled }
+  { is_touch_enabled, is_mouse_enabled }
 }
 
 ///|
@@ -44,7 +44,7 @@ pub impl @app.Resource for PointerInputSettings with fn resource() {
 fn picking_pointer_input_settings(world : @ecs.World) -> PointerInputSettings {
   match get_pointer_input_settings_resource(world).get() {
     Some(settings) => settings
-    None => PointerInputSettings::PointerInputSettings()
+    None => PointerInputSettings()
   }
 }
 
@@ -61,7 +61,7 @@ fn picking_pointer_from_touch_id(touch_id : Int) -> @pointer_events.PointerId {
 pub fn ensure_pointer_input_settings_system(world : @ecs.World) -> Unit {
   let res = get_pointer_input_settings_resource(world)
   if res.get() is None {
-    res.insert(PointerInputSettings::PointerInputSettings())
+    res.insert(PointerInputSettings())
   }
 }
 
@@ -75,13 +75,9 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
   if settings.is_mouse_enabled {
     let pointer : @pointer_events.PointerId = 0
     let window_position = @input.mouse_position()
-    let down = @input.mouse_button_pressed(@window.MouseButton::Left)
-    let just_pressed = @input.mouse_button_just_pressed(
-      @window.MouseButton::Left,
-    )
-    let just_released = @input.mouse_button_just_released(
-      @window.MouseButton::Left,
-    )
+    let down = @input.mouse_button_pressed(Left)
+    let just_pressed = @input.mouse_button_just_pressed(Left)
+    let just_released = @input.mouse_button_just_released(Left)
     ignore(
       writer.write(
         PointerInput::new(

@@ -100,7 +100,7 @@ pub(all) struct PerspectiveProjection3d {
 
 ///|
 pub fn PerspectiveProjection3d::PerspectiveProjection3d() -> PerspectiveProjection3d {
-  PerspectiveProjection3d::{
+  {
     // Match Bevy's PerspectiveProjection::default() (PI / 4.0).
     fov: @math.pi_half() * 0.5F,
     near: 0.1F,
@@ -116,7 +116,7 @@ pub fn PerspectiveProjection3d::with_aspect_ratio(
   aspect_ratio : Float,
 ) -> PerspectiveProjection3d {
   let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
-  PerspectiveProjection3d::{
+  {
     fov: self.fov,
     near: self.near,
     far: self.far,
@@ -131,7 +131,7 @@ pub fn PerspectiveProjection3d::with_fov(
   fov : Float,
 ) -> PerspectiveProjection3d {
   let safe_fov = if fov <= 0.0F { @math.pi_half() * 0.5F } else { fov }
-  PerspectiveProjection3d::{
+  {
     fov: safe_fov,
     near: self.near,
     far: self.far,
@@ -163,7 +163,7 @@ pub fn PerspectiveProjection3d::with_near(
   } else {
     self.near_clip_plane
   }
-  PerspectiveProjection3d::{
+  {
     fov: self.fov,
     near: safe_near,
     far: safe_far,
@@ -178,7 +178,7 @@ pub fn PerspectiveProjection3d::with_far(
   far : Float,
 ) -> PerspectiveProjection3d {
   let safe_far = if far <= self.near { self.near + 0.0001F } else { far }
-  PerspectiveProjection3d::{
+  {
     fov: self.fov,
     near: self.near,
     far: safe_far,
@@ -192,7 +192,7 @@ pub fn PerspectiveProjection3d::with_near_clip_plane(
   self : PerspectiveProjection3d,
   near_clip_plane : @math.Vec4,
 ) -> PerspectiveProjection3d {
-  PerspectiveProjection3d::{
+  {
     fov: self.fov,
     near: self.near,
     far: self.far,
@@ -242,15 +242,12 @@ pub(all) struct OrthographicProjection3d {
 
 ///|
 pub fn OrthographicProjection3d::default_2d() -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    ..OrthographicProjection3d::default_3d(),
-    near: -1000.0F,
-  }
+  { ..OrthographicProjection3d::default_3d(), near: -1000.0F }
 }
 
 ///|
 pub fn OrthographicProjection3d::default_3d() -> OrthographicProjection3d {
-  OrthographicProjection3d::{
+  {
     near: 0.0F,
     far: 1000.0F,
     viewport_origin: @math.Vec2::new(0.5F, 0.5F),
@@ -274,7 +271,7 @@ pub fn OrthographicProjection3d::with_scale(
   scale : Float,
 ) -> OrthographicProjection3d {
   let safe_scale = if scale <= 0.0F { 1.0F } else { scale }
-  OrthographicProjection3d::{
+  {
     near: self.near,
     far: self.far,
     viewport_origin: self.viewport_origin,
@@ -290,7 +287,7 @@ pub fn OrthographicProjection3d::with_near(
   near : Float,
 ) -> OrthographicProjection3d {
   let safe_far = if self.far <= near { near + 0.0001F } else { self.far }
-  OrthographicProjection3d::{
+  {
     scale: self.scale,
     near,
     far: safe_far,
@@ -306,7 +303,7 @@ pub fn OrthographicProjection3d::with_far(
   far : Float,
 ) -> OrthographicProjection3d {
   let safe_far = if far <= self.near { self.near + 0.0001F } else { far }
-  OrthographicProjection3d::{
+  {
     scale: self.scale,
     near: self.near,
     far: safe_far,
@@ -321,7 +318,7 @@ pub fn OrthographicProjection3d::with_scaling_mode(
   self : OrthographicProjection3d,
   scaling_mode : OrthographicScalingMode3d,
 ) -> OrthographicProjection3d {
-  OrthographicProjection3d::{
+  {
     near: self.near,
     far: self.far,
     viewport_origin: self.viewport_origin,
@@ -336,7 +333,7 @@ pub fn OrthographicProjection3d::with_viewport_origin(
   self : OrthographicProjection3d,
   viewport_origin : @math.Vec2,
 ) -> OrthographicProjection3d {
-  OrthographicProjection3d::{
+  {
     near: self.near,
     far: self.far,
     viewport_origin,
@@ -351,7 +348,7 @@ pub fn OrthographicProjection3d::with_area(
   self : OrthographicProjection3d,
   area : @math.Rect,
 ) -> OrthographicProjection3d {
-  OrthographicProjection3d::{
+  {
     near: self.near,
     far: self.far,
     viewport_origin: self.viewport_origin,
@@ -506,7 +503,7 @@ fn render3d_adjust_perspective_matrix_for_clip_plane(
         -1.0F - clip_plane.z * a,
         -clip_plane.w * a,
       )
-      ProjectionMatrix3d::{
+      {
         x_axis: @math.Vec4::new(
           matrix.x_axis.x,
           matrix.x_axis.y,
@@ -705,7 +702,7 @@ pub fn ProjectionMatrix3d::from_cols(
   z_axis : @math.Vec4,
   w_axis : @math.Vec4,
 ) -> ProjectionMatrix3d {
-  ProjectionMatrix3d::{ x_axis, y_axis, z_axis, w_axis }
+  { x_axis, y_axis, z_axis, w_axis }
 }
 
 ///|
@@ -928,12 +925,7 @@ pub fn render3d_pass_projection(
   camera_near : Float,
   camera_far : Float,
 ) -> Render3dPassProjection {
-  Render3dPassProjection::{
-    clip_from_view,
-    unjittered_clip_from_view,
-    camera_near,
-    camera_far,
-  }
+  { clip_from_view, unjittered_clip_from_view, camera_near, camera_far }
 }
 
 ///|
@@ -999,7 +991,7 @@ pub fn render3d_projection_matrix_apply_temporal_jitter(
     jitter_y = jitter_y * clip_from_view.y_axis.y * 0.5F
   }
   let z_axis = clip_from_view.z_axis
-  ProjectionMatrix3d::{
+  {
     ..clip_from_view,
     z_axis: @math.Vec4::new(
       z_axis.x + jitter_x,

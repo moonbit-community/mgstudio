@@ -28,6 +28,7 @@ pub(all) suberror ErasedPrepareAssetError {
 pub struct ErasedAssetExtractionSystems {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ErasedAssetExtractionSystems::new() -> ErasedAssetExtractionSystems {
   ErasedAssetExtractionSystems::{  }
 }
@@ -51,7 +52,7 @@ pub impl[A : RenderAssetResource] @app.Resource for ErasedRenderAssets[A] with f
 
 ///|
 pub fn[A] ErasedRenderAssets::new() -> ErasedRenderAssets[A] {
-  ErasedRenderAssets::{ items: @hashmap.HashMap([]) }
+  { items: HashMap([]) }
 }
 
 ///|
@@ -145,7 +146,7 @@ pub impl[A] @app.Resource for ErasedPrepareNextFrameAssets[A] with fn resource()
 
 ///|
 pub fn[A] ErasedPrepareNextFrameAssets::new() -> ErasedPrepareNextFrameAssets[A] {
-  ErasedPrepareNextFrameAssets::{ values: [] }
+  { values: [] }
 }
 
 ///|
@@ -188,7 +189,7 @@ pub fn[A, B] prepare_erased_render_assets_with(
   prepare_asset : (A, UntypedRenderAssetId, B?) -> B raise ErasedPrepareAssetError,
   unload_asset : (UntypedRenderAssetId, B?) -> Unit,
   byte_len? : (A) -> Int? = fn(_) { None },
-  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
+  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter(),
 ) -> Unit {
   let queued_assets = prepare_next_frame.take()
   for entry in queued_assets {

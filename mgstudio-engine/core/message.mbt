@@ -44,7 +44,7 @@ pub(open) trait Message {
 
 ///|
 pub fn[T] Messages::new() -> Messages[T] {
-  Messages::{
+  {
     previous_tick: None,
     previous_messages: [],
     current_tick: None,
@@ -100,7 +100,7 @@ pub fn[T] Messages::reader(
   } else {
     []
   }
-  MessageReader::{
+  {
     previous_tick: self.previous_tick,
     previous_messages,
     current_tick: self.current_tick,
@@ -120,7 +120,7 @@ pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
 
 ///|
 pub fn[T] Messages::writer(self : Messages[T], tick : Tick) -> MessageWriter[T] {
-  MessageWriter::{ messages: self, tick }
+  { messages: self, tick }
 }
 
 ///|

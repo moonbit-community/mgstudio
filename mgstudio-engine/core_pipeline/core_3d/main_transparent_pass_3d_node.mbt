@@ -26,7 +26,7 @@ pub struct MainTransparentPass3dNode {
 
 ///|
 pub fn MainTransparentPass3dNode::MainTransparentPass3dNode() -> MainTransparentPass3dNode {
-  MainTransparentPass3dNode::{ label: MAIN_TRANSPARENT_PASS_3D_LABEL }
+  { label: MAIN_TRANSPARENT_PASS_3D_LABEL }
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn MainTransparentPass3dState::new(
   has_custom_viewport? : Bool = false,
   webgl_requires_viewport_reset? : Bool = false,
 ) -> MainTransparentPass3dState {
-  MainTransparentPass3dState::{
+  {
     has_transparent_phase,
     has_oit,
     has_oit_resolve_pipeline,

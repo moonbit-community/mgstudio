@@ -25,11 +25,10 @@ pub(all) enum MeshGenerateTangentsError {
 ///|
 pub fn Mesh::generate_tangents(self : Mesh) -> MeshGenerateTangentsError? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) =>
-      Some(MeshGenerateTangentsError::Not3dGeometry)
-    MeshGeometry::Geometry3d(geometry3d) =>
+    Geometry2d(_) => Some(Not3dGeometry)
+    Geometry3d(geometry3d) =>
       match geometry3d.generate_tangents() {
-        Some(err) => Some(MeshGenerateTangentsError::GeometryError(err))
+        Some(err) => Some(GeometryError(err))
         None => None
       }
   }

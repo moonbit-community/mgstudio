@@ -35,7 +35,7 @@ pub(all) enum BoxSizing {
 
 ///|
 pub fn BoxSizing::default() -> BoxSizing {
-  BoxSizing::BorderBox
+  BorderBox
 }
 
 ///|
@@ -61,12 +61,12 @@ pub struct Overflow {
 
 ///|
 pub fn Overflow::new(x : OverflowAxis, y : OverflowAxis) -> Overflow {
-  Overflow::{ x, y }
+  { x, y }
 }
 
 ///|
 pub fn Overflow::Overflow() -> Overflow {
-  Overflow::new(OverflowAxis::Visible, OverflowAxis::Visible)
+  Overflow::new(Visible, Visible)
 }
 
 ///|
@@ -84,7 +84,7 @@ pub struct OverflowClipMargin {
 
 ///|
 pub fn OverflowClipMargin::OverflowClipMargin() -> OverflowClipMargin {
-  OverflowClipMargin::{ visual_box: OverflowClipBox::ContentBox, margin: 0.0F }
+  { visual_box: ContentBox, margin: 0.0F }
 }
 
 ///|
@@ -92,22 +92,22 @@ pub fn OverflowClipMargin::new(
   visual_box : OverflowClipBox,
   margin : Float,
 ) -> OverflowClipMargin {
-  OverflowClipMargin::{ visual_box, margin }
+  { visual_box, margin }
 }
 
 ///|
 pub fn OverflowClipMargin::content_box() -> OverflowClipMargin {
-  OverflowClipMargin::new(OverflowClipBox::ContentBox, 0.0F)
+  OverflowClipMargin::new(ContentBox, 0.0F)
 }
 
 ///|
 pub fn OverflowClipMargin::padding_box() -> OverflowClipMargin {
-  OverflowClipMargin::new(OverflowClipBox::PaddingBox, 0.0F)
+  OverflowClipMargin::new(PaddingBox, 0.0F)
 }
 
 ///|
 pub fn OverflowClipMargin::border_box() -> OverflowClipMargin {
-  OverflowClipMargin::new(OverflowClipBox::BorderBox, 0.0F)
+  OverflowClipMargin::new(BorderBox, 0.0F)
 }
 
 ///|
@@ -115,7 +115,7 @@ pub fn OverflowClipMargin::with_margin(
   self : OverflowClipMargin,
   margin : Float,
 ) -> OverflowClipMargin {
-  OverflowClipMargin::{ ..self, margin, }
+  { ..self, margin, }
 }
 
 ///|
@@ -249,15 +249,12 @@ pub fn RepeatedGridTrack::new(
   repetition : GridTrackRepetition,
   tracks : Array[GridTrack],
 ) -> RepeatedGridTrack {
-  RepeatedGridTrack::{ repetition, tracks }
+  { repetition, tracks }
 }
 
 ///|
 pub fn RepeatedGridTrack::RepeatedGridTrack() -> RepeatedGridTrack {
-  RepeatedGridTrack::{
-    repetition: GridTrackRepetition::Count(1),
-    tracks: [GridTrack::Auto],
-  }
+  { repetition: Count(1), tracks: [Auto] }
 }
 
 ///|
@@ -269,65 +266,65 @@ pub struct GridPlacement {
 
 ///|
 pub fn GridPlacement::GridPlacement() -> GridPlacement {
-  GridPlacement::{ start: None, span: Some(1), end: None }
+  { start: None, span: Some(1), end: None }
 }
 
 ///|
 pub fn GridPlacement::auto() -> GridPlacement {
-  GridPlacement::GridPlacement()
+  GridPlacement()
 }
 
 ///|
 pub fn GridPlacement::span(span : Int) -> GridPlacement {
   if span == 0 {
-    GridPlacement::GridPlacement()
+    GridPlacement()
   } else {
-    GridPlacement::{ start: None, end: None, span: Some(span) }
+    { start: None, end: None, span: Some(span) }
   }
 }
 
 ///|
 pub fn GridPlacement::start(start : Int) -> GridPlacement {
   if start == 0 {
-    GridPlacement::GridPlacement()
+    GridPlacement()
   } else {
-    GridPlacement::{ ..GridPlacement(), start: Some(start) }
+    { ..GridPlacement(), start: Some(start) }
   }
 }
 
 ///|
 pub fn GridPlacement::end(end : Int) -> GridPlacement {
   if end == 0 {
-    GridPlacement::GridPlacement()
+    GridPlacement()
   } else {
-    GridPlacement::{ ..GridPlacement(), end: Some(end) }
+    { ..GridPlacement(), end: Some(end) }
   }
 }
 
 ///|
 pub fn GridPlacement::start_span(start : Int, span : Int) -> GridPlacement {
   if start == 0 || span == 0 {
-    GridPlacement::GridPlacement()
+    GridPlacement()
   } else {
-    GridPlacement::{ start: Some(start), end: None, span: Some(span) }
+    { start: Some(start), end: None, span: Some(span) }
   }
 }
 
 ///|
 pub fn GridPlacement::start_end(start : Int, end : Int) -> GridPlacement {
   if start == 0 || end == 0 {
-    GridPlacement::GridPlacement()
+    GridPlacement()
   } else {
-    GridPlacement::{ start: Some(start), end: Some(end), span: None }
+    { start: Some(start), end: Some(end), span: None }
   }
 }
 
 ///|
 pub fn GridPlacement::end_span(end : Int, span : Int) -> GridPlacement {
   if end == 0 || span == 0 {
-    GridPlacement::GridPlacement()
+    GridPlacement()
   } else {
-    GridPlacement::{ start: None, end: Some(end), span: Some(span) }
+    { start: None, end: Some(end), span: Some(span) }
   }
 }
 
@@ -379,48 +376,48 @@ pub(all) struct Node {
 
 ///|
 pub fn Node::Node() -> Node {
-  Node::{
-    display: Display::Flex,
+  {
+    display: Flex,
     box_sizing: BoxSizing::default(),
-    position_type: PositionType::Relative,
-    overflow: Overflow::Overflow(),
+    position_type: Relative,
+    overflow: Overflow(),
     scrollbar_width: 0.0F,
-    overflow_clip_margin: OverflowClipMargin::OverflowClipMargin(),
-    left: Val::Auto,
-    right: Val::Auto,
-    top: Val::Auto,
-    bottom: Val::Auto,
-    width: Val::Auto,
-    height: Val::Auto,
-    min_width: Val::Auto,
-    min_height: Val::Auto,
-    max_width: Val::Auto,
-    max_height: Val::Auto,
+    overflow_clip_margin: OverflowClipMargin(),
+    left: Auto,
+    right: Auto,
+    top: Auto,
+    bottom: Auto,
+    width: Auto,
+    height: Auto,
+    min_width: Auto,
+    min_height: Auto,
+    max_width: Auto,
+    max_height: Auto,
     aspect_ratio: None,
-    align_items: AlignItems::Default,
-    justify_items: JustifyItems::Default,
-    align_self: AlignSelf::Auto,
-    justify_self: JustifySelf::Auto,
-    align_content: AlignContent::Default,
-    justify_content: JustifyContent::Default,
-    margin: UiRect::UiRect(),
-    padding: UiRect::UiRect(),
-    border: UiRect::UiRect(),
-    border_radius: BorderRadius::BorderRadius(),
-    flex_direction: FlexDirection::Row,
-    flex_wrap: FlexWrap::NoWrap,
+    align_items: Default,
+    justify_items: Default,
+    align_self: Auto,
+    justify_self: Auto,
+    align_content: Default,
+    justify_content: Default,
+    margin: UiRect(),
+    padding: UiRect(),
+    border: UiRect(),
+    border_radius: BorderRadius(),
+    flex_direction: Row,
+    flex_wrap: NoWrap,
     flex_grow: 0.0F,
     flex_shrink: 1.0F,
-    flex_basis: Val::Auto,
-    row_gap: Val::Px(0.0F),
-    column_gap: Val::Px(0.0F),
-    grid_auto_flow: GridAutoFlow::Row,
+    flex_basis: Auto,
+    row_gap: Px(0.0F),
+    column_gap: Px(0.0F),
+    grid_auto_flow: Row,
     grid_template_rows: [],
     grid_template_columns: [],
     grid_auto_rows: [],
     grid_auto_columns: [],
-    grid_row: GridPlacement::GridPlacement(),
-    grid_column: GridPlacement::GridPlacement(),
+    grid_row: GridPlacement(),
+    grid_column: GridPlacement(),
   }
 }
 
@@ -429,27 +426,27 @@ pub fn Node::with_position_type(
   self : Node,
   position_type : PositionType,
 ) -> Node {
-  Node::{ ..self, position_type, }
+  { ..self, position_type, }
 }
 
 ///|
 pub fn Node::with_display(self : Node, display : Display) -> Node {
-  Node::{ ..self, display, }
+  { ..self, display, }
 }
 
 ///|
 pub fn Node::with_box_sizing(self : Node, box_sizing : BoxSizing) -> Node {
-  Node::{ ..self, box_sizing, }
+  { ..self, box_sizing, }
 }
 
 ///|
 pub fn Node::with_overflow(self : Node, overflow : Overflow) -> Node {
-  Node::{ ..self, overflow, }
+  { ..self, overflow, }
 }
 
 ///|
 pub fn Node::with_scrollbar_width(self : Node, scrollbar_width : Float) -> Node {
-  Node::{ ..self, scrollbar_width, }
+  { ..self, scrollbar_width, }
 }
 
 ///|
@@ -457,22 +454,22 @@ pub fn Node::with_overflow_clip_margin(
   self : Node,
   overflow_clip_margin : OverflowClipMargin,
 ) -> Node {
-  Node::{ ..self, overflow_clip_margin, }
+  { ..self, overflow_clip_margin, }
 }
 
 ///|
 pub fn Node::with_padding(self : Node, padding : UiRect) -> Node {
-  Node::{ ..self, padding, }
+  { ..self, padding, }
 }
 
 ///|
 pub fn Node::with_margin(self : Node, margin : UiRect) -> Node {
-  Node::{ ..self, margin, }
+  { ..self, margin, }
 }
 
 ///|
 pub fn Node::with_border(self : Node, border : UiRect) -> Node {
-  Node::{ ..self, border, }
+  { ..self, border, }
 }
 
 ///|
@@ -480,37 +477,37 @@ pub fn Node::with_border_radius(
   self : Node,
   border_radius : BorderRadius,
 ) -> Node {
-  Node::{ ..self, border_radius, }
+  { ..self, border_radius, }
 }
 
 ///|
 pub fn Node::with_left(self : Node, left : Val) -> Node {
-  Node::{ ..self, left, }
+  { ..self, left, }
 }
 
 ///|
 pub fn Node::with_right(self : Node, right : Val) -> Node {
-  Node::{ ..self, right, }
+  { ..self, right, }
 }
 
 ///|
 pub fn Node::with_top(self : Node, top : Val) -> Node {
-  Node::{ ..self, top, }
+  { ..self, top, }
 }
 
 ///|
 pub fn Node::with_bottom(self : Node, bottom : Val) -> Node {
-  Node::{ ..self, bottom, }
+  { ..self, bottom, }
 }
 
 ///|
 pub fn Node::with_width(self : Node, width : Val) -> Node {
-  Node::{ ..self, width, }
+  { ..self, width, }
 }
 
 ///|
 pub fn Node::with_height(self : Node, height : Val) -> Node {
-  Node::{ ..self, height, }
+  { ..self, height, }
 }
 
 ///|
@@ -518,12 +515,12 @@ pub fn Node::with_justify_content(
   self : Node,
   justify_content : JustifyContent,
 ) -> Node {
-  Node::{ ..self, justify_content, }
+  { ..self, justify_content, }
 }
 
 ///|
 pub fn Node::with_align_items(self : Node, align_items : AlignItems) -> Node {
-  Node::{ ..self, align_items, }
+  { ..self, align_items, }
 }
 
 ///|
@@ -531,32 +528,32 @@ pub fn Node::with_flex_direction(
   self : Node,
   flex_direction : FlexDirection,
 ) -> Node {
-  Node::{ ..self, flex_direction, }
+  { ..self, flex_direction, }
 }
 
 ///|
 pub fn Node::with_flex_grow(self : Node, flex_grow : Float) -> Node {
-  Node::{ ..self, flex_grow, }
+  { ..self, flex_grow, }
 }
 
 ///|
 pub fn Node::with_flex_shrink(self : Node, flex_shrink : Float) -> Node {
-  Node::{ ..self, flex_shrink, }
+  { ..self, flex_shrink, }
 }
 
 ///|
 pub fn Node::with_flex_basis(self : Node, flex_basis : Val) -> Node {
-  Node::{ ..self, flex_basis, }
+  { ..self, flex_basis, }
 }
 
 ///|
 pub fn Node::with_row_gap(self : Node, row_gap : Val) -> Node {
-  Node::{ ..self, row_gap, }
+  { ..self, row_gap, }
 }
 
 ///|
 pub fn Node::with_column_gap(self : Node, column_gap : Val) -> Node {
-  Node::{ ..self, column_gap, }
+  { ..self, column_gap, }
 }
 
 ///|
@@ -564,7 +561,7 @@ pub fn Node::with_grid_template_rows(
   self : Node,
   grid_template_rows : Array[RepeatedGridTrack],
 ) -> Node {
-  Node::{ ..self, grid_template_rows, }
+  { ..self, grid_template_rows, }
 }
 
 ///|
@@ -572,13 +569,14 @@ pub fn Node::with_grid_template_columns(
   self : Node,
   grid_template_columns : Array[RepeatedGridTrack],
 ) -> Node {
-  Node::{ ..self, grid_template_columns, }
+  { ..self, grid_template_columns, }
 }
 
 ///|
 pub struct GhostNode {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn GhostNode::GhostNode() -> GhostNode {
   GhostNode::{  }
 }
@@ -587,6 +585,7 @@ pub fn GhostNode::GhostNode() -> GhostNode {
 pub struct UiRoot {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn UiRoot::UiRoot() -> UiRoot {
   UiRoot::{  }
 }
@@ -603,7 +602,7 @@ pub struct UiImage {
 
 ///|
 pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
-  UiImage::{
+  {
     color: @color.Color::white(),
     image,
     texture_atlas: None,
@@ -615,7 +614,7 @@ pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
 
 ///|
 pub fn UiImage::with_color(self : UiImage, color : @color.Color) -> UiImage {
-  UiImage::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -623,22 +622,22 @@ pub fn UiImage::with_texture_atlas(
   self : UiImage,
   texture_atlas : @asset.TextureAtlas?,
 ) -> UiImage {
-  UiImage::{ ..self, texture_atlas, }
+  { ..self, texture_atlas, }
 }
 
 ///|
 pub fn UiImage::with_flip_x(self : UiImage) -> UiImage {
-  UiImage::{ ..self, flip_x: true }
+  { ..self, flip_x: true }
 }
 
 ///|
 pub fn UiImage::with_flip_y(self : UiImage) -> UiImage {
-  UiImage::{ ..self, flip_y: true }
+  { ..self, flip_y: true }
 }
 
 ///|
 pub fn UiImage::with_rect(self : UiImage, rect : @math.Rect?) -> UiImage {
-  UiImage::{ ..self, rect, }
+  { ..self, rect, }
 }
 
 ///|
@@ -664,12 +663,12 @@ pub fn BorderRect::new(
   top : Float,
   bottom : Float,
 ) -> BorderRect {
-  BorderRect::{ left, right, top, bottom }
+  { left, right, top, bottom }
 }
 
 ///|
 pub fn BorderRect::square(value : Float) -> BorderRect {
-  BorderRect::{ left: value, right: value, top: value, bottom: value }
+  { left: value, right: value, top: value, bottom: value }
 }
 
 ///|
@@ -677,12 +676,7 @@ pub fn BorderRect::rectangle(
   horizontal : Float,
   vertical : Float,
 ) -> BorderRect {
-  BorderRect::{
-    left: horizontal,
-    right: horizontal,
-    top: vertical,
-    bottom: vertical,
-  }
+  { left: horizontal, right: horizontal, top: vertical, bottom: vertical }
 }
 
 ///|
@@ -699,7 +693,7 @@ pub(all) enum SliceScaleMode {
 
 ///|
 pub fn SliceScaleMode::default() -> SliceScaleMode {
-  SliceScaleMode::Stretch
+  Stretch
 }
 
 ///|
@@ -713,17 +707,17 @@ pub struct TextureSlicer {
 
 ///|
 pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
-  TextureSlicer::{
+  {
     border,
-    center_scale_mode: SliceScaleMode::Stretch,
-    sides_scale_mode: SliceScaleMode::Stretch,
+    center_scale_mode: Stretch,
+    sides_scale_mode: Stretch,
     max_corner_scale: 1.0F,
   }
 }
 
 ///|
 pub fn TextureSlicer::TextureSlicer() -> TextureSlicer {
-  TextureSlicer::new(BorderRect::BorderRect())
+  TextureSlicer::new(BorderRect())
 }
 
 ///|
@@ -731,7 +725,7 @@ pub fn TextureSlicer::with_center_scale_mode(
   self : TextureSlicer,
   center_scale_mode : SliceScaleMode,
 ) -> TextureSlicer {
-  TextureSlicer::{ ..self, center_scale_mode, }
+  { ..self, center_scale_mode, }
 }
 
 ///|
@@ -739,7 +733,7 @@ pub fn TextureSlicer::with_sides_scale_mode(
   self : TextureSlicer,
   sides_scale_mode : SliceScaleMode,
 ) -> TextureSlicer {
-  TextureSlicer::{ ..self, sides_scale_mode, }
+  { ..self, sides_scale_mode, }
 }
 
 ///|
@@ -747,7 +741,7 @@ pub fn TextureSlicer::with_max_corner_scale(
   self : TextureSlicer,
   max_corner_scale : Float,
 ) -> TextureSlicer {
-  TextureSlicer::{ ..self, max_corner_scale, }
+  { ..self, max_corner_scale, }
 }
 
 ///|
@@ -764,14 +758,14 @@ pub(all) enum NodeImageMode {
 
 ///|
 pub fn NodeImageMode::default() -> NodeImageMode {
-  NodeImageMode::Auto
+  Auto
 }
 
 ///|
 pub fn NodeImageMode::uses_slices(self : NodeImageMode) -> Bool {
   match self {
-    NodeImageMode::Sliced(_) => true
-    NodeImageMode::Tiled(_, _, _) => true
+    Sliced(_) => true
+    Tiled(_, _, _) => true
     _ => false
   }
 }
@@ -790,20 +784,20 @@ pub struct ImageNode {
 
 ///|
 pub fn ImageNode::ImageNode() -> ImageNode {
-  ImageNode::{
+  {
     color: @color.Color::white(),
     image: @asset.asset_transparent_texture(),
     texture_atlas: None,
     flip_x: false,
     flip_y: false,
     rect: None,
-    image_mode: NodeImageMode::Auto,
+    image_mode: Auto,
   }
 }
 
 ///|
 pub fn ImageNode::new(image : @asset.Handle[@asset.Image]) -> ImageNode {
-  ImageNode::{ ..ImageNode(), image, }
+  { ..ImageNode(), image, }
 }
 
 ///|
@@ -819,7 +813,7 @@ pub fn ImageNode::with_color(
   self : ImageNode,
   color : @color.Color,
 ) -> ImageNode {
-  ImageNode::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -827,22 +821,22 @@ pub fn ImageNode::with_texture_atlas(
   self : ImageNode,
   texture_atlas : @asset.TextureAtlas?,
 ) -> ImageNode {
-  ImageNode::{ ..self, texture_atlas, }
+  { ..self, texture_atlas, }
 }
 
 ///|
 pub fn ImageNode::with_flip_x(self : ImageNode) -> ImageNode {
-  ImageNode::{ ..self, flip_x: true }
+  { ..self, flip_x: true }
 }
 
 ///|
 pub fn ImageNode::with_flip_y(self : ImageNode) -> ImageNode {
-  ImageNode::{ ..self, flip_y: true }
+  { ..self, flip_y: true }
 }
 
 ///|
 pub fn ImageNode::with_rect(self : ImageNode, rect : @math.Rect?) -> ImageNode {
-  ImageNode::{ ..self, rect, }
+  { ..self, rect, }
 }
 
 ///|
@@ -850,7 +844,7 @@ pub fn ImageNode::with_mode(
   self : ImageNode,
   image_mode : NodeImageMode,
 ) -> ImageNode {
-  ImageNode::{ ..self, image_mode, }
+  { ..self, image_mode, }
 }
 
 ///|
@@ -866,6 +860,7 @@ pub(all) enum Interaction {
 pub struct Button {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Button::Button() -> Button {
   Button::{  }
 }
@@ -875,6 +870,7 @@ pub fn Button::Button() -> Button {
 pub struct Label {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Label::Label() -> Label {
   Label::{  }
 }
@@ -892,7 +888,7 @@ pub fn ButtonColors::new(
   hovered : @color.Color,
   pressed : @color.Color,
 ) -> ButtonColors {
-  ButtonColors::{ normal, hovered, pressed }
+  { normal, hovered, pressed }
 }
 
 ///|
@@ -942,7 +938,7 @@ priv struct UiResolvedCameraState {
 
 ///|
 fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
-  UiResolvedCameraState::{
+  {
     viewport_origin: @math.Vec2::new(0.0F, 0.0F),
     viewport_size: @math.Vec2::new(0.0F, 0.0F),
     camera_entity: None,
@@ -1015,8 +1011,7 @@ fn ui_viewport_point_to_world(
         } noraise {
           value => value
         }) {
-        Some(@camera_projection2d.Projection::Orthographic(orthographic)) =>
-          orthographic
+        Some(Orthographic(orthographic)) => orthographic
         _ => @camera_projection2d.OrthographicProjection::default_2d()
       }
       let target_size = match camera.physical_target_size() {
@@ -1196,18 +1191,17 @@ fn ui_render_target_targets_primary_window(
   target : @camera_camera.RenderTarget,
 ) -> Bool {
   match target {
-    @camera_camera.RenderTarget::Screen => true
-    @camera_camera.RenderTarget::Window(window_ref) =>
+    Screen => true
+    Window(window_ref) =>
       match window_ref {
-        @window.WindowRef::Primary => true
-        @window.WindowRef::Entity(window_entity) =>
-          match
-            @window.window_entity_for_ref(world, @window.WindowRef::Primary) {
+        Primary => true
+        Entity(window_entity) =>
+          match @window.window_entity_for_ref(world, Primary) {
             Some(primary_window) => ui_entity_eq(window_entity, primary_window)
             None => false
           }
       }
-    @camera_camera.RenderTarget::Image(_) => false
+    Image(_) => false
   }
 }
 
@@ -1229,7 +1223,7 @@ fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
     let target = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
       Some(value) => value
-      None => @camera_camera.RenderTarget::Screen
+      None => Screen
     }
     if !ui_render_target_targets_primary_window(world, target) {
       return
@@ -1259,7 +1253,7 @@ fn ui_camera_transform_for_entity(
     (try! world.get_by_key(
       camera_entity, @camera_projection2d.ecs_key_projection,
     )) {
-    Some(@camera_projection2d.Projection::Orthographic(_)) => ()
+    Some(Orthographic(_)) => ()
     _ => return @transform.Transform::identity()
   }
   match
@@ -1283,8 +1277,7 @@ fn ui_camera_scale_for_entity(
     (try! world.get_by_key(
       camera_entity, @camera_projection2d.ecs_key_projection,
     )) {
-    Some(@camera_projection2d.Projection::Orthographic(projection)) =>
-      safe_camera_scale(projection.scale)
+    Some(Orthographic(projection)) => safe_camera_scale(projection.scale)
     _ => 1.0F
   }
 }
@@ -1328,27 +1321,18 @@ fn ui_compute_render_target_info(
               camera_entity, @camera_camera.ecs_key_render_target,
             )) {
             Some(value) => value
-            None => @camera_camera.RenderTarget::Screen
+            None => Screen
           }
           match target {
-            @camera_camera.RenderTarget::Screen =>
+            Screen =>
               (
                 @math.IVec2::new(
-                  @window.window_physical_width_for(
-                    world,
-                    @window.WindowRef::Primary,
-                  ),
-                  @window.window_physical_height_for(
-                    world,
-                    @window.WindowRef::Primary,
-                  ),
+                  @window.window_physical_width_for(world, Primary),
+                  @window.window_physical_height_for(world, Primary),
                 ),
-                @window.window_scale_factor_for(
-                  world,
-                  @window.WindowRef::Primary,
-                ),
+                @window.window_scale_factor_for(world, Primary),
               )
-            @camera_camera.RenderTarget::Window(window_ref) =>
+            Window(window_ref) =>
               (
                 @math.IVec2::new(
                   @window.window_physical_width_for(world, window_ref),
@@ -1356,7 +1340,7 @@ fn ui_compute_render_target_info(
                 ),
                 @window.window_scale_factor_for(world, window_ref),
               )
-            @camera_camera.RenderTarget::Image(handle) =>
+            Image(handle) =>
               (
                 @math.IVec2::new(
                   @asset.asset_texture_width(handle),
@@ -1380,7 +1364,7 @@ fn ui_compute_render_target_info(
       let scale_factor = target_scale_factor * ui_scale_value
       ComputedUiRenderTargetInfo::new(scale_factor, physical_size)
     }
-    None => ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo()
+    None => ComputedUiRenderTargetInfo()
   }
 }
 
@@ -1388,7 +1372,7 @@ fn ui_compute_render_target_info(
 fn ui_resolved_camera_state_from_fallback_ctx(
   ctx : UiContext,
 ) -> UiResolvedCameraState {
-  UiResolvedCameraState::{
+  {
     viewport_origin: ctx.viewport_origin,
     viewport_size: ctx.viewport_size,
     camera_entity: ctx.camera_entity,
@@ -1415,7 +1399,7 @@ fn ui_resolved_camera_state_from_computed(
     camera_transform = ui_camera_transform_for_entity(world, entity)
     camera_scale = ui_camera_scale_for_entity(world, entity)
   }
-  UiResolvedCameraState::{
+  {
     viewport_origin,
     viewport_size: render_target_info.logical_size(),
     camera_entity,
@@ -1561,13 +1545,9 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   ctx.camera_transform = camera_transform
   ctx.camera_scale = camera_scale
   ctx.pointer_pos = pointer_pos
-  ctx.pointer_down = @input.mouse_button_pressed(@window.MouseButton::Left)
-  ctx.pointer_just_pressed = @input.mouse_button_just_pressed(
-    @window.MouseButton::Left,
-  )
-  ctx.pointer_just_released = @input.mouse_button_just_released(
-    @window.MouseButton::Left,
-  )
+  ctx.pointer_down = @input.mouse_button_pressed(Left)
+  ctx.pointer_just_pressed = @input.mouse_button_just_pressed(Left)
+  ctx.pointer_just_released = @input.mouse_button_just_released(Left)
   ctx.wheel_delta = match @input.mouse_wheel_delta_opt() {
     Some(v) => v
     None => @math.Vec2::new(0.0F, 0.0F)
@@ -1678,7 +1658,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
       return
     }
     let is_auto = match image_node.image_mode {
-      NodeImageMode::Auto => true
+      Auto => true
       _ => false
     }
     if image_node.image.id() == transparent_id || !is_auto {
@@ -1794,12 +1774,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     viewport_size : @math.Vec2,
   ) -> Float {
     match val {
-      Val::Auto => 0.0F
-      Val::Px(px) => px
-      Val::Percent(p) => node_axis * (p / 100.0F)
-      Val::Vw(p) => viewport_size.x * (p / 100.0F)
-      Val::Vh(p) => viewport_size.y * (p / 100.0F)
-      Val::VMin(p) => {
+      Auto => 0.0F
+      Px(px) => px
+      Percent(p) => node_axis * (p / 100.0F)
+      Vw(p) => viewport_size.x * (p / 100.0F)
+      Vh(p) => viewport_size.y * (p / 100.0F)
+      VMin(p) => {
         let m = if viewport_size.x < viewport_size.y {
           viewport_size.x
         } else {
@@ -1807,7 +1787,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         }
         m * (p / 100.0F)
       }
-      Val::VMax(p) => {
+      VMax(p) => {
         let m = if viewport_size.x > viewport_size.y {
           viewport_size.x
         } else {
@@ -1821,7 +1801,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn rect_for_uirect(
     r : UiRect,
   ) -> @chicle_geometry.Rect[@chicle_style.Dimension] {
-    @chicle_geometry.Rect(
+    Rect(
       left=dim_for_val(r.left),
       right=dim_for_val(r.right),
       top=dim_for_val(r.top),
@@ -1833,17 +1813,17 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     w : Val,
     h : Val,
   ) -> @chicle_geometry.Size[@chicle_style.Dimension] {
-    @chicle_geometry.Size(width=dim_for_val(w), height=dim_for_val(h))
+    Size(width=dim_for_val(w), height=dim_for_val(h))
   }
 
   fn grid_track_to_chicle(track : GridTrack) -> @chicle_style.Dimension {
     match track {
-      GridTrack::Auto => @chicle_helpers.auto()
-      GridTrack::Px(px) => @chicle_helpers.length(f2d(px))
-      GridTrack::Percent(p) => @chicle_helpers.percent(f2d(p))
-      GridTrack::Fr(w) => @chicle_helpers.fr(f2d(w))
-      GridTrack::MinContent => @chicle_helpers.grid_min_content()
-      GridTrack::MaxContent => @chicle_helpers.grid_max_content()
+      Auto => @chicle_helpers.auto()
+      Px(px) => @chicle_helpers.length(f2d(px))
+      Percent(p) => @chicle_helpers.percent(f2d(p))
+      Fr(w) => @chicle_helpers.fr(f2d(w))
+      MinContent => @chicle_helpers.grid_min_content()
+      MaxContent => @chicle_helpers.grid_max_content()
     }
   }
 
@@ -1851,9 +1831,9 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     repetition : GridTrackRepetition,
   ) -> @chicle_style.GridTrackRepetition {
     match repetition {
-      GridTrackRepetition::Count(n) => @chicle_helpers.repeat_count(n)
-      GridTrackRepetition::AutoFill => @chicle_helpers.repeat_auto_fill()
-      GridTrackRepetition::AutoFit => @chicle_helpers.repeat_auto_fit()
+      Count(n) => @chicle_helpers.repeat_count(n)
+      AutoFill => @chicle_helpers.repeat_auto_fill()
+      AutoFit => @chicle_helpers.repeat_auto_fit()
     }
   }
 
@@ -1865,7 +1845,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       tracks.push(grid_track_to_chicle(track))
     }
     match rep.repetition {
-      GridTrackRepetition::Count(1) =>
+      Count(1) =>
         if tracks.length() == 1 {
           tracks[0]
         } else {
@@ -1904,17 +1884,17 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   fn overflow_axis_to_chicle(axis : OverflowAxis) -> @chicle_style.Overflow {
     match axis {
-      OverflowAxis::Visible => @chicle_helpers.overflow_visible()
-      OverflowAxis::Hidden => @chicle_helpers.overflow_hidden()
-      OverflowAxis::Scroll => @chicle_helpers.overflow_scroll()
-      OverflowAxis::Clip => @chicle_helpers.overflow_clip()
+      Visible => @chicle_helpers.overflow_visible()
+      Hidden => @chicle_helpers.overflow_hidden()
+      Scroll => @chicle_helpers.overflow_scroll()
+      Clip => @chicle_helpers.overflow_clip()
     }
   }
 
   fn overflow_to_chicle(
     overflow : Overflow,
   ) -> @chicle_geometry.Point[@chicle_style.Overflow] {
-    @chicle_geometry.Point(
+    Point(
       x=overflow_axis_to_chicle(overflow.x),
       y=overflow_axis_to_chicle(overflow.y),
     )
@@ -1922,10 +1902,10 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
   fn display_to_chicle(display : Display) -> @chicle_style.Display {
     match display {
-      Display::Block => @chicle_helpers.display_block()
-      Display::Flex => @chicle_helpers.display_flex()
-      Display::Grid => @chicle_helpers.display_grid()
-      Display::None => @chicle_helpers.display_none()
+      Block => @chicle_helpers.display_block()
+      Flex => @chicle_helpers.display_flex()
+      Grid => @chicle_helpers.display_grid()
+      None => @chicle_helpers.display_none()
     }
   }
 
@@ -1933,8 +1913,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     position_type : PositionType,
   ) -> @chicle_style.Position {
     match position_type {
-      PositionType::Relative => @chicle_helpers.position_relative()
-      PositionType::Absolute => @chicle_helpers.position_absolute()
+      Relative => @chicle_helpers.position_relative()
+      Absolute => @chicle_helpers.position_absolute()
     }
   }
 
@@ -1942,32 +1922,31 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     dir : FlexDirection,
   ) -> @chicle_style.FlexDirection {
     match dir {
-      FlexDirection::Row => @chicle_helpers.flex_direction_row()
-      FlexDirection::RowReverse => @chicle_helpers.flex_direction_row_reverse()
-      FlexDirection::Column => @chicle_helpers.flex_direction_column()
-      FlexDirection::ColumnReverse =>
-        @chicle_helpers.flex_direction_column_reverse()
+      Row => @chicle_helpers.flex_direction_row()
+      RowReverse => @chicle_helpers.flex_direction_row_reverse()
+      Column => @chicle_helpers.flex_direction_column()
+      ColumnReverse => @chicle_helpers.flex_direction_column_reverse()
     }
   }
 
   fn flex_wrap_to_chicle(wrap : FlexWrap) -> @chicle_style.FlexWrap {
     match wrap {
-      FlexWrap::NoWrap => @chicle_helpers.flex_wrap_no_wrap()
-      FlexWrap::Wrap => @chicle_helpers.flex_wrap_wrap()
-      FlexWrap::WrapReverse => @chicle_helpers.flex_wrap_wrap_reverse()
+      NoWrap => @chicle_helpers.flex_wrap_no_wrap()
+      Wrap => @chicle_helpers.flex_wrap_wrap()
+      WrapReverse => @chicle_helpers.flex_wrap_wrap_reverse()
     }
   }
 
   fn align_items_to_chicle(items : AlignItems) -> @chicle_style.AlignItems? {
     match items {
-      AlignItems::Default => None
-      AlignItems::Baseline => Some(@chicle_helpers.align_items_baseline())
-      AlignItems::Center => Some(@chicle_helpers.align_items_center())
-      AlignItems::End => Some(@chicle_helpers.align_items_end())
-      AlignItems::FlexEnd => Some(@chicle_helpers.align_items_flex_end())
-      AlignItems::FlexStart => Some(@chicle_helpers.align_items_flex_start())
-      AlignItems::Start => Some(@chicle_helpers.align_items_start())
-      AlignItems::Stretch => Some(@chicle_helpers.align_items_stretch())
+      Default => None
+      Baseline => Some(@chicle_helpers.align_items_baseline())
+      Center => Some(@chicle_helpers.align_items_center())
+      End => Some(@chicle_helpers.align_items_end())
+      FlexEnd => Some(@chicle_helpers.align_items_flex_end())
+      FlexStart => Some(@chicle_helpers.align_items_flex_start())
+      Start => Some(@chicle_helpers.align_items_start())
+      Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
@@ -1975,25 +1954,25 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     items : JustifyItems,
   ) -> @chicle_style.JustifyItems? {
     match items {
-      JustifyItems::Default => None
-      JustifyItems::Baseline => Some(@chicle_helpers.align_items_baseline())
-      JustifyItems::Center => Some(@chicle_helpers.align_items_center())
-      JustifyItems::End => Some(@chicle_helpers.align_items_end())
-      JustifyItems::Start => Some(@chicle_helpers.align_items_start())
-      JustifyItems::Stretch => Some(@chicle_helpers.align_items_stretch())
+      Default => None
+      Baseline => Some(@chicle_helpers.align_items_baseline())
+      Center => Some(@chicle_helpers.align_items_center())
+      End => Some(@chicle_helpers.align_items_end())
+      Start => Some(@chicle_helpers.align_items_start())
+      Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
   fn align_self_to_chicle(align_self : AlignSelf) -> @chicle_style.AlignSelf? {
     match align_self {
-      AlignSelf::Auto => None
-      AlignSelf::Baseline => Some(@chicle_helpers.align_items_baseline())
-      AlignSelf::Center => Some(@chicle_helpers.align_items_center())
-      AlignSelf::End => Some(@chicle_helpers.align_items_end())
-      AlignSelf::FlexEnd => Some(@chicle_helpers.align_items_flex_end())
-      AlignSelf::FlexStart => Some(@chicle_helpers.align_items_flex_start())
-      AlignSelf::Start => Some(@chicle_helpers.align_items_start())
-      AlignSelf::Stretch => Some(@chicle_helpers.align_items_stretch())
+      Auto => None
+      Baseline => Some(@chicle_helpers.align_items_baseline())
+      Center => Some(@chicle_helpers.align_items_center())
+      End => Some(@chicle_helpers.align_items_end())
+      FlexEnd => Some(@chicle_helpers.align_items_flex_end())
+      FlexStart => Some(@chicle_helpers.align_items_flex_start())
+      Start => Some(@chicle_helpers.align_items_start())
+      Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
@@ -2001,12 +1980,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     justify_self : JustifySelf,
   ) -> @chicle_style.JustifySelf? {
     match justify_self {
-      JustifySelf::Auto => None
-      JustifySelf::Baseline => Some(@chicle_helpers.align_items_baseline())
-      JustifySelf::Center => Some(@chicle_helpers.align_items_center())
-      JustifySelf::End => Some(@chicle_helpers.align_items_end())
-      JustifySelf::Start => Some(@chicle_helpers.align_items_start())
-      JustifySelf::Stretch => Some(@chicle_helpers.align_items_stretch())
+      Auto => None
+      Baseline => Some(@chicle_helpers.align_items_baseline())
+      Center => Some(@chicle_helpers.align_items_center())
+      End => Some(@chicle_helpers.align_items_end())
+      Start => Some(@chicle_helpers.align_items_start())
+      Stretch => Some(@chicle_helpers.align_items_stretch())
     }
   }
 
@@ -2014,20 +1993,16 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     content : AlignContent,
   ) -> @chicle_style.AlignContent? {
     match content {
-      AlignContent::Default => None
-      AlignContent::Center => Some(@chicle_helpers.align_content_center())
-      AlignContent::End => Some(@chicle_helpers.align_content_end())
-      AlignContent::FlexEnd => Some(@chicle_helpers.align_content_flex_end())
-      AlignContent::FlexStart =>
-        Some(@chicle_helpers.align_content_flex_start())
-      AlignContent::SpaceAround =>
-        Some(@chicle_helpers.align_content_space_around())
-      AlignContent::SpaceBetween =>
-        Some(@chicle_helpers.align_content_space_between())
-      AlignContent::SpaceEvenly =>
-        Some(@chicle_helpers.align_content_space_evenly())
-      AlignContent::Start => Some(@chicle_helpers.align_content_start())
-      AlignContent::Stretch => Some(@chicle_helpers.align_content_stretch())
+      Default => None
+      Center => Some(@chicle_helpers.align_content_center())
+      End => Some(@chicle_helpers.align_content_end())
+      FlexEnd => Some(@chicle_helpers.align_content_flex_end())
+      FlexStart => Some(@chicle_helpers.align_content_flex_start())
+      SpaceAround => Some(@chicle_helpers.align_content_space_around())
+      SpaceBetween => Some(@chicle_helpers.align_content_space_between())
+      SpaceEvenly => Some(@chicle_helpers.align_content_space_evenly())
+      Start => Some(@chicle_helpers.align_content_start())
+      Stretch => Some(@chicle_helpers.align_content_stretch())
     }
   }
 
@@ -2035,21 +2010,16 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     content : JustifyContent,
   ) -> @chicle_style.JustifyContent? {
     match content {
-      JustifyContent::Default => None
-      JustifyContent::Center => Some(@chicle_helpers.justify_content_center())
-      JustifyContent::End => Some(@chicle_helpers.justify_content_end())
-      JustifyContent::FlexEnd =>
-        Some(@chicle_helpers.justify_content_flex_end())
-      JustifyContent::FlexStart =>
-        Some(@chicle_helpers.justify_content_flex_start())
-      JustifyContent::SpaceAround =>
-        Some(@chicle_helpers.justify_content_space_around())
-      JustifyContent::SpaceBetween =>
-        Some(@chicle_helpers.justify_content_space_between())
-      JustifyContent::SpaceEvenly =>
-        Some(@chicle_helpers.justify_content_space_evenly())
-      JustifyContent::Start => Some(@chicle_helpers.justify_content_start())
-      JustifyContent::Stretch => Some(@chicle_helpers.justify_content_stretch())
+      Default => None
+      Center => Some(@chicle_helpers.justify_content_center())
+      End => Some(@chicle_helpers.justify_content_end())
+      FlexEnd => Some(@chicle_helpers.justify_content_flex_end())
+      FlexStart => Some(@chicle_helpers.justify_content_flex_start())
+      SpaceAround => Some(@chicle_helpers.justify_content_space_around())
+      SpaceBetween => Some(@chicle_helpers.justify_content_space_between())
+      SpaceEvenly => Some(@chicle_helpers.justify_content_space_evenly())
+      Start => Some(@chicle_helpers.justify_content_start())
+      Stretch => Some(@chicle_helpers.justify_content_stretch())
     }
   }
 
@@ -2057,10 +2027,10 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     flow : GridAutoFlow,
   ) -> @chicle_style.GridAutoFlow {
     match flow {
-      GridAutoFlow::Row => @chicle_helpers.grid_auto_flow_row()
-      GridAutoFlow::RowDense => @chicle_helpers.grid_auto_flow_row_dense()
-      GridAutoFlow::Column => @chicle_helpers.grid_auto_flow_column()
-      GridAutoFlow::ColumnDense => @chicle_helpers.grid_auto_flow_column_dense()
+      Row => @chicle_helpers.grid_auto_flow_row()
+      RowDense => @chicle_helpers.grid_auto_flow_row_dense()
+      Column => @chicle_helpers.grid_auto_flow_column()
+      ColumnDense => @chicle_helpers.grid_auto_flow_column_dense()
     }
   }
 
@@ -2073,25 +2043,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     }
     match (value.start, value.end) {
       (Some(start), Some(end)) =>
-        @chicle_geometry.Line(
-          start=@chicle_helpers.line(start),
-          end=@chicle_helpers.line(end),
-        )
+        Line(start=@chicle_helpers.line(start), end=@chicle_helpers.line(end))
       (Some(start), None) =>
-        @chicle_geometry.Line(
-          start=@chicle_helpers.line(start),
-          end=@chicle_helpers.span(span),
-        )
+        Line(start=@chicle_helpers.line(start), end=@chicle_helpers.span(span))
       (None, Some(end)) =>
-        @chicle_geometry.Line(
-          start=@chicle_helpers.span(span),
-          end=@chicle_helpers.line(end),
-        )
+        Line(start=@chicle_helpers.span(span), end=@chicle_helpers.line(end))
       (None, None) =>
-        @chicle_geometry.Line(
-          start=@chicle_helpers.span(span),
-          end=@chicle_helpers.place_auto(),
-        )
+        Line(start=@chicle_helpers.span(span), end=@chicle_helpers.place_auto())
     }
   }
 
@@ -2105,13 +2063,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   ) -> @chicle_style.Style {
     let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
-      None => Node::Node()
+      None => Node()
     }
     let mut style = @chicle_style.Style::default()
       .with_display(display_to_chicle(node.display))
       .with_position(position_to_chicle(node.position_type))
       .with_inset(
-        @chicle_geometry.Rect(
+        Rect(
           left=dim_for_val(node.left),
           right=dim_for_val(node.right),
           top=dim_for_val(node.top),
@@ -2139,7 +2097,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       .with_grid_row(grid_placement_to_chicle(node.grid_row))
       .with_grid_column(grid_placement_to_chicle(node.grid_column))
       .with_gap(
-        @chicle_geometry.Size(
+        Size(
           width=dim_for_val(node.column_gap),
           height=dim_for_val(node.row_gap),
         ),
@@ -2177,7 +2135,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       style = style
         .with_position(@chicle_helpers.position_relative())
         .with_size(
-          @chicle_geometry.Size(
+          Size(
             width=@chicle_helpers.length(f2d(root_viewport_size.x)),
             height=@chicle_helpers.length(f2d(root_viewport_size.y)),
           ),
@@ -2195,7 +2153,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
     let chicle = @chicle_tree.ChicleTree()
-    let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap([])
+    let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = HashMap([])
     fn build(entity : @core.Entity, is_root : Bool) -> Array[Int] {
       let child_ids : Array[Int] = []
       for child in ui_collect_effective_children(world, entity) {
@@ -2232,7 +2190,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let viewport_root_style = @chicle_style.Style::default()
         .with_position(@chicle_helpers.position_relative())
         .with_size(
-          @chicle_geometry.Size(
+          Size(
             width=@chicle_helpers.length(f2d(root_ctx.viewport_size.x)),
             height=@chicle_helpers.length(f2d(root_ctx.viewport_size.y)),
           ),
@@ -2249,7 +2207,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     )
     fn available_to_option(v : @chicle_geometry.AvailableSpace) -> Double? {
       match v {
-        @chicle_geometry.AvailDefinite(x) => Some(x)
+        AvailDefinite(x) => Some(x)
         _ => None
       }
     }
@@ -2259,8 +2217,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       parent : Double?,
     ) -> Double? {
       match dim {
-        @chicle_style.DimLength(x) => Some(x)
-        @chicle_style.DimPercent(p) =>
+        DimLength(x) => Some(x)
+        DimPercent(p) =>
           match parent {
             Some(base) => Some(base * p)
             None => None
@@ -2351,7 +2309,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           }
           let out_w = clamp_f64(width.unwrap_or(intrinsic_w), s_min_w, s_max_w)
           let out_h = clamp_f64(height.unwrap_or(intrinsic_h), s_min_h, s_max_h)
-          @chicle_geometry.Size(width=out_w, height=out_h)
+          Size(width=out_w, height=out_h)
         }
         None => @chicle_geometry.Size::zero()
       }
@@ -2386,7 +2344,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let node_for_layout = match
         (try! world.get_by_key(entity, ecs_key_node)) {
         Some(v) => v
-        None => Node::Node()
+        None => Node()
       }
       let border_l = clamp_nonneg(
         resolve_axis(
@@ -2444,7 +2402,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let mut outline_offset = 0.0F
       match (try! world.get_by_key(entity, ecs_key_outline)) {
         Some(outline) => {
-          if node_for_layout.display != Display::None {
+          if node_for_layout.display != None {
             outline_width = clamp_nonneg(
               outline.width.resolve(1.0F, size.x, root_ctx.viewport_size) catch {
                 _ => 0.0F
@@ -2538,10 +2496,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
             content_rect,
             ui_world_transform(root_ctx, content_rect, 0.0F),
           )
-          @text.text_set_y_axis(
-            text_handle,
-            @text.YAxisOrientation::TopToBottom,
-          )
+          @text.text_set_y_axis(text_handle, TopToBottom)
           @text.text_set_ui_node_size(text_handle, Some(content_size))
           @text.text_set_transform(text_handle, text_transform)
           @text.text_set_layers(text_handle, layers)
@@ -2550,25 +2505,23 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let scroll_raw = match
         (try! world.get_by_key(entity, ecs_key_scroll_position)) {
         Some(v) => v
-        None => ScrollPosition::ScrollPosition()
+        None => ScrollPosition()
       }
       let scroll = match (try! world.get_by_key(entity, ecs_key_node)) {
         Some(node) => {
-          let x = if node.overflow.x == OverflowAxis::Scroll &&
-            scroll_raw.offset_x > 0.0F {
+          let x = if node.overflow.x == Scroll && scroll_raw.offset_x > 0.0F {
             scroll_raw.offset_x
           } else {
             0.0F
           }
-          let y = if node.overflow.y == OverflowAxis::Scroll &&
-            scroll_raw.offset_y > 0.0F {
+          let y = if node.overflow.y == Scroll && scroll_raw.offset_y > 0.0F {
             scroll_raw.offset_y
           } else {
             0.0F
           }
           ScrollPosition::new(x, y)
         }
-        None => ScrollPosition::ScrollPosition()
+        None => ScrollPosition()
       }
       let child_rect = @math.Rect::new(
         @math.Vec2::new(
@@ -2628,8 +2581,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
     if !layout.rect.contains(pointer) {
       continue
     }
-    let can_scroll = node.overflow.x == OverflowAxis::Scroll ||
-      node.overflow.y == OverflowAxis::Scroll
+    let can_scroll = node.overflow.x == Scroll || node.overflow.y == Scroll
     if !can_scroll {
       continue
     }
@@ -2639,13 +2591,13 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   guard target is Some(target_e) else { return }
   let prev = match (try! world.get_by_key(target_e, ecs_key_scroll_position)) {
     Some(v) => v
-    None => ScrollPosition::ScrollPosition()
+    None => ScrollPosition()
   }
   guard (try! world.get_by_key(target_e, ecs_key_node)) is Some(target_node) else {
     return
   }
-  let scrolls_x = target_node.overflow.x == OverflowAxis::Scroll
-  let scrolls_y = target_node.overflow.y == OverflowAxis::Scroll
+  let scrolls_x = target_node.overflow.x == Scroll
+  let scrolls_y = target_node.overflow.y == Scroll
   let abs_dx = if delta.x < 0.0F { 0.0F - delta.x } else { delta.x }
   let abs_dy = if delta.y < 0.0F { 0.0F - delta.y } else { delta.y }
   let mut dx = delta.x
@@ -2732,12 +2684,12 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
       }
     }
   }
-  let mut next_x = if target_node.overflow.x == OverflowAxis::Scroll {
+  let mut next_x = if target_node.overflow.x == Scroll {
     prev.offset_x + dx
   } else {
     0.0F
   }
-  let mut next_y = if target_node.overflow.y == OverflowAxis::Scroll {
+  let mut next_y = if target_node.overflow.y == Scroll {
     prev.offset_y + dy
   } else {
     0.0F
@@ -2845,13 +2797,13 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     }
     let node = match (try! world.get_by_key(entity, ecs_key_node)) {
       Some(v) => v
-      None => Node::Node()
+      None => Node()
     }
     let mut child_clip = self_clip
     let mut child_clipped = clipped_by_parent
     if (try! world.get_by_key(entity, ecs_key_ui_layout)) is Some(layout) {
-      let overflow_clips = node.overflow.x != OverflowAxis::Visible ||
-        node.overflow.y != OverflowAxis::Visible
+      let overflow_clips = node.overflow.x != Visible ||
+        node.overflow.y != Visible
       if overflow_clips {
         let local_clip = layout.resolve_clip_rect(
           node.overflow,
@@ -2899,7 +2851,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 /// while preserving insertion order for ties.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let res = get_ui_stack_resource(world)
-  let stack = res.get().unwrap_or(UiStack::UiStack())
+  let stack = res.get().unwrap_or(UiStack())
   UiStack::clear(stack)
   fn cmp_int(a : Int, b : Int) -> Int {
     if a < b {
@@ -2925,7 +2877,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     }
   }
 
-  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
   let roots : Array[(@core.Entity, Int, Int, Int)] = []
 
   // Root candidates: unparented UI layout nodes.
@@ -3095,12 +3047,12 @@ pub fn ui_build_a11y_tree_update(
       @moon_accesskit.TreeId::root(),
       root,
     )
-    update.set_tree(@moon_accesskit.Tree::Tree(root))
+    update.set_tree(Tree(root))
     update
   }
   // Build the set of required nodes (focusables + their ancestor chain), so
   // every node's parent always exists in this update.
-  let required : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let required : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
   fn key(entity : @core.Entity) -> (Int, Int) {
     (entity.id, entity.generation)
   }
@@ -3221,8 +3173,8 @@ pub fn ui_build_a11y_tree_update(
     }
   }
   let update = @moon_accesskit.TreeUpdate::TreeUpdate(tree_id, focus_id)
-  update.set_tree(@moon_accesskit.Tree::Tree(root_id))
-  let root_node = @moon_accesskit.Node::Node(@moon_accesskit.Role::Window)
+  update.set_tree(Tree(root_id))
+  let root_node = @moon_accesskit.Node::Node(Window)
   let mut root_min_x = 0.0
   let mut root_min_y = 0.0
   let mut root_max_x = 0.0
@@ -3264,9 +3216,7 @@ pub fn ui_build_a11y_tree_update(
       }
     }
   }
-  root_node.set_bounds(
-    @moon_accesskit.Rect::Rect(root_min_x, root_min_y, root_max_x, root_max_y),
-  )
+  root_node.set_bounds(Rect(root_min_x, root_min_y, root_max_x, root_max_y))
 
   // Attach top-level required nodes under the root.
   for entity in stack0.uinodes {
@@ -3303,13 +3253,13 @@ pub fn ui_build_a11y_tree_update(
     let role = if (try! world.contains_by_key(entity, ecs_key_button)) {
       @moon_accesskit.Role::Button
     } else if is_editable {
-      @moon_accesskit.Role::TextInput
+      TextInput
     } else if (try! world.contains_by_key(entity, ecs_key_label)) {
-      @moon_accesskit.Role::Label
+      Label
     } else if (try! world.contains_by_key(entity, ecs_key_image_node)) {
-      @moon_accesskit.Role::Image
+      Image
     } else {
-      @moon_accesskit.Role::GenericContainer
+      GenericContainer
     }
     let node = @moon_accesskit.Node::Node(role)
 
@@ -3328,7 +3278,7 @@ pub fn ui_build_a11y_tree_update(
     let size = rect.size()
     let x1 = (entity_ctx.viewport_origin.x + rect.min.x + size.x).to_double()
     let y1 = (entity_ctx.viewport_origin.y + rect.min.y + size.y).to_double()
-    node.set_bounds(@moon_accesskit.Rect::Rect(x0, y0, x1, y1))
+    node.set_bounds(Rect(x0, y0, x1, y1))
     if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
       node.set_clips_children()
     }
@@ -3336,23 +3286,22 @@ pub fn ui_build_a11y_tree_update(
       Some(vv) => if !vv.is_visible() { node.set_hidden() }
       None => ()
     }
-    let can_set_value = role == @moon_accesskit.Role::TextInput
-    if role == @moon_accesskit.Role::Button {
-      node.add_action(@moon_accesskit.Action::Focus)
-      node.add_action(@moon_accesskit.Action::Click)
+    let can_set_value = role == TextInput
+    if role == Button {
+      node.add_action(Focus)
+      node.add_action(Click)
     }
     if (try! world.contains_by_key(entity, ecs_key_scroll_position)) {
-      node.add_action(@moon_accesskit.Action::ScrollUp)
-      node.add_action(@moon_accesskit.Action::ScrollDown)
-      node.add_action(@moon_accesskit.Action::ScrollLeft)
-      node.add_action(@moon_accesskit.Action::ScrollRight)
+      node.add_action(ScrollUp)
+      node.add_action(ScrollDown)
+      node.add_action(ScrollLeft)
+      node.add_action(ScrollRight)
     }
     if can_set_value {
-      node.add_action(@moon_accesskit.Action::SetValue)
-      node.add_action(@moon_accesskit.Action::Focus)
+      node.add_action(SetValue)
+      node.add_action(Focus)
     }
-    if role == @moon_accesskit.Role::Button ||
-      role == @moon_accesskit.Role::Image {
+    if role == Button || role == Image {
       let name = if explicit_label != "" {
         Some(explicit_label)
       } else {
@@ -3362,14 +3311,14 @@ pub fn ui_build_a11y_tree_update(
         Some(s) => if s != "" { node.set_label(s) }
         None => ()
       }
-    } else if role == @moon_accesskit.Role::Label {
+    } else if role == Label {
       let value = calc_value_from_self(entity)
       if explicit_label != "" {
         node.set_label(explicit_label)
       }
       // Bevy-aligned: keep a `Label` node's value even if it is empty.
       node.set_value(value)
-    } else if role == @moon_accesskit.Role::TextInput {
+    } else if role == TextInput {
       if explicit_label != "" {
         node.set_label(explicit_label)
       }
@@ -3457,7 +3406,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       candidates.push(entity)
     }
     if !(try! world.contains_by_key(entity, ecs_key_interaction)) {
-      try! world.set_by_key(entity, ecs_key_interaction, Interaction::None)
+      try! world.set_by_key(entity, ecs_key_interaction, None)
     }
   })
   fn rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
@@ -3644,7 +3593,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       } else {
         try! world.set_by_key(entity, ecs_key_relative_cursor_position, rcp)
       }
-      let next = if down { Interaction::Pressed } else { Interaction::Hovered }
+      let next = if down { Interaction::Pressed } else { Hovered }
       if (try! world.contains_by_key(entity, ecs_key_interaction)) {
         try! (world.replace(entity, ecs_key_interaction, next) |> ignore)
       } else {
@@ -3653,9 +3602,9 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       active.push(entity)
       let focus = match (try! world.get_by_key(entity, ecs_key_focus_policy)) {
         Some(v) => v
-        None => FocusPolicy::Block
+        None => Block
       }
-      if focus == FocusPolicy::Block {
+      if focus == Block {
         captured = true
       }
     }
@@ -3668,17 +3617,16 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
     }
     let prev = match (try! world.get_by_key(entity, ecs_key_interaction)) {
       Some(v) => v
-      None => Interaction::None
+      None => None
     }
-    if prev != Interaction::None {
-      try! (world.replace(entity, ecs_key_interaction, Interaction::None)
-      |> ignore)
+    if prev != None {
+      try! (world.replace(entity, ecs_key_interaction, None) |> ignore)
     }
     if (try! world.contains_by_key(entity, ecs_key_relative_cursor_position)) {
       try! (world.replace(
         entity,
         ecs_key_relative_cursor_position,
-        RelativeCursorPosition::RelativeCursorPosition(),
+        RelativeCursorPosition(),
       )
       |> ignore)
     }

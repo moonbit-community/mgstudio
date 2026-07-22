@@ -217,10 +217,10 @@ fn setup(
           "Controls:\nSpace: Change UVs\nX/Y/Z: Rotate\nR: Reset orientation",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(12.0F),
-          left: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(12.0F),
+          left: Px(12.0F),
         },
       ),
     ),
@@ -235,7 +235,7 @@ fn input_handler(
   query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[CustomUV]],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  if keyboard_input.just_pressed(@window.KeyCode::Space) {
+  if keyboard_input.just_pressed(Space) {
     guard (mesh_query.single() catch { _ => None }) is Some(mesh_handle_comp) else {
       return
     }
@@ -248,7 +248,7 @@ fn input_handler(
       }
     })
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyX) {
+  if keyboard_input.pressed(KeyX) {
     try! query.view(fn(_entity, transform) {
       let current = transform.value()
       transform.set(
@@ -260,7 +260,7 @@ fn input_handler(
       )
     })
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyY) {
+  if keyboard_input.pressed(KeyY) {
     try! query.view(fn(_entity, transform) {
       let current = transform.value()
       transform.set(
@@ -272,7 +272,7 @@ fn input_handler(
       )
     })
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyZ) {
+  if keyboard_input.pressed(KeyZ) {
     try! query.view(fn(_entity, transform) {
       let current = transform.value()
       transform.set(
@@ -284,7 +284,7 @@ fn input_handler(
       )
     })
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyR) {
+  if keyboard_input.pressed(KeyR) {
     try! query.view(fn(_entity, transform) {
       transform.set(transform.value().with_rotation(@math.Quat::identity()))
     })
@@ -295,7 +295,7 @@ fn input_handler(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param5(@app.Update, input_handler)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param5(Update, input_handler)
   .run()
 }

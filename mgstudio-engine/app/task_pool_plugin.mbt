@@ -24,29 +24,17 @@ pub(all) struct TaskPoolThreadAssignmentPolicy {
 
 ///|
 pub fn TaskPoolThreadAssignmentPolicy::default_io() -> TaskPoolThreadAssignmentPolicy {
-  TaskPoolThreadAssignmentPolicy::{
-    min_threads: 1,
-    max_threads: 4,
-    percent: 0.25F,
-  }
+  { min_threads: 1, max_threads: 4, percent: 0.25F }
 }
 
 ///|
 pub fn TaskPoolThreadAssignmentPolicy::default_async_compute() -> TaskPoolThreadAssignmentPolicy {
-  TaskPoolThreadAssignmentPolicy::{
-    min_threads: 1,
-    max_threads: 4,
-    percent: 0.25F,
-  }
+  { min_threads: 1, max_threads: 4, percent: 0.25F }
 }
 
 ///|
 pub fn TaskPoolThreadAssignmentPolicy::default_compute() -> TaskPoolThreadAssignmentPolicy {
-  TaskPoolThreadAssignmentPolicy::{
-    min_threads: 1,
-    max_threads: 2147483647,
-    percent: 1.0F,
-  }
+  { min_threads: 1, max_threads: 2147483647, percent: 1.0F }
 }
 
 ///|
@@ -60,7 +48,7 @@ pub(all) struct TaskPoolOptions {
 
 ///|
 pub fn TaskPoolOptions::TaskPoolOptions() -> TaskPoolOptions {
-  TaskPoolOptions::{
+  {
     min_total_threads: 1,
     max_total_threads: 2147483647,
     io: TaskPoolThreadAssignmentPolicy::default_io(),
@@ -71,7 +59,7 @@ pub fn TaskPoolOptions::TaskPoolOptions() -> TaskPoolOptions {
 
 ///|
 pub fn TaskPoolOptions::with_num_threads(thread_count : Int) -> TaskPoolOptions {
-  TaskPoolOptions::{
+  {
     ..TaskPoolOptions(),
     min_total_threads: thread_count,
     max_total_threads: thread_count,
@@ -90,7 +78,7 @@ pub(all) struct TaskPoolPlugin {
 
 ///|
 pub fn TaskPoolPlugin::TaskPoolPlugin() -> TaskPoolPlugin {
-  TaskPoolPlugin::{ task_pool_options: TaskPoolOptions::TaskPoolOptions() }
+  { task_pool_options: TaskPoolOptions() }
 }
 
 ///|

@@ -62,7 +62,7 @@ pub impl @ecs.Message for MyMessage with fn message() {
 
 ///|
 pub fn MyComponentIndex::MyComponentIndex() -> MyComponentIndex {
-  { entities: @hashmap.HashMap([]) }
+  { entities: HashMap([]) }
 }
 
 ///|
@@ -115,6 +115,7 @@ fn update_my_component_index(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn write_my_message(world : @ecs.DeferredWorld) -> Unit {
   if !world
     .resource(my_message_key.messages_resource())
@@ -189,7 +190,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { MyComponentIndex::MyComponentIndex() })
   .add_message(my_message_key)
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param3(@app.Update, trigger_hooks)
+  .add_systems_world(Startup, setup)
+  .add_systems_param3(Update, trigger_hooks)
   .run()
 }

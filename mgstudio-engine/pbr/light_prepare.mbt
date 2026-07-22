@@ -79,7 +79,7 @@ fn prepare_lights_view_render_layers(
           _ => abort("prepare_lights: failed to read source-world RenderLayers")
         }) {
         Some(layers) => layers
-        None => @camera_render_layers.RenderLayers::RenderLayers()
+        None => RenderLayers()
       }
     }
   }
@@ -235,7 +235,7 @@ fn prepare_lights_gpu_clustered_light(
       )
     }
   }
-  GpuClusteredLight::{
+  {
     light_custom_data,
     color_inverse_square_range: @math.Vec4::new(
       light.color.r * light.intensity,
@@ -336,7 +336,7 @@ pub fn prepare_lights(world : @ecs.World) -> Unit {
     world.set_by_key(
       view_entity,
       @pbr_render.ViewLightEntities::component(),
-      @pbr_render.ViewLightEntities::ViewLightEntities(),
+      ViewLightEntities(),
     ) catch {
       _ => abort("prepare_lights: failed to insert ViewLightEntities")
     }

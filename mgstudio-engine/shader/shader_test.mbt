@@ -32,7 +32,7 @@ test "shader: from_wgsl_with_defs preserves shader defs" {
   let shader = @shader.Shader::from_wgsl_with_defs(
     "fn main() -> f32 {\n  return 1.0;\n}\n",
     "shaders/demo.wgsl",
-    [@shader.shader_def("HDR"), @shader.ShaderDefVal::UInt("TONEMAP_MODE", 2U)],
+    [@shader.shader_def("HDR"), UInt("TONEMAP_MODE", 2U)],
   )
   debug_inspect(shader.shader_defs.length(), content="2")
   debug_inspect(shader.shader_defs[0].value_as_string(), content="\"true\"")
@@ -63,10 +63,7 @@ test "shader: source language and shader type align with naga_oil surface" {
   debug_inspect(wgsl.language(), content="Wgsl")
   debug_inspect(wgsl.shader_type(), content="Wgsl")
 
-  let glsl = @shader.Source::Glsl(
-    "void main() {}",
-    @shader.ShaderStage::Fragment,
-  )
+  let glsl = @shader.Source::Glsl("void main() {}", Fragment)
   debug_inspect(glsl.language(), content="Glsl")
   debug_inspect(glsl.shader_type(), content="GlslFragment")
 }

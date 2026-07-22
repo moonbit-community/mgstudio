@@ -449,6 +449,7 @@ test "app: Commands spawn accepts ecs bundle tuples and unit bundles" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app: Commands spawn_batch defers all batch insertions until flush" {
   let counts : Array[Int] = []
   let spawned : Ref[Array[@core.Entity]] = Ref([])
@@ -465,16 +466,8 @@ test "app: Commands spawn_batch defers all batch insertions until flush" {
         CommandsVelocity::{ dx: 23, dy: 24 },
         CommandsMarker::{  },
       ),
-      (
-        CommandsPosition::{ x: 31, y: 32 },
-        CommandsVelocity::{ dx: 33, dy: 34 },
-        CommandsMarker::{  },
-      ),
-      (
-        CommandsPosition::{ x: 41, y: 42 },
-        CommandsVelocity::{ dx: 43, dy: 44 },
-        CommandsMarker::{  },
-      ),
+      ({ x: 31, y: 32 }, { dx: 33, dy: 34 }, CommandsMarker::{  }),
+      ({ x: 41, y: 42 }, { dx: 43, dy: 44 }, CommandsMarker::{  }),
     ])
     counts.push(query.count())
   })
@@ -706,7 +699,7 @@ test "app: failing built-in queued commands route through the default error hand
   app = app.run_once()
 
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Command, content="true")
+  debug_inspect(kinds[0] == Command, content="true")
   debug_inspect(sources[0], content="\"EntityCommands::insert_component\"")
 }
 
@@ -784,7 +777,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
     first_events,
     @pointer_events.PointerEvent::new(
       1,
-      @pointer_events.PointerEventKind::Enter,
+      Enter,
       @math.Vec2::new(8.0F, 13.0F),
       target=Some(target),
     ),
@@ -797,7 +790,7 @@ test "app: EntityCommands::observe_pointer scopes pointer observers to the targe
     second_events,
     @pointer_events.PointerEvent::new(
       1,
-      @pointer_events.PointerEventKind::Enter,
+      Enter,
       @math.Vec2::new(8.0F, 13.0F),
       target=Some(other),
     ),
@@ -848,7 +841,7 @@ test "app: EntityCommands::observe_pointer4 accepts normal system params" {
     click_events,
     @pointer_events.PointerEvent::new(
       2,
-      @pointer_events.PointerEventKind::Click,
+      Click,
       @math.Vec2::new(21.0F, 34.0F),
       target=Some(target),
     ),

@@ -85,7 +85,7 @@ pub fn embedded_shader_source_required(
 ) -> String raise @wgsl_compose.ComposerError {
   match embedded_shader_source(rel_path) {
     Some(source) => source
-    None => raise @wgsl_compose.ComposerError::MissingRegisteredSource(rel_path)
+    None => raise MissingRegisteredSource(rel_path)
   }
 }
 
@@ -291,5 +291,5 @@ pub fn copy_embedded_shader_import_module_paths() -> @hashmap.HashMap[
   registry.register_source_files(
     embedded_shader_source_files_with_import_path(),
   )
-  @hashmap.HashMap(registry.copy_import_module_paths().to_array())
+  HashMap(registry.copy_import_module_paths().to_array())
 }

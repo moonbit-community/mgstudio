@@ -43,7 +43,7 @@ pub fn gltf_skin_index(skin_index : Int) -> GltfSkinIndex {
 
 ///|
 pub fn gltf_mesh_asset_label(mesh_index : Int) -> GltfAssetLabel {
-  GltfAssetLabel::Mesh(mesh_index)
+  Mesh(mesh_index)
 }
 
 ///|
@@ -51,10 +51,10 @@ pub fn gltf_primitive_asset_label(
   mesh_index : Int,
   primitive_index : Int,
 ) -> GltfAssetLabel {
-  GltfAssetLabel::Primitive(mesh_index, primitive_index)
+  Primitive(mesh_index, primitive_index)
 }
 
 ///|
 pub fn gltf_skin_asset_label(skin_index : Int) -> GltfAssetLabel {
-  GltfAssetLabel::Skin(skin_index)
+  Skin(skin_index)
 }

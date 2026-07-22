@@ -39,7 +39,7 @@ let menu_data_resource_key : @ecs.ResourceKey[MenuData] = @ecs.register_resource
 
 ///|
 impl Default for AppState with fn default() {
-  AppState::Menu
+  Menu
 }
 
 ///|
@@ -113,8 +113,8 @@ fn pressed_button_color() -> @color.Color {
 ///|
 fn should_exist(source : AppState) -> IsPaused? {
   match source {
-    AppState::InGame => Some(IsPaused::Running)
-    AppState::Menu => None
+    InGame => Some(Running)
+    Menu => None
   }
 }
 
@@ -124,27 +124,27 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(AppState::default())
   .add_sub_state(AppState::InGame, IsPaused::Running, should_exist)
-  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(Startup, setup)
   .add_on_enter_system_param(AppState::Menu, setup_menu)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
   )
   .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
   .add_on_enter_system_param2(AppState::InGame, setup_game)
   .add_on_enter_system_param(IsPaused::Paused, setup_paused_screen)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(movement).run_if(@app.in_state(IsPaused::Running)),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(change_color).run_if(
       @app.in_state(IsPaused::Running),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(toggle_pause).run_if(
       @app.in_state(AppState::InGame),
     ),
@@ -161,20 +161,20 @@ fn setup(commands : @app.Commands) -> Unit {
 fn setup_menu(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(Center)
+    .with_align_items(Center),
   )
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(150.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(150.0F))
+      .with_height(Px(65.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
   )
@@ -198,12 +198,12 @@ fn menu(world : @ecs.World) -> Unit {
       return
     }
     let color = match interaction {
-      @ui.Interaction::Pressed => {
+      Pressed => {
         @app.set_state(AppState::InGame)
         pressed_button_color()
       }
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None => normal_button_color()
+      Hovered => hovered_button_color()
+      None => normal_button_color()
     }
     if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
       try! (world.replace(
@@ -253,16 +253,16 @@ fn movement(world : @ecs.World) -> Unit {
   try! query.view(fn(_entity, transform) {
     let mut dx = 0.0F
     let mut dy = 0.0F
-    if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+    if @input.key_pressed(ArrowLeft) {
       dx -= 1.0F
     }
-    if @input.key_pressed(@window.KeyCode::ArrowRight) {
+    if @input.key_pressed(ArrowRight) {
       dx += 1.0F
     }
-    if @input.key_pressed(@window.KeyCode::ArrowUp) {
+    if @input.key_pressed(ArrowUp) {
       dy += 1.0F
     }
-    if @input.key_pressed(@window.KeyCode::ArrowDown) {
+    if @input.key_pressed(ArrowDown) {
       dy -= 1.0F
     }
     if dx == 0.0F && dy == 0.0F {
@@ -300,14 +300,14 @@ fn change_color(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_pause(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   match @app.world_state(world, IsPaused::Running) {
     Some(current_state) =>
       match current_state.get() {
-        IsPaused::Running => @app.set_state(IsPaused::Paused)
-        IsPaused::Paused => @app.set_state(IsPaused::Running)
+        Running => @app.set_state(IsPaused::Paused)
+        Paused => @app.set_state(IsPaused::Running)
       }
     None => ()
   }
@@ -319,11 +319,11 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
     (
       @state.DespawnOnExit::new(IsPaused::Paused),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_flex_direction(@ui.FlexDirection::Column),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center)
+      .with_flex_direction(Column),
     ),
   )
   ignore(
@@ -331,10 +331,10 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(400.0F))
-        .with_height(@ui.Val::Px(120.0F))
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center),
+        .with_width(Px(400.0F))
+        .with_height(Px(120.0F))
+        .with_justify_content(Center)
+        .with_align_items(Center),
         @ui.BackgroundColor::new(normal_button_color()),
       ),
     ),

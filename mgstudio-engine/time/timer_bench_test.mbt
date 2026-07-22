@@ -15,10 +15,7 @@
 ///|
 test "bench time: tick repeating timers" (b : @bench.T) {
   let timer_count = 20_000
-  let timers = Array::make(
-    timer_count,
-    Timer::from_seconds(1.0F, TimerMode::Repeating),
-  )
+  let timers = Array::make(timer_count, Timer::from_seconds(1.0F, Repeating))
   let delta = @core.Duration::from_millis(16L)
   b.bench(name="tick repeating timers x20000", count=100U, () => {
     for index in 0..<timers.length() {

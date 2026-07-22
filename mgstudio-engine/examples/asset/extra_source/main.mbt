@@ -41,10 +41,10 @@ fn setup(
 fn main {
   @asset.register_asset_source(
     @app.App::new(@ecs.World::new()),
-    @asset.AssetSourceId::Named("example_files"),
+    Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
   )
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

@@ -27,7 +27,7 @@ pub struct RenderMaterial2dInstances[M] {
 
 ///|
 pub fn[M] RenderMaterial2dInstances::new() -> RenderMaterial2dInstances[M] {
-  RenderMaterial2dInstances::{ instances: @hashmap.HashMap([]) }
+  { instances: HashMap([]) }
 }
 
 ///|
@@ -171,8 +171,8 @@ fn material2d_texture_sample_type_key(
   sample_type : Material2dTextureSampleType,
 ) -> String {
   match sample_type {
-    Material2dTextureSampleType::Float => "float"
-    Material2dTextureSampleType::UInt => "uint"
+    Float => "float"
+    UInt => "uint"
   }
 }
 
@@ -181,8 +181,8 @@ fn material2d_texture_view_dimension_key(
   view_dimension : Material2dTextureViewDimension,
 ) -> String {
   match view_dimension {
-    Material2dTextureViewDimension::D2 => "2d"
-    Material2dTextureViewDimension::D2Array => "2d_array"
+    D2 => "2d"
+    D2Array => "2d_array"
   }
 }
 
@@ -197,7 +197,7 @@ pub fn Material2dBinding::uniform(
   binding : Int,
   bytes : Bytes,
 ) -> Material2dBinding {
-  Material2dBinding::{ binding, value: Uniform(bytes) }
+  { binding, value: Uniform(bytes) }
 }
 
 ///|
@@ -205,14 +205,7 @@ pub fn Material2dBinding::texture(
   binding : Int,
   texture : @asset.Handle[@asset.Image]?,
 ) -> Material2dBinding {
-  Material2dBinding::{
-    binding,
-    value: Texture(
-      texture,
-      Material2dTextureSampleType::Float,
-      Material2dTextureViewDimension::D2,
-    ),
-  }
+  { binding, value: Texture(texture, Float, D2) }
 }
 
 ///|
@@ -222,10 +215,7 @@ pub fn Material2dBinding::texture_with_layout(
   sample_type : Material2dTextureSampleType,
   view_dimension : Material2dTextureViewDimension,
 ) -> Material2dBinding {
-  Material2dBinding::{
-    binding,
-    value: Texture(texture, sample_type, view_dimension),
-  }
+  { binding, value: Texture(texture, sample_type, view_dimension) }
 }
 
 ///|
@@ -233,7 +223,7 @@ pub fn Material2dBinding::sampler(
   binding : Int,
   texture : @asset.Handle[@asset.Image]?,
 ) -> Material2dBinding {
-  Material2dBinding::{ binding, value: Sampler(texture) }
+  { binding, value: Sampler(texture) }
 }
 
 ///|
@@ -293,7 +283,7 @@ pub fn Material2dBindGroup::new(
       )
     }
   }
-  Material2dBindGroup::{ bindings: normalized }
+  { bindings: normalized }
 }
 
 ///|
@@ -355,7 +345,7 @@ pub fn[M] Material2dKey::new(
   bind_group_layout_key : String,
   bind_group_data : String,
 ) -> Material2dKey[M] {
-  Material2dKey::{ mesh_key, bind_group_layout_key, bind_group_data }
+  { mesh_key, bind_group_layout_key, bind_group_data }
 }
 
 ///|
@@ -368,7 +358,7 @@ pub fn[M] Material2dKey::with_mesh_key(
   self : Material2dKey[M],
   mesh_key : Int,
 ) -> Material2dKey[M] {
-  Material2dKey::{ ..self, mesh_key, }
+  { ..self, mesh_key, }
 }
 
 ///|
@@ -384,7 +374,7 @@ pub struct MeshMaterial2d[M] {
 
 ///|
 pub fn[M] MeshMaterial2d::new(material : @asset.Handle[M]) -> MeshMaterial2d[M] {
-  MeshMaterial2d::{ handle: material }
+  { handle: material }
 }
 
 ///|
@@ -425,7 +415,7 @@ pub struct Material2dKeys[M] {
 pub fn[M] register_material2d_keys(
   material_debug_name : String,
 ) -> Material2dKeys[M] {
-  Material2dKeys::{
+  {
     mesh_material2d_component: @ecs.register_component(
       debug_name="mgstudio_sprite_render::MeshMaterial2d<\{material_debug_name}>",
     ),
@@ -456,7 +446,7 @@ pub(open) trait Material2d {
 
 ///|
 pub fn[M] Material2dPipeline::Material2dPipeline() -> Material2dPipeline[M] {
-  Material2dPipeline::{ vertex_shader: None, fragment_shader: None }
+  { vertex_shader: None, fragment_shader: None }
 }
 
 ///|
@@ -464,7 +454,7 @@ pub fn[M] Material2dPipeline::new(
   vertex_shader : String?,
   fragment_shader : String?,
 ) -> Material2dPipeline[M] {
-  Material2dPipeline::{ vertex_shader, fragment_shader }
+  { vertex_shader, fragment_shader }
 }
 
 ///|
@@ -484,7 +474,7 @@ pub fn[M : Material2d] Material2dPipeline::key_for(
 fn material2d_push_material_bind_group_def(
   shader_defs : Array[@render.ShaderDefVal],
 ) -> Unit {
-  shader_defs.push(@render.ShaderDefVal::UInt("MATERIAL_BIND_GROUP", 2U))
+  shader_defs.push(UInt("MATERIAL_BIND_GROUP", 2U))
 }
 
 ///|
@@ -534,8 +524,8 @@ fn material2d_base_pipeline_descriptor(
   primitive_topology : UInt,
 ) -> @render.RenderPipelineDescriptor {
   @render.RenderPipelineDescriptor::RenderPipelineDescriptor()
-  .with_vertex(@render.VertexState::VertexState())
-  .with_fragment(Some(@render.FragmentState::FragmentState()))
+  .with_vertex(VertexState())
+  .with_fragment(Some(FragmentState()))
   .with_primitive(
     @render.PrimitiveState::PrimitiveState().with_topology(primitive_topology),
   )
@@ -552,7 +542,7 @@ pub fn Material2dProperties::new(
   alpha_mode : AlphaMode2d,
   mesh_pipeline_key_bits : Int,
 ) -> Material2dProperties {
-  Material2dProperties::{ alpha_mode, mesh_pipeline_key_bits }
+  { alpha_mode, mesh_pipeline_key_bits }
 }
 
 ///|
@@ -583,7 +573,7 @@ pub fn[M : Material2d] PreparedMaterial2d::from_material(
   let bind_group = material.bind_group()
   let host_bind_group = material2d_bind_group_to_host(bind_group)
   let key = pipeline.key_for(material, bind_group)
-  PreparedMaterial2d::{
+  {
     source,
     bind_group,
     host_bind_group,
@@ -710,7 +700,7 @@ fn[M : Material2d] render_material2d_resolved_material(
   guard prepared_material2d_alpha_phase(material) is Some(phase) else {
     return None
   }
-  Some(RenderMaterial2dResolvedMaterial::{
+  Some({
     phase,
     draw_mesh_fn: fn(mesh) {
       draw_material2d_mesh_item_with_prepared_material(mesh, material, pipeline)
@@ -736,7 +726,7 @@ pub fn RenderMaterial2dResolvedSlots::new() -> RenderMaterial2dResolvedSlots {
   let slots : @render_material.RenderMaterialEntitySlots[
     RenderMaterial2dResolvedSlot,
   ] = @render_material.RenderMaterialEntitySlots::new()
-  RenderMaterial2dResolvedSlots::{ slots, }
+  { slots, }
 }
 
 ///|
@@ -752,7 +742,7 @@ pub fn RenderMaterial2dResolvedSlots::set_pending(
   self : RenderMaterial2dResolvedSlots,
   entity : @core.Entity,
 ) -> Unit {
-  self.slots.set(entity, RenderMaterial2dResolvedSlot::Pending)
+  self.slots.set(entity, Pending)
 }
 
 ///|
@@ -761,7 +751,7 @@ pub fn RenderMaterial2dResolvedSlots::set_resolved(
   entity : @core.Entity,
   material : RenderMaterial2dResolvedMaterial,
 ) -> Unit {
-  self.slots.set(entity, RenderMaterial2dResolvedSlot::Resolved(material))
+  self.slots.set(entity, Resolved(material))
 }
 
 ///|
@@ -873,16 +863,12 @@ pub fn material2d_binding_to_host(
           None => -1
         },
         sample_type=match sample_type {
-          Material2dTextureSampleType::Float =>
-            @render.HostMaterial2dTextureSampleType::Float
-          Material2dTextureSampleType::UInt =>
-            @render.HostMaterial2dTextureSampleType::UInt
+          Float => Float
+          UInt => UInt
         },
         view_dimension=match view_dimension {
-          Material2dTextureViewDimension::D2 =>
-            @render.HostMaterial2dTextureViewDimension::D2
-          Material2dTextureViewDimension::D2Array =>
-            @render.HostMaterial2dTextureViewDimension::D2Array
+          D2 => D2
+          D2Array => D2Array
         },
       )
     Sampler(texture) =>
@@ -1020,11 +1006,7 @@ pub struct Material2dPlugin[M] {
 
 ///|
 pub fn[M] Material2dPlugin::Material2dPlugin() -> Material2dPlugin[M] {
-  Material2dPlugin::{
-    vertex_shader: None,
-    fragment_shader: None,
-    asset_init: None,
-  }
+  { vertex_shader: None, fragment_shader: None, asset_init: None }
 }
 
 ///|
@@ -1032,7 +1014,7 @@ pub fn[M] Material2dPlugin::with_vertex_shader(
   self : Material2dPlugin[M],
   path : String,
 ) -> Material2dPlugin[M] {
-  Material2dPlugin::{ ..self, vertex_shader: Some(path) }
+  { ..self, vertex_shader: Some(path) }
 }
 
 ///|
@@ -1040,7 +1022,7 @@ pub fn[M] Material2dPlugin::with_fragment_shader(
   self : Material2dPlugin[M],
   path : String,
 ) -> Material2dPlugin[M] {
-  Material2dPlugin::{ ..self, fragment_shader: Some(path) }
+  { ..self, fragment_shader: Some(path) }
 }
 
 ///|
@@ -1048,7 +1030,7 @@ pub fn[M] Material2dPlugin::with_asset_init(
   self : Material2dPlugin[M],
   init : () -> M,
 ) -> Material2dPlugin[M] {
-  Material2dPlugin::{ ..self, asset_init: Some(init) }
+  { ..self, asset_init: Some(init) }
 }
 
 ///|
@@ -1311,7 +1293,7 @@ fn[M : Material2d + @asset.Asset] prepare_material2d_assets_system(
   guard world.get_resource_mut(prepared_assets_key) is Some(prepared_assets) else {
     return
   }
-  let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let prepared_ids : @hashset.HashSet[Int] = HashSet([])
   for _, material_handle in instances.instances {
     let material_id = material_handle.id()
     if prepared_ids.contains(material_id) {

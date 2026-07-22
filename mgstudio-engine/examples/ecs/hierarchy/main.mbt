@@ -130,7 +130,7 @@ fn rotate(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, rotate)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, rotate)
   .run()
 }

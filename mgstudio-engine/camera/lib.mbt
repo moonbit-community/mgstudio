@@ -75,7 +75,7 @@ pub fn update_frusta_2d_system(world : @ecs.World) -> Unit {
       return
     }
     let orthographic = match projection {
-      @camera_projection2d.Projection::Orthographic(value) => value
+      Orthographic(value) => value
     }
     let projection_3d = @camera_projection3d.OrthographicProjection3d::default_2d()
       .with_scale(orthographic.scale)
@@ -105,6 +105,7 @@ pub fn update_frusta_2d_system(world : @ecs.World) -> Unit {
 pub struct CameraProjectionPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CameraProjectionPlugin::CameraProjectionPlugin() -> CameraProjectionPlugin {
   CameraProjectionPlugin::{  }
 }
@@ -123,6 +124,7 @@ pub impl @app.Plugin for CameraProjectionPlugin with fn build(_self, app) {
 pub struct CameraPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CameraPlugin::CameraPlugin() -> CameraPlugin {
   CameraPlugin::{  }
 }
@@ -142,10 +144,10 @@ pub fn camera_projection_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
-  .configure_set(@app.PostUpdate, camera_update_systems, after=[
+  .configure_set(PostUpdate, camera_update_systems, after=[
     @transform.transform_set_propagate,
   ])
-  .configure_set(@app.PostUpdate, camera_update_frusta_systems, after=[
+  .configure_set(PostUpdate, camera_update_frusta_systems, after=[
     camera_update_systems, @transform.transform_set_propagate,
   ])
   .add_post_update_system_config(
@@ -174,14 +176,14 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   world.register_required_components_with(
     ecs_key_camera3d,
     @post_process.ecs_key_color_grading,
-    fn() { @post_process.ColorGrading::ColorGrading() },
+    fn() { ColorGrading() },
   ) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "CameraPlugin required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
       )
@@ -189,14 +191,14 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   world.register_required_components_with(
     ecs_key_camera3d,
     @camera_camera.ecs_key_exposure,
-    fn() { @camera_camera.Exposure::Exposure() },
+    fn() { Exposure() },
   ) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "CameraPlugin required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
       )

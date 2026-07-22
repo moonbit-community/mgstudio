@@ -38,7 +38,7 @@ priv struct AppSettings {
 
 ///|
 fn AppSettings::AppSettings() -> AppSettings {
-  AppSettings::{ volumetric_spotlight: true, volumetric_pointlight: true }
+  { volumetric_spotlight: true, volumetric_pointlight: true }
 }
 
 ///|
@@ -64,7 +64,7 @@ fn MoveBackAndForthHorizontally::MoveBackAndForthHorizontally(
   max_x~ : Float,
   speed~ : Float,
 ) -> MoveBackAndForthHorizontally {
-  MoveBackAndForthHorizontally::{ min_x, max_x, speed }
+  { min_x, max_x, speed }
 }
 
 ///|
@@ -128,7 +128,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -137,13 +137,9 @@ fn setup_camera(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_tonemapping,
-    @post_process.Tonemapping::TonyMcMapface,
+    TonyMcMapface,
   )
-  try! world.set_by_key(
-    camera,
-    @post_process.ecs_key_bloom,
-    @post_process.Bloom::Bloom(),
-  )
+  try! world.set_by_key(camera, @post_process.ecs_key_bloom, Bloom())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_skybox,
@@ -180,12 +176,12 @@ fn setup_lights(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     point_light,
     @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   try! world.set_by_key(
     point_light,
     move_back_and_forth_horizontally_component_key,
-    MoveBackAndForthHorizontally::MoveBackAndForthHorizontally(
+    MoveBackAndForthHorizontally(
       min_x=POINT_LIGHT_MIN_X,
       max_x=POINT_LIGHT_MAX_X,
       speed=POINT_LIGHT_INITIAL_SPEED,
@@ -213,15 +209,11 @@ fn setup_lights(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     spot_light,
     @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
 
   let fog_volume = world.spawn_empty()
-  try! world.set_by_key(
-    fog_volume,
-    @pbr.ecs_key_fog_volume,
-    @pbr.FogVolume::FogVolume(),
-  )
+  try! world.set_by_key(fog_volume, @pbr.ecs_key_fog_volume, FogVolume())
   try! world.set_by_key(
     fog_volume,
     @transform.ecs_key_transform,
@@ -233,7 +225,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
 fn setup_instructions(world : @ecs.World) -> Unit {
   let app_settings = match world.get_resource(app_settings_resource_key) {
     Some(settings) => settings
-    None => AppSettings::AppSettings()
+    None => AppSettings()
   }
   let help_text = world.spawn_empty()
   try! world.set_by_key(
@@ -241,26 +233,14 @@ fn setup_instructions(world : @ecs.World) -> Unit {
     @text.ecs_key_text,
     create_text(app_settings),
   )
-  try! world.set_by_key(
-    help_text,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
-  try! world.set_by_key(
-    help_text,
-    @text.ecs_key_text_color,
-    @text.TextColor::TextColor(),
-  )
-  try! world.set_by_key(
-    help_text,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::TextLayout(),
-  )
+  try! world.set_by_key(help_text, @text.ecs_key_text_font, TextFont())
+  try! world.set_by_key(help_text, @text.ecs_key_text_color, TextColor())
+  try! world.set_by_key(help_text, @text.ecs_key_text_layout, TextLayout())
   try! world.set_by_key(
     help_text,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
+    .with_position_type(Absolute)
     .with_top(@ui.px(12.0F))
     .with_left(@ui.px(12.0F)),
   )
@@ -272,20 +252,16 @@ fn directional_light_delta_theta(
 ) -> @math.Vec2 {
   let mut delta_x = 0.0F
   let mut delta_y = 0.0F
-  if input.pressed(@window.KeyCode::KeyW) ||
-    input.pressed(@window.KeyCode::ArrowUp) {
+  if input.pressed(KeyW) || input.pressed(ArrowUp) {
     delta_y = delta_y + DIRECTIONAL_LIGHT_MOVEMENT_SPEED
   }
-  if input.pressed(@window.KeyCode::KeyS) ||
-    input.pressed(@window.KeyCode::ArrowDown) {
+  if input.pressed(KeyS) || input.pressed(ArrowDown) {
     delta_y = delta_y - DIRECTIONAL_LIGHT_MOVEMENT_SPEED
   }
-  if input.pressed(@window.KeyCode::KeyA) ||
-    input.pressed(@window.KeyCode::ArrowLeft) {
+  if input.pressed(KeyA) || input.pressed(ArrowLeft) {
     delta_x = delta_x + DIRECTIONAL_LIGHT_MOVEMENT_SPEED
   }
-  if input.pressed(@window.KeyCode::KeyD) ||
-    input.pressed(@window.KeyCode::ArrowRight) {
+  if input.pressed(KeyD) || input.pressed(ArrowRight) {
     delta_x = delta_x - DIRECTIONAL_LIGHT_MOVEMENT_SPEED
   }
   @math.Vec2::new(delta_x, delta_y)
@@ -293,12 +269,7 @@ fn directional_light_delta_theta(
 
 ///|
 fn directional_light_delta_quat(delta_theta : @math.Vec2) -> @math.Quat {
-  @math.Quat::from_euler(
-    @math.EulerRot::XZY,
-    delta_theta.y,
-    0.0F,
-    delta_theta.x,
-  )
+  @math.Quat::from_euler(XZY, delta_theta.y, 0.0F, delta_theta.x)
 }
 
 ///|
@@ -394,18 +365,12 @@ fn app_settings_after_input(
 ) -> (AppSettings, Bool) {
   let mut next = settings
   let mut any_changes = false
-  if keyboard_input.just_pressed(@window.KeyCode::KeyP) {
-    next = AppSettings::{
-      ..next,
-      volumetric_pointlight: !next.volumetric_pointlight,
-    }
+  if keyboard_input.just_pressed(KeyP) {
+    next = { ..next, volumetric_pointlight: !next.volumetric_pointlight }
     any_changes = true
   }
-  if keyboard_input.just_pressed(@window.KeyCode::KeyL) {
-    next = AppSettings::{
-      ..next,
-      volumetric_spotlight: !next.volumetric_spotlight,
-    }
+  if keyboard_input.just_pressed(KeyL) {
+    next = { ..next, volumetric_spotlight: !next.volumetric_spotlight }
     any_changes = true
   }
   (next, any_changes)
@@ -461,7 +426,7 @@ fn adjust_app_settings(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   if world.get_resource(app_settings_resource_key) is None {
-    world.insert_resource(app_settings_resource_key, AppSettings::AppSettings())
+    world.insert_resource(app_settings_resource_key, AppSettings())
   }
 
   world.insert_resource(
@@ -483,10 +448,10 @@ fn main {
     @camera.ClearColor::new(@color.Color::srgba(0.02F, 0.02F, 0.02F, 1.0F)),
   )
   .insert_resource(AppSettings::AppSettings())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, tweak_scene)
-  .add_systems_param2(@app.Update, move_directional_light)
-  .add_systems_param2(@app.Update, move_point_light)
-  .add_systems_param6(@app.Update, adjust_app_settings)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, tweak_scene)
+  .add_systems_param2(Update, move_directional_light)
+  .add_systems_param2(Update, move_point_light)
+  .add_systems_param6(Update, adjust_app_settings)
   .run()
 }

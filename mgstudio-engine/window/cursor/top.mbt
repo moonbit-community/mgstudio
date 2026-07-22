@@ -48,7 +48,7 @@ pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
 
 ///|
 pub impl Default for CursorIcon with fn default() {
-  System(SystemCursorIcon::Default)
+  System(Default)
 }
 
 ///|
@@ -60,7 +60,7 @@ pub(all) struct CursorOptions {
 
 ///|
 pub fn CursorOptions::CursorOptions() -> CursorOptions {
-  CursorOptions::{ visible: true, grab_mode: GrabNone, hit_test: true }
+  { visible: true, grab_mode: GrabNone, hit_test: true }
 }
 
 ///|

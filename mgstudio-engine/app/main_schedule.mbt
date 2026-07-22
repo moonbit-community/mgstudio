@@ -44,7 +44,7 @@ pub fn MainScheduleOrder::new(
   labels : Array[ScheduleStage],
   startup_labels : Array[ScheduleStage],
 ) -> MainScheduleOrder {
-  MainScheduleOrder::{ labels, startup_labels }
+  { labels, startup_labels }
 }
 
 ///|
@@ -69,7 +69,7 @@ priv struct MainScheduleRuntimeState {
 pub fn FixedMainScheduleOrder::new(
   labels : Array[ScheduleStage],
 ) -> FixedMainScheduleOrder {
-  FixedMainScheduleOrder::{ labels, }
+  { labels, }
 }
 
 ///|
@@ -217,7 +217,7 @@ pub fn FixedMainScheduleOrder::insert_before(
 pub fn world_main_schedule_order(world : @ecs.World) -> MainScheduleOrder {
   match world_schedule_resource(world, main_schedule_order_resource_key) {
     Some(order) => order
-    None => MainScheduleOrder::MainScheduleOrder()
+    None => MainScheduleOrder()
   }
 }
 
@@ -227,7 +227,7 @@ pub fn world_fixed_main_schedule_order(
 ) -> FixedMainScheduleOrder {
   match world_schedule_resource(world, fixed_main_schedule_order_resource_key) {
     Some(order) => order
-    None => FixedMainScheduleOrder::FixedMainScheduleOrder()
+    None => FixedMainScheduleOrder()
   }
 }
 
@@ -236,7 +236,7 @@ fn main_schedule_runtime_state(world : @ecs.World) -> MainScheduleRuntimeState {
   match
     world_schedule_resource(world, main_schedule_runtime_state_resource_key) {
     Some(state) => state
-    None => MainScheduleRuntimeState::{ startup_ran: false }
+    None => { startup_ran: false }
   }
 }
 
@@ -289,17 +289,12 @@ fn main_schedule_insert_startup_before_unique(
 
 ///|
 fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
-  world.insert_resource(
-    main_schedule_order_resource_key,
-    MainScheduleOrder::MainScheduleOrder(),
-  )
+  world.insert_resource(main_schedule_order_resource_key, MainScheduleOrder())
   world.insert_resource(
     fixed_main_schedule_order_resource_key,
-    FixedMainScheduleOrder::FixedMainScheduleOrder(),
+    FixedMainScheduleOrder(),
   )
-  main_schedule_write_runtime_state(world, MainScheduleRuntimeState::{
-    startup_ran: false,
-  })
+  main_schedule_write_runtime_state(world, { startup_ran: false })
 }
 
 ///|
@@ -325,9 +320,7 @@ fn run_main_schedule_startup(
   for stage in world_main_schedule_order(world).startup_labels {
     run_main_schedule_stage(world, schedule, stage)
   }
-  main_schedule_write_runtime_state(world, MainScheduleRuntimeState::{
-    startup_ran: true,
-  })
+  main_schedule_write_runtime_state(world, { startup_ran: true })
 }
 
 ///|

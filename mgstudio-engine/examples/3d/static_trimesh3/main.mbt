@@ -33,9 +33,9 @@ const TAU : Float = 6.283185307179586F
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup_graphics)
-  .add_systems_world(@app.Startup, setup_physics)
-  .add_systems_world(@app.Update, ball_spawner)
+  .add_systems_world(Startup, setup_graphics)
+  .add_systems_world(Startup, setup_physics)
+  .add_systems_world(Update, ball_spawner)
   .run()
 }
 

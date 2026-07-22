@@ -34,7 +34,7 @@ pub fn AssetReader::new(
   read_directory : (String) -> Array[String]?,
   is_directory : (String) -> Bool,
 ) -> AssetReader {
-  AssetReader::{
+  {
     read_fn: read,
     read_meta_fn: read_meta,
     read_directory_fn: read_directory,
@@ -70,7 +70,7 @@ pub fn AssetSourceBuilder::platform_default(
   path : String,
   _watcher : Unit?,
 ) -> AssetSourceBuilder {
-  AssetSourceBuilder::{ path, reader_builder: None }
+  { path, reader_builder: None }
 }
 
 ///|
@@ -78,14 +78,14 @@ pub fn AssetSourceBuilder::with_reader(
   self : AssetSourceBuilder,
   reader_builder : (AssetReader) -> AssetReader,
 ) -> AssetSourceBuilder {
-  AssetSourceBuilder::{ path: self.path, reader_builder: Some(reader_builder) }
+  { path: self.path, reader_builder: Some(reader_builder) }
 }
 
 ///|
 fn asset_source_id_debug_name(source_id : AssetSourceId) -> String {
   match source_id {
-    AssetSourceId::Default => "default"
-    AssetSourceId::Named(name) => name
+    Default => "default"
+    Named(name) => name
   }
 }
 
@@ -110,11 +110,11 @@ fn asset_source_builder_registry_upsert_in_state(
   replace_existing : Bool,
 ) -> Unit {
   match source_id {
-    AssetSourceId::Default =>
+    Default =>
       if replace_existing || state.default_builder is None {
         state.default_builder = Some(builder)
       }
-    AssetSourceId::Named(source_name) =>
+    Named(source_name) =>
       if replace_existing || state.named_builders.get(source_name) is None {
         state.named_builders.set(source_name, builder)
       }
@@ -127,8 +127,8 @@ fn asset_source_builder_registry_for_world(
 ) -> AssetSourceBuilderRegistryState {
   let key = asset_source_builder_registry_resource_key
   if world.get_resource(key) is None {
-    world.insert_resource(key, AssetSourceBuilderRegistryState::{
-      named_builders: @hashmap.HashMap([]),
+    world.insert_resource(key, {
+      named_builders: HashMap([]),
       default_builder: None,
     })
   }
@@ -194,14 +194,14 @@ fn asset_registered_source_reader_entries() -> Array[
   match state.default_builder {
     Some(default_builder) =>
       if default_builder.reader_builder is Some(_) {
-        entries.push((AssetSourceId::Default, default_builder))
+        entries.push((Default, default_builder))
       }
     None => ()
   }
   for entry in state.named_builders.iter() {
     let (source_name, builder) = entry
     if builder.reader_builder is Some(_) {
-      entries.push((AssetSourceId::Named(source_name), builder))
+      entries.push((Named(source_name), builder))
     }
   }
   entries

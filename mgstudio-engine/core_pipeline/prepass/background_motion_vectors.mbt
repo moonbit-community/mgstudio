@@ -20,6 +20,7 @@
 pub struct NoBackgroundMotionVectors {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoBackgroundMotionVectors::NoBackgroundMotionVectors() -> NoBackgroundMotionVectors {
   NoBackgroundMotionVectors::{  }
 }
@@ -35,7 +36,7 @@ pub fn BackgroundMotionVectorsPipelineKey::new(
   samples~ : Int,
   normal_prepass~ : Bool,
 ) -> BackgroundMotionVectorsPipelineKey {
-  BackgroundMotionVectorsPipelineKey::{ samples, normal_prepass }
+  { samples, normal_prepass }
 }
 
 ///|
@@ -62,10 +63,7 @@ pub struct BackgroundMotionVectorsPluginState {
 pub fn BackgroundMotionVectorsPluginState::new(
   gpu_has_independent_blend : Bool,
 ) -> BackgroundMotionVectorsPluginState {
-  BackgroundMotionVectorsPluginState::{
-    required_independent_blend: true,
-    enabled: gpu_has_independent_blend,
-  }
+  { required_independent_blend: true, enabled: gpu_has_independent_blend }
 }
 
 ///|

@@ -82,11 +82,11 @@ fn render3d_build_camera_queue_entry(
   retained_phase_items? : Array[MeshPhaseItem3d]? = None,
 ) -> Render3dExecuteCameraQueueBuildResult {
   let trace_camera_queue_build_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_build",
   )
   let trace_camera_queue_entry_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_entry",
   )
   let camera_indirect_enabled = @pbr_render.render3d_camera_indirect_enabled(
@@ -122,13 +122,13 @@ fn render3d_build_camera_queue_entry(
     camera_indirect_enabled && camera.gpu_occlusion_culling_enabled,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_entry",
     trace_camera_queue_entry_start_us,
   )
   let draw_items = draw_queue_entry.draw_items
   let trace_camera_queue_indices_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_indices",
   )
   let opaque_alpha_draw_item_indices = render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
@@ -145,16 +145,16 @@ fn render3d_build_camera_queue_entry(
     draw_queue_entry.indirect_metadata,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_indices",
     trace_camera_queue_indices_start_us,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_build",
     trace_camera_queue_build_start_us,
   )
-  Render3dExecuteCameraQueueBuildResult::{
+  {
     draw_queue_entry,
     opaque_alpha_draw_item_indices,
     indexed_indirect_parameter_indices,
@@ -184,10 +184,7 @@ fn render3d_resolve_prepass_phase_draw_items(
         "Retained prepass phase entity is missing its main-pass GPU preprocess output",
       )
     }
-    resolved.push(Render3dPrepassPhaseDrawItem3d::{
-      phase_item,
-      preprocess_draw_item_index,
-    })
+    resolved.push({ phase_item, preprocess_draw_item_index })
   }
   resolved
 }
@@ -204,7 +201,7 @@ fn render3d_upload_camera_queue_entry(
     return
   }
   let trace_camera_queue_upload_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_upload",
   )
   @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
@@ -222,7 +219,7 @@ fn render3d_upload_camera_queue_entry(
     ),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "prepare_3d_camera_queue_upload",
     trace_camera_queue_upload_start_us,
   )
@@ -240,7 +237,7 @@ fn render3d_dispatch_camera_preprocess_early(
     return
   }
   let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_preprocess_early",
   )
   if camera.gpu_occlusion_culling_enabled {
@@ -265,7 +262,7 @@ fn render3d_dispatch_camera_preprocess_early(
     )
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_preprocess_early",
     trace_camera_queue_preprocess_start_us,
   )
@@ -281,7 +278,7 @@ fn render3d_dispatch_camera_preprocess_late(
     return
   }
   let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_preprocess_late",
   )
   @render.host_gpu_downsample_mesh3d_depth_pyramid(
@@ -299,7 +296,7 @@ fn render3d_dispatch_camera_preprocess_late(
     phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_LATE,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_preprocess_late",
     trace_camera_queue_preprocess_start_us,
   )
@@ -318,7 +315,7 @@ fn render3d_dispatch_camera_preprocess_main(
     return
   }
   let trace_camera_queue_preprocess_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_preprocess_main",
   )
   @render.host_gpu_build_mesh3d_indirect_parameters(
@@ -327,7 +324,7 @@ fn render3d_dispatch_camera_preprocess_main(
     phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_OCCLUSION_MAIN,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_3d_camera_preprocess_main",
     trace_camera_queue_preprocess_start_us,
   )
@@ -394,7 +391,7 @@ fn render3d_prepare_camera_queue_entry(
     queue_build_result.draw_queue_entry.draw_items,
     queue_build_result.opaque_alpha_draw_item_indices,
   )
-  Some(Render3dPreparedCameraQueue::{
+  Some({
     draw_queue_entry: queue_build_result.draw_queue_entry,
     prepass_draw_items,
     deferred_prepass_draw_items,

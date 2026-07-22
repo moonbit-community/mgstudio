@@ -28,7 +28,7 @@ pub struct RenderDiagnosticsPlugin {
 pub fn RenderDiagnosticsPlugin::new(
   max_history_length : Int,
 ) -> RenderDiagnosticsPlugin {
-  RenderDiagnosticsPlugin::{ max_history_length, }
+  { max_history_length, }
 }
 
 ///|
@@ -186,10 +186,7 @@ priv struct RenderDiagnosticsMeasurements {
 pub fn render_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_diagnostics_plugin_with(
-    app,
-    RenderDiagnosticsPlugin::RenderDiagnosticsPlugin(),
-  )
+  render_diagnostics_plugin_with(app, RenderDiagnosticsPlugin())
 }
 
 ///|
@@ -418,7 +415,7 @@ fn render_diagnostics_collect_snapshot(
   world : @ecs.World,
 ) -> RenderDiagnosticsMeasurements {
   let gpu_snapshot = @render.render_diagnostics_snapshot()
-  RenderDiagnosticsMeasurements::{
+  {
     prepared_cameras_2d: Some(
       @sprite_render.render2d_diagnostic_prepared_camera_count(),
     ),

@@ -20,9 +20,7 @@ test "pipeline cache: queued render and compute pipelines allocate stable ids" {
       Some("render"),
     ),
   )
-  let compute_id = cache.queue_compute_pipeline(
-    ComputePipelineDescriptor::ComputePipelineDescriptor(),
-  )
+  let compute_id = cache.queue_compute_pipeline(ComputePipelineDescriptor())
   debug_inspect(render_id.id(), content="0")
   debug_inspect(compute_id.id(), content="1")
   debug_inspect(cache.pipeline_count(), content="0")
@@ -50,9 +48,7 @@ test "pipeline cache: process_queue exposes descriptors and waiting ids" {
       Some("render"),
     ),
   )
-  let compute_id = cache.queue_compute_pipeline(
-    ComputePipelineDescriptor::ComputePipelineDescriptor(),
-  )
+  let compute_id = cache.queue_compute_pipeline(ComputePipelineDescriptor())
   cache.process_queue()
   debug_inspect(cache.pipeline_count(), content="2")
   debug_inspect(cache.queued_pipeline_count(), content="0")
@@ -77,16 +73,8 @@ test "pipeline cache: process_queue exposes descriptors and waiting ids" {
 ///|
 test "pipeline cache: waiting pipeline ids are observed without consumption" {
   let cache = PipelineCache::new()
-  ignore(
-    cache.queue_render_pipeline(
-      RenderPipelineDescriptor::RenderPipelineDescriptor(),
-    ),
-  )
-  ignore(
-    cache.queue_compute_pipeline(
-      ComputePipelineDescriptor::ComputePipelineDescriptor(),
-    ),
-  )
+  ignore(cache.queue_render_pipeline(RenderPipelineDescriptor()))
+  ignore(cache.queue_compute_pipeline(ComputePipelineDescriptor()))
   cache.process_queue()
   debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
   debug_inspect(cache.waiting_pipelines(), content="[0, 1]")
@@ -95,12 +83,8 @@ test "pipeline cache: waiting pipeline ids are observed without consumption" {
 ///|
 test "pipeline cache: retryable errors requeue through process_queue" {
   let cache = PipelineCache::new()
-  let render_id = cache.queue_render_pipeline(
-    RenderPipelineDescriptor::RenderPipelineDescriptor(),
-  )
-  let compute_id = cache.queue_compute_pipeline(
-    ComputePipelineDescriptor::ComputePipelineDescriptor(),
-  )
+  let render_id = cache.queue_render_pipeline(RenderPipelineDescriptor())
+  let compute_id = cache.queue_compute_pipeline(ComputePipelineDescriptor())
   cache.process_queue()
 
   try! cache.mark_pipeline_retryable_error(
@@ -160,9 +144,7 @@ test "pipeline cache: retryable errors requeue through process_queue" {
 ///|
 test "pipeline cache: descriptor access rejects unprocessed ids and wrong kinds" {
   let cache = PipelineCache::new()
-  let render_id = cache.queue_render_pipeline(
-    RenderPipelineDescriptor::RenderPipelineDescriptor(),
-  )
+  let render_id = cache.queue_render_pipeline(RenderPipelineDescriptor())
   try {
     cache.get_render_pipeline_descriptor(render_id) |> ignore
     fail("descriptor should not be accessible before processing")

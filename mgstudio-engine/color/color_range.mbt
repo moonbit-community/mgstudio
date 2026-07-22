@@ -20,7 +20,7 @@ pub struct ColorRange {
 
 ///|
 pub fn ColorRange::new(start : Color, end_ : Color) -> ColorRange {
-  ColorRange::{ start, end_ }
+  { start, end_ }
 }
 
 ///|

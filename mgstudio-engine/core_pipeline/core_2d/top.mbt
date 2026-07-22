@@ -29,6 +29,7 @@ pub const CORE_2D_DEPTH_FORMAT : String = "depth32float"
 pub struct Core2dPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Core2dPlugin::Core2dPlugin() -> Core2dPlugin {
   Core2dPlugin::{  }
 }
@@ -87,7 +88,7 @@ pub let core_2d_set_post_process : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn core_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  core_2d_plugin_with(app, Core2dPlugin::Core2dPlugin())
+  core_2d_plugin_with(app, Core2dPlugin())
 }
 
 ///|
@@ -95,14 +96,14 @@ fn core_2d_register_required_components(world : @ecs.World) -> Unit {
   world.register_required_components_with(
     @camera_components2d.ecs_key_camera2d,
     ecs_key_deband_dither,
-    fn() { DebandDither::Disabled },
+    fn() { Disabled },
   ) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "Core2dPlugin required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
       )
@@ -110,14 +111,14 @@ fn core_2d_register_required_components(world : @ecs.World) -> Unit {
   world.register_required_components_with(
     @camera_components2d.ecs_key_camera2d,
     ecs_key_tonemapping,
-    fn() { Tonemapping::None },
+    fn() { None },
   ) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "Core2dPlugin required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
       )
@@ -129,12 +130,12 @@ fn core_2d_register_required_components(world : @ecs.World) -> Unit {
       @render.CameraRenderGraph::new(@app.schedule_label(CORE_2D_SCHEDULE_NAME))
     },
   ) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "Core2dPlugin required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "Core2dPlugin required-component cycle detected: \{requiree} -> \{required}",
       )
@@ -147,22 +148,13 @@ fn core_2d_configure_render_sub_app(
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
   if !world.resource(ecs_key_opaque2d_phase).is_present() {
-    world.insert_resource(
-      ecs_key_opaque2d_phase,
-      Opaque2dPhase::Opaque2dPhase(),
-    )
+    world.insert_resource(ecs_key_opaque2d_phase, Opaque2dPhase())
   }
   if !world.resource(ecs_key_alpha_mask2d_phase).is_present() {
-    world.insert_resource(
-      ecs_key_alpha_mask2d_phase,
-      AlphaMask2dPhase::AlphaMask2dPhase(),
-    )
+    world.insert_resource(ecs_key_alpha_mask2d_phase, AlphaMask2dPhase())
   }
   if !world.resource(ecs_key_transparent2d_phase).is_present() {
-    world.insert_resource(
-      ecs_key_transparent2d_phase,
-      Transparent2dPhase::Transparent2dPhase(),
-    )
+    world.insert_resource(ecs_key_transparent2d_phase, Transparent2dPhase())
   }
   let stage = @render.render_schedule_stage()
   let graph_stage = @render.RenderGraph::schedule()
@@ -244,7 +236,7 @@ pub struct BatchSetKey2d {
 
 ///|
 pub fn BatchSetKey2d::new(indexed? : Bool = false) -> BatchSetKey2d {
-  BatchSetKey2d::{ indexed, }
+  { indexed, }
 }
 
 ///|
@@ -267,12 +259,7 @@ pub fn Opaque2dBinKey::new(
   asset_id~ : Int,
   material_bind_group_id? : Int? = None,
 ) -> Opaque2dBinKey {
-  Opaque2dBinKey::{
-    pipeline_id,
-    draw_function_id,
-    asset_id,
-    material_bind_group_id,
-  }
+  { pipeline_id, draw_function_id, asset_id, material_bind_group_id }
 }
 
 ///|
@@ -290,12 +277,7 @@ pub fn AlphaMask2dBinKey::new(
   asset_id~ : Int,
   material_bind_group_id? : Int? = None,
 ) -> AlphaMask2dBinKey {
-  AlphaMask2dBinKey::{
-    pipeline_id,
-    draw_function_id,
-    asset_id,
-    material_bind_group_id,
-  }
+  { pipeline_id, draw_function_id, asset_id, material_bind_group_id }
 }
 
 ///|
@@ -319,7 +301,7 @@ pub fn Opaque2d::new(
   batch_range_end? : Int = 0,
   extra_index? : Int = 0,
 ) -> Opaque2d {
-  Opaque2d::{
+  {
     batch_set_key,
     bin_key,
     representative_entity_id,
@@ -366,7 +348,7 @@ pub fn AlphaMask2d::new(
   batch_range_end? : Int = 0,
   extra_index? : Int = 0,
 ) -> AlphaMask2d {
-  AlphaMask2d::{
+  {
     batch_set_key,
     bin_key,
     representative_entity_id,
@@ -419,7 +401,7 @@ pub fn Transparent2d::new(
   extra_index? : Int = 0,
   indexed? : Bool = false,
 ) -> Transparent2d {
-  Transparent2d::{
+  {
     sort_key,
     entity_id,
     main_entity_id,
@@ -453,7 +435,7 @@ pub struct Opaque2dViewPhase {
 pub fn Opaque2dViewPhase::new(
   retained_view : @render_view.RetainedViewEntity,
 ) -> Opaque2dViewPhase {
-  Opaque2dViewPhase::{ retained_view, items: [] }
+  { retained_view, items: [] }
 }
 
 ///|
@@ -478,7 +460,7 @@ pub struct AlphaMask2dViewPhase {
 pub fn AlphaMask2dViewPhase::new(
   retained_view : @render_view.RetainedViewEntity,
 ) -> AlphaMask2dViewPhase {
-  AlphaMask2dViewPhase::{ retained_view, items: [] }
+  { retained_view, items: [] }
 }
 
 ///|
@@ -505,7 +487,7 @@ pub struct Transparent2dViewPhase {
 pub fn Transparent2dViewPhase::new(
   retained_view : @render_view.RetainedViewEntity,
 ) -> Transparent2dViewPhase {
-  Transparent2dViewPhase::{ retained_view, items: [] }
+  { retained_view, items: [] }
 }
 
 ///|
@@ -529,7 +511,7 @@ pub struct Opaque2dPhase {
 
 ///|
 pub fn Opaque2dPhase::Opaque2dPhase() -> Opaque2dPhase {
-  Opaque2dPhase::{ view_phases: [] }
+  { view_phases: [] }
 }
 
 ///|
@@ -648,7 +630,7 @@ pub struct AlphaMask2dPhase {
 
 ///|
 pub fn AlphaMask2dPhase::AlphaMask2dPhase() -> AlphaMask2dPhase {
-  AlphaMask2dPhase::{ view_phases: [] }
+  { view_phases: [] }
 }
 
 ///|
@@ -767,7 +749,7 @@ pub struct Transparent2dPhase {
 
 ///|
 pub fn Transparent2dPhase::Transparent2dPhase() -> Transparent2dPhase {
-  Transparent2dPhase::{ view_phases: [] }
+  { view_phases: [] }
 }
 
 ///|

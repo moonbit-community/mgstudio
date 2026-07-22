@@ -55,18 +55,18 @@ enum ReflectionMode {
 ///|
 fn ReflectionMode::next(self : ReflectionMode) -> ReflectionMode {
   match self {
-    ReflectionMode::EnvironmentMap => ReflectionMode::ReflectionProbe
-    ReflectionMode::ReflectionProbe => ReflectionMode::GeneratedEnvironmentMap
-    ReflectionMode::GeneratedEnvironmentMap => ReflectionMode::EnvironmentMap
+    EnvironmentMap => ReflectionProbe
+    ReflectionProbe => GeneratedEnvironmentMap
+    GeneratedEnvironmentMap => EnvironmentMap
   }
 }
 
 ///|
 fn ReflectionMode::to_string(self : ReflectionMode) -> String {
   match self {
-    ReflectionMode::EnvironmentMap => "Environment map"
-    ReflectionMode::ReflectionProbe => "Reflection probe"
-    ReflectionMode::GeneratedEnvironmentMap => "Generated environment map"
+    EnvironmentMap => "Environment map"
+    ReflectionProbe => "Reflection probe"
+    GeneratedEnvironmentMap => "Generated environment map"
   }
 }
 
@@ -79,11 +79,7 @@ struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{
-    reflection_mode: ReflectionMode::ReflectionProbe,
-    rotating: false,
-    sphere_roughness: 0.2F,
-  }
+  { reflection_mode: ReflectionProbe, rotating: false, sphere_roughness: 0.2F }
 }
 
 ///|
@@ -130,7 +126,7 @@ struct Cubemaps {
 
 ///|
 fn Cubemaps::from_asset_server(asset_server : @asset.AssetServer) -> Cubemaps {
-  Cubemaps::{
+  {
     diffuse_environment_map: asset_server.load_image(DIFFUSE_ENV_MAP_ASSET),
     specular_environment_map: asset_server.load_image(SPECULAR_ENV_MAP_ASSET),
     specular_reflection_probe: asset_server.load_image(
@@ -258,7 +254,7 @@ fn spawn_sphere(
   let sphere_mesh = @mesh_primitives_dim3.SphereMeshBuilder::from_sphere(
     @math.Sphere::new(1.0F),
   ).ico(7) catch {
-    @mesh_primitives_dim3.IcosphereError::TooManyVertices(_, _) =>
+    TooManyVertices(_, _) =>
       abort("reflection_probes sphere subdivisions produce too many vertices")
   }
   let sphere_mesh = meshes.peek().add(@mesh.Mesh::from_3d_geometry(sphere_mesh))
@@ -308,7 +304,7 @@ fn spawn_text(commands : @app.Commands, app_status : AppStatus) -> Unit {
       (
         app_status.create_text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
         HelpText::{  },
@@ -365,7 +361,7 @@ fn change_reflection_type(
   cubemaps : @app.Res[Cubemaps],
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
 
@@ -384,9 +380,8 @@ fn change_reflection_type(
   })
 
   match next_mode {
-    ReflectionMode::EnvironmentMap | ReflectionMode::GeneratedEnvironmentMap =>
-      ()
-    ReflectionMode::ReflectionProbe => {
+    EnvironmentMap | GeneratedEnvironmentMap => ()
+    ReflectionProbe => {
       spawn_reflection_probe(commands, cubemaps)
       spawn_scene(commands, asset_server)
     }
@@ -399,11 +394,11 @@ fn change_reflection_type(
       @pbr.ecs_key_generated_environment_map_light,
     )
     match next_mode {
-      ReflectionMode::EnvironmentMap | ReflectionMode::ReflectionProbe =>
+      EnvironmentMap | ReflectionProbe =>
         camera_commands.insert_component(
           create_camera_environment_map_light(cubemaps),
         )
-      ReflectionMode::GeneratedEnvironmentMap =>
+      GeneratedEnvironmentMap =>
         camera_commands.insert_component(
           @pbr.GeneratedEnvironmentMapLight::new(
             Some(cubemaps.specular_environment_map),
@@ -416,7 +411,7 @@ fn change_reflection_type(
 
 ///|
 fn toggle_rotation(app_status : @app.ResMut[AppStatus]) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Enter) {
+  if @input.key_just_pressed(Enter) {
     app_status.modify(fn(status) { status.rotating = !status.rotating })
   }
 }
@@ -479,9 +474,9 @@ fn change_sphere_roughness(
     @ecs.With[SphereMaterial],
   ],
 ) -> Unit {
-  let roughness_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
+  let roughness_delta = if @input.key_pressed(ArrowUp) {
     0.01F
-  } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
+  } else if @input.key_pressed(ArrowDown) {
     -0.01F
   } else {
     0.0F
@@ -522,13 +517,13 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { AppStatus::AppStatus() })
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param3(@app.PreUpdate, add_environment_map_to_camera)
-  .add_systems_param7(@app.Update, change_reflection_type)
-  .add_systems_param(@app.Update, toggle_rotation)
-  .add_systems_param3(@app.Update, change_sphere_roughness)
-  .add_systems_param3(@app.Update, rotate_camera)
-  .add_systems_param2(@app.Update, update_text)
-  .add_systems_param2(@app.Update, setup_environment_map_usage)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param3(PreUpdate, add_environment_map_to_camera)
+  .add_systems_param7(Update, change_reflection_type)
+  .add_systems_param(Update, toggle_rotation)
+  .add_systems_param3(Update, change_sphere_roughness)
+  .add_systems_param3(Update, rotate_camera)
+  .add_systems_param2(Update, update_text)
+  .add_systems_param2(Update, setup_environment_map_usage)
   .run()
 }

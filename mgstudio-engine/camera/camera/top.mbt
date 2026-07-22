@@ -43,12 +43,12 @@ pub struct Camera {
 
 ///|
 pub fn Camera::new(clear_color : @color.Color) -> Camera {
-  Camera::{
+  {
     viewport: None,
     order: 0,
     is_active: true,
-    computed: ComputedCameraValues::ComputedCameraValues(),
-    clear_color: ClearColorConfig::Custom(clear_color),
+    computed: ComputedCameraValues(),
+    clear_color: Custom(clear_color),
     invert_culling: false,
     sub_camera_view: None,
   }
@@ -56,11 +56,11 @@ pub fn Camera::new(clear_color : @color.Color) -> Camera {
 
 ///|
 pub fn Camera::Camera() -> Camera {
-  Camera::{
+  {
     viewport: None,
     order: 0,
     is_active: true,
-    computed: ComputedCameraValues::ComputedCameraValues(),
+    computed: ComputedCameraValues(),
     clear_color: ClearColorConfig::default(),
     invert_culling: false,
     sub_camera_view: None,
@@ -69,17 +69,17 @@ pub fn Camera::Camera() -> Camera {
 
 ///|
 pub fn Camera::with_order(self : Camera, order : Int) -> Camera {
-  Camera::{ ..self, order, }
+  { ..self, order, }
 }
 
 ///|
 pub fn Camera::with_viewport(self : Camera, viewport : Viewport) -> Camera {
-  Camera::{ ..self, viewport: Some(viewport) }
+  { ..self, viewport: Some(viewport) }
 }
 
 ///|
 pub fn Camera::clear_viewport(self : Camera) -> Camera {
-  Camera::{ ..self, viewport: None }
+  { ..self, viewport: None }
 }
 
 ///|
@@ -87,7 +87,7 @@ pub fn Camera::with_clear_color(
   self : Camera,
   clear_color : @color.Color,
 ) -> Camera {
-  Camera::{ ..self, clear_color: ClearColorConfig::Custom(clear_color) }
+  { ..self, clear_color: Custom(clear_color) }
 }
 
 ///|
@@ -95,17 +95,17 @@ pub fn Camera::with_clear_color_config(
   self : Camera,
   clear_color : ClearColorConfig,
 ) -> Camera {
-  Camera::{ ..self, clear_color, }
+  { ..self, clear_color, }
 }
 
 ///|
 pub fn Camera::with_clear_color_none(self : Camera) -> Camera {
-  Camera::{ ..self, clear_color: ClearColorConfig::None }
+  { ..self, clear_color: None }
 }
 
 ///|
 pub fn Camera::with_is_active(self : Camera, is_active : Bool) -> Camera {
-  Camera::{ ..self, is_active, }
+  { ..self, is_active, }
 }
 
 ///|
@@ -113,7 +113,7 @@ pub fn Camera::with_invert_culling(
   self : Camera,
   invert_culling : Bool,
 ) -> Camera {
-  Camera::{ ..self, invert_culling, }
+  { ..self, invert_culling, }
 }
 
 ///|
@@ -121,7 +121,7 @@ pub fn Camera::with_sub_camera_view(
   self : Camera,
   sub_camera_view : SubCameraView3d?,
 ) -> Camera {
-  Camera::{ ..self, sub_camera_view, }
+  { ..self, sub_camera_view, }
 }
 
 ///|
@@ -129,7 +129,7 @@ pub fn Camera::with_computed(
   self : Camera,
   computed : ComputedCameraValues,
 ) -> Camera {
-  Camera::{ ..self, computed, }
+  { ..self, computed, }
 }
 
 ///|
@@ -349,7 +349,7 @@ pub struct CameraMainTextureUsages {
 
 ///|
 pub fn CameraMainTextureUsages::CameraMainTextureUsages() -> CameraMainTextureUsages {
-  CameraMainTextureUsages::{
+  {
     bits: @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
     @wgpu.TEXTURE_USAGE_COPY_SRC,
@@ -358,7 +358,7 @@ pub fn CameraMainTextureUsages::CameraMainTextureUsages() -> CameraMainTextureUs
 
 ///|
 pub fn CameraMainTextureUsages::new(bits : UInt64) -> CameraMainTextureUsages {
-  CameraMainTextureUsages::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -366,7 +366,7 @@ pub fn CameraMainTextureUsages::with_usage(
   self : CameraMainTextureUsages,
   usage : UInt64,
 ) -> CameraMainTextureUsages {
-  CameraMainTextureUsages::{ bits: self.bits | usage }
+  { bits: self.bits | usage }
 }
 
 ///|
@@ -381,9 +381,9 @@ pub struct VisibleEntities {
 
 ///|
 pub fn VisibleEntities::VisibleEntities() -> VisibleEntities {
-  let entities : @hashmap.HashMap[Int, Array[@core.Entity]] = @hashmap.HashMap([])
+  let entities : @hashmap.HashMap[Int, Array[@core.Entity]] = HashMap([])
   entities.set(@mesh.ecs_key_mesh3d.id(), [])
-  VisibleEntities::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -498,17 +498,17 @@ pub fn register_camera_required_components(
   world.register_required_components_with(
     ecs_key_camera,
     @camera_primitives.ecs_key_frustum,
-    fn() { @camera_primitives.Frustum::Frustum() },
+    fn() { Frustum() },
   )
   world.register_required_components_with(
     ecs_key_camera,
     ecs_key_camera_main_texture_usages,
-    fn() { CameraMainTextureUsages::CameraMainTextureUsages() },
+    fn() { CameraMainTextureUsages() },
   )
   world.register_required_components_with(
     ecs_key_camera,
     ecs_key_visible_entities,
-    fn() { VisibleEntities::VisibleEntities() },
+    fn() { VisibleEntities() },
   )
   world.register_required_components_with(
     ecs_key_camera,
@@ -518,29 +518,29 @@ pub fn register_camera_required_components(
   world.register_required_components_with(
     ecs_key_camera,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_camera,
     @render.ecs_key_sync_to_render_world,
-    fn() { @render.SyncToRenderWorld::SyncToRenderWorld() },
+    fn() { SyncToRenderWorld() },
   )
   world.register_required_components_with(
     ecs_key_camera,
     ecs_key_render_target,
-    fn() { RenderTarget::Screen },
+    fn() { Screen },
   )
 }
 
 ///|
 pub fn ensure_camera_required_components(world : @ecs.World) -> Unit {
   register_camera_required_components(world) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "Camera required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "Camera required-component cycle detected: \{requiree} -> \{required}",
       )
@@ -589,7 +589,7 @@ fn decode_camera(json : Json) -> Camera {
   ) : (Json?, Int, Bool, Json, Json, Bool, SubCameraView3d?) = try! @json.from_json(
     json,
   )
-  Camera::{
+  {
     viewport: viewport_json.map(fn(value) {
       @camera_viewport.decode_viewport(value)
     }),

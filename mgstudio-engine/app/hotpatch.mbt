@@ -27,18 +27,20 @@ pub struct HotPatchChanges {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn HotPatchPlugin::HotPatchPlugin() -> HotPatchPlugin {
   HotPatchPlugin::{  }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn HotPatched::HotPatched() -> HotPatched {
   HotPatched::{  }
 }
 
 ///|
 pub fn HotPatchChanges::HotPatchChanges() -> HotPatchChanges {
-  HotPatchChanges::{ revision: 0 }
+  { revision: 0 }
 }
 
 ///|
@@ -66,10 +68,7 @@ fn hotpatch_ensure_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[HotPatchChanges] {
   if world.get_resource(HotPatchChanges::resource()) is None {
-    world.insert_resource(
-      HotPatchChanges::resource(),
-      HotPatchChanges::HotPatchChanges(),
-    )
+    world.insert_resource(HotPatchChanges::resource(), HotPatchChanges())
   }
   match world.get_resource_mut(HotPatchChanges::resource()) {
     Some(state) => state
@@ -85,7 +84,7 @@ pub fn hotpatch_mark_patched(world : @ecs.World) -> Unit {
   if !world.contains_message(key) {
     world.init_message(key)
   }
-  ignore(world.send_message(key, HotPatched::HotPatched()))
+  ignore(world.send_message(key, HotPatched()))
 }
 
 ///|

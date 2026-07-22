@@ -26,7 +26,7 @@ pub struct MainOpaquePass3dNode {
 
 ///|
 pub fn MainOpaquePass3dNode::MainOpaquePass3dNode() -> MainOpaquePass3dNode {
-  MainOpaquePass3dNode::{ label: MAIN_OPAQUE_PASS_3D_LABEL }
+  { label: MAIN_OPAQUE_PASS_3D_LABEL }
 }
 
 ///|
@@ -49,7 +49,7 @@ pub fn MainOpaquePass3dState::new(
   has_skybox_pipeline? : Bool = false,
   has_skybox_bind_group? : Bool = false,
 ) -> MainOpaquePass3dState {
-  MainOpaquePass3dState::{
+  {
     has_opaque_phase,
     has_alpha_mask_phase,
     has_skybox_pipeline,

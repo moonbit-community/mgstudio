@@ -1,6 +1,6 @@
 import {
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/camera" @_,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
@@ -16,7 +16,6 @@ import {
   "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/text",
-  "Milky2018/mgstudio/window",
 }
 
 supported_targets = "native"

@@ -25,7 +25,7 @@ pub struct ContactShadows {
 
 ///|
 pub fn ContactShadows::ContactShadows() -> ContactShadows {
-  ContactShadows::{ linear_steps: 16, thickness: 0.1F, length: 0.3F }
+  { linear_steps: 16, thickness: 0.1F, length: 0.3F }
 }
 
 ///|
@@ -34,7 +34,7 @@ pub fn ContactShadows::new(
   thickness : Float,
   length : Float,
 ) -> ContactShadows {
-  ContactShadows::{
+  {
     linear_steps: if linear_steps <= 0 {
       1
     } else {
@@ -86,14 +86,14 @@ pub struct ContactShadowsUniform {
 
 ///|
 pub fn ContactShadowsUniform::ContactShadowsUniform() -> ContactShadowsUniform {
-  ContactShadowsUniform::{ linear_steps: 0U, thickness: 0.0F, length: 0.0F }
+  { linear_steps: 0U, thickness: 0.0F, length: 0.0F }
 }
 
 ///|
 pub fn ContactShadowsUniform::from_settings(
   settings : ContactShadows,
 ) -> ContactShadowsUniform {
-  ContactShadowsUniform::{
+  {
     linear_steps: if settings.linear_steps <= 0 {
       0U
     } else {
@@ -114,7 +114,7 @@ pub fn ContactShadowsUniform::from_settings(
 
 ///|
 pub fn ContactShadowsUniform::disabled() -> ContactShadowsUniform {
-  ContactShadowsUniform::ContactShadowsUniform()
+  ContactShadowsUniform()
 }
 
 ///|
@@ -150,7 +150,7 @@ pub let ecs_key_view_contact_shadows_uniform_offset : @ecs.ComponentKey[
 pub fn ViewContactShadowsUniformOffset::new(
   offset : UInt,
 ) -> ViewContactShadowsUniformOffset {
-  ViewContactShadowsUniformOffset::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -182,7 +182,7 @@ pub impl @app.Resource for ContactShadowsBuffer with fn resource() {
 
 ///|
 pub fn ContactShadowsBuffer::ContactShadowsBuffer() -> ContactShadowsBuffer {
-  ContactShadowsBuffer::{ uniforms: [] }
+  { uniforms: [] }
 }
 
 ///|
@@ -222,6 +222,7 @@ pub fn ContactShadowsBuffer::uniform_at(
 pub struct ContactShadowsPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ContactShadowsPlugin::ContactShadowsPlugin() -> ContactShadowsPlugin {
   ContactShadowsPlugin::{  }
 }
@@ -247,10 +248,7 @@ pub impl @app.Plugin for ContactShadowsPlugin with fn build(self, app) {
 pub fn contact_shadows_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  contact_shadows_plugin_install_with(
-    app,
-    ContactShadowsPlugin::ContactShadowsPlugin(),
-  )
+  contact_shadows_plugin_install_with(app, ContactShadowsPlugin())
 }
 
 ///|
@@ -258,14 +256,14 @@ pub fn contact_shadows_plugin_install_with(
   app : @app.App[@ecs.World],
   _plugin : ContactShadowsPlugin,
 ) -> @app.App[@ecs.World] {
-  let extract_plugin : @render.ExtractComponentPlugin[ContactShadows, Unit] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
+  let extract_plugin : @render.ExtractComponentPlugin[ContactShadows, Unit] = ExtractComponentPlugin()
   let next = @render.extract_component_plugin_with(app, extract_plugin)
   @render.with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {
     let world = sub_app.world()
     if world.get_resource(ContactShadowsBuffer::resource()) is None {
       world.insert_resource(
         ContactShadowsBuffer::resource(),
-        ContactShadowsBuffer::ContactShadowsBuffer(),
+        ContactShadowsBuffer(),
       )
     }
     sub_app.add_systems(
@@ -294,7 +292,7 @@ pub fn render3d_contact_shadows_buffer_mut_or_init(
   if render3d_contact_shadows_buffer_mut(world) is None {
     world.insert_resource(
       ContactShadowsBuffer::resource(),
-      ContactShadowsBuffer::ContactShadowsBuffer(),
+      ContactShadowsBuffer(),
     )
   }
   match render3d_contact_shadows_buffer_mut(world) {

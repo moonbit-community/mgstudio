@@ -26,9 +26,7 @@ fn spawn_text(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
   ignore(
@@ -36,13 +34,13 @@ fn spawn_text(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(-16.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(-16.0F))
+        .with_left(Px(12.0F)),
         @text.Text::new(controller.to_string()),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -81,6 +79,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@camera_controller.PanCameraPlugin::PanCameraPlugin())
-  .add_systems(@app.Startup, (setup_system, spawn_text_system) |> @app.chain())
+  .add_systems(Startup, (setup_system, spawn_text_system) |> @app.chain())
   .run()
 }

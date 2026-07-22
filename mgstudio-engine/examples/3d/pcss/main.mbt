@@ -78,11 +78,7 @@ priv struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{
-    light_type: LightType::Directional,
-    shadow_filter: ShadowFilter::NonTemporal,
-    soft_shadows: true,
-  }
+  { light_type: Directional, shadow_filter: NonTemporal, soft_shadows: true }
 }
 
 ///|
@@ -196,13 +192,13 @@ fn apply_light_type(
   entity.remove_component(@pbr.ecs_key_spot_light)
 
   match app_status.light_type {
-    LightType::Directional =>
+    Directional =>
       commands
       .entity(light)
       .insert_component(create_directional_light(app_status))
-    LightType::Point =>
+    Point =>
       commands.entity(light).insert_component(create_point_light(app_status))
-    LightType::Spot =>
+    Spot =>
       commands.entity(light).insert_component(create_spot_light(app_status))
   }
 }
@@ -214,11 +210,11 @@ fn apply_camera_shadow_filter(
   app_status : AppStatus,
 ) -> Unit {
   let filter_mode = match app_status.shadow_filter {
-    ShadowFilter::NonTemporal => @pbr.ShadowFilteringMethod::Gaussian
-    ShadowFilter::Temporal => @pbr.ShadowFilteringMethod::Temporal
+    NonTemporal => @pbr.ShadowFilteringMethod::Gaussian
+    Temporal => Temporal
   }
   commands.entity(camera).insert_component(filter_mode)
-  if app_status.shadow_filter == ShadowFilter::Temporal {
+  if app_status.shadow_filter == Temporal {
     commands
     .entity(camera)
     .insert_component(
@@ -241,18 +237,10 @@ fn spawn_camera(
     4.466F * 0.7F,
     -10.624F * 0.7F,
   ).with_rotation(
-    @math.Quat::from_euler(
-      @math.EulerRot::YXZ,
-      -134.76F / 180.0F * @math.pi(),
-      -0.175F,
-      0.0F,
-    ),
+    @math.Quat::from_euler(YXZ, -134.76F / 180.0F * @math.pi(), -0.175F, 0.0F),
   )
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      camera_transform,
-    ),
+    @camera.Camera3dBundle::new(Camera(), camera_transform),
   )
   commands.entity(camera).insert_component(PcssCamera::{  })
   commands.entity(camera).insert_component(@pbr.ShadowFilteringMethod::Gaussian)
@@ -314,9 +302,7 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -325,21 +311,21 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Light Type", [
-      (AppSetting::LightType(LightType::Directional), "Directional"),
-      (AppSetting::LightType(LightType::Point), "Point"),
-      (AppSetting::LightType(LightType::Spot), "Spot"),
+      (AppSetting::LightType(Directional), "Directional"),
+      (LightType(Point), "Point"),
+      (LightType(Spot), "Spot"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Shadow Filter", [
-      (AppSetting::ShadowFilter(ShadowFilter::NonTemporal), "Non-Temporal"),
-      (AppSetting::ShadowFilter(ShadowFilter::Temporal), "Temporal"),
+      (AppSetting::ShadowFilter(NonTemporal), "Non-Temporal"),
+      (ShadowFilter(Temporal), "Temporal"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Soft Shadows", [
       (AppSetting::SoftShadows(true), "On"),
-      (AppSetting::SoftShadows(false), "Off"),
+      (SoftShadows(false), "Off"),
     ]),
   )
 }
@@ -381,11 +367,9 @@ fn handle_ui_interactions(
 ///|
 fn app_setting_selected(setting : AppSetting, app_status : AppStatus) -> Bool {
   match setting {
-    AppSetting::LightType(light_type) => light_type == app_status.light_type
-    AppSetting::ShadowFilter(shadow_filter) =>
-      shadow_filter == app_status.shadow_filter
-    AppSetting::SoftShadows(soft_shadows) =>
-      soft_shadows == app_status.soft_shadows
+    LightType(light_type) => light_type == app_status.light_type
+    ShadowFilter(shadow_filter) => shadow_filter == app_status.shadow_filter
+    SoftShadows(soft_shadows) => soft_shadows == app_status.soft_shadows
   }
 }
 
@@ -461,7 +445,7 @@ fn handle_light_type_change(
     let mut changed = false
     for event in events.read() {
       match event.get() {
-        AppSetting::LightType(light_type) =>
+        LightType(light_type) =>
           if status.light_type != light_type {
             status.light_type = light_type
             changed = true
@@ -489,7 +473,7 @@ fn handle_shadow_filter_change(
     let mut changed = false
     for event in events.read() {
       match event.get() {
-        AppSetting::ShadowFilter(shadow_filter) =>
+        ShadowFilter(shadow_filter) =>
           if status.shadow_filter != shadow_filter {
             status.shadow_filter = shadow_filter
             changed = true
@@ -517,7 +501,7 @@ fn handle_pcss_toggle(
     let mut changed = false
     for event in events.read() {
       match event.get() {
-        AppSetting::SoftShadows(soft_shadows) =>
+        SoftShadows(soft_shadows) =>
           if status.soft_shadows != soft_shadows {
             status.soft_shadows = soft_shadows
             changed = true
@@ -544,32 +528,32 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, handle_ui_interactions)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, handle_ui_interactions)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(handle_light_type_change).run_if_on_message(
       widget_click_message_key,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(handle_shadow_filter_change).run_if_on_message(
       widget_click_message_key,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(handle_pcss_toggle).run_if_on_message(
       widget_click_message_key,
     ),
   )
-  .add_systems_param3(@app.Update, update_radio_buttons)
+  .add_systems_param3(Update, update_radio_buttons)
   .run()
 }

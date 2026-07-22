@@ -167,10 +167,7 @@ fn test_tga_24_2x1_bytes() -> Bytes {
 ///|
 test "asset host io: tga decode supports uncompressed true-color with container hint" {
   let bytes = test_tga_24_2x1_bytes()
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Tga),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Tga)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(2, 1)")
   // Left pixel red.
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
@@ -220,10 +217,7 @@ fn test_tga_rle_24_2x1_bytes() -> Bytes {
 ///|
 test "asset host io: tga decode supports RLE true-color payload" {
   let bytes = test_tga_rle_24_2x1_bytes()
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Tga),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Tga)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(2, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -262,10 +256,7 @@ fn test_pnm_p6_2x1_bytes() -> Bytes {
 ///|
 test "asset host io: pnm decode supports binary P6 payload" {
   let bytes = test_pnm_p6_2x1_bytes()
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Pnm),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Pnm)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(2, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -296,10 +287,7 @@ fn test_pnm_p6_16bit_1x1_bytes() -> Bytes {
 ///|
 test "asset host io: pnm decode supports binary P6 16-bit samples" {
   let bytes = test_pnm_p6_16bit_1x1_bytes()
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Pnm),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Pnm)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -315,10 +303,7 @@ fn test_pnm_p3_2x1_bytes() -> Bytes {
 ///|
 test "asset host io: pnm decode supports ascii P3 payload" {
   let bytes = test_pnm_p3_2x1_bytes()
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Pnm),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Pnm)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(2, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -348,10 +333,7 @@ fn test_pnm_p7_rgba_1x1_bytes() -> Bytes {
 test "asset host io: pnm decode supports pam P7 payload and dimensions" {
   let bytes = test_pnm_p7_rgba_1x1_bytes()
   debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Pnm),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Pnm)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="10")
   debug_inspect(decoded.pixels[1].to_uint(), content="20")
@@ -383,10 +365,7 @@ fn test_pnm_p7_rgba_16bit_1x1_bytes() -> Bytes {
 ///|
 test "asset host io: pnm decode supports pam P7 16-bit samples" {
   let bytes = test_pnm_p7_rgba_16bit_1x1_bytes()
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Pnm),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Pnm)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -423,10 +402,7 @@ fn test_farbfeld_1x2_bytes() -> Bytes {
 test "asset host io: farbfeld decode and dimensions work" {
   let bytes = test_farbfeld_1x2_bytes()
   debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 2))")
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Farbfeld),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Farbfeld)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 2)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -471,10 +447,7 @@ fn test_qoi_1x1_red_bytes() -> Bytes {
 test "asset host io: qoi decode and dimensions work" {
   let bytes = test_qoi_1x1_red_bytes()
   debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Qoi),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Qoi)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -520,10 +493,7 @@ fn test_ico_with_png_1x1_red_bytes() -> Bytes {
 test "asset host io: ico dimensions and embedded png decode work" {
   let bytes = test_ico_with_png_1x1_red_bytes()
   debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Ico),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Ico)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")
@@ -582,10 +552,7 @@ fn test_ico_with_dib_1x1_red_bytes() -> Bytes {
 test "asset host io: ico dimensions and DIB BGRA32 decode work" {
   let bytes = test_ico_with_dib_1x1_red_bytes()
   debug_inspect(texture_dimensions_from_bytes(bytes), content="Some((1, 1))")
-  let decoded = decode_texture_image_with_container(
-    bytes,
-    Some(@image.ImageContainerFormat::Ico),
-  ).unwrap()
+  let decoded = decode_texture_image_with_container(bytes, Some(Ico)).unwrap()
   debug_inspect((decoded.width, decoded.height), content="(1, 1)")
   debug_inspect(decoded.pixels[0].to_uint(), content="255")
   debug_inspect(decoded.pixels[1].to_uint(), content="0")

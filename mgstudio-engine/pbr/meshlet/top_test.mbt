@@ -116,14 +116,11 @@ test "pbr meshlet: plugin installs state into app and render sub-app" {
   )
   let debug_material = meshlet_debug_material_add(
     app.world(),
-    MeshletDebugMaterial::MeshletDebugMaterial(),
+    MeshletDebugMaterial(),
   )
   let mesh_material = meshlet_debug_mesh_material3d(debug_material)
-  inspect(
-    mesh_material.material_family is @material.Material3dFamily::MeshletDebug,
-    content="true",
-  )
-  let render_world = app.sub_app(@app.RenderApp).world()
+  inspect(mesh_material.material_family is MeshletDebug, content="true")
+  let render_world = app.sub_app(RenderApp).world()
   inspect(
     render_world.get_resource(ecs_key_meshlet_plugin_state) is Some(_),
     content="true",
@@ -192,20 +189,16 @@ test "pbr meshlet: configure views inserts prepass and deferred bins by view fla
   let world = @ecs.World::new()
   defer world.close()
   let view_entity = world.spawn()
-  try! world.set_by_key(
-    view_entity,
-    @core_pipeline.ecs_key_msaa,
-    @core_pipeline.Msaa::Off,
-  )
+  try! world.set_by_key(view_entity, @core_pipeline.ecs_key_msaa, Off)
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_normal_prepass,
-    @core_pipeline.NormalPrepass::NormalPrepass(),
+    NormalPrepass(),
   )
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_deferred_prepass,
-    @core_pipeline.DeferredPrepass::DeferredPrepass(),
+    DeferredPrepass(),
   )
   let app = @app.App::new(world)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -241,15 +234,11 @@ test "pbr meshlet: configure views mirrors Bevy prepass bin insertion" {
   let world = @ecs.World::new()
   defer world.close()
   let view_entity = world.spawn()
-  try! world.set_by_key(
-    view_entity,
-    @core_pipeline.ecs_key_msaa,
-    @core_pipeline.Msaa::Off,
-  )
+  try! world.set_by_key(view_entity, @core_pipeline.ecs_key_msaa, Off)
   try! world.set_by_key(
     view_entity,
     @core_pipeline.ecs_key_normal_prepass,
-    @core_pipeline.NormalPrepass::NormalPrepass(),
+    NormalPrepass(),
   )
   let app = @app.App::new(world)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -271,11 +260,7 @@ test "panic pbr meshlet: configure views rejects msaa-enabled views" {
   let world = @ecs.World::new()
   defer world.close()
   let view_entity = world.spawn()
-  try! world.set_by_key(
-    view_entity,
-    @core_pipeline.ecs_key_msaa,
-    @core_pipeline.Msaa::Sample4,
-  )
+  try! world.set_by_key(view_entity, @core_pipeline.ecs_key_msaa, Sample4)
   ignore(
     @app.App::new(world)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
@@ -289,11 +274,7 @@ test "pbr meshlet: material prepare system creates empty per-view material bins"
   let world = @ecs.World::new()
   defer world.close()
   let view_entity = world.spawn()
-  try! world.set_by_key(
-    view_entity,
-    @core_pipeline.ecs_key_msaa,
-    @core_pipeline.Msaa::Off,
-  )
+  try! world.set_by_key(view_entity, @core_pipeline.ecs_key_msaa, Off)
   let app = @app.App::new(world)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(MeshletPlugin::MeshletPlugin())
@@ -324,11 +305,11 @@ test "pbr meshlet: transmission and alpha-mode helpers follow bevy standard mate
     content="true",
   )
   let alpha_to_coverage_material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-    @material.AlphaMode3d::AlphaToCoverage,
+    AlphaToCoverage,
   )
   inspect(
     @pbr.standard_material_render_phase_type(alpha_to_coverage_material)
-    is @material.RenderPhaseType::Opaque,
+    is Opaque,
     content="true",
   )
 }

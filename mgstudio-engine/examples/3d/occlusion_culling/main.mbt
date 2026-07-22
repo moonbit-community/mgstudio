@@ -176,7 +176,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
@@ -188,21 +188,17 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_depth_prepass,
-    @pbr.DepthPrepass::DepthPrepass(),
-  )
+  try! world.set_by_key(camera, @pbr.ecs_key_depth_prepass, DepthPrepass())
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_occlusion_culling,
-    @pbr.OcclusionCulling::OcclusionCulling(),
+    OcclusionCulling(),
   )
 
   let help_text = @text.Text2dBundle::new(
@@ -219,9 +215,9 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   occlusion_state.val.help_text = Some(help_text)
 
@@ -270,21 +266,17 @@ fn spin_large_cube(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   occlusion_state.val.occlusion_enabled = !occlusion_state.val.occlusion_enabled
   world.for_each_component(@camera.ecs_key_camera3d, fn(camera, _camera3d) {
     if occlusion_state.val.occlusion_enabled {
-      try! world.set_by_key(
-        camera,
-        @pbr.ecs_key_depth_prepass,
-        @pbr.DepthPrepass::DepthPrepass(),
-      )
+      try! world.set_by_key(camera, @pbr.ecs_key_depth_prepass, DepthPrepass())
       try! world.set_by_key(
         camera,
         @pbr.ecs_key_occlusion_culling,
-        @pbr.OcclusionCulling::OcclusionCulling(),
+        OcclusionCulling(),
       )
     } else {
       try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
@@ -304,10 +296,10 @@ fn update_status_text(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, spin_small_cubes)
-  .add_systems_world(@app.Update, spin_large_cube)
-  .add_systems_world(@app.Update, update_status_text)
-  .add_systems_world(@app.Update, toggle_occlusion_culling_on_request)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, spin_small_cubes)
+  .add_systems_world(Update, spin_large_cube)
+  .add_systems_world(Update, update_status_text)
+  .add_systems_world(Update, toggle_occlusion_culling_on_request)
   .run()
 }

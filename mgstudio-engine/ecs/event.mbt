@@ -35,7 +35,7 @@ priv struct EventOps {
 }
 
 ///|
-let event_ops_registry : @hashmap.HashMap[Int, EventOps] = @hashmap.HashMap([])
+let event_ops_registry : @hashmap.HashMap[Int, EventOps] = HashMap([])
 
 ///|
 fn[T] event_access_ops_new(event_id : Int) -> EventAccessOps[T] {

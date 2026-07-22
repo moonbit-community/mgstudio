@@ -22,7 +22,7 @@ pub struct Extract[T] {
 
 ///|
 pub fn[T] Extract::new(item : T) -> Extract[T] {
-  Extract::{ item, }
+  { item, }
 }
 
 ///|
@@ -32,7 +32,7 @@ pub fn[T] Extract::item(self : Extract[T]) -> T {
 
 ///|
 pub fn[T, U] Extract::map(self : Extract[T], f : (T) -> U) -> Extract[U] {
-  Extract::{ item: f(self.item) }
+  { item: f(self.item) }
 }
 
 ///|
@@ -40,7 +40,7 @@ pub fn[T] extract_param_from_source_world(
   world : @ecs.World,
   read : (@ecs.World) -> T,
 ) -> Extract[T] {
-  Extract::{ item: read(render_source_world(world)) }
+  { item: read(render_source_world(world)) }
 }
 
 ///|

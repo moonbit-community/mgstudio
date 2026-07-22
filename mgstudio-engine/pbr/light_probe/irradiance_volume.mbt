@@ -44,7 +44,7 @@ pub struct RenderViewIrradianceVolumeInfo {
 
 ///|
 pub fn RenderViewIrradianceVolumeInfo::RenderViewIrradianceVolumeInfo() -> RenderViewIrradianceVolumeInfo {
-  RenderViewIrradianceVolumeInfo::{ texture: None, intensity: 1.0F }
+  { texture: None, intensity: 1.0F }
 }
 
 ///|
@@ -52,7 +52,7 @@ pub fn RenderViewIrradianceVolumeInfo::with_texture(
   self : RenderViewIrradianceVolumeInfo,
   texture : @asset.Handle[@asset.Image]?,
 ) -> RenderViewIrradianceVolumeInfo {
-  RenderViewIrradianceVolumeInfo::{ ..self, texture, }
+  { ..self, texture, }
 }
 
 ///|
@@ -60,7 +60,7 @@ pub fn RenderViewIrradianceVolumeInfo::with_intensity(
   self : RenderViewIrradianceVolumeInfo,
   intensity : Float,
 ) -> RenderViewIrradianceVolumeInfo {
-  RenderViewIrradianceVolumeInfo::{ ..self, intensity, }
+  { ..self, intensity, }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn pbr_irradiance_volume_bind_group_entries(
 ) -> RenderViewIrradianceVolumeBindGroupEntries {
   if !use_binding_arrays || volumes.length() == 0 {
     let single = if volumes.length() == 0 { None } else { volumes[0].texture }
-    RenderViewIrradianceVolumeBindGroupEntries::Single(single)
+    Single(single)
   } else {
     let max_count = if max_view_light_probes <= 0 {
       1
@@ -88,7 +88,7 @@ pub fn pbr_irradiance_volume_bind_group_entries(
     while textures.length() < max_count {
       textures.push(None)
     }
-    RenderViewIrradianceVolumeBindGroupEntries::Multiple(textures)
+    Multiple(textures)
   }
 }
 
@@ -111,13 +111,7 @@ pub fn pbr_irradiance_volume_texture_id_entries(
   max_view_light_probes : Int,
 ) -> RenderViewIrradianceVolumeTextureIdEntries {
   if !use_binding_arrays {
-    return RenderViewIrradianceVolumeTextureIdEntries::Single(
-      if texture_ids.length() == 0 {
-        -1
-      } else {
-        texture_ids[0]
-      },
-    )
+    return Single(if texture_ids.length() == 0 { -1 } else { texture_ids[0] })
   }
   let max_count = if max_view_light_probes <= 0 {
     1
@@ -134,7 +128,7 @@ pub fn pbr_irradiance_volume_texture_id_entries(
       },
     )
   }
-  RenderViewIrradianceVolumeTextureIdEntries::Multiple(entries)
+  Multiple(entries)
 }
 
 ///|

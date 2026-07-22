@@ -32,6 +32,7 @@ let terminal_ctrl_c_runtime_state : TerminalCtrlCRuntimeState = {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TerminalCtrlCHandlerPlugin::TerminalCtrlCHandlerPlugin() -> TerminalCtrlCHandlerPlugin {
   TerminalCtrlCHandlerPlugin::{  }
 }

@@ -114,7 +114,7 @@ pub impl @ecs.TriggerEvent for StepEvent with fn set_observer_entity(
   event_ref,
   entity,
 ) {
-  StepEvent::{ ..event_ref, observer_entity: Some(entity) }
+  { ..event_ref, observer_entity: Some(entity) }
 }
 
 ///|
@@ -134,7 +134,7 @@ fn StepEvent::new(phase : Float) -> StepEvent {
 
 ///|
 fn FoxFeetTargets::FoxFeetTargets() -> FoxFeetTargets {
-  FoxFeetTargets::{
+  {
     front_left: @animation.AnimationTargetId::from_names([
       "root", "_rootJoint", "b_Root_00", "b_Hip_01", "b_Spine01_02", "b_Spine02_03",
       "b_LeftUpperArm_09", "b_LeftForeArm_010", "b_LeftHand_011",
@@ -188,7 +188,7 @@ fn setup(world : @ecs.World) -> Unit {
   let graph_handle = @animation.animation_graph_add(graph)
   let feet_targets = FoxFeetTargets::FoxFeetTargets()
 
-  world.insert_resource(animation_setup_key, AnimationSetup::{
+  world.insert_resource(animation_setup_key, {
     clip_handle,
     graph_handle,
     index,
@@ -202,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
   let particle_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@color.Color::white()).with_unlit(true),
   )
-  world.insert_resource(particle_assets_key, ParticleAssets::{
+  world.insert_resource(particle_assets_key, {
     mesh: particle_mesh,
     material: particle_material,
   })
@@ -214,7 +214,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -250,7 +250,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
+          @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
         @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
         @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
@@ -340,7 +340,7 @@ fn observe_on_step(
           Particle::{
             lifetime_timer: @time.Timer::from_seconds(
               0.2F + 0.03F * i_float,
-              @time.TimerMode::Once,
+              Once,
             ),
             size,
             velocity: @math.Vec3::new(
@@ -399,8 +399,8 @@ fn simulate_particles(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .add_observer4(observe_on_step)
-  .add_systems_param3(@app.Update, simulate_particles)
+  .add_systems_param3(Update, simulate_particles)
   .run()
 }

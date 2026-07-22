@@ -58,9 +58,6 @@ type ColorMaterial = @sprite_render_mesh2d_color_material.ColorMaterial
 type ColorMaterialPlugin = @sprite_render_mesh2d_color_material.ColorMaterialPlugin
 
 ///|
-type AlphaMode2d = @sprite_render_mesh2d_material.AlphaMode2d
-
-///|
 type PreparedMaterial2d[M] = @sprite_render_mesh2d_material.PreparedMaterial2d[
   M,
 ]
@@ -606,7 +603,7 @@ fn render2d_camera_postprocess_plan(
   let uses_intermediate_source = bloom is Some(_) ||
     tonemapping_enabled ||
     cas_enabled
-  Render2dCameraPostprocessPlan::{
+  {
     uses_intermediate_source,
     apply_bloom_before_tonemapping: bloom is Some(_),
     tonemapping_stage_enabled: tonemapping_enabled,
@@ -795,9 +792,6 @@ priv struct ExtractedSpriteSliceBatch {
 type ExtractedUiSpriteSliceBatch = @ui_render_runtime.ExtractedUiSpriteSliceBatch
 
 ///|
-type UiRectDrawPayload = @ui_render_runtime.UiRectDrawPayload
-
-///|
 type ExtractedUiRect = @ui_render_runtime.ExtractedUiRect
 
 ///|
@@ -843,9 +837,6 @@ fn render2d_extracted_camera_target_format_raw(
 ) -> UInt {
   camera.target_format_raw
 }
-
-///|
-type Mesh2dDrawPayload = @sprite_render_mesh2d_runtime.Mesh2dDrawPayload
 
 ///|
 type ExtractedMesh2d = @sprite_render_mesh2d_runtime.ExtractedMesh2d
@@ -940,7 +931,7 @@ let render2d_runtime_state : Render2dRuntimeState = {
 
 ///|
 fn RenderState::new() -> RenderState {
-  RenderState::{
+  {
     draw_enabled: false,
     primary_camera: @core.Entity::placeholder(),
     sprites: [],
@@ -1167,7 +1158,7 @@ fn sprite_uv_from_sprite(
     uv_min = @math.Vec2::new(uv_min.x, pair.0)
     uv_max = @math.Vec2::new(uv_max.x, pair.1)
   }
-  Some(SpriteUvInfo::{
+  Some({
     uv_min,
     uv_max,
     image_size: @math.Vec2::new(denom_x, denom_y),
@@ -1198,9 +1189,9 @@ fn append_computed_sprite_slices(
   image_size : @math.Vec2,
 ) -> Bool {
   guard computed_slices is Some(computed_slices) else { return false }
-  sprite_slice_batches.push(ExtractedComputedSpriteSlices::{
+  sprite_slice_batches.push({
     entity: phase_entity_ref_for_main(entity),
-    payload: ComputedSpriteSlicesDrawPayload::{
+    payload: {
       transform,
       color: sprite.color,
       texture: sprite.image,
@@ -1247,9 +1238,9 @@ pub fn render2d_push_sprite_uv(
   layers : RenderLayers,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.extra_sprites.push(ExtractedSprite::{
+    rs.extra_sprites.push({
       entity: phase_entity_ref_placeholder(),
-      payload: SpriteDrawPayload::{
+      payload: {
         transform,
         anchor_offset: @math.Vec2::new(0.0F, 0.0F),
         draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
@@ -1277,9 +1268,9 @@ pub fn render2d_push_sprite_uv_scissor(
   scissor : @math.Rect?,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.extra_sprites.push(ExtractedSprite::{
+    rs.extra_sprites.push({
       entity: phase_entity_ref_placeholder(),
-      payload: SpriteDrawPayload::{
+      payload: {
         transform,
         anchor_offset: @math.Vec2::new(0.0F, 0.0F),
         draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
@@ -1351,7 +1342,7 @@ pub fn render2d_push_sprite_uv_scissor_batch(
           @ui_render_runtime.push_extracted_ui_sprite(
             world,
             Some(camera_entity),
-            @ui_render_runtime.UiSpriteDrawPayload::{
+            {
               transform: payload.transform,
               anchor_offset: payload.anchor_offset,
               draw_scale: payload.draw_scale,
@@ -1364,7 +1355,7 @@ pub fn render2d_push_sprite_uv_scissor_batch(
             },
           )
         None =>
-          rs.extra_sprites.push(ExtractedSprite::{
+          rs.extra_sprites.push({
             entity: phase_entity_ref_placeholder(),
             payload,
           })
@@ -1404,7 +1395,7 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
           @ui_render_runtime.push_extracted_ui_sprite_slice_batch(
             world,
             Some(camera_entity),
-            @ui_render_runtime.UiSpriteSliceBatchDrawPayload::{
+            {
               rotation: payload.rotation,
               draw_scale: payload.draw_scale,
               z: payload.z,
@@ -1418,7 +1409,7 @@ pub fn render2d_push_sprite_uv_scissor_slices_batch(
             },
           )
         None =>
-          rs.extra_sprite_slice_batches.push(ExtractedSpriteSliceBatch::{
+          rs.extra_sprite_slice_batches.push({
             entity: phase_entity_ref_placeholder(),
             payload,
           })
@@ -1462,10 +1453,7 @@ fn render2d_window_target_info(
   if scale_factor <= 0.0F {
     scale_factor = 1.0F
   }
-  Some(RenderTargetComputed::{
-    size: @math.IVec2::new(width, height),
-    scale_factor,
-  })
+  Some({ size: @math.IVec2::new(width, height), scale_factor })
 }
 
 ///|
@@ -1474,13 +1462,13 @@ fn render2d_target_info(
   target : @camera_camera.RenderTarget,
 ) -> RenderTargetComputed? {
   match target {
-    Screen => render2d_window_target_info(world, @window.WindowRef::Primary)
+    Screen => render2d_window_target_info(world, Primary)
     Window(window_ref) => render2d_window_target_info(world, window_ref)
     Image(handle) => {
       let images_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
       if world.get_resource(images_key) is Some(images) &&
         images.get(handle) is Some(image) {
-        Some(RenderTargetComputed::{
+        Some({
           size: @math.IVec2::new(image.width(), image.height()),
           scale_factor: 1.0F,
         })
@@ -1488,10 +1476,7 @@ fn render2d_target_info(
         let width = @asset.asset_texture_width(handle)
         let height = @asset.asset_texture_height(handle)
         if width > 0 && height > 0 {
-          Some(RenderTargetComputed::{
-            size: @math.IVec2::new(width, height),
-            scale_factor: 1.0F,
-          })
+          Some({ size: @math.IVec2::new(width, height), scale_factor: 1.0F })
         } else {
           None
         }
@@ -1561,7 +1546,7 @@ fn render2d_get_or_create_postprocess_intermediate_target(
   for i in 0..<state.postprocess_intermediate_targets.length() {
     let entry = state.postprocess_intermediate_targets[i]
     if render2d_same_entity(entry.camera, camera) && entry.slot == slot {
-      state.postprocess_intermediate_targets[i] = PostProcessIntermediateTargetInfo::{
+      state.postprocess_intermediate_targets[i] = {
         camera,
         slot,
         width: safe_width,
@@ -1571,7 +1556,7 @@ fn render2d_get_or_create_postprocess_intermediate_target(
       return handle
     }
   }
-  state.postprocess_intermediate_targets.push(PostProcessIntermediateTargetInfo::{
+  state.postprocess_intermediate_targets.push({
     camera,
     slot,
     width: safe_width,
@@ -1826,8 +1811,8 @@ fn camera_deband_dither_enabled(
   camera : @core.Entity,
 ) -> Bool {
   match (try! world.get_by_key(camera, @post_process.ecs_key_deband_dither)) {
-    Some(@post_process.DebandDither::Enabled) => true
-    Some(@post_process.DebandDither::Disabled) => false
+    Some(Enabled) => true
+    Some(Disabled) => false
     None => false
   }
 }
@@ -1850,12 +1835,12 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
     let target = match
       (try! ecs_world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
       Some(value) => value
-      None => @camera_camera.RenderTarget::Screen
+      None => Screen
     }
     let camera = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(value) => value
-      None => @camera_camera.Camera::Camera()
+      None => Camera()
     }
     try! (ecs_world
     .get_by_key(entity, @camera_projection2d.ecs_key_projection)
@@ -1973,9 +1958,9 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
   for entity in cameras {
     let target = (try! world.get_by_key(
       entity, @camera_camera.ecs_key_render_target,
-    )).unwrap_or(@camera_camera.RenderTarget::Screen)
+    )).unwrap_or(Screen)
     let camera = (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)).unwrap_or(
-      @camera_camera.Camera::Camera(),
+      Camera(),
     )
     (try! world.get_by_key(entity, @camera_projection2d.ecs_key_projection)).unwrap_or(
       @camera_projection2d.Projection::orthographic_2d(),
@@ -2059,9 +2044,9 @@ fn render2d_extract_camera_entity_ecs(
   }
   let target = (try! world.get_by_key(
     entity, @camera_camera.ecs_key_render_target,
-  )).unwrap_or(@camera_camera.RenderTarget::Screen)
+  )).unwrap_or(Screen)
   let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-    RenderLayers::RenderLayers(),
+    RenderLayers(),
   )
   let bloom = try! world.get_by_key(entity, @post_process.ecs_key_bloom)
   let contrast_adaptive_sharpening = try! world.get_by_key(
@@ -2084,19 +2069,16 @@ fn render2d_extract_camera_entity_ecs(
     } else {
       target_info.scale_factor
     }
-    computed = CameraComputed::{
-      target_size: target_info.physical_size,
-      scale_factor,
-    }
+    computed = { target_size: target_info.physical_size, scale_factor }
   } else if render2d_target_info(world, target) is Some(info) {
     let scale_factor = if info.scale_factor <= 0.0F {
       1.0F
     } else {
       info.scale_factor
     }
-    computed = CameraComputed::{ target_size: info.size, scale_factor }
+    computed = { target_size: info.size, scale_factor }
   }
-  rs.cameras.push(ExtractedCamera2d::{
+  rs.cameras.push({
     entity,
     camera,
     projection,
@@ -2256,7 +2238,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         let anchor = anchors.value(row_index)
         let layers = match render_layers {
           Some(column) => column.value(row_index)
-          None => RenderLayers::RenderLayers()
+          None => RenderLayers()
         }
         let transform = global_transforms.value(row_index).to_transform_approx()
         let mut uv_min = default_uv_min()
@@ -2306,10 +2288,8 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         if needs_repeat_sampler {
           @asset.asset_set_texture_sampler(
             sprite.image,
-            @asset.ImageSampler::Descriptor(
-              @asset.ImageSamplerDescriptor::linear().set_address_mode(
-                @asset.ImageAddressMode::Repeat,
-              ),
+            Descriptor(
+              @asset.ImageSamplerDescriptor::linear().set_address_mode(Repeat),
             ),
           )
         }
@@ -2327,9 +2307,9 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
             scissor,
             image_size,
           ) {
-          rs.sprites.push(ExtractedSprite::{
+          rs.sprites.push({
             entity: phase_entity_ref_for_main(entity),
-            payload: SpriteDrawPayload::{
+            payload: {
               transform,
               anchor_offset,
               draw_scale: draw_scale_for_host,
@@ -2358,7 +2338,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         return
       }
       let layers = (try! source_world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-        RenderLayers::RenderLayers(),
+        RenderLayers(),
       )
       let transform = render2d_resolve_transform_ecs(source_world, entity)
       let wireframe_component = try! source_world.get_by_key(
@@ -2370,9 +2350,9 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         None => @color.Color::white()
       }
       let mesh2d = mesh2d.value()
-      rs.meshes.push(ExtractedMesh2d::{
+      rs.meshes.push({
         entity: phase_entity_ref_for_main(entity),
-        payload: Mesh2dDrawPayload::{
+        payload: {
           mesh_id: render2d_upload_mesh_handle(mesh2d.mesh()),
           transform,
           layers,
@@ -2408,7 +2388,7 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
 pub fn render_queue_system(world : @ecs.World) -> Unit {
   let queue_start = @time.host_time_now()
   let queue_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "queue_2d",
   )
   let material_slots = render_material2d_resolved_slots_or_empty(world)
@@ -2489,11 +2469,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       @time.host_time_now() - queue_start
     ) *
     1000.0F
-  @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
-    "queue_2d",
-    queue_trace_start_us,
-  )
+  @app.timeline_trace_end_span(RenderQueue, "queue_2d", queue_trace_start_us)
 }
 
 ///|
@@ -2573,7 +2549,7 @@ pub fn SceneCullContext::new(
   half_width : Float,
   half_height : Float,
 ) -> SceneCullContext {
-  SceneCullContext::{ center_x, center_y, cosv, sinv, half_width, half_height }
+  { center_x, center_y, cosv, sinv, half_width, half_height }
 }
 
 ///|
@@ -2717,7 +2693,7 @@ fn render2d_camera_scene_cull_context(
     camera.transform,
   )
   let rotation = camera.transform.rotation_z()
-  Some(SceneCullContext::{
+  Some({
     center_x: camera.transform.translation.x,
     center_y: camera.transform.translation.y,
     cosv: @math.cos(rotation),
@@ -3146,7 +3122,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteMain(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
@@ -3173,7 +3149,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteSliceBatchMain(i),
       entity: batch.entity,
       z: batch.payload.transform.translation.z,
@@ -3202,7 +3178,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteExtra(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
@@ -3231,7 +3207,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteSliceBatchExtra(i),
       entity: batch.entity,
       z: batch.payload.z,
@@ -3244,7 +3220,7 @@ fn[M] draw_material2d_scene_phase_items_for_layers(
   }
   ignore(sort_opaque_scene_draw_items(opaque_items))
   ignore(sort_transparent_scene_draw_items(transparent_items))
-  ScenePhaseDrawItems::{ opaque_items, transparent_items }
+  { opaque_items, transparent_items }
 }
 
 ///|
@@ -3359,7 +3335,7 @@ fn draw_resolved_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteMain(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
@@ -3386,7 +3362,7 @@ fn draw_resolved_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteSliceBatchMain(i),
       entity: batch.entity,
       z: batch.payload.transform.translation.z,
@@ -3415,7 +3391,7 @@ fn draw_resolved_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteExtra(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
@@ -3444,7 +3420,7 @@ fn draw_resolved_scene_phase_items_for_layers(
         continue
       }
     }
-    transparent_items.push(DrawItem::{
+    transparent_items.push({
       kind: SpriteSliceBatchExtra(i),
       entity: batch.entity,
       z: batch.payload.z,
@@ -3457,7 +3433,7 @@ fn draw_resolved_scene_phase_items_for_layers(
   }
   ignore(sort_opaque_scene_draw_items(opaque_items))
   ignore(sort_transparent_scene_draw_items(transparent_items))
-  ScenePhaseDrawItems::{ opaque_items, transparent_items }
+  { opaque_items, transparent_items }
 }
 
 ///|
@@ -3551,7 +3527,7 @@ fn build_camera_draw_items(
     extra_ui_sprites, extra_ui_sprite_slice_batches, extra_ui_rects, extra_ui_box_shadows,
     extra_ui_texture_slices, camera_entity, layers,
   )
-  QueuedCameraDrawItems::{
+  {
     camera_entity,
     scene_opaque_items: scene_phase_items.opaque_items,
     scene_transparent_items: scene_phase_items.transparent_items,
@@ -3605,7 +3581,7 @@ fn draw_ui_overlay_items_for_layers(
       ) {
       continue
     }
-    items.push(DrawItem::{
+    items.push({
       kind: UiSpriteExtra(i),
       entity: sprite.entity,
       z: sprite.payload.transform.translation.z,
@@ -3625,7 +3601,7 @@ fn draw_ui_overlay_items_for_layers(
       ) {
       continue
     }
-    items.push(DrawItem::{
+    items.push({
       kind: UiSpriteSliceBatchExtra(i),
       entity: sprite.entity,
       z: sprite.payload.z,
@@ -3645,7 +3621,7 @@ fn draw_ui_overlay_items_for_layers(
       ) {
       continue
     }
-    items.push(DrawItem::{
+    items.push({
       kind: UiRectExtra(i),
       entity: rect.entity,
       z: rect.payload.transform.translation.z,
@@ -3665,7 +3641,7 @@ fn draw_ui_overlay_items_for_layers(
       ) {
       continue
     }
-    items.push(DrawItem::{
+    items.push({
       kind: UiBoxShadowExtra(i),
       entity: shadow.entity,
       z: shadow.payload.transform.translation.z,
@@ -3685,7 +3661,7 @@ fn draw_ui_overlay_items_for_layers(
       ) {
       continue
     }
-    items.push(DrawItem::{
+    items.push({
       kind: UiTextureSliceExtra(i),
       entity: slice.entity,
       z: slice.payload.transform.translation.z,
@@ -3712,9 +3688,9 @@ fn extracted_sprite_item(
   uv_max : @math.Vec2,
   scissor : @math.Rect?,
 ) -> ExtractedSprite {
-  ExtractedSprite::{
+  {
     entity: phase_entity_ref_for_main(entity),
-    payload: SpriteDrawPayload::{
+    payload: {
       transform,
       anchor_offset,
       draw_scale,
@@ -3783,7 +3759,7 @@ fn computed_sprite_slice_draw_payload(
       payload.transform.scale.y * slice.draw_size.y / slice_size.y
     },
   )
-  SpriteDrawPayload::{
+  {
     transform: @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(
         payload.transform.translation.x + world_offset.x,
@@ -3821,10 +3797,10 @@ fn extracted_ui_rect_item(
   radius : UiCornerRadii,
   border : BorderRect,
 ) -> ExtractedUiRect {
-  ExtractedUiRect::{
+  {
     entity: phase_entity_ref_for_main(entity),
     extracted_camera_entity,
-    payload: UiRectDrawPayload::{
+    payload: {
       transform,
       anchor_offset,
       draw_scale,
@@ -3863,15 +3839,9 @@ fn extracted_mesh2d_item(
   wireframe? : Bool = false,
   wireframe_color? : @color.Color = @color.Color::white(),
 ) -> ExtractedMesh2d {
-  ExtractedMesh2d::{
+  {
     entity: phase_entity_ref_for_main(entity),
-    payload: Mesh2dDrawPayload::{
-      mesh_id,
-      transform,
-      layers,
-      wireframe,
-      wireframe_color,
-    },
+    payload: { mesh_id, transform, layers, wireframe, wireframe_color },
   }
 }
 
@@ -3883,7 +3853,7 @@ test "render2d: mesh prepared material handle resolves from extracted entity ins
     entity,
     12,
     @transform.Transform::identity(),
-    RenderLayers::RenderLayers(),
+    RenderLayers(),
   )
   let instances = render_material2d_instances_for_tests([(entity, handle)])
   let prepared_id = match
@@ -3900,7 +3870,7 @@ test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
     @core.Entity::new(2, 0),
     12,
     @transform.Transform::identity(),
-    RenderLayers::RenderLayers(),
+    RenderLayers(),
     wireframe=true,
     wireframe_color=@color.Color::new(0.25F, 0.5F, 0.75F, 1.0F),
   )
@@ -3917,10 +3887,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(1)
   let prepared_materials = prepared_color_materials_for_tests([
-    (
-      material_handle,
-      ColorMaterial::new(@color.Color::white(), AlphaMode2d::Blend),
-    ),
+    (material_handle, ColorMaterial::new(@color.Color::white(), Blend)),
   ])
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
@@ -4013,7 +3980,7 @@ test "render2d: UI overlay draw items route by target camera" {
       None,
       0,
       UiCornerRadii::zero(),
-      BorderRect::BorderRect(),
+      BorderRect(),
     ),
     extracted_ui_rect_item(
       @core.Entity::new(101, 0),
@@ -4029,7 +3996,7 @@ test "render2d: UI overlay draw items route by target camera" {
       None,
       0,
       UiCornerRadii::zero(),
-      BorderRect::BorderRect(),
+      BorderRect(),
     ),
   ]
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
@@ -4091,7 +4058,7 @@ test "render2d: scene draw items exclude UI overlays" {
         None,
         0,
         UiCornerRadii::zero(),
-        BorderRect::BorderRect(),
+        BorderRect(),
       ),
     ],
     [],
@@ -4107,12 +4074,7 @@ test "render2d: scene draw items exclude UI overlays" {
 
 ///|
 test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
-  let plan = render2d_camera_postprocess_plan(
-    Some(@post_process.Bloom::Bloom()),
-    0,
-    None,
-    None,
-  )
+  let plan = render2d_camera_postprocess_plan(Some(Bloom()), 0, None, None)
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
     !plan.tonemapping_stage_enabled &&
@@ -4142,7 +4104,7 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
   let plan = render2d_camera_postprocess_plan(
     None,
     0,
-    Some(@post_process.ColorGrading::ColorGrading()),
+    Some(ColorGrading()),
     None,
   )
   let ok = plan.uses_intermediate_source &&
@@ -4159,7 +4121,7 @@ test "render2d: CAS alone uses Bevy postprocess source path" {
     None,
     0,
     None,
-    Some(@cas.ContrastAdaptiveSharpening::ContrastAdaptiveSharpening()),
+    Some(ContrastAdaptiveSharpening()),
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
@@ -4181,12 +4143,12 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   render_state_update(world, fn(rs) {
     rs.draw_enabled = true
     rs.cameras.clear()
-    rs.cameras.push(ExtractedCamera2d::{
+    rs.cameras.push({
       entity: camera_a,
       camera: @camera_camera.Camera::Camera().with_order(0),
       projection: @camera_projection2d.OrthographicProjection::default_2d(),
       transform: @transform.Transform::identity(),
-      target: @camera_camera.RenderTarget::Screen,
+      target: Screen,
       layers,
       bloom: None,
       compositing_space: None,
@@ -4195,33 +4157,25 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       deband_dither_enabled: false,
       color_grading: None,
       contrast_adaptive_sharpening: None,
-      computed: CameraComputed::{
-        target_size: @math.IVec2::new(640, 360),
-        scale_factor: 1.0F,
-      },
+      computed: { target_size: @math.IVec2::new(640, 360), scale_factor: 1.0F },
     })
-    rs.cameras.push(ExtractedCamera2d::{
+    rs.cameras.push({
       entity: camera_b,
       camera: @camera_camera.Camera::Camera().with_order(1),
       projection: @camera_projection2d.OrthographicProjection::default_2d(),
       transform: @transform.Transform::identity(),
-      target: @camera_camera.RenderTarget::Screen,
+      target: Screen,
       layers,
       bloom: None,
-      compositing_space: Some(@camera_compositing_space.CompositingSpace::Oklab),
+      compositing_space: Some(Oklab),
       target_format_raw: @render_view.extracted_view_target_format_raw(
-        compositing_space=Some(
-          @camera_compositing_space.CompositingSpace::Oklab,
-        ),
+        compositing_space=Some(Oklab),
       ),
       tonemapping_mode: 0,
       deband_dither_enabled: false,
       color_grading: None,
       contrast_adaptive_sharpening: None,
-      computed: CameraComputed::{
-        target_size: @math.IVec2::new(640, 360),
-        scale_factor: 1.0F,
-      },
+      computed: { target_size: @math.IVec2::new(640, 360), scale_factor: 1.0F },
     })
     rs.prepared_camera_indices.clear()
     rs.prepared_camera_indices.push(0)
@@ -4244,7 +4198,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       None,
       0,
       UiCornerRadii::zero(),
-      BorderRect::BorderRect(),
+      BorderRect(),
     ),
   )
   render2d_push_extracted_ui_rect_for_test(
@@ -4263,14 +4217,13 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       None,
       0,
       UiCornerRadii::zero(),
-      BorderRect::BorderRect(),
+      BorderRect(),
     ),
   )
 
   let compositing_space_ok = match render_state_ref(world) {
     Some(rs) =>
-      render2d_extracted_camera_compositing_space(rs.cameras[1]) ==
-      Some(@camera_compositing_space.CompositingSpace::Oklab)
+      render2d_extracted_camera_compositing_space(rs.cameras[1]) == Some(Oklab)
     None => false
   }
   debug_inspect(compositing_space_ok, content="true")
@@ -4296,17 +4249,13 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
   @ui_render_runtime.clear_extracted_ui_nodes(world)
   let layers = RenderLayers::RenderLayers()
   let camera = world.spawn_empty()
-  try! (world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! (world.set_by_key(camera, @camera_camera.ecs_key_camera, Camera())
   |> ignore)
-  try! world.set_by_key(camera, @camera_hdr.ecs_key_hdr, @camera_hdr.Hdr::Hdr())
+  try! world.set_by_key(camera, @camera_hdr.ecs_key_hdr, Hdr())
   try! world.set_by_key(
     camera,
     @camera_compositing_space.ecs_key_compositing_space,
-    @camera_compositing_space.CompositingSpace::Srgb,
+    Srgb,
   )
 
   render2d_push_extracted_ui_rect_for_test(
@@ -4325,7 +4274,7 @@ test "render2d: ecs extract includes UI-only camera without Camera2d marker" {
       None,
       0,
       UiCornerRadii::zero(),
-      BorderRect::BorderRect(),
+      BorderRect(),
     ),
   )
 
@@ -4350,17 +4299,11 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let prepared_materials = prepared_color_materials_for_tests([
     (
       opaque_handle,
-      ColorMaterial::new(
-        @color.Color::new(1.0F, 0.0F, 0.0F, 0.2F),
-        AlphaMode2d::Opaque,
-      ),
+      ColorMaterial::new(@color.Color::new(1.0F, 0.0F, 0.0F, 0.2F), Opaque),
     ),
     (
       blend_handle,
-      ColorMaterial::new(
-        @color.Color::new(0.0F, 1.0F, 0.0F, 0.2F),
-        AlphaMode2d::Blend,
-      ),
+      ColorMaterial::new(@color.Color::new(0.0F, 1.0F, 0.0F, 0.2F), Blend),
     ),
   ])
   let sprites : Array[ExtractedSprite] = []
@@ -4418,10 +4361,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let prepared_materials = prepared_color_materials_for_tests([
     (
       material_handle,
-      ColorMaterial::new(
-        @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-        AlphaMode2d::Blend,
-      ),
+      ColorMaterial::new(@color.Color::new(1.0F, 1.0F, 1.0F, 1.0F), Blend),
     ),
   ])
   let sprites : Array[ExtractedSprite] = [
@@ -4481,14 +4421,14 @@ test "render2d: sprite scale fill start and end keep Bevy crop direction" {
     @math.Vec2::new(1.0F, 1.0F),
     draw_scale,
     region_size,
-    SpriteScalingMode::FillStart,
+    FillStart,
   )
   let (end_uv_min, end_uv_max, _, _) = apply_scale_sprite_image_mode(
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(1.0F, 1.0F),
     draw_scale,
     region_size,
-    SpriteScalingMode::FillEnd,
+    FillEnd,
   )
   let ok = render2d_close(start_uv_min.y, 2.0F / 3.0F) &&
     render2d_close(start_uv_max.y, 1.0F) &&
@@ -4506,7 +4446,7 @@ test "render2d: sprite scale fit start offsets quad center like Bevy" {
     @math.Vec2::new(1.0F, 1.0F),
     draw_scale,
     region_size,
-    SpriteScalingMode::FitStart,
+    FitStart,
   )
   let center_offset = sprite_anchor_offset(
     Anchor::center(),
@@ -4540,17 +4480,11 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let prepared_materials = prepared_color_materials_for_tests([
     (
       masked_low_handle,
-      ColorMaterial::new(
-        @color.Color::new(1.0F, 1.0F, 1.0F, 0.2F),
-        AlphaMode2d::Mask(0.5F),
-      ),
+      ColorMaterial::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.2F), Mask(0.5F)),
     ),
     (
       masked_high_handle,
-      ColorMaterial::new(
-        @color.Color::new(1.0F, 1.0F, 1.0F, 0.8F),
-        AlphaMode2d::Mask(0.5F),
-      ),
+      ColorMaterial::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.8F), Mask(0.5F)),
     ),
   ])
   let sprites : Array[ExtractedSprite] = []
@@ -4626,9 +4560,7 @@ test "render2d: tiled sprite mode computes repeated slices" {
 ///|
 test "render2d: sliced sprite extraction follows computed slices instead of ui slice path" {
   let sprite = Sprite::from_image(@asset.Handle::new(1))
-    .with_image_mode(
-      SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
-    )
+    .with_image_mode(Sliced(TextureSlicer::new(BorderRect::square(8.0F))))
     .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
   guard compute_sprite_slices_from_rect(
       sprite,
@@ -4647,7 +4579,7 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     Some(computed_slices),
     Anchor::center(),
     @transform.Transform::identity(),
-    RenderLayers::RenderLayers(),
+    RenderLayers(),
     None,
     @math.Vec2::new(32.0F, 32.0F),
   )
@@ -4687,9 +4619,7 @@ test "render2d: ecs sprite extraction preserves required and optional columns" {
 
   let sliced_entity = world.spawn_empty()
   let sliced_sprite = Sprite::from_image(@asset.Handle::new(7))
-    .with_image_mode(
-      SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
-    )
+    .with_image_mode(Sliced(TextureSlicer::new(BorderRect::square(8.0F))))
     .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
   guard compute_sprite_slices_from_rect(
       sliced_sprite,
@@ -4821,7 +4751,7 @@ test "render2d: logical view extent derives from physical viewport and scale fac
 pub fn render_execute_system(world : @ecs.World) -> Unit {
   let execute_start = @time.host_time_now()
   let execute_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_2d",
   )
   let source_world = @renderer.render_source_world(world)
@@ -6065,7 +5995,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     ) *
     1000.0F
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "execute_2d",
     execute_trace_start_us,
   )
@@ -6270,6 +6200,7 @@ fn configure_render2d_render_sub_app_ecs(
 pub struct Render2dPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Render2dPlugin::Render2dPlugin() -> Render2dPlugin {
   Render2dPlugin::{  }
 }
@@ -6278,6 +6209,7 @@ pub fn Render2dPlugin::Render2dPlugin() -> Render2dPlugin {
 pub struct Render2dEcsPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Render2dEcsPlugin::Render2dEcsPlugin() -> Render2dEcsPlugin {
   Render2dEcsPlugin::{  }
 }
@@ -6317,7 +6249,7 @@ fn render2d_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
       app.init_resource(fn() { ClearColor::ClearColor() }),
-      DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
+      DefaultGizmoConfigGroup(),
     )
     .add_message(@asset.image_asset_resource_keys.event)
     .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())
@@ -6356,7 +6288,7 @@ fn render2d_plugin_ecs_install(
   ensure_render2d_required_components(app.world())
   let next = init_gizmo_group(
       app.init_resource(fn() { ClearColor::ClearColor() }),
-      DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
+      DefaultGizmoConfigGroup(),
     )
     .add_message(@asset.image_asset_resource_keys.event)
     .add_plugins(ColorMaterialPlugin::ColorMaterialPlugin())

@@ -35,7 +35,7 @@ fn meshlet_wbtest_sphere(
 ///|
 fn meshlet_wbtest_cull(id : Int) -> MeshletTempCullData {
   let x = Float::from_int(id) * 2.0F
-  MeshletTempCullData::{
+  {
     aabb: meshlet_wbtest_aabb(x, 0.0F, 0.0F, 0.5F),
     lod_group_sphere: meshlet_wbtest_sphere(x, 0.0F, 0.0F, 0.5F),
     error: Float::from_int(id) * 0.01F,

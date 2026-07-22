@@ -36,13 +36,14 @@ pub impl @ecs.Message for PlayPitch with fn message() {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PlayPitch::PlayPitch() -> PlayPitch {
   PlayPitch::{  }
 }
 
 ///|
 pub impl Default for PlayPitch with fn default() {
-  PlayPitch::PlayPitch()
+  PlayPitch()
 }
 
 ///|
@@ -55,17 +56,15 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_message(play_pitch_message_key)
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param4(@app.Update, play_pitch)
-  .add_systems_param3(@app.Update, keyboard_input_system)
+  .add_systems_world(Startup, setup)
+  .add_systems_param4(Update, play_pitch)
+  .add_systems_param3(Update, keyboard_input_system)
   .run()
 }
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  world.insert_resource(PitchFrequency::resource(), PitchFrequency::{
-    value: 220.0F,
-  })
+  world.insert_resource(PitchFrequency::resource(), { value: 220.0F })
 }
 
 ///|
@@ -95,18 +94,18 @@ fn keyboard_input_system(
   play_pitch_writer : @ecs.MessageWriter[PlayPitch],
 ) -> Unit {
   let semitone_ratio = @math.pow(2.0F, 1.0F / 12.0F)
-  if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) ||
-    keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
+  if keyboard_input.just_pressed(ArrowUp) ||
+    keyboard_input.just_pressed(ArrowDown) {
     frequency.modify(fn(value) {
-      if keyboard_input.just_pressed(@window.KeyCode::ArrowUp) {
+      if keyboard_input.just_pressed(ArrowUp) {
         value.value = value.value * semitone_ratio
       }
-      if keyboard_input.just_pressed(@window.KeyCode::ArrowDown) {
+      if keyboard_input.just_pressed(ArrowDown) {
         value.value = value.value / semitone_ratio
       }
     })
   }
-  if keyboard_input.just_pressed(@window.KeyCode::Space) {
+  if keyboard_input.just_pressed(Space) {
     play_pitch_writer.write_default() |> ignore
   }
 }

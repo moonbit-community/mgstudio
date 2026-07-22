@@ -102,8 +102,7 @@ fn run_registered_system_config(
     Error(err) => {
       config.last_run_tick = this_run
       match config.error_handler {
-        Some(handler) =>
-          handler(err, system_context(config, ErrorContextKind::System, None))
+        Some(handler) => handler(err, system_context(config, System, None))
         None => raise err
       }
     }

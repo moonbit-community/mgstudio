@@ -44,7 +44,7 @@ pub struct BufferedSender[T] {
 
 ///|
 pub fn[T] BufferedChannel::new(chunk_size? : Int = 1024) -> BufferedChannel[T] {
-  BufferedChannel::{
+  {
     chunk_size: if chunk_size <= 0 {
       1
     } else {
@@ -88,11 +88,8 @@ pub fn[T] BufferedChannel::unbounded(
   self : BufferedChannel[T],
 ) -> (BufferedReceiver[T], BufferedSender[T]) {
   (
-    BufferedReceiver::{ channel: self },
-    BufferedSender::{
-      channel: self,
-      buffer: buffered_channel_take_chunk_buffer(self),
-    },
+    { channel: self },
+    { channel: self, buffer: buffered_channel_take_chunk_buffer(self) },
   )
 }
 

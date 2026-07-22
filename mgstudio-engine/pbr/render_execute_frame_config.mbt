@@ -48,7 +48,7 @@ fn render3d_execute_frame_config(
     source_world,
   )
   let delta_seconds = @pbr_render.render3d_default_time_or_default(source_world).delta_seconds()
-  Render3dExecuteFrameConfig::{
+  {
     gpu_instance_buffer_builder_requested,
     gpu_culling_supported,
     gpu_instance_buffer_builder_enabled,

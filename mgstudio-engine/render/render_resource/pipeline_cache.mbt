@@ -90,7 +90,7 @@ pub struct PipelineCache {
 
 ///|
 pub fn PipelineCache::new() -> PipelineCache {
-  PipelineCache::{ pipelines: [], waiting_pipelines: [], new_pipelines: [] }
+  { pipelines: [], waiting_pipelines: [], new_pipelines: [] }
 }
 
 ///|
@@ -121,9 +121,9 @@ pub fn PipelineCache::queue_render_pipeline(
   let id = CachedRenderPipelineId::new(
     (self.pipelines.length() + self.new_pipelines.length()).to_uint64(),
   )
-  self.new_pipelines.push(CachedPipeline::{
-    descriptor: PipelineDescriptor::RenderPipelineDescriptor(descriptor),
-    state: CachedPipelineState::Queued,
+  self.new_pipelines.push({
+    descriptor: RenderPipelineDescriptor(descriptor),
+    state: Queued,
   })
   id
 }
@@ -136,9 +136,9 @@ pub fn PipelineCache::queue_compute_pipeline(
   let id = CachedComputePipelineId::new(
     (self.pipelines.length() + self.new_pipelines.length()).to_uint64(),
   )
-  self.new_pipelines.push(CachedPipeline::{
-    descriptor: PipelineDescriptor::ComputePipelineDescriptor(descriptor),
-    state: CachedPipelineState::Queued,
+  self.new_pipelines.push({
+    descriptor: ComputePipelineDescriptor(descriptor),
+    state: Queued,
   })
   id
 }
@@ -150,7 +150,7 @@ fn PipelineCache::pipeline_state_by_index(
 ) -> CachedPipelineState {
   let index = id.to_int()
   if index < 0 || index >= self.pipelines.length() {
-    CachedPipelineState::Queued
+    Queued
   } else {
     self.pipelines[index].state
   }
@@ -214,16 +214,15 @@ pub fn PipelineCache::mark_render_pipeline_ready(
 ) -> Unit raise PipelineCacheAccessError {
   let index = id.id().to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id.id())
+    raise PipelineNotProcessed(id.id())
   }
   match self.pipelines[index].descriptor {
     RenderPipelineDescriptor(_) =>
-      self.pipelines[index] = CachedPipeline::{
+      self.pipelines[index] = {
         descriptor: self.pipelines[index].descriptor,
-        state: CachedPipelineState::Ok(Pipeline::RenderPipeline(pipeline)),
+        state: Ok(RenderPipeline(pipeline)),
       }
-    ComputePipelineDescriptor(_) =>
-      raise PipelineCacheAccessError::WrongPipelineKind(id.id())
+    ComputePipelineDescriptor(_) => raise WrongPipelineKind(id.id())
   }
   self.remove_waiting_pipeline(id.id())
 }
@@ -236,15 +235,14 @@ pub fn PipelineCache::mark_compute_pipeline_ready(
 ) -> Unit raise PipelineCacheAccessError {
   let index = id.id().to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id.id())
+    raise PipelineNotProcessed(id.id())
   }
   match self.pipelines[index].descriptor {
-    RenderPipelineDescriptor(_) =>
-      raise PipelineCacheAccessError::WrongPipelineKind(id.id())
+    RenderPipelineDescriptor(_) => raise WrongPipelineKind(id.id())
     ComputePipelineDescriptor(_) =>
-      self.pipelines[index] = CachedPipeline::{
+      self.pipelines[index] = {
         descriptor: self.pipelines[index].descriptor,
-        state: CachedPipelineState::Ok(Pipeline::ComputePipeline(pipeline)),
+        state: Ok(ComputePipeline(pipeline)),
       }
   }
   self.remove_waiting_pipeline(id.id())
@@ -258,11 +256,11 @@ pub fn PipelineCache::mark_pipeline_error(
 ) -> Unit raise PipelineCacheAccessError {
   let index = id.to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id)
+    raise PipelineNotProcessed(id)
   }
-  self.pipelines[index] = CachedPipeline::{
+  self.pipelines[index] = {
     descriptor: self.pipelines[index].descriptor,
-    state: CachedPipelineState::Err(CachedPipelineError::Fatal(message)),
+    state: Err(Fatal(message)),
   }
   self.remove_waiting_pipeline(id)
 }
@@ -275,11 +273,11 @@ pub fn PipelineCache::mark_pipeline_retryable_error(
 ) -> Unit raise PipelineCacheAccessError {
   let index = id.to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id)
+    raise PipelineNotProcessed(id)
   }
-  self.pipelines[index] = CachedPipeline::{
+  self.pipelines[index] = {
     descriptor: self.pipelines[index].descriptor,
-    state: CachedPipelineState::Err(CachedPipelineError::Retryable(message)),
+    state: Err(Retryable(message)),
   }
   self.ensure_waiting_pipeline(id)
 }
@@ -291,11 +289,11 @@ fn PipelineCache::requeue_pipeline(
 ) -> Unit raise PipelineCacheAccessError {
   let index = id.to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id)
+    raise PipelineNotProcessed(id)
   }
-  self.pipelines[index] = CachedPipeline::{
+  self.pipelines[index] = {
     descriptor: self.pipelines[index].descriptor,
-    state: CachedPipelineState::Queued,
+    state: Queued,
   }
   self.ensure_waiting_pipeline(id)
 }
@@ -308,9 +306,9 @@ fn PipelineCache::process_pipeline(self : PipelineCache, id : UInt64) -> Unit {
   }
   match self.pipelines[index].state {
     Queued =>
-      self.pipelines[index] = CachedPipeline::{
+      self.pipelines[index] = {
         descriptor: self.pipelines[index].descriptor,
-        state: CachedPipelineState::Creating,
+        state: Creating,
       }
     Creating => ()
     Err(Retryable(_)) =>
@@ -330,12 +328,11 @@ pub fn PipelineCache::get_render_pipeline_descriptor(
 ) -> RenderPipelineDescriptor raise PipelineCacheAccessError {
   let index = id.id().to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id.id())
+    raise PipelineNotProcessed(id.id())
   }
   match self.pipelines[index].descriptor {
     RenderPipelineDescriptor(descriptor) => descriptor
-    ComputePipelineDescriptor(_) =>
-      raise PipelineCacheAccessError::WrongPipelineKind(id.id())
+    ComputePipelineDescriptor(_) => raise WrongPipelineKind(id.id())
   }
 }
 
@@ -346,11 +343,10 @@ pub fn PipelineCache::get_compute_pipeline_descriptor(
 ) -> ComputePipelineDescriptor raise PipelineCacheAccessError {
   let index = id.id().to_int()
   if index < 0 || index >= self.pipelines.length() {
-    raise PipelineCacheAccessError::PipelineNotProcessed(id.id())
+    raise PipelineNotProcessed(id.id())
   }
   match self.pipelines[index].descriptor {
-    RenderPipelineDescriptor(_) =>
-      raise PipelineCacheAccessError::WrongPipelineKind(id.id())
+    RenderPipelineDescriptor(_) => raise WrongPipelineKind(id.id())
     ComputePipelineDescriptor(descriptor) => descriptor
   }
 }
@@ -389,7 +385,7 @@ pub fn PipelineCache::get_compute_pipeline(
 pub fn PipelineCache::process_queue(self : PipelineCache) -> Unit {
   for new_pipeline in self.new_pipelines {
     let id = self.pipelines.length().to_uint64()
-    self.pipelines.push(CachedPipeline::{
+    self.pipelines.push({
       descriptor: new_pipeline.descriptor,
       state: new_pipeline.state,
     })

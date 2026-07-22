@@ -121,7 +121,7 @@ priv struct IrradianceVolumesState {
 fn default_state() -> IrradianceVolumesState {
   {
     irradiance_volume_present: true,
-    model: ExampleModel::Sphere,
+    model: Sphere,
     rotating: true,
     voxels_visible: false,
     camera: None,
@@ -181,7 +181,7 @@ fn create_help_text() -> String {
   }
   let switch_mesh_help_text = if example_model_eq(
       irradiance_volumes_state.val.model,
-      ExampleModel::Sphere,
+      Sphere,
     ) {
     SWITCH_TO_FOX_HELP_TEXT
   } else {
@@ -268,11 +268,7 @@ fn set_entity_visibility(
   visible : Bool,
 ) -> Unit {
   guard entity is Some(target) else { return }
-  let value = if visible {
-    @visibility.Visibility::Visible
-  } else {
-    @visibility.Visibility::Hidden
-  }
+  let value = if visible { @visibility.Visibility::Visible } else { Hidden }
   try! world.set_by_key(target, @visibility.ecs_key_visibility, value)
 }
 
@@ -324,11 +320,7 @@ fn spawn_irradiance_volume(
 ) -> Unit {
   let entity = world.spawn_empty()
   irradiance_volumes_state.val.light_probe = Some(entity)
-  try! world.set_by_key(
-    entity,
-    @pbr.ecs_key_light_probe,
-    @pbr.LightProbe::LightProbe(),
-  )
+  try! world.set_by_key(entity, @pbr.ecs_key_light_probe, LightProbe())
   try! world.set_by_key(
     entity,
     @pbr.ecs_key_irradiance_volume,
@@ -416,7 +408,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
     @pbr.StandardMaterial::from_color(
       @color.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
     )
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
     .with_unlit(true),
   )
   let mesh = @mesh.Mesh3d::new(
@@ -448,7 +440,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
         try! world.set_by_key(
           entity,
           @pbr.ecs_key_not_shadow_caster,
-          @pbr.NotShadowCaster::NotShadowCaster(),
+          NotShadowCaster(),
         )
         irradiance_volumes_state.val.voxel_cubes.push(entity)
       }
@@ -479,9 +471,9 @@ fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     )
     .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   irradiance_volumes_state.val.help_text = Some(text)
 }
@@ -538,15 +530,15 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn change_main_object(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Tab) {
+  if !@input.key_just_pressed(Tab) {
     return
   }
-  if example_model_eq(irradiance_volumes_state.val.model, ExampleModel::Sphere) {
-    irradiance_volumes_state.val.model = ExampleModel::Fox
+  if example_model_eq(irradiance_volumes_state.val.model, Sphere) {
+    irradiance_volumes_state.val.model = Fox
     set_entity_visibility(world, irradiance_volumes_state.val.sphere, false)
     set_entity_visibility(world, irradiance_volumes_state.val.fox, true)
   } else {
-    irradiance_volumes_state.val.model = ExampleModel::Sphere
+    irradiance_volumes_state.val.model = Sphere
     set_entity_visibility(world, irradiance_volumes_state.val.sphere, true)
     set_entity_visibility(world, irradiance_volumes_state.val.fox, false)
   }
@@ -555,7 +547,7 @@ fn change_main_object(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   guard irradiance_volumes_state.val.light_probe is Some(light_probe) else {
@@ -585,7 +577,7 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_voxel_visibility(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Backspace) {
+  if !@input.key_just_pressed(Backspace) {
     return
   }
   irradiance_volumes_state.val.voxels_visible = !irradiance_volumes_state.val.voxels_visible
@@ -601,7 +593,7 @@ fn toggle_voxel_visibility(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_rotation() -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Enter) {
+  if !@input.key_just_pressed(Enter) {
     return
   }
   irradiance_volumes_state.val.rotating = !irradiance_volumes_state.val.rotating
@@ -646,7 +638,7 @@ fn move_entity_on_ground(
 
 ///|
 fn handle_mouse_clicks(world : @ecs.World) -> Unit {
-  if !@input.mouse_button_pressed(@window.MouseButton::Left) {
+  if !@input.mouse_button_pressed(Left) {
     return
   }
   guard irradiance_volumes_state.val.camera is Some(camera_entity) else {
@@ -697,13 +689,13 @@ fn update_text() -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, rotate_camera)
-  .add_systems_world(@app.Update, handle_mouse_clicks)
-  .add_systems_world(@app.Update, change_main_object)
-  .add_systems_world(@app.Update, toggle_irradiance_volumes)
-  .add_systems_world(@app.Update, toggle_voxel_visibility)
-  .add_systems_fn(@app.Update, toggle_rotation)
-  .add_systems_fn(@app.Update, update_text)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, rotate_camera)
+  .add_systems_world(Update, handle_mouse_clicks)
+  .add_systems_world(Update, change_main_object)
+  .add_systems_world(Update, toggle_irradiance_volumes)
+  .add_systems_world(Update, toggle_voxel_visibility)
+  .add_systems_fn(Update, toggle_rotation)
+  .add_systems_fn(Update, update_text)
   .run()
 }

@@ -19,11 +19,7 @@ test "visibility: inherited child is hidden when parent is hidden" {
   let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
-  try! world.set_by_key(
-    parent,
-    ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, ecs_key_visibility, Hidden)
   try! world.set_by_key(
     parent,
     ecs_key_inherited_visibility,
@@ -40,11 +36,7 @@ test "visibility: inherited child is hidden when parent is hidden" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(child, ecs_key_visibility, Inherited)
   try! world.set_by_key(
     child,
     ecs_key_inherited_visibility,
@@ -69,11 +61,7 @@ test "visibility: incrementally added child inherits hidden parent after initial
   initial_ctx.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(initial_ctx)
   let parent = world.spawn_empty()
-  try! world.set_by_key(
-    parent,
-    ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, ecs_key_visibility, Hidden)
   try! world.set_by_key(
     parent,
     ecs_key_inherited_visibility,
@@ -96,11 +84,7 @@ test "visibility: incrementally added child inherits hidden parent after initial
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(child, ecs_key_visibility, Inherited)
   try! world.set_by_key(
     child,
     ecs_key_inherited_visibility,
@@ -126,11 +110,7 @@ test "visibility: removing Parent restores inherited visibility" {
   initial_ctx.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(initial_ctx)
   let parent = world.spawn_empty()
-  try! world.set_by_key(
-    parent,
-    ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, ecs_key_visibility, Hidden)
   try! world.set_by_key(
     parent,
     ecs_key_inherited_visibility,
@@ -142,11 +122,7 @@ test "visibility: removing Parent restores inherited visibility" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(child, ecs_key_visibility, Inherited)
   try! world.set_by_key(
     child,
     ecs_key_inherited_visibility,
@@ -187,11 +163,7 @@ test "visibility: incrementally added child honors hidden parent before parent p
 
   ignore(world.increment_change_tick())
   let parent = world.spawn_empty()
-  try! world.set_by_key(
-    parent,
-    ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, ecs_key_visibility, Hidden)
   try! world.set_by_key(
     parent,
     ecs_key_inherited_visibility,
@@ -213,11 +185,7 @@ test "visibility: incrementally added child honors hidden parent before parent p
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(child, ecs_key_visibility, Inherited)
   try! world.set_by_key(
     child,
     ecs_key_inherited_visibility,
@@ -241,11 +209,7 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let tick = world.increment_change_tick()
   ignore(tick)
   let parent = world.spawn_empty()
-  try! world.set_by_key(
-    parent,
-    ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, ecs_key_visibility, Hidden)
   try! world.set_by_key(
     parent,
     ecs_key_inherited_visibility,
@@ -262,11 +226,7 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_visibility,
-    @visibility.Visibility::Visible,
-  )
+  try! world.set_by_key(child, ecs_key_visibility, Visible)
   try! world.set_by_key(
     child,
     ecs_key_inherited_visibility,
@@ -297,11 +257,7 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  try! world.set_by_key(
-    child,
-    ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(child, ecs_key_visibility, Inherited)
   try! world.set_by_key(
     child,
     ecs_key_inherited_visibility,
@@ -364,11 +320,7 @@ test "visibility plugin: hidden parent clears child view visibility" {
     .add_plugins(@visibility.VisibilityPlugin::VisibilityPlugin())
   let world = app.world()
   let parent = world.spawn_empty()
-  try! world.set_by_key(
-    parent,
-    ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! world.set_by_key(parent, ecs_key_visibility, Hidden)
   let child = world.spawn_empty()
   try! world.set_by_key(
     child,
@@ -490,7 +442,7 @@ test "visibility: no-cpu-culling marker has stable default and ecs key" {
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_no_cpu_culling,
-    @visibility.NoCpuCulling::NoCpuCulling(),
+    NoCpuCulling(),
   )
   debug_inspect(
     (try! world.get_by_key(entity, @visibility.ecs_key_no_cpu_culling))

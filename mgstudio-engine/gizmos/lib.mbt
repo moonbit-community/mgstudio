@@ -40,6 +40,7 @@ let ecs_res_key_gizmo_plugin_marker : @ecs.ResourceKey[GizmoPluginMarker] = @ecs
 pub struct GizmoPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn GizmoPlugin::GizmoPlugin() -> GizmoPlugin {
   GizmoPlugin::{  }
 }
@@ -96,7 +97,7 @@ pub type Grid2dBuilder = @sprite.Grid2dBuilder
 
 ///|
 pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  gizmo_plugin_with(app, GizmoPlugin::GizmoPlugin())
+  gizmo_plugin_with(app, GizmoPlugin())
 }
 
 ///|
@@ -110,6 +111,7 @@ pub impl @app.Plugin for GizmoPlugin with fn build(self, app) {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn gizmo_plugin_with(
   app : @app.App[@ecs.World],
   plugin : GizmoPlugin,
@@ -132,6 +134,6 @@ pub fn gizmo_plugin_with(
   next = next.add_last_system_config(
     @app.system(update_gizmo_meshes).in_set(gizmo_set_mesh),
   )
-  next = next.configure_set(@app.Last, gizmo_set_flush, before=[gizmo_set_mesh])
+  next = next.configure_set(Last, gizmo_set_flush, before=[gizmo_set_mesh])
   next
 }

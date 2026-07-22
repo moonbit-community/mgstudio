@@ -25,12 +25,12 @@ pub fn AtomicPodBlob::new(word_count : Int) -> AtomicPodBlob {
   if word_count < 0 {
     abort("atomic pod word count must be non-negative")
   }
-  AtomicPodBlob::{ words: Array::make(word_count, 0U) }
+  { words: Array::make(word_count, 0U) }
 }
 
 ///|
 pub fn AtomicPodBlob::from_words(words : Array[UInt]) -> AtomicPodBlob {
-  AtomicPodBlob::{ words: words.copy() }
+  { words: words.copy() }
 }
 
 ///|

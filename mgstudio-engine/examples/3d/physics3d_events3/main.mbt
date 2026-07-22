@@ -20,9 +20,9 @@ fn main {
     @mgstudio.DefaultPlugins::DefaultPlugins(),
   )
   @physics3d.physics3d_debug_render_plugin(app)
-  .add_systems_world(@app.Startup, setup_graphics)
-  .add_systems_world(@app.Startup, setup_physics)
-  .add_systems_world(@app.PostUpdate, display_events)
+  .add_systems_world(Startup, setup_graphics)
+  .add_systems_world(Startup, setup_physics)
+  .add_systems_world(PostUpdate, display_events)
   .run()
 }
 
@@ -106,11 +106,11 @@ fn display_events(world : @ecs.World) -> Unit {
 
   for collision_event in events.collisions {
     match collision_event {
-      @physics3d.CollisionEvent3d::Started(a, b, sensor) =>
+      Started(a, b, sensor) =>
         println(
           "Received collision event: Started(\{a.id}, \{b.id}, sensor=\{sensor})",
         )
-      @physics3d.CollisionEvent3d::Stopped(a, b, sensor) =>
+      Stopped(a, b, sensor) =>
         println(
           "Received collision event: Stopped(\{a.id}, \{b.id}, sensor=\{sensor})",
         )

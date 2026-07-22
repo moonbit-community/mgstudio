@@ -141,13 +141,13 @@ fn setup(
 ///|
 fn input_control(pool : @app.ResMut[SimulatedPool]) -> Unit {
   pool.modify(fn(value) {
-    if @input.key_just_pressed(@window.KeyCode::Space) {
+    if @input.key_just_pressed(Space) {
       value.busy = !value.busy
     }
-    if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
+    if @input.key_just_pressed(ArrowUp) {
       value.worker_count += 1
     }
-    if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
+    if @input.key_just_pressed(ArrowDown) {
       value.worker_count = max_int(value.worker_count - 1, 1)
     }
   })
@@ -218,9 +218,9 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param(@app.Update, input_control)
-  .add_systems_param2(@app.Update, simulate_pool)
-  .add_systems_param3(@app.Update, animate_cubes)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param(Update, input_control)
+  .add_systems_param2(Update, simulate_pool)
+  .add_systems_param3(Update, animate_cubes)
   .run()
 }

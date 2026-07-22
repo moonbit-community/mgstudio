@@ -17,6 +17,7 @@
 pub struct IsDefaultUiCamera {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn IsDefaultUiCamera::IsDefaultUiCamera() -> IsDefaultUiCamera {
   IsDefaultUiCamera::{  }
 }
@@ -28,7 +29,7 @@ pub struct UiTargetCamera {
 
 ///|
 pub fn UiTargetCamera::new(camera : @core.Entity) -> UiTargetCamera {
-  UiTargetCamera::{ camera, }
+  { camera, }
 }
 
 ///|
@@ -45,12 +46,12 @@ pub struct ComputedUiTargetCamera {
 pub fn ComputedUiTargetCamera::new(
   camera : @core.Entity,
 ) -> ComputedUiTargetCamera {
-  ComputedUiTargetCamera::{ camera, }
+  { camera, }
 }
 
 ///|
 pub fn ComputedUiTargetCamera::ComputedUiTargetCamera() -> ComputedUiTargetCamera {
-  ComputedUiTargetCamera::{ camera: @core.Entity::placeholder() }
+  { camera: @core.Entity::placeholder() }
 }
 
 ///|
@@ -75,15 +76,12 @@ pub fn ComputedUiRenderTargetInfo::new(
   scale_factor : Float,
   physical_size : @math.IVec2,
 ) -> ComputedUiRenderTargetInfo {
-  ComputedUiRenderTargetInfo::{ scale_factor, physical_size }
+  { scale_factor, physical_size }
 }
 
 ///|
 pub fn ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo() -> ComputedUiRenderTargetInfo {
-  ComputedUiRenderTargetInfo::{
-    scale_factor: 1.0F,
-    physical_size: @math.IVec2::new(0, 0),
-  }
+  { scale_factor: 1.0F, physical_size: @math.IVec2::new(0, 0) }
 }
 
 ///|
@@ -119,12 +117,12 @@ pub(all) struct Val2 {
 
 ///|
 pub fn Val2::Val2() -> Val2 {
-  Val2::{ x: Val::zero(), y: Val::zero() }
+  { x: Val::zero(), y: Val::zero() }
 }
 
 ///|
 pub fn Val2::new(x : Val, y : Val) -> Val2 {
-  Val2::{ x, y }
+  { x, y }
 }
 
 ///|
@@ -134,12 +132,12 @@ pub fn Val2::all(value : Val) -> Val2 {
 
 ///|
 pub fn Val2::px(x : Float, y : Float) -> Val2 {
-  Val2::new(Val::Px(x), Val::Px(y))
+  Val2::new(Px(x), Px(y))
 }
 
 ///|
 pub fn Val2::percent(x : Float, y : Float) -> Val2 {
-  Val2::new(Val::Percent(x), Val::Percent(y))
+  Val2::new(Percent(x), Percent(y))
 }
 
 ///|
@@ -167,26 +165,22 @@ pub(all) struct UiTransform {
 
 ///|
 pub fn UiTransform::UiTransform() -> UiTransform {
-  UiTransform::{
-    translation: Val2::Val2(),
-    scale: @math.Vec2::new(1.0F, 1.0F),
-    rotation: 0.0F,
-  }
+  { translation: Val2(), scale: @math.Vec2::new(1.0F, 1.0F), rotation: 0.0F }
 }
 
 ///|
 pub fn UiTransform::from_rotation(rotation : Float) -> UiTransform {
-  UiTransform::{ ..UiTransform::UiTransform(), rotation, }
+  { ..UiTransform(), rotation, }
 }
 
 ///|
 pub fn UiTransform::from_translation(translation : Val2) -> UiTransform {
-  UiTransform::{ ..UiTransform::UiTransform(), translation, }
+  { ..UiTransform(), translation, }
 }
 
 ///|
 pub fn UiTransform::from_scale(scale : @math.Vec2) -> UiTransform {
-  UiTransform::{ ..UiTransform::UiTransform(), scale, }
+  { ..UiTransform(), scale, }
 }
 
 ///|
@@ -207,12 +201,12 @@ pub struct UiLayout {
 
 ///|
 pub fn UiLayout::new(rect : @math.Rect) -> UiLayout {
-  UiLayout::{
+  {
     stack_index: 0,
     rect,
-    border: @sprite.BorderRect::BorderRect(),
-    padding: @sprite.BorderRect::BorderRect(),
-    border_radius: ResolvedBorderRadius::ResolvedBorderRadius(),
+    border: BorderRect(),
+    padding: BorderRect(),
+    border_radius: ResolvedBorderRadius(),
     outline_width: 0.0F,
     outline_offset: 0.0F,
   }
@@ -227,7 +221,7 @@ pub fn UiLayout::from_computed(
   outline_width : Float,
   outline_offset : Float,
 ) -> UiLayout {
-  UiLayout::{
+  {
     stack_index: 0,
     rect,
     border,
@@ -243,7 +237,7 @@ pub fn UiLayout::with_stack_index(
   self : UiLayout,
   stack_index : Int,
 ) -> UiLayout {
-  UiLayout::{ ..self, stack_index, }
+  { ..self, stack_index, }
 }
 
 ///|
@@ -356,9 +350,9 @@ pub fn UiLayout::resolve_clip_rect(
 ) -> @math.Rect {
   let mut clip_rect = self.border_box()
   let clip_inset = match overflow_clip_margin.visual_box {
-    OverflowClipBox::BorderBox => @sprite.BorderRect::BorderRect()
-    OverflowClipBox::ContentBox => self.content_inset()
-    OverflowClipBox::PaddingBox => self.border
+    BorderBox => @sprite.BorderRect::BorderRect()
+    ContentBox => self.content_inset()
+    PaddingBox => self.border
   }
   let margin = if overflow_clip_margin.margin < 0.0F {
     0.0F
@@ -375,13 +369,13 @@ pub fn UiLayout::resolve_clip_rect(
       clip_rect.max.y - clip_inset.bottom + margin,
     ),
   )
-  if overflow.x == OverflowAxis::Visible {
+  if overflow.x == Visible {
     clip_rect = @math.Rect::new(
       @math.Vec2::new(-1.0F / 0.0F, clip_rect.min.y),
       @math.Vec2::new(1.0F / 0.0F, clip_rect.max.y),
     )
   }
-  if overflow.y == OverflowAxis::Visible {
+  if overflow.y == Visible {
     clip_rect = @math.Rect::new(
       @math.Vec2::new(clip_rect.min.x, -1.0F / 0.0F),
       @math.Vec2::new(clip_rect.max.x, 1.0F / 0.0F),
@@ -402,7 +396,7 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
     }
     let render_target_info = match camera_entity {
       Some(entity) => ui_compute_render_target_info(world, entity)
-      None => ComputedUiRenderTargetInfo::ComputedUiRenderTargetInfo()
+      None => ComputedUiRenderTargetInfo()
     }
     let (camera_id, camera_generation) = match camera_entity {
       Some(entity) => (entity.id, entity.generation)

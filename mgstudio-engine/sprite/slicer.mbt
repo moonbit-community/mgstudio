@@ -20,7 +20,7 @@ pub(all) enum SliceScaleMode {
 
 ///|
 pub fn SliceScaleMode::default() -> SliceScaleMode {
-  SliceScaleMode::Stretch
+  Stretch
 }
 
 ///|
@@ -33,17 +33,17 @@ pub struct TextureSlicer {
 
 ///|
 pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
-  TextureSlicer::{
+  {
     border,
-    center_scale_mode: SliceScaleMode::Stretch,
-    sides_scale_mode: SliceScaleMode::Stretch,
+    center_scale_mode: Stretch,
+    sides_scale_mode: Stretch,
     max_corner_scale: 1.0F,
   }
 }
 
 ///|
 pub fn TextureSlicer::TextureSlicer() -> TextureSlicer {
-  TextureSlicer::new(BorderRect::BorderRect())
+  TextureSlicer::new(BorderRect())
 }
 
 ///|
@@ -51,7 +51,7 @@ pub fn TextureSlicer::with_center_scale_mode(
   self : TextureSlicer,
   center_scale_mode : SliceScaleMode,
 ) -> TextureSlicer {
-  TextureSlicer::{ ..self, center_scale_mode, }
+  { ..self, center_scale_mode, }
 }
 
 ///|
@@ -59,7 +59,7 @@ pub fn TextureSlicer::with_sides_scale_mode(
   self : TextureSlicer,
   sides_scale_mode : SliceScaleMode,
 ) -> TextureSlicer {
-  TextureSlicer::{ ..self, sides_scale_mode, }
+  { ..self, sides_scale_mode, }
 }
 
 ///|
@@ -67,7 +67,7 @@ pub fn TextureSlicer::with_max_corner_scale(
   self : TextureSlicer,
   max_corner_scale : Float,
 ) -> TextureSlicer {
-  TextureSlicer::{ ..self, max_corner_scale, }
+  { ..self, max_corner_scale, }
 }
 
 ///|
@@ -142,7 +142,7 @@ fn TextureSlicer::corner_slices(
   let min = texture_slice_rect_min(base_rect)
   let max = texture_slice_rect_max(base_rect)
   (
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         min,
         texture_slice_vec2_add(min, @math.Vec2::new(left, top)),
@@ -156,7 +156,7 @@ fn TextureSlicer::corner_slices(
         (render_size.y - top * scale) / 2.0F,
       ),
     },
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         @math.Vec2::new(max.x - right, min.y),
         @math.Vec2::new(max.x, min.y + top),
@@ -170,7 +170,7 @@ fn TextureSlicer::corner_slices(
         (render_size.y - top * scale) / 2.0F,
       ),
     },
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         @math.Vec2::new(min.x, max.y - bottom),
         @math.Vec2::new(min.x + left, max.y),
@@ -184,7 +184,7 @@ fn TextureSlicer::corner_slices(
         (-render_size.y + bottom * scale) / 2.0F,
       ),
     },
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         @math.Vec2::new(max.x - right, max.y - bottom),
         max,
@@ -215,7 +215,7 @@ fn TextureSlicer::horizontal_side_slices(
   let min = texture_slice_rect_min(base_rect)
   let max = texture_slice_rect_max(base_rect)
   (
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         texture_slice_vec2_add(min, @math.Vec2::new(0.0F, self.border.top)),
         @math.Vec2::new(min.x + self.border.left, max.y - self.border.bottom),
@@ -229,7 +229,7 @@ fn TextureSlicer::horizontal_side_slices(
         (bottom_left.draw_size.y - left.draw_size.y) / 2.0F,
       ),
     },
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         @math.Vec2::new(max.x - self.border.right, min.y + self.border.top),
         texture_slice_vec2_sub(max, @math.Vec2::new(0.0F, self.border.bottom)),
@@ -260,7 +260,7 @@ fn TextureSlicer::vertical_side_slices(
   let min = texture_slice_rect_min(base_rect)
   let max = texture_slice_rect_max(base_rect)
   (
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         texture_slice_vec2_add(min, @math.Vec2::new(self.border.left, 0.0F)),
         @math.Vec2::new(max.x - self.border.right, min.y + self.border.top),
@@ -274,7 +274,7 @@ fn TextureSlicer::vertical_side_slices(
         (render_size.y - top_left.draw_size.y) / 2.0F,
       ),
     },
-    TextureSlice::{
+    {
       texture_rect: @math.Rect::new(
         @math.Vec2::new(min.x + self.border.left, max.y - self.border.bottom),
         texture_slice_vec2_sub(max, @math.Vec2::new(self.border.right, 0.0F)),
@@ -308,7 +308,7 @@ pub fn TextureSlicer::compute_slices(
   let rect_size = texture_slice_rect_size(rect)
   if border_total.x >= rect_size.x || border_total.y >= rect_size.y {
     return [
-      TextureSlice::{
+      {
         texture_rect: rect,
         draw_size: target_size,
         offset: @math.Vec2::new(0.0F, 0.0F),
@@ -345,20 +345,20 @@ pub fn TextureSlicer::compute_slices(
     corners.3,
   ]
   match self.center_scale_mode {
-    SliceScaleMode::Stretch => slices.push(center)
-    SliceScaleMode::Tile(stretch_value) =>
+    Stretch => slices.push(center)
+    Tile(stretch_value) =>
       for slice in center.tiled(stretch_value, (true, true)) {
         slices.push(slice)
       }
   }
   match self.sides_scale_mode {
-    SliceScaleMode::Stretch => {
+    Stretch => {
       slices.push(vertical_sides.0)
       slices.push(vertical_sides.1)
       slices.push(horizontal_sides.0)
       slices.push(horizontal_sides.1)
     }
-    SliceScaleMode::Tile(stretch_value) => {
+    Tile(stretch_value) => {
       for slice in vertical_sides.0.tiled(stretch_value, (true, false)) {
         slices.push(slice)
       }

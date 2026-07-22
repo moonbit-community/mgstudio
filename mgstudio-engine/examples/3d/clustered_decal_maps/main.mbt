@@ -63,7 +63,7 @@ priv struct AppTextures {
 ///|
 fn AppTextures::AppTextures() -> AppTextures {
   let asset_server = @asset.AssetServer::new()
-  AppTextures::{
+  {
     decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
     decal_normal_map_texture: asset_server.load_with_settings(
       decal_maps_asset_url("BevyLogo-Normal.png"),
@@ -104,13 +104,10 @@ priv struct ExampleDecal {
 
 ///|
 fn ExampleDecal::new(size : Float) -> ExampleDecal {
-  ExampleDecal::{
+  {
     size,
-    state: ExampleDecalState::AnimatingIn(
-      @time.Timer::from_seconds(
-        DECAL_ANIMATE_IN_DURATION,
-        @time.TimerMode::Once,
-      ),
+    state: AnimatingIn(
+      @time.Timer::from_seconds(DECAL_ANIMATE_IN_DURATION, Once),
     ),
   }
 }
@@ -166,7 +163,7 @@ priv struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ emissive_decals: false }
+  { emissive_decals: false }
 }
 
 ///|
@@ -186,7 +183,7 @@ priv struct SeededRng {
 
 ///|
 fn SeededRng::SeededRng() -> SeededRng {
-  SeededRng::{ rng: @example_rng.ChaCha8Rng::seed_from_u64(19878367467712UL) }
+  { rng: @example_rng.ChaCha8Rng::seed_from_u64(19878367467712UL) }
 }
 
 ///|
@@ -206,18 +203,14 @@ priv struct DecalSpawnTimer {
 
 ///|
 impl @app.FromWorld for DecalSpawnTimer with fn from_world(_world) {
-  DecalSpawnTimer::{ timer: None }
+  { timer: None }
 }
 
 ///|
 fn decal_spawn_timer(state : DecalSpawnTimer) -> @time.Timer {
   match state.timer {
     Some(timer) => timer
-    None =>
-      @time.Timer::from_seconds(
-        DECAL_SPAWN_INTERVAL,
-        @time.TimerMode::Repeating,
-      )
+    None => @time.Timer::from_seconds(DECAL_SPAWN_INTERVAL, Repeating)
   }
 }
 
@@ -238,7 +231,7 @@ fn random_range(
 ///|
 fn app_setting_selected(setting : AppSetting, app_status : AppStatus) -> Bool {
   match setting {
-    AppSetting::EmissiveDecals(emissive_decals) =>
+    EmissiveDecals(emissive_decals) =>
       emissive_decals == app_status.emissive_decals
   }
 }
@@ -254,9 +247,7 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -266,7 +257,7 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Emissive Decals", [
       (AppSetting::EmissiveDecals(true), "On"),
-      (AppSetting::EmissiveDecals(false), "Off"),
+      (EmissiveDecals(false), "Off"),
     ]),
   )
 }
@@ -329,7 +320,7 @@ fn handle_emission_type_change(
 ) -> Unit {
   app_status.modify(fn(status) {
     for event in events.read() {
-      let AppSetting::EmissiveDecals(on) = event.get()
+      let EmissiveDecals(on) = event.get()
       status.emissive_decals = on
     }
   })
@@ -376,7 +367,7 @@ fn spawn_plane(
       }),
     ),
     @pbr.MeshMaterial3dTyped::new(material),
-    @transform.Transform::Transform(),
+    Transform(),
   ).spawn(world)
   |> ignore
 }
@@ -399,13 +390,13 @@ fn spawn_light(world : @ecs.World) -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, Hdr())
 }
 
 ///|
@@ -427,7 +418,7 @@ fn spawn_decal(
   let timer = decal_spawn_timer(decal_spawn_timer_state.get()).tick(
     time.get().delta(),
   )
-  decal_spawn_timer_state.set(DecalSpawnTimer::{ timer: Some(timer) })
+  decal_spawn_timer_state.set({ timer: Some(timer) })
   if !timer.just_finished() {
     return
   }
@@ -471,42 +462,32 @@ fn tick_decal_state(
   delta : @core.Duration,
 ) -> ExampleDecalState? {
   match state {
-    ExampleDecalState::AnimatingIn(timer) => {
+    AnimatingIn(timer) => {
+      let timer = timer.tick(delta)
+      if timer.just_finished() {
+        Some(Idling(@time.Timer::from_seconds(DECAL_IDLE_DURATION, Once)))
+      } else {
+        Some(AnimatingIn(timer))
+      }
+    }
+    Idling(timer) => {
       let timer = timer.tick(delta)
       if timer.just_finished() {
         Some(
-          ExampleDecalState::Idling(
-            @time.Timer::from_seconds(
-              DECAL_IDLE_DURATION,
-              @time.TimerMode::Once,
-            ),
+          AnimatingOut(
+            @time.Timer::from_seconds(DECAL_ANIMATE_OUT_DURATION, Once),
           ),
         )
       } else {
-        Some(ExampleDecalState::AnimatingIn(timer))
+        Some(Idling(timer))
       }
     }
-    ExampleDecalState::Idling(timer) => {
-      let timer = timer.tick(delta)
-      if timer.just_finished() {
-        Some(
-          ExampleDecalState::AnimatingOut(
-            @time.Timer::from_seconds(
-              DECAL_ANIMATE_OUT_DURATION,
-              @time.TimerMode::Once,
-            ),
-          ),
-        )
-      } else {
-        Some(ExampleDecalState::Idling(timer))
-      }
-    }
-    ExampleDecalState::AnimatingOut(timer) => {
+    AnimatingOut(timer) => {
       let timer = timer.tick(delta)
       if timer.just_finished() {
         None
       } else {
-        Some(ExampleDecalState::AnimatingOut(timer))
+        Some(AnimatingOut(timer))
       }
     }
   }
@@ -515,9 +496,9 @@ fn tick_decal_state(
 ///|
 fn decal_scale_factor(state : ExampleDecalState) -> Float {
   match state {
-    ExampleDecalState::AnimatingIn(timer) => timer.fraction()
-    ExampleDecalState::Idling(_) => 1.0F
-    ExampleDecalState::AnimatingOut(timer) => timer.fraction_remaining()
+    AnimatingIn(timer) => timer.fraction()
+    Idling(_) => 1.0F
+    AnimatingOut(timer) => timer.fraction_remaining()
   }
 }
 
@@ -592,7 +573,7 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
@@ -600,18 +581,18 @@ fn main {
   .insert_resource(AppTextures::AppTextures())
   .insert_resource(SeededRng::SeededRng())
   .add_message(widget_click_message_key)
-  .add_systems_world(@app.Startup, setup_scene)
-  .add_systems_param(@app.Startup, spawn_buttons)
-  .add_systems_param2(@app.Update, handle_ui_interactions)
+  .add_systems_world(Startup, setup_scene)
+  .add_systems_param(Startup, spawn_buttons)
+  .add_systems_param2(Update, handle_ui_interactions)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_emission_type_change).run_if_on_message(
       widget_click_message_key,
     ),
   )
-  .add_systems_param3(@app.Update, update_radio_buttons)
-  .add_systems_param6(@app.Update, spawn_decal)
-  .add_systems_param3(@app.Update, animate_decals)
-  .add_systems_param2(@app.Update, draw_gizmos)
+  .add_systems_param3(Update, update_radio_buttons)
+  .add_systems_param6(Update, spawn_decal)
+  .add_systems_param3(Update, animate_decals)
+  .add_systems_param2(Update, draw_gizmos)
   .run()
 }

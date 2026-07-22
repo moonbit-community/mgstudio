@@ -27,7 +27,7 @@ pub fn ScheduleGraphSettings::with_include_system_name(
   _ : ScheduleGraphSettings,
   include_system_name : (String) -> Bool,
 ) -> ScheduleGraphSettings {
-  ScheduleGraphSettings::{ include_system_name: Some(include_system_name) }
+  { include_system_name: Some(include_system_name) }
 }
 
 ///|
@@ -147,7 +147,7 @@ fn schedule_graph_dot_for_registry(
 pub fn App::schedule_graph_dot(
   self : App[@ecs.World],
   stage : ScheduleStage,
-  settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
+  settings? : ScheduleGraphSettings = ScheduleGraphSettings(),
 ) -> String {
   schedule_graph_dot_for_registry(
     self.sub_apps.main.schedule,
@@ -161,7 +161,7 @@ pub fn App::schedule_graph_dot(
 pub fn SubApp::schedule_graph_dot(
   self : SubApp[@ecs.World],
   stage : ScheduleStage,
-  settings? : ScheduleGraphSettings = ScheduleGraphSettings::ScheduleGraphSettings(),
+  settings? : ScheduleGraphSettings = ScheduleGraphSettings(),
 ) -> String {
   schedule_graph_dot_for_registry(self.schedule, self.world, stage, settings)
 }

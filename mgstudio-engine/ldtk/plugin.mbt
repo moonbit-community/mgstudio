@@ -37,6 +37,7 @@ let process_api_set_clean : @app.SystemSet = @app.system_set(
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn LdtkPlugin::LdtkPlugin() -> LdtkPlugin {
   LdtkPlugin::{  }
 }
@@ -53,7 +54,7 @@ pub impl @app.Plugin for LdtkPlugin with fn build(self, app) {
 
 ///|
 pub fn ldtk_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ldtk_plugin_with(app, LdtkPlugin::LdtkPlugin())
+  ldtk_plugin_with(app, LdtkPlugin())
 }
 
 ///|
@@ -65,12 +66,12 @@ pub fn ldtk_plugin_with(
   let main_schedule_order_key : @ecs.ResourceKey[@app.MainScheduleOrder] = @app.main_schedule_order_resource_key
   let main_schedule_order = match world.get_resource(main_schedule_order_key) {
     Some(value) => value
-    None => @app.MainScheduleOrder::MainScheduleOrder()
+    None => MainScheduleOrder()
   }
   ldtk_init_assets(app)
   .insert_world_resource(
     main_schedule_order_key,
-    main_schedule_order.insert_after(@app.Update, process_ldtk_api_schedule),
+    main_schedule_order.insert_after(Update, process_ldtk_api_schedule),
   )
   .add_schedule(@app.Schedule::new(process_ldtk_api_schedule))
   .configure_set(process_ldtk_api_schedule, process_api_set_clean, after=[
@@ -83,8 +84,8 @@ pub fn ldtk_plugin_with(
   .init_resource(fn() { LdtkRuntimeState::LdtkRuntimeState() })
   .init_resource(fn() { LdtkSpawnedLevelIids::LdtkSpawnedLevelIids() })
   .add_message(ldtk_level_event_key)
-  .add_systems(@app.PreUpdate, @app.system(process_ldtk_assets))
-  .add_systems(@app.PreUpdate, @app.system(process_ldtk_levels))
+  .add_systems(PreUpdate, @app.system(process_ldtk_assets))
+  .add_systems(PreUpdate, @app.system(process_ldtk_levels))
   .add_systems(
     process_ldtk_api_schedule,
     (
@@ -98,15 +99,15 @@ pub fn ldtk_plugin_with(
     @app.system(clean_respawn_entities).in_set(process_api_set_clean),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param2(detect_level_spawned_events),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param2(fire_level_transformed_events),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system(worldly_adoption).after(@transform.transform_set_propagate),
   )
 }

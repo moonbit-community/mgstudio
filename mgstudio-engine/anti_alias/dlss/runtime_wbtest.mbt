@@ -15,11 +15,7 @@
 ///|
 fn dlss_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   let entity = world.spawn_empty()
-  try! world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_camera, Camera())
   entity
 }
 
@@ -74,7 +70,7 @@ test "anti_alias/dlss: required camera components mirror Bevy" {
     DlssPlugin::DlssPlugin(),
   )
   let entity = app.world().spawn_empty()
-  try! app.world().set_by_key(entity, Dlss::component(), Dlss::Dlss())
+  try! app.world().set_by_key(entity, Dlss::component(), Dlss())
   debug_inspect(
     try! app
     .world()
@@ -101,12 +97,6 @@ test "anti_alias/dlss: required camera components mirror Bevy" {
     try! app.world().contains_by_key(entity, @core_pipeline.ecs_key_hdr),
     content="true",
   )
-  debug_inspect(
-    DlssPerfQualityMode::default() is DlssPerfQualityMode::Auto,
-    content="true",
-  )
-  debug_inspect(
-    Dlss::Dlss().perf_quality_mode is DlssPerfQualityMode::Auto,
-    content="true",
-  )
+  debug_inspect(DlssPerfQualityMode::default() is Auto, content="true")
+  debug_inspect(Dlss::Dlss().perf_quality_mode is Auto, content="true")
 }

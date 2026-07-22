@@ -20,13 +20,13 @@ pub(all) struct PhaseEntityRef {
 
 ///|
 pub fn phase_entity_ref_for_main(main_entity : @core.Entity) -> PhaseEntityRef {
-  PhaseEntityRef::{ render_entity: main_entity, main_entity }
+  { render_entity: main_entity, main_entity }
 }
 
 ///|
 pub fn phase_entity_ref_placeholder() -> PhaseEntityRef {
   let placeholder = @core.Entity::placeholder()
-  PhaseEntityRef::{ render_entity: placeholder, main_entity: placeholder }
+  { render_entity: placeholder, main_entity: placeholder }
 }
 
 ///|
@@ -214,7 +214,7 @@ pub fn mesh2d_pipeline_key_bits_for_target_format(
         MESH2D_PIPELINE_KEY_COLOR_TARGET_FORMAT_MASK_BITS.reinterpret_as_int()
       ) <<
       MESH2D_PIPELINE_KEY_COLOR_TARGET_FORMAT_SHIFT_BITS
-    None => raise Mesh2dPipelineKeyError::UnsupportedTargetFormat(format_raw)
+    None => raise UnsupportedTargetFormat(format_raw)
   }
 }
 
@@ -337,9 +337,9 @@ test "mesh2d pipeline key encodes Bevy view bits" {
       4,
       @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
       false,
-      Some(@camera_compositing_space.CompositingSpace::Srgb),
-      Some(@post_process.Tonemapping::AgX),
-      Some(@post_process.DebandDither::Enabled),
+      Some(Srgb),
+      Some(AgX),
+      Some(Enabled),
     ),
     content="1090520019",
   )
@@ -348,9 +348,9 @@ test "mesh2d pipeline key encodes Bevy view bits" {
       1,
       @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
       true,
-      Some(@camera_compositing_space.CompositingSpace::Oklab),
-      Some(@post_process.Tonemapping::TonyMcMapface),
-      Some(@post_process.DebandDither::Enabled),
+      Some(Oklab),
+      Some(TonyMcMapface),
+      Some(Enabled),
     ),
     content="288",
   )

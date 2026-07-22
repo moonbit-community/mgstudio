@@ -24,7 +24,7 @@ pub struct ParallelIterator[T] {
 pub fn[T] ParallelIterator::new(
   batches : Array[Array[T]],
 ) -> ParallelIterator[T] {
-  ParallelIterator::{ batches, cursor: 0 }
+  { batches, cursor: 0 }
 }
 
 ///|
@@ -47,7 +47,7 @@ pub fn[T] ParallelIterator::from_items(
     batches.push(batch)
     start = end
   }
-  ParallelIterator::{ batches, cursor: 0 }
+  { batches, cursor: 0 }
 }
 
 ///|

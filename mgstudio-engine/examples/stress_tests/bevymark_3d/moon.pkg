@@ -7,7 +7,7 @@ import {
   "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input",
-  "Milky2018/mgstudio/input/events" @input_events,
+  "Milky2018/mgstudio/input/events" @_,
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",

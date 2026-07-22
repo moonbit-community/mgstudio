@@ -40,7 +40,7 @@ pub struct SparseBufferId {
 
 ///|
 pub fn SparseBufferId::new(id : UInt64) -> SparseBufferId {
-  SparseBufferId::{ id, }
+  { id, }
 }
 
 ///|
@@ -67,11 +67,7 @@ pub fn GpuSparseBufferUpdateMetadata::new(
   if page_size_log2 < 0 {
     abort("sparse buffer page_size_log2 must be non-negative")
   }
-  GpuSparseBufferUpdateMetadata::{
-    element_size,
-    updated_page_count,
-    page_size_log2,
-  }
+  { element_size, updated_page_count, page_size_log2 }
 }
 
 ///|
@@ -110,12 +106,7 @@ pub fn SparseBufferUpdateJob::new(
   element_word_size~ : Int,
   label~ : String,
 ) -> SparseBufferUpdateJob {
-  SparseBufferUpdateJob::{
-    updated_page_count,
-    page_size_log2,
-    element_word_size,
-    label,
-  }
+  { updated_page_count, page_size_log2, element_word_size, label }
 }
 
 ///|
@@ -212,7 +203,7 @@ pub fn AtomicSparseBufferVecState::new(
   if page_size_log2 < 0 {
     abort("sparse buffer page_size_log2 must be non-negative")
   }
-  AtomicSparseBufferVecState::{
+  {
     len: 0,
     capacity: 0,
     element_word_size,
@@ -389,7 +380,7 @@ pub fn AtomicSparseBufferVecState::upload_plan(
   max_storage_buffers_per_shader_stage~ : Int,
 ) -> SparseBufferUploadPlan {
   if self.len == 0 || self.changed_page_count() == 0 {
-    return SparseBufferUploadPlan::{
+    return {
       kind: NoUpload,
       pages: [],
       metadata: GpuSparseBufferUpdateMetadata::new(
@@ -407,12 +398,7 @@ pub fn AtomicSparseBufferVecState::upload_plan(
     page_size_log2=self.page_size_log2,
   )
   if self.should_perform_full_reupload(max_storage_buffers_per_shader_stage~) {
-    SparseBufferUploadPlan::{
-      kind: FullReupload,
-      pages,
-      metadata,
-      workgroup_count: 0,
-    }
+    { kind: FullReupload, pages, metadata, workgroup_count: 0 }
   } else {
     let job = SparseBufferUpdateJob::new(
       updated_page_count=pages.length(),
@@ -420,7 +406,7 @@ pub fn AtomicSparseBufferVecState::upload_plan(
       element_word_size=self.element_word_size,
       label=self.label,
     )
-    SparseBufferUploadPlan::{
+    {
       kind: SparseUpload,
       pages,
       metadata,

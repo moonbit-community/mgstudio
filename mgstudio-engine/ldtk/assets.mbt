@@ -23,12 +23,12 @@ pub fn LevelIndices::in_world(
   world_index : Int,
   level_index : Int,
 ) -> LevelIndices {
-  LevelIndices::{ world: Some(world_index), level: level_index }
+  { world: Some(world_index), level: level_index }
 }
 
 ///|
 pub fn LevelIndices::in_root(index : Int) -> LevelIndices {
-  LevelIndices::{ world: None, level: index }
+  { world: None, level: index }
 }
 
 ///|
@@ -42,7 +42,7 @@ pub fn LevelMetadata::new(
   bg_image : @asset.Handle[@asset.Image]?,
   indices : LevelIndices,
 ) -> LevelMetadata {
-  LevelMetadata::{ bg_image, indices }
+  { bg_image, indices }
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn ExternalLevelMetadata::new(
   metadata : LevelMetadata,
   external_handle : @asset.Handle[@asset.Blob],
 ) -> ExternalLevelMetadata {
-  ExternalLevelMetadata::{ metadata, external_handle }
+  { metadata, external_handle }
 }
 
 ///|
@@ -102,7 +102,7 @@ pub fn LdtkProject::new(
     @asset.Handle[@asset.Blob],
   ],
 ) -> LdtkProject {
-  LdtkProject::{
+  {
     data,
     level_map,
     tileset_map,
@@ -341,13 +341,13 @@ fn ldtk_load_project_asset(
   let data = ldtk_parse_json(bytes)
   let ldtk_root_path = context.path().with_label(None)
   let asset_server = context.asset_server()
-  let level_map : @hashmap.HashMap[String, LevelMetadata] = @hashmap.HashMap([])
-  let tileset_map : @hashmap.HashMap[Int, @asset.Handle[@asset.Image]] = @hashmap.HashMap([],
+  let level_map : @hashmap.HashMap[String, LevelMetadata] = HashMap([])
+  let tileset_map : @hashmap.HashMap[Int, @asset.Handle[@asset.Image]] = HashMap([],
   )
   let external_level_blob_handles : @hashmap.HashMap[
     String,
     @asset.Handle[@asset.Blob],
-  ] = @hashmap.HashMap([])
+  ] = HashMap([])
 
   for level_index, level in data.levels {
     ldtk_level_map_insert(
@@ -410,7 +410,7 @@ fn ldtk_load_project_asset(
 ///|
 fn ldtk_project_asset_default() -> LdtkProject {
   LdtkProject::new(
-    LdtkJson::{
+    {
       iid: "",
       bg_color: @color.Color::black(),
       default_level_bg_color: @color.Color::black(),
@@ -420,12 +420,12 @@ fn ldtk_project_asset_default() -> LdtkProject {
       world_grid_height: None,
       levels: [],
       worlds: [],
-      defs: Definitions::{ entities: [], layers: [], tilesets: [] },
+      defs: { entities: [], layers: [], tilesets: [] },
     },
-    @hashmap.HashMap([]),
-    @hashmap.HashMap([]),
+    HashMap([]),
+    HashMap([]),
     None,
-    @hashmap.HashMap([]),
+    HashMap([]),
   )
 }
 

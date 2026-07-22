@@ -61,19 +61,19 @@ pub struct ScatteringMediumSampler {
 
 ///|
 pub fn ScatteringMediumSampler::ScatteringMediumSampler() -> ScatteringMediumSampler {
-  ScatteringMediumSampler::{
-    address_mode_u: @asset.ImageAddressMode::ClampToEdge,
-    address_mode_v: @asset.ImageAddressMode::ClampToEdge,
-    address_mode_w: @asset.ImageAddressMode::ClampToEdge,
-    mag_filter: @asset.ImageFilterMode::Linear,
-    min_filter: @asset.ImageFilterMode::Linear,
-    mipmap_filter: @asset.ImageFilterMode::Linear,
+  {
+    address_mode_u: ClampToEdge,
+    address_mode_v: ClampToEdge,
+    address_mode_w: ClampToEdge,
+    mag_filter: Linear,
+    min_filter: Linear,
+    mipmap_filter: Linear,
   }
 }
 
 ///|
 pub fn ScatteringMediumSampler::linear_clamp() -> ScatteringMediumSampler {
-  ScatteringMediumSampler::ScatteringMediumSampler()
+  ScatteringMediumSampler()
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn ScatteringMediumSampler::with_address_mode(
   self : ScatteringMediumSampler,
   address_mode : @asset.ImageAddressMode,
 ) -> ScatteringMediumSampler {
-  ScatteringMediumSampler::{
+  {
     ..self,
     address_mode_u: address_mode,
     address_mode_v: address_mode,
@@ -94,24 +94,19 @@ pub fn ScatteringMediumSampler::with_filter(
   self : ScatteringMediumSampler,
   filter : @asset.ImageFilterMode,
 ) -> ScatteringMediumSampler {
-  ScatteringMediumSampler::{
-    ..self,
-    mag_filter: filter,
-    min_filter: filter,
-    mipmap_filter: filter,
-  }
+  { ..self, mag_filter: filter, min_filter: filter, mipmap_filter: filter }
 }
 
 ///|
 pub fn ScatteringMediumSampler::is_linear_clamp(
   self : ScatteringMediumSampler,
 ) -> Bool {
-  self.address_mode_u == @asset.ImageAddressMode::ClampToEdge &&
-  self.address_mode_v == @asset.ImageAddressMode::ClampToEdge &&
-  self.address_mode_w == @asset.ImageAddressMode::ClampToEdge &&
-  self.mag_filter == @asset.ImageFilterMode::Linear &&
-  self.min_filter == @asset.ImageFilterMode::Linear &&
-  self.mipmap_filter == @asset.ImageFilterMode::Linear
+  self.address_mode_u == ClampToEdge &&
+  self.address_mode_v == ClampToEdge &&
+  self.address_mode_w == ClampToEdge &&
+  self.mag_filter == Linear &&
+  self.min_filter == Linear &&
+  self.mipmap_filter == Linear
 }
 
 ///|
@@ -229,7 +224,7 @@ fn pbr_scattering_medium_read_f32_le(bytes : Bytes, offset : Int) -> Float? {
 fn pbr_scattering_medium_chromatic_curve_from_image(
   image : @asset.Image,
 ) -> @light.SampledVec3Curve? {
-  if image.format() != @asset.TextureFormat::Rgba32Float || image.width() <= 0 {
+  if image.format() != Rgba32Float || image.width() <= 0 {
     return None
   }
   let data = image.data()
@@ -254,11 +249,11 @@ fn pbr_scattering_medium_chromatic_curve_from_image(
 fn pbr_scattering_medium_collect_chromatic_texture_ids(
   media : @asset.Assets[ScatteringMedium],
 ) -> @hashset.HashSet[Int] {
-  let ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let ids : @hashset.HashSet[Int] = HashSet([])
   for entry in media.iter() {
     let (_, medium) = entry
     for term in medium.terms {
-      if term.phase is @light.PhaseFunction::ChromaticTexture(handle) {
+      if term.phase is ChromaticTexture(handle) {
         ids.add(handle.id())
       }
     }
@@ -278,7 +273,7 @@ fn pbr_scattering_medium_resolve_chromatic_texture(
     let mut changed = false
     let terms : Array[@light.ScatteringTerm] = []
     for term in medium.terms {
-      if term.phase is @light.PhaseFunction::ChromaticTexture(handle) &&
+      if term.phase is ChromaticTexture(handle) &&
         handle.id() == image_handle.id() {
         terms.push(
           @light.ScatteringTerm::new(
@@ -318,9 +313,7 @@ fn extract_chromatic_phase_textures(
   let image_assets = images.get()
   scattering_media.modify(fn(media) {
     for event in events {
-      guard event is @asset.AssetEvent::LoadedWithDependencies(handle) else {
-        continue
-      }
+      guard event is LoadedWithDependencies(handle) else { continue }
       if !referenced.contains(handle.id()) {
         continue
       }
@@ -349,7 +342,7 @@ pub fn GpuScatteringMedium::new(
   medium : ScatteringMedium,
   sampler : ScatteringMediumSampler,
 ) -> GpuScatteringMedium {
-  GpuScatteringMedium::{
+  {
     terms: medium.terms,
     falloff_resolution: medium.falloff_resolution,
     phase_resolution: medium.phase_resolution,
@@ -458,20 +451,20 @@ fn pbr_scattering_medium_hash_falloff(
   falloff : @light.Falloff,
 ) -> UInt64 {
   match falloff {
-    @light.Falloff::Linear => pbr_scattering_medium_hash_u64(hash, 1UL)
-    @light.Falloff::Exponential(scale) =>
+    Linear => pbr_scattering_medium_hash_u64(hash, 1UL)
+    Exponential(scale) =>
       pbr_scattering_medium_hash_float(
         pbr_scattering_medium_hash_u64(hash, 2UL),
         scale,
       )
-    @light.Falloff::Tent(center, width) => {
+    Tent(center, width) => {
       let next = pbr_scattering_medium_hash_float(
         pbr_scattering_medium_hash_u64(hash, 3UL),
         center,
       )
       pbr_scattering_medium_hash_float(next, width)
     }
-    @light.Falloff::Curve(curve) => {
+    Curve(curve) => {
       let mut next = pbr_scattering_medium_hash_u64(hash, 4UL)
       next = pbr_scattering_medium_hash_float(next, curve.domain_start)
       next = pbr_scattering_medium_hash_float(next, curve.domain_end)
@@ -490,14 +483,14 @@ fn pbr_scattering_medium_hash_phase(
   phase : @light.PhaseFunction,
 ) -> UInt64 {
   match phase {
-    @light.PhaseFunction::Isotropic => pbr_scattering_medium_hash_u64(hash, 1UL)
-    @light.PhaseFunction::Rayleigh => pbr_scattering_medium_hash_u64(hash, 2UL)
-    @light.PhaseFunction::Mie(asymmetry) =>
+    Isotropic => pbr_scattering_medium_hash_u64(hash, 1UL)
+    Rayleigh => pbr_scattering_medium_hash_u64(hash, 2UL)
+    Mie(asymmetry) =>
       pbr_scattering_medium_hash_float(
         pbr_scattering_medium_hash_u64(hash, 3UL),
         asymmetry,
       )
-    @light.PhaseFunction::Curve(curve) => {
+    Curve(curve) => {
       let mut next = pbr_scattering_medium_hash_u64(hash, 4UL)
       next = pbr_scattering_medium_hash_float(next, curve.domain_start)
       next = pbr_scattering_medium_hash_float(next, curve.domain_end)
@@ -507,7 +500,7 @@ fn pbr_scattering_medium_hash_phase(
       }
       next
     }
-    @light.PhaseFunction::ChromaticCurve(curve) => {
+    ChromaticCurve(curve) => {
       let mut next = pbr_scattering_medium_hash_u64(hash, 5UL)
       next = pbr_scattering_medium_hash_float(next, curve.domain_start)
       next = pbr_scattering_medium_hash_float(next, curve.domain_end)
@@ -517,7 +510,7 @@ fn pbr_scattering_medium_hash_phase(
       }
       next
     }
-    @light.PhaseFunction::ChromaticTexture(handle) =>
+    ChromaticTexture(handle) =>
       pbr_scattering_medium_hash_int(
         pbr_scattering_medium_hash_u64(hash, 6UL),
         handle.id(),
@@ -574,7 +567,7 @@ fn PreparedGpuScatteringMedium::from_medium(
   sampler : ScatteringMediumSampler,
 ) -> PreparedGpuScatteringMedium {
   let gpu_medium = GpuScatteringMedium::new(medium, sampler)
-  PreparedGpuScatteringMedium::{
+  {
     signature: pbr_scattering_medium_signature(medium),
     density_width: gpu_medium.density_lut_width(),
     density_height: gpu_medium.density_lut_height(),
@@ -684,15 +677,12 @@ pub struct ScatteringMediumPlugin {
 
 ///|
 pub fn ScatteringMediumPlugin::ScatteringMediumPlugin() -> ScatteringMediumPlugin {
-  ScatteringMediumPlugin::{
-    enabled: true,
-    sampler: ScatteringMediumSampler::ScatteringMediumSampler(),
-  }
+  { enabled: true, sampler: ScatteringMediumSampler() }
 }
 
 ///|
 pub fn ScatteringMediumPlugin::disabled() -> ScatteringMediumPlugin {
-  ScatteringMediumPlugin::{ ..ScatteringMediumPlugin(), enabled: false }
+  { ..ScatteringMediumPlugin(), enabled: false }
 }
 
 ///|
@@ -700,7 +690,7 @@ pub fn ScatteringMediumPlugin::with_sampler(
   self : ScatteringMediumPlugin,
   sampler : ScatteringMediumSampler,
 ) -> ScatteringMediumPlugin {
-  ScatteringMediumPlugin::{ ..self, sampler, }
+  { ..self, sampler, }
 }
 
 ///|
@@ -747,10 +737,7 @@ fn init_scattering_medium_resources(
 pub fn scattering_medium_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  scattering_medium_plugin_with(
-    app,
-    ScatteringMediumPlugin::ScatteringMediumPlugin(),
-  )
+  scattering_medium_plugin_with(app, ScatteringMediumPlugin())
 }
 
 ///|
@@ -801,25 +788,19 @@ pub fn pbr_scattering_medium_with_density_multiplier(
 
 ///|
 pub fn pbr_scattering_medium_sampler_default() -> ScatteringMediumSampler {
-  ScatteringMediumSampler::ScatteringMediumSampler()
+  ScatteringMediumSampler()
 }
 
 ///|
 pub fn pbr_scattering_medium_gpu_default() -> GpuScatteringMedium {
-  GpuScatteringMedium::new(
-    ScatteringMedium(),
-    ScatteringMediumSampler::ScatteringMediumSampler(),
-  )
+  GpuScatteringMedium::new(ScatteringMedium(), ScatteringMediumSampler())
 }
 
 ///|
 pub fn pbr_scattering_medium_gpu_from_medium(
   medium : ScatteringMedium,
 ) -> GpuScatteringMedium {
-  GpuScatteringMedium::new(
-    medium,
-    ScatteringMediumSampler::ScatteringMediumSampler(),
-  )
+  GpuScatteringMedium::new(medium, ScatteringMediumSampler())
 }
 
 ///|

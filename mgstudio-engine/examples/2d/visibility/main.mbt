@@ -27,8 +27,8 @@ let parent_entity_state : Ref[@core.Entity?] = Ref(None)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, visibility_setup)
-  .add_systems_world(@app.Update, visibility_toggle_system)
+  .add_systems_world(Startup, visibility_setup)
+  .add_systems_world(Update, visibility_toggle_system)
   .run()
 }
 
@@ -41,11 +41,7 @@ fn visibility_setup(world : @ecs.World) -> Unit {
     @transform.ecs_key_transform,
     @transform.Transform::identity(),
   )
-  try! world.set_by_key(
-    parent,
-    @vis.ecs_key_visibility,
-    @vis.Visibility::Visible,
-  )
+  try! world.set_by_key(parent, @vis.ecs_key_visibility, Visible)
   try! world.set_by_key(
     parent,
     @vis.ecs_key_inherited_visibility,
@@ -83,21 +79,21 @@ fn visibility_setup(world : @ecs.World) -> Unit {
 
 ///|
 fn visibility_toggle_system(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::KeyH) {
+  if !@input.key_just_pressed(KeyH) {
     return
   }
   guard parent_entity_state.val is Some(parent) else { return }
   let next = match (try! world.get_by_key(parent, @vis.ecs_key_visibility)) {
-    Some(@vis.Visibility::Hidden) => @vis.Visibility::Visible
-    Some(@vis.Visibility::Visible) => @vis.Visibility::Hidden
-    Some(@vis.Visibility::Inherited) => @vis.Visibility::Hidden
-    None => @vis.Visibility::Hidden
+    Some(Hidden) => @vis.Visibility::Visible
+    Some(Visible) => Hidden
+    Some(Inherited) => Hidden
+    None => Hidden
   }
   try! world.set_by_key(parent, @vis.ecs_key_visibility, next)
   let msg = match next {
-    @vis.Visibility::Hidden => "Parent Visibility: Hidden"
-    @vis.Visibility::Visible => "Parent Visibility: Visible"
-    @vis.Visibility::Inherited => "Parent Visibility: Inherited"
+    Hidden => "Parent Visibility: Hidden"
+    Visible => "Parent Visibility: Visible"
+    Inherited => "Parent Visibility: Inherited"
   }
   @window.host_debug_string(value=msg)
 }

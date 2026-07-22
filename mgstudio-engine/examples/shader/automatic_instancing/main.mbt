@@ -107,7 +107,7 @@ fn update(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, update)
   .run()
 }

@@ -43,13 +43,7 @@ pub fn Wireframe3dBatchSetKey::new(
   slabs : @render_mesh.MeshSlabs,
   mesh_asset_id? : Int? = None,
 ) -> Wireframe3dBatchSetKey {
-  Wireframe3dBatchSetKey::{
-    pipeline,
-    asset_id,
-    draw_function,
-    slabs,
-    mesh_asset_id,
-  }
+  { pipeline, asset_id, draw_function, slabs, mesh_asset_id }
 }
 
 ///|
@@ -97,7 +91,7 @@ pub struct Wireframe3dBinKey {
 
 ///|
 pub fn Wireframe3dBinKey::new(asset_id : Int) -> Wireframe3dBinKey {
-  Wireframe3dBinKey::{ asset_id, }
+  { asset_id, }
 }
 
 ///|
@@ -130,7 +124,7 @@ pub fn Wireframe3d::new(
   batch_range : Wireframe3dBatchRange,
   extra_index : WireframePhaseItemExtraIndex,
 ) -> Wireframe3d {
-  Wireframe3d::{
+  {
     batch_set_key,
     bin_key,
     render_entity,
@@ -204,7 +198,7 @@ pub fn WireframePipelineKey::new(
   quads : Bool,
   line_mode : Bool,
 ) -> WireframePipelineKey {
-  WireframePipelineKey::{ mesh_key, wide, quads, line_mode }
+  { mesh_key, wide, quads, line_mode }
 }
 
 ///|
@@ -243,7 +237,7 @@ pub fn WireframePipelineKey::from_material(
     None => false
   }
   let wide = thick || quads
-  WireframePipelineKey::{ mesh_key, wide, quads, line_mode: wide && !thick }
+  { mesh_key, wide, quads, line_mode: wide && !thick }
 }
 
 ///|
@@ -261,7 +255,7 @@ pub fn WireframeWidePipelineCacheKey::new(
   quads : Bool,
   line_mode : Bool,
 ) -> WireframeWidePipelineCacheKey {
-  WireframeWidePipelineCacheKey::{ mesh_key, mesh_layout, quads, line_mode }
+  { mesh_key, mesh_layout, quads, line_mode }
 }
 
 ///|
@@ -286,7 +280,7 @@ pub fn WireframePipelineCacheKey::new(
   key : WireframePipelineKey,
   mesh_layout : @material.MaterialMeshVertexLayout,
 ) -> WireframePipelineCacheKey {
-  WireframePipelineCacheKey::{ key, mesh_layout }
+  { key, mesh_layout }
 }
 
 ///|
@@ -316,7 +310,7 @@ pub struct SpecializedWireframeViewPipelineCache {
 
 ///|
 pub fn SpecializedWireframeViewPipelineCache::SpecializedWireframeViewPipelineCache() -> SpecializedWireframeViewPipelineCache {
-  SpecializedWireframeViewPipelineCache::{ map: Map([]) }
+  { map: Map([]) }
 }
 
 ///|
@@ -372,7 +366,7 @@ pub struct SpecializedWireframePipelineCache {
 
 ///|
 pub fn SpecializedWireframePipelineCache::SpecializedWireframePipelineCache() -> SpecializedWireframePipelineCache {
-  SpecializedWireframePipelineCache::{ views: Map([]), wide: [] }
+  { views: Map([]), wide: [] }
 }
 
 ///|
@@ -521,11 +515,11 @@ pub fn SpecializedWireframePipelineCache::insert_wide_pipeline(
 ) -> Unit {
   for index in 0..<self.wide.length() {
     if wireframe_wide_pipeline_cache_key_equal(self.wide[index].key, key) {
-      self.wide[index] = WireframeWidePipelineCacheEntry::{ key, pipeline_id }
+      self.wide[index] = { key, pipeline_id }
       return
     }
   }
-  self.wide.push(WireframeWidePipelineCacheEntry::{ key, pipeline_id })
+  self.wide.push({ key, pipeline_id })
 }
 
 ///|
@@ -535,7 +529,7 @@ pub struct SpecializedWireframeMeshPipelines {
 
 ///|
 pub fn SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines() -> SpecializedWireframeMeshPipelines {
-  SpecializedWireframeMeshPipelines::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -578,14 +572,11 @@ pub fn SpecializedWireframeMeshPipelines::insert(
 ) -> Unit {
   for index in 0..<self.entries.length() {
     if wireframe_pipeline_cache_key_equal(self.entries[index].key, key) {
-      self.entries[index] = WireframeThinPipelineCacheEntry::{
-        key,
-        pipeline_id,
-      }
+      self.entries[index] = { key, pipeline_id }
       return
     }
   }
-  self.entries.push(WireframeThinPipelineCacheEntry::{ key, pipeline_id })
+  self.entries.push({ key, pipeline_id })
 }
 
 ///|
@@ -596,7 +587,7 @@ pub struct RenderWireframeInstances {
 
 ///|
 pub fn RenderWireframeInstances::RenderWireframeInstances() -> RenderWireframeInstances {
-  RenderWireframeInstances::{ entries: Map([]), last_source_change_tick: 0 }
+  { entries: Map([]), last_source_change_tick: 0 }
 }
 
 ///|
@@ -676,7 +667,7 @@ pub struct RenderWireframeAssets {
 
 ///|
 pub fn RenderWireframeAssets::RenderWireframeAssets() -> RenderWireframeAssets {
-  RenderWireframeAssets::{ assets: Map([]) }
+  { assets: Map([]) }
 }
 
 ///|
@@ -733,7 +724,7 @@ pub struct WireframeWideBindGroups {
 
 ///|
 pub fn WireframeWideBindGroups::WireframeWideBindGroups() -> WireframeWideBindGroups {
-  WireframeWideBindGroups::{ params: [], mesh_asset_dynamic_offsets: Map([]) }
+  { params: [], mesh_asset_dynamic_offsets: Map([]) }
 }
 
 ///|
@@ -844,8 +835,7 @@ pub fn prepare_wireframe_wide_bind_groups(
     guard render_wireframe_assets.get(wireframe_asset_id) is Some(material) else {
       continue
     }
-    if material.line_width <= 1.0F &&
-      material.topology != WireframeTopology::Quads {
+    if material.line_width <= 1.0F && material.topology != Quads {
       continue
     }
     let entity = @render.MainEntity::new(@core.Entity::from_bits(entity_bits))
@@ -893,7 +883,7 @@ pub fn Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() -> Wireframe3dDrawFu
   let draw_functions = @material.DrawFunctions::new()
   let thin = draw_functions.register("DrawWireframe3dThin")
   let wide = draw_functions.register("DrawWireframe3dWide")
-  Wireframe3dDrawFunctions::{ draw_functions, thin, wide }
+  { draw_functions, thin, wide }
 }
 
 ///|
@@ -935,10 +925,7 @@ pub struct ViewPendingWireframeQueues {
 
 ///|
 pub fn ViewPendingWireframeQueues::ViewPendingWireframeQueues() -> ViewPendingWireframeQueues {
-  ViewPendingWireframeQueues::{
-    current_frame: @hashset.HashSet([]),
-    prev_frame: @hashset.HashSet([]),
-  }
+  { current_frame: HashSet([]), prev_frame: HashSet([]) }
 }
 
 ///|
@@ -988,7 +975,7 @@ pub struct PendingWireframeQueues {
 
 ///|
 pub fn PendingWireframeQueues::PendingWireframeQueues() -> PendingWireframeQueues {
-  PendingWireframeQueues::{ views: Map([]) }
+  { views: Map([]) }
 }
 
 ///|
@@ -1107,11 +1094,7 @@ pub struct DirtyWireframeSpecializations {
 
 ///|
 pub fn DirtyWireframeSpecializations::DirtyWireframeSpecializations() -> DirtyWireframeSpecializations {
-  DirtyWireframeSpecializations::{
-    changed_renderables: Map([]),
-    removed_renderables: Map([]),
-    views: Map([]),
-  }
+  { changed_renderables: Map([]), removed_renderables: Map([]), views: Map([]) }
 }
 
 ///|
@@ -1380,9 +1363,7 @@ pub struct Wireframe3dViewPhase {
 pub fn Wireframe3dViewPhase::new(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Wireframe3dViewPhase {
-  Wireframe3dViewPhase::{
-    phase: @render_phase.BinnedRenderPhase::new(gpu_preprocessing_mode),
-  }
+  { phase: @render_phase.BinnedRenderPhase::new(gpu_preprocessing_mode) }
 }
 
 ///|
@@ -1539,11 +1520,7 @@ pub fn Wireframe3dViewPhase::items(
         let batch = batch_set.first_batch()
         let representative = batch.representative_entity()
         let extra_index = match batch.extra_index() {
-          @render_phase.PhaseItemExtraIndex::IndirectParametersIndex(
-            start,
-            _,
-            _
-          ) =>
+          IndirectParametersIndex(start, _, _) =>
             @render_phase.PhaseItemExtraIndex::indirect_parameters_index(
               start,
               start + batch_set.batch_count(),
@@ -1685,7 +1662,7 @@ pub struct Wireframe3dPhases {
 
 ///|
 pub fn Wireframe3dPhases::Wireframe3dPhases() -> Wireframe3dPhases {
-  Wireframe3dPhases::{ views: Map([]) }
+  { views: Map([]) }
 }
 
 ///|
@@ -1812,14 +1789,14 @@ fn Wireframe3dPhases::prepare_phase_buffers_into(
   }
   for view_bits, phase in self.views {
     match phase.gpu_preprocessing_mode() {
-      @render_batching.GpuPreprocessingMode::None =>
+      None =>
         phase.prepare_cpu_buffers_into(
           cpu_batched_instance_buffer, render_mesh_instances,
         )
       mode =>
         phase.phase.prepare_gpu_buffers(
           view_bits.to_string(),
-          mode == @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+          mode == PreprocessingOnly,
           occlusion_culling_views.contains(view_bits),
           phase_batched_instance_buffers,
           phase_indirect_parameters_buffers,
@@ -1858,9 +1835,7 @@ pub struct Wireframe3dBatchedInstanceBuffer {
 
 ///|
 pub fn Wireframe3dBatchedInstanceBuffer::Wireframe3dBatchedInstanceBuffer() -> Wireframe3dBatchedInstanceBuffer {
-  Wireframe3dBatchedInstanceBuffer::{
-    buffer: @render_batching.BatchedInstanceBuffer::new(),
-  }
+  { buffer: @render_batching.BatchedInstanceBuffer::new() }
 }
 
 ///|
@@ -1884,9 +1859,7 @@ pub struct Wireframe3dPhaseBatchedInstanceBuffers {
 
 ///|
 pub fn Wireframe3dPhaseBatchedInstanceBuffers::Wireframe3dPhaseBatchedInstanceBuffers() -> Wireframe3dPhaseBatchedInstanceBuffers {
-  Wireframe3dPhaseBatchedInstanceBuffers::{
-    buffers: @render_batching.PhaseBatchedInstanceBuffers::new(),
-  }
+  { buffers: @render_batching.PhaseBatchedInstanceBuffers::new() }
 }
 
 ///|
@@ -1910,9 +1883,7 @@ pub struct Wireframe3dPhaseIndirectParametersBuffers {
 
 ///|
 pub fn Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers() -> Wireframe3dPhaseIndirectParametersBuffers {
-  Wireframe3dPhaseIndirectParametersBuffers::{
-    buffers: @render_batching.PhaseIndirectParametersBuffers::new(false),
-  }
+  { buffers: @render_batching.PhaseIndirectParametersBuffers::new(false) }
 }
 
 ///|
@@ -1934,7 +1905,7 @@ pub struct WireframeViewKeyCache {
 
 ///|
 pub fn WireframeViewKeyCache::WireframeViewKeyCache() -> WireframeViewKeyCache {
-  WireframeViewKeyCache::{ views: Map([]) }
+  { views: Map([]) }
 }
 
 ///|
@@ -2231,9 +2202,7 @@ pub fn queue_wireframe_phase_items(
       continue
     }
     let is_wide = match render_wireframe_assets.get(wireframe_asset_id) {
-      Some(material) =>
-        material.line_width > 1.0F ||
-        material.topology == WireframeTopology::Quads
+      Some(material) => material.line_width > 1.0F || material.topology == Quads
       None => false
     }
     let draw_function = if is_wide {

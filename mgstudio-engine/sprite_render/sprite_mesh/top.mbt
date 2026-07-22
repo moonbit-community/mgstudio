@@ -46,12 +46,6 @@ type Anchor = @sprite.Anchor
 type SpriteImageMode = @sprite.SpriteImageMode
 
 ///|
-type SpriteScalingMode = @sprite.SpriteScalingMode
-
-///|
-type SliceScaleMode = @sprite.SliceScaleMode
-
-///|
 let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh] = @sprite.ecs_key_sprite_mesh
 
 ///|
@@ -140,15 +134,15 @@ fn sprite_alpha_mode_to_alpha_mode2d(
   alpha_mode : SpriteAlphaMode,
 ) -> AlphaMode2d {
   match alpha_mode {
-    SpriteAlphaMode::Opaque => AlphaMode2d::Opaque
-    SpriteAlphaMode::Mask(cutoff) => AlphaMode2d::Mask(cutoff)
-    SpriteAlphaMode::Blend => AlphaMode2d::Blend
+    Opaque => Opaque
+    Mask(cutoff) => Mask(cutoff)
+    Blend => Blend
   }
 }
 
 ///|
 pub fn SpriteMaterial::SpriteMaterial() -> SpriteMaterial {
-  SpriteMaterial::{
+  {
     image: @asset.Handle::new(0),
     texture_atlas: None,
     color: @color.Color::white(),
@@ -156,8 +150,8 @@ pub fn SpriteMaterial::SpriteMaterial() -> SpriteMaterial {
     flip_y: false,
     custom_size: None,
     rect: None,
-    image_mode: SpriteImageMode::Auto,
-    alpha_mode: AlphaMode2d::Blend,
+    image_mode: Auto,
+    alpha_mode: Blend,
     anchor: @math.Vec2::zero(),
     texture_atlas_layout: None,
     texture_atlas_index: 0,
@@ -166,7 +160,7 @@ pub fn SpriteMaterial::SpriteMaterial() -> SpriteMaterial {
 
 ///|
 pub fn SpriteMaterial::from_sprite_mesh(sprite : SpriteMesh) -> SpriteMaterial {
-  SpriteMaterial::{
+  {
     image: sprite.image,
     texture_atlas: sprite.texture_atlas,
     color: sprite.color,
@@ -187,7 +181,7 @@ pub fn SpriteMaterial::with_anchor(
   self : SpriteMaterial,
   anchor : @math.Vec2,
 ) -> SpriteMaterial {
-  SpriteMaterial::{ ..self, anchor, }
+  { ..self, anchor, }
 }
 
 ///|
@@ -196,13 +190,14 @@ pub fn SpriteMaterial::with_texture_atlas_layout(
   texture_atlas_layout : @asset.TextureAtlasLayout?,
   texture_atlas_index : Int,
 ) -> SpriteMaterial {
-  SpriteMaterial::{ ..self, texture_atlas_layout, texture_atlas_index }
+  { ..self, texture_atlas_layout, texture_atlas_index }
 }
 
 ///|
 pub struct SpriteMaterialPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SpriteMaterialPlugin::SpriteMaterialPlugin() -> SpriteMaterialPlugin {
   SpriteMaterialPlugin::{  }
 }
@@ -211,6 +206,7 @@ pub fn SpriteMaterialPlugin::SpriteMaterialPlugin() -> SpriteMaterialPlugin {
 pub struct SpriteMeshPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SpriteMeshPlugin::SpriteMeshPlugin() -> SpriteMeshPlugin {
   SpriteMeshPlugin::{  }
 }
@@ -222,7 +218,7 @@ priv struct SpriteMeshQuad {
 
 ///|
 fn SpriteMeshQuad::SpriteMeshQuad() -> SpriteMeshQuad {
-  SpriteMeshQuad::{ handle: None }
+  { handle: None }
 }
 
 ///|
@@ -232,7 +228,7 @@ priv struct SpriteMeshMaterialCache {
 
 ///|
 fn SpriteMeshMaterialCache::SpriteMeshMaterialCache() -> SpriteMeshMaterialCache {
-  SpriteMeshMaterialCache::{ handles: @hashmap.HashMap([]) }
+  { handles: HashMap([]) }
 }
 
 ///|
@@ -260,9 +256,9 @@ impl @app.Resource for SpriteMeshMaterialCache with fn resource() {
 ///|
 fn sprite_material_alpha_mode_key(alpha_mode : AlphaMode2d) -> String {
   match alpha_mode {
-    AlphaMode2d::Opaque => "opaque"
-    AlphaMode2d::Mask(cutoff) => "mask:\{cutoff.to_double().to_string()}"
-    AlphaMode2d::Blend => "blend"
+    Opaque => "opaque"
+    Mask(cutoff) => "mask:\{cutoff.to_double().to_string()}"
+    Blend => "blend"
   }
 }
 
@@ -291,20 +287,20 @@ fn sprite_material_vec2_option_key(value : @math.Vec2?) -> String {
 ///|
 fn sprite_material_image_mode_key(value : SpriteImageMode) -> String {
   match value {
-    SpriteImageMode::Auto => "auto"
-    SpriteImageMode::Scale(mode) => {
+    Auto => "auto"
+    Scale(mode) => {
       let mode_key = match mode {
-        SpriteScalingMode::FillCenter => "fill_center"
-        SpriteScalingMode::FillStart => "fill_start"
-        SpriteScalingMode::FillEnd => "fill_end"
-        SpriteScalingMode::FitCenter => "fit_center"
-        SpriteScalingMode::FitStart => "fit_start"
-        SpriteScalingMode::FitEnd => "fit_end"
+        FillCenter => "fill_center"
+        FillStart => "fill_start"
+        FillEnd => "fill_end"
+        FitCenter => "fit_center"
+        FitStart => "fit_start"
+        FitEnd => "fit_end"
       }
       "scale:\{mode_key}"
     }
-    SpriteImageMode::Sliced(_) => "sliced"
-    SpriteImageMode::Tiled(tiling) =>
+    Sliced(_) => "sliced"
+    Tiled(tiling) =>
       "tiled:\{tiling.tile_x.to_string()}:\{tiling.tile_y.to_string()}:\{tiling.stretch_value.to_double().to_string()}"
   }
 }
@@ -343,7 +339,7 @@ fn sprite_material_flags(material : SpriteMaterial) -> UInt {
   if material.flip_y {
     flags = flags | 2U
   }
-  if material.image_mode is SpriteImageMode::Tiled(tiling) {
+  if material.image_mode is Tiled(tiling) {
     if tiling.tile_x {
       flags = flags | 4U
     }
@@ -362,10 +358,7 @@ priv struct SpriteUvTransform {
 
 ///|
 fn SpriteUvTransform::identity() -> SpriteUvTransform {
-  SpriteUvTransform::{
-    scale: @math.Vec2::new(1.0F, 1.0F),
-    offset: @math.Vec2::zero(),
-  }
+  { scale: @math.Vec2::new(1.0F, 1.0F), offset: @math.Vec2::zero() }
 }
 
 ///|
@@ -480,8 +473,8 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
 
   if material.custom_size is Some(custom_size) {
     match material.image_mode {
-      SpriteImageMode::Auto => quad_size = custom_size
-      SpriteImageMode::Scale(scaling_mode) => {
+      Auto => quad_size = custom_size
+      Scale(scaling_mode) => {
         let quad_ratio = quad_size.x / quad_size.y
         let custom_ratio = custom_size.x / custom_size.y
         let fill_size = fn() {
@@ -499,7 +492,7 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
           }
         }
         match scaling_mode {
-          SpriteScalingMode::FillCenter => {
+          FillCenter => {
             let fill_size = fill_size()
             uv_transform.append_scale(
               sprite_material_vec2_div(custom_size, fill_size),
@@ -512,14 +505,14 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
             )
             quad_size = custom_size
           }
-          SpriteScalingMode::FillStart => {
+          FillStart => {
             let fill_size = fill_size()
             uv_transform.append_scale(
               sprite_material_vec2_div(custom_size, fill_size),
             )
             quad_size = custom_size
           }
-          SpriteScalingMode::FillEnd => {
+          FillEnd => {
             let fill_size = fill_size()
             uv_transform.append_scale(
               sprite_material_vec2_div(custom_size, fill_size),
@@ -529,15 +522,15 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
             )
             quad_size = custom_size
           }
-          SpriteScalingMode::FitCenter => quad_size = fit_size()
-          SpriteScalingMode::FitStart => {
+          FitCenter => quad_size = fit_size()
+          FitStart => {
             let fit_size = fit_size()
             quad_offset = quad_offset.sub(
               custom_size.sub(fit_size).mul_scalar(0.5F),
             )
             quad_size = fit_size
           }
-          SpriteScalingMode::FitEnd => {
+          FitEnd => {
             let fit_size = fit_size()
             quad_offset = quad_offset.add(
               custom_size.sub(fit_size).mul_scalar(0.5F),
@@ -546,7 +539,7 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
           }
         }
       }
-      SpriteImageMode::Tiled(tiling) => {
+      Tiled(tiling) => {
         if tiling.tile_x {
           flags = flags | 4U
         }
@@ -559,7 +552,7 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
         )
         quad_size = custom_size
       }
-      SpriteImageMode::Sliced(slicer) => {
+      Sliced(slicer) => {
         let quad_ratio = quad_size.x / quad_size.y
         let custom_ratio = custom_size.x / custom_size.y
         if quad_ratio > custom_ratio {
@@ -594,20 +587,20 @@ fn sprite_material_uniform_bytes(material : SpriteMaterial) -> Bytes {
         )
 
         match slicer.sides_scale_mode {
-          SliceScaleMode::Tile(stretch_value) =>
+          Tile(stretch_value) =>
             side_stretch_value = sprite_material_vec2_div(
               numerator.mul_scalar(stretch_value),
               denominator,
             )
-          SliceScaleMode::Stretch => ()
+          Stretch => ()
         }
         match slicer.center_scale_mode {
-          SliceScaleMode::Tile(stretch_value) =>
+          Tile(stretch_value) =>
             center_stretch_value = sprite_material_vec2_div(
               numerator.mul_scalar(stretch_value),
               denominator,
             )
-          SliceScaleMode::Stretch => ()
+          Stretch => ()
         }
         quad_size = custom_size
       }
@@ -819,7 +812,7 @@ fn sprite_mesh_add_material_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.get_tick_context().ticks()
-  let changed : @hashset.HashSet[UInt64] = @hashset.HashSet([])
+  let changed : @hashset.HashSet[UInt64] = HashSet([])
   for entity in world.added_components(ecs_key_sprite_mesh, tick).read() {
     sprite_insert_entity_key(changed, entity)
   }
@@ -865,7 +858,7 @@ pub impl @app.Plugin for SpriteMeshPlugin with fn build(_self, app) {
   .init_resource(fn() { SpriteMeshQuad::SpriteMeshQuad() })
   .init_resource(fn() { SpriteMeshMaterialCache::SpriteMeshMaterialCache() })
   .add_systems(
-    @app.Update,
+    Update,
     (
       @app.system(sprite_mesh_add_mesh_system),
       @app.system(sprite_mesh_add_material_system),

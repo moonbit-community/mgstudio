@@ -182,52 +182,52 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(Test::RayCast)
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update_text)
-  .add_systems_world(@app.Update, spin)
-  .add_systems_param2(@app.Update, update_volumes)
-  .add_systems_world(@app.Update, update_test_state)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, update_text)
+  .add_systems_world(Update, spin)
+  .add_systems_param2(Update, update_volumes)
+  .add_systems_world(Update, update_test_state)
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(render_shapes).in_set(SYSTEM_SET_RENDER_SHAPES),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(aabb_intersection_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::AabbSweep)),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(circle_intersection_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::CircleSweep)),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(ray_cast_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::RayCast)),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(aabb_cast_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::AabbCast)),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(bounding_circle_cast_system)
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::CircleCast)),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param(render_volumes).in_set(SYSTEM_SET_RENDER_VOLUMES),
   )
   .run()
@@ -249,30 +249,30 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(-OFFSET_X, OFFSET_Y, 0.0F),
-    Shape::Circle(@math.Circle::new(45.0F)),
-    DesiredVolume::Aabb,
+    Circle(@math.Circle::new(45.0F)),
+    Aabb,
     false,
   )
 
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(0.0F, OFFSET_Y, 0.0F),
-    Shape::Rectangle(@math.Rectangle::new(80.0F, 80.0F)),
-    DesiredVolume::Circle,
+    Rectangle(@math.Rectangle::new(80.0F, 80.0F)),
+    Circle,
     true,
   )
 
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(OFFSET_X, OFFSET_Y, 0.0F),
-    Shape::Triangle(
+    Triangle(
       @math.Triangle2d::new(
         @math.Vec2::new(-40.0F, -40.0F),
         @math.Vec2::new(-20.0F, 40.0F),
         @math.Vec2::new(40.0F, 50.0F),
       ),
     ),
-    DesiredVolume::Aabb,
+    Aabb,
     true,
   )
 
@@ -281,29 +281,29 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(-OFFSET_X, -OFFSET_Y, 0.0F),
-    Shape::Line(
+    Line(
       @math.Segment2d::new(
         @math.Vec2::new(-half_line.x, -half_line.y),
         @math.Vec2::new(half_line.x, half_line.y),
       ),
     ),
-    DesiredVolume::Circle,
+    Circle,
     true,
   )
 
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(0.0F, -OFFSET_Y, 0.0F),
-    Shape::Capsule(@math.Capsule2d::new(25.0F, 100.0F).with_segments(16)),
-    DesiredVolume::Aabb,
+    Capsule(@math.Capsule2d::new(25.0F, 100.0F).with_segments(16)),
+    Aabb,
     true,
   )
 
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(OFFSET_X, -OFFSET_Y, 0.0F),
-    Shape::Polygon(@math.RegularPolygon::new(50.0F, 6)),
-    DesiredVolume::Circle,
+    Polygon(@math.RegularPolygon::new(50.0F, 6)),
+    Circle,
     true,
   )
 
@@ -311,6 +311,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_shape_entity(
   world : @ecs.World,
   transform : @transform.Transform,
@@ -334,13 +335,11 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
   let text_entity = world.spawn_empty()
   try! world.set_by_key(
@@ -352,9 +351,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_top(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -374,24 +373,24 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   overlay_text_entity.val = Some(text_entity)
 }
 
 ///|
 fn update_test_state(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
 
   let current = read_current_test(world)
   let next = match current {
-    Test::AabbSweep => Test::CircleSweep
-    Test::CircleSweep => Test::RayCast
-    Test::RayCast => Test::AabbCast
-    Test::AabbCast => Test::CircleCast
-    Test::CircleCast => Test::AabbSweep
+    AabbSweep => Test::CircleSweep
+    CircleSweep => RayCast
+    RayCast => AabbCast
+    AabbCast => CircleCast
+    CircleCast => AabbSweep
   }
   @app.set_state(next)
 }
@@ -410,11 +409,11 @@ fn update_text(world : @ecs.World) -> Unit {
 ///|
 fn overlay_text(current : Test) -> String {
   let tests : Array[Test] = [
-    Test::AabbSweep,
-    Test::CircleSweep,
-    Test::RayCast,
-    Test::AabbCast,
-    Test::CircleCast,
+    AabbSweep,
+    CircleSweep,
+    RayCast,
+    AabbCast,
+    CircleCast,
   ]
   let mut content = "Intersection test:\n"
   for test_case in tests {
@@ -427,11 +426,11 @@ fn overlay_text(current : Test) -> String {
 ///|
 fn test_name(test_case : Test) -> String {
   match test_case {
-    Test::AabbSweep => "AabbSweep"
-    Test::CircleSweep => "CircleSweep"
-    Test::RayCast => "RayCast"
-    Test::AabbCast => "AabbCast"
-    Test::CircleCast => "CircleCast"
+    AabbSweep => "AabbSweep"
+    CircleSweep => "CircleSweep"
+    RayCast => "RayCast"
+    AabbCast => "AabbCast"
+    CircleCast => "CircleCast"
   }
 }
 
@@ -439,7 +438,7 @@ fn test_name(test_case : Test) -> String {
 fn read_current_test(world : @ecs.World) -> Test {
   match @app.world_state(world, Test::RayCast) {
     Some(state) => state.get()
-    None => Test::RayCast
+    None => RayCast
   }
 }
 
@@ -495,10 +494,8 @@ fn update_volumes(
     let (entity, desired_volume, shape, transform) = data
     let isometry = transform_math_isometry(transform.value())
     let volume = match desired_volume.value() {
-      DesiredVolume::Aabb =>
-        CurrentVolume::Aabb(shape_aabb(shape.value(), isometry))
-      DesiredVolume::Circle =>
-        CurrentVolume::Circle(shape_bounding_circle(shape.value(), isometry))
+      Aabb => CurrentVolume::Aabb(shape_aabb(shape.value(), isometry))
+      Circle => Circle(shape_bounding_circle(shape.value(), isometry))
     }
     commands.entity(entity).insert_component(volume)
   })
@@ -533,13 +530,13 @@ fn render_volumes(
   try! query.view(fn(_entity, data) {
     let color = if data.intersects { color_aqua() } else { color_orange_red() }
     match data.volume {
-      CurrentVolume::Aabb(aabb) =>
+      Aabb(aabb) =>
         gizmos.rect_2d(
           @sprite.Isometry2d::new(aabb.center(), 0.0F),
           aabb.half_size().mul_scalar(2.0F),
           color,
         )
-      CurrentVolume::Circle(circle) =>
+      Circle(circle) =>
         gizmos.circle_2d(
           @sprite.Isometry2d::new(circle.center, 0.0F),
           circle.radius(),
@@ -569,8 +566,8 @@ fn aabb_intersection_system(
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, data) {
     let hit = match data.volume {
-      CurrentVolume::Aabb(other) => aabb.intersects_aabb(other)
-      CurrentVolume::Circle(circle) => aabb.intersects_circle(circle)
+      Aabb(other) => aabb.intersects_aabb(other)
+      Circle(circle) => aabb.intersects_circle(circle)
     }
     updates.push((entity, hit))
   })
@@ -600,8 +597,8 @@ fn circle_intersection_system(
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, data) {
     let hit = match data.volume {
-      CurrentVolume::Aabb(aabb) => aabb.intersects_circle(circle)
-      CurrentVolume::Circle(other) => circle.intersects_circle(other)
+      Aabb(aabb) => aabb.intersects_circle(circle)
+      Circle(other) => circle.intersects_circle(other)
     }
     updates.push((entity, hit))
   })
@@ -623,8 +620,8 @@ fn ray_cast_system(
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, data) {
     let toi = match data.volume {
-      CurrentVolume::Aabb(aabb) => ray_cast.aabb_intersection_at(aabb)
-      CurrentVolume::Circle(circle) => ray_cast.circle_intersection_at(circle)
+      Aabb(aabb) => ray_cast.aabb_intersection_at(aabb)
+      Circle(circle) => ray_cast.circle_intersection_at(circle)
     }
     updates.push((entity, toi is Some(_)))
     if toi is Some(hit_time) {
@@ -655,8 +652,8 @@ fn aabb_cast_system(
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, data) {
     let toi = match data.volume {
-      CurrentVolume::Aabb(aabb) => cast.aabb_collision_at(aabb)
-      CurrentVolume::Circle(_) => None
+      Aabb(aabb) => cast.aabb_collision_at(aabb)
+      Circle(_) => None
     }
     updates.push((entity, toi is Some(_)))
     if toi is Some(hit_time) {
@@ -693,8 +690,8 @@ fn bounding_circle_cast_system(
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
   try! query.view(fn(entity, data) {
     let toi = match data.volume {
-      CurrentVolume::Aabb(_) => None
-      CurrentVolume::Circle(circle) => cast.circle_collision_at(circle)
+      Aabb(_) => None
+      Circle(circle) => cast.circle_collision_at(circle)
     }
     updates.push((entity, toi is Some(_)))
     if toi is Some(hit_time) {
@@ -780,27 +777,26 @@ fn draw_shape_outline(
   color : @color.Color,
 ) -> Unit {
   match shape {
-    Shape::Rectangle(rectangle) =>
+    Rectangle(rectangle) =>
       gizmos.rect_2d(isometry, rectangle.half_size.mul_scalar(2.0F), color)
-    Shape::Circle(circle) =>
-      gizmos.circle_2d(isometry, circle.radius, color) |> ignore
-    Shape::Triangle(triangle) =>
+    Circle(circle) => gizmos.circle_2d(isometry, circle.radius, color) |> ignore
+    Triangle(triangle) =>
       gizmos.lineloop_2d(
         transformed_points([triangle.a, triangle.b, triangle.c], isometry),
         color,
       )
-    Shape::Line(line) =>
+    Line(line) =>
       gizmos.line_2d(
         isometry.transform_point(line.start),
         isometry.transform_point(line.end),
         color,
       )
-    Shape::Capsule(capsule) =>
+    Capsule(capsule) =>
       gizmos.lineloop_2d(
         transformed_points(capsule_points_local(capsule), isometry),
         color,
       )
-    Shape::Polygon(polygon) =>
+    Polygon(polygon) =>
       gizmos.lineloop_2d(
         transformed_points(polygon_points_local(polygon), isometry),
         color,
@@ -811,12 +807,12 @@ fn draw_shape_outline(
 ///|
 fn shape_aabb(shape : Shape, isometry : @math.Isometry2d) -> @math.Aabb2d {
   match shape {
-    Shape::Rectangle(rectangle) => rectangle.aabb_2d(isometry)
-    Shape::Circle(circle) => circle.aabb_2d(isometry)
-    Shape::Triangle(triangle) => triangle.aabb_2d(isometry)
-    Shape::Line(line) => line.aabb_2d(isometry)
-    Shape::Capsule(capsule) => capsule.aabb_2d(isometry)
-    Shape::Polygon(polygon) => polygon.aabb_2d(isometry)
+    Rectangle(rectangle) => rectangle.aabb_2d(isometry)
+    Circle(circle) => circle.aabb_2d(isometry)
+    Triangle(triangle) => triangle.aabb_2d(isometry)
+    Line(line) => line.aabb_2d(isometry)
+    Capsule(capsule) => capsule.aabb_2d(isometry)
+    Polygon(polygon) => polygon.aabb_2d(isometry)
   }
 }
 
@@ -826,12 +822,12 @@ fn shape_bounding_circle(
   isometry : @math.Isometry2d,
 ) -> @math.BoundingCircle {
   match shape {
-    Shape::Rectangle(rectangle) => rectangle.bounding_circle(isometry)
-    Shape::Circle(circle) => circle.bounding_circle(isometry)
-    Shape::Triangle(triangle) => triangle.bounding_circle(isometry)
-    Shape::Line(line) => line.bounding_circle(isometry)
-    Shape::Capsule(capsule) => capsule.bounding_circle(isometry)
-    Shape::Polygon(polygon) => polygon.bounding_circle(isometry)
+    Rectangle(rectangle) => rectangle.bounding_circle(isometry)
+    Circle(circle) => circle.bounding_circle(isometry)
+    Triangle(triangle) => triangle.bounding_circle(isometry)
+    Line(line) => line.bounding_circle(isometry)
+    Capsule(capsule) => capsule.bounding_circle(isometry)
+    Polygon(polygon) => polygon.bounding_circle(isometry)
   }
 }
 

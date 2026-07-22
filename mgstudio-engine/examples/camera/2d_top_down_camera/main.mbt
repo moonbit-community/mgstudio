@@ -91,10 +91,10 @@ fn setup_instructions(commands : @app.Commands) -> Unit {
           "Move the light with WASD.\nThe camera will smoothly track the light.",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          left: @ui.Val::Px(12.0F),
-          bottom: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          left: Px(12.0F),
+          bottom: Px(12.0F),
         },
       ),
     ),
@@ -120,16 +120,16 @@ fn move_player(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
   let direction = @math.Vec2::zero()
-  if keyboard_input.pressed(@window.KeyCode::KeyW) {
+  if keyboard_input.pressed(KeyW) {
     direction.y = direction.y + 1.0F
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyS) {
+  if keyboard_input.pressed(KeyS) {
     direction.y = direction.y - 1.0F
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyA) {
+  if keyboard_input.pressed(KeyA) {
     direction.x = direction.x - 1.0F
   }
-  if keyboard_input.pressed(@window.KeyCode::KeyD) {
+  if keyboard_input.pressed(KeyD) {
     direction.x = direction.x + 1.0F
   }
 
@@ -183,11 +183,11 @@ fn main {
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup_scene)
-  .add_systems_param(@app.Startup, setup_instructions)
-  .add_systems_param(@app.Startup, setup_camera)
+  .add_systems_param3(Startup, setup_scene)
+  .add_systems_param(Startup, setup_instructions)
+  .add_systems_param(Startup, setup_camera)
   .add_systems(
-    @app.Update,
+    Update,
     (move_player_system, update_camera_system) |> @app.chain(),
   )
   .run()

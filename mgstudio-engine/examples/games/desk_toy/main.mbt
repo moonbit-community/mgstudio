@@ -101,7 +101,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param2(@app.Update, simulate_bodies)
+  .add_systems_param(Startup, setup)
+  .add_systems_param2(Update, simulate_bodies)
   .run()
 }

@@ -26,19 +26,19 @@ pub struct Isometry3d {
 
 ///|
 pub fn Isometry2d::new(translation : Vec2, rotation : Rot2) -> Isometry2d {
-  Isometry2d::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
 pub fn Isometry2d::identity() -> Isometry2d {
-  Isometry2d::{ translation: Vec2::zero(), rotation: Rot2::identity() }
+  { translation: Vec2::zero(), rotation: Rot2::identity() }
 }
 
 ///|
 pub fn Isometry2d::inverse(self : Isometry2d) -> Isometry2d {
   let rotation = self.rotation.inverse()
   let translation = rotation.mul_vec2(self.translation.mul_scalar(-1.0F))
-  Isometry2d::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
@@ -48,22 +48,22 @@ pub fn Isometry2d::transform_point2(self : Isometry2d, point : Vec2) -> Vec2 {
 
 ///|
 pub fn Isometry3d::new(translation : Vec3, rotation : Quat) -> Isometry3d {
-  Isometry3d::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
 pub fn Isometry3d::from_rotation(rotation : Quat) -> Isometry3d {
-  Isometry3d::{ translation: Vec3::zero(), rotation }
+  { translation: Vec3::zero(), rotation }
 }
 
 ///|
 pub fn Isometry3d::identity() -> Isometry3d {
-  Isometry3d::{ translation: Vec3::zero(), rotation: Quat::identity() }
+  { translation: Vec3::zero(), rotation: Quat::identity() }
 }
 
 ///|
 pub fn Isometry3d::mul(self : Isometry3d, other : Isometry3d) -> Isometry3d {
-  Isometry3d::{
+  {
     translation: self.transform_point3(other.translation),
     rotation: self.rotation.mul(other.rotation).normalize(),
   }
@@ -78,7 +78,7 @@ pub fn Isometry3d::inverse(self : Isometry3d) -> Isometry3d {
     w: self.rotation.w,
   }.normalize()
   let translation = quat_rotate_vec3(rotation, self.translation.neg())
-  Isometry3d::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|

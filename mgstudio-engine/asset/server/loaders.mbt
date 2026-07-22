@@ -26,7 +26,7 @@ pub fn AssetServerLoaderInfo::new(
   extension : String,
   kind : @asset.AssetLoaderKind,
 ) -> AssetServerLoaderInfo {
-  AssetServerLoaderInfo::{ extension, kind }
+  { extension, kind }
 }
 
 ///|

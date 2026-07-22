@@ -41,13 +41,13 @@ pub struct CosmicBuffer {
 
 ///|
 pub fn CosmicBuffer::CosmicBuffer() -> CosmicBuffer {
-  CosmicBuffer::{
+  {
     text: "",
     spans: [],
     font_size: 20.0F,
     line_height: 20.0F,
-    justify: Justify::Left,
-    linebreak: LineBreak::WordBoundary,
+    justify: Left,
+    linebreak: WordBoundary,
     max_width: None,
     max_height: None,
     uses_viewport_sizes: false,
@@ -70,8 +70,8 @@ pub struct ComputedTextBlock {
 
 ///|
 pub fn ComputedTextBlock::ComputedTextBlock() -> ComputedTextBlock {
-  ComputedTextBlock::{
-    buffer: CosmicBuffer::CosmicBuffer(),
+  {
+    buffer: CosmicBuffer(),
     scale_factor: 1.0F,
     needs_rerender: true,
     uses_viewport_sizes: false,
@@ -110,6 +110,7 @@ pub fn ComputedTextBlock::entities(
 pub struct TextPipeline {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TextPipeline::TextPipeline() -> TextPipeline {
   TextPipeline::{  }
 }
@@ -117,13 +118,13 @@ pub fn TextPipeline::TextPipeline() -> TextPipeline {
 ///|
 fn build_text_entities(instance : TextInstance) -> Array[TextEntity] {
   let entities : Array[TextEntity] = []
-  entities.push(TextEntity::{
+  entities.push({
     id: instance.id,
     depth: 0,
     font_smoothing: instance.font.font_smoothing,
   })
   for span in instance.spans {
-    entities.push(TextEntity::{
+    entities.push({
       id: span.id,
       depth: 1,
       font_smoothing: span.font.font_smoothing,
@@ -203,11 +204,11 @@ fn build_text_buffer(
   let mut text = instance.text.content
   let spans : Array[TextSpanRange] = []
   let mut cursor = text.length()
-  spans.push(TextSpanRange::{ start: 0, length: cursor })
+  spans.push({ start: 0, length: cursor })
   for span in instance.spans {
     let content = span.span.content
     let length = content.length()
-    spans.push(TextSpanRange::{ start: cursor, length })
+    spans.push({ start: cursor, length })
     text = text + content
     cursor = cursor + length
   }
@@ -234,7 +235,7 @@ fn build_text_buffer(
     Some(height) => Some(height * scale_factor)
     None => None
   }
-  CosmicBuffer::{
+  {
     text,
     spans,
     font_size: font_size * scale_factor,
@@ -412,7 +413,7 @@ fn cosmic_font_system_state_new() -> CosmicFontSystemState {
 
 ///|
 let text_pipeline_runtime_state : TextPipelineRuntimeState = {
-  font_atlas_set: FontAtlasSet::FontAtlasSet(),
+  font_atlas_set: FontAtlasSet(),
   default_text_font_handle: None,
   cosmic_font_system: cosmic_font_system_state_new(),
   diagnostic_update_cpu_ms: 0.0F,
@@ -432,7 +433,7 @@ let text_pipeline_runtime_state : TextPipelineRuntimeState = {
 ///|
 let text_font_asset_events_cursor : @ecs.MessageCursor[
   @asset.AssetEvent[@asset.Font],
-] = @ecs.MessageCursor::MessageCursor()
+] = MessageCursor()
 
 ///|
 priv struct OverlaySpriteSliceBatchBounds {
@@ -445,13 +446,7 @@ priv struct OverlaySpriteSliceBatchBounds {
 
 ///|
 fn OverlaySpriteSliceBatchBounds::OverlaySpriteSliceBatchBounds() -> OverlaySpriteSliceBatchBounds {
-  OverlaySpriteSliceBatchBounds::{
-    has_bounds: false,
-    min_x: 0.0F,
-    min_y: 0.0F,
-    max_x: 0.0F,
-    max_y: 0.0F,
-  }
+  { has_bounds: false, min_x: 0.0F, min_y: 0.0F, max_x: 0.0F, max_y: 0.0F }
 }
 
 ///|
@@ -596,10 +591,10 @@ fn text_mark_all_instances_for_rerender() -> Unit {
   }
   for i in 0..<count {
     let instance = text_state.texts[i]
-    text_state.texts[i] = TextInstance::{
+    text_state.texts[i] = {
       ..instance,
       layout_dirty: true,
-      computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+      computed: { ..instance.computed, needs_rerender: true },
     }
   }
   text_runtime_mark_layout_dirty()
@@ -618,14 +613,11 @@ fn text_sync_font_assets_from_events(world : @ecs.World) -> Bool {
   let mut new_fonts_added = false
   for event in reader.read() {
     match event {
-      @asset.AssetEvent::Added(handle) => {
+      Added(handle) => {
         new_fonts_added = true
         cosmic_get_or_load_font_id(handle) |> ignore
       }
-      @asset.AssetEvent::LoadedWithDependencies(_)
-      | @asset.AssetEvent::Modified(_)
-      | @asset.AssetEvent::Removed(_)
-      | @asset.AssetEvent::Unused(_) => ()
+      LoadedWithDependencies(_) | Modified(_) | Removed(_) | Unused(_) => ()
     }
   }
   if !new_fonts_added {
@@ -666,7 +658,7 @@ fn font_source_resolved_handle(
   source : FontSource,
 ) -> @asset.Handle[@asset.Font]? {
   match source {
-    FontSource::Handle(font) => Some(text_pipeline_resolve_default_font(font))
+    Handle(font) => Some(text_pipeline_resolve_default_font(font))
     _ => None
   }
 }
@@ -714,7 +706,7 @@ fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
       handle_to_family.push((handle_id, family))
     }
   }
-  text_pipeline_runtime_state.cosmic_font_system = CosmicFontSystemState::{
+  text_pipeline_runtime_state.cosmic_font_system = {
     font_system,
     handle_to_font_id,
     font_id_to_handle_id,
@@ -744,14 +736,9 @@ fn cosmic_font_family_name(font : @asset.Handle[@asset.Font]) -> String? {
 ///|
 fn text_font_source_family(source : FontSource) -> @cosmic.Family? {
   match source {
-    FontSource::Handle(font) =>
+    Handle(font) =>
       match cosmic_font_family_name(font) {
-        Some(name) =>
-          if name.length() > 0 {
-            Some(@cosmic.Family::Name(name))
-          } else {
-            None
-          }
+        Some(name) => if name.length() > 0 { Some(Name(name)) } else { None }
         None => None
       }
     _ => font_source_to_cosmic_family(source)
@@ -769,7 +756,7 @@ fn text_font_source_ready(source : FontSource) -> Bool {
 ///|
 fn justify_is_left(justify : Justify) -> Bool {
   match justify {
-    Justify::Left => true
+    Left => true
     _ => false
   }
 }
@@ -777,20 +764,20 @@ fn justify_is_left(justify : Justify) -> Bool {
 ///|
 fn justify_to_cosmic_align(justify : Justify) -> @cosmic.Align {
   match justify {
-    Justify::Left => @cosmic.Align::Left
-    Justify::Center => @cosmic.Align::Center
-    Justify::Right => @cosmic.Align::Right
-    Justify::Justified => @cosmic.Align::Justified
-    Justify::Start => @cosmic.Align::Start
-    Justify::End => @cosmic.Align::End
+    Left => Left
+    Center => Center
+    Right => Right
+    Justified => Justified
+    Start => Start
+    End => End
   }
 }
 
 ///|
 fn font_hinting_to_cosmic(hinting : FontHinting) -> @cosmic.Hinting {
   match hinting {
-    Disabled => @cosmic.Hinting::Disabled
-    Enabled => @cosmic.Hinting::Enabled
+    Disabled => Disabled
+    Enabled => Enabled
   }
 }
 
@@ -802,10 +789,10 @@ fn cosmic_physical_xy(
 ) -> (@cosmic.CacheKey, Int, Int, Int, Int) {
   fn bin_index(bin : @cosmic.SubpixelBin) -> Int {
     match bin {
-      @cosmic.SubpixelBin::Zero => 0
-      @cosmic.SubpixelBin::One => 1
-      @cosmic.SubpixelBin::Two => 2
-      @cosmic.SubpixelBin::Three => 3
+      Zero => 0
+      One => 1
+      Two => 2
+      Three => 3
     }
   }
   // Bevy parity:
@@ -813,7 +800,7 @@ fn cosmic_physical_xy(
   //   the physical glyph from that rounded layout glyph.
   // - FontSmoothing::AntiAliased uses the original layout glyph directly.
   match font_smoothing {
-    FontSmoothing::None => {
+    None => {
       // `moon_cosmic.LayoutGlyph` is externally read-only, so we cannot clone-and-edit
       // like Bevy's Rust code. Rebuild the same rounded physical parameters directly.
       let rounded_x = @cosmic.roundf(glyph.x)
@@ -840,7 +827,7 @@ fn cosmic_physical_xy(
         bin_index(cache_key.y_bin()),
       )
     }
-    FontSmoothing::AntiAliased => {
+    AntiAliased => {
       let physical = glyph.physical((0.0F, line_y_offset), 1.0F)
       let cache_key = physical.cache_key
       (
@@ -876,7 +863,7 @@ fn text_layout_needs_update(instance : TextInstance) -> Bool {
 ///|
 fn text_update_layout(instance : TextInstance) -> TextInstance {
   if !text_layout_needs_update(instance) {
-    return TextInstance::{ ..instance, layout_dirty: false }
+    return { ..instance, layout_dirty: false }
   }
   let logical_viewport_size = text_current_logical_viewport_size(instance)
   let rem_size = text_runtime_state.rem_size
@@ -887,9 +874,9 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   )
   let entities = build_text_entities(instance)
   if buffer.font_size <= 0.0F || buffer.line_height <= 0.0F {
-    return TextInstance::{
+    return {
       ..instance,
-      layout_info: TextLayoutInfo::{
+      layout_info: {
         scale_factor,
         glyphs: [],
         run_geometry: [],
@@ -901,7 +888,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         instance.transform.scale,
       ),
       layout_dirty: false,
-      computed: ComputedTextBlock::{
+      computed: {
         buffer,
         scale_factor,
         entities,
@@ -933,7 +920,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     }
   }
   if needs_retry {
-    return TextInstance::{
+    return {
       ..instance,
       cull_margin: text_compute_cull_margin(
         instance.bounds,
@@ -941,7 +928,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         instance.transform.scale,
       ),
       layout_dirty: true,
-      computed: ComputedTextBlock::{
+      computed: {
         buffer,
         scale_factor,
         entities,
@@ -996,10 +983,10 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
     spans.push((sp.span.content, attrs))
   }
   let wrap = match buffer.linebreak {
-    LineBreak::WordBoundary => @cosmic.Wrap::Word
-    LineBreak::AnyCharacter => @cosmic.Wrap::Glyph
-    LineBreak::WordOrCharacter => @cosmic.Wrap::WordOrGlyph
-    LineBreak::NoWrap => @cosmic.Wrap::None
+    WordBoundary => @cosmic.Wrap::Word
+    AnyCharacter => Glyph
+    WordOrCharacter => WordOrGlyph
+    NoWrap => None
   }
   let align = justify_to_cosmic_align(buffer.justify)
   let mut cosmic_buffer = @cosmic.Buffer::new_empty(base_metrics).set_hinting(
@@ -1010,7 +997,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   cosmic_buffer = cosmic_buffer.set_rich_text(
     spans,
     base_attrs,
-    @cosmic.Shaping::Advanced,
+    Advanced,
     Some(align),
   )
 
@@ -1081,7 +1068,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         )
         let stroke_size = if stroke < 1.0F { 1.0F } else { stroke }
         let start = if end_x > layout_glyph.x { end_x } else { layout_glyph.x }
-        maybe_run_geom = Some(RunGeometry::{
+        maybe_run_geom = Some({
           span_index,
           bounds: @math.Rect::new(
             @math.Vec2::new(start, run_min_y),
@@ -1105,7 +1092,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
           rg0.bounds.min,
           @math.Vec2::new(end_x, rg0.bounds.max.y),
         )
-        maybe_run_geom = Some(RunGeometry::{ ..rg0, bounds, })
+        maybe_run_geom = Some({ ..rg0, bounds, })
       }
       let glyph_byte_start = layout_glyph0.start
       let glyph_byte_end = layout_glyph0.end
@@ -1203,10 +1190,10 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let y_raw = glyph_size_y / 2.0F + phys_y - top
       // Bevy parity: `BottomToTop` flips Y using the computed box height.
       let y = match instance.y_axis {
-        YAxisOrientation::TopToBottom => y_raw
-        YAxisOrientation::BottomToTop => box_h - y_raw
+        TopToBottom => y_raw
+        BottomToTop => box_h - y_raw
       }
-      glyphs.push(PositionedGlyph::{
+      glyphs.push({
         position: @math.Vec2::new(x, y),
         size: @math.Vec2::new(glyph_size_x, glyph_size_y),
         atlas_info,
@@ -1231,7 +1218,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       box_h * inverse_scale_factor,
     ),
   }
-  TextInstance::{
+  {
     ..instance,
     layout_info: updated,
     cull_margin: text_compute_cull_margin(
@@ -1240,7 +1227,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       instance.transform.scale,
     ),
     layout_dirty: needs_retry,
-    computed: ComputedTextBlock::{
+    computed: {
       buffer,
       scale_factor,
       entities,
@@ -1299,8 +1286,8 @@ fn text_rotate_vec2(v : @math.Vec2, cosv : Float, sinv : Float) -> @math.Vec2 {
 ///|
 fn text_to_y_up(y_axis : YAxisOrientation, v : @math.Vec2) -> @math.Vec2 {
   match y_axis {
-    YAxisOrientation::TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
-    YAxisOrientation::BottomToTop => v
+    TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
+    BottomToTop => v
   }
 }
 
@@ -1436,7 +1423,7 @@ fn text_push_overlay_sprite_slice_batch(
   if slices_xy_uv.length() == 0 {
     return
   }
-  batches.push(@sprite_render.OverlaySpriteUvScissorSlices::{
+  batches.push({
     texture,
     rotation,
     draw_scale,
@@ -1557,7 +1544,7 @@ fn text_append_overlay_sprite_slice_batch(
     batch.cull_center,
     batch.cull_half_size,
   )
-  batches[last_index] = @sprite_render.OverlaySpriteUvScissorSlices::{
+  batches[last_index] = {
     texture: last_batch.texture,
     rotation: last_batch.rotation,
     draw_scale: last_batch.draw_scale,
@@ -1695,13 +1682,13 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       // Bevy parity: top_left = (Anchor::TOP_LEFT - anchor) * size
       // for the default TopToBottom layout orientation.
       origin_offset_layout = match instance.y_axis {
-        YAxisOrientation::TopToBottom =>
+        TopToBottom =>
           @math.Vec2::new(
             (0.0F - 0.5F - a.x) * anchor_size.x,
             (0.5F - a.y) * anchor_size.y,
           )
         // Backward-compatible semantics for BottomToTop mode.
-        YAxisOrientation::BottomToTop =>
+        BottomToTop =>
           @math.Vec2::new(
             (0.0F - 0.5F - a.x) * anchor_size.x,
             (0.0F - 0.5F - a.y) * anchor_size.y,
@@ -1713,7 +1700,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     // - `top_left` translation is applied before the Y-flip scale, so it should not be Y-flipped.
     // For UI text we keep existing conversion semantics.
     let origin_offset = match (instance.y_axis, instance.ui_node_size) {
-      (YAxisOrientation::TopToBottom, None) => origin_offset_layout
+      (TopToBottom, None) => origin_offset_layout
       _ => text_to_y_up(instance.y_axis, origin_offset_layout)
     }
     let origin_scaled = @math.Vec2::new(
@@ -1764,7 +1751,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             run_draw_scale,
             z=instance.transform.translation.z - 0.001F,
           )
-          overlay_sprites.push(@sprite_render.OverlaySpriteUvScissor::{
+          overlay_sprites.push({
             texture: white_texture,
             transform: background_transform,
             uv_min: @math.Vec2::new(0.0F, 0.0F),
@@ -1815,7 +1802,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
               underline_draw_scale,
               z=instance.transform.translation.z + 0.0005F,
             )
-            overlay_sprites.push(@sprite_render.OverlaySpriteUvScissor::{
+            overlay_sprites.push({
               texture: white_texture,
               transform: underline_transform,
               uv_min: @math.Vec2::new(0.0F, 0.0F),
@@ -1854,7 +1841,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
               strike_draw_scale,
               z=instance.transform.translation.z + 0.0005F,
             )
-            overlay_sprites.push(@sprite_render.OverlaySpriteUvScissor::{
+            overlay_sprites.push({
               texture: white_texture,
               transform: strike_transform,
               uv_min: @math.Vec2::new(0.0F, 0.0F),
@@ -1886,8 +1873,8 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
     let glyph_z = instance.transform.translation.z
     let shadow_opt = instance.shadow
     let top_to_bottom_y_axis = match instance.y_axis {
-      YAxisOrientation::TopToBottom => true
-      YAxisOrientation::BottomToTop => false
+      TopToBottom => true
+      BottomToTop => false
     }
     let no_rotation = rot > -0.000001F && rot < 0.000001F
     let mut cached_span_index = -1
@@ -2218,7 +2205,7 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @app.system(text_sync_ecs_system).in_set(text_set_sync_ecs),
     )
     .configure_set(
-      @app.PostUpdate,
+      PostUpdate,
       text_set_sync_ecs,
       after=[
         @app.system_set("mgstudio.ui.stack"),
@@ -2227,19 +2214,19 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       before=[text_set_render_prepare],
     )
     .configure_set(
-      @app.PostUpdate,
+      PostUpdate,
       text_set_render_prepare,
       after=[text_set_sync_ecs, @sprite_render.render2d_set_extract],
       before=[text_set_render_transparent_2d],
     )
     .configure_set(
-      @app.PostUpdate,
+      PostUpdate,
       text_set_render_transparent_2d,
       after=[text_set_render_prepare, @sprite_render.render2d_set_prepare],
       before=[text_set_render_transparent_ui],
     )
     .configure_set(
-      @app.PostUpdate,
+      PostUpdate,
       text_set_render_transparent_ui,
       after=[text_set_render_transparent_2d],
       before=[@sprite_render.render2d_set_queue],

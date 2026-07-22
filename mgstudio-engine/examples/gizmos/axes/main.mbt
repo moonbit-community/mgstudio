@@ -178,7 +178,7 @@ fn setup(
 
 ///|
 fn random_transform(rng : @example_rng.ChaCha8Rng) -> @transform.Transform {
-  @transform.Transform::{
+  {
     translation: random_translation(rng),
     rotation: random_rotation(rng),
     scale: random_scale(rng),
@@ -252,7 +252,7 @@ fn interpolate_transforms(
   b : @transform.Transform,
   t : Float,
 ) -> @transform.Transform {
-  @transform.Transform::{
+  {
     translation: vec3_lerp(a.translation, b.translation, t),
     rotation: a.rotation.slerp(b.rotation, t),
     scale: elerp(a.scale, b.scale, t),
@@ -311,8 +311,8 @@ fn draw_axes(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, move_cubes)
-  .add_systems_param2(@app.Update, draw_axes)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, move_cubes)
+  .add_systems_param2(Update, draw_axes)
   .run()
 }

@@ -73,21 +73,21 @@ fn render3d_execute_camera_pass_config(
 ) -> Render3dExecuteCameraPassConfig {
   let camera_deferred_config = match camera.deferred_config {
     Some(value) => value
-    None => CameraDeferredConfig3d::CameraDeferredConfig3d()
+    None => CameraDeferredConfig3d()
   }
   let camera_decal_config = match camera.decal_config {
     Some(value) => value
-    None => CameraDecalConfig3d::CameraDecalConfig3d()
+    None => CameraDecalConfig3d()
   }
   let camera_deferred_enabled = deferred_lighting_enabled &&
     prepass_enabled &&
     (
       camera.deferred_prepass_enabled ||
       camera_deferred_config.requires_deferred_prepass ||
-      camera_deferred_mode is OpaqueRendererMethod::Deferred
+      camera_deferred_mode is Deferred
     )
   let camera_msaa_allows_forward_decals = match camera.msaa {
-    Some(msaa) => msaa is Msaa::Off
+    Some(msaa) => msaa is Off
     None => true
   }
   let camera_forward_decal_enabled = render3d_decal_mode_allows_forward(
@@ -222,7 +222,7 @@ fn render3d_execute_camera_pass_config(
   } else {
     0.0001F
   }
-  Render3dExecuteCameraPassConfig::{
+  {
     camera_deferred_enabled,
     camera_forward_decal_enabled,
     camera_clustered_decal_enabled,

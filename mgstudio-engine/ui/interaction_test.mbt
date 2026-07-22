@@ -30,7 +30,7 @@ test "ui: interaction updates component state" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_button, Button::Button())
+  try! world.set_by_key(e, ecs_key_button, Button())
   try! world.set_by_key(
     e,
     ecs_key_ui_layout,
@@ -47,7 +47,7 @@ test "ui: interaction updates component state" {
   let cursor0 = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  debug_inspect(s0 == Interaction::Hovered, content="true")
+  debug_inspect(s0 == Hovered, content="true")
   debug_inspect(cursor0.cursor_over(), content="true")
 
   // Pressed.
@@ -68,7 +68,7 @@ test "ui: interaction updates component state" {
   let cursor1 = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  debug_inspect(s1 == Interaction::Pressed, content="true")
+  debug_inspect(s1 == Pressed, content="true")
   debug_inspect(cursor1.cursor_over(), content="true")
 
   // Outside.
@@ -89,7 +89,7 @@ test "ui: interaction updates component state" {
   let cursor2 = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  debug_inspect(s2 == Interaction::None, content="true")
+  debug_inspect(s2 == None, content="true")
   debug_inspect(cursor2.cursor_over(), content="false")
   debug_inspect(cursor2.normalized is None, content="true")
 }
@@ -131,7 +131,7 @@ test "ui: interaction hit test respects node transform rotation" {
   )
   get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  try! world.set_by_key(e, ecs_key_button, Button::Button())
+  try! world.set_by_key(e, ecs_key_button, Button())
   let rect = @math.Rect::new(
     @math.Vec2::new(40.0F, 50.0F),
     @math.Vec2::new(240.0F, 110.0F),
@@ -153,7 +153,7 @@ test "ui: interaction hit test respects node transform rotation" {
   let cursor = try! world
     .get_by_key(e, ecs_key_relative_cursor_position)
     .unwrap()
-  debug_inspect(interaction == Interaction::Hovered, content="true")
+  debug_inspect(interaction == Hovered, content="true")
   debug_inspect(cursor.cursor_over(), content="true")
 }
 
@@ -174,24 +174,16 @@ test "ui: interaction keeps top and bottom rows distinct" {
   )
   get_ui_context_resource(world).insert(ctx_top)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
     Node::Node()
-    .with_width(Val::Percent(100.0F))
-    .with_height(Val::Percent(100.0F))
-    .with_display(Display::Grid)
-    .with_grid_template_columns([
-      RepeatedGridTrack::new(GridTrackRepetition::Count(1), [
-        GridTrack::Fr(1.0F),
-      ]),
-    ])
-    .with_grid_template_rows([
-      RepeatedGridTrack::new(GridTrackRepetition::Count(2), [
-        GridTrack::Fr(1.0F),
-      ]),
-    ]),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_display(Grid)
+    .with_grid_template_columns([RepeatedGridTrack::new(Count(1), [Fr(1.0F)])])
+    .with_grid_template_rows([RepeatedGridTrack::new(Count(2), [Fr(1.0F)])]),
   )
   let top = world.spawn_empty()
   try! world.set_by_key(
@@ -199,13 +191,11 @@ test "ui: interaction keeps top and bottom rows distinct" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(top, ecs_key_button, Button::Button())
+  try! world.set_by_key(top, ecs_key_button, Button())
   try! world.set_by_key(
     top,
     ecs_key_node,
-    Node::Node()
-    .with_width(Val::Percent(100.0F))
-    .with_height(Val::Percent(100.0F)),
+    Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
   let bottom = world.spawn_empty()
   try! world.set_by_key(
@@ -213,13 +203,11 @@ test "ui: interaction keeps top and bottom rows distinct" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(bottom, ecs_key_button, Button::Button())
+  try! world.set_by_key(bottom, ecs_key_button, Button())
   try! world.set_by_key(
     bottom,
     ecs_key_node,
-    Node::Node()
-    .with_width(Val::Percent(100.0F))
-    .with_height(Val::Percent(100.0F)),
+    Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
   ui_layout_system(world)
   ui_stack_system(world)
@@ -228,8 +216,8 @@ test "ui: interaction keeps top and bottom rows distinct" {
   let bottom_interaction = try! world
     .get_by_key(bottom, ecs_key_interaction)
     .unwrap()
-  debug_inspect(top_interaction == Interaction::Hovered, content="true")
-  debug_inspect(bottom_interaction == Interaction::None, content="true")
+  debug_inspect(top_interaction == Hovered, content="true")
+  debug_inspect(bottom_interaction == None, content="true")
 
   let ctx_bottom = UiContext::new(
     @asset.Handle::new(1),
@@ -251,6 +239,6 @@ test "ui: interaction keeps top and bottom rows distinct" {
   let bottom_interaction2 = try! world
     .get_by_key(bottom, ecs_key_interaction)
     .unwrap()
-  debug_inspect(top_interaction2 == Interaction::None, content="true")
-  debug_inspect(bottom_interaction2 == Interaction::Hovered, content="true")
+  debug_inspect(top_interaction2 == None, content="true")
+  debug_inspect(bottom_interaction2 == Hovered, content="true")
 }

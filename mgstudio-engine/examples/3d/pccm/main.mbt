@@ -44,7 +44,7 @@ priv struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ pccm_enabled: PccmEnableStatus::Enabled }
+  { pccm_enabled: Enabled }
 }
 
 ///|
@@ -103,7 +103,7 @@ fn configured_window() -> @window.Window {
 fn spawn_camera(commands : @app.Commands) -> Unit {
   let camera = commands.spawn(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 4.0F).looking_at(
         @math.Vec3::new(0.0F, -2.5F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -191,9 +191,7 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -203,7 +201,7 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Parallax Correction", [
       (PccmEnableStatus::Enabled, "On"),
-      (PccmEnableStatus::Disabled, "Off"),
+      (Disabled, "Off"),
     ]),
   )
 }
@@ -263,8 +261,8 @@ fn handle_pccm_enable_change(
     for event in events.read() {
       status.pccm_enabled = event.get()
       let correction = match event.get() {
-        PccmEnableStatus::Enabled => @pbr.ParallaxCorrection::Auto
-        PccmEnableStatus::Disabled => @pbr.ParallaxCorrection::None
+        Enabled => @pbr.ParallaxCorrection::Auto
+        Disabled => None
       }
       commands.entity(light_probe_entity).insert_component(correction)
     }
@@ -316,21 +314,21 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .add_plugins(@camera_controller.FreeCameraPlugin::FreeCameraPlugin())
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, handle_ui_interactions)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, handle_ui_interactions)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param4(handle_pccm_enable_change).run_if_on_message(
       widget_click_message_key,
     ),
   )
-  .add_systems_param3(@app.Update, update_radio_buttons)
+  .add_systems_param3(Update, update_radio_buttons)
   .run()
 }

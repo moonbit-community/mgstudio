@@ -24,35 +24,35 @@ pub struct TestColor {
 ///|
 pub fn test_colors() -> Array[TestColor] {
   [
-    TestColor::{
+    {
       name: "black",
       color: Color::black(),
       hsla: Hsla::new(0.0F, 0.0F, 0.0F, 1.0F),
       hsva: Hsva::new(0.0F, 0.0F, 0.0F, 1.0F),
       hwba: Hwba::new(0.0F, 0.0F, 1.0F, 1.0F),
     },
-    TestColor::{
+    {
       name: "white",
       color: Color::white(),
       hsla: Hsla::new(0.0F, 0.0F, 1.0F, 1.0F),
       hsva: Hsva::new(0.0F, 0.0F, 1.0F, 1.0F),
       hwba: Hwba::new(0.0F, 1.0F, 0.0F, 1.0F),
     },
-    TestColor::{
+    {
       name: "red",
       color: Color::srgba(1.0F, 0.0F, 0.0F, 1.0F),
       hsla: Hsla::new(0.0F, 1.0F, 0.5F, 1.0F),
       hsva: Hsva::new(0.0F, 1.0F, 1.0F, 1.0F),
       hwba: Hwba::new(0.0F, 0.0F, 0.0F, 1.0F),
     },
-    TestColor::{
+    {
       name: "green",
       color: Color::srgba(0.0F, 1.0F, 0.0F, 1.0F),
       hsla: Hsla::new(120.0F, 1.0F, 0.5F, 1.0F),
       hsva: Hsva::new(120.0F, 1.0F, 1.0F, 1.0F),
       hwba: Hwba::new(120.0F, 0.0F, 0.0F, 1.0F),
     },
-    TestColor::{
+    {
       name: "blue",
       color: Color::srgba(0.0F, 0.0F, 1.0F, 1.0F),
       hsla: Hsla::new(240.0F, 1.0F, 0.5F, 1.0F),

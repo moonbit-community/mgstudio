@@ -16,6 +16,7 @@
 pub struct VisibilityPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn VisibilityPlugin::VisibilityPlugin() -> VisibilityPlugin {
   VisibilityPlugin::{  }
 }

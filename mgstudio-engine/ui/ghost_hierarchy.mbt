@@ -105,7 +105,7 @@ fn ui_collect_effective_children(
 
 ///|
 fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
-  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
   let roots : Array[@core.Entity] = []
   world.for_each_component(ecs_key_node, fn(entity, _node) {
     if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {

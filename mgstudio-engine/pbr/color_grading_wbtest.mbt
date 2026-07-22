@@ -171,7 +171,7 @@ test "render3d: color grading alone enables tonemap postprocess path" {
     None,
     None,
     false,
-    Some(@post_process.ColorGrading::ColorGrading()),
+    Some(ColorGrading()),
   )
   debug_inspect(enabled, content="true")
 }

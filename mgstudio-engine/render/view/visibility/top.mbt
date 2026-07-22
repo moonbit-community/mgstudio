@@ -40,7 +40,7 @@ pub struct RenderVisibleEntities {
 
 ///|
 pub fn RenderVisibleEntities::RenderVisibleEntities() -> RenderVisibleEntities {
-  RenderVisibleEntities::{ classes: @hashmap.HashMap([]) }
+  { classes: HashMap([]) }
 }
 
 ///|
@@ -110,7 +110,7 @@ pub struct RenderShadowMapVisibleEntities {
 
 ///|
 pub fn RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities() -> RenderShadowMapVisibleEntities {
-  RenderShadowMapVisibleEntities::{ subviews: @hashmap.HashMap([]) }
+  { subviews: HashMap([]) }
 }
 
 ///|
@@ -173,7 +173,7 @@ pub struct RenderExtractedVisibleEntities {
 
 ///|
 pub fn RenderExtractedVisibleEntities::RenderExtractedVisibleEntities() -> RenderExtractedVisibleEntities {
-  RenderExtractedVisibleEntities::{ classes: @hashmap.HashMap([]) }
+  { classes: HashMap([]) }
 }
 
 ///|
@@ -199,7 +199,7 @@ pub struct RenderExtractedShadowMapVisibleEntities {
 
 ///|
 pub fn RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities() -> RenderExtractedShadowMapVisibleEntities {
-  RenderExtractedShadowMapVisibleEntities::{ subviews: @hashmap.HashMap([]) }
+  { subviews: HashMap([]) }
 }
 
 ///|
@@ -255,9 +255,9 @@ pub struct RenderVisibleEntitiesClass {
 
 ///|
 pub fn RenderVisibleEntitiesClass::RenderVisibleEntitiesClass() -> RenderVisibleEntitiesClass {
-  RenderVisibleEntitiesClass::{
+  {
     entities_cpu_culling: [],
-    entities_gpu_culling: @hashmap.HashMap([]),
+    entities_gpu_culling: HashMap([]),
     added_entities: [],
     removed_entities: [],
   }
@@ -271,7 +271,7 @@ pub struct RenderExtractedVisibleEntitiesClass {
 
 ///|
 pub fn RenderExtractedVisibleEntitiesClass::RenderExtractedVisibleEntitiesClass() -> RenderExtractedVisibleEntitiesClass {
-  RenderExtractedVisibleEntitiesClass::{ entities: [] }
+  { entities: [] }
 }
 
 ///|
@@ -434,10 +434,10 @@ pub struct DirtySpecializations {
 
 ///|
 pub fn DirtySpecializations::DirtySpecializations() -> DirtySpecializations {
-  DirtySpecializations::{
-    changed_renderables: @hashset.HashSet([]),
-    removed_renderables: @hashset.HashSet([]),
-    views: @hashset.HashSet([]),
+  {
+    changed_renderables: HashSet([]),
+    removed_renderables: HashSet([]),
+    views: HashSet([]),
   }
 }
 

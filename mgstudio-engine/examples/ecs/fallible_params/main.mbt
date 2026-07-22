@@ -94,13 +94,13 @@ fn main {
   .set_error_handler(@app.ErrorHandlers::warn)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(EnemySpawnCursor::{ next: 0 })
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     (user_input_system, move_targets_system, track_targets_system)
     |> @app.chain(),
   )
-  .add_systems_param(@app.Update, do_nothing_fail_validation)
+  .add_systems_param(Update, do_nothing_fail_validation)
   .run()
 }
 
@@ -137,14 +137,14 @@ fn setup(
           "A: add enemy ship\nR: remove enemy ship\n\nThe player follows only when exactly one enemy exists.",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          left: @ui.Val::Px(12.0F),
-          top: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          left: Px(12.0F),
+          top: Px(12.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -154,35 +154,35 @@ fn setup(
 fn enemy_blueprint(index : Int) -> Enemy {
   match index % 5 {
     0 =>
-      Enemy::{
+      {
         origin: @math.Vec2::new(-180.0F, 100.0F),
         radius: 70.0F,
         rotation: 0.3F,
         rotation_speed: 0.6F,
       }
     1 =>
-      Enemy::{
+      {
         origin: @math.Vec2::new(170.0F, 90.0F),
         radius: 90.0F,
         rotation: 1.2F,
         rotation_speed: 0.8F,
       }
     2 =>
-      Enemy::{
+      {
         origin: @math.Vec2::new(140.0F, -140.0F),
         radius: 120.0F,
         rotation: 2.4F,
         rotation_speed: 1.1F,
       }
     3 =>
-      Enemy::{
+      {
         origin: @math.Vec2::new(-160.0F, -120.0F),
         radius: 80.0F,
         rotation: 4.2F,
         rotation_speed: 1.35F,
       }
     _ =>
-      Enemy::{
+      {
         origin: @math.Vec2::new(0.0F, 180.0F),
         radius: 110.0F,
         rotation: 5.1F,
@@ -230,7 +230,7 @@ fn user_input(
   asset_server : @app.Res[@asset.AssetServer],
   cursor : @app.ResMut[EnemySpawnCursor],
 ) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyA) {
+  if @input.key_just_pressed(KeyA) {
     let next_index = cursor.modify(fn(value) {
       let next_index = value.next
       value.next = next_index + 1
@@ -243,7 +243,7 @@ fn user_input(
     )
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyR) &&
+  if @input.key_just_pressed(KeyR) &&
     first_enemy_entity(enemies) is Some(entity) {
     commands.entity(entity).despawn()
   }

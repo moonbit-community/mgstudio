@@ -25,6 +25,7 @@ pub(all) suberror PrepareAssetError {
 pub struct AssetExtractionSystems {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AssetExtractionSystems::new() -> AssetExtractionSystems {
   AssetExtractionSystems::{  }
 }
@@ -39,11 +40,11 @@ pub struct ExtractedAssets[A] {
 
 ///|
 pub fn[A] ExtractedAssets::new() -> ExtractedAssets[A] {
-  ExtractedAssets::{
+  {
     extracted: [],
-    removed: @hashset.HashSet([]),
-    modified: @hashset.HashSet([]),
-    added: @hashset.HashSet([]),
+    removed: HashSet([]),
+    modified: HashSet([]),
+    added: HashSet([]),
   }
 }
 
@@ -92,7 +93,7 @@ pub impl[A : RenderAssetResource] @app.Resource for RenderAssets[A] with fn reso
 
 ///|
 pub fn[A] RenderAssets::new() -> RenderAssets[A] {
-  RenderAssets::{ items: @hashmap.HashMap([]) }
+  { items: HashMap([]) }
 }
 
 ///|
@@ -165,12 +166,12 @@ pub let render_asset_bytes_per_frame_resource_key : @ecs.ResourceKey[
 
 ///|
 pub fn RenderAssetBytesPerFrame::RenderAssetBytesPerFrame() -> RenderAssetBytesPerFrame {
-  RenderAssetBytesPerFrame::{ max_bytes: None }
+  { max_bytes: None }
 }
 
 ///|
 pub impl Default for RenderAssetBytesPerFrame with fn default() {
-  RenderAssetBytesPerFrame::RenderAssetBytesPerFrame()
+  RenderAssetBytesPerFrame()
 }
 
 ///|
@@ -182,7 +183,7 @@ pub impl @app.Resource for RenderAssetBytesPerFrame with fn resource() {
 pub fn RenderAssetBytesPerFrame::new(
   max_bytes : Int,
 ) -> RenderAssetBytesPerFrame {
-  RenderAssetBytesPerFrame::{ max_bytes: Some(max_bytes) }
+  { max_bytes: Some(max_bytes) }
 }
 
 ///|
@@ -207,12 +208,12 @@ pub let render_asset_bytes_per_frame_limiter_resource_key : @ecs.ResourceKey[
 
 ///|
 pub fn RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter() -> RenderAssetBytesPerFrameLimiter {
-  RenderAssetBytesPerFrameLimiter::{ max_bytes: None, bytes_written: 0 }
+  { max_bytes: None, bytes_written: 0 }
 }
 
 ///|
 pub impl Default for RenderAssetBytesPerFrameLimiter with fn default() {
-  RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter()
+  RenderAssetBytesPerFrameLimiter()
 }
 
 ///|
@@ -224,10 +225,7 @@ pub impl @app.Resource for RenderAssetBytesPerFrameLimiter with fn resource() {
 pub fn RenderAssetBytesPerFrameLimiter::new(
   max_bytes : Int,
 ) -> RenderAssetBytesPerFrameLimiter {
-  RenderAssetBytesPerFrameLimiter::{
-    max_bytes: Some(max_bytes),
-    bytes_written: 0,
-  }
+  { max_bytes: Some(max_bytes), bytes_written: 0 }
 }
 
 ///|
@@ -347,7 +345,7 @@ pub impl[A] @app.Resource for PrepareNextFrameAssets[A] with fn resource() {
 
 ///|
 pub fn[A] PrepareNextFrameAssets::new() -> PrepareNextFrameAssets[A] {
-  PrepareNextFrameAssets::{ values: [] }
+  { values: [] }
 }
 
 ///|
@@ -395,7 +393,7 @@ pub fn[A, B] prepare_render_assets_with(
   prepare_asset : (A, Int, B?) -> B raise PrepareAssetError,
   unload_asset : (Int, B?) -> Unit,
   byte_len? : (A) -> Int? = fn(_) { None },
-  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
+  bytes_per_frame? : RenderAssetBytesPerFrameLimiter = RenderAssetBytesPerFrameLimiter(),
 ) -> Unit {
   let queued_assets = prepare_next_frame.take()
   for entry in queued_assets {

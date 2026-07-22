@@ -30,11 +30,7 @@ pub(all) struct ConicalFrustumMeshBuilder {
 
 ///|
 pub fn ConicalFrustumMeshBuilder::ConicalFrustumMeshBuilder() -> ConicalFrustumMeshBuilder {
-  {
-    frustum: @math.ConicalFrustum::ConicalFrustum(),
-    resolution: 32,
-    segments: 1,
-  }
+  { frustum: ConicalFrustum(), resolution: 32, segments: 1 }
 }
 
 ///|

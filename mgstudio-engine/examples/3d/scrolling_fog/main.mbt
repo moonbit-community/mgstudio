@@ -112,10 +112,8 @@ fn spawn_fog_volume(
   let noise_texture = asset_server.load_with_settings(
     "volumes/fog_noise.ktx2",
     fn(settings) {
-      settings.sampler = @asset.ImageSampler::Descriptor(
-        @asset.ImageSamplerDescriptor::linear().set_address_mode(
-          @asset.ImageAddressMode::Repeat,
-        ),
+      settings.sampler = Descriptor(
+        @asset.ImageSamplerDescriptor::linear().set_address_mode(Repeat),
       )
     },
   )
@@ -173,13 +171,13 @@ fn scrolling_fog_app() -> @app.App[@ecs.World] {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .insert_resource(@pbr.DirectionalLightShadowMap::new(4096))
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, scroll_fog)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, scroll_fog)
 }
 
 ///|

@@ -19,7 +19,7 @@ priv struct ContactFilterState {
 }
 
 ///|
-let contact_filter_state : Ref[ContactFilterState] = Ref(ContactFilterState::{
+let contact_filter_state : Ref[ContactFilterState] = Ref({
   left: None,
   right: None,
 })
@@ -31,8 +31,8 @@ let contact_filter_enabled : Ref[Bool] = Ref(true)
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_contact_filter2_setup)
-  .add_systems_fn(@app.Update, rapier2d_contact_filter2_toggle)
+  .add_systems_world(Startup, rapier2d_contact_filter2_setup)
+  .add_systems_fn(Update, rapier2d_contact_filter2_toggle)
   .run()
 }
 
@@ -148,10 +148,7 @@ fn rapier2d_contact_filter2_setup(world : @ecs.World) -> Unit {
       @collision.ActiveHooks::filter_contact_pairs(),
     ),
   )
-  contact_filter_state.val = ContactFilterState::{
-    left: Some(left),
-    right: Some(right),
-  }
+  contact_filter_state.val = { left: Some(left), right: Some(right) }
   @physics2d.physics2d_set_filter_contact_pair(world, fn(_, _, h1, h2) {
     if !contact_filter_enabled.val {
       return true
@@ -185,7 +182,7 @@ fn rapier2d_contact_filter2_setup(world : @ecs.World) -> Unit {
 
 ///|
 fn rapier2d_contact_filter2_toggle() -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Space) {
+  if @input.key_just_pressed(Space) {
     contact_filter_enabled.val = !contact_filter_enabled.val
     println(
       "[contact_filter2] contact filter enabled=\{contact_filter_enabled.val}",

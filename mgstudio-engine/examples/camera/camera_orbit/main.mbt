@@ -132,9 +132,7 @@ fn instructions(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
   ignore(
@@ -143,15 +141,15 @@ fn instructions(
         @ecs.Name::new("Instructions"),
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         @text.Text::new(
           "Mouse up or down: pitch\nMouse left or right: yaw\nMouse buttons: roll",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -174,17 +172,17 @@ fn orbit(
   let delta_yaw = delta.x * settings.yaw_speed
 
   let mut delta_roll = 0.0F
-  if mouse_buttons.pressed(@window.MouseButton::Left) {
+  if mouse_buttons.pressed(Left) {
     delta_roll = delta_roll - 1.0F
   }
-  if mouse_buttons.pressed(@window.MouseButton::Right) {
+  if mouse_buttons.pressed(Right) {
     delta_roll = delta_roll + 1.0F
   }
   delta_roll = delta_roll * settings.roll_speed * time.get().delta_seconds()
 
   try! camera_query.view(fn(_entity, camera_transform) {
     camera_transform.modify(fn(value) {
-      let (yaw, pitch, roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
+      let (yaw, pitch, roll) = value.rotation.to_euler(YXZ)
 
       let next_pitch = clamp_float(
         pitch + delta_pitch,
@@ -194,7 +192,7 @@ fn orbit(
       let next_roll = roll + delta_roll
       let next_yaw = yaw + delta_yaw
       value.rotation = @math.Quat::from_euler(
-        @math.EulerRot::YXZ,
+        YXZ,
         next_yaw,
         next_pitch,
         next_roll,
@@ -230,10 +228,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { CameraSettings::CameraSettings() })
-  .add_systems(
-    @app.Startup,
-    (setup_system, instructions_system) |> @app.chain(),
-  )
-  .add_systems_param5(@app.Update, orbit)
+  .add_systems(Startup, (setup_system, instructions_system) |> @app.chain())
+  .add_systems_param5(Update, orbit)
   .run()
 }

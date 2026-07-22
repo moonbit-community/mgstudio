@@ -40,8 +40,7 @@ priv struct MessageUpdateOp {
 }
 
 ///|
-let message_update_ops : @hashmap.HashMap[Int, MessageUpdateOp] = @hashmap.HashMap([],
-)
+let message_update_ops : @hashmap.HashMap[Int, MessageUpdateOp] = HashMap([])
 
 ///|
 fn[T] register_message_update_op(key : MessageKey[T]) -> Unit {
@@ -63,7 +62,7 @@ fn[T] message_queue_resource_key(
   id : Int,
   debug_name : String,
 ) -> ResourceKey[Messages[T]] {
-  ResourceKey::{ id, debug_name, access: resource_access_ops_new(id) }
+  { id, debug_name, access: resource_access_ops_new(id) }
 }
 
 ///|
@@ -219,7 +218,7 @@ pub fn[T] MessageCursor::MessageCursor() -> MessageCursor[T] {
 
 ///|
 pub impl[T] Default for MessageCursor[T] with fn default() {
-  MessageCursor::MessageCursor()
+  MessageCursor()
 }
 
 ///|
@@ -313,7 +312,7 @@ let message_registry_resource_key : ResourceKey[MessageRegistryState] = register
 fn world_message_registry(world : World) -> MessageRegistryState {
   match world.resource(message_registry_resource_key).get() {
     Some(registry) => registry
-    None => MessageRegistryState::{ ids: [] }
+    None => { ids: [] }
   }
 }
 
@@ -429,7 +428,7 @@ pub struct MessageWriter[T] {
 ///|
 pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
   ignore(self)
-  MessageCursor::MessageCursor()
+  MessageCursor()
 }
 
 ///|
@@ -540,24 +539,24 @@ pub fn[T] MessageCursor::read_mut(
 pub fn[T] World::message_reader(
   self : World,
   key : MessageKey[T],
-  cursor? : MessageCursor[T] = MessageCursor::MessageCursor(),
+  cursor? : MessageCursor[T] = MessageCursor(),
 ) -> MessageReader[T] {
   if !self.contains_message(key) {
     queue_missing_abort(key)
   }
-  MessageReader::{ world: self, key, cursor }
+  { world: self, key, cursor }
 }
 
 ///|
 pub fn[T] World::message_mutator(
   self : World,
   key : MessageKey[T],
-  cursor? : MessageCursor[T] = MessageCursor::MessageCursor(),
+  cursor? : MessageCursor[T] = MessageCursor(),
 ) -> MessageMutator[T] {
   if !self.contains_message(key) {
     queue_missing_abort(key)
   }
-  MessageMutator::{ world: self, key, cursor }
+  { world: self, key, cursor }
 }
 
 ///|
@@ -568,7 +567,7 @@ pub fn[T] World::message_writer(
   if !self.contains_message(key) {
     queue_missing_abort(key)
   }
-  MessageWriter::{ world: self, key }
+  { world: self, key }
 }
 
 ///|

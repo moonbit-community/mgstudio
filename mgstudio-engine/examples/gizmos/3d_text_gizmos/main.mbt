@@ -16,7 +16,7 @@
 fn setup_camera(world : @ecs.World) -> Unit {
   ignore(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -80,8 +80,8 @@ fn draw_text(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup_camera)
-  .add_systems_param(@app.Startup, configure_gizmos)
+  .add_systems_world(Startup, setup_camera)
+  .add_systems_param(Startup, configure_gizmos)
   .add_system_param2(draw_text)
   .run()
 }

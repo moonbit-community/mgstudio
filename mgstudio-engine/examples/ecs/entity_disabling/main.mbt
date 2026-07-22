@@ -125,10 +125,10 @@ fn setup_scene(
         EntityNameText::{  },
         @text.Text::new("Named entities found:\n"),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(12.0F),
-          right: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(12.0F),
+          right: Px(12.0F),
         },
       ),
     ),
@@ -144,10 +144,10 @@ fn display_instructions(commands : @app.Commands) -> Unit {
           "Click an entity to disable it.\n\nPress Space to re-enable all disabled entities.",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(12.0F),
-          left: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(12.0F),
+          left: Px(12.0F),
         },
       ),
     ),
@@ -162,7 +162,7 @@ fn disable_entities_on_click(
 ) -> Unit {
   click_events.modify(fn(events) {
     for event in @app.PickingEvents::drain(events) {
-      if event.kind != @pointer_events.PointerEventKind::Click {
+      if event.kind != Click {
         continue
       }
       if event.target is Some(target) &&
@@ -214,7 +214,7 @@ fn reenable_entities_on_space(
   commands : @app.Commands,
   disabled_entities : @ecs.Query[@core.Entity, @ecs.With[@ecs.Disabled]],
 ) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   let entities : Array[@core.Entity] = []

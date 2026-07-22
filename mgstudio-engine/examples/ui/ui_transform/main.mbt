@@ -135,19 +135,19 @@ fn text_color() -> @color.Color {
 ///|
 fn button_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Px(80.0F))
-  .with_height(@ui.Val::Px(80.0F))
-  .with_align_items(@ui.AlignItems::Center)
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
+  .with_width(Px(80.0F))
+  .with_height(Px(80.0F))
+  .with_align_items(Center)
+  .with_justify_content(Center)
+  .with_border_radius(@ui.BorderRadius::all(Percent(100.0F)))
 }
 
 ///|
 fn control_column_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_flex_direction(@ui.FlexDirection::Column)
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_row_gap(@ui.Val::Px(10.0F))
+  .with_flex_direction(Column)
+  .with_justify_content(Center)
+  .with_row_gap(Px(10.0F))
 }
 
 ///|
@@ -257,10 +257,10 @@ fn setup(
       @ui.UiRoot::UiRoot(),
       @transform.Transform::identity(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
@@ -269,9 +269,9 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::SpaceEvenly)
-      .with_column_gap(@ui.Val::Px(25.0F)),
+      .with_align_items(Center)
+      .with_justify_content(SpaceEvenly)
+      .with_column_gap(Px(25.0F)),
     ),
   )
 
@@ -299,11 +299,11 @@ fn setup(
       TargetNode::{  },
       @transform.Transform::identity(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(300.0F))
-      .with_height(@ui.Val::Px(300.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_justify_content(@ui.JustifyContent::SpaceBetween)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(300.0F))
+      .with_height(Px(300.0F))
+      .with_flex_direction(Column)
+      .with_justify_content(SpaceBetween)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(@color.Color::srgb(0.33F, 0.33F, 0.33F)),
     ),
   )
@@ -314,10 +314,8 @@ fn setup(
     (
       @hierarchy.Parent::new(target),
       @ui.Node::{
-        ..@ui.Node()
-        .with_justify_content(@ui.JustifyContent::SpaceBetween)
-        .with_align_items(@ui.AlignItems::Center),
-        align_self: @ui.AlignSelf::Stretch,
+        ..@ui.Node().with_justify_content(SpaceBetween).with_align_items(Center),
+        align_self: Stretch,
       },
     ),
   )
@@ -332,9 +330,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(middle_row),
-        @ui.Node::Node()
-        .with_width(@ui.Val::Px(100.0F))
-        .with_height(@ui.Val::Px(100.0F)),
+        @ui.Node::Node().with_width(Px(100.0F)).with_height(Px(100.0F)),
         @ui.ImageNode::new(icon),
       ),
     ),
@@ -399,7 +395,7 @@ fn button_system(world : @ecs.World) -> Unit {
       is Some(button_state) else {
       return
     }
-    let is_pressed = interaction == @ui.Interaction::Pressed
+    let is_pressed = interaction == Pressed
     let was_pressed = button_state.value().pressed
     if is_pressed && !was_pressed {
       if target_transform is Some(transform) {
@@ -437,16 +433,16 @@ fn translation_system(
 ) -> Unit {
   let mut dx = 0.0F
   let mut dy = 0.0F
-  if keyboard.pressed(@window.KeyCode::ArrowLeft) {
+  if keyboard.pressed(ArrowLeft) {
     dx -= MOVE_SPEED * time.get().delta_seconds()
   }
-  if keyboard.pressed(@window.KeyCode::ArrowRight) {
+  if keyboard.pressed(ArrowRight) {
     dx += MOVE_SPEED * time.get().delta_seconds()
   }
-  if keyboard.pressed(@window.KeyCode::ArrowUp) {
+  if keyboard.pressed(ArrowUp) {
     dy -= MOVE_SPEED * time.get().delta_seconds()
   }
-  if keyboard.pressed(@window.KeyCode::ArrowDown) {
+  if keyboard.pressed(ArrowDown) {
     dy += MOVE_SPEED * time.get().delta_seconds()
   }
   if dx == 0.0F && dy == 0.0F {
@@ -471,8 +467,8 @@ fn translation_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_world(@app.Update, button_system)
-  .add_systems_param3(@app.Update, translation_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_world(Update, button_system)
+  .add_systems_param3(Update, translation_system)
   .run()
 }

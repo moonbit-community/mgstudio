@@ -26,7 +26,7 @@ test "ecs removed components: remove emits entity in tick range" {
   )
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, key, TestMarker::{ value: 1 })
+  try! world.set_by_key(entity, key, { value: 1 })
   world.increment_change_tick() |> ignore
   debug_inspect(try! world.remove_by_key(entity, key), content="true")
 
@@ -46,7 +46,7 @@ test "ecs removed components: despawn emits removed entity for attached componen
   )
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, key, TestMarker::{ value: 7 })
+  try! world.set_by_key(entity, key, { value: 7 })
   world.increment_change_tick() |> ignore
   try! world.despawn(entity)
 
@@ -67,8 +67,8 @@ test "ecs removed components: len, is_empty and clear match unread messages" {
   let entity0 = world.spawn()
   let entity1 = world.spawn()
 
-  try! world.set_by_key(entity0, key, TestMarker::{ value: 1 })
-  try! world.set_by_key(entity1, key, TestMarker::{ value: 2 })
+  try! world.set_by_key(entity0, key, { value: 1 })
+  try! world.set_by_key(entity1, key, { value: 2 })
   world.increment_change_tick() |> ignore
   debug_inspect(try! world.remove_by_key(entity0, key), content="true")
   debug_inspect(try! world.remove_by_key(entity1, key), content="true")

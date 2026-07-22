@@ -22,7 +22,7 @@ pub struct Xyza {
 
 ///|
 pub fn Xyza::new(x : Float, y : Float, z : Float, alpha : Float) -> Xyza {
-  Xyza::{ x, y, z, alpha: color_clamp_unit(alpha) }
+  { x, y, z, alpha: color_clamp_unit(alpha) }
 }
 
 ///|

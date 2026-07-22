@@ -16,13 +16,14 @@
 struct MyRoundGizmos {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn MyRoundGizmos::MyRoundGizmos() -> MyRoundGizmos {
   MyRoundGizmos::{  }
 }
 
 ///|
 impl Default for MyRoundGizmos with fn default() {
-  MyRoundGizmos::MyRoundGizmos()
+  MyRoundGizmos()
 }
 
 ///|
@@ -56,7 +57,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn new_gizmo_config_group_cell() {
-  MyRoundGizmosCell(Ref(MyRoundGizmos::MyRoundGizmos()))
+  MyRoundGizmosCell(Ref(MyRoundGizmos()))
 }
 
 ///|
@@ -185,9 +186,7 @@ fn spawn_help_overlay(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
   ignore(
@@ -195,15 +194,15 @@ fn spawn_help_overlay(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_left(Px(12.0F))
+        .with_top(Px(12.0F)),
         @text.Text::new(
           "Arrow Left/Right: straight gizmo line width\nArrow Up/Down: round gizmo line width\n1 / 2: toggle straight / round gizmos\nU / I: cycle line styles\nJ / K: cycle line joins\nSpace: pause virtual time",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -461,8 +460,8 @@ fn main {
     ),
     MyRoundGizmos::MyRoundGizmos(),
   )
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, draw_example_collection)
-  .add_systems_param4(@app.Update, update_config)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, draw_example_collection)
+  .add_systems_param4(Update, update_config)
   .run()
 }

@@ -20,7 +20,7 @@ pub struct Pitch {
 
 ///|
 pub fn Pitch::new(frequency : Float, duration_seconds : Float) -> Pitch {
-  Pitch::{ frequency, duration_seconds }
+  { frequency, duration_seconds }
 }
 
 ///|

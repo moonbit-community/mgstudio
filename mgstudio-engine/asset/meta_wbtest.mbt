@@ -15,7 +15,7 @@
 ///|
 fn meta_layout_is_row_count(layout : ImageArrayLayout?, rows : Int) -> Bool {
   match layout {
-    Some(ImageArrayLayout::RowCount(actual)) => actual == rows
+    Some(RowCount(actual)) => actual == rows
     _ => false
   }
 }
@@ -23,7 +23,7 @@ fn meta_layout_is_row_count(layout : ImageArrayLayout?, rows : Int) -> Bool {
 ///|
 fn meta_layout_is_row_height(layout : ImageArrayLayout?, pixels : Int) -> Bool {
   match layout {
-    Some(ImageArrayLayout::RowHeight(actual)) => actual == pixels
+    Some(RowHeight(actual)) => actual == pixels
     _ => false
   }
 }
@@ -33,11 +33,8 @@ test "asset wb: image meta applies format/texture/usages and row-height layout" 
   let settings = ImageLoaderSettings::ImageLoaderSettings()
   let content = "(asset: Load(settings: (format: Guess, texture_format: Some(Rgba16Float), is_srgb: false, array_layout: Some(RowHeight { pixels: 64 }), asset_usage: RenderAssetUsages(\"RENDER_WORLD\"), load_meshes: RenderAssetUsages(\"MAIN_WORLD\"),),),)"
   apply_image_meta_settings(settings, content)
-  debug_inspect(settings.format == ImageFormatSetting::Guess, content="true")
-  debug_inspect(
-    settings.texture_format == Some(TextureFormat::Rgba16Float),
-    content="true",
-  )
+  debug_inspect(settings.format == Guess, content="true")
+  debug_inspect(settings.texture_format == Some(Rgba16Float), content="true")
   debug_inspect(!settings.is_srgb, content="true")
   debug_inspect(
     settings.asset_usage == RenderAssetUsages::render_world(),
@@ -58,10 +55,7 @@ test "asset wb: image meta accepts row-count and explicit format variant" {
   let settings = ImageLoaderSettings::ImageLoaderSettings()
   let content = "(asset: Load(settings: (format: Format(Png), array_layout: Some(RowCount(rows: 4)), asset_usage: RenderAssetUsages(\"MAIN_WORLD | RENDER_WORLD\"), load_meshes: RenderAssetUsages(\"RENDER_WORLD | MAIN_WORLD\"),),),)"
   apply_image_meta_settings(settings, content)
-  debug_inspect(
-    settings.format == ImageFormatSetting::Format(ImageContainerFormat::Png),
-    content="true",
-  )
+  debug_inspect(settings.format == Format(Png), content="true")
   debug_inspect(
     meta_layout_is_row_count(settings.array_layout, 4),
     content="true",
@@ -82,13 +76,10 @@ test "asset wb: image meta parses sampler compare/border/anisotropy fields" {
   let content = "(asset: Load(settings: (sampler: Descriptor (ImageSamplerDescriptor(compare: Some(LessEqual), border_color: Some(OpaqueWhite), anisotropy_clamp: 8,)),),),)"
   apply_image_meta_settings(settings, content)
   match settings.sampler {
-    ImageSampler::Descriptor(descriptor) => {
+    Descriptor(descriptor) => {
+      debug_inspect(descriptor.compare == Some(LessEqual), content="true")
       debug_inspect(
-        descriptor.compare == Some(ImageCompareFunction::LessEqual),
-        content="true",
-      )
-      debug_inspect(
-        descriptor.border_color == Some(ImageSamplerBorderColor::OpaqueWhite),
+        descriptor.border_color == Some(OpaqueWhite),
         content="true",
       )
       debug_inspect(descriptor.anisotropy_clamp == 8, content="true")

@@ -74,33 +74,21 @@ test "directional_navigation_map supports manual edges and removal" {
   let map_ref = directional_navigation_map_ref(world)
 
   map_ref.modify(fn(value) {
-    value.add_symmetrical_edge(a, b, @math.CompassOctant::East)
-    value.add_edge(b, c, @math.CompassOctant::South)
+    value.add_symmetrical_edge(a, b, East)
+    value.add_edge(b, c, South)
   })
 
+  debug_inspect(map_ref.peek().get_neighbor(a, East) == Some(b), content="true")
+  debug_inspect(map_ref.peek().get_neighbor(b, West) == Some(a), content="true")
   debug_inspect(
-    map_ref.peek().get_neighbor(a, @math.CompassOctant::East) == Some(b),
-    content="true",
-  )
-  debug_inspect(
-    map_ref.peek().get_neighbor(b, @math.CompassOctant::West) == Some(a),
-    content="true",
-  )
-  debug_inspect(
-    map_ref.peek().get_neighbor(b, @math.CompassOctant::South) == Some(c),
+    map_ref.peek().get_neighbor(b, South) == Some(c),
     content="true",
   )
 
   map_ref.modify(fn(value) { value.remove(b) })
 
-  debug_inspect(
-    map_ref.peek().get_neighbor(a, @math.CompassOctant::East) is None,
-    content="true",
-  )
-  debug_inspect(
-    map_ref.peek().get_neighbor(c, @math.CompassOctant::North) is None,
-    content="true",
-  )
+  debug_inspect(map_ref.peek().get_neighbor(a, East) is None, content="true")
+  debug_inspect(map_ref.peek().get_neighbor(c, North) is None, content="true")
 }
 
 ///|
@@ -111,13 +99,10 @@ test "directional_navigation navigate follows manual map and updates focus" {
   let b = world.spawn()
   set_directional_navigation_focus(world, a)
   directional_navigation_map_ref(world).modify(fn(value) {
-    value.add_edge(a, b, @math.CompassOctant::East)
+    value.add_edge(a, b, East)
   })
 
-  debug_inspect(
-    navigate_direction(world, @math.CompassOctant::East) == Some(b),
-    content="true",
-  )
+  debug_inspect(navigate_direction(world, East) == Some(b), content="true")
   debug_inspect(directional_navigation_focus(world) == Some(b), content="true")
 }
 
@@ -153,20 +138,16 @@ test "auto_generate_navigation_edges connects nearest candidate without overwrit
     ),
   ]
   let map_ref = directional_navigation_map_ref(world)
-  map_ref.modify(fn(value) {
-    value.add_edge(origin, manual, @math.CompassOctant::East)
-  })
+  map_ref.modify(fn(value) { value.add_edge(origin, manual, East) })
 
   auto_generate_navigation_edges(map_ref.peek(), nodes, config)
 
   debug_inspect(
-    map_ref.peek().get_neighbor(origin, @math.CompassOctant::East) ==
-    Some(manual),
+    map_ref.peek().get_neighbor(origin, East) == Some(manual),
     content="true",
   )
   debug_inspect(
-    map_ref.peek().get_neighbor(origin, @math.CompassOctant::South) ==
-    Some(south),
+    map_ref.peek().get_neighbor(origin, South) == Some(south),
     content="true",
   )
 }

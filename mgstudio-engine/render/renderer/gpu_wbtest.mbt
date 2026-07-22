@@ -21,7 +21,7 @@ fn gpu_float_approx_eq(a : Float, b : Float) -> Bool {
 fn gpu_wbtest_pass_state(
   mesh3d_lights_uniform_bytes? : Bytes? = None,
 ) -> GpuPassState {
-  GpuPassState::{
+  {
     target_id: -1,
     target_layer: -1,
     secondary_target_id: -1,
@@ -331,9 +331,9 @@ test "renderer: render context state starts empty and finish clears state" {
 
 ///|
 fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
-  HostMesh3dPreprocessCameraPayload::{
+  {
     output_count: 1,
-    view: HostMesh3dPreprocessView::{
+    view: {
       clip_from_world: gpu_clip_matrix_identity(),
       unjittered_clip_from_world: gpu_clip_matrix_identity(),
       world_from_clip: gpu_clip_matrix_identity(),
@@ -356,7 +356,7 @@ fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
       frustum_planes: [],
       mip_bias: 0.0F,
     },
-    previous_view: HostMesh3dPreprocessPreviousView::{
+    previous_view: {
       view_from_world: gpu_clip_matrix_identity(),
       clip_from_world: gpu_clip_matrix_identity(),
       clip_from_view: gpu_clip_matrix_identity(),
@@ -364,7 +364,7 @@ fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
       view_from_clip: gpu_clip_matrix_identity(),
     },
     mesh_culling_data: [
-      HostMesh3dPreprocessMeshCullingData::{
+      {
         aabb_center_x: 0.0F,
         aabb_center_y: 0.0F,
         aabb_center_z: 0.0F,
@@ -374,7 +374,7 @@ fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
       },
     ],
     mesh_inputs: [
-      HostMesh3dPreprocessMeshInput::{
+      {
         translation_x: 0.0F,
         translation_y: 0.0F,
         translation_z: 0.0F,
@@ -428,37 +428,22 @@ fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
     ],
     direct_work_items: [],
     indexed_work_items: [
-      HostMesh3dPreprocessShaderWorkItem::{
-        input_index: 0,
-        output_or_indirect_parameters_index: 0,
-      },
+      { input_index: 0, output_or_indirect_parameters_index: 0 },
     ],
     non_indexed_work_items: [],
     late_indexed_work_items: [],
     late_non_indexed_work_items: [],
-    indexed_cpu_metadata: [
-      HostMesh3dPreprocessIndirectParametersCpuMetadata::{
-        base_output_index: 0,
-        batch_set_index: -1,
-      },
-    ],
+    indexed_cpu_metadata: [{ base_output_index: 0, batch_set_index: -1 }],
     indexed_gpu_metadata: [
-      HostMesh3dPreprocessIndirectParametersGpuMetadata::{
-        mesh_index: 0,
-        early_instance_count: 0,
-        late_instance_count: 0,
-      },
+      { mesh_index: 0, early_instance_count: 0, late_instance_count: 0 },
     ],
     indexed_batch_sets: [
-      HostMesh3dPreprocessIndirectBatchSet::{
-        indirect_parameters_count: 0,
-        indirect_parameters_base: 0,
-      },
+      { indirect_parameters_count: 0, indirect_parameters_base: 0 },
     ],
     non_indexed_cpu_metadata: [],
     non_indexed_gpu_metadata: [],
     non_indexed_batch_sets: [],
-    dispatch_metadata: HostMesh3dPreprocessDispatchMetadata::{
+    dispatch_metadata: {
       direct_workgroup_count: 0,
       indexed_workgroup_count: 1,
       non_indexed_workgroup_count: 0,
@@ -819,7 +804,7 @@ test "renderer: mesh3d preprocess mesh input bytes match bevy struct size" {
   let (current_bytes, previous_bytes) = mesh3d_preprocess_mesh_inputs_bytes(
     17U,
     [
-      HostMesh3dPreprocessMeshInput::{
+      {
         translation_x: 1.0F,
         translation_y: 2.0F,
         translation_z: 3.0F,
@@ -1209,7 +1194,7 @@ test "renderer: backend shutdown releases motion vector owners" {
   let slot_bg = mesh3d_create_empty_bind_group(
     backend, mesh_bgl, "test_motion_vector_slot_bg",
   )
-  backend.mesh3d_motion_vector_mesh_slots.push(GpuStorageSlot::{
+  backend.mesh3d_motion_vector_mesh_slots.push({
     buffer: slot_buffer,
     bind_group: slot_bg,
   })
@@ -1271,7 +1256,7 @@ test "renderer: backend shutdown releases general postprocess owners" {
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
     ),
   )
-  backend.custom_postprocess3d_pipeline_cache.push(CustomPostProcessPipelineCacheEntry::{
+  backend.custom_postprocess3d_pipeline_cache.push({
     shader_path: "test",
     fragment_entry: "fs_main",
     surface_format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
@@ -1284,7 +1269,7 @@ test "renderer: backend shutdown releases general postprocess owners" {
   let prepared_bg = mesh3d_create_empty_bind_group(
     backend, bgl, "test_postprocess_prepared_bg",
   )
-  backend.skybox_prepared_bind_groups.push(SkyboxPreparedBindGroupEntry::{
+  backend.skybox_prepared_bind_groups.push({
     id: 1,
     bind_group: prepared_bg,
     uniform_buffer: prepared_buffer,
@@ -1332,7 +1317,7 @@ test "renderer: backend shutdown releases temporal exposure owners" {
   let history_view_0 = history_texture_0.create_view()
   let history_texture_1 = backend.device.create_texture_rgba8_2d(1U, 1U)
   let history_view_1 = history_texture_1.create_view()
-  backend.taa_history_textures.push(GpuTaaHistoryTextures::{
+  backend.taa_history_textures.push({
     camera_key_hi: 1,
     camera_key_lo: 2,
     width: 1,
@@ -1344,7 +1329,7 @@ test "renderer: backend shutdown releases temporal exposure owners" {
     view_1: history_view_1,
     next_write_index: 0,
   })
-  backend.taa_pipeline_cache.push(GpuTaaPipelineCacheEntry::{
+  backend.taa_pipeline_cache.push({
     format: tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     tonemap: false,
     reset: false,
@@ -1370,11 +1355,7 @@ test "renderer: backend shutdown releases temporal exposure owners" {
     size=4UL,
     usage=bu(@wgpu.BUFFER_USAGE_STORAGE),
   )
-  backend.auto_exposure_view_states.push(GpuAutoExposureViewState::{
-    key_hi: 1,
-    key_lo: 2,
-    state_buf,
-  })
+  backend.auto_exposure_view_states.push({ key_hi: 1, key_lo: 2, state_buf })
   backend.auto_exposure_active_state_buf = Some(state_buf)
   backend.shutdown()
   observer.process_events()
@@ -1412,7 +1393,7 @@ test "renderer: backend shutdown releases advanced pbr feature owners" {
     #|}
     #|
   let shader = backend.device.create_shader_module_wgsl(shader_source)
-  backend.mesh3d_ssao_pipeline_cache.push(GpuSsaoPipelineCacheEntry::{
+  backend.mesh3d_ssao_pipeline_cache.push({
     quality_level: 0,
     slice_count: 1,
     samples_per_slice_side: 1,
@@ -1431,7 +1412,7 @@ test "renderer: backend shutdown releases advanced pbr feature owners" {
     backend.device.create_sampler_linear_clamp(),
   )
   let intermediate_texture = backend.device.create_texture_rgba8_2d(1U, 1U)
-  backend.light_probe_environment_intermediate = Some(GpuLightProbeIntermediateTexture::{
+  backend.light_probe_environment_intermediate = Some({
     source_texture_id: 1,
     base_size: 1,
     mip_count: 1,
@@ -1439,7 +1420,7 @@ test "renderer: backend shutdown releases advanced pbr feature owners" {
     view: intermediate_texture.create_view(),
   })
   let deferred_texture = backend.device.create_texture_rgba8_2d(1U, 1U)
-  backend.mesh3d_deferred_lighting_id_depth_texture = Some(GpuDeferredLightingIdDepthTexture::{
+  backend.mesh3d_deferred_lighting_id_depth_texture = Some({
     width: 1,
     height: 1,
     texture: deferred_texture,
@@ -1889,17 +1870,9 @@ test "renderer: prepared render assets replace legacy buffers with allocator sla
   backend.meshes.clear()
   let mesh_vertex_layout = @mesh.MeshVertexBufferLayout::new(
     attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
-    layout=@mesh.VertexBufferLayout::new(
-      array_stride=12,
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
-      attributes=[
-        @mesh.VertexAttribute::new(
-          offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-      ],
-    ),
+    layout=@mesh.VertexBufferLayout::new(array_stride=12, step_mode=Vertex, attributes=[
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+    ]),
   )
   let vertex_bytes = Bytes::from_array(Array::make(36, b'\x00'))
   let indices : Array[Int] = [0, 1, 2]
@@ -1914,7 +1887,7 @@ test "renderer: prepared render assets replace legacy buffers with allocator sla
     vertex_count=3,
     indexed=true,
     index_count=3,
-    index_format=@render_mesh.RenderMeshIndexFormat::Uint16,
+    index_format=Uint16,
   )
   let first_plan = allocator.allocate_render_mesh(101, render_mesh, 12)
   let first_vertex_slice = allocator.mesh_vertex_slice(101).unwrap()
@@ -1973,17 +1946,9 @@ test "renderer: wide wireframe bind groups prepare before surface frame activati
   backend.meshes.clear()
   let mesh_vertex_layout = @mesh.MeshVertexBufferLayout::new(
     attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
-    layout=@mesh.VertexBufferLayout::new(
-      array_stride=12,
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
-      attributes=[
-        @mesh.VertexAttribute::new(
-          offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-      ],
-    ),
+    layout=@mesh.VertexBufferLayout::new(array_stride=12, step_mode=Vertex, attributes=[
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+    ]),
   )
   let vertex_bytes = Bytes::from_array(Array::make(36, b'\x00'))
   let indices : Array[Int] = [0, 1, 2]
@@ -1995,7 +1960,7 @@ test "renderer: wide wireframe bind groups prepare before surface frame activati
     vertex_count=3,
     indexed=true,
     index_count=3,
-    index_format=@render_mesh.RenderMeshIndexFormat::Uint32,
+    index_format=Uint32,
   )
   let plan = allocator.allocate_render_mesh(101, render_mesh, 12)
   let prepared = backend.prepare_mesh3d_allocator_asset(
@@ -2438,7 +2403,7 @@ test "renderer: clearing mesh3d frame caches preserves transient owners" {
     size=16UL,
     usage=bu(@wgpu.BUFFER_USAGE_UNIFORM),
   )
-  backend.mesh3d_pass_uniform_states.push(Mesh3dPassUniformState::{
+  backend.mesh3d_pass_uniform_states.push({
     frame_count: 0U,
     camera_key_hi: 0,
     camera_key_lo: 0,
@@ -2447,7 +2412,7 @@ test "renderer: clearing mesh3d frame caches preserves transient owners" {
     lights_buffer,
     shadow_view_bind_group: Some(pass_bind_group),
   })
-  backend.mesh3d_frame_view_bg_cache.push(Mesh3dFrameViewBindGroupCacheEntry::{
+  backend.mesh3d_frame_view_bg_cache.push({
     material_pipeline_id: 0UL,
     view_layout_key_bits: 0U,
     tonemap_in_shader: false,
@@ -2909,11 +2874,7 @@ test "renderer: material descriptor exact layout preserves empty prepass group" 
     @render_resource.BindGroupLayoutEntry::new(
       0,
       @wgpu.SHADER_STAGE_VERTEX.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        0UL,
-      ),
+      BufferBinding(Uniform, false, 0UL),
     ),
   ])
   let empty_layout = @render_resource.BindGroupLayoutDescriptor::new(
@@ -2942,21 +2903,13 @@ test "renderer: default mesh3d draw descriptor matches storage plus skin layout"
   let draw_entry = descriptor.entries()[0]
   inspect(draw_entry.binding(), content="0")
   match draw_entry.kind() {
-    @render_resource.BindingType::BufferBinding(
-      @render_resource.BufferBindingType::Storage(true),
-      false,
-      size
-    ) => inspect(size, content="176")
+    BufferBinding(Storage(true), false, size) => inspect(size, content="176")
     _ => fail("expected draw storage buffer binding")
   }
   let skin_entry = descriptor.entries()[1]
   inspect(skin_entry.binding(), content="1")
   match skin_entry.kind() {
-    @render_resource.BindingType::BufferBinding(
-      @render_resource.BufferBindingType::Storage(true),
-      false,
-      size
-    ) => inspect(size, content="16384")
+    BufferBinding(Storage(true), false, size) => inspect(size, content="16384")
     _ => fail("expected skin storage buffer binding")
   }
 }
@@ -2977,17 +2930,11 @@ test "renderer: lightmapped mesh3d draw descriptor matches Bevy mesh layout" {
     content="true",
   )
   match descriptor.entries()[2].kind() {
-    @render_resource.BindingType::TextureBinding(
-      @render_resource.TextureSampleType::Float(true),
-      @render_resource.TextureViewDimension::D2,
-      false
-    ) => ()
+    TextureBinding(Float(true), D2, false) => ()
     _ => fail("expected lightmap texture binding")
   }
   match descriptor.entries()[3].kind() {
-    @render_resource.BindingType::SamplerBinding(
-      @render_resource.SamplerBindingType::Filtering
-    ) => ()
+    SamplerBinding(Filtering) => ()
     _ => fail("expected lightmap sampler binding")
   }
 }
@@ -3011,29 +2958,17 @@ test "renderer: mesh3d draw dynamic offsets follow morph binding order" {
     @render_resource.BindGroupLayoutEntry::new(
       0,
       @wgpu.SHADER_STAGE_VERTEX.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        176UL,
-      ),
+      BufferBinding(Storage(true), false, 176UL),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       2,
       @wgpu.SHADER_STAGE_VERTEX.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        true,
-        256UL,
-      ),
+      BufferBinding(Uniform, true, 256UL),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       7,
       @wgpu.SHADER_STAGE_VERTEX.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        true,
-        256UL,
-      ),
+      BufferBinding(Uniform, true, 256UL),
     ),
   ])
   let offsets = mesh3d_draw_bind_group_dynamic_offsets(descriptor, 256, -1)
@@ -3048,7 +2983,7 @@ test "renderer: shadow shader defs extend descriptor defs with shadow projection
     .with_vertex(
       @render_resource.VertexState::new(
         Some("pbr/prepass/prepass.wgsl"),
-        [@render_resource.ShaderDefVal::Flag("PREPASS_PIPELINE")],
+        [Flag("PREPASS_PIPELINE")],
         None,
         [],
       ),
@@ -3057,7 +2992,7 @@ test "renderer: shadow shader defs extend descriptor defs with shadow projection
       Some(
         @render_resource.FragmentState::new(
           Some("pbr/render/pbr_prepass.wgsl"),
-          [@render_resource.ShaderDefVal::Flag("DEPTH_PREPASS")],
+          [Flag("DEPTH_PREPASS")],
           None,
           [],
         ),
@@ -3210,24 +3145,16 @@ test "renderer: mesh3d lights uniform prefers bevy-shaped pbr bytes" {
 test "renderer: volumetric fog pipeline cache key includes full hull vertex layout" {
   let layout_a = @mesh.VertexBufferLayout::new(
     array_stride=32,
-    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    step_mode=Vertex,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=0,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
     ],
   )
   let layout_b = @mesh.VertexBufferLayout::new(
     array_stride=32,
-    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    step_mode=Vertex,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=16,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=0,
-      ),
+      @mesh.VertexAttribute::new(offset=16, format=Float32x3, shader_location=0),
     ],
   )
   let entry = Mesh3dVolumetricFogPipelineCacheEntry::{
@@ -3323,7 +3250,7 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   register_wgsl_source(
     "sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
@@ -3427,7 +3354,7 @@ test "renderer: custom mesh2d pipeline preprocessing uses per-object uniform lay
   let preprocessed = load_wgsl_preprocessed(
     "",
     "examples/2d/mesh2d_manual/colored_mesh2d.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     mesh2d_pipeline_value_defines(),
   )
   debug_inspect(preprocessed.contains("var<uniform>"), content="true")
@@ -3448,7 +3375,7 @@ test "renderer: registered wgsl sources resolve nested alias imports" {
   register_wgsl_source(
     "test/main.wgsl", "#import test::bindings::lights\nfn demo() -> f32 {\n  return lights.value;\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "test/main.wgsl", defines, value_defines,
@@ -3471,7 +3398,7 @@ test "renderer: registered wgsl sources resolve nested alias imports through mod
   register_wgsl_source(
     "test/main.wgsl", "#import test::bindings\nfn demo() -> f32 {\n  return bindings::lights.value;\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "test/main.wgsl", defines, value_defines,
@@ -3503,7 +3430,7 @@ test "renderer: registered wgsl sources resolve nested alias imports through gro
   register_wgsl_source(
     "test/main.wgsl", "#import test::{ bindings as view_bindings, types }\n#import test::bindings::globals\nfn demo() -> f32 {\n  return view_bindings::lights.value + globals.value;\n}\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   let preprocessed = load_wgsl_preprocessed(
     "", "test/main.wgsl", defines, value_defines,
@@ -4079,7 +4006,7 @@ test "renderer: mesh3d shader value defines match Bevy native light limits" {
   let preprocessed = load_wgsl_preprocessed(
     "",
     "test/main.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   ) catch {
     _ => abort("failed to preprocess mesh3d value define probe")
@@ -4116,9 +4043,9 @@ test "renderer: mesh3d custom material pipeline preprocesses Bevy PBR vertex sha
       @render_resource.VertexState::new(
         Some("test/custom_mesh.wgsl"),
         [
-          @render_resource.ShaderDefVal::Flag("VERTEX_POSITIONS"),
-          @render_resource.ShaderDefVal::Flag("VERTEX_OUTPUT_INSTANCE_INDEX"),
-          @render_resource.ShaderDefVal::UInt("MATERIAL_BIND_GROUP", 3U),
+          Flag("VERTEX_POSITIONS"),
+          Flag("VERTEX_OUTPUT_INSTANCE_INDEX"),
+          UInt("MATERIAL_BIND_GROUP", 3U),
         ],
         Some("vertex"),
         [],
@@ -4128,7 +4055,7 @@ test "renderer: mesh3d custom material pipeline preprocesses Bevy PBR vertex sha
       Some(
         @render_resource.FragmentState::new(
           Some("test/line_material.wgsl"),
-          [@render_resource.ShaderDefVal::UInt("MATERIAL_BIND_GROUP", 3U)],
+          [UInt("MATERIAL_BIND_GROUP", 3U)],
           Some("fragment"),
           [],
         ),

@@ -21,5 +21,5 @@ pub(all) enum FocusPolicy {
 
 ///|
 pub fn FocusPolicy::default() -> FocusPolicy {
-  FocusPolicy::Pass
+  Pass
 }

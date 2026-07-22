@@ -98,26 +98,26 @@ fn CameraShakeState::CameraShakeState() -> CameraShakeState {
 
 ///|
 impl Default for CameraShakeState with fn default() {
-  CameraShakeState::CameraShakeState()
+  CameraShakeState()
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, register_camera_shake_requirements)
-  .add_systems_param3(@app.Startup, setup_scene)
-  .add_systems_param2(@app.Startup, setup_instructions)
-  .add_systems_param(@app.Startup, setup_camera)
-  .add_systems_param(@app.PreUpdate, reset_transform)
+  .add_systems_world(Startup, register_camera_shake_requirements)
+  .add_systems_param3(Startup, setup_scene)
+  .add_systems_param2(Startup, setup_instructions)
+  .add_systems_param(Startup, setup_camera)
+  .add_systems_param(PreUpdate, reset_transform)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(increase_trauma).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param2(shake_camera).before(
       @transform.transform_set_propagate,
     ),
@@ -301,11 +301,7 @@ fn setup_instructions(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::{
-        ..@ui.Node(),
-        width: @ui.Val::Percent(100.0F),
-        height: @ui.Val::Percent(100.0F),
-      },
+      @ui.Node::{ ..Node(), width: Percent(100.0F), height: Percent(100.0F) },
     ),
   )
   ignore(
@@ -313,15 +309,15 @@ fn setup_instructions(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          bottom: @ui.Val::Px(12.0F),
-          left: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          bottom: Px(12.0F),
+          left: Px(12.0F),
         },
         @text.Text::new(INSTRUCTIONS),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )

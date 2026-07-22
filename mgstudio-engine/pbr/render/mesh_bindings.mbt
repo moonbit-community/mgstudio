@@ -51,15 +51,15 @@ pub enum MeshBindingSlot3d {
 ///|
 pub fn mesh_binding_slot_index(slot : MeshBindingSlot3d) -> Int {
   match slot {
-    MeshBindingSlot3d::Model => 0
-    MeshBindingSlot3d::SkinCurrent => 1
-    MeshBindingSlot3d::MorphWeightsCurrent => 2
-    MeshBindingSlot3d::MorphTargets => 3
-    MeshBindingSlot3d::LightmapTexture => 4
-    MeshBindingSlot3d::LightmapSampler => 5
-    MeshBindingSlot3d::SkinPrevious => 6
-    MeshBindingSlot3d::MorphWeightsPrevious => 7
-    MeshBindingSlot3d::MorphDescriptors => 8
+    Model => 0
+    SkinCurrent => 1
+    MorphWeightsCurrent => 2
+    MorphTargets => 3
+    LightmapTexture => 4
+    LightmapSampler => 5
+    SkinPrevious => 6
+    MorphWeightsPrevious => 7
+    MorphDescriptors => 8
   }
 }
 
@@ -99,7 +99,7 @@ pub fn MeshBindingLayoutEntry3d::new(
   binding : Int,
   count? : Int = 0,
 ) -> MeshBindingLayoutEntry3d {
-  MeshBindingLayoutEntry3d::{ slot, binding, count }
+  { slot, binding, count }
 }
 
 ///|
@@ -173,27 +173,23 @@ fn mesh_binding_layout_slots(
   binding_arrays_are_usable : Bool,
 ) -> Array[MeshBindingLayoutEntry3d] {
   let slots : Array[MeshBindingLayoutEntry3d] = [
-    mesh_binding_layout_entry(MeshBindingSlot3d::Model),
+    mesh_binding_layout_entry(Model),
   ]
   if skinned {
-    slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::SkinCurrent))
+    slots.push(mesh_binding_layout_entry(SkinCurrent))
   }
   if morphed {
-    slots.push(
-      mesh_binding_layout_entry(MeshBindingSlot3d::MorphWeightsCurrent),
-    )
-    slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::MorphTargets))
+    slots.push(mesh_binding_layout_entry(MorphWeightsCurrent))
+    slots.push(mesh_binding_layout_entry(MorphTargets))
     if !skins_use_uniform_buffers() {
-      slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::MorphDescriptors))
+      slots.push(mesh_binding_layout_entry(MorphDescriptors))
     }
   }
   if skinned && motion_vectors {
-    slots.push(mesh_binding_layout_entry(MeshBindingSlot3d::SkinPrevious))
+    slots.push(mesh_binding_layout_entry(SkinPrevious))
   }
   if morphed && motion_vectors {
-    slots.push(
-      mesh_binding_layout_entry(MeshBindingSlot3d::MorphWeightsPrevious),
-    )
+    slots.push(mesh_binding_layout_entry(MorphWeightsPrevious))
   }
   if lightmapped {
     let lightmap_count = if binding_arrays_are_usable {
@@ -201,18 +197,8 @@ fn mesh_binding_layout_slots(
     } else {
       0
     }
-    slots.push(
-      mesh_binding_layout_entry(
-        MeshBindingSlot3d::LightmapTexture,
-        count=lightmap_count,
-      ),
-    )
-    slots.push(
-      mesh_binding_layout_entry(
-        MeshBindingSlot3d::LightmapSampler,
-        count=lightmap_count,
-      ),
-    )
+    slots.push(mesh_binding_layout_entry(LightmapTexture, count=lightmap_count))
+    slots.push(mesh_binding_layout_entry(LightmapSampler, count=lightmap_count))
   }
   slots
 }
@@ -226,7 +212,7 @@ fn mesh_binding_layout(
   motion_vectors : Bool,
   binding_arrays_are_usable : Bool,
 ) -> MeshBindingLayout3d {
-  MeshBindingLayout3d::{
+  {
     name,
     entries: mesh_binding_layout_slots(
       lightmapped, skinned, morphed, motion_vectors, binding_arrays_are_usable,
@@ -238,7 +224,7 @@ fn mesh_binding_layout(
 pub fn render3d_mesh_layouts(
   binding_arrays_are_usable? : Bool = false,
 ) -> MeshLayouts3d {
-  MeshLayouts3d::{
+  {
     model_only: mesh_binding_layout(
       "mesh_layout", false, false, false, false, binding_arrays_are_usable,
     ),
@@ -299,7 +285,7 @@ pub fn RenderMeshBindingInput3d::new(
   skinned? : Bool = false,
   morph_targets? : Bool = false,
 ) -> RenderMeshBindingInput3d {
-  RenderMeshBindingInput3d::{ mesh_asset_id, skinned, morph_targets }
+  { mesh_asset_id, skinned, morph_targets }
 }
 
 ///|
@@ -335,11 +321,7 @@ fn mesh_prepared_bind_group_3d(
   label : String,
   layout : MeshBindingLayout3d,
 ) -> MeshPreparedBindGroup3d {
-  MeshPreparedBindGroup3d::{
-    label,
-    layout_name: layout.name(),
-    bindings: layout.bindings(),
-  }
+  { label, layout_name: layout.name(), bindings: layout.bindings() }
 }
 
 ///|
@@ -396,7 +378,7 @@ fn mesh_bind_group_pair_3d(
   motion_vectors : MeshPreparedBindGroup3d,
   no_motion_vectors : MeshPreparedBindGroup3d,
 ) -> MeshBindGroupPair3d {
-  MeshBindGroupPair3d::{ motion_vectors, no_motion_vectors }
+  { motion_vectors, no_motion_vectors }
 }
 
 ///|
@@ -421,7 +403,7 @@ pub struct MeshPhaseBindGroups3d {
 
 ///|
 pub fn MeshPhaseBindGroups3d::new() -> MeshPhaseBindGroups3d {
-  MeshPhaseBindGroups3d::{
+  {
     model_only: None,
     skinned: None,
     morph_targets: Map([]),
@@ -498,14 +480,14 @@ pub enum MeshBindGroups3d {
 pub fn render3d_mesh_bind_groups_cpu_preprocessing(
   groups : MeshPhaseBindGroups3d,
 ) -> MeshBindGroups3d {
-  MeshBindGroups3d::CpuPreprocessing(groups)
+  CpuPreprocessing(groups)
 }
 
 ///|
 pub fn render3d_mesh_bind_groups_gpu_preprocessing(
   phase_groups : Map[String, MeshPhaseBindGroups3d],
 ) -> MeshBindGroups3d {
-  MeshBindGroups3d::GpuPreprocessing(phase_groups)
+  GpuPreprocessing(phase_groups)
 }
 
 ///|

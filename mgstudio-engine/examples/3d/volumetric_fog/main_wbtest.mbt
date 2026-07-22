@@ -162,32 +162,28 @@ fn volumetric_fog_material_specializer_layout() -> @mesh.MeshVertexBufferLayoutR
         @mesh.MeshVertexAttribute::uv_0().id(),
         @mesh.MeshVertexAttribute::color().id(),
       ],
-      layout=@mesh.VertexBufferLayout::new(
-        array_stride=48,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[
-          @mesh.VertexAttribute::new(
-            offset=0,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=9,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=12,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=10,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=24,
-            format=@mesh.MeshVertexFormat::Float32x2,
-            shader_location=11,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=32,
-            format=@mesh.MeshVertexFormat::Float32x4,
-            shader_location=12,
-          ),
-        ],
-      ),
+      layout=@mesh.VertexBufferLayout::new(array_stride=48, step_mode=Vertex, attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=Float32x3,
+          shader_location=9,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=Float32x3,
+          shader_location=10,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=24,
+          format=Float32x2,
+          shader_location=11,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=32,
+          format=Float32x4,
+          shader_location=12,
+        ),
+      ]),
     ),
   )
 }
@@ -199,7 +195,7 @@ fn shader_defs_contain_flag(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @material.ShaderDefVal::Flag(flag) if flag == expected => return true
+      Flag(flag) if flag == expected => return true
       _ => ()
     }
   }
@@ -282,10 +278,7 @@ test "volumetric_fog: AppSettings and help text match Bevy defaults" {
   guard (try! world.get_by_key(help_text, @ui.ecs_key_node)) is Some(node) else {
     abort("expected UI Node on help text")
   }
-  debug_inspect(
-    node.position_type == @ui.PositionType::Absolute,
-    content="true",
-  )
+  debug_inspect(node.position_type == Absolute, content="true")
   debug_inspect(val_px_approx_eq(node.top, 12.0F), content="true")
   debug_inspect(val_px_approx_eq(node.left, 12.0F), content="true")
 }
@@ -300,7 +293,7 @@ test "volumetric_fog: app resources match Bevy clear and ambient defaults" {
       @camera.ClearColor::new(@color.Color::srgba(0.02F, 0.02F, 0.02F, 1.0F)),
     )
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
+    .add_systems_world(Startup, setup)
   app = app.run_once()
   let world = app.world()
   guard world.get_resource(@camera.ClearColor::resource()) is Some(clear_color) else {
@@ -326,9 +319,9 @@ test "volumetric_fog: app resources match Bevy clear and ambient defaults" {
 ///|
 test "volumetric_fog: AppSettings toggles follow Bevy P and L keys" {
   let input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
-  input.press(@window.KeyCode::KeyP)
+  input.press(KeyP)
   let (point_off, point_changed) = app_settings_after_input(
-    AppSettings::AppSettings(),
+    AppSettings(),
     input,
   )
   debug_inspect(point_changed, content="true")
@@ -336,7 +329,7 @@ test "volumetric_fog: AppSettings toggles follow Bevy P and L keys" {
   debug_inspect(point_off.volumetric_spotlight, content="true")
 
   let second_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
-  second_input.press(@window.KeyCode::KeyL)
+  second_input.press(KeyL)
   let (spot_off, spot_changed) = app_settings_after_input(
     point_off, second_input,
   )
@@ -357,12 +350,12 @@ test "volumetric_fog: VolumetricLight sync inserts and removes components" {
   try! disable_world.set_by_key(
     point_light,
     @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
+    PointLight(),
   )
   try! disable_world.set_by_key(
     point_light,
     @pbr.ecs_key_volumetric_light,
-    @pbr.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   let mut disable_app = @app.App::new(disable_world).add_system_param2(fn(
     commands : @app.Commands,
@@ -382,11 +375,7 @@ test "volumetric_fog: VolumetricLight sync inserts and removes components" {
   let enable_world = @ecs.World::new()
   defer enable_world.close()
   let spot_light = enable_world.spawn_empty()
-  try! enable_world.set_by_key(
-    spot_light,
-    @pbr.ecs_key_spot_light,
-    @pbr.SpotLight::SpotLight(),
-  )
+  try! enable_world.set_by_key(spot_light, @pbr.ecs_key_spot_light, SpotLight())
   let mut enable_app = @app.App::new(enable_world).add_system_param2(fn(
     commands : @app.Commands,
     spot_lights : @ecs.Query[@core.Entity, @ecs.With[@pbr.SpotLight]],
@@ -506,7 +495,7 @@ test "volumetric_fog: camera skybox and volumetric fog setup matches Bevy" {
       vec3_approx_eq(transform.translation, @math.Vec3::new(-1.7F, 1.5F, 4.5F))
 
     tonemapping_matches.val = tonemapping_matches.val &&
-      tonemapping_read.value() == @post_process.Tonemapping::TonyMcMapface
+      tonemapping_read.value() == TonyMcMapface
 
     bloom_matches.val = bloom_matches.val && true
 
@@ -589,7 +578,7 @@ test "volumetric_fog: camera render entity prepares Bevy skybox draw state" {
   let mut app = @app.App::new(lifecycle_world_578_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
+    .add_systems_world(Startup, setup)
   app = app.run_startup()
   app = app.run_once()
   app = app.run_once()
@@ -608,7 +597,7 @@ test "volumetric_fog: camera render entity prepares Bevy skybox draw state" {
   debug_inspect(!camera_entity.val.is_placeholder(), content="true")
   debug_inspect(!render_entity.val.is_placeholder(), content="true")
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   debug_inspect(
     @core_pipeline_skybox.view_has_skybox_pipeline(
       render_world,
@@ -640,11 +629,11 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
   let mut app = @app.App::new(lifecycle_world_626_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
-    .add_systems_param2(@app.Update, tweak_scene)
-    .add_systems_param2(@app.Update, move_directional_light)
-    .add_systems_param2(@app.Update, move_point_light)
-    .add_systems_param6(@app.Update, adjust_app_settings)
+    .add_systems_world(Startup, setup)
+    .add_systems_param2(Update, tweak_scene)
+    .add_systems_param2(Update, move_directional_light)
+    .add_systems_param2(Update, move_point_light)
+    .add_systems_param6(Update, adjust_app_settings)
   for _ in 0..<6 {
     app = app.update()
   }
@@ -926,7 +915,7 @@ test "volumetric_fog: runtime pass-local evidence reaches Bevy fog pass" {
     counter_index.val = counter_index.val + 1
   }
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let lighting = @pbr_render.render3d_collect_lighting(render_world)
   debug_inspect(lighting.directional_shadow_maps_enabled, content="true")
   debug_inspect(lighting.point_shadow_maps_enabled, content="true")
@@ -1051,15 +1040,15 @@ test "volumetric_fog: directional and ambient GPU lights match Bevy prepare_ligh
   let mut app = @app.App::new(lifecycle_world_1039_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
-    .add_systems_param2(@app.Update, tweak_scene)
-    .add_systems_param2(@app.Update, move_directional_light)
-    .add_systems_param2(@app.Update, move_point_light)
-    .add_systems_param6(@app.Update, adjust_app_settings)
+    .add_systems_world(Startup, setup)
+    .add_systems_param2(Update, tweak_scene)
+    .add_systems_param2(Update, move_directional_light)
+    .add_systems_param2(Update, move_point_light)
+    .add_systems_param6(Update, adjust_app_settings)
   for _ in 0..<6 {
     app = app.update()
   }
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let lighting = @pbr_render.render3d_collect_lighting(render_world)
   let gpu_lights = match lighting.gpu_lights {
     Some(value) => value
@@ -1155,11 +1144,11 @@ test "volumetric_fog: directional shadow cascade scalar inputs match Bevy order"
   let mut app = @app.App::new(lifecycle_world_1137_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
-    .add_systems_param2(@app.Update, tweak_scene)
-    .add_systems_param2(@app.Update, move_directional_light)
-    .add_systems_param2(@app.Update, move_point_light)
-    .add_systems_param6(@app.Update, adjust_app_settings)
+    .add_systems_world(Startup, setup)
+    .add_systems_param2(Update, tweak_scene)
+    .add_systems_param2(Update, move_directional_light)
+    .add_systems_param2(Update, move_point_light)
+    .add_systems_param6(Update, adjust_app_settings)
   for _ in 0..<6 {
     app = app.update()
   }
@@ -1175,7 +1164,7 @@ test "volumetric_fog: directional shadow cascade scalar inputs match Bevy order"
   }
   debug_inspect(fog_consumed_directional_shadow.val, content="true")
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let lighting = @pbr_render.render3d_collect_lighting(render_world)
   let gpu_lights = match lighting.gpu_lights {
     Some(value) => value
@@ -1213,16 +1202,16 @@ test "volumetric_fog: directional shadow cascade records match Bevy packing" {
   let mut app = @app.App::new(lifecycle_world_1197_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
-    .add_systems_param2(@app.Update, tweak_scene)
-    .add_systems_param2(@app.Update, move_directional_light)
-    .add_systems_param2(@app.Update, move_point_light)
-    .add_systems_param6(@app.Update, adjust_app_settings)
+    .add_systems_world(Startup, setup)
+    .add_systems_param2(Update, tweak_scene)
+    .add_systems_param2(Update, move_directional_light)
+    .add_systems_param2(Update, move_point_light)
+    .add_systems_param6(Update, adjust_app_settings)
   for _ in 0..<6 {
     app = app.update()
   }
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let lighting = @pbr_render.render3d_collect_lighting(render_world)
   let gpu_lights = match lighting.gpu_lights {
     Some(value) => value
@@ -1278,16 +1267,16 @@ test "volumetric_fog: clustered point and spot light GPU values match Bevy packi
   let mut app = @app.App::new(lifecycle_world_1260_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, setup)
-    .add_systems_param2(@app.Update, tweak_scene)
-    .add_systems_param2(@app.Update, move_directional_light)
-    .add_systems_param2(@app.Update, move_point_light)
-    .add_systems_param6(@app.Update, adjust_app_settings)
+    .add_systems_world(Startup, setup)
+    .add_systems_param2(Update, tweak_scene)
+    .add_systems_param2(Update, move_directional_light)
+    .add_systems_param2(Update, move_point_light)
+    .add_systems_param6(Update, adjust_app_settings)
   for _ in 0..<6 {
     app = app.update()
   }
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let lighting = @pbr_render.render3d_collect_lighting(render_world)
   guard lighting.gpu_clustered_lights_bytes is Some(clustered_bytes) else {
     debug_inspect("missing", content="clustered")
@@ -1892,9 +1881,7 @@ test "volumetric_fog: GLB scene contributor is the inherited-visible Cube mesh" 
   let mut app = @app.App::new(lifecycle_world_1820_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_resource(AppSettings::AppSettings())
-    .add_systems_world(@app.Startup, fn(world : @ecs.World) {
-      setup_scene(world)
-    })
+    .add_systems_world(Startup, fn(world : @ecs.World) { setup_scene(world) })
   app = app.run_startup()
   for _ in 0..<180 {
     app = app.run_once()
@@ -2035,8 +2022,7 @@ test "volumetric_fog: GLB scene contributor is the inherited-visible Cube mesh" 
               approx_eq(base_g, 0.800000011920929F) &&
               approx_eq(base_b, 0.800000011920929F) &&
               approx_eq(base_a, 1.0F)
-            cube_material_alpha_mode_matches.val = material.alpha_mode
-              is @pbr.AlphaMode3d::Opaque
+            cube_material_alpha_mode_matches.val = material.alpha_mode is Opaque
             cube_material_normal_texture_matches.val = material.normal_map_texture
               is Some(_)
             match material.normal_map_texture {
@@ -2084,12 +2070,12 @@ test "volumetric_fog: GLB scene contributor is the inherited-visible Cube mesh" 
             let properties = @pbr.render3d_material_properties_for_standard_material(
               material,
               None,
-              @material.OpaqueRendererMethod::Forward,
+              Forward,
               true,
             )
             cube_prepared_phase_matches.val = properties.render_phase_type
-              is @material.RenderPhaseType::Opaque &&
-              properties.alpha_mode is @material.AlphaMode3d::Opaque &&
+              is Opaque &&
+              properties.alpha_mode is Opaque &&
               !properties.reads_view_transmission_texture &&
               properties.mesh_pipeline_key_bits.bits() == 0UL
             let material_key = @pbr.standard_material_key_from_material(
@@ -2437,7 +2423,7 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
       if world.get_resource(@pbr.ecs_key_render_material_instances) is None {
         world.insert_resource(
           @pbr.ecs_key_render_material_instances,
-          @pbr.RenderMaterialInstances::RenderMaterialInstances(),
+          RenderMaterialInstances(),
         )
       }
       match world.get_resource(@pbr.ecs_key_render_material_instances) {
@@ -2452,7 +2438,7 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
       if world.get_resource(@render_mesh.RenderMeshAssets::resource()) is None {
         world.insert_resource(
           @render_mesh.RenderMeshAssets::resource(),
-          @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+          RenderMeshAssets(),
         )
       }
       if world.get_resource(@render_mesh.MeshAllocator::resource()) is None {
@@ -2498,7 +2484,7 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
   let cpu_previous_transform_matches = Ref(false)
   let cpu_flags_match = Ref(false)
   match render_instances {
-    @pbr.RenderMeshInstances::CpuBuilding(cpu_instances) =>
+    CpuBuilding(cpu_instances) =>
       match cpu_instances.entries.get(cube_primitive_entity.val.to_bits()) {
         Some(instance) =>
           match instance.transforms {
@@ -2520,7 +2506,7 @@ test "volumetric_fog: GLB Cube reaches PBR render mesh extraction" {
           }
         None => ()
       }
-    @pbr.RenderMeshInstances::GpuBuilding(_) =>
+    GpuBuilding(_) =>
       abort("expected CPU RenderMeshInstances for extraction transform proof")
   }
 
@@ -2841,8 +2827,8 @@ test "volumetric_fog: point light movement clamps and toggles like Bevy" {
 ///|
 test "volumetric_fog: directional light rotation delta uses Bevy XZY euler order" {
   let input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
-  input.press(@window.KeyCode::KeyW)
-  input.press(@window.KeyCode::ArrowLeft)
+  input.press(KeyW)
+  input.press(ArrowLeft)
   let actual_delta = directional_light_delta_theta(input)
   debug_inspect(
     approx_eq(actual_delta.x, DIRECTIONAL_LIGHT_MOVEMENT_SPEED),
@@ -2854,8 +2840,8 @@ test "volumetric_fog: directional light rotation delta uses Bevy XZY euler order
   )
 
   let opposite_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
-  opposite_input.press(@window.KeyCode::KeyS)
-  opposite_input.press(@window.KeyCode::ArrowRight)
+  opposite_input.press(KeyS)
+  opposite_input.press(ArrowRight)
   let opposite_delta = directional_light_delta_theta(opposite_input)
   debug_inspect(
     approx_eq(opposite_delta.x, -DIRECTIONAL_LIGHT_MOVEMENT_SPEED),
@@ -2872,7 +2858,7 @@ test "volumetric_fog: directional light rotation delta uses Bevy XZY euler order
   )
   let actual = directional_light_delta_quat(delta)
   let expected = @math.Quat::from_euler(
-    @math.EulerRot::XZY,
+    XZY,
     DIRECTIONAL_LIGHT_MOVEMENT_SPEED,
     0.0F,
     DIRECTIONAL_LIGHT_MOVEMENT_SPEED,
@@ -2888,7 +2874,7 @@ test "volumetric_fog: tweak_scene shadows and volumetric-lights changed directio
   try! world.set_by_key(
     directional,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   let mut app = @app.App::new(world).add_system_param2(tweak_scene)
 

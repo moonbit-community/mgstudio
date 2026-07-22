@@ -59,18 +59,14 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_display(@ui.Display::Grid)
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(COLS), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(COLS), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(rows), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(rows), [Fr(1.0F)]),
       ]),
     ),
   )
@@ -82,8 +78,8 @@ fn setup(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(root),
         GradientCell::{ index: i },
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F)),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F)),
         @ui.BackgroundColor::new(@color.Color::hsl(hue, 1.0F, 0.5F)),
       ),
     )
@@ -115,7 +111,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_cells)
+  .add_systems_param(Startup, setup)
+  .add_systems_param2(Update, animate_cells)
   .run()
 }

@@ -27,7 +27,7 @@ fn phase_entity_ref3d(
   main_entity : @core.Entity,
   render_entity : @core.Entity,
 ) -> PhaseEntityRef3d {
-  PhaseEntityRef3d::{ render_entity, main_entity }
+  { render_entity, main_entity }
 }
 
 ///|
@@ -223,7 +223,7 @@ priv struct Render3dMainViewDrawItems {
 
 ///|
 fn Render3dMainViewDrawItems::Render3dMainViewDrawItems() -> Render3dMainViewDrawItems {
-  Render3dMainViewDrawItems::{ views: Map([]) }
+  { views: Map([]) }
 }
 
 ///|
@@ -334,7 +334,7 @@ fn render3d_merge_main_view_phase_items(
         "queued pbr main phase entity is missing its current extracted draw payload",
       )
     }
-    queued_by_main_entity.set(queued_item.entity.main_entity.to_bits(), MeshPhaseItem3d::{
+    queued_by_main_entity.set(queued_item.entity.main_entity.to_bits(), {
       ..queued_item,
       extracted_index,
     })
@@ -352,7 +352,7 @@ fn render3d_merge_main_view_phase_items(
         "retained pbr main phase entity is missing its current extracted draw payload",
       )
     }
-    merged.push(MeshPhaseItem3d::{ ..item, extracted_index, })
+    merged.push({ ..item, extracted_index, })
   }
   for _, queued_item in queued_by_main_entity {
     merged.push(queued_item)
@@ -367,7 +367,7 @@ priv struct Render3dMainViewPhaseIndexStore {
 
 ///|
 fn Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore() -> Render3dMainViewPhaseIndexStore {
-  Render3dMainViewPhaseIndexStore::{ views: Map([]) }
+  { views: Map([]) }
 }
 
 ///|
@@ -410,9 +410,7 @@ priv struct Render3dOpaqueMainViewPhases {
 
 ///|
 fn Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases() -> Render3dOpaqueMainViewPhases {
-  Render3dOpaqueMainViewPhases::{
-    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
-  }
+  { store: Render3dMainViewPhaseIndexStore() }
 }
 
 ///|
@@ -434,9 +432,7 @@ priv struct Render3dAlphaMaskMainViewPhases {
 
 ///|
 fn Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases() -> Render3dAlphaMaskMainViewPhases {
-  Render3dAlphaMaskMainViewPhases::{
-    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
-  }
+  { store: Render3dMainViewPhaseIndexStore() }
 }
 
 ///|
@@ -458,9 +454,7 @@ priv struct Render3dTransmissiveMainViewPhases {
 
 ///|
 fn Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases() -> Render3dTransmissiveMainViewPhases {
-  Render3dTransmissiveMainViewPhases::{
-    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
-  }
+  { store: Render3dMainViewPhaseIndexStore() }
 }
 
 ///|
@@ -482,9 +476,7 @@ priv struct Render3dTransparentMainViewPhases {
 
 ///|
 fn Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases() -> Render3dTransparentMainViewPhases {
-  Render3dTransparentMainViewPhases::{
-    store: Render3dMainViewPhaseIndexStore::Render3dMainViewPhaseIndexStore(),
-  }
+  { store: Render3dMainViewPhaseIndexStore() }
 }
 
 ///|
@@ -507,7 +499,7 @@ fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
     is None {
     world.insert_resource(
       (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
-      Render3dMainViewDrawItems::Render3dMainViewDrawItems(),
+      Render3dMainViewDrawItems(),
     )
   }
   if world.get_resource(
@@ -520,7 +512,7 @@ fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
-      Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases(),
+      Render3dOpaqueMainViewPhases(),
     )
   }
   if world.get_resource(
@@ -533,7 +525,7 @@ fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
-      Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases(),
+      Render3dAlphaMaskMainViewPhases(),
     )
   }
   if world.get_resource(
@@ -546,7 +538,7 @@ fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
-      Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases(),
+      Render3dTransmissiveMainViewPhases(),
     )
   }
   if world.get_resource(
@@ -559,7 +551,7 @@ fn ensure_render3d_main_view_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
-      Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases(),
+      Render3dTransparentMainViewPhases(),
     )
   }
 }
@@ -900,7 +892,7 @@ fn render3d_queue_camera_phase_items(
   let items : Array[CameraPhaseItem3d] = []
   for i in 0..<cameras.length() {
     let camera = cameras[i]
-    items.push(CameraPhaseItem3d::{
+    items.push({
       entity: camera.entity,
       extracted_index: i,
       order: camera.payload.camera.order,
@@ -919,10 +911,10 @@ fn render3d_queue_camera_phase_items(
 ///|
 fn render3d_mesh_phase_kind(properties : @material.MaterialProperties) -> Int {
   match properties.render_phase_type {
-    @material.RenderPhaseType::Opaque => RENDER3D_PHASE_OPAQUE
-    @material.RenderPhaseType::AlphaMask => RENDER3D_PHASE_ALPHA_MASK
-    @material.RenderPhaseType::Transmissive => RENDER3D_PHASE_TRANSMISSIVE
-    @material.RenderPhaseType::Transparent => RENDER3D_PHASE_TRANSPARENT
+    Opaque => RENDER3D_PHASE_OPAQUE
+    AlphaMask => RENDER3D_PHASE_ALPHA_MASK
+    Transmissive => RENDER3D_PHASE_TRANSMISSIVE
+    Transparent => RENDER3D_PHASE_TRANSPARENT
   }
 }
 
@@ -931,13 +923,12 @@ fn render3d_main_pass_draw_function(
   properties : @material.MaterialProperties,
 ) -> @material.DrawFunctionId? {
   match properties.render_phase_type {
-    @material.RenderPhaseType::Opaque =>
-      properties.get_draw_function(MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL)
-    @material.RenderPhaseType::AlphaMask =>
+    Opaque => properties.get_draw_function(MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL)
+    AlphaMask =>
       properties.get_draw_function(MAIN_PASS_ALPHA_MASK_DRAW_FUNCTION_LABEL)
-    @material.RenderPhaseType::Transmissive =>
+    Transmissive =>
       properties.get_draw_function(MAIN_PASS_TRANSMISSIVE_DRAW_FUNCTION_LABEL)
-    @material.RenderPhaseType::Transparent =>
+    Transparent =>
       properties.get_draw_function(MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL)
   }
 }
@@ -953,8 +944,7 @@ fn render3d_material_phase_distance(
   camera_transform : @transform.Transform,
 ) -> Float {
   match material_properties.render_phase_type {
-    @material.RenderPhaseType::Transmissive
-    | @material.RenderPhaseType::Transparent => {
+    Transmissive | Transparent => {
       guard render_mesh_assets.get(mesh_instance.mesh_asset_id())
         is Some(render_mesh) else {
         abort(
@@ -1027,7 +1017,7 @@ fn render3d_queue_material_binding_for_instance(
   instance : RenderMaterialInstance,
 ) -> MaterialBindingId? {
   if instance.asset_id() == DUMMY_MESH_MATERIAL_ID {
-    return Some(MaterialBindingId::MaterialBindingId())
+    return Some(MaterialBindingId())
   }
   match render_material_bindings.get(instance.asset_id()) {
     Some(binding) => Some(binding)

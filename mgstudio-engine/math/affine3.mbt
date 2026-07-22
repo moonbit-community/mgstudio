@@ -20,7 +20,7 @@ pub struct Affine3 {
 
 ///|
 pub fn Affine3::identity() -> Affine3 {
-  Affine3::{ matrix3: Mat3::identity(), translation: Vec3::zero() }
+  { matrix3: Mat3::identity(), translation: Vec3::zero() }
 }
 
 ///|
@@ -44,7 +44,7 @@ pub fn Affine3::from_mat3_translation(
   matrix3 : Mat3,
   translation : Vec3,
 ) -> Affine3 {
-  Affine3::{ matrix3, translation }
+  { matrix3, translation }
 }
 
 ///|
@@ -97,7 +97,7 @@ fn affine3_quat_from_basis(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Quat 
 
 ///|
 pub fn Affine3::from_translation(translation : Vec3) -> Affine3 {
-  Affine3::{ matrix3: Mat3::identity(), translation }
+  { matrix3: Mat3::identity(), translation }
 }
 
 ///|
@@ -117,7 +117,7 @@ pub fn Affine3::from_rotation_translation(
   let wx = rotation.w * x2
   let wy = rotation.w * y2
   let wz = rotation.w * z2
-  Affine3::{
+  {
     matrix3: Mat3::from_cols(
       Vec3::new(1.0F - (yy + zz), xy + wz, xz - wy),
       Vec3::new(xy - wz, 1.0F - (xx + zz), yz + wx),
@@ -154,7 +154,7 @@ pub fn Affine3::from_scale_rotation_translation(
   let m20 = (xz + wy) * scale.z
   let m21 = (yz - wx) * scale.z
   let m22 = (1.0F - (xx + yy)) * scale.z
-  Affine3::{
+  {
     matrix3: Mat3::from_cols(
       Vec3::new(m00, m01, m02),
       Vec3::new(m10, m11, m12),
@@ -169,7 +169,7 @@ pub fn Affine3::mul_translation(self : Affine3, translation : Vec3) -> Affine3 {
   let sx = self.matrix3.x_axis
   let sy = self.matrix3.y_axis
   let sz = self.matrix3.z_axis
-  Affine3::{
+  {
     matrix3: self.matrix3,
     translation: Vec3::new(
       sx.x * translation.x +
@@ -248,7 +248,7 @@ pub fn Affine3::mul_rotation_translation(
     sz.z * translation.z +
     self.translation.z,
   )
-  Affine3::{
+  {
     matrix3: Mat3::from_cols(result_x_axis, result_y_axis, result_z_axis),
     translation: result_translation,
   }
@@ -315,7 +315,7 @@ pub fn Affine3::mul_transform(
     sz.z * translation.z +
     self.translation.z,
   )
-  Affine3::{
+  {
     matrix3: Mat3::from_cols(result_x_axis, result_y_axis, result_z_axis),
     translation: result_translation,
   }
@@ -336,7 +336,7 @@ pub fn Affine3::mul(self : Affine3, other : Affine3) -> Affine3 {
     self.matrix3.y_axis.z * translated.y +
     self.matrix3.z_axis.z * translated.z +
     self.translation.z
-  Affine3::{
+  {
     matrix3: self.matrix3.mul(other.matrix3),
     translation: Vec3::new(tx, ty, tz),
   }
@@ -346,7 +346,7 @@ pub fn Affine3::mul(self : Affine3, other : Affine3) -> Affine3 {
 pub fn Affine3::inverse(self : Affine3) -> Affine3 {
   match self.matrix3.inverse() {
     Some(inverse_matrix3) =>
-      Affine3::{
+      {
         matrix3: inverse_matrix3,
         translation: inverse_matrix3.mul_vec3(self.translation).neg(),
       }

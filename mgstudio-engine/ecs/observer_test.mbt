@@ -308,15 +308,9 @@ test "ecs observer: world add_component_observer is world-scoped and fires on re
   let entity0 = world0.spawn()
   let entity1 = world1.spawn()
 
-  try! world0.set_by_key(entity0, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
-  try! world0.set_by_key(entity0, observer_marker_key, ObserverMarker::{
-    value: 2,
-  })
-  try! world1.set_by_key(entity1, observer_marker_key, ObserverMarker::{
-    value: 3,
-  })
+  try! world0.set_by_key(entity0, observer_marker_key, { value: 1 })
+  try! world0.set_by_key(entity0, observer_marker_key, { value: 2 })
+  try! world1.set_by_key(entity1, observer_marker_key, { value: 3 })
 
   debug_inspect(first_handle.world_id() == world0.world_id(), content="true")
   debug_inspect(first_handle.id() > 0, content="true")
@@ -344,15 +338,9 @@ test "ecs observer: add_entity_component_observer only fires for the bound entit
     }),
   )
 
-  try! world.set_by_key(entity0, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
-  try! world.set_by_key(entity1, observer_marker_key, ObserverMarker::{
-    value: 2,
-  })
-  try! world.set_by_key(entity0, observer_marker_key, ObserverMarker::{
-    value: 3,
-  })
+  try! world.set_by_key(entity0, observer_marker_key, { value: 1 })
+  try! world.set_by_key(entity1, observer_marker_key, { value: 2 })
+  try! world.set_by_key(entity0, observer_marker_key, { value: 3 })
 
   debug_inspect(hits.val, content="2")
   debug_inspect(seen_entities, content="[0, 0]")
@@ -375,9 +363,7 @@ test "ecs observer: world add_component_observer fires on remove" {
     }),
   )
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 1 })
   debug_inspect(
     try! world.remove_by_key(entity, observer_marker_key),
     content="true",
@@ -413,9 +399,7 @@ test "ecs observer: remove observer can still read the removed component" {
   )
 
   let removed = world.spawn()
-  try! world.set_by_key(removed, observer_marker_key, ObserverMarker::{
-    value: 11,
-  })
+  try! world.set_by_key(removed, observer_marker_key, { value: 11 })
   ignore(try! world.remove_by_key(removed, observer_marker_key))
 
   ignore(
@@ -433,9 +417,7 @@ test "ecs observer: remove observer can still read the removed component" {
   )
 
   let despawned = world.spawn()
-  try! world.set_by_key(despawned, observer_marker_key, ObserverMarker::{
-    value: 23,
-  })
+  try! world.set_by_key(despawned, observer_marker_key, { value: 23 })
   try! world.despawn(despawned)
 
   debug_inspect(remove_values, content="[11, 23]")
@@ -457,12 +439,8 @@ test "ecs observer: add observers only fire on first insertion" {
     }),
   )
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 2,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 1 })
+  try! world.set_by_key(entity, observer_marker_key, { value: 2 })
   debug_inspect(hits.val, content="1")
 }
 
@@ -481,17 +459,13 @@ test "ecs observer: replace observers fire on replace and remove paths" {
     }),
   )
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 1 })
   ignore(
     try! world.update_by_key(entity, observer_marker_key, fn(marker) {
-      ObserverMarker::{ value: marker.value + 1 }
+      { value: marker.value + 1 }
     }),
   )
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 3,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 3 })
   ignore(try! world.remove_by_key(entity, observer_marker_key))
 
   debug_inspect(hits.val, content="3")
@@ -513,12 +487,8 @@ test "ecs observer: despawn observers fire only during despawn" {
     }),
   )
 
-  try! world.set_by_key(keep_entity, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
-  try! world.set_by_key(despawn_entity, observer_marker_key, ObserverMarker::{
-    value: 2,
-  })
+  try! world.set_by_key(keep_entity, observer_marker_key, { value: 1 })
+  try! world.set_by_key(despawn_entity, observer_marker_key, { value: 2 })
   ignore(try! world.remove_by_key(keep_entity, observer_marker_key))
   try! world.despawn(despawn_entity)
 
@@ -611,19 +581,13 @@ test "ecs observer: lifecycle observer ordering is deterministic" {
     }),
   )
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 2,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 1 })
+  try! world.set_by_key(entity, observer_marker_key, { value: 2 })
   debug_inspect(
     try! world.remove_by_key(entity, observer_marker_key),
     content="true",
   )
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 3,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 3 })
   try! world.despawn(entity)
 
   debug_inspect(
@@ -688,9 +652,7 @@ test "ecs observer: trigger propagation bubbles to parent and carries payload mu
   let parent = world.spawn()
   let child = world.spawn()
   let order : Array[String] = []
-  try! world.set_by_key(child, observer_parent_link_key, ObserverParentLink::{
-    parent,
-  })
+  try! world.set_by_key(child, observer_parent_link_key, { parent, })
 
   ignore(
     world.add_entity_observer(child, fn(event : On[ObserverAttack]) {
@@ -717,9 +679,7 @@ test "ecs observer: trigger propagation can be halted early" {
   let parent = world.spawn()
   let child = world.spawn()
   let order : Array[String] = []
-  try! world.set_by_key(child, observer_parent_link_key, ObserverParentLink::{
-    parent,
-  })
+  try! world.set_by_key(child, observer_parent_link_key, { parent, })
 
   ignore(
     world.add_entity_observer(child, fn(event : On[ObserverAttack]) {
@@ -756,9 +716,7 @@ test "ecs observer: parent lookup cache refreshes after late relationship regist
   world.trigger(ObserverAttack::{ damage: 10, entity: child })
   debug_inspect(parent_hits.val, content="0")
 
-  try! world.set_by_key(child, observer_parent_link_late_key, ObserverParentLinkLate::{
-    parent,
-  })
+  try! world.set_by_key(child, observer_parent_link_late_key, { parent, })
   world.trigger(ObserverAttack::{ damage: 10, entity: child })
   debug_inspect(parent_hits.val, content="1")
 }
@@ -777,7 +735,7 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
       observer_parent_lookup=true,
     ),
   )
-  try! world0.set_by_key(child0, observer_parent_link_stable_key, ObserverParentLinkStable::{
+  try! world0.set_by_key(child0, observer_parent_link_stable_key, {
     parent: parent0,
   })
 
@@ -795,7 +753,7 @@ test "ecs observer: parent lookup accessor is captured per-world registration" {
   let parent1 = world1.spawn()
   let child1 = world1.spawn()
   let world1_hits : Ref[Int] = Ref(0)
-  try! world1.set_by_key(child1, observer_parent_link_stable_key, ObserverParentLinkStable::{
+  try! world1.set_by_key(child1, observer_parent_link_stable_key, {
     parent: parent1,
   })
 
@@ -849,9 +807,7 @@ test "ecs observer: parent lookup cache tracks archetype register and unregister
   debug_inspect(observer_parent_lookup_probe_calls_ref.val, content="0")
   debug_inspect(parent_hits.val, content="0")
 
-  try! world.set_by_key(child, observer_parent_lookup_probe_key, ObserverParentLookupProbe::{
-    parent,
-  })
+  try! world.set_by_key(child, observer_parent_lookup_probe_key, { parent, })
   world.trigger(ObserverAttack::{ damage: 10, entity: child })
   debug_inspect(observer_parent_lookup_probe_calls_ref.val, content="1")
   debug_inspect(parent_hits.val, content="1")
@@ -894,7 +850,7 @@ test "ecs observer: parent lookup cache isolates archetype activity per world" {
   let world0_hits : Ref[Int] = Ref(0)
   let world1_hits : Ref[Int] = Ref(0)
 
-  try! world0.set_by_key(child0, observer_parent_lookup_probe_key, ObserverParentLookupProbe::{
+  try! world0.set_by_key(child0, observer_parent_lookup_probe_key, {
     parent: parent0,
   })
 
@@ -937,12 +893,8 @@ test "ecs observer: add_remove_entity_component_observer only fires for the boun
     }),
   )
 
-  try! world.set_by_key(entity0, observer_marker_key, ObserverMarker::{
-    value: 1,
-  })
-  try! world.set_by_key(entity1, observer_marker_key, ObserverMarker::{
-    value: 2,
-  })
+  try! world.set_by_key(entity0, observer_marker_key, { value: 1 })
+  try! world.set_by_key(entity1, observer_marker_key, { value: 2 })
   debug_inspect(
     try! world.remove_by_key(entity0, observer_marker_key),
     content="true",

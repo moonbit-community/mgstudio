@@ -20,7 +20,7 @@ pub struct MainEntity {
 
 ///|
 pub fn MainEntity::new(entity : @core.Entity) -> MainEntity {
-  MainEntity::{ entity, }
+  { entity, }
 }
 
 ///|

@@ -53,7 +53,7 @@ pub fn ColorMaterial::new(
   texture? : @asset.Handle[@asset.Image]? = None,
   uv_transform? : @transform.Affine2 = @transform.Affine2::identity(),
 ) -> ColorMaterial {
-  ColorMaterial::{ color, alpha_mode, texture, uv_transform }
+  { color, alpha_mode, texture, uv_transform }
 }
 
 ///|
@@ -72,7 +72,7 @@ pub fn ColorMaterial::from_image(
 ) -> ColorMaterial {
   ColorMaterial::new(
     @color.Color::white(),
-    @sprite_render_mesh2d_material.AlphaMode2d::Blend,
+    Blend,
     texture=Some(texture),
     uv_transform=@transform.Affine2::identity(),
   )
@@ -82,7 +82,7 @@ pub fn ColorMaterial::from_image(
 pub fn ColorMaterial::ColorMaterial() -> ColorMaterial {
   ColorMaterial::new(
     @color.Color::white(),
-    @sprite_render_mesh2d_material.AlphaMode2d::Blend,
+    Blend,
     texture=None,
     uv_transform=@transform.Affine2::identity(),
   )
@@ -90,7 +90,7 @@ pub fn ColorMaterial::ColorMaterial() -> ColorMaterial {
 
 ///|
 pub impl Default for ColorMaterial with fn default() {
-  ColorMaterial::ColorMaterial()
+  ColorMaterial()
 }
 
 ///|
@@ -142,7 +142,7 @@ pub fn ColorMaterial::with_alpha_mode(
   self : ColorMaterial,
   alpha_mode : @sprite_render_mesh2d_material.AlphaMode2d,
 ) -> ColorMaterial {
-  ColorMaterial::{ ..self, alpha_mode, }
+  { ..self, alpha_mode, }
 }
 
 ///|
@@ -150,7 +150,7 @@ pub fn ColorMaterial::with_texture(
   self : ColorMaterial,
   texture : @asset.Handle[@asset.Image],
 ) -> ColorMaterial {
-  ColorMaterial::{ ..self, texture: Some(texture) }
+  { ..self, texture: Some(texture) }
 }
 
 ///|
@@ -158,7 +158,7 @@ pub fn ColorMaterial::with_uv_transform(
   self : ColorMaterial,
   uv_transform : @transform.Affine2,
 ) -> ColorMaterial {
-  ColorMaterial::{ ..self, uv_transform, }
+  { ..self, uv_transform, }
 }
 
 ///|
@@ -170,7 +170,7 @@ fn default_color_material_handle() -> @asset.Handle[ColorMaterial] {
 fn default_color_material() -> ColorMaterial {
   ColorMaterial::new(
     @color.Color::srgb(1.0F, 0.0F, 1.0F),
-    @sprite_render_mesh2d_material.AlphaMode2d::Blend,
+    Blend,
     texture=None,
     uv_transform=@transform.Affine2::identity(),
   )
@@ -181,9 +181,9 @@ fn color_material_alpha_mode_for_color(
   color : @color.Color,
 ) -> @sprite_render_mesh2d_material.AlphaMode2d {
   if color.alpha() < 1.0F {
-    @sprite_render_mesh2d_material.AlphaMode2d::Blend
+    Blend
   } else {
-    @sprite_render_mesh2d_material.AlphaMode2d::Opaque
+    Opaque
   }
 }
 
@@ -329,6 +329,7 @@ fn init_default_color_material(
 pub struct ColorMaterialPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ColorMaterialPlugin::ColorMaterialPlugin() -> ColorMaterialPlugin {
   ColorMaterialPlugin::{  }
 }

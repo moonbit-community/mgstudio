@@ -26,6 +26,7 @@ fn print_world_system() -> Unit {
 struct PrintHelloPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn PrintHelloPlugin::PrintHelloPlugin() -> PrintHelloPlugin {
   PrintHelloPlugin::{  }
 }
@@ -37,13 +38,14 @@ impl @app.Plugin for PrintHelloPlugin with fn name(_self) {
 
 ///|
 impl @app.Plugin for PrintHelloPlugin with fn build(_self, app) {
-  app.add_systems_fn(@app.Update, print_hello_system)
+  app.add_systems_fn(Update, print_hello_system)
 }
 
 ///|
 struct PrintWorldPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn PrintWorldPlugin::PrintWorldPlugin() -> PrintWorldPlugin {
   PrintWorldPlugin::{  }
 }
@@ -55,13 +57,14 @@ impl @app.Plugin for PrintWorldPlugin with fn name(_self) {
 
 ///|
 impl @app.Plugin for PrintWorldPlugin with fn build(_self, app) {
-  app.add_systems_fn(@app.Update, print_world_system)
+  app.add_systems_fn(Update, print_world_system)
 }
 
 ///|
 struct HelloWorldPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn HelloWorldPlugins::HelloWorldPlugins() -> HelloWorldPlugins {
   HelloWorldPlugins::{  }
 }

@@ -69,6 +69,7 @@ pub fn get_wireframe2d_config_resource(
 pub struct Wireframe2d {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Wireframe2d::Wireframe2d() -> Wireframe2d {
   Wireframe2d::{  }
 }
@@ -86,6 +87,7 @@ pub impl @ecs.Component for Wireframe2d with fn component() {
 pub struct NoWireframe2d {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoWireframe2d::NoWireframe2d() -> NoWireframe2d {
   NoWireframe2d::{  }
 }
@@ -103,12 +105,12 @@ pub struct Wireframe2dColor {
 
 ///|
 pub fn Wireframe2dColor::Wireframe2dColor() -> Wireframe2dColor {
-  Wireframe2dColor::{ color: Color::white() }
+  { color: Color::white() }
 }
 
 ///|
 pub fn Wireframe2dColor::new(color : Color) -> Wireframe2dColor {
-  Wireframe2dColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -117,7 +119,7 @@ pub fn Wireframe2dColor::with_color(
   color : Color,
 ) -> Wireframe2dColor {
   self |> ignore
-  Wireframe2dColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -144,7 +146,7 @@ pub impl ToJson for Wireframe2d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for Wireframe2d with fn from_json(_json, _path) {
-  Wireframe2d::Wireframe2d()
+  Wireframe2d()
 }
 
 ///|
@@ -155,7 +157,7 @@ pub impl ToJson for NoWireframe2d with fn to_json(self) {
 
 ///|
 pub impl @json.FromJson for NoWireframe2d with fn from_json(_json, _path) {
-  NoWireframe2d::NoWireframe2d()
+  NoWireframe2d()
 }
 
 ///|
@@ -181,12 +183,12 @@ pub struct Wireframe2dMaterial {
 
 ///|
 pub fn Wireframe2dMaterial::Wireframe2dMaterial() -> Wireframe2dMaterial {
-  Wireframe2dMaterial::{ color: Color::white() }
+  { color: Color::white() }
 }
 
 ///|
 pub fn Wireframe2dMaterial::new(color : Color) -> Wireframe2dMaterial {
-  Wireframe2dMaterial::{ color, }
+  { color, }
 }
 
 ///|
@@ -223,7 +225,7 @@ pub struct Mesh2dWireframe {
 pub fn Mesh2dWireframe::new(
   handle : @asset.Handle[Wireframe2dMaterial],
 ) -> Mesh2dWireframe {
-  Mesh2dWireframe::{ handle, }
+  { handle, }
 }
 
 ///|
@@ -246,7 +248,7 @@ pub struct WireframeEntitiesNeedingSpecialization {
 
 ///|
 pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> WireframeEntitiesNeedingSpecialization {
-  WireframeEntitiesNeedingSpecialization::{ changed: [], removed: [] }
+  { changed: [], removed: [] }
 }
 
 ///|
@@ -258,7 +260,7 @@ struct GlobalWireframeMaterial {
 fn GlobalWireframeMaterial::new(
   handle : @asset.Handle[Wireframe2dMaterial],
 ) -> GlobalWireframeMaterial {
-  GlobalWireframeMaterial::{ handle, }
+  { handle, }
 }
 
 ///|
@@ -270,6 +272,7 @@ pub impl @app.Resource for GlobalWireframeMaterial with fn resource() {
 pub struct Wireframe2dPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Wireframe2dPlugin::Wireframe2dPlugin() -> Wireframe2dPlugin {
   Wireframe2dPlugin::{  }
 }
@@ -286,7 +289,7 @@ pub impl @app.Plugin for Wireframe2dPlugin with fn build(_self, app) {
 
 ///|
 pub fn Wireframe2dConfig::Wireframe2dConfig() -> Wireframe2dConfig {
-  Wireframe2dConfig::{ global: false, default_color: Color::white() }
+  { global: false, default_color: Color::white() }
 }
 
 ///|
@@ -294,7 +297,7 @@ pub fn Wireframe2dConfig::new(
   global : Bool,
   default_color : Color,
 ) -> Wireframe2dConfig {
-  Wireframe2dConfig::{ global, default_color }
+  { global, default_color }
 }
 
 ///|
@@ -302,7 +305,7 @@ pub fn Wireframe2dConfig::with_global(
   self : Wireframe2dConfig,
   global : Bool,
 ) -> Wireframe2dConfig {
-  Wireframe2dConfig::{ ..self, global, }
+  { ..self, global, }
 }
 
 ///|
@@ -310,7 +313,7 @@ pub fn Wireframe2dConfig::with_default_color(
   self : Wireframe2dConfig,
   default_color : Color,
 ) -> Wireframe2dConfig {
-  Wireframe2dConfig::{ ..self, default_color, }
+  { ..self, default_color, }
 }
 
 ///|
@@ -343,18 +346,16 @@ fn wireframe2d_material_assets(
 fn setup_global_wireframe_material(world : @ecs.World) -> Unit {
   let wireframe_config = get_wireframe2d_config_resource(world)
   if !wireframe_config.is_present() {
-    wireframe_config.insert(Wireframe2dConfig::Wireframe2dConfig())
+    wireframe_config.insert(Wireframe2dConfig())
   }
   if world.get_resource(WireframeEntitiesNeedingSpecialization::resource())
     is None {
     world.insert_resource(
       WireframeEntitiesNeedingSpecialization::resource(),
-      WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization(),
+      WireframeEntitiesNeedingSpecialization(),
     )
   }
-  let config = wireframe_config
-    .get()
-    .unwrap_or(Wireframe2dConfig::Wireframe2dConfig())
+  let config = wireframe_config.get().unwrap_or(Wireframe2dConfig())
   guard wireframe2d_material_assets_mut(world) is Some(materials) else {
     return
   }
@@ -533,7 +534,7 @@ fn wireframe2d_plugin_install(
   @asset.init_asset(app, fn() { Wireframe2dMaterial::Wireframe2dMaterial() })
   .add_startup_system(setup_global_wireframe_material)
   .add_systems(
-    @app.Update,
+    Update,
     (
       @app.system(sync_global_wireframe_material),
       @app.system(apply_wireframe_material),

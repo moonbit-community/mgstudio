@@ -67,7 +67,7 @@ pub fn ScrollDragState::ScrollDragState() -> ScrollDragState {
 
 ///|
 pub impl Default for ScrollDragState with fn default() {
-  ScrollDragState::ScrollDragState()
+  ScrollDragState()
 }
 
 ///|
@@ -93,10 +93,7 @@ fn setup(commands : @app.Commands) -> Unit {
       @ui.ecs_key_ui_scale,
       @ui.UiScale::new(UI_SCALE_FACTOR),
     )
-    world.insert_resource(
-      scroll_drag_state_key,
-      ScrollDragState::ScrollDragState(),
-    )
+    world.insert_resource(scroll_drag_state_key, ScrollDragState())
   })
 
   let scroll_area = commands.spawn(
@@ -106,11 +103,9 @@ fn setup(commands : @app.Commands) -> Unit {
       @ui.RelativeCursorPosition::RelativeCursorPosition(),
       @ui.ScrollPosition::new(0.0F, 0.0F),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_overflow(
-        @ui.Overflow::new(@ui.OverflowAxis::Scroll, @ui.OverflowAxis::Scroll),
-      ),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_overflow(@ui.Overflow::new(Scroll, Scroll)),
     ),
   )
 
@@ -118,19 +113,13 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @hierarchy.Parent::new(scroll_area),
       @ui.Node::{
-        ..@ui.Node(),
-        display: @ui.Display::Grid,
+        ..Node(),
+        display: Grid,
         grid_template_rows: [
-          @ui.RepeatedGridTrack::new(
-            @ui.GridTrackRepetition::Count(GRID_HEIGHT),
-            [@ui.GridTrack::Px(TILE_SIZE)],
-          ),
+          @ui.RepeatedGridTrack::new(Count(GRID_HEIGHT), [Px(TILE_SIZE)]),
         ],
         grid_template_columns: [
-          @ui.RepeatedGridTrack::new(
-            @ui.GridTrackRepetition::Count(GRID_WIDTH),
-            [@ui.GridTrack::Px(TILE_SIZE)],
-          ),
+          @ui.RepeatedGridTrack::new(Count(GRID_WIDTH), [Px(TILE_SIZE)]),
         ],
       },
     ),
@@ -142,7 +131,7 @@ fn setup(commands : @app.Commands) -> Unit {
         (
           @hierarchy.Parent::new(grid),
           @ui.Node::{
-            ..@ui.Node(),
+            ..Node(),
             grid_row: @ui.GridPlacement::start(y + 1),
             grid_column: @ui.GridPlacement::start(x + 1),
           },

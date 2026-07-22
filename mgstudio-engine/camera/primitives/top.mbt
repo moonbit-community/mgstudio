@@ -56,7 +56,7 @@ fn sub_camera_view3d_sanitize(
   let safe_full_height = if full_size.y <= 0 { 1 } else { full_size.y }
   let safe_size_width = if size.x <= 0 { 1 } else { size.x }
   let safe_size_height = if size.y <= 0 { 1 } else { size.y }
-  SubCameraView3d::{
+  {
     full_size: @math.IVec2::new(safe_full_width, safe_full_height),
     offset,
     size: @math.IVec2::new(safe_size_width, safe_size_height),
@@ -82,7 +82,7 @@ pub fn SubCameraView3d::with_offset(
 
 ///|
 pub fn Sphere::Sphere() -> Sphere {
-  Sphere::{ center_x: 0.0F, center_y: 0.0F, center_z: 0.0F, radius: 0.0F }
+  { center_x: 0.0F, center_y: 0.0F, center_z: 0.0F, radius: 0.0F }
 }
 
 ///|
@@ -97,7 +97,7 @@ pub fn Sphere::from_xyz(
   center_z : Float,
   radius : Float,
 ) -> Sphere {
-  Sphere::{ center_x, center_y, center_z, radius }
+  { center_x, center_y, center_z, radius }
 }
 
 ///|
@@ -158,16 +158,14 @@ pub struct ViewFrustum {
 
 ///|
 pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
-  ViewFrustum::{ inner: @math.ViewFrustum::new(half_spaces) }
+  { inner: @math.ViewFrustum::new(half_spaces) }
 }
 
 ///|
 pub fn ViewFrustum::from_clip_from_world(
   clip_from_world : @math.Mat4,
 ) -> ViewFrustum {
-  ViewFrustum::{
-    inner: @math.ViewFrustum::from_clip_from_world(clip_from_world),
-  }
+  { inner: @math.ViewFrustum::from_clip_from_world(clip_from_world) }
 }
 
 ///|
@@ -177,7 +175,7 @@ pub fn ViewFrustum::from_clip_from_world_custom_far(
   view_backward : @math.Vec3,
   far : Float,
 ) -> ViewFrustum {
-  ViewFrustum::{
+  {
     inner: @math.ViewFrustum::from_clip_from_world_custom_far(
       clip_from_world, view_translation, view_backward, far,
     ),
@@ -201,12 +199,12 @@ pub struct Frustum {
 
 ///|
 pub fn Frustum::new(view_frustum : ViewFrustum) -> Frustum {
-  Frustum::{ half_spaces: view_frustum.half_spaces() }
+  { half_spaces: view_frustum.half_spaces() }
 }
 
 ///|
 pub fn Frustum::Frustum() -> Frustum {
-  Frustum::{ half_spaces: [] }
+  { half_spaces: [] }
 }
 
 ///|
@@ -242,7 +240,7 @@ pub struct CubeMapFace {
 
 ///|
 pub fn CubeMapFace::new(target : @math.Vec3, up : @math.Vec3) -> CubeMapFace {
-  CubeMapFace::{ target, up }
+  { target, up }
 }
 
 ///|
@@ -318,16 +316,7 @@ pub struct CubemapFrusta {
 
 ///|
 pub fn CubemapFrusta::CubemapFrusta() -> CubemapFrusta {
-  CubemapFrusta::{
-    frusta: [
-      Frustum::Frustum(),
-      Frustum::Frustum(),
-      Frustum::Frustum(),
-      Frustum::Frustum(),
-      Frustum::Frustum(),
-      Frustum::Frustum(),
-    ],
-  }
+  { frusta: [Frustum(), Frustum(), Frustum(), Frustum(), Frustum(), Frustum()] }
 }
 
 ///|
@@ -363,7 +352,7 @@ pub struct CascadesFrusta {
 
 ///|
 pub fn CascadesFrusta::CascadesFrusta() -> CascadesFrusta {
-  CascadesFrusta::{ frusta: @hashmap.HashMap([]) }
+  { frusta: HashMap([]) }
 }
 
 ///|
@@ -580,7 +569,7 @@ pub impl @ecs.Component for CascadesFrusta with fn component() {
 pub fn Aabb::from_math(inner : @math.Aabb3d) -> Aabb {
   let center = inner.center()
   let half_extents = inner.half_size()
-  Aabb::{
+  {
     center_x: center.x,
     center_y: center.y,
     center_z: center.z,
@@ -605,7 +594,7 @@ pub fn Aabb::from_min_max_xyz(
   max_y : Float,
   max_z : Float,
 ) -> Aabb {
-  Aabb::{
+  {
     center_x: (max_x + min_x) * 0.5F,
     center_y: (max_y + min_y) * 0.5F,
     center_z: (max_z + min_z) * 0.5F,

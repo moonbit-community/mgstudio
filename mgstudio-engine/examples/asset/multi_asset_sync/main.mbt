@@ -94,7 +94,7 @@ fn spawn_when_loaded(
       ),
     ),
   )
-  pending.set(PendingTextures::{ ..pending_state, spawned: true })
+  pending.set({ ..pending_state, spawned: true })
   @window.host_debug_string(
     value="[multi_asset_sync] all requested textures loaded and spawned",
   )
@@ -122,8 +122,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, spawn_when_loaded)
-  .add_systems_param2(@app.Update, animate_loaded_sprites)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, spawn_when_loaded)
+  .add_systems_param2(Update, animate_loaded_sprites)
   .run()
 }

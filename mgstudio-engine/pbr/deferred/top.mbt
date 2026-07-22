@@ -73,12 +73,12 @@ pub struct DeferredPbrLightingState {
 
 ///|
 pub fn DeferredPbrLightingState::enabled() -> DeferredPbrLightingState {
-  DeferredPbrLightingState::{ enabled: true }
+  { enabled: true }
 }
 
 ///|
 pub fn DeferredPbrLightingState::disabled() -> DeferredPbrLightingState {
-  DeferredPbrLightingState::{ enabled: false }
+  { enabled: false }
 }
 
 ///|
@@ -90,6 +90,7 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[
 pub struct DeferredPbrLightingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DeferredPbrLightingPlugin::DeferredPbrLightingPlugin() -> DeferredPbrLightingPlugin {
   DeferredPbrLightingPlugin::{  }
 }
@@ -103,7 +104,7 @@ pub struct DeferredLightingPipeline {
 pub fn DeferredLightingPipeline::new(
   pipeline_id~ : Int,
 ) -> DeferredLightingPipeline {
-  DeferredLightingPipeline::{ pipeline_id, }
+  { pipeline_id, }
 }
 
 ///|
@@ -157,7 +158,7 @@ pub fn DeferredLightingViewState::new(
   atmosphere? : Bool = false,
   binding_arrays_are_usable? : Bool = false,
 ) -> DeferredLightingViewState {
-  DeferredLightingViewState::{
+  {
     hdr,
     invert_culling,
     tonemapping,
@@ -255,24 +256,14 @@ pub let ecs_key_skip_deferred_lighting : @ecs.ComponentKey[SkipDeferredLighting]
 
 ///|
 pub fn PbrDeferredLightingDepthId::PbrDeferredLightingDepthId() -> PbrDeferredLightingDepthId {
-  PbrDeferredLightingDepthId::{
-    depth_id: DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID,
-  }
+  { depth_id: DEFAULT_PBR_DEFERRED_LIGHTING_PASS_ID }
 }
 
 ///|
 pub fn PbrDeferredLightingDepthId::new(
   value : Int,
 ) -> PbrDeferredLightingDepthId {
-  PbrDeferredLightingDepthId::{
-    depth_id: if value < 0 {
-      0
-    } else if value > 255 {
-      255
-    } else {
-      value
-    },
-  }
+  { depth_id: if value < 0 { 0 } else if value > 255 { 255 } else { value } }
 }
 
 ///|
@@ -324,7 +315,7 @@ fn insert_deferred_lighting_pass_id_component(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       ecs_key_pbr_deferred_lighting_depth_id,
-      PbrDeferredLightingDepthId::PbrDeferredLightingDepthId(),
+      PbrDeferredLightingDepthId(),
     )
   }
 }
@@ -339,7 +330,7 @@ pub fn deferred_pbr_lighting_plugin(
     DeferredPbrLightingState::enabled(),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system(insert_deferred_lighting_pass_id_component),
   )
 }
@@ -357,16 +348,16 @@ fn deferred_lighting_tonemapping_shader_def(
   tonemapping : Tonemapping,
 ) -> String {
   match tonemapping {
-    Tonemapping::None => "TONEMAP_METHOD_NONE"
-    Tonemapping::Reinhard => "TONEMAP_METHOD_REINHARD"
-    Tonemapping::ReinhardLuminance => "TONEMAP_METHOD_REINHARD_LUMINANCE"
-    Tonemapping::AcesFitted => "TONEMAP_METHOD_ACES_FITTED"
-    Tonemapping::AgX => "TONEMAP_METHOD_AGX"
-    Tonemapping::SomewhatBoringDisplayTransform =>
+    None => "TONEMAP_METHOD_NONE"
+    Reinhard => "TONEMAP_METHOD_REINHARD"
+    ReinhardLuminance => "TONEMAP_METHOD_REINHARD_LUMINANCE"
+    AcesFitted => "TONEMAP_METHOD_ACES_FITTED"
+    AgX => "TONEMAP_METHOD_AGX"
+    SomewhatBoringDisplayTransform =>
       "TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM"
-    Tonemapping::TonyMcMapface => "TONEMAP_METHOD_TONY_MC_MAPFACE"
-    Tonemapping::BlenderFilmic => "TONEMAP_METHOD_BLENDER_FILMIC"
-    Tonemapping::PbrNeutral => "TONEMAP_METHOD_PBR_NEUTRAL"
+    TonyMcMapface => "TONEMAP_METHOD_TONY_MC_MAPFACE"
+    BlenderFilmic => "TONEMAP_METHOD_BLENDER_FILMIC"
+    PbrNeutral => "TONEMAP_METHOD_PBR_NEUTRAL"
   }
 }
 
@@ -393,8 +384,8 @@ pub fn deferred_lighting_shader_defs(
         shader_defs.push("TONEMAP_IN_SHADER")
         shader_defs.push(deferred_lighting_tonemapping_shader_def(tonemapping))
         match state.deband_dither {
-          Some(DebandDither::Enabled) => shader_defs.push("DEBAND_DITHER")
-          Some(DebandDither::Disabled) | None => ()
+          Some(Enabled) => shader_defs.push("DEBAND_DITHER")
+          Some(Disabled) | None => ()
         }
       }
     None => ()
@@ -455,7 +446,7 @@ pub fn deferred_lighting_prepare_plan(
   state : DeferredLightingViewState,
 ) -> DeferredLightingPreparePlan {
   let should_prepare = state.deferred_prepass && !state.skip_deferred_lighting
-  DeferredLightingPreparePlan::{
+  {
     should_prepare,
     remove_existing_pipeline: !should_prepare,
     shader_defs: if should_prepare {
@@ -471,7 +462,7 @@ pub fn deferred_lighting_prepare_plan(
 pub fn deferred_lighting_pipeline_descriptor_plan(
   state : DeferredLightingViewState,
 ) -> DeferredLightingPipelineDescriptorPlan {
-  DeferredLightingPipelineDescriptorPlan::{
+  {
     label: DEFERRED_LIGHTING_PIPELINE_LABEL,
     layout_count: 3,
     main_view_layout: true,
@@ -503,7 +494,7 @@ pub fn deferred_lighting_pass_plan(
     has_mesh_view_bind_group &&
     has_view_target &&
     has_deferred_lighting_id_depth_texture
-  DeferredLightingPassPlan::{
+  {
     label: DEFERRED_LIGHTING_PASS_LABEL,
     should_run,
     color_attachment_count: if should_run {

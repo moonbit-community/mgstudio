@@ -88,7 +88,7 @@ fn spawn_text_block(
   node : @ui.Node,
   background_color : @color.Color,
   text_color? : @color.Color = @color.Color::white(),
-  layout? : @text.TextLayout = @text.TextLayout::TextLayout(),
+  layout? : @text.TextLayout = TextLayout(),
 ) -> @core.Entity {
   commands.spawn(
     (
@@ -188,7 +188,7 @@ fn std_deviation(data : Array[Float]) -> Float? {
 ///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::Window()
-  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.present_mode = AutoNoVsync
   window
 }
 
@@ -212,9 +212,9 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_justify_content(@ui.JustifyContent::SpaceBetween),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_justify_content(SpaceBetween),
     ),
   )
 
@@ -222,18 +222,11 @@ fn setup(
     commands,
     root,
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_justify_content(@ui.JustifyContent::SpaceBetween)
-    .with_align_items(@ui.AlignItems::Start)
+    .with_flex_direction(Column)
+    .with_justify_content(SpaceBetween)
+    .with_align_items(Start)
     .with_flex_grow(1.0F)
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(15.0F),
-        @ui.Val::Px(15.0F),
-        @ui.Val::Px(5.0F),
-        @ui.Val::Px(5.0F),
-      ),
-    ),
+    .with_margin(@ui.UiRect::new(Px(15.0F), Px(15.0F), Px(5.0F), Px(5.0F))),
   )
   ignore(
     spawn_text_block(
@@ -243,7 +236,7 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(25.0F)),
-      @ui.Node::Node(),
+      Node(),
       maroon(),
     ),
   )
@@ -255,10 +248,10 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(25.0F)),
-      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
+      { ..Node(), max_width: Px(300.0F) },
       maroon(),
       text_color=yellow(),
-      layout=@text.TextLayout::new_with_justify(@text.Justify::Right),
+      layout=@text.TextLayout::new_with_justify(Right),
     ),
   )
   ignore(
@@ -269,7 +262,7 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(25.0F)),
-      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
+      { ..Node(), max_width: Px(300.0F) },
       maroon(),
     ),
   )
@@ -278,18 +271,11 @@ fn setup(
     commands,
     root,
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_justify_content(@ui.JustifyContent::SpaceBetween)
-    .with_align_items(@ui.AlignItems::End)
+    .with_flex_direction(Column)
+    .with_justify_content(SpaceBetween)
+    .with_align_items(End)
     .with_flex_grow(1.0F)
-    .with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(15.0F),
-        @ui.Val::Px(15.0F),
-        @ui.Val::Px(5.0F),
-        @ui.Val::Px(5.0F),
-      ),
-    ),
+    .with_margin(@ui.UiRect::new(Px(15.0F), Px(15.0F), Px(5.0F), Px(5.0F))),
   )
   ignore(
     spawn_text_block(
@@ -299,10 +285,10 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(33.0F)),
-      { ..@ui.Node(), max_width: @ui.Val::Px(400.0F) },
+      { ..Node(), max_width: Px(400.0F) },
       maroon(),
       text_color=pink(),
-      layout=@text.TextLayout::new_with_justify(@text.Justify::Center),
+      layout=@text.TextLayout::new_with_justify(Center),
     ),
   )
   ignore(
@@ -313,10 +299,10 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(29.0F)),
-      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
+      { ..Node(), max_width: Px(300.0F) },
       maroon(),
       text_color=yellow(),
-      layout=@text.TextLayout::new_with_justify(@text.Justify::Left),
+      layout=@text.TextLayout::new_with_justify(Left),
     ),
   )
   ignore(
@@ -327,10 +313,10 @@ fn setup(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(29.0F)),
-      { ..@ui.Node(), max_width: @ui.Val::Px(300.0F) },
+      { ..Node(), max_width: Px(300.0F) },
       maroon(),
       text_color=green_yellow(),
-      layout=@text.TextLayout::new_with_justify(@text.Justify::Justified),
+      layout=@text.TextLayout::new_with_justify(Justified),
     ),
   )
 
@@ -505,14 +491,14 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .add_plugins(
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param6(@app.Update, change_text_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param6(Update, change_text_system)
   .run()
 }

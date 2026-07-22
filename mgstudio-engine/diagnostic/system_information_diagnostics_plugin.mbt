@@ -23,6 +23,7 @@ const SYSTEM_INFORMATION_DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic
 pub struct SystemInformationDiagnosticsPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin() -> SystemInformationDiagnosticsPlugin {
   SystemInformationDiagnosticsPlugin::{  }
 }
@@ -165,7 +166,7 @@ fn collect_system_info() -> SystemInfo {
     .with_cpu(@sysinfo.CpuRefreshKind::nothing())
     .with_memory(@sysinfo.MemoryRefreshKind::nothing().with_ram()),
   )
-  SystemInfo::{
+  {
     os: match @sysinfo.System::long_os_version() {
       Some(value) => value
       None => system_info_not_available()
@@ -203,9 +204,7 @@ fn collect_sysinfo_refresh_data(
   system : @sysinfo.System,
   pid : @sysinfo.Pid,
 ) -> SysinfoRefreshData {
-  ignore(
-    system.refresh_processes(@sysinfo.ProcessesToUpdate::Selected([pid]), true),
-  )
+  ignore(system.refresh_processes(Selected([pid]), true))
   system.refresh_cpu_specifics(
     @sysinfo.CpuRefreshKind::nothing().with_cpu_usage(),
   )
@@ -229,7 +228,7 @@ fn collect_sysinfo_refresh_data(
     None => 0.0
   }
 
-  SysinfoRefreshData::{
+  {
     system_cpu_usage: Float::from_double(system.global_cpu_usage()),
     system_mem_usage: Float::from_double(system_mem_usage),
     process_cpu_usage: Float::from_double(process_cpu_usage),
@@ -302,11 +301,12 @@ pub fn system_information_diagnostics_plugin(
 ) -> @app.App[@ecs.World] {
   system_information_diagnostics_plugin_with(
     app,
-    SystemInformationDiagnosticsPlugin::SystemInformationDiagnosticsPlugin(),
+    SystemInformationDiagnosticsPlugin(),
   )
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn system_information_diagnostics_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : SystemInformationDiagnosticsPlugin,

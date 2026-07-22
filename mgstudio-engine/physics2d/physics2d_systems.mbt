@@ -59,24 +59,18 @@ fn make_collider_builder(shape : ColliderShape2d) -> @collision.ColliderBuilder 
       for v in vertices {
         vs.push(mg_vec2_to_rapier(v))
       }
-      @collision.ColliderBuilder::ColliderBuilder(
-        @collision.Shape::ConvexPolygon(vs),
-      )
+      ColliderBuilder(ConvexPolygon(vs))
     }
     TriMesh(vertices, indices) => {
       let vs : Array[@rapier_core.Vec2] = []
       for v in vertices {
         vs.push(mg_vec2_to_rapier(v))
       }
-      @collision.ColliderBuilder::ColliderBuilder(
-        @collision.Shape::TriMesh(vs, indices),
-      )
+      ColliderBuilder(TriMesh(vs, indices))
     }
     Compound(parts) =>
-      @collision.ColliderBuilder::ColliderBuilder(
-        collider_shape2d_to_rapier(Compound(parts)),
-      )
-    Raw(shape) => @collision.ColliderBuilder::ColliderBuilder(shape)
+      ColliderBuilder(collider_shape2d_to_rapier(Compound(parts)))
+    Raw(shape) => ColliderBuilder(shape)
   }
 }
 
@@ -86,16 +80,10 @@ fn rigid_body_type_eq(
   b : @dynamics.RigidBodyType,
 ) -> Bool {
   match (a, b) {
-    (@dynamics.RigidBodyType::Dynamic, @dynamics.RigidBodyType::Dynamic) => true
-    (@dynamics.RigidBodyType::Fixed, @dynamics.RigidBodyType::Fixed) => true
-    (
-      @dynamics.RigidBodyType::KinematicPositionBased,
-      @dynamics.RigidBodyType::KinematicPositionBased,
-    ) => true
-    (
-      @dynamics.RigidBodyType::KinematicVelocityBased,
-      @dynamics.RigidBodyType::KinematicVelocityBased,
-    ) => true
+    (Dynamic, Dynamic) => true
+    (Fixed, Fixed) => true
+    (KinematicPositionBased, KinematicPositionBased) => true
+    (KinematicVelocityBased, KinematicVelocityBased) => true
     _ => false
   }
 }
@@ -104,9 +92,9 @@ fn rigid_body_type_eq(
 fn collision_groups_to_rapier(
   groups : CollisionGroups2d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::InteractionGroups(
-    @dynamics.Group::Group(groups.memberships),
-    @dynamics.Group::Group(groups.filter),
+  InteractionGroups(
+    Group(groups.memberships),
+    Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -115,9 +103,9 @@ fn collision_groups_to_rapier(
 fn solver_groups_to_rapier(
   groups : SolverGroups2d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::InteractionGroups(
-    @dynamics.Group::Group(groups.memberships),
-    @dynamics.Group::Group(groups.filter),
+  InteractionGroups(
+    Group(groups.memberships),
+    Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -132,7 +120,7 @@ fn recompute_body_mass_properties(
     return
   }
   match body.body_type() {
-    @dynamics.RigidBodyType::Dynamic => ()
+    Dynamic => ()
     _ => return
   }
   let attached = ctx.colliders.colliders_with_parent(bodyh)
@@ -158,7 +146,7 @@ pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   if !cfg_res.is_present() {
-    cfg_res.insert(Physics2dConfig::Physics2dConfig())
+    cfg_res.insert(Physics2dConfig())
   }
   let ctx_res = get_physics2d_context_resource(ecs_world)
   if !ctx_res.is_present() {
@@ -170,7 +158,7 @@ pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
   }
   let hooks_res = get_physics2d_hooks_config_resource(ecs_world)
   if !hooks_res.is_present() {
-    hooks_res.insert(Physics2dHooksConfig::Physics2dHooksConfig())
+    hooks_res.insert(Physics2dHooksConfig())
   }
 }
 
@@ -313,7 +301,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   }
 
   // 2) Remove rapier state when entities are despawned (handle components gone).
-  let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let alive : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
   ecs_world.for_each_component(ecs_key_rapier_body_handle2d, fn(e, _h) {
     alive.set(entity_key(e), true)
   })
@@ -420,7 +408,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx = current_ctx
-  let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let touched_bodies : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
 
   // Insert rigid bodies.
   ecs_world.for_each_component(ecs_key_rigid_body2d, fn(entity, rb2d) {
@@ -432,11 +420,11 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
     )).unwrap_or(@transform.Transform::identity())
     let iso = mg_transform_to_iso2(transform)
     let builder = match rb2d.body_type {
-      @dynamics.RigidBodyType::Dynamic => @dynamics.RigidBodyBuilder::dynamic()
-      @dynamics.RigidBodyType::Fixed => @dynamics.RigidBodyBuilder::fixed()
-      @dynamics.RigidBodyType::KinematicPositionBased =>
+      Dynamic => @dynamics.RigidBodyBuilder::dynamic()
+      Fixed => @dynamics.RigidBodyBuilder::fixed()
+      KinematicPositionBased =>
         @dynamics.RigidBodyBuilder::kinematic_position_based()
-      @dynamics.RigidBodyType::KinematicVelocityBased =>
+      KinematicVelocityBased =>
         @dynamics.RigidBodyBuilder::kinematic_velocity_based()
     }
     let mut builder = builder.position(iso)
@@ -800,7 +788,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     }
 
     // Kinematic position-based bodies follow the ECS transform.
-    if rb2d.body_type is @dynamics.RigidBodyType::KinematicPositionBased {
+    if rb2d.body_type is KinematicPositionBased {
       let transform = (try! ecs_world.get_by_key(
         entity, @transform.ecs_key_transform,
       )).unwrap_or(@transform.Transform::identity())
@@ -961,9 +949,9 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
       (Some(a), Some(b)) => {
         let sensor = ev.sensor()
         if ev.started() {
-          events.collisions.push(CollisionEvent2d::Started(a, b, sensor))
+          events.collisions.push(Started(a, b, sensor))
         } else if ev.stopped() {
-          events.collisions.push(CollisionEvent2d::Stopped(a, b, sensor))
+          events.collisions.push(Stopped(a, b, sensor))
         }
       }
       _ => ()
@@ -977,7 +965,7 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
     let e2 = ctx.collider_to_entity.get(h2.into_raw_parts())
     match (e1, e2) {
       (Some(a), Some(b)) =>
-        events.contact_forces.push(ContactForceEvent2d::{
+        events.contact_forces.push({
           entity1: a,
           entity2: b,
           total_force: rapier_vec2_to_mg(ev.total_force()),

@@ -76,7 +76,7 @@ pub impl @asset.Asset for AutoExposureCompensationCurve with fn asset_resource_k
 
 ///|
 pub fn AutoExposureCompensationCurve::AutoExposureCompensationCurve() -> AutoExposureCompensationCurve {
-  AutoExposureCompensationCurve::{
+  {
     min_log_lum: 0.0F,
     max_log_lum: 0.0F,
     min_compensation: 0.0F,
@@ -170,13 +170,7 @@ pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::f
   } else {
     Bytes::makei(AUTO_EXPOSURE_COMPENSATION_CURVE_LUT_SIZE, _ => 0)
   }
-  AutoExposureCompensationCurve::{
-    min_log_lum,
-    max_log_lum,
-    min_compensation,
-    max_compensation,
-    lut,
-  }
+  { min_log_lum, max_log_lum, min_compensation, max_compensation, lut }
 }
 
 ///|

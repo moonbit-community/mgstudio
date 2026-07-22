@@ -29,7 +29,7 @@ pub struct Vignette {
 
 ///|
 pub fn Vignette::Vignette() -> Vignette {
-  Vignette::{
+  {
     intensity: 1.0F,
     radius: 0.75F,
     smoothness: 5.0F,
@@ -51,7 +51,7 @@ pub fn Vignette::new(
   let safe_radius = if radius < 0.0F { 0.0F } else { radius }
   let safe_smoothness = if smoothness <= 0.01F { 0.01F } else { smoothness }
   let safe_roundness = if roundness <= 0.01F { 0.01F } else { roundness }
-  Vignette::{
+  {
     ..Vignette(),
     intensity: safe_intensity,
     radius: safe_radius,
@@ -62,19 +62,12 @@ pub fn Vignette::new(
 
 ///|
 pub fn Vignette::with_intensity(self : Vignette, intensity : Float) -> Vignette {
-  Vignette::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
+  { ..self, intensity: if intensity < 0.0F { 0.0F } else { intensity } }
 }
 
 ///|
 pub fn Vignette::with_radius(self : Vignette, radius : Float) -> Vignette {
-  Vignette::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
+  { ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
 }
 
 ///|
@@ -82,31 +75,17 @@ pub fn Vignette::with_smoothness(
   self : Vignette,
   smoothness : Float,
 ) -> Vignette {
-  Vignette::{
-    ..self,
-    smoothness: if smoothness <= 0.01F {
-      0.01F
-    } else {
-      smoothness
-    },
-  }
+  { ..self, smoothness: if smoothness <= 0.01F { 0.01F } else { smoothness } }
 }
 
 ///|
 pub fn Vignette::with_roundness(self : Vignette, roundness : Float) -> Vignette {
-  Vignette::{
-    ..self,
-    roundness: if roundness <= 0.01F {
-      0.01F
-    } else {
-      roundness
-    },
-  }
+  { ..self, roundness: if roundness <= 0.01F { 0.01F } else { roundness } }
 }
 
 ///|
 pub fn Vignette::with_center(self : Vignette, center : @math.Vec2) -> Vignette {
-  Vignette::{ ..self, center, }
+  { ..self, center, }
 }
 
 ///|
@@ -121,12 +100,12 @@ pub fn Vignette::with_edge_compensation(
   } else {
     edge_compensation
   }
-  Vignette::{ ..self, edge_compensation: safe }
+  { ..self, edge_compensation: safe }
 }
 
 ///|
 pub fn Vignette::with_color(self : Vignette, color : @color.Color) -> Vignette {
-  Vignette::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -152,7 +131,7 @@ pub struct VignetteUniform {
 
 ///|
 pub fn VignetteUniform::from_settings(settings : Vignette) -> VignetteUniform {
-  VignetteUniform::{
+  {
     intensity: settings.intensity,
     radius: settings.radius,
     smoothness: settings.smoothness,

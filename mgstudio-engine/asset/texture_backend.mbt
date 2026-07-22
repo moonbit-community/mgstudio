@@ -25,7 +25,7 @@ pub fn AssetTextureCapture::new(
   height~ : Int,
   pixels~ : Bytes,
 ) -> AssetTextureCapture {
-  AssetTextureCapture::{ width, height, pixels }
+  { width, height, pixels }
 }
 
 ///|
@@ -184,7 +184,7 @@ pub fn AssetTextureBackend::new(
   ) -> Unit,
   capture_texture_rgba8_fn~ : (Int) -> AssetTextureCapture?,
 ) -> AssetTextureBackend {
-  AssetTextureBackend::{
+  {
     create_render_target_with_formats_fn,
     create_texture_empty_fn,
     create_texture_3d_with_format_fn,

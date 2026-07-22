@@ -22,7 +22,7 @@ pub(all) enum DecalRenderMode3d {
 
 ///|
 pub fn DecalRenderMode3d::default() -> DecalRenderMode3d {
-  DecalRenderMode3d::ForwardAndClustered
+  ForwardAndClustered
 }
 
 ///|
@@ -34,8 +34,8 @@ pub struct CameraDecalConfig3d {
 
 ///|
 pub fn CameraDecalConfig3d::CameraDecalConfig3d() -> CameraDecalConfig3d {
-  CameraDecalConfig3d::{
-    mode: DecalRenderMode3d::ForwardAndClustered,
+  {
+    mode: ForwardAndClustered,
     requires_depth_prepass: true,
     clustered_requires_deferred_prepass: false,
   }
@@ -46,7 +46,7 @@ pub fn CameraDecalConfig3d::with_mode(
   self : CameraDecalConfig3d,
   mode : DecalRenderMode3d,
 ) -> CameraDecalConfig3d {
-  CameraDecalConfig3d::{ ..self, mode, }
+  { ..self, mode, }
 }
 
 ///|
@@ -54,7 +54,7 @@ pub fn CameraDecalConfig3d::with_requires_depth_prepass(
   self : CameraDecalConfig3d,
   requires_depth_prepass : Bool,
 ) -> CameraDecalConfig3d {
-  CameraDecalConfig3d::{ ..self, requires_depth_prepass, }
+  { ..self, requires_depth_prepass, }
 }
 
 ///|
@@ -62,7 +62,7 @@ pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(
   self : CameraDecalConfig3d,
   clustered_requires_deferred_prepass : Bool,
 ) -> CameraDecalConfig3d {
-  CameraDecalConfig3d::{ ..self, clustered_requires_deferred_prepass, }
+  { ..self, clustered_requires_deferred_prepass, }
 }
 
 ///|
@@ -74,7 +74,7 @@ pub(all) enum CameraDeferredMode3d {
 
 ///|
 pub fn CameraDeferredMode3d::default() -> CameraDeferredMode3d {
-  CameraDeferredMode3d::Auto
+  Auto
 }
 
 ///|
@@ -85,10 +85,7 @@ pub struct CameraDeferredConfig3d {
 
 ///|
 pub fn CameraDeferredConfig3d::CameraDeferredConfig3d() -> CameraDeferredConfig3d {
-  CameraDeferredConfig3d::{
-    mode: CameraDeferredMode3d::Auto,
-    requires_deferred_prepass: false,
-  }
+  { mode: Auto, requires_deferred_prepass: false }
 }
 
 ///|
@@ -96,7 +93,7 @@ pub fn CameraDeferredConfig3d::with_mode(
   self : CameraDeferredConfig3d,
   mode : CameraDeferredMode3d,
 ) -> CameraDeferredConfig3d {
-  CameraDeferredConfig3d::{ ..self, mode, }
+  { ..self, mode, }
 }
 
 ///|
@@ -104,7 +101,7 @@ pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(
   self : CameraDeferredConfig3d,
   requires_deferred_prepass : Bool,
 ) -> CameraDeferredConfig3d {
-  CameraDeferredConfig3d::{ ..self, requires_deferred_prepass, }
+  { ..self, requires_deferred_prepass, }
 }
 
 ///|
@@ -123,7 +120,7 @@ pub struct AutoExposure {
 
 ///|
 pub fn AutoExposure::AutoExposure() -> AutoExposure {
-  AutoExposure::{
+  {
     min_ev100: -8.0F,
     max_ev100: 8.0F,
     low_percent: 0.10F,
@@ -149,7 +146,7 @@ pub fn AutoExposure::with_range(
 ) -> AutoExposure {
   let safe_min = if min_ev100 < max_ev100 { min_ev100 } else { max_ev100 }
   let safe_max = if max_ev100 > safe_min { max_ev100 } else { safe_min + 0.01F }
-  AutoExposure::{ ..self, min_ev100: safe_min, max_ev100: safe_max }
+  { ..self, min_ev100: safe_min, max_ev100: safe_max }
 }
 
 ///|
@@ -175,7 +172,7 @@ pub fn AutoExposure::with_filter(
   if safe_high < safe_low {
     safe_high = safe_low
   }
-  AutoExposure::{ ..self, low_percent: safe_low, high_percent: safe_high }
+  { ..self, low_percent: safe_low, high_percent: safe_high }
 }
 
 ///|
@@ -183,7 +180,7 @@ pub fn AutoExposure::with_speed_brighten(
   self : AutoExposure,
   speed_brighten : Float,
 ) -> AutoExposure {
-  AutoExposure::{
+  {
     ..self,
     speed_brighten: if speed_brighten < 0.0F {
       0.0F
@@ -198,7 +195,7 @@ pub fn AutoExposure::with_speed_darken(
   self : AutoExposure,
   speed_darken : Float,
 ) -> AutoExposure {
-  AutoExposure::{
+  {
     ..self,
     speed_darken: if speed_darken < 0.0F {
       0.0F
@@ -213,7 +210,7 @@ pub fn AutoExposure::with_exponential_transition_distance(
   self : AutoExposure,
   exponential_transition_distance : Float,
 ) -> AutoExposure {
-  AutoExposure::{
+  {
     ..self,
     exponential_transition_distance: if exponential_transition_distance <= 0.0F {
       0.0001F
@@ -228,7 +225,7 @@ pub fn AutoExposure::with_compensation_curve(
   self : AutoExposure,
   compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?,
 ) -> AutoExposure {
-  AutoExposure::{ ..self, compensation_curve, }
+  { ..self, compensation_curve, }
 }
 
 ///|
@@ -236,7 +233,7 @@ pub fn AutoExposure::with_metering_mask(
   self : AutoExposure,
   metering_mask : @asset.Handle[@asset.Image]?,
 ) -> AutoExposure {
-  AutoExposure::{ ..self, metering_mask, }
+  { ..self, metering_mask, }
 }
 
 ///|
@@ -247,7 +244,7 @@ pub(all) enum DepthOfFieldMode {
 
 ///|
 pub fn DepthOfFieldMode::default() -> DepthOfFieldMode {
-  DepthOfFieldMode::Gaussian
+  Gaussian
 }
 
 ///|
@@ -263,7 +260,7 @@ pub(all) struct DepthOfField {
 
 ///|
 pub fn DepthOfField::DepthOfField() -> DepthOfField {
-  DepthOfField::{
+  {
     mode: DepthOfFieldMode::default(),
     focal_distance: 10.0F,
     sensor_height: PhysicalCameraParameters::PhysicalCameraParameters().sensor_height,
@@ -381,7 +378,7 @@ fn oit_safe_alpha_threshold(value : Float) -> Float {
 
 ///|
 pub fn OrderIndependentTransparencySettings::OrderIndependentTransparencySettings() -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{
+  {
     sorted_fragment_max_count: 8,
     fragments_per_pixel_average: 4.0F,
     alpha_threshold: 0.0F,
@@ -394,7 +391,7 @@ pub fn OrderIndependentTransparencySettings::new(
   fragments_per_pixel_average : Float,
   alpha_threshold : Float,
 ) -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{
+  {
     sorted_fragment_max_count: oit_safe_sorted_fragment_max_count(
       sorted_fragment_max_count,
     ),
@@ -410,7 +407,7 @@ pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(
   self : OrderIndependentTransparencySettings,
   sorted_fragment_max_count : Int,
 ) -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{
+  {
     ..self,
     sorted_fragment_max_count: oit_safe_sorted_fragment_max_count(
       sorted_fragment_max_count,
@@ -423,7 +420,7 @@ pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(
   self : OrderIndependentTransparencySettings,
   fragments_per_pixel_average : Float,
 ) -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{
+  {
     ..self,
     fragments_per_pixel_average: oit_safe_fragments_per_pixel_average(
       fragments_per_pixel_average,
@@ -436,10 +433,7 @@ pub fn OrderIndependentTransparencySettings::with_alpha_threshold(
   self : OrderIndependentTransparencySettings,
   alpha_threshold : Float,
 ) -> OrderIndependentTransparencySettings {
-  OrderIndependentTransparencySettings::{
-    ..self,
-    alpha_threshold: oit_safe_alpha_threshold(alpha_threshold),
-  }
+  { ..self, alpha_threshold: oit_safe_alpha_threshold(alpha_threshold) }
 }
 
 ///|

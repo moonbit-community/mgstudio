@@ -47,8 +47,8 @@ fn setup(
       settings.sampler = @asset.ImageSampler::nearest()
     })
   let slicer = @ui.TextureSlicer::new(@ui.BorderRect::square(16.0F))
-    .with_center_scale_mode(@ui.SliceScaleMode::Tile(1.0F))
-    .with_sides_scale_mode(@ui.SliceScaleMode::Tile(1.0F))
+    .with_center_scale_mode(Tile(1.0F))
+    .with_sides_scale_mode(Tile(1.0F))
 
   commands.spawn(
     (@camera_components2d.Camera2d::Camera2d(), @camera_camera.Camera::Camera()),
@@ -59,14 +59,14 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::{
-        ..@ui.Node(),
-        width: @ui.Val::Percent(100.0F),
-        height: @ui.Val::Percent(100.0F),
-        justify_content: @ui.JustifyContent::Center,
-        align_content: @ui.AlignContent::Center,
-        flex_wrap: @ui.FlexWrap::Wrap,
-        column_gap: @ui.Val::Px(10.0F),
-        row_gap: @ui.Val::Px(10.0F),
+        ..Node(),
+        width: Percent(100.0F),
+        height: Percent(100.0F),
+        justify_content: Center,
+        align_content: Center,
+        flex_wrap: Wrap,
+        column_gap: Px(10.0F),
+        row_gap: Px(10.0F),
       },
     ),
   )
@@ -81,7 +81,7 @@ fn setup(
   for dimension in dimensions {
     for flip in flips {
       let image_node = image_with_flip(
-        @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Sliced(slicer)),
+        @ui.ImageNode::new(image).with_mode(Sliced(slicer)),
         flip.0,
         flip.1,
       )
@@ -91,8 +91,8 @@ fn setup(
             @hierarchy.Parent::new(root),
             image_node,
             @ui.Node::Node()
-            .with_width(@ui.Val::Px(16.0F * float_from_int(dimension.0)))
-            .with_height(@ui.Val::Px(16.0F * float_from_int(dimension.1))),
+            .with_width(Px(16.0F * float_from_int(dimension.0)))
+            .with_height(Px(16.0F * float_from_int(dimension.1))),
           ),
         ),
       )
@@ -104,6 +104,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

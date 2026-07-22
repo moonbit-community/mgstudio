@@ -17,11 +17,7 @@ fn wireframe_pipeline_test_descriptor() -> @material.RenderPipelineDescriptor {
   @material.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_vertex(
     @material.VertexState::new(Some("base.wgsl"), [], Some("vertex"), [
-      @mesh.VertexBufferLayout::new(
-        array_stride=12,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[],
-      ),
+      @mesh.VertexBufferLayout::new(array_stride=12, step_mode=Vertex, attributes=[]),
     ]),
   )
   .with_fragment(
@@ -31,7 +27,7 @@ fn wireframe_pipeline_test_descriptor() -> @material.RenderPipelineDescriptor {
       ]),
     ),
   )
-  .with_depth_stencil(Some(@material.DepthStencilState::DepthStencilState()))
+  .with_depth_stencil(Some(DepthStencilState()))
 }
 
 ///|
@@ -41,7 +37,7 @@ fn wireframe_pipeline_shader_defs_contain_flag(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @material.ShaderDefVal::Flag(flag) if flag == name => return true
+      Flag(flag) if flag == name => return true
       _ => ()
     }
   }
@@ -128,21 +124,11 @@ test "pbr: Wireframe3dPipeline wide specialization mirrors Bevy descriptor edits
   let wide_layout = descriptor.layout[0]
   debug_inspect(wide_layout.entries().length(), content="3")
   debug_inspect(
-    wide_layout.entries()[0].kind()
-    is @render_resource.BindingType::BufferBinding(
-      @render_resource.BufferBindingType::Storage(true),
-      false,
-      0UL
-    ),
+    wide_layout.entries()[0].kind() is BufferBinding(Storage(true), false, 0UL),
     content="true",
   )
   debug_inspect(
-    wide_layout.entries()[2].kind()
-    is @render_resource.BindingType::BufferBinding(
-      @render_resource.BufferBindingType::Uniform,
-      true,
-      16UL
-    ),
+    wide_layout.entries()[2].kind() is BufferBinding(Uniform, true, 16UL),
     content="true",
   )
   debug_inspect(descriptor.primitive.polygon_mode, content="Some(1)")

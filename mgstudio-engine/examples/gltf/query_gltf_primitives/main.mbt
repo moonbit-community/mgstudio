@@ -41,7 +41,7 @@ fn setup(
     commands.spawn(
       (
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -FRAC_PI_4),
+          @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -FRAC_PI_4),
         ),
         @pbr.DirectionalLight::DirectionalLight(),
       ),
@@ -125,7 +125,7 @@ fn find_top_material_and_mesh(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param4(@app.Update, find_top_material_and_mesh)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param4(Update, find_top_material_and_mesh)
   .run()
 }

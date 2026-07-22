@@ -132,7 +132,7 @@ fn cluster_assign_clear_view(
       clusters.clear()
       clusters
     }
-    None => Clusters::Clusters()
+    None => Clusters()
   }
   try! world.set_by_key(entity, Clusters::component(), cleared_clusters)
   try! world.set_by_key(
@@ -162,7 +162,7 @@ fn cluster_assign_cluster_objects(
     return objects
   }
   for _ in 0..<cluster_count {
-    objects.push(ObjectsInCluster::ObjectsInCluster())
+    objects.push(ObjectsInCluster())
   }
   objects
 }
@@ -206,7 +206,7 @@ fn cluster_assign_entity_render_layers(
   match
     (try! world.get_by_key(entity, @camera_render_layers.ecs_key_render_layers)) {
     Some(render_layers) => render_layers
-    None => @camera_render_layers.RenderLayers::RenderLayers()
+    None => RenderLayers()
   }
 }
 
@@ -223,20 +223,17 @@ fn cluster_assign_collect_objects(
   let global_cluster_settings = match
     world.get_resource(ecs_key_global_cluster_settings) {
     Some(settings) => settings
-    None => GlobalClusterSettings::GlobalClusterSettings()
+    None => GlobalClusterSettings()
   }
   world.for_each_component(@light.ecs_key_point_light, fn(entity, light) {
     if !cluster_assign_is_view_visible(world, entity) {
       return
     }
-    objects.push(ClusterableObjectAssignmentData::{
+    objects.push({
       entity,
       transform: cluster_assign_entity_transform(world, entity),
       range: light.range,
-      object_type: ClusterableObjectType::PointLight(
-        light.shadow_maps_enabled,
-        false,
-      ),
+      object_type: PointLight(light.shadow_maps_enabled, false),
       render_layers: cluster_assign_entity_render_layers(world, entity),
     })
   })
@@ -244,11 +241,11 @@ fn cluster_assign_collect_objects(
     if !cluster_assign_is_view_visible(world, entity) {
       return
     }
-    objects.push(ClusterableObjectAssignmentData::{
+    objects.push({
       entity,
       transform: cluster_assign_entity_transform(world, entity),
       range: light.range,
-      object_type: ClusterableObjectType::SpotLight(
+      object_type: SpotLight(
         light.shadow_maps_enabled,
         false,
         light.outer_angle,
@@ -268,12 +265,12 @@ fn cluster_assign_collect_objects(
         return
       }
       let transform = cluster_assign_entity_transform(world, entity)
-      objects.push(ClusterableObjectAssignmentData::{
+      objects.push({
         entity,
         transform,
         range: cluster_assign_light_probe_radius(transform),
-        object_type: ClusterableObjectType::ReflectionProbe,
-        render_layers: @camera_render_layers.RenderLayers::RenderLayers(),
+        object_type: ReflectionProbe,
+        render_layers: RenderLayers(),
       })
     })
     world.for_each_component(@light.ecs_key_irradiance_volume, fn(
@@ -287,12 +284,12 @@ fn cluster_assign_collect_objects(
         return
       }
       let transform = cluster_assign_entity_transform(world, entity)
-      objects.push(ClusterableObjectAssignmentData::{
+      objects.push({
         entity,
         transform,
         range: cluster_assign_light_probe_radius(transform),
-        object_type: ClusterableObjectType::IrradianceVolume,
-        render_layers: @camera_render_layers.RenderLayers::RenderLayers(),
+        object_type: IrradianceVolume,
+        render_layers: RenderLayers(),
       })
     })
   }
@@ -305,12 +302,12 @@ fn cluster_assign_collect_objects(
         return
       }
       let transform = cluster_assign_entity_transform(world, entity)
-      objects.push(ClusterableObjectAssignmentData::{
+      objects.push({
         entity,
         transform,
         range: transform.scale.length(),
-        object_type: ClusterableObjectType::Decal,
-        render_layers: @camera_render_layers.RenderLayers::RenderLayers(),
+        object_type: Decal,
+        render_layers: RenderLayers(),
       })
     })
   }
@@ -681,7 +678,7 @@ fn cluster_assign_compute_cluster_aabb_sphere(
   }
   let center = cluster_min.add(cluster_max).mul_scalar(0.5F)
   let half_extents = cluster_max.sub(cluster_min).mul_scalar(0.5F)
-  ClusterAssignSphere::{ center, radius: half_extents.length() }
+  { center, radius: half_extents.length() }
 }
 
 ///|
@@ -707,7 +704,7 @@ fn cluster_assign_project_to_plane_z(
   if distance_to_plane.abs() > sphere.radius {
     return None
   }
-  Some(ClusterAssignSphere::{
+  Some({
     center: @math.Vec3::new(sphere.center.x, sphere.center.y, z),
     radius: @math.sqrt(
       sphere.radius * sphere.radius - distance_to_plane * distance_to_plane,
@@ -729,7 +726,7 @@ fn cluster_assign_project_to_plane_y(
   if distance_to_plane.abs() > sphere.radius {
     return None
   }
-  Some(ClusterAssignSphere::{
+  Some({
     center: sphere.center.add(y_plane.normal().mul_scalar(distance_to_plane)),
     radius: @math.sqrt(
       sphere.radius * sphere.radius - distance_to_plane * distance_to_plane,
@@ -1183,7 +1180,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
   let global_cluster_settings = match
     world.get_resource(ecs_key_global_cluster_settings) {
     Some(settings) => settings
-    None => GlobalClusterSettings::GlobalClusterSettings()
+    None => GlobalClusterSettings()
   }
   let camera_entities = []
   world.for_each_component(@camera_components3d.ecs_key_camera3d, fn(
@@ -1199,7 +1196,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
       None => ClusterConfig::default()
     }
     let previous_clusters = try! world.get_by_key(entity, Clusters::component())
-    if config is ClusterConfig::None {
+    if config is None {
       cluster_assign_clear_view(world, entity, previous_clusters)
       continue
     }
@@ -1274,7 +1271,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
     let tile_size_y = cluster_assign_tile_size(screen_height, dimensions_y)
     let cluster_count = dimensions_x * dimensions_y * dimensions_z
     let mut far = match cluster_config_far_z_mode(config) {
-      ClusterFarZMode::MaxClusterableObjectRange =>
+      MaxClusterableObjectRange =>
         match previous_clusters {
           Some(previous) =>
             match previous.last_frame_farthest_z {
@@ -1283,7 +1280,7 @@ pub fn cluster_assign_lights_system(world : @ecs.World) -> Unit {
             }
           None => DEFAULT_FAR_DEPTH
         }
-      ClusterFarZMode::Constant(value) => value
+      Constant(value) => value
     }
     let mut near = cluster_config_first_slice_depth(config)
     if is_orthographic {

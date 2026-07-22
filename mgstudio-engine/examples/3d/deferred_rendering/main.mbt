@@ -38,7 +38,7 @@ impl @app.Resource for Pause with fn resource() {
 
 ///|
 fn Pause::Pause(value : Bool) -> Pause {
-  Pause::{ value, }
+  { value, }
 }
 
 ///|
@@ -58,7 +58,7 @@ impl @ecs.Component for Spin with fn component() {
 
 ///|
 fn Spin::Spin(speed : Float) -> Spin {
-  Spin::{ speed, }
+  { speed, }
 }
 
 ///|
@@ -70,7 +70,7 @@ priv enum DefaultRenderMode {
 
 ///|
 fn default_render_mode() -> DefaultRenderMode {
-  DefaultRenderMode::Deferred
+  Deferred
 }
 
 ///|
@@ -131,7 +131,7 @@ fn setup(
   let asset_server = asset_server.get()
   let camera = commands.spawn(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -174,7 +174,7 @@ fn setup(
         .with_maximum_distance(10.0F)
         .build(),
         @transform.Transform::identity().with_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 0.0F, -FRAC_PI_4),
+          @math.Quat::from_euler(ZYX, 0.0F, 0.0F, -FRAC_PI_4),
         ),
       ),
     ),
@@ -199,7 +199,7 @@ fn setup(
   let forward_material = material_handle(
     materials,
     @pbr.StandardMaterial::from_color(@color.Color::srgb(0.1F, 0.2F, 0.1F)).with_opaque_render_method(
-      @pbr.OpaqueRendererMethod::Forward,
+      Forward,
     ),
   )
   ignore(
@@ -353,9 +353,9 @@ fn setup(
       (
         @text.Text::Text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
       ),
     ),
   )
@@ -413,7 +413,7 @@ fn setup_parallax(
       Some(asset_server.load("textures/parallax_example/cube_depth.png")),
     )
     .with_parallax_depth_scale(0.09F)
-    .with_parallax_mapping_method(@pbr.ParallaxMappingMethod::Relief(4))
+    .with_parallax_mapping_method(Relief(4))
     .with_max_parallax_layer_count(@math.pow(2.0F, 5.0F)),
   )
   ignore(
@@ -469,7 +469,7 @@ fn help_text(mode : DefaultRenderMode, hide_ui : Bool) -> String {
   if hide_ui {
     ""
   } else {
-    "(H) Hide UI\n(Space) Play/Pause\n\nRendering Method:\n(1) \{mode_marker(mode, DefaultRenderMode::Deferred)} Deferred\n(2) \{mode_marker(mode, DefaultRenderMode::Forward)} Forward\n(3) \{mode_marker(mode, DefaultRenderMode::ForwardPrepass)} Forward + Prepass"
+    "(H) Hide UI\n(Space) Play/Pause\n\nRendering Method:\n(1) \{mode_marker(mode, Deferred)} Deferred\n(2) \{mode_marker(mode, Forward)} Forward\n(3) \{mode_marker(mode, ForwardPrepass)} Forward + Prepass"
   }
 }
 
@@ -489,13 +489,13 @@ fn switch_mode(
   let mut next_hide_ui = hide_ui.get()
   let next_pause = pause.get()
 
-  if keys.just_pressed(@window.KeyCode::Space) {
+  if keys.just_pressed(Space) {
     next_pause.value = !next_pause.value
     pause.set(next_pause)
   }
 
-  if keys.just_pressed(@window.KeyCode::Digit1) {
-    next_mode = DefaultRenderMode::Deferred
+  if keys.just_pressed(Digit1) {
+    next_mode = Deferred
     default_opaque_renderer_method.set(
       default_opaque_renderer_method.get().set_to_deferred(),
     )
@@ -514,8 +514,8 @@ fn switch_mode(
       .insert_component(@pbr.DeferredPrepass::DeferredPrepass())
     })
   }
-  if keys.just_pressed(@window.KeyCode::Digit2) {
-    next_mode = DefaultRenderMode::Forward
+  if keys.just_pressed(Digit2) {
+    next_mode = Forward
     default_opaque_renderer_method.set(
       default_opaque_renderer_method.get().set_to_forward(),
     )
@@ -528,8 +528,8 @@ fn switch_mode(
       commands.entity(camera_entity).remove(@pbr.ecs_key_deferred_prepass)
     })
   }
-  if keys.just_pressed(@window.KeyCode::Digit3) {
-    next_mode = DefaultRenderMode::ForwardPrepass
+  if keys.just_pressed(Digit3) {
+    next_mode = ForwardPrepass
     default_opaque_renderer_method.set(
       default_opaque_renderer_method.get().set_to_forward(),
     )
@@ -549,7 +549,7 @@ fn switch_mode(
     })
   }
 
-  if keys.just_pressed(@window.KeyCode::KeyH) {
+  if keys.just_pressed(KeyH) {
     next_hide_ui = !next_hide_ui
   }
 
@@ -565,10 +565,10 @@ fn main {
   .insert_resource(@pbr.DirectionalLightShadowMap::new(4096))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(Pause::Pause(true))
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param4(@app.Startup, setup_parallax)
-  .add_systems_param3(@app.Update, animate_light_direction)
-  .add_systems_param9(@app.Update, switch_mode)
-  .add_systems_param3(@app.Update, spin)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param4(Startup, setup_parallax)
+  .add_systems_param3(Update, animate_light_direction)
+  .add_systems_param9(Update, switch_mode)
+  .add_systems_param3(Update, spin)
   .run()
 }

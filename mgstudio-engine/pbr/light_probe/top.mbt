@@ -41,6 +41,7 @@ pub fn max_view_light_probes() -> Int {
 pub struct LightProbePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn LightProbePlugin::LightProbePlugin() -> LightProbePlugin {
   LightProbePlugin::{  }
 }
@@ -64,15 +65,12 @@ pub struct LightProbePluginState {
 
 ///|
 pub fn LightProbePluginState::LightProbePluginState() -> LightProbePluginState {
-  LightProbePluginState::{
-    binding_arrays_supported: true,
-    extracted_probe_count: 0,
-  }
+  { binding_arrays_supported: true, extracted_probe_count: 0 }
 }
 
 ///|
 pub fn light_probe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  light_probe_plugin_with(app, LightProbePlugin::LightProbePlugin())
+  light_probe_plugin_with(app, LightProbePlugin())
 }
 
 ///|
@@ -119,10 +117,7 @@ pub fn init_light_probes_buffer(world : @ecs.World) -> Unit {
   if world.resource(ecs_key_light_probes_buffer).is_present() {
     return
   }
-  world.insert_resource(
-    ecs_key_light_probes_buffer,
-    LightProbesBuffer::LightProbesBuffer(),
-  )
+  world.insert_resource(ecs_key_light_probes_buffer, LightProbesBuffer())
 }
 
 ///|
@@ -130,7 +125,7 @@ pub fn light_probe_plugin_state_with_extracted_probe_count(
   state : LightProbePluginState,
   extracted_probe_count : Int,
 ) -> LightProbePluginState {
-  LightProbePluginState::{
+  {
     ..state,
     extracted_probe_count: if extracted_probe_count < 0 {
       0
@@ -154,7 +149,7 @@ pub struct RenderLightProbe {
 
 ///|
 pub fn RenderLightProbe::RenderLightProbe() -> RenderLightProbe {
-  RenderLightProbe::{
+  {
     light_from_world_transposed: [
       @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
       @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
@@ -197,19 +192,19 @@ pub fn LightProbeTextureId::environment_map(
   diffuse : @asset.Handle[@asset.Image],
   specular : @asset.Handle[@asset.Image],
 ) -> LightProbeTextureId {
-  LightProbeTextureId::{ diffuse: Some(diffuse), specular: Some(specular) }
+  { diffuse: Some(diffuse), specular: Some(specular) }
 }
 
 ///|
 pub fn LightProbeTextureId::irradiance_volume(
   texture : @asset.Handle[@asset.Image],
 ) -> LightProbeTextureId {
-  LightProbeTextureId::{ diffuse: Some(texture), specular: Some(texture) }
+  { diffuse: Some(texture), specular: Some(texture) }
 }
 
 ///|
 pub fn LightProbeTextureId::missing() -> LightProbeTextureId {
-  LightProbeTextureId::{ diffuse: None, specular: None }
+  { diffuse: None, specular: None }
 }
 
 ///|
@@ -257,7 +252,7 @@ pub fn LightProbeInfo::new(
     Some(handle) => LightProbeTextureId::irradiance_volume(handle)
     None => LightProbeTextureId::missing()
   }
-  LightProbeInfo::{
+  {
     main_entity,
     world_from_light: @math.Affine3::identity(),
     light_from_world: [
@@ -308,9 +303,9 @@ fn light_probe_parallax_bounds(
   parallax_correction : @light.ParallaxCorrection?,
 ) -> @math.Vec3 {
   match parallax_correction {
-    Some(@light.ParallaxCorrection::Auto) => @math.Vec3::splat(0.5F)
-    Some(@light.ParallaxCorrection::Custom(bounds)) => bounds
-    Some(@light.ParallaxCorrection::None) | None => @math.Vec3::zero()
+    Some(Auto) => @math.Vec3::splat(0.5F)
+    Some(Custom(bounds)) => bounds
+    Some(None) | None => @math.Vec3::zero()
   }
 }
 
@@ -327,13 +322,12 @@ fn environment_map_light_probe_flags(
     )
   }
   match parallax_correction {
-    Some(@light.ParallaxCorrection::Auto)
-    | Some(@light.ParallaxCorrection::Custom(_)) =>
+    Some(Auto) | Some(Custom(_)) =>
       flags = render_light_probe_flags_insert(
         flags,
         RENDER_LIGHT_PROBE_FLAG_ENABLE_PARALLAX_CORRECTION,
       )
-    Some(@light.ParallaxCorrection::None) | None => ()
+    Some(None) | None => ()
   }
   flags
 }
@@ -357,11 +351,7 @@ pub fn LightProbeInfo::from_world_from_light(
   self : LightProbeInfo,
   world_from_light : @math.Affine3,
 ) -> LightProbeInfo {
-  LightProbeInfo::{
-    ..self,
-    world_from_light,
-    world_position: world_from_light.translation,
-  }
+  { ..self, world_from_light, world_position: world_from_light.translation }
 }
 
 ///|
@@ -375,7 +365,7 @@ fn light_probe_info_from_world_from_light(
   flags : Int,
 ) -> LightProbeInfo {
   let light_from_world = world_from_light.inverse()
-  LightProbeInfo::{
+  {
     main_entity,
     world_from_light,
     light_from_world: [
@@ -799,9 +789,9 @@ pub struct RenderViewIrradianceVolumeLightProbes {
 
 ///|
 pub fn RenderViewLightProbes::RenderViewLightProbes() -> RenderViewLightProbes {
-  RenderViewLightProbes::{
+  {
     binding_index_to_textures: [],
-    cubemap_to_binding_index: @hashmap.HashMap([]),
+    cubemap_to_binding_index: HashMap([]),
     render_light_probes: [],
     main_entity_to_render_light_probe_index: Map([]),
     view_light_probe_info: None,
@@ -855,7 +845,7 @@ fn render_light_probe_from_info(
   info : LightProbeInfo,
   texture_index : Int,
 ) -> RenderLightProbe {
-  RenderLightProbe::{
+  {
     light_from_world_transposed: info.light_from_world,
     falloff: info.falloff,
     bounding_sphere_radius: info.bounding_sphere_radius,
@@ -968,7 +958,7 @@ pub fn RenderViewLightProbes::probe_count(self : RenderViewLightProbes) -> Int {
 pub fn RenderViewEnvironmentMapLightProbes::new(
   probes : RenderViewLightProbes,
 ) -> RenderViewEnvironmentMapLightProbes {
-  RenderViewEnvironmentMapLightProbes::{ probes, }
+  { probes, }
 }
 
 ///|
@@ -989,7 +979,7 @@ pub fn RenderViewEnvironmentMapLightProbes::probes(
 pub fn RenderViewIrradianceVolumeLightProbes::new(
   probes : RenderViewLightProbes,
 ) -> RenderViewIrradianceVolumeLightProbes {
-  RenderViewIrradianceVolumeLightProbes::{ probes, }
+  { probes, }
 }
 
 ///|
@@ -1047,15 +1037,9 @@ pub struct LightProbesUniform {
 
 ///|
 pub fn LightProbesUniform::LightProbesUniform() -> LightProbesUniform {
-  LightProbesUniform::{
-    reflection_probes: Array::make(
-      MAX_VIEW_LIGHT_PROBES,
-      RenderLightProbe::RenderLightProbe(),
-    ),
-    irradiance_volumes: Array::make(
-      MAX_VIEW_LIGHT_PROBES,
-      RenderLightProbe::RenderLightProbe(),
-    ),
+  {
+    reflection_probes: Array::make(MAX_VIEW_LIGHT_PROBES, RenderLightProbe()),
+    irradiance_volumes: Array::make(MAX_VIEW_LIGHT_PROBES, RenderLightProbe()),
     reflection_probe_count: 0,
     irradiance_volume_count: 0,
     view_cubemap_index: -1,
@@ -1226,7 +1210,7 @@ pub struct LightProbesBuffer {
 
 ///|
 pub fn LightProbesBuffer::LightProbesBuffer() -> LightProbesBuffer {
-  LightProbesBuffer::{ uniform_bytes: [], gpu_buffer: None, gpu_capacity: 0UL }
+  { uniform_bytes: [], gpu_buffer: None, gpu_capacity: 0UL }
 }
 
 ///|
@@ -1402,14 +1386,14 @@ pub struct ViewLightProbesUniformOffset {
 
 ///|
 pub fn ViewLightProbesUniformOffset::ViewLightProbesUniformOffset() -> ViewLightProbesUniformOffset {
-  ViewLightProbesUniformOffset::{ offset: 0U }
+  { offset: 0U }
 }
 
 ///|
 pub fn ViewLightProbesUniformOffset::new(
   offset : UInt,
 ) -> ViewLightProbesUniformOffset {
-  ViewLightProbesUniformOffset::{ offset, }
+  { offset, }
 }
 
 ///|

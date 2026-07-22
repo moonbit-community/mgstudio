@@ -53,8 +53,8 @@ fn setup(
       @asset.Image::new_target_texture(
         512,
         512,
-        @asset.TextureFormat::Rgba8Unorm,
-        Some(@asset.TextureFormat::Rgba8UnormSrgb),
+        Rgba8Unorm,
+        Some(Rgba8UnormSrgb),
       ),
     )
   })
@@ -186,8 +186,8 @@ fn cube_rotator_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, cube_rotator_system)
-  .add_systems_param2(@app.Update, rotator_system)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, cube_rotator_system)
+  .add_systems_param2(Update, rotator_system)
   .run()
 }

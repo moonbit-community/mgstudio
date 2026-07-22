@@ -165,9 +165,7 @@ test "app observer: add_component_observer2 exposes ComponentOn<Insert, C> with 
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 7,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 7 })
 
   let reader = world.message_reader(message_key)
   let messages = reader.read()
@@ -187,9 +185,7 @@ test "app observer: add_component_observer2 exposes ComponentOn<Remove, C> with 
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 11,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 11 })
   ignore(try! world.remove_by_key(entity, observer_marker_key))
 
   let reader = world.message_reader(message_key)
@@ -218,12 +214,10 @@ test "app observer: fallible component insert observers route errors through the
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 5,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 5 })
 
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  debug_inspect(kinds[0] == Observer, content="true")
   debug_inspect(sources[0], content="\"<component-observer>\"")
 }
 
@@ -242,13 +236,11 @@ test "app observer: fallible component remove observers route errors through the
   let world = app.world()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, observer_marker_key, ObserverMarker::{
-    value: 6,
-  })
+  try! world.set_by_key(entity, observer_marker_key, { value: 6 })
   ignore(try! world.remove_by_key(entity, observer_marker_key))
 
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  debug_inspect(kinds[0] == Observer, content="true")
 }
 
 ///|
@@ -270,6 +262,6 @@ test "app observer: fallible trigger observers route errors through the default 
   world.trigger(ObserverPulse::{ amount: 5 })
 
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  debug_inspect(kinds[0] == Observer, content="true")
   debug_inspect(sources[0], content="\"<observer>\"")
 }

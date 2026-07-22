@@ -390,12 +390,12 @@ pub fn gltf_extras(value : String) -> GltfExtras {
 
 ///|
 pub fn gltf_animation_asset_label(animation_index : Int) -> GltfAssetLabel {
-  GltfAssetLabel::Animation(animation_index)
+  Animation(animation_index)
 }
 
 ///|
 pub fn gltf_inverse_bind_matrices_asset_label(
   skin_index : Int,
 ) -> GltfAssetLabel {
-  GltfAssetLabel::InverseBindMatrices(skin_index)
+  InverseBindMatrices(skin_index)
 }

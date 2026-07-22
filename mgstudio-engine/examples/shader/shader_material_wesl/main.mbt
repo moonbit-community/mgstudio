@@ -50,6 +50,7 @@ pub impl @app.Resource for UtilityShaderHandle with fn resource() {
 struct UtilityShaderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn UtilityShaderPlugin::UtilityShaderPlugin() -> UtilityShaderPlugin {
   UtilityShaderPlugin::{  }
 }
@@ -161,7 +162,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(UtilityShaderPlugin::UtilityShaderPlugin())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, spin_system)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, spin_system)
   .run()
 }

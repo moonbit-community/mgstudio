@@ -29,7 +29,7 @@ pub struct CubicSegment[P] {
 pub fn[P] CubicSegment::from_math(
   segment : @math.CubicSegment[P],
 ) -> CubicSegment[P] {
-  CubicSegment::{ inner: segment }
+  { inner: segment }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn[P : @math.SplinePoint] CubicSegment::new_bezier(
   p2 : P,
   p3 : P,
 ) -> CubicSegment[P] {
-  CubicSegment::{ inner: @math.CubicSegment::new_bezier(p0, p1, p2, p3) }
+  { inner: @math.CubicSegment::new_bezier(p0, p1, p2, p3) }
 }
 
 ///|
@@ -104,7 +104,7 @@ pub struct CubicCurve[P] {
 
 ///|
 pub fn[P] CubicCurve::from_math(curve : @math.CubicCurve[P]) -> CubicCurve[P] {
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -121,7 +121,7 @@ pub fn[P] CubicCurve::from_segments(
     raw.push(segment.to_math())
   }
   match @math.CubicCurve::from_segments(raw) {
-    Some(curve) => Some(CubicCurve::{ inner: curve })
+    Some(curve) => Some({ inner: curve })
     None => None
   }
 }
@@ -130,7 +130,7 @@ pub fn[P] CubicCurve::from_segments(
 pub fn[P] CubicCurve::segments(self : CubicCurve[P]) -> Array[CubicSegment[P]] {
   let values : Array[CubicSegment[P]] = []
   for segment in self.inner.segments() {
-    values.push(CubicSegment::{ inner: segment })
+    values.push({ inner: segment })
   }
   values
 }
@@ -198,7 +198,7 @@ pub struct LinearSpline[P] {
 
 ///|
 pub fn[P] LinearSpline::new(control_points : Array[P]) -> LinearSpline[P] {
-  LinearSpline::{ inner: @math.LinearSpline::new(control_points) }
+  { inner: @math.LinearSpline::new(control_points) }
 }
 
 ///|
@@ -206,10 +206,10 @@ pub fn[P : @math.SplinePoint] LinearSpline::to_curve(
   self : LinearSpline[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -217,10 +217,10 @@ pub fn[P : @math.SplinePoint] LinearSpline::to_curve_cyclic(
   self : LinearSpline[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve_cyclic() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -233,7 +233,7 @@ pub fn[P] CubicHermite::new(
   control_points : Array[P],
   tangents : Array[P],
 ) -> CubicHermite[P] {
-  CubicHermite::{ inner: @math.CubicHermite::new(control_points, tangents) }
+  { inner: @math.CubicHermite::new(control_points, tangents) }
 }
 
 ///|
@@ -241,10 +241,10 @@ pub fn[P : @math.SplinePoint] CubicHermite::to_curve(
   self : CubicHermite[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -252,10 +252,10 @@ pub fn[P : @math.SplinePoint] CubicHermite::to_curve_cyclic(
   self : CubicHermite[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve_cyclic() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -268,18 +268,14 @@ pub fn[P] CubicCardinalSpline::new(
   tension : Float,
   control_points : Array[P],
 ) -> CubicCardinalSpline[P] {
-  CubicCardinalSpline::{
-    inner: @math.CubicCardinalSpline::new(tension, control_points),
-  }
+  { inner: @math.CubicCardinalSpline::new(tension, control_points) }
 }
 
 ///|
 pub fn[P] CubicCardinalSpline::new_catmull_rom(
   control_points : Array[P],
 ) -> CubicCardinalSpline[P] {
-  CubicCardinalSpline::{
-    inner: @math.CubicCardinalSpline::new_catmull_rom(control_points),
-  }
+  { inner: @math.CubicCardinalSpline::new_catmull_rom(control_points) }
 }
 
 ///|
@@ -287,10 +283,10 @@ pub fn[P : @math.SplinePoint] CubicCardinalSpline::to_curve(
   self : CubicCardinalSpline[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -298,10 +294,10 @@ pub fn[P : @math.SplinePoint] CubicCardinalSpline::to_curve_cyclic(
   self : CubicCardinalSpline[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve_cyclic() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -311,7 +307,7 @@ pub struct CubicBSpline[P] {
 
 ///|
 pub fn[P] CubicBSpline::new(control_points : Array[P]) -> CubicBSpline[P] {
-  CubicBSpline::{ inner: @math.CubicBSpline::new(control_points) }
+  { inner: @math.CubicBSpline::new(control_points) }
 }
 
 ///|
@@ -319,10 +315,10 @@ pub fn[P : @math.SplinePoint] CubicBSpline::to_curve(
   self : CubicBSpline[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }
 
 ///|
@@ -330,8 +326,8 @@ pub fn[P : @math.SplinePoint] CubicBSpline::to_curve_cyclic(
   self : CubicBSpline[P],
 ) -> CubicCurve[P] raise InsufficientDataError {
   let curve = self.inner.to_curve_cyclic() catch {
-    @math.InsufficientData(required, actual) =>
+    InsufficientData(required, actual) =>
       raise InsufficientData(required, actual)
   }
-  CubicCurve::{ inner: curve }
+  { inner: curve }
 }

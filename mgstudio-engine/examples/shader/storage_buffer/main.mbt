@@ -111,7 +111,7 @@ fn update_storage_values(
   for i in 0..<values.length() {
     values[i] = @math.sin(elapsed * 1.3F + Float::from_int(i) * 0.08F)
   }
-  storage_values.set(StorageValues::{ values, })
+  storage_values.set({ values, })
 }
 
 ///|
@@ -134,8 +134,8 @@ fn apply_storage_values(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update_storage_values)
-  .add_systems_param2(@app.Update, apply_storage_values)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, update_storage_values)
+  .add_systems_param2(Update, apply_storage_values)
   .run()
 }

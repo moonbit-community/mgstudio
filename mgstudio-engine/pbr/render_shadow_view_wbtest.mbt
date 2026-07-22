@@ -17,31 +17,19 @@ test "pbr shadow view cache keys are distinct per Bevy retained shadow view" {
   let light = @core.Entity::new(9, 2)
   let point0 = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Point(
-      light_entity=light,
-      main_entity=light,
-      face_index=0,
-    ),
+    Point(light_entity=light, main_entity=light, face_index=0),
   )
   let point1 = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Point(
-      light_entity=light,
-      main_entity=light,
-      face_index=1,
-    ),
+    Point(light_entity=light, main_entity=light, face_index=1),
   )
   let cascade0 = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Directional(
-      light_entity=light,
-      main_entity=light,
-      cascade_index=0,
-    ),
+    Directional(light_entity=light, main_entity=light, cascade_index=0),
   )
   let spot = render3d_shadow_view_cache_key(
     camera,
-    Render3dLightEntity::Spot(light_entity=light, main_entity=light),
+    Spot(light_entity=light, main_entity=light),
   )
   inspect(point0 == point1, content="false")
   inspect(point0 == cascade0, content="false")
@@ -206,7 +194,7 @@ test "pbr directional shadow view consumes extracted light cascades" {
 
 ///|
 fn shadow_view_test_camera_payload() -> Camera3dViewPayload {
-  Camera3dViewPayload::{
+  {
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -214,8 +202,8 @@ fn shadow_view_test_camera_payload() -> Camera3dViewPayload {
     volumetric_fog: None,
     atmosphere: None,
     atmosphere_settings: None,
-    camera: @camera_camera.Camera::Camera(),
-    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+    camera: Camera(),
+    depth_texture_usages: Camera3dDepthTextureUsage(),
     projection: Projection::default(),
     sub_camera_view: None,
     oit_settings: None,
@@ -250,13 +238,13 @@ fn shadow_view_test_camera_payload() -> Camera3dViewPayload {
     shadow_filtering_method: None,
     motion_vector_prepass_enabled: false,
     msaa: None,
-    transform: @transform.Transform::Transform(),
-    previous_transform: @transform.Transform::Transform(),
+    transform: Transform(),
+    previous_transform: Transform(),
     previous_clip_from_world: None,
     target_id: 0,
     target_size: @math.IVec2::new(1280, 720),
     scale_factor: 1.0F,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    layers: RenderLayers(),
     invert_culling: false,
   }
 }
@@ -286,14 +274,14 @@ fn shadow_view_test_directional_entry(
   cascades : @light.Cascades,
   bounds : Array[Float],
 ) -> @pbr_render.Render3dLightingDirectionalLight {
-  @pbr_render.Render3dLightingDirectionalLight::{
+  {
     render_entity: render_light,
     light: @pbr_render.render3d_extracted_directional_light_for_shadow(
       light,
       @transform.Transform::identity(),
       cascades,
       bounds,
-      @camera_render_layers.RenderLayers::RenderLayers(),
+      RenderLayers(),
       false,
     ),
   }
@@ -317,15 +305,8 @@ test "pbr directional shadow binding carries cascades for volumetric fog pass" {
     @light.ecs_key_directional_light_shadow_map,
     @light.DirectionalLightShadowMap::new(4096),
   )
-  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
-    entries: [
-      DirectionalLightShadowTargetsEntry::{
-        camera_entity: camera,
-        size: 4096,
-        layers: 4,
-        target_id: 77,
-      },
-    ],
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
+    entries: [{ camera_entity: camera, size: 4096, layers: 4, target_id: 77 }],
   })
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
@@ -382,15 +363,8 @@ test "pbr directional shadow pass attaches Bevy-shaped target layers" {
     @light.ecs_key_directional_light_shadow_map,
     @light.DirectionalLightShadowMap::new(2048),
   )
-  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
-    entries: [
-      DirectionalLightShadowTargetsEntry::{
-        camera_entity: camera,
-        size: 2048,
-        layers: 3,
-        target_id: 91,
-      },
-    ],
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
+    entries: [{ camera_entity: camera, size: 2048, layers: 3, target_id: 91 }],
   })
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
@@ -453,15 +427,8 @@ test "pbr directional shadow pass accumulates multiple Bevy directional lights" 
     @light.ecs_key_directional_light_shadow_map,
     @light.DirectionalLightShadowMap::new(2048),
   )
-  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
-    entries: [
-      DirectionalLightShadowTargetsEntry::{
-        camera_entity: camera,
-        size: 2048,
-        layers: 5,
-        target_id: 133,
-      },
-    ],
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
+    entries: [{ camera_entity: camera, size: 2048, layers: 5, target_id: 133 }],
   })
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
@@ -569,15 +536,8 @@ test "pbr directional shadow frame identity reaches volumetric view binding" {
     @light.ecs_key_directional_light_shadow_map,
     @light.DirectionalLightShadowMap::new(1024),
   )
-  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), Render3dDirectionalLightShadowTargets::{
-    entries: [
-      DirectionalLightShadowTargetsEntry::{
-        camera_entity: camera,
-        size: 1024,
-        layers: 2,
-        target_id: 123,
-      },
-    ],
+  world.insert_resource(Render3dDirectionalLightShadowTargets::resource(), {
+    entries: [{ camera_entity: camera, size: 1024, layers: 2, target_id: 123 }],
   })
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),

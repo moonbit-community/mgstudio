@@ -40,7 +40,7 @@ fn main {
   touch_widget_button_wbtest_imports()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .add_system_config(
     @app.system_config_world(button_system).after(@ui.ui_set_focus),
   )
@@ -58,28 +58,27 @@ fn button_system(world : @ecs.World) -> Unit {
     }
     if input_focus is Some(input_focus_mut) {
       match interaction {
-        @ui.Interaction::Pressed | @ui.Interaction::Hovered =>
+        Pressed | Hovered =>
           input_focus_mut.modify(fn(value) { value.set(entity) })
-        @ui.Interaction::None =>
-          input_focus_mut.modify(fn(value) { value.clear() })
+        None => input_focus_mut.modify(fn(value) { value.clear() })
       }
     }
     let text = match interaction {
-      @ui.Interaction::Pressed => "Press"
-      @ui.Interaction::Hovered => "Hover"
-      @ui.Interaction::None => "Button"
+      Pressed => "Press"
+      Hovered => "Hover"
+      None => "Button"
     }
     let bg_color = match interaction {
-      @ui.Interaction::Pressed => pressed_button_color()
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None => normal_button_color()
+      Pressed => pressed_button_color()
+      Hovered => hovered_button_color()
+      None => normal_button_color()
     }
     let border_color = match interaction {
-      @ui.Interaction::Pressed => @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-      @ui.Interaction::Hovered => @color.Color::white()
-      @ui.Interaction::None => @color.Color::black()
+      Pressed => @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+      Hovered => @color.Color::white()
+      None => @color.Color::black()
     }
-    if interaction != @ui.Interaction::None {
+    if interaction != None {
       if (try! world.get_by_key(entity, @ui.ecs_key_button)) is Some(button) {
         try! (world.replace(entity, @ui.ecs_key_button, button) |> ignore)
       }
@@ -147,15 +146,15 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Root node.
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(Center)
+    .with_align_items(Center),
   )
 
   // Button node.
@@ -165,46 +164,46 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(button, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(150.0F))
-    .with_height(@ui.Val::Px(65.0F))
-    .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+    .with_width(Px(150.0F))
+    .with_height(Px(65.0F))
+    .with_border(@ui.UiRect::all(Px(5.0F)))
+    .with_justify_content(Center)
+    .with_align_items(Center)
+    .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(button, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(150.0F))
-    .with_height(@ui.Val::Px(65.0F))
-    .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+    .with_width(Px(150.0F))
+    .with_height(Px(65.0F))
+    .with_border(@ui.UiRect::all(Px(5.0F)))
+    .with_justify_content(Center)
+    .with_align_items(Center)
+    .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
   )
   try! world.set_by_key(
     button,
     @ui.ecs_key_border_color,
     @ui.BorderColor::new(@color.Color::white()),
   )
-  try! world.set_by_key(button, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(button, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     button,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(150.0F))
-    .with_height(@ui.Val::Px(65.0F))
-    .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+    .with_width(Px(150.0F))
+    .with_height(Px(65.0F))
+    .with_border(@ui.UiRect::all(Px(5.0F)))
+    .with_justify_content(Center)
+    .with_align_items(Center)
+    .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
   )
   try! world.set_by_key(
     button,
@@ -227,7 +226,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    @ui.Node::Node().with_width(Auto).with_height(Auto),
   )
   try! world.set_by_key(label, @text.ecs_key_text, @text.Text::new("Button"))
   try! world.set_by_key(
@@ -243,6 +242,6 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     label,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Center),
+    @text.TextLayout::new_with_justify(Center),
   )
 }

@@ -115,60 +115,36 @@ test "pbr meshlet: visibility raster plan follows bevy pass order" {
 ///|
 test "pbr meshlet: visibility raster command descriptors mirror bevy dispatch modes" {
   let first_instance = meshlet_visibility_buffer_raster_op_command_descriptor(
-    MeshletVisibilityBufferRasterOp::FirstInstanceCull(false),
+    FirstInstanceCull(false),
   )
-  inspect(
-    first_instance.command_kind()
-    is MeshletVisibilityBufferRasterCommandKind::ComputePass,
-    content="true",
-  )
-  inspect(
-    first_instance.dispatch_kind()
-    is MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
-    content="true",
-  )
+  inspect(first_instance.command_kind() is ComputePass, content="true")
+  inspect(first_instance.dispatch_kind() is DirectWorkgroups, content="true")
   inspect(first_instance.pipeline_slot(), content="first_instance_cull")
   inspect(first_instance.bind_group(), content="first_instance_cull")
   inspect(first_instance.immediate_size(), content="0")
   inspect(first_instance.dynamic_offset_count(), content="2")
   let first_bvh_pong = meshlet_visibility_buffer_raster_op_command_descriptor(
-    MeshletVisibilityBufferRasterOp::FirstBvhCull(false, false),
+    FirstBvhCull(false, false),
   )
-  inspect(
-    first_bvh_pong.dispatch_kind()
-    is MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
-    content="true",
-  )
+  inspect(first_bvh_pong.dispatch_kind() is IndirectWorkgroups, content="true")
   inspect(first_bvh_pong.pipeline_slot(), content="first_bvh_cull")
   inspect(first_bvh_pong.bind_group(), content="first_bvh_cull_pong")
   inspect(first_bvh_pong.immediate_size(), content="0")
   inspect(first_bvh_pong.dynamic_offset_count(), content="2")
   let clear_count = meshlet_visibility_buffer_raster_op_command_descriptor(
-    MeshletVisibilityBufferRasterOp::FirstBvhCullClearCount(false, true),
+    FirstBvhCullClearCount(false, true),
   )
-  inspect(
-    clear_count.command_kind()
-    is MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
-    content="true",
-  )
+  inspect(clear_count.command_kind() is ClearBuffer, content="true")
   inspect(clear_count.clear_buffer_count(), content="1")
 }
 
 ///|
 test "pbr meshlet: visibility raster command descriptors preserve render and shadow variants" {
   let hardware_camera = meshlet_visibility_buffer_raster_op_command_descriptor(
-    MeshletVisibilityBufferRasterOp::HardwareRaster(true, false),
+    HardwareRaster(true, false),
   )
-  inspect(
-    hardware_camera.command_kind()
-    is MeshletVisibilityBufferRasterCommandKind::RenderPass,
-    content="true",
-  )
-  inspect(
-    hardware_camera.dispatch_kind()
-    is MeshletVisibilityBufferRasterDispatchKind::IndirectDraw,
-    content="true",
-  )
+  inspect(hardware_camera.command_kind() is RenderPass, content="true")
+  inspect(hardware_camera.dispatch_kind() is IndirectDraw, content="true")
   inspect(
     hardware_camera.pipeline_slot(),
     content="visibility_buffer_hardware_raster",
@@ -178,7 +154,7 @@ test "pbr meshlet: visibility raster command descriptors preserve render and sha
   inspect(hardware_camera.dynamic_offset_count(), content="1")
   inspect(hardware_camera.uses_camera_viewport(), content="true")
   let hardware_directional_shadow = meshlet_visibility_buffer_raster_op_command_descriptor(
-    MeshletVisibilityBufferRasterOp::HardwareRaster(true, true),
+    HardwareRaster(true, true),
     directional_shadow_view=true,
   )
   inspect(
@@ -191,18 +167,13 @@ test "pbr meshlet: visibility raster command descriptors preserve render and sha
   )
   inspect(hardware_directional_shadow.uses_camera_viewport(), content="false")
   let resolve_material_depth = meshlet_visibility_buffer_raster_op_command_descriptor(
-    MeshletVisibilityBufferRasterOp::ResolveMaterialDepth,
+    ResolveMaterialDepth,
   )
   inspect(
-    resolve_material_depth.command_kind()
-    is MeshletVisibilityBufferRasterCommandKind::DepthResolvePass,
+    resolve_material_depth.command_kind() is DepthResolvePass,
     content="true",
   )
-  inspect(
-    resolve_material_depth.dispatch_kind()
-    is MeshletVisibilityBufferRasterDispatchKind::DirectDraw,
-    content="true",
-  )
+  inspect(resolve_material_depth.dispatch_kind() is DirectDraw, content="true")
   inspect(
     resolve_material_depth.pipeline_slot(),
     content="resolve_material_depth",
@@ -218,17 +189,9 @@ test "pbr meshlet: visibility raster execution events preserve bevy diagnostic g
     max_bvh_depth=1,
   )
   inspect(events.length(), content="32")
-  inspect(
-    events[0].kind
-    is MeshletVisibilityBufferRasterExecutionEventKind::PushDebugGroup,
-    content="true",
-  )
+  inspect(events[0].kind is PushDebugGroup, content="true")
   inspect(events[0].label, content="meshlet_visibility_buffer_raster")
-  inspect(
-    events[1].kind
-    is MeshletVisibilityBufferRasterExecutionEventKind::BeginDiagnosticSpan,
-    content="true",
-  )
+  inspect(events[1].kind is BeginDiagnosticSpan, content="true")
   inspect(events[1].label, content="meshlet_visibility_buffer_raster")
   inspect(events[2].operation_label, content="clear_raster_cluster_prev_counts")
   inspect(events[3].operation_label, content="clear_visibility_buffer")
@@ -241,11 +204,7 @@ test "pbr meshlet: visibility raster execution events preserve bevy diagnostic g
   inspect(events[19].label, content="meshlet_second_bvh_cull")
   inspect(events[20].operation_label, content="meshlet_second_bvh_cull_ping")
   inspect(events[29].operation_label, content="downsample_depth_second")
-  inspect(
-    events[30].kind
-    is MeshletVisibilityBufferRasterExecutionEventKind::EndDiagnosticSpan,
-    content="true",
-  )
+  inspect(events[30].kind is EndDiagnosticSpan, content="true")
   inspect(events[31].label, content="meshlet_visibility_buffer_raster")
 }
 
@@ -262,11 +221,7 @@ test "pbr meshlet: visibility raster execution events preserve shadow diagnostic
     events[34].label,
     content="meshlet_visibility_buffer_raster: directional_light_shadow_map",
   )
-  inspect(
-    events[35].kind
-    is MeshletVisibilityBufferRasterExecutionEventKind::BeginDiagnosticSpan,
-    content="true",
-  )
+  inspect(events[35].kind is BeginDiagnosticSpan, content="true")
   inspect(events[35].label, content="directional_light_shadow_map")
   inspect(
     events[36].operation_label,

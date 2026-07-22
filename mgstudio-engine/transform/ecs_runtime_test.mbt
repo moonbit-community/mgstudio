@@ -54,7 +54,7 @@ fn prepare_transform_world_ecs(world : @ecs.World) -> Unit {
   if !world.resource(static_transform_optimizations_resource_key).is_present() {
     world.insert_resource(
       static_transform_optimizations_resource_key,
-      StaticTransformOptimizations::StaticTransformOptimizations(),
+      StaticTransformOptimizations(),
     )
   }
 }

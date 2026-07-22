@@ -19,6 +19,7 @@
 pub struct FrameTimeGraphPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FrameTimeGraphPlugin::FrameTimeGraphPlugin() -> FrameTimeGraphPlugin {
   FrameTimeGraphPlugin::{  }
 }
@@ -40,7 +41,7 @@ priv struct FrameTimeGraphValues {
 
 ///|
 fn FrameTimeGraphValues::FrameTimeGraphValues() -> FrameTimeGraphValues {
-  FrameTimeGraphValues::{ values: [] }
+  { values: [] }
 }
 
 ///|
@@ -70,12 +71,12 @@ pub fn FrametimeGraphMaterial::new(
   values : @asset.Handle[@render_resource.StorageBuffer[Float]],
   config : FrameTimeGraphConfigUniform,
 ) -> FrametimeGraphMaterial {
-  FrametimeGraphMaterial::{ values, config }
+  { values, config }
 }
 
 ///|
 fn FrametimeGraphMaterial::asset_init_probe() -> FrametimeGraphMaterial {
-  FrametimeGraphMaterial::{
+  {
     values: @asset.Handle::new(-1),
     config: FrameTimeGraphConfigUniform::new(60.0F, 30.0F, true),
   }
@@ -154,7 +155,7 @@ pub fn FrameTimeGraphConfigUniform::new(
 ) -> FrameTimeGraphConfigUniform {
   let dt_min = 1.0F / (target_fps * 1.2F)
   let dt_max = 1.0F / min_fps
-  FrameTimeGraphConfigUniform::{
+  {
     dt_min,
     dt_max,
     dt_min_log2: frame_time_graph_log2(dt_min),
@@ -182,10 +183,7 @@ fn frame_time_graph_has_frame_time_diagnostics(
 pub fn frame_time_graph_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  frame_time_graph_plugin_with(
-    app,
-    FrameTimeGraphPlugin::FrameTimeGraphPlugin(),
-  )
+  frame_time_graph_plugin_with(app, FrameTimeGraphPlugin())
 }
 
 ///|
@@ -201,7 +199,7 @@ pub fn frame_time_graph_plugin_with(
     @asset.init_asset(
       app.insert_world_resource(
         frame_time_graph_values_resource_key,
-        FrameTimeGraphValues::FrameTimeGraphValues(),
+        FrameTimeGraphValues(),
       ),
       fn() -> @render_resource.StorageBuffer[Float] {
         @render_resource.StorageBuffer::new()
@@ -209,7 +207,7 @@ pub fn frame_time_graph_plugin_with(
     ),
     FrametimeGraphMaterial::asset_init_probe,
   ).add_systems(
-    @app.Update,
+    Update,
     @app.system(update_frame_time_values).in_set(fps_overlay_set_update_text),
   )
 }

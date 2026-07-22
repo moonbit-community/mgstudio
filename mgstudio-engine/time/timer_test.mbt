@@ -14,7 +14,7 @@
 
 ///|
 test "timer once mode: transitions to finished only once" {
-  let t0 = Timer::from_seconds(1.0F, TimerMode::Once)
+  let t0 = Timer::from_seconds(1.0F, Once)
   let t1 = t0.tick(@core.Duration::from_millis(500L))
   debug_inspect(t1.just_finished(), content="false")
   debug_inspect(t1.is_finished(), content="false")
@@ -35,7 +35,7 @@ test "timer once mode: transitions to finished only once" {
 
 ///|
 test "timer repeating mode: wraps and finishes on each crossing" {
-  let t0 = Timer::from_seconds(1.0F, TimerMode::Repeating)
+  let t0 = Timer::from_seconds(1.0F, Repeating)
   let t1 = t0.tick(@core.Duration::from_millis(250L))
   debug_inspect(t1.just_finished(), content="false")
   debug_inspect(t1.is_finished(), content="false")
@@ -50,7 +50,7 @@ test "timer repeating mode: wraps and finishes on each crossing" {
 
 ///|
 test "timer pause/unpause: paused timer does not advance" {
-  let t0 = Timer::from_seconds(2.0F, TimerMode::Once).pause()
+  let t0 = Timer::from_seconds(2.0F, Once).pause()
   let t1 = t0.tick(@core.Duration::from_millis(1500L))
   debug_inspect(t1.just_finished(), content="false")
   debug_inspect(t1.is_finished(), content="false")
@@ -64,7 +64,7 @@ test "timer pause/unpause: paused timer does not advance" {
 
 ///|
 test "timer finish helpers match bevy behavior" {
-  let once = Timer::from_seconds(1.5F, TimerMode::Once).almost_finish()
+  let once = Timer::from_seconds(1.5F, Once).almost_finish()
   debug_inspect(once.is_finished(), content="false")
   debug_inspect(once.remaining().as_nanos(), content="1")
 

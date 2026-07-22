@@ -21,6 +21,7 @@ pub struct TabIndex {
 pub struct TabNavigationPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TabNavigationPlugin::TabNavigationPlugin() -> TabNavigationPlugin {
   TabNavigationPlugin::{  }
 }
@@ -37,7 +38,7 @@ pub impl @app.Plugin for TabNavigationPlugin with fn build(_self, app) {
 
 ///|
 pub fn TabIndex::new(value : Int) -> TabIndex {
-  TabIndex::{ value, }
+  { value, }
 }
 
 ///|
@@ -63,12 +64,12 @@ pub struct TabGroup {
 
 ///|
 pub fn TabGroup::new(order : Int) -> TabGroup {
-  TabGroup::{ modal: false, order }
+  { modal: false, order }
 }
 
 ///|
 pub fn TabGroup::modal() -> TabGroup {
-  TabGroup::{ modal: true, order: 0 }
+  { modal: true, order: 0 }
 }
 
 ///|
@@ -255,7 +256,7 @@ fn tab_navigation_collect_candidates(world : @ecs.World) -> Array[TabCandidate] 
           tab_index: tab_index.value().value(),
         }
       None =>
-        TabCandidate::{
+        {
           entity,
           entity_path,
           group_modal: false,
@@ -335,11 +336,10 @@ pub fn advance_tab_focus(world : @ecs.World, reverse : Bool) -> Unit {
 
 ///|
 fn tab_navigation_input(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Tab) {
+  if !keyboard.just_pressed(Tab) {
     return
   }
-  let reverse = keyboard.pressed(@window.KeyCode::ShiftLeft) ||
-    keyboard.pressed(@window.KeyCode::ShiftRight)
+  let reverse = keyboard.pressed(ShiftLeft) || keyboard.pressed(ShiftRight)
   let world = current_input_focus_world_abort_missing()
   advance_tab_focus(world, reverse)
 }
@@ -348,5 +348,5 @@ fn tab_navigation_input(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit 
 pub fn tab_navigation_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app.add_systems(@app.Update, @app.system_config_param(tab_navigation_input))
+  app.add_systems(Update, @app.system_config_param(tab_navigation_input))
 }

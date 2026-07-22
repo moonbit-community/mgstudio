@@ -16,9 +16,7 @@
 test "examples ecs component_hooks: hooks keep index and message queue in sync" {
   let world = @ecs.World::new()
   defer world.close()
-  world
-  .resource(my_component_index_key)
-  .insert(MyComponentIndex::MyComponentIndex())
+  world.resource(my_component_index_key).insert(MyComponentIndex())
   world
   .resource(my_message_key.messages_resource())
   .insert(@ecs.Messages::new())
@@ -26,13 +24,9 @@ test "examples ecs component_hooks: hooks keep index and message queue in sync" 
   setup(world)
 
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    my_component_key,
-    MyComponent::new(@window.KeyCode::KeyA),
-  )
+  try! world.set_by_key(entity, my_component_key, MyComponent::new(KeyA))
 
-  match my_component_index_or_abort(world).entities.get(@window.KeyCode::KeyA) {
+  match my_component_index_or_abort(world).entities.get(KeyA) {
     Some(indexed_entity) =>
       debug_inspect(indexed_entity == entity, content="true")
     None => abort("expected KeyA to be indexed after on_add")
@@ -49,7 +43,7 @@ test "examples ecs component_hooks: hooks keep index and message queue in sync" 
   )
   debug_inspect(world.is_alive(entity), content="false")
   debug_inspect(
-    my_component_index_or_abort(world).entities.contains(@window.KeyCode::KeyA),
+    my_component_index_or_abort(world).entities.contains(KeyA),
     content="false",
   )
 }

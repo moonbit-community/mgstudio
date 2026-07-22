@@ -90,7 +90,7 @@ fn cycle_scene(
   roots : @ecs.Query[@ecs.Read[ViewerRoot], @ecs.All],
   commands : @app.Commands,
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Enter) {
+  if !keyboard.just_pressed(Enter) {
     return
   }
   let handle = scenes.modify(fn(value) {
@@ -112,7 +112,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param4(@app.Update, cycle_scene)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param4(Update, cycle_scene)
   .run()
 }

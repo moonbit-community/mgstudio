@@ -29,9 +29,9 @@ fn render3d_prepass_phase_test_camera(
   msaa_samples? : Int = 4,
   active? : Bool = true,
 ) -> ExtractedCamera3d {
-  ExtractedCamera3d::{
+  {
     entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
-    payload: Camera3dViewPayload::{
+    payload: {
       decal_config: None,
       deferred_config: None,
       distance_fog: None,
@@ -40,7 +40,7 @@ fn render3d_prepass_phase_test_camera(
       atmosphere: None,
       atmosphere_settings: None,
       camera: @camera_camera.Camera::Camera().with_is_active(active),
-      depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+      depth_texture_usages: Camera3dDepthTextureUsage(),
       projection: Projection::default(),
       sub_camera_view: None,
       oit_settings: None,
@@ -81,7 +81,7 @@ fn render3d_prepass_phase_test_camera(
       target_id: 0,
       target_size: @math.IVec2::new(1280, 720),
       scale_factor: 1.0F,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       invert_culling: false,
     },
   }
@@ -117,9 +117,7 @@ fn render3d_prepass_phase_test_world() -> @ecs.World {
   let world = @ecs.World::new()
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),
-    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-      @render_batching.GpuPreprocessingMode::Culling,
-    ),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(Culling),
   )
   world
 }
@@ -251,7 +249,7 @@ test "pbr prepass specialization: changed view keys dirty only changed views" {
   ensure_render3d_prepass_specialization_resources(world)
   world.insert_resource(
     @render_visibility.DirtySpecializations::resource(),
-    @render_visibility.DirtySpecializations::DirtySpecializations(),
+    DirtySpecializations(),
   )
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(41, 0),
@@ -304,8 +302,7 @@ test "pbr prepass specialization: cache retains live views and full entry data" 
     @material.CachedRenderPipelineId::new(81UL),
     @material.DrawFunctionId::new(82U),
   )
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   live_views.add(live_view)
   cache.retain_live_views(live_views)
   let entry = cache.get(live_view).unwrap().get(entity).unwrap()
@@ -319,7 +316,7 @@ test "pbr prepass specialization: cache retains live views and full entry data" 
 test "pbr prepass queue: retained phase replaces entities and refreshes payload indices" {
   let phase = Render3dRetainedMeshPhaseView::{
     items: [],
-    gpu_preprocessing_mode: @render_batching.GpuPreprocessingMode::Culling,
+    gpu_preprocessing_mode: Culling,
     phase_types: Map([]),
   }
   let entity = phase_entity_ref3d(
@@ -331,7 +328,7 @@ test "pbr prepass queue: retained phase replaces entities and refreshes payload 
     extracted_index : Int,
     pipeline_id : UInt64,
   ) -> MeshPhaseItem3d {
-    MeshPhaseItem3d::{
+    {
       entity,
       extracted_index,
       current_uniform_index: 3U,
@@ -345,14 +342,8 @@ test "pbr prepass queue: retained phase replaces entities and refreshes payload 
       material_bind_group_slot: -1,
     }
   }
-  phase.add(
-    item(entity, 0, 7UL),
-    Render3dPrepassBinnedRenderPhaseType::MultidrawableMesh,
-  )
-  phase.add(
-    item(entity, 1, 8UL),
-    Render3dPrepassBinnedRenderPhaseType::BatchableMesh,
-  )
+  phase.add(item(entity, 0, 7UL), MultidrawableMesh)
+  phase.add(item(entity, 1, 8UL), BatchableMesh)
   inspect(phase.items.length(), content="1")
   inspect(phase.items[0].pipeline_id.id(), content="8")
   let indices : Map[UInt64, Int] = Map([])
@@ -360,8 +351,7 @@ test "pbr prepass queue: retained phase replaces entities and refreshes payload 
   phase.refresh_extracted_indices(indices)
   inspect(phase.items[0].extracted_index, content="9")
   debug_inspect(
-    phase.phase_types.get(entity.main_entity.to_bits())
-    is Some(Render3dPrepassBinnedRenderPhaseType::BatchableMesh),
+    phase.phase_types.get(entity.main_entity.to_bits()) is Some(BatchableMesh),
     content="true",
   )
   phase.remove(entity.main_entity)
@@ -369,16 +359,13 @@ test "pbr prepass queue: retained phase replaces entities and refreshes payload 
 
   let direct_phase = Render3dRetainedMeshPhaseView::{
     items: [],
-    gpu_preprocessing_mode: @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    gpu_preprocessing_mode: PreprocessingOnly,
     phase_types: Map([]),
   }
-  direct_phase.add(
-    item(entity, 0, 9UL),
-    Render3dPrepassBinnedRenderPhaseType::MultidrawableMesh,
-  )
+  direct_phase.add(item(entity, 0, 9UL), MultidrawableMesh)
   debug_inspect(
     direct_phase.phase_types.get(entity.main_entity.to_bits())
-    is Some(Render3dPrepassBinnedRenderPhaseType::BatchableMesh),
+    is Some(BatchableMesh),
     content="true",
   )
 }

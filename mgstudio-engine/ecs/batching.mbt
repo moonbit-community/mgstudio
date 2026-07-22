@@ -32,12 +32,12 @@ pub fn BatchingStrategy::BatchingStrategy() -> BatchingStrategy {
 
 ///|
 pub impl Default for BatchingStrategy with fn default() {
-  BatchingStrategy::BatchingStrategy()
+  BatchingStrategy()
 }
 
 ///|
 pub fn BatchingStrategy::new() -> BatchingStrategy {
-  BatchingStrategy::{
+  {
     min_batch_size: BATCH_SIZE_MIN_DEFAULT,
     max_batch_size: BATCH_SIZE_MAX_DEFAULT,
     batches_per_thread: 1,
@@ -47,7 +47,7 @@ pub fn BatchingStrategy::new() -> BatchingStrategy {
 ///|
 pub fn BatchingStrategy::fixed(batch_size : Int) -> BatchingStrategy {
   let normalized = batching_strategy_non_negative(batch_size)
-  BatchingStrategy::{
+  {
     min_batch_size: normalized,
     max_batch_size: normalized,
     batches_per_thread: 1,
@@ -59,7 +59,7 @@ pub fn BatchingStrategy::min_batch_size(
   self : BatchingStrategy,
   batch_size : Int,
 ) -> BatchingStrategy {
-  BatchingStrategy::{
+  {
     min_batch_size: batching_strategy_non_negative(batch_size),
     max_batch_size: self.max_batch_size,
     batches_per_thread: self.batches_per_thread,
@@ -71,7 +71,7 @@ pub fn BatchingStrategy::max_batch_size(
   self : BatchingStrategy,
   batch_size : Int,
 ) -> BatchingStrategy {
-  BatchingStrategy::{
+  {
     min_batch_size: self.min_batch_size,
     max_batch_size: batching_strategy_non_negative(batch_size),
     batches_per_thread: self.batches_per_thread,
@@ -83,7 +83,7 @@ pub fn BatchingStrategy::batches_per_thread(
   self : BatchingStrategy,
   batches_per_thread : Int,
 ) -> BatchingStrategy {
-  BatchingStrategy::{
+  {
     min_batch_size: self.min_batch_size,
     max_batch_size: self.max_batch_size,
     batches_per_thread: if batches_per_thread <= 0 {

@@ -30,7 +30,7 @@ fn main {
   .add_fixed_update_system(@physics2d.physics2d_step_system)
   .add_fixed_update_system(@physics2d.physics2d_writeback_system)
   .add_post_update_system_param(@physics2d.physics2d_debug_render_system)
-  .add_systems_world(@app.Startup, rapier2d_custom_system_setup2_setup)
+  .add_systems_world(Startup, rapier2d_custom_system_setup2_setup)
   .run()
 }
 

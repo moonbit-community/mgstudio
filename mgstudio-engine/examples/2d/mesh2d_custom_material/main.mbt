@@ -46,9 +46,9 @@ impl @asset.Asset for CustomMaterialAsset with fn asset_resource_keys() {
 fn custom_material_asset(
   color : @color.Color,
   color_texture? : @asset.Handle[@asset.Image]? = None,
-  alpha_mode? : @sprite_render.AlphaMode2d = @sprite_render.AlphaMode2d::Blend,
+  alpha_mode? : @sprite_render.AlphaMode2d = Blend,
 ) -> CustomMaterialAsset {
-  CustomMaterialAsset::{ color, color_texture, alpha_mode }
+  { color, color_texture, alpha_mode }
 }
 
 ///|
@@ -142,7 +142,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(custom_material_plugin())
-  .add_systems_world(@app.Startup, mesh2d_custom_material_setup)
+  .add_systems_world(Startup, mesh2d_custom_material_setup)
   .run()
 }
 
@@ -185,14 +185,10 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   try! (world.set_by_key(
     entity,
     @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::RenderLayers(),
+    RenderLayers(),
   )
   |> ignore)
-  try! (world.set_by_key(
-    entity,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! (world.set_by_key(entity, @visibility.ecs_key_visibility, Inherited)
   |> ignore)
   try! (world.set_by_key(
     entity,

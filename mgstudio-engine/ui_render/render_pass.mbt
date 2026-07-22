@@ -35,7 +35,7 @@ priv struct UiResolvedCameraState {
 
 ///|
 fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
-  UiResolvedCameraState::{
+  {
     camera_entity: None,
     viewport_size: @math.Vec2::new(0.0F, 0.0F),
     render_target_info: None,
@@ -46,7 +46,7 @@ fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
 fn ui_resolved_camera_state_from_fallback_ctx(
   ctx : @ui.UiContext,
 ) -> UiResolvedCameraState {
-  UiResolvedCameraState::{
+  {
     camera_entity: ctx.camera_entity,
     viewport_size: ctx.viewport_size,
     render_target_info: None,
@@ -58,7 +58,7 @@ fn ui_resolved_camera_state_from_computed(
   camera_entity : @core.Entity?,
   render_target_info : @ui.ComputedUiRenderTargetInfo,
 ) -> UiResolvedCameraState {
-  UiResolvedCameraState::{
+  {
     camera_entity,
     viewport_size: render_target_info.logical_size(),
     render_target_info: Some(render_target_info),

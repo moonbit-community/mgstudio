@@ -27,10 +27,10 @@ pub struct Render3dMeshRuntimeState {
 
 ///|
 pub fn Render3dMeshRuntimeState::new() -> Render3dMeshRuntimeState {
-  Render3dMeshRuntimeState::{
+  {
     mesh_upload_cache: Map([]),
     morph_target_texture_cache: Map([]),
-    mesh_vertex_buffer_layouts: @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
+    mesh_vertex_buffer_layouts: MeshVertexBufferLayouts(),
     binding_arrays_are_usable: false,
     clustered_decals_are_usable: @render_gpu.host_gpu_mesh3d_binding_arrays_are_usable(
       required_storage_textures_per_shader_stage=0U,
@@ -50,7 +50,7 @@ pub fn Render3dMeshRuntimeState::with_pipeline_capabilities(
     self.clustered_decals_are_usable == clustered_decals_are_usable {
     return self
   }
-  Render3dMeshRuntimeState::{
+  {
     ..self,
     binding_arrays_are_usable,
     clustered_decals_are_usable,
@@ -166,14 +166,14 @@ pub struct Render3dMeshUploadCacheState {
 
 ///|
 pub fn Render3dMeshUploadCacheState::Render3dMeshUploadCacheState() -> Render3dMeshUploadCacheState {
-  Render3dMeshUploadCacheState::{ clear_count: 0 }
+  { clear_count: 0 }
 }
 
 ///|
 pub fn render3d_mesh_upload_cache_state_after_clear(
   state : Render3dMeshUploadCacheState,
 ) -> Render3dMeshUploadCacheState {
-  Render3dMeshUploadCacheState::{ clear_count: state.clear_count + 1 }
+  { clear_count: state.clear_count + 1 }
 }
 
 ///|
@@ -340,7 +340,7 @@ pub fn Render3dDrawMaterialInput::from_standard_material(
   specular_texture_id? : Int = -1,
   forward_decal? : Bool = false,
 ) -> Render3dDrawMaterialInput {
-  Render3dDrawMaterialInput::{
+  {
     uv_transform: material.uv_transform,
     emissive: material.emissive,
     emissive_exposure_weight: material.emissive_exposure_weight,
@@ -376,7 +376,7 @@ pub fn Render3dDrawMaterialInput::from_standard_material(
 pub fn Render3dDrawMaterialInput::from_material_properties(
   material_properties : @material.MaterialProperties,
 ) -> Render3dDrawMaterialInput {
-  Render3dDrawMaterialInput::{
+  {
     uv_transform: @transform.Affine2::identity(),
     emissive: @color.Color::black(),
     emissive_exposure_weight: 0.0F,
@@ -397,9 +397,7 @@ pub fn Render3dDrawMaterialInput::from_material_properties(
     STANDARD_MATERIAL_FLAGS_FOG_ENABLED_BIT,
     lightmap_exposure: 1.0F,
     deferred_lighting_pass_id: 1,
-    cull_mode_base: render3d_material_cull_mode_base(
-      Some(@material.Face3d::Back),
-    ),
+    cull_mode_base: render3d_material_cull_mode_base(Some(Back)),
   }
 }
 
@@ -435,26 +433,26 @@ pub fn render3d_resolve_material_extension_bind_group_data(
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> @render_resource.MaterialBindGroupResolvedData {
   guard extension is Some(extension0) else {
-    return @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+    return MaterialBindGroupResolvedData()
   }
   let entries : Array[@render_resource.MaterialBindGroupResolvedEntry] = []
   for binding in extension0.extension_bind_group_bindings() {
     match binding.resource() {
-      @material.MaterialExtensionBindingResource3d::Texture(image) =>
+      Texture(image) =>
         entries.push(
           @render_resource.MaterialBindGroupResolvedEntry::texture(
             binding.binding(),
             image.id(),
           ),
         )
-      @material.MaterialExtensionBindingResource3d::Sampler(image) =>
+      Sampler(image) =>
         entries.push(
           @render_resource.MaterialBindGroupResolvedEntry::sampler(
             binding.binding(),
             image.id(),
           ),
         )
-      @material.MaterialExtensionBindingResource3d::Uniform(bytes) =>
+      Uniform(bytes) =>
         entries.push(
           @render_resource.MaterialBindGroupResolvedEntry::uniform(
             binding.binding(),
@@ -519,7 +517,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   forward_decal_inv_depth_fade_factor? : Float = 1.0F / 8.0F,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
-  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = MaterialBindGroupResolvedData(),
   material_pipeline_id~ : @material.CachedRenderPipelineId,
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
@@ -546,7 +544,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
     Some(affine) => affine
     None => render3d_transform_affine(previous_transform)
   }
-  MeshGpuDrawPayload3d::{
+  {
     mesh_id,
     preprocess_camera_key_hi,
     preprocess_camera_key_lo,

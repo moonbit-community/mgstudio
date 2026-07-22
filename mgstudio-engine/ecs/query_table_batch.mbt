@@ -393,7 +393,7 @@ pub fn[T] QueryTableBatch::read(
     column: Some(column),
   }
   self.cleanups.push(fn() { binding.invalidate() })
-  Some(TableBatchRead::{ scope: self.scope, binding, key })
+  Some({ scope: self.scope, binding, key })
 }
 
 ///|
@@ -432,7 +432,7 @@ pub fn[T] QueryTableBatch::write(
     column: Some(column),
   }
   self.cleanups.push(fn() { binding.invalidate() })
-  Some(TableBatchWrite::{ scope: self.scope, binding, key, local_component_id })
+  Some({ scope: self.scope, binding, key, local_component_id })
 }
 
 ///|

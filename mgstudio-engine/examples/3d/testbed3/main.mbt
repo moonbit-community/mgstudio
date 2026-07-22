@@ -24,8 +24,8 @@ let testbed3_state : Ref[Testbed3State] = Ref({ spawned: [] })
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, update)
   .run()
 }
 
@@ -132,11 +132,11 @@ fn testbed3_spawn_mode(world : @ecs.World, mode : Int) -> Unit {
 
 ///|
 fn update(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     testbed3_spawn_mode(world, 0)
-  } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  } else if @input.key_just_pressed(Digit2) {
     testbed3_spawn_mode(world, 1)
-  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  } else if @input.key_just_pressed(Digit3) {
     testbed3_spawn_mode(world, 2)
   }
 }

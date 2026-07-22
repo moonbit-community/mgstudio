@@ -132,6 +132,7 @@ pub fn configure_pbr_render_startup_systems(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn configure_pbr_render_light_view_observers(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -167,6 +168,7 @@ pub fn configure_pbr_render_light_view_observers(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn configure_pbr_render_prepare_systems(
   sub_app : @app.SubApp[@ecs.World],
 ) -> @app.SubApp[@ecs.World] {
@@ -242,76 +244,68 @@ fn configure_pbr_render_world_resources(
 ) -> @app.SubApp[@ecs.World] {
   let world = sub_app.world()
   pbr_init_render_resource_if_missing(world, ViewKeyCache::resource(), fn() {
-    ViewKeyCache::ViewKeyCache()
+    ViewKeyCache()
   })
   pbr_init_render_resource_if_missing(
     world,
     @pbr_render.LightMeta::resource(),
-    fn() { @pbr_render.LightMeta::LightMeta() },
+    fn() { LightMeta() },
   )
   pbr_init_render_resource_if_missing(
     world,
     RenderMaterialBindings::resource(),
-    fn() { RenderMaterialBindings::RenderMaterialBindings() },
+    fn() { RenderMaterialBindings() },
   )
   pbr_init_render_resource_if_missing(
     world,
     ecs_key_render_material_shader_paths,
-    fn() { RenderMaterialShaderPaths::RenderMaterialShaderPaths() },
+    fn() { RenderMaterialShaderPaths() },
   )
   pbr_init_render_resource_if_missing(
     world,
     @render_view.RenderShadowLodOrigin::resource(),
-    fn() { @render_view.RenderShadowLodOrigin::RenderShadowLodOrigin() },
+    fn() { RenderShadowLodOrigin() },
   )
   pbr_init_render_resource_if_missing(
     world,
     Render3dShadowPhaseBatchedInstanceBuffers::resource(),
-    fn() {
-      Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers()
-    },
+    fn() { Render3dShadowPhaseBatchedInstanceBuffers() },
   )
   pbr_init_render_resource_if_missing(
     world,
     Render3dShadowPhaseIndirectParametersBuffers::resource(),
-    fn() {
-      Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers()
-    },
+    fn() { Render3dShadowPhaseIndirectParametersBuffers() },
   )
   pbr_init_render_resource_if_missing(
     world,
     (@app.Resource::resource() : @ecs.ResourceKey[Render3dMainViewDrawItems]),
-    fn() { Render3dMainViewDrawItems::Render3dMainViewDrawItems() },
+    fn() { Render3dMainViewDrawItems() },
   )
   pbr_init_render_resource_if_missing(
     world,
     (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaqueMainViewPhases]),
-    fn() { Render3dOpaqueMainViewPhases::Render3dOpaqueMainViewPhases() },
+    fn() { Render3dOpaqueMainViewPhases() },
   )
   pbr_init_render_resource_if_missing(
     world,
     (
       @app.Resource::resource() :
       @ecs.ResourceKey[Render3dAlphaMaskMainViewPhases]),
-    fn() { Render3dAlphaMaskMainViewPhases::Render3dAlphaMaskMainViewPhases() },
+    fn() { Render3dAlphaMaskMainViewPhases() },
   )
   pbr_init_render_resource_if_missing(
     world,
     (
       @app.Resource::resource() :
       @ecs.ResourceKey[Render3dTransmissiveMainViewPhases]),
-    fn() {
-      Render3dTransmissiveMainViewPhases::Render3dTransmissiveMainViewPhases()
-    },
+    fn() { Render3dTransmissiveMainViewPhases() },
   )
   pbr_init_render_resource_if_missing(
     world,
     (
       @app.Resource::resource() :
       @ecs.ResourceKey[Render3dTransparentMainViewPhases]),
-    fn() {
-      Render3dTransparentMainViewPhases::Render3dTransparentMainViewPhases()
-    },
+    fn() { Render3dTransparentMainViewPhases() },
   )
   sub_app
 }

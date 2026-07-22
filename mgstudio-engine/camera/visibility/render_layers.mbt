@@ -29,7 +29,7 @@ pub using @camera_render_layers {ecs_key_render_layers}
 
 ///|
 pub fn render_layers_default() -> RenderLayers {
-  RenderLayers::RenderLayers()
+  RenderLayers()
 }
 
 ///|

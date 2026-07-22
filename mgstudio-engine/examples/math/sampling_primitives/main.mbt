@@ -95,17 +95,17 @@ fn sky_color() -> @color.Color {
 
 ///|
 fn cuboid_shape() -> @math.Cuboid {
-  @math.Cuboid::{ half_size: @math.Vec3::new(SMALL_3D, BIG_3D, SMALL_3D) }
+  { half_size: @math.Vec3::new(SMALL_3D, BIG_3D, SMALL_3D) }
 }
 
 ///|
 fn sphere_shape() -> @math.Sphere {
-  @math.Sphere::{ radius: 1.5F * SMALL_3D }
+  { radius: 1.5F * SMALL_3D }
 }
 
 ///|
 fn triangle_shape() -> @math.Triangle3d {
-  @math.Triangle3d::{
+  {
     vertices: [
       @math.Vec3::new(BIG_3D, -BIG_3D * 0.5F, 0.0F),
       @math.Vec3::new(0.0F, BIG_3D, 0.0F),
@@ -116,17 +116,17 @@ fn triangle_shape() -> @math.Triangle3d {
 
 ///|
 fn capsule_shape() -> @math.Capsule3d {
-  @math.Capsule3d::{ radius: SMALL_3D, half_length: SMALL_3D }
+  { radius: SMALL_3D, half_length: SMALL_3D }
 }
 
 ///|
 fn cylinder_shape() -> @math.Cylinder {
-  @math.Cylinder::{ radius: SMALL_3D, half_height: SMALL_3D }
+  { radius: SMALL_3D, half_height: SMALL_3D }
 }
 
 ///|
 fn tetrahedron_shape() -> @math.Tetrahedron {
-  @math.Tetrahedron::{
+  {
     vertices: [
       @math.Vec3::new(-BIG_3D, -BIG_3D * 0.67F, BIG_3D * 0.5F),
       @math.Vec3::new(BIG_3D, -BIG_3D * 0.67F, BIG_3D * 0.5F),
@@ -412,7 +412,7 @@ fn sampled_shapes_new() -> SampledShapes {
   let center = Float::from_int(shapes.length()) / 2.0F
   let spacing = distance_between_shapes()
   for i in 0..<shapes.length() {
-    entries.push(SampledShape::{
+    entries.push({
       shape: shapes[i],
       translation: @math.Vec3::new(
         (Float::from_int(i) - center) * spacing.x,
@@ -421,7 +421,7 @@ fn sampled_shapes_new() -> SampledShapes {
       ),
     })
   }
-  SampledShapes::{ shapes: entries }
+  { shapes: entries }
 }
 
 ///|
@@ -506,17 +506,15 @@ fn spawn_instructions(
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
+    IsDefaultUiCamera(),
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -536,9 +534,9 @@ fn spawn_instructions(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -566,9 +564,9 @@ fn spawn_instructions(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -590,7 +588,7 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   try! world.set_by_key(
     text_entity,
@@ -601,9 +599,9 @@ fn spawn_instructions(
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -625,34 +623,33 @@ fn spawn_instructions(
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
   try! world.set_by_key(
     text_entity,
     @visibility.Visibility::component(),
-    @visibility.Visibility::Visible,
+    Visible,
   )
-  world.insert_resource(InstructionText::resource(), InstructionText::{
-    entity: text_entity,
-  })
+  world.insert_resource(InstructionText::resource(), { entity: text_entity })
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
 
-  world.insert_resource(RandomSource::resource(), RandomSource::{
+  world.insert_resource(RandomSource::resource(), {
     rng: @random.Rand::chacha8(seed=b"bevy-sampling-primitives-seed-04"),
   })
   world.insert_resource(SampledShapes::resource(), sampled_shapes_new())
-  world.insert_resource(SpawnQueue::resource(), SpawnQueue::{ count: 0 })
-  world.insert_resource(PointCounter::resource(), PointCounter::{ count: 0 })
-  world.insert_resource(SamplingMode::resource(), SamplingMode::Interior)
-  world.insert_resource(SpawningMode::resource(), SpawningMode::Automatic)
-  world.insert_resource(MousePressed::resource(), MousePressed::{ value: false })
+  world.insert_resource(SpawnQueue::resource(), { count: 0 })
+  world.insert_resource(PointCounter::resource(), { count: 0 })
+  world.insert_resource(SamplingMode::resource(), Interior)
+  world.insert_resource(SpawningMode::resource(), Automatic)
+  world.insert_resource(MousePressed::resource(), { value: false })
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -685,7 +682,7 @@ fn setup(
         @color.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
       )
       .with_reflectance(0.0F)
-      .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+      .with_alpha_mode(Blend)
       .with_cull_mode(None),
     )
 
@@ -743,17 +740,17 @@ fn setup(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_tonemapping(Some(@pbr.Tonemapping::TonyMcMapface))
-    .with_bloom(Some(@pbr.Bloom::Bloom()))
+    .with_tonemapping(Some(TonyMcMapface))
+    .with_bloom(Some(Bloom()))
     .spawn(world)
-  try! world.set_by_key(camera_entity, CameraRig::component(), CameraRig::{
+  try! world.set_by_key(camera_entity, CameraRig::component(), {
     yaw: 0.56F,
     pitch: 0.45F,
     distance: 8.0F,
     target: @math.Vec3::zero(),
   })
 
-  world.insert_resource(PointMesh::resource(), PointMesh::{
+  world.insert_resource(PointMesh::resource(), {
     mesh: @mesh.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
         assets
@@ -766,7 +763,7 @@ fn setup(
       }),
     ),
   })
-  world.insert_resource(PointMaterial::resource(), PointMaterial::{
+  world.insert_resource(PointMaterial::resource(), {
     interior: materials
     .peek()
     .add(
@@ -787,6 +784,7 @@ fn setup(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_sample_point(
   world : @ecs.World,
   point_mesh : PointMesh,
@@ -802,16 +800,14 @@ fn spawn_sample_point(
     ),
   ).spawn(world)
   try! world.set_by_key(entity, SamplePoint::component(), SamplePoint::{  })
-  try! world.set_by_key(entity, SpawningPoint::component(), SpawningPoint::{
-    progress: 0.0F,
-  })
+  try! world.set_by_key(entity, SpawningPoint::component(), { progress: 0.0F })
 }
 
 ///|
 fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
   let world = current_world_or_abort()
 
-  if keyboard.just_pressed(@window.KeyCode::KeyR) {
+  if keyboard.just_pressed(KeyR) {
     let sample_entities : Array[@core.Entity] = []
     world.for_each_component(SamplePoint::component(), fn(entity, _sample) {
       sample_entities.push(entity)
@@ -844,13 +840,13 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
 
-  if keyboard.just_pressed(@window.KeyCode::KeyS) {
+  if keyboard.just_pressed(KeyS) {
     spawn_queue.modify(fn(value) { value.count = value.count + 1 })
   }
-  if keyboard.just_pressed(@window.KeyCode::KeyD) {
+  if keyboard.just_pressed(KeyD) {
     spawn_queue.modify(fn(value) { value.count = value.count + 100 })
   }
-  if keyboard.just_pressed(@window.KeyCode::KeyM) {
+  if keyboard.just_pressed(KeyM) {
     mode.update(fn(value) {
       match value {
         Interior => Boundary
@@ -858,7 +854,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
       }
     })
   }
-  if keyboard.just_pressed(@window.KeyCode::KeyA) {
+  if keyboard.just_pressed(KeyA) {
     spawn_mode.update(fn(value) {
       match value {
         Manual => Automatic
@@ -866,18 +862,18 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
       }
     })
   }
-  if keyboard.just_pressed(@window.KeyCode::Tab) {
+  if keyboard.just_pressed(Tab) {
     let current_visibility = match
       (try! world.get_by_key(
         instruction.entity,
         @visibility.Visibility::component(),
       )) {
       Some(visibility) => visibility
-      None => @visibility.Visibility::Visible
+      None => Visible
     }
     let next_visibility = match current_visibility {
-      @visibility.Visibility::Hidden => @visibility.Visibility::Visible
-      _ => @visibility.Visibility::Hidden
+      Hidden => @visibility.Visibility::Visible
+      _ => Hidden
     }
     try! world.set_by_key(
       instruction.entity,
@@ -898,8 +894,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
 
-  if keyboard.just_pressed(@window.KeyCode::NumpadSubtract) ||
-    keyboard.just_pressed(@window.KeyCode::Minus) {
+  if keyboard.just_pressed(NumpadSubtract) || keyboard.just_pressed(Minus) {
     let next_rig = rig
     next_rig.distance = if rig.distance + MAX_CAMERA_DISTANCE / 15.0F >
       MAX_CAMERA_DISTANCE {
@@ -909,7 +904,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     }
     ignore(try! world.replace(camera_entity, CameraRig::component(), next_rig))
   }
-  if keyboard.just_pressed(@window.KeyCode::NumpadAdd) {
+  if keyboard.just_pressed(NumpadAdd) {
     let next_rig = rig
     next_rig.distance = if rig.distance - MAX_CAMERA_DISTANCE / 15.0F <
       MIN_CAMERA_DISTANCE {
@@ -920,8 +915,8 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     ignore(try! world.replace(camera_entity, CameraRig::component(), next_rig))
   }
 
-  let left = keyboard.just_pressed(@window.KeyCode::ArrowLeft)
-  let right = keyboard.just_pressed(@window.KeyCode::ArrowRight)
+  let left = keyboard.just_pressed(ArrowLeft)
+  let right = keyboard.just_pressed(ArrowRight)
   if left || right {
     let mut closest = 0
     let mut closest_distance = 1_000_000_000.0F
@@ -962,9 +957,7 @@ fn handle_mouse(
   guard world.get_resource_mut(MousePressed::resource()) is Some(mouse_pressed) else {
     return
   }
-  mouse_pressed.modify(fn(value) {
-    value.value = mouse_buttons.pressed(@window.MouseButton::Left)
-  })
+  mouse_pressed.modify(fn(value) { value.value = mouse_buttons.pressed(Left) })
 
   let mut camera_entity : @core.Entity? = None
   world.for_each_component(CameraRig::component(), fn(entity, _rig) {
@@ -1114,7 +1107,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
       break
     }
     let entity = sample_entities[i]
-    try! world.set_by_key(entity, DespawningPoint::component(), DespawningPoint::{
+    try! world.set_by_key(entity, DespawningPoint::component(), {
       progress: 0.0F,
     })
     try! (world.take(entity, SamplePoint::component()) |> ignore)
@@ -1283,14 +1276,14 @@ fn update_lights(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param(@app.Update, handle_keypress)
-  .add_systems_param3(@app.Update, handle_mouse)
-  .add_systems_world(@app.Update, spawn_points)
-  .add_systems_world(@app.Update, despawn_points)
-  .add_systems_world(@app.Update, animate_spawning)
-  .add_systems_world(@app.Update, animate_despawning)
-  .add_systems_world(@app.Update, update_camera)
-  .add_systems_world(@app.Update, update_lights)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param(Update, handle_keypress)
+  .add_systems_param3(Update, handle_mouse)
+  .add_systems_world(Update, spawn_points)
+  .add_systems_world(Update, despawn_points)
+  .add_systems_world(Update, animate_spawning)
+  .add_systems_world(Update, animate_despawning)
+  .add_systems_world(Update, update_camera)
+  .add_systems_world(Update, update_lights)
   .run()
 }

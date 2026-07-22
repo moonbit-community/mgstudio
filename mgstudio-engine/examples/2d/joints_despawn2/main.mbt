@@ -19,8 +19,8 @@ let joints_despawn2_state : Ref[(Int, @core.Entity?)] = Ref((0, None))
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_joints_despawn2_setup)
-  .add_systems_world(@app.Update, rapier2d_joints_despawn2_tick)
+  .add_systems_world(Startup, rapier2d_joints_despawn2_setup)
+  .add_systems_world(Update, rapier2d_joints_despawn2_tick)
   .run()
 }
 

@@ -57,12 +57,8 @@ test "gizmos_render boundary exposes render systems and plugin entry" {
   defer lifecycle_world_54_0.close()
   let app = @app.App::new(lifecycle_world_54_0)
   let _ = @gizmos_render.gizmo_render_plugin(app)
-  let _set2d = @gizmos_render.gizmo_render_system_set(
-    @gizmos_render.GizmoRenderSystems::QueueLineGizmos2d,
-  )
-  let _set3d = @gizmos_render.gizmo_render_system_set(
-    @gizmos_render.GizmoRenderSystems::QueueLineGizmos3d,
-  )
+  let _set2d = @gizmos_render.gizmo_render_system_set(QueueLineGizmos2d)
+  let _set3d = @gizmos_render.gizmo_render_system_set(QueueLineGizmos3d)
   ignore(_set2d)
   ignore(_set3d)
 }
@@ -84,11 +80,11 @@ test "extract_line_gizmos spawns Bevy-shaped temporary render entities" {
     @gizmos.Gizmo::Gizmo()
     .with_handle(handle)
     .with_depth_bias(-0.25F)
-    .with_line_config(@gizmos.GizmoLineConfig::{
+    .with_line_config({
       width: 7.0F,
       perspective: true,
-      style: @gizmos.GizmoLineStyle::Dashed(gap_scale=3.0F, line_scale=5.0F),
-      joints: @gizmos.GizmoLineJoint::Round(6),
+      style: Dashed(gap_scale=3.0F, line_scale=5.0F),
+      joints: Round(6),
     }),
   )
   try! world.set(entity, @transform.GlobalTransform::identity())
@@ -139,11 +135,11 @@ test "extract_line_gizmos preserves dashed scale values" {
   let entity = world.spawn()
   try! world.set(
     entity,
-    @gizmos.Gizmo::Gizmo().with_line_config(@gizmos.GizmoLineConfig::{
+    @gizmos.Gizmo::Gizmo().with_line_config({
       width: 2.0F,
       perspective: false,
-      style: @gizmos.GizmoLineStyle::Dashed(gap_scale=2.0F, line_scale=4.0F),
-      joints: @gizmos.GizmoLineJoint::None,
+      style: Dashed(gap_scale=2.0F, line_scale=4.0F),
+      joints: None,
     }),
   )
   try! world.set(entity, @transform.GlobalTransform::identity())
@@ -170,11 +166,11 @@ test "line gizmo uniform bytes match Bevy ShaderType layout" {
     entity,
     @gizmos.Gizmo::Gizmo()
     .with_depth_bias(-0.5F)
-    .with_line_config(@gizmos.GizmoLineConfig::{
+    .with_line_config({
       width: 9.0F,
       perspective: true,
-      style: @gizmos.GizmoLineStyle::Dashed(gap_scale=2.0F, line_scale=3.0F),
-      joints: @gizmos.GizmoLineJoint::Round(5),
+      style: Dashed(gap_scale=2.0F, line_scale=3.0F),
+      joints: Round(5),
     }),
   )
   let transform = @transform.Transform::from_xyz(5.0F, 6.0F, 7.0F).with_scale(
@@ -296,7 +292,7 @@ test "line gizmo pipeline plans preserve Bevy 2d and 3d specialization keys" {
       msaa_samples=4U,
       target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
       strip=true,
-      line_style=@gizmos.GizmoLineStyle::Dashed(gap_scale=2.0F, line_scale=3.0F),
+      line_style=Dashed(gap_scale=2.0F, line_scale=3.0F),
     ),
   )
   debug_inspect(plan2d.label(), content="\"LineGizmo Pipeline 2D\"")
@@ -315,7 +311,7 @@ test "line gizmo pipeline plans preserve Bevy 2d and 3d specialization keys" {
       target_format=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
       strip=false,
       perspective=true,
-      line_style=@gizmos.GizmoLineStyle::Dotted,
+      line_style=Dotted,
     ),
   )
   debug_inspect(plan3d.label(), content="\"LineGizmo 3d Pipeline\"")
@@ -336,7 +332,7 @@ test "line joint gizmo pipeline plans preserve Bevy joint entry points" {
     @gizmos_render.LineJointGizmo2dPipelineKey::new(
       msaa_samples=1U,
       target_format=@wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
-      joints=@gizmos.GizmoLineJoint::Bevel,
+      joints=Bevel,
     ),
   )
   debug_inspect(bevel.vertex_entry_point(), content="Some(\"vertex_bevel\")")
@@ -346,7 +342,7 @@ test "line joint gizmo pipeline plans preserve Bevy joint entry points" {
       msaa_samples=1U,
       target_format=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
       perspective=true,
-      joints=@gizmos.GizmoLineJoint::Round(12),
+      joints=Round(12),
     ),
   )
   debug_inspect(round.vertex_entry_point(), content="Some(\"vertex_round\")")
@@ -418,7 +414,7 @@ test "draw line gizmo plan mirrors Bevy list and strip buffer slices" {
 test "draw line joint gizmo plan mirrors Bevy joint draw conditions" {
   guard @gizmos_render.draw_line_joint_gizmo_plan(
       strip_vertex_count=6,
-      joints=@gizmos.GizmoLineJoint::Round(8),
+      joints=Round(8),
     )
     is Some(round_plan) else {
     abort("expected round joint draw plan")
@@ -439,30 +435,23 @@ test "draw line joint gizmo plan mirrors Bevy joint draw conditions" {
   debug_inspect(round_plan.bindings()[3].offset_bytes(), content="16")
   debug_inspect(round_plan.bindings()[3].size_bytes(), content="64")
   debug_inspect(
-    @gizmos_render.draw_line_joint_gizmo_vertex_count(
-      @gizmos.GizmoLineJoint::Miter,
-    ),
+    @gizmos_render.draw_line_joint_gizmo_vertex_count(Miter),
     content="Some(6)",
   )
   debug_inspect(
-    @gizmos_render.draw_line_joint_gizmo_vertex_count(
-      @gizmos.GizmoLineJoint::Bevel,
-    ),
+    @gizmos_render.draw_line_joint_gizmo_vertex_count(Bevel),
     content="Some(3)",
   )
   debug_inspect(
     @gizmos_render.draw_line_joint_gizmo_plan(
       strip_vertex_count=2,
-      joints=@gizmos.GizmoLineJoint::Miter,
+      joints=Miter,
     )
     is None,
     content="true",
   )
   debug_inspect(
-    @gizmos_render.draw_line_joint_gizmo_plan(
-      strip_vertex_count=6,
-      joints=@gizmos.GizmoLineJoint::None,
-    )
+    @gizmos_render.draw_line_joint_gizmo_plan(strip_vertex_count=6, joints=None)
     is None,
     content="true",
   )
@@ -477,8 +466,8 @@ test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
   let handle = @asset.Handle::new(7)
   let mesh_config = @gizmos.GizmoMeshConfig::new(
     line_perspective=true,
-    line_style=@gizmos.GizmoLineStyle::Dotted,
-    line_joints=@gizmos.GizmoLineJoint::Round(8),
+    line_style=Dotted,
+    line_joints=Round(8),
     render_layers=@camera_render_layers.RenderLayers::layer(1),
     handle~,
   )
@@ -489,27 +478,15 @@ test "line gizmo phase planning mirrors Bevy list strip and joint conditions" {
     main_entity,
     entities,
     draw_functions,
-    @gizmos_render.LineGizmoRenderDimension::Dim3,
+    Dim3,
     mesh_config,
     2,
     4,
   )
   debug_inspect(items.length(), content="3")
-  debug_inspect(
-    items[0].pipeline_key().kind()
-    is @gizmos_render.LineGizmoPhaseKind::LineList,
-    content="true",
-  )
-  debug_inspect(
-    items[1].pipeline_key().kind()
-    is @gizmos_render.LineGizmoPhaseKind::LineStrip,
-    content="true",
-  )
-  debug_inspect(
-    items[2].pipeline_key().kind()
-    is @gizmos_render.LineGizmoPhaseKind::LineJoint,
-    content="true",
-  )
+  debug_inspect(items[0].pipeline_key().kind() is LineList, content="true")
+  debug_inspect(items[1].pipeline_key().kind() is LineStrip, content="true")
+  debug_inspect(items[2].pipeline_key().kind() is LineJoint, content="true")
   debug_inspect(items[0].indexed(), content="true")
   debug_inspect(items[0].handle_id(), content="7")
   debug_inspect(items[0].pipeline_key().perspective(), content="true")
@@ -528,9 +505,9 @@ test "line gizmo phase planning skips joints without enough strip vertices" {
   let handle = @asset.Handle::new(9)
   let mesh_config = @gizmos.GizmoMeshConfig::new(
     line_perspective=false,
-    line_style=@gizmos.GizmoLineStyle::Solid,
-    line_joints=@gizmos.GizmoLineJoint::Miter,
-    render_layers=@camera_render_layers.RenderLayers::RenderLayers(),
+    line_style=Solid,
+    line_joints=Miter,
+    render_layers=RenderLayers(),
     handle~,
   )
   let items = @gizmos_render.line_gizmo_phase_items_for_counts(
@@ -538,18 +515,14 @@ test "line gizmo phase planning skips joints without enough strip vertices" {
     @render.MainEntity::new(world.spawn()),
     entities,
     draw_functions,
-    @gizmos_render.LineGizmoRenderDimension::Dim2,
+    Dim2,
     mesh_config,
     0,
     2,
   )
   debug_inspect(items.length(), content="1")
   debug_inspect(items[0].indexed(), content="false")
-  debug_inspect(
-    items[0].pipeline_key().kind()
-    is @gizmos_render.LineGizmoPhaseKind::LineStrip,
-    content="true",
-  )
+  debug_inspect(items[0].pipeline_key().kind() is LineStrip, content="true")
 }
 
 ///|
@@ -559,11 +532,11 @@ test "line gizmo render command plan combines Bevy command tuple inputs" {
   let entity = world.spawn()
   try! world.set(
     entity,
-    @gizmos.Gizmo::Gizmo().with_line_config(@gizmos.GizmoLineConfig::{
+    @gizmos.Gizmo::Gizmo().with_line_config({
       width: 6.0F,
       perspective: true,
-      style: @gizmos.GizmoLineStyle::Dotted,
-      joints: @gizmos.GizmoLineJoint::Round(4),
+      style: Dotted,
+      joints: Round(4),
     }),
   )
   try! world.set(entity, @transform.GlobalTransform::identity())
@@ -599,7 +572,7 @@ test "line gizmo render command plan combines Bevy command tuple inputs" {
       main_entity_comp.value(),
       entities,
       draw_functions,
-      @gizmos_render.LineGizmoRenderDimension::Dim3,
+      Dim3,
       mesh_config_comp.value(),
       4,
       5,

@@ -1,6 +1,6 @@
 import {
   "Milky2018/mgstudio/color",
-  "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/camera/camera" @_,
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/camera",
@@ -13,7 +13,6 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/time",
-  "Milky2018/mgstudio/window",
 }
 
 supported_targets = "native"

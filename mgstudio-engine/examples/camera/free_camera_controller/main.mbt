@@ -67,7 +67,7 @@ fn spawn_camera(commands : @app.Commands) -> Unit {
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
         @camera_controller.FreeCamera::{
-          ..@camera_controller.FreeCamera(),
+          ..FreeCamera(),
           sensitivity: 0.2F,
           friction: 25.0F,
           walk_speed: 3.0F,
@@ -107,9 +107,7 @@ fn spawn_text(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
 
@@ -118,13 +116,13 @@ fn spawn_text(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(-16.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(-16.0F))
+        .with_left(Px(12.0F)),
         @text.Text::new(free_camera_text(free_camera)),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -134,15 +132,15 @@ fn spawn_text(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_bottom(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_bottom(Px(12.0F))
+        .with_left(Px(12.0F)),
         @text.Text::new(
           "Z/X: decrease/increase sensitivity\nC/V: decrease/increase friction\nF/G: decrease/increase scroll factor\nB: enable/disable controller",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -152,13 +150,13 @@ fn spawn_text(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_right(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_right(Px(12.0F)),
         @text.Text::new(""),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
         InfoText::{  },
       ),
     ),
@@ -183,8 +181,8 @@ fn update_camera_settings(
     let free_camera_state = free_camera_state.value()
     let mut camera_changed = false
 
-    if input.pressed(@window.KeyCode::KeyZ) {
-      next_camera = @camera_controller.FreeCamera::{
+    if input.pressed(KeyZ) {
+      next_camera = {
         ..next_camera,
         sensitivity: if next_camera.sensitivity - 0.005F < 0.005F {
           0.005F
@@ -194,15 +192,15 @@ fn update_camera_settings(
       }
       camera_changed = true
     }
-    if input.pressed(@window.KeyCode::KeyX) {
-      next_camera = @camera_controller.FreeCamera::{
+    if input.pressed(KeyX) {
+      next_camera = {
         ..next_camera,
         sensitivity: next_camera.sensitivity + 0.005F,
       }
       camera_changed = true
     }
-    if input.pressed(@window.KeyCode::KeyC) {
-      next_camera = @camera_controller.FreeCamera::{
+    if input.pressed(KeyC) {
+      next_camera = {
         ..next_camera,
         friction: if next_camera.friction - 0.2F < 0.0F {
           0.0F
@@ -212,15 +210,12 @@ fn update_camera_settings(
       }
       camera_changed = true
     }
-    if input.pressed(@window.KeyCode::KeyV) {
-      next_camera = @camera_controller.FreeCamera::{
-        ..next_camera,
-        friction: next_camera.friction + 0.2F,
-      }
+    if input.pressed(KeyV) {
+      next_camera = { ..next_camera, friction: next_camera.friction + 0.2F }
       camera_changed = true
     }
-    if input.pressed(@window.KeyCode::KeyF) {
-      next_camera = @camera_controller.FreeCamera::{
+    if input.pressed(KeyF) {
+      next_camera = {
         ..next_camera,
         scroll_factor: if next_camera.scroll_factor - 0.02F < 0.02F {
           0.02F
@@ -230,8 +225,8 @@ fn update_camera_settings(
       }
       camera_changed = true
     }
-    if input.pressed(@window.KeyCode::KeyG) {
-      next_camera = @camera_controller.FreeCamera::{
+    if input.pressed(KeyG) {
+      next_camera = {
         ..next_camera,
         scroll_factor: next_camera.scroll_factor + 0.02F,
       }
@@ -241,7 +236,7 @@ fn update_camera_settings(
       commands.entity(entity).insert_component(next_camera)
     }
 
-    if input.just_pressed(@window.KeyCode::KeyB) {
+    if input.just_pressed(KeyB) {
       commands
       .entity(entity)
       .insert_component(@camera_controller.FreeCameraState::{
@@ -428,7 +423,7 @@ fn spawn_world(
 
 ///|
 fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_systems_param(@app.Startup, spawn_camera)
+  app.add_systems_param(Startup, spawn_camera)
 }
 
 ///|
@@ -440,9 +435,9 @@ fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     update_text,
   )
   app
-  .add_systems_param3(@app.PostStartup, spawn_text)
+  .add_systems_param3(PostStartup, spawn_text)
   .add_systems(
-    @app.Update,
+    Update,
     (update_camera_settings_system, update_text_system) |> @app.chain(),
   )
 }
@@ -450,8 +445,8 @@ fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems_param(@app.Startup, spawn_lights)
-  .add_systems_param3(@app.Startup, spawn_world)
+  .add_systems_param(Startup, spawn_lights)
+  .add_systems_param3(Startup, spawn_world)
 }
 
 ///|

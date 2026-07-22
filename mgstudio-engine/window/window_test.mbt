@@ -96,14 +96,14 @@ priv struct UnavailableHandleProvider {}
 impl @raw_windowing.WindowHandleProvider for UnavailableHandleProvider with fn raw_window_handle(
   _self,
 ) {
-  raise @raw_windowing.HandleError::Unavailable
+  raise Unavailable
 }
 
 ///|
 impl @raw_windowing.DisplayHandleProvider for UnavailableHandleProvider with fn raw_display_handle(
   _self,
 ) {
-  raise @raw_windowing.HandleError::Unavailable
+  raise Unavailable
 }
 
 ///|
@@ -125,14 +125,12 @@ test "window: RawHandleWrapper owns typed window and display handles" {
   let raw_handle = test_raw_handle(-1)
   debug_inspect(raw_handle.window(), content="-1")
   try raw_handle.window_handle().as_raw() catch {
-    @raw_windowing.HandleError::Unavailable =>
-      debug_inspect(true, content="true")
+    Unavailable => debug_inspect(true, content="true")
   } noraise {
     _ => debug_inspect(false, content="true")
   }
   try raw_handle.display_handle().as_raw() catch {
-    @raw_windowing.HandleError::Unavailable =>
-      debug_inspect(true, content="true")
+    Unavailable => debug_inspect(true, content="true")
   } noraise {
     _ => debug_inspect(false, content="true")
   }
@@ -197,11 +195,9 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_window.title = "Configured Window"
   configured_window.resolution.set_physical_resolution(800, 600)
   configured_window.resolution.set_scale_factor(2.0F)
-  configured_window.present_mode = PresentMode::AutoNoVsync
+  configured_window.present_mode = AutoNoVsync
   configured_window.position = WindowPosition::new(12, 34)
-  configured_window.mode = WindowMode::BorderlessFullscreen(
-    MonitorSelection::Primary,
-  )
+  configured_window.mode = BorderlessFullscreen(Primary)
   configured_window.resizable = false
   configured_window.enabled_buttons.minimize = false
   configured_window.enabled_buttons.maximize = false
@@ -209,19 +205,19 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_window.decorations = false
   configured_window.transparent = true
   configured_window.focused = false
-  configured_window.window_level = WindowLevel::AlwaysOnTop
-  configured_window.window_theme = Some(WindowTheme::Dark)
+  configured_window.window_level = AlwaysOnTop
+  configured_window.window_theme = Some(Dark)
   configured_window.visible = false
   let configured_cursor = @window.CursorOptions::CursorOptions()
   configured_cursor.visible = false
-  configured_cursor.grab_mode = CursorGrabMode::GrabLocked
+  configured_cursor.grab_mode = GrabLocked
 
   let lifecycle_world_151_0 = @ecs.World::new()
   defer lifecycle_world_151_0.close()
-  let app = window_plugin_with(@app.App::new(lifecycle_world_151_0), WindowPlugin::{
+  let app = window_plugin_with(@app.App::new(lifecycle_world_151_0), {
     primary_window: Some(configured_window),
     primary_cursor_options: Some(configured_cursor),
-    exit_condition: ExitCondition::DontExit,
+    exit_condition: DontExit,
     close_when_requested: false,
   }).run_once()
 
@@ -318,8 +314,7 @@ test "window: plugin spawns configured primary window entity and messages" {
     content="true",
   )
   debug_inspect(
-    stored_window.mode ==
-    WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+    stored_window.mode == BorderlessFullscreen(Primary),
     content="true",
   )
   debug_inspect(stored_window.resizable, content="false")
@@ -333,10 +328,7 @@ test "window: plugin spawns configured primary window entity and messages" {
     stored_window.window_level.to_string(),
     content="\"AlwaysOnTop\"",
   )
-  debug_inspect(
-    stored_window.window_theme == Some(@window.WindowTheme::Dark),
-    content="true",
-  )
+  debug_inspect(stored_window.window_theme == Some(Dark), content="true")
   debug_inspect(stored_window.visible, content="false")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
@@ -373,7 +365,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
   let seen_scale_factor : Ref[Float] = Ref(0.0F)
 
   let app = @app.App::new(world).add_systems(
-    @app.Update,
+    Update,
     @app.system(fn(_world : @ecs.World) {
       seen_width.val = window_width()
       seen_height.val = window_height()
@@ -387,19 +379,14 @@ test "window: compatibility helpers read and write ECS primary window state" {
       window_set_decorations(decorations=false)
       window_set_transparent(transparent=true)
       window_set_cursor_visible(visible=false)
-      window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
-      window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
-      window_set_present_mode(mode=PresentMode::AutoNoVsync)
+      window_set_cursor_grab_mode(mode=GrabConfined)
+      window_set_cursor_icon(icon=CursorIcon::from(EwResize))
+      window_set_present_mode(mode=AutoNoVsync)
       window_set_enabled_buttons(minimize=false, maximize=false, close=false)
-      window_set_window_level(level=WindowLevel::AlwaysOnTop)
-      window_set_theme(theme=Some(WindowTheme::Dark))
+      window_set_window_level(level=AlwaysOnTop)
+      window_set_theme(theme=Some(Dark))
       window_set_position(x=30, y=40)
-      window_set_mode(
-        mode=WindowMode::Fullscreen(
-          MonitorSelection::Primary,
-          VideoModeSelection::Current,
-        ),
-      )
+      window_set_mode(mode=Fullscreen(Primary, Current))
     }),
   )
   let app = app.run_once()
@@ -423,11 +410,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
     content="true",
   )
   debug_inspect(
-    stored_window.mode ==
-    WindowMode::Fullscreen(
-      MonitorSelection::Primary,
-      VideoModeSelection::Current,
-    ),
+    stored_window.mode == Fullscreen(Primary, Current),
     content="true",
   )
   debug_inspect(stored_window.resizable, content="false")
@@ -441,10 +424,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
     stored_window.window_level.to_string(),
     content="\"AlwaysOnTop\"",
   )
-  debug_inspect(
-    stored_window.window_theme == Some(@window.WindowTheme::Dark),
-    content="true",
-  )
+  debug_inspect(stored_window.window_theme == Some(Dark), content="true")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
@@ -454,7 +434,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
   debug_inspect(stored_cursor.grab_mode, content="GrabConfined")
   debug_inspect(
     match cursor_icon_value(app.world(), entity) {
-      Some(System(icon)) => icon == SystemCursorIcon::EwResize
+      Some(System(icon)) => icon == EwResize
       Some(_) => false
       None => false
     },
@@ -468,7 +448,7 @@ test "window: drag request helpers write pending requests" {
   window.set_maximized(true)
   window.set_minimized(true)
   window.start_drag_move()
-  window.start_drag_resize(@math.CompassOctant::North)
+  window.start_drag_resize(North)
   debug_inspect(window.maximize_request, content="Some(true)")
   debug_inspect(window.minimize_request, content="Some(true)")
   debug_inspect(window.drag_move_request, content="true")
@@ -495,26 +475,19 @@ test "window: window refs resolve entity-backed metrics" {
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
   debug_inspect(
-    window_entity_for_ref(world, WindowRef::Primary) == Some(primary),
+    window_entity_for_ref(world, Primary) == Some(primary),
     content="true",
   )
   debug_inspect(
-    window_entity_for_ref(world, WindowRef::Entity(secondary)) ==
-    Some(secondary),
+    window_entity_for_ref(world, Entity(secondary)) == Some(secondary),
     content="true",
   )
+  debug_inspect(window_physical_width_for(world, Primary), content="320")
   debug_inspect(
-    window_physical_width_for(world, WindowRef::Primary),
-    content="320",
-  )
-  debug_inspect(
-    window_physical_height_for(world, WindowRef::Entity(secondary)),
+    window_physical_height_for(world, Entity(secondary)),
     content="360",
   )
-  debug_inspect(
-    window_scale_factor_for(world, WindowRef::Entity(secondary)),
-    content="2",
-  )
+  debug_inspect(window_scale_factor_for(world, Entity(secondary)), content="2")
 }
 
 ///|
@@ -529,19 +502,10 @@ test "window: primary refs do not fall back to secondary windows" {
   let secondary = world.spawn()
   try! (world.entity_mut(secondary).insert_component(secondary_window) |> ignore)
 
-  debug_inspect(
-    window_entity_for_ref(world, WindowRef::Primary) is None,
-    content="true",
-  )
-  debug_inspect(
-    window_physical_width_for(world, WindowRef::Primary),
-    content="0",
-  )
-  debug_inspect(
-    window_physical_height_for(world, WindowRef::Primary),
-    content="0",
-  )
-  debug_inspect(window_scale_factor_for(world, WindowRef::Primary), content="1")
+  debug_inspect(window_entity_for_ref(world, Primary) is None, content="true")
+  debug_inspect(window_physical_width_for(world, Primary), content="0")
+  debug_inspect(window_physical_height_for(world, Primary), content="0")
+  debug_inspect(window_scale_factor_for(world, Primary), content="1")
   debug_inspect(window_ensure_primary_host(world), content="None")
 }
 
@@ -561,7 +525,7 @@ test "window: singleton helpers no-op when no primary window exists" {
   let position_y = Ref(-1)
 
   let app = @app.App::new(world).add_systems(
-    @app.Update,
+    Update,
     @app.system(fn(_world : @ecs.World) {
       width.val = window_width()
       height.val = window_height()
@@ -572,15 +536,10 @@ test "window: singleton helpers no-op when no primary window exists" {
       window_set_size(width=800, height=600)
       window_set_resizable(resizable=false)
       window_set_cursor_visible(visible=false)
-      window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
-      window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
+      window_set_cursor_grab_mode(mode=GrabConfined)
+      window_set_cursor_icon(icon=CursorIcon::from(EwResize))
       window_set_position(x=30, y=40)
-      window_set_mode(
-        mode=WindowMode::Fullscreen(
-          MonitorSelection::Primary,
-          VideoModeSelection::Current,
-        ),
-      )
+      window_set_mode(mode=Fullscreen(Primary, Current))
     }),
   )
   let app = app.run_once()
@@ -597,11 +556,8 @@ test "window: singleton helpers no-op when no primary window exists" {
   debug_inspect(stored_window.title, content="\"Secondary\"")
   debug_inspect(stored_window.physical_width(), content="640")
   debug_inspect(stored_window.physical_height(), content="360")
-  debug_inspect(
-    stored_window.position == WindowPosition::Automatic,
-    content="true",
-  )
-  debug_inspect(stored_window.mode == WindowMode::Windowed, content="true")
+  debug_inspect(stored_window.position == Automatic, content="true")
+  debug_inspect(stored_window.mode == Windowed, content="true")
   debug_inspect(stored_window.resizable, content="true")
   debug_inspect(cursor_options_value(app.world(), secondary), content="None")
   debug_inspect(
@@ -619,13 +575,13 @@ test "window: scale-factor helper prefers override over observed host scale" {
 
   let lifecycle_world_568_0 = @ecs.World::new()
   defer lifecycle_world_568_0.close()
-  let app = window_plugin_with(@app.App::new(lifecycle_world_568_0), WindowPlugin::{
+  let app = window_plugin_with(@app.App::new(lifecycle_world_568_0), {
     primary_window: Some(configured_window),
-    primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-    exit_condition: ExitCondition::DontExit,
+    primary_cursor_options: Some(CursorOptions()),
+    exit_condition: DontExit,
     close_when_requested: false,
   }).add_systems(
-    @app.Update,
+    Update,
     @app.system(fn(_world : @ecs.World) {
       seen_scale_factor.val = window_scale_factor()
     }),
@@ -664,13 +620,9 @@ test "window: close_when_requested marks windows without immediate despawn" {
     .add_message(ecs_key_window_closing)
     .add_message(ecs_key_window_closed)
     .add_message(ecs_key_window_destroyed)
-    .add_systems(@app.Update, @app.system_config_param2(close_when_requested))
+    .add_systems(Update, @app.system_config_param2(close_when_requested))
   ignore(
-    app
-    .world()
-    .send_message(ecs_key_window_close_requested, WindowCloseRequested::{
-      window: entity,
-    }),
+    app.world().send_message(ecs_key_window_close_requested, { window: entity }),
   )
 
   app = app.run_once()
@@ -686,7 +638,7 @@ test "window: exit_on_all_closed sends AppExit when no windows remain" {
   defer lifecycle_world_634_0.close()
   let mut app = @app.App::new(lifecycle_world_634_0)
     .add_message(@app.AppExit::message())
-    .add_systems(@app.PostUpdate, @app.system_config_param2(exit_on_all_closed))
+    .add_systems(PostUpdate, @app.system_config_param2(exit_on_all_closed))
 
   app = app.run_once()
   debug_inspect(app.should_exit(), content="Some(Success)")
@@ -707,10 +659,7 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
   let mut app = @app.App::new(world)
     .add_message(@app.AppExit::message())
     .add_message(ecs_key_window_closed)
-    .add_systems(
-      @app.PostUpdate,
-      @app.system_config_param2(exit_on_primary_closed),
-    )
+    .add_systems(PostUpdate, @app.system_config_param2(exit_on_primary_closed))
 
   app = app.run_once()
   debug_inspect(app.should_exit() is None, content="true")
@@ -722,13 +671,13 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
 
 ///|
 test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
-  let key_index : @hashmap.HashMap[KeyCode, Int] = @hashmap.HashMap([])
-  key_index.set(KeyCode::KeyA, 1)
-  key_index.set(KeyCode::Space, 2)
+  let key_index : @hashmap.HashMap[KeyCode, Int] = HashMap([])
+  key_index.set(KeyA, 1)
+  key_index.set(Space, 2)
 
-  debug_inspect(key_index.get(KeyCode::KeyA), content="Some(1)")
-  debug_inspect(key_index.get(KeyCode::Space), content="Some(2)")
-  debug_inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
+  debug_inspect(key_index.get(KeyA), content="Some(1)")
+  debug_inspect(key_index.get(Space), content="Some(2)")
+  debug_inspect(KeyCode::KeyA == KeyA, content="true")
   debug_inspect(to_repr(KeyCode::KeyA).to_string(), content="\"KeyA\"")
 }
 
@@ -848,7 +797,7 @@ test "window: cursor events write back window cursor state like bevy winit" {
   window.resolution.set_scale_factor(2.0F)
   try! (world.entity_mut(entity).insert_component(window) |> ignore)
 
-  window_emit_cursor_moved(world, CursorMoved::{
+  window_emit_cursor_moved(world, {
     window: entity,
     position: @math.Vec2::new(12.0F, 24.0F),
     delta: None,
@@ -858,12 +807,13 @@ test "window: cursor events write back window cursor state like bevy winit" {
   debug_inspect(physical.x, content="24")
   debug_inspect(physical.y, content="48")
 
-  window_emit_cursor_left(world, CursorLeft::{ window: entity })
+  window_emit_cursor_left(world, { window: entity })
   let left = window_component_value(world, entity).unwrap()
   debug_inspect(left.physical_cursor_position() is None, content="true")
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "window: aggregate event bus mirrors window-owned emit helpers" {
   let world = @ecs.World::new()
   defer world.close()
@@ -875,45 +825,31 @@ test "window: aggregate event bus mirrors window-owned emit helpers" {
   let app = window_plugin(@app.App::new(world)).run_once()
   let world0 = app.world()
 
-  window_emit_cursor_moved(world0, CursorMoved::{
+  window_emit_cursor_moved(world0, {
     window: entity,
     position: @math.Vec2::new(1.0F, 2.0F),
     delta: None,
   })
-  window_emit_cursor_entered(world0, CursorEntered::{ window: entity })
-  window_emit_cursor_left(world0, CursorLeft::{ window: entity })
-  window_emit_file_drag_and_drop(
-    world0,
-    FileDragAndDrop::HoveredFile(entity, "assets/icon.png"),
-  )
-  window_emit_ime(world0, Ime::Enabled(entity))
-  window_emit_mouse_button_input(world0, MouseButtonInput::{
-    button: MouseButton::Left,
-    state: ButtonState::Pressed,
-  })
-  window_emit_mouse_motion(world0, MouseMotion::{
-    delta: @math.Vec2::new(3.0F, -1.0F),
-  })
-  window_emit_mouse_wheel(world0, MouseWheel::{
-    unit: MouseScrollUnit::Line,
-    x: 1.0F,
-    y: -2.0F,
-  })
-  window_emit_pinch_gesture(world0, PinchGesture::{ delta: 0.5F })
-  window_emit_rotation_gesture(world0, RotationGesture::{ delta: -0.25F })
+  window_emit_cursor_entered(world0, { window: entity })
+  window_emit_cursor_left(world0, { window: entity })
+  window_emit_file_drag_and_drop(world0, HoveredFile(entity, "assets/icon.png"))
+  window_emit_ime(world0, Enabled(entity))
+  window_emit_mouse_button_input(world0, { button: Left, state: Pressed })
+  window_emit_mouse_motion(world0, { delta: @math.Vec2::new(3.0F, -1.0F) })
+  window_emit_mouse_wheel(world0, { unit: Line, x: 1.0F, y: -2.0F })
+  window_emit_pinch_gesture(world0, { delta: 0.5F })
+  window_emit_rotation_gesture(world0, { delta: -0.25F })
   window_emit_double_tap_gesture(world0, DoubleTapGesture::{  })
-  window_emit_pan_gesture(world0, PanGesture::{
-    delta: @math.Vec2::new(2.0F, -3.0F),
-  })
-  window_emit_touch_input(world0, TouchInput::{
+  window_emit_pan_gesture(world0, { delta: @math.Vec2::new(2.0F, -3.0F) })
+  window_emit_touch_input(world0, {
     id: 7,
-    phase: TouchPhase::Started,
+    phase: Started,
     position: @math.Vec2::new(5.0F, 6.0F),
   })
-  window_emit_keyboard_input(world0, KeyboardInput::{
-    key_code: KeyCode::Space,
-    logical_key: Key::Character(" "),
-    state: ButtonState::Pressed,
+  window_emit_keyboard_input(world0, {
+    key_code: Space,
+    logical_key: Character(" "),
+    state: Pressed,
     repeat: false,
     text: Some(" "),
   })
@@ -937,25 +873,21 @@ test "window: aggregate event bus mirrors window-owned emit helpers" {
   let mut keyboard_focus_lost_count = 0
   for event in events {
     match event {
-      WindowEvent::CursorMoved(_) => cursor_moved_count = cursor_moved_count + 1
-      WindowEvent::CursorEntered(_) =>
-        cursor_entered_count = cursor_entered_count + 1
-      WindowEvent::CursorLeft(_) => cursor_left_count = cursor_left_count + 1
-      WindowEvent::FileDragAndDrop(_) => drag_count = drag_count + 1
-      WindowEvent::Ime(_) => ime_count = ime_count + 1
-      WindowEvent::MouseButtonInput(_) =>
-        mouse_button_count = mouse_button_count + 1
-      WindowEvent::MouseMotion(_) => mouse_motion_count = mouse_motion_count + 1
-      WindowEvent::MouseWheel(_) => mouse_wheel_count = mouse_wheel_count + 1
-      WindowEvent::PinchGesture(_) => pinch_count = pinch_count + 1
-      WindowEvent::RotationGesture(_) => rotation_count = rotation_count + 1
-      WindowEvent::DoubleTapGesture(_) =>
-        double_tap_count = double_tap_count + 1
-      WindowEvent::PanGesture(_) => pan_count = pan_count + 1
-      WindowEvent::TouchInput(_) => touch_count = touch_count + 1
-      WindowEvent::KeyboardInput(_) =>
-        keyboard_input_count = keyboard_input_count + 1
-      WindowEvent::KeyboardFocusLost(_) =>
+      CursorMoved(_) => cursor_moved_count = cursor_moved_count + 1
+      CursorEntered(_) => cursor_entered_count = cursor_entered_count + 1
+      CursorLeft(_) => cursor_left_count = cursor_left_count + 1
+      FileDragAndDrop(_) => drag_count = drag_count + 1
+      Ime(_) => ime_count = ime_count + 1
+      MouseButtonInput(_) => mouse_button_count = mouse_button_count + 1
+      MouseMotion(_) => mouse_motion_count = mouse_motion_count + 1
+      MouseWheel(_) => mouse_wheel_count = mouse_wheel_count + 1
+      PinchGesture(_) => pinch_count = pinch_count + 1
+      RotationGesture(_) => rotation_count = rotation_count + 1
+      DoubleTapGesture(_) => double_tap_count = double_tap_count + 1
+      PanGesture(_) => pan_count = pan_count + 1
+      TouchInput(_) => touch_count = touch_count + 1
+      KeyboardInput(_) => keyboard_input_count = keyboard_input_count + 1
+      KeyboardFocusLost(_) =>
         keyboard_focus_lost_count = keyboard_focus_lost_count + 1
       _ => ()
     }

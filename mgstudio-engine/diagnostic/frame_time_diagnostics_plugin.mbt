@@ -39,7 +39,7 @@ let frame_time_diagnostics_plugin_marker_key : @ecs.ResourceKey[
 pub fn FrameTimeDiagnosticsPlugin::new(
   max_history_length : Int,
 ) -> FrameTimeDiagnosticsPlugin {
-  FrameTimeDiagnosticsPlugin::{
+  {
     max_history_length,
     smoothing_factor: 2.0F / (Float::from_int(max_history_length) + 1.0F),
   }
@@ -79,13 +79,11 @@ pub let frame_time_diagnostic_frame_time : DiagnosticPath = DiagnosticPath::cons
 pub fn frame_time_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  frame_time_diagnostics_plugin_with(
-    app,
-    FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
-  )
+  frame_time_diagnostics_plugin_with(app, FrameTimeDiagnosticsPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn frame_time_diagnostics_plugin_with(
   app : @app.App[@ecs.World],
   plugin : FrameTimeDiagnosticsPlugin,

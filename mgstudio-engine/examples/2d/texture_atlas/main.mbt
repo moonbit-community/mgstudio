@@ -23,7 +23,7 @@ pub(all) enum AppState {
 
 ///|
 impl Default for AppState with fn default() {
-  AppState::Setup
+  Setup
 }
 
 ///|
@@ -69,7 +69,7 @@ fn main {
   .insert_state(AppState::default())
   .add_on_enter_system_param2(AppState::Setup, load_textures)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(check_textures).run_if(
       @app.in_state(AppState::Setup),
     ),
@@ -311,7 +311,7 @@ fn create_label(
       (
         @text.Text2d::new(text),
         text_style,
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @text.TextLayout::new_with_justify(Center),
         @transform.Transform::from_xyz(
           translation.0,
           translation.1,

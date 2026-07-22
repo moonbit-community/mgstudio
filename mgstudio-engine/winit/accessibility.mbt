@@ -124,7 +124,7 @@ fn winit_build_accessibility_tree_update(
     node_updates.push((@a11y.node_id_for_entity(entity), node))
   }
 
-  let window_node = @moon_accesskit.Node::Node(@moon_accesskit.Role::Window)
+  let window_node = @moon_accesskit.Node::Node(Window)
   if primary_window.title != "" {
     window_node.set_label(primary_window.title)
   }
@@ -137,7 +137,7 @@ fn winit_build_accessibility_tree_update(
     @moon_accesskit.TreeId::root(),
     focus_node_id,
   )
-  update.set_tree(@moon_accesskit.Tree::Tree(window_node_id))
+  update.set_tree(Tree(window_node_id))
   update.push_node(window_node_id, window_node)
   for pair in node_updates {
     update.push_node(pair.0, pair.1)

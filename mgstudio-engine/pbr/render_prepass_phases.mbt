@@ -32,8 +32,7 @@ fn render3d_prepass_effective_phase_type(
   phase_type : Render3dPrepassBinnedRenderPhaseType,
 ) -> Render3dPrepassBinnedRenderPhaseType {
   match (gpu_preprocessing_mode, phase_type) {
-    (@render_batching.GpuPreprocessingMode::PreprocessingOnly, MultidrawableMesh
-    ) => BatchableMesh
+    (PreprocessingOnly, MultidrawableMesh) => BatchableMesh
     (_, MultidrawableMesh) => MultidrawableMesh
     (_, BatchableMesh) => BatchableMesh
     (_, UnbatchableMesh) => UnbatchableMesh
@@ -51,7 +50,7 @@ priv struct Render3dRetainedMeshPhaseViews {
 
 ///|
 fn Render3dRetainedMeshPhaseViews::Render3dRetainedMeshPhaseViews() -> Render3dRetainedMeshPhaseViews {
-  Render3dRetainedMeshPhaseViews::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|
@@ -61,7 +60,7 @@ fn Render3dRetainedMeshPhaseViews::prepare_for_new_frame(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Unit {
   if !self.views.contains(retained_view_entity) {
-    self.views.set(retained_view_entity, Render3dRetainedMeshPhaseView::{
+    self.views.set(retained_view_entity, {
       items: [],
       gpu_preprocessing_mode,
       phase_types: Map([]),
@@ -148,7 +147,7 @@ fn Render3dRetainedMeshPhaseView::refresh_extracted_indices(
         "Retained prepass phase entity is missing its current extracted mesh payload",
       )
     }
-    self.items[index] = MeshPhaseItem3d::{ ..item, extracted_index, }
+    self.items[index] = { ..item, extracted_index, }
   }
 }
 
@@ -225,9 +224,7 @@ priv struct Render3dOpaquePrepassPhases {
 
 ///|
 fn Render3dOpaquePrepassPhases::Render3dOpaquePrepassPhases() -> Render3dOpaquePrepassPhases {
-  Render3dOpaquePrepassPhases::{
-    phases: Render3dRetainedMeshPhaseViews::Render3dRetainedMeshPhaseViews(),
-  }
+  { phases: Render3dRetainedMeshPhaseViews() }
 }
 
 ///|
@@ -249,9 +246,7 @@ priv struct Render3dAlphaMaskPrepassPhases {
 
 ///|
 fn Render3dAlphaMaskPrepassPhases::Render3dAlphaMaskPrepassPhases() -> Render3dAlphaMaskPrepassPhases {
-  Render3dAlphaMaskPrepassPhases::{
-    phases: Render3dRetainedMeshPhaseViews::Render3dRetainedMeshPhaseViews(),
-  }
+  { phases: Render3dRetainedMeshPhaseViews() }
 }
 
 ///|
@@ -273,9 +268,7 @@ priv struct Render3dOpaqueDeferredPhases {
 
 ///|
 fn Render3dOpaqueDeferredPhases::Render3dOpaqueDeferredPhases() -> Render3dOpaqueDeferredPhases {
-  Render3dOpaqueDeferredPhases::{
-    phases: Render3dRetainedMeshPhaseViews::Render3dRetainedMeshPhaseViews(),
-  }
+  { phases: Render3dRetainedMeshPhaseViews() }
 }
 
 ///|
@@ -297,9 +290,7 @@ priv struct Render3dAlphaMaskDeferredPhases {
 
 ///|
 fn Render3dAlphaMaskDeferredPhases::Render3dAlphaMaskDeferredPhases() -> Render3dAlphaMaskDeferredPhases {
-  Render3dAlphaMaskDeferredPhases::{
-    phases: Render3dRetainedMeshPhaseViews::Render3dRetainedMeshPhaseViews(),
-  }
+  { phases: Render3dRetainedMeshPhaseViews() }
 }
 
 ///|
@@ -322,7 +313,7 @@ fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
     is None {
     world.insert_resource(
       (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
-      Render3dOpaquePrepassPhases::Render3dOpaquePrepassPhases(),
+      Render3dOpaquePrepassPhases(),
     )
   }
   if world.get_resource(
@@ -335,7 +326,7 @@ fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dAlphaMaskPrepassPhases]),
-      Render3dAlphaMaskPrepassPhases::Render3dAlphaMaskPrepassPhases(),
+      Render3dAlphaMaskPrepassPhases(),
     )
   }
   if world.get_resource(
@@ -348,7 +339,7 @@ fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dOpaqueDeferredPhases]),
-      Render3dOpaqueDeferredPhases::Render3dOpaqueDeferredPhases(),
+      Render3dOpaqueDeferredPhases(),
     )
   }
   if world.get_resource(
@@ -361,7 +352,7 @@ fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
       (
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
-      Render3dAlphaMaskDeferredPhases::Render3dAlphaMaskDeferredPhases(),
+      Render3dAlphaMaskDeferredPhases(),
     )
   }
 }
@@ -380,8 +371,7 @@ fn render3d_extract_camera_prepass_phases(
         "Missing GpuPreprocessingSupport resource during camera prepass phase extraction",
       )
   }
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   for camera in cameras {
     if !camera.payload.camera.is_active {
       continue
@@ -389,7 +379,7 @@ fn render3d_extract_camera_prepass_phases(
     let requested_gpu_preprocessing_mode = if camera.payload.no_indirect_drawing {
       @render_batching.GpuPreprocessingMode::PreprocessingOnly
     } else {
-      @render_batching.GpuPreprocessingMode::Culling
+      Culling
     }
     let gpu_preprocessing_mode = gpu_preprocessing_support.min(
       requested_gpu_preprocessing_mode,

@@ -57,11 +57,11 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @ui.Node::{
-          ..@ui.Node(),
-          align_self: @ui.AlignSelf::Center,
-          justify_self: @ui.JustifySelf::Center,
-          justify_content: @ui.JustifyContent::Center,
-          bottom: @ui.Val::Px(2.0F * BOX_SIZE),
+          ..Node(),
+          align_self: Center,
+          justify_self: Center,
+          justify_content: Center,
+          bottom: Px(2.0F * BOX_SIZE),
         },
         @text.Text::new(
           "Each box is rendered by a different camera\n* left-click: increase the camera's order\n* right-click: decrease the camera's order",
@@ -94,16 +94,16 @@ fn setup(commands : @app.Commands) -> Unit {
     let button_entity = commands.spawn(
       (
         @ui.Node::{
-          ..@ui.Node(),
-          align_self: @ui.AlignSelf::Center,
-          justify_self: @ui.JustifySelf::Center,
-          justify_content: @ui.JustifyContent::Center,
-          align_items: @ui.AlignItems::Center,
-          left: @ui.Val::Px(offset),
-          top: @ui.Val::Px(offset),
-          width: @ui.Val::Px(BOX_SIZE),
-          height: @ui.Val::Px(BOX_SIZE),
-          border: @ui.UiRect::all(@ui.Val::Px(0.1F * BOX_SIZE)),
+          ..Node(),
+          align_self: Center,
+          justify_self: Center,
+          justify_content: Center,
+          align_items: Center,
+          left: Px(offset),
+          top: Px(offset),
+          width: Px(BOX_SIZE),
+          height: Px(BOX_SIZE),
+          border: @ui.UiRect::all(Px(0.1F * BOX_SIZE)),
         },
         @ui.UiTargetCamera::new(camera_entity),
         @ui.Button::Button(),
@@ -140,7 +140,7 @@ fn update_camera_orders(
 
   try! buttons.view(fn(_entity, data) {
     let (interaction, box) = data
-    guard interaction.value() == @ui.Interaction::Pressed else { return }
+    guard interaction.value() == Pressed else { return }
     let box = box.value()
     guard (cameras.get(box.camera_entity) catch { _ => None }) is Some(camera) else {
       return
@@ -158,7 +158,7 @@ fn update_camera_orders(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param4(@app.Update, update_camera_orders)
+  .add_systems_param(Startup, setup)
+  .add_systems_param4(Update, update_camera_orders)
   .run()
 }

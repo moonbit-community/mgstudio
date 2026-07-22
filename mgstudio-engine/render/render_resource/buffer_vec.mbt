@@ -23,12 +23,12 @@ pub struct BufferVec[T] {
 
 ///|
 pub fn[T] BufferVec::new() -> BufferVec[T] {
-  BufferVec::{ values: [], buffer_id: 0 }
+  { values: [], buffer_id: 0 }
 }
 
 ///|
 pub fn[T] BufferVec::with_buffer_id(buffer_id : BufferId) -> BufferVec[T] {
-  BufferVec::{ values: [], buffer_id }
+  { values: [], buffer_id }
 }
 
 ///|

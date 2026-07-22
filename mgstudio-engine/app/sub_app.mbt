@@ -36,7 +36,7 @@ pub fn SubApp::new(world : @ecs.World) -> SubApp[@ecs.World] {
     FixedMain,
     system(run_fixed_main_schedule_driver_system),
   )
-  SubApp::{
+  {
     world,
     update_schedule: None,
     schedule,
@@ -51,7 +51,7 @@ pub fn[W] SubApp::set_update_schedule(
   self : SubApp[W],
   schedule : ScheduleStage?,
 ) -> SubApp[W] {
-  SubApp::{ ..self, update_schedule: schedule }
+  { ..self, update_schedule: schedule }
 }
 
 ///|
@@ -64,7 +64,7 @@ pub fn[W] SubApp::set_extract(
   self : SubApp[W],
   extract : SubAppExtractFn[W],
 ) -> SubApp[W] {
-  SubApp::{ ..self, extract: Some(extract) }
+  { ..self, extract: Some(extract) }
 }
 
 ///|
@@ -72,7 +72,7 @@ pub fn[W] SubApp::take_extract(
   self : SubApp[W],
 ) -> (SubApp[W], SubAppExtractFn[W]?) {
   let extract = self.extract
-  (SubApp::{ ..self, extract: None }, extract)
+  ({ ..self, extract: None }, extract)
 }
 
 ///|
@@ -170,10 +170,10 @@ pub struct SubApps[W] {
 
 ///|
 pub fn[W] SubApps::new(main : SubApp[W]) -> SubApps[W] {
-  SubApps::{
+  {
     main,
-    sub_apps: @hashmap.HashMap([]),
-    sub_app_labels: @hashmap.HashMap([]),
+    sub_apps: HashMap([]),
+    sub_app_labels: HashMap([]),
     sub_app_order: [],
   }
 }
@@ -282,7 +282,7 @@ pub fn SubApps::update(self : SubApps[@ecs.World]) -> SubApps[@ecs.World] {
       app_execution_context_state.current_allowed_ambiguous_resources = None
       app_execution_context_state.current_app_schedule = None
       self.main.world = worlds.0
-      next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
+      next_sub_app = { ..next_sub_app, world: worlds.1 }
     }
     self.sub_apps.set(key, next_sub_app.update())
   }
@@ -312,7 +312,7 @@ pub fn SubApps::update_sub_app_by_label(
       app_execution_context_state.current_allowed_ambiguous_resources = None
       app_execution_context_state.current_app_schedule = None
       self.main.world = worlds.0
-      next_sub_app = SubApp::{ ..next_sub_app, world: worlds.1 }
+      next_sub_app = { ..next_sub_app, world: worlds.1 }
     }
     self.sub_apps.set(key, next_sub_app.update())
   }

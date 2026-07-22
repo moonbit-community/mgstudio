@@ -53,7 +53,7 @@ pub struct JointIndex {
 
 ///|
 pub fn JointIndex::new(value : Int) -> JointIndex {
-  JointIndex::{ value, }
+  { value, }
 }
 
 ///|
@@ -74,7 +74,7 @@ pub fn Influence::new(
   joint_index : JointIndex,
   joint_weight : Float,
 ) -> Influence {
-  Influence::{ vertex_index, joint_index, joint_weight }
+  { vertex_index, joint_index, joint_weight }
 }
 
 ///|
@@ -121,15 +121,15 @@ pub fn InfluenceIterator::new(
 ) -> InfluenceIterator raise MeshAttributeError {
   let geometry = match mesh.as_3d_geometry() {
     Some(geometry) => geometry
-    None => raise MeshAttributeError::MissingAttribute("Vertex_Position")
+    None => raise MissingAttribute("Vertex_Position")
   }
   let joint_indices = match geometry.joint_indices {
     Some(joint_indices) => joint_indices
-    None => raise MeshAttributeError::MissingAttribute("Vertex_JointIndex")
+    None => raise MissingAttribute("Vertex_JointIndex")
   }
   let joint_weights = match geometry.joint_weights {
     Some(joint_weights) => joint_weights
-    None => raise MeshAttributeError::MissingAttribute("Vertex_JointWeight")
+    None => raise MissingAttribute("Vertex_JointWeight")
   }
   let vertex_count = if joint_indices.length() < joint_weights.length() {
     joint_indices.length()
@@ -157,7 +157,7 @@ pub fn InfluenceIterator::new(
       }
     }
   }
-  InfluenceIterator::{ influences, cursor: 0 }
+  { influences, cursor: 0 }
 }
 
 ///|
@@ -184,7 +184,7 @@ pub struct JointAabb {
 
 ///|
 pub fn JointAabb::new(center : @math.Vec3, half_size : @math.Vec3) -> JointAabb {
-  JointAabb::{ center, half_size }
+  { center, half_size }
 }
 
 ///|
@@ -226,11 +226,7 @@ priv struct AabbAccumulator {
 
 ///|
 fn AabbAccumulator::new() -> AabbAccumulator {
-  AabbAccumulator::{
-    has_value: false,
-    min: @math.Vec3::zero(),
-    max: @math.Vec3::zero(),
-  }
+  { has_value: false, min: @math.Vec3::zero(), max: @math.Vec3::zero() }
 }
 
 ///|
@@ -336,7 +332,7 @@ pub struct SkinnedMeshBounds {
 
 ///|
 pub fn SkinnedMeshBounds::SkinnedMeshBounds() -> SkinnedMeshBounds {
-  SkinnedMeshBounds::{ aabbs: [], aabb_index_to_joint_index: [] }
+  { aabbs: [], aabb_index_to_joint_index: [] }
 }
 
 ///|
@@ -344,7 +340,7 @@ pub fn SkinnedMeshBounds::new(
   aabbs : Array[JointAabb],
   aabb_index_to_joint_index : Array[JointIndex],
 ) -> SkinnedMeshBounds {
-  SkinnedMeshBounds::{ aabbs, aabb_index_to_joint_index }
+  { aabbs, aabb_index_to_joint_index }
 }
 
 ///|
@@ -473,7 +469,7 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
 ) -> @math.Aabb3d raise EntityAabbFromSkinnedMeshBoundsError {
   let skinned_mesh_bounds = match mesh.skinned_mesh_bounds() {
     Some(bounds) => bounds
-    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingSkinnedMeshBounds
+    None => raise MissingSkinnedMeshBounds
   }
   let accumulator = AabbAccumulator::new()
   let joints = skinned_mesh.joints()
@@ -490,21 +486,16 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
     let joint_from_model = match
       skinned_mesh_inverse_bindposes.affine(joint_index_value) {
       Some(inverse_bindpose) => inverse_bindpose
-      None =>
-        raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
-          joint_index,
-        )
+      None => raise OutOfRangeJointIndex(joint_index)
     }
     if joint_index_value < 0 || joint_index_value >= joints.length() {
-      raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
-        joint_index,
-      )
+      raise OutOfRangeJointIndex(joint_index)
     }
     let joint_entity = joints[joint_index_value]
     let world_from_joint = match
       fetch_joint_transform(joint_entity, joint_index_value) {
       Some(global_transform) => global_transform
-      None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
+      None => raise MissingJointEntity
     }
     let world_from_model = world_from_joint.affine().mul(joint_from_model)
     accumulator.add_transformed_joint_aabb(
@@ -513,7 +504,7 @@ fn entity_aabb_from_skinned_mesh_bounds_with_fetch(
   }
   let worldspace_entity_aabb = match accumulator.finish_aabb3d() {
     Some(aabb) => aabb
-    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
+    None => raise MissingJointEntity
   }
   match world_from_entity {
     Some(global_transform) =>
@@ -552,7 +543,7 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(
 ) -> (@math.Aabb3d, Int, Int, Int) raise EntityAabbFromSkinnedMeshBoundsError {
   let skinned_mesh_bounds = match mesh.skinned_mesh_bounds() {
     Some(bounds) => bounds
-    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingSkinnedMeshBounds
+    None => raise MissingSkinnedMeshBounds
   }
   let accumulator = AabbAccumulator::new()
   let joints = skinned_mesh.joints()
@@ -572,15 +563,10 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(
     let joint_from_model = match
       skinned_mesh_inverse_bindposes.affine(joint_index_value) {
       Some(inverse_bindpose) => inverse_bindpose
-      None =>
-        raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
-          joint_index,
-        )
+      None => raise OutOfRangeJointIndex(joint_index)
     }
     if joint_index_value < 0 || joint_index_value >= joints.length() {
-      raise EntityAabbFromSkinnedMeshBoundsError::OutOfRangeJointIndex(
-        joint_index,
-      )
+      raise OutOfRangeJointIndex(joint_index)
     }
     joint_bounds_processed = joint_bounds_processed + 1
     let world_from_joint = match
@@ -593,7 +579,7 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(
       }
       None => {
         joint_transform_cache_misses = joint_transform_cache_misses + 1
-        raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
+        raise MissingJointEntity
       }
     }
     let world_from_model = world_from_joint.affine().mul(joint_from_model)
@@ -603,7 +589,7 @@ pub fn entity_aabb_from_skinned_mesh_bounds_cached_counted(
   }
   let worldspace_entity_aabb = match accumulator.finish_aabb3d() {
     Some(aabb) => aabb
-    None => raise EntityAabbFromSkinnedMeshBoundsError::MissingJointEntity
+    None => raise MissingJointEntity
   }
   let aabb = match world_from_entity {
     Some(global_transform) =>
@@ -637,16 +623,13 @@ pub fn SkinnedMeshBounds::from_mesh(
 ) -> SkinnedMeshBounds raise SkinnedMeshBoundsError {
   let geometry = match mesh.as_3d_geometry() {
     Some(geometry) => geometry
-    None =>
-      raise SkinnedMeshBoundsError::MeshAttributeError(
-        MeshAttributeError::MissingAttribute("Vertex_Position"),
-      )
+    None => raise MeshAttributeError(MissingAttribute("Vertex_Position"))
   }
   let influences = InfluenceIterator::new(mesh).collect() catch {
-    error => raise SkinnedMeshBoundsError::MeshAttributeError(error)
+    error => raise MeshAttributeError(error)
   }
   if influences.is_empty() {
-    return SkinnedMeshBounds::SkinnedMeshBounds()
+    return SkinnedMeshBounds()
   }
   let mut max_joint_index = -1
   for influence in influences {
@@ -681,7 +664,7 @@ pub fn SkinnedMeshBounds::from_mesh(
     }
   }
   if aabbs.is_empty() {
-    raise SkinnedMeshBoundsError::NoSkinnedJoints
+    raise NoSkinnedJoints
   } else {
     SkinnedMeshBounds::new(aabbs, aabb_index_to_joint_index)
   }
@@ -702,7 +685,7 @@ pub fn MeshCustomAttributeVec3::new(
     MeshVertexAttribute::new(
       name,
       first_available_custom_mesh_attribute() | name.hash().to_uint64(),
-      MeshVertexFormat::Float32x3,
+      Float32x3,
     ),
     values,
   )
@@ -764,7 +747,7 @@ pub struct SkinningMat4 {
 
 ///|
 pub fn SkinningMat4::identity() -> SkinningMat4 {
-  SkinningMat4::{
+  {
     m00: 1.0F,
     m01: 0.0F,
     m02: 0.0F,
@@ -868,7 +851,7 @@ pub fn SkinningMat4::from_transform(
   let wx = qw * qx
   let wy = qw * qy
   let wz = qw * qz
-  SkinningMat4::{
+  {
     m00: (1.0F - 2.0F * (yy + zz)) * sx,
     m01: 2.0F * (xy - wz) * sy,
     m02: 2.0F * (xz + wy) * sz,
@@ -896,7 +879,7 @@ pub fn SkinningMat4::from_global_transform(
   let x_axis = affine.matrix3.x_axis
   let y_axis = affine.matrix3.y_axis
   let z_axis = affine.matrix3.z_axis
-  SkinningMat4::{
+  {
     m00: x_axis.x,
     m01: y_axis.x,
     m02: z_axis.x,
@@ -962,7 +945,7 @@ pub fn SkinningMat4::inverse_transform(
   let wx = qw * qx
   let wy = qw * qy
   let wz = qw * qz
-  SkinningMat4::{
+  {
     m00: (1.0F - 2.0F * (yy + zz)) * sx,
     m01: 2.0F * (xy - wz) * sy,
     m02: 2.0F * (xz + wy) * sz,
@@ -987,7 +970,7 @@ pub fn SkinningMat4::mul(
   self : SkinningMat4,
   other : SkinningMat4,
 ) -> SkinningMat4 {
-  SkinningMat4::{
+  {
     m00: self.m00 * other.m00 +
     self.m01 * other.m10 +
     self.m02 * other.m20 +

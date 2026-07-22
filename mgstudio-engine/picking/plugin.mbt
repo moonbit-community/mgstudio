@@ -16,6 +16,7 @@
 pub struct PickingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PickingPlugin::PickingPlugin() -> PickingPlugin {
   PickingPlugin::{  }
 }
@@ -24,6 +25,7 @@ pub fn PickingPlugin::PickingPlugin() -> PickingPlugin {
 pub struct PointerInputPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PointerInputPlugin::PointerInputPlugin() -> PointerInputPlugin {
   PointerInputPlugin::{  }
 }
@@ -32,6 +34,7 @@ pub fn PointerInputPlugin::PointerInputPlugin() -> PointerInputPlugin {
 pub struct InteractionPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn InteractionPlugin::InteractionPlugin() -> InteractionPlugin {
   InteractionPlugin::{  }
 }
@@ -40,6 +43,7 @@ pub fn InteractionPlugin::InteractionPlugin() -> InteractionPlugin {
 pub struct DefaultPickingPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DefaultPickingPlugins::DefaultPickingPlugins() -> DefaultPickingPlugins {
   DefaultPickingPlugins::{  }
 }

@@ -23,17 +23,17 @@ pub struct InheritableFont {
 
 ///|
 pub fn InheritableFont::InheritableFont() -> InheritableFont {
-  InheritableFont::{ font: Path(FONT_REGULAR), font_size_px: 16.0 }
+  { font: Path(FONT_REGULAR), font_size_px: 16.0 }
 }
 
 ///|
 pub fn InheritableFont::from_handle(handle : String) -> InheritableFont {
-  InheritableFont::{ font: Handle(handle), font_size_px: 16.0 }
+  { font: Handle(handle), font_size_px: 16.0 }
 }
 
 ///|
 pub fn InheritableFont::from_path(path : String) -> InheritableFont {
-  InheritableFont::{ font: Path(path), font_size_px: 16.0 }
+  { font: Path(path), font_size_px: 16.0 }
 }
 
 ///|

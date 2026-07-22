@@ -56,12 +56,7 @@ pub fn ShaderCompileRequest::for_path(
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> ShaderCompileRequest {
-  ShaderCompileRequest::{
-    assets_base,
-    target: ShaderCompileTarget::Path(rel),
-    defines,
-    value_defines,
-  }
+  { assets_base, target: Path(rel), defines, value_defines }
 }
 
 ///|
@@ -71,12 +66,7 @@ pub fn ShaderCompileRequest::for_source(
   defines : @hashmap.HashMap[String, Bool],
   value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> ShaderCompileRequest {
-  ShaderCompileRequest::{
-    assets_base,
-    target: ShaderCompileTarget::Source(source),
-    defines,
-    value_defines,
-  }
+  { assets_base, target: Source(source), defines, value_defines }
 }
 
 ///|
@@ -84,14 +74,11 @@ fn shader_compile_error_from_composer(
   err : @wgsl_compose.ComposerError,
 ) -> ShaderCompileError {
   match err {
-    FailedToResolveImport(path) => ShaderCompileError::UnresolvedImport(path)
-    MissingRegisteredSource(rel) =>
-      ShaderCompileError::MissingRegisteredSource(rel)
-    MissingPreparedSourceDefs(rel) =>
-      ShaderCompileError::MissingPreparedSourceDefs(rel)
-    MissingStartupRegisteredSource(rel) =>
-      ShaderCompileError::MissingStartupRegisteredSource(rel)
-    _ => ShaderCompileError::Composer(err.message())
+    FailedToResolveImport(path) => UnresolvedImport(path)
+    MissingRegisteredSource(rel) => MissingRegisteredSource(rel)
+    MissingPreparedSourceDefs(rel) => MissingPreparedSourceDefs(rel)
+    MissingStartupRegisteredSource(rel) => MissingStartupRegisteredSource(rel)
+    _ => Composer(err.message())
   }
 }
 
@@ -155,7 +142,7 @@ fn shader_def_hashmap_to_map(
 fn shader_def_map_to_hashmap(
   source : Map[String, @wgsl_common.ShaderDefValue],
 ) -> @hashmap.HashMap[String, @wgsl_common.ShaderDefValue] {
-  @hashmap.HashMap(source.to_array())
+  HashMap(source.to_array())
 }
 
 ///|
@@ -236,10 +223,7 @@ fn shader_compile_cache_get(key : String) -> String? {
 
 ///|
 fn shader_compile_cache_insert(key : String, source : String) -> Unit {
-  shader_compile_runtime_state.composed_cache.push(ShaderCompileCacheEntry::{
-    key,
-    source,
-  })
+  shader_compile_runtime_state.composed_cache.push({ key, source })
 }
 
 ///|
@@ -289,7 +273,7 @@ fn shader_compile_composer(root_rel_path : String?) -> @wgsl_compose.Composer {
     }
   }
   let composer = shader_compile_build_composer(root_rel_path)
-  shader_compile_runtime_state.composers.push(ShaderCompileComposerEntry::{
+  shader_compile_runtime_state.composers.push({
     root_rel_path: root_key,
     composer,
   })
@@ -336,7 +320,7 @@ fn compose_options(
   value_defines : @hashmap.HashMap[String, @wgsl_common.ShaderDefValue],
 ) -> @wgsl_common.WgslComposeOptions {
   ignore(assets_base)
-  @wgsl_common.WgslComposeOptions::{
+  {
     defines: bool_hashmap_to_map(defines),
     value_defines: shader_def_hashmap_to_map(value_defines),
     redirects: [],
@@ -354,7 +338,7 @@ pub fn preprocess_shader_source(
 ) -> String raise ShaderCompileError {
   let key = shader_compile_full_cache_key(
     assets_base,
-    ShaderCompileTarget::Source(source),
+    Source(source),
     defines,
     value_defines,
   )
@@ -379,7 +363,7 @@ pub fn load_preprocessed_wgsl(
 ) -> String raise ShaderCompileError {
   let key = shader_compile_full_cache_key(
     assets_base,
-    ShaderCompileTarget::Path(rel),
+    Path(rel),
     defines,
     value_defines,
   )
@@ -403,7 +387,7 @@ pub fn load_wgsl_from_sources_required(
   load_preprocessed_wgsl(
     assets_base,
     rel,
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   )
 }

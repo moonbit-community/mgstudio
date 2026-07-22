@@ -304,7 +304,7 @@ pub fn WindowHostEntry::new(
   entity : @core.Entity,
   host_window : HostWindow,
 ) -> WindowHostEntry {
-  WindowHostEntry::{ entity, host_window }
+  { entity, host_window }
 }
 
 ///|
@@ -320,7 +320,7 @@ pub fn WindowModeChangeRequest::new(
   host_window : HostWindow,
   mode : WindowMode,
 ) -> WindowModeChangeRequest {
-  WindowModeChangeRequest::{ entity, host_window, mode }
+  { entity, host_window, mode }
 }
 
 ///|
@@ -504,7 +504,7 @@ fn window_current_cursor_options(
 ) -> CursorOptions {
   match window_cursor_options_component(world, entity) {
     Some(options) => options
-    None => CursorOptions::CursorOptions()
+    None => CursorOptions()
   }
 }
 
@@ -698,8 +698,8 @@ fn window_runtime_close_host_window(
   if window_runtime_component(world, entity) is Some(runtime) {
     host_window_request_close(runtime.window)
   }
-  window_emit_window_closed(world, WindowClosed::{ window: entity })
-  window_emit_window_destroyed(world, WindowDestroyed::{ window: entity })
+  window_emit_window_closed(world, { window: entity })
+  window_emit_window_destroyed(world, { window: entity })
 }
 
 ///|
@@ -829,7 +829,7 @@ fn window_create_runtime_for_entity(
     if host_window_set_cursor_hit_test(host_window, hit_test=false) {
       cursor_hit_test = false
     } else {
-      window_set_cursor_options_component(world, entity, CursorOptions::{
+      window_set_cursor_options_component(world, entity, {
         visible: cursor_options.visible,
         grab_mode: cursor_options.grab_mode,
         hit_test: true,
@@ -864,7 +864,7 @@ fn window_create_runtime_for_entity(
     last_applied_width: observed_width,
     last_applied_height: observed_height,
     last_applied_position: window.position,
-    last_applied_mode: WindowMode::Windowed,
+    last_applied_mode: Windowed,
     last_applied_visible: window.visible,
     last_applied_skip_taskbar: window.skip_taskbar,
     last_applied_clip_children: window.clip_children,
@@ -1157,7 +1157,7 @@ fn window_sync_requested_cursor_state(
     }
   }
   if restore_grab_mode is Some(_) || restore_hit_test is Some(_) {
-    window_set_cursor_options_component(world, entity, CursorOptions::{
+    window_set_cursor_options_component(world, entity, {
       visible: requested_cursor_options.visible,
       grab_mode: match restore_grab_mode {
         Some(mode) => mode
@@ -1212,12 +1212,12 @@ fn window_sync_observed_state(
     scale_factor0
   }
   if !runtime_ref.val.created_sent {
-    window_emit_window_created(world, WindowCreated::{ window: entity })
+    window_emit_window_created(world, { window: entity })
     runtime_ref.val.created_sent = true
   }
   if observed_width != runtime_ref.val.last_observed_width ||
     observed_height != runtime_ref.val.last_observed_height {
-    window_emit_window_resized(world, WindowResized::{
+    window_emit_window_resized(world, {
       window: entity,
       width: Float::from_int(observed_width) / observed_scale_factor,
       height: Float::from_int(observed_height) / observed_scale_factor,
@@ -1227,7 +1227,7 @@ fn window_sync_observed_state(
   }
   if observed_position_x != runtime_ref.val.last_observed_position_x ||
     observed_position_y != runtime_ref.val.last_observed_position_y {
-    window_emit_window_moved(world, WindowMoved::{
+    window_emit_window_moved(world, {
       window: entity,
       x: observed_position_x,
       y: observed_position_y,
@@ -1236,7 +1236,7 @@ fn window_sync_observed_state(
     runtime_ref.val.last_observed_position_y = observed_position_y
   }
   if observed_scale_factor != runtime_ref.val.last_observed_scale_factor {
-    window_emit_window_backend_scale_factor_changed(world, WindowBackendScaleFactorChanged::{
+    window_emit_window_backend_scale_factor_changed(world, {
       window: entity,
       scale_factor: observed_scale_factor,
     })
@@ -1258,14 +1258,14 @@ fn window_sync_observed_state(
         old_scale_factor, next_scale_factor, scale_factor_override,
       ) {
       if world.contains_message(ecs_key_window_scale_factor_changed) {
-        window_emit_window_scale_factor_changed(world, WindowScaleFactorChanged::{
+        window_emit_window_scale_factor_changed(world, {
           window: entity,
           scale_factor: next_scale_factor,
         })
       }
     }
     if window.focused != observed_focused {
-      window_emit_window_focused(world, WindowFocused::{
+      window_emit_window_focused(world, {
         window: entity,
         focused: observed_focused,
       })
@@ -1273,9 +1273,7 @@ fn window_sync_observed_state(
   }
   if host_window_should_close(host_window) &&
     !runtime_ref.val.close_requested_sent {
-    window_emit_window_close_requested(world, WindowCloseRequested::{
-      window: entity,
-    })
+    window_emit_window_close_requested(world, { window: entity })
     runtime_ref.val.close_requested_sent = true
   }
   ignore(
@@ -1354,17 +1352,17 @@ pub fn window_request_close_all_hosts(world : @ecs.World) -> Unit {
 
 ///|
 fn window_primary_physical_width(world : @ecs.World) -> Int {
-  window_physical_width_for(world, WindowRef::Primary)
+  window_physical_width_for(world, Primary)
 }
 
 ///|
 fn window_primary_physical_height(world : @ecs.World) -> Int {
-  window_physical_height_for(world, WindowRef::Primary)
+  window_physical_height_for(world, Primary)
 }
 
 ///|
 fn window_primary_scale_factor(world : @ecs.World) -> Float {
-  window_scale_factor_for(world, WindowRef::Primary)
+  window_scale_factor_for(world, Primary)
 }
 
 ///|
@@ -1414,7 +1412,7 @@ fn window_emit_window_created(
   if world.contains_message(ecs_key_window_created) {
     ignore(world.send_message(ecs_key_window_created, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowCreated(event))
+  window_emit_window_event(world, WindowCreated(event))
 }
 
 ///|
@@ -1425,7 +1423,7 @@ fn window_emit_window_close_requested(
   if world.contains_message(ecs_key_window_close_requested) {
     ignore(world.send_message(ecs_key_window_close_requested, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowCloseRequested(event))
+  window_emit_window_event(world, WindowCloseRequested(event))
 }
 
 ///|
@@ -1453,7 +1451,7 @@ fn window_emit_window_destroyed(
   if world.contains_message(ecs_key_window_destroyed) {
     ignore(world.send_message(ecs_key_window_destroyed, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowDestroyed(event))
+  window_emit_window_event(world, WindowDestroyed(event))
 }
 
 ///|
@@ -1464,7 +1462,7 @@ fn window_emit_window_resized(
   if world.contains_message(ecs_key_window_resized) {
     ignore(world.send_message(ecs_key_window_resized, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowResized(event))
+  window_emit_window_event(world, WindowResized(event))
 }
 
 ///|
@@ -1472,7 +1470,7 @@ fn window_emit_window_moved(world : @ecs.World, event : WindowMoved) -> Unit {
   if world.contains_message(ecs_key_window_moved) {
     ignore(world.send_message(ecs_key_window_moved, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowMoved(event))
+  window_emit_window_event(world, WindowMoved(event))
 }
 
 ///|
@@ -1483,7 +1481,7 @@ fn window_emit_window_scale_factor_changed(
   if world.contains_message(ecs_key_window_scale_factor_changed) {
     ignore(world.send_message(ecs_key_window_scale_factor_changed, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowScaleFactorChanged(event))
+  window_emit_window_event(world, WindowScaleFactorChanged(event))
 }
 
 ///|
@@ -1496,10 +1494,7 @@ fn window_emit_window_backend_scale_factor_changed(
       world.send_message(ecs_key_window_backend_scale_factor_changed, event),
     )
   }
-  window_emit_window_event(
-    world,
-    WindowEvent::WindowBackendScaleFactorChanged(event),
-  )
+  window_emit_window_event(world, WindowBackendScaleFactorChanged(event))
 }
 
 ///|
@@ -1510,7 +1505,7 @@ fn window_emit_window_focused(
   if world.contains_message(ecs_key_window_focused) {
     ignore(world.send_message(ecs_key_window_focused, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowFocused(event))
+  window_emit_window_event(world, WindowFocused(event))
 }
 
 ///|
@@ -1527,7 +1522,7 @@ pub fn window_emit_cursor_moved(
   if world.contains_message(ecs_key_cursor_moved) {
     ignore(world.send_message(ecs_key_cursor_moved, event))
   }
-  window_emit_window_event(world, WindowEvent::CursorMoved(event))
+  window_emit_window_event(world, CursorMoved(event))
 }
 
 ///|
@@ -1538,7 +1533,7 @@ pub fn window_emit_cursor_entered(
   if world.contains_message(ecs_key_cursor_entered) {
     ignore(world.send_message(ecs_key_cursor_entered, event))
   }
-  window_emit_window_event(world, WindowEvent::CursorEntered(event))
+  window_emit_window_event(world, CursorEntered(event))
 }
 
 ///|
@@ -1551,7 +1546,7 @@ pub fn window_emit_cursor_left(world : @ecs.World, event : CursorLeft) -> Unit {
   if world.contains_message(ecs_key_cursor_left) {
     ignore(world.send_message(ecs_key_cursor_left, event))
   }
-  window_emit_window_event(world, WindowEvent::CursorLeft(event))
+  window_emit_window_event(world, CursorLeft(event))
 }
 
 ///|
@@ -1562,7 +1557,7 @@ pub fn window_emit_file_drag_and_drop(
   if world.contains_message(ecs_key_file_drag_and_drop) {
     ignore(world.send_message(ecs_key_file_drag_and_drop, event))
   }
-  window_emit_window_event(world, WindowEvent::FileDragAndDrop(event))
+  window_emit_window_event(world, FileDragAndDrop(event))
 }
 
 ///|
@@ -1570,7 +1565,7 @@ pub fn window_emit_ime(world : @ecs.World, event : Ime) -> Unit {
   if world.contains_message(ecs_key_ime) {
     ignore(world.send_message(ecs_key_ime, event))
   }
-  window_emit_window_event(world, WindowEvent::Ime(event))
+  window_emit_window_event(world, Ime(event))
 }
 
 ///|
@@ -1581,7 +1576,7 @@ pub fn window_emit_mouse_button_input(
   if world.contains_message(ecs_key_mouse_button_input) {
     ignore(world.send_message(ecs_key_mouse_button_input, event))
   }
-  window_emit_window_event(world, WindowEvent::MouseButtonInput(event))
+  window_emit_window_event(world, MouseButtonInput(event))
 }
 
 ///|
@@ -1592,7 +1587,7 @@ pub fn window_emit_mouse_motion(
   if world.contains_message(ecs_key_mouse_motion) {
     ignore(world.send_message(ecs_key_mouse_motion, event))
   }
-  window_emit_window_event(world, WindowEvent::MouseMotion(event))
+  window_emit_window_event(world, MouseMotion(event))
 }
 
 ///|
@@ -1600,7 +1595,7 @@ pub fn window_emit_mouse_wheel(world : @ecs.World, event : MouseWheel) -> Unit {
   if world.contains_message(ecs_key_mouse_wheel) {
     ignore(world.send_message(ecs_key_mouse_wheel, event))
   }
-  window_emit_window_event(world, WindowEvent::MouseWheel(event))
+  window_emit_window_event(world, MouseWheel(event))
 }
 
 ///|
@@ -1611,7 +1606,7 @@ pub fn window_emit_pinch_gesture(
   if world.contains_message(ecs_key_pinch_gesture) {
     ignore(world.send_message(ecs_key_pinch_gesture, event))
   }
-  window_emit_window_event(world, WindowEvent::PinchGesture(event))
+  window_emit_window_event(world, PinchGesture(event))
 }
 
 ///|
@@ -1622,7 +1617,7 @@ pub fn window_emit_rotation_gesture(
   if world.contains_message(ecs_key_rotation_gesture) {
     ignore(world.send_message(ecs_key_rotation_gesture, event))
   }
-  window_emit_window_event(world, WindowEvent::RotationGesture(event))
+  window_emit_window_event(world, RotationGesture(event))
 }
 
 ///|
@@ -1633,7 +1628,7 @@ pub fn window_emit_double_tap_gesture(
   if world.contains_message(ecs_key_double_tap_gesture) {
     ignore(world.send_message(ecs_key_double_tap_gesture, event))
   }
-  window_emit_window_event(world, WindowEvent::DoubleTapGesture(event))
+  window_emit_window_event(world, DoubleTapGesture(event))
 }
 
 ///|
@@ -1641,7 +1636,7 @@ pub fn window_emit_pan_gesture(world : @ecs.World, event : PanGesture) -> Unit {
   if world.contains_message(ecs_key_pan_gesture) {
     ignore(world.send_message(ecs_key_pan_gesture, event))
   }
-  window_emit_window_event(world, WindowEvent::PanGesture(event))
+  window_emit_window_event(world, PanGesture(event))
 }
 
 ///|
@@ -1649,7 +1644,7 @@ pub fn window_emit_touch_input(world : @ecs.World, event : TouchInput) -> Unit {
   if world.contains_message(ecs_key_touch_input) {
     ignore(world.send_message(ecs_key_touch_input, event))
   }
-  window_emit_window_event(world, WindowEvent::TouchInput(event))
+  window_emit_window_event(world, TouchInput(event))
 }
 
 ///|
@@ -1660,7 +1655,7 @@ pub fn window_emit_keyboard_input(
   if world.contains_message(ecs_key_keyboard_input) {
     ignore(world.send_message(ecs_key_keyboard_input, event))
   }
-  window_emit_window_event(world, WindowEvent::KeyboardInput(event))
+  window_emit_window_event(world, KeyboardInput(event))
 }
 
 ///|
@@ -1671,7 +1666,7 @@ pub fn window_emit_keyboard_focus_lost(
   if world.contains_message(ecs_key_keyboard_focus_lost) {
     ignore(world.send_message(ecs_key_keyboard_focus_lost, event))
   }
-  window_emit_window_event(world, WindowEvent::KeyboardFocusLost(event))
+  window_emit_window_event(world, KeyboardFocusLost(event))
 }
 
 ///|
@@ -1682,7 +1677,7 @@ fn window_emit_window_occluded(
   if world.contains_message(ecs_key_window_occluded) {
     ignore(world.send_message(ecs_key_window_occluded, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowOccluded(event))
+  window_emit_window_event(world, WindowOccluded(event))
 }
 
 ///|
@@ -1693,7 +1688,7 @@ fn window_emit_window_theme_changed(
   if world.contains_message(ecs_key_window_theme_changed) {
     ignore(world.send_message(ecs_key_window_theme_changed, event))
   }
-  window_emit_window_event(world, WindowEvent::WindowThemeChanged(event))
+  window_emit_window_event(world, WindowThemeChanged(event))
 }
 
 ///|
@@ -1704,14 +1699,14 @@ fn window_emit_app_lifecycle(
   if world.contains_message(ecs_key_app_lifecycle) {
     ignore(world.send_message(ecs_key_app_lifecycle, lifecycle))
   }
-  window_emit_window_event(world, WindowEvent::AppLifecycle(lifecycle))
+  window_emit_window_event(world, AppLifecycle(lifecycle))
 }
 
 ///|
 fn window_theme_from_host(theme : Int) -> WindowTheme? {
   match theme {
-    1 => Some(WindowTheme::Light)
-    2 => Some(WindowTheme::Dark)
+    1 => Some(Light)
+    2 => Some(Dark)
     _ => None
   }
 }
@@ -1719,11 +1714,11 @@ fn window_theme_from_host(theme : Int) -> WindowTheme? {
 ///|
 fn app_lifecycle_from_host(kind : Int) -> AppLifecycle? {
   match kind {
-    0 => Some(AppLifecycle::Idle)
-    1 => Some(AppLifecycle::Running)
-    2 => Some(AppLifecycle::WillSuspend)
-    3 => Some(AppLifecycle::Suspended)
-    4 => Some(AppLifecycle::WillResume)
+    0 => Some(Idle)
+    1 => Some(Running)
+    2 => Some(WillSuspend)
+    3 => Some(Suspended)
+    4 => Some(WillResume)
     _ => None
   }
 }
@@ -1743,10 +1738,7 @@ fn window_emit_native_theme_events(world : @ecs.World) -> Unit {
       is Some(theme) else {
       continue
     }
-    window_emit_window_theme_changed(world, WindowThemeChanged::{
-      window: window_entity,
-      theme,
-    })
+    window_emit_window_theme_changed(world, { window: window_entity, theme })
   }
 }
 
@@ -1761,7 +1753,7 @@ fn window_emit_native_occluded_events(world : @ecs.World) -> Unit {
     guard window_entity_for_host(world, host_window) is Some(window_entity) else {
       continue
     }
-    window_emit_window_occluded(world, WindowOccluded::{
+    window_emit_window_occluded(world, {
       window: window_entity,
       occluded: host_window_occluded_event_occluded(index=i),
     })

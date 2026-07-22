@@ -27,7 +27,7 @@ pub fn Lcha::new(
   hue : Float,
   alpha : Float,
 ) -> Lcha {
-  Lcha::{
+  {
     lightness,
     chroma: if chroma < 0.0F {
       0.0F

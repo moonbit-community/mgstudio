@@ -20,6 +20,7 @@
 pub struct ExperimentalMipGeneration {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ExperimentalMipGeneration::ExperimentalMipGeneration() -> ExperimentalMipGeneration {
   ExperimentalMipGeneration::{  }
 }
@@ -68,8 +69,5 @@ pub fn experimental_mip_generation_has_depth_support() -> Bool {
 
 ///|
 pub fn experimental_mip_generation_depth_pass_labels() -> Array[String] {
-  [
-    downsample_depth_pass_label(DownsampleDepthPassKind::Early),
-    downsample_depth_pass_label(DownsampleDepthPassKind::Late),
-  ]
+  [downsample_depth_pass_label(Early), downsample_depth_pass_label(Late)]
 }

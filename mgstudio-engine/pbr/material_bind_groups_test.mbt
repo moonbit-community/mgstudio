@@ -143,7 +143,7 @@ test "render3d: standard material allocator install plan carries layout descript
 ///|
 test "render3d: standard material layout derives optional texture feature gates" {
   let no_optional = standard_material_bind_group_layout_descriptor(
-    features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(),
+    features=StandardMaterialTextureFeatureSet(),
   )
   debug_inspect(no_optional.entries().length(), content="13")
   inspect(no_optional.entries()[12].binding(), content="12")
@@ -154,7 +154,7 @@ test "render3d: standard material layout derives optional texture feature gates"
   inspect(default_features.entries()[14].binding(), content="14")
 
   let all_optional = standard_material_bind_group_layout_descriptor(
-    features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    features=StandardMaterialTextureFeatureSet(
       pbr_transmission_textures=true,
       pbr_multi_layer_material_textures=true,
       pbr_anisotropy_texture=true,
@@ -178,7 +178,7 @@ test "render3d: standard material allocator install chooses bindless mode from b
   debug_inspect(bindless_plan.uses_bindless_resources(), content="true")
   debug_inspect(bindless_allocators.len(), content="1")
   match bindless_allocators.get("StandardMaterial") {
-    Some(MaterialBindGroupAllocator::Bindless(allocator)) => {
+    Some(Bindless(allocator)) => {
       debug_inspect(true, content="true")
       for material_id in 0..<8 {
         ignore(allocator.allocate(material_id))
@@ -199,8 +199,7 @@ test "render3d: standard material allocator install chooses bindless mode from b
   )
   debug_inspect(non_bindless_plan.uses_bindless_resources(), content="false")
   match non_bindless_allocators.get("StandardMaterial") {
-    Some(MaterialBindGroupAllocator::NonBindless(_)) =>
-      debug_inspect(true, content="true")
+    Some(NonBindless(_)) => debug_inspect(true, content="true")
     _ => debug_inspect(false, content="true")
   }
 }

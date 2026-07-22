@@ -49,11 +49,11 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   ensure_transform_runtime_resources(app.world())
   let validate_parent_plugin : @app.ValidateParentHasComponentPlugin[
     GlobalTransform,
-  ] = @app.ValidateParentHasComponentPlugin::ValidateParentHasComponentPlugin()
+  ] = ValidateParentHasComponentPlugin()
   app
   .add_plugins(validate_parent_plugin)
   .add_systems(
-    @app.PostStartup,
+    PostStartup,
     (
       transform_mark_dirty_trees_system_config(),
       transform_propagate_parent_transforms_system_config(),
@@ -63,7 +63,7 @@ pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     |> @app.SystemConfig::in_set(transform_set_propagate),
   )
   .add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     (
       transform_mark_dirty_trees_system_config(),
       transform_propagate_parent_transforms_system_config(),

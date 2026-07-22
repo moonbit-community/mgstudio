@@ -23,7 +23,7 @@ pub fn WinitWindowEntry::new(
   entity : @core.Entity,
   window : @window.HostWindow,
 ) -> WinitWindowEntry {
-  WinitWindowEntry::{ entity, window }
+  { entity, window }
 }
 
 ///|
@@ -33,7 +33,7 @@ pub struct WinitWindows {
 
 ///|
 pub fn WinitWindows::new() -> WinitWindows {
-  WinitWindows::{ windows: [] }
+  { windows: [] }
 }
 
 ///|
@@ -145,7 +145,7 @@ pub impl @app.Resource for WinitWindows with fn resource() {
 pub fn winit_sync_windows_resource_system(world : @ecs.World) -> Unit {
   let windows = match world.get_resource(WinitWindows::resource()) {
     Some(windows) => windows
-    None => WinitWindows::WinitWindows()
+    None => WinitWindows()
   }
   windows.sync_windows(world)
   world.insert_resource(WinitWindows::resource(), windows)

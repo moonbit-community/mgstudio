@@ -33,7 +33,7 @@ pub fn ClusterProjectionMatrix3d::from_cols(
   z_axis : @math.Vec4,
   w_axis : @math.Vec4,
 ) -> ClusterProjectionMatrix3d {
-  ClusterProjectionMatrix3d::{ x_axis, y_axis, z_axis, w_axis }
+  { x_axis, y_axis, z_axis, w_axis }
 }
 
 ///|
@@ -246,12 +246,7 @@ pub fn ClusterCameraProjection::new(
   far : Float,
   orthographic_first_slice_depth : Float,
 ) -> ClusterCameraProjection {
-  ClusterCameraProjection::{
-    clip_from_view,
-    is_orthographic,
-    far,
-    orthographic_first_slice_depth,
-  }
+  { clip_from_view, is_orthographic, far, orthographic_first_slice_depth }
 }
 
 ///|

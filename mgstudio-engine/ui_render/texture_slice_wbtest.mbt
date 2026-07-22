@@ -42,7 +42,7 @@ test "ui_render: sliced image uses Bevy-like normalized borders" {
   let (slices, border, repeat) = compute_texture_slices(
     @math.Vec2::new(100.0F, 200.0F),
     @math.Vec2::new(300.0F, 400.0F),
-    @ui.NodeImageMode::Sliced(slicer),
+    Sliced(slicer),
   )
   debug_inspect(vec4_approx_eq(slices, 0.1F, 0.1F, 0.7F, 0.8F), content="true")
   debug_inspect(
@@ -57,7 +57,7 @@ test "ui_render: tiled image mode maps repeat to center channels" {
   let (slices, border, repeat) = compute_texture_slices(
     @math.Vec2::new(64.0F, 32.0F),
     @math.Vec2::new(256.0F, 96.0F),
-    @ui.NodeImageMode::Tiled(true, false, 2.0F),
+    Tiled(true, false, 2.0F),
   )
   debug_inspect(vec4_approx_eq(slices, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
   debug_inspect(vec4_approx_eq(border, 0.0F, 0.0F, 1.0F, 1.0F), content="true")

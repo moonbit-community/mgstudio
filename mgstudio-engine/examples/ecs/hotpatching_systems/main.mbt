@@ -72,12 +72,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(10.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_flex_direction(Column)
+      .with_row_gap(Px(10.0F)),
     ),
   )
   let text_button = commands.spawn(
@@ -85,11 +85,11 @@ fn setup(
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(460.0F))
-      .with_height(@ui.Val::Px(100.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Px(460.0F))
+      .with_height(Px(100.0F))
+      .with_border(@ui.UiRect::all(Px(2.0F)))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BorderColor::new(@color.Color::white()),
       @ui.BackgroundColor::new(@color.Color::srgb(0.15F, 0.15F, 0.2F)),
     ),
@@ -123,7 +123,7 @@ fn keyboard_toggle(
   keyboard : @input.ButtonInput[@window.KeyCode],
   mode : @app.ResMut[Mode],
 ) -> Unit {
-  if keyboard.just_pressed(@window.KeyCode::KeyH) {
+  if keyboard.just_pressed(KeyH) {
     mode.modify(fn(value) { value.value = (value.value + 1) % 2 })
   }
 }
@@ -159,8 +159,8 @@ fn update_text(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, keyboard_toggle)
-  .add_systems_param3(@app.Update, update_text)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, keyboard_toggle)
+  .add_systems_param3(Update, update_text)
   .run()
 }

@@ -1070,7 +1070,7 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
   morphed : Bool,
   has_previous_morph : Bool,
 ) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   defines.set("PREPASS_FRAGMENT", true)
   defines.set("MOTION_VECTOR_PREPASS", true)
   if skinned {
@@ -1498,11 +1498,7 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       0,
       stage,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        MESH3D_PREPASS_MESH_BUFFER_SIZE,
-      ),
+      BufferBinding(Storage(true), false, MESH3D_PREPASS_MESH_BUFFER_SIZE),
     ),
   ]
   if skinned {
@@ -1510,8 +1506,8 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         1,
         stage,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
+        BufferBinding(
+          Storage(true),
           false,
           MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
         ),
@@ -1523,30 +1519,22 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         2,
         stage,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
-          false,
-          MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
-        ),
+        BufferBinding(Storage(true), false, MESH3D_MORPH_WEIGHT_STRIDE_BYTES),
       ),
     )
     entries.push(
       @render_resource.BindGroupLayoutEntry::new(
         3,
         stage,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
-          false,
-          MESH3D_MORPH_ATTRIBUTE_STRIDE_BYTES,
-        ),
+        BufferBinding(Storage(true), false, MESH3D_MORPH_ATTRIBUTE_STRIDE_BYTES),
       ),
     )
     entries.push(
       @render_resource.BindGroupLayoutEntry::new(
         8,
         stage,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
+        BufferBinding(
+          Storage(true),
           false,
           MESH3D_MORPH_DESCRIPTOR_STRIDE_BYTES,
         ),
@@ -1558,8 +1546,8 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         6,
         stage,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
+        BufferBinding(
+          Storage(true),
           false,
           MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
         ),
@@ -1571,11 +1559,7 @@ fn mesh3d_motion_vector_mesh_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         7,
         stage,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
-          false,
-          MESH3D_MORPH_WEIGHT_STRIDE_BYTES,
-        ),
+        BufferBinding(Storage(true), false, MESH3D_MORPH_WEIGHT_STRIDE_BYTES),
       ),
     )
   }
@@ -1747,7 +1731,7 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
       is Some(mesh_bg) else {
       return None
     }
-    backend.mesh3d_motion_vector_mesh_slots.push(GpuStorageSlot::{
+    backend.mesh3d_motion_vector_mesh_slots.push({
       buffer: mesh_buf,
       bind_group: mesh_bg,
     })
@@ -1794,7 +1778,7 @@ fn ensure_mesh3d_motion_vector_mesh_slot(
       is Some(mesh_bg) else {
       return None
     }
-    backend.mesh3d_motion_vector_mesh_slots[slot_index] = GpuStorageSlot::{
+    backend.mesh3d_motion_vector_mesh_slots[slot_index] = {
       buffer: mesh_buf,
       bind_group: mesh_bg,
     }

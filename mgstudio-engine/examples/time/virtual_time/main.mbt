@@ -123,6 +123,7 @@ fn update_info_text(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
   virtual_time_state.val = { real_text: None, virtual_text: None }
 
@@ -188,9 +189,9 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   virtual_time_state.val.real_text = Some(real_text)
 
@@ -206,11 +207,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   .with_anchor(@sprite.Anchor::top_center())
   .with_bounds(@text.TextBounds::new_horizontal(300.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+  .with_layout(@text.TextLayout::new_with_justify(Center))
   .with_color(
     @text.TextColor::new(@color.Color::new(0.85F, 0.85F, 0.85F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -226,11 +227,11 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_right())
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Right))
+    .with_layout(@text.TextLayout::new_with_justify(Right))
     .with_color(
       @text.TextColor::new(@color.Color::new(1.0F, 0.843F, 0.0F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   virtual_time_state.val.virtual_text = Some(virtual_text)
 
@@ -239,17 +240,17 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn input_toggle_pressed() -> Bool {
-  @input.key_just_pressed(@window.KeyCode::Space)
+  @input.key_just_pressed(Space)
 }
 
 ///|
 fn input_speed_up_pressed() -> Bool {
-  @input.key_just_pressed(@window.KeyCode::ArrowUp)
+  @input.key_just_pressed(ArrowUp)
 }
 
 ///|
 fn input_speed_down_pressed() -> Bool {
-  @input.key_just_pressed(@window.KeyCode::ArrowDown)
+  @input.key_just_pressed(ArrowDown)
 }
 
 ///|
@@ -322,27 +323,27 @@ fn move_virtual_time_sprites(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, move_virtual_time_sprites)
-  .add_systems_param2(@app.Update, move_real_time_sprites)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, move_virtual_time_sprites)
+  .add_systems_param2(Update, move_real_time_sprites)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(toggle_pause).run_if_fn(input_toggle_pressed),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(change_time_speed_up).run_if_fn(
       input_speed_up_pressed,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(change_time_speed_down).run_if_fn(
       input_speed_down_pressed,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(update_info_text).run_if(
       @time.on_real_timer(@core.Duration::from_millis(250L)),
     ),

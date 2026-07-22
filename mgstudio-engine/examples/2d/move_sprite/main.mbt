@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, sprite_movement)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, sprite_movement)
   .run()
 }
 
@@ -80,9 +80,9 @@ fn sprite_movement(
       value.translation.x
     })
     if next_x > EDGE_LIMIT {
-      direction.set(Direction::Left)
+      direction.set(Left)
     } else if next_x < 0.0F - EDGE_LIMIT {
-      direction.set(Direction::Right)
+      direction.set(Right)
     }
   })
 }

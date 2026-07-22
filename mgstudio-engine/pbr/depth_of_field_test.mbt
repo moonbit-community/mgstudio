@@ -43,17 +43,17 @@ test "render3d: Exposure and DepthOfField can be created from physical camera pa
 ///|
 test "render3d: DepthOfField default and direct field mutation align with Bevy component style" {
   let dof = DepthOfField::DepthOfField()
-  debug_inspect(dof.mode == DepthOfFieldMode::Gaussian, content="true")
+  debug_inspect(dof.mode == Gaussian, content="true")
   debug_inspect(dof.max_depth.is_inf(), content="true")
 
-  dof.mode = DepthOfFieldMode::Bokeh
+  dof.mode = Bokeh
   dof.focal_distance = 4.0F
   dof.sensor_height = 0.021F
   dof.aperture_f_stops = 1.4F
   dof.max_circle_of_confusion_diameter = 32.0F
   dof.max_depth = 75.0F
 
-  debug_inspect(dof.mode == DepthOfFieldMode::Bokeh, content="true")
+  debug_inspect(dof.mode == Bokeh, content="true")
   debug_inspect(dof.focal_distance == 4.0F, content="true")
   debug_inspect(dof.sensor_height == 0.021F, content="true")
   debug_inspect(dof.aperture_f_stops == 1.4F, content="true")

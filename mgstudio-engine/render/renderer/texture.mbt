@@ -1241,7 +1241,7 @@ pub fn GpuBackend::set_texture_sampler(
         old_bind_group.release()
       }
       info.sampler.release()
-      self.textures[i] = GpuTextureInfo::{
+      self.textures[i] = {
         id: info.id,
         width: info.width,
         height: info.height,
@@ -1640,7 +1640,7 @@ pub fn GpuBackend::create_depth_prepass_target(
     0U,
     1U,
   )
-  self.prepass_depth_textures.push(GpuPrepassDepthTextureInfo::{
+  self.prepass_depth_textures.push({
     id,
     width: w.reinterpret_as_int(),
     height: h.reinterpret_as_int(),

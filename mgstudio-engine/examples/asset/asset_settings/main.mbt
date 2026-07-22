@@ -67,6 +67,6 @@ fn main {
       @asset.AssetPlugin::AssetPlugin().with_file_path("examples/asset/files"),
     ),
   )
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

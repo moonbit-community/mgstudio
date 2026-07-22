@@ -22,5 +22,5 @@ pub fn image_is_ktx2_extension(extension : String) -> Bool {
 
 ///|
 pub fn ktx2_default_texture_format() -> TextureFormat {
-  TextureFormat::Rgba8Unorm
+  Rgba8Unorm
 }

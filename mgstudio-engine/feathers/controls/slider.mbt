@@ -24,7 +24,7 @@ pub struct SliderProps {
 
 ///|
 pub fn SliderProps::SliderProps() -> SliderProps {
-  SliderProps::{ value: 0.0, min: 0.0, max: 1.0 }
+  { value: 0.0, min: 0.0, max: 1.0 }
 }
 
 ///|
@@ -34,13 +34,14 @@ pub struct Slider {
 
 ///|
 pub fn slider(props : SliderProps) -> Slider {
-  Slider::{ props, }
+  { props, }
 }
 
 ///|
 pub struct SliderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SliderPlugin::SliderPlugin() -> SliderPlugin {
   SliderPlugin::{  }
 }

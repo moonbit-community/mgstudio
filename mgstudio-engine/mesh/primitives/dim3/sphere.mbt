@@ -650,7 +650,7 @@ pub(all) struct SphereMeshBuilder {
 
 ///|
 pub fn SphereMeshBuilder::SphereMeshBuilder() -> SphereMeshBuilder {
-  { sphere: @math.Sphere::Sphere(), kind: SphereKind::default() }
+  { sphere: Sphere(), kind: SphereKind::default() }
 }
 
 ///|
@@ -658,7 +658,7 @@ pub fn SphereMeshBuilder::new(
   radius : Float,
   kind : SphereKind,
 ) -> SphereMeshBuilder {
-  { sphere: @math.Sphere::{ radius, }, kind }
+  { sphere: { radius, }, kind }
 }
 
 ///|
@@ -684,9 +684,7 @@ pub fn SphereMeshBuilder::ico(
   if subdivisions >= 80 {
     let temp = subdivisions + 1
     let number_of_resulting_points = temp * temp * 10 + 2
-    raise IcosphereError::TooManyVertices(
-      subdivisions, number_of_resulting_points,
-    )
+    raise TooManyVertices(subdivisions, number_of_resulting_points)
   } else {
     icosphere_mesh(self.sphere.radius, subdivisions)
   }

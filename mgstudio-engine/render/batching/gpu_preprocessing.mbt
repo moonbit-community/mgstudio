@@ -48,7 +48,7 @@ pub fn IndirectBatchSet::new(
   indirect_parameters_base : Int,
   indirect_parameters_count? : Int = 0,
 ) -> IndirectBatchSet {
-  IndirectBatchSet::{ indirect_parameters_base, indirect_parameters_count }
+  { indirect_parameters_base, indirect_parameters_count }
 }
 
 ///|
@@ -73,7 +73,7 @@ pub struct IndirectParametersCpuMetadata {
 
 ///|
 pub fn IndirectParametersCpuMetadata::IndirectParametersCpuMetadata() -> IndirectParametersCpuMetadata {
-  IndirectParametersCpuMetadata::{ base_output_index: 0, batch_set_index: 0 }
+  { base_output_index: 0, batch_set_index: 0 }
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn IndirectParametersCpuMetadata::new(
   base_output_index : Int,
   batch_set_index : Int,
 ) -> IndirectParametersCpuMetadata {
-  IndirectParametersCpuMetadata::{ base_output_index, batch_set_index }
+  { base_output_index, batch_set_index }
 }
 
 ///|
@@ -111,7 +111,7 @@ pub struct MeshClassIndirectParametersBuffers {
 pub fn MeshClassIndirectParametersBuffers::new(
   allow_copies_from_indirect_parameter_buffers : Bool,
 ) -> MeshClassIndirectParametersBuffers {
-  MeshClassIndirectParametersBuffers::{
+  {
     indirect_draw_parameter_count: 0,
     cpu_metadata: [],
     gpu_metadata_count: 0,
@@ -130,9 +130,7 @@ pub fn MeshClassIndirectParametersBuffers::allocate(
     self.indirect_draw_parameter_count += count
     self.gpu_metadata_count += count
     for _ in 0..<count {
-      self.cpu_metadata.push(
-        IndirectParametersCpuMetadata::IndirectParametersCpuMetadata(),
-      )
+      self.cpu_metadata.push(IndirectParametersCpuMetadata())
     }
   }
   offset
@@ -236,7 +234,7 @@ pub struct UntypedPhaseIndirectParametersBuffers {
 pub fn UntypedPhaseIndirectParametersBuffers::new(
   allow_copies_from_indirect_parameter_buffers : Bool,
 ) -> UntypedPhaseIndirectParametersBuffers {
-  UntypedPhaseIndirectParametersBuffers::{
+  {
     indexed: MeshClassIndirectParametersBuffers::new(
       allow_copies_from_indirect_parameter_buffers,
     ),
@@ -385,7 +383,7 @@ pub struct PhaseIndirectParametersBuffers {
 pub fn PhaseIndirectParametersBuffers::new(
   allow_copies_from_indirect_parameter_buffers : Bool,
 ) -> PhaseIndirectParametersBuffers {
-  PhaseIndirectParametersBuffers::{
+  {
     buffers: UntypedPhaseIndirectParametersBuffers::new(
       allow_copies_from_indirect_parameter_buffers,
     ),
@@ -412,7 +410,7 @@ pub struct IndirectParametersBuffers {
 
 ///|
 pub fn IndirectParametersBuffers::IndirectParametersBuffers() -> IndirectParametersBuffers {
-  IndirectParametersBuffers::{ buffers: @hashmap.HashMap([]) }
+  { buffers: HashMap([]) }
 }
 
 ///|
@@ -432,21 +430,19 @@ pub fn IndirectParametersBuffers::get(
 
 ///|
 pub fn GpuPreprocessingSupport::GpuPreprocessingSupport() -> GpuPreprocessingSupport {
-  GpuPreprocessingSupport::{ max_supported_mode: GpuPreprocessingMode::None }
+  { max_supported_mode: None }
 }
 
 ///|
 pub fn GpuPreprocessingSupport::with_max_supported_mode(
   max_supported_mode : GpuPreprocessingMode,
 ) -> GpuPreprocessingSupport {
-  GpuPreprocessingSupport::{ max_supported_mode, }
+  { max_supported_mode, }
 }
 
 ///|
 pub fn IndirectParametersBuffersSettings::IndirectParametersBuffersSettings() -> IndirectParametersBuffersSettings {
-  IndirectParametersBuffersSettings::{
-    allow_copies_from_indirect_parameter_buffers: false,
-  }
+  { allow_copies_from_indirect_parameter_buffers: false }
 }
 
 ///|
@@ -454,9 +450,7 @@ pub fn IndirectParametersBuffersSettings::with_allow_copies_from_indirect_parame
   _self : IndirectParametersBuffersSettings,
   allow : Bool,
 ) -> IndirectParametersBuffersSettings {
-  IndirectParametersBuffersSettings::{
-    allow_copies_from_indirect_parameter_buffers: allow,
-  }
+  { allow_copies_from_indirect_parameter_buffers: allow }
 }
 
 ///|
@@ -470,7 +464,7 @@ pub fn IndirectParametersBuffersSettings::allow_copies_from_indirect_parameter_b
 pub fn GpuPreprocessingSupport::is_available(
   self : GpuPreprocessingSupport,
 ) -> Bool {
-  self.max_supported_mode != GpuPreprocessingMode::None
+  self.max_supported_mode != None
 }
 
 ///|
@@ -479,11 +473,10 @@ pub fn GpuPreprocessingSupport::min(
   mode : GpuPreprocessingMode,
 ) -> GpuPreprocessingMode {
   match (self.max_supported_mode, mode) {
-    (GpuPreprocessingMode::None, _) | (_, GpuPreprocessingMode::None) =>
-      GpuPreprocessingMode::None
-    (GpuPreprocessingMode::Culling, other) => other
-    (other, GpuPreprocessingMode::Culling) => other
-    _ => GpuPreprocessingMode::PreprocessingOnly
+    (None, _) | (_, None) => None
+    (Culling, other) => other
+    (other, Culling) => other
+    _ => PreprocessingOnly
   }
 }
 
@@ -491,7 +484,7 @@ pub fn GpuPreprocessingSupport::min(
 pub fn GpuPreprocessingSupport::is_culling_supported(
   self : GpuPreprocessingSupport,
 ) -> Bool {
-  self.max_supported_mode == GpuPreprocessingMode::Culling
+  self.max_supported_mode == Culling
 }
 
 ///|
@@ -502,7 +495,7 @@ pub struct InstanceInputUniformBuffer[BDI] {
 
 ///|
 pub fn[BDI] InstanceInputUniformBuffer::new() -> InstanceInputUniformBuffer[BDI] {
-  InstanceInputUniformBuffer::{ buffer: [], free_uniform_indices: [] }
+  { buffer: [], free_uniform_indices: [] }
 }
 
 ///|
@@ -617,10 +610,10 @@ pub struct BatchedInstanceBuffers[BD, BDI] {
 
 ///|
 pub fn[BD, BDI] BatchedInstanceBuffers::new() -> BatchedInstanceBuffers[BD, BDI] {
-  BatchedInstanceBuffers::{
+  {
     current_input_buffer: InstanceInputUniformBuffer::new(),
     previous_input_buffer: InstanceInputUniformBuffer::new(),
-    phase_instance_buffers: @hashmap.HashMap([]),
+    phase_instance_buffers: HashMap([]),
   }
 }
 
@@ -678,9 +671,9 @@ pub struct UntypedPhaseBatchedInstanceBuffers[BD] {
 pub fn[BD] UntypedPhaseBatchedInstanceBuffers::new() -> UntypedPhaseBatchedInstanceBuffers[
   BD,
 ] {
-  UntypedPhaseBatchedInstanceBuffers::{
+  {
     data_buffer: @render_resource.GpuArrayBuffer::new(),
-    work_item_buffers: @hashmap.HashMap([]),
+    work_item_buffers: HashMap([]),
     late_indexed_indirect_parameters_buffer: [],
     late_non_indexed_indirect_parameters_buffer: [],
   }
@@ -704,10 +697,7 @@ pub struct PhaseBatchedInstanceBuffers[BD] {
 
 ///|
 pub fn[BD] PhaseBatchedInstanceBuffers::new() -> PhaseBatchedInstanceBuffers[BD] {
-  PhaseBatchedInstanceBuffers::{
-    buffers: UntypedPhaseBatchedInstanceBuffers::new(),
-    marker: 0,
-  }
+  { buffers: UntypedPhaseBatchedInstanceBuffers::new(), marker: 0 }
 }
 
 ///|
@@ -801,12 +791,12 @@ pub fn PreprocessWorkItem::new(
   input_index : Int,
   output_or_indirect_parameters_index : Int,
 ) -> PreprocessWorkItem {
-  PreprocessWorkItem::{ input_index, output_or_indirect_parameters_index }
+  { input_index, output_or_indirect_parameters_index }
 }
 
 ///|
 pub fn PreprocessWorkItem::uninit() -> PreprocessWorkItem {
-  PreprocessWorkItem::{
+  {
     input_index: PREPROCESS_WORK_ITEM_UNINIT_INDEX,
     output_or_indirect_parameters_index: PREPROCESS_WORK_ITEM_UNINIT_INDEX,
   }
@@ -840,12 +830,7 @@ pub struct LatePreprocessWorkItemIndirectParameters {
 
 ///|
 pub fn LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters() -> LatePreprocessWorkItemIndirectParameters {
-  LatePreprocessWorkItemIndirectParameters::{
-    dispatch_x: 0,
-    dispatch_y: 1,
-    dispatch_z: 1,
-    work_item_count: 0,
-  }
+  { dispatch_x: 0, dispatch_y: 1, dispatch_z: 1, work_item_count: 0 }
 }
 
 ///|
@@ -858,7 +843,7 @@ pub struct GpuOcclusionCullingWorkItemBuffers {
 
 ///|
 pub fn GpuOcclusionCullingWorkItemBuffers::new() -> GpuOcclusionCullingWorkItemBuffers {
-  GpuOcclusionCullingWorkItemBuffers::{
+  {
     late_indexed: [],
     late_non_indexed: [],
     late_indirect_parameters_indexed_offset: 0,
@@ -878,14 +863,14 @@ pub(all) enum PreprocessWorkItemBuffers {
 
 ///|
 pub fn preprocess_work_item_buffers_direct() -> PreprocessWorkItemBuffers {
-  PreprocessWorkItemBuffers::Direct([])
+  Direct([])
 }
 
 ///|
 pub fn preprocess_work_item_buffers_indirect(
   enable_gpu_occlusion_culling : Bool,
 ) -> PreprocessWorkItemBuffers {
-  PreprocessWorkItemBuffers::Indirect(
+  Indirect(
     [],
     [],
     if enable_gpu_occlusion_culling {
@@ -947,11 +932,11 @@ pub fn init_work_item_buffers(
     Indirect(_, _, Some(gpu_occlusion_culling)) => {
       gpu_occlusion_culling.late_indirect_parameters_indexed_offset = late_indexed_indirect_parameters_buffer.length()
       late_indexed_indirect_parameters_buffer.push(
-        LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
+        LatePreprocessWorkItemIndirectParameters(),
       )
       gpu_occlusion_culling.late_indirect_parameters_non_indexed_offset = late_non_indexed_indirect_parameters_buffer.length()
       late_non_indexed_indirect_parameters_buffer.push(
-        LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
+        LatePreprocessWorkItemIndirectParameters(),
       )
     }
     _ => ()
@@ -1184,20 +1169,14 @@ pub struct GpuPreprocessingPlugin {
 
 ///|
 pub fn GpuPreprocessingPlugin::GpuPreprocessingPlugin() -> GpuPreprocessingPlugin {
-  GpuPreprocessingPlugin::{
-    mode: GpuPreprocessingMode::Culling,
-    allow_copies_from_indirect_parameter_buffers: false,
-  }
+  { mode: Culling, allow_copies_from_indirect_parameter_buffers: false }
 }
 
 ///|
 pub fn GpuPreprocessingPlugin::with_mode(
   mode : GpuPreprocessingMode,
 ) -> GpuPreprocessingPlugin {
-  GpuPreprocessingPlugin::{
-    mode,
-    allow_copies_from_indirect_parameter_buffers: false,
-  }
+  { mode, allow_copies_from_indirect_parameter_buffers: false }
 }
 
 ///|
@@ -1205,10 +1184,7 @@ pub fn GpuPreprocessingPlugin::with_allow_copies_from_indirect_parameter_buffers
   self : GpuPreprocessingPlugin,
   allow : Bool,
 ) -> GpuPreprocessingPlugin {
-  GpuPreprocessingPlugin::{
-    ..self,
-    allow_copies_from_indirect_parameter_buffers: allow,
-  }
+  { ..self, allow_copies_from_indirect_parameter_buffers: allow }
 }
 
 ///|
@@ -1261,10 +1237,7 @@ pub impl @app.Resource for IndirectParametersBuffers with fn resource() {
 pub fn gpu_preprocessing_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  gpu_preprocessing_plugin_with(
-    app,
-    GpuPreprocessingPlugin::GpuPreprocessingPlugin(),
-  )
+  gpu_preprocessing_plugin_with(app, GpuPreprocessingPlugin())
 }
 
 ///|
@@ -1274,19 +1247,19 @@ pub fn gpu_preprocessing_plugin_with(
 ) -> @app.App[@ecs.World] {
   let mut next = app
   if !next.contains_resource(gpu_preprocessing_support_resource_key) {
-    next = next.insert_world_resource(gpu_preprocessing_support_resource_key, GpuPreprocessingSupport::{
+    next = next.insert_world_resource(gpu_preprocessing_support_resource_key, {
       max_supported_mode: plugin.mode,
     })
   }
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    next.modify_sub_app(RenderApp, fn(render_sub_app) {
       if render_sub_app
         .world()
         .get_resource(gpu_preprocessing_support_resource_key)
         is None {
         render_sub_app
         .world()
-        .insert_resource(gpu_preprocessing_support_resource_key, GpuPreprocessingSupport::{
+        .insert_resource(gpu_preprocessing_support_resource_key, {
           max_supported_mode: plugin.mode,
         })
       }
@@ -1306,7 +1279,7 @@ pub fn gpu_preprocessing_plugin_with(
         .world()
         .insert_resource(
           indirect_parameters_buffers_resource_key,
-          IndirectParametersBuffers::IndirectParametersBuffers(),
+          IndirectParametersBuffers(),
         )
       }
       render_sub_app

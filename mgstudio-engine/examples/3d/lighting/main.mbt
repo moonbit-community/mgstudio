@@ -38,9 +38,7 @@ impl @app.Resource for Parameters with fn resource() {
 
 ///|
 fn Parameters::Parameters() -> Parameters {
-  Parameters::{
-    physical_camera_parameters: @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters(),
-  }
+  { physical_camera_parameters: PhysicalCameraParameters() }
 }
 
 ///|
@@ -192,7 +190,7 @@ fn setup(
             Some(asset_server.get().load("branding/bevy_logo_light.png")),
           )
           .with_perceptual_roughness(1.0F)
-          .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F))
+          .with_alpha_mode(Mask(0.5F))
           .with_cull_mode(None),
         ),
         @transform.Transform::from_xyz(-2.2F, 0.5F, 1.0F).with_rotation(
@@ -381,7 +379,7 @@ fn setup(
       @text.TextColor::TextColor(),
       @text.TextLayout::TextLayout(),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
+      .with_position_type(Absolute)
       .with_top(@ui.px(12.0F))
       .with_left(@ui.px(12.0F)),
     ),
@@ -435,9 +433,7 @@ fn setup(
   let ui_root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -472,35 +468,35 @@ fn update_exposure(
   let next = parameters.get()
   let mut physical_camera_parameters = next.physical_camera_parameters
   let mut changed = false
-  if key_input.just_pressed(@window.KeyCode::Digit2) {
+  if key_input.just_pressed(Digit2) {
     physical_camera_parameters.aperture_f_stops = physical_camera_parameters.aperture_f_stops *
       2.0F
     changed = true
-  } else if key_input.just_pressed(@window.KeyCode::Digit1) {
+  } else if key_input.just_pressed(Digit1) {
     physical_camera_parameters.aperture_f_stops = physical_camera_parameters.aperture_f_stops *
       0.5F
     changed = true
   }
-  if key_input.just_pressed(@window.KeyCode::Digit4) {
+  if key_input.just_pressed(Digit4) {
     physical_camera_parameters.shutter_speed_s = physical_camera_parameters.shutter_speed_s *
       2.0F
     changed = true
-  } else if key_input.just_pressed(@window.KeyCode::Digit3) {
+  } else if key_input.just_pressed(Digit3) {
     physical_camera_parameters.shutter_speed_s = physical_camera_parameters.shutter_speed_s *
       0.5F
     changed = true
   }
-  if key_input.just_pressed(@window.KeyCode::Digit6) {
+  if key_input.just_pressed(Digit6) {
     physical_camera_parameters.sensitivity_iso = physical_camera_parameters.sensitivity_iso +
       100.0F
     changed = true
-  } else if key_input.just_pressed(@window.KeyCode::Digit5) {
+  } else if key_input.just_pressed(Digit5) {
     physical_camera_parameters.sensitivity_iso = physical_camera_parameters.sensitivity_iso -
       100.0F
     changed = true
   }
-  if key_input.just_pressed(@window.KeyCode::KeyR) {
-    physical_camera_parameters = @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters()
+  if key_input.just_pressed(KeyR) {
+    physical_camera_parameters = PhysicalCameraParameters()
     changed = true
   }
 
@@ -545,7 +541,7 @@ fn toggle_ambient_light(
   text : @app.Single[@core.Entity, @ecs.With[@text.Text]],
   writer : @ui.TextUiWriter,
 ) -> Unit {
-  if key_input.just_pressed(@window.KeyCode::Space) {
+  if key_input.just_pressed(Space) {
     let current = ambient_light.get()
     let next_brightness = if current.brightness > 1.0F { 0.0F } else { 200.0F }
     let next = @pbr.GlobalAmbientLight::new(current.color, next_brightness)
@@ -592,16 +588,16 @@ fn movement(
 ) -> Unit {
   try! query.for_each(fn(_entity, transform) {
     let mut direction = @math.Vec3::zero()
-    if input.pressed(@window.KeyCode::ArrowUp) {
+    if input.pressed(ArrowUp) {
       direction = direction.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
     }
-    if input.pressed(@window.KeyCode::ArrowDown) {
+    if input.pressed(ArrowDown) {
       direction = direction.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
     }
-    if input.pressed(@window.KeyCode::ArrowLeft) {
+    if input.pressed(ArrowLeft) {
       direction = direction.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
     }
-    if input.pressed(@window.KeyCode::ArrowRight) {
+    if input.pressed(ArrowRight) {
       direction = direction.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
     }
 
@@ -618,10 +614,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(Parameters::Parameters())
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param5(@app.Update, update_exposure)
-  .add_systems_param4(@app.Update, toggle_ambient_light)
-  .add_systems_param2(@app.Update, animate_light_direction)
-  .add_systems_param3(@app.Update, movement)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param5(Update, update_exposure)
+  .add_systems_param4(Update, toggle_ambient_light)
+  .add_systems_param2(Update, animate_light_direction)
+  .add_systems_param3(Update, movement)
   .run()
 }

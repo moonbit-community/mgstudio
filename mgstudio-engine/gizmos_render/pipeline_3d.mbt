@@ -22,6 +22,7 @@ pub struct LineGizmo3dPlugin {}
 const LINE_GIZMO_3D_PLUGIN_NAME : String = "mgstudio.gizmos_render.LineGizmo3dPlugin"
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn LineGizmo3dPlugin::LineGizmo3dPlugin() -> LineGizmo3dPlugin {
   LineGizmo3dPlugin::{  }
 }
@@ -43,13 +44,7 @@ pub fn LineGizmo3dPipelineKey::new(
   perspective~ : Bool,
   line_style~ : @gizmos.GizmoLineStyle,
 ) -> LineGizmo3dPipelineKey {
-  LineGizmo3dPipelineKey::{
-    msaa_samples,
-    target_format,
-    strip,
-    perspective,
-    line_style,
-  }
+  { msaa_samples, target_format, strip, perspective, line_style }
 }
 
 ///|
@@ -74,18 +69,13 @@ pub fn LineJointGizmo3dPipelineKey::new(
   perspective~ : Bool,
   joints~ : @gizmos.GizmoLineJoint,
 ) -> LineJointGizmo3dPipelineKey {
-  LineJointGizmo3dPipelineKey::{
-    msaa_samples,
-    target_format,
-    perspective,
-    joints,
-  }
+  { msaa_samples, target_format, perspective, joints }
 }
 
 ///|
 fn line_gizmo_3d_shader_defs(perspective : Bool) -> Array[@render.ShaderDefVal] {
   if perspective {
-    [@render.ShaderDefVal::Flag("PERSPECTIVE")]
+    [Flag("PERSPECTIVE")]
   } else {
     []
   }
@@ -95,7 +85,7 @@ fn line_gizmo_3d_shader_defs(perspective : Bool) -> Array[@render.ShaderDefVal] 
 pub fn line_gizmo_3d_pipeline_plan(
   key : LineGizmo3dPipelineKey,
 ) -> LineGizmoPipelinePlan {
-  LineGizmoPipelinePlan::{
+  {
     label: "LineGizmo 3d Pipeline",
     shader_path: "gizmos_render/lines.wgsl",
     fragment_entry_point: line_gizmo_fragment_entry_point(key.line_style),
@@ -115,7 +105,7 @@ pub fn line_gizmo_3d_pipeline_plan(
 pub fn line_joint_gizmo_3d_pipeline_plan(
   key : LineJointGizmo3dPipelineKey,
 ) -> LineGizmoPipelinePlan {
-  LineGizmoPipelinePlan::{
+  {
     label: "LineJointGizmo 3d Pipeline",
     shader_path: "gizmos_render/line_joints.wgsl",
     fragment_entry_point: "fragment",
@@ -133,7 +123,7 @@ pub fn line_joint_gizmo_3d_pipeline_plan(
 
 ///|
 pub fn line_gizmo_3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  line_gizmo_3d_plugin_with(app, LineGizmo3dPlugin::LineGizmo3dPlugin())
+  line_gizmo_3d_plugin_with(app, LineGizmo3dPlugin())
 }
 
 ///|

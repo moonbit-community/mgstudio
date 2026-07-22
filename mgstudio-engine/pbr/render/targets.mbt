@@ -61,32 +61,23 @@ pub fn render3d_target_info(
   target : @camera_camera.RenderTarget,
 ) -> RenderTargetComputed3d? {
   match target {
-    @camera_camera.RenderTarget::Screen => {
-      let width = @window.window_physical_width_for(
-        world,
-        @window.WindowRef::Primary,
-      )
-      let height = @window.window_physical_height_for(
-        world,
-        @window.WindowRef::Primary,
-      )
+    Screen => {
+      let width = @window.window_physical_width_for(world, Primary)
+      let height = @window.window_physical_height_for(world, Primary)
       if width <= 0 || height <= 0 {
         return None
       }
-      let mut scale_factor = @window.window_scale_factor_for(
-        world,
-        @window.WindowRef::Primary,
-      )
+      let mut scale_factor = @window.window_scale_factor_for(world, Primary)
       if scale_factor <= 0.0F {
         scale_factor = 1.0F
       }
-      Some(RenderTargetComputed3d::{
+      Some({
         target_id: -1,
         target_size: @math.IVec2::new(width, height),
         scale_factor,
       })
     }
-    @camera_camera.RenderTarget::Window(window_ref) => {
+    Window(window_ref) => {
       guard @window.window_host_window_for_ref(world, window_ref)
         is Some(host_window) else {
         return None
@@ -106,19 +97,19 @@ pub fn render3d_target_info(
       if scale_factor <= 0.0F {
         scale_factor = 1.0F
       }
-      Some(RenderTargetComputed3d::{
+      Some({
         target_id: surface_target_id,
         target_size: @math.IVec2::new(width, height),
         scale_factor,
       })
     }
-    @camera_camera.RenderTarget::Image(handle) => {
+    Image(handle) => {
       let width = @asset.asset_texture_width(handle)
       let height = @asset.asset_texture_height(handle)
       if width <= 0 || height <= 0 {
         return None
       }
-      Some(RenderTargetComputed3d::{
+      Some({
         target_id: handle.id(),
         target_size: @math.IVec2::new(width, height),
         scale_factor: 1.0F,

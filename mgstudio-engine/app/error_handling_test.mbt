@@ -72,7 +72,7 @@ test "app error handling: default handler captures fallible system body errors" 
   app = app.run_once()
 
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::System, content="true")
+  debug_inspect(kinds[0] == System, content="true")
   debug_inspect(sources[0], content="\"<anonymous system>\"")
 }
 
@@ -95,7 +95,7 @@ test "app error handling: missing Res routes invalid validation through default 
 
   debug_inspect(ran.val, content="false")
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(kinds[0] == Validation, content="true")
 }
 
 ///|
@@ -149,7 +149,7 @@ test "app error handling: per-system handler captures body errors" {
   debug_inspect(default_count.val, content="0")
   debug_inspect(local_count.val, content="1")
   debug_inspect(local_kinds.length(), content="1")
-  debug_inspect(local_kinds[0] == ErrorContextKind::System, content="true")
+  debug_inspect(local_kinds[0] == System, content="true")
 }
 
 ///|
@@ -177,8 +177,5 @@ test "app error handling: per-system handler does not intercept validation failu
 
   debug_inspect(local_kinds.length(), content="0")
   debug_inspect(default_kinds.length(), content="1")
-  debug_inspect(
-    default_kinds[0] == ErrorContextKind::Validation,
-    content="true",
-  )
+  debug_inspect(default_kinds[0] == Validation, content="true")
 }

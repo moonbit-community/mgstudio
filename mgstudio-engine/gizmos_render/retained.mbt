@@ -74,7 +74,7 @@ pub struct RetainedLineGizmo {
 
 ///|
 pub fn RetainedLineGizmo::new(entity : @core.Entity) -> RetainedLineGizmo {
-  RetainedLineGizmo::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -220,24 +220,16 @@ pub fn line_gizmo_vertex_buffer_layouts(
 ) -> Array[@mesh.VertexBufferLayout] {
   let position_layout = @mesh.VertexBufferLayout::new(
     array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
-    step_mode=@mesh.MeshVertexStepMode::Instance,
+    step_mode=Instance,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=0,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
     ],
   )
   let color_layout = @mesh.VertexBufferLayout::new(
     array_stride=LINE_GIZMO_RGBA_SIZE_BYTES,
-    step_mode=@mesh.MeshVertexStepMode::Instance,
+    step_mode=Instance,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x4,
-        shader_location=2,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x4, shader_location=2),
     ],
   )
   if strip {
@@ -245,11 +237,11 @@ pub fn line_gizmo_vertex_buffer_layouts(
       position_layout,
       @mesh.VertexBufferLayout::new(
         array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
-        step_mode=@mesh.MeshVertexStepMode::Instance,
+        step_mode=Instance,
         attributes=[
           @mesh.VertexAttribute::new(
             offset=0,
-            format=@mesh.MeshVertexFormat::Float32x3,
+            format=Float32x3,
             shader_location=1,
           ),
         ],
@@ -257,11 +249,11 @@ pub fn line_gizmo_vertex_buffer_layouts(
       color_layout,
       @mesh.VertexBufferLayout::new(
         array_stride=LINE_GIZMO_RGBA_SIZE_BYTES,
-        step_mode=@mesh.MeshVertexStepMode::Instance,
+        step_mode=Instance,
         attributes=[
           @mesh.VertexAttribute::new(
             offset=0,
-            format=@mesh.MeshVertexFormat::Float32x4,
+            format=Float32x4,
             shader_location=3,
           ),
         ],
@@ -271,32 +263,32 @@ pub fn line_gizmo_vertex_buffer_layouts(
     [
       @mesh.VertexBufferLayout::new(
         array_stride=LINE_GIZMO_VEC3_SIZE_BYTES * 2,
-        step_mode=@mesh.MeshVertexStepMode::Instance,
+        step_mode=Instance,
         attributes=[
           @mesh.VertexAttribute::new(
             offset=0,
-            format=@mesh.MeshVertexFormat::Float32x3,
+            format=Float32x3,
             shader_location=0,
           ),
           @mesh.VertexAttribute::new(
             offset=LINE_GIZMO_VEC3_SIZE_BYTES,
-            format=@mesh.MeshVertexFormat::Float32x3,
+            format=Float32x3,
             shader_location=1,
           ),
         ],
       ),
       @mesh.VertexBufferLayout::new(
         array_stride=LINE_GIZMO_RGBA_SIZE_BYTES * 2,
-        step_mode=@mesh.MeshVertexStepMode::Instance,
+        step_mode=Instance,
         attributes=[
           @mesh.VertexAttribute::new(
             offset=0,
-            format=@mesh.MeshVertexFormat::Float32x4,
+            format=Float32x4,
             shader_location=2,
           ),
           @mesh.VertexAttribute::new(
             offset=LINE_GIZMO_RGBA_SIZE_BYTES,
-            format=@mesh.MeshVertexFormat::Float32x4,
+            format=Float32x4,
             shader_location=3,
           ),
         ],
@@ -312,44 +304,44 @@ pub fn line_joint_gizmo_vertex_buffer_layouts() -> Array[
   [
     @mesh.VertexBufferLayout::new(
       array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
-      step_mode=@mesh.MeshVertexStepMode::Instance,
+      step_mode=Instance,
       attributes=[
         @mesh.VertexAttribute::new(
           offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=0,
         ),
       ],
     ),
     @mesh.VertexBufferLayout::new(
       array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
-      step_mode=@mesh.MeshVertexStepMode::Instance,
+      step_mode=Instance,
       attributes=[
         @mesh.VertexAttribute::new(
           offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=1,
         ),
       ],
     ),
     @mesh.VertexBufferLayout::new(
       array_stride=LINE_GIZMO_VEC3_SIZE_BYTES,
-      step_mode=@mesh.MeshVertexStepMode::Instance,
+      step_mode=Instance,
       attributes=[
         @mesh.VertexAttribute::new(
           offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=2,
         ),
       ],
     ),
     @mesh.VertexBufferLayout::new(
       array_stride=LINE_GIZMO_RGBA_SIZE_BYTES,
-      step_mode=@mesh.MeshVertexStepMode::Instance,
+      step_mode=Instance,
       attributes=[
         @mesh.VertexAttribute::new(
           offset=0,
-          format=@mesh.MeshVertexFormat::Float32x4,
+          format=Float32x4,
           shader_location=3,
         ),
       ],
@@ -399,7 +391,7 @@ pub fn prepare_gpu_line_gizmo(
 ) -> GpuLineGizmo {
   let buffer = gizmo.buffer()
   let usage = line_gizmo_vertex_buffer_usage()
-  GpuLineGizmo::{
+  {
     list_position_buffer: device.create_buffer_init(
       usage~,
       line_gizmo_position_bytes(buffer.list_positions()),
@@ -451,13 +443,7 @@ pub fn LineGizmoPhasePipelineKey::new(
   line_style : @gizmos.GizmoLineStyle,
   line_joints : @gizmos.GizmoLineJoint,
 ) -> LineGizmoPhasePipelineKey {
-  LineGizmoPhasePipelineKey::{
-    dimension,
-    kind,
-    perspective,
-    line_style,
-    line_joints,
-  }
+  { dimension, kind, perspective, line_style, line_joints }
 }
 
 ///|
@@ -565,7 +551,7 @@ pub struct LineGizmoPhaseItems {
 
 ///|
 pub fn LineGizmoPhaseItems::LineGizmoPhaseItems() -> LineGizmoPhaseItems {
-  LineGizmoPhaseItems::{ items: [] }
+  { items: [] }
 }
 
 ///|
@@ -618,11 +604,7 @@ pub fn LineGizmoEntities::new(
   line_strip_gizmo_renderer : @render.MainEntity,
   line_joint_gizmo_renderer : @render.MainEntity,
 ) -> LineGizmoEntities {
-  LineGizmoEntities::{
-    line_gizmo_renderer,
-    line_strip_gizmo_renderer,
-    line_joint_gizmo_renderer,
-  }
+  { line_gizmo_renderer, line_strip_gizmo_renderer, line_joint_gizmo_renderer }
 }
 
 ///|
@@ -692,7 +674,7 @@ pub fn LineGizmoDrawFunctions::LineGizmoDrawFunctions() -> LineGizmoDrawFunction
   let line_gizmo_3d = draw_functions.register("DrawLineGizmo3d")
   let line_strip_gizmo_3d = draw_functions.register("DrawLineGizmo3dStrip")
   let line_joint_gizmo_3d = draw_functions.register("DrawLineJointGizmo3d")
-  LineGizmoDrawFunctions::{
+  {
     draw_functions,
     line_gizmo_2d,
     line_strip_gizmo_2d,
@@ -988,7 +970,7 @@ pub fn line_gizmo_phase_items_for_counts(
       )
   }
   if list_vertex_count > 0 {
-    items.push(LineGizmoPhaseItem::{
+    items.push({
       render_entity,
       main_entity,
       renderer_entity: line_gizmo_entities.line_gizmo_renderer(),
@@ -1007,7 +989,7 @@ pub fn line_gizmo_phase_items_for_counts(
     })
   }
   if strip_vertex_count >= 2 {
-    items.push(LineGizmoPhaseItem::{
+    items.push({
       render_entity,
       main_entity,
       renderer_entity: line_gizmo_entities.line_strip_gizmo_renderer(),
@@ -1025,9 +1007,8 @@ pub fn line_gizmo_phase_items_for_counts(
       indexed,
     })
   }
-  if strip_vertex_count >= 3 &&
-    !(mesh_config.line_joints() is @gizmos.GizmoLineJoint::None) {
-    items.push(LineGizmoPhaseItem::{
+  if strip_vertex_count >= 3 && !(mesh_config.line_joints() is None) {
+    items.push({
       render_entity,
       main_entity,
       renderer_entity: line_gizmo_entities.line_joint_gizmo_renderer(),
@@ -1397,10 +1378,10 @@ pub fn extract_line_gizmos(render_world : @ecs.World) -> Unit {
     let (gap_scale, line_scale) = retained_line_style_parts(line_config.style)
     let render_layers = match render_layers_comp {
       Some(layers_comp) => layers_comp.value()
-      None => @camera_render_layers.RenderLayers::RenderLayers()
+      None => RenderLayers()
     }
-    values.push(ExtractedLineGizmo::{
-      uniform: LineGizmoUniform::{
+    values.push({
+      uniform: {
         world_from_local: transform_comp.value().affine(),
         line_width: line_config.width,
         depth_bias: gizmo.depth_bias,

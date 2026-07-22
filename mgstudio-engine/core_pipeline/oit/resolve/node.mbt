@@ -23,7 +23,7 @@ pub struct OitResolveNode {
 
 ///|
 pub fn OitResolveNode::OitResolveNode() -> OitResolveNode {
-  OitResolveNode::{ label: OIT_RESOLVE_PASS_LABEL }
+  { label: OIT_RESOLVE_PASS_LABEL }
 }
 
 ///|
@@ -50,7 +50,7 @@ pub fn OitResolveNodeState::new(
   has_depth_prepass? : Bool = false,
   has_camera_viewport_override? : Bool = false,
 ) -> OitResolveNodeState {
-  OitResolveNodeState::{
+  {
     has_oit_resolve_pipeline_resource,
     has_oit_resolve_bind_group_resource,
     has_specialized_resolve_pipeline,

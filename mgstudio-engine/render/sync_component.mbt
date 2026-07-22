@@ -22,6 +22,7 @@ const SYNC_COMPONENT_PLUGIN_NAME : String = "mgstudio.render.SyncComponentPlugin
 pub struct SyncComponentPlugin[_, _] {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn[C, F] SyncComponentPlugin::SyncComponentPlugin() -> SyncComponentPlugin[
   C,
   F,
@@ -75,14 +76,14 @@ fn[C] sync_component_register_remove_hook(
         ecs_key_pending_sync_entity,
       )
       if !pending_resource.is_present() {
-        pending_resource.insert(PendingSyncEntity::PendingSyncEntity())
+        pending_resource.insert(PendingSyncEntity())
       }
       ignore(
         pending_resource.update(fn(
           pending : PendingSyncEntity,
         ) -> PendingSyncEntity {
           pending.push(
-            EntityRecord::ComponentRemoved(context.entity(), fn(
+            ComponentRemoved(context.entity(), fn(
               render_world : @ecs.World,
               render_entity : @core.Entity,
             ) -> @ecs.World {

@@ -114,14 +114,14 @@ pub impl @app.Resource for OverrideStatus with fn resource() {
 ///|
 fn override_button_node(left : Float, top : Float) -> @ui.Node {
   @ui.Node::Node()
-  .with_position_type(@ui.PositionType::Absolute)
-  .with_left(@ui.Val::Px(left))
-  .with_top(@ui.Val::Px(top))
-  .with_width(@ui.Val::Px(OVERRIDE_BUTTON_WIDTH))
-  .with_height(@ui.Val::Px(OVERRIDE_BUTTON_HEIGHT))
-  .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
-  .with_align_items(@ui.AlignItems::Center)
-  .with_justify_content(@ui.JustifyContent::Center)
+  .with_position_type(Absolute)
+  .with_left(Px(left))
+  .with_top(Px(top))
+  .with_width(Px(OVERRIDE_BUTTON_WIDTH))
+  .with_height(Px(OVERRIDE_BUTTON_HEIGHT))
+  .with_border(@ui.UiRect::all(Px(4.0F)))
+  .with_align_items(Center)
+  .with_justify_content(Center)
 }
 
 ///|
@@ -135,11 +135,11 @@ fn override_font(
 ///|
 fn override_status_node(bottom : Float) -> @ui.Node {
   @ui.Node::Node()
-  .with_position_type(@ui.PositionType::Absolute)
-  .with_left(@ui.Val::Px(24.0F))
-  .with_bottom(@ui.Val::Px(bottom))
-  .with_width(@ui.Val::Px(340.0F))
-  .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F)))
+  .with_position_type(Absolute)
+  .with_left(Px(24.0F))
+  .with_bottom(Px(bottom))
+  .with_width(Px(340.0F))
+  .with_padding(@ui.UiRect::all(Px(12.0F)))
 }
 
 ///|
@@ -217,9 +217,7 @@ fn setup_override_ui(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
 
@@ -233,11 +231,11 @@ fn setup_override_ui(
         override_font(font, 18.0F),
         @text.TextColor::new(@color.Color::white()),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(24.0F))
-        .with_top(@ui.Val::Px(24.0F))
-        .with_width(@ui.Val::Px(360.0F))
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
+        .with_position_type(Absolute)
+        .with_left(Px(24.0F))
+        .with_top(Px(24.0F))
+        .with_width(Px(360.0F))
+        .with_padding(@ui.UiRect::all(Px(12.0F))),
         @ui.BackgroundColor::new(
           @color.Color::srgba(0.08F, 0.08F, 0.08F, 0.82F),
         ),
@@ -287,23 +285,11 @@ fn setup_override_ui(
   ]
 
   nav_map.modify(fn(value) {
-    value.add_edge(left_buttons[0], left_buttons[2], @math.CompassOctant::North)
-    value.add_edge(left_buttons[2], left_buttons[0], @math.CompassOctant::South)
-    value.add_edge(
-      right_buttons[0],
-      right_buttons[2],
-      @math.CompassOctant::North,
-    )
-    value.add_edge(
-      right_buttons[2],
-      right_buttons[0],
-      @math.CompassOctant::South,
-    )
-    value.add_symmetrical_edge(
-      left_buttons[1],
-      right_buttons[1],
-      @math.CompassOctant::East,
-    )
+    value.add_edge(left_buttons[0], left_buttons[2], North)
+    value.add_edge(left_buttons[2], left_buttons[0], South)
+    value.add_edge(right_buttons[0], right_buttons[2], North)
+    value.add_edge(right_buttons[2], right_buttons[0], South)
+    value.add_symmetrical_edge(left_buttons[1], right_buttons[1], East)
   })
   focus.modify(fn(value) { value.set(left_buttons[0]) })
 }
@@ -318,14 +304,14 @@ fn override_direction_from_gamepads(
       return
     }
     let value = gamepad.value()
-    if value.just_pressed(@input.GamepadButton::DPadUp) {
-      result.val = Some(@math.CompassOctant::North)
-    } else if value.just_pressed(@input.GamepadButton::DPadDown) {
-      result.val = Some(@math.CompassOctant::South)
-    } else if value.just_pressed(@input.GamepadButton::DPadLeft) {
-      result.val = Some(@math.CompassOctant::West)
-    } else if value.just_pressed(@input.GamepadButton::DPadRight) {
-      result.val = Some(@math.CompassOctant::East)
+    if value.just_pressed(DPadUp) {
+      result.val = Some(North)
+    } else if value.just_pressed(DPadDown) {
+      result.val = Some(South)
+    } else if value.just_pressed(DPadLeft) {
+      result.val = Some(West)
+    } else if value.just_pressed(DPadRight) {
+      result.val = Some(East)
     }
   })
   result.val
@@ -351,14 +337,14 @@ fn navigate_override_ui(
   gamepads : @ecs.Query[@ecs.Read[@input.Gamepad], @ecs.All],
   status : @app.ResMut[OverrideStatus],
 ) -> Unit {
-  let direction = if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
+  let direction = if @input.key_just_pressed(ArrowUp) {
     Some(@math.CompassOctant::North)
-  } else if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
-    Some(@math.CompassOctant::South)
-  } else if @input.key_just_pressed(@window.KeyCode::ArrowLeft) {
-    Some(@math.CompassOctant::West)
-  } else if @input.key_just_pressed(@window.KeyCode::ArrowRight) {
-    Some(@math.CompassOctant::East)
+  } else if @input.key_just_pressed(ArrowDown) {
+    Some(South)
+  } else if @input.key_just_pressed(ArrowLeft) {
+    Some(West)
+  } else if @input.key_just_pressed(ArrowRight) {
+    Some(East)
   } else {
     override_direction_from_gamepads(gamepads)
   }
@@ -386,7 +372,7 @@ fn override_activate_from_gamepads(
     if pressed.val {
       return
     }
-    if gamepad.value().just_pressed(@input.GamepadButton::South) {
+    if gamepad.value().just_pressed(South) {
       pressed.val = true
     }
   })
@@ -395,8 +381,8 @@ fn override_activate_from_gamepads(
 
 ///|
 fn activate_override_button(world : @ecs.World) -> Unit {
-  let activate = @input.key_just_pressed(@window.KeyCode::Enter) ||
-    @input.key_just_pressed(@window.KeyCode::Space) ||
+  let activate = @input.key_just_pressed(Enter) ||
+    @input.key_just_pressed(Space) ||
     override_activate_from_gamepads(@ecs.query(world))
   if !activate {
     return
@@ -541,11 +527,11 @@ fn main {
   .insert_resource(
     @input_focus.AutoNavigationConfig::new(0.1F, Some(200.0F), true),
   )
-  .add_systems_param4(@app.Startup, setup_override_ui)
-  .add_systems_param3(@app.PreUpdate, navigate_override_ui)
-  .add_systems_world(@app.PreUpdate, activate_override_button)
-  .add_systems_world(@app.Update, update_override_focus_display)
-  .add_systems_world(@app.Update, update_override_last_input_display)
-  .add_systems_world(@app.Update, update_override_button_visuals)
+  .add_systems_param4(Startup, setup_override_ui)
+  .add_systems_param3(PreUpdate, navigate_override_ui)
+  .add_systems_world(PreUpdate, activate_override_button)
+  .add_systems_world(Update, update_override_focus_display)
+  .add_systems_world(Update, update_override_last_input_display)
+  .add_systems_world(Update, update_override_button_visuals)
   .run()
 }

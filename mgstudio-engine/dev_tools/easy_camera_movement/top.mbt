@@ -25,7 +25,7 @@ pub struct EasyCameraMovementPlugin {
 
 ///|
 pub fn EasyCameraMovementPlugin::EasyCameraMovementPlugin() -> EasyCameraMovementPlugin {
-  EasyCameraMovementPlugin::{ decay_rate: 1.0F }
+  { decay_rate: 1.0F }
 }
 
 ///|
@@ -34,7 +34,7 @@ pub fn EasyCameraMovementPlugin::with_decay_rate(
   decay_rate : Float,
 ) -> EasyCameraMovementPlugin {
   self |> ignore
-  EasyCameraMovementPlugin::{ decay_rate, }
+  { decay_rate, }
 }
 
 ///|
@@ -48,7 +48,7 @@ pub fn CameraMovement::CameraMovement(
   translation : @math.Vec3,
   rotation : @math.Quat,
 ) -> CameraMovement {
-  CameraMovement::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
@@ -114,7 +114,7 @@ pub fn easy_camera_movement_plugin_with(
 ) -> @app.App[@ecs.World] {
   let decay_rate = plugin.decay_rate
   app.add_systems(
-    @app.PostUpdate,
+    PostUpdate,
     @app.system_config_param2(fn(
       time : @app.Res[@time.Time[Unit]],
       cameras : @ecs.Query[
@@ -131,8 +131,5 @@ pub fn easy_camera_movement_plugin_with(
 pub fn easy_camera_movement_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  easy_camera_movement_plugin_with(
-    app,
-    EasyCameraMovementPlugin::EasyCameraMovementPlugin(),
-  )
+  easy_camera_movement_plugin_with(app, EasyCameraMovementPlugin())
 }

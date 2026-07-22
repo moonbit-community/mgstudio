@@ -21,7 +21,7 @@ pub struct Scope[T] {
 
 ///|
 pub fn[T] Scope::new() -> Scope[T] {
-  Scope::{ results: [] }
+  { results: [] }
 }
 
 ///|
@@ -88,7 +88,7 @@ pub struct TaskPoolBuilder {
 
 ///|
 pub fn TaskPoolBuilder::new() -> TaskPoolBuilder {
-  TaskPoolBuilder::{
+  {
     num_threads: None,
     stack_size: None,
     thread_name: None,
@@ -102,7 +102,7 @@ pub fn TaskPoolBuilder::num_threads(
   self : TaskPoolBuilder,
   num_threads : Int,
 ) -> TaskPoolBuilder {
-  TaskPoolBuilder::{ ..self, num_threads: Some(num_threads) }
+  { ..self, num_threads: Some(num_threads) }
 }
 
 ///|
@@ -110,7 +110,7 @@ pub fn TaskPoolBuilder::stack_size(
   self : TaskPoolBuilder,
   stack_size : Int,
 ) -> TaskPoolBuilder {
-  TaskPoolBuilder::{ ..self, stack_size: Some(stack_size) }
+  { ..self, stack_size: Some(stack_size) }
 }
 
 ///|
@@ -118,7 +118,7 @@ pub fn TaskPoolBuilder::thread_name(
   self : TaskPoolBuilder,
   thread_name : String,
 ) -> TaskPoolBuilder {
-  TaskPoolBuilder::{ ..self, thread_name: Some(thread_name) }
+  { ..self, thread_name: Some(thread_name) }
 }
 
 ///|
@@ -126,7 +126,7 @@ pub fn TaskPoolBuilder::on_thread_spawn(
   self : TaskPoolBuilder,
   callback : () -> Unit,
 ) -> TaskPoolBuilder {
-  TaskPoolBuilder::{ ..self, on_thread_spawn: Some(callback) }
+  { ..self, on_thread_spawn: Some(callback) }
 }
 
 ///|
@@ -134,7 +134,7 @@ pub fn TaskPoolBuilder::on_thread_destroy(
   self : TaskPoolBuilder,
   callback : () -> Unit,
 ) -> TaskPoolBuilder {
-  TaskPoolBuilder::{ ..self, on_thread_destroy: Some(callback) }
+  { ..self, on_thread_destroy: Some(callback) }
 }
 
 ///|
@@ -153,5 +153,5 @@ pub fn TaskPoolBuilder::build(self : TaskPoolBuilder) -> TaskPool {
   if self.on_thread_destroy is Some(callback) {
     callback()
   }
-  TaskPool::{ thread_num: self.num_threads.unwrap_or(available_parallelism()) }
+  { thread_num: self.num_threads.unwrap_or(available_parallelism()) }
 }

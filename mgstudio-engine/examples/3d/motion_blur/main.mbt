@@ -269,7 +269,7 @@ fn set_camera_fov(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::identity(),
   ).spawn(world)
   try! world.set_by_key(
@@ -350,13 +350,10 @@ fn motion_blur_uv_debug_texture(
   ).with_format(Rgba8UnormSrgb)
   let handle = images.add(image)
   let sampler = @asset.ImageSamplerDescriptor::linear()
-  sampler.address_mode_u = @asset.ImageAddressMode::Repeat
-  sampler.address_mode_v = @asset.ImageAddressMode::MirrorRepeat
-  sampler.mag_filter = @asset.ImageFilterMode::Nearest
-  @asset.asset_set_texture_sampler(
-    handle,
-    @asset.ImageSampler::Descriptor(sampler),
-  )
+  sampler.address_mode_u = Repeat
+  sampler.address_mode_v = MirrorRepeat
+  sampler.mag_filter = Nearest
+  @asset.asset_set_texture_sampler(handle, Descriptor(sampler))
   handle
 }
 
@@ -392,13 +389,11 @@ fn setup_ui(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
@@ -411,26 +406,14 @@ fn setup_ui(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
-  try! world.set_by_key(text_entity, @text.ecs_key_text, @text.Text::Text())
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_font,
-    @text.TextFont::TextFont(),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_color,
-    @text.TextColor::TextColor(),
-  )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_layout,
-    @text.TextLayout::TextLayout(),
-  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text, Text())
+  try! world.set_by_key(text_entity, @text.ecs_key_text_font, TextFont())
+  try! world.set_by_key(text_entity, @text.ecs_key_text_color, TextColor())
+  try! world.set_by_key(text_entity, @text.ecs_key_text_layout, TextLayout())
   spawn_help_text_span(world, text_entity, "") |> ignore
   spawn_help_text_span(world, text_entity, "") |> ignore
   spawn_help_text_span(
@@ -445,6 +428,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_car(
   world : @ecs.World,
   body_mesh : @mesh.Mesh3d,
@@ -461,7 +445,7 @@ fn spawn_car(
       @math.Vec3::new(0.5F, 0.5F, 0.5F),
     ),
   ).spawn(world)
-  try! world.set_by_key(body, Moves::component(), Moves::{ phase, })
+  try! world.set_by_key(body, Moves::component(), { phase, })
   if tracked {
     try! world.set_by_key(body, CameraTracked::component(), CameraTracked::{  })
   }
@@ -565,7 +549,7 @@ fn spawn_trees(
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
-  world.insert_resource(CameraMode::resource(), CameraMode::Chase)
+  world.insert_resource(CameraMode::resource(), Chase)
   let mesh_assets = @pbr.mesh_assets_mut_or_abort()
   let image_assets_ref : @ecs.ResourceMut[@asset.Assets[@asset.Image]] = @asset.asset_assets_ref_mut_or_abort()
   let image_assets = image_assets_ref.peek()
@@ -713,15 +697,15 @@ fn keyboard_inputs(world : @ecs.World) -> Unit {
   }
   let mut shutter_angle = motion_blur.shutter_angle
   let mut samples = motion_blur.samples.reinterpret_as_int()
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     shutter_angle = shutter_angle - 0.25F
-  } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  } else if @input.key_just_pressed(Digit2) {
     shutter_angle = shutter_angle + 0.25F
-  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  } else if @input.key_just_pressed(Digit3) {
     samples = samples - 1
-  } else if @input.key_just_pressed(@window.KeyCode::Digit4) {
+  } else if @input.key_just_pressed(Digit4) {
     samples = samples + 1
-  } else if @input.key_just_pressed(@window.KeyCode::Space) {
+  } else if @input.key_just_pressed(Space) {
     toggle_camera_mode(world)
   }
 
@@ -833,7 +817,7 @@ fn move_camera(world : @ecs.World) -> Unit {
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let camera_mode = match world.get_resource(CameraMode::resource()) {
     Some(value) => value
-    None => CameraMode::Chase
+    None => Chase
   }
   match camera_mode {
     Track => {
@@ -868,7 +852,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_systems(
-    @app.Startup,
+    Startup,
     (
       @app.system_config_world(setup_camera),
       @app.system_config_world(setup_scene_system),
@@ -877,7 +861,7 @@ fn main {
     |> @app.chain(),
   )
   .add_systems(
-    @app.Update,
+    Update,
     (
       @app.system_config_world(keyboard_inputs),
       @app.system_config_world(move_cars),

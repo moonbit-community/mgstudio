@@ -59,7 +59,7 @@ pub(all) struct HostColorGrading {
 
 ///|
 pub fn HostColorGrading::HostColorGrading() -> HostColorGrading {
-  HostColorGrading::{
+  {
     balance_x_axis_x: 1.0F,
     balance_x_axis_y: 0.0F,
     balance_x_axis_z: 0.0F,
@@ -230,7 +230,7 @@ pub fn host_mesh3d_volumetric_fog_volume(
   uniform_buffer_offset~ : UInt,
   exterior~ : Bool,
 ) -> HostMesh3dVolumetricFogVolume {
-  @renderer.HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
+  HostMesh3dVolumetricFogVolume(
     density_texture_id~,
     uniform_buffer_offset~,
     exterior~,
@@ -1893,7 +1893,7 @@ pub fn host_gpu_draw_mesh3d(
   cull_mode~ : Int,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
-  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = MaterialBindGroupResolvedData(),
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
   morph_weights_index? : Int = -1,

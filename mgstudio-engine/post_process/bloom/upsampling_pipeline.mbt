@@ -42,13 +42,13 @@ pub fn bloom_upsample_passes(
     let target_pass = downsample_passes[reverse_index - 1]
     let normalized_level = Float::from_double(reverse_index.to_double()) /
       Float::from_double(total_levels.to_double())
-    passes.push(BloomUpsamplePass::{
+    passes.push({
       source_mip_level: source_pass.mip_level,
       target_mip_level: target_pass.mip_level,
       width: target_pass.width,
       height: target_pass.height,
       blend_factor: settings.intensity * (1.0F - normalized_level * 0.5F),
-      additive: settings.composite_mode == BloomCompositeMode::Additive,
+      additive: settings.composite_mode == Additive,
     })
   }
   passes

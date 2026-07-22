@@ -76,12 +76,12 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_row_gap(@ui.Val::Px(40.0F)),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F))
+        .with_align_items(Center)
+        .with_justify_content(Center)
+        .with_flex_direction(Column)
+        .with_row_gap(Px(40.0F)),
         @ui.BackgroundColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
       ),
     ),
@@ -96,9 +96,7 @@ fn setup(world : @ecs.World) -> Unit {
       .insert(
         (
           @hierarchy.Parent::new(root),
-          @ui.Node::Node()
-          .with_flex_direction(@ui.FlexDirection::Row)
-          .with_column_gap(@ui.Val::Px(20.0F)),
+          @ui.Node::Node().with_flex_direction(Row).with_column_gap(Px(20.0F)),
           @ui.BackgroundColor::new(@color.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
         ),
       ),
@@ -112,15 +110,8 @@ fn setup(world : @ecs.World) -> Unit {
         (
           @hierarchy.Parent::new(row),
           @ui.Node::Node()
-          .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
-          .with_margin(
-            @ui.UiRect::new(
-              @ui.Val::Px(0.0F),
-              @ui.Val::Px(0.0F),
-              @ui.Val::Px(0.0F),
-              @ui.Val::Px(25.0F),
-            ),
-          ),
+          .with_padding(@ui.UiRect::all(Px(10.0F)))
+          .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(25.0F))),
           @ui.BackgroundColor::new(@color.Color::srgb(0.25F, 0.25F, 0.25F)),
         ),
       ),
@@ -135,22 +126,13 @@ fn setup(world : @ecs.World) -> Unit {
         (
           @hierarchy.Parent::new(row),
           @ui.Node::Node()
-          .with_width(@ui.Val::Px(100.0F))
-          .with_height(@ui.Val::Px(100.0F))
-          .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
-          .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
-          .with_overflow(
-            @ui.Overflow::new(@ui.OverflowAxis::Clip, @ui.OverflowAxis::Clip),
-          )
+          .with_width(Px(100.0F))
+          .with_height(Px(100.0F))
+          .with_padding(@ui.UiRect::all(Px(20.0F)))
+          .with_border(@ui.UiRect::all(Px(5.0F)))
+          .with_overflow(@ui.Overflow::new(Clip, Clip))
           .with_overflow_clip_margin(overflow_clip_margin)
-          .with_margin(
-            @ui.UiRect::new(
-              @ui.Val::Px(0.0F),
-              @ui.Val::Px(10.0F),
-              @ui.Val::Px(0.0F),
-              @ui.Val::Px(0.0F),
-            ),
-          ),
+          .with_margin(@ui.UiRect::new(Px(0.0F), Px(10.0F), Px(0.0F), Px(0.0F))),
           @ui.BackgroundColor::new(@color.Color::srgb(0.5F, 0.5F, 0.5F)),
           @ui.BorderColor::new(@color.Color::black()),
         ),
@@ -164,11 +146,7 @@ fn setup(world : @ecs.World) -> Unit {
       .insert(
         (
           @hierarchy.Parent::new(panel),
-          @ui.Node::{
-            ..@ui.Node(),
-            min_width: @ui.Val::Px(100.0F),
-            min_height: @ui.Val::Px(100.0F),
-          },
+          @ui.Node::{ ..Node(), min_width: Px(100.0F), min_height: Px(100.0F) },
           @ui.BackgroundColor::new(@color.Color::srgb(0.88F, 1.0F, 1.0F)),
           @ui.ImageNode::new(icon),
         ),
@@ -181,6 +159,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

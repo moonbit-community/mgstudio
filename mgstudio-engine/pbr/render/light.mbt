@@ -169,7 +169,7 @@ pub struct LightKeyCache {
 
 ///|
 pub fn LightKeyCache::LightKeyCache() -> LightKeyCache {
-  LightKeyCache::{ keys: @hashmap.HashMap([]) }
+  { keys: HashMap([]) }
 }
 
 ///|
@@ -241,7 +241,7 @@ pub struct SpecializedShadowMaterialViewPipelineCache {
 
 ///|
 pub fn SpecializedShadowMaterialViewPipelineCache::SpecializedShadowMaterialViewPipelineCache() -> SpecializedShadowMaterialViewPipelineCache {
-  SpecializedShadowMaterialViewPipelineCache::{ map: @hashmap.HashMap([]) }
+  { map: HashMap([]) }
 }
 
 ///|
@@ -310,7 +310,7 @@ pub struct SpecializedShadowMaterialPipelineCache {
 
 ///|
 pub fn SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache() -> SpecializedShadowMaterialPipelineCache {
-  SpecializedShadowMaterialPipelineCache::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|
@@ -449,7 +449,7 @@ pub struct PendingShadowQueues {
 
 ///|
 pub fn PendingShadowQueues::PendingShadowQueues() -> PendingShadowQueues {
-  PendingShadowQueues::{ queues: @render_gpu.PendingQueues::PendingQueues() }
+  { queues: PendingQueues() }
 }
 
 ///|
@@ -536,7 +536,7 @@ pub fn init_shadow_samplers(world : @ecs.World) -> Unit {
     return
   }
   let device = render_device.wgpu_device()
-  world.insert_resource(ecs_key_shadow_samplers, ShadowSamplers::{
+  world.insert_resource(ecs_key_shadow_samplers, {
     point_light_comparison_sampler: pbr_create_shadow_comparison_sampler(
       device, "point light shadow map sampler",
     ),
@@ -883,7 +883,7 @@ pub fn render3d_extracted_directional_light_for_shadow(
   render_layers : @camera_render_layers.RenderLayers,
   occlusion_culling : Bool,
 ) -> ExtractedDirectionalLight3d {
-  ExtractedDirectionalLight3d::{
+  {
     entity,
     color: @color.Color::white(),
     illuminance: 1.0F,
@@ -954,7 +954,7 @@ pub struct DirectionalLightViewEntities {
 
 ///|
 pub fn DirectionalLightViewEntities::DirectionalLightViewEntities() -> DirectionalLightViewEntities {
-  DirectionalLightViewEntities::{ view_entities_by_view: @hashmap.HashMap([]) }
+  { view_entities_by_view: HashMap([]) }
 }
 
 ///|
@@ -1007,14 +1007,14 @@ pub struct PointAndSpotLightViewEntities {
 
 ///|
 pub fn PointAndSpotLightViewEntities::PointAndSpotLightViewEntities() -> PointAndSpotLightViewEntities {
-  PointAndSpotLightViewEntities::{ entities: [] }
+  { entities: [] }
 }
 
 ///|
 pub fn PointAndSpotLightViewEntities::new(
   entities : Array[@core.Entity],
 ) -> PointAndSpotLightViewEntities {
-  PointAndSpotLightViewEntities::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -1057,7 +1057,7 @@ pub fn add_light_view_entities(
   world.set_by_key(
     add.entity(),
     ecs_key_directional_light_view_entities,
-    DirectionalLightViewEntities::DirectionalLightViewEntities(),
+    DirectionalLightViewEntities(),
   ) catch {
     _ => ()
   }
@@ -1252,7 +1252,7 @@ fn light_extraction_set_last_source_change_tick(
     Some(state) =>
       state.modify(fn(value) { value.last_source_change_tick = tick })
     None =>
-      render_world.insert_resource(ecs_key_light_extraction_state, LightExtractionState::{
+      render_world.insert_resource(ecs_key_light_extraction_state, {
         last_source_change_tick: tick,
       })
   }
@@ -1308,7 +1308,7 @@ pub struct GpuLights3d {
 
 ///|
 pub fn GpuLights3d::GpuLights3d() -> GpuLights3d {
-  GpuLights3d::{
+  {
     directional_lights: [],
     ambient_color: @color.Color::black(),
     cluster_dimensions: (0, 0, 0, 0),
@@ -1331,7 +1331,7 @@ pub struct ViewLightsUniformOffset {
 
 ///|
 pub fn ViewLightsUniformOffset::new(offset : UInt) -> ViewLightsUniformOffset {
-  ViewLightsUniformOffset::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -1359,12 +1359,12 @@ pub struct ViewLightEntities {
 pub fn ViewLightEntities::new(
   lights : Array[@core.Entity],
 ) -> ViewLightEntities {
-  ViewLightEntities::{ lights, }
+  { lights, }
 }
 
 ///|
 pub fn ViewLightEntities::ViewLightEntities() -> ViewLightEntities {
-  ViewLightEntities::{ lights: [] }
+  { lights: [] }
 }
 
 ///|
@@ -1398,7 +1398,7 @@ pub struct LightMeta {
 
 ///|
 pub fn LightMeta::LightMeta() -> LightMeta {
-  LightMeta::{
+  {
     view_gpu_lights: @render_resource.DynamicUniformBuffer::new(),
     view_gpu_lights_buffer: None,
     view_gpu_lights_capacity: 0UL,
@@ -1616,7 +1616,7 @@ fn render3d_clustered_light_flag_limits(
     max_texture_array_layers -
     directional_shadow_enabled_count * MAX_CASCADES_PER_LIGHT,
   )
-  Render3dClusteredLightFlagLimits::{
+  {
     point_light_count,
     point_light_shadow_maps_count: render3d_min_int(
       point_light_shadow_maps_enabled_count, max_texture_cubes,
@@ -1768,7 +1768,7 @@ fn render3d_lights_push_directional_light(
 
 ///|
 fn render3d_gpu_rect_light_default() -> GpuRectLight3d {
-  GpuRectLight3d::{
+  {
     color: @color.Color::black(),
     position: @math.Vec3::zero(),
     width: 0.0F,
@@ -1876,7 +1876,7 @@ fn render3d_gpu_directional_cascade_from_flat_data(
   if cascade_index < 0 || base + 17 >= data.length() {
     return render3d_gpu_directional_cascade_default()
   }
-  GpuDirectionalCascade3d::{
+  {
     clip_from_world: ProjectionMatrix3d::from_cols(
       @math.Vec4::new(
         data[base],
@@ -1963,7 +1963,7 @@ pub fn render3d_gpu_lights_with_directional_shadow_cascades(
           resolved_cascades.push(render3d_gpu_directional_cascade_default())
         }
       }
-      directional_lights.push(GpuDirectionalLight3d::{
+      directional_lights.push({
         ..light,
         cascades: resolved_cascades,
         flags: light.flags | DIRECTIONAL_LIGHT_FLAG_SHADOW_MAPS_ENABLED,
@@ -1974,7 +1974,7 @@ pub fn render3d_gpu_lights_with_directional_shadow_cascades(
       directional_lights.push(light)
     }
   }
-  GpuLights3d::{ ..lights, directional_lights, }
+  { ..lights, directional_lights, }
 }
 
 ///|
@@ -2333,7 +2333,7 @@ fn render3d_clustered_reflection_probe_indices(
       return
     }
     let transform = render3d_extract_light_transform(world, entity)
-    entries.push(Render3dClusteredReflectionProbeIndexEntry::{
+    entries.push({
       entity,
       distance_squared: transform.translation
       .sub(camera_transform.translation)
@@ -2371,7 +2371,7 @@ fn render3d_clustered_irradiance_volume_indices(
       return
     }
     let transform = render3d_extract_light_transform(world, entity)
-    entries.push(Render3dClusteredReflectionProbeIndexEntry::{
+    entries.push({
       entity,
       distance_squared: transform.translation
       .sub(camera_transform.translation)
@@ -2488,7 +2488,7 @@ fn render3d_extract_point_light(
   point_light_texel_size : Float,
 ) -> ExtractedPointLight3d {
   let transform = render3d_extract_light_transform(world, entity)
-  ExtractedPointLight3d::{
+  {
     entity,
     color: light.color,
     // Bevy parity: point-light authoring uses lumens, extracted runtime stores
@@ -2530,7 +2530,7 @@ fn render3d_extract_spot_light(
   let texel_size = 2.0F *
     render3d_tan(outer) /
     Float::from_double(safe_shadow_map_size.to_double())
-  ExtractedPointLight3d::{
+  {
     entity,
     color: light.color,
     // Bevy parity: spot-light authoring uses lumens, extracted runtime stores
@@ -2562,7 +2562,7 @@ fn render3d_extract_directional_light(
   let render_layers = match
     (try! world.get_by_key(entity, @camera_render_layers.ecs_key_render_layers)) {
     Some(layers) => layers
-    None => @camera_render_layers.RenderLayers::RenderLayers()
+    None => RenderLayers()
   }
   let occlusion_culling = (try! world.get_by_key(
       entity, @render_occlusion_culling.ecs_key_occlusion_culling,
@@ -2571,21 +2571,21 @@ fn render3d_extract_directional_light(
   let sun_disk = match
     (try! world.get_by_key(entity, @light.ecs_key_sun_disk)) {
     Some(v) => v
-    None => @light.SunDisk::SunDisk()
+    None => SunDisk()
   }
   let cascade_config = match
     (try! world.get_by_key(entity, @light.ecs_key_cascade_shadow_config)) {
     Some(config) => config
-    None => @light.CascadeShadowConfig::CascadeShadowConfig()
+    None => CascadeShadowConfig()
   }
   let cascades = match
     (try! world.get_by_key(entity, @light.ecs_key_cascades)) {
     Some(value) => render3d_clone_cascades(value)
-    None => @light.Cascades::Cascades()
+    None => Cascades()
   }
   let cascade_count = cascade_config.bounds.length()
   let cascade_overlap_proportion = cascade_config.overlap_proportion
-  ExtractedDirectionalLight3d::{
+  {
     entity,
     color: light.color,
     illuminance: light.illuminance,
@@ -2801,7 +2801,7 @@ fn light_extract_rect_light(
   }
   let effective_width = rect_light.width() * scale.x.abs()
   let effective_height = rect_light.height() * scale.y.abs()
-  ExtractedRectLight3d::{
+  {
     entity,
     color: rect_light.color(),
     intensity: rect_light.intensity() /
@@ -3039,10 +3039,7 @@ fn render3d_collect_extracted_point_light_entries(
   let extracted : Array[Render3dExtractedPointLightEntry] = []
   world.for_each_component(ecs_key_extracted_point_light3d, fn(entity, light) {
     if light.spot_light_angles is None {
-      extracted.push(Render3dExtractedPointLightEntry::{
-        render_entity: entity,
-        light,
-      })
+      extracted.push({ render_entity: entity, light })
     }
   })
   extracted.sort_by(fn(left, right) {
@@ -3062,10 +3059,7 @@ fn render3d_collect_extracted_spot_light_entries(
   let extracted : Array[Render3dExtractedPointLightEntry] = []
   world.for_each_component(ecs_key_extracted_point_light3d, fn(entity, light) {
     if light.spot_light_angles is Some(_) {
-      extracted.push(Render3dExtractedPointLightEntry::{
-        render_entity: entity,
-        light,
-      })
+      extracted.push({ render_entity: entity, light })
     }
   })
   extracted.sort_by(fn(left, right) {
@@ -3120,7 +3114,7 @@ pub fn render3d_collect_extracted_clusterable_point_lights(
     render3d_clusterable_light_sort_by_key(left.0, left.1, right.0, right.1)
   })
   combined.map(fn(item) {
-    ExtractedClusterablePointLight3d::{
+    {
       clusterable_type_order: item.0,
       render_entity: item.1.render_entity,
       light: item.1.light,
@@ -3164,10 +3158,7 @@ fn render3d_collect_extracted_directional_light_entries(
     entity,
     light,
   ) {
-    extracted.push(Render3dExtractedDirectionalLightEntry::{
-      render_entity: entity,
-      light,
-    })
+    extracted.push({ render_entity: entity, light })
   })
   extracted.sort_by(fn(left, right) {
     let volumetric_cmp = cmp_int(
@@ -3247,7 +3238,7 @@ fn render3d_directional_lights_volumetric_enabled_count(
 
 ///|
 fn render3d_gpu_directional_cascade_default() -> GpuDirectionalCascade3d {
-  GpuDirectionalCascade3d::{
+  {
     far_bound: 0.0F,
     texel_size: 1.0F,
     clip_from_world: ProjectionMatrix3d::from_cols(
@@ -3265,7 +3256,7 @@ fn render3d_gpu_directional_light_default() -> GpuDirectionalLight3d {
   while cascades.length() < MAX_CASCADES_PER_LIGHT {
     cascades.push(render3d_gpu_directional_cascade_default())
   }
-  GpuDirectionalLight3d::{
+  {
     cascades,
     color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     dir_to_light: @math.Vec3::new(0.0F, 0.0F, 1.0F),
@@ -3379,9 +3370,9 @@ fn render3d_cluster_view_render_layers(
           entity, @camera_render_layers.ecs_key_render_layers,
         )) {
         Some(layers) => layers
-        None => @camera_render_layers.RenderLayers::RenderLayers()
+        None => RenderLayers()
       }
-    None => @camera_render_layers.RenderLayers::RenderLayers()
+    None => RenderLayers()
   }
 }
 
@@ -3443,14 +3434,8 @@ fn render3d_cluster_view_info(world : @ecs.World) -> (Int, Int) {
   if fallback_view.view is Some(view) {
     return view
   }
-  let width = @window.window_physical_width_for(
-    world,
-    @window.WindowRef::Primary,
-  )
-  let height = @window.window_physical_height_for(
-    world,
-    @window.WindowRef::Primary,
-  )
+  let width = @window.window_physical_width_for(world, Primary)
+  let height = @window.window_physical_height_for(world, Primary)
   if width > 0 && height > 0 {
     (width, height)
   } else {
@@ -3683,7 +3668,7 @@ fn render3d_collect_gpu_lights_with_view_config(
     is Some(v) {
     v
   } else {
-    @light.GlobalAmbientLight::GlobalAmbientLight()
+    GlobalAmbientLight()
   }
   let (
     cluster_screen_width,
@@ -3758,8 +3743,8 @@ fn render3d_collect_gpu_lights_with_view_config(
         }
         cluster_far = match
           @light_cluster.cluster_config_far_z_mode(cluster_config) {
-          @light_cluster.ClusterFarZMode::Constant(far) => far
-          @light_cluster.ClusterFarZMode::MaxClusterableObjectRange =>
+          Constant(far) => far
+          MaxClusterableObjectRange =>
             render3d_clusterable_object_max_range(world)
         }
         if !cluster_is_orthographic &&
@@ -3836,7 +3821,7 @@ fn render3d_collect_gpu_lights_with_view_config(
     while cascades.length() < MAX_CASCADES_PER_LIGHT {
       cascades.push(render3d_gpu_directional_cascade_default())
     }
-    gpu_directional_lights.push(GpuDirectionalLight3d::{
+    gpu_directional_lights.push({
       cascades,
       color: render3d_scale_color(item.color, item.illuminance),
       dir_to_light: item.transform.back(),
@@ -3867,7 +3852,7 @@ fn render3d_collect_gpu_lights_with_view_config(
   }
   for i in 0..<rect_light_count {
     let rect_light = rect_lights[i]
-    gpu_rect_lights.push(GpuRectLight3d::{
+    gpu_rect_lights.push({
       color: render3d_scale_color(rect_light.color, rect_light.intensity),
       position: rect_light.transform.translation,
       width: rect_light.width,
@@ -3880,7 +3865,7 @@ fn render3d_collect_gpu_lights_with_view_config(
   while gpu_rect_lights.length() < MAX_RECT_LIGHTS {
     gpu_rect_lights.push(render3d_gpu_rect_light_default())
   }
-  GpuLights3d::{
+  {
     directional_lights: gpu_directional_lights,
     ambient_color: render3d_scale_color(ambient.color, ambient.brightness),
     cluster_dimensions: (
@@ -3920,7 +3905,7 @@ pub fn render3d_collect_gpu_lights_for_view_config(
 ) -> GpuLights3d {
   render3d_collect_gpu_lights_with_view_config(
     world,
-    Some(Render3dGpuLightsViewConfig::{
+    Some({
       viewport_width,
       viewport_height,
       cluster_dimensions_x,
@@ -3941,7 +3926,7 @@ pub fn render3d_collect_gpu_lights(world : @ecs.World) -> GpuLights3d {
 
 ///|
 pub fn render3d_default_lighting_state() -> Render3dLightingState {
-  Render3dLightingState::{
+  {
     ambient_color: @color.Color::white(),
     ambient_brightness: 80.0F,
     directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
@@ -3957,7 +3942,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
     directional_cascade_bounds: [],
     directional_cascade_overlap_proportion: 0.0F,
     directional_cascade_minimum_distance: 0.1F,
-    directional_cascades: @light.Cascades::Cascades(),
+    directional_cascades: Cascades(),
     directional_occlusion_culling: false,
     directional_lights: [],
     point_entity: None,
@@ -3996,7 +3981,7 @@ pub fn render3d_default_lighting_state() -> Render3dLightingState {
 pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   let mut lighting = render3d_default_lighting_state()
   if world.get_resource(@light.ecs_key_global_ambient_light) is Some(ambient) {
-    lighting = Render3dLightingState::{
+    lighting = {
       ..lighting,
       ambient_color: ambient.color,
       ambient_brightness: ambient.brightness,
@@ -4014,7 +3999,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   if directional_lights.length() > 0 {
     let directional_entry = directional_lights[0]
     let directional = directional_entry.light
-    lighting = Render3dLightingState::{
+    lighting = {
       ..lighting,
       directional_dir: directional.transform.back(),
       directional_color: directional.color,
@@ -4034,16 +4019,13 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       directional_lights: lighting_directional_lights,
     }
   } else {
-    lighting = Render3dLightingState::{
-      ..lighting,
-      directional_lights: lighting_directional_lights,
-    }
+    lighting = { ..lighting, directional_lights: lighting_directional_lights }
   }
   let point_lights = render3d_collect_extracted_point_light_entries(world)
   if point_lights.length() > 0 {
     let point_entry = point_lights[0]
     let point = point_entry.light
-    lighting = Render3dLightingState::{
+    lighting = {
       ..lighting,
       point_entity: Some(point.entity),
       point_render_entity: Some(point_entry.render_entity),
@@ -4066,7 +4048,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     spot_flags |> ignore
     match spot.spot_light_angles {
       Some((inner, outer)) =>
-        lighting = Render3dLightingState::{
+        lighting = {
           ..lighting,
           spot_pos: spot.transform.translation,
           spot_dir: render3d_transform_forward(spot.transform),
@@ -4084,7 +4066,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
           spot_shadow_map_near_z: spot.shadow_map_near_z,
         }
       None =>
-        lighting = Render3dLightingState::{
+        lighting = {
           ..lighting,
           spot_pos: spot.transform.translation,
           spot_dir: render3d_transform_forward(spot.transform),
@@ -4113,7 +4095,7 @@ pub fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     render3d_clustered_reflection_probe_indices(world),
     render3d_clustered_irradiance_volume_indices(world),
   )
-  Render3dLightingState::{
+  {
     ..lighting,
     gpu_lights: Some(gpu_lights),
     gpu_clustered_lights_bytes: Some(gpu_clustered_lights_bytes),
@@ -4152,7 +4134,7 @@ pub fn render3d_collect_lighting_for_view_config(
     cluster_is_orthographic~,
     render_layers~,
   )
-  Render3dLightingState::{ ..lighting, gpu_lights: Some(gpu_lights) }
+  { ..lighting, gpu_lights: Some(gpu_lights) }
 }
 
 ///|

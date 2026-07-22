@@ -61,14 +61,14 @@ fn spawn_ui_label(
   font : @text.TextFont,
 ) -> Unit {
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_top(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
 
   if ui_camera is Some(camera) {
@@ -96,11 +96,7 @@ fn spawn_ui_label(
     @text.ecs_key_text_color,
     @text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)),
   )
-  try! world.set_by_key(
-    text_entity,
-    @text.ecs_key_text_shadow,
-    @text.TextShadow::TextShadow(),
-  )
+  try! world.set_by_key(text_entity, @text.ecs_key_text_shadow, TextShadow())
 }
 
 ///|
@@ -137,9 +133,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @color.Color::srgb(0.08F, 0.10F, 0.14F),
       ),
       @transform.Transform::identity(),
-      @camera_camera.RenderTarget::Window(
-        @window.WindowRef::Entity(secondary_window),
-      ),
+      @camera_camera.RenderTarget::Window(Entity(secondary_window)),
       @camera_render_layers.RenderLayers::layer(1),
     ),
   )
@@ -158,7 +152,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)))
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -169,7 +163,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @camera_render_layers.RenderLayers::layer(1),
   )
   .with_color(@text.TextColor::new(@color.Color::srgb(1.0F, 1.0F, 0.0F)))
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -180,7 +174,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @camera_render_layers.RenderLayers::from_layers([0, 1]),
   )
   .with_color(@text.TextColor::new(@color.Color::srgb(0.8784314F, 1.0F, 1.0F)))
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 }
@@ -191,11 +185,11 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_primary_window()),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
-  .add_systems_world(@app.Startup, setup_scene)
+  .add_systems_world(Startup, setup_scene)
   .run()
 }

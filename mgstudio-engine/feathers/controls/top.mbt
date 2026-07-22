@@ -22,6 +22,7 @@ const CONTROLS_PLUGIN_NAME : String = "mgstudio.feathers.controls.ControlsPlugin
 pub struct ControlsPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ControlsPlugin::ControlsPlugin() -> ControlsPlugin {
   ControlsPlugin::{  }
 }

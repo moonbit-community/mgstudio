@@ -111,26 +111,21 @@ impl @app.Resource for TrackChangePending with fn resource() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, cycle_game_state)
-  .add_systems_world(@app.Update, change_track)
-  .add_systems_world(@app.Update, fade_in)
-  .add_systems_world(@app.Update, fade_out)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, cycle_game_state)
+  .add_systems_world(Update, change_track)
+  .add_systems_world(Update, fade_in)
+  .add_systems_world(Update, fade_out)
   .run()
 }
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  world.insert_resource(GameState::resource(), GameState::Peaceful)
-  world.insert_resource(GameStateTimer::resource(), GameStateTimer::{
-    timer: @time.Timer::from_seconds(
-      STATE_CHANGE_SECONDS,
-      @time.TimerMode::Repeating,
-    ),
+  world.insert_resource(GameState::resource(), Peaceful)
+  world.insert_resource(GameStateTimer::resource(), {
+    timer: @time.Timer::from_seconds(STATE_CHANGE_SECONDS, Repeating),
   })
-  world.insert_resource(TrackChangePending::resource(), TrackChangePending::{
-    changed: true,
-  })
+  world.insert_resource(TrackChangePending::resource(), { changed: true })
 
   let asset_server = @asset.AssetServer::new()
   let track_1 : @asset.Handle[@audio.AudioSource] = asset_server.load(
@@ -139,7 +134,7 @@ fn setup(world : @ecs.World) -> Unit {
   let track_2 : @asset.Handle[@audio.AudioSource] = asset_server.load(
     "sounds/Epic orchestra music.ogg",
   )
-  world.insert_resource(SoundtrackPlayer::resource(), SoundtrackPlayer::{
+  world.insert_resource(SoundtrackPlayer::resource(), {
     track_list: [track_1, track_2],
   })
 }
@@ -155,9 +150,7 @@ fn cycle_game_state(world : @ecs.World) -> Unit {
     None => abort("Missing Time<Unit> resource in soundtrack example")
   }
   let next_timer = timer_state.timer.tick(time.delta())
-  world.insert_resource(GameStateTimer::resource(), GameStateTimer::{
-    timer: next_timer,
-  })
+  world.insert_resource(GameStateTimer::resource(), { timer: next_timer })
   if !next_timer.just_finished() {
     return
   }
@@ -170,12 +163,11 @@ fn cycle_game_state(world : @ecs.World) -> Unit {
     Peaceful => Battle
   }
   world.insert_resource(GameState::resource(), next_state)
-  world.insert_resource(TrackChangePending::resource(), TrackChangePending::{
-    changed: true,
-  })
+  world.insert_resource(TrackChangePending::resource(), { changed: true })
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn change_track(world : @ecs.World) -> Unit {
   guard world.get_resource(TrackChangePending::resource()) is Some(pending) else {
     return
@@ -184,9 +176,7 @@ fn change_track(world : @ecs.World) -> Unit {
     return
   }
 
-  world.insert_resource(TrackChangePending::resource(), TrackChangePending::{
-    changed: false,
-  })
+  world.insert_resource(TrackChangePending::resource(), { changed: false })
 
   world.for_each_component(@audio.ecs_key_audio_sink, fn(
     entity : @core.Entity,
@@ -251,10 +241,7 @@ fn fade_in(world : @ecs.World) -> Unit {
       sink : @audio.AudioSink,
     ) {
       sink.set_volume(
-        @audio.Volume::silent().fade_towards(
-          @audio.Volume::Linear(1.0F),
-          factor,
-        ),
+        @audio.Volume::silent().fade_towards(Linear(1.0F), factor),
       )
     })
     |> ignore)
@@ -262,7 +249,7 @@ fn fade_in(world : @ecs.World) -> Unit {
       try! (world.update_by_key(entity, @audio.ecs_key_audio_sink, fn(
         sink : @audio.AudioSink,
       ) {
-        sink.set_volume(@audio.Volume::Linear(1.0F))
+        sink.set_volume(Linear(1.0F))
       })
       |> ignore)
       try! (world.take(entity, fade_in_component_key) |> ignore)

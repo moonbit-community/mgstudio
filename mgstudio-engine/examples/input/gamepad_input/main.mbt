@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Update, gamepad_system)
+  .add_systems_param(Update, gamepad_system)
   .run()
 }
 
@@ -27,9 +27,9 @@ fn gamepad_system(
   try! gamepads.view(fn(entity, gamepad) {
     let gamepad = gamepad.value()
     let gamepad_id = entity_text(entity)
-    if gamepad.just_pressed(@input.GamepadButton::South) {
+    if gamepad.just_pressed(South) {
       log_line("\{gamepad_id} just pressed South")
-    } else if gamepad.just_released(@input.GamepadButton::South) {
+    } else if gamepad.just_released(South) {
       log_line("\{gamepad_id} just released South")
     }
 

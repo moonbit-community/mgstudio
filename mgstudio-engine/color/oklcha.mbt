@@ -27,7 +27,7 @@ pub fn Oklcha::new(
   hue : Float,
   alpha : Float,
 ) -> Oklcha {
-  Oklcha::{
+  {
     lightness,
     chroma: if chroma < 0.0F {
       0.0F

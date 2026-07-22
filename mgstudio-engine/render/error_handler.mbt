@@ -43,7 +43,7 @@ pub fn RenderError::new(
   ty : RenderErrorType,
   description : String,
 ) -> RenderError {
-  RenderError::{ ty, description }
+  { ty, description }
 }
 
 ///|
@@ -69,19 +69,19 @@ fn default_render_error_handler(
     main_world.init_message(key)
   }
   ignore(main_world.send_message(key, @app.AppExit::error()))
-  RenderErrorPolicy::StopRendering
+  StopRendering
 }
 
 ///|
 pub fn RenderErrorHandler::RenderErrorHandler() -> RenderErrorHandler {
-  RenderErrorHandler::{ handler: default_render_error_handler }
+  { handler: default_render_error_handler }
 }
 
 ///|
 pub fn RenderErrorHandler::new(
   handler : (RenderError, @ecs.World, @ecs.World) -> RenderErrorPolicy,
 ) -> RenderErrorHandler {
-  RenderErrorHandler::{ handler, }
+  { handler, }
 }
 
 ///|
@@ -226,7 +226,7 @@ fn update_render_state(
       let handler = match
         main_world.get_resource(render_error_handler_resource_key) {
         Some(value) => value
-        None => RenderErrorHandler::RenderErrorHandler()
+        None => RenderErrorHandler()
       }
       handler.handle(error, main_world, render_world)
     }

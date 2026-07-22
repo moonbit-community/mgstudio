@@ -49,7 +49,7 @@ pub fn[T] World::added_components(
     Some(messages) => messages.reader(system)
     None => @core.Messages::new().reader(system)
   }
-  AddedComponents::{ reader, }
+  { reader, }
 }
 
 ///|

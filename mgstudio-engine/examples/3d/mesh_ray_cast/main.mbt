@@ -69,7 +69,7 @@ priv struct RaycastState {
 
 ///|
 let raycast_state : Ref[RaycastState] = Ref({
-  camera: @camera_camera.Camera::Camera(),
+  camera: Camera(),
   camera_projection: @camera.Projection::default(),
   camera_transform: @transform.Transform::identity(),
   collider_entities: [],
@@ -100,11 +100,7 @@ fn set_visibility(
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
-  let value = if visible {
-    @visibility.Visibility::Inherited
-  } else {
-    @visibility.Visibility::Hidden
-  }
+  let value = if visible { @visibility.Visibility::Inherited } else { Hidden }
   if (try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
     try! (world.replace(entity, @visibility.ecs_key_visibility, value) |> ignore)
   } else {
@@ -272,7 +268,7 @@ fn setup(world : @ecs.World) -> Unit {
   let plane_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @color.Color::new(0.5F, 0.5F, 0.5F, 0.05F),
-    ).with_alpha_mode(@pbr.AlphaMode3d::Blend),
+    ).with_alpha_mode(Blend),
   )
 
   // Inward-facing box planes with upstream sample topology.
@@ -410,11 +406,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .with_layout(@text.TextLayout::new_with_justify(Left))
   .with_color(
     @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 }
@@ -564,7 +560,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, bouncing_raycast)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, bouncing_raycast)
   .run()
 }

@@ -29,8 +29,8 @@ fn main {
   println("Running Bevy App")
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_fn(@app.Startup, set_title)
-  .add_systems_fn(@app.Update, system)
+  .add_systems_fn(Startup, set_title)
+  .add_systems_fn(Update, system)
   .run()
   println("Bevy App has exited. We are back in our main function.")
 }

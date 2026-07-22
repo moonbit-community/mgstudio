@@ -190,7 +190,7 @@ fn setup(
         @text.TextFont::TextFont().with_font_size(18.0F),
         @text.TextColor::new(@color.Color::srgb(0.9F, 0.9F, 0.9F)),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
         RoughnessDisplay::{  },
@@ -217,9 +217,9 @@ fn adjust_roughness(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   text_query : @ecs.Query[@ecs.Write[@text.Text], @ecs.With[RoughnessDisplay]],
 ) -> Unit {
-  let delta = if keys.pressed(@window.KeyCode::ArrowUp) {
+  let delta = if keys.pressed(ArrowUp) {
     0.005F
-  } else if keys.pressed(@window.KeyCode::ArrowDown) {
+  } else if keys.pressed(ArrowDown) {
     -0.005F
   } else {
     return
@@ -246,7 +246,7 @@ fn toggle_gizmos(
   keys : @input.ButtonInput[@window.KeyCode],
   config_store : @app.ResMut[@gizmos.GizmoConfigStore],
 ) -> Unit {
-  if !keys.just_pressed(@window.KeyCode::KeyG) {
+  if !keys.just_pressed(KeyG) {
     return
   }
   config_store.modify(fn(store) {
@@ -263,8 +263,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param4(@app.Update, adjust_roughness)
-  .add_systems_param2(@app.Update, toggle_gizmos)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param4(Update, adjust_roughness)
+  .add_systems_param2(Update, toggle_gizmos)
   .run()
 }

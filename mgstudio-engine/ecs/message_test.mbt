@@ -49,7 +49,7 @@ pub fn TestDefaultRuntimeMessage::TestDefaultRuntimeMessage() -> TestDefaultRunt
 
 ///|
 pub impl Default for TestDefaultRuntimeMessage with fn default() {
-  TestDefaultRuntimeMessage::TestDefaultRuntimeMessage()
+  TestDefaultRuntimeMessage()
 }
 
 ///|
@@ -63,7 +63,7 @@ test "ecs message: mutator reads unread messages as in-place refs" {
   ignore(writer.write({ value: 1 }))
   ignore(writer.write({ value: 2 }))
 
-  let cursor : MessageCursor[TestRuntimeMessage] = MessageCursor::MessageCursor()
+  let cursor : MessageCursor[TestRuntimeMessage] = MessageCursor()
   let mutator = world.message_mutator(key, cursor~)
   let unread = mutator.read()
   debug_inspect(unread.length(), content="2")

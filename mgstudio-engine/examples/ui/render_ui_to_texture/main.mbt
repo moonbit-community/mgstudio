@@ -208,7 +208,7 @@ fn setup(
       @asset.Image::new_target_texture(
         UI_TEXTURE_SIZE,
         UI_TEXTURE_SIZE,
-        @asset.TextureFormat::Bgra8UnormSrgb,
+        Bgra8UnormSrgb,
         None,
       ),
     )
@@ -234,11 +234,11 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(gray()),
       @ui.UiTargetCamera::new(texture_camera),
     ),
@@ -250,12 +250,12 @@ fn setup(
       DraggablePanel::{  },
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_width(@ui.Val::Auto)
-      .with_height(@ui.Val::Auto)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(10.0F))),
+      .with_position_type(Absolute)
+      .with_width(Auto)
+      .with_height(Auto)
+      .with_align_items(Center)
+      .with_padding(@ui.UiRect::all(Px(20.0F)))
+      .with_border_radius(@ui.BorderRadius::all(Px(10.0F))),
       @ui.BackgroundColor::new(blue()),
     ),
   )
@@ -320,7 +320,7 @@ fn setup(
 
   commands.queue(fn(world : @ecs.World) {
     let camera_entity = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -371,11 +371,9 @@ fn drive_diegetic_pointer(world : @ecs.World) -> Unit {
   let cube = cube_query.single() catch { _ => None }
   guard cube is Some((cube_entity, cube_transform)) else { return }
 
-  let down = @input.mouse_button_pressed(@window.MouseButton::Left)
-  let just_pressed = @input.mouse_button_just_pressed(@window.MouseButton::Left)
-  let just_released = @input.mouse_button_just_released(
-    @window.MouseButton::Left,
-  )
+  let down = @input.mouse_button_pressed(Left)
+  let just_pressed = @input.mouse_button_just_pressed(Left)
+  let just_released = @input.mouse_button_just_released(Left)
 
   let mut pointer_position : @math.Vec2? = None
   if @input.primary_pointer_position() is Some(cursor) &&
@@ -434,10 +432,8 @@ fn drag_panel(
   panel_node.set(
     panel_node
     .value()
-    .with_left(
-      @ui.Val::Px(pointer.position().x - panel_layout.value().size().x / 2.0F),
-    )
-    .with_top(@ui.Val::Px(pointer.position().y - 50.0F)),
+    .with_left(Px(pointer.position().x - panel_layout.value().size().x / 2.0F))
+    .with_top(Px(pointer.position().y - 50.0F)),
   )
 }
 
@@ -454,10 +450,10 @@ fn stop_drag_panel(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_cube)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param2(Update, rotate_cube)
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     @app.system_config_world(drive_diegetic_pointer)
     .before(@picking.picking_set_input)
     .after(@transform.transform_set_propagate)

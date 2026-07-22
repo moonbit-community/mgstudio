@@ -19,6 +19,7 @@
 pub struct TransformHelper {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TransformHelper::TransformHelper() -> TransformHelper {
   TransformHelper::{  }
 }

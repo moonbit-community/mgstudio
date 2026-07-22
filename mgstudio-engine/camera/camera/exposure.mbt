@@ -35,32 +35,32 @@ pub struct Exposure {
 
 ///|
 pub fn Exposure::Exposure() -> Exposure {
-  Exposure::{ ev100: EXPOSURE_EV100_BLENDER }
+  { ev100: EXPOSURE_EV100_BLENDER }
 }
 
 ///|
 pub fn Exposure::new(ev100 : Float) -> Exposure {
-  Exposure::{ ev100, }
+  { ev100, }
 }
 
 ///|
 pub fn Exposure::sunlight() -> Exposure {
-  Exposure::{ ev100: EXPOSURE_EV100_SUNLIGHT }
+  { ev100: EXPOSURE_EV100_SUNLIGHT }
 }
 
 ///|
 pub fn Exposure::overcast() -> Exposure {
-  Exposure::{ ev100: EXPOSURE_EV100_OVERCAST }
+  { ev100: EXPOSURE_EV100_OVERCAST }
 }
 
 ///|
 pub fn Exposure::indoor() -> Exposure {
-  Exposure::{ ev100: EXPOSURE_EV100_INDOOR }
+  { ev100: EXPOSURE_EV100_INDOOR }
 }
 
 ///|
 pub fn Exposure::blender() -> Exposure {
-  Exposure::{ ev100: EXPOSURE_EV100_BLENDER }
+  { ev100: EXPOSURE_EV100_BLENDER }
 }
 
 ///|
@@ -73,7 +73,7 @@ pub fn Exposure::from_physical_camera(
 ///|
 pub fn Exposure::with_ev100(self : Exposure, ev100 : Float) -> Exposure {
   self |> ignore
-  Exposure::{ ev100, }
+  { ev100, }
 }
 
 ///|
@@ -131,7 +131,7 @@ pub(all) struct PhysicalCameraParameters {
 
 ///|
 pub fn PhysicalCameraParameters::PhysicalCameraParameters() -> PhysicalCameraParameters {
-  PhysicalCameraParameters::{
+  {
     aperture_f_stops: 1.0F,
     shutter_speed_s: 1.0F / 125.0F,
     sensitivity_iso: 100.0F,

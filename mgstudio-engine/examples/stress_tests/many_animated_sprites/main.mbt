@@ -37,20 +37,18 @@ struct PrintingTimer {
 
 ///|
 fn PrintingTimer::PrintingTimer() -> PrintingTimer {
-  PrintingTimer::{
-    timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
-  }
+  { timer: @time.Timer::from_seconds(1.0F, Repeating) }
 }
 
 ///|
 impl @app.FromWorld for PrintingTimer with fn from_world(_world) {
-  PrintingTimer::PrintingTimer()
+  PrintingTimer()
 }
 
 ///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::Window()
-  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.present_mode = AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
   )
@@ -59,8 +57,8 @@ fn configured_window() -> @window.Window {
 
 ///|
 fn animation_timer(elapsed_seconds : Float) -> AnimationTimer {
-  AnimationTimer::{
-    timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating).set_elapsed(
+  {
+    timer: @time.Timer::from_seconds(0.1F, Repeating).set_elapsed(
       @core.Duration::from_secs_f32(elapsed_seconds),
     ),
   }
@@ -84,7 +82,7 @@ fn setup(
   texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
 ) -> Unit {
   @app.log_record(
-    @app.Warn,
+    Warn,
     message="This is a stress test used to push Mgstudio to its limit and debug performance issues. It is not representative of an actual game. It must be run in release mode using --release or it will be very slow.",
     target="many_animated_sprites",
   )
@@ -189,7 +187,7 @@ fn print_sprite_count(
   sprites : @ecs.Query[@ecs.Read[@sprite.Sprite], @ecs.All],
 ) -> Unit {
   let next_timer = timer.get().timer.tick(time.get().delta())
-  timer.set(PrintingTimer::{ timer: next_timer })
+  timer.set({ timer: next_timer })
   if !next_timer.just_finished() {
     return
   }
@@ -206,22 +204,22 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .insert_resource(@winit.WinitSettings::continuous())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, animate_sprites)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, animate_sprites)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(print_sprite_count).named(
       "examples.stress_tests.many_animated_sprites.print_sprite_count",
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(move_camera).after(
       @app.system_set(
         "examples.stress_tests.many_animated_sprites.print_sprite_count",

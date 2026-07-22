@@ -25,11 +25,7 @@ pub fn RawHandleWrapper::new(
   window_handle : @raw_windowing.WindowHandle,
   display_handle : @raw_windowing.DisplayHandle,
 ) -> RawHandleWrapper {
-  RawHandleWrapper::{
-    window,
-    window_handle_: window_handle,
-    display_handle_: display_handle,
-  }
+  { window, window_handle_: window_handle, display_handle_: display_handle }
 }
 
 ///|
@@ -72,7 +68,7 @@ pub(all) struct RawHandleWrapperHolder {
 
 ///|
 pub fn RawHandleWrapperHolder::new() -> RawHandleWrapperHolder {
-  RawHandleWrapperHolder::{ handle: Ref(None) }
+  { handle: Ref(None) }
 }
 
 ///|

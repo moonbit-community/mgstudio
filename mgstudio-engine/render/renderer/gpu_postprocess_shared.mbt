@@ -25,7 +25,7 @@ fn clamp_non_negative(value : Float) -> Float {
 fn postprocess_define_keys_map(
   define_keys : Array[String],
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   for key in define_keys {
     defines.set(key, true)
   }
@@ -67,7 +67,7 @@ fn load_fullscreen_postprocess_wgsl_modules_with_defines_required(
   rel : String,
   define_keys : Array[String],
 ) -> FullscreenPostprocessWgslSources raise GpuBackendError {
-  FullscreenPostprocessWgslSources::{
+  {
     vertex_source: load_fullscreen_vertex_wgsl_required(backend),
     fragment_source: load_postprocess_fragment_wgsl_with_defines_required(
       backend, rel, define_keys,

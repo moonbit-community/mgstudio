@@ -22,13 +22,14 @@ pub(all) struct RadioButton {
 
 ///|
 pub fn radio(label : String) -> RadioButton {
-  RadioButton::{ label, }
+  { label, }
 }
 
 ///|
 pub struct RadioPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn RadioPlugin::RadioPlugin() -> RadioPlugin {
   RadioPlugin::{  }
 }

@@ -19,6 +19,7 @@
 pub struct AndroidTracingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AndroidTracingPlugin::AndroidTracingPlugin() -> AndroidTracingPlugin {
   AndroidTracingPlugin::{  }
 }

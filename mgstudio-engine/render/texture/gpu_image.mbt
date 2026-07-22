@@ -33,7 +33,7 @@ pub fn GpuImage::new(texture_id : Int) -> GpuImage {
   match GpuImage::from_texture_id(texture_id) {
     Some(image) => image
     None =>
-      GpuImage::{
+      {
         texture_id,
         width: @renderer.asset_texture_width(texture_id~),
         height: @renderer.asset_texture_height(texture_id~),
@@ -49,7 +49,7 @@ pub fn GpuImage::new(texture_id : Int) -> GpuImage {
 
 ///|
 pub fn GpuImage::from_texture_info(info : @renderer.GpuTextureInfo) -> GpuImage {
-  GpuImage::{
+  {
     texture_id: info.id,
     width: info.width,
     height: info.height,
@@ -67,7 +67,7 @@ pub fn GpuImage::from_texture_id_and_format(
   texture_id : Int,
   format : @wgpu.TextureFormat,
 ) -> GpuImage {
-  GpuImage::{
+  {
     texture_id,
     width: @renderer.asset_texture_width(texture_id~),
     height: @renderer.asset_texture_height(texture_id~),

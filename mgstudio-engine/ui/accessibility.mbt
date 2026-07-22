@@ -22,7 +22,7 @@ pub struct AccessibilityLabel {
 
 ///|
 pub fn AccessibilityLabel::new(text : String) -> AccessibilityLabel {
-  AccessibilityLabel::{ text, }
+  { text, }
 }
 
 ///|

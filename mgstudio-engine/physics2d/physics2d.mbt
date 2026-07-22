@@ -26,22 +26,22 @@ pub struct RigidBody2d {
 
 ///|
 pub fn RigidBody2d::dynamic() -> RigidBody2d {
-  { body_type: @dynamics.RigidBodyType::Dynamic }
+  { body_type: Dynamic }
 }
 
 ///|
 pub fn RigidBody2d::fixed() -> RigidBody2d {
-  { body_type: @dynamics.RigidBodyType::Fixed }
+  { body_type: Fixed }
 }
 
 ///|
 pub fn RigidBody2d::kinematic_position_based() -> RigidBody2d {
-  { body_type: @dynamics.RigidBodyType::KinematicPositionBased }
+  { body_type: KinematicPositionBased }
 }
 
 ///|
 pub fn RigidBody2d::kinematic_velocity_based() -> RigidBody2d {
-  { body_type: @dynamics.RigidBodyType::KinematicVelocityBased }
+  { body_type: KinematicVelocityBased }
 }
 
 ///|
@@ -148,7 +148,7 @@ pub fn Collider2d::new(shape : ColliderShape2d) -> Collider2d {
 
 ///|
 pub fn Collider2d::sensor(self : Collider2d, sensor : Bool) -> Collider2d {
-  Collider2d::{ ..self, sensor, }
+  { ..self, sensor, }
 }
 
 ///|
@@ -203,7 +203,7 @@ pub struct GravityScale2d {
 
 ///|
 pub fn GravityScale2d::new(scale : Float) -> GravityScale2d {
-  GravityScale2d::{ scale, }
+  { scale, }
 }
 
 ///|
@@ -248,7 +248,7 @@ pub struct Dominance2d {
 
 ///|
 pub fn Dominance2d::new(group : Int) -> Dominance2d {
-  Dominance2d::{ group, }
+  { group, }
 }
 
 ///|
@@ -258,7 +258,7 @@ pub struct Sleeping2d {
 
 ///|
 pub fn Sleeping2d::new(sleeping : Bool) -> Sleeping2d {
-  Sleeping2d::{ sleeping, }
+  { sleeping, }
 }
 
 ///|
@@ -308,7 +308,7 @@ pub struct ContactForceEventThreshold2d {
 pub fn ContactForceEventThreshold2d::new(
   threshold : Float,
 ) -> ContactForceEventThreshold2d {
-  ContactForceEventThreshold2d::{ threshold, }
+  { threshold, }
 }
 
 ///|
@@ -568,7 +568,7 @@ pub fn Physics2dConfig::Physics2dConfig() -> Physics2dConfig {
 
 ///|
 pub fn Physics2dConfig::new(gravity : @math.Vec2) -> Physics2dConfig {
-  Physics2dConfig::{ ..Physics2dConfig(), gravity, }
+  { ..Physics2dConfig(), gravity, }
 }
 
 ///|
@@ -576,7 +576,7 @@ pub fn Physics2dConfig::with_gravity(
   self : Physics2dConfig,
   gravity : @math.Vec2,
 ) -> Physics2dConfig {
-  Physics2dConfig::{ ..self, gravity, }
+  { ..self, gravity, }
 }
 
 ///|
@@ -584,7 +584,7 @@ pub fn Physics2dConfig::with_physics_pipeline_active(
   self : Physics2dConfig,
   active : Bool,
 ) -> Physics2dConfig {
-  Physics2dConfig::{ ..self, physics_pipeline_active: active }
+  { ..self, physics_pipeline_active: active }
 }
 
 ///|
@@ -592,7 +592,7 @@ pub fn Physics2dConfig::with_integration_parameters(
   self : Physics2dConfig,
   integration : @dynamics.IntegrationParameters,
 ) -> Physics2dConfig {
-  Physics2dConfig::{ ..self, integration, }
+  { ..self, integration, }
 }
 
 ///|
@@ -631,29 +631,29 @@ pub fn Physics2dContext::new() -> Physics2dContext {
   let rigid_bodies = @dynamics.RigidBodySet::RigidBodySet()
   let colliders = @collision.ColliderSet::ColliderSet()
   let query_pipeline = @collision.QueryPipelineMut::QueryPipelineMut(
-    @collision.QueryFilter::QueryFilter(),
+    QueryFilter(),
     rigid_bodies,
     colliders,
   )
-  Physics2dContext::{
+  {
     rigid_bodies,
     colliders,
-    islands: @dynamics.IslandManager::IslandManager(),
-    broad_phase: @collision.BroadPhaseBvh::BroadPhaseBvh(),
-    narrow_phase: @collision.NarrowPhase::NarrowPhase(),
-    impulse_joints: @dynamics.ImpulseJointSet::ImpulseJointSet(),
-    multibody_joints: @dynamics.MultibodyJointSet::MultibodyJointSet(),
-    ccd: @dynamics_ccd.CCDSolver::CCDSolver(),
-    pipeline: @pipeline.PhysicsPipeline::PhysicsPipeline(),
+    islands: IslandManager(),
+    broad_phase: BroadPhaseBvh(),
+    narrow_phase: NarrowPhase(),
+    impulse_joints: ImpulseJointSet(),
+    multibody_joints: MultibodyJointSet(),
+    ccd: CCDSolver(),
+    pipeline: PhysicsPipeline(),
     integration: @dynamics.IntegrationParameters::default(),
-    hooks: @pipeline.PhysicsHooks::PhysicsHooks(),
-    event_handler: @pipeline.EventHandler::EventHandler(),
+    hooks: PhysicsHooks(),
+    event_handler: EventHandler(),
     query_pipeline,
-    entity_to_body: @hashmap.HashMap([]),
-    entity_to_collider: @hashmap.HashMap([]),
-    entity_to_impulse_joint: @hashmap.HashMap([]),
-    entity_to_multibody_joint: @hashmap.HashMap([]),
-    collider_to_entity: @hashmap.HashMap([]),
+    entity_to_body: HashMap([]),
+    entity_to_collider: HashMap([]),
+    entity_to_impulse_joint: HashMap([]),
+    entity_to_multibody_joint: HashMap([]),
+    collider_to_entity: HashMap([]),
   }
 }
 
@@ -723,7 +723,7 @@ pub fn physics2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .named("mgstudio.physics2d.cleanup")
     .in_set(physics2d_set_cleanup),
   )
-  .configure_set(@app.PreUpdate, physics2d_set_clear_events, before=[
+  .configure_set(PreUpdate, physics2d_set_clear_events, before=[
     physics2d_set_cleanup,
   ])
   .add_fixed_update_system_config(
@@ -756,19 +756,19 @@ pub fn physics2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     .named("mgstudio.physics2d.writeback")
     .in_set(physics2d_set_writeback),
   )
-  .configure_set(@app.FixedUpdate, physics2d_set_sync_insertions, before=[
+  .configure_set(FixedUpdate, physics2d_set_sync_insertions, before=[
     physics2d_set_sync_joints,
   ])
-  .configure_set(@app.FixedUpdate, physics2d_set_sync_joints, before=[
+  .configure_set(FixedUpdate, physics2d_set_sync_joints, before=[
     physics2d_set_sync_world_to_rapier,
   ])
-  .configure_set(@app.FixedUpdate, physics2d_set_sync_world_to_rapier, before=[
+  .configure_set(FixedUpdate, physics2d_set_sync_world_to_rapier, before=[
     physics2d_set_character_controller,
   ])
-  .configure_set(@app.FixedUpdate, physics2d_set_character_controller, before=[
+  .configure_set(FixedUpdate, physics2d_set_character_controller, before=[
     physics2d_set_step,
   ])
-  .configure_set(@app.FixedUpdate, physics2d_set_step, before=[
+  .configure_set(FixedUpdate, physics2d_set_step, before=[
     physics2d_set_writeback,
   ])
   .add_post_update_system_config(

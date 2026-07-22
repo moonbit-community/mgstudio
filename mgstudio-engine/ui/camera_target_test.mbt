@@ -72,7 +72,7 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   try! world.set_by_key(
     marked,
     ecs_key_is_default_ui_camera,
-    IsDefaultUiCamera::IsDefaultUiCamera(),
+    IsDefaultUiCamera(),
   )
 
   ui_update_context_system(world)
@@ -109,7 +109,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_by_key(
     marked_a,
     ecs_key_is_default_ui_camera,
-    IsDefaultUiCamera::IsDefaultUiCamera(),
+    IsDefaultUiCamera(),
   )
 
   let marked_b = world.spawn_empty()
@@ -121,12 +121,12 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_by_key(
     marked_b,
     @camera_camera.ecs_key_render_target,
-    @camera_camera.RenderTarget::Image(@asset.Handle::new(7)),
+    Image(@asset.Handle::new(7)),
   )
   try! world.set_by_key(
     marked_b,
     ecs_key_is_default_ui_camera,
-    IsDefaultUiCamera::IsDefaultUiCamera(),
+    IsDefaultUiCamera(),
   )
 
   let primary_ref = world.spawn_empty()
@@ -138,7 +138,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_by_key(
     primary_ref,
     @camera_camera.ecs_key_render_target,
-    @camera_camera.RenderTarget::Window(@window.WindowRef::Primary),
+    Window(Primary),
   )
 
   let primary_entity = world.spawn_empty()
@@ -150,9 +150,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_by_key(
     primary_entity,
     @camera_camera.ecs_key_render_target,
-    @camera_camera.RenderTarget::Window(
-      @window.WindowRef::Entity(primary_window_entity),
-    ),
+    Window(Entity(primary_window_entity)),
   )
 
   ui_update_context_system(world)
@@ -186,7 +184,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
@@ -259,14 +257,10 @@ test "ui: propagated target info falls back to camera target when computed info 
   |> ignore)
 
   let target_camera = world.spawn_empty()
-  try! world.set_by_key(
-    target_camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(target_camera, @camera_camera.ecs_key_camera, Camera())
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
@@ -306,13 +300,13 @@ test "ui: perspective target camera keeps overlays in screen space" {
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(target_camera),
   )
-  try! world.set_by_key(root, ecs_key_node, Node::Node())
+  try! world.set_by_key(root, ecs_key_node, Node())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)
@@ -347,22 +341,22 @@ test "ui: layout resolves each root against its propagated target viewport" {
   )
 
   let root_a = world.spawn_empty()
-  try! world.set_by_key(root_a, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root_a, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root_a,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(camera_a),
   )
-  try! world.set_by_key(root_a, ecs_key_node, Node::Node())
+  try! world.set_by_key(root_a, ecs_key_node, Node())
 
   let root_b = world.spawn_empty()
-  try! world.set_by_key(root_b, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root_b, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root_b,
     ecs_key_ui_target_camera,
     UiTargetCamera::new(camera_b),
   )
-  try! world.set_by_key(root_b, ecs_key_node, Node::Node())
+  try! world.set_by_key(root_b, ecs_key_node, Node())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)

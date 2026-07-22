@@ -82,7 +82,7 @@ pub impl @ecs.TriggerEvent for TestTypedAnimationEvent with fn set_observer_enti
   self,
   entity,
 ) {
-  TestTypedAnimationEvent::{ observer_entity: Some(entity), value: self.value }
+  { observer_entity: Some(entity), value: self.value }
 }
 
 ///|
@@ -331,14 +331,14 @@ test "animation graph: from_clip/from_clips/add APIs" {
 ///|
 test "active animation: repeat semantics" {
   let never = ActiveAnimation::ActiveAnimation()
-    .set_repeat(RepeatAnimation::Never)
+    .set_repeat(Never)
     .update(0.6F, 1.0F)
     .update(0.6F, 1.0F)
   debug_inspect(never.is_finished(), content="true")
   debug_inspect(never.completions(), content="1")
 
   let count = ActiveAnimation::ActiveAnimation()
-    .set_repeat(RepeatAnimation::Count(2))
+    .set_repeat(Count(2))
     .update(1.1F, 1.0F)
     .update(1.1F, 1.0F)
   debug_inspect(count.is_finished(), content="true")
@@ -359,7 +359,7 @@ test "active animation: replay and weight semantics match bevy" {
   let replayed = ActiveAnimation::ActiveAnimation()
     .pause()
     .seek_to(0.7F)
-    .set_repeat(RepeatAnimation::Count(3))
+    .set_repeat(Count(3))
     .replay()
   debug_inspect(replayed.is_paused(), content="true")
   assert_true(approx_eq_animation(replayed.seek_time(), 0.0F))
@@ -371,7 +371,7 @@ test "active animation: zero-speed at clip end does not complete" {
   let stationary = ActiveAnimation::ActiveAnimation()
     .set_speed(0.0F)
     .seek_to(1.0F)
-    .set_repeat(RepeatAnimation::Never)
+    .set_repeat(Never)
     .update(0.25F, 1.0F)
   debug_inspect(stationary.just_completed(), content="false")
   debug_inspect(stationary.completions(), content="0")
@@ -381,7 +381,7 @@ test "active animation: zero-speed at clip end does not complete" {
 ///|
 test "active animation: zero-duration clip completes for non-repeating playback" {
   let completed = ActiveAnimation::ActiveAnimation()
-    .set_repeat(RepeatAnimation::Never)
+    .set_repeat(Never)
     .update(0.1F, 0.0F)
   debug_inspect(completed.just_completed(), content="true")
   debug_inspect(completed.completions(), content="1")
@@ -443,7 +443,7 @@ test "animation transitions: zero-duration switch expires via transition systems
   advance_transitions(world)
   expire_completed_transitions(world)
   let after_player = (try! world.get_by_key(entity, ecs_key_animation_player)).unwrap_or(
-    AnimationPlayer::AnimationPlayer(),
+    AnimationPlayer(),
   )
   let after_transitions = (try! world.get_by_key(
     entity, ecs_key_animation_transitions,
@@ -480,7 +480,7 @@ test "animation transitions: remaining weight is not clamped like bevy" {
   set_delta(0.0F)
   advance_transitions(world)
   let after_player = (try! world.get_by_key(entity, ecs_key_animation_player)).unwrap_or(
-    AnimationPlayer::AnimationPlayer(),
+    AnimationPlayer(),
   )
   debug_inspect(
     if after_player.animation(node_a) is Some(active_a) {
@@ -527,7 +527,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
   advance_transitions(world)
   let after_first_player = (try! world.get_by_key(
     entity, ecs_key_animation_player,
-  )).unwrap_or(AnimationPlayer::AnimationPlayer())
+  )).unwrap_or(AnimationPlayer())
   debug_inspect(
     if after_first_player.animation(node_a) is Some(active_a) {
       approx_eq_animation(active_a.weight(), 0.5F)
@@ -553,7 +553,7 @@ test "animation transitions: advance/expire keep frame-snapshot weight decline s
   )).unwrap_or(AnimationTransitions::new())
   let after_second_player = (try! world.get_by_key(
     entity, ecs_key_animation_player,
-  )).unwrap_or(AnimationPlayer::AnimationPlayer())
+  )).unwrap_or(AnimationPlayer())
   debug_inspect(after_second_transitions.transitions.length(), content="0")
   debug_inspect(after_second_player.animation(node_a) is None, content="true")
   debug_inspect(
@@ -879,7 +879,7 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
 
 ///|
 test "animation runtime: animate_targets applies sampled transform and weights" {
-  let default_time : @time.Time[Unit] = @time.Time::Time()
+  let default_time : @time.Time[Unit] = Time()
   let lifecycle_world_880_0 = @ecs.World::new()
   defer lifecycle_world_880_0.close()
   let mut app = @app.App::new(lifecycle_world_880_0)
@@ -945,7 +945,7 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
 
 ///|
 test "animation runtime: unchanged target output keeps transform change tick" {
-  let default_time : @time.Time[Unit] = @time.Time::Time()
+  let default_time : @time.Time[Unit] = Time()
   let lifecycle_world_944_0 = @ecs.World::new()
   defer lifecycle_world_944_0.close()
   let mut app = @app.App::new(lifecycle_world_944_0)
@@ -1016,7 +1016,7 @@ test "animation runtime: unchanged target output keeps transform change tick" {
 
 ///|
 test "animation runtime: evaluator stack overwrites animated fields like Bevy" {
-  let default_time : @time.Time[Unit] = @time.Time::Time()
+  let default_time : @time.Time[Unit] = Time()
   let lifecycle_world_1013_0 = @ecs.World::new()
   defer lifecycle_world_1013_0.close()
   let mut app = @app.App::new(lifecycle_world_1013_0)

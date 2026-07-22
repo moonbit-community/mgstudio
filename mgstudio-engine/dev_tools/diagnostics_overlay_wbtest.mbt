@@ -19,7 +19,7 @@ fn diagnostics_overlay_test_app_with_overlay(
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     @time.TimePlugin::TimePlugin(),
   )
-  let app = diagnostics_overlay_plugin_with(app, DiagnosticsOverlayPlugin::{
+  let app = diagnostics_overlay_plugin_with(app, {
     refresh_interval_seconds: 0.01F,
   })
   let overlay_entity = app.world().spawn_empty()

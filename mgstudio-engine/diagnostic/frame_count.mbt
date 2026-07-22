@@ -26,7 +26,7 @@ const FRAME_COUNT_PLUGIN_NAME : String = "mgstudio.diagnostic.FrameCountPlugin"
 
 ///|
 pub fn FrameCount::FrameCount() -> FrameCount {
-  FrameCount::{ value: 0 }
+  { value: 0 }
 }
 
 ///|
@@ -51,6 +51,7 @@ pub impl @app.Resource for FrameCount with fn resource() {
 pub struct FrameCountPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FrameCountPlugin::FrameCountPlugin() -> FrameCountPlugin {
   FrameCountPlugin::{  }
 }
@@ -67,10 +68,11 @@ pub impl @app.Plugin for FrameCountPlugin with fn build(self, app) {
 
 ///|
 pub fn frame_count_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  frame_count_plugin_with(app, FrameCountPlugin::FrameCountPlugin())
+  frame_count_plugin_with(app, FrameCountPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn frame_count_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : FrameCountPlugin,
@@ -90,9 +92,9 @@ pub fn frame_count_plugin_with(
 pub fn update_frame_count(frame_count : @app.ResMut[FrameCount]) -> Unit {
   frame_count.update(fn(value) {
     if value.value == @int.MAX_VALUE {
-      FrameCount::{ value: 0 }
+      { value: 0 }
     } else {
-      FrameCount::{ value: value.value + 1 }
+      { value: value.value + 1 }
     }
   })
 }

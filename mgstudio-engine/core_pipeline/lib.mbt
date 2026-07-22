@@ -30,6 +30,7 @@ pub let core_pipeline_camera_driver_set : @app.SystemSet = @app.system_set(
 pub struct CorePipelinePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CorePipelinePlugin::CorePipelinePlugin() -> CorePipelinePlugin {
   CorePipelinePlugin::{  }
 }
@@ -141,9 +142,7 @@ fn core_pipeline_configure_render_sub_app(
 fn core_pipeline_install_render_graph_driver(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  ignore(
-    app.modify_sub_app(@app.RenderApp, core_pipeline_configure_render_sub_app),
-  )
+  ignore(app.modify_sub_app(RenderApp, core_pipeline_configure_render_sub_app))
   app
 }
 

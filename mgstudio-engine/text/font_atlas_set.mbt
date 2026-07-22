@@ -28,7 +28,7 @@ pub fn FontAtlasKey::new(
   font_smoothing : FontSmoothing,
 ) -> FontAtlasKey {
   let bits = font_size.reinterpret_as_uint().reinterpret_as_int()
-  FontAtlasKey::{ font_id, font_size_bits: bits, hinting, font_smoothing }
+  { font_id, font_size_bits: bits, hinting, font_smoothing }
 }
 
 ///|
@@ -42,16 +42,16 @@ fn font_atlas_key_equals(a : FontAtlasKey, b : FontAtlasKey) -> Bool {
 ///|
 fn font_hinting_equals(a : FontHinting, b : FontHinting) -> Bool {
   match a {
-    FontHinting::Disabled => b is FontHinting::Disabled
-    FontHinting::Enabled => b is FontHinting::Enabled
+    Disabled => b is Disabled
+    Enabled => b is Enabled
   }
 }
 
 ///|
 fn font_smoothing_equals(a : FontSmoothing, b : FontSmoothing) -> Bool {
   match a {
-    FontSmoothing::None => b is FontSmoothing::None
-    FontSmoothing::AntiAliased => b is FontSmoothing::AntiAliased
+    None => b is None
+    AntiAliased => b is AntiAliased
   }
 }
 
@@ -68,7 +68,7 @@ pub struct FontAtlasSet {
 
 ///|
 pub fn FontAtlasSet::FontAtlasSet() -> FontAtlasSet {
-  FontAtlasSet::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn FontAtlasSet::get_or_insert(
     return atlases
   }
   let atlases : Array[FontAtlas] = []
-  self.entries.push(FontAtlasSetEntry::{ key, atlases })
+  self.entries.push({ key, atlases })
   atlases
 }
 

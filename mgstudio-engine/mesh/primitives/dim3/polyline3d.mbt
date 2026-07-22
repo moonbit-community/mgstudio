@@ -24,7 +24,7 @@ pub struct Polyline3dMeshBuilder {
 
 ///|
 pub fn Polyline3dMeshBuilder::Polyline3dMeshBuilder() -> Polyline3dMeshBuilder {
-  { polyline: @math.Polyline3d::Polyline3d() }
+  { polyline: Polyline3d() }
 }
 
 ///|
@@ -67,6 +67,6 @@ pub fn polyline3d_line_list(shape : @math.Polyline3d) -> @mesh.Mesh3dGeometry {
   @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     positions,
     Some(indices),
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
 }

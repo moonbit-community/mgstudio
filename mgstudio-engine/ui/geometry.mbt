@@ -82,12 +82,12 @@ pub impl Eq for Val with fn not_equal(self, other) {
 
 ///|
 pub fn Val::default() -> Val {
-  Val::Auto
+  Auto
 }
 
 ///|
 pub fn Val::zero() -> Val {
-  Val::Px(0.0F)
+  Px(0.0F)
 }
 
 ///|
@@ -100,7 +100,7 @@ pub fn Val::parse(input : String) -> Val raise ValParseError {
   let text = input.trim().to_owned()
   let lower = text.to_lower()
   if lower == "auto" {
-    return Val::Auto
+    return Auto
   }
   let mut end_of_number = -1
   for i in 0..<text.length() {
@@ -110,25 +110,25 @@ pub fn Val::parse(input : String) -> Val raise ValParseError {
     }
   }
   if end_of_number < 0 {
-    raise ValParseError::UnitMissing
+    raise UnitMissing
   }
   if end_of_number == 0 {
-    raise ValParseError::ValueMissing
+    raise ValueMissing
   }
   let value_text = text[0:end_of_number].to_owned()
   let value_double : Double = @strconv.from_str(value_text) catch {
-    _ => raise ValParseError::InvalidValue
+    _ => raise InvalidValue
   }
   let value = Float::from_double(value_double)
   let unit = text[end_of_number:text.length()].trim().to_owned().to_lower()
   match unit {
-    "px" => Val::Px(value)
-    "%" => Val::Percent(value)
-    "vw" => Val::Vw(value)
-    "vh" => Val::Vh(value)
-    "vmin" => Val::VMin(value)
-    "vmax" => Val::VMax(value)
-    _ => raise ValParseError::InvalidUnit
+    "px" => Px(value)
+    "%" => Percent(value)
+    "vw" => Vw(value)
+    "vh" => Vh(value)
+    "vmin" => VMin(value)
+    "vmax" => VMax(value)
+    _ => raise InvalidUnit
   }
 }
 
@@ -214,7 +214,7 @@ pub fn Val::resolve(
   physical_target_size : @math.Vec2,
 ) -> Float raise ValArithmeticError {
   match self {
-    Auto => raise ValArithmeticError::NonEvaluable
+    Auto => raise NonEvaluable
     Percent(value) => physical_base_value * value / 100.0F
     Px(value) => value * scale_factor
     Vw(value) => physical_target_size.x * value / 100.0F
@@ -240,37 +240,37 @@ pub fn Val::resolve(
 
 ///|
 pub fn auto() -> Val {
-  Val::Auto
+  Auto
 }
 
 ///|
 pub fn px(value : Float) -> Val {
-  Val::Px(value)
+  Px(value)
 }
 
 ///|
 pub fn percent(value : Float) -> Val {
-  Val::Percent(value)
+  Percent(value)
 }
 
 ///|
 pub fn vw(value : Float) -> Val {
-  Val::Vw(value)
+  Vw(value)
 }
 
 ///|
 pub fn vh(value : Float) -> Val {
-  Val::Vh(value)
+  Vh(value)
 }
 
 ///|
 pub fn vmin(value : Float) -> Val {
-  Val::VMin(value)
+  VMin(value)
 }
 
 ///|
 pub fn vmax(value : Float) -> Val {
-  Val::VMax(value)
+  VMax(value)
 }
 
 ///|
@@ -283,12 +283,12 @@ pub(all) struct UiRect {
 
 ///|
 pub fn UiRect::new(left : Val, right : Val, top : Val, bottom : Val) -> UiRect {
-  UiRect::{ left, right, top, bottom }
+  { left, right, top, bottom }
 }
 
 ///|
 pub fn UiRect::UiRect() -> UiRect {
-  UiRect::new(Val::Px(0.0F), Val::Px(0.0F), Val::Px(0.0F), Val::Px(0.0F))
+  UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(0.0F))
 }
 
 ///|
@@ -303,7 +303,7 @@ pub fn UiRect::px(
   top : Float,
   bottom : Float,
 ) -> UiRect {
-  UiRect::new(Val::Px(left), Val::Px(right), Val::Px(top), Val::Px(bottom))
+  UiRect::new(Px(left), Px(right), Px(top), Px(bottom))
 }
 
 ///|
@@ -313,72 +313,62 @@ pub fn UiRect::percent(
   top : Float,
   bottom : Float,
 ) -> UiRect {
-  UiRect::new(
-    Val::Percent(left),
-    Val::Percent(right),
-    Val::Percent(top),
-    Val::Percent(bottom),
-  )
+  UiRect::new(Percent(left), Percent(right), Percent(top), Percent(bottom))
 }
 
 ///|
 pub fn UiRect::horizontal(value : Val) -> UiRect {
-  UiRect::{ ..UiRect(), left: value, right: value }
+  { ..UiRect(), left: value, right: value }
 }
 
 ///|
 pub fn UiRect::vertical(value : Val) -> UiRect {
-  UiRect::{ ..UiRect(), top: value, bottom: value }
+  { ..UiRect(), top: value, bottom: value }
 }
 
 ///|
 pub fn UiRect::axes(horizontal : Val, vertical : Val) -> UiRect {
-  UiRect::{
-    left: horizontal,
-    right: horizontal,
-    top: vertical,
-    bottom: vertical,
-  }
+  { left: horizontal, right: horizontal, top: vertical, bottom: vertical }
 }
 
 ///|
 pub fn UiRect::left(value : Val) -> UiRect {
-  UiRect::{ ..UiRect(), left: value }
+  { ..UiRect(), left: value }
 }
 
 ///|
 pub fn UiRect::right(value : Val) -> UiRect {
-  UiRect::{ ..UiRect(), right: value }
+  { ..UiRect(), right: value }
 }
 
 ///|
 pub fn UiRect::top(value : Val) -> UiRect {
-  UiRect::{ ..UiRect(), top: value }
+  { ..UiRect(), top: value }
 }
 
 ///|
 pub fn UiRect::bottom(value : Val) -> UiRect {
-  UiRect::{ ..UiRect(), bottom: value }
+  { ..UiRect(), bottom: value }
 }
 
 ///|
 pub fn UiRect::with_left(self : UiRect, left : Val) -> UiRect {
-  UiRect::{ ..self, left, }
+  { ..self, left, }
 }
 
 ///|
 pub fn UiRect::with_right(self : UiRect, right : Val) -> UiRect {
-  UiRect::{ ..self, right, }
+  { ..self, right, }
 }
 
 ///|
 pub fn UiRect::with_top(self : UiRect, top : Val) -> UiRect {
-  UiRect::{ ..self, top, }
+  { ..self, top, }
 }
 
 ///|
 pub fn UiRect::with_bottom(self : UiRect, bottom : Val) -> UiRect {
-  UiRect::{ ..self, bottom, }
+  { ..self, bottom, }
 }
 
 ///|
@@ -391,17 +381,17 @@ pub struct BorderRadius {
 
 ///|
 pub fn BorderRadius::BorderRadius() -> BorderRadius {
-  BorderRadius::{
-    top_left: Val::Px(0.0F),
-    top_right: Val::Px(0.0F),
-    bottom_left: Val::Px(0.0F),
-    bottom_right: Val::Px(0.0F),
+  {
+    top_left: Px(0.0F),
+    top_right: Px(0.0F),
+    bottom_left: Px(0.0F),
+    bottom_right: Px(0.0F),
   }
 }
 
 ///|
 pub fn BorderRadius::all(radius : Val) -> BorderRadius {
-  BorderRadius::{
+  {
     top_left: radius,
     top_right: radius,
     bottom_right: radius,
@@ -416,7 +406,7 @@ pub fn BorderRadius::new(
   bottom_right : Val,
   bottom_left : Val,
 ) -> BorderRadius {
-  BorderRadius::{ top_left, top_right, bottom_right, bottom_left }
+  { top_left, top_right, bottom_right, bottom_left }
 }
 
 ///|
@@ -427,10 +417,10 @@ pub fn BorderRadius::px(
   bottom_left : Float,
 ) -> BorderRadius {
   BorderRadius::new(
-    Val::Px(top_left),
-    Val::Px(top_right),
-    Val::Px(bottom_right),
-    Val::Px(bottom_left),
+    Px(top_left),
+    Px(top_right),
+    Px(bottom_right),
+    Px(bottom_left),
   )
 }
 
@@ -442,51 +432,51 @@ pub fn BorderRadius::percent(
   bottom_left : Float,
 ) -> BorderRadius {
   BorderRadius::new(
-    Val::Percent(top_left),
-    Val::Percent(top_right),
-    Val::Percent(bottom_right),
-    Val::Percent(bottom_left),
+    Percent(top_left),
+    Percent(top_right),
+    Percent(bottom_right),
+    Percent(bottom_left),
   )
 }
 
 ///|
 pub fn BorderRadius::top_left(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), top_left: radius }
+  { ..BorderRadius(), top_left: radius }
 }
 
 ///|
 pub fn BorderRadius::top_right(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), top_right: radius }
+  { ..BorderRadius(), top_right: radius }
 }
 
 ///|
 pub fn BorderRadius::bottom_right(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), bottom_right: radius }
+  { ..BorderRadius(), bottom_right: radius }
 }
 
 ///|
 pub fn BorderRadius::bottom_left(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), bottom_left: radius }
+  { ..BorderRadius(), bottom_left: radius }
 }
 
 ///|
 pub fn BorderRadius::left(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), top_left: radius, bottom_left: radius }
+  { ..BorderRadius(), top_left: radius, bottom_left: radius }
 }
 
 ///|
 pub fn BorderRadius::right(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), top_right: radius, bottom_right: radius }
+  { ..BorderRadius(), top_right: radius, bottom_right: radius }
 }
 
 ///|
 pub fn BorderRadius::top(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), top_left: radius, top_right: radius }
+  { ..BorderRadius(), top_left: radius, top_right: radius }
 }
 
 ///|
 pub fn BorderRadius::bottom(radius : Val) -> BorderRadius {
-  BorderRadius::{ ..BorderRadius(), bottom_left: radius, bottom_right: radius }
+  { ..BorderRadius(), bottom_left: radius, bottom_right: radius }
 }
 
 ///|
@@ -494,7 +484,7 @@ pub fn BorderRadius::with_top_left(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, top_left: radius }
+  { ..self, top_left: radius }
 }
 
 ///|
@@ -502,7 +492,7 @@ pub fn BorderRadius::with_top_right(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, top_right: radius }
+  { ..self, top_right: radius }
 }
 
 ///|
@@ -510,7 +500,7 @@ pub fn BorderRadius::with_bottom_right(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, bottom_right: radius }
+  { ..self, bottom_right: radius }
 }
 
 ///|
@@ -518,7 +508,7 @@ pub fn BorderRadius::with_bottom_left(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, bottom_left: radius }
+  { ..self, bottom_left: radius }
 }
 
 ///|
@@ -526,7 +516,7 @@ pub fn BorderRadius::with_left(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, top_left: radius, bottom_left: radius }
+  { ..self, top_left: radius, bottom_left: radius }
 }
 
 ///|
@@ -534,7 +524,7 @@ pub fn BorderRadius::with_right(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, top_right: radius, bottom_right: radius }
+  { ..self, top_right: radius, bottom_right: radius }
 }
 
 ///|
@@ -542,7 +532,7 @@ pub fn BorderRadius::with_top(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, top_left: radius, top_right: radius }
+  { ..self, top_left: radius, top_right: radius }
 }
 
 ///|
@@ -550,7 +540,7 @@ pub fn BorderRadius::with_bottom(
   self : BorderRadius,
   radius : Val,
 ) -> BorderRadius {
-  BorderRadius::{ ..self, bottom_left: radius, bottom_right: radius }
+  { ..self, bottom_left: radius, bottom_right: radius }
 }
 
 ///|
@@ -574,7 +564,7 @@ pub fn BorderRadius::resolve(
   viewport_size : @math.Vec2,
 ) -> ResolvedBorderRadius {
   let length = if node_size.x < node_size.y { node_size.x } else { node_size.y }
-  ResolvedBorderRadius::{
+  {
     top_left: BorderRadius::resolve_single_corner(
       self.top_left,
       scale_factor,
@@ -617,7 +607,7 @@ pub fn ResolvedBorderRadius::new(
   bottom_right : Float,
   bottom_left : Float,
 ) -> ResolvedBorderRadius {
-  ResolvedBorderRadius::{ top_left, top_right, bottom_right, bottom_left }
+  { top_left, top_right, bottom_right, bottom_left }
 }
 
 ///|
@@ -642,7 +632,7 @@ pub fn ResolvedBorderRadius::outline_radius(
       0.0F
     }
   }
-  ResolvedBorderRadius::{
+  {
     top_left: compute_radius(self.top_left, outer_distance),
     top_right: compute_radius(self.top_right, outer_distance),
     bottom_right: compute_radius(self.bottom_right, outer_distance),
@@ -659,14 +649,14 @@ pub struct Outline {
 
 ///|
 pub fn Outline::new(width : Val, offset : Val, color : @color.Color) -> Outline {
-  Outline::{ width, offset, color }
+  { width, offset, color }
 }
 
 ///|
 pub fn Outline::Outline() -> Outline {
-  Outline::{
-    width: Val::Px(0.0F),
-    offset: Val::Px(0.0F),
+  {
+    width: Px(0.0F),
+    offset: Px(0.0F),
     color: @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
   }
 }
@@ -678,5 +668,5 @@ pub struct BorderColor {
 
 ///|
 pub fn BorderColor::new(color : @color.Color) -> BorderColor {
-  BorderColor::{ color, }
+  { color, }
 }

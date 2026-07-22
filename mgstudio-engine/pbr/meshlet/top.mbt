@@ -120,9 +120,9 @@ pub fn meshlet_runtime_status_from_availability(
   runtime_available : Bool,
 ) -> MeshletRuntimeStatus {
   if !runtime_available {
-    return MeshletRuntimeStatus::RuntimeUnavailable
+    return RuntimeUnavailable
   }
-  MeshletRuntimeStatus::Enabled
+  Enabled
 }
 
 ///|
@@ -148,7 +148,7 @@ fn meshlet_cluster_buffer_slots_validate(value : Int) -> Int {
 
 ///|
 pub fn MeshletPlugin::new(cluster_buffer_slots : Int) -> MeshletPlugin {
-  MeshletPlugin::{
+  {
     cluster_buffer_slots: meshlet_cluster_buffer_slots_validate(
       cluster_buffer_slots,
     ),
@@ -172,7 +172,7 @@ pub fn MeshletPlugin::MeshletPlugin() -> MeshletPlugin {
 
 ///|
 pub fn meshlet_plugin() -> MeshletPlugin {
-  MeshletPlugin::MeshletPlugin()
+  MeshletPlugin()
 }
 
 ///|
@@ -194,10 +194,7 @@ pub fn meshlet_debug_material_add(
 pub fn meshlet_debug_mesh_material3d(
   material : @asset.Handle[MeshletDebugMaterial],
 ) -> @material.MeshMaterial3d {
-  @material.MeshMaterial3d::from_erased_material_id(
-    @material.Material3dFamily::MeshletDebug,
-    material.id(),
-  )
+  @material.MeshMaterial3d::from_erased_material_id(MeshletDebug, material.id())
 }
 
 ///|
@@ -324,7 +321,7 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
     entity,
     msaa,
   ) {
-    if msaa is @core_pipeline.Msaa::Off {
+    if msaa is Off {
       msaa_off_views.push(entity)
     } else {
       abort(
@@ -336,7 +333,7 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
     try! source_world.set_by_key(
       view_entity,
       ecs_key_meshlet_view_materials_main_opaque_pass,
-      MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass(),
+      MeshletViewMaterialsMainOpaquePass(),
     )
     let has_normal_prepass = try! source_world.contains_by_key(
       view_entity, @core_pipeline.ecs_key_normal_prepass,
@@ -351,12 +348,12 @@ fn meshlet_configure_views_system(world : @ecs.World) -> Unit {
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_prepass,
-        MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass(),
+        MeshletViewMaterialsPrepass(),
       )
       try! source_world.set_by_key(
         view_entity,
         ecs_key_meshlet_view_materials_deferred_gbuffer_prepass,
-        MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass(),
+        MeshletViewMaterialsDeferredGBufferPrepass(),
       )
     }
   }
@@ -484,7 +481,7 @@ fn meshlet_queue_material_meshes_system(world : @ecs.World) -> Unit {
 fn meshlet_refresh_plugin_state_system(world : @ecs.World) -> Unit {
   world.insert_resource(
     ecs_key_meshlet_plugin_state,
-    MeshletPluginState::from_plugin(MeshletPlugin::MeshletPlugin()),
+    MeshletPluginState::from_plugin(MeshletPlugin()),
   )
 }
 
@@ -502,7 +499,7 @@ fn meshlet_default_opaque_renderer_method(
   match
     source_world.get_resource(@material.ecs_key_default_opaque_renderer_method) {
     Some(default_method) => default_method.renderer_method()
-    None => @material.OpaqueRendererMethod::Forward
+    None => Forward
   }
 }
 
@@ -536,9 +533,9 @@ fn meshlet_material_pipeline_family_id(
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> Int {
   let family_id = match material_family {
-    @material.Material3dFamily::Standard => 0
-    @material.Material3dFamily::ForwardDecal => 1
-    @material.Material3dFamily::MeshletDebug => 2
+    Standard => 0
+    ForwardDecal => 1
+    MeshletDebug => 2
   }
   guard extension is Some(extension) else { return family_id }
   let mut hash = 1 + extension.extension_tag % 8191
@@ -654,7 +651,7 @@ fn meshlet_collect_material_inputs(
       ),
     )
     match scene_material.material_family {
-      @material.Material3dFamily::Standard =>
+      Standard =>
         match standard_material_assets {
           Some(assets) =>
             material_input = meshlet_collect_standard_material_input(
@@ -662,8 +659,8 @@ fn meshlet_collect_material_inputs(
             )
           None => ()
         }
-      @material.Material3dFamily::ForwardDecal => ()
-      @material.Material3dFamily::MeshletDebug => ()
+      ForwardDecal => ()
+      MeshletDebug => ()
     }
     material_inputs.push(material_input)
   }
@@ -678,15 +675,15 @@ fn meshlet_tonemapping_mode_key(
   match (try! source_world.get_by_key(entity, @pbr.ecs_key_tonemapping)) {
     Some(tonemapping) =>
       match tonemapping {
-        @pbr.Tonemapping::None => 0
-        @pbr.Tonemapping::Reinhard => 1
-        @pbr.Tonemapping::ReinhardLuminance => 2
-        @pbr.Tonemapping::AcesFitted => 3
-        @pbr.Tonemapping::AgX => 4
-        @pbr.Tonemapping::SomewhatBoringDisplayTransform => 5
-        @pbr.Tonemapping::TonyMcMapface => 6
-        @pbr.Tonemapping::BlenderFilmic => 7
-        @pbr.Tonemapping::PbrNeutral => 8
+        None => 0
+        Reinhard => 1
+        ReinhardLuminance => 2
+        AcesFitted => 3
+        AgX => 4
+        SomewhatBoringDisplayTransform => 5
+        TonyMcMapface => 6
+        BlenderFilmic => 7
+        PbrNeutral => 8
       }
     None => 0
   }
@@ -698,7 +695,7 @@ fn meshlet_deband_dither_enabled(
   entity : @core.Entity,
 ) -> Bool {
   match (try! source_world.get_by_key(entity, @pbr.ecs_key_deband_dither)) {
-    Some(dither) => dither is @pbr.DebandDither::Enabled
+    Some(dither) => dither is Enabled
     None => false
   }
 }
@@ -711,9 +708,9 @@ fn meshlet_projection_type_key(
   match (try! source_world.get_by_key(entity, @camera.ecs_key_projection)) {
     Some(projection) =>
       match projection {
-        @camera.Projection::Perspective(_) => 1
-        @camera.Projection::Orthographic(_) => 2
-        @camera.Projection::Custom(_) => 3
+        Perspective(_) => 1
+        Orthographic(_) => 2
+        Custom(_) => 3
       }
     None => 0
   }
@@ -730,9 +727,9 @@ fn meshlet_shadow_filter_method_key(
     None => @pbr.ShadowFilteringMethod::default()
   }
   match shadow_filtering {
-    @pbr.ShadowFilteringMethod::Hardware2x2 => 1
-    @pbr.ShadowFilteringMethod::Gaussian => 2
-    @pbr.ShadowFilteringMethod::Temporal => 3
+    Hardware2x2 => 1
+    Gaussian => 2
+    Temporal => 3
   }
 }
 
@@ -882,7 +879,7 @@ fn meshlet_visibility_buffer_raster_system(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state) is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
-      MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState(),
+      MeshletVisibilityBufferRasterState(),
     )
   }
   let instance_count = meshlet_instance_count_from_world(world)
@@ -992,11 +989,7 @@ fn meshlet_material_shade_layout_descriptor() -> @render_resource.BindGroupLayou
       @render_resource.BindGroupLayoutEntry::new(
         binding,
         fragment,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Storage(true),
-          false,
-          0UL,
-        ),
+        BufferBinding(Storage(true), false, 0UL),
       ),
     )
   }
@@ -1020,7 +1013,7 @@ fn meshlet_shader_defs_with_material_pass(
   for shader_def in shader_defs {
     next.push(shader_def)
   }
-  next.push(@material.ShaderDefVal::Flag("MESHLET_MESH_MATERIAL_PASS"))
+  next.push(Flag("MESHLET_MESH_MATERIAL_PASS"))
   next
 }
 
@@ -1077,9 +1070,7 @@ fn meshlet_material_pipeline_key_for_standard_material(
 ) -> @material.ErasedMaterialPipelineKey {
   let mesh_bits = properties.mesh_pipeline_key_bits.bits() |
     meshlet_view_material_mesh_pipeline_bits(view_key) |
-    @mesh.BaseMeshPipelineKey::from_primitive_topology(
-      @mesh.Mesh3dPrimitiveTopology::TriangleList,
-    ).bits()
+    @mesh.BaseMeshPipelineKey::from_primitive_topology(TriangleList).bits()
   @material.ErasedMaterialPipelineKey::new(
     @material.ErasedMeshPipelineKey::new(mesh_bits, "MeshPipelineKey"),
     properties.material_key,
@@ -1159,7 +1150,7 @@ fn meshlet_main_opaque_debug_material_descriptor(
   view_key : MeshletViewMaterialPipelineKey,
 ) -> @material.RenderPipelineDescriptor? {
   let descriptor = meshlet_main_opaque_standard_material_descriptor(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
     default_opaque_renderer_method,
     view_key,
@@ -1379,7 +1370,7 @@ fn meshlet_main_opaque_material_shade_draws(
       continue
     }
     let (material, descriptor) = match material_family {
-      @material.Material3dFamily::Standard => {
+      Standard => {
         guard standard_material_assets is Some(assets) else { continue }
         guard assets.get(@asset.Handle::new(material_asset_id))
           is Some(base_material) else {
@@ -1402,8 +1393,8 @@ fn meshlet_main_opaque_material_shade_draws(
         }
         (material, descriptor)
       }
-      @material.Material3dFamily::ForwardDecal => continue
-      @material.Material3dFamily::MeshletDebug => {
+      ForwardDecal => continue
+      MeshletDebug => {
         guard meshlet_main_opaque_debug_material_descriptor(
             default_opaque_renderer_method,
             material_entry.descriptor.view_key,
@@ -1411,7 +1402,7 @@ fn meshlet_main_opaque_material_shade_draws(
           is Some(descriptor) else {
           continue
         }
-        (@material.StandardMaterial::StandardMaterial(), descriptor)
+        (StandardMaterial(), descriptor)
       }
     }
     let pipeline_id = draw_call.material_pipeline_id.to_uint64()
@@ -1538,10 +1529,7 @@ fn meshlet_ensure_render_sub_app_resources(
   let plugin_state = MeshletPluginState::from_plugin(plugin)
   world.insert_resource(ecs_key_meshlet_plugin_state, plugin_state)
   if world.get_resource(ecs_key_meshlet_instance_manager) is None {
-    world.insert_resource(
-      ecs_key_meshlet_instance_manager,
-      InstanceManager::InstanceManager(),
-    )
+    world.insert_resource(ecs_key_meshlet_instance_manager, InstanceManager())
   }
   if world.get_resource(ecs_key_meshlet_resource_manager) is None {
     world.insert_resource(
@@ -1556,15 +1544,12 @@ fn meshlet_ensure_render_sub_app_resources(
     )
   }
   if world.get_resource(ecs_key_meshlet_mesh_manager) is None {
-    world.insert_resource(
-      ecs_key_meshlet_mesh_manager,
-      MeshletMeshManager::MeshletMeshManager(),
-    )
+    world.insert_resource(ecs_key_meshlet_mesh_manager, MeshletMeshManager())
   }
   if world.get_resource(ecs_key_meshlet_visibility_buffer_raster_state) is None {
     world.insert_resource(
       ecs_key_meshlet_visibility_buffer_raster_state,
-      MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState(),
+      MeshletVisibilityBufferRasterState(),
     )
   }
 }
@@ -1680,11 +1665,12 @@ pub fn register_meshlet_mesh3d_required_components(
   world.register_required_components_with(
     ecs_key_meshlet_mesh3d,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn meshlet_plugin_with(
   app : @app.App[@ecs.World],
   plugin : MeshletPlugin,
@@ -1731,7 +1717,7 @@ pub struct MeshletPluginState {
 
 ///|
 pub fn MeshletPluginState::MeshletPluginState() -> MeshletPluginState {
-  MeshletPluginState::from_plugin(MeshletPlugin::MeshletPlugin())
+  MeshletPluginState::from_plugin(MeshletPlugin())
 }
 
 ///|
@@ -1739,7 +1725,7 @@ pub fn MeshletPluginState::from_plugin(
   plugin : MeshletPlugin,
 ) -> MeshletPluginState {
   ignore(plugin)
-  MeshletPluginState::{
+  {
     runtime_status: meshlet_runtime_status_from_availability(
       meshlet_runtime_available(),
     ),
@@ -1758,7 +1744,7 @@ pub struct MeshletMesh3d {
 
 ///|
 pub fn MeshletMesh3d::new(meshlet_mesh_id : Int) -> MeshletMesh3d {
-  MeshletMesh3d::{ meshlet_mesh_id, }
+  { meshlet_mesh_id, }
 }
 
 ///|

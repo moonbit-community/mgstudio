@@ -30,11 +30,11 @@ pub fn polygon_signed_area(vertices : Array[Vec2]) -> Float {
 pub fn polygon_winding_order(vertices : Array[Vec2]) -> WindingOrder {
   let area = polygon_signed_area(vertices)
   if polygon_absf(area) <= 1.0e-6F {
-    WindingOrder::Invalid
+    Invalid
   } else if area < 0.0F {
-    WindingOrder::Clockwise
+    Clockwise
   } else {
-    WindingOrder::CounterClockwise
+    CounterClockwise
   }
 }
 

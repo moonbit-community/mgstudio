@@ -134,7 +134,7 @@ test "examples ui button: scheduled update queues ui draw items" {
   defer lifecycle_world_127_0.close()
   let mut app = @app.App::new(lifecycle_world_127_0)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems_world(@app.Startup, setup)
+    .add_systems_world(Startup, setup)
   app = app.update()
 
   let world = app.world()

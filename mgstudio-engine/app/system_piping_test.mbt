@@ -68,14 +68,14 @@ fn touch_system_piping_types() -> Unit {
 ///|
 fn parse_piped_message(text : String) -> Int raise SystemPipingError {
   @string.parse_int(text[:], base=10) catch {
-    _ => raise SystemPipingError::InvalidInteger("invalid integer: \{text}")
+    _ => raise InvalidInteger("invalid integer: \{text}")
   }
 }
 
 ///|
 fn parse_piped_message_system(message : Res[SystemPipingMessage]) -> Int {
   parse_piped_message(message.get().value) catch {
-    SystemPipingError::InvalidInteger(message) => abort(message)
+    InvalidInteger(message) => abort(message)
   }
 }
 

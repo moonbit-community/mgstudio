@@ -34,11 +34,11 @@ pub fn InvalidDirectionError::from_length(
   length : Float,
 ) -> InvalidDirectionError {
   if length.is_nan() {
-    InvalidDirectionError::NaN
+    NaN
   } else if length.is_inf() {
-    InvalidDirectionError::Infinite
+    Infinite
   } else {
-    InvalidDirectionError::Zero
+    Zero
   }
 }
 
@@ -49,7 +49,7 @@ pub fn Dir2::new(value : Vec2) -> Dir2 raise InvalidDirectionError {
 
 ///|
 pub fn Dir2::new_unchecked(value : Vec2) -> Dir2 {
-  Dir2::{ value, }
+  { value, }
 }
 
 ///|
@@ -60,7 +60,7 @@ pub fn Dir2::new_and_length(
   if length.is_inf() || length <= 0.0F {
     raise InvalidDirectionError::from_length(length)
   }
-  (Dir2::{ value: value.mul_scalar(1.0F / length) }, length)
+  ({ value: value.mul_scalar(1.0F / length) }, length)
 }
 
 ///|
@@ -75,7 +75,7 @@ pub fn Dir2::from_xy_unchecked(x : Float, y : Float) -> Dir2 {
 
 ///|
 pub fn Dir2::from_angle(angle : Float) -> Dir2 {
-  Dir2::{ value: Vec2::from_angle(angle) }
+  { value: Vec2::from_angle(angle) }
 }
 
 ///|
@@ -90,12 +90,12 @@ pub fn Dir2::dot(self : Dir2, other : Dir2) -> Float {
 
 ///|
 pub fn Dir2::x() -> Dir2 {
-  Dir2::{ value: Vec2::new(1.0F, 0.0F) }
+  { value: Vec2::new(1.0F, 0.0F) }
 }
 
 ///|
 pub fn Dir2::y() -> Dir2 {
-  Dir2::{ value: Vec2::new(0.0F, 1.0F) }
+  { value: Vec2::new(0.0F, 1.0F) }
 }
 
 ///|
@@ -105,7 +105,7 @@ pub fn Dir3::new(value : Vec3) -> Dir3 raise InvalidDirectionError {
 
 ///|
 pub fn Dir3::new_unchecked(value : Vec3) -> Dir3 {
-  Dir3::{ value, }
+  { value, }
 }
 
 ///|
@@ -116,7 +116,7 @@ pub fn Dir3::new_and_length(
   if length.is_inf() || length <= 0.0F {
     raise InvalidDirectionError::from_length(length)
   }
-  (Dir3::{ value: value.mul_scalar(1.0F / length) }, length)
+  ({ value: value.mul_scalar(1.0F / length) }, length)
 }
 
 ///|
@@ -145,15 +145,15 @@ pub fn Dir3::dot(self : Dir3, other : Dir3) -> Float {
 
 ///|
 pub fn Dir3::x() -> Dir3 {
-  Dir3::{ value: Vec3::new(1.0F, 0.0F, 0.0F) }
+  { value: Vec3::new(1.0F, 0.0F, 0.0F) }
 }
 
 ///|
 pub fn Dir3::y() -> Dir3 {
-  Dir3::{ value: Vec3::new(0.0F, 1.0F, 0.0F) }
+  { value: Vec3::new(0.0F, 1.0F, 0.0F) }
 }
 
 ///|
 pub fn Dir3::z() -> Dir3 {
-  Dir3::{ value: Vec3::new(0.0F, 0.0F, 1.0F) }
+  { value: Vec3::new(0.0F, 0.0F, 1.0F) }
 }

@@ -46,7 +46,7 @@ pub struct DlssProjectId {
 
 ///|
 pub fn DlssProjectId::new(value : String) -> DlssProjectId {
-  DlssProjectId::{ value, }
+  { value, }
 }
 
 ///|
@@ -58,6 +58,7 @@ pub fn DlssProjectId::value(self : DlssProjectId) -> String {
 pub struct DlssInitPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DlssInitPlugin::DlssInitPlugin() -> DlssInitPlugin {
   DlssInitPlugin::{  }
 }
@@ -66,6 +67,7 @@ pub fn DlssInitPlugin::DlssInitPlugin() -> DlssInitPlugin {
 pub struct DlssPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DlssPlugin::DlssPlugin() -> DlssPlugin {
   DlssPlugin::{  }
 }
@@ -78,12 +80,12 @@ pub struct Dlss {
 
 ///|
 pub fn Dlss::Dlss() -> Dlss {
-  Dlss::{ perf_quality_mode: DlssPerfQualityMode::default(), reset: false }
+  { perf_quality_mode: DlssPerfQualityMode::default(), reset: false }
 }
 
 ///|
 pub impl Default for Dlss with fn default() {
-  Dlss::Dlss()
+  Dlss()
 }
 
 ///|
@@ -91,7 +93,7 @@ pub fn Dlss::new(
   perf_quality_mode? : DlssPerfQualityMode = DlssPerfQualityMode::default(),
   reset? : Bool = false,
 ) -> Dlss {
-  Dlss::{ perf_quality_mode, reset }
+  { perf_quality_mode, reset }
 }
 
 ///|
@@ -99,12 +101,12 @@ pub fn Dlss::with_perf_quality_mode(
   self : Dlss,
   perf_quality_mode : DlssPerfQualityMode,
 ) -> Dlss {
-  Dlss::{ ..self, perf_quality_mode, }
+  { ..self, perf_quality_mode, }
 }
 
 ///|
 pub fn Dlss::with_reset(self : Dlss, reset : Bool) -> Dlss {
-  Dlss::{ ..self, reset, }
+  { ..self, reset, }
 }
 
 ///|
@@ -116,7 +118,7 @@ pub struct DlssRuntimeState {
 
 ///|
 pub fn DlssRuntimeState::DlssRuntimeState() -> DlssRuntimeState {
-  DlssRuntimeState::{
+  {
     enabled_camera_count: 0,
     reset_requested_count: 0,
     runtime_supported: DLSS_RUNTIME_SUPPORTED,
@@ -224,18 +226,14 @@ pub fn install_dlss_required_components() -> Unit {
   ignore(
     @ecs.component_metadata_builder(ecs_key_dlss)
     .require_with(@post_process.ecs_key_temporal_jitter, fn() {
-      @post_process.TemporalJitter::TemporalJitter()
+      TemporalJitter()
     })
-    .require_with(@post_process.ecs_key_mip_bias, fn() {
-      @post_process.MipBias::MipBias()
-    })
-    .require_with(@core_pipeline.ecs_key_depth_prepass, fn() {
-      @core_pipeline.DepthPrepass::DepthPrepass()
-    })
+    .require_with(@post_process.ecs_key_mip_bias, fn() { MipBias() })
+    .require_with(@core_pipeline.ecs_key_depth_prepass, fn() { DepthPrepass() })
     .require_with(@core_pipeline.ecs_key_motion_vector_prepass, fn() {
-      @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
+      MotionVectorPrepass()
     })
-    .require_with(@core_pipeline.ecs_key_hdr, fn() { @core_pipeline.Hdr::Hdr() }),
+    .require_with(@core_pipeline.ecs_key_hdr, fn() { Hdr() }),
   )
   dlss_required_components_runtime_state.required_components_installed = true
 }
@@ -248,10 +246,11 @@ pub impl @app.Plugin for DlssPlugin with fn build(self, app) {
 
 ///|
 pub fn dlss_init_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  dlss_init_plugin_with(app, DlssInitPlugin::DlssInitPlugin())
+  dlss_init_plugin_with(app, DlssInitPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn dlss_init_plugin_with(
   app : @app.App[@ecs.World],
   plugin : DlssInitPlugin,
@@ -272,10 +271,11 @@ pub fn dlss_init_plugin_with(
 
 ///|
 pub fn dlss_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  dlss_plugin_with(app, DlssPlugin::DlssPlugin())
+  dlss_plugin_with(app, DlssPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn dlss_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : DlssPlugin,

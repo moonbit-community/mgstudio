@@ -19,6 +19,7 @@
 pub struct Wireframe3dRenderNode {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Wireframe3dRenderNode::Wireframe3dRenderNode() -> Wireframe3dRenderNode {
   Wireframe3dRenderNode::{  }
 }
@@ -55,7 +56,7 @@ pub fn Wireframe3dRenderNodePlan::new(
   command_skip_count? : Int = 0,
   command_failure_count? : Int = 0,
 ) -> Wireframe3dRenderNodePlan {
-  Wireframe3dRenderNodePlan::{
+  {
     label: "wireframe_3d",
     retained_view_entity,
     item_count,
@@ -122,10 +123,10 @@ pub fn wireframe_3d_render_node_plan(
   viewport_enabled : Bool,
 ) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason {
   guard phases.phase(retained_view_entity) is Some(phase) else {
-    raise Wireframe3dRenderNodeSkipReason::MissingPhase
+    raise MissingPhase
   }
   if phase.is_empty() {
-    raise Wireframe3dRenderNodeSkipReason::EmptyPhase
+    raise EmptyPhase
   }
   Wireframe3dRenderNodePlan::new(
     retained_view_entity,
@@ -148,10 +149,10 @@ pub fn wireframe_3d_render_node_command_plan(
   wide_bind_groups : WireframeWideBindGroups,
 ) -> Wireframe3dRenderNodePlan raise Wireframe3dRenderNodeSkipReason {
   guard phases.phase(retained_view_entity) is Some(phase) else {
-    raise Wireframe3dRenderNodeSkipReason::MissingPhase
+    raise MissingPhase
   }
   if phase.is_empty() {
-    raise Wireframe3dRenderNodeSkipReason::EmptyPhase
+    raise EmptyPhase
   }
   let mut command_plan_count = 0
   let mut command_skip_count = 0

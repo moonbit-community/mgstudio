@@ -99,7 +99,7 @@ fn GltfExtensionRuntimeState::from_bootstrap() -> GltfExtensionRuntimeState {
   for handler in gltf_extension_handlers_registry_bootstrap {
     handlers.push(handler)
   }
-  GltfExtensionRuntimeState::{
+  {
     handlers,
     pbr_material_handler_enabled: gltf_extension_bootstrap_state.pbr_material_handler_enabled,
   }

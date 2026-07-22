@@ -22,7 +22,7 @@ pub struct RenderAppChannels {
 
 ///|
 pub fn RenderAppChannels::new() -> RenderAppChannels {
-  RenderAppChannels::{ render_app_in_render_thread: false }
+  { render_app_in_render_thread: false }
 }
 
 ///|
@@ -77,7 +77,7 @@ pub fn pipelined_rendering_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   let mut next = app
-  if next.get_sub_app(@app.RenderApp) is None {
+  if next.get_sub_app(RenderApp) is None {
     return next
   }
   if !next.contains_resource(RenderAppChannels::resource()) {
@@ -94,5 +94,5 @@ pub fn pipelined_rendering_plugin(
 
 ///|
 pub fn render_extract_app_label() -> @app.AppLabel {
-  @app.RenderExtractApp
+  RenderExtractApp
 }

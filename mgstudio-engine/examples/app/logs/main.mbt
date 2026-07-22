@@ -14,7 +14,7 @@
 
 ///|
 fn panic_on_p() -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyP) {
+  if @input.key_just_pressed(KeyP) {
     abort("P pressed, panicking")
   }
 }
@@ -50,11 +50,9 @@ fn log_once_system() -> Unit {
   }
 
   @app.log_info_once("logs::expensive_once_begin", "doing expensive things")
-  @app.log_once_with(
-    @app.LogLevel::Info,
-    callsite="logs::expensive_once_compute",
-    fn() { expensive_sum_message() },
-  )
+  @app.log_once_with(Info, callsite="logs::expensive_once_compute", fn() {
+    expensive_sum_message()
+  })
 }
 
 ///|
@@ -71,10 +69,10 @@ fn main {
   let log_plugin = @app.LogPlugin::LogPlugin()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(log_plugin))
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_fn(@app.Update, log_system)
-  .add_systems_fn(@app.Update, log_once_system)
-  .add_systems_fn(@app.Update, panic_on_p)
+  .add_systems_world(Startup, setup)
+  .add_systems_fn(Update, log_system)
+  .add_systems_fn(Update, log_once_system)
+  .add_systems_fn(Update, panic_on_p)
   .run()
 }
 
@@ -93,9 +91,9 @@ fn setup(world : @ecs.World) -> Unit {
     (
       @text.Text::new("Press P to panic"),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(12.0F))
-      .with_left(@ui.Val::Px(12.0F)),
+      .with_position_type(Absolute)
+      .with_top(Px(12.0F))
+      .with_left(Px(12.0F)),
     ),
   )
   |> ignore)

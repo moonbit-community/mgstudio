@@ -20,6 +20,7 @@ const DEFERRED_PLUGIN_NAME : String = "mgstudio.core_pipeline.deferred.DeferredP
 pub struct DeferredPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DeferredPlugin::DeferredPlugin() -> DeferredPlugin {
   DeferredPlugin::{  }
 }
@@ -76,6 +77,7 @@ pub const DEFERRED_LIGHTING_PASS_ID_DEPTH_FORMAT : String = "Depth16Unorm"
 pub struct DeferredPrepass {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DeferredPrepass::DeferredPrepass() -> DeferredPrepass {
   DeferredPrepass::{  }
 }

@@ -35,6 +35,6 @@ fn main {
   let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(
     rapier_debugdump_include_system,
   )
-  let dot = app.schedule_graph_dot(@app.PostUpdate, settings~)
+  let dot = app.schedule_graph_dot(PostUpdate, settings~)
   println(dot)
 }

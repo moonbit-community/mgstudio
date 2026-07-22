@@ -13,10 +13,11 @@
 // limitations under the License.
 
 ///|
+#warnings("-unnecessary_annotation")
 test "sprite 3d gizmo shapes emit expected line segments" {
   gizmos_reset()
   let gizmos : Gizmos[DefaultGizmoConfigGroup] = {
-    config: GizmoConfig::GizmoConfig(),
+    config: GizmoConfig(),
     config_group: DefaultGizmoConfigGroup::{  },
     state: gizmo_state,
     world: None,
@@ -72,10 +73,11 @@ test "sprite 3d gizmo shapes emit expected line segments" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "sprite 2d clear keeps 3d axes lines for the 3d pass" {
   gizmos_reset()
   let gizmos : Gizmos[DefaultGizmoConfigGroup] = {
-    config: GizmoConfig::GizmoConfig(),
+    config: GizmoConfig(),
     config_group: DefaultGizmoConfigGroup::{  },
     state: gizmo_state,
     world: None,
@@ -101,7 +103,7 @@ test "gizmos system param queues into world storage before render drain" {
     @app.App::new(lifecycle_world_95_0),
     DefaultGizmoConfigGroup::DefaultGizmoConfigGroup(),
   ).add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(fn(gizmos : Gizmos[DefaultGizmoConfigGroup]) {
       gizmos.line_3d(
         @math.Vec3::zero(),

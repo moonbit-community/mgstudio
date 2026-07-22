@@ -43,20 +43,14 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_display(@ui.Display::Grid)
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(
-          @ui.GridTrackRepetition::Count(BUTTONS_PER_AXIS),
-          [@ui.GridTrack::Fr(1.0F)],
-        ),
+        @ui.RepeatedGridTrack::new(Count(BUTTONS_PER_AXIS), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(
-          @ui.GridTrackRepetition::Count(BUTTONS_PER_AXIS),
-          [@ui.GridTrack::Fr(1.0F)],
-        ),
+        @ui.RepeatedGridTrack::new(Count(BUTTONS_PER_AXIS), [Fr(1.0F)]),
       ]),
     ),
   )
@@ -73,11 +67,9 @@ fn setup(commands : @app.Commands) -> Unit {
             @ui.Button::Button(),
             IdleColor::{ color: bg },
             @ui.Node::Node()
-            .with_width(@ui.Val::Percent(100.0F))
-            .with_height(@ui.Val::Percent(100.0F))
-            .with_border(
-              @ui.UiRect::all(@ui.Val::VMin(0.05F * 90.0F / buttons_f)),
-            ),
+            .with_width(Percent(100.0F))
+            .with_height(Percent(100.0F))
+            .with_border(@ui.UiRect::all(VMin(0.05F * 90.0F / buttons_f))),
             @ui.BackgroundColor::new(bg),
             @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.5F)),
           ),
@@ -101,7 +93,7 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, color, idle_color) = data
     let next = match interaction.value() {
-      @ui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.27F, 0.0F)
+      Hovered => @color.Color::srgb(1.0F, 0.27F, 0.0F)
       _ => idle_color.value().color
     }
     color.set(@ui.BackgroundColor::new(next))
@@ -114,7 +106,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param(@app.Update, button_system)
+  .add_systems_param(Startup, setup)
+  .add_systems_param(Update, button_system)
   .run()
 }

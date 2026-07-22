@@ -46,7 +46,7 @@ fn draw_all_glyphs(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(Startup, setup)
   .add_system_param(draw_all_glyphs)
   .run()
 }

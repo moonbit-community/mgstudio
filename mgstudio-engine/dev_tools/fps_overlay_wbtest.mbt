@@ -17,12 +17,12 @@ fn overlay_test_app(config : FpsOverlayConfig) -> @app.App[@ecs.World] {
   let app = @app.App::new(@ecs.World::new()).add_plugins(
     @time.TimePlugin::TimePlugin(),
   )
-  fps_overlay_plugin_with(app, FpsOverlayPlugin::{ config, })
+  fps_overlay_plugin_with(app, { config, })
 }
 
 ///|
 test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
-  let app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig()).run_startup()
+  let app = overlay_test_app(FpsOverlayConfig()).run_startup()
   let state = app.world().get_resource(fps_overlay_state_resource_key).unwrap()
   guard state.root_entity is Some(root_entity) else {
     abort("missing overlay root")
@@ -81,7 +81,7 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
 
 ///|
 test "dev_tools: fps overlay installs frame time graph plugin" {
-  let app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig())
+  let app = overlay_test_app(FpsOverlayConfig())
   debug_inspect(
     app.plugin_names().contains("mgstudio.dev_tools.FrameTimeGraphPlugin"),
     content="true",
@@ -235,7 +235,7 @@ test "dev_tools: frame time graph material buffers mirror diagnostics history" {
 
 ///|
 test "dev_tools: fps overlay hides text and graph when disabled" {
-  let mut app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig()).run_startup()
+  let mut app = overlay_test_app(FpsOverlayConfig()).run_startup()
   let state = app.world().get_resource(fps_overlay_state_resource_key).unwrap()
   let config = app.world().get_resource(FpsOverlayConfig::resource()).unwrap()
   config.enabled = false
@@ -263,7 +263,7 @@ test "dev_tools: fps overlay hides text and graph when disabled" {
 
 ///|
 test "dev_tools: fps overlay updates text and graph from diagnostics" {
-  let mut app = overlay_test_app(FpsOverlayConfig::FpsOverlayConfig()).run_startup()
+  let mut app = overlay_test_app(FpsOverlayConfig()).run_startup()
   app = app.insert_resource(
     @time.TimeUpdateStrategy::ManualDuration(@core.Duration::from_millis(100)),
   )
@@ -299,7 +299,7 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
     .get_by_key(first_bar, @ui.ecs_key_node)
     .unwrap()
   match bar_node.height {
-    @ui.Val::Px(value) => debug_inspect(value > 0.0F, content="true")
+    Px(value) => debug_inspect(value > 0.0F, content="true")
     _ => debug_inspect(false, content="true")
   }
 }

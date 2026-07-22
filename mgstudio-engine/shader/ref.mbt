@@ -21,5 +21,5 @@ pub(all) enum ShaderRef {
 
 ///|
 pub fn ShaderRef::default() -> ShaderRef {
-  ShaderRef::Default
+  Default
 }

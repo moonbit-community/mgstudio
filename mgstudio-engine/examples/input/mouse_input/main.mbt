@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Update, mouse_click_system)
-  .add_systems_param2(@app.Update, mouse_move_system)
+  .add_systems_param(Update, mouse_click_system)
+  .add_systems_param2(Update, mouse_move_system)
   .run()
 }
 

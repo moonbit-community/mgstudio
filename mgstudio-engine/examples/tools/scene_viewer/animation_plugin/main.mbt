@@ -49,7 +49,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   ignore(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(5.0F, 4.0F, 7.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -85,7 +85,7 @@ fn rotate_preview(
     let (spin, transform) = data
     transform.modify(fn(value) {
       value.rotation = @math.Quat::from_euler(
-        @math.EulerRot::ZYX,
+        ZYX,
         0.0F,
         t * spin.value().speed,
         t * spin.value().speed * 0.35F,
@@ -99,7 +99,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_preview)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, rotate_preview)
   .run()
 }

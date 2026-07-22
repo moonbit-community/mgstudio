@@ -47,7 +47,7 @@ fn custom_asset_reader_plugin(
 ) -> @app.App[@ecs.World] {
   @asset.register_asset_source(
     app,
-    @asset.AssetSourceId::Default,
+    Default,
     @asset.AssetSourceBuilder::platform_default("", None).with_reader(
       custom_asset_reader,
     ),
@@ -71,7 +71,7 @@ fn setup(
 fn main {
   custom_asset_reader_plugin(@app.App::new(@ecs.World::new()))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_fn(@app.Update, print_reads)
+  .add_systems_param2(Startup, setup)
+  .add_systems_fn(Update, print_reads)
   .run()
 }

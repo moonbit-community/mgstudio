@@ -81,46 +81,42 @@ pub fn MeshVertexAttribute::format(
 
 ///|
 pub fn MeshVertexAttribute::position() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_Position", 0UL, MeshVertexFormat::Float32x3)
+  MeshVertexAttribute::new("Vertex_Position", 0UL, Float32x3)
 }
 
 ///|
 pub fn MeshVertexAttribute::normal() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_Normal", 1UL, MeshVertexFormat::Float32x3)
+  MeshVertexAttribute::new("Vertex_Normal", 1UL, Float32x3)
 }
 
 ///|
 pub fn MeshVertexAttribute::uv_0() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_Uv", 2UL, MeshVertexFormat::Float32x2)
+  MeshVertexAttribute::new("Vertex_Uv", 2UL, Float32x2)
 }
 
 ///|
 pub fn MeshVertexAttribute::uv_1() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_Uv_1", 3UL, MeshVertexFormat::Float32x2)
+  MeshVertexAttribute::new("Vertex_Uv_1", 3UL, Float32x2)
 }
 
 ///|
 pub fn MeshVertexAttribute::tangent() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_Tangent", 4UL, MeshVertexFormat::Float32x4)
+  MeshVertexAttribute::new("Vertex_Tangent", 4UL, Float32x4)
 }
 
 ///|
 pub fn MeshVertexAttribute::color() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_Color", 5UL, MeshVertexFormat::Float32x4)
+  MeshVertexAttribute::new("Vertex_Color", 5UL, Float32x4)
 }
 
 ///|
 pub fn MeshVertexAttribute::joint_weight() -> MeshVertexAttribute {
-  MeshVertexAttribute::new(
-    "Vertex_JointWeight",
-    6UL,
-    MeshVertexFormat::Float32x4,
-  )
+  MeshVertexAttribute::new("Vertex_JointWeight", 6UL, Float32x4)
 }
 
 ///|
 pub fn MeshVertexAttribute::joint_index() -> MeshVertexAttribute {
-  MeshVertexAttribute::new("Vertex_JointIndex", 7UL, MeshVertexFormat::Uint16x4)
+  MeshVertexAttribute::new("Vertex_JointIndex", 7UL, Uint16x4)
 }
 
 ///|
@@ -150,19 +146,19 @@ pub fn VertexAttributeValues::format(
   self : VertexAttributeValues,
 ) -> MeshVertexFormat {
   match self {
-    Float32(_) => MeshVertexFormat::Float32
-    Sint32(_) => MeshVertexFormat::Sint32
-    Uint32(_) => MeshVertexFormat::Uint32
-    Float32x2(_) => MeshVertexFormat::Float32x2
-    Sint32x2(_) => MeshVertexFormat::Sint32x2
-    Uint32x2(_) => MeshVertexFormat::Uint32x2
-    Float32x3(_) => MeshVertexFormat::Float32x3
-    Sint32x3(_) => MeshVertexFormat::Sint32x3
-    Uint32x3(_) => MeshVertexFormat::Uint32x3
-    Float32x4(_) => MeshVertexFormat::Float32x4
-    Sint32x4(_) => MeshVertexFormat::Sint32x4
-    Uint32x4(_) => MeshVertexFormat::Uint32x4
-    Uint16x4(_) => MeshVertexFormat::Uint16x4
+    Float32(_) => Float32
+    Sint32(_) => Sint32
+    Uint32(_) => Uint32
+    Float32x2(_) => Float32x2
+    Sint32x2(_) => Sint32x2
+    Uint32x2(_) => Uint32x2
+    Float32x3(_) => Float32x3
+    Sint32x3(_) => Sint32x3
+    Uint32x3(_) => Uint32x3
+    Float32x4(_) => Float32x4
+    Sint32x4(_) => Sint32x4
+    Uint32x4(_) => Uint32x4
+    Uint16x4(_) => Uint16x4
   }
 }
 
@@ -277,7 +273,7 @@ pub fn VertexAttribute::new(
   format~ : MeshVertexFormat,
   shader_location~ : Int,
 ) -> VertexAttribute {
-  VertexAttribute::{ offset, format, shader_location }
+  { offset, format, shader_location }
 }
 
 ///|
@@ -308,7 +304,7 @@ pub fn VertexBufferLayout::new(
   step_mode~ : MeshVertexStepMode,
   attributes~ : Array[VertexAttribute],
 ) -> VertexBufferLayout {
-  VertexBufferLayout::{ array_stride, step_mode, attributes }
+  { array_stride, step_mode, attributes }
 }
 
 ///|
@@ -354,12 +350,12 @@ pub fn VertexBufferLayout::offset_locations_by(
 ) -> VertexBufferLayout {
   let attributes : Array[VertexAttribute] = []
   for attribute in self.attributes {
-    attributes.push(VertexAttribute::{
+    attributes.push({
       ..attribute,
       shader_location: attribute.shader_location + location,
     })
   }
-  VertexBufferLayout::{ ..self, attributes, }
+  { ..self, attributes, }
 }
 
 ///|
@@ -375,7 +371,7 @@ pub fn VertexAttributeDescriptor::new(
   id~ : MeshVertexAttributeId,
   name~ : String,
 ) -> VertexAttributeDescriptor {
-  VertexAttributeDescriptor::{ shader_location, id, name }
+  { shader_location, id, name }
 }
 
 ///|
@@ -389,7 +385,7 @@ pub fn MissingVertexAttributeError::new(
   name~ : String,
   pipeline_type? : String? = None,
 ) -> MissingVertexAttributeError {
-  MissingVertexAttributeError::MissingVertexAttribute(id, name, pipeline_type)
+  MissingVertexAttribute(id, name, pipeline_type)
 }
 
 ///|
@@ -424,11 +420,7 @@ pub fn MissingVertexAttributeError::with_pipeline_type(
   self : MissingVertexAttributeError,
   pipeline_type : String?,
 ) -> MissingVertexAttributeError {
-  MissingVertexAttributeError::MissingVertexAttribute(
-    self.id(),
-    self.name(),
-    pipeline_type,
-  )
+  MissingVertexAttribute(self.id(), self.name(), pipeline_type)
 }
 
 ///|
@@ -442,7 +434,7 @@ pub fn MeshVertexBufferLayout::new(
   attribute_ids~ : Array[MeshVertexAttributeId],
   layout~ : VertexBufferLayout,
 ) -> MeshVertexBufferLayout {
-  MeshVertexBufferLayout::{ attribute_ids, layout }
+  { attribute_ids, layout }
 }
 
 ///|
@@ -496,7 +488,7 @@ pub fn MeshVertexBufferLayout::get_layout(
       mesh_vertex_buffer_attribute_index(self.attribute_ids, descriptor.id) {
       Some(index) => {
         let source = self.layout.attributes[index]
-        attributes.push(VertexAttribute::{
+        attributes.push({
           format: source.format,
           offset: source.offset,
           shader_location: descriptor.shader_location,
@@ -509,7 +501,7 @@ pub fn MeshVertexBufferLayout::get_layout(
         )
     }
   }
-  VertexBufferLayout::{
+  {
     array_stride: self.layout.array_stride,
     step_mode: self.layout.step_mode,
     attributes,
@@ -551,7 +543,7 @@ pub struct MeshVertexBufferLayouts {
 
 ///|
 pub fn MeshVertexBufferLayouts::MeshVertexBufferLayouts() -> MeshVertexBufferLayouts {
-  MeshVertexBufferLayouts::{ layouts: [] }
+  { layouts: [] }
 }
 
 ///|
@@ -619,11 +611,11 @@ pub fn MeshVertexBufferLayouts::insert(
 ) -> MeshVertexBufferLayoutRef {
   for index in 0..<self.layouts.length() {
     if self.layouts[index].equal(layout) {
-      return MeshVertexBufferLayoutRef::{ index, layout: self.layouts[index] }
+      return { index, layout: self.layouts[index] }
     }
   }
   self.layouts.push(layout)
-  MeshVertexBufferLayoutRef::{ index: self.layouts.length() - 1, layout }
+  { index: self.layouts.length() - 1, layout }
 }
 
 ///|
@@ -640,47 +632,47 @@ fn mesh3d_attribute_values_for_standard_id(
   id : MeshVertexAttributeId,
 ) -> VertexAttributeValues? {
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::position().id()) {
-    return Some(VertexAttributeValues::Float32x3(geometry.positions))
+    return Some(Float32x3(geometry.positions))
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::normal().id()) {
     return match geometry.normals {
-      Some(values) => Some(VertexAttributeValues::Float32x3(values))
+      Some(values) => Some(Float32x3(values))
       None => None
     }
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_0().id()) {
     return match geometry.uvs {
-      Some(values) => Some(VertexAttributeValues::Float32x2(values))
+      Some(values) => Some(Float32x2(values))
       None => None
     }
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_1().id()) {
     return match geometry.uv1s {
-      Some(values) => Some(VertexAttributeValues::Float32x2(values))
+      Some(values) => Some(Float32x2(values))
       None => None
     }
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::tangent().id()) {
     return match geometry.tangents {
-      Some(values) => Some(VertexAttributeValues::Float32x4(values))
+      Some(values) => Some(Float32x4(values))
       None => None
     }
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::color().id()) {
     return match geometry.colors {
-      Some(values) => Some(VertexAttributeValues::Float32x4(values))
+      Some(values) => Some(Float32x4(values))
       None => None
     }
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::joint_weight().id()) {
     return match geometry.joint_weights {
-      Some(values) => Some(VertexAttributeValues::Float32x4(values))
+      Some(values) => Some(Float32x4(values))
       None => None
     }
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::joint_index().id()) {
     return match geometry.joint_indices {
-      Some(values) => Some(VertexAttributeValues::Uint16x4(values))
+      Some(values) => Some(Uint16x4(values))
       None => None
     }
   }
@@ -728,7 +720,7 @@ pub fn Mesh3dGeometry::attribute(
   }
   for custom_attribute in self.custom_attributes_vec3 {
     if mesh_vertex_attribute_id_eq(custom_attribute.id(), id) {
-      return Some(VertexAttributeValues::Float32x3(custom_attribute.values()))
+      return Some(Float32x3(custom_attribute.values()))
     }
   }
   None
@@ -750,7 +742,7 @@ pub fn Mesh3dGeometry::attribute_data(
       return Some(
         MeshAttributeData::new(
           custom_attribute.attribute(),
-          VertexAttributeValues::Float32x3(custom_attribute.values()),
+          Float32x3(custom_attribute.values()),
         ),
       )
     }
@@ -788,63 +780,49 @@ pub fn Mesh3dGeometry::insert_attribute(
   }
   let id = attribute.id()
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::position().id()) {
-    guard values is VertexAttributeValues::Float32x3(positions) else {
-      return false
-    }
+    guard values is Float32x3(positions) else { return false }
     mesh3d_assign_positions(self.positions, positions)
     self.tangents = None
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::normal().id()) {
-    guard values is VertexAttributeValues::Float32x3(normals) else {
-      return false
-    }
+    guard values is Float32x3(normals) else { return false }
     self.normals = Some(normals)
     self.tangents = None
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_0().id()) {
-    guard values is VertexAttributeValues::Float32x2(uvs) else { return false }
+    guard values is Float32x2(uvs) else { return false }
     self.uvs = Some(uvs)
     self.tangents = None
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::uv_1().id()) {
-    guard values is VertexAttributeValues::Float32x2(uv1s) else { return false }
+    guard values is Float32x2(uv1s) else { return false }
     self.uv1s = Some(uv1s)
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::tangent().id()) {
-    guard values is VertexAttributeValues::Float32x4(tangents) else {
-      return false
-    }
+    guard values is Float32x4(tangents) else { return false }
     self.tangents = Some(tangents)
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::color().id()) {
-    guard values is VertexAttributeValues::Float32x4(colors) else {
-      return false
-    }
+    guard values is Float32x4(colors) else { return false }
     self.colors = Some(colors)
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::joint_weight().id()) {
-    guard values is VertexAttributeValues::Float32x4(weights) else {
-      return false
-    }
+    guard values is Float32x4(weights) else { return false }
     self.joint_weights = Some(weights)
     return true
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::joint_index().id()) {
-    guard values is VertexAttributeValues::Uint16x4(indices) else {
-      return false
-    }
+    guard values is Uint16x4(indices) else { return false }
     self.joint_indices = Some(indices)
     return true
   }
-  guard values is VertexAttributeValues::Float32x3(custom_values) else {
-    return false
-  }
+  guard values is Float32x3(custom_values) else { return false }
   let next : Array[MeshCustomAttributeVec3] = []
   let mut replaced = false
   for custom_attribute in self.custom_attributes_vec3 {
@@ -885,14 +863,14 @@ pub fn Mesh3dGeometry::remove_attribute(
     let removed = self.positions.copy()
     self.positions.clear()
     self.tangents = None
-    return Some(VertexAttributeValues::Float32x3(removed))
+    return Some(Float32x3(removed))
   }
   if mesh_vertex_attribute_id_eq(id, MeshVertexAttribute::normal().id()) {
     return match self.normals {
       Some(values) => {
         self.normals = None
         self.tangents = None
-        Some(VertexAttributeValues::Float32x3(values))
+        Some(Float32x3(values))
       }
       None => None
     }
@@ -902,7 +880,7 @@ pub fn Mesh3dGeometry::remove_attribute(
       Some(values) => {
         self.uvs = None
         self.tangents = None
-        Some(VertexAttributeValues::Float32x2(values))
+        Some(Float32x2(values))
       }
       None => None
     }
@@ -911,7 +889,7 @@ pub fn Mesh3dGeometry::remove_attribute(
     return match self.uv1s {
       Some(values) => {
         self.uv1s = None
-        Some(VertexAttributeValues::Float32x2(values))
+        Some(Float32x2(values))
       }
       None => None
     }
@@ -920,7 +898,7 @@ pub fn Mesh3dGeometry::remove_attribute(
     return match self.tangents {
       Some(values) => {
         self.tangents = None
-        Some(VertexAttributeValues::Float32x4(values))
+        Some(Float32x4(values))
       }
       None => None
     }
@@ -929,7 +907,7 @@ pub fn Mesh3dGeometry::remove_attribute(
     return match self.colors {
       Some(values) => {
         self.colors = None
-        Some(VertexAttributeValues::Float32x4(values))
+        Some(Float32x4(values))
       }
       None => None
     }
@@ -938,7 +916,7 @@ pub fn Mesh3dGeometry::remove_attribute(
     return match self.joint_weights {
       Some(values) => {
         self.joint_weights = None
-        Some(VertexAttributeValues::Float32x4(values))
+        Some(Float32x4(values))
       }
       None => None
     }
@@ -947,7 +925,7 @@ pub fn Mesh3dGeometry::remove_attribute(
     return match self.joint_indices {
       Some(values) => {
         self.joint_indices = None
-        Some(VertexAttributeValues::Uint16x4(values))
+        Some(Uint16x4(values))
       }
       None => None
     }
@@ -956,9 +934,7 @@ pub fn Mesh3dGeometry::remove_attribute(
   let mut removed : VertexAttributeValues? = None
   for custom_attribute in self.custom_attributes_vec3 {
     if mesh_vertex_attribute_id_eq(custom_attribute.id(), id) {
-      removed = Some(
-        VertexAttributeValues::Float32x3(custom_attribute.values()),
-      )
+      removed = Some(Float32x3(custom_attribute.values()))
     } else {
       next.push(custom_attribute)
     }

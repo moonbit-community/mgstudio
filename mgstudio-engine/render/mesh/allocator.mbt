@@ -53,7 +53,7 @@ pub fn MeshSlabs::new(
   index_slab_id? : Int? = None,
   morph_target_slab_id? : Int? = None,
 ) -> MeshSlabs {
-  MeshSlabs::{ vertex_slab_id, index_slab_id, morph_target_slab_id }
+  { vertex_slab_id, index_slab_id, morph_target_slab_id }
 }
 
 ///|
@@ -88,7 +88,7 @@ pub fn MeshAllocatorSettings::new(
   growth_factor~ : Float,
   extra_buffer_usages? : UInt64 = 0UL,
 ) -> MeshAllocatorSettings {
-  MeshAllocatorSettings::{
+  {
     min_slab_size,
     max_slab_size,
     large_threshold,
@@ -109,7 +109,7 @@ pub fn MeshAllocatorSettings::MeshAllocatorSettings() -> MeshAllocatorSettings {
 
 ///|
 pub impl Default for MeshAllocatorSettings with fn default() {
-  MeshAllocatorSettings::MeshAllocatorSettings()
+  MeshAllocatorSettings()
 }
 
 ///|
@@ -162,7 +162,7 @@ pub fn MeshAllocatorSettings::with_extra_buffer_usages(
   self : MeshAllocatorSettings,
   extra_buffer_usages : UInt64,
 ) -> MeshAllocatorSettings {
-  MeshAllocatorSettings::{ ..self, extra_buffer_usages, }
+  { ..self, extra_buffer_usages, }
 }
 
 ///|
@@ -186,7 +186,7 @@ pub fn MeshAllocatorElementLayout::new(
     2 => 2
     _ => 4
   }
-  MeshAllocatorElementLayout::{ class, size, elements_per_slot }
+  { class, size, elements_per_slot }
 }
 
 ///|
@@ -379,11 +379,11 @@ pub fn mesh_allocator_grow_general_slab_if_necessary(
   current_slot_capacity : Int,
   new_size_in_slots : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings(),
 ) -> MeshAllocatorSlabGrowth {
   let initial_slot_capacity = current_slot_capacity
   if current_slot_capacity >= new_size_in_slots {
-    return MeshAllocatorSlabGrowth::{
+    return {
       kind: NoGrowthNeeded,
       old_slot_capacity: initial_slot_capacity,
       current_slot_capacity,
@@ -395,7 +395,7 @@ pub fn mesh_allocator_grow_general_slab_if_necessary(
       capacity, settings, layout,
     )
     if next_capacity == capacity {
-      return MeshAllocatorSlabGrowth::{
+      return {
         kind: CantGrow,
         old_slot_capacity: initial_slot_capacity,
         current_slot_capacity: capacity,
@@ -403,7 +403,7 @@ pub fn mesh_allocator_grow_general_slab_if_necessary(
     }
     capacity = next_capacity
   }
-  MeshAllocatorSlabGrowth::{
+  {
     kind: NeededGrowth,
     old_slot_capacity: initial_slot_capacity,
     current_slot_capacity: capacity,
@@ -415,7 +415,7 @@ pub fn mesh_allocator_plan_new_general_slab(
   slab_id : Int,
   data_byte_len : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings(),
 ) -> MeshAllocatorSlabPlan {
   let data_element_count = mesh_allocator_div_ceil(data_byte_len, layout.size())
   let data_slot_count = mesh_allocator_div_ceil(
@@ -430,18 +430,14 @@ pub fn mesh_allocator_plan_new_general_slab(
       layout, data_slot_count, settings,
     ),
   )
-  MeshAllocatorSlabPlan::{
+  {
     slab_id,
     kind: General,
     layout,
     offset: 0,
     slot_count: data_slot_count,
     current_slot_capacity,
-    growth: MeshAllocatorSlabGrowth::{
-      kind: NeededGrowth,
-      old_slot_capacity: 0,
-      current_slot_capacity,
-    },
+    growth: { kind: NeededGrowth, old_slot_capacity: 0, current_slot_capacity },
   }
 }
 
@@ -456,14 +452,14 @@ pub fn mesh_allocator_plan_large_slab(
     data_element_count,
     layout.elements_per_slot(),
   )
-  MeshAllocatorSlabPlan::{
+  {
     slab_id,
     kind: LargeObject,
     layout,
     offset: 0,
     slot_count: data_slot_count,
     current_slot_capacity: data_slot_count,
-    growth: MeshAllocatorSlabGrowth::{
+    growth: {
       kind: NoGrowthNeeded,
       old_slot_capacity: data_slot_count,
       current_slot_capacity: data_slot_count,
@@ -475,7 +471,7 @@ pub fn mesh_allocator_plan_large_slab(
 pub fn mesh_allocator_should_allocate_large(
   data_byte_len : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings(),
 ) -> Bool {
   let data_element_count = mesh_allocator_div_ceil(data_byte_len, layout.size())
   let data_slot_count = mesh_allocator_div_ceil(
@@ -756,7 +752,7 @@ pub struct MeshAllocator {
 pub fn MeshAllocator::new(
   general_vertex_slabs_supported? : Bool = true,
 ) -> MeshAllocator {
-  MeshAllocator::{
+  {
     slabs: [],
     mesh_id_to_vertex_slab: [],
     mesh_id_to_index_slab: [],
@@ -772,7 +768,7 @@ pub fn MeshAllocator::MeshAllocator() -> MeshAllocator {
 
 ///|
 pub impl Default for MeshAllocator with fn default() {
-  MeshAllocator::MeshAllocator()
+  MeshAllocator()
 }
 
 ///|
@@ -789,6 +785,7 @@ pub impl @app.Resource for MeshAllocator with fn resource() {
 pub struct MeshAllocatorPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MeshAllocatorPlugin::MeshAllocatorPlugin() -> MeshAllocatorPlugin {
   MeshAllocatorPlugin::{  }
 }
@@ -797,7 +794,7 @@ pub fn MeshAllocatorPlugin::MeshAllocatorPlugin() -> MeshAllocatorPlugin {
 pub fn mesh_allocator_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  mesh_allocator_plugin_with(app, MeshAllocatorPlugin::MeshAllocatorPlugin())
+  mesh_allocator_plugin_with(app, MeshAllocatorPlugin())
 }
 
 ///|
@@ -818,25 +815,19 @@ pub fn mesh_allocator_plugin_with(
   ignore(plugin)
   let next = app
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(sub_app) {
+    next.modify_sub_app(RenderApp, fn(sub_app) {
       let world = sub_app.world()
       if world.get_resource(MeshAllocatorSettings::resource()) is None {
         world.insert_resource(
           MeshAllocatorSettings::resource(),
-          MeshAllocatorSettings::MeshAllocatorSettings(),
+          MeshAllocatorSettings(),
         )
       }
       if world.get_resource(MeshAllocator::resource()) is None {
-        world.insert_resource(
-          MeshAllocator::resource(),
-          MeshAllocator::MeshAllocator(),
-        )
+        world.insert_resource(MeshAllocator::resource(), MeshAllocator())
       }
       if world.get_resource(RenderMeshAssets::resource()) is None {
-        world.insert_resource(
-          RenderMeshAssets::resource(),
-          RenderMeshAssets::RenderMeshAssets(),
-        )
+        world.insert_resource(RenderMeshAssets::resource(), RenderMeshAssets())
       }
       sub_app
     }),
@@ -941,9 +932,8 @@ fn mesh_allocator_record_map(
   slab_id : Int,
 ) -> Unit {
   match mesh_allocator_find_map_index(entries, mesh_id) {
-    Some(index) =>
-      entries[index] = MeshAllocatorMeshSlabEntry::{ mesh_id, slab_id }
-    None => entries.push(MeshAllocatorMeshSlabEntry::{ mesh_id, slab_id })
+    Some(index) => entries[index] = { mesh_id, slab_id }
+    None => entries.push({ mesh_id, slab_id })
   }
 }
 
@@ -1009,7 +999,7 @@ fn mesh_allocator_merge_free_ranges(
       let merged_end = (current.offset + current.slot_count).max(
         next.offset + next.slot_count,
       )
-      free_ranges[index] = MeshAllocatorFreeRange::{
+      free_ranges[index] = {
         offset: current.offset,
         slot_count: merged_end - current.offset,
       }
@@ -1048,7 +1038,7 @@ fn MeshAllocatorSlabState::try_allocate_free_range(
       if free_range.slot_count == data_slot_count {
         ignore(self.free_ranges.remove(range_index))
       } else {
-        self.free_ranges[range_index] = MeshAllocatorFreeRange::{
+        self.free_ranges[range_index] = {
           offset: free_range.offset + data_slot_count,
           slot_count: free_range.slot_count - data_slot_count,
         }
@@ -1086,7 +1076,7 @@ fn MeshAllocatorSlabState::remove_allocation(
   for index in 0..<self.allocations.length() {
     let allocation = self.allocations[index]
     if allocation.mesh_id == mesh_id {
-      self.free_ranges.push(MeshAllocatorFreeRange::{
+      self.free_ranges.push({
         offset: allocation.offset,
         slot_count: allocation.slot_count,
       })
@@ -1106,10 +1096,7 @@ fn MeshAllocatorSlabState::mark_resident(
   for index in 0..<self.allocations.length() {
     let allocation = self.allocations[index]
     if allocation.mesh_id == mesh_id {
-      self.allocations[index] = MeshAllocatorSlabAllocation::{
-        ..allocation,
-        residency: Resident,
-      }
+      self.allocations[index] = { ..allocation, residency: Resident }
       return true
     }
   }
@@ -1123,7 +1110,7 @@ fn MeshAllocatorSlabState::slice_for_mesh(
 ) -> MeshAllocatorSlice? {
   for allocation in self.allocations {
     if allocation.mesh_id == mesh_id {
-      return Some(MeshAllocatorSlice::{
+      return Some({
         slab_id: self.id,
         start: allocation.offset * self.layout.elements_per_slot,
         end: (allocation.offset + allocation.slot_count) *
@@ -1140,7 +1127,7 @@ fn MeshAllocatorSlabState::buffer_plan(
   mapped_at_creation : Bool,
 ) -> MeshAllocatorBufferPlan {
   let usage = mesh_allocator_buffer_usage(self.layout.class)
-  MeshAllocatorBufferPlan::{
+  {
     slab_id: self.id,
     label: mesh_allocator_buffer_label(self.kind, self.id, usage),
     usage,
@@ -1162,7 +1149,7 @@ fn MeshAllocatorSlabState::upload_plan_for_mesh(
       }
       let usage = mesh_allocator_buffer_usage(self.layout.class)
       let slot_size = self.layout.slot_size()
-      return Some(MeshAllocatorUploadPlan::{
+      return Some({
         slab_id: self.id,
         label: mesh_allocator_buffer_label(self.kind, self.id, usage),
         usage,
@@ -1192,30 +1179,25 @@ fn MeshAllocator::allocate_large(
 ) -> MeshAllocatorSlabPlan {
   let slab_id = self.allocate_slab_id()
   self.record_allocation(mesh_id, slab_id, layout.class)
-  self.slabs.push(MeshAllocatorSlabState::{
+  self.slabs.push({
     id: slab_id,
     kind: LargeObject,
     layout,
     current_slot_capacity: data_slot_count,
     max_slot_capacity: data_slot_count,
     allocations: [
-      MeshAllocatorSlabAllocation::{
-        mesh_id,
-        offset: 0,
-        slot_count: data_slot_count,
-        residency: Pending,
-      },
+      { mesh_id, offset: 0, slot_count: data_slot_count, residency: Pending },
     ],
     free_ranges: [],
   })
-  MeshAllocatorSlabPlan::{
+  {
     slab_id,
     kind: LargeObject,
     layout,
     offset: 0,
     slot_count: data_slot_count,
     current_slot_capacity: data_slot_count,
-    growth: MeshAllocatorSlabGrowth::{
+    growth: {
       kind: NoGrowthNeeded,
       old_slot_capacity: data_slot_count,
       current_slot_capacity: data_slot_count,
@@ -1245,7 +1227,7 @@ fn MeshAllocator::allocate_general(
             continue
           }
           self.record_allocation(mesh_id, slab.id, layout.class)
-          return MeshAllocatorSlabPlan::{
+          return {
             slab_id: slab.id,
             kind: General,
             layout,
@@ -1276,31 +1258,26 @@ fn MeshAllocator::allocate_general(
   } else {
     []
   }
-  self.slabs.push(MeshAllocatorSlabState::{
+  self.slabs.push({
     id: slab_id,
     kind: General,
     layout,
     current_slot_capacity: initial_slot_capacity,
     max_slot_capacity,
     allocations: [
-      MeshAllocatorSlabAllocation::{
-        mesh_id,
-        offset: 0,
-        slot_count: data_slot_count,
-        residency: Pending,
-      },
+      { mesh_id, offset: 0, slot_count: data_slot_count, residency: Pending },
     ],
     free_ranges,
   })
   self.record_allocation(mesh_id, slab_id, layout.class)
-  MeshAllocatorSlabPlan::{
+  {
     slab_id,
     kind: General,
     layout,
     offset: 0,
     slot_count: data_slot_count,
     current_slot_capacity: initial_slot_capacity,
-    growth: MeshAllocatorSlabGrowth::{
+    growth: {
       kind: NeededGrowth,
       old_slot_capacity: 0,
       current_slot_capacity: initial_slot_capacity,
@@ -1314,7 +1291,7 @@ pub fn MeshAllocator::allocate(
   mesh_id : Int,
   data_byte_len : Int,
   layout : MeshAllocatorElementLayout,
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings(),
 ) -> MeshAllocatorSlabPlan? {
   if data_byte_len <= 0 {
     return None
@@ -1386,7 +1363,7 @@ pub fn MeshAllocator::allocate_render_mesh(
   index_layout? : MeshAllocatorElementLayout = mesh_allocator_render_mesh_index_layout(
     mesh,
   ),
-  settings? : MeshAllocatorSettings = MeshAllocatorSettings::MeshAllocatorSettings(),
+  settings? : MeshAllocatorSettings = MeshAllocatorSettings(),
 ) -> MeshAllocatorRenderMeshPlan {
   let vertex_byte_len = mesh.vertex_count() * vertex_stride
   let vertex_allocation = if vertex_byte_len > 0 {
@@ -1414,7 +1391,7 @@ pub fn MeshAllocator::allocate_render_mesh(
     Some(byte_len) => self.pending_upload_plan(mesh_id, Index, byte_len)
     None => None
   }
-  MeshAllocatorRenderMeshPlan::{
+  {
     vertex_allocation,
     index_allocation,
     vertex_upload,
@@ -1573,7 +1550,7 @@ pub fn MeshAllocator::reallocate_slab_plan(
         return None
       }
       let buffer = slab.buffer_plan(false)
-      Some(MeshAllocatorReallocateSlabPlan::{
+      Some({
         slab_id,
         label: buffer.label,
         usage: buffer.usage,

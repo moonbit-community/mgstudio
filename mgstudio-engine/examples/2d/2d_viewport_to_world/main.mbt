@@ -32,9 +32,9 @@ fn main {
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param6(@app.FixedUpdate, controls)
-  .add_systems(@app.PostUpdate, draw_cursor_system)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param6(FixedUpdate, controls)
+  .add_systems(PostUpdate, draw_cursor_system)
   .run()
 }
 
@@ -61,7 +61,7 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
           "Move the mouse to see the circle follow your cursor.\nUse the arrow keys to move the camera.\nUse the comma and period keys to zoom in and out.\nUse the WASD keys to move the viewport.\nUse the IJKL keys to resize the viewport.",
         ),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -239,16 +239,16 @@ fn controls(
       let current_transform = camera_transform.value()
       let mut x = current_transform.translation.x
       let mut y = current_transform.translation.y
-      if input.pressed(@window.KeyCode::ArrowUp) {
+      if input.pressed(ArrowUp) {
         y = y + fspeed
       }
-      if input.pressed(@window.KeyCode::ArrowDown) {
+      if input.pressed(ArrowDown) {
         y = y - fspeed
       }
-      if input.pressed(@window.KeyCode::ArrowLeft) {
+      if input.pressed(ArrowLeft) {
         x = x - fspeed
       }
-      if input.pressed(@window.KeyCode::ArrowRight) {
+      if input.pressed(ArrowRight) {
         x = x + fspeed
       }
       if x != current_transform.translation.x ||
@@ -272,17 +272,17 @@ fn controls(
     if (projection_query.get(camera_entity) catch { _ => None })
       is Some(camera_projection) {
       match camera_projection.value() {
-        @camera_projection2d.Projection::Orthographic(orthographic) => {
+        Orthographic(orthographic) => {
           let mut scale = orthographic.scale
-          if input.pressed(@window.KeyCode::Comma) {
+          if input.pressed(Comma) {
             scale = scale * @math.pow(4.0F, time.get().delta_seconds())
           }
-          if input.pressed(@window.KeyCode::Period) {
+          if input.pressed(Period) {
             scale = scale * @math.pow(0.25F, time.get().delta_seconds())
           }
           if scale != orthographic.scale {
             camera_projection.set(
-              @camera_projection2d.Projection::Orthographic(
+              Orthographic(
                 @camera_projection2d.OrthographicProjection::new(scale),
               ),
             )
@@ -317,31 +317,31 @@ fn controls(
 
       let mut position = viewport.physical_position
       let mut size = viewport.physical_size
-      if input.pressed(@window.KeyCode::KeyW) {
+      if input.pressed(KeyW) {
         position = position.saturating_sub(@math.IVec2::new(0, uspeed))
       }
-      if input.pressed(@window.KeyCode::KeyS) {
+      if input.pressed(KeyS) {
         position = position.add(@math.IVec2::new(0, uspeed))
       }
-      if input.pressed(@window.KeyCode::KeyA) {
+      if input.pressed(KeyA) {
         position = position.saturating_sub(@math.IVec2::new(uspeed, 0))
       }
-      if input.pressed(@window.KeyCode::KeyD) {
+      if input.pressed(KeyD) {
         position = position.add(@math.IVec2::new(uspeed, 0))
       }
       let max_position = window_size.saturating_sub(size)
       position = position.min(max_position)
 
-      if input.pressed(@window.KeyCode::KeyI) {
+      if input.pressed(KeyI) {
         size = size.saturating_sub(@math.IVec2::new(0, uspeed))
       }
-      if input.pressed(@window.KeyCode::KeyK) {
+      if input.pressed(KeyK) {
         size = size.add(@math.IVec2::new(0, uspeed))
       }
-      if input.pressed(@window.KeyCode::KeyJ) {
+      if input.pressed(KeyJ) {
         size = size.saturating_sub(@math.IVec2::new(uspeed, 0))
       }
-      if input.pressed(@window.KeyCode::KeyL) {
+      if input.pressed(KeyL) {
         size = size.add(@math.IVec2::new(uspeed, 0))
       }
 

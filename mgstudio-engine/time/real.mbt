@@ -30,7 +30,7 @@ pub fn Real::Real() -> Real {
 
 ///|
 pub impl Default for Real with fn default() {
-  Real::Real()
+  Real()
 }
 
 ///|
@@ -127,9 +127,7 @@ pub fn Time::last_update_seconds(self : Time[Real]) -> Float? {
 
 ///|
 fn world_real_or_default(world : @ecs.World) -> Time[Real] {
-  world_time_resource_or_default(world, real_time_resource_key, fn() {
-    Time::Time()
-  })
+  world_time_resource_or_default(world, real_time_resource_key, fn() { Time() })
 }
 
 ///|

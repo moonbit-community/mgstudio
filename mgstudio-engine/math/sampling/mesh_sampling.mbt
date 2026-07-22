@@ -44,7 +44,7 @@ pub fn UniformMeshSampler::try_new(
   if total_area <= 0.0F {
     raise ZeroSurfaceArea
   }
-  UniformMeshSampler::{ triangles, cumulative_areas, total_area }
+  { triangles, cumulative_areas, total_area }
 }
 
 ///|

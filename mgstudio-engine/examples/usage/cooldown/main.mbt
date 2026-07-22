@@ -84,10 +84,10 @@ pub impl @ecs.Component for StatusLabel with fn component() {
 ///|
 fn food_items() -> Array[FoodItem] {
   [
-    FoodItem::{ name: "an apple", cooldown_seconds: 2.0F, index: 2 },
-    FoodItem::{ name: "a burger", cooldown_seconds: 1.0F, index: 23 },
-    FoodItem::{ name: "chocolate", cooldown_seconds: 10.0F, index: 32 },
-    FoodItem::{ name: "cherries", cooldown_seconds: 4.0F, index: 41 },
+    { name: "an apple", cooldown_seconds: 2.0F, index: 2 },
+    { name: "a burger", cooldown_seconds: 1.0F, index: 23 },
+    { name: "chocolate", cooldown_seconds: 10.0F, index: 32 },
+    { name: "cherries", cooldown_seconds: 4.0F, index: 41 },
   ]
 }
 
@@ -123,9 +123,9 @@ fn build_ability(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(80.0F))
-      .with_height(@ui.Val::Px(80.0F))
-      .with_flex_direction(@ui.FlexDirection::ColumnReverse),
+      .with_width(Px(80.0F))
+      .with_height(Px(80.0F))
+      .with_flex_direction(ColumnReverse),
       @ui.BackgroundColor::new(food_button_color()),
       @ui.Button::Button(),
       @ui.ImageNode::from_atlas_image(
@@ -137,9 +137,7 @@ fn build_ability(
   let overlay = commands.spawn(
     (
       @hierarchy.Parent::new(button),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(0.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(0.0F)),
       @ui.BackgroundColor::new(food_overlay_color()),
     ),
   )
@@ -149,11 +147,8 @@ fn build_ability(
     (
       AbilityName::{ value: food.name },
       Cooldown::{
-        timer: @time.Timer::from_seconds(
-          food.cooldown_seconds,
-          @time.TimerMode::Once,
-        ),
-        previous_interaction: @ui.Interaction::None,
+        timer: @time.Timer::from_seconds(food.cooldown_seconds, Once),
+        previous_interaction: None,
         overlay_entity: overlay,
       },
     ),
@@ -175,11 +170,11 @@ fn setup(
 
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_column_gap(@ui.Val::Px(15.0F)),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_align_items(Center)
+    .with_justify_content(Center)
+    .with_column_gap(Px(15.0F)),
   )
   for food in food_items() {
     build_ability(commands, root, texture, layout, food)
@@ -192,9 +187,9 @@ fn setup(
         @text.TextFont::TextFont().with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         StatusLabel::{  },
       ),
     ),
@@ -216,7 +211,7 @@ fn activate_ability(
     let interaction = interaction.value()
     let ability_name = ability_name.value()
     let (was_pressed, remaining_seconds) = cooldown.modify(fn(value) {
-      let was_pressed = value.previous_interaction == @ui.Interaction::Pressed
+      let was_pressed = value.previous_interaction == Pressed
       value.previous_interaction = interaction
       let remaining_seconds = value.timer
         .remaining_secs()
@@ -225,9 +220,7 @@ fn activate_ability(
         .to_int()
       (was_pressed, remaining_seconds)
     })
-    guard interaction == @ui.Interaction::Pressed && !was_pressed else {
-      return
-    }
+    guard interaction == Pressed && !was_pressed else { return }
 
     if (active_cooldowns.get(entity) catch { _ => None }) is Some(_) {
       let message = "You can eat \{ability_name.value} again in \{remaining_seconds.to_string()} seconds."
@@ -261,16 +254,12 @@ fn animate_cooldowns(
     if (nodes.get(overlay_entity) catch { _ => None }) is Some(overlay_node) {
       if next_timer.just_finished() {
         commands.entity(entity).remove_component(ActiveCooldown::component())
-        overlay_node.set(
-          overlay_node.value().with_height(@ui.Val::Percent(0.0F)),
-        )
+        overlay_node.set(overlay_node.value().with_height(Percent(0.0F)))
       } else {
         overlay_node.set(
           overlay_node
           .value()
-          .with_height(
-            @ui.Val::Percent((1.0F - next_timer.fraction()) * 100.0F),
-          ),
+          .with_height(Percent((1.0F - next_timer.fraction()) * 100.0F)),
         )
       }
     }
@@ -281,10 +270,10 @@ fn animate_cooldowns(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param4(@app.Update, activate_ability)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param4(Update, activate_ability)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param5(animate_cooldowns).run_if(
       @app.any_with_component(ActiveCooldown::component()),
     ),

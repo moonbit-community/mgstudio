@@ -98,16 +98,16 @@ fn render3d_camera_deferred_mode(
   deferred_lighting_enabled : Bool,
 ) -> OpaqueRendererMethod {
   if !deferred_lighting_enabled {
-    return OpaqueRendererMethod::Forward
+    return Forward
   }
   match config.mode {
-    CameraDeferredMode3d::Forward => OpaqueRendererMethod::Forward
-    CameraDeferredMode3d::Deferred => OpaqueRendererMethod::Deferred
-    CameraDeferredMode3d::Auto =>
+    Forward => Forward
+    Deferred => Deferred
+    Auto =>
       match default_method {
-        OpaqueRendererMethod::Forward => OpaqueRendererMethod::Forward
-        OpaqueRendererMethod::Deferred => OpaqueRendererMethod::Deferred
-        OpaqueRendererMethod::Auto => OpaqueRendererMethod::Forward
+        Forward => Forward
+        Deferred => Deferred
+        Auto => Forward
       }
   }
 }
@@ -123,11 +123,10 @@ fn render3d_default_opaque_renderer_method(
     is Some(resource) {
     resource.renderer_method()
   } else {
-    OpaqueRendererMethod::Forward
+    Forward
   }
-  if !deferred_lighting_enabled &&
-    default_method is OpaqueRendererMethod::Deferred {
-    default_method = OpaqueRendererMethod::Forward
+  if !deferred_lighting_enabled && default_method is Deferred {
+    default_method = Forward
   }
   default_method
 }

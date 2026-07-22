@@ -29,14 +29,14 @@ fn wireframe_phase_test_render_mesh_assets(
 
 ///|
 fn wireframe_phase_test_frame_config() -> Render3dExecuteFrameConfig {
-  Render3dExecuteFrameConfig::{
+  {
     gpu_instance_buffer_builder_requested: false,
     gpu_culling_supported: false,
     gpu_instance_buffer_builder_enabled: false,
     prepass_enabled: false,
     deferred_lighting_enabled: false,
     delta_seconds: 0.0F,
-    default_opaque_renderer_method: OpaqueRendererMethod::Forward,
+    default_opaque_renderer_method: Forward,
     point_light_shadow_map_size: 0,
   }
 }
@@ -47,9 +47,9 @@ fn wireframe_phase_test_camera(
   motion_vector_prepass_enabled? : Bool = false,
   invert_culling? : Bool = false,
 ) -> ExtractedCamera3d {
-  ExtractedCamera3d::{
+  {
     entity: phase_entity_ref3d_for_main(view_entity),
-    payload: Camera3dViewPayload::{
+    payload: {
       decal_config: None,
       deferred_config: None,
       distance_fog: None,
@@ -57,8 +57,8 @@ fn wireframe_phase_test_camera(
       volumetric_fog: None,
       atmosphere: None,
       atmosphere_settings: None,
-      camera: @camera_camera.Camera::Camera(),
-      depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+      camera: Camera(),
+      depth_texture_usages: Camera3dDepthTextureUsage(),
       projection: Projection::default(),
       sub_camera_view: None,
       oit_settings: None,
@@ -93,13 +93,13 @@ fn wireframe_phase_test_camera(
       shadow_filtering_method: None,
       motion_vector_prepass_enabled,
       msaa: None,
-      transform: @transform.Transform::Transform(),
-      previous_transform: @transform.Transform::Transform(),
+      transform: Transform(),
+      previous_transform: Transform(),
       previous_clip_from_world: None,
       target_id: 0,
       target_size: @math.IVec2::new(1280, 720),
       scale_factor: 1.0F,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       invert_culling,
     },
   }
@@ -285,13 +285,13 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
     cache,
     pipelines,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     Map([]),
     RenderMeshInstances::new(),
-    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    RenderMeshAssets(),
     0UL,
-    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderVisibilityRanges(),
+    RenderLightmaps(),
     Wireframe3dPipeline::new(),
     MeshPipeline::new(),
     @render_resource.PipelineCache::new(),
@@ -304,14 +304,14 @@ test "pbr: specialize wireframes keeps unloaded meshes in pending queues" {
 ///|
 test "pbr: wireframe mesh key comes from shared RenderMesh topology and index format" {
   let topology_key = @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
-    @mesh.Mesh3dPrimitiveTopology::LineStrip,
-    Some(@mesh.Mesh3dIndexFormat::Uint16),
+    LineStrip,
+    Some(Uint16),
   )
   let render_mesh = @render_mesh.RenderMesh::new(
     vertex_count=3,
     indexed=true,
     index_count=3,
-    index_format=@render_mesh.RenderMeshIndexFormat::Uint16,
+    index_format=Uint16,
     key_bits=@mesh.BaseMeshPipelineKey::new(
       topology_key.bits() | @mesh.BaseMeshPipelineKey::morph_targets().bits(),
     ),
@@ -379,13 +379,13 @@ test "pbr: specialize wireframes caches thin pipelines by mesh layout and key" {
     cache,
     pipelines,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     Map([]),
     render_mesh_instances,
     render_meshes,
     0UL,
-    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderVisibilityRanges(),
+    RenderLightmaps(),
     Wireframe3dPipeline::new(),
     MeshPipeline::new(),
     pipeline_cache,
@@ -463,13 +463,13 @@ test "pbr: specialize wireframes includes previous skin and morph flags per inst
     cache,
     pipelines,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     Map([]),
     render_mesh_instances,
     render_meshes,
     MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS,
-    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderVisibilityRanges(),
+    RenderLightmaps(),
     Wireframe3dPipeline::new(),
     MeshPipeline::new(),
     pipeline_cache,
@@ -541,7 +541,7 @@ test "pbr: specialize wireframes derives dither and lightmap keys from render re
     cache,
     pipelines,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     Map([]),
     render_mesh_instances,
     render_meshes,
@@ -602,13 +602,13 @@ test "pbr: specialize wireframes uses Bevy wide cache key with shared mesh pipel
     cache,
     pipelines,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     materials,
     render_mesh_instances,
     render_meshes,
     0UL,
-    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderVisibilityRanges(),
+    RenderLightmaps(),
     Wireframe3dPipeline::new(),
     MeshPipeline::new(),
     pipeline_cache,
@@ -1172,8 +1172,7 @@ test "pbr: dirty wireframe specializations iterate Bevy specialize queue" {
   visible.prepare_for_new_frame()
   visible.update_cpu_culled_entities([stable_pair, pending_pair, added_pair])
   dirty.insert_changed(stable_pair.1)
-  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = @hashset.HashSet([],
-  )
+  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = HashSet([])
   pending.add(pending_pair)
 
   let to_specialize = dirty.iter_to_specialize(view, visible, pending)
@@ -1211,8 +1210,7 @@ test "pbr: dirty wireframe specializations iterate Bevy dequeue and queue lists"
   visible.update_cpu_culled_entities([changed_pair, pending_pair, added_pair])
   dirty.insert_changed(changed_pair.1)
   dirty.insert_removed(explicitly_removed)
-  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = @hashset.HashSet([],
-  )
+  let pending : @hashset.HashSet[(@core.Entity, @render.MainEntity)] = HashSet([])
   pending.add(pending_pair)
 
   let to_dequeue = dirty.iter_to_dequeue(view, visible)
@@ -1243,7 +1241,7 @@ test "pbr: wireframe dirty extraction writes changed and removed render tables" 
   )
   world.insert_resource(
     DirtyWireframeSpecializations::resource(),
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
   )
 
   extract_wireframe_entities_needing_specialization_system(world)
@@ -1271,14 +1269,8 @@ test "pbr: wireframe 3d phases prepare and retain views" {
   let phases = Wireframe3dPhases::Wireframe3dPhases()
   let live_view = @core.Entity::new(10, 1)
   let stale_view = @core.Entity::new(11, 1)
-  phases.prepare_for_new_frame(
-    live_view,
-    @render_batching.GpuPreprocessingMode::None,
-  )
-  phases.prepare_for_new_frame(
-    stale_view,
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  phases.prepare_for_new_frame(live_view, None)
+  phases.prepare_for_new_frame(stale_view, Culling)
   let live : Map[UInt64, Bool] = Map([])
   live.set(live_view.to_bits(), true)
 
@@ -1312,10 +1304,7 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
   let view = @core.Entity::new(10, 1)
   let render_entity = @core.Entity::new(20, 1)
   let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
-  phases.prepare_for_new_frame(
-    view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(view, PreprocessingOnly)
   let batch_set = Wireframe3dBatchSetKey::new(
     @material.CachedRenderPipelineId::new(77UL),
     8,
@@ -1353,9 +1342,7 @@ test "pbr: wireframe view phase add caches Bevy bin metadata" {
 
 ///|
 test "pbr: wireframe unbatchable meshes use retained Bevy bins" {
-  let phase = Wireframe3dViewPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Wireframe3dViewPhase::new(None)
   let batch_set = Wireframe3dBatchSetKey::new(
     @material.CachedRenderPipelineId::new(77UL),
     8,
@@ -1436,10 +1423,7 @@ test "pbr: wireframe binned phase prepare preserves cached items" {
   let view = @core.Entity::new(10, 1)
   let render_entity = @core.Entity::new(20, 1)
   let main_entity = wireframe_test_main_entity(@core.Entity::new(21, 1))
-  phases.prepare_for_new_frame(
-    view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(view, PreprocessingOnly)
   phases.add(
     view,
     Wireframe3dBatchSetKey::new(
@@ -1454,10 +1438,7 @@ test "pbr: wireframe binned phase prepare preserves cached items" {
     MultidrawableMesh,
   )
 
-  phases.prepare_for_new_frame(
-    view,
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  phases.prepare_for_new_frame(view, Culling)
 
   let phase = phases.phase(view).unwrap()
   debug_inspect(phase.len(), content="1")
@@ -1474,10 +1455,7 @@ test "pbr: wireframe phase preparation owns output ranges and collection" {
   let render_entity = @core.Entity::new(120, 1)
   let main_entity = wireframe_test_main_entity(@core.Entity::new(121, 1))
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(view, PreprocessingOnly)
   phases.add(
     view,
     Wireframe3dBatchSetKey::new(
@@ -1529,15 +1507,15 @@ test "pbr: wireframe phase preparation owns output ranges and collection" {
   )
   world.insert_resource(
     RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
-    RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers(),
+    RenderMeshInstanceGpuBatchedInstanceBuffers(),
   )
   world.insert_resource(
     @render_batching.IndirectParametersBuffers::resource(),
-    @render_batching.IndirectParametersBuffers::IndirectParametersBuffers(),
+    IndirectParametersBuffers(),
   )
   world.insert_resource(
     @render_batching.IndirectParametersBuffersSettings::resource(),
-    @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+    IndirectParametersBuffersSettings(),
   )
   collect_wireframe_3d_phase_buffers_system(world)
   let global_instances = world
@@ -1564,9 +1542,7 @@ test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
   cache.insert(view, main_entity, @material.CachedRenderPipelineId::new(77UL))
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(main_entity, 8)
-  let phase = Wireframe3dViewPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Wireframe3dViewPhase::new(None)
 
   queue_wireframe_phase_items(
     phase,
@@ -1575,12 +1551,12 @@ test "pbr: queue wireframes keeps unloaded meshes in pending queues" {
     pending,
     cache,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     Map([]),
     RenderMeshInstances::new(),
     @render_mesh.MeshAllocator::new(),
-    Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
-    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    Wireframe3dDrawFunctions(),
+    GpuPreprocessingSupport(),
   )
 
   debug_inspect(phase.len(), content="0")
@@ -1618,9 +1594,7 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     80,
   )
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
-  let phase = Wireframe3dViewPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Wireframe3dViewPhase::new(None)
 
   queue_wireframe_phase_items(
     phase,
@@ -1629,12 +1603,12 @@ test "pbr: queue wireframes adds wide phase items with Bevy batch keys" {
     pending,
     cache,
     instances,
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
     render_wireframe_assets,
     render_mesh_instances,
     mesh_allocator,
     draw_functions,
-    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    GpuPreprocessingSupport(),
   )
 
   phase.prepare_cpu_buffers(render_mesh_instances)
@@ -1671,7 +1645,7 @@ test "pbr: render wireframe assets mirror source WireframeMaterial assets" {
   world.insert_resource(asset_key, source_assets)
   world.insert_resource(
     RenderWireframeAssets::resource(),
-    RenderWireframeAssets::RenderWireframeAssets(),
+    RenderWireframeAssets(),
   )
 
   extract_wireframe_material_assets_system(world)
@@ -1703,25 +1677,22 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   )
 
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    view,
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  phases.prepare_for_new_frame(view, None)
   world.insert_resource(Wireframe3dPhases::resource(), phases)
   let view_key_cache = WireframeViewKeyCache::WireframeViewKeyCache()
   view_key_cache.insert(view, 0UL)
   world.insert_resource(WireframeViewKeyCache::resource(), view_key_cache)
   world.insert_resource(
     PendingWireframeQueues::resource(),
-    PendingWireframeQueues::PendingWireframeQueues(),
+    PendingWireframeQueues(),
   )
   world.insert_resource(
     SpecializedWireframePipelineCache::resource(),
-    SpecializedWireframePipelineCache::SpecializedWireframePipelineCache(),
+    SpecializedWireframePipelineCache(),
   )
   world.insert_resource(
     SpecializedWireframeMeshPipelines::resource(),
-    SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines(),
+    SpecializedWireframeMeshPipelines(),
   )
   let wireframe_instances = RenderWireframeInstances::RenderWireframeInstances()
   wireframe_instances.insert(main_entity, 8)
@@ -1742,7 +1713,7 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   )
   world.insert_resource(
     DirtyWireframeSpecializations::resource(),
-    DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+    DirtyWireframeSpecializations(),
   )
   let render_mesh_instances = RenderMeshInstances::new()
   render_mesh_instances.insert(
@@ -1768,11 +1739,11 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   )
   world.insert_resource(
     @render_visibility.RenderVisibilityRanges::resource(),
-    @render_visibility.RenderVisibilityRanges::RenderVisibilityRanges(),
+    RenderVisibilityRanges(),
   )
   world.insert_resource(
     @lightmap.RenderLightmaps::resource(),
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderLightmaps(),
   )
   let mesh_allocator = @render_mesh.MeshAllocator::new()
   let _ = mesh_allocator.allocate_render_mesh(
@@ -1783,11 +1754,11 @@ test "pbr: wireframe render systems specialize and queue visible Mesh3d phase it
   world.insert_resource(@render_mesh.MeshAllocator::resource(), mesh_allocator)
   world.insert_resource(
     Wireframe3dDrawFunctions::resource(),
-    Wireframe3dDrawFunctions::Wireframe3dDrawFunctions(),
+    Wireframe3dDrawFunctions(),
   )
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),
-    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    GpuPreprocessingSupport(),
   )
 
   specialize_wireframes_system(world)
@@ -1856,22 +1827,15 @@ test "pbr: extract_wireframe_3d_camera prepares active camera phases" {
   let inactive_camera = world.spawn()
   let stale_view = @core.Entity::new(12, 1)
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    stale_view,
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  phases.prepare_for_new_frame(stale_view, Culling)
   world.insert_resource(Wireframe3dPhases::resource(), phases)
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),
-    @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+    GpuPreprocessingSupport(),
   )
-  try! world.set_by_key(active_camera, ecs_key_camera3d, Camera3d::Camera3d())
-  try! world.set_by_key(
-    active_camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  try! world.set_by_key(inactive_camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(active_camera, ecs_key_camera3d, Camera3d())
+  try! world.set_by_key(active_camera, @camera_camera.ecs_key_camera, Camera())
+  try! world.set_by_key(inactive_camera, ecs_key_camera3d, Camera3d())
   try! world.set_by_key(
     inactive_camera,
     @camera_camera.ecs_key_camera,
@@ -1915,17 +1879,13 @@ test "pbr: prepare wide wireframe bind groups mirrors Bevy filtering" {
   let layout = mesh_layouts.insert(
     @mesh.MeshVertexBufferLayout::new(
       attribute_ids=[@mesh.MeshVertexAttribute::position().id()],
-      layout=@mesh.VertexBufferLayout::new(
-        array_stride=80,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[
-          @mesh.VertexAttribute::new(
-            offset=8,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=0,
-          ),
-        ],
-      ),
+      layout=@mesh.VertexBufferLayout::new(array_stride=80, step_mode=Vertex, attributes=[
+        @mesh.VertexAttribute::new(
+          offset=8,
+          format=Float32x3,
+          shader_location=0,
+        ),
+      ]),
     ),
   )
   let render_mesh = @render_mesh.RenderMesh::new(
@@ -1999,26 +1959,17 @@ test "pbr: wireframe 3d render node mirrors Bevy skip branches" {
     wireframe_3d_render_node_plan(phases, retained_view, false),
   ) catch {
     error => {
-      debug_inspect(
-        error is Wireframe3dRenderNodeSkipReason::MissingPhase,
-        content="true",
-      )
+      debug_inspect(error is MissingPhase, content="true")
       None
     }
   }
   debug_inspect(missing_phase is None, content="true")
-  phases.prepare_for_new_frame(
-    retained_view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(retained_view, PreprocessingOnly)
   let empty_phase = Some(
     wireframe_3d_render_node_plan(phases, retained_view, false),
   ) catch {
     error => {
-      debug_inspect(
-        error is Wireframe3dRenderNodeSkipReason::EmptyPhase,
-        content="true",
-      )
+      debug_inspect(error is EmptyPhase, content="true")
       None
     }
   }
@@ -2031,10 +1982,7 @@ test "pbr: wireframe 3d render node plans nonempty phase pass" {
   let render_entity = @core.Entity::new(2, 1)
   let main_entity = @render.MainEntity::new(@core.Entity::new(3, 1))
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    retained_view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(retained_view, PreprocessingOnly)
   phases.add(
     retained_view,
     Wireframe3dBatchSetKey::new(
@@ -2068,10 +2016,7 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
   let main_entity_c = @render.MainEntity::new(@core.Entity::new(12, 1))
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    retained_view,
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  phases.prepare_for_new_frame(retained_view, None)
   phases.add(
     retained_view,
     Wireframe3dBatchSetKey::new(
@@ -2158,7 +2103,7 @@ test "pbr: wireframe 3d render node command plan classifies planned skipped and 
     render_mesh_instances,
     render_meshes,
     mesh_allocator,
-    WireframeWideBindGroups::WireframeWideBindGroups(),
+    WireframeWideBindGroups(),
   )
 
   debug_inspect(plan.item_count(), content="3")
@@ -2187,14 +2132,8 @@ test "pbr: wireframe 3d render node skips empty phases before command resources"
     @render.CurrentView::new(render_view),
   )
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    retained_view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
-  phases.prepare_for_new_frame(
-    other_retained_view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(retained_view, PreprocessingOnly)
+  phases.prepare_for_new_frame(other_retained_view, PreprocessingOnly)
   phases.add(
     other_retained_view,
     Wireframe3dBatchSetKey::new(
@@ -2238,10 +2177,7 @@ test "pbr: wireframe 3d render node requires command resources for nonempty phas
   let main_entity = @render.MainEntity::new(@core.Entity::new(3, 1))
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
   let phases = Wireframe3dPhases::Wireframe3dPhases()
-  phases.prepare_for_new_frame(
-    retained_view,
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
-  )
+  phases.prepare_for_new_frame(retained_view, PreprocessingOnly)
   phases.add(
     retained_view,
     Wireframe3dBatchSetKey::new(
@@ -2280,7 +2216,7 @@ test "pbr: wireframe 3d render node requires command resources for nonempty phas
   )
   world.insert_resource(
     @render_mesh.RenderMeshAssets::resource(),
-    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    RenderMeshAssets(),
   )
   world.insert_resource(
     @render_mesh.MeshAllocator::resource(),
@@ -2288,7 +2224,7 @@ test "pbr: wireframe 3d render node requires command resources for nonempty phas
   )
   world.insert_resource(
     WireframeWideBindGroups::resource(),
-    WireframeWideBindGroups::WireframeWideBindGroups(),
+    WireframeWideBindGroups(),
   )
   world.insert_resource(
     @render.pipeline_cache_resource_key,
@@ -2310,7 +2246,7 @@ test "pbr: wireframe 3d render node is scheduled between main pass and early pos
   defer render_world.close()
   render_world.insert_resource(
     @render_mesh.MeshAllocatorSettings::resource(),
-    @render_mesh.MeshAllocatorSettings::MeshAllocatorSettings(),
+    MeshAllocatorSettings(),
   )
   let render_sub_app = @app.SubApp::new(render_world)
     .set_update_schedule(Some(graph_stage))

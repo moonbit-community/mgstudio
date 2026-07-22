@@ -189,7 +189,7 @@ fn parity_capture_maybe_request_surface_capture() -> Unit {
     return
   }
   let capture_id = next_screenshot_capture_id()
-  state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
+  state.pending_surface_screenshot_captures.push({
     id: capture_id,
     target_id: 0,
   })
@@ -318,7 +318,7 @@ priv struct ScreenshotRuntimeState {
 
 ///|
 fn screenshot_runtime_state_default() -> ScreenshotRuntimeState {
-  ScreenshotRuntimeState::{
+  {
     next_screenshot_capture_id: 1,
     pending_screenshot_captures: [],
     pending_surface_screenshot_captures: [],
@@ -534,7 +534,7 @@ fn screenshot_enqueue_texture_capture(
   }
   guard backend.frame is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  state.pending_screenshot_captures.push(PendingScreenshotCapture::{
+  state.pending_screenshot_captures.push({
     id: capture_id,
     width,
     height,
@@ -609,7 +609,7 @@ fn screenshot_read_texture_sync(
   buffer.release()
   cmd.release()
   encoder.release()
-  Some(ScreenshotCaptureResult::{ id: 0, width, height, pixels })
+  Some({ id: 0, width, height, pixels })
 }
 
 ///|
@@ -638,7 +638,7 @@ fn screenshot_enqueue_copy_to_buffer(
     height.reinterpret_as_uint(),
     bytes_per_pixel.reinterpret_as_uint(),
   )
-  state.inflight_screenshot_captures.push(InflightScreenshotCapture::{
+  state.inflight_screenshot_captures.push({
     id: capture_id,
     width,
     height,
@@ -882,7 +882,7 @@ pub fn screenshot_capture_surface_request() -> Int {
   let state = screenshot_runtime_state
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
+  state.pending_surface_screenshot_captures.push({
     id: capture_id,
     target_id: 0,
   })
@@ -896,10 +896,7 @@ pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
   guard target_id > 0 else { return 0 }
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  state.pending_surface_screenshot_captures.push(PendingSurfaceScreenshotCapture::{
-    id: capture_id,
-    target_id,
-  })
+  state.pending_surface_screenshot_captures.push({ id: capture_id, target_id })
   screenshot_debug_log(
     "request surface capture id=\{capture_id}, target=\{target_id}",
   )
@@ -969,11 +966,7 @@ pub fn screenshot_texture_refs() -> Array[ScreenshotTextureRef] {
   guard ensure_backend() is Some(backend) else { return [] }
   let refs : Array[ScreenshotTextureRef] = []
   for texture in backend.textures {
-    refs.push(ScreenshotTextureRef::{
-      id: texture.id,
-      width: texture.width,
-      height: texture.height,
-    })
+    refs.push({ id: texture.id, width: texture.width, height: texture.height })
   }
   refs
 }

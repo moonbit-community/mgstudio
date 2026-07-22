@@ -30,28 +30,17 @@ fn connected_test_info() -> GamepadConnectionInfo {
 fn send_connection(world : @ecs.World, entity : @core.Entity) -> Unit {
   let event = GamepadConnectionEvent::new(
     entity,
-    GamepadConnection::Connected(connected_test_info()),
+    Connected(connected_test_info()),
   )
   world.send_message(gamepad_connection_event_message_key, event) |> ignore
-  world.send_message(
-    raw_gamepad_event_message_key,
-    RawGamepadEvent::Connection(event),
-  )
-  |> ignore
+  world.send_message(raw_gamepad_event_message_key, Connection(event)) |> ignore
 }
 
 ///|
 fn send_disconnection(world : @ecs.World, entity : @core.Entity) -> Unit {
-  let event = GamepadConnectionEvent::new(
-    entity,
-    GamepadConnection::Disconnected,
-  )
+  let event = GamepadConnectionEvent::new(entity, Disconnected)
   world.send_message(gamepad_connection_event_message_key, event) |> ignore
-  world.send_message(
-    raw_gamepad_event_message_key,
-    RawGamepadEvent::Connection(event),
-  )
-  |> ignore
+  world.send_message(raw_gamepad_event_message_key, Connection(event)) |> ignore
 }
 
 ///|
@@ -182,7 +171,7 @@ test "input gamepad: reconnection preserves settings component state" {
 
   debug_inspect(
     try! @ecs.World::update(world, entity, fn(settings : GamepadSettings) {
-      GamepadSettings::{ ..settings, default_button_settings: button_settings }
+      { ..settings, default_button_settings: button_settings }
     }),
     content="true",
   )
@@ -211,18 +200,10 @@ test "input gamepad: valid axis changes emit processed axis events" {
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickY, 0.5F),
-    ),
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::RightStickX, 0.6F),
-    ),
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::RightZ, -0.4F),
-    ),
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::RightStickY, -0.8F),
-    ),
+    Axis(RawGamepadAxisChangedEvent::new(entity, LeftStickY, 0.5F)),
+    Axis(RawGamepadAxisChangedEvent::new(entity, RightStickX, 0.6F)),
+    Axis(RawGamepadAxisChangedEvent::new(entity, RightZ, -0.4F)),
+    Axis(RawGamepadAxisChangedEvent::new(entity, RightStickY, -0.8F)),
   ])
   app = app.run_once()
 
@@ -245,24 +226,18 @@ test "input gamepad: axis threshold filter ignores changes below threshold" {
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Axis(
+    Axis(RawGamepadAxisChangedEvent::new(entity, LeftStickX, base_value)),
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
-        base_value,
-      ),
-    ),
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(
-        entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         base_value + settings.threshold - 0.001F,
       ),
     ),
-    RawGamepadEvent::Axis(
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         base_value + settings.threshold + 0.001F,
       ),
     ),
@@ -287,17 +262,17 @@ test "input gamepad: axis deadzone filter drops zeroed changes" {
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Axis(
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.deadzone_upperbound - 0.01F,
       ),
     ),
-    RawGamepadEvent::Axis(
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.deadzone_lowerbound + 0.01F,
       ),
     ),
@@ -322,23 +297,19 @@ test "input gamepad: axis deadzone inputs are rounded to zero when crossing from
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, 1.0F),
-    ),
-    RawGamepadEvent::Axis(
+    Axis(RawGamepadAxisChangedEvent::new(entity, LeftStickX, 1.0F)),
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.deadzone_upperbound - 0.01F,
       ),
     ),
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, 1.0F),
-    ),
-    RawGamepadEvent::Axis(
+    Axis(RawGamepadAxisChangedEvent::new(entity, LeftStickX, 1.0F)),
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.deadzone_lowerbound + 0.01F,
       ),
     ),
@@ -365,23 +336,19 @@ test "input gamepad: axis livezone filter ignores clamped changes beyond the edg
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, 1.0F),
-    ),
-    RawGamepadEvent::Axis(
+    Axis(RawGamepadAxisChangedEvent::new(entity, LeftStickX, 1.0F)),
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.livezone_upperbound + 0.01F,
       ),
     ),
-    RawGamepadEvent::Axis(
-      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, -1.0F),
-    ),
-    RawGamepadEvent::Axis(
+    Axis(RawGamepadAxisChangedEvent::new(entity, LeftStickX, -1.0F)),
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.livezone_lowerbound - 0.01F,
       ),
     ),
@@ -406,17 +373,17 @@ test "input gamepad: axis livezone values are rounded to the extremes" {
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Axis(
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.livezone_upperbound + 0.01F,
       ),
     ),
-    RawGamepadEvent::Axis(
+    Axis(
       RawGamepadAxisChangedEvent::new(
         entity,
-        GamepadAxis::LeftStickX,
+        LeftStickX,
         settings.livezone_lowerbound - 0.01F,
       ),
     ),
@@ -441,10 +408,10 @@ test "input gamepad: button press emits state change and updates digital state" 
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.press_threshold,
       ),
     ),
@@ -458,7 +425,7 @@ test "input gamepad: button press emits state change and updates digital state" 
   debug_inspect(state_events[0].button, content="DPadDown")
   debug_inspect(state_events[0].state, content="Pressed")
   debug_inspect(
-    world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().pressed(DPadDown),
     content="true",
   )
 
@@ -470,7 +437,7 @@ test "input gamepad: button press emits state change and updates digital state" 
     content="0",
   )
   debug_inspect(
-    world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().pressed(DPadDown),
     content="true",
   )
 }
@@ -487,10 +454,10 @@ test "input gamepad: just_pressed lasts for one frame" {
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.press_threshold,
       ),
     ),
@@ -498,13 +465,13 @@ test "input gamepad: just_pressed lasts for one frame" {
   app = app.run_once()
 
   debug_inspect(
-    world_gamepad(world, entity).unwrap().just_pressed(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().just_pressed(DPadDown),
     content="true",
   )
   clear_gamepad_messages(world)
   app = app.run_once()
   debug_inspect(
-    world_gamepad(world, entity).unwrap().just_pressed(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().just_pressed(DPadDown),
     content="false",
   )
 }
@@ -521,10 +488,10 @@ test "input gamepad: button release emits state change and clears digital state"
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.press_threshold,
       ),
     ),
@@ -533,10 +500,10 @@ test "input gamepad: button release emits state change and clears digital state"
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.release_threshold - 0.01F,
       ),
     ),
@@ -549,7 +516,7 @@ test "input gamepad: button release emits state change and clears digital state"
   debug_inspect(state_events.length(), content="1")
   debug_inspect(state_events[0].state, content="Released")
   debug_inspect(
-    world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().pressed(DPadDown),
     content="false",
   )
 
@@ -573,17 +540,17 @@ test "input gamepad: just_released lasts for one frame" {
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.press_threshold,
       ),
     ),
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.release_threshold - 0.01F,
       ),
     ),
@@ -591,13 +558,13 @@ test "input gamepad: just_released lasts for one frame" {
   app = app.run_once()
 
   debug_inspect(
-    world_gamepad(world, entity).unwrap().just_released(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().just_released(DPadDown),
     content="true",
   )
   clear_gamepad_messages(world)
   app = app.run_once()
   debug_inspect(
-    world_gamepad(world, entity).unwrap().just_released(GamepadButton::DPadDown),
+    world_gamepad(world, entity).unwrap().just_released(DPadDown),
     content="false",
   )
 }
@@ -615,38 +582,38 @@ test "input gamepad: button axis filtering matches bevy analog and digital count
   clear_gamepad_messages(world)
 
   send_raw_events(world, [
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.press_threshold,
       ),
     ),
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.release_threshold,
       ),
     ),
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.release_threshold - analog_settings.threshold * 1.01F,
       ),
     ),
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.release_threshold - analog_settings.threshold * 1.5F,
       ),
     ),
-    RawGamepadEvent::Button(
+    Button(
       RawGamepadButtonChangedEvent::new(
         entity,
-        GamepadButton::DPadDown,
+        DPadDown,
         digital_settings.release_threshold - analog_settings.threshold * 2.02F,
       ),
     ),
@@ -676,7 +643,7 @@ test "input gamepad: rumble add requests reach backend output" {
 
   world.send_message(
     gamepad_rumble_request_message_key,
-    GamepadRumbleRequest::Add(
+    Add(
       duration=@core.Duration::from_secs_f32(0.5F),
       intensity=GamepadRumbleIntensity::weak_motor(0.25F),
       gamepad=entity,
@@ -706,7 +673,7 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
 
   world.send_message(
     gamepad_rumble_request_message_key,
-    GamepadRumbleRequest::Add(
+    Add(
       duration=@core.Duration::from_secs(2L),
       intensity=GamepadRumbleIntensity::strong_motor(0.6F),
       gamepad=entity,
@@ -715,12 +682,9 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
   |> ignore
   world.send_message(
     gamepad_rumble_request_message_key,
-    GamepadRumbleRequest::Add(
+    Add(
       duration=@core.Duration::from_secs(5L),
-      intensity=GamepadRumbleIntensity::{
-        strong_motor: 0.6F,
-        weak_motor: 0.25F,
-      },
+      intensity={ strong_motor: 0.6F, weak_motor: 0.25F },
       gamepad=entity,
     ),
   )
@@ -733,10 +697,7 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
   debug_inspect(add_commands[0].weak_motor == 0.25F, content="true")
   debug_inspect(add_commands[0].duration_ms, content="5000")
 
-  world.send_message(
-    gamepad_rumble_request_message_key,
-    GamepadRumbleRequest::Stop(gamepad=entity),
-  )
+  world.send_message(gamepad_rumble_request_message_key, Stop(gamepad=entity))
   |> ignore
   app = app.run_once()
 
@@ -760,7 +721,7 @@ test "input gamepad: unsupported rumble requests are dropped" {
 
   world.send_message(
     gamepad_rumble_request_message_key,
-    GamepadRumbleRequest::Add(
+    Add(
       duration=@core.Duration::from_secs(1L),
       intensity=GamepadRumbleIntensity::max(),
       gamepad=entity,

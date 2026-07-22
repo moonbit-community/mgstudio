@@ -26,9 +26,7 @@ test "plugin: ldtk_plugin installs its schedule after Update" {
   }
 
   let update_index = match
-    main_schedule_order.labels.search_by(fn(stage) {
-      stage == @app.ScheduleStage::Update
-    }) {
+    main_schedule_order.labels.search_by(fn(stage) { stage == Update }) {
     Some(index) => index
     None => abort("Expected Update schedule stage")
   }

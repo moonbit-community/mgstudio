@@ -44,7 +44,7 @@ pub fn bloom_downsample_passes(
   while width > 1 || height > 1 {
     width = bloom_downsample_next_extent(width)
     height = bloom_downsample_next_extent(height)
-    passes.push(BloomDownsamplePass::{
+    passes.push({
       mip_level,
       width,
       height,

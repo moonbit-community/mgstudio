@@ -25,12 +25,12 @@ pub struct Entity {
 
 ///|
 pub fn Entity::new(id : Int, generation : Int) -> Entity {
-  Entity::{ id, generation }
+  { id, generation }
 }
 
 ///|
 pub fn Entity::placeholder() -> Entity {
-  Entity::{ id: -1, generation: 0 }
+  { id: -1, generation: 0 }
 }
 
 ///|
@@ -126,7 +126,7 @@ pub fn Entities::alive_entities(self : Entities) -> Array[Entity] {
   let len = self.generations.length()
   for id in 0..<len {
     if self.alive[id] {
-      entities.push(Entity::{ id, generation: self.generations[id] })
+      entities.push({ id, generation: self.generations[id] })
     }
   }
   entities

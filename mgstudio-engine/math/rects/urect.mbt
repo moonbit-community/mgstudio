@@ -23,7 +23,7 @@ pub struct URect {
 
 ///|
 pub fn URect::new(min : @math.UVec2, max : @math.UVec2) -> URect {
-  URect::{ min, max }
+  { min, max }
 }
 
 ///|

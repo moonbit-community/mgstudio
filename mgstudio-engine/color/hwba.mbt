@@ -27,7 +27,7 @@ pub fn Hwba::new(
   blackness : Float,
   alpha : Float,
 ) -> Hwba {
-  Hwba::{
+  {
     hue: color_wrap_hue(hue),
     whiteness: color_clamp_unit(whiteness),
     blackness: color_clamp_unit(blackness),

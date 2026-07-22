@@ -67,7 +67,7 @@ fn ui_globals_uniform_bytes() -> Bytes {
 
 ///|
 fn load_ui_node_wgsl(anti_alias : Bool) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   if anti_alias {
     defines.set("ANTI_ALIAS", true)
   }
@@ -130,7 +130,7 @@ fn ui_box_shadow_sample_count(samples : Int) -> Int {
 
 ///|
 fn load_ui_box_shadow_wgsl(samples : Int) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   value_defines.set(
     "SHADOW_SAMPLES",
@@ -184,7 +184,7 @@ fn create_ui_shadow_pipeline(
 
 ///|
 fn load_ui_texture_slice_wgsl() -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let value_defines = default_wgsl_value_defines()
   load_wgsl_preprocessed(
     "", "ui_render/ui_texture_slice.wgsl", defines, value_defines,
@@ -480,7 +480,7 @@ fn ui_shadow_pipeline_for_current_pass(
   let pipeline = create_ui_shadow_pipeline(
     backend, format, effective_samples, label,
   )
-  backend.ui_shadow_pipeline_cache.push(UiShadowPipelineCacheEntry::{
+  backend.ui_shadow_pipeline_cache.push({
     format,
     samples: effective_samples,
     pipeline,
@@ -885,7 +885,7 @@ fn ui_enqueue_rect(
       1].instance_count +
       6U
   } else {
-    backend.ui_batches.push(UiBatch::{
+    backend.ui_batches.push({
       texture_id: tex.id,
       first_instance: first_vertex,
       instance_count: 6U,
@@ -1185,7 +1185,7 @@ fn ui_enqueue_texture_slice(
       1].instance_count +
       6U
   } else {
-    backend.ui_slice_batches.push(UiBatch::{
+    backend.ui_slice_batches.push({
       texture_id: tex.id,
       first_instance: first_vertex,
       instance_count: 6U,
@@ -1420,7 +1420,7 @@ fn ui_enqueue_box_shadow(
       1].instance_count +
       6U
   } else {
-    backend.ui_shadow_batches.push(UiShadowBatch::{
+    backend.ui_shadow_batches.push({
       first_instance: first_vertex,
       instance_count: 6U,
       samples: effective_samples,

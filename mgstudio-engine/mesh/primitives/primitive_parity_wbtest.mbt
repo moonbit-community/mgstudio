@@ -29,10 +29,7 @@ fn primitive_parity_assert_triangle_winding_matches_normals(
   name : String,
   geometry : @mesh.Mesh3dGeometry,
 ) -> Unit {
-  guard geometry.primitive_topology() ==
-    @mesh.Mesh3dPrimitiveTopology::TriangleList else {
-    return
-  }
+  guard geometry.primitive_topology() == TriangleList else { return }
   let normals = match geometry.normals() {
     Some(values) => values
     None => abort("\{name}: missing normal attribute")
@@ -192,7 +189,7 @@ fn primitive_parity_assert_vec2(
 fn primitive_parity_count_distinct_positions(
   geometry : @mesh.Mesh3dGeometry,
 ) -> Int {
-  let seen : @hashset.HashSet[String] = @hashset.HashSet([])
+  let seen : @hashset.HashSet[String] = HashSet([])
   for index in 0..<geometry.vertex_count() {
     guard geometry.vertex_position(index) is Some(position) else { continue }
     let key = "\{primitive_parity_fix_float(position.x).to_string()},\{primitive_parity_fix_float(position.y).to_string()},\{primitive_parity_fix_float(position.z).to_string()}"
@@ -344,23 +341,23 @@ test "dim2 and extrusion primitives: triangle winding matches generated normals"
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "annulus",
-    annulus_mesh(@math.Annulus::Annulus()),
+    annulus_mesh(Annulus()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "circular_sector",
-    circular_sector_mesh(@math.CircularSector::CircularSector()),
+    circular_sector_mesh(CircularSector()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "circular_segment",
-    circular_segment_mesh(@math.CircularSegment::CircularSegment()),
+    circular_segment_mesh(CircularSegment()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "rhombus",
-    rhombus_mesh(@math.Rhombus::Rhombus()),
+    rhombus_mesh(Rhombus()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "triangle2d",
-    triangle2d_mesh(@math.Triangle2d::Triangle2d()),
+    triangle2d_mesh(Triangle2d()),
   )
   primitive_parity_assert_triangle_winding_matches_normals(
     "extrusion_rectangle",
@@ -579,15 +576,13 @@ test "dim2 primitive builders expose extrusion perimeters" {
   )
   debug_inspect(
     primitive_parity_perimeter_index_count(
-      CircularSectorMeshBuilder::new(@math.CircularSector::CircularSector())
-      .resolution(8)
-      .perimeter(),
+      CircularSectorMeshBuilder::new(CircularSector()).resolution(8).perimeter(),
     ),
     content="11",
   )
   debug_inspect(
     primitive_parity_perimeter_index_count(
-      CircularSegmentMeshBuilder::new(@math.CircularSegment::CircularSegment())
+      CircularSegmentMeshBuilder::new(CircularSegment())
       .resolution(8)
       .perimeter(),
     ),

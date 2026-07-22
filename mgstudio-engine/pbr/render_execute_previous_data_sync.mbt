@@ -32,7 +32,7 @@ fn render3d_previous_global_transform_sync_state_mut(
     world.get_resource_mut(render3d_previous_global_transform_sync_state_key) {
     Some(state) => state
     None => {
-      world.insert_resource(render3d_previous_global_transform_sync_state_key, Render3dPreviousGlobalTransformSyncState::{
+      world.insert_resource(render3d_previous_global_transform_sync_state_key, {
         verified_missing_scan_generation: -1,
       })
       match
@@ -90,7 +90,7 @@ fn render3d_has_active_camera(world : @ecs.World) -> Bool {
     let camera = match
       (try! world.get_by_key(entity, @camera_camera.ecs_key_camera)) {
       Some(value) => value
-      None => @camera_camera.Camera::Camera()
+      None => Camera()
     }
     if camera.is_active {
       active = true
@@ -192,7 +192,7 @@ fn update_mesh_previous_global_transforms(world : @ecs.World) -> Unit {
       entity, ecs_key_previous_global_transform, previous_global_transform,
     )
   }
-  sync_state.set(Render3dPreviousGlobalTransformSyncState::{
+  sync_state.set({
     verified_missing_scan_generation: world.structural_generation(),
   })
   @app.timeline_trace_emit_counter_int(

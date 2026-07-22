@@ -23,7 +23,7 @@ pub fn WinitMonitorEntry::new(
   monitor : @window_core.MonitorHandle,
   entity : @core.Entity,
 ) -> WinitMonitorEntry {
-  WinitMonitorEntry::{ monitor, entity }
+  { monitor, entity }
 }
 
 ///|
@@ -33,7 +33,7 @@ pub struct WinitMonitors {
 
 ///|
 pub fn WinitMonitors::new() -> WinitMonitors {
-  WinitMonitors::{ monitors: [] }
+  { monitors: [] }
 }
 
 ///|

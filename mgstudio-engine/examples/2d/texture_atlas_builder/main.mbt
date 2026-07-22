@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, texture_atlas_builder_setup)
-  .add_systems_world(@app.Update, texture_atlas_builder_update)
+  .add_systems_world(Startup, texture_atlas_builder_setup)
+  .add_systems_world(Update, texture_atlas_builder_update)
   .run()
 }
 
@@ -29,7 +29,7 @@ priv struct TextureAtlasBuilderState {
 }
 
 ///|
-let builder_state : Ref[TextureAtlasBuilderState] = Ref(TextureAtlasBuilderState::{
+let builder_state : Ref[TextureAtlasBuilderState] = Ref({
   built: false,
   texture_a: None,
   texture_b: None,

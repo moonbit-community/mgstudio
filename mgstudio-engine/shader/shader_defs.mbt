@@ -20,7 +20,7 @@ pub(all) enum ValidateShader {
 
 ///|
 pub fn ValidateShader::default() -> ValidateShader {
-  ValidateShader::Disabled
+  Disabled
 }
 
 ///|
@@ -39,7 +39,7 @@ pub(all) enum ShaderDefVal {
 
 ///|
 pub fn shader_def(name : String) -> ShaderDefVal {
-  ShaderDefVal::Bool(name, true)
+  Bool(name, true)
 }
 
 ///|

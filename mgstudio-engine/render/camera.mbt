@@ -138,10 +138,7 @@ pub struct ViewPendingQueues {
 
 ///|
 pub fn ViewPendingQueues::ViewPendingQueues() -> ViewPendingQueues {
-  ViewPendingQueues::{
-    current_frame: @hashset.HashSet([]),
-    prev_frame: @hashset.HashSet([]),
-  }
+  { current_frame: HashSet([]), prev_frame: HashSet([]) }
 }
 
 ///|
@@ -187,7 +184,7 @@ pub struct PendingQueues {
 
 ///|
 pub fn PendingQueues::PendingQueues() -> PendingQueues {
-  PendingQueues::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|

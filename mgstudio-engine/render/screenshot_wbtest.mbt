@@ -126,7 +126,7 @@ test "screenshot: RenderPlugin initializes pending capture state resource" {
     app.world().resource(render_screenshot_targets_resource_key).is_present(),
     content="true",
   )
-  let render_app = app.get_sub_app(@app.RenderApp).unwrap()
+  let render_app = app.get_sub_app(RenderApp).unwrap()
   debug_inspect(
     render_app
     .world()
@@ -166,7 +166,7 @@ test "screenshot: ScreenshotPlugin tolerates missing RenderApp" {
     app.world().resource(captured_screenshots_resource_key).is_present(),
     content="true",
   )
-  debug_inspect(app.get_sub_app(@app.RenderApp) is None, content="true")
+  debug_inspect(app.get_sub_app(RenderApp) is None, content="true")
 }
 
 ///|
@@ -200,9 +200,9 @@ test "screenshot: trigger_screenshots drains captured resource and triggers enti
       )
     }),
   )
-  world.insert_resource(captured_screenshots_resource_key, CapturedScreenshots::{
+  world.insert_resource(captured_screenshots_resource_key, {
     captures: [
-      CapturedScreenshot::{
+      {
         entity: screenshot_entity,
         image: @asset.Image::new(4, 5, Bytes::from_array([])),
       },

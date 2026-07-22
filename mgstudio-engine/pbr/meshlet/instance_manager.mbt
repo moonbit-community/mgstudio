@@ -45,7 +45,7 @@ fn meshlet_material_key(
   material_asset_id : Int,
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> MeshletMaterialKey {
-  MeshletMaterialKey::{
+  {
     material_family,
     material_asset_id: non_negative(material_asset_id),
     extension,
@@ -58,18 +58,13 @@ fn meshlet_alpha_mode_equal(
   right : @material.AlphaMode3d,
 ) -> Bool {
   match (left, right) {
-    (@material.AlphaMode3d::Opaque, @material.AlphaMode3d::Opaque) => true
-    (@material.AlphaMode3d::Mask(left), @material.AlphaMode3d::Mask(right)) =>
-      left == right
-    (@material.AlphaMode3d::Blend, @material.AlphaMode3d::Blend) => true
-    (@material.AlphaMode3d::Premultiplied, @material.AlphaMode3d::Premultiplied) =>
-      true
-    (
-      @material.AlphaMode3d::AlphaToCoverage,
-      @material.AlphaMode3d::AlphaToCoverage,
-    ) => true
-    (@material.AlphaMode3d::Add, @material.AlphaMode3d::Add) => true
-    (@material.AlphaMode3d::Multiply, @material.AlphaMode3d::Multiply) => true
+    (Opaque, Opaque) => true
+    (Mask(left), Mask(right)) => left == right
+    (Blend, Blend) => true
+    (Premultiplied, Premultiplied) => true
+    (AlphaToCoverage, AlphaToCoverage) => true
+    (Add, Add) => true
+    (Multiply, Multiply) => true
     _ => false
   }
 }
@@ -138,7 +133,7 @@ pub struct MeshletInstanceUniform {
 
 ///|
 pub fn MeshletInstanceUniform::MeshletInstanceUniform() -> MeshletInstanceUniform {
-  MeshletInstanceUniform::{
+  {
     world_from_local: @math.Affine3::identity(),
     previous_world_from_local: @math.Affine3::identity(),
     material_slot: 0,
@@ -181,7 +176,7 @@ pub struct ExtractedMeshletInstance {
 
 ///|
 pub fn InstanceManager::InstanceManager() -> InstanceManager {
-  InstanceManager::{
+  {
     scene_instance_count: 0,
     max_bvh_depth: 0,
     instances: [],
@@ -249,7 +244,7 @@ pub fn InstanceManager::add_instance(
   world_from_local? : @math.Affine3 = @math.Affine3::identity(),
   previous_world_from_local? : @math.Affine3 = @math.Affine3::identity(),
   not_shadow_receiver? : Bool = false,
-  material_family? : @material.Material3dFamily = @material.Material3dFamily::Standard,
+  material_family? : @material.Material3dFamily = Standard,
   material_extension? : @material.ExtendedMaterialMetadata3d? = None,
 ) -> Unit {
   self.instances.push(
@@ -263,7 +258,7 @@ pub fn InstanceManager::add_instance(
   if world_from_local.matrix3.determinant() >= 0.0F {
     flags = flags | MESHLET_MESH_FLAGS_SIGN_DETERMINANT_MODEL_3X3
   }
-  self.instance_uniforms.push(MeshletInstanceUniform::{
+  self.instance_uniforms.push({
     world_from_local,
     previous_world_from_local,
     material_slot: safe_material_slot,
@@ -357,11 +352,7 @@ pub fn InstanceManager::get_material_id(
   match self.material_id_lookup.get(key) {
     Some(id) => id
     None => {
-      let material_key = meshlet_material_key(
-        @material.Material3dFamily::Standard,
-        key,
-        None,
-      )
+      let material_key = meshlet_material_key(Standard, key, None)
       let id = match self.material_id_for_key(material_key) {
         Some(existing) => existing
         None => self.get_material_id_for_key(material_key)
@@ -378,11 +369,7 @@ pub fn InstanceManager::get_material_id_with_extension(
   material_asset_id : Int,
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> Int {
-  let key = meshlet_material_key(
-    @material.Material3dFamily::Standard,
-    material_asset_id,
-    extension,
-  )
+  let key = meshlet_material_key(Standard, material_asset_id, extension)
   if extension is None {
     return self.get_material_id(material_asset_id)
   }
@@ -396,8 +383,7 @@ pub fn InstanceManager::get_material_id_for_material(
   material_asset_id : Int,
   extension : @material.ExtendedMaterialMetadata3d?,
 ) -> Int {
-  if material_family is @material.Material3dFamily::Standard &&
-    extension is None {
+  if material_family is Standard && extension is None {
     return self.get_material_id(material_asset_id)
   }
   self.get_material_id_for_key(
@@ -427,11 +413,7 @@ pub fn InstanceManager::material_id_for_asset(
   material_asset_id : Int,
 ) -> Int? {
   self.material_id_for_key(
-    meshlet_material_key(
-      @material.Material3dFamily::Standard,
-      material_asset_id,
-      None,
-    ),
+    meshlet_material_key(Standard, material_asset_id, None),
   )
 }
 
@@ -507,7 +489,7 @@ pub fn InstanceManager::scene_materials(
       }
     }
     if !exists {
-      materials.push(MeshletSceneMaterial::{
+      materials.push({
         material_id,
         material_family: key.material_family,
         material_asset_id: key.material_asset_id,
@@ -661,7 +643,7 @@ fn InstanceManager::gpu_buffer_payload(
       root_node.reinterpret_as_uint(),
     )
   }
-  MeshletInstanceGpuBufferPayload::{
+  {
     instance_uniforms: Bytes::from_array(instance_uniforms),
     instance_aabbs: Bytes::from_array(instance_aabbs),
     instance_material_ids: Bytes::from_array(instance_material_ids),
@@ -791,11 +773,11 @@ pub fn ExtractedMeshletInstance::new(
   instance : @core.Entity,
   material_asset_id : Int,
 ) -> ExtractedMeshletInstance {
-  ExtractedMeshletInstance::{
+  {
     instance,
     material_asset_id: non_negative(material_asset_id),
     root_bvh_node: 0,
-    aabb: MeshletAabb::MeshletAabb(),
+    aabb: MeshletAabb(),
     bvh_depth: 0,
     render_layer_mask: 1,
     not_shadow_caster: false,
@@ -809,7 +791,7 @@ pub fn ExtractedMeshletInstance::with_bvh(
   root_bvh_node : Int,
   bvh_depth : Int,
 ) -> ExtractedMeshletInstance {
-  ExtractedMeshletInstance::{
+  {
     ..self,
     root_bvh_node: non_negative(root_bvh_node),
     bvh_depth: non_negative(bvh_depth),
@@ -821,7 +803,7 @@ pub fn ExtractedMeshletInstance::with_aabb(
   self : ExtractedMeshletInstance,
   aabb : MeshletAabb,
 ) -> ExtractedMeshletInstance {
-  ExtractedMeshletInstance::{ ..self, aabb, }
+  { ..self, aabb, }
 }
 
 ///|
@@ -829,10 +811,7 @@ pub fn ExtractedMeshletInstance::with_render_layers(
   self : ExtractedMeshletInstance,
   render_layer_mask : Int,
 ) -> ExtractedMeshletInstance {
-  ExtractedMeshletInstance::{
-    ..self,
-    render_layer_mask: non_negative(render_layer_mask),
-  }
+  { ..self, render_layer_mask: non_negative(render_layer_mask) }
 }
 
 ///|
@@ -840,7 +819,7 @@ pub fn ExtractedMeshletInstance::with_not_shadow_caster(
   self : ExtractedMeshletInstance,
   not_shadow_caster : Bool,
 ) -> ExtractedMeshletInstance {
-  ExtractedMeshletInstance::{ ..self, not_shadow_caster, }
+  { ..self, not_shadow_caster, }
 }
 
 ///|
@@ -848,10 +827,7 @@ pub fn ExtractedMeshletInstance::with_material_slot(
   self : ExtractedMeshletInstance,
   material_slot : Int,
 ) -> ExtractedMeshletInstance {
-  ExtractedMeshletInstance::{
-    ..self,
-    material_slot: non_negative(material_slot),
-  }
+  { ..self, material_slot: non_negative(material_slot) }
 }
 
 ///|

@@ -120,7 +120,7 @@ fn move_cube(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, move_cube)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, move_cube)
   .run()
 }

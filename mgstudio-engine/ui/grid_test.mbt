@@ -32,23 +32,17 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     ecs_key_node,
     Node::Node()
-    .with_display(Display::Grid)
+    .with_display(Grid)
     .with_grid_template_columns([
-      RepeatedGridTrack::new(GridTrackRepetition::Count(1), [
-        GridTrack::Px(100.0F),
-        GridTrack::Px(100.0F),
-      ]),
+      RepeatedGridTrack::new(Count(1), [Px(100.0F), Px(100.0F)]),
     ])
     .with_grid_template_rows([
-      RepeatedGridTrack::new(GridTrackRepetition::Count(1), [
-        GridTrack::Px(50.0F),
-        GridTrack::Px(50.0F),
-      ]),
+      RepeatedGridTrack::new(Count(1), [Px(50.0F), Px(50.0F)]),
     ]),
   )
   let a = world.spawn_empty()
@@ -57,14 +51,14 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(a, ecs_key_node, Node::Node())
+  try! world.set_by_key(a, ecs_key_node, Node())
   let b = world.spawn_empty()
   try! world.set_by_key(
     b,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(b, ecs_key_node, Node::Node())
+  try! world.set_by_key(b, ecs_key_node, Node())
 
   // Build Children from Parent before layout.
   ui_layout_system(world)

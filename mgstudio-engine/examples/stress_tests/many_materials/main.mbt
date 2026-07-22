@@ -130,7 +130,7 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, animate_materials)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, animate_materials)
   .run()
 }

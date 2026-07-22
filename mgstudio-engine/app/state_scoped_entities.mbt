@@ -45,11 +45,11 @@ pub fn DespawnOnEnter::state_debug(self : DespawnOnEnter) -> String {
 }
 
 ///|
-let despawn_on_exit_registration_registry : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([],
+let despawn_on_exit_registration_registry : @hashmap.HashMap[String, Bool] = HashMap([],
 )
 
 ///|
-let despawn_on_enter_registration_registry : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([],
+let despawn_on_enter_registration_registry : @hashmap.HashMap[String, Bool] = HashMap([],
 )
 
 ///|

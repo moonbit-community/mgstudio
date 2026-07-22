@@ -60,7 +60,7 @@ fn pcg32_next(state : Ref[UInt64]) -> UInt {
 ///|
 fn u32_widening_multiply(a : UInt, b : UInt) -> U32Product {
   let product = a.to_uint64() * b.to_uint64()
-  U32Product::{ lo: product.to_uint(), hi: (product >> 32).to_uint() }
+  { lo: product.to_uint(), hi: (product >> 32).to_uint() }
 }
 
 ///|
@@ -137,7 +137,7 @@ pub fn ChaCha8Rng::seed_from_u64(seed : UInt64) -> ChaCha8Rng {
     0U,
     0U,
   ]
-  ChaCha8Rng::{ state, buffer: Array::make(64, 0U), index: 64 }
+  { state, buffer: Array::make(64, 0U), index: 64 }
 }
 
 ///|

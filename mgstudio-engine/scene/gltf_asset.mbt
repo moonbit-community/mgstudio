@@ -55,7 +55,7 @@ pub fn Gltf::new(
   named_animations? : Array[(String, @asset.Handle[@animation.AnimationClip])] = [],
   source? : String? = None,
 ) -> Gltf {
-  Gltf::{
+  {
     scenes,
     named_scenes,
     materials,
@@ -69,7 +69,7 @@ pub fn Gltf::new(
 
 ///|
 fn gltf_asset_default() -> Gltf {
-  Gltf::{
+  {
     scenes: [],
     named_scenes: [],
     materials: [],

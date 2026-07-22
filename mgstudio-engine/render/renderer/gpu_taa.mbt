@@ -275,12 +275,7 @@ fn taa_pipeline_get_or_create(
   pipeline.set_label("mgstudio_taa_pipeline")
   vertex_sm.release()
   fragment_sm.release()
-  backend.taa_pipeline_cache.push(GpuTaaPipelineCacheEntry::{
-    format,
-    tonemap,
-    reset,
-    pipeline,
-  })
+  backend.taa_pipeline_cache.push({ format, tonemap, reset, pipeline })
   Some(pipeline)
 }
 

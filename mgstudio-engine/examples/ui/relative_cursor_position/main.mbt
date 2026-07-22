@@ -80,11 +80,11 @@ fn setup(
 
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_flex_direction(@ui.FlexDirection::Column),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_align_items(Center)
+    .with_justify_content(Center)
+    .with_flex_direction(Column),
   )
 
   ignore(
@@ -94,16 +94,9 @@ fn setup(
         CursorArea::{  },
         @ui.RelativeCursorPosition::RelativeCursorPosition(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(250.0F))
-        .with_height(@ui.Val::Px(250.0F))
-        .with_margin(
-          @ui.UiRect::new(
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(0.0F),
-            @ui.Val::Px(15.0F),
-          ),
-        ),
+        .with_width(Px(250.0F))
+        .with_height(Px(250.0F))
+        .with_margin(@ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(15.0F))),
         @ui.BackgroundColor::new(@color.Color::srgb(0.92F, 0.14F, 0.05F)),
       ),
     ),
@@ -166,7 +159,7 @@ fn relative_cursor_position_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, relative_cursor_position_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, relative_cursor_position_system)
   .run()
 }

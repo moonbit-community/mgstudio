@@ -47,83 +47,57 @@ fn image_wb_has_format(
 ///|
 test "image wb: container format detection by extension" {
   debug_inspect(
-    image_container_format_from_extension("png") == ImageContainerFormat::Png,
+    image_container_format_from_extension("png") == Png,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("jpeg") == ImageContainerFormat::Jpeg,
+    image_container_format_from_extension("jpeg") == Jpeg,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("hdr") == ImageContainerFormat::Hdr,
+    image_container_format_from_extension("hdr") == Hdr,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("basis") ==
-    ImageContainerFormat::Basis,
+    image_container_format_from_extension("basis") == Basis,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("foo") ==
-    ImageContainerFormat::Unknown("foo"),
+    image_container_format_from_extension("foo") == Unknown("foo"),
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("webp") == ImageContainerFormat::Webp,
+    image_container_format_from_extension("webp") == Webp,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("gif") == ImageContainerFormat::Gif,
+    image_container_format_from_extension("gif") == Gif,
     content="true",
   )
   debug_inspect(
-    image_container_format_from_extension("pam") == ImageContainerFormat::Pnm,
+    image_container_format_from_extension("pam") == Pnm,
     content="true",
   )
 }
 
 ///|
 test "image wb: hdr and gpu-compressed classification" {
-  debug_inspect(
-    image_container_is_hdr(ImageContainerFormat::Hdr),
-    content="true",
-  )
-  debug_inspect(
-    image_container_is_hdr(ImageContainerFormat::Exr),
-    content="true",
-  )
-  debug_inspect(
-    !image_container_is_hdr(ImageContainerFormat::Png),
-    content="true",
-  )
+  debug_inspect(image_container_is_hdr(Hdr), content="true")
+  debug_inspect(image_container_is_hdr(Exr), content="true")
+  debug_inspect(!image_container_is_hdr(Png), content="true")
 
-  debug_inspect(
-    image_container_is_gpu_compressed(ImageContainerFormat::Dds),
-    content="true",
-  )
-  debug_inspect(
-    image_container_is_gpu_compressed(ImageContainerFormat::Ktx2),
-    content="true",
-  )
-  debug_inspect(
-    image_container_is_gpu_compressed(ImageContainerFormat::Basis),
-    content="true",
-  )
-  debug_inspect(
-    !image_container_is_gpu_compressed(ImageContainerFormat::Jpeg),
-    content="true",
-  )
+  debug_inspect(image_container_is_gpu_compressed(Dds), content="true")
+  debug_inspect(image_container_is_gpu_compressed(Ktx2), content="true")
+  debug_inspect(image_container_is_gpu_compressed(Basis), content="true")
+  debug_inspect(!image_container_is_gpu_compressed(Jpeg), content="true")
 }
 
 ///|
 test "image wb: basis/dds/ktx2/hdr/exr helpers" {
   debug_inspect(image_is_basis_extension("basis"), content="true")
   debug_inspect(!image_is_basis_extension("ktx2"), content="true")
-  debug_inspect(basis_requires_transcode(BasisContainer::Basis), content="true")
-  debug_inspect(
-    !basis_requires_transcode(BasisContainer::Ktx2Basis),
-    content="true",
-  )
+  debug_inspect(basis_requires_transcode(Basis), content="true")
+  debug_inspect(!basis_requires_transcode(Ktx2Basis), content="true")
 
   debug_inspect(image_is_dds_extension("dds"), content="true")
   debug_inspect(image_is_ktx2_extension("ktx2"), content="true")
@@ -133,22 +107,10 @@ test "image wb: basis/dds/ktx2/hdr/exr helpers" {
 
 ///|
 test "image wb: default texture format helpers" {
-  debug_inspect(
-    dds_default_texture_format() == TextureFormat::Rgba8Unorm,
-    content="true",
-  )
-  debug_inspect(
-    ktx2_default_texture_format() == TextureFormat::Rgba8Unorm,
-    content="true",
-  )
-  debug_inspect(
-    hdr_default_texture_format() == TextureFormat::Rgba16Float,
-    content="true",
-  )
-  debug_inspect(
-    exr_default_texture_format() == TextureFormat::Rgba16Float,
-    content="true",
-  )
+  debug_inspect(dds_default_texture_format() == Rgba8Unorm, content="true")
+  debug_inspect(ktx2_default_texture_format() == Rgba8Unorm, content="true")
+  debug_inspect(hdr_default_texture_format() == Rgba16Float, content="true")
+  debug_inspect(exr_default_texture_format() == Rgba16Float, content="true")
 }
 
 ///|
@@ -161,52 +123,25 @@ test "image wb: compressed saver quality clamp and format eligibility" {
   debug_inspect(options.quality == 100, content="true")
   debug_inspect(options.format_hint == "png", content="true")
 
-  debug_inspect(
-    image_can_use_compressed_saver(TextureFormat::Rgba8Unorm),
-    content="true",
-  )
-  debug_inspect(
-    image_can_use_compressed_saver(TextureFormat::Rgba8UnormSrgb),
-    content="true",
-  )
-  debug_inspect(
-    !image_can_use_compressed_saver(TextureFormat::Bgra8Unorm),
-    content="true",
-  )
-  debug_inspect(
-    !image_can_use_compressed_saver(TextureFormat::Bgra8UnormSrgb),
-    content="true",
-  )
-  debug_inspect(
-    !image_can_use_compressed_saver(TextureFormat::Rgba16Float),
-    content="true",
-  )
-  debug_inspect(
-    !image_can_use_compressed_saver(TextureFormat::Rgba32Float),
-    content="true",
-  )
-  debug_inspect(
-    !image_can_use_compressed_saver(TextureFormat::Rgba16Uint),
-    content="true",
-  )
-  debug_inspect(
-    !image_can_use_compressed_saver(TextureFormat::Rg16Float),
-    content="true",
-  )
+  debug_inspect(image_can_use_compressed_saver(Rgba8Unorm), content="true")
+  debug_inspect(image_can_use_compressed_saver(Rgba8UnormSrgb), content="true")
+  debug_inspect(!image_can_use_compressed_saver(Bgra8Unorm), content="true")
+  debug_inspect(!image_can_use_compressed_saver(Bgra8UnormSrgb), content="true")
+  debug_inspect(!image_can_use_compressed_saver(Rgba16Float), content="true")
+  debug_inspect(!image_can_use_compressed_saver(Rgba32Float), content="true")
+  debug_inspect(!image_can_use_compressed_saver(Rgba16Uint), content="true")
+  debug_inspect(!image_can_use_compressed_saver(Rg16Float), content="true")
 }
 
 ///|
 test "image wb: image loader settings defaults" {
   let settings = ImageLoaderSettings::ImageLoaderSettings()
-  debug_inspect(
-    settings.format == ImageFormatSetting::FromExtension,
-    content="true",
-  )
+  debug_inspect(settings.format == FromExtension, content="true")
   debug_inspect(settings.texture_format == None, content="true")
   debug_inspect(settings.is_srgb, content="true")
   debug_inspect(
     match settings.sampler {
-      ImageSampler::Default => true
+      Default => true
       _ => false
     },
     content="true",
@@ -231,35 +166,22 @@ test "image wb: extension extraction and lookup from path" {
     content="true",
   )
   debug_inspect(
-    image_loader_container_from_path(
-      "textures/fox.png",
-      ImageFormatSetting::FromExtension,
-    ) ==
-    Some(ImageContainerFormat::Png),
+    image_loader_container_from_path("textures/fox.png", FromExtension) ==
+    Some(Png),
     content="true",
   )
   debug_inspect(
-    image_loader_container_from_path(
-      "textures/fox.unknown",
-      ImageFormatSetting::FromExtension,
-    ) ==
+    image_loader_container_from_path("textures/fox.unknown", FromExtension) ==
     None,
     content="true",
   )
   debug_inspect(
-    image_loader_container_from_path(
-      "textures/fox.any",
-      ImageFormatSetting::Format(ImageContainerFormat::Dds),
-    ) ==
-    Some(ImageContainerFormat::Dds),
+    image_loader_container_from_path("textures/fox.any", Format(Dds)) ==
+    Some(Dds),
     content="true",
   )
   debug_inspect(
-    image_loader_container_from_path(
-      "textures/fox.png",
-      ImageFormatSetting::Guess,
-    ) ==
-    None,
+    image_loader_container_from_path("textures/fox.png", Guess) == None,
     content="true",
   )
 }
@@ -267,23 +189,23 @@ test "image wb: extension extraction and lookup from path" {
 ///|
 test "image wb: array layout layer counting" {
   debug_inspect(
-    image_array_layout_layers(1024, ImageArrayLayout::RowCount(4)) == Some(4),
+    image_array_layout_layers(1024, RowCount(4)) == Some(4),
     content="true",
   )
   debug_inspect(
-    image_array_layout_layers(1024, ImageArrayLayout::RowHeight(256)) == Some(4),
+    image_array_layout_layers(1024, RowHeight(256)) == Some(4),
     content="true",
   )
   debug_inspect(
-    image_array_layout_layers(1024, ImageArrayLayout::RowHeight(300)) == None,
+    image_array_layout_layers(1024, RowHeight(300)) == None,
     content="true",
   )
   debug_inspect(
-    image_array_layout_layers(0, ImageArrayLayout::RowCount(1)) == None,
+    image_array_layout_layers(0, RowCount(1)) == None,
     content="true",
   )
   debug_inspect(
-    image_array_layout_layers(100, ImageArrayLayout::RowCount(0)) == None,
+    image_array_layout_layers(100, RowCount(0)) == None,
     content="true",
   )
 }
@@ -291,22 +213,10 @@ test "image wb: array layout layer counting" {
 ///|
 test "image wb: supported image formats and file extensions" {
   let formats = image_loader_supported_formats()
-  debug_inspect(
-    image_wb_has_format(formats, ImageContainerFormat::Png),
-    content="true",
-  )
-  debug_inspect(
-    image_wb_has_format(formats, ImageContainerFormat::Ktx2),
-    content="true",
-  )
-  debug_inspect(
-    image_wb_has_format(formats, ImageContainerFormat::Webp),
-    content="true",
-  )
-  debug_inspect(
-    image_wb_has_format(formats, ImageContainerFormat::Gif),
-    content="true",
-  )
+  debug_inspect(image_wb_has_format(formats, Png), content="true")
+  debug_inspect(image_wb_has_format(formats, Ktx2), content="true")
+  debug_inspect(image_wb_has_format(formats, Webp), content="true")
+  debug_inspect(image_wb_has_format(formats, Gif), content="true")
 
   let extensions = image_loader_supported_file_extensions()
   debug_inspect(image_wb_has_extension(extensions, "png"), content="true")
@@ -322,12 +232,12 @@ test "image wb: format guess from magic bytes" {
     image_guess_container_from_bytes(
       image_wb_bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
     ) ==
-    Some(ImageContainerFormat::Png),
+    Some(Png),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(image_wb_bytes([0xFF, 0xD8, 0xFF, 0xEE])) ==
-    Some(ImageContainerFormat::Jpeg),
+    Some(Jpeg),
     content="true",
   )
   debug_inspect(
@@ -336,14 +246,14 @@ test "image wb: format guess from magic bytes" {
         0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A,
       ]),
     ) ==
-    Some(ImageContainerFormat::Ktx2),
+    Some(Ktx2),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(
       image_wb_bytes([0x44, 0x44, 0x53, 0x20, 0x7C]),
     ) ==
-    Some(ImageContainerFormat::Dds),
+    Some(Dds),
     content="true",
   )
   debug_inspect(
@@ -352,39 +262,37 @@ test "image wb: format guess from magic bytes" {
         0x52, 0x49, 0x46, 0x46, 0x01, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
       ]),
     ) ==
-    Some(ImageContainerFormat::Webp),
+    Some(Webp),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(image_wb_bytes([0x00, 0x00, 0x01, 0x00])) ==
-    Some(ImageContainerFormat::Ico),
+    Some(Ico),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(
       image_wb_bytes([0x66, 0x61, 0x72, 0x62, 0x66, 0x65, 0x6C, 0x64]),
     ) ==
-    Some(ImageContainerFormat::Farbfeld),
+    Some(Farbfeld),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(image_wb_bytes([0x71, 0x6F, 0x69, 0x66])) ==
-    Some(ImageContainerFormat::Qoi),
+    Some(Qoi),
     content="true",
   )
   debug_inspect(
     image_guess_container_from_bytes(image_wb_bytes([0x49, 0x49, 0x2A, 0x00])) ==
-    Some(ImageContainerFormat::Tiff),
+    Some(Tiff),
     content="true",
   )
   debug_inspect(
-    image_guess_container_from_bytes(image_wb_bytes([0x50, 0x36])) ==
-    Some(ImageContainerFormat::Pnm),
+    image_guess_container_from_bytes(image_wb_bytes([0x50, 0x36])) == Some(Pnm),
     content="true",
   )
   debug_inspect(
-    image_guess_container_from_bytes(image_wb_bytes([0x50, 0x37])) ==
-    Some(ImageContainerFormat::Pnm),
+    image_guess_container_from_bytes(image_wb_bytes([0x50, 0x37])) == Some(Pnm),
     content="true",
   )
   debug_inspect(
@@ -402,27 +310,19 @@ test "image wb: format resolution from path + bytes + setting" {
     image_loader_container_from_input(
       "textures/no_extension",
       Some(png_magic),
-      ImageFormatSetting::Guess,
+      Guess,
     ) ==
-    Some(ImageContainerFormat::Png),
+    Some(Png),
     content="true",
   )
   debug_inspect(
-    image_loader_container_from_input(
-      "textures/no_extension",
-      None,
-      ImageFormatSetting::Guess,
-    ) ==
+    image_loader_container_from_input("textures/no_extension", None, Guess) ==
     None,
     content="true",
   )
   debug_inspect(
-    image_loader_container_from_input(
-      "textures/fox.jpeg",
-      None,
-      ImageFormatSetting::FromExtension,
-    ) ==
-    Some(ImageContainerFormat::Jpeg),
+    image_loader_container_from_input("textures/fox.jpeg", None, FromExtension) ==
+    Some(Jpeg),
     content="true",
   )
 }
@@ -432,7 +332,7 @@ test "image wb: image loader type exposes supported formats/extensions" {
   let loader = ImageLoader::new(7)
   debug_inspect(loader.supported_compressed_formats() == 7, content="true")
   debug_inspect(
-    image_wb_has_format(loader.supported_formats(), ImageContainerFormat::Png),
+    image_wb_has_format(loader.supported_formats(), Png),
     content="true",
   )
   debug_inspect(
@@ -454,17 +354,16 @@ test "image wb: image loader error message helpers" {
     content="true",
   )
   debug_inspect(
-    image_loader_error_message(ImageLoaderError::Io("eof")) ==
-    "Failed to load image bytes: eof",
+    image_loader_error_message(Io("eof")) == "Failed to load image bytes: eof",
     content="true",
   )
   debug_inspect(
-    image_loader_error_message(ImageLoaderError::FileTexture(file_error)) ==
+    image_loader_error_message(FileTexture(file_error)) ==
     "Could not load texture file: Error reading image file foo.png: decode failed.",
     content="true",
   )
   debug_inspect(
-    image_loader_error_message(ImageLoaderError::ArrayLayout("zero rows")) ==
+    image_loader_error_message(ArrayLayout("zero rows")) ==
     "Invalid array layout: zero rows",
     content="true",
   )

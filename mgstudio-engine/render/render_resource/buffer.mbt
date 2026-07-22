@@ -30,7 +30,7 @@ pub struct BufferSlice {
 
 ///|
 pub fn Buffer::new(value : @wgpu.Buffer) -> Buffer {
-  Buffer::{ id: next_buffer_id(), value }
+  { id: next_buffer_id(), value }
 }
 
 ///|
@@ -49,7 +49,7 @@ pub fn Buffer::slice(
   start : BufferAddress,
   end : BufferAddress,
 ) -> BufferSlice {
-  BufferSlice::{ buffer_id: self.id, start, end }
+  { buffer_id: self.id, start, end }
 }
 
 ///|

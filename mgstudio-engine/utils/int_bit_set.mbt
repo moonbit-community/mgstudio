@@ -28,13 +28,13 @@ pub struct IntBitSet {
 
 ///|
 pub fn IntBitSet::new() -> IntBitSet {
-  IntBitSet::{ bits: [], bit_len: 0 }
+  { bits: [], bit_len: 0 }
 }
 
 ///|
 pub fn IntBitSet::with_capacity(capacity : Int) -> IntBitSet {
   let capacity = if capacity < 0 { 0 } else { capacity }
-  IntBitSet::{
+  {
     bits: Array::make(
       (capacity + int_bit_set_segment_bits - 1) / int_bit_set_segment_bits,
       0U,
@@ -166,5 +166,5 @@ pub fn IntBitSet::clone(self : IntBitSet) -> IntBitSet {
   for segment in self.bits {
     bits.push(segment)
   }
-  IntBitSet::{ bits, bit_len: self.bit_len }
+  { bits, bit_len: self.bit_len }
 }

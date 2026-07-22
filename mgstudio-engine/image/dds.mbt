@@ -34,5 +34,5 @@ pub fn image_is_dds_extension(extension : String) -> Bool {
 
 ///|
 pub fn dds_default_texture_format() -> TextureFormat {
-  TextureFormat::Rgba8Unorm
+  Rgba8Unorm
 }

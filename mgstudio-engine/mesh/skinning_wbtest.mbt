@@ -47,7 +47,7 @@ test "mesh/skinning: influence iterator mirrors Bevy non-zero weights" {
     ignore(InfluenceIterator::new(empty))
     false
   } catch {
-    MeshAttributeError::MissingAttribute("Vertex_JointIndex") => true
+    MissingAttribute("Vertex_JointIndex") => true
     _ => fail("expected missing joint index attribute")
   }
   debug_inspect(missing_joint_index, content="true")

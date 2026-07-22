@@ -58,7 +58,7 @@ pub struct MaterialsPlugin {
 
 ///|
 pub fn MaterialsPlugin::MaterialsPlugin() -> MaterialsPlugin {
-  MaterialsPlugin::{ debug_flags: @render.RenderDebugFlags::RenderDebugFlags() }
+  { debug_flags: RenderDebugFlags() }
 }
 
 ///|
@@ -67,7 +67,7 @@ pub fn MaterialsPlugin::with_debug_flags(
   debug_flags : @render.RenderDebugFlags,
 ) -> MaterialsPlugin {
   self |> ignore
-  MaterialsPlugin::{ debug_flags, }
+  { debug_flags, }
 }
 
 ///|
@@ -91,7 +91,7 @@ pub struct PendingMeshMaterialQueues {
 
 ///|
 pub fn PendingMeshMaterialQueues::PendingMeshMaterialQueues() -> PendingMeshMaterialQueues {
-  PendingMeshMaterialQueues::{ queues: @render.PendingQueues::PendingQueues() }
+  { queues: PendingQueues() }
 }
 
 ///|
@@ -152,21 +152,19 @@ pub impl @app.Resource for PendingMeshMaterialQueues with fn resource() {
 
 ///|
 pub fn MaterialsPluginState::MaterialsPluginState() -> MaterialsPluginState {
-  MaterialsPluginState::{
-    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
-  }
+  { debug_flags: RenderDebugFlags() }
 }
 
 ///|
 pub fn MaterialsPluginState::new() -> MaterialsPluginState {
-  MaterialsPluginState::MaterialsPluginState()
+  MaterialsPluginState()
 }
 
 ///|
 pub fn MaterialsPluginState::from_plugin(
   plugin : MaterialsPlugin,
 ) -> MaterialsPluginState {
-  MaterialsPluginState::{ debug_flags: plugin.debug_flags }
+  { debug_flags: plugin.debug_flags }
 }
 
 ///|
@@ -195,26 +193,26 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_entity_specialization_ticks) is None {
     world.insert_resource(
       ecs_key_entity_specialization_ticks,
-      EntitySpecializationTicks::EntitySpecializationTicks(),
+      EntitySpecializationTicks(),
     )
   }
   if world.get_resource(ecs_key_specialized_material_pipeline_cache) is None {
     world.insert_resource(
       ecs_key_specialized_material_pipeline_cache,
-      SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+      SpecializedMaterialPipelineCache(),
     )
   }
   if world.get_resource(@render_visibility.DirtySpecializations::resource())
     is None {
     world.insert_resource(
       @render_visibility.DirtySpecializations::resource(),
-      @render_visibility.DirtySpecializations::DirtySpecializations(),
+      DirtySpecializations(),
     )
   }
   if world.get_resource(@pbr_render.LightKeyCache::resource()) is None {
     world.insert_resource(
       @pbr_render.LightKeyCache::resource(),
-      @pbr_render.LightKeyCache::LightKeyCache(),
+      LightKeyCache(),
     )
   }
   if world.get_resource(
@@ -223,37 +221,37 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
     is None {
     world.insert_resource(
       @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
-      @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache(),
+      SpecializedShadowMaterialPipelineCache(),
     )
   }
   if world.get_resource(ecs_key_render_material_instances) is None {
     world.insert_resource(
       ecs_key_render_material_instances,
-      RenderMaterialInstances::RenderMaterialInstances(),
+      RenderMaterialInstances(),
     )
   }
   if world.get_resource(ecs_key_material_bind_group_allocators) is None {
     world.insert_resource(
       ecs_key_material_bind_group_allocators,
-      MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
+      MaterialBindGroupAllocators(),
     )
   }
   if world.get_resource(PendingMeshMaterialQueues::resource()) is None {
     world.insert_resource(
       PendingMeshMaterialQueues::resource(),
-      PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+      PendingMeshMaterialQueues(),
     )
   }
   if world.get_resource(@pbr_render.PendingShadowQueues::resource()) is None {
     world.insert_resource(
       @pbr_render.PendingShadowQueues::resource(),
-      @pbr_render.PendingShadowQueues::PendingShadowQueues(),
+      PendingShadowQueues(),
     )
   }
   if world.get_resource(Render3dShadowPhasesData::resource()) is None {
     world.insert_resource(
       Render3dShadowPhasesData::resource(),
-      Render3dShadowPhasesData::Render3dShadowPhasesData(),
+      Render3dShadowPhasesData(),
     )
   }
 }
@@ -318,7 +316,7 @@ pub fn pbr_material_bind_group_index() -> Int {
 
 ///|
 pub fn pbr_materials_plugin_state_default() -> MaterialsPluginState {
-  MaterialsPluginState::MaterialsPluginState()
+  MaterialsPluginState()
 }
 
 ///|
@@ -328,7 +326,7 @@ pub fn pbr_materials_plugin_state_new() -> MaterialsPluginState {
 
 ///|
 pub fn pbr_materials_plugin_default() -> MaterialsPlugin {
-  MaterialsPlugin::MaterialsPlugin()
+  MaterialsPlugin()
 }
 
 ///|
@@ -367,7 +365,7 @@ pub fn pbr_material_draw_function_labels() -> Array[@material.DrawFunctionLabel]
 pub fn pbr_material_register_draw_functions(
   draw_functions : @material.DrawFunctions,
 ) -> PbrMaterialDrawFunctionIds {
-  PbrMaterialDrawFunctionIds::{
+  {
     main_pass_opaque: draw_functions.register(
       MAIN_PASS_OPAQUE_DRAW_FUNCTION_LABEL,
     ),
@@ -516,13 +514,12 @@ fn alpha_mode_pipeline_key(
   msaa_samples? : Int = 1,
 ) -> UInt64 {
   match alpha_mode {
-    @material.AlphaMode3d::Premultiplied =>
-      MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
-    @material.AlphaMode3d::Add => MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
-    @material.AlphaMode3d::Blend => MESH_PIPELINE_KEY_BLEND_ALPHA
-    @material.AlphaMode3d::Multiply => MESH_PIPELINE_KEY_BLEND_MULTIPLY
-    @material.AlphaMode3d::Mask(_) => MESH_PIPELINE_KEY_MAY_DISCARD
-    @material.AlphaMode3d::AlphaToCoverage =>
+    Premultiplied => MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
+    Add => MESH_PIPELINE_KEY_BLEND_PREMULTIPLIED_ALPHA
+    Blend => MESH_PIPELINE_KEY_BLEND_ALPHA
+    Multiply => MESH_PIPELINE_KEY_BLEND_MULTIPLY
+    Mask(_) => MESH_PIPELINE_KEY_MAY_DISCARD
+    AlphaToCoverage =>
       if msaa_samples <= 1 {
         MESH_PIPELINE_KEY_MAY_DISCARD
       } else {

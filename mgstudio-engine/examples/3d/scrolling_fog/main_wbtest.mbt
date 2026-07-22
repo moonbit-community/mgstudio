@@ -54,7 +54,7 @@ test "scrolling_fog: Bevy scene authoring inputs reach source world" {
     camera_transform_matches.val = camera_transform_matches.val &&
       vec3_approx_eq(transform.translation, @math.Vec3::new(0.0F, 2.0F, 0.0F))
     camera_msaa_matches.val = camera_msaa_matches.val &&
-      msaa_read.value() == @pbr.Msaa::Off
+      msaa_read.value() == Off
     let fog = fog_read.value()
     camera_fog_matches.val = camera_fog_matches.val &&
       approx_eq(fog.ambient_intensity, 0.0F) &&
@@ -178,7 +178,7 @@ test "scrolling_fog: directional cascade inputs are Bevy-shaped" {
     let (_camera3d, projection_read) = data
     camera_entity.val = Some(entity)
     match projection_read.value() {
-      @camera.Projection::Perspective(projection) =>
+      Perspective(projection) =>
         camera_projection_aspect_matches.val = approx_eq(
           projection.aspect_ratio(),
           1280.0F / 720.0F,
@@ -260,8 +260,7 @@ test "scrolling_fog: volumetric fog shader defs mirror Bevy active pipeline key"
   try! camera_query.view(fn(_entity, data) {
     let (_camera, msaa_read, _volumetric_fog) = data
     camera_count.val = camera_count.val + 1
-    camera_non_msaa.val = camera_non_msaa.val &&
-      msaa_read.value() == @pbr.Msaa::Off
+    camera_non_msaa.val = camera_non_msaa.val && msaa_read.value() == Off
   })
   let atmosphere_count = Ref(0)
   world.for_each_component(@pbr_atmosphere.Atmosphere::component(), fn(
@@ -292,13 +291,9 @@ test "scrolling_fog: volumetric fog shader defs mirror Bevy active pipeline key"
   )
   let vertex_buffer_layout = @mesh.VertexBufferLayout::new(
     array_stride=12,
-    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    step_mode=Vertex,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=0,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
     ],
   )
   let textureless = @pbr_volumetric_fog.VolumetricFogPipelineKey::VolumetricFogPipelineKey(
@@ -458,7 +453,7 @@ test "scrolling_fog: runtime volumetric fog pass receives directional shadow res
     }
   }
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let lighting = @pbr_render.render3d_collect_lighting(render_world)
   debug_inspect(lighting.directional_shadow_maps_enabled, content="true")
   debug_inspect(
@@ -538,7 +533,7 @@ test "scrolling_fog: pillar reaches directional shadow visible set" {
   }
   let pillar_main_entity = @render.MainEntity::new(pillar)
   let mesh_visibility_class = @mesh.ecs_key_mesh3d.id().to_string()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let subview_count = Ref(0)
   let visible_cascade_count = Ref(0)
   let pillar_visible = Ref(false)
@@ -594,7 +589,7 @@ test "scrolling_fog: pillar resolves Bevy shadow specialization inputs" {
     abort("expected scrolling_fog pillar entity")
   }
   let pillar_main_entity = @render.MainEntity::new(pillar)
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let subview_count = Ref(0)
   let input_ready_count = Ref(0)
   let material_instance_found = Ref(false)
@@ -702,7 +697,7 @@ test "scrolling_fog: pillar produces shadow specialization cache entry" {
     abort("expected scrolling_fog pillar entity")
   }
   let pillar_main_entity = @render.MainEntity::new(pillar)
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let shadow_pipeline_cache = match
     render_world.get_resource(
       @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
@@ -774,7 +769,7 @@ test "scrolling_fog: pillar produces queued directional shadow phase item" {
     abort("expected scrolling_fog pillar entity")
   }
   let pillar_main_entity = @render.MainEntity::new(pillar)
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let shadow_phases = match
     render_world.get_resource(@pbr.Render3dShadowPhasesData::resource()) {
     Some(value) => value

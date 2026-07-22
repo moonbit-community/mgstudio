@@ -26,7 +26,7 @@ pub struct Ray3d {
 
 ///|
 pub fn Ray2d::new(origin : Vec2, direction : Dir2) -> Ray2d {
-  Ray2d::{ origin, direction }
+  { origin, direction }
 }
 
 ///|
@@ -36,7 +36,7 @@ pub fn Ray2d::get_point(self : Ray2d, distance : Float) -> Vec2 {
 
 ///|
 pub fn Ray3d::new(origin : Vec3, direction : Dir3) -> Ray3d {
-  Ray3d::{ origin, direction }
+  { origin, direction }
 }
 
 ///|

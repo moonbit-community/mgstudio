@@ -291,7 +291,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for S
     fn() raise {
       let query : @ecs.Query[D, F] = query_param_query_from_state(state)
       let value = query.require_single()
-      Single::{ value, query }
+      { value, query }
     },
     fn(value : Single[D, F]) {
       query_param_store_query_state(value.query, state)
@@ -346,7 +346,7 @@ pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for P
       if query.count() == 0 {
         raise @ecs.Skipped("Expected at least one matching entity")
       }
-      Populated::{ query, }
+      { query, }
     },
     fn(value : Populated[D, F]) {
       query_param_store_query_state(value.query, state)

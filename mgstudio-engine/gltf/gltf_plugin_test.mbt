@@ -25,20 +25,14 @@ test "gltf: pbr material handler toggle can be switched at runtime" {
 ///|
 test "gltf: plugin surface can configure skinned mesh bounds policy" {
   let original = gltf_default_skinned_mesh_bounds_policy()
-  gltf_set_default_skinned_mesh_bounds_policy(
-    GltfSkinnedMeshBoundsPolicy::BindPose,
-  )
+  gltf_set_default_skinned_mesh_bounds_policy(BindPose)
   debug_inspect(
-    gltf_default_skinned_mesh_bounds_policy() ==
-    GltfSkinnedMeshBoundsPolicy::BindPose,
+    gltf_default_skinned_mesh_bounds_policy() == BindPose,
     content="true",
   )
-  gltf_set_default_skinned_mesh_bounds_policy(
-    GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
-  )
+  gltf_set_default_skinned_mesh_bounds_policy(NoFrustumCulling)
   debug_inspect(
-    gltf_default_skinned_mesh_bounds_policy() ==
-    GltfSkinnedMeshBoundsPolicy::NoFrustumCulling,
+    gltf_default_skinned_mesh_bounds_policy() == NoFrustumCulling,
     content="true",
   )
   gltf_set_default_skinned_mesh_bounds_policy(original)
@@ -66,17 +60,11 @@ test "gltf: plugin surface can configure default coordinate conversion" {
 test "gltf: plugin surface can configure default image sampler" {
   let original = gltf_default_image_sampler()
   let nearest_clamp = @image.ImageSamplerDescriptor::nearest()
-  nearest_clamp.set_address_mode(@image.ImageAddressMode::ClampToEdge) |> ignore
+  nearest_clamp.set_address_mode(ClampToEdge) |> ignore
   gltf_set_default_image_sampler(nearest_clamp)
   let configured = gltf_default_image_sampler()
-  debug_inspect(
-    configured.min_filter == @image.ImageFilterMode::Nearest,
-    content="true",
-  )
-  debug_inspect(
-    configured.address_mode_u == @image.ImageAddressMode::ClampToEdge,
-    content="true",
-  )
+  debug_inspect(configured.min_filter == Nearest, content="true")
+  debug_inspect(configured.address_mode_u == ClampToEdge, content="true")
   gltf_set_default_image_sampler(original)
 }
 

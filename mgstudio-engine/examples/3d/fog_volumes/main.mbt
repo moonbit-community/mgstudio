@@ -132,13 +132,13 @@ fn fog_volumes_app() -> @app.App[@ecs.World] {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
-  .add_systems_world(@app.Startup, setup_global_ambient_light)
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param(@app.Update, rotate_camera)
+  .add_systems_world(Startup, setup_global_ambient_light)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param(Update, rotate_camera)
 }
 
 ///|
@@ -402,7 +402,7 @@ test "fog_volumes: scene matches upstream volumetric fog volume shape" {
   }
   debug_inspect(prepared_fog_matches, content="true")
   app = app.update()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let render_storage_counts = @pbr_volumetric_fog.volumetric_fog_render_world_storage_counts(
     render_world,
   )
@@ -522,7 +522,7 @@ test "fog_volumes: update schedule rotates camera every rendered frame" {
     ),
     content="true",
   )
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let render_storage_counts = @pbr_volumetric_fog.volumetric_fog_render_world_storage_counts(
     render_world,
   )

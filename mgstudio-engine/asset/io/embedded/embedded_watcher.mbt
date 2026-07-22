@@ -26,7 +26,7 @@ pub fn EmbeddedAssetWatcher::new(
   asset_path : String,
   source_path : String,
 ) -> EmbeddedAssetWatcher {
-  EmbeddedAssetWatcher::{ asset_path, source_path }
+  { asset_path, source_path }
 }
 
 ///|

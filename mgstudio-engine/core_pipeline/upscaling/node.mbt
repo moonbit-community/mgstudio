@@ -26,7 +26,7 @@ pub struct UpscalingNode {
 
 ///|
 pub fn UpscalingNode::UpscalingNode() -> UpscalingNode {
-  UpscalingNode::{ label: UPSCALING_PASS_LABEL }
+  { label: UPSCALING_PASS_LABEL }
 }
 
 ///|
@@ -47,11 +47,7 @@ pub fn UpscalingNodeState::new(
   has_specialized_pipeline? : Bool = false,
   has_camera_viewport? : Bool = false,
 ) -> UpscalingNodeState {
-  UpscalingNodeState::{
-    camera_output_mode_skip,
-    has_specialized_pipeline,
-    has_camera_viewport,
-  }
+  { camera_output_mode_skip, has_specialized_pipeline, has_camera_viewport }
 }
 
 ///|
@@ -82,10 +78,7 @@ pub fn UpscalingBindGroupCacheState::new(
   has_cached_bind_group? : Bool = false,
   cached_main_texture_view_id? : Int = -1,
 ) -> UpscalingBindGroupCacheState {
-  UpscalingBindGroupCacheState::{
-    has_cached_bind_group,
-    cached_main_texture_view_id,
-  }
+  { has_cached_bind_group, cached_main_texture_view_id }
 }
 
 ///|
@@ -102,7 +95,7 @@ pub fn upscaling_bind_group_cache_record(
   _cache : UpscalingBindGroupCacheState,
   main_texture_view_id~ : Int,
 ) -> UpscalingBindGroupCacheState {
-  UpscalingBindGroupCacheState::{
+  {
     has_cached_bind_group: true,
     cached_main_texture_view_id: main_texture_view_id,
   }

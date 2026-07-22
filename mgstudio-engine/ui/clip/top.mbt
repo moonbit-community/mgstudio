@@ -24,7 +24,7 @@ pub struct ScissorRect {
 
 ///|
 pub fn ScissorRect::new(rect : @math.Rect) -> ScissorRect {
-  ScissorRect::{ rect, }
+  { rect, }
 }
 
 ///|

@@ -24,7 +24,7 @@ pub struct RenderMaterialEntitySlots[S] {
 
 ///|
 pub fn[S] RenderMaterialEntitySlots::new() -> RenderMaterialEntitySlots[S] {
-  RenderMaterialEntitySlots::{ slots: @hashmap.HashMap([]) }
+  { slots: HashMap([]) }
 }
 
 ///|

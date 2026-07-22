@@ -29,7 +29,7 @@ pub struct BindGroupLayoutEntryBuilder {
 pub fn bind_group_layout_entry_builder(
   kind : @render_resource.BindingType,
 ) -> BindGroupLayoutEntryBuilder {
-  BindGroupLayoutEntryBuilder::{ kind, visibility: None, count: None }
+  { kind, visibility: None, count: None }
 }
 
 ///|
@@ -37,7 +37,7 @@ pub fn BindGroupLayoutEntryBuilder::visibility(
   self : BindGroupLayoutEntryBuilder,
   visibility : UInt,
 ) -> BindGroupLayoutEntryBuilder {
-  BindGroupLayoutEntryBuilder::{ ..self, visibility: Some(visibility) }
+  { ..self, visibility: Some(visibility) }
 }
 
 ///|
@@ -45,14 +45,7 @@ pub fn BindGroupLayoutEntryBuilder::count(
   self : BindGroupLayoutEntryBuilder,
   count : UInt,
 ) -> BindGroupLayoutEntryBuilder {
-  BindGroupLayoutEntryBuilder::{
-    ..self,
-    count: if count == 0U {
-      None
-    } else {
-      Some(count)
-    },
-  }
+  { ..self, count: if count == 0U { None } else { Some(count) } }
 }
 
 ///|
@@ -89,7 +82,7 @@ pub fn bind_group_layout_entries_sequential(
     output.push(entry.build(binding, default_visibility))
     binding = binding + 1
   }
-  BindGroupLayoutEntries::{ entries: output }
+  { entries: output }
 }
 
 ///|
@@ -101,7 +94,7 @@ pub fn bind_group_layout_entries_with_indices(
   for entry in entries {
     output.push(entry.1.build(entry.0, default_visibility))
   }
-  BindGroupLayoutEntries::{ entries: output }
+  { entries: output }
 }
 
 ///|
@@ -136,7 +129,7 @@ pub fn dynamic_bind_group_layout_entries_sequential(
     output.push(entry.build(binding, default_visibility))
     binding = binding + 1
   }
-  DynamicBindGroupLayoutEntries::{ default_visibility, entries: output }
+  { default_visibility, entries: output }
 }
 
 ///|
@@ -148,14 +141,14 @@ pub fn dynamic_bind_group_layout_entries_with_indices(
   for entry in entries {
     output.push(entry.1.build(entry.0, default_visibility))
   }
-  DynamicBindGroupLayoutEntries::{ default_visibility, entries: output }
+  { default_visibility, entries: output }
 }
 
 ///|
 pub fn DynamicBindGroupLayoutEntries::new(
   default_visibility : UInt,
 ) -> DynamicBindGroupLayoutEntries {
-  DynamicBindGroupLayoutEntries::{ default_visibility, entries: [] }
+  { default_visibility, entries: [] }
 }
 
 ///|
@@ -172,7 +165,7 @@ pub fn DynamicBindGroupLayoutEntries::extend_sequential(
     output.push(entry.build(binding, self.default_visibility))
     binding = binding + 1
   }
-  DynamicBindGroupLayoutEntries::{ ..self, entries: output }
+  { ..self, entries: output }
 }
 
 ///|
@@ -184,7 +177,7 @@ pub fn DynamicBindGroupLayoutEntries::extend_with_indices(
   for entry in entries {
     output.push(entry.1.build(entry.0, self.default_visibility))
   }
-  DynamicBindGroupLayoutEntries::{ ..self, entries: output }
+  { ..self, entries: output }
 }
 
 ///|

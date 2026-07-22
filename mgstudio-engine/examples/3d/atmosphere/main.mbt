@@ -79,7 +79,7 @@ struct WaterSettings {
 
 ///|
 fn WaterSettings::WaterSettings() -> WaterSettings {
-  WaterSettings::{
+  {
     octave_vectors: [
       @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
       @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
@@ -97,10 +97,7 @@ struct Water {
 
 ///|
 fn Water::Water() -> Water {
-  Water::{
-    normals: @asset.Handle::new(0),
-    settings: WaterSettings::WaterSettings(),
-  }
+  { normals: @asset.Handle::new(0), settings: WaterSettings() }
 }
 
 ///|
@@ -295,27 +292,17 @@ pub impl @pbr.MaterialExtension for Water with fn bind_group_layout_entries(
     @render_resource.BindGroupLayoutEntry::new(
       100,
       fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      ),
+      TextureBinding(Float(true), D2, false),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       101,
       fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
+      SamplerBinding(Filtering),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       102,
       fragment,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        64UL,
-      ),
+      BufferBinding(Uniform, false, 64UL),
     ),
   ]
 }
@@ -371,9 +358,7 @@ fn setup_camera_fog(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_atmosphere_settings(
-      Some(@pbr.AtmosphereSettings::AtmosphereSettings()),
-    )
+    .with_atmosphere_settings(Some(AtmosphereSettings()))
     .with_volumetric_fog(
       Some(@pbr.VolumetricFog::VolumetricFog().with_ambient_intensity(0.0F)),
     )
@@ -385,7 +370,7 @@ fn setup_camera_fog(
         ),
       ),
     )
-    .with_tonemapping(Some(@post_process.Tonemapping::AcesFitted))
+    .with_tonemapping(Some(AcesFitted))
     .with_bloom(Some(@post_process.Bloom::natural())),
   )
   commands
@@ -455,10 +440,8 @@ fn setup_terrain_scene(
     "textures/water_normals.png",
     fn(settings) {
       settings.is_srgb = false
-      settings.sampler = @asset.ImageSampler::Descriptor(
-        @asset.ImageSamplerDescriptor::linear().set_address_mode(
-          @asset.ImageAddressMode::Repeat,
-        ),
+      settings.sampler = Descriptor(
+        @asset.ImageSamplerDescriptor::linear().set_address_mode(Repeat),
       )
     },
   )
@@ -467,7 +450,7 @@ fn setup_terrain_scene(
   ).with_perceptual_roughness(0.0F)
   let water_extension = Water::{
     normals: water_normals,
-    settings: WaterSettings::{
+    settings: {
       octave_vectors: [
         @math.Vec4::new(0.080F, 0.059F, 0.073F, -0.062F),
         @math.Vec4::new(0.153F, 0.138F, -0.149F, -0.195F),
@@ -516,7 +499,7 @@ fn atmosphere_controls(
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  if @input.key_just_pressed(Digit3) {
     let presets = atmosphere_presets.get()
     try! planet_atmosphere.view(fn(_entity, item) {
       let atmosphere = @pbr.Atmosphere::earth(presets.earth)
@@ -532,7 +515,7 @@ fn atmosphere_controls(
     println("Switched to Earth atmosphere")
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
+  if @input.key_just_pressed(Digit4) {
     let presets = atmosphere_presets.get()
     try! planet_atmosphere.view(fn(_entity, item) {
       let atmosphere = @pbr.Atmosphere::mars(presets.mars)
@@ -548,34 +531,28 @@ fn atmosphere_controls(
     println("Switched to Mars atmosphere")
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     try! camera_settings.view(fn(_entity, settings) {
-      settings.set(
-        settings
-        .value()
-        .with_rendering_method(@pbr.AtmosphereMode::LookupTexture),
-      )
+      settings.set(settings.value().with_rendering_method(LookupTexture))
     })
     println("Switched to lookup texture rendering method")
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  if @input.key_just_pressed(Digit2) {
     try! camera_settings.view(fn(_entity, settings) {
-      settings.set(
-        settings.value().with_rendering_method(@pbr.AtmosphereMode::Raymarched),
-      )
+      settings.set(settings.value().with_rendering_method(Raymarched))
     })
     println("Switched to raymarched rendering method")
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Enter) {
+  if @input.key_just_pressed(Enter) {
     game_state.modify(fn(state) { state.paused = !state.paused })
   }
 
   let delta = time.get().delta_seconds()
-  let exposure_delta = if keyboard_input.pressed(@window.KeyCode::ArrowUp) {
+  let exposure_delta = if keyboard_input.pressed(ArrowUp) {
     -delta * 2.0F
-  } else if keyboard_input.pressed(@window.KeyCode::ArrowDown) {
+  } else if keyboard_input.pressed(ArrowDown) {
     delta * 2.0F
   } else {
     0.0F
@@ -616,10 +593,7 @@ fn setup_instructions(_commands : @app.Commands) -> Unit {
 ///|
 fn main {
   let water_material_plugin : @pbr.MaterialPlugin[WaterMaterial] = @pbr.MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      @pbr.ExtendedMaterial::new(
-        @pbr.StandardMaterial::StandardMaterial(),
-        Water::Water(),
-      )
+      @pbr.ExtendedMaterial::new(StandardMaterial(), Water())
     },
   )
   @app.App::new(@ecs.World::new())
@@ -632,10 +606,10 @@ fn main {
   .insert_resource(GameState::GameState())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(water_material_plugin)
-  .add_systems_param3(@app.Startup, setup_camera_fog)
-  .add_systems_param4(@app.Startup, setup_terrain_scene)
-  .add_systems_param(@app.Startup, setup_instructions)
-  .add_systems_param7(@app.Update, atmosphere_controls)
-  .add_systems_param3(@app.Update, dynamic_scene)
+  .add_systems_param3(Startup, setup_camera_fog)
+  .add_systems_param4(Startup, setup_terrain_scene)
+  .add_systems_param(Startup, setup_instructions)
+  .add_systems_param7(Update, atmosphere_controls)
+  .add_systems_param3(Update, dynamic_scene)
   .run()
 }

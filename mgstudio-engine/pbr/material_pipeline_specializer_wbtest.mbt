@@ -23,32 +23,28 @@ fn pbr_material_specializer_test_layout() -> @mesh.MeshVertexBufferLayoutRef {
         @mesh.MeshVertexAttribute::uv_0().id(),
         @mesh.MeshVertexAttribute::color().id(),
       ],
-      layout=@mesh.VertexBufferLayout::new(
-        array_stride=48,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[
-          @mesh.VertexAttribute::new(
-            offset=0,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=9,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=12,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=10,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=24,
-            format=@mesh.MeshVertexFormat::Float32x2,
-            shader_location=11,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=32,
-            format=@mesh.MeshVertexFormat::Float32x4,
-            shader_location=12,
-          ),
-        ],
-      ),
+      layout=@mesh.VertexBufferLayout::new(array_stride=48, step_mode=Vertex, attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=Float32x3,
+          shader_location=9,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=Float32x3,
+          shader_location=10,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=24,
+          format=Float32x2,
+          shader_location=11,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=32,
+          format=Float32x4,
+          shader_location=12,
+        ),
+      ]),
     ),
   )
 }
@@ -66,42 +62,38 @@ fn pbr_material_specializer_test_skinned_layout() -> @mesh.MeshVertexBufferLayou
         @mesh.MeshVertexAttribute::joint_index().id(),
         @mesh.MeshVertexAttribute::joint_weight().id(),
       ],
-      layout=@mesh.VertexBufferLayout::new(
-        array_stride=72,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[
-          @mesh.VertexAttribute::new(
-            offset=0,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=9,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=12,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=10,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=24,
-            format=@mesh.MeshVertexFormat::Float32x2,
-            shader_location=11,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=32,
-            format=@mesh.MeshVertexFormat::Float32x4,
-            shader_location=12,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=48,
-            format=@mesh.MeshVertexFormat::Uint16x4,
-            shader_location=13,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=56,
-            format=@mesh.MeshVertexFormat::Float32x4,
-            shader_location=14,
-          ),
-        ],
-      ),
+      layout=@mesh.VertexBufferLayout::new(array_stride=72, step_mode=Vertex, attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=Float32x3,
+          shader_location=9,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=Float32x3,
+          shader_location=10,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=24,
+          format=Float32x2,
+          shader_location=11,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=32,
+          format=Float32x4,
+          shader_location=12,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=48,
+          format=Uint16x4,
+          shader_location=13,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=56,
+          format=Float32x4,
+          shader_location=14,
+        ),
+      ]),
     ),
   )
 }
@@ -110,9 +102,7 @@ fn pbr_material_specializer_test_skinned_layout() -> @mesh.MeshVertexBufferLayou
 fn pbr_material_specializer_test_render_mesh() -> @render_mesh.RenderMesh {
   @render_mesh.RenderMesh::new(
     vertex_count=3,
-    key_bits=@mesh.BaseMeshPipelineKey::from_primitive_topology(
-      @mesh.Mesh3dPrimitiveTopology::TriangleList,
-    ),
+    key_bits=@mesh.BaseMeshPipelineKey::from_primitive_topology(TriangleList),
     layout=pbr_material_specializer_test_layout(),
   )
 }
@@ -136,7 +126,7 @@ fn pbr_material_specializer_shader_defs_contain_flag(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @material.ShaderDefVal::Flag(flag) if flag == name => return true
+      Flag(flag) if flag == name => return true
       _ => ()
     }
   }
@@ -151,8 +141,8 @@ fn pbr_material_specializer_shader_defs_contain_uint(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @material.ShaderDefVal::UInt(flag, flag_value) if flag == name &&
-        flag_value == value => return true
+      UInt(flag, flag_value) if flag == name && flag_value == value =>
+        return true
       _ => ()
     }
   }
@@ -167,8 +157,8 @@ fn pbr_material_specializer_shader_defs_contain_int(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @material.ShaderDefVal::Int(flag, flag_value) if flag == name &&
-        flag_value == value => return true
+      Int(flag, flag_value) if flag == name && flag_value == value =>
+        return true
       _ => ()
     }
   }
@@ -191,9 +181,7 @@ fn pbr_material_specializer_layout_has_binding(
 ///|
 test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let specializer = PbrMaterialPipelineSpecializer::new(properties)
   let descriptor = try! specializer.specialize(
@@ -276,13 +264,11 @@ test "pbr material pipeline specializer mirrors bevy mesh attribute shader defs"
 ///|
 test "pbr material pipeline optional texture feature set controls shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let no_optional_descriptor = try! PbrMaterialPipelineSpecializer::new(
     properties,
-    standard_material_texture_features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(),
+    standard_material_texture_features=StandardMaterialTextureFeatureSet(),
   ).specialize(
     pbr_material_specializer_test_key(),
     pbr_material_specializer_test_layout(),
@@ -303,7 +289,7 @@ test "pbr material pipeline optional texture feature set controls shader defs" {
 
   let all_optional_descriptor = try! PbrMaterialPipelineSpecializer::new(
     properties,
-    standard_material_texture_features=StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    standard_material_texture_features=StandardMaterialTextureFeatureSet(
       pbr_transmission_textures=true,
       pbr_multi_layer_material_textures=true,
       pbr_anisotropy_texture=true,
@@ -363,7 +349,7 @@ test "pbr material pipeline rejects non-bindless sampler-limit overflow before p
   ) catch {
     error => {
       match error {
-        @material.SpecializedMeshPipelineError::UnsupportedFeature(message) => {
+        UnsupportedFeature(message) => {
           debug_inspect(message.contains("uses 20"), content="true")
           debug_inspect(
             message.contains("max_samplers_per_shader_stage 16"),
@@ -372,7 +358,7 @@ test "pbr material pipeline rejects non-bindless sampler-limit overflow before p
         }
         _ => abort("expected unsupported feature sampler-limit error")
       }
-      @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
+      RenderPipelineDescriptor()
     }
   }
   ignore(unsupported)
@@ -381,9 +367,7 @@ test "pbr material pipeline rejects non-bindless sampler-limit overflow before p
 ///|
 test "pbr material pipeline specializer mirrors bevy view projection shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -420,9 +404,7 @@ test "pbr material pipeline specializer mirrors bevy view projection shader defs
 ///|
 test "pbr material pipeline mirrors bevy temporal shadow filter shader def" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -452,9 +434,7 @@ test "pbr material pipeline mirrors bevy temporal shadow filter shader def" {
 ///|
 test "pbr material pipeline specializer mirrors StandardMaterial shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let material_bits = STANDARD_MATERIAL_KEY_CULL_BACK |
     STANDARD_MATERIAL_KEY_NORMAL_MAP |
@@ -514,9 +494,7 @@ test "pbr material pipeline specializer mirrors StandardMaterial shader defs" {
 ///|
 test "pbr material pipeline specializer mirrors StandardMaterial depth bias" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let positive_bits = STANDARD_MATERIAL_KEY_CULL_BACK |
     (42UL << STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT)
@@ -543,9 +521,7 @@ test "pbr material pipeline specializer mirrors StandardMaterial depth bias" {
 ///|
 test "pbr material pipeline specializer mirrors StandardMaterial inverted culling" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -563,9 +539,7 @@ test "pbr material pipeline specializer mirrors StandardMaterial inverted cullin
 ///|
 test "pbr material pipeline specializer selects morphed skinned mesh layout" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let specializer = PbrMaterialPipelineSpecializer::new(properties)
   let descriptor = try! specializer.specialize(
@@ -601,11 +575,7 @@ test "pbr material pipeline specializer selects morphed skinned mesh layout" {
 ///|
 test "pbr material pipeline specializer inserts material bind group and overrides shaders" {
   let properties = @material.MaterialProperties::MaterialProperties()
-    .with_material_layout(
-      Some(
-        @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-      ),
-    )
+    .with_material_layout(Some(BindGroupLayoutDescriptor()))
     .with_bindless(true)
     .add_shader(
       @material.MATERIAL_VERTEX_SHADER_LABEL,
@@ -694,11 +664,9 @@ test "pbr material pipeline specializer inserts material bind group and override
 ///|
 test "pbr standard material properties install base specialization hook" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-      @material.AlphaMode3d::Blend,
-    ),
+    @material.StandardMaterial::StandardMaterial().with_alpha_mode(Blend),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   debug_inspect(properties.base_specialize is Some(_), content="true")
@@ -727,19 +695,16 @@ test "pbr material pipeline specializes volumetric_fog cube material like Bevy" 
   let cube_material = @material.StandardMaterial::StandardMaterial()
     .with_normal_map_texture(Some(@asset.Handle::new(1)))
     .with_cull_mode(None)
-    .with_alpha_mode(@material.AlphaMode3d::Opaque)
+    .with_alpha_mode(Opaque)
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.5F)
   let properties = render3d_material_properties_for_standard_material(
     cube_material,
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
-  debug_inspect(
-    properties.render_phase_type is @material.RenderPhaseType::Opaque,
-    content="true",
-  )
+  debug_inspect(properties.render_phase_type is Opaque, content="true")
   inspect(properties.mesh_pipeline_key_bits.bits(), content="0")
   inspect(
     properties.material_key.bits() & STANDARD_MATERIAL_KEY_NORMAL_MAP,
@@ -795,9 +760,9 @@ test "pbr material pipeline specializes volumetric_fog cube material like Bevy" 
 ///|
 test "pbr material pipeline key carries mesh-owned lightmap bits" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
@@ -819,9 +784,9 @@ test "pbr material pipeline key carries mesh-owned lightmap bits" {
 ///|
 test "pbr material pipeline key carries bevy view bits into descriptor layout" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let view_key_bits = mesh_pipeline_key_msaa_bits(4) |
@@ -903,9 +868,7 @@ test "pbr material pipeline key carries bevy view bits into descriptor layout" {
 ///|
 test "pbr material pipeline mirrors bevy target format key" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let view_key_bits = mesh_pipeline_key_target_format_bits(
     @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
@@ -938,9 +901,7 @@ test "pbr material pipeline mirrors bevy target format key" {
 ///|
 test "pbr material pipeline mirrors bevy load prepass normals gate" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let opaque_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -981,9 +942,7 @@ test "pbr material pipeline mirrors bevy load prepass normals gate" {
 ///|
 test "pbr material pipeline mirrors bevy prepass mesh key shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -1016,9 +975,7 @@ test "pbr material pipeline mirrors bevy prepass mesh key shader defs" {
 ///|
 test "pbr material pipeline mirrors bevy discard visibility and atmosphere shader defs" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -1045,9 +1002,7 @@ test "pbr material pipeline mirrors bevy discard visibility and atmosphere shade
 ///|
 test "pbr material pipeline mirrors bevy blend pass specialization" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let alpha_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(mesh_bits=MESH_PIPELINE_KEY_BLEND_ALPHA),
@@ -1189,9 +1144,7 @@ test "pbr material pipeline mirrors bevy blend pass specialization" {
 ///|
 test "pbr material pipeline gates lightmap binding-array defs on pipeline support" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let default_specializer = PbrMaterialPipelineSpecializer::new(properties)
   let default_descriptor = try! default_specializer.specialize(
@@ -1279,9 +1232,7 @@ test "pbr material pipeline gates lightmap binding-array defs on pipeline suppor
 ///|
 test "pbr material pipeline keeps clustered decal shader defs and layout in sync" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let default_descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(),
@@ -1320,13 +1271,11 @@ test "pbr material pipeline keeps clustered decal shader defs and layout in sync
 ///|
 test "pbr material pipeline carries Bevy primitive state from mesh key" {
   let properties = @material.MaterialProperties::MaterialProperties().with_material_layout(
-    Some(
-      @render_resource.BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    ),
+    Some(BindGroupLayoutDescriptor()),
   )
   let mesh_key = @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
-    @mesh.Mesh3dPrimitiveTopology::LineStrip,
-    Some(@mesh.Mesh3dIndexFormat::Uint16),
+    LineStrip,
+    Some(Uint16),
   )
   let descriptor = try! PbrMaterialPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(mesh_bits=mesh_key.bits()),
@@ -1343,9 +1292,9 @@ test "pbr material base specialization caches descriptors from real material pro
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   guard properties.base_specialize is Some(base_specialize) else {
@@ -1389,11 +1338,9 @@ test "pbr material base specialization caches descriptors from real material pro
 ///|
 test "pbr prepass pipeline specializer mirrors bevy layout and shader defs" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-      @material.AlphaMode3d::Mask(0.5F),
-    ),
+    @material.StandardMaterial::StandardMaterial().with_alpha_mode(Mask(0.5F)),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let specializer = PbrPrepassPipelineSpecializer::new(properties)
@@ -1461,9 +1408,9 @@ test "pbr prepass pipeline specializer mirrors bevy layout and shader defs" {
 ///|
 test "pbr prepass depth-only opaque path uses empty material layout" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let specializer = PbrPrepassPipelineSpecializer::new(properties)
@@ -1502,9 +1449,9 @@ test "pbr mesh pipeline specializes the base mesh descriptor without material la
 ///|
 test "pbr prepass pipeline emulates unclipped depth when depth clip control is missing" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let specializer = PbrPrepassPipelineSpecializer::new(
@@ -1549,9 +1496,9 @@ test "pbr prepass pipeline emulates unclipped depth when depth clip control is m
 ///|
 test "pbr prepass pipeline uses native unclipped depth when depth clip control exists" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let specializer = PbrPrepassPipelineSpecializer::new(
@@ -1580,9 +1527,9 @@ test "pbr prepass pipeline uses native unclipped depth when depth clip control e
 ///|
 test "pbr prepass pipeline mirrors bevy view projection shader defs" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let descriptor = try! PbrPrepassPipelineSpecializer::new(properties).specialize(
@@ -1611,14 +1558,14 @@ test "pbr prepass pipeline mirrors bevy view projection shader defs" {
 ///|
 test "pbr prepass pipeline carries Bevy primitive state from mesh key" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let mesh_key = @mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
-    @mesh.Mesh3dPrimitiveTopology::LineStrip,
-    Some(@mesh.Mesh3dIndexFormat::Uint16),
+    LineStrip,
+    Some(Uint16),
   )
   let descriptor = try! PbrPrepassPipelineSpecializer::new(properties).specialize(
     pbr_material_specializer_test_key(
@@ -1633,9 +1580,9 @@ test "pbr prepass pipeline carries Bevy primitive state from mesh key" {
 ///|
 test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let specializer = PbrPrepassPipelineSpecializer::new(properties)
@@ -1681,9 +1628,9 @@ test "pbr prepass pipeline specializer selects morphed skinned motion layout" {
 ///|
 test "pbr prepass pipeline gates lightmap binding-array defs on pipeline support" {
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let default_specializer = PbrPrepassPipelineSpecializer::new(properties)
@@ -1750,16 +1697,16 @@ test "pbr material specialization keeps tangent defs for forward decal meshes" {
   }
   let render_mesh = @render_mesh.RenderMesh::from_mesh(
     @mesh.Mesh::from_3d_geometry(geometry),
-    @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts(),
+    MeshVertexBufferLayouts(),
   )
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     Some(
       forward_decal_material_extension_metadata(
         ForwardDecalMaterialExt::new(1.0F),
       ),
     ),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
@@ -1792,9 +1739,9 @@ test "pbr material prepass specialization caches descriptors separately" {
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   guard properties.prepass_specialize is Some(prepass_specialize) else {
@@ -1844,9 +1791,9 @@ test "pbr material pipeline capability changes invalidate specialized descriptor
   let pipeline_cache = @render_resource.PipelineCache::new()
   world.insert_resource(@render.pipeline_cache_resource_key, pipeline_cache)
   let properties = render3d_material_properties_for_standard_material(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     None,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   guard properties.base_specialize is Some(base_specialize) else {

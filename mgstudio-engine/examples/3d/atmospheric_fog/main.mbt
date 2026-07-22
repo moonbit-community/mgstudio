@@ -127,7 +127,7 @@ fn setup_instructions(commands : @app.Commands) -> Unit {
           "Press Spacebar to Toggle Atmospheric Fog.\nPress S to Toggle Directional Light Fog Influence.",
         ),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -141,14 +141,14 @@ fn toggle_system(
   fog : @app.Single[@ecs.Write[@pbr.DistanceFog], @ecs.All],
 ) -> Unit {
   let fog = fog.get()
-  if keycode.just_pressed(@window.KeyCode::Space) {
+  if keycode.just_pressed(Space) {
     let value = fog.value()
     fog.set(
       value.with_color(value.color.with_alpha(1.0F - value.color.alpha())),
     )
   }
 
-  if keycode.just_pressed(@window.KeyCode::KeyS) {
+  if keycode.just_pressed(KeyS) {
     let value = fog.value()
     fog.set(
       value.with_directional_light_color(
@@ -164,9 +164,9 @@ fn toggle_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup_camera_fog)
-  .add_systems_param4(@app.Startup, setup_terrain_scene)
-  .add_systems_param(@app.Startup, setup_instructions)
-  .add_systems_param2(@app.Update, toggle_system)
+  .add_systems_param(Startup, setup_camera_fog)
+  .add_systems_param4(Startup, setup_terrain_scene)
+  .add_systems_param(Startup, setup_instructions)
+  .add_systems_param2(Update, toggle_system)
   .run()
 }

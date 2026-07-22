@@ -103,9 +103,9 @@ fn main {
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
   .insert_resource(A::{ value: 0 })
   .insert_resource(B::{ value: 0 })
-  .add_systems(@app.Update, reads_a_system)
-  .add_systems(@app.Update, writes_a_system)
-  .add_systems(@app.Update, b_ordered_chain)
-  .add_systems(@app.Update, reads_a_and_b_system)
+  .add_systems(Update, reads_a_system)
+  .add_systems(Update, writes_a_system)
+  .add_systems(Update, b_ordered_chain)
+  .add_systems(Update, reads_a_and_b_system)
   .run()
 }

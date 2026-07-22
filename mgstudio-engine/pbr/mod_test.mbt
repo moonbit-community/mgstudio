@@ -97,7 +97,7 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
-  let sub_app = app.sub_app(@app.RenderApp)
+  let sub_app = app.sub_app(RenderApp)
   let settings = @app.ScheduleGraphSettings::ScheduleGraphSettings().with_include_system_name(fn(
       name : String,
     ) {
@@ -320,7 +320,7 @@ test "pbr: plugin installs render resources required by wireframe specialization
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
 
   debug_inspect(
     render_world.get_resource(
@@ -364,7 +364,7 @@ fn prepare_lights_schedule_spawn_view(world : @ecs.World) -> Unit {
             @render_view.RetainedViewEntity::new(view),
           ),
         )
-        try! world.set_by_key(view, ecs_key_camera3d, Camera3d::Camera3d())
+        try! world.set_by_key(view, ecs_key_camera3d, Camera3d())
         probe.spawned_view = Some(view)
       }
     None => ()
@@ -396,7 +396,7 @@ fn prepare_clustered_decals_schedule_seed(world : @ecs.World) -> Unit {
     @render_view.ExtractedView::component(),
     @render_view.ExtractedView::new(@render_view.RetainedViewEntity::new(view)),
   )
-  try! world.set_by_key(view, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(view, ecs_key_camera3d, Camera3d())
   let decal_entity = world.spawn()
   let decal = @light.ClusteredDecal::ClusteredDecal().with_tag(3U)
   try! world.set_by_key(decal_entity, @pbr_decal.ecs_key_clustered_decal, decal)
@@ -465,7 +465,7 @@ test "render3d: pbr plugin registers deferred shader libraries when deferred plu
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::{
-      ..PbrPlugin::PbrPlugin(),
+      ..PbrPlugin(),
       add_default_deferred_lighting_plugin: false,
     }),
   )
@@ -516,7 +516,7 @@ test "render3d: pbr plugin registers bevy pbr shader library list" {
     .add_plugins(@time.TimePlugin::TimePlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::{
-      ..PbrPlugin::PbrPlugin(),
+      ..PbrPlugin(),
       add_default_deferred_lighting_plugin: false,
     }),
   )
@@ -564,8 +564,7 @@ test "render3d: screen space transmission plugin registers shader and camera req
     content="true",
   )
   let entity = app.world().spawn_empty()
-  try! (app.world().set_by_key(entity, ecs_key_camera3d, Camera3d::Camera3d())
-  |> ignore)
+  try! (app.world().set_by_key(entity, ecs_key_camera3d, Camera3d()) |> ignore)
   debug_inspect(
     (try! app.world().get_by_key(entity, ecs_key_screen_space_transmission))
     is Some(_),
@@ -682,18 +681,8 @@ test "render3d: gpu clustering pipelines specialize Bevy-shaped descriptors" {
   )
   debug_inspect(raster_cache.len(), content="2")
   let z_cache = SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines()
-  ignore(
-    z_cache.queue(
-      cache,
-      ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
-    ),
-  )
-  ignore(
-    z_cache.queue(
-      cache,
-      ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
-    ),
-  )
+  ignore(z_cache.queue(cache, ClusteringZSlicingPipeline()))
+  ignore(z_cache.queue(cache, ClusteringZSlicingPipeline()))
   debug_inspect(z_cache.len(), content="1")
   let allocation_cache = SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines()
   ignore(
@@ -723,27 +712,27 @@ test "render3d: gpu clustering prepare queues per-view pipeline ids" {
   )
   world.insert_resource(
     SpecializedClusteringRasterPipelines::resource(),
-    SpecializedClusteringRasterPipelines::SpecializedClusteringRasterPipelines(),
+    SpecializedClusteringRasterPipelines(),
   )
   world.insert_resource(
     SpecializedClusteringZSlicingPipelines::resource(),
-    SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines(),
+    SpecializedClusteringZSlicingPipelines(),
   )
   world.insert_resource(
     SpecializedClusteringAllocationPipelines::resource(),
-    SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines(),
+    SpecializedClusteringAllocationPipelines(),
   )
   world.insert_resource(
     ClusteringRasterPipeline::resource(),
-    ClusteringRasterPipeline::ClusteringRasterPipeline(),
+    ClusteringRasterPipeline(),
   )
   world.insert_resource(
     ClusteringZSlicingPipeline::resource(),
-    ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
+    ClusteringZSlicingPipeline(),
   )
   world.insert_resource(
     ClusteringAllocationPipeline::resource(),
-    ClusteringAllocationPipeline::ClusteringAllocationPipeline(),
+    ClusteringAllocationPipeline(),
   )
   let view_a = world.spawn()
   let view_b = world.spawn()
@@ -831,7 +820,7 @@ test "render3d: gpu clustering run condition follows global cluster settings" {
   debug_inspect(gpu_clustering_is_enabled(world), content="false")
   world.insert_resource(
     @light_cluster.GlobalClusterSettings::resource(),
-    @light_cluster.GlobalClusterSettings::GlobalClusterSettings(),
+    GlobalClusterSettings(),
   )
   debug_inspect(gpu_clustering_is_enabled(world), content="true")
 }
@@ -911,10 +900,7 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
   defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
-  world.insert_resource(
-    @pbr_render.LightMeta::resource(),
-    @pbr_render.LightMeta::LightMeta(),
-  )
+  world.insert_resource(@pbr_render.LightMeta::resource(), LightMeta())
   let direct_view = world.spawn()
   let main_view = world.spawn()
   let indirect_view = world.spawn()
@@ -926,8 +912,8 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
       @render_view.RetainedViewEntity::new(direct_view),
     ),
   )
-  try! world.set_by_key(direct_view, ecs_key_camera3d, Camera3d::Camera3d())
-  try! world.set_by_key(main_view, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(direct_view, ecs_key_camera3d, Camera3d())
+  try! world.set_by_key(main_view, ecs_key_camera3d, Camera3d())
   try! world.set_by_key(
     indirect_view,
     @render_view.ExtractedView::component(),
@@ -967,7 +953,7 @@ test "render3d: prepare_lights writes view uniform offsets for camera views" {
     None => abort("missing indirect view lights uniform offset")
   }
   let uniform_size = @pbr_render.render3d_gpu_lights_uniform_bytes(
-      @pbr_render.GpuLights3d::GpuLights3d(),
+      GpuLights3d(),
     )
     .length()
     .reinterpret_as_uint()
@@ -1029,13 +1015,10 @@ test "render3d: prepare_lights uses extracted view viewport for cluster factors"
   defer world.close()
   world.insert_resource(@render.render_device_resource_key, render_device)
   world.insert_resource(@render.render_queue_resource_key, render_queue)
-  world.insert_resource(
-    @pbr_render.LightMeta::resource(),
-    @pbr_render.LightMeta::LightMeta(),
-  )
+  world.insert_resource(@pbr_render.LightMeta::resource(), LightMeta())
   let camera = world.spawn()
   let view = world.spawn()
-  try! world.set_by_key(camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! world.set_by_key(camera, ecs_key_camera3d, Camera3d())
   try! world.set_by_key(
     camera,
     @camera_camera.ecs_key_camera,
@@ -1109,7 +1092,7 @@ test "render3d: NoIndirectDrawing reuses render view owner key" {
   try! world.set_by_key(
     entity,
     ecs_key_no_indirect_drawing,
-    NoIndirectDrawing::NoIndirectDrawing(),
+    NoIndirectDrawing(),
   )
   debug_inspect(
     (try! world.get_by_key(entity, @render_view.NoIndirectDrawing::component()))
@@ -1130,14 +1113,14 @@ test "render3d: prepare_lights packs render-world extracted lights" {
     .add_plugins(PbrPlugin::PbrPlugin())
   let mut app = app0
   let camera = app.world().spawn()
-  try! app.world().set_by_key(camera, ecs_key_camera3d, Camera3d::Camera3d())
+  try! app.world().set_by_key(camera, ecs_key_camera3d, Camera3d())
   let directional_light = app.world().spawn()
   try! app
   .world()
   .set_by_key(
     directional_light,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   try! app
   .world()
@@ -1155,7 +1138,7 @@ test "render3d: prepare_lights packs render-world extracted lights" {
   )
 
   app = app.update()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let view = render_world.spawn()
   try! render_world.set_by_key(
     view,
@@ -1203,7 +1186,7 @@ test "render3d: prepare_lights runs after the camera driver set" {
     .add_plugins(PbrPlugin::PbrPlugin())
   let mut app = app0
   ignore(
-    app.modify_sub_app(@app.RenderApp, fn(render_app) {
+    app.modify_sub_app(RenderApp, fn(render_app) {
       render_app
       .world()
       .insert_resource(@render.render_device_resource_key, render_device)
@@ -1212,9 +1195,7 @@ test "render3d: prepare_lights runs after the camera driver set" {
       .insert_resource(@render.render_queue_resource_key, render_queue)
       render_app
       .world()
-      .insert_resource(prepare_lights_schedule_probe_key, PrepareLightsScheduleProbe::{
-        spawned_view: None,
-      })
+      .insert_resource(prepare_lights_schedule_probe_key, { spawned_view: None })
       render_app.add_systems(
         @render.render_schedule_stage(),
         @app.system(prepare_lights_schedule_spawn_view)
@@ -1226,7 +1207,7 @@ test "render3d: prepare_lights runs after the camera driver set" {
 
   app = app.update()
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let spawned_view = match
     render_world.get_resource(prepare_lights_schedule_probe_key).unwrap().spawned_view {
     Some(entity) => entity
@@ -1273,7 +1254,7 @@ test "render3d: clustered decals prepare after prepare_lights" {
     .add_plugins(PbrPlugin::PbrPlugin())
   let mut app = app0
   ignore(
-    app.modify_sub_app(@app.RenderApp, fn(render_app) {
+    app.modify_sub_app(RenderApp, fn(render_app) {
       render_app
       .world()
       .insert_resource(@render.render_device_resource_key, render_device)
@@ -1282,7 +1263,7 @@ test "render3d: clustered decals prepare after prepare_lights" {
       .insert_resource(@render.render_queue_resource_key, render_queue)
       render_app
       .world()
-      .insert_resource(prepare_clustered_decals_schedule_probe_key, PrepareClusteredDecalsScheduleProbe::{
+      .insert_resource(prepare_clustered_decals_schedule_probe_key, {
         decal_entity: None,
         light_texture_entity: None,
       })
@@ -1297,7 +1278,7 @@ test "render3d: clustered decals prepare after prepare_lights" {
 
   app = app.update()
 
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let decal_entity = match
     render_world
     .get_resource(prepare_clustered_decals_schedule_probe_key)
@@ -1350,8 +1331,8 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   let meta = GlobalClusterableObjectMeta::new(
     @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
   )
-  meta.add_gpu_clustered_light(GpuClusteredLight::GpuClusteredLight())
-  meta.add_gpu_clustered_light(GpuClusteredLight::GpuClusteredLight())
+  meta.add_gpu_clustered_light(GpuClusteredLight())
+  meta.add_gpu_clustered_light(GpuClusteredLight())
   meta.write_gpu_clustered_lights_buffer(render_device, render_queue)
   world.insert_resource(GlobalClusterableObjectMeta::resource(), meta)
   let readback = RenderViewClusteringReadbackData::RenderViewClusteringReadbackData()
@@ -1364,10 +1345,7 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   world.insert_resource(RenderViewClusteringReadbackData::resource(), readback)
   let render_decals = @pbr_decal.RenderClusteredDecals::RenderClusteredDecals()
   ignore(
-    render_decals.insert_decal(
-      @core.Entity::new(200, 1),
-      @light.ClusteredDecal::ClusteredDecal(),
-    ),
+    render_decals.insert_decal(@core.Entity::new(200, 1), ClusteredDecal()),
   )
   world.insert_resource(
     @pbr_decal.RenderClusteredDecals::resource(),
@@ -1391,12 +1369,10 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
     ExtractedClusterConfig::new(0.1F, 1000.0F, 2, 3, 4),
   )
   let probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
-  probes.push_probe(@pbr_light_probe.RenderLightProbe::RenderLightProbe())
-  probes.push_probe(@pbr_light_probe.RenderLightProbe::RenderLightProbe())
+  probes.push_probe(RenderLightProbe())
+  probes.push_probe(RenderLightProbe())
   let irradiance_probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
-  irradiance_probes.push_probe(
-    @pbr_light_probe.RenderLightProbe::RenderLightProbe(),
-  )
+  irradiance_probes.push_probe(RenderLightProbe())
   try! world.set_by_key(
     view,
     @pbr_light_probe.RenderViewEnvironmentMapLightProbes::component(),
@@ -1511,16 +1487,14 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   )
   world.insert_resource(@pbr_decal.DecalsBuffer::resource(), decals_buffer)
   let light_meta = @pbr_render.LightMeta::LightMeta()
-  ignore(
-    light_meta.push_view_gpu_lights(@pbr_render.GpuLights3d::GpuLights3d()),
-  )
+  ignore(light_meta.push_view_gpu_lights(GpuLights3d()))
   light_meta.write_view_gpu_lights_buffer(
     render_device.wgpu_device(),
     render_queue.wgpu_queue(),
   )
   world.insert_resource(@pbr_render.LightMeta::resource(), light_meta)
   let view_uniforms = @render_view.ViewUniforms::ViewUniforms()
-  ignore(view_uniforms.push(@render_view.ViewUniform::ViewUniform()))
+  ignore(view_uniforms.push(ViewUniform()))
   view_uniforms.write_buffer(
     render_device.wgpu_device(),
     render_queue.wgpu_queue(),
@@ -1528,15 +1502,15 @@ test "render3d: gpu clustering prepare creates per-view buffers" {
   world.insert_resource(@render_view.ViewUniforms::resource(), view_uniforms)
   world.insert_resource(
     ClusteringRasterPipeline::resource(),
-    ClusteringRasterPipeline::ClusteringRasterPipeline(),
+    ClusteringRasterPipeline(),
   )
   world.insert_resource(
     ClusteringZSlicingPipeline::resource(),
-    ClusteringZSlicingPipeline::ClusteringZSlicingPipeline(),
+    ClusteringZSlicingPipeline(),
   )
   world.insert_resource(
     ClusteringAllocationPipeline::resource(),
-    ClusteringAllocationPipeline::ClusteringAllocationPipeline(),
+    ClusteringAllocationPipeline(),
   )
 
   prepare_clustering_bind_groups(world)
@@ -1564,11 +1538,7 @@ test "render3d: gpu clustering extract writes configs and syncs readback statist
     @light_cluster.Clusters::component(),
     clusters,
   )
-  try! world.set_by_key(
-    source_view,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(source_view, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     source_view,
     @render.ecs_key_render_entity,
@@ -1646,24 +1616,22 @@ test "render3d: cpu clustering prepare writes Bevy-shaped view cluster bindings"
     view,
     ExtractedClusterableObjects::component(),
     ExtractedClusterableObjects::new([
-      ExtractedClusterableObjectElement::ClusterHeader(
-        ClusterableObjectCounts3d::new(1U, 0U, 1U, 1U, 1U),
-      ),
-      ExtractedClusterableObjectElement::Light(light_entity),
-      ExtractedClusterableObjectElement::ReflectionProbe(reflection_probe),
-      ExtractedClusterableObjectElement::IrradianceVolume(irradiance_volume),
-      ExtractedClusterableObjectElement::Decal(decal_entity),
+      ClusterHeader(ClusterableObjectCounts3d::new(1U, 0U, 1U, 1U, 1U)),
+      Light(light_entity),
+      ReflectionProbe(reflection_probe),
+      IrradianceVolume(irradiance_volume),
+      Decal(decal_entity),
     ]),
   )
   let reflection_probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
   reflection_probes.push_probe_for_main_entity(
     reflection_probe,
-    @pbr_light_probe.RenderLightProbe::RenderLightProbe(),
+    RenderLightProbe(),
   )
   let irradiance_probes = @pbr_light_probe.RenderViewLightProbes::RenderViewLightProbes()
   irradiance_probes.push_probe_for_main_entity(
     irradiance_volume,
-    @pbr_light_probe.RenderLightProbe::RenderLightProbe(),
+    RenderLightProbe(),
   )
   try! world.set_by_key(
     view,
@@ -1819,7 +1787,7 @@ test "render3d: gpu clustering plugin finish initializes render resources" {
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin())
   ignore(
-    app0.modify_sub_app(@app.RenderApp, fn(render_app) {
+    app0.modify_sub_app(RenderApp, fn(render_app) {
       let render_world = render_app.world()
       render_world.insert_resource(
         @render.render_device_resource_key,
@@ -1833,7 +1801,7 @@ test "render3d: gpu clustering plugin finish initializes render resources" {
     }),
   )
   let app = app0.finish()
-  let render_app = app.get_sub_app(@app.RenderApp).unwrap()
+  let render_app = app.get_sub_app(RenderApp).unwrap()
   let render_world = render_app.world()
   let expected = storage_buffers > 0U
   debug_inspect(
@@ -1888,7 +1856,7 @@ fn read_global_cluster_settings(
 
 ///|
 fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
-  match app.get_sub_app(@app.RenderApp) {
+  match app.get_sub_app(RenderApp) {
     Some(render_sub_app) => {
       let render_world = render_sub_app.world()
       render_world.get_resource(@pbr_render.FogMeta::resource()) is Some(_)
@@ -1899,7 +1867,7 @@ fn render_world_with_fog_meta(app : @app.App[@ecs.World]) -> Bool {
 
 ///|
 fn render_world_with_material_resources(app : @app.App[@ecs.World]) -> Bool {
-  match app.get_sub_app(@app.RenderApp) {
+  match app.get_sub_app(RenderApp) {
     Some(render_sub_app) => {
       let render_world = render_sub_app.world()
       render_world.get_resource(ecs_key_entity_specialization_ticks) is Some(_) &&
@@ -2078,7 +2046,7 @@ test "render3d: pbr plugin forwards gpu preprocess builder setting" {
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::{
-      ..PbrPlugin::PbrPlugin(),
+      ..PbrPlugin(),
       use_gpu_instance_buffer_builder: false,
     })
   let state = read_gpu_preprocess_state(app.world())
@@ -2103,7 +2071,7 @@ test "render3d: pbr plugin finish initializes global cluster settings" {
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
   ignore(
-    app0.modify_sub_app(@app.RenderApp, fn(render_app) {
+    app0.modify_sub_app(RenderApp, fn(render_app) {
       render_app
       .world()
       .insert_resource(
@@ -2165,7 +2133,7 @@ test "render3d: pbr plugin installs Bevy-shaped render startup resources" {
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
   let render_sub_app = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .set_update_schedule(Some(@render.render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
   debug_inspect(
@@ -2221,7 +2189,7 @@ test "render3d: pbr plugin initializes Bevy-shaped render resources" {
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let light_meta = match
     render_world.get_resource(@pbr_render.LightMeta::resource()) {
     Some(value) => value
@@ -2263,7 +2231,7 @@ test "render3d: pbr plugin extracts global ambient light through render schedule
   )
 
   app = app.update()
-  let first_render_world = app.sub_app(@app.RenderApp).world()
+  let first_render_world = app.sub_app(RenderApp).world()
   let first_changed_tick = first_render_world
     .resource_changed_tick(@light.ecs_key_global_ambient_light)
     .unwrap()
@@ -2274,7 +2242,7 @@ test "render3d: pbr plugin extracts global ambient light through render schedule
   debug_inspect(first_ambient.affects_lightmapped_meshes, content="false")
 
   app = app.update()
-  let second_render_world = app.sub_app(@app.RenderApp).world()
+  let second_render_world = app.sub_app(RenderApp).world()
   let unchanged_tick = second_render_world
     .resource_changed_tick(@light.ecs_key_global_ambient_light)
     .unwrap()
@@ -2290,7 +2258,7 @@ test "render3d: pbr plugin extracts global ambient light through render schedule
     ),
   )
   app = app.update()
-  let third_render_world = app.sub_app(@app.RenderApp).world()
+  let third_render_world = app.sub_app(RenderApp).world()
   let second_changed_tick = third_render_world
     .resource_changed_tick(@light.ecs_key_global_ambient_light)
     .unwrap()
@@ -2313,11 +2281,7 @@ test "render3d: pbr plugin extracts shadow filtering method through render sched
   let mut app = app0
   let world = app.world()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    ecs_key_shadow_filtering_method,
-    ShadowFilteringMethod::Temporal,
-  )
+  try! world.set_by_key(entity, ecs_key_shadow_filtering_method, Temporal)
 
   app = app.update()
   let render_entity = match
@@ -2325,7 +2289,7 @@ test "render3d: pbr plugin extracts shadow filtering method through render sched
     Some(value) => value.id()
     None => abort("missing RenderEntity after sync")
   }
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let extracted = match
     (try! render_world.get_by_key(
       render_entity, ecs_key_shadow_filtering_method,
@@ -2337,15 +2301,11 @@ test "render3d: pbr plugin extracts shadow filtering method through render sched
 
   try! app
   .world()
-  .set_by_key(
-    entity,
-    ecs_key_shadow_filtering_method,
-    ShadowFilteringMethod::Hardware2x2,
-  )
+  .set_by_key(entity, ecs_key_shadow_filtering_method, Hardware2x2)
   app = app.update()
   let updated = match
     (try! app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_by_key(render_entity, ecs_key_shadow_filtering_method)) {
     Some(value) => value
@@ -2381,7 +2341,7 @@ test "render3d: pbr plugin extracts ambient light through render schedule" {
     Some(value) => value.id()
     None => abort("missing RenderEntity after sync")
   }
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let extracted = match
     (try! render_world.get_by_key(render_entity, ecs_key_ambient_light)) {
     Some(value) => value
@@ -2400,7 +2360,7 @@ test "render3d: pbr plugin extracts ambient light through render schedule" {
   app = app.update()
   let updated = match
     (try! app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_by_key(render_entity, ecs_key_ambient_light)) {
     Some(value) => value
@@ -2426,7 +2386,7 @@ test "render3d: pbr sync target cleanup removes directional light render target 
   try! world.set_by_key(
     entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   try! world.set_by_key(
     entity,
@@ -2440,21 +2400,21 @@ test "render3d: pbr sync target cleanup removes directional light render target 
     Some(value) => value.id()
     None => abort("missing RenderEntity after directional light sync")
   }
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   try! render_world.set_by_key(
     render_entity,
     @pbr_render.ecs_key_directional_light_view_entities,
-    @pbr_render.DirectionalLightViewEntities::DirectionalLightViewEntities(),
+    DirectionalLightViewEntities(),
   )
   try! render_world.set_by_key(
     render_entity,
     @render_visibility.ecs_key_render_shadow_map_visible_entities,
-    @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities(),
+    RenderShadowMapVisibleEntities(),
   )
   try! render_world.set_by_key(
     render_entity,
     @render_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
-    @render_visibility.RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities(),
+    RenderExtractedShadowMapVisibleEntities(),
   )
 
   ignore(
@@ -2463,7 +2423,7 @@ test "render3d: pbr sync target cleanup removes directional light render target 
     },
   )
   app = app.update()
-  let render_world_after = app.sub_app(@app.RenderApp).world()
+  let render_world_after = app.sub_app(RenderApp).world()
   debug_inspect(
     (try! render_world_after.get_by_key(
       render_entity, @pbr_render.ecs_key_directional_light_view_entities,
@@ -2500,12 +2460,12 @@ test "render3d: pbr light sync target removers match point spot and rect target 
   try! world.set_by_key(
     point_entity,
     @render_visibility.ecs_key_render_shadow_map_visible_entities,
-    @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities(),
+    RenderShadowMapVisibleEntities(),
   )
   try! world.set_by_key(
     point_entity,
     @render_visibility.ecs_key_render_extracted_shadow_map_visible_entities,
-    @render_visibility.RenderExtractedShadowMapVisibleEntities::RenderExtractedShadowMapVisibleEntities(),
+    RenderExtractedShadowMapVisibleEntities(),
   )
   ignore(@pbr_render.remove_point_light_sync_target(world, point_entity))
   debug_inspect(
@@ -2539,11 +2499,7 @@ test "render3d: pbr light sync target removers match point spot and rect target 
   )
 
   let rect_entity = world.spawn()
-  try! world.set_by_key(
-    rect_entity,
-    @light.ecs_key_rect_light,
-    @light.RectLight::RectLight(),
-  )
+  try! world.set_by_key(rect_entity, @light.ecs_key_rect_light, RectLight())
   ignore(@pbr_render.remove_rect_light_sync_target(world, rect_entity))
   debug_inspect(
     (try! world.get_by_key(rect_entity, @light.ecs_key_rect_light)) is None,
@@ -2568,7 +2524,7 @@ test "render3d: pbr installs light view entity observers in render world" {
   .set_by_key(
     light_entity,
     @light.ecs_key_directional_light,
-    @light.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   try! app
   .world()
@@ -2583,7 +2539,7 @@ test "render3d: pbr installs light view entity observers in render world" {
     Some(value) => value.id()
     None => abort("missing RenderEntity after directional light sync")
   }
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   debug_inspect(
     (try! render_world.get_by_key(
       render_entity, @pbr_render.ecs_key_directional_light_view_entities,
@@ -2635,16 +2591,8 @@ test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
   let mut app = app0
   let world = app.world()
   let camera = world.spawn_empty()
-  try! world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
-  try! world.set_by_key(
-    camera,
-    @camera_camera.ecs_key_render_target,
-    @camera_camera.RenderTarget::Screen,
-  )
+  try! world.set_by_key(camera, @camera_camera.ecs_key_camera, Camera())
+  try! world.set_by_key(camera, @camera_camera.ecs_key_render_target, Screen)
   try! world.set_by_key(
     camera,
     @transform.ecs_key_global_transform,
@@ -2655,7 +2603,7 @@ test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
 
   app = app.update()
   let first_origin = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_resource(@render_view.RenderShadowLodOrigin::resource())
     .unwrap()
@@ -2668,7 +2616,7 @@ test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
   try! world.set_by_key(
     explicit_origin,
     @camera_visibility.ecs_key_shadow_lod_origin,
-    @camera_visibility.ShadowLodOrigin::ShadowLodOrigin(),
+    ShadowLodOrigin(),
   )
   try! world.set_by_key(
     explicit_origin,
@@ -2680,7 +2628,7 @@ test "render3d: pbr plugin extracts shadow LOD origin through render schedule" {
 
   app = app.update()
   let second_origin = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_resource(@render_view.RenderShadowLodOrigin::resource())
     .unwrap()
@@ -2695,7 +2643,7 @@ fn pbr_extract_material_instance_or_abort(
   app : @app.App[@ecs.World],
   entity : @core.Entity,
 ) -> RenderMaterialInstance {
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   let instances = render_world
     .get_resource(ecs_key_render_material_instances)
     .unwrap()
@@ -2739,7 +2687,7 @@ test "render3d: pbr plugin extracts and sweeps material instances through render
   debug_inspect(first_instance.last_change_tick(), content="0")
   debug_inspect(
     app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_resource(ecs_key_render_material_instances)
     .unwrap()
@@ -2753,7 +2701,7 @@ test "render3d: pbr plugin extracts and sweeps material instances through render
   app = app.update()
   debug_inspect(
     app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_resource(ecs_key_render_material_instances)
     .unwrap()
@@ -2783,7 +2731,7 @@ test "render3d: pbr plugin extracts and sweeps material instances through render
   app = app.update()
   debug_inspect(
     app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_resource(ecs_key_render_material_instances)
     .unwrap()
@@ -2851,7 +2799,7 @@ test "render3d: pbr plugin extracts lights through render schedule" {
   }
   debug_inspect(
     (try! app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_by_key(render_entity, @pbr_render.ecs_key_extracted_point_light3d))
     is Some(_),
@@ -2870,7 +2818,7 @@ test "render3d: pbr plugin extracts lights through render schedule" {
   app = app.update()
   debug_inspect(
     (try! app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .world()
     .get_by_key(render_entity, @pbr_render.ecs_key_extracted_point_light3d))
     is None,
@@ -2886,7 +2834,7 @@ test "render3d: pbr plugin does not cache internal LUTs before renderer backend"
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(PbrPlugin::PbrPlugin())
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   debug_inspect(
     render_world.get_resource(ecs_key_bluenoise) is None,
     content="true",
@@ -2956,7 +2904,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
     @app.App::new(lifecycle_world_2895_0)
     .add_plugins(@asset.AssetPlugin::AssetPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin()),
-    PbrPlugin::{
+    {
       prepass_enabled: false,
       add_default_deferred_lighting_plugin: false,
       use_gpu_instance_buffer_builder: false,
@@ -3043,11 +2991,9 @@ test "render3d: pbr plugin config updates runtime feature switches" {
 test "render3d: root pbr exposes deferred lighting planning surface" {
   let state = DeferredLightingViewState::new(
     deferred_prepass=true,
-    tonemapping=Some(Tonemapping::TonyMcMapface),
-    deband_dither=Some(DebandDither::Enabled),
-    shadow_filter_method=Some(
-      DeferredLightingShadowFilteringMethod::Hardware2x2,
-    ),
+    tonemapping=Some(TonyMcMapface),
+    deband_dither=Some(Enabled),
+    shadow_filter_method=Some(Hardware2x2),
     normal_prepass=true,
   )
   let prepare = deferred_lighting_prepare_plan(state)

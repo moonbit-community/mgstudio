@@ -26,9 +26,7 @@ pub struct ExperimentalDepthMipGenerationNode {
 
 ///|
 pub fn ExperimentalDepthMipGenerationNode::ExperimentalDepthMipGenerationNode() -> ExperimentalDepthMipGenerationNode {
-  ExperimentalDepthMipGenerationNode::{
-    label: EXPERIMENTAL_DEPTH_MIP_GENERATION_LABEL,
-  }
+  { label: EXPERIMENTAL_DEPTH_MIP_GENERATION_LABEL }
 }
 
 ///|
@@ -75,7 +73,7 @@ pub fn DownsampleDepthPipelinePairState::new(
   first_multisample_pipeline_ready? : Bool = false,
   second_multisample_pipeline_ready? : Bool = false,
 ) -> DownsampleDepthPipelinePairState {
-  DownsampleDepthPipelinePairState::{
+  {
     first_pipeline_ready,
     second_pipeline_ready,
     first_multisample_pipeline_ready,
@@ -113,7 +111,7 @@ pub fn DownsampleDepthViewState::new(
   depth_texture_height? : Int = 0,
   depth_texture_sample_count? : Int = 1,
 ) -> DownsampleDepthViewState {
-  DownsampleDepthViewState::{
+  {
     has_depth_pyramid,
     has_downsample_bind_group,
     depth_texture_width,

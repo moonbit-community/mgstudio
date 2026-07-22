@@ -168,7 +168,7 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       @pbr.ecs_key_not_shadow_caster,
-      @pbr.NotShadowCaster::NotShadowCaster(),
+      NotShadowCaster(),
     )
   }
 }
@@ -193,7 +193,7 @@ fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       entity,
       @pbr.ecs_key_not_shadow_receiver,
-      @pbr.NotShadowReceiver::NotShadowReceiver(),
+      NotShadowReceiver(),
     )
   }
 }
@@ -237,7 +237,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     blue_sphere,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::NotShadowCaster(),
+    NotShadowCaster(),
   )
 
   let floating_plane = @pbr.MeshMaterial3dBundle::new(
@@ -257,12 +257,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     floating_plane,
     @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::NotShadowCaster(),
+    NotShadowCaster(),
   )
   try! world.set_by_key(
     floating_plane,
     @pbr.ecs_key_not_shadow_receiver,
-    @pbr.NotShadowReceiver::NotShadowReceiver(),
+    NotShadowReceiver(),
   )
 
   let ground_plane = @pbr.MeshMaterial3dBundle::new(
@@ -321,7 +321,7 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_caster_receiver_state.val.directional_light = Some(directional_light)
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -333,16 +333,16 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn controls(world : @ecs.World) -> Unit {
   let state = shadow_caster_receiver_state.val
-  if @input.key_just_pressed(@window.KeyCode::KeyL) {
+  if @input.key_just_pressed(KeyL) {
     state.point_light_enabled = !state.point_light_enabled
     update_light_modes(world)
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
+  if @input.key_just_pressed(KeyC) {
     toggle_shadow_casters(world)
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyR) {
+  if @input.key_just_pressed(KeyR) {
     toggle_shadow_receivers(world)
   }
 }
@@ -351,7 +351,7 @@ fn controls(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, controls)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, controls)
   .run()
 }

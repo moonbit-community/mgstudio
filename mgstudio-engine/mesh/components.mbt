@@ -335,6 +335,7 @@ pub fn MorphWeights::values(self : MorphWeights) -> Array[Float] {
 pub struct DynamicSkinnedMeshBounds {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DynamicSkinnedMeshBounds::new() -> DynamicSkinnedMeshBounds {
   DynamicSkinnedMeshBounds::{  }
 }

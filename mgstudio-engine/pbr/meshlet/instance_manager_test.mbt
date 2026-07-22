@@ -15,20 +15,8 @@
 ///|
 test "pbr/meshlet: instance manager tracks counts and material ids" {
   let manager = InstanceManager::InstanceManager()
-  manager.add_instance(
-    @core.Entity::new(0, 1),
-    100,
-    4,
-    MeshletAabb::MeshletAabb(),
-    3,
-  )
-  manager.add_instance(
-    @core.Entity::new(0, 2),
-    100,
-    9,
-    MeshletAabb::MeshletAabb(),
-    7,
-  )
+  manager.add_instance(@core.Entity::new(0, 1), 100, 4, MeshletAabb(), 3)
+  manager.add_instance(@core.Entity::new(0, 2), 100, 9, MeshletAabb(), 7)
   debug_inspect(manager.instance_count(), content="2")
   debug_inspect(manager.max_bvh_depth(), content="7")
 
@@ -57,7 +45,7 @@ test "pbr/meshlet: instance manager stores Bevy mesh uniform transforms and rend
     @core.Entity::new(0, 1),
     100,
     4,
-    MeshletAabb::MeshletAabb(),
+    MeshletAabb(),
     3,
     render_layer_mask=8,
     world_from_local~,
@@ -79,7 +67,7 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
     @core.Entity::new(0, 1),
     100,
     4,
-    MeshletAabb::MeshletAabb(),
+    MeshletAabb(),
     3,
     render_layer_mask=0b0001,
   )
@@ -87,7 +75,7 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
     @core.Entity::new(0, 2),
     101,
     5,
-    MeshletAabb::MeshletAabb(),
+    MeshletAabb(),
     3,
     render_layer_mask=0b0010,
   )
@@ -95,7 +83,7 @@ test "pbr/meshlet: per-view instance visibility follows layers and shadow caster
     @core.Entity::new(0, 3),
     102,
     6,
-    MeshletAabb::MeshletAabb(),
+    MeshletAabb(),
     3,
     render_layer_mask=0b0001,
     not_shadow_caster=true,
@@ -149,28 +137,22 @@ test "pbr/meshlet: material ids include Bevy material family" {
     @core.Entity::new(0, 1),
     7,
     1,
-    MeshletAabb::MeshletAabb(),
+    MeshletAabb(),
     1,
-    material_family=@material.Material3dFamily::Standard,
+    material_family=Standard,
   )
   manager.add_instance(
     @core.Entity::new(0, 2),
     7,
     2,
-    MeshletAabb::MeshletAabb(),
+    MeshletAabb(),
     1,
-    material_family=@material.Material3dFamily::MeshletDebug,
+    material_family=MeshletDebug,
   )
   debug_inspect(queue_material_meshlet_meshes(manager), content="2")
   debug_inspect(manager.instance_material_ids(), content="[1, 2]")
   let materials = manager.scene_materials()
   inspect(materials.length(), content="2")
-  inspect(
-    materials[0].material_family is @material.Material3dFamily::Standard,
-    content="true",
-  )
-  inspect(
-    materials[1].material_family is @material.Material3dFamily::MeshletDebug,
-    content="true",
-  )
+  inspect(materials[0].material_family is Standard, content="true")
+  inspect(materials[1].material_family is MeshletDebug, content="true")
 }

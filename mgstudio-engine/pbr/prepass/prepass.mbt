@@ -24,12 +24,7 @@ pub struct PrepassBindings3d {
 
 ///|
 pub fn PrepassBindings3d::PrepassBindings3d() -> PrepassBindings3d {
-  PrepassBindings3d::{
-    depth: false,
-    normal: false,
-    motion_vector: false,
-    deferred: false,
-  }
+  { depth: false, normal: false, motion_vector: false, deferred: false }
 }
 
 ///|
@@ -37,7 +32,7 @@ pub fn PrepassBindings3d::with_depth(
   self : PrepassBindings3d,
   depth : Bool,
 ) -> PrepassBindings3d {
-  PrepassBindings3d::{ ..self, depth, }
+  { ..self, depth, }
 }
 
 ///|
@@ -45,7 +40,7 @@ pub fn PrepassBindings3d::with_normal(
   self : PrepassBindings3d,
   normal : Bool,
 ) -> PrepassBindings3d {
-  PrepassBindings3d::{ ..self, normal, }
+  { ..self, normal, }
 }
 
 ///|
@@ -53,7 +48,7 @@ pub fn PrepassBindings3d::with_motion_vector(
   self : PrepassBindings3d,
   motion_vector : Bool,
 ) -> PrepassBindings3d {
-  PrepassBindings3d::{ ..self, motion_vector, }
+  { ..self, motion_vector, }
 }
 
 ///|
@@ -61,7 +56,7 @@ pub fn PrepassBindings3d::with_deferred(
   self : PrepassBindings3d,
   deferred : Bool,
 ) -> PrepassBindings3d {
-  PrepassBindings3d::{ ..self, deferred, }
+  { ..self, deferred, }
 }
 
 ///|
@@ -77,5 +72,5 @@ pub struct PrepassPluginState {
 
 ///|
 pub fn PrepassPluginState::PrepassPluginState() -> PrepassPluginState {
-  PrepassPluginState::{ enabled: true, view_count: 0 }
+  { enabled: true, view_count: 0 }
 }

@@ -14,14 +14,10 @@
 
 ///|
 test "material boundary matches bevy opaque renderer defaults" {
-  inspect(
-    @material.OpaqueRendererMethod::default()
-    is @material.OpaqueRendererMethod::Forward,
-    content="true",
-  )
+  inspect(@material.OpaqueRendererMethod::default() is Forward, content="true")
   inspect(
     @material.DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod().renderer_method()
-    is @material.OpaqueRendererMethod::Forward,
+    is Forward,
     content="true",
   )
 }
@@ -32,32 +28,23 @@ test "material boundary re-exports standard material APIs" {
     .with_metallic(0.25)
     .with_perceptual_roughness(0.75)
     .with_unlit(true)
-    .with_alpha_mode(@material.AlphaMode::Blend)
+    .with_alpha_mode(Blend)
   debug_inspect(material.metallic.to_double(), content="0.25")
   debug_inspect(material.perceptual_roughness.to_double(), content="0.75")
   debug_inspect(material.unlit, content="true")
-  debug_inspect(
-    material.alpha_mode is @material.AlphaMode::Blend,
-    content="true",
-  )
+  debug_inspect(material.alpha_mode is Blend, content="true")
 }
 
 ///|
 test "mesh material carries its Bevy material family identity" {
   let standard = @material.MeshMaterial3d::new(@asset.Handle::new(42))
-  inspect(
-    standard.material_family is @material.Material3dFamily::Standard,
-    content="true",
-  )
+  inspect(standard.material_family is Standard, content="true")
   inspect(standard.material_asset_id(), content="42")
   let meshlet_debug = @material.MeshMaterial3d::from_erased_material_id(
-    @material.Material3dFamily::MeshletDebug,
+    MeshletDebug,
     7,
   )
-  inspect(
-    meshlet_debug.material_family is @material.Material3dFamily::MeshletDebug,
-    content="true",
-  )
+  inspect(meshlet_debug.material_family is MeshletDebug, content="true")
   inspect(meshlet_debug.material_asset_id(), content="7")
   inspect(meshlet_debug.is_standard_material(), content="false")
 }
@@ -75,14 +62,8 @@ test "standard material defaults align with bevy clearcoat and alpha threshold" 
   let opaque_material = @material.StandardMaterial::from_color(
     @color.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
   )
-  debug_inspect(
-    blend_material.alpha_mode is @material.AlphaMode::Blend,
-    content="true",
-  )
-  debug_inspect(
-    opaque_material.alpha_mode is @material.AlphaMode::Opaque,
-    content="true",
-  )
+  debug_inspect(blend_material.alpha_mode is Blend, content="true")
+  debug_inspect(opaque_material.alpha_mode is Opaque, content="true")
 }
 
 ///|
@@ -132,10 +113,7 @@ test "material boundary re-exports material metadata APIs" {
     content="Some(\"shaders/manual_material.wgsl\")",
   )
   debug_inspect(forward_ext.depth_fade_factor.to_double(), content="0.5")
-  debug_inspect(
-    renderer_method.renderer_method() is @material.OpaqueRendererMethod::Forward,
-    content="true",
-  )
+  debug_inspect(renderer_method.renderer_method() is Forward, content="true")
   debug_inspect(
     mesh_material.extended_material.map(fn(ext) { ext.fragment_shader_path }),
     content="Some(Some(\"shaders/manual_material.wgsl\"))",
@@ -152,8 +130,7 @@ test "material boundary resolves auto opaque render method at runtime" {
     default_method,
   )
   debug_inspect(
-    resolved_auto is @material.OpaqueRendererMethod::Deferred &&
-    resolved_forward is @material.OpaqueRendererMethod::Forward,
+    resolved_auto is Deferred && resolved_forward is Forward,
     content="true",
   )
 }
@@ -161,25 +138,13 @@ test "material boundary resolves auto opaque render method at runtime" {
 ///|
 test "material boundary exposes bevy-shaped render phase type" {
   let default_phase = @material.RenderPhaseType::default()
-  let alpha_mask_phase : @material.MaterialRenderPhaseType = @material.RenderPhaseType::AlphaMask
-  let transmissive_phase : @material.MaterialRenderPhaseType = @material.RenderPhaseType::Transmissive
-  let transparent_phase : @material.MaterialRenderPhaseType = @material.RenderPhaseType::Transparent
-  debug_inspect(
-    default_phase is @material.RenderPhaseType::Opaque,
-    content="true",
-  )
-  debug_inspect(
-    alpha_mask_phase is @material.RenderPhaseType::AlphaMask,
-    content="true",
-  )
-  debug_inspect(
-    transmissive_phase is @material.RenderPhaseType::Transmissive,
-    content="true",
-  )
-  debug_inspect(
-    transparent_phase is @material.RenderPhaseType::Transparent,
-    content="true",
-  )
+  let alpha_mask_phase : @material.MaterialRenderPhaseType = AlphaMask
+  let transmissive_phase : @material.MaterialRenderPhaseType = Transmissive
+  let transparent_phase : @material.MaterialRenderPhaseType = Transparent
+  debug_inspect(default_phase is Opaque, content="true")
+  debug_inspect(alpha_mask_phase is AlphaMask, content="true")
+  debug_inspect(transmissive_phase is Transmissive, content="true")
+  debug_inspect(transparent_phase is Transparent, content="true")
 }
 
 ///|
@@ -187,7 +152,7 @@ test "material boundary descriptor helpers match bevy layout/target behavior" {
   let entry = @render_resource.BindGroupLayoutEntry::new(
     0,
     @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-    @render_resource.BindingType::Texture,
+    Texture,
   )
   let layout = @material.BindGroupLayoutDescriptor::new("material.layout", [
     entry,
@@ -215,7 +180,7 @@ test "material boundary includes material layout and bindless property builders"
   let layout_entry = @render_resource.BindGroupLayoutEntry::new(
     0,
     @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-    @render_resource.BindingType::Texture,
+    Texture,
   )
   let layout = @material.BindGroupLayoutDescriptor::new("material.layout", [
     layout_entry,
@@ -236,24 +201,11 @@ test "material boundary defaults mirror bevy derived MaterialProperties default"
   let properties = @material.MaterialProperties::MaterialProperties()
   inspect(properties.shadows_enabled, content="false")
   inspect(properties.prepass_enabled, content="false")
-  inspect(
-    properties.render_method is @material.OpaqueRendererMethod::Forward,
-    content="true",
-  )
-  inspect(properties.alpha_mode is @material.AlphaMode::Opaque, content="true")
-  inspect(
-    @material.AlphaMode3d::default() is @material.AlphaMode::Opaque,
-    content="true",
-  )
-  inspect(
-    @material.OpaqueRendererMethod::default()
-    is @material.OpaqueRendererMethod::Forward,
-    content="true",
-  )
-  inspect(
-    @material.RenderPhaseType::default() is @material.RenderPhaseType::Opaque,
-    content="true",
-  )
+  inspect(properties.render_method is Forward, content="true")
+  inspect(properties.alpha_mode is Opaque, content="true")
+  inspect(@material.AlphaMode3d::default() is Opaque, content="true")
+  inspect(@material.OpaqueRendererMethod::default() is Forward, content="true")
+  inspect(@material.RenderPhaseType::default() is Opaque, content="true")
 }
 
 ///|
@@ -302,12 +254,8 @@ test "material boundary draw functions register stable ids by label" {
 
 ///|
 test "material boundary dynamic bind group layout entries mirror bevy builder flow" {
-  let texture = @material.bind_group_layout_entry_builder(
-    @render_resource.BindingType::Texture,
-  )
-  let sampler = @material.bind_group_layout_entry_builder(
-    @render_resource.BindingType::Sampler,
-  )
+  let texture = @material.bind_group_layout_entry_builder(Texture)
+  let sampler = @material.bind_group_layout_entry_builder(Sampler)
   let dynamic = @material.dynamic_bind_group_layout_entries_sequential(
       @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
       [texture],
@@ -369,7 +317,7 @@ fn material_test_user_specialize(
   let entry = @render_resource.BindGroupLayoutEntry::new(
     0,
     @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-    @render_resource.BindingType::Texture,
+    Texture,
   )
   descriptor.set_layout(
     0,
@@ -384,20 +332,12 @@ fn material_test_mesh_vertex_layout(
   let layouts = @mesh.MeshVertexBufferLayouts::MeshVertexBufferLayouts()
   let attribute_ids = [@mesh.MeshVertexAttribute::position().id()]
   let attributes = [
-    @mesh.VertexAttribute::new(
-      offset=0,
-      format=@mesh.MeshVertexFormat::Float32x3,
-      shader_location=0,
-    ),
+    @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
   ]
   if include_unused_attribute {
     attribute_ids.push(@mesh.MeshVertexAttribute::normal().id())
     attributes.push(
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=1,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=1),
     )
   }
   layouts.insert(
@@ -405,7 +345,7 @@ fn material_test_mesh_vertex_layout(
       attribute_ids~,
       layout=@mesh.VertexBufferLayout::new(
         array_stride=12,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
+        step_mode=Vertex,
         attributes~,
       ),
     ),
@@ -445,7 +385,7 @@ test "material boundary carries bevy specialize callbacks in material properties
       (try! @material.material_specialize_user(
         user_specialize,
         "user.specialize",
-        @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor(),
+        RenderPipelineDescriptor(),
         layout,
         pipeline_key,
       )).layout[0].label
@@ -491,18 +431,10 @@ fn material_test_specialized_mesh_instancing_pipeline(
   let mesh_vertex_layout = mesh_descriptor.vertex.buffers[0]
   let instance_vertex_layout = @mesh.VertexBufferLayout::new(
     array_stride=32,
-    step_mode=@mesh.MeshVertexStepMode::Instance,
+    step_mode=Instance,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x4,
-        shader_location=3,
-      ),
-      @mesh.VertexAttribute::new(
-        offset=16,
-        format=@mesh.MeshVertexFormat::Float32x4,
-        shader_location=4,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x4, shader_location=3),
+      @mesh.VertexAttribute::new(offset=16, format=Float32x4, shader_location=4),
     ],
   )
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor().with_vertex(
@@ -573,8 +505,7 @@ test "specialized mesh pipelines allow instance vertex buffer layouts" {
   let descriptor = try! pipeline_cache.get_render_pipeline_descriptor(first_id)
   inspect(descriptor.vertex.buffers.length(), content="2")
   debug_inspect(
-    descriptor.vertex.buffers[1].step_mode()
-    is @mesh.MeshVertexStepMode::Instance,
+    descriptor.vertex.buffers[1].step_mode() is Instance,
     content="true",
   )
 }

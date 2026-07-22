@@ -32,7 +32,7 @@ priv struct FogExampleState {
 let fog_example_state : Ref[FogExampleState] = Ref({
   camera: None,
   help_text: None,
-  fog: @pbr.DistanceFog::DistanceFog(),
+  fog: DistanceFog(),
 })
 
 ///|
@@ -130,7 +130,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
     @pbr.FogFalloff3d::linear(5.0F, 20.0F),
   )
   let camera = @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -182,7 +182,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F)
     .with_metallic(0.5F)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend),
+    .with_alpha_mode(Blend),
   )
   let orb = spawn_mesh(
     world,
@@ -192,15 +192,11 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
       @math.Vec3::splat(1.75F),
     ),
   )
-  try! world.set_by_key(
-    orb,
-    @pbr.ecs_key_not_shadow_caster,
-    @pbr.NotShadowCaster::NotShadowCaster(),
-  )
+  try! world.set_by_key(orb, @pbr.ecs_key_not_shadow_caster, NotShadowCaster())
   try! world.set_by_key(
     orb,
     @pbr.ecs_key_not_shadow_receiver,
-    @pbr.NotShadowReceiver::NotShadowReceiver(),
+    NotShadowReceiver(),
   )
 
   for i in 0..<50 {
@@ -262,23 +258,23 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
 ///|
 fn fog_mode_label(falloff : @pbr.FogFalloff3d) -> String {
   match falloff {
-    @pbr.FogFalloff3d::Atmospheric(_, _) => "Atmospheric"
-    @pbr.FogFalloff3d::Linear(_, _) => "Linear"
-    @pbr.FogFalloff3d::Exponential(_) => "Exponential"
-    @pbr.FogFalloff3d::ExponentialSquared(_) => "ExponentialSquared"
+    Atmospheric(_, _) => "Atmospheric"
+    Linear(_, _) => "Linear"
+    Exponential(_) => "Exponential"
+    ExponentialSquared(_) => "ExponentialSquared"
   }
 }
 
 ///|
 fn fog_help_text(fog : @pbr.DistanceFog) -> String {
   let detail = match fog.falloff {
-    @pbr.FogFalloff3d::Atmospheric(extinction, inscattering) =>
+    Atmospheric(extinction, inscattering) =>
       "Atmospheric extinction: (\{extinction.x}, \{extinction.y}, \{extinction.z})\nAtmospheric inscattering: (\{inscattering.x}, \{inscattering.y}, \{inscattering.z})"
-    @pbr.FogFalloff3d::Linear(start, end_) =>
+    Linear(start, end_) =>
       "Linear start/end: \{start} / \{end_}\nA/S adjust start, Z/X adjust end"
-    @pbr.FogFalloff3d::Exponential(density) =>
+    Exponential(density) =>
       "Exponential density: \{density}\nA/S adjust density"
-    @pbr.FogFalloff3d::ExponentialSquared(density) =>
+    ExponentialSquared(density) =>
       "ExpSquared density: \{density}\nA/S adjust density"
   }
   "Fog Falloff: \{fog_mode_label(fog.falloff)}\nFog Color: (\{fog.color.r}, \{fog.color.g}, \{fog.color.b}, \{fog.color.a})\n\n1/2/3 switch falloff mode\nMinus/Equal red -/+\nBracketLeft/BracketRight green -/+\nSemicolon/Quote blue -/+\nPeriod/Slash alpha -/+\n\n\{detail}"
@@ -300,11 +296,11 @@ fn setup_instructions() -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(
       @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   fog_example_state.val.help_text = Some(handle)
 
@@ -336,62 +332,62 @@ fn update_system(world : @ecs.World) -> Unit {
   try! (world.replace(camera, @transform.ecs_key_transform, camera_transform)
   |> ignore)
 
-  if @input.key_pressed(@window.KeyCode::Digit1) {
+  if @input.key_pressed(Digit1) {
     fog = fog.with_falloff(@pbr.FogFalloff3d::linear(5.0F, 20.0F))
   }
-  if @input.key_pressed(@window.KeyCode::Digit2) {
+  if @input.key_pressed(Digit2) {
     let density = match fog.falloff {
-      @pbr.FogFalloff3d::Atmospheric(_, _) => 0.07F
-      @pbr.FogFalloff3d::Exponential(d) => d
-      @pbr.FogFalloff3d::ExponentialSquared(d) => d
-      @pbr.FogFalloff3d::Linear(_, _) => 0.07F
+      Atmospheric(_, _) => 0.07F
+      Exponential(d) => d
+      ExponentialSquared(d) => d
+      Linear(_, _) => 0.07F
     }
     fog = fog.with_falloff(@pbr.FogFalloff3d::exponential(density))
   }
-  if @input.key_pressed(@window.KeyCode::Digit3) {
+  if @input.key_pressed(Digit3) {
     let density = match fog.falloff {
-      @pbr.FogFalloff3d::Atmospheric(_, _) => 0.07F
-      @pbr.FogFalloff3d::Exponential(d) => d
-      @pbr.FogFalloff3d::ExponentialSquared(d) => d
-      @pbr.FogFalloff3d::Linear(_, _) => 0.07F
+      Atmospheric(_, _) => 0.07F
+      Exponential(d) => d
+      ExponentialSquared(d) => d
+      Linear(_, _) => 0.07F
     }
     fog = fog.with_falloff(@pbr.FogFalloff3d::exponential_squared(density))
   }
 
   let next_falloff = match fog.falloff {
-    @pbr.FogFalloff3d::Atmospheric(extinction, inscattering) =>
+    Atmospheric(extinction, inscattering) =>
       @pbr.FogFalloff3d::atmospheric(extinction, inscattering)
-    @pbr.FogFalloff3d::Linear(start, end_) => {
-      let next_start = if @input.key_pressed(@window.KeyCode::KeyA) {
+    Linear(start, end_) => {
+      let next_start = if @input.key_pressed(KeyA) {
         start - delta * 3.0F
-      } else if @input.key_pressed(@window.KeyCode::KeyS) {
+      } else if @input.key_pressed(KeyS) {
         start + delta * 3.0F
       } else {
         start
       }
-      let next_end = if @input.key_pressed(@window.KeyCode::KeyZ) {
+      let next_end = if @input.key_pressed(KeyZ) {
         end_ - delta * 3.0F
-      } else if @input.key_pressed(@window.KeyCode::KeyX) {
+      } else if @input.key_pressed(KeyX) {
         end_ + delta * 3.0F
       } else {
         end_
       }
       @pbr.FogFalloff3d::linear(next_start, next_end)
     }
-    @pbr.FogFalloff3d::Exponential(density) => {
-      let next_density = if @input.key_pressed(@window.KeyCode::KeyA) {
+    Exponential(density) => {
+      let next_density = if @input.key_pressed(KeyA) {
         density - delta * 0.5F * density
-      } else if @input.key_pressed(@window.KeyCode::KeyS) {
+      } else if @input.key_pressed(KeyS) {
         density + delta * 0.5F * density
       } else {
         density
       }
       @pbr.FogFalloff3d::exponential(next_density)
     }
-    @pbr.FogFalloff3d::ExponentialSquared(density) => {
-      let next_density = if @input.key_pressed(@window.KeyCode::KeyA) {
+    ExponentialSquared(density) => {
+      let next_density = if @input.key_pressed(KeyA) {
         density - delta * 0.5F * density
-      } else if @input.key_pressed(@window.KeyCode::KeyS) {
+      } else if @input.key_pressed(KeyS) {
         density + delta * 0.5F * density
       } else {
         density
@@ -402,7 +398,7 @@ fn update_system(world : @ecs.World) -> Unit {
   fog = fog.with_falloff(next_falloff)
 
   let mut color = fog.color
-  if @input.key_pressed(@window.KeyCode::Minus) {
+  if @input.key_pressed(Minus) {
     color = @color.Color::new(
       clamp01(color.r - 0.1F * delta),
       color.g,
@@ -410,7 +406,7 @@ fn update_system(world : @ecs.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::Equal) {
+  if @input.key_pressed(Equal) {
     color = @color.Color::new(
       clamp01(color.r + 0.1F * delta),
       color.g,
@@ -418,7 +414,7 @@ fn update_system(world : @ecs.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::BracketLeft) {
+  if @input.key_pressed(BracketLeft) {
     color = @color.Color::new(
       color.r,
       clamp01(color.g - 0.1F * delta),
@@ -426,7 +422,7 @@ fn update_system(world : @ecs.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::BracketRight) {
+  if @input.key_pressed(BracketRight) {
     color = @color.Color::new(
       color.r,
       clamp01(color.g + 0.1F * delta),
@@ -434,7 +430,7 @@ fn update_system(world : @ecs.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::Semicolon) {
+  if @input.key_pressed(Semicolon) {
     color = @color.Color::new(
       color.r,
       color.g,
@@ -442,7 +438,7 @@ fn update_system(world : @ecs.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::Quote) {
+  if @input.key_pressed(Quote) {
     color = @color.Color::new(
       color.r,
       color.g,
@@ -450,7 +446,7 @@ fn update_system(world : @ecs.World) -> Unit {
       color.a,
     )
   }
-  if @input.key_pressed(@window.KeyCode::Period) {
+  if @input.key_pressed(Period) {
     color = @color.Color::new(
       color.r,
       color.g,
@@ -458,7 +454,7 @@ fn update_system(world : @ecs.World) -> Unit {
       clamp01(color.a - 0.1F * delta),
     )
   }
-  if @input.key_pressed(@window.KeyCode::Slash) {
+  if @input.key_pressed(Slash) {
     color = @color.Color::new(
       color.r,
       color.g,
@@ -480,7 +476,7 @@ fn update_system(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   fog_example_state.val.camera = None
   fog_example_state.val.help_text = None
-  fog_example_state.val.fog = @pbr.DistanceFog::DistanceFog()
+  fog_example_state.val.fog = DistanceFog()
   setup_camera_fog(world)
   setup_pyramid_scene(world)
   setup_instructions()
@@ -490,7 +486,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update_system)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, update_system)
   .run()
 }

@@ -25,6 +25,7 @@ pub const GLOBALS_UNIFORM_SIZE_BYTES : Int = 16
 pub struct GlobalsPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn GlobalsPlugin::GlobalsPlugin() -> GlobalsPlugin {
   GlobalsPlugin::{  }
 }
@@ -62,7 +63,7 @@ pub struct GlobalsUniform {
 
 ///|
 pub fn GlobalsUniform::GlobalsUniform() -> GlobalsUniform {
-  GlobalsUniform::{ time: 0.0F, delta_time: 0.0F, frame_count: 0U }
+  { time: 0.0F, delta_time: 0.0F, frame_count: 0U }
 }
 
 ///|
@@ -71,7 +72,7 @@ pub fn GlobalsUniform::new(
   delta_time : Float,
   frame_count : UInt,
 ) -> GlobalsUniform {
-  GlobalsUniform::{ time, delta_time, frame_count }
+  { time, delta_time, frame_count }
 }
 
 ///|
@@ -121,11 +122,7 @@ pub struct GlobalsBuffer {
 
 ///|
 pub fn GlobalsBuffer::GlobalsBuffer() -> GlobalsBuffer {
-  GlobalsBuffer::{
-    value: GlobalsUniform::GlobalsUniform(),
-    gpu_buffer: None,
-    gpu_capacity: 0UL,
-  }
+  { value: GlobalsUniform(), gpu_buffer: None, gpu_capacity: 0UL }
 }
 
 ///|
@@ -205,10 +202,7 @@ pub fn init_globals_buffer(render_world : @ecs.World) -> Unit {
   if render_world.resource(GlobalsBuffer::resource()).is_present() {
     return
   }
-  render_world.insert_resource(
-    GlobalsBuffer::resource(),
-    GlobalsBuffer::GlobalsBuffer(),
-  )
+  render_world.insert_resource(GlobalsBuffer::resource(), GlobalsBuffer())
 }
 
 ///|
@@ -230,10 +224,7 @@ fn globals_buffer_mut_or_init(
   render_world : @ecs.World,
 ) -> @ecs.ResourceMut[GlobalsBuffer] {
   if render_world.get_resource(GlobalsBuffer::resource()) is None {
-    render_world.insert_resource(
-      GlobalsBuffer::resource(),
-      GlobalsBuffer::GlobalsBuffer(),
-    )
+    render_world.insert_resource(GlobalsBuffer::resource(), GlobalsBuffer())
   }
   match render_world.get_resource_mut(GlobalsBuffer::resource()) {
     Some(value) => value

@@ -29,7 +29,7 @@ fn zinc_600() -> @color.Color {
 
 ///|
 fn font_size() -> @text.FontSize {
-  @text.FontSize::Px(25.0F)
+  Px(25.0F)
 }
 
 ///|
@@ -76,10 +76,7 @@ fn family_description(font_source : @text.FontSource) -> String {
 
 ///|
 fn generic_font_text(font_source : @text.FontSource) -> @text.TextFont {
-  @text.TextFont::{
-    ..@text.TextFont::from_font_size(font_size()),
-    font: font_source,
-  }
+  { ..@text.TextFont::from_font_size(font_size()), font: font_source }
 }
 
 ///|
@@ -92,21 +89,15 @@ fn spawn_row(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_display(@ui.Display::Grid)
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(3), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(3), [Fr(1.0F)]),
       ])
-      .with_column_gap(@ui.Val::Px(15.0F))
-      .with_width(@ui.Val::Percent(100.0F)),
+      .with_column_gap(Px(15.0F))
+      .with_width(Percent(100.0F)),
     ),
   )
-  let outline = @ui.Outline::new(
-    @ui.Val::Px(2.0F),
-    @ui.Val::Px(4.0F),
-    zinc_600(),
-  )
+  let outline = @ui.Outline::new(Px(2.0F), Px(4.0F), zinc_600())
   ignore(
     commands.spawn(
       (
@@ -114,7 +105,7 @@ fn spawn_row(
         @text.Text::new(family_description(font_source)),
         generic_font_text(font_source),
         @text.TextColor::new(wheat()),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @text.TextLayout::new_with_justify(Center),
         outline,
       ),
     ),
@@ -126,7 +117,7 @@ fn spawn_row(
         @text.Text::new(generic_font_label(font_source)),
         @text.TextFont::from_font_size(font_size()),
         @text.TextColor::new(yellow()),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @text.TextLayout::new_with_justify(Center),
         outline,
       ),
     ),
@@ -137,7 +128,7 @@ fn spawn_row(
         @hierarchy.Parent::new(row),
         @text.Text::new(family_description(font_source)),
         @text.TextFont::from_font_size(font_size()),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @text.TextLayout::new_with_justify(Center),
         outline,
       ),
     ),
@@ -154,16 +145,14 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_display(@ui.Display::Grid)
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(1), [Fr(1.0F)]),
       ])
-      .with_width(@ui.Val::Px(1200.0F))
-      .with_margin(@ui.UiRect::all(@ui.Val::Auto))
-      .with_row_gap(@ui.Val::Px(25.0F))
-      .with_column_gap(@ui.Val::Px(15.0F)),
+      .with_width(Px(1200.0F))
+      .with_margin(@ui.UiRect::all(Auto))
+      .with_row_gap(Px(25.0F))
+      .with_column_gap(Px(15.0F)),
     ),
   )
 
@@ -179,11 +168,11 @@ fn setup(commands : @app.Commands) -> Unit {
   )
 
   let families : Array[@text.FontSource] = [
-    @text.FontSource::SansSerif,
-    @text.FontSource::Serif,
-    @text.FontSource::Fantasy,
-    @text.FontSource::Cursive,
-    @text.FontSource::Monospace,
+    SansSerif,
+    Serif,
+    Fantasy,
+    Cursive,
+    Monospace,
   ]
   for font_source in families {
     spawn_row(commands, root, font_source)
@@ -194,6 +183,6 @@ fn setup(commands : @app.Commands) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(Startup, setup)
   .run()
 }

@@ -313,30 +313,30 @@ test "math: pi matches two half turns" {
 
 ///|
 test "math: quat to_euler YXZ roundtrips orbit rotations" {
-  let rotation = Quat::from_euler(EulerRot::YXZ, 0.65F, -0.31F, 0.42F)
-  let (yaw, pitch, roll) = rotation.to_euler(EulerRot::YXZ)
-  let rebuilt = Quat::from_euler(EulerRot::YXZ, yaw, pitch, roll)
+  let rotation = Quat::from_euler(YXZ, 0.65F, -0.31F, 0.42F)
+  let (yaw, pitch, roll) = rotation.to_euler(YXZ)
+  let rebuilt = Quat::from_euler(YXZ, yaw, pitch, roll)
   debug_inspect(quat_same_rotation(rotation, rebuilt), content="true")
 }
 
 ///|
 test "math: quat to_euler supports XYZ and ZYX orders" {
-  let xyz = Quat::from_euler(EulerRot::XYZ, 0.25F, -0.5F, 0.75F)
-  let xyz_angles = xyz.to_euler(EulerRot::XYZ)
+  let xyz = Quat::from_euler(XYZ, 0.25F, -0.5F, 0.75F)
+  let xyz_angles = xyz.to_euler(XYZ)
   debug_inspect(
     quat_same_rotation(
       xyz,
-      Quat::from_euler(EulerRot::XYZ, xyz_angles.0, xyz_angles.1, xyz_angles.2),
+      Quat::from_euler(XYZ, xyz_angles.0, xyz_angles.1, xyz_angles.2),
     ),
     content="true",
   )
 
-  let zyx = Quat::from_euler(EulerRot::ZYX, 0.9F, -0.2F, 0.3F)
-  let zyx_angles = zyx.to_euler(EulerRot::ZYX)
+  let zyx = Quat::from_euler(ZYX, 0.9F, -0.2F, 0.3F)
+  let zyx_angles = zyx.to_euler(ZYX)
   debug_inspect(
     quat_same_rotation(
       zyx,
-      Quat::from_euler(EulerRot::ZYX, zyx_angles.0, zyx_angles.1, zyx_angles.2),
+      Quat::from_euler(ZYX, zyx_angles.0, zyx_angles.1, zyx_angles.2),
     ),
     content="true",
   )
@@ -403,16 +403,16 @@ test "math: isometry rotation constructor and composition mirror Bevy shape" {
 
 ///|
 test "math: extrinsic EulerRot aliases reverse intrinsic order" {
-  let intrinsic = Quat::from_euler(EulerRot::ZXY, 0.2F, 0.4F, -0.6F)
-  let extrinsic = Quat::from_euler(EulerRot::YXZEx, -0.6F, 0.4F, 0.2F)
+  let intrinsic = Quat::from_euler(ZXY, 0.2F, 0.4F, -0.6F)
+  let extrinsic = Quat::from_euler(YXZEx, -0.6F, 0.4F, 0.2F)
   debug_inspect(quat_same_rotation(intrinsic, extrinsic), content="true")
 
-  let extrinsic_angles = extrinsic.to_euler(EulerRot::YXZEx)
+  let extrinsic_angles = extrinsic.to_euler(YXZEx)
   debug_inspect(
     quat_same_rotation(
       extrinsic,
       Quat::from_euler(
-        EulerRot::YXZEx,
+        YXZEx,
         extrinsic_angles.0,
         extrinsic_angles.1,
         extrinsic_angles.2,

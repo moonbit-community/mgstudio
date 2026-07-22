@@ -22,6 +22,7 @@ const LIGHT_PLUGIN_NAME : String = "mgstudio.light.LightPlugin"
 pub struct LightPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn LightPlugin::LightPlugin() -> LightPlugin {
   LightPlugin::{  }
 }
@@ -102,12 +103,12 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_point_light,
     @camera_primitives.ecs_key_cubemap_frusta,
-    fn() { @camera_primitives.CubemapFrusta::CubemapFrusta() },
+    fn() { CubemapFrusta() },
   )
   world.register_required_components_with(
     ecs_key_point_light,
     @camera_visibility.ecs_key_cubemap_visible_entities,
-    fn() { @camera_visibility.CubemapVisibleEntities::CubemapVisibleEntities() },
+    fn() { CubemapVisibleEntities() },
   )
   world.register_required_components_with(
     ecs_key_point_light,
@@ -117,22 +118,22 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_point_light,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_point_light,
     @visibility.ecs_key_visibility_class,
-    fn() { @visibility.VisibilityClass::VisibilityClass() },
+    fn() { VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_spot_light,
     @camera_primitives.ecs_key_frustum,
-    fn() { @camera_primitives.Frustum::Frustum() },
+    fn() { Frustum() },
   )
   world.register_required_components_with(
     ecs_key_spot_light,
     @camera_visibility.ecs_key_visible_mesh_entities,
-    fn() { @camera_visibility.VisibleMeshEntities::VisibleMeshEntities() },
+    fn() { VisibleMeshEntities() },
   )
   world.register_required_components_with(
     ecs_key_spot_light,
@@ -142,34 +143,32 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_spot_light,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_spot_light,
     @visibility.ecs_key_visibility_class,
-    fn() { @visibility.VisibilityClass::VisibilityClass() },
+    fn() { VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
     ecs_key_cascades,
-    fn() { Cascades::Cascades() },
+    fn() { Cascades() },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
     @camera_primitives.ecs_key_cascades_frusta,
-    fn() { @camera_primitives.CascadesFrusta::CascadesFrusta() },
+    fn() { CascadesFrusta() },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
     ecs_key_cascade_shadow_config,
-    fn() { CascadeShadowConfig::CascadeShadowConfig() },
+    fn() { CascadeShadowConfig() },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
     @camera_visibility.ecs_key_cascades_visible_entities,
-    fn() {
-      @camera_visibility.CascadesVisibleEntities::CascadesVisibleEntities()
-    },
+    fn() { CascadesVisibleEntities() },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
@@ -179,32 +178,32 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_directional_light,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_directional_light,
     @visibility.ecs_key_visibility_class,
-    fn() { @visibility.VisibilityClass::VisibilityClass() },
+    fn() { VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_point_light_texture,
     ecs_key_point_light,
-    fn() { PointLight::PointLight() },
+    fn() { PointLight() },
   )
   world.register_required_components_with(
     ecs_key_spot_light_texture,
     ecs_key_spot_light,
-    fn() { SpotLight::SpotLight() },
+    fn() { SpotLight() },
   )
   world.register_required_components_with(
     ecs_key_directional_light_texture,
     ecs_key_directional_light,
-    fn() { DirectionalLight::DirectionalLight() },
+    fn() { DirectionalLight() },
   )
   world.register_required_components_with(
     ecs_key_sun_disk,
     ecs_key_directional_light,
-    fn() { DirectionalLight::DirectionalLight() },
+    fn() { DirectionalLight() },
   )
   world.register_required_components_with(
     ecs_key_rect_light,
@@ -214,17 +213,17 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_rect_light,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_rect_light,
     @visibility.ecs_key_visibility_class,
-    fn() { @visibility.VisibilityClass::VisibilityClass() },
+    fn() { VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_ambient_light,
     @camera_camera.ecs_key_camera,
-    fn() { @camera_camera.Camera::Camera() },
+    fn() { Camera() },
   )
   world.register_required_components_with(
     ecs_key_light_probe,
@@ -234,7 +233,7 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_light_probe,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_light_probe,
@@ -244,17 +243,17 @@ fn register_light_required_components(
   world.register_required_components_with(
     ecs_key_light_probe,
     @visibility.ecs_key_visibility_class,
-    fn() { @visibility.VisibilityClass::VisibilityClass() },
+    fn() { VisibilityClass() },
   )
   world.register_required_components_with(
     ecs_key_irradiance_volume,
     ecs_key_light_probe,
-    fn() { LightProbe::LightProbe() },
+    fn() { LightProbe() },
   )
   world.register_required_components_with(
     ecs_key_atmosphere,
     @transform.ecs_key_global_transform,
-    fn() { @transform.GlobalTransform::GlobalTransform() },
+    fn() { GlobalTransform() },
   )
 }
 
@@ -309,24 +308,24 @@ pub fn light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if !next.contains_resource(ecs_key_global_ambient_light) {
     next = next.insert_world_resource(
       ecs_key_global_ambient_light,
-      GlobalAmbientLight::GlobalAmbientLight(),
+      GlobalAmbientLight(),
     )
   }
   if !next.contains_resource(ecs_key_point_light_shadow_map) {
     next = next.insert_world_resource(
       ecs_key_point_light_shadow_map,
-      PointLightShadowMap::PointLightShadowMap(),
+      PointLightShadowMap(),
     )
   }
   if !next.contains_resource(ecs_key_directional_light_shadow_map) {
     next = next.insert_world_resource(
       ecs_key_directional_light_shadow_map,
-      DirectionalLightShadowMap::DirectionalLightShadowMap(),
+      DirectionalLightShadowMap(),
     )
   }
   next
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(automatically_add_parallax_correction_components),
   )
   .add_post_update_system_config(

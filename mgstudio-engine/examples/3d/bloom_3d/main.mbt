@@ -182,7 +182,7 @@ fn setup_scene(
       (
         @text.Text::Text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -208,7 +208,7 @@ fn update_bloom_settings(
 
   match current_bloom {
     Some(bloom) => {
-      if keycode.just_pressed(@window.KeyCode::Space) {
+      if keycode.just_pressed(Space) {
         commands
         .entity(camera_entity)
         .remove_component(@post_process.ecs_key_bloom)
@@ -217,29 +217,29 @@ fn update_bloom_settings(
 
       let dt = time.get().delta_secs()
       let mut intensity = bloom.intensity
-      if keycode.pressed(@window.KeyCode::KeyA) {
+      if keycode.pressed(KeyA) {
         intensity = intensity - dt / 10.0F
       }
-      if keycode.pressed(@window.KeyCode::KeyQ) {
+      if keycode.pressed(KeyQ) {
         intensity = intensity + dt / 10.0F
       }
       intensity = clampf(intensity, 0.0F, 1.0F)
 
       let mut low_frequency_boost = bloom.low_frequency_boost
-      if keycode.pressed(@window.KeyCode::KeyS) {
+      if keycode.pressed(KeyS) {
         low_frequency_boost = low_frequency_boost - dt / 10.0F
       }
-      if keycode.pressed(@window.KeyCode::KeyW) {
+      if keycode.pressed(KeyW) {
         low_frequency_boost = low_frequency_boost + dt / 10.0F
       }
       low_frequency_boost = clampf(low_frequency_boost, 0.0F, 1.0F)
 
       let mut low_frequency_boost_curvature = bloom.low_frequency_boost_curvature
-      if keycode.pressed(@window.KeyCode::KeyD) {
+      if keycode.pressed(KeyD) {
         low_frequency_boost_curvature = low_frequency_boost_curvature -
           dt / 10.0F
       }
-      if keycode.pressed(@window.KeyCode::KeyE) {
+      if keycode.pressed(KeyE) {
         low_frequency_boost_curvature = low_frequency_boost_curvature +
           dt / 10.0F
       }
@@ -248,27 +248,27 @@ fn update_bloom_settings(
       )
 
       let mut high_pass_frequency = bloom.high_pass_frequency
-      if keycode.pressed(@window.KeyCode::KeyF) {
+      if keycode.pressed(KeyF) {
         high_pass_frequency = high_pass_frequency - dt / 10.0F
       }
-      if keycode.pressed(@window.KeyCode::KeyR) {
+      if keycode.pressed(KeyR) {
         high_pass_frequency = high_pass_frequency + dt / 10.0F
       }
       high_pass_frequency = clampf(high_pass_frequency, 0.0F, 1.0F)
 
       let mut composite_mode = bloom.composite_mode
-      if keycode.pressed(@window.KeyCode::KeyG) {
+      if keycode.pressed(KeyG) {
         composite_mode = Additive
       }
-      if keycode.pressed(@window.KeyCode::KeyT) {
+      if keycode.pressed(KeyT) {
         composite_mode = EnergyConserving
       }
 
       let mut threshold = bloom.prefilter.threshold
-      if keycode.pressed(@window.KeyCode::KeyH) {
+      if keycode.pressed(KeyH) {
         threshold = threshold - dt
       }
-      if keycode.pressed(@window.KeyCode::KeyY) {
+      if keycode.pressed(KeyY) {
         threshold = threshold + dt
       }
       if threshold < 0.0F {
@@ -276,19 +276,19 @@ fn update_bloom_settings(
       }
 
       let mut threshold_softness = bloom.prefilter.threshold_softness
-      if keycode.pressed(@window.KeyCode::KeyJ) {
+      if keycode.pressed(KeyJ) {
         threshold_softness = threshold_softness - dt / 10.0F
       }
-      if keycode.pressed(@window.KeyCode::KeyU) {
+      if keycode.pressed(KeyU) {
         threshold_softness = threshold_softness + dt / 10.0F
       }
       threshold_softness = clampf(threshold_softness, 0.0F, 1.0F)
 
       let mut scale_x = bloom.scale.x
-      if keycode.pressed(@window.KeyCode::KeyK) {
+      if keycode.pressed(KeyK) {
         scale_x = scale_x - dt * 2.0F
       }
-      if keycode.pressed(@window.KeyCode::KeyI) {
+      if keycode.pressed(KeyI) {
         scale_x = scale_x + dt * 2.0F
       }
       scale_x = clampf(scale_x, 0.0F, 8.0F)
@@ -307,7 +307,7 @@ fn update_bloom_settings(
       )
     }
     None =>
-      if keycode.just_pressed(@window.KeyCode::Space) {
+      if keycode.just_pressed(Space) {
         commands
         .entity(camera_entity)
         .insert_component(@post_process.Bloom::Bloom())
@@ -333,8 +333,8 @@ fn bounce_spheres(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup_scene)
-  .add_systems_param5(@app.Update, update_bloom_settings)
-  .add_systems_param2(@app.Update, bounce_spheres)
+  .add_systems_param3(Startup, setup_scene)
+  .add_systems_param5(Update, update_bloom_settings)
+  .add_systems_param2(Update, bounce_spheres)
   .run()
 }

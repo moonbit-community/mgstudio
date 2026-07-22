@@ -267,7 +267,7 @@ test "pbr volumetric fog: extract copies Bevy render-world components" {
   try! source_world.set_by_key(
     light_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
 
   extract_volumetric_fog_from_worlds(source_world, render_world)
@@ -317,12 +317,12 @@ test "pbr volumetric fog: no-light extract cleans render-world fog state only" {
   try! render_world.set_by_key(
     render_view,
     ViewVolumetricFogPipelines::component(),
-    ViewVolumetricFogPipelines::{ textureless: 1, textured: 2 },
+    { textureless: 1, textured: 2 },
   )
   try! render_world.set_by_key(
     render_view,
     ViewVolumetricFog::component(),
-    ViewVolumetricFog::ViewVolumetricFog(),
+    ViewVolumetricFog(),
   )
 
   let volume_entity = source_world.spawn()
@@ -389,7 +389,7 @@ test "pbr volumetric fog: last-light removal follows Bevy extract cleanup bounda
   try! source_world.set_by_key(
     view_entity,
     @light.ecs_key_volumetric_fog,
-    @light.VolumetricFog::VolumetricFog(),
+    VolumetricFog(),
   )
 
   let volume_entity = source_world.spawn()
@@ -399,7 +399,7 @@ test "pbr volumetric fog: last-light removal follows Bevy extract cleanup bounda
   try! source_world.set_by_key(
     volume_entity,
     @light.ecs_key_fog_volume,
-    @light.FogVolume::FogVolume(),
+    FogVolume(),
   )
   try! source_world.set_by_key(
     volume_entity,
@@ -414,7 +414,7 @@ test "pbr volumetric fog: last-light removal follows Bevy extract cleanup bounda
   try! source_world.set_by_key(
     light_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   extract_volumetric_fog_from_worlds(source_world, render_world)
   assert_true(

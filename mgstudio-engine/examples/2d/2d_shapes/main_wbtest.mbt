@@ -21,7 +21,7 @@ test "examples 2d shapes: scheduled update queues visible 2d draw items" {
     .add_plugins(
       @sprite_render_mesh2d_wireframe2d.Wireframe2dPlugin::Wireframe2dPlugin(),
     )
-    .add_systems_param3(@app.Startup, setup)
+    .add_systems_param3(Startup, setup)
 
   app = app.update()
 

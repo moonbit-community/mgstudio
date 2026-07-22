@@ -300,13 +300,13 @@ test "render mesh: constructor preserves topology key and vertex layout" {
       attribute_ids=[],
       layout=@asset_mesh.VertexBufferLayout::new(
         array_stride=0,
-        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+        step_mode=Vertex,
         attributes=[],
       ),
     ),
   )
   let key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology(
-    @asset_mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
   let render_mesh = RenderMesh::new(
     vertex_count=2,
@@ -316,11 +316,7 @@ test "render mesh: constructor preserves topology key and vertex layout" {
   )
   inspect(render_mesh.vertex_count(), content="2")
   inspect(render_mesh.indexed(), content="false")
-  inspect(
-    render_mesh.primitive_topology() ==
-    @asset_mesh.Mesh3dPrimitiveTopology::LineList,
-    content="true",
-  )
+  inspect(render_mesh.primitive_topology() == LineList, content="true")
   inspect(render_mesh.layout().index(), content="0")
   inspect(layouts.len(), content="1")
 }
@@ -536,9 +532,9 @@ test "render mesh allocator plugin initializes resource owners without overwriti
   let lifecycle_world_531_1 = @ecs.World::new()
   defer lifecycle_world_531_1.close()
   let app = @app.App::new(lifecycle_world_531_1)
-    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .insert_sub_app(RenderApp, render_sub_app)
     .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   inspect(
     render_world.get_resource(MeshAllocatorSettings::resource()) is Some(_),
     content="true",
@@ -560,10 +556,10 @@ test "render mesh allocator plugin initializes resource owners without overwriti
   let lifecycle_world_531_2 = @ecs.World::new()
   defer lifecycle_world_531_2.close()
   let app = @app.App::new(lifecycle_world_531_2)
-    .insert_sub_app(@app.RenderApp, @app.SubApp::new(seeded_world))
+    .insert_sub_app(RenderApp, @app.SubApp::new(seeded_world))
     .add_plugins(MeshAllocatorPlugin::MeshAllocatorPlugin())
   guard app
-    .get_sub_app(@app.RenderApp)
+    .get_sub_app(RenderApp)
     .unwrap()
     .world()
     .get_resource(MeshAllocator::resource())

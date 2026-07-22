@@ -34,12 +34,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_row_gap(@ui.Val::Px(40.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_row_gap(Px(40.0F)),
     ),
   )
 
@@ -51,13 +51,11 @@ fn setup(
           texture,
           @asset.TextureAtlas::new(atlas_layout, 0),
         ),
-        @ui.Node::Node()
-        .with_width(@ui.Val::Px(256.0F))
-        .with_height(@ui.Val::Px(256.0F)),
+        @ui.Node::Node().with_width(Px(256.0F)).with_height(Px(256.0F)),
         @ui.BackgroundColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
         @ui.Outline::new(
-          @ui.Val::Px(8.0F),
-          @ui.Val::Px(0.0F),
+          Px(8.0F),
+          Px(0.0F),
           @color.Color::srgb(0.86F, 0.08F, 0.24F),
         ),
       ),
@@ -118,7 +116,7 @@ fn increment_atlas_index(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, increment_atlas_index)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, increment_atlas_index)
   .run()
 }

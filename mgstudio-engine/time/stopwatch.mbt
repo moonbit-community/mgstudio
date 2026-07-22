@@ -25,7 +25,7 @@ pub struct Stopwatch {
 
 ///|
 pub fn Stopwatch::new() -> Stopwatch {
-  Stopwatch::{ elapsed_nanos: 0L, paused: false }
+  { elapsed_nanos: 0L, paused: false }
 }
 
 ///|
@@ -53,7 +53,7 @@ pub fn Stopwatch::set_elapsed(
   self : Stopwatch,
   elapsed : @core.Duration,
 ) -> Stopwatch {
-  Stopwatch::{ ..self, elapsed_nanos: elapsed.as_nanos() }
+  { ..self, elapsed_nanos: elapsed.as_nanos() }
 }
 
 ///|
@@ -69,21 +69,18 @@ pub fn Stopwatch::tick(self : Stopwatch, delta : @core.Duration) -> Stopwatch {
   if self.paused || delta.is_zero() {
     self
   } else {
-    Stopwatch::{
-      ..self,
-      elapsed_nanos: self.elapsed().saturating_add(delta).as_nanos(),
-    }
+    { ..self, elapsed_nanos: self.elapsed().saturating_add(delta).as_nanos() }
   }
 }
 
 ///|
 pub fn Stopwatch::pause(self : Stopwatch) -> Stopwatch {
-  Stopwatch::{ ..self, paused: true }
+  { ..self, paused: true }
 }
 
 ///|
 pub fn Stopwatch::unpause(self : Stopwatch) -> Stopwatch {
-  Stopwatch::{ ..self, paused: false }
+  { ..self, paused: false }
 }
 
 ///|
@@ -93,5 +90,5 @@ pub fn Stopwatch::is_paused(self : Stopwatch) -> Bool {
 
 ///|
 pub fn Stopwatch::reset(self : Stopwatch) -> Stopwatch {
-  Stopwatch::{ ..self, elapsed_nanos: 0L }
+  { ..self, elapsed_nanos: 0L }
 }

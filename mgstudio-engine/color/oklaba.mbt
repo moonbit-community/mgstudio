@@ -27,7 +27,7 @@ pub fn Oklaba::new(
   b : Float,
   alpha : Float,
 ) -> Oklaba {
-  Oklaba::{ lightness, a, b, alpha: color_clamp_unit(alpha) }
+  { lightness, a, b, alpha: color_clamp_unit(alpha) }
 }
 
 ///|

@@ -41,25 +41,25 @@ pub fn Text2dBundle::new(
   font : TextFont,
   transform : @transform.Transform,
 ) -> Text2dBundle {
-  Text2dBundle::{
+  {
     text,
     font,
-    color: TextColor::TextColor(),
+    color: TextColor(),
     background_color: None,
     underline: None,
     underline_color: None,
     strikethrough: None,
     strikethrough_color: None,
-    layout: TextLayout::TextLayout(),
-    bounds: TextBounds::TextBounds(),
+    layout: TextLayout(),
+    bounds: TextBounds(),
     line_height: LineHeight::default(),
     font_hinting: FontHinting::default(),
     shadow: None,
     transform,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    layers: RenderLayers(),
     no_frustum_culling: false,
-    anchor: @sprite.Anchor::Anchor(),
-    y_axis: YAxisOrientation::TopToBottom,
+    anchor: Anchor(),
+    y_axis: TopToBottom,
     logical_viewport_size: None,
   }
 }
@@ -71,25 +71,25 @@ pub fn Text2dBundle::new_with_layers(
   transform : @transform.Transform,
   layers : @camera_render_layers.RenderLayers,
 ) -> Text2dBundle {
-  Text2dBundle::{
+  {
     text,
     font,
-    color: TextColor::TextColor(),
+    color: TextColor(),
     background_color: None,
     underline: None,
     underline_color: None,
     strikethrough: None,
     strikethrough_color: None,
-    layout: TextLayout::TextLayout(),
-    bounds: TextBounds::TextBounds(),
+    layout: TextLayout(),
+    bounds: TextBounds(),
     line_height: LineHeight::default(),
     font_hinting: FontHinting::default(),
     shadow: None,
     transform,
     layers,
     no_frustum_culling: false,
-    anchor: @sprite.Anchor::Anchor(),
-    y_axis: YAxisOrientation::TopToBottom,
+    anchor: Anchor(),
+    y_axis: TopToBottom,
     logical_viewport_size: None,
   }
 }
@@ -99,7 +99,7 @@ pub fn Text2dBundle::with_color(
   self : Text2dBundle,
   color : TextColor,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -107,7 +107,7 @@ pub fn Text2dBundle::with_background_color(
   self : Text2dBundle,
   background_color : TextBackgroundColor?,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, background_color, }
+  { ..self, background_color, }
 }
 
 ///|
@@ -115,7 +115,7 @@ pub fn Text2dBundle::with_underline(
   self : Text2dBundle,
   underline : Underline?,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, underline, }
+  { ..self, underline, }
 }
 
 ///|
@@ -123,7 +123,7 @@ pub fn Text2dBundle::with_underline_color(
   self : Text2dBundle,
   underline_color : UnderlineColor?,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, underline_color, }
+  { ..self, underline_color, }
 }
 
 ///|
@@ -131,7 +131,7 @@ pub fn Text2dBundle::with_strikethrough(
   self : Text2dBundle,
   strikethrough : Strikethrough?,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, strikethrough, }
+  { ..self, strikethrough, }
 }
 
 ///|
@@ -139,7 +139,7 @@ pub fn Text2dBundle::with_strikethrough_color(
   self : Text2dBundle,
   strikethrough_color : StrikethroughColor?,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, strikethrough_color, }
+  { ..self, strikethrough_color, }
 }
 
 ///|
@@ -147,7 +147,7 @@ pub fn Text2dBundle::with_layout(
   self : Text2dBundle,
   layout : TextLayout,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, layout, }
+  { ..self, layout, }
 }
 
 ///|
@@ -155,7 +155,7 @@ pub fn Text2dBundle::with_bounds(
   self : Text2dBundle,
   bounds : TextBounds,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, bounds, }
+  { ..self, bounds, }
 }
 
 ///|
@@ -163,7 +163,7 @@ pub fn Text2dBundle::with_line_height(
   self : Text2dBundle,
   line_height : LineHeight,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, line_height, }
+  { ..self, line_height, }
 }
 
 ///|
@@ -171,7 +171,7 @@ pub fn Text2dBundle::with_font_hinting(
   self : Text2dBundle,
   font_hinting : FontHinting,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, font_hinting, }
+  { ..self, font_hinting, }
 }
 
 ///|
@@ -179,7 +179,7 @@ pub fn Text2dBundle::with_shadow(
   self : Text2dBundle,
   shadow : Text2dShadow?,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, shadow, }
+  { ..self, shadow, }
 }
 
 ///|
@@ -188,7 +188,7 @@ pub fn Text2dBundle::with_anchor(
   self : Text2dBundle,
   anchor : @sprite.Anchor,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, anchor, }
+  { ..self, anchor, }
 }
 
 ///|
@@ -197,7 +197,7 @@ pub fn Text2dBundle::with_y_axis(
   self : Text2dBundle,
   y_axis : YAxisOrientation,
 ) -> Text2dBundle {
-  Text2dBundle::{ ..self, y_axis, }
+  { ..self, y_axis, }
 }
 
 ///|
@@ -220,10 +220,10 @@ pub struct TextSpanBundle {
 
 ///|
 pub fn TextSpanBundle::new(span : TextSpan, font : TextFont) -> TextSpanBundle {
-  TextSpanBundle::{
+  {
     span,
     font,
-    color: TextColor::TextColor(),
+    color: TextColor(),
     background_color: None,
     underline: None,
     underline_color: None,
@@ -238,7 +238,7 @@ pub fn TextSpanBundle::with_color(
   self : TextSpanBundle,
   color : TextColor,
 ) -> TextSpanBundle {
-  TextSpanBundle::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
@@ -246,7 +246,7 @@ pub fn TextSpanBundle::with_background_color(
   self : TextSpanBundle,
   background_color : TextBackgroundColor?,
 ) -> TextSpanBundle {
-  TextSpanBundle::{ ..self, background_color, }
+  { ..self, background_color, }
 }
 
 ///|
@@ -254,7 +254,7 @@ pub fn TextSpanBundle::with_underline(
   self : TextSpanBundle,
   underline : Underline?,
 ) -> TextSpanBundle {
-  TextSpanBundle::{ ..self, underline, }
+  { ..self, underline, }
 }
 
 ///|
@@ -262,7 +262,7 @@ pub fn TextSpanBundle::with_underline_color(
   self : TextSpanBundle,
   underline_color : UnderlineColor?,
 ) -> TextSpanBundle {
-  TextSpanBundle::{ ..self, underline_color, }
+  { ..self, underline_color, }
 }
 
 ///|
@@ -270,7 +270,7 @@ pub fn TextSpanBundle::with_strikethrough(
   self : TextSpanBundle,
   strikethrough : Strikethrough?,
 ) -> TextSpanBundle {
-  TextSpanBundle::{ ..self, strikethrough, }
+  { ..self, strikethrough, }
 }
 
 ///|
@@ -278,7 +278,7 @@ pub fn TextSpanBundle::with_strikethrough_color(
   self : TextSpanBundle,
   strikethrough_color : StrikethroughColor?,
 ) -> TextSpanBundle {
-  TextSpanBundle::{ ..self, strikethrough_color, }
+  { ..self, strikethrough_color, }
 }
 
 ///|
@@ -351,7 +351,7 @@ priv struct TextState {
 }
 
 ///|
-let text_state : TextState = TextState::{
+let text_state : TextState = {
   next_text_id: 0,
   next_span_id: 0,
   texts: [],
@@ -467,9 +467,7 @@ priv struct TextDebugFrameState {
 }
 
 ///|
-let text_debug_frame_state : TextDebugFrameState = TextDebugFrameState::{
-  draws: [],
-}
+let text_debug_frame_state : TextDebugFrameState = { draws: [] }
 
 ///|
 pub fn text_debug_capture_enabled() -> Bool {
@@ -507,7 +505,7 @@ pub fn text_debug_push_glyph(
   if !text_runtime_state.debug_capture_enabled {
     return
   }
-  text_debug_frame_state.draws.push(TextDebugGlyphDraw::{
+  text_debug_frame_state.draws.push({
     text_id,
     bounds,
     scissor,
@@ -548,10 +546,7 @@ pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw] {
 pub fn text_debug_text_infos() -> Array[TextDebugTextInfo] {
   let infos : Array[TextDebugTextInfo] = []
   for instance in text_state.texts {
-    infos.push(TextDebugTextInfo::{
-      text_id: instance.id,
-      content: instance.text.content,
-    })
+    infos.push({ text_id: instance.id, content: instance.text.content })
   }
   infos
 }
@@ -661,7 +656,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
   let index = text_state.texts.length()
   text_state.next_text_id = id + 1
   text_runtime_mark_layout_dirty()
-  text_state.texts.push(TextInstance::{
+  text_state.texts.push({
     id,
     text: bundle.text,
     font: bundle.font,
@@ -694,11 +689,11 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     ),
     spans: [],
     layout_dirty: true,
-    computed: ComputedTextBlock::ComputedTextBlock(),
-    layout_info: TextLayoutInfo::TextLayoutInfo(),
+    computed: ComputedTextBlock(),
+    layout_info: TextLayoutInfo(),
   })
   text_state.text_index_by_id.set(id, index)
-  TextHandle::{ id, }
+  { id, }
 }
 
 ///|
@@ -711,7 +706,7 @@ pub fn text_spawn_span(
   text_runtime_mark_layout_dirty()
   if text_state_find_index_by_id(parent.id) is Some(index) {
     let instance = text_state.texts[index]
-    instance.spans.push(TextSpanInstance::{
+    instance.spans.push({
       id: span_id,
       span: bundle.span,
       font: bundle.font,
@@ -723,14 +718,14 @@ pub fn text_spawn_span(
       strikethrough_color: bundle.strikethrough_color,
       line_height: bundle.line_height,
     })
-    text_state.texts[index] = TextInstance::{
+    text_state.texts[index] = {
       ..instance,
       spans: instance.spans,
       layout_dirty: true,
-      computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+      computed: { ..instance.computed, needs_rerender: true },
     }
   }
-  TextSpanHandle::{ id: span_id }
+  { id: span_id }
 }
 
 ///|
@@ -802,33 +797,33 @@ fn text_state_entity_opt_eq(lhs : @core.Entity?, rhs : @core.Entity?) -> Bool {
 ///|
 pub fn text_set_content(handle : TextHandle, content : String) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
-    text: Text2d::{ content, },
+    text: { content, },
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_font(handle : TextHandle, font : TextFont) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     font,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_color(handle : TextHandle, color : TextColor) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     color,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -838,22 +833,22 @@ pub fn text_set_background_color(
   background_color : TextBackgroundColor?,
 ) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     background_color,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_underline(handle : TextHandle, underline : Underline?) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     underline,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -863,11 +858,11 @@ pub fn text_set_underline_color(
   underline_color : UnderlineColor?,
 ) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     underline_color,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -877,11 +872,11 @@ pub fn text_set_strikethrough(
   strikethrough : Strikethrough?,
 ) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     strikethrough,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -891,29 +886,29 @@ pub fn text_set_strikethrough_color(
   strikethrough_color : StrikethroughColor?,
 ) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     strikethrough_color,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_layout(handle : TextHandle, layout : TextLayout) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     layout,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_bounds(handle : TextHandle, bounds : TextBounds) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     bounds,
     cull_margin: text_compute_cull_margin(
@@ -922,7 +917,7 @@ pub fn text_set_bounds(handle : TextHandle, bounds : TextBounds) -> Unit {
       instance.transform.scale,
     ),
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -932,11 +927,11 @@ pub fn text_set_line_height(
   line_height : LineHeight,
 ) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     line_height,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -946,22 +941,22 @@ pub fn text_set_font_hinting(
   font_hinting : FontHinting,
 ) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     font_hinting,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
 ///|
 pub fn text_set_shadow(handle : TextHandle, shadow : Text2dShadow?) -> Unit {
   text_runtime_mark_layout_dirty()
-  text_update_instance(handle, instance => TextInstance::{
+  text_update_instance(handle, instance => {
     ..instance,
     shadow,
     layout_dirty: true,
-    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+    computed: { ..instance.computed, needs_rerender: true },
   })
 }
 
@@ -975,7 +970,7 @@ pub fn text_set_transform(
     if text_state_transform_eq(instance.transform, transform) {
       instance
     } else {
-      TextInstance::{
+      {
         ..instance,
         transform,
         cull_margin: text_compute_cull_margin(
@@ -1007,7 +1002,7 @@ pub fn text_set_layers(
     if instance.layers.mask == layers.mask {
       instance
     } else {
-      TextInstance::{ ..instance, layers, }
+      { ..instance, layers, }
     }
   })
 }
@@ -1015,10 +1010,7 @@ pub fn text_set_layers(
 ///|
 /// Update the extracted `ViewVisibility` of a text handle without marking rerender.
 pub fn text_set_view_visible(handle : TextHandle, view_visible : Bool) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    view_visible,
-  })
+  text_update_instance(handle, instance => { ..instance, view_visible, })
 }
 
 ///|
@@ -1027,16 +1019,13 @@ pub fn text_set_no_frustum_culling(
   handle : TextHandle,
   no_frustum_culling : Bool,
 ) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    no_frustum_culling,
-  })
+  text_update_instance(handle, instance => { ..instance, no_frustum_culling, })
 }
 
 ///|
 /// Update the anchor of a text handle without marking it as needing rerender.
 pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{ ..instance, anchor, })
+  text_update_instance(handle, instance => { ..instance, anchor, })
 }
 
 ///|
@@ -1048,14 +1037,11 @@ pub fn text_set_y_axis(handle : TextHandle, y_axis : YAxisOrientation) -> Unit {
       instance
     } else {
       text_runtime_mark_layout_dirty()
-      TextInstance::{
+      {
         ..instance,
         y_axis,
         layout_dirty: true,
-        computed: ComputedTextBlock::{
-          ..instance.computed,
-          needs_rerender: true,
-        },
+        computed: { ..instance.computed, needs_rerender: true },
       }
     }
   })
@@ -1071,14 +1057,11 @@ pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
       instance
     } else {
       text_runtime_mark_layout_dirty()
-      TextInstance::{
+      {
         ..instance,
         ui_node_size: size,
         layout_dirty: true,
-        computed: ComputedTextBlock::{
-          ..instance.computed,
-          needs_rerender: true,
-        },
+        computed: { ..instance.computed, needs_rerender: true },
       }
     }
   })
@@ -1115,14 +1098,11 @@ pub fn text_set_logical_viewport_size(
       instance
     } else {
       text_runtime_mark_layout_dirty()
-      TextInstance::{
+      {
         ..instance,
         logical_viewport_size,
         layout_dirty: true,
-        computed: ComputedTextBlock::{
-          ..instance.computed,
-          needs_rerender: true,
-        },
+        computed: { ..instance.computed, needs_rerender: true },
       }
     }
   })
@@ -1136,14 +1116,11 @@ pub fn text_set_scale_factor(handle : TextHandle, scale_factor : Float) -> Unit 
       instance
     } else {
       text_runtime_mark_layout_dirty()
-      TextInstance::{
+      {
         ..instance,
         scale_factor: safe_scale_factor,
         layout_dirty: true,
-        computed: ComputedTextBlock::{
-          ..instance.computed,
-          needs_rerender: true,
-        },
+        computed: { ..instance.computed, needs_rerender: true },
       }
     }
   })
@@ -1158,7 +1135,7 @@ pub fn text_set_ui_camera_entity(
     if text_state_entity_opt_eq(instance.ui_camera_entity, camera_entity) {
       instance
     } else {
-      TextInstance::{ ..instance, ui_camera_entity: camera_entity }
+      { ..instance, ui_camera_entity: camera_entity }
     }
   })
 }
@@ -1166,10 +1143,7 @@ pub fn text_set_ui_camera_entity(
 ///|
 /// Set optional UI clip rect for a text handle.
 pub fn text_set_ui_scissor(handle : TextHandle, scissor : @math.Rect?) -> Unit {
-  text_update_instance(handle, instance => TextInstance::{
-    ..instance,
-    ui_scissor: scissor,
-  })
+  text_update_instance(handle, instance => { ..instance, ui_scissor: scissor })
 }
 
 ///|
@@ -1196,7 +1170,7 @@ pub fn text_set_runtime_rem_size(rem_size : Float) -> Unit {
     let count = text_state.texts.length()
     for i in 0..<count {
       let instance = text_state.texts[i]
-      text_state.texts[i] = TextInstance::{ ..instance, layout_dirty: true }
+      text_state.texts[i] = { ..instance, layout_dirty: true }
     }
     text_runtime_mark_layout_dirty()
   }
@@ -1226,8 +1200,8 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
 
   fn to_y_up(y_axis : YAxisOrientation, v : @math.Vec2) -> @math.Vec2 {
     match y_axis {
-      YAxisOrientation::TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
-      YAxisOrientation::BottomToTop => v
+      TopToBottom => @math.Vec2::new(v.x, 0.0F - v.y)
+      BottomToTop => v
     }
   }
 
@@ -1265,12 +1239,12 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       None => {
         let anchor = instance.anchor.as_vec()
         match instance.y_axis {
-          YAxisOrientation::TopToBottom =>
+          TopToBottom =>
             @math.Vec2::new(
               (0.0F - 0.5F - anchor.x) * anchor_size.x,
               (0.5F - anchor.y) * anchor_size.y,
             )
-          YAxisOrientation::BottomToTop =>
+          BottomToTop =>
             @math.Vec2::new(
               (0.0F - 0.5F - anchor.x) * anchor_size.x,
               (0.0F - 0.5F - anchor.y) * anchor_size.y,
@@ -1279,7 +1253,7 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       }
     }
     let origin_offset = match (instance.y_axis, instance.ui_node_size) {
-      (YAxisOrientation::TopToBottom, None) => origin_offset_layout
+      (TopToBottom, None) => origin_offset_layout
       _ => to_y_up(instance.y_axis, origin_offset_layout)
     }
     let mut min_x = 0.0F

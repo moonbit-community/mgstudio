@@ -29,6 +29,7 @@ pub struct Core3d {}
 pub struct Core2d {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Core3d::Core3d() -> Core3d {
   Core3d::{  }
 }
@@ -39,6 +40,7 @@ pub fn Core3d::schedule() -> @app.ScheduleStage {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Core2d::Core2d() -> Core2d {
   Core2d::{  }
 }

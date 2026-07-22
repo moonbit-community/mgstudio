@@ -51,7 +51,7 @@ pub(all) struct LightGizmoConfigGroup {
 
 ///|
 pub fn LightGizmoConfigGroup::LightGizmoConfigGroup() -> LightGizmoConfigGroup {
-  LightGizmoConfigGroup::{
+  {
     draw_all: false,
     color: MatchLightColor,
     point_light_color: @color.Color::srgb(1.0F, 0.0F, 0.0F),
@@ -63,7 +63,7 @@ pub fn LightGizmoConfigGroup::LightGizmoConfigGroup() -> LightGizmoConfigGroup {
 
 ///|
 pub impl Default for LightGizmoConfigGroup with fn default() {
-  LightGizmoConfigGroup::LightGizmoConfigGroup()
+  LightGizmoConfigGroup()
 }
 
 ///|
@@ -97,7 +97,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn new_gizmo_config_group_cell() {
-  LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup::LightGizmoConfigGroup()))
+  LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup()))
 }
 
 ///|
@@ -117,7 +117,7 @@ pub struct ShowLightGizmo {
 
 ///|
 pub fn ShowLightGizmo::ShowLightGizmo() -> ShowLightGizmo {
-  ShowLightGizmo::{ color: None }
+  { color: None }
 }
 
 ///|
@@ -126,7 +126,7 @@ pub fn ShowLightGizmo::with_color(
   color : LightGizmoColor?,
 ) -> ShowLightGizmo {
   ignore(self)
-  ShowLightGizmo::{ color, }
+  { color, }
 }
 
 ///|

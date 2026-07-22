@@ -51,7 +51,7 @@ fn parse_args() -> Args {
 ///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::Window()
-  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.present_mode = AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
   )
@@ -63,21 +63,18 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
   ignore(commands.spawn_component(@camera_components2d.Camera2d::Camera2d()))
   let text_string = build_glyph_text(10_000)
   let text_font = @text.TextFont::from_font_size(4.0F)
-  let text_layout = @text.TextLayout::new(
-    @text.Justify::Left,
-    @text.LineBreak::AnyCharacter,
-  )
+  let text_layout = @text.TextLayout::new(Left, AnyCharacter)
   if !args.get().no_ui {
     let center_node = commands.spawn_component(
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
     )
     let text_node = commands.spawn(
       (
         @hierarchy.Parent::new(center_node),
-        @ui.Node::Node().with_width(@ui.Val::Px(1000.0F)),
+        @ui.Node::Node().with_width(Px(1000.0F)),
       ),
     )
     ignore(
@@ -124,14 +121,14 @@ fn main {
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
         primary_window: Some(configured_window()),
         primary_cursor_options: None,
-        exit_condition: @window.ExitCondition::OnAllClosed,
+        exit_condition: OnAllClosed,
         close_when_requested: true,
       }),
     )
     .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-    .add_systems_param2(@app.Startup, setup)
+    .add_systems_param2(Startup, setup)
   if args.recompute_text {
-    app.add_systems_param(@app.Update, force_recompute) |> ignore
+    app.add_systems_param(Update, force_recompute) |> ignore
   }
   app.run()
 }

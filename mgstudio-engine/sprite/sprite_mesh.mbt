@@ -35,7 +35,7 @@ pub(all) enum SpriteAlphaMode {
 
 ///|
 pub fn SpriteAlphaMode::default() -> SpriteAlphaMode {
-  SpriteAlphaMode::Mask(0.5F)
+  Mask(0.5F)
 }
 
 ///|
@@ -62,7 +62,7 @@ pub fn SpriteMesh::SpriteMesh() -> SpriteMesh {
 pub fn SpriteMesh::from_image(
   image : @asset.Handle[@asset.Image],
 ) -> SpriteMesh {
-  SpriteMesh::{
+  {
     image,
     texture_atlas: None,
     color: @color.Color::white(),
@@ -70,14 +70,14 @@ pub fn SpriteMesh::from_image(
     flip_y: false,
     custom_size: None,
     rect: None,
-    image_mode: SpriteImageMode::Auto,
+    image_mode: Auto,
     alpha_mode: SpriteAlphaMode::default(),
   }
 }
 
 ///|
 pub fn SpriteMesh::sized(custom_size : @math.Vec2) -> SpriteMesh {
-  SpriteMesh::{ ..SpriteMesh(), custom_size: Some(custom_size) }
+  { ..SpriteMesh(), custom_size: Some(custom_size) }
 }
 
 ///|
@@ -85,7 +85,7 @@ pub fn SpriteMesh::from_atlas_image(
   image : @asset.Handle[@asset.Image],
   atlas : @asset.TextureAtlas,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..SpriteMesh::from_image(image), texture_atlas: Some(atlas) }
+  { ..SpriteMesh::from_image(image), texture_atlas: Some(atlas) }
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn SpriteMesh::from_color(
   color : @color.Color,
   size : @math.Vec2,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..SpriteMesh(), color, custom_size: Some(size) }
+  { ..SpriteMesh(), color, custom_size: Some(size) }
 }
 
 ///|
@@ -101,7 +101,7 @@ pub fn SpriteMesh::with_texture_atlas(
   self : SpriteMesh,
   texture_atlas : @asset.TextureAtlas?,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..self, texture_atlas, }
+  { ..self, texture_atlas, }
 }
 
 ///|
@@ -109,17 +109,17 @@ pub fn SpriteMesh::with_color(
   self : SpriteMesh,
   color : @color.Color,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
 pub fn SpriteMesh::with_flip_x(self : SpriteMesh, flip_x : Bool) -> SpriteMesh {
-  SpriteMesh::{ ..self, flip_x, }
+  { ..self, flip_x, }
 }
 
 ///|
 pub fn SpriteMesh::with_flip_y(self : SpriteMesh, flip_y : Bool) -> SpriteMesh {
-  SpriteMesh::{ ..self, flip_y, }
+  { ..self, flip_y, }
 }
 
 ///|
@@ -127,7 +127,7 @@ pub fn SpriteMesh::with_custom_size(
   self : SpriteMesh,
   custom_size : @math.Vec2?,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..self, custom_size, }
+  { ..self, custom_size, }
 }
 
 ///|
@@ -135,7 +135,7 @@ pub fn SpriteMesh::with_rect(
   self : SpriteMesh,
   rect : @math.Rect?,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..self, rect, }
+  { ..self, rect, }
 }
 
 ///|
@@ -143,7 +143,7 @@ pub fn SpriteMesh::with_image_mode(
   self : SpriteMesh,
   image_mode : SpriteImageMode,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..self, image_mode, }
+  { ..self, image_mode, }
 }
 
 ///|
@@ -151,7 +151,7 @@ pub fn SpriteMesh::with_alpha_mode(
   self : SpriteMesh,
   alpha_mode : SpriteAlphaMode,
 ) -> SpriteMesh {
-  SpriteMesh::{ ..self, alpha_mode, }
+  { ..self, alpha_mode, }
 }
 
 ///|
@@ -228,10 +228,10 @@ pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 }
 
 ///|
-let mesh_upload_cache : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])
+let mesh_upload_cache : @hashmap.HashMap[Int, Int] = HashMap([])
 
 ///|
-let mesh_upload_radius_cache : @hashmap.HashMap[Int, Float] = @hashmap.HashMap([])
+let mesh_upload_radius_cache : @hashmap.HashMap[Int, Float] = HashMap([])
 
 ///|
 fn mesh2d_geometry_base_radius(geometry : @mesh.Mesh2dGeometry) -> Float {
@@ -286,12 +286,12 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
   })
   for event in events {
     match event {
-      @asset.AssetEvent::Modified(handle) =>
+      Modified(handle) =>
         if mesh_upload_cache.get(handle.id()) is Some(mesh_id) {
           mesh_id |> ignore
           ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
         }
-      @asset.AssetEvent::Removed(handle) =>
+      Removed(handle) =>
         if mesh_upload_cache.get(handle.id()) is Some(_) {
           ignore(render2d_delete_uploaded_mesh_handle_id(handle.id()))
         }
@@ -380,11 +380,11 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
   let uploaded_mesh_id = match mesh_asset_get(mesh) {
     Some(mesh_asset) =>
       match mesh_asset.geometry {
-        @mesh.MeshGeometry::Geometry2d(geometry2d) => {
+        Geometry2d(geometry2d) => {
           uploaded_mesh_radius = mesh2d_geometry_base_radius(geometry2d)
           render2d_upload_typed_mesh2d(mesh_asset)
         }
-        @mesh.MeshGeometry::Geometry3d(geometry3d) => {
+        Geometry3d(geometry3d) => {
           uploaded_mesh_radius = mesh3d_geometry_base_radius(geometry3d)
           render2d_upload_typed_mesh2d(mesh_asset)
         }

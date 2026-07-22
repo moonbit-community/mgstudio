@@ -34,6 +34,7 @@ fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = world_asset_server(world)
 
@@ -91,8 +92,8 @@ fn react_on_removal(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param3(@app.Update, remove_component)
+  .add_systems_world(Startup, setup)
+  .add_systems_param3(Update, remove_component)
   .add_component_observer2(react_on_removal)
   .run()
 }

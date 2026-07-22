@@ -32,7 +32,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let container = world.spawn_empty()
   try! world.set_by_key(
     container,
@@ -40,20 +40,11 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     @hierarchy.Parent::new(root),
   )
   let container_node = Node::Node()
-    .with_width(Val::Px(100.0F))
-    .with_height(Val::Px(100.0F))
-    .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Hidden))
-    .with_border(
-      UiRect::new(Val::Px(5.0F), Val::Px(5.0F), Val::Px(5.0F), Val::Px(5.0F)),
-    )
-    .with_padding(
-      UiRect::new(
-        Val::Px(10.0F),
-        Val::Px(10.0F),
-        Val::Px(10.0F),
-        Val::Px(10.0F),
-      ),
-    )
+    .with_width(Px(100.0F))
+    .with_height(Px(100.0F))
+    .with_overflow(Overflow::new(Hidden, Hidden))
+    .with_border(UiRect::new(Px(5.0F), Px(5.0F), Px(5.0F), Px(5.0F)))
+    .with_padding(UiRect::new(Px(10.0F), Px(10.0F), Px(10.0F), Px(10.0F)))
     .with_overflow_clip_margin(
       OverflowClipMargin::content_box().with_margin(2.0F),
     )
@@ -64,7 +55,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  try! world.set_by_key(child, ecs_key_node, Node::Node())
+  try! world.set_by_key(child, ecs_key_node, Node())
 
   // Build Children from Parent before clip.
 
@@ -79,7 +70,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
       ),
       @sprite.BorderRect::new(5.0F, 5.0F, 5.0F, 5.0F),
       @sprite.BorderRect::new(10.0F, 10.0F, 10.0F, 10.0F),
-      ResolvedBorderRadius::ResolvedBorderRadius(),
+      ResolvedBorderRadius(),
       0.0F,
       0.0F,
     ),
@@ -123,7 +114,7 @@ test "ui: overflow Visible disables clipping per-axis" {
   )
   get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::UiRoot())
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot())
   let container = world.spawn_empty()
   try! world.set_by_key(
     container,
@@ -133,9 +124,7 @@ test "ui: overflow Visible disables clipping per-axis" {
   try! world.set_by_key(
     container,
     ecs_key_node,
-    Node::Node().with_overflow(
-      Overflow::new(OverflowAxis::Visible, OverflowAxis::Hidden),
-    ),
+    Node::Node().with_overflow(Overflow::new(Visible, Hidden)),
   )
   let child = world.spawn_empty()
   try! world.set_by_key(
@@ -143,7 +132,7 @@ test "ui: overflow Visible disables clipping per-axis" {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(container),
   )
-  try! world.set_by_key(child, ecs_key_node, Node::Node())
+  try! world.set_by_key(child, ecs_key_node, Node())
   try! world.set_by_key(
     container,
     ecs_key_ui_layout,

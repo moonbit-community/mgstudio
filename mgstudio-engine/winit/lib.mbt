@@ -41,12 +41,12 @@ pub impl @ecs.Message for RawWinitWindowEvent with fn message() {
 
 ///|
 pub fn WinitPlugin::WinitPlugin() -> WinitPlugin {
-  WinitPlugin::{ run_on_any_thread: false }
+  { run_on_any_thread: false }
 }
 
 ///|
 pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  winit_plugin_with(app, WinitPlugin::WinitPlugin())
+  winit_plugin_with(app, WinitPlugin())
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn winit_plugin_with(
     ),
   )
   .add_systems(
-    @app.Last,
+    Last,
     (
       @app.system(winit_changed_windows_system).named(
         "mgstudio_winit::changed_windows",
@@ -113,7 +113,7 @@ pub fn winit_plugin_with(
     |> @app.chain(),
   )
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     (
       @app.system(winit_create_windows_system).named(
         "mgstudio_winit::create_windows",

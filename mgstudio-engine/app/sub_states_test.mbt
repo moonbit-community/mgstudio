@@ -48,8 +48,8 @@ impl SubStates for TestSubState
 ///|
 fn test_sub_state_should_exist(source : TestState) -> TestSubState? {
   match source {
-    TestState::A => Some(TestSubState::Setup)
-    TestState::B => None
+    A => Some(Setup)
+    B => None
   }
 }
 
@@ -110,7 +110,7 @@ test "app sub state: queued next state mutates while parent still exists" {
     .add_system(fn(world : @ecs.World) {
       match world_state(world, TestSubState::Setup) {
         Some(current) =>
-          if current.get() == TestSubState::Setup {
+          if current.get() == Setup {
             set_state(TestSubState::Battle)
           }
         None => ()

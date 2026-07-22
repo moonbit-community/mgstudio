@@ -28,7 +28,7 @@ pub fn TextureAttachment::new(
   mip_level : Int,
   layer : Int,
 ) -> TextureAttachment {
-  TextureAttachment::{ texture_id, mip_level, layer }
+  { texture_id, mip_level, layer }
 }
 
 ///|
@@ -67,7 +67,7 @@ pub fn OutputColorAttachment::new(
   view : @render_resource.TextureView,
   view_format : @wgpu.TextureFormat,
 ) -> OutputColorAttachment {
-  OutputColorAttachment::{ view, view_format, is_first_call: true }
+  { view, view_format, is_first_call: true }
 }
 
 ///|

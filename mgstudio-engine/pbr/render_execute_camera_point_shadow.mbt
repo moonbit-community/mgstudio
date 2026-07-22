@@ -96,7 +96,7 @@ fn render3d_prepare_camera_point_shadow_pass(
       pass_lighting.point_range,
     )
     let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::RenderQueue,
+      RenderQueue,
       "render_3d_shadow_phase_construction",
     )
     let shadow_light_entity = Render3dLightEntity::Point(
@@ -119,7 +119,7 @@ fn render3d_prepare_camera_point_shadow_pass(
     )
     queued_phase_views.push(queued_shadow_phase_view)
     @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::RenderQueue,
+      RenderQueue,
       "render_3d_shadow_phase_construction",
       shadow_phase_trace_start_us,
     )

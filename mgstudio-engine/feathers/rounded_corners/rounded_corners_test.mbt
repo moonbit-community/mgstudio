@@ -15,7 +15,7 @@
 ///|
 fn val_px_eq(value : @ui.Val, expected : Float) -> Bool {
   match value {
-    @ui.Val::Px(actual) => actual == expected
+    Px(actual) => actual == expected
     _ => false
   }
 }
@@ -36,10 +36,7 @@ fn radius_matches(
 
 ///|
 test "feathers rounded corners: default mirrors Bevy All" {
-  debug_inspect(
-    RoundedCorners::default() is RoundedCorners::All,
-    content="true",
-  )
+  debug_inspect(RoundedCorners::default() is All, content="true")
 }
 
 ///|

@@ -71,11 +71,11 @@ fn shader_import_from_raw(raw_import : String) -> ShaderImport {
     if closing_quote > 0 {
       let tail = trimmed[closing_quote + 1:].trim().to_owned()
       if tail == "" || tail.has_prefix("::") {
-        return ShaderImport::AssetPath(trimmed[1:closing_quote].to_owned())
+        return AssetPath(trimmed[1:closing_quote].to_owned())
       }
     }
   }
-  ShaderImport::Custom(trimmed)
+  Custom(trimmed)
 }
 
 ///|
@@ -85,7 +85,7 @@ fn preprocess_shader_imports(
 ) -> (ShaderImport, Array[ShaderImport]) {
   let metadata = @wgsl_common.get_preprocessor_metadata(source) catch {
     _ =>
-      @wgsl_common.PreprocessorMetaData::PreprocessorMetaData(
+      PreprocessorMetaData(
         None,
         [],
         Map([]),
@@ -96,7 +96,7 @@ fn preprocess_shader_imports(
   }
   let shader_import_path = match metadata.name {
     Some(module_path) => ShaderImport::Custom(module_path)
-    None => ShaderImport::AssetPath(path)
+    None => AssetPath(path)
   }
   let shader_imports : Array[ShaderImport] = []
   for import_definition in metadata.imports {
@@ -148,15 +148,15 @@ pub fn Shader::new(source : String) -> Shader {
 ///|
 pub fn Shader::from_wgsl(source : String, path : String) -> Shader {
   let (import_path, imports) = preprocess_shader_imports(source, path)
-  Shader::{
+  {
     path,
     imports,
     import_path,
-    source: Source::Wgsl(source),
+    source: Wgsl(source),
     additional_imports: [],
     shader_defs: [],
     file_dependencies: [],
-    validate_shader: ValidateShader::Disabled,
+    validate_shader: Disabled,
   }
 }
 
@@ -167,7 +167,7 @@ pub fn Shader::from_wgsl_with_defs(
   shader_defs : Array[ShaderDefVal],
 ) -> Shader {
   let shader = Shader::from_wgsl(source, path)
-  Shader::{ ..shader, shader_defs, }
+  { ..shader, shader_defs, }
 }
 
 ///|
@@ -180,15 +180,15 @@ pub fn Shader::from_wesl(source : String, path : String) -> Shader {
         "wesl shaders only support asset-backed import paths: \{module_path}",
       )
   }
-  Shader::{
+  {
     path,
     imports,
-    import_path: ShaderImport::AssetPath(shader_wesl_asset_import_path(path)),
-    source: Source::Wesl(source),
+    import_path: AssetPath(shader_wesl_asset_import_path(path)),
+    source: Wesl(source),
     additional_imports: [],
     shader_defs: [],
     file_dependencies: [],
-    validate_shader: ValidateShader::Disabled,
+    validate_shader: Disabled,
   }
 }
 
@@ -199,29 +199,29 @@ pub fn Shader::from_glsl(
   path : String,
 ) -> Shader {
   let (import_path, imports) = preprocess_shader_imports(source, path)
-  Shader::{
+  {
     path,
     imports,
     import_path,
-    source: Source::Glsl(source, stage),
+    source: Glsl(source, stage),
     additional_imports: [],
     shader_defs: [],
     file_dependencies: [],
-    validate_shader: ValidateShader::Disabled,
+    validate_shader: Disabled,
   }
 }
 
 ///|
 pub fn Shader::from_spirv(source : Bytes, path : String) -> Shader {
-  Shader::{
+  {
     path,
     imports: [],
-    import_path: ShaderImport::AssetPath(path),
-    source: Source::SpirV(source),
+    import_path: AssetPath(path),
+    source: SpirV(source),
     additional_imports: [],
     shader_defs: [],
     file_dependencies: [],
-    validate_shader: ValidateShader::Disabled,
+    validate_shader: Disabled,
   }
 }
 

@@ -39,25 +39,25 @@ fn named_system(
 fn main {
   let mut app = @app.App::new(@ecs.World::new())
     .add_systems(
-      @app.PreUpdate,
+      PreUpdate,
       named_system(PRE_UPDATE_SYSTEM_NAME, pre_update_system),
     )
     .add_systems(
-      @app.Update,
+      Update,
       named_system(UPDATE_SYSTEM_ONE_NAME, update_system_one),
     )
     .add_systems(
-      @app.Update,
+      Update,
       named_system(UPDATE_SYSTEM_FOUR_NAME, update_system_four),
     )
     .add_systems(
-      @app.Update,
+      Update,
       named_system(UPDATE_SYSTEM_TWO_NAME, update_system_two).after(
         @app.system_set(UPDATE_SYSTEM_ONE_NAME),
       ),
     )
     .add_systems(
-      @app.Update,
+      Update,
       named_system(UPDATE_SYSTEM_THREE_NAME, update_system_three).after(
         @app.system_set(UPDATE_SYSTEM_TWO_NAME),
       ),
@@ -71,7 +71,7 @@ fn main {
     "\nActions: add Update to Stepping, enable it, then call app.update()\n Result: Only PreUpdate runs while Update waits for an explicit step or continue",
   )
   let stepping = stepping_ref(app)
-  stepping.set(stepping.peek().add_schedule(@app.Update).enable())
+  stepping.set(stepping.peek().add_schedule(Update).enable())
   app = app.update()
 
   println(
@@ -94,7 +94,7 @@ fn main {
   println(
     "\nActions: mark update_system_two as always_run; step three frames\n Result: update_system_two runs every frame while the other Update systems step one by one",
   )
-  stepping.set(stepping.peek().always_run(@app.Update, UPDATE_SYSTEM_TWO_NAME))
+  stepping.set(stepping.peek().always_run(Update, UPDATE_SYSTEM_TWO_NAME))
   for _ in 0..<3 {
     stepping.set(stepping.peek().step_frame())
     app = app.update()
@@ -103,7 +103,7 @@ fn main {
   println(
     "\nActions: mark update_system_two as never_run; continue one frame\n Result: all other Update systems run, but update_system_two stays skipped while stepping is enabled",
   )
-  stepping.set(stepping.peek().never_run(@app.Update, UPDATE_SYSTEM_TWO_NAME))
+  stepping.set(stepping.peek().never_run(Update, UPDATE_SYSTEM_TWO_NAME))
   stepping.set(stepping.peek().continue_frame())
   app = app.update()
 
@@ -113,8 +113,8 @@ fn main {
   stepping.set(
     stepping
     .peek()
-    .clear_schedule(@app.Update)
-    .set_breakpoint(@app.Update, UPDATE_SYSTEM_TWO_NAME),
+    .clear_schedule(Update)
+    .set_breakpoint(Update, UPDATE_SYSTEM_TWO_NAME),
   )
   stepping.set(stepping.peek().continue_frame())
   app = app.update()
@@ -126,9 +126,7 @@ fn main {
   println(
     "\nActions: clear the breakpoint, disable stepping, then call app.update()\n Result: all systems run normally again",
   )
-  stepping.set(
-    stepping.peek().clear_breakpoint(@app.Update, UPDATE_SYSTEM_TWO_NAME),
-  )
+  stepping.set(stepping.peek().clear_breakpoint(Update, UPDATE_SYSTEM_TWO_NAME))
   stepping.update(fn(value) { value.disable() })
   app = app.update()
 }

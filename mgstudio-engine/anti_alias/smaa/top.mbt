@@ -25,6 +25,7 @@ const SMAA_PLUGIN_NAME : String = "mgstudio.anti_alias.smaa.SmaaPlugin"
 pub struct SmaaPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SmaaPlugin::SmaaPlugin() -> SmaaPlugin {
   SmaaPlugin::{  }
 }
@@ -59,7 +60,7 @@ pub struct Smaa {
 
 ///|
 pub fn Smaa::Smaa() -> Smaa {
-  Smaa::{ preset: SmaaPreset::default() }
+  { preset: SmaaPreset::default() }
 }
 
 ///|
@@ -67,7 +68,7 @@ pub fn Smaa::with_preset(self : Smaa, preset : SmaaPreset) -> Smaa {
   if self.preset == preset {
     self
   } else {
-    Smaa::{ preset, }
+    { preset, }
   }
 }
 
@@ -87,7 +88,7 @@ pub struct SmaaLuts {
 pub fn SmaaLuts::from_asset_server(
   asset_server : @asset.AssetServer,
 ) -> SmaaLuts {
-  SmaaLuts::{
+  {
     area_lut: asset_server.load_with_settings(SMAA_AREA_LUT_PATH, fn(settings) {
       settings.is_srgb = false
       settings.asset_usage = @asset.RenderAssetUsages::render_world()
@@ -126,9 +127,7 @@ pub fn SmaaInfoUniform::from_viewport_size(
   width : Float,
   height : Float,
 ) -> SmaaInfoUniform {
-  SmaaInfoUniform::{
-    rt_metrics: @math.Vec4::new(1.0F / width, 1.0F / height, width, height),
-  }
+  { rt_metrics: @math.Vec4::new(1.0F / width, 1.0F / height, width, height) }
 }
 
 ///|
@@ -138,7 +137,7 @@ pub struct SmaaInfoUniformOffset {
 
 ///|
 pub fn SmaaInfoUniformOffset::new(offset : UInt) -> SmaaInfoUniformOffset {
-  SmaaInfoUniformOffset::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -186,7 +185,7 @@ pub fn SmaaNeighborhoodBlendingPipelineKey::new(
   texture_format : UInt,
   preset : SmaaPreset,
 ) -> SmaaNeighborhoodBlendingPipelineKey {
-  SmaaNeighborhoodBlendingPipelineKey::{ texture_format, preset }
+  { texture_format, preset }
 }
 
 ///|
@@ -202,7 +201,7 @@ pub fn ViewSmaaPipelines::new(
   blending_weight_calculation_pipeline_id : @material.CachedRenderPipelineId,
   neighborhood_blending_pipeline_id : @material.CachedRenderPipelineId,
 ) -> ViewSmaaPipelines {
-  ViewSmaaPipelines::{
+  {
     edge_detection_pipeline_id,
     blending_weight_calculation_pipeline_id,
     neighborhood_blending_pipeline_id,
@@ -211,10 +210,7 @@ pub fn ViewSmaaPipelines::new(
 
 ///|
 pub fn SmaaRuntimeState::SmaaRuntimeState() -> SmaaRuntimeState {
-  SmaaRuntimeState::{
-    enabled_camera_count: 0,
-    runtime_supported: SMAA_RUNTIME_SUPPORTED,
-  }
+  { enabled_camera_count: 0, runtime_supported: SMAA_RUNTIME_SUPPORTED }
 }
 
 ///|
@@ -239,23 +235,17 @@ pub impl @app.Resource for SmaaRuntimeState with fn resource() {
 
 ///|
 fn smaa_texture_entry() -> @material.BindGroupLayoutEntryBuilder {
-  @material.bind_group_layout_entry_builder(
-    @render_resource.BindingType::Texture,
-  )
+  @material.bind_group_layout_entry_builder(Texture)
 }
 
 ///|
 fn smaa_sampler_entry() -> @material.BindGroupLayoutEntryBuilder {
-  @material.bind_group_layout_entry_builder(
-    @render_resource.BindingType::Sampler,
-  )
+  @material.bind_group_layout_entry_builder(Sampler)
 }
 
 ///|
 fn smaa_uniform_entry() -> @material.BindGroupLayoutEntryBuilder {
-  @material.bind_group_layout_entry_builder(
-    @render_resource.BindingType::Buffer,
-  ).visibility(
+  @material.bind_group_layout_entry_builder(Buffer).visibility(
     (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint(),
   )
 }
@@ -299,18 +289,18 @@ pub fn init_smaa_pipelines(
     "SMAA neighborhood blending bind group layout",
     [smaa_texture_entry(), smaa_sampler_entry()],
   )
-  SmaaPipelines::{
-    edge_detection: SmaaEdgeDetectionPipeline::{
+  {
+    edge_detection: {
       postprocess_bind_group_layout,
       edge_detection_bind_group_layout,
       shader,
     },
-    blending_weight_calculation: SmaaBlendingWeightCalculationPipeline::{
+    blending_weight_calculation: {
       postprocess_bind_group_layout,
       blending_weight_calculation_bind_group_layout,
       shader,
     },
-    neighborhood_blending: SmaaNeighborhoodBlendingPipeline::{
+    neighborhood_blending: {
       postprocess_bind_group_layout,
       neighborhood_blending_bind_group_layout,
       shader,
@@ -355,7 +345,7 @@ pub fn SmaaEdgeDetectionPipeline::specialize(
 ) -> @material.RenderPipelineDescriptor {
   let shader_defs = [
     @material.ShaderDefVal::Flag("SMAA_EDGE_DETECTION"),
-    @material.ShaderDefVal::Flag(preset.shader_def()),
+    Flag(preset.shader_def()),
   ]
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("SMAA edge detection"))
@@ -386,7 +376,7 @@ pub fn SmaaBlendingWeightCalculationPipeline::specialize(
 ) -> @material.RenderPipelineDescriptor {
   let shader_defs = [
     @material.ShaderDefVal::Flag("SMAA_BLENDING_WEIGHT_CALCULATION"),
-    @material.ShaderDefVal::Flag(preset.shader_def()),
+    Flag(preset.shader_def()),
   ]
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("SMAA blending weight calculation"))
@@ -421,7 +411,7 @@ pub fn SmaaNeighborhoodBlendingPipeline::specialize(
 ) -> @material.RenderPipelineDescriptor {
   let shader_defs = [
     @material.ShaderDefVal::Flag("SMAA_NEIGHBORHOOD_BLENDING"),
-    @material.ShaderDefVal::Flag(key.preset.shader_def()),
+    Flag(key.preset.shader_def()),
   ]
   @render_resource.RenderPipelineDescriptor::RenderPipelineDescriptor()
   .with_label(Some("SMAA neighborhood blending"))
@@ -463,7 +453,7 @@ pub impl @app.Plugin for SmaaPlugin with fn build(self, app) {
 
 ///|
 pub fn smaa_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  smaa_plugin_with(app, SmaaPlugin::SmaaPlugin())
+  smaa_plugin_with(app, SmaaPlugin())
 }
 
 ///|

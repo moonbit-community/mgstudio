@@ -66,10 +66,10 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       player,
       @animation.AnimationGraphHandle::new(graph_handle),
     ),
@@ -85,7 +85,7 @@ fn setup(
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(@text.FontSize::Px(80.0F)),
       @text.TextColor::new(@color.Color::srgb(1.0F, 0.0F, 0.0F)),
-      @text.TextLayout::new_with_justify(@text.Justify::Center),
+      @text.TextLayout::new_with_justify(Center),
       @transform.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
     ),
   )
@@ -99,6 +99,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

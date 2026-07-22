@@ -137,7 +137,7 @@ pub fn HostGpuMeshInfo::primitive_topology(self : HostGpuMeshInfo) -> UInt {
 
 ///|
 fn host_gpu_mesh_info_from_gpu(mesh : GpuMeshInfo) -> HostGpuMeshInfo {
-  HostGpuMeshInfo::{
+  {
     id: mesh.id,
     index_count: mesh.index_count.reinterpret_as_int(),
     vertex_count: mesh.vertex_count.reinterpret_as_int(),

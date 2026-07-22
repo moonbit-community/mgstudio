@@ -17,17 +17,17 @@
 
 ///|
 pub fn default_gizmo_config() -> @sprite.GizmoConfig {
-  @sprite.GizmoConfig::GizmoConfig()
+  GizmoConfig()
 }
 
 ///|
 pub fn default_gizmo_line_config() -> @sprite.GizmoLineConfig {
-  @sprite.GizmoLineConfig::GizmoLineConfig()
+  GizmoLineConfig()
 }
 
 ///|
 pub fn default_gizmo_config_group() -> @sprite.DefaultGizmoConfigGroup {
-  @sprite.DefaultGizmoConfigGroup::DefaultGizmoConfigGroup()
+  DefaultGizmoConfigGroup()
 }
 
 ///|
@@ -79,13 +79,7 @@ pub fn GizmoMeshConfig::new(
   render_layers~ : @camera_render_layers.RenderLayers,
   handle~ : @asset.Handle[GizmoAsset],
 ) -> GizmoMeshConfig {
-  GizmoMeshConfig::{
-    line_perspective,
-    line_style,
-    line_joints,
-    render_layers,
-    handle,
-  }
+  { line_perspective, line_style, line_joints, render_layers, handle }
 }
 
 ///|

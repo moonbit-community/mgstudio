@@ -30,10 +30,7 @@ pub struct FullscreenShader {
 
 ///|
 pub fn FullscreenShader::FullscreenShader() -> FullscreenShader {
-  FullscreenShader::{
-    path: FULLSCREEN_SHADER_PATH,
-    entry_point: FULLSCREEN_SHADER_ENTRY_POINT,
-  }
+  { path: FULLSCREEN_SHADER_PATH, entry_point: FULLSCREEN_SHADER_ENTRY_POINT }
 }
 
 ///|
@@ -41,7 +38,7 @@ pub fn FullscreenShader::new(
   path? : String = FULLSCREEN_SHADER_PATH,
   entry_point? : String = FULLSCREEN_SHADER_ENTRY_POINT,
 ) -> FullscreenShader {
-  FullscreenShader::{ path, entry_point }
+  { path, entry_point }
 }
 
 ///|

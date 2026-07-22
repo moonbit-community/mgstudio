@@ -165,12 +165,7 @@ fn line_gizmo_binding(
   offset_bytes : UInt64,
   size_bytes : UInt64,
 ) -> LineGizmoVertexBufferBindingPlan {
-  LineGizmoVertexBufferBindingPlan::{
-    slot,
-    buffer_kind,
-    offset_bytes,
-    size_bytes,
-  }
+  { slot, buffer_kind, offset_bytes, size_bytes }
 }
 
 ///|
@@ -196,7 +191,7 @@ pub fn draw_line_gizmo_plan(
         LINE_GIZMO_RGBA_SIZE_BYTES,
       ) -
       color_item_size
-    Some(LineGizmoDrawPlan::{
+    Some({
       bindings: [
         line_gizmo_binding(0U, StripPosition, 0UL, position_size),
         line_gizmo_binding(1U, StripPosition, position_item_size, position_size),
@@ -207,7 +202,7 @@ pub fn draw_line_gizmo_plan(
       instance_count: (strip_vertex_count - 1).reinterpret_as_uint(),
     })
   } else {
-    Some(LineGizmoDrawPlan::{
+    Some({
       bindings: [
         line_gizmo_binding(
           0U,
@@ -269,7 +264,7 @@ pub fn draw_line_joint_gizmo_plan(
       LINE_GIZMO_RGBA_SIZE_BYTES,
     ) -
     color_item_size * 2UL
-  Some(LineGizmoDrawPlan::{
+  Some({
     bindings: [
       line_gizmo_binding(0U, StripPosition, 0UL, position_size),
       line_gizmo_binding(1U, StripPosition, position_item_size, position_size),
@@ -357,14 +352,14 @@ pub fn line_gizmo_render_command_plan(
       draw_line_joint_gizmo_plan(strip_vertex_count~, joints=key.line_joints())
   }
   guard draw is Some(draw_plan) else { return None }
-  Some(LineGizmoRenderCommandPlan::{
+  Some({
     phase_item: item,
     pipeline: line_gizmo_pipeline_plan_for_phase(
       key,
       msaa_samples~,
       target_format~,
     ),
-    bind_groups: LineGizmoBindGroupPlan::{
+    bind_groups: {
       view_slot: 0U,
       uniform_slot: 1U,
       uniform_dynamic_offset: 0U,

@@ -36,7 +36,7 @@ pub(all) struct WinitSettings {
 
 ///|
 pub fn WinitSettings::game() -> WinitSettings {
-  WinitSettings::{
+  {
     focused_mode: Continuous,
     unfocused_mode: UpdateMode::reactive_low_power(
       @core.Duration::from_secs_f64(1.0 / 60.0),
@@ -46,7 +46,7 @@ pub fn WinitSettings::game() -> WinitSettings {
 
 ///|
 pub fn WinitSettings::desktop_app() -> WinitSettings {
-  WinitSettings::{
+  {
     focused_mode: UpdateMode::reactive(@core.Duration::from_secs(5L)),
     unfocused_mode: UpdateMode::reactive_low_power(
       @core.Duration::from_secs(60L),
@@ -56,7 +56,7 @@ pub fn WinitSettings::desktop_app() -> WinitSettings {
 
 ///|
 pub fn WinitSettings::mobile() -> WinitSettings {
-  WinitSettings::{
+  {
     focused_mode: UpdateMode::reactive(
       @core.Duration::from_secs_f32(1.0F / 60.0F),
     ),
@@ -68,7 +68,7 @@ pub fn WinitSettings::mobile() -> WinitSettings {
 
 ///|
 pub fn WinitSettings::continuous() -> WinitSettings {
-  WinitSettings::{ focused_mode: Continuous, unfocused_mode: Continuous }
+  { focused_mode: Continuous, unfocused_mode: Continuous }
 }
 
 ///|

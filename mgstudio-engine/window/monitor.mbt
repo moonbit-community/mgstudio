@@ -25,7 +25,7 @@ pub fn VideoMode::new(
   bit_depth : Int,
   refresh_rate_millihertz : Int,
 ) -> VideoMode {
-  VideoMode::{ physical_size, bit_depth, refresh_rate_millihertz }
+  { physical_size, bit_depth, refresh_rate_millihertz }
 }
 
 ///|

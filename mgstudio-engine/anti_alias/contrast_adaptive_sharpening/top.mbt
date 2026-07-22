@@ -25,6 +25,7 @@ const CAS_PLUGIN_NAME : String = "mgstudio.anti_alias.contrast_adaptive_sharpeni
 pub struct CasPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CasPlugin::CasPlugin() -> CasPlugin {
   CasPlugin::{  }
 }
@@ -38,11 +39,7 @@ pub struct ContrastAdaptiveSharpening {
 
 ///|
 pub fn ContrastAdaptiveSharpening::ContrastAdaptiveSharpening() -> ContrastAdaptiveSharpening {
-  ContrastAdaptiveSharpening::{
-    enabled: true,
-    sharpening_strength: 0.6,
-    denoise: false,
-  }
+  { enabled: true, sharpening_strength: 0.6, denoise: false }
 }
 
 ///|
@@ -53,7 +50,7 @@ pub fn ContrastAdaptiveSharpening::with_enabled(
   if self.enabled == enabled {
     self
   } else {
-    ContrastAdaptiveSharpening::{ ..self, enabled, }
+    { ..self, enabled, }
   }
 }
 
@@ -65,7 +62,7 @@ pub fn ContrastAdaptiveSharpening::with_sharpening_strength(
   if self.sharpening_strength == sharpening_strength {
     self
   } else {
-    ContrastAdaptiveSharpening::{ ..self, sharpening_strength, }
+    { ..self, sharpening_strength, }
   }
 }
 
@@ -77,7 +74,7 @@ pub fn ContrastAdaptiveSharpening::with_denoise(
   if self.denoise == denoise {
     self
   } else {
-    ContrastAdaptiveSharpening::{ ..self, denoise, }
+    { ..self, denoise, }
   }
 }
 
@@ -88,7 +85,7 @@ pub struct DenoiseCas {
 
 ///|
 pub fn DenoiseCas::DenoiseCas() -> DenoiseCas {
-  DenoiseCas::{ enabled: false }
+  { enabled: false }
 }
 
 ///|
@@ -98,7 +95,7 @@ pub struct CasUniform {
 
 ///|
 pub fn CasUniform::CasUniform() -> CasUniform {
-  CasUniform::{ sharpness: 0.0 }
+  { sharpness: 0.0 }
 }
 
 ///|
@@ -142,11 +139,7 @@ pub struct CasRuntimeState {
 
 ///|
 pub fn CasRuntimeState::CasRuntimeState() -> CasRuntimeState {
-  CasRuntimeState::{
-    enabled_camera_count: 0,
-    active_camera_count: 0,
-    denoise_camera_count: 0,
-  }
+  { enabled_camera_count: 0, active_camera_count: 0, denoise_camera_count: 0 }
 }
 
 ///|
@@ -184,7 +177,7 @@ pub impl @app.Plugin for CasPlugin with fn build(self, app) {
 
 ///|
 pub fn cas_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  cas_plugin_with(app, CasPlugin::CasPlugin())
+  cas_plugin_with(app, CasPlugin())
 }
 
 ///|

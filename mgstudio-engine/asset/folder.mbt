@@ -107,10 +107,7 @@ fn AssetServer::enqueue_loaded_folder(
       return
     }
   }
-  self.pending_loaded_folder_loads.push(PendingLoadedFolderLoad::{
-    handle_id: handle.id(),
-    handles,
-  })
+  self.pending_loaded_folder_loads.push({ handle_id: handle.id(), handles })
 }
 
 ///|
@@ -207,7 +204,7 @@ pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
       let mut failed : String? = None
       for image in pending.handles {
         match asset_server.load_state(image) {
-          LoadState::Failed(error) => {
+          Failed(error) => {
             loaded = false
             failed = Some(error)
             break
@@ -230,8 +227,7 @@ pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
         None =>
           if loaded {
             store.push_event(LoadedWithDependencies(handle))
-            store.insert(handle, LoadedFolder::{ handles: pending.handles })
-            |> ignore
+            store.insert(handle, { handles: pending.handles }) |> ignore
             asset_server.set_typed_loaded_states(type_name, handle.id())
           } else {
             remaining.push(pending)

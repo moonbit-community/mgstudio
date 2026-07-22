@@ -41,7 +41,7 @@ pub fn Virtual::Virtual() -> Virtual {
 
 ///|
 pub impl Default for Virtual with fn default() {
-  Virtual::Virtual()
+  Virtual()
 }
 
 ///|
@@ -56,7 +56,7 @@ pub impl TimeContext for Virtual with fn time_resource_key() {
 
 ///|
 pub fn Time::from_max_delta(max_delta : @core.Duration) -> Time[Virtual] {
-  let virtual_time : Time[Virtual] = Time::Time()
+  let virtual_time : Time[Virtual] = Time()
   virtual_time.set_max_delta(max_delta)
 }
 
@@ -201,7 +201,7 @@ pub fn update_virtual_time(
 ///|
 fn world_virtual_or_default(world : @ecs.World) -> Time[Virtual] {
   world_time_resource_or_default(world, virtual_time_resource_key, fn() {
-    Time::Time()
+    Time()
   })
 }
 

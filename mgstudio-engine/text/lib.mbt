@@ -28,7 +28,7 @@ pub fn Text::Text() -> Text {
 
 ///|
 pub fn Text::new(content : String) -> Text {
-  Text::{ content, }
+  { content, }
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn Text2d::Text2d() -> Text2d {
 
 ///|
 pub fn Text2d::new(content : String) -> Text2d {
-  Text2d::{ content, }
+  { content, }
 }
 
 ///|
@@ -58,7 +58,7 @@ pub fn TextSpan::TextSpan() -> TextSpan {
 
 ///|
 pub fn TextSpan::new(content : String) -> TextSpan {
-  TextSpan::{ content, }
+  { content, }
 }
 
 ///|

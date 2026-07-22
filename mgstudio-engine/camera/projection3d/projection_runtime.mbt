@@ -42,7 +42,7 @@ pub struct ViewFrustum {
 pub fn ViewFrustum::from_clip_from_world(
   clip_from_world : ProjectionMatrix3d,
 ) -> ViewFrustum {
-  ViewFrustum::{
+  {
     inner: @camera_primitives.ViewFrustum::from_clip_from_world(
       clip_from_world.to_mat4(),
     ),
@@ -56,7 +56,7 @@ pub fn ViewFrustum::from_clip_from_world_custom_far(
   view_backward : @math.Vec3,
   far : Float,
 ) -> ViewFrustum {
-  ViewFrustum::{
+  {
     inner: @camera_primitives.ViewFrustum::from_clip_from_world_custom_far(
       clip_from_world.to_mat4(),
       view_translation,
@@ -68,7 +68,7 @@ pub fn ViewFrustum::from_clip_from_world_custom_far(
 
 ///|
 pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
-  ViewFrustum::{ inner: @camera_primitives.ViewFrustum::new(half_spaces) }
+  { inner: @camera_primitives.ViewFrustum::new(half_spaces) }
 }
 
 ///|
@@ -169,7 +169,7 @@ pub fn custom_projection3d_from_callbacks(
   far_fn : () -> Float,
   get_frustum_corners_fn : (Float, Float) -> Array[@math.Vec3],
 ) -> CustomProjection3d {
-  CustomProjection3d::{
+  {
     type_name,
     get_clip_from_view_fn,
     get_clip_from_view_for_sub_fn,
@@ -258,7 +258,7 @@ pub impl @ecs.Component for Projection with fn component() {
 
 ///|
 pub fn Projection::default() -> Projection {
-  Perspective(PerspectiveProjection3d::PerspectiveProjection3d())
+  Perspective(PerspectiveProjection3d())
 }
 
 ///|

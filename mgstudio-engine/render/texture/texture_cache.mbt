@@ -65,7 +65,7 @@ pub fn TextureCacheDescriptor::new(
   format_raw~ : UInt,
   usage_bits~ : UInt64,
 ) -> TextureCacheDescriptor {
-  TextureCacheDescriptor::{
+  {
     label,
     width: texture_cache_positive(width),
     height: texture_cache_positive(height),
@@ -188,7 +188,7 @@ pub fn CachedTexture::default_view_id(
 
 ///|
 pub fn TextureCache::new() -> TextureCache {
-  TextureCache::{ textures: [] }
+  { textures: [] }
 }
 
 ///|
@@ -234,7 +234,7 @@ fn texture_cache_create_texture(
     texture.set_label(label)
   }
   let default_view = texture.create_view()
-  CachedTextureMeta::{
+  {
     texture: @render_resource.Texture::from_wgpu(texture),
     default_view: @render_resource.TextureView::from_wgpu(default_view),
     taken: true,
@@ -244,7 +244,7 @@ fn texture_cache_create_texture(
 
 ///|
 fn cached_texture_from_meta(meta : CachedTextureMeta) -> CachedTexture {
-  CachedTexture::{ texture: meta.texture, default_view: meta.default_view }
+  { texture: meta.texture, default_view: meta.default_view }
 }
 
 ///|
@@ -268,7 +268,7 @@ pub fn TextureCache::get(
     return cached_texture_from_meta(created)
   }
   let created = texture_cache_create_texture(render_device, descriptor)
-  self.textures.push(TextureCacheEntry::{ descriptor, textures: [created] })
+  self.textures.push({ descriptor, textures: [created] })
   cached_texture_from_meta(created)
 }
 
@@ -317,7 +317,7 @@ pub fn TextureCache::update(self : TextureCache) -> Unit {
       }
     }
     if !retained_textures.is_empty() {
-      retained_entries.push(TextureCacheEntry::{
+      retained_entries.push({
         descriptor: entry.descriptor,
         textures: retained_textures,
       })

@@ -112,12 +112,12 @@ pub struct RenderMorphTargetAllocatorState {
 
 ///|
 pub fn RenderMorphTargetAllocatorState::image() -> RenderMorphTargetAllocatorState {
-  RenderMorphTargetAllocatorState::{ mode: Image, mesh_ids: [] }
+  { mode: Image, mesh_ids: [] }
 }
 
 ///|
 pub fn RenderMorphTargetAllocatorState::storage() -> RenderMorphTargetAllocatorState {
-  RenderMorphTargetAllocatorState::{ mode: Storage, mesh_ids: [] }
+  { mode: Storage, mesh_ids: [] }
 }
 
 ///|
@@ -191,11 +191,7 @@ pub fn render_morph_lowest_2d(
   if best_width == 0 {
     None
   } else {
-    Some(RenderMorphTextureRect::{
-      width: best_width,
-      height: best_height,
-      padding: best_padding,
-    })
+    Some({ width: best_width, height: best_height, padding: best_padding })
   }
 }
 
@@ -205,17 +201,14 @@ pub fn render_morph_target_image_plan(
   vertex_count : Int,
 ) -> MorphTargetImagePlan raise RenderMorphBuildError {
   if target_count > RENDER_MORPH_MAX_WEIGHTS {
-    raise RenderMorphBuildError::TooManyTargets(target_count~)
+    raise TooManyTargets(target_count~)
   }
   let component_count = vertex_count * RENDER_MORPH_ATTRIBUTE_COMPONENT_COUNT
   guard render_morph_lowest_2d(component_count) is Some(rect) else {
-    raise RenderMorphBuildError::TooManyAttributes(
-      vertex_count~,
-      component_count~,
-    )
+    raise TooManyAttributes(vertex_count~, component_count~)
   }
   let layer_component_count = component_count + rect.padding
-  MorphTargetImagePlan::{
+  {
     width: rect.width,
     height: rect.height,
     depth_or_array_layers: target_count,

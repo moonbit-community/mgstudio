@@ -45,7 +45,7 @@ pub(all) struct SkinOffsetAllocator {
 
 ///|
 fn SkinOffsetAllocator::new() -> SkinOffsetAllocator {
-  SkinOffsetAllocator::{ next_offset: 0, free_ranges: [] }
+  { next_offset: 0, free_ranges: [] }
 }
 
 ///|
@@ -54,7 +54,7 @@ fn SkinOffsetAllocator::allocate(
   size : Int,
 ) -> SkinAllocation? {
   if size <= 0 {
-    return Some(SkinAllocation::{ offset: 0, size: 0 })
+    return Some({ offset: 0, size: 0 })
   }
   let free_range_count = self.free_ranges.length()
   for index in 0..<free_range_count {
@@ -66,7 +66,7 @@ fn SkinOffsetAllocator::allocate(
     if range.size == size {
       self.free_ranges.remove(index) |> ignore
     } else {
-      self.free_ranges[index] = SkinOffsetFreeRange::{
+      self.free_ranges[index] = {
         offset: range.offset + size,
         size: range.size - size,
       }
@@ -89,10 +89,7 @@ fn SkinOffsetAllocator::free(
   if allocation.size <= 0 {
     return
   }
-  self.free_ranges.push(SkinOffsetFreeRange::{
-    offset: allocation.offset,
-    size: allocation.size,
-  })
+  self.free_ranges.push({ offset: allocation.offset, size: allocation.size })
   self.free_ranges.sort_by(fn(lhs, rhs) { lhs.offset - rhs.offset })
   if self.free_ranges.length() > 1 {
     let merged : Array[SkinOffsetFreeRange] = []
@@ -110,7 +107,7 @@ fn SkinOffsetAllocator::free(
         } else {
           range.offset + range.size
         }
-        merged[last_index] = SkinOffsetFreeRange::{
+        merged[last_index] = {
           offset: last.offset,
           size: merged_end - last.offset,
         }
@@ -159,12 +156,12 @@ pub struct SkinUniforms {
 
 ///|
 pub fn SkinUniforms::new() -> SkinUniforms {
-  SkinUniforms::{
+  {
     skin_uniform_info: Map([]),
     allocator: SkinOffsetAllocator::new(),
     joint_to_skins: Map([]),
-    current_skins: @hashset.HashSet([]),
-    previous_skins: @hashset.HashSet([]),
+    current_skins: HashSet([]),
+    previous_skins: HashSet([]),
     current_staging_buffer: [],
     total_joints: 0,
   }

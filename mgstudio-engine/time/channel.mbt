@@ -24,7 +24,7 @@ pub(all) struct TimeChannel {
 
 ///|
 fn TimeChannel::bounded(capacity : Int) -> TimeChannel {
-  TimeChannel::{ capacity: capacity.max(1), queue: [] }
+  { capacity: capacity.max(1), queue: [] }
 }
 
 ///|
@@ -66,10 +66,7 @@ pub impl @app.Resource for TimeSender with fn resource() {
 ///|
 pub fn create_time_channels() -> (TimeSender, TimeReceiver) {
   let channel = TimeChannel::bounded(2)
-  (
-    TimeSender::{ channel, },
-    TimeReceiver::{ channel, has_received_time: false },
-  )
+  ({ channel, }, { channel, has_received_time: false })
 }
 
 ///|
@@ -78,7 +75,7 @@ pub fn TimeSender::try_send(
   instant : @core.Instant,
 ) -> Unit raise TimeSendError {
   if self.channel.queue.length() >= self.channel.capacity {
-    raise TimeSendError::Full
+    raise Full
   }
   self.channel.queue.push(instant)
 }

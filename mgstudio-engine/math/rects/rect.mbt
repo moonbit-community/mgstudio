@@ -23,7 +23,7 @@ pub struct Rect {
 
 ///|
 pub fn Rect::new(min : @math.Vec2, max : @math.Vec2) -> Rect {
-  Rect::{ min, max }
+  { min, max }
 }
 
 ///|

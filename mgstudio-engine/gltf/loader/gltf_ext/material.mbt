@@ -28,10 +28,10 @@ pub fn gltf_material_asset_label(
   material_index : Int,
   is_scale_inverted : Bool,
 ) -> GltfAssetLabel {
-  GltfAssetLabel::Material(material_index, is_scale_inverted)
+  Material(material_index, is_scale_inverted)
 }
 
 ///|
 pub fn gltf_default_material_asset_label() -> GltfAssetLabel {
-  GltfAssetLabel::DefaultMaterial
+  DefaultMaterial
 }

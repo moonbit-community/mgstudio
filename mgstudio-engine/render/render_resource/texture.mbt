@@ -46,7 +46,7 @@ pub struct DefaultImageSampler {
 
 ///|
 pub fn Texture::new(value : @wgpu.Texture) -> Texture {
-  Texture::{ id: next_texture_id(), value }
+  { id: next_texture_id(), value }
 }
 
 ///|
@@ -61,7 +61,7 @@ pub fn Texture::id(self : Texture) -> TextureId {
 
 ///|
 pub fn Texture::create_view(self : Texture) -> TextureView {
-  TextureView::{ id: next_texture_view_id(), value: self.value.create_view() }
+  { id: next_texture_view_id(), value: self.value.create_view() }
 }
 
 ///|
@@ -69,7 +69,7 @@ pub fn Texture::create_view_2d_single_mip_with_format(
   self : Texture,
   format : @wgpu.TextureFormat,
 ) -> TextureView {
-  TextureView::{
+  {
     id: next_texture_view_id(),
     value: self.value.create_view_u32(
       format,
@@ -105,7 +105,7 @@ pub fn TextureView::id(self : TextureView) -> TextureViewId {
 
 ///|
 pub fn TextureView::new(value : @wgpu.TextureView) -> TextureView {
-  TextureView::{ id: next_texture_view_id(), value }
+  { id: next_texture_view_id(), value }
 }
 
 ///|
@@ -130,7 +130,7 @@ pub fn SurfaceTexture::from_wgpu(
 ) -> SurfaceTexture {
   let texture = value.take_texture()
   value.release()
-  SurfaceTexture::{ surface: surface.add_ref(), texture }
+  { surface: surface.add_ref(), texture }
 }
 
 ///|
@@ -147,7 +147,7 @@ pub fn SurfaceTexture::take_texture(self : SurfaceTexture) -> Texture {
 
 ///|
 pub fn Sampler::new(value : @wgpu.Sampler) -> Sampler {
-  Sampler::{ id: next_sampler_id(), value }
+  { id: next_sampler_id(), value }
 }
 
 ///|
@@ -172,7 +172,7 @@ pub fn Sampler::into_inner(self : Sampler) -> @wgpu.Sampler {
 
 ///|
 pub fn DefaultImageSampler::new(sampler : Sampler) -> DefaultImageSampler {
-  DefaultImageSampler::{ sampler, }
+  { sampler, }
 }
 
 ///|

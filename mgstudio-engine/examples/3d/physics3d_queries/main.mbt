@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, run_queries)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, run_queries)
   .run()
 }
 
@@ -97,7 +97,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 6.0F, 10.0F).looking_at(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -109,7 +109,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn run_queries(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   guard @physics3d.get_physics3d_context_resource(world).get() is Some(ctx) else {

@@ -354,12 +354,12 @@ fn light_probe_generate_downsample_source(
   shader_def : String,
 ) -> String raise GpuBackendError {
   let value_defines = default_wgsl_value_defines()
-  value_defines.set("ARRAY_TEXTURE", @wgsl_common.ShaderDefValue::Bool(true))
-  value_defines.set(shader_def, @wgsl_common.ShaderDefValue::Int(1))
+  value_defines.set("ARRAY_TEXTURE", Bool(true))
+  value_defines.set(shader_def, Int(1))
   preprocess_wgsl_source(
     "",
     @mip_generation_source.downsample_specialized_wgsl_source("rgba16float"),
-    @hashmap.HashMap([]),
+    HashMap([]),
     value_defines,
   )
 }
@@ -369,11 +369,11 @@ fn light_probe_generate_filter_source(
   backend : GpuBackend,
 ) -> String raise GpuBackendError {
   let value_defines = default_wgsl_value_defines()
-  value_defines.set("ARRAY_TEXTURE", @wgsl_common.ShaderDefValue::Bool(true))
+  value_defines.set("ARRAY_TEXTURE", Bool(true))
   load_wgsl_preprocessed(
     backend.assets_base,
     "pbr/light_probe/environment_filter.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     value_defines,
   )
 }
@@ -483,7 +483,7 @@ fn ensure_light_probe_environment_generator(
       let copy_source = load_wgsl_preprocessed(
         backend.assets_base,
         "pbr/light_probe/copy.wgsl",
-        @hashmap.HashMap([]),
+        HashMap([]),
         default_wgsl_value_defines(),
       )
       let downsampling_first_pipeline = light_probe_generate_create_compute_pipeline(

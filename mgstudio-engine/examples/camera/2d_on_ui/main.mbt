@@ -39,11 +39,11 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::{
-        ..@ui.Node(),
-        width: @ui.Val::Percent(100.0F),
-        height: @ui.Val::Percent(100.0F),
-        justify_content: @ui.JustifyContent::Center,
-        align_items: @ui.AlignItems::Center,
+        ..Node(),
+        width: Percent(100.0F),
+        height: Percent(100.0F),
+        justify_content: Center,
+        align_items: Center,
       },
       @ui.BackgroundColor::new(@color.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
     ),
@@ -53,13 +53,13 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::{
-          ..@ui.Node(),
-          width: @ui.Val::Percent(20.0F),
-          height: @ui.Val::Percent(30.0F),
-          min_width: @ui.Val::Px(150.0F),
-          min_height: @ui.Val::Px(150.0F),
-          border: @ui.UiRect::all(@ui.Val::Px(2.0F)),
-          border_radius: @ui.BorderRadius::all(@ui.Val::Percent(25.0F)),
+          ..Node(),
+          width: Percent(20.0F),
+          height: Percent(30.0F),
+          min_width: Px(150.0F),
+          min_height: Px(150.0F),
+          border: @ui.UiRect::all(Px(2.0F)),
+          border_radius: @ui.BorderRadius::all(Percent(25.0F)),
         },
         @ui.BorderColor::new(@color.Color::white()),
       ),
@@ -102,7 +102,7 @@ fn rotate_sprite(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_sprite)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, rotate_sprite)
   .run()
 }

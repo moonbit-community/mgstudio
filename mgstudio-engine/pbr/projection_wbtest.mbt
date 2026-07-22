@@ -219,19 +219,19 @@ test "render3d: oblique perspective clip plane rewrites third row without changi
 ///|
 test "render3d: projection runtime updates changed orthographic projection at stable viewport" {
   let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
-    Projection::Orthographic(
+    Orthographic(
       OrthographicProjection3d::default_3d()
       .with_scaling_mode(FixedVertical(6.0F))
       .with_scale(2.0F),
     ),
-    Some(ProjectionRuntime3d::{
+    Some({
       last_view_width: 800.0F,
       last_view_height: 400.0F,
       is_orthographic: true,
       orthographic_first_slice_depth: 0.0F,
     }),
     true,
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @math.IVec2::new(800, 400),
     1.0F,
   )
@@ -244,7 +244,7 @@ test "render3d: projection runtime updates changed orthographic projection at st
     None => 0.0F
   }
   let ok = match runtime_projection {
-    Projection::Orthographic(orthographic) => {
+    Orthographic(orthographic) => {
       let area = orthographic.area()
       let clip_from_view = orthographic.get_clip_from_view()
       let row_two = clip_from_view.row(2)
@@ -262,8 +262,8 @@ test "render3d: projection runtime updates changed orthographic projection at st
         runtime_first_slice_depth, expected_first_slice_depth,
       )
     }
-    Projection::Perspective(_) => false
-    Projection::Custom(_) => false
+    Perspective(_) => false
+    Custom(_) => false
   }
   debug_inspect(ok, content="true")
 }

@@ -14,7 +14,7 @@
 
 ///|
 test "time core: advance and wrap semantics follow bevy shape" {
-  let t0 : Time[Unit] = Time::Time()
+  let t0 : Time[Unit] = Time()
   debug_inspect(t0.wrap_period().as_secs_f32(), content="3600")
   debug_inspect(t0.delta().as_millis(), content="0")
   debug_inspect(t0.elapsed().as_millis(), content="0")
@@ -60,7 +60,7 @@ test "time core: real update keeps first delta zero and then advances" {
 
 ///|
 test "time core: virtual pause speed and max delta semantics" {
-  let v0 : Time[Virtual] = Time::Time()
+  let v0 : Time[Virtual] = Time()
   let v1 = v0.set_max_delta(@core.Duration::from_millis(500L))
   let v2 = v1.advance_with_raw_delta(@core.Duration::from_secs(1L))
   debug_inspect(v2.delta().as_millis(), content="500")

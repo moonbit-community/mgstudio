@@ -29,7 +29,7 @@ pub fn ColorGradient::new(
   if colors.length() < 2 {
     raise NotEnoughStops(colors.length())
   }
-  ColorGradient::{ colors, }
+  { colors, }
 }
 
 ///|

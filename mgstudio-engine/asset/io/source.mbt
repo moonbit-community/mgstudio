@@ -23,7 +23,7 @@ pub struct AssetSourcePath {
 
 ///|
 pub fn AssetSourcePath::new(path : String) -> AssetSourcePath {
-  AssetSourcePath::{ source_name: None, path }
+  { source_name: None, path }
 }
 
 ///|
@@ -31,7 +31,7 @@ pub fn AssetSourcePath::with_source_name(
   self : AssetSourcePath,
   source_name : String?,
 ) -> AssetSourcePath {
-  AssetSourcePath::{ ..self, source_name, }
+  { ..self, source_name, }
 }
 
 ///|

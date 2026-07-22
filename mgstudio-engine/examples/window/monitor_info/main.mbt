@@ -75,15 +75,10 @@ fn spawn_window_for_monitor(
   let window_entity = commands.spawn(
     (
       @window.Window::{
-        ..@window.Window(),
+        ..Window(),
         title,
-        mode: @window.WindowMode::Fullscreen(
-          @window.MonitorSelection::Entity(monitor_entity),
-          @window.VideoModeSelection::Current,
-        ),
-        position: @window.WindowPosition::Centered(
-          @window.MonitorSelection::Entity(monitor_entity),
-        ),
+        mode: Fullscreen(Entity(monitor_entity), Current),
+        position: Centered(Entity(monitor_entity)),
       },
       MonitorRef::{ monitor: monitor_entity },
     ),
@@ -94,9 +89,7 @@ fn spawn_window_for_monitor(
       @camera_components2d.Camera2d::Camera2d(),
       @camera_camera.Camera::Camera(),
       @transform.Transform::identity(),
-      @camera_camera.RenderTarget::Window(
-        @window.WindowRef::Entity(window_entity),
-      ),
+      @camera_camera.RenderTarget::Window(Entity(window_entity)),
     ),
   )
 
@@ -105,9 +98,9 @@ fn spawn_window_for_monitor(
       (
         @text.Text::new(monitor_info_text(title, monitor)),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Relative)
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_width(@ui.Val::Percent(100.0F)),
+        .with_position_type(Relative)
+        .with_height(Percent(100.0F))
+        .with_width(Percent(100.0F)),
         @ui.UiTargetCamera::new(info_camera),
       ),
     ),
@@ -157,7 +150,7 @@ fn close_on_esc(
   keyboard : @input.ButtonInput[@window.KeyCode],
   windows : @ecs.Query[(@core.Entity, @ecs.Read[@window.Window]), @ecs.All],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Escape) {
+  if !keyboard.just_pressed(Escape) {
     return
   }
   try! windows.view(fn(_query_entity, pair) {
@@ -172,13 +165,13 @@ fn close_on_esc(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(
-    @mgstudio.DefaultPlugins::set_window(@window.WindowPlugin::{
-      ..@window.WindowPlugin(),
+    @mgstudio.DefaultPlugins::set_window({
+      ..WindowPlugin(),
       primary_window: None,
-      exit_condition: @window.ExitCondition::DontExit,
+      exit_condition: DontExit,
     }),
   )
-  .add_systems_param4(@app.Update, update)
-  .add_systems_param3(@app.Update, close_on_esc)
+  .add_systems_param4(Update, update)
+  .add_systems_param3(Update, close_on_esc)
   .run()
 }

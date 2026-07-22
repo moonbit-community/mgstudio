@@ -23,7 +23,7 @@ pub struct WithDerivative[T] {
 
 ///|
 pub fn[T] with_derivative(value : T, derivative : T) -> WithDerivative[T] {
-  WithDerivative::{ value, derivative }
+  { value, derivative }
 }
 
 ///|
@@ -39,5 +39,5 @@ pub fn[T] with_two_derivatives(
   derivative : T,
   second_derivative : T,
 ) -> WithTwoDerivatives[T] {
-  WithTwoDerivatives::{ value, derivative, second_derivative }
+  { value, derivative, second_derivative }
 }

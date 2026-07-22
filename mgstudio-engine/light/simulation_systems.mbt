@@ -57,25 +57,25 @@ pub fn simulation_light_system_set_name(
 
 ///|
 pub let simulation_light_set_update_bounds : @app.SystemSet = simulation_light_system_set_name(
-  SimulationLightSystems::UpdateBounds,
+  UpdateBounds,
 )
 
 ///|
 pub let simulation_light_set_assign_lights_to_clusters : @app.SystemSet = simulation_light_system_set_name(
-  SimulationLightSystems::AssignLightsToClusters,
+  AssignLightsToClusters,
 )
 
 ///|
 pub let simulation_light_set_update_directional_light_cascades : @app.SystemSet = simulation_light_system_set_name(
-  SimulationLightSystems::UpdateDirectionalLightCascades,
+  UpdateDirectionalLightCascades,
 )
 
 ///|
 pub let simulation_light_set_update_light_frusta : @app.SystemSet = simulation_light_system_set_name(
-  SimulationLightSystems::UpdateLightFrusta,
+  UpdateLightFrusta,
 )
 
 ///|
 pub let simulation_light_set_check_light_visibility : @app.SystemSet = simulation_light_system_set_name(
-  SimulationLightSystems::CheckLightVisibility,
+  CheckLightVisibility,
 )

@@ -101,8 +101,8 @@ fn system_info_diagnostics() -> Array[@diagnostic.DiagnosticPath] {
 ///|
 fn status_enabled(status : LogDiagnosticsStatus) -> Bool {
   match status {
-    LogDiagnosticsStatus::Disabled => false
-    LogDiagnosticsStatus::Enabled => true
+    Disabled => false
+    Enabled => true
   }
 }
 
@@ -118,8 +118,8 @@ fn bool_label(value : Bool) -> String {
 ///|
 fn status_label(status : LogDiagnosticsStatus) -> String {
   match status {
-    LogDiagnosticsStatus::Disabled => "Disabled"
-    LogDiagnosticsStatus::Enabled => "Enabled"
+    Disabled => "Disabled"
+    Enabled => "Enabled"
   }
 }
 
@@ -191,16 +191,8 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
+  try! world.set_by_key(light, @pbr.ecs_key_point_light, PointLight())
+  try! world.set_by_key(light, @pbr.ecs_key_point_light, PointLight())
   try! world.set_by_key(
     light,
     @transform.ecs_key_transform,
@@ -208,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -218,9 +210,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let text_entity = @text.Text2dBundle::new(
-      @text.Text2d::new(
-        command_text_content(LogDiagnosticsStatus::Disabled, default_filters()),
-      ),
+      @text.Text2d::new(command_text_content(Disabled, default_filters())),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
@@ -233,9 +223,9 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(@text.TextColor::new(@color.Color::white()))
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   world.insert_resource(LogDiagnosticsCommandsText::resource(), {
     entity: text_entity,
@@ -248,13 +238,13 @@ fn filters_inputs(
   filters : @app.ResMut[LogDiagnosticsFilters],
   log_state : @app.ResMut[@diagnostic.LogDiagnosticsState],
 ) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyQ) {
+  if @input.key_just_pressed(KeyQ) {
     match status.get() {
-      LogDiagnosticsStatus::Enabled => {
+      Enabled => {
         log_state.modify(fn(value) { value.disable_filtering() })
-        status.set(LogDiagnosticsStatus::Disabled)
+        status.set(Disabled)
       }
-      LogDiagnosticsStatus::Disabled => {
+      Disabled => {
         let current_filters = filters.peek()
         log_state.modify(fn(value) {
           value.enable_filtering()
@@ -274,13 +264,13 @@ fn filters_inputs(
             current_filters.system_info,
           )
         })
-        status.set(LogDiagnosticsStatus::Enabled)
+        status.set(Enabled)
       }
     }
   }
 
   let enabled = status_enabled(status.get())
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     let next_enabled = !filters.peek().frame_time
     filters.modify(fn(value) { value.frame_time = next_enabled })
     if enabled {
@@ -289,7 +279,7 @@ fn filters_inputs(
       })
     }
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  if @input.key_just_pressed(Digit2) {
     let next_enabled = !filters.peek().entity_count
     filters.modify(fn(value) { value.entity_count = next_enabled })
     if enabled {
@@ -298,7 +288,7 @@ fn filters_inputs(
       })
     }
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  if @input.key_just_pressed(Digit3) {
     let next_enabled = !filters.peek().system_info
     filters.modify(fn(value) { value.system_info = next_enabled })
     if enabled {
@@ -335,10 +325,10 @@ fn main {
   .add_plugins(@diagnostic.RenderDiagnosticsPlugin::RenderDiagnosticsPlugin())
   .insert_resource(default_filters())
   .insert_resource(LogDiagnosticsStatus::Disabled)
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param3(@app.Update, filters_inputs)
+  .add_systems_world(Startup, setup)
+  .add_systems_param3(Update, filters_inputs)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_commands).run_if(
       @app.run_condition_or(
         @app.resource_exists_and_changed(LogDiagnosticsStatus::resource()),

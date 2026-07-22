@@ -251,7 +251,7 @@ fn setup(
       (
         @text.Text::new(INSTRUCTIONS),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -272,7 +272,7 @@ fn light_sway(
     let (transform, angles) = components
     transform.modify(fn(value) {
       value.rotation = @math.Quat::from_euler(
-        @math.EulerRot::XYZ,
+        XYZ,
         -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F,
         @math.sin(elapsed * 3.0F) * 0.5F,
         0.0F,
@@ -292,21 +292,21 @@ fn movement(
   query : @ecs.Query[@ecs.Write[@transform.Transform], @ecs.With[Movable]],
 ) -> Unit {
   let mut translation = @math.Vec3::zero()
-  if input.pressed(@window.KeyCode::KeyW) {
+  if input.pressed(KeyW) {
     translation = translation.add(@math.Vec3::new(0.0F, 0.0F, 1.0F))
-  } else if input.pressed(@window.KeyCode::KeyS) {
+  } else if input.pressed(KeyS) {
     translation = translation.add(@math.Vec3::new(0.0F, 0.0F, -1.0F))
   }
 
-  if input.pressed(@window.KeyCode::KeyA) {
+  if input.pressed(KeyA) {
     translation = translation.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
-  } else if input.pressed(@window.KeyCode::KeyD) {
+  } else if input.pressed(KeyD) {
     translation = translation.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
   }
 
-  if input.pressed(@window.KeyCode::ShiftLeft) {
+  if input.pressed(ShiftLeft) {
     translation = translation.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
-  } else if input.pressed(@window.KeyCode::Space) {
+  } else if input.pressed(Space) {
     translation = translation.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
   }
 
@@ -331,7 +331,7 @@ fn rotation(
 ) -> Unit {
   let delta = time.get().delta_seconds()
 
-  if input.pressed(@window.KeyCode::ArrowLeft) {
+  if input.pressed(ArrowLeft) {
     transform
     .get()
     .modify(fn(value) {
@@ -340,7 +340,7 @@ fn rotation(
         @math.Quat::from_rotation_y(delta),
       )
     })
-  } else if input.pressed(@window.KeyCode::ArrowRight) {
+  } else if input.pressed(ArrowRight) {
     transform
     .get()
     .modify(fn(value) {
@@ -357,9 +357,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 20.0F))
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, light_sway)
-  .add_systems_param3(@app.Update, movement)
-  .add_systems_param3(@app.Update, rotation)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, light_sway)
+  .add_systems_param3(Update, movement)
+  .add_systems_param3(Update, rotation)
   .run()
 }

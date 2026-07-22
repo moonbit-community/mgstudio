@@ -23,7 +23,7 @@ pub struct FileAsset {
 
 ///|
 pub fn FileAsset::new(path : String, bytes : Bytes) -> FileAsset {
-  FileAsset::{ path, bytes }
+  { path, bytes }
 }
 
 ///|

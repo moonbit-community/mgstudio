@@ -60,11 +60,11 @@ test "ui: unparented node acts as implicit root for layout" {
     root,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(24.0F))
-    .with_top(Val::Px(32.0F))
-    .with_width(Val::Px(120.0F))
-    .with_height(Val::Px(48.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(24.0F))
+    .with_top(Px(32.0F))
+    .with_width(Px(120.0F))
+    .with_height(Px(48.0F)),
   )
 
   ui_layout_system(world)
@@ -86,9 +86,9 @@ test "ui: unparented ghost node acts as implicit root for layout" {
   let tick = seed_ui_context_for_implicit_root_test(world)
   ignore(tick)
   let ghost_root = world.spawn_empty()
-  try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode::GhostNode())
+  try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode())
   let child = world.spawn_empty()
-  try! world.set_by_key(child, ecs_key_node, Node::Node())
+  try! world.set_by_key(child, ecs_key_node, Node())
   try! world.set_by_key(
     child,
     @hierarchy.ecs_key_parent,
@@ -98,11 +98,11 @@ test "ui: unparented ghost node acts as implicit root for layout" {
     child,
     ecs_key_node,
     Node::Node()
-    .with_position_type(PositionType::Absolute)
-    .with_left(Val::Px(24.0F))
-    .with_top(Val::Px(32.0F))
-    .with_width(Val::Px(120.0F))
-    .with_height(Val::Px(48.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(24.0F))
+    .with_top(Px(32.0F))
+    .with_width(Px(120.0F))
+    .with_height(Px(48.0F)),
   )
 
   ui_layout_system(world)
@@ -132,7 +132,7 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_node, Node::Node())
+  try! world.set_by_key(root, ecs_key_node, Node())
   try! world.set_by_key(
     root,
     ecs_key_ui_target_camera,
@@ -187,10 +187,10 @@ test "ui: unparented ghost node exposes descendant root for target camera propag
   )
 
   let ghost_root = world.spawn_empty()
-  try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode::GhostNode())
+  try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode())
 
   let child = world.spawn_empty()
-  try! world.set_by_key(child, ecs_key_node, Node::Node())
+  try! world.set_by_key(child, ecs_key_node, Node())
   try! world.set_by_key(
     child,
     ecs_key_ui_target_camera,

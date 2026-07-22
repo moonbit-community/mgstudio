@@ -298,7 +298,7 @@ fn initial_ball_velocity() -> Velocity {
     INITIAL_BALL_DIRECTION_X,
     INITIAL_BALL_DIRECTION_Y,
   ).normalize()
-  Velocity::{ value: direction.mul_scalar(BALL_SPEED) }
+  { value: direction.mul_scalar(BALL_SPEED) }
 }
 
 ///|
@@ -324,6 +324,7 @@ fn wall_location_size(location : WallLocation) -> @math.Vec2 {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn wall_bundle(
   location : WallLocation,
 ) -> (Wall, @sprite.Sprite, @transform.Transform, Collider) {
@@ -418,9 +419,9 @@ fn setup(
       @text.TextColor::new(text_color),
       ScoreboardUi::{  },
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(SCOREBOARD_TEXT_PADDING))
-      .with_left(@ui.Val::Px(SCOREBOARD_TEXT_PADDING)),
+      .with_position_type(Absolute)
+      .with_top(Px(SCOREBOARD_TEXT_PADDING))
+      .with_left(Px(SCOREBOARD_TEXT_PADDING)),
     ),
   )
   ignore(
@@ -662,16 +663,16 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(
     @showcase_stepping.SteppingPlugin::SteppingPlugin()
-    .add_schedule(@app.Update)
+    .add_schedule(Update)
     .at(@ui.percent(35.0F), @ui.percent(50.0F)),
   )
-  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     (apply_velocity_system, move_paddle_system, check_for_collisions_system)
     |> @app.chain(),
   )
-  .add_systems_param3(@app.Update, update_scoreboard)
+  .add_systems_param3(Update, update_scoreboard)
   .add_observer3(play_collision_sound)
   .run()
 }

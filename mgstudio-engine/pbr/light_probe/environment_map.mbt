@@ -29,7 +29,7 @@ pub struct EnvironmentMapIds {
 
 ///|
 pub fn EnvironmentMapIds::EnvironmentMapIds() -> EnvironmentMapIds {
-  EnvironmentMapIds::{ diffuse: None, specular: None }
+  { diffuse: None, specular: None }
 }
 
 ///|
@@ -43,7 +43,7 @@ pub struct EnvironmentMapViewLightProbeInfo {
 
 ///|
 pub fn EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo() -> EnvironmentMapViewLightProbeInfo {
-  EnvironmentMapViewLightProbeInfo::{
+  {
     cubemap_index: -1,
     smallest_specular_mip_level: 0,
     intensity: 1.0F,
@@ -60,7 +60,7 @@ pub fn EnvironmentMapViewLightProbeInfo::new(
   affects_lightmapped_mesh_diffuse : Bool,
   rotation : @math.Quat,
 ) -> EnvironmentMapViewLightProbeInfo {
-  EnvironmentMapViewLightProbeInfo::{
+  {
     cubemap_index,
     smallest_specular_mip_level,
     intensity,
@@ -216,7 +216,7 @@ pub fn pbr_environment_map_bind_group_entries(
     } else {
       cubemaps[0]
     }
-    return RenderViewEnvironmentMapBindGroupEntries::Single(RenderViewEnvironmentMapBindGroupEntriesSingle::{
+    return Single({
       diffuse_texture: first.diffuse,
       specular_texture: first.specular,
     })
@@ -240,10 +240,7 @@ pub fn pbr_environment_map_bind_group_entries(
     diffuse_textures.push(None)
     specular_textures.push(None)
   }
-  RenderViewEnvironmentMapBindGroupEntries::Multiple(RenderViewEnvironmentMapBindGroupEntriesMultiple::{
-    diffuse_textures,
-    specular_textures,
-  })
+  Multiple({ diffuse_textures, specular_textures })
 }
 
 ///|
@@ -281,7 +278,7 @@ pub fn pbr_environment_map_texture_id_entries(
   max_view_light_probes : Int,
 ) -> RenderViewEnvironmentMapTextureIdEntries {
   if !use_binding_arrays {
-    return RenderViewEnvironmentMapTextureIdEntries::Single(RenderViewEnvironmentMapTextureIdEntriesSingle::{
+    return Single({
       diffuse_texture_id: if diffuse_texture_ids.length() == 0 {
         -1
       } else {
@@ -317,7 +314,7 @@ pub fn pbr_environment_map_texture_id_entries(
       },
     )
   }
-  RenderViewEnvironmentMapTextureIdEntries::Multiple(RenderViewEnvironmentMapTextureIdEntriesMultiple::{
+  Multiple({
     diffuse_texture_ids: diffuse_entries,
     specular_texture_ids: specular_entries,
   })

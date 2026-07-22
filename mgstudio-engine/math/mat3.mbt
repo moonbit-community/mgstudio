@@ -21,7 +21,7 @@ pub struct Mat3 {
 
 ///|
 pub fn Mat3::identity() -> Mat3 {
-  Mat3::{
+  {
     x_axis: Vec3::new(1.0F, 0.0F, 0.0F),
     y_axis: Vec3::new(0.0F, 1.0F, 0.0F),
     z_axis: Vec3::new(0.0F, 0.0F, 1.0F),
@@ -30,7 +30,7 @@ pub fn Mat3::identity() -> Mat3 {
 
 ///|
 pub fn Mat3::from_cols(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Mat3 {
-  Mat3::{ x_axis, y_axis, z_axis }
+  { x_axis, y_axis, z_axis }
 }
 
 ///|

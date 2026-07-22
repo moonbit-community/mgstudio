@@ -61,7 +61,7 @@ pub(all) enum Selection {
 
 ///|
 pub impl Default for Selection with fn default() {
-  Selection::Camera
+  Camera
 }
 
 ///|
@@ -73,7 +73,7 @@ pub(all) enum DragMode {
 
 ///|
 pub impl Default for DragMode with fn default() {
-  DragMode::Move
+  Move
 }
 
 ///|
@@ -84,7 +84,7 @@ priv struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ selection: Selection::Camera, drag_mode: DragMode::Move }
+  { selection: Camera, drag_mode: Move }
 }
 
 ///|
@@ -163,6 +163,7 @@ impl @ecs.Component for HelpText with fn component() {
 pub(all) struct CustomDecalExtension {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn CustomDecalExtension::CustomDecalExtension() -> CustomDecalExtension {
   CustomDecalExtension::{  }
 }
@@ -268,18 +269,18 @@ pub impl @pbr.MaterialExtension for CustomDecalExtension with fn bind_group_bind
 ///|
 fn selection_text(selection : Selection) -> String {
   match selection {
-    Selection::Camera => "camera"
-    Selection::DecalA => "decal A"
-    Selection::DecalB => "decal B"
+    Camera => "camera"
+    DecalA => "decal A"
+    DecalB => "decal B"
   }
 }
 
 ///|
 fn drag_mode_text(mode : DragMode) -> String {
   match mode {
-    DragMode::Move => "move"
-    DragMode::Scale => "scale"
-    DragMode::Roll => "roll"
+    Move => "move"
+    Scale => "scale"
+    Roll => "roll"
   }
 }
 
@@ -429,18 +430,11 @@ fn drag_button(
     (
       @hierarchy.Parent::new(parent),
       @ui.Node::Node()
-      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_padding(
-        @ui.UiRect::new(
-          @ui.Val::Px(12.0F),
-          @ui.Val::Px(6.0F),
-          @ui.Val::Px(12.0F),
-          @ui.Val::Px(6.0F),
-        ),
-      )
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
+      .with_border(@ui.UiRect::all(Px(1.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center)
+      .with_padding(@ui.UiRect::new(Px(12.0F), Px(6.0F), Px(12.0F), Px(6.0F)))
+      .with_border_radius(@ui.BorderRadius::all(Px(6.0F))),
       @ui.Button::Button(),
       @ui.BackgroundColor::new(@color.Color::black()),
       @ui.BorderColor::new(@color.Color::white()),
@@ -461,20 +455,20 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Drag to Move", [
       (Selection::Camera, "Camera"),
-      (Selection::DecalA, "Decal A"),
-      (Selection::DecalB, "Decal B"),
+      (DecalA, "Decal A"),
+      (DecalB, "Decal B"),
     ]),
   )
   let drag_panel = commands.spawn_component(
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Row)
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_right(@ui.Val::Px(10.0F))
-    .with_bottom(@ui.Val::Px(10.0F))
-    .with_column_gap(@ui.Val::Px(6.0F)),
+    .with_flex_direction(Row)
+    .with_position_type(Absolute)
+    .with_right(Px(10.0F))
+    .with_bottom(Px(10.0F))
+    .with_column_gap(Px(6.0F)),
   )
-  ignore(drag_button(commands, drag_panel, "Scale", DragMode::Scale))
-  ignore(drag_button(commands, drag_panel, "Roll", DragMode::Roll))
+  ignore(drag_button(commands, drag_panel, "Scale", Scale))
+  ignore(drag_button(commands, drag_panel, "Roll", Roll))
 }
 
 ///|
@@ -484,9 +478,9 @@ fn spawn_help_text(commands : @app.Commands, app_status : AppStatus) -> Unit {
       (
         @text.Text::new(create_help_string(app_status)),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         HelpText::{  },
       ),
     ),
@@ -526,9 +520,9 @@ fn draw_gizmos(
   try! decals.view(fn(_entity, data) {
     let (global_transform, selection) = data
     let color = match selection.value() {
-      Selection::Camera => return
-      Selection::DecalA => color_orange_red()
-      Selection::DecalB => color_lime()
+      Camera => return
+      DecalA => color_orange_red()
+      DecalB => color_lime()
     }
     let transform = global_transform.value().to_transform_approx()
     gizmos.cuboid_3d(transform, transform.scale, color)
@@ -632,8 +626,8 @@ fn signum(value : Float) -> Float {
 ///|
 fn selection_move_factors(selection : Selection) -> (Float, Float) {
   match selection {
-    Selection::Camera => (1.0F, -1.0F)
-    Selection::DecalA | Selection::DecalB => (-1.0F, 1.0F)
+    Camera => (1.0F, -1.0F)
+    DecalA | DecalB => (-1.0F, 1.0F)
   }
 }
 
@@ -660,14 +654,12 @@ fn move_selection_transform(
     radius * @math.cos(theta),
     radius * @math.sin(theta) * @math.sin(phi),
   )
-  let (_, _, roll) = transform.rotation.to_euler(@math.EulerRot::YXZ)
+  let (_, _, roll) = transform.rotation.to_euler(YXZ)
   let oriented = transform
     .with_translation(translation)
     .looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let (yaw, pitch, _) = oriented.rotation.to_euler(@math.EulerRot::YXZ)
-  oriented.with_rotation(
-    @math.Quat::from_euler(@math.EulerRot::YXZ, yaw, pitch, roll),
-  )
+  let (yaw, pitch, _) = oriented.rotation.to_euler(YXZ)
+  oriented.with_rotation(@math.Quat::from_euler(YXZ, yaw, pitch, roll))
 }
 
 ///|
@@ -681,8 +673,7 @@ fn process_move_input(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
-  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
-    status.drag_mode != DragMode::Move {
+  if !mouse_buttons.pressed(Left) || status.drag_mode != Move {
     return
   }
   let delta = mouse_motion.get().delta
@@ -707,8 +698,7 @@ fn process_scale_input(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
-  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
-    status.drag_mode != DragMode::Scale {
+  if !mouse_buttons.pressed(Left) || status.drag_mode != Scale {
     return
   }
   let delta = mouse_motion.get().delta
@@ -734,8 +724,7 @@ fn process_roll_input(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
-  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
-    status.drag_mode != DragMode::Roll {
+  if !mouse_buttons.pressed(Left) || status.drag_mode != Roll {
     return
   }
   let delta = mouse_motion.get().delta
@@ -744,19 +733,12 @@ fn process_roll_input(
     if status.selection != selection.value() {
       return
     }
-    let (yaw, pitch, roll) = transform.value().rotation.to_euler(
-      @math.EulerRot::YXZ,
-    )
+    let (yaw, pitch, roll) = transform.value().rotation.to_euler(YXZ)
     transform.set(
       transform
       .value()
       .with_rotation(
-        @math.Quat::from_euler(
-          @math.EulerRot::YXZ,
-          yaw,
-          pitch,
-          roll + delta.x * ROLL_SPEED,
-        ),
+        @math.Quat::from_euler(YXZ, yaw, pitch, roll + delta.x * ROLL_SPEED),
       ),
     )
   })
@@ -773,20 +755,20 @@ fn switch_drag_mode(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   app_status : @app.ResMut[AppStatus],
 ) -> Unit {
-  if mouse_buttons.pressed(@window.MouseButton::Left) {
+  if mouse_buttons.pressed(Left) {
     return
   }
   let mut hovered_mode : DragMode? = None
   try! interactions.view(fn(_entity, data) {
     let (interaction, drag_mode) = data
-    if interaction.value() == @ui.Interaction::Hovered {
+    if interaction.value() == Hovered {
       hovered_mode = Some(drag_mode.value())
     }
   })
   app_status.modify(fn(status) {
     match hovered_mode {
       Some(mode) => status.drag_mode = mode
-      None => status.drag_mode = DragMode::Move
+      None => status.drag_mode = Move
     }
   })
   try! windows.view(fn(_query_entity, window_entity) {
@@ -794,9 +776,7 @@ fn switch_drag_mode(
       Some(_) =>
         commands
         .entity(window_entity)
-        .insert_component(
-          @window.CursorIcon::from(@window.SystemCursorIcon::EwResize),
-        )
+        .insert_component(@window.CursorIcon::from(EwResize))
       None =>
         commands
         .entity(window_entity)
@@ -820,8 +800,8 @@ fn update_button_visibility(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let visible = match app_status.get().selection {
-    Selection::Camera => @visibility.Visibility::Hidden
-    Selection::DecalA | Selection::DecalB => @visibility.Visibility::Visible
+    Camera => @visibility.Visibility::Hidden
+    DecalA | DecalB => Visible
   }
   try! nodes.view(fn(_entity, visibility) { visibility.set(visible) })
 }
@@ -836,23 +816,23 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
-  .add_systems_param6(@app.Startup, setup)
-  .add_systems_param2(@app.Update, draw_gizmos)
-  .add_systems_param(@app.Update, rotate_cube)
-  .add_systems_param2(@app.Update, handle_ui_interactions)
-  .add_systems_param2(@app.Update, handle_selection_change)
-  .add_systems_param3(@app.Update, update_radio_buttons)
-  .add_systems_param4(@app.Update, process_move_input)
-  .add_systems_param4(@app.Update, process_scale_input)
-  .add_systems_param4(@app.Update, process_roll_input)
-  .add_systems_param5(@app.Update, switch_drag_mode)
-  .add_systems_param2(@app.Update, update_help_text)
-  .add_systems_param2(@app.Update, update_button_visibility)
+  .add_systems_param6(Startup, setup)
+  .add_systems_param2(Update, draw_gizmos)
+  .add_systems_param(Update, rotate_cube)
+  .add_systems_param2(Update, handle_ui_interactions)
+  .add_systems_param2(Update, handle_selection_change)
+  .add_systems_param3(Update, update_radio_buttons)
+  .add_systems_param4(Update, process_move_input)
+  .add_systems_param4(Update, process_scale_input)
+  .add_systems_param4(Update, process_roll_input)
+  .add_systems_param5(Update, switch_drag_mode)
+  .add_systems_param2(Update, update_help_text)
+  .add_systems_param2(Update, update_button_visibility)
   .run()
 }

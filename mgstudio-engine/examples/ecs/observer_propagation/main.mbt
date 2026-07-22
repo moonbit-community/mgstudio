@@ -68,7 +68,7 @@ pub impl @ecs.TriggerEvent for Attack with fn observer_entity(self) {
 
 ///|
 pub impl @ecs.TriggerEvent for Attack with fn set_observer_entity(self, entity) {
-  Attack::{ damage: self.damage, entity }
+  { damage: self.damage, entity }
 }
 
 ///|

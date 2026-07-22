@@ -16,6 +16,7 @@
 pub struct UiPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn UiPlugin::UiPlugin() -> UiPlugin {
   UiPlugin::{  }
 }

@@ -22,5 +22,5 @@ pub fn image_is_exr_extension(extension : String) -> Bool {
 
 ///|
 pub fn exr_default_texture_format() -> TextureFormat {
-  TextureFormat::Rgba16Float
+  Rgba16Float
 }

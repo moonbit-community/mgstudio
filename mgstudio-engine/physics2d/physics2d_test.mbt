@@ -467,22 +467,22 @@ test "physics2d: collision groups filter collision events" {
   try! world.set_by_key(
     a,
     ecs_key_collision_groups2d,
-    CollisionGroups2d::new(1, 1, @dynamics.InteractionTestMode::And),
+    CollisionGroups2d::new(1, 1, And),
   )
   try! world.set_by_key(
     b,
     ecs_key_collision_groups2d,
-    CollisionGroups2d::new(2, 2, @dynamics.InteractionTestMode::And),
+    CollisionGroups2d::new(2, 2, And),
   )
   try! world.set_by_key(
     a,
     ecs_key_solver_groups2d,
-    SolverGroups2d::new(1, 1, @dynamics.InteractionTestMode::And),
+    SolverGroups2d::new(1, 1, And),
   )
   try! world.set_by_key(
     b,
     ecs_key_solver_groups2d,
-    SolverGroups2d::new(2, 2, @dynamics.InteractionTestMode::And),
+    SolverGroups2d::new(2, 2, And),
   )
   physics2d_clear_events_system(world)
   physics2d_sync_insertions_system(world)
@@ -656,10 +656,7 @@ test "physics2d: query pipeline sees inserted colliders" {
   let at_origin = ctx.intersect_point_entities(@math.Vec2::new(0.0F, 0.0F))
   debug_inspect(at_origin.length() > 0, content="true")
   debug_inspect(at_origin[0].id == floor.id, content="true")
-  let excluded = ctx.query_filter_exclude_entity(
-    @collision.QueryFilter::QueryFilter(),
-    floor,
-  )
+  let excluded = ctx.query_filter_exclude_entity(QueryFilter(), floor)
   let miss = ctx.cast_ray_entity_with_filter(
     @math.Vec2::new(0.0F, 10.0F),
     @math.Vec2::new(0.0F, -1.0F),
@@ -716,7 +713,7 @@ test "physics2d: query pipeline sees inserted colliders" {
       z=0.0F,
     ),
     @math.Vec2::new(0.0F, -1.0F),
-    @collision.ShapeCastOptions::ShapeCastOptions(10.0F, false),
+    ShapeCastOptions(10.0F, false),
   )
   debug_inspect(sweep is Some(_), content="true")
   match sweep {
@@ -1230,7 +1227,7 @@ test "physics2d: collision events use child collider entity mapping" {
     let events = get_physics2d_events_resource(world).get().unwrap()
     for ev in events.collisions {
       match ev {
-        CollisionEvent2d::Started(a, b, _) => {
+        Started(a, b, _) => {
           if a.id == child.id || b.id == child.id {
             seen_child = true
           }
@@ -1238,7 +1235,7 @@ test "physics2d: collision events use child collider entity mapping" {
             seen_parent = true
           }
         }
-        CollisionEvent2d::Stopped(_, _, _) => ()
+        Stopped(_, _, _) => ()
       }
     }
   }

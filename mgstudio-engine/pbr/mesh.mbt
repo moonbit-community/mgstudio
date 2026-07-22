@@ -353,9 +353,7 @@ fn render3d_mesh_local_aabb(mesh3d : @mesh.Mesh3d) -> (@math.Vec3, @math.Vec3)? 
   guard @sprite.render_mesh_asset_get(mesh3d.mesh()) is Some(mesh_asset) else {
     return None
   }
-  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {
-    return None
-  }
+  guard mesh_asset.geometry is Geometry3d(geometry3d) else { return None }
   guard geometry3d.positions.length() > 0 else { return None }
   let mut min_x = geometry3d.positions[0].x
   let mut min_y = geometry3d.positions[0].y

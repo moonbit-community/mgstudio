@@ -19,8 +19,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, physics2d_queries_setup)
-  .add_systems_world(@app.Update, physics2d_queries_raycast)
+  .add_systems_world(Startup, physics2d_queries_setup)
+  .add_systems_world(Update, physics2d_queries_raycast)
   .run()
 }
 
@@ -33,7 +33,7 @@ priv struct QueryState {
 }
 
 ///|
-let query_state : Ref[QueryState] = Ref(QueryState::{
+let query_state : Ref[QueryState] = Ref({
   accumulator: 0.0F,
   phase: 0.0F,
   ray_line: None,

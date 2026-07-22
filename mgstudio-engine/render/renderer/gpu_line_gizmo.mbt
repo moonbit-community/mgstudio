@@ -16,7 +16,7 @@
 fn line_gizmo_shader_bool_defines(
   shader_defs : Array[@render_resource.ShaderDefVal],
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   for shader_def in shader_defs {
     match shader_def {
       Flag(name) => defines.set(name, true)
@@ -34,12 +34,9 @@ fn line_gizmo_shader_value_defines(
   let value_defines = default_wgsl_value_defines()
   for shader_def in shader_defs {
     match shader_def {
-      Int(name, value) =>
-        value_defines.set(name, @wgsl_common.ShaderDefValue::Int(value))
-      UInt(name, value) =>
-        value_defines.set(name, @wgsl_common.ShaderDefValue::UInt(value))
-      String(name, value) =>
-        value_defines.set(name, @wgsl_common.ShaderDefValue::Raw(value))
+      Int(name, value) => value_defines.set(name, Int(value))
+      UInt(name, value) => value_defines.set(name, UInt(value))
+      String(name, value) => value_defines.set(name, Raw(value))
       Flag(_) | Bool(_, _) => ()
     }
   }
@@ -477,7 +474,7 @@ pub fn queue_line_gizmo_phase_draw(
   instance_count~ : UInt,
 ) -> Unit {
   guard ensure_backend() is Some(backend) else { return }
-  backend.line_gizmo_queued_draws.push(GpuQueuedLineGizmoDraw::{
+  backend.line_gizmo_queued_draws.push({
     phase_kind,
     render_layers_mask,
     shader_path,

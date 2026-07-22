@@ -101,12 +101,12 @@ fn meshlet_pipeline_descriptor(
   entry_point? : String? = None,
   color_target_r8uint? : Bool = false,
   color_write_mask_empty? : Bool = false,
-  depth_format? : MeshletPipelineDepthFormat = MeshletPipelineDepthFormat::NoDepth,
+  depth_format? : MeshletPipelineDepthFormat = NoDepth,
   depth_write_enabled? : Bool = false,
   depth_compare_always? : Bool = false,
   zero_initialize_workgroup_memory? : Bool = true,
 ) -> MeshletQueuedPipelineDescriptor {
-  MeshletQueuedPipelineDescriptor::{
+  {
     slot_label,
     pipeline_label,
     kind,
@@ -150,7 +150,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "clear_visibility_buffer",
       "meshlet_clear_visibility_buffer_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "clear_visibility_buffer_bind_group_layout",
       immediate_size=8,
       shader_label="clear_visibility_buffer.wgsl",
@@ -159,7 +159,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "clear_visibility_buffer_shadow_view",
       "meshlet_clear_visibility_buffer_shadow_view_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "clear_visibility_buffer_shadow_view_bind_group_layout",
       immediate_size=8,
       shader_label="clear_visibility_buffer.wgsl",
@@ -167,7 +167,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "first_instance_cull",
       "meshlet_first_instance_cull_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "first_instance_cull_bind_group_layout",
       immediate_size=4,
       shader_label="cull_instances.wgsl",
@@ -178,7 +178,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "second_instance_cull",
       "meshlet_second_instance_cull_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "second_instance_cull_bind_group_layout",
       immediate_size=4,
       shader_label="cull_instances.wgsl",
@@ -189,7 +189,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "first_bvh_cull",
       "meshlet_first_bvh_cull_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "first_bvh_cull_bind_group_layout",
       immediate_size=8,
       shader_label="cull_bvh.wgsl",
@@ -200,7 +200,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "second_bvh_cull",
       "meshlet_second_bvh_cull_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "second_bvh_cull_bind_group_layout",
       immediate_size=8,
       shader_label="cull_bvh.wgsl",
@@ -211,7 +211,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "first_meshlet_cull",
       "meshlet_first_meshlet_cull_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "first_meshlet_cull_bind_group_layout",
       immediate_size=4,
       shader_label="cull_clusters.wgsl",
@@ -222,7 +222,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "second_meshlet_cull",
       "meshlet_second_meshlet_cull_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "second_meshlet_cull_bind_group_layout",
       immediate_size=4,
       shader_label="cull_clusters.wgsl",
@@ -233,7 +233,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "downsample_depth_first",
       "meshlet_downsample_depth_first_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "downsample_depth_bind_group_layout",
       immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
@@ -245,7 +245,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "downsample_depth_second",
       "meshlet_downsample_depth_second_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "downsample_depth_bind_group_layout",
       immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
@@ -257,7 +257,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "downsample_depth_first_shadow_view",
       "meshlet_downsample_depth_first_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "downsample_depth_shadow_view_bind_group_layout",
       immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
@@ -267,7 +267,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "downsample_depth_second_shadow_view",
       "meshlet_downsample_depth_second_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "downsample_depth_shadow_view_bind_group_layout",
       immediate_size=4,
       shader_label="core_pipeline/downsample_depth.wgsl",
@@ -278,7 +278,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "visibility_buffer_software_raster",
       "meshlet_visibility_buffer_software_raster_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "visibility_buffer_raster_bind_group_layout",
       shader_label="visibility_buffer_software_raster.wgsl",
       compute_shader_defs=[
@@ -289,7 +289,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "visibility_buffer_software_raster_shadow_view",
       "meshlet_visibility_buffer_software_raster_shadow_view_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "visibility_buffer_raster_shadow_view_bind_group_layout",
       shader_label="visibility_buffer_software_raster.wgsl",
       compute_shader_defs=[
@@ -299,7 +299,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "visibility_buffer_hardware_raster",
       "meshlet_visibility_buffer_hardware_raster_pipeline",
-      MeshletPipelineKind::Render,
+      Render,
       "visibility_buffer_raster_bind_group_layout",
       immediate_size=4,
       shader_label="visibility_buffer_hardware_raster.wgsl",
@@ -315,7 +315,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "visibility_buffer_hardware_raster_shadow_view",
       "meshlet_visibility_buffer_hardware_raster_shadow_view_pipeline",
-      MeshletPipelineKind::Render,
+      Render,
       "visibility_buffer_raster_shadow_view_bind_group_layout",
       immediate_size=4,
       shader_label="visibility_buffer_hardware_raster.wgsl",
@@ -327,7 +327,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "visibility_buffer_hardware_raster_shadow_view_unclipped",
       "meshlet_visibility_buffer_hardware_raster_shadow_view_unclipped_pipeline",
-      MeshletPipelineKind::Render,
+      Render,
       "visibility_buffer_raster_shadow_view_bind_group_layout",
       immediate_size=4,
       shader_label="visibility_buffer_hardware_raster.wgsl",
@@ -339,42 +339,42 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "resolve_depth",
       "meshlet_resolve_depth_pipeline",
-      MeshletPipelineKind::Render,
+      Render,
       "resolve_depth_bind_group_layout",
       shader_label="resolve_render_targets.wgsl",
       fragment_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT"],
       entry_point=Some("resolve_depth"),
-      depth_format=MeshletPipelineDepthFormat::Core3dDepth,
+      depth_format=Core3dDepth,
       depth_write_enabled=true,
       depth_compare_always=true,
     ),
     meshlet_pipeline_descriptor(
       "resolve_depth_shadow_view",
       "meshlet_resolve_depth_pipeline",
-      MeshletPipelineKind::Render,
+      Render,
       "resolve_depth_shadow_view_bind_group_layout",
       shader_label="resolve_render_targets.wgsl",
       entry_point=Some("resolve_depth"),
-      depth_format=MeshletPipelineDepthFormat::Core3dDepth,
+      depth_format=Core3dDepth,
       depth_write_enabled=true,
       depth_compare_always=true,
     ),
     meshlet_pipeline_descriptor(
       "resolve_material_depth",
       "meshlet_resolve_material_depth_pipeline",
-      MeshletPipelineKind::Render,
+      Render,
       "resolve_material_depth_bind_group_layout",
       shader_label="resolve_render_targets.wgsl",
       fragment_shader_defs=["MESHLET_VISIBILITY_BUFFER_RASTER_PASS_OUTPUT"],
       entry_point=Some("resolve_material_depth"),
-      depth_format=MeshletPipelineDepthFormat::Depth16Unorm,
+      depth_format=Depth16Unorm,
       depth_write_enabled=true,
       depth_compare_always=true,
     ),
     meshlet_pipeline_descriptor(
       "fill_counts",
       "meshlet_fill_counts_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "fill_counts_bind_group_layout",
       shader_label="fill_counts.wgsl",
       compute_shader_defs=[dispatch_def],
@@ -382,7 +382,7 @@ pub fn meshlet_pipeline_descriptors(
     meshlet_pipeline_descriptor(
       "remap_1d_to_2d_dispatch",
       "meshlet_remap_1d_to_2d_dispatch_pipeline",
-      MeshletPipelineKind::Compute,
+      Compute,
       "remap_1d_to_2d_dispatch_bind_group_layout",
       optional=true,
       enabled=remap_dispatch_enabled,
@@ -426,7 +426,7 @@ pub fn MeshletQueuedPipelineDescriptor::has_shader_def(
 
 ///|
 pub fn MeshletPipelines::MeshletPipelines() -> MeshletPipelines {
-  MeshletPipelines::{
+  {
     clear_visibility_buffer: -1,
     clear_visibility_buffer_shadow_view: -1,
     first_instance_cull: -1,
@@ -473,7 +473,7 @@ pub fn meshlet_pipeline_slot_descriptors(
 ) -> Array[MeshletPipelineSlotDescriptor] {
   let slots : Array[MeshletPipelineSlotDescriptor] = []
   for descriptor in meshlet_pipeline_descriptors(remap_dispatch_enabled~) {
-    slots.push(MeshletPipelineSlotDescriptor::{
+    slots.push({
       label: descriptor.slot_label,
       kind: descriptor.kind,
       optional: descriptor.optional,
@@ -619,7 +619,7 @@ pub fn init_meshlet_pipelines_with_core(
   fill_counts : Int,
 ) -> MeshletPipelines {
   let pipelines = MeshletPipelines::MeshletPipelines()
-  MeshletPipelines::{
+  {
     ..pipelines,
     visibility_buffer_hardware_raster: meshlet_pipeline_sanitize_id(
       visibility_buffer_hardware_raster,
@@ -639,7 +639,7 @@ pub fn init_meshlet_pipelines(
   let pipelines = init_meshlet_pipelines_with_core(
     main_opaque_pipeline_id, prepass_pipeline_id, deferred_prepass_pipeline_id, -1,
   )
-  MeshletPipelines::{
+  {
     ..pipelines,
     visibility_buffer_software_raster: meshlet_pipeline_sanitize_id(
       main_opaque_pipeline_id,

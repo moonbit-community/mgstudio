@@ -25,18 +25,18 @@ pub struct TileData {
 
 ///|
 pub fn TileData::TileData() -> TileData {
-  TileData::{
+  {
     tileset_index: 0,
     color: @color.Color::white(),
     visible: true,
-    orientation: TileOrientation::Default,
+    orientation: Default,
   }
 }
 
 ///|
 pub fn TileData::from_tileset_index(tileset_index : Int) -> TileData {
   let value = if tileset_index < 0 { 0 } else { tileset_index }
-  TileData::{ ..TileData::TileData(), tileset_index: value }
+  { ..TileData(), tileset_index: value }
 }
 
 ///|
@@ -44,10 +44,10 @@ pub fn TileData::new(
   tileset_index : Int,
   color? : @color.Color = @color.Color::white(),
   visible? : Bool = true,
-  orientation? : TileOrientation = TileOrientation::Default,
+  orientation? : TileOrientation = Default,
 ) -> TileData {
   let value = if tileset_index < 0 { 0 } else { tileset_index }
-  TileData::{ tileset_index: value, color, visible, orientation }
+  { tileset_index: value, color, visible, orientation }
 }
 
 ///|
@@ -63,9 +63,9 @@ pub fn TilemapChunk::new(
   chunk_size : @math.UVec2,
   tile_display_size : @math.UVec2,
   tileset : @asset.Handle[@asset.Image],
-  alpha_mode? : @mesh2d_material.AlphaMode2d = @mesh2d_material.AlphaMode2d::Blend,
+  alpha_mode? : @mesh2d_material.AlphaMode2d = Blend,
 ) -> TilemapChunk {
-  TilemapChunk::{ chunk_size, tile_display_size, tileset, alpha_mode }
+  { chunk_size, tile_display_size, tileset, alpha_mode }
 }
 
 ///|
@@ -136,7 +136,7 @@ pub struct TilemapChunkTileData {
 pub fn TilemapChunkTileData::new(
   tile_data : Array[TileData?],
 ) -> TilemapChunkTileData {
-  TilemapChunkTileData::{ tile_data, }
+  { tile_data, }
 }
 
 ///|
@@ -183,7 +183,7 @@ pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(
       next.push(self.tile_data[i])
     }
   }
-  TilemapChunkTileData::{ tile_data: next }
+  { tile_data: next }
 }
 
 ///|
@@ -335,6 +335,7 @@ pub impl @json.FromJson for TilemapChunkTileData with fn from_json(json, _path) 
 pub struct TilemapChunkPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TilemapChunkPlugin::TilemapChunkPlugin() -> TilemapChunkPlugin {
   TilemapChunkPlugin::{  }
 }
@@ -348,7 +349,7 @@ pub impl @app.Plugin for TilemapChunkPlugin with fn name(_self) {
 pub impl @app.Plugin for TilemapChunkPlugin with fn build(_self, app) {
   app
   .init_resource(fn() { TilemapChunkMeshCache::TilemapChunkMeshCache() })
-  .add_systems(@app.Update, @app.system(update_tilemap_chunk_indices))
+  .add_systems(Update, @app.system(update_tilemap_chunk_indices))
 }
 
 ///|
@@ -358,7 +359,7 @@ pub struct TilemapChunkMeshCache {
 
 ///|
 pub fn TilemapChunkMeshCache::TilemapChunkMeshCache() -> TilemapChunkMeshCache {
-  TilemapChunkMeshCache::{ handles: @hashmap.HashMap([]) }
+  { handles: HashMap([]) }
 }
 
 ///|
@@ -527,7 +528,7 @@ pub fn update_tilemap_chunk_indices(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.get_tick_context().ticks()
-  let changed : @hashset.HashSet[UInt64] = @hashset.HashSet([])
+  let changed : @hashset.HashSet[UInt64] = HashSet([])
   for entity in world.added_components(ecs_key_tilemap_chunk, tick).read() {
     tilemap_chunk_insert_entity_key(changed, entity)
   }

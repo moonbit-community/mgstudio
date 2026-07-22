@@ -26,10 +26,7 @@ pub fn[T] IterableCurve::new(
   domain : Interval,
   sample_iter_unchecked : (Float) -> Iter[T],
 ) -> IterableCurve[T] {
-  IterableCurve::{
-    domain_: domain,
-    sample_iter_unchecked_fn: sample_iter_unchecked,
-  }
+  { domain_: domain, sample_iter_unchecked_fn: sample_iter_unchecked }
 }
 
 ///|

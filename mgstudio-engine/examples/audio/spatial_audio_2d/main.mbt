@@ -54,9 +54,9 @@ fn main {
   .insert_resource(
     @audio.DefaultSpatialScale::new(@audio.SpatialScale::new_2d(AUDIO_SCALE)),
   )
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update_emitters)
-  .add_systems_world(@app.Update, update_listener)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, update_emitters)
+  .add_systems_world(Update, update_listener)
   .run()
 }
 
@@ -103,13 +103,11 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
@@ -122,9 +120,9 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_bottom(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -144,7 +142,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
 }
 
@@ -268,7 +266,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn update_emitters(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Space) {
+  if @input.key_just_pressed(Space) {
     spatial_audio_2d_state.val.emitter_stopwatch = toggle_stopwatch(
       spatial_audio_2d_state.val.emitter_stopwatch,
     )
@@ -300,16 +298,16 @@ fn update_emitters(world : @ecs.World) -> Unit {
 ///|
 fn update_listener(world : @ecs.World) -> Unit {
   let delta_seconds = world_time(world).delta_seconds()
-  let dx = if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  let dx = if @input.key_pressed(ArrowRight) {
     LISTENER_SPEED * delta_seconds
-  } else if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  } else if @input.key_pressed(ArrowLeft) {
     -LISTENER_SPEED * delta_seconds
   } else {
     0.0F
   }
-  let dy = if @input.key_pressed(@window.KeyCode::ArrowUp) {
+  let dy = if @input.key_pressed(ArrowUp) {
     LISTENER_SPEED * delta_seconds
-  } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
+  } else if @input.key_pressed(ArrowDown) {
     -LISTENER_SPEED * delta_seconds
   } else {
     0.0F

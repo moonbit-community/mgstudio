@@ -25,7 +25,7 @@ priv struct LineMaterial {
 
 ///|
 fn LineMaterial::LineMaterial() -> LineMaterial {
-  LineMaterial::{ color: @color.Color::white() }
+  { color: @color.Color::white() }
 }
 
 ///|
@@ -262,7 +262,7 @@ fn line_mesh_from_line_list(line_list : LineList) -> @mesh.Mesh3dGeometry {
   @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     positions,
     None,
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
 }
 
@@ -275,7 +275,7 @@ fn line_mesh_from_line_strip(line_strip : LineStrip) -> @mesh.Mesh3dGeometry {
   @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     positions,
     None,
-    @mesh.Mesh3dPrimitiveTopology::LineStrip,
+    LineStrip,
   ).with_inserted_indices_u16(Some(line_strip.indices))
 }
 
@@ -286,10 +286,10 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[LineMaterial]],
 ) -> Unit {
   let line_list_material = materials.modify(fn(material_assets) {
-    material_assets.add(LineMaterial::{ color: color_green() })
+    material_assets.add({ color: color_green() })
   })
   let line_strip_material = materials.modify(fn(material_assets) {
-    material_assets.add(LineMaterial::{ color: color_blue() })
+    material_assets.add({ color: color_blue() })
   })
 
   ignore(
@@ -299,7 +299,7 @@ fn setup(
           meshes.modify(fn(mesh_assets) {
             mesh_assets
             |> @pbr.add_mesh(
-              line_mesh_from_line_list(LineList::{
+              line_mesh_from_line_list({
                 lines: [
                   (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
                   (
@@ -324,7 +324,7 @@ fn setup(
           meshes.modify(fn(mesh_assets) {
             mesh_assets
             |> @pbr.add_mesh(
-              line_mesh_from_line_strip(LineStrip::{
+              line_mesh_from_line_strip({
                 points: [
                   @math.Vec3::zero(),
                   @math.Vec3::new(1.0F, 1.0F, 0.0F),
@@ -359,12 +359,12 @@ fn setup(
 ///|
 fn main {
   let line_material_plugin : @pbr.MaterialPlugin[LineMaterial] = @pbr.MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      LineMaterial::LineMaterial()
+      LineMaterial()
     },
   )
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(line_material_plugin)
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .run()
 }

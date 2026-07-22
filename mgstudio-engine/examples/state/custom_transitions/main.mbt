@@ -33,7 +33,7 @@ let menu_data_resource_key : @ecs.ResourceKey[MenuData] = @ecs.register_resource
 
 ///|
 impl Default for AppState with fn default() {
-  AppState::Menu
+  Menu
 }
 
 ///|
@@ -85,27 +85,27 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(AppState::default())
-  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(Startup, setup)
   .add_on_enter_system_param(AppState::Menu, setup_menu)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
   )
   .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
   .add_on_reenter_system_param2(AppState::InGame, setup_game)
   .add_on_reexit_system_param2(AppState::InGame, teardown_game)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(movement).run_if(@app.in_state(AppState::InGame)),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(change_color).run_if(
       @app.in_state(AppState::InGame),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_fn(trigger_game_restart).run_if(
       @app.in_state(AppState::InGame),
     ),
@@ -122,20 +122,20 @@ fn setup(commands : @app.Commands) -> Unit {
 fn setup_menu(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(Center)
+    .with_align_items(Center),
   )
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(150.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(150.0F))
+      .with_height(Px(65.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
   )
@@ -159,12 +159,12 @@ fn menu(world : @ecs.World) -> Unit {
       return
     }
     let color = match interaction {
-      @ui.Interaction::Pressed => {
+      Pressed => {
         @app.set_state(AppState::InGame)
         pressed_button_color()
       }
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None => normal_button_color()
+      Hovered => hovered_button_color()
+      None => normal_button_color()
     }
     if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
       try! (world.replace(
@@ -219,16 +219,16 @@ fn movement(world : @ecs.World) -> Unit {
   ] = @ecs.query_filtered(world, @ecs.With::new(@sprite.ecs_key_sprite))
   let delta_seconds = time.delta_seconds()
   let direction = @math.Vec3::zero()
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.key_pressed(ArrowLeft) {
     direction.x = direction.x - 1.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  if @input.key_pressed(ArrowRight) {
     direction.x = direction.x + 1.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowUp) {
+  if @input.key_pressed(ArrowUp) {
     direction.y = direction.y + 1.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowDown) {
+  if @input.key_pressed(ArrowDown) {
     direction.y = direction.y - 1.0F
   }
   if direction.x == 0.0F && direction.y == 0.0F {
@@ -264,7 +264,7 @@ fn change_color(world : @ecs.World) -> Unit {
 
 ///|
 fn trigger_game_restart() -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyR) {
+  if @input.key_just_pressed(KeyR) {
     @app.set_state(AppState::InGame)
   }
 }

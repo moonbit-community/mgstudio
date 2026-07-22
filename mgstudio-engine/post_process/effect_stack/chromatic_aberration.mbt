@@ -24,7 +24,7 @@ pub struct ChromaticAberration {
 
 ///|
 pub fn ChromaticAberration::ChromaticAberration() -> ChromaticAberration {
-  ChromaticAberration::{ intensity: 0.02F, max_samples: 8 }
+  { intensity: 0.02F, max_samples: 8 }
 }
 
 ///|
@@ -34,10 +34,7 @@ pub fn ChromaticAberration::new(
 ) -> ChromaticAberration {
   let safe_intensity = if intensity < 0.0F { 0.0F } else { intensity }
   let safe_max_samples = if max_samples <= 0 { 1 } else { max_samples }
-  ChromaticAberration::{
-    intensity: safe_intensity,
-    max_samples: safe_max_samples,
-  }
+  { intensity: safe_intensity, max_samples: safe_max_samples }
 }
 
 ///|
@@ -76,7 +73,7 @@ pub struct ChromaticAberrationUniform {
 pub fn ChromaticAberrationUniform::from_settings(
   settings : ChromaticAberration,
 ) -> ChromaticAberrationUniform {
-  ChromaticAberrationUniform::{
+  {
     intensity: settings.intensity,
     inverse_max_samples: 1.0F /
     Float::from_double(settings.max_samples.to_double()),

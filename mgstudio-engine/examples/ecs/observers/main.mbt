@@ -49,7 +49,7 @@ pub impl @app.Resource for MineWorldState with fn resource() {
 
 ///|
 pub fn MineWorldState::MineWorldState() -> MineWorldState {
-  { explosions_enabled: true, map: @hashmap.HashMap([]) }
+  { explosions_enabled: true, map: HashMap([]) }
 }
 
 ///|
@@ -116,7 +116,7 @@ pub impl @ecs.TriggerEvent for Explode with fn set_observer_entity(
   _self,
   entity,
 ) {
-  Explode::{ entity, }
+  { entity, }
 }
 
 ///|

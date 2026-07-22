@@ -236,12 +236,12 @@ struct WorldObserverRegistry {
 fn world_observer_registry_new() -> WorldObserverRegistry {
   {
     next_observer_id: 1,
-    add_observers: @hashmap.HashMap([]),
-    insert_observers: @hashmap.HashMap([]),
-    replace_observers: @hashmap.HashMap([]),
-    remove_observers: @hashmap.HashMap([]),
-    despawn_observers: @hashmap.HashMap([]),
-    trigger_observers: @hashmap.HashMap([]),
+    add_observers: HashMap([]),
+    insert_observers: HashMap([]),
+    replace_observers: HashMap([]),
+    remove_observers: HashMap([]),
+    despawn_observers: HashMap([]),
+    trigger_observers: HashMap([]),
     observer_parent_lookup_accessors: [],
     observer_parent_lookup_component_registration_generation: -1,
     observer_parent_lookup_archetype_generation: -1,
@@ -278,7 +278,7 @@ pub fn[E : TriggerEvent] World::current_observer(self : World) -> On[E] {
       "Current \{E::debug_name()} observer context does not match event `\{event_key.debug_name()}`",
     )
   }
-  On::{ world: self, event_key, entity: context.entity, caller: context.caller }
+  { world: self, event_key, entity: context.entity, caller: context.caller }
 }
 
 ///|
@@ -295,7 +295,7 @@ pub fn[E : ComponentObserverEvent, C : Component] World::current_component_obser
       "Current \{E::debug_name()} observer context does not match component `\{component_key.debug_name()}`",
     )
   }
-  ComponentOn::{
+  {
     world: self,
     entity: context.entity,
     caller: None,
@@ -318,7 +318,7 @@ fn World::register_insert_component_observer(
   let observers = registry.insert_observers.get_or_init(local_component_id, fn() {
     []
   })
-  observers.push(InsertObserver::{ entity, run: observer })
+  observers.push({ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -336,7 +336,7 @@ fn World::register_add_component_observer(
   let observers = registry.add_observers.get_or_init(local_component_id, fn() {
     []
   })
-  observers.push(AddObserver::{ entity, run: observer })
+  observers.push({ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -354,7 +354,7 @@ fn World::register_replace_component_observer(
   let observers = registry.replace_observers.get_or_init(local_component_id, fn() {
     []
   })
-  observers.push(ReplaceObserver::{ entity, run: observer })
+  observers.push({ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -372,7 +372,7 @@ fn World::register_remove_component_observer(
   let observers = registry.remove_observers.get_or_init(local_component_id, fn() {
     []
   })
-  observers.push(RemoveObserver::{ entity, run: observer })
+  observers.push({ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -390,7 +390,7 @@ fn World::register_despawn_component_observer(
   let observers = registry.despawn_observers.get_or_init(local_component_id, fn() {
     []
   })
-  observers.push(DespawnObserver::{ entity, run: observer })
+  observers.push({ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -407,7 +407,7 @@ fn World::register_trigger_observer(
   let observers = registry.trigger_observers.get_or_init(event_key_id, fn() {
     []
   })
-  observers.push(TriggerObserver::{ entity, run: observer })
+  observers.push({ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -432,6 +432,7 @@ pub impl ComponentObserverEvent for Add with fn register_component_observer(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl ComponentObserverEvent for Add with fn marker() {
   Add::{  }
 }
@@ -442,6 +443,7 @@ pub impl ComponentObserverEvent for Add with fn debug_name() {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl ComponentObserverEvent for Insert with fn marker() {
   Insert::{  }
 }
@@ -462,6 +464,7 @@ pub impl ComponentObserverEvent for Replace with fn register_component_observer(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl ComponentObserverEvent for Replace with fn marker() {
   Replace::{  }
 }
@@ -482,6 +485,7 @@ pub impl ComponentObserverEvent for Remove with fn register_component_observer(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl ComponentObserverEvent for Remove with fn marker() {
   Remove::{  }
 }
@@ -502,6 +506,7 @@ pub impl ComponentObserverEvent for Despawn with fn register_component_observer(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl ComponentObserverEvent for Despawn with fn marker() {
   Despawn::{  }
 }

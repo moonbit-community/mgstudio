@@ -15,9 +15,9 @@
 ///|
 fn sampler_tag(sampler : @image.ImageSampler) -> Int {
   match sampler {
-    @image.ImageSampler::Default => 0
-    @image.ImageSampler::Descriptor(descriptor) =>
-      if descriptor.min_filter == @image.ImageFilterMode::Nearest {
+    Default => 0
+    Descriptor(descriptor) =>
+      if descriptor.min_filter == Nearest {
         1
       } else {
         2
@@ -76,43 +76,42 @@ test "image texture descriptor label is runtime-only metadata" {
 ///|
 test "image texture formats follow current wgpu constants" {
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Rgba8Unorm).to_u32() ==
+    @image.texture_format(Rgba8Unorm).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Rgba8UnormSrgb).to_u32() ==
+    @image.texture_format(Rgba8UnormSrgb).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Bgra8Unorm).to_u32() ==
+    @image.texture_format(Bgra8Unorm).to_u32() ==
     @wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Bgra8UnormSrgb).to_u32() ==
+    @image.texture_format(Bgra8UnormSrgb).to_u32() ==
     @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Rgba16Uint).to_u32() ==
+    @image.texture_format(Rgba16Uint).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RGBA16_UINT,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Rgba16Float).to_u32() ==
+    @image.texture_format(Rgba16Float).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Rgba32Float).to_u32() ==
+    @image.texture_format(Rgba32Float).to_u32() ==
     @wgpu.TEXTURE_FORMAT_RGBA32_FLOAT,
     content="true",
   )
   debug_inspect(
-    @image.texture_format(@image.TextureFormat::Rg16Float).to_u32() ==
-    @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
+    @image.texture_format(Rg16Float).to_u32() == @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
     content="true",
   )
 }

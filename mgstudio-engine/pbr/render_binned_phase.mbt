@@ -303,7 +303,7 @@ fn render3d_mesh_gpu_binned_phase_push(
   if can_extend {
     let batch_index = phase.batches.length() - 1
     let batch = phase.batches[batch_index]
-    phase.batches[batch_index] = MeshGpuBinnedRenderPhaseBatch3d::{
+    phase.batches[batch_index] = {
       ..batch,
       instance_count: batch.instance_count + 1,
     }
@@ -343,7 +343,7 @@ fn render3d_draw_mesh_gpu_binned_phase(
     ignore(batch.batch_set_key)
     ignore(batch.bin_key)
     let representative_payload = phase.payloads[batch.representative_payload_index]
-    @pbr_render.render3d_draw_mesh_gpu_payload(@pbr_render.MeshGpuDrawPayload3d::{
+    @pbr_render.render3d_draw_mesh_gpu_payload({
       ..representative_payload,
       indirect_draw_count: batch.instance_count,
     })

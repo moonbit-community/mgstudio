@@ -20,6 +20,7 @@
 pub struct CameraControllerPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CameraControllerPlugins::CameraControllerPlugins() -> CameraControllerPlugins {
   CameraControllerPlugins::{  }
 }
@@ -43,5 +44,5 @@ pub impl @app.Plugin for CameraControllerPlugins with fn build(_self, app) {
 
 ///|
 pub fn camera_controller_plugins() -> CameraControllerPlugins {
-  CameraControllerPlugins::CameraControllerPlugins()
+  CameraControllerPlugins()
 }

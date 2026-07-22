@@ -35,7 +35,7 @@ pub type MaterialExtensionPipeline3d = MaterialExtensionPipeline
 
 ///|
 pub fn MaterialExtensionPipeline::MaterialExtensionPipeline() -> MaterialExtensionPipeline {
-  MaterialExtensionPipeline::{ use_prepass: true, use_shadows: true }
+  { use_prepass: true, use_shadows: true }
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn MaterialExtensionPipeline::with_prepass(
   self : MaterialExtensionPipeline,
   use_prepass : Bool,
 ) -> MaterialExtensionPipeline {
-  MaterialExtensionPipeline::{ ..self, use_prepass, }
+  { ..self, use_prepass, }
 }
 
 ///|
@@ -51,7 +51,7 @@ pub fn MaterialExtensionPipeline::with_shadows(
   self : MaterialExtensionPipeline,
   use_shadows : Bool,
 ) -> MaterialExtensionPipeline {
-  MaterialExtensionPipeline::{ ..self, use_shadows, }
+  { ..self, use_shadows, }
 }
 
 ///|
@@ -68,7 +68,7 @@ pub fn[E] MaterialExtensionKey::new(
   mesh_key : UInt64,
   bind_group_data : E,
 ) -> MaterialExtensionKey[E] {
-  MaterialExtensionKey::{ mesh_key, bind_group_data }
+  { mesh_key, bind_group_data }
 }
 
 ///|
@@ -316,7 +316,7 @@ pub fn[B : Default, E : Default] ExtendedMaterial::ExtendedMaterial() -> Extende
   B,
   E,
 ] {
-  ExtendedMaterial::{ base: B::default(), extension: E::default() }
+  { base: B::default(), extension: E::default() }
 }
 
 ///|
@@ -324,7 +324,7 @@ pub fn[B, E] ExtendedMaterial::new(
   base : B,
   extension : E,
 ) -> ExtendedMaterial[B, E] {
-  ExtendedMaterial::{ base, extension }
+  { base, extension }
 }
 
 ///|
@@ -342,7 +342,7 @@ pub fn[B, E] ExtendedMaterial::with_base(
   self : ExtendedMaterial[B, E],
   base : B,
 ) -> ExtendedMaterial[B, E] {
-  ExtendedMaterial::{ ..self, base, }
+  { ..self, base, }
 }
 
 ///|
@@ -350,7 +350,7 @@ pub fn[B, E] ExtendedMaterial::with_extension(
   self : ExtendedMaterial[B, E],
   extension : E,
 ) -> ExtendedMaterial[B, E] {
-  ExtendedMaterial::{ ..self, extension, }
+  { ..self, extension, }
 }
 
 ///|
@@ -440,12 +440,9 @@ fn extended_material_binding_from_extension_binding(
   binding : @material.MaterialExtensionBinding3d,
 ) -> MaterialBinding {
   match binding.resource() {
-    @material.MaterialExtensionBindingResource3d::Texture(image) =>
-      MaterialBinding::texture(binding.binding(), Some(image))
-    @material.MaterialExtensionBindingResource3d::Sampler(image) =>
-      MaterialBinding::sampler(binding.binding(), Some(image))
-    @material.MaterialExtensionBindingResource3d::Uniform(bytes) =>
-      MaterialBinding::uniform(binding.binding(), bytes)
+    Texture(image) => MaterialBinding::texture(binding.binding(), Some(image))
+    Sampler(image) => MaterialBinding::sampler(binding.binding(), Some(image))
+    Uniform(bytes) => MaterialBinding::uniform(binding.binding(), bytes)
   }
 }
 
@@ -665,7 +662,7 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn draw_data(self) {
-  MaterialDrawData3d::Standard(self.base)
+  Standard(self.base)
 }
 
 ///|
@@ -742,10 +739,7 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
   StandardMaterial,
   E,
 ] with fn bind_group_data(self) {
-  extended_material_standard_bind_group(
-    self,
-    MaterialBindGroupContext::MaterialBindGroupContext(),
-  ).bind_group_data()
+  extended_material_standard_bind_group(self, MaterialBindGroupContext()).bind_group_data()
 }
 
 ///|
@@ -822,14 +816,14 @@ pub struct ForwardDecalMaterialExtension {
 
 ///|
 pub fn ForwardDecalMaterialExtension::ForwardDecalMaterialExtension() -> ForwardDecalMaterialExtension {
-  ForwardDecalMaterialExtension::{ ext: ForwardDecalMaterialExt() }
+  { ext: ForwardDecalMaterialExt() }
 }
 
 ///|
 pub fn ForwardDecalMaterialExtension::new(
   ext : ForwardDecalMaterialExt,
 ) -> ForwardDecalMaterialExtension {
-  ForwardDecalMaterialExtension::{ ext, }
+  { ext, }
 }
 
 ///|
@@ -892,14 +886,14 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with fn deferred_fr
 pub impl MaterialExtension for ForwardDecalMaterialExtension with fn alpha_mode(
   _self,
 ) {
-  Some(@material.AlphaMode3d::Blend)
+  Some(Blend)
 }
 
 ///|
 pub impl MaterialExtension for ForwardDecalMaterialExtension with fn opaque_render_method(
   _self,
 ) {
-  Some(@material.OpaqueRendererMethod::Forward)
+  Some(Forward)
 }
 
 ///|
@@ -927,7 +921,7 @@ fn forward_decal_specialize(
     raise @material.missing_vertex_attribute_error("forward decal mesh layout")
   }
   let vertex_shader_defs = descriptor.vertex.shader_defs.copy()
-  vertex_shader_defs.push(@render_resource.ShaderDefVal::Flag("FORWARD_DECAL"))
+  vertex_shader_defs.push(Flag("FORWARD_DECAL"))
   let depth_stencil = match descriptor.depth_stencil {
     Some(depth_stencil) =>
       Some(
@@ -951,9 +945,7 @@ fn forward_decal_specialize(
   let fragment = match descriptor.fragment {
     Some(fragment) => {
       let fragment_shader_defs = fragment.shader_defs.copy()
-      fragment_shader_defs.push(
-        @render_resource.ShaderDefVal::Flag("FORWARD_DECAL"),
-      )
+      fragment_shader_defs.push(Flag("FORWARD_DECAL"))
       Some(
         @render_resource.FragmentState::new(
           fragment.shader,
@@ -999,7 +991,7 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with fn bind_group_
 
 ///|
 pub fn extended_material_metadata_default() -> ExtendedMaterialMetadata3d {
-  @material.ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+  ExtendedMaterialMetadata3d()
 }
 
 ///|

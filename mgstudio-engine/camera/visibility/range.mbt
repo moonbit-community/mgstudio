@@ -26,6 +26,7 @@ pub struct VisibilityRangePlugin {}
 pub struct ShadowLodOrigin {} derive(Eq, Debug)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ShadowLodOrigin::ShadowLodOrigin() -> ShadowLodOrigin {
   ShadowLodOrigin::{  }
 }
@@ -36,6 +37,7 @@ pub let visibility_range_set_check : @app.SystemSet = @app.system_set(
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn VisibilityRangePlugin::VisibilityRangePlugin() -> VisibilityRangePlugin {
   VisibilityRangePlugin::{  }
 }
@@ -44,10 +46,7 @@ pub fn VisibilityRangePlugin::VisibilityRangePlugin() -> VisibilityRangePlugin {
 pub fn visibility_range_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  visibility_range_plugin_with(
-    app,
-    VisibilityRangePlugin::VisibilityRangePlugin(),
-  )
+  visibility_range_plugin_with(app, VisibilityRangePlugin())
 }
 
 ///|
@@ -81,10 +80,7 @@ pub struct VisibleEntityRanges {
 
 ///|
 pub fn VisibleEntityRanges::VisibleEntityRanges() -> VisibleEntityRanges {
-  VisibleEntityRanges::{
-    views: @hashmap.HashMap([]),
-    entities: @hashmap.HashMap([]),
-  }
+  { views: HashMap([]), entities: HashMap([]) }
 }
 
 ///|

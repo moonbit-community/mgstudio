@@ -108,7 +108,7 @@ pub(all) struct SliderBaseColor {
 
 ///|
 pub fn SliderBaseColor::new(color : @color.Color) -> SliderBaseColor {
-  SliderBaseColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -124,7 +124,7 @@ pub(all) struct ColorSliderProps {
 
 ///|
 pub fn ColorSliderProps::ColorSliderProps() -> ColorSliderProps {
-  ColorSliderProps::{ value: 0.0, channel: Alpha }
+  { value: 0.0, channel: Alpha }
 }
 
 ///|
@@ -134,7 +134,7 @@ pub(all) struct ColorSlider {
 
 ///|
 pub fn ColorSlider::ColorSlider() -> ColorSlider {
-  ColorSlider::{ channel: ColorChannel::default() }
+  { channel: ColorChannel::default() }
 }
 
 ///|
@@ -142,7 +142,7 @@ pub fn color_slider(
   props : ColorSliderProps,
 ) -> (ColorSlider, @ui_widgets.SliderValue, @ui_widgets.SliderRange) {
   (
-    ColorSlider::{ channel: props.channel },
+    { channel: props.channel },
     @ui_widgets.SliderValue::new(props.value),
     props.channel.range(),
   )
@@ -152,6 +152,7 @@ pub fn color_slider(
 pub struct ColorSliderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ColorSliderPlugin::ColorSliderPlugin() -> ColorSliderPlugin {
   ColorSliderPlugin::{  }
 }

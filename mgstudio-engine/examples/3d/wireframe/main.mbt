@@ -107,8 +107,8 @@ fn color_label(color : @color.Color) -> String {
 ///|
 fn topology_label(topology : @pbr.WireframeTopology) -> String {
   match topology {
-    @pbr.WireframeTopology::Triangles => "Triangles"
-    @pbr.WireframeTopology::Quads => "Quads"
+    Triangles => "Triangles"
+    Quads => "Quads"
   }
 }
 
@@ -127,6 +127,7 @@ fn setup_wireframe_config(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font : @asset.Handle[@asset.Font] = asset_server.load_font(
@@ -143,13 +144,11 @@ fn setup_ui(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let controls_entity = world.spawn_empty()
@@ -165,9 +164,9 @@ fn setup_ui(world : @ecs.World) -> Unit {
     controls_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_top(Px(12.0F)),
   )
   try! world.set_by_key(
     controls_entity,
@@ -187,7 +186,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     controls_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
 }
 
@@ -195,7 +194,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
 fn update_controls_text(world : @ecs.World) -> Unit {
   let config = match world.get_resource(@pbr.ecs_key_wireframe_config) {
     Some(value) => value
-    None => @pbr.WireframeConfig::WireframeConfig()
+    None => WireframeConfig()
   }
   let mut current_width = 1.0F
   world.for_each_component(@pbr.ecs_key_wireframe_line_width, fn(_, width) {
@@ -215,6 +214,7 @@ fn update_controls_text(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup_scene(world : @ecs.World) -> Unit {
   setup_wireframe_config(world)
 
@@ -229,11 +229,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
     @transform.Transform::from_xyz(-1.5F, 0.5F, -1.5F),
   ).spawn(world)
-  try! world.set_by_key(
-    red_cube,
-    @pbr.ecs_key_no_wireframe,
-    @pbr.NoWireframe::NoWireframe(),
-  )
+  try! world.set_by_key(red_cube, @pbr.ecs_key_no_wireframe, NoWireframe())
 
   @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -263,11 +259,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
     @transform.Transform::from_xyz(0.5F, 0.5F, 0.5F),
   ).spawn(world)
-  try! world.set_by_key(
-    green_cube,
-    @pbr.ecs_key_wireframe,
-    @pbr.Wireframe::Wireframe(),
-  )
+  try! world.set_by_key(green_cube, @pbr.ecs_key_wireframe, Wireframe())
   try! world.set_by_key(
     green_cube,
     @pbr.ecs_key_wireframe_color,
@@ -290,11 +282,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
     @transform.Transform::from_xyz(1.5F, 0.5F, 1.5F),
   ).spawn(world)
-  try! world.set_by_key(
-    purple_cube,
-    @pbr.ecs_key_wireframe,
-    @pbr.Wireframe::Wireframe(),
-  )
+  try! world.set_by_key(purple_cube, @pbr.ecs_key_wireframe, Wireframe())
   try! world.set_by_key(
     purple_cube,
     @pbr.ecs_key_wireframe_color,
@@ -305,11 +293,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.ecs_key_wireframe_line_width,
     @pbr.WireframeLineWidth::new(3.0F),
   )
-  try! world.set_by_key(
-    purple_cube,
-    @pbr.ecs_key_wireframe_topology,
-    @pbr.WireframeTopology::Quads,
-  )
+  try! world.set_by_key(purple_cube, @pbr.ecs_key_wireframe_topology, Quads)
 
   let plane = @pbr.MeshMaterial3dBundle::new(
     @mesh.Mesh3d::new(
@@ -336,11 +320,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let light = world.spawn_empty()
-  try! world.set_by_key(
-    light,
-    @pbr.ecs_key_point_light,
-    @pbr.PointLight::PointLight(),
-  )
+  try! world.set_by_key(light, @pbr.ecs_key_point_light, PointLight())
   try! world.set_by_key(
     light,
     @transform.ecs_key_transform,
@@ -348,7 +328,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -364,15 +344,15 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn update_colors(world : @ecs.World) -> Unit {
   let mut config = match world.get_resource(@pbr.ecs_key_wireframe_config) {
     Some(value) => value
-    None => @pbr.WireframeConfig::WireframeConfig()
+    None => WireframeConfig()
   }
   update_controls_text(world)
   let mut config_changed = false
-  if @input.key_just_pressed(@window.KeyCode::KeyZ) {
+  if @input.key_just_pressed(KeyZ) {
     config = config.with_global(!config.global)
     config_changed = true
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyX) {
+  if @input.key_just_pressed(KeyX) {
     let next = if color_approx_eq(config.default_color, color_white()) {
       color_deep_pink()
     } else {
@@ -381,7 +361,7 @@ fn update_colors(world : @ecs.World) -> Unit {
     config = config.with_default_color(next)
     config_changed = true
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
+  if @input.key_just_pressed(KeyC) {
     let updates : Array[(@core.Entity, @pbr.WireframeColor)] = []
     world.for_each_component(@pbr.ecs_key_wireframe_color, fn(entity, color) {
       if (try! world.get_by_key(entity, color_toggle_cube_component_key))
@@ -402,7 +382,7 @@ fn update_colors(world : @ecs.World) -> Unit {
     }
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyV) {
+  if @input.key_just_pressed(KeyV) {
     let updates : Array[(@core.Entity, @pbr.WireframeLineWidth)] = []
     world.for_each_component(@pbr.ecs_key_wireframe_line_width, fn(
       entity,
@@ -427,10 +407,10 @@ fn update_colors(world : @ecs.World) -> Unit {
     }
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyB) {
+  if @input.key_just_pressed(KeyB) {
     let next_topology = match config.default_topology {
-      @pbr.WireframeTopology::Triangles => @pbr.WireframeTopology::Quads
-      @pbr.WireframeTopology::Quads => @pbr.WireframeTopology::Triangles
+      Triangles => @pbr.WireframeTopology::Quads
+      Quads => Triangles
     }
     config = config.with_default_topology(next_topology)
     config_changed = true
@@ -446,7 +426,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.WireframePlugin::WireframePlugin())
-  .add_systems_world(@app.Startup, setup_scene)
-  .add_systems_world(@app.Update, update_colors)
+  .add_systems_world(Startup, setup_scene)
+  .add_systems_world(Update, update_colors)
   .run()
 }

@@ -112,12 +112,12 @@ pub struct StandardMaterialKey {
 
 ///|
 pub fn StandardMaterialKey::empty() -> StandardMaterialKey {
-  StandardMaterialKey::{ bits: 0UL }
+  { bits: 0UL }
 }
 
 ///|
 pub fn StandardMaterialKey::from_bits(bits : UInt64) -> StandardMaterialKey {
-  StandardMaterialKey::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -138,7 +138,7 @@ pub fn StandardMaterialKey::with_flag(
   self : StandardMaterialKey,
   flag : UInt64,
 ) -> StandardMaterialKey {
-  StandardMaterialKey::{ bits: self.bits | flag }
+  { bits: self.bits | flag }
 }
 
 ///|
@@ -146,7 +146,7 @@ pub fn StandardMaterialKey::without_flag(
   self : StandardMaterialKey,
   flag : UInt64,
 ) -> StandardMaterialKey {
-  StandardMaterialKey::{ bits: self.bits & (0xffffffffffffffffUL ^ flag) }
+  { bits: self.bits & (0xffffffffffffffffUL ^ flag) }
 }
 
 ///|
@@ -158,7 +158,7 @@ pub fn StandardMaterialKey::with_depth_bias(
       depth_bias.to_uint64() << STANDARD_MATERIAL_KEY_DEPTH_BIAS_SHIFT
     ) &
     STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK
-  StandardMaterialKey::{
+  {
     bits: (
       self.bits & (0xffffffffffffffffUL ^ STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK)
     ) |
@@ -179,16 +179,15 @@ pub fn standard_material_key_from_material(
 ) -> StandardMaterialKey {
   let mut bits : UInt64 = 0UL
   match material.cull_mode {
-    Some(Face3d::Front) => bits = bits | STANDARD_MATERIAL_KEY_CULL_FRONT
-    Some(Face3d::Back) => bits = bits | STANDARD_MATERIAL_KEY_CULL_BACK
+    Some(Front) => bits = bits | STANDARD_MATERIAL_KEY_CULL_FRONT
+    Some(Back) => bits = bits | STANDARD_MATERIAL_KEY_CULL_BACK
     None => ()
   }
   if material.normal_map_texture is Some(_) {
     bits = bits | STANDARD_MATERIAL_KEY_NORMAL_MAP
   }
   match material.parallax_mapping_method {
-    @material.ParallaxMappingMethod::Relief(_) =>
-      bits = bits | STANDARD_MATERIAL_KEY_RELIEF_MAPPING
+    Relief(_) => bits = bits | STANDARD_MATERIAL_KEY_RELIEF_MAPPING
     _ => ()
   }
   if material.diffuse_transmission > 0.0F {
@@ -212,7 +211,7 @@ pub fn standard_material_key_from_material(
     ) &
     STANDARD_MATERIAL_KEY_DEPTH_BIAS_MASK
   bits = bits | depth_bias_bits
-  StandardMaterialKey::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -234,7 +233,7 @@ pub fn standard_material_opaque_render_method(
   default_opaque_renderer_method : OpaqueRendererMethod,
 ) -> OpaqueRendererMethod {
   let material_opaque_method = match material.opaque_render_method {
-    OpaqueRendererMethod::Auto if material.diffuse_transmission > 0.0F =>
+    Auto if material.diffuse_transmission > 0.0F =>
       OpaqueRendererMethod::Forward
     opaque_method => opaque_method
   }
@@ -249,21 +248,19 @@ pub fn standard_material_render_phase_type(
   material : StandardMaterial,
 ) -> @material.RenderPhaseType {
   match material.alpha_mode {
-    @material.AlphaMode3d::Blend => @material.RenderPhaseType::Transparent
-    @material.AlphaMode3d::Premultiplied =>
-      @material.RenderPhaseType::Transparent
-    @material.AlphaMode3d::Add => @material.RenderPhaseType::Transparent
-    @material.AlphaMode3d::Multiply => @material.RenderPhaseType::Transparent
+    Blend => Transparent
+    Premultiplied => Transparent
+    Add => Transparent
+    Multiply => Transparent
     _ =>
       if standard_material_reads_view_transmission_texture(material) {
-        @material.RenderPhaseType::Transmissive
+        Transmissive
       } else {
         match material.alpha_mode {
-          @material.AlphaMode3d::Opaque => @material.RenderPhaseType::Opaque
-          @material.AlphaMode3d::AlphaToCoverage =>
-            @material.RenderPhaseType::Opaque
-          @material.AlphaMode3d::Mask(_) => @material.RenderPhaseType::AlphaMask
-          _ => @material.RenderPhaseType::Opaque
+          Opaque => Opaque
+          AlphaToCoverage => Opaque
+          Mask(_) => AlphaMask
+          _ => Opaque
         }
       }
   }
@@ -448,7 +445,7 @@ pub fn standard_material_uniform_from_material(
   normal_map_two_component : Bool,
   features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> StandardMaterialUniform {
-  StandardMaterialUniform::{
+  {
     base_color: standard_material_color_vec4(material.base_color),
     emissive: standard_material_emissive_vec4(material),
     attenuation_color: standard_material_color_vec4(material.attenuation_color),
@@ -634,8 +631,7 @@ fn standard_material_unresolved_opaque_render_method(
   material : StandardMaterial,
 ) -> OpaqueRendererMethod {
   match material.opaque_render_method {
-    OpaqueRendererMethod::Auto if material.diffuse_transmission > 0.0F =>
-      OpaqueRendererMethod::Forward
+    Auto if material.diffuse_transmission > 0.0F => Forward
     opaque_method => opaque_method
   }
 }
@@ -724,7 +720,7 @@ pub impl Material for StandardMaterial with fn reads_view_transmission_texture(
 
 ///|
 pub impl Material for StandardMaterial with fn draw_data(self) {
-  MaterialDrawData3d::Standard(self)
+  Standard(self)
 }
 
 ///|
@@ -783,7 +779,7 @@ pub impl Material for StandardMaterial with fn renderer_extra_bind_group_data(
   _context,
 ) {
   ignore(self)
-  @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+  MaterialBindGroupResolvedData()
 }
 
 ///|
@@ -820,9 +816,9 @@ pub(all) struct StandardMaterialPlugin {
 
 ///|
 pub fn StandardMaterialPlugin::StandardMaterialPlugin() -> StandardMaterialPlugin {
-  StandardMaterialPlugin::{
+  {
     prepass_enabled: true,
-    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
+    debug_flags: RenderDebugFlags(),
     standard_material_texture_features: standard_material_default_texture_feature_set(),
   }
 }
@@ -832,7 +828,7 @@ pub fn StandardMaterialPlugin::with_prepass_enabled(
   self : StandardMaterialPlugin,
   prepass_enabled : Bool,
 ) -> StandardMaterialPlugin {
-  StandardMaterialPlugin::{ ..self, prepass_enabled, }
+  { ..self, prepass_enabled, }
 }
 
 ///|
@@ -840,7 +836,7 @@ pub fn StandardMaterialPlugin::with_debug_flags(
   self : StandardMaterialPlugin,
   debug_flags : @render.RenderDebugFlags,
 ) -> StandardMaterialPlugin {
-  StandardMaterialPlugin::{ ..self, debug_flags, }
+  { ..self, debug_flags, }
 }
 
 ///|
@@ -848,7 +844,7 @@ pub fn StandardMaterialPlugin::with_standard_material_texture_features(
   self : StandardMaterialPlugin,
   standard_material_texture_features : StandardMaterialTextureFeatureSet,
 ) -> StandardMaterialPlugin {
-  StandardMaterialPlugin::{ ..self, standard_material_texture_features, }
+  { ..self, standard_material_texture_features, }
 }
 
 ///|
@@ -930,7 +926,7 @@ pub fn StandardMaterialPluginPlan::extract_schedule_steps(
 pub fn standard_material_plugin_plan(
   plugin : StandardMaterialPlugin,
 ) -> StandardMaterialPluginPlan {
-  StandardMaterialPluginPlan::{
+  {
     prepass_enabled: plugin.prepass_enabled,
     debug_flags: plugin.debug_flags,
     standard_material_texture_features: plugin.standard_material_texture_features,
@@ -964,7 +960,7 @@ pub struct StandardMaterialPluginState {
 pub fn StandardMaterialPluginState::from_plugin(
   plugin : StandardMaterialPlugin,
 ) -> StandardMaterialPluginState {
-  StandardMaterialPluginState::{
+  {
     prepass_enabled: plugin.prepass_enabled,
     debug_flags: plugin.debug_flags,
     standard_material_texture_features: plugin.standard_material_texture_features,
@@ -1016,10 +1012,7 @@ pub fn standard_material_plugin_state(
 ) -> StandardMaterialPluginState {
   match world.get_resource(ecs_key_standard_material_plugin_state) {
     Some(state) => state
-    None =>
-      StandardMaterialPluginState::from_plugin(
-        StandardMaterialPlugin::StandardMaterialPlugin(),
-      )
+    None => StandardMaterialPluginState::from_plugin(StandardMaterialPlugin())
   }
 }
 
@@ -1027,10 +1020,7 @@ pub fn standard_material_plugin_state(
 pub fn standard_material_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  standard_material_plugin_with(
-    app,
-    StandardMaterialPlugin::StandardMaterialPlugin(),
-  )
+  standard_material_plugin_with(app, StandardMaterialPlugin())
 }
 
 ///|
@@ -1117,7 +1107,7 @@ pub fn pbr_mesh_material3d_with_extension_fragment_shader_path(
 
 ///|
 pub fn pbr_material_forward_decal_material_ext_default() -> @material.ForwardDecalMaterialExt {
-  @material.ForwardDecalMaterialExt::ForwardDecalMaterialExt()
+  ForwardDecalMaterialExt()
 }
 
 ///|

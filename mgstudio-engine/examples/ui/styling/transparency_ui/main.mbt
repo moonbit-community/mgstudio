@@ -15,10 +15,10 @@
 ///|
 fn button_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Px(150.0F))
-  .with_height(@ui.Val::Px(65.0F))
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_align_items(@ui.AlignItems::Center)
+  .with_width(Px(150.0F))
+  .with_height(Px(65.0F))
+  .with_justify_content(Center)
+  .with_align_items(Center)
 }
 
 ///|
@@ -88,10 +88,10 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::SpaceAround),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F))
+        .with_align_items(Center)
+        .with_justify_content(SpaceAround),
       ),
     ),
   )
@@ -119,6 +119,6 @@ fn main {
   .insert_resource(
     @camera_clear_color.ClearColor::new(@color.Color::srgb(0.0F, 0.0F, 0.0F)),
   )
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

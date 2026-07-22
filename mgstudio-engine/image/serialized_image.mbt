@@ -32,7 +32,7 @@ pub struct SerializedImage {
 
 ///|
 pub fn SerializedImage::from_image(image : Image) -> SerializedImage {
-  SerializedImage::{
+  {
     width: image.width,
     height: image.height,
     pixels: image.pixels,
@@ -49,7 +49,7 @@ pub fn SerializedImage::from_image(image : Image) -> SerializedImage {
 
 ///|
 pub fn SerializedImage::into_image(self : SerializedImage) -> Image {
-  Image::{
+  {
     width: self.width,
     height: self.height,
     pixels: self.pixels,

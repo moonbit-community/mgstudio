@@ -21,7 +21,7 @@ pub struct ScrollPosition {
 
 ///|
 pub fn ScrollPosition::ScrollPosition() -> ScrollPosition {
-  ScrollPosition::{ offset_x: 0.0F, offset_y: 0.0F }
+  { offset_x: 0.0F, offset_y: 0.0F }
 }
 
 ///|
@@ -29,7 +29,7 @@ pub fn ScrollPosition::new(
   offset_x : Float,
   offset_y : Float,
 ) -> ScrollPosition {
-  ScrollPosition::{ offset_x, offset_y }
+  { offset_x, offset_y }
 }
 
 ///|
@@ -38,7 +38,7 @@ pub fn ScrollPosition::with_delta(
   dx : Float,
   dy : Float,
 ) -> ScrollPosition {
-  ScrollPosition::{ offset_x: self.offset_x + dx, offset_y: self.offset_y + dy }
+  { offset_x: self.offset_x + dx, offset_y: self.offset_y + dy }
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn ScrollPosition::with_x(
   self : ScrollPosition,
   offset_x : Float,
 ) -> ScrollPosition {
-  ScrollPosition::{ ..self, offset_x, }
+  { ..self, offset_x, }
 }
 
 ///|
@@ -64,7 +64,7 @@ pub fn ScrollPosition::with_y(
   self : ScrollPosition,
   offset_y : Float,
 ) -> ScrollPosition {
-  ScrollPosition::{ ..self, offset_y, }
+  { ..self, offset_y, }
 }
 
 ///|
@@ -74,7 +74,7 @@ pub struct CalculatedClip {
 
 ///|
 pub fn CalculatedClip::new(clip : @math.Rect) -> CalculatedClip {
-  CalculatedClip::{ clip, }
+  { clip, }
 }
 
 ///|
@@ -84,7 +84,7 @@ pub struct ContentSize {
 
 ///|
 pub fn ContentSize::new(size : @math.Vec2) -> ContentSize {
-  ContentSize::{ size, }
+  { size, }
 }
 
 ///|
@@ -99,7 +99,7 @@ pub struct ImageNodeSize {
 
 ///|
 pub fn ImageNodeSize::ImageNodeSize() -> ImageNodeSize {
-  ImageNodeSize::{ size: @math.UVec2::zero() }
+  { size: @math.UVec2::zero() }
 }
 
 ///|

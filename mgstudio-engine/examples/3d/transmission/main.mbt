@@ -85,7 +85,7 @@ fn ExampleControls::ExampleControls(
   specular_transmission~ : Bool,
   color~ : Bool,
 ) -> ExampleControls {
-  ExampleControls::{ diffuse_transmission, specular_transmission, color }
+  { diffuse_transmission, specular_transmission, color }
 }
 
 ///|
@@ -101,7 +101,7 @@ priv struct ExampleState {
 
 ///|
 fn ExampleState::ExampleState() -> ExampleState {
-  ExampleState::{
+  {
     diffuse_transmission: 0.5F,
     specular_transmission: 0.9F,
     thickness: 1.8F,
@@ -114,7 +114,7 @@ fn ExampleState::ExampleState() -> ExampleState {
 
 ///|
 impl @app.FromWorld for ExampleState with fn from_world(_world) {
-  ExampleState::ExampleState()
+  ExampleState()
 }
 
 ///|
@@ -124,12 +124,12 @@ priv struct ExampleRandom {
 
 ///|
 fn ExampleRandom::ExampleRandom() -> ExampleRandom {
-  ExampleRandom::{ rng: @random.Rand::new() }
+  { rng: @random.Rand::new() }
 }
 
 ///|
 impl @app.FromWorld for ExampleRandom with fn from_world(_world) {
-  ExampleRandom::ExampleRandom()
+  ExampleRandom()
 }
 
 ///|
@@ -267,7 +267,7 @@ fn setup_scene(
       .mul(@math.Quat::from_rotation_z(21.3F))
       .normalize(),
     ),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=false,
       diffuse_transmission=false,
@@ -287,7 +287,7 @@ fn setup_scene(
       .mul(@math.Quat::from_rotation_z(4.7F))
       .normalize(),
     ),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=false,
       diffuse_transmission=false,
@@ -310,7 +310,7 @@ fn setup_scene(
     candle_mesh,
     candle_material,
     @transform.Transform::from_xyz(-1.0F, 0.0F, 0.0F),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=false,
       diffuse_transmission=true,
@@ -359,7 +359,7 @@ fn setup_scene(
     sphere_mesh,
     white_glass,
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=true,
       diffuse_transmission=false,
@@ -386,7 +386,7 @@ fn setup_scene(
     @transform.Transform::from_xyz(1.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
     ),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=true,
       diffuse_transmission=false,
@@ -413,7 +413,7 @@ fn setup_scene(
     @transform.Transform::from_xyz(0.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
     ),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=true,
       diffuse_transmission=false,
@@ -440,7 +440,7 @@ fn setup_scene(
     @transform.Transform::from_xyz(-1.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
     ),
-    ExampleControls::ExampleControls(
+    ExampleControls(
       color=true,
       specular_transmission=true,
       diffuse_transmission=false,
@@ -479,7 +479,7 @@ fn setup_scene(
           -1.0F,
           float_from_int(z) * 2.0F,
         ),
-        ExampleControls::ExampleControls(
+        ExampleControls(
           color=true,
           specular_transmission=false,
           diffuse_transmission=false,
@@ -584,7 +584,7 @@ fn setup_text(commands : @app.Commands) -> Unit {
       (
         @text.Text::Text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
         ExampleDisplay::{  },
@@ -699,103 +699,93 @@ fn example_control_system(
   let taa_enabled = temporal_jitter.value() is Some(_)
   let mut transmission_settings = transmission.value()
   let mut transmission_settings_changed = false
-  let toggle_hdr = @input.key_just_pressed(@window.KeyCode::KeyH)
-  let toggle_depth_prepass = @input.key_just_pressed(@window.KeyCode::KeyD)
-  let toggle_taa = @input.key_just_pressed(@window.KeyCode::KeyT)
+  let toggle_hdr = @input.key_just_pressed(KeyH)
+  let toggle_depth_prepass = @input.key_just_pressed(KeyD)
+  let toggle_taa = @input.key_just_pressed(KeyT)
 
-  if @input.key_pressed(@window.KeyCode::Digit2) {
+  if @input.key_pressed(Digit2) {
     state.diffuse_transmission = clamp01(state.diffuse_transmission + delta)
     materials_changed = true
-  } else if @input.key_pressed(@window.KeyCode::Digit1) {
+  } else if @input.key_pressed(Digit1) {
     state.diffuse_transmission = clamp01(state.diffuse_transmission - delta)
     materials_changed = true
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyW) {
+  if @input.key_pressed(KeyW) {
     state.specular_transmission = clamp01(state.specular_transmission + delta)
     materials_changed = true
-  } else if @input.key_pressed(@window.KeyCode::KeyQ) {
+  } else if @input.key_pressed(KeyQ) {
     state.specular_transmission = clamp01(state.specular_transmission - delta)
     materials_changed = true
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyS) {
+  if @input.key_pressed(KeyS) {
     state.thickness = clampf(state.thickness + delta, 0.0F, 5.0F)
     materials_changed = true
-  } else if @input.key_pressed(@window.KeyCode::KeyA) {
+  } else if @input.key_pressed(KeyA) {
     state.thickness = clampf(state.thickness - delta, 0.0F, 5.0F)
     materials_changed = true
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyX) {
+  if @input.key_pressed(KeyX) {
     state.ior = clampf(state.ior + delta, 1.0F, 3.0F)
     materials_changed = true
-  } else if @input.key_pressed(@window.KeyCode::KeyZ) {
+  } else if @input.key_pressed(KeyZ) {
     state.ior = clampf(state.ior - delta, 1.0F, 3.0F)
     materials_changed = true
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyI) {
+  if @input.key_pressed(KeyI) {
     state.reflectance = clamp01(state.reflectance + delta)
     materials_changed = true
-  } else if @input.key_pressed(@window.KeyCode::KeyU) {
+  } else if @input.key_pressed(KeyU) {
     state.reflectance = clamp01(state.reflectance - delta)
     materials_changed = true
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyR) {
+  if @input.key_pressed(KeyR) {
     state.perceptual_roughness = clamp01(state.perceptual_roughness + delta)
     materials_changed = true
-  } else if @input.key_pressed(@window.KeyCode::KeyE) {
+  } else if @input.key_pressed(KeyE) {
     state.perceptual_roughness = clamp01(state.perceptual_roughness - delta)
     materials_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyO) &&
-    transmission_settings.steps > 0 {
+  if @input.key_just_pressed(KeyO) && transmission_settings.steps > 0 {
     transmission_settings = transmission_settings.with_steps(
       transmission_settings.steps - 1,
     )
     transmission_settings_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyP) &&
-    transmission_settings.steps < 4 {
+  if @input.key_just_pressed(KeyP) && transmission_settings.steps < 4 {
     transmission_settings = transmission_settings.with_steps(
       transmission_settings.steps + 1,
     )
     transmission_settings_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyJ) {
-    transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::Low,
-    )
+  if @input.key_just_pressed(KeyJ) {
+    transmission_settings = transmission_settings.with_quality(Low)
     transmission_settings_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyK) {
-    transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::Medium,
-    )
+  if @input.key_just_pressed(KeyK) {
+    transmission_settings = transmission_settings.with_quality(Medium)
     transmission_settings_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyL) {
-    transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::High,
-    )
+  if @input.key_just_pressed(KeyL) {
+    transmission_settings = transmission_settings.with_quality(High)
     transmission_settings_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::Semicolon) {
-    transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::Ultra,
-    )
+  if @input.key_just_pressed(Semicolon) {
+    transmission_settings = transmission_settings.with_quality(Ultra)
     transmission_settings_changed = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
+  if @input.key_just_pressed(KeyC) {
     randomize_colors = true
     materials_changed = true
   }
@@ -838,10 +828,10 @@ fn example_control_system(
     }
   }
 
-  let rotation = if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  let rotation = if @input.key_pressed(ArrowRight) {
     state.auto_camera = false
     delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  } else if @input.key_pressed(ArrowLeft) {
     state.auto_camera = false
     -delta
   } else if state.auto_camera {
@@ -851,11 +841,10 @@ fn example_control_system(
   }
 
   let camera_distance = camera_transform.value().translation.length()
-  let distance_change = if @input.key_pressed(@window.KeyCode::ArrowDown) &&
+  let distance_change = if @input.key_pressed(ArrowDown) &&
     camera_distance < 25.0F {
     delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowUp) &&
-    camera_distance > 2.0F {
+  } else if @input.key_pressed(ArrowUp) && camera_distance > 2.0F {
     -delta
   } else {
     0.0F
@@ -981,8 +970,8 @@ fn main {
   .insert_resource(@camera.ClearColor::new(@color.Color::black()))
   .insert_resource(@pbr.PointLightShadowMap::new(2048))
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param8(@app.Update, example_control_system)
-  .add_systems_param3(@app.Update, flicker_system)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param8(Update, example_control_system)
+  .add_systems_param3(Update, flicker_system)
   .run()
 }

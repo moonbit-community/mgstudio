@@ -33,6 +33,7 @@ pub type FogVolume = @light.FogVolume
 pub struct VolumetricFogPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn VolumetricFogPlugin::VolumetricFogPlugin() -> VolumetricFogPlugin {
   VolumetricFogPlugin::{  }
 }
@@ -59,7 +60,7 @@ fn FogAssets::new(
   plane_mesh : @asset.Handle[@mesh.Mesh],
   cube_mesh : @asset.Handle[@mesh.Mesh],
 ) -> FogAssets {
-  FogAssets::{ plane_mesh, cube_mesh }
+  { plane_mesh, cube_mesh }
 }
 
 ///|
@@ -93,12 +94,12 @@ fn volumetric_fog_plugin_install_with(
   let fog_volume_sync : @render.SyncComponentPlugin[
     FogVolume,
     VolumetricFogPlugin,
-  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  ] = SyncComponentPlugin()
   next = @render.sync_component_plugin_with(next, fog_volume_sync)
   let volumetric_fog_sync : @render.SyncComponentPlugin[
     VolumetricFog,
     VolumetricFogPlugin,
-  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  ] = SyncComponentPlugin()
   next = @render.sync_component_plugin_with(next, volumetric_fog_sync)
   @render.try_with_render_app(next, fn(render_app) {
     volumetric_fog_configure_render_sub_app(render_app, fog_assets)
@@ -114,15 +115,12 @@ fn volumetric_fog_configure_render_sub_app(
   render_app.world().insert_resource(ecs_key_fog_assets, fog_assets)
   render_app
   .world()
-  .insert_resource(
-    VolumetricFogPipeline::resource(),
-    VolumetricFogPipeline::VolumetricFogPipeline(),
-  )
+  .insert_resource(VolumetricFogPipeline::resource(), VolumetricFogPipeline())
   render_app
   .world()
   .insert_resource(
     VolumetricFogUniformBuffer::resource(),
-    VolumetricFogUniformBuffer::VolumetricFogUniformBuffer(),
+    VolumetricFogUniformBuffer(),
   )
   render_app
   .configure_sets(

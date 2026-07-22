@@ -147,7 +147,7 @@ fn ui_overlay_items_for_camera(
         sprite.extracted_camera_entity,
         camera_entity,
       ) {
-      items.push(UiOverlayDrawItem::{
+      items.push({
         kind: Sprite(i),
         z: sprite.payload.transform.translation.z,
         tie,
@@ -162,11 +162,7 @@ fn ui_overlay_items_for_camera(
         batch.extracted_camera_entity,
         camera_entity,
       ) {
-      items.push(UiOverlayDrawItem::{
-        kind: SpriteSliceBatch(i),
-        z: batch.payload.z,
-        tie,
-      })
+      items.push({ kind: SpriteSliceBatch(i), z: batch.payload.z, tie })
       tie = tie + 1
     }
   }
@@ -177,11 +173,7 @@ fn ui_overlay_items_for_camera(
         rect.extracted_camera_entity,
         camera_entity,
       ) {
-      items.push(UiOverlayDrawItem::{
-        kind: Rect(i),
-        z: rect.payload.transform.translation.z,
-        tie,
-      })
+      items.push({ kind: Rect(i), z: rect.payload.transform.translation.z, tie })
       tie = tie + 1
     }
   }
@@ -192,7 +184,7 @@ fn ui_overlay_items_for_camera(
         shadow.extracted_camera_entity,
         camera_entity,
       ) {
-      items.push(UiOverlayDrawItem::{
+      items.push({
         kind: BoxShadow(i),
         z: shadow.payload.transform.translation.z,
         tie,
@@ -207,7 +199,7 @@ fn ui_overlay_items_for_camera(
         slice.extracted_camera_entity,
         camera_entity,
       ) {
-      items.push(UiOverlayDrawItem::{
+      items.push({
         kind: TextureSlice(i),
         z: slice.payload.transform.translation.z,
         tie,

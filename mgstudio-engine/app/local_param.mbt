@@ -60,7 +60,7 @@ pub impl[T] FromWorld for Array[T] with fn from_world(_world) {
 ///|
 pub impl[T : FromWorld] SystemParam for Local[T] with fn init_state(world) {
   let mut value = T::from_world(world)
-  SystemParamState::new(fn() { Local::{ value, } }, fn(local_value : Local[T]) {
+  SystemParamState::new(fn() { { value, } }, fn(local_value : Local[T]) {
     value = local_value.value
   })
 }

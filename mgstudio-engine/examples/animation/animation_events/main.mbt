@@ -81,11 +81,7 @@ pub impl @ecs.TriggerEvent for SetMessage with fn set_observer_entity(
   self,
   entity,
 ) {
-  SetMessage::{
-    observer_entity: Some(entity),
-    value: self.value,
-    palette: self.palette,
-  }
+  { observer_entity: Some(entity), value: self.value, palette: self.palette }
 }
 
 ///|
@@ -130,10 +126,10 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       (
         MessageText::{  },
-        MessageFade::{ palette: MessagePalette::None },
+        MessageFade::{ palette: None },
         @text.Text2d::Text2d(),
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(119.0F)),
-        @text.TextColor::new(message_color(MessagePalette::None, 0.0F)),
+        @text.TextColor::new(message_color(None, 0.0F)),
       ),
     ),
   )
@@ -145,8 +141,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let clip = @animation.AnimationClip::new()
     .set_duration(2.0F)
-    .add_typed_event(0.0F, SetMessage::new("HELLO", MessagePalette::Hello))
-    .add_typed_event(1.0F, SetMessage::new("BYE", MessagePalette::Bye))
+    .add_typed_event(0.0F, SetMessage::new("HELLO", Hello))
+    .add_typed_event(1.0F, SetMessage::new("BYE", Bye))
   let clip_handle = @animation.animation_clip_add(clip)
   let (graph, animation_index) = @animation.AnimationGraph::from_clip(
     clip_handle,
@@ -209,8 +205,8 @@ fn animate_text_opacity(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_text_opacity)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, animate_text_opacity)
   .add_observer2(on_set_message)
   .run()
 }

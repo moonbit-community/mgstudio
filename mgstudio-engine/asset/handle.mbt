@@ -21,7 +21,7 @@ pub struct Handle[T] {
 
 ///|
 pub fn[T] Handle::new(id : Int) -> Handle[T] {
-  Handle::{ id, phantom: None }
+  { id, phantom: None }
 }
 
 ///|

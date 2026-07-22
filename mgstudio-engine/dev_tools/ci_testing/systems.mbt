@@ -35,7 +35,7 @@ pub(all) struct CiTestingRuntimeState {
 
 ///|
 pub fn CiTestingRuntimeState::CiTestingRuntimeState() -> CiTestingRuntimeState {
-  CiTestingRuntimeState::{ current_frame: 0 }
+  { current_frame: 0 }
 }
 
 ///|
@@ -70,11 +70,7 @@ fn ci_testing_queue_screenshot(
   let observer = if exit_after_capture {
     fn(event : @ecs.On[@render.ScreenshotCaptured]) {
       @render.save_to_disk(path)(event)
-      ignore(
-        event
-        .world()
-        .send_message(@app.AppExit::message(), @app.AppExit::Success),
-      )
+      ignore(event.world().send_message(@app.AppExit::message(), Success))
     }
   } else {
     @render.save_to_disk(path)
@@ -103,9 +99,7 @@ fn ci_testing_apply_camera_pose(
   try! world.set_by_key(
     entity,
     @dev_tools_easy_camera_movement.ecs_key_camera_movement,
-    @dev_tools_easy_camera_movement.CameraMovement::CameraMovement(
-      translation, rotation,
-    ),
+    CameraMovement(translation, rotation),
   )
 }
 
@@ -153,10 +147,7 @@ pub fn ci_testing_send_events_system(world : @ecs.World) -> Unit {
             world,
             ci_testing_screenshot_path_for_name(name),
           )
-        AppExit =>
-          ignore(
-            world.send_message(@app.AppExit::message(), @app.AppExit::Success),
-          )
+        AppExit => ignore(world.send_message(@app.AppExit::message(), Success))
         StartScreenRecording => ()
         StopScreenRecording => ()
         MoveCamera(translation, rotation) =>

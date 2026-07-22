@@ -26,15 +26,12 @@ pub fn RenderTargetInfo::new(
   physical_size : @math.IVec2,
   scale_factor : Float,
 ) -> RenderTargetInfo {
-  RenderTargetInfo::{ physical_size, scale_factor }
+  { physical_size, scale_factor }
 }
 
 ///|
 pub fn RenderTargetInfo::RenderTargetInfo() -> RenderTargetInfo {
-  RenderTargetInfo::{
-    physical_size: @math.IVec2::new(0, 0),
-    scale_factor: 1.0F,
-  }
+  { physical_size: @math.IVec2::new(0, 0), scale_factor: 1.0F }
 }
 
 ///|
@@ -50,7 +47,7 @@ pub struct ComputedCameraValues {
 
 ///|
 pub fn ComputedCameraValues::ComputedCameraValues() -> ComputedCameraValues {
-  ComputedCameraValues::{
+  {
     clip_from_view: @math.Mat4::identity(),
     target_info: None,
     old_viewport_size: None,
@@ -65,12 +62,7 @@ pub fn ComputedCameraValues::new(
   old_viewport_size : @math.IVec2?,
   old_sub_camera_view : @camera_primitives.SubCameraView3d?,
 ) -> ComputedCameraValues {
-  ComputedCameraValues::{
-    clip_from_view,
-    target_info,
-    old_viewport_size,
-    old_sub_camera_view,
-  }
+  { clip_from_view, target_info, old_viewport_size, old_sub_camera_view }
 }
 
 ///|
@@ -106,7 +98,7 @@ pub fn decode_computed_camera_values(json : Json) -> ComputedCameraValues {
   ) : (@math.Mat4, Json?, Json?, @camera_primitives.SubCameraView3d?) = try! @json.from_json(
     json,
   )
-  ComputedCameraValues::{
+  {
     clip_from_view,
     target_info: target_info_json.map(fn(value) {
       decode_render_target_info(value)

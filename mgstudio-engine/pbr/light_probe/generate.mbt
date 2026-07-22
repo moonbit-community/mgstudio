@@ -32,7 +32,7 @@ pub struct GeneratorBindGroupLayouts {
 
 ///|
 pub fn GeneratorBindGroupLayouts::GeneratorBindGroupLayouts() -> GeneratorBindGroupLayouts {
-  GeneratorBindGroupLayouts::{
+  {
     downsampling_first: "downsampling_first_bind_group_layout",
     downsampling_second: "downsampling_second_bind_group_layout",
     radiance: "radiance_bind_group_layout",
@@ -48,7 +48,7 @@ pub struct GeneratorSamplers {
 
 ///|
 pub fn GeneratorSamplers::GeneratorSamplers() -> GeneratorSamplers {
-  GeneratorSamplers::{ linear: "generator_linear_sampler" }
+  { linear: "generator_linear_sampler" }
 }
 
 ///|
@@ -62,7 +62,7 @@ pub struct GeneratorPipelines {
 
 ///|
 pub fn GeneratorPipelines::GeneratorPipelines() -> GeneratorPipelines {
-  GeneratorPipelines::{
+  {
     downsample_first: -1,
     downsample_second: -1,
     copy: -1,
@@ -78,7 +78,7 @@ pub struct DownsamplingConfig {
 
 ///|
 pub fn DownsamplingConfig::DownsamplingConfig() -> DownsamplingConfig {
-  DownsamplingConfig::{ combine_bind_group: false }
+  { combine_bind_group: false }
 }
 
 ///|
@@ -97,6 +97,7 @@ pub fn pbr_generated_environment_map_light_default() -> GeneratedEnvironmentMapL
 pub struct EnvironmentMapGenerationPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn EnvironmentMapGenerationPlugin::EnvironmentMapGenerationPlugin() -> EnvironmentMapGenerationPlugin {
   EnvironmentMapGenerationPlugin::{  }
 }
@@ -110,7 +111,7 @@ pub impl @app.Plugin for EnvironmentMapGenerationPlugin with fn name(_self) {
 pub impl @app.Plugin for EnvironmentMapGenerationPlugin with fn build(self, app) {
   register_embedded_wgsl_sources()
   ignore(self)
-  app.add_systems_world(@app.Update, generate_environment_map_light)
+  app.add_systems_world(Update, generate_environment_map_light)
 }
 
 ///|
@@ -118,7 +119,7 @@ pub fn pbr_downsampling_config(
   max_storage_textures_per_shader_stage : Int,
   supports_read_write_storage_texture : Bool,
 ) -> DownsamplingConfig {
-  DownsamplingConfig::{
+  {
     combine_bind_group: max_storage_textures_per_shader_stage >= 12 &&
     supports_read_write_storage_texture,
   }
@@ -161,8 +162,8 @@ fn pbr_generated_environment_map_is_power_of_two(size : Int) -> Bool {
 ///|
 fn pbr_generated_environment_map_face_height(image : @asset.Image) -> Int? {
   match image.array_layout() {
-    Some(@asset.ImageArrayLayout::RowCount(6)) => Some(image.height() / 6)
-    Some(@asset.ImageArrayLayout::RowHeight(height)) => Some(height)
+    Some(RowCount(6)) => Some(image.height() / 6)
+    Some(RowHeight(height)) => Some(height)
     _ => Some(image.height())
   }
 }
@@ -190,10 +191,10 @@ fn pbr_generated_environment_map_cube_image(
   usage_bits : Int,
 ) -> @asset.Image {
   @asset.Image::new(size, size * 6, Bytes::new(size * size * 6 * 8))
-  .with_format(@asset.TextureFormat::Rgba16Float)
+  .with_format(Rgba16Float)
   .with_texture_usage_bits(usage_bits)
-  .with_array_layout(Some(@asset.ImageArrayLayout::RowCount(6)))
-  .with_texture_view_dimension(Some(@asset.ImageTextureViewDimension::Cube))
+  .with_array_layout(Some(RowCount(6)))
+  .with_texture_view_dimension(Some(Cube))
   .with_mip_level_count(mip_level_count)
 }
 

@@ -27,7 +27,7 @@ fn render3d_main_phase_test_item(
   phase : Int,
 ) -> MeshPhaseItem3d {
   let entity = @core.Entity::new(entity_id, 0)
-  MeshPhaseItem3d::{
+  {
     entity: phase_entity_ref3d_for_main(entity),
     extracted_index: entity_id,
     current_uniform_index: entity_id.reinterpret_as_uint(),
@@ -143,7 +143,7 @@ test "pbr: main view phases retain only live cameras" {
   ])
   let camera = ExtractedCamera3d::{
     entity: phase_entity_ref3d_for_main(live_view),
-    payload: Camera3dViewPayload::{
+    payload: {
       decal_config: None,
       deferred_config: None,
       distance_fog: None,
@@ -151,11 +151,9 @@ test "pbr: main view phases retain only live cameras" {
       volumetric_fog: None,
       atmosphere: None,
       atmosphere_settings: None,
-      camera: @camera_camera.Camera::Camera(),
-      depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
-      projection: Projection::Perspective(
-        PerspectiveProjection3d::PerspectiveProjection3d(),
-      ),
+      camera: Camera(),
+      depth_texture_usages: Camera3dDepthTextureUsage(),
+      projection: Perspective(PerspectiveProjection3d()),
       sub_camera_view: None,
       oit_settings: None,
       screen_space_transmission: None,
@@ -195,7 +193,7 @@ test "pbr: main view phases retain only live cameras" {
       target_id: -1,
       target_size: @math.IVec2::new(640, 480),
       scale_factor: 1.0,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       invert_culling: false,
     },
   }

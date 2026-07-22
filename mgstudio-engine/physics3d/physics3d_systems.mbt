@@ -36,9 +36,9 @@ fn update_transform_from_iso3(
 fn collision_groups_to_rapier(
   groups : CollisionGroups3d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::InteractionGroups(
-    @dynamics.Group::Group(groups.memberships),
-    @dynamics.Group::Group(groups.filter),
+  InteractionGroups(
+    Group(groups.memberships),
+    Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -47,9 +47,9 @@ fn collision_groups_to_rapier(
 fn solver_groups_to_rapier(
   groups : SolverGroups3d,
 ) -> @dynamics.InteractionGroups {
-  @dynamics.InteractionGroups::InteractionGroups(
-    @dynamics.Group::Group(groups.memberships),
-    @dynamics.Group::Group(groups.filter),
+  InteractionGroups(
+    Group(groups.memberships),
+    Group(groups.filter),
     groups.test_mode,
   )
 }
@@ -72,12 +72,12 @@ fn collider_shape3d_to_rapier(shape : ColliderShape3d) -> @collision.Shape3D {
     Cuboid(hx, hy, hz) => @collision.Shape3D::cuboid(hx, hy, hz)
     CapsuleX(half_height, radius) => {
       let c = @collision.Shape3D::capsule_y(radius, half_height)
-      @collision.Shape3D::Compound([
+      Compound([
         (
-          @rapier_core.Isometry3::Isometry3(
+          Isometry3(
             @rapier_core.Vec3::zero(),
             @rapier_core.rotation_from_scaled_axis(
-              @rapier_core.Vec3::Vec3(0.0F, 0.0F, -1.5707964F),
+              Vec3(0.0F, 0.0F, -1.5707964F),
             ),
           ),
           c,
@@ -88,13 +88,11 @@ fn collider_shape3d_to_rapier(shape : ColliderShape3d) -> @collision.Shape3D {
       @collision.Shape3D::capsule_y(radius, half_height)
     CapsuleZ(half_height, radius) => {
       let c = @collision.Shape3D::capsule_y(radius, half_height)
-      @collision.Shape3D::Compound([
+      Compound([
         (
-          @rapier_core.Isometry3::Isometry3(
+          Isometry3(
             @rapier_core.Vec3::zero(),
-            @rapier_core.rotation_from_scaled_axis(
-              @rapier_core.Vec3::Vec3(1.5707964F, 0.0F, 0.0F),
-            ),
+            @rapier_core.rotation_from_scaled_axis(Vec3(1.5707964F, 0.0F, 0.0F)),
           ),
           c,
         ),
@@ -112,16 +110,15 @@ fn collider_shape3d_to_rapier(shape : ColliderShape3d) -> @collision.Shape3D {
         mg_vec3_to_rapier(c),
       )
     TriMesh(vertices, indices) =>
-      @collision.Shape3D::TriMesh(vec3_array_to_rapier(vertices), indices)
-    ConvexHull(vertices) =>
-      @collision.Shape3D::ConvexHull(vec3_array_to_rapier(vertices), 0.0F)
+      TriMesh(vec3_array_to_rapier(vertices), indices)
+    ConvexHull(vertices) => ConvexHull(vec3_array_to_rapier(vertices), 0.0F)
     Compound(parts) => {
       let rs : Array[(@rapier_core.Isometry3, @collision.Shape3D)] = []
       for part in parts {
         let (t, s) = part
         rs.push((mg_transform_to_iso3(t), collider_shape3d_to_rapier(s)))
       }
-      @collision.Shape3D::Compound(rs)
+      Compound(rs)
     }
     Heightfield(heights, nrows, ncols, scale) =>
       if @collision.ColliderBuilder3D::heightfield(
@@ -212,7 +209,7 @@ pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   if !cfg_res.is_present() {
-    cfg_res.insert(Physics3dConfig::Physics3dConfig())
+    cfg_res.insert(Physics3dConfig())
   }
   let ctx_res = get_physics3d_context_resource(ecs_world)
   if !ctx_res.is_present() {
@@ -224,7 +221,7 @@ pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
   }
   let hooks_res = get_physics3d_hooks_config_resource(ecs_world)
   if !hooks_res.is_present() {
-    hooks_res.insert(Physics3dHooksConfig::Physics3dHooksConfig())
+    hooks_res.insert(Physics3dHooksConfig())
   }
 }
 
@@ -333,7 +330,7 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
   }
 
   // 2) Remove rapier state when entities are despawned (handle components gone).
-  let alive : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let alive : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
   ecs_world.for_each_component(ecs_key_rapier_body_handle3d, fn(e, _h) {
     alive.set(entity_key(e), true)
   })
@@ -428,12 +425,11 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
     let t = transform.translation
     let r = transform.rotation
     let mut builder = match rb3d.body_type {
-      @dynamics.RigidBodyType::Dynamic =>
-        @dynamics.RigidBodyBuilder3D::dynamic()
-      @dynamics.RigidBodyType::Fixed => @dynamics.RigidBodyBuilder3D::fixed()
-      @dynamics.RigidBodyType::KinematicPositionBased =>
+      Dynamic => @dynamics.RigidBodyBuilder3D::dynamic()
+      Fixed => @dynamics.RigidBodyBuilder3D::fixed()
+      KinematicPositionBased =>
         @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-      @dynamics.RigidBodyType::KinematicVelocityBased =>
+      KinematicVelocityBased =>
         @dynamics.RigidBodyBuilder3D::kinematic_velocity_based()
     }
     builder = builder
@@ -737,7 +733,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     guard ctx.rigid_bodies.get_mut(bh.handle) is Some(body) else { return }
 
     // Kinematic position-based bodies follow the ECS transform.
-    if rb3d.body_type is @dynamics.RigidBodyType::KinematicPositionBased {
+    if rb3d.body_type is KinematicPositionBased {
       let transform = (try! ecs_world.get_by_key(
         entity, @transform.ecs_key_transform,
       )).unwrap_or(@transform.Transform::identity())
@@ -865,9 +861,9 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
       (Some(a), Some(b)) => {
         let sensor = ev.sensor()
         if ev.started() {
-          events.collisions.push(CollisionEvent3d::Started(a, b, sensor))
+          events.collisions.push(Started(a, b, sensor))
         } else if ev.stopped() {
-          events.collisions.push(CollisionEvent3d::Stopped(a, b, sensor))
+          events.collisions.push(Stopped(a, b, sensor))
         }
       }
       _ => ()
@@ -881,7 +877,7 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
     let e2 = ctx.collider_to_entity.get(h2.into_raw_parts())
     match (e1, e2) {
       (Some(a), Some(b)) =>
-        events.contact_forces.push(ContactForceEvent3d::{
+        events.contact_forces.push({
           entity1: a,
           entity2: b,
           total_force: rapier_vec3_to_mg(ev.total_force()),

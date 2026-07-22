@@ -26,7 +26,7 @@ pub struct RectLight {
 
 ///|
 pub fn RectLight::RectLight() -> RectLight {
-  RectLight::{
+  {
     color: @color.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
@@ -43,7 +43,7 @@ pub fn RectLight::new(
   width : Float,
   height : Float,
 ) -> RectLight {
-  RectLight::{ color, intensity, range, width, height }
+  { color, intensity, range, width, height }
 }
 
 ///|

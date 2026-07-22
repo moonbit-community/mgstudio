@@ -28,7 +28,7 @@ pub struct EntityCountDiagnosticsPlugin {
 pub fn EntityCountDiagnosticsPlugin::new(
   max_history_length : Int,
 ) -> EntityCountDiagnosticsPlugin {
-  EntityCountDiagnosticsPlugin::{ max_history_length, }
+  { max_history_length, }
 }
 
 ///|
@@ -55,10 +55,7 @@ pub let entity_count_diagnostic_path : DiagnosticPath = DiagnosticPath::const_ne
 pub fn entity_count_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  entity_count_diagnostics_plugin_with(
-    app,
-    EntityCountDiagnosticsPlugin::EntityCountDiagnosticsPlugin(),
-  )
+  entity_count_diagnostics_plugin_with(app, EntityCountDiagnosticsPlugin())
 }
 
 ///|
@@ -84,7 +81,7 @@ fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
             if !diagnostic.is_enabled {
               return
             }
-            diagnostic.add_measurement(DiagnosticMeasurement::{
+            diagnostic.add_measurement({
               time: @core.Instant::now(),
               value: Float::from_int(world.entity_count()),
             })

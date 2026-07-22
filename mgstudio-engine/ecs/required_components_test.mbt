@@ -32,32 +32,32 @@ struct RequiredCounter {
 
 ///|
 pub fn RequiredB::RequiredB() -> RequiredB {
-  RequiredB::{ value: 10 }
+  { value: 10 }
 }
 
 ///|
 pub impl Default for RequiredB with fn default() {
-  RequiredB::RequiredB()
+  RequiredB()
 }
 
 ///|
 pub fn RequiredC::RequiredC() -> RequiredC {
-  RequiredC::{ value: 20 }
+  { value: 20 }
 }
 
 ///|
 pub impl Default for RequiredC with fn default() {
-  RequiredC::RequiredC()
+  RequiredC()
 }
 
 ///|
 pub fn RequiredCounter::RequiredCounter() -> RequiredCounter {
-  RequiredCounter::{ value: 0 }
+  { value: 0 }
 }
 
 ///|
 pub impl Default for RequiredCounter with fn default() {
-  RequiredCounter::RequiredCounter()
+  RequiredCounter()
 }
 
 ///|
@@ -121,6 +121,7 @@ test "ecs: required components insert recursively on set_component" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs: batch insert keeps indirect required components when direct required is explicit" {
   let world = World::new()
   defer world.close()
@@ -129,7 +130,7 @@ test "ecs: batch insert keeps indirect required components when direct required 
   try! world.register_required_components(required_a_key, required_b_key)
   try! world.register_required_components(required_b_key, required_c_key)
   try! world.insert_component_writers(entity, [
-    component_writer(required_b_key, RequiredB::{ value: 77 }),
+    component_writer(required_b_key, { value: 77 }),
     component_writer(required_a_key, RequiredA::{  }),
   ])
 
@@ -153,12 +154,12 @@ test "ecs: direct required constructor overrides indirect constructor" {
   try! world.register_required_components_with(
     required_b_key,
     required_counter_key,
-    fn() { RequiredCounter::{ value: 1 } },
+    fn() { { value: 1 } },
   )
   try! world.register_required_components_with(
     required_a_key,
     required_counter_key,
-    fn() { RequiredCounter::{ value: 2 } },
+    fn() { { value: 2 } },
   )
   try! (world.entity_mut(entity).insert_component(RequiredA::{  }) |> ignore)
 
@@ -238,6 +239,7 @@ test "ecs: get_required_by_components returns transitive requirees" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs: try register required components reports duplicate cycle and archetype usage" {
   let duplicate_world = World::new()
   defer duplicate_world.close()
@@ -248,8 +250,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   duplicate_world.try_register_required_components(
     required_a_key, required_b_key,
   ) catch {
-    RequiredComponentsError::DuplicateRegistration(a0, b0) =>
-      duplicate_pair = Some((a0, b0))
+    DuplicateRegistration(a0, b0) => duplicate_pair = Some((a0, b0))
     _ => fail("expected duplicate registration error")
   }
   guard duplicate_pair is Some((a0, b0)) else {
@@ -275,8 +276,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
     required_a_key,
     fn() { RequiredA::{  } },
   ) catch {
-    RequiredComponentsError::CyclicRequirement(a1, b1) =>
-      cycle_pair = Some((a1, b1))
+    CyclicRequirement(a1, b1) => cycle_pair = Some((a1, b1))
     _ => fail("expected cyclic requirement error")
   }
   guard cycle_pair is Some((a1, b1)) else {
@@ -299,8 +299,7 @@ test "ecs: try register required components reports duplicate cycle and archetyp
   archetype_world.try_register_required_components(
     required_a_key, required_b_key,
   ) catch {
-    RequiredComponentsError::ArchetypeExists(component_id) =>
-      archetype_component_id = Some(component_id)
+    ArchetypeExists(component_id) => archetype_component_id = Some(component_id)
     _ => fail("expected archetype exists error")
   }
   guard archetype_component_id is Some(component_id) else {
@@ -320,7 +319,7 @@ test "ecs: required_by stays consistent after transitive rebuild and constructor
   try! world.register_required_components(required_a_key, required_b_key)
   try! world.register_required_components(required_b_key, required_c_key)
   try! world.register_required_components_with(required_a_key, required_c_key, fn() {
-    RequiredC::{ value: 99 }
+    { value: 99 }
   })
   try! world.register_required_components(required_c_key, required_counter_key)
 

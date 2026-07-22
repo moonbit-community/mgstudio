@@ -147,6 +147,6 @@ fn main {
   .add_plugins(@app.ScheduleRunnerPlugin::run_once())
   .insert_resource(Message::{ value: "42" })
   .insert_resource(OptionalWarning::{ value: Some("Got to rusty?") })
-  .add_systems(@app.Update, update_chain)
+  .add_systems(Update, update_chain)
   .run()
 }

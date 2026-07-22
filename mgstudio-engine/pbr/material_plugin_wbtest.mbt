@@ -31,10 +31,10 @@ struct ParityCustomMaterial {
 
 ///|
 fn ParityCustomMaterial::ParityCustomMaterial() -> ParityCustomMaterial {
-  ParityCustomMaterial::{
+  {
     color: Bytes::makei(4, fn(index) { (index + 1).to_byte() }),
     texture: Some(@asset.Handle::new(9)),
-    opaque_render_method: @material.OpaqueRendererMethod::Forward,
+    opaque_render_method: Forward,
   }
 }
 
@@ -43,7 +43,7 @@ fn ParityCustomMaterial::with_opaque_render_method(
   self : ParityCustomMaterial,
   opaque_render_method : @material.OpaqueRendererMethod,
 ) -> ParityCustomMaterial {
-  ParityCustomMaterial::{ ..self, opaque_render_method, }
+  { ..self, opaque_render_method, }
 }
 
 ///|
@@ -243,9 +243,7 @@ impl Material for ParityCustomMaterial with fn specialize(
 ///|
 test "pbr material plugin: typed bind group owns uniform texture and sampler bindings" {
   let material = ParityCustomMaterial::ParityCustomMaterial()
-  let bind_group = material.bind_group(
-    MaterialBindGroupContext::MaterialBindGroupContext(),
-  )
+  let bind_group = material.bind_group(MaterialBindGroupContext())
   inspect(
     bind_group.layout_key(),
     content="0:uniform;1:texture(float,2d);2:sampler",
@@ -258,22 +256,21 @@ test "pbr material plugin: typed bind group owns uniform texture and sampler bin
   inspect(resolved.length(), content="3")
   debug_inspect(
     match resolved[0].resource() {
-      @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) =>
-        bytes.length() == 4
+      Uniform(bytes) => bytes.length() == 4
       _ => false
     },
     content="true",
   )
   debug_inspect(
     match resolved[1].resource() {
-      @render_resource.MaterialBindGroupResolvedResource::Texture(9) => true
+      Texture(9) => true
       _ => false
     },
     content="true",
   )
   debug_inspect(
     match resolved[2].resource() {
-      @render_resource.MaterialBindGroupResolvedResource::Sampler(9) => true
+      Sampler(9) => true
       _ => false
     },
     content="true",
@@ -288,16 +285,13 @@ test "pbr material plugin: prepared material carries shader hooks and typed bind
     @asset.Handle::new(7),
     material,
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   debug_inspect(
     prepared.properties().get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"shaders/tonemapping_test_patterns.wgsl\")",
   )
-  debug_inspect(
-    prepared.material_draw_data() is MaterialDrawData3d::Custom,
-    content="true",
-  )
+  debug_inspect(prepared.material_draw_data() is Custom, content="true")
   inspect(
     prepared.properties().material_key.type_tag(),
     content="MaterialKey<mgstudio_pbr_test::ParityCustomMaterial>",
@@ -312,7 +306,7 @@ test "pbr material plugin: prepared material uses material layout descriptor hoo
     @asset.Handle::new(7),
     ParityCustomMaterial::ParityCustomMaterial(),
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   guard prepared.properties().material_layout is Some(layout) else {
     abort("missing prepared material layout")
@@ -331,11 +325,11 @@ test "pbr material plugin: prepared material uses material bind group data hook"
     @asset.Handle::new(7),
     material,
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   inspect(
     material
-    .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
+    .bind_group(MaterialBindGroupContext())
     .bind_group_data()
     .debug_string(),
     content="0:uniform(len=4:1,2,3,4);1:texture(9,float,2d);2:sampler(9)",
@@ -359,17 +353,17 @@ test "pbr material plugin: prepared material uses material bind group data hook"
 test "pbr material plugin: prepared material resolves auto renderer method from default resource value" {
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material = ParityCustomMaterial::ParityCustomMaterial().with_opaque_render_method(
-    @material.OpaqueRendererMethod::Auto,
+    Auto,
   )
   let prepared = PreparedMaterial::from_material(
     @asset.Handle::new(8),
     material,
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Deferred,
+    Deferred,
   )
   debug_inspect(
     match prepared.properties().render_method {
-      @material.OpaqueRendererMethod::Deferred => true
+      Deferred => true
       _ => false
     },
     content="true",
@@ -383,7 +377,7 @@ test "pbr material plugin: prepared typed material carries bevy draw functions" 
     @asset.Handle::new(9),
     ParityCustomMaterial::ParityCustomMaterial(),
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Deferred,
+    Deferred,
   )
   let properties = prepared.properties()
   debug_inspect(
@@ -418,7 +412,7 @@ test "pbr material plugin: prepared custom material can specialize a mesh pipeli
     @asset.Handle::new(7),
     material,
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let properties = prepared.properties()
   guard properties.base_specialize is Some(base_specialize) else {
@@ -469,7 +463,7 @@ test "pbr material plugin: prepared custom material can specialize a mesh pipeli
 ///|
 test "pbr material plugin: plugin registers assets typed component and render resources" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      ParityCustomMaterial::ParityCustomMaterial()
+      ParityCustomMaterial()
     },
   )
   let lifecycle_world_459_0 = @ecs.World::new()
@@ -490,7 +484,7 @@ test "pbr material plugin: plugin registers assets typed component and render re
   let component_key : @ecs.ComponentKey[
     MeshMaterial3dTyped[ParityCustomMaterial],
   ] = MeshMaterial3dTyped::component()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   debug_inspect(app.contains_resource(main_assets_key), content="true")
   debug_inspect(
     render_world.get_resource(render_pipeline_key) is Some(_),
@@ -513,7 +507,7 @@ test "pbr material plugin: plugin registers assets typed component and render re
 ///|
 test "pbr material plugin: render startup installs typed bind group allocator" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      ParityCustomMaterial::ParityCustomMaterial()
+      ParityCustomMaterial()
     },
   )
   let lifecycle_world_501_0 = @ecs.World::new()
@@ -522,7 +516,7 @@ test "pbr material plugin: render startup installs typed bind group allocator" {
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
   let render_sub_app = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .set_update_schedule(Some(@render.render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
   debug_inspect(
@@ -537,8 +531,7 @@ test "pbr material plugin: render startup installs typed bind group allocator" {
         content="true",
       )
       match allocators.get("mgstudio_pbr_test::ParityCustomMaterial") {
-        Some(MaterialBindGroupAllocator::NonBindless(_)) =>
-          debug_inspect(true, content="true")
+        Some(NonBindless(_)) => debug_inspect(true, content="true")
         _ => debug_inspect(false, content="true")
       }
     }
@@ -552,9 +545,7 @@ test "pbr material plugin: typed material extraction fills Bevy render material 
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   ensure_prepared_material_assets_resource_in_world(world, probe)
   ensure_material_pipeline_resource_in_world(
@@ -564,18 +555,16 @@ test "pbr material plugin: typed material extraction fills Bevy render material 
   ensure_render_material_instances_resource_in_world(world, probe)
   world.insert_resource(
     ecs_key_render_material_instances,
-    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialInstances(),
   )
   world.insert_resource(
     RenderMaterialBindings::resource(),
-    RenderMaterialBindings::RenderMaterialBindings(),
+    RenderMaterialBindings(),
   )
   let allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   allocators.insert(
     ParityCustomMaterial::material_debug_name(),
-    MaterialBindGroupAllocator::Bindless(
-      MaterialBindGroupBindlessAllocator::with_slab_capacity(4),
-    ),
+    Bindless(MaterialBindGroupBindlessAllocator::with_slab_capacity(4)),
   )
   world.insert_resource(ecs_key_material_bind_group_allocators, allocators)
   let entity = world.spawn()
@@ -631,9 +620,7 @@ test "pbr material plugin: removed typed material unloads prepared binding" {
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   @asset.asset_update_event_messages(world)
   ensure_prepared_material_assets_resource_in_world(world, probe)
@@ -645,18 +632,16 @@ test "pbr material plugin: removed typed material unloads prepared binding" {
   ensure_material_asset_event_cursor_resource_in_world(world, probe)
   world.insert_resource(
     ecs_key_render_material_instances,
-    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialInstances(),
   )
   world.insert_resource(
     RenderMaterialBindings::resource(),
-    RenderMaterialBindings::RenderMaterialBindings(),
+    RenderMaterialBindings(),
   )
   let allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   allocators.insert(
     ParityCustomMaterial::material_debug_name(),
-    MaterialBindGroupAllocator::Bindless(
-      MaterialBindGroupBindlessAllocator::with_slab_capacity(4),
-    ),
+    Bindless(MaterialBindGroupBindlessAllocator::with_slab_capacity(4)),
   )
   world.insert_resource(ecs_key_material_bind_group_allocators, allocators)
   let entity = world.spawn()
@@ -743,14 +728,12 @@ test "pbr material plugin: typed material removal sweeps Bevy render material ta
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   ensure_render_material_instances_resource_in_world(world, probe)
   world.insert_resource(
     ecs_key_render_material_instances,
-    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialInstances(),
   )
   let typed_instances_key : @ecs.ResourceKey[
     RenderMaterial3dInstances[ParityCustomMaterial],
@@ -806,14 +789,12 @@ test "pbr material plugin: typed material extraction marks specialization dirty"
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   ensure_render_material_instances_resource_in_world(world, probe)
   world.insert_resource(
     ecs_key_render_material_instances,
-    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialInstances(),
   )
   let entity = world.spawn()
   try! world.set_by_key(
@@ -890,9 +871,7 @@ test "pbr material plugin: typed specialization collector ignores despawned mesh
   let world = @ecs.World::new()
   defer world.close()
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   let entity = world.spawn()
   try! world.set_by_key(
     entity,
@@ -923,9 +902,7 @@ test "pbr material plugin: first prepared typed material marks specialization di
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   ensure_prepared_material_assets_resource_in_world(world, probe)
   ensure_material_pipeline_resource_in_world(
@@ -935,7 +912,7 @@ test "pbr material plugin: first prepared typed material marks specialization di
   ensure_render_material_instances_resource_in_world(world, probe)
   world.insert_resource(
     ecs_key_render_material_instances,
-    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialInstances(),
   )
   let entity = world.spawn()
   try! world.set_by_key(
@@ -971,9 +948,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   @asset.asset_update_event_messages(world)
   ensure_prepared_material_assets_resource_in_world(world, probe)
@@ -985,7 +960,7 @@ test "pbr material plugin: changed typed material asset marks specialization dir
   ensure_material_asset_event_cursor_resource_in_world(world, probe)
   world.insert_resource(
     ecs_key_render_material_instances,
-    RenderMaterialInstances::RenderMaterialInstances(),
+    RenderMaterialInstances(),
   )
   let entity = world.spawn()
   try! world.set_by_key(
@@ -1012,10 +987,10 @@ test "pbr material plugin: changed typed material asset marks specialization dir
     Some(assets) =>
       assets.modify(fn(value) {
         ignore(
-          value.set(material_handle, ParityCustomMaterial::{
+          value.set(material_handle, {
             color: Bytes::makei(4, fn(index) { (index + 5).to_byte() }),
             texture: Some(@asset.Handle::new(11)),
-            opaque_render_method: @material.OpaqueRendererMethod::Forward,
+            opaque_render_method: Forward,
           }),
         )
       })
@@ -1042,9 +1017,7 @@ test "pbr material plugin: typed extraction writes resolved material slots" {
   defer world.close()
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let material_assets : @asset.Assets[ParityCustomMaterial] = @asset.Assets::new()
-  let material_handle = material_assets.add(
-    ParityCustomMaterial::ParityCustomMaterial(),
-  )
+  let material_handle = material_assets.add(ParityCustomMaterial())
   world.insert_resource(@asset.assets_resource_key(), material_assets)
   ensure_prepared_material_assets_resource_in_world(world, probe)
   ensure_material_pipeline_resource_in_world(
@@ -1108,7 +1081,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     material_handle,
     material,
     material_pipeline_from_material_hooks(probe),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let resolved = prepared.resolved_material()
   world.insert_resource(
@@ -1121,7 +1094,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
   )
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
-    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    SpecializedMaterialPipelineCache(),
   )
   let dirty_specializations = @render_visibility.DirtySpecializations::DirtySpecializations()
   let main_view = @core.Entity::new(711, 1)
@@ -1136,7 +1109,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
   )
   world.insert_resource(
     PendingMeshMaterialQueues::resource(),
-    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    PendingMeshMaterialQueues(),
   )
   let visible_entities = @render_visibility.RenderVisibleEntities::RenderVisibleEntities()
   let visible_class = visible_entities.class_or_insert(
@@ -1190,7 +1163,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
   )
   let extracted_mesh = ExtractedMesh3d::{
     entity: phase_entity_ref3d(main_mesh, render_mesh),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..material_test_extracted_mesh_payload(
         777,
         resolved.material_properties(),
@@ -1219,7 +1192,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
     render_material_instances,
     render_material_bindings,
     material_slots,
-    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    PendingMeshMaterialQueues(),
     @transform.Transform::identity(),
     false,
     retained_view_entity=retained_view,
@@ -1236,7 +1209,7 @@ test "pbr material plugin: prepared typed material prewarms and queues mesh draw
 
 ///|
 test "pbr material plugin: debug flags mirror Bevy plugin configuration" {
-  let default_plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin()
+  let default_plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin()
   inspect(
     default_plugin.debug_flags().allow_copies_from_indirect_parameters(),
     content="false",

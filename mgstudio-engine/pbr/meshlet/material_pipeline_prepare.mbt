@@ -45,32 +45,28 @@ pub fn meshlet_fake_vertex_buffer_layout() -> @mesh.MeshVertexBufferLayout {
   let tangent = @mesh.MeshVertexAttribute::tangent()
   @mesh.MeshVertexBufferLayout::new(
     attribute_ids=[position.id(), normal.id(), uv_0.id(), tangent.id()],
-    layout=@mesh.VertexBufferLayout::new(
-      array_stride=48,
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
-      attributes=[
-        @mesh.VertexAttribute::new(
-          offset=0,
-          format=position.format(),
-          shader_location=0,
-        ),
-        @mesh.VertexAttribute::new(
-          offset=12,
-          format=normal.format(),
-          shader_location=1,
-        ),
-        @mesh.VertexAttribute::new(
-          offset=24,
-          format=uv_0.format(),
-          shader_location=2,
-        ),
-        @mesh.VertexAttribute::new(
-          offset=32,
-          format=tangent.format(),
-          shader_location=3,
-        ),
-      ],
-    ),
+    layout=@mesh.VertexBufferLayout::new(array_stride=48, step_mode=Vertex, attributes=[
+      @mesh.VertexAttribute::new(
+        offset=0,
+        format=position.format(),
+        shader_location=0,
+      ),
+      @mesh.VertexAttribute::new(
+        offset=12,
+        format=normal.format(),
+        shader_location=1,
+      ),
+      @mesh.VertexAttribute::new(
+        offset=24,
+        format=uv_0.format(),
+        shader_location=2,
+      ),
+      @mesh.VertexAttribute::new(
+        offset=32,
+        format=tangent.format(),
+        shader_location=3,
+      ),
+    ]),
   )
 }
 
@@ -98,9 +94,9 @@ pub struct MeshletMaterialPipelineDescriptor {
 
 ///|
 pub fn MeshletMaterialPipelineDescriptor::new(
-  pass_variant? : MeshletMaterialPassVariant = MeshletMaterialPassVariant::MainOpaque,
-  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey(),
-  view_layout_kind? : MeshletMaterialViewLayoutKind = MeshletMaterialViewLayoutKind::MeshView,
+  pass_variant? : MeshletMaterialPassVariant = MainOpaque,
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey(),
+  view_layout_kind? : MeshletMaterialViewLayoutKind = MeshView,
   fake_vertex_buffer_layout? : @mesh.MeshVertexBufferLayout = meshlet_fake_vertex_buffer_layout(),
   layout_count? : Int = 4,
   uses_binding_array_layout? : Bool = true,
@@ -108,7 +104,7 @@ pub fn MeshletMaterialPipelineDescriptor::new(
   uses_material_shade_layout? : Bool = true,
   material_layout_id? : Int = 0,
   vertex_shader_label? : String = "pbr/meshlet/meshlet_mesh_material.wgsl",
-  fragment_shader_kind? : MeshletMaterialFragmentShaderKind = MeshletMaterialFragmentShaderKind::MeshletMaterial,
+  fragment_shader_kind? : MeshletMaterialFragmentShaderKind = MeshletMaterial,
   shader_def_meshlet_material_pass? : Bool = true,
   shader_def_count? : Int = 1,
   uses_material_fragment_entry_point? : Bool = true,
@@ -117,7 +113,7 @@ pub fn MeshletMaterialPipelineDescriptor::new(
   depth_compare_equal? : Bool = true,
   zero_initialize_workgroup_memory? : Bool = false,
 ) -> MeshletMaterialPipelineDescriptor {
-  MeshletMaterialPipelineDescriptor::{
+  {
     pass_variant,
     view_key,
     view_layout_kind,
@@ -161,7 +157,7 @@ pub let ecs_key_meshlet_view_materials_main_opaque_pass : @ecs.ComponentKey[
 
 ///|
 pub fn MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass() -> MeshletViewMaterialsMainOpaquePass {
-  MeshletViewMaterialsMainOpaquePass::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -200,7 +196,7 @@ pub let ecs_key_meshlet_view_materials_prepass : @ecs.ComponentKey[
 
 ///|
 pub fn MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass() -> MeshletViewMaterialsPrepass {
-  MeshletViewMaterialsPrepass::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -239,7 +235,7 @@ pub let ecs_key_meshlet_view_materials_deferred_gbuffer_prepass : @ecs.Component
 
 ///|
 pub fn MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass() -> MeshletViewMaterialsDeferredGBufferPrepass {
-  MeshletViewMaterialsDeferredGBufferPrepass::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -333,7 +329,7 @@ pub fn MeshletViewMaterialPipelineKey::new(
     shadow_filter_method
   }
   let tonemapping_mode = if tonemapping_mode < 0 { 0 } else { tonemapping_mode }
-  MeshletViewMaterialPipelineKey::{
+  {
     hdr,
     target_format_raw,
     normal_prepass,
@@ -363,7 +359,7 @@ pub fn MeshletViewMaterialPipelineKey::with_deferred_prepass(
   self : MeshletViewMaterialPipelineKey,
   deferred_prepass : Bool,
 ) -> MeshletViewMaterialPipelineKey {
-  MeshletViewMaterialPipelineKey::{ ..self, deferred_prepass, }
+  { ..self, deferred_prepass, }
 }
 
 ///|
@@ -371,7 +367,7 @@ pub fn MeshletViewMaterialPipelineKey::for_meshlet_prepass(
   self : MeshletViewMaterialPipelineKey,
   deferred_prepass : Bool,
 ) -> MeshletViewMaterialPipelineKey {
-  MeshletViewMaterialPipelineKey::{
+  {
     hdr: self.hdr,
     target_format_raw: self.target_format_raw,
     normal_prepass: self.normal_prepass,
@@ -423,11 +419,11 @@ pub fn MeshletPreparedMaterialInput::new(
   material_id : Int,
   material_asset_id : Int,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
+  {
     material_id: meshlet_material_non_negative(material_id),
     material_asset_id: meshlet_material_non_negative(material_asset_id),
-    opaque_render_method: @material.OpaqueRendererMethod::Forward,
-    alpha_mode: @material.AlphaMode3d::Opaque,
+    opaque_render_method: Forward,
+    alpha_mode: Opaque,
     reads_view_transmission_texture: false,
     material_bind_group_id: meshlet_material_non_negative(material_id),
     material_layout_id: 0,
@@ -446,7 +442,7 @@ pub fn MeshletPreparedMaterialInput::with_opaque_render_method(
   self : MeshletPreparedMaterialInput,
   opaque_render_method : @material.OpaqueRendererMethod,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{ ..self, opaque_render_method, }
+  { ..self, opaque_render_method, }
 }
 
 ///|
@@ -454,7 +450,7 @@ pub fn MeshletPreparedMaterialInput::with_alpha_mode(
   self : MeshletPreparedMaterialInput,
   alpha_mode : @material.AlphaMode3d,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{ ..self, alpha_mode, }
+  { ..self, alpha_mode, }
 }
 
 ///|
@@ -462,7 +458,7 @@ pub fn MeshletPreparedMaterialInput::with_reads_view_transmission_texture(
   self : MeshletPreparedMaterialInput,
   reads_view_transmission_texture : Bool,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{ ..self, reads_view_transmission_texture, }
+  { ..self, reads_view_transmission_texture, }
 }
 
 ///|
@@ -470,7 +466,7 @@ pub fn MeshletPreparedMaterialInput::with_material_bind_group_id(
   self : MeshletPreparedMaterialInput,
   material_bind_group_id : Int,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
+  {
     ..self,
     material_bind_group_id: meshlet_material_non_negative(
       material_bind_group_id,
@@ -483,7 +479,7 @@ pub fn MeshletPreparedMaterialInput::with_material_layout_id(
   self : MeshletPreparedMaterialInput,
   material_layout_id : Int,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
+  {
     ..self,
     material_layout_id: meshlet_material_non_negative(material_layout_id),
   }
@@ -494,7 +490,7 @@ pub fn MeshletPreparedMaterialInput::with_material_shader_def_count(
   self : MeshletPreparedMaterialInput,
   material_shader_def_count : Int,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
+  {
     ..self,
     material_shader_def_count: meshlet_material_non_negative(
       material_shader_def_count,
@@ -506,54 +502,42 @@ pub fn MeshletPreparedMaterialInput::with_material_shader_def_count(
 pub fn MeshletPreparedMaterialInput::without_material_layout(
   self : MeshletPreparedMaterialInput,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{ ..self, has_material_layout: false }
+  { ..self, has_material_layout: false }
 }
 
 ///|
 pub fn MeshletPreparedMaterialInput::without_material_bind_group_allocator(
   self : MeshletPreparedMaterialInput,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
-    ..self,
-    has_material_bind_group_allocator: false,
-  }
+  { ..self, has_material_bind_group_allocator: false }
 }
 
 ///|
 pub fn MeshletPreparedMaterialInput::without_material_bind_group(
   self : MeshletPreparedMaterialInput,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{ ..self, has_material_bind_group: false }
+  { ..self, has_material_bind_group: false }
 }
 
 ///|
 pub fn MeshletPreparedMaterialInput::with_meshlet_fragment_shader_override(
   self : MeshletPreparedMaterialInput,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
-    ..self,
-    has_meshlet_fragment_shader_override: true,
-  }
+  { ..self, has_meshlet_fragment_shader_override: true }
 }
 
 ///|
 pub fn MeshletPreparedMaterialInput::with_meshlet_prepass_fragment_shader_override(
   self : MeshletPreparedMaterialInput,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
-    ..self,
-    has_meshlet_prepass_fragment_shader_override: true,
-  }
+  { ..self, has_meshlet_prepass_fragment_shader_override: true }
 }
 
 ///|
 pub fn MeshletPreparedMaterialInput::with_meshlet_deferred_fragment_shader_override(
   self : MeshletPreparedMaterialInput,
 ) -> MeshletPreparedMaterialInput {
-  MeshletPreparedMaterialInput::{
-    ..self,
-    has_meshlet_deferred_fragment_shader_override: true,
-  }
+  { ..self, has_meshlet_deferred_fragment_shader_override: true }
 }
 
 ///|
@@ -654,10 +638,10 @@ fn meshlet_main_opaque_pipeline_descriptor(
   view_key : MeshletViewMaterialPipelineKey,
   material_input : MeshletPreparedMaterialInput,
 ) -> MeshletMaterialPipelineDescriptor {
-  MeshletMaterialPipelineDescriptor::{
-    pass_variant: MeshletMaterialPassVariant::MainOpaque,
+  {
+    pass_variant: MainOpaque,
     view_key,
-    view_layout_kind: MeshletMaterialViewLayoutKind::MeshView,
+    view_layout_kind: MeshView,
     fake_vertex_buffer_layout: meshlet_fake_vertex_buffer_layout(),
     layout_count: 4,
     uses_binding_array_layout: true,
@@ -666,9 +650,9 @@ fn meshlet_main_opaque_pipeline_descriptor(
     material_layout_id: material_input.material_layout_id,
     vertex_shader_label: "pbr/meshlet/meshlet_mesh_material.wgsl",
     fragment_shader_kind: if material_input.has_meshlet_fragment_shader_override {
-      MeshletMaterialFragmentShaderKind::MeshletFragmentOverride
+      MeshletFragmentOverride
     } else {
-      MeshletMaterialFragmentShaderKind::MeshletMaterial
+      MeshletMaterial
     },
     shader_def_meshlet_material_pass: true,
     shader_def_count: meshlet_material_shader_def_count(material_input),
@@ -685,9 +669,9 @@ fn meshlet_prepass_view_layout_kind(
   view_key : MeshletViewMaterialPipelineKey,
 ) -> MeshletMaterialViewLayoutKind {
   if view_key.motion_vector_prepass {
-    MeshletMaterialViewLayoutKind::PrepassMotionVectors
+    PrepassMotionVectors
   } else {
-    MeshletMaterialViewLayoutKind::PrepassNoMotionVectors
+    PrepassNoMotionVectors
   }
 }
 
@@ -698,14 +682,14 @@ fn meshlet_prepass_fragment_shader_kind(
 ) -> MeshletMaterialFragmentShaderKind {
   if view_key.deferred_prepass {
     if material_input.has_meshlet_deferred_fragment_shader_override {
-      MeshletMaterialFragmentShaderKind::MeshletDeferredFragmentOverride
+      MeshletDeferredFragmentOverride
     } else {
-      MeshletMaterialFragmentShaderKind::MeshletMaterial
+      MeshletMaterial
     }
   } else if material_input.has_meshlet_prepass_fragment_shader_override {
-    MeshletMaterialFragmentShaderKind::MeshletPrepassFragmentOverride
+    MeshletPrepassFragmentOverride
   } else {
-    MeshletMaterialFragmentShaderKind::MeshletMaterial
+    MeshletMaterial
   }
 }
 
@@ -713,7 +697,7 @@ fn meshlet_prepass_fragment_shader_kind(
 fn meshlet_material_fragment_shader_is_meshlet_material(
   kind : MeshletMaterialFragmentShaderKind,
 ) -> Bool {
-  kind is MeshletMaterialFragmentShaderKind::MeshletMaterial
+  kind is MeshletMaterial
 }
 
 ///|
@@ -725,7 +709,7 @@ fn meshlet_prepass_pipeline_descriptor(
   let fragment_shader_kind = meshlet_prepass_fragment_shader_kind(
     view_key, material_input,
   )
-  MeshletMaterialPipelineDescriptor::{
+  {
     pass_variant,
     view_key,
     view_layout_kind: meshlet_prepass_view_layout_kind(view_key),
@@ -756,7 +740,7 @@ pub fn MeshletViewMaterialEntry::new(
   material_bind_group : Int,
   descriptor : MeshletMaterialPipelineDescriptor,
 ) -> MeshletViewMaterialEntry {
-  MeshletViewMaterialEntry::{
+  {
     material_id: meshlet_material_non_negative(material_id),
     material_pipeline_id,
     material_bind_group: meshlet_material_non_negative(material_bind_group),
@@ -790,19 +774,18 @@ fn meshlet_material_inputs_from_ids(
 pub fn prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(
   view_materials : MeshletViewMaterialsMainOpaquePass,
   material_inputs : Array[MeshletPreparedMaterialInput],
-  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey(),
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey(),
 ) -> Unit {
   view_materials.clear()
   let queued_material_ids = @utils.IntBitSet::new()
   for material_input in material_inputs {
-    if !(material_input.alpha_mode is @material.AlphaMode3d::Opaque) {
+    if !(material_input.alpha_mode is Opaque) {
       continue
     }
     if material_input.reads_view_transmission_texture {
       continue
     }
-    if material_input.opaque_render_method !=
-      @material.OpaqueRendererMethod::Forward {
+    if material_input.opaque_render_method != Forward {
       continue
     }
     if !meshlet_material_input_has_required_binding_state(material_input) {
@@ -842,7 +825,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
   prepass_materials : MeshletViewMaterialsPrepass,
   deferred_prepass_materials : MeshletViewMaterialsDeferredGBufferPrepass,
   material_inputs : Array[MeshletPreparedMaterialInput],
-  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey::MeshletViewMaterialPipelineKey(),
+  view_key? : MeshletViewMaterialPipelineKey = MeshletViewMaterialPipelineKey(),
   deferred_enabled? : Bool = true,
 ) -> Unit {
   prepass_materials.clear()
@@ -852,7 +835,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
   let view_has_deferred_prepass = view_key.deferred_prepass
   let mut working_view_key = view_key.for_meshlet_prepass(false)
   for material_input in material_inputs {
-    if !(material_input.alpha_mode is @material.AlphaMode3d::Opaque) {
+    if !(material_input.alpha_mode is Opaque) {
       continue
     }
     if material_input.reads_view_transmission_texture {
@@ -862,7 +845,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
       continue
     }
     let material_wants_deferred = material_input.opaque_render_method
-      is @material.OpaqueRendererMethod::Deferred
+      is Deferred
     if deferred_enabled && view_has_deferred_prepass && material_wants_deferred {
       working_view_key = working_view_key.with_deferred_prepass(true)
     } else if !working_view_key.normal_prepass &&
@@ -884,7 +867,7 @@ pub fn prepare_material_meshlet_meshes_prepass_with_inputs(
     let pass_variant = if route_deferred {
       MeshletMaterialPassVariant::DeferredGBufferPrepass
     } else {
-      MeshletMaterialPassVariant::Prepass
+      Prepass
     }
     let pipeline_id = meshlet_material_pipeline_id(
       if route_deferred {

@@ -65,10 +65,10 @@ fn update_indicator(
   try! gamepads.for_each(fn(_entity, gamepad) {
     connected += 1
     let state = gamepad.value()
-    if state.pressed(@input.GamepadButton::South) ||
-      state.pressed(@input.GamepadButton::East) ||
-      state.pressed(@input.GamepadButton::West) ||
-      state.pressed(@input.GamepadButton::North) {
+    if state.pressed(South) ||
+      state.pressed(East) ||
+      state.pressed(West) ||
+      state.pressed(North) {
       any_pressed = true
     }
   })
@@ -91,7 +91,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param3(@app.Update, update_indicator)
+  .add_systems_param(Startup, setup)
+  .add_systems_param3(Update, update_indicator)
   .run()
 }

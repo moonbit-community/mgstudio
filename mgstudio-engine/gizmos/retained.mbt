@@ -140,7 +140,7 @@ pub struct GizmoBuffer {
 
 ///|
 pub fn GizmoBuffer::new() -> GizmoBuffer {
-  GizmoBuffer::{
+  {
     enabled: true,
     list_positions: [],
     list_colors: [],
@@ -161,7 +161,7 @@ pub fn GizmoBuffer::GizmoBuffer() -> GizmoBuffer {
 
 ///|
 pub impl Default for GizmoBuffer with fn default() {
-  GizmoBuffer::GizmoBuffer()
+  GizmoBuffer()
 }
 
 ///|
@@ -188,7 +188,7 @@ pub fn GizmoBuffer::clear(self : GizmoBuffer) -> Unit {
 ///|
 pub fn GizmoBuffer::buffer(self : GizmoBuffer) -> GizmoBufferView {
   self.flush_pending()
-  GizmoBufferView::{
+  {
     list_positions: self.list_positions,
     list_colors: self.list_colors,
     strip_positions: self.strip_positions,
@@ -1002,7 +1002,7 @@ pub fn GizmoBuffer::ellipse(
   let id = self.pending_ellipses.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_ellipses.push(RetainedPendingEllipse::{
+  self.pending_ellipses.push({
     order,
     is_2d: false,
     isometry2d: @sprite.Isometry2d::identity(),
@@ -1011,7 +1011,7 @@ pub fn GizmoBuffer::ellipse(
     color,
     resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
   })
-  RetainedEllipseBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1024,7 +1024,7 @@ pub fn GizmoBuffer::ellipse_2d(
   let id = self.pending_ellipses.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_ellipses.push(RetainedPendingEllipse::{
+  self.pending_ellipses.push({
     order,
     is_2d: true,
     isometry2d: isometry,
@@ -1033,7 +1033,7 @@ pub fn GizmoBuffer::ellipse_2d(
     color,
     resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
   })
-  RetainedEllipseBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1066,14 +1066,14 @@ pub fn GizmoBuffer::sphere(
   let id = self.pending_spheres.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_spheres.push(RetainedPendingSphere::{
+  self.pending_spheres.push({
     order,
     isometry,
     radius,
     color,
     resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
   })
-  RetainedSphereBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1086,7 +1086,7 @@ pub fn GizmoBuffer::arrow(
   let id = self.pending_arrows.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_arrows.push(RetainedPendingArrow::{
+  self.pending_arrows.push({
     order,
     start,
     end,
@@ -1094,7 +1094,7 @@ pub fn GizmoBuffer::arrow(
     double_ended: false,
     tip_length: end.sub(start).length() / 10.0F,
   })
-  RetainedArrowBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1177,7 +1177,7 @@ pub fn GizmoBuffer::arc_2d(
   let id = self.pending_arcs.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_arcs.push(RetainedPendingArc::{
+  self.pending_arcs.push({
     order,
     is_2d: true,
     start_vertex: @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -1189,7 +1189,7 @@ pub fn GizmoBuffer::arc_2d(
     resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
     has_resolution: false,
   })
-  RetainedArcBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1203,7 +1203,7 @@ pub fn GizmoBuffer::arc_3d(
   let id = self.pending_arcs.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_arcs.push(RetainedPendingArc::{
+  self.pending_arcs.push({
     order,
     is_2d: false,
     start_vertex: @math.Vec3::new(1.0F, 0.0F, 0.0F),
@@ -1215,7 +1215,7 @@ pub fn GizmoBuffer::arc_3d(
     resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
     has_resolution: false,
   })
-  RetainedArcBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1292,7 +1292,7 @@ fn GizmoBuffer::arc_3d_from_to(
   let id = self.pending_arcs.length()
   let order = self.pending_order_next
   self.pending_order_next = order + 1
-  self.pending_arcs.push(RetainedPendingArc::{
+  self.pending_arcs.push({
     order,
     is_2d: false,
     start_vertex,
@@ -1304,7 +1304,7 @@ fn GizmoBuffer::arc_3d_from_to(
     resolution: RETAINED_DEFAULT_CIRCLE_RESOLUTION,
     has_resolution: false,
   })
-  RetainedArcBuilder::{ id, buffer: self }
+  { id, buffer: self }
 }
 
 ///|
@@ -1383,8 +1383,8 @@ pub impl @asset.Asset for GizmoAsset with fn asset_resource_keys() {
 
 ///|
 pub fn GizmoAsset::new() -> GizmoAsset {
-  GizmoAsset::{
-    buffer: GizmoBuffer::GizmoBuffer(),
+  {
+    buffer: GizmoBuffer(),
     config_type_name: @sprite.DefaultGizmoConfigGroup::gizmo_config_group_debug_name(),
   }
 }
@@ -1412,7 +1412,7 @@ pub fn GizmoAsset::from_drained_storage(
     buffer.list_colors.push(line.start_color.as_linear_rgba())
     buffer.list_colors.push(line.end_color.as_linear_rgba())
   }
-  GizmoAsset::{ buffer, config_type_name: drained.group_type_name() }
+  { buffer, config_type_name: drained.group_type_name() }
 }
 
 ///|
@@ -1782,7 +1782,7 @@ pub fn GizmoAsset::GizmoAsset() -> GizmoAsset {
 
 ///|
 pub impl Default for GizmoAsset with fn default() {
-  GizmoAsset::GizmoAsset()
+  GizmoAsset()
 }
 
 ///|
@@ -1810,12 +1810,12 @@ pub struct GizmoHandles {
 
 ///|
 pub fn GizmoHandles::GizmoHandles() -> GizmoHandles {
-  GizmoHandles::{ handles: @hashmap.HashMap([]) }
+  { handles: HashMap([]) }
 }
 
 ///|
 pub impl Default for GizmoHandles with fn default() {
-  GizmoHandles::GizmoHandles()
+  GizmoHandles()
 }
 
 ///|
@@ -1892,14 +1892,14 @@ pub fn update_gizmo_meshes(world : @ecs.World) -> Unit {
     match handles.handles.get(group_type_name) {
       Some(entry) => {
         ignore(assets.set(entry.handle(), asset))
-        handles.handles.set(group_type_name, GizmoHandleEntry::{
+        handles.handles.set(group_type_name, {
           handle: entry.handle(),
           config: drained.config(),
         })
       }
       None => {
         let handle = assets.add(asset)
-        handles.handles.set(group_type_name, GizmoHandleEntry::{
+        handles.handles.set(group_type_name, {
           handle,
           config: drained.config(),
         })
@@ -1922,7 +1922,7 @@ pub struct Gizmo {
 
 ///|
 pub fn Gizmo::Gizmo() -> Gizmo {
-  Gizmo::{
+  {
     handle: @asset.Handle::new(0),
     line_config: GizmoLineConfig(),
     depth_bias: 0.0F,
@@ -1949,7 +1949,7 @@ pub fn Gizmo::with_handle(
   self : Gizmo,
   handle : @asset.Handle[GizmoAsset],
 ) -> Gizmo {
-  Gizmo::{ handle, line_config: self.line_config, depth_bias: self.depth_bias }
+  { handle, line_config: self.line_config, depth_bias: self.depth_bias }
 }
 
 ///|
@@ -1957,17 +1957,17 @@ pub fn Gizmo::with_line_config(
   self : Gizmo,
   line_config : GizmoLineConfig,
 ) -> Gizmo {
-  Gizmo::{ handle: self.handle, line_config, depth_bias: self.depth_bias }
+  { handle: self.handle, line_config, depth_bias: self.depth_bias }
 }
 
 ///|
 pub fn Gizmo::with_depth_bias(self : Gizmo, depth_bias : Float) -> Gizmo {
-  Gizmo::{ handle: self.handle, line_config: self.line_config, depth_bias }
+  { handle: self.handle, line_config: self.line_config, depth_bias }
 }
 
 ///|
 pub impl Default for Gizmo with fn default() {
-  Gizmo::Gizmo()
+  Gizmo()
 }
 
 ///|

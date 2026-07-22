@@ -34,8 +34,8 @@ pub impl @app.Resource for AnimationState with fn resource() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, animate)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, animate)
   .run()
 }
 
@@ -73,12 +73,9 @@ fn animate(
   let mut animation_state = state.get()
   if animation_state.current >= animation_state.max ||
     animation_state.current <= animation_state.min {
-    animation_state = AnimationState::{
-      ..animation_state,
-      speed: -animation_state.speed,
-    }
+    animation_state = { ..animation_state, speed: -animation_state.speed }
   }
-  animation_state = AnimationState::{
+  animation_state = {
     ..animation_state,
     current: animation_state.current +
     animation_state.speed * time.get().delta_secs(),

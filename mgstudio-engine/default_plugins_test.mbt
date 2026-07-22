@@ -258,8 +258,8 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
   let app = @app.App::new(lifecycle_world_248_0).add_plugins(
     DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
@@ -349,7 +349,7 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
   defer lifecycle_world_340_0.close()
   let app = @asset.register_asset_source(
     @app.App::new(lifecycle_world_340_0),
-    @asset.AssetSourceId::Named("example_files"),
+    Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
   ).add_plugins(DefaultPlugins::build())
 
@@ -386,7 +386,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
   defer lifecycle_world_370_0.close()
   let app = @asset.register_asset_source(
     @app.App::new(lifecycle_world_370_0),
-    @asset.AssetSourceId::Named("example_files"),
+    Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None).with_reader(fn(
         base_reader,
       ) {
@@ -419,7 +419,7 @@ test "default plugins: register_asset_source can wrap source reader callbacks" {
   }
   let image_handle : @asset.Handle[@asset.Image] = asset_server.load(
     @asset.AssetPath::from_path("bevy_pixel_dark_with_meta.png").with_source(
-      @asset.AssetSourceId::Named("example_files"),
+      Named("example_files"),
     ),
   )
   let folder_handle = asset_server.load_folder("example_files://")
@@ -462,7 +462,7 @@ test "default plugins: register_asset_source can wrap the default source reader"
   defer lifecycle_world_447_0.close()
   let app = @asset.register_asset_source(
     @app.App::new(lifecycle_world_447_0),
-    @asset.AssetSourceId::Default,
+    Default,
     @asset.AssetSourceBuilder::platform_default("", None).with_reader(fn(
       base_reader,
     ) {

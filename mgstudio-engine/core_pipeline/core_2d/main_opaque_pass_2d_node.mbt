@@ -26,7 +26,7 @@ pub struct MainOpaquePass2dNode {
 
 ///|
 pub fn MainOpaquePass2dNode::MainOpaquePass2dNode() -> MainOpaquePass2dNode {
-  MainOpaquePass2dNode::{ label: MAIN_OPAQUE_PASS_2D_LABEL }
+  { label: MAIN_OPAQUE_PASS_2D_LABEL }
 }
 
 ///|
@@ -45,7 +45,7 @@ pub fn MainOpaquePass2dState::new(
   has_opaque_phase? : Bool = false,
   has_alpha_mask_phase? : Bool = false,
 ) -> MainOpaquePass2dState {
-  MainOpaquePass2dState::{ has_opaque_phase, has_alpha_mask_phase }
+  { has_opaque_phase, has_alpha_mask_phase }
 }
 
 ///|

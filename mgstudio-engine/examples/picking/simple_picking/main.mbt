@@ -82,9 +82,9 @@ fn setup(
     (
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Percent(12.0F))
-      .with_left(@ui.Val::Percent(12.0F)),
+      .with_position_type(Absolute)
+      .with_top(Percent(12.0F))
+      .with_left(Percent(12.0F)),
       @text.Text::new("Click me to spawn cubes\nClick cube to toggle color"),
       @text.TextColor::new(@color.Color::white()),
       @text.TextFont::from_font_size(@text.FontSize::Px(24.0F)),

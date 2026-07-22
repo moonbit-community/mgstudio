@@ -24,17 +24,17 @@ pub enum DebugPickingMode {
 
 ///|
 pub fn DebugPickingMode::default() -> DebugPickingMode {
-  DebugPickingMode::Disabled
+  Disabled
 }
 
 ///|
 pub fn dev_tools_picking_debug_enabled(mode : DebugPickingMode) -> Bool {
-  mode == DebugPickingMode::Normal || mode == DebugPickingMode::Noisy
+  mode == Normal || mode == Noisy
 }
 
 ///|
 pub fn dev_tools_picking_debug_is_noisy(mode : DebugPickingMode) -> Bool {
-  mode == DebugPickingMode::Noisy
+  mode == Noisy
 }
 
 ///|
@@ -63,10 +63,9 @@ fn picking_debug_should_log(
   event : @pointer_events.PointerEvent,
 ) -> Bool {
   match mode {
-    DebugPickingMode::Noisy => true
-    DebugPickingMode::Normal =>
-      event.kind != @pointer_events.PointerEventKind::Move
-    DebugPickingMode::Disabled => false
+    Noisy => true
+    Normal => event.kind != Move
+    Disabled => false
   }
 }
 
@@ -99,6 +98,7 @@ fn picking_debug_log_system(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn dev_tools_picking_debug_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {

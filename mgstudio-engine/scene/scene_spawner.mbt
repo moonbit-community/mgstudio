@@ -89,7 +89,7 @@ priv struct SceneRuntimeState {
 
 ///|
 fn SceneRuntimeState::SceneRuntimeState() -> SceneRuntimeState {
-  SceneRuntimeState::{
+  {
     next_instance_id: 1,
     instances_by_id: Map([]),
     spawned_instances_by_scene_id: Map([]),
@@ -140,7 +140,7 @@ fn scene_runtime_allocate_instance(
   scene_runtime_state_mut_or_abort(world).modify(fn(state) {
     let instance_id = state.next_instance_id
     state.next_instance_id = instance_id + 1
-    state.instances_by_id.set(instance_id, SceneInstanceState::{
+    state.instances_by_id.set(instance_id, {
       scene_id: scene.id(),
       spawned_entities: [],
       ready: false,
@@ -230,7 +230,7 @@ fn scene_runtime_mark_ready(
     guard state.instances_by_id.get(instance_id) is Some(instance) else {
       return false
     }
-    state.instances_by_id.set(instance_id, SceneInstanceState::{
+    state.instances_by_id.set(instance_id, {
       ..instance,
       spawned_entities,
       ready: true,
@@ -273,10 +273,7 @@ fn scene_runtime_queue_instance_ready(
   instance_id : Int,
 ) -> Unit {
   scene_runtime_state_mut_or_abort(world).modify(fn(state) {
-    state.instances_ready.push(SceneReadyQueueEntry::{
-      root_entity,
-      instance_id,
-    })
+    state.instances_ready.push({ root_entity, instance_id })
   })
 }
 
@@ -331,6 +328,7 @@ let ecs_key_scene_root_respawn_requested : @ecs.ComponentKey[
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 fn scene_mark_root_respawn_requested(
   world : @ecs.World,
   entity : @core.Entity,
@@ -539,10 +537,7 @@ fn scene_spawn_instance_when_ready(
         @hierarchy.Parent::new(parent_entity),
       ),
       @ecs.component_writer(@transform.ecs_key_transform, node.transform),
-      @ecs.component_writer(
-        @visibility.ecs_key_visibility,
-        @visibility.Visibility::Inherited,
-      ),
+      @ecs.component_writer(@visibility.ecs_key_visibility, Inherited),
     ]
     if node.name is Some(name) {
       child_writers.push(@ecs.component_writer(@ecs.Name::component(), name))
@@ -718,7 +713,7 @@ fn scene_spawn_instance_when_ready(
       child_writers.push(
         @ecs.component_writer(
           @animation.ecs_key_animation_player,
-          @animation.AnimationPlayer::AnimationPlayer(),
+          AnimationPlayer(),
         ),
       )
     }
@@ -828,19 +823,19 @@ fn scene_spawn_instance_when_ready(
       @mesh.SkinnedMesh::new(inverse_bindposes_handle, joint_entities),
     )
     match skinned_mesh_bounds_policy {
-      @gltf.GltfSkinnedMeshBoundsPolicy::Dynamic =>
+      Dynamic =>
         try! world.set_by_key(
           spawned_entities[entity_index],
           @mesh.DynamicSkinnedMeshBounds::component(),
           @mesh.DynamicSkinnedMeshBounds::new(),
         )
-      @gltf.GltfSkinnedMeshBoundsPolicy::NoFrustumCulling =>
+      NoFrustumCulling =>
         try! world.set_by_key(
           spawned_entities[entity_index],
           @visibility.ecs_key_no_frustum_culling,
-          @visibility.NoFrustumCulling::NoFrustumCulling(),
+          NoFrustumCulling(),
         )
-      @gltf.GltfSkinnedMeshBoundsPolicy::BindPose => ()
+      BindPose => ()
     }
   }
 
@@ -908,7 +903,7 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   })
 
   if modified_scene_ids.length() > 0 {
-    let modified_scene_id_set : @hashset.HashSet[Int] = @hashset.HashSet([])
+    let modified_scene_id_set : @hashset.HashSet[Int] = HashSet([])
     for scene_id in modified_scene_ids {
       modified_scene_id_set.add(scene_id)
     }
@@ -1088,7 +1083,7 @@ pub fn scene_collect_root_spawn_requests_system(world : @ecs.World) -> Unit {
         }
       None => Spawn
     }
-    scene_runtime_queue_root_spawn(world, SceneRootQueueEntry::{
+    scene_runtime_queue_root_spawn(world, {
       root_entity,
       root,
       existing_instance_id,
@@ -1139,7 +1134,7 @@ fn scene_runtime_plugin_base(
     SceneGltfPendingRequestsState::SceneGltfPendingRequestsState()
   })
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     (
       @app.system(scene_load_pending_system).in_set(scene_spawner_set_spawn),
       @app.system(scene_reload_modified_roots_system).in_set(
@@ -1152,7 +1147,7 @@ fn scene_runtime_plugin_base(
     )
     |> @app.chain(),
   )
-  .configure_set(@app.PreUpdate, scene_spawner_set_spawn, before=[
+  .configure_set(PreUpdate, scene_spawner_set_spawn, before=[
     @transform.transform_set_propagate,
   ])
 }
@@ -1167,9 +1162,7 @@ const SCENE_PLUGIN_NAME : String = "mgstudio.scene.ScenePlugin"
 
 ///|
 pub fn ScenePlugin::ScenePlugin() -> ScenePlugin {
-  ScenePlugin::{
-    lod_visibility_policy: GltfLodVisibilityPolicy::GltfLodVisibilityPolicy(),
-  }
+  { lod_visibility_policy: GltfLodVisibilityPolicy() }
 }
 
 ///|
@@ -1178,7 +1171,7 @@ pub fn ScenePlugin::with_gltf_lod_visibility_policy(
   policy : GltfLodVisibilityPolicy,
 ) -> ScenePlugin {
   ignore(self)
-  ScenePlugin::{ lod_visibility_policy: policy }
+  { lod_visibility_policy: policy }
 }
 
 ///|
@@ -1193,7 +1186,7 @@ pub impl @app.Plugin for ScenePlugin with fn build(self, app) {
 
 ///|
 pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_plugin_with(app, ScenePlugin::ScenePlugin())
+  scene_plugin_with(app, ScenePlugin())
 }
 
 ///|

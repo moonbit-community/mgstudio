@@ -184,7 +184,7 @@ fn mouse_spawn(
   assets : @app.Res[CubeAssets],
   counter : @app.ResMut[CubeCounter],
 ) -> Unit {
-  if !@input.mouse_button_just_pressed(@input_events.MouseButton::Left) {
+  if !@input.mouse_button_just_pressed(Left) {
     return
   }
   let next_count = spawn_cubes(
@@ -265,9 +265,9 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param3(@app.Update, mouse_spawn)
-  .add_systems_param2(@app.Update, movement)
-  .add_systems_param2(@app.Update, print_count)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param3(Update, mouse_spawn)
+  .add_systems_param2(Update, movement)
+  .add_systems_param2(Update, print_count)
   .run()
 }

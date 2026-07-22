@@ -60,6 +60,7 @@ struct HDRViewer {}
 struct ColorGradientMaterial {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ColorGradientMaterial::ColorGradientMaterial() -> ColorGradientMaterial {
   ColorGradientMaterial::{  }
 }
@@ -363,15 +364,15 @@ fn method_name(tonemapper : @post_process.Tonemapping) -> String {
 ///|
 fn tonemapping_methods() -> Array[@post_process.Tonemapping] {
   [
-    @post_process.Tonemapping::None,
-    @post_process.Tonemapping::Reinhard,
-    @post_process.Tonemapping::ReinhardLuminance,
-    @post_process.Tonemapping::AcesFitted,
-    @post_process.Tonemapping::AgX,
-    @post_process.Tonemapping::SomewhatBoringDisplayTransform,
-    @post_process.Tonemapping::TonyMcMapface,
-    @post_process.Tonemapping::BlenderFilmic,
-    @post_process.Tonemapping::PbrNeutral,
+    None,
+    Reinhard,
+    ReinhardLuminance,
+    AcesFitted,
+    AgX,
+    SomewhatBoringDisplayTransform,
+    TonyMcMapface,
+    BlenderFilmic,
+    PbrNeutral,
   ]
 }
 
@@ -381,34 +382,15 @@ fn PerMethodSettings::basic_scene_recommendation(
 ) -> @post_process.ColorGrading {
   match tonemapper {
     Reinhard | ReinhardLuminance =>
-      @post_process.ColorGrading::{
-        ..@post_process.ColorGrading::ColorGrading(),
-        global: @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal::ColorGradingGlobal(),
-          exposure: 0.5F,
-        },
-      }
+      { ..ColorGrading(), global: { ..ColorGradingGlobal(), exposure: 0.5F } }
     AcesFitted =>
-      @post_process.ColorGrading::{
-        ..@post_process.ColorGrading::ColorGrading(),
-        global: @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal::ColorGradingGlobal(),
-          exposure: 0.35F,
-        },
-      }
+      { ..ColorGrading(), global: { ..ColorGradingGlobal(), exposure: 0.35F } }
     AgX =>
       @post_process.ColorGrading::with_identical_sections(
-        @post_process.ColorGradingGlobal::{
-          ..@post_process.ColorGradingGlobal::ColorGradingGlobal(),
-          exposure: -0.2F,
-          post_saturation: 1.1F,
-        },
-        @post_process.ColorGradingSection::{
-          ..@post_process.ColorGradingSection::ColorGradingSection(),
-          saturation: 1.1F,
-        },
+        { ..ColorGradingGlobal(), exposure: -0.2F, post_saturation: 1.1F },
+        { ..ColorGradingSection(), saturation: 1.1F },
       )
-    _ => @post_process.ColorGrading::ColorGrading()
+    _ => ColorGrading()
   }
 }
 
@@ -417,7 +399,7 @@ fn PerMethodSettings::PerMethodSettings() -> PerMethodSettings {
   let settings : @hashmap.HashMap[
     @post_process.Tonemapping,
     @post_process.ColorGrading,
-  ] = @hashmap.HashMap([])
+  ] = HashMap([])
   for tonemapper in tonemapping_methods() {
     settings.set(
       tonemapper,
@@ -444,9 +426,9 @@ fn ui_text_content(
   selected_parameter : Int,
 ) -> String {
   let some_marker = selected_marker(
-    tonemapping == @post_process.Tonemapping::SomewhatBoringDisplayTransform,
+    tonemapping == SomewhatBoringDisplayTransform,
   )
-  let mut content = "(H) Hide UI\n\nTest Scene:\n(Q) \{selected_marker(scene == 1)}Basic Scene\n(W) \{selected_marker(scene == 2)}Color Sweep\n(E) \{selected_marker(scene == 3)}Image Viewer\n\nTonemapping Method:\n(1) \{selected_marker(tonemapping == @post_process.Tonemapping::None)}Disabled\n(2) \{selected_marker(tonemapping == @post_process.Tonemapping::Reinhard)}Reinhard\n(3) \{selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance)}Reinhard Luminance\n(4) \{selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted)}ACES Fitted\n(5) \{selected_marker(tonemapping == @post_process.Tonemapping::AgX)}AgX\n(6) \{some_marker}SomewhatBoringDisplayTransform\n(7) \{selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface)}TonyMcMapface\n(8) \{selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic)}Blender Filmic\n(9) \{selected_marker(tonemapping == @post_process.Tonemapping::PbrNeutral)}PBR Neutral\n\nColor Grading:\n(arrow keys)\n\{selected_marker(selected_parameter == 0)}Exposure: \{color_grading.global.exposure}\n\{selected_marker(selected_parameter == 1)}Gamma: \{color_grading.shadows.gamma}\n\{selected_marker(selected_parameter == 2)}PreSaturation: \{color_grading.shadows.saturation}\n\{selected_marker(selected_parameter == 3)}PostSaturation: \{color_grading.global.post_saturation}\n(Space) Reset all to default\n"
+  let mut content = "(H) Hide UI\n\nTest Scene:\n(Q) \{selected_marker(scene == 1)}Basic Scene\n(W) \{selected_marker(scene == 2)}Color Sweep\n(E) \{selected_marker(scene == 3)}Image Viewer\n\nTonemapping Method:\n(1) \{selected_marker(tonemapping == None)}Disabled\n(2) \{selected_marker(tonemapping == Reinhard)}Reinhard\n(3) \{selected_marker(tonemapping == ReinhardLuminance)}Reinhard Luminance\n(4) \{selected_marker(tonemapping == AcesFitted)}ACES Fitted\n(5) \{selected_marker(tonemapping == AgX)}AgX\n(6) \{some_marker}SomewhatBoringDisplayTransform\n(7) \{selected_marker(tonemapping == TonyMcMapface)}TonyMcMapface\n(8) \{selected_marker(tonemapping == BlenderFilmic)}Blender Filmic\n(9) \{selected_marker(tonemapping == PbrNeutral)}PBR Neutral\n\nColor Grading:\n(arrow keys)\n\{selected_marker(selected_parameter == 0)}Exposure: \{color_grading.global.exposure}\n\{selected_marker(selected_parameter == 1)}Gamma: \{color_grading.shadows.gamma}\n\{selected_marker(selected_parameter == 2)}PreSaturation: \{color_grading.shadows.saturation}\n\{selected_marker(selected_parameter == 3)}PostSaturation: \{color_grading.global.post_saturation}\n(Space) Reset all to default\n"
 
   if scene == 1 {
     content = "\{content}(Enter) Reset all to scene recommendation\n"
@@ -462,11 +444,8 @@ fn setup(
   camera_transform : @app.Res[CameraTransform],
 ) -> Unit {
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
-      camera_transform.get().transform,
-    )
-    .with_color_grading(Some(@post_process.ColorGrading::ColorGrading()))
+    @camera.Camera3dBundle::new(Camera(), camera_transform.get().transform)
+    .with_color_grading(Some(ColorGrading()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -502,7 +481,7 @@ fn setup(
       (
         @text.Text::Text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -561,12 +540,7 @@ fn setup_basic_scene(
         .with_first_cascade_far_bound(0.9F)
         .build(),
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(
-            @math.EulerRot::ZYX,
-            0.0F,
-            PI * -0.15F,
-            PI * -0.15F,
-          ),
+          @math.Quat::from_euler(ZYX, 0.0F, PI * -0.15F, PI * -0.15F),
         ),
         SceneNumber::{ value: 1 },
         @visibility.Visibility::Inherited,
@@ -587,9 +561,7 @@ fn setup_color_gradient_scene(
     .add(
       @mesh.Mesh::from_3d_geometry(@mesh_primitives.rectangle_mesh(0.7F, 0.7F)),
     )
-  let material_handle = material_assets
-    .peek()
-    .add(ColorGradientMaterial::ColorGradientMaterial())
+  let material_handle = material_assets.peek().add(ColorGradientMaterial())
 
   let transform = camera_transform.get().transform
   transform.translation = transform.translation.add(transform.forward())
@@ -645,14 +617,14 @@ fn setup_image_viewer_scene(
     commands.spawn(
       (
         @ui.Node::{
-          ..@ui.Node(),
-          align_self: @ui.AlignSelf::Center,
-          margin: @ui.UiRect::all(@ui.Val::Auto),
+          ..Node(),
+          align_self: Center,
+          margin: @ui.UiRect::all(Auto),
         },
         @text.Text::new("Drag and drop an HDR or EXR file"),
         @text.TextFont::TextFont().with_font_size(36.0F),
         @text.TextColor::new(@color.Color::black()),
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @text.TextLayout::new_with_justify(Center),
         SceneNumber::{ value: 3 },
         @visibility.Visibility::Hidden,
       ),
@@ -677,13 +649,13 @@ fn toggle_scene(
     None
   }
   guard next_scene is Some(scene) else { return }
-  current_scene.set(CurrentScene::{ value: scene })
+  current_scene.set({ value: scene })
 
   try! scene_query.view(fn(entity, scene_number) {
     let visibility = if scene_number.value().value == scene {
       @visibility.Visibility::Inherited
     } else {
-      @visibility.Visibility::Hidden
+      Hidden
     }
     if (visibility_query.get(entity) catch { _ => None }) is Some(component) {
       component.set(visibility)
@@ -701,21 +673,21 @@ fn toggle_tonemapping_method(
   let next_method = if keys.just_pressed(Digit1) {
     Some(@post_process.Tonemapping::None)
   } else if keys.just_pressed(Digit2) {
-    Some(@post_process.Tonemapping::Reinhard)
+    Some(Reinhard)
   } else if keys.just_pressed(Digit3) {
-    Some(@post_process.Tonemapping::ReinhardLuminance)
+    Some(ReinhardLuminance)
   } else if keys.just_pressed(Digit4) {
-    Some(@post_process.Tonemapping::AcesFitted)
+    Some(AcesFitted)
   } else if keys.just_pressed(Digit5) {
-    Some(@post_process.Tonemapping::AgX)
+    Some(AgX)
   } else if keys.just_pressed(Digit6) {
-    Some(@post_process.Tonemapping::SomewhatBoringDisplayTransform)
+    Some(SomewhatBoringDisplayTransform)
   } else if keys.just_pressed(Digit7) {
-    Some(@post_process.Tonemapping::TonyMcMapface)
+    Some(TonyMcMapface)
   } else if keys.just_pressed(Digit8) {
-    Some(@post_process.Tonemapping::BlenderFilmic)
+    Some(BlenderFilmic)
   } else if keys.just_pressed(Digit9) {
-    Some(@post_process.Tonemapping::PbrNeutral)
+    Some(PbrNeutral)
   } else {
     None
   }
@@ -761,9 +733,7 @@ fn update_color_grading_settings(
   if delta != 0.0F {
     let selected_value = selected_parameter.get().value
     per_method_settings.modify(fn(value) {
-      let next = value.settings
-        .get(current_method)
-        .unwrap_or(@post_process.ColorGrading::ColorGrading())
+      let next = value.settings.get(current_method).unwrap_or(ColorGrading())
       match selected_value {
         0 => next.global.exposure = next.global.exposure + delta
         1 =>
@@ -783,10 +753,7 @@ fn update_color_grading_settings(
   if keys.just_pressed(Space) {
     per_method_settings.modify(fn(value) {
       for tonemapper in tonemapping_methods() {
-        value.settings.set(
-          tonemapper,
-          @post_process.ColorGrading::ColorGrading(),
-        )
+        value.settings.set(tonemapper, ColorGrading())
       }
     })
   }
@@ -917,7 +884,7 @@ fn update_ui(
   let text = text_query.get()
   if hide_ui.get() {
     if text.value().content != "" {
-      text.set(@text.Text::Text())
+      text.set(Text())
     }
     return
   }
@@ -938,14 +905,12 @@ fn main {
   let color_gradient_material_plugin : @pbr.MaterialPlugin[
     ColorGradientMaterial,
   ] = @pbr.MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-    ColorGradientMaterial::ColorGradientMaterial()
+    ColorGradientMaterial()
   })
   @app.App::new(@ecs.World::new())
   .add_plugins(
     @mgstudio.DefaultPlugins::set(
-      @asset.AssetPlugin::AssetPlugin().with_unapproved_path_mode(
-        @asset.UnapprovedPathMode::Allow,
-      ),
+      @asset.AssetPlugin::AssetPlugin().with_unapproved_path_mode(Allow),
     ),
   )
   .add_plugins(color_gradient_material_plugin)
@@ -953,15 +918,15 @@ fn main {
   .insert_resource(PerMethodSettings::PerMethodSettings())
   .insert_resource(CurrentScene::CurrentScene())
   .insert_resource(SelectedParameter::SelectedParameter())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Startup, setup_basic_scene)
-  .add_systems_param4(@app.Startup, setup_color_gradient_scene)
-  .add_systems_param4(@app.Startup, setup_image_viewer_scene)
-  .add_systems_param6(@app.Update, drag_drop_image)
-  .add_systems_param5(@app.Update, resize_image)
-  .add_systems_param4(@app.Update, toggle_scene)
-  .add_systems_param4(@app.Update, toggle_tonemapping_method)
-  .add_systems_param6(@app.Update, update_color_grading_settings)
-  .add_systems_param6(@app.Update, update_ui)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Startup, setup_basic_scene)
+  .add_systems_param4(Startup, setup_color_gradient_scene)
+  .add_systems_param4(Startup, setup_image_viewer_scene)
+  .add_systems_param6(Update, drag_drop_image)
+  .add_systems_param5(Update, resize_image)
+  .add_systems_param4(Update, toggle_scene)
+  .add_systems_param4(Update, toggle_tonemapping_method)
+  .add_systems_param6(Update, update_color_grading_settings)
+  .add_systems_param6(Update, update_ui)
   .run()
 }

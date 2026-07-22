@@ -39,7 +39,7 @@ pub fn ImpulseJoint3d::with_wake_up(
   self : ImpulseJoint3d,
   wake_up : Bool,
 ) -> ImpulseJoint3d {
-  ImpulseJoint3d::{ ..self, wake_up, }
+  { ..self, wake_up, }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn MultibodyJoint3d::with_wake_up(
   self : MultibodyJoint3d,
   wake_up : Bool,
 ) -> MultibodyJoint3d {
-  MultibodyJoint3d::{ ..self, wake_up, }
+  { ..self, wake_up, }
 }
 
 ///|
@@ -86,7 +86,7 @@ pub fn MultibodyJoint3d::with_kinematic(
   self : MultibodyJoint3d,
   kinematic : Bool,
 ) -> MultibodyJoint3d {
-  MultibodyJoint3d::{ ..self, kinematic, }
+  { ..self, kinematic, }
 }
 
 ///|
@@ -174,12 +174,7 @@ pub fn joint3d_spring(
   .coupled_axes(@dynamics.JointAxesMask3DReal::lin_axes())
   .local_anchor1(mg_vec3_to_rapier(local_anchor1))
   .local_anchor2(mg_vec3_to_rapier(local_anchor2))
-  .motor_position(
-    @dynamics.JointAxis3DReal::LinX,
-    rest_length,
-    stiffness,
-    damping,
-  )
+  .motor_position(LinX, rest_length, stiffness, damping)
   .build()
   .to_generic_joint()
 }

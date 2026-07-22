@@ -61,7 +61,7 @@ pub(all) struct GpuClusteredLights {
 
 ///|
 pub fn GpuClusteredLight::GpuClusteredLight() -> GpuClusteredLight {
-  GpuClusteredLight::{
+  {
     light_custom_data: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
     color_inverse_square_range: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
     position_radius: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
@@ -81,19 +81,9 @@ pub fn GpuClusteredLights::from_binding_type(
   binding_type : UInt,
 ) -> GpuClusteredLights {
   if binding_type == @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE {
-    GpuClusteredLights::{
-      data: [],
-      is_storage_buffer: true,
-      gpu_buffer: None,
-      gpu_capacity: 0UL,
-    }
+    { data: [], is_storage_buffer: true, gpu_buffer: None, gpu_capacity: 0UL }
   } else {
-    GpuClusteredLights::{
-      data: [],
-      is_storage_buffer: false,
-      gpu_buffer: None,
-      gpu_capacity: 0UL,
-    }
+    { data: [], is_storage_buffer: false, gpu_buffer: None, gpu_capacity: 0UL }
   }
 }
 
@@ -206,11 +196,11 @@ pub fn GpuClusteredLights::write_buffer(
 ) -> Unit {
   if self.is_storage_buffer {
     if self.data.length() == 0 {
-      self.data.push(GpuClusteredLight::GpuClusteredLight())
+      self.data.push(GpuClusteredLight())
     }
   } else {
     while self.data.length() < MAX_UNIFORM_BUFFER_CLUSTERABLE_OBJECTS {
-      self.data.push(GpuClusteredLight::GpuClusteredLight())
+      self.data.push(GpuClusteredLight())
     }
   }
   let bytes = pbr_gpu_clustered_lights_bytes(self.data)
@@ -254,7 +244,7 @@ pub impl @app.Resource for GlobalClusterableObjectMeta with fn resource() {
 pub fn GlobalClusterableObjectMeta::new(
   binding_type : UInt,
 ) -> GlobalClusterableObjectMeta {
-  GlobalClusterableObjectMeta::{
+  {
     gpu_clustered_lights: GpuClusteredLights::from_binding_type(binding_type),
     entity_to_index: Map([]),
   }
@@ -379,7 +369,7 @@ pub struct ClusterableObjectCounts3d {
 
 ///|
 pub fn ClusterableObjectCounts3d::ClusterableObjectCounts3d() -> ClusterableObjectCounts3d {
-  ClusterableObjectCounts3d::{
+  {
     point_lights: 0U,
     spot_lights: 0U,
     reflection_probes: 0U,
@@ -396,13 +386,7 @@ pub fn ClusterableObjectCounts3d::new(
   irradiance_volumes : UInt,
   decals : UInt,
 ) -> ClusterableObjectCounts3d {
-  ClusterableObjectCounts3d::{
-    point_lights,
-    spot_lights,
-    reflection_probes,
-    irradiance_volumes,
-    decals,
-  }
+  { point_lights, spot_lights, reflection_probes, irradiance_volumes, decals }
 }
 
 ///|
@@ -503,7 +487,7 @@ pub fn ExtractedClusterConfig::from_clusters(
   clusters : @light_cluster.Clusters,
 ) -> ExtractedClusterConfig {
   let dimensions = clusters.dimensions()
-  ExtractedClusterConfig::{
+  {
     near: clusters.near(),
     far: clusters.far(),
     dimensions_x: dimensions.0,
@@ -520,13 +504,7 @@ pub fn ExtractedClusterConfig::new(
   dimensions_y : Int,
   dimensions_z : Int,
 ) -> ExtractedClusterConfig {
-  ExtractedClusterConfig::{
-    near,
-    far,
-    dimensions_x,
-    dimensions_y,
-    dimensions_z,
-  }
+  { near, far, dimensions_x, dimensions_y, dimensions_z }
 }
 
 ///|
@@ -586,7 +564,7 @@ pub impl @ecs.Component for ExtractedClusterableObjects with fn component() {
 pub fn ExtractedClusterableObjects::new(
   data : Array[ExtractedClusterableObjectElement],
 ) -> ExtractedClusterableObjects {
-  ExtractedClusterableObjects::{ data, }
+  { data, }
 }
 
 ///|
@@ -607,7 +585,7 @@ fn cluster_config_sanitize_dimension(value : Int) -> Int {
 
 ///|
 pub fn ClusterConfig3d::ClusterConfig3d() -> ClusterConfig3d {
-  ClusterConfig3d::{
+  {
     dimensions_x: 16,
     dimensions_y: 9,
     dimensions_z: 24,
@@ -622,7 +600,7 @@ pub fn ClusterConfig3d::with_dimensions(
   dimensions_y : Int,
   dimensions_z : Int,
 ) -> ClusterConfig3d {
-  ClusterConfig3d::{
+  {
     ..self,
     dimensions_x: cluster_config_sanitize_dimension(dimensions_x),
     dimensions_y: cluster_config_sanitize_dimension(dimensions_y),
@@ -635,7 +613,7 @@ pub fn ClusterConfig3d::with_dynamic_resizing(
   self : ClusterConfig3d,
   dynamic_resizing : Bool,
 ) -> ClusterConfig3d {
-  ClusterConfig3d::{ ..self, dynamic_resizing, }
+  { ..self, dynamic_resizing, }
 }
 
 ///|
@@ -691,7 +669,7 @@ pub fn pbr_pack_cluster_offset_and_counts(
 pub fn pbr_unpack_cluster_offset_and_counts(
   packed : UInt,
 ) -> ClusterOffsetAndCountsPacked3d {
-  ClusterOffsetAndCountsPacked3d::{
+  {
     offset: (packed >> (CLUSTER_COUNT_SIZE * 2)) & CLUSTER_OFFSET_MASK,
     point_lights: (packed >> CLUSTER_COUNT_SIZE) & CLUSTER_COUNT_MASK,
     spot_lights: packed & CLUSTER_COUNT_MASK,
@@ -742,7 +720,7 @@ pub impl @ecs.Component for ViewClusterBindings with fn component() {
 
 ///|
 pub fn GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts() -> GpuClusterOffsetAndCounts {
-  GpuClusterOffsetAndCounts::{
+  {
     offset: 0U,
     point_lights: 0U,
     spot_lights: 0U,
@@ -757,7 +735,7 @@ pub fn GpuClusterOffsetAndCounts::new(
   offset : UInt,
   counts : ClusterableObjectCounts3d,
 ) -> GpuClusterOffsetAndCounts {
-  GpuClusterOffsetAndCounts::{
+  {
     offset,
     point_lights: counts.point_lights,
     spot_lights: counts.spot_lights,
@@ -769,7 +747,7 @@ pub fn GpuClusterOffsetAndCounts::new(
 
 ///|
 pub fn ViewClusterBindings::ViewClusterBindings() -> ViewClusterBindings {
-  ViewClusterBindings::{
+  {
     n_indices: 0,
     n_offsets: 0,
     clusterable_object_index_lists: @render_resource.StorageBuffer::new(),
@@ -836,9 +814,7 @@ pub fn ViewClusterBindings::reserve_clusters(
     abort("ViewClusterBindings::reserve_clusters requires non-negative count")
   }
   for _ in 0..<clusters {
-    self.cluster_offsets_and_counts.push(
-      GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
-    )
+    self.cluster_offsets_and_counts.push(GpuClusterOffsetAndCounts())
   }
   self.n_offsets += clusters
 }
@@ -1046,7 +1022,7 @@ pub fn ViewClusterBindings::write_buffers(
 
 ///|
 pub fn ViewClusterBindings3d::ViewClusterBindings3d() -> ViewClusterBindings3d {
-  ViewClusterBindings3d::{
+  {
     indices: [],
     offsets_and_counts: [],
     max_indices: VIEW_CLUSTER_BINDINGS_MAX_INDICES,
@@ -1059,7 +1035,7 @@ pub fn ViewClusterBindings3d::with_limits(
   max_indices : Int,
   max_offsets : Int,
 ) -> ViewClusterBindings3d {
-  ViewClusterBindings3d::{
+  {
     indices: [],
     offsets_and_counts: [],
     max_indices: if max_indices <= 0 {
@@ -1186,7 +1162,7 @@ fn pbr_extract_clusterable_element(
       clusterable_entity, @light.ecs_key_clustered_decal,
     )) {
     match render_entity {
-      Some(entity) => out.push(ExtractedClusterableObjectElement::Decal(entity))
+      Some(entity) => out.push(Decal(entity))
       None => ()
     }
   } else if (try! source_world.contains_by_key(
@@ -1196,27 +1172,19 @@ fn pbr_extract_clusterable_element(
       clusterable_entity, @light.ecs_key_spot_light,
     )) {
     match render_entity {
-      Some(entity) => out.push(ExtractedClusterableObjectElement::Light(entity))
+      Some(entity) => out.push(Light(entity))
       None => ()
     }
   }
   if (try! source_world.contains_by_key(
       clusterable_entity, @light.ecs_key_environment_map_light,
     )) {
-    out.push(
-      ExtractedClusterableObjectElement::ReflectionProbe(
-        @render.MainEntity::new(clusterable_entity),
-      ),
-    )
+    out.push(ReflectionProbe(@render.MainEntity::new(clusterable_entity)))
   }
   if (try! source_world.contains_by_key(
       clusterable_entity, @light.ecs_key_irradiance_volume,
     )) {
-    out.push(
-      ExtractedClusterableObjectElement::IrradianceVolume(
-        @render.MainEntity::new(clusterable_entity),
-      ),
-    )
+    out.push(IrradianceVolume(@render.MainEntity::new(clusterable_entity)))
   }
   out
 }
@@ -1296,7 +1264,7 @@ pub fn extract_clusters_for_cpu_clustering(render_world : @ecs.World) -> Unit {
     let data : Array[ExtractedClusterableObjectElement] = []
     for cluster_objects in clusters.clusterable_objects() {
       data.push(
-        ExtractedClusterableObjectElement::ClusterHeader(
+        ClusterHeader(
           pbr_cluster_counts_from_light_cluster(cluster_objects.counts()),
         ),
       )

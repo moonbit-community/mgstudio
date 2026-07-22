@@ -234,7 +234,7 @@ fn mesh3d_forward_shader_defines(
   shadow_filter_method : Int,
   lightmapped? : Bool = false,
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   defines.set("VERTEX_POSITIONS", true)
   defines.set("VERTEX_NORMALS", true)
   defines.set("VERTEX_UVS", true)
@@ -283,7 +283,7 @@ fn mesh3d_forward_shader_defines_from_descriptor(
       lightmapped~,
     )
   }
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
     for shader_def in shader_defs {
       match shader_def {
@@ -329,12 +329,9 @@ fn mesh3d_forward_value_defines(
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
     for shader_def in shader_defs {
       match shader_def {
-        Int(name, value) =>
-          value_defines.set(name, @wgsl_common.ShaderDefValue::Int(value))
-        UInt(name, value) =>
-          value_defines.set(name, @wgsl_common.ShaderDefValue::UInt(value))
-        String(name, value) =>
-          value_defines.set(name, @wgsl_common.ShaderDefValue::Raw(value))
+        Int(name, value) => value_defines.set(name, Int(value))
+        UInt(name, value) => value_defines.set(name, UInt(value))
+        String(name, value) => value_defines.set(name, Raw(value))
         Bool(_, _) | Flag(_) => ()
       }
     }
@@ -359,7 +356,7 @@ fn mesh3d_shadow_shader_defines(
   directional_light : Bool,
   emulate_unclipped_depth : Bool,
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   defines.set("PREPASS_PIPELINE", true)
   defines.set("DEPTH_PREPASS", true)
   if directional_light {
@@ -398,7 +395,7 @@ fn mesh3d_shadow_shader_defines_from_descriptor(
       skinned, material_path, directional_light, emulate_unclipped_depth,
     )
   }
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
     for shader_def in shader_defs {
       match shader_def {
@@ -583,7 +580,7 @@ fn mesh3d_create_forward_shader_modules(
       raise err
     }
   }
-  Mesh3dForwardShaderModules::{ vertex, fragment }
+  { vertex, fragment }
 }
 
 ///|
@@ -778,7 +775,7 @@ fn mesh3d_descriptor_shader_bool_defines(
   fallback : @hashmap.HashMap[String, Bool],
 ) -> @hashmap.HashMap[String, Bool] {
   guard descriptor is Some(desc) else { return fallback }
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
     for shader_def in shader_defs {
       match shader_def {
@@ -1478,7 +1475,7 @@ fn mesh3d_volumetric_fog_pipeline_render_sample_count(
 fn mesh3d_volumetric_fog_shader_defines_from_descriptor(
   descriptor : @render_resource.RenderPipelineDescriptor,
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   let apply_defs = fn(shader_defs : Array[@render_resource.ShaderDefVal]) {
     for shader_def in shader_defs {
       match shader_def {
@@ -1830,20 +1827,12 @@ fn mesh3d_default_draw_bind_group_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       0,
       view_stage,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        MESH3D_DRAW_STORAGE_STRIDE_BYTES,
-      ),
+      BufferBinding(Storage(true), false, MESH3D_DRAW_STORAGE_STRIDE_BYTES),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       1,
       @wgpu.SHADER_STAGE_VERTEX.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        MESH3D_SKINNING_STORAGE_STRIDE_BYTES,
-      ),
+      BufferBinding(Storage(true), false, MESH3D_SKINNING_STORAGE_STRIDE_BYTES),
     ),
   ]
   if lightmapped {
@@ -1851,20 +1840,14 @@ fn mesh3d_default_draw_bind_group_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         4,
         @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-        @render_resource.BindingType::TextureBinding(
-          @render_resource.TextureSampleType::Float(true),
-          @render_resource.TextureViewDimension::D2,
-          false,
-        ),
+        TextureBinding(Float(true), D2, false),
       ),
     )
     entries.push(
       @render_resource.BindGroupLayoutEntry::new(
         5,
         @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-        @render_resource.BindingType::SamplerBinding(
-          @render_resource.SamplerBindingType::Filtering,
-        ),
+        SamplerBinding(Filtering),
       ),
     )
   }
@@ -2184,7 +2167,7 @@ fn mesh3d_material_pipeline_layout_get_or_create(
   backend : GpuBackend,
   material_pipeline_id : UInt64,
   material_descriptor : @render_resource.RenderPipelineDescriptor?,
-  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+  default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = MeshPipelineViewLayoutKey(),
   default_lightmapped? : Bool = false,
 ) -> Mesh3dMaterialPipelineLayoutCacheEntry raise GpuBackendError {
   ensure_mesh3d_pipeline_layout_resources(backend)
@@ -3372,7 +3355,7 @@ fn mesh3d_build_motion_vector_pipeline(
   let fragment_shader_path = mesh3d_descriptor_fragment_shader_path(
     material_descriptor,
   )
-  let fallback_defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let fallback_defines : @hashmap.HashMap[String, Bool] = HashMap([])
   fallback_defines.set("PREPASS_FRAGMENT", true)
   fallback_defines.set("MOTION_VECTOR_PREPASS", true)
   if skinned {

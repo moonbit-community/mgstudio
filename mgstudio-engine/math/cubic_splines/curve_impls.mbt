@@ -33,7 +33,7 @@ pub fn[P : @math.SplinePoint] cubic_curve_sample_with_derivative(
   curve : CubicCurve[P],
   t : Float,
 ) -> WithDerivative[P] {
-  WithDerivative::{ value: curve.position(t), derivative: curve.velocity(t) }
+  { value: curve.position(t), derivative: curve.velocity(t) }
 }
 
 ///|
@@ -41,7 +41,7 @@ pub fn[P : @math.SplinePoint] cubic_curve_sample_with_two_derivatives(
   curve : CubicCurve[P],
   t : Float,
 ) -> WithTwoDerivatives[P] {
-  WithTwoDerivatives::{
+  {
     value: curve.position(t),
     derivative: curve.velocity(t),
     second_derivative: curve.acceleration(t),
@@ -53,10 +53,7 @@ pub fn[P : @math.SplinePoint] cubic_segment_sample_with_derivative(
   segment : CubicSegment[P],
   t : Float,
 ) -> WithDerivative[P] {
-  WithDerivative::{
-    value: segment.position(t),
-    derivative: segment.velocity(t),
-  }
+  { value: segment.position(t), derivative: segment.velocity(t) }
 }
 
 ///|
@@ -64,7 +61,7 @@ pub fn[P : @math.SplinePoint] cubic_segment_sample_with_two_derivatives(
   segment : CubicSegment[P],
   t : Float,
 ) -> WithTwoDerivatives[P] {
-  WithTwoDerivatives::{
+  {
     value: segment.position(t),
     derivative: segment.velocity(t),
     second_derivative: segment.acceleration(t),

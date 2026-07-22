@@ -23,14 +23,14 @@ pub struct Pickable {
 } derive(Eq, Debug, ToJson, FromJson)
 
 ///|
-pub let pickable_ignore : Pickable = Pickable::{
+pub let pickable_ignore : Pickable = {
   should_block_lower: false,
   is_hoverable: false,
 }
 
 ///|
 pub fn Pickable::Pickable() -> Pickable {
-  Pickable::{ should_block_lower: true, is_hoverable: true }
+  { should_block_lower: true, is_hoverable: true }
 }
 
 ///|
@@ -38,7 +38,7 @@ pub fn Pickable::new(
   should_block_lower : Bool,
   is_hoverable : Bool,
 ) -> Pickable {
-  Pickable::{ should_block_lower, is_hoverable }
+  { should_block_lower, is_hoverable }
 }
 
 ///|
@@ -71,10 +71,7 @@ pub struct SpritePickingSettings {
 
 ///|
 pub fn SpritePickingSettings::SpritePickingSettings() -> SpritePickingSettings {
-  SpritePickingSettings::{
-    require_markers: false,
-    picking_mode: AlphaThreshold(0.1F),
-  }
+  { require_markers: false, picking_mode: AlphaThreshold(0.1F) }
 }
 
 ///|
@@ -82,7 +79,7 @@ pub fn SpritePickingSettings::new(
   require_markers : Bool,
   picking_mode : SpritePickingMode,
 ) -> SpritePickingSettings {
-  SpritePickingSettings::{ require_markers, picking_mode }
+  { require_markers, picking_mode }
 }
 
 ///|
@@ -100,7 +97,7 @@ pub struct PickingSettings {
 
 ///|
 pub fn PickingSettings::PickingSettings() -> PickingSettings {
-  PickingSettings::{
+  {
     is_enabled: true,
     is_input_enabled: true,
     is_hover_enabled: true,
@@ -117,7 +114,7 @@ pub impl @app.Resource for PickingSettings with fn resource() {
 fn current_picking_settings(world : @ecs.World) -> PickingSettings {
   match get_picking_settings_resource(world).get() {
     Some(settings) => settings
-    None => PickingSettings::PickingSettings()
+    None => PickingSettings()
   }
 }
 
@@ -188,9 +185,7 @@ pub let picking_set_events : @app.SystemSet = picking_set_hover
 
 ///|
 pub fn picking_clear_system(world : @ecs.World) -> Unit {
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  @app.get_picking_events_resource(world).insert(PickingEvents())
 }
 
 ///|
@@ -207,12 +202,8 @@ pub fn picking_input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     .run_if(picking_input_should_run)
     .in_set(picking_set_input_stage),
   )
-  .configure_set(@app.First, picking_set_input_stage, before=[
-    picking_set_post_input,
-  ])
-  .configure_set(@app.First, picking_set_post_input, after=[
-    picking_set_input_stage,
-  ])
+  .configure_set(First, picking_set_input_stage, before=[picking_set_post_input])
+  .configure_set(First, picking_set_post_input, after=[picking_set_input_stage])
 }
 
 ///|
@@ -251,32 +242,27 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(ensure_hover_maps_system).in_set(picking_set_hover),
   )
   .configure_set(
-    @app.PreUpdate,
+    PreUpdate,
     picking_set_process_input,
     after=[@input.input_systems_set],
     before=[picking_set_backend],
   )
   .configure_set(
-    @app.PreUpdate,
+    PreUpdate,
     picking_set_backend,
     after=[picking_set_process_input, @transform.transform_set_propagate],
     before=[picking_set_hover],
   )
+  .configure_set(PreUpdate, picking_set_hover, after=[picking_set_backend], before=[
+    picking_set_post_hover,
+  ])
   .configure_set(
-    @app.PreUpdate,
-    picking_set_hover,
-    after=[picking_set_backend],
-    before=[picking_set_post_hover],
-  )
-  .configure_set(
-    @app.PreUpdate,
+    PreUpdate,
     picking_set_post_hover,
     after=[picking_set_hover, @a11y.a11y_set, @ui.ui_set_focus],
     before=[picking_set_last],
   )
-  .configure_set(@app.PreUpdate, picking_set_last, after=[
-    picking_set_post_hover,
-  ])
+  .configure_set(PreUpdate, picking_set_last, after=[picking_set_post_hover])
 }
 
 ///|

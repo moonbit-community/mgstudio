@@ -20,14 +20,14 @@ test "examples ecs state_scoped: scheduled update queues UI overlay for Camera3d
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
     .insert_state(GameState::default())
     .insert_resource(TickTock::{
-      timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
+      timer: @time.Timer::from_seconds(1.0F, Repeating),
     })
-    .add_systems_param(@app.Startup, setup_camera)
+    .add_systems_param(Startup, setup_camera)
     .add_on_enter_system_param(GameState::A, on_a_enter)
     .add_on_enter_system_param(GameState::B, on_b_enter)
     .add_on_exit_system_param(GameState::A, on_a_exit)
     .add_on_exit_system_param(GameState::B, on_b_exit)
-    .add_systems_param4(@app.Update, toggle)
+    .add_systems_param4(Update, toggle)
 
   app = app.update()
   app = app.update()

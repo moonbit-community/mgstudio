@@ -215,7 +215,7 @@ fn render3d_specialize_shadow_phase_views(
   world : @ecs.World,
   views : Array[Render3dQueuedShadowPhaseView],
 ) -> Int {
-  let all_shadow_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
+  let all_shadow_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([],
   )
   let work_items : Array[Render3dShadowSpecializationWorkItemData] = []
   for view in views {
@@ -309,10 +309,7 @@ fn render3d_shadow_resolve_phase_items(
       ),
       Render3dShadowPhaseItemExtraIndex::none(),
     )
-    resolved.push(Render3dResolvedShadowPhaseItem::{
-      item,
-      extracted_indices: [index],
-    })
+    resolved.push({ item, extracted_indices: [index] })
   }
   resolved
 }
@@ -335,8 +332,7 @@ fn render3d_shadow_material_bind_group_data(
 ) -> @render_resource.MaterialBindGroupResolvedData {
   match phase_item.batch_set_key().material_bind_group_index() {
     Some(_) => shadow_mesh.material_bind_group_data
-    None =>
-      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+    None => MaterialBindGroupResolvedData()
   }
 }
 
@@ -432,8 +428,7 @@ fn render3d_update_shadow_map_visible_entities(
       owner, @render_visibility.ecs_key_render_shadow_map_visible_entities,
     )) {
     Some(value) => value
-    None =>
-      @render_visibility.RenderShadowMapVisibleEntities::RenderShadowMapVisibleEntities()
+    None => RenderShadowMapVisibleEntities()
   }
   let visible_entities = shadow_map_visible_entities.subview_or_insert(
     visible_key,
@@ -611,7 +606,7 @@ fn render3d_execute_shadow_phase_view(
       let batch_draw_storage_index = draw_storage_base + draw_storage_offset
       render3d_mesh_gpu_binned_phase_push(
         shadow_phase,
-        @pbr_render.MeshGpuDrawPayload3d::{
+        {
           ..batch_payload,
           draw_storage_index: batch_draw_storage_index,
           transform: batch_mesh.transform,

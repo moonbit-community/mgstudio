@@ -67,7 +67,7 @@ pub struct UiChildren {
 
 ///|
 pub fn UiChildren::new(world : @ecs.World) -> UiChildren {
-  UiChildren::{ world, }
+  { world, }
 }
 
 ///|
@@ -148,12 +148,12 @@ pub struct UiRootNodes {
 
 ///|
 pub fn UiRootNodes::new(world : @ecs.World) -> UiRootNodes {
-  UiRootNodes::{ world, children: UiChildren::new(world) }
+  { world, children: UiChildren::new(world) }
 }
 
 ///|
 pub fn UiRootNodes::iter(self : UiRootNodes) -> Array[@core.Entity] {
-  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap([])
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = HashMap([])
   let roots : Array[@core.Entity] = []
   self.world.for_each_component(@ui.ecs_key_node, fn(entity, _node) {
     if (try! self.world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {

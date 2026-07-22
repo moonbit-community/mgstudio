@@ -36,7 +36,7 @@ fn render3d_directional_cascade_pass(
     light_transform.rotation,
     @math.Vec3::splat(1.0F),
   )
-  Render3dDirectionalCascadePass::{
+  {
     transform,
     projection: @pbr_render.render3d_pass_projection(
       clip_from_cascade, clip_from_cascade, 0.0F, far_bound,
@@ -120,7 +120,7 @@ fn render3d_directional_shadow_frustum_planes(
   )
   if @pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX < planes.length() {
     let near = planes[@pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX]
-    planes[@pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX] = @render.HostMesh3dPreprocessFrustumPlane::{
+    planes[@pbr_render.VIEW_FRUSTUM_NEAR_PLANE_IDX] = {
       normal_x: near.normal_x,
       normal_y: near.normal_y,
       normal_z: near.normal_z,
@@ -186,7 +186,7 @@ fn render3d_directional_shadow_light_passes(
     if used_texture_array_layers + cascades.length() > max_texture_array_layers {
       continue
     }
-    passes.push(Render3dDirectionalShadowLightPass::{
+    passes.push({
       light_index,
       render_entity: entry.render_entity,
       main_entity: entry.light.entity,
@@ -265,7 +265,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
     for cascade_index in 0..<light_pass.cascades.length() {
       let cascade = light_pass.cascades[cascade_index]
       let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
+        RenderQueue,
         "render_3d_shadow_phase_construction",
       )
       let shadow_light_entity = Render3dLightEntity::Directional(
@@ -286,7 +286,7 @@ fn render3d_prepare_camera_directional_shadow_pass(
       )
       queued_phase_views.push(queued_shadow_phase_view)
       @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
+        RenderQueue,
         "render_3d_shadow_phase_construction",
         shadow_phase_trace_start_us,
       )
@@ -403,7 +403,7 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
     spot_near,
   )
   let shadow_phase_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "render_3d_shadow_phase_construction",
   )
   let shadow_light_entity = Render3dLightEntity::Spot(
@@ -422,7 +422,7 @@ fn render3d_prepare_camera_spot_shadow_phase_view(
     render3d_directional_shadow_frustum_planes(clip_from_world),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "render_3d_shadow_phase_construction",
     shadow_phase_trace_start_us,
   )

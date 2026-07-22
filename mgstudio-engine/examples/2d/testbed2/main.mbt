@@ -18,14 +18,14 @@ priv struct TestbedState {
 }
 
 ///|
-let testbed_state : Ref[TestbedState] = Ref(TestbedState::{ spawned: [] })
+let testbed_state : Ref[TestbedState] = Ref({ spawned: [] })
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_testbed2_setup)
-  .add_systems_world(@app.Update, rapier2d_testbed2_update)
+  .add_systems_world(Startup, rapier2d_testbed2_setup)
+  .add_systems_world(Update, rapier2d_testbed2_update)
   .run()
 }
 
@@ -48,7 +48,7 @@ fn rapier2d_testbed2_setup(world : @ecs.World) -> Unit {
     ),
   )
   |> ignore)
-  testbed_state.val = TestbedState::{ spawned: [] }
+  testbed_state.val = { spawned: [] }
   rapier2d_testbed2_spawn_mode(world, texture, 0)
 }
 
@@ -233,7 +233,7 @@ fn rapier2d_testbed2_spawn_mode(
       try! world.set_by_key(
         player,
         @physics2d.ecs_key_kinematic_character_controller2d,
-        @physics2d.KinematicCharacterController2d::KinematicCharacterController2d(),
+        KinematicCharacterController2d(),
       )
       try! world.set_by_key(
         player,
@@ -248,19 +248,19 @@ fn rapier2d_testbed2_spawn_mode(
 
 ///|
 fn rapier2d_testbed2_update(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     rapier2d_testbed2_spawn_mode(
       world,
       @asset.AssetServer::new().load("branding/icon.png"),
       0,
     )
-  } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  } else if @input.key_just_pressed(Digit2) {
     rapier2d_testbed2_spawn_mode(
       world,
       @asset.AssetServer::new().load("branding/icon.png"),
       1,
     )
-  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  } else if @input.key_just_pressed(Digit3) {
     rapier2d_testbed2_spawn_mode(
       world,
       @asset.AssetServer::new().load("branding/icon.png"),

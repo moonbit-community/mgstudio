@@ -183,15 +183,12 @@ test "pbr: wireframe immediate commands fail when material is missing" {
   let missing_instance = Some(
     set_wireframe_3d_thin_immediates(
       item,
-      RenderWireframeInstances::RenderWireframeInstances(),
-      RenderWireframeAssets::RenderWireframeAssets(),
+      RenderWireframeInstances(),
+      RenderWireframeAssets(),
     ),
   ) catch {
     error => {
-      debug_inspect(
-        error is WireframeRenderCommandError::NoWireframeMaterialFoundForEntity,
-        content="true",
-      )
+      debug_inspect(error is NoWireframeMaterialFoundForEntity, content="true")
       None
     }
   }
@@ -199,17 +196,10 @@ test "pbr: wireframe immediate commands fail when material is missing" {
   let instances = RenderWireframeInstances::RenderWireframeInstances()
   instances.insert(main_entity, 7)
   let missing_asset = Some(
-    set_wireframe_3d_wide_immediates(
-      item,
-      instances,
-      RenderWireframeAssets::RenderWireframeAssets(),
-    ),
+    set_wireframe_3d_wide_immediates(item, instances, RenderWireframeAssets()),
   ) catch {
     error => {
-      debug_inspect(
-        error is WireframeRenderCommandError::NoWireframeMaterialFoundForEntity,
-        content="true",
-      )
+      debug_inspect(error is NoWireframeMaterialFoundForEntity, content="true")
       None
     }
   }
@@ -374,9 +364,9 @@ test "pbr: wireframe render command decision plans thin command tuple" {
     instances,
     assets,
     RenderMeshInstances::new(),
-    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    RenderMeshAssets(),
     @render_mesh.MeshAllocator::new(),
-    WireframeWideBindGroups::WireframeWideBindGroups(),
+    WireframeWideBindGroups(),
   )
 
   guard decision is Planned(plan) else {
@@ -409,7 +399,7 @@ test "pbr: wireframe render command decision skips wide command without bind gro
     render_mesh_instances,
     render_meshes,
     mesh_allocator,
-    WireframeWideBindGroups::WireframeWideBindGroups(),
+    WireframeWideBindGroups(),
   )
 
   debug_inspect(decision is Skipped, content="true")
@@ -449,9 +439,7 @@ test "pbr: wireframe render command decision plans wide pulled direct draw" {
 test "pbr: wireframe phase render command plans preserve item order and skips" {
   let draw_functions = Wireframe3dDrawFunctions::Wireframe3dDrawFunctions()
   let main_entity = @render.MainEntity::new(@core.Entity::new(10, 1))
-  let phase = Wireframe3dViewPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Wireframe3dViewPhase::new(None)
   phase.add(
     Wireframe3dBatchSetKey::new(
       @material.CachedRenderPipelineId::new(3UL),
@@ -462,10 +450,7 @@ test "pbr: wireframe phase render command plans preserve item order and skips" {
     Wireframe3dBinKey::new(13),
     (@core.Entity::new(20, 1), main_entity),
     0U,
-    WireframeBinnedRenderPhaseType::mesh(
-      true,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
-    ),
+    WireframeBinnedRenderPhaseType::mesh(true, GpuPreprocessingSupport()),
   )
   phase.add(
     Wireframe3dBatchSetKey::new(
@@ -477,10 +462,7 @@ test "pbr: wireframe phase render command plans preserve item order and skips" {
     Wireframe3dBinKey::new(13),
     (@core.Entity::new(21, 1), main_entity),
     1U,
-    WireframeBinnedRenderPhaseType::mesh(
-      true,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
-    ),
+    WireframeBinnedRenderPhaseType::mesh(true, GpuPreprocessingSupport()),
   )
   let (instances, assets) = wireframe_render_command_test_assets(main_entity)
   let (render_mesh_instances, render_meshes, mesh_allocator) = wireframe_render_command_test_mesh_state(
@@ -495,7 +477,7 @@ test "pbr: wireframe phase render command plans preserve item order and skips" {
     render_mesh_instances,
     render_meshes,
     mesh_allocator,
-    WireframeWideBindGroups::WireframeWideBindGroups(),
+    WireframeWideBindGroups(),
   )
 
   debug_inspect(plans.length(), content="1")
@@ -519,16 +501,13 @@ test "pbr: wireframe render command decision fails unknown draw function" {
       instances,
       assets,
       RenderMeshInstances::new(),
-      @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+      RenderMeshAssets(),
       @render_mesh.MeshAllocator::new(),
-      WireframeWideBindGroups::WireframeWideBindGroups(),
+      WireframeWideBindGroups(),
     ),
   ) catch {
     error => {
-      debug_inspect(
-        error is WireframeRenderCommandError::UnknownWireframeDrawFunction,
-        content="true",
-      )
+      debug_inspect(error is UnknownWireframeDrawFunction, content="true")
       None
     }
   }

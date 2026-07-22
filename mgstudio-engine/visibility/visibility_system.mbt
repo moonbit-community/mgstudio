@@ -59,9 +59,9 @@ let ecs_key_visibility_propagation_state : @ecs.ResourceKey[
 ///|
 fn visibility_effective(visibility : Visibility, parent_visible : Bool) -> Bool {
   match visibility {
-    Visibility::Visible => true
-    Visibility::Hidden => false
-    Visibility::Inherited => parent_visible
+    Visible => true
+    Hidden => false
+    Inherited => parent_visible
   }
 }
 
@@ -136,6 +136,7 @@ fn visibility_propagate_full_scan(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   if world.get_resource(ecs_key_visibility_propagation_state) is None {
     visibility_propagate_full_scan(world)
@@ -340,7 +341,7 @@ fn register_visibility_required_components(
   world.register_required_components_with(
     @mesh.ecs_key_mesh2d,
     ecs_key_visibility,
-    fn() { Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     @mesh.ecs_key_mesh2d,
@@ -350,7 +351,7 @@ fn register_visibility_required_components(
   world.register_required_components_with(
     @mesh.ecs_key_mesh3d,
     ecs_key_visibility,
-    fn() { Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     @mesh.ecs_key_mesh3d,
@@ -374,14 +375,14 @@ pub fn visibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Hierarchy hooks keep `Children` synchronized with `Parent` before schedule execution.
   try! register_visibility_required_components(app.world())
   app
-  .configure_set(@app.PostUpdate, visibility_set_visibility_propagate, after=[
+  .configure_set(PostUpdate, visibility_set_visibility_propagate, after=[
     @transform.transform_set_propagate,
   ])
-  .configure_set(@app.PostUpdate, visibility_set_check_visibility, after=[
+  .configure_set(PostUpdate, visibility_set_check_visibility, after=[
     visibility_set_visibility_propagate,
   ])
   .configure_set(
-    @app.PostUpdate,
+    PostUpdate,
     visibility_set_mark_newly_hidden_entities_invisible,
     after=[visibility_set_check_visibility],
   )

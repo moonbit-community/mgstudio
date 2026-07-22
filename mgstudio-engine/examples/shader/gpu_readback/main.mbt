@@ -130,9 +130,7 @@ fn emulate_gpu_readback(
     count = count + 1
   })
   if count > 0 {
-    readback_state.set(ReadbackState::{
-      average_height: total / Float::from_int(count),
-    })
+    readback_state.set({ average_height: total / Float::from_int(count) })
   }
 }
 
@@ -157,9 +155,9 @@ fn tint_from_readback(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_samples)
-  .add_systems_param2(@app.Update, emulate_gpu_readback)
-  .add_systems_param3(@app.Update, tint_from_readback)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, animate_samples)
+  .add_systems_param2(Update, emulate_gpu_readback)
+  .add_systems_param3(Update, tint_from_readback)
   .run()
 }

@@ -23,7 +23,7 @@ pub struct TextHandle {
 
 ///|
 pub fn TextHandle::new(id : Int) -> TextHandle {
-  TextHandle::{ id, }
+  { id, }
 }
 
 ///|
@@ -38,7 +38,7 @@ pub struct TextSpanHandle {
 
 ///|
 pub fn TextSpanHandle::new(id : Int) -> TextSpanHandle {
-  TextSpanHandle::{ id, }
+  { id, }
 }
 
 ///|
@@ -48,7 +48,7 @@ pub struct TextReader {
 
 ///|
 pub fn TextReader::new(world : @ecs.World) -> TextReader {
-  TextReader::{ world, }
+  { world, }
 }
 
 ///|
@@ -58,7 +58,7 @@ pub struct TextWriter {
 
 ///|
 pub fn TextWriter::new(world : @ecs.World) -> TextWriter {
-  TextWriter::{ world, }
+  { world, }
 }
 
 ///|

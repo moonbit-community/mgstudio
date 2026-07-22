@@ -28,6 +28,7 @@ pub type ScreenSpaceAmbientOcclusion = @post_process.ScreenSpaceAmbientOcclusion
 pub struct ScreenSpaceAmbientOcclusionPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin() -> ScreenSpaceAmbientOcclusionPlugin {
   ScreenSpaceAmbientOcclusionPlugin::{  }
 }
@@ -53,7 +54,7 @@ pub struct SsaoPipelineId {
 
 ///|
 pub fn SsaoPipelineId::SsaoPipelineId() -> SsaoPipelineId {
-  SsaoPipelineId::{ id: -1 }
+  { id: -1 }
 }
 
 ///|
@@ -69,9 +70,9 @@ pub struct SsaoPipelines {
 
 ///|
 pub fn SsaoPipelines::SsaoPipelines() -> SsaoPipelines {
-  SsaoPipelines::{
-    preprocess_depth_pipeline: SsaoPipelineId::SsaoPipelineId(),
-    spatial_denoise_pipeline: SsaoPipelineId::SsaoPipelineId(),
+  {
+    preprocess_depth_pipeline: SsaoPipelineId(),
+    spatial_denoise_pipeline: SsaoPipelineId(),
   }
 }
 
@@ -83,7 +84,7 @@ pub struct SsaoPipelineKey {
 
 ///|
 pub fn SsaoPipelineKey::SsaoPipelineKey() -> SsaoPipelineKey {
-  SsaoPipelineKey::{
+  {
     quality_level: ScreenSpaceAmbientOcclusionQualityLevel::default(),
     temporal_jitter: false,
   }
@@ -97,10 +98,7 @@ pub struct ScreenSpaceAmbientOcclusionPluginState {
 
 ///|
 pub fn ScreenSpaceAmbientOcclusionPluginState::ScreenSpaceAmbientOcclusionPluginState() -> ScreenSpaceAmbientOcclusionPluginState {
-  ScreenSpaceAmbientOcclusionPluginState::{
-    supported: true,
-    pipelines: SsaoPipelines::SsaoPipelines(),
-  }
+  { supported: true, pipelines: SsaoPipelines() }
 }
 
 ///|
@@ -134,7 +132,7 @@ pub fn ssao_pipeline_key(
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel,
   temporal_jitter : Bool,
 ) -> SsaoPipelineKey {
-  SsaoPipelineKey::{ quality_level, temporal_jitter }
+  { quality_level, temporal_jitter }
 }
 
 ///|
@@ -153,7 +151,7 @@ pub struct ScreenSpaceAmbientOcclusionResources {
 
 ///|
 pub fn ScreenSpaceAmbientOcclusionResources::ScreenSpaceAmbientOcclusionResources() -> ScreenSpaceAmbientOcclusionResources {
-  ScreenSpaceAmbientOcclusionResources::{
+  {
     preprocessed_depth_texture_id: -1,
     ssao_noisy_texture_id: -1,
     screen_space_ambient_occlusion_texture_id: -1,
@@ -179,7 +177,7 @@ pub struct SsaoBindGroups {
 
 ///|
 pub fn SsaoBindGroups::SsaoBindGroups() -> SsaoBindGroups {
-  SsaoBindGroups::{
+  {
     common_bind_group_id: -1,
     preprocess_depth_bind_group_id: -1,
     ssao_bind_group_id: -1,
@@ -229,10 +227,7 @@ pub fn ssao_generate_hilbert_index_lut() -> Array[Array[Int]] {
 
 ///|
 pub fn ssao_plugin_install(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ssao_plugin_install_with(
-    app,
-    ScreenSpaceAmbientOcclusionPlugin::ScreenSpaceAmbientOcclusionPlugin(),
-  )
+  ssao_plugin_install_with(app, ScreenSpaceAmbientOcclusionPlugin())
 }
 
 ///|
@@ -246,7 +241,7 @@ pub fn ssao_plugin_install_with(
   } else {
     app.insert_world_resource(
       ecs_key_ssao_plugin_state,
-      ScreenSpaceAmbientOcclusionPluginState::ScreenSpaceAmbientOcclusionPluginState(),
+      ScreenSpaceAmbientOcclusionPluginState(),
     )
   }
 }

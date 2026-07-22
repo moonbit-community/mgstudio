@@ -24,7 +24,7 @@ test "diagnostics: timeline trace plugin writes filtered chrome trace json" {
     .with_enabled(true)
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
-    .with_categories([@app.TimelineTraceCategory::System])
+    .with_categories([System])
   let lifecycle_world_20_0 = @ecs.World::new()
   defer lifecycle_world_20_0.close()
   let mut app = @app.App::new(lifecycle_world_20_0).add_plugins(
@@ -57,7 +57,7 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
     .with_enabled(true)
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
-    .with_categories([@app.TimelineTraceCategory::RenderQueue])
+    .with_categories([RenderQueue])
   let lifecycle_world_51_0 = @ecs.World::new()
   defer lifecycle_world_51_0.close()
   let mut app = @app.App::new(lifecycle_world_51_0).add_plugins(
@@ -66,14 +66,10 @@ test "diagnostics: timeline trace plugin captures direct render queue spans" {
   app = app.add_system_config(
     @app.system(fn(_world : @ecs.World) {
       let trace_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::RenderQueue,
+        RenderQueue,
         "queue_2d",
       )
-      @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::RenderQueue,
-        "queue_2d",
-        trace_start_us,
-      )
+      @app.timeline_trace_end_span(RenderQueue, "queue_2d", trace_start_us)
     }),
   )
   app = app.update()
@@ -90,7 +86,7 @@ test "diagnostics: timeline trace plugin captures direct counters" {
     .with_enabled(true)
     .with_output_path(output_path)
     .with_flush_interval_frames(1)
-    .with_categories([@app.TimelineTraceCategory::Counter])
+    .with_categories([Counter])
   let lifecycle_world_82_0 = @ecs.World::new()
   defer lifecycle_world_82_0.close()
   let mut app = @app.App::new(lifecycle_world_82_0).add_plugins(

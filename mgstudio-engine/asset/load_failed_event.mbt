@@ -40,7 +40,7 @@ let asset_load_failed_untyped_key : @ecs.MessageKey[UntypedAssetLoadFailedEvent]
 let asset_load_failed_dispatch_registry : @hashmap.HashMap[
   String,
   AssetLoadFailedDispatch,
-] = @hashmap.HashMap([])
+] = HashMap([])
 
 ///|
 fn[T : Asset] registered_asset_load_failed_message_key() -> @ecs.MessageKey[
@@ -63,7 +63,7 @@ fn[T : Asset] register_asset_load_failed_dispatch_for_type_name(
       world.init_message(message_key)
     }
     ignore(
-      world.send_message(message_key, AssetLoadFailedEvent::{
+      world.send_message(message_key, {
         id: AssetId::new(failure.id),
         path: failure.path,
         error: failure.error,
@@ -119,14 +119,14 @@ pub fn UntypedAssetLoadFailedEvent::new(
   path : AssetPath,
   error : String,
 ) -> UntypedAssetLoadFailedEvent {
-  UntypedAssetLoadFailedEvent::{ type_name, id, path, error }
+  { type_name, id, path, error }
 }
 
 ///|
 pub fn[T : Asset] AssetLoadFailedEvent::untyped(
   self : AssetLoadFailedEvent[T],
 ) -> UntypedAssetLoadFailedEvent {
-  UntypedAssetLoadFailedEvent::{
+  {
     type_name: assets_type_name((None : T?)),
     id: self.id.index(),
     path: self.path,

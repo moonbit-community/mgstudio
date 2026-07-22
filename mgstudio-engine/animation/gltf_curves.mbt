@@ -28,16 +28,16 @@ pub fn gltf_interpolation_from_name(
   interpolation : String?,
 ) -> GltfInterpolation {
   match interpolation {
-    Some("STEP") => GltfInterpolation::Step
-    Some("CUBICSPLINE") => GltfInterpolation::CubicSpline
-    _ => GltfInterpolation::Linear
+    Some("STEP") => Step
+    Some("CUBICSPLINE") => CubicSpline
+    _ => Linear
   }
 }
 
 ///|
 pub fn gltf_interpolation_is_step(interpolation : GltfInterpolation) -> Bool {
   match interpolation {
-    GltfInterpolation::Step => true
+    Step => true
     _ => false
   }
 }
@@ -47,7 +47,7 @@ pub fn gltf_interpolation_is_cubic_spline(
   interpolation : GltfInterpolation,
 ) -> Bool {
   match interpolation {
-    GltfInterpolation::CubicSpline => true
+    CubicSpline => true
     _ => false
   }
 }
@@ -67,21 +67,21 @@ pub fn gltf_translation_keyframes_from_samples(
   guard keyframe_count > 0 else { return None }
   let keyframes : Array[KeyframeVec3] = []
   match interpolation {
-    GltfInterpolation::Linear => {
+    Linear => {
       guard samples.length() == keyframe_count else { return None }
       for i in 0..<keyframe_count {
         keyframes.push(KeyframeVec3::new(timestamps[i], samples[i]))
       }
       Some(keyframes)
     }
-    GltfInterpolation::Step => {
+    Step => {
       guard samples.length() == keyframe_count else { return None }
       for i in 0..<keyframe_count {
         keyframes.push(KeyframeVec3::new_stepped(timestamps[i], samples[i]))
       }
       Some(keyframes)
     }
-    GltfInterpolation::CubicSpline => {
+    CubicSpline => {
       guard samples.length() == keyframe_count * 3 else { return None }
       for i in 0..<keyframe_count {
         keyframes.push(
@@ -108,7 +108,7 @@ pub fn gltf_rotation_keyframes_from_samples(
   guard keyframe_count > 0 else { return None }
   let keyframes : Array[KeyframeQuat] = []
   match interpolation {
-    GltfInterpolation::Linear => {
+    Linear => {
       guard samples.length() == keyframe_count else { return None }
       for i in 0..<keyframe_count {
         keyframes.push(
@@ -117,7 +117,7 @@ pub fn gltf_rotation_keyframes_from_samples(
       }
       Some(keyframes)
     }
-    GltfInterpolation::Step => {
+    Step => {
       guard samples.length() == keyframe_count else { return None }
       for i in 0..<keyframe_count {
         keyframes.push(
@@ -129,7 +129,7 @@ pub fn gltf_rotation_keyframes_from_samples(
       }
       Some(keyframes)
     }
-    GltfInterpolation::CubicSpline => {
+    CubicSpline => {
       guard samples.length() == keyframe_count * 3 else { return None }
       for i in 0..<keyframe_count {
         keyframes.push(
@@ -169,7 +169,7 @@ pub fn gltf_weight_keyframes_from_flat_samples(
   guard keyframe_count > 0 else { return None }
   let keyframes : Array[KeyframeWeights] = []
   match interpolation {
-    GltfInterpolation::Linear => {
+    Linear => {
       guard flat_samples.length() % keyframe_count == 0 else { return None }
       let width = flat_samples.length() / keyframe_count
       guard width > 0 else { return None }
@@ -183,7 +183,7 @@ pub fn gltf_weight_keyframes_from_flat_samples(
       }
       Some(keyframes)
     }
-    GltfInterpolation::Step => {
+    Step => {
       guard flat_samples.length() % keyframe_count == 0 else { return None }
       let width = flat_samples.length() / keyframe_count
       guard width > 0 else { return None }
@@ -197,7 +197,7 @@ pub fn gltf_weight_keyframes_from_flat_samples(
       }
       Some(keyframes)
     }
-    GltfInterpolation::CubicSpline => {
+    CubicSpline => {
       guard flat_samples.length() % (keyframe_count * 3) == 0 else {
         return None
       }

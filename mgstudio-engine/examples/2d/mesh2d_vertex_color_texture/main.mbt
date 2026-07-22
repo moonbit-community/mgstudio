@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(Startup, setup)
   .run()
 }
 
@@ -41,11 +41,7 @@ fn setup(
       (
         @mesh.Mesh2d::new(mesh_handle),
         @sprite_render_mesh2d_material.MeshMaterial2d::new(
-          materials
-          .peek()
-          .add(
-            @sprite_render_mesh2d_color_material.ColorMaterial::ColorMaterial(),
-          ),
+          materials.peek().add(ColorMaterial()),
         ),
         @transform.Transform::from_translation(
           @math.Vec3::new(-96.0F, 0.0F, 0.0F),

@@ -47,7 +47,7 @@ pub fn RenderClusteredDecal::new(
   world_position? : @math.Vec3 = @math.Vec3::zero(),
   bounding_sphere_radius? : Float = 0.0F,
 ) -> RenderClusteredDecal {
-  RenderClusteredDecal::{
+  {
     local_from_world,
     base_color_texture_index,
     normal_map_texture_index,
@@ -77,7 +77,7 @@ pub struct RenderClusteredDecals {
 
 ///|
 pub fn RenderClusteredDecals::RenderClusteredDecals() -> RenderClusteredDecals {
-  RenderClusteredDecals::{
+  {
     binding_index_to_textures: [],
     texture_to_binding_index: Map([]),
     decals: [],
@@ -232,23 +232,13 @@ pub fn clustered_decal_bind_group_layout_entries(
     return None
   }
   Some([
-    ClusteredDecalBindGroupLayoutEntry::{
-      binding: 0,
-      name: "decals",
-      entry_type: ClusteredDecalBindGroupLayoutEntryType::StorageBufferReadOnly,
-    },
-    ClusteredDecalBindGroupLayoutEntry::{
+    { binding: 0, name: "decals", entry_type: StorageBufferReadOnly },
+    {
       binding: 1,
       name: "decal_textures",
-      entry_type: ClusteredDecalBindGroupLayoutEntryType::Texture2dBindingArray(
-        max_view_decals,
-      ),
+      entry_type: Texture2dBindingArray(max_view_decals),
     },
-    ClusteredDecalBindGroupLayoutEntry::{
-      binding: 2,
-      name: "decal_sampler",
-      entry_type: ClusteredDecalBindGroupLayoutEntryType::SamplerFiltering,
-    },
+    { binding: 2, name: "decal_sampler", entry_type: SamplerFiltering },
   ])
 }
 
@@ -261,7 +251,7 @@ pub struct DecalsBuffer {
 
 ///|
 pub fn DecalsBuffer::DecalsBuffer() -> DecalsBuffer {
-  DecalsBuffer::{ decals: [], gpu_buffer: None, gpu_capacity: 0UL }
+  { decals: [], gpu_buffer: None, gpu_capacity: 0UL }
 }
 
 ///|
@@ -344,10 +334,7 @@ fn render_clustered_decal_push_gpu_words(
 pub fn DecalsBuffer::gpu_words(self : DecalsBuffer) -> Array[UInt] {
   let words : Array[UInt] = []
   if self.decals.length() == 0 {
-    render_clustered_decal_push_gpu_words(
-      words,
-      RenderClusteredDecal::RenderClusteredDecal(),
-    )
+    render_clustered_decal_push_gpu_words(words, RenderClusteredDecal())
     return words
   }
   for decal in self.decals {
@@ -478,11 +465,7 @@ pub fn RenderViewClusteredDecalBindGroupEntries::get(
   } else {
     render_decals.binding_index_to_textures[0]
   }
-  Some(RenderViewClusteredDecalBindGroupEntries::{
-    decals: decals_buffer.decals.copy(),
-    texture_ids,
-    sampler_texture_id,
-  })
+  Some({ decals: decals_buffer.decals.copy(), texture_ids, sampler_texture_id })
 }
 
 ///|
@@ -495,7 +478,7 @@ pub fn render3d_upload_decals(
     decals_buffer.push(decal)
   }
   if decals_buffer.is_empty() {
-    decals_buffer.push(RenderClusteredDecal::RenderClusteredDecal())
+    decals_buffer.push(RenderClusteredDecal())
   }
 }
 
@@ -521,7 +504,7 @@ pub fn render3d_decals_buffer_ref_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[DecalsBuffer] {
   if render3d_decals_buffer_ref(world) is None {
-    world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::DecalsBuffer())
+    world.insert_resource(ecs_key_decals_buffer, DecalsBuffer())
   }
   match render3d_decals_buffer_ref(world) {
     Some(decals_buffer) => decals_buffer
@@ -533,6 +516,7 @@ pub fn render3d_decals_buffer_ref_or_init(
 pub struct ClusteredDecalPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ClusteredDecalPlugin::ClusteredDecalPlugin() -> ClusteredDecalPlugin {
   ClusteredDecalPlugin::{  }
 }
@@ -545,12 +529,12 @@ pub impl @app.Plugin for ClusteredDecalPlugin with fn name(_self) {
 ///|
 fn clustered_decal_cubemap_layout_tag(layout : @light.CubemapLayout3d) -> UInt {
   match layout {
-    @light.CubemapLayout3d::CrossVertical => 0U
-    @light.CubemapLayout3d::CrossHorizontal => 1U
-    @light.CubemapLayout3d::LineVertical => 2U
-    @light.CubemapLayout3d::LineHorizontal => 3U
-    @light.CubemapLayout3d::Equirectangular => 4U
-    @light.CubemapLayout3d::Faces => 5U
+    CrossVertical => 0U
+    CrossHorizontal => 1U
+    LineVertical => 2U
+    LineHorizontal => 3U
+    Equirectangular => 4U
+    Faces => 5U
   }
 }
 
@@ -593,7 +577,7 @@ fn clustered_decal_world_transform(
     None =>
       match (try! world.get_by_key(entity, @transform.ecs_key_transform)) {
         Some(transform) => transform
-        None => @transform.Transform::Transform()
+        None => Transform()
       }
   }
 }
@@ -737,7 +721,7 @@ pub fn render3d_render_clustered_decals_ref_or_init(
   if render3d_render_clustered_decals_ref(world) is None {
     world.insert_resource(
       ecs_key_render_clustered_decals,
-      RenderClusteredDecals::RenderClusteredDecals(),
+      RenderClusteredDecals(),
     )
   }
   match render3d_render_clustered_decals_ref(world) {
@@ -754,7 +738,7 @@ pub impl @app.Plugin for ClusteredDecalPlugin with fn build(self, app) {
   let sync_component : @render.SyncComponentPlugin[
     ClusteredDecal,
     ClusteredDecalPlugin,
-  ] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  ] = SyncComponentPlugin()
   let next = @render.sync_component_plugin_with(app, sync_component)
   register_embedded_wgsl_sources()
   clustered_decal_plugin_install_with(next, self)
@@ -764,10 +748,7 @@ pub impl @app.Plugin for ClusteredDecalPlugin with fn build(self, app) {
 pub fn clustered_decal_plugin_install(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  clustered_decal_plugin_install_with(
-    app,
-    ClusteredDecalPlugin::ClusteredDecalPlugin(),
-  )
+  clustered_decal_plugin_install_with(app, ClusteredDecalPlugin())
 }
 
 ///|
@@ -780,11 +761,11 @@ pub fn clustered_decal_plugin_install_with(
     if world.get_resource(ecs_key_render_clustered_decals) is None {
       world.insert_resource(
         ecs_key_render_clustered_decals,
-        RenderClusteredDecals::RenderClusteredDecals(),
+        RenderClusteredDecals(),
       )
     }
     if world.get_resource(ecs_key_decals_buffer) is None {
-      world.insert_resource(ecs_key_decals_buffer, DecalsBuffer::DecalsBuffer())
+      world.insert_resource(ecs_key_decals_buffer, DecalsBuffer())
     }
     sub_app
     .add_systems(

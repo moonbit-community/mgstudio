@@ -36,12 +36,7 @@ pub fn SlabAllocatorSettings::new(
   if growth_factor <= 1.0F {
     abort("slab allocator growth factor must be greater than 1")
   }
-  SlabAllocatorSettings::{
-    min_slab_size,
-    max_slab_size,
-    large_threshold,
-    growth_factor,
-  }
+  { min_slab_size, max_slab_size, large_threshold, growth_factor }
 }
 
 ///|
@@ -56,7 +51,7 @@ pub fn SlabAllocatorSettings::SlabAllocatorSettings() -> SlabAllocatorSettings {
 
 ///|
 pub impl Default for SlabAllocatorSettings with fn default() {
-  SlabAllocatorSettings::SlabAllocatorSettings()
+  SlabAllocatorSettings()
 }
 
 ///|
@@ -119,7 +114,7 @@ pub fn SlabItemLayoutInfo::new(
   if elements_per_slot <= 0 {
     abort("slab item layout elements_per_slot must be positive")
   }
-  SlabItemLayoutInfo::{ size, elements_per_slot, buffer_usages }
+  { size, elements_per_slot, buffer_usages }
 }
 
 ///|
@@ -187,14 +182,14 @@ pub fn slab_allocator_allocation_shape(
     layout.elements_per_slot,
   )
   let padding = slot_count * layout.elements_per_slot - element_count
-  SlabAllocationShape::{ element_count, slot_count, padding }
+  { element_count, slot_count, padding }
 }
 
 ///|
 pub fn slab_allocator_should_allocate_large(
   data_byte_len : Int,
   layout : SlabItemLayoutInfo,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings(),
 ) -> Bool {
   let shape = slab_allocator_allocation_shape(data_byte_len, layout)
   shape.slot_count * layout.slot_size() >=
@@ -236,7 +231,7 @@ fn slab_allocator_min_allocator_size(slot_count : Int) -> Int {
 pub fn slab_allocator_initial_general_slab_slot_capacity(
   layout : SlabItemLayoutInfo,
   data_slot_count : Int,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings(),
 ) -> Int {
   slab_allocator_div_ceil(settings.min_slab_size, layout.slot_size()).max(
     slab_allocator_min_allocator_size(data_slot_count),
@@ -263,11 +258,11 @@ pub fn slab_allocator_grow_general_slab_if_necessary(
   current_slot_capacity : Int,
   new_size_in_slots : Int,
   layout : SlabItemLayoutInfo,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings(),
 ) -> SlabGrowth {
   let initial_slot_capacity = current_slot_capacity
   if current_slot_capacity >= new_size_in_slots {
-    return SlabGrowth::{
+    return {
       kind: NoGrowthNeeded,
       old_slot_capacity: initial_slot_capacity,
       current_slot_capacity,
@@ -279,7 +274,7 @@ pub fn slab_allocator_grow_general_slab_if_necessary(
       capacity, settings, layout,
     )
     if next_capacity == capacity {
-      return SlabGrowth::{
+      return {
         kind: CantGrow,
         old_slot_capacity: initial_slot_capacity,
         current_slot_capacity: capacity,
@@ -287,7 +282,7 @@ pub fn slab_allocator_grow_general_slab_if_necessary(
     }
     capacity = next_capacity
   }
-  SlabGrowth::{
+  {
     kind: NeededGrowth,
     old_slot_capacity: initial_slot_capacity,
     current_slot_capacity: capacity,
@@ -343,7 +338,7 @@ pub fn slab_allocator_plan_new_general_slab(
   slab_id : Int,
   data_byte_len : Int,
   layout : SlabItemLayoutInfo,
-  settings? : SlabAllocatorSettings = SlabAllocatorSettings::SlabAllocatorSettings(),
+  settings? : SlabAllocatorSettings = SlabAllocatorSettings(),
 ) -> SlabAllocationPlan {
   let shape = slab_allocator_allocation_shape(data_byte_len, layout)
   let current_slot_capacity = slab_allocator_initial_general_slab_slot_capacity(
@@ -351,7 +346,7 @@ pub fn slab_allocator_plan_new_general_slab(
     shape.slot_count,
     settings~,
   )
-  SlabAllocationPlan::{
+  {
     slab_id,
     kind: General,
     layout,
@@ -359,11 +354,7 @@ pub fn slab_allocator_plan_new_general_slab(
     slot_count: shape.slot_count,
     padding: shape.padding,
     current_slot_capacity,
-    growth: SlabGrowth::{
-      kind: NeededGrowth,
-      old_slot_capacity: 0,
-      current_slot_capacity,
-    },
+    growth: { kind: NeededGrowth, old_slot_capacity: 0, current_slot_capacity },
   }
 }
 
@@ -374,7 +365,7 @@ pub fn slab_allocator_plan_large_slab(
   layout : SlabItemLayoutInfo,
 ) -> SlabAllocationPlan {
   let shape = slab_allocator_allocation_shape(data_byte_len, layout)
-  SlabAllocationPlan::{
+  {
     slab_id,
     kind: LargeObject,
     layout,
@@ -382,7 +373,7 @@ pub fn slab_allocator_plan_large_slab(
     slot_count: shape.slot_count,
     padding: shape.padding,
     current_slot_capacity: shape.slot_count,
-    growth: SlabGrowth::{
+    growth: {
       kind: NoGrowthNeeded,
       old_slot_capacity: shape.slot_count,
       current_slot_capacity: shape.slot_count,

@@ -102,7 +102,7 @@ fn[T] raise_shader_compile_error(
     MissingRegisteredSource(_)
     | MissingPreparedSourceDefs(_)
     | MissingStartupRegisteredSource(_) =>
-      raise GpuBackendError::ShaderNotReady("wgpu: \{err.message()}")
+      raise ShaderNotReady("wgpu: \{err.message()}")
     _ => fatal("wgpu: \{err.message()}")
   }
 }
@@ -136,26 +136,20 @@ fn default_wgsl_value_defines() -> @hashmap.HashMap[
   value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   value_defines.set(
     "MAX_DIRECTIONAL_LIGHTS",
-    @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_DIRECTIONAL_LIGHTS),
+    UInt(MESH3D_MAX_DIRECTIONAL_LIGHTS),
   )
   value_defines.set(
     "MAX_CASCADES_PER_LIGHT",
-    @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_CASCADES_PER_LIGHT),
+    UInt(MESH3D_MAX_CASCADES_PER_LIGHT),
   )
-  value_defines.set(
-    "MAX_RECT_LIGHTS",
-    @wgsl_common.ShaderDefValue::UInt(MESH3D_MAX_RECT_LIGHTS),
-  )
-  value_defines.set(
-    "AVAILABLE_STORAGE_BUFFER_BINDINGS",
-    @wgsl_common.ShaderDefValue::UInt(8U),
-  )
+  value_defines.set("MAX_RECT_LIGHTS", UInt(MESH3D_MAX_RECT_LIGHTS))
+  value_defines.set("AVAILABLE_STORAGE_BUFFER_BINDINGS", UInt(8U))
   value_defines
 }
 
 ///|
 fn wgsl_def_int(value : Int) -> @wgsl_common.ShaderDefValue {
-  @wgsl_common.ShaderDefValue::Int(value)
+  Int(value)
 }
 
 ///|
@@ -217,7 +211,7 @@ fn load_wgsl_from_assets_base_required(
   load_wgsl_preprocessed(
     assets_base,
     rel,
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
 }

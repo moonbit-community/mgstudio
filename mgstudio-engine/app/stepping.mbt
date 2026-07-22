@@ -66,10 +66,10 @@ pub impl Resource for Stepping with fn resource() {
 
 ///|
 pub fn Stepping::new() -> Stepping {
-  Stepping::{
+  {
     action: RunAll,
     schedules: [],
-    schedule_states: @hashmap.HashMap([]),
+    schedule_states: HashMap([]),
     cursor_schedule: 0,
     cursor_system: 0,
     continue_started: false,
@@ -215,7 +215,7 @@ fn ensure_schedule_state(
   match stepping.schedule_states.get(key) {
     Some(state) => state
     None => {
-      let state = { behaviors: @hashmap.HashMap([]) }
+      let state = { behaviors: HashMap([]) }
       stepping.schedule_states.set(key, state)
       state
     }

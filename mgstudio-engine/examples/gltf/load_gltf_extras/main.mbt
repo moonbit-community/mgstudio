@@ -74,9 +74,7 @@ fn setup(
   let ui_root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
 
@@ -87,10 +85,10 @@ fn setup(
         @text.Text::new("Waiting for glTF extras..."),
         @text.TextFont::from_font_size(15.0F),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(12.0F),
-          left: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(12.0F),
+          left: Px(12.0F),
         },
         ExampleDisplay::{  },
       ),
@@ -173,7 +171,7 @@ fn update_display(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update_display)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, update_display)
   .run()
 }

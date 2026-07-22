@@ -253,8 +253,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(fixed_time)
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param(@app.FixedUpdate, interact_bodies)
-  .add_systems_param2(@app.FixedUpdate, integrate)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param(FixedUpdate, interact_bodies)
+  .add_systems_param2(FixedUpdate, integrate)
   .run()
 }

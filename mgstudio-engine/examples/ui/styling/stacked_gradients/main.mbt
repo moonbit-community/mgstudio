@@ -37,9 +37,7 @@ fn setup(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.BackgroundColor::new(@color.Color::black()),
     ),
   )
@@ -50,9 +48,9 @@ fn setup(commands : @app.Commands) -> Unit {
         @hierarchy.Parent::new(root),
         Layer::{ index: i },
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_position_type(@ui.PositionType::Absolute),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F))
+        .with_position_type(Absolute),
         @ui.BackgroundColor::new(
           match i {
             0 => @color.Color::new(0.9F, 0.1F, 0.1F, 0.25F)
@@ -97,7 +95,7 @@ fn animate_layers(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_layers)
+  .add_systems_param(Startup, setup)
+  .add_systems_param2(Update, animate_layers)
   .run()
 }

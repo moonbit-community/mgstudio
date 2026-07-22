@@ -23,7 +23,7 @@ pub struct ParallelIteratorAdapter[T] {
 pub fn[T] ParallelIteratorAdapter::new(
   iter : ParallelIterator[T],
 ) -> ParallelIteratorAdapter[T] {
-  ParallelIteratorAdapter::{ iter, }
+  { iter, }
 }
 
 ///|

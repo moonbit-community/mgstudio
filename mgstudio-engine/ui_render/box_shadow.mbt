@@ -21,7 +21,7 @@ pub struct BoxShadowSamples {
 ///|
 pub fn BoxShadowSamples::new(samples : Int) -> BoxShadowSamples {
   let safe = if samples < 0 { 0 } else { samples }
-  BoxShadowSamples::{ samples: safe }
+  { samples: safe }
 }
 
 ///|

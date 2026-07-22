@@ -51,7 +51,7 @@ pub struct MeshletVisibilityBufferRasterState {
 
 ///|
 pub fn MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState() -> MeshletVisibilityBufferRasterState {
-  MeshletVisibilityBufferRasterState::{
+  {
     enabled: meshlet_runtime_available(),
     last_view_count: 0,
     last_shadow_view_count: 0,
@@ -86,10 +86,7 @@ pub fn MeshletVisibilityBufferRasterState::MeshletVisibilityBufferRasterState() 
 pub fn meshlet_visibility_buffer_raster_state_with_enabled(
   enabled : Bool,
 ) -> MeshletVisibilityBufferRasterState {
-  MeshletVisibilityBufferRasterState::{
-    ..MeshletVisibilityBufferRasterState(),
-    enabled,
-  }
+  { ..MeshletVisibilityBufferRasterState(), enabled, }
 }
 
 ///|
@@ -168,14 +165,14 @@ fn meshlet_visibility_buffer_raster_execution_event(
   label? : String = "",
   operation_label? : String = "",
 ) -> MeshletVisibilityBufferRasterExecutionEvent {
-  MeshletVisibilityBufferRasterExecutionEvent::{ kind, label, operation_label }
+  { kind, label, operation_label }
 }
 
 ///|
 fn meshlet_visibility_buffer_raster_command_descriptor(
   label : String,
   command_kind : MeshletVisibilityBufferRasterCommandKind,
-  dispatch_kind? : MeshletVisibilityBufferRasterDispatchKind = MeshletVisibilityBufferRasterDispatchKind::NoDispatch,
+  dispatch_kind? : MeshletVisibilityBufferRasterDispatchKind = NoDispatch,
   pipeline_slot? : String = "",
   bind_group? : String = "",
   immediate_size? : Int = 0,
@@ -184,7 +181,7 @@ fn meshlet_visibility_buffer_raster_command_descriptor(
   uses_camera_viewport? : Bool = false,
   uses_shadow_unclipped_pipeline? : Bool = false,
 ) -> MeshletVisibilityBufferRasterCommandDescriptor {
-  MeshletVisibilityBufferRasterCommandDescriptor::{
+  {
     label,
     command_kind,
     dispatch_kind,
@@ -301,14 +298,14 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     ClearRasterClusterPrevCounts =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+        ClearBuffer,
         clear_buffer_count=1,
       )
     ClearVisibilityBuffer(shadow_view) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        ComputePass,
+        dispatch_kind=DirectWorkgroups,
         pipeline_slot=if shadow_view {
           "clear_visibility_buffer_shadow_view"
         } else {
@@ -319,8 +316,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     FirstInstanceCull(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        ComputePass,
+        dispatch_kind=DirectWorkgroups,
         pipeline_slot="first_instance_cull",
         bind_group="first_instance_cull",
         dynamic_offset_count=2,
@@ -328,8 +325,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     FirstBvhCull(_, ping) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        ComputePass,
+        dispatch_kind=IndirectWorkgroups,
         pipeline_slot="first_bvh_cull",
         bind_group=if ping {
           "first_bvh_cull_ping"
@@ -341,20 +338,20 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     FirstBvhCullClearCount(_, _) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+        ClearBuffer,
         clear_buffer_count=1,
       )
     FirstBvhCullClearDispatch(_, _) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ClearBuffer,
+        ClearBuffer,
         clear_buffer_count=1,
       )
     FirstMeshletCull(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        ComputePass,
+        dispatch_kind=IndirectWorkgroups,
         pipeline_slot="first_meshlet_cull",
         bind_group="first_meshlet_cull",
         dynamic_offset_count=2,
@@ -362,16 +359,16 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     FirstRemap1dTo2d(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        ComputePass,
+        dispatch_kind=DirectWorkgroups,
         pipeline_slot="remap_1d_to_2d_dispatch",
         bind_group="remap_1d_to_2d_dispatch",
       )
     SoftwareRaster(_, shadow_view) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        ComputePass,
+        dispatch_kind=IndirectWorkgroups,
         pipeline_slot=if shadow_view {
           "visibility_buffer_software_raster_shadow_view"
         } else {
@@ -383,8 +380,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     HardwareRaster(_, shadow_view) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::RenderPass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectDraw,
+        RenderPass,
+        dispatch_kind=IndirectDraw,
         pipeline_slot=if shadow_view && directional_shadow_view {
           "visibility_buffer_hardware_raster_shadow_view_unclipped"
         } else if shadow_view {
@@ -400,16 +397,16 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     FillCounts(_, _) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        ComputePass,
+        dispatch_kind=DirectWorkgroups,
         pipeline_slot="fill_counts",
         bind_group="fill_counts",
       )
     DownsampleDepth(first_pass, shadow_view) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::DepthPyramidDownsample,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        DepthPyramidDownsample,
+        dispatch_kind=DirectWorkgroups,
         pipeline_slot=if first_pass {
           if shadow_view {
             "downsample_depth_first_shadow_view"
@@ -426,8 +423,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     SecondInstanceCull(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        ComputePass,
+        dispatch_kind=IndirectWorkgroups,
         pipeline_slot="second_instance_cull",
         bind_group="second_instance_cull",
         dynamic_offset_count=2,
@@ -435,8 +432,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     SecondBvhCull(_, ping) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        ComputePass,
+        dispatch_kind=IndirectWorkgroups,
         pipeline_slot="second_bvh_cull",
         bind_group=if ping {
           "second_bvh_cull_ping"
@@ -448,8 +445,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     SecondMeshletCull(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::IndirectWorkgroups,
+        ComputePass,
+        dispatch_kind=IndirectWorkgroups,
         pipeline_slot="second_meshlet_cull",
         bind_group="second_meshlet_cull",
         dynamic_offset_count=2,
@@ -457,16 +454,16 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     SecondRemap1dTo2d(_) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::ComputePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectWorkgroups,
+        ComputePass,
+        dispatch_kind=DirectWorkgroups,
         pipeline_slot="remap_1d_to_2d_dispatch",
         bind_group="remap_1d_to_2d_dispatch",
       )
     ResolveDepth(shadow_view) =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::DepthResolvePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectDraw,
+        DepthResolvePass,
+        dispatch_kind=DirectDraw,
         pipeline_slot=if shadow_view {
           "resolve_depth_shadow_view"
         } else {
@@ -478,8 +475,8 @@ pub fn meshlet_visibility_buffer_raster_op_command_descriptor(
     ResolveMaterialDepth =>
       meshlet_visibility_buffer_raster_command_descriptor(
         label,
-        MeshletVisibilityBufferRasterCommandKind::DepthResolvePass,
-        dispatch_kind=MeshletVisibilityBufferRasterDispatchKind::DirectDraw,
+        DepthResolvePass,
+        dispatch_kind=DirectDraw,
         pipeline_slot="resolve_material_depth",
         bind_group="resolve_material_depth",
         uses_camera_viewport=true,
@@ -582,41 +579,21 @@ fn meshlet_push_first_pass_ops(
   max_bvh_depth : Int,
   remap_dispatch_enabled : Bool,
 ) -> Unit {
-  operations.push(
-    MeshletVisibilityBufferRasterOp::FirstInstanceCull(shadow_view),
-  )
+  operations.push(FirstInstanceCull(shadow_view))
   let mut ping = true
   for _ in 0..<max_bvh_depth {
-    operations.push(
-      MeshletVisibilityBufferRasterOp::FirstBvhCull(shadow_view, ping),
-    )
-    operations.push(
-      MeshletVisibilityBufferRasterOp::FirstBvhCullClearCount(shadow_view, ping),
-    )
-    operations.push(
-      MeshletVisibilityBufferRasterOp::FirstBvhCullClearDispatch(
-        shadow_view, ping,
-      ),
-    )
+    operations.push(FirstBvhCull(shadow_view, ping))
+    operations.push(FirstBvhCullClearCount(shadow_view, ping))
+    operations.push(FirstBvhCullClearDispatch(shadow_view, ping))
     ping = !ping
   }
-  operations.push(
-    MeshletVisibilityBufferRasterOp::FirstMeshletCull(shadow_view),
-  )
+  operations.push(FirstMeshletCull(shadow_view))
   if remap_dispatch_enabled {
-    operations.push(
-      MeshletVisibilityBufferRasterOp::FirstRemap1dTo2d(shadow_view),
-    )
+    operations.push(FirstRemap1dTo2d(shadow_view))
   }
-  operations.push(
-    MeshletVisibilityBufferRasterOp::SoftwareRaster(true, shadow_view),
-  )
-  operations.push(
-    MeshletVisibilityBufferRasterOp::HardwareRaster(true, shadow_view),
-  )
-  operations.push(
-    MeshletVisibilityBufferRasterOp::FillCounts(true, shadow_view),
-  )
+  operations.push(SoftwareRaster(true, shadow_view))
+  operations.push(HardwareRaster(true, shadow_view))
+  operations.push(FillCounts(true, shadow_view))
 }
 
 ///|
@@ -626,33 +603,19 @@ fn meshlet_push_second_pass_ops(
   max_bvh_depth : Int,
   remap_dispatch_enabled : Bool,
 ) -> Unit {
-  operations.push(
-    MeshletVisibilityBufferRasterOp::SecondInstanceCull(shadow_view),
-  )
+  operations.push(SecondInstanceCull(shadow_view))
   let mut ping = true
   for _ in 0..<max_bvh_depth {
-    operations.push(
-      MeshletVisibilityBufferRasterOp::SecondBvhCull(shadow_view, ping),
-    )
+    operations.push(SecondBvhCull(shadow_view, ping))
     ping = !ping
   }
-  operations.push(
-    MeshletVisibilityBufferRasterOp::SecondMeshletCull(shadow_view),
-  )
+  operations.push(SecondMeshletCull(shadow_view))
   if remap_dispatch_enabled {
-    operations.push(
-      MeshletVisibilityBufferRasterOp::SecondRemap1dTo2d(shadow_view),
-    )
+    operations.push(SecondRemap1dTo2d(shadow_view))
   }
-  operations.push(
-    MeshletVisibilityBufferRasterOp::SoftwareRaster(false, shadow_view),
-  )
-  operations.push(
-    MeshletVisibilityBufferRasterOp::HardwareRaster(false, shadow_view),
-  )
-  operations.push(
-    MeshletVisibilityBufferRasterOp::FillCounts(false, shadow_view),
-  )
+  operations.push(SoftwareRaster(false, shadow_view))
+  operations.push(HardwareRaster(false, shadow_view))
+  operations.push(FillCounts(false, shadow_view))
 }
 
 ///|
@@ -663,25 +626,19 @@ fn meshlet_push_visibility_buffer_raster_view_ops(
   has_material_depth : Bool,
   remap_dispatch_enabled : Bool,
 ) -> Unit {
-  operations.push(
-    MeshletVisibilityBufferRasterOp::ClearVisibilityBuffer(shadow_view),
-  )
+  operations.push(ClearVisibilityBuffer(shadow_view))
   meshlet_push_first_pass_ops(
     operations, shadow_view, max_bvh_depth, remap_dispatch_enabled,
   )
-  operations.push(
-    MeshletVisibilityBufferRasterOp::DownsampleDepth(true, shadow_view),
-  )
+  operations.push(DownsampleDepth(true, shadow_view))
   meshlet_push_second_pass_ops(
     operations, shadow_view, max_bvh_depth, remap_dispatch_enabled,
   )
-  operations.push(MeshletVisibilityBufferRasterOp::ResolveDepth(shadow_view))
+  operations.push(ResolveDepth(shadow_view))
   if !shadow_view && has_material_depth {
-    operations.push(MeshletVisibilityBufferRasterOp::ResolveMaterialDepth)
+    operations.push(ResolveMaterialDepth)
   }
-  operations.push(
-    MeshletVisibilityBufferRasterOp::DownsampleDepth(false, shadow_view),
-  )
+  operations.push(DownsampleDepth(false, shadow_view))
 }
 
 ///|
@@ -691,7 +648,7 @@ fn meshlet_visibility_buffer_raster_push_operation_event(
 ) -> Unit {
   events.push(
     meshlet_visibility_buffer_raster_execution_event(
-      MeshletVisibilityBufferRasterExecutionEventKind::Operation,
+      Operation,
       operation_label=meshlet_visibility_buffer_raster_op_label(op),
     ),
   )
@@ -703,10 +660,7 @@ fn meshlet_visibility_buffer_raster_push_debug_group(
   label : String,
 ) -> Unit {
   events.push(
-    meshlet_visibility_buffer_raster_execution_event(
-      MeshletVisibilityBufferRasterExecutionEventKind::PushDebugGroup,
-      label~,
-    ),
+    meshlet_visibility_buffer_raster_execution_event(PushDebugGroup, label~),
   )
 }
 
@@ -716,10 +670,7 @@ fn meshlet_visibility_buffer_raster_pop_debug_group(
   label : String,
 ) -> Unit {
   events.push(
-    meshlet_visibility_buffer_raster_execution_event(
-      MeshletVisibilityBufferRasterExecutionEventKind::PopDebugGroup,
-      label~,
-    ),
+    meshlet_visibility_buffer_raster_execution_event(PopDebugGroup, label~),
   )
 }
 
@@ -730,7 +681,7 @@ fn meshlet_visibility_buffer_raster_begin_span(
 ) -> Unit {
   events.push(
     meshlet_visibility_buffer_raster_execution_event(
-      MeshletVisibilityBufferRasterExecutionEventKind::BeginDiagnosticSpan,
+      BeginDiagnosticSpan,
       label~,
     ),
   )
@@ -742,10 +693,7 @@ fn meshlet_visibility_buffer_raster_end_span(
   label : String,
 ) -> Unit {
   events.push(
-    meshlet_visibility_buffer_raster_execution_event(
-      MeshletVisibilityBufferRasterExecutionEventKind::EndDiagnosticSpan,
-      label~,
-    ),
+    meshlet_visibility_buffer_raster_execution_event(EndDiagnosticSpan, label~),
   )
 }
 
@@ -761,7 +709,7 @@ fn meshlet_push_first_pass_execution_events(
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::FirstInstanceCull(shadow_view),
+    FirstInstanceCull(shadow_view),
   )
   meshlet_visibility_buffer_raster_push_debug_group(
     events, "meshlet_first_bvh_cull",
@@ -770,17 +718,15 @@ fn meshlet_push_first_pass_execution_events(
   for _ in 0..<max_bvh_depth {
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::FirstBvhCull(shadow_view, ping),
+      FirstBvhCull(shadow_view, ping),
     )
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::FirstBvhCullClearCount(shadow_view, ping),
+      FirstBvhCullClearCount(shadow_view, ping),
     )
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::FirstBvhCullClearDispatch(
-        shadow_view, ping,
-      ),
+      FirstBvhCullClearDispatch(shadow_view, ping),
     )
     ping = !ping
   }
@@ -789,25 +735,25 @@ fn meshlet_push_first_pass_execution_events(
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::FirstMeshletCull(shadow_view),
+    FirstMeshletCull(shadow_view),
   )
   if remap_dispatch_enabled {
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::FirstRemap1dTo2d(shadow_view),
+      FirstRemap1dTo2d(shadow_view),
     )
   }
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::SoftwareRaster(true, shadow_view),
+    SoftwareRaster(true, shadow_view),
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::HardwareRaster(true, shadow_view),
+    HardwareRaster(true, shadow_view),
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::FillCounts(true, shadow_view),
+    FillCounts(true, shadow_view),
   )
   meshlet_visibility_buffer_raster_pop_debug_group(events, "meshlet_first_pass")
 }
@@ -824,7 +770,7 @@ fn meshlet_push_second_pass_execution_events(
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::SecondInstanceCull(shadow_view),
+    SecondInstanceCull(shadow_view),
   )
   meshlet_visibility_buffer_raster_push_debug_group(
     events, "meshlet_second_bvh_cull",
@@ -833,7 +779,7 @@ fn meshlet_push_second_pass_execution_events(
   for _ in 0..<max_bvh_depth {
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::SecondBvhCull(shadow_view, ping),
+      SecondBvhCull(shadow_view, ping),
     )
     ping = !ping
   }
@@ -842,25 +788,25 @@ fn meshlet_push_second_pass_execution_events(
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::SecondMeshletCull(shadow_view),
+    SecondMeshletCull(shadow_view),
   )
   if remap_dispatch_enabled {
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::SecondRemap1dTo2d(shadow_view),
+      SecondRemap1dTo2d(shadow_view),
     )
   }
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::SoftwareRaster(false, shadow_view),
+    SoftwareRaster(false, shadow_view),
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::HardwareRaster(false, shadow_view),
+    HardwareRaster(false, shadow_view),
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::FillCounts(false, shadow_view),
+    FillCounts(false, shadow_view),
   )
   meshlet_visibility_buffer_raster_pop_debug_group(
     events, "meshlet_second_pass",
@@ -877,31 +823,31 @@ fn meshlet_push_visibility_buffer_raster_view_execution_events(
 ) -> Unit {
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::ClearVisibilityBuffer(shadow_view),
+    ClearVisibilityBuffer(shadow_view),
   )
   meshlet_push_first_pass_execution_events(
     events, shadow_view, max_bvh_depth, remap_dispatch_enabled,
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::DownsampleDepth(true, shadow_view),
+    DownsampleDepth(true, shadow_view),
   )
   meshlet_push_second_pass_execution_events(
     events, shadow_view, max_bvh_depth, remap_dispatch_enabled,
   )
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::ResolveDepth(shadow_view),
+    ResolveDepth(shadow_view),
   )
   if !shadow_view && has_material_depth {
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::ResolveMaterialDepth,
+      ResolveMaterialDepth,
     )
   }
   meshlet_visibility_buffer_raster_push_operation_event(
     events,
-    MeshletVisibilityBufferRasterOp::DownsampleDepth(false, shadow_view),
+    DownsampleDepth(false, shadow_view),
   )
 }
 
@@ -930,7 +876,7 @@ pub fn meshlet_visibility_buffer_raster_execution_events(
     )
     meshlet_visibility_buffer_raster_push_operation_event(
       events,
-      MeshletVisibilityBufferRasterOp::ClearRasterClusterPrevCounts,
+      ClearRasterClusterPrevCounts,
     )
     for index in 0..<safe_view_count {
       meshlet_push_visibility_buffer_raster_view_execution_events(
@@ -986,9 +932,7 @@ pub fn meshlet_visibility_buffer_raster_plan(
   ).min(safe_view_count)
   let operations : Array[MeshletVisibilityBufferRasterOp] = []
   if enabled && pipelines_ready {
-    operations.push(
-      MeshletVisibilityBufferRasterOp::ClearRasterClusterPrevCounts,
-    )
+    operations.push(ClearRasterClusterPrevCounts)
     for index in 0..<safe_view_count {
       meshlet_push_visibility_buffer_raster_view_ops(
         operations,
@@ -1004,7 +948,7 @@ pub fn meshlet_visibility_buffer_raster_plan(
       )
     }
   }
-  MeshletVisibilityBufferRasterPlan::{
+  {
     operations,
     view_count: safe_view_count,
     shadow_view_count: safe_shadow_view_count,

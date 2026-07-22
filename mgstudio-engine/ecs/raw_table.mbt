@@ -35,8 +35,7 @@ fn raw_table_load_tick(tick : @core.Tick) -> @core.Tick? {
 }
 
 ///|
-let raw_table_changed_caller_ids : @hashmap.HashMap[String, Int] = @hashmap.HashMap([],
-)
+let raw_table_changed_caller_ids : @hashmap.HashMap[String, Int] = HashMap([])
 
 ///|
 let raw_table_changed_callers : Array[String?] = [None]

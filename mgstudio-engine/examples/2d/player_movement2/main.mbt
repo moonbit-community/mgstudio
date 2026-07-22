@@ -18,16 +18,14 @@ priv struct PlayerMovementState {
 }
 
 ///|
-let player_movement_state : Ref[PlayerMovementState] = Ref(PlayerMovementState::{
-  player: None,
-})
+let player_movement_state : Ref[PlayerMovementState] = Ref({ player: None })
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_player_movement2_setup)
-  .add_systems_world(@app.FixedUpdate, rapier2d_player_movement2_fixed)
+  .add_systems_world(Startup, rapier2d_player_movement2_setup)
+  .add_systems_world(FixedUpdate, rapier2d_player_movement2_fixed)
   .run()
 }
 
@@ -110,14 +108,14 @@ fn rapier2d_player_movement2_setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     @physics2d.ecs_key_kinematic_character_controller2d,
-    @physics2d.KinematicCharacterController2d::KinematicCharacterController2d(),
+    KinematicCharacterController2d(),
   )
   try! world.set_by_key(
     player,
     @physics2d.ecs_key_kinematic_character_controller_output2d,
     @physics2d.KinematicCharacterControllerOutput2d::new(),
   )
-  player_movement_state.val = PlayerMovementState::{ player: Some(player) }
+  player_movement_state.val = { player: Some(player) }
 }
 
 ///|
@@ -130,20 +128,16 @@ fn rapier2d_player_movement2_fixed(world : @ecs.World) -> Unit {
     return
   }
   let mut axis = @math.Vec2::new(0.0F, 0.0F)
-  if @input.key_pressed(@window.KeyCode::KeyA) ||
-    @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.key_pressed(KeyA) || @input.key_pressed(ArrowLeft) {
     axis = @math.Vec2::new(axis.x - 1.0F, axis.y)
   }
-  if @input.key_pressed(@window.KeyCode::KeyD) ||
-    @input.key_pressed(@window.KeyCode::ArrowRight) {
+  if @input.key_pressed(KeyD) || @input.key_pressed(ArrowRight) {
     axis = @math.Vec2::new(axis.x + 1.0F, axis.y)
   }
-  if @input.key_pressed(@window.KeyCode::KeyW) ||
-    @input.key_pressed(@window.KeyCode::ArrowUp) {
+  if @input.key_pressed(KeyW) || @input.key_pressed(ArrowUp) {
     axis = @math.Vec2::new(axis.x, axis.y + 1.0F)
   }
-  if @input.key_pressed(@window.KeyCode::KeyS) ||
-    @input.key_pressed(@window.KeyCode::ArrowDown) {
+  if @input.key_pressed(KeyS) || @input.key_pressed(ArrowDown) {
     axis = @math.Vec2::new(axis.x, axis.y - 1.0F)
   }
   let dt = @time.time_fixed_timestep_seconds()

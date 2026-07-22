@@ -22,14 +22,14 @@ pub struct RenderMeshInstanceFlags {
 
 ///|
 pub fn RenderMeshInstanceFlags::empty() -> RenderMeshInstanceFlags {
-  RenderMeshInstanceFlags::{ bits: 0U }
+  { bits: 0U }
 }
 
 ///|
 pub fn RenderMeshInstanceFlags::from_bits(
   bits : UInt,
 ) -> RenderMeshInstanceFlags {
-  RenderMeshInstanceFlags::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -129,7 +129,7 @@ pub fn RenderMeshQueueData::new(
   mesh_asset_id : Int,
   current_uniform_index : @render_phase.InputUniformIndex,
   should_batch : Bool,
-  material_bindings_index? : MaterialBindingId = MaterialBindingId::MaterialBindingId(),
+  material_bindings_index? : MaterialBindingId = MaterialBindingId(),
   flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
   render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> RenderMeshQueueData {
@@ -138,7 +138,7 @@ pub fn RenderMeshQueueData::new(
   } else {
     flags
   }
-  RenderMeshQueueData::{
+  {
     mesh_asset_id,
     material_bindings_index,
     current_uniform_index,
@@ -199,7 +199,7 @@ pub fn MeshTransforms::new(
   previous_world_from_local : @math.Affine3,
   flags : UInt,
 ) -> MeshTransforms {
-  MeshTransforms::{ world_from_local, previous_world_from_local, flags }
+  { world_from_local, previous_world_from_local, flags }
 }
 
 ///|
@@ -232,13 +232,13 @@ pub struct RenderMeshInstanceSharedFlat {
 ///|
 pub fn RenderMeshInstanceSharedFlat::new(
   mesh_asset_id : Int,
-  material_bindings_index? : MaterialBindingId = MaterialBindingId::MaterialBindingId(),
+  material_bindings_index? : MaterialBindingId = MaterialBindingId(),
   lightmap_slab_index? : Int? = None,
   tag? : UInt = 0U,
   current_uniform_index? : UInt = 0U,
   flags? : RenderMeshInstanceFlags = RenderMeshInstanceFlags::empty(),
 ) -> RenderMeshInstanceSharedFlat {
-  RenderMeshInstanceSharedFlat::{
+  {
     mesh_asset_id,
     material_bindings_index,
     lightmap_slab_index,
@@ -336,7 +336,7 @@ pub struct RenderMeshInstanceGpuFlat {
 pub fn RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
   current_uniform_index? : UInt = 0U,
 ) -> RenderMeshInstanceGpuFlat {
-  RenderMeshInstanceGpuFlat::{ current_uniform_index, }
+  { current_uniform_index, }
 }
 
 ///|
@@ -359,7 +359,7 @@ pub fn RenderMeshInstanceCpu::new(
   transforms? : MeshTransforms? = None,
   render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> RenderMeshInstanceCpu {
-  RenderMeshInstanceCpu::{ shared, transforms, render_layers }
+  { shared, transforms, render_layers }
 }
 
 ///|
@@ -399,10 +399,10 @@ pub struct RenderMeshInstanceGpu {
 ///|
 pub fn RenderMeshInstanceGpu::new(
   shared : RenderMeshInstanceSharedFlat,
-  gpu_specific? : RenderMeshInstanceGpuFlat = RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(),
+  gpu_specific? : RenderMeshInstanceGpuFlat = RenderMeshInstanceGpuFlat(),
   render_layers? : @camera_render_layers.RenderLayers? = None,
 ) -> RenderMeshInstanceGpu {
-  RenderMeshInstanceGpu::{ shared, gpu_specific, render_layers }
+  { shared, gpu_specific, render_layers }
 }
 
 ///|
@@ -411,7 +411,7 @@ pub fn RenderMeshInstanceGpu::from_queue_data(
 ) -> RenderMeshInstanceGpu {
   RenderMeshInstanceGpu::new(
     RenderMeshInstanceSharedFlat::from_queue_data(data),
-    gpu_specific=RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
+    gpu_specific=RenderMeshInstanceGpuFlat(
       current_uniform_index=data.current_uniform_index().value(),
     ),
     render_layers=data.render_layers(),
@@ -473,7 +473,7 @@ pub fn MeshInputUniform::new(
   tag? : UInt = 0U,
   morph_descriptor_index? : UInt = mesh_input_uniform_invalid_index(),
 ) -> MeshInputUniform {
-  MeshInputUniform::{
+  {
     world_from_local,
     lightmap_uv_rect,
     flags,
@@ -521,7 +521,7 @@ pub fn MeshInputUniform::with_previous_input_index(
   self : MeshInputUniform,
   previous_input_index : UInt,
 ) -> MeshInputUniform {
-  MeshInputUniform::{ ..self, previous_input_index, }
+  { ..self, previous_input_index, }
 }
 
 ///|
@@ -536,7 +536,7 @@ pub fn MeshCullingData::new(aabb : @camera_primitives.Aabb?) -> MeshCullingData 
     Some(aabb) => {
       let center = aabb.center()
       let half_extents = aabb.half_size()
-      MeshCullingData::{
+      {
         aabb_center: @math.Vec4::new(center.x, center.y, center.z, 0.0F),
         aabb_half_extents: @math.Vec4::new(
           half_extents.x,
@@ -548,7 +548,7 @@ pub fn MeshCullingData::new(aabb : @camera_primitives.Aabb?) -> MeshCullingData 
     }
     None => {
       let infinity = 1.0F / 0.0F
-      MeshCullingData::{
+      {
         aabb_center: @math.Vec4::new(0.0F, 0.0F, 0.0F, 0.0F),
         aabb_half_extents: @math.Vec4::new(infinity, infinity, infinity, 0.0F),
       }
@@ -573,7 +573,7 @@ pub struct MeshCullingDataBuffer {
 
 ///|
 pub fn MeshCullingDataBuffer::MeshCullingDataBuffer() -> MeshCullingDataBuffer {
-  MeshCullingDataBuffer::{ data: [] }
+  { data: [] }
 }
 
 ///|
@@ -645,12 +645,7 @@ pub struct RenderGpuCulledEntities {
 
 ///|
 pub fn RenderGpuCulledEntities::RenderGpuCulledEntities() -> RenderGpuCulledEntities {
-  RenderGpuCulledEntities::{
-    entities: Map([]),
-    added: [],
-    removed: [],
-    changed_layers: [],
-  }
+  { entities: Map([]), added: [], removed: [], changed_layers: [] }
 }
 
 ///|
@@ -904,7 +899,7 @@ pub struct RenderMeshInstanceGpuBuilder {
 pub fn RenderMeshInstanceGpuBuilder::new(
   queue_data : RenderMeshQueueData,
 ) -> RenderMeshInstanceGpuBuilder {
-  RenderMeshInstanceGpuBuilder::{
+  {
     shared: RenderMeshInstanceSharedFlat::from_queue_data(queue_data),
     world_from_local: @math.Affine3::identity(),
     lightmap_uv_rect: @math.UVec2::zero(),
@@ -923,7 +918,7 @@ pub fn RenderMeshInstanceGpuBuilder::from_shared(
   render_layers : @camera_render_layers.RenderLayers?,
   mesh_flags : UInt,
 ) -> RenderMeshInstanceGpuBuilder {
-  RenderMeshInstanceGpuBuilder::{
+  {
     shared,
     world_from_local,
     lightmap_uv_rect,
@@ -966,7 +961,7 @@ pub fn RenderMeshInstanceGpuBuilder::prepare(
       None => return None
     }
   } else {
-    MaterialBindingId::MaterialBindingId()
+    MaterialBindingId()
   }
   let (first_vertex_index, vertex_count) = match
     mesh_allocator.mesh_vertex_slice(self.shared.mesh_asset_id()) {
@@ -1026,11 +1021,7 @@ pub fn RenderMeshInstanceGpuBuilder::prepare(
     tag=shared.tag(),
     morph_descriptor_index~,
   )
-  Some(RenderMeshInstanceGpuPrepared::{
-    shared,
-    mesh_input_uniform,
-    render_layers: self.render_layers,
-  })
+  Some({ shared, mesh_input_uniform, render_layers: self.render_layers })
 }
 
 ///|
@@ -1045,7 +1036,7 @@ pub fn RenderMeshInstanceGpuPrepared::new(
   queue_data : RenderMeshQueueData,
 ) -> RenderMeshInstanceGpuPrepared {
   let shared = RenderMeshInstanceSharedFlat::from_queue_data(queue_data)
-  RenderMeshInstanceGpuPrepared::{
+  {
     shared,
     mesh_input_uniform: MeshInputUniform::from_shared(shared),
     render_layers: queue_data.render_layers(),
@@ -1058,7 +1049,7 @@ pub fn RenderMeshInstanceGpuPrepared::from_shared(
   mesh_input_uniform : MeshInputUniform,
   render_layers : @camera_render_layers.RenderLayers?,
 ) -> RenderMeshInstanceGpuPrepared {
-  RenderMeshInstanceGpuPrepared::{ shared, mesh_input_uniform, render_layers }
+  { shared, mesh_input_uniform, render_layers }
 }
 
 ///|
@@ -1110,9 +1101,7 @@ pub fn RenderMeshInstanceGpuPrepared::update(
     key,
     RenderMeshInstanceGpu::new(
       self.shared,
-      gpu_specific=RenderMeshInstanceGpuFlat::RenderMeshInstanceGpuFlat(
-        current_uniform_index~,
-      ),
+      gpu_specific=RenderMeshInstanceGpuFlat(current_uniform_index~),
       render_layers=self.render_layers,
     ),
   )
@@ -1158,7 +1147,7 @@ fn render_mesh_instance_gpu_layers_or_default(
 ) -> @camera_render_layers.RenderLayers {
   match layers {
     Some(value) => value
-    None => @camera_render_layers.RenderLayers::RenderLayers()
+    None => RenderLayers()
   }
 }
 
@@ -1264,7 +1253,7 @@ pub struct RenderMeshInstanceGpuCpuCullingQueue {
 
 ///|
 pub fn RenderMeshInstanceGpuCpuCullingQueue::RenderMeshInstanceGpuCpuCullingQueue() -> RenderMeshInstanceGpuCpuCullingQueue {
-  RenderMeshInstanceGpuCpuCullingQueue::{ changed: [], removed: [] }
+  { changed: [], removed: [] }
 }
 
 ///|
@@ -1280,11 +1269,7 @@ pub struct RenderMeshInstanceGpuGpuCullingQueue {
 
 ///|
 pub fn RenderMeshInstanceGpuGpuCullingQueue::RenderMeshInstanceGpuGpuCullingQueue() -> RenderMeshInstanceGpuGpuCullingQueue {
-  RenderMeshInstanceGpuGpuCullingQueue::{
-    changed_cpu_culling: [],
-    changed_gpu_culling: [],
-    removed: [],
-  }
+  { changed_cpu_culling: [], changed_gpu_culling: [], removed: [] }
 }
 
 ///|
@@ -1301,7 +1286,7 @@ pub struct RenderMeshInstanceGpuQueue {
 
 ///|
 pub fn RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue() -> RenderMeshInstanceGpuQueue {
-  RenderMeshInstanceGpuQueue::{ state: NoQueue }
+  { state: NoQueue }
 }
 
 ///|
@@ -1322,18 +1307,13 @@ pub fn RenderMeshInstanceGpuQueue::init(
       queue.changed_gpu_culling.clear()
       queue.removed.clear()
     }
-    (true, _) =>
-      self.state = GpuCulling(
-        RenderMeshInstanceGpuGpuCullingQueue::RenderMeshInstanceGpuGpuCullingQueue(),
-      )
+    (true, _) => self.state = GpuCulling(RenderMeshInstanceGpuGpuCullingQueue())
     (false, CpuCulling(queue)) => {
       queue.changed.clear()
       queue.removed.clear()
     }
     (false, _) =>
-      self.state = CpuCulling(
-        RenderMeshInstanceGpuCpuCullingQueue::RenderMeshInstanceGpuCpuCullingQueue(),
-      )
+      self.state = CpuCulling(RenderMeshInstanceGpuCpuCullingQueue())
   }
 }
 
@@ -1450,9 +1430,7 @@ pub struct RenderMeshInstanceGpuQueues {
 
 ///|
 pub fn RenderMeshInstanceGpuQueues::RenderMeshInstanceGpuQueues() -> RenderMeshInstanceGpuQueues {
-  RenderMeshInstanceGpuQueues::{
-    queues: [RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue()],
-  }
+  { queues: [RenderMeshInstanceGpuQueue()] }
 }
 
 ///|
@@ -1521,7 +1499,7 @@ fn render_mesh_instance_gpu_extraction_set_last_source_change_tick(
     None =>
       render_world.insert_resource(
         ecs_key_render_mesh_instance_gpu_extraction_state,
-        RenderMeshInstanceGpuExtractionState::{ last_source_change_tick: tick },
+        { last_source_change_tick: tick },
       )
   }
 }
@@ -1538,7 +1516,7 @@ pub fn RenderMeshInstanceGpuQueues::borrow_local_mut(
   self : RenderMeshInstanceGpuQueues,
 ) -> RenderMeshInstanceGpuQueue {
   if self.queues.is_empty() {
-    self.queues.push(RenderMeshInstanceGpuQueue::RenderMeshInstanceGpuQueue())
+    self.queues.push(RenderMeshInstanceGpuQueue())
   }
   self.queues[0]
 }
@@ -1724,7 +1702,7 @@ pub struct MeshesToReextractNextFrame {
 
 ///|
 pub fn MeshesToReextractNextFrame::MeshesToReextractNextFrame() -> MeshesToReextractNextFrame {
-  MeshesToReextractNextFrame::{ entries: Map([]) }
+  { entries: Map([]) }
 }
 
 ///|
@@ -1795,9 +1773,7 @@ pub struct RenderMeshInstanceGpuBatchedInstanceBuffers {
 
 ///|
 pub fn RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers() -> RenderMeshInstanceGpuBatchedInstanceBuffers {
-  RenderMeshInstanceGpuBatchedInstanceBuffers::{
-    buffers: @render_batching.BatchedInstanceBuffers::new(),
-  }
+  { buffers: @render_batching.BatchedInstanceBuffers::new() }
 }
 
 ///|
@@ -1826,7 +1802,7 @@ pub struct RenderMeshInstancesCpu {
 
 ///|
 pub fn RenderMeshInstancesCpu::RenderMeshInstancesCpu() -> RenderMeshInstancesCpu {
-  RenderMeshInstancesCpu::{ entries: Map([]) }
+  { entries: Map([]) }
 }
 
 ///|
@@ -1836,7 +1812,7 @@ pub struct RenderMeshInstancesGpu {
 
 ///|
 pub fn RenderMeshInstancesGpu::RenderMeshInstancesGpu() -> RenderMeshInstancesGpu {
-  RenderMeshInstancesGpu::{ entries: Map([]) }
+  { entries: Map([]) }
 }
 
 ///|
@@ -1850,9 +1826,9 @@ pub fn RenderMeshInstances::new(
   use_gpu_instance_buffer_builder? : Bool = false,
 ) -> RenderMeshInstances {
   if use_gpu_instance_buffer_builder {
-    GpuBuilding(RenderMeshInstancesGpu::RenderMeshInstancesGpu())
+    GpuBuilding(RenderMeshInstancesGpu())
   } else {
-    CpuBuilding(RenderMeshInstancesCpu::RenderMeshInstancesCpu())
+    CpuBuilding(RenderMeshInstancesCpu())
   }
 }
 
@@ -1949,7 +1925,7 @@ fn RenderMeshInstancesCpu::insert_mesh_instance_flags(
         ..instance.shared,
         flags: instance.shared.flags().or(flags),
       }
-      self.entries.set(key, RenderMeshInstanceCpu::{ ..instance, shared, })
+      self.entries.set(key, { ..instance, shared, })
     }
     None => ()
   }
@@ -2032,7 +2008,7 @@ fn RenderMeshInstancesGpu::insert_mesh_instance_flags(
         ..instance.shared,
         flags: instance.shared.flags().or(flags),
       }
-      self.entries.set(key, RenderMeshInstanceGpu::{ ..instance, shared, })
+      self.entries.set(key, { ..instance, shared, })
     }
     None => ()
   }
@@ -2256,7 +2232,7 @@ fn render_mesh_instance_gpu_extraction_row_from_source(
     Some(value) => value
     None => return None
   }
-  Some(RenderMeshInstanceGpuExtractionRow::{
+  Some({
     entity,
     view_visibility,
     world_from_local: global_transform.affine(),
@@ -2407,19 +2383,19 @@ fn render_mesh_instance_cpu_material_binding_id(
   render_material_bindings : RenderMaterialBindings?,
 ) -> MaterialBindingId {
   guard mesh_material_ids is Some(material_ids) else {
-    return MaterialBindingId::MaterialBindingId()
+    return MaterialBindingId()
   }
   let material_id = material_ids.mesh_material(row.entity)
   guard material_id != DUMMY_MESH_MATERIAL_ID else {
-    return MaterialBindingId::MaterialBindingId()
+    return MaterialBindingId()
   }
   match render_material_bindings {
     Some(bindings) =>
       match bindings.get(material_id) {
         Some(binding) => binding
-        None => MaterialBindingId::MaterialBindingId()
+        None => MaterialBindingId()
       }
-    None => MaterialBindingId::MaterialBindingId()
+    None => MaterialBindingId()
   }
 }
 

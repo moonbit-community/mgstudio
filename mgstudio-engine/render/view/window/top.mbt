@@ -37,6 +37,7 @@ pub fn WindowSurfaceCreateError::message(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn WindowRenderPlugin::WindowRenderPlugin() -> WindowRenderPlugin {
   WindowRenderPlugin::{  }
 }
@@ -82,7 +83,7 @@ pub fn ExtractedWindow::new(
   desired_maximum_frame_latency : Int?,
   alpha_mode : @window_pkg.CompositeAlphaMode,
 ) -> ExtractedWindow {
-  ExtractedWindow::{
+  {
     entity,
     handle,
     physical_width: physical_width.max(1),
@@ -150,14 +151,12 @@ priv struct ExtractWindowsMessageCursors {
 
 ///|
 fn ExtractWindowsMessageCursors::ExtractWindowsMessageCursors() -> ExtractWindowsMessageCursors {
-  ExtractWindowsMessageCursors::{
-    window_closing: @ecs.MessageCursor::MessageCursor(),
-  }
+  { window_closing: MessageCursor() }
 }
 
 ///|
 pub fn ExtractedWindows::ExtractedWindows() -> ExtractedWindows {
-  ExtractedWindows::{ primary: None, windows: @hashmap.HashMap([]) }
+  { primary: None, windows: HashMap([]) }
 }
 
 ///|
@@ -219,10 +218,7 @@ pub struct WindowSurfaces {
 
 ///|
 pub fn WindowSurfaces::WindowSurfaces() -> WindowSurfaces {
-  WindowSurfaces::{
-    surfaces: @hashmap.HashMap([]),
-    configured_windows: @hashset.HashSet([]),
-  }
+  { surfaces: HashMap([]), configured_windows: HashSet([]) }
 }
 
 ///|
@@ -676,22 +672,14 @@ fn configure_surface_for_window(
   render_device : @renderer.RenderDevice,
 ) -> Unit raise WindowSurfaceCreateError {
   surface.sync_macos_window_handle(window.handle.window_handle()) catch {
-    err =>
-      raise WindowSurfaceCreateError::NativeSurfaceConfigureFailed(
-        window.entity,
-        err.message(),
-      )
+    err => raise NativeSurfaceConfigureFailed(window.entity, err.message())
   }
   surface.configure_with_or_raise(
     render_adapter.wgpu_adapter(),
     render_device.wgpu_device(),
     configuration,
   ) catch {
-    err =>
-      raise WindowSurfaceCreateError::NativeSurfaceConfigureFailed(
-        window.entity,
-        err.message(),
-      )
+    err => raise NativeSurfaceConfigureFailed(window.entity, err.message())
   }
 }
 
@@ -701,11 +689,7 @@ pub fn create_surface_for_window(
   render_instance : @renderer.RenderInstance,
 ) -> @wgpu.Surface raise WindowSurfaceCreateError {
   render_instance.wgpu_instance().create_surface_from_window(window.handle) catch {
-    err =>
-      raise WindowSurfaceCreateError::NativeSurfaceCreateFailed(
-        window.entity,
-        err.message(),
-      )
+    err => raise NativeSurfaceCreateFailed(window.entity, err.message())
   }
 }
 
@@ -723,7 +707,7 @@ fn surface_data_for_window(
   configure_surface_for_window(
     window, surface, configuration, render_adapter, render_device,
   )
-  SurfaceData::{
+  {
     surface,
     configuration,
     texture_view_format: surface_texture_view_format(configuration.format),
@@ -749,7 +733,7 @@ fn reconfigured_surface_data_for_window(
     render_adapter,
     render_device,
   )
-  SurfaceData::{
+  {
     surface: data.surface,
     configuration,
     texture_view_format: surface_texture_view_format(configuration.format),
@@ -815,10 +799,7 @@ pub fn init_extracted_windows(world : @ecs.World) -> Unit {
   if world.resource(extracted_windows_resource_key).is_present() {
     return
   }
-  world.insert_resource(
-    extracted_windows_resource_key,
-    ExtractedWindows::ExtractedWindows(),
-  )
+  world.insert_resource(extracted_windows_resource_key, ExtractedWindows())
 }
 
 ///|
@@ -826,10 +807,7 @@ pub fn init_window_surfaces(world : @ecs.World) -> Unit {
   if world.resource(window_surfaces_resource_key).is_present() {
     return
   }
-  world.insert_resource(
-    window_surfaces_resource_key,
-    WindowSurfaces::WindowSurfaces(),
-  )
+  world.insert_resource(window_surfaces_resource_key, WindowSurfaces())
 }
 
 ///|
@@ -839,7 +817,7 @@ fn init_extract_windows_message_cursors(world : @ecs.World) -> Unit {
   }
   world.insert_resource(
     extract_windows_message_cursors_resource_key,
-    ExtractWindowsMessageCursors::ExtractWindowsMessageCursors(),
+    ExtractWindowsMessageCursors(),
   )
 }
 
@@ -883,7 +861,7 @@ fn window_render_plugin_install(
 ) -> @app.App[@ecs.World] {
   let next = app
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    next.modify_sub_app(RenderApp, fn(render_sub_app) {
       init_extracted_windows(render_sub_app.world())
       init_window_surfaces(render_sub_app.world())
       init_extract_windows_message_cursors(render_sub_app.world())

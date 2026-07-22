@@ -95,7 +95,7 @@ impl @app.Resource for StressMetricsState with fn resource() {
 ///|
 fn stress_metrics_state_default() -> StressMetricsState {
   {
-    timer: @time.Timer::from_seconds(0.5F, @time.Repeating),
+    timer: @time.Timer::from_seconds(0.5F, Repeating),
     frame_count: 0,
     elapsed_seconds: 0.0F,
   }
@@ -144,7 +144,7 @@ fn parse_args() -> Args {
 fn configured_window() -> @window.Window {
   let window = @window.Window::Window()
   window.title = "🦊🦊🦊 Many Foxes! 🦊🦊🦊"
-  window.present_mode = @window.PresentMode::AutoNoVsync
+  window.present_mode = AutoNoVsync
   window.resolution = @window.WindowResolution::new(1920, 1080).with_scale_factor_override(
     1.0F,
   )
@@ -374,12 +374,7 @@ fn setup(
         .with_maximum_distance(2.8F * radius)
         .build(),
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(
-            @math.EulerRot::ZYX,
-            0.0F,
-            1.0F,
-            -3.141592653589793F / 4.0F,
-          ),
+          @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -3.141592653589793F / 4.0F),
         ),
       ),
     ),
@@ -464,12 +459,12 @@ fn keyboard_animation_control(
   animations : @app.Res[FoxAnimations],
   current_animation : @app.Local[Int],
 ) -> Unit {
-  let space = @input.key_just_pressed(@input_events.KeyCode::Space)
-  let up = @input.key_just_pressed(@input_events.KeyCode::ArrowUp)
-  let down = @input.key_just_pressed(@input_events.KeyCode::ArrowDown)
-  let left = @input.key_just_pressed(@input_events.KeyCode::ArrowLeft)
-  let right = @input.key_just_pressed(@input_events.KeyCode::ArrowRight)
-  let enter = @input.key_just_pressed(@input_events.KeyCode::Enter)
+  let space = @input.key_just_pressed(Space)
+  let up = @input.key_just_pressed(ArrowUp)
+  let down = @input.key_just_pressed(ArrowDown)
+  let left = @input.key_just_pressed(ArrowLeft)
+  let right = @input.key_just_pressed(ArrowRight)
+  let enter = @input.key_just_pressed(Enter)
 
   if space || up || down {
     foxes.modify(fn(value) {
@@ -570,7 +565,7 @@ fn main {
       @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
         primary_window: Some(configured_window()),
         primary_cursor_options: None,
-        exit_condition: @window.ExitCondition::OnAllClosed,
+        exit_condition: OnAllClosed,
         close_when_requested: true,
       }),
     )
@@ -580,24 +575,24 @@ fn main {
     .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
     .add_plugins(@diagnostic.TimelineTracePlugin::TimelineTracePlugin())
     .add_systems(
-      @app.Startup,
+      Startup,
       @app.system_config_param3(setup).named(
         "examples.stress_tests.many_foxes.setup",
       ),
     )
     .add_systems(
-      @app.Update,
+      Update,
       (keyboard_animation_control_system, update_fox_rings_system)
       |> @app.chain(),
     )
     .add_systems(
-      @app.PostUpdate,
+      PostUpdate,
       @app.system_config_param2(stress_metrics_system).named(
         "examples.stress_tests.many_foxes.stress_metrics",
       ),
     )
   if args.dump_postupdate_schedule {
-    println(app.schedule_graph_dot(@app.PostUpdate))
+    println(app.schedule_graph_dot(PostUpdate))
     return
   }
   app.run()

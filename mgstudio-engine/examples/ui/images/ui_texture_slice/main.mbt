@@ -32,10 +32,10 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
     ),
   )
 
@@ -49,13 +49,13 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         @ui.Button::Button(),
-        @ui.ImageNode::new(image).with_mode(@ui.NodeImageMode::Sliced(slicer)),
+        @ui.ImageNode::new(image).with_mode(Sliced(slicer)),
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(size.0))
-        .with_height(@ui.Val::Px(size.1))
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center)
-        .with_margin(@ui.UiRect::all(@ui.Val::Px(20.0F))),
+        .with_width(Px(size.0))
+        .with_height(Px(size.1))
+        .with_justify_content(Center)
+        .with_align_items(Center)
+        .with_margin(@ui.UiRect::all(Px(20.0F))),
       ),
     )
     ignore(
@@ -94,19 +94,19 @@ fn button_system(
     let label = children[0]
     guard (texts.get(label) catch { _ => None }) is Some(text) else { return }
     match interaction_comp.value() {
-      @ui.Interaction::Pressed => {
+      Pressed => {
         text.modify(fn(value) { value.content = "Press" })
         image.set(
           image.value().with_color(@color.Color::srgb(1.0F, 0.84F, 0.0F)),
         )
       }
-      @ui.Interaction::Hovered => {
+      Hovered => {
         text.modify(fn(value) { value.content = "Hover" })
         image.set(
           image.value().with_color(@color.Color::srgb(1.0F, 0.55F, 0.0F)),
         )
       }
-      @ui.Interaction::None => {
+      None => {
         text.modify(fn(value) { value.content = "Button" })
         image.set(image.value().with_color(@color.Color::white()))
       }
@@ -118,7 +118,7 @@ fn button_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, button_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, button_system)
   .run()
 }

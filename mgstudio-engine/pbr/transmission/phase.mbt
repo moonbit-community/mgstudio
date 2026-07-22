@@ -48,7 +48,7 @@ pub fn Transmissive3d::new(
   } else {
     batch_range_end
   }
-  Transmissive3d::{
+  {
     distance,
     pipeline_id,
     render_entity,

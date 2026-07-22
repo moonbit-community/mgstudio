@@ -5,7 +5,7 @@ priv struct ParsedVirtualAssetPath {
 }
 
 ///|
-let embedded_assets : @hashmap.HashMap[String, Bytes] = @hashmap.HashMap([])
+let embedded_assets : @hashmap.HashMap[String, Bytes] = HashMap([])
 
 ///|
 fn string_last_index_of_char(input : String, code : Int) -> Int {
@@ -64,9 +64,9 @@ fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
     } else {
       ""
     }
-    ParsedVirtualAssetPath::{ source_name: Some(source_name), relative_path }
+    { source_name: Some(source_name), relative_path }
   } else {
-    ParsedVirtualAssetPath::{ source_name: None, relative_path: without_label }
+    { source_name: None, relative_path: without_label }
   }
 }
 

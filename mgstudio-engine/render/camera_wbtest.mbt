@@ -121,8 +121,7 @@ test "render camera: PendingQueues expires stale views" {
     @core.Entity::new(3, 1),
     camera_pending_test_main_entity(@core.Entity::new(4, 1)),
   )
-  let live : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   live.add(live_view)
 
   queues.expire_stale_views(live)

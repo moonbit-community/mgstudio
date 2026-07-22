@@ -930,7 +930,7 @@ test "app: cyclic set hierarchy reports validation error and skips stage executi
 
   debug_inspect(log.length(), content="0")
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(kinds[0] == Validation, content="true")
 }
 
 ///|
@@ -958,7 +958,7 @@ test "app: cyclic set ordering reports validation error and skips stage executio
 
   debug_inspect(log.length(), content="0")
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(kinds[0] == Validation, content="true")
 }
 
 ///|
@@ -1786,12 +1786,8 @@ test "app: SystemParam Query2 injects typed query into update system" {
   let app = App::new(world)
     .add_startup_system(fn(startup_world) {
       let entity = startup_world.spawn()
-      try! startup_world.set_by_key(entity, ecs_position_key, EcsPosition::{
-        x: 1,
-      })
-      try! startup_world.set_by_key(entity, ecs_velocity_key, EcsVelocity::{
-        x: 41,
-      })
+      try! startup_world.set_by_key(entity, ecs_position_key, { x: 1 })
+      try! startup_world.set_by_key(entity, ecs_velocity_key, { x: 41 })
     })
     .add_system_param(fn(
       query : @ecs.Query[
@@ -1837,8 +1833,7 @@ test "app: schedule reports conflicting query params during execution validation
   debug_inspect(ran.val, content="false")
   debug_inspect(kinds.length(), content="2")
   debug_inspect(
-    kinds[0] == ErrorContextKind::Validation &&
-    kinds[1] == ErrorContextKind::Validation,
+    kinds[0] == Validation && kinds[1] == Validation,
     content="true",
   )
 }
@@ -1865,5 +1860,5 @@ test "app: add_system_param5 reports conflicting query params during execution v
 
   debug_inspect(ran.val, content="false")
   debug_inspect(kinds.length(), content="1")
-  debug_inspect(kinds[0] == ErrorContextKind::Validation, content="true")
+  debug_inspect(kinds[0] == Validation, content="true")
 }

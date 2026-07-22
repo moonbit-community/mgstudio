@@ -32,7 +32,7 @@ pub struct TextureAtlasLayout {
 
 ///|
 pub fn TextureAtlasLayout::new(width : Int, height : Int) -> TextureAtlasLayout {
-  TextureAtlasLayout::{
+  {
     width: if width <= 0 {
       1
     } else {

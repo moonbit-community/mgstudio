@@ -184,9 +184,7 @@ fn spawn_text(commands : @app.Commands) -> Unit {
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(overlay_camera),
     ),
   )
@@ -195,10 +193,10 @@ fn spawn_text(commands : @app.Commands) -> Unit {
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_bottom(@ui.Val::Px(12.0F))
-      .with_left(@ui.Val::Px(12.0F))
-      .with_flex_direction(@ui.FlexDirection::Column),
+      .with_position_type(Absolute)
+      .with_bottom(Px(12.0F))
+      .with_left(Px(12.0F))
+      .with_flex_direction(Column),
     ),
   )
 
@@ -338,14 +336,14 @@ fn rotate_camera(
   let delta_yaw = -delta.x * sensitivity.value().x
   let delta_pitch = -delta.y * sensitivity.value().y
   transform.modify(fn(value) {
-    let (yaw, pitch, roll) = value.rotation.to_euler(@math.EulerRot::YXZ)
+    let (yaw, pitch, roll) = value.rotation.to_euler(YXZ)
     let next_pitch = clamp_float(
       pitch + delta_pitch,
       -CAMERA_PITCH_LIMIT,
       CAMERA_PITCH_LIMIT,
     )
     value.rotation = @math.Quat::from_euler(
-      @math.EulerRot::YXZ,
+      YXZ,
       yaw + delta_yaw,
       next_pitch,
       roll,
@@ -369,16 +367,16 @@ fn accumulate_input(
   let (input, velocity) = player.get()
   input.modify(fn(value) {
     value.movement = @math.Vec2::zero()
-    if keyboard_input.pressed(@window.KeyCode::KeyW) {
+    if keyboard_input.pressed(KeyW) {
       value.movement.y = value.movement.y + 1.0F
     }
-    if keyboard_input.pressed(@window.KeyCode::KeyS) {
+    if keyboard_input.pressed(KeyS) {
       value.movement.y = value.movement.y - 1.0F
     }
-    if keyboard_input.pressed(@window.KeyCode::KeyA) {
+    if keyboard_input.pressed(KeyA) {
       value.movement.x = value.movement.x - 1.0F
     }
-    if keyboard_input.pressed(@window.KeyCode::KeyD) {
+    if keyboard_input.pressed(KeyD) {
       value.movement.x = value.movement.x + 1.0F
     }
   })
@@ -500,7 +498,7 @@ fn clamp_float(value : Float, min_value : Float, max_value : Float) -> Float {
 ///|
 fn main {
   let fixed_main_loop_set = @app.run_fixed_main_loop_system_set_name(
-    @app.RunFixedMainLoopSystems::FixedMainLoop,
+    FixedMainLoop,
   )
   let spawn_text_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
     spawn_text,
@@ -517,12 +515,12 @@ fn main {
   .init_resource(fn() {
     DidFixedTimestepRunThisFrame::DidFixedTimestepRunThisFrame()
   })
-  .add_systems(@app.Startup, spawn_text_system)
-  .add_systems(@app.Startup, spawn_player_system)
-  .add_systems(@app.Startup, spawn_environment_system)
-  .add_systems_param(@app.PreUpdate, clear_fixed_timestep_flag)
-  .add_systems_param(@app.FixedPreUpdate, set_fixed_time_step_flag)
-  .add_systems_param(@app.FixedUpdate, advance_physics)
+  .add_systems(Startup, spawn_text_system)
+  .add_systems(Startup, spawn_player_system)
+  .add_systems(Startup, spawn_environment_system)
+  .add_systems_param(PreUpdate, clear_fixed_timestep_flag)
+  .add_systems_param(FixedPreUpdate, set_fixed_time_step_flag)
+  .add_systems_param(FixedUpdate, advance_physics)
   .add_run_fixed_main_loop_system_config(
     @app.system_config_param2(rotate_camera)
     .in_set(SET_ROTATE_CAMERA)

@@ -91,13 +91,13 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_column_gap(@ui.Val::Px(50.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_display(Flex)
+      .with_flex_direction(Row)
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_column_gap(Px(50.0F)),
       @input_focus.TabGroup::new(0),
     ),
   )
@@ -148,10 +148,10 @@ fn spawn_slider_column(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_row_gap(@ui.Val::Px(10.0F)),
+      .with_display(Flex)
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_row_gap(Px(10.0F)),
     ),
   )
 }
@@ -193,18 +193,16 @@ fn spawn_vertical_slider(
     (
       @hierarchy.Parent::new(parent),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Stretch)
-      .with_column_gap(@ui.Val::Px(4.0F))
-      .with_width(@ui.Val::Px(12.0F))
-      .with_height(@ui.Val::Px(200.0F)),
+      .with_display(Flex)
+      .with_flex_direction(Row)
+      .with_justify_content(Center)
+      .with_align_items(Stretch)
+      .with_column_gap(Px(4.0F))
+      .with_width(Px(12.0F))
+      .with_height(Px(200.0F)),
       DemoSlider::{  },
       VerticalSlider::{  },
-      @ui_widgets.Slider::Slider().with_track_click(
-        @ui_widgets.TrackClick::Snap,
-      ),
+      @ui_widgets.Slider::Slider().with_track_click(Snap),
       @ui_widgets.SliderValue::new(50.0F),
       @ui_widgets.SliderRange::new(0.0F, 100.0F),
       @input_focus.TabIndex::new(0),
@@ -214,8 +212,8 @@ fn spawn_vertical_slider(
     (
       @hierarchy.Parent::new(slider),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(6.0F))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(3.0F))),
+      .with_width(Px(6.0F))
+      .with_border_radius(@ui.BorderRadius::all(Px(3.0F))),
       @ui.BackgroundColor::new(slider_track_color()),
     ),
   )
@@ -224,12 +222,12 @@ fn spawn_vertical_slider(
     (
       @hierarchy.Parent::new(slider),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(12.0F))
-      .with_bottom(@ui.Val::Px(0.0F))
-      .with_left(@ui.Val::Px(0.0F))
-      .with_right(@ui.Val::Px(0.0F)),
+      .with_display(Flex)
+      .with_position_type(Absolute)
+      .with_top(Px(12.0F))
+      .with_bottom(Px(0.0F))
+      .with_left(Px(0.0F))
+      .with_right(Px(0.0F)),
     ),
   )
   commands.spawn(
@@ -238,12 +236,12 @@ fn spawn_vertical_slider(
       DemoSliderThumb::{  },
       @ui_widgets.SliderThumb::SliderThumb(),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_width(@ui.Val::Px(12.0F))
-      .with_height(@ui.Val::Px(12.0F))
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_bottom(@ui.Val::Percent(0.0F))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+      .with_display(Flex)
+      .with_width(Px(12.0F))
+      .with_height(Px(12.0F))
+      .with_position_type(Absolute)
+      .with_bottom(Percent(0.0F))
+      .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
       @ui.BackgroundColor::new(slider_thumb_color()),
     ),
   )
@@ -260,17 +258,15 @@ fn spawn_horizontal_slider(
     (
       @hierarchy.Parent::new(parent),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Stretch)
-      .with_column_gap(@ui.Val::Px(4.0F))
-      .with_height(@ui.Val::Px(12.0F))
-      .with_width(@ui.Val::Px(200.0F)),
+      .with_display(Flex)
+      .with_flex_direction(Column)
+      .with_justify_content(Center)
+      .with_align_items(Stretch)
+      .with_column_gap(Px(4.0F))
+      .with_height(Px(12.0F))
+      .with_width(Px(200.0F)),
       DemoSlider::{  },
-      @ui_widgets.Slider::Slider().with_track_click(
-        @ui_widgets.TrackClick::Snap,
-      ),
+      @ui_widgets.Slider::Slider().with_track_click(Snap),
       @ui_widgets.SliderValue::new(50.0F),
       @ui_widgets.SliderRange::new(0.0F, 100.0F),
       @input_focus.TabIndex::new(0),
@@ -280,8 +276,8 @@ fn spawn_horizontal_slider(
     (
       @hierarchy.Parent::new(slider),
       @ui.Node::Node()
-      .with_height(@ui.Val::Px(6.0F))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(3.0F))),
+      .with_height(Px(6.0F))
+      .with_border_radius(@ui.BorderRadius::all(Px(3.0F))),
       @ui.BackgroundColor::new(slider_track_color()),
     ),
   )
@@ -290,12 +286,12 @@ fn spawn_horizontal_slider(
     (
       @hierarchy.Parent::new(slider),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(0.0F))
-      .with_right(@ui.Val::Px(12.0F))
-      .with_top(@ui.Val::Px(0.0F))
-      .with_bottom(@ui.Val::Px(0.0F)),
+      .with_display(Flex)
+      .with_position_type(Absolute)
+      .with_left(Px(0.0F))
+      .with_right(Px(12.0F))
+      .with_top(Px(0.0F))
+      .with_bottom(Px(0.0F)),
     ),
   )
   commands.spawn(
@@ -304,12 +300,12 @@ fn spawn_horizontal_slider(
       DemoSliderThumb::{  },
       @ui_widgets.SliderThumb::SliderThumb(),
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_width(@ui.Val::Px(12.0F))
-      .with_height(@ui.Val::Px(12.0F))
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Percent(0.0F))
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Percent(100.0F))),
+      .with_display(Flex)
+      .with_width(Px(12.0F))
+      .with_height(Px(12.0F))
+      .with_position_type(Absolute)
+      .with_left(Percent(0.0F))
+      .with_border_radius(@ui.BorderRadius::all(Percent(100.0F))),
       @ui.BackgroundColor::new(slider_thumb_color()),
     ),
   )
@@ -369,15 +365,13 @@ fn update_slider_visuals(
         100.0F
       let node = thumb_node.peek()
       let next_node = if is_vertical.present() {
-        node.with_bottom(@ui.Val::Percent(position))
+        node.with_bottom(Percent(position))
       } else {
-        node.with_left(@ui.Val::Percent(position))
+        node.with_left(Percent(position))
       }
       thumb_node.set(next_node)
       let hovered_or_pressed = match interaction {
-        Some(state) =>
-          state.value() == @ui.Interaction::Hovered ||
-          state.value() == @ui.Interaction::Pressed
+        Some(state) => state.value() == Hovered || state.value() == Pressed
         None => false
       }
       let active = hovered_or_pressed || drag_state.value().dragging()
@@ -418,8 +412,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@input_focus.TabNavigationPlugin::TabNavigationPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, update_value_labels)
-  .add_systems_param3(@app.Update, update_slider_visuals)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, update_value_labels)
+  .add_systems_param3(Update, update_slider_visuals)
   .run()
 }

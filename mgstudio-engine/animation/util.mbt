@@ -417,7 +417,7 @@ fn animation_target_id_from_u64_pair(
   high : UInt64,
   low : UInt64,
 ) -> AnimationTargetId {
-  AnimationTargetId::{ high, low }
+  { high, low }
 }
 
 ///|

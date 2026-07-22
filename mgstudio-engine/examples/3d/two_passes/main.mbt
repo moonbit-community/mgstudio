@@ -87,7 +87,7 @@ fn setup(
         @camera.Camera3d::Camera3d(),
         @camera_camera.Camera::Camera()
         .with_order(1)
-        .with_clear_color_config(@camera_clear_color.ClearColorConfig::None),
+        .with_clear_color_config(None),
         @transform.Transform::from_xyz(10.0F, 10.0F, -5.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -101,6 +101,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
+  .add_systems_param3(Startup, setup)
   .run()
 }

@@ -31,7 +31,7 @@ pub struct ParallelQueue[T] {
 
 ///|
 pub fn[T] ParallelQueue::new() -> ParallelQueue[T] {
-  ParallelQueue::{ values: [] }
+  { values: [] }
 }
 
 ///|

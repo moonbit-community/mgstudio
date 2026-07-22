@@ -25,5 +25,5 @@ pub fn texture_slice_slicer(border : @sprite.BorderRect) -> TextureSliceSlicer {
 
 ///|
 pub fn texture_slice_default_slicer() -> TextureSliceSlicer {
-  @sprite.TextureSlicer::TextureSlicer()
+  TextureSlicer()
 }

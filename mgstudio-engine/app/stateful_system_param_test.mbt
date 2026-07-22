@@ -143,6 +143,7 @@ test "app: ParamSet2 keeps each nested SystemParam state independently" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app: RemovedComponents typed system param observes fresh removals" {
   let entity_ref : Ref[@core.Entity] = Ref(@core.Entity::placeholder())
   let observed_lengths : Array[Int] = []

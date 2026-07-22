@@ -46,7 +46,7 @@ struct LinearColor {
 ///|
 impl @app.FromWorld for LinearColor with fn from_world(world) {
   ignore(world)
-  LinearColor::{ r: 0.0F, g: 0.0F, b: 0.0F }
+  { r: 0.0F, g: 0.0F, b: 0.0F }
 }
 
 ///|
@@ -84,8 +84,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(@time.Time::from_hz(120.0F))
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param5(@app.FixedUpdate, draw)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param5(FixedUpdate, draw)
   .run()
 }
 
@@ -176,11 +176,7 @@ fn seeded_rng() -> @example_rng.ChaCha8Rng {
 
 ///|
 fn next_random_color(rng : @example_rng.ChaCha8Rng) -> LinearColor {
-  LinearColor::{
-    r: rng.random_float(),
-    g: rng.random_float(),
-    b: rng.random_float(),
-  }
+  { r: rng.random_float(), g: rng.random_float(), b: rng.random_float() }
 }
 
 ///|

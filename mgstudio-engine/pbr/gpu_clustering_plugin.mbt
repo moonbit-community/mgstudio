@@ -43,12 +43,12 @@ pub struct ClusteringRasterPipelineKey {
 
 ///|
 pub fn ClusteringRasterPipelineKey::count_pass() -> ClusteringRasterPipelineKey {
-  ClusteringRasterPipelineKey::{ populate_pass: false }
+  { populate_pass: false }
 }
 
 ///|
 pub fn ClusteringRasterPipelineKey::new_populate_pass() -> ClusteringRasterPipelineKey {
-  ClusteringRasterPipelineKey::{ populate_pass: true }
+  { populate_pass: true }
 }
 
 ///|
@@ -65,12 +65,12 @@ pub struct ClusteringAllocationPipelineKey {
 
 ///|
 pub fn ClusteringAllocationPipelineKey::local_pass() -> ClusteringAllocationPipelineKey {
-  ClusteringAllocationPipelineKey::{ global_pass: false }
+  { global_pass: false }
 }
 
 ///|
 pub fn ClusteringAllocationPipelineKey::new_global_pass() -> ClusteringAllocationPipelineKey {
-  ClusteringAllocationPipelineKey::{ global_pass: true }
+  { global_pass: true }
 }
 
 ///|
@@ -219,6 +219,7 @@ pub struct ViewGpuClusteringPipelineIds {
 pub struct GpuClusteringPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn GpuClusteringPlugin::GpuClusteringPlugin() -> GpuClusteringPlugin {
   GpuClusteringPlugin::{  }
 }
@@ -233,7 +234,7 @@ pub struct GpuClusteringPluginState {
 pub fn GpuClusteringPluginState::new(
   max_storage_buffers_per_shader_stage : Int,
 ) -> GpuClusteringPluginState {
-  GpuClusteringPluginState::{
+  {
     enabled: max_storage_buffers_per_shader_stage > 0,
     max_storage_buffers_per_shader_stage,
   }
@@ -455,20 +456,12 @@ fn gpu_clustering_div_ceil(value : Int, divisor : Int) -> Int {
 
 ///|
 fn gpu_clustering_storage(read_only : Bool) -> @render_resource.BindingType {
-  @render_resource.BindingType::BufferBinding(
-    @render_resource.BufferBindingType::Storage(read_only),
-    false,
-    0UL,
-  )
+  BufferBinding(Storage(read_only), false, 0UL)
 }
 
 ///|
 fn gpu_clustering_uniform_dynamic() -> @render_resource.BindingType {
-  @render_resource.BindingType::BufferBinding(
-    @render_resource.BufferBindingType::Uniform,
-    true,
-    0UL,
-  )
+  BufferBinding(Uniform, true, 0UL)
 }
 
 ///|
@@ -568,7 +561,7 @@ pub fn ClusteringRasterPipeline::ClusteringRasterPipeline() -> ClusteringRasterP
     gpu_clustering_layout_entry(7, fragment, gpu_clustering_storage(true)),
     gpu_clustering_layout_entry(8, fragment, gpu_clustering_storage(false)),
   ]
-  ClusteringRasterPipeline::{
+  {
     bind_group_layout_count_pass: @render_resource.BindGroupLayoutDescriptor::new(
       "clustering count pass bind group layout", count_entries,
     ),
@@ -603,7 +596,7 @@ pub fn ClusteringRasterPipeline::shader(
 ///|
 pub fn ClusteringZSlicingPipeline::ClusteringZSlicingPipeline() -> ClusteringZSlicingPipeline {
   let compute = gpu_clustering_compute_stage()
-  ClusteringZSlicingPipeline::{
+  {
     bind_group_layout: @render_resource.BindGroupLayoutDescriptor::new(
       "clustering Z slicing pass bind group layout",
       [
@@ -649,7 +642,7 @@ pub fn ClusteringZSlicingPipeline::shader(
 ///|
 pub fn ClusteringAllocationPipeline::ClusteringAllocationPipeline() -> ClusteringAllocationPipeline {
   let compute = gpu_clustering_compute_stage()
-  ClusteringAllocationPipeline::{
+  {
     bind_group_layout: @render_resource.BindGroupLayoutDescriptor::new(
       "clustering allocation pass bind group layout",
       [
@@ -689,7 +682,7 @@ pub fn ClusteringRasterPipeline::specialize(
   let pass_def = if key.populate_pass { "POPULATE_PASS" } else { "COUNT_PASS" }
   let vertex_defs = [
     @render_resource.ShaderDefVal::Flag(pass_def),
-    @render_resource.ShaderDefVal::Flag("VERTEX_SHADER"),
+    Flag("VERTEX_SHADER"),
   ]
   let fragment_defs = [@render_resource.ShaderDefVal::Flag(pass_def)]
   let layout = if key.populate_pass {
@@ -714,17 +707,13 @@ pub fn ClusteringRasterPipeline::specialize(
       vertex_defs,
       Some("vertex_main"),
       [
-        @mesh.VertexBufferLayout::new(
-          array_stride=8,
-          step_mode=@mesh.MeshVertexStepMode::Vertex,
-          attributes=[
-            @mesh.VertexAttribute::new(
-              offset=0,
-              format=@mesh.MeshVertexFormat::Float32x2,
-              shader_location=0,
-            ),
-          ],
-        ),
+        @mesh.VertexBufferLayout::new(array_stride=8, step_mode=Vertex, attributes=[
+          @mesh.VertexAttribute::new(
+            offset=0,
+            format=Float32x2,
+            shader_location=0,
+          ),
+        ]),
       ],
     ),
   )
@@ -788,7 +777,7 @@ pub fn ClusteringAllocationPipeline::specialize(
 
 ///|
 pub fn SpecializedClusteringRasterPipelines::SpecializedClusteringRasterPipelines() -> SpecializedClusteringRasterPipelines {
-  SpecializedClusteringRasterPipelines::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -820,7 +809,7 @@ pub fn SpecializedClusteringRasterPipelines::queue(
 
 ///|
 pub fn SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines() -> SpecializedClusteringZSlicingPipelines {
-  SpecializedClusteringZSlicingPipelines::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -846,7 +835,7 @@ pub fn SpecializedClusteringZSlicingPipelines::queue(
 
 ///|
 pub fn SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines() -> SpecializedClusteringAllocationPipelines {
-  SpecializedClusteringAllocationPipelines::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -878,12 +867,12 @@ pub fn SpecializedClusteringAllocationPipelines::queue(
 
 ///|
 pub fn ClusterableObjectZSlice::ClusterableObjectZSlice() -> ClusterableObjectZSlice {
-  ClusterableObjectZSlice::{ object_index: 0U, object_type: 0U, z_slice: 0U }
+  { object_index: 0U, object_type: 0U, z_slice: 0U }
 }
 
 ///|
 pub fn ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams() -> ClusterRasterIndirectDrawParams {
-  ClusterRasterIndirectDrawParams::{
+  {
     index_count: 0U,
     instance_count: 0U,
     first_index: 0U,
@@ -900,13 +889,7 @@ pub fn ClusterRasterIndirectDrawParams::new(
   base_vertex : UInt,
   first_instance : UInt,
 ) -> ClusterRasterIndirectDrawParams {
-  ClusterRasterIndirectDrawParams::{
-    index_count,
-    instance_count,
-    first_index,
-    base_vertex,
-    first_instance,
-  }
+  { index_count, instance_count, first_index, base_vertex, first_instance }
 }
 
 ///|
@@ -946,8 +929,8 @@ pub fn ClusterRasterIndirectDrawParams::first_instance(
 
 ///|
 pub fn ClusterMetadata::ClusterMetadata() -> ClusterMetadata {
-  ClusterMetadata::{
-    indirect_draw_params: ClusterRasterIndirectDrawParams::ClusterRasterIndirectDrawParams(),
+  {
+    indirect_draw_params: ClusterRasterIndirectDrawParams(),
     clustered_light_count: 0U,
     reflection_probe_count: 0U,
     irradiance_volume_count: 0U,
@@ -967,7 +950,7 @@ pub fn ClusterMetadata::new(
   index_list_capacity : UInt,
   z_slice_list_capacity : UInt,
 ) -> ClusterMetadata {
-  ClusterMetadata::{
+  {
     indirect_draw_params: ClusterRasterIndirectDrawParams::new(
       6U, 0U, 0U, 0U, 0U,
     ),
@@ -992,7 +975,7 @@ pub fn ClusterMetadata::from_gpu_readback(
   index_list_capacity : UInt,
   farthest_z : UInt,
 ) -> ClusterMetadata {
-  ClusterMetadata::{
+  {
     indirect_draw_params,
     clustered_light_count,
     reflection_probe_count,
@@ -1155,7 +1138,7 @@ pub fn gpu_clustering_sortable_u32_to_f32_bits(bits : UInt) -> UInt {
 pub fn ViewClusteringReadbackData::new(
   settings : @light_cluster.GlobalClusterGpuSettings,
 ) -> ViewClusteringReadbackData {
-  ViewClusteringReadbackData::{
+  {
     z_slice_list_capacity: settings.initial_z_slice_list_capacity(),
     max_index_list_capacity: settings.initial_index_list_capacity(),
     metadata_staging_pending_buffers: [],
@@ -1169,7 +1152,7 @@ pub fn ViewClusteringLastFrameStatistics::new(
   index_list_size : UInt,
   farthest_z : Float,
 ) -> ViewClusteringLastFrameStatistics {
-  ViewClusteringLastFrameStatistics::{ index_list_size, farthest_z }
+  { index_list_size, farthest_z }
 }
 
 ///|
@@ -1288,7 +1271,7 @@ pub fn ViewClusteringReadbackData::last_frame_statistics(
 
 ///|
 pub fn RenderViewClusteringReadbackData::RenderViewClusteringReadbackData() -> RenderViewClusteringReadbackData {
-  RenderViewClusteringReadbackData::{ views: Map([]) }
+  { views: Map([]) }
 }
 
 ///|
@@ -1319,8 +1302,8 @@ pub fn ViewGpuClusteringBuffers::ViewGpuClusteringBuffers() -> ViewGpuClustering
   let metadata_buffer : @render_resource.StorageBuffer[ClusterMetadata] = @render_resource.StorageBuffer::with_label(
     "clustering Z slicing metadata buffer",
   )
-  metadata_buffer.push(ClusterMetadata::ClusterMetadata())
-  ViewGpuClusteringBuffers::{
+  metadata_buffer.push(ClusterMetadata())
+  {
     z_slices_buffer: @render_resource.StorageBuffer::new(),
     scratchpad_offsets_and_counts_buffer: @render_resource.StorageBuffer::new(),
     cluster_metadata_buffer: metadata_buffer,
@@ -1353,7 +1336,7 @@ pub fn ViewGpuClusteringBuffers::metadata(
 ) -> ClusterMetadata {
   match self.cluster_metadata_buffer.values() {
     [metadata, ..] => metadata
-    [] => ClusterMetadata::ClusterMetadata()
+    [] => ClusterMetadata()
   }
 }
 
@@ -1374,9 +1357,7 @@ fn ViewGpuClusteringBuffers::ensure_z_slices_capacity(
   let missing = capacity - self.z_slices_buffer.len()
   if missing > 0 {
     for _ in 0..<missing {
-      self.z_slices_buffer.push(
-        ClusterableObjectZSlice::ClusterableObjectZSlice(),
-      )
+      self.z_slices_buffer.push(ClusterableObjectZSlice())
     }
   }
 }
@@ -1387,9 +1368,7 @@ fn ViewGpuClusteringBuffers::reserve_scratchpad_offsets_and_counts(
   cluster_count : Int,
 ) -> Unit {
   for _ in 0..<cluster_count {
-    self.scratchpad_offsets_and_counts_buffer.push(
-      GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
-    )
+    self.scratchpad_offsets_and_counts_buffer.push(GpuClusterOffsetAndCounts())
   }
 }
 
@@ -1398,9 +1377,7 @@ fn ViewGpuClusteringBuffers::ensure_nonempty_scratchpad_offsets_and_counts(
   self : ViewGpuClusteringBuffers,
 ) -> Unit {
   if self.scratchpad_offsets_and_counts_buffer.len() == 0 {
-    self.scratchpad_offsets_and_counts_buffer.push(
-      GpuClusterOffsetAndCounts::GpuClusterOffsetAndCounts(),
-    )
+    self.scratchpad_offsets_and_counts_buffer.push(GpuClusterOffsetAndCounts())
   }
 }
 
@@ -1595,7 +1572,7 @@ pub fn GpuClusteringMeshBuffers::GpuClusteringMeshBuffers(
       gpu_clustering_mesh_u32le_bytes(gpu_clustering_indices()),
     )
   index_buffer.set_label("GPU clustering index buffer")
-  GpuClusteringMeshBuffers::{ vertex_buffer, index_buffer }
+  { vertex_buffer, index_buffer }
 }
 
 ///|
@@ -1616,7 +1593,7 @@ pub fn GpuClusteringMeshBuffers::index_buffer(
 pub fn ViewClusteringDummyTexture::new(
   texture : @render_texture.CachedTexture,
 ) -> ViewClusteringDummyTexture {
-  ViewClusteringDummyTexture::{ texture, }
+  { texture, }
 }
 
 ///|
@@ -1633,7 +1610,7 @@ pub fn ViewClusteringBindGroups::new(
   clustering_bind_group_allocate_pass : @wgpu.BindGroup,
   clustering_bind_group_populate_pass : @wgpu.BindGroup,
 ) -> ViewClusteringBindGroups {
-  ViewClusteringBindGroups::{
+  {
     clustering_bind_group_z_slicing_pass,
     clustering_bind_group_count_pass,
     clustering_bind_group_allocate_pass,
@@ -1696,7 +1673,7 @@ pub fn ViewGpuClusteringPipelineIds::new(
   clustering_allocation_global_pipeline_id : @render_resource.CachedComputePipelineId,
   clustering_populate_pipeline_id : @render_resource.CachedRenderPipelineId,
 ) -> ViewGpuClusteringPipelineIds {
-  ViewGpuClusteringPipelineIds::{
+  {
     clustering_z_slicing_pipeline_id,
     clustering_count_pipeline_id,
     clustering_allocation_local_pipeline_id,
@@ -2335,13 +2312,7 @@ fn gpu_clustering_resolve_view_pipelines(
     is Some(populate) else {
     return None
   }
-  Some(ResolvedViewGpuClusteringPipelines::{
-    z_slicing,
-    count,
-    allocation_local,
-    allocation_global,
-    populate,
-  })
+  Some({ z_slicing, count, allocation_local, allocation_global, populate })
 }
 
 ///|
@@ -2564,10 +2535,7 @@ pub fn gpu_clustering_cluster_on_gpu_commands(
       command_encoder, view_gpu_clustering_buffers, staging_buffer,
     ),
   )
-  Some(GpuClusteringReadbackRequest::{
-    view_clustering_readback_data,
-    staging_buffer,
-  })
+  Some({ view_clustering_readback_data, staging_buffer })
 }
 
 ///|
@@ -3128,7 +3096,7 @@ pub fn gpu_clustering_plugin_with(
   let extract_plugin : @render.ExtractResourcePlugin[
     @light_cluster.GlobalClusterSettings,
     GpuClusteringPlugin,
-  ] = @render.ExtractResourcePlugin::ExtractResourcePlugin()
+  ] = ExtractResourcePlugin()
   @render.extract_resource_plugin_with(app, extract_plugin)
 }
 
@@ -3170,50 +3138,42 @@ fn gpu_clustering_configure_render_app_finish(
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     SpecializedClusteringRasterPipelines::resource(),
-    fn() {
-      SpecializedClusteringRasterPipelines::SpecializedClusteringRasterPipelines()
-    },
+    fn() { SpecializedClusteringRasterPipelines() },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     SpecializedClusteringZSlicingPipelines::resource(),
-    fn() {
-      SpecializedClusteringZSlicingPipelines::SpecializedClusteringZSlicingPipelines()
-    },
+    fn() { SpecializedClusteringZSlicingPipelines() },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     SpecializedClusteringAllocationPipelines::resource(),
-    fn() {
-      SpecializedClusteringAllocationPipelines::SpecializedClusteringAllocationPipelines()
-    },
+    fn() { SpecializedClusteringAllocationPipelines() },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     RenderViewClusteringReadbackData::resource(),
-    fn() {
-      RenderViewClusteringReadbackData::RenderViewClusteringReadbackData()
-    },
+    fn() { RenderViewClusteringReadbackData() },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     GpuClusteringMeshBuffers::resource(),
-    fn() { GpuClusteringMeshBuffers::GpuClusteringMeshBuffers(render_device) },
+    fn() { GpuClusteringMeshBuffers(render_device) },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     ClusteringRasterPipeline::resource(),
-    fn() { ClusteringRasterPipeline::ClusteringRasterPipeline() },
+    fn() { ClusteringRasterPipeline() },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     ClusteringZSlicingPipeline::resource(),
-    fn() { ClusteringZSlicingPipeline::ClusteringZSlicingPipeline() },
+    fn() { ClusteringZSlicingPipeline() },
   )
   gpu_clustering_init_render_resource_if_missing(
     render_world,
     ClusteringAllocationPipeline::resource(),
-    fn() { ClusteringAllocationPipeline::ClusteringAllocationPipeline() },
+    fn() { ClusteringAllocationPipeline() },
   )
   sub_app
   .add_systems(

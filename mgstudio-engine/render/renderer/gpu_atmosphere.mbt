@@ -467,7 +467,7 @@ fn atmosphere_create_transmittance_lut_pipeline(
   let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "pbr/atmosphere/transmittance_lut.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
   let shader = backend.device.create_shader_module_wgsl(wgsl)
@@ -492,7 +492,7 @@ fn atmosphere_create_multiscattering_lut_pipeline(
   let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "pbr/atmosphere/multiscattering_lut.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
   let shader = backend.device.create_shader_module_wgsl(wgsl)
@@ -517,7 +517,7 @@ fn atmosphere_create_sky_view_lut_pipeline(
   let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "pbr/atmosphere/sky_view_lut.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
   let shader = backend.device.create_shader_module_wgsl(wgsl)
@@ -542,7 +542,7 @@ fn atmosphere_create_aerial_view_lut_pipeline(
   let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "pbr/atmosphere/aerial_view_lut.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
   let shader = backend.device.create_shader_module_wgsl(wgsl)
@@ -567,7 +567,7 @@ fn atmosphere_create_environment_pipeline(
   let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     "pbr/atmosphere/environment.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
   let shader = backend.device.create_shader_module_wgsl(wgsl)
@@ -594,7 +594,7 @@ fn atmosphere_create_render_sky_pipeline(
   let vertex_source = load_wgsl_preprocessed(
     backend.assets_base,
     "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_wgsl_value_defines(),
   )
   let shader_defs = @hashmap.HashMap([])

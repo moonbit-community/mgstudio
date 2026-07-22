@@ -46,7 +46,7 @@ pub fn MeshRayCastSettings::with_max_distance(
   self : MeshRayCastSettings,
   max_distance : Float,
 ) -> MeshRayCastSettings {
-  MeshRayCastSettings::{ ..self, max_distance, }
+  { ..self, max_distance, }
 }
 
 ///|
@@ -54,7 +54,7 @@ pub fn MeshRayCastSettings::with_ray_epsilon(
   self : MeshRayCastSettings,
   ray_epsilon : Float,
 ) -> MeshRayCastSettings {
-  MeshRayCastSettings::{ ..self, ray_epsilon, }
+  { ..self, ray_epsilon, }
 }
 
 ///|
@@ -62,7 +62,7 @@ pub fn MeshRayCastSettings::with_max_hits(
   self : MeshRayCastSettings,
   max_hits : Int,
 ) -> MeshRayCastSettings {
-  MeshRayCastSettings::{ ..self, max_hits, }
+  { ..self, max_hits, }
 }
 
 ///|
@@ -70,7 +70,7 @@ pub fn MeshRayCastSettings::with_include_invisible(
   self : MeshRayCastSettings,
   include_invisible : Bool,
 ) -> MeshRayCastSettings {
-  MeshRayCastSettings::{ ..self, include_invisible, }
+  { ..self, include_invisible, }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn MeshRayCastSettings::with_only_entities(
   self : MeshRayCastSettings,
   only_entities : Array[@core.Entity]?,
 ) -> MeshRayCastSettings {
-  MeshRayCastSettings::{ ..self, only_entities, }
+  { ..self, only_entities, }
 }
 
 ///|

@@ -21,8 +21,8 @@ fn main {
     ),
   )
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, change_clear_color_system)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, change_clear_color_system)
   .run()
 }
 

@@ -28,7 +28,7 @@ test "pbr render: item-imported entrypoints are tree-shaken when unused" {
   composer.register_source(
     "entry.wgsl", "#import demo::{ mesh::vertex, pbr::fragment }\n",
   )
-  let source = composer.compose_wgsl("entry.wgsl", @wgsl_common.WgslComposeOptions::{
+  let source = composer.compose_wgsl("entry.wgsl", {
     defines: Map([]),
     value_defines: @wgsl_common.bevy_wgsl_value_defines(),
     redirects: [],
@@ -66,7 +66,7 @@ test "pbr render: module alias global binding access composes" {
   composer.register_source(
     "view_transformations.wgsl", view_transformations_source,
   )
-  let source = composer.compose_wgsl("view_transformations.wgsl", @wgsl_common.WgslComposeOptions::{
+  let source = composer.compose_wgsl("view_transformations.wgsl", {
     defines: Map([]),
     value_defines: @wgsl_common.bevy_wgsl_value_defines(),
     redirects: [],

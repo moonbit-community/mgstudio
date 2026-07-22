@@ -33,7 +33,7 @@ let menu_data_resource_key : @ecs.ResourceKey[MenuData] = @ecs.register_resource
 
 ///|
 impl Default for AppState with fn default() {
-  AppState::Menu
+  Menu
 }
 
 ///|
@@ -82,20 +82,20 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(AppState::default())
-  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(Startup, setup)
   .add_on_enter_system_param(AppState::Menu, setup_menu)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
   )
   .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
   .add_on_enter_system_param2(AppState::InGame, setup_game)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(movement).run_if(@app.in_state(AppState::InGame)),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(change_color).run_if(
       @app.in_state(AppState::InGame),
     ),
@@ -112,20 +112,20 @@ fn setup(commands : @app.Commands) -> Unit {
 fn setup_menu(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(Center)
+    .with_align_items(Center),
   )
   let button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(150.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(150.0F))
+      .with_height(Px(65.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(normal_button_color()),
     ),
   )
@@ -149,12 +149,12 @@ fn menu(world : @ecs.World) -> Unit {
       return
     }
     let color = match interaction {
-      @ui.Interaction::Pressed => {
+      Pressed => {
         @app.set_state(AppState::InGame)
         pressed_button_color()
       }
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None => normal_button_color()
+      Hovered => hovered_button_color()
+      None => normal_button_color()
     }
     if (try! world.contains_by_key(entity, @ui.ecs_key_background_color)) {
       try! (world.replace(
@@ -200,16 +200,16 @@ fn movement(
   try! query.for_each(fn(_entity, transform) {
     let mut dx = 0.0F
     let mut dy = 0.0F
-    if input.pressed(@window.KeyCode::ArrowLeft) {
+    if input.pressed(ArrowLeft) {
       dx -= 1.0F
     }
-    if input.pressed(@window.KeyCode::ArrowRight) {
+    if input.pressed(ArrowRight) {
       dx += 1.0F
     }
-    if input.pressed(@window.KeyCode::ArrowUp) {
+    if input.pressed(ArrowUp) {
       dy += 1.0F
     }
-    if input.pressed(@window.KeyCode::ArrowDown) {
+    if input.pressed(ArrowDown) {
       dy -= 1.0F
     }
     if dx == 0.0F && dy == 0.0F {

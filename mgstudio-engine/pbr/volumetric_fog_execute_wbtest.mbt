@@ -42,7 +42,7 @@ fn render3d_volumetric_fog_wbtest_pass_projection() -> @pbr_render.Render3dPassP
 fn render3d_volumetric_fog_wbtest_camera_payload(
   volumetric_fog : VolumetricFog?,
 ) -> Camera3dViewPayload {
-  Camera3dViewPayload::{
+  {
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -50,8 +50,8 @@ fn render3d_volumetric_fog_wbtest_camera_payload(
     volumetric_fog,
     atmosphere: None,
     atmosphere_settings: None,
-    camera: @camera_camera.Camera::Camera(),
-    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+    camera: Camera(),
+    depth_texture_usages: Camera3dDepthTextureUsage(),
     projection: Projection::default(),
     sub_camera_view: None,
     oit_settings: None,
@@ -86,13 +86,13 @@ fn render3d_volumetric_fog_wbtest_camera_payload(
     shadow_filtering_method: None,
     motion_vector_prepass_enabled: false,
     msaa: None,
-    transform: @transform.Transform::Transform(),
-    previous_transform: @transform.Transform::Transform(),
+    transform: Transform(),
+    previous_transform: Transform(),
     previous_clip_from_world: None,
     target_id: 0,
     target_size: @math.IVec2::new(1280, 720),
     scale_factor: 1.0F,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    layers: RenderLayers(),
     invert_culling: false,
   }
 }
@@ -122,7 +122,7 @@ test "pbr volumetric fog execute: prepare consumes extracted render-world state"
   try! render_world.set_by_key(
     light_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   let volume_entity = render_world.spawn()
   try! render_world.set_by_key(
@@ -190,10 +190,7 @@ test "pbr volumetric fog execute: pre-main prepare state consumes prepared rende
   let prepared = render3d_prepare_camera_volumetric_fog_state(
     render_world,
     source_world,
-    ExtractedCamera3d::{
-      entity: phase_entity_ref3d(main_entity, view_entity),
-      payload: camera,
-    },
+    { entity: phase_entity_ref3d(main_entity, view_entity), payload: camera },
     camera,
     render3d_volumetric_fog_wbtest_pass_projection(),
     0,
@@ -202,7 +199,7 @@ test "pbr volumetric fog execute: pre-main prepare state consumes prepared rende
     -1,
     -1,
     -1,
-    Render3dEnvironmentMapState::{
+    {
       diffuse_texture_id: -1,
       specular_texture_id: -1,
       smallest_specular_mip_level: 0,
@@ -210,7 +207,7 @@ test "pbr volumetric fog execute: pre-main prepare state consumes prepared rende
       rotation: @math.Quat::identity(),
       affects_lightmapped_mesh_diffuse: false,
     },
-    Render3dLightProbeState::{
+    {
       uniform_bytes: Bytes::from_array([]),
       uniform_offset: 0U,
       diffuse_texture_ids: [],
@@ -244,7 +241,7 @@ test "pbr volumetric fog execute: extracts lights and precomputes local-from-wor
   try! (world.set_by_key(
     light_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
   let skipped_volume_entity = world.spawn()
@@ -290,10 +287,10 @@ test "pbr volumetric fog execute: converts clip projection columns without trans
   ignore(
     @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
       buffer,
-      @light.VolumetricFog::VolumetricFog(),
+      VolumetricFog(),
       @math.Affine3::identity(),
       converted,
-      [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
+      [(FogVolume(), @math.Affine3::identity())],
     ),
   )
   inspect(
@@ -310,10 +307,10 @@ test "pbr volumetric fog execute: standalone uniform prepare clears stale data f
     render3d_volumetric_fog_uniform_buffer_mut(world).modify(fn(buffer) {
       @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
         buffer,
-        @light.VolumetricFog::VolumetricFog(),
+        VolumetricFog(),
         @math.Affine3::identity(),
         render3d_volumetric_fog_wbtest_identity_mat4(),
-        [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
+        [(FogVolume(), @math.Affine3::identity())],
       )
     }),
   )
@@ -339,9 +336,9 @@ test "pbr volumetric fog execute: standalone uniform prepare keeps zero-volume v
   defer world.close()
   let view_entity = world.spawn()
   let output = render3d_prepare_volumetric_fog_uniform_buffer(world, [
-    Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+    Render3dVolumetricFogUniformPrepareViewInput(
       view_entity,
-      @light.VolumetricFog::VolumetricFog(),
+      VolumetricFog(),
       @math.Affine3::identity(),
       render3d_volumetric_fog_wbtest_identity_mat4(),
     ),
@@ -389,13 +386,13 @@ test "pbr volumetric fog execute: standalone uniform prepare derives count from 
   let second_view = world.spawn()
 
   let output = render3d_prepare_volumetric_fog_uniform_buffer(world, [
-    Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+    Render3dVolumetricFogUniformPrepareViewInput(
       first_view,
       @light.VolumetricFog::VolumetricFog().with_step_count(32),
       @math.Affine3::identity(),
       render3d_volumetric_fog_wbtest_identity_mat4(),
     ),
-    Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+    Render3dVolumetricFogUniformPrepareViewInput(
       second_view,
       @light.VolumetricFog::VolumetricFog().with_step_count(64),
       @math.Affine3::from_translation(@math.Vec3::new(1.0F, 0.0F, 0.0F)),
@@ -457,15 +454,15 @@ test "pbr volumetric fog execute: standalone uniform prepare inserts per-view fo
   let outside_view = world.spawn()
 
   let output = render3d_prepare_volumetric_fog_uniform_buffer(world, [
-    Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+    Render3dVolumetricFogUniformPrepareViewInput(
       inside_view,
-      @light.VolumetricFog::VolumetricFog(),
+      VolumetricFog(),
       @math.Affine3::identity(),
       render3d_volumetric_fog_wbtest_identity_mat4(),
     ),
-    Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+    Render3dVolumetricFogUniformPrepareViewInput(
       outside_view,
-      @light.VolumetricFog::VolumetricFog(),
+      VolumetricFog(),
       @math.Affine3::from_translation(@math.Vec3::new(0.6F, 0.0F, 0.0F)),
       render3d_volumetric_fog_wbtest_identity_mat4(),
     ),
@@ -499,10 +496,10 @@ test "pbr volumetric fog execute: clears shared uniform buffer" {
     buffer.modify(fn(uniform_buffer) {
       @pbr_volumetric_fog.prepare_volumetric_fog_view_uniforms(
         uniform_buffer,
-        @light.VolumetricFog::VolumetricFog(),
+        VolumetricFog(),
         @math.Affine3::identity(),
         render3d_volumetric_fog_wbtest_identity_mat4(),
-        [(@light.FogVolume::FogVolume(), @math.Affine3::identity())],
+        [(FogVolume(), @math.Affine3::identity())],
       )
       |> ignore
     }),
@@ -527,7 +524,7 @@ test "pbr volumetric fog execute: clears shared uniform buffer" {
 ///|
 test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog view" {
   let inactive = Render3dVolumetricFogPrepareOutput::{
-    ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    ..Render3dVolumetricFogPrepareOutput(),
     view_count: 1,
     light_count: 1,
     plane_mesh_id: -1,
@@ -537,7 +534,7 @@ test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog v
     content="(false, false)",
   )
   let active = Render3dVolumetricFogPrepareOutput::{
-    ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    ..Render3dVolumetricFogPrepareOutput(),
     view_count: 1,
     light_count: 1,
     plane_mesh_id: 7,
@@ -548,7 +545,7 @@ test "pbr volumetric fog execute: prepares both Bevy pipeline variants per fog v
   )
   assert_true(render3d_volumetric_fog_should_prepare_hull_meshes(active))
   let view_without_volume = Render3dVolumetricFogPrepareOutput::{
-    ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    ..Render3dVolumetricFogPrepareOutput(),
     view_count: 1,
     volume_count: 0,
     light_count: 1,
@@ -566,13 +563,9 @@ test "pbr volumetric fog execute: pipeline keys preserve Bevy texture variants a
   )
   let vertex_buffer_layout = @mesh.VertexBufferLayout::new(
     array_stride=32,
-    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    step_mode=Vertex,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=16,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=0,
-      ),
+      @mesh.VertexAttribute::new(offset=16, format=Float32x3, shader_location=0),
     ],
   )
   let textureless = @pbr_volumetric_fog.VolumetricFogPipelineKey::VolumetricFogPipelineKey(
@@ -656,11 +649,7 @@ test "pbr volumetric fog execute: prepares depth texture usage from sampled dept
   )
 
   let entity = world.spawn()
-  try! (world.set_by_key(
-    entity,
-    ecs_key_volumetric_fog,
-    VolumetricFog::VolumetricFog(),
-  )
+  try! (world.set_by_key(entity, ecs_key_volumetric_fog, VolumetricFog())
   |> ignore)
   assert_true(render3d_world_has_volumetric_fog_views(world))
   assert_true(
@@ -675,7 +664,7 @@ test "pbr volumetric fog execute: prepares depth texture usage from sampled dept
   try! (world.set_by_key(
     light_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
   |> ignore)
   assert_true(render3d_world_has_volumetric_fog_views(world))

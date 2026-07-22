@@ -47,7 +47,7 @@ pub fn StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
   pbr_anisotropy_texture? : Bool = false,
   pbr_specular_textures? : Bool = false,
 ) -> StandardMaterialTextureFeatureSet {
-  StandardMaterialTextureFeatureSet::{
+  {
     pbr_transmission_textures,
     pbr_multi_layer_material_textures,
     pbr_anisotropy_texture,
@@ -57,9 +57,7 @@ pub fn StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
 
 ///|
 pub fn standard_material_default_texture_feature_set() -> StandardMaterialTextureFeatureSet {
-  StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
-    pbr_anisotropy_texture=true,
-  )
+  StandardMaterialTextureFeatureSet(pbr_anisotropy_texture=true)
 }
 
 ///|
@@ -167,7 +165,7 @@ pub fn init_fallback_bindless_resources(world : @ecs.World) -> Unit {
     return
   }
   let device = render_device.wgpu_device()
-  world.insert_resource(ecs_key_fallback_bindless_resources, FallbackBindlessResources::{
+  world.insert_resource(ecs_key_fallback_bindless_resources, {
     filtering_sampler: pbr_create_fallback_filtering_sampler(device),
     non_filtering_sampler: pbr_create_fallback_non_filtering_sampler(device),
     comparison_sampler: pbr_create_fallback_comparison_sampler(device),
@@ -185,11 +183,7 @@ fn standard_material_texture_layout_entry(
   @render_resource.BindGroupLayoutEntry::new(
     binding,
     fragment,
-    @render_resource.BindingType::TextureBinding(
-      @render_resource.TextureSampleType::Float(true),
-      @render_resource.TextureViewDimension::D2,
-      false,
-    ),
+    TextureBinding(Float(true), D2, false),
   )
 }
 
@@ -201,9 +195,7 @@ fn standard_material_sampler_layout_entry(
   @render_resource.BindGroupLayoutEntry::new(
     binding,
     fragment,
-    @render_resource.BindingType::SamplerBinding(
-      @render_resource.SamplerBindingType::Filtering,
-    ),
+    SamplerBinding(Filtering),
   )
 }
 
@@ -233,11 +225,7 @@ pub fn standard_material_bind_group_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       0,
       material_uniform_visibility,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        192UL,
-      ),
+      BufferBinding(Uniform, false, 192UL),
     ),
   ]
   standard_material_push_texture_sampler_layout_pair(entries, 1, 2, fragment)
@@ -293,11 +281,7 @@ pub fn forward_decal_material_bind_group_layout_descriptor() -> @material.BindGr
     @render_resource.BindGroupLayoutEntry::new(
       200,
       @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        4UL,
-      ),
+      BufferBinding(Uniform, false, 4UL),
     ),
   )
   @material.BindGroupLayoutDescriptor::new(
@@ -391,7 +375,7 @@ pub fn standard_material_bind_group_allocator_install_plan(
   bindless_slot_count : Int?,
   features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> MaterialBindGroupAllocatorInstallPlan {
-  MaterialBindGroupAllocatorInstallPlan::{
+  {
     material_label: "StandardMaterial",
     uses_bindless_resources: material_uses_bindless_resources(
       bindless_supported, bindless_slot_count,
@@ -408,7 +392,7 @@ pub fn material_bind_group_allocator_for_support(
 ) -> MaterialBindGroupAllocator {
   match bindless_slot_count {
     Some(slot_count) if bindless_supported && slot_count > 1 =>
-      MaterialBindGroupAllocator::Bindless(
+      Bindless(
         MaterialBindGroupBindlessAllocator::with_slab_capacity(slot_count),
       )
     _ => MaterialBindGroupAllocator::default_non_bindless()
@@ -422,7 +406,7 @@ pub struct MaterialBindGroupIndex {
 
 ///|
 pub fn MaterialBindGroupIndex::new(value : Int) -> MaterialBindGroupIndex {
-  MaterialBindGroupIndex::{ value: if value < 0 { 0 } else { value } }
+  { value: if value < 0 { 0 } else { value } }
 }
 
 ///|
@@ -437,7 +421,7 @@ pub struct MaterialBindGroupSlot {
 
 ///|
 pub fn MaterialBindGroupSlot::new(value : Int) -> MaterialBindGroupSlot {
-  MaterialBindGroupSlot::{ value: if value < 0 { 0 } else { value } }
+  { value: if value < 0 { 0 } else { value } }
 }
 
 ///|
@@ -453,10 +437,7 @@ pub struct MaterialBindingId {
 
 ///|
 pub fn MaterialBindingId::MaterialBindingId() -> MaterialBindingId {
-  MaterialBindingId::{
-    group: MaterialBindGroupIndex::new(0),
-    slot: MaterialBindGroupSlot::new(0),
-  }
+  { group: MaterialBindGroupIndex::new(0), slot: MaterialBindGroupSlot::new(0) }
 }
 
 ///|
@@ -464,7 +445,7 @@ pub fn MaterialBindingId::new(
   group : MaterialBindGroupIndex,
   slot : MaterialBindGroupSlot,
 ) -> MaterialBindingId {
-  MaterialBindingId::{ group, slot }
+  { group, slot }
 }
 
 ///|
@@ -491,7 +472,7 @@ pub struct RenderMaterialBindings {
 
 ///|
 pub fn RenderMaterialBindings::RenderMaterialBindings() -> RenderMaterialBindings {
-  RenderMaterialBindings::{ bindings: Map([]) }
+  { bindings: Map([]) }
 }
 
 ///|
@@ -594,7 +575,7 @@ pub fn MaterialBindGroupEntry::new(
   material_id : Int,
   binding_id : MaterialBindingId,
 ) -> MaterialBindGroupEntry {
-  MaterialBindGroupEntry::{ material_id, binding_id }
+  { material_id, binding_id }
 }
 
 ///|
@@ -620,7 +601,7 @@ pub struct MaterialNonBindlessAllocatedBindGroup {
 pub fn MaterialNonBindlessAllocatedBindGroup::new(
   bind_group_id : Int,
 ) -> MaterialNonBindlessAllocatedBindGroup {
-  MaterialNonBindlessAllocatedBindGroup::{ bind_group_id, }
+  { bind_group_id, }
 }
 
 ///|
@@ -638,7 +619,7 @@ pub struct MaterialBindGroupNonBindlessAllocator {
 
 ///|
 pub fn MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator() -> MaterialBindGroupNonBindlessAllocator {
-  MaterialBindGroupNonBindlessAllocator::{ bind_groups: [], free_indices: [] }
+  { bind_groups: [], free_indices: [] }
 }
 
 ///|
@@ -748,11 +729,7 @@ pub fn MaterialBindGroupBindlessAllocator::with_slab_capacity(
   slab_capacity : Int,
 ) -> MaterialBindGroupBindlessAllocator {
   let capacity = if slab_capacity <= 0 { 1 } else { slab_capacity }
-  MaterialBindGroupBindlessAllocator::{
-    slab_capacity: capacity,
-    slots: [],
-    free_slots: [],
-  }
+  { slab_capacity: capacity, slots: [], free_slots: [] }
 }
 
 ///|
@@ -843,16 +820,12 @@ pub(all) enum MaterialBindGroupAllocator {
 
 ///|
 pub fn MaterialBindGroupAllocator::default_bindless() -> MaterialBindGroupAllocator {
-  MaterialBindGroupAllocator::Bindless(
-    MaterialBindGroupBindlessAllocator::MaterialBindGroupBindlessAllocator(),
-  )
+  Bindless(MaterialBindGroupBindlessAllocator())
 }
 
 ///|
 pub fn MaterialBindGroupAllocator::default_non_bindless() -> MaterialBindGroupAllocator {
-  MaterialBindGroupAllocator::NonBindless(
-    MaterialBindGroupNonBindlessAllocator::MaterialBindGroupNonBindlessAllocator(),
-  )
+  NonBindless(MaterialBindGroupNonBindlessAllocator())
 }
 
 ///|
@@ -914,7 +887,7 @@ pub struct MaterialBindGroupAllocators {
 
 ///|
 pub fn MaterialBindGroupAllocators::MaterialBindGroupAllocators() -> MaterialBindGroupAllocators {
-  MaterialBindGroupAllocators::{ allocators: Map([]) }
+  { allocators: Map([]) }
 }
 
 ///|
@@ -984,7 +957,7 @@ pub struct MaterialBindGroups {
 
 ///|
 pub fn MaterialBindGroups::MaterialBindGroups() -> MaterialBindGroups {
-  MaterialBindGroups::{ entries: [] }
+  { entries: [] }
 }
 
 ///|

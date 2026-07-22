@@ -81,7 +81,7 @@ pub fn SceneNode3d::new(
   default_morph_weights? : Array[Float]? = None,
   animation_root? : Bool = false,
 ) -> SceneNode3d {
-  SceneNode3d::{
+  {
     name,
     parent_node_index,
     mesh: Some(mesh),
@@ -137,7 +137,7 @@ pub fn SceneNode3d::new_empty(
   spot_light? : @light.SpotLight? = None,
   animation_root? : Bool = false,
 ) -> SceneNode3d {
-  SceneNode3d::{
+  {
     name,
     parent_node_index,
     mesh: None,
@@ -201,7 +201,7 @@ pub impl @asset.Asset for Scene with fn asset_resource_keys() {
 
 ///|
 pub fn Scene::new(nodes3d : Array[SceneNode3d]) -> Scene {
-  Scene::{ nodes3d, gltf_scene_extras: None, ready: true }
+  { nodes3d, gltf_scene_extras: None, ready: true }
 }
 
 ///|
@@ -209,7 +209,7 @@ pub fn Scene::with_gltf_scene_extras(
   self : Scene,
   extras : @gltf.GltfSceneExtras?,
 ) -> Scene {
-  Scene::{ ..self, gltf_scene_extras: extras }
+  { ..self, gltf_scene_extras: extras }
 }
 
 ///|
@@ -239,7 +239,7 @@ pub struct GltfLodVisibilityPolicy {
 
 ///|
 pub fn GltfLodVisibilityPolicy::GltfLodVisibilityPolicy() -> GltfLodVisibilityPolicy {
-  GltfLodVisibilityPolicy::{
+  {
     enabled: true,
     first_start_margin_min: GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MIN,
     first_start_margin_max: GLTF_LOD_DEFAULT_FIRST_START_MARGIN_MAX,
@@ -254,7 +254,7 @@ pub fn GltfLodVisibilityPolicy::with_enabled(
   self : GltfLodVisibilityPolicy,
   enabled : Bool,
 ) -> GltfLodVisibilityPolicy {
-  GltfLodVisibilityPolicy::{ ..self, enabled, }
+  { ..self, enabled, }
 }
 
 ///|
@@ -265,7 +265,7 @@ pub fn GltfLodVisibilityPolicy::with_first_lod_range(
   end_margin_min : Float,
   end_margin_max : Float,
 ) -> GltfLodVisibilityPolicy {
-  GltfLodVisibilityPolicy::{
+  {
     ..self,
     first_start_margin_min: start_margin_min,
     first_start_margin_max: start_margin_max,
@@ -280,10 +280,10 @@ pub fn GltfLodVisibilityPolicy::with_step(
   step : Float,
 ) -> GltfLodVisibilityPolicy {
   let safe_step = if step < 0.0F { 0.0F } else { step }
-  GltfLodVisibilityPolicy::{ ..self, step: safe_step }
+  { ..self, step: safe_step }
 }
 
 ///|
 fn scene_pending() -> Scene {
-  Scene::{ nodes3d: [], gltf_scene_extras: None, ready: false }
+  { nodes3d: [], gltf_scene_extras: None, ready: false }
 }

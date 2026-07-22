@@ -19,7 +19,7 @@ pub fn Color::srgb(r : Float, g : Float, b : Float) -> Color {
 
 ///|
 pub fn Color::srgba(r : Float, g : Float, b : Float, a : Float) -> Color {
-  Color::{
+  {
     r: color_srgb_to_linear(r),
     g: color_srgb_to_linear(g),
     b: color_srgb_to_linear(b),

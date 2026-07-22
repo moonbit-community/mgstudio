@@ -46,7 +46,7 @@ pub struct BindGroupLayoutDescriptor {
 
 ///|
 pub fn BindGroupLayout::new(value : @wgpu.BindGroupLayout) -> BindGroupLayout {
-  BindGroupLayout::{ id: next_bind_group_layout_id(), value }
+  { id: next_bind_group_layout_id(), value }
 }
 
 ///|
@@ -83,7 +83,7 @@ pub fn BindGroupLayoutEntry::new(
   kind : BindingType,
   count? : Int = 0,
 ) -> BindGroupLayoutEntry {
-  BindGroupLayoutEntry::{ binding, visibility, kind, count }
+  { binding, visibility, kind, count }
 }
 
 ///|
@@ -108,12 +108,12 @@ pub fn BindGroupLayoutEntry::count(self : BindGroupLayoutEntry) -> Int {
 
 ///|
 pub fn BindGroupLayoutDescriptor::BindGroupLayoutDescriptor() -> BindGroupLayoutDescriptor {
-  BindGroupLayoutDescriptor::{ label: "", entries: [] }
+  { label: "", entries: [] }
 }
 
 ///|
 pub impl Default for BindGroupLayoutDescriptor with fn default() {
-  BindGroupLayoutDescriptor::BindGroupLayoutDescriptor()
+  BindGroupLayoutDescriptor()
 }
 
 ///|
@@ -121,7 +121,7 @@ pub fn BindGroupLayoutDescriptor::new(
   label : String,
   entries : Array[BindGroupLayoutEntry],
 ) -> BindGroupLayoutDescriptor {
-  BindGroupLayoutDescriptor::{ label, entries }
+  { label, entries }
 }
 
 ///|

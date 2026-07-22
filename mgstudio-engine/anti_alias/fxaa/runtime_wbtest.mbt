@@ -15,11 +15,7 @@
 ///|
 fn fxaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   let entity = world.spawn_empty()
-  try! world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_camera, Camera())
   entity
 }
 

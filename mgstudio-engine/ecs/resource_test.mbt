@@ -32,13 +32,11 @@ test "ecs resource: insert/get/update" {
 
   debug_inspect(world.get_resource(res_config), content="None")
 
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.insert_resource(res_config, { fps: 60 })
   debug_inspect(world.get_resource(res_config), content="Some({ fps: 60 })")
 
   debug_inspect(
-    world.update_resource(res_config, fn(config) {
-      RuntimeConfig::{ fps: config.fps + 30 }
-    }),
+    world.update_resource(res_config, fn(config) { { fps: config.fps + 30 } }),
     content="true",
   )
   debug_inspect(world.get_resource(res_config), content="Some({ fps: 90 })")
@@ -53,9 +51,7 @@ test "ecs resource: update missing returns false" {
   )
 
   debug_inspect(
-    world.update_resource(res_config, fn(config) {
-      RuntimeConfig::{ fps: config.fps + 1 }
-    }),
+    world.update_resource(res_config, fn(config) { { fps: config.fps + 1 } }),
     content="false",
   )
 }
@@ -68,8 +64,8 @@ test "ecs resource: get_resource reads world storage" {
     debug_name="ref_runtime_config",
   )
 
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 75 })
+  world.insert_resource(res_config, { fps: 60 })
+  world.insert_resource(res_config, { fps: 75 })
 
   debug_inspect(world.get_resource(res_config), content="Some({ fps: 75 })")
 }
@@ -82,9 +78,9 @@ test "ecs resource: ResourceMut updates live world storage" {
     debug_name="ref_mut_runtime_config",
   )
 
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.insert_resource(res_config, { fps: 60 })
   let config = world.get_resource_mut(res_config).unwrap()
-  config.set(RuntimeConfig::{ fps: 90 })
+  config.set({ fps: 90 })
 
   debug_inspect(world.get_resource(res_config), content="Some({ fps: 90 })")
 }
@@ -97,7 +93,7 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
     debug_name="resource_mut_detect_runtime_config",
   )
 
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.insert_resource(res_config, { fps: 60 })
   world.increment_change_tick() |> ignore
 
   let first_ctx = @core.SystemTickContext::new()
@@ -120,7 +116,7 @@ test "ecs resource: ResourceMut exposes detect changes metadata" {
   debug_inspect(second_config.is_added(), content="false")
   debug_inspect(second_config.is_changed(), content="false")
 
-  second_config.set(RuntimeConfig::{ fps: 75 })
+  second_config.set({ fps: 75 })
   debug_inspect(second_config.is_changed(), content="true")
   debug_inspect(second_config.last_changed(), content="2")
   second_config.set_changed()
@@ -140,7 +136,7 @@ test "ecs resource: ResourceMut acquisition and peek do not mark changed" {
     debug_name="resource_mut_acquire_runtime_config",
   )
 
-  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.insert_resource(res_config, { fps: 60 })
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
 

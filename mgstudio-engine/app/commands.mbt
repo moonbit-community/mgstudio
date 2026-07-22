@@ -77,7 +77,7 @@ let deferred_command_runtime_state_resource_key : @ecs.ResourceKey[
 
 ///|
 fn deferred_command_runtime_state_new() -> DeferredCommandRuntimeState {
-  DeferredCommandRuntimeState::{ batch_queue: None }
+  { batch_queue: None }
 }
 
 ///|
@@ -149,7 +149,7 @@ fn flush_deferred_command_entries(
     (command.run)(world, tick) catch {
       err => {
         let context = ErrorContext::new(
-          ErrorContextKind::Command,
+          Command,
           command.source,
           stage=current_schedule_stage(),
         )
@@ -219,7 +219,7 @@ pub fn Commands::entity(
   self : Commands,
   entity : @core.Entity,
 ) -> EntityCommands {
-  EntityCommands::{ commands: self, entity }
+  { commands: self, entity }
 }
 
 ///|
@@ -688,7 +688,7 @@ pub impl SystemParam for Commands with fn init_state(world) {
 pub impl SystemParam for Commands with fn get(_state) {
   let world = system_param_abort_missing_world()
   let scope = current_system_param_scope_or_abort()
-  Commands::{
+  {
     scope,
     allocator: world.allocator_connection(),
     tick: current_system_ticks().this_run,

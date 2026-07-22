@@ -34,8 +34,8 @@ pub fn Shape::mesh_asset_path(self : Shape) -> String {
 ///|
 pub fn Shape::next(self : Shape) -> Shape {
   match self {
-    Cube => Shape::Sphere
-    Sphere => Shape::Cube
+    Cube => Sphere
+    Sphere => Cube
   }
 }
 
@@ -145,10 +145,10 @@ fn spawn_text(commands : @app.Commands) -> Unit {
           "Space: swap meshes by mutating a Handle<Mesh>\nEnter: mutate the mesh asset itself",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(12.0F),
-          left: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(12.0F),
+          left: Px(12.0F),
         },
       ),
     ),
@@ -206,16 +206,16 @@ fn alter_mesh(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param(@app.Startup, spawn_text)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param(Startup, spawn_text)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(alter_handle).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(alter_mesh).run_if(
       @input.input_just_pressed(@window.KeyCode::Enter),
     ),

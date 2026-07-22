@@ -16,7 +16,7 @@
 test "pbr light probe: view probe container enforces max probe count" {
   let probes = RenderViewLightProbes::RenderViewLightProbes()
   for i in 0..<16 {
-    probes.push_probe(RenderLightProbe::RenderLightProbe())
+    probes.push_probe(RenderLightProbe())
     i |> ignore
   }
   inspect(probes.texture_count(), content="0")
@@ -158,11 +158,7 @@ test "pbr light probe: gather uses visible clusterable probes and skips unloaded
     @render.ecs_key_render_entity,
     @render.RenderEntity::new(render_view),
   )
-  try! world.set_by_key(
-    view,
-    @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
-  )
+  try! world.set_by_key(view, @camera_components3d.ecs_key_camera3d, Camera3d())
   try! world.set_by_key(
     view,
     @light_cluster.VisibleClusterableObjects::component(),
@@ -176,7 +172,7 @@ test "pbr light probe: gather uses visible clusterable probes and skips unloaded
   try! world.set_by_key(
     reflection_probe,
     @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
+    LightProbe(),
   )
   try! world.set_by_key(
     reflection_probe,
@@ -190,7 +186,7 @@ test "pbr light probe: gather uses visible clusterable probes and skips unloaded
   try! world.set_by_key(
     irradiance_volume,
     @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
+    LightProbe(),
   )
   try! world.set_by_key(
     irradiance_volume,
@@ -240,9 +236,7 @@ test "pbr light probe: view environment map creates Bevy view light probe info" 
   )
   let info = probes
     .view_light_probe_info()
-    .unwrap_or(
-      EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo(),
-    )
+    .unwrap_or(EnvironmentMapViewLightProbeInfo())
   inspect(probes.is_empty(), content="false")
   inspect(probes.texture_count(), content="1")
   inspect(info.cubemap_index(), content="0")
@@ -273,11 +267,7 @@ test "pbr light probe: gather includes view environment maps without visible pro
     @render.ecs_key_render_entity,
     @render.RenderEntity::new(render_view),
   )
-  try! world.set_by_key(
-    view,
-    @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
-  )
+  try! world.set_by_key(view, @camera_components3d.ecs_key_camera3d, Camera3d())
   try! world.set_by_key(
     view,
     @light.ecs_key_environment_map_light,
@@ -288,16 +278,12 @@ test "pbr light probe: gather includes view environment maps without visible pro
     render_view,
     RenderViewEnvironmentMapLightProbes::component(),
   )).unwrap_or(
-    RenderViewEnvironmentMapLightProbes::new(
-      RenderViewLightProbes::RenderViewLightProbes(),
-    ),
+    RenderViewEnvironmentMapLightProbes::new(RenderViewLightProbes()),
   )
   let info = render_view_light_probes
     .probes()
     .view_light_probe_info()
-    .unwrap_or(
-      EnvironmentMapViewLightProbeInfo::EnvironmentMapViewLightProbeInfo(),
-    )
+    .unwrap_or(EnvironmentMapViewLightProbeInfo())
   inspect(render_view_light_probes.probe_count(), content="0")
   inspect(render_view_light_probes.probes().texture_count(), content="1")
   inspect(info.cubemap_index(), content="0")
@@ -354,11 +340,7 @@ test "pbr light probe: gather removes stale inactive view components" {
     @render.ecs_key_render_entity,
     @render.RenderEntity::new(render_view),
   )
-  try! world.set_by_key(
-    view,
-    @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
-  )
+  try! world.set_by_key(view, @camera_components3d.ecs_key_camera3d, Camera3d())
   try! world.set_by_key(
     view,
     @camera_camera.ecs_key_camera,
@@ -372,16 +354,12 @@ test "pbr light probe: gather removes stale inactive view components" {
   try! world.set_by_key(
     render_view,
     RenderViewEnvironmentMapLightProbes::component(),
-    RenderViewEnvironmentMapLightProbes::new(
-      RenderViewLightProbes::RenderViewLightProbes(),
-    ),
+    RenderViewEnvironmentMapLightProbes::new(RenderViewLightProbes()),
   )
   try! world.set_by_key(
     render_view,
     RenderViewIrradianceVolumeLightProbes::component(),
-    RenderViewIrradianceVolumeLightProbes::new(
-      RenderViewLightProbes::RenderViewLightProbes(),
-    ),
+    RenderViewIrradianceVolumeLightProbes::new(RenderViewLightProbes()),
   )
   gather_environment_map_light_probes(world)
   gather_irradiance_volume_light_probes(world)
@@ -519,7 +497,7 @@ test "pbr light probe: upload_light_probes writes render-world offsets" {
 
   let buffer = world
     .get_resource(LightProbesBuffer::resource())
-    .unwrap_or(LightProbesBuffer::LightProbesBuffer())
+    .unwrap_or(LightProbesBuffer())
   inspect(buffer.uniform_count(), content="1")
   let offset = (try! world.get_by_key(
     view,
@@ -538,7 +516,7 @@ test "pbr light probe: plugin schedules upload in render prepare resources" {
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(LightProbePlugin::LightProbePlugin())
   let render_sub_app = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .set_update_schedule(Some(@render.render_schedule_stage()))
   let render_dot = render_sub_app.schedule_graph_dot(
     @render.render_schedule_stage(),
@@ -576,7 +554,7 @@ test "pbr light probe: plugin schedules upload in render prepare resources" {
   ignore(render_sub_app.update())
   let buffer = render_world
     .get_resource(LightProbesBuffer::resource())
-    .unwrap_or(LightProbesBuffer::LightProbesBuffer())
+    .unwrap_or(LightProbesBuffer())
   inspect(buffer.uniform_count(), content="1")
   let offset = (try! render_world.get_by_key(
     view,
@@ -606,7 +584,7 @@ test "pbr light probe: plugin initializes main state and render buffer resource"
   )
   inspect(app.contains_resource(ecs_key_light_probes_buffer), content="false")
   let render_sub_app = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .set_update_schedule(Some(@render.render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
   inspect(
@@ -626,7 +604,7 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
   defer world.close()
   world.insert_resource(
     ecs_key_light_probe_plugin_state,
-    LightProbePluginState::LightProbePluginState(),
+    LightProbePluginState(),
   )
   let state : LightProbePluginState? = world.get_resource(
     ecs_key_light_probe_plugin_state,
@@ -637,7 +615,7 @@ test "pbr light probe: resource and component keys round-trip through ecs APIs" 
   try! (world.set_by_key(
     entity,
     ecs_key_render_view_light_probes,
-    RenderViewLightProbes::RenderViewLightProbes(),
+    RenderViewLightProbes(),
   )
   |> ignore)
   let probes = try! world.get_by_key(entity, ecs_key_render_view_light_probes)

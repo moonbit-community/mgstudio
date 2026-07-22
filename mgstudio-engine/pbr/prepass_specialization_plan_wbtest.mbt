@@ -14,18 +14,15 @@
 
 ///|
 fn pbr_prepass_test_properties(
-  alpha_mode? : @material.AlphaMode3d = @material.AlphaMode3d::Opaque,
-  render_method? : OpaqueRendererMethod = OpaqueRendererMethod::Forward,
-  render_phase_type? : @material.RenderPhaseType = @material.RenderPhaseType::Opaque,
+  alpha_mode? : @material.AlphaMode3d = Opaque,
+  render_method? : OpaqueRendererMethod = Forward,
+  render_phase_type? : @material.RenderPhaseType = Opaque,
   prepass_enabled? : Bool = true,
   reads_view_transmission_texture? : Bool = false,
 ) -> @material.MaterialProperties {
   let draw_functions = @material.DrawFunctions::new()
   let ids = pbr_material_register_draw_functions(draw_functions)
-  pbr_material_apply_draw_functions(
-    @material.MaterialProperties::MaterialProperties(),
-    ids,
-  )
+  pbr_material_apply_draw_functions(MaterialProperties(), ids)
   .with_alpha_mode(alpha_mode)
   .with_render_method(render_method)
   .with_render_phase_type(render_phase_type)
@@ -40,28 +37,19 @@ test "pbr prepass specialization: removes materials Bevy excludes before queuing
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS,
   )
-  debug_inspect(
-    disabled is PbrPrepassMaterialSpecializationDecision::Remove,
-    content="true",
-  )
+  debug_inspect(disabled is Remove, content="true")
   let blended = pbr_prepass_material_specialization_decision(
-    pbr_prepass_test_properties(alpha_mode=@material.AlphaMode3d::Blend),
+    pbr_prepass_test_properties(alpha_mode=Blend),
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS,
   )
-  debug_inspect(
-    blended is PbrPrepassMaterialSpecializationDecision::Remove,
-    content="true",
-  )
+  debug_inspect(blended is Remove, content="true")
   let transmissive = pbr_prepass_material_specialization_decision(
     pbr_prepass_test_properties(reads_view_transmission_texture=true),
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS,
   )
-  debug_inspect(
-    transmissive is PbrPrepassMaterialSpecializationDecision::Remove,
-    content="true",
-  )
+  debug_inspect(transmissive is Remove, content="true")
 }
 
 ///|
@@ -71,7 +59,7 @@ test "pbr prepass specialization: depth-only opaque uses empty material bind gro
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS,
   )
-  guard decision is PbrPrepassMaterialSpecializationDecision::Queue(plan) else {
+  guard decision is Queue(plan) else {
     abort("expected queued depth-only prepass plan")
   }
   inspect(
@@ -86,14 +74,14 @@ test "pbr prepass specialization: depth-only opaque uses empty material bind gro
 ///|
 test "pbr prepass specialization: deferred lightmap keeps bicubic bit and deferred draw" {
   let decision = pbr_prepass_material_specialization_decision(
-    pbr_prepass_test_properties(render_method=OpaqueRendererMethod::Deferred),
+    pbr_prepass_test_properties(render_method=Deferred),
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS | MESH_PIPELINE_KEY_NORMAL_PREPASS,
     has_deferred_prepass=true,
     lightmapped=true,
     lightmap_bicubic_sampling=true,
   )
-  guard decision is PbrPrepassMaterialSpecializationDecision::Queue(plan) else {
+  guard decision is Queue(plan) else {
     abort("expected queued deferred prepass plan")
   }
   inspect(plan.draw_function_label(), content="DeferredOpaqueDrawFunction")
@@ -114,8 +102,8 @@ test "pbr prepass specialization: deferred lightmap keeps bicubic bit and deferr
 test "pbr prepass specialization: alpha mask motion path keeps previous flags" {
   let decision = pbr_prepass_material_specialization_decision(
     pbr_prepass_test_properties(
-      alpha_mode=@material.AlphaMode3d::Mask(0.5F),
-      render_phase_type=@material.RenderPhaseType::AlphaMask,
+      alpha_mode=Mask(0.5F),
+      render_phase_type=AlphaMask,
     ),
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS | MESH_PIPELINE_KEY_MOTION_VECTOR_PREPASS,
@@ -123,7 +111,7 @@ test "pbr prepass specialization: alpha mask motion path keeps previous flags" {
     has_previous_skin=true,
     has_previous_morph=true,
   )
-  guard decision is PbrPrepassMaterialSpecializationDecision::Queue(plan) else {
+  guard decision is Queue(plan) else {
     abort("expected queued alpha-mask prepass plan")
   }
   inspect(plan.draw_function_label(), content="PrepassAlphaMaskDrawFunction")
@@ -146,14 +134,14 @@ test "pbr prepass specialization: alpha mask motion path keeps previous flags" {
 test "pbr prepass specialization: alpha-to-coverage consumes view MSAA" {
   let decision = pbr_prepass_material_specialization_decision(
     pbr_prepass_test_properties(
-      alpha_mode=@material.AlphaMode3d::AlphaToCoverage,
-      render_phase_type=@material.RenderPhaseType::AlphaMask,
+      alpha_mode=AlphaToCoverage,
+      render_phase_type=AlphaMask,
     ),
     0UL,
     MESH_PIPELINE_KEY_DEPTH_PREPASS,
     msaa_samples=4,
   )
-  guard decision is PbrPrepassMaterialSpecializationDecision::Queue(plan) else {
+  guard decision is Queue(plan) else {
     abort("expected queued alpha-to-coverage prepass plan")
   }
   inspect(

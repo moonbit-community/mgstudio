@@ -23,7 +23,7 @@ pub(all) enum PhaseItemExtraIndex {
 
 ///|
 pub fn PhaseItemExtraIndex::none() -> PhaseItemExtraIndex {
-  PhaseItemExtraIndex::None
+  None
 }
 
 ///|
@@ -37,7 +37,7 @@ pub fn PhaseItemExtraIndex::maybe_dynamic_offset(
 ) -> PhaseItemExtraIndex {
   match dynamic_offset {
     Some(offset) => DynamicOffset(offset)
-    None => PhaseItemExtraIndex::None
+    None => None
   }
 }
 
@@ -56,7 +56,7 @@ pub fn PhaseItemExtraIndex::maybe_indirect_parameters_index(
 ) -> PhaseItemExtraIndex {
   match indirect_parameters_index {
     Some(index) => IndirectParametersIndex(index, index + 1, None)
-    None => PhaseItemExtraIndex::None
+    None => None
   }
 }
 
@@ -83,7 +83,7 @@ pub fn PhaseItemBatchRange::new(start : Int, end : Int) -> PhaseItemBatchRange {
   if start < 0 || end < 0 {
     abort("phase item batch range bounds must be non-negative")
   }
-  PhaseItemBatchRange::{ start, end }
+  { start, end }
 }
 
 ///|
@@ -211,7 +211,7 @@ fn RenderBin::from_entity(
 ) -> RenderBin {
   let entities = RenderBinEntities::default()
   entities.insert(entity, uniform_index)
-  RenderBin::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -307,7 +307,7 @@ pub fn GpuRenderBinnedMeshInstance::new(
   input_uniform_index : InputUniformIndex,
   bin_index : RenderBinIndex,
 ) -> GpuRenderBinnedMeshInstance {
-  GpuRenderBinnedMeshInstance::{
+  {
     input_uniform_index: input_uniform_index.value(),
     bin_index: bin_index.value(),
   }
@@ -337,7 +337,7 @@ pub struct CpuRenderBinnedMeshInstance {
 
 ///|
 pub fn CpuRenderBinnedMeshInstance::default() -> CpuRenderBinnedMeshInstance {
-  CpuRenderBinnedMeshInstance::{
+  {
     main_entity: @render_sync_world.MainEntity::new(@core.Entity::placeholder()),
     bin_index: RenderBinIndex::default(),
   }
@@ -348,7 +348,7 @@ pub fn CpuRenderBinnedMeshInstance::new(
   main_entity : @render_sync_world.MainEntity,
   bin_index : RenderBinIndex,
 ) -> CpuRenderBinnedMeshInstance {
-  CpuRenderBinnedMeshInstance::{ main_entity, bin_index }
+  { main_entity, bin_index }
 }
 
 ///|
@@ -444,7 +444,7 @@ pub struct RenderMultidrawableBatchSetGpuBuffers {
 
 ///|
 fn RenderMultidrawableBatchSetGpuBuffers::new() -> RenderMultidrawableBatchSetGpuBuffers {
-  RenderMultidrawableBatchSetGpuBuffers::{
+  {
     render_binned_mesh_instance_buffer: [],
     bin_index_to_indirect_parameters_offset_buffer: [],
   }
@@ -538,7 +538,7 @@ pub struct RenderMultidrawableBatchSet[K] {
 pub fn[K : Hash + Eq] RenderMultidrawableBatchSet::new() -> RenderMultidrawableBatchSet[
   K,
 ] {
-  RenderMultidrawableBatchSet::{
+  {
     gpu_buffers: RenderMultidrawableBatchSetGpuBuffers::new(),
     bin_key_to_bin_index: Map([]),
     bins: [],
@@ -831,7 +831,7 @@ pub struct CachedBinnedEntity[BatchSetKey, BinKey] {
 pub fn[BatchSetKey, BinKey] CachedBinnedEntity::new(
   cached_bin_key : CachedBinKey[BatchSetKey, BinKey]?,
 ) -> CachedBinnedEntity[BatchSetKey, BinKey] {
-  CachedBinnedEntity::{ cached_bin_key, }
+  { cached_bin_key, }
 }
 
 ///|
@@ -855,7 +855,7 @@ pub fn[BatchSetKey, BinKey] CachedBinKey::new(
   bin_key : BinKey,
   phase_type : BinnedRenderPhaseType,
 ) -> CachedBinKey[BatchSetKey, BinKey] {
-  CachedBinKey::{ batch_set_key, bin_key, phase_type }
+  { batch_set_key, bin_key, phase_type }
 }
 
 ///|
@@ -894,7 +894,7 @@ pub fn BinnedRenderPhaseBatch::new(
   instance_range : PhaseItemBatchRange,
   extra_index : PhaseItemExtraIndex,
 ) -> BinnedRenderPhaseBatch {
-  BinnedRenderPhaseBatch::{ representative_entity, instance_range, extra_index }
+  { representative_entity, instance_range, extra_index }
 }
 
 ///|
@@ -937,13 +937,7 @@ pub fn[BK] BinnedRenderPhaseBatchSet::new(
   index : Int,
   first_work_item_index : Int,
 ) -> BinnedRenderPhaseBatchSet[BK] {
-  BinnedRenderPhaseBatchSet::{
-    first_batch,
-    bin_key,
-    batch_count,
-    index,
-    first_work_item_index,
-  }
+  { first_batch, bin_key, batch_count, index, first_work_item_index }
 }
 
 ///|
@@ -1018,7 +1012,7 @@ pub fn UnbatchableBinnedEntityIndices::new(
   if instance_index < 0 {
     abort("unbatchable binned entity instance index must be non-negative")
   }
-  UnbatchableBinnedEntityIndices::{ instance_index, extra_index }
+  { instance_index, extra_index }
 }
 
 ///|
@@ -1053,9 +1047,7 @@ pub(all) struct UnbatchableBinnedEntityIndexSet {
 
 ///|
 pub fn UnbatchableBinnedEntityIndexSet::new() -> UnbatchableBinnedEntityIndexSet {
-  UnbatchableBinnedEntityIndexSet::{
-    kind: UnbatchableBinnedEntityIndexSetKind::NoEntities,
-  }
+  { kind: NoEntities }
 }
 
 ///|
@@ -1091,7 +1083,7 @@ pub fn UnbatchableBinnedEntityIndexSet::indices_for_entity_index(
       Some(
         UnbatchableBinnedEntityIndices::new(
           instance_range.start() + entity_index,
-          PhaseItemExtraIndex::None,
+          None,
         ),
       )
     Sparse(instance_range, Some(first_indirect_parameters_index)) => {
@@ -1126,12 +1118,12 @@ fn unbatchable_indices_can_extend_sparse(
     return false
   }
   match first_indirect_parameters_index {
-    None => indices.extra_index() == PhaseItemExtraIndex::None
+    None => indices.extra_index() == None
     Some(first_index) =>
       match indices.extra_index() {
         IndirectParametersIndex(range_start, _, _) =>
           first_index + instance_range.count() == range_start
-        DynamicOffset(_) | PhaseItemExtraIndex::None => false
+        DynamicOffset(_) | None => false
       }
   }
 }
@@ -1153,7 +1145,7 @@ fn UnbatchableBinnedEntityIndexSet::demote_sparse_to_dense_with(
     }
   }
   dense.push(indices)
-  self.kind = UnbatchableBinnedEntityIndexSetKind::Dense(dense)
+  self.kind = Dense(dense)
 }
 
 ///|
@@ -1164,10 +1156,9 @@ pub fn UnbatchableBinnedEntityIndexSet::add(
   match self.kind {
     NoEntities =>
       match indices.extra_index() {
-        DynamicOffset(_) =>
-          self.kind = UnbatchableBinnedEntityIndexSetKind::Dense([indices])
-        PhaseItemExtraIndex::None =>
-          self.kind = UnbatchableBinnedEntityIndexSetKind::Sparse(
+        DynamicOffset(_) => self.kind = Dense([indices])
+        None =>
+          self.kind = Sparse(
             PhaseItemBatchRange::new(
               indices.instance_index(),
               indices.instance_index() + 1,
@@ -1175,7 +1166,7 @@ pub fn UnbatchableBinnedEntityIndexSet::add(
             None,
           )
         IndirectParametersIndex(range_start, _, _) =>
-          self.kind = UnbatchableBinnedEntityIndexSetKind::Sparse(
+          self.kind = Sparse(
             PhaseItemBatchRange::new(
               indices.instance_index(),
               indices.instance_index() + 1,
@@ -1187,7 +1178,7 @@ pub fn UnbatchableBinnedEntityIndexSet::add(
       if unbatchable_indices_can_extend_sparse(
           instance_range, first_indirect_parameters_index, indices,
         ) {
-        self.kind = UnbatchableBinnedEntityIndexSetKind::Sparse(
+        self.kind = Sparse(
           PhaseItemBatchRange::new(
             instance_range.start(),
             instance_range.end() + 1,
@@ -1207,7 +1198,7 @@ pub fn UnbatchableBinnedEntityIndexSet::clear(
 ) -> Unit {
   match self.kind {
     Dense(indices) => indices.clear()
-    Sparse(_, _) => self.kind = UnbatchableBinnedEntityIndexSetKind::NoEntities
+    Sparse(_, _) => self.kind = NoEntities
     NoEntities => ()
   }
 }
@@ -1220,7 +1211,7 @@ struct BinnedRenderPhaseEntities {
 
 ///|
 fn BinnedRenderPhaseEntities::new() -> BinnedRenderPhaseEntities {
-  BinnedRenderPhaseEntities::{ entries: [], indices: Map([]) }
+  { entries: [], indices: Map([]) }
 }
 
 ///|
@@ -1283,10 +1274,7 @@ fn UnbatchableBinnedEntities::new(
 ) -> UnbatchableBinnedEntities {
   let entities = BinnedRenderPhaseEntities::new()
   entities.insert(main_entity, entity)
-  UnbatchableBinnedEntities::{
-    entities,
-    buffer_indices: UnbatchableBinnedEntityIndexSet::new(),
-  }
+  { entities, buffer_indices: UnbatchableBinnedEntityIndexSet::new() }
 }
 
 ///|
@@ -1341,7 +1329,7 @@ fn NonMeshEntities::new(
 ) -> NonMeshEntities {
   let entities = BinnedRenderPhaseEntities::new()
   entities.insert(main_entity, entity)
-  NonMeshEntities::{ entities, }
+  { entities, }
 }
 
 ///|
@@ -1504,7 +1492,7 @@ pub struct BinnedRenderPhase[BatchSetKey, BinKey] {
 pub fn[BatchSetKey, BinKey] BinnedRenderPhase::new(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> BinnedRenderPhase[BatchSetKey, BinKey] {
-  BinnedRenderPhase::{
+  {
     multidrawable_meshes: [],
     batchable_meshes: [],
     unbatchable_meshes: [],
@@ -1651,8 +1639,7 @@ pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(
   input_uniform_index : InputUniformIndex,
   phase_type : BinnedRenderPhaseType,
 ) -> Unit {
-  let effective_phase_type = if self.gpu_preprocessing_mode ==
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly &&
+  let effective_phase_type = if self.gpu_preprocessing_mode == PreprocessingOnly &&
     phase_type == MultidrawableMesh {
     BatchableMesh
   } else {
@@ -1670,10 +1657,7 @@ pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(
       } else {
         let batch_set : RenderMultidrawableBatchSet[BinKey] = RenderMultidrawableBatchSet::new()
         batch_set.insert(bin_key, representative_entity.1, input_uniform_index)
-        self.multidrawable_meshes.push(BinnedRenderPhaseMultidrawableEntry::{
-          batch_set_key,
-          batch_set,
-        })
+        self.multidrawable_meshes.push({ batch_set_key, batch_set })
       }
     }
     BatchableMesh => {
@@ -1684,7 +1668,7 @@ pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(
           input_uniform_index,
         )
       } else {
-        self.batchable_meshes.push(BinnedRenderPhaseBatchableEntry::{
+        self.batchable_meshes.push({
           batch_set_key,
           bin_key,
           bin: RenderBin::from_entity(
@@ -1702,7 +1686,7 @@ pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(
           representative_entity.0,
         )
       } else {
-        self.unbatchable_meshes.push(BinnedRenderPhaseUnbatchableEntry::{
+        self.unbatchable_meshes.push({
           batch_set_key,
           bin_key,
           entities: UnbatchableBinnedEntities::new(
@@ -1720,7 +1704,7 @@ pub fn[BatchSetKey : Eq, BinKey : Eq + Hash] BinnedRenderPhase::add(
           representative_entity.0,
         )
       } else {
-        self.non_mesh_items.push(BinnedRenderPhaseNonMeshEntry::{
+        self.non_mesh_items.push({
           batch_set_key,
           bin_key,
           entities: NonMeshEntities::new(

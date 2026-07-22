@@ -27,12 +27,12 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_row_gap(@ui.Val::Px(8.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_justify_content(Center)
+      .with_row_gap(Px(8.0F)),
       @ui.BackgroundColor::new(@color.Color::srgb(0.11F, 0.12F, 0.15F)),
     ),
   )
@@ -53,11 +53,11 @@ fn setup(
         @hierarchy.Parent::new(root),
         @ui.Button::Button(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(220.0F))
-        .with_height(@ui.Val::Px(46.0F))
-        .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center),
+        .with_width(Px(220.0F))
+        .with_height(Px(46.0F))
+        .with_border(@ui.UiRect::all(Px(2.0F)))
+        .with_align_items(Center)
+        .with_justify_content(Center),
         @ui.BorderColor::new(@color.Color::srgb(0.58F, 0.62F, 0.72F)),
         @ui.BackgroundColor::new(@color.Color::srgb(0.2F, 0.22F, 0.28F)),
       ),
@@ -78,6 +78,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

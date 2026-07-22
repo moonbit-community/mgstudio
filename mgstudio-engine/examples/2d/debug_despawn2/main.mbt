@@ -18,16 +18,14 @@ priv struct DebugDespawnState {
 }
 
 ///|
-let debug_despawn_state : Ref[DebugDespawnState] = Ref(DebugDespawnState::{
-  spawned: [],
-})
+let debug_despawn_state : Ref[DebugDespawnState] = Ref({ spawned: [] })
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, rapier2d_debug_despawn2_setup)
-  .add_systems_world(@app.Update, rapier2d_debug_despawn2_update)
+  .add_systems_world(Startup, rapier2d_debug_despawn2_setup)
+  .add_systems_world(Update, rapier2d_debug_despawn2_update)
   .run()
 }
 
@@ -116,7 +114,7 @@ fn rapier2d_debug_despawn2_setup(world : @ecs.World) -> Unit {
     )
     spawned.push(entity)
   }
-  debug_despawn_state.val = DebugDespawnState::{ spawned, }
+  debug_despawn_state.val = { spawned, }
   println(
     "[debug_despawn2] press D to despawn the last box and R to respawn it",
   )
@@ -124,11 +122,11 @@ fn rapier2d_debug_despawn2_setup(world : @ecs.World) -> Unit {
 
 ///|
 fn rapier2d_debug_despawn2_update(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyD) {
+  if @input.key_just_pressed(KeyD) {
     guard debug_despawn_state.val.spawned.pop() is Some(entity) else { return }
     try! world.despawn(entity)
     println("[debug_despawn2] despawned one box")
-  } else if @input.key_just_pressed(@window.KeyCode::KeyR) {
+  } else if @input.key_just_pressed(KeyR) {
     let asset_server = @asset.AssetServer::new()
     let texture = asset_server.load("branding/icon.png")
     let entity = world.spawn_empty()

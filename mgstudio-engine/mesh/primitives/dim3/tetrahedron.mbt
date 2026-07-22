@@ -29,7 +29,7 @@ pub struct TetrahedronMeshBuilder {
 
 ///|
 pub fn TetrahedronMeshBuilder::TetrahedronMeshBuilder() -> TetrahedronMeshBuilder {
-  { tetrahedron: @math.Tetrahedron::Tetrahedron() }
+  { tetrahedron: Tetrahedron() }
 }
 
 ///|

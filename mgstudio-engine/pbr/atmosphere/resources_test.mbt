@@ -26,7 +26,7 @@ test "pbr atmosphere: gpu settings copy Bevy atmosphere settings fields" {
     .with_aerial_view_lut_samples(13)
     .with_aerial_view_lut_max_distance(17.0F)
     .with_sky_max_samples(0)
-    .with_rendering_method(AtmosphereMode::Raymarched)
+    .with_rendering_method(Raymarched)
   let settings = pbr_gpu_atmosphere_settings(source)
   inspect(settings.transmittance_lut_size.x, content="64")
   inspect(settings.transmittance_lut_size.y, content="16")
@@ -53,10 +53,7 @@ test "pbr atmosphere: texture descriptors mirror bevy LUT resource shape" {
   inspect(textures.transmittance_lut.width, content="256")
   inspect(textures.transmittance_lut.height, content="128")
   inspect(textures.transmittance_lut.depth_or_array_layers, content="1")
-  inspect(
-    textures.transmittance_lut.dimension == AtmosphereTextureDimension::D2,
-    content="true",
-  )
+  inspect(textures.transmittance_lut.dimension == D2, content="true")
   inspect(textures.multiscattering_lut.width, content="32")
   inspect(textures.multiscattering_lut.height, content="32")
   inspect(textures.sky_view_lut.width, content="400")
@@ -64,14 +61,8 @@ test "pbr atmosphere: texture descriptors mirror bevy LUT resource shape" {
   inspect(textures.aerial_view_lut.width, content="32")
   inspect(textures.aerial_view_lut.height, content="32")
   inspect(textures.aerial_view_lut.depth_or_array_layers, content="32")
-  inspect(
-    textures.aerial_view_lut.dimension == AtmosphereTextureDimension::D3,
-    content="true",
-  )
-  inspect(
-    textures.transmittance_lut.format == AtmosphereTextureFormat::Rgba16Float,
-    content="true",
-  )
+  inspect(textures.aerial_view_lut.dimension == D3, content="true")
+  inspect(textures.transmittance_lut.format == Rgba16Float, content="true")
   inspect(textures.transmittance_lut.storage_binding, content="true")
   inspect(textures.transmittance_lut.texture_binding, content="true")
 }
@@ -168,7 +159,7 @@ test "pbr atmosphere: uniform bytes are owned by pbr atmosphere resources" {
     .with_aerial_view_lut_samples(0)
     .with_aerial_view_lut_max_distance(9.0F)
     .with_sky_max_samples(0)
-    .with_rendering_method(AtmosphereMode::Raymarched),
+    .with_rendering_method(Raymarched),
   )
   let textures = AtmosphereTextures::from_settings(settings)
   let atmosphere = GpuAtmosphere::GpuAtmosphere()

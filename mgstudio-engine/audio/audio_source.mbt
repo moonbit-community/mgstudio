@@ -19,7 +19,7 @@ pub struct AudioSource {
 
 ///|
 pub fn AudioSource::new(bytes : Bytes) -> AudioSource {
-  AudioSource::{ bytes, }
+  { bytes, }
 }
 
 ///|
@@ -64,7 +64,7 @@ priv struct AudioSourceAssetPaths {
 
 ///|
 fn AudioSourceAssetPaths::new() -> AudioSourceAssetPaths {
-  AudioSourceAssetPaths::{ paths: [] }
+  { paths: [] }
 }
 
 ///|

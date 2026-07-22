@@ -26,10 +26,10 @@ pub fn cursor_icon_from_custom(
 pub fn custom_cursor_image(
   data : @window.CustomCursorImage,
 ) -> @window.CustomCursor {
-  @window.CustomCursor::Image(data)
+  Image(data)
 }
 
 ///|
 pub fn custom_cursor_url(url : @window.CustomCursorUrl) -> @window.CustomCursor {
-  @window.CustomCursor::Url(url)
+  Url(url)
 }

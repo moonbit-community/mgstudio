@@ -19,24 +19,16 @@ test "render camera sort: SortedCameras stores Bevy-shaped camera metadata" {
   let first = SortedCamera::new(
     first_entity,
     0,
-    Some(
-      @camera_render_target.NormalizedRenderTarget::Image(
-        @camera_render_target.ImageRenderTarget::new(7),
-      ),
-    ),
+    Some(Image(@camera_render_target.ImageRenderTarget::new(7))),
     true,
-    CameraOutputMode::Write,
+    Write,
   )
   let second = SortedCamera::new(
     second_entity,
     1,
-    Some(
-      @camera_render_target.NormalizedRenderTarget::TextureView(
-        @camera_render_target.ManualTextureViewHandle::new(9),
-      ),
-    ),
+    Some(TextureView(@camera_render_target.ManualTextureViewHandle::new(9))),
     false,
-    CameraOutputMode::Skip,
+    Skip,
   )
   let sorted = SortedCameras::{ cameras: [first, second] }
   let entities = sorted.camera_entities()

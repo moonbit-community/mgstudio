@@ -61,11 +61,9 @@ fn setup(
       (
         @ecs.Name::new("Camera"),
         @camera.Camera3d::Camera3d(),
-        @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+        @camera.Projection::Orthographic({
           ..@camera.OrthographicProjection3d::default_3d(),
-          scaling_mode: @camera.OrthographicScalingMode3d::FixedVertical(
-            settings.orthographic_viewport_height,
-          ),
+          scaling_mode: FixedVertical(settings.orthographic_viewport_height),
           scale: 1.0F,
         }),
         @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
@@ -137,9 +135,7 @@ fn instructions(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
   ignore(
@@ -148,15 +144,15 @@ fn instructions(
         @ecs.Name::new("Instructions"),
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         @text.Text::new(
           "Scroll mouse wheel to zoom in/out\nSpace: switch between orthographic and perspective projections",
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )
@@ -171,30 +167,28 @@ fn switch_projection(
   camera_settings : @app.Res[CameraSettings],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
-  if !keyboard_input.just_pressed(@window.KeyCode::Space) {
+  if !keyboard_input.just_pressed(Space) {
     return
   }
   let settings = camera_settings.get()
   try! camera_query.view(fn(_entity, camera_projection) {
     let next_projection = match camera_projection.value() {
-      @camera.Projection::Orthographic(_) =>
+      Orthographic(_) =>
         Some(
-          @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
-            ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
+          @camera.Projection::Perspective({
+            ..PerspectiveProjection3d(),
             fov: settings.perspective_zoom_min,
           }),
         )
-      @camera.Projection::Perspective(_) =>
+      Perspective(_) =>
         Some(
-          @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+          Orthographic({
             ..@camera.OrthographicProjection3d::default_3d(),
-            scaling_mode: @camera.OrthographicScalingMode3d::FixedVertical(
-              settings.orthographic_viewport_height,
-            ),
+            scaling_mode: FixedVertical(settings.orthographic_viewport_height),
             scale: 1.0F,
           }),
         )
-      @camera.Projection::Custom(_) => None
+      Custom(_) => None
     }
     guard next_projection is Some(next_projection) else { return }
     camera_projection.set(next_projection)
@@ -219,7 +213,7 @@ fn zoom(
   try! camera_query.view(fn(_entity, camera_projection) {
     camera_projection.modify(fn(projection) {
       match projection {
-        @camera.Projection::Orthographic(orthographic) => {
+        Orthographic(orthographic) => {
           let delta_zoom = -scroll_delta * settings.orthographic_zoom_speed
           let multiplicative_zoom = 1.0F + delta_zoom
           orthographic.scale = clamp_float(
@@ -228,7 +222,7 @@ fn zoom(
             settings.orthographic_zoom_max,
           )
         }
-        @camera.Projection::Perspective(perspective) => {
+        Perspective(perspective) => {
           let delta_zoom = -scroll_delta * settings.perspective_zoom_speed
           perspective.fov = clamp_float(
             perspective.fov + delta_zoom,
@@ -236,7 +230,7 @@ fn zoom(
             settings.perspective_zoom_max,
           )
         }
-        @camera.Projection::Custom(_) => return
+        Custom(_) => return
       }
     })
   })
@@ -264,11 +258,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .init_resource(fn() { CameraSettings::CameraSettings() })
-  .add_systems(
-    @app.Startup,
-    (setup_system, instructions_system) |> @app.chain(),
-  )
-  .add_systems_param3(@app.Update, switch_projection)
-  .add_systems_param3(@app.Update, zoom)
+  .add_systems(Startup, (setup_system, instructions_system) |> @app.chain())
+  .add_systems_param3(Update, switch_projection)
+  .add_systems_param3(Update, zoom)
   .run()
 }

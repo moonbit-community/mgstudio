@@ -69,7 +69,7 @@ test "winit: monitor synchronization is owned by the event loop" {
   let world = @ecs.World::new()
   defer world.close()
   let app = winit_plugin(@window.window_plugin(@app.App::new(world)))
-  let pre_update = app.schedule_graph_dot(@app.PreUpdate)
+  let pre_update = app.schedule_graph_dot(PreUpdate)
 
   assert_false(pre_update.contains("mgstudio_winit::create_monitors"))
   assert_true(pre_update.contains("mgstudio_winit::create_windows"))
@@ -93,12 +93,8 @@ let keyboard_press_probe_button_ref : Ref[Bool] = Ref(false)
 fn keyboard_press_probe_system(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
-  keyboard_press_probe_direct_ref.val = @input.key_just_pressed(
-    @window.KeyCode::Digit1,
-  )
-  keyboard_press_probe_button_ref.val = keyboard_input.just_pressed(
-    @window.KeyCode::Digit1,
-  )
+  keyboard_press_probe_direct_ref.val = @input.key_just_pressed(Digit1)
+  keyboard_press_probe_button_ref.val = keyboard_input.just_pressed(Digit1)
 }
 
 ///|
@@ -135,7 +131,7 @@ test "winit: plugin forwards run_on_any_thread setting to native backend" {
   defer lifecycle_world_120_0.close()
   let _app = winit_plugin_with(
     @window.window_plugin(@app.App::new(lifecycle_world_120_0)),
-    WinitPlugin::{ run_on_any_thread: true },
+    { run_on_any_thread: true },
   ).run_once()
   debug_inspect(@windowing.event_loop_any_thread_requested(), content="true")
   @windowing.set_event_loop_any_thread(false)
@@ -177,7 +173,7 @@ test "winit: startup systems see the primary host window" {
       startup_host_count.val = @window.window_host_entries(world).length()
       startup_primary_width.val = @window.window_physical_width_for(
         world,
-        @window.WindowRef::Primary,
+        Primary,
       )
     })
     .run_startup()
@@ -329,53 +325,27 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
   let primary_monitor = @windowing.primary_monitor()
 
   debug_inspect(
-    select_monitor(
-      monitors,
-      primary_monitor,
-      Some(monitor_b),
-      @window.MonitorSelection::Current,
-    ) ==
+    select_monitor(monitors, primary_monitor, Some(monitor_b), Current) ==
     Some(monitor_b),
     content="true",
   )
   debug_inspect(
-    select_monitor(
-      monitors,
-      primary_monitor,
-      Some(monitor_b),
-      @window.MonitorSelection::Primary,
-    ) ==
+    select_monitor(monitors, primary_monitor, Some(monitor_b), Primary) ==
     primary_monitor,
     content="true",
   )
   debug_inspect(
-    select_monitor(
-      monitors,
-      primary_monitor,
-      Some(monitor_b),
-      @window.MonitorSelection::Index(1),
-    ) ==
+    select_monitor(monitors, primary_monitor, Some(monitor_b), Index(1)) ==
     Some(monitor_b),
     content="true",
   )
   debug_inspect(
-    select_monitor(
-      monitors,
-      primary_monitor,
-      Some(monitor_b),
-      @window.MonitorSelection::Entity(entity_a),
-    ) ==
+    select_monitor(monitors, primary_monitor, Some(monitor_b), Entity(entity_a)) ==
     Some(monitor_a),
     content="true",
   )
   debug_inspect(
-    select_monitor(
-      monitors,
-      primary_monitor,
-      Some(monitor_b),
-      @window.MonitorSelection::Index(9),
-    )
-    is None,
+    select_monitor(monitors, primary_monitor, Some(monitor_b), Index(9)) is None,
     content="true",
   )
   debug_inspect(
@@ -383,19 +353,13 @@ test "winit: select_monitor aligns with bevy monitor selection semantics" {
       monitors,
       primary_monitor,
       Some(monitor_b),
-      @window.MonitorSelection::Entity(world.spawn()),
+      Entity(world.spawn()),
     )
     is None,
     content="true",
   )
   debug_inspect(
-    select_monitor(
-      monitors,
-      primary_monitor,
-      None,
-      @window.MonitorSelection::Current,
-    )
-    is None,
+    select_monitor(monitors, primary_monitor, None, Current) is None,
     content="true",
   )
 }
@@ -412,14 +376,12 @@ test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
   match monitor.current_video_mode() {
     Some(current_mode) =>
       debug_inspect(
-        get_selected_videomode(monitor, @window.VideoModeSelection::Current) ==
-        Some(current_mode),
+        get_selected_videomode(monitor, Current) == Some(current_mode),
         content="true",
       )
     None =>
       debug_inspect(
-        get_selected_videomode(monitor, @window.VideoModeSelection::Current)
-        is None,
+        get_selected_videomode(monitor, Current) is None,
         content="true",
       )
   }
@@ -427,11 +389,7 @@ test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
   if modes.length() > 0 {
     let mode = modes[0]
     debug_inspect(
-      get_selected_videomode(
-        monitor,
-        @window.VideoModeSelection::Specific(mode),
-      ) ==
-      Some(mode),
+      get_selected_videomode(monitor, Specific(mode)) == Some(mode),
       content="true",
     )
   }
@@ -495,9 +453,7 @@ test "winit: create pass consumes initial window mode requests" {
   defer world.close()
   let window_entity = world.spawn()
   let window = @window.Window::Window()
-  window.mode = @window.WindowMode::BorderlessFullscreen(
-    @window.MonitorSelection::Current,
-  )
+  window.mode = BorderlessFullscreen(Current)
   try! (world.entity_mut(window_entity).insert_component(window) |> ignore)
 
   winit_create_monitors_system(world)
@@ -545,17 +501,13 @@ test "winit: typed raw winit events are published as messages" {
     @window.window_plugin(@app.App::new(lifecycle_world_511_0)),
   ).run_once()
   let world = app.world()
-  let cursor : @ecs.MessageCursor[RawWinitWindowEvent] = @ecs.MessageCursor::MessageCursor()
+  let cursor : @ecs.MessageCursor[RawWinitWindowEvent] = MessageCursor()
   let writer = world.message_writer(ecs_key_raw_winit_window_event)
 
   assert_true(world.contains_message(ecs_key_raw_winit_window_event))
 
-  ignore(
-    writer.write(RawWinitWindowEvent::{ window_id: 21, event: CloseRequested }),
-  )
-  ignore(
-    writer.write(RawWinitWindowEvent::{ window_id: 34, event: Focused(true) }),
-  )
+  ignore(writer.write({ window_id: 21, event: CloseRequested }))
+  ignore(writer.write({ window_id: 34, event: Focused(true) }))
 
   let events = read_raw_winit_window_events(world, cursor)
   assert_eq(events.length(), 2)
@@ -592,32 +544,26 @@ test "winit: keyboard press reaches update input readers" {
   |> ignore)
 
   let mut app = winit_plugin(@window.window_plugin(@app.App::new(world)))
-    .add_systems(
-      @app.Update,
-      @app.system_config_param(keyboard_press_probe_system),
-    )
+    .add_systems(Update, @app.system_config_param(keyboard_press_probe_system))
     .run_once()
   let host_window = match
-    @window.window_host_window_for_ref(
-      app.world(),
-      @window.WindowRef::Entity(window_entity),
-    ) {
+    @window.window_host_window_for_ref(app.world(), Entity(window_entity)) {
     Some(host_window) => host_window
     None => abort("missing host window for keyboard input test")
   }
   let key_event = @window_core.KeyEvent(
-    @window_core.PhysicalKey::from_key_code(@window_core.KeyCode::Digit1),
-    @window_core.Key::Character("1"),
-    @window_core.Key::Character("1"),
-    @window_core.KeyLocation::Standard,
-    @window_core.ElementState::Pressed,
+    @window_core.PhysicalKey::from_key_code(Digit1),
+    Character("1"),
+    Character("1"),
+    Standard,
+    Pressed,
     false,
     Some("1"),
     Some("1"),
   )
   @windowing.runner_process_window_event(
     host_window,
-    @window_core.WindowEvent::KeyboardInput(None, key_event, false),
+    KeyboardInput(None, key_event, false),
   )
 
   app = app.run_once()
@@ -647,32 +593,29 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
     .add_message(@window.WindowFocused::message())
     .run_once()
   let host_window = match
-    @window.window_host_window_for_ref(
-      app.world(),
-      @window.WindowRef::Entity(window_entity),
-    ) {
+    @window.window_host_window_for_ref(app.world(), Entity(window_entity)) {
     Some(host_window) => host_window
     None => abort("missing host window for keyboard focus-loss test")
   }
   let key_event = @window_core.KeyEvent(
-    @window_core.PhysicalKey::from_key_code(@window_core.KeyCode::KeyA),
-    @window_core.Key::Character("a"),
-    @window_core.Key::Character("a"),
-    @window_core.KeyLocation::Standard,
-    @window_core.ElementState::Pressed,
+    @window_core.PhysicalKey::from_key_code(KeyA),
+    Character("a"),
+    Character("a"),
+    Standard,
+    Pressed,
     false,
     Some("a"),
     Some("a"),
   )
   @windowing.runner_process_window_event(
     host_window,
-    @window_core.WindowEvent::KeyboardInput(None, key_event, false),
+    KeyboardInput(None, key_event, false),
   )
 
   ignore(
     app
     .world()
-    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+    .send_message(@window.WindowFocused::message(), {
       window: window_entity,
       focused: false,
     }),
@@ -688,7 +631,7 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
   let window_events = window_event_reader.read()
   let mut focus_lost_count = 0
   for event in window_events {
-    if event is @window.WindowEvent::KeyboardFocusLost(_) {
+    if event is KeyboardFocusLost(_) {
       focus_lost_count = focus_lost_count + 1
     }
   }
@@ -696,18 +639,15 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
   let mut released_count = 0
   for event in window_events {
     match event {
-      @window.WindowEvent::KeyboardInput(keyboard_event) =>
-        if keyboard_event.state is @window.ButtonState::Released {
+      KeyboardInput(keyboard_event) =>
+        if keyboard_event.state is Released {
           released_count = released_count + 1
         }
       _ => ()
     }
   }
   debug_inspect(released_count > 0, content="true")
-  debug_inspect(
-    @input.keyboard_keycode_pressed(@window.KeyCode::KeyA),
-    content="false",
-  )
+  debug_inspect(@input.keyboard_keycode_pressed(KeyA), content="false")
 }
 
 ///|
@@ -721,10 +661,10 @@ test "winit: close request follows bevy two-frame close lifecycle" {
   |> ignore)
 
   let mut app = winit_plugin(
-    @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{
+    @window.window_plugin_with(@app.App::new(world), {
       primary_window: None,
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::DontExit,
+      exit_condition: DontExit,
       close_when_requested: true,
     }),
   ).run_once()
@@ -732,7 +672,7 @@ test "winit: close request follows bevy two-frame close lifecycle" {
   ignore(
     app
     .world()
-    .send_message(@window.ecs_key_window_close_requested, @window.WindowCloseRequested::{
+    .send_message(@window.ecs_key_window_close_requested, {
       window: window_entity,
     }),
   )
@@ -762,26 +702,20 @@ test "winit: native close request keeps host open until ECS closes window" {
   |> ignore)
 
   let mut app = winit_plugin(
-    @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{
+    @window.window_plugin_with(@app.App::new(world), {
       primary_window: None,
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::DontExit,
+      exit_condition: DontExit,
       close_when_requested: true,
     }),
   ).run_once()
   let host_window = match
-    @window.window_host_window_for_ref(
-      app.world(),
-      @window.WindowRef::Entity(window_entity),
-    ) {
+    @window.window_host_window_for_ref(app.world(), Entity(window_entity)) {
     Some(host_window) => host_window
     None => abort("missing host window for close request test")
   }
 
-  @windowing.runner_process_window_event(
-    host_window,
-    @window_core.WindowEvent::CloseRequested,
-  )
+  @windowing.runner_process_window_event(host_window, CloseRequested)
 
   app = app.run_once()
 
@@ -806,19 +740,17 @@ test "winit: app exit emits WindowClosing for all open windows" {
   |> ignore)
 
   let mut app = winit_plugin(
-      @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{
+      @window.window_plugin_with(@app.App::new(world), {
         primary_window: None,
         primary_cursor_options: None,
-        exit_condition: @window.ExitCondition::DontExit,
+        exit_condition: DontExit,
         close_when_requested: false,
       }),
     )
     .add_message(@app.AppExit::message())
     .run_once()
 
-  ignore(
-    app.world().send_message(@app.AppExit::message(), @app.AppExit::Success),
-  )
+  ignore(app.world().send_message(@app.AppExit::message(), Success))
 
   app = app.run_once()
 
@@ -835,7 +767,7 @@ test "winit: plugin owns accessibility action propagation" {
 
   let target = @moon_accesskit.NodeId::from_u64(42UL)
   let request = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::Focus,
+    Focus,
     @moon_accesskit.TreeId::root(),
     target,
   )
@@ -855,7 +787,7 @@ test "winit: plugin owns accessibility action propagation" {
 
   assert_true(world.contains_message(@a11y.ecs_msg_key_action_request))
   assert_eq(actions.length(), 1)
-  assert_eq(actions[0].action(), @moon_accesskit.Action::Focus)
+  assert_eq(actions[0].action(), Focus)
   assert_eq(actions[0].target_node(), target)
   assert_true(
     @a11y.get_accessibility_requested_resource(world).get().unwrap().get(),

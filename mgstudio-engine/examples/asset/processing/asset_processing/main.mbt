@@ -42,7 +42,7 @@ impl @asset.Asset for Text with fn asset_resource_keys() {
 
 ///|
 fn Text::new(value : String) -> Text {
-  Text::{ value, }
+  { value, }
 }
 
 ///|
@@ -75,41 +75,25 @@ pub impl @app.Resource for TextAssets with fn resource() {
 fn cool_text_source(path : String) -> CoolTextSource {
   match path {
     "a" =>
-      CoolTextSource::{
-        text: "a",
-        embedded_dependencies: [],
-        dependencies_with_overrides: [],
-      }
+      { text: "a", embedded_dependencies: [], dependencies_with_overrides: [] }
     "b" =>
-      CoolTextSource::{
-        text: "b",
-        embedded_dependencies: [],
-        dependencies_with_overrides: [],
-      }
+      { text: "b", embedded_dependencies: [], dependencies_with_overrides: [] }
     "c" =>
-      CoolTextSource::{
+      {
         text: "c",
         embedded_dependencies: ["a", "b"],
         dependencies_with_overrides: [],
       }
     "d" =>
-      CoolTextSource::{
+      {
         text: "d",
         embedded_dependencies: ["c", "e"],
         dependencies_with_overrides: [("e", "E")],
       }
     "e" =>
-      CoolTextSource::{
-        text: "e",
-        embedded_dependencies: [],
-        dependencies_with_overrides: [],
-      }
+      { text: "e", embedded_dependencies: [], dependencies_with_overrides: [] }
     _ =>
-      CoolTextSource::{
-        text: "",
-        embedded_dependencies: [],
-        dependencies_with_overrides: [],
-      }
+      { text: "", embedded_dependencies: [], dependencies_with_overrides: [] }
   }
 }
 
@@ -135,6 +119,7 @@ fn processed_cool_text_value(path : String) -> String {
 struct TextPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn TextPlugin::TextPlugin() -> TextPlugin {
   TextPlugin::{  }
 }
@@ -202,7 +187,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(TextPlugin::TextPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, print_text)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, print_text)
   .run()
 }

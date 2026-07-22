@@ -23,17 +23,17 @@ pub struct PointerId {
 
 ///|
 pub fn PointerId::new(value : @pointer_events.PointerId) -> PointerId {
-  PointerId::{ value, }
+  { value, }
 }
 
 ///|
 pub fn PointerId::mouse() -> PointerId {
-  PointerId::{ value: 0 }
+  { value: 0 }
 }
 
 ///|
 pub fn PointerId::touch(touch_id : Int) -> PointerId {
-  PointerId::{ value: if touch_id >= 0 { touch_id + 1 } else { 1 } }
+  { value: if touch_id >= 0 { touch_id + 1 } else { 1 } }
 }
 
 ///|
@@ -72,12 +72,12 @@ pub struct PointerLocation {
 
 ///|
 pub fn PointerLocation::PointerLocation() -> PointerLocation {
-  PointerLocation::{ location: None }
+  { location: None }
 }
 
 ///|
 pub fn PointerLocation::new(location : @math.Vec2) -> PointerLocation {
-  PointerLocation::{ location: Some(location) }
+  { location: Some(location) }
 }
 
 ///|
@@ -99,7 +99,7 @@ pub struct PointerPress {
 
 ///|
 pub fn PointerPress::PointerPress() -> PointerPress {
-  PointerPress::{ primary: false, secondary: false, middle: false }
+  { primary: false, secondary: false, middle: false }
 }
 
 ///|
@@ -134,7 +134,7 @@ pub struct PointerInteraction {
 
 ///|
 pub fn PointerInteraction::PointerInteraction() -> PointerInteraction {
-  PointerInteraction::{ sorted_entities: [] }
+  { sorted_entities: [] }
 }
 
 ///|
@@ -160,7 +160,7 @@ pub struct PointerMap {
 
 ///|
 pub fn PointerMap::PointerMap() -> PointerMap {
-  PointerMap::{ inner: @hashmap.HashMap([]) }
+  { inner: HashMap([]) }
 }
 
 ///|
@@ -180,7 +180,7 @@ pub impl @app.Resource for PointerMap with fn resource() {
 pub fn ensure_pointer_map_system(world : @ecs.World) -> Unit {
   let res = get_pointer_map_resource(world)
   if res.get() is None {
-    res.insert(PointerMap::PointerMap())
+    res.insert(PointerMap())
   }
 }
 
@@ -190,7 +190,7 @@ pub fn update_pointer_map_system(world : @ecs.World) -> Unit {
   world.for_each_component(ecs_key_pointer_id, fn(entity, id) {
     map.set(id.value(), entity)
   })
-  get_pointer_map_resource(world).insert(PointerMap::{ inner: map })
+  get_pointer_map_resource(world).insert({ inner: map })
 }
 
 ///|
@@ -242,22 +242,16 @@ fn ensure_pointer_entity(
     )
   }
   if !(try! world.contains_by_key(entity, ecs_key_pointer_location)) {
-    try! world.set_by_key(entity, ecs_key_pointer_location, PointerLocation::{
-      location,
-    })
+    try! world.set_by_key(entity, ecs_key_pointer_location, { location, })
   }
   if !(try! world.contains_by_key(entity, ecs_key_pointer_press)) {
-    try! world.set_by_key(
-      entity,
-      ecs_key_pointer_press,
-      PointerPress::PointerPress(),
-    )
+    try! world.set_by_key(entity, ecs_key_pointer_press, PointerPress())
   }
   if !(try! world.contains_by_key(entity, ecs_key_pointer_interaction)) {
     try! world.set_by_key(
       entity,
       ecs_key_pointer_interaction,
-      PointerInteraction::PointerInteraction(),
+      PointerInteraction(),
     )
   }
   entity
@@ -276,7 +270,7 @@ priv struct PointerInputReaderState {
 
 ///|
 fn PointerInputReaderState::PointerInputReaderState() -> PointerInputReaderState {
-  { cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
@@ -290,7 +284,7 @@ let pointer_input_reader_state_resource_key : @ecs.ResourceKey[
 fn ensure_pointer_input_reader_state(world : @ecs.World) -> Unit {
   let res = world.resource(pointer_input_reader_state_resource_key)
   if !res.is_present() {
-    res.insert(PointerInputReaderState::PointerInputReaderState())
+    res.insert(PointerInputReaderState())
   }
 }
 
@@ -331,7 +325,7 @@ pub fn pointer_input_receive_system(world : @ecs.World) -> Unit {
     let prev_press = match
       (try! world.get_by_key(entity, ecs_key_pointer_press)) {
       Some(value) => value
-      None => PointerPress::PointerPress()
+      None => PointerPress()
     }
     let primary = if input.just_pressed {
       true
@@ -372,7 +366,7 @@ pub fn pointer_inputs_from_entities(world : @ecs.World) -> Array[PointerInput] {
     }
     let press = match (try! world.get_by_key(entity, ecs_key_pointer_press)) {
       Some(value) => value
-      None => PointerPress::PointerPress()
+      None => PointerPress()
     }
     inputs.push(
       PointerInput::new(
@@ -409,7 +403,7 @@ pub fn PointerInput::new(
   just_pressed : Bool,
   just_released : Bool,
 ) -> PointerInput {
-  PointerInput::{ pointer, window_position, down, just_pressed, just_released }
+  { pointer, window_position, down, just_pressed, just_released }
 }
 
 ///|

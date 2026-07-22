@@ -60,7 +60,7 @@ pub(all) enum Selection {
 
 ///|
 pub impl Default for Selection with fn default() {
-  Selection::Camera
+  Camera
 }
 
 ///|
@@ -72,7 +72,7 @@ pub(all) enum DragMode {
 
 ///|
 pub impl Default for DragMode with fn default() {
-  DragMode::Move
+  Move
 }
 
 ///|
@@ -83,7 +83,7 @@ priv struct AppStatus {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{ selection: Selection::Camera, drag_mode: DragMode::Move }
+  { selection: Camera, drag_mode: Move }
 }
 
 ///|
@@ -174,19 +174,19 @@ impl @ecs.Component for Rotate with fn component() {
 ///|
 fn selection_text(selection : Selection) -> String {
   match selection {
-    Selection::Camera => "camera"
-    Selection::SpotLight => "spotlight"
-    Selection::PointLight => "point light"
-    Selection::DirectionalLight => "directional light"
+    Camera => "camera"
+    SpotLight => "spotlight"
+    PointLight => "point light"
+    DirectionalLight => "directional light"
   }
 }
 
 ///|
 fn drag_mode_text(mode : DragMode) -> String {
   match mode {
-    DragMode::Move => "move"
-    DragMode::Scale => "scale"
-    DragMode::Roll => "roll"
+    Move => "move"
+    Scale => "scale"
+    Roll => "roll"
   }
 }
 
@@ -381,7 +381,7 @@ fn spawn_light_textures(
           Some(
             asset_server.load("lightmaps/faces_pointlight_texture_blurred.png"),
           ),
-          @pbr.CubemapLayout3d::CrossVertical,
+          CrossVertical,
         ),
       ),
     ),
@@ -403,18 +403,11 @@ fn drag_button(
     (
       @hierarchy.Parent::new(parent),
       @ui.Node::Node()
-      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_padding(
-        @ui.UiRect::new(
-          @ui.Val::Px(12.0F),
-          @ui.Val::Px(6.0F),
-          @ui.Val::Px(12.0F),
-          @ui.Val::Px(6.0F),
-        ),
-      )
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(6.0F))),
+      .with_border(@ui.UiRect::all(Px(1.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center)
+      .with_padding(@ui.UiRect::new(Px(12.0F), Px(6.0F), Px(12.0F), Px(6.0F)))
+      .with_border_radius(@ui.BorderRadius::all(Px(6.0F))),
       @ui.Button::Button(),
       @ui.BackgroundColor::new(@color.Color::black()),
       @ui.BorderColor::new(@color.Color::white()),
@@ -435,27 +428,27 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Drag to Move", [
       (Selection::Camera, "Camera"),
-      (Selection::SpotLight, "Spotlight"),
-      (Selection::PointLight, "Point Light"),
-      (Selection::DirectionalLight, "Directional Light"),
+      (SpotLight, "Spotlight"),
+      (PointLight, "Point Light"),
+      (DirectionalLight, "Directional Light"),
     ]),
   )
   let drag_panel = commands.spawn_component(
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Row)
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_right(@ui.Val::Px(10.0F))
-    .with_bottom(@ui.Val::Px(10.0F))
-    .with_column_gap(@ui.Val::Px(6.0F)),
+    .with_flex_direction(Row)
+    .with_position_type(Absolute)
+    .with_right(Px(10.0F))
+    .with_bottom(Px(10.0F))
+    .with_column_gap(Px(6.0F)),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, drag_panel, "", [
       (@visibility.Visibility::Inherited, "Show"),
-      (@visibility.Visibility::Hidden, "Hide"),
+      (Hidden, "Hide"),
     ]),
   )
-  ignore(drag_button(commands, drag_panel, "Scale", DragMode::Scale))
-  ignore(drag_button(commands, drag_panel, "Roll", DragMode::Roll))
+  ignore(drag_button(commands, drag_panel, "Scale", Scale))
+  ignore(drag_button(commands, drag_panel, "Roll", Roll))
 }
 
 ///|
@@ -465,9 +458,9 @@ fn spawn_help_text(commands : @app.Commands, app_status : AppStatus) -> Unit {
       (
         @text.Text::new(create_help_string(app_status)),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         HelpText::{  },
       ),
     ),
@@ -510,7 +503,7 @@ fn draw_gizmos(
 ) -> Unit {
   try! spotlights.view(fn(_entity, data) {
     let (global_transform, spotlight, visibility) = data
-    if visibility.value() == @visibility.Visibility::Hidden {
+    if visibility.value() == Hidden {
       return
     }
     let transform = global_transform.value().to_transform_approx()
@@ -748,10 +741,8 @@ fn signum(value : Float) -> Float {
 ///|
 fn selection_move_factors(selection : Selection) -> (Float, Float) {
   match selection {
-    Selection::Camera => (1.0F, -1.0F)
-    Selection::SpotLight
-    | Selection::PointLight
-    | Selection::DirectionalLight => (-1.0F, 1.0F)
+    Camera => (1.0F, -1.0F)
+    SpotLight | PointLight | DirectionalLight => (-1.0F, 1.0F)
   }
 }
 
@@ -761,7 +752,7 @@ fn move_selection_transform(
   selection : Selection,
   delta : @math.Vec2,
 ) -> @transform.Transform {
-  if selection == Selection::PointLight {
+  if selection == PointLight {
     return transform.with_translation(
       transform.translation.add(
         @math.Vec3::new(delta.x * MOVE_SPEED, -delta.y * MOVE_SPEED, 0.0F),
@@ -785,14 +776,12 @@ fn move_selection_transform(
     radius * @math.cos(theta),
     radius * @math.sin(theta) * @math.sin(phi),
   )
-  let (_, _, roll) = transform.rotation.to_euler(@math.EulerRot::YXZ)
+  let (_, _, roll) = transform.rotation.to_euler(YXZ)
   let oriented = transform
     .with_translation(translation)
     .looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let (yaw, pitch, _) = oriented.rotation.to_euler(@math.EulerRot::YXZ)
-  oriented.with_rotation(
-    @math.Quat::from_euler(@math.EulerRot::YXZ, yaw, pitch, roll),
-  )
+  let (yaw, pitch, _) = oriented.rotation.to_euler(YXZ)
+  oriented.with_rotation(@math.Quat::from_euler(YXZ, yaw, pitch, roll))
 }
 
 ///|
@@ -806,8 +795,7 @@ fn process_move_input(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
-  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
-    status.drag_mode != DragMode::Move {
+  if !mouse_buttons.pressed(Left) || status.drag_mode != Move {
     return
   }
   let delta = mouse_motion.get().delta
@@ -836,8 +824,7 @@ fn process_scale_input(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
-  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
-    status.drag_mode != DragMode::Scale {
+  if !mouse_buttons.pressed(Left) || status.drag_mode != Scale {
     return
   }
   let delta = mouse_motion.get().delta
@@ -885,8 +872,7 @@ fn process_roll_input(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let status = app_status.get()
-  if !mouse_buttons.pressed(@window.MouseButton::Left) ||
-    status.drag_mode != DragMode::Roll {
+  if !mouse_buttons.pressed(Left) || status.drag_mode != Roll {
     return
   }
   let delta = mouse_motion.get().delta
@@ -895,19 +881,12 @@ fn process_roll_input(
     if status.selection != selection.value() {
       return
     }
-    let (yaw, pitch, roll) = transform.value().rotation.to_euler(
-      @math.EulerRot::YXZ,
-    )
+    let (yaw, pitch, roll) = transform.value().rotation.to_euler(YXZ)
     transform.set(
       transform
       .value()
       .with_rotation(
-        @math.Quat::from_euler(
-          @math.EulerRot::YXZ,
-          yaw,
-          pitch,
-          roll + delta.x * ROLL_SPEED,
-        ),
+        @math.Quat::from_euler(YXZ, yaw, pitch, roll + delta.x * ROLL_SPEED),
       ),
     )
   })
@@ -924,20 +903,20 @@ fn switch_drag_mode(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   app_status : @app.ResMut[AppStatus],
 ) -> Unit {
-  if mouse_buttons.pressed(@window.MouseButton::Left) {
+  if mouse_buttons.pressed(Left) {
     return
   }
   let mut hovered_mode : DragMode? = None
   try! interactions.view(fn(_entity, data) {
     let (interaction, drag_mode) = data
-    if interaction.value() == @ui.Interaction::Hovered {
+    if interaction.value() == Hovered {
       hovered_mode = Some(drag_mode.value())
     }
   })
   app_status.modify(fn(status) {
     match hovered_mode {
       Some(mode) => status.drag_mode = mode
-      None => status.drag_mode = DragMode::Move
+      None => status.drag_mode = Move
     }
   })
   try! windows.view(fn(_query_entity, window_entity) {
@@ -945,9 +924,7 @@ fn switch_drag_mode(
       Some(_) =>
         commands
         .entity(window_entity)
-        .insert_component(
-          @window.CursorIcon::from(@window.SystemCursorIcon::EwResize),
-        )
+        .insert_component(@window.CursorIcon::from(EwResize))
       None =>
         commands
         .entity(window_entity)
@@ -984,10 +961,8 @@ fn update_button_visibility(
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let visible = match app_status.get().selection {
-    Selection::Camera => @visibility.Visibility::Hidden
-    Selection::SpotLight
-    | Selection::PointLight
-    | Selection::DirectionalLight => @visibility.Visibility::Visible
+    Camera => @visibility.Visibility::Hidden
+    SpotLight | PointLight | DirectionalLight => Visible
   }
   try! drag_nodes.view(fn(_entity, visibility) { visibility.set(visible) })
   try! visibility_nodes.view(fn(_entity, visibility) { visibility.set(visible) })
@@ -1014,14 +989,13 @@ fn update_directional_light(
   let mut any_texture_light_visible = false
   try! selections.view(fn(_entity, data) {
     let (selection, visibility) = data
-    if visibility.value() == @visibility.Visibility::Hidden {
+    if visibility.value() == Hidden {
       return
     }
     match selection.value() {
-      Selection::DirectionalLight => directional_visible = true
-      Selection::SpotLight | Selection::PointLight =>
-        any_texture_light_visible = true
-      Selection::Camera => ()
+      DirectionalLight => directional_visible = true
+      SpotLight | PointLight => any_texture_light_visible = true
+      Camera => ()
     }
   })
   try! lights.view(fn(_query_entity, data) {
@@ -1083,17 +1057,17 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(selection_widget_click_message_key)
   .add_message(visibility_widget_click_message_key)
-  .add_systems_param6(@app.Startup, setup)
-  .add_systems_param2(@app.Update, draw_gizmos)
-  .add_systems_param(@app.Update, rotate_cube)
-  .add_systems_param2(@app.Update, hide_shadows)
+  .add_systems_param6(Startup, setup)
+  .add_systems_param2(Update, draw_gizmos)
+  .add_systems_param(Update, rotate_cube)
+  .add_systems_param2(Update, hide_shadows)
   .add_system_config(
     @app.system_config_param2(handle_selection_ui_interactions).in_set(
       light_textures_selection_interaction_set,
@@ -1114,13 +1088,13 @@ fn main {
     .after(light_textures_selection_interaction_set)
     .after(light_textures_visibility_interaction_set),
   )
-  .add_systems_param3(@app.Update, toggle_visibility)
-  .add_systems_param4(@app.Update, update_directional_light)
-  .add_systems_param4(@app.Update, process_move_input)
-  .add_systems_param5(@app.Update, process_scale_input)
-  .add_systems_param4(@app.Update, process_roll_input)
-  .add_systems_param5(@app.Update, switch_drag_mode)
-  .add_systems_param2(@app.Update, update_help_text)
-  .add_systems_param3(@app.Update, update_button_visibility)
+  .add_systems_param3(Update, toggle_visibility)
+  .add_systems_param4(Update, update_directional_light)
+  .add_systems_param4(Update, process_move_input)
+  .add_systems_param5(Update, process_scale_input)
+  .add_systems_param4(Update, process_roll_input)
+  .add_systems_param5(Update, switch_drag_mode)
+  .add_systems_param2(Update, update_help_text)
+  .add_systems_param3(Update, update_button_visibility)
   .run()
 }

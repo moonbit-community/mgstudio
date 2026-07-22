@@ -25,6 +25,7 @@ pub const MOTION_BLUR_UNIFORM_SIZE_BYTES : Int = 16
 pub struct MotionBlurPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MotionBlurPlugin::MotionBlurPlugin() -> MotionBlurPlugin {
   MotionBlurPlugin::{  }
 }
@@ -47,12 +48,12 @@ pub struct MotionBlur {
 
 ///|
 pub fn MotionBlur::MotionBlur() -> MotionBlur {
-  MotionBlur::{ shutter_angle: 0.5F, samples: 1U }
+  { shutter_angle: 0.5F, samples: 1U }
 }
 
 ///|
 pub fn MotionBlur::new(shutter_angle : Float, samples : UInt) -> MotionBlur {
-  MotionBlur::{ shutter_angle, samples }
+  { shutter_angle, samples }
 }
 
 ///|
@@ -89,7 +90,7 @@ pub struct MotionBlurUniform {
 
 ///|
 pub fn MotionBlurUniform::MotionBlurUniform() -> MotionBlurUniform {
-  MotionBlurUniform::{ shutter_angle: 0.5F, samples: 1U }
+  { shutter_angle: 0.5F, samples: 1U }
 }
 
 ///|
@@ -97,7 +98,7 @@ pub fn MotionBlurUniform::new(
   shutter_angle : Float,
   samples : UInt,
 ) -> MotionBlurUniform {
-  MotionBlurUniform::{ shutter_angle, samples }
+  { shutter_angle, samples }
 }
 
 ///|
@@ -210,7 +211,7 @@ pub fn motion_blur_render_resources_for_view(
     return None
   }
   guard globals_buffer.binding() is Some(globals_binding) else { return None }
-  Some(MotionBlurRenderResources::{
+  Some({
     pipeline,
     sampler: motion_blur_pipeline.sampler(),
     settings_buffer,
@@ -228,7 +229,7 @@ pub struct ViewMotionBlurUniformOffset {
 pub fn ViewMotionBlurUniformOffset::new(
   offset : UInt,
 ) -> ViewMotionBlurUniformOffset {
-  ViewMotionBlurUniformOffset::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -259,7 +260,7 @@ pub struct MotionBlurUniforms {
 
 ///|
 pub fn MotionBlurUniforms::MotionBlurUniforms() -> MotionBlurUniforms {
-  MotionBlurUniforms::{
+  {
     uniforms: @render_resource.DynamicUniformBuffer::new(),
     gpu_buffer: None,
     gpu_capacity: 0UL,
@@ -453,7 +454,7 @@ pub fn init_motion_blur_uniforms(render_world : @ecs.World) -> Unit {
   }
   render_world.insert_resource(
     MotionBlurUniforms::resource(),
-    MotionBlurUniforms::MotionBlurUniforms(),
+    MotionBlurUniforms(),
   )
 }
 
@@ -487,7 +488,7 @@ fn motion_blur_uniforms_mut_or_init(
   if render_world.get_resource(MotionBlurUniforms::resource()) is None {
     render_world.insert_resource(
       MotionBlurUniforms::resource(),
-      MotionBlurUniforms::MotionBlurUniforms(),
+      MotionBlurUniforms(),
     )
   }
   match render_world.get_resource_mut(MotionBlurUniforms::resource()) {
@@ -547,7 +548,7 @@ pub fn motion_blur_plugin_with(
   _plugin : MotionBlurPlugin,
 ) -> @app.App[@ecs.World] {
   register_embedded_wgsl_sources()
-  let sync_component : @render.SyncComponentPlugin[MotionBlur, MotionBlurPlugin] = @render.SyncComponentPlugin::SyncComponentPlugin()
+  let sync_component : @render.SyncComponentPlugin[MotionBlur, MotionBlurPlugin] = SyncComponentPlugin()
   let next = @render.sync_component_plugin_with_target_removal(
     app, sync_component, remove_motion_blur_sync_target,
   )

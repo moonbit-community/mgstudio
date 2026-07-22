@@ -32,7 +32,7 @@ fn easing_translation_curve() -> @math.Curve[@math.Vec3] {
   let base = @math.EasingCurve::new(
     @math.Vec3::new(-6.0F, 2.0F, 0.0F),
     @math.Vec3::new(6.0F, 2.0F, 0.0F),
-    @math.EaseFunction::CubicInOut,
+    CubicInOut,
   ).as_curve()
   let forward = base.reparametrize_linear(motion_domain) catch {
     _ => abort("eased motion example expects bounded translation curve")
@@ -53,7 +53,7 @@ fn easing_rotation_curve() -> @math.Curve[@math.Quat] {
   let base = @math.EasingCurve::new(
     @math.Quat::identity(),
     @math.Quat::from_rotation_y(1.5707963267948966F),
-    @math.EaseFunction::ElasticInOut,
+    ElasticInOut,
   ).as_curve()
   base.reparametrize_linear(rotation_domain) catch {
     _ => abort("eased motion example expects bounded rotation curve")
@@ -70,12 +70,12 @@ fn easing_motion_clip() -> (
   let clip = @animation.AnimationClip::new()
     .add_curve_to_target(
       target,
-      @animation.AnimatableCurve::Translation(easing_translation_curve()),
+      Translation(easing_translation_curve()),
       sample_count=MOTION_SAMPLE_COUNT,
     )
     .add_curve_to_target(
       target,
-      @animation.AnimatableCurve::Rotation(easing_rotation_curve()),
+      Rotation(easing_rotation_curve()),
       sample_count=ROTATION_SAMPLE_COUNT,
     )
 
@@ -161,7 +161,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 6.0F, 12.0F).looking_at(
       @math.Vec3::new(0.0F, 1.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -174,6 +174,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

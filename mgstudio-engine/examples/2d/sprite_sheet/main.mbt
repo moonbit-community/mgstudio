@@ -53,8 +53,8 @@ pub impl @ecs.Component for AnimationTimer with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_sprite)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, animate_sprite)
   .run()
 }
 
@@ -124,9 +124,7 @@ fn setup(
           @math.Vec3::splat(6.0F),
         ),
         animation_indices,
-        AnimationTimer::{
-          timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-        },
+        AnimationTimer::{ timer: @time.Timer::from_seconds(0.1F, Repeating) },
       ),
     ),
   )

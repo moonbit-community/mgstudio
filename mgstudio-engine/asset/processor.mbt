@@ -38,7 +38,7 @@ pub struct ProcessedAsset[T] {
 
 ///|
 pub fn[T] ProcessedAsset::new(asset : T) -> ProcessedAsset[T] {
-  ProcessedAsset::{ asset, saved_bytes: None }
+  { asset, saved_bytes: None }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn[T] ProcessedAsset::with_saved_bytes(
   self : ProcessedAsset[T],
   bytes : Bytes,
 ) -> ProcessedAsset[T] {
-  ProcessedAsset::{ ..self, saved_bytes: Some(bytes) }
+  { ..self, saved_bytes: Some(bytes) }
 }
 
 ///|
@@ -70,7 +70,7 @@ pub fn[T] LoadTransformAndSave::new(
   extensions : Array[String],
   process : (AssetServer, AssetPath, Bytes) -> ProcessedAsset[T] raise AssetProcessError,
 ) -> LoadTransformAndSave[T] {
-  LoadTransformAndSave::{ extensions, process }
+  { extensions, process }
 }
 
 ///|
@@ -166,10 +166,10 @@ fn asset_processor_registry_state_for_world(
 ) -> AssetProcessorRegistryState {
   let key = asset_processor_registry_state_resource_key
   if world.get_resource(key) is None {
-    world.insert_resource(key, AssetProcessorRegistryState::{
-      processors: @hashmap.HashMap([]),
-      default_processor_by_extension: @hashmap.HashMap([]),
-      named_processors: @hashmap.HashMap([]),
+    world.insert_resource(key, {
+      processors: HashMap([]),
+      default_processor_by_extension: HashMap([]),
+      named_processors: HashMap([]),
       last_registered_entry: None,
     })
   }
@@ -222,7 +222,7 @@ fn[T : Asset] register_asset_processor_with_name(
   asset_with_world(world, fn() {
     asset_processor_registry_register_entry(
       type_name,
-      AssetProcessorEntry::{
+      {
         extensions: processor.extensions,
         process_and_insert: fn(
           world,
@@ -422,7 +422,7 @@ fn asset_should_process_registered_asset(
   type_name : String,
   path : AssetPath,
 ) -> Bool {
-  asset_server.mode == AssetMode::Processed &&
+  asset_server.mode == Processed &&
   asset_processor_entry_for_path(type_name, path) is Some(_)
 }
 

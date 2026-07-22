@@ -109,14 +109,14 @@ fn render3d_traced_mesh_pipeline_id_for_view(
   specialized_material_pipeline_cache : SpecializedMaterialPipelineCache,
 ) -> @material.CachedRenderPipelineId? {
   let trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "render_3d_pipeline_lookup",
   )
   let pipeline_id = render3d_mesh_pipeline_id_for_view(
     visible_entity, retained_view_entity, specialized_material_pipeline_cache,
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "render_3d_pipeline_lookup",
     trace_start_us,
   )
@@ -196,7 +196,7 @@ fn render3d_queue_material_mesh_candidate(
     is Some(draw_function) else {
     return None
   }
-  Some(QueuedMaterialMesh3d::{
+  Some({
     phase,
     draw_function,
     pipeline_id,
@@ -279,7 +279,7 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
       is Some(candidate) else {
       continue
     }
-    items.push(MeshPhaseItem3d::{
+    items.push({
       entity: mesh.entity,
       extracted_index: i,
       current_uniform_index: candidate.current_uniform_index,
@@ -348,7 +348,7 @@ fn render3d_collect_meshes_for_gpu_building(
       is Some(candidate) else {
       continue
     }
-    work_items.push(GpuPreprocessWorkItem3d::{
+    work_items.push({
       entity: mesh.entity,
       extracted_index: i,
       current_uniform_index: candidate.current_uniform_index,
@@ -418,7 +418,7 @@ fn render3d_write_batched_instance_buffers(
 ) -> Array[MeshPhaseItem3d] {
   let phase_items : Array[MeshPhaseItem3d] = []
   for work_item in render3d_sort_gpu_preprocess_work_items(work_items) {
-    phase_items.push(MeshPhaseItem3d::{
+    phase_items.push({
       entity: work_item.entity,
       extracted_index: work_item.extracted_index,
       current_uniform_index: work_item.current_uniform_index,
@@ -449,15 +449,11 @@ fn render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
     if draw_items[i].phase == current_phase {
       continue
     }
-    phase_ranges.push(GpuPreprocessPhaseRange3d::{
-      phase: current_phase,
-      start: range_start,
-      end: i,
-    })
+    phase_ranges.push({ phase: current_phase, start: range_start, end: i })
     current_phase = draw_items[i].phase
     range_start = i
   }
-  phase_ranges.push(GpuPreprocessPhaseRange3d::{
+  phase_ranges.push({
     phase: current_phase,
     start: range_start,
     end: draw_items.length(),
@@ -469,7 +465,7 @@ fn render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
 fn render3d_gpu_preprocess_shader_work_item_from_batching(
   item : @render_batching.PreprocessWorkItem,
 ) -> GpuPreprocessShaderWorkItem3d {
-  GpuPreprocessShaderWorkItem3d::{
+  {
     input_index: item.input_index(),
     output_or_indirect_parameters_index: item.output_or_indirect_parameters_index(),
   }
@@ -486,7 +482,7 @@ pub fn render3d_build_gpu_preprocess_work_item_buffers_from_phase(
         render3d_gpu_preprocess_shader_work_item_from_batching(item),
       )
     }
-    return GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+    return Direct(direct_work_items)
   }
   let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   for item in work_item_buffers.indexed_items() {
@@ -502,7 +498,7 @@ pub fn render3d_build_gpu_preprocess_work_item_buffers_from_phase(
   }
   let late_indexed_items = work_item_buffers.late_indexed_items()
   let late_non_indexed_items = work_item_buffers.late_non_indexed_items()
-  GpuPreprocessWorkItemBuffers3d::Indirect(
+  Indirect(
     indexed_work_items,
     non_indexed_work_items,
     render3d_build_gpu_occlusion_culling_work_item_buffers(
@@ -524,7 +520,7 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
   for index in 0..<phase_indirect_parameters_buffers.cpu_metadata_len(indexed) {
     match phase_indirect_parameters_buffers.cpu_metadata_at(indexed, index) {
       Some(metadata) =>
-        indirect_parameters_cpu_metadata.push(GpuPreprocessIndirectParametersCpuMetadata3d::{
+        indirect_parameters_cpu_metadata.push({
           base_output_index: metadata.base_output_index(),
           batch_set_index: metadata.batch_set_index(),
         })
@@ -535,7 +531,7 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
     GpuPreprocessIndirectParametersGpuMetadata3d,
   ] = []
   for _ in 0..<phase_indirect_parameters_buffers.gpu_metadata_len(indexed) {
-    indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
+    indirect_parameters_gpu_metadata.push({
       mesh_index: 0,
       early_instance_count: 0,
       late_instance_count: 0,
@@ -545,14 +541,14 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
   for index in 0..<phase_indirect_parameters_buffers.batch_set_count(indexed) {
     match phase_indirect_parameters_buffers.batch_set_at(indexed, index) {
       Some(batch_set) =>
-        indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
+        indirect_batch_sets.push({
           indirect_parameters_count: batch_set.indirect_parameters_count(),
           indirect_parameters_base: batch_set.indirect_parameters_base(),
         })
       None => ()
     }
   }
-  GpuPreprocessIndirectMeshClassMetadata3d::{
+  {
     indirect_parameters_cpu_metadata,
     indirect_parameters_gpu_metadata,
     indirect_batch_sets,
@@ -563,7 +559,7 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
 pub fn render3d_build_gpu_preprocess_indirect_metadata_from_phase(
   phase_indirect_parameters_buffers : @render_batching.UntypedPhaseIndirectParametersBuffers,
 ) -> GpuPreprocessIndirectMetadata3d {
-  GpuPreprocessIndirectMetadata3d::{
+  {
     indexed: render3d_build_gpu_preprocess_indirect_mesh_class_metadata_from_phase(
       phase_indirect_parameters_buffers, true,
     ),
@@ -592,7 +588,7 @@ fn render3d_build_gpu_preprocess_dispatch_metadata(
 ) -> GpuPreprocessDispatchMetadata3d {
   match work_item_buffers {
     Direct(items) =>
-      GpuPreprocessDispatchMetadata3d::{
+      {
         direct_workgroup_count: render3d_gpu_preprocess_workgroup_count(
           items.length(),
         ),
@@ -610,7 +606,7 @@ fn render3d_build_gpu_preprocess_dispatch_metadata(
         Some(_culling_buffers) => non_indexed_items.length()
         None => 0
       }
-      GpuPreprocessDispatchMetadata3d::{
+      {
         direct_workgroup_count: 0,
         indexed_workgroup_count: render3d_gpu_preprocess_workgroup_count(
           indexed_items.length(),
@@ -640,7 +636,7 @@ fn render3d_build_gpu_occlusion_culling_work_item_buffers(
   }
   ignore(indexed_work_items)
   ignore(non_indexed_work_items)
-  Some(GpuOcclusionCullingWorkItemBuffers3d::{ enabled: true })
+  Some({ enabled: true })
 }
 
 ///|
@@ -673,10 +669,7 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
         @render_batching.PreprocessWorkItem::new(i, i),
       )
     }
-    return Render3dGpuPreprocessPhaseBuffers::{
-      work_item_buffers,
-      indirect_parameters_buffers,
-    }
+    return { work_item_buffers, indirect_parameters_buffers }
   }
   let work_item_buffers = @render_batching.preprocess_work_item_buffers_indirect(
     gpu_occlusion_culling_enabled,
@@ -716,10 +709,7 @@ fn render3d_build_gpu_preprocess_phase_buffers_from_draw_items(
   if has_non_indexed_items {
     indirect_parameters_buffers.add_batch_set(false, 0)
   }
-  Render3dGpuPreprocessPhaseBuffers::{
-    work_item_buffers,
-    indirect_parameters_buffers,
-  }
+  { work_item_buffers, indirect_parameters_buffers }
 }
 
 ///|
@@ -803,7 +793,7 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
       }
     }
   }
-  GpuPreprocessResolvedCameraQueueEntry3d::{
+  {
     draw_items,
     output_count: if output_count < 0 {
       draw_items.length()
@@ -843,7 +833,7 @@ fn render3d_gpu_preprocess_opaque_alpha_end_index(
 fn render3d_host_preprocess_shader_work_item(
   item : GpuPreprocessShaderWorkItem3d,
 ) -> @render.HostMesh3dPreprocessShaderWorkItem {
-  @render.HostMesh3dPreprocessShaderWorkItem::{
+  {
     input_index: item.input_index,
     output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
   }
@@ -853,7 +843,7 @@ fn render3d_host_preprocess_shader_work_item(
 fn render3d_host_preprocess_cpu_metadata(
   metadata : GpuPreprocessIndirectParametersCpuMetadata3d,
 ) -> @render.HostMesh3dPreprocessIndirectParametersCpuMetadata {
-  @render.HostMesh3dPreprocessIndirectParametersCpuMetadata::{
+  {
     base_output_index: metadata.base_output_index,
     batch_set_index: metadata.batch_set_index,
   }
@@ -863,7 +853,7 @@ fn render3d_host_preprocess_cpu_metadata(
 fn render3d_host_preprocess_gpu_metadata(
   metadata : GpuPreprocessIndirectParametersGpuMetadata3d,
 ) -> @render.HostMesh3dPreprocessIndirectParametersGpuMetadata {
-  @render.HostMesh3dPreprocessIndirectParametersGpuMetadata::{
+  {
     mesh_index: metadata.mesh_index,
     early_instance_count: metadata.early_instance_count,
     late_instance_count: metadata.late_instance_count,
@@ -874,7 +864,7 @@ fn render3d_host_preprocess_gpu_metadata(
 fn render3d_host_preprocess_batch_set(
   batch_set : GpuPreprocessIndirectBatchSet3d,
 ) -> @render.HostMesh3dPreprocessIndirectBatchSet {
-  @render.HostMesh3dPreprocessIndirectBatchSet::{
+  {
     indirect_parameters_count: batch_set.indirect_parameters_count,
     indirect_parameters_base: batch_set.indirect_parameters_base,
   }
@@ -887,7 +877,7 @@ fn render3d_host_preprocess_frustum_planes_from_half_spaces(
   let planes : Array[@render.HostMesh3dPreprocessFrustumPlane] = []
   for half_space in half_spaces {
     let normal_d = half_space.normal_d()
-    planes.push(@render.HostMesh3dPreprocessFrustumPlane::{
+    planes.push({
       normal_x: normal_d.x,
       normal_y: normal_d.y,
       normal_z: normal_d.z,
@@ -950,7 +940,7 @@ fn render3d_host_preprocess_view(
     Some(value) => value
     None => render3d_projection_matrix_identity()
   }
-  @render.HostMesh3dPreprocessView::{
+  {
     clip_from_world: render3d_host_gpu_clip_matrix(clip_from_world),
     unjittered_clip_from_world: render3d_host_gpu_clip_matrix(
       unjittered_clip_from_world,
@@ -1027,7 +1017,7 @@ fn render3d_host_preprocess_previous_view(
     Some(value) => value
     None => render3d_projection_matrix_identity()
   }
-  @render.HostMesh3dPreprocessPreviousView::{
+  {
     view_from_world: render3d_host_gpu_clip_matrix(
       resolved_previous_view_from_world,
     ),
@@ -1056,7 +1046,7 @@ fn render3d_host_preprocess_mesh_culling_data(
   }
   let center = culling_data.aabb_center()
   let half_extents = culling_data.aabb_half_extents()
-  @render.HostMesh3dPreprocessMeshCullingData::{
+  {
     aabb_center_x: center.x,
     aabb_center_y: center.y,
     aabb_center_z: center.z,
@@ -1149,7 +1139,7 @@ fn render3d_host_preprocess_mesh_input(
   let previous_world_from_local = previous_mesh_input.world_from_local
   let (scale, rotation, translation) = world_from_local.to_scale_rotation_translation()
   let (previous_scale, previous_rotation, previous_translation) = previous_world_from_local.to_scale_rotation_translation()
-  @render.HostMesh3dPreprocessMeshInput::{
+  {
     translation_x: translation.x,
     translation_y: translation.y,
     translation_z: translation.z,
@@ -1318,7 +1308,7 @@ fn render3d_host_preprocess_camera_payload(
     late_indexed_workgroup_count: queue_entry.dispatch_metadata.late_indexed_workgroup_count,
     late_non_indexed_workgroup_count: queue_entry.dispatch_metadata.late_non_indexed_workgroup_count,
   }
-  @render.HostMesh3dPreprocessCameraPayload::{
+  {
     view,
     previous_view,
     output_count: queue_entry.output_count,

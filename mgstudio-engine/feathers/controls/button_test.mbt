@@ -15,11 +15,8 @@
 ///|
 test "feathers controls button: props mirror Bevy defaults" {
   let props = ButtonProps::ButtonProps()
-  debug_inspect(props.variant is ButtonVariant::Normal, content="true")
-  debug_inspect(
-    props.corners is @rounded_corners.RoundedCorners::All,
-    content="true",
-  )
+  debug_inspect(props.variant is Normal, content="true")
+  debug_inspect(props.corners is All, content="true")
 }
 
 ///|
@@ -54,7 +51,7 @@ fn color_tuple_eq(
 
 ///|
 test "feathers controls color slider mirrors Bevy data model" {
-  debug_inspect(ColorChannel::default() is ColorChannel::Red, content="true")
+  debug_inspect(ColorChannel::default() is Red, content="true")
   let hue_range = ColorChannel::HslHue.range()
   debug_inspect(hue_range.start() == 0.0F, content="true")
   debug_inspect(hue_range.end() == 360.0F, content="true")
@@ -78,21 +75,18 @@ test "feathers controls color slider mirrors Bevy data model" {
   )
 
   let props = ColorSliderProps::ColorSliderProps()
-  debug_inspect(props.channel is ColorChannel::Alpha, content="true")
+  debug_inspect(props.channel is Alpha, content="true")
   let (slider0, value0, range0) = color_slider(props)
-  debug_inspect(slider0.channel is ColorChannel::Alpha, content="true")
+  debug_inspect(slider0.channel is Alpha, content="true")
   debug_inspect(value0.value() == 0.0F, content="true")
   debug_inspect(range0.end() == 1.0F, content="true")
 }
 
 ///|
 test "feathers controls color plane and swatch mirror Bevy defaults" {
-  debug_inspect(
-    ColorPlane::default() is ColorPlane::HueLightness,
-    content="true",
-  )
-  let (plane0, value0) = color_plane(ColorPlane::HueSaturation)
-  debug_inspect(plane0 is ColorPlane::HueSaturation, content="true")
+  debug_inspect(ColorPlane::default() is HueLightness, content="true")
+  let (plane0, value0) = color_plane(HueSaturation)
+  debug_inspect(plane0 is HueSaturation, content="true")
   debug_inspect(
     value0.value.x == 0.0F && value0.value.y == 0.0F && value0.value.z == 0.0F,
     content="true",

@@ -22,5 +22,5 @@ pub fn image_is_hdr_extension(extension : String) -> Bool {
 
 ///|
 pub fn hdr_default_texture_format() -> TextureFormat {
-  TextureFormat::Rgba16Float
+  Rgba16Float
 }

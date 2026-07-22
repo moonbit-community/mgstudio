@@ -70,10 +70,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(@time.Time::from_hz(60.0F))
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.FixedUpdate, player_movement_system)
-  .add_systems_param2(@app.FixedUpdate, snap_to_player_system)
-  .add_systems_param3(@app.FixedUpdate, rotate_to_player_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(FixedUpdate, player_movement_system)
+  .add_systems_param2(FixedUpdate, snap_to_player_system)
+  .add_systems_param3(FixedUpdate, rotate_to_player_system)
   .run()
 }
 
@@ -135,7 +135,7 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
       (
         @text.Text::new("Up Arrow: Move Forward\nLeft / Right Arrow: Turn"),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -225,13 +225,13 @@ fn player_movement_system(
   let mut rotation_factor = 0.0F
   let mut movement_factor = 0.0F
 
-  if keyboard_input.pressed(@window.KeyCode::ArrowLeft) {
+  if keyboard_input.pressed(ArrowLeft) {
     rotation_factor += 1.0F
   }
-  if keyboard_input.pressed(@window.KeyCode::ArrowRight) {
+  if keyboard_input.pressed(ArrowRight) {
     rotation_factor -= 1.0F
   }
-  if keyboard_input.pressed(@window.KeyCode::ArrowUp) {
+  if keyboard_input.pressed(ArrowUp) {
     movement_factor += 1.0F
   }
 

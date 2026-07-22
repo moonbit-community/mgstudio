@@ -27,7 +27,7 @@ pub struct RenderAssetDiagnosticPlugin {
 pub fn RenderAssetDiagnosticPlugin::new(
   suffix : String,
 ) -> RenderAssetDiagnosticPlugin {
-  RenderAssetDiagnosticPlugin::{ suffix, }
+  { suffix, }
 }
 
 ///|
@@ -74,9 +74,9 @@ pub impl @app.Resource for RenderAssetDiagnosticState with fn resource() {
 pub fn RenderAssetDiagnosticState::new(
   suffix : String,
 ) -> RenderAssetDiagnosticState {
-  RenderAssetDiagnosticState::{
+  {
     suffix,
-    snapshot: @renderer.RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
+    snapshot: RenderDiagnosticsSnapshot(),
     sample_count: 0,
     last_sample_us: 0.0F,
   }
@@ -101,10 +101,7 @@ fn render_asset_diagnostic_sample_system(world : @ecs.World) -> Unit {
 pub fn render_asset_diagnostic_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  render_asset_diagnostic_plugin_with(
-    app,
-    RenderAssetDiagnosticPlugin::RenderAssetDiagnosticPlugin(),
-  )
+  render_asset_diagnostic_plugin_with(app, RenderAssetDiagnosticPlugin())
 }
 
 ///|

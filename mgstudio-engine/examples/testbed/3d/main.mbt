@@ -150,8 +150,8 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, spin_cubes)
-  .add_systems_param2(@app.Update, orbit_camera)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, spin_cubes)
+  .add_systems_param2(Update, orbit_camera)
   .run()
 }

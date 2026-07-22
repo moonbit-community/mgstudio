@@ -133,7 +133,7 @@ pub(all) struct ImeCursorRange {
 
 ///|
 pub fn ImeCursorRange::new(start : Int, end : Int) -> ImeCursorRange {
-  ImeCursorRange::{ start, end }
+  { start, end }
 }
 
 ///|

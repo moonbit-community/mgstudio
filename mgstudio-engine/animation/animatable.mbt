@@ -29,7 +29,7 @@ pub fn[T] BlendInput::new(
   value : T,
   additive? : Bool = false,
 ) -> BlendInput[T] {
-  BlendInput::{ weight, value, additive }
+  { weight, value, additive }
 }
 
 ///|

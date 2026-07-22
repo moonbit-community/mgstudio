@@ -135,7 +135,7 @@ pub struct SpecializedMeshPipelines {
 
 ///|
 pub fn SpecializedMeshPipelines::new() -> SpecializedMeshPipelines {
-  SpecializedMeshPipelines::{ mesh_layout_cache: [], vertex_layout_cache: [] }
+  { mesh_layout_cache: [], vertex_layout_cache: [] }
 }
 
 ///|
@@ -145,7 +145,7 @@ pub fn SpecializedMeshPipelines::SpecializedMeshPipelines() -> SpecializedMeshPi
 
 ///|
 pub impl Default for SpecializedMeshPipelines with fn default() {
-  SpecializedMeshPipelines::SpecializedMeshPipelines()
+  SpecializedMeshPipelines()
 }
 
 ///|
@@ -234,7 +234,7 @@ pub fn SpecializedMeshPipelines::specialize(
     Some(pipeline_id) => pipeline_id
     None => {
       let id = pipeline_cache.queue_render_pipeline(descriptor)
-      self.vertex_layout_cache.push(SpecializedMeshPipelineVertexLayoutCacheEntry::{
+      self.vertex_layout_cache.push({
         vertex_layouts: descriptor.vertex.buffers,
         key,
         pipeline_id: id,
@@ -242,10 +242,6 @@ pub fn SpecializedMeshPipelines::specialize(
       id
     }
   }
-  self.mesh_layout_cache.push(SpecializedMeshPipelineMeshLayoutCacheEntry::{
-    layout,
-    key,
-    pipeline_id,
-  })
+  self.mesh_layout_cache.push({ layout, key, pipeline_id })
   pipeline_id
 }

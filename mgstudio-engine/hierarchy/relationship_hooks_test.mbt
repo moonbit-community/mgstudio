@@ -142,7 +142,7 @@ test "hierarchy: cached child table row refreshes after structural migration" {
   let children = (try! world.get_by_key(parent, ecs_key_children)).unwrap()
   ignore(children.entity_table_row_cached(world, 0))
 
-  try! world.set_by_key(child, hierarchy_cache_migration_marker_key, HierarchyCacheMigrationMarker::{
+  try! world.set_by_key(child, hierarchy_cache_migration_marker_key, {
     value: 1,
   })
 

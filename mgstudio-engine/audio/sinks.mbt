@@ -96,20 +96,14 @@ pub struct SpatialAudioSink {
 
 ///|
 fn audio_sink_from_native(player : NativeAudioPlayer) -> AudioSink {
-  AudioSink::{
-    sink_id: audio_sink_registry_insert(player),
-    managed_volume: None,
-  }
+  { sink_id: audio_sink_registry_insert(player), managed_volume: None }
 }
 
 ///|
 fn spatial_audio_sink_from_native(
   player : NativeSpatialAudioPlayer,
 ) -> SpatialAudioSink {
-  SpatialAudioSink::{
-    sink_id: spatial_audio_sink_registry_insert(player),
-    managed_volume: None,
-  }
+  { sink_id: spatial_audio_sink_registry_insert(player), managed_volume: None }
 }
 
 ///|
@@ -118,7 +112,7 @@ fn audio_sink_live_volume(sink : AudioSink) -> Volume {
     Some(volume) => volume
     None =>
       match audio_sink_registry_get(sink.sink_id) {
-        Some(player) => Volume::Linear(Float::from_double(player.volume()))
+        Some(player) => Linear(Float::from_double(player.volume()))
         None => Volume::default()
       }
   }
@@ -130,7 +124,7 @@ fn spatial_audio_sink_live_volume(sink : SpatialAudioSink) -> Volume {
     Some(volume) => volume
     None =>
       match spatial_audio_sink_registry_get(sink.sink_id) {
-        Some(player) => Volume::Linear(Float::from_double(player.volume()))
+        Some(player) => Linear(Float::from_double(player.volume()))
         None => Volume::default()
       }
   }
@@ -146,12 +140,12 @@ pub impl AudioSinkPlayback for AudioSink with fn set_volume(self, volume) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) =>
       if self.managed_volume is Some(_) {
-        AudioSink::{ ..self, managed_volume: Some(volume) }
+        { ..self, managed_volume: Some(volume) }
       } else {
         player.set_volume(volume.to_linear().to_double())
-        AudioSink::{ ..self, managed_volume: None }
+        { ..self, managed_volume: None }
       }
-    None => AudioSink::{ ..self, managed_volume: Some(volume) }
+    None => { ..self, managed_volume: Some(volume) }
   }
 }
 
@@ -244,7 +238,7 @@ pub impl AudioSinkPlayback for AudioSink with fn mute(self) {
     Some(player) => {
       let remembered = self.volume()
       player.set_volume(0.0)
-      AudioSink::{ ..self, managed_volume: Some(remembered) }
+      { ..self, managed_volume: Some(remembered) }
     }
     None => self
   }
@@ -258,7 +252,7 @@ pub impl AudioSinkPlayback for AudioSink with fn unmute(self) {
         Some(player) => player.set_volume(volume.to_linear().to_double())
         None => ()
       }
-      AudioSink::{ ..self, managed_volume: None }
+      { ..self, managed_volume: None }
     }
     None => self
   }
@@ -274,12 +268,12 @@ pub impl AudioSinkPlayback for SpatialAudioSink with fn set_volume(self, volume)
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) =>
       if self.managed_volume is Some(_) {
-        SpatialAudioSink::{ ..self, managed_volume: Some(volume) }
+        { ..self, managed_volume: Some(volume) }
       } else {
         player.set_volume(volume.to_linear().to_double())
-        SpatialAudioSink::{ ..self, managed_volume: None }
+        { ..self, managed_volume: None }
       }
-    None => SpatialAudioSink::{ ..self, managed_volume: Some(volume) }
+    None => { ..self, managed_volume: Some(volume) }
   }
 }
 
@@ -372,7 +366,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with fn mute(self) {
     Some(player) => {
       let remembered = self.volume()
       player.set_volume(0.0)
-      SpatialAudioSink::{ ..self, managed_volume: Some(remembered) }
+      { ..self, managed_volume: Some(remembered) }
     }
     None => self
   }
@@ -386,7 +380,7 @@ pub impl AudioSinkPlayback for SpatialAudioSink with fn unmute(self) {
         Some(player) => player.set_volume(volume.to_linear().to_double())
         None => ()
       }
-      SpatialAudioSink::{ ..self, managed_volume: None }
+      { ..self, managed_volume: None }
     }
     None => self
   }

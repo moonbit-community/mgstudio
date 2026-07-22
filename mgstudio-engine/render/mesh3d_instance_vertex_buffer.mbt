@@ -25,7 +25,7 @@ pub fn Mesh3dInstanceVertexBufferData::new(
   bytes~ : Bytes,
   length~ : Int,
 ) -> Mesh3dInstanceVertexBufferData {
-  Mesh3dInstanceVertexBufferData::{ buffer_id, bytes, length }
+  { buffer_id, bytes, length }
 }
 
 ///|

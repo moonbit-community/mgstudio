@@ -370,7 +370,7 @@ pub fn host_mesh3d_main_pass_draw_entry(
   morph_targets_texture_id? : Int = -1,
   first_vertex_index? : UInt = 0U,
 ) -> HostMesh3dMainPassDrawEntry {
-  HostMesh3dMainPassDrawEntry::{
+  {
     draw_storage_index,
     world_from_local,
     x,
@@ -714,7 +714,7 @@ fn GpuBackend::prepare_mesh3d_instance_vertex_buffer(
         current.buffer
       }
       self.queue.write_buffer(buffer, 0UL, bytes)
-      self.mesh3d_instance_vertex_buffers[index] = GpuMesh3dInstanceVertexBufferInfo::{
+      self.mesh3d_instance_vertex_buffers[index] = {
         id: buffer_id,
         buffer,
         byte_size: if current.byte_size < byte_size {
@@ -727,7 +727,7 @@ fn GpuBackend::prepare_mesh3d_instance_vertex_buffer(
     }
     None => {
       let buffer = self.device.create_buffer_init(usage~, bytes)
-      self.mesh3d_instance_vertex_buffers.push(GpuMesh3dInstanceVertexBufferInfo::{
+      self.mesh3d_instance_vertex_buffers.push({
         id: buffer_id,
         buffer,
         byte_size,
@@ -1407,7 +1407,7 @@ pub fn draw_mesh3d(
   cull_mode~ : Int,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
-  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+  material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = MaterialBindGroupResolvedData(),
   skinning_key_hi? : Int = -1,
   skinning_key_lo? : Int = -1,
   morph_weights_index? : Int = -1,

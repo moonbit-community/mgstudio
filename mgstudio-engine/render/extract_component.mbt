@@ -29,7 +29,7 @@ pub fn[C, F] ExtractComponentPlugin::ExtractComponentPlugin() -> ExtractComponen
   C,
   F,
 ] {
-  ExtractComponentPlugin::{
+  {
     only_extract_visible: false,
     extract_component: fn(component) { component },
   }
@@ -40,10 +40,7 @@ pub fn[C, F] ExtractComponentPlugin::extract_visible() -> ExtractComponentPlugin
   C,
   F,
 ] {
-  ExtractComponentPlugin::{
-    only_extract_visible: true,
-    extract_component: fn(component) { component },
-  }
+  { only_extract_visible: true, extract_component: fn(component) { component } }
 }
 
 ///|
@@ -51,10 +48,7 @@ pub fn[C, F] ExtractComponentPlugin::with_extract_component(
   self : ExtractComponentPlugin[C, F],
   extract_component : (C) -> C,
 ) -> ExtractComponentPlugin[C, F] {
-  ExtractComponentPlugin::{
-    only_extract_visible: self.only_extract_visible,
-    extract_component,
-  }
+  { only_extract_visible: self.only_extract_visible, extract_component }
 }
 
 ///|
@@ -178,7 +172,7 @@ pub fn[C : @ecs.Component, F] extract_component_plugin_with(
   app : @app.App[@ecs.World],
   plugin : ExtractComponentPlugin[C, F],
 ) -> @app.App[@ecs.World] {
-  let sync_component : SyncComponentPlugin[C, F] = SyncComponentPlugin::SyncComponentPlugin()
+  let sync_component : SyncComponentPlugin[C, F] = SyncComponentPlugin()
   let next = sync_component_plugin_with(app, sync_component)
   let component_key = C::component()
   with_render_app(next, fn(sub_app : @app.SubApp[@ecs.World]) {

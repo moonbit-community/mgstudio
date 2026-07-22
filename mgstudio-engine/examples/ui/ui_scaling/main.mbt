@@ -48,18 +48,18 @@ fn setup(world : @ecs.World) -> Unit {
   @ui.get_ui_scale_resource(world).insert(@ui.UiScale::new(1.0F))
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(50.0F))
-    .with_height(@ui.Val::Percent(50.0F))
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Percent(25.0F))
-    .with_top(@ui.Val::Percent(25.0F))
-    .with_justify_content(@ui.JustifyContent::SpaceAround)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_width(Percent(50.0F))
+    .with_height(Percent(50.0F))
+    .with_position_type(Absolute)
+    .with_left(Percent(25.0F))
+    .with_top(Percent(25.0F))
+    .with_justify_content(SpaceAround)
+    .with_align_items(Center),
   )
   try! world.set_by_key(
     root,
@@ -76,9 +76,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     red_box,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Px(40.0F))
-    .with_height(@ui.Val::Px(40.0F)),
+    @ui.Node::Node().with_width(Px(40.0F)).with_height(Px(40.0F)),
   )
   try! world.set_by_key(
     red_box,
@@ -113,9 +111,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     blue_box,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(15.0F))
-    .with_height(@ui.Val::Percent(15.0F)),
+    @ui.Node::Node().with_width(Percent(15.0F)).with_height(Percent(15.0F)),
   )
   try! world.set_by_key(
     blue_box,
@@ -132,9 +128,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     image,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Px(30.0F))
-    .with_height(@ui.Val::Px(30.0F)),
+    @ui.Node::Node().with_width(Px(30.0F)).with_height(Px(30.0F)),
   )
   try! world.set_by_key(image, @ui.ecs_key_image_node, @ui.ImageNode::new(icon))
 }
@@ -146,10 +140,10 @@ fn change_scaling(world : @ecs.World) -> Unit {
     Some(scale) => scale.value
     None => 1.0F
   }
-  if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
+  if @input.key_just_pressed(ArrowUp) {
     ui_scale.insert(@ui.UiScale::new(min_float(current * 2.0F, 8.0F)))
   }
-  if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
+  if @input.key_just_pressed(ArrowDown) {
     ui_scale.insert(@ui.UiScale::new(max_float(current / 2.0F, 0.125F)))
   }
 }
@@ -159,6 +153,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_startup_system(setup)
-  .add_systems_world(@app.Update, change_scaling)
+  .add_systems_world(Update, change_scaling)
   .run()
 }

@@ -23,7 +23,7 @@ pub struct DecalPluginState {
 
 ///|
 pub fn DecalPluginState::DecalPluginState() -> DecalPluginState {
-  DecalPluginState::{ forward_enabled: true, clustered_enabled: true }
+  { forward_enabled: true, clustered_enabled: true }
 }
 
 ///|
@@ -38,12 +38,12 @@ pub fn DecalPluginState::clustered_enabled(self : DecalPluginState) -> Bool {
 
 ///|
 pub fn forward_decal() -> ForwardDecal {
-  ForwardDecal::ForwardDecal()
+  ForwardDecal()
 }
 
 ///|
 pub fn clustered_decal() -> ClusteredDecal {
-  @light.ClusteredDecal::ClusteredDecal()
+  ClusteredDecal()
 }
 
 ///|

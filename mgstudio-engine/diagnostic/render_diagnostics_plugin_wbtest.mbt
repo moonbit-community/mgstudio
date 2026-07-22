@@ -26,7 +26,7 @@ test "diagnostics: render snapshot records render measurements" {
     .get_resource_mut(DiagnosticsStore::resource())
     .unwrap()
   store_mut.modify(fn(store) {
-    render_diagnostics_record_snapshot(store, tick, RenderDiagnosticsMeasurements::{
+    render_diagnostics_record_snapshot(store, tick, {
       prepared_cameras_2d: Some(2),
       queued_draw_items_2d: Some(14),
       queue_cpu_ms_2d: Some(1.25F),

@@ -36,7 +36,7 @@ pub(all) struct ColorPlaneValue {
 
 ///|
 pub fn ColorPlaneValue::new(value : @math.Vec3) -> ColorPlaneValue {
-  ColorPlaneValue::{ value, }
+  { value, }
 }
 
 ///|
@@ -46,13 +46,14 @@ pub fn ColorPlaneValue::ColorPlaneValue() -> ColorPlaneValue {
 
 ///|
 pub fn color_plane(plane : ColorPlane) -> (ColorPlane, ColorPlaneValue) {
-  (plane, ColorPlaneValue::ColorPlaneValue())
+  (plane, ColorPlaneValue())
 }
 
 ///|
 pub struct ColorPlanePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ColorPlanePlugin::ColorPlanePlugin() -> ColorPlanePlugin {
   ColorPlanePlugin::{  }
 }

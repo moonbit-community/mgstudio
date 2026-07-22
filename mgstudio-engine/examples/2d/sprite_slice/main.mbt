@@ -22,7 +22,7 @@ const LABEL_VERTICAL_GAP : Float = 10.0F
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }
 
@@ -68,42 +68,38 @@ fn spawn_sprites(
   let cursor = position
   let border = @sprite.BorderRect::square(slice_border)
   let cases : Array[(String, @math.Vec2, @sprite.SpriteImageMode)] = [
-    ("Original", @math.Vec2::new(100.0F, 100.0F), @sprite.SpriteImageMode::Auto),
-    (
-      "Stretched",
-      @math.Vec2::new(100.0F, 200.0F),
-      @sprite.SpriteImageMode::Auto,
-    ),
+    ("Original", @math.Vec2::new(100.0F, 100.0F), Auto),
+    ("Stretched", @math.Vec2::new(100.0F, 200.0F), Auto),
     (
       "With Slicing",
       @math.Vec2::new(100.0F, 200.0F),
-      @sprite.SpriteImageMode::Sliced(@sprite.TextureSlicer::new(border)),
+      Sliced(@sprite.TextureSlicer::new(border)),
     ),
     (
       "With Tiling",
       @math.Vec2::new(100.0F, 200.0F),
-      @sprite.SpriteImageMode::Sliced(
+      Sliced(
         @sprite.TextureSlicer::new(border)
-        .with_center_scale_mode(@sprite.SliceScaleMode::Tile(0.5F))
-        .with_sides_scale_mode(@sprite.SliceScaleMode::Tile(0.2F)),
+        .with_center_scale_mode(Tile(0.5F))
+        .with_sides_scale_mode(Tile(0.2F)),
       ),
     ),
     (
       "With Tiling",
       @math.Vec2::new(300.0F, 200.0F),
-      @sprite.SpriteImageMode::Sliced(
+      Sliced(
         @sprite.TextureSlicer::new(border)
-        .with_center_scale_mode(@sprite.SliceScaleMode::Tile(0.2F))
-        .with_sides_scale_mode(@sprite.SliceScaleMode::Tile(0.3F)),
+        .with_center_scale_mode(Tile(0.2F))
+        .with_sides_scale_mode(Tile(0.3F)),
       ),
     ),
     (
       "With Corners Constrained",
       @math.Vec2::new(300.0F, 200.0F),
-      @sprite.SpriteImageMode::Sliced(
+      Sliced(
         @sprite.TextureSlicer::new(border)
-        .with_center_scale_mode(@sprite.SliceScaleMode::Tile(0.1F))
-        .with_sides_scale_mode(@sprite.SliceScaleMode::Tile(0.2F))
+        .with_center_scale_mode(Tile(0.1F))
+        .with_sides_scale_mode(Tile(0.2F))
         .with_max_corner_scale(0.2F),
       ),
     ),
@@ -141,7 +137,7 @@ fn spawn_slice_label(
       (
         @text.Text2d::new(label),
         style,
-        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @text.TextLayout::new_with_justify(Center),
         @transform.Transform::from_xyz(
           0.0F,
           -0.5F * sprite_size.y - LABEL_VERTICAL_GAP,

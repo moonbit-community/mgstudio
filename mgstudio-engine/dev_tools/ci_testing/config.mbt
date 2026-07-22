@@ -22,7 +22,7 @@ pub struct CiTestingSetup {
 
 ///|
 pub fn CiTestingSetup::CiTestingSetup() -> CiTestingSetup {
-  CiTestingSetup::{ fixed_frame_time: None }
+  { fixed_frame_time: None }
 }
 
 ///|
@@ -31,7 +31,7 @@ pub fn CiTestingSetup::with_fixed_frame_time(
   fixed_frame_time : @core.Duration,
 ) -> CiTestingSetup {
   self |> ignore
-  CiTestingSetup::{ fixed_frame_time: Some(fixed_frame_time) }
+  { fixed_frame_time: Some(fixed_frame_time) }
 }
 
 ///|
@@ -57,7 +57,7 @@ pub fn CiTestingEventOnFrame::new(
   frame : Int,
   event : CiTestingEvent,
 ) -> CiTestingEventOnFrame {
-  CiTestingEventOnFrame::{ frame, event }
+  { frame, event }
 }
 
 ///|
@@ -68,7 +68,7 @@ pub struct CiTestingConfig {
 
 ///|
 pub fn CiTestingConfig::CiTestingConfig() -> CiTestingConfig {
-  CiTestingConfig::{ setup: CiTestingSetup::CiTestingSetup(), events: [] }
+  { setup: CiTestingSetup(), events: [] }
 }
 
 ///|
@@ -76,7 +76,7 @@ pub fn CiTestingConfig::with_setup(
   self : CiTestingConfig,
   setup : CiTestingSetup,
 ) -> CiTestingConfig {
-  CiTestingConfig::{ ..self, setup, }
+  { ..self, setup, }
 }
 
 ///|
@@ -87,7 +87,7 @@ pub fn CiTestingConfig::with_event(
 ) -> CiTestingConfig {
   let events = self.events
   events.push(CiTestingEventOnFrame::new(frame, event))
-  CiTestingConfig::{ ..self, events, }
+  { ..self, events, }
 }
 
 ///|
@@ -97,7 +97,7 @@ pub struct CiTestingCustomEvent {
 
 ///|
 pub fn CiTestingCustomEvent::new(value : String) -> CiTestingCustomEvent {
-  CiTestingCustomEvent::{ value, }
+  { value, }
 }
 
 ///|

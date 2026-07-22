@@ -37,12 +37,12 @@ test "light visibility: point shadow caster becomes view visible" {
   try! world.set_by_key(
     point,
     @camera_primitives.ecs_key_cubemap_frusta,
-    @camera_primitives.CubemapFrusta::CubemapFrusta(),
+    CubemapFrusta(),
   )
   try! world.set_by_key(
     point,
     @camera_visibility.ecs_key_cubemap_visible_entities,
-    @camera_visibility.CubemapVisibleEntities::CubemapVisibleEntities(),
+    CubemapVisibleEntities(),
   )
   try! world.set_by_key(
     mesh,
@@ -109,15 +109,11 @@ test "light visibility: spot shadow caster becomes view visible" {
     @transform.ecs_key_global_transform,
     @transform.GlobalTransform::identity(),
   )
-  try! world.set_by_key(
-    spot,
-    @camera_primitives.ecs_key_frustum,
-    @camera_primitives.Frustum::Frustum(),
-  )
+  try! world.set_by_key(spot, @camera_primitives.ecs_key_frustum, Frustum())
   try! world.set_by_key(
     spot,
     @camera_visibility.ecs_key_visible_mesh_entities,
-    @camera_visibility.VisibleMeshEntities::VisibleMeshEntities(),
+    VisibleMeshEntities(),
   )
   try! world.set_by_key(
     mesh,
@@ -170,7 +166,7 @@ test "light visibility: directional shadow caster becomes view visible" {
   let light = world.spawn()
   let mesh = world.spawn()
   let frusta = @camera_primitives.CascadesFrusta::CascadesFrusta()
-  frusta.set(view, [@camera_primitives.Frustum::Frustum()])
+  frusta.set(view, [Frustum()])
   try! world.set_by_key(
     light,
     ecs_key_directional_light,
@@ -182,7 +178,7 @@ test "light visibility: directional shadow caster becomes view visible" {
   try! world.set_by_key(
     light,
     @camera_visibility.ecs_key_cascades_visible_entities,
-    @camera_visibility.CascadesVisibleEntities::CascadesVisibleEntities(),
+    CascadesVisibleEntities(),
   )
   try! world.set_by_key(
     light,

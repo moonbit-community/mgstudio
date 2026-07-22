@@ -29,7 +29,7 @@ fn volumetric_fog_test_shader_defs_contain(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @render_resource.ShaderDefVal::Flag(flag) if flag == name => return true
+      Flag(flag) if flag == name => return true
       _ => ()
     }
   }
@@ -46,11 +46,11 @@ test "pbr volumetric fog: pipeline key mirrors Bevy shader defs and layout bits"
     target_format=80U,
     vertex_buffer_layout=@mesh.VertexBufferLayout::new(
       array_stride=12,
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      step_mode=Vertex,
       attributes=[
         @mesh.VertexAttribute::new(
           offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=0,
         ),
       ],
@@ -91,33 +91,22 @@ test "pbr volumetric fog: bind group layout descriptors mirror Bevy variants" {
   inspect(descriptors[0].entries()[0].binding(), content="0")
   inspect(descriptors[0].entries()[0].visibility(), content="3")
   match descriptors[0].entries()[0].kind() {
-    @render_resource.BindingType::BufferBinding(
-      @render_resource.BufferBindingType::Uniform,
-      true,
-      size
-    ) => inspect(size, content="288")
+    BufferBinding(Uniform, true, size) => inspect(size, content="288")
     _ => inspect("unexpected binding", content="uniform dynamic binding")
   }
   match descriptors[1].entries()[1].kind() {
-    @render_resource.BindingType::TextureBinding(
-      @render_resource.TextureSampleType::Depth,
-      @render_resource.TextureViewDimension::D2,
-      true
-    ) => inspect("multisampled depth", content="multisampled depth")
+    TextureBinding(Depth, D2, true) =>
+      inspect("multisampled depth", content="multisampled depth")
     _ => inspect("unexpected binding", content="multisampled depth")
   }
   match descriptors[2].entries()[2].kind() {
-    @render_resource.BindingType::TextureBinding(
-      @render_resource.TextureSampleType::Float(true),
-      @render_resource.TextureViewDimension::D3,
-      false
-    ) => inspect("density texture", content="density texture")
+    TextureBinding(Float(true), D3, false) =>
+      inspect("density texture", content="density texture")
     _ => inspect("unexpected binding", content="density texture")
   }
   match descriptors[2].entries()[3].kind() {
-    @render_resource.BindingType::SamplerBinding(
-      @render_resource.SamplerBindingType::Filtering
-    ) => inspect("density sampler", content="density sampler")
+    SamplerBinding(Filtering) =>
+      inspect("density sampler", content="density sampler")
     _ => inspect("unexpected binding", content="density sampler")
   }
   let pipeline = @volumetric_fog.VolumetricFogPipeline::VolumetricFogPipeline()
@@ -131,13 +120,9 @@ test "pbr volumetric fog: pipeline specialize mirrors Bevy descriptor" {
   )
   let vertex_buffer_layout = @mesh.VertexBufferLayout::new(
     array_stride=12,
-    step_mode=@mesh.MeshVertexStepMode::Vertex,
+    step_mode=Vertex,
     attributes=[
-      @mesh.VertexAttribute::new(
-        offset=0,
-        format=@mesh.MeshVertexFormat::Float32x3,
-        shader_location=0,
-      ),
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
     ],
   )
   let key = @volumetric_fog.VolumetricFogPipelineKey::VolumetricFogPipelineKey(
@@ -290,7 +275,7 @@ test "pbr volumetric fog: render-world storage uses typed synced components" {
   try! render_world.set_by_key(
     render_view_entity,
     @light.ecs_key_volumetric_fog,
-    @light.VolumetricFog::VolumetricFog(),
+    VolumetricFog(),
   )
 
   let volume_without_transform = render_world.spawn()
@@ -324,7 +309,7 @@ test "pbr volumetric fog: render-world storage uses typed synced components" {
   try! render_world.set_by_key(
     light_entity,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
 
   let counts = @volumetric_fog.volumetric_fog_render_world_storage_counts(

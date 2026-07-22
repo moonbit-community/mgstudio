@@ -23,6 +23,7 @@ const MIP_GENERATION_PLUGIN_NAME : String = "mgstudio.core_pipeline.mip_generati
 pub struct MipGenerationPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MipGenerationPlugin::MipGenerationPlugin() -> MipGenerationPlugin {
   MipGenerationPlugin::{  }
 }
@@ -83,7 +84,7 @@ fn mip_generation_plugin_finish_with(
     if !world.resource(ecs_key_mip_generation_resources).is_present() {
       world.insert_resource(
         ecs_key_mip_generation_resources,
-        MipGenerationResources::MipGenerationResources(),
+        MipGenerationResources(),
       )
     }
     sub_app
@@ -100,15 +101,12 @@ fn mip_generation_configure_render_sub_app(
     world.insert_resource(ecs_key_downsample_shaders, downsample_shaders)
   }
   if !world.resource(ecs_key_mip_generation_jobs).is_present() {
-    world.insert_resource(
-      ecs_key_mip_generation_jobs,
-      MipGenerationJobs::MipGenerationJobs(),
-    )
+    world.insert_resource(ecs_key_mip_generation_jobs, MipGenerationJobs())
   }
   if !world.resource(ecs_key_mip_generation_pipelines).is_present() {
     world.insert_resource(
       ecs_key_mip_generation_pipelines,
-      MipGenerationPipelines::MipGenerationPipelines(),
+      MipGenerationPipelines(),
     )
   }
   @render.configure_base_render_sets(sub_app)
@@ -146,7 +144,7 @@ pub struct MipGenerationResources {
 
 ///|
 pub fn MipGenerationResources::MipGenerationResources() -> MipGenerationResources {
-  MipGenerationResources::{
+  {
     sampler_label: "mip generation sampler",
     mag_filter: "Linear",
     min_filter: "Linear",
@@ -303,7 +301,7 @@ pub fn DownsampleShaders::new(
   depth~ : @asset.Handle[@shader.Shader],
   general~ : Map[String, @asset.Handle[@shader.Shader]],
 ) -> DownsampleShaders {
-  DownsampleShaders::{ depth, general }
+  { depth, general }
 }
 
 ///|
@@ -343,7 +341,7 @@ pub struct MipGenerationPhaseId {
 
 ///|
 pub fn MipGenerationPhaseId::new(value~ : UInt) -> MipGenerationPhaseId {
-  MipGenerationPhaseId::{ value, }
+  { value, }
 }
 
 ///|
@@ -358,7 +356,7 @@ pub struct MipGenerationPhase {
 
 ///|
 pub fn MipGenerationPhase::MipGenerationPhase() -> MipGenerationPhase {
-  MipGenerationPhase::{ image_asset_ids: [] }
+  { image_asset_ids: [] }
 }
 
 ///|
@@ -385,7 +383,7 @@ pub fn MipGenerationPhase::push(
 ) -> MipGenerationPhase {
   let next = self.image_asset_ids.copy()
   next.push(image_asset_id)
-  MipGenerationPhase::{ image_asset_ids: next }
+  { image_asset_ids: next }
 }
 
 ///|
@@ -395,12 +393,12 @@ pub struct MipGenerationJobs {
 
 ///|
 pub fn MipGenerationJobs::MipGenerationJobs() -> MipGenerationJobs {
-  MipGenerationJobs::{ phases: Map([]) }
+  { phases: Map([]) }
 }
 
 ///|
 pub fn MipGenerationJobs::clear(_ : MipGenerationJobs) -> MipGenerationJobs {
-  MipGenerationJobs::MipGenerationJobs()
+  MipGenerationJobs()
 }
 
 ///|
@@ -432,7 +430,7 @@ pub fn MipGenerationJobs::add(
     None => MipGenerationPhase::MipGenerationPhase().push(image_asset_id)
   }
   phases.set(key, next_phase)
-  MipGenerationJobs::{ phases, }
+  { phases, }
 }
 
 ///|
@@ -453,7 +451,7 @@ pub fn MipGenerationJobs::remove_phase(
   let removed = self.phases.get(key)
   let next = self.phases.copy()
   next.remove(key) |> ignore
-  (MipGenerationJobs::{ phases: next }, removed)
+  ({ phases: next }, removed)
 }
 
 ///|
@@ -497,7 +495,7 @@ fn reset_mip_generation_jobs(world : @ecs.World) -> Unit {
   ignore(
     world
     .resource(ecs_key_mip_generation_jobs)
-    .update(fn(_) { MipGenerationJobs::MipGenerationJobs() }),
+    .update(fn(_) { MipGenerationJobs() }),
   )
 }
 
@@ -537,10 +535,7 @@ pub struct MipGenerationPipelines {
 
 ///|
 pub fn MipGenerationPipelines::MipGenerationPipelines() -> MipGenerationPipelines {
-  MipGenerationPipelines::{
-    pipelines: @hashmap.HashMap([]),
-    bind_groups: @hashmap.HashMap([]),
-  }
+  { pipelines: HashMap([]), bind_groups: HashMap([]) }
 }
 
 ///|
@@ -558,7 +553,7 @@ pub fn MipGenerationPipelines::reset_bind_group_cache(
 pub fn MipGenerationPipelines::clear(
   _ : MipGenerationPipelines,
 ) -> MipGenerationPipelines {
-  MipGenerationPipelines::MipGenerationPipelines()
+  MipGenerationPipelines()
 }
 
 ///|

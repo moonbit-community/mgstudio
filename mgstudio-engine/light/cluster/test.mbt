@@ -49,7 +49,7 @@ fn cluster_test_set_camera3d(
   try! (world.set_by_key(
     entity,
     @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
+    Camera3d(),
   )
   |> ignore)
 }
@@ -93,7 +93,7 @@ test "light cluster: cluster config helper semantics match bevy shape" {
   let none_config = ClusterConfig::None
   inspect(cluster_config_first_slice_depth(none_config), content="0")
   inspect(
-    cluster_config_far_z_mode(none_config) is ClusterFarZMode::Constant(0.0F),
+    cluster_config_far_z_mode(none_config) is Constant(0.0F),
     content="true",
   )
   inspect(!cluster_config_dynamic_resizing(none_config), content="true")
@@ -101,22 +101,18 @@ test "light cluster: cluster config helper semantics match bevy shape" {
   let single_config = ClusterConfig::Single
   inspect(cluster_config_first_slice_depth(single_config), content="0")
   inspect(
-    cluster_config_far_z_mode(single_config)
-    is ClusterFarZMode::MaxClusterableObjectRange,
+    cluster_config_far_z_mode(single_config) is MaxClusterableObjectRange,
     content="true",
   )
   inspect(!cluster_config_dynamic_resizing(single_config), content="true")
 
   let z_config = ClusterZConfig::{
     first_slice_depth: 7.5F,
-    far_z_mode: ClusterFarZMode::Constant(33.0F),
+    far_z_mode: Constant(33.0F),
   }
   let xyz = ClusterConfig::XYZ(4, 3, 2, z_config, true)
   inspect(cluster_config_first_slice_depth(xyz), content="7.5")
-  inspect(
-    cluster_config_far_z_mode(xyz) is ClusterFarZMode::Constant(33.0F),
-    content="true",
-  )
+  inspect(cluster_config_far_z_mode(xyz) is Constant(33.0F), content="true")
   inspect(cluster_config_dynamic_resizing(xyz), content="true")
 }
 
@@ -127,30 +123,30 @@ test "light cluster: assignment is scheduled after transform camera and visibili
   defer lifecycle_world_123_0.close()
   let app = @app.App::new(lifecycle_world_123_0)
     .add_systems(
-      @app.PostUpdate,
+      PostUpdate,
       @app.system(fn(_world : @ecs.World) { () })
       .named("tests.transform.propagate")
       .in_set(@transform.transform_set_propagate),
     )
     .add_systems(
-      @app.PostUpdate,
+      PostUpdate,
       @app.system(fn(_world : @ecs.World) { () })
       .named("tests.visibility.check")
       .in_set(@visibility.visibility_set_check_visibility),
     )
     .add_systems(
-      @app.PostUpdate,
+      PostUpdate,
       @app.system(fn(_world : @ecs.World) { () })
       .named("tests.camera.update")
       .in_set(camera_update_set),
     )
     .add_plugins(ClusterLightPlugin::ClusterLightPlugin())
-  let update_dot = app.schedule_graph_dot(@app.Update)
+  let update_dot = app.schedule_graph_dot(Update)
   debug_inspect(
     update_dot.contains("\"mgstudio.light.cluster.assign_objects_to_clusters\""),
     content="false",
   )
-  let post_update_dot = app.schedule_graph_dot(@app.PostUpdate)
+  let post_update_dot = app.schedule_graph_dot(PostUpdate)
   debug_inspect(
     post_update_dot.contains(
       "\"mgstudio.light.cluster.assign_objects_to_clusters\"",
@@ -288,11 +284,7 @@ test "light cluster: ClusterConfig::None clears clusters and preserves last-fram
   defer world.close()
   let camera_entity = world.spawn()
   cluster_test_set_camera3d(world, camera_entity, cluster_test_camera())
-  try! (world.set_by_key(
-    camera_entity,
-    ClusterConfig::component(),
-    ClusterConfig::None,
-  )
+  try! (world.set_by_key(camera_entity, ClusterConfig::component(), None)
   |> ignore)
   let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
   previous_clusters.last_frame_farthest_z = Some(77.0F)
@@ -328,11 +320,7 @@ test "light cluster: camera without physical viewport clears clusters" {
   let world = @ecs.World::new()
   defer world.close()
   let camera_entity = world.spawn()
-  cluster_test_set_camera3d(
-    world,
-    camera_entity,
-    @camera_camera.Camera::Camera(),
-  )
+  cluster_test_set_camera3d(world, camera_entity, Camera())
   let previous_clusters = Clusters::new(120, 120, 16, 9, 24, 5.0F, 1000.0F)
   previous_clusters.last_frame_farthest_z = Some(88.0F)
   previous_clusters.last_frame_total_cluster_index_count = Some(4321)
@@ -524,13 +512,10 @@ test "light cluster: assign system honors constant far z mode from config" {
   try! (world.set_by_key(
     camera_entity,
     ClusterConfig::component(),
-    ClusterConfig::FixedZ(
+    FixedZ(
       4096,
       24,
-      ClusterZConfig::{
-        first_slice_depth: 6.0F,
-        far_z_mode: ClusterFarZMode::Constant(123.0F),
-      },
+      { first_slice_depth: 6.0F, far_z_mode: Constant(123.0F) },
       true,
     ),
   )
@@ -575,13 +560,13 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     probe_visible,
     @light.ecs_key_environment_map_light,
-    @light.EnvironmentMapLight::EnvironmentMapLight(),
+    EnvironmentMapLight(),
   )
   |> ignore)
   try! (world.set_by_key(
     probe_visible,
     @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
+    LightProbe(),
   )
   |> ignore)
 
@@ -589,14 +574,10 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     probe_hidden,
     @light.ecs_key_environment_map_light,
-    @light.EnvironmentMapLight::EnvironmentMapLight(),
+    EnvironmentMapLight(),
   )
   |> ignore)
-  try! (world.set_by_key(
-    probe_hidden,
-    @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
-  )
+  try! (world.set_by_key(probe_hidden, @light.ecs_key_light_probe, LightProbe())
   |> ignore)
   try! (world.set_by_key(
     probe_hidden,
@@ -609,13 +590,13 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     irradiance_visible,
     @light.ecs_key_irradiance_volume,
-    @light.IrradianceVolume::IrradianceVolume(),
+    IrradianceVolume(),
   )
   |> ignore)
   try! (world.set_by_key(
     irradiance_visible,
     @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
+    LightProbe(),
   )
   |> ignore)
 
@@ -623,13 +604,13 @@ test "light cluster: assign system filters hidden clusterables by view visibilit
   try! (world.set_by_key(
     irradiance_hidden,
     @light.ecs_key_irradiance_volume,
-    @light.IrradianceVolume::IrradianceVolume(),
+    IrradianceVolume(),
   )
   |> ignore)
   try! (world.set_by_key(
     irradiance_hidden,
     @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
+    LightProbe(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -714,7 +695,7 @@ test "light cluster: light probes require LightProbe and use transform radius" {
   try! (world.set_by_key(
     bare_environment_map,
     @light.ecs_key_environment_map_light,
-    @light.EnvironmentMapLight::EnvironmentMapLight(),
+    EnvironmentMapLight(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -728,13 +709,13 @@ test "light cluster: light probes require LightProbe and use transform radius" {
   try! (world.set_by_key(
     reflection_probe,
     @light.ecs_key_environment_map_light,
-    @light.EnvironmentMapLight::EnvironmentMapLight(),
+    EnvironmentMapLight(),
   )
   |> ignore)
   try! (world.set_by_key(
     reflection_probe,
     @light.ecs_key_light_probe,
-    @light.LightProbe::LightProbe(),
+    LightProbe(),
   )
   |> ignore)
   try! (world.set_by_key(
@@ -781,11 +762,11 @@ test "light cluster: runtime container helpers follow bevy-style semantics" {
   let entity2 = @core.Entity::new(3, 1)
   let entity3 = @core.Entity::new(4, 1)
   let entity4 = @core.Entity::new(5, 1)
-  visible.add(entity0, ClusterableObjectType::PointLight(false, false))
-  visible.add(entity1, ClusterableObjectType::SpotLight(false, false, 0.8F))
-  visible.add(entity2, ClusterableObjectType::ReflectionProbe)
-  visible.add(entity3, ClusterableObjectType::IrradianceVolume)
-  visible.add(entity4, ClusterableObjectType::Decal)
+  visible.add(entity0, PointLight(false, false))
+  visible.add(entity1, SpotLight(false, false, 0.8F))
+  visible.add(entity2, ReflectionProbe)
+  visible.add(entity3, IrradianceVolume)
+  visible.add(entity4, Decal)
   inspect(visible.point_and_spot_light_count(), content="2")
   inspect(visible.reflection_probe_count(), content="1")
   inspect(visible.irradiance_volume_count(), content="1")

@@ -212,9 +212,7 @@ fn setup(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
       @ui.UiTargetCamera::new(ui_camera),
     ),
   )
@@ -227,9 +225,9 @@ fn setup(
       "Perceptual Roughness",
       label_font,
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(20.0F))
-      .with_left(@ui.Val::Px(100.0F)),
+      .with_position_type(Absolute)
+      .with_top(Px(20.0F))
+      .with_left(Px(100.0F)),
     ),
   )
   ignore(
@@ -239,8 +237,8 @@ fn setup(
       "Metallic",
       label_font,
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_top(@ui.Val::Px(130.0F))
+      .with_position_type(Absolute)
+      .with_top(Px(130.0F))
       .with_right(@ui.Val::zero()),
       @math.pi_half(),
     ),
@@ -251,9 +249,9 @@ fn setup(
     "Loading Environment Map...",
     label_font,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(20.0F))
-    .with_right(@ui.Val::Px(20.0F)),
+    .with_position_type(Absolute)
+    .with_bottom(Px(20.0F))
+    .with_right(Px(20.0F)),
   )
   commands.entity(env_loading_label).insert_component(EnvironmentMapLabel::{  })
 
@@ -270,8 +268,8 @@ fn setup(
   }
   let camera = commands.spawn(
     @camera.Camera3dBundle::new_with_projection(
-      @camera_camera.Camera::Camera(),
-      @camera.Projection::Orthographic(orthographic),
+      Camera(),
+      Orthographic(orthographic),
       @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
         @math.Vec3::new(0.0F, 0.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -309,8 +307,8 @@ fn environment_map_load_finish(
   let environment_map = environment_map.value()
   guard environment_map.diffuse_map is Some(diffuse_map) else { return }
   guard environment_map.specular_map is Some(specular_map) else { return }
-  if asset_server.get().load_state(diffuse_map) is @asset.LoadState::Loaded &&
-    asset_server.get().load_state(specular_map) is @asset.LoadState::Loaded {
+  if asset_server.get().load_state(diffuse_map) is Loaded &&
+    asset_server.get().load_state(specular_map) is Loaded {
     commands.entity(label.unwrap()).despawn()
   }
 }

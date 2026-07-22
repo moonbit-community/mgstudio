@@ -43,7 +43,7 @@ priv struct Physics3dDebugRenderState {
 }
 
 ///|
-let physics3d_debug_render_context : Physics3dDebugRenderContext = Physics3dDebugRenderContext::Physics3dDebugRenderContext()
+let physics3d_debug_render_context : Physics3dDebugRenderContext = Physics3dDebugRenderContext()
 
 ///|
 let physics3d_debug_render_state : Physics3dDebugRenderState = {
@@ -65,7 +65,7 @@ fn physics3d_debug_make_material(
 ) -> @pbr.MeshMaterial3dTyped[@pbr.StandardMaterial] {
   let standard = @pbr.StandardMaterial::from_color(color)
     .with_unlit(true)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
   @pbr.MeshMaterial3dTyped::new(@pbr.standard_material_add(standard))
 }
 
@@ -90,12 +90,10 @@ fn physics3d_debug_material_for(
   match rb3d {
     Some(rb) =>
       match rb.body_type {
-        @dynamics.RigidBodyType::Dynamic => state.dynamic_material
-        @dynamics.RigidBodyType::Fixed => state.fixed_material
-        @dynamics.RigidBodyType::KinematicPositionBased =>
-          state.kinematic_material
-        @dynamics.RigidBodyType::KinematicVelocityBased =>
-          state.kinematic_material
+        Dynamic => state.dynamic_material
+        Fixed => state.fixed_material
+        KinematicPositionBased => state.kinematic_material
+        KinematicVelocityBased => state.kinematic_material
       }
     None => state.parentless_material
   }
@@ -222,7 +220,7 @@ fn physics3d_debug_add_line(
   if end.sub(start).length() <= 0.0001F {
     return
   }
-  lines.push(DebugLine3d::{ start, end, material })
+  lines.push({ start, end, material })
 }
 
 ///|
@@ -471,7 +469,7 @@ pub fn physics3d_debug_render_plugin(
       physics3d_set_debug_render_sync,
     ),
   )
-  .configure_set(@app.FixedUpdate, physics3d_set_debug_render_sync, after=[
+  .configure_set(FixedUpdate, physics3d_set_debug_render_sync, after=[
     physics3d_set_writeback,
   ])
 }

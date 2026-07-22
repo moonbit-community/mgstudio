@@ -226,9 +226,7 @@ test "ecs component hooks: first insert fires add then insert with readable payl
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 1 })
 
   debug_inspect(hook_event_log, content="[\"add:1\", \"insert:1\"]")
   debug_inspect(hook_entity_ids, content="[0, 0]")
@@ -245,14 +243,10 @@ test "ecs component hooks: replace fires replace then insert around the new payl
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 1 })
   hook_test_reset()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 2,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 2 })
 
   debug_inspect(hook_event_log, content="[\"replace:1\", \"insert:2\"]")
   debug_inspect(hook_entity_ids, content="[0, 0]")
@@ -269,9 +263,7 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 7,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 7 })
   hook_test_reset()
 
   debug_inspect(
@@ -297,9 +289,7 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 9,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 9 })
   hook_test_reset()
 
   try! world.despawn(entity)
@@ -323,9 +313,7 @@ test "ecs component hooks: component access mutation paths preserve caller prove
   hook_test_install_hooks(world)
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 3,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 3 })
 
   debug_inspect(hook_event_log, content="[\"add:3\", \"insert:3\"]")
   debug_inspect(hook_callers_present_ref.val, content="true")
@@ -339,6 +327,7 @@ test "ecs component hooks: component access mutation paths preserve caller prove
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs component hooks: deferred hook commands flush after callback" {
   let world = World::new()
   defer world.close()
@@ -355,15 +344,14 @@ test "ecs component hooks: deferred hook commands flush after callback" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs component hooks: deferred remove commands flush after callback" {
   let world = World::new()
   defer world.close()
   hook_remove_commands_test_install_hooks(world)
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, hook_test_component_key, HookTestComponent::{
-    value: 1,
-  })
+  try! world.set_by_key(entity, hook_test_component_key, { value: 1 })
   try! world.set_by_key(entity, hook_remove_commands_test_component_key, HookRemoveCommandsTestComponent::{
 
   })
@@ -409,6 +397,7 @@ test "ecs component hooks: duplicate builder registration fails per hook kind" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs component hooks: world-scoped registration rejects late hooks and keeps worlds isolated" {
   ignore(LateRegistrationHookTestComponent::{  })
   let world0 = World::new()
@@ -489,6 +478,7 @@ test "ecs component hooks: register_component_hooks_with merges disjoint hooks a
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs component hooks: register_component_hooks_with enforces pre-use-only per world" {
   ignore(HooksWithLateRegistrationTestComponent::{  })
   let world0 = World::new()

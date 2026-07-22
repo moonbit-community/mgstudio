@@ -47,5 +47,5 @@ pub fn PointerEvent::new(
   delta? : @math.Vec2 = @math.Vec2::zero(),
   distance? : @math.Vec2 = @math.Vec2::zero(),
 ) -> PointerEvent {
-  PointerEvent::{ pointer, kind, position, target, delta, distance }
+  { pointer, kind, position, target, delta, distance }
 }

@@ -38,22 +38,22 @@ fn host_vertex_layout_test_source_layout(
   let attributes = [
     @asset_mesh.VertexAttribute::new(
       offset=0,
-      format=@asset_mesh.MeshVertexFormat::Float32x3,
+      format=Float32x3,
       shader_location=0,
     ),
     @asset_mesh.VertexAttribute::new(
       offset=12,
-      format=@asset_mesh.MeshVertexFormat::Float32x3,
+      format=Float32x3,
       shader_location=1,
     ),
     @asset_mesh.VertexAttribute::new(
       offset=24,
-      format=@asset_mesh.MeshVertexFormat::Float32x2,
+      format=Float32x2,
       shader_location=2,
     ),
     @asset_mesh.VertexAttribute::new(
       offset=32,
-      format=@asset_mesh.MeshVertexFormat::Float32x4,
+      format=Float32x4,
       shader_location=5,
     ),
   ]
@@ -65,14 +65,14 @@ fn host_vertex_layout_test_source_layout(
     attributes.push(
       @asset_mesh.VertexAttribute::new(
         offset=48,
-        format=@asset_mesh.MeshVertexFormat::Uint16x4,
+        format=Uint16x4,
         shader_location=6,
       ),
     )
     attributes.push(
       @asset_mesh.VertexAttribute::new(
         offset=56,
-        format=@asset_mesh.MeshVertexFormat::Float32x4,
+        format=Float32x4,
         shader_location=7,
       ),
     )
@@ -82,7 +82,7 @@ fn host_vertex_layout_test_source_layout(
       attribute_ids~,
       layout=@asset_mesh.VertexBufferLayout::new(
         array_stride=stride,
-        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+        step_mode=Vertex,
         attributes~,
       ),
     ),
@@ -105,26 +105,26 @@ test "render mesh host vertex layout matches fixed renderer upload stride" {
     ],
     layout=@asset_mesh.VertexBufferLayout::new(
       array_stride=80,
-      step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+      step_mode=Vertex,
       attributes=[
         @asset_mesh.VertexAttribute::new(
           offset=0,
-          format=@asset_mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=0,
         ),
         @asset_mesh.VertexAttribute::new(
           offset=12,
-          format=@asset_mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=1,
         ),
         @asset_mesh.VertexAttribute::new(
           offset=24,
-          format=@asset_mesh.MeshVertexFormat::Float32x2,
+          format=Float32x2,
           shader_location=2,
         ),
         @asset_mesh.VertexAttribute::new(
           offset=32,
-          format=@asset_mesh.MeshVertexFormat::Float32x4,
+          format=Float32x4,
           shader_location=5,
         ),
       ],
@@ -176,26 +176,26 @@ test "render mesh host vertex layout preserves skinned semantics with renderer o
     }
   let expected_prepass_layout = @asset_mesh.VertexBufferLayout::new(
     array_stride=80,
-    step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+    step_mode=Vertex,
     attributes=[
       @asset_mesh.VertexAttribute::new(
         offset=0,
-        format=@asset_mesh.MeshVertexFormat::Float32x3,
+        format=Float32x3,
         shader_location=0,
       ),
       @asset_mesh.VertexAttribute::new(
         offset=24,
-        format=@asset_mesh.MeshVertexFormat::Float32x2,
+        format=Float32x2,
         shader_location=1,
       ),
       @asset_mesh.VertexAttribute::new(
         offset=48,
-        format=@asset_mesh.MeshVertexFormat::Uint32x4,
+        format=Uint32x4,
         shader_location=5,
       ),
       @asset_mesh.VertexAttribute::new(
         offset=64,
-        format=@asset_mesh.MeshVertexFormat::Float32x4,
+        format=Float32x4,
         shader_location=6,
       ),
     ],

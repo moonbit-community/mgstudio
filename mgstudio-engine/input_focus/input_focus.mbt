@@ -19,12 +19,12 @@ pub struct InputFocus {
 
 ///|
 pub fn InputFocus::InputFocus() -> InputFocus {
-  InputFocus::{ focused_entity: None }
+  { focused_entity: None }
 }
 
 ///|
 pub fn InputFocus::from_entity(entity : @core.Entity) -> InputFocus {
-  InputFocus::{ focused_entity: Some(entity) }
+  { focused_entity: Some(entity) }
 }
 
 ///|
@@ -49,12 +49,12 @@ pub struct InputFocusVisible {
 
 ///|
 pub fn InputFocusVisible::InputFocusVisible() -> InputFocusVisible {
-  InputFocusVisible::{ visible: false }
+  { visible: false }
 }
 
 ///|
 pub fn InputFocusVisible::new(visible : Bool) -> InputFocusVisible {
-  InputFocusVisible::{ visible, }
+  { visible, }
 }
 
 ///|
@@ -88,7 +88,7 @@ pub fn[M] FocusedInput::new(
   input : M,
   window : @core.Entity,
 ) -> FocusedInput[M] {
-  FocusedInput::{ focused_entity, input, window }
+  { focused_entity, input, window }
 }
 
 ///|
@@ -123,6 +123,7 @@ pub struct IsFocusedHelper {
 pub struct InputDispatchPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn InputDispatchPlugin::InputDispatchPlugin() -> InputDispatchPlugin {
   InputDispatchPlugin::{  }
 }
@@ -212,7 +213,7 @@ fn input_focus_world_resource_ref_mut(
 
 ///|
 fn input_focus_primary_window_entity(world : @ecs.World) -> @core.Entity? {
-  @window.window_entity_for_ref(world, @window.WindowRef::Primary)
+  @window.window_entity_for_ref(world, Primary)
 }
 
 ///|
@@ -352,7 +353,7 @@ pub impl @app.SystemParam for IsFocusedHelper with fn init_state(world) {
 
 ///|
 pub impl @app.SystemParam for IsFocusedHelper with fn get(_state) {
-  IsFocusedHelper::{ world: current_input_focus_world_abort_missing() }
+  { world: current_input_focus_world_abort_missing() }
 }
 
 ///|
@@ -457,21 +458,21 @@ pub fn input_dispatch_plugin(
   .add_message(focused_keyboard_input_message_key())
   .add_message(focused_gamepad_button_input_message_key())
   .add_message(focused_mouse_wheel_message_key())
-  .add_systems(@app.PostStartup, @app.system(set_initial_focus))
+  .add_systems(PostStartup, @app.system(set_initial_focus))
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     @app.system_config_param2(dispatch_focused_keyboard_input).in_set(
       input_focus_system_set_name(Dispatch),
     ),
   )
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     @app.system_config_param2(dispatch_focused_gamepad_button_input).in_set(
       input_focus_system_set_name(Dispatch),
     ),
   )
   .add_systems(
-    @app.PreUpdate,
+    PreUpdate,
     @app.system_config_param2(dispatch_focused_mouse_wheel).in_set(
       input_focus_system_set_name(Dispatch),
     ),

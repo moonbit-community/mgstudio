@@ -68,10 +68,10 @@ pub impl @ecs.Component for AnimationTimer with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup_sprites)
-  .add_systems_param3(@app.Startup, setup_texture_atlas)
-  .add_systems_param(@app.Startup, setup_camera)
-  .add_systems_param2(@app.Update, animate_sprite)
+  .add_systems_param2(Startup, setup_sprites)
+  .add_systems_param3(Startup, setup_texture_atlas)
+  .add_systems_param(Startup, setup_camera)
+  .add_systems_param2(Update, animate_sprite)
   .run()
 }
 
@@ -89,144 +89,122 @@ fn setup_sprites(
   let banner = asset_server.get().load("branding/banner.png")
 
   let rects : Array[Rect] = [
-    Rect::{
+    {
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Stretched",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-570.0F, 230.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Auto,
+      image_mode: Auto,
     },
-    Rect::{
+    {
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Fill Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-450.0F, 230.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillCenter,
-      ),
+      image_mode: Scale(FillCenter),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Fill Start",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-330.0F, 230.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillStart,
-      ),
+      image_mode: Scale(FillStart),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(100.0F, 225.0F),
       text: "Fill End",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-210.0F, 230.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillEnd,
-      ),
+      image_mode: Scale(FillEnd),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(300.0F, 100.0F),
       text: "Fill Start Horizontal",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(10.0F, 290.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillStart,
-      ),
+      image_mode: Scale(FillStart),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(300.0F, 100.0F),
       text: "Fill End Horizontal",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(10.0F, 155.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillEnd,
-      ),
+      image_mode: Scale(FillEnd),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fill Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(280.0F, 230.0F, 0.0F),
       ),
       texture: banner,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillCenter,
-      ),
+      image_mode: Scale(FillCenter),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(200.0F, 100.0F),
       text: "Fill Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(500.0F, 230.0F, 0.0F),
       ),
       texture: square,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillCenter,
-      ),
+      image_mode: Scale(FillCenter),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(100.0F, 100.0F),
       text: "Stretched",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-570.0F, -40.0F, 0.0F),
       ),
       texture: banner,
-      image_mode: @sprite.SpriteImageMode::Auto,
+      image_mode: Auto,
     },
-    Rect::{
+    {
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fit Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-400.0F, -40.0F, 0.0F),
       ),
       texture: banner,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitCenter,
-      ),
+      image_mode: Scale(FitCenter),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fit Start",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-180.0F, -40.0F, 0.0F),
       ),
       texture: banner,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitStart,
-      ),
+      image_mode: Scale(FitStart),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(200.0F, 200.0F),
       text: "Fit End",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(40.0F, -40.0F, 0.0F),
       ),
       texture: banner,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitEnd,
-      ),
+      image_mode: Scale(FitEnd),
     },
-    Rect::{
+    {
       size: @math.Vec2::new(100.0F, 200.0F),
       text: "Fit Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(210.0F, -40.0F, 0.0F),
       ),
       texture: banner,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitCenter,
-      ),
+      image_mode: Scale(FitCenter),
     },
   ]
 
@@ -244,7 +222,7 @@ fn setup_sprites(
         (
           @hierarchy.Parent::new(entity),
           @text.Text2d::new(rect.text),
-          @text.TextLayout::new_with_justify(@text.Justify::Center),
+          @text.TextLayout::new_with_justify(Center),
           @text.TextFont::from_font_size(15.0F),
           @transform.Transform::from_xyz(
             0.0F,
@@ -276,163 +254,125 @@ fn setup_texture_atlas(
   )
 
   let sprite_sheets : Array[SpriteSheet] = [
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Stretched",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-570.0F, -200.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Auto,
+      image_mode: Auto,
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fill Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-570.0F, -300.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillCenter,
-      ),
+      image_mode: Scale(FillCenter),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fill Start",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-430.0F, -200.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillStart,
-      ),
+      image_mode: Scale(FillStart),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fill End",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-430.0F, -300.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillEnd,
-      ),
+      image_mode: Scale(FillEnd),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(50.0F, 120.0F),
       text: "Fill Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-300.0F, -250.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillCenter,
-      ),
+      image_mode: Scale(FillCenter),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(50.0F, 120.0F),
       text: "Fill Start",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-190.0F, -250.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillStart,
-      ),
+      image_mode: Scale(FillStart),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(50.0F, 120.0F),
       text: "Fill End",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(-90.0F, -250.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FillEnd,
-      ),
+      image_mode: Scale(FillEnd),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fit Center",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(20.0F, -200.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitCenter,
-      ),
+      image_mode: Scale(FitCenter),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fit Start",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(20.0F, -300.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitStart,
-      ),
+      image_mode: Scale(FitStart),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
-    SpriteSheet::{
+    {
       size: @math.Vec2::new(120.0F, 50.0F),
       text: "Fit End",
       transform: @transform.Transform::from_translation(
         @math.Vec3::new(160.0F, -200.0F, 0.0F),
       ),
       texture: gabe,
-      image_mode: @sprite.SpriteImageMode::Scale(
-        @sprite.SpriteScalingMode::FitEnd,
-      ),
+      image_mode: Scale(FitEnd),
       atlas: gabe_atlas,
       indices: animation_indices,
-      timer: AnimationTimer::{
-        timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
-      },
+      timer: { timer: @time.Timer::from_seconds(0.1F, Repeating) },
     },
   ]
 
@@ -455,7 +395,7 @@ fn setup_texture_atlas(
         (
           @hierarchy.Parent::new(entity),
           @text.Text2d::new(sprite_sheet.text),
-          @text.TextLayout::new_with_justify(@text.Justify::Center),
+          @text.TextLayout::new_with_justify(Center),
           @text.TextFont::from_font_size(15.0F),
           @transform.Transform::from_xyz(
             0.0F,

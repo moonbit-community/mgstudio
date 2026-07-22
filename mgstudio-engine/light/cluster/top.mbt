@@ -42,6 +42,7 @@ const CLUSTER_LIGHT_PLUGIN_NAME : String = "mgstudio.light.cluster.ClusterLightP
 pub struct ClusterLightPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ClusterLightPlugin::ClusterLightPlugin() -> ClusterLightPlugin {
   ClusterLightPlugin::{  }
 }
@@ -66,10 +67,7 @@ pub fn GlobalClusterGpuSettings::new(
   initial_z_slice_list_capacity : Int,
   initial_index_list_capacity : Int,
 ) -> GlobalClusterGpuSettings {
-  GlobalClusterGpuSettings::{
-    initial_z_slice_list_capacity,
-    initial_index_list_capacity,
-  }
+  { initial_z_slice_list_capacity, initial_index_list_capacity }
 }
 
 ///|
@@ -88,7 +86,7 @@ pub fn GlobalClusterGpuSettings::initial_index_list_capacity(
 
 ///|
 pub fn GlobalClusterSettings::GlobalClusterSettings() -> GlobalClusterSettings {
-  GlobalClusterSettings::{
+  {
     supports_storage_buffers: true,
     clustered_decals_are_usable: true,
     gpu_clustering: Some(GlobalClusterGpuSettings::new(1024, 65536)),
@@ -140,7 +138,7 @@ pub fn GlobalClusterSettings::new(
   max_uniform_buffer_clusterable_objects : Int,
   view_cluster_bindings_max_indices : Int,
 ) -> GlobalClusterSettings {
-  GlobalClusterSettings::{
+  {
     supports_storage_buffers,
     clustered_decals_are_usable,
     gpu_clustering,
@@ -168,10 +166,7 @@ pub struct ClusterZConfig {
 
 ///|
 pub fn ClusterZConfig::ClusterZConfig() -> ClusterZConfig {
-  ClusterZConfig::{
-    first_slice_depth: 5.0,
-    far_z_mode: ClusterFarZMode::default(),
-  }
+  { first_slice_depth: 5.0, far_z_mode: ClusterFarZMode::default() }
 }
 
 ///|
@@ -188,7 +183,7 @@ pub fn ClusterConfig::default() -> ClusterConfig {
   // - total clusters: 4096
   // - z slices: 24
   // - dynamic resizing enabled
-  FixedZ(4096, 24, ClusterZConfig::ClusterZConfig(), true)
+  FixedZ(4096, 24, ClusterZConfig(), true)
 }
 
 ///|
@@ -261,8 +256,8 @@ pub fn cluster_config_first_slice_depth(config : ClusterConfig) -> Float {
 ///|
 pub fn cluster_config_far_z_mode(config : ClusterConfig) -> ClusterFarZMode {
   match config {
-    None => ClusterFarZMode::Constant(0.0F)
-    Single => ClusterFarZMode::MaxClusterableObjectRange
+    None => Constant(0.0F)
+    Single => MaxClusterableObjectRange
     XYZ(_, _, _, z_config, _) => z_config.far_z_mode
     FixedZ(_, _, z_config, _) => z_config.far_z_mode
   }
@@ -327,7 +322,7 @@ pub struct ClusterableObjectCounts {
 
 ///|
 pub fn ClusterableObjectCounts::ClusterableObjectCounts() -> ClusterableObjectCounts {
-  ClusterableObjectCounts::{
+  {
     point_lights: 0,
     spot_lights: 0,
     reflection_probes: 0,
@@ -377,16 +372,13 @@ pub struct ObjectsInCluster {
 
 ///|
 pub fn ObjectsInCluster::ObjectsInCluster() -> ObjectsInCluster {
-  ObjectsInCluster::{
-    clusterables: [],
-    counts: ClusterableObjectCounts::ClusterableObjectCounts(),
-  }
+  { clusterables: [], counts: ClusterableObjectCounts() }
 }
 
 ///|
 pub fn ObjectsInCluster::clear(self : ObjectsInCluster) -> Unit {
   self.clusterables.clear()
-  self.counts = ClusterableObjectCounts::ClusterableObjectCounts()
+  self.counts = ClusterableObjectCounts()
 }
 
 ///|
@@ -395,10 +387,7 @@ pub fn ObjectsInCluster::add_point_light(
   entity : @core.Entity,
 ) -> Unit {
   self.clusterables.push(entity)
-  self.counts = ClusterableObjectCounts::{
-    ..self.counts,
-    point_lights: self.counts.point_lights + 1,
-  }
+  self.counts = { ..self.counts, point_lights: self.counts.point_lights + 1 }
 }
 
 ///|
@@ -407,10 +396,7 @@ pub fn ObjectsInCluster::add_spot_light(
   entity : @core.Entity,
 ) -> Unit {
   self.clusterables.push(entity)
-  self.counts = ClusterableObjectCounts::{
-    ..self.counts,
-    spot_lights: self.counts.spot_lights + 1,
-  }
+  self.counts = { ..self.counts, spot_lights: self.counts.spot_lights + 1 }
 }
 
 ///|
@@ -419,7 +405,7 @@ pub fn ObjectsInCluster::add_reflection_probe(
   entity : @core.Entity,
 ) -> Unit {
   self.clusterables.push(entity)
-  self.counts = ClusterableObjectCounts::{
+  self.counts = {
     ..self.counts,
     reflection_probes: self.counts.reflection_probes + 1,
   }
@@ -431,7 +417,7 @@ pub fn ObjectsInCluster::add_irradiance_volume(
   entity : @core.Entity,
 ) -> Unit {
   self.clusterables.push(entity)
-  self.counts = ClusterableObjectCounts::{
+  self.counts = {
     ..self.counts,
     irradiance_volumes: self.counts.irradiance_volumes + 1,
   }
@@ -443,10 +429,7 @@ pub fn ObjectsInCluster::add_decal(
   entity : @core.Entity,
 ) -> Unit {
   self.clusterables.push(entity)
-  self.counts = ClusterableObjectCounts::{
-    ..self.counts,
-    decals: self.counts.decals + 1,
-  }
+  self.counts = { ..self.counts, decals: self.counts.decals + 1 }
 }
 
 ///|
@@ -484,7 +467,7 @@ pub struct Clusters {
 
 ///|
 pub fn Clusters::Clusters() -> Clusters {
-  Clusters::{
+  {
     tile_size_x: 0,
     tile_size_y: 0,
     dimensions_x: 0,
@@ -514,9 +497,9 @@ pub fn Clusters::new(
   let cluster_count = safe_dimensions_x * safe_dimensions_y * safe_dimensions_z
   let clusterable_objects : Array[ObjectsInCluster] = []
   for _ in 0..<cluster_count {
-    clusterable_objects.push(ObjectsInCluster::ObjectsInCluster())
+    clusterable_objects.push(ObjectsInCluster())
   }
-  Clusters::{
+  {
     tile_size_x: if tile_size_x <= 0 {
       0
     } else {
@@ -630,7 +613,7 @@ pub fn Clusters::with_last_frame_statistics(
   farthest_z : Float,
   total_cluster_index_count : Int,
 ) -> Clusters {
-  Clusters::{
+  {
     ..self,
     last_frame_farthest_z: Some(farthest_z),
     last_frame_total_cluster_index_count: Some(total_cluster_index_count),
@@ -654,7 +637,7 @@ pub struct VisibleClusterableObjects {
 
 ///|
 pub fn VisibleClusterableObjects::VisibleClusterableObjects() -> VisibleClusterableObjects {
-  VisibleClusterableObjects::{
+  {
     point_and_spot_lights: [],
     reflection_probes: [],
     irradiance_volumes: [],
@@ -664,7 +647,7 @@ pub fn VisibleClusterableObjects::VisibleClusterableObjects() -> VisibleClustera
 
 ///|
 pub fn VisibleClusterableObjects::new() -> VisibleClusterableObjects {
-  VisibleClusterableObjects::VisibleClusterableObjects()
+  VisibleClusterableObjects()
 }
 
 ///|
@@ -674,7 +657,7 @@ pub fn VisibleClusterableObjects::from_lists(
   irradiance_volumes : Array[@core.Entity],
   decals? : Array[@core.Entity] = [],
 ) -> VisibleClusterableObjects {
-  VisibleClusterableObjects::{
+  {
     point_and_spot_lights: point_and_spot_lights.copy(),
     reflection_probes: reflection_probes.copy(),
     irradiance_volumes: irradiance_volumes.copy(),
@@ -755,15 +738,11 @@ pub fn VisibleClusterableObjects::add(
   object_type : ClusterableObjectType,
 ) -> Unit {
   match object_type {
-    ClusterableObjectType::PointLight(_, _) =>
-      self.point_and_spot_lights.push(entity)
-    ClusterableObjectType::SpotLight(_, _, _) =>
-      self.point_and_spot_lights.push(entity)
-    ClusterableObjectType::ReflectionProbe =>
-      self.reflection_probes.push(entity)
-    ClusterableObjectType::IrradianceVolume =>
-      self.irradiance_volumes.push(entity)
-    ClusterableObjectType::Decal => self.decals.push(entity)
+    PointLight(_, _) => self.point_and_spot_lights.push(entity)
+    SpotLight(_, _, _) => self.point_and_spot_lights.push(entity)
+    ReflectionProbe => self.reflection_probes.push(entity)
+    IrradianceVolume => self.irradiance_volumes.push(entity)
+    Decal => self.decals.push(entity)
   }
 }
 
@@ -821,7 +800,7 @@ pub impl @app.Plugin for ClusterLightPlugin with fn build(self, app) {
 
 ///|
 pub fn cluster_light_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  cluster_light_plugin_with(app, ClusterLightPlugin::ClusterLightPlugin())
+  cluster_light_plugin_with(app, ClusterLightPlugin())
 }
 
 ///|

@@ -47,7 +47,7 @@ test "pbr/meshlet: mesh manager uploads real meshlet asset slices" {
     indices=[0, 2, 1],
     bvh=[BvhNode::BvhNode().with_child_count(0, 2)],
     meshlets=[Meshlet::new(0, 0, 0, 3, 1)],
-    meshlet_cull_data=[MeshletCullData::MeshletCullData()],
+    meshlet_cull_data=[MeshletCullData()],
     aabb~,
     bvh_depth=9,
   )

@@ -40,7 +40,7 @@ pub impl @ecs.TriggerEvent for Activate with fn set_observer_entity(
   _self,
   entity,
 ) {
-  Activate::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -134,7 +134,7 @@ pub impl[T : ValueChangeValue] @ecs.TriggerEvent for ValueChange[T] with fn set_
   self,
   entity,
 ) {
-  ValueChange::{ source: entity, value: self.value }
+  { source: entity, value: self.value }
 }
 
 ///|
@@ -177,6 +177,7 @@ const UI_WIDGETS_SLIDER_PLUGIN_NAME : String = "mgstudio.ui_widgets.SliderPlugin
 pub struct PopoverWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PopoverWidgetPlugin::PopoverWidgetPlugin() -> PopoverWidgetPlugin {
   PopoverWidgetPlugin::{  }
 }
@@ -195,6 +196,7 @@ pub impl @app.Plugin for PopoverWidgetPlugin with fn build(_self, app) {
 pub struct ButtonWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ButtonWidgetPlugin::ButtonWidgetPlugin() -> ButtonWidgetPlugin {
   ButtonWidgetPlugin::{  }
 }
@@ -213,6 +215,7 @@ pub impl @app.Plugin for ButtonWidgetPlugin with fn build(_self, app) {
 pub struct CheckboxWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CheckboxWidgetPlugin::CheckboxWidgetPlugin() -> CheckboxWidgetPlugin {
   CheckboxWidgetPlugin::{  }
 }
@@ -231,6 +234,7 @@ pub impl @app.Plugin for CheckboxWidgetPlugin with fn build(_self, app) {
 pub struct MenuWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn MenuWidgetPlugin::MenuWidgetPlugin() -> MenuWidgetPlugin {
   MenuWidgetPlugin::{  }
 }
@@ -249,6 +253,7 @@ pub impl @app.Plugin for MenuWidgetPlugin with fn build(_self, app) {
 pub struct RadioGroupWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn RadioGroupWidgetPlugin::RadioGroupWidgetPlugin() -> RadioGroupWidgetPlugin {
   RadioGroupWidgetPlugin::{  }
 }
@@ -267,6 +272,7 @@ pub impl @app.Plugin for RadioGroupWidgetPlugin with fn build(_self, app) {
 pub struct ScrollbarWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ScrollbarWidgetPlugin::ScrollbarWidgetPlugin() -> ScrollbarWidgetPlugin {
   ScrollbarWidgetPlugin::{  }
 }
@@ -285,6 +291,7 @@ pub impl @app.Plugin for ScrollbarWidgetPlugin with fn build(_self, app) {
 pub struct SliderWidgetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SliderWidgetPlugin::SliderWidgetPlugin() -> SliderWidgetPlugin {
   SliderWidgetPlugin::{  }
 }
@@ -303,6 +310,7 @@ pub impl @app.Plugin for SliderWidgetPlugin with fn build(_self, app) {
 pub struct UiWidgetsPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn UiWidgetsPlugins::UiWidgetsPlugins() -> UiWidgetsPlugins {
   UiWidgetsPlugins::{  }
 }
@@ -331,7 +339,7 @@ pub impl @app.Plugin for UiWidgetsPlugins with fn build(_self, app) {
 
 ///|
 pub fn ui_widgets_plugins() -> UiWidgetsPlugins {
-  UiWidgetsPlugins::UiWidgetsPlugins()
+  UiWidgetsPlugins()
 }
 
 ///|
@@ -348,6 +356,7 @@ pub impl @app.Resource for UiWidgetsPluginMarker with fn resource() {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if app.contains_resource(ui_widgets_plugin_marker_key) {
     app

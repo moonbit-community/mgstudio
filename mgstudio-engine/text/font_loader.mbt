@@ -19,6 +19,7 @@
 pub struct FontLoader {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FontLoader::FontLoader() -> FontLoader {
   FontLoader::{  }
 }

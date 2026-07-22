@@ -52,7 +52,7 @@ pub struct ComponentMetadataBuilder[T] {
 }
 
 ///|
-let component_metadata_registry : @hashmap.HashMap[Int, ComponentMetadata] = @hashmap.HashMap([],
+let component_metadata_registry : @hashmap.HashMap[Int, ComponentMetadata] = HashMap([],
 )
 
 ///|
@@ -170,7 +170,7 @@ pub fn[T] component_metadata_builder(
   key : ComponentKey[T],
 ) -> ComponentMetadataBuilder[T] {
   ignore(component_metadata_ensure(key.id(), debug_name=key.debug_name()))
-  ComponentMetadataBuilder::{ key, }
+  { key, }
 }
 
 ///|
@@ -202,15 +202,12 @@ fn component_metadata_register_hook(
   }
   let updated_hooks = match kind {
     OnAdd => ComponentHooks::{ ..hooks, on_add: Some(hook) }
-    OnInsert => ComponentHooks::{ ..hooks, on_insert: Some(hook) }
-    OnReplace => ComponentHooks::{ ..hooks, on_replace: Some(hook) }
-    OnRemove => ComponentHooks::{ ..hooks, on_remove: Some(hook) }
-    OnDespawn => ComponentHooks::{ ..hooks, on_despawn: Some(hook) }
+    OnInsert => { ..hooks, on_insert: Some(hook) }
+    OnReplace => { ..hooks, on_replace: Some(hook) }
+    OnRemove => { ..hooks, on_remove: Some(hook) }
+    OnDespawn => { ..hooks, on_despawn: Some(hook) }
   }
-  component_metadata_set(component_id, ComponentMetadata::{
-    ..metadata,
-    hooks: updated_hooks,
-  })
+  component_metadata_set(component_id, { ..metadata, hooks: updated_hooks })
 }
 
 ///|
@@ -315,7 +312,7 @@ pub fn[T, R] ComponentMetadataBuilder::require_with(
     required_component_id: required_key.id(),
     init_value: fn() { component_writer_for_key(required_key, init()) },
   })
-  component_metadata_set(self.key.id(), ComponentMetadata::{
+  component_metadata_set(self.key.id(), {
     ..metadata,
     required_components: entries,
   })
@@ -332,7 +329,7 @@ pub fn[T] ComponentMetadataBuilder::relationship_source(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
-  component_metadata_set(self.key.id(), ComponentMetadata::{
+  component_metadata_set(self.key.id(), {
     ..metadata,
     relationship_source: Some({ target_entity, observer_parent_lookup }),
   })
@@ -370,7 +367,7 @@ pub fn[T] ComponentMetadataBuilder::relationship_target(
       "relationship_target(linked_spawn=true) requires linked_entities for component `\{self.key.debug_name()}`",
     )
   }
-  component_metadata_set(self.key.id(), ComponentMetadata::{
+  component_metadata_set(self.key.id(), {
     ..metadata,
     relationship_target: Some({
       linked_spawn,
@@ -389,10 +386,7 @@ pub fn[T] ComponentMetadataBuilder::storage_table(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
-  component_metadata_set(self.key.id(), ComponentMetadata::{
-    ..metadata,
-    storage_type: Table,
-  })
+  component_metadata_set(self.key.id(), { ..metadata, storage_type: Table })
   self
 }
 
@@ -404,9 +398,6 @@ pub fn[T] ComponentMetadataBuilder::storage_sparse_set(
     self.key.id(),
     debug_name=self.key.debug_name(),
   )
-  component_metadata_set(self.key.id(), ComponentMetadata::{
-    ..metadata,
-    storage_type: SparseSet,
-  })
+  component_metadata_set(self.key.id(), { ..metadata, storage_type: SparseSet })
   self
 }

@@ -96,6 +96,7 @@ test "app identity transition: default enter and exit ignore same-state transiti
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app identity transition: DespawnOnExit removes scoped entities" {
   let lifecycle_world_96_0 = @ecs.World::new()
   defer lifecycle_world_96_0.close()
@@ -119,13 +120,14 @@ test "app identity transition: DespawnOnExit removes scoped entities" {
     ignore(app.world().get_by_key(entity, despawn_marker_key))
     false
   } catch {
-    @ecs.EntityNotAlive(_) => true
+    EntityNotAlive(_) => true
     _ => fail("expected despawned entity lookup to fail")
   }
   debug_inspect(entity_not_alive, content="true")
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app identity transition: DespawnOnEnter removes scoped entities" {
   let lifecycle_world_124_0 = @ecs.World::new()
   defer lifecycle_world_124_0.close()
@@ -156,7 +158,7 @@ test "app identity transition: DespawnOnEnter removes scoped entities" {
     ignore(app.world().get_by_key(entity, despawn_marker_key))
     false
   } catch {
-    @ecs.EntityNotAlive(_) => true
+    EntityNotAlive(_) => true
     _ => fail("expected despawned entity lookup to fail")
   }
   debug_inspect(entity_not_alive, content="true")

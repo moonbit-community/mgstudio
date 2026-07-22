@@ -89,7 +89,7 @@ fn animate_light_direction(
   try! lights.view(fn(_entity, transform) {
     transform.modify(fn(value) {
       value.rotation = @math.Quat::from_euler(
-        @math.EulerRot::ZYX,
+        ZYX,
         0.0F,
         elapsed * PI / 5.0F,
         -FRAC_PI_4,
@@ -102,7 +102,7 @@ fn animate_light_direction(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_light_direction)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, animate_light_direction)
   .run()
 }

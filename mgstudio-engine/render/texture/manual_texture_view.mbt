@@ -31,7 +31,7 @@ pub fn ManualTextureView::new(
   size : @math.UVec2,
   view_format : @wgpu.TextureFormat,
 ) -> ManualTextureView {
-  ManualTextureView::{ texture_view, size, view_format }
+  { texture_view, size, view_format }
 }
 
 ///|
@@ -72,7 +72,7 @@ pub struct ManualTextureViews {
 
 ///|
 pub fn ManualTextureViews::ManualTextureViews() -> ManualTextureViews {
-  ManualTextureViews::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|

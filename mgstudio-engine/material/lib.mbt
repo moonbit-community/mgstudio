@@ -32,7 +32,7 @@ pub type AlphaMode = AlphaMode3d
 
 ///|
 pub impl Default for AlphaMode3d with fn default() {
-  AlphaMode3d::Opaque
+  Opaque
 }
 
 ///|
@@ -75,7 +75,7 @@ pub(all) enum OpaqueRendererMethod {
 
 ///|
 pub impl Default for OpaqueRendererMethod with fn default() {
-  OpaqueRendererMethod::Forward
+  Forward
 }
 
 ///|
@@ -119,35 +119,29 @@ pub struct DefaultOpaqueRendererMethod {
 
 ///|
 pub fn DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod() -> DefaultOpaqueRendererMethod {
-  DefaultOpaqueRendererMethod::{
-    renderer_method: OpaqueRendererMethod::Forward,
-  }
+  { renderer_method: Forward }
 }
 
 ///|
 pub impl Default for DefaultOpaqueRendererMethod with fn default() {
-  DefaultOpaqueRendererMethod::DefaultOpaqueRendererMethod()
+  DefaultOpaqueRendererMethod()
 }
 
 ///|
 pub fn DefaultOpaqueRendererMethod::new(
   renderer_method : OpaqueRendererMethod,
 ) -> DefaultOpaqueRendererMethod {
-  DefaultOpaqueRendererMethod::{ renderer_method, }
+  { renderer_method, }
 }
 
 ///|
 pub fn DefaultOpaqueRendererMethod::forward() -> DefaultOpaqueRendererMethod {
-  DefaultOpaqueRendererMethod::{
-    renderer_method: OpaqueRendererMethod::Forward,
-  }
+  { renderer_method: Forward }
 }
 
 ///|
 pub fn DefaultOpaqueRendererMethod::deferred() -> DefaultOpaqueRendererMethod {
-  DefaultOpaqueRendererMethod::{
-    renderer_method: OpaqueRendererMethod::Deferred,
-  }
+  { renderer_method: Deferred }
 }
 
 ///|
@@ -156,21 +150,21 @@ pub fn DefaultOpaqueRendererMethod::with_method(
   renderer_method : OpaqueRendererMethod,
 ) -> DefaultOpaqueRendererMethod {
   self |> ignore
-  DefaultOpaqueRendererMethod::{ renderer_method, }
+  { renderer_method, }
 }
 
 ///|
 pub fn DefaultOpaqueRendererMethod::set_to_forward(
   self : DefaultOpaqueRendererMethod,
 ) -> DefaultOpaqueRendererMethod {
-  self.with_method(OpaqueRendererMethod::Forward)
+  self.with_method(Forward)
 }
 
 ///|
 pub fn DefaultOpaqueRendererMethod::set_to_deferred(
   self : DefaultOpaqueRendererMethod,
 ) -> DefaultOpaqueRendererMethod {
-  self.with_method(OpaqueRendererMethod::Deferred)
+  self.with_method(Deferred)
 }
 
 ///|
@@ -186,7 +180,7 @@ pub fn OpaqueRendererMethod::resolve_runtime(
   default_renderer_method : OpaqueRendererMethod,
 ) -> OpaqueRendererMethod {
   match self {
-    OpaqueRendererMethod::Auto => default_renderer_method
+    Auto => default_renderer_method
     _ => self
   }
 }
@@ -213,13 +207,13 @@ pub struct MaterialProperties {
 
 ///|
 pub fn MaterialProperties::MaterialProperties() -> MaterialProperties {
-  MaterialProperties::{
-    render_method: OpaqueRendererMethod::Forward,
-    alpha_mode: AlphaMode3d::Opaque,
-    mesh_pipeline_key_bits: ErasedMeshPipelineKey::ErasedMeshPipelineKey(),
+  {
+    render_method: Forward,
+    alpha_mode: Opaque,
+    mesh_pipeline_key_bits: ErasedMeshPipelineKey(),
     depth_bias: 0.0F,
     reads_view_transmission_texture: false,
-    render_phase_type: RenderPhaseType::Opaque,
+    render_phase_type: Opaque,
     material_layout: None,
     draw_functions: [],
     shaders: [],
@@ -227,7 +221,7 @@ pub fn MaterialProperties::MaterialProperties() -> MaterialProperties {
     base_specialize: None,
     prepass_specialize: None,
     user_specialize: None,
-    material_key: ErasedMaterialKey::ErasedMaterialKey(),
+    material_key: ErasedMaterialKey(),
     shadows_enabled: false,
     prepass_enabled: false,
   }
@@ -235,7 +229,7 @@ pub fn MaterialProperties::MaterialProperties() -> MaterialProperties {
 
 ///|
 pub impl Default for MaterialProperties with fn default() {
-  MaterialProperties::MaterialProperties()
+  MaterialProperties()
 }
 
 ///|
@@ -263,11 +257,11 @@ pub fn MaterialProperties::add_shader(
     let (entry_label, _) = shaders[index]
     if entry_label == label {
       shaders[index] = (label, shader)
-      return MaterialProperties::{ ..self, shaders, }
+      return { ..self, shaders, }
     }
   }
   shaders.push((label, shader))
-  MaterialProperties::{ ..self, shaders, }
+  { ..self, shaders, }
 }
 
 ///|
@@ -292,7 +286,7 @@ pub fn MaterialProperties::add_draw_function(
 ) -> MaterialProperties {
   let draw_functions = self.draw_functions
   draw_functions.push((label, draw_function))
-  MaterialProperties::{ ..self, draw_functions, }
+  { ..self, draw_functions, }
 }
 
 ///|
@@ -300,7 +294,7 @@ pub fn MaterialProperties::with_render_method(
   self : MaterialProperties,
   render_method : OpaqueRendererMethod,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, render_method, }
+  { ..self, render_method, }
 }
 
 ///|
@@ -308,7 +302,7 @@ pub fn MaterialProperties::with_alpha_mode(
   self : MaterialProperties,
   alpha_mode : AlphaMode3d,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, alpha_mode, }
+  { ..self, alpha_mode, }
 }
 
 ///|
@@ -316,7 +310,7 @@ pub fn MaterialProperties::with_mesh_pipeline_key_bits(
   self : MaterialProperties,
   mesh_pipeline_key_bits : ErasedMeshPipelineKey,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, mesh_pipeline_key_bits, }
+  { ..self, mesh_pipeline_key_bits, }
 }
 
 ///|
@@ -324,7 +318,7 @@ pub fn MaterialProperties::with_depth_bias(
   self : MaterialProperties,
   depth_bias : Float,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, depth_bias, }
+  { ..self, depth_bias, }
 }
 
 ///|
@@ -332,7 +326,7 @@ pub fn MaterialProperties::with_reads_view_transmission_texture(
   self : MaterialProperties,
   reads_view_transmission_texture : Bool,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, reads_view_transmission_texture, }
+  { ..self, reads_view_transmission_texture, }
 }
 
 ///|
@@ -340,7 +334,7 @@ pub fn MaterialProperties::with_render_phase_type(
   self : MaterialProperties,
   render_phase_type : RenderPhaseType,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, render_phase_type, }
+  { ..self, render_phase_type, }
 }
 
 ///|
@@ -348,7 +342,7 @@ pub fn MaterialProperties::with_material_layout(
   self : MaterialProperties,
   material_layout : BindGroupLayoutDescriptor?,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, material_layout, }
+  { ..self, material_layout, }
 }
 
 ///|
@@ -356,7 +350,7 @@ pub fn MaterialProperties::with_bindless(
   self : MaterialProperties,
   bindless : Bool,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, bindless, }
+  { ..self, bindless, }
 }
 
 ///|
@@ -364,7 +358,7 @@ pub fn MaterialProperties::with_material_key(
   self : MaterialProperties,
   material_key : ErasedMaterialKey,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, material_key, }
+  { ..self, material_key, }
 }
 
 ///|
@@ -372,7 +366,7 @@ pub fn MaterialProperties::with_base_specialize(
   self : MaterialProperties,
   base_specialize : BaseSpecializeFn?,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, base_specialize, }
+  { ..self, base_specialize, }
 }
 
 ///|
@@ -380,7 +374,7 @@ pub fn MaterialProperties::with_prepass_specialize(
   self : MaterialProperties,
   prepass_specialize : PrepassSpecializeFn?,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, prepass_specialize, }
+  { ..self, prepass_specialize, }
 }
 
 ///|
@@ -388,7 +382,7 @@ pub fn MaterialProperties::with_user_specialize(
   self : MaterialProperties,
   user_specialize : UserSpecializeFn?,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, user_specialize, }
+  { ..self, user_specialize, }
 }
 
 ///|
@@ -396,7 +390,7 @@ pub fn MaterialProperties::with_shadows_enabled(
   self : MaterialProperties,
   shadows_enabled : Bool,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, shadows_enabled, }
+  { ..self, shadows_enabled, }
 }
 
 ///|
@@ -404,7 +398,7 @@ pub fn MaterialProperties::with_prepass_enabled(
   self : MaterialProperties,
   prepass_enabled : Bool,
 ) -> MaterialProperties {
-  MaterialProperties::{ ..self, prepass_enabled, }
+  { ..self, prepass_enabled, }
 }
 
 ///|
@@ -483,7 +477,7 @@ pub(open) trait IntoStandardMaterialAsset {
 
 ///|
 pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
-  StandardMaterial::{
+  {
     base_color: @color.Color::white(),
     base_color_texture: None,
     uv_transform: @transform.Affine2::identity(),
@@ -492,7 +486,7 @@ pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
     depth_map: None,
     parallax_depth_scale: 0.1F,
     max_parallax_layer_count: 16.0F,
-    parallax_mapping_method: ParallaxMappingMethod::Occlusion,
+    parallax_mapping_method: Occlusion,
     clearcoat: 0.0F,
     clearcoat_perceptual_roughness: 0.5F,
     clearcoat_texture: None,
@@ -521,26 +515,22 @@ pub fn StandardMaterial::StandardMaterial() -> StandardMaterial {
     specular_texture: None,
     specular_tint_texture: None,
     occlusion_texture: None,
-    alpha_mode: AlphaMode3d::Opaque,
+    alpha_mode: Opaque,
     depth_bias: 0.0F,
     fog_enabled: true,
     lightmap_exposure: 1.0F,
     deferred_lighting_pass_id: 1,
-    opaque_render_method: OpaqueRendererMethod::Auto,
+    opaque_render_method: Auto,
     unlit: false,
-    cull_mode: Some(Face3d::Back),
+    cull_mode: Some(Back),
   }
 }
 
 ///|
 pub fn StandardMaterial::from_color(color : @color.Color) -> StandardMaterial {
-  let alpha_mode = if color.a < 1.0F {
-    AlphaMode3d::Blend
-  } else {
-    AlphaMode3d::Opaque
-  }
+  let alpha_mode = if color.a < 1.0F { AlphaMode3d::Blend } else { Opaque }
   let default_value = StandardMaterial::StandardMaterial()
-  StandardMaterial::{
+  {
     base_color: color,
     base_color_texture: default_value.base_color_texture,
     uv_transform: default_value.uv_transform,
@@ -623,7 +613,7 @@ pub fn StandardMaterial::flip(
       uv_transform,
     )
   }
-  StandardMaterial::{ ..self, uv_transform, }
+  { ..self, uv_transform, }
 }
 
 ///|
@@ -662,7 +652,7 @@ pub fn StandardMaterial::with_base_color(
   self : StandardMaterial,
   color : @color.Color,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, base_color: color }
+  { ..self, base_color: color }
 }
 
 ///|
@@ -670,7 +660,7 @@ pub fn StandardMaterial::with_alpha_mode(
   self : StandardMaterial,
   alpha_mode : AlphaMode3d,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, alpha_mode, }
+  { ..self, alpha_mode, }
 }
 
 ///|
@@ -678,7 +668,7 @@ pub fn StandardMaterial::with_depth_bias(
   self : StandardMaterial,
   depth_bias : Float,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, depth_bias, }
+  { ..self, depth_bias, }
 }
 
 ///|
@@ -686,7 +676,7 @@ pub fn StandardMaterial::with_lightmap_exposure(
   self : StandardMaterial,
   lightmap_exposure : Float,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, lightmap_exposure, }
+  { ..self, lightmap_exposure, }
 }
 
 ///|
@@ -694,7 +684,7 @@ pub fn StandardMaterial::with_opaque_render_method(
   self : StandardMaterial,
   opaque_render_method : OpaqueRendererMethod,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, opaque_render_method, }
+  { ..self, opaque_render_method, }
 }
 
 ///|
@@ -702,7 +692,7 @@ pub fn StandardMaterial::with_base_color_texture(
   self : StandardMaterial,
   base_color_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, base_color_texture, }
+  { ..self, base_color_texture, }
 }
 
 ///|
@@ -710,7 +700,7 @@ pub fn StandardMaterial::with_uv_transform(
   self : StandardMaterial,
   uv_transform : @transform.Affine2,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, uv_transform, }
+  { ..self, uv_transform, }
 }
 
 ///|
@@ -718,7 +708,7 @@ pub fn StandardMaterial::with_normal_map_texture(
   self : StandardMaterial,
   normal_map_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, normal_map_texture, }
+  { ..self, normal_map_texture, }
 }
 
 ///|
@@ -726,7 +716,7 @@ pub fn StandardMaterial::with_flip_normal_map_y(
   self : StandardMaterial,
   flip_normal_map_y : Bool,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, flip_normal_map_y, }
+  { ..self, flip_normal_map_y, }
 }
 
 ///|
@@ -734,7 +724,7 @@ pub fn StandardMaterial::with_depth_map(
   self : StandardMaterial,
   depth_map : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, depth_map, }
+  { ..self, depth_map, }
 }
 
 ///|
@@ -747,7 +737,7 @@ pub fn StandardMaterial::with_parallax_depth_scale(
   } else {
     parallax_depth_scale
   }
-  StandardMaterial::{ ..self, parallax_depth_scale: safe_parallax_depth_scale }
+  { ..self, parallax_depth_scale: safe_parallax_depth_scale }
 }
 
 ///|
@@ -760,10 +750,7 @@ pub fn StandardMaterial::with_max_parallax_layer_count(
   } else {
     max_parallax_layer_count
   }
-  StandardMaterial::{
-    ..self,
-    max_parallax_layer_count: safe_max_parallax_layer_count,
-  }
+  { ..self, max_parallax_layer_count: safe_max_parallax_layer_count }
 }
 
 ///|
@@ -771,7 +758,7 @@ pub fn StandardMaterial::with_parallax_mapping_method(
   self : StandardMaterial,
   parallax_mapping_method : ParallaxMappingMethod,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, parallax_mapping_method, }
+  { ..self, parallax_mapping_method, }
 }
 
 ///|
@@ -786,7 +773,7 @@ pub fn StandardMaterial::with_clearcoat(
   } else {
     clearcoat
   }
-  StandardMaterial::{ ..self, clearcoat: safe_clearcoat }
+  { ..self, clearcoat: safe_clearcoat }
 }
 
 ///|
@@ -802,7 +789,7 @@ pub fn StandardMaterial::with_clearcoat_perceptual_roughness(
   } else {
     clearcoat_perceptual_roughness
   }
-  StandardMaterial::{
+  {
     ..self,
     clearcoat_perceptual_roughness: safe_clearcoat_perceptual_roughness,
   }
@@ -813,7 +800,7 @@ pub fn StandardMaterial::with_clearcoat_texture(
   self : StandardMaterial,
   clearcoat_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, clearcoat_texture, }
+  { ..self, clearcoat_texture, }
 }
 
 ///|
@@ -821,7 +808,7 @@ pub fn StandardMaterial::with_clearcoat_roughness_texture(
   self : StandardMaterial,
   clearcoat_roughness_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, clearcoat_roughness_texture, }
+  { ..self, clearcoat_roughness_texture, }
 }
 
 ///|
@@ -829,7 +816,7 @@ pub fn StandardMaterial::with_clearcoat_normal_texture(
   self : StandardMaterial,
   clearcoat_normal_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, clearcoat_normal_texture, }
+  { ..self, clearcoat_normal_texture, }
 }
 
 ///|
@@ -844,7 +831,7 @@ pub fn StandardMaterial::with_anisotropy_strength(
   } else {
     anisotropy_strength
   }
-  StandardMaterial::{ ..self, anisotropy_strength: safe_anisotropy_strength }
+  { ..self, anisotropy_strength: safe_anisotropy_strength }
 }
 
 ///|
@@ -852,7 +839,7 @@ pub fn StandardMaterial::with_anisotropy_rotation(
   self : StandardMaterial,
   anisotropy_rotation : Float,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, anisotropy_rotation, }
+  { ..self, anisotropy_rotation, }
 }
 
 ///|
@@ -860,7 +847,7 @@ pub fn StandardMaterial::with_anisotropy_texture(
   self : StandardMaterial,
   anisotropy_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, anisotropy_texture, }
+  { ..self, anisotropy_texture, }
 }
 
 ///|
@@ -868,7 +855,7 @@ pub fn StandardMaterial::with_emissive(
   self : StandardMaterial,
   emissive : @color.Color,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, emissive, }
+  { ..self, emissive, }
 }
 
 ///|
@@ -876,7 +863,7 @@ pub fn StandardMaterial::with_emissive_texture(
   self : StandardMaterial,
   emissive_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, emissive_texture, }
+  { ..self, emissive_texture, }
 }
 
 ///|
@@ -891,7 +878,7 @@ pub fn StandardMaterial::with_metallic(
   } else {
     metallic
   }
-  StandardMaterial::{ ..self, metallic: safe_metallic }
+  { ..self, metallic: safe_metallic }
 }
 
 ///|
@@ -906,7 +893,7 @@ pub fn StandardMaterial::with_perceptual_roughness(
   } else {
     perceptual_roughness
   }
-  StandardMaterial::{ ..self, perceptual_roughness: safe_perceptual_roughness }
+  { ..self, perceptual_roughness: safe_perceptual_roughness }
 }
 
 ///|
@@ -915,7 +902,7 @@ pub fn StandardMaterial::with_reflectance(
   reflectance : Float,
 ) -> StandardMaterial {
   let safe_reflectance = if reflectance < 0.0F { 0.0F } else { reflectance }
-  StandardMaterial::{ ..self, reflectance: safe_reflectance }
+  { ..self, reflectance: safe_reflectance }
 }
 
 ///|
@@ -930,7 +917,7 @@ pub fn StandardMaterial::with_diffuse_transmission(
   } else {
     diffuse_transmission
   }
-  StandardMaterial::{ ..self, diffuse_transmission: safe_diffuse_transmission }
+  { ..self, diffuse_transmission: safe_diffuse_transmission }
 }
 
 ///|
@@ -938,7 +925,7 @@ pub fn StandardMaterial::with_diffuse_transmission_texture(
   self : StandardMaterial,
   diffuse_transmission_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, diffuse_transmission_texture, }
+  { ..self, diffuse_transmission_texture, }
 }
 
 ///|
@@ -953,10 +940,7 @@ pub fn StandardMaterial::with_specular_transmission(
   } else {
     specular_transmission
   }
-  StandardMaterial::{
-    ..self,
-    specular_transmission: safe_specular_transmission,
-  }
+  { ..self, specular_transmission: safe_specular_transmission }
 }
 
 ///|
@@ -964,7 +948,7 @@ pub fn StandardMaterial::with_specular_transmission_texture(
   self : StandardMaterial,
   specular_transmission_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, specular_transmission_texture, }
+  { ..self, specular_transmission_texture, }
 }
 
 ///|
@@ -973,7 +957,7 @@ pub fn StandardMaterial::with_thickness(
   thickness : Float,
 ) -> StandardMaterial {
   let safe_thickness = if thickness < 0.0F { 0.0F } else { thickness }
-  StandardMaterial::{ ..self, thickness: safe_thickness }
+  { ..self, thickness: safe_thickness }
 }
 
 ///|
@@ -981,7 +965,7 @@ pub fn StandardMaterial::with_thickness_texture(
   self : StandardMaterial,
   thickness_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, thickness_texture, }
+  { ..self, thickness_texture, }
 }
 
 ///|
@@ -990,7 +974,7 @@ pub fn StandardMaterial::with_ior(
   ior : Float,
 ) -> StandardMaterial {
   let safe_ior = if ior < 1.0F { 1.0F } else { ior }
-  StandardMaterial::{ ..self, ior: safe_ior }
+  { ..self, ior: safe_ior }
 }
 
 ///|
@@ -998,7 +982,7 @@ pub fn StandardMaterial::with_specular_tint(
   self : StandardMaterial,
   specular_tint : @color.Color,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, specular_tint, }
+  { ..self, specular_tint, }
 }
 
 ///|
@@ -1006,7 +990,7 @@ pub fn StandardMaterial::with_specular_texture(
   self : StandardMaterial,
   specular_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, specular_texture, }
+  { ..self, specular_texture, }
 }
 
 ///|
@@ -1014,7 +998,7 @@ pub fn StandardMaterial::with_specular_tint_texture(
   self : StandardMaterial,
   specular_tint_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, specular_tint_texture, }
+  { ..self, specular_tint_texture, }
 }
 
 ///|
@@ -1022,7 +1006,7 @@ pub fn StandardMaterial::with_metallic_roughness_texture(
   self : StandardMaterial,
   metallic_roughness_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, metallic_roughness_texture, }
+  { ..self, metallic_roughness_texture, }
 }
 
 ///|
@@ -1030,7 +1014,7 @@ pub fn StandardMaterial::with_occlusion_texture(
   self : StandardMaterial,
   occlusion_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, occlusion_texture, }
+  { ..self, occlusion_texture, }
 }
 
 ///|
@@ -1038,7 +1022,7 @@ pub fn StandardMaterial::with_unlit(
   self : StandardMaterial,
   unlit : Bool,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, unlit, }
+  { ..self, unlit, }
 }
 
 ///|
@@ -1046,7 +1030,7 @@ pub fn StandardMaterial::with_cull_mode(
   self : StandardMaterial,
   cull_mode : Face3d?,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, cull_mode, }
+  { ..self, cull_mode, }
 }
 
 ///|
@@ -1054,8 +1038,8 @@ pub fn StandardMaterial::with_double_sided(
   self : StandardMaterial,
   double_sided : Bool,
 ) -> StandardMaterial {
-  let cull_mode : Face3d? = if double_sided { None } else { Some(Face3d::Back) }
-  StandardMaterial::{ ..self, cull_mode, }
+  let cull_mode : Face3d? = if double_sided { None } else { Some(Back) }
+  { ..self, cull_mode, }
 }
 
 ///|
@@ -1139,10 +1123,7 @@ pub fn MaterialExtensionBinding3d::texture(
   binding : Int,
   image : @asset.Handle[@asset.Image],
 ) -> MaterialExtensionBinding3d {
-  MaterialExtensionBinding3d::{
-    binding,
-    resource: MaterialExtensionBindingResource3d::Texture(image),
-  }
+  { binding, resource: Texture(image) }
 }
 
 ///|
@@ -1150,10 +1131,7 @@ pub fn MaterialExtensionBinding3d::sampler(
   binding : Int,
   image : @asset.Handle[@asset.Image],
 ) -> MaterialExtensionBinding3d {
-  MaterialExtensionBinding3d::{
-    binding,
-    resource: MaterialExtensionBindingResource3d::Sampler(image),
-  }
+  { binding, resource: Sampler(image) }
 }
 
 ///|
@@ -1161,10 +1139,7 @@ pub fn MaterialExtensionBinding3d::uniform(
   binding : Int,
   bytes : Bytes,
 ) -> MaterialExtensionBinding3d {
-  MaterialExtensionBinding3d::{
-    binding,
-    resource: MaterialExtensionBindingResource3d::Uniform(bytes),
-  }
+  { binding, resource: Uniform(bytes) }
 }
 
 ///|
@@ -1212,7 +1187,7 @@ pub struct ExtendedMaterialMetadata3d {
 
 ///|
 pub fn ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d() -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     extension_tag: 0,
     vertex_shader_path: None,
     fragment_shader_path: None,
@@ -1250,7 +1225,7 @@ pub fn ExtendedMaterialMetadata3d::with_extension_tag(
   extension_tag : Int,
 ) -> ExtendedMaterialMetadata3d {
   let safe_tag = if extension_tag < 0 { 0 } else { extension_tag }
-  ExtendedMaterialMetadata3d::{ ..self, extension_tag: safe_tag }
+  { ..self, extension_tag: safe_tag }
 }
 
 ///|
@@ -1266,10 +1241,7 @@ pub fn ExtendedMaterialMetadata3d::with_vertex_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
-    ..self,
-    vertex_shader_path: normalize_material_shader_path(shader_path),
-  }
+  { ..self, vertex_shader_path: normalize_material_shader_path(shader_path) }
 }
 
 ///|
@@ -1277,10 +1249,7 @@ pub fn ExtendedMaterialMetadata3d::with_fragment_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
-    ..self,
-    fragment_shader_path: normalize_material_shader_path(shader_path),
-  }
+  { ..self, fragment_shader_path: normalize_material_shader_path(shader_path) }
 }
 
 ///|
@@ -1288,7 +1257,7 @@ pub fn ExtendedMaterialMetadata3d::with_prepass_vertex_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     prepass_vertex_shader_path: normalize_material_shader_path(shader_path),
   }
@@ -1299,7 +1268,7 @@ pub fn ExtendedMaterialMetadata3d::with_prepass_fragment_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     prepass_fragment_shader_path: normalize_material_shader_path(shader_path),
   }
@@ -1310,7 +1279,7 @@ pub fn ExtendedMaterialMetadata3d::with_deferred_vertex_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     deferred_vertex_shader_path: normalize_material_shader_path(shader_path),
   }
@@ -1321,7 +1290,7 @@ pub fn ExtendedMaterialMetadata3d::with_deferred_fragment_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     deferred_fragment_shader_path: normalize_material_shader_path(shader_path),
   }
@@ -1332,7 +1301,7 @@ pub fn ExtendedMaterialMetadata3d::with_meshlet_fragment_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     meshlet_fragment_shader_path: normalize_material_shader_path(shader_path),
   }
@@ -1343,7 +1312,7 @@ pub fn ExtendedMaterialMetadata3d::with_meshlet_prepass_fragment_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     meshlet_prepass_fragment_shader_path: normalize_material_shader_path(
       shader_path,
@@ -1356,7 +1325,7 @@ pub fn ExtendedMaterialMetadata3d::with_meshlet_deferred_fragment_shader_path(
   self : ExtendedMaterialMetadata3d,
   shader_path : String?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{
+  {
     ..self,
     meshlet_deferred_fragment_shader_path: normalize_material_shader_path(
       shader_path,
@@ -1369,7 +1338,7 @@ pub fn ExtendedMaterialMetadata3d::with_alpha_mode_override(
   self : ExtendedMaterialMetadata3d,
   alpha_mode_override : AlphaMode3d?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, alpha_mode_override, }
+  { ..self, alpha_mode_override, }
 }
 
 ///|
@@ -1377,7 +1346,7 @@ pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(
   self : ExtendedMaterialMetadata3d,
   opaque_render_method_override : OpaqueRendererMethod?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, opaque_render_method_override, }
+  { ..self, opaque_render_method_override, }
 }
 
 ///|
@@ -1385,7 +1354,7 @@ pub fn ExtendedMaterialMetadata3d::with_requires_depth_prepass(
   self : ExtendedMaterialMetadata3d,
   requires_depth_prepass : Bool,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, requires_depth_prepass, }
+  { ..self, requires_depth_prepass, }
 }
 
 ///|
@@ -1393,7 +1362,7 @@ pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(
   self : ExtendedMaterialMetadata3d,
   requires_deferred_prepass : Bool,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, requires_deferred_prepass, }
+  { ..self, requires_deferred_prepass, }
 }
 
 ///|
@@ -1401,7 +1370,7 @@ pub fn ExtendedMaterialMetadata3d::with_disable_shadows(
   self : ExtendedMaterialMetadata3d,
   disable_shadows : Bool,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, disable_shadows, }
+  { ..self, disable_shadows, }
 }
 
 ///|
@@ -1409,7 +1378,7 @@ pub fn ExtendedMaterialMetadata3d::with_prepass_enabled(
   self : ExtendedMaterialMetadata3d,
   prepass_enabled : Bool,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, prepass_enabled, }
+  { ..self, prepass_enabled, }
 }
 
 ///|
@@ -1417,7 +1386,7 @@ pub fn ExtendedMaterialMetadata3d::with_user_specialize(
   self : ExtendedMaterialMetadata3d,
   user_specialize : UserSpecializeFn?,
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, user_specialize, }
+  { ..self, user_specialize, }
 }
 
 ///|
@@ -1427,7 +1396,7 @@ pub fn ExtendedMaterialMetadata3d::with_extension_bind_group_layout_entries(
     @render_resource.BindGroupLayoutEntry,
   ],
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, extension_bind_group_layout_entries, }
+  { ..self, extension_bind_group_layout_entries, }
 }
 
 ///|
@@ -1435,7 +1404,7 @@ pub fn ExtendedMaterialMetadata3d::with_extension_bind_group_bindings(
   self : ExtendedMaterialMetadata3d,
   extension_bind_group_bindings : Array[MaterialExtensionBinding3d],
 ) -> ExtendedMaterialMetadata3d {
-  ExtendedMaterialMetadata3d::{ ..self, extension_bind_group_bindings, }
+  { ..self, extension_bind_group_bindings, }
 }
 
 ///|
@@ -1463,11 +1432,7 @@ pub struct MeshMaterial3d {
 pub fn MeshMaterial3d::new(
   material : @asset.Handle[StandardMaterial],
 ) -> MeshMaterial3d {
-  MeshMaterial3d::{
-    material,
-    material_family: Material3dFamily::Standard,
-    extended_material: None,
-  }
+  { material, material_family: Standard, extended_material: None }
 }
 
 ///|
@@ -1476,7 +1441,7 @@ pub fn MeshMaterial3d::from_erased_material_id(
   material_id : Int,
 ) -> MeshMaterial3d {
   let safe_id = if material_id < 0 { 0 } else { material_id }
-  MeshMaterial3d::{
+  {
     material: @asset.Handle::new(safe_id),
     material_family,
     extended_material: None,
@@ -1490,7 +1455,7 @@ pub fn MeshMaterial3d::material_asset_id(self : MeshMaterial3d) -> Int {
 
 ///|
 pub fn MeshMaterial3d::is_standard_material(self : MeshMaterial3d) -> Bool {
-  self.material_family is Material3dFamily::Standard
+  self.material_family is Standard
 }
 
 ///|
@@ -1509,7 +1474,7 @@ pub fn MeshMaterial3d::with_extended_material(
   self : MeshMaterial3d,
   extended_material : ExtendedMaterialMetadata3d?,
 ) -> MeshMaterial3d {
-  MeshMaterial3d::{ ..self, extended_material, }
+  { ..self, extended_material, }
 }
 
 ///|
@@ -1519,9 +1484,9 @@ pub fn MeshMaterial3d::with_extension_tag(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(extension.with_extension_tag(extension_tag)),
   }
@@ -1534,9 +1499,9 @@ pub fn MeshMaterial3d::with_extension_vertex_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(extension.with_vertex_shader_path(shader_path)),
   }
@@ -1549,9 +1514,9 @@ pub fn MeshMaterial3d::with_extension_fragment_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(extension.with_fragment_shader_path(shader_path)),
   }
@@ -1564,9 +1529,9 @@ pub fn MeshMaterial3d::with_extension_meshlet_fragment_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_meshlet_fragment_shader_path(shader_path),
@@ -1581,9 +1546,9 @@ pub fn MeshMaterial3d::with_extension_meshlet_prepass_fragment_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_meshlet_prepass_fragment_shader_path(shader_path),
@@ -1598,9 +1563,9 @@ pub fn MeshMaterial3d::with_extension_meshlet_deferred_fragment_shader_path(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_meshlet_deferred_fragment_shader_path(shader_path),
@@ -1615,9 +1580,9 @@ pub fn MeshMaterial3d::with_extension_alpha_mode(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_alpha_mode_override(alpha_mode_override),
@@ -1632,9 +1597,9 @@ pub fn MeshMaterial3d::with_extension_opaque_renderer_method(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_opaque_render_method_override(
@@ -1651,9 +1616,9 @@ pub fn MeshMaterial3d::with_extension_requires_depth_prepass(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_requires_depth_prepass(requires_depth_prepass),
@@ -1668,9 +1633,9 @@ pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(
       extension.with_requires_deferred_prepass(requires_deferred_prepass),
@@ -1685,9 +1650,9 @@ pub fn MeshMaterial3d::with_extension_disable_shadows(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(extension.with_disable_shadows(disable_shadows)),
   }
@@ -1700,9 +1665,9 @@ pub fn MeshMaterial3d::with_extension_prepass_enabled(
 ) -> MeshMaterial3d {
   let extension = match self.extended_material {
     Some(value) => value
-    None => ExtendedMaterialMetadata3d::ExtendedMaterialMetadata3d()
+    None => ExtendedMaterialMetadata3d()
   }
-  MeshMaterial3d::{
+  {
     ..self,
     extended_material: Some(extension.with_prepass_enabled(prepass_enabled)),
   }
@@ -1726,16 +1691,14 @@ pub struct ForwardDecalMaterialExt {
 
 ///|
 pub fn ForwardDecalMaterialExt::ForwardDecalMaterialExt() -> ForwardDecalMaterialExt {
-  ForwardDecalMaterialExt::{ depth_fade_factor: 8.0F }
+  { depth_fade_factor: 8.0F }
 }
 
 ///|
 pub fn ForwardDecalMaterialExt::new(
   depth_fade_factor : Float,
 ) -> ForwardDecalMaterialExt {
-  ForwardDecalMaterialExt::{
-    depth_fade_factor: forward_decal_depth_fade_factor_safe(depth_fade_factor),
-  }
+  { depth_fade_factor: forward_decal_depth_fade_factor_safe(depth_fade_factor) }
 }
 
 ///|
@@ -1744,9 +1707,7 @@ pub fn ForwardDecalMaterialExt::with_depth_fade_factor(
   depth_fade_factor : Float,
 ) -> ForwardDecalMaterialExt {
   self |> ignore
-  ForwardDecalMaterialExt::{
-    depth_fade_factor: forward_decal_depth_fade_factor_safe(depth_fade_factor),
-  }
+  { depth_fade_factor: forward_decal_depth_fade_factor_safe(depth_fade_factor) }
 }
 
 ///|

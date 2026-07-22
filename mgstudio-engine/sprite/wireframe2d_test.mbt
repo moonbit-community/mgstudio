@@ -119,7 +119,7 @@ test "sprite: explicit @sprite_render_mesh2d_wireframe2d.Wireframe2d inserts mat
       try! (world.set_by_key(
         entity,
         @sprite_render_mesh2d_wireframe2d.Wireframe2d::component(),
-        @sprite_render_mesh2d_wireframe2d.Wireframe2d::Wireframe2d(),
+        Wireframe2d(),
       )
       |> ignore)
     })

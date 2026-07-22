@@ -91,8 +91,8 @@ fn spawn_camera(
       @camera.Camera3d::Camera3d(),
       @pbr.Hdr::Hdr(),
       @camera_camera.Camera::Camera(),
-      @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
-        ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
+      @camera.Projection::Perspective({
+        ..PerspectiveProjection3d(),
         fov: 27.0F * PI / 180.0F,
       }),
       @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
@@ -154,7 +154,7 @@ fn rotate_skybox_and_environment_map(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_skybox_and_environment_map)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, rotate_skybox_and_environment_map)
   .run()
 }

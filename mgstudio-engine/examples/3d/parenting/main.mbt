@@ -103,7 +103,7 @@ fn rotator_system(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotator_system)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, rotator_system)
   .run()
 }

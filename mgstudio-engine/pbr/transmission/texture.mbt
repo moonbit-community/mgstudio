@@ -25,12 +25,7 @@ pub struct ViewTransmissionTexture {
 
 ///|
 pub fn ViewTransmissionTexture::ViewTransmissionTexture() -> ViewTransmissionTexture {
-  ViewTransmissionTexture::{
-    texture_id: -1,
-    width: 0,
-    height: 0,
-    sampler_linear: true,
-  }
+  { texture_id: -1, width: 0, height: 0, sampler_linear: true }
 }
 
 ///|
@@ -46,7 +41,7 @@ pub fn pbr_prepare_view_transmission_texture(
   width : Int,
   height : Int,
 ) -> ViewTransmissionTexture {
-  ViewTransmissionTexture::{
+  {
     texture_id,
     width: if width < 0 {
       0
@@ -85,7 +80,7 @@ pub struct TransmissionTextureState {
 
 ///|
 pub fn TransmissionTextureState::TransmissionTextureState() -> TransmissionTextureState {
-  TransmissionTextureState::{ source_texture_id: -1, blur_texture_id: -1 }
+  { source_texture_id: -1, blur_texture_id: -1 }
 }
 
 ///|
@@ -93,7 +88,7 @@ pub fn TransmissionTextureState::with_source_texture_id(
   self : TransmissionTextureState,
   source_texture_id : Int,
 ) -> TransmissionTextureState {
-  TransmissionTextureState::{ ..self, source_texture_id, }
+  { ..self, source_texture_id, }
 }
 
 ///|
@@ -101,5 +96,5 @@ pub fn TransmissionTextureState::with_blur_texture_id(
   self : TransmissionTextureState,
   blur_texture_id : Int,
 ) -> TransmissionTextureState {
-  TransmissionTextureState::{ ..self, blur_texture_id, }
+  { ..self, blur_texture_id, }
 }

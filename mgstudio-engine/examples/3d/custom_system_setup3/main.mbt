@@ -48,9 +48,9 @@ fn main {
   .add_fixed_update_system(@physics3d.physics3d_character_controller_system)
   .add_fixed_update_system(@physics3d.physics3d_step_system)
   .add_fixed_update_system(@physics3d.physics3d_writeback_system)
-  .add_systems_world(@app.Startup, setup_graphics)
-  .add_systems_world(@app.Startup, setup_physics)
-  .add_systems_world(@app.Update, despawn_one_box)
+  .add_systems_world(Startup, setup_graphics)
+  .add_systems_world(Startup, setup_physics)
+  .add_systems_world(Update, despawn_one_box)
   .run()
 }
 

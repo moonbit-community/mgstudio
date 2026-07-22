@@ -56,7 +56,7 @@ fn atmosphere_top_spawn_camera(
   try! source_world.set_by_key(
     source_entity,
     @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
+    Camera3d(),
   )
   try! source_world.set_by_key(
     source_entity,
@@ -166,7 +166,7 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
     },
   )
   let update_dot = app_before_finish.schedule_graph_dot(
-    @app.Update,
+    Update,
     settings=update_settings,
   )
   inspect(
@@ -176,7 +176,7 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
     content="true",
   )
   let render_extract_dot = app_before_finish
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .schedule_graph_dot(
       @render.render_extract_schedule_stage(),
       settings=update_settings,
@@ -194,7 +194,7 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
     },
   )
   let render_dot = app_before_finish
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .schedule_graph_dot(
       @render.render_schedule_stage(),
       settings=render_settings,
@@ -219,7 +219,7 @@ test "pbr atmosphere: plugin installs Bevy-shaped build systems" {
     },
   )
   let finish_dot = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .schedule_graph_dot(
       @render.render_schedule_stage(),
       settings=finish_settings,

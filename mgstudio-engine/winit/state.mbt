@@ -85,16 +85,14 @@ fn runner_surface_present_mode(
   match window {
     Some(value) =>
       match value.present_mode {
-        @window.PresentMode::AutoVsync => @render.HostGpuPresentMode::AutoVsync
-        @window.PresentMode::AutoNoVsync =>
-          @render.HostGpuPresentMode::AutoNoVsync
-        @window.PresentMode::Fifo => @render.HostGpuPresentMode::Fifo
-        @window.PresentMode::FifoRelaxed =>
-          @render.HostGpuPresentMode::FifoRelaxed
-        @window.PresentMode::Immediate => @render.HostGpuPresentMode::Immediate
-        @window.PresentMode::Mailbox => @render.HostGpuPresentMode::Mailbox
+        AutoVsync => AutoVsync
+        AutoNoVsync => AutoNoVsync
+        Fifo => Fifo
+        FifoRelaxed => FifoRelaxed
+        Immediate => Immediate
+        Mailbox => Mailbox
       }
-    None => @render.HostGpuPresentMode::Fifo
+    None => Fifo
   }
 }
 
@@ -105,16 +103,11 @@ fn runner_surface_composite_alpha_mode(
   match window {
     Some(value) =>
       match value.composite_alpha_mode {
-        @window.CompositeAlphaMode::Auto =>
-          @render.HostGpuCompositeAlphaMode::Auto
-        @window.CompositeAlphaMode::Opaque =>
-          @render.HostGpuCompositeAlphaMode::Opaque
-        @window.CompositeAlphaMode::PreMultiplied =>
-          @render.HostGpuCompositeAlphaMode::PreMultiplied
-        @window.CompositeAlphaMode::PostMultiplied =>
-          @render.HostGpuCompositeAlphaMode::PostMultiplied
-        @window.CompositeAlphaMode::Inherit =>
-          @render.HostGpuCompositeAlphaMode::Inherit
+        Auto => Auto
+        Opaque => Opaque
+        PreMultiplied => PreMultiplied
+        PostMultiplied => PostMultiplied
+        Inherit => Inherit
       }
     None => @render.HostGpuCompositeAlphaMode::default()
   }
@@ -162,23 +155,16 @@ fn runner_now_millis() -> Int64 {
 
 ///|
 fn winit_runner_trace_span(name : String, run : () -> Unit) -> Unit {
-  let trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
-    name,
-  )
+  let trace_start_us = @app.timeline_trace_begin_span(System, name)
   run()
-  @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
-    name,
-    trace_start_us,
-  )
+  @app.timeline_trace_end_span(System, name, trace_start_us)
 }
 
 ///|
 fn runner_update_mode_for_world(world : @ecs.World) -> UpdateMode {
   let settings = match world.get_resource(WinitSettings::resource()) {
     Some(value) => value
-    None => WinitSettings::WinitSettings()
+    None => WinitSettings()
   }
   let mut focused = false
   for entry in @window.window_host_entries(world) {
@@ -464,7 +450,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     winit_window_backend_sync_system(world)
   })
   let surface_bindings_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::runner.surface_bindings",
   )
   let host_entries : Array[@window.WindowHostEntry] = []
@@ -521,7 +507,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
           desired_maximum_frame_latency~,
         )
       }
-      next_surfaces.push(RunnerSurfaceBinding::{
+      next_surfaces.push({
         host_window,
         surface: previous.surface,
         target_id: previous.target_id,
@@ -552,7 +538,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
         desired_maximum_frame_latency~,
       )
     }
-    next_surfaces.push(RunnerSurfaceBinding::{
+    next_surfaces.push({
       host_window,
       surface,
       target_id,
@@ -569,7 +555,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     self.runner_surfaces.length(),
   )
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::runner.surface_bindings",
     surface_bindings_trace_start_us,
   )
@@ -588,7 +574,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     self.debug_screenshot_surface_index
   }
   let screenshot_queue_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::runner.screenshot_capture_requests",
   )
   for i in 0..<ordered_surface_bindings.length() {
@@ -605,7 +591,7 @@ fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
     }
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::runner.screenshot_capture_requests",
     screenshot_queue_trace_start_us,
   )
@@ -659,7 +645,7 @@ fn WinitAppRunnerState::redraw_requested(
   event_loop : @window_macos.ActiveEventLoop,
 ) -> Unit {
   let redraw_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::redraw_requested",
   )
   let begin_frame_ms = runner_now_millis()
@@ -710,12 +696,12 @@ fn WinitAppRunnerState::redraw_requested(
   }
 
   let control_flow_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::redraw.control_flow",
   )
   match mode {
     Continuous => {
-      event_loop.set_control_flow(@window_core.ControlFlow::Wait)
+      event_loop.set_control_flow(Wait)
       self.redraw_requested = true
     }
     Reactive(wait, _, _, _) =>
@@ -729,15 +715,14 @@ fn WinitAppRunnerState::redraw_requested(
           start_time_ms, wait,
         )
         match control_flow {
-          @window_core.ControlFlow::WaitUntil(next_ms) =>
-            self.scheduled_tick_start_ms = Some(next_ms)
+          WaitUntil(next_ms) => self.scheduled_tick_start_ms = Some(next_ms)
           _ => self.scheduled_tick_start_ms = Some(begin_frame_ms)
         }
         event_loop.set_control_flow(control_flow)
       }
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::redraw.control_flow",
     control_flow_trace_start_us,
   )
@@ -755,7 +740,7 @@ fn WinitAppRunnerState::redraw_requested(
   if self.app_ref.val.should_exit() is Some(_) {
     self.close_all_host_windows()
     @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::System,
+      System,
       "mgstudio_winit::redraw_requested",
       redraw_trace_start_us,
     )
@@ -763,7 +748,7 @@ fn WinitAppRunnerState::redraw_requested(
     return
   }
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
+    System,
     "mgstudio_winit::redraw_requested",
     redraw_trace_start_us,
   )
@@ -855,7 +840,7 @@ impl @window_macos.ApplicationHandler for WinitAppRunnerState with fn about_to_w
     !runner_has_logical_windows(self.app_ref.val.world()) {
     event_loop.exit()
   } else if !@windowing.any_window_open() {
-    event_loop.set_control_flow(@window_core.ControlFlow::Poll)
+    event_loop.set_control_flow(Poll)
   }
 }
 
@@ -950,7 +935,7 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       debug_screenshot_render_frame: 0,
       frame_limit: runner_frame_limit(),
       frame_count_ref: Ref(0),
-      update_mode: UpdateMode::Continuous,
+      update_mode: Continuous,
       window_event_received: false,
       device_event_received: false,
       user_event_received: false,
@@ -959,8 +944,8 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       wait_elapsed: false,
       startup_forced_updates: 5,
       scheduled_tick_start_ms: None,
-      request_redraw_cursor: @ecs.MessageCursor::MessageCursor(),
-      close_request_cursor: @ecs.MessageCursor::MessageCursor(),
+      request_redraw_cursor: MessageCursor(),
+      close_request_cursor: MessageCursor(),
     }
     @windowing.native_event_loop().run_app(runner_state)
   }

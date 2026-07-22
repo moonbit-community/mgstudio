@@ -50,7 +50,7 @@ pub struct SamplingDistribution[T] {
 pub fn[T] SamplingDistribution::new(
   sample_one : (@random.Rand) -> T,
 ) -> SamplingDistribution[T] {
-  SamplingDistribution::{ sample_one, }
+  { sample_one, }
 }
 
 ///|

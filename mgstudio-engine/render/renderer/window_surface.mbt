@@ -42,7 +42,7 @@ priv struct WindowSurfaceRuntimeState {
 
 ///|
 fn window_surface_runtime_state_default() -> WindowSurfaceRuntimeState {
-  WindowSurfaceRuntimeState::{ surfaces: [], next_surface_id: 1, frames: [] }
+  { surfaces: [], next_surface_id: 1, frames: [] }
 }
 
 ///|
@@ -127,11 +127,7 @@ fn record_active_frame(surface_id : NativeGpuSurface, target_id : Int) -> Unit {
       return
     }
   }
-  state.frames.push(FrameBinding::{
-    surface_id,
-    target_id,
-    needs_present: false,
-  })
+  state.frames.push({ surface_id, target_id, needs_present: false })
 }
 
 ///|
@@ -607,7 +603,7 @@ pub fn GpuBackend::create_surface_binding(
   let surface = self.instance.create_surface_from_window(handle) catch {
     err => abort("wgpu: failed to create window surface: \{err.message()}")
   }
-  self.surfaces.push(GpuSurfaceState::{
+  self.surfaces.push({
     surface_id,
     target_id,
     surface,
@@ -838,7 +834,7 @@ pub fn GpuBackend::begin_frame_binding(
   let view = tex.create_view()
   view.set_label("mgstudio_surface_view")
   let encoder = self.device.create_command_encoder()
-  self.surfaces[index].frame = Some(GpuFrameState::{
+  self.surfaces[index].frame = Some({
     surface_tex: st,
     surface_texture: tex,
     surface_view: view,
@@ -912,7 +908,7 @@ fn GpuBackend::prepare_frame_submission_binding(
     frame.pass = None
   }
   let command_encoding_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "renderer.command_encoding",
   )
   screenshot_encode_active_surface_captures(self, frame)
@@ -921,7 +917,7 @@ fn GpuBackend::prepare_frame_submission_binding(
   let cmd = frame.encoder.finish()
   pending_command_buffers.push_one(cmd)
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "renderer.command_encoding",
     command_encoding_trace_start_us,
   )
@@ -942,13 +938,13 @@ fn GpuBackend::present_frame_binding(
   guard self.frame is Some(frame) else { return }
   screenshot_collect_completed_captures(self)
   let present_wait_trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "renderer.present_wait",
   )
   self.surfaces[index].surface.present() |> ignore
   self.instance.process_events()
   @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::RenderQueue,
+    RenderQueue,
     "renderer.present_wait",
     present_wait_trace_start_us,
   )
@@ -1084,7 +1080,7 @@ pub fn create_surface(
   let surface_id = next_surface_id()
   let target_id = surface_target_id_from_surface_id(surface_id)
   let state = window_surface_runtime_state
-  state.surfaces.push(SurfaceBinding::{
+  state.surfaces.push({
     surface_id,
     window: handle.window(),
     handle,

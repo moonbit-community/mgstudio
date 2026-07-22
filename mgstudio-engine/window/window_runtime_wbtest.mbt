@@ -117,7 +117,7 @@ test "window runtime: centered monitor entity drives window position on create" 
   let world = @ecs.World::new()
   defer world.close()
   let monitor_entity = world.spawn()
-  try! world.set_by_key(monitor_entity, ecs_key_monitor, Monitor::{
+  try! world.set_by_key(monitor_entity, ecs_key_monitor, {
     name: Some("test-monitor"),
     physical_height: 1080,
     physical_width: 1920,
@@ -283,7 +283,7 @@ test "window runtime: iOS preference fields remain mutable at runtime" {
       let next : Window = current
       next.prefers_home_indicator_hidden = true
       next.prefers_status_bar_hidden = true
-      next.preferred_screen_edges_deferring_system_gestures = ScreenEdge::All
+      next.preferred_screen_edges_deferring_system_gestures = All
       next
     }),
   )

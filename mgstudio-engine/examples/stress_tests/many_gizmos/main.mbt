@@ -85,13 +85,13 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn input(config : @app.ResMut[Config]) -> Unit {
   config.modify(fn(value) {
-    if @input.key_just_pressed(@input_events.KeyCode::ArrowUp) {
+    if @input.key_just_pressed(ArrowUp) {
       value.line_count += 10000
     }
-    if @input.key_just_pressed(@input_events.KeyCode::ArrowDown) {
+    if @input.key_just_pressed(ArrowDown) {
       value.line_count = max_int(value.line_count - 10000, 0)
     }
-    if @input.key_just_pressed(@input_events.KeyCode::Space) {
+    if @input.key_just_pressed(Space) {
       value.fancy = !value.fancy
     }
   })
@@ -139,8 +139,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param(@app.Update, input)
-  .add_systems_param3(@app.Update, draw_many_lines)
+  .add_systems_param(Startup, setup)
+  .add_systems_param(Update, input)
+  .add_systems_param3(Update, draw_many_lines)
   .run()
 }

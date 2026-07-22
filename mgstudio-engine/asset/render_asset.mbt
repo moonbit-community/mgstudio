@@ -26,17 +26,17 @@ const RENDER_ASSET_USAGE_RENDER_WORLD_BIT : Int = 2
 
 ///|
 pub fn RenderAssetUsages::main_world() -> RenderAssetUsages {
-  RenderAssetUsages::{ bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT }
+  { bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT }
 }
 
 ///|
 pub fn RenderAssetUsages::render_world() -> RenderAssetUsages {
-  RenderAssetUsages::{ bits: RENDER_ASSET_USAGE_RENDER_WORLD_BIT }
+  { bits: RENDER_ASSET_USAGE_RENDER_WORLD_BIT }
 }
 
 ///|
 pub fn RenderAssetUsages::all() -> RenderAssetUsages {
-  RenderAssetUsages::{
+  {
     bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT |
     RENDER_ASSET_USAGE_RENDER_WORLD_BIT,
   }

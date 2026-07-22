@@ -27,11 +27,7 @@ fn spawn_camera_entity(
       @transform.Transform::from_xyz(x, y, z),
     ),
   )
-  try! world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_camera, Camera())
   entity
 }
 
@@ -61,10 +57,7 @@ fn spawn_visibility_entity(
 test "camera visibility range: entity in range of camera" {
   let world = @ecs.World::new()
   defer world.close()
-  world.insert_resource(
-    ecs_key_visible_entity_ranges,
-    VisibleEntityRanges::VisibleEntityRanges(),
-  )
+  world.insert_resource(ecs_key_visible_entity_ranges, VisibleEntityRanges())
   let camera = spawn_camera_entity(world, 0.0F, 0.0F, 0.0F)
   let mesh = spawn_visibility_entity(
     world,
@@ -82,10 +75,7 @@ test "camera visibility range: entity in range of camera" {
 test "camera visibility range: entity out of range of camera" {
   let world = @ecs.World::new()
   defer world.close()
-  world.insert_resource(
-    ecs_key_visible_entity_ranges,
-    VisibleEntityRanges::VisibleEntityRanges(),
-  )
+  world.insert_resource(ecs_key_visible_entity_ranges, VisibleEntityRanges())
   let camera = spawn_camera_entity(world, 0.0F, 0.0F, 0.0F)
   let mesh = spawn_visibility_entity(
     world,
@@ -106,10 +96,7 @@ test "camera visibility range: entity out of range of camera" {
 test "camera visibility range: use_aabb uses transformed aabb center" {
   let world = @ecs.World::new()
   defer world.close()
-  world.insert_resource(
-    ecs_key_visible_entity_ranges,
-    VisibleEntityRanges::VisibleEntityRanges(),
-  )
+  world.insert_resource(ecs_key_visible_entity_ranges, VisibleEntityRanges())
   let camera = spawn_camera_entity(world, 0.0F, 0.0F, 0.0F)
   let mesh = spawn_visibility_entity(
     world,
@@ -135,10 +122,7 @@ test "camera visibility range: use_aabb uses transformed aabb center" {
 test "camera visibility range: no cpu culling entities are excluded" {
   let world = @ecs.World::new()
   defer world.close()
-  world.insert_resource(
-    ecs_key_visible_entity_ranges,
-    VisibleEntityRanges::VisibleEntityRanges(),
-  )
+  world.insert_resource(ecs_key_visible_entity_ranges, VisibleEntityRanges())
   let camera = spawn_camera_entity(world, 0.0F, 0.0F, 0.0F)
   let mesh = spawn_visibility_entity(
     world,
@@ -150,7 +134,7 @@ test "camera visibility range: no cpu culling entities are excluded" {
   try! world.set_by_key(
     mesh,
     @root_visibility.ecs_key_no_cpu_culling,
-    @root_visibility.NoCpuCulling::NoCpuCulling(),
+    NoCpuCulling(),
   )
   check_visibility_ranges(world)
   let ranges = world.get_resource(ecs_key_visible_entity_ranges).unwrap()
@@ -164,10 +148,7 @@ test "camera visibility range: no cpu culling entities are excluded" {
 test "camera visibility range: shadow lod origin participates as a view" {
   let world = @ecs.World::new()
   defer world.close()
-  world.insert_resource(
-    ecs_key_visible_entity_ranges,
-    VisibleEntityRanges::VisibleEntityRanges(),
-  )
+  world.insert_resource(ecs_key_visible_entity_ranges, VisibleEntityRanges())
   let origin = world.spawn()
   try! world.set_by_key(
     origin,
@@ -176,11 +157,7 @@ test "camera visibility range: shadow lod origin participates as a view" {
       @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
     ),
   )
-  try! world.set_by_key(
-    origin,
-    ecs_key_shadow_lod_origin,
-    ShadowLodOrigin::ShadowLodOrigin(),
-  )
+  try! world.set_by_key(origin, ecs_key_shadow_lod_origin, ShadowLodOrigin())
   let mesh = spawn_visibility_entity(
     world,
     0.0F,

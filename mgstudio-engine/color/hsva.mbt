@@ -27,7 +27,7 @@ pub fn Hsva::new(
   value : Float,
   alpha : Float,
 ) -> Hsva {
-  Hsva::{
+  {
     hue: color_wrap_hue(hue),
     saturation: color_clamp_unit(saturation),
     value: color_clamp_unit(value),

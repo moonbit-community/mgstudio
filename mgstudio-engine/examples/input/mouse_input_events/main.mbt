@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Update, print_mouse_events_system)
-  .add_systems_param3(@app.Update, print_mouse_gesture_events_system)
+  .add_systems_param4(Update, print_mouse_events_system)
+  .add_systems_param3(Update, print_mouse_gesture_events_system)
   .run()
 }
 
@@ -81,8 +81,8 @@ fn format_cursor_moved(event : @window.CursorMoved) -> String {
 ///|
 fn format_mouse_wheel(event : @input.MouseWheel) -> String {
   let unit = match event.unit {
-    @input.MouseScrollUnit::Line => "Line"
-    @input.MouseScrollUnit::Pixel => "Pixel"
+    Line => "Line"
+    Pixel => "Pixel"
   }
   "MouseWheel { unit: \{unit}, x: \{event.x}, y: \{event.y} }"
 }

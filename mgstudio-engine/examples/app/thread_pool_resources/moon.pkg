@@ -12,7 +12,6 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/winit",
 }
 

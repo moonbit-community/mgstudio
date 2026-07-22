@@ -35,7 +35,7 @@ pub impl @json.FromJson for AnimationTransition with fn from_json(json, path) {
     Float,
     AnimationNodeIndex,
   ) = @json.from_json(json, path~)
-  AnimationTransition::{ current_weight, weight_decline_per_sec, animation }
+  { current_weight, weight_decline_per_sec, animation }
 }
 
 ///|
@@ -44,7 +44,7 @@ fn animation_transition_new(
   weight_decline_per_sec : Float,
   animation : AnimationNodeIndex,
 ) -> AnimationTransition {
-  AnimationTransition::{ current_weight, weight_decline_per_sec, animation }
+  { current_weight, weight_decline_per_sec, animation }
 }
 
 ///|
@@ -64,12 +64,12 @@ pub impl @json.FromJson for AnimationTransitions with fn from_json(json, path) {
     AnimationNodeIndex?,
     Array[AnimationTransition],
   ) = @json.from_json(json, path~)
-  AnimationTransitions::{ main_animation, transitions }
+  { main_animation, transitions }
 }
 
 ///|
 pub fn AnimationTransitions::new() -> AnimationTransitions {
-  AnimationTransitions::{ main_animation: None, transitions: [] }
+  { main_animation: None, transitions: [] }
 }
 
 ///|

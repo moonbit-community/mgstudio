@@ -48,6 +48,6 @@ fn main {
     .with_fmt_layer(fmt_layer)
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(log_plugin))
-  .add_systems_fn(@app.Update, log_system)
+  .add_systems_fn(Update, log_system)
   .run()
 }

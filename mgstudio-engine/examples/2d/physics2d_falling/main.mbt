@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, physics2d_falling_setup)
-  .add_systems_world(@app.Update, physics2d_print_events)
+  .add_systems_world(Startup, physics2d_falling_setup)
+  .add_systems_world(Update, physics2d_print_events)
   .run()
 }
 
@@ -113,9 +113,9 @@ fn physics2d_print_events(world : @ecs.World) -> Unit {
     Some(events) => {
       for ev in events.collisions {
         match ev {
-          @physics2d.CollisionEvent2d::Started(a, b, sensor) =>
+          Started(a, b, sensor) =>
             println("Collision Started: \{a.id}, \{b.id}, sensor=\{sensor}")
-          @physics2d.CollisionEvent2d::Stopped(a, b, sensor) =>
+          Stopped(a, b, sensor) =>
             println("Collision Stopped: \{a.id}, \{b.id}, sensor=\{sensor}")
         }
       }

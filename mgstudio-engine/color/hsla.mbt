@@ -27,7 +27,7 @@ pub fn Hsla::new(
   lightness : Float,
   alpha : Float,
 ) -> Hsla {
-  Hsla::{
+  {
     hue: color_wrap_hue(hue),
     saturation: color_clamp_unit(saturation),
     lightness: color_clamp_unit(lightness),

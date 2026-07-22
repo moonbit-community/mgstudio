@@ -150,11 +150,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .with_layout(@text.TextLayout::new_with_justify(Left))
   .with_color(
     @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
-  .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+  .with_shadow(Some(Text2dShadow()))
   .spawn()
   |> ignore
 
@@ -203,16 +203,16 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
 
 ///|
 fn button_system(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     split_screen_state.val.active_camera = 0
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  if @input.key_just_pressed(Digit2) {
     split_screen_state.val.active_camera = 1
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  if @input.key_just_pressed(Digit3) {
     split_screen_state.val.active_camera = 2
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
+  if @input.key_just_pressed(Digit4) {
     split_screen_state.val.active_camera = 3
   }
 
@@ -233,9 +233,9 @@ fn button_system(world : @ecs.World) -> Unit {
     }
   }
 
-  let keyboard_angle = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  let keyboard_angle = if @input.key_pressed(ArrowLeft) {
     -0.1F
-  } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  } else if @input.key_pressed(ArrowRight) {
     0.1F
   } else {
     0.0F
@@ -283,8 +283,8 @@ fn button_system(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, set_camera_viewports)
-  .add_systems_world(@app.Update, button_system)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, set_camera_viewports)
+  .add_systems_world(Update, button_system)
   .run()
 }

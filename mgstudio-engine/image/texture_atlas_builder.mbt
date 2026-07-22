@@ -27,7 +27,7 @@ pub fn TextureAtlasBuilder::new(
   atlas_width : Int,
   atlas_height : Int,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
+  {
     atlas_width: if atlas_width <= 0 {
       1
     } else {
@@ -47,14 +47,7 @@ pub fn TextureAtlasBuilder::with_padding(
   self : TextureAtlasBuilder,
   padding : Int,
 ) -> TextureAtlasBuilder {
-  TextureAtlasBuilder::{
-    ..self,
-    padding: if padding < 0 {
-      0
-    } else {
-      padding
-    },
-  }
+  { ..self, padding: if padding < 0 { 0 } else { padding } }
 }
 
 ///|
@@ -77,12 +70,7 @@ pub fn TextureAtlasBuilder::build_grid(
     let mut x = 0
     while x + cell_width <= self.atlas_width {
       ignore(
-        layout.add_region(TextureAtlasRegion::{
-          x,
-          y,
-          width: cell_width,
-          height: cell_height,
-        }),
+        layout.add_region({ x, y, width: cell_width, height: cell_height }),
       )
       x = x + stride_x
     }

@@ -25,8 +25,8 @@ fn render3d_flags_approx_eq(lhs : Float, rhs : Float) -> Bool {
 ///|
 test "render3d: alpha-mask phase queueing does not evaluate shader cutoff" {
   let properties = @material.MaterialProperties::MaterialProperties()
-    .with_render_phase_type(@material.RenderPhaseType::AlphaMask)
-    .with_alpha_mode(@material.AlphaMode3d::Mask(0.9F))
+    .with_render_phase_type(AlphaMask)
+    .with_alpha_mode(Mask(0.9F))
   debug_inspect(render3d_mesh_phase_kind(properties), content="1")
 }
 
@@ -77,7 +77,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
 ///|
 test "render3d: forward decal specialization bit is carried into material flags" {
   let flags = @pbr_render.render3d_standard_material_flags(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     -1,
     -1,
     -1,
@@ -97,7 +97,7 @@ test "render3d: forward decal specialization bit is carried into material flags"
 ///|
 test "render3d: standard material flags keep opaque default when maps are absent" {
   let flags = @pbr_render.render3d_standard_material_flags(
-    @material.StandardMaterial::StandardMaterial(),
+    StandardMaterial(),
     -1,
     -1,
     -1,
@@ -153,7 +153,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       material_bind_group_index: 0,
       material_bind_group_slot: 0,
     },
-    MeshPhaseItem3d::{
+    {
       entity: phase_entity_ref3d_for_main(@core.Entity::new(2, 0)),
       extracted_index: 1,
       current_uniform_index: 1U,
@@ -166,7 +166,7 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
       material_bind_group_index: 0,
       material_bind_group_slot: 0,
     },
-    MeshPhaseItem3d::{
+    {
       entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
       extracted_index: 2,
       current_uniform_index: 2U,
@@ -182,46 +182,26 @@ test "render3d: preprocess indirect index maps preserve per-draw indexed slots" 
   ]
   let (indexed, non_indexed) = render3d_gpu_preprocess_indirect_parameter_index_maps(
     draw_items,
-    GpuPreprocessWorkItemBuffers3d::Indirect(
+    Indirect(
       [
-        GpuPreprocessShaderWorkItem3d::{
-          input_index: 0,
-          output_or_indirect_parameters_index: 0,
-        },
-        GpuPreprocessShaderWorkItem3d::{
-          input_index: 2,
-          output_or_indirect_parameters_index: 1,
-        },
+        { input_index: 0, output_or_indirect_parameters_index: 0 },
+        { input_index: 2, output_or_indirect_parameters_index: 1 },
       ],
-      [
-        GpuPreprocessShaderWorkItem3d::{
-          input_index: 1,
-          output_or_indirect_parameters_index: 0,
-        },
-      ],
+      [{ input_index: 1, output_or_indirect_parameters_index: 0 }],
       None,
     ),
-    GpuPreprocessIndirectMetadata3d::{
-      indexed: GpuPreprocessIndirectMeshClassMetadata3d::{
+    {
+      indexed: {
         indirect_parameters_cpu_metadata: [
-          GpuPreprocessIndirectParametersCpuMetadata3d::{
-            base_output_index: 0,
-            batch_set_index: -1,
-          },
-          GpuPreprocessIndirectParametersCpuMetadata3d::{
-            base_output_index: 2,
-            batch_set_index: -1,
-          },
+          { base_output_index: 0, batch_set_index: -1 },
+          { base_output_index: 2, batch_set_index: -1 },
         ],
         indirect_parameters_gpu_metadata: [],
         indirect_batch_sets: [],
       },
-      non_indexed: GpuPreprocessIndirectMeshClassMetadata3d::{
+      non_indexed: {
         indirect_parameters_cpu_metadata: [
-          GpuPreprocessIndirectParametersCpuMetadata3d::{
-            base_output_index: 1,
-            batch_set_index: -1,
-          },
+          { base_output_index: 1, batch_set_index: -1 },
         ],
         indirect_parameters_gpu_metadata: [],
         indirect_batch_sets: [],
@@ -532,7 +512,7 @@ test "render3d: GPU preprocess includes every Bevy main mesh phase" {
   ]
   let draw_items : Array[MeshPhaseItem3d] = []
   for index in 0..<phases.length() {
-    draw_items.push(MeshPhaseItem3d::{
+    draw_items.push({
       entity: phase_entity_ref3d_for_main(@core.Entity::new(50 + index, 0)),
       extracted_index: index,
       current_uniform_index: (10 + index).reinterpret_as_uint(),
@@ -602,24 +582,22 @@ fn render3d_test_extracted_mesh_for_flags(
     @math.Quat::identity(),
     @math.Vec3::zero(),
   )
-  ExtractedMesh3d::{
+  {
     entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       mesh_handle: @asset.Handle::new(1),
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,
       previous_transform: transform,
       aabb: None,
-      material_draw_data: MaterialDrawData3d::Standard(
-        @material.StandardMaterial::StandardMaterial(),
-      ),
+      material_draw_data: Standard(StandardMaterial()),
       material_extension: None,
       material_properties: pbr_material_apply_draw_functions(
-        @material.MaterialProperties::MaterialProperties(),
+        MaterialProperties(),
         pbr_material_default_draw_function_ids(),
       ),
-      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      material_bind_group_data: MaterialBindGroupResolvedData(),
       lightmap: None,
       is_forward_decal: false,
       forward_decal_material_ext: None,
@@ -629,7 +607,7 @@ fn render3d_test_extracted_mesh_for_flags(
       has_transmitted_shadow_receiver,
       has_no_frustum_culling,
       has_no_cpu_culling: false,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
@@ -649,26 +627,26 @@ fn render3d_test_transparent_mesh_for_queue(
   let transform = @transform.Transform::from_xyz(0.0F, 0.0F, z)
   let world_from_local = @math.Affine3::from_translation(transform.translation)
   let material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-    @material.AlphaMode3d::Blend,
+    Blend,
   )
-  ExtractedMesh3d::{
+  {
     entity: phase_entity_ref3d_for_main(@core.Entity::new(entity_id, 0)),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       mesh_handle: @asset.Handle::new(entity_id),
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,
       previous_transform: transform,
       aabb: None,
-      material_draw_data: MaterialDrawData3d::Standard(material),
+      material_draw_data: Standard(material),
       material_extension: None,
       material_properties: render3d_material_properties_for_standard_material(
         material,
         None,
-        OpaqueRendererMethod::Forward,
+        Forward,
         true,
       ).with_depth_bias(depth_bias),
-      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      material_bind_group_data: MaterialBindGroupResolvedData(),
       lightmap: None,
       is_forward_decal: false,
       forward_decal_material_ext: None,
@@ -678,7 +656,7 @@ fn render3d_test_transparent_mesh_for_queue(
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
@@ -745,11 +723,11 @@ test "render3d: render asset preparation deduplicates shared mesh instances" {
     )
     let first = ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(301, 0)),
-      payload: Mesh3dExtractedPayload::{ ..base.payload, mesh_handle, },
+      payload: { ..base.payload, mesh_handle, },
     }
     let second = ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(@core.Entity::new(302, 0)),
-      payload: Mesh3dExtractedPayload::{ ..base.payload, mesh_handle, },
+      payload: { ..base.payload, mesh_handle, },
     }
     let extracted_assets = render3d_extracted_render_mesh_assets_from_extracted_meshes([
         first, second,
@@ -1002,7 +980,7 @@ test "render3d: transparent sorting uses render mesh center and CPU or GPU insta
     render3d_test_queue_material_instances(meshes),
     render3d_test_queue_material_bindings(meshes),
     material_slots,
-    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    PendingMeshMaterialQueues(),
     @transform.Transform::identity(),
     false,
     retained_view_entity=view,
@@ -1031,7 +1009,7 @@ test "render3d: transparent sorting uses render mesh center and CPU or GPU insta
     render3d_test_queue_material_instances(meshes),
     render3d_test_queue_material_bindings(meshes),
     material_slots,
-    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    PendingMeshMaterialQueues(),
     @transform.Transform::identity(),
     true,
     retained_view_entity=view,
@@ -1049,18 +1027,15 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
     @math.Vec3::splat(1.0F),
   )
   let properties = @material.MaterialProperties::MaterialProperties()
-    .with_alpha_mode(@material.AlphaMode3d::Blend)
-    .with_render_phase_type(@material.RenderPhaseType::Transparent)
+    .with_alpha_mode(Blend)
+    .with_render_phase_type(Transparent)
     .add_draw_function(
       MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
       @material.DrawFunctionId::new(70U),
     )
   let mesh = ExtractedMesh3d::{
     ..base,
-    payload: Mesh3dExtractedPayload::{
-      ..base.payload,
-      material_properties: properties,
-    },
+    payload: { ..base.payload, material_properties: properties },
   }
   let (view, cache) = render3d_test_queue_pipeline_cache([mesh])
   let material_slots = render3d_test_queue_material_slots([mesh])
@@ -1104,18 +1079,18 @@ test "render3d: queue phase uses bevy MaterialProperties render phase" {
 ///|
 test "render3d: queue phase reads material properties from resolved material slots" {
   let payload_properties = @material.MaterialProperties::MaterialProperties()
-    .with_alpha_mode(@material.AlphaMode3d::Opaque)
-    .with_render_phase_type(@material.RenderPhaseType::Opaque)
+    .with_alpha_mode(Opaque)
+    .with_render_phase_type(Opaque)
   let slot_properties = @material.MaterialProperties::MaterialProperties()
-    .with_alpha_mode(@material.AlphaMode3d::Blend)
-    .with_render_phase_type(@material.RenderPhaseType::Transparent)
+    .with_alpha_mode(Blend)
+    .with_render_phase_type(Transparent)
     .with_depth_bias(4.0F)
     .add_draw_function(
       MAIN_PASS_TRANSPARENT_DRAW_FUNCTION_LABEL,
       @material.DrawFunctionId::new(71U),
     )
   let material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-    @material.AlphaMode3d::Blend,
+    Blend,
   )
   let base = render3d_test_extracted_mesh_for_flags(
     false,
@@ -1125,9 +1100,9 @@ test "render3d: queue phase reads material properties from resolved material slo
   )
   let mesh = ExtractedMesh3d::{
     ..base,
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..base.payload,
-      material_draw_data: MaterialDrawData3d::Standard(material),
+      material_draw_data: Standard(material),
       material_properties: payload_properties,
     },
   }
@@ -1135,9 +1110,9 @@ test "render3d: queue phase reads material properties from resolved material slo
   material_slots.set_resolved(
     mesh.entity.main_entity,
     Render3dResolvedMaterial::new(
-      MaterialDrawData3d::Standard(material),
+      Standard(material),
       slot_properties,
-      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      MaterialBindGroupResolvedData(),
       "StandardMaterial",
     ),
   )
@@ -1185,17 +1160,17 @@ test "render3d: queue phase reads material properties from resolved material slo
 test "render3d: queue phase skips material without its main pass draw function" {
   let mesh = render3d_test_transparent_mesh_for_queue(8, -1.0F, 0.0F)
   let material = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-    @material.AlphaMode3d::Blend,
+    Blend,
   )
   let material_slots = RenderMaterial3dResolvedSlots::new()
   material_slots.set_resolved(
     mesh.entity.main_entity,
     Render3dResolvedMaterial::new(
-      MaterialDrawData3d::Standard(material),
+      Standard(material),
       @material.MaterialProperties::MaterialProperties()
-      .with_alpha_mode(@material.AlphaMode3d::Blend)
-      .with_render_phase_type(@material.RenderPhaseType::Transparent),
-      @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      .with_alpha_mode(Blend)
+      .with_render_phase_type(Transparent),
+      MaterialBindGroupResolvedData(),
       "StandardMaterial",
     ),
   )
@@ -1252,7 +1227,7 @@ test "render3d: queue phase reads mesh layers from RenderMeshInstances" {
   let camera_layer = @camera_render_layers.RenderLayers::layer(1)
   let mesh = ExtractedMesh3d::{
     ..base,
-    payload: Mesh3dExtractedPayload::{ ..base.payload, layers: payload_layer },
+    payload: { ..base.payload, layers: payload_layer },
   }
   let mesh_instances = RenderMeshInstances::new()
   mesh_instances.insert(
@@ -1328,7 +1303,7 @@ test "render3d: queue phase returns missing material bindings to pending queue" 
     None,
     render3d_test_queue_mesh_allocator([mesh]),
     render3d_test_queue_material_instances([mesh]),
-    RenderMaterialBindings::RenderMaterialBindings(),
+    RenderMaterialBindings(),
     material_slots,
     pending_queues,
     @transform.Transform::identity(),
@@ -1351,7 +1326,7 @@ test "render3d: queue phase skips missing MeshAllocator slabs without pending re
     render3d_test_queue_mesh_instances([mesh]),
     render3d_test_queue_render_mesh_assets([mesh]),
     None,
-    @render_mesh.MeshAllocator::MeshAllocator(),
+    MeshAllocator(),
     render3d_test_queue_material_instances([mesh]),
     render3d_test_queue_material_bindings([mesh]),
     material_slots,
@@ -1375,9 +1350,9 @@ test "render3d: queue phase checks prepared binding before allocator slabs" {
     render3d_test_queue_mesh_instances([mesh]),
     render3d_test_queue_render_mesh_assets([mesh]),
     None,
-    @render_mesh.MeshAllocator::MeshAllocator(),
+    MeshAllocator(),
     render3d_test_queue_material_instances([mesh]),
-    RenderMaterialBindings::RenderMaterialBindings(),
+    RenderMaterialBindings(),
     render3d_test_queue_material_slots([mesh]),
     pending_queues,
     @transform.Transform::identity(),
@@ -1394,13 +1369,13 @@ test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
   let cube_material = @material.StandardMaterial::StandardMaterial()
     .with_normal_map_texture(Some(@asset.Handle::new(1)))
     .with_cull_mode(None)
-    .with_alpha_mode(@material.AlphaMode3d::Opaque)
+    .with_alpha_mode(Opaque)
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.5F)
   let properties = render3d_material_properties_for_standard_material(
     cube_material,
     None,
-    OpaqueRendererMethod::Forward,
+    Forward,
     true,
   )
   let base = render3d_test_extracted_mesh_for_flags(
@@ -1411,9 +1386,9 @@ test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
   )
   let mesh = ExtractedMesh3d::{
     ..base,
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..base.payload,
-      material_draw_data: MaterialDrawData3d::Standard(cube_material),
+      material_draw_data: Standard(cube_material),
       material_properties: properties,
     },
   }
@@ -1450,10 +1425,7 @@ test "render3d: volumetric_fog Cube material queues into Bevy opaque phase" {
     retained_view_entity=view,
     specialized_material_pipeline_cache=cache,
   )
-  debug_inspect(
-    properties.render_phase_type is @material.RenderPhaseType::Opaque,
-    content="true",
-  )
+  debug_inspect(properties.render_phase_type is Opaque, content="true")
   debug_inspect(cpu_items.length(), content="1")
   debug_inspect(cpu_items[0].phase, content="0")
   debug_inspect(cpu_items[0].phase == RENDER3D_PHASE_OPAQUE, content="true")
@@ -1620,17 +1592,17 @@ test "render3d: queue phase checks pipeline cache before pending resources" {
   let items = render3d_queue_mesh_phase_items(
     [mesh],
     RenderMeshInstances::new(),
-    @render_mesh.RenderMeshAssets::RenderMeshAssets(),
+    RenderMeshAssets(),
     None,
-    @render_mesh.MeshAllocator::MeshAllocator(),
-    RenderMaterialInstances::RenderMaterialInstances(),
-    RenderMaterialBindings::RenderMaterialBindings(),
+    MeshAllocator(),
+    RenderMaterialInstances(),
+    RenderMaterialBindings(),
     RenderMaterial3dResolvedSlots::new(),
     pending_queues,
     @transform.Transform::identity(),
     false,
     retained_view_entity=view,
-    specialized_material_pipeline_cache=SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    specialized_material_pipeline_cache=SpecializedMaterialPipelineCache(),
   )
   debug_inspect(items.length(), content="0")
   debug_inspect(pending_queues.current_len(view), content="0")
@@ -1645,22 +1617,22 @@ test "render3d: transmissive materials use a distinct sorted phase" {
   let world_from_local = @math.Affine3::from_translation(transform.translation)
   let mesh = ExtractedMesh3d::{
     entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       mesh_handle: @asset.Handle::new(3),
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,
       previous_transform: transform,
       aabb: None,
-      material_draw_data: MaterialDrawData3d::Standard(material),
+      material_draw_data: Standard(material),
       material_extension: None,
       material_properties: render3d_material_properties_for_standard_material(
         material,
         None,
-        OpaqueRendererMethod::Forward,
+        Forward,
         true,
       ),
-      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      material_bind_group_data: MaterialBindGroupResolvedData(),
       lightmap: None,
       is_forward_decal: false,
       forward_decal_material_ext: None,
@@ -1670,7 +1642,7 @@ test "render3d: transmissive materials use a distinct sorted phase" {
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling: false,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
@@ -1707,15 +1679,13 @@ test "render3d: transmissive materials use a distinct sorted phase" {
 
 ///|
 test "render3d: standard material pipeline key includes render mesh topology" {
-  let line_key = @mesh.BaseMeshPipelineKey::from_primitive_topology(
-    @mesh.Mesh3dPrimitiveTopology::LineList,
-  )
+  let line_key = @mesh.BaseMeshPipelineKey::from_primitive_topology(LineList)
   let render_mesh = @render_mesh.RenderMesh::new(
     vertex_count=2,
     key_bits=line_key,
   )
   let pipeline_key = material_pipeline_key_for_standard_material_render_mesh(
-    @material.MaterialProperties::MaterialProperties(),
+    MaterialProperties(),
     render_mesh,
   )
   let mesh_key_bits = pipeline_key.mesh_key().downcast_u64("MeshPipelineKey")

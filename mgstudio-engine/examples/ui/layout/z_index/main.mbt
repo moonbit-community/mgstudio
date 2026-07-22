@@ -34,11 +34,11 @@ fn spawn_box(
     entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(left))
-    .with_bottom(@ui.Val::Px(bottom))
-    .with_width(@ui.Val::Px(width))
-    .with_height(@ui.Val::Px(height)),
+    .with_position_type(Absolute)
+    .with_left(Px(left))
+    .with_bottom(Px(bottom))
+    .with_width(Px(width))
+    .with_height(Px(height)),
   )
   try! world.set_by_key(
     entity,
@@ -69,15 +69,15 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_align_items(Center)
+    .with_justify_content(Center),
   )
 
   let container = world.spawn_empty()
@@ -89,9 +89,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     container,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Px(180.0F))
-    .with_height(@ui.Val::Px(100.0F)),
+    @ui.Node::Node().with_width(Px(180.0F)).with_height(Px(100.0F)),
   )
   try! world.set_by_key(
     container,

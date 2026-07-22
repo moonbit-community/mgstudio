@@ -24,7 +24,7 @@ fn text_access_test_insert_style(
     ecs_key_text_font,
     TextFont::from_font_size(font_size),
   )
-  try! world.set_by_key(entity, ecs_key_text_color, TextColor::TextColor())
+  try! world.set_by_key(entity, ecs_key_text_color, TextColor())
   try! world.set_by_key(entity, ecs_key_text_line_height, line_height)
 }
 
@@ -40,10 +40,10 @@ test "text writer addresses root and TextSpan children by Bevy flattened index" 
   try! world.set_by_key(first, ecs_key_text_span, TextSpan::new("first"))
   try! world.set_by_key(nested, ecs_key_text_span, TextSpan::new("nested"))
   try! world.set_by_key(second, ecs_key_text_span, TextSpan::new("second"))
-  text_access_test_insert_style(world, root, 20.0F, LineHeight::Px(20.0F))
-  text_access_test_insert_style(world, first, 21.0F, LineHeight::Px(21.0F))
-  text_access_test_insert_style(world, nested, 22.0F, LineHeight::Px(22.0F))
-  text_access_test_insert_style(world, second, 23.0F, LineHeight::Px(23.0F))
+  text_access_test_insert_style(world, root, 20.0F, Px(20.0F))
+  text_access_test_insert_style(world, first, 21.0F, Px(21.0F))
+  text_access_test_insert_style(world, nested, 22.0F, Px(22.0F))
+  text_access_test_insert_style(world, second, 23.0F, Px(23.0F))
   try! world.set_by_key(
     first,
     @hierarchy.ecs_key_parent,
@@ -96,10 +96,7 @@ test "text writer addresses root and TextSpan children by Bevy flattened index" 
     writer.set_font(root, 2, TextFont::from_font_size(42.0F)),
     content="true",
   )
-  debug_inspect(
-    writer.set_line_height(root, 2, LineHeight::Px(7.0F)),
-    content="true",
-  )
+  debug_inspect(writer.set_line_height(root, 2, Px(7.0F)), content="true")
   debug_inspect(writer.set_color(root, 2, TextColor::white()), content="true")
   debug_inspect(
     writer.set_font(root, 4, TextFont::from_font_size(99.0F)),

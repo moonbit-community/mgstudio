@@ -60,7 +60,7 @@ fn render_mesh_default_layout_ref() -> @asset_mesh.MeshVertexBufferLayoutRef {
       attribute_ids=[],
       layout=@asset_mesh.VertexBufferLayout::new(
         array_stride=0,
-        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+        step_mode=Vertex,
         attributes=[],
       ),
     ),
@@ -97,7 +97,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
     source_layout,
     @asset_mesh.MeshVertexAttribute::position(),
     0,
-    @asset_mesh.MeshVertexFormat::Float32x3,
+    Float32x3,
     0,
     attribute_ids,
     attributes,
@@ -106,7 +106,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
     source_layout,
     @asset_mesh.MeshVertexAttribute::normal(),
     12,
-    @asset_mesh.MeshVertexFormat::Float32x3,
+    Float32x3,
     1,
     attribute_ids,
     attributes,
@@ -115,7 +115,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
     source_layout,
     @asset_mesh.MeshVertexAttribute::uv_0(),
     24,
-    @asset_mesh.MeshVertexFormat::Float32x2,
+    Float32x2,
     2,
     attribute_ids,
     attributes,
@@ -124,7 +124,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
     source_layout,
     @asset_mesh.MeshVertexAttribute::color(),
     32,
-    @asset_mesh.MeshVertexFormat::Float32x4,
+    Float32x4,
     5,
     attribute_ids,
     attributes,
@@ -133,7 +133,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
     source_layout,
     @asset_mesh.MeshVertexAttribute::joint_index(),
     48,
-    @asset_mesh.MeshVertexFormat::Uint32x4,
+    Uint32x4,
     6,
     attribute_ids,
     attributes,
@@ -142,7 +142,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
     source_layout,
     @asset_mesh.MeshVertexAttribute::joint_weight(),
     64,
-    @asset_mesh.MeshVertexFormat::Float32x4,
+    Float32x4,
     7,
     attribute_ids,
     attributes,
@@ -152,7 +152,7 @@ pub fn render_mesh3d_host_vertex_buffer_layout(
       attribute_ids~,
       layout=@asset_mesh.VertexBufferLayout::new(
         array_stride=RENDER_MESH3D_HOST_VERTEX_STRIDE_BYTES,
-        step_mode=@asset_mesh.MeshVertexStepMode::Vertex,
+        step_mode=Vertex,
         attributes~,
       ),
     ),
@@ -168,7 +168,7 @@ pub fn RenderMesh::new(
   index_format? : RenderMeshIndexFormat = Uint32,
   dimension? : RenderMeshDimension = Dim3,
   key_bits? : @asset_mesh.BaseMeshPipelineKey = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology(
-    @asset_mesh.Mesh3dPrimitiveTopology::TriangleList,
+    TriangleList,
   ),
   layout? : @asset_mesh.MeshVertexBufferLayoutRef = render_mesh_default_layout_ref(),
 ) -> RenderMesh {
@@ -177,14 +177,7 @@ pub fn RenderMesh::new(
   } else {
     NonIndexed
   }
-  RenderMesh::{
-    vertex_count,
-    aabb_center,
-    buffer_info,
-    dimension,
-    key_bits,
-    layout,
-  }
+  { vertex_count, aabb_center, buffer_info, dimension, key_bits, layout }
 }
 
 ///|
@@ -259,15 +252,15 @@ pub fn RenderMesh::from_mesh(
       let index_format = render_mesh_index_format_from_mesh(mesh, indices)
       RenderMeshBufferInfo::Indexed(indices.length(), index_format)
     }
-    None => RenderMeshBufferInfo::NonIndexed
+    None => NonIndexed
   }
   let primitive_topology = match mesh.primitive_topology() {
     Some(topology) => topology
-    None => @asset_mesh.Mesh3dPrimitiveTopology::TriangleList
+    None => TriangleList
   }
   let strip_index_format = match buffer_info {
     Indexed(_, Uint16) => Some(@asset_mesh.Mesh3dIndexFormat::Uint16)
-    Indexed(_, Uint32) => Some(@asset_mesh.Mesh3dIndexFormat::Uint32)
+    Indexed(_, Uint32) => Some(Uint32)
     NonIndexed => None
   }
   let base_key_bits = @asset_mesh.BaseMeshPipelineKey::from_primitive_topology_and_strip_index(
@@ -282,7 +275,7 @@ pub fn RenderMesh::from_mesh(
     base_key_bits
   }
   let layout = mesh.get_mesh_vertex_buffer_layout(mesh_vertex_buffer_layouts)
-  RenderMesh::{
+  {
     vertex_count,
     aabb_center: render_mesh_aabb_center(mesh),
     buffer_info,
@@ -308,14 +301,9 @@ fn render_mesh_index_format_from_mesh(
   indices : Array[Int],
 ) -> RenderMeshIndexFormat {
   match mesh.index_format() {
-    Some(Uint16) => RenderMeshIndexFormat::Uint16
-    Some(Uint32) => RenderMeshIndexFormat::Uint32
-    None =>
-      if render_mesh_indices_use_u32(indices) {
-        RenderMeshIndexFormat::Uint32
-      } else {
-        RenderMeshIndexFormat::Uint16
-      }
+    Some(Uint16) => Uint16
+    Some(Uint32) => Uint32
+    None => if render_mesh_indices_use_u32(indices) { Uint32 } else { Uint16 }
   }
 }
 
@@ -362,8 +350,8 @@ pub fn RenderMesh::index_format(
   self : RenderMesh,
 ) -> @asset_mesh.Mesh3dIndexFormat? {
   match self.buffer_info {
-    Indexed(_, Uint16) => Some(@asset_mesh.Mesh3dIndexFormat::Uint16)
-    Indexed(_, Uint32) => Some(@asset_mesh.Mesh3dIndexFormat::Uint32)
+    Indexed(_, Uint16) => Some(Uint16)
+    Indexed(_, Uint32) => Some(Uint32)
     NonIndexed => None
   }
 }
@@ -415,7 +403,7 @@ pub struct RenderMeshAssets {
 
 ///|
 pub fn RenderMeshAssets::RenderMeshAssets() -> RenderMeshAssets {
-  RenderMeshAssets::{ assets: Map([]) }
+  { assets: Map([]) }
 }
 
 ///|
@@ -459,7 +447,7 @@ pub fn ExtractedRenderMeshAsset::new(
   mesh_asset_id : Int,
   mesh : @asset_mesh.Mesh,
 ) -> ExtractedRenderMeshAsset {
-  ExtractedRenderMeshAsset::{ mesh_asset_id, mesh }
+  { mesh_asset_id, mesh }
 }
 
 ///|
@@ -481,7 +469,7 @@ pub fn PreparedRenderMeshAsset::new(
   mesh_asset_id : Int,
   render_mesh : RenderMesh,
 ) -> PreparedRenderMeshAsset {
-  PreparedRenderMeshAsset::{ mesh_asset_id, render_mesh }
+  { mesh_asset_id, render_mesh }
 }
 
 ///|

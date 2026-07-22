@@ -61,7 +61,7 @@ pub fn[T] register_asset_resource_keys(
 type AssetEventDispatch = (@ecs.World) -> Unit
 
 ///|
-let asset_event_dispatch_registry : @hashmap.HashMap[String, AssetEventDispatch] = @hashmap.HashMap([],
+let asset_event_dispatch_registry : @hashmap.HashMap[String, AssetEventDispatch] = HashMap([],
 )
 
 ///|
@@ -132,7 +132,7 @@ pub impl[T : Asset] @ecs.Message for AssetEvent[T] with fn message() {
 
 ///|
 pub fn[T] Assets::new() -> Assets[T] {
-  Assets::{ items: [], alive: 0, events: [], dirty: [], marker: None }
+  { items: [], alive: 0, events: [], dirty: [], marker: None }
 }
 
 ///|
@@ -203,7 +203,7 @@ fn[T] assets_mark_dirty(assets : Assets[T], handle : Handle[T]) -> Unit {
     }
   }
   assets.dirty.push(id)
-  assets.events.push(AssetEvent::Modified(handle))
+  assets.events.push(Modified(handle))
 }
 
 ///|
@@ -293,10 +293,10 @@ pub fn[T] Assets::insert(
   self.items[id] = Some(value)
   assets_remove_dirty_handle(self, handle)
   if existed {
-    self.events.push(AssetEvent::Modified(handle))
+    self.events.push(Modified(handle))
   } else {
     self.alive = self.alive + 1
-    self.events.push(AssetEvent::Added(handle))
+    self.events.push(Added(handle))
   }
   true
 }
@@ -312,7 +312,7 @@ pub fn[T] Assets::remove(self : Assets[T], handle : Handle[T]) -> T? {
         self.items[id] = None
         self.alive = self.alive - 1
         assets_remove_dirty_handle(self, handle)
-        self.events.push(AssetEvent::Removed(handle))
+        self.events.push(Removed(handle))
         Some(value)
       }
       None => None

@@ -44,7 +44,7 @@ pub fn RayCast3d::new(
       1.0F / dir.z
     },
   )
-  RayCast3d::{ origin, direction, max, direction_recip: recip }
+  { origin, direction, max, direction_recip: recip }
 }
 
 ///|
@@ -157,7 +157,7 @@ pub fn AabbCast3d::new(
   direction : Dir3,
   max : Float,
 ) -> AabbCast3d {
-  AabbCast3d::{ ray: RayCast3d::new(origin, direction, max), aabb }
+  { ray: RayCast3d::new(origin, direction, max), aabb }
 }
 
 ///|
@@ -194,7 +194,7 @@ pub fn BoundingSphereCast::new(
   direction : Dir3,
   max : Float,
 ) -> BoundingSphereCast {
-  BoundingSphereCast::{ ray: RayCast3d::new(origin, direction, max), sphere }
+  { ray: RayCast3d::new(origin, direction, max), sphere }
 }
 
 ///|

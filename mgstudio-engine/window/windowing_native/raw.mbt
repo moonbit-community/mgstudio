@@ -313,6 +313,7 @@ priv struct WindowingNativeRuntimeState {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 let windowing_native_runtime_state : WindowingNativeRuntimeState = {
   open_window_ids: [],
   close_requested_window_ids: [],
@@ -512,11 +513,7 @@ fn push_drag_event(window : Int, kind : Int, text : Bytes) -> Unit {
   if windowing_native_runtime_state.drag_events.length() >= MAX_DRAG_EVENTS {
     return
   }
-  windowing_native_runtime_state.drag_events.push(DragEvent::{
-    window,
-    kind,
-    text,
-  })
+  windowing_native_runtime_state.drag_events.push({ window, kind, text })
 }
 
 ///|
@@ -526,10 +523,10 @@ fn push_window_theme_event(window : Int, theme : @window_core.Theme) -> Unit {
     return
   }
   let encoded_theme = match theme {
-    @window_core.Theme::Light => WINDOW_THEME_LIGHT
-    @window_core.Theme::Dark => WINDOW_THEME_DARK
+    Light => WINDOW_THEME_LIGHT
+    Dark => WINDOW_THEME_DARK
   }
-  windowing_native_runtime_state.window_theme_events.push(WindowThemeEvent::{
+  windowing_native_runtime_state.window_theme_events.push({
     window,
     theme: encoded_theme,
   })
@@ -541,7 +538,7 @@ fn push_window_occluded_event(window : Int, occluded : Bool) -> Unit {
     MAX_WINDOW_OCCLUDED_EVENTS {
     return
   }
-  windowing_native_runtime_state.window_occluded_events.push(WindowOccludedEvent::{
+  windowing_native_runtime_state.window_occluded_events.push({
     window,
     occluded,
   })
@@ -569,10 +566,7 @@ fn push_pinch_gesture_event(window : Int, delta : Float) -> Unit {
     MAX_PINCH_GESTURE_EVENTS {
     return
   }
-  windowing_native_runtime_state.pinch_gesture_events.push(ScalarGestureEvent::{
-    window,
-    delta,
-  })
+  windowing_native_runtime_state.pinch_gesture_events.push({ window, delta })
 }
 
 ///|
@@ -581,10 +575,7 @@ fn push_rotation_gesture_event(window : Int, delta : Float) -> Unit {
     MAX_ROTATION_GESTURE_EVENTS {
     return
   }
-  windowing_native_runtime_state.rotation_gesture_events.push(ScalarGestureEvent::{
-    window,
-    delta,
-  })
+  windowing_native_runtime_state.rotation_gesture_events.push({ window, delta })
 }
 
 ///|
@@ -593,11 +584,7 @@ fn push_pan_gesture_event(window : Int, x : Float, y : Float) -> Unit {
     MAX_PAN_GESTURE_EVENTS {
     return
   }
-  windowing_native_runtime_state.pan_gesture_events.push(PanGestureEvent::{
-    window,
-    x,
-    y,
-  })
+  windowing_native_runtime_state.pan_gesture_events.push({ window, x, y })
 }
 
 ///|
@@ -606,9 +593,7 @@ fn push_double_tap_gesture_event(window : Int) -> Unit {
     MAX_DOUBLE_TAP_GESTURE_EVENTS {
     return
   }
-  windowing_native_runtime_state.double_tap_gesture_events.push(DoubleTapGestureEvent::{
-    window,
-  })
+  windowing_native_runtime_state.double_tap_gesture_events.push({ window, })
 }
 
 ///|
@@ -660,7 +645,7 @@ fn push_raw_winit_window_events(
       MAX_RAW_WINIT_WINDOW_EVENTS {
       return
     }
-    windowing_native_runtime_state.raw_winit_window_events.push(RawWinitWindowEventSnapshot::{
+    windowing_native_runtime_state.raw_winit_window_events.push({
       window_id,
       event: raw_winit_window_event_data_from_winit_event(event),
     })
@@ -685,7 +670,7 @@ fn push_ime_event(
   if windowing_native_runtime_state.ime_events.length() >= MAX_IME_EVENTS {
     return
   }
-  windowing_native_runtime_state.ime_events.push(ImeEvent::{
+  windowing_native_runtime_state.ime_events.push({
     window,
     kind,
     text,
@@ -708,7 +693,7 @@ fn push_keyboard_event(
     MAX_KEYBOARD_EVENTS {
     return
   }
-  windowing_native_runtime_state.keyboard_events.push(KeyboardEvent::{
+  windowing_native_runtime_state.keyboard_events.push({
     key_id,
     state,
     repeat,
@@ -912,7 +897,7 @@ fn ensure_native_event_loop() -> @window_macos.EventLoop {
       let event_loop = @window_macos.EventLoopBuilder()
         .with_any_thread(windowing_native_runtime_state.event_loop_any_thread)
         .build()
-      event_loop.set_control_flow(@window_core.ControlFlow::Poll)
+      event_loop.set_control_flow(Poll)
       windowing_native_runtime_state.event_loop_any_thread_applied = windowing_native_runtime_state.event_loop_any_thread
       windowing_native_runtime_state.native_event_loop = Some(event_loop)
       event_loop
@@ -1355,7 +1340,7 @@ pub fn create_utf8(
   }
   let native_window = event_loop.create_window(attributes)
   let window = native_window.id().into_raw()
-  windowing_native_runtime_state.native_windows.push(NativeWindowEntry::{
+  windowing_native_runtime_state.native_windows.push({
     id: window,
     window_ref: Ref(native_window),
   })
@@ -1778,34 +1763,18 @@ pub fn set_cursor_grab_mode(
   match native_window_ref(window) {
     Some(window_ref) =>
       match mode {
-        @window_core.CursorGrabMode::None =>
-          set_cursor_grab_mode_once(
-            window_ref,
-            @window_core.CursorGrabMode::None,
-          )
-        @window_core.CursorGrabMode::Confined =>
-          if set_cursor_grab_mode_once(
-              window_ref,
-              @window_core.CursorGrabMode::Confined,
-            ) {
+        None => set_cursor_grab_mode_once(window_ref, None)
+        Confined =>
+          if set_cursor_grab_mode_once(window_ref, Confined) {
             true
           } else {
-            set_cursor_grab_mode_once(
-              window_ref,
-              @window_core.CursorGrabMode::Locked,
-            )
+            set_cursor_grab_mode_once(window_ref, Locked)
           }
-        @window_core.CursorGrabMode::Locked =>
-          if set_cursor_grab_mode_once(
-              window_ref,
-              @window_core.CursorGrabMode::Locked,
-            ) {
+        Locked =>
+          if set_cursor_grab_mode_once(window_ref, Locked) {
             true
           } else {
-            set_cursor_grab_mode_once(
-              window_ref,
-              @window_core.CursorGrabMode::Confined,
-            )
+            set_cursor_grab_mode_once(window_ref, Confined)
           }
       }
     None => false
@@ -1888,9 +1857,7 @@ pub fn drag_resize_window(
 pub fn position_x(window : Int) -> Int {
   match native_window_ref(window) {
     Some(window_ref) =>
-      (window_ref.val.outer_position() catch {
-        _ => @window_dpi.PhysicalPosition(0, 0)
-      }).x()
+      (window_ref.val.outer_position() catch { _ => PhysicalPosition(0, 0) }).x()
     None => 0
   }
 }
@@ -1899,9 +1866,7 @@ pub fn position_x(window : Int) -> Int {
 pub fn position_y(window : Int) -> Int {
   match native_window_ref(window) {
     Some(window_ref) =>
-      (window_ref.val.outer_position() catch {
-        _ => @window_dpi.PhysicalPosition(0, 0)
-      }).y()
+      (window_ref.val.outer_position() catch { _ => PhysicalPosition(0, 0) }).y()
     None => 0
   }
 }

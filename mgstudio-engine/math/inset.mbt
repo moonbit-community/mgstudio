@@ -67,7 +67,7 @@ pub impl ToRing for RegularPolygon with fn to_ring(self, thickness) {
 
 ///|
 pub impl Inset for Circle with fn inset(self, distance) {
-  Circle::{ ..self, radius: self.radius - distance }
+  { ..self, radius: self.radius - distance }
 }
 
 ///|
@@ -98,19 +98,17 @@ pub impl Inset for Rhombus with fn inset(self, distance) {
   )
   let x_offset = distance / sin(angle)
   let y_offset = distance / cos(angle)
-  Rhombus::{
-    half_diagonal: self.half_diagonal.sub(Vec2::new(x_offset, y_offset)),
-  }
+  { half_diagonal: self.half_diagonal.sub(Vec2::new(x_offset, y_offset)) }
 }
 
 ///|
 pub impl Inset for Capsule2d with fn inset(self, distance) {
-  Capsule2d::{ ..self, radius: self.radius - distance }
+  { ..self, radius: self.radius - distance }
 }
 
 ///|
 pub impl Inset for Rectangle with fn inset(self, distance) {
-  Rectangle::{ half_size: self.half_size.sub(Vec2::splat(distance)) }
+  { half_size: self.half_size.sub(Vec2::splat(distance)) }
 }
 
 ///|
@@ -118,7 +116,7 @@ pub impl Inset for CircularSegment with fn inset(self, distance) {
   let radius = self.radius - distance
   let apothem = self.radius * cos(self.half_angle) + distance
   let half_angle = acos(apothem / radius)
-  CircularSegment::{ ..self, radius, half_angle }
+  { ..self, radius, half_angle }
 }
 
 ///|
@@ -129,5 +127,5 @@ pub impl Inset for RegularPolygon with fn inset(self, distance) {
     Float::from_double(safe_sides.to_double())
   let half_angle = internal_angle / 2.0F
   let offset = distance / sin(half_angle)
-  RegularPolygon::{ ..self, radius: self.radius - offset }
+  { ..self, radius: self.radius - offset }
 }

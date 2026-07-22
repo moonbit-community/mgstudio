@@ -401,7 +401,7 @@ fn dirty_specializations_mut_or_init(
     is None {
     render_world.insert_resource(
       @render_visibility.DirtySpecializations::resource(),
-      @render_visibility.DirtySpecializations::DirtySpecializations(),
+      DirtySpecializations(),
     )
   }
   match
@@ -420,7 +420,7 @@ fn entity_specialization_ticks_mut_or_init(
   if render_world.get_resource(ecs_key_entity_specialization_ticks) is None {
     render_world.insert_resource(
       ecs_key_entity_specialization_ticks,
-      EntitySpecializationTicks::EntitySpecializationTicks(),
+      EntitySpecializationTicks(),
     )
   }
   match render_world.get_resource_mut(ecs_key_entity_specialization_ticks) {
@@ -511,7 +511,7 @@ fn extract_mesh_materials(render_world : @ecs.World) -> Unit {
   if render_world.get_resource(ecs_key_render_material_shader_paths) is None {
     render_world.insert_resource(
       ecs_key_render_material_shader_paths,
-      RenderMaterialShaderPaths::RenderMaterialShaderPaths(),
+      RenderMaterialShaderPaths(),
     )
   }
   let material_shader_paths = match

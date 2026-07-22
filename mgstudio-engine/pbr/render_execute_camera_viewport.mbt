@@ -65,7 +65,7 @@ fn render3d_execute_camera_viewport_state(
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return None
   }
-  Some(Render3dCameraViewportState::{
+  Some({
     viewport_x,
     viewport_y,
     viewport_width,

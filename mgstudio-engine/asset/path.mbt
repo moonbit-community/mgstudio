@@ -93,14 +93,11 @@ fn string_find_substring(input : String, pattern : String) -> Int {
 ///|
 fn asset_parse_path_error_message(error : ParseAssetPathError) -> String {
   match error {
-    ParseAssetPathError::InvalidSourceSyntax =>
-      "asset source must not contain `#`"
-    ParseAssetPathError::InvalidLabelSyntax =>
-      "asset label must not contain `://`"
-    ParseAssetPathError::MissingSource =>
+    InvalidSourceSyntax => "asset source must not contain `#`"
+    InvalidLabelSyntax => "asset label must not contain `://`"
+    MissingSource =>
       "asset source must contain at least one character before `://`"
-    ParseAssetPathError::MissingLabel =>
-      "asset label must contain at least one character after `#`"
+    MissingLabel => "asset label must contain at least one character after `#`"
   }
 }
 
@@ -111,16 +108,16 @@ pub fn asset_try_parse_path(
   let hash_index = string_last_index_of_char(path, 35)
   let scheme_index = string_find_substring(path, "://")
   if hash_index >= 0 && scheme_index > hash_index {
-    raise ParseAssetPathError::InvalidSourceSyntax
+    raise InvalidSourceSyntax
   }
   let (without_label, label) = if hash_index >= 0 {
     if hash_index + 1 >= path.length() {
-      raise ParseAssetPathError::MissingLabel
+      raise MissingLabel
     }
     let base = if hash_index > 0 { path[0:hash_index].to_owned() } else { "" }
     let parsed_label = path[hash_index + 1:path.length()].to_owned()
     if string_find_substring(parsed_label, "://") >= 0 {
-      raise ParseAssetPathError::InvalidLabelSyntax
+      raise InvalidLabelSyntax
     }
     (base, Some(parsed_label))
   } else {
@@ -128,16 +125,16 @@ pub fn asset_try_parse_path(
   }
 
   if scheme_index == 0 {
-    raise ParseAssetPathError::MissingSource
+    raise MissingSource
   }
 
   let source_scheme_index = string_find_substring(without_label, "://")
   if source_scheme_index == 0 {
-    raise ParseAssetPathError::MissingSource
+    raise MissingSource
   }
 
   if string_last_index_of_char(without_label, 35) >= 0 {
-    raise ParseAssetPathError::InvalidSourceSyntax
+    raise InvalidSourceSyntax
   }
 
   if source_scheme_index > 0 {
@@ -147,13 +144,9 @@ pub fn asset_try_parse_path(
     } else {
       ""
     }
-    AssetPath::{
-      source: AssetSourceId::Named(source_name),
-      path: relative_path,
-      label,
-    }
+    { source: Named(source_name), path: relative_path, label }
   } else {
-    AssetPath::{ source: AssetSourceId::Default, path: without_label, label }
+    { source: Default, path: without_label, label }
   }
 }
 
@@ -170,8 +163,8 @@ pub fn asset_parse_path(path : String) -> AssetPath {
 ///|
 pub fn asset_format_path(parsed : AssetPath) -> String {
   let base = match parsed.source {
-    AssetSourceId::Default => parsed.path
-    AssetSourceId::Named(name) => "\{name}://\{parsed.path}"
+    Default => parsed.path
+    Named(name) => "\{name}://\{parsed.path}"
   }
   match parsed.label {
     Some(label) if label.length() > 0 => "\{base}#\{label}"
@@ -182,15 +175,15 @@ pub fn asset_format_path(parsed : AssetPath) -> String {
 ///|
 pub fn AssetSourceId::from(name : String) -> AssetSourceId {
   if name == "" {
-    AssetSourceId::Default
+    Default
   } else {
-    AssetSourceId::Named(name)
+    Named(name)
   }
 }
 
 ///|
 pub fn AssetPath::from_path(path : String) -> AssetPath {
-  AssetPath::{ source: AssetSourceId::Default, path, label: None }
+  { source: Default, path, label: None }
 }
 
 ///|
@@ -198,12 +191,12 @@ pub fn AssetPath::with_source(
   self : AssetPath,
   source : AssetSourceId,
 ) -> AssetPath {
-  AssetPath::{ source, path: self.path, label: self.label }
+  { source, path: self.path, label: self.label }
 }
 
 ///|
 pub fn AssetPath::with_label(self : AssetPath, label : String?) -> AssetPath {
-  AssetPath::{ source: self.source, path: self.path, label }
+  { source: self.source, path: self.path, label }
 }
 
 ///|
@@ -276,9 +269,5 @@ fn[P : IntoAssetPath] asset_path_string(path : P) -> String {
 ///|
 pub fn asset_strip_label(path : String) -> String {
   let parsed = asset_parse_path(path)
-  asset_format_path(AssetPath::{
-    source: parsed.source,
-    path: parsed.path,
-    label: None,
-  })
+  asset_format_path({ source: parsed.source, path: parsed.path, label: None })
 }

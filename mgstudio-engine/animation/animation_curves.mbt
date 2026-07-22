@@ -26,13 +26,7 @@ pub struct KeyframeVec3 {
 
 ///|
 pub fn KeyframeVec3::new(time : Float, value : @math.Vec3) -> KeyframeVec3 {
-  KeyframeVec3::{
-    time,
-    value,
-    interpolation: GltfInterpolation::Linear,
-    in_tangent: None,
-    out_tangent: None,
-  }
+  { time, value, interpolation: Linear, in_tangent: None, out_tangent: None }
 }
 
 ///|
@@ -40,13 +34,7 @@ pub fn KeyframeVec3::new_stepped(
   time : Float,
   value : @math.Vec3,
 ) -> KeyframeVec3 {
-  KeyframeVec3::{
-    time,
-    value,
-    interpolation: GltfInterpolation::Step,
-    in_tangent: None,
-    out_tangent: None,
-  }
+  { time, value, interpolation: Step, in_tangent: None, out_tangent: None }
 }
 
 ///|
@@ -56,10 +44,10 @@ pub fn KeyframeVec3::new_cubic(
   in_tangent : @math.Vec3,
   out_tangent : @math.Vec3,
 ) -> KeyframeVec3 {
-  KeyframeVec3::{
+  {
     time,
     value,
-    interpolation: GltfInterpolation::CubicSpline,
+    interpolation: CubicSpline,
     in_tangent: Some(in_tangent),
     out_tangent: Some(out_tangent),
   }
@@ -76,13 +64,7 @@ pub struct KeyframeQuat {
 
 ///|
 pub fn KeyframeQuat::new(time : Float, value : @math.Quat) -> KeyframeQuat {
-  KeyframeQuat::{
-    time,
-    value,
-    interpolation: GltfInterpolation::Linear,
-    in_tangent: None,
-    out_tangent: None,
-  }
+  { time, value, interpolation: Linear, in_tangent: None, out_tangent: None }
 }
 
 ///|
@@ -90,13 +72,7 @@ pub fn KeyframeQuat::new_stepped(
   time : Float,
   value : @math.Quat,
 ) -> KeyframeQuat {
-  KeyframeQuat::{
-    time,
-    value,
-    interpolation: GltfInterpolation::Step,
-    in_tangent: None,
-    out_tangent: None,
-  }
+  { time, value, interpolation: Step, in_tangent: None, out_tangent: None }
 }
 
 ///|
@@ -106,10 +82,10 @@ pub fn KeyframeQuat::new_cubic(
   in_tangent : @math.Vec4,
   out_tangent : @math.Vec4,
 ) -> KeyframeQuat {
-  KeyframeQuat::{
+  {
     time,
     value,
-    interpolation: GltfInterpolation::CubicSpline,
+    interpolation: CubicSpline,
     in_tangent: Some(in_tangent),
     out_tangent: Some(out_tangent),
   }
@@ -129,13 +105,7 @@ pub fn KeyframeWeights::new(
   time : Float,
   value : Array[Float],
 ) -> KeyframeWeights {
-  KeyframeWeights::{
-    time,
-    value,
-    interpolation: GltfInterpolation::Linear,
-    in_tangent: None,
-    out_tangent: None,
-  }
+  { time, value, interpolation: Linear, in_tangent: None, out_tangent: None }
 }
 
 ///|
@@ -143,13 +113,7 @@ pub fn KeyframeWeights::new_stepped(
   time : Float,
   value : Array[Float],
 ) -> KeyframeWeights {
-  KeyframeWeights::{
-    time,
-    value,
-    interpolation: GltfInterpolation::Step,
-    in_tangent: None,
-    out_tangent: None,
-  }
+  { time, value, interpolation: Step, in_tangent: None, out_tangent: None }
 }
 
 ///|
@@ -159,10 +123,10 @@ pub fn KeyframeWeights::new_cubic(
   in_tangent : Array[Float],
   out_tangent : Array[Float],
 ) -> KeyframeWeights {
-  KeyframeWeights::{
+  {
     time,
     value,
-    interpolation: GltfInterpolation::CubicSpline,
+    interpolation: CubicSpline,
     in_tangent: Some(in_tangent),
     out_tangent: Some(out_tangent),
   }
@@ -176,7 +140,7 @@ pub struct KeyframeColor {
 
 ///|
 pub fn KeyframeColor::new(time : Float, value : @color.Color) -> KeyframeColor {
-  KeyframeColor::{ time, value }
+  { time, value }
 }
 
 ///|
@@ -201,13 +165,7 @@ pub struct AnimationTargetCurves {
 
 ///|
 fn animation_target_curves_new() -> AnimationTargetCurves {
-  AnimationTargetCurves::{
-    translation: [],
-    rotation: [],
-    scale: [],
-    weights: [],
-    text_color: [],
-  }
+  { translation: [], rotation: [], scale: [], weights: [], text_color: [] }
 }
 
 ///|
@@ -220,7 +178,7 @@ pub struct AnimationTargetBinding {
 fn animation_target_binding_new(
   target_id : AnimationTargetId,
 ) -> AnimationTargetBinding {
-  AnimationTargetBinding::{ target_id, curves: animation_target_curves_new() }
+  { target_id, curves: animation_target_curves_new() }
 }
 
 ///|
@@ -253,7 +211,7 @@ pub impl @asset.Asset for AnimationClip with fn asset_resource_keys() {
 
 ///|
 pub fn AnimationClip::new() -> AnimationClip {
-  AnimationClip::{
+  {
     duration_seconds: 0.0F,
     targets: [],
     target_index_by_key: Map([]),
@@ -704,7 +662,7 @@ fn animation_clip_events_get(
 fn animation_clip_events_for_root(
   clip : AnimationClip,
 ) -> Array[AnimationClipEvent] {
-  match animation_clip_events_get(clip, AnimationEventTarget::Root) {
+  match animation_clip_events_get(clip, Root) {
     Some(events) => events
     None => []
   }
@@ -718,10 +676,7 @@ pub fn AnimationClip::add_event(
   payload : String,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new(time, label, payload)
-  let events = animation_clip_events_get_or_insert(
-    self,
-    AnimationEventTarget::Root,
-  )
+  let events = animation_clip_events_get_or_insert(self, Root)
   animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
@@ -735,10 +690,7 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event(
   time : Float,
   event : T,
 ) -> AnimationClip {
-  let events = animation_clip_events_get_or_insert(
-    self,
-    AnimationEventTarget::Root,
-  )
+  let events = animation_clip_events_get_or_insert(self, Root)
   animation_clip_event_insert_sorted(
     events,
     AnimationClipEvent::new_typed(time, event),
@@ -758,10 +710,7 @@ pub fn AnimationClip::add_event_to_target(
   payload : String,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new(time, label, payload)
-  let events = animation_clip_events_get_or_insert(
-    self,
-    AnimationEventTarget::Node(target_id),
-  )
+  let events = animation_clip_events_get_or_insert(self, Node(target_id))
   animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
@@ -776,10 +725,7 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClip::add_typed_event_to
   time : Float,
   event : T,
 ) -> AnimationClip {
-  let events = animation_clip_events_get_or_insert(
-    self,
-    AnimationEventTarget::Node(target_id),
-  )
+  let events = animation_clip_events_get_or_insert(self, Node(target_id))
   animation_clip_event_insert_sorted(
     events,
     AnimationClipEvent::new_typed(time, event),
@@ -797,10 +743,7 @@ pub fn AnimationClip::add_event_fn(
   callback : AnimationEventTriggerFn,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new_callback(time, callback)
-  let events = animation_clip_events_get_or_insert(
-    self,
-    AnimationEventTarget::Root,
-  )
+  let events = animation_clip_events_get_or_insert(self, Root)
   animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
@@ -816,10 +759,7 @@ pub fn AnimationClip::add_event_fn_to_target(
   callback : AnimationEventTriggerFn,
 ) -> AnimationClip {
   let event = AnimationClipEvent::new_callback(time, callback)
-  let events = animation_clip_events_get_or_insert(
-    self,
-    AnimationEventTarget::Node(target_id),
-  )
+  let events = animation_clip_events_get_or_insert(self, Node(target_id))
   animation_clip_event_insert_sorted(events, event)
   if time > self.duration_seconds {
     self.duration_seconds = time
@@ -832,7 +772,7 @@ fn animation_clip_events_for_target(
   clip : AnimationClip,
   target_id : AnimationTargetId,
 ) -> Array[AnimationClipEvent]? {
-  animation_clip_events_get(clip, AnimationEventTarget::Node(target_id))
+  animation_clip_events_get(clip, Node(target_id))
 }
 
 ///|
@@ -924,13 +864,8 @@ fn animation_step_or_linear_vec3(
   span : Float,
 ) -> @math.Vec3 {
   match left_keyframe.interpolation {
-    GltfInterpolation::Step =>
-      if t >= 1.0F {
-        right_keyframe.value
-      } else {
-        left_keyframe.value
-      }
-    GltfInterpolation::CubicSpline =>
+    Step => if t >= 1.0F { right_keyframe.value } else { left_keyframe.value }
+    CubicSpline =>
       match (left_keyframe.out_tangent, right_keyframe.in_tangent) {
         (Some(out_tangent), Some(in_tangent)) =>
           animation_interpolate_with_cubic_bezier_vec3(
@@ -948,7 +883,7 @@ fn animation_step_or_linear_vec3(
             t,
           )
       }
-    GltfInterpolation::Linear =>
+    Linear =>
       animation_interpolate_vec3_unclamped(
         left_keyframe.value,
         right_keyframe.value,
@@ -965,13 +900,8 @@ fn animation_step_or_linear_quat(
   span : Float,
 ) -> @math.Quat {
   match left_keyframe.interpolation {
-    GltfInterpolation::Step =>
-      if t >= 1.0F {
-        right_keyframe.value
-      } else {
-        left_keyframe.value
-      }
-    GltfInterpolation::CubicSpline =>
+    Step => if t >= 1.0F { right_keyframe.value } else { left_keyframe.value }
+    CubicSpline =>
       match (left_keyframe.out_tangent, right_keyframe.in_tangent) {
         (Some(out_tangent), Some(in_tangent)) =>
           animation_interpolate_with_cubic_bezier_quat(
@@ -989,7 +919,7 @@ fn animation_step_or_linear_quat(
             t,
           )
       }
-    GltfInterpolation::Linear =>
+    Linear =>
       animation_interpolate_quat_unclamped(
         left_keyframe.value,
         right_keyframe.value,
@@ -1006,13 +936,8 @@ fn animation_step_or_linear_weights(
   span : Float,
 ) -> Array[Float] {
   match left_keyframe.interpolation {
-    GltfInterpolation::Step =>
-      if t >= 1.0F {
-        right_keyframe.value
-      } else {
-        left_keyframe.value
-      }
-    GltfInterpolation::CubicSpline =>
+    Step => if t >= 1.0F { right_keyframe.value } else { left_keyframe.value }
+    CubicSpline =>
       match (left_keyframe.out_tangent, right_keyframe.in_tangent) {
         (Some(out_tangent), Some(in_tangent)) =>
           animation_interpolate_with_cubic_bezier_weights(
@@ -1030,7 +955,7 @@ fn animation_step_or_linear_weights(
             t,
           )
       }
-    GltfInterpolation::Linear =>
+    Linear =>
       animation_interpolate_weights_unclamped(
         left_keyframe.value,
         right_keyframe.value,
@@ -1275,7 +1200,7 @@ pub fn AnimationClip::sample_target(
     scale is Some(_) ||
     weights is Some(_) ||
     text_color is Some(_) {
-    Some(AnimationSample::{ translation, rotation, scale, weights, text_color })
+    Some({ translation, rotation, scale, weights, text_color })
   } else {
     None
   }

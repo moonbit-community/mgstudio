@@ -46,33 +46,31 @@ fn dedup_sorted_families(families : Array[String]) -> Array[String] {
 ///|
 fn root_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Percent(100.0F))
-  .with_height(@ui.Val::Percent(100.0F))
-  .with_align_items(@ui.AlignItems::Center)
-  .with_justify_content(@ui.JustifyContent::Center)
+  .with_width(Percent(100.0F))
+  .with_height(Percent(100.0F))
+  .with_align_items(Center)
+  .with_justify_content(Center)
 }
 
 ///|
 fn page_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Percent(100.0F))
-  .with_height(@ui.Val::Percent(100.0F))
-  .with_align_items(@ui.AlignItems::Center)
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
+  .with_width(Percent(100.0F))
+  .with_height(Percent(100.0F))
+  .with_align_items(Center)
+  .with_justify_content(Center)
+  .with_padding(@ui.UiRect::all(Px(20.0F)))
 }
 
 ///|
 fn list_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_flex_direction(@ui.FlexDirection::Column)
-  .with_row_gap(@ui.Val::Px(6.0F))
-  .with_width(@ui.Val::Percent(100.0F))
-  .with_height(@ui.Val::Px(600.0F))
-  .with_padding(@ui.UiRect::all(@ui.Val::Px(8.0F)))
-  .with_overflow(
-    @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
-  )
+  .with_flex_direction(Column)
+  .with_row_gap(Px(6.0F))
+  .with_width(Percent(100.0F))
+  .with_height(Px(600.0F))
+  .with_padding(@ui.UiRect::all(Px(8.0F)))
+  .with_overflow(@ui.Overflow::new(Hidden, Scroll))
 }
 
 ///|
@@ -123,15 +121,13 @@ fn spawn_family_row(
     (
       @hierarchy.Parent::new(parent),
       @ui.Node::Node()
-      .with_display(@ui.Display::Grid)
+      .with_display(Grid)
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(2), [Fr(1.0F)]),
       ])
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F)))
-      .with_column_gap(@ui.Val::Px(50.0F)),
+      .with_width(Percent(100.0F))
+      .with_padding(@ui.UiRect::all(Px(6.0F)))
+      .with_column_gap(Px(50.0F)),
       @ui.BackgroundColor::new(panel_background()),
     ),
   )
@@ -142,19 +138,10 @@ fn spawn_family_row(
       family,
       family_preview_font(family),
       label_color(),
-      @ui.Node::Node(),
+      Node(),
     ),
   )
-  ignore(
-    spawn_text(
-      commands,
-      row,
-      family,
-      body_font(),
-      label_color(),
-      @ui.Node::Node(),
-    ),
-  )
+  ignore(spawn_text(commands, row, family, body_font(), label_color(), Node()))
 }
 
 ///|
@@ -183,11 +170,11 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
     (
       @hierarchy.Parent::new(page),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(1000.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_row_gap(@ui.Val::Px(10.0F)),
+      .with_width(Px(1000.0F))
+      .with_height(Percent(100.0F))
+      .with_flex_direction(Column)
+      .with_align_items(Center)
+      .with_row_gap(Px(10.0F)),
     ),
   )
 
@@ -198,7 +185,7 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
       "Total available fonts: \{families.length().to_string()}",
       heading_font(),
       label_color(),
-      @ui.Node::Node(),
+      Node(),
     ),
   )
 
@@ -218,6 +205,6 @@ fn setup(commands : @app.Commands, font_cx : @app.ResMut[@text.FontCx]) -> Unit 
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

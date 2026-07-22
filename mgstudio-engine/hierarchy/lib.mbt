@@ -22,7 +22,7 @@ pub struct Parent {
 
 ///|
 pub fn Parent::new(entity : @core.Entity) -> Parent {
-  Parent::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -53,7 +53,7 @@ pub struct Children {
 
 ///|
 pub fn Children::new(entities : Array[@core.Entity]) -> Children {
-  Children::{
+  {
     entities,
     entity_table_ids: Array::make(entities.length(), -1),
     entity_row_indices: Array::make(entities.length(), -1),

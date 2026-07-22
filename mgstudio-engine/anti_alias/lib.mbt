@@ -21,6 +21,7 @@
 pub struct AntiAliasPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AntiAliasPlugin::AntiAliasPlugin() -> AntiAliasPlugin {
   AntiAliasPlugin::{  }
 }
@@ -40,7 +41,7 @@ pub impl @app.Plugin for AntiAliasPlugin with fn build(self, app) {
 
 ///|
 pub fn anti_alias_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  anti_alias_plugin_with(app, AntiAliasPlugin::AntiAliasPlugin())
+  anti_alias_plugin_with(app, AntiAliasPlugin())
 }
 
 ///|

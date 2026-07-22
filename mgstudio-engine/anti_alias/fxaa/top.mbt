@@ -31,6 +31,7 @@ const FXAA_PLUGIN_NAME : String = "mgstudio.anti_alias.fxaa.FxaaPlugin"
 pub struct FxaaPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FxaaPlugin::FxaaPlugin() -> FxaaPlugin {
   FxaaPlugin::{  }
 }
@@ -42,7 +43,7 @@ pub struct FxaaRuntimeState {
 
 ///|
 pub fn FxaaRuntimeState::FxaaRuntimeState() -> FxaaRuntimeState {
-  FxaaRuntimeState::{ enabled_camera_count: 0 }
+  { enabled_camera_count: 0 }
 }
 
 ///|
@@ -111,12 +112,12 @@ pub fn fxaa_update_runtime_state(world : @ecs.World) -> Unit {
   match current_state {
     Some(state) =>
       if state.enabled_camera_count != enabled_camera_count {
-        world.insert_resource(ecs_key_fxaa_runtime_state, FxaaRuntimeState::{
+        world.insert_resource(ecs_key_fxaa_runtime_state, {
           enabled_camera_count,
         })
       }
     None =>
-      world.insert_resource(ecs_key_fxaa_runtime_state, FxaaRuntimeState::{
+      world.insert_resource(ecs_key_fxaa_runtime_state, {
         enabled_camera_count,
       })
   }

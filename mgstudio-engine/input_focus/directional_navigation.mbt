@@ -19,6 +19,7 @@ const DIRECTIONAL_NAVIGATION_NO_SCORE : Float = 1000000000000.0F
 pub struct DirectionalNavigationPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DirectionalNavigationPlugin::DirectionalNavigationPlugin() -> DirectionalNavigationPlugin {
   DirectionalNavigationPlugin::{  }
 }
@@ -46,11 +47,7 @@ pub fn AutoNavigationConfig::new(
   max_search_distance : Float?,
   prefer_aligned : Bool,
 ) -> AutoNavigationConfig {
-  AutoNavigationConfig::{
-    min_alignment_factor,
-    max_search_distance,
-    prefer_aligned,
-  }
+  { min_alignment_factor, max_search_distance, prefer_aligned }
 }
 
 ///|
@@ -93,7 +90,7 @@ pub struct NavNeighbors {
 
 ///|
 pub fn NavNeighbors::NavNeighbors() -> NavNeighbors {
-  NavNeighbors::{
+  {
     north: None,
     north_east: None,
     east: None,
@@ -147,7 +144,7 @@ pub struct DirectionalNavigationMap {
 
 ///|
 pub fn DirectionalNavigationMap::DirectionalNavigationMap() -> DirectionalNavigationMap {
-  { neighbors: @hashmap.HashMap([]) }
+  { neighbors: HashMap([]) }
 }
 
 ///|
@@ -252,7 +249,7 @@ fn directional_navigation_without_entity(
       value
     }
   }
-  NavNeighbors::{
+  {
     north: keep(neighbors.north),
     north_east: keep(neighbors.north_east),
     east: keep(neighbors.east),
@@ -293,9 +290,7 @@ pub fn DirectionalNavigationMap::add_edge(
   direction : @math.CompassOctant,
 ) -> Unit {
   let key = directional_navigation_entity_key(a)
-  let neighbors = self.neighbors
-    .get(key)
-    .unwrap_or(NavNeighbors::NavNeighbors())
+  let neighbors = self.neighbors.get(key).unwrap_or(NavNeighbors())
   self.neighbors.set(key, neighbors.set(direction, b))
 }
 
@@ -366,7 +361,7 @@ fn directional_navigation_map_value(
 ) -> DirectionalNavigationMap {
   match world.get_resource(DirectionalNavigationMap::resource()) {
     Some(map) => map
-    None => DirectionalNavigationMap::DirectionalNavigationMap()
+    None => DirectionalNavigationMap()
   }
 }
 
@@ -593,13 +588,13 @@ pub fn auto_generate_navigation_edges(
 ) -> Unit {
   let octants = [
     @math.CompassOctant::North,
-    @math.CompassOctant::NorthEast,
-    @math.CompassOctant::East,
-    @math.CompassOctant::SouthEast,
-    @math.CompassOctant::South,
-    @math.CompassOctant::SouthWest,
-    @math.CompassOctant::West,
-    @math.CompassOctant::NorthWest,
+    NorthEast,
+    East,
+    SouthEast,
+    South,
+    SouthWest,
+    West,
+    NorthWest,
   ]
   for origin in nodes {
     for octant in octants {
@@ -652,7 +647,7 @@ pub impl @app.SystemParam for DirectionalNavigation with fn init_state(world) {
 
 ///|
 pub impl @app.SystemParam for DirectionalNavigation with fn get(_state) {
-  DirectionalNavigation::{ world: current_input_focus_world_abort_missing() }
+  { world: current_input_focus_world_abort_missing() }
 }
 
 ///|

@@ -227,7 +227,7 @@ pub fn timeline_trace_emit_complete_span(
 ///|
 pub fn timeline_trace_emit_counter(name : String, value : Float) -> Unit {
   guard timeline_trace_runtime_state.counter_sink is Some(sink) else { return }
-  sink(TimelineTraceCounter::{ name, ts_us: timeline_trace_now_us(), value })
+  sink({ name, ts_us: timeline_trace_now_us(), value })
 }
 
 ///|

@@ -53,7 +53,7 @@ fn setup(
   ignore(
     commands.spawn(
       @camera.Camera3dBundle::new(
-        @camera_camera.Camera::Camera(),
+        Camera(),
         @transform.Transform::from_xyz(3.0F, 2.1F, 10.2F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -66,7 +66,7 @@ fn setup(
     commands.spawn(
       (
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, PI / 2.0F, 0.0F, 0.0F),
+          @math.Quat::from_euler(ZYX, PI / 2.0F, 0.0F, 0.0F),
         ),
         @pbr.DirectionalLight::DirectionalLight(),
       ),
@@ -160,7 +160,7 @@ fn name_morph_targets(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, name_morph_targets)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, name_morph_targets)
   .run()
 }

@@ -19,6 +19,7 @@
 pub struct ToggleSwitch {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn toggle_switch() -> ToggleSwitch {
   ToggleSwitch::{  }
 }
@@ -27,6 +28,7 @@ pub fn toggle_switch() -> ToggleSwitch {
 pub struct ToggleSwitchPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ToggleSwitchPlugin::ToggleSwitchPlugin() -> ToggleSwitchPlugin {
   ToggleSwitchPlugin::{  }
 }

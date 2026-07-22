@@ -100,12 +100,12 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_systems(
-    @app.Startup,
+    Startup,
     (setup_camera_system, setup_sprite_system, setup_mesh_system)
     |> @app.chain(),
   )
-  .add_systems_param2(@app.Update, rotate)
-  .add_systems_param2(@app.Update, fit_canvas)
+  .add_systems_param2(Update, rotate)
+  .add_systems_param2(Update, fit_canvas)
   .run()
 }
 
@@ -183,7 +183,7 @@ fn setup_camera(
       @asset.Image::new_target_texture(
         RES_WIDTH,
         RES_HEIGHT,
-        @asset.TextureFormat::Bgra8UnormSrgb,
+        Bgra8UnormSrgb,
         None,
       ),
     )

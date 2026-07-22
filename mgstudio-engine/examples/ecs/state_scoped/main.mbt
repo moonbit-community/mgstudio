@@ -33,7 +33,7 @@ let tick_tock_resource_key : @ecs.ResourceKey[TickTock] = @ecs.register_resource
 
 ///|
 impl Default for GameState with fn default() {
-  GameState::A
+  A
 }
 
 ///|
@@ -73,9 +73,9 @@ fn spawn_text(
   enter_marker : @state.DespawnOnEnter?,
 ) -> Unit {
   let node = @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(top))
-    .with_left(@ui.Val::Px(left))
+    .with_position_type(Absolute)
+    .with_top(Px(top))
+    .with_left(Px(left))
 
   let entity = match (exit_marker, enter_marker) {
     (Some(marker), None) =>
@@ -189,8 +189,8 @@ fn toggle(
   guard ready else { return }
 
   let next = match state.get().get() {
-    GameState::A => @app.NextState::Pending(GameState::B)
-    GameState::B => @app.NextState::Pending(GameState::A)
+    A => @app.NextState::Pending(GameState::B)
+    B => Pending(A)
   }
   next_state.set(next)
 }
@@ -201,13 +201,13 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_state(GameState::default())
   .insert_resource(TickTock::{
-    timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
+    timer: @time.Timer::from_seconds(1.0F, Repeating),
   })
-  .add_systems_param(@app.Startup, setup_camera)
+  .add_systems_param(Startup, setup_camera)
   .add_on_enter_system_param(GameState::A, on_a_enter)
   .add_on_enter_system_param(GameState::B, on_b_enter)
   .add_on_exit_system_param(GameState::A, on_a_exit)
   .add_on_exit_system_param(GameState::B, on_b_exit)
-  .add_systems_param4(@app.Update, toggle)
+  .add_systems_param4(Update, toggle)
   .run()
 }

@@ -36,16 +36,9 @@ fn winit_has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool 
 
 ///|
 fn winit_trace_window_backend_span(name : String, run : () -> Unit) -> Unit {
-  let trace_start_us = @app.timeline_trace_begin_span(
-    @app.TimelineTraceCategory::System,
-    name,
-  )
+  let trace_start_us = @app.timeline_trace_begin_span(System, name)
   run()
-  @app.timeline_trace_end_span(
-    @app.TimelineTraceCategory::System,
-    name,
-    trace_start_us,
-  )
+  @app.timeline_trace_end_span(System, name, trace_start_us)
 }
 
 ///|
@@ -91,7 +84,7 @@ pub fn winit_create_monitors_system(world : @ecs.World) -> Unit {
   let primary_monitor = @windowing.primary_monitor()
   let monitors = match world.get_resource(WinitMonitors::resource()) {
     Some(monitors) => monitors
-    None => WinitMonitors::WinitMonitors()
+    None => WinitMonitors()
   }
 
   let seen_entries : Array[Bool] = []
@@ -152,12 +145,7 @@ fn winit_write_raw_winit_window_events(
   }
   let writer = world.message_writer(ecs_key_raw_winit_window_event)
   for event in events {
-    ignore(
-      writer.write(RawWinitWindowEvent::{
-        window_id: event.window_id,
-        event: event.event,
-      }),
-    )
+    ignore(writer.write({ window_id: event.window_id, event: event.event }))
   }
 }
 
@@ -210,7 +198,7 @@ pub fn winit_write_raw_winit_window_events_system(world : @ecs.World) -> Unit {
 fn winit_monitors_resource(world : @ecs.World) -> WinitMonitors {
   match world.get_resource(WinitMonitors::resource()) {
     Some(monitors) => monitors
-    None => WinitMonitors::WinitMonitors()
+    None => WinitMonitors()
   }
 }
 
@@ -229,7 +217,7 @@ fn winit_apply_window_mode_change(
       )
       @windowing.set_fullscreen(
         request.host_window,
-        fullscreen=Some(@window_core.Fullscreen::Borderless(monitor)),
+        fullscreen=Some(Borderless(monitor)),
       )
     }
     Fullscreen(monitor_selection, video_mode_selection) =>
@@ -242,9 +230,7 @@ fn winit_apply_window_mode_change(
             Some(video_mode) =>
               @windowing.set_fullscreen(
                 request.host_window,
-                fullscreen=Some(
-                  @window_core.Fullscreen::Exclusive(monitor, video_mode),
-                ),
+                fullscreen=Some(Exclusive(monitor, video_mode)),
               )
             None =>
               @window.host_debug_string(

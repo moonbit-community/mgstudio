@@ -115,7 +115,7 @@ pub impl @app.Resource for PressedControls with fn resource() {
 
 ///|
 fn ShadowSettings::ShadowSettings() -> ShadowSettings {
-  ShadowSettings::{
+  {
     x_offset: 20.0F,
     y_offset: 20.0F,
     blur: 10.0F,
@@ -126,7 +126,7 @@ fn ShadowSettings::ShadowSettings() -> ShadowSettings {
 
 ///|
 fn PressedControls::PressedControls() -> PressedControls {
-  PressedControls::{ entities: [] }
+  { entities: [] }
 }
 
 ///|
@@ -224,25 +224,15 @@ fn apply_action(
 ) -> ShadowSettings {
   match action {
     ShapeDec =>
-      ShadowSettings::{
-        ..settings,
-        shape_index: clamp_shape_index(settings.shape_index - 1),
-      }
+      { ..settings, shape_index: clamp_shape_index(settings.shape_index - 1) }
     ShapeInc =>
-      ShadowSettings::{
-        ..settings,
-        shape_index: clamp_shape_index(settings.shape_index + 1),
-      }
-    XOffsetDec =>
-      ShadowSettings::{ ..settings, x_offset: settings.x_offset - 5.0F }
-    XOffsetInc =>
-      ShadowSettings::{ ..settings, x_offset: settings.x_offset + 5.0F }
-    YOffsetDec =>
-      ShadowSettings::{ ..settings, y_offset: settings.y_offset - 5.0F }
-    YOffsetInc =>
-      ShadowSettings::{ ..settings, y_offset: settings.y_offset + 5.0F }
+      { ..settings, shape_index: clamp_shape_index(settings.shape_index + 1) }
+    XOffsetDec => { ..settings, x_offset: settings.x_offset - 5.0F }
+    XOffsetInc => { ..settings, x_offset: settings.x_offset + 5.0F }
+    YOffsetDec => { ..settings, y_offset: settings.y_offset - 5.0F }
+    YOffsetInc => { ..settings, y_offset: settings.y_offset + 5.0F }
     BlurDec =>
-      ShadowSettings::{
+      {
         ..settings,
         blur: if settings.blur < 2.0F {
           0.0F
@@ -250,10 +240,10 @@ fn apply_action(
           settings.blur - 2.0F
         },
       }
-    BlurInc => ShadowSettings::{ ..settings, blur: settings.blur + 2.0F }
-    SpreadDec => ShadowSettings::{ ..settings, spread: settings.spread - 2.0F }
-    SpreadInc => ShadowSettings::{ ..settings, spread: settings.spread + 2.0F }
-    Reset => ShadowSettings::ShadowSettings()
+    BlurInc => { ..settings, blur: settings.blur + 2.0F }
+    SpreadDec => { ..settings, spread: settings.spread - 2.0F }
+    SpreadInc => { ..settings, spread: settings.spread + 2.0F }
+    Reset => ShadowSettings()
   }
 }
 
@@ -271,36 +261,11 @@ fn field_value(settings : ShadowSettings, field : ShadowField) -> String {
 ///|
 fn shape_dimensions(index : Int) -> (@ui.Val, @ui.Val, @ui.BorderRadius) {
   match index {
-    0 =>
-      (
-        @ui.Val::Px(164.0F),
-        @ui.Val::Px(164.0F),
-        @ui.BorderRadius::BorderRadius(),
-      )
-    1 =>
-      (
-        @ui.Val::Px(164.0F),
-        @ui.Val::Px(164.0F),
-        @ui.BorderRadius::all(@ui.Val::Px(41.0F)),
-      )
-    2 =>
-      (
-        @ui.Val::Px(164.0F),
-        @ui.Val::Px(164.0F),
-        @ui.BorderRadius::all(@ui.Val::Percent(100.0F)),
-      )
-    3 =>
-      (
-        @ui.Val::Px(240.0F),
-        @ui.Val::Px(80.0F),
-        @ui.BorderRadius::all(@ui.Val::Px(32.0F)),
-      )
-    _ =>
-      (
-        @ui.Val::Px(80.0F),
-        @ui.Val::Px(240.0F),
-        @ui.BorderRadius::all(@ui.Val::Px(32.0F)),
-      )
+    0 => (Px(164.0F), Px(164.0F), BorderRadius())
+    1 => (Px(164.0F), Px(164.0F), @ui.BorderRadius::all(Px(41.0F)))
+    2 => (Px(164.0F), Px(164.0F), @ui.BorderRadius::all(Percent(100.0F)))
+    3 => (Px(240.0F), Px(80.0F), @ui.BorderRadius::all(Px(32.0F)))
+    _ => (Px(80.0F), Px(240.0F), @ui.BorderRadius::all(Px(32.0F)))
   }
 }
 
@@ -351,17 +316,10 @@ fn spawn_control_button(
         @ui.Button::Button(),
         ShadowControlButton::{ action, },
         @ui.Node::Node()
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
-        .with_padding(
-          @ui.UiRect::new(
-            @ui.Val::Px(10.0F),
-            @ui.Val::Px(5.0F),
-            @ui.Val::Px(10.0F),
-            @ui.Val::Px(5.0F),
-          ),
-        ),
+        .with_align_items(Center)
+        .with_justify_content(Center)
+        .with_border(@ui.UiRect::all(Px(2.0F)))
+        .with_padding(@ui.UiRect::new(Px(10.0F), Px(5.0F), Px(10.0F), Px(5.0F))),
         @ui.BackgroundColor::new(normal_button_color()),
       ),
     ),
@@ -423,14 +381,12 @@ fn spawn_control_row(
       (
         @hierarchy.Parent::new(parent),
         @ui.Node::Node()
-        .with_display(@ui.Display::Grid)
+        .with_display(Grid)
         .with_grid_template_columns([
-          @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(4), [
-            @ui.GridTrack::Fr(1.0F),
-          ]),
+          @ui.RepeatedGridTrack::new(Count(4), [Fr(1.0F)]),
         ])
-        .with_column_gap(@ui.Val::Px(8.0F))
-        .with_width(@ui.Val::Percent(100.0F)),
+        .with_column_gap(Px(8.0F))
+        .with_width(Percent(100.0F)),
       ),
     ),
   )
@@ -475,10 +431,10 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F))
+        .with_align_items(Center)
+        .with_justify_content(Center),
         @ui.BackgroundColor::new(@color.Color::srgb(0.5F, 0.5F, 0.5F)),
       ),
     ),
@@ -493,11 +449,11 @@ fn setup(world : @ecs.World) -> Unit {
         @hierarchy.Parent::new(root),
         ShadowNode::{  },
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(164.0F))
-        .with_height(@ui.Val::Px(164.0F))
-        .with_align_items(@ui.AlignItems::Center)
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
+        .with_width(Px(164.0F))
+        .with_height(Px(164.0F))
+        .with_align_items(Center)
+        .with_justify_content(Center)
+        .with_border(@ui.UiRect::all(Px(1.0F))),
         @ui.BorderColor::new(@color.Color::white()),
         @ui.BackgroundColor::new(shadow_card_color()),
       ),
@@ -509,10 +465,10 @@ fn setup(world : @ecs.World) -> Unit {
     .insert_component(
       @ui.BoxShadow::new(
         @color.Color::new(0.0F, 0.0F, 0.0F, 0.8F),
-        @ui.Val::Px(20.0F),
-        @ui.Val::Px(20.0F),
-        @ui.Val::Px(15.0F),
-        @ui.Val::Px(10.0F),
+        Px(20.0F),
+        Px(20.0F),
+        Px(15.0F),
+        Px(10.0F),
       ),
     ),
   )
@@ -528,13 +484,13 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(24.0F))
-        .with_bottom(@ui.Val::Px(24.0F))
-        .with_width(@ui.Val::Px(320.0F))
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
-        .with_row_gap(@ui.Val::Px(10.0F)),
+        .with_flex_direction(Column)
+        .with_position_type(Absolute)
+        .with_left(Px(24.0F))
+        .with_bottom(Px(24.0F))
+        .with_width(Px(320.0F))
+        .with_padding(@ui.UiRect::all(Px(16.0F)))
+        .with_row_gap(Px(10.0F)),
         @ui.BackgroundColor::new(panel_background()),
         @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.15F)),
       ),
@@ -584,11 +540,11 @@ fn update_shadow_controls(
     let action = action_comp.value().action
 
     let background = match interaction {
-      @ui.Interaction::Pressed => pressed_button_color()
-      @ui.Interaction::Hovered => hovered_button_color()
-      @ui.Interaction::None => normal_button_color()
+      Pressed => pressed_button_color()
+      Hovered => hovered_button_color()
+      None => normal_button_color()
     }
-    let border = if interaction == @ui.Interaction::Pressed {
+    let border = if interaction == Pressed {
       @color.Color::white()
     } else {
       @color.Color::new(1.0F, 1.0F, 1.0F, 0.6F)
@@ -596,7 +552,7 @@ fn update_shadow_controls(
     background_mut.set(@ui.BackgroundColor::new(background))
     border_mut.set(@ui.BorderColor::new(border))
 
-    if interaction == @ui.Interaction::Pressed {
+    if interaction == Pressed {
       next_pressed.push(entity)
       if !array_contains_entity(previous, entity) {
         next_settings = apply_action(next_settings, action)
@@ -604,7 +560,7 @@ fn update_shadow_controls(
     }
   })
   settings.set(next_settings)
-  pressed_controls.set(PressedControls::{ entities: next_pressed })
+  pressed_controls.set({ entities: next_pressed })
 }
 
 ///|
@@ -621,14 +577,14 @@ fn update_shadow_node(
     let node_mut = data.0
     let shadow_mut = data.1
     let node = node_mut.value()
-    node_mut.set(@ui.Node::{ ..node, width, height, border_radius })
+    node_mut.set({ ..node, width, height, border_radius })
     shadow_mut.set(
       @ui.BoxShadow::new(
         @color.Color::new(0.0F, 0.0F, 0.0F, 0.8F),
-        @ui.Val::Px(current.x_offset),
-        @ui.Val::Px(current.y_offset),
-        @ui.Val::Px(current.spread),
-        @ui.Val::Px(current.blur),
+        Px(current.x_offset),
+        Px(current.y_offset),
+        Px(current.spread),
+        Px(current.blur),
       ),
     )
   })
@@ -656,9 +612,9 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(ShadowSettings::ShadowSettings())
   .insert_resource(PressedControls::PressedControls())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param3(@app.Update, update_shadow_controls)
-  .add_systems_param2(@app.Update, update_shadow_node)
-  .add_systems_param2(@app.Update, update_shadow_labels)
+  .add_systems_world(Startup, setup)
+  .add_systems_param3(Update, update_shadow_controls)
+  .add_systems_param2(Update, update_shadow_node)
+  .add_systems_param2(Update, update_shadow_labels)
   .run()
 }

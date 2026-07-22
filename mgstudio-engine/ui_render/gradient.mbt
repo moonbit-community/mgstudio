@@ -29,12 +29,12 @@ fn resolve_axis(
   viewport_size : @math.Vec2,
 ) -> Float {
   match val {
-    @ui.Val::Auto => 0.0F
-    @ui.Val::Px(px) => px
-    @ui.Val::Percent(p) => node_axis * (p / 100.0F)
-    @ui.Val::Vw(p) => viewport_size.x * (p / 100.0F)
-    @ui.Val::Vh(p) => viewport_size.y * (p / 100.0F)
-    @ui.Val::VMin(p) => {
+    Auto => 0.0F
+    Px(px) => px
+    Percent(p) => node_axis * (p / 100.0F)
+    Vw(p) => viewport_size.x * (p / 100.0F)
+    Vh(p) => viewport_size.y * (p / 100.0F)
+    VMin(p) => {
       let m = if viewport_size.x < viewport_size.y {
         viewport_size.x
       } else {
@@ -42,7 +42,7 @@ fn resolve_axis(
       }
       m * (p / 100.0F)
     }
-    @ui.Val::VMax(p) => {
+    VMax(p) => {
       let m = if viewport_size.x > viewport_size.y {
         viewport_size.x
       } else {

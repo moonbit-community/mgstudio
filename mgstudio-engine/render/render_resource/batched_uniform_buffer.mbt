@@ -25,7 +25,7 @@ pub struct BatchedUniformBuffer[T] {
 pub fn[T] BatchedUniformBuffer::new(
   batch_size : Int,
 ) -> BatchedUniformBuffer[T] {
-  BatchedUniformBuffer::{ values: [], batch_size }
+  { values: [], batch_size }
 }
 
 ///|

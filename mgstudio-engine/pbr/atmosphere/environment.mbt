@@ -39,10 +39,7 @@ pub impl @ecs.Component for AtmosphereEnvironmentMap with fn component() {
 
 ///|
 pub fn AtmosphereEnvironmentMap::AtmosphereEnvironmentMap() -> AtmosphereEnvironmentMap {
-  AtmosphereEnvironmentMap::{
-    environment_map: None,
-    size: @math.UVec2::new(512, 512),
-  }
+  { environment_map: None, size: @math.UVec2::new(512, 512) }
 }
 
 ///|
@@ -73,10 +70,7 @@ pub fn pbr_atmosphere_environment_map(
   environment_map : @asset.Handle[@asset.Image]?,
   size : @math.UVec2,
 ) -> AtmosphereEnvironmentMap {
-  AtmosphereEnvironmentMap::{
-    environment_map,
-    size: pbr_validate_atmosphere_environment_map_size(size),
-  }
+  { environment_map, size: pbr_validate_atmosphere_environment_map_size(size) }
 }
 
 ///|
@@ -140,14 +134,14 @@ fn pbr_atmosphere_environment_cube_image(size : @math.UVec2) -> @asset.Image {
     size.y * 6,
     Bytes::new(pbr_atmosphere_environment_cube_byte_len(size)),
   )
-  .with_format(@asset.TextureFormat::Rgba16Float)
+  .with_format(Rgba16Float)
   .with_texture_usage_bits(
     @asset.IMAGE_USAGE_TEXTURE_BINDING |
     @asset.IMAGE_USAGE_STORAGE_BINDING |
     @asset.IMAGE_USAGE_COPY_SRC,
   )
-  .with_array_layout(Some(@asset.ImageArrayLayout::RowCount(6)))
-  .with_texture_view_dimension(Some(@asset.ImageTextureViewDimension::Cube))
+  .with_array_layout(Some(RowCount(6)))
+  .with_texture_view_dimension(Some(Cube))
 }
 
 ///|
@@ -178,7 +172,7 @@ pub fn prepare_atmosphere_probe_components(world : @ecs.World) -> Unit {
       let environment_handle = images_ref.modify(fn(images) {
         images.add(pbr_atmosphere_environment_cube_image(size))
       })
-      try! world.set_by_key(entity, ecs_key_atmosphere_environment_map, AtmosphereEnvironmentMap::{
+      try! world.set_by_key(entity, ecs_key_atmosphere_environment_map, {
         environment_map: Some(environment_handle),
         size,
       })

@@ -40,6 +40,7 @@ const TEMPORAL_ANTI_ALIAS_PLUGIN_NAME : String = "mgstudio.anti_alias.taa.Tempor
 pub struct TemporalAntiAliasPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TemporalAntiAliasPlugin::TemporalAntiAliasPlugin() -> TemporalAntiAliasPlugin {
   TemporalAntiAliasPlugin::{  }
 }
@@ -52,10 +53,7 @@ pub struct TemporalAntiAliasRuntimeState {
 
 ///|
 pub fn TemporalAntiAliasRuntimeState::TemporalAntiAliasRuntimeState() -> TemporalAntiAliasRuntimeState {
-  TemporalAntiAliasRuntimeState::{
-    enabled_camera_count: 0,
-    reset_requested_count: 0,
-  }
+  { enabled_camera_count: 0, reset_requested_count: 0 }
 }
 
 ///|
@@ -92,11 +90,9 @@ pub fn install_temporal_anti_alias_required_components() -> Unit {
     @ecs.component_metadata_builder(ecs_key_temporal_anti_aliasing)
     .require_with(ecs_key_temporal_jitter, fn() { TemporalJitter() })
     .require_with(ecs_key_mip_bias, fn() { MipBias() })
-    .require_with(@core_pipeline.ecs_key_depth_prepass, fn() {
-      @core_pipeline.DepthPrepass::DepthPrepass()
-    })
+    .require_with(@core_pipeline.ecs_key_depth_prepass, fn() { DepthPrepass() })
     .require_with(@core_pipeline.ecs_key_motion_vector_prepass, fn() {
-      @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
+      MotionVectorPrepass()
     }),
   )
   temporal_anti_alias_required_components_runtime_state.required_components_installed
@@ -114,10 +110,7 @@ pub impl @app.Plugin for TemporalAntiAliasPlugin with fn build(self, app) {
 pub fn temporal_anti_alias_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  temporal_anti_alias_plugin_with(
-    app,
-    TemporalAntiAliasPlugin::TemporalAntiAliasPlugin(),
-  )
+  temporal_anti_alias_plugin_with(app, TemporalAntiAliasPlugin())
 }
 
 ///|

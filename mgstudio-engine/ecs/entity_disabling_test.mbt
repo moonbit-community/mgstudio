@@ -47,8 +47,8 @@ test "ecs entity disabling: default queries skip disabled entities" {
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set_by_key(enabled, dummy_key, Dummy::{ label: "enabled" })
-  try! world.set_by_key(disabled, dummy_key, Dummy::{ label: "disabled" })
+  try! world.set_by_key(enabled, dummy_key, { label: "enabled" })
+  try! world.set_by_key(disabled, dummy_key, { label: "disabled" })
   try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   let dummy_query : @ecs.Query[@ecs.Read[Dummy], @ecs.All] = @ecs.query(world)
@@ -93,8 +93,8 @@ test "ecs entity disabling: has counts as explicit mention but optional does not
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set_by_key(enabled, dummy_key, Dummy::{ label: "enabled" })
-  try! world.set_by_key(disabled, dummy_key, Dummy::{ label: "disabled" })
+  try! world.set_by_key(enabled, dummy_key, { label: "enabled" })
+  try! world.set_by_key(disabled, dummy_key, { label: "disabled" })
   try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   let has_query : @ecs.Query[(@ecs.Read[Dummy], @ecs.Has[Disabled]), @ecs.All] = @ecs.query(
@@ -118,6 +118,7 @@ test "ecs entity disabling: has counts as explicit mention but optional does not
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs entity disabling: multiple disabling components require explicit mention of all" {
   let world = World::new()
   defer world.close()
@@ -128,10 +129,10 @@ test "ecs entity disabling: multiple disabling components require explicit menti
   let custom_only = world.spawn()
   let both = world.spawn()
 
-  try! world.set_by_key(plain, dummy_key, Dummy::{ label: "plain" })
-  try! world.set_by_key(disabled_only, dummy_key, Dummy::{ label: "disabled" })
-  try! world.set_by_key(custom_only, dummy_key, Dummy::{ label: "custom" })
-  try! world.set_by_key(both, dummy_key, Dummy::{ label: "both" })
+  try! world.set_by_key(plain, dummy_key, { label: "plain" })
+  try! world.set_by_key(disabled_only, dummy_key, { label: "disabled" })
+  try! world.set_by_key(custom_only, dummy_key, { label: "custom" })
+  try! world.set_by_key(both, dummy_key, { label: "both" })
 
   try! world.set_by_key(disabled_only, ecs_key_disabled, Disabled::new())
   try! world.set_by_key(custom_only, custom_disabled_key, CustomDisabled::{  })

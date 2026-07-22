@@ -16,6 +16,7 @@
 pub struct ShaderPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ShaderPlugin::ShaderPlugin() -> ShaderPlugin {
   ShaderPlugin::{  }
 }

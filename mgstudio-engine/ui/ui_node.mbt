@@ -19,11 +19,7 @@ fn ensure_visibility_defaults(
   entity : @core.Entity,
 ) -> Unit {
   if !(try! world.contains_by_key(entity, @visibility.ecs_key_visibility)) {
-    try! world.set_by_key(
-      entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Inherited,
-    )
+    try! world.set_by_key(entity, @visibility.ecs_key_visibility, Inherited)
   }
   if !(try! world.contains_by_key(
       entity, @visibility.ecs_key_inherited_visibility,

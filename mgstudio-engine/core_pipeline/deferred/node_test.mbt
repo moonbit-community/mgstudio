@@ -22,7 +22,7 @@ test "core deferred node: early run plan mirrors deferred prepass attachments" {
     has_deferred_lighting_pass_id_attachment=true,
     has_prepass_depth_attachment=true,
   )
-  let plan = deferred_prepass_run_plan(DeferredPrepassRunKind::Early, state)
+  let plan = deferred_prepass_run_plan(Early, state)
   inspect(plan.label, content="early deferred prepass")
   inspect(plan.should_run, content="true")
   inspect(plan.is_late, content="false")
@@ -47,7 +47,7 @@ test "core deferred node: late run plan requires occlusion and indirect drawing"
     occlusion_culling_enabled=false,
   )
   inspect(
-    deferred_prepass_run_plan(DeferredPrepassRunKind::Late, missing_occlusion).should_run,
+    deferred_prepass_run_plan(Late, missing_occlusion).should_run,
     content="false",
   )
   let no_indirect = DeferredPrepassViewState::new(
@@ -56,7 +56,7 @@ test "core deferred node: late run plan requires occlusion and indirect drawing"
     no_indirect_drawing=true,
   )
   inspect(
-    deferred_prepass_run_plan(DeferredPrepassRunKind::Late, no_indirect).should_run,
+    deferred_prepass_run_plan(Late, no_indirect).should_run,
     content="false",
   )
   let late = DeferredPrepassViewState::new(
@@ -65,7 +65,7 @@ test "core deferred node: late run plan requires occlusion and indirect drawing"
     occlusion_culling_enabled=true,
     no_indirect_drawing=false,
   )
-  let plan = deferred_prepass_run_plan(DeferredPrepassRunKind::Late, late)
+  let plan = deferred_prepass_run_plan(Late, late)
   inspect(plan.label, content="late deferred prepass")
   inspect(plan.should_run, content="true")
   inspect(plan.is_late, content="true")
@@ -82,13 +82,10 @@ test "core deferred node: webgl early deferred clear is explicit" {
     has_opaque_deferred_phase=true,
     has_deferred_attachment=true,
   )
-  let native = deferred_prepass_color_attachment_plan(
-    DeferredPrepassRunKind::Early,
-    state,
-  )
+  let native = deferred_prepass_color_attachment_plan(Early, state)
   inspect(native.webgl_manual_deferred_clear, content="false")
   let webgl = deferred_prepass_color_attachment_plan(
-    DeferredPrepassRunKind::Early,
+    Early,
     state,
     webgl_manual_clear_supported=true,
   )
@@ -99,7 +96,7 @@ test "core deferred node: webgl early deferred clear is explicit" {
 ///|
 test "core deferred node: empty color attachments remove fragment requirement" {
   let state = DeferredPrepassViewState::new(has_opaque_deferred_phase=true)
-  let plan = deferred_prepass_run_plan(DeferredPrepassRunKind::Early, state)
+  let plan = deferred_prepass_run_plan(Early, state)
   inspect(plan.should_run, content="true")
   inspect(plan.color_attachments.slot_count, content="0")
   inspect(plan.has_depth_stencil_attachment, content="true")

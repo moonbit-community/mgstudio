@@ -17,7 +17,7 @@ test "pbr fog: koschmieder helper matches exponential convenience constructor" {
   let density = FogFalloff3d::koschmieder(100.0F, 0.05F)
   let from_visibility = FogFalloff3d::from_visibility_contrast(100.0F, 0.05F)
   match from_visibility {
-    FogFalloff3d::Exponential(value) =>
+    Exponential(value) =>
       inspect(@math.abs(value - density) < 0.0001F, content="true")
     _ => abort("expected exponential fog falloff")
   }

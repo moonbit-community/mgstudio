@@ -122,20 +122,16 @@ fn move_player(
   let dt = time.get().delta_secs()
   let mut dx = 0.0F
   let mut dy = 0.0F
-  if keyboard.pressed(@window.KeyCode::ArrowLeft) ||
-    keyboard.pressed(@window.KeyCode::KeyA) {
+  if keyboard.pressed(ArrowLeft) || keyboard.pressed(KeyA) {
     dx -= 1.0F
   }
-  if keyboard.pressed(@window.KeyCode::ArrowRight) ||
-    keyboard.pressed(@window.KeyCode::KeyD) {
+  if keyboard.pressed(ArrowRight) || keyboard.pressed(KeyD) {
     dx += 1.0F
   }
-  if keyboard.pressed(@window.KeyCode::ArrowUp) ||
-    keyboard.pressed(@window.KeyCode::KeyW) {
+  if keyboard.pressed(ArrowUp) || keyboard.pressed(KeyW) {
     dy += 1.0F
   }
-  if keyboard.pressed(@window.KeyCode::ArrowDown) ||
-    keyboard.pressed(@window.KeyCode::KeyS) {
+  if keyboard.pressed(ArrowDown) || keyboard.pressed(KeyS) {
     dy -= 1.0F
   }
   try! players.for_each(fn(_entity, transform) {
@@ -191,8 +187,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_param3(@app.Update, move_player)
-  .add_systems_param4(@app.Update, collect_cakes)
+  .add_systems_param(Startup, setup)
+  .add_systems_param3(Update, move_player)
+  .add_systems_param4(Update, collect_cakes)
   .run()
 }

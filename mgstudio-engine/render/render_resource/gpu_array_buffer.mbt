@@ -23,7 +23,7 @@ pub struct GpuArrayBuffer[T] {
 
 ///|
 pub fn[T] GpuArrayBuffer::new() -> GpuArrayBuffer[T] {
-  GpuArrayBuffer::{ values: [], buffer_id: 0 }
+  { values: [], buffer_id: 0 }
 }
 
 ///|

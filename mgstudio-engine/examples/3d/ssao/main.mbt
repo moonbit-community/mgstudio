@@ -152,8 +152,7 @@ fn current_ssao_value(
 ) -> @post_process.ScreenSpaceAmbientOcclusion {
   match current {
     Some(ssao) => ssao
-    None =>
-      @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion()
+    None => ScreenSpaceAmbientOcclusion()
   }
 }
 
@@ -178,6 +177,7 @@ fn set_ssao_component(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
@@ -190,45 +190,45 @@ fn setup(
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_hdr, @pbr.Hdr::Hdr())
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(camera, @pbr.ecs_key_hdr, Hdr())
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+    ScreenSpaceAmbientOcclusion(),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+    ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+    TemporalAntiAliasing(),
   )
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, Off)
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_screen_space_ambient_occlusion,
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+    ScreenSpaceAmbientOcclusion(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_anti_aliasing,
-    @post_process.TemporalAntiAliasing::TemporalAntiAliasing(),
+    TemporalAntiAliasing(),
   )
   try! world.set_by_key(
     camera,
     @post_process.ecs_key_temporal_jitter,
-    @post_process.TemporalJitter::TemporalJitter(),
+    TemporalJitter(),
   )
   try! world.set_by_key(camera, SsaoCamera::component(), SsaoCamera::{  })
 
@@ -304,12 +304,7 @@ fn setup(
     light,
     @transform.ecs_key_transform,
     @transform.Transform::from_rotation(
-      @math.Quat::from_euler(
-        @math.EulerRot::ZYX,
-        0.0F,
-        PI * -0.15F,
-        PI * -0.15F,
-      ),
+      @math.Quat::from_euler(ZYX, 0.0F, PI * -0.15F, PI * -0.15F),
     ),
   )
   try! world.set_by_key(
@@ -319,14 +314,7 @@ fn setup(
   )
 
   let instructions = @text.Text2dBundle::new(
-      @text.Text2d::new(
-        ssao_ui_text(
-          Some(
-            @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
-          ),
-          true,
-        ),
-      ),
+      @text.Text2d::new(ssao_ui_text(Some(ScreenSpaceAmbientOcclusion()), true)),
       @text.TextFont::TextFont()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
@@ -339,14 +327,12 @@ fn setup(
     )
     .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(
       @text.TextColor::new(@color.Color::srgba(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
-  world.insert_resource(ssao_instructions_resource_key, SsaoInstructions::{
-    handle: instructions,
-  })
+  world.insert_resource(ssao_instructions_resource_key, { handle: instructions })
 }
 
 ///|
@@ -372,47 +358,31 @@ fn update(
   )
   let base_ssao = current_ssao_value(current_ssao)
 
-  if keycode.just_pressed(@window.KeyCode::Digit2) {
+  if keycode.just_pressed(Digit2) {
+    set_ssao_component(world, camera_entity, base_ssao.with_quality_level(Low))
+  }
+
+  if keycode.just_pressed(Digit3) {
     set_ssao_component(
       world,
       camera_entity,
-      base_ssao.with_quality_level(
-        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::Low,
-      ),
+      base_ssao.with_quality_level(Medium),
     )
   }
 
-  if keycode.just_pressed(@window.KeyCode::Digit3) {
+  if keycode.just_pressed(Digit4) {
+    set_ssao_component(world, camera_entity, base_ssao.with_quality_level(High))
+  }
+
+  if keycode.just_pressed(Digit5) {
     set_ssao_component(
       world,
       camera_entity,
-      base_ssao.with_quality_level(
-        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::Medium,
-      ),
+      base_ssao.with_quality_level(Ultra),
     )
   }
 
-  if keycode.just_pressed(@window.KeyCode::Digit4) {
-    set_ssao_component(
-      world,
-      camera_entity,
-      base_ssao.with_quality_level(
-        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::High,
-      ),
-    )
-  }
-
-  if keycode.just_pressed(@window.KeyCode::Digit5) {
-    set_ssao_component(
-      world,
-      camera_entity,
-      base_ssao.with_quality_level(
-        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
-      ),
-    )
-  }
-
-  if keycode.just_pressed(@window.KeyCode::ArrowUp) {
+  if keycode.just_pressed(ArrowUp) {
     set_ssao_component(
       world,
       camera_entity,
@@ -426,7 +396,7 @@ fn update(
     )
   }
 
-  if keycode.just_pressed(@window.KeyCode::ArrowDown) {
+  if keycode.just_pressed(ArrowDown) {
     set_ssao_component(
       world,
       camera_entity,
@@ -440,14 +410,14 @@ fn update(
     )
   }
 
-  if keycode.just_pressed(@window.KeyCode::Digit1) {
+  if keycode.just_pressed(Digit1) {
     try! (world.take(
       camera_entity, @post_process.ecs_key_screen_space_ambient_occlusion,
     )
     |> ignore)
   }
 
-  if keycode.just_pressed(@window.KeyCode::Space) {
+  if keycode.just_pressed(Space) {
     if (try! world.contains_by_key(
         camera_entity, @post_process.ecs_key_temporal_jitter,
       )) {
@@ -457,7 +427,7 @@ fn update(
       try! world.set_by_key(
         camera_entity,
         @post_process.ecs_key_temporal_jitter,
-        @post_process.TemporalJitter::TemporalJitter(),
+        TemporalJitter(),
       )
     }
   }
@@ -483,7 +453,7 @@ fn update(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::build())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param4(@app.Update, update)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param4(Update, update)
   .run()
 }

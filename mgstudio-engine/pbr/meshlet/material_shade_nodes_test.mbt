@@ -62,10 +62,7 @@ test "pbr meshlet: main opaque pass draw count filters scene presence and pipeli
 ///|
 test "pbr meshlet: main opaque shade descriptor mirrors bevy fullscreen pass" {
   let descriptor = meshlet_main_opaque_pass_descriptor()
-  inspect(
-    descriptor.pass_variant is MeshletMaterialShadePassVariant::MainOpaque,
-    content="true",
-  )
+  inspect(descriptor.pass_variant is MainOpaque, content="true")
   inspect(descriptor.label, content="meshlet_material_opaque_3d_pass")
   debug_inspect(descriptor.color_attachment_slots, content="[\"view_target\"]")
   inspect(descriptor.depth_load, content="Load")
@@ -129,15 +126,9 @@ test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
     has_camera_viewport=true,
   )
   inspect(commands.length(), content="8")
-  inspect(
-    commands[0].kind is MeshletMaterialShadePassCommandKind::BeginRenderPass,
-    content="true",
-  )
+  inspect(commands[0].kind is BeginRenderPass, content="true")
   inspect(commands[0].label, content="meshlet_material_opaque_3d_pass")
-  inspect(
-    commands[1].kind is MeshletMaterialShadePassCommandKind::SetCameraViewport,
-    content="true",
-  )
+  inspect(commands[1].kind is SetCameraViewport, content="true")
   inspect(commands[2].bind_group_index, content="0")
   inspect(commands[2].bind_group_kind, content="mesh_view")
   inspect(commands[2].dynamic_offset_count, content="7")
@@ -145,10 +136,7 @@ test "pbr meshlet: main opaque pass commands mirror bevy bind and draw order" {
   inspect(commands[3].bind_group_kind, content="binding_array")
   inspect(commands[4].bind_group_index, content="2")
   inspect(commands[4].bind_group_kind, content="material_shade")
-  inspect(
-    commands[5].kind is MeshletMaterialShadePassCommandKind::SetRenderPipeline,
-    content="true",
-  )
+  inspect(commands[5].kind is SetRenderPipeline, content="true")
   inspect(commands[5].material_pipeline_id, content="42")
   inspect(commands[6].bind_group_index, content="3")
   inspect(commands[6].bind_group_kind, content="material")

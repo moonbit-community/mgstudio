@@ -31,11 +31,10 @@ test "app: timeline trace captures schedule stage and system spans" {
   let mut has_system = false
   let mut all_non_negative = true
   for span in spans.val {
-    if span.category() == TimelineTraceCategory::ScheduleStage {
+    if span.category() == ScheduleStage {
       has_stage = true
     }
-    if span.category() == TimelineTraceCategory::System &&
-      span.name() == "timeline_test_system" {
+    if span.category() == System && span.name() == "timeline_test_system" {
       has_system = true
     }
     if span.ts_us() < 0L || span.dur_us() < 0L {
@@ -53,11 +52,8 @@ test "app: timeline trace disabled path stays no-op" {
   clear_timeline_trace_counter_sink()
   debug_inspect(timeline_trace_enabled(), content="false")
 
-  let begin_ts = timeline_trace_begin_span(
-    TimelineTraceCategory::System,
-    "disabled",
-  )
-  timeline_trace_end_span(TimelineTraceCategory::System, "disabled", begin_ts)
+  let begin_ts = timeline_trace_begin_span(System, "disabled")
+  timeline_trace_end_span(System, "disabled", begin_ts)
 
   debug_inspect(begin_ts, content="-1")
 }
@@ -72,12 +68,7 @@ test "app: timeline trace pending queue stores and drains spans" {
   set_timeline_trace_span_sink(
     Some(fn(span) { timeline_trace_push_pending_span(span) }),
   )
-  timeline_trace_emit_complete_span(
-    TimelineTraceCategory::RenderQueue,
-    "queue_test",
-    10L,
-    20L,
-  )
+  timeline_trace_emit_complete_span(RenderQueue, "queue_test", 10L, 20L)
   clear_timeline_trace_span_sink()
 
   let first_batch = timeline_trace_take_pending_spans()
@@ -85,10 +76,7 @@ test "app: timeline trace pending queue stores and drains spans" {
 
   debug_inspect(first_batch.length(), content="1")
   debug_inspect(first_batch[0].name() == "queue_test", content="true")
-  debug_inspect(
-    first_batch[0].category() == TimelineTraceCategory::RenderQueue,
-    content="true",
-  )
+  debug_inspect(first_batch[0].category() == RenderQueue, content="true")
   debug_inspect(second_batch.length(), content="0")
 }
 

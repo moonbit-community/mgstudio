@@ -245,7 +245,7 @@ fn render3d_queue_prepass_material_meshes(
       }
       let properties = material.material_properties()
       ignore(cache_entry.tick)
-      let deferred = properties.render_method is OpaqueRendererMethod::Deferred
+      let deferred = properties.render_method is Deferred
       let depth_only_draw_function = properties.get_draw_function(
         PREPASS_OPAQUE_DEPTH_ONLY_DRAW_FUNCTION_LABEL,
       )
@@ -255,8 +255,7 @@ fn render3d_queue_prepass_material_meshes(
         entity: phase_entity_ref3d(visible_entity.id(), render_entity),
         extracted_index,
         current_uniform_index: mesh_instance.current_uniform_index(),
-        phase: if properties.render_phase_type
-          is @material.RenderPhaseType::Opaque {
+        phase: if properties.render_phase_type is Opaque {
           RENDER3D_PHASE_OPAQUE
         } else {
           RENDER3D_PHASE_ALPHA_MASK
@@ -282,7 +281,7 @@ fn render3d_queue_prepass_material_meshes(
         gpu_preprocessing_support,
       )
       match properties.render_phase_type {
-        @material.RenderPhaseType::Opaque =>
+        Opaque =>
           if deferred {
             match opaque_deferred {
               Some(phase) => phase.add(phase_item, phase_type)
@@ -295,7 +294,7 @@ fn render3d_queue_prepass_material_meshes(
               None => ()
             }
           }
-        @material.RenderPhaseType::AlphaMask =>
+        AlphaMask =>
           if deferred {
             match alpha_mask_deferred {
               Some(phase) => phase.add(phase_item, phase_type)
@@ -308,8 +307,7 @@ fn render3d_queue_prepass_material_meshes(
               None => ()
             }
           }
-        @material.RenderPhaseType::Transmissive
-        | @material.RenderPhaseType::Transparent => ()
+        Transmissive | Transparent => ()
       }
     }
   }

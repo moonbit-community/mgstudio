@@ -38,7 +38,7 @@ fn run_registered_observer_system(
   world : @ecs.World,
   run_state : ObserverSystemRunState,
   observer_system : SystemFn[@ecs.World],
-  context_kind? : ErrorContextKind = ErrorContextKind::Observer,
+  context_kind? : ErrorContextKind = Observer,
   source? : String = "<observer>",
 ) -> Unit {
   let this_run = world.increment_change_tick()
@@ -64,11 +64,7 @@ fn run_registered_observer_system(
       report_world_error(
         world,
         @ecs.Invalid(message),
-        ErrorContext::new(
-          ErrorContextKind::Validation,
-          source,
-          stage=current_schedule_stage(),
-        ),
+        ErrorContext::new(Validation, source, stage=current_schedule_stage()),
       )
     Error(err) => {
       run_state.last_run_tick = this_run

@@ -33,7 +33,7 @@ pub fn TracyGpuContext::new(
   backend : String,
   enabled : Bool,
 ) -> TracyGpuContext {
-  TracyGpuContext::{ backend, created_at_us: @time.host_time_now(), enabled }
+  { backend, created_at_us: @time.host_time_now(), enabled }
 }
 
 ///|

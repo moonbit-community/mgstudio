@@ -22,13 +22,14 @@ const HALF_PI : Float = 1.5707963267948966F
 struct MyRoundGizmos {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn MyRoundGizmos::MyRoundGizmos() -> MyRoundGizmos {
   MyRoundGizmos::{  }
 }
 
 ///|
 impl Default for MyRoundGizmos with fn default() {
-  MyRoundGizmos::MyRoundGizmos()
+  MyRoundGizmos()
 }
 
 ///|
@@ -62,7 +63,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn new_gizmo_config_group_cell() {
-  MyRoundGizmosCell(Ref(MyRoundGizmos::MyRoundGizmos()))
+  MyRoundGizmosCell(Ref(MyRoundGizmos()))
 }
 
 ///|
@@ -208,10 +209,7 @@ fn setup(
       (
         @gizmos.Gizmo::Gizmo()
         .with_handle(static_gizmo_handle)
-        .with_line_config({
-          ..@gizmos.GizmoLineConfig::GizmoLineConfig(),
-          width: 5.0F,
-        }),
+        .with_line_config({ ..GizmoLineConfig(), width: 5.0F }),
         @transform.Transform::from_xyz(4.0F, 1.0F, 0.0F),
       ),
     ),
@@ -310,7 +308,7 @@ fn draw_example_collection(
   gizmos.grid_3d(
     @math.Isometry3d::new(
       @math.Vec3::splat(4.0F),
-      @math.Quat::from_euler(@math.EulerRot::XYZ, HALF_PI, 0.0F, seconds * 0.5F),
+      @math.Quat::from_euler(XYZ, HALF_PI, 0.0F, seconds * 0.5F),
     ),
     @math.IVec2::new(5, 5),
     @math.Vec2::new(0.5F, 0.5F),
@@ -358,12 +356,7 @@ fn draw_example_collection(
   my_gizmos.circle_3d(
     @math.Isometry3d::new(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Quat::from_euler(
-        @math.EulerRot::XYZ,
-        HALF_PI,
-        0.0F,
-        0.25F + seconds * 0.1F,
-      ),
+      @math.Quat::from_euler(XYZ, HALF_PI, 0.0F, 0.25F + seconds * 0.1F),
     ),
     3.1F,
     @color.Color::srgb(0.0F, 0.0F, 0.5F),
@@ -371,7 +364,7 @@ fn draw_example_collection(
   my_gizmos.arc_3d(
     @math.Isometry3d::new(
       @math.Vec3::new(1.0F, 1.0F, 1.0F),
-      @math.Quat::from_euler(@math.EulerRot::XYZ, 0.7F, 0.4F, 0.0F),
+      @math.Quat::from_euler(XYZ, 0.7F, 0.4F, 0.0F),
     ),
     PI,
     0.2F,
@@ -477,8 +470,8 @@ fn main {
     ),
     MyRoundGizmos::MyRoundGizmos(),
   )
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, draw_example_collection)
-  .add_systems_param4(@app.Update, update_config)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, draw_example_collection)
+  .add_systems_param4(Update, update_config)
   .run()
 }

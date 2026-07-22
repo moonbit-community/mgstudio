@@ -24,7 +24,7 @@ test "compile package composes registered embedded shader graph" {
   let source = load_preprocessed_wgsl(
     "",
     "shader/compile/root.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -42,7 +42,7 @@ test "compile package applies shader defs inside imported modules" {
   register_shader_source(
     "shader/compile/defined_root.wgsl", "#import test::defined_util::value\nfn root() -> u32 { return value(); }\n",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   defines.set("USE_REAL", true)
   let source = load_preprocessed_wgsl(
     "",
@@ -66,7 +66,7 @@ test "compile package keeps unresolved imports structured" {
   let message = load_preprocessed_wgsl(
     "",
     "shader/compile/missing_root.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     UnresolvedImport(path) => path
@@ -87,7 +87,7 @@ test "compile package composes quoted file imports by registered rel path" {
   let source = load_preprocessed_wgsl(
     "",
     "shader/compile/file_root.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -105,7 +105,7 @@ test "compile package composes quoted file imports from combined source" {
   let source = preprocess_shader_source(
     "",
     "#import \"shader/compile/source_dep.wgsl\"::SOURCE_VALUE\nfn root() -> u32 { return SOURCE_VALUE; }\n",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -123,7 +123,7 @@ test "compile package composes quoted file imports when dependency has file impo
   let source = preprocess_shader_source(
     "",
     "#import \"shader/compile/synthetic_dep.wgsl\"::SYNTHETIC_VALUE\nfn root() -> u32 { return SYNTHETIC_VALUE; }\n",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -151,7 +151,7 @@ test "compile package does not auto-register entry shaders as import modules" {
   let source = load_preprocessed_wgsl(
     "",
     "shader/compile/entry_only.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -171,7 +171,7 @@ test "compile package invalidates persistent shader cache after source update" {
   let first = load_preprocessed_wgsl(
     "",
     "shader/compile/live_root.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())
@@ -184,7 +184,7 @@ test "compile package invalidates persistent shader cache after source update" {
   let second = load_preprocessed_wgsl(
     "",
     "shader/compile/live_root.wgsl",
-    @hashmap.HashMap([]),
+    HashMap([]),
     default_shader_value_defines(),
   ) catch {
     err => abort(err.message())

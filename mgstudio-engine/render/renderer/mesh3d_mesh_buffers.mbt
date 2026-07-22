@@ -150,9 +150,9 @@ fn GpuBackend::mesh3d_update_mesh_infos_for_allocator_buffer(
   for index in 0..<self.meshes.length() {
     let mesh = self.meshes[index]
     if usage_kind == 0 && mesh.vertex_slab_id == slab_id {
-      self.meshes[index] = GpuMeshInfo::{ ..mesh, vertex_buf: buffer }
+      self.meshes[index] = { ..mesh, vertex_buf: buffer }
     } else if usage_kind == 1 && mesh.index_slab_id == slab_id {
-      self.meshes[index] = GpuMeshInfo::{ ..mesh, index_buf: buffer }
+      self.meshes[index] = { ..mesh, index_buf: buffer }
     }
   }
 }
@@ -173,18 +173,9 @@ fn GpuBackend::mesh3d_store_allocator_buffer(
     Some(index) => {
       let old = self.mesh_allocator_buffers[index].buffer
       self.frame_retired_buffers.push(old)
-      self.mesh_allocator_buffers[index] = GpuMeshAllocatorBuffer::{
-        slab_id,
-        usage_kind,
-        buffer,
-      }
+      self.mesh_allocator_buffers[index] = { slab_id, usage_kind, buffer }
     }
-    None =>
-      self.mesh_allocator_buffers.push(GpuMeshAllocatorBuffer::{
-        slab_id,
-        usage_kind,
-        buffer,
-      })
+    None => self.mesh_allocator_buffers.push({ slab_id, usage_kind, buffer })
   }
   self.mesh3d_update_mesh_infos_for_allocator_buffer(
     slab_id, usage_kind, buffer,
@@ -355,7 +346,7 @@ pub fn GpuBackend::prepare_mesh3d_allocator_asset(
   if old_mesh.index_slab_id < 0 {
     mesh3d_retire_or_release_buffer(self, old_mesh.index_buf)
   }
-  self.meshes[mesh_index] = GpuMeshInfo::{
+  self.meshes[mesh_index] = {
     id: mesh_id,
     index_count: indices.length().reinterpret_as_uint(),
     vertex_count: vertex_count.reinterpret_as_uint(),

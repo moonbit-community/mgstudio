@@ -19,7 +19,7 @@ const TORUS_SCENE_PATH : String = "models/torus/torus.gltf"
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }
 

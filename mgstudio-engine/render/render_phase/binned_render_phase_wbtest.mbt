@@ -53,13 +53,13 @@ test "render_phase: phase item batch range preserves valid u32-like bounds" {
 ///|
 test "render_phase: binned mesh type follows Bevy preprocessing support" {
   let none = @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-    @render_batching.GpuPreprocessingMode::None,
+    None,
   )
   let preprocessing = @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    PreprocessingOnly,
   )
   let culling = @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-    @render_batching.GpuPreprocessingMode::Culling,
+    Culling,
   )
   debug_inspect(
     BinnedRenderPhaseType::mesh(true, none),
@@ -265,7 +265,7 @@ test "render_phase: cached bin keys retain exact owner and phase type" {
   let cached_key = CachedBinKey::new(
     TestMultidrawBinKey(406),
     TestMultidrawBinKey(407),
-    BinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   let cached_entity = CachedBinnedEntity::new(Some(cached_key))
   let retained = cached_entity.cached_bin_key().unwrap()
@@ -355,8 +355,8 @@ test "render_phase: binned batch-set variants clear their matching storage" {
 ///|
 test "render_phase: unbatchable indices preserve Bevy sparse and dense transitions" {
   let sparse = UnbatchableBinnedEntityIndexSet::new()
-  sparse.add(UnbatchableBinnedEntityIndices::new(4, PhaseItemExtraIndex::None))
-  sparse.add(UnbatchableBinnedEntityIndices::new(5, PhaseItemExtraIndex::None))
+  sparse.add(UnbatchableBinnedEntityIndices::new(4, None))
+  sparse.add(UnbatchableBinnedEntityIndices::new(5, None))
   debug_inspect(sparse.len(), content="2")
   debug_inspect(
     sparse
@@ -386,8 +386,8 @@ test "render_phase: unbatchable indices preserve Bevy sparse and dense transitio
   )
 
   let dense = UnbatchableBinnedEntityIndexSet::new()
-  dense.add(UnbatchableBinnedEntityIndices::new(10, PhaseItemExtraIndex::None))
-  dense.add(UnbatchableBinnedEntityIndices::new(12, PhaseItemExtraIndex::None))
+  dense.add(UnbatchableBinnedEntityIndices::new(10, None))
+  dense.add(UnbatchableBinnedEntityIndices::new(12, None))
   debug_inspect(
     dense
     .indices_for_entity_index(1)
@@ -401,13 +401,13 @@ test "render_phase: unbatchable indices preserve Bevy sparse and dense transitio
 ///|
 test "render_phase: generic binned phase selects Bevy batch-set storage" {
   let cpu : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
+    None,
   )
   let direct : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    PreprocessingOnly,
   )
   let indirect : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::Culling,
+    Culling,
   )
   match cpu.batch_sets() {
     DynamicUniforms(values) => inspect(values.length(), content="0")
@@ -426,7 +426,7 @@ test "render_phase: generic binned phase selects Bevy batch-set storage" {
 ///|
 test "render_phase: generic binned phase retains and removes all Bevy bin types" {
   let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::Culling,
+    Culling,
   )
   let batch_set_key = TestMultidrawBinKey(601)
   let batchable_bin_key = TestMultidrawBinKey(602)
@@ -513,7 +513,7 @@ test "render_phase: generic binned phase retains and removes all Bevy bin types"
 ///|
 test "render_phase: generic binned phase downgrades multidraw and clears frame data" {
   let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    PreprocessingOnly,
   )
   let main_entity = @render_sync_world.MainEntity::new(@core.Entity::new(61, 1))
   phase.add(
@@ -553,7 +553,7 @@ test "render_phase: generic binned phase downgrades multidraw and clears frame d
 ///|
 test "render_phase: GPU binned preparation maps input indices to phase output ranges" {
   let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    PreprocessingOnly,
   )
   let first = @render_sync_world.MainEntity::new(@core.Entity::new(71, 1))
   let second = @render_sync_world.MainEntity::new(@core.Entity::new(72, 1))
@@ -608,7 +608,7 @@ test "render_phase: GPU binned preparation maps input indices to phase output ra
 ///|
 test "render_phase: GPU binned preparation preserves Bevy phase ordering" {
   let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::Culling,
+    Culling,
   )
   let unbatchable = @render_sync_world.MainEntity::new(@core.Entity::new(91, 1))
   let first_multidraw = @render_sync_world.MainEntity::new(
@@ -685,10 +685,10 @@ test "render_phase: GPU binned preparation preserves Bevy phase ordering" {
 ///|
 test "render_phase: CPU binned preparation shares output storage across views" {
   let first_phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
+    None,
   )
   let second_phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::None,
+    None,
   )
   let first = @render_sync_world.MainEntity::new(@core.Entity::new(111, 1))
   let skipped = @render_sync_world.MainEntity::new(@core.Entity::new(112, 1))
@@ -747,7 +747,7 @@ test "render_phase: CPU binned preparation shares output storage across views" {
 ///|
 test "render_phase: indirect unbatchables reserve Bevy metadata range before filtering" {
   let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::Culling,
+    Culling,
   )
   let skipped = @render_sync_world.MainEntity::new(@core.Entity::new(131, 1))
   let retained = @render_sync_world.MainEntity::new(@core.Entity::new(132, 1))
@@ -802,7 +802,7 @@ test "render_phase: indirect unbatchables reserve Bevy metadata range before fil
 ///|
 test "render_phase: indirect batchable records Bevy next batch-set index" {
   let phase : BinnedRenderPhase[TestMultidrawBinKey, TestMultidrawBinKey] = BinnedRenderPhase::new(
-    @render_batching.GpuPreprocessingMode::Culling,
+    Culling,
   )
   let entity = @render_sync_world.MainEntity::new(@core.Entity::new(151, 1))
   phase.add(

@@ -68,11 +68,7 @@ impl @app.Resource for AppSettings with fn resource() {
 
 ///|
 fn AppSettings::AppSettings() -> AppSettings {
-  AppSettings::{
-    focal_distance: 7.0F,
-    aperture_f_stops: 1.0F / 8.0F,
-    mode: Some(@pbr.DepthOfFieldMode::Bokeh),
-  }
+  { focal_distance: 7.0F, aperture_f_stops: 1.0F / 8.0F, mode: Some(Bokeh) }
 }
 
 ///|
@@ -174,13 +170,13 @@ fn setup(
   let settings = app_settings.get()
   let camera = commands.spawn(
     @pbr.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(0.0F, 4.5F, 8.25F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_tonemapping(Some(@post_process.Tonemapping::TonyMcMapface))
+    .with_tonemapping(Some(TonyMcMapface))
     .with_bloom(Some(@post_process.Bloom::natural())),
   )
 
@@ -208,7 +204,7 @@ fn setup(
       (
         create_text(settings),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -221,17 +217,17 @@ fn adjust_focus(
   input : @input.ButtonInput[@window.KeyCode],
   app_settings : @app.ResMut[AppSettings],
 ) -> Unit {
-  let distance_delta = if input.pressed(@window.KeyCode::ArrowDown) {
+  let distance_delta = if input.pressed(ArrowDown) {
     -FOCAL_DISTANCE_SPEED
-  } else if input.pressed(@window.KeyCode::ArrowUp) {
+  } else if input.pressed(ArrowUp) {
     FOCAL_DISTANCE_SPEED
   } else {
     0.0F
   }
 
-  let f_stop_delta = if input.pressed(@window.KeyCode::ArrowLeft) {
+  let f_stop_delta = if input.pressed(ArrowLeft) {
     -APERTURE_F_STOP_SPEED
-  } else if input.pressed(@window.KeyCode::ArrowRight) {
+  } else if input.pressed(ArrowRight) {
     APERTURE_F_STOP_SPEED
   } else {
     0.0F
@@ -254,14 +250,14 @@ fn change_mode(
   input : @input.ButtonInput[@window.KeyCode],
   app_settings : @app.ResMut[AppSettings],
 ) -> Unit {
-  if !input.just_pressed(@window.KeyCode::Space) {
+  if !input.just_pressed(Space) {
     return
   }
   app_settings.modify(fn(settings) {
     settings.mode = match settings.mode {
-      Some(Bokeh) => Some(@pbr.DepthOfFieldMode::Gaussian)
+      Some(Bokeh) => Some(Gaussian)
       Some(Gaussian) => None
-      None => Some(@pbr.DepthOfFieldMode::Bokeh)
+      None => Some(Bokeh)
     }
   })
 }
@@ -352,30 +348,30 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param5(@app.Update, tweak_scene)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param5(Update, tweak_scene)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(adjust_focus).in_set(depth_of_field_adjust_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(change_mode)
     .after(depth_of_field_adjust_set)
     .in_set(depth_of_field_change_mode_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_dof_settings)
     .after(depth_of_field_change_mode_set)
     .in_set(depth_of_field_update_settings_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(update_text).after(
       depth_of_field_update_settings_set,
     ),

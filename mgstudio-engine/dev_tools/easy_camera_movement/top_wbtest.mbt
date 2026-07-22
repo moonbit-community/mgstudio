@@ -21,25 +21,16 @@ test "easy camera movement: nudges camera transform toward target" {
     .add_plugins(EasyCameraMovementPlugin::EasyCameraMovementPlugin())
     .insert_resource(@time.TimeUpdateStrategy::FixedTimesteps(60))
   let camera = app.world().spawn()
+  try! app.world().set_by_key(camera, @camera.Camera::component(), Camera())
   try! app
   .world()
-  .set_by_key(camera, @camera.Camera::component(), @camera.Camera::Camera())
-  try! app
-  .world()
-  .set_by_key(
-    camera,
-    @transform.Transform::component(),
-    @transform.Transform::Transform(),
-  )
+  .set_by_key(camera, @transform.Transform::component(), Transform())
   try! app
   .world()
   .set_by_key(
     camera,
     ecs_key_camera_movement,
-    CameraMovement::CameraMovement(
-      @math.Vec3::new(10.0F, 0.0F, 0.0F),
-      @math.Quat::identity(),
-    ),
+    CameraMovement(@math.Vec3::new(10.0F, 0.0F, 0.0F), @math.Quat::identity()),
   )
   app = app.run_once()
   app = app.run_once()

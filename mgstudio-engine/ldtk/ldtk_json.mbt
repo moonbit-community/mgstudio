@@ -96,7 +96,7 @@ pub(all) enum Type {
 
 ///|
 pub fn Type::default() -> Type {
-  Type::Tiles
+  Tiles
 }
 
 ///|
@@ -159,7 +159,7 @@ pub(all) enum BgPos {
 
 ///|
 pub fn BgPos::default() -> BgPos {
-  BgPos::Contain
+  Contain
 }
 
 ///|
@@ -235,7 +235,7 @@ pub fn LdtkTileEnumTags::new(
   tags : Array[String],
   source_enum_uid : Int?,
 ) -> LdtkTileEnumTags {
-  LdtkTileEnumTags::{ tags, source_enum_uid }
+  { tags, source_enum_uid }
 }
 
 ///|
@@ -266,7 +266,7 @@ fn ldtk_create_int_grid_image_size(definitions : Definitions) -> Int {
   let mut max_grid_size = 0
   for layer in definitions.layers {
     match layer.layer_definition_type {
-      Type::IntGrid =>
+      IntGrid =>
         if layer.tileset_def_uid is None && layer.grid_size > max_grid_size {
           max_grid_size = layer.grid_size
         }
@@ -482,10 +482,10 @@ fn ldtk_decode_vec2(json : Json) -> @math.Vec2 {
 ///|
 fn ldtk_decode_type(value : String) -> Type {
   match value {
-    "AutoLayer" => Type::AutoLayer
-    "Entities" => Type::Entities
-    "IntGrid" => Type::IntGrid
-    "Tiles" => Type::Tiles
+    "AutoLayer" => AutoLayer
+    "Entities" => Entities
+    "IntGrid" => IntGrid
+    "Tiles" => Tiles
     _ => Type::default()
   }
 }
@@ -493,11 +493,11 @@ fn ldtk_decode_type(value : String) -> Type {
 ///|
 fn ldtk_decode_bg_pos(value : String) -> BgPos {
   match value {
-    "Contain" => BgPos::Contain
-    "Cover" => BgPos::Cover
-    "CoverDirty" => BgPos::CoverDirty
-    "Repeat" => BgPos::Repeat
-    "Unscaled" => BgPos::Unscaled
+    "Contain" => Contain
+    "Cover" => Cover
+    "CoverDirty" => CoverDirty
+    "Repeat" => Repeat
+    "Unscaled" => Unscaled
     _ => BgPos::default()
   }
 }
@@ -505,7 +505,7 @@ fn ldtk_decode_bg_pos(value : String) -> BgPos {
 ///|
 fn ldtk_decode_tileset_rectangle(json : Json) -> TilesetRectangle {
   let object = ldtk_json_object(json)
-  TilesetRectangle::{
+  {
     h: ldtk_int_or_default(object, "h", 0),
     tileset_uid: ldtk_int_or_default(object, "tilesetUid", -1),
     w: ldtk_int_or_default(object, "w", 0),
@@ -519,7 +519,7 @@ fn ldtk_decode_reference_to_entity_instance(
   json : Json,
 ) -> ReferenceToAnEntityInstance {
   let object = ldtk_json_object(json)
-  ReferenceToAnEntityInstance::{
+  {
     entity_iid: ldtk_string_or_default(object, "entityIid", ""),
     layer_iid: ldtk_string_or_default(object, "layerIid", ""),
     level_iid: ldtk_string_or_default(object, "levelIid", ""),
@@ -660,7 +660,7 @@ fn ldtk_decode_level_background_position(
     Some(value) => try! @json.from_json(value)
     None => []
   }
-  LevelBackgroundPosition::{
+  {
     crop_rect,
     scale: ldtk_decode_vec2(
       ldtk_object_get_or(object, "scale", [1.0, 1.0].to_json()),
@@ -674,7 +674,7 @@ fn ldtk_decode_level_background_position(
 ///|
 fn ldtk_decode_tile_instance(json : Json) -> TileInstance {
   let object = ldtk_json_object(json)
-  TileInstance::{
+  {
     px: ldtk_decode_ivec2(ldtk_object_get_or(object, "__px", [0, 0].to_json())),
     src: ldtk_decode_ivec2(ldtk_object_get_or(object, "src", [0, 0].to_json())),
     f: ldtk_int_or_default(object, "f", 0),
@@ -696,7 +696,7 @@ fn ldtk_decode_field_instance(json : Json) -> LdtkFieldInstance {
     Some(value) => try! @json.from_json(value)
     None => []
   }
-  LdtkFieldInstance::{
+  {
     identifier: ldtk_string_or_default(object, "__identifier", ""),
     tile: match ldtk_optional_json(object, "__tile") {
       Some(value) => Some(ldtk_decode_tileset_rectangle(value))
@@ -719,7 +719,7 @@ fn ldtk_decode_entity_instance(json : Json) -> EntityInstance {
     ) {
     field_instances.push(ldtk_decode_field_instance(field_json))
   }
-  EntityInstance::{
+  {
     iid: ldtk_string_or_default(object, "iid", ""),
     identifier: ldtk_string_or_default(object, "__identifier", ""),
     def_uid: ldtk_int_or_default(object, "defUid", -1),
@@ -775,7 +775,7 @@ fn ldtk_decode_layer_instance(json : Json) -> LayerInstance {
     ) {
     entity_instances.push(ldtk_decode_entity_instance(entity_json))
   }
-  LayerInstance::{
+  {
     c_hei: ldtk_int_or_default(object, "__cHei", 0),
     c_wid: ldtk_int_or_default(object, "__cWid", 0),
     grid_size: ldtk_int_or_default(object, "__gridSize", 0),
@@ -814,10 +814,7 @@ fn ldtk_decode_level_neighbours(json : Json) -> Array[NeighbourLevel] {
     let object = ldtk_json_object(value)
     let level_iid = ldtk_string_or_default(object, "levelIid", "")
     if level_iid != "" {
-      out.push(NeighbourLevel::{
-        dir: ldtk_string_or_default(object, "dir", ""),
-        level_iid,
-      })
+      out.push({ dir: ldtk_string_or_default(object, "dir", ""), level_iid })
     }
   }
   out
@@ -843,7 +840,7 @@ fn ldtk_decode_level(json : Json) -> Level {
     }
     None => None
   }
-  Level::{
+  {
     iid: ldtk_string_or_default(object, "iid", ""),
     identifier: ldtk_string_or_default(object, "identifier", ""),
     uid: ldtk_int_or_default(object, "uid", -1),
@@ -899,7 +896,7 @@ fn ldtk_decode_world(json : Json) -> World {
     ) {
     levels.push(ldtk_decode_level(level_json))
   }
-  World::{
+  {
     iid: ldtk_string_or_default(object, "iid", ""),
     identifier: ldtk_string_or_default(object, "identifier", ""),
     world_grid_width: ldtk_optional_int(object, "worldGridWidth"),
@@ -912,7 +909,7 @@ fn ldtk_decode_world(json : Json) -> World {
 ///|
 fn ldtk_decode_tileset_definition(json : Json) -> TilesetDefinition {
   let object = ldtk_json_object(json)
-  let custom_data_by_tile : @hashmap.HashMap[Int, String] = @hashmap.HashMap([])
+  let custom_data_by_tile : @hashmap.HashMap[Int, String] = HashMap([])
   for
     custom_json in ldtk_json_array(
       ldtk_object_get_or(object, "customData", ldtk_empty_json_array()),
@@ -925,8 +922,7 @@ fn ldtk_decode_tileset_definition(json : Json) -> TilesetDefinition {
     }
   }
 
-  let enum_tags_by_tile : @hashmap.HashMap[Int, LdtkTileEnumTags] = @hashmap.HashMap([],
-  )
+  let enum_tags_by_tile : @hashmap.HashMap[Int, LdtkTileEnumTags] = HashMap([])
   for
     tag_json in ldtk_json_array(
       ldtk_object_get_or(object, "enumTags", ldtk_empty_json_array()),
@@ -962,7 +958,7 @@ fn ldtk_decode_tileset_definition(json : Json) -> TilesetDefinition {
     }
   }
 
-  TilesetDefinition::{
+  {
     uid: ldtk_int_or_default(object, "uid", -1),
     identifier: ldtk_string_or_default(object, "identifier", ""),
     rel_path: ldtk_optional_string(object, "relPath"),
@@ -991,7 +987,7 @@ fn ldtk_decode_entity_definition(json : Json) -> EntityDefinition {
     }
     None => None
   }
-  EntityDefinition::{
+  {
     uid: ldtk_int_or_default(object, "uid", -1),
     identifier: ldtk_string_or_default(object, "identifier", ""),
     width: ldtk_int_or_default(object, "width", 0),
@@ -1009,14 +1005,14 @@ fn ldtk_decode_layer_definition(json : Json) -> LayerDefinition {
       ldtk_object_get_or(object, "intGridValues", ldtk_empty_json_array()),
     ) {
     let value_object = ldtk_json_object(value_json)
-    int_grid_values.push(IntGridValueDefinition::{
+    int_grid_values.push({
       value: ldtk_int_or_default(value_object, "value", 0),
       color: ldtk_parse_color_hex(
         ldtk_string_or_default(value_object, "color", "#000000"),
       ),
     })
   }
-  LayerDefinition::{
+  {
     uid: ldtk_int_or_default(object, "uid", -1),
     identifier: ldtk_string_or_default(object, "identifier", ""),
     layer_definition_type: ldtk_decode_type(
@@ -1057,7 +1053,7 @@ fn ldtk_decode_definitions(json : Json) -> Definitions {
     ) {
     tilesets.push(ldtk_decode_tileset_definition(tileset_json))
   }
-  Definitions::{ entities, layers, tilesets }
+  { entities, layers, tilesets }
 }
 
 ///|
@@ -1078,7 +1074,7 @@ pub fn ldtk_parse_json_from_text(text : String) -> LdtkJson {
     ) {
     worlds.push(ldtk_decode_world(world_json))
   }
-  LdtkJson::{
+  {
     iid: ldtk_string_or_default(object, "iid", ""),
     bg_color: ldtk_parse_color_hex(
       ldtk_string_or_default(object, "bgColor", "#000000"),

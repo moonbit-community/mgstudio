@@ -23,6 +23,7 @@ pub struct DiagnosticsPlugin {}
 const DIAGNOSTICS_PLUGIN_NAME : String = "mgstudio.diagnostic.DiagnosticsPlugin"
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn DiagnosticsPlugin::DiagnosticsPlugin() -> DiagnosticsPlugin {
   DiagnosticsPlugin::{  }
 }
@@ -39,7 +40,7 @@ pub impl @app.Plugin for DiagnosticsPlugin with fn build(self, app) {
 
 ///|
 pub fn diagnostics_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  diagnostics_plugin_with(app, DiagnosticsPlugin::DiagnosticsPlugin())
+  diagnostics_plugin_with(app, DiagnosticsPlugin())
 }
 
 ///|

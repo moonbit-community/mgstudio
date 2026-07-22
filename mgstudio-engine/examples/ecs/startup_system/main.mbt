@@ -25,7 +25,7 @@ fn normal_system() -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_systems_fn(@app.Startup, startup_system)
-  .add_systems_fn(@app.Update, normal_system)
+  .add_systems_fn(Startup, startup_system)
+  .add_systems_fn(Update, normal_system)
   .run()
 }

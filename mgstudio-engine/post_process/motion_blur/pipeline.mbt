@@ -39,7 +39,7 @@ pub fn MotionBlurPipelineKey::new(
   samples? : Int = 1,
 ) -> MotionBlurPipelineKey {
   let samples = if samples <= 0 { 1 } else { samples }
-  MotionBlurPipelineKey::{ target_format_raw, samples }
+  { target_format_raw, samples }
 }
 
 ///|
@@ -70,7 +70,7 @@ pub struct MotionBlurPipelineId {
 pub fn MotionBlurPipelineId::new(
   pipeline_id~ : @render_resource.CachedRenderPipelineId,
 ) -> MotionBlurPipelineId {
-  MotionBlurPipelineId::{ pipeline_id, }
+  { pipeline_id, }
 }
 
 ///|
@@ -105,7 +105,7 @@ pub fn MotionBlurPipeline::new(
   render_device : @render.RenderDevice,
   fullscreen_shader : @fullscreen_vertex_shader.FullscreenShader,
 ) -> MotionBlurPipeline {
-  MotionBlurPipeline::{
+  {
     sampler: render_device.create_sampler_linear_clamp(),
     layout: motion_blur_bind_group_layout_descriptor(multisampled=false),
     layout_msaa: motion_blur_bind_group_layout_descriptor(multisampled=true),
@@ -215,7 +215,7 @@ pub struct SpecializedMotionBlurPipelines {
 
 ///|
 pub fn SpecializedMotionBlurPipelines::SpecializedMotionBlurPipelines() -> SpecializedMotionBlurPipelines {
-  SpecializedMotionBlurPipelines::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -268,7 +268,7 @@ pub fn init_motion_blur_pipeline(render_world : @ecs.World) -> Unit {
       @fullscreen_vertex_shader.FullscreenShader::resource(),
     ) {
     Some(value) => value
-    None => @fullscreen_vertex_shader.FullscreenShader::FullscreenShader()
+    None => FullscreenShader()
   }
   render_world.insert_resource(
     MotionBlurPipeline::resource(),
@@ -279,7 +279,7 @@ pub fn init_motion_blur_pipeline(render_world : @ecs.World) -> Unit {
     .is_present() {
     render_world.insert_resource(
       SpecializedMotionBlurPipelines::resource(),
-      SpecializedMotionBlurPipelines::SpecializedMotionBlurPipelines(),
+      SpecializedMotionBlurPipelines(),
     )
   }
 }
@@ -291,7 +291,7 @@ fn motion_blur_pipeline_state_mut_or_init(
   if world.get_resource(SpecializedMotionBlurPipelines::resource()) is None {
     world.insert_resource(
       SpecializedMotionBlurPipelines::resource(),
-      SpecializedMotionBlurPipelines::SpecializedMotionBlurPipelines(),
+      SpecializedMotionBlurPipelines(),
     )
   }
   match world.get_resource_mut(SpecializedMotionBlurPipelines::resource()) {
@@ -401,7 +401,7 @@ pub fn motion_blur_bind_group_layout_descriptor(
   let motion_vector_sample_type = if multisampled {
     @render_resource.TextureSampleType::Float(false)
   } else {
-    @render_resource.TextureSampleType::Float(true)
+    Float(true)
   }
   let depth_sample_type = @render_resource.TextureSampleType::Float(false)
   @render_resource.BindGroupLayoutDescriptor::new(
@@ -414,54 +414,32 @@ pub fn motion_blur_bind_group_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         0,
         fragment,
-        @render_resource.BindingType::TextureBinding(
-          @render_resource.TextureSampleType::Float(true),
-          @render_resource.TextureViewDimension::D2,
-          false,
-        ),
+        TextureBinding(Float(true), D2, false),
       ),
       @render_resource.BindGroupLayoutEntry::new(
         1,
         fragment,
-        @render_resource.BindingType::TextureBinding(
-          motion_vector_sample_type,
-          @render_resource.TextureViewDimension::D2,
-          multisampled,
-        ),
+        TextureBinding(motion_vector_sample_type, D2, multisampled),
       ),
       @render_resource.BindGroupLayoutEntry::new(
         2,
         fragment,
-        @render_resource.BindingType::TextureBinding(
-          depth_sample_type,
-          @render_resource.TextureViewDimension::D2,
-          multisampled,
-        ),
+        TextureBinding(depth_sample_type, D2, multisampled),
       ),
       @render_resource.BindGroupLayoutEntry::new(
         3,
         fragment,
-        @render_resource.BindingType::SamplerBinding(
-          @render_resource.SamplerBindingType::Filtering,
-        ),
+        SamplerBinding(Filtering),
       ),
       @render_resource.BindGroupLayoutEntry::new(
         4,
         fragment,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Uniform,
-          false,
-          MOTION_BLUR_SETTINGS_UNIFORM_SIZE_BYTES,
-        ),
+        BufferBinding(Uniform, false, MOTION_BLUR_SETTINGS_UNIFORM_SIZE_BYTES),
       ),
       @render_resource.BindGroupLayoutEntry::new(
         5,
         fragment,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Uniform,
-          false,
-          MOTION_BLUR_GLOBALS_UNIFORM_SIZE_BYTES,
-        ),
+        BufferBinding(Uniform, false, MOTION_BLUR_GLOBALS_UNIFORM_SIZE_BYTES),
       ),
     ],
   )
@@ -479,7 +457,7 @@ pub fn motion_blur_samples(settings : MotionBlur) -> Array[MotionBlurSample] {
     return []
   }
   if settings.samples == 1U {
-    return [MotionBlurSample::{ offset: 0.0F, weight: 1.0F }]
+    return [{ offset: 0.0F, weight: 1.0F }]
   }
   let samples : Array[MotionBlurSample] = []
   let half_angle = settings.shutter_angle * 0.5F
@@ -494,10 +472,7 @@ pub fn motion_blur_samples(settings : MotionBlur) -> Array[MotionBlurSample] {
     } else {
       offset.abs() / half_angle
     }
-    samples.push(MotionBlurSample::{
-      offset,
-      weight: 1.0F - normalized_distance * 0.5F,
-    })
+    samples.push({ offset, weight: 1.0F - normalized_distance * 0.5F })
   }
   samples
 }
@@ -566,8 +541,7 @@ test "motion blur: pipeline specialization mirrors Bevy MSAA shader def split" {
   )
   let msaa_fragment = msaa_descriptor.fragment_or_error()
   debug_inspect(msaa_fragment.shader_defs().length(), content="1")
-  guard msaa_fragment.shader_defs()[0]
-    is @render_resource.ShaderDefVal::Flag(name) else {
+  guard msaa_fragment.shader_defs()[0] is Flag(name) else {
     abort("expected MULTISAMPLED shader def")
   }
   debug_inspect(name, content="\"MULTISAMPLED\"")

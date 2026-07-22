@@ -71,12 +71,12 @@ let menu_data_resource_key : @ecs.ResourceKey[MenuData] = @ecs.register_resource
 
 ///|
 impl Default for AppState with fn default() {
-  AppState::Menu
+  Menu
 }
 
 ///|
 impl Default for TutorialState with fn default() {
-  TutorialState::Active
+  Active
 }
 
 ///|
@@ -246,48 +246,40 @@ fn pressed_active_button_color() -> @color.Color {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn compute_in_game(state : AppState) -> InGame? {
   match state {
-    AppState::InGame(_, _) => Some(InGame::{  })
-    AppState::Menu => None
+    InGame(_, _) => Some(InGame::{  })
+    Menu => None
   }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn compute_turbo_mode(state : AppState) -> TurboMode? {
   match state {
-    AppState::InGame(_, turbo) =>
-      if turbo {
-        Some(TurboMode::{  })
-      } else {
-        None
-      }
-    AppState::Menu => None
+    InGame(_, turbo) => if turbo { Some(TurboMode::{  }) } else { None }
+    Menu => None
   }
 }
 
 ///|
 fn compute_is_paused(state : AppState) -> IsPaused? {
   match state {
-    AppState::InGame(paused, _) =>
-      if paused {
-        Some(IsPaused::Paused)
-      } else {
-        Some(IsPaused::NotPaused)
-      }
-    AppState::Menu => None
+    InGame(paused, _) => if paused { Some(Paused) } else { Some(NotPaused) }
+    Menu => None
   }
 }
 
 ///|
 fn compute_tutorial(input : (TutorialState, InGame, IsPaused?)) -> Tutorial? {
   let (tutorial_state, _in_game, is_paused) = input
-  if tutorial_state == TutorialState::Inactive {
+  if tutorial_state == Inactive {
     return None
   }
   match is_paused {
-    Some(IsPaused::NotPaused) => Some(Tutorial::MovementInstructions)
-    Some(IsPaused::Paused) => Some(Tutorial::PauseInstructions)
+    Some(NotPaused) => Some(MovementInstructions)
+    Some(Paused) => Some(PauseInstructions)
     None => None
   }
 }
@@ -308,34 +300,34 @@ fn main {
     Tutorial::MovementInstructions,
     compute_tutorial,
   )
-  .add_systems_param(@app.Startup, setup)
+  .add_systems_param(Startup, setup)
   .add_on_enter_system_param(AppState::Menu, setup_menu)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(menu).run_if(@app.in_state(AppState::Menu)),
   )
   .add_on_exit_system_param2(AppState::Menu, cleanup_menu)
   .add_on_enter_system_param2(InGame::{  }, setup_game)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(toggle_pause).run_if(@app.in_state(InGame::{  })),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(change_color).run_if(@app.in_state(InGame::{  })),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_fn(quit_to_menu).run_if(@app.in_state(InGame::{  })),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(toggle_turbo).run_if(
       @app.in_state(IsPaused::NotPaused),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_world(movement).run_if(
       @app.in_state(IsPaused::NotPaused),
     ),
@@ -359,22 +351,22 @@ fn setup(commands : @app.Commands) -> Unit {
 fn setup_menu(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_row_gap(@ui.Val::Px(16.0F)),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_justify_content(Center)
+    .with_align_items(Center)
+    .with_flex_direction(Column)
+    .with_row_gap(Px(16.0F)),
   )
   let play_button = commands.spawn(
     (
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(200.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(200.0F))
+      .with_height(Px(65.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(normal_button_color()),
       MenuButton::Play,
     ),
@@ -394,10 +386,10 @@ fn setup_menu(commands : @app.Commands) -> Unit {
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(200.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(200.0F))
+      .with_height(Px(65.0F))
+      .with_justify_content(Center)
+      .with_align_items(Center),
       @ui.BackgroundColor::new(active_button_color()),
       MenuButton::Tutorial,
     ),
@@ -422,24 +414,24 @@ fn button_color(
   button : MenuButton,
 ) -> @color.Color {
   match button {
-    MenuButton::Play =>
+    Play =>
       match interaction {
-        @ui.Interaction::Pressed => pressed_button_color()
-        @ui.Interaction::Hovered => hovered_button_color()
-        @ui.Interaction::None => normal_button_color()
+        Pressed => pressed_button_color()
+        Hovered => hovered_button_color()
+        None => normal_button_color()
       }
-    MenuButton::Tutorial =>
+    Tutorial =>
       if tutorial_active {
         match interaction {
-          @ui.Interaction::Pressed => pressed_active_button_color()
-          @ui.Interaction::Hovered => hovered_active_button_color()
-          @ui.Interaction::None => active_button_color()
+          Pressed => pressed_active_button_color()
+          Hovered => hovered_active_button_color()
+          None => active_button_color()
         }
       } else {
         match interaction {
-          @ui.Interaction::Pressed => pressed_button_color()
-          @ui.Interaction::Hovered => hovered_button_color()
-          @ui.Interaction::None => normal_button_color()
+          Pressed => pressed_button_color()
+          Hovered => hovered_button_color()
+          None => normal_button_color()
         }
       }
   }
@@ -448,7 +440,7 @@ fn button_color(
 ///|
 fn menu(world : @ecs.World) -> Unit {
   let tutorial_active = match @app.world_state(world, TutorialState::Active) {
-    Some(state) => state.get() == TutorialState::Active
+    Some(state) => state.get() == Active
     None => true
   }
   world.for_each_component(@ui.ecs_key_interaction, fn(entity, interaction) {
@@ -467,12 +459,12 @@ fn menu(world : @ecs.World) -> Unit {
       )
       |> ignore)
     }
-    if interaction != @ui.Interaction::Pressed {
+    if interaction != Pressed {
       return
     }
     match button {
-      MenuButton::Play => @app.set_state(AppState::InGame(false, false))
-      MenuButton::Tutorial =>
+      Play => @app.set_state(AppState::InGame(false, false))
+      Tutorial =>
         if tutorial_active {
           @app.set_state(TutorialState::Inactive)
         } else {
@@ -528,16 +520,16 @@ fn movement(world : @ecs.World) -> Unit {
   let delta_seconds = time.delta_seconds()
   let speed = if turbo_active(world) { 300.0F } else { 100.0F }
   let direction = @math.Vec3::zero()
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.key_pressed(ArrowLeft) {
     direction.x = direction.x - 1.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  if @input.key_pressed(ArrowRight) {
     direction.x = direction.x + 1.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowUp) {
+  if @input.key_pressed(ArrowUp) {
     direction.y = direction.y + 1.0F
   }
-  if @input.key_pressed(@window.KeyCode::ArrowDown) {
+  if @input.key_pressed(ArrowDown) {
     direction.y = direction.y - 1.0F
   }
   if direction.x == 0.0F && direction.y == 0.0F {
@@ -560,11 +552,11 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
     (
       @state.DespawnOnExit::new(IsPaused::Paused),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_position_type(Absolute)
+      .with_justify_content(Center)
+      .with_align_items(Center),
     ),
   )
   ignore(
@@ -572,10 +564,10 @@ fn setup_paused_screen(commands : @app.Commands) -> Unit {
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_width(@ui.Val::Px(400.0F))
-        .with_height(@ui.Val::Px(120.0F))
-        .with_justify_content(@ui.JustifyContent::Center)
-        .with_align_items(@ui.AlignItems::Center),
+        .with_width(Px(400.0F))
+        .with_height(Px(120.0F))
+        .with_justify_content(Center)
+        .with_align_items(Center),
         @ui.BackgroundColor::new(normal_button_color()),
       ),
     ),
@@ -602,10 +594,10 @@ fn setup_turbo_text(commands : @app.Commands) -> Unit {
         @text.TextFont::TextFont().with_font_size(33.0F),
         @text.TextColor::new(@color.Color::srgb(0.9F, 0.3F, 0.1F)),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(16.0F),
-          left: @ui.Val::Px(16.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(16.0F),
+          left: Px(16.0F),
         },
       ),
     ),
@@ -633,13 +625,13 @@ fn movement_instructions(commands : @app.Commands) -> Unit {
     (
       @state.DespawnOnExit::new(Tutorial::MovementInstructions),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_justify_content(@ui.JustifyContent::End)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(8.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_position_type(Absolute)
+      .with_justify_content(End)
+      .with_align_items(Center)
+      .with_flex_direction(Column)
+      .with_row_gap(Px(8.0F)),
     ),
   )
   let lines = [
@@ -666,13 +658,13 @@ fn pause_instructions(commands : @app.Commands) -> Unit {
     (
       @state.DespawnOnExit::new(Tutorial::PauseInstructions),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_justify_content(@ui.JustifyContent::End)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(8.0F)),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_position_type(Absolute)
+      .with_justify_content(End)
+      .with_align_items(Center)
+      .with_flex_direction(Column)
+      .with_row_gap(Px(8.0F)),
     ),
   )
   let lines = ["Press SPACE to resume", "Press ESCAPE to return to the menu"]
@@ -692,15 +684,15 @@ fn pause_instructions(commands : @app.Commands) -> Unit {
 
 ///|
 fn toggle_pause(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   match @app.world_state(world, AppState::Menu) {
     Some(current_state) =>
       match current_state.get() {
-        AppState::InGame(paused, turbo) =>
+        InGame(paused, turbo) =>
           @app.set_state(AppState::InGame(!paused, turbo))
-        AppState::Menu => ()
+        Menu => ()
       }
     None => ()
   }
@@ -708,15 +700,15 @@ fn toggle_pause(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_turbo(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::KeyT) {
+  if !@input.key_just_pressed(KeyT) {
     return
   }
   match @app.world_state(world, AppState::Menu) {
     Some(current_state) =>
       match current_state.get() {
-        AppState::InGame(paused, turbo) =>
+        InGame(paused, turbo) =>
           @app.set_state(AppState::InGame(paused, !turbo))
-        AppState::Menu => ()
+        Menu => ()
       }
     None => ()
   }
@@ -724,7 +716,7 @@ fn toggle_turbo(world : @ecs.World) -> Unit {
 
 ///|
 fn quit_to_menu() -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Escape) {
+  if @input.key_just_pressed(Escape) {
     @app.set_state(AppState::Menu)
   }
 }

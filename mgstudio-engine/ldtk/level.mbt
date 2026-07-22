@@ -158,11 +158,7 @@ fn ldtk_spawn_layer_entity(
       layer_z,
     ),
   )
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(entity, @visibility.ecs_key_visibility, Inherited)
   try! world.set_by_key(
     entity,
     ecs_key_layer_metadata,
@@ -364,7 +360,7 @@ fn ldtk_spawn_int_grid_entities(
     )
     dispatcher(world, entity, int_grid_cell, layer_instance)
     match ldtk_settings.int_grid_rendering {
-      IntGridRendering::Colorful => {
+      Colorful => {
         let sprite = match int_grid_image_handle {
           Some(image_handle) =>
             @sprite.Sprite::from_image(image_handle)
@@ -398,7 +394,7 @@ fn ldtk_spawn_int_grid_entities(
           @hierarchy.Parent::new(entity),
         )
       }
-      IntGridRendering::Invisible => ()
+      Invisible => ()
     }
   }
 }
@@ -437,11 +433,7 @@ fn ldtk_spawn_layer_entities(
         level.px_hei,
       ),
     )
-    try! world.set_by_key(
-      entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Inherited,
-    )
+    try! world.set_by_key(entity, @visibility.ecs_key_visibility, Inherited)
     try! world.set_by_key(
       entity,
       @hierarchy.ecs_key_parent,
@@ -484,7 +476,7 @@ pub fn spawn_level(
 ) -> Unit {
   let mut layer_z : Float = 0.0F
   match ldtk_settings.level_background {
-    LevelBackground::Rendered => {
+    Rendered => {
       ldtk_spawn_level_background(world, level, ldtk_entity, layer_z)
       layer_z = layer_z + 1.0F
       match (background_image, level.bg_pos) {
@@ -497,7 +489,7 @@ pub fn spawn_level(
         _ => ()
       }
     }
-    LevelBackground::Nonexistent => ()
+    Nonexistent => ()
   }
   guard level.layer_instances is Some(layer_instances) else { return }
   for reverse_index in 0..<layer_instances.length() {
@@ -513,17 +505,17 @@ pub fn spawn_level(
       world, layer_instance, ldtk_entity, layer_z,
     )
     match layer_instance.layer_instance_type {
-      Type::Entities =>
+      Entities =>
         ldtk_spawn_layer_entities(
           world, level, layer_entity, layer_instance, asset_server, tileset_map,
           entity_definition_map, tileset_definition_map, int_grid_image_handle, ldtk_settings,
         )
-      Type::IntGrid =>
+      IntGrid =>
         ldtk_spawn_int_grid_entities(
           world, layer_entity, layer_instance, ldtk_settings, layer_definition_map,
           int_grid_image_handle,
         )
-      Type::Tiles =>
+      Tiles =>
         for
           sublayer_index, sublayer_tiles in layer_grid_tiles(
             layer_instance.grid_tiles,
@@ -544,7 +536,7 @@ pub fn spawn_level(
             Float::from_int(sublayer_index),
           )
         }
-      Type::AutoLayer =>
+      AutoLayer =>
         for
           sublayer_index, sublayer_tiles in layer_grid_tiles(
             layer_instance.auto_layer_tiles,

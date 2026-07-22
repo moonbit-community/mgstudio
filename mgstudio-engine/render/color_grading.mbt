@@ -39,7 +39,7 @@ pub(all) struct ColorGradingRange {
 
 ///|
 pub fn ColorGradingRange::ColorGradingRange() -> ColorGradingRange {
-  ColorGradingRange::{ start: 0.2F, end_: 0.7F }
+  { start: 0.2F, end_: 0.7F }
 }
 
 ///|
@@ -63,13 +63,13 @@ pub(all) struct ColorGradingGlobal {
 
 ///|
 pub fn ColorGradingGlobal::ColorGradingGlobal() -> ColorGradingGlobal {
-  ColorGradingGlobal::{
+  {
     exposure: 0.0F,
     temperature: 0.0F,
     tint: 0.0F,
     hue: 0.0F,
     post_saturation: 1.0F,
-    midtones_range: ColorGradingRange::ColorGradingRange(),
+    midtones_range: ColorGradingRange(),
   }
 }
 
@@ -97,13 +97,7 @@ pub(all) struct ColorGradingSection {
 
 ///|
 pub fn ColorGradingSection::ColorGradingSection() -> ColorGradingSection {
-  ColorGradingSection::{
-    saturation: 1.0F,
-    contrast: 1.0F,
-    gamma: 1.0F,
-    gain: 1.0F,
-    lift: 0.0F,
-  }
+  { saturation: 1.0F, contrast: 1.0F, gamma: 1.0F, gain: 1.0F, lift: 0.0F }
 }
 
 ///|
@@ -130,11 +124,11 @@ pub(all) struct ColorGrading {
 
 ///|
 pub fn ColorGrading::ColorGrading() -> ColorGrading {
-  ColorGrading::{
-    global: ColorGradingGlobal::ColorGradingGlobal(),
-    shadows: ColorGradingSection::ColorGradingSection(),
-    midtones: ColorGradingSection::ColorGradingSection(),
-    highlights: ColorGradingSection::ColorGradingSection(),
+  {
+    global: ColorGradingGlobal(),
+    shadows: ColorGradingSection(),
+    midtones: ColorGradingSection(),
+    highlights: ColorGradingSection(),
   }
 }
 
@@ -194,7 +188,7 @@ pub fn host_color_grading_from_post_process(
 ) -> HostColorGrading {
   let grading = match color_grading {
     Some(value) => value
-    None => ColorGrading::ColorGrading()
+    None => ColorGrading()
   }
   let white_point_x = HOST_COLOR_GRADING_D65_X - grading.global.temperature
   let white_point_y = HOST_COLOR_GRADING_D65_Y + grading.global.tint
@@ -239,7 +233,7 @@ pub fn host_color_grading_from_post_process(
     lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_z_axis,
   )
   let midtones_range = grading.global.midtones_range
-  HostColorGrading::{
+  {
     balance_x_axis_x: balance_x_axis.x,
     balance_x_axis_y: balance_x_axis.y,
     balance_x_axis_z: balance_x_axis.z,

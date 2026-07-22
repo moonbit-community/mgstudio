@@ -25,7 +25,7 @@ pub(all) enum JumpAt {
 
 ///|
 pub impl Default for JumpAt with fn default() {
-  JumpAt::End
+  End
 }
 
 ///|
@@ -73,7 +73,7 @@ pub(all) enum EaseFunction {
 
 ///|
 pub impl Default for EaseFunction with fn default() {
-  EaseFunction::Linear
+  Linear
 }
 
 ///|
@@ -128,7 +128,7 @@ pub fn[T] EasingCurve::new(
   end : T,
   ease_fn : EaseFunction,
 ) -> EasingCurve[T] {
-  EasingCurve::{ start, end, ease_fn }
+  { start, end, ease_fn }
 }
 
 ///|
@@ -160,54 +160,54 @@ pub fn[T : Ease] EasingCurve::sample_clamped(
 ///|
 fn JumpAt::to_math(self : JumpAt) -> @math.JumpAt {
   match self {
-    Start => @math.JumpAt::Start
-    End => @math.JumpAt::End
-    None => @math.JumpAt::None
-    Both => @math.JumpAt::Both
+    Start => Start
+    End => End
+    None => None
+    Both => Both
   }
 }
 
 ///|
 fn EaseFunction::to_math(self : EaseFunction) -> @math.EaseFunction {
   match self {
-    Linear => @math.EaseFunction::Linear
-    QuadraticIn => @math.EaseFunction::QuadraticIn
-    QuadraticOut => @math.EaseFunction::QuadraticOut
-    QuadraticInOut => @math.EaseFunction::QuadraticInOut
-    CubicIn => @math.EaseFunction::CubicIn
-    CubicOut => @math.EaseFunction::CubicOut
-    CubicInOut => @math.EaseFunction::CubicInOut
-    QuarticIn => @math.EaseFunction::QuarticIn
-    QuarticOut => @math.EaseFunction::QuarticOut
-    QuarticInOut => @math.EaseFunction::QuarticInOut
-    QuinticIn => @math.EaseFunction::QuinticIn
-    QuinticOut => @math.EaseFunction::QuinticOut
-    QuinticInOut => @math.EaseFunction::QuinticInOut
-    SmoothStepIn => @math.EaseFunction::SmoothStepIn
-    SmoothStepOut => @math.EaseFunction::SmoothStepOut
-    SmoothStep => @math.EaseFunction::SmoothStep
-    SmootherStepIn => @math.EaseFunction::SmootherStepIn
-    SmootherStepOut => @math.EaseFunction::SmootherStepOut
-    SmootherStep => @math.EaseFunction::SmootherStep
-    SineIn => @math.EaseFunction::SineIn
-    SineOut => @math.EaseFunction::SineOut
-    SineInOut => @math.EaseFunction::SineInOut
-    CircularIn => @math.EaseFunction::CircularIn
-    CircularOut => @math.EaseFunction::CircularOut
-    CircularInOut => @math.EaseFunction::CircularInOut
-    ExponentialIn => @math.EaseFunction::ExponentialIn
-    ExponentialOut => @math.EaseFunction::ExponentialOut
-    ExponentialInOut => @math.EaseFunction::ExponentialInOut
-    ElasticIn => @math.EaseFunction::ElasticIn
-    ElasticOut => @math.EaseFunction::ElasticOut
-    ElasticInOut => @math.EaseFunction::ElasticInOut
-    BackIn => @math.EaseFunction::BackIn
-    BackOut => @math.EaseFunction::BackOut
-    BackInOut => @math.EaseFunction::BackInOut
-    BounceIn => @math.EaseFunction::BounceIn
-    BounceOut => @math.EaseFunction::BounceOut
-    BounceInOut => @math.EaseFunction::BounceInOut
-    Steps(count, jump_at) => @math.EaseFunction::Steps(count, jump_at.to_math())
-    Elastic(period) => @math.EaseFunction::Elastic(period)
+    Linear => Linear
+    QuadraticIn => QuadraticIn
+    QuadraticOut => QuadraticOut
+    QuadraticInOut => QuadraticInOut
+    CubicIn => CubicIn
+    CubicOut => CubicOut
+    CubicInOut => CubicInOut
+    QuarticIn => QuarticIn
+    QuarticOut => QuarticOut
+    QuarticInOut => QuarticInOut
+    QuinticIn => QuinticIn
+    QuinticOut => QuinticOut
+    QuinticInOut => QuinticInOut
+    SmoothStepIn => SmoothStepIn
+    SmoothStepOut => SmoothStepOut
+    SmoothStep => SmoothStep
+    SmootherStepIn => SmootherStepIn
+    SmootherStepOut => SmootherStepOut
+    SmootherStep => SmootherStep
+    SineIn => SineIn
+    SineOut => SineOut
+    SineInOut => SineInOut
+    CircularIn => CircularIn
+    CircularOut => CircularOut
+    CircularInOut => CircularInOut
+    ExponentialIn => ExponentialIn
+    ExponentialOut => ExponentialOut
+    ExponentialInOut => ExponentialInOut
+    ElasticIn => ElasticIn
+    ElasticOut => ElasticOut
+    ElasticInOut => ElasticInOut
+    BackIn => BackIn
+    BackOut => BackOut
+    BackInOut => BackInOut
+    BounceIn => BounceIn
+    BounceOut => BounceOut
+    BounceInOut => BounceInOut
+    Steps(count, jump_at) => Steps(count, jump_at.to_math())
+    Elastic(period) => Elastic(period)
   }
 }

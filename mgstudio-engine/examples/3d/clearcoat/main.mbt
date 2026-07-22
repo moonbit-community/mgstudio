@@ -137,7 +137,7 @@ fn spawn_coated_glass_bubble_sphere(
     .with_clearcoat_perceptual_roughness(0.1F)
     .with_metallic(0.5F)
     .with_perceptual_roughness(0.1F)
-    .with_alpha_mode(@pbr.AlphaMode3d::Blend),
+    .with_alpha_mode(Blend),
   )
   ignore(
     commands.spawn(
@@ -233,8 +233,8 @@ fn spawn_camera(
     (
       @camera.Camera3d::Camera3d(),
       @pbr.Hdr::Hdr(),
-      @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
-        ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
+      @camera.Projection::Perspective({
+        ..PerspectiveProjection3d(),
         fov: 27.0F / 180.0F * PI,
       }),
       @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
@@ -267,7 +267,7 @@ fn spawn_text(commands : @app.Commands, light_mode : LightMode) -> Unit {
       (
         light_mode.create_help_text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -351,19 +351,19 @@ fn handle_input(
   keyboard : @input.ButtonInput[@window.KeyCode],
   light_mode : @app.ResMut[LightMode],
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Space) {
+  if !keyboard.just_pressed(Space) {
     return
   }
 
   try! light_query.view(fn(light, _entity) {
     match light_mode.peek() {
       Point => {
-        light_mode.set(LightMode::Directional)
+        light_mode.set(Directional)
         commands.entity(light).remove(@pbr.ecs_key_point_light)
         commands.entity(light).insert_component(create_directional_light())
       }
       Directional => {
-        light_mode.set(LightMode::Point)
+        light_mode.set(Point)
         commands.entity(light).remove(@pbr.ecs_key_directional_light)
         commands.entity(light).insert_component(create_point_light())
       }
@@ -392,11 +392,11 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(LightMode::Point)
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_light)
-  .add_systems_param2(@app.Update, animate_spheres)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param2(Update, animate_light)
+  .add_systems_param2(Update, animate_spheres)
   .add_systems(
-    @app.Update,
+    Update,
     (handle_input_system, update_help_text_system) |> @app.chain(),
   )
   .run()

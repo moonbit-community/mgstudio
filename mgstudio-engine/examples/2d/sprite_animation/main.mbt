@@ -57,7 +57,7 @@ fn AnimationConfig::new(
   last_sprite_index : Int,
   fps : Int,
 ) -> AnimationConfig {
-  AnimationConfig::{
+  {
     first_sprite_index,
     last_sprite_index,
     fps,
@@ -67,10 +67,7 @@ fn AnimationConfig::new(
 
 ///|
 fn AnimationConfig::timer_from_fps(fps : Int) -> @time.Timer {
-  @time.Timer::from_seconds(
-    1.0F / Float::from_double(fps.to_double()),
-    @time.TimerMode::Once,
-  )
+  @time.Timer::from_seconds(1.0F / Float::from_double(fps.to_double()), Once)
 }
 
 ///|
@@ -103,16 +100,16 @@ pub impl @ecs.Component for RightSprite with fn component() {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, execute_animations)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, execute_animations)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(trigger_left_animation).run_if(
       @input.input_just_pressed(@window.KeyCode::ArrowLeft),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(trigger_right_animation).run_if(
       @input.input_just_pressed(@window.KeyCode::ArrowRight),
     ),
@@ -129,7 +126,7 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
           "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
         ),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),

@@ -59,7 +59,7 @@ fn last_system() -> Unit {
 fn main {
   let mut custom_update_schedule = @app.Schedule::new(single_threaded_update)
   custom_update_schedule = custom_update_schedule.set_executor_kind(
-    @app.SingleThreaded,
+    SingleThreaded,
   )
 
   let app = @app.App::new(@ecs.World::new())
@@ -67,17 +67,17 @@ fn main {
     .add_schedule(@app.Schedule::new(custom_startup))
 
   let order = @app.world_main_schedule_order(app.world())
-    .insert_after(@app.Update, single_threaded_update)
-    .insert_startup_after(@app.PreStartup, custom_startup)
+    .insert_after(Update, single_threaded_update)
+    .insert_startup_after(PreStartup, custom_startup)
   app.world().insert_resource(@app.main_schedule_order_resource_key, order)
 
   app
-  .add_systems_fn(@app.PreStartup, pre_startup_system)
+  .add_systems_fn(PreStartup, pre_startup_system)
   .add_systems_fn(custom_startup, custom_startup_system)
-  .add_systems_fn(@app.Startup, startup_system)
-  .add_systems_fn(@app.First, first_system)
-  .add_systems_fn(@app.Update, update_system)
+  .add_systems_fn(Startup, startup_system)
+  .add_systems_fn(First, first_system)
+  .add_systems_fn(Update, update_system)
   .add_systems_fn(single_threaded_update, single_threaded_update_system)
-  .add_systems_fn(@app.Last, last_system)
+  .add_systems_fn(Last, last_system)
   .run()
 }

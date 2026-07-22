@@ -112,11 +112,7 @@ fn cas_pipeline_get_or_create(
     POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_cas_\{format.raw.to_string()}_\{label_suffix}",
   )
-  backend.cas_pipeline_cache.push(CasPipelineCacheEntry::{
-    surface_format: format,
-    denoise,
-    pipeline,
-  })
+  backend.cas_pipeline_cache.push({ surface_format: format, denoise, pipeline })
   Some(pipeline)
 }
 

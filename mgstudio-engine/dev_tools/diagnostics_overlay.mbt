@@ -38,11 +38,7 @@ pub struct DiagnosticsOverlayItem {
 pub fn DiagnosticsOverlayItem::default_with_path(
   path : @diagnostic.DiagnosticPath,
 ) -> DiagnosticsOverlayItem {
-  DiagnosticsOverlayItem::{
-    statistic: DiagnosticsOverlayStatistic::default(),
-    path,
-    precision: 4,
-  }
+  { statistic: DiagnosticsOverlayStatistic::default(), path, precision: 4 }
 }
 
 ///|
@@ -56,7 +52,7 @@ pub fn DiagnosticsOverlay::new(
   title : String,
   diagnostic_overlay_items : Array[DiagnosticsOverlayItem],
 ) -> DiagnosticsOverlay {
-  DiagnosticsOverlay::{ title, diagnostic_overlay_items }
+  { title, diagnostic_overlay_items }
 }
 
 ///|
@@ -68,9 +64,9 @@ pub fn DiagnosticsOverlay::fps() -> DiagnosticsOverlay {
     DiagnosticsOverlayItem::default_with_path(
       @diagnostic.frame_time_diagnostic_frame_time,
     ),
-    DiagnosticsOverlayItem::{
+    {
       path: @diagnostic.frame_time_diagnostic_frame_count,
-      statistic: DiagnosticsOverlayStatistic::Smoothed,
+      statistic: Smoothed,
       precision: 0,
     },
   ])
@@ -91,14 +87,14 @@ pub fn DiagnosticsOverlay::render() -> DiagnosticsOverlay {
     DiagnosticsOverlayItem::default_with_path(
       @diagnostic.render_diagnostic_execute_cpu_ms_3d,
     ),
-    DiagnosticsOverlayItem::{
+    {
       path: @diagnostic.render_diagnostic_mesh2d_draw_calls,
-      statistic: DiagnosticsOverlayStatistic::Value,
+      statistic: Value,
       precision: 0,
     },
-    DiagnosticsOverlayItem::{
+    {
       path: @diagnostic.render_diagnostic_mesh3d_draw_calls,
-      statistic: DiagnosticsOverlayStatistic::Value,
+      statistic: Value,
       precision: 0,
     },
   ])
@@ -136,7 +132,7 @@ pub(all) struct DiagnosticsOverlayPlugin {
 
 ///|
 pub fn DiagnosticsOverlayPlugin::DiagnosticsOverlayPlugin() -> DiagnosticsOverlayPlugin {
-  DiagnosticsOverlayPlugin::{ refresh_interval_seconds: 1.0F }
+  { refresh_interval_seconds: 1.0F }
 }
 
 ///|
@@ -178,10 +174,7 @@ priv struct DiagnosticsOverlayRuntimeState {
 
 ///|
 fn DiagnosticsOverlayRuntimeState::DiagnosticsOverlayRuntimeState() -> DiagnosticsOverlayRuntimeState {
-  DiagnosticsOverlayRuntimeState::{
-    timer: @time.Timer::from_seconds(1.0F, @time.Repeating),
-    plane_entity: None,
-  }
+  { timer: @time.Timer::from_seconds(1.0F, Repeating), plane_entity: None }
 }
 
 ///|
@@ -201,12 +194,7 @@ priv struct DiagnosticsOverlayDragState {
 
 ///|
 fn DiagnosticsOverlayDragState::DiagnosticsOverlayDragState() -> DiagnosticsOverlayDragState {
-  DiagnosticsOverlayDragState::{
-    active_overlay: None,
-    pointer_id: None,
-    offset_x: 0.0F,
-    offset_y: 0.0F,
-  }
+  { active_overlay: None, pointer_id: None, offset_x: 0.0F, offset_y: 0.0F }
 }
 
 ///|
@@ -281,7 +269,7 @@ fn diagnostics_overlay_measurement_text(
 ///|
 fn diagnostics_overlay_val_px(value : @ui.Val) -> Float {
   match value {
-    @ui.Val::Px(px) => px
+    Px(px) => px
     _ => 0.0F
   }
 }
@@ -301,9 +289,7 @@ fn diagnostics_overlay_ensure_plane(
   try! (world
   .entity_mut(plane)
   .insert_component(
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
   |> ignore)
   try! (world
@@ -348,10 +334,10 @@ fn diagnostics_overlay_rebuild_entries(
     .entity_mut(row)
     .insert_component(
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_justify_content(@ui.JustifyContent::SpaceBetween)
-      .with_column_gap(@ui.Val::Px(10.0F)),
+      .with_display(Flex)
+      .with_flex_direction(Row)
+      .with_justify_content(SpaceBetween)
+      .with_column_gap(Px(10.0F)),
     )
     |> ignore)
 
@@ -412,7 +398,7 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
   let plane = diagnostics_overlay_ensure_plane(world, runtime_state.peek())
   let diagnostics_store = world
     .get_resource(@diagnostic.DiagnosticsStore::resource())
-    .unwrap_or(@diagnostic.DiagnosticsStore::DiagnosticsStore())
+    .unwrap_or(DiagnosticsStore())
   let overlays : @ecs.QueryState[@ecs.Read[DiagnosticsOverlay], @ecs.All] = world.query()
   let overlay_iter = overlays.iter(world)
   let mut window_index = 0
@@ -443,13 +429,13 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
         .entity_mut(overlay_entity)
         .insert_component(
           @ui.Node::Node()
-          .with_position_type(@ui.PositionType::Absolute)
-          .with_display(@ui.Display::Flex)
-          .with_flex_direction(@ui.FlexDirection::Column)
-          .with_left(@ui.Val::Px(16.0F))
-          .with_top(@ui.Val::Px(16.0F + Float::from_int(window_index) * 160.0F))
-          .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F)))
-          .with_row_gap(@ui.Val::Px(4.0F)),
+          .with_position_type(Absolute)
+          .with_display(Flex)
+          .with_flex_direction(Column)
+          .with_left(Px(16.0F))
+          .with_top(Px(16.0F + Float::from_int(window_index) * 160.0F))
+          .with_padding(@ui.UiRect::all(Px(6.0F)))
+          .with_row_gap(Px(4.0F)),
         )
       catch {
         _ => false
@@ -482,9 +468,9 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
     .entity_mut(header)
     .insert_component(
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(4.0F)))
-      .with_width(@ui.Val::Px(280.0F)),
+      .with_display(Flex)
+      .with_padding(@ui.UiRect::all(Px(4.0F)))
+      .with_width(Px(280.0F)),
     )
     |> ignore)
     try! (world
@@ -530,10 +516,10 @@ fn diagnostics_overlay_build_windows_system(world : @ecs.World) -> Unit {
     .entity_mut(contents)
     .insert_component(
       @ui.Node::Node()
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_row_gap(@ui.Val::Px(3.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(4.0F))),
+      .with_display(Flex)
+      .with_flex_direction(Column)
+      .with_row_gap(Px(3.0F))
+      .with_padding(@ui.UiRect::all(Px(4.0F))),
     )
     |> ignore)
 
@@ -565,7 +551,7 @@ fn diagnostics_overlay_rebuild_system(world : @ecs.World) -> Unit {
   }
   let diagnostics_store = world
     .get_resource(@diagnostic.DiagnosticsStore::resource())
-    .unwrap_or(@diagnostic.DiagnosticsStore::DiagnosticsStore())
+    .unwrap_or(DiagnosticsStore())
   let overlays : @ecs.QueryState[
     (@ecs.Read[DiagnosticsOverlay], @ecs.Read[DiagnosticsOverlayWindow]),
     @ecs.All,
@@ -618,9 +604,7 @@ fn diagnostics_overlay_pointer_move(
   guard overlay_node is Some(overlay_node) else { return }
   let x = pointer.position().x - drag_state_value.offset_x
   let y = pointer.position().y - drag_state_value.offset_y
-  overlay_node.set(
-    overlay_node.value().with_left(@ui.Val::Px(x)).with_top(@ui.Val::Px(y)),
-  )
+  overlay_node.set(overlay_node.value().with_left(Px(x)).with_top(Px(y)))
 }
 
 ///|
@@ -655,9 +639,7 @@ fn diagnostics_overlay_pointer_click(
   let contents_node = nodes.get(contents_entity) catch { _ => None }
   guard contents_node is Some(contents_node) else { return }
   contents_node.set(
-    contents_node
-    .value()
-    .with_display(if collapsed { @ui.Display::None } else { @ui.Display::Flex }),
+    contents_node.value().with_display(if collapsed { None } else { Flex }),
   )
 }
 
@@ -665,10 +647,7 @@ fn diagnostics_overlay_pointer_click(
 pub fn diagnostics_overlay_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  diagnostics_overlay_plugin_with(
-    app,
-    DiagnosticsOverlayPlugin::DiagnosticsOverlayPlugin(),
-  )
+  diagnostics_overlay_plugin_with(app, DiagnosticsOverlayPlugin())
 }
 
 ///|
@@ -682,7 +661,7 @@ pub fn diagnostics_overlay_plugin_with(
   }
   let mut app_ = app
     .insert_world_resource(marker, true)
-    .insert_world_resource(diagnostics_overlay_runtime_state_resource_key, DiagnosticsOverlayRuntimeState::{
+    .insert_world_resource(diagnostics_overlay_runtime_state_resource_key, {
       ..DiagnosticsOverlayRuntimeState(),
       timer: @time.Timer::from_seconds(
         if plugin.refresh_interval_seconds <= 0.0F {
@@ -690,12 +669,12 @@ pub fn diagnostics_overlay_plugin_with(
         } else {
           plugin.refresh_interval_seconds
         },
-        @time.Repeating,
+        Repeating,
       ),
     })
     .insert_world_resource(
       diagnostics_overlay_drag_state_resource_key,
-      DiagnosticsOverlayDragState::DiagnosticsOverlayDragState(),
+      DiagnosticsOverlayDragState(),
     )
     .add_startup_system(diagnostics_overlay_build_plane_system)
     .add_system(diagnostics_overlay_build_windows_system)

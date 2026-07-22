@@ -19,7 +19,7 @@ pub struct EntityIid {
 
 ///|
 pub fn EntityIid::new(iid : String) -> EntityIid {
-  EntityIid::{ iid, }
+  { iid, }
 }
 
 ///|
@@ -34,7 +34,7 @@ pub struct LevelIid {
 
 ///|
 pub fn LevelIid::new(iid : String) -> LevelIid {
-  LevelIid::{ iid, }
+  { iid, }
 }
 
 ///|
@@ -54,7 +54,7 @@ pub struct LevelSet {
 
 ///|
 pub fn LevelSet::new(iids : Array[LevelIid]) -> LevelSet {
-  let seen : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let seen : @hashmap.HashMap[String, Bool] = HashMap([])
   let deduped : Array[LevelIid] = []
   for iid in iids {
     if !seen.contains(iid.get()) {
@@ -62,12 +62,12 @@ pub fn LevelSet::new(iids : Array[LevelIid]) -> LevelSet {
       deduped.push(iid)
     }
   }
-  LevelSet::{ iids: deduped }
+  { iids: deduped }
 }
 
 ///|
 pub fn LevelSet::LevelSet() -> LevelSet {
-  LevelSet::{ iids: [] }
+  { iids: [] }
 }
 
 ///|
@@ -101,7 +101,7 @@ pub struct IntGridCell {
 
 ///|
 pub fn IntGridCell::new(value : Int) -> IntGridCell {
-  IntGridCell::{ value, }
+  { value, }
 }
 
 ///|
@@ -111,12 +111,12 @@ pub struct Worldly {
 
 ///|
 pub fn Worldly::new(entity_iid : String) -> Worldly {
-  Worldly::{ entity_iid, }
+  { entity_iid, }
 }
 
 ///|
 pub fn Worldly::from_entity_info(entity_instance : EntityInstance) -> Worldly {
-  Worldly::{ entity_iid: entity_instance.iid }
+  { entity_iid: entity_instance.iid }
 }
 
 ///|
@@ -127,7 +127,7 @@ pub struct GridCoords {
 
 ///|
 pub fn GridCoords::new(x : Int, y : Int) -> GridCoords {
-  GridCoords::{ x, y }
+  { x, y }
 }
 
 ///|
@@ -144,17 +144,17 @@ pub fn GridCoords::from_entity_info(
 
 ///|
 pub fn GridCoords::add(self : GridCoords, rhs : GridCoords) -> GridCoords {
-  GridCoords::{ x: self.x + rhs.x, y: self.y + rhs.y }
+  { x: self.x + rhs.x, y: self.y + rhs.y }
 }
 
 ///|
 pub fn GridCoords::sub(self : GridCoords, rhs : GridCoords) -> GridCoords {
-  GridCoords::{ x: self.x - rhs.x, y: self.y - rhs.y }
+  { x: self.x - rhs.x, y: self.y - rhs.y }
 }
 
 ///|
 pub fn GridCoords::mul(self : GridCoords, rhs : GridCoords) -> GridCoords {
-  GridCoords::{ x: self.x * rhs.x, y: self.y * rhs.y }
+  { x: self.x * rhs.x, y: self.y * rhs.y }
 }
 
 ///|
@@ -164,7 +164,7 @@ pub struct TileMetadata {
 
 ///|
 pub fn TileMetadata::new(data : String) -> TileMetadata {
-  TileMetadata::{ data, }
+  { data, }
 }
 
 ///|
@@ -178,7 +178,7 @@ pub fn TileEnumTags::new(
   tags : Array[String],
   source_enum_uid : Int?,
 ) -> TileEnumTags {
-  TileEnumTags::{ tags, source_enum_uid }
+  { tags, source_enum_uid }
 }
 
 ///|
@@ -208,7 +208,7 @@ pub struct LayerMetadata {
 pub fn LayerMetadata::from_layer_instance(
   layer_instance : LayerInstance,
 ) -> LayerMetadata {
-  LayerMetadata::{
+  {
     c_hei: layer_instance.c_hei,
     c_wid: layer_instance.c_wid,
     grid_size: layer_instance.grid_size,
@@ -243,7 +243,7 @@ pub struct LdtkProjectHandle {
 pub fn LdtkProjectHandle::new(
   handle : @asset.Handle[LdtkProject],
 ) -> LdtkProjectHandle {
-  LdtkProjectHandle::{ handle, }
+  { handle, }
 }
 
 ///|
@@ -274,12 +274,12 @@ pub fn LdtkWorldBundle::new(
   handle : @asset.Handle[LdtkProject],
 ) -> LdtkWorldBundle {
   let transform = @transform.Transform::identity()
-  LdtkWorldBundle::{
+  {
     ldtk_handle: LdtkProjectHandle::new(handle),
-    level_set: LevelSet::LevelSet(),
+    level_set: LevelSet(),
     transform,
     global_transform: @transform.GlobalTransform::from_transform(transform),
-    visibility: @visibility.Visibility::Inherited,
+    visibility: Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
   }

@@ -32,7 +32,7 @@ test "audio source AssetServer loader registers direct handle flow" {
   let mut app = @asset.asset_plugin(@app.App::new(lifecycle_world_24_0))
   app = audio_plugin(app)
   app = app.add_systems(
-    @app.Startup,
+    Startup,
     @app.system(fn(world : @ecs.World) {
       let asset_server = @asset.AssetServer::new()
       let first : @asset.Handle[AudioSource] = asset_server.load(

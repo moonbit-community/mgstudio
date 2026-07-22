@@ -32,7 +32,7 @@ priv struct CubemapAsset {
 
 ///|
 fn CubemapAsset::new(path : String, required_format : Int) -> CubemapAsset {
-  CubemapAsset::{ path, required_format }
+  { path, required_format }
 }
 
 ///|
@@ -68,7 +68,7 @@ fn Cubemap::new(
   index~ : Int,
   image_handle~ : @asset.Handle[@asset.Image],
 ) -> Cubemap {
-  Cubemap::{ is_loaded, index, image_handle }
+  { is_loaded, index, image_handle }
 }
 
 ///|
@@ -191,8 +191,7 @@ fn asset_loaded(
   if cubemap_value.is_loaded {
     return
   }
-  if !(asset_server.get().load_state(cubemap_value.image_handle)
-    is @asset.LoadState::Loaded) {
+  if !(asset_server.get().load_state(cubemap_value.image_handle) is Loaded) {
     return
   }
 
@@ -202,9 +201,7 @@ fn asset_loaded(
         if image.array_layout() is None {
           let layers = image.height() / image.width()
           if image.reinterpret_stacked_2d_as_array(layers) {
-            image.set_texture_view_dimension(
-              Some(@asset.ImageTextureViewDimension::Cube),
-            )
+            image.set_texture_view_dimension(Some(Cube))
           } else {
             abort(
               "skybox image must be a stacked 2D texture with evenly divisible layers",
@@ -254,9 +251,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr.FreeCameraPlugin::FreeCameraPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param4(@app.Update, cycle_cubemap_asset)
-  .add_systems_param4(@app.Update, asset_loaded)
-  .add_systems_param2(@app.Update, animate_light_direction)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param4(Update, cycle_cubemap_asset)
+  .add_systems_param4(Update, asset_loaded)
+  .add_systems_param2(Update, animate_light_direction)
   .run()
 }

@@ -19,14 +19,14 @@ priv struct UnavailableHandleProvider {}
 impl @windowing.WindowHandleProvider for UnavailableHandleProvider with fn raw_window_handle(
   _self,
 ) {
-  raise @windowing.HandleError::Unavailable
+  raise Unavailable
 }
 
 ///|
 impl @windowing.DisplayHandleProvider for UnavailableHandleProvider with fn raw_display_handle(
   _self,
 ) {
-  raise @windowing.HandleError::Unavailable
+  raise Unavailable
 }
 
 ///|
@@ -51,9 +51,9 @@ test "render view window: WindowRenderPlugin initializes render-world window res
   let lifecycle_world_15_1 = @ecs.World::new()
   defer lifecycle_world_15_1.close()
   let app = @app.App::new(lifecycle_world_15_1)
-    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .insert_sub_app(RenderApp, render_sub_app)
     .add_plugins(WindowRenderPlugin::WindowRenderPlugin())
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
   debug_inspect(
     render_world.resource(extracted_windows_resource_key).is_present(),
     content="true",
@@ -71,7 +71,7 @@ test "render view window: WindowRenderPlugin tolerates missing RenderApp" {
   let app = @app.App::new(lifecycle_world_32_0).add_plugins(
     WindowRenderPlugin::WindowRenderPlugin(),
   )
-  debug_inspect(app.get_sub_app(@app.RenderApp) is None, content="true")
+  debug_inspect(app.get_sub_app(RenderApp) is None, content="true")
 }
 
 ///|
@@ -81,15 +81,7 @@ test "render view window: ExtractedWindows tracks primary and removes it with en
   defer world.close()
   let entity = world.spawn()
   let handle = test_raw_handle(11)
-  let extracted = ExtractedWindow::new(
-    entity,
-    handle,
-    0,
-    0,
-    @window_pkg.PresentMode::Fifo,
-    None,
-    @window_pkg.CompositeAlphaMode::Auto,
-  )
+  let extracted = ExtractedWindow::new(entity, handle, 0, 0, Fifo, None, Auto)
   windows.primary = Some(entity)
   windows.insert(entity, extracted)
   debug_inspect(windows.len(), content="1")
@@ -180,7 +172,7 @@ test "render view window: extract_windows updates size and present-mode change f
   extract_windows(main_world, render_world)
 
   let next_window = test_window_with_size(800, 600)
-  next_window.present_mode = @window_pkg.PresentMode::Immediate
+  next_window.present_mode = Immediate
   try! main_world.set_by_key(entity, @window_pkg.ecs_key_window, next_window)
   extract_windows(main_world, render_world)
 
@@ -218,7 +210,7 @@ test "render view window: extract_windows removes closing windows and consumes c
   .modify(fn(surfaces) { ignore(surfaces.configured_windows.add(entity)) })
 
   ignore(
-    main_world.send_message(@window_pkg.ecs_key_window_closing, @window_pkg.WindowClosing::{
+    main_world.send_message(@window_pkg.ecs_key_window_closing, {
       window: entity,
     }),
   )
@@ -259,9 +251,9 @@ test "render view window: need_surface_configuration follows configured and chan
     test_raw_handle(17),
     640,
     360,
-    @window_pkg.PresentMode::Fifo,
+    Fifo,
     None,
-    @window_pkg.CompositeAlphaMode::Auto,
+    Auto,
   )
   windows.insert(entity, extracted)
   debug_inspect(need_surface_configuration(windows, surfaces), content="true")
@@ -285,18 +277,18 @@ test "render view window: camera target gating follows Bevy prepare_windows cond
     test_raw_handle(17),
     640,
     360,
-    @window_pkg.PresentMode::Fifo,
+    Fifo,
     None,
-    @window_pkg.CompositeAlphaMode::Auto,
+    Auto,
   )
   let secondary = ExtractedWindow::new(
     secondary_entity,
     test_raw_handle(18),
     640,
     360,
-    @window_pkg.PresentMode::Fifo,
+    Fifo,
     None,
-    @window_pkg.CompositeAlphaMode::Auto,
+    Auto,
   )
   windows.primary = Some(primary_entity)
   windows.insert(primary_entity, primary)
@@ -305,24 +297,16 @@ test "render view window: camera target gating follows Bevy prepare_windows cond
   let write_primary = @render_camera_sort.SortedCamera::new(
     @core.Entity::new(30, 1),
     0,
-    Some(
-      @camera_render_target.NormalizedRenderTarget::Window(
-        @window_pkg.WindowRef::Primary,
-      ),
-    ),
+    Some(Window(Primary)),
     false,
-    @render_camera_sort.CameraOutputMode::Write,
+    Write,
   )
   let skip_secondary = @render_camera_sort.SortedCamera::new(
     @core.Entity::new(31, 1),
     1,
-    Some(
-      @camera_render_target.NormalizedRenderTarget::Window(
-        @window_pkg.WindowRef::Entity(secondary_entity),
-      ),
-    ),
+    Some(Window(Entity(secondary_entity))),
     false,
-    @render_camera_sort.CameraOutputMode::Skip,
+    Skip,
   )
   let sorted = @render_camera_sort.SortedCameras::from_array([
     write_primary, skip_secondary,
@@ -374,16 +358,12 @@ test "render view window: surface acquire statuses follow prepare_windows branch
 
 ///|
 test "render view window: present mode fallbacks follow Bevy ordering" {
-  let auto_vsync = present_mode_fallbacks_raw(
-    @window_pkg.PresentMode::AutoVsync,
-  )
+  let auto_vsync = present_mode_fallbacks_raw(AutoVsync)
   debug_inspect(
     auto_vsync == [@wgpu.PRESENT_MODE_FIFO_RELAXED, @wgpu.PRESENT_MODE_FIFO],
     content="true",
   )
-  let auto_no_vsync = present_mode_fallbacks_raw(
-    @window_pkg.PresentMode::AutoNoVsync,
-  )
+  let auto_no_vsync = present_mode_fallbacks_raw(AutoNoVsync)
   debug_inspect(
     auto_no_vsync ==
     [
@@ -393,7 +373,7 @@ test "render view window: present mode fallbacks follow Bevy ordering" {
     ],
     content="true",
   )
-  let mailbox = present_mode_fallbacks_raw(@window_pkg.PresentMode::Mailbox)
+  let mailbox = present_mode_fallbacks_raw(Mailbox)
   debug_inspect(
     mailbox ==
     [
@@ -415,9 +395,9 @@ test "render view window: present_mode_raw chooses first supported fallback" {
     test_raw_handle(17),
     640,
     360,
-    @window_pkg.PresentMode::AutoNoVsync,
+    AutoNoVsync,
     None,
-    @window_pkg.CompositeAlphaMode::Auto,
+    Auto,
   )
   debug_inspect(
     present_mode_raw(window, [
@@ -482,9 +462,9 @@ test "render view window: surface configuration uses Bevy window fields" {
     test_raw_handle(17),
     640,
     360,
-    @window_pkg.PresentMode::AutoNoVsync,
+    AutoNoVsync,
     Some(3),
-    @window_pkg.CompositeAlphaMode::PostMultiplied,
+    PostMultiplied,
   )
   let configuration = surface_configuration_for_window(
     window,
@@ -528,9 +508,9 @@ test "render view window: create_surface_for_window reports unavailable typed ha
     test_raw_handle(-1),
     640,
     360,
-    @window_pkg.PresentMode::Fifo,
+    Fifo,
     None,
-    @window_pkg.CompositeAlphaMode::Auto,
+    Auto,
   )
   let render_instance = @renderer.RenderInstance::from_wgpu(
     @wgpu.Instance::create(),

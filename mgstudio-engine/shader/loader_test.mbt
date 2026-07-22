@@ -98,7 +98,7 @@ test "shader loader stores typed shader assets and direct file dependencies" {
     @asset.asset_plugin(@app.App::new(lifecycle_world_59_0)),
   )
   app = app.add_systems(
-    @app.Startup,
+    Startup,
     @app.system(fn(world : @ecs.World) {
       let asset_server = match
         world.get_resource(@asset.AssetServer::resource()) {
@@ -116,7 +116,7 @@ test "shader loader stores typed shader assets and direct file dependencies" {
     }),
   )
   app = app.add_systems(
-    @app.Update,
+    Update,
     @app.system(fn(world : @ecs.World) {
       if root_paths.length() > 0 {
         return

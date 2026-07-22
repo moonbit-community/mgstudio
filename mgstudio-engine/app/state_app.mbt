@@ -16,6 +16,7 @@
 pub struct StatesPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn StatesPlugin::StatesPlugin() -> StatesPlugin {
   StatesPlugin::{  }
 }
@@ -48,6 +49,7 @@ pub impl Plugin for StatesPlugin with fn name(_self) {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub impl Plugin for StatesPlugin with fn build(_self, app) {
   main_schedule_insert_after_unique(app.world(), PreUpdate, StateTransition)
   main_schedule_insert_startup_before_unique(
@@ -69,10 +71,8 @@ pub fn[S : States] insert_state_app(
   require_states_plugin_installed(app.world())
   register_state_transition(state)
   app.world().insert_resource(state_resource_key(state), State::new(state))
-  app
-  .world()
-  .insert_resource(next_state_resource_key(state), NextState::Unchanged)
-  enqueue_transition_event(app.world(), state, StateTransitionEvent::{
+  app.world().insert_resource(next_state_resource_key(state), Unchanged)
+  enqueue_transition_event(app.world(), state, {
     exited: None,
     entered: Some(state),
     allow_same_state_transitions: true,

@@ -28,7 +28,7 @@ pub struct ColorSwatchFg {} derive(Default, Debug)
 
 ///|
 pub fn ColorSwatchValue::new(color : @color.Color) -> ColorSwatchValue {
-  ColorSwatchValue::{ color, }
+  { color, }
 }
 
 ///|
@@ -37,14 +37,16 @@ pub fn ColorSwatchValue::ColorSwatchValue() -> ColorSwatchValue {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn color_swatch() -> (ColorSwatch, ColorSwatchValue, ColorSwatchFg) {
-  (ColorSwatch::{  }, ColorSwatchValue::ColorSwatchValue(), ColorSwatchFg::{  })
+  (ColorSwatch::{  }, ColorSwatchValue(), ColorSwatchFg::{  })
 }
 
 ///|
 pub struct ColorSwatchPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ColorSwatchPlugin::ColorSwatchPlugin() -> ColorSwatchPlugin {
   ColorSwatchPlugin::{  }
 }

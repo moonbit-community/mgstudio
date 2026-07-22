@@ -344,10 +344,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
       is Some(draw_bg) else {
       return None
     }
-    self.mesh3d_draw_slots.push(GpuStorageSlot::{
-      buffer: draw_buf,
-      bind_group: draw_bg,
-    })
+    self.mesh3d_draw_slots.push({ buffer: draw_buf, bind_group: draw_bg })
     self.mesh3d_draw_slot_skin_revisions.push(self.mesh3d_skin_revision)
     self.mesh3d_draw_slot_morph_revisions.push(morph_revision)
     self.mesh3d_draw_slot_material_pipeline_ids.push(material_pipeline_id)
@@ -383,7 +380,7 @@ fn GpuBackend::ensure_mesh3d_draw_slot_with_layout(
       return None
     }
     self.retire_mesh3d_draw_bind_group(slot.bind_group)
-    self.mesh3d_draw_slots[slot_index] = GpuStorageSlot::{
+    self.mesh3d_draw_slots[slot_index] = {
       buffer: slot.buffer,
       bind_group: draw_bg,
     }
@@ -585,7 +582,7 @@ fn GpuBackend::mesh3d_preprocess_phase_draw_bind_group_get_or_create(
     is Some(bind_group) else {
     return None
   }
-  self.mesh3d_preprocess_camera_upload_states[state_index].phase_draw_bind_groups.push(GpuMesh3dPhaseDrawBindGroupEntry::{
+  self.mesh3d_preprocess_camera_upload_states[state_index].phase_draw_bind_groups.push({
       material_pipeline_id,
       skin_revision: self.mesh3d_skin_revision,
       morph_revision,

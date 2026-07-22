@@ -26,7 +26,7 @@ pub fn EntitySpecializationTickPair::new(
   system_tick : @core.Tick,
   material_instances_tick : @core.Tick,
 ) -> EntitySpecializationTickPair {
-  EntitySpecializationTickPair::{ system_tick, material_instances_tick }
+  { system_tick, material_instances_tick }
 }
 
 ///|
@@ -50,7 +50,7 @@ pub struct EntitySpecializationTicks {
 
 ///|
 pub fn EntitySpecializationTicks::EntitySpecializationTicks() -> EntitySpecializationTicks {
-  EntitySpecializationTicks::{ entities: Map([]) }
+  { entities: Map([]) }
 }
 
 ///|
@@ -123,7 +123,7 @@ pub fn SpecializedMaterialPipelineCacheEntry::new(
   tick : @core.Tick,
   pipeline_id : @material.CachedRenderPipelineId,
 ) -> SpecializedMaterialPipelineCacheEntry {
-  SpecializedMaterialPipelineCacheEntry::{ tick, pipeline_id }
+  { tick, pipeline_id }
 }
 
 ///|
@@ -147,7 +147,7 @@ pub struct SpecializedMaterialViewPipelineCache {
 
 ///|
 pub fn SpecializedMaterialViewPipelineCache::SpecializedMaterialViewPipelineCache() -> SpecializedMaterialViewPipelineCache {
-  SpecializedMaterialViewPipelineCache::{ entries: Map([]) }
+  { entries: Map([]) }
 }
 
 ///|
@@ -205,7 +205,7 @@ pub struct SpecializedMaterialPipelineCache {
 
 ///|
 pub fn SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache() -> SpecializedMaterialPipelineCache {
-  SpecializedMaterialPipelineCache::{ views: @hashmap.HashMap([]) }
+  { views: HashMap([]) }
 }
 
 ///|

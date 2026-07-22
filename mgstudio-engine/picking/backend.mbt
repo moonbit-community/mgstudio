@@ -31,7 +31,7 @@ pub fn HitData::new(
   position : @math.Vec3?,
   normal : @math.Vec3?,
 ) -> HitData {
-  HitData::{ camera, depth, position, normal }
+  { camera, depth, position, normal }
 }
 
 ///|
@@ -47,7 +47,7 @@ pub fn PointerHits::new(
   picks : Array[(@core.Entity, HitData)],
   order : Float,
 ) -> PointerHits {
-  PointerHits::{ pointer, picks, order }
+  { pointer, picks, order }
 }
 
 ///|
@@ -179,7 +179,7 @@ fn picking_insert_sprite_camera_sorted(
 fn current_sprite_picking_settings(world : @ecs.World) -> SpritePickingSettings {
   match get_sprite_picking_settings_resource(world).get() {
     Some(settings) => settings
-    None => SpritePickingSettings::SpritePickingSettings()
+    None => SpritePickingSettings()
   }
 }
 
@@ -235,7 +235,7 @@ fn picking_sprite_pixel_is_valid(
   guard sprite.compute_pixel_space_point(
       local_pos, anchor, images, texture_atlases,
     )
-    is @sprite.SpritePixelSpacePoint::Inside(pixel) else {
+    is Inside(pixel) else {
     return false
   }
   match mode {
@@ -296,7 +296,7 @@ fn picking_sprite_cameras(
     guard (try! world.get_by_key(
         entity, @camera_projection2d.ecs_key_projection,
       ))
-      is Some(@camera_projection2d.Projection::Orthographic(projection_2d)) else {
+      is Some(Orthographic(projection_2d)) else {
       return
     }
     // Mgstudio stores the implemented 2D authoring subset separately from the
@@ -310,7 +310,7 @@ fn picking_sprite_cameras(
     let affine = picking_camera_affine(world, entity)
     let render_layers = (try! world.get_by_key(
       entity, @camera_render_layers.ecs_key_render_layers,
-    )).unwrap_or(@camera_render_layers.RenderLayers::RenderLayers())
+    )).unwrap_or(RenderLayers())
     picking_insert_sprite_camera_sorted(
       cameras,
       (entity, camera, projection, affine, has_marker, render_layers),
@@ -516,7 +516,7 @@ fn picking_sprite_collect_sorted(
           pickable.value(row_index),
           match layers {
             Some(column) => column.value(row_index)
-            None => @camera_render_layers.RenderLayers::RenderLayers()
+            None => RenderLayers()
           },
         ),
       )
@@ -680,9 +680,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
         let projection = camera_entry.2
         let camera_affine = camera_entry.3
         let camera_layers = camera_entry.5
-        guard projection is @camera.Projection::Orthographic(orthographic) else {
-          continue
-        }
+        guard projection is Orthographic(orthographic) else { continue }
         let target_size = picking_camera_target_size(
           camera, window_width, window_height,
         )
@@ -771,9 +769,9 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
         let focus = match
           (try! world.get_by_key(entity, @ui.ecs_key_focus_policy)) {
           Some(v) => v
-          None => @ui.FocusPolicy::Block
+          None => Block
         }
-        if focus == @ui.FocusPolicy::Block {
+        if focus == Block {
           captured = true
         }
       }

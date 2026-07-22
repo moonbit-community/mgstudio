@@ -26,6 +26,7 @@ const POST_PROCESS_PLUGIN_NAME : String = "mgstudio.post_process.PostProcessPlug
 pub struct PostProcessPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn PostProcessPlugin::PostProcessPlugin() -> PostProcessPlugin {
   PostProcessPlugin::{  }
 }
@@ -47,19 +48,19 @@ pub fn register_post_process_required_components(
   world.register_required_components_with(
     ecs_key_bloom,
     @camera_hdr.ecs_key_hdr,
-    fn() { @camera_hdr.Hdr::Hdr() },
+    fn() { Hdr() },
   )
 }
 
 ///|
 pub fn ensure_post_process_required_components(world : @ecs.World) -> Unit {
   register_post_process_required_components(world) catch {
-    @ecs.RequiredComponentsError::DuplicateRegistration(_, _) => ()
-    @ecs.RequiredComponentsError::ArchetypeExists(component_id) =>
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
       abort(
         "PostProcessPlugin required-component registration ran too late for component \{component_id}",
       )
-    @ecs.RequiredComponentsError::CyclicRequirement(requiree, required) =>
+    CyclicRequirement(requiree, required) =>
       abort(
         "PostProcessPlugin required-component cycle detected: \{requiree} -> \{required}",
       )

@@ -57,7 +57,7 @@ pub(all) suberror GpuBackendError {
 
 ///|
 fn[T] fatal(message : String) -> T raise GpuBackendError {
-  raise GpuBackendError::Fatal(message)
+  raise Fatal(message)
 }
 
 ///|
@@ -145,95 +145,47 @@ priv struct TextureBlockInfo {
 ///|
 fn texture_block_info(format_raw : UInt) -> TextureBlockInfo? {
   if format_raw == @wgpu.TEXTURE_FORMAT_R8_UNORM {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 1,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 1 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 4,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 4 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_RGB9_E5_UFLOAT {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 4,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 4 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 4,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 4 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_R32_FLOAT {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 4,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 4 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_RG16_FLOAT {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 4,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 4 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_UINT {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 8,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 8 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT {
-    return Some(TextureBlockInfo::{
-      block_width: 1,
-      block_height: 1,
-      block_bytes: 8,
-    })
+    return Some({ block_width: 1, block_height: 1, block_bytes: 8 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_BC7_RGBA_UNORM_SRGB {
-    return Some(TextureBlockInfo::{
-      block_width: 4,
-      block_height: 4,
-      block_bytes: 16,
-    })
+    return Some({ block_width: 4, block_height: 4, block_bytes: 16 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGBA8_UNORM_SRGB {
-    return Some(TextureBlockInfo::{
-      block_width: 4,
-      block_height: 4,
-      block_bytes: 16,
-    })
+    return Some({ block_width: 4, block_height: 4, block_bytes: 16 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_UNORM_SRGB ||
     format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_ETC2_RGB8_A1_UNORM_SRGB {
-    return Some(TextureBlockInfo::{
-      block_width: 4,
-      block_height: 4,
-      block_bytes: 8,
-    })
+    return Some({ block_width: 4, block_height: 4, block_bytes: 8 })
   }
   if format_raw == @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM ||
     format_raw == @wgpu.TEXTURE_FORMAT_ASTC4X4_UNORM_SRGB {
-    return Some(TextureBlockInfo::{
-      block_width: 4,
-      block_height: 4,
-      block_bytes: 16,
-    })
+    return Some({ block_width: 4, block_height: 4, block_bytes: 16 })
   }
   None
 }

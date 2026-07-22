@@ -29,7 +29,7 @@ pub fn[T] World::resource(
   self : World,
   key : ResourceKey[T],
 ) -> ResourceAccess[T] {
-  ResourceAccess::{ world: self, key }
+  { world: self, key }
 }
 
 ///|
@@ -38,7 +38,7 @@ pub fn[T] World::get_resource_mut(
   key : ResourceKey[T],
 ) -> ResourceMut[T]? {
   match self.get_resource(key) {
-    Some(_) => Some(ResourceMut::{ world: self, key })
+    Some(_) => Some({ world: self, key })
     None => None
   }
 }

@@ -84,7 +84,7 @@ fn capture_system(
     let path = "test_images/headless_renderer_\{frame.to_string()}.png"
     @asset.asset_save_texture_png(target, path)
     if single_image {
-      ignore(app_exit.write(@app.AppExit::Success))
+      ignore(app_exit.write(Success))
     }
   }
 }
@@ -94,7 +94,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(CaptureState::{ target: None, frame: 0, single_image: true })
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, capture_system)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, capture_system)
   .run()
 }

@@ -19,7 +19,7 @@ pub struct FloatOrd {
 
 ///|
 pub fn FloatOrd::new(value : Float) -> FloatOrd {
-  FloatOrd::{ value, }
+  { value, }
 }
 
 ///|

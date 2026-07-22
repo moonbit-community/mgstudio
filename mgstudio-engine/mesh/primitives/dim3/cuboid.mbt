@@ -58,12 +58,12 @@ pub fn CuboidMeshBuilder::half_size(self : CuboidMeshBuilder) -> @math.Vec3 {
 pub fn CuboidMeshBuilder::build(
   self : CuboidMeshBuilder,
 ) -> @mesh.Mesh3dGeometry {
-  cuboid_mesh(@math.Cuboid::{ half_size: self.half_size })
+  cuboid_mesh({ half_size: self.half_size })
 }
 
 ///|
 pub impl MeshBuilder for CuboidMeshBuilder with fn build(self) {
-  cuboid_mesh(@math.Cuboid::{ half_size: self.half_size })
+  cuboid_mesh({ half_size: self.half_size })
 }
 
 ///|

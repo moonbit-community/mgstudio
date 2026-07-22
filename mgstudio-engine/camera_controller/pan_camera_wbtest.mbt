@@ -37,12 +37,12 @@ test "camera_controller: pan camera default text matches bevy controls" {
 ///|
 test "camera_controller: pan camera movement normalizes diagonal input" {
   let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
-  key_input.press(@window.KeyCode::KeyW)
-  key_input.press(@window.KeyCode::KeyD)
+  key_input.press(KeyW)
+  key_input.press(KeyD)
   let scroll = @input.AccumulatedMouseScroll::new()
   let (transform, _controller) = pan_camera_step(
     @transform.Transform::identity(),
-    PanCamera::PanCamera(),
+    PanCamera(),
     0.5F,
     key_input,
     scroll,
@@ -56,15 +56,15 @@ test "camera_controller: pan camera movement normalizes diagonal input" {
 ///|
 test "camera_controller: pan camera rotation and zoom follow controller settings" {
   let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
-  key_input.press(@window.KeyCode::KeyQ)
-  key_input.press(@window.KeyCode::Equal)
+  key_input.press(KeyQ)
+  key_input.press(Equal)
   let scroll = @input.AccumulatedMouseScroll::new_with_unit(
-    @input.MouseScrollUnit::Line,
+    Line,
     @math.Vec2::new(0.0F, 1.0F),
   )
   let (transform, controller) = pan_camera_step(
     @transform.Transform::identity(),
-    PanCamera::PanCamera(),
+    PanCamera(),
     0.5F,
     key_input,
     scroll,
@@ -85,7 +85,7 @@ test "camera_controller: pan camera rotation and zoom follow controller settings
 test "camera_controller: pan camera zoom clamps to configured bounds" {
   let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
   let scroll = @input.AccumulatedMouseScroll::new_with_unit(
-    @input.MouseScrollUnit::Line,
+    Line,
     @math.Vec2::new(0.0F, 200.0F),
   )
   let controller = PanCamera::{ ..PanCamera(), min_zoom: 0.5F, max_zoom: 2.0F }

@@ -559,21 +559,21 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_plugins(@pbr.WireframePlugin::WireframePlugin())
-  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(Startup, setup)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(toggle_wireframe).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(rotate).run_if(
       @input.input_toggle_active(true, @window.KeyCode::KeyR),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(advance_rows).run_if(
       @input.input_just_pressed(@window.KeyCode::Tab),
     ),

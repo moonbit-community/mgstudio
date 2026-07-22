@@ -745,7 +745,7 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   let vertex_source = load_wgsl_from_assets_required(
     backend, "core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
   )
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   for key in define_keys {
     defines.set(key, true)
   }
@@ -849,7 +849,7 @@ fn tonemapping_pipeline_for_format(
   ) catch {
     ShaderNotReady(_) => return None
     Fatal(message) => {
-      backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
+      backend.tonemapping_pipeline_cache.push({
         key,
         state: RenderPipelineErr(message),
       })
@@ -869,7 +869,7 @@ fn tonemapping_pipeline_for_format(
   ) catch {
     ShaderNotReady(_) => return None
     Fatal(message) => {
-      backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
+      backend.tonemapping_pipeline_cache.push({
         key,
         state: RenderPipelineErr(message),
       })
@@ -877,7 +877,7 @@ fn tonemapping_pipeline_for_format(
       return None
     }
   }
-  backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
+  backend.tonemapping_pipeline_cache.push({
     key,
     state: RenderPipelineOk(pipeline),
   })

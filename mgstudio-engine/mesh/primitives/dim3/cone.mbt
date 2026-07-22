@@ -43,7 +43,7 @@ pub(all) struct ConeMeshBuilder {
 
 ///|
 pub fn ConeMeshBuilder::ConeMeshBuilder() -> ConeMeshBuilder {
-  { cone: @math.Cone::Cone(), resolution: 32, anchor: ConeAnchor::default() }
+  { cone: Cone(), resolution: 32, anchor: ConeAnchor::default() }
 }
 
 ///|

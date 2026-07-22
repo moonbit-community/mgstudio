@@ -46,10 +46,10 @@ fn main {
     small: @math.Vec2::new(640.0F, 360.0F),
   })
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup_camera)
-  .add_systems_world(@app.Startup, setup_ui)
-  .add_systems_param2(@app.Update, toggle_resolution)
-  .add_systems_param(@app.Update, on_resize_system)
+  .add_systems_world(Startup, setup_camera)
+  .add_systems_world(Startup, setup_ui)
+  .add_systems_param2(Update, toggle_resolution)
+  .add_systems_param(Update, on_resize_system)
   .run()
 }
 
@@ -66,15 +66,16 @@ fn setup_camera(world : @ecs.World) -> Unit {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node().with_width(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)),
   )
   let text_entity = world.spawn_empty()
   try! world.set_by_key(

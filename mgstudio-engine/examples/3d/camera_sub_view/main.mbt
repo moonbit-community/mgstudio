@@ -79,11 +79,9 @@ fn spawn_orthographic_camera(
 ) -> Unit {
   let entity = @camera.Camera3dBundle::new_with_projection(
       @camera_camera.Camera::Camera().with_order(order),
-      @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+      Orthographic({
         ..@camera.OrthographicProjection3d::default_3d(),
-        scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
-          ORTHOGRAPHIC_VIEWPORT_HEIGHT,
-        ),
+        scaling_mode: FixedVertical(ORTHOGRAPHIC_VIEWPORT_HEIGHT),
       }),
       camera_sub_view_state.val.base_transform,
     )
@@ -186,45 +184,45 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   // Perspective cameras
-  spawn_perspective_camera(world, ExampleViewport::PerspectiveMain, 0)
+  spawn_perspective_camera(world, PerspectiveMain, 0)
   spawn_perspective_camera(
     world,
-    ExampleViewport::PerspectiveStretched,
+    PerspectiveStretched,
     1,
     sub_camera_view=Some(perspective_stretched_sub_view),
   )
   spawn_perspective_camera(
     world,
-    ExampleViewport::PerspectiveMoving,
+    PerspectiveMoving,
     2,
     sub_camera_view=Some(perspective_moving_sub_view),
     moving=true,
   )
   spawn_perspective_camera(
     world,
-    ExampleViewport::PerspectiveControl,
+    PerspectiveControl,
     3,
     sub_camera_view=Some(perspective_control_sub_view),
   )
 
   // Orthographic cameras
-  spawn_orthographic_camera(world, ExampleViewport::OrthographicMain, 4)
+  spawn_orthographic_camera(world, OrthographicMain, 4)
   spawn_orthographic_camera(
     world,
-    ExampleViewport::OrthographicStretched,
+    OrthographicStretched,
     5,
     sub_camera_view=Some(orthographic_stretched_sub_view),
   )
   spawn_orthographic_camera(
     world,
-    ExampleViewport::OrthographicMoving,
+    OrthographicMoving,
     6,
     sub_camera_view=Some(orthographic_moving_sub_view),
     moving=true,
   )
   spawn_orthographic_camera(
     world,
-    ExampleViewport::OrthographicControl,
+    OrthographicControl,
     7,
     sub_camera_view=Some(orthographic_control_sub_view),
   )
@@ -305,7 +303,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
       is Some(camera) {
       let viewport = match camera.viewport {
         Some(viewport) => viewport
-        None => @camera_viewport.Viewport::Viewport()
+        None => Viewport()
       }
       try! (world.replace(
         entity,
@@ -328,8 +326,8 @@ fn resize_viewports(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, move_camera_view)
-  .add_systems_world(@app.Update, resize_viewports)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, move_camera_view)
+  .add_systems_world(Update, resize_viewports)
   .run()
 }

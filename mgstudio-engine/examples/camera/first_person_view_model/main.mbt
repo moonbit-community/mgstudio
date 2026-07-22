@@ -91,19 +91,20 @@ fn clamp_float(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn spawn_view_model(world : @ecs.World) -> Unit {
   let player = world.spawn_empty()
   try! world.set_by_key(player, Player::component(), Player::{  })
   try! world.set_by_key(
     player,
     CameraSensitivity::component(),
-    CameraSensitivity::CameraSensitivity(),
+    CameraSensitivity(),
   )
   try! world.set_by_key(player, Player::component(), Player::{  })
   try! world.set_by_key(
     player,
     CameraSensitivity::component(),
-    CameraSensitivity::CameraSensitivity(),
+    CameraSensitivity(),
   )
   try! world.set_by_key(
     player,
@@ -112,11 +113,8 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   )
 
   let world_camera = @camera.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::Camera(),
-    Perspective(@camera.PerspectiveProjection3d::{
-      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
-      fov: degrees_to_radians(90.0F),
-    }),
+    Camera(),
+    Perspective({ ..PerspectiveProjection3d(), fov: degrees_to_radians(90.0F) }),
     @transform.Transform::identity(),
   ).spawn(world)
   try! world.set_by_key(world_camera, WorldModelCamera::component(), WorldModelCamera::{
@@ -130,10 +128,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 
   let view_model_camera = @camera.Camera3dBundle::new_with_projection(
     @camera_camera.Camera::Camera().with_order(1),
-    Perspective(@camera.PerspectiveProjection3d::{
-      ..@pbr.PerspectiveProjection3d::PerspectiveProjection3d(),
-      fov: degrees_to_radians(70.0F),
-    }),
+    Perspective({ ..PerspectiveProjection3d(), fov: degrees_to_radians(70.0F) }),
     @transform.Transform::identity(),
   ).spawn(world)
   try! world.set_by_key(
@@ -170,7 +165,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     arm,
     @pbr.NotShadowCaster::component(),
-    @pbr.NotShadowCaster::NotShadowCaster(),
+    NotShadowCaster(),
   )
   try! world.set_by_key(
     arm,
@@ -267,17 +262,15 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     overlay_camera,
     @ui.IsDefaultUiCamera::component(),
-    @ui.IsDefaultUiCamera::IsDefaultUiCamera(),
+    IsDefaultUiCamera(),
   )
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let asset_server = @asset.AssetServer::new()
@@ -298,9 +291,9 @@ fn spawn_text(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_bottom(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -328,9 +321,9 @@ fn spawn_text(world : @ecs.World) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_bottom(Px(12.0F))
+    .with_left(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -352,7 +345,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
 }
 
@@ -375,18 +368,11 @@ fn move_player(
     let delta_yaw = -delta.x * sensitivity.x
     let delta_pitch = -delta.y * sensitivity.y
     let current_transform = player_transform.value()
-    let (yaw, pitch, roll) = current_transform.rotation.to_euler(
-      @math.EulerRot::YXZ,
-    )
+    let (yaw, pitch, roll) = current_transform.rotation.to_euler(YXZ)
     let next_yaw = yaw + delta_yaw
     let next_pitch = clamp_float(pitch + delta_pitch, -pitch_limit, pitch_limit)
     player_transform.modify(fn(value) {
-      value.rotation = @math.Quat::from_euler(
-        @math.EulerRot::YXZ,
-        next_yaw,
-        next_pitch,
-        roll,
-      )
+      value.rotation = @math.Quat::from_euler(YXZ, next_yaw, next_pitch, roll)
     })
   })
 }
@@ -400,10 +386,10 @@ fn change_fov(
   ],
 ) -> Unit {
   let mut delta = 0.0F
-  if input.pressed(@window.KeyCode::ArrowUp) {
+  if input.pressed(ArrowUp) {
     delta = delta - degrees_to_radians(1.0F)
   }
-  if input.pressed(@window.KeyCode::ArrowDown) {
+  if input.pressed(ArrowDown) {
     delta = delta + degrees_to_radians(1.0F)
   }
   if delta == 0.0F {
@@ -416,7 +402,7 @@ fn change_fov(
     match projection.value() {
       Perspective(perspective) =>
         projection.set(
-          Perspective(@camera.PerspectiveProjection::{
+          Perspective({
             ..perspective,
             fov: clamp_float(perspective.fov + delta, min_fov, max_fov),
           }),
@@ -431,11 +417,11 @@ fn change_fov(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, spawn_view_model)
-  .add_systems_world(@app.Startup, spawn_world_model)
-  .add_systems_world(@app.Startup, spawn_lights)
-  .add_systems_world(@app.Startup, spawn_text)
-  .add_systems_param2(@app.Update, move_player)
-  .add_systems_param2(@app.Update, change_fov)
+  .add_systems_world(Startup, spawn_view_model)
+  .add_systems_world(Startup, spawn_world_model)
+  .add_systems_world(Startup, spawn_lights)
+  .add_systems_world(Startup, spawn_text)
+  .add_systems_param2(Update, move_player)
+  .add_systems_param2(Update, change_fov)
   .run()
 }

@@ -36,29 +36,19 @@ fn example_error_to_render_error(
   error : ExampleRenderError,
 ) -> @render.RenderError {
   match error {
-    None =>
-      @render.RenderError::new(
-        @render.RenderErrorType::Unknown("none"),
-        "no render error",
-      )
+    None => @render.RenderError::new(Unknown("none"), "no render error")
     OutOfMemory =>
       @render.RenderError::new(
-        @render.RenderErrorType::OutOfMemory,
+        OutOfMemory,
         "requested out-of-memory render error",
       )
     Validation =>
-      @render.RenderError::new(
-        @render.RenderErrorType::Validation,
-        "requested validation render error",
-      )
+      @render.RenderError::new(Validation, "requested validation render error")
     DeviceLost =>
-      @render.RenderError::new(
-        @render.RenderErrorType::DeviceLost,
-        "requested device-lost render error",
-      )
+      @render.RenderError::new(DeviceLost, "requested device-lost render error")
     Loop =>
       @render.RenderError::new(
-        @render.RenderErrorType::DeviceLost,
+        DeviceLost,
         "requested infinite shader loop render error",
       )
   }
@@ -78,7 +68,7 @@ fn set_ignore_policy(
   _main_world : @ecs.World,
   _render_world : @ecs.World,
 ) -> @render.RenderErrorPolicy {
-  @render.RenderErrorPolicy::Ignore
+  Ignore
 }
 
 ///|
@@ -101,7 +91,7 @@ fn set_exit_policy(
     main_world.init_message(key)
   }
   ignore(main_world.send_message(key, @app.AppExit::error()))
-  @render.RenderErrorPolicy::StopRendering
+  StopRendering
 }
 
 ///|
@@ -110,7 +100,7 @@ fn set_stop_policy(
   _main_world : @ecs.World,
   _render_world : @ecs.World,
 ) -> @render.RenderErrorPolicy {
-  @render.RenderErrorPolicy::StopRendering
+  StopRendering
 }
 
 ///|
@@ -119,7 +109,7 @@ fn set_recover_policy(
   _main_world : @ecs.World,
   _render_world : @ecs.World,
 ) -> @render.RenderErrorPolicy {
-  @render.RenderErrorPolicy::Recover(@render.RenderCreation::default())
+  Recover(@render.RenderCreation::default())
 }
 
 ///|
@@ -128,37 +118,37 @@ fn input_system(
   handler : @app.ResMut[@render.RenderErrorHandler],
 ) -> Unit {
   error.set(None)
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     handler.set(@render.RenderErrorHandler::new(set_ignore_policy))
     println("render policy: Ignore")
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  if @input.key_just_pressed(Digit2) {
     handler.set(@render.RenderErrorHandler::new(set_panic_policy))
     println("render policy: Panic")
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  if @input.key_just_pressed(Digit3) {
     handler.set(@render.RenderErrorHandler::new(set_exit_policy))
     println("render policy: ExitApp")
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit4) {
+  if @input.key_just_pressed(Digit4) {
     handler.set(@render.RenderErrorHandler::new(set_stop_policy))
     println("render policy: StopRendering")
   }
-  if @input.key_just_pressed(@window.KeyCode::Digit5) {
+  if @input.key_just_pressed(Digit5) {
     handler.set(@render.RenderErrorHandler::new(set_recover_policy))
     println("render policy: Recover")
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyO) {
+  if @input.key_just_pressed(KeyO) {
     error.set(OutOfMemory)
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyV) {
+  if @input.key_just_pressed(KeyV) {
     error.set(Validation)
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyD) {
+  if @input.key_just_pressed(KeyD) {
     error.set(DeviceLost)
   }
-  if @input.key_just_pressed(@window.KeyCode::KeyL) {
+  if @input.key_just_pressed(KeyL) {
     error.set(Loop)
   }
 }
@@ -178,8 +168,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(ExampleRenderError::None)
-  .add_systems_fn(@app.Startup, setup)
-  .add_systems_param2(@app.Update, input_system)
-  .add_systems_param(@app.Update, report_status)
+  .add_systems_fn(Startup, setup)
+  .add_systems_param2(Update, input_system)
+  .add_systems_param(Update, report_status)
   .run()
 }

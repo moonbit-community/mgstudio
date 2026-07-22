@@ -43,18 +43,12 @@ pub struct TimelineTraceConfig {
 
 ///|
 fn timeline_trace_default_categories() -> Array[@app.TimelineTraceCategory] {
-  [
-    @app.TimelineTraceCategory::ScheduleStage,
-    @app.TimelineTraceCategory::System,
-    @app.TimelineTraceCategory::RenderPass,
-    @app.TimelineTraceCategory::RenderQueue,
-    @app.TimelineTraceCategory::Counter,
-  ]
+  [ScheduleStage, System, RenderPass, RenderQueue, Counter]
 }
 
 ///|
 pub fn TimelineTraceConfig::TimelineTraceConfig() -> TimelineTraceConfig {
-  TimelineTraceConfig::{
+  {
     enabled: false,
     output_path: "/tmp/mgstudio_timeline_trace.json",
     flush_interval_frames: 60,
@@ -67,7 +61,7 @@ pub fn TimelineTraceConfig::with_enabled(
   self : TimelineTraceConfig,
   enabled : Bool,
 ) -> TimelineTraceConfig {
-  TimelineTraceConfig::{ ..self, enabled, }
+  { ..self, enabled, }
 }
 
 ///|
@@ -75,7 +69,7 @@ pub fn TimelineTraceConfig::with_output_path(
   self : TimelineTraceConfig,
   output_path : String,
 ) -> TimelineTraceConfig {
-  TimelineTraceConfig::{ ..self, output_path, }
+  { ..self, output_path, }
 }
 
 ///|
@@ -83,7 +77,7 @@ pub fn TimelineTraceConfig::with_flush_interval_frames(
   self : TimelineTraceConfig,
   flush_interval_frames : Int,
 ) -> TimelineTraceConfig {
-  TimelineTraceConfig::{ ..self, flush_interval_frames, }
+  { ..self, flush_interval_frames, }
 }
 
 ///|
@@ -91,7 +85,7 @@ pub fn TimelineTraceConfig::with_categories(
   self : TimelineTraceConfig,
   categories : Array[@app.TimelineTraceCategory],
 ) -> TimelineTraceConfig {
-  TimelineTraceConfig::{ ..self, categories, }
+  { ..self, categories, }
 }
 
 ///|
@@ -101,14 +95,14 @@ pub struct TimelineTracePlugin {
 
 ///|
 pub fn TimelineTracePlugin::TimelineTracePlugin() -> TimelineTracePlugin {
-  TimelineTracePlugin::{ config: TimelineTraceConfig::TimelineTraceConfig() }
+  { config: TimelineTraceConfig() }
 }
 
 ///|
 pub fn TimelineTracePlugin::with_config(
   config : TimelineTraceConfig,
 ) -> TimelineTracePlugin {
-  TimelineTracePlugin::{ config, }
+  { config, }
 }
 
 ///|
@@ -129,10 +123,7 @@ pub struct StressDiagnosticsPlugin {
 
 ///|
 pub fn StressDiagnosticsPlugin::StressDiagnosticsPlugin() -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{
-    use_generic_stack: None,
-    log_interval_seconds: 1.0F,
-  }
+  { use_generic_stack: None, log_interval_seconds: 1.0F }
 }
 
 ///|
@@ -140,10 +131,7 @@ pub fn StressDiagnosticsPlugin::with_use_generic_stack(
   self : StressDiagnosticsPlugin,
   use_generic_stack : Bool,
 ) -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{
-    ..self,
-    use_generic_stack: Some(use_generic_stack),
-  }
+  { ..self, use_generic_stack: Some(use_generic_stack) }
 }
 
 ///|
@@ -151,7 +139,7 @@ pub fn StressDiagnosticsPlugin::with_log_interval_seconds(
   self : StressDiagnosticsPlugin,
   log_interval_seconds : Float,
 ) -> StressDiagnosticsPlugin {
-  StressDiagnosticsPlugin::{ ..self, log_interval_seconds, }
+  { ..self, log_interval_seconds, }
 }
 
 ///|
@@ -176,7 +164,7 @@ fn stress_metrics_state_default(
   log_interval_seconds : Float,
 ) -> StressMetricsState {
   {
-    timer: @time.Timer::from_seconds(log_interval_seconds, @time.Repeating),
+    timer: @time.Timer::from_seconds(log_interval_seconds, Repeating),
     frame_count: 0,
     elapsed_seconds: 0.0F,
   }
@@ -242,17 +230,17 @@ fn stress_metrics_system(
       1000.0F /
       Float::from_int(frame_count)
     @app.log_record(
-      @app.Info,
+      Info,
       message="fps: \{fps.to_string()} (avg \{fps.to_string()})",
       target="mgstudio_diagnostic",
     )
     @app.log_record(
-      @app.Info,
+      Info,
       message="frame_time: \{frame_time_ms.to_string()}ms (avg \{frame_time_ms.to_string()}ms)",
       target="mgstudio_diagnostic",
     )
     @app.log_record(
-      @app.Info,
+      Info,
       message="frame_count: \{frame_count.to_string()}",
       target="mgstudio_diagnostic",
     )
@@ -323,15 +311,11 @@ fn timeline_trace_env_int(default_value : Int, key : String) -> Int {
 ///|
 fn timeline_trace_parse_category(token : String) -> @app.TimelineTraceCategory? {
   match token.trim().to_owned() {
-    "schedule_stage" | "ScheduleStage" | "stage" =>
-      Some(@app.TimelineTraceCategory::ScheduleStage)
-    "system" | "System" => Some(@app.TimelineTraceCategory::System)
-    "render_pass" | "RenderPass" | "pass" =>
-      Some(@app.TimelineTraceCategory::RenderPass)
-    "render_queue" | "RenderQueue" | "queue" =>
-      Some(@app.TimelineTraceCategory::RenderQueue)
-    "counter" | "Counter" | "counters" =>
-      Some(@app.TimelineTraceCategory::Counter)
+    "schedule_stage" | "ScheduleStage" | "stage" => Some(ScheduleStage)
+    "system" | "System" => Some(System)
+    "render_pass" | "RenderPass" | "pass" => Some(RenderPass)
+    "render_queue" | "RenderQueue" | "queue" => Some(RenderQueue)
+    "counter" | "Counter" | "counters" => Some(Counter)
     _ => None
   }
 }
@@ -376,7 +360,7 @@ fn timeline_trace_resolved_config(
     TIMELINE_TRACE_ENV_FLUSH_FRAMES,
   )
   let categories = timeline_trace_env_categories(config.categories)
-  TimelineTraceConfig::{
+  {
     enabled,
     output_path,
     flush_interval_frames: if flush_interval_frames <= 0 {
@@ -465,7 +449,7 @@ fn timeline_trace_counter_json_line(
   let safe_ts = if counter.ts_us() >= 0L { counter.ts_us() } else { 0L }
   let safe_name = timeline_trace_json_escape(counter.name())
   let safe_category = timeline_trace_json_escape(
-    @app.timeline_trace_category_label(@app.TimelineTraceCategory::Counter),
+    @app.timeline_trace_category_label(Counter),
   )
   "{\"name\":\"\{safe_name}\",\"cat\":\"\{safe_category}\",\"ph\":\"C\",\"ts\":\{safe_ts.to_string()},\"pid\":1,\"tid\":0,\"args\":{\"value\":\{counter.value().to_string()}}}"
 }
@@ -523,10 +507,7 @@ fn timeline_trace_append_pending_spans(state : TimelineTraceState) -> Unit {
 ///|
 fn timeline_trace_append_pending_counters(state : TimelineTraceState) -> Unit {
   let pending = @app.timeline_trace_take_pending_counters()
-  if !timeline_trace_category_enabled(
-      state.config,
-      @app.TimelineTraceCategory::Counter,
-    ) {
+  if !timeline_trace_category_enabled(state.config, Counter) {
     return
   }
   for counter in pending {
@@ -563,7 +544,7 @@ let timeline_trace_plugin_marker_key : @ecs.ResourceKey[Bool] = @ecs.register_re
 pub fn timeline_trace_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  timeline_trace_plugin_with(app, TimelineTracePlugin::TimelineTracePlugin())
+  timeline_trace_plugin_with(app, TimelineTracePlugin())
 }
 
 ///|
@@ -578,7 +559,7 @@ pub fn timeline_trace_plugin_with(
 
   let mut app_ = app
     .insert_world_resource(timeline_trace_plugin_marker_key, true)
-    .insert_world_resource(timeline_trace_state_resource_key, TimelineTraceState::{
+    .insert_world_resource(timeline_trace_state_resource_key, {
       config,
       events_json_lines: [],
       frame_count_since_flush: 0,
@@ -601,10 +582,7 @@ pub fn timeline_trace_plugin_with(
 pub fn stress_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  stress_diagnostics_plugin_with(
-    app,
-    StressDiagnosticsPlugin::StressDiagnosticsPlugin(),
-  )
+  stress_diagnostics_plugin_with(app, StressDiagnosticsPlugin())
 }
 
 ///|
@@ -629,10 +607,7 @@ pub fn stress_diagnostics_plugin_with(
       )
     }
     return next
-      .add_systems(
-        @app.PostUpdate,
-        @app.system_config_param2(stress_metrics_system),
-      )
+      .add_systems(PostUpdate, @app.system_config_param2(stress_metrics_system))
       .add_plugins(TimelineTracePlugin::TimelineTracePlugin())
   }
   let include_render_diagnostics = match

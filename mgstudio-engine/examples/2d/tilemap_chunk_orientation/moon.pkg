@@ -8,7 +8,6 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite_render",
 }
 
 supported_targets = "native"

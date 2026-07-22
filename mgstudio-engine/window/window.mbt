@@ -80,7 +80,7 @@ pub(all) struct WindowResizeConstraints {
 
 ///|
 pub fn WindowResizeConstraints::WindowResizeConstraints() -> WindowResizeConstraints {
-  WindowResizeConstraints::{
+  {
     min_width: 180.0F,
     min_height: 120.0F,
     max_width: @float.infinity,
@@ -104,7 +104,7 @@ pub fn WindowResizeConstraints::check_constraints(
   } else {
     self.max_height
   }
-  WindowResizeConstraints::{ min_width, min_height, max_width, max_height }
+  { min_width, min_height, max_width, max_height }
 }
 
 ///|
@@ -118,7 +118,7 @@ pub(all) enum CompositeAlphaMode {
 
 ///|
 pub fn CompositeAlphaMode::default() -> CompositeAlphaMode {
-  CompositeAlphaMode::Auto
+  Auto
 }
 
 ///|
@@ -156,7 +156,7 @@ pub(all) enum ScreenEdge {
 
 ///|
 pub fn ScreenEdge::default() -> ScreenEdge {
-  ScreenEdge::None
+  None
 }
 
 ///|
@@ -168,7 +168,7 @@ pub(all) struct EnabledButtons {
 
 ///|
 pub fn EnabledButtons::EnabledButtons() -> EnabledButtons {
-  EnabledButtons::{ minimize: true, maximize: true, close: true }
+  { minimize: true, maximize: true, close: true }
 }
 
 ///|
@@ -181,7 +181,7 @@ pub(all) struct WindowResolution {
 
 ///|
 pub fn WindowResolution::WindowResolution() -> WindowResolution {
-  WindowResolution::{
+  {
     physical_width: 1280,
     physical_height: 720,
     scale_factor_override: None,
@@ -366,22 +366,22 @@ pub(all) struct Window {
 
 ///|
 pub fn Window::Window() -> Window {
-  Window::{
+  {
     title: DEFAULT_WINDOW_TITLE,
     name: None,
     composite_alpha_mode: CompositeAlphaMode::default(),
-    resize_constraints: WindowResizeConstraints::WindowResizeConstraints(),
+    resize_constraints: WindowResizeConstraints(),
     canvas: None,
-    resolution: WindowResolution::WindowResolution(),
-    present_mode: PresentMode::Fifo,
+    resolution: WindowResolution(),
+    present_mode: Fifo,
     position: Automatic,
     mode: Windowed,
     resizable: true,
-    enabled_buttons: EnabledButtons::EnabledButtons(),
+    enabled_buttons: EnabledButtons(),
     decorations: true,
     transparent: false,
     focused: true,
-    window_level: WindowLevel::Normal,
+    window_level: Normal,
     fit_canvas_to_parent: false,
     prevent_default_event_handling: true,
     window_theme: None,
@@ -534,9 +534,9 @@ const WINDOW_PLUGIN_NAME : String = "mgstudio.window.WindowPlugin"
 
 ///|
 pub fn WindowPlugin::WindowPlugin() -> WindowPlugin {
-  WindowPlugin::{
-    primary_window: Some(Window::Window()),
-    primary_cursor_options: Some(CursorOptions::CursorOptions()),
+  {
+    primary_window: Some(Window()),
+    primary_cursor_options: Some(CursorOptions()),
     exit_condition: OnAllClosed,
     close_when_requested: true,
   }

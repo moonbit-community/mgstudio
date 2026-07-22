@@ -16,7 +16,7 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
+  .add_systems_param4(Startup, setup)
   .run()
 }
 
@@ -50,7 +50,7 @@ fn setup(
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::new(
               white,
-              @sprite_render.AlphaMode2d::Opaque,
+              Opaque,
               texture=Some(texture),
             ),
           ),
@@ -69,7 +69,7 @@ fn setup(
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::new(
               blue,
-              @sprite_render.AlphaMode2d::Opaque,
+              Opaque,
               texture=Some(texture),
             ),
           ),
@@ -88,7 +88,7 @@ fn setup(
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::new(
               green,
-              @sprite_render.AlphaMode2d::Opaque,
+              Opaque,
               texture=Some(texture),
             ),
           ),
@@ -107,7 +107,7 @@ fn setup(
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::new(
               white,
-              @sprite_render.AlphaMode2d::Mask(0.5F),
+              Mask(0.5F),
               texture=Some(texture),
             ),
           ),
@@ -126,7 +126,7 @@ fn setup(
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::new(
               blue.with_alpha(0.7F),
-              @sprite_render.AlphaMode2d::Blend,
+              Blend,
               texture=Some(texture),
             ),
           ),
@@ -145,7 +145,7 @@ fn setup(
           .add(
             @sprite_render_mesh2d_color_material.ColorMaterial::new(
               green.with_alpha(0.7F),
-              @sprite_render.AlphaMode2d::Blend,
+              Blend,
               texture=Some(texture),
             ),
           ),

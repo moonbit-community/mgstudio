@@ -46,7 +46,7 @@ pub impl @ecs.Component for LogViewerRoot with fn component() {
 
 ///|
 fn custom_layer(record : @app.LogRecord) -> Unit {
-  captured_log_queue_ref.val.push(LogMessage::{
+  captured_log_queue_ref.val.push({
     message: record.message(),
     level: record.level(),
   })
@@ -64,31 +64,23 @@ fn transfer_log_messages(writer : @ecs.MessageWriter[LogMessage]) -> Unit {
 
 ///|
 fn log_system() -> Unit {
+  @app.log_record(Error, message="Something failed", target="log_layers_ecs")
   @app.log_record(
-    @app.LogLevel::Error,
-    message="Something failed",
-    target="log_layers_ecs",
-  )
-  @app.log_record(
-    @app.LogLevel::Warn,
+    Warn,
     message="Something bad happened that isn't a failure, but thats worth calling out",
     target="log_layers_ecs",
   )
   @app.log_record(
-    @app.LogLevel::Info,
+    Info,
     message="Helpful information that is worth printing by default",
     target="log_layers_ecs",
   )
   @app.log_record(
-    @app.LogLevel::Debug,
+    Debug,
     message="Helpful for debugging",
     target="log_layers_ecs",
   )
-  @app.log_record(
-    @app.LogLevel::Trace,
-    message="Very noisy",
-    target="log_layers_ecs",
-  )
+  @app.log_record(Trace, message="Very noisy", target="log_layers_ecs")
 }
 
 ///|
@@ -98,10 +90,10 @@ fn setup(commands : @app.Commands) -> Unit {
     commands.spawn(
       (
         @ui.Node::Node()
-        .with_width(@ui.Val::Vw(100.0F))
-        .with_height(@ui.Val::Vh(100.0F))
-        .with_flex_direction(@ui.FlexDirection::Column)
-        .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
+        .with_width(Vw(100.0F))
+        .with_height(Vh(100.0F))
+        .with_flex_direction(Column)
+        .with_padding(@ui.UiRect::all(Px(12.0F))),
         LogViewerRoot::{  },
       ),
     ),
@@ -188,7 +180,7 @@ fn print_logs(
 ///|
 fn main {
   let log_plugin = @app.LogPlugin::LogPlugin()
-    .with_level(@app.LogLevel::Trace)
+    .with_level(Trace)
     .with_filter("warn,log_layers_ecs=trace")
     .with_custom_layer(custom_layer)
   let transfer_log_messages_system : @app.SystemConfig[@ecs.World] = @app.system_config_param(
@@ -200,10 +192,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_message(log_message_key)
   .add_plugins(@mgstudio.DefaultPlugins::set(log_plugin))
-  .add_systems_param(@app.Startup, setup)
-  .add_systems_fn(@app.Startup, log_system)
+  .add_systems_param(Startup, setup)
+  .add_systems_fn(Startup, log_system)
   .add_systems(
-    @app.Update,
+    Update,
     (transfer_log_messages_system, print_logs_system) |> @app.chain(),
   )
   .run()

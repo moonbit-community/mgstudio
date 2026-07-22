@@ -21,7 +21,7 @@ priv struct PickState {
 
 ///|
 let pick_state : Ref[PickState] = Ref({
-  camera: @camera_camera.Camera::Camera(),
+  camera: Camera(),
   projection: @camera.Projection::default(),
   transform: @transform.Transform::identity(),
 })
@@ -30,8 +30,8 @@ let pick_state : Ref[PickState] = Ref({
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, pick)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, pick)
   .run()
 }
 
@@ -42,15 +42,12 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
   pick_state.val = {
-    camera: @camera_camera.Camera::Camera(),
+    camera: Camera(),
     projection: @camera.Projection::default(),
     transform: camera_transform,
   }
   @rapier_examples.rapier3d_basic_lighting(world)
-  @camera.Camera3dBundle::new(@camera_camera.Camera::Camera(), camera_transform).spawn(
-    world,
-  )
-  |> ignore
+  @camera.Camera3dBundle::new(Camera(), camera_transform).spawn(world) |> ignore
   ignore(
     @rapier_examples.rapier3d_spawn_ground(
       world,
@@ -79,18 +76,9 @@ fn build_cursor_ray(
   world : @ecs.World,
   cursor_position : @math.Vec2,
 ) -> (@math.Vec3, @math.Vec3)? {
-  let width = @window.window_physical_width_for(
-    world,
-    @window.WindowRef::Primary,
-  )
-  let height = @window.window_physical_height_for(
-    world,
-    @window.WindowRef::Primary,
-  )
-  let scale_factor = @window.window_scale_factor_for(
-    world,
-    @window.WindowRef::Primary,
-  )
+  let width = @window.window_physical_width_for(world, Primary)
+  let height = @window.window_physical_height_for(world, Primary)
+  let scale_factor = @window.window_scale_factor_for(world, Primary)
   @camera.camera_viewport_to_world_ray(
     cursor_position,
     pick_state.val.camera,
@@ -103,7 +91,7 @@ fn build_cursor_ray(
 
 ///|
 fn pick(world : @ecs.World) -> Unit {
-  if !@input.mouse_button_just_pressed(@window.MouseButton::Left) {
+  if !@input.mouse_button_just_pressed(Left) {
     return
   }
   guard @input.mouse_position() is Some(cursor_position) else { return }

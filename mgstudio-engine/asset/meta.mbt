@@ -36,11 +36,11 @@ pub(all) struct ImageLoaderSettings {
 
 ///|
 pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
-  ImageLoaderSettings::{
-    format: ImageFormatSetting::FromExtension,
+  {
+    format: FromExtension,
     texture_format: None,
     texture_descriptor_label: None,
-    sampler: ImageSampler::Default,
+    sampler: Default,
     override_sampler: false,
     is_srgb: true,
     array_layout: None,
@@ -60,75 +60,75 @@ pub fn ImageLoaderSettings::ImageLoaderSettings() -> ImageLoaderSettings {
 ///|
 fn meta_image_format_setting(content : String) -> ImageFormatSetting? {
   if string_contains(content, "format: Guess") {
-    return Some(ImageFormatSetting::Guess)
+    return Some(Guess)
   }
   if string_contains(content, "format: FromExtension") {
-    return Some(ImageFormatSetting::FromExtension)
+    return Some(FromExtension)
   }
   guard string_contains(content, "format: Format") else { return None }
   if string_contains(content, "Format(Basis)") ||
     string_contains(content, "Format (Basis)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Basis))
+    return Some(Format(Basis))
   }
   if string_contains(content, "Format(Bmp)") ||
     string_contains(content, "Format (Bmp)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Bmp))
+    return Some(Format(Bmp))
   }
   if string_contains(content, "Format(Dds)") ||
     string_contains(content, "Format (Dds)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Dds))
+    return Some(Format(Dds))
   }
   if string_contains(content, "Format(Exr)") ||
     string_contains(content, "Format (Exr)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Exr))
+    return Some(Format(Exr))
   }
   if string_contains(content, "Format(Farbfeld)") ||
     string_contains(content, "Format (Farbfeld)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Farbfeld))
+    return Some(Format(Farbfeld))
   }
   if string_contains(content, "Format(Gif)") ||
     string_contains(content, "Format (Gif)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Gif))
+    return Some(Format(Gif))
   }
   if string_contains(content, "Format(Hdr)") ||
     string_contains(content, "Format (Hdr)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Hdr))
+    return Some(Format(Hdr))
   }
   if string_contains(content, "Format(Ico)") ||
     string_contains(content, "Format (Ico)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Ico))
+    return Some(Format(Ico))
   }
   if string_contains(content, "Format(Jpeg)") ||
     string_contains(content, "Format (Jpeg)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Jpeg))
+    return Some(Format(Jpeg))
   }
   if string_contains(content, "Format(Ktx2)") ||
     string_contains(content, "Format (Ktx2)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Ktx2))
+    return Some(Format(Ktx2))
   }
   if string_contains(content, "Format(Png)") ||
     string_contains(content, "Format (Png)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Png))
+    return Some(Format(Png))
   }
   if string_contains(content, "Format(Pnm)") ||
     string_contains(content, "Format (Pnm)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Pnm))
+    return Some(Format(Pnm))
   }
   if string_contains(content, "Format(Qoi)") ||
     string_contains(content, "Format (Qoi)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Qoi))
+    return Some(Format(Qoi))
   }
   if string_contains(content, "Format(Tga)") ||
     string_contains(content, "Format (Tga)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Tga))
+    return Some(Format(Tga))
   }
   if string_contains(content, "Format(Tiff)") ||
     string_contains(content, "Format (Tiff)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Tiff))
+    return Some(Format(Tiff))
   }
   if string_contains(content, "Format(Webp)") ||
     string_contains(content, "Format (Webp)") {
-    return Some(ImageFormatSetting::Format(ImageContainerFormat::Webp))
+    return Some(Format(Webp))
   }
   None
 }
@@ -136,28 +136,28 @@ fn meta_image_format_setting(content : String) -> ImageFormatSetting? {
 ///|
 fn meta_texture_format_setting(content : String) -> TextureFormat? {
   if string_contains(content, "texture_format: Some(Rgba8UnormSrgb)") {
-    return Some(TextureFormat::Rgba8UnormSrgb)
+    return Some(Rgba8UnormSrgb)
   }
   if string_contains(content, "texture_format: Some(Bgra8UnormSrgb)") {
-    return Some(TextureFormat::Bgra8UnormSrgb)
+    return Some(Bgra8UnormSrgb)
   }
   if string_contains(content, "texture_format: Some(Bgra8Unorm)") {
-    return Some(TextureFormat::Bgra8Unorm)
+    return Some(Bgra8Unorm)
   }
   if string_contains(content, "texture_format: Some(Rgba8Unorm)") {
-    return Some(TextureFormat::Rgba8Unorm)
+    return Some(Rgba8Unorm)
   }
   if string_contains(content, "texture_format: Some(Rgba16Uint)") {
-    return Some(TextureFormat::Rgba16Uint)
+    return Some(Rgba16Uint)
   }
   if string_contains(content, "texture_format: Some(Rgba16Float)") {
-    return Some(TextureFormat::Rgba16Float)
+    return Some(Rgba16Float)
   }
   if string_contains(content, "texture_format: Some(Rgba32Float)") {
-    return Some(TextureFormat::Rgba32Float)
+    return Some(Rgba32Float)
   }
   if string_contains(content, "texture_format: Some(Rg16Float)") {
-    return Some(TextureFormat::Rg16Float)
+    return Some(Rg16Float)
   }
   None
 }
@@ -168,10 +168,10 @@ fn meta_image_filter_mode(
   field_name : String,
 ) -> ImageFilterMode? {
   if string_contains(content, "\{field_name}: Nearest") {
-    return Some(ImageFilterMode::Nearest)
+    return Some(Nearest)
   }
   if string_contains(content, "\{field_name}: Linear") {
-    return Some(ImageFilterMode::Linear)
+    return Some(Linear)
   }
   None
 }
@@ -182,16 +182,16 @@ fn meta_image_address_mode(
   field_name : String,
 ) -> ImageAddressMode? {
   if string_contains(content, "\{field_name}: ClampToEdge") {
-    return Some(ImageAddressMode::ClampToEdge)
+    return Some(ClampToEdge)
   }
   if string_contains(content, "\{field_name}: Repeat") {
-    return Some(ImageAddressMode::Repeat)
+    return Some(Repeat)
   }
   if string_contains(content, "\{field_name}: MirrorRepeat") {
-    return Some(ImageAddressMode::MirrorRepeat)
+    return Some(MirrorRepeat)
   }
   if string_contains(content, "\{field_name}: ClampToBorder") {
-    return Some(ImageAddressMode::ClampToBorder)
+    return Some(ClampToBorder)
   }
   None
 }
@@ -202,28 +202,28 @@ fn meta_image_compare_function(
   field_name : String,
 ) -> ImageCompareFunction? {
   if string_contains(content, "\{field_name}: Some(Never)") {
-    return Some(ImageCompareFunction::Never)
+    return Some(Never)
   }
   if string_contains(content, "\{field_name}: Some(Less)") {
-    return Some(ImageCompareFunction::Less)
+    return Some(Less)
   }
   if string_contains(content, "\{field_name}: Some(Equal)") {
-    return Some(ImageCompareFunction::Equal)
+    return Some(Equal)
   }
   if string_contains(content, "\{field_name}: Some(LessEqual)") {
-    return Some(ImageCompareFunction::LessEqual)
+    return Some(LessEqual)
   }
   if string_contains(content, "\{field_name}: Some(Greater)") {
-    return Some(ImageCompareFunction::Greater)
+    return Some(Greater)
   }
   if string_contains(content, "\{field_name}: Some(NotEqual)") {
-    return Some(ImageCompareFunction::NotEqual)
+    return Some(NotEqual)
   }
   if string_contains(content, "\{field_name}: Some(GreaterEqual)") {
-    return Some(ImageCompareFunction::GreaterEqual)
+    return Some(GreaterEqual)
   }
   if string_contains(content, "\{field_name}: Some(Always)") {
-    return Some(ImageCompareFunction::Always)
+    return Some(Always)
   }
   None
 }
@@ -234,16 +234,16 @@ fn meta_image_border_color(
   field_name : String,
 ) -> ImageSamplerBorderColor? {
   if string_contains(content, "\{field_name}: Some(TransparentBlack)") {
-    return Some(ImageSamplerBorderColor::TransparentBlack)
+    return Some(TransparentBlack)
   }
   if string_contains(content, "\{field_name}: Some(OpaqueBlack)") {
-    return Some(ImageSamplerBorderColor::OpaqueBlack)
+    return Some(OpaqueBlack)
   }
   if string_contains(content, "\{field_name}: Some(OpaqueWhite)") {
-    return Some(ImageSamplerBorderColor::OpaqueWhite)
+    return Some(OpaqueWhite)
   }
   if string_contains(content, "\{field_name}: Some(Zero)") {
-    return Some(ImageSamplerBorderColor::Zero)
+    return Some(Zero)
   }
   None
 }
@@ -347,37 +347,37 @@ fn meta_image_array_layout(content : String) -> ImageArrayLayout? {
       content, "array_layout: Some(RowCount(rows: ",
     )
     is Some(rows) {
-    return Some(ImageArrayLayout::RowCount(rows))
+    return Some(RowCount(rows))
   }
   if meta_parse_positive_int_after(
       content, "array_layout: Some(RowCount (rows: ",
     )
     is Some(rows) {
-    return Some(ImageArrayLayout::RowCount(rows))
+    return Some(RowCount(rows))
   }
   if meta_parse_positive_int_after(
       content, "array_layout: Some(RowCount { rows: ",
     )
     is Some(rows) {
-    return Some(ImageArrayLayout::RowCount(rows))
+    return Some(RowCount(rows))
   }
   if meta_parse_positive_int_after(
       content, "array_layout: Some(RowHeight(pixels: ",
     )
     is Some(pixels) {
-    return Some(ImageArrayLayout::RowHeight(pixels))
+    return Some(RowHeight(pixels))
   }
   if meta_parse_positive_int_after(
       content, "array_layout: Some(RowHeight (pixels: ",
     )
     is Some(pixels) {
-    return Some(ImageArrayLayout::RowHeight(pixels))
+    return Some(RowHeight(pixels))
   }
   if meta_parse_positive_int_after(
       content, "array_layout: Some(RowHeight { pixels: ",
     )
     is Some(pixels) {
-    return Some(ImageArrayLayout::RowHeight(pixels))
+    return Some(RowHeight(pixels))
   }
   None
 }
@@ -462,5 +462,5 @@ fn apply_image_meta_settings(
   if anisotropy_clamp is Some(value) {
     descriptor.anisotropy_clamp = value
   }
-  settings.sampler = ImageSampler::Descriptor(descriptor)
+  settings.sampler = Descriptor(descriptor)
 }

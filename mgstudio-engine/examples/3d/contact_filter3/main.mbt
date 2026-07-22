@@ -19,7 +19,7 @@ const CUSTOM_FILTER_TAG_GROUP_A : Int = 0
 const CUSTOM_FILTER_TAG_GROUP_B : Int = 1
 
 ///|
-let custom_filter_tags : @hashmap.HashMap[Int, Int] = @hashmap.HashMap([])
+let custom_filter_tags : @hashmap.HashMap[Int, Int] = HashMap([])
 
 ///|
 fn tag_for_entity(entity : @core.Entity) -> Int? {
@@ -48,7 +48,7 @@ fn same_user_data_filter(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }
 

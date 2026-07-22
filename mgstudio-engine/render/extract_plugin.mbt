@@ -40,9 +40,7 @@ fn render_sub_app_extract(
   let synced = sync_world(main_world, render_world)
   let main_world = synced.0
   let render_world = synced.1
-  render_world.insert_resource(ecs_key_render_main_world, RenderMainWorld::{
-    world: main_world,
-  })
+  render_world.insert_resource(ecs_key_render_main_world, { world: main_world })
   @app.run_current_schedule_stage(render_world, render_extract_schedule_stage())
   (main_world, render_world)
 }
@@ -61,6 +59,7 @@ pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn render_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : RenderPlugin,
@@ -74,22 +73,22 @@ fn render_plugin_install_with(
   if !next.contains_resource(render_asset_bytes_per_frame_resource_key) {
     next = next.insert_world_resource(
       render_asset_bytes_per_frame_resource_key,
-      RenderAssetBytesPerFrame::RenderAssetBytesPerFrame(),
+      RenderAssetBytesPerFrame(),
     )
   }
   if !next.contains_resource(render_error_handler_resource_key) {
     next = next.insert_world_resource(
       render_error_handler_resource_key,
-      RenderErrorHandler::RenderErrorHandler(),
+      RenderErrorHandler(),
     )
   }
   if !next.contains_resource(@render_texture.ManualTextureViews::resource()) {
     next = next.insert_world_resource(
       @render_texture.ManualTextureViews::resource(),
-      @render_texture.ManualTextureViews::ManualTextureViews(),
+      ManualTextureViews(),
     )
   }
-  if next.get_sub_app(@app.RenderApp) is None {
+  if next.get_sub_app(RenderApp) is None {
     let render_sub_app = @app.SubApp::new(@ecs.World::new()).set_update_schedule(
       Some(render_recovery_schedule_stage()),
     )
@@ -111,11 +110,11 @@ fn render_plugin_install_with(
     let render_sub_app = render_sub_app.add_schedule(
       @app.Schedule::new(render_recovery_schedule_stage()),
     )
-    next = next.insert_sub_app(@app.RenderApp, render_sub_app)
+    next = next.insert_sub_app(RenderApp, render_sub_app)
   }
-  next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
+  next = next.set_sub_app_extract(RenderApp, render_sub_app_extract)
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    next.modify_sub_app(RenderApp, fn(render_sub_app) {
       render_sub_app
       .world()
       .add_shutdown_hook(fn(_world) { @renderer.shutdown_render_context() })
@@ -126,7 +125,7 @@ fn render_plugin_install_with(
   ignore(insert_future_render_resources(plugin.render_creation(), next.world()))
   let asset_server = next.world().get_resource(@asset.AssetServer::resource())
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    next.modify_sub_app(RenderApp, fn(render_sub_app) {
       init_render_state(render_sub_app.world())
       match asset_server {
         Some(asset_server) =>
@@ -146,14 +145,14 @@ fn render_plugin_install_with(
         .world()
         .insert_resource(
           render_schedule_order_resource_key,
-          RenderScheduleOrder::RenderScheduleOrder(),
+          RenderScheduleOrder(),
         )
       }
       render_sub_app
       .world()
       .insert_resource(
         render_asset_bytes_per_frame_limiter_resource_key,
-        RenderAssetBytesPerFrameLimiter::RenderAssetBytesPerFrameLimiter(),
+        RenderAssetBytesPerFrameLimiter(),
       )
       if !render_sub_app
         .world()
@@ -163,7 +162,7 @@ fn render_plugin_install_with(
         .world()
         .insert_resource(
           @render_texture.ManualTextureViews::resource(),
-          @render_texture.ManualTextureViews::ManualTextureViews(),
+          ManualTextureViews(),
         )
       }
       if !render_sub_app
@@ -269,7 +268,7 @@ fn render_plugin_install_with(
     let extract_manual_texture_views_plugin : ExtractResourcePlugin[
       @render_texture.ManualTextureViews,
       Unit,
-    ] = ExtractResourcePlugin::ExtractResourcePlugin()
+    ] = ExtractResourcePlugin()
     next = next.add_plugins(extract_manual_texture_views_plugin)
     next = next.add_plugins(
       @render_view_window.WindowRenderPlugin::WindowRenderPlugin(),
@@ -309,7 +308,7 @@ fn render_plugin_finish_with(
 ) -> @app.App[@ecs.World] {
   let next = app
   ignore(
-    next.modify_sub_app(@app.RenderApp, fn(render_sub_app) {
+    next.modify_sub_app(RenderApp, fn(render_sub_app) {
       match take_future_render_resources(next.world()) {
         Some(resources) =>
           resources.unpack_into(next.world(), render_sub_app.world())
@@ -339,7 +338,7 @@ pub fn try_with_render_app(
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
 ) -> @app.App[@ecs.World] {
   let next = app
-  ignore(next.modify_sub_app(@app.RenderApp, update))
+  ignore(next.modify_sub_app(RenderApp, update))
   next
 }
 
@@ -349,7 +348,7 @@ pub fn with_render_app(
   update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
 ) -> @app.App[@ecs.World] {
   let next = app
-  if next.modify_sub_app(@app.RenderApp, update) {
+  if next.modify_sub_app(RenderApp, update) {
     next
   } else {
     abort(

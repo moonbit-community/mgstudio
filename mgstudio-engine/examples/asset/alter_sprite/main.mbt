@@ -25,7 +25,7 @@ pub struct Bird {
 
 ///|
 pub fn Bird::normal() -> Bird {
-  Bird::{ variant: BirdVariant::Normal }
+  { variant: Normal }
 }
 
 ///|
@@ -39,8 +39,8 @@ pub fn Bird::get_texture_path(self : Bird) -> String {
 ///|
 pub fn Bird::set_next_variant(self : Bird) -> Unit {
   self.variant = match self.variant {
-    Normal => BirdVariant::Logo
-    Logo => BirdVariant::Normal
+    Normal => Logo
+    Logo => Normal
   }
 }
 
@@ -118,10 +118,10 @@ fn spawn_text(commands : @app.Commands) -> Unit {
           "Space: swap the right sprite's image handle\nEnter: modify the left sprite image asset",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          top: @ui.Val::Px(12.0F),
-          left: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          top: Px(12.0F),
+          left: Px(12.0F),
         },
       ),
     ),
@@ -178,16 +178,16 @@ fn alter_asset(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param(@app.Startup, spawn_text)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param(Startup, spawn_text)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(alter_handle).run_if(
       @input.input_just_pressed(@window.KeyCode::Space),
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(alter_asset).run_if(
       @input.input_just_pressed(@window.KeyCode::Enter),
     ),

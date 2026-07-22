@@ -22,7 +22,7 @@ pub struct AnimationNodeIndex {
 
 ///|
 pub fn AnimationNodeIndex::new(index : Int) -> AnimationNodeIndex {
-  AnimationNodeIndex::{ index, }
+  { index, }
 }
 
 ///|
@@ -123,7 +123,7 @@ fn animation_graph_node_new(
   weight : Float,
   parents : Array[AnimationNodeIndex],
 ) -> AnimationGraphNode {
-  AnimationGraphNode::{ node_type, mask, weight, parents, children: [] }
+  { node_type, mask, weight, parents, children: [] }
 }
 
 ///|
@@ -157,9 +157,9 @@ pub impl @asset.Asset for AnimationGraph with fn asset_resource_keys() {
 ///|
 pub fn AnimationGraph::new() -> AnimationGraph {
   let root = AnimationNodeIndex::new(0)
-  AnimationGraph::{
+  {
     root,
-    nodes: [animation_graph_node_new(AnimationNodeType::Blend, 0U, 1.0F, [])],
+    nodes: [animation_graph_node_new(Blend, 0U, 1.0F, [])],
     mask_groups: [],
     target_mask_index_by_key: Map([]),
   }
@@ -399,7 +399,7 @@ pub fn AnimationGraph::add_clip(
   weight : Float,
   parent : AnimationNodeIndex,
 ) -> AnimationNodeIndex {
-  self.add_with_mask(AnimationNodeType::Clip(clip), 0U, weight, parent)
+  self.add_with_mask(Clip(clip), 0U, weight, parent)
 }
 
 ///|
@@ -410,7 +410,7 @@ pub fn AnimationGraph::add_clip_with_mask(
   weight : Float,
   parent : AnimationNodeIndex,
 ) -> AnimationNodeIndex {
-  self.add_with_mask(AnimationNodeType::Clip(clip), mask, weight, parent)
+  self.add_with_mask(Clip(clip), mask, weight, parent)
 }
 
 ///|
@@ -419,7 +419,7 @@ pub fn AnimationGraph::add_blend(
   weight : Float,
   parent : AnimationNodeIndex,
 ) -> AnimationNodeIndex {
-  self.add_with_mask(AnimationNodeType::Blend, 0U, weight, parent)
+  self.add_with_mask(Blend, 0U, weight, parent)
 }
 
 ///|
@@ -429,7 +429,7 @@ pub fn AnimationGraph::add_blend_with_mask(
   weight : Float,
   parent : AnimationNodeIndex,
 ) -> AnimationNodeIndex {
-  self.add_with_mask(AnimationNodeType::Blend, mask, weight, parent)
+  self.add_with_mask(Blend, mask, weight, parent)
 }
 
 ///|
@@ -438,7 +438,7 @@ pub fn AnimationGraph::add_add(
   weight : Float,
   parent : AnimationNodeIndex,
 ) -> AnimationNodeIndex {
-  self.add_with_mask(AnimationNodeType::Add, 0U, weight, parent)
+  self.add_with_mask(Add, 0U, weight, parent)
 }
 
 ///|
@@ -457,7 +457,7 @@ pub fn AnimationGraph::add_add_with_mask(
   weight : Float,
   parent : AnimationNodeIndex,
 ) -> AnimationNodeIndex {
-  self.add_with_mask(AnimationNodeType::Add, mask, weight, parent)
+  self.add_with_mask(Add, mask, weight, parent)
 }
 
 ///|
@@ -688,12 +688,7 @@ fn threaded_animation_graph_new(node_count : Int) -> ThreadedAnimationGraph {
     sorted_edge_ranges.push((0, 0))
     computed_masks.push(0U)
   }
-  ThreadedAnimationGraph::{
-    threaded_graph: [],
-    sorted_edge_ranges,
-    sorted_edges: [],
-    computed_masks,
-  }
+  { threaded_graph: [], sorted_edge_ranges, sorted_edges: [], computed_masks }
 }
 
 ///|
@@ -823,7 +818,7 @@ pub impl @json.FromJson for AnimationGraphHandle with fn from_json(json, path) {
 pub fn AnimationGraphHandle::new(
   graph : @asset.Handle[AnimationGraph],
 ) -> AnimationGraphHandle {
-  AnimationGraphHandle::{ graph, }
+  { graph, }
 }
 
 ///|
@@ -866,7 +861,7 @@ fn thread_animation_graphs(
   let graph_assets_value = graph_assets.get()
   for event in graph_events.read() {
     match event {
-      @asset.AssetEvent::Added(handle) =>
+      Added(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
           threaded_graphs.modify(fn(threaded_graphs_value) {
             thread_animation_graph_rebuild(
@@ -876,7 +871,7 @@ fn thread_animation_graphs(
             )
           })
         }
-      @asset.AssetEvent::Modified(handle) =>
+      Modified(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
           threaded_graphs.modify(fn(threaded_graphs_value) {
             thread_animation_graph_rebuild(
@@ -886,7 +881,7 @@ fn thread_animation_graphs(
             )
           })
         }
-      @asset.AssetEvent::LoadedWithDependencies(handle) =>
+      LoadedWithDependencies(handle) =>
         if graph_assets_value.get(handle) is Some(graph) {
           threaded_graphs.modify(fn(threaded_graphs_value) {
             thread_animation_graph_rebuild(
@@ -896,11 +891,11 @@ fn thread_animation_graphs(
             )
           })
         }
-      @asset.AssetEvent::Removed(handle) =>
+      Removed(handle) =>
         threaded_graphs.modify(fn(threaded_graphs_value) {
           ignore(threaded_graphs_value.graphs.remove(handle.id()))
         })
-      @asset.AssetEvent::Unused(_) => ()
+      Unused(_) => ()
     }
   }
 }

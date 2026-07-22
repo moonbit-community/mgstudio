@@ -273,9 +273,9 @@ fn reset_text_runtime_state() -> Unit {
   text_ecs_index_by_world_id.clear()
   ui_text_ecs_entries.clear()
   ui_text_ecs_index_by_world_id.clear()
-  text_pipeline_runtime_state.font_atlas_set = FontAtlasSet::FontAtlasSet()
+  text_pipeline_runtime_state.font_atlas_set = FontAtlasSet()
   text_pipeline_runtime_state.default_text_font_handle = None
-  text_pipeline_runtime_state.cosmic_font_system = CosmicFontSystemState::{
+  text_pipeline_runtime_state.cosmic_font_system = {
     font_system: @cosmic.FontSystem::new(),
     handle_to_font_id: [],
     font_id_to_handle_id: [],
@@ -306,13 +306,13 @@ fn register_text_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_layout, fn() {
-    TextLayout::TextLayout()
+    TextLayout()
   })
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_font, fn() {
-    TextFont::TextFont()
+    TextFont()
   })
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_color, fn() {
-    TextColor::TextColor()
+    TextColor()
   })
   world.register_required_components_with(
     ecs_key_text2d,
@@ -325,17 +325,17 @@ fn register_text_required_components(
     fn() { FontHinting::default() },
   )
   world.register_required_components_with(ecs_key_text2d, ecs_key_text_bounds, fn() {
-    TextBounds::TextBounds()
+    TextBounds()
   })
   world.register_required_components_with(
     ecs_key_text2d,
     @sprite.ecs_key_anchor,
-    fn() { @sprite.Anchor::Anchor() },
+    fn() { Anchor() },
   )
   world.register_required_components_with(
     ecs_key_text2d,
     @visibility.ecs_key_visibility,
-    fn() { @visibility.Visibility::Inherited },
+    fn() { Inherited },
   )
   world.register_required_components_with(
     ecs_key_text2d,
@@ -414,8 +414,8 @@ fn vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
 ///|
 fn font_smoothing_eq(lhs : FontSmoothing, rhs : FontSmoothing) -> Bool {
   match (lhs, rhs) {
-    (FontSmoothing::None, FontSmoothing::None) => true
-    (FontSmoothing::AntiAliased, FontSmoothing::AntiAliased) => true
+    (None, None) => true
+    (AntiAliased, AntiAliased) => true
     _ => false
   }
 }
@@ -433,21 +433,21 @@ fn text_span_eq(lhs : TextSpan, rhs : TextSpan) -> Bool {
 ///|
 fn font_source_eq(lhs : FontSource, rhs : FontSource) -> Bool {
   match (lhs, rhs) {
-    (FontSource::Handle(lhs), FontSource::Handle(rhs)) => lhs.id() == rhs.id()
-    (FontSource::Family(lhs), FontSource::Family(rhs)) => lhs == rhs
-    (FontSource::Serif, FontSource::Serif) => true
-    (FontSource::SansSerif, FontSource::SansSerif) => true
-    (FontSource::Cursive, FontSource::Cursive) => true
-    (FontSource::Fantasy, FontSource::Fantasy) => true
-    (FontSource::Monospace, FontSource::Monospace) => true
-    (FontSource::SystemUi, FontSource::SystemUi) => true
-    (FontSource::UiSerif, FontSource::UiSerif) => true
-    (FontSource::UiSansSerif, FontSource::UiSansSerif) => true
-    (FontSource::UiMonospace, FontSource::UiMonospace) => true
-    (FontSource::UiRounded, FontSource::UiRounded) => true
-    (FontSource::Emoji, FontSource::Emoji) => true
-    (FontSource::Math, FontSource::Math) => true
-    (FontSource::FangSong, FontSource::FangSong) => true
+    (Handle(lhs), Handle(rhs)) => lhs.id() == rhs.id()
+    (Family(lhs), Family(rhs)) => lhs == rhs
+    (Serif, Serif) => true
+    (SansSerif, SansSerif) => true
+    (Cursive, Cursive) => true
+    (Fantasy, Fantasy) => true
+    (Monospace, Monospace) => true
+    (SystemUi, SystemUi) => true
+    (UiSerif, UiSerif) => true
+    (UiSansSerif, UiSansSerif) => true
+    (UiMonospace, UiMonospace) => true
+    (UiRounded, UiRounded) => true
+    (Emoji, Emoji) => true
+    (Math, Math) => true
+    (FangSong, FangSong) => true
     _ => false
   }
 }
@@ -455,12 +455,12 @@ fn font_source_eq(lhs : FontSource, rhs : FontSource) -> Bool {
 ///|
 fn font_size_eq(lhs : FontSize, rhs : FontSize) -> Bool {
   match (lhs, rhs) {
-    (FontSize::Px(lhs), FontSize::Px(rhs)) => lhs == rhs
-    (FontSize::Vw(lhs), FontSize::Vw(rhs)) => lhs == rhs
-    (FontSize::Vh(lhs), FontSize::Vh(rhs)) => lhs == rhs
-    (FontSize::VMin(lhs), FontSize::VMin(rhs)) => lhs == rhs
-    (FontSize::VMax(lhs), FontSize::VMax(rhs)) => lhs == rhs
-    (FontSize::Rem(lhs), FontSize::Rem(rhs)) => lhs == rhs
+    (Px(lhs), Px(rhs)) => lhs == rhs
+    (Vw(lhs), Vw(rhs)) => lhs == rhs
+    (Vh(lhs), Vh(rhs)) => lhs == rhs
+    (VMin(lhs), VMin(rhs)) => lhs == rhs
+    (VMax(lhs), VMax(rhs)) => lhs == rhs
+    (Rem(lhs), Rem(rhs)) => lhs == rhs
     _ => false
   }
 }
@@ -478,9 +478,9 @@ fn font_width_eq(lhs : FontWidth, rhs : FontWidth) -> Bool {
 ///|
 fn font_style_eq(lhs : FontStyle, rhs : FontStyle) -> Bool {
   match (lhs, rhs) {
-    (FontStyle::Normal, FontStyle::Normal) => true
-    (FontStyle::Italic, FontStyle::Italic) => true
-    (FontStyle::Oblique(lhs), FontStyle::Oblique(rhs)) => float_opt_eq(lhs, rhs)
+    (Normal, Normal) => true
+    (Italic, Italic) => true
+    (Oblique(lhs), Oblique(rhs)) => float_opt_eq(lhs, rhs)
     _ => false
   }
 }
@@ -569,12 +569,12 @@ fn[A] empty_marker_opt_eq(lhs : A?, rhs : A?) -> Bool {
 ///|
 fn justify_eq(lhs : Justify, rhs : Justify) -> Bool {
   match (lhs, rhs) {
-    (Justify::Left, Justify::Left) => true
-    (Justify::Center, Justify::Center) => true
-    (Justify::Right, Justify::Right) => true
-    (Justify::Justified, Justify::Justified) => true
-    (Justify::Start, Justify::Start) => true
-    (Justify::End, Justify::End) => true
+    (Left, Left) => true
+    (Center, Center) => true
+    (Right, Right) => true
+    (Justified, Justified) => true
+    (Start, Start) => true
+    (End, End) => true
     _ => false
   }
 }
@@ -582,10 +582,10 @@ fn justify_eq(lhs : Justify, rhs : Justify) -> Bool {
 ///|
 fn line_break_eq(lhs : LineBreak, rhs : LineBreak) -> Bool {
   match (lhs, rhs) {
-    (LineBreak::WordBoundary, LineBreak::WordBoundary) => true
-    (LineBreak::AnyCharacter, LineBreak::AnyCharacter) => true
-    (LineBreak::WordOrCharacter, LineBreak::WordOrCharacter) => true
-    (LineBreak::NoWrap, LineBreak::NoWrap) => true
+    (WordBoundary, WordBoundary) => true
+    (AnyCharacter, AnyCharacter) => true
+    (WordOrCharacter, WordOrCharacter) => true
+    (NoWrap, NoWrap) => true
     _ => false
   }
 }
@@ -599,9 +599,8 @@ fn text_layout_eq(lhs : TextLayout, rhs : TextLayout) -> Bool {
 ///|
 fn line_height_eq(lhs : LineHeight, rhs : LineHeight) -> Bool {
   match (lhs, rhs) {
-    (LineHeight::Px(lhs), LineHeight::Px(rhs)) => lhs == rhs
-    (LineHeight::RelativeToFont(lhs), LineHeight::RelativeToFont(rhs)) =>
-      lhs == rhs
+    (Px(lhs), Px(rhs)) => lhs == rhs
+    (RelativeToFont(lhs), RelativeToFont(rhs)) => lhs == rhs
     _ => false
   }
 }
@@ -609,8 +608,8 @@ fn line_height_eq(lhs : LineHeight, rhs : LineHeight) -> Bool {
 ///|
 fn font_hinting_eq(lhs : FontHinting, rhs : FontHinting) -> Bool {
   match (lhs, rhs) {
-    (FontHinting::Disabled, FontHinting::Disabled) => true
-    (FontHinting::Enabled, FontHinting::Enabled) => true
+    (Disabled, Disabled) => true
+    (Enabled, Enabled) => true
     _ => false
   }
 }
@@ -641,8 +640,8 @@ fn text_shadow_component_to_2d(shadow : TextShadow?) -> Text2dShadow? {
 ///|
 fn y_axis_eq(lhs : YAxisOrientation, rhs : YAxisOrientation) -> Bool {
   match (lhs, rhs) {
-    (YAxisOrientation::TopToBottom, YAxisOrientation::TopToBottom) => true
-    (YAxisOrientation::BottomToTop, YAxisOrientation::BottomToTop) => true
+    (TopToBottom, TopToBottom) => true
+    (BottomToTop, BottomToTop) => true
     _ => false
   }
 }
@@ -786,7 +785,7 @@ fn text_ecs_changed_span_parent_ids(
   span_edges : Array[(@core.Entity, @core.Entity)],
   tick : @core.SystemTicks,
 ) -> @hashset.HashSet[Int] {
-  let dirty_parent_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let dirty_parent_ids : @hashset.HashSet[Int] = HashSet([])
   for edge in span_edges {
     let (parent, child) = edge
     if world.is_changed_by_key(child, ecs_key_text_span, tick) ||
@@ -862,25 +861,25 @@ fn text_ecs_bundle_from_entity(
 ) -> (Text2dBundle, Bool) {
   guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
     return (
-      Text2dBundle::{
+      {
         text,
         font,
-        color: TextColor::TextColor(),
+        color: TextColor(),
         background_color: None,
         underline: None,
         underline_color: None,
         strikethrough: None,
         strikethrough_color: None,
-        layout: TextLayout::TextLayout(),
-        bounds: TextBounds::TextBounds(),
+        layout: TextLayout(),
+        bounds: TextBounds(),
         line_height: LineHeight::default(),
         font_hinting: FontHinting::default(),
         shadow: None,
         transform: local_transform,
-        layers: @camera_render_layers.RenderLayers::RenderLayers(),
+        layers: RenderLayers(),
         no_frustum_culling: false,
-        anchor: @sprite.Anchor::Anchor(),
-        y_axis: YAxisOrientation::TopToBottom,
+        anchor: Anchor(),
+        y_axis: TopToBottom,
         logical_viewport_size: None,
       },
       true,
@@ -893,7 +892,7 @@ fn text_ecs_bundle_from_entity(
   }
   let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
-    None => TextColor::TextColor()
+    None => TextColor()
   }
   let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
     entity_ref,
@@ -906,11 +905,11 @@ fn text_ecs_bundle_from_entity(
   )
   let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
     Some(layout) => layout
-    None => TextLayout::TextLayout()
+    None => TextLayout()
   }
   let bounds = match (text_ecs_entity_ref_get(entity_ref) : TextBounds?) {
     Some(bounds) => bounds
-    None => TextBounds::TextBounds()
+    None => TextBounds()
   }
   let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
@@ -925,15 +924,15 @@ fn text_ecs_bundle_from_entity(
   let layers = match
     (text_ecs_entity_ref_get(entity_ref) : @camera_render_layers.RenderLayers?) {
     Some(layers) => layers
-    None => @camera_render_layers.RenderLayers::RenderLayers()
+    None => RenderLayers()
   }
   let anchor = match (text_ecs_entity_ref_get(entity_ref) : @sprite.Anchor?) {
     Some(anchor) => anchor
-    None => @sprite.Anchor::Anchor()
+    None => Anchor()
   }
   let y_axis = match (text_ecs_entity_ref_get(entity_ref) : YAxisOrientation?) {
     Some(y_axis) => y_axis
-    None => YAxisOrientation::TopToBottom
+    None => TopToBottom
   }
   let no_frustum_culling = (world.contains_by_key(
       entity, @visibility.ecs_key_no_frustum_culling,
@@ -944,7 +943,7 @@ fn text_ecs_bundle_from_entity(
       _ => false
     })
   (
-    Text2dBundle::{
+    {
       text,
       font,
       color,
@@ -989,7 +988,7 @@ fn text_ecs_span_bundle_from_entity(
   }
   let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
-    None => TextColor::TextColor()
+    None => TextColor()
   }
   let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
     entity_ref,
@@ -1004,7 +1003,7 @@ fn text_ecs_span_bundle_from_entity(
     Some(line_height) => line_height
     None => inherited_line_height
   }
-  Some(TextSpanBundle::{
+  Some({
     span,
     font,
     color,
@@ -1098,7 +1097,7 @@ fn text_ecs_spawn_entry(
     handle
   })
   text_set_view_visible(handle, view_visible)
-  text_ecs_entries.push(EcsTextEntry::{
+  text_ecs_entries.push({
     world_id,
     entity,
     handle,
@@ -1184,7 +1183,7 @@ fn text_ecs_respawn_entry(
     handle
   })
   text_set_view_visible(handle, view_visible)
-  EcsTextEntry::{ ..entry, handle, bundle, view_visible, span_bundles }
+  { ..entry, handle, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1276,7 +1275,7 @@ fn text_ecs_sync_existing_entry(
     ) {
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
-  EcsTextEntry::{ ..entry, bundle, view_visible, span_bundles }
+  { ..entry, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1426,35 +1425,35 @@ fn ui_text_ecs_bundle_from_entity(
   text : Text,
 ) -> Text2dBundle {
   guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
-    return Text2dBundle::{
+    return {
       text: Text2d::new(text.content),
-      font: TextFont::TextFont(),
-      color: TextColor::TextColor(),
+      font: TextFont(),
+      color: TextColor(),
       background_color: None,
       underline: None,
       underline_color: None,
       strikethrough: None,
       strikethrough_color: None,
-      layout: TextLayout::TextLayout(),
-      bounds: TextBounds::TextBounds(),
+      layout: TextLayout(),
+      bounds: TextBounds(),
       line_height: LineHeight::default(),
       font_hinting: FontHinting::default(),
       shadow: None,
       transform: @transform.Transform::identity(),
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       no_frustum_culling: false,
-      anchor: @sprite.Anchor::Anchor(),
-      y_axis: YAxisOrientation::TopToBottom,
+      anchor: Anchor(),
+      y_axis: TopToBottom,
       logical_viewport_size: None,
     }
   }
   let font = match (text_ecs_entity_ref_get(entity_ref) : TextFont?) {
     Some(font) => font
-    None => TextFont::TextFont()
+    None => TextFont()
   }
   let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
     Some(color) => color
-    None => TextColor::TextColor()
+    None => TextColor()
   }
   let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
     entity_ref,
@@ -1467,7 +1466,7 @@ fn ui_text_ecs_bundle_from_entity(
   )
   let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
     Some(layout) => layout
-    None => TextLayout::TextLayout()
+    None => TextLayout()
   }
   let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
     Some(line_height) => line_height
@@ -1479,7 +1478,7 @@ fn ui_text_ecs_bundle_from_entity(
     None => FontHinting::default()
   }
   let shadow_component : TextShadow? = text_ecs_entity_ref_get(entity_ref)
-  Text2dBundle::{
+  {
     text: Text2d::new(text.content),
     font,
     color,
@@ -1489,15 +1488,15 @@ fn ui_text_ecs_bundle_from_entity(
     strikethrough,
     strikethrough_color,
     layout,
-    bounds: TextBounds::TextBounds(),
+    bounds: TextBounds(),
     line_height,
     font_hinting,
     shadow: text_shadow_component_to_2d(shadow_component),
     transform: @transform.Transform::identity(),
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    layers: RenderLayers(),
     no_frustum_culling: false,
-    anchor: @sprite.Anchor::Anchor(),
-    y_axis: YAxisOrientation::TopToBottom,
+    anchor: Anchor(),
+    y_axis: TopToBottom,
     logical_viewport_size: None,
   }
 }
@@ -1520,7 +1519,7 @@ fn ui_text_ecs_spawn_entry(
     handle
   })
   text_set_view_visible(handle, view_visible)
-  ui_text_ecs_entries.push(UiEcsTextEntry::{
+  ui_text_ecs_entries.push({
     world_id,
     entity,
     handle,
@@ -1596,7 +1595,7 @@ fn ui_text_ecs_respawn_entry(
     handle
   })
   text_set_view_visible(handle, view_visible)
-  UiEcsTextEntry::{ ..entry, handle, bundle, view_visible, span_bundles }
+  { ..entry, handle, bundle, view_visible, span_bundles }
 }
 
 ///|
@@ -1663,7 +1662,7 @@ fn ui_text_ecs_sync_existing_entry(
     text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
   ignore(needs_layout)
-  UiEcsTextEntry::{ ..entry, bundle, view_visible, span_bundles }
+  { ..entry, bundle, view_visible, span_bundles }
 }
 
 ///|

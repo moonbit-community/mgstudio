@@ -23,10 +23,7 @@ pub(open) trait IntoMeshAsset {
 
 ///|
 pub fn Mesh::from_2d_geometry(geometry2d : Mesh2dGeometry) -> Mesh {
-  Mesh::{
-    geometry: MeshGeometry::Geometry2d(geometry2d),
-    skinned_mesh_bounds: None,
-  }
+  { geometry: Geometry2d(geometry2d), skinned_mesh_bounds: None }
 }
 
 ///|
@@ -41,10 +38,7 @@ pub impl IntoMeshAsset for Mesh2dGeometry with fn into_mesh_asset(self) {
 
 ///|
 pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
-  Mesh::{
-    geometry: MeshGeometry::Geometry3d(geometry3d),
-    skinned_mesh_bounds: None,
-  }
+  { geometry: Geometry3d(geometry3d), skinned_mesh_bounds: None }
 }
 
 ///|

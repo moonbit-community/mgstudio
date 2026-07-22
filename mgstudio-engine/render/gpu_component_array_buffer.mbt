@@ -22,6 +22,7 @@ const GPU_COMPONENT_ARRAY_BUFFER_PLUGIN_NAME : String = "mgstudio.render.GpuComp
 pub struct GpuComponentArrayBufferPlugin[_] {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn[C] GpuComponentArrayBufferPlugin::GpuComponentArrayBufferPlugin() -> GpuComponentArrayBufferPlugin[
   C,
 ] {
@@ -56,10 +57,7 @@ pub(open) trait GpuComponentArrayBufferComponent: @ecs.Component {
 
 ///|
 pub fn[C] GpuComponentArrayBufferState::new() -> GpuComponentArrayBufferState[C] {
-  GpuComponentArrayBufferState::{
-    buffer: @render_resource.GpuArrayBuffer::new(),
-    indices: Map([]),
-  }
+  { buffer: @render_resource.GpuArrayBuffer::new(), indices: Map([]) }
 }
 
 ///|
@@ -135,7 +133,7 @@ pub fn[C : @ecs.Component] prepare_gpu_component_array_buffers(
 ///|
 pub fn[C] gpu_component_array_buffer_plugin(
   app : @app.App[@ecs.World],
-  _plugin? : GpuComponentArrayBufferPlugin[C] = GpuComponentArrayBufferPlugin::GpuComponentArrayBufferPlugin(),
+  _plugin? : GpuComponentArrayBufferPlugin[C] = GpuComponentArrayBufferPlugin(),
 ) -> @app.App[@ecs.World] {
   app
 }

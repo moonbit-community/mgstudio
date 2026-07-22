@@ -22,10 +22,7 @@ test "pbr/lightmap: render-lightmaps allocates and removes entries" {
     entity0,
     Lightmap::new(@asset.Handle::new(7)).with_bicubic_sampling(true),
   )
-  let render_lightmap1 = render_lightmaps.insert_lightmap(
-    entity1,
-    Lightmap::Lightmap(),
-  )
+  let render_lightmap1 = render_lightmaps.insert_lightmap(entity1, Lightmap())
 
   debug_inspect(render_lightmaps.entity_count(), content="2")
   debug_inspect(render_lightmap0.slab_index.to_int(), content="0")
@@ -88,11 +85,11 @@ test "pbr/lightmap: plugin initializes render-lightmaps in render world" {
   let lifecycle_world_84_1 = @ecs.World::new()
   defer lifecycle_world_84_1.close()
   let app = @app.App::new(lifecycle_world_84_0).insert_sub_app(
-    @app.RenderApp,
-    @app.SubApp::new(lifecycle_world_84_1).set_update_schedule(Some(@app.Main)),
+    RenderApp,
+    @app.SubApp::new(lifecycle_world_84_1).set_update_schedule(Some(Main)),
   )
   let app = lightmap_plugin_install(app)
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
 
   debug_inspect(
     app.world().get_resource(RenderLightmaps::resource()) is None,

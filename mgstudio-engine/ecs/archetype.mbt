@@ -862,13 +862,7 @@ fn World::bundle_migration_plan(
   } else {
     NewArchetypeNewTable
   }
-  ArchetypeBundleMigrationPlan::{
-    from_archetype_id,
-    to_archetype_id,
-    from_table_id,
-    to_table_id,
-    path,
-  }
+  { from_archetype_id, to_archetype_id, from_table_id, to_table_id, path }
 }
 
 ///|

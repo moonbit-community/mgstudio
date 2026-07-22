@@ -20,7 +20,7 @@ pub struct ZIndex {
 
 ///|
 pub fn ZIndex::new(value : Int) -> ZIndex {
-  ZIndex::{ value, }
+  { value, }
 }
 
 ///|
@@ -30,7 +30,7 @@ pub struct GlobalZIndex {
 
 ///|
 pub fn GlobalZIndex::new(value : Int) -> GlobalZIndex {
-  GlobalZIndex::{ value, }
+  { value, }
 }
 
 ///|
@@ -40,7 +40,7 @@ pub struct UiScale {
 
 ///|
 pub fn UiScale::new(value : Float) -> UiScale {
-  UiScale::{ value, }
+  { value, }
 }
 
 ///|
@@ -51,7 +51,7 @@ pub struct UiStack {
 
 ///|
 pub fn UiStack::UiStack() -> UiStack {
-  UiStack::{ partition: [], uinodes: [] }
+  { partition: [], uinodes: [] }
 }
 
 ///|

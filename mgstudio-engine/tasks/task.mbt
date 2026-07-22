@@ -32,7 +32,7 @@ pub fn[T] Task::poll(self : Task[T]) -> T? {
 
 ///|
 pub fn[T] Task::detach(self : Task[T]) -> Task[T] {
-  Task::{ ..self, detached: true }
+  { ..self, detached: true }
 }
 
 ///|

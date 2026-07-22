@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.FixedUpdate, controller_input)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(FixedUpdate, controller_input)
   .run()
 }
 
@@ -96,12 +96,12 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     player,
     @physics3d.ecs_key_kinematic_character_controller3d,
-    @physics3d.KinematicCharacterController3d::KinematicCharacterController3d(),
+    KinematicCharacterController3d(),
   )
   player_entity.val = Some(player)
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 5.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -123,16 +123,16 @@ fn controller_input(world : @ecs.World) -> Unit {
   let dt = @time.time_fixed_timestep_seconds()
   let speed = 4.0F
   let mut axis = @math.Vec3::zero()
-  if @input.key_pressed(@window.KeyCode::KeyA) {
+  if @input.key_pressed(KeyA) {
     axis = @math.Vec3::new(axis.x - 1.0F, axis.y, axis.z)
   }
-  if @input.key_pressed(@window.KeyCode::KeyD) {
+  if @input.key_pressed(KeyD) {
     axis = @math.Vec3::new(axis.x + 1.0F, axis.y, axis.z)
   }
-  if @input.key_pressed(@window.KeyCode::KeyW) {
+  if @input.key_pressed(KeyW) {
     axis = @math.Vec3::new(axis.x, axis.y, axis.z - 1.0F)
   }
-  if @input.key_pressed(@window.KeyCode::KeyS) {
+  if @input.key_pressed(KeyS) {
     axis = @math.Vec3::new(axis.x, axis.y, axis.z + 1.0F)
   }
   if axis.x == 0.0F && axis.z == 0.0F {

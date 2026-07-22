@@ -48,17 +48,9 @@ test "pbr/meshlet: resource layouts require Bevy visibility buffer textures" {
   let descriptors = meshlet_resource_bind_group_layout_descriptors()
   let clear_layout = descriptors[0]
   debug_inspect(clear_layout.entry_count(), content="1")
+  debug_inspect(clear_layout.count_binding_kind(StorageTexture2d), content="1")
   debug_inspect(
-    clear_layout.count_binding_kind(
-      MeshletResourceBindingKind::StorageTexture2d,
-    ),
-    content="1",
-  )
-  debug_inspect(
-    clear_layout.uses_storage_texture(
-      MeshletResourceTextureFormat::R64Uint,
-      MeshletResourceStorageTextureAccess::WriteOnly,
-    ),
+    clear_layout.uses_storage_texture(R64Uint, WriteOnly),
     content="true",
   )
   let camera_raster_layout = descriptors[10]
@@ -67,36 +59,24 @@ test "pbr/meshlet: resource layouts require Bevy visibility buffer textures" {
   debug_inspect(camera_raster_layout.fragment_stage, content="true")
   debug_inspect(camera_raster_layout.entry_count(), content="9")
   debug_inspect(
-    camera_raster_layout.count_binding_kind(
-      MeshletResourceBindingKind::StorageBufferReadOnly,
-    ),
+    camera_raster_layout.count_binding_kind(StorageBufferReadOnly),
     content="7",
   )
   debug_inspect(
-    camera_raster_layout.count_binding_kind(
-      MeshletResourceBindingKind::StorageTexture2d,
-    ),
+    camera_raster_layout.count_binding_kind(StorageTexture2d),
     content="1",
   )
   debug_inspect(
-    camera_raster_layout.count_binding_kind(
-      MeshletResourceBindingKind::UniformBuffer,
-    ),
+    camera_raster_layout.count_binding_kind(UniformBuffer),
     content="1",
   )
   debug_inspect(
-    camera_raster_layout.uses_storage_texture(
-      MeshletResourceTextureFormat::R64Uint,
-      MeshletResourceStorageTextureAccess::Atomic,
-    ),
+    camera_raster_layout.uses_storage_texture(R64Uint, Atomic),
     content="true",
   )
   let shadow_raster_layout = descriptors[11]
   debug_inspect(
-    shadow_raster_layout.uses_storage_texture(
-      MeshletResourceTextureFormat::R32Uint,
-      MeshletResourceStorageTextureAccess::Atomic,
-    ),
+    shadow_raster_layout.uses_storage_texture(R32Uint, Atomic),
     content="true",
   )
 }
@@ -107,37 +87,22 @@ test "pbr/meshlet: resource downsample and material shade layouts preserve bevy 
   let downsample = descriptors[8]
   debug_inspect(downsample.entry_count(), content="14")
   debug_inspect(
-    downsample.count_binding_kind(
-      MeshletResourceBindingKind::StorageBufferReadOnly,
-    ),
+    downsample.count_binding_kind(StorageBufferReadOnly),
     content="0",
   )
+  debug_inspect(downsample.count_binding_kind(SamplerNonFiltering), content="1")
   debug_inspect(
-    downsample.count_binding_kind(
-      MeshletResourceBindingKind::SamplerNonFiltering,
-    ),
-    content="1",
-  )
-  debug_inspect(
-    downsample.uses_storage_texture(
-      MeshletResourceTextureFormat::R64Uint,
-      MeshletResourceStorageTextureAccess::ReadOnly,
-    ),
+    downsample.uses_storage_texture(R64Uint, ReadOnly),
     content="true",
   )
   let material_shade = descriptors[15]
   debug_inspect(material_shade.entry_count(), content="8")
   debug_inspect(
-    material_shade.count_binding_kind(
-      MeshletResourceBindingKind::StorageBufferReadOnly,
-    ),
+    material_shade.count_binding_kind(StorageBufferReadOnly),
     content="7",
   )
   debug_inspect(
-    material_shade.uses_storage_texture(
-      MeshletResourceTextureFormat::R64Uint,
-      MeshletResourceStorageTextureAccess::ReadOnly,
-    ),
+    material_shade.uses_storage_texture(R64Uint, ReadOnly),
     content="true",
   )
 }

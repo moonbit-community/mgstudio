@@ -66,7 +66,7 @@ fn auto_directional_navigation_map(
   )
   match map {
     Some(map) => map
-    None => @input_focus.DirectionalNavigationMap::DirectionalNavigationMap()
+    None => DirectionalNavigationMap()
   }
 }
 
@@ -79,7 +79,7 @@ fn auto_directional_navigation_config(
   )
   match config {
     Some(config) => config
-    None => @input_focus.AutoNavigationConfig::AutoNavigationConfig()
+    None => AutoNavigationConfig()
   }
 }
 
@@ -409,14 +409,12 @@ pub fn AutoDirectionalNavigator::navigate(
   direction : @math.CompassOctant,
 ) -> @core.Entity raise @input_focus.DirectionalNavigationError {
   guard auto_directional_navigation_focus_ref_mut(self.world) is Some(focus_ref) else {
-    raise @input_focus.NoFocus
+    raise NoFocus
   }
-  guard focus_ref.peek().get() is Some(current_focus) else {
-    raise @input_focus.NoFocus
-  }
+  guard focus_ref.peek().get() is Some(current_focus) else { raise NoFocus }
   if !self.world.is_alive(current_focus) {
     focus_ref.modify(fn(focus) { focus.clear() })
-    raise @input_focus.NoFocus
+    raise NoFocus
   }
 
   let manual_map = auto_directional_navigation_map(self.world)
@@ -427,7 +425,7 @@ pub fn AutoDirectionalNavigator::navigate(
 
   guard auto_directional_navigation_focusable_area(self.world, current_focus)
     is Some((target_camera, origin)) else {
-    raise @input_focus.NoNeighborInDirection(current_focus, direction)
+    raise NoNeighborInDirection(current_focus, direction)
   }
   let config = auto_directional_navigation_config(self.world)
   let candidates = auto_directional_navigation_candidates(
@@ -438,7 +436,7 @@ pub fn AutoDirectionalNavigator::navigate(
       origin, direction, candidates, config,
     )
     is Some(new_focus) else {
-    raise @input_focus.NoNeighborInDirection(current_focus, direction)
+    raise NoNeighborInDirection(current_focus, direction)
   }
   focus_ref.modify(fn(focus) { focus.set(new_focus) })
   new_focus
@@ -451,9 +449,7 @@ pub impl @app.SystemParam for AutoDirectionalNavigator with fn init_state(world)
 
 ///|
 pub impl @app.SystemParam for AutoDirectionalNavigator with fn get(_state) {
-  AutoDirectionalNavigator::{
-    world: current_auto_directional_navigation_world_abort_missing(),
-  }
+  { world: current_auto_directional_navigation_world_abort_missing() }
 }
 
 ///|

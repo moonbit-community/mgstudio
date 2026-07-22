@@ -276,27 +276,27 @@ test "pbr: CPU-building extraction reads Bevy source query rows" {
   try! source_world.set_by_key(
     entity,
     @visibility.ecs_key_no_frustum_culling,
-    @visibility.NoFrustumCulling::NoFrustumCulling(),
+    NoFrustumCulling(),
   )
   try! source_world.set_by_key(
     entity,
     ecs_key_not_shadow_receiver,
-    NotShadowReceiver::NotShadowReceiver(),
+    NotShadowReceiver(),
   )
   try! source_world.set_by_key(
     entity,
     ecs_key_transmitted_shadow_receiver,
-    TransmittedShadowReceiver::TransmittedShadowReceiver(),
+    TransmittedShadowReceiver(),
   )
   try! source_world.set_by_key(
     entity,
     ecs_key_not_shadow_caster,
-    NotShadowCaster::NotShadowCaster(),
+    NotShadowCaster(),
   )
   try! source_world.set_by_key(
     entity,
     @render_batching.ecs_key_no_automatic_batching,
-    @render_batching.NoAutomaticBatching::NoAutomaticBatching(),
+    NoAutomaticBatching(),
   )
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   material_instances.extract_mesh_material(
@@ -550,8 +550,8 @@ test "pbr: RenderMeshInstanceGpuBuilder prepare waits for non-dummy material bin
       entity,
       @render_mesh.MeshAllocator::new(),
       material_instances,
-      RenderMaterialBindings::RenderMaterialBindings(),
-      @lightmap.RenderLightmaps::RenderLightmaps(),
+      RenderMaterialBindings(),
+      RenderLightmaps(),
       @pbr_render.SkinUniforms::new(),
       @pbr_render.MorphIndices::new(),
       3U,
@@ -711,7 +711,7 @@ test "pbr: collect_meshes_for_gpu_building prepares ready CPU-culling queues and
     allocator,
     material_instances,
     material_bindings,
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderLightmaps(),
     @pbr_render.SkinUniforms::new(),
     @pbr_render.MorphIndices::new(),
     55U,
@@ -790,7 +790,7 @@ test "pbr: collect_meshes_for_gpu_building updates GPU-culling visibility and re
     allocator,
     material_instances,
     material_bindings,
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderLightmaps(),
     @pbr_render.SkinUniforms::new(),
     @pbr_render.MorphIndices::new(),
     56U,
@@ -813,7 +813,7 @@ test "pbr: collect_meshes_for_gpu_building updates GPU-culling visibility and re
     allocator,
     material_instances,
     material_bindings,
-    @lightmap.RenderLightmaps::RenderLightmaps(),
+    RenderLightmaps(),
     @pbr_render.SkinUniforms::new(),
     @pbr_render.MorphIndices::new(),
     57U,
@@ -1151,21 +1151,19 @@ fn render_mesh_instances_test_mesh_for_entity(
 ) -> ExtractedMesh3d {
   let transform = @transform.Transform::identity()
   let world_from_local = @math.Affine3::identity()
-  ExtractedMesh3d::{
+  {
     entity: phase_entity_ref3d_for_main(entity),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       mesh_handle: @asset.Handle::new(mesh_id),
       world_from_local,
       previous_world_from_local: world_from_local,
       transform,
       previous_transform: transform,
       aabb: None,
-      material_draw_data: MaterialDrawData3d::Standard(
-        @material.StandardMaterial::StandardMaterial(),
-      ),
+      material_draw_data: Standard(StandardMaterial()),
       material_extension: None,
-      material_properties: @material.MaterialProperties::MaterialProperties(),
-      material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+      material_properties: MaterialProperties(),
+      material_bind_group_data: MaterialBindGroupResolvedData(),
       lightmap,
       is_forward_decal: false,
       forward_decal_material_ext: None,
@@ -1175,7 +1173,7 @@ fn render_mesh_instances_test_mesh_for_entity(
       has_transmitted_shadow_receiver: false,
       has_no_frustum_culling: false,
       has_no_cpu_culling,
-      layers: @camera_render_layers.RenderLayers::RenderLayers(),
+      layers: RenderLayers(),
       skinning_key_hi: -1,
       has_previous_skin: false,
       morph_weights_index: -1,
@@ -1223,7 +1221,7 @@ test "pbr: GPU-building extraction does not remove stale meshes without source r
   try! source_world.set_by_key(
     second,
     @visibility.ecs_key_no_cpu_culling,
-    @visibility.NoCpuCulling::NoCpuCulling(),
+    NoCpuCulling(),
   )
   let stale_entity = @render.MainEntity::new(@core.Entity::new(99, 0))
   let instances = RenderMeshInstances::new(use_gpu_instance_buffer_builder=true)
@@ -1496,9 +1494,7 @@ test "pbr: material bind group preparation records bindless material bindings" {
   let material_bind_group_allocators = MaterialBindGroupAllocators::MaterialBindGroupAllocators()
   material_bind_group_allocators.insert(
     "StandardMaterial",
-    MaterialBindGroupAllocator::Bindless(
-      MaterialBindGroupBindlessAllocator::with_slab_capacity(4),
-    ),
+    Bindless(MaterialBindGroupBindlessAllocator::with_slab_capacity(4)),
   )
 
   prepare_render_material_bindings(

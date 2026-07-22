@@ -16,6 +16,7 @@
 pub struct Disabled {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Disabled::new() -> Disabled {
   Disabled::{  }
 }
@@ -27,7 +28,7 @@ pub struct DefaultQueryFilters {
 
 ///|
 pub fn DefaultQueryFilters::empty() -> DefaultQueryFilters {
-  DefaultQueryFilters::{ disabling_component_ids: [] }
+  { disabling_component_ids: [] }
 }
 
 ///|

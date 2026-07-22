@@ -25,7 +25,7 @@ pub struct AnimatedBy {
 
 ///|
 pub fn AnimatedBy::new(player : @core.Entity) -> AnimatedBy {
-  AnimatedBy::{ player, }
+  { player, }
 }
 
 ///|
@@ -121,9 +121,9 @@ pub(all) enum RepeatAnimation {
 ///|
 pub impl ToJson for RepeatAnimation with fn to_json(self) {
   match self {
-    RepeatAnimation::Never => (0, 0).to_json()
-    RepeatAnimation::Count(count) => (1, count).to_json()
-    RepeatAnimation::Forever => (2, 0).to_json()
+    Never => (0, 0).to_json()
+    Count(count) => (1, count).to_json()
+    Forever => (2, 0).to_json()
   }
 }
 
@@ -131,10 +131,10 @@ pub impl ToJson for RepeatAnimation with fn to_json(self) {
 pub impl @json.FromJson for RepeatAnimation with fn from_json(json, path) {
   let (tag, payload) : (Int, Int) = @json.from_json(json, path~)
   match tag {
-    0 => RepeatAnimation::Never
-    1 => RepeatAnimation::Count(payload)
-    2 => RepeatAnimation::Forever
-    _ => RepeatAnimation::Never
+    0 => Never
+    1 => Count(payload)
+    2 => Forever
+    _ => Never
   }
 }
 
@@ -182,7 +182,7 @@ pub impl @json.FromJson for ActiveAnimation with fn from_json(json, path) {
     json,
     path~,
   )
-  ActiveAnimation::{
+  {
     weight,
     repeat,
     speed,
@@ -197,9 +197,9 @@ pub impl @json.FromJson for ActiveAnimation with fn from_json(json, path) {
 
 ///|
 pub fn ActiveAnimation::ActiveAnimation() -> ActiveAnimation {
-  ActiveAnimation::{
+  {
     weight: 1.0F,
-    repeat: RepeatAnimation::Never,
+    repeat: Never,
     speed: 1.0F,
     elapsed: 0.0F,
     seek_time: 0.0F,
@@ -238,9 +238,9 @@ pub fn ActiveAnimation::is_paused(self : ActiveAnimation) -> Bool {
 ///|
 pub fn ActiveAnimation::is_finished(self : ActiveAnimation) -> Bool {
   match self.repeat {
-    RepeatAnimation::Forever => false
-    RepeatAnimation::Never => self.completions >= 1
-    RepeatAnimation::Count(n) => self.completions >= n
+    Forever => false
+    Never => self.completions >= 1
+    Count(n) => self.completions >= n
   }
 }
 
@@ -249,7 +249,7 @@ pub fn ActiveAnimation::set_weight(
   self : ActiveAnimation,
   weight : Float,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, weight, }
+  { ..self, weight, }
 }
 
 ///|
@@ -257,14 +257,14 @@ pub fn ActiveAnimation::set_repeat(
   self : ActiveAnimation,
   repeat : RepeatAnimation,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, repeat, }
+  { ..self, repeat, }
 }
 
 ///|
 pub fn ActiveAnimation::repeat_forever(
   self : ActiveAnimation,
 ) -> ActiveAnimation {
-  self.set_repeat(RepeatAnimation::Forever)
+  self.set_repeat(Forever)
 }
 
 ///|
@@ -282,7 +282,7 @@ pub fn ActiveAnimation::set_speed(
   self : ActiveAnimation,
   speed : Float,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, speed, }
+  { ..self, speed, }
 }
 
 ///|
@@ -302,12 +302,12 @@ pub fn ActiveAnimation::is_playback_reversed(self : ActiveAnimation) -> Bool {
 
 ///|
 pub fn ActiveAnimation::pause(self : ActiveAnimation) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, paused: true }
+  { ..self, paused: true }
 }
 
 ///|
 pub fn ActiveAnimation::unpause(self : ActiveAnimation) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, paused: false }
+  { ..self, paused: false }
 }
 
 ///|
@@ -322,7 +322,7 @@ pub fn ActiveAnimation::set_seek_time(
   self : ActiveAnimation,
   seek_time : Float,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, seek_time, last_seek_time: Some(seek_time) }
+  { ..self, seek_time, last_seek_time: Some(seek_time) }
 }
 
 ///|
@@ -330,7 +330,7 @@ pub fn ActiveAnimation::seek_to(
   self : ActiveAnimation,
   seek_time : Float,
 ) -> ActiveAnimation {
-  ActiveAnimation::{ ..self, seek_time, last_seek_time: Some(self.seek_time) }
+  { ..self, seek_time, last_seek_time: Some(self.seek_time) }
 }
 
 ///|
@@ -340,7 +340,7 @@ pub fn ActiveAnimation::rewind(self : ActiveAnimation) -> ActiveAnimation {
 
 ///|
 pub fn ActiveAnimation::replay(self : ActiveAnimation) -> ActiveAnimation {
-  ActiveAnimation::{
+  {
     ..self,
     elapsed: 0.0F,
     seek_time: 0.0F,
@@ -432,7 +432,7 @@ fn animation_player_entry_new(
   player : AnimationPlayer,
   node : AnimationNodeIndex,
 ) -> AnimationPlayerEntry {
-  AnimationPlayerEntry::{ player, node }
+  { player, node }
 }
 
 ///|
@@ -469,12 +469,12 @@ pub impl @json.FromJson for AnimationPlayer with fn from_json(json, path) {
       active_animations_dense[node_key] = Some(pair.1)
     }
   }
-  AnimationPlayer::{ active_animations: active_animations_dense }
+  { active_animations: active_animations_dense }
 }
 
 ///|
 pub fn AnimationPlayer::AnimationPlayer() -> AnimationPlayer {
-  AnimationPlayer::{ active_animations: [] }
+  { active_animations: [] }
 }
 
 ///|
@@ -782,7 +782,7 @@ pub fn AnimationPlayerEntry::set_repeat(
 pub fn AnimationPlayerEntry::repeat_forever(
   self : AnimationPlayerEntry,
 ) -> AnimationPlayerEntry {
-  self.set_repeat(RepeatAnimation::Forever)
+  self.set_repeat(Forever)
 }
 
 ///|
@@ -925,7 +925,7 @@ priv struct AnimationFrameCurveCache {
 
 ///|
 fn animation_frame_curve_cache_new() -> AnimationFrameCurveCache {
-  AnimationFrameCurveCache::{
+  {
     stamp: 1,
     len: 0,
     stamps: [],
@@ -1173,7 +1173,7 @@ priv struct AnimationEvaluationOutput {
 fn animation_stack_element_empty(
   graph_node : AnimationNodeIndex,
 ) -> AnimationStackElement {
-  AnimationStackElement::{
+  {
     graph_node,
     has_translation: false,
     has_rotation: false,
@@ -1288,7 +1288,7 @@ fn animation_color_add_scaled(
 
 ///|
 fn animation_evaluation_state_new() -> AnimationEvaluationState {
-  AnimationEvaluationState::{
+  {
     stack: [],
     stack_len: 0,
     register: animation_stack_element_empty(AnimationNodeIndex::new(-1)),
@@ -1297,7 +1297,7 @@ fn animation_evaluation_state_new() -> AnimationEvaluationState {
 
 ///|
 fn animation_evaluation_output_new() -> AnimationEvaluationOutput {
-  AnimationEvaluationOutput::{
+  {
     has_transform: false,
     transform: @transform.Transform::identity(),
     weights: None,
@@ -1851,7 +1851,7 @@ priv struct AnimationRuntimeScratch {
 
 ///|
 fn AnimationRuntimeScratch::AnimationRuntimeScratch() -> AnimationRuntimeScratch {
-  AnimationRuntimeScratch::{
+  {
     frame_stamp: 0,
     transform_updates: [],
     weights_updates: [],
@@ -1941,7 +1941,7 @@ fn animation_runtime_scratch_ref_or_init(
     None => {
       world.insert_resource(
         ecs_key_animation_runtime_scratch,
-        AnimationRuntimeScratch::AnimationRuntimeScratch(),
+        AnimationRuntimeScratch(),
       )
       match world.get_resource_mut(ecs_key_animation_runtime_scratch) {
         Some(state_ref) => state_ref
@@ -2157,7 +2157,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     let counters = AnimationTargetCounters::AnimationTargetCounters()
 
     let player_preparation_trace_start_us = @app.timeline_trace_begin_span(
-      @app.TimelineTraceCategory::System,
+      System,
       "animation_targets.player_preparation",
     )
     let prepare_player = fn(
@@ -2215,12 +2215,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       animation_runtime_scratch_store_prepared_player(
         runtime_scratch,
         player_entity,
-        AnimationPreparedPlayer::{
-          graph_id: graph_handle_id,
-          graph,
-          active_by_node,
-          threaded_graph,
-        },
+        { graph_id: graph_handle_id, graph, active_by_node, threaded_graph },
       )
       counters.players_prepared = counters.players_prepared + 1
     }
@@ -2258,7 +2253,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       })
     }
     @app.timeline_trace_end_span(
-      @app.TimelineTraceCategory::System,
+      System,
       "animation_targets.player_preparation",
       player_preparation_trace_start_us,
     )
@@ -2344,7 +2339,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     if target_id_column is Some(target_id_column) &&
       animated_by_column is Some(animated_by_column) {
       let target_iteration_trace_start_us = @app.timeline_trace_begin_span(
-        @app.TimelineTraceCategory::System,
+        System,
         "animation_targets.target_iteration",
       )
       let process_target = fn(
@@ -2545,7 +2540,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
           })
       }
       @app.timeline_trace_end_span(
-        @app.TimelineTraceCategory::System,
+        System,
         "animation_targets.target_iteration",
         target_iteration_trace_start_us,
       )
@@ -2655,6 +2650,7 @@ pub fn trigger_untargeted_animation_events(world : @ecs.World) -> Unit {
 pub struct AnimationPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn AnimationPlugin::AnimationPlugin() -> AnimationPlugin {
   AnimationPlugin::{  }
 }
@@ -2671,7 +2667,7 @@ pub impl @app.Plugin for AnimationPlugin with fn build(self, app) {
 
 ///|
 pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  animation_plugin_with(app, AnimationPlugin::AnimationPlugin())
+  animation_plugin_with(app, AnimationPlugin())
 }
 
 ///|
@@ -2708,22 +2704,22 @@ pub fn animation_plugin_with(
       animation_set_expire_transitions,
     ),
   )
-  .configure_set(@app.PostUpdate, animation_set_thread, before=[
+  .configure_set(PostUpdate, animation_set_thread, before=[
     animation_set_advance_transitions,
   ])
-  .configure_set(@app.PostUpdate, animation_set_advance_transitions, before=[
+  .configure_set(PostUpdate, animation_set_advance_transitions, before=[
     animation_set_advance_animations,
   ])
-  .configure_set(@app.PostUpdate, animation_set_advance_animations, before=[
+  .configure_set(PostUpdate, animation_set_advance_animations, before=[
     animation_set_animate_targets,
   ])
-  .configure_set(@app.PostUpdate, animation_set_animate_targets, before=[
+  .configure_set(PostUpdate, animation_set_animate_targets, before=[
     animation_set_trigger_untargeted_events,
   ])
-  .configure_set(@app.PostUpdate, animation_set_trigger_untargeted_events, before=[
+  .configure_set(PostUpdate, animation_set_trigger_untargeted_events, before=[
     animation_set_expire_transitions,
   ])
-  .configure_set(@app.PostUpdate, animation_set_animate_targets, before=[
+  .configure_set(PostUpdate, animation_set_animate_targets, before=[
     @transform.transform_set_propagate,
   ])
 }

@@ -151,17 +151,17 @@ const MESH_PIPELINE_KEY_BLEND_RESERVED_BITS : UInt64 = 1879048192UL
 
 ///|
 fn pbr_shader_def(name : String) -> @material.ShaderDefVal {
-  @material.ShaderDefVal::Flag(name)
+  Flag(name)
 }
 
 ///|
 fn pbr_shader_def_uint(name : String, value : UInt) -> @material.ShaderDefVal {
-  @material.ShaderDefVal::UInt(name, value)
+  UInt(name, value)
 }
 
 ///|
 fn pbr_shader_def_int(name : String, value : Int) -> @material.ShaderDefVal {
-  @material.ShaderDefVal::Int(name, value)
+  Int(name, value)
 }
 
 ///|
@@ -197,8 +197,7 @@ fn pbr_pipeline_layout_fragment_sampler_count(
         continue
       }
       match entry.kind() {
-        @render_resource.BindingType::Sampler
-        | @render_resource.BindingType::SamplerBinding(_) => {
+        Sampler | SamplerBinding(_) => {
           let entry_count = entry.count()
           sampler_count += if entry_count > 0 { entry_count } else { 1 }
         }
@@ -330,8 +329,8 @@ fn pbr_mesh_key_is_opaque(mesh_key_bits : UInt64) -> Bool {
 
 ///|
 fn pbr_multiply_blend_state() -> @material.BlendState {
-  @material.BlendState::BlendState(
-    color=@material.BlendComponent::BlendComponent(
+  BlendState(
+    color=BlendComponent(
       src_factor=@wgpu.BLEND_FACTOR_DST,
       dst_factor=@wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
       operation=@wgpu.BLEND_OPERATION_ADD,
@@ -643,53 +642,28 @@ fn pbr_mesh_binding_layout_entry(
   let vertex = @wgpu.SHADER_STAGE_VERTEX.to_uint()
   let fragment = @wgpu.SHADER_STAGE_FRAGMENT.to_uint()
   let kind = match slot {
-    @pbr_render.MeshBindingSlot3d::Model =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        176UL,
-      )
-    @pbr_render.MeshBindingSlot3d::SkinCurrent
-    | @pbr_render.MeshBindingSlot3d::SkinPrevious =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
+    Model =>
+      @render_resource.BindingType::BufferBinding(Storage(true), false, 176UL)
+    SkinCurrent | SkinPrevious =>
+      BufferBinding(
+        Storage(true),
         false,
         @pbr_render.RENDER3D_JOINT_BUFFER_SIZE_BYTES.to_uint64(),
       )
-    @pbr_render.MeshBindingSlot3d::MorphWeightsCurrent
-    | @pbr_render.MeshBindingSlot3d::MorphWeightsPrevious =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
+    MorphWeightsCurrent | MorphWeightsPrevious =>
+      BufferBinding(
+        Storage(true),
         false,
         @pbr_render.RENDER3D_MORPH_BUFFER_SIZE_BYTES.to_uint64(),
       )
-    @pbr_render.MeshBindingSlot3d::MorphTargets =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        48UL,
-      )
-    @pbr_render.MeshBindingSlot3d::MorphDescriptors =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        20UL,
-      )
-    @pbr_render.MeshBindingSlot3d::LightmapTexture =>
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::D2,
-        false,
-      )
-    @pbr_render.MeshBindingSlot3d::LightmapSampler =>
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      )
+    MorphTargets => BufferBinding(Storage(true), false, 48UL)
+    MorphDescriptors => BufferBinding(Storage(true), false, 20UL)
+    LightmapTexture => TextureBinding(Float(true), D2, false)
+    LightmapSampler => SamplerBinding(Filtering)
   }
   let visibility = match slot {
-    @pbr_render.MeshBindingSlot3d::Model => vertex_fragment
-    @pbr_render.MeshBindingSlot3d::LightmapTexture
-    | @pbr_render.MeshBindingSlot3d::LightmapSampler => fragment
+    Model => vertex_fragment
+    LightmapTexture | LightmapSampler => fragment
     _ => vertex
   }
   @render_resource.BindGroupLayoutEntry::new(binding, visibility, kind, count~)
@@ -771,20 +745,12 @@ fn pbr_prepass_view_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       0,
       vertex_fragment,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        true,
-        0UL,
-      ),
+      BufferBinding(Uniform, true, 0UL),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       1,
       vertex_fragment,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        0UL,
-      ),
+      BufferBinding(Uniform, false, 0UL),
     ),
   ]
   if motion_vectors {
@@ -792,11 +758,7 @@ fn pbr_prepass_view_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         2,
         vertex_fragment,
-        @render_resource.BindingType::BufferBinding(
-          @render_resource.BufferBindingType::Uniform,
-          true,
-          0UL,
-        ),
+        BufferBinding(Uniform, true, 0UL),
       ),
     )
   }
@@ -804,11 +766,7 @@ fn pbr_prepass_view_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       14,
       @wgpu.SHADER_STAGE_VERTEX.to_uint(),
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(true),
-        false,
-        16UL,
-      ),
+      BufferBinding(Storage(true), false, 16UL),
     ),
   )
   @material.BindGroupLayoutDescriptor::new(
@@ -1172,7 +1130,7 @@ pub fn MeshPipeline::new(
   clustered_decals_are_usable? : Bool = false,
   standard_material_texture_features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
 ) -> MeshPipeline {
-  MeshPipeline::{
+  {
     binding_arrays_are_usable,
     clustered_decals_are_usable,
     standard_material_texture_features,
@@ -1478,7 +1436,7 @@ pub fn PbrMaterialPipelineSpecializer::new(
   standard_material_texture_features? : StandardMaterialTextureFeatureSet = standard_material_default_texture_feature_set(),
   max_fragment_samplers_per_shader_stage? : UInt? = None,
 ) -> PbrMaterialPipelineSpecializer {
-  PbrMaterialPipelineSpecializer::{
+  {
     properties,
     binding_arrays_are_usable,
     clustered_decals_are_usable,
@@ -1584,11 +1542,7 @@ pub fn PbrPrepassPipelineSpecializer::new(
   binding_arrays_are_usable? : Bool = false,
   depth_clip_control_supported? : Bool = false,
 ) -> PbrPrepassPipelineSpecializer {
-  PbrPrepassPipelineSpecializer::{
-    properties,
-    binding_arrays_are_usable,
-    depth_clip_control_supported,
-  }
+  { properties, binding_arrays_are_usable, depth_clip_control_supported }
 }
 
 ///|

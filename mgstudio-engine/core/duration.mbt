@@ -51,13 +51,13 @@ fn duration_add_saturating(lhs : Int64, rhs : Int64) -> Int64 {
 ///|
 fn duration_from_double_seconds(seconds : Double) -> Duration {
   if seconds <= 0.0 || seconds.is_nan() {
-    return Duration::{ nanos: 0L }
+    return { nanos: 0L }
   }
   if seconds.is_inf() {
-    return Duration::{ nanos: DURATION_MAX_NANOS }
+    return { nanos: DURATION_MAX_NANOS }
   }
   let nanos = (seconds * NANOS_PER_SEC.to_double()).to_int64()
-  Duration::{ nanos: duration_clamp_non_negative_nanos(nanos) }
+  { nanos: duration_clamp_non_negative_nanos(nanos) }
 }
 
 ///|
@@ -70,12 +70,12 @@ pub fn Duration::new(secs : Int64, nanos? : Int = 0) -> Duration {
     secs * NANOS_PER_SEC
   }
   let extra_nanos = if nanos <= 0 { 0L } else { nanos.to_int64() }
-  Duration::{ nanos: duration_add_saturating(nanos_from_secs, extra_nanos) }
+  { nanos: duration_add_saturating(nanos_from_secs, extra_nanos) }
 }
 
 ///|
 pub fn Duration::zero() -> Duration {
-  Duration::{ nanos: 0L }
+  { nanos: 0L }
 }
 
 ///|
@@ -95,21 +95,17 @@ pub fn Duration::from_secs_f64(secs : Double) -> Duration {
 
 ///|
 pub fn Duration::from_millis(millis : Int64) -> Duration {
-  Duration::{
-    nanos: duration_clamp_non_negative_nanos(millis * NANOS_PER_MILLI),
-  }
+  { nanos: duration_clamp_non_negative_nanos(millis * NANOS_PER_MILLI) }
 }
 
 ///|
 pub fn Duration::from_micros(micros : Int64) -> Duration {
-  Duration::{
-    nanos: duration_clamp_non_negative_nanos(micros * NANOS_PER_MICRO),
-  }
+  { nanos: duration_clamp_non_negative_nanos(micros * NANOS_PER_MICRO) }
 }
 
 ///|
 pub fn Duration::from_nanos(nanos : Int64) -> Duration {
-  Duration::{ nanos: duration_clamp_non_negative_nanos(nanos) }
+  { nanos: duration_clamp_non_negative_nanos(nanos) }
 }
 
 ///|
@@ -148,13 +144,13 @@ pub fn Duration::checked_sub(self : Duration, other : Duration) -> Duration? {
   if remaining < 0L {
     None
   } else {
-    Some(Duration::{ nanos: remaining })
+    Some({ nanos: remaining })
   }
 }
 
 ///|
 pub fn Duration::saturating_add(self : Duration, other : Duration) -> Duration {
-  Duration::{ nanos: duration_add_saturating(self.nanos, other.nanos) }
+  { nanos: duration_add_saturating(self.nanos, other.nanos) }
 }
 
 ///|
@@ -174,7 +170,7 @@ pub fn Duration::mul_f64(self : Duration, factor : Double) -> Duration {
     return Duration::zero()
   }
   let nanos = (self.nanos.to_double() * factor).to_int64()
-  Duration::{ nanos: duration_clamp_non_negative_nanos(nanos) }
+  { nanos: duration_clamp_non_negative_nanos(nanos) }
 }
 
 ///|
@@ -182,8 +178,8 @@ pub fn Duration::mul_int(self : Duration, factor : Int) -> Duration {
   if factor <= 0 {
     Duration::zero()
   } else if self.nanos > DURATION_MAX_NANOS / factor.to_int64() {
-    Duration::{ nanos: DURATION_MAX_NANOS }
+    { nanos: DURATION_MAX_NANOS }
   } else {
-    Duration::{ nanos: self.nanos * factor.to_int64() }
+    { nanos: self.nanos * factor.to_int64() }
   }
 }

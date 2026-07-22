@@ -22,13 +22,14 @@ pub(all) struct Checkbox {
 
 ///|
 pub fn checkbox(label : String) -> Checkbox {
-  Checkbox::{ label, }
+  { label, }
 }
 
 ///|
 pub struct CheckboxPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CheckboxPlugin::CheckboxPlugin() -> CheckboxPlugin {
   CheckboxPlugin::{  }
 }

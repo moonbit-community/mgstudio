@@ -81,7 +81,7 @@ fn meshlet_material_shade_pass_descriptor(
 ) -> MeshletMaterialShadePassDescriptor {
   match pass_variant {
     MainOpaque =>
-      MeshletMaterialShadePassDescriptor::{
+      {
         pass_variant,
         label: "meshlet_material_opaque_3d_pass",
         color_attachment_slots: ["view_target"],
@@ -98,7 +98,7 @@ fn meshlet_material_shade_pass_descriptor(
         requires_material_shade_bind_group: true,
       }
     Prepass =>
-      MeshletMaterialShadePassDescriptor::{
+      {
         pass_variant,
         label: "meshlet_material_prepass",
         color_attachment_slots: ["normal", "motion_vectors", "none", "none"],
@@ -123,7 +123,7 @@ fn meshlet_material_shade_pass_descriptor(
         requires_material_shade_bind_group: true,
       }
     DeferredGBufferPrepass =>
-      MeshletMaterialShadePassDescriptor::{
+      {
         pass_variant,
         label: "meshlet_material_deferred_prepass",
         color_attachment_slots: [
@@ -154,9 +154,7 @@ fn meshlet_material_shade_pass_descriptor(
 
 ///|
 pub fn meshlet_main_opaque_pass_descriptor() -> MeshletMaterialShadePassDescriptor {
-  meshlet_material_shade_pass_descriptor(
-    MeshletMaterialShadePassVariant::MainOpaque,
-  )
+  meshlet_material_shade_pass_descriptor(MainOpaque)
 }
 
 ///|
@@ -164,7 +162,7 @@ pub fn meshlet_prepass_descriptor(
   uses_motion_vector_prepass_bind_group? : Bool = false,
 ) -> MeshletMaterialShadePassDescriptor {
   meshlet_material_shade_pass_descriptor(
-    MeshletMaterialShadePassVariant::Prepass,
+    Prepass,
     uses_motion_vector_prepass_bind_group~,
   )
 }
@@ -174,7 +172,7 @@ pub fn meshlet_deferred_gbuffer_prepass_descriptor(
   uses_motion_vector_prepass_bind_group? : Bool = false,
 ) -> MeshletMaterialShadePassDescriptor {
   meshlet_material_shade_pass_descriptor(
-    MeshletMaterialShadePassVariant::DeferredGBufferPrepass,
+    DeferredGBufferPrepass,
     uses_motion_vector_prepass_bind_group~,
   )
 }
@@ -245,7 +243,7 @@ fn meshlet_material_shade_command(
   vertex_start? : Int = 0,
   vertex_end? : Int = 0,
 ) -> MeshletMaterialShadePassCommand {
-  MeshletMaterialShadePassCommand::{
+  {
     kind,
     label,
     bind_group_index,
@@ -277,7 +275,7 @@ fn meshlet_material_bin_draw_calls(
     if meshlet_pipeline_id_valid(material_bin.material_pipeline_id) &&
       instance_manager.material_present_in_scene(material_bin.material_id) {
       let vertex_start = material_bin.material_id * 3
-      draw_calls.push(MeshletMaterialDrawCall::{
+      draw_calls.push({
         material_id: material_bin.material_id,
         material_pipeline_id: material_bin.material_pipeline_id,
         material_bind_group: material_bin.material_bind_group,
@@ -300,11 +298,7 @@ fn meshlet_material_shade_pass_plan(
   let draw_calls = meshlet_material_bin_draw_calls(
     material_bins, instance_manager, has_material_depth, has_material_shade_bind_group,
   )
-  MeshletMaterialShadePassPlan::{
-    descriptor,
-    draw_calls,
-    render_pass_enabled: draw_calls.length() > 0,
-  }
+  { descriptor, draw_calls, render_pass_enabled: draw_calls.length() > 0 }
 }
 
 ///|
@@ -389,22 +383,16 @@ pub fn meshlet_material_shade_pass_commands(
   let commands : Array[MeshletMaterialShadePassCommand] = []
   let descriptor = plan.descriptor
   commands.push(
-    meshlet_material_shade_command(
-      MeshletMaterialShadePassCommandKind::BeginRenderPass,
-      label=descriptor.label,
-    ),
+    meshlet_material_shade_command(BeginRenderPass, label=descriptor.label),
   )
   if has_camera_viewport && descriptor.uses_main_pass_resolution_override {
     commands.push(
-      meshlet_material_shade_command(
-        MeshletMaterialShadePassCommandKind::SetCameraViewport,
-        label="camera_viewport",
-      ),
+      meshlet_material_shade_command(SetCameraViewport, label="camera_viewport"),
     )
   }
   commands.push(
     meshlet_material_shade_command(
-      MeshletMaterialShadePassCommandKind::SetBindGroup,
+      SetBindGroup,
       bind_group_index=0,
       bind_group_kind=descriptor.view_bind_group_kind,
       dynamic_offset_count=descriptor.view_bind_group_dynamic_offset_count,
@@ -412,7 +400,7 @@ pub fn meshlet_material_shade_pass_commands(
   )
   commands.push(
     meshlet_material_shade_command(
-      MeshletMaterialShadePassCommandKind::SetBindGroup,
+      SetBindGroup,
       bind_group_index=1,
       bind_group_kind=if descriptor.sets_binding_array_group {
         "binding_array"
@@ -423,7 +411,7 @@ pub fn meshlet_material_shade_pass_commands(
   )
   commands.push(
     meshlet_material_shade_command(
-      MeshletMaterialShadePassCommandKind::SetBindGroup,
+      SetBindGroup,
       bind_group_index=descriptor.material_shade_bind_group_index,
       bind_group_kind="material_shade",
     ),
@@ -431,14 +419,14 @@ pub fn meshlet_material_shade_pass_commands(
   for draw_call in plan.draw_calls {
     commands.push(
       meshlet_material_shade_command(
-        MeshletMaterialShadePassCommandKind::SetRenderPipeline,
+        SetRenderPipeline,
         material_id=draw_call.material_id,
         material_pipeline_id=draw_call.material_pipeline_id,
       ),
     )
     commands.push(
       meshlet_material_shade_command(
-        MeshletMaterialShadePassCommandKind::SetBindGroup,
+        SetBindGroup,
         bind_group_index=descriptor.material_bind_group_index,
         bind_group_kind="material",
         material_id=draw_call.material_id,
@@ -447,7 +435,7 @@ pub fn meshlet_material_shade_pass_commands(
     )
     commands.push(
       meshlet_material_shade_command(
-        MeshletMaterialShadePassCommandKind::Draw,
+        Draw,
         material_id=draw_call.material_id,
         vertex_start=draw_call.vertex_start,
         vertex_end=draw_call.vertex_end,

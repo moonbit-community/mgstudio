@@ -47,10 +47,10 @@ fn main {
   let mut app = @app.App::new(@ecs.World::new())
     .set_error_handler(@app.ErrorHandlers::warn)
     .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-    .add_systems_param2(@app.Startup, setup)
-    .add_systems_param(@app.Startup, failing_commands)
+    .add_systems_param2(Startup, setup)
+    .add_systems_param(Startup, failing_commands)
     .add_systems(
-      @app.PostStartup,
+      PostStartup,
       @app.fallible_system_config_fn(failing_system).handle_error_with(
         capture_failing_system_error,
       ),
@@ -90,14 +90,14 @@ fn setup(
           "Raise-based error handling\n\nMove the cursor over the ship.\nWarnings come from the global handler.\nPostStartup uses a per-system handler.",
         ),
         @ui.Node::{
-          ..@ui.Node(),
-          position_type: @ui.PositionType::Absolute,
-          left: @ui.Val::Px(12.0F),
-          top: @ui.Val::Px(12.0F),
+          ..Node(),
+          position_type: Absolute,
+          left: Px(12.0F),
+          top: Px(12.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
       ),
     ),
   )

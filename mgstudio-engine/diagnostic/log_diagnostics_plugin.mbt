@@ -28,22 +28,18 @@ pub struct LogDiagnosticsPlugin {
 
 ///|
 pub fn LogDiagnosticsPlugin::LogDiagnosticsPlugin() -> LogDiagnosticsPlugin {
-  LogDiagnosticsPlugin::{
-    debug: false,
-    wait_duration_seconds: 1.0F,
-    filter: None,
-  }
+  { debug: false, wait_duration_seconds: 1.0F, filter: None }
 }
 
 ///|
 pub fn LogDiagnosticsPlugin::filtered(
   filter : Array[DiagnosticPath],
 ) -> LogDiagnosticsPlugin {
-  let filter_map : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let filter_map : @hashmap.HashMap[String, Bool] = HashMap([])
   for path in filter {
     filter_map.set(path.as_str(), true)
   }
-  LogDiagnosticsPlugin::{ ..LogDiagnosticsPlugin(), filter: Some(filter_map) }
+  { ..LogDiagnosticsPlugin(), filter: Some(filter_map) }
 }
 
 ///|
@@ -67,7 +63,7 @@ pub fn LogDiagnosticsState::set_timer_duration(
   self : LogDiagnosticsState,
   duration_seconds : Float,
 ) -> Unit {
-  self.timer = @time.Timer::from_seconds(duration_seconds, @time.Repeating)
+  self.timer = @time.Timer::from_seconds(duration_seconds, Repeating)
 }
 
 ///|
@@ -82,7 +78,7 @@ pub fn LogDiagnosticsState::add_filter(
       !exists
     }
     None => {
-      let filter : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+      let filter : @hashmap.HashMap[String, Bool] = HashMap([])
       filter.set(diagnostic_path.as_str(), true)
       self.filter = Some(filter)
       true
@@ -126,7 +122,7 @@ pub fn LogDiagnosticsState::clear_filter(self : LogDiagnosticsState) -> Unit {
 pub fn LogDiagnosticsState::enable_filtering(
   self : LogDiagnosticsState,
 ) -> Unit {
-  self.filter = Some(@hashmap.HashMap([]))
+  self.filter = Some(HashMap([]))
 }
 
 ///|
@@ -138,10 +134,7 @@ pub fn LogDiagnosticsState::disable_filtering(
 
 ///|
 pub fn LogDiagnosticsState::LogDiagnosticsState() -> LogDiagnosticsState {
-  LogDiagnosticsState::{
-    timer: @time.Timer::from_seconds(1.0F, @time.Repeating),
-    filter: None,
-  }
+  { timer: @time.Timer::from_seconds(1.0F, Repeating), filter: None }
 }
 
 ///|
@@ -158,7 +151,7 @@ pub impl @app.Resource for LogDiagnosticsState with fn resource() {
 pub fn log_diagnostics_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  log_diagnostics_plugin_with(app, LogDiagnosticsPlugin::LogDiagnosticsPlugin())
+  log_diagnostics_plugin_with(app, LogDiagnosticsPlugin())
 }
 
 ///|
@@ -167,10 +160,7 @@ pub fn log_diagnostics_plugin_with(
   plugin : LogDiagnosticsPlugin,
 ) -> @app.App[@ecs.World] {
   let state = LogDiagnosticsState::{
-    timer: @time.Timer::from_seconds(
-      plugin.wait_duration_seconds,
-      @time.Repeating,
-    ),
+    timer: @time.Timer::from_seconds(plugin.wait_duration_seconds, Repeating),
     filter: plugin.filter,
   }
   if plugin.debug {
@@ -245,7 +235,7 @@ fn log_diagnostics_system(
       }
       let message = log_diagnostic_message(diagnostic)
       if message != "" {
-        @app.log_record(@app.Info, message~, target="mgstudio_diagnostic")
+        @app.log_record(Info, message~, target="mgstudio_diagnostic")
       }
     }
   })
@@ -269,7 +259,7 @@ fn log_diagnostics_debug_system(
         continue
       }
       @app.log_record(
-        @app.Debug,
+        Debug,
         message=to_repr(diagnostic).to_string(),
         target="mgstudio_diagnostic",
       )

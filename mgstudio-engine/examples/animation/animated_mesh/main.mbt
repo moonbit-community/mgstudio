@@ -93,7 +93,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 
   ignore(
     @camera.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
         @math.Vec3::new(0.0F, 20.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -129,7 +129,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
     .insert(
       (
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -PI / 4.0F),
+          @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -PI / 4.0F),
         ),
         @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
         @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
@@ -145,7 +145,7 @@ fn setup_camera_and_environment(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup_mesh_and_animation)
-  .add_systems_world(@app.Startup, setup_camera_and_environment)
+  .add_systems_param2(Startup, setup_mesh_and_animation)
+  .add_systems_world(Startup, setup_camera_and_environment)
   .run()
 }

@@ -28,7 +28,7 @@ pub fn UiCornerRadii::new(
   bottom_right : Float,
   bottom_left : Float,
 ) -> UiCornerRadii {
-  UiCornerRadii::{ top_left, top_right, bottom_right, bottom_left }
+  { top_left, top_right, bottom_right, bottom_left }
 }
 
 ///|
@@ -189,7 +189,7 @@ pub(all) struct ExtractedUiNodes {
 
 ///|
 pub fn ExtractedUiNodes::new() -> ExtractedUiNodes {
-  ExtractedUiNodes::{
+  {
     sprites: [],
     sprite_slice_batches: [],
     rects: [],
@@ -277,7 +277,7 @@ pub fn push_extracted_ui_sprite(
   payload : UiSpriteDrawPayload,
 ) -> Unit {
   extracted_ui_nodes_update(world, fn(nodes) {
-    nodes.sprites.push(ExtractedUiSprite::{
+    nodes.sprites.push({
       entity: phase_entity_ref_placeholder(),
       extracted_camera_entity: ui_overlay_target_camera(target_camera),
       payload,
@@ -292,7 +292,7 @@ pub fn push_extracted_ui_sprite_slice_batch(
   payload : UiSpriteSliceBatchDrawPayload,
 ) -> Unit {
   extracted_ui_nodes_update(world, fn(nodes) {
-    nodes.sprite_slice_batches.push(ExtractedUiSpriteSliceBatch::{
+    nodes.sprite_slice_batches.push({
       entity: phase_entity_ref_placeholder(),
       extracted_camera_entity: ui_overlay_target_camera(target_camera),
       payload,
@@ -308,7 +308,7 @@ pub fn push_extracted_ui_rect(
   payload : UiRectDrawPayload,
 ) -> Unit {
   extracted_ui_nodes_update(world, fn(nodes) {
-    nodes.rects.push(ExtractedUiRect::{
+    nodes.rects.push({
       entity: phase_entity_ref_for_main(entity),
       extracted_camera_entity: ui_overlay_target_camera(target_camera),
       payload,
@@ -324,7 +324,7 @@ pub fn push_extracted_ui_box_shadow(
   payload : UiBoxShadowDrawPayload,
 ) -> Unit {
   extracted_ui_nodes_update(world, fn(nodes) {
-    nodes.box_shadows.push(ExtractedUiBoxShadow::{
+    nodes.box_shadows.push({
       entity: phase_entity_ref_for_main(entity),
       extracted_camera_entity: ui_overlay_target_camera(target_camera),
       payload,
@@ -340,7 +340,7 @@ pub fn push_extracted_ui_texture_slice(
   payload : UiTextureSliceDrawPayload,
 ) -> Unit {
   extracted_ui_nodes_update(world, fn(nodes) {
-    nodes.texture_slices.push(ExtractedUiTextureSlice::{
+    nodes.texture_slices.push({
       entity: phase_entity_ref_for_main(entity),
       extracted_camera_entity: ui_overlay_target_camera(target_camera),
       payload,

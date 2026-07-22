@@ -32,12 +32,7 @@ pub fn AutoExposureBuffers::new(
   for _ in 0..<pipeline.histogram_bin_count {
     histogram.push(0)
   }
-  AutoExposureBuffers::{
-    histogram,
-    average_ev100: 0.0F,
-    target_ev100: 0.0F,
-    current_ev100: 0.0F,
-  }
+  { histogram, average_ev100: 0.0F, target_ev100: 0.0F, current_ev100: 0.0F }
 }
 
 ///|
@@ -79,7 +74,7 @@ pub fn auto_exposure_buffers_from_samples(
   let current_ev100 = auto_exposure_adapt_ev100(
     previous_ev100, target_ev100, settings, delta_time,
   )
-  AutoExposureBuffers::{ histogram, average_ev100, target_ev100, current_ev100 }
+  { histogram, average_ev100, target_ev100, current_ev100 }
 }
 
 ///|

@@ -838,7 +838,7 @@ priv struct Render3dAutoExposureCurveGpuData {
 
 ///|
 fn render3d_default_auto_exposure_curve_gpu_data() -> Render3dAutoExposureCurveGpuData {
-  Render3dAutoExposureCurveGpuData::{
+  {
     lut: Bytes::makei(256, _ => 0),
     min_log_lum: 0.0F,
     max_log_lum: 0.0F,
@@ -862,7 +862,7 @@ fn render3d_auto_exposure_curve_gpu_data(
   }
   match curves.get(resolved_handle) {
     Some(curve) =>
-      Render3dAutoExposureCurveGpuData::{
+      {
         lut: curve.lut,
         min_log_lum: curve.min_log_lum,
         max_log_lum: curve.max_log_lum,

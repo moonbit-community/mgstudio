@@ -23,6 +23,7 @@ const SKYBOX_PLUGIN_NAME : String = "mgstudio.core_pipeline.skybox.SkyboxPlugin"
 pub struct SkyboxPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SkyboxPlugin::SkyboxPlugin() -> SkyboxPlugin {
   SkyboxPlugin::{  }
 }
@@ -50,7 +51,7 @@ pub fn SkyboxPipelineKey::new(
   depth_format_raw? : UInt = @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
 ) -> SkyboxPipelineKey {
   let samples = if samples <= 0 { 1 } else { samples }
-  SkyboxPipelineKey::{ target_format_raw, samples, depth_format_raw }
+  { target_format_raw, samples, depth_format_raw }
 }
 
 ///|
@@ -62,7 +63,7 @@ pub struct SkyboxPipelineId {
 pub fn SkyboxPipelineId::new(
   pipeline_id~ : @render_resource.CachedRenderPipelineId,
 ) -> SkyboxPipelineId {
-  SkyboxPipelineId::{ pipeline_id, }
+  { pipeline_id, }
 }
 
 ///|
@@ -93,7 +94,7 @@ pub fn SkyboxBindGroup::new(
   bind_group_id~ : Int,
   skybox_uniform_index~ : Int,
 ) -> SkyboxBindGroup {
-  SkyboxBindGroup::{ bind_group_id, skybox_uniform_index }
+  { bind_group_id, skybox_uniform_index }
 }
 
 ///|
@@ -135,7 +136,7 @@ pub fn SkyboxPrepareViewState::new(
   has_skybox_uniform_binding? : Bool = false,
   has_skybox_gpu_image? : Bool = false,
 ) -> SkyboxPrepareViewState {
-  SkyboxPrepareViewState::{
+  {
     has_skybox,
     target_format_raw,
     msaa_samples,
@@ -178,24 +179,18 @@ fn skybox_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDesc
     @render_resource.BindGroupLayoutEntry::new(
       0,
       fragment,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Float(true),
-        @render_resource.TextureViewDimension::Cube,
-        false,
-      ),
+      TextureBinding(Float(true), Cube, false),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       1,
       fragment,
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      ),
+      SamplerBinding(Filtering),
     ),
     @render_resource.BindGroupLayoutEntry::new(
       2,
       vertex_fragment,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
+      BufferBinding(
+        Uniform,
         true,
         @render_view.VIEW_UNIFORM_SIZE_BYTES.to_uint64(),
       ),
@@ -203,11 +198,7 @@ fn skybox_bind_group_layout_descriptor() -> @render_resource.BindGroupLayoutDesc
     @render_resource.BindGroupLayoutEntry::new(
       3,
       vertex_fragment,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        true,
-        SKYBOX_UNIFORM_BUFFER_SIZE_BYTES,
-      ),
+      BufferBinding(Uniform, true, SKYBOX_UNIFORM_BUFFER_SIZE_BYTES),
     ),
   ])
 }
@@ -275,7 +266,7 @@ fn skybox_draw_params_from_extracted(
   guard entry.skybox.image is Some(image) else { return None }
   let texture_id = image.id()
   guard texture_id >= 0 else { return None }
-  Some(SkyboxDrawParams::{
+  Some({
     texture_id,
     brightness: entry.uniforms.brightness,
     rotation: entry.skybox.rotation.inverse(),
@@ -358,7 +349,7 @@ fn SkyboxUniforms::new(
   brightness~ : Float,
   transform~ : Array[Float],
 ) -> SkyboxUniforms {
-  SkyboxUniforms::{ brightness, transform }
+  { brightness, transform }
 }
 
 ///|
@@ -436,7 +427,7 @@ fn ExtractedSkybox::new(
   skybox~ : @light.Skybox,
   uniforms~ : SkyboxUniforms,
 ) -> ExtractedSkybox {
-  ExtractedSkybox::{ render_entity, skybox, uniforms }
+  { render_entity, skybox, uniforms }
 }
 
 ///|
@@ -456,7 +447,7 @@ priv struct ExtractedSkyboxes {
 
 ///|
 fn ExtractedSkyboxes::ExtractedSkyboxes() -> ExtractedSkyboxes {
-  ExtractedSkyboxes::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
@@ -502,7 +493,7 @@ fn skybox_plugin_install_with(
   plugin : SkyboxPlugin,
 ) -> @app.App[@ecs.World] {
   ignore(plugin)
-  let skybox_uniform_plugin : @render.UniformComponentPlugin[SkyboxUniforms] = @render.UniformComponentPlugin::UniformComponentPlugin()
+  let skybox_uniform_plugin : @render.UniformComponentPlugin[SkyboxUniforms] = UniformComponentPlugin()
   let next = app.init_resource(fn() {
     SkyboxPipelineState::SkyboxPipelineState()
   })
@@ -521,7 +512,7 @@ pub struct SkyboxPipelineState {
 
 ///|
 pub fn SkyboxPipelineState::SkyboxPipelineState() -> SkyboxPipelineState {
-  SkyboxPipelineState::{ pipeline_count: 0, bind_group_count: 0, pipelines: [] }
+  { pipeline_count: 0, bind_group_count: 0, pipelines: [] }
 }
 
 ///|
@@ -603,7 +594,7 @@ fn skybox_pipeline_state_mut_or_init(
   if world.get_resource(SkyboxPipelineState::resource()) is None {
     world.insert_resource(
       SkyboxPipelineState::resource(),
-      SkyboxPipelineState::SkyboxPipelineState(),
+      SkyboxPipelineState(),
     )
   }
   match world.get_resource_mut(SkyboxPipelineState::resource()) {
@@ -622,7 +613,7 @@ fn extracted_skyboxes_mut_or_init(
     is None {
     world.insert_resource(
       (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
-      ExtractedSkyboxes::ExtractedSkyboxes(),
+      ExtractedSkyboxes(),
     )
   }
   match
@@ -756,7 +747,7 @@ fn configure_skybox_render_sub_app(
   if !world.resource(SkyboxPipelineState::resource()).is_present() {
     world.insert_resource(
       SkyboxPipelineState::resource(),
-      SkyboxPipelineState::SkyboxPipelineState(),
+      SkyboxPipelineState(),
     )
   }
   if !world
@@ -764,7 +755,7 @@ fn configure_skybox_render_sub_app(
     .is_present() {
     world.insert_resource(
       (@app.Resource::resource() : @ecs.ResourceKey[ExtractedSkyboxes]),
-      ExtractedSkyboxes::ExtractedSkyboxes(),
+      ExtractedSkyboxes(),
     )
   }
   @render.configure_base_render_sets(sub_app)
@@ -833,10 +824,7 @@ fn prepare_skybox_pipelines(world : @ecs.World) -> Unit {
   let mut pipeline_count = 0
   guard world.get_resource(@render.pipeline_cache_resource_key)
     is Some(pipeline_cache) else {
-    remove_stale_skybox_pipeline_components(
-      world,
-      ExtractedSkyboxes::ExtractedSkyboxes(),
-    )
+    remove_stale_skybox_pipeline_components(world, ExtractedSkyboxes())
     skybox_pipeline_state_mut_or_init(world).modify(fn(state) {
       state.set_counts(
         pipeline_count=0,

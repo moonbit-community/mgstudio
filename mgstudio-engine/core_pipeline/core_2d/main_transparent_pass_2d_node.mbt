@@ -26,7 +26,7 @@ pub struct MainTransparentPass2dNode {
 
 ///|
 pub fn MainTransparentPass2dNode::MainTransparentPass2dNode() -> MainTransparentPass2dNode {
-  MainTransparentPass2dNode::{ label: MAIN_TRANSPARENT_PASS_2D_LABEL }
+  { label: MAIN_TRANSPARENT_PASS_2D_LABEL }
 }
 
 ///|
@@ -52,11 +52,7 @@ pub fn MainTransparentPass2dState::new(
   has_custom_viewport? : Bool = false,
   webgl_requires_viewport_reset? : Bool = false,
 ) -> MainTransparentPass2dState {
-  MainTransparentPass2dState::{
-    has_transparent_phase,
-    has_custom_viewport,
-    webgl_requires_viewport_reset,
-  }
+  { has_transparent_phase, has_custom_viewport, webgl_requires_viewport_reset }
 }
 
 ///|

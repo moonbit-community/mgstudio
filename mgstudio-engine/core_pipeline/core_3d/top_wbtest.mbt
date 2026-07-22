@@ -142,7 +142,7 @@ test "core3d: phase resources live in RenderApp" {
     .add_plugins(@shader.ShaderPlugin::ShaderPlugin())
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(Core3dPlugin::Core3dPlugin())
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   debug_inspect(
     app.world().get_resource(Transparent3dPhase::resource()) is None,
     content="true",
@@ -169,22 +169,14 @@ test "core3d: active Camera3d prepares and retains transparent phase views" {
   let camera_entity = app.world().spawn_empty()
   try! app
   .world()
-  .set_by_key(
-    camera_entity,
-    @camera_components3d.ecs_key_camera3d,
-    @camera_components3d.Camera3d::Camera3d(),
-  )
+  .set_by_key(camera_entity, @camera_components3d.ecs_key_camera3d, Camera3d())
   try! app
   .world()
-  .set_by_key(
-    camera_entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  .set_by_key(camera_entity, @camera_camera.ecs_key_camera, Camera())
   app = app.update()
   let retained_view = @render_view.RetainedViewEntity::new(camera_entity)
   let phases = app
-    .get_sub_app(@app.RenderApp)
+    .get_sub_app(RenderApp)
     .unwrap()
     .world()
     .get_resource(Transparent3dPhase::resource())
@@ -201,7 +193,7 @@ test "core3d: active Camera3d prepares and retains transparent phase views" {
   )
   app = app.update()
   let phases = app
-    .get_sub_app(@app.RenderApp)
+    .get_sub_app(RenderApp)
     .unwrap()
     .world()
     .get_resource(Transparent3dPhase::resource())
@@ -217,7 +209,7 @@ test "core3d: DrawFunctions<Transparent3d> executes the registered render comman
   let seen : Array[@core.Entity] = []
   let draw_function = draw_functions.register("DrawCustom", fn(_world, item) {
     seen.push(item.entity())
-    Transparent3dRenderCommandResult::Success
+    Success
   })
   let entity = @core.Entity::new(17, 2)
   let item = Transparent3d::new(

@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param4(@app.Update, update_bloom_settings)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param4(Update, update_bloom_settings)
   .run()
 }
 
@@ -108,9 +108,9 @@ fn spawn_help_overlay(commands : @app.Commands) -> Unit {
       (
         @text.Text::Text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
       ),
     ),
   )
@@ -217,35 +217,35 @@ fn update_bloom_settings(
 
   match current_bloom {
     Some(current_bloom) =>
-      if @input.key_just_pressed(@window.KeyCode::Space) {
+      if @input.key_just_pressed(Space) {
         commands
         .entity(camera_entity)
         .remove_component(@post_process_bloom.ecs_key_bloom)
       } else {
         let mut intensity = current_bloom.intensity
-        if @input.key_pressed(@window.KeyCode::KeyA) {
+        if @input.key_pressed(KeyA) {
           intensity = intensity - dt / 10.0F
         }
-        if @input.key_pressed(@window.KeyCode::KeyQ) {
+        if @input.key_pressed(KeyQ) {
           intensity = intensity + dt / 10.0F
         }
         intensity = clampf(intensity, 0.0F, 1.0F)
 
         let mut low_frequency_boost = current_bloom.low_frequency_boost
-        if @input.key_pressed(@window.KeyCode::KeyS) {
+        if @input.key_pressed(KeyS) {
           low_frequency_boost = low_frequency_boost - dt / 10.0F
         }
-        if @input.key_pressed(@window.KeyCode::KeyW) {
+        if @input.key_pressed(KeyW) {
           low_frequency_boost = low_frequency_boost + dt / 10.0F
         }
         low_frequency_boost = clampf(low_frequency_boost, 0.0F, 1.0F)
 
         let mut low_frequency_boost_curvature = current_bloom.low_frequency_boost_curvature
-        if @input.key_pressed(@window.KeyCode::KeyD) {
+        if @input.key_pressed(KeyD) {
           low_frequency_boost_curvature = low_frequency_boost_curvature -
             dt / 10.0F
         }
-        if @input.key_pressed(@window.KeyCode::KeyE) {
+        if @input.key_pressed(KeyE) {
           low_frequency_boost_curvature = low_frequency_boost_curvature +
             dt / 10.0F
         }
@@ -254,27 +254,27 @@ fn update_bloom_settings(
         )
 
         let mut high_pass_frequency = current_bloom.high_pass_frequency
-        if @input.key_pressed(@window.KeyCode::KeyF) {
+        if @input.key_pressed(KeyF) {
           high_pass_frequency = high_pass_frequency - dt / 10.0F
         }
-        if @input.key_pressed(@window.KeyCode::KeyR) {
+        if @input.key_pressed(KeyR) {
           high_pass_frequency = high_pass_frequency + dt / 10.0F
         }
         high_pass_frequency = clampf(high_pass_frequency, 0.0F, 1.0F)
 
         let mut composite_mode = current_bloom.composite_mode
-        if @input.key_pressed(@window.KeyCode::KeyG) {
+        if @input.key_pressed(KeyG) {
           composite_mode = Additive
         }
-        if @input.key_pressed(@window.KeyCode::KeyT) {
+        if @input.key_pressed(KeyT) {
           composite_mode = EnergyConserving
         }
 
         let mut threshold = current_bloom.prefilter.threshold
-        if @input.key_pressed(@window.KeyCode::KeyH) {
+        if @input.key_pressed(KeyH) {
           threshold = threshold - dt
         }
-        if @input.key_pressed(@window.KeyCode::KeyY) {
+        if @input.key_pressed(KeyY) {
           threshold = threshold + dt
         }
         if threshold < 0.0F {
@@ -282,19 +282,19 @@ fn update_bloom_settings(
         }
 
         let mut threshold_softness = current_bloom.prefilter.threshold_softness
-        if @input.key_pressed(@window.KeyCode::KeyJ) {
+        if @input.key_pressed(KeyJ) {
           threshold_softness = threshold_softness - dt / 10.0F
         }
-        if @input.key_pressed(@window.KeyCode::KeyU) {
+        if @input.key_pressed(KeyU) {
           threshold_softness = threshold_softness + dt / 10.0F
         }
         threshold_softness = clampf(threshold_softness, 0.0F, 1.0F)
 
         let mut scale_x = current_bloom.scale.x
-        if @input.key_pressed(@window.KeyCode::KeyK) {
+        if @input.key_pressed(KeyK) {
           scale_x = scale_x - dt * 2.0F
         }
-        if @input.key_pressed(@window.KeyCode::KeyI) {
+        if @input.key_pressed(KeyI) {
           scale_x = scale_x + dt * 2.0F
         }
         scale_x = clampf(scale_x, 0.0F, 16.0F)
@@ -313,14 +313,14 @@ fn update_bloom_settings(
         )
       }
     None =>
-      if @input.key_just_pressed(@window.KeyCode::Space) {
+      if @input.key_just_pressed(Space) {
         commands
         .entity(camera_entity)
         .insert_component(@post_process_bloom.Bloom::Bloom())
       }
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyO) {
+  if @input.key_just_pressed(KeyO) {
     commands.entity(camera_entity).insert_component(next_tonemap(tonemapping))
   }
 }

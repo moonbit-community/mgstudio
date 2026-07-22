@@ -184,7 +184,7 @@ fn skybox_pipeline_get_or_create(
     "mgstudio_skybox_pipeline_\{surface_format.raw.to_string()}_\{safe_samples.to_string()}",
   )
   shader.release()
-  backend.skybox_pipeline_cache.push(SkyboxPipelineCacheEntry::{
+  backend.skybox_pipeline_cache.push({
     surface_format,
     samples: safe_samples,
     pipeline,
@@ -273,7 +273,7 @@ pub fn GpuBackend::prepare_skybox_bind_group(
   )
   let id = self.skybox_next_prepared_bind_group_id
   self.skybox_next_prepared_bind_group_id = id + 1
-  self.skybox_prepared_bind_groups.push(SkyboxPreparedBindGroupEntry::{
+  self.skybox_prepared_bind_groups.push({
     id,
     bind_group,
     uniform_buffer: skybox_uniform_buf,

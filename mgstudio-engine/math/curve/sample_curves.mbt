@@ -28,7 +28,7 @@ pub fn[T] SampleCurve::new(
   interpolation : (T, T, Float) -> T,
 ) -> SampleCurve[T] raise EvenCoreError {
   let core = EvenCore::new(domain, samples)
-  SampleCurve::{ core, interpolation }
+  { core, interpolation }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn[T] SampleAutoCurve::new(
   samples : Array[T],
 ) -> SampleAutoCurve[T] raise EvenCoreError {
   let core = EvenCore::new(domain, samples)
-  SampleAutoCurve::{ core, }
+  { core, }
 }
 
 ///|
@@ -126,7 +126,7 @@ pub fn[T] UnevenSampleCurve::new(
   interpolation : (T, T, Float) -> T,
 ) -> UnevenSampleCurve[T] raise UnevenCoreError {
   let core = UnevenCore::new(sample_points)
-  UnevenSampleCurve::{ core, interpolation }
+  { core, interpolation }
 }
 
 ///|

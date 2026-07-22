@@ -29,7 +29,7 @@ pub fn DynamicTextureAtlasBuilder::new(
   max_width : Int,
   max_height : Int,
 ) -> DynamicTextureAtlasBuilder {
-  DynamicTextureAtlasBuilder::{
+  {
     max_width: if max_width <= 0 {
       1
     } else {

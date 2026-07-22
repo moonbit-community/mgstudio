@@ -20,6 +20,7 @@
 pub struct Wireframe {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Wireframe::Wireframe() -> Wireframe {
   Wireframe::{  }
 }
@@ -32,6 +33,7 @@ pub fn Wireframe::Wireframe() -> Wireframe {
 pub struct NoWireframe {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoWireframe::NoWireframe() -> NoWireframe {
   NoWireframe::{  }
 }
@@ -44,12 +46,12 @@ pub struct WireframeColor {
 
 ///|
 pub fn WireframeColor::WireframeColor() -> WireframeColor {
-  WireframeColor::{ color: @color.Color::white() }
+  { color: @color.Color::white() }
 }
 
 ///|
 pub fn WireframeColor::new(color : @color.Color) -> WireframeColor {
-  WireframeColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -58,7 +60,7 @@ pub fn WireframeColor::with_color(
   color : @color.Color,
 ) -> WireframeColor {
   self |> ignore
-  WireframeColor::{ color, }
+  { color, }
 }
 
 ///|
@@ -69,12 +71,12 @@ pub struct WireframeLineWidth {
 
 ///|
 pub fn WireframeLineWidth::WireframeLineWidth() -> WireframeLineWidth {
-  WireframeLineWidth::{ width: 1.0F }
+  { width: 1.0F }
 }
 
 ///|
 pub fn WireframeLineWidth::new(width : Float) -> WireframeLineWidth {
-  WireframeLineWidth::{ width, }
+  { width, }
 }
 
 ///|
@@ -83,7 +85,7 @@ pub fn WireframeLineWidth::with_width(
   width : Float,
 ) -> WireframeLineWidth {
   self |> ignore
-  WireframeLineWidth::{ width, }
+  { width, }
 }
 
 ///|
@@ -107,7 +109,7 @@ pub struct WireframeMaterial {
 
 ///|
 pub fn WireframeMaterial::WireframeMaterial() -> WireframeMaterial {
-  WireframeMaterial::{
+  {
     color: @color.Color::white(),
     line_width: 1.0F,
     topology: WireframeTopology::default(),
@@ -120,7 +122,7 @@ pub fn WireframeMaterial::new(
   line_width : Float,
   topology : WireframeTopology,
 ) -> WireframeMaterial {
-  WireframeMaterial::{ color, line_width, topology }
+  { color, line_width, topology }
 }
 
 ///|
@@ -152,7 +154,7 @@ pub struct Mesh3dWireframe {
 pub fn Mesh3dWireframe::new(
   material : @asset.Handle[WireframeMaterial],
 ) -> Mesh3dWireframe {
-  Mesh3dWireframe::{ material, }
+  { material, }
 }
 
 ///|
@@ -173,7 +175,7 @@ pub struct RenderWireframeMaterial {
 pub fn RenderWireframeMaterial::from_material(
   material : WireframeMaterial,
 ) -> RenderWireframeMaterial {
-  RenderWireframeMaterial::{
+  {
     color: material.color,
     line_width: material.line_width,
     topology: material.topology,
@@ -207,14 +209,12 @@ priv struct WireframeMeshAssetEventCursor {
 
 ///|
 fn WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor() -> WireframeMaterialAssetEventCursor {
-  WireframeMaterialAssetEventCursor::{
-    cursor: @ecs.MessageCursor::MessageCursor(),
-  }
+  { cursor: MessageCursor() }
 }
 
 ///|
 fn WireframeMeshAssetEventCursor::WireframeMeshAssetEventCursor() -> WireframeMeshAssetEventCursor {
-  WireframeMeshAssetEventCursor::{ cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
@@ -239,7 +239,7 @@ pub struct WireframeEntitiesNeedingSpecialization {
 
 ///|
 pub fn WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization() -> WireframeEntitiesNeedingSpecialization {
-  WireframeEntitiesNeedingSpecialization::{ changed: [], removed: [] }
+  { changed: [], removed: [] }
 }
 
 ///|
@@ -287,7 +287,7 @@ pub struct WireframeConfig {
 
 ///|
 pub fn WireframeConfig::WireframeConfig() -> WireframeConfig {
-  WireframeConfig::{
+  {
     global: false,
     default_color: @color.Color::white(),
     default_line_width: 1.0F,
@@ -302,12 +302,7 @@ pub fn WireframeConfig::new(
   default_line_width? : Float = 1.0F,
   default_topology? : WireframeTopology = WireframeTopology::default(),
 ) -> WireframeConfig {
-  WireframeConfig::{
-    global,
-    default_color,
-    default_line_width,
-    default_topology,
-  }
+  { global, default_color, default_line_width, default_topology }
 }
 
 ///|
@@ -315,7 +310,7 @@ pub fn WireframeConfig::with_global(
   self : WireframeConfig,
   global : Bool,
 ) -> WireframeConfig {
-  WireframeConfig::{ ..self, global, }
+  { ..self, global, }
 }
 
 ///|
@@ -323,7 +318,7 @@ pub fn WireframeConfig::with_default_color(
   self : WireframeConfig,
   default_color : @color.Color,
 ) -> WireframeConfig {
-  WireframeConfig::{ ..self, default_color, }
+  { ..self, default_color, }
 }
 
 ///|
@@ -331,7 +326,7 @@ pub fn WireframeConfig::with_default_line_width(
   self : WireframeConfig,
   default_line_width : Float,
 ) -> WireframeConfig {
-  WireframeConfig::{ ..self, default_line_width, }
+  { ..self, default_line_width, }
 }
 
 ///|
@@ -339,7 +334,7 @@ pub fn WireframeConfig::with_default_topology(
   self : WireframeConfig,
   default_topology : WireframeTopology,
 ) -> WireframeConfig {
-  WireframeConfig::{ ..self, default_topology, }
+  { ..self, default_topology, }
 }
 
 ///|
@@ -394,6 +389,7 @@ let wireframe_render_set_node : @app.SystemSet = @app.system_set(
 pub struct WireframePlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn WireframePlugin::WireframePlugin() -> WireframePlugin {
   WireframePlugin::{  }
 }
@@ -412,25 +408,25 @@ pub impl @app.Plugin for WireframePlugin with fn build(_self, app) {
 fn init_wireframe_resources(world : @ecs.World) -> Unit {
   let wireframe_config = get_wireframe_config_resource(world)
   if !wireframe_config.is_present() {
-    wireframe_config.insert(WireframeConfig::WireframeConfig())
+    wireframe_config.insert(WireframeConfig())
   }
   if world.get_resource(WireframeEntitiesNeedingSpecialization::resource())
     is None {
     world.insert_resource(
       WireframeEntitiesNeedingSpecialization::resource(),
-      WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization(),
+      WireframeEntitiesNeedingSpecialization(),
     )
   }
   if world.get_resource(wireframe_material_asset_event_cursor_key) is None {
     world.insert_resource(
       wireframe_material_asset_event_cursor_key,
-      WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor(),
+      WireframeMaterialAssetEventCursor(),
     )
   }
   if world.get_resource(wireframe_mesh_asset_event_cursor_key) is None {
     world.insert_resource(
       wireframe_mesh_asset_event_cursor_key,
-      WireframeMeshAssetEventCursor::WireframeMeshAssetEventCursor(),
+      WireframeMeshAssetEventCursor(),
     )
   }
 }
@@ -482,7 +478,7 @@ fn setup_global_wireframe_material(world : @ecs.World) -> Unit {
   })
   world.insert_resource(
     (@app.Resource::resource() : @ecs.ResourceKey[GlobalWireframeMaterial]),
-    GlobalWireframeMaterial::{ handle, },
+    { handle, },
   )
 }
 
@@ -778,7 +774,7 @@ fn wireframe_entities_needing_specialization_mut_or_init(
     is None {
     world.insert_resource(
       WireframeEntitiesNeedingSpecialization::resource(),
-      WireframeEntitiesNeedingSpecialization::WireframeEntitiesNeedingSpecialization(),
+      WireframeEntitiesNeedingSpecialization(),
     )
   }
   match
@@ -805,7 +801,7 @@ fn wireframe_collect_unique_entity(
 fn wireframe_material_asset_changed_ids_since_last_check(
   world : @ecs.World,
 ) -> @hashset.HashSet[Int] {
-  let changed_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_ids : @hashset.HashSet[Int] = HashSet([])
   let event_key : @ecs.MessageKey[@asset.AssetEvent[WireframeMaterial]] = @ecs.Message::message()
   if !world.contains_message(event_key) {
     return changed_ids
@@ -813,7 +809,7 @@ fn wireframe_material_asset_changed_ids_since_last_check(
   if world.get_resource(wireframe_material_asset_event_cursor_key) is None {
     world.insert_resource(
       wireframe_material_asset_event_cursor_key,
-      WireframeMaterialAssetEventCursor::WireframeMaterialAssetEventCursor(),
+      WireframeMaterialAssetEventCursor(),
     )
   }
   guard world.get_resource_mut(wireframe_material_asset_event_cursor_key)
@@ -838,7 +834,7 @@ fn wireframe_material_asset_changed_ids_since_last_check(
 fn wireframe_mesh_asset_changed_ids_since_last_check(
   world : @ecs.World,
 ) -> @hashset.HashSet[Int] {
-  let changed_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_ids : @hashset.HashSet[Int] = HashSet([])
   let event_key : @ecs.MessageKey[@asset.AssetEvent[@mesh.Mesh]] = @ecs.Message::message()
   if !world.contains_message(event_key) {
     return changed_ids
@@ -846,7 +842,7 @@ fn wireframe_mesh_asset_changed_ids_since_last_check(
   if world.get_resource(wireframe_mesh_asset_event_cursor_key) is None {
     world.insert_resource(
       wireframe_mesh_asset_event_cursor_key,
-      WireframeMeshAssetEventCursor::WireframeMeshAssetEventCursor(),
+      WireframeMeshAssetEventCursor(),
     )
   }
   guard world.get_resource_mut(wireframe_mesh_asset_event_cursor_key)
@@ -1004,7 +1000,7 @@ fn render_wireframe_instances_mut_or_init(
   if world.get_resource(RenderWireframeInstances::resource()) is None {
     world.insert_resource(
       RenderWireframeInstances::resource(),
-      RenderWireframeInstances::RenderWireframeInstances(),
+      RenderWireframeInstances(),
     )
   }
   match world.get_resource_mut(RenderWireframeInstances::resource()) {
@@ -1102,7 +1098,7 @@ fn render_wireframe_assets_mut_or_init(
   if world.get_resource(RenderWireframeAssets::resource()) is None {
     world.insert_resource(
       RenderWireframeAssets::resource(),
-      RenderWireframeAssets::RenderWireframeAssets(),
+      RenderWireframeAssets(),
     )
   }
   match world.get_resource_mut(RenderWireframeAssets::resource()) {
@@ -1135,7 +1131,7 @@ fn dirty_wireframe_specializations_mut_or_init(
   if world.get_resource(DirtyWireframeSpecializations::resource()) is None {
     world.insert_resource(
       DirtyWireframeSpecializations::resource(),
-      DirtyWireframeSpecializations::DirtyWireframeSpecializations(),
+      DirtyWireframeSpecializations(),
     )
   }
   match world.get_resource_mut(DirtyWireframeSpecializations::resource()) {
@@ -1162,7 +1158,7 @@ fn wireframe_view_key_cache_mut_or_init(
   if world.get_resource(WireframeViewKeyCache::resource()) is None {
     world.insert_resource(
       WireframeViewKeyCache::resource(),
-      WireframeViewKeyCache::WireframeViewKeyCache(),
+      WireframeViewKeyCache(),
     )
   }
   match world.get_resource_mut(WireframeViewKeyCache::resource()) {
@@ -1651,8 +1647,7 @@ pub fn collect_wireframe_3d_phase_buffers_system(world : @ecs.World) -> Unit {
       @render_batching.IndirectParametersBuffersSettings::resource(),
     ) {
     Some(value) => value
-    None =>
-      @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings()
+    None => IndirectParametersBuffersSettings()
   }
   phase_instances_ref.modify(fn(phase_instances) {
     phase_indirect_ref.modify(fn(phase_indirect) {
@@ -1797,7 +1792,7 @@ fn wireframe_3d_execute_thin_command(
   render_mesh_instances : RenderMeshInstances,
   pipeline_cache : @render_resource.PipelineCache,
 ) -> Bool {
-  guard plan.kind() == Wireframe3dRenderCommandKind::Thin else { return false }
+  guard plan.kind() == Thin else { return false }
   guard plan.thin_immediates() is Some(immediates) else { return false }
   guard pipeline_cache.get_render_pipeline(plan.pipeline()) is Some(_) else {
     return false
@@ -1852,7 +1847,7 @@ fn wireframe_3d_execute_wide_command(
   render_mesh_instances : RenderMeshInstances,
   pipeline_cache : @render_resource.PipelineCache,
 ) -> Bool {
-  guard plan.kind() == Wireframe3dRenderCommandKind::Wide else { return false }
+  guard plan.kind() == Wide else { return false }
   guard plan.wide_immediates() is Some(immediates) else { return false }
   guard plan.wide_bind_group_dynamic_offset() is Some(params_index) else {
     return false
@@ -2049,7 +2044,7 @@ fn wireframe_3d_render_node_system(world : @ecs.World) -> Unit {
       }
       match decision {
         Some(Planned(command)) =>
-          if command.kind() == Wireframe3dRenderCommandKind::Thin {
+          if command.kind() == Thin {
             if wireframe_3d_execute_thin_command(
                 world, command, retained_view_entity, render_mesh_instances, pipeline_cache,
               ) {
@@ -2101,10 +2096,7 @@ fn wireframe_3d_phases_mut_or_init(
   world : @ecs.World,
 ) -> @ecs.ResourceMut[Wireframe3dPhases] {
   if world.get_resource(Wireframe3dPhases::resource()) is None {
-    world.insert_resource(
-      Wireframe3dPhases::resource(),
-      Wireframe3dPhases::Wireframe3dPhases(),
-    )
+    world.insert_resource(Wireframe3dPhases::resource(), Wireframe3dPhases())
   }
   match world.get_resource_mut(Wireframe3dPhases::resource()) {
     Some(value) => value
@@ -2145,7 +2137,7 @@ fn extract_wireframe_3d_camera_system(world : @ecs.World) -> Unit {
       let (main_entity, _camera3d, camera_opt, no_indirect_drawing) = data
       let camera = match camera_opt.value() {
         Some(value) => value
-        None => @camera_camera.Camera::Camera()
+        None => Camera()
       }
       if !camera.is_active {
         return
@@ -2153,7 +2145,7 @@ fn extract_wireframe_3d_camera_system(world : @ecs.World) -> Unit {
       let requested_mode = if no_indirect_drawing.present() {
         @render_batching.GpuPreprocessingMode::PreprocessingOnly
       } else {
-        @render_batching.GpuPreprocessingMode::Culling
+        Culling
       }
       let gpu_preprocessing_mode = gpu_preprocessing_support.min(requested_mode)
       phases.prepare_for_new_frame(main_entity, gpu_preprocessing_mode)
@@ -2245,77 +2237,67 @@ fn configure_wireframe_render_sub_app(
   wireframe_init_render_resource_if_missing(
     world,
     SpecializedWireframePipelineCache::resource(),
-    fn() {
-      SpecializedWireframePipelineCache::SpecializedWireframePipelineCache()
-    },
+    fn() { SpecializedWireframePipelineCache() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     SpecializedWireframeMeshPipelines::resource(),
-    fn() {
-      SpecializedWireframeMeshPipelines::SpecializedWireframeMeshPipelines()
-    },
+    fn() { SpecializedWireframeMeshPipelines() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     RenderWireframeInstances::resource(),
-    fn() { RenderWireframeInstances::RenderWireframeInstances() },
+    fn() { RenderWireframeInstances() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     RenderWireframeAssets::resource(),
-    fn() { RenderWireframeAssets::RenderWireframeAssets() },
+    fn() { RenderWireframeAssets() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     WireframeWideBindGroups::resource(),
-    fn() { WireframeWideBindGroups::WireframeWideBindGroups() },
+    fn() { WireframeWideBindGroups() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     PendingWireframeQueues::resource(),
-    fn() { PendingWireframeQueues::PendingWireframeQueues() },
+    fn() { PendingWireframeQueues() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     Wireframe3dDrawFunctions::resource(),
-    fn() { Wireframe3dDrawFunctions::Wireframe3dDrawFunctions() },
+    fn() { Wireframe3dDrawFunctions() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     DirtyWireframeSpecializations::resource(),
-    fn() { DirtyWireframeSpecializations::DirtyWireframeSpecializations() },
+    fn() { DirtyWireframeSpecializations() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     Wireframe3dPhases::resource(),
-    fn() { Wireframe3dPhases::Wireframe3dPhases() },
+    fn() { Wireframe3dPhases() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     Wireframe3dBatchedInstanceBuffer::resource(),
-    fn() {
-      Wireframe3dBatchedInstanceBuffer::Wireframe3dBatchedInstanceBuffer()
-    },
+    fn() { Wireframe3dBatchedInstanceBuffer() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     Wireframe3dPhaseBatchedInstanceBuffers::resource(),
-    fn() {
-      Wireframe3dPhaseBatchedInstanceBuffers::Wireframe3dPhaseBatchedInstanceBuffers()
-    },
+    fn() { Wireframe3dPhaseBatchedInstanceBuffers() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     Wireframe3dPhaseIndirectParametersBuffers::resource(),
-    fn() {
-      Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers()
-    },
+    fn() { Wireframe3dPhaseIndirectParametersBuffers() },
   )
   wireframe_init_render_resource_if_missing(
     world,
     WireframeViewKeyCache::resource(),
-    fn() { WireframeViewKeyCache::WireframeViewKeyCache() },
+    fn() { WireframeViewKeyCache() },
   )
   let stage = @render.render_schedule_stage()
   let extract_stage = @render.render_extract_schedule_stage()
@@ -2444,7 +2426,7 @@ fn configure_wireframe_render_sub_app(
 
 ///|
 pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  wireframe_plugin_with(app, WireframePlugin::WireframePlugin())
+  wireframe_plugin_with(app, WireframePlugin())
 }
 
 ///|
@@ -2454,9 +2436,9 @@ pub fn wireframe_plugin_with(
 ) -> @app.App[@ecs.World] {
   @asset.init_asset(app, fn() { WireframeMaterial::WireframeMaterial() })
   .add_startup_system(wireframe_startup_system)
-  .add_systems_world(@app.PostUpdate, wireframe_material_application_system)
+  .add_systems_world(PostUpdate, wireframe_material_application_system)
   .add_systems_world(
-    @app.PostUpdate,
+    PostUpdate,
     check_wireframe_entities_needing_specialization_system,
   )
   |> fn(next) {

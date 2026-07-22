@@ -28,7 +28,7 @@ pub fn[T] Curve::new(
   domain : Interval,
   sample_unchecked : (Float) -> T,
 ) -> Curve[T] {
-  Curve::{ domain_: domain, sample_unchecked_fn: sample_unchecked }
+  { domain_: domain, sample_unchecked_fn: sample_unchecked }
 }
 
 ///|
@@ -158,9 +158,7 @@ pub fn[T] Curve::resample(
   points : Int,
   interpolation : (T, T, Float) -> T,
 ) -> SampleCurve[T] raise EvenCoreError {
-  let values = self.samples(points) catch {
-    _ => raise EvenCoreError::UnboundedDomain
-  }
+  let values = self.samples(points) catch { _ => raise UnboundedDomain }
   SampleCurve::new(self.domain_, values, interpolation)
 }
 
@@ -169,8 +167,6 @@ pub fn[T] Curve::resample_auto(
   self : Curve[T],
   points : Int,
 ) -> SampleAutoCurve[T] raise EvenCoreError {
-  let values = self.samples(points) catch {
-    _ => raise EvenCoreError::UnboundedDomain
-  }
+  let values = self.samples(points) catch { _ => raise UnboundedDomain }
   SampleAutoCurve::new(self.domain_, values)
 }

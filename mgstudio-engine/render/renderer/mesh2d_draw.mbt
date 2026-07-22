@@ -88,20 +88,17 @@ pub fn HostMaterial2dBinding::uniform(
   binding : UInt,
   bytes : Bytes,
 ) -> HostMaterial2dBinding {
-  HostMaterial2dBinding::{ binding, value: Uniform(bytes) }
+  { binding, value: Uniform(bytes) }
 }
 
 ///|
 pub fn HostMaterial2dBinding::texture(
   binding : UInt,
   texture_id : Int,
-  sample_type? : HostMaterial2dTextureSampleType = HostMaterial2dTextureSampleType::Float,
-  view_dimension? : HostMaterial2dTextureViewDimension = HostMaterial2dTextureViewDimension::D2,
+  sample_type? : HostMaterial2dTextureSampleType = Float,
+  view_dimension? : HostMaterial2dTextureViewDimension = D2,
 ) -> HostMaterial2dBinding {
-  HostMaterial2dBinding::{
-    binding,
-    value: Texture(texture_id, sample_type, view_dimension),
-  }
+  { binding, value: Texture(texture_id, sample_type, view_dimension) }
 }
 
 ///|
@@ -109,7 +106,7 @@ pub fn HostMaterial2dBinding::sampler(
   binding : UInt,
   texture_id : Int,
 ) -> HostMaterial2dBinding {
-  HostMaterial2dBinding::{ binding, value: Sampler(texture_id) }
+  { binding, value: Sampler(texture_id) }
 }
 
 ///|
@@ -138,7 +135,7 @@ pub fn HostMaterial2dBindGroup::new(
       )
     }
   }
-  HostMaterial2dBindGroup::{ bindings: normalized }
+  { bindings: normalized }
 }
 
 ///|
@@ -410,21 +407,21 @@ fn mesh2d_default_mesh_vertex_buffer_layout() -> @mesh.MeshVertexBufferLayout {
     ],
     layout=@mesh.VertexBufferLayout::new(
       array_stride=MESH2D_VERTEX_STRIDE_BYTES.to_int(),
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
+      step_mode=Vertex,
       attributes=[
         @mesh.VertexAttribute::new(
           offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
+          format=Float32x3,
           shader_location=0,
         ),
         @mesh.VertexAttribute::new(
           offset=12,
-          format=@mesh.MeshVertexFormat::Float32x2,
+          format=Float32x2,
           shader_location=2,
         ),
         @mesh.VertexAttribute::new(
           offset=20,
-          format=@mesh.MeshVertexFormat::Float32x4,
+          format=Float32x4,
           shader_location=4,
         ),
       ],
@@ -499,22 +496,10 @@ test "mesh2d material vertex layout follows Bevy attribute descriptors" {
       @mesh.MeshVertexAttribute::position().id(),
       @mesh.MeshVertexAttribute::uv_0().id(),
     ],
-    layout=@mesh.VertexBufferLayout::new(
-      array_stride=20,
-      step_mode=@mesh.MeshVertexStepMode::Vertex,
-      attributes=[
-        @mesh.VertexAttribute::new(
-          offset=0,
-          format=@mesh.MeshVertexFormat::Float32x3,
-          shader_location=0,
-        ),
-        @mesh.VertexAttribute::new(
-          offset=12,
-          format=@mesh.MeshVertexFormat::Float32x2,
-          shader_location=1,
-        ),
-      ],
-    ),
+    layout=@mesh.VertexBufferLayout::new(array_stride=20, step_mode=Vertex, attributes=[
+      @mesh.VertexAttribute::new(offset=0, format=Float32x3, shader_location=0),
+      @mesh.VertexAttribute::new(offset=12, format=Float32x2, shader_location=1),
+    ]),
   )
   let vertex_layout = mesh2d_material_vertex_buffer_layout(mesh_layout).unwrap()
   debug_inspect(vertex_layout.array_stride, content="20")
@@ -660,7 +645,7 @@ test "mesh2d pipeline cache key tracks descriptor specialization inputs" {
     .with_vertex(
       @render_resource.VertexState::new(
         Some("shaders/specialized_vertex.wgsl"),
-        [@render_resource.ShaderDefVal::UInt("SPECIALIZED_MODE", 7U)],
+        [UInt("SPECIALIZED_MODE", 7U)],
         Some("vertex"),
         [],
       ),
@@ -669,7 +654,7 @@ test "mesh2d pipeline cache key tracks descriptor specialization inputs" {
       Some(
         @render_resource.FragmentState::new(
           Some("shaders/specialized_fragment.wgsl"),
-          [@render_resource.ShaderDefVal::Flag("SPECIALIZED_FRAGMENT")],
+          [Flag("SPECIALIZED_FRAGMENT")],
           Some("fragment"),
           [],
         ),
@@ -735,11 +720,7 @@ test "mesh2d material bind group cache separates layout from data" {
   ])
   let different_layout = HostMaterial2dBindGroup::new([
     HostMaterial2dBinding::uniform(0U, host_material2d_f32le_pack([1.0F])),
-    HostMaterial2dBinding::texture(
-      1U,
-      7,
-      sample_type=HostMaterial2dTextureSampleType::UInt,
-    ),
+    HostMaterial2dBinding::texture(1U, 7, sample_type=UInt),
     HostMaterial2dBinding::sampler(2U, 7),
   ])
   debug_inspect(
@@ -853,26 +834,10 @@ fn host_material2d_binding_layout_kind_key(
 ) -> Int {
   match value {
     Uniform(_) => 1
-    Texture(
-      _,
-      HostMaterial2dTextureSampleType::Float,
-      HostMaterial2dTextureViewDimension::D2
-    ) => 2
-    Texture(
-      _,
-      HostMaterial2dTextureSampleType::Float,
-      HostMaterial2dTextureViewDimension::D2Array
-    ) => 4
-    Texture(
-      _,
-      HostMaterial2dTextureSampleType::UInt,
-      HostMaterial2dTextureViewDimension::D2
-    ) => 5
-    Texture(
-      _,
-      HostMaterial2dTextureSampleType::UInt,
-      HostMaterial2dTextureViewDimension::D2Array
-    ) => 6
+    Texture(_, Float, D2) => 2
+    Texture(_, Float, D2Array) => 4
+    Texture(_, UInt, D2) => 5
+    Texture(_, UInt, D2Array) => 6
     Sampler(_) => 3
   }
 }
@@ -995,8 +960,8 @@ fn host_material2d_texture_sample_type_key(
   sample_type : HostMaterial2dTextureSampleType,
 ) -> UInt64 {
   match sample_type {
-    HostMaterial2dTextureSampleType::Float => 1UL
-    HostMaterial2dTextureSampleType::UInt => 2UL
+    Float => 1UL
+    UInt => 2UL
   }
 }
 
@@ -1005,8 +970,8 @@ fn host_material2d_texture_view_dimension_key(
   view_dimension : HostMaterial2dTextureViewDimension,
 ) -> UInt64 {
   match view_dimension {
-    HostMaterial2dTextureViewDimension::D2 => 1UL
-    HostMaterial2dTextureViewDimension::D2Array => 2UL
+    D2 => 1UL
+    D2Array => 2UL
   }
 }
 
@@ -1071,10 +1036,7 @@ fn host_material2d_bind_group_cache_key(
         Texture(texture_id, sample_type, view_dimension)
       Sampler(texture_id) => Sampler(texture_id)
     }
-    cloned.push(HostMaterial2dBinding::{
-      binding: binding.binding,
-      value: cloned_value,
-    })
+    cloned.push({ binding: binding.binding, value: cloned_value })
   }
   cloned
 }
@@ -1120,7 +1082,7 @@ fn load_wgsl_with_defines_required_mesh2d_material(
   define_keys : Array[String],
   pipeline_descriptor? : @render_resource.RenderPipelineDescriptor? = None,
 ) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   for key in define_keys {
     defines.set(key, true)
   }
@@ -1133,12 +1095,9 @@ fn load_wgsl_with_defines_required_mesh2d_material(
           match shader_def {
             Flag(name) => defines.set(name, true)
             Bool(name, value) => defines.set(name, value)
-            Int(name, value) =>
-              value_defines.set(name, @wgsl_common.ShaderDefValue::Int(value))
-            UInt(name, value) =>
-              value_defines.set(name, @wgsl_common.ShaderDefValue::UInt(value))
-            String(name, value) =>
-              value_defines.set(name, @wgsl_common.ShaderDefValue::Raw(value))
+            Int(name, value) => value_defines.set(name, Int(value))
+            UInt(name, value) => value_defines.set(name, UInt(value))
+            String(name, value) => value_defines.set(name, Raw(value))
           }
         }
       }
@@ -1440,7 +1399,7 @@ fn mesh2d_material_layout_for_bind_group(
   pipeline_layout.set_label(
     "mgstudio_mesh2d_pipeline_layout_\{layout_key_string}",
   )
-  backend.mesh2d_material_layout_cache.push(Mesh2dMaterialLayoutCacheEntry::{
+  backend.mesh2d_material_layout_cache.push({
     key: layout_signature,
     bind_group_layout: material_bgl,
     pipeline_layout,
@@ -1718,7 +1677,7 @@ fn create_mesh2d_registered_pipeline(
   let wgsl = load_wgsl_preprocessed(
     backend.assets_base,
     descriptor.shader_path,
-    @hashmap.HashMap([]),
+    HashMap([]),
     mesh2d_pipeline_value_defines(),
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
@@ -1792,10 +1751,7 @@ fn mesh2d_registered_pipeline_for_draw(
     is Some(pipeline) else {
     return None
   }
-  backend.mesh2d_pipeline_cache.push(Mesh2dPipelineCacheEntry::{
-    key: cache_key,
-    pipeline,
-  })
+  backend.mesh2d_pipeline_cache.push({ key: cache_key, pipeline })
   backend.mesh2d_pipeline_cache_index.set(
     cache_key,
     backend.mesh2d_pipeline_cache.length() - 1,
@@ -1812,10 +1768,7 @@ pub fn GpuBackend::register_mesh2d_pipeline_descriptor(
   if pipeline_id == 0UL {
     return
   }
-  self.mesh2d_pipeline_descriptors[pipeline_id] = Mesh2dRegisteredPipelineDescriptor::{
-    pipeline_id,
-    shader_path,
-  }
+  self.mesh2d_pipeline_descriptors[pipeline_id] = { pipeline_id, shader_path }
 }
 
 ///|
@@ -1964,8 +1917,8 @@ fn host_material2d_texture_sample_type_to_wgpu(
   sample_type : HostMaterial2dTextureSampleType,
 ) -> UInt {
   match sample_type {
-    HostMaterial2dTextureSampleType::Float => @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT
-    HostMaterial2dTextureSampleType::UInt => @wgpu.TEXTURE_SAMPLE_TYPE_UINT
+    Float => @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT
+    UInt => @wgpu.TEXTURE_SAMPLE_TYPE_UINT
   }
 }
 
@@ -1974,9 +1927,8 @@ fn host_material2d_texture_view_dimension_to_wgpu(
   view_dimension : HostMaterial2dTextureViewDimension,
 ) -> UInt {
   match view_dimension {
-    HostMaterial2dTextureViewDimension::D2 => @wgpu.TEXTURE_VIEW_DIMENSION_2D
-    HostMaterial2dTextureViewDimension::D2Array =>
-      @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY
+    D2 => @wgpu.TEXTURE_VIEW_DIMENSION_2D
+    D2Array => @wgpu.TEXTURE_VIEW_DIMENSION_2D_ARRAY
   }
 }
 
@@ -1986,7 +1938,7 @@ fn mesh2d_material_texture_view_for_binding(
   view_dimension : HostMaterial2dTextureViewDimension,
 ) -> @wgpu.TextureView {
   match view_dimension {
-    HostMaterial2dTextureViewDimension::D2 =>
+    D2 =>
       match texture.sample_view {
         Some(sampled) =>
           if texture.format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) ||
@@ -1997,7 +1949,7 @@ fn mesh2d_material_texture_view_for_binding(
           }
         None => texture.view
       }
-    HostMaterial2dTextureViewDimension::D2Array =>
+    D2Array =>
       match texture.sample_view {
         Some(sampled) => sampled
         None => texture.view
@@ -2091,7 +2043,7 @@ fn mesh2d_material_bind_group_for_draw(
     material_bgl,
     label="mgstudio_mesh2d_material_bg",
   )
-  backend.mesh2d_material_bg_cache.push(Mesh2dMaterialBindGroupCacheEntry::{
+  backend.mesh2d_material_bg_cache.push({
     key: cache_key,
     bind_group,
     uniform_buffers,
@@ -2142,7 +2094,7 @@ fn mesh2d_pipeline_key_for_format(
       }
     None => mesh2d_fragment_shader_path_or_default(fragment_shader_path)
   }
-  Mesh2dPipelineKey::{
+  {
     color_format: format,
     primitive_topology,
     blend_alpha,
@@ -2216,10 +2168,7 @@ fn mesh2d_get_or_create_pipeline(
   let pipeline = create_mesh2d_pipeline(
     backend, key, material_pipeline_layout, pipeline_label,
   )
-  backend.mesh2d_pipeline_cache.push(Mesh2dPipelineCacheEntry::{
-    key: cache_key,
-    pipeline,
-  })
+  backend.mesh2d_pipeline_cache.push({ key: cache_key, pipeline })
   backend.mesh2d_pipeline_cache_index.set(
     cache_key,
     backend.mesh2d_pipeline_cache.length() - 1,

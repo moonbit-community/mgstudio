@@ -109,7 +109,7 @@ impl @app.Resource for AppStatus with fn resource() {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{
+  {
     contact_shadows: Enabled,
     shadow_maps: Enabled,
     light_rotation: Rotating,
@@ -194,7 +194,7 @@ fn on_flight_helmet_pointer_over(
   commands : @app.Commands,
   windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
 ) -> Unit {
-  set_primary_window_cursor(commands, windows, @window.SystemCursorIcon::Grab)
+  set_primary_window_cursor(commands, windows, Grab)
 }
 
 ///|
@@ -203,11 +203,7 @@ fn on_flight_helmet_pointer_out(
   commands : @app.Commands,
   windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
 ) -> Unit {
-  set_primary_window_cursor(
-    commands,
-    windows,
-    @window.SystemCursorIcon::Default,
-  )
+  set_primary_window_cursor(commands, windows, Default)
 }
 
 ///|
@@ -223,11 +219,7 @@ fn on_flight_helmet_pointer_drag(
   try! scene_roots.view(fn(_entity, transform) {
     transform.modify(fn(value) { value.rotate_y(pointer.delta().x * 0.01F) })
   })
-  set_primary_window_cursor(
-    commands,
-    windows,
-    @window.SystemCursorIcon::Grabbing,
-  )
+  set_primary_window_cursor(commands, windows, Grabbing)
 }
 
 ///|
@@ -236,11 +228,7 @@ fn on_flight_helmet_pointer_drag_end(
   commands : @app.Commands,
   windows : @ecs.Query[@core.Entity, @ecs.With[@window.PrimaryWindow]],
 ) -> Unit {
-  set_primary_window_cursor(
-    commands,
-    windows,
-    @window.SystemCursorIcon::Default,
-  )
+  set_primary_window_cursor(commands, windows, Default)
 }
 
 ///|
@@ -334,7 +322,7 @@ fn spawn_ground_plane(
   let mesh = meshes.modify(fn(mesh_assets) {
     mesh_assets
     |> @pbr.add_mesh(
-      @mesh_primitives.CircleMeshBuilder::from_circle(@math.Circle::Circle()).build(),
+      @mesh_primitives.CircleMeshBuilder::from_circle(Circle()).build(),
     )
   })
   let material = materials.modify(fn(material_assets) {
@@ -365,32 +353,32 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Contact Shadows", [
       (ExampleSetting::ContactShadows(Enabled), "On"),
-      (ExampleSetting::ContactShadows(Disabled), "Off"),
+      (ContactShadows(Disabled), "Off"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Shadow Maps", [
       (ExampleSetting::ShadowMaps(Enabled), "On"),
-      (ExampleSetting::ShadowMaps(Disabled), "Off"),
+      (ShadowMaps(Disabled), "Off"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Light Rotation", [
       (ExampleSetting::LightRotation(Rotating), "On"),
-      (ExampleSetting::LightRotation(Stationary), "Off"),
+      (LightRotation(Stationary), "Off"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Light Type", [
       (ExampleSetting::LightType(Directional), "Directional"),
-      (ExampleSetting::LightType(Point), "Point"),
-      (ExampleSetting::LightType(Spot), "Spot"),
+      (LightType(Point), "Point"),
+      (LightType(Spot), "Spot"),
     ]),
   )
   ignore(
     @widgets_lib.spawn_option_buttons(commands, panel, "Receive Shadows", [
       (ExampleSetting::ReceiveShadows(Enabled), "On"),
-      (ExampleSetting::ReceiveShadows(Disabled), "Off"),
+      (ReceiveShadows(Disabled), "Off"),
     ]),
   )
 }
@@ -399,11 +387,11 @@ fn spawn_buttons(commands : @app.Commands) -> Unit {
 fn spawn_drag_help_text(commands : @app.Commands) -> Unit {
   let root = commands.spawn_component(
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
+    .with_position_type(Absolute)
     .with_top(@ui.px(12.0F))
     .with_left(@ui.px(0.0F))
     .with_right(@ui.px(0.0F))
-    .with_justify_content(@ui.JustifyContent::Center),
+    .with_justify_content(Center),
   )
   ignore(
     commands.spawn(
@@ -433,7 +421,7 @@ fn setup(
 
   let camera = commands.spawn(
     @pbr.Camera3dBundle::new(
-      @camera_camera.Camera::Camera(),
+      Camera(),
       @transform.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
         @math.Vec3::new(0.0F, 0.35F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -566,9 +554,9 @@ fn apply_directional_light_settings(
     )
     visibility.set(
       if status.light_type == Directional {
-        @visibility.Visibility::Visible
+        Visible
       } else {
-        @visibility.Visibility::Hidden
+        Hidden
       },
     )
   })
@@ -591,13 +579,7 @@ fn apply_point_light_settings(
       .with_contact_shadows_enabled(status.contact_shadows == Enabled)
       .with_shadow_maps_enabled(status.shadow_maps == Enabled),
     )
-    visibility.set(
-      if status.light_type == Point {
-        @visibility.Visibility::Visible
-      } else {
-        @visibility.Visibility::Hidden
-      },
-    )
+    visibility.set(if status.light_type == Point { Visible } else { Hidden })
   })
 }
 
@@ -618,13 +600,7 @@ fn apply_spot_light_settings(
       .with_contact_shadows_enabled(status.contact_shadows == Enabled)
       .with_shadow_maps_enabled(status.shadow_maps == Enabled),
     )
-    visibility.set(
-      if status.light_type == Spot {
-        @visibility.Visibility::Visible
-      } else {
-        @visibility.Visibility::Hidden
-      },
-    )
+    visibility.set(if status.light_type == Spot { Visible } else { Hidden })
   })
 }
 
@@ -677,7 +653,7 @@ fn main {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
       primary_cursor_options: None,
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
@@ -685,46 +661,46 @@ fn main {
   .init_resource(fn() { AppStatus::AppStatus() })
   .insert_resource(@pbr.GlobalAmbientLight::new(@color.Color::white(), 0.0F))
   .add_message(widget_click_message_key)
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param2(@app.Update, rotate_light)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param2(Update, rotate_light)
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_ui_interactions).in_set(
       contact_shadows_ui_interaction_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(handle_setting_change)
     .after(contact_shadows_ui_interaction_set)
     .in_set(contact_shadows_setting_change_set),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_radio_buttons).after(
       contact_shadows_setting_change_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(apply_directional_light_settings).after(
       contact_shadows_setting_change_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(apply_point_light_settings).after(
       contact_shadows_setting_change_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param2(apply_spot_light_settings).after(
       contact_shadows_setting_change_set,
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param3(update_receive_shadows).after(
       contact_shadows_setting_change_set,
     ),

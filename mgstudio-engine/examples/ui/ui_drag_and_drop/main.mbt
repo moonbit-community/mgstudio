@@ -85,15 +85,15 @@ fn tile_hover_border_color_b() -> @color.Color {
 
 ///|
 fn tile_node(column : Int, row : Int) -> @ui.Node {
-  @ui.Node::{
-    ..@ui.Node(),
-    width: @ui.Val::Px(TILE_SIZE),
-    height: @ui.Val::Px(TILE_SIZE),
-    border: @ui.UiRect::all(@ui.Val::Px(4.0F)),
+  {
+    ..Node(),
+    width: Px(TILE_SIZE),
+    height: Px(TILE_SIZE),
+    border: @ui.UiRect::all(Px(4.0F)),
     grid_row: @ui.GridPlacement::start(row + 1),
     grid_column: @ui.GridPlacement::start(column + 1),
-    align_items: @ui.AlignItems::Center,
-    justify_content: @ui.JustifyContent::Center,
+    align_items: Center,
+    justify_content: Center,
   }
 }
 
@@ -138,13 +138,7 @@ fn begin_drag(
   })
   let visual = visuals.get(entity) catch { _ => None }
   if visual is Some((outline, global_z)) {
-    outline.set(
-      @ui.Outline::new(
-        @ui.Val::Px(2.0F),
-        @ui.Val::Px(0.0F),
-        @color.Color::white(),
-      ),
-    )
+    outline.set(@ui.Outline::new(Px(2.0F), Px(0.0F), @color.Color::white()))
     global_z.set(@ui.GlobalZIndex::new(1))
   }
 }
@@ -165,7 +159,7 @@ fn drag_active_tile(
     let delta_y = current.y - start.y
     let current_transform = transform.value()
     let z = current_transform.translation.z
-    transform.set(@transform.Transform::{
+    transform.set({
       ..current_transform,
       translation: @math.Vec3::new(delta_x, delta_y, z),
     })
@@ -193,11 +187,11 @@ fn release_active_tile(
   if active_visual is Some((transform, outline, global_z)) {
     let current_transform = transform.value()
     let z = current_transform.translation.z
-    transform.set(@transform.Transform::{
+    transform.set({
       ..current_transform,
       translation: @math.Vec3::new(0.0F, 0.0F, z),
     })
-    outline.set(@ui.Outline::Outline())
+    outline.set(Outline())
     global_z.set(@ui.GlobalZIndex::new(0))
   }
 
@@ -209,12 +203,12 @@ fn release_active_tile(
     if hovered_node is Some(hovered_node) {
       let active_value = active_node.value()
       let hovered_value = hovered_node.value()
-      active_node.set(@ui.Node::{
+      active_node.set({
         ..active_value,
         grid_row: hovered_value.grid_row,
         grid_column: hovered_value.grid_column,
       })
-      hovered_node.set(@ui.Node::{
+      hovered_node.set({
         ..hovered_value,
         grid_row: active_value.grid_row,
         grid_column: active_value.grid_column,
@@ -242,19 +236,16 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BackgroundColor::new(@color.Color::srgb(0.4F, 0.4F, 0.4F)),
     ),
   )
 
   let board = commands.spawn(
-    (
-      @hierarchy.Parent::new(root),
-      @ui.Node::Node().with_display(@ui.Display::Grid),
-    ),
+    (@hierarchy.Parent::new(root), @ui.Node::Node().with_display(Grid)),
   )
 
   for column in 0..<COLUMNS {

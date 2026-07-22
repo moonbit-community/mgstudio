@@ -166,7 +166,7 @@ fn ensure_queued_require_metadata_registered() -> Unit {
   ignore(
     component_metadata_builder(queued_require_a_key).require_with(
       queued_require_b_key,
-      fn() { QueuedRequireB::{ value: 42 } },
+      fn() { { value: 42 } },
     ),
   )
   queued_require_metadata_initialized.val = true
@@ -366,7 +366,7 @@ test "ecs: fetched mutable component retains the explicit typed key" {
     debug_name="tests.ecs.explicit_typed_counter",
   )
   let entity = world.spawn()
-  try! world.set_by_key(entity, explicit_key, TypedCounter::{ value: 7 })
+  try! world.set_by_key(entity, explicit_key, { value: 7 })
 
   let item = match (try! world.get_mut(entity, key=explicit_key)) {
     Some(item) => item
@@ -385,7 +385,7 @@ test "ecs: spawn set get update and despawn cleanup" {
   )
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, comp_counter, Counter::{ value: 3 })
+  try! world.set_by_key(entity, comp_counter, { value: 3 })
   debug_inspect(
     try! world.get_by_key(entity, comp_counter),
     content="Some({ value: 3 })",
@@ -393,7 +393,7 @@ test "ecs: spawn set get update and despawn cleanup" {
 
   debug_inspect(
     try! world.update_by_key(entity, comp_counter, fn(counter) {
-      Counter::{ value: counter.value + 9 }
+      { value: counter.value + 9 }
     }),
     content="true",
   )
@@ -417,7 +417,7 @@ test "ecs: dead entity fails fast" {
   try! world.despawn(entity)
 
   let mut entity_not_alive = false
-  world.set_by_key(entity, comp_counter, Counter::{ value: 1 }) catch {
+  world.set_by_key(entity, comp_counter, { value: 1 }) catch {
     EntityNotAlive(_) => entity_not_alive = true
     _ => fail("expected EntityNotAlive for set")
   }
@@ -447,7 +447,7 @@ test "ecs: typed component api uses component ownership" {
   debug_inspect(initial_counter, content="Some({ value: 10 })")
   debug_inspect(
     try! World::update(world, e0, fn(counter : TypedCounter) {
-      TypedCounter::{ value: counter.value + 5 }
+      { value: counter.value + 5 }
     }),
     content="true",
   )
@@ -528,14 +528,12 @@ test "ecs: for_each_component tolerates structural changes during iteration" {
 
   for i in 0..<32 {
     let entity = world.spawn()
-    try! world.set_by_key(entity, typed_counter_key, TypedCounter::{ value: i })
+    try! world.set_by_key(entity, typed_counter_key, { value: i })
   }
 
   world.for_each_component(typed_counter_key, fn(entity, _counter) {
     visited.push(entity.id)
-    try! world.set_by_key(entity, typed_marker_key, TypedMarker::{
-      enabled: true,
-    })
+    try! world.set_by_key(entity, typed_marker_key, { enabled: true })
   })
 
   visited.sort()
@@ -570,9 +568,7 @@ test "ecs: bundle migration paths follow archetype/table topology" {
     .unwrap_or(-1)
   debug_inspect(counter_table_id >= 0, content="true")
 
-  try! world.set_by_key(entity, sparse_storage_counter_key, SparseStorageCounter::{
-    value: 7,
-  })
+  try! world.set_by_key(entity, sparse_storage_counter_key, { value: 7 })
   let counter_sparse_archetype_id = world
     .entity_archetype_id(entity)
     .unwrap_or(-1)
@@ -644,7 +640,7 @@ test "ecs: bundle migration execution keeps path boundaries and row consistency"
   )
   debug_inspect(
     try! world.update_by_key(e0, typed_counter_key, fn(counter) {
-      TypedCounter::{ value: counter.value }
+      { value: counter.value }
     }),
     content="true",
   )
@@ -676,9 +672,7 @@ test "ecs: bundle migration execution keeps path boundaries and row consistency"
     content="true",
   )
 
-  try! world.set_by_key(e0, sparse_storage_counter_key, SparseStorageCounter::{
-    value: 7,
-  })
+  try! world.set_by_key(e0, sparse_storage_counter_key, { value: 7 })
   let counter_sparse_archetype_id = world.entity_archetype_id(e0).unwrap_or(-1)
   debug_inspect(
     world.bundle_migration_path_label_for_archetypes(
@@ -850,9 +844,7 @@ test "ecs: structural mutations keep archetype membership deterministic" {
     content="true",
   )
 
-  try! world.set_by_key(e0, sparse_storage_counter_key, SparseStorageCounter::{
-    value: 9,
-  })
+  try! world.set_by_key(e0, sparse_storage_counter_key, { value: 9 })
   let counter_marker_sparse_archetype_id = world
     .entity_archetype_id(e0)
     .unwrap_or(-1)
@@ -1050,15 +1042,9 @@ test "ecs: component runtime ids are world-local and isolated" {
   let e1 = world1.spawn()
 
   // Force different local registration order between worlds.
-  try! world0.set_by_key(e0, world_local_probe_key, WorldLocalProbe::{
-    value: 1,
-  })
-  try! world0.set_by_key(e0, world_local_component_key, WorldLocalComponent::{
-    value: 2,
-  })
-  try! world1.set_by_key(e1, world_local_component_key, WorldLocalComponent::{
-    value: 3,
-  })
+  try! world0.set_by_key(e0, world_local_probe_key, { value: 1 })
+  try! world0.set_by_key(e0, world_local_component_key, { value: 2 })
+  try! world1.set_by_key(e1, world_local_component_key, { value: 3 })
 
   let world0_id = world0
     .component_id_by_key(world_local_component_key)
@@ -1147,6 +1133,7 @@ test "ecs: queued registration ids stay stable across worlds with identical queu
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs: queued component registration preserves local ids and required-components semantics" {
   ensure_queued_require_metadata_registered()
   let world = World::new()
@@ -1226,9 +1213,7 @@ test "ecs: sparse-set storage metadata routes through world storage split" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, sparse_storage_counter_key, SparseStorageCounter::{
-    value: 7,
-  })
+  try! world.set_by_key(entity, sparse_storage_counter_key, { value: 7 })
   debug_inspect(
     try! world.get_by_key(entity, sparse_storage_counter_key),
     content="Some({ value: 7 })",
@@ -1250,9 +1235,7 @@ test "ecs: world-local storage type remains stable after metadata mutation" {
   let world0 = World::new()
   defer world0.close()
   let entity0 = world0.spawn()
-  try! world0.set_by_key(entity0, storage_mode_probe_key, StorageModeProbe::{
-    value: 10,
-  })
+  try! world0.set_by_key(entity0, storage_mode_probe_key, { value: 10 })
 
   // Mutate global metadata after world0 registration.
   ignore(
@@ -1262,9 +1245,7 @@ test "ecs: world-local storage type remains stable after metadata mutation" {
   let world1 = World::new()
   defer world1.close()
   let entity1 = world1.spawn()
-  try! world1.set_by_key(entity1, storage_mode_probe_key, StorageModeProbe::{
-    value: 20,
-  })
+  try! world1.set_by_key(entity1, storage_mode_probe_key, { value: 20 })
 
   debug_inspect(
     try! world0.get_by_key(entity0, storage_mode_probe_key),
@@ -1311,6 +1292,7 @@ test "ecs parity wave2: duplicate hook kind registration fails in-world" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs parity wave2: late hook registration after archetype use fails" {
   let world = World::new()
   defer world.close()
@@ -1337,6 +1319,7 @@ test "ecs parity wave2: late hook registration after archetype use fails" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs parity wave2: required_by tracks transitive closure and cycle registration fails" {
   let world = World::new()
   defer world.close()

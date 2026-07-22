@@ -70,10 +70,10 @@ let ecs_res_key_default_error_handler : @ecs.ResourceKey[
 ///|
 fn error_context_prefix(context : ErrorContext) -> String {
   let base = match context.kind {
-    ErrorContextKind::System => "Encountered an error in system"
-    ErrorContextKind::Command => "Encountered an error in command"
-    ErrorContextKind::Observer => "Encountered an error in observer"
-    ErrorContextKind::Validation => "Encountered a validation error"
+    System => "Encountered an error in system"
+    Command => "Encountered an error in command"
+    Observer => "Encountered an error in observer"
+    Validation => "Encountered a validation error"
   }
   let stage_suffix = match context.stage {
     Some(stage) => " during \{to_repr(stage).to_string()}"

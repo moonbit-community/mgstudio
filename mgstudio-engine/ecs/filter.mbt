@@ -348,6 +348,7 @@ fn query_filter_append_unique_anchor_components(
 pub struct All {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn All::new() -> All {
   All::{  }
 }

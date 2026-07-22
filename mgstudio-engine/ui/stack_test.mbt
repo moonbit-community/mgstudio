@@ -25,7 +25,7 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   }
 
   let global_root = world.spawn_empty()
-  try! world.set_by_key(global_root, ecs_key_node, Node::Node())
+  try! world.set_by_key(global_root, ecs_key_node, Node())
   try! world.set_by_key(global_root, ecs_key_ui_layout, layout_dummy())
   try! world.set_by_key(
     global_root,
@@ -33,10 +33,10 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
     GlobalZIndex::new(-1),
   )
   let root = world.spawn_empty()
-  try! world.set_by_key(root, ecs_key_node, Node::Node())
+  try! world.set_by_key(root, ecs_key_node, Node())
   try! world.set_by_key(root, ecs_key_ui_layout, layout_dummy())
   let child_b = world.spawn_empty()
-  try! world.set_by_key(child_b, ecs_key_node, Node::Node())
+  try! world.set_by_key(child_b, ecs_key_node, Node())
   try! world.set_by_key(
     child_b,
     @hierarchy.ecs_key_parent,
@@ -45,7 +45,7 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   try! world.set_by_key(child_b, ecs_key_ui_layout, layout_dummy())
   try! world.set_by_key(child_b, ecs_key_z_index, ZIndex::new(0))
   let child_c = world.spawn_empty()
-  try! world.set_by_key(child_c, ecs_key_node, Node::Node())
+  try! world.set_by_key(child_c, ecs_key_node, Node())
   try! world.set_by_key(
     child_c,
     @hierarchy.ecs_key_parent,
@@ -55,7 +55,7 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   // Same z as child_b: should preserve insertion order (b before c).
   try! world.set_by_key(child_c, ecs_key_z_index, ZIndex::new(0))
   let child_a = world.spawn_empty()
-  try! world.set_by_key(child_a, ecs_key_node, Node::Node())
+  try! world.set_by_key(child_a, ecs_key_node, Node())
   try! world.set_by_key(
     child_a,
     @hierarchy.ecs_key_parent,
@@ -64,7 +64,7 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   try! world.set_by_key(child_a, ecs_key_ui_layout, layout_dummy())
   try! world.set_by_key(child_a, ecs_key_z_index, ZIndex::new(1))
   let child_a0 = world.spawn_empty()
-  try! world.set_by_key(child_a0, ecs_key_node, Node::Node())
+  try! world.set_by_key(child_a0, ecs_key_node, Node())
   try! world.set_by_key(
     child_a0,
     @hierarchy.ecs_key_parent,

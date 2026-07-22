@@ -23,7 +23,7 @@ pub struct TextUiReader {
 
 ///|
 pub fn TextUiReader::new(world : @ecs.World) -> TextUiReader {
-  TextUiReader::{ inner: @text.TextReader::new(world) }
+  { inner: @text.TextReader::new(world) }
 }
 
 ///|
@@ -121,7 +121,7 @@ pub struct TextUiWriter {
 
 ///|
 pub fn TextUiWriter::new(world : @ecs.World) -> TextUiWriter {
-  TextUiWriter::{ inner: @text.TextWriter::new(world) }
+  { inner: @text.TextWriter::new(world) }
 }
 
 ///|

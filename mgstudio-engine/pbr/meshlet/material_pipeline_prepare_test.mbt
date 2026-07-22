@@ -64,18 +64,12 @@ test "pbr meshlet: prepare prepass respects deferred toggle" {
 test "pbr meshlet: main opaque pass filters by renderer method and transmission" {
   let main_opaque = MeshletViewMaterialsMainOpaquePass::MeshletViewMaterialsMainOpaquePass()
   prepare_material_meshlet_meshes_main_opaque_pass_with_inputs(main_opaque, [
-    MeshletPreparedMaterialInput::new(1, 10).with_opaque_render_method(
-      @material.OpaqueRendererMethod::Forward,
-    ),
-    MeshletPreparedMaterialInput::new(2, 11).with_opaque_render_method(
-      @material.OpaqueRendererMethod::Deferred,
-    ),
+    MeshletPreparedMaterialInput::new(1, 10).with_opaque_render_method(Forward),
+    MeshletPreparedMaterialInput::new(2, 11).with_opaque_render_method(Deferred),
     MeshletPreparedMaterialInput::new(3, 12).with_reads_view_transmission_texture(
       true,
     ),
-    MeshletPreparedMaterialInput::new(4, 13).with_alpha_mode(
-      @material.AlphaMode3d::Blend,
-    ),
+    MeshletPreparedMaterialInput::new(4, 13).with_alpha_mode(Blend),
   ])
   inspect(main_opaque.len(), content="1")
 }
@@ -94,10 +88,10 @@ test "pbr meshlet: prepass routes deferred materials to deferred bins" {
     deferred,
     [
       MeshletPreparedMaterialInput::new(10, 100).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Deferred,
+        Deferred,
       ),
       MeshletPreparedMaterialInput::new(11, 101).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
     ],
     view_key~,
@@ -121,10 +115,10 @@ test "pbr meshlet: prepass preserves bevy working view key carry after deferred 
     deferred,
     [
       MeshletPreparedMaterialInput::new(20, 200).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Deferred,
+        Deferred,
       ),
       MeshletPreparedMaterialInput::new(21, 201).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
     ],
     view_key~,
@@ -133,8 +127,7 @@ test "pbr meshlet: prepass preserves bevy working view key carry after deferred 
   inspect(prepass.len(), content="0")
   inspect(deferred.len(), content="2")
   inspect(
-    deferred.entries[1].descriptor.pass_variant
-    is MeshletMaterialPassVariant::DeferredGBufferPrepass,
+    deferred.entries[1].descriptor.pass_variant is DeferredGBufferPrepass,
     content="true",
   )
 }
@@ -164,16 +157,16 @@ test "pbr meshlet: prepass deduplicates material ids per pass" {
     deferred,
     [
       MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
       MeshletPreparedMaterialInput::new(1, 101).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
       MeshletPreparedMaterialInput::new(2, 200).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Deferred,
+        Deferred,
       ),
       MeshletPreparedMaterialInput::new(2, 201).with_opaque_render_method(
-        @material.OpaqueRendererMethod::Deferred,
+        Deferred,
       ),
     ],
     view_key~,
@@ -190,9 +183,7 @@ test "pbr meshlet: prepass pipeline key ignores depth-prepass bit" {
   let prepass_b = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
   let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let inputs = [
-    MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
-      @material.OpaqueRendererMethod::Forward,
-    ),
+    MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(Forward),
   ]
   prepare_material_meshlet_meshes_prepass_with_inputs(
     prepass_a,
@@ -232,9 +223,7 @@ test "pbr meshlet: prepass pipeline key ignores main-pass-only view dimensions" 
   let prepass_b = MeshletViewMaterialsPrepass::MeshletViewMaterialsPrepass()
   let deferred_b = MeshletViewMaterialsDeferredGBufferPrepass::MeshletViewMaterialsDeferredGBufferPrepass()
   let inputs = [
-    MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(
-      @material.OpaqueRendererMethod::Forward,
-    ),
+    MeshletPreparedMaterialInput::new(1, 100).with_opaque_render_method(Forward),
   ]
   prepare_material_meshlet_meshes_prepass_with_inputs(
     prepass_a,
@@ -352,15 +341,9 @@ test "pbr meshlet: main opaque descriptor mirrors bevy material pass layout" {
     view_key~,
   )
   let descriptor = main_opaque.entries[0].descriptor
-  inspect(
-    descriptor.pass_variant is MeshletMaterialPassVariant::MainOpaque,
-    content="true",
-  )
+  inspect(descriptor.pass_variant is MainOpaque, content="true")
   inspect(descriptor.view_key.equal(view_key), content="true")
-  inspect(
-    descriptor.view_layout_kind is MeshletMaterialViewLayoutKind::MeshView,
-    content="true",
-  )
+  inspect(descriptor.view_layout_kind is MeshView, content="true")
   let fake_layout = descriptor.fake_vertex_buffer_layout
   let attribute_ids = fake_layout.attribute_ids()
   let vertex_layout = fake_layout.layout()
@@ -375,43 +358,27 @@ test "pbr meshlet: main opaque descriptor mirrors bevy material pass layout" {
     content="[0, 1, 2, 4]",
   )
   inspect(vertex_layout.array_stride, content="48")
-  inspect(
-    vertex_layout.step_mode is @mesh.MeshVertexStepMode::Vertex,
-    content="true",
-  )
+  inspect(vertex_layout.step_mode is Vertex, content="true")
   inspect(vertex_layout.attributes.length(), content="4")
   inspect(vertex_layout.attributes[0].offset, content="0")
   inspect(vertex_layout.attributes[0].shader_location, content="0")
-  inspect(
-    vertex_layout.attributes[0].format is @mesh.MeshVertexFormat::Float32x3,
-    content="true",
-  )
+  inspect(vertex_layout.attributes[0].format is Float32x3, content="true")
   inspect(vertex_layout.attributes[1].offset, content="12")
   inspect(vertex_layout.attributes[1].shader_location, content="1")
-  inspect(
-    vertex_layout.attributes[1].format is @mesh.MeshVertexFormat::Float32x3,
-    content="true",
-  )
+  inspect(vertex_layout.attributes[1].format is Float32x3, content="true")
   inspect(vertex_layout.attributes[2].offset, content="24")
   inspect(vertex_layout.attributes[2].shader_location, content="2")
-  inspect(
-    vertex_layout.attributes[2].format is @mesh.MeshVertexFormat::Float32x2,
-    content="true",
-  )
+  inspect(vertex_layout.attributes[2].format is Float32x2, content="true")
   inspect(vertex_layout.attributes[3].offset, content="32")
   inspect(vertex_layout.attributes[3].shader_location, content="3")
-  inspect(
-    vertex_layout.attributes[3].format is @mesh.MeshVertexFormat::Float32x4,
-    content="true",
-  )
+  inspect(vertex_layout.attributes[3].format is Float32x4, content="true")
   inspect(descriptor.layout_count, content="4")
   inspect(descriptor.uses_binding_array_layout, content="true")
   inspect(descriptor.uses_empty_bind_group_layout, content="false")
   inspect(descriptor.uses_material_shade_layout, content="true")
   inspect(descriptor.material_layout_id, content="77")
   inspect(
-    descriptor.fragment_shader_kind
-    is MeshletMaterialFragmentShaderKind::MeshletFragmentOverride,
+    descriptor.fragment_shader_kind is MeshletFragmentOverride,
     content="true",
   )
   inspect(descriptor.shader_def_meshlet_material_pass, content="true")
@@ -466,20 +433,12 @@ test "pbr meshlet: prepass descriptor switches view layout and entry point for o
     deferred_enabled=false,
   )
   let descriptor = prepass.entries[0].descriptor
-  inspect(
-    descriptor.pass_variant is MeshletMaterialPassVariant::Prepass,
-    content="true",
-  )
-  inspect(
-    descriptor.view_layout_kind
-    is MeshletMaterialViewLayoutKind::PrepassMotionVectors,
-    content="true",
-  )
+  inspect(descriptor.pass_variant is Prepass, content="true")
+  inspect(descriptor.view_layout_kind is PrepassMotionVectors, content="true")
   inspect(descriptor.uses_binding_array_layout, content="false")
   inspect(descriptor.uses_empty_bind_group_layout, content="true")
   inspect(
-    descriptor.fragment_shader_kind
-    is MeshletMaterialFragmentShaderKind::MeshletPrepassFragmentOverride,
+    descriptor.fragment_shader_kind is MeshletPrepassFragmentOverride,
     content="true",
   )
   inspect(descriptor.uses_material_fragment_entry_point, content="false")

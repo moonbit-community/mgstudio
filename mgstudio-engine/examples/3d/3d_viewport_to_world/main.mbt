@@ -78,12 +78,7 @@ fn circle_line_mesh(radius : Float, segments : Int) -> @mesh.Mesh3d {
     @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
       assets.add(
         @mesh.Mesh::from_3d_geometry(
-          @mesh.Mesh3dGeometry::new_with_topology(
-            points,
-            uvs,
-            None,
-            @mesh.Mesh3dPrimitiveTopology::LineStrip,
-          ),
+          @mesh.Mesh3dGeometry::new_with_topology(points, uvs, None, LineStrip),
         ),
       )
     }),
@@ -199,7 +194,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   try! world.set_by_key(
     light,
@@ -211,7 +206,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(15.0F, 5.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -232,11 +227,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
-  try! (world.replace(
-    cursor_marker,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Hidden,
-  )
+  try! (world.replace(cursor_marker, @visibility.ecs_key_visibility, Hidden)
   |> ignore)
 }
 
@@ -299,18 +290,10 @@ fn draw_cursor(world : @ecs.World) -> Unit {
       ),
     )
     |> ignore)
-    try! (world.replace(
-      cursor_entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Visible,
-    )
+    try! (world.replace(cursor_entity, @visibility.ecs_key_visibility, Visible)
     |> ignore)
   } else {
-    try! (world.replace(
-      cursor_entity,
-      @visibility.ecs_key_visibility,
-      @visibility.Visibility::Hidden,
-    )
+    try! (world.replace(cursor_entity, @visibility.ecs_key_visibility, Hidden)
     |> ignore)
   }
 }
@@ -319,7 +302,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, draw_cursor)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, draw_cursor)
   .run()
 }

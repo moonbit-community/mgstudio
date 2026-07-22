@@ -108,7 +108,7 @@ pub fn BindGroupEntry::buffer(
   binding : Int,
   buffer : BufferId,
 ) -> BindGroupEntry {
-  BindGroupEntry::{ binding, resource: BindingResource::Buffer(buffer) }
+  { binding, resource: Buffer(buffer) }
 }
 
 ///|
@@ -116,10 +116,7 @@ pub fn BindGroupEntry::texture_view(
   binding : Int,
   texture_view : TextureViewId,
 ) -> BindGroupEntry {
-  BindGroupEntry::{
-    binding,
-    resource: BindingResource::TextureView(texture_view),
-  }
+  { binding, resource: TextureView(texture_view) }
 }
 
 ///|
@@ -127,7 +124,7 @@ pub fn BindGroupEntry::sampler(
   binding : Int,
   sampler : SamplerId,
 ) -> BindGroupEntry {
-  BindGroupEntry::{ binding, resource: BindingResource::Sampler(sampler) }
+  { binding, resource: Sampler(sampler) }
 }
 
 ///|
@@ -144,7 +141,7 @@ pub fn BindGroupEntry::resource(self : BindGroupEntry) -> BindingResource {
 pub fn BindGroupDescriptor::new(
   entries : Array[BindGroupEntry],
 ) -> BindGroupDescriptor {
-  BindGroupDescriptor::{ entries, }
+  { entries, }
 }
 
 ///|
@@ -159,10 +156,7 @@ pub fn MaterialBindGroupResolvedEntry::texture(
   binding : Int,
   texture_id : Int,
 ) -> MaterialBindGroupResolvedEntry {
-  MaterialBindGroupResolvedEntry::{
-    binding,
-    resource: MaterialBindGroupResolvedResource::Texture(texture_id),
-  }
+  { binding, resource: Texture(texture_id) }
 }
 
 ///|
@@ -170,10 +164,7 @@ pub fn MaterialBindGroupResolvedEntry::sampler(
   binding : Int,
   texture_id : Int,
 ) -> MaterialBindGroupResolvedEntry {
-  MaterialBindGroupResolvedEntry::{
-    binding,
-    resource: MaterialBindGroupResolvedResource::Sampler(texture_id),
-  }
+  { binding, resource: Sampler(texture_id) }
 }
 
 ///|
@@ -181,10 +172,7 @@ pub fn MaterialBindGroupResolvedEntry::uniform(
   binding : Int,
   bytes : Bytes,
 ) -> MaterialBindGroupResolvedEntry {
-  MaterialBindGroupResolvedEntry::{
-    binding,
-    resource: MaterialBindGroupResolvedResource::Uniform(bytes),
-  }
+  { binding, resource: Uniform(bytes) }
 }
 
 ///|
@@ -203,19 +191,19 @@ pub fn MaterialBindGroupResolvedEntry::resource(
 
 ///|
 pub fn MaterialBindGroupResolvedData::MaterialBindGroupResolvedData() -> MaterialBindGroupResolvedData {
-  MaterialBindGroupResolvedData::{ entries: [] }
+  { entries: [] }
 }
 
 ///|
 pub impl Default for MaterialBindGroupResolvedData with fn default() {
-  MaterialBindGroupResolvedData::MaterialBindGroupResolvedData()
+  MaterialBindGroupResolvedData()
 }
 
 ///|
 pub fn MaterialBindGroupResolvedData::new(
   entries : Array[MaterialBindGroupResolvedEntry],
 ) -> MaterialBindGroupResolvedData {
-  MaterialBindGroupResolvedData::{ entries, }
+  { entries, }
 }
 
 ///|

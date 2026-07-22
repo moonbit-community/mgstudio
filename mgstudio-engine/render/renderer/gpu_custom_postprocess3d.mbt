@@ -131,7 +131,7 @@ fn custom_postprocess3d_pipeline_get_or_create(
     POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_custom_postprocess3d_\{shader_path}_\{fragment_entry}_\{format.raw.to_string()}",
   )
-  backend.custom_postprocess3d_pipeline_cache.push(CustomPostProcessPipelineCacheEntry::{
+  backend.custom_postprocess3d_pipeline_cache.push({
     shader_path,
     fragment_entry,
     surface_format: format,

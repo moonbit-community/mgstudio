@@ -22,6 +22,7 @@ const CI_TESTING_PLUGIN_NAME : String = "mgstudio.dev_tools.CiTestingPlugin"
 pub struct CiTestingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CiTestingPlugin::CiTestingPlugin() -> CiTestingPlugin {
   CiTestingPlugin::{  }
 }
@@ -120,10 +121,11 @@ fn ci_testing_add_easy_camera_movement_plugin(
 
 ///|
 pub fn ci_testing_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  ci_testing_plugin_with(app, CiTestingPlugin::CiTestingPlugin())
+  ci_testing_plugin_with(app, CiTestingPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ci_testing_plugin_with(
   app : @app.App[@ecs.World],
   plugin : CiTestingPlugin,
@@ -145,14 +147,14 @@ pub fn ci_testing_plugin_with(
   if !next.contains_resource(ci_testing_runtime_state_resource_key) {
     next = next.insert_world_resource(
       ci_testing_runtime_state_resource_key,
-      CiTestingRuntimeState::CiTestingRuntimeState(),
+      CiTestingRuntimeState(),
     )
   }
   ci_testing_add_easy_camera_movement_plugin(next)
   |> ci_testing_apply_time_update_strategy
   |> @app.App::add_message(ci_testing_custom_event_message_key)
   |> @app.App::add_systems(
-    @app.Update,
+    Update,
     @app.system(ci_testing_send_events_system)
     .in_set(ci_testing_event_sender_system_set)
     .before(@render.screenshot_trigger_system_set)

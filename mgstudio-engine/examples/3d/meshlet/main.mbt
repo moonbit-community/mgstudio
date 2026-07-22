@@ -82,13 +82,9 @@ fn spawn_meshlet_bunny_base(
   try! world.set_by_key(
     entity,
     @camera_render_layers.ecs_key_render_layers,
-    @camera_render_layers.RenderLayers::RenderLayers(),
+    RenderLayers(),
   )
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_visibility,
-    @visibility.Visibility::Inherited,
-  )
+  try! world.set_by_key(entity, @visibility.ecs_key_visibility, Inherited)
   try! world.set_by_key(
     entity,
     @visibility.ecs_key_inherited_visibility,
@@ -128,6 +124,7 @@ fn spawn_meshlet_debug_bunny(
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   world.insert_resource(
@@ -136,13 +133,13 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  try! world.set_by_key(camera, @pbr.ecs_key_msaa, @pbr.Msaa::Off)
+  try! world.set_by_key(camera, @pbr.ecs_key_msaa, Off)
   try! world.set_by_key(
     camera,
     @pbr.ecs_key_environment_map_light,
@@ -152,11 +149,7 @@ fn setup(world : @ecs.World) -> Unit {
       ENVIRONMENT_LIGHT_INTENSITY,
     ),
   )
-  try! world.set_by_key(
-    camera,
-    @pbr.ecs_key_free_camera,
-    @pbr.FreeCamera::FreeCamera(),
-  )
+  try! world.set_by_key(camera, @pbr.ecs_key_free_camera, FreeCamera())
 
   let directional = world.spawn_empty()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::CascadeShadowConfigBuilder()
@@ -188,7 +181,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let debug_material = @pbr_meshlet.meshlet_debug_material_add(
     world,
-    @pbr_meshlet.MeshletDebugMaterial::MeshletDebugMaterial(),
+    MeshletDebugMaterial(),
   )
   for i in 0..<5 {
     let x_int = i - 2
@@ -273,7 +266,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@pbr_meshlet.MeshletPlugin::new(16_384))
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, bunny_wiggler)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, bunny_wiggler)
   .run()
 }

@@ -28,13 +28,13 @@ pub fn image_to_target_texture(image : Image) -> Image {
 ///|
 pub fn image_with_srgb_view(image : Image) -> Image {
   let view_format = match image.format {
-    TextureFormat::Rgba8Unorm => Some(TextureFormat::Rgba8UnormSrgb)
-    TextureFormat::Rgba8UnormSrgb => Some(TextureFormat::Rgba8UnormSrgb)
-    TextureFormat::Bgra8Unorm => Some(TextureFormat::Bgra8UnormSrgb)
-    TextureFormat::Bgra8UnormSrgb => Some(TextureFormat::Bgra8UnormSrgb)
+    Rgba8Unorm => Some(TextureFormat::Rgba8UnormSrgb)
+    Rgba8UnormSrgb => Some(Rgba8UnormSrgb)
+    Bgra8Unorm => Some(Bgra8UnormSrgb)
+    Bgra8UnormSrgb => Some(Bgra8UnormSrgb)
     _ => image.view_format
   }
-  Image::{
+  {
     width: image.width,
     height: image.height,
     pixels: image.pixels,

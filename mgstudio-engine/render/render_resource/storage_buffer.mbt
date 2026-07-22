@@ -45,12 +45,12 @@ pub impl @asset.Asset for StorageBuffer[Float] with fn asset_resource_keys() {
 
 ///|
 pub fn[T] StorageBuffer::new() -> StorageBuffer[T] {
-  StorageBuffer::{ data: BufferVec::new(), label: None }
+  { data: BufferVec::new(), label: None }
 }
 
 ///|
 pub fn[T] StorageBuffer::with_label(label : String) -> StorageBuffer[T] {
-  StorageBuffer::{ data: BufferVec::new(), label: Some(label) }
+  { data: BufferVec::new(), label: Some(label) }
 }
 
 ///|

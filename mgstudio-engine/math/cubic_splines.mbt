@@ -130,7 +130,7 @@ pub struct LinearSpline[P] {
 
 ///|
 pub fn[P] LinearSpline::new(control_points : Array[P]) -> LinearSpline[P] {
-  LinearSpline::{ control_points, }
+  { control_points, }
 }
 
 ///|
@@ -145,14 +145,14 @@ pub fn[P : SplinePoint] LinearSpline::to_curve(
   for index in 0..<segment_count {
     let start = self.control_points[index]
     let end_ = self.control_points[index + 1]
-    segments.push(CubicSegment::{
+    segments.push({
       coeff0: start,
       coeff1: end_.sub(start),
       coeff2: P::zero(),
       coeff3: P::zero(),
     })
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -166,14 +166,14 @@ pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(
   for index in 0..<self.control_points.length() {
     let start = self.control_points[index]
     let end_ = self.control_points[(index + 1) % self.control_points.length()]
-    segments.push(CubicSegment::{
+    segments.push({
       coeff0: start,
       coeff1: end_.sub(start),
       coeff2: P::zero(),
       coeff3: P::zero(),
     })
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -195,7 +195,7 @@ pub fn[P] CubicHermite::new(
   for i in 0..<count {
     points_and_tangents.push((control_points[i], tangents[i]))
   }
-  CubicHermite::{ control_points: points_and_tangents }
+  { control_points: points_and_tangents }
 }
 
 ///|
@@ -209,14 +209,14 @@ pub fn[P] CubicCardinalSpline::new(
   tension : Float,
   control_points : Array[P],
 ) -> CubicCardinalSpline[P] {
-  CubicCardinalSpline::{ tension, control_points }
+  { tension, control_points }
 }
 
 ///|
 pub fn[P] CubicCardinalSpline::new_catmull_rom(
   control_points : Array[P],
 ) -> CubicCardinalSpline[P] {
-  CubicCardinalSpline::{ tension: 0.5F, control_points }
+  { tension: 0.5F, control_points }
 }
 
 ///|
@@ -226,7 +226,7 @@ pub struct CubicBSpline[P] {
 
 ///|
 pub fn[P] CubicBSpline::new(control_points : Array[P]) -> CubicBSpline[P] {
-  CubicBSpline::{ control_points, }
+  { control_points, }
 }
 
 ///|
@@ -341,7 +341,7 @@ pub fn[P] CubicCurve::from_segments(
   if segments.is_empty() {
     None
   } else {
-    Some(CubicCurve::{ segments, })
+    Some({ segments, })
   }
 }
 
@@ -455,7 +455,7 @@ pub fn[P : SplinePoint] CubicHermite::to_curve(
       ),
     )
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -487,7 +487,7 @@ pub fn[P : SplinePoint] CubicHermite::to_curve_cyclic(
       ),
     )
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -532,7 +532,7 @@ pub fn[P : SplinePoint] CubicCardinalSpline::to_curve(
       cubic_segment_coefficients(a, b, c, d, row0, row1, row2, row3),
     )
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -584,7 +584,7 @@ pub fn[P : SplinePoint] CubicCardinalSpline::to_curve_cyclic(
       ),
     )
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -614,7 +614,7 @@ pub fn[P : SplinePoint] CubicBSpline::to_curve(
       ),
     )
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -644,7 +644,7 @@ pub fn[P : SplinePoint] CubicBSpline::to_curve_cyclic(
       ),
     )
   }
-  CubicCurve::{ segments, }
+  { segments, }
 }
 
 ///|
@@ -658,7 +658,7 @@ fn[P : SplinePoint] cubic_segment_coefficients(
   row2 : (Float, Float, Float, Float),
   row3 : (Float, Float, Float, Float),
 ) -> CubicSegment[P] {
-  CubicSegment::{
+  {
     coeff0: cubic_matrix_row_value(p0, p1, p2, p3, row0),
     coeff1: cubic_matrix_row_value(p0, p1, p2, p3, row1),
     coeff2: cubic_matrix_row_value(p0, p1, p2, p3, row2),

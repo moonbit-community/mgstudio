@@ -20,12 +20,12 @@ pub struct Rot2 {
 
 ///|
 pub fn Rot2::identity() -> Rot2 {
-  Rot2::{ sin: 0.0F, cos: 1.0F }
+  { sin: 0.0F, cos: 1.0F }
 }
 
 ///|
 pub fn Rot2::radians(angle : Float) -> Rot2 {
-  Rot2::{ sin: sin(angle), cos: cos(angle) }
+  { sin: sin(angle), cos: cos(angle) }
 }
 
 ///|
@@ -40,7 +40,7 @@ pub fn Rot2::as_radians(self : Rot2) -> Float {
 
 ///|
 pub fn Rot2::inverse(self : Rot2) -> Rot2 {
-  Rot2::{ sin: -self.sin, cos: self.cos }
+  { sin: -self.sin, cos: self.cos }
 }
 
 ///|
@@ -53,7 +53,7 @@ pub fn Rot2::mul_vec2(self : Rot2, value : Vec2) -> Vec2 {
 
 ///|
 pub fn Rot2::mul(self : Rot2, other : Rot2) -> Rot2 {
-  Rot2::{
+  {
     sin: self.sin * other.cos + self.cos * other.sin,
     cos: self.cos * other.cos - self.sin * other.sin,
   }

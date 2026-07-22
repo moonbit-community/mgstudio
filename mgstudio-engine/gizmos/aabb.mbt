@@ -28,12 +28,12 @@ pub(all) struct AabbGizmoConfigGroup {
 
 ///|
 pub fn AabbGizmoConfigGroup::AabbGizmoConfigGroup() -> AabbGizmoConfigGroup {
-  AabbGizmoConfigGroup::{ draw_all: false, default_color: None }
+  { draw_all: false, default_color: None }
 }
 
 ///|
 pub impl Default for AabbGizmoConfigGroup with fn default() {
-  AabbGizmoConfigGroup::AabbGizmoConfigGroup()
+  AabbGizmoConfigGroup()
 }
 
 ///|
@@ -67,7 +67,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn new_gizmo_config_group_cell() {
-  AabbGizmoConfigGroupCell(Ref(AabbGizmoConfigGroup::AabbGizmoConfigGroup()))
+  AabbGizmoConfigGroupCell(Ref(AabbGizmoConfigGroup()))
 }
 
 ///|
@@ -87,7 +87,7 @@ pub struct ShowAabbGizmo {
 
 ///|
 pub fn ShowAabbGizmo::ShowAabbGizmo() -> ShowAabbGizmo {
-  ShowAabbGizmo::{ color: None }
+  { color: None }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn ShowAabbGizmo::with_color(
   color : @color.Color?,
 ) -> ShowAabbGizmo {
   ignore(self)
-  ShowAabbGizmo::{ color, }
+  { color, }
 }
 
 ///|
@@ -245,11 +245,8 @@ pub fn draw_all_aabb_gizmos(
 pub fn aabb_gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   @sprite.init_gizmo_group(
     app
-    .add_systems(@app.PostUpdate, @app.system_config_param2(draw_aabb_gizmos))
-    .add_systems(
-      @app.PostUpdate,
-      @app.system_config_param2(draw_all_aabb_gizmos),
-    ),
+    .add_systems(PostUpdate, @app.system_config_param2(draw_aabb_gizmos))
+    .add_systems(PostUpdate, @app.system_config_param2(draw_all_aabb_gizmos)),
     AabbGizmoConfigGroup::AabbGizmoConfigGroup(),
   )
 }

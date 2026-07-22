@@ -19,7 +19,7 @@
 pub type Layer = Int
 
 ///|
-pub let default_layers : RenderLayers = RenderLayers::RenderLayers()
+pub let default_layers : RenderLayers = RenderLayers()
 
 ///|
 pub struct RenderLayers {
@@ -42,17 +42,17 @@ fn render_layer_bit(index : Int) -> Int {
 
 ///|
 pub fn RenderLayers::RenderLayers() -> RenderLayers {
-  RenderLayers::{ mask: 1 }
+  { mask: 1 }
 }
 
 ///|
 pub fn RenderLayers::none() -> RenderLayers {
-  RenderLayers::{ mask: 0 }
+  { mask: 0 }
 }
 
 ///|
 pub fn RenderLayers::layer(index : Layer) -> RenderLayers {
-  RenderLayers::{ mask: render_layer_bit(index) }
+  { mask: render_layer_bit(index) }
 }
 
 ///|
@@ -74,7 +74,7 @@ pub fn RenderLayers::from_layers(layers : Array[Layer]) -> RenderLayers {
   for layer in layers {
     mask = mask | render_layer_bit(layer)
   }
-  RenderLayers::{ mask, }
+  { mask, }
 }
 
 ///|
@@ -82,7 +82,7 @@ pub fn RenderLayers::with_layer(
   self : RenderLayers,
   index : Layer,
 ) -> RenderLayers {
-  RenderLayers::{ mask: self.mask | render_layer_bit(index) }
+  { mask: self.mask | render_layer_bit(index) }
 }
 
 ///|
@@ -92,7 +92,7 @@ pub fn RenderLayers::without_layer(
 ) -> RenderLayers {
   let bit = render_layer_bit(index)
   if (self.mask & bit) != 0 {
-    RenderLayers::{ mask: self.mask ^ bit }
+    { mask: self.mask ^ bit }
   } else {
     self
   }
@@ -123,7 +123,7 @@ pub fn RenderLayers::union(
   self : RenderLayers,
   other : RenderLayers,
 ) -> RenderLayers {
-  RenderLayers::{ mask: self.mask | other.mask }
+  { mask: self.mask | other.mask }
 }
 
 ///|
@@ -131,7 +131,7 @@ pub fn RenderLayers::intersection(
   self : RenderLayers,
   other : RenderLayers,
 ) -> RenderLayers {
-  RenderLayers::{ mask: self.mask & other.mask }
+  { mask: self.mask & other.mask }
 }
 
 ///|
@@ -160,7 +160,7 @@ fn encode_render_layers(layers : RenderLayers) -> Json {
 ///|
 fn decode_render_layers(json : Json) -> RenderLayers {
   let mask : Int = try! @json.from_json(json)
-  RenderLayers::{ mask, }
+  { mask, }
 }
 
 ///|

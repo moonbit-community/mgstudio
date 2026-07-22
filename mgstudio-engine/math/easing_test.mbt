@@ -63,33 +63,33 @@ test "math: ease function sample matches unit interval semantics" {
 ///|
 test "math: steps easing follows Bevy jump semantics" {
   debug_inspect(
-    EaseFunction::Steps(4, JumpAt::Start).sample_clamped(0.1F) == 0.25F,
+    EaseFunction::Steps(4, Start).sample_clamped(0.1F) == 0.25F,
     content="true",
   )
   debug_inspect(
-    EaseFunction::Steps(4, JumpAt::End).sample_clamped(0.1F) == 0.0F,
+    EaseFunction::Steps(4, End).sample_clamped(0.1F) == 0.0F,
     content="true",
   )
   debug_inspect(
-    EaseFunction::Steps(4, JumpAt::Both).sample_clamped(0.1F) == 0.2F,
+    EaseFunction::Steps(4, Both).sample_clamped(0.1F) == 0.2F,
     content="true",
   )
   debug_inspect(
-    EaseFunction::Steps(4, JumpAt::None).sample_clamped(0.6F) == 2.0F / 3.0F,
+    EaseFunction::Steps(4, None).sample_clamped(0.6F) == 2.0F / 3.0F,
     content="true",
   )
 }
 
 ///|
 test "math: easing curve interpolates floats and vec2 values" {
-  let scalar = EasingCurve::new(2.0F, 4.0F, EaseFunction::Linear)
+  let scalar = EasingCurve::new(2.0F, 4.0F, Linear)
   debug_inspect(scalar.sample_clamped(0.5F) == 3.0F, content="true")
   debug_inspect(scalar.sample(-1.0F) is None, content="true")
 
   let vector = EasingCurve::new(
     Vec2::new(0.0F, 4.0F),
     Vec2::new(2.0F, 8.0F),
-    EaseFunction::Linear,
+    Linear,
   )
   let vector_sample = vector.sample_clamped(0.5F)
   debug_inspect(
@@ -104,7 +104,7 @@ test "math: easing curve interpolates quaternions on the shortest path" {
   let curve = EasingCurve::new(
     Quat::identity(),
     Quat::from_rotation_y(pi_half()),
-    EaseFunction::Linear,
+    Linear,
   )
   let halfway = curve.sample_clamped(0.5F)
   debug_inspect(

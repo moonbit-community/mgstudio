@@ -85,11 +85,7 @@ test "visibility: gpu culling follows inherited visibility changes" {
     ecs_key_view_visibility,
     ViewVisibility::hidden(),
   )
-  try! world.set_by_key(
-    entity,
-    ecs_key_no_cpu_culling,
-    NoCpuCulling::NoCpuCulling(),
-  )
+  try! world.set_by_key(entity, ecs_key_no_cpu_culling, NoCpuCulling())
   let first_tick_context = @core.SystemTickContext::new()
   first_tick_context.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(first_tick_context)

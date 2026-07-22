@@ -29,7 +29,7 @@ pub fn ViewRangefinder3d::from_world_from_view(
     @math.Vec3::new(0.0F, 0.0F, 1.0F),
   )
   let forward = z_axis.sub(origin)
-  ViewRangefinder3d::{
+  {
     view_from_world_row_2: @math.Vec4::new(
       forward.x,
       forward.y,

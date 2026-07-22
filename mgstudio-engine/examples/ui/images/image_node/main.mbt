@@ -30,10 +30,10 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
     ),
   )
 
@@ -41,9 +41,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(root),
-        @ui.Node::Node()
-        .with_width(@ui.Val::Px(256.0F))
-        .with_height(@ui.Val::Px(256.0F)),
+        @ui.Node::Node().with_width(Px(256.0F)).with_height(Px(256.0F)),
         @ui.ImageNode::new(asset_server.get().load_image("branding/icon.png")),
       ),
     ),
@@ -54,6 +52,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

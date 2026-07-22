@@ -36,7 +36,7 @@ pub fn DepthOfFieldUniform::from_settings(
   } else {
     settings.focal_distance * settings.focal_distance / denominator
   }
-  DepthOfFieldUniform::{
+  {
     mode: settings.mode,
     focal_distance: settings.focal_distance,
     sensor_height: settings.sensor_height,

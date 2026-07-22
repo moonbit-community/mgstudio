@@ -318,7 +318,7 @@ pub fn[T] World::register_component_hooks_for_key(
   key : ComponentKey[T],
 ) -> ComponentHooksBuilder[T] {
   ignore(self.ensure_component_registered(key.id()))
-  ComponentHooksBuilder::{ world: self, key }
+  { world: self, key }
 }
 
 ///|
@@ -418,35 +418,35 @@ fn component_hooks_merge(
     if merged.on_add is Some(_) {
       raise DuplicateHookRegistration(component_local_id, OnAdd)
     }
-    merged = ComponentHooks::{ ..merged, on_add: Some(on_add) }
+    merged = { ..merged, on_add: Some(on_add) }
   }
 
   if incoming.on_insert is Some(on_insert) {
     if merged.on_insert is Some(_) {
       raise DuplicateHookRegistration(component_local_id, OnInsert)
     }
-    merged = ComponentHooks::{ ..merged, on_insert: Some(on_insert) }
+    merged = { ..merged, on_insert: Some(on_insert) }
   }
 
   if incoming.on_replace is Some(on_replace) {
     if merged.on_replace is Some(_) {
       raise DuplicateHookRegistration(component_local_id, OnReplace)
     }
-    merged = ComponentHooks::{ ..merged, on_replace: Some(on_replace) }
+    merged = { ..merged, on_replace: Some(on_replace) }
   }
 
   if incoming.on_remove is Some(on_remove) {
     if merged.on_remove is Some(_) {
       raise DuplicateHookRegistration(component_local_id, OnRemove)
     }
-    merged = ComponentHooks::{ ..merged, on_remove: Some(on_remove) }
+    merged = { ..merged, on_remove: Some(on_remove) }
   }
 
   if incoming.on_despawn is Some(on_despawn) {
     if merged.on_despawn is Some(_) {
       raise DuplicateHookRegistration(component_local_id, OnDespawn)
     }
-    merged = ComponentHooks::{ ..merged, on_despawn: Some(on_despawn) }
+    merged = { ..merged, on_despawn: Some(on_despawn) }
   }
 
   merged
@@ -471,10 +471,10 @@ fn component_hooks_register_kind(
   }
   let updated = match kind {
     OnAdd => ComponentHooks::{ ..hooks, on_add: Some(hook) }
-    OnInsert => ComponentHooks::{ ..hooks, on_insert: Some(hook) }
-    OnReplace => ComponentHooks::{ ..hooks, on_replace: Some(hook) }
-    OnRemove => ComponentHooks::{ ..hooks, on_remove: Some(hook) }
-    OnDespawn => ComponentHooks::{ ..hooks, on_despawn: Some(hook) }
+    OnInsert => { ..hooks, on_insert: Some(hook) }
+    OnReplace => { ..hooks, on_replace: Some(hook) }
+    OnRemove => { ..hooks, on_remove: Some(hook) }
+    OnDespawn => { ..hooks, on_despawn: Some(hook) }
   }
   world.component_hooks_registry.set(local_component_id, updated)
 }
@@ -570,10 +570,7 @@ fn World::run_component_hook(
   hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit {
   let local_component_id = self.ensure_component_registered(component_id)
-  hook(
-    DeferredWorld::{ world: self },
-    hook_context(entity, local_component_id, caller~),
-  )
+  hook({ world: self }, hook_context(entity, local_component_id, caller~))
 }
 
 ///|

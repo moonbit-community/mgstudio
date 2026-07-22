@@ -36,7 +36,7 @@ pub(all) enum SpriteScalingMode {
 
 ///|
 pub impl Default for SpriteScalingMode with fn default() {
-  SpriteScalingMode::FillCenter
+  FillCenter
 }
 
 ///|
@@ -52,7 +52,7 @@ pub fn SpriteTiling::new(
   tile_y : Bool,
   stretch_value : Float,
 ) -> SpriteTiling {
-  SpriteTiling::{ tile_x, tile_y, stretch_value }
+  { tile_x, tile_y, stretch_value }
 }
 
 ///|
@@ -62,7 +62,7 @@ pub fn SpriteTiling::SpriteTiling() -> SpriteTiling {
 
 ///|
 pub impl Default for SpriteTiling with fn default() {
-  SpriteTiling::SpriteTiling()
+  SpriteTiling()
 }
 
 ///|
@@ -70,7 +70,7 @@ pub fn SpriteTiling::with_tile_x(
   self : SpriteTiling,
   tile_x : Bool,
 ) -> SpriteTiling {
-  SpriteTiling::{ ..self, tile_x, }
+  { ..self, tile_x, }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn SpriteTiling::with_tile_y(
   self : SpriteTiling,
   tile_y : Bool,
 ) -> SpriteTiling {
-  SpriteTiling::{ ..self, tile_y, }
+  { ..self, tile_y, }
 }
 
 ///|
@@ -86,7 +86,7 @@ pub fn SpriteTiling::with_stretch_value(
   self : SpriteTiling,
   stretch_value : Float,
 ) -> SpriteTiling {
-  SpriteTiling::{ ..self, stretch_value, }
+  { ..self, stretch_value, }
 }
 
 ///|
@@ -99,7 +99,7 @@ pub(all) enum SpriteImageMode {
 
 ///|
 pub impl Default for SpriteImageMode with fn default() {
-  SpriteImageMode::Auto
+  Auto
 }
 
 ///|
@@ -109,7 +109,7 @@ pub struct Anchor {
 
 ///|
 pub fn Anchor::new(value : @math.Vec2) -> Anchor {
-  Anchor::{ value, }
+  { value, }
 }
 
 ///|
@@ -169,13 +169,13 @@ pub fn Anchor::Anchor() -> Anchor {
 
 ///|
 pub impl Default for Anchor with fn default() {
-  Anchor::Anchor()
+  Anchor()
 }
 
 ///|
 pub fn SpriteImageMode::scale(self : SpriteImageMode) -> SpriteScalingMode? {
   match self {
-    SpriteImageMode::Scale(mode) => Some(mode)
+    Scale(mode) => Some(mode)
     _ => None
   }
 }
@@ -183,8 +183,8 @@ pub fn SpriteImageMode::scale(self : SpriteImageMode) -> SpriteScalingMode? {
 ///|
 pub fn SpriteImageMode::uses_slices(self : SpriteImageMode) -> Bool {
   match self {
-    SpriteImageMode::Sliced(_) => true
-    SpriteImageMode::Tiled(_) => true
+    Sliced(_) => true
+    Tiled(_) => true
     _ => false
   }
 }
@@ -195,7 +195,7 @@ pub fn SpriteImageMode::tiled(
   tile_y? : Bool = true,
   stretch_value? : Float = 1.0F,
 ) -> SpriteImageMode {
-  SpriteImageMode::Tiled(SpriteTiling::new(tile_x, tile_y, stretch_value))
+  Tiled(SpriteTiling::new(tile_x, tile_y, stretch_value))
 }
 
 ///|
@@ -205,12 +205,12 @@ pub fn Sprite::Sprite() -> Sprite {
 
 ///|
 pub impl Default for Sprite with fn default() {
-  Sprite::Sprite()
+  Sprite()
 }
 
 ///|
 pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
-  Sprite::{
+  {
     image,
     texture_atlas: None,
     color: @color.Color::white(),
@@ -218,7 +218,7 @@ pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
     flip_y: false,
     custom_size: None,
     rect: None,
-    image_mode: SpriteImageMode::Auto,
+    image_mode: Auto,
   }
 }
 
@@ -229,7 +229,7 @@ pub fn Sprite::sized(size : @math.Vec2) -> Sprite {
 
 ///|
 pub fn Sprite::from_color(color : @color.Color, size : @math.Vec2) -> Sprite {
-  Sprite::{ ..Sprite::sized(size), color, }
+  { ..Sprite::sized(size), color, }
 }
 
 ///|
@@ -352,7 +352,7 @@ pub fn Sprite::from_atlas_image(
   image : @asset.Handle[@asset.Image],
   atlas : @asset.TextureAtlas,
 ) -> Sprite {
-  Sprite::{ ..Sprite::from_image(image), texture_atlas: Some(atlas) }
+  { ..Sprite::from_image(image), texture_atlas: Some(atlas) }
 }
 
 ///|
@@ -360,22 +360,22 @@ pub fn Sprite::with_texture_atlas(
   self : Sprite,
   texture_atlas : @asset.TextureAtlas?,
 ) -> Sprite {
-  Sprite::{ ..self, texture_atlas, }
+  { ..self, texture_atlas, }
 }
 
 ///|
 pub fn Sprite::with_color(self : Sprite, color : @color.Color) -> Sprite {
-  Sprite::{ ..self, color, }
+  { ..self, color, }
 }
 
 ///|
 pub fn Sprite::with_flip_x(self : Sprite, flip_x : Bool) -> Sprite {
-  Sprite::{ ..self, flip_x, }
+  { ..self, flip_x, }
 }
 
 ///|
 pub fn Sprite::with_flip_y(self : Sprite, flip_y : Bool) -> Sprite {
-  Sprite::{ ..self, flip_y, }
+  { ..self, flip_y, }
 }
 
 ///|
@@ -383,12 +383,12 @@ pub fn Sprite::with_custom_size(
   self : Sprite,
   custom_size : @math.Vec2?,
 ) -> Sprite {
-  Sprite::{ ..self, custom_size, }
+  { ..self, custom_size, }
 }
 
 ///|
 pub fn Sprite::with_rect(self : Sprite, rect : @math.Rect?) -> Sprite {
-  Sprite::{ ..self, rect, }
+  { ..self, rect, }
 }
 
 ///|
@@ -396,5 +396,5 @@ pub fn Sprite::with_image_mode(
   self : Sprite,
   image_mode : SpriteImageMode,
 ) -> Sprite {
-  Sprite::{ ..self, image_mode, }
+  { ..self, image_mode, }
 }

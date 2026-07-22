@@ -28,7 +28,7 @@ priv struct PickingA11yActionReaderState {
 
 ///|
 fn PickingA11yActionReaderState::PickingA11yActionReaderState() -> PickingA11yActionReaderState {
-  { cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
@@ -42,7 +42,7 @@ let picking_a11y_action_reader_state_resource_key : @ecs.ResourceKey[
 fn ensure_picking_a11y_action_reader_state(world : @ecs.World) -> Unit {
   let res = world.resource(picking_a11y_action_reader_state_resource_key)
   if !res.is_present() {
-    res.insert(PickingA11yActionReaderState::PickingA11yActionReaderState())
+    res.insert(PickingA11yActionReaderState())
   }
 }
 
@@ -69,7 +69,7 @@ priv struct PickingPointerInputEventReaderState {
 
 ///|
 fn PickingPointerInputEventReaderState::PickingPointerInputEventReaderState() -> PickingPointerInputEventReaderState {
-  { cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
@@ -85,9 +85,7 @@ fn ensure_picking_pointer_input_event_reader_state(world : @ecs.World) -> Unit {
     picking_pointer_input_event_reader_state_resource_key,
   )
   if !res.is_present() {
-    res.insert(
-      PickingPointerInputEventReaderState::PickingPointerInputEventReaderState(),
-    )
+    res.insert(PickingPointerInputEventReaderState())
   }
 }
 
@@ -136,7 +134,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     let prev = match
       (try! world.get_by_key(entity, @ui.ecs_key_scroll_position)) {
       Some(v) => v
-      None => @ui.ScrollPosition::ScrollPosition()
+      None => ScrollPosition()
     }
     let mut max_offset_x = 0.0F
     let mut max_offset_y = 0.0F
@@ -215,12 +213,12 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
         }
       }
     }
-    let mut next_x = if target_node.overflow.x == @ui.OverflowAxis::Scroll {
+    let mut next_x = if target_node.overflow.x == Scroll {
       prev.offset_x + dx
     } else {
       0.0F
     }
-    let mut next_y = if target_node.overflow.y == @ui.OverflowAxis::Scroll {
+    let mut next_y = if target_node.overflow.y == Scroll {
       prev.offset_y + dy
     } else {
       0.0F
@@ -252,61 +250,41 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
       continue
     }
     match req.action() {
-      @moon_accesskit.Action::Focus => {
+      Focus => {
         picking_set_input_focus(world, entity)
         // Map focus-driven navigation (tab / VO) to the hovered state so UI can
         // reflect focus without requiring pointer position.
         if (try! world.contains_by_key(entity, @ui.ecs_key_interaction)) {
-          try! (world.replace(
-            entity,
-            @ui.ecs_key_interaction,
-            @ui.Interaction::Hovered,
-          )
+          try! (world.replace(entity, @ui.ecs_key_interaction, Hovered)
           |> ignore)
         } else {
-          try! world.set_by_key(
-            entity,
-            @ui.ecs_key_interaction,
-            @ui.Interaction::Hovered,
-          )
+          try! world.set_by_key(entity, @ui.ecs_key_interaction, Hovered)
         }
       }
-      @moon_accesskit.Action::Click => {
+      Click => {
         picking_set_input_focus(world, entity)
         if (try! world.contains_by_key(entity, @ui.ecs_key_interaction)) {
-          try! (world.replace(
-            entity,
-            @ui.ecs_key_interaction,
-            @ui.Interaction::Pressed,
-          )
+          try! (world.replace(entity, @ui.ecs_key_interaction, Pressed)
           |> ignore)
         } else {
-          try! world.set_by_key(
-            entity,
-            @ui.ecs_key_interaction,
-            @ui.Interaction::Pressed,
-          )
+          try! world.set_by_key(entity, @ui.ecs_key_interaction, Pressed)
         }
         @app.PickingEvents::push(
           events,
           @pointer_events.PointerEvent::new(
             0,
-            @pointer_events.PointerEventKind::Click,
+            Click,
             @math.Vec2::new(0.0F, 0.0F),
             target=Some(entity),
           ),
         )
       }
-      @moon_accesskit.Action::ScrollUp =>
-        apply_scroll_delta(entity, 0.0F, -scroll_step)
-      @moon_accesskit.Action::ScrollDown =>
-        apply_scroll_delta(entity, 0.0F, scroll_step)
-      @moon_accesskit.Action::ScrollLeft =>
-        apply_scroll_delta(entity, -scroll_step, 0.0F)
-      @moon_accesskit.Action::ScrollRight =>
-        apply_scroll_delta(entity, scroll_step, 0.0F)
-      @moon_accesskit.Action::SetValue =>
-        if req.data() is Some(@moon_accesskit.ActionData::Value(value)) {
+      ScrollUp => apply_scroll_delta(entity, 0.0F, -scroll_step)
+      ScrollDown => apply_scroll_delta(entity, 0.0F, scroll_step)
+      ScrollLeft => apply_scroll_delta(entity, -scroll_step, 0.0F)
+      ScrollRight => apply_scroll_delta(entity, scroll_step, 0.0F)
+      SetValue =>
+        if req.data() is Some(Value(value)) {
           guard (try! world.get_by_key(entity, @text.ecs_key_text))
             is Some(text_node) else {
             continue
@@ -355,7 +333,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
                 events,
                 @pointer_events.PointerEvent::new(
                   pointer_id,
-                  @pointer_events.PointerEventKind::Move,
+                  Move,
                   pos,
                   target=hit_top,
                   delta=move_delta,
@@ -367,7 +345,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
               events,
               @pointer_events.PointerEvent::new(
                 pointer_id,
-                @pointer_events.PointerEventKind::Move,
+                Move,
                 pos,
                 target=hit_top,
               ),
@@ -388,7 +366,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
             events,
             @pointer_events.PointerEvent::new(
               pointer_id,
-              @pointer_events.PointerEventKind::Leave,
+              Leave,
               pos,
               target=Some(prev_e),
             ),
@@ -401,7 +379,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
             events,
             @pointer_events.PointerEvent::new(
               pointer_id,
-              @pointer_events.PointerEventKind::Enter,
+              Enter,
               pos,
               target=Some(next_e),
             ),
@@ -418,7 +396,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
           events,
           @pointer_events.PointerEvent::new(
             pointer_id,
-            @pointer_events.PointerEventKind::Down,
+            Down,
             pos,
             target=Some(target),
           ),
@@ -464,7 +442,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
                 events,
                 @pointer_events.PointerEvent::new(
                   pointer_id,
-                  @pointer_events.PointerEventKind::DragStart,
+                  DragStart,
                   pos,
                   target=Some(pressed_entity),
                 ),
@@ -483,7 +461,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
               events,
               @pointer_events.PointerEvent::new(
                 pointer_id,
-                @pointer_events.PointerEventKind::Drag,
+                Drag,
                 pos,
                 target=Some(pressed_entity),
                 delta=drag_delta,
@@ -508,7 +486,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
             events,
             @pointer_events.PointerEvent::new(
               pointer_id,
-              @pointer_events.PointerEventKind::Up,
+              Up,
               pos,
               target=Some(pressed_entity),
             ),
@@ -519,7 +497,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
               events,
               @pointer_events.PointerEvent::new(
                 pointer_id,
-                @pointer_events.PointerEventKind::Click,
+                Click,
                 pos,
                 target=Some(pressed_entity),
               ),
@@ -536,7 +514,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
                 events,
                 @pointer_events.PointerEvent::new(
                   pointer_id,
-                  @pointer_events.PointerEventKind::DragEnd,
+                  DragEnd,
                   pos,
                   target=Some(dragged_entity),
                   distance=pos.sub(start_pos),

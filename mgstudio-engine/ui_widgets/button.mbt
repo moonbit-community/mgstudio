@@ -35,8 +35,7 @@ fn button_on_key_input(
   ],
   commands : @app.Commands,
 ) -> Unit {
-  if !keyboard.just_pressed(@window.KeyCode::Enter) &&
-    !keyboard.just_pressed(@window.KeyCode::Space) {
+  if !keyboard.just_pressed(Enter) && !keyboard.just_pressed(Space) {
     return
   }
   guard focus.get().get() is Some(entity) else { return }
@@ -129,7 +128,7 @@ fn button_on_pointer_click(
 ///|
 pub fn button_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_systems(@app.Update, @app.system_config_param4(button_on_key_input))
+  .add_systems(Update, @app.system_config_param4(button_on_key_input))
   .add_pointer_observer3(button_on_pointer_down)
   .add_pointer_observer3(button_on_pointer_up)
   .add_pointer_observer3(button_on_pointer_leave)

@@ -23,7 +23,7 @@ pub struct ProcessorGatedAssetIo {
 
 ///|
 pub fn ProcessorGatedAssetIo::new(extension : String) -> ProcessorGatedAssetIo {
-  ProcessorGatedAssetIo::{ enabled: true, extension }
+  { enabled: true, extension }
 }
 
 ///|

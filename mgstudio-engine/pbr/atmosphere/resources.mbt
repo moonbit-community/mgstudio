@@ -141,7 +141,7 @@ fn pbr_atmosphere_push_mat4_words(
 
 ///|
 pub fn GpuAtmosphere::GpuAtmosphere() -> GpuAtmosphere {
-  GpuAtmosphere::{
+  {
     ground_albedo: @math.Vec3::zero(),
     inner_radius: 0.0F,
     outer_radius: 0.0F,
@@ -199,12 +199,7 @@ pub fn pbr_gpu_atmosphere_from_extracted(
   ground_albedo : @math.Vec3,
   world_to_atmosphere : @math.Affine3,
 ) -> GpuAtmosphere {
-  GpuAtmosphere::{
-    ground_albedo,
-    inner_radius,
-    outer_radius,
-    world_to_atmosphere,
-  }
+  { ground_albedo, inner_radius, outer_radius, world_to_atmosphere }
 }
 
 ///|
@@ -228,7 +223,7 @@ pub fn pbr_atmosphere_prepare_transform(
       camera_world,
     ),
   )
-  AtmosphereTransform::{
+  {
     world_from_atmosphere,
     atmosphere_from_world: world_from_atmosphere.transpose(),
   }
@@ -270,7 +265,7 @@ pub fn prepare_atmosphere_uniforms(world : @ecs.World) -> Unit {
 
 ///|
 pub fn GpuAtmosphereSettings::GpuAtmosphereSettings() -> GpuAtmosphereSettings {
-  GpuAtmosphereSettings::{
+  {
     transmittance_lut_size: @math.UVec2::new(256, 128),
     multiscattering_lut_size: @math.UVec2::new(32, 32),
     sky_view_lut_size: @math.UVec2::new(400, 200),
@@ -353,7 +348,7 @@ pub fn AtmosphereTextureDescriptor::new(
   depth_or_array_layers : Int,
   dimension : AtmosphereTextureDimension,
 ) -> AtmosphereTextureDescriptor {
-  AtmosphereTextureDescriptor::{
+  {
     width: if width <= 0 {
       1
     } else {
@@ -370,7 +365,7 @@ pub fn AtmosphereTextureDescriptor::new(
       depth_or_array_layers
     },
     dimension,
-    format: AtmosphereTextureFormat::Rgba16Float,
+    format: Rgba16Float,
     storage_binding: true,
     texture_binding: true,
   }
@@ -388,30 +383,30 @@ pub struct AtmosphereTextures {
 pub fn AtmosphereTextures::from_settings(
   settings : GpuAtmosphereSettings,
 ) -> AtmosphereTextures {
-  AtmosphereTextures::{
+  {
     transmittance_lut: AtmosphereTextureDescriptor::new(
       settings.transmittance_lut_size.x,
       settings.transmittance_lut_size.y,
       1,
-      AtmosphereTextureDimension::D2,
+      D2,
     ),
     multiscattering_lut: AtmosphereTextureDescriptor::new(
       settings.multiscattering_lut_size.x,
       settings.multiscattering_lut_size.y,
       1,
-      AtmosphereTextureDimension::D2,
+      D2,
     ),
     sky_view_lut: AtmosphereTextureDescriptor::new(
       settings.sky_view_lut_size.x,
       settings.sky_view_lut_size.y,
       1,
-      AtmosphereTextureDimension::D2,
+      D2,
     ),
     aerial_view_lut: AtmosphereTextureDescriptor::new(
       settings.aerial_view_lut_size.0.x,
       settings.aerial_view_lut_size.0.y,
       settings.aerial_view_lut_size.1,
-      AtmosphereTextureDimension::D3,
+      D3,
     ),
   }
 }
@@ -420,7 +415,7 @@ pub fn AtmosphereTextures::from_settings(
 pub fn pbr_gpu_atmosphere_settings(
   settings : AtmosphereSettings,
 ) -> GpuAtmosphereSettings {
-  GpuAtmosphereSettings::{
+  {
     transmittance_lut_size: settings.transmittance_lut_size,
     multiscattering_lut_size: settings.multiscattering_lut_size,
     sky_view_lut_size: settings.sky_view_lut_size,

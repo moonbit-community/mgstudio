@@ -78,7 +78,7 @@ pub struct MeshPipelineViewLayoutKey {
 
 ///|
 pub fn MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey() -> MeshPipelineViewLayoutKey {
-  MeshPipelineViewLayoutKey::{ bits: 0U }
+  { bits: 0U }
 }
 
 ///|
@@ -92,7 +92,7 @@ pub fn MeshPipelineViewLayoutKey::bits(
 pub fn mesh_view_layout_key_from_bits_truncate(
   bits : UInt,
 ) -> MeshPipelineViewLayoutKey {
-  MeshPipelineViewLayoutKey::{ bits: bits & MESH_PIPELINE_VIEW_LAYOUT_KEY_MASK }
+  { bits: bits & MESH_PIPELINE_VIEW_LAYOUT_KEY_MASK }
 }
 
 ///|
@@ -124,7 +124,7 @@ pub fn mesh_view_layout_key(
   area_light_luts? : Bool = false,
   dfg_lut? : Bool = false,
 ) -> MeshPipelineViewLayoutKey {
-  MeshPipelineViewLayoutKey::{
+  {
     bits: mesh_view_layout_flag(multisampled, MESH_VIEW_LAYOUT_MULTISAMPLED) |
     mesh_view_layout_flag(depth_prepass, MESH_VIEW_LAYOUT_DEPTH_PREPASS) |
     mesh_view_layout_flag(normal_prepass, MESH_VIEW_LAYOUT_NORMAL_PREPASS) |
@@ -310,10 +310,10 @@ fn mesh_view_layout_texture_sample_type(
   sample_type : MeshViewTextureSampleType,
 ) -> @render_resource.TextureSampleType {
   match sample_type {
-    FloatFilterable => @render_resource.TextureSampleType::Float(true)
-    FloatNonFilterable => @render_resource.TextureSampleType::Float(false)
-    Depth => @render_resource.TextureSampleType::Depth
-    UInt => @render_resource.TextureSampleType::UInt
+    FloatFilterable => Float(true)
+    FloatNonFilterable => Float(false)
+    Depth => Depth
+    UInt => UInt
   }
 }
 
@@ -322,11 +322,11 @@ fn mesh_view_layout_texture_dimension(
   dimension : MeshViewTextureDimension,
 ) -> @render_resource.TextureViewDimension {
   match dimension {
-    D2 => @render_resource.TextureViewDimension::D2
-    D2Array => @render_resource.TextureViewDimension::D2Array
-    D3 => @render_resource.TextureViewDimension::D3
-    Cube => @render_resource.TextureViewDimension::Cube
-    CubeArray => @render_resource.TextureViewDimension::CubeArray
+    D2 => D2
+    D2Array => D2Array
+    D3 => D3
+    Cube => Cube
+    CubeArray => CubeArray
   }
 }
 
@@ -335,8 +335,8 @@ fn mesh_view_layout_sampler_binding_type(
   sampler_type : MeshViewSamplerBindingType,
 ) -> @render_resource.SamplerBindingType {
   match sampler_type {
-    Filtering => @render_resource.SamplerBindingType::Filtering
-    Comparison => @render_resource.SamplerBindingType::Comparison
+    Filtering => Filtering
+    Comparison => Comparison
   }
 }
 
@@ -365,26 +365,24 @@ fn mesh_view_layout_entry_to_render_resource(
   let kind = match entry.entry_type {
     UniformBuffer =>
       @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
+        Uniform,
         entry.has_dynamic_offset,
         mesh_view_layout_min_binding_size(entry.binding),
       )
     StorageBuffer(read_only) =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Storage(read_only),
+      BufferBinding(
+        Storage(read_only),
         entry.has_dynamic_offset,
         mesh_view_layout_min_binding_size(entry.binding),
       )
     Texture(sample_type, dimension, multisampled, _) =>
-      @render_resource.BindingType::TextureBinding(
+      TextureBinding(
         mesh_view_layout_texture_sample_type(sample_type),
         mesh_view_layout_texture_dimension(dimension),
         multisampled,
       )
     Sampler(sampler_type) =>
-      @render_resource.BindingType::SamplerBinding(
-        mesh_view_layout_sampler_binding_type(sampler_type),
-      )
+      SamplerBinding(mesh_view_layout_sampler_binding_type(sampler_type))
   }
   let count = match entry.entry_type {
     Texture(_, _, _, array_count) => array_count
@@ -483,12 +481,12 @@ fn mesh_view_layout_texture_count(
 ) -> Int {
   let mut count = 0
   for entry in main_entries {
-    if entry.entry_type is MeshViewBindGroupLayoutEntryType::Texture(_, _, _, _) {
+    if entry.entry_type is Texture(_, _, _, _) {
       count = count + 1
     }
   }
   for entry in binding_array_entries {
-    if entry.entry_type is MeshViewBindGroupLayoutEntryType::Texture(_, _, _, _) {
+    if entry.entry_type is Texture(_, _, _, _) {
       count = count + 1
     }
   }
@@ -515,7 +513,7 @@ pub fn render3d_mesh_pipeline_view_layout(
     oit_supported~,
   )
   let label = layout_key.label()
-  MeshPipelineViewLayout::{
+  {
     main_layout_label: label,
     binding_array_layout_label: label.replace(
       old="mesh_view_layout:",
@@ -539,7 +537,7 @@ pub fn render3d_mesh_pipeline_view_layouts(
   irradiance_volumes_usable? : Bool = true,
   oit_supported? : Bool = true,
 ) -> MeshPipelineViewLayouts {
-  MeshPipelineViewLayouts::{
+  {
     clustered_forward_buffer_read_only,
     visibility_ranges_buffer_read_only,
     multiple_light_probes_in_array,
@@ -553,16 +551,10 @@ pub fn render3d_mesh_pipeline_view_layouts(
 fn mesh_view_uniform_buffer_entry(
   binding : Int,
   name : String,
-  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
+  stage? : MeshViewBindGroupLayoutEntryStage = Fragment,
   has_dynamic_offset? : Bool = false,
 ) -> MeshViewBindGroupLayoutEntry {
-  MeshViewBindGroupLayoutEntry::{
-    binding,
-    name,
-    entry_type: MeshViewBindGroupLayoutEntryType::UniformBuffer,
-    stage,
-    has_dynamic_offset,
-  }
+  { binding, name, entry_type: UniformBuffer, stage, has_dynamic_offset }
 }
 
 ///|
@@ -570,13 +562,13 @@ fn mesh_view_storage_buffer_entry(
   binding : Int,
   name : String,
   read_only : Bool,
-  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
+  stage? : MeshViewBindGroupLayoutEntryStage = Fragment,
   has_dynamic_offset? : Bool = false,
 ) -> MeshViewBindGroupLayoutEntry {
-  MeshViewBindGroupLayoutEntry::{
+  {
     binding,
     name,
-    entry_type: MeshViewBindGroupLayoutEntryType::StorageBuffer(read_only),
+    entry_type: StorageBuffer(read_only),
     stage,
     has_dynamic_offset,
   }
@@ -588,16 +580,14 @@ fn mesh_view_texture_entry(
   name : String,
   sample_type : MeshViewTextureSampleType,
   dimension : MeshViewTextureDimension,
-  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
+  stage? : MeshViewBindGroupLayoutEntryStage = Fragment,
   multisampled? : Bool = false,
   array_count? : Int = 0,
 ) -> MeshViewBindGroupLayoutEntry {
-  MeshViewBindGroupLayoutEntry::{
+  {
     binding,
     name,
-    entry_type: MeshViewBindGroupLayoutEntryType::Texture(
-      sample_type, dimension, multisampled, array_count,
-    ),
+    entry_type: Texture(sample_type, dimension, multisampled, array_count),
     stage,
     has_dynamic_offset: false,
   }
@@ -608,12 +598,12 @@ fn mesh_view_sampler_entry(
   binding : Int,
   name : String,
   sampler_type : MeshViewSamplerBindingType,
-  stage? : MeshViewBindGroupLayoutEntryStage = MeshViewBindGroupLayoutEntryStage::Fragment,
+  stage? : MeshViewBindGroupLayoutEntryStage = Fragment,
 ) -> MeshViewBindGroupLayoutEntry {
-  MeshViewBindGroupLayoutEntry::{
+  {
     binding,
     name,
-    entry_type: MeshViewBindGroupLayoutEntryType::Sampler(sampler_type),
+    entry_type: Sampler(sampler_type),
     stage,
     has_dynamic_offset: false,
   }
@@ -634,31 +624,21 @@ pub fn render3d_mesh_view_layout_entries(
     mesh_view_uniform_buffer_entry(
       0,
       "view",
-      stage=MeshViewBindGroupLayoutEntryStage::VertexFragment,
+      stage=VertexFragment,
       has_dynamic_offset=true,
     ),
     mesh_view_uniform_buffer_entry(1, "lights", has_dynamic_offset=true),
-    mesh_view_texture_entry(
-      2,
-      "point_shadow_textures",
-      MeshViewTextureSampleType::Depth,
-      MeshViewTextureDimension::CubeArray,
-    ),
+    mesh_view_texture_entry(2, "point_shadow_textures", Depth, CubeArray),
     mesh_view_sampler_entry(
       3,
       "point_shadow_textures_comparison_sampler",
-      MeshViewSamplerBindingType::Comparison,
+      Comparison,
     ),
-    mesh_view_texture_entry(
-      5,
-      "directional_shadow_textures",
-      MeshViewTextureSampleType::Depth,
-      MeshViewTextureDimension::D2Array,
-    ),
+    mesh_view_texture_entry(5, "directional_shadow_textures", Depth, D2Array),
     mesh_view_sampler_entry(
       6,
       "directional_shadow_textures_comparison_sampler",
-      MeshViewSamplerBindingType::Comparison,
+      Comparison,
     ),
     mesh_view_storage_buffer_entry(
       8, "clustered_lights", clustered_forward_buffer_read_only,
@@ -669,17 +649,13 @@ pub fn render3d_mesh_view_layout_entries(
     mesh_view_storage_buffer_entry(
       10, "cluster_offsets_and_counts", clustered_forward_buffer_read_only,
     ),
-    mesh_view_uniform_buffer_entry(
-      11,
-      "globals",
-      stage=MeshViewBindGroupLayoutEntryStage::VertexFragment,
-    ),
+    mesh_view_uniform_buffer_entry(11, "globals", stage=VertexFragment),
     mesh_view_uniform_buffer_entry(12, "light_probes", has_dynamic_offset=true),
     mesh_view_storage_buffer_entry(
       14,
       "visibility_ranges",
       visibility_ranges_buffer_read_only,
-      stage=MeshViewBindGroupLayoutEntryStage::Vertex,
+      stage=Vertex,
     ),
   ]
   if layout_key.contains(MESH_VIEW_LAYOUT_DISTANCE_FOG) {
@@ -710,35 +686,24 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         17,
         "screen_space_ambient_occlusion_texture",
-        MeshViewTextureSampleType::FloatNonFilterable,
-        MeshViewTextureDimension::D2,
+        FloatNonFilterable,
+        D2,
       ),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_TONEMAP_IN_SHADER) {
     main_entries.push(
-      mesh_view_texture_entry(
-        18,
-        "dt_lut_texture",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::D3,
-      ),
+      mesh_view_texture_entry(18, "dt_lut_texture", FloatFilterable, D3),
     )
-    main_entries.push(
-      mesh_view_sampler_entry(
-        19,
-        "dt_lut_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
-    )
+    main_entries.push(mesh_view_sampler_entry(19, "dt_lut_sampler", Filtering))
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_DEPTH_PREPASS) {
     main_entries.push(
       mesh_view_texture_entry(
         20,
         "depth_prepass_texture",
-        MeshViewTextureSampleType::Depth,
-        MeshViewTextureDimension::D2,
+        Depth,
+        D2,
         multisampled=layout_key.contains(MESH_VIEW_LAYOUT_MULTISAMPLED),
       ),
     )
@@ -748,8 +713,8 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         21,
         "normal_prepass_texture",
-        MeshViewTextureSampleType::FloatNonFilterable,
-        MeshViewTextureDimension::D2,
+        FloatNonFilterable,
+        D2,
         multisampled=layout_key.contains(MESH_VIEW_LAYOUT_MULTISAMPLED),
       ),
     )
@@ -759,36 +724,27 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         22,
         "motion_vector_prepass_texture",
-        MeshViewTextureSampleType::FloatNonFilterable,
-        MeshViewTextureDimension::D2,
+        FloatNonFilterable,
+        D2,
         multisampled=layout_key.contains(MESH_VIEW_LAYOUT_MULTISAMPLED),
       ),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_DEFERRED_PREPASS) {
     main_entries.push(
-      mesh_view_texture_entry(
-        23,
-        "deferred_prepass_texture",
-        MeshViewTextureSampleType::UInt,
-        MeshViewTextureDimension::D2,
-      ),
+      mesh_view_texture_entry(23, "deferred_prepass_texture", UInt, D2),
     )
   }
   main_entries.push(
     mesh_view_texture_entry(
       24,
       "view_transmission_texture",
-      MeshViewTextureSampleType::FloatFilterable,
-      MeshViewTextureDimension::D2,
+      FloatFilterable,
+      D2,
     ),
   )
   main_entries.push(
-    mesh_view_sampler_entry(
-      25,
-      "view_transmission_sampler",
-      MeshViewSamplerBindingType::Filtering,
-    ),
+    mesh_view_sampler_entry(25, "view_transmission_sampler", Filtering),
   )
   if layout_key.contains(MESH_VIEW_LAYOUT_OIT_ENABLED) && oit_supported {
     main_entries.push(
@@ -810,16 +766,12 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         31,
         "atmosphere_transmittance_texture",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::D2,
+        FloatFilterable,
+        D2,
       ),
     )
     main_entries.push(
-      mesh_view_sampler_entry(
-        32,
-        "atmosphere_transmittance_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
+      mesh_view_sampler_entry(32, "atmosphere_transmittance_sampler", Filtering),
     )
     main_entries.push(
       mesh_view_storage_buffer_entry(33, "atmosphere_data", true),
@@ -830,44 +782,24 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         34,
         "blue_noise_texture",
-        MeshViewTextureSampleType::FloatNonFilterable,
-        MeshViewTextureDimension::D2Array,
+        FloatNonFilterable,
+        D2Array,
       ),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_AREA_LIGHT_LUTS) {
     main_entries.push(
-      mesh_view_texture_entry(
-        35,
-        "area_light_luts",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::D2Array,
-      ),
+      mesh_view_texture_entry(35, "area_light_luts", FloatFilterable, D2Array),
     )
     main_entries.push(
-      mesh_view_sampler_entry(
-        36,
-        "area_light_luts_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
+      mesh_view_sampler_entry(36, "area_light_luts_sampler", Filtering),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_DFG_LUT) {
     main_entries.push(
-      mesh_view_texture_entry(
-        37,
-        "dfg_lut",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::D2,
-      ),
+      mesh_view_texture_entry(37, "dfg_lut", FloatFilterable, D2),
     )
-    main_entries.push(
-      mesh_view_sampler_entry(
-        38,
-        "dfg_lut_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
-    )
+    main_entries.push(mesh_view_sampler_entry(38, "dfg_lut_sampler", Filtering))
   }
   let binding_array_entries : Array[MeshViewBindGroupLayoutEntry] = []
   if layout_key.contains(MESH_VIEW_LAYOUT_ENVIRONMENT_MAP) {
@@ -875,8 +807,8 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         0,
         "diffuse_environment_maps",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::Cube,
+        FloatFilterable,
+        Cube,
         array_count=if multiple_light_probes_in_array { 8 } else { 0 },
       ),
     )
@@ -884,17 +816,13 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         1,
         "specular_environment_maps",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::Cube,
+        FloatFilterable,
+        Cube,
         array_count=if multiple_light_probes_in_array { 8 } else { 0 },
       ),
     )
     binding_array_entries.push(
-      mesh_view_sampler_entry(
-        2,
-        "environment_map_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
+      mesh_view_sampler_entry(2, "environment_map_sampler", Filtering),
     )
   }
   if layout_key.contains(MESH_VIEW_LAYOUT_IRRADIANCE_VOLUME) &&
@@ -903,17 +831,13 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         3,
         "irradiance_volumes",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::D3,
+        FloatFilterable,
+        D3,
         array_count=8,
       ),
     )
     binding_array_entries.push(
-      mesh_view_sampler_entry(
-        4,
-        "irradiance_volume_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
+      mesh_view_sampler_entry(4, "irradiance_volume_sampler", Filtering),
     )
   }
   if clustered_decals_usable {
@@ -924,17 +848,13 @@ pub fn render3d_mesh_view_layout_entries(
       mesh_view_texture_entry(
         6,
         "clustered_decal_textures",
-        MeshViewTextureSampleType::FloatFilterable,
-        MeshViewTextureDimension::D2,
+        FloatFilterable,
+        D2,
         array_count=8,
       ),
     )
     binding_array_entries.push(
-      mesh_view_sampler_entry(
-        7,
-        "clustered_decal_sampler",
-        MeshViewSamplerBindingType::Filtering,
-      ),
+      mesh_view_sampler_entry(7, "clustered_decal_sampler", Filtering),
     )
   }
   (main_entries, binding_array_entries)

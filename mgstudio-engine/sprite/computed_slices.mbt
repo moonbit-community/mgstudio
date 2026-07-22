@@ -274,7 +274,7 @@ pub fn ComputedTextureSlices::extract_slices(
   )
   let extracted : Array[TextureSlice] = []
   for slice in self.slices {
-    extracted.push(TextureSlice::{
+    extracted.push({
       texture_rect: slice.texture_rect,
       draw_size: slice.draw_size,
       offset: @math.Vec2::new(
@@ -328,11 +328,9 @@ pub fn compute_sprite_slices_from_rect(
   texture_rect : @math.Rect,
 ) -> ComputedTextureSlices? {
   match sprite.image_mode {
-    SpriteImageMode::Sliced(slicer) =>
-      Some(ComputedTextureSlices::{
-        slices: slicer.compute_slices(texture_rect, sprite.custom_size),
-      })
-    SpriteImageMode::Tiled(tiling) => {
+    Sliced(slicer) =>
+      Some({ slices: slicer.compute_slices(texture_rect, sprite.custom_size) })
+    Tiled(tiling) => {
       let slice = TextureSlice::{
         texture_rect,
         draw_size: match sprite.custom_size {
@@ -341,7 +339,7 @@ pub fn compute_sprite_slices_from_rect(
         },
         offset: @math.Vec2::new(0.0F, 0.0F),
       }
-      Some(ComputedTextureSlices::{
+      Some({
         slices: slice.tiled(
           tiling.stretch_value,
           (tiling.tile_x, tiling.tile_y),
@@ -441,7 +439,7 @@ pub fn compute_slices_on_asset_event_system(
   assets : ComputedSlicesAssetParams,
   params : ComputedSlicesAssetEventParams,
 ) -> Unit {
-  let changed_handles : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_handles : @hashset.HashSet[Int] = HashSet([])
   for event in params.p0().read() {
     match event {
       Added(handle) | Modified(handle) => changed_handles.add(handle.id())
@@ -484,9 +482,7 @@ test "sprite: computed texture slice insertion is deferred until after sprite qu
       })
       let sprite = Sprite::from_image(image)
         .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
-        .with_image_mode(
-          SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
-        )
+        .with_image_mode(Sliced(TextureSlicer::new(BorderRect::square(8.0F))))
       spawned.val = Some(commands.spawn_component(sprite))
     })
     .add_system_param3(compute_slices_on_sprite_change_system)

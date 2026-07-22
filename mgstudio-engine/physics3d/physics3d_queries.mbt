@@ -101,7 +101,7 @@ pub fn Physics3dContext::cast_ray_entity(
     .cast_ray(self.rigid_bodies, self.colliders, ray, max_toi, solid) {
     Some((h, toi)) =>
       match entity_from_collider_handle(self, h) {
-        Some(e) => Some(RayHit3d::{ entity: e, toi })
+        Some(e) => Some({ entity: e, toi })
         None => None
       }
     None => None
@@ -128,7 +128,7 @@ pub fn Physics3dContext::cast_ray_entity_with_filter(
     .cast_ray(self.rigid_bodies, self.colliders, ray, max_toi, solid) {
     Some((h, toi)) =>
       match entity_from_collider_handle(self, h) {
-        Some(e) => Some(RayHit3d::{ entity: e, toi })
+        Some(e) => Some({ entity: e, toi })
         None => None
       }
     None => None
@@ -160,7 +160,7 @@ pub fn Physics3dContext::cast_ray_and_get_normal_entity(
     Some((h, inter)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
-          Some(RayHitNormal3d::{
+          Some({
             entity: e,
             toi: inter.toi(),
             normal: rapier_vec3_to_mg(inter.normal()),
@@ -198,7 +198,7 @@ pub fn Physics3dContext::cast_ray_and_get_normal_entity_with_filter(
     Some((h, inter)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
-          Some(RayHitNormal3d::{
+          Some({
             entity: e,
             toi: inter.toi(),
             normal: rapier_vec3_to_mg(inter.normal()),
@@ -222,7 +222,7 @@ pub fn Physics3dContext::intersect_ray_entities(
     dir,
     max_toi,
     solid,
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
+    QueryFilter3DReal(),
   )
 }
 
@@ -247,7 +247,7 @@ pub fn Physics3dContext::intersect_ray_entities_with_filter(
   for pair in hits {
     let (h, inter) = pair
     if entity_from_collider_handle(self, h) is Some(e) {
-      out.push(RayHitNormal3d::{
+      out.push({
         entity: e,
         toi: inter.toi(),
         normal: rapier_vec3_to_mg(inter.normal()),
@@ -262,10 +262,7 @@ pub fn Physics3dContext::intersect_point_entities(
   self : Physics3dContext,
   point : @math.Vec3,
 ) -> Array[@core.Entity] {
-  self.intersect_point_entities_with_filter(
-    point,
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
-  )
+  self.intersect_point_entities_with_filter(point, QueryFilter3DReal())
 }
 
 ///|
@@ -302,7 +299,7 @@ pub fn Physics3dContext::project_point_entity(
     point,
     max_dist,
     solid,
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
+    QueryFilter3DReal(),
   )
 }
 
@@ -328,7 +325,7 @@ pub fn Physics3dContext::project_point_entity_with_filter(
     Some((h, proj)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
-          Some(PointProjection3d::{
+          Some({
             entity: e,
             point: rapier_vec3_to_mg(proj.point()),
             is_inside: proj.is_inside(),
@@ -348,7 +345,7 @@ pub fn Physics3dContext::intersect_shape_entities(
   self.intersect_shape_entities_with_filter(
     shape_pos,
     shape,
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
+    QueryFilter3DReal(),
   )
 }
 
@@ -390,7 +387,7 @@ pub fn Physics3dContext::cast_shape_entity(
     shape_vel,
     shape,
     options,
-    @collision.QueryFilter3DReal::QueryFilter3DReal(),
+    QueryFilter3DReal(),
   )
 }
 
@@ -418,7 +415,7 @@ pub fn Physics3dContext::cast_shape_entity_with_filter(
     Some((h, hit)) =>
       match entity_from_collider_handle(self, h) {
         Some(e) =>
-          Some(ShapeCastHit3d::{
+          Some({
             entity: e,
             toi: hit.toi(),
             point: rapier_vec3_to_mg(hit.point()),

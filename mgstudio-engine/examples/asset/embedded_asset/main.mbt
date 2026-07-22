@@ -19,6 +19,7 @@ const EMBEDDED_CRATE_NAME : String = "embedded_asset"
 struct EmbeddedAssetPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn EmbeddedAssetPlugin::EmbeddedAssetPlugin() -> EmbeddedAssetPlugin {
   EmbeddedAssetPlugin::{  }
 }
@@ -68,6 +69,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(EmbeddedAssetPlugin::EmbeddedAssetPlugin())
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

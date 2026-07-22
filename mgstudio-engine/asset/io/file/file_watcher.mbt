@@ -24,7 +24,7 @@ pub struct FileWatcher {
 
 ///|
 pub fn FileWatcher::new(root_path : String) -> FileWatcher {
-  FileWatcher::{ root_path, recursive: true, enabled: true }
+  { root_path, recursive: true, enabled: true }
 }
 
 ///|
@@ -32,7 +32,7 @@ pub fn FileWatcher::with_recursive(
   self : FileWatcher,
   recursive : Bool,
 ) -> FileWatcher {
-  FileWatcher::{ ..self, recursive, }
+  { ..self, recursive, }
 }
 
 ///|
@@ -40,7 +40,7 @@ pub fn FileWatcher::with_enabled(
   self : FileWatcher,
   enabled : Bool,
 ) -> FileWatcher {
-  FileWatcher::{ ..self, enabled, }
+  { ..self, enabled, }
 }
 
 ///|

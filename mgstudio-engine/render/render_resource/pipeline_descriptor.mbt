@@ -37,7 +37,7 @@ pub struct VertexState {
 
 ///|
 pub fn VertexState::VertexState() -> VertexState {
-  VertexState::{ shader: None, shader_defs: [], entry_point: None, buffers: [] }
+  { shader: None, shader_defs: [], entry_point: None, buffers: [] }
 }
 
 ///|
@@ -47,7 +47,7 @@ pub fn VertexState::new(
   entry_point : String?,
   buffers : Array[VertexBufferLayout],
 ) -> VertexState {
-  VertexState::{ shader, shader_defs, entry_point, buffers }
+  { shader, shader_defs, entry_point, buffers }
 }
 
 ///|
@@ -72,7 +72,7 @@ pub fn VertexState::buffers(self : VertexState) -> Array[VertexBufferLayout] {
 
 ///|
 pub impl Default for VertexState with fn default() {
-  VertexState::VertexState()
+  VertexState()
 }
 
 ///|
@@ -94,12 +94,12 @@ pub fn BlendComponent::BlendComponent(
   dst_factor? : BlendFactor = @wgpu.BLEND_FACTOR_ZERO,
   operation? : BlendOperation = @wgpu.BLEND_OPERATION_ADD,
 ) -> BlendComponent {
-  BlendComponent::{ src_factor, dst_factor, operation }
+  { src_factor, dst_factor, operation }
 }
 
 ///|
 pub fn BlendComponent::over() -> BlendComponent {
-  BlendComponent::{
+  {
     src_factor: @wgpu.BLEND_FACTOR_ONE,
     dst_factor: @wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
     operation: @wgpu.BLEND_OPERATION_ADD,
@@ -129,20 +129,20 @@ pub struct BlendState {
 
 ///|
 pub fn BlendState::BlendState(
-  color? : BlendComponent = BlendComponent::BlendComponent(),
-  alpha? : BlendComponent = BlendComponent::BlendComponent(),
+  color? : BlendComponent = BlendComponent(),
+  alpha? : BlendComponent = BlendComponent(),
 ) -> BlendState {
-  BlendState::{ color, alpha }
+  { color, alpha }
 }
 
 ///|
 pub fn BlendState::alpha_blending() -> BlendState {
-  BlendState::{ color: BlendComponent::over(), alpha: BlendComponent::over() }
+  { color: BlendComponent::over(), alpha: BlendComponent::over() }
 }
 
 ///|
 pub fn BlendState::premultiplied_alpha_blending() -> BlendState {
-  BlendState::{ color: BlendComponent::over(), alpha: BlendComponent::over() }
+  { color: BlendComponent::over(), alpha: BlendComponent::over() }
 }
 
 ///|
@@ -168,7 +168,7 @@ pub fn ColorTargetState::new(
   write_mask : UInt64,
   blend? : BlendState? = None,
 ) -> ColorTargetState {
-  ColorTargetState::{ format, blend, write_mask }
+  { format, blend, write_mask }
 }
 
 ///|
@@ -186,7 +186,7 @@ pub fn ColorTargetState::with_blend(
   self : ColorTargetState,
   blend : BlendState?,
 ) -> ColorTargetState {
-  ColorTargetState::{ ..self, blend, }
+  { ..self, blend, }
 }
 
 ///|
@@ -204,12 +204,7 @@ pub struct FragmentState {
 
 ///|
 pub fn FragmentState::FragmentState() -> FragmentState {
-  FragmentState::{
-    shader: None,
-    shader_defs: [],
-    entry_point: None,
-    targets: [],
-  }
+  { shader: None, shader_defs: [], entry_point: None, targets: [] }
 }
 
 ///|
@@ -219,12 +214,12 @@ pub fn FragmentState::new(
   entry_point : String?,
   targets : Array[ColorTargetState?],
 ) -> FragmentState {
-  FragmentState::{ shader, shader_defs, entry_point, targets }
+  { shader, shader_defs, entry_point, targets }
 }
 
 ///|
 pub impl Default for FragmentState with fn default() {
-  FragmentState::FragmentState()
+  FragmentState()
 }
 
 ///|
@@ -252,7 +247,7 @@ pub fn FragmentState::with_shader(
   self : FragmentState,
   shader : String?,
 ) -> FragmentState {
-  FragmentState::{ ..self, shader, }
+  { ..self, shader, }
 }
 
 ///|
@@ -260,7 +255,7 @@ pub fn FragmentState::with_shader_defs(
   self : FragmentState,
   shader_defs : Array[ShaderDefVal],
 ) -> FragmentState {
-  FragmentState::{ ..self, shader_defs, }
+  { ..self, shader_defs, }
 }
 
 ///|
@@ -268,7 +263,7 @@ pub fn FragmentState::with_entry_point(
   self : FragmentState,
   entry_point : String?,
 ) -> FragmentState {
-  FragmentState::{ ..self, entry_point, }
+  { ..self, entry_point, }
 }
 
 ///|
@@ -283,7 +278,7 @@ pub struct PrimitiveState {
 
 ///|
 pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
-  PrimitiveState::{
+  {
     topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     strip_index_format: None,
     front_face: @wgpu.FRONT_FACE_CCW,
@@ -295,7 +290,7 @@ pub fn PrimitiveState::PrimitiveState() -> PrimitiveState {
 
 ///|
 pub impl Default for PrimitiveState with fn default() {
-  PrimitiveState::PrimitiveState()
+  PrimitiveState()
 }
 
 ///|
@@ -303,7 +298,7 @@ pub fn PrimitiveState::with_polygon_mode(
   self : PrimitiveState,
   polygon_mode : UInt?,
 ) -> PrimitiveState {
-  PrimitiveState::{ ..self, polygon_mode, }
+  { ..self, polygon_mode, }
 }
 
 ///|
@@ -311,7 +306,7 @@ pub fn PrimitiveState::with_topology(
   self : PrimitiveState,
   topology : UInt,
 ) -> PrimitiveState {
-  PrimitiveState::{ ..self, topology, }
+  { ..self, topology, }
 }
 
 ///|
@@ -319,7 +314,7 @@ pub fn PrimitiveState::with_strip_index_format(
   self : PrimitiveState,
   strip_index_format : UInt?,
 ) -> PrimitiveState {
-  PrimitiveState::{ ..self, strip_index_format, }
+  { ..self, strip_index_format, }
 }
 
 ///|
@@ -327,7 +322,7 @@ pub fn PrimitiveState::with_front_face(
   self : PrimitiveState,
   front_face : UInt,
 ) -> PrimitiveState {
-  PrimitiveState::{ ..self, front_face, }
+  { ..self, front_face, }
 }
 
 ///|
@@ -335,7 +330,7 @@ pub fn PrimitiveState::with_cull_mode(
   self : PrimitiveState,
   cull_mode : UInt?,
 ) -> PrimitiveState {
-  PrimitiveState::{ ..self, cull_mode, }
+  { ..self, cull_mode, }
 }
 
 ///|
@@ -343,7 +338,7 @@ pub fn PrimitiveState::with_unclipped_depth(
   self : PrimitiveState,
   unclipped_depth : Bool,
 ) -> PrimitiveState {
-  PrimitiveState::{ ..self, unclipped_depth, }
+  { ..self, unclipped_depth, }
 }
 
 ///|
@@ -358,7 +353,7 @@ pub struct DepthStencilState {
 
 ///|
 pub fn DepthStencilState::DepthStencilState() -> DepthStencilState {
-  DepthStencilState::{
+  {
     format: @wgpu.TEXTURE_FORMAT_DEPTH24_PLUS,
     depth_write_enabled: true,
     depth_compare: @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
@@ -374,7 +369,7 @@ pub fn DepthStencilState::new(
   depth_write_enabled : Bool,
   depth_compare : UInt,
 ) -> DepthStencilState {
-  DepthStencilState::{
+  {
     format,
     depth_write_enabled,
     depth_compare,
@@ -389,7 +384,7 @@ pub fn DepthStencilState::with_bias_constant(
   self : DepthStencilState,
   bias_constant : Int,
 ) -> DepthStencilState {
-  DepthStencilState::{ ..self, bias_constant, }
+  { ..self, bias_constant, }
 }
 
 ///|
@@ -397,7 +392,7 @@ pub fn DepthStencilState::with_bias_slope_scale(
   self : DepthStencilState,
   bias_slope_scale : Float,
 ) -> DepthStencilState {
-  DepthStencilState::{ ..self, bias_slope_scale, }
+  { ..self, bias_slope_scale, }
 }
 
 ///|
@@ -405,12 +400,12 @@ pub fn DepthStencilState::with_bias_clamp(
   self : DepthStencilState,
   bias_clamp : Float,
 ) -> DepthStencilState {
-  DepthStencilState::{ ..self, bias_clamp, }
+  { ..self, bias_clamp, }
 }
 
 ///|
 pub impl Default for DepthStencilState with fn default() {
-  DepthStencilState::DepthStencilState()
+  DepthStencilState()
 }
 
 ///|
@@ -422,16 +417,12 @@ pub struct MultisampleState {
 
 ///|
 pub fn MultisampleState::MultisampleState() -> MultisampleState {
-  MultisampleState::{
-    count: 1U,
-    mask: 0xffffffffffffffffUL,
-    alpha_to_coverage_enabled: false,
-  }
+  { count: 1U, mask: 0xffffffffffffffffUL, alpha_to_coverage_enabled: false }
 }
 
 ///|
 pub impl Default for MultisampleState with fn default() {
-  MultisampleState::MultisampleState()
+  MultisampleState()
 }
 
 ///|
@@ -440,7 +431,7 @@ pub fn MultisampleState::new(
   mask? : UInt64 = 0xffffffffffffffffUL,
   alpha_to_coverage_enabled? : Bool = false,
 ) -> MultisampleState {
-  MultisampleState::{ count, mask, alpha_to_coverage_enabled }
+  { count, mask, alpha_to_coverage_enabled }
 }
 
 ///|
@@ -463,14 +454,14 @@ pub struct RenderPipelineDescriptor {
 
 ///|
 pub fn RenderPipelineDescriptor::RenderPipelineDescriptor() -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{
+  {
     label: None,
     layout: [],
     immediate_size: 0U,
-    vertex: VertexState::VertexState(),
-    primitive: PrimitiveState::PrimitiveState(),
+    vertex: VertexState(),
+    primitive: PrimitiveState(),
     depth_stencil: None,
-    multisample: MultisampleState::MultisampleState(),
+    multisample: MultisampleState(),
     fragment: None,
     zero_initialize_workgroup_memory: true,
   }
@@ -478,7 +469,7 @@ pub fn RenderPipelineDescriptor::RenderPipelineDescriptor() -> RenderPipelineDes
 
 ///|
 pub impl Default for RenderPipelineDescriptor with fn default() {
-  RenderPipelineDescriptor::RenderPipelineDescriptor()
+  RenderPipelineDescriptor()
 }
 
 ///|
@@ -514,7 +505,7 @@ pub fn RenderPipelineDescriptor::with_label(
   self : RenderPipelineDescriptor,
   label : String?,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, label, }
+  { ..self, label, }
 }
 
 ///|
@@ -522,7 +513,7 @@ pub fn RenderPipelineDescriptor::with_layout(
   self : RenderPipelineDescriptor,
   layout : Array[BindGroupLayoutDescriptor],
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, layout, }
+  { ..self, layout, }
 }
 
 ///|
@@ -530,7 +521,7 @@ pub fn RenderPipelineDescriptor::with_vertex(
   self : RenderPipelineDescriptor,
   vertex : VertexState,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, vertex, }
+  { ..self, vertex, }
 }
 
 ///|
@@ -538,7 +529,7 @@ pub fn RenderPipelineDescriptor::with_fragment(
   self : RenderPipelineDescriptor,
   fragment : FragmentState?,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, fragment, }
+  { ..self, fragment, }
 }
 
 ///|
@@ -546,7 +537,7 @@ pub fn RenderPipelineDescriptor::with_depth_stencil(
   self : RenderPipelineDescriptor,
   depth_stencil : DepthStencilState?,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, depth_stencil, }
+  { ..self, depth_stencil, }
 }
 
 ///|
@@ -554,7 +545,7 @@ pub fn RenderPipelineDescriptor::with_immediate_size(
   self : RenderPipelineDescriptor,
   immediate_size : UInt,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, immediate_size, }
+  { ..self, immediate_size, }
 }
 
 ///|
@@ -562,7 +553,7 @@ pub fn RenderPipelineDescriptor::with_primitive(
   self : RenderPipelineDescriptor,
   primitive : PrimitiveState,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, primitive, }
+  { ..self, primitive, }
 }
 
 ///|
@@ -570,7 +561,7 @@ pub fn RenderPipelineDescriptor::with_multisample(
   self : RenderPipelineDescriptor,
   multisample : MultisampleState,
 ) -> RenderPipelineDescriptor {
-  RenderPipelineDescriptor::{ ..self, multisample, }
+  { ..self, multisample, }
 }
 
 ///|
@@ -601,7 +592,7 @@ pub struct ComputePipelineDescriptor {
 
 ///|
 pub fn ComputePipelineDescriptor::ComputePipelineDescriptor() -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{
+  {
     label: None,
     layout: [],
     immediate_size: 0U,
@@ -614,7 +605,7 @@ pub fn ComputePipelineDescriptor::ComputePipelineDescriptor() -> ComputePipeline
 
 ///|
 pub impl Default for ComputePipelineDescriptor with fn default() {
-  ComputePipelineDescriptor::ComputePipelineDescriptor()
+  ComputePipelineDescriptor()
 }
 
 ///|
@@ -657,7 +648,7 @@ pub fn ComputePipelineDescriptor::with_label(
   self : ComputePipelineDescriptor,
   label : String?,
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, label, }
+  { ..self, label, }
 }
 
 ///|
@@ -665,7 +656,7 @@ pub fn ComputePipelineDescriptor::with_layout(
   self : ComputePipelineDescriptor,
   layout : Array[BindGroupLayoutDescriptor],
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, layout, }
+  { ..self, layout, }
 }
 
 ///|
@@ -673,7 +664,7 @@ pub fn ComputePipelineDescriptor::with_shader(
   self : ComputePipelineDescriptor,
   shader : String?,
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, shader, }
+  { ..self, shader, }
 }
 
 ///|
@@ -681,7 +672,7 @@ pub fn ComputePipelineDescriptor::with_shader_defs(
   self : ComputePipelineDescriptor,
   shader_defs : Array[ShaderDefVal],
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, shader_defs, }
+  { ..self, shader_defs, }
 }
 
 ///|
@@ -689,7 +680,7 @@ pub fn ComputePipelineDescriptor::with_entry_point(
   self : ComputePipelineDescriptor,
   entry_point : String?,
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, entry_point, }
+  { ..self, entry_point, }
 }
 
 ///|
@@ -697,7 +688,7 @@ pub fn ComputePipelineDescriptor::with_immediate_size(
   self : ComputePipelineDescriptor,
   immediate_size : UInt,
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, immediate_size, }
+  { ..self, immediate_size, }
 }
 
 ///|
@@ -705,7 +696,7 @@ pub fn ComputePipelineDescriptor::with_zero_initialize_workgroup_memory(
   self : ComputePipelineDescriptor,
   zero_initialize_workgroup_memory : Bool,
 ) -> ComputePipelineDescriptor {
-  ComputePipelineDescriptor::{ ..self, zero_initialize_workgroup_memory, }
+  { ..self, zero_initialize_workgroup_memory, }
 }
 
 ///|
@@ -734,13 +725,8 @@ pub fn RenderPipelineDescriptor::set_layout(
   layout : BindGroupLayoutDescriptor,
 ) -> RenderPipelineDescriptor {
   let next_layout = self.layout
-  filling_set_at(
-    next_layout,
-    index,
-    BindGroupLayoutDescriptor::BindGroupLayoutDescriptor(),
-    layout,
-  )
-  RenderPipelineDescriptor::{ ..self, layout: next_layout }
+  filling_set_at(next_layout, index, BindGroupLayoutDescriptor(), layout)
+  { ..self, layout: next_layout }
 }
 
 ///|
@@ -751,7 +737,7 @@ pub fn FragmentState::set_target(
 ) -> FragmentState {
   let next_targets = self.targets
   filling_set_at(next_targets, index, None, Some(target))
-  FragmentState::{ ..self, targets: next_targets }
+  { ..self, targets: next_targets }
 }
 
 ///|
@@ -767,12 +753,12 @@ pub struct CachedRenderPipelineId {
 
 ///|
 pub fn CachedRenderPipelineId::invalid() -> CachedRenderPipelineId {
-  CachedRenderPipelineId::{ id: 0xffffffffffffffffUL }
+  { id: 0xffffffffffffffffUL }
 }
 
 ///|
 pub fn CachedRenderPipelineId::new(id : UInt64) -> CachedRenderPipelineId {
-  CachedRenderPipelineId::{ id, }
+  { id, }
 }
 
 ///|
@@ -787,12 +773,12 @@ pub struct CachedComputePipelineId {
 
 ///|
 pub fn CachedComputePipelineId::invalid() -> CachedComputePipelineId {
-  CachedComputePipelineId::{ id: 0xffffffffffffffffUL }
+  { id: 0xffffffffffffffffUL }
 }
 
 ///|
 pub fn CachedComputePipelineId::new(id : UInt64) -> CachedComputePipelineId {
-  CachedComputePipelineId::{ id, }
+  { id, }
 }
 
 ///|

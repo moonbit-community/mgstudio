@@ -340,6 +340,7 @@ test "app: explicit apply_deferred_system syncs commands when auto insertion is 
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "app: deferred command batches are scoped to the executing world" {
   let outer_stage = schedule_label("DeferredBatchOuterWorld")
   let inner_stage = schedule_label("DeferredBatchInnerWorld")
@@ -943,8 +944,7 @@ test "app: runtime-invalid system is still scheduled and validated during execut
   debug_inspect(follower_runs.val, content="2")
   debug_inspect(validation_kinds.length(), content="2")
   debug_inspect(
-    validation_kinds[0] == ErrorContextKind::Validation &&
-    validation_kinds[1] == ErrorContextKind::Validation,
+    validation_kinds[0] == Validation && validation_kinds[1] == Validation,
     content="true",
   )
 }
@@ -984,8 +984,7 @@ test "app: statically invalid system stays in order and evaluates conditions bef
   debug_inspect(follower_runs.val, content="2")
   debug_inspect(validation_kinds.length(), content="2")
   debug_inspect(
-    validation_kinds[0] == ErrorContextKind::Validation &&
-    validation_kinds[1] == ErrorContextKind::Validation,
+    validation_kinds[0] == Validation && validation_kinds[1] == Validation,
     content="true",
   )
 }

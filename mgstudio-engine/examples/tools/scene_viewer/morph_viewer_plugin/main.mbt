@@ -65,7 +65,7 @@ fn setup(
   ignore(
     commands.spawn(
       @camera.Camera3dBundle::new(
-        @camera_camera.Camera::Camera(),
+        Camera(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
           @math.Vec3::zero(),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -157,7 +157,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, print_morph_target_names)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, print_morph_target_names)
   .run()
 }

@@ -262,7 +262,7 @@ fn ssao_create_hilbert_index_lut(
 
 ///|
 fn ssao_bool_defines(use_r16float : Bool) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   if use_r16float {
     defines.set("USE_R16FLOAT", true)
   }
@@ -625,7 +625,7 @@ fn ensure_mesh3d_ssao_pipeline_for_key(
     defines,
     ssao_value_defines(slice_count, samples_per_slice_side),
   )
-  backend.mesh3d_ssao_pipeline_cache.push(GpuSsaoPipelineCacheEntry::{
+  backend.mesh3d_ssao_pipeline_cache.push({
     quality_level,
     slice_count,
     samples_per_slice_side,

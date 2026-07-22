@@ -47,7 +47,7 @@ pub fn Camera3dBundle::new(
   camera : @camera_camera.Camera,
   transform : @transform.Transform,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
+  {
     camera,
     projection: Projection::default(),
     sub_camera_view: None,
@@ -60,9 +60,9 @@ pub fn Camera3dBundle::new(
     custom_post_process3d: None,
     vignette: None,
     motion_blur: None,
-    exposure: Some(Exposure::Exposure()),
+    exposure: Some(Exposure()),
     color_grading: None,
-    camera3d: Camera3d::Camera3d(),
+    camera3d: Camera3d(),
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -72,8 +72,8 @@ pub fn Camera3dBundle::new(
     atmosphere: None,
     atmosphere_settings: None,
     transform,
-    target: @camera_camera.RenderTarget::Screen,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    target: Screen,
+    layers: RenderLayers(),
   }
 }
 
@@ -83,7 +83,7 @@ pub fn Camera3dBundle::new_with_projection(
   projection : Projection,
   transform : @transform.Transform,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
+  {
     camera,
     projection,
     sub_camera_view: None,
@@ -96,9 +96,9 @@ pub fn Camera3dBundle::new_with_projection(
     custom_post_process3d: None,
     vignette: None,
     motion_blur: None,
-    exposure: Some(Exposure::Exposure()),
+    exposure: Some(Exposure()),
     color_grading: None,
-    camera3d: Camera3d::Camera3d(),
+    camera3d: Camera3d(),
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -108,8 +108,8 @@ pub fn Camera3dBundle::new_with_projection(
     atmosphere: None,
     atmosphere_settings: None,
     transform,
-    target: @camera_camera.RenderTarget::Screen,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    target: Screen,
+    layers: RenderLayers(),
   }
 }
 
@@ -118,7 +118,7 @@ pub fn Camera3dBundle::with_sub_camera_view(
   self : Camera3dBundle,
   sub_camera_view : SubCameraView3d?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{
+  {
     ..self,
     camera: self.camera.with_sub_camera_view(sub_camera_view),
     sub_camera_view,
@@ -130,7 +130,7 @@ pub fn Camera3dBundle::with_target(
   self : Camera3dBundle,
   target : @camera_camera.RenderTarget,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, target, }
+  { ..self, target, }
 }
 
 ///|
@@ -138,7 +138,7 @@ pub fn Camera3dBundle::with_screen_space_transmission(
   self : Camera3dBundle,
   screen_space_transmission : ScreenSpaceTransmission?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, screen_space_transmission, }
+  { ..self, screen_space_transmission, }
 }
 
 ///|
@@ -146,7 +146,7 @@ pub fn Camera3dBundle::with_screen_space_reflections(
   self : Camera3dBundle,
   screen_space_reflections : ScreenSpaceReflections?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, screen_space_reflections, }
+  { ..self, screen_space_reflections, }
 }
 
 ///|
@@ -154,7 +154,7 @@ pub fn Camera3dBundle::with_bloom(
   self : Camera3dBundle,
   bloom : Bloom?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, bloom, }
+  { ..self, bloom, }
 }
 
 ///|
@@ -162,7 +162,7 @@ pub fn Camera3dBundle::with_tonemapping(
   self : Camera3dBundle,
   tonemapping : Tonemapping?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, tonemapping, }
+  { ..self, tonemapping, }
 }
 
 ///|
@@ -170,7 +170,7 @@ pub fn Camera3dBundle::with_deband_dither(
   self : Camera3dBundle,
   deband_dither : DebandDither?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, deband_dither, }
+  { ..self, deband_dither, }
 }
 
 ///|
@@ -178,7 +178,7 @@ pub fn Camera3dBundle::with_chromatic_aberration(
   self : Camera3dBundle,
   chromatic_aberration : ChromaticAberration?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, chromatic_aberration, }
+  { ..self, chromatic_aberration, }
 }
 
 ///|
@@ -186,7 +186,7 @@ pub fn Camera3dBundle::with_custom_post_process3d(
   self : Camera3dBundle,
   custom_post_process3d : CustomPostProcess3d?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, custom_post_process3d, }
+  { ..self, custom_post_process3d, }
 }
 
 ///|
@@ -194,7 +194,7 @@ pub fn Camera3dBundle::with_vignette(
   self : Camera3dBundle,
   vignette : Vignette?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, vignette, }
+  { ..self, vignette, }
 }
 
 ///|
@@ -202,7 +202,7 @@ pub fn Camera3dBundle::with_motion_blur(
   self : Camera3dBundle,
   motion_blur : MotionBlur?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, motion_blur, }
+  { ..self, motion_blur, }
 }
 
 ///|
@@ -210,7 +210,7 @@ pub fn Camera3dBundle::with_exposure(
   self : Camera3dBundle,
   exposure : Exposure?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, exposure, }
+  { ..self, exposure, }
 }
 
 ///|
@@ -218,7 +218,7 @@ pub fn Camera3dBundle::with_color_grading(
   self : Camera3dBundle,
   color_grading : ColorGrading?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, color_grading, }
+  { ..self, color_grading, }
 }
 
 ///|
@@ -226,7 +226,7 @@ pub fn Camera3dBundle::with_camera3d(
   self : Camera3dBundle,
   camera3d : Camera3d,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, camera3d, }
+  { ..self, camera3d, }
 }
 
 ///|
@@ -234,7 +234,7 @@ pub fn Camera3dBundle::with_decal_config(
   self : Camera3dBundle,
   decal_config : CameraDecalConfig3d,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, decal_config: Some(decal_config) }
+  { ..self, decal_config: Some(decal_config) }
 }
 
 ///|
@@ -242,7 +242,7 @@ pub fn Camera3dBundle::with_deferred_config(
   self : Camera3dBundle,
   deferred_config : CameraDeferredConfig3d,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, deferred_config: Some(deferred_config) }
+  { ..self, deferred_config: Some(deferred_config) }
 }
 
 ///|
@@ -250,7 +250,7 @@ pub fn Camera3dBundle::with_distance_fog(
   self : Camera3dBundle,
   distance_fog : DistanceFog?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, distance_fog, }
+  { ..self, distance_fog, }
 }
 
 ///|
@@ -258,7 +258,7 @@ pub fn Camera3dBundle::with_volumetric_fog(
   self : Camera3dBundle,
   volumetric_fog : VolumetricFog?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, volumetric_fog, }
+  { ..self, volumetric_fog, }
 }
 
 ///|
@@ -266,7 +266,7 @@ pub fn Camera3dBundle::with_atmosphere(
   self : Camera3dBundle,
   atmosphere : Atmosphere?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, atmosphere, }
+  { ..self, atmosphere, }
 }
 
 ///|
@@ -274,7 +274,7 @@ pub fn Camera3dBundle::with_atmosphere_settings(
   self : Camera3dBundle,
   atmosphere_settings : AtmosphereSettings?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, atmosphere_settings, }
+  { ..self, atmosphere_settings, }
 }
 
 ///|
@@ -282,7 +282,7 @@ pub fn Camera3dBundle::with_auto_exposure(
   self : Camera3dBundle,
   auto_exposure : AutoExposure?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, auto_exposure, }
+  { ..self, auto_exposure, }
 }
 
 ///|
@@ -290,7 +290,7 @@ pub fn Camera3dBundle::with_depth_of_field(
   self : Camera3dBundle,
   depth_of_field : DepthOfField?,
 ) -> Camera3dBundle {
-  Camera3dBundle::{ ..self, depth_of_field, }
+  { ..self, depth_of_field, }
 }
 
 ///|
@@ -310,12 +310,12 @@ pub fn MeshMaterial3dBundle::new(
   material : MeshMaterial3dTyped[StandardMaterial],
   transform : @transform.Transform,
 ) -> MeshMaterial3dBundle {
-  MeshMaterial3dBundle::{
+  {
     mesh,
     material,
     transform,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
-    visibility: @visibility.Visibility::Inherited,
+    layers: RenderLayers(),
+    visibility: Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
   }
@@ -471,7 +471,7 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(
     ecs_key_camera3d,
     @camera_camera.ecs_key_camera,
-    fn() { @camera_camera.Camera::Camera() },
+    fn() { Camera() },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
@@ -486,12 +486,12 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(
     ecs_key_camera3d,
     @camera_camera.ecs_key_render_target,
-    fn() { @camera_camera.RenderTarget::Screen },
+    fn() { Screen },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
     @camera_render_layers.ecs_key_render_layers,
-    fn() { @camera_render_layers.RenderLayers::RenderLayers() },
+    fn() { RenderLayers() },
   )
   world.register_required_components_with(
     ecs_key_camera3d,
@@ -501,7 +501,7 @@ pub fn register_render3d_required_components(
   world.register_required_components_with(
     ecs_key_camera3d,
     ecs_key_deband_dither,
-    fn() { DebandDither::Enabled },
+    fn() { Enabled },
   )
   world.register_required_components_with(ecs_key_camera3d, ecs_key_frustum, fn() {
     Projection::default().compute_frustum(@transform.Transform::identity())

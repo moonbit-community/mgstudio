@@ -22,7 +22,7 @@ test "picking wb: collect input honors PointerInputSettings mouse toggle" {
     PointerInputSettings::new(false, false),
   )
   picking_collect_mouse_system(world)
-  let cursor : @ecs.MessageCursor[PointerInput] = @ecs.MessageCursor::MessageCursor()
+  let cursor : @ecs.MessageCursor[PointerInput] = MessageCursor()
   let disabled_inputs = world
     .message_reader(pointer_input_message_key(), cursor~)
     .read()
@@ -51,9 +51,7 @@ test "picking wb: PointerInput messages update pointer entity components" {
   )
   |> ignore
   picking_process_pointer_inputs_system(world)
-  let map = get_pointer_map_resource(world)
-    .get()
-    .unwrap_or(PointerMap::PointerMap())
+  let map = get_pointer_map_resource(world).get().unwrap_or(PointerMap())
   let entity = map.get_entity(0).unwrap()
   let id = (try! world.get_by_key(entity, ecs_key_pointer_id)).unwrap()
   inspect(id.value(), content="0")
@@ -76,7 +74,7 @@ test "picking wb: PointerInput messages update pointer entity components" {
   picking_process_pointer_inputs_system(world)
   let entity_after = get_pointer_map_resource(world)
     .get()
-    .unwrap_or(PointerMap::PointerMap())
+    .unwrap_or(PointerMap())
     .get_entity(0)
     .unwrap()
   inspect(entity_after.id == entity.id, content="true")

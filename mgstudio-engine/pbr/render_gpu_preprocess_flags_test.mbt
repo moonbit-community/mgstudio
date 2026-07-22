@@ -19,23 +19,20 @@ test "render3d gpu preprocess: transmissive phase classification follows bevy re
   )
   let masked_transmissive = @material.StandardMaterial::StandardMaterial()
     .with_specular_transmission(0.6F)
-    .with_alpha_mode(@material.AlphaMode3d::Mask(0.5F))
+    .with_alpha_mode(Mask(0.5F))
   let transparent_transmissive = @material.StandardMaterial::StandardMaterial()
     .with_specular_transmission(0.6F)
-    .with_alpha_mode(@material.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
   debug_inspect(
-    standard_material_render_phase_type(opaque_transmissive)
-    is @material.RenderPhaseType::Transmissive,
+    standard_material_render_phase_type(opaque_transmissive) is Transmissive,
     content="true",
   )
   debug_inspect(
-    standard_material_render_phase_type(masked_transmissive)
-    is @material.RenderPhaseType::Transmissive,
+    standard_material_render_phase_type(masked_transmissive) is Transmissive,
     content="true",
   )
   debug_inspect(
-    standard_material_render_phase_type(transparent_transmissive)
-    is @material.RenderPhaseType::Transparent,
+    standard_material_render_phase_type(transparent_transmissive) is Transparent,
     content="true",
   )
 }

@@ -35,7 +35,7 @@ pub fn AnimationClipEvent::new(
   label : String,
   payload : String,
 ) -> AnimationClipEvent {
-  AnimationClipEvent::{ time, label, payload, trigger: None }
+  { time, label, payload, trigger: None }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn AnimationClipEvent::new_callback(
   time : Float,
   trigger : AnimationEventTriggerFn,
 ) -> AnimationClipEvent {
-  AnimationClipEvent::{ time, label: "", payload: "", trigger: Some(trigger) }
+  { time, label: "", payload: "", trigger: Some(trigger) }
 }
 
 ///|
@@ -64,7 +64,7 @@ pub fn[T : AnimationEvent + @ecs.TriggerEvent] AnimationClipEvent::new_typed(
     let event_value = @ecs.TriggerEvent::set_observer_entity(event, entity)
     world.trigger(event_value, caller=Some("mgstudio.animation.trigger_events"))
   }
-  AnimationClipEvent::{ time, label: "", payload: "", trigger: Some(trigger) }
+  { time, label: "", payload: "", trigger: Some(trigger) }
 }
 
 ///|
@@ -221,9 +221,9 @@ fn triggered_events_from_animation(
   let looping = active.just_completed() && !is_finished
   let direction = match (reverse, looping) {
     (false, false) => TriggeredEventsDirection::Forward
-    (false, true) => TriggeredEventsDirection::ForwardLooping
-    (true, false) => TriggeredEventsDirection::Reverse
-    (true, true) => TriggeredEventsDirection::ReverseLooping
+    (false, true) => ForwardLooping
+    (true, false) => Reverse
+    (true, true) => ReverseLooping
   }
 
   match direction {
@@ -238,7 +238,7 @@ fn triggered_events_from_animation(
           event.time < this_time
         })
       }
-      Some(TriggeredEvents::{
+      Some({
         direction,
         lower_start: start,
         lower_end: end,
@@ -257,7 +257,7 @@ fn triggered_events_from_animation(
           event.time <= this_time
         })
       }
-      Some(TriggeredEvents::{
+      Some({
         direction,
         lower_start: start,
         lower_end: end,
@@ -272,7 +272,7 @@ fn triggered_events_from_animation(
       let lower_end = animation_clip_event_partition_point(events, fn(event) {
         event.time < this_time
       })
-      Some(TriggeredEvents::{
+      Some({
         direction,
         lower_start: 0,
         lower_end,
@@ -287,7 +287,7 @@ fn triggered_events_from_animation(
       let upper_start = animation_clip_event_partition_point(events, fn(event) {
         event.time <= this_time
       })
-      Some(TriggeredEvents::{
+      Some({
         direction,
         lower_start: 0,
         lower_end,

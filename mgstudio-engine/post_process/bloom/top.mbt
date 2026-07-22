@@ -22,6 +22,7 @@ const BLOOM_PLUGIN_NAME : String = "mgstudio.post_process.bloom.BloomPlugin"
 pub struct BloomPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn BloomPlugin::BloomPlugin() -> BloomPlugin {
   BloomPlugin::{  }
 }
@@ -45,7 +46,7 @@ pub struct BloomPrefilter {
 
 ///|
 pub fn BloomPrefilter::BloomPrefilter() -> BloomPrefilter {
-  BloomPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
+  { threshold: 0.0F, threshold_softness: 0.0F }
 }
 
 ///|
@@ -53,7 +54,7 @@ pub fn BloomPrefilter::new(
   threshold : Float,
   threshold_softness : Float,
 ) -> BloomPrefilter {
-  BloomPrefilter::{
+  {
     threshold: if threshold < 0.0F {
       0.0F
     } else {
@@ -93,7 +94,7 @@ pub(all) enum BloomCompositeMode {
 
 ///|
 pub fn BloomCompositeMode::default() -> BloomCompositeMode {
-  BloomCompositeMode::EnergyConserving
+  EnergyConserving
 }
 
 ///|
@@ -114,13 +115,13 @@ pub struct Bloom {
 
 ///|
 pub fn Bloom::Bloom() -> Bloom {
-  Bloom::{
+  {
     intensity: 0.15F,
     low_frequency_boost: 0.7F,
     low_frequency_boost_curvature: 0.95F,
     high_pass_frequency: 1.0F,
-    prefilter: BloomPrefilter::BloomPrefilter(),
-    composite_mode: BloomCompositeMode::EnergyConserving,
+    prefilter: BloomPrefilter(),
+    composite_mode: EnergyConserving,
     max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION,
     scale: @math.Vec2::new(1.0F, 1.0F),
   }
@@ -128,12 +129,12 @@ pub fn Bloom::Bloom() -> Bloom {
 
 ///|
 pub fn Bloom::natural() -> Bloom {
-  Bloom::Bloom()
+  Bloom()
 }
 
 ///|
 pub fn Bloom::anamorphic() -> Bloom {
-  Bloom::{
+  {
     ..Bloom(),
     max_mip_dimension: BLOOM_DEFAULT_MAX_MIP_DIMENSION * 2,
     scale: @math.Vec2::new(4.0F, 1.0F),
@@ -142,17 +143,17 @@ pub fn Bloom::anamorphic() -> Bloom {
 
 ///|
 pub fn Bloom::old_school() -> Bloom {
-  Bloom::{
+  {
     ..Bloom(),
     intensity: 0.05F,
     prefilter: BloomPrefilter::new(0.6F, 0.2F),
-    composite_mode: BloomCompositeMode::Additive,
+    composite_mode: Additive,
   }
 }
 
 ///|
 pub fn Bloom::screen_blur() -> Bloom {
-  Bloom::{
+  {
     ..Bloom(),
     intensity: 1.0F,
     low_frequency_boost: 0.0F,
@@ -163,19 +164,12 @@ pub fn Bloom::screen_blur() -> Bloom {
 
 ///|
 pub fn Bloom::new(intensity : Float) -> Bloom {
-  Bloom::{
-    ..Bloom(),
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
+  { ..Bloom(), intensity: if intensity < 0.0F { 0.0F } else { intensity } }
 }
 
 ///|
 pub fn Bloom::with_intensity(self : Bloom, intensity : Float) -> Bloom {
-  Bloom::{ ..self, intensity: if intensity < 0.0F { 0.0F } else { intensity } }
+  { ..self, intensity: if intensity < 0.0F { 0.0F } else { intensity } }
 }
 
 ///|
@@ -183,7 +177,7 @@ pub fn Bloom::with_low_frequency_boost(
   self : Bloom,
   low_frequency_boost : Float,
 ) -> Bloom {
-  Bloom::{
+  {
     ..self,
     low_frequency_boost: if low_frequency_boost < 0.0F {
       0.0F
@@ -200,7 +194,7 @@ pub fn Bloom::with_low_frequency_boost_curvature(
   self : Bloom,
   low_frequency_boost_curvature : Float,
 ) -> Bloom {
-  Bloom::{
+  {
     ..self,
     low_frequency_boost_curvature: if low_frequency_boost_curvature < 0.0F {
       0.0F
@@ -217,7 +211,7 @@ pub fn Bloom::with_high_pass_frequency(
   self : Bloom,
   high_pass_frequency : Float,
 ) -> Bloom {
-  Bloom::{
+  {
     ..self,
     high_pass_frequency: if high_pass_frequency < 0.0F {
       0.0F
@@ -235,10 +229,7 @@ pub fn Bloom::with_prefilter(
   threshold : Float,
   threshold_softness : Float,
 ) -> Bloom {
-  Bloom::{
-    ..self,
-    prefilter: BloomPrefilter::new(threshold, threshold_softness),
-  }
+  { ..self, prefilter: BloomPrefilter::new(threshold, threshold_softness) }
 }
 
 ///|
@@ -246,7 +237,7 @@ pub fn Bloom::with_prefilter_settings(
   self : Bloom,
   prefilter : BloomPrefilter,
 ) -> Bloom {
-  Bloom::{
+  {
     ..self,
     prefilter: BloomPrefilter::new(
       prefilter.threshold,
@@ -260,7 +251,7 @@ pub fn Bloom::with_composite_mode(
   self : Bloom,
   composite_mode : BloomCompositeMode,
 ) -> Bloom {
-  Bloom::{ ..self, composite_mode, }
+  { ..self, composite_mode, }
 }
 
 ///|
@@ -268,7 +259,7 @@ pub fn Bloom::with_max_mip_dimension(
   self : Bloom,
   max_mip_dimension : Int,
 ) -> Bloom {
-  Bloom::{
+  {
     ..self,
     max_mip_dimension: if max_mip_dimension < 4 {
       4
@@ -280,7 +271,7 @@ pub fn Bloom::with_max_mip_dimension(
 
 ///|
 pub fn Bloom::with_scale(self : Bloom, scale : @math.Vec2) -> Bloom {
-  Bloom::{
+  {
     ..self,
     scale: @math.Vec2::new(
       if scale.x < 0.0F {

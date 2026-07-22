@@ -45,19 +45,17 @@ pub struct ClearColor {
 
 ///|
 pub fn ClearColor::new(color : @color.Color) -> ClearColor {
-  ClearColor::{ color, }
+  { color, }
 }
 
 ///|
 pub fn ClearColor::ClearColor() -> ClearColor {
-  ClearColor::{
-    color: @color.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
-  }
+  { color: @color.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F) }
 }
 
 ///|
 pub impl Default for ClearColor with fn default() {
-  ClearColor::ClearColor()
+  ClearColor()
 }
 
 ///|

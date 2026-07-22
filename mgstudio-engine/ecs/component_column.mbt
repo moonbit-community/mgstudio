@@ -205,7 +205,7 @@ pub fn[T] ComponentColumn::table_column(
   guard self.storage_type == Table else { return None }
   match self.cached_table_column(table_id) {
     Some(column) =>
-      Some(ComponentTableColumn::{
+      Some({
         world: self.world,
         table_id,
         local_component_id: self.local_component_id,

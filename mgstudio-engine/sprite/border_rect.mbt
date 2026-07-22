@@ -27,12 +27,12 @@ pub fn BorderRect::new(
   top : Float,
   bottom : Float,
 ) -> BorderRect {
-  BorderRect::{ left, right, top, bottom }
+  { left, right, top, bottom }
 }
 
 ///|
 pub fn BorderRect::square(value : Float) -> BorderRect {
-  BorderRect::{ left: value, right: value, top: value, bottom: value }
+  { left: value, right: value, top: value, bottom: value }
 }
 
 ///|

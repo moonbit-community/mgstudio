@@ -19,6 +19,7 @@
 pub struct Hdr {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn Hdr::Hdr() -> Hdr {
   Hdr::{  }
 }

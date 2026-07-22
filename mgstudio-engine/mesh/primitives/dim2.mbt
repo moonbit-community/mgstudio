@@ -56,19 +56,16 @@ fn primitive2d_geometry_with_normals(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> @mesh.Mesh3dGeometry {
-  @mesh.Mesh3dGeometry::new_empty(@mesh.Mesh3dPrimitiveTopology::TriangleList)
+  @mesh.Mesh3dGeometry::new_empty(TriangleList)
   .with_inserted_attribute(
     @mesh.MeshVertexAttribute::position(),
-    @mesh.VertexAttributeValues::Float32x3(positions),
+    Float32x3(positions),
   )
   .with_inserted_attribute(
     @mesh.MeshVertexAttribute::normal(),
-    @mesh.VertexAttributeValues::Float32x3(normals),
+    Float32x3(normals),
   )
-  .with_inserted_attribute(
-    @mesh.MeshVertexAttribute::uv_0(),
-    @mesh.VertexAttributeValues::Float32x2(uvs),
-  )
+  .with_inserted_attribute(@mesh.MeshVertexAttribute::uv_0(), Float32x2(uvs))
   .with_inserted_indices(indices)
 }
 
@@ -89,7 +86,7 @@ pub(all) struct CircleMeshBuilder {
 
 ///|
 pub fn CircleMeshBuilder::CircleMeshBuilder() -> CircleMeshBuilder {
-  { circle: @math.Circle::Circle(), resolution: 32 }
+  { circle: Circle(), resolution: 32 }
 }
 
 ///|
@@ -191,7 +188,7 @@ pub fn circle_line_strip_mesh(
     positions,
     uvs,
     Some(indices),
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
 }
 
@@ -292,11 +289,7 @@ pub(all) struct CircularSectorMeshBuilder {
 
 ///|
 pub fn CircularSectorMeshBuilder::CircularSectorMeshBuilder() -> CircularSectorMeshBuilder {
-  {
-    sector: @math.CircularSector::CircularSector(),
-    resolution: 32,
-    uv_mode: Mask(0.0F),
-  }
+  { sector: CircularSector(), resolution: 32, uv_mode: Mask(0.0F) }
 }
 
 ///|
@@ -407,11 +400,7 @@ pub(all) struct CircularSegmentMeshBuilder {
 
 ///|
 pub fn CircularSegmentMeshBuilder::CircularSegmentMeshBuilder() -> CircularSegmentMeshBuilder {
-  {
-    segment: @math.CircularSegment::CircularSegment(),
-    resolution: 32,
-    uv_mode: Mask(0.0F),
-  }
+  { segment: CircularSegment(), resolution: 32, uv_mode: Mask(0.0F) }
 }
 
 ///|
@@ -628,7 +617,7 @@ pub(all) struct EllipseMeshBuilder {
 
 ///|
 pub fn EllipseMeshBuilder::EllipseMeshBuilder() -> EllipseMeshBuilder {
-  { ellipse: @math.Ellipse::Ellipse(), resolution: 32 }
+  { ellipse: Ellipse(), resolution: 32 }
 }
 
 ///|
@@ -742,7 +731,7 @@ pub fn segment2d_mesh(segment : @math.Segment2d) -> @mesh.Mesh3dGeometry {
       @math.Vec3::new(segment.end.x, segment.end.y, 0.0F),
     ],
     Some([0, 1]),
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
 }
 
@@ -825,7 +814,7 @@ pub fn polyline2d_mesh(polyline : @math.Polyline2d) -> @mesh.Mesh3dGeometry {
   @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     positions,
     Some(indices),
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
 }
 
@@ -883,7 +872,7 @@ pub(all) struct AnnulusMeshBuilder {
 
 ///|
 pub fn AnnulusMeshBuilder::AnnulusMeshBuilder() -> AnnulusMeshBuilder {
-  { annulus: @math.Annulus::Annulus(), resolution: 32 }
+  { annulus: Annulus(), resolution: 32 }
 }
 
 ///|
@@ -1127,7 +1116,7 @@ pub struct Triangle2dMeshBuilder {
 
 ///|
 pub fn Triangle2dMeshBuilder::Triangle2dMeshBuilder() -> Triangle2dMeshBuilder {
-  { triangle: @math.Triangle2d::Triangle2d() }
+  { triangle: Triangle2d() }
 }
 
 ///|
@@ -1298,7 +1287,7 @@ pub(all) struct Capsule2dMeshBuilder {
 
 ///|
 pub fn Capsule2dMeshBuilder::Capsule2dMeshBuilder() -> Capsule2dMeshBuilder {
-  { capsule: @math.Capsule2d::Capsule2d(), resolution: 16 }
+  { capsule: Capsule2d(), resolution: 16 }
 }
 
 ///|

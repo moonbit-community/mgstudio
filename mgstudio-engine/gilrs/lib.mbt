@@ -113,10 +113,10 @@ pub fn gamepad_set_rumble(
 ) -> GamepadRumbleResult {
   let gamepad = match connected_gamepad(gamepad_id) {
     Some(gamepad) => gamepad
-    None => return GamepadRumbleResult::NotFound
+    None => return NotFound
   }
   if !gamepad_ff_supported_for_rumble(gamepad) {
-    return GamepadRumbleResult::Unsupported
+    return Unsupported
   }
 
   let strong = clamp_rumble_motor(strong_motor)
@@ -130,7 +130,7 @@ pub fn gamepad_set_rumble(
       weak_motor: Float::from_double(weak),
       duration_ms: clamped_duration_ms,
     })
-    return GamepadRumbleResult::Applied
+    return Applied
   }
 
   let effect = @gamepad.EffectBuilder::new()
@@ -138,19 +138,19 @@ pub fn gamepad_set_rumble(
     .duration(clamped_duration_ms)
     .rumble(strong, weak)
     .finish(ensure_gilrs()) catch {
-      _ => return GamepadRumbleResult::Unsupported
+      _ => return Unsupported
     }
 
   if strong == 0.0 && weak == 0.0 {
     effect.stop() catch {
-      _ => return GamepadRumbleResult::Unsupported
+      _ => return Unsupported
     }
   } else {
     effect.play() catch {
-      _ => return GamepadRumbleResult::Unsupported
+      _ => return Unsupported
     }
   }
-  GamepadRumbleResult::Applied
+  Applied
 }
 
 ///|
@@ -204,41 +204,41 @@ pub fn gamepad_test_reset_state() -> Unit {
 ///|
 fn gamepad_button_from_index(index : Int) -> @gamepad.Button {
   match index {
-    0 => @gamepad.Button::South
-    1 => @gamepad.Button::East
-    2 => @gamepad.Button::C
-    3 => @gamepad.Button::North
-    4 => @gamepad.Button::West
-    5 => @gamepad.Button::Z
-    6 => @gamepad.Button::LeftTrigger
-    7 => @gamepad.Button::RightTrigger
-    8 => @gamepad.Button::LeftTrigger2
-    9 => @gamepad.Button::RightTrigger2
-    10 => @gamepad.Button::Select
-    11 => @gamepad.Button::Start
-    12 => @gamepad.Button::Mode
-    13 => @gamepad.Button::LeftThumb
-    14 => @gamepad.Button::RightThumb
-    15 => @gamepad.Button::DPadUp
-    16 => @gamepad.Button::DPadDown
-    17 => @gamepad.Button::DPadLeft
-    18 => @gamepad.Button::DPadRight
-    _ => @gamepad.Button::Unknown
+    0 => South
+    1 => East
+    2 => C
+    3 => North
+    4 => West
+    5 => Z
+    6 => LeftTrigger
+    7 => RightTrigger
+    8 => LeftTrigger2
+    9 => RightTrigger2
+    10 => Select
+    11 => Start
+    12 => Mode
+    13 => LeftThumb
+    14 => RightThumb
+    15 => DPadUp
+    16 => DPadDown
+    17 => DPadLeft
+    18 => DPadRight
+    _ => Unknown
   }
 }
 
 ///|
 fn gamepad_axis_from_index(index : Int) -> @gamepad.Axis {
   match index {
-    0 => @gamepad.Axis::LeftStickX
-    1 => @gamepad.Axis::LeftStickY
-    2 => @gamepad.Axis::LeftZ
-    3 => @gamepad.Axis::RightStickX
-    4 => @gamepad.Axis::RightStickY
-    5 => @gamepad.Axis::RightZ
-    6 => @gamepad.Axis::DPadX
-    7 => @gamepad.Axis::DPadY
-    _ => @gamepad.Axis::Unknown
+    0 => LeftStickX
+    1 => LeftStickY
+    2 => LeftZ
+    3 => RightStickX
+    4 => RightStickY
+    5 => RightZ
+    6 => DPadX
+    7 => DPadY
+    _ => Unknown
   }
 }
 

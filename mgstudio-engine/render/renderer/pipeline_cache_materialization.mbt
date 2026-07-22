@@ -19,7 +19,7 @@
 fn pipeline_cache_shader_bool_defines(
   shader_defs : Array[@render_resource.ShaderDefVal],
 ) -> @hashmap.HashMap[String, Bool] {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap([])
+  let defines : @hashmap.HashMap[String, Bool] = HashMap([])
   for shader_def in shader_defs {
     match shader_def {
       Flag(name) => defines.set(name, true)
@@ -37,12 +37,9 @@ fn pipeline_cache_shader_value_defines(
   let value_defines = default_wgsl_value_defines()
   for shader_def in shader_defs {
     match shader_def {
-      Int(name, value) =>
-        value_defines.set(name, @wgsl_common.ShaderDefValue::Int(value))
-      UInt(name, value) =>
-        value_defines.set(name, @wgsl_common.ShaderDefValue::UInt(value))
-      String(name, value) =>
-        value_defines.set(name, @wgsl_common.ShaderDefValue::Raw(value))
+      Int(name, value) => value_defines.set(name, Int(value))
+      UInt(name, value) => value_defines.set(name, UInt(value))
+      String(name, value) => value_defines.set(name, Raw(value))
       Bool(_, _) | Flag(_) => ()
     }
   }
@@ -112,9 +109,7 @@ fn GpuBackend::create_pipeline_cache_compute_pipeline(
   let shader_path = match descriptor.shader() {
     Some(path) => path
     None =>
-      raise GpuBackendError::ShaderNotReady(
-        "compute pipeline shader path is not configured",
-      )
+      raise ShaderNotReady("compute pipeline shader path is not configured")
   }
   let shader_defs = descriptor.shader_defs()
   let source = load_wgsl_preprocessed(
@@ -372,7 +367,7 @@ fn GpuBackend::create_pipeline_cache_render_pipeline(
   let vertex_shader_path = match vertex.shader {
     Some(path) => path
     None =>
-      raise GpuBackendError::ShaderNotReady(
+      raise ShaderNotReady(
         "render pipeline vertex shader path is not configured",
       )
   }
@@ -397,7 +392,7 @@ fn GpuBackend::create_pipeline_cache_render_pipeline(
           Some(self.device.create_shader_module_wgsl(fragment_source))
         }
         None =>
-          raise GpuBackendError::ShaderNotReady(
+          raise ShaderNotReady(
             "render pipeline fragment shader path is not configured",
           )
       }

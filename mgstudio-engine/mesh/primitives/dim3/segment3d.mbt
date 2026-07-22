@@ -24,7 +24,7 @@ pub struct Segment3dMeshBuilder {
 
 ///|
 pub fn Segment3dMeshBuilder::Segment3dMeshBuilder() -> Segment3dMeshBuilder {
-  { segment: @math.Segment3d::Segment3d() }
+  { segment: Segment3d() }
 }
 
 ///|
@@ -56,6 +56,6 @@ pub fn segment3d_line_list(shape : @math.Segment3d) -> @mesh.Mesh3dGeometry {
   @mesh.Mesh3dGeometry::new_with_positions_and_topology(
     [shape.point1(), shape.point2()],
     Some([0, 1]),
-    @mesh.Mesh3dPrimitiveTopology::LineList,
+    LineList,
   )
 }

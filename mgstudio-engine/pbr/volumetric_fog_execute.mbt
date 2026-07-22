@@ -24,7 +24,7 @@ priv struct Render3dVolumetricFogPrepareOutput {
 
 ///|
 fn Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput() -> Render3dVolumetricFogPrepareOutput {
-  Render3dVolumetricFogPrepareOutput::{
+  {
     view_count: 0,
     volume_count: 0,
     light_count: 0,
@@ -49,12 +49,7 @@ fn Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPre
   world_from_view : @math.Affine3,
   clip_from_view : @pbr_volumetric_fog.VolumetricFogMat4,
 ) -> Render3dVolumetricFogUniformPrepareViewInput {
-  Render3dVolumetricFogUniformPrepareViewInput::{
-    view_entity,
-    volumetric_fog,
-    world_from_view,
-    clip_from_view,
-  }
+  { view_entity, volumetric_fog, world_from_view, clip_from_view }
 }
 
 ///|
@@ -82,7 +77,7 @@ fn render3d_volumetric_fog_uniform_buffer_mut(
     is None {
     world.insert_resource(
       @pbr_volumetric_fog.VolumetricFogUniformBuffer::resource(),
-      @pbr_volumetric_fog.VolumetricFogUniformBuffer::VolumetricFogUniformBuffer(),
+      VolumetricFogUniformBuffer(),
     )
   }
   match
@@ -120,16 +115,13 @@ fn render3d_prepare_volumetric_fog_uniform_buffer(
           view_fog,
         )
         |> ignore)
-        prepared_views.push(Render3dVolumetricFogPreparedViewUniforms::{
-          view_entity: view.view_entity,
-          view_fog,
-        })
+        prepared_views.push({ view_entity: view.view_entity, view_fog })
       }
       uniform_buffer.count()
     },
   )
   render3d_upload_volumetric_fog_uniform_buffer(render_world)
-  Render3dVolumetricFogUniformPrepareOutput::{
+  {
     views: prepared_views,
     view_count: views.length(),
     volume_count: fog_volumes.length(),
@@ -174,7 +166,7 @@ fn render3d_volumetric_fog_pipeline_key(
     return None
   }
   Some(
-    @pbr_volumetric_fog.VolumetricFogPipelineKey::VolumetricFogPipelineKey(
+    VolumetricFogPipelineKey(
       mesh_pipeline_view_key~,
       target_format~,
       vertex_buffer_layout~,
@@ -415,11 +407,7 @@ fn render3d_prepare_volumetric_fog_hull_meshes(
       ),
     )
   })
-  Render3dVolumetricFogPrepareOutput::{
-    ..prepared,
-    plane_mesh_id,
-    cube_mesh_id,
-  }
+  { ..prepared, plane_mesh_id, cube_mesh_id }
 }
 
 ///|
@@ -606,15 +594,12 @@ fn render3d_prepare_camera_volumetric_fog(
   let light_count = render3d_collect_volumetric_light_count(render_world)
   guard (try! render_world.get_by_key(view_entity, ecs_key_volumetric_fog))
     is Some(volumetric_fog) else {
-    return Render3dVolumetricFogPrepareOutput::{
-      ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
-      light_count,
-    }
+    return { ..Render3dVolumetricFogPrepareOutput(), light_count, }
   }
   let uniform_prepare = render3d_prepare_volumetric_fog_uniform_buffer(
     render_world,
     [
-      Render3dVolumetricFogUniformPrepareViewInput::Render3dVolumetricFogUniformPrepareViewInput(
+      Render3dVolumetricFogUniformPrepareViewInput(
         view_entity,
         volumetric_fog,
         @math.Affine3::from_scale_rotation_translation(
@@ -631,8 +616,8 @@ fn render3d_prepare_camera_volumetric_fog(
     ],
   )
   guard uniform_prepare.views.length() > 0 else {
-    return Render3dVolumetricFogPrepareOutput::{
-      ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    return {
+      ..Render3dVolumetricFogPrepareOutput(),
       view_count: uniform_prepare.view_count,
       volume_count: uniform_prepare.volume_count,
       light_count: uniform_prepare.light_count,
@@ -641,15 +626,15 @@ fn render3d_prepare_camera_volumetric_fog(
   }
   let prepared_view = uniform_prepare.views[0]
   guard prepared_view.view_entity == view_entity else {
-    return Render3dVolumetricFogPrepareOutput::{
-      ..Render3dVolumetricFogPrepareOutput::Render3dVolumetricFogPrepareOutput(),
+    return {
+      ..Render3dVolumetricFogPrepareOutput(),
       view_count: uniform_prepare.view_count,
       volume_count: uniform_prepare.volume_count,
       light_count: uniform_prepare.light_count,
       uniform_count: uniform_prepare.uniform_count,
     }
   }
-  Render3dVolumetricFogPrepareOutput::{
+  {
     view_count: uniform_prepare.view_count,
     volume_count: prepared_view.view_fog.count(),
     light_count: uniform_prepare.light_count,

@@ -109,7 +109,7 @@ fn animate_custom_phase(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_custom_phase)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, animate_custom_phase)
   .run()
 }

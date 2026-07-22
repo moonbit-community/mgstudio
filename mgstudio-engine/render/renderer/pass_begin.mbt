@@ -134,7 +134,7 @@ pub fn GpuBackend::begin_pass(
     camera_rot,
     camera_scale,
   )
-  self.pass_state = Some(GpuPassState::{
+  self.pass_state = Some({
     target_id,
     target_layer: -1,
     secondary_target_id: -1,
@@ -387,7 +387,7 @@ pub fn GpuBackend::begin_pass_with_depth(
     camera_rot,
     camera_scale,
   )
-  self.pass_state = Some(GpuPassState::{
+  self.pass_state = Some({
     target_id,
     target_layer: -1,
     secondary_target_id: -1,
@@ -1112,7 +1112,7 @@ pub fn GpuBackend::begin_pass_3d(
     view_from_world: view_parts.2,
     clip_from_view: view_parts.3,
     view_from_clip: view_parts.4,
-    previous_clip_from_world: GpuClipMatrix::{
+    previous_clip_from_world: {
       x_axis_x: previous_clip_from_world_x_axis_x,
       x_axis_y: previous_clip_from_world_x_axis_y,
       x_axis_z: previous_clip_from_world_x_axis_z,

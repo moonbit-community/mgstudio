@@ -51,8 +51,7 @@ test "mesh2d: validate attribute length mismatch" {
   let uvs = [@math.Vec2::new(0.0F, 0.0F)]
   let mesh = Mesh2dGeometry::new(positions, uvs, None)
   match mesh.validate() {
-    Some(Mesh2dValidationError::AttributeLengthMismatch(_, _)) =>
-      debug_inspect(true, content="true")
+    Some(AttributeLengthMismatch(_, _)) => debug_inspect(true, content="true")
     _ => debug_inspect(false, content="false")
   }
 }
@@ -63,7 +62,7 @@ test "mesh2d: validate non-indexed vertex count multiple of 3" {
   let uvs = [@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 0.0F)]
   let mesh = Mesh2dGeometry::new(positions, uvs, None)
   match mesh.validate() {
-    Some(Mesh2dValidationError::NonIndexedVertexCountNotMultipleOf3(_)) =>
+    Some(NonIndexedVertexCountNotMultipleOf3(_)) =>
       debug_inspect(true, content="true")
     _ => debug_inspect(false, content="false")
   }
@@ -76,7 +75,7 @@ test "mesh2d: validate color attribute length mismatch" {
   let colors = [@math.Vec4::splat(1.0F)]
   let mesh = Mesh2dGeometry::new_with_colors(positions, uvs, colors, None)
   match mesh.validate() {
-    Some(Mesh2dValidationError::ColorAttributeLengthMismatch(_, _)) =>
+    Some(ColorAttributeLengthMismatch(_, _)) =>
       debug_inspect(true, content="true")
     _ => debug_inspect(false, content="false")
   }
@@ -97,8 +96,7 @@ test "mesh2d: validate index bounds" {
   let indices = [0, 1, 3]
   let mesh = Mesh2dGeometry::new(positions, uvs, Some(indices))
   match mesh.validate() {
-    Some(Mesh2dValidationError::IndexOutOfBounds(_, _)) =>
-      debug_inspect(true, content="true")
+    Some(IndexOutOfBounds(_, _)) => debug_inspect(true, content="true")
     _ => debug_inspect(false, content="false")
   }
 }
@@ -118,8 +116,7 @@ test "mesh2d: validate indices multiple of 3" {
   let indices = [0, 1]
   let mesh = Mesh2dGeometry::new(positions, uvs, Some(indices))
   match mesh.validate() {
-    Some(Mesh2dValidationError::IndicesCountNotMultipleOf3(_)) =>
-      debug_inspect(true, content="true")
+    Some(IndicesCountNotMultipleOf3(_)) => debug_inspect(true, content="true")
     _ => debug_inspect(false, content="false")
   }
 }

@@ -60,9 +60,7 @@ fn typed_asset_loader_registry_for_world(
 ) -> @hashmap.HashMap[String, Array[TypedAssetLoaderEntry]] {
   let key = typed_asset_loader_registry_resource_key
   if world.get_resource(key) is None {
-    world.insert_resource(key, TypedAssetLoaderRegistryState::{
-      loaders: @hashmap.HashMap([]),
-    })
+    world.insert_resource(key, { loaders: HashMap([]) })
   }
   match world.get_resource(key) {
     Some(state) => state.loaders
@@ -97,7 +95,7 @@ pub fn[T] AssetLoader::new(
   extensions : Array[String],
   load : (AssetServer, AssetPath, Bytes) -> T,
 ) -> AssetLoader[T] {
-  AssetLoader::{
+  {
     extensions,
     load: fn(context, bytes) {
       load(context.asset_server(), context.path(), bytes)
@@ -110,7 +108,7 @@ pub fn[T] AssetLoader::new_with_context(
   extensions : Array[String],
   load : (LoadContext, Bytes) -> T,
 ) -> AssetLoader[T] {
-  AssetLoader::{ extensions, load }
+  { extensions, load }
 }
 
 ///|
@@ -119,7 +117,7 @@ fn LoadContext::new(
   asset_server : AssetServer,
   path : AssetPath,
 ) -> LoadContext {
-  LoadContext::{ world: Some(world), asset_server, path }
+  { world: Some(world), asset_server, path }
 }
 
 ///|
@@ -388,7 +386,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
   ) -> Unit {
     if asset_should_process_registered_asset(asset_server, type_name, path) {
       if !pending_processed_contains(asset_server, type_name, handle.id(), path) {
-        asset_server.pending_processed_asset_loads.push(PendingProcessedAssetLoad::{
+        asset_server.pending_processed_asset_loads.push({
           type_name,
           handle_id: handle.id(),
           path,
@@ -400,7 +398,7 @@ fn[T : Asset, P : IntoAssetPath] AssetServer::load_registered_asset(
         handle.id(),
         path,
       ) {
-      asset_server.pending_typed_asset_loads.push(PendingTypedAssetLoad::{
+      asset_server.pending_typed_asset_loads.push({
         type_name,
         handle_id: handle.id(),
         path,
@@ -471,7 +469,7 @@ pub fn[T : Asset] register_asset_loader(
     type_name, existing, normalized_extensions,
   )
   let next_entries = typed_asset_loader_clone_entries(existing)
-  next_entries.push(TypedAssetLoaderEntry::{
+  next_entries.push({
     extensions: normalized_extensions,
     load_and_insert: fn(world, asset_server, path, handle_id, bytes) {
       let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -487,7 +485,7 @@ pub fn[T : Asset] register_asset_loader(
       ignore(
         assets.modify(fn(store) {
           let handle = Handle::new(handle_id)
-          store.push_event(AssetEvent::LoadedWithDependencies(handle))
+          store.push_event(LoadedWithDependencies(handle))
           store.insert(handle, value)
         }),
       )

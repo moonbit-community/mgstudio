@@ -31,24 +31,17 @@ pub struct Affine2 {
 
 ///|
 pub fn Affine2::identity() -> Affine2 {
-  Affine2::{ a: 1.0F, b: 0.0F, c: 0.0F, d: 1.0F, tx: 0.0F, ty: 0.0F }
+  { a: 1.0F, b: 0.0F, c: 0.0F, d: 1.0F, tx: 0.0F, ty: 0.0F }
 }
 
 ///|
 pub fn Affine2::from_scale(scale : @math.Vec2) -> Affine2 {
-  Affine2::{ a: scale.x, b: 0.0F, c: 0.0F, d: scale.y, tx: 0.0F, ty: 0.0F }
+  { a: scale.x, b: 0.0F, c: 0.0F, d: scale.y, tx: 0.0F, ty: 0.0F }
 }
 
 ///|
 pub fn Affine2::from_translation(translation : @math.Vec2) -> Affine2 {
-  Affine2::{
-    a: 1.0F,
-    b: 0.0F,
-    c: 0.0F,
-    d: 1.0F,
-    tx: translation.x,
-    ty: translation.y,
-  }
+  { a: 1.0F, b: 0.0F, c: 0.0F, d: 1.0F, tx: translation.x, ty: translation.y }
 }
 
 ///|
@@ -57,7 +50,7 @@ pub fn Affine2::from_cols(
   y_axis : @math.Vec2,
   translation : @math.Vec2,
 ) -> Affine2 {
-  Affine2::{
+  {
     a: x_axis.x,
     b: x_axis.y,
     c: y_axis.x,
@@ -72,7 +65,7 @@ pub fn Affine2::from_scale_translation(
   scale : @math.Vec2,
   translation : @math.Vec2,
 ) -> Affine2 {
-  Affine2::{
+  {
     a: scale.x,
     b: 0.0F,
     c: 0.0F,
@@ -91,7 +84,7 @@ pub fn Affine2::mul(self : Affine2, other : Affine2) -> Affine2 {
   let d = self.b * other.c + self.d * other.d
   let tx = self.a * other.tx + self.c * other.ty + self.tx
   let ty = self.b * other.tx + self.d * other.ty + self.ty
-  Affine2::{ a, b, c, d, tx, ty }
+  { a, b, c, d, tx, ty }
 }
 
 ///|
@@ -112,7 +105,7 @@ pub struct GlobalTransform {
 
 ///|
 pub fn GlobalTransform::identity() -> GlobalTransform {
-  GlobalTransform::{ affine: @math.Affine3::identity() }
+  { affine: @math.Affine3::identity() }
 }
 
 ///|
@@ -139,7 +132,7 @@ pub fn GlobalTransform::GlobalTransform() -> GlobalTransform {
 
 ///|
 pub impl Default for GlobalTransform with fn default() {
-  GlobalTransform::GlobalTransform()
+  GlobalTransform()
 }
 
 ///|
@@ -189,7 +182,7 @@ pub impl @json.FromJson for GlobalTransform with fn from_json(json, path) {
     Float,
     Float,
   ) = @json.from_json(json, path~)
-  GlobalTransform::{
+  {
     affine: @math.Affine3::from_mat3_translation(
       @math.Mat3::from_cols(
         @math.Vec3::new(x_axis_x, x_axis_y, x_axis_z),
@@ -212,18 +205,16 @@ pub fn GlobalTransform::from_transform(
       transform.rotation.y == 0.0F &&
       transform.rotation.z == 0.0F &&
       transform.rotation.w == 1.0F {
-      return GlobalTransform::{
-        affine: @math.Affine3::from_translation(transform.translation),
-      }
+      return { affine: @math.Affine3::from_translation(transform.translation) }
     }
-    return GlobalTransform::{
+    return {
       affine: @math.Affine3::from_rotation_translation(
         transform.rotation,
         transform.translation,
       ),
     }
   }
-  GlobalTransform::{
+  {
     affine: @math.Affine3::from_scale_rotation_translation(
       transform.scale,
       transform.rotation,
@@ -237,7 +228,7 @@ pub fn GlobalTransform::mul(
   self : GlobalTransform,
   other : GlobalTransform,
 ) -> GlobalTransform {
-  GlobalTransform::{ affine: self.affine.mul(other.affine) }
+  { affine: self.affine.mul(other.affine) }
 }
 
 ///|
@@ -252,18 +243,16 @@ pub fn GlobalTransform::mul_transform(
       transform.rotation.y == 0.0F &&
       transform.rotation.z == 0.0F &&
       transform.rotation.w == 1.0F {
-      return GlobalTransform::{
-        affine: self.affine.mul_translation(transform.translation),
-      }
+      return { affine: self.affine.mul_translation(transform.translation) }
     }
-    return GlobalTransform::{
+    return {
       affine: self.affine.mul_rotation_translation(
         transform.rotation,
         transform.translation,
       ),
     }
   }
-  GlobalTransform::{
+  {
     affine: self.affine.mul_transform(
       transform.scale,
       transform.rotation,
@@ -521,7 +510,7 @@ pub fn GlobalTransform::to_transform_approx(
 
 ///|
 pub fn GlobalTransform::inverse(self : GlobalTransform) -> GlobalTransform {
-  GlobalTransform::{ affine: self.affine.inverse() }
+  { affine: self.affine.inverse() }
 }
 
 ///|
@@ -545,13 +534,14 @@ pub fn GlobalTransform::compute_transform(self : GlobalTransform) -> Transform {
 pub struct TransformTreeChanged {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TransformTreeChanged::TransformTreeChanged() -> TransformTreeChanged {
   TransformTreeChanged::{  }
 }
 
 ///|
 pub impl Default for TransformTreeChanged with fn default() {
-  TransformTreeChanged::TransformTreeChanged()
+  TransformTreeChanged()
 }
 
 ///|
@@ -562,29 +552,29 @@ pub enum StaticTransformOptimizations {
 
 ///|
 pub fn StaticTransformOptimizations::disabled() -> StaticTransformOptimizations {
-  StaticTransformOptimizations::Disabled
+  Disabled
 }
 
 ///|
 pub fn StaticTransformOptimizations::enabled() -> StaticTransformOptimizations {
-  StaticTransformOptimizations::Enabled
+  Enabled
 }
 
 ///|
 pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> StaticTransformOptimizations {
-  StaticTransformOptimizations::Enabled
+  Enabled
 }
 
 ///|
 pub fn StaticTransformOptimizations::is_enabled(
   self : StaticTransformOptimizations,
 ) -> Bool {
-  self == StaticTransformOptimizations::Enabled
+  self == Enabled
 }
 
 ///|
 pub impl Default for StaticTransformOptimizations with fn default() {
-  StaticTransformOptimizations::StaticTransformOptimizations()
+  StaticTransformOptimizations()
 }
 
 ///|

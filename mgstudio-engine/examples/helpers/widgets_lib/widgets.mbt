@@ -44,7 +44,7 @@ pub struct WidgetClickEvent[T] {
 
 ///|
 pub fn[T] WidgetClickEvent::new(value : T) -> WidgetClickEvent[T] {
-  WidgetClickEvent::{ value, }
+  { value, }
 }
 
 ///|
@@ -59,7 +59,7 @@ pub struct WidgetClickSender[T] {
 
 ///|
 pub fn[T] WidgetClickSender::new(value : T) -> WidgetClickSender[T] {
-  WidgetClickSender::{ value, }
+  { value, }
 }
 
 ///|
@@ -159,20 +159,20 @@ fn black() -> @color.Color {
 ///|
 fn button_padding() -> @ui.UiRect {
   @ui.UiRect::new(
-    @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
-    @ui.Val::Px(BUTTON_VERTICAL_PADDING),
-    @ui.Val::Px(BUTTON_HORIZONTAL_PADDING),
-    @ui.Val::Px(BUTTON_VERTICAL_PADDING),
+    Px(BUTTON_HORIZONTAL_PADDING),
+    Px(BUTTON_VERTICAL_PADDING),
+    Px(BUTTON_HORIZONTAL_PADDING),
+    Px(BUTTON_VERTICAL_PADDING),
   )
 }
 
 ///|
 fn button_border(left_width : Float) -> @ui.UiRect {
   @ui.UiRect::new(
-    @ui.Val::Px(left_width),
-    @ui.Val::Px(BUTTON_BORDER_WIDTH),
-    @ui.Val::Px(BUTTON_BORDER_WIDTH),
-    @ui.Val::Px(BUTTON_BORDER_WIDTH),
+    Px(left_width),
+    Px(BUTTON_BORDER_WIDTH),
+    Px(BUTTON_BORDER_WIDTH),
+    Px(BUTTON_BORDER_WIDTH),
   )
 }
 
@@ -228,11 +228,11 @@ fn radio_button_foreground_color(selected : Bool) -> @color.Color {
 ///|
 pub fn main_ui_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_flex_direction(@ui.FlexDirection::Column)
-  .with_position_type(@ui.PositionType::Absolute)
-  .with_row_gap(@ui.Val::Px(6.0F))
-  .with_left(@ui.Val::Px(10.0F))
-  .with_bottom(@ui.Val::Px(10.0F))
+  .with_flex_direction(Column)
+  .with_position_type(Absolute)
+  .with_row_gap(Px(6.0F))
+  .with_left(Px(10.0F))
+  .with_bottom(Px(10.0F))
 }
 
 ///|
@@ -260,13 +260,11 @@ pub fn[T : WidgetValue] spawn_action_button(
       @hierarchy.Parent::new(parent),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_border(@ui.UiRect::all(@ui.Val::Px(BUTTON_BORDER_WIDTH)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
+      .with_border(@ui.UiRect::all(Px(BUTTON_BORDER_WIDTH)))
+      .with_justify_content(Center)
+      .with_align_items(Center)
       .with_padding(button_padding())
-      .with_border_radius(
-        @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
-      ),
+      .with_border_radius(@ui.BorderRadius::all(Px(BUTTON_BORDER_RADIUS))),
       @ui.BorderColor::new(white()),
       @ui.BackgroundColor::new(black()),
       WidgetClickSender::new(value),
@@ -300,8 +298,8 @@ pub fn[T : WidgetValue] spawn_option_button(
       .with_border(
         button_border(if is_first { BUTTON_BORDER_WIDTH } else { 0.0F }),
       )
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
+      .with_justify_content(Center)
+      .with_align_items(Center)
       .with_padding(button_padding())
       .with_border_radius(option_button_border_radius(is_first, is_last)),
       @ui.BorderColor::new(white()),
@@ -334,16 +332,13 @@ pub fn[T : WidgetValue] spawn_option_buttons(
 ) -> @core.Entity {
   let (text, text_font, text_color) = ui_text(title, white())
   let row = commands.spawn(
-    (
-      @hierarchy.Parent::new(parent),
-      @ui.Node::Node().with_align_items(@ui.AlignItems::Center),
-    ),
+    (@hierarchy.Parent::new(parent), @ui.Node::Node().with_align_items(Center)),
   )
   ignore(
     commands.spawn(
       (
         @hierarchy.Parent::new(row),
-        @ui.Node::Node().with_width(@ui.Val::Px(OPTION_TITLE_WIDTH)),
+        @ui.Node::Node().with_width(Px(OPTION_TITLE_WIDTH)),
         text,
         text_font,
         text_color,
@@ -378,7 +373,7 @@ pub fn[T : WidgetValue] handle_ui_interactions(
 ) -> Unit {
   try! interactions.for_each(fn(_entity, data) {
     let (interaction, click_sender) = data
-    if interaction.value() == @ui.Interaction::Pressed {
+    if interaction.value() == Pressed {
       ignore(
         widget_click_events.write(
           WidgetClickEvent::new(click_sender.value().get()),

@@ -28,6 +28,7 @@ const SYNC_WORLD_PLUGIN_NAME : String = "mgstudio.render.SyncWorldPlugin"
 pub struct SyncWorldPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SyncWorldPlugin::SyncWorldPlugin() -> SyncWorldPlugin {
   SyncWorldPlugin::{  }
 }
@@ -46,13 +47,14 @@ pub impl @app.Plugin for SyncWorldPlugin with fn build(self, app) {
 pub struct SyncToRenderWorld {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SyncToRenderWorld::SyncToRenderWorld() -> SyncToRenderWorld {
   SyncToRenderWorld::{  }
 }
 
 ///|
 pub impl Default for SyncToRenderWorld with fn default() {
-  SyncToRenderWorld::SyncToRenderWorld()
+  SyncToRenderWorld()
 }
 
 ///|
@@ -72,7 +74,7 @@ pub struct RenderEntity {
 
 ///|
 pub fn RenderEntity::new(entity : @core.Entity) -> RenderEntity {
-  RenderEntity::{ entity, }
+  { entity, }
 }
 
 ///|
@@ -94,6 +96,7 @@ pub impl @ecs.Component for RenderEntity with fn component() {
 pub struct TemporaryRenderEntity {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TemporaryRenderEntity::TemporaryRenderEntity() -> TemporaryRenderEntity {
   TemporaryRenderEntity::{  }
 }
@@ -120,7 +123,7 @@ pub struct PendingSyncEntity {
 
 ///|
 pub fn PendingSyncEntity::PendingSyncEntity() -> PendingSyncEntity {
-  PendingSyncEntity::{ records: [] }
+  { records: [] }
 }
 
 ///|
@@ -153,10 +156,7 @@ pub impl @app.Resource for PendingSyncEntity with fn resource() {
 ///|
 fn ensure_pending_sync_entity_resource(world : @ecs.World) -> Unit {
   if world.get_resource(PendingSyncEntity::resource()) is None {
-    world.insert_resource(
-      PendingSyncEntity::resource(),
-      PendingSyncEntity::PendingSyncEntity(),
-    )
+    world.insert_resource(PendingSyncEntity::resource(), PendingSyncEntity())
   }
 }
 
@@ -264,7 +264,7 @@ fn entity_sync_system(
   }
   for record in records {
     match record {
-      EntityRecord::ComponentRemoved(main_entity, removal) => {
+      ComponentRemoved(main_entity, removal) => {
         if !main_world.is_alive(main_entity) {
           continue
         }

@@ -29,10 +29,7 @@ pub(all) struct ButtonProps {
 
 ///|
 pub fn ButtonProps::ButtonProps() -> ButtonProps {
-  ButtonProps::{
-    variant: Normal,
-    corners: @rounded_corners.RoundedCorners::default(),
-  }
+  { variant: Normal, corners: @rounded_corners.RoundedCorners::default() }
 }
 
 ///|
@@ -43,13 +40,14 @@ pub struct Button {
 
 ///|
 pub fn button(props : ButtonProps, label : String) -> Button {
-  Button::{ props, label }
+  { props, label }
 }
 
 ///|
 pub struct ButtonPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ButtonPlugin::ButtonPlugin() -> ButtonPlugin {
   ButtonPlugin::{  }
 }

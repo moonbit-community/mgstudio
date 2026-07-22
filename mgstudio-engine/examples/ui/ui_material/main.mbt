@@ -40,10 +40,10 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.1F, 0.14F)),
     ),
   )
@@ -53,12 +53,12 @@ fn setup(
       @hierarchy.Parent::new(root),
       AnimatedMaterialNode::{  },
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(460.0F))
-      .with_height(@ui.Val::Px(190.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(12.0F)))
-      .with_justify_content(@ui.JustifyContent::Center)
-      .with_align_items(@ui.AlignItems::Center)
-      .with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(18.0F))),
+      .with_width(Px(460.0F))
+      .with_height(Px(190.0F))
+      .with_border(@ui.UiRect::all(Px(12.0F)))
+      .with_justify_content(Center)
+      .with_align_items(Center)
+      .with_border_radius(@ui.BorderRadius::all(Px(18.0F))),
       @ui.BorderColor::new(@color.Color::srgb(0.92F, 0.95F, 1.0F)),
       @ui.ImageNode::new(image).with_color(@color.Color::white()),
     ),
@@ -100,7 +100,7 @@ fn animate_material_node(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param2(@app.Update, animate_material_node)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param2(Update, animate_material_node)
   .run()
 }

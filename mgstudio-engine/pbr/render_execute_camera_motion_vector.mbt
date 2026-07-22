@@ -179,7 +179,7 @@ fn render3d_execute_camera_prepass(
     !normal_prepass_enabled &&
     !motion_vector_prepass_enabled &&
     !deferred_prepass_enabled {
-    return Render3dCameraPrepassResult::{
+    return {
       scene_target_id,
       velocity_target_id,
       depth_texture_id: -1,
@@ -355,7 +355,7 @@ fn render3d_execute_camera_prepass(
     )
     @render.host_gpu_end_pass()
   }
-  Render3dCameraPrepassResult::{
+  {
     scene_target_id: next_scene_target_id,
     velocity_target_id: next_velocity_target_id,
     depth_texture_id: shared_depth_id,

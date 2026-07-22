@@ -92,37 +92,36 @@ fn modify_aa(
   let (camera_entity, fxaa, smaa, taa, msaa) = camera.get()
   let camera_commands = commands.entity(camera_entity)
 
-  if keys.just_pressed(@window.KeyCode::Digit1) {
-    msaa.set(@anti_alias.Msaa::Off)
+  if keys.just_pressed(Digit1) {
+    msaa.set(Off)
     camera_commands.remove(@anti_alias.ecs_key_fxaa)
     camera_commands.remove(@anti_alias.ecs_key_smaa)
     remove_taa_components(camera_commands)
     remove_dlss_components(camera_commands)
   }
 
-  if keys.just_pressed(@window.KeyCode::Digit2) &&
-    msaa.value() == @anti_alias.Msaa::Off {
+  if keys.just_pressed(Digit2) && msaa.value() == Off {
     camera_commands.remove(@anti_alias.ecs_key_fxaa)
     camera_commands.remove(@anti_alias.ecs_key_smaa)
     remove_taa_components(camera_commands)
     remove_dlss_components(camera_commands)
-    msaa.set(@anti_alias.Msaa::Sample4)
+    msaa.set(Sample4)
   }
 
-  if msaa.value() != @anti_alias.Msaa::Off {
-    if keys.just_pressed(@window.KeyCode::KeyQ) {
-      msaa.set(@anti_alias.Msaa::Sample2)
+  if msaa.value() != Off {
+    if keys.just_pressed(KeyQ) {
+      msaa.set(Sample2)
     }
-    if keys.just_pressed(@window.KeyCode::KeyW) {
-      msaa.set(@anti_alias.Msaa::Sample4)
+    if keys.just_pressed(KeyW) {
+      msaa.set(Sample4)
     }
-    if keys.just_pressed(@window.KeyCode::KeyE) {
-      msaa.set(@anti_alias.Msaa::Sample8)
+    if keys.just_pressed(KeyE) {
+      msaa.set(Sample8)
     }
   }
 
-  if keys.just_pressed(@window.KeyCode::Digit3) && fxaa.value() is None {
-    msaa.set(@anti_alias.Msaa::Off)
+  if keys.just_pressed(Digit3) && fxaa.value() is None {
+    msaa.set(Off)
     camera_commands.remove(@anti_alias.ecs_key_smaa)
     remove_taa_components(camera_commands)
     remove_dlss_components(camera_commands)
@@ -131,37 +130,27 @@ fn modify_aa(
 
   match fxaa.value() {
     Some(fxaa_value) => {
-      if keys.just_pressed(@window.KeyCode::KeyQ) {
-        camera_commands.insert_component(
-          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Low),
-        )
+      if keys.just_pressed(KeyQ) {
+        camera_commands.insert_component(fxaa_value.with_sensitivity(Low))
       }
-      if keys.just_pressed(@window.KeyCode::KeyW) {
-        camera_commands.insert_component(
-          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Medium),
-        )
+      if keys.just_pressed(KeyW) {
+        camera_commands.insert_component(fxaa_value.with_sensitivity(Medium))
       }
-      if keys.just_pressed(@window.KeyCode::KeyE) {
-        camera_commands.insert_component(
-          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::High),
-        )
+      if keys.just_pressed(KeyE) {
+        camera_commands.insert_component(fxaa_value.with_sensitivity(High))
       }
-      if keys.just_pressed(@window.KeyCode::KeyR) {
-        camera_commands.insert_component(
-          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Ultra),
-        )
+      if keys.just_pressed(KeyR) {
+        camera_commands.insert_component(fxaa_value.with_sensitivity(Ultra))
       }
-      if keys.just_pressed(@window.KeyCode::KeyT) {
-        camera_commands.insert_component(
-          fxaa_value.with_sensitivity(@anti_alias.FxaaSensitivity::Extreme),
-        )
+      if keys.just_pressed(KeyT) {
+        camera_commands.insert_component(fxaa_value.with_sensitivity(Extreme))
       }
     }
     None => ()
   }
 
-  if keys.just_pressed(@window.KeyCode::Digit4) && smaa.value() is None {
-    msaa.set(@anti_alias.Msaa::Off)
+  if keys.just_pressed(Digit4) && smaa.value() is None {
+    msaa.set(Off)
     camera_commands.remove(@anti_alias.ecs_key_fxaa)
     remove_taa_components(camera_commands)
     remove_dlss_components(camera_commands)
@@ -170,32 +159,24 @@ fn modify_aa(
 
   match smaa.value() {
     Some(smaa_value) => {
-      if keys.just_pressed(@window.KeyCode::KeyQ) {
-        camera_commands.insert_component(
-          smaa_value.with_preset(@anti_alias.SmaaPreset::Low),
-        )
+      if keys.just_pressed(KeyQ) {
+        camera_commands.insert_component(smaa_value.with_preset(Low))
       }
-      if keys.just_pressed(@window.KeyCode::KeyW) {
-        camera_commands.insert_component(
-          smaa_value.with_preset(@anti_alias.SmaaPreset::Medium),
-        )
+      if keys.just_pressed(KeyW) {
+        camera_commands.insert_component(smaa_value.with_preset(Medium))
       }
-      if keys.just_pressed(@window.KeyCode::KeyE) {
-        camera_commands.insert_component(
-          smaa_value.with_preset(@anti_alias.SmaaPreset::High),
-        )
+      if keys.just_pressed(KeyE) {
+        camera_commands.insert_component(smaa_value.with_preset(High))
       }
-      if keys.just_pressed(@window.KeyCode::KeyR) {
-        camera_commands.insert_component(
-          smaa_value.with_preset(@anti_alias.SmaaPreset::Ultra),
-        )
+      if keys.just_pressed(KeyR) {
+        camera_commands.insert_component(smaa_value.with_preset(Ultra))
       }
     }
     None => ()
   }
 
-  if keys.just_pressed(@window.KeyCode::Digit5) && taa.value() is None {
-    msaa.set(@anti_alias.Msaa::Off)
+  if keys.just_pressed(Digit5) && taa.value() is None {
+    msaa.set(Off)
     camera_commands.remove(@anti_alias.ecs_key_fxaa)
     camera_commands.remove(@anti_alias.ecs_key_smaa)
     remove_dlss_components(camera_commands)
@@ -212,11 +193,11 @@ fn modify_sharpening(
   ],
 ) -> Unit {
   try! query.for_each(fn(_entity, cas) {
-    if keys.just_pressed(@window.KeyCode::Digit0) {
+    if keys.just_pressed(Digit0) {
       cas.set(cas.value().with_enabled(!cas.value().enabled))
     }
     if cas.value().enabled {
-      if keys.just_pressed(@window.KeyCode::Minus) {
+      if keys.just_pressed(Minus) {
         cas.set(
           cas
           .value()
@@ -225,7 +206,7 @@ fn modify_sharpening(
           ),
         )
       }
-      if keys.just_pressed(@window.KeyCode::Equal) {
+      if keys.just_pressed(Equal) {
         cas.set(
           cas
           .value()
@@ -234,7 +215,7 @@ fn modify_sharpening(
           ),
         )
       }
-      if keys.just_pressed(@window.KeyCode::KeyD) {
+      if keys.just_pressed(KeyD) {
         cas.set(cas.value().with_denoise(!cas.value().denoise))
       }
     }
@@ -246,22 +227,19 @@ fn modify_projection(
   keys : @input.ButtonInput[@window.KeyCode],
   query : @ecs.Query[@ecs.Write[@pbr.Projection], @ecs.All],
 ) -> Unit {
-  if !keys.just_pressed(@window.KeyCode::KeyO) {
+  if !keys.just_pressed(KeyO) {
     return
   }
   try! query.for_each(fn(_entity, projection) {
     match projection.value() {
       Perspective(_) =>
         projection.set(
-          Orthographic(@pbr.OrthographicProjection3d::{
+          Orthographic({
             ..@pbr.OrthographicProjection3d::default_3d(),
             scale: 0.002F,
           }),
         )
-      _ =>
-        projection.set(
-          Perspective(@pbr.PerspectiveProjection3d::PerspectiveProjection3d()),
-        )
+      _ => projection.set(Perspective(PerspectiveProjection3d()))
     }
   })
 }
@@ -294,76 +272,41 @@ fn update_ui(
     ui,
     "No AA",
     "1",
-    msaa_value == @anti_alias.Msaa::Off &&
+    msaa_value == Off &&
     fxaa_value is None &&
     taa_value is None &&
     smaa_value is None &&
     dlss_none,
   )
-  draw_selectable_menu_item(
-    ui,
-    "MSAA",
-    "2",
-    msaa_value != @anti_alias.Msaa::Off,
-  )
+  draw_selectable_menu_item(ui, "MSAA", "2", msaa_value != Off)
   draw_selectable_menu_item(ui, "FXAA", "3", fxaa_value is Some(_))
   draw_selectable_menu_item(ui, "SMAA", "4", smaa_value is Some(_))
   draw_selectable_menu_item(ui, "TAA", "5", taa_value is Some(_))
 
-  if msaa_value != @anti_alias.Msaa::Off {
+  if msaa_value != Off {
     ui.write_string("\n----------\n\nSample Count\n")
-    draw_selectable_menu_item(
-      ui,
-      "2",
-      "Q",
-      msaa_value == @anti_alias.Msaa::Sample2,
-    )
-    draw_selectable_menu_item(
-      ui,
-      "4",
-      "W",
-      msaa_value == @anti_alias.Msaa::Sample4,
-    )
-    draw_selectable_menu_item(
-      ui,
-      "8",
-      "E",
-      msaa_value == @anti_alias.Msaa::Sample8,
-    )
+    draw_selectable_menu_item(ui, "2", "Q", msaa_value == Sample2)
+    draw_selectable_menu_item(ui, "4", "W", msaa_value == Sample4)
+    draw_selectable_menu_item(ui, "8", "E", msaa_value == Sample8)
   }
 
   match fxaa_value {
     Some(fxaa) => {
       ui.write_string("\n----------\n\nSensitivity\n")
-      draw_selectable_menu_item(
-        ui,
-        "Low",
-        "Q",
-        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Low,
-      )
+      draw_selectable_menu_item(ui, "Low", "Q", fxaa.edge_threshold == Low)
       draw_selectable_menu_item(
         ui,
         "Medium",
         "W",
-        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Medium,
+        fxaa.edge_threshold == Medium,
       )
-      draw_selectable_menu_item(
-        ui,
-        "High",
-        "E",
-        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::High,
-      )
-      draw_selectable_menu_item(
-        ui,
-        "Ultra",
-        "R",
-        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Ultra,
-      )
+      draw_selectable_menu_item(ui, "High", "E", fxaa.edge_threshold == High)
+      draw_selectable_menu_item(ui, "Ultra", "R", fxaa.edge_threshold == Ultra)
       draw_selectable_menu_item(
         ui,
         "Extreme",
         "T",
-        fxaa.edge_threshold == @anti_alias.FxaaSensitivity::Extreme,
+        fxaa.edge_threshold == Extreme,
       )
     }
     None => ()
@@ -372,30 +315,10 @@ fn update_ui(
   match smaa_value {
     Some(smaa) => {
       ui.write_string("\n----------\n\nQuality\n")
-      draw_selectable_menu_item(
-        ui,
-        "Low",
-        "Q",
-        smaa.preset == @anti_alias.SmaaPreset::Low,
-      )
-      draw_selectable_menu_item(
-        ui,
-        "Medium",
-        "W",
-        smaa.preset == @anti_alias.SmaaPreset::Medium,
-      )
-      draw_selectable_menu_item(
-        ui,
-        "High",
-        "E",
-        smaa.preset == @anti_alias.SmaaPreset::High,
-      )
-      draw_selectable_menu_item(
-        ui,
-        "Ultra",
-        "R",
-        smaa.preset == @anti_alias.SmaaPreset::Ultra,
-      )
+      draw_selectable_menu_item(ui, "Low", "Q", smaa.preset == Low)
+      draw_selectable_menu_item(ui, "Medium", "W", smaa.preset == Medium)
+      draw_selectable_menu_item(ui, "High", "E", smaa.preset == High)
+      draw_selectable_menu_item(ui, "Ultra", "R", smaa.preset == Ultra)
     }
     None => ()
   }
@@ -477,12 +400,7 @@ fn uv_debug_texture(
     Bytes::from_array(texture_data),
   ).with_format(Rgba8UnormSrgb)
   let handle = images.modify(fn(assets) { assets.add(image) })
-  @asset.asset_set_texture_sampler(
-    handle,
-    @asset.ImageSampler::Descriptor(
-      @asset.ImageSamplerDescriptor::ImageSamplerDescriptor(),
-    ),
-  )
+  @asset.asset_set_texture_sampler(handle, Descriptor(ImageSamplerDescriptor()))
   handle
 }
 
@@ -580,12 +498,7 @@ fn setup(
         .with_first_cascade_far_bound(0.9F)
         .build(),
         @transform.Transform::identity().with_rotation(
-          @math.Quat::from_euler(
-            @math.EulerRot::ZYX,
-            0.0F,
-            PI * -0.15F,
-            PI * -0.15F,
-          ),
+          @math.Quat::from_euler(ZYX, 0.0F, PI * -0.15F, PI * -0.15F),
         ),
       ),
     ),
@@ -632,7 +545,7 @@ fn setup(
       (
         @text.Text::Text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_top(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -644,10 +557,10 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param5(@app.Startup, setup)
-  .add_systems_param3(@app.Update, modify_aa)
-  .add_systems_param2(@app.Update, modify_sharpening)
-  .add_systems_param2(@app.Update, modify_projection)
-  .add_systems_param2(@app.Update, update_ui)
+  .add_systems_param5(Startup, setup)
+  .add_systems_param3(Update, modify_aa)
+  .add_systems_param2(Update, modify_sharpening)
+  .add_systems_param2(Update, modify_projection)
+  .add_systems_param2(Update, update_ui)
   .run()
 }

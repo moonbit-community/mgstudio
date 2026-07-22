@@ -42,23 +42,23 @@ pub(all) struct AssetPlugin {
 
 ///|
 pub fn AssetPlugin::AssetPlugin() -> AssetPlugin {
-  AssetPlugin::{
+  {
     default_sampler_nearest: false,
-    mode: AssetMode::Unprocessed,
+    mode: Unprocessed,
     file_path: None,
     processed_file_path: None,
-    unapproved_path_mode: UnapprovedPathMode::Forbid,
+    unapproved_path_mode: Forbid,
   }
 }
 
 ///|
 pub fn AssetPlugin::nearest() -> AssetPlugin {
-  AssetPlugin::{
+  {
     default_sampler_nearest: true,
-    mode: AssetMode::Unprocessed,
+    mode: Unprocessed,
     file_path: None,
     processed_file_path: None,
-    unapproved_path_mode: UnapprovedPathMode::Forbid,
+    unapproved_path_mode: Forbid,
   }
 }
 
@@ -67,7 +67,7 @@ pub fn AssetPlugin::with_default_sampler_nearest(
   self : AssetPlugin,
   enabled : Bool,
 ) -> AssetPlugin {
-  AssetPlugin::{
+  {
     default_sampler_nearest: enabled,
     mode: self.mode,
     file_path: self.file_path,
@@ -81,7 +81,7 @@ pub fn AssetPlugin::with_mode(
   self : AssetPlugin,
   mode : AssetMode,
 ) -> AssetPlugin {
-  AssetPlugin::{ ..self, mode, }
+  { ..self, mode, }
 }
 
 ///|
@@ -89,7 +89,7 @@ pub fn AssetPlugin::with_file_path(
   self : AssetPlugin,
   file_path : String,
 ) -> AssetPlugin {
-  AssetPlugin::{
+  {
     default_sampler_nearest: self.default_sampler_nearest,
     mode: self.mode,
     file_path: Some(file_path),
@@ -103,7 +103,7 @@ pub fn AssetPlugin::with_processed_file_path(
   self : AssetPlugin,
   processed_file_path : String,
 ) -> AssetPlugin {
-  AssetPlugin::{ ..self, processed_file_path: Some(processed_file_path) }
+  { ..self, processed_file_path: Some(processed_file_path) }
 }
 
 ///|
@@ -111,7 +111,7 @@ pub fn AssetPlugin::with_unapproved_path_mode(
   self : AssetPlugin,
   unapproved_path_mode : UnapprovedPathMode,
 ) -> AssetPlugin {
-  AssetPlugin::{ ..self, unapproved_path_mode, }
+  { ..self, unapproved_path_mode, }
 }
 
 ///|
@@ -152,7 +152,7 @@ fn asset_plugin_with_server(
     ),
     fn() { TextureAtlasLayout::new_empty(@math.UVec2::zero()) },
   )
-  .configure_sets(@app.PreUpdate, asset_tracking_system_set(), after=[
+  .configure_sets(PreUpdate, asset_tracking_system_set(), after=[
     asset_internal_system_set(),
   ])
   .add_pre_update_system_config(
@@ -169,9 +169,9 @@ pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     app,
     asset_server_standalone(),
     None,
-    AssetMode::Unprocessed,
+    Unprocessed,
     None,
-    UnapprovedPathMode::Forbid,
+    Forbid,
   )
 }
 
@@ -179,14 +179,7 @@ pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let asset_server = asset_server_standalone()
   asset_server.default_sampler_nearest = true
-  asset_plugin_with_server(
-    app,
-    asset_server,
-    None,
-    AssetMode::Unprocessed,
-    None,
-    UnapprovedPathMode::Forbid,
-  )
+  asset_plugin_with_server(app, asset_server, None, Unprocessed, None, Forbid)
 }
 
 ///|

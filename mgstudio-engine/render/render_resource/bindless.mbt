@@ -35,7 +35,7 @@ pub fn BindlessDescriptor::new(
   max_textures : Int,
   max_samplers : Int,
 ) -> BindlessDescriptor {
-  BindlessDescriptor::{ max_storage_buffers, max_textures, max_samplers }
+  { max_storage_buffers, max_textures, max_samplers }
 }
 
 ///|
@@ -44,14 +44,14 @@ pub fn BindlessSlabResourceLimit::new(
   textures : Int,
   samplers : Int,
 ) -> BindlessSlabResourceLimit {
-  BindlessSlabResourceLimit::{ storage_buffers, textures, samplers }
+  { storage_buffers, textures, samplers }
 }
 
 ///|
 pub fn BindlessDescriptor::slab_limit(
   self : BindlessDescriptor,
 ) -> BindlessSlabResourceLimit {
-  BindlessSlabResourceLimit::{
+  {
     storage_buffers: self.max_storage_buffers,
     textures: self.max_textures,
     samplers: self.max_samplers,

@@ -48,7 +48,7 @@ pub(all) struct FpsOverlayPlugin {
 
 ///|
 pub fn FpsOverlayPlugin::FpsOverlayPlugin() -> FpsOverlayPlugin {
-  FpsOverlayPlugin::{ config: FpsOverlayConfig::FpsOverlayConfig() }
+  { config: FpsOverlayConfig() }
 }
 
 ///|
@@ -157,7 +157,7 @@ priv struct FpsOverlayState {
 
 ///|
 fn FpsOverlayState::FpsOverlayState() -> FpsOverlayState {
-  FpsOverlayState::{
+  {
     root_entity: None,
     text_entity: None,
     text_value_span_entity: None,
@@ -219,7 +219,7 @@ fn fps_overlay_config(world : @ecs.World) -> FpsOverlayConfig {
 fn fps_overlay_warn_on_low_interval(config : FpsOverlayConfig) -> Unit {
   if config.refresh_interval.as_millis() < MIN_SAFE_INTERVAL_MILLIS {
     @app.log_record(
-      @app.Warn,
+      Warn,
       message="Low refresh interval (\{to_repr(config.refresh_interval).to_string()}) may degrade performance. Min recommended: \{to_repr(@core.Duration::from_millis(MIN_SAFE_INTERVAL_MILLIS)).to_string()}",
     )
   }
@@ -242,10 +242,11 @@ fn fps_overlay_has_frame_time_graph_plugin(app : @app.App[@ecs.World]) -> Bool {
 
 ///|
 pub fn fps_overlay_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  fps_overlay_plugin_with(app, FpsOverlayPlugin::FpsOverlayPlugin())
+  fps_overlay_plugin_with(app, FpsOverlayPlugin())
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn fps_overlay_plugin_with(
   app : @app.App[@ecs.World],
   plugin : FpsOverlayPlugin,
@@ -268,19 +269,16 @@ pub fn fps_overlay_plugin_with(
 
   })
   .insert_resource(plugin.config)
-  .insert_world_resource(
-    fps_overlay_state_resource_key,
-    FpsOverlayState::FpsOverlayState(),
-  )
-  .add_systems(@app.Startup, @app.system(fps_overlay_setup))
+  .insert_world_resource(fps_overlay_state_resource_key, FpsOverlayState())
+  .add_systems(Startup, @app.system(fps_overlay_setup))
   .add_systems(
-    @app.Update,
+    Update,
     @app.system(fps_overlay_customize_system)
     .run_if(@app.resource_changed(fps_overlay_config_resource_key))
     .in_set(fps_overlay_set_customize),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system(fps_overlay_update_system)
     .run_if(@time.on_timer(plugin.config.refresh_interval))
     .in_set(fps_overlay_set_update_text)
@@ -314,18 +312,18 @@ fn fps_overlay_graph_height(config : FpsOverlayConfig) -> Float {
 ///|
 fn fps_overlay_text_display(config : FpsOverlayConfig) -> @ui.Display {
   if config.enabled {
-    @ui.Display::Flex
+    Flex
   } else {
-    @ui.Display::None
+    None
   }
 }
 
 ///|
 fn fps_overlay_graph_display(config : FpsOverlayConfig) -> @ui.Display {
   if config.frame_time_graph_config.enabled {
-    @ui.Display::Flex
+    Flex
   } else {
-    @ui.Display::None
+    None
   }
 }
 
@@ -459,9 +457,7 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   try! (world
   .entity_mut(root)
   .insert_component(
-    @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_flex_direction(@ui.FlexDirection::Column),
+    @ui.Node::Node().with_position_type(Absolute).with_flex_direction(Column),
   )
   |> ignore)
   try! (world
@@ -515,14 +511,12 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   .entity_mut(graph_entity)
   .insert_component(
     @ui.Node::Node()
-    .with_width(@ui.Val::Px(fps_overlay_graph_width(config)))
-    .with_height(@ui.Val::Px(fps_overlay_graph_height(config)))
+    .with_width(Px(fps_overlay_graph_width(config)))
+    .with_height(Px(fps_overlay_graph_height(config)))
     .with_display(fps_overlay_graph_display(config))
-    .with_flex_direction(@ui.FlexDirection::Row)
-    .with_align_items(@ui.AlignItems::End)
-    .with_overflow(
-      @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Hidden),
-    ),
+    .with_flex_direction(Row)
+    .with_align_items(End)
+    .with_overflow(@ui.Overflow::new(Hidden, Hidden)),
   )
   |> ignore)
   try! (world
@@ -609,8 +603,8 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
       try
         world.update(graph_entity, fn(node : @ui.Node) {
           node
-          .with_width(@ui.Val::Px(fps_overlay_graph_width(config)))
-          .with_height(@ui.Val::Px(fps_overlay_graph_height(config)))
+          .with_width(Px(fps_overlay_graph_width(config)))
+          .with_height(Px(fps_overlay_graph_height(config)))
           .with_display(fps_overlay_graph_display(config))
         })
       catch {
@@ -707,7 +701,7 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
     ignore(
       try
         world.update(bar_entity, fn(node : @ui.Node) {
-          node.with_width(@ui.Val::Px(width)).with_height(@ui.Val::Px(height))
+          node.with_width(Px(width)).with_height(Px(height))
         })
       catch {
         _ => false

@@ -34,6 +34,6 @@ fn main {
       silence_startup_warning: true,
     }),
   )
-  .add_systems_param2(@app.Startup, setup)
+  .add_systems_param2(Startup, setup)
   .run()
 }

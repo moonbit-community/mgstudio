@@ -53,12 +53,12 @@ priv struct CameraStopwatch {
 
 ///|
 fn CameraStopwatch::CameraStopwatch() -> CameraStopwatch {
-  CameraStopwatch::{ stopwatch: @time.Stopwatch::new() }
+  { stopwatch: @time.Stopwatch::new() }
 }
 
 ///|
 impl @app.FromWorld for CameraStopwatch with fn from_world(_world) {
-  CameraStopwatch::CameraStopwatch()
+  CameraStopwatch()
 }
 
 ///|
@@ -73,11 +73,7 @@ impl @app.Resource for AppStatus with fn resource() {
 
 ///|
 fn AppStatus::AppStatus() -> AppStatus {
-  AppStatus::{
-    light_mode: LightMode::Directional,
-    anisotropy_enabled: true,
-    visible_scene: Scene::BarnLamp,
-  }
+  { light_mode: Directional, anisotropy_enabled: true, visible_scene: BarnLamp }
 }
 
 ///|
@@ -122,8 +118,8 @@ impl @ecs.Component for Scene with fn component() {
 ///|
 fn Scene::next(self : Scene) -> Scene {
   match self {
-    BarnLamp => Scene::Sphere
-    Sphere => Scene::BarnLamp
+    BarnLamp => Sphere
+    Sphere => BarnLamp
   }
 }
 
@@ -225,7 +221,7 @@ fn spawn_text(commands : @app.Commands, app_status : AppStatus) -> Unit {
       (
         app_status.create_help_text(),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(12.0F))
         .with_left(@ui.px(12.0F)),
       ),
@@ -381,8 +377,8 @@ fn rotate_camera(
   time : @app.Res[@time.Time[Unit]],
   stopwatch : @app.Local[CameraStopwatch],
 ) -> Unit {
-  if app_status.get().light_mode == LightMode::EnvironmentMap {
-    stopwatch.set(CameraStopwatch::{
+  if app_status.get().light_mode == EnvironmentMap {
+    stopwatch.set({
       stopwatch: stopwatch.get().stopwatch.tick(time.get().delta()),
     })
   }
@@ -426,17 +422,17 @@ fn handle_input(
   keyboard : @input.ButtonInput[@window.KeyCode],
   app_status : @app.ResMut[AppStatus],
 ) -> Unit {
-  if keyboard.just_pressed(@window.KeyCode::Space) {
+  if keyboard.just_pressed(Space) {
     let status = app_status.peek()
     match status.light_mode {
       Directional => {
-        status.light_mode = LightMode::Point
+        status.light_mode = Point
         app_status.set(status)
         try! lights.view(fn(light, _entity) { commands.entity(light).despawn() })
         spawn_point_light(commands)
       }
       Point => {
-        status.light_mode = LightMode::EnvironmentMap
+        status.light_mode = EnvironmentMap
         app_status.set(status)
         try! lights.view(fn(light, _entity) { commands.entity(light).despawn() })
         try! cameras.view(fn(camera, _entity) {
@@ -444,7 +440,7 @@ fn handle_input(
         })
       }
       EnvironmentMap => {
-        status.light_mode = LightMode::Directional
+        status.light_mode = Directional
         app_status.set(status)
         try! cameras.view(fn(camera, _entity) {
           commands.entity(camera).remove(@pbr.ecs_key_skybox)
@@ -455,7 +451,7 @@ fn handle_input(
     }
   }
 
-  if keyboard.just_pressed(@window.KeyCode::Enter) {
+  if keyboard.just_pressed(Enter) {
     let status = app_status.peek()
     status.anisotropy_enabled = !status.anisotropy_enabled
     app_status.set(status)
@@ -473,7 +469,7 @@ fn handle_input(
     })
   }
 
-  if keyboard.just_pressed(@window.KeyCode::KeyQ) {
+  if keyboard.just_pressed(KeyQ) {
     let status = app_status.peek()
     status.visible_scene = status.visible_scene.next()
     app_status.set(status)
@@ -482,7 +478,7 @@ fn handle_input(
       let new_visibility = if scene.value() == status.visible_scene {
         @visibility.Visibility::Inherited
       } else {
-        @visibility.Visibility::Hidden
+        Hidden
       }
       visibility.set(new_visibility)
     })
@@ -519,23 +515,21 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::build()
     .set(@window.WindowPlugin::{
-      ..@window.WindowPlugin::WindowPlugin(),
+      ..WindowPlugin(),
       primary_window: Some(configured_window()),
     })
     .set(
       @pbr.PbrPlugin::PbrPlugin().with_standard_material_texture_features(
-        @pbr.StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
-          pbr_anisotropy_texture=true,
-        ),
+        StandardMaterialTextureFeatureSet(pbr_anisotropy_texture=true),
       ),
     ),
   )
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param3(@app.Update, create_material_variants)
-  .add_systems_param2(@app.Update, animate_light)
-  .add_systems_param4(@app.Update, rotate_camera)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param3(Update, create_material_variants)
+  .add_systems_param2(Update, animate_light)
+  .add_systems_param4(Update, rotate_camera)
   .add_systems(
-    @app.Update,
+    Update,
     (handle_input_system, update_help_text_system) |> @app.chain(),
   )
   .run()

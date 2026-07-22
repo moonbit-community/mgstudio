@@ -303,7 +303,7 @@ pub struct Has[_] {
 ///|
 pub fn[T] Has::new(key : ComponentKey[T]) -> Has[T] {
   ignore(key)
-  Has::{ present: false }
+  { present: false }
 }
 
 ///|
@@ -325,7 +325,7 @@ pub struct Optional[T] {
 ///|
 pub fn[T] Optional::new(key : ComponentKey[T]) -> Optional[T] {
   ignore(key)
-  Optional::{ value: None }
+  { value: None }
 }
 
 ///|
@@ -344,7 +344,7 @@ pub fn[F] World::query_entities_filtered(
   self : World,
   filter : F,
 ) -> Query[@core.Entity, F] {
-  Query::{ lease: WorldLease::new(self), filter, cache: None }
+  { lease: WorldLease::new(self), filter, cache: None }
 }
 
 ///|
@@ -398,12 +398,12 @@ pub fn QueryCache::new() -> QueryCache {
 
 ///|
 pub fn[D] query(world : World) -> Query[D, All] {
-  Query::{ lease: WorldLease::new(world), filter: All::new(), cache: None }
+  { lease: WorldLease::new(world), filter: All::new(), cache: None }
 }
 
 ///|
 pub fn[D, F] query_filtered(world : World, filter : F) -> Query[D, F] {
-  Query::{ lease: WorldLease::new(world), filter, cache: None }
+  { lease: WorldLease::new(world), filter, cache: None }
 }
 
 ///|
@@ -412,7 +412,7 @@ pub fn[D, F] query_filtered_with_cache(
   filter : F,
   cache : QueryCache,
 ) -> Query[D, F] {
-  Query::{ lease: WorldLease::new(world), filter, cache: Some(cache) }
+  { lease: WorldLease::new(world), filter, cache: Some(cache) }
 }
 
 ///|
@@ -421,7 +421,7 @@ pub fn[D, F] query_filtered_with_cache_and_lease(
   filter : F,
   cache : QueryCache,
 ) -> Query[D, F] {
-  Query::{ lease, filter, cache: Some(cache) }
+  { lease, filter, cache: Some(cache) }
 }
 
 ///|
@@ -3000,7 +3000,7 @@ fn[F : QueryFilter] query_default_filter_component_ids_for_query(
 fn query_require_unique_entities(
   entities : Array[@core.Entity],
 ) -> Unit raise EcsError {
-  let seen : @hashset.HashSet[UInt64] = @hashset.HashSet([])
+  let seen : @hashset.HashSet[UInt64] = HashSet([])
   for entity in entities {
     let key_hi = entity.id.reinterpret_as_uint().to_uint64()
     let key_lo = entity.generation.reinterpret_as_uint().to_uint64() &

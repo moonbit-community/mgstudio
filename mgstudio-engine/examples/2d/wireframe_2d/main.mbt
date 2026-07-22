@@ -38,8 +38,8 @@ fn main {
       color_default_white(),
     ),
   )
-  .add_systems_param4(@app.Startup, setup)
-  .add_systems_param4(@app.Update, update_colors)
+  .add_systems_param4(Startup, setup)
+  .add_systems_param4(Update, update_colors)
   .run()
 }
 
@@ -184,9 +184,7 @@ fn setup(
   let root = commands.spawn(
     (
       @ui.UiRoot::UiRoot(),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
     ),
   )
   ignore(
@@ -194,13 +192,13 @@ fn setup(
       (
         @hierarchy.Parent::new(root),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_left(Px(12.0F))
+        .with_top(Px(12.0F)),
         @text.Text::new(""),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        @text.TextLayout::new_with_justify(Left),
         WireframeHelpText::{  },
       ),
     ),
@@ -221,12 +219,12 @@ fn update_colors(
   .get()
   .modify(fn(value) { value.content = wireframe_overlay_text(config.peek()) })
 
-  if keyboard_input.just_pressed(@window.KeyCode::KeyZ) {
+  if keyboard_input.just_pressed(KeyZ) {
     let current = config.peek()
     config.set(current.with_global(!current.global))
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::KeyX) {
+  if keyboard_input.just_pressed(KeyX) {
     let current = config.peek()
     let next_color = if color_close(
         current.default_color,
@@ -239,7 +237,7 @@ fn update_colors(
     config.set(current.with_default_color(next_color))
   }
 
-  if keyboard_input.just_pressed(@window.KeyCode::KeyC) {
+  if keyboard_input.just_pressed(KeyC) {
     try! wireframe_colors.view(fn(_entity, color) {
       let current = color.value()
       let next = if color_close(current.color, color_green()) {

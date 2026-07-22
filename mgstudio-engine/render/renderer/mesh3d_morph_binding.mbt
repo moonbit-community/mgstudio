@@ -146,7 +146,7 @@ pub fn GpuBackend::create_mesh3d_morph_target_buffer(
   )
   self.queue.write_buffer(buffer, 0UL, packed)
   let id = alloc_id(self)
-  self.mesh3d_morph_target_buffers.push(GpuMesh3dMorphTargetBufferInfo::{
+  self.mesh3d_morph_target_buffers.push({
     id,
     buffer,
     byte_size,

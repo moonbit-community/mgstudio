@@ -16,6 +16,7 @@
 pub struct TextPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TextPlugin::TextPlugin() -> TextPlugin {
   TextPlugin::{  }
 }

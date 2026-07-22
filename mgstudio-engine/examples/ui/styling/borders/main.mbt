@@ -15,133 +15,33 @@
 ///|
 fn border_cases() -> Array[(String, @ui.UiRect)] {
   [
-    ("None", @ui.UiRect::UiRect()),
-    ("All", @ui.UiRect::all(@ui.Val::Px(10.0F))),
-    (
-      "Left",
-      @ui.UiRect::new(
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    ),
-    (
-      "Right",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    ),
-    (
-      "Top",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    ),
-    (
-      "Bottom",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-      ),
-    ),
-    (
-      "Horizontal",
-      @ui.UiRect::new(
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    ),
-    (
-      "Vertical",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-      ),
-    ),
-    (
-      "Top Left",
-      @ui.UiRect::new(
-        @ui.Val::Px(20.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    ),
-    (
-      "Bottom Left",
-      @ui.UiRect::new(
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(20.0F),
-      ),
-    ),
-    (
-      "Top Right",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(20.0F),
-        @ui.Val::Px(0.0F),
-      ),
-    ),
-    (
-      "Bottom Right",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(10.0F),
-      ),
-    ),
+    ("None", UiRect()),
+    ("All", @ui.UiRect::all(Px(10.0F))),
+    ("Left", @ui.UiRect::new(Px(10.0F), Px(0.0F), Px(0.0F), Px(0.0F))),
+    ("Right", @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(10.0F), Px(0.0F))),
+    ("Top", @ui.UiRect::new(Px(0.0F), Px(10.0F), Px(0.0F), Px(0.0F))),
+    ("Bottom", @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(0.0F), Px(10.0F))),
+    ("Horizontal", @ui.UiRect::new(Px(10.0F), Px(0.0F), Px(10.0F), Px(0.0F))),
+    ("Vertical", @ui.UiRect::new(Px(0.0F), Px(10.0F), Px(0.0F), Px(10.0F))),
+    ("Top Left", @ui.UiRect::new(Px(20.0F), Px(10.0F), Px(0.0F), Px(0.0F))),
+    ("Bottom Left", @ui.UiRect::new(Px(10.0F), Px(0.0F), Px(0.0F), Px(20.0F))),
+    ("Top Right", @ui.UiRect::new(Px(0.0F), Px(10.0F), Px(20.0F), Px(0.0F))),
+    ("Bottom Right", @ui.UiRect::new(Px(0.0F), Px(0.0F), Px(10.0F), Px(10.0F))),
     (
       "Top Bottom Right",
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(20.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(10.0F),
-      ),
+      @ui.UiRect::new(Px(0.0F), Px(20.0F), Px(10.0F), Px(10.0F)),
     ),
     (
       "Top Bottom Left",
-      @ui.UiRect::new(
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-      ),
+      @ui.UiRect::new(Px(10.0F), Px(10.0F), Px(0.0F), Px(10.0F)),
     ),
     (
       "Top Left Right",
-      @ui.UiRect::new(
-        @ui.Val::Px(20.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-      ),
+      @ui.UiRect::new(Px(20.0F), Px(10.0F), Px(10.0F), Px(0.0F)),
     ),
     (
       "Bottom Left Right",
-      @ui.UiRect::new(
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(10.0F),
-        @ui.Val::Px(20.0F),
-      ),
+      @ui.UiRect::new(Px(10.0F), Px(0.0F), Px(10.0F), Px(20.0F)),
     ),
   ]
 }
@@ -207,12 +107,7 @@ fn spawn_label(
     world,
     Some(parent),
     @ui.Node::Node().with_margin(
-      @ui.UiRect::new(
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(8.0F),
-        @ui.Val::Px(0.0F),
-        @ui.Val::Px(0.0F),
-      ),
+      @ui.UiRect::new(Px(0.0F), Px(8.0F), Px(0.0F), Px(0.0F)),
     ),
     None,
   )
@@ -232,20 +127,20 @@ fn spawn_border_example(
     world,
     Some(parent),
     @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_align_items(@ui.AlignItems::Center)
-    .with_margin(@ui.UiRect::all(@ui.Val::Px(6.0F))),
+    .with_flex_direction(Column)
+    .with_align_items(Center)
+    .with_margin(@ui.UiRect::all(Px(6.0F))),
     None,
   )
   let base_box_node = @ui.Node::Node()
-    .with_width(@ui.Val::Px(56.0F))
-    .with_height(@ui.Val::Px(56.0F))
+    .with_width(Px(56.0F))
+    .with_height(Px(56.0F))
     .with_border(border)
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F)))
-    .with_align_items(@ui.AlignItems::Center)
-    .with_justify_content(@ui.JustifyContent::Center)
+    .with_padding(@ui.UiRect::all(Px(12.0F)))
+    .with_align_items(Center)
+    .with_justify_content(Center)
   let box_node = if rounded {
-    base_box_node.with_border_radius(@ui.BorderRadius::all(@ui.Val::Px(22.0F)))
+    base_box_node.with_border_radius(@ui.BorderRadius::all(Px(22.0F)))
   } else {
     base_box_node
   }
@@ -263,19 +158,13 @@ fn spawn_border_example(
   try! world.set_by_key(
     border_box,
     @ui.ecs_key_outline,
-    @ui.Outline::new(
-      @ui.Val::Px(4.0F),
-      @ui.Val::Px(6.0F),
-      @color.Color::white(),
-    ),
+    @ui.Outline::new(Px(4.0F), Px(6.0F), @color.Color::white()),
   )
   ignore(
     spawn_node(
       world,
       Some(border_box),
-      @ui.Node::Node()
-      .with_width(@ui.Val::Px(12.0F))
-      .with_height(@ui.Val::Px(12.0F)),
+      @ui.Node::Node().with_width(Px(12.0F)).with_height(Px(12.0F)),
       Some(@ui.BackgroundColor::new(@color.Color::srgb(1.0F, 0.92F, 0.0F))),
     ),
   )
@@ -293,20 +182,18 @@ fn spawn_section(
   let section = spawn_node(
     world,
     Some(parent),
-    @ui.Node::Node()
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_row_gap(@ui.Val::Px(12.0F)),
+    @ui.Node::Node().with_flex_direction(Column).with_row_gap(Px(12.0F)),
     None,
   )
   ignore(spawn_text(world, section, title, font, 22.0F))
   let samples = spawn_node(
     world,
     Some(section),
-    @ui.Node::{
+    {
       ..@ui.Node()
-      .with_flex_direction(@ui.FlexDirection::Row)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(12.0F))),
-      flex_wrap: @ui.FlexWrap::Wrap,
+      .with_flex_direction(Row)
+      .with_padding(@ui.UiRect::all(Px(12.0F))),
+      flex_wrap: Wrap,
     },
     Some(@ui.BackgroundColor::new(@color.Color::srgb(0.16F, 0.16F, 0.16F))),
   )
@@ -333,14 +220,14 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     None,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(20.0F)))
-    .with_row_gap(@ui.Val::Px(24.0F)),
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Column)
+    .with_padding(@ui.UiRect::all(Px(20.0F)))
+    .with_row_gap(Px(24.0F)),
     Some(@ui.BackgroundColor::new(@color.Color::srgb(0.08F, 0.08F, 0.08F))),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
 
   spawn_section(world, root, "Borders", font, false)
   spawn_section(world, root, "Borders Rounded", font, true)
@@ -350,6 +237,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
+  .add_systems_world(Startup, setup)
   .run()
 }

@@ -22,6 +22,7 @@ const SCREEN_SPACE_TRANSMISSION_PLUGIN_NAME : String = "mgstudio.pbr.ScreenSpace
 pub struct ScreenSpaceTransmissionPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ScreenSpaceTransmissionPlugin::ScreenSpaceTransmissionPlugin() -> ScreenSpaceTransmissionPlugin {
   ScreenSpaceTransmissionPlugin::{  }
 }
@@ -33,7 +34,7 @@ fn screen_space_transmission_plugin_register_required_components(
   world.register_required_components_with(
     ecs_key_camera3d,
     @transmission.ecs_key_screen_space_transmission,
-    fn() { @transmission.ScreenSpaceTransmission::ScreenSpaceTransmission() },
+    fn() { ScreenSpaceTransmission() },
   ) catch {
     _ =>
       abort(
@@ -52,7 +53,7 @@ pub fn screen_space_transmission_plugin_with(
   let extract_plugin : @render.ExtractComponentPlugin[
     @transmission.ScreenSpaceTransmission,
     ScreenSpaceTransmissionPlugin,
-  ] = @render.ExtractComponentPlugin::ExtractComponentPlugin()
+  ] = ExtractComponentPlugin()
   let next = @render.extract_component_plugin_with(app, extract_plugin)
   screen_space_transmission_plugin_register_required_components(next.world())
   next

@@ -42,45 +42,37 @@ test "ui.experimental: UiChildren iter flattens ghost hierarchy and skips non-ui
   let direct_leaf = world.spawn()
   let non_ui = world.spawn()
 
-  try! world.set_by_key(root, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(root, @ui.ecs_key_node, Node())
 
-  try! world.set_by_key(
-    ghost_a,
-    @ui.ecs_key_ghost_node,
-    @ui.GhostNode::GhostNode(),
-  )
+  try! world.set_by_key(ghost_a, @ui.ecs_key_ghost_node, GhostNode())
   try! world.set_by_key(
     ghost_a,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
 
-  try! world.set_by_key(
-    ghost_b,
-    @ui.ecs_key_ghost_node,
-    @ui.GhostNode::GhostNode(),
-  )
+  try! world.set_by_key(ghost_b, @ui.ecs_key_ghost_node, GhostNode())
   try! world.set_by_key(
     ghost_b,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
 
-  try! world.set_by_key(leaf_a, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(leaf_a, @ui.ecs_key_node, Node())
   try! world.set_by_key(
     leaf_a,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(ghost_a),
   )
 
-  try! world.set_by_key(leaf_b, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(leaf_b, @ui.ecs_key_node, Node())
   try! world.set_by_key(
     leaf_b,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(ghost_b),
   )
 
-  try! world.set_by_key(direct_leaf, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(direct_leaf, @ui.ecs_key_node, Node())
   try! world.set_by_key(
     direct_leaf,
     @hierarchy.ecs_key_parent,
@@ -113,19 +105,15 @@ test "ui.experimental: UiRootNodes iter includes root nodes and root ghost desce
   let root_ghost_leaf = world.spawn()
   let compat_root = world.spawn()
 
-  try! world.set_by_key(root_node, @ui.ecs_key_node, @ui.Node::Node())
-  try! world.set_by_key(
-    root_ghost,
-    @ui.ecs_key_ghost_node,
-    @ui.GhostNode::GhostNode(),
-  )
-  try! world.set_by_key(root_ghost_leaf, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(root_node, @ui.ecs_key_node, Node())
+  try! world.set_by_key(root_ghost, @ui.ecs_key_ghost_node, GhostNode())
+  try! world.set_by_key(root_ghost_leaf, @ui.ecs_key_node, Node())
   try! world.set_by_key(
     root_ghost_leaf,
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root_ghost),
   )
-  try! world.set_by_key(compat_root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(compat_root, @ui.ecs_key_ui_root, UiRoot())
 
   let roots = UiRootNodes::new(world).iter()
   debug_inspect(roots.length(), content="3")

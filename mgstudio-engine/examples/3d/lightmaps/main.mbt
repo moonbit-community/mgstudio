@@ -180,7 +180,7 @@ fn main {
   }
   app
   .insert_resource(args)
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param5(@app.Update, add_lightmaps_to_meshes)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param5(Update, add_lightmaps_to_meshes)
   .run()
 }

@@ -51,7 +51,7 @@ fn mesh3d_preprocess_camera_upload_state_new(
   key_lo : Int,
   phase_id : String,
 ) -> GpuMesh3dPreprocessCameraUploadState {
-  GpuMesh3dPreprocessCameraUploadState::{
+  {
     key_hi,
     key_lo,
     phase_id,
@@ -784,12 +784,7 @@ fn mesh3d_preprocess_view_uniform_bytes(
     let plane = if i < view.frustum_planes.length() {
       view.frustum_planes[i]
     } else {
-      HostMesh3dPreprocessFrustumPlane::{
-        normal_x: 0.0F,
-        normal_y: 0.0F,
-        normal_z: 0.0F,
-        distance: 0.0F,
-      }
+      { normal_x: 0.0F, normal_y: 0.0F, normal_z: 0.0F, distance: 0.0F }
     }
     for word in mesh3d_preprocess_frustum_plane_words(plane) {
       words.push(word)

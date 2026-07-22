@@ -14,12 +14,12 @@
 
 ///|
 fn node_with_display(node : @ui.Node, display : @ui.Display) -> @ui.Node {
-  @ui.Node::{ ..node, display, }
+  { ..node, display, }
 }
 
 ///|
 fn node_with_aspect_ratio(node : @ui.Node, aspect_ratio : Float) -> @ui.Node {
-  @ui.Node::{ ..node, aspect_ratio: Some(aspect_ratio) }
+  { ..node, aspect_ratio: Some(aspect_ratio) }
 }
 
 ///|
@@ -68,31 +68,21 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore)
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    node_with_display(@ui.Node::Node(), @ui.Display::Grid)
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
+    node_with_display(Node(), Grid)
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
     .with_grid_template_columns([
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::MinContent,
-      ]),
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Fr(1.0F),
-      ]),
+      @ui.RepeatedGridTrack::new(Count(1), [MinContent]),
+      @ui.RepeatedGridTrack::new(Count(1), [Fr(1.0F)]),
     ])
     .with_grid_template_rows([
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Auto,
-      ]),
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Fr(1.0F),
-      ]),
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Px(20.0F),
-      ]),
+      @ui.RepeatedGridTrack::new(Count(1), [Auto]),
+      @ui.RepeatedGridTrack::new(Count(1), [Fr(1.0F)]),
+      @ui.RepeatedGridTrack::new(Count(1), [Px(20.0F)]),
     ]),
   )
   try! world.set_by_key(
@@ -107,10 +97,8 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(header, @ui.ecs_key_node, @ui.Node::{
-    ..node_with_display(@ui.Node::Node(), @ui.Display::Grid).with_padding(
-      @ui.UiRect::all(@ui.Val::Px(6.0F)),
-    ),
+  try! world.set_by_key(header, @ui.ecs_key_node, {
+    ..node_with_display(Node(), Grid).with_padding(@ui.UiRect::all(Px(6.0F))),
     grid_column: @ui.GridPlacement::span(2),
   })
   ignore(
@@ -133,21 +121,17 @@ fn setup(world : @ecs.World) -> Unit {
     main_grid,
     @ui.ecs_key_node,
     node_with_aspect_ratio(
-      node_with_display(@ui.Node::Node(), @ui.Display::Grid)
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(24.0F)))
+      node_with_display(Node(), Grid)
+      .with_height(Percent(100.0F))
+      .with_padding(@ui.UiRect::all(Px(24.0F)))
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(4), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(4), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(4), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(4), [Fr(1.0F)]),
       ])
-      .with_row_gap(@ui.Val::Px(12.0F))
-      .with_column_gap(@ui.Val::Px(12.0F)),
+      .with_row_gap(Px(12.0F))
+      .with_column_gap(Px(12.0F)),
       1.0F,
     ),
   )
@@ -185,9 +169,7 @@ fn setup(world : @ecs.World) -> Unit {
     try! world.set_by_key(
       frame,
       @ui.ecs_key_node,
-      node_with_display(@ui.Node::Node(), @ui.Display::Grid).with_padding(
-        @ui.UiRect::all(@ui.Val::Px(3.0F)),
-      ),
+      node_with_display(Node(), Grid).with_padding(@ui.UiRect::all(Px(3.0F))),
     )
     try! world.set_by_key(
       frame,
@@ -201,7 +183,7 @@ fn setup(world : @ecs.World) -> Unit {
       @hierarchy.ecs_key_parent,
       @hierarchy.Parent::new(frame),
     )
-    try! world.set_by_key(inner, @ui.ecs_key_node, @ui.Node::Node())
+    try! world.set_by_key(inner, @ui.ecs_key_node, Node())
     try! world.set_by_key(
       inner,
       @ui.ecs_key_background_color,
@@ -215,23 +197,17 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(sidebar, @ui.ecs_key_node, @ui.Node::{
-    ..node_with_display(@ui.Node::Node(), @ui.Display::Grid)
-    .with_align_items(@ui.AlignItems::Start)
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(10.0F)))
+  try! world.set_by_key(sidebar, @ui.ecs_key_node, {
+    ..node_with_display(Node(), Grid)
+    .with_align_items(Start)
+    .with_padding(@ui.UiRect::all(Px(10.0F)))
     .with_grid_template_rows([
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Auto,
-      ]),
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Auto,
-      ]),
-      @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(1), [
-        @ui.GridTrack::Fr(1.0F),
-      ]),
+      @ui.RepeatedGridTrack::new(Count(1), [Auto]),
+      @ui.RepeatedGridTrack::new(Count(1), [Auto]),
+      @ui.RepeatedGridTrack::new(Count(1), [Fr(1.0F)]),
     ])
-    .with_row_gap(@ui.Val::Px(10.0F)),
-    justify_items: @ui.JustifyItems::Center,
+    .with_row_gap(Px(10.0F)),
+    justify_items: Center,
   })
   try! world.set_by_key(
     sidebar,
@@ -255,7 +231,7 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(sidebar),
   )
-  try! world.set_by_key(spacer, @ui.ecs_key_node, @ui.Node::Node())
+  try! world.set_by_key(spacer, @ui.ecs_key_node, Node())
 
   let footer = world.spawn_empty()
   try! world.set_by_key(
@@ -263,8 +239,8 @@ fn setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(root),
   )
-  try! world.set_by_key(footer, @ui.ecs_key_node, @ui.Node::{
-    ..@ui.Node(),
+  try! world.set_by_key(footer, @ui.ecs_key_node, {
+    ..Node(),
     grid_column: @ui.GridPlacement::span(2),
   })
   try! world.set_by_key(

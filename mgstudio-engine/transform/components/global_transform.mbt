@@ -27,24 +27,17 @@ pub struct Affine2 {
 
 ///|
 pub fn Affine2::identity() -> Affine2 {
-  Affine2::{ a: 1.0F, b: 0.0F, c: 0.0F, d: 1.0F, tx: 0.0F, ty: 0.0F }
+  { a: 1.0F, b: 0.0F, c: 0.0F, d: 1.0F, tx: 0.0F, ty: 0.0F }
 }
 
 ///|
 pub fn Affine2::from_scale(scale : @math.Vec2) -> Affine2 {
-  Affine2::{ a: scale.x, b: 0.0F, c: 0.0F, d: scale.y, tx: 0.0F, ty: 0.0F }
+  { a: scale.x, b: 0.0F, c: 0.0F, d: scale.y, tx: 0.0F, ty: 0.0F }
 }
 
 ///|
 pub fn Affine2::from_translation(translation : @math.Vec2) -> Affine2 {
-  Affine2::{
-    a: 1.0F,
-    b: 0.0F,
-    c: 0.0F,
-    d: 1.0F,
-    tx: translation.x,
-    ty: translation.y,
-  }
+  { a: 1.0F, b: 0.0F, c: 0.0F, d: 1.0F, tx: translation.x, ty: translation.y }
 }
 
 ///|
@@ -53,7 +46,7 @@ pub fn Affine2::from_cols(
   y_axis : @math.Vec2,
   translation : @math.Vec2,
 ) -> Affine2 {
-  Affine2::{
+  {
     a: x_axis.x,
     b: x_axis.y,
     c: y_axis.x,
@@ -68,7 +61,7 @@ pub fn Affine2::from_scale_translation(
   scale : @math.Vec2,
   translation : @math.Vec2,
 ) -> Affine2 {
-  Affine2::{
+  {
     a: scale.x,
     b: 0.0F,
     c: 0.0F,
@@ -87,7 +80,7 @@ pub fn Affine2::mul(self : Affine2, other : Affine2) -> Affine2 {
   let d = self.b * other.c + self.d * other.d
   let tx = self.a * other.tx + self.c * other.ty + self.tx
   let ty = self.b * other.tx + self.d * other.ty + self.ty
-  Affine2::{ a, b, c, d, tx, ty }
+  { a, b, c, d, tx, ty }
 }
 
 ///|
@@ -109,7 +102,7 @@ pub struct GlobalTransform {
 
 ///|
 pub fn GlobalTransform::identity() -> GlobalTransform {
-  GlobalTransform::{ affine: Affine2::identity(), z: 0.0F }
+  { affine: Affine2::identity(), z: 0.0F }
 }
 
 ///|
@@ -119,7 +112,7 @@ pub fn GlobalTransform::GlobalTransform() -> GlobalTransform {
 
 ///|
 pub impl Default for GlobalTransform with fn default() {
-  GlobalTransform::GlobalTransform()
+  GlobalTransform()
 }
 
 ///|
@@ -146,7 +139,7 @@ pub impl @json.FromJson for GlobalTransform with fn from_json(json, path) {
     Float,
     Float,
   ) = @json.from_json(json, path~)
-  GlobalTransform::{ affine: Affine2::{ a, b, c, d, tx, ty }, z }
+  { affine: { a, b, c, d, tx, ty }, z }
 }
 
 ///|
@@ -162,8 +155,8 @@ pub fn GlobalTransform::from_transform(
   let b = sinv * sx
   let c = -sinv * sy
   let d = cosv * sy
-  GlobalTransform::{
-    affine: Affine2::{
+  {
+    affine: {
       a,
       b,
       c,
@@ -180,10 +173,7 @@ pub fn GlobalTransform::mul(
   self : GlobalTransform,
   other : GlobalTransform,
 ) -> GlobalTransform {
-  GlobalTransform::{
-    affine: self.affine.mul(other.affine),
-    z: self.z + other.z,
-  }
+  { affine: self.affine.mul(other.affine), z: self.z + other.z }
 }
 
 ///|
@@ -221,7 +211,7 @@ pub fn GlobalTransform::inverse(self : GlobalTransform) -> GlobalTransform {
   let d = self.affine.a * inv_det
   let tx = -(a * self.affine.tx + c * self.affine.ty)
   let ty = -(b * self.affine.tx + d * self.affine.ty)
-  GlobalTransform::{ affine: Affine2::{ a, b, c, d, tx, ty }, z: -self.z }
+  { affine: { a, b, c, d, tx, ty }, z: -self.z }
 }
 
 ///|
@@ -241,13 +231,14 @@ pub fn GlobalTransform::compute_transform(self : GlobalTransform) -> Transform {
 pub struct TransformTreeChanged {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn TransformTreeChanged::TransformTreeChanged() -> TransformTreeChanged {
   TransformTreeChanged::{  }
 }
 
 ///|
 pub impl Default for TransformTreeChanged with fn default() {
-  TransformTreeChanged::TransformTreeChanged()
+  TransformTreeChanged()
 }
 
 ///|
@@ -280,7 +271,7 @@ pub fn StaticTransformOptimizations::StaticTransformOptimizations() -> StaticTra
 
 ///|
 pub impl Default for StaticTransformOptimizations with fn default() {
-  StaticTransformOptimizations::StaticTransformOptimizations()
+  StaticTransformOptimizations()
 }
 
 ///|

@@ -82,12 +82,12 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::set(@asset.AssetPlugin::nearest()))
   .add_systems(
-    @app.Startup,
+    Startup,
     (setup_system, spawn_fake_player_system) |> @app.chain(),
   )
-  .add_systems_param4(@app.Update, update_tilemap)
-  .add_systems_param3(@app.Update, move_player)
-  .add_systems_param2(@app.Update, log_tile)
+  .add_systems_param4(Update, update_tilemap)
+  .add_systems_param3(Update, move_player)
+  .add_systems_param2(Update, log_tile)
   .run()
 }
 
@@ -122,7 +122,7 @@ fn setup(
     asset_server
     .get()
     .load_with_settings("textures/array_texture.png", fn(settings) {
-      settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(4))
+      settings.array_layout = Some(RowCount(4))
     }),
   )
   let tile_data = build_initial_tile_data(rng, chunk.tile_capacity())
@@ -133,10 +133,7 @@ fn setup(
         chunk,
         @sprite_tilemap_chunk.TilemapChunkTileData::new(tile_data),
         UpdateTimer::{
-          timer: @time.Timer::from_seconds(
-            UPDATE_INTERVAL_SECONDS,
-            @time.TimerMode::Repeating,
-          ),
+          timer: @time.Timer::from_seconds(UPDATE_INTERVAL_SECONDS, Repeating),
         },
       ),
     ),

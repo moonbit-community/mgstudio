@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param4(@app.Update, gamepad_events)
-  .add_systems_param(@app.Update, gamepad_ordered_events)
+  .add_systems_param4(Update, gamepad_events)
+  .add_systems_param(Update, gamepad_ordered_events)
   .run()
 }
 

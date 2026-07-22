@@ -64,7 +64,7 @@ pub fn KinematicCharacterController3d::with_translation(
   self : KinematicCharacterController3d,
   translation : @math.Vec3,
 ) -> KinematicCharacterController3d {
-  KinematicCharacterController3d::{ ..self, translation, }
+  { ..self, translation, }
 }
 
 ///|
@@ -72,7 +72,7 @@ pub fn KinematicCharacterController3d::add_translation(
   self : KinematicCharacterController3d,
   delta : @math.Vec3,
 ) -> KinematicCharacterController3d {
-  KinematicCharacterController3d::{
+  {
     ..self,
     translation: @math.Vec3::new(
       self.translation.x + delta.x,
@@ -86,7 +86,7 @@ pub fn KinematicCharacterController3d::add_translation(
 pub fn KinematicCharacterController3d::reset_translation(
   self : KinematicCharacterController3d,
 ) -> KinematicCharacterController3d {
-  KinematicCharacterController3d::{ ..self, translation: @math.Vec3::zero() }
+  { ..self, translation: @math.Vec3::zero() }
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn KinematicCharacterController3d::with_up(
   up : @math.Vec3,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_up(mg_vec3_to_rapier(up))
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -104,7 +104,7 @@ pub fn KinematicCharacterController3d::with_slide(
   slide : Bool,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_slide(slide)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -113,7 +113,7 @@ pub fn KinematicCharacterController3d::with_offset(
   offset : @control.CharacterLength,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_offset(offset)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -122,7 +122,7 @@ pub fn KinematicCharacterController3d::with_snap_to_ground(
   snap : @control.CharacterLength?,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_snap_to_ground(snap)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -131,7 +131,7 @@ pub fn KinematicCharacterController3d::with_autostep(
   autostep : @control.CharacterAutostep?,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_autostep(autostep)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -140,7 +140,7 @@ pub fn KinematicCharacterController3d::with_max_slope_climb_angle(
   angle : Float,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_max_slope_climb_angle(angle)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -149,7 +149,7 @@ pub fn KinematicCharacterController3d::with_min_slope_slide_angle(
   angle : Float,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_min_slope_slide_angle(angle)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -158,7 +158,7 @@ pub fn KinematicCharacterController3d::with_normal_nudge_factor(
   factor : Float,
 ) -> KinematicCharacterController3d {
   let controller = self.controller.with_normal_nudge_factor(factor)
-  KinematicCharacterController3d::{ ..self, controller, }
+  { ..self, controller, }
 }
 
 ///|
@@ -183,7 +183,7 @@ pub fn KinematicCharacterControllerOutput3d::new() -> KinematicCharacterControll
 pub fn KinematicCharacterControllerOutput3d::without_collisions(
   self : KinematicCharacterControllerOutput3d,
 ) -> KinematicCharacterControllerOutput3d {
-  KinematicCharacterControllerOutput3d::{ ..self, collisions: [] }
+  { ..self, collisions: [] }
 }
 
 ///|

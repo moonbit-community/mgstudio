@@ -15,11 +15,7 @@
 ///|
 fn smaa_test_spawn_camera(world : @ecs.World) -> @core.Entity {
   let entity = world.spawn_empty()
-  try! world.set_by_key(
-    entity,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(entity, @camera_camera.ecs_key_camera, Camera())
   entity
 }
 
@@ -32,10 +28,8 @@ test "anti_alias/smaa: runtime state counts only camera entities with Smaa" {
   )
   let camera_entity = smaa_test_spawn_camera(app.world())
   let non_camera_entity = app.world().spawn_empty()
-  try! app.world().set_by_key(camera_entity, Smaa::component(), Smaa::Smaa())
-  try! app
-  .world()
-  .set_by_key(non_camera_entity, Smaa::component(), Smaa::Smaa())
+  try! app.world().set_by_key(camera_entity, Smaa::component(), Smaa())
+  try! app.world().set_by_key(non_camera_entity, Smaa::component(), Smaa())
   let app = app.update()
   let runtime = app.world().get_resource(SmaaRuntimeState::resource()).unwrap()
   debug_inspect(runtime.enabled_camera_count, content="1")
@@ -117,13 +111,11 @@ test "anti_alias/smaa: preset shader defs and uniform metrics mirror Bevy" {
 ///|
 test "anti_alias/smaa: pipeline descriptors mirror Bevy pass layout" {
   let pipelines = init_smaa_pipelines()
-  let edge = pipelines.edge_detection.specialize(SmaaPreset::High)
-  let blend = pipelines.blending_weight_calculation.specialize(
-    SmaaPreset::Medium,
-  )
-  let neighborhood = pipelines.neighborhood_blending.specialize(SmaaNeighborhoodBlendingPipelineKey::{
+  let edge = pipelines.edge_detection.specialize(High)
+  let blend = pipelines.blending_weight_calculation.specialize(Medium)
+  let neighborhood = pipelines.neighborhood_blending.specialize({
     texture_format: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
-    preset: SmaaPreset::Ultra,
+    preset: Ultra,
   })
   debug_inspect(edge.label == Some("SMAA edge detection"), content="true")
   inspect(edge.layout.length(), content="2")

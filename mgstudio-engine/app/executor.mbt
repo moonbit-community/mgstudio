@@ -206,7 +206,7 @@ fn run_systems(
               @ecs.Invalid(message),
               system_context(
                 systems[system_i],
-                ErrorContextKind::Validation,
+                Validation,
                 current_schedule_stage(),
               ),
             )
@@ -225,7 +225,7 @@ fn run_systems(
         let trace_name = system_trace_name(cfg, stage, execution_i)
         let system_trace_start_us = if timeline_enabled &&
           should_trace_system(cfg, stage, systems.length()) {
-          timeline_trace_begin_span(TimelineTraceCategory::System, trace_name)
+          timeline_trace_begin_span(System, trace_name)
         } else {
           -1L
         }
@@ -251,11 +251,7 @@ fn run_systems(
         match outcome {
           Success => {
             if timeline_enabled && system_trace_start_us >= 0L {
-              timeline_trace_end_span(
-                TimelineTraceCategory::System,
-                trace_name,
-                system_trace_start_us,
-              )
+              timeline_trace_end_span(System, trace_name, system_trace_start_us)
             }
             systems[system_i].last_run_tick = this_run
             executor_state.mark_unapplied(system_i)
@@ -266,18 +262,14 @@ fn run_systems(
           Skipped(_) => return
           Invalid(message) => {
             if timeline_enabled && system_trace_start_us >= 0L {
-              timeline_trace_end_span(
-                TimelineTraceCategory::System,
-                trace_name,
-                system_trace_start_us,
-              )
+              timeline_trace_end_span(System, trace_name, system_trace_start_us)
             }
             report_world_error(
               world,
               @ecs.Invalid(message),
               system_context(
                 systems[system_i],
-                ErrorContextKind::Validation,
+                Validation,
                 current_schedule_stage(),
               ),
             )
@@ -285,11 +277,7 @@ fn run_systems(
           }
           Error(err) => {
             if timeline_enabled && system_trace_start_us >= 0L {
-              timeline_trace_end_span(
-                TimelineTraceCategory::System,
-                trace_name,
-                system_trace_start_us,
-              )
+              timeline_trace_end_span(System, trace_name, system_trace_start_us)
             }
             systems[system_i].last_run_tick = this_run
             executor_state.mark_unapplied(system_i)
@@ -302,7 +290,7 @@ fn run_systems(
                   err,
                   system_context(
                     systems[system_i],
-                    ErrorContextKind::System,
+                    System,
                     current_schedule_stage(),
                   ),
                 )
@@ -312,7 +300,7 @@ fn run_systems(
                   err,
                   system_context(
                     systems[system_i],
-                    ErrorContextKind::System,
+                    System,
                     current_schedule_stage(),
                   ),
                 )

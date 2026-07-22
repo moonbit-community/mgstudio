@@ -40,7 +40,7 @@ pub struct VolumetricFogBindGroupLayoutKey {
 
 ///|
 pub fn VolumetricFogBindGroupLayoutKey::VolumetricFogBindGroupLayoutKey() -> VolumetricFogBindGroupLayoutKey {
-  VolumetricFogBindGroupLayoutKey::{ bits: 0U }
+  { bits: 0U }
 }
 
 ///|
@@ -55,7 +55,7 @@ pub fn VolumetricFogBindGroupLayoutKey::from_msaa_and_density(
   if has_density_texture {
     bits = bits | VOLUMETRIC_FOG_BIND_GROUP_LAYOUT_DENSITY_TEXTURE
   }
-  VolumetricFogBindGroupLayoutKey::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -107,7 +107,7 @@ pub fn VolumetricFogBindGroupLayoutKey::description(
 fn volumetric_fog_bind_group_layout_key_from_bits(
   bits : Int,
 ) -> VolumetricFogBindGroupLayoutKey {
-  VolumetricFogBindGroupLayoutKey::{ bits: bits.reinterpret_as_uint() }
+  { bits: bits.reinterpret_as_uint() }
 }
 
 ///|
@@ -118,8 +118,8 @@ pub fn VolumetricFogBindGroupLayoutKey::bind_group_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       0,
       @render_resource.SHADER_STAGE_VERTEX_FRAGMENT,
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
+      BufferBinding(
+        Uniform,
         true,
         VOLUMETRIC_FOG_UNIFORM_SIZE_BYTES.to_uint64(),
       ),
@@ -127,11 +127,7 @@ pub fn VolumetricFogBindGroupLayoutKey::bind_group_layout_descriptor(
     @render_resource.BindGroupLayoutEntry::new(
       1,
       @render_resource.SHADER_STAGE_FRAGMENT,
-      @render_resource.BindingType::TextureBinding(
-        @render_resource.TextureSampleType::Depth,
-        @render_resource.TextureViewDimension::D2,
-        self.is_multisampled(),
-      ),
+      TextureBinding(Depth, D2, self.is_multisampled()),
     ),
   ]
   if self.has_density_texture() {
@@ -139,20 +135,14 @@ pub fn VolumetricFogBindGroupLayoutKey::bind_group_layout_descriptor(
       @render_resource.BindGroupLayoutEntry::new(
         2,
         @render_resource.SHADER_STAGE_FRAGMENT,
-        @render_resource.BindingType::TextureBinding(
-          @render_resource.TextureSampleType::Float(true),
-          @render_resource.TextureViewDimension::D3,
-          false,
-        ),
+        TextureBinding(Float(true), D3, false),
       ),
     )
     entries.push(
       @render_resource.BindGroupLayoutEntry::new(
         3,
         @render_resource.SHADER_STAGE_FRAGMENT,
-        @render_resource.BindingType::SamplerBinding(
-          @render_resource.SamplerBindingType::Filtering,
-        ),
+        SamplerBinding(Filtering),
       ),
     )
   }
@@ -193,7 +183,7 @@ pub impl @app.Resource for VolumetricFogPipeline with fn resource() {
 
 ///|
 pub fn VolumetricFogPipeline::VolumetricFogPipeline() -> VolumetricFogPipeline {
-  VolumetricFogPipeline::{
+  {
     shader_path: VOLUMETRIC_FOG_SHADER_PATH,
     mesh_view_layouts: @mesh_view_layout.render3d_mesh_pipeline_view_layouts(
       false, false,
@@ -229,20 +219,20 @@ fn volumetric_fog_shader_def_vals(
 ) -> Array[@render_resource.ShaderDefVal] {
   let values : Array[@render_resource.ShaderDefVal] = []
   for shader_def in shader_defs {
-    values.push(@render_resource.ShaderDefVal::Flag(shader_def))
+    values.push(Flag(shader_def))
   }
   values
 }
 
 ///|
 fn volumetric_fog_blend_state() -> @render_resource.BlendState {
-  @render_resource.BlendState::BlendState(
-    color=@render_resource.BlendComponent::BlendComponent(
+  BlendState(
+    color=BlendComponent(
       src_factor=@wgpu.BLEND_FACTOR_ONE,
       dst_factor=@wgpu.BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
       operation=@wgpu.BLEND_OPERATION_ADD,
     ),
-    alpha=@render_resource.BlendComponent::BlendComponent(
+    alpha=BlendComponent(
       src_factor=@wgpu.BLEND_FACTOR_ZERO,
       dst_factor=@wgpu.BLEND_FACTOR_ONE,
       operation=@wgpu.BLEND_OPERATION_ADD,
@@ -265,7 +255,7 @@ pub fn VolumetricFogPipelineKey::VolumetricFogPipelineKey(
   vertex_buffer_layout~ : @mesh.VertexBufferLayout,
   has_density_texture~ : Bool,
 ) -> VolumetricFogPipelineKey {
-  VolumetricFogPipelineKey::{
+  {
     mesh_pipeline_view_key,
     target_format,
     vertex_buffer_layout,
@@ -398,7 +388,7 @@ pub fn VolumetricFogRenderWorldEntity::new(
   render_entity : @core.Entity,
   main_entity : @render.MainEntity,
 ) -> VolumetricFogRenderWorldEntity {
-  VolumetricFogRenderWorldEntity::{ render_entity, main_entity }
+  { render_entity, main_entity }
 }
 
 ///|
@@ -515,12 +505,7 @@ pub fn volumetric_fog_render_world_storage_counts(
   ) {
     light_count = light_count + 1
   })
-  VolumetricFogRenderWorldStorageCounts::{
-    view_count,
-    volume_count,
-    transformed_volume_count,
-    light_count,
-  }
+  { view_count, volume_count, transformed_volume_count, light_count }
 }
 
 ///|
@@ -750,14 +735,14 @@ pub fn VolumetricFogMat4::from_cols(
   z_axis : @math.Vec4,
   w_axis : @math.Vec4,
 ) -> VolumetricFogMat4 {
-  VolumetricFogMat4::{ x_axis, y_axis, z_axis, w_axis }
+  { x_axis, y_axis, z_axis, w_axis }
 }
 
 ///|
 fn VolumetricFogMat4::from_affine3(
   transform : @math.Affine3,
 ) -> VolumetricFogMat4 {
-  VolumetricFogMat4::{
+  {
     x_axis: @math.Vec4::new(
       transform.matrix3.x_axis.x,
       transform.matrix3.x_axis.y,
@@ -1053,7 +1038,7 @@ pub impl @ecs.Component for ViewVolumetricFog with fn component() {
 
 ///|
 fn ViewVolumetricFog::ViewVolumetricFog() -> ViewVolumetricFog {
-  ViewVolumetricFog::{ volumes: [] }
+  { volumes: [] }
 }
 
 ///|
@@ -1095,7 +1080,7 @@ pub impl @app.Resource for VolumetricFogUniformBuffer with fn resource() {
 
 ///|
 pub fn VolumetricFogUniformBuffer::VolumetricFogUniformBuffer() -> VolumetricFogUniformBuffer {
-  VolumetricFogUniformBuffer::{ uniforms: [] }
+  { uniforms: [] }
 }
 
 ///|
@@ -1186,7 +1171,7 @@ pub fn prepare_volumetric_fog_view_uniforms(
       jitter_strength: volumetric_fog.jitter,
     }
     let uniform_buffer_offset = uniform_buffer.push(uniform)
-    view_fog.push(ViewFogVolume::{
+    view_fog.push({
       density_texture: fog_volume.density_texture,
       uniform_buffer_offset,
       exterior: !interior,

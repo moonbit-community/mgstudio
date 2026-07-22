@@ -62,7 +62,7 @@ fn main {
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .insert_resource(InputCounter::{ value: 0 })
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(increment_input_counter)
     .run_if(@app.resource_exists(InputCounter::resource()))
     .run_if(
@@ -73,13 +73,13 @@ fn main {
     ),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(print_input_counter)
     .run_if(@app.resource_exists(InputCounter::resource()))
     .run_if_stateful(None, input_counter_changed),
   )
   .add_systems(
-    @app.Update,
+    Update,
     @app.system_config_fn(print_time_message)
     .run_if_stateful(0.0F, time_passed(2.0F))
     .run_if(
@@ -93,10 +93,10 @@ fn main {
 
 ///|
 fn has_user_input(world : @ecs.World) -> Bool {
-  @input.key_just_pressed(@window.KeyCode::Space) ||
-  @input.key_just_pressed(@window.KeyCode::Enter) ||
-  @input.mouse_button_just_pressed(@window.MouseButton::Left) ||
-  @input.mouse_button_just_pressed(@window.MouseButton::Right) ||
+  @input.key_just_pressed(Space) ||
+  @input.key_just_pressed(Enter) ||
+  @input.mouse_button_just_pressed(Left) ||
+  @input.mouse_button_just_pressed(Right) ||
   touches_any_just_pressed(world)
 }
 

@@ -152,7 +152,7 @@ test "gpu preprocessing: collect buffers for phase exchanges instance and indire
     phase_indirect,
     batched,
     indirect,
-    IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+    IndirectParametersBuffersSettings(),
   )
   debug_inspect(batched.phase_instance_buffer_count(), content="1")
   debug_inspect(
@@ -183,12 +183,8 @@ test "gpu preprocessing: indirect work-item buffers split mesh classes and late 
   let buffers = preprocess_work_item_buffers_indirect(true)
   let indexed_offsets : Array[LatePreprocessWorkItemIndirectParameters] = []
   let non_indexed_offsets : Array[LatePreprocessWorkItemIndirectParameters] = []
-  indexed_offsets.push(
-    LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
-  )
-  non_indexed_offsets.push(
-    LatePreprocessWorkItemIndirectParameters::LatePreprocessWorkItemIndirectParameters(),
-  )
+  indexed_offsets.push(LatePreprocessWorkItemIndirectParameters())
+  non_indexed_offsets.push(LatePreprocessWorkItemIndirectParameters())
   init_work_item_buffers(buffers, indexed_offsets, non_indexed_offsets)
   buffers.push(true, PreprocessWorkItem::new(1, 10))
   buffers.push(false, PreprocessWorkItem::new(2, 20))
@@ -225,8 +221,7 @@ test "gpu preprocessing: multidraw reserves uninitialized indirect work-item slo
 
 ///|
 test "gpu preprocessing: work-item table toggles occlusion buffers for retained views" {
-  let table : @hashmap.HashMap[String, PreprocessWorkItemBuffers] = @hashmap.HashMap([],
-  )
+  let table : @hashmap.HashMap[String, PreprocessWorkItemBuffers] = HashMap([])
   let initial = get_or_create_work_item_buffer(table, "main-view", false, false)
   debug_inspect(initial.late_indirect_offsets() is None, content="true")
   let enabled = get_or_create_work_item_buffer(table, "main-view", false, true)
@@ -254,13 +249,13 @@ test "gpu preprocessing: plugin writes indirect parameter settings into render a
   let lifecycle_world_249_1 = @ecs.World::new()
   defer lifecycle_world_249_1.close()
   let app = @app.App::new(lifecycle_world_249_1)
-    .insert_sub_app(@app.RenderApp, render_sub_app)
+    .insert_sub_app(RenderApp, render_sub_app)
     .add_plugins(
-      GpuPreprocessingPlugin::with_mode(GpuPreprocessingMode::Culling).with_allow_copies_from_indirect_parameter_buffers(
+      GpuPreprocessingPlugin::with_mode(Culling).with_allow_copies_from_indirect_parameter_buffers(
         true,
       ),
     )
-  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
+  let render_world = app.get_sub_app(RenderApp).unwrap().world()
   let settings = render_world
     .get_resource(indirect_parameters_buffers_settings_resource_key)
     .unwrap()

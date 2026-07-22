@@ -69,8 +69,8 @@ fn material_texture_sample_type_to_render_resource(
   sample_type : MaterialTextureSampleType,
 ) -> @render_resource.TextureSampleType {
   match sample_type {
-    Float => @render_resource.TextureSampleType::Float(true)
-    UInt => @render_resource.TextureSampleType::UInt
+    Float => Float(true)
+    UInt => UInt
   }
 }
 
@@ -79,11 +79,11 @@ fn material_texture_view_dimension_to_render_resource(
   view_dimension : MaterialTextureViewDimension,
 ) -> @render_resource.TextureViewDimension {
   match view_dimension {
-    D2 => @render_resource.TextureViewDimension::D2
-    D2Array => @render_resource.TextureViewDimension::D2Array
-    Cube => @render_resource.TextureViewDimension::Cube
-    CubeArray => @render_resource.TextureViewDimension::CubeArray
-    D3 => @render_resource.TextureViewDimension::D3
+    D2 => D2
+    D2Array => D2Array
+    Cube => Cube
+    CubeArray => CubeArray
+    D3 => D3
   }
 }
 
@@ -101,7 +101,7 @@ pub struct MaterialBindGroupContext {
 
 ///|
 pub fn MaterialBindGroupContext::MaterialBindGroupContext() -> MaterialBindGroupContext {
-  MaterialBindGroupContext::{
+  {
     images: @render.RenderAssets::new(),
     standard_material_texture_features: standard_material_default_texture_feature_set(),
   }
@@ -111,7 +111,7 @@ pub fn MaterialBindGroupContext::MaterialBindGroupContext() -> MaterialBindGroup
 pub fn MaterialBindGroupContext::from_images(
   images : @render.RenderAssets[@render_texture.GpuImage],
 ) -> MaterialBindGroupContext {
-  MaterialBindGroupContext::{
+  {
     images,
     standard_material_texture_features: standard_material_default_texture_feature_set(),
   }
@@ -122,7 +122,7 @@ pub fn MaterialBindGroupContext::with_standard_material_texture_features(
   self : MaterialBindGroupContext,
   standard_material_texture_features : StandardMaterialTextureFeatureSet,
 ) -> MaterialBindGroupContext {
-  MaterialBindGroupContext::{ ..self, standard_material_texture_features, }
+  { ..self, standard_material_texture_features, }
 }
 
 ///|
@@ -169,7 +169,7 @@ pub fn MaterialBinding::uniform(
   binding : Int,
   bytes : Bytes,
 ) -> MaterialBinding {
-  MaterialBinding::{ binding, value: Uniform(bytes) }
+  { binding, value: Uniform(bytes) }
 }
 
 ///|
@@ -177,10 +177,7 @@ pub fn MaterialBinding::texture(
   binding : Int,
   texture : @asset.Handle[@asset.Image]?,
 ) -> MaterialBinding {
-  MaterialBinding::{
-    binding,
-    value: Texture(texture, MaterialTextureSampleType::Float, D2),
-  }
+  { binding, value: Texture(texture, Float, D2) }
 }
 
 ///|
@@ -190,10 +187,7 @@ pub fn MaterialBinding::texture_with_layout(
   sample_type : MaterialTextureSampleType,
   view_dimension : MaterialTextureViewDimension,
 ) -> MaterialBinding {
-  MaterialBinding::{
-    binding,
-    value: Texture(texture, sample_type, view_dimension),
-  }
+  { binding, value: Texture(texture, sample_type, view_dimension) }
 }
 
 ///|
@@ -201,7 +195,7 @@ pub fn MaterialBinding::sampler(
   binding : Int,
   texture : @asset.Handle[@asset.Image]?,
 ) -> MaterialBinding {
-  MaterialBinding::{ binding, value: Sampler(texture) }
+  { binding, value: Sampler(texture) }
 }
 
 ///|
@@ -259,14 +253,14 @@ fn material_bind_group_key_copy_bytes(bytes : Bytes) -> Bytes {
 
 ///|
 pub fn MaterialBindGroupKey::from_bytes(bytes : Bytes) -> MaterialBindGroupKey {
-  MaterialBindGroupKey::{ bytes: material_bind_group_key_copy_bytes(bytes) }
+  { bytes: material_bind_group_key_copy_bytes(bytes) }
 }
 
 ///|
 pub fn MaterialBindGroupKey::from_u64_bits(
   bits : UInt64,
 ) -> MaterialBindGroupKey {
-  MaterialBindGroupKey::{ bytes: bits.to_le_bytes() }
+  { bytes: bits.to_le_bytes() }
 }
 
 ///|
@@ -303,21 +297,14 @@ fn material_binding_to_layout_entry(
   let visibility = (@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT).to_uint()
   let kind = match binding.value {
     Uniform(_) =>
-      @render_resource.BindingType::BufferBinding(
-        @render_resource.BufferBindingType::Uniform,
-        false,
-        0UL,
-      )
+      @render_resource.BindingType::BufferBinding(Uniform, false, 0UL)
     Texture(_, sample_type, view_dimension) =>
-      @render_resource.BindingType::TextureBinding(
+      TextureBinding(
         material_texture_sample_type_to_render_resource(sample_type),
         material_texture_view_dimension_to_render_resource(view_dimension),
         false,
       )
-    Sampler(_) =>
-      @render_resource.BindingType::SamplerBinding(
-        @render_resource.SamplerBindingType::Filtering,
-      )
+    Sampler(_) => SamplerBinding(Filtering)
   }
   @render_resource.BindGroupLayoutEntry::new(binding.binding, visibility, kind)
 }
@@ -377,7 +364,7 @@ pub fn MaterialBindGroup::new(
       )
     }
   }
-  MaterialBindGroup::{ bindings: normalized }
+  { bindings: normalized }
 }
 
 ///|
@@ -467,12 +454,7 @@ pub fn[M] MaterialPipelineKey::new(
     "MaterialKey",
   ),
 ) -> MaterialPipelineKey[M] {
-  MaterialPipelineKey::{
-    mesh_key,
-    bind_group_layout_key,
-    bind_group_data,
-    material_key,
-  }
+  { mesh_key, bind_group_layout_key, bind_group_data, material_key }
 }
 
 ///|
@@ -519,7 +501,7 @@ pub struct MaterialPipeline[M] {
 
 ///|
 pub fn[M] MaterialPipeline::MaterialPipeline() -> MaterialPipeline[M] {
-  MaterialPipeline::{
+  {
     vertex_shader: None,
     fragment_shader: None,
     prepass_vertex_shader: None,
@@ -545,7 +527,7 @@ pub fn[M] MaterialPipeline::new(
   meshlet_prepass_fragment_shader : String?,
   meshlet_deferred_fragment_shader : String?,
 ) -> MaterialPipeline[M] {
-  MaterialPipeline::{
+  {
     vertex_shader,
     fragment_shader,
     prepass_vertex_shader,
@@ -568,7 +550,7 @@ pub struct MeshMaterial3dTyped[M] {
 pub fn[M] MeshMaterial3dTyped::new(
   material : @asset.Handle[M],
 ) -> MeshMaterial3dTyped[M] {
-  MeshMaterial3dTyped::{ handle: material }
+  { handle: material }
 }
 
 ///|
@@ -614,7 +596,7 @@ pub struct RenderMaterial3dInstances[M] {
 
 ///|
 pub fn[M] RenderMaterial3dInstances::new() -> RenderMaterial3dInstances[M] {
-  RenderMaterial3dInstances::{ instances: @hashmap.HashMap([]) }
+  { instances: HashMap([]) }
 }
 
 ///|
@@ -663,7 +645,7 @@ pub struct RenderMaterial3dResolvedSlots {
 ///|
 pub fn RenderMaterial3dResolvedSlots::new() -> RenderMaterial3dResolvedSlots {
   let slots : @material.RenderMaterialEntitySlots[RenderMaterial3dResolvedSlot] = @material.RenderMaterialEntitySlots::new()
-  RenderMaterial3dResolvedSlots::{ slots, }
+  { slots, }
 }
 
 ///|
@@ -679,7 +661,7 @@ pub fn RenderMaterial3dResolvedSlots::set_pending(
   self : RenderMaterial3dResolvedSlots,
   entity : @core.Entity,
 ) -> Unit {
-  self.slots.set(entity, RenderMaterial3dResolvedSlot::Pending)
+  self.slots.set(entity, Pending)
 }
 
 ///|
@@ -688,7 +670,7 @@ pub fn RenderMaterial3dResolvedSlots::set_resolved(
   entity : @core.Entity,
   material : Render3dResolvedMaterial,
 ) -> Unit {
-  self.slots.set(entity, RenderMaterial3dResolvedSlot::Resolved(material))
+  self.slots.set(entity, Resolved(material))
 }
 
 ///|
@@ -757,7 +739,7 @@ pub struct MaterialKeys[M] {
 pub fn[M] register_material_keys(
   material_debug_name : String,
 ) -> MaterialKeys[M] {
-  MaterialKeys::{
+  {
     mesh_material_component: @ecs.register_component(
       debug_name="mgstudio_pbr::MeshMaterial3d<\{material_debug_name}>",
     ),
@@ -788,7 +770,7 @@ pub struct MaterialAssetEventCursor[M] {
 pub fn[M] MaterialAssetEventCursor::MaterialAssetEventCursor() -> MaterialAssetEventCursor[
   M,
 ] {
-  MaterialAssetEventCursor::{ cursor: @ecs.MessageCursor::MessageCursor() }
+  { cursor: MessageCursor() }
 }
 
 ///|
@@ -845,12 +827,12 @@ pub fn material_default_fragment_shader() -> String? {
 
 ///|
 pub fn material_default_alpha_mode() -> @material.AlphaMode3d {
-  @material.AlphaMode3d::Opaque
+  Opaque
 }
 
 ///|
 pub fn material_default_opaque_render_method() -> @material.OpaqueRendererMethod {
-  @material.OpaqueRendererMethod::Forward
+  Forward
 }
 
 ///|
@@ -865,7 +847,7 @@ pub fn material_default_reads_view_transmission_texture() -> Bool {
 
 ///|
 pub fn material_default_draw_data() -> MaterialDrawData3d {
-  MaterialDrawData3d::Custom
+  Custom
 }
 
 ///|
@@ -897,13 +879,13 @@ pub fn material_default_bindless_slot_count() -> Int? {
 
 ///|
 pub fn material_default_bind_group() -> MaterialBindGroup {
-  MaterialBindGroup::MaterialBindGroup()
+  MaterialBindGroup()
 }
 
 ///|
 pub fn[M : Material] material_default_bind_group_layout_descriptor(
   material : M,
-  context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
+  context? : MaterialBindGroupContext = MaterialBindGroupContext(),
 ) -> @render_resource.BindGroupLayoutDescriptor {
   material
   .bind_group(context)
@@ -914,9 +896,7 @@ pub fn[M : Material] material_default_bind_group_layout_descriptor(
 pub fn[M : Material] material_default_bind_group_data(
   material : M,
 ) -> MaterialBindGroupKey {
-  material
-  .bind_group(MaterialBindGroupContext::MaterialBindGroupContext())
-  .bind_group_data()
+  material.bind_group(MaterialBindGroupContext()).bind_group_data()
 }
 
 ///|
@@ -975,7 +955,7 @@ pub struct EntitiesNeedingSpecialization[M] {
 pub fn[M] EntitiesNeedingSpecialization::EntitiesNeedingSpecialization() -> EntitiesNeedingSpecialization[
   M,
 ] {
-  EntitiesNeedingSpecialization::{ changed: [], removed: [], marker: None }
+  { changed: [], removed: [], marker: None }
 }
 
 ///|
@@ -1018,21 +998,19 @@ fn[M : Material] material_render_phase_type(
   material : M,
 ) -> @material.RenderPhaseType {
   match material.alpha_mode() {
-    @material.AlphaMode3d::Blend => @material.RenderPhaseType::Transparent
-    @material.AlphaMode3d::Premultiplied =>
-      @material.RenderPhaseType::Transparent
-    @material.AlphaMode3d::Add => @material.RenderPhaseType::Transparent
-    @material.AlphaMode3d::Multiply => @material.RenderPhaseType::Transparent
+    Blend => Transparent
+    Premultiplied => Transparent
+    Add => Transparent
+    Multiply => Transparent
     _ =>
       if material.reads_view_transmission_texture() {
-        @material.RenderPhaseType::Transmissive
+        Transmissive
       } else {
         match material.alpha_mode() {
-          @material.AlphaMode3d::Opaque => @material.RenderPhaseType::Opaque
-          @material.AlphaMode3d::AlphaToCoverage =>
-            @material.RenderPhaseType::Opaque
-          @material.AlphaMode3d::Mask(_) => @material.RenderPhaseType::AlphaMask
-          _ => @material.RenderPhaseType::Opaque
+          Opaque => Opaque
+          AlphaToCoverage => Opaque
+          Mask(_) => AlphaMask
+          _ => Opaque
         }
       }
   }
@@ -1116,7 +1094,7 @@ pub fn Render3dResolvedMaterial::new(
   material_type_tag : String,
   material_extension? : @material.ExtendedMaterialMetadata3d? = None,
 ) -> Render3dResolvedMaterial {
-  Render3dResolvedMaterial::{
+  {
     material_draw_data,
     material_extension,
     material_properties,
@@ -1176,7 +1154,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
   material : M,
   pipeline : MaterialPipeline[M],
   default_opaque_renderer_method : @material.OpaqueRendererMethod,
-  context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
+  context? : MaterialBindGroupContext = MaterialBindGroupContext(),
 ) -> PreparedMaterial[M] {
   let bind_group = material.bind_group(context)
   let material_layout = material.bind_group_layout_descriptor(context)
@@ -1267,7 +1245,7 @@ pub fn[M : Material] PreparedMaterial::from_material(
     @material.MESHLET_DEFERRED_FRAGMENT_SHADER_LABEL,
     pipeline.meshlet_deferred_fragment_shader,
   )
-  PreparedMaterial::{
+  {
     source,
     material_draw_data: material.draw_data(),
     material_extension: material.material_extension_metadata(),
@@ -1332,10 +1310,7 @@ pub struct MaterialPlugin[M] {
 
 ///|
 pub fn[M] MaterialPlugin::MaterialPlugin() -> MaterialPlugin[M] {
-  MaterialPlugin::{
-    debug_flags: @render.RenderDebugFlags::RenderDebugFlags(),
-    asset_init: None,
-  }
+  { debug_flags: RenderDebugFlags(), asset_init: None }
 }
 
 ///|
@@ -1343,7 +1318,7 @@ pub fn[M] MaterialPlugin::with_asset_init(
   self : MaterialPlugin[M],
   init : () -> M,
 ) -> MaterialPlugin[M] {
-  MaterialPlugin::{ ..self, asset_init: Some(init) }
+  { ..self, asset_init: Some(init) }
 }
 
 ///|
@@ -1351,7 +1326,7 @@ pub fn[M] MaterialPlugin::with_debug_flags(
   self : MaterialPlugin[M],
   debug_flags : @render.RenderDebugFlags,
 ) -> MaterialPlugin[M] {
-  MaterialPlugin::{ ..self, debug_flags, }
+  { ..self, debug_flags, }
 }
 
 ///|
@@ -1457,10 +1432,7 @@ fn[M : Material] ensure_material_asset_event_cursor_resource_in_world(
 ) -> Unit {
   let key = M::material_keys().material_asset_event_cursor
   if world.get_resource(key) is None {
-    world.insert_resource(
-      key,
-      MaterialAssetEventCursor::MaterialAssetEventCursor(),
-    )
+    world.insert_resource(key, MaterialAssetEventCursor())
   }
 }
 
@@ -1472,10 +1444,7 @@ fn[M : Material] ensure_entities_needing_specialization_resource_in_world(
   ignore(_probe)
   let key : @ecs.ResourceKey[EntitiesNeedingSpecialization[M]] = EntitiesNeedingSpecialization::resource()
   if world.get_resource(key) is None {
-    world.insert_resource(
-      key,
-      EntitiesNeedingSpecialization::EntitiesNeedingSpecialization(),
-    )
+    world.insert_resource(key, EntitiesNeedingSpecialization())
   }
 }
 
@@ -1676,7 +1645,7 @@ fn[M : Material] add_material_bind_group_allocator_system(
   if world.get_resource(ecs_key_material_bind_group_allocators) is None {
     world.insert_resource(
       ecs_key_material_bind_group_allocators,
-      MaterialBindGroupAllocators::MaterialBindGroupAllocators(),
+      MaterialBindGroupAllocators(),
     )
   }
   guard world.get_resource_mut(ecs_key_material_bind_group_allocators)
@@ -1777,12 +1746,12 @@ fn[M : Material + @asset.Asset] material_plugin_build(
   let entities_needing_specialization_key : @ecs.ResourceKey[
     EntitiesNeedingSpecialization[M],
   ] = EntitiesNeedingSpecialization::resource()
-  let entities_needing_specialization : EntitiesNeedingSpecialization[M] = EntitiesNeedingSpecialization::EntitiesNeedingSpecialization()
+  let entities_needing_specialization : EntitiesNeedingSpecialization[M] = EntitiesNeedingSpecialization()
   let configured = configured
     .insert_world_resource(
       entities_needing_specialization_key, entities_needing_specialization,
     )
-    .add_systems_world(@app.PostUpdate, fn(world : @ecs.World) {
+    .add_systems_world(PostUpdate, fn(world : @ecs.World) {
       check_typed_entities_needing_specialization_system(world, probe)
     })
   let configured = @render.with_render_app(configured, fn(render_app) {
@@ -1861,13 +1830,13 @@ fn[M : Material] extract_mesh_materials_system(
   if world.get_resource(ecs_key_render_material_instances) is None {
     world.insert_resource(
       ecs_key_render_material_instances,
-      RenderMaterialInstances::RenderMaterialInstances(),
+      RenderMaterialInstances(),
     )
   }
   if world.get_resource(ecs_key_render_material_shader_paths) is None {
     world.insert_resource(
       ecs_key_render_material_shader_paths,
-      RenderMaterialShaderPaths::RenderMaterialShaderPaths(),
+      RenderMaterialShaderPaths(),
     )
   }
   let global_instances = world.get_resource_mut(
@@ -2171,7 +2140,7 @@ fn[M : Material + @asset.Asset] material_asset_changed_ids_since_last_prepare(
   render_world : @ecs.World,
   _probe : @asset.Handle[M],
 ) -> @hashset.HashSet[Int] {
-  let changed_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let changed_ids : @hashset.HashSet[Int] = HashSet([])
   let event_key : @ecs.MessageKey[@asset.AssetEvent[M]] = @ecs.Message::message()
   if !source_world.contains_message(event_key) {
     return changed_ids
@@ -2222,14 +2191,14 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
   let default_opaque_renderer_method = match
     source_world.get_resource(@material.ecs_key_default_opaque_renderer_method) {
     Some(value) => value.renderer_method()
-    None => @material.OpaqueRendererMethod::Forward
+    None => Forward
   }
   let image_assets_key : @ecs.ResourceKey[
     @render.RenderAssets[@render_texture.GpuImage],
   ] = @render.RenderAssets::resource()
   let image_context = (match world.get_resource(image_assets_key) {
     Some(images) => MaterialBindGroupContext::from_images(images)
-    None => MaterialBindGroupContext::MaterialBindGroupContext()
+    None => MaterialBindGroupContext()
   }).with_standard_material_texture_features(
     pbr_standard_material_texture_features(source_world),
   )
@@ -2241,7 +2210,7 @@ fn[M : Material + @asset.Asset] prepare_material_assets_system(
   let changed_material_ids = material_asset_changed_ids_since_last_prepare(
     source_world, world, _probe,
   )
-  let prepared_ids : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let prepared_ids : @hashset.HashSet[Int] = HashSet([])
   for _, material_handle in instances.instances {
     let material_id = material_handle.id()
     if prepared_ids.contains(material_id) {

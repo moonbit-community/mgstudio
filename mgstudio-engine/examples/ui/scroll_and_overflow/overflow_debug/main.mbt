@@ -111,17 +111,12 @@ pub impl @app.Resource for OverflowDebugSettings with fn resource() {
 
 ///|
 fn AnimationState::AnimationState() -> AnimationState {
-  AnimationState::{
-    paused_at: 0.0F,
-    paused_total: 0.0F,
-    playing: true,
-    t: 0.0F,
-  }
+  { paused_at: 0.0F, paused_total: 0.0F, playing: true, t: 0.0F }
 }
 
 ///|
 fn OverflowDebugSettings::OverflowDebugSettings() -> OverflowDebugSettings {
-  OverflowDebugSettings::{ overflow_index: 3, size_index: 0 }
+  { overflow_index: 3, size_index: 0 }
 }
 
 ///|
@@ -145,10 +140,10 @@ fn container_size(index : Int) -> Float {
 ///|
 fn overflow_at(index : Int) -> @ui.Overflow {
   match index % 4 {
-    0 => @ui.Overflow::new(@ui.OverflowAxis::Visible, @ui.OverflowAxis::Visible)
-    1 => @ui.Overflow::new(@ui.OverflowAxis::Visible, @ui.OverflowAxis::Clip)
-    2 => @ui.Overflow::new(@ui.OverflowAxis::Clip, @ui.OverflowAxis::Visible)
-    _ => @ui.Overflow::new(@ui.OverflowAxis::Clip, @ui.OverflowAxis::Clip)
+    0 => @ui.Overflow::new(Visible, Visible)
+    1 => @ui.Overflow::new(Visible, Clip)
+    2 => @ui.Overflow::new(Clip, Visible)
+    _ => @ui.Overflow::new(Clip, Clip)
   }
 }
 
@@ -156,10 +151,10 @@ fn overflow_at(index : Int) -> @ui.Overflow {
 fn overflow_label(overflow : @ui.Overflow) -> String {
   let axis = fn(value : @ui.OverflowAxis) -> String {
     match value {
-      @ui.OverflowAxis::Visible => "Visible"
-      @ui.OverflowAxis::Hidden => "Hidden"
-      @ui.OverflowAxis::Clip => "Clip"
-      @ui.OverflowAxis::Scroll => "Scroll"
+      Visible => "Visible"
+      Hidden => "Hidden"
+      Clip => "Clip"
+      Scroll => "Scroll"
     }
   }
   "Overflow(\{axis(overflow.x)}, \{axis(overflow.y)})"
@@ -187,47 +182,41 @@ fn instructions_text(
 
 ///|
 fn root_node() -> @ui.Node {
-  @ui.Node::Node()
-  .with_width(@ui.Val::Percent(100.0F))
-  .with_height(@ui.Val::Percent(100.0F))
+  @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F))
 }
 
 ///|
 fn demo_grid_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_display(@ui.Display::Grid)
+  .with_display(Grid)
   .with_grid_template_columns([
-    @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(3), [
-      @ui.GridTrack::Px(CELL_SIZE),
-    ]),
+    @ui.RepeatedGridTrack::new(Count(3), [Px(CELL_SIZE)]),
   ])
   .with_grid_template_rows([
-    @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(2), [
-      @ui.GridTrack::Px(CELL_SIZE),
-    ]),
+    @ui.RepeatedGridTrack::new(Count(2), [Px(CELL_SIZE)]),
   ])
-  .with_row_gap(@ui.Val::Px(40.0F))
-  .with_column_gap(@ui.Val::Px(40.0F))
+  .with_row_gap(Px(40.0F))
+  .with_column_gap(Px(40.0F))
 }
 
 ///|
 fn demo_cell_node() -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Px(CELL_SIZE))
-  .with_height(@ui.Val::Px(CELL_SIZE))
-  .with_flex_direction(@ui.FlexDirection::Column)
-  .with_align_items(@ui.AlignItems::Center)
-  .with_justify_content(@ui.JustifyContent::Center)
-  .with_row_gap(@ui.Val::Px(12.0F))
+  .with_width(Px(CELL_SIZE))
+  .with_height(Px(CELL_SIZE))
+  .with_flex_direction(Column)
+  .with_align_items(Center)
+  .with_justify_content(Center)
+  .with_row_gap(Px(12.0F))
 }
 
 ///|
 fn clipped_container_node(size : Float, overflow : @ui.Overflow) -> @ui.Node {
   @ui.Node::Node()
-  .with_width(@ui.Val::Px(size))
-  .with_height(@ui.Val::Px(size))
-  .with_align_items(@ui.AlignItems::Center)
-  .with_justify_content(@ui.JustifyContent::Center)
+  .with_width(Px(size))
+  .with_height(Px(size))
+  .with_align_items(Center)
+  .with_justify_content(Center)
   .with_overflow(overflow)
 }
 
@@ -280,9 +269,7 @@ fn spawn_demo_cell(
             @hierarchy.Parent::new(clipped),
             AnimationMotion::{ kind: motion_kind },
             @transform.Transform::identity(),
-            @ui.Node::Node()
-            .with_width(@ui.Val::Px(360.0F))
-            .with_height(@ui.Val::Px(120.0F)),
+            @ui.Node::Node().with_width(Px(360.0F)).with_height(Px(120.0F)),
             @ui.ImageNode::new(image),
           ),
         ),
@@ -354,14 +341,11 @@ fn setup(
         @hierarchy.Parent::new(root),
         InstructionsText::{  },
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_top(@ui.Val::Px(12.0F))
-        .with_left(@ui.Val::Px(12.0F)),
+        .with_position_type(Absolute)
+        .with_top(Px(12.0F))
+        .with_left(Px(12.0F)),
         @text.Text::new(
-          instructions_text(
-            OverflowDebugSettings::OverflowDebugSettings(),
-            AnimationState::AnimationState(),
-          ),
+          instructions_text(OverflowDebugSettings(), AnimationState()),
         ),
         @text.TextFont::TextFont().with_font(font).with_font_size(20.0F),
         @text.TextColor::new(@color.Color::white()),
@@ -373,67 +357,19 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
     ),
   )
   let grid = commands.spawn((@hierarchy.Parent::new(center), demo_grid_node()))
-  spawn_demo_cell(
-    commands,
-    grid,
-    font,
-    MotionKind::Move,
-    ContentKind::Image,
-    image,
-    overflow,
-  )
-  spawn_demo_cell(
-    commands,
-    grid,
-    font,
-    MotionKind::Scale,
-    ContentKind::Image,
-    image,
-    overflow,
-  )
-  spawn_demo_cell(
-    commands,
-    grid,
-    font,
-    MotionKind::Rotate,
-    ContentKind::Image,
-    image,
-    overflow,
-  )
-  spawn_demo_cell(
-    commands,
-    grid,
-    font,
-    MotionKind::Move,
-    ContentKind::Text,
-    image,
-    overflow,
-  )
-  spawn_demo_cell(
-    commands,
-    grid,
-    font,
-    MotionKind::Scale,
-    ContentKind::Text,
-    image,
-    overflow,
-  )
-  spawn_demo_cell(
-    commands,
-    grid,
-    font,
-    MotionKind::Rotate,
-    ContentKind::Text,
-    image,
-    overflow,
-  )
+  spawn_demo_cell(commands, grid, font, Move, Image, image, overflow)
+  spawn_demo_cell(commands, grid, font, Scale, Image, image, overflow)
+  spawn_demo_cell(commands, grid, font, Rotate, Image, image, overflow)
+  spawn_demo_cell(commands, grid, font, Move, Text, image, overflow)
+  spawn_demo_cell(commands, grid, font, Scale, Text, image, overflow)
+  spawn_demo_cell(commands, grid, font, Rotate, Text, image, overflow)
 }
 
 ///|
@@ -442,7 +378,7 @@ fn update_controls(
   state : @app.ResMut[AnimationState],
   settings : @app.ResMut[OverflowDebugSettings],
 ) -> Unit {
-  if keyboard.just_pressed(@window.KeyCode::Space) {
+  if keyboard.just_pressed(Space) {
     state.modify(fn(value) {
       value.playing = !value.playing
       if !value.playing {
@@ -450,12 +386,12 @@ fn update_controls(
       }
     })
   }
-  if keyboard.just_pressed(@window.KeyCode::KeyO) {
+  if keyboard.just_pressed(KeyO) {
     settings.modify(fn(value) {
       value.overflow_index = value.overflow_index + 1
     })
   }
-  if keyboard.just_pressed(@window.KeyCode::KeyS) {
+  if keyboard.just_pressed(KeyS) {
     settings.modify(fn(value) { value.size_index = value.size_index + 1 })
   }
 }
@@ -528,12 +464,7 @@ fn apply_container_settings(
   let size = container_size(settings.get().size_index)
   try! containers.view(fn(_entity, node) {
     let current = node.value()
-    node.set(@ui.Node::{
-      ..current,
-      width: @ui.Val::Px(size),
-      height: @ui.Val::Px(size),
-      overflow,
-    })
+    node.set({ ..current, width: Px(size), height: Px(size), overflow })
   })
 }
 
@@ -552,11 +483,11 @@ fn update_instructions(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param3(@app.Update, update_controls)
-  .add_systems_param2(@app.Update, update_animation)
-  .add_systems_param2(@app.Update, update_motion_transforms)
-  .add_systems_param2(@app.Update, apply_container_settings)
-  .add_systems_param3(@app.Update, update_instructions)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param3(Update, update_controls)
+  .add_systems_param2(Update, update_animation)
+  .add_systems_param2(Update, update_motion_transforms)
+  .add_systems_param2(Update, apply_container_settings)
+  .add_systems_param3(Update, update_instructions)
   .run()
 }

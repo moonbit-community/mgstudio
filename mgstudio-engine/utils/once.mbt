@@ -22,7 +22,7 @@ pub struct OnceFlag {
 
 ///|
 pub fn OnceFlag::new() -> OnceFlag {
-  OnceFlag::{ should_fire: true }
+  { should_fire: true }
 }
 
 ///|
@@ -44,7 +44,7 @@ pub struct OnceCell[T] {
 
 ///|
 pub fn[T] OnceCell::new() -> OnceCell[T] {
-  OnceCell::{ value: None }
+  { value: None }
 }
 
 ///|

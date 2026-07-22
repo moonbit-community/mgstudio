@@ -22,6 +22,7 @@ pub struct LineGizmo2dPlugin {}
 const LINE_GIZMO_2D_PLUGIN_NAME : String = "mgstudio.gizmos_render.LineGizmo2dPlugin"
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn LineGizmo2dPlugin::LineGizmo2dPlugin() -> LineGizmo2dPlugin {
   LineGizmo2dPlugin::{  }
 }
@@ -41,7 +42,7 @@ pub fn LineGizmo2dPipelineKey::new(
   strip~ : Bool,
   line_style~ : @gizmos.GizmoLineStyle,
 ) -> LineGizmo2dPipelineKey {
-  LineGizmo2dPipelineKey::{ msaa_samples, target_format, strip, line_style }
+  { msaa_samples, target_format, strip, line_style }
 }
 
 ///|
@@ -69,7 +70,7 @@ pub fn LineJointGizmo2dPipelineKey::new(
   target_format~ : UInt,
   joints~ : @gizmos.GizmoLineJoint,
 ) -> LineJointGizmo2dPipelineKey {
-  LineJointGizmo2dPipelineKey::{ msaa_samples, target_format, joints }
+  { msaa_samples, target_format, joints }
 }
 
 ///|
@@ -201,7 +202,7 @@ pub fn line_joint_gizmo_vertex_entry_point(
 pub fn line_gizmo_2d_pipeline_plan(
   key : LineGizmo2dPipelineKey,
 ) -> LineGizmoPipelinePlan {
-  LineGizmoPipelinePlan::{
+  {
     label: "LineGizmo Pipeline 2D",
     shader_path: "gizmos_render/lines.wgsl",
     fragment_entry_point: line_gizmo_fragment_entry_point(key.line_style),
@@ -221,7 +222,7 @@ pub fn line_gizmo_2d_pipeline_plan(
 pub fn line_joint_gizmo_2d_pipeline_plan(
   key : LineJointGizmo2dPipelineKey,
 ) -> LineGizmoPipelinePlan {
-  LineGizmoPipelinePlan::{
+  {
     label: "LineJointGizmo Pipeline 2D",
     shader_path: "gizmos_render/line_joints.wgsl",
     fragment_entry_point: "fragment",
@@ -239,7 +240,7 @@ pub fn line_joint_gizmo_2d_pipeline_plan(
 
 ///|
 pub fn line_gizmo_2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  line_gizmo_2d_plugin_with(app, LineGizmo2dPlugin::LineGizmo2dPlugin())
+  line_gizmo_2d_plugin_with(app, LineGizmo2dPlugin())
 }
 
 ///|

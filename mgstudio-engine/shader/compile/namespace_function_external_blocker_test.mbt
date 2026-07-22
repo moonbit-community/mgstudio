@@ -82,7 +82,7 @@ test "compile: transitive fully qualified module function call is flattened" {
     load_preprocessed_wgsl(
       "",
       "shader/compile/fog_blocker_root.wgsl",
-      @hashmap.HashMap([("DISTANCE_FOG", true)]),
+      HashMap([("DISTANCE_FOG", true)]),
       default_shader_value_defines(),
     )
   catch {

@@ -51,10 +51,10 @@ fn spawn_menu_item(
       @hierarchy.Parent::new(menu_entity),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(180.0F))
-      .with_height(@ui.Val::Px(34.0F))
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(6.0F)))
-      .with_align_items(@ui.AlignItems::Center),
+      .with_width(Px(180.0F))
+      .with_height(Px(34.0F))
+      .with_padding(@ui.UiRect::all(Px(6.0F)))
+      .with_align_items(Center),
       @ui.BackgroundColor::new(button_color),
     ),
   )
@@ -92,12 +92,12 @@ fn open_context_menu(
   let menu = commands.spawn(
     (
       @ui.Node::Node()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(position.x))
-      .with_top(@ui.Val::Px(position.y))
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
+      .with_position_type(Absolute)
+      .with_left(Px(position.x))
+      .with_top(Px(position.y))
+      .with_display(Flex)
+      .with_flex_direction(Column)
+      .with_border(@ui.UiRect::all(Px(1.0F))),
       @ui.BorderColor::new(@color.Color::black()),
       @ui.BackgroundColor::new(@color.Color::srgb(0.09F, 0.09F, 0.09F)),
     ),
@@ -152,10 +152,10 @@ fn setup(commands : @app.Commands) -> Unit {
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_align_items(Center)
+      .with_justify_content(Center),
     ),
   )
   let button = commands.spawn(
@@ -163,11 +163,11 @@ fn setup(commands : @app.Commands) -> Unit {
       @hierarchy.Parent::new(root),
       @ui.Button::Button(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Px(260.0F))
-      .with_height(@ui.Val::Px(68.0F))
-      .with_border(@ui.UiRect::all(@ui.Val::Px(4.0F)))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
+      .with_width(Px(260.0F))
+      .with_height(Px(68.0F))
+      .with_border(@ui.UiRect::all(Px(4.0F)))
+      .with_align_items(Center)
+      .with_justify_content(Center),
       @ui.BorderColor::new(@color.Color::black()),
       @ui.BackgroundColor::new(@color.Color::black()),
     ),

@@ -25,7 +25,7 @@ pub struct DynamicUniformIndex[_] {
 
 ///|
 pub fn[C] DynamicUniformIndex::new(index : UInt) -> DynamicUniformIndex[C] {
-  DynamicUniformIndex::{ index, }
+  { index, }
 }
 
 ///|
@@ -40,7 +40,7 @@ pub struct ComponentUniforms[C] {
 
 ///|
 pub fn[C] ComponentUniforms::ComponentUniforms() -> ComponentUniforms[C] {
-  ComponentUniforms::{ uniforms: [] }
+  { uniforms: [] }
 }
 
 ///|
@@ -83,7 +83,7 @@ pub struct UniformComponentKeys[C] {
 pub fn[C] register_uniform_component_keys(
   component_debug_name : String,
 ) -> UniformComponentKeys[C] {
-  UniformComponentKeys::{
+  {
     uniforms: @ecs.register_resource(
       debug_name="mgstudio_render::ComponentUniforms<\{component_debug_name}>",
     ),
@@ -131,7 +131,7 @@ fn[C] prepare_uniform_components(
   uniform_key : @ecs.ResourceKey[ComponentUniforms[C]],
 ) -> Unit {
   if world.get_resource(uniform_key) is None {
-    world.insert_resource(uniform_key, ComponentUniforms::ComponentUniforms())
+    world.insert_resource(uniform_key, ComponentUniforms())
   }
   let entries : Array[(@core.Entity, C)] = []
   world.for_each_component(component_key, fn(entity, component) {
@@ -160,6 +160,7 @@ fn[C] prepare_uniform_components(
 pub struct UniformComponentPlugin[_] {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn[C] UniformComponentPlugin::UniformComponentPlugin() -> UniformComponentPlugin[
   C,
 ] {
@@ -198,9 +199,7 @@ pub fn[C : @ecs.Component + UniformComponent] uniform_component_plugin_with(
   let index_key : @ecs.ComponentKey[DynamicUniformIndex[C]] = DynamicUniformIndex::component()
   try_with_render_app(app, fn(render_app : @app.SubApp[@ecs.World]) {
     if render_app.world().get_resource(uniform_key) is None {
-      render_app
-      .world()
-      .insert_resource(uniform_key, ComponentUniforms::ComponentUniforms())
+      render_app.world().insert_resource(uniform_key, ComponentUniforms())
     }
     render_app.add_systems(
       render_schedule_stage(),

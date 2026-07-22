@@ -28,7 +28,7 @@ pub fn Transform::new(
   rotation : @math.Quat,
   scale : @math.Vec3,
 ) -> Transform {
-  Transform::{ translation, rotation, scale }
+  { translation, rotation, scale }
 }
 
 ///|
@@ -70,7 +70,7 @@ pub impl @json.FromJson for Transform with fn from_json(json, path) {
 
 ///|
 pub fn Transform::identity() -> Transform {
-  Transform::{
+  {
     translation: @math.Vec3::zero(),
     rotation: @math.Quat::identity(),
     scale: @math.Vec3::splat(1.0F),
@@ -84,7 +84,7 @@ pub fn Transform::Transform() -> Transform {
 
 ///|
 pub impl Default for Transform with fn default() {
-  Transform::Transform()
+  Transform()
 }
 
 ///|
@@ -135,7 +135,7 @@ pub fn Transform::with_translation(
   self : Transform,
   translation : @math.Vec3,
 ) -> Transform {
-  Transform::{ translation, rotation: self.rotation, scale: self.scale }
+  { translation, rotation: self.rotation, scale: self.scale }
 }
 
 ///|
@@ -143,12 +143,12 @@ pub fn Transform::with_rotation(
   self : Transform,
   rotation : @math.Quat,
 ) -> Transform {
-  Transform::{ translation: self.translation, rotation, scale: self.scale }
+  { translation: self.translation, rotation, scale: self.scale }
 }
 
 ///|
 pub fn Transform::with_scale(self : Transform, scale : @math.Vec3) -> Transform {
-  Transform::{ translation: self.translation, rotation: self.rotation, scale }
+  { translation: self.translation, rotation: self.rotation, scale }
 }
 
 ///|
@@ -223,7 +223,7 @@ pub fn Transform::looking_at(
   }
   let y_axis = z_axis.cross(x_axis).normalize_or_zero()
   let rotation = transform_quat_from_basis(x_axis, y_axis, z_axis)
-  Transform::{ translation: self.translation, rotation, scale: self.scale }
+  { translation: self.translation, rotation, scale: self.scale }
 }
 
 ///|

@@ -29,7 +29,7 @@ pub fn RenderMaterialInstance::new(
   asset_id : Int,
   last_change_tick : @core.Tick,
 ) -> RenderMaterialInstance {
-  RenderMaterialInstance::{ asset_id, last_change_tick }
+  { asset_id, last_change_tick }
 }
 
 ///|
@@ -53,11 +53,7 @@ pub struct RenderMaterialInstances {
 
 ///|
 pub fn RenderMaterialInstances::RenderMaterialInstances() -> RenderMaterialInstances {
-  RenderMaterialInstances::{
-    instances: Map([]),
-    current_change_tick: 0,
-    last_source_change_tick: 0,
-  }
+  { instances: Map([]), current_change_tick: 0, last_source_change_tick: 0 }
 }
 
 ///|
@@ -72,7 +68,7 @@ priv struct RenderMaterialShaderPaths {
 
 ///|
 fn RenderMaterialShaderPaths::RenderMaterialShaderPaths() -> RenderMaterialShaderPaths {
-  RenderMaterialShaderPaths::{ paths: Map([]) }
+  { paths: Map([]) }
 }
 
 ///|

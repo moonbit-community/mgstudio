@@ -66,7 +66,7 @@ test "skybox: plugin installs Bevy-shaped uniform component preparation" {
     },
   )
   let render_dot = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .schedule_graph_dot(@render.render_schedule_stage(), settings~)
   debug_inspect(
     render_dot.contains(
@@ -217,17 +217,13 @@ test "skybox: pipeline descriptor matches Bevy layout and depth anchors" {
   debug_inspect(layouts[0].label(), content="\"skybox_bind_group_layout\"")
   debug_inspect(entries.length(), content="4")
   match entries[0].kind() {
-    @render_resource.BindingType::TextureBinding(
-      sample_type,
-      view_dimension,
-      multisampled
-    ) => {
+    TextureBinding(sample_type, view_dimension, multisampled) => {
       let sample_type_ok = match sample_type {
-        @render_resource.TextureSampleType::Float(filterable) => filterable
+        Float(filterable) => filterable
         _ => false
       }
       let view_dimension_ok = match view_dimension {
-        @render_resource.TextureViewDimension::Cube => true
+        Cube => true
         _ => false
       }
       debug_inspect(sample_type_ok, content="true")
@@ -237,9 +233,9 @@ test "skybox: pipeline descriptor matches Bevy layout and depth anchors" {
     _ => abort("expected skybox cube texture binding")
   }
   match entries[1].kind() {
-    @render_resource.BindingType::SamplerBinding(kind) => {
+    SamplerBinding(kind) => {
       let filtering = match kind {
-        @render_resource.SamplerBindingType::Filtering => true
+        Filtering => true
         _ => false
       }
       debug_inspect(filtering, content="true")
@@ -247,13 +243,9 @@ test "skybox: pipeline descriptor matches Bevy layout and depth anchors" {
     _ => abort("expected skybox filtering sampler")
   }
   match entries[2].kind() {
-    @render_resource.BindingType::BufferBinding(
-      kind,
-      has_dynamic_offset,
-      min_size
-    ) => {
+    BufferBinding(kind, has_dynamic_offset, min_size) => {
       let uniform = match kind {
-        @render_resource.BufferBindingType::Uniform => true
+        Uniform => true
         _ => false
       }
       debug_inspect(uniform, content="true")
@@ -266,13 +258,9 @@ test "skybox: pipeline descriptor matches Bevy layout and depth anchors" {
     _ => abort("expected view uniform binding")
   }
   match entries[3].kind() {
-    @render_resource.BindingType::BufferBinding(
-      kind,
-      has_dynamic_offset,
-      min_size
-    ) => {
+    BufferBinding(kind, has_dynamic_offset, min_size) => {
       let uniform = match kind {
-        @render_resource.BufferBindingType::Uniform => true
+        Uniform => true
         _ => false
       }
       debug_inspect(uniform, content="true")
@@ -309,11 +297,7 @@ test "skybox: prepare pipelines writes render-world view component" {
       target_format_raw=@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
     ),
   )
-  try! world.set_by_key(
-    render_entity,
-    @render_view.Msaa::component(),
-    @render_view.Msaa::Sample4,
-  )
+  try! world.set_by_key(render_entity, @render_view.Msaa::component(), Sample4)
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(17)
   let skybox = @light.Skybox::new(image, 1.0F)
   let extracted = ExtractedSkyboxes::ExtractedSkyboxes()
@@ -388,7 +372,7 @@ test "skybox: extract_skybox writes Bevy component and uniform payload to render
   try! source_world.set_by_key(
     source_entity,
     @render.SyncToRenderWorld::component(),
-    @render.SyncToRenderWorld::SyncToRenderWorld(),
+    SyncToRenderWorld(),
   )
   try! source_world.set_by_key(
     source_entity,
@@ -398,12 +382,10 @@ test "skybox: extract_skybox writes Bevy component and uniform payload to render
   try! source_world.set_by_key(
     source_entity,
     @camera_camera.Exposure::component(),
-    @camera_camera.Exposure::from_physical_camera(
-      @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters(),
-    ),
+    @camera_camera.Exposure::from_physical_camera(PhysicalCameraParameters()),
   )
 
-  @render.mark_renderer_ready(app.sub_app(@app.RenderApp).world())
+  @render.mark_renderer_ready(app.sub_app(RenderApp).world())
   let app = app.run_once()
   let source_world = app.world()
   let render_entity = (try! source_world.get_by_key(
@@ -412,7 +394,7 @@ test "skybox: extract_skybox writes Bevy component and uniform payload to render
     ))
     .unwrap()
     .id()
-  let render_world = app.sub_app(@app.RenderApp).world()
+  let render_world = app.sub_app(RenderApp).world()
 
   debug_inspect(
     (try! render_world.get_by_key(render_entity, @light.Skybox::component()))
@@ -431,9 +413,7 @@ test "skybox: extract_skybox writes Bevy component and uniform payload to render
     skybox_test_approx(
       uniforms.brightness,
       5.0F *
-      @camera_camera.Exposure::from_physical_camera(
-        @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters(),
-      ).exposure(),
+      @camera_camera.Exposure::from_physical_camera(PhysicalCameraParameters()).exposure(),
     ),
     content="true",
   )

@@ -22,7 +22,7 @@ pub struct ThemeToken {
 
 ///|
 pub fn ThemeToken::new(text : String) -> ThemeToken {
-  ThemeToken::{ name: text }
+  { name: text }
 }
 
 ///|
@@ -42,7 +42,7 @@ pub struct ThemeProps {
 
 ///|
 pub fn ThemeProps::ThemeProps() -> ThemeProps {
-  ThemeProps::{ color: [] }
+  { color: [] }
 }
 
 ///|
@@ -79,7 +79,7 @@ pub struct UiTheme {
 
 ///|
 pub fn UiTheme::UiTheme() -> UiTheme {
-  UiTheme::{ props: ThemeProps::ThemeProps() }
+  { props: ThemeProps() }
 }
 
 ///|
@@ -116,17 +116,17 @@ pub struct ThemedText {} derive(Default, Debug)
 
 ///|
 pub fn ThemeBackgroundColor::new(token : ThemeToken) -> ThemeBackgroundColor {
-  ThemeBackgroundColor::{ token, }
+  { token, }
 }
 
 ///|
 pub fn ThemeBorderColor::new(token : ThemeToken) -> ThemeBorderColor {
-  ThemeBorderColor::{ token, }
+  { token, }
 }
 
 ///|
 pub fn ThemeFontColor::new(token : ThemeToken) -> ThemeFontColor {
-  ThemeFontColor::{ token, }
+  { token, }
 }
 
 ///|

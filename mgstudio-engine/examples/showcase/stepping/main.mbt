@@ -28,7 +28,7 @@ pub struct SteppingPlugin {
 
 ///|
 pub fn SteppingPlugin::SteppingPlugin() -> SteppingPlugin {
-  SteppingPlugin::{ schedule_labels: [], top: @ui.auto(), left: @ui.auto() }
+  { schedule_labels: [], top: @ui.auto(), left: @ui.auto() }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn SteppingPlugin::at(
   left : @ui.Val,
   top : @ui.Val,
 ) -> SteppingPlugin {
-  SteppingPlugin::{ ..self, top, left }
+  { ..self, top, left }
 }
 
 ///|
@@ -59,7 +59,7 @@ pub impl @app.Plugin for SteppingPlugin with fn build(self, app) {
   ignore(self.schedule_labels)
   ignore(self.top)
   ignore(self.left)
-  app.add_systems_param(@app.Startup, build_stepping_hint)
+  app.add_systems_param(Startup, build_stepping_hint)
 }
 
 ///|
@@ -73,7 +73,7 @@ fn build_stepping_hint(commands : @app.Commands) -> Unit {
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(15.0F)),
         @text.TextColor::new(font_color()),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
+        .with_position_type(Absolute)
         .with_bottom(@ui.px(5.0F))
         .with_left(@ui.px(5.0F)),
       ),

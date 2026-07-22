@@ -36,7 +36,7 @@ pub struct AutoExposurePipeline {
 
 ///|
 pub fn AutoExposurePipeline::AutoExposurePipeline() -> AutoExposurePipeline {
-  AutoExposurePipeline::{
+  {
     histogram_bin_count: AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT,
     histogram_workgroup_size: AUTO_EXPOSURE_HISTOGRAM_WORKGROUP_SIZE,
   }
@@ -57,7 +57,7 @@ pub fn AutoExposurePipeline::new(
   } else {
     histogram_workgroup_size
   }
-  AutoExposurePipeline::{
+  {
     histogram_bin_count: safe_bin_count,
     histogram_workgroup_size: safe_workgroup_size,
   }
@@ -112,7 +112,7 @@ pub fn auto_exposure_uniform(
     Some(curve_value) => auto_exposure_curve_extents(curve_value)
     None => (0.0F, 0.0F, 0.0F, 0.0F)
   }
-  AutoExposureUniform::{
+  {
     min_ev100: settings.min_ev100,
     max_ev100: settings.max_ev100,
     low_percent: settings.low_percent,

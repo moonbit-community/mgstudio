@@ -33,7 +33,7 @@ fn binding_min_size(
   for entry in entries {
     if entry.binding() == binding {
       match entry.kind() {
-        @render_resource.BindingType::BufferBinding(_, _, size) => return size
+        BufferBinding(_, _, size) => return size
         _ => return 0UL
       }
     }
@@ -139,9 +139,7 @@ test "pbr/render: mesh_view layout table builds all key variants" {
     true, true,
   )
 
-  let default_layout = layouts.get_view_layout(
-    @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
-  )
+  let default_layout = layouts.get_view_layout(MeshPipelineViewLayoutKey())
   debug_inspect(
     default_layout.main_layout_label,
     content="\"mesh_view_layout:\"",

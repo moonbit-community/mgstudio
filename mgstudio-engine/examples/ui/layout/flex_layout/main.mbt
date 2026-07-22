@@ -24,27 +24,17 @@ fn justify_content_color() -> @color.Color {
 
 ///|
 fn panel_gap() -> @ui.Val {
-  @ui.Val::Px(12.0F)
+  Px(12.0F)
 }
 
 ///|
 fn margin_right(value : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(
-    @ui.Val::Px(0.0F),
-    @ui.Val::Px(0.0F),
-    value,
-    @ui.Val::Px(0.0F),
-  )
+  @ui.UiRect::new(Px(0.0F), Px(0.0F), value, Px(0.0F))
 }
 
 ///|
 fn margin_top(value : @ui.Val) -> @ui.UiRect {
-  @ui.UiRect::new(
-    @ui.Val::Px(0.0F),
-    value,
-    @ui.Val::Px(0.0F),
-    @ui.Val::Px(0.0F),
-  )
+  @ui.UiRect::new(Px(0.0F), value, Px(0.0F), Px(0.0F))
 }
 
 ///|
@@ -83,14 +73,7 @@ fn spawn_label_chip(
     Some(parent),
     @ui.Node::Node()
     .with_margin(margin)
-    .with_padding(
-      @ui.UiRect::new(
-        @ui.Val::Px(5.0F),
-        @ui.Val::Px(1.0F),
-        @ui.Val::Px(5.0F),
-        @ui.Val::Px(1.0F),
-      ),
-    ),
+    .with_padding(@ui.UiRect::new(Px(5.0F), Px(1.0F), Px(5.0F), Px(1.0F))),
     Some(@ui.BackgroundColor::new(background)),
   )
   let text = world.spawn_empty()
@@ -134,20 +117,20 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     None,
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
-    .with_align_items(@ui.AlignItems::Center)
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Column)
+    .with_align_items(Center)
     .with_padding(@ui.UiRect::all(panel_gap()))
     .with_row_gap(panel_gap()),
     Some(@ui.BackgroundColor::new(@color.Color::black())),
   )
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
 
   let legend = spawn_node(
     world,
     Some(root),
-    @ui.Node::Node().with_flex_direction(@ui.FlexDirection::Row),
+    @ui.Node::Node().with_flex_direction(Row),
     None,
   )
   ignore(
@@ -166,7 +149,7 @@ fn setup(world : @ecs.World) -> Unit {
       legend,
       "JustifyContent",
       justify_content_color(),
-      @ui.UiRect::UiRect(),
+      UiRect(),
       font,
     ),
   )
@@ -175,27 +158,27 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     Some(root),
     @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_flex_direction(@ui.FlexDirection::Column)
+    .with_width(Percent(100.0F))
+    .with_height(Percent(100.0F))
+    .with_flex_direction(Column)
     .with_row_gap(panel_gap()),
     None,
   )
 
   let justifications : Array[@ui.JustifyContent] = [
-    @ui.JustifyContent::FlexStart,
-    @ui.JustifyContent::Center,
-    @ui.JustifyContent::FlexEnd,
-    @ui.JustifyContent::SpaceEvenly,
-    @ui.JustifyContent::SpaceAround,
-    @ui.JustifyContent::SpaceBetween,
+    FlexStart,
+    Center,
+    FlexEnd,
+    SpaceEvenly,
+    SpaceAround,
+    SpaceBetween,
   ]
   let alignments : Array[@ui.AlignItems] = [
-    @ui.AlignItems::Baseline,
-    @ui.AlignItems::FlexStart,
-    @ui.AlignItems::Center,
-    @ui.AlignItems::FlexEnd,
-    @ui.AlignItems::Stretch,
+    Baseline,
+    FlexStart,
+    Center,
+    FlexEnd,
+    Stretch,
   ]
 
   for alignment in alignments {
@@ -203,8 +186,8 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       Some(content),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_flex_direction(@ui.FlexDirection::Row)
+      .with_width(Percent(100.0F))
+      .with_flex_direction(Row)
       .with_column_gap(panel_gap())
       .with_flex_grow(1.0F),
       None,
@@ -215,9 +198,9 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         Some(row),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F))
-        .with_flex_direction(@ui.FlexDirection::Column)
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F))
+        .with_flex_direction(Column)
         .with_align_items(alignment)
         .with_justify_content(justification)
         .with_flex_grow(1.0F),
@@ -229,7 +212,7 @@ fn setup(world : @ecs.World) -> Unit {
           cell,
           to_repr(alignment).to_string(),
           align_items_color(),
-          @ui.UiRect::UiRect(),
+          UiRect(),
           font,
         ),
       )
@@ -239,7 +222,7 @@ fn setup(world : @ecs.World) -> Unit {
           cell,
           to_repr(justification).to_string(),
           justify_content_color(),
-          margin_top(@ui.Val::Px(3.0F)),
+          margin_top(Px(3.0F)),
           font,
         ),
       )

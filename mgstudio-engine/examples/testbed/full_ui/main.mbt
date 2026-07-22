@@ -49,13 +49,13 @@ fn setup(
     (
       @ui.UiRoot::UiRoot(),
       @ui.Node::Node()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_display(@ui.Display::Flex)
-      .with_flex_direction(@ui.FlexDirection::Column)
-      .with_padding(@ui.UiRect::all(@ui.Val::Px(16.0F)))
-      .with_row_gap(@ui.Val::Px(12.0F))
-      .with_align_items(@ui.AlignItems::Stretch),
+      .with_width(Percent(100.0F))
+      .with_height(Percent(100.0F))
+      .with_display(Flex)
+      .with_flex_direction(Column)
+      .with_padding(@ui.UiRect::all(Px(16.0F)))
+      .with_row_gap(Px(12.0F))
+      .with_align_items(Stretch),
       @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.12F, 0.16F)),
     ),
   )
@@ -66,7 +66,7 @@ fn setup(
         @text.Text::new("Full UI Testbed"),
         @text.TextFont::TextFont().with_font(font).with_font_size(32.0F),
         @text.TextColor::new(@color.Color::white()),
-        @ui.Node::Node().with_height(@ui.Val::Px(44.0F)),
+        @ui.Node::Node().with_height(Px(44.0F)),
       ),
     ),
   )
@@ -75,21 +75,16 @@ fn setup(
     (
       @hierarchy.Parent::new(root),
       @ui.Node::Node()
-      .with_display(@ui.Display::Grid)
-      .with_height(@ui.Val::Percent(100.0F))
+      .with_display(Grid)
+      .with_height(Percent(100.0F))
       .with_grid_template_columns([
-        @ui.RepeatedGridTrack::new(
-          @ui.GridTrackRepetition::Count(GRID_COLUMNS),
-          [@ui.GridTrack::Fr(1.0F)],
-        ),
+        @ui.RepeatedGridTrack::new(Count(GRID_COLUMNS), [Fr(1.0F)]),
       ])
       .with_grid_template_rows([
-        @ui.RepeatedGridTrack::new(@ui.GridTrackRepetition::Count(GRID_ROWS), [
-          @ui.GridTrack::Fr(1.0F),
-        ]),
+        @ui.RepeatedGridTrack::new(Count(GRID_ROWS), [Fr(1.0F)]),
       ])
-      .with_column_gap(@ui.Val::Px(6.0F))
-      .with_row_gap(@ui.Val::Px(6.0F)),
+      .with_column_gap(Px(6.0F))
+      .with_row_gap(Px(6.0F)),
     ),
   )
 
@@ -104,9 +99,9 @@ fn setup(
           @ui.Button::Button(),
           IdleColor::{ color: idle },
           @ui.Node::Node()
-          .with_width(@ui.Val::Percent(100.0F))
-          .with_height(@ui.Val::Percent(100.0F))
-          .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F))),
+          .with_width(Percent(100.0F))
+          .with_height(Percent(100.0F))
+          .with_border(@ui.UiRect::all(Px(1.0F))),
           @ui.BackgroundColor::new(idle),
           @ui.BorderColor::new(@color.Color::new(1.0F, 1.0F, 1.0F, 0.2F)),
         ),
@@ -129,8 +124,8 @@ fn button_system(
   try! buttons.for_each(fn(_entity, data) {
     let (interaction, color, idle) = data
     let next = match interaction.value() {
-      @ui.Interaction::Hovered => @color.Color::srgb(1.0F, 0.38F, 0.0F)
-      @ui.Interaction::Pressed => @color.Color::srgb(1.0F, 0.16F, 0.0F)
+      Hovered => @color.Color::srgb(1.0F, 0.38F, 0.0F)
+      Pressed => @color.Color::srgb(1.0F, 0.16F, 0.0F)
       _ => idle.value().color
     }
     color.set(@ui.BackgroundColor::new(next))
@@ -146,7 +141,7 @@ fn main {
     @diagnostic.FrameTimeDiagnosticsPlugin::FrameTimeDiagnosticsPlugin(),
   )
   .add_plugins(@diagnostic.LogDiagnosticsPlugin::LogDiagnosticsPlugin())
-  .add_systems_param2(@app.Startup, setup)
-  .add_systems_param(@app.Update, button_system)
+  .add_systems_param2(Startup, setup)
+  .add_systems_param(Update, button_system)
   .run()
 }

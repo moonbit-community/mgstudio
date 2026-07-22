@@ -35,17 +35,17 @@ pub(all) enum FxaaSensitivity {
 
 ///|
 pub fn FxaaSensitivity::default() -> FxaaSensitivity {
-  FxaaSensitivity::High
+  High
 }
 
 ///|
 pub fn FxaaSensitivity::get_str(self : FxaaSensitivity) -> String {
   match self {
-    FxaaSensitivity::Low => "LOW"
-    FxaaSensitivity::Medium => "MEDIUM"
-    FxaaSensitivity::High => "HIGH"
-    FxaaSensitivity::Ultra => "ULTRA"
-    FxaaSensitivity::Extreme => "EXTREME"
+    Low => "LOW"
+    Medium => "MEDIUM"
+    High => "HIGH"
+    Ultra => "ULTRA"
+    Extreme => "EXTREME"
   }
 }
 
@@ -59,16 +59,12 @@ pub struct Fxaa {
 
 ///|
 pub fn Fxaa::Fxaa() -> Fxaa {
-  Fxaa::{
-    enabled: true,
-    edge_threshold: FxaaSensitivity::High,
-    edge_threshold_min: FxaaSensitivity::High,
-  }
+  { enabled: true, edge_threshold: High, edge_threshold_min: High }
 }
 
 ///|
 pub fn Fxaa::new(enabled : Bool) -> Fxaa {
-  Fxaa::{ ..Fxaa(), enabled, }
+  { ..Fxaa(), enabled, }
 }
 
 ///|
@@ -77,12 +73,12 @@ pub fn Fxaa::new_with_sensitivity(
   edge_threshold : FxaaSensitivity,
   edge_threshold_min : FxaaSensitivity,
 ) -> Fxaa {
-  Fxaa::{ enabled, edge_threshold, edge_threshold_min }
+  { enabled, edge_threshold, edge_threshold_min }
 }
 
 ///|
 pub fn Fxaa::with_enabled(self : Fxaa, enabled : Bool) -> Fxaa {
-  Fxaa::{ ..self, enabled, }
+  { ..self, enabled, }
 }
 
 ///|
@@ -90,7 +86,7 @@ pub fn Fxaa::with_edge_threshold(
   self : Fxaa,
   edge_threshold : FxaaSensitivity,
 ) -> Fxaa {
-  Fxaa::{ ..self, edge_threshold, }
+  { ..self, edge_threshold, }
 }
 
 ///|
@@ -98,7 +94,7 @@ pub fn Fxaa::with_edge_threshold_min(
   self : Fxaa,
   edge_threshold_min : FxaaSensitivity,
 ) -> Fxaa {
-  Fxaa::{ ..self, edge_threshold_min, }
+  { ..self, edge_threshold_min, }
 }
 
 ///|
@@ -106,7 +102,7 @@ pub fn Fxaa::with_sensitivity(
   self : Fxaa,
   sensitivity : FxaaSensitivity,
 ) -> Fxaa {
-  Fxaa::{ ..self, edge_threshold: sensitivity, edge_threshold_min: sensitivity }
+  { ..self, edge_threshold: sensitivity, edge_threshold_min: sensitivity }
 }
 
 ///|
@@ -127,7 +123,7 @@ pub struct CustomPostProcess3d {
 
 ///|
 pub fn CustomPostProcess3d::CustomPostProcess3d() -> CustomPostProcess3d {
-  CustomPostProcess3d::{
+  {
     enabled: false,
     shader_path: "",
     fragment_entry: "fragment_main",
@@ -140,7 +136,7 @@ pub fn CustomPostProcess3d::CustomPostProcess3d() -> CustomPostProcess3d {
 
 ///|
 pub fn CustomPostProcess3d::new(shader_path : String) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..CustomPostProcess3d(), shader_path, }
+  { ..CustomPostProcess3d(), shader_path, }
 }
 
 ///|
@@ -148,7 +144,7 @@ pub fn CustomPostProcess3d::with_enabled(
   self : CustomPostProcess3d,
   enabled : Bool,
 ) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..self, enabled, }
+  { ..self, enabled, }
 }
 
 ///|
@@ -156,7 +152,7 @@ pub fn CustomPostProcess3d::with_shader_path(
   self : CustomPostProcess3d,
   shader_path : String,
 ) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..self, shader_path, }
+  { ..self, shader_path, }
 }
 
 ///|
@@ -164,7 +160,7 @@ pub fn CustomPostProcess3d::with_fragment_entry(
   self : CustomPostProcess3d,
   fragment_entry : String,
 ) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..self, fragment_entry, }
+  { ..self, fragment_entry, }
 }
 
 ///|
@@ -175,7 +171,7 @@ pub fn CustomPostProcess3d::with_uniform(
   uniform_z : Float,
   uniform_w : Float,
 ) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..self, uniform_x, uniform_y, uniform_z, uniform_w }
+  { ..self, uniform_x, uniform_y, uniform_z, uniform_w }
 }
 
 ///|
@@ -183,7 +179,7 @@ pub fn CustomPostProcess3d::with_intensity(
   self : CustomPostProcess3d,
   intensity : Float,
 ) -> CustomPostProcess3d {
-  CustomPostProcess3d::{ ..self, uniform_x: intensity }
+  { ..self, uniform_x: intensity }
 }
 
 ///|
@@ -194,12 +190,12 @@ pub struct TemporalAntiAliasing {
 
 ///|
 pub fn TemporalAntiAliasing::TemporalAntiAliasing() -> TemporalAntiAliasing {
-  TemporalAntiAliasing::{ reset: true }
+  { reset: true }
 }
 
 ///|
 pub fn TemporalAntiAliasing::new(reset : Bool) -> TemporalAntiAliasing {
-  TemporalAntiAliasing::{ reset, }
+  { reset, }
 }
 
 ///|
@@ -210,7 +206,7 @@ pub fn TemporalAntiAliasing::with_reset(
   if self.reset == reset {
     self
   } else {
-    TemporalAntiAliasing::{ reset, }
+    { reset, }
   }
 }
 
@@ -225,12 +221,12 @@ pub struct MipBias {
 
 ///|
 pub fn MipBias::MipBias() -> MipBias {
-  MipBias::{ bias: -1.0F }
+  { bias: -1.0F }
 }
 
 ///|
 pub fn MipBias::new(bias : Float) -> MipBias {
-  MipBias::{ bias, }
+  { bias, }
 }
 
 ///|
@@ -243,7 +239,7 @@ pub fn MipBias::with_bias(self : MipBias, bias : Float) -> MipBias {
   if self.bias == bias {
     self
   } else {
-    MipBias::{ bias, }
+    { bias, }
   }
 }
 
@@ -255,12 +251,12 @@ pub struct TemporalJitter {
 
 ///|
 pub fn TemporalJitter::TemporalJitter() -> TemporalJitter {
-  TemporalJitter::{ offset: @math.Vec2::new(0.0F, 0.0F) }
+  { offset: @math.Vec2::new(0.0F, 0.0F) }
 }
 
 ///|
 pub fn TemporalJitter::new(offset : @math.Vec2) -> TemporalJitter {
-  TemporalJitter::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -269,7 +265,7 @@ pub fn TemporalJitter::with_offset(
   offset : @math.Vec2,
 ) -> TemporalJitter {
   self |> ignore
-  TemporalJitter::{ offset, }
+  { offset, }
 }
 
 ///|
@@ -300,7 +296,7 @@ pub(all) enum Tonemapping {
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {
-  Tonemapping::TonyMcMapface
+  TonyMcMapface
 }
 
 ///|
@@ -312,7 +308,7 @@ pub(all) enum DebandDither {
 
 ///|
 pub fn DebandDither::default() -> DebandDither {
-  DebandDither::Disabled
+  Disabled
 }
 
 ///|
@@ -335,7 +331,7 @@ pub(all) enum ScreenSpaceAmbientOcclusionQualityLevel {
 
 ///|
 pub fn ScreenSpaceAmbientOcclusionQualityLevel::default() -> ScreenSpaceAmbientOcclusionQualityLevel {
-  ScreenSpaceAmbientOcclusionQualityLevel::High
+  High
 }
 
 ///|
@@ -348,7 +344,7 @@ pub struct ScreenSpaceAmbientOcclusion {
 
 ///|
 pub fn ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion() -> ScreenSpaceAmbientOcclusion {
-  ScreenSpaceAmbientOcclusion::{
+  {
     quality_level: ScreenSpaceAmbientOcclusionQualityLevel::default(),
     constant_object_thickness: 0.25F,
   }
@@ -359,7 +355,7 @@ pub fn ScreenSpaceAmbientOcclusion::with_quality_level(
   self : ScreenSpaceAmbientOcclusion,
   quality_level : ScreenSpaceAmbientOcclusionQualityLevel,
 ) -> ScreenSpaceAmbientOcclusion {
-  ScreenSpaceAmbientOcclusion::{ ..self, quality_level, }
+  { ..self, quality_level, }
 }
 
 ///|
@@ -367,7 +363,7 @@ pub fn ScreenSpaceAmbientOcclusion::with_constant_object_thickness(
   self : ScreenSpaceAmbientOcclusion,
   constant_object_thickness : Float,
 ) -> ScreenSpaceAmbientOcclusion {
-  ScreenSpaceAmbientOcclusion::{
+  {
     ..self,
     constant_object_thickness: if constant_object_thickness < 0.0F {
       0.0F
@@ -474,7 +470,7 @@ pub fn ScreenSpaceReflections::ScreenSpaceReflections() -> ScreenSpaceReflection
   let (min_start, min_end) = screen_space_reflections_safe_range(0.08F, 0.12F)
   let (max_start, max_end) = screen_space_reflections_safe_range(0.55F, 0.6F)
   let (edge_start, edge_end) = screen_space_reflections_safe_range(0.0F, 0.0F)
-  ScreenSpaceReflections::{
+  {
     min_perceptual_roughness_start: min_start,
     min_perceptual_roughness_end: min_end,
     max_perceptual_roughness_start: max_start,
@@ -498,7 +494,7 @@ pub fn ScreenSpaceReflections::with_min_perceptual_roughness(
   end_ : Float,
 ) -> ScreenSpaceReflections {
   let (safe_start, safe_end) = screen_space_reflections_safe_range(start, end_)
-  ScreenSpaceReflections::{
+  {
     ..self,
     min_perceptual_roughness_start: safe_start,
     min_perceptual_roughness_end: safe_end,
@@ -512,7 +508,7 @@ pub fn ScreenSpaceReflections::with_max_perceptual_roughness(
   end_ : Float,
 ) -> ScreenSpaceReflections {
   let (safe_start, safe_end) = screen_space_reflections_safe_range(start, end_)
-  ScreenSpaceReflections::{
+  {
     ..self,
     max_perceptual_roughness_start: safe_start,
     max_perceptual_roughness_end: safe_end,
@@ -526,11 +522,7 @@ pub fn ScreenSpaceReflections::with_edge_fadeout(
   end_ : Float,
 ) -> ScreenSpaceReflections {
   let (safe_start, safe_end) = screen_space_reflections_safe_range(start, end_)
-  ScreenSpaceReflections::{
-    ..self,
-    edge_fadeout_start: safe_start,
-    edge_fadeout_end: safe_end,
-  }
+  { ..self, edge_fadeout_start: safe_start, edge_fadeout_end: safe_end }
 }
 
 ///|
@@ -538,10 +530,7 @@ pub fn ScreenSpaceReflections::with_thickness(
   self : ScreenSpaceReflections,
   thickness : Float,
 ) -> ScreenSpaceReflections {
-  ScreenSpaceReflections::{
-    ..self,
-    thickness: screen_space_reflections_safe_thickness(thickness),
-  }
+  { ..self, thickness: screen_space_reflections_safe_thickness(thickness) }
 }
 
 ///|
@@ -549,7 +538,7 @@ pub fn ScreenSpaceReflections::with_linear_steps(
   self : ScreenSpaceReflections,
   linear_steps : Int,
 ) -> ScreenSpaceReflections {
-  ScreenSpaceReflections::{
+  {
     ..self,
     linear_steps: screen_space_reflections_safe_linear_steps(linear_steps),
   }
@@ -560,7 +549,7 @@ pub fn ScreenSpaceReflections::with_linear_march_exponent(
   self : ScreenSpaceReflections,
   linear_march_exponent : Float,
 ) -> ScreenSpaceReflections {
-  ScreenSpaceReflections::{
+  {
     ..self,
     linear_march_exponent: screen_space_reflections_safe_linear_march_exponent(
       linear_march_exponent,
@@ -573,7 +562,7 @@ pub fn ScreenSpaceReflections::with_bisection_steps(
   self : ScreenSpaceReflections,
   bisection_steps : Int,
 ) -> ScreenSpaceReflections {
-  ScreenSpaceReflections::{
+  {
     ..self,
     bisection_steps: screen_space_reflections_safe_bisection_steps(
       bisection_steps,
@@ -586,7 +575,7 @@ pub fn ScreenSpaceReflections::with_use_secant(
   self : ScreenSpaceReflections,
   use_secant : Bool,
 ) -> ScreenSpaceReflections {
-  ScreenSpaceReflections::{ ..self, use_secant, }
+  { ..self, use_secant, }
 }
 
 ///|

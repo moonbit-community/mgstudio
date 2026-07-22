@@ -108,7 +108,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
         entity, @camera_render_layers.ecs_key_render_layers,
       )) {
       Some(v) => v
-      None => @camera_render_layers.RenderLayers::RenderLayers()
+      None => RenderLayers()
     }
     let scissor = match
       (try! source_world.get_by_key(entity, @ui_clip.ecs_key_scissor_rect)) {
@@ -140,7 +140,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       (
         try! source_world.get_by_key(entity, ecs_key_ui_anti_alias) :
         UiAntiAlias?) {
-      Some(UiAntiAlias::Off) => false
+      Some(Off) => false
       _ => true
     }
     if aa_enabled {
@@ -218,7 +218,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 world,
                 entity,
                 entity_ctx.camera_entity,
-                @ui_render_runtime.UiBoxShadowDrawPayload::{
+                {
                   transform: t_shadow,
                   anchor_offset: @math.Vec2::new(0.0F, 0.0F),
                   draw_scale: draw_scale_shadow,
@@ -263,7 +263,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             world,
             entity,
             entity_ctx.camera_entity,
-            @ui_render_runtime.UiRectDrawPayload::{
+            {
               transform: t_bg,
               anchor_offset: @math.Vec2::new(0.0F, 0.0F),
               draw_scale,
@@ -324,7 +324,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
         let flip_y = info.5
         let mode = match info.6 {
           Some(m) => m
-          None => @ui.NodeImageMode::Stretch
+          None => Stretch
         }
         let mut image_width = @asset.asset_texture_width(texture)
         let mut image_height = @asset.asset_texture_height(texture)
@@ -387,7 +387,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             world,
             entity,
             entity_ctx.camera_entity,
-            @ui_render_runtime.UiTextureSliceDrawPayload::{
+            {
               transform: t_content,
               anchor_offset: @math.Vec2::new(0.0F, 0.0F),
               draw_scale,
@@ -406,7 +406,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             world,
             entity,
             entity_ctx.camera_entity,
-            @ui_render_runtime.UiRectDrawPayload::{
+            {
               transform: t_content,
               anchor_offset: @math.Vec2::new(0.0F, 0.0F),
               draw_scale,
@@ -440,7 +440,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
         world,
         entity,
         entity_ctx.camera_entity,
-        @ui_render_runtime.UiRectDrawPayload::{
+        {
           transform: t_border,
           anchor_offset: @math.Vec2::new(0.0F, 0.0F),
           draw_scale,
@@ -496,7 +496,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 world,
                 entity,
                 entity_ctx.camera_entity,
-                @ui_render_runtime.UiRectDrawPayload::{
+                {
                   transform: t_outline,
                   anchor_offset: @math.Vec2::new(0.0F, 0.0F),
                   draw_scale: outline_draw_scale,

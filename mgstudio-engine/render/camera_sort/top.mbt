@@ -48,7 +48,7 @@ pub fn SortedCamera::new(
   hdr : Bool,
   output_mode : CameraOutputMode,
 ) -> SortedCamera {
-  SortedCamera::{ entity, order, target, hdr, output_mode }
+  { entity, order, target, hdr, output_mode }
 }
 
 ///|
@@ -90,14 +90,14 @@ pub struct SortedCameras {
 
 ///|
 pub fn SortedCameras::new() -> SortedCameras {
-  SortedCameras::{ cameras: [] }
+  { cameras: [] }
 }
 
 ///|
 pub fn SortedCameras::from_array(
   cameras : Array[SortedCamera],
 ) -> SortedCameras {
-  SortedCameras::{ cameras, }
+  { cameras, }
 }
 
 ///|

@@ -14,32 +14,29 @@
 
 ///|
 test "ui: node builder stores explicit column gap" {
-  let node = Node::Node().with_column_gap(Val::Px(15.0F))
-  debug_inspect(node.column_gap == Val::Px(15.0F), content="true")
+  let node = Node::Node().with_column_gap(Px(15.0F))
+  debug_inspect(node.column_gap == Px(15.0F), content="true")
 }
 
 ///|
 test "ui: node default includes Bevy-owned box and radius fields" {
   let node = Node::Node()
-  debug_inspect(node.box_sizing == BoxSizing::BorderBox, content="true")
+  debug_inspect(node.box_sizing == BorderBox, content="true")
   debug_inspect(node.scrollbar_width == 0.0F, content="true")
-  debug_inspect(node.border_radius.top_left == Val::Px(0.0F), content="true")
-  debug_inspect(node.border_radius.top_right == Val::Px(0.0F), content="true")
-  debug_inspect(
-    node.border_radius.bottom_right == Val::Px(0.0F),
-    content="true",
-  )
-  debug_inspect(node.border_radius.bottom_left == Val::Px(0.0F), content="true")
+  debug_inspect(node.border_radius.top_left == Px(0.0F), content="true")
+  debug_inspect(node.border_radius.top_right == Px(0.0F), content="true")
+  debug_inspect(node.border_radius.bottom_right == Px(0.0F), content="true")
+  debug_inspect(node.border_radius.bottom_left == Px(0.0F), content="true")
 }
 
 ///|
 test "ui: node builders update Bevy-owned box and radius fields" {
-  let radius = BorderRadius::all(Val::Px(6.0F))
+  let radius = BorderRadius::all(Px(6.0F))
   let node = Node::Node()
-    .with_box_sizing(BoxSizing::ContentBox)
+    .with_box_sizing(ContentBox)
     .with_scrollbar_width(12.0F)
     .with_border_radius(radius)
-  debug_inspect(node.box_sizing == BoxSizing::ContentBox, content="true")
+  debug_inspect(node.box_sizing == ContentBox, content="true")
   debug_inspect(node.scrollbar_width == 12.0F, content="true")
   debug_inspect(node.border_radius.top_left == radius.top_left, content="true")
   debug_inspect(

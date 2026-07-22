@@ -19,9 +19,7 @@ extend ShadowReadinessNoShadowMaterial with @asset.Asset::{asset_debug_name}
 fn material_test_insert_gpu_preprocessing_support(world : @ecs.World) -> Unit {
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),
-    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-      @render_batching.GpuPreprocessingMode::Culling,
-    ),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(Culling),
   )
 }
 
@@ -143,10 +141,7 @@ test "render3d: materials startup preserves pending queue resources" {
     Render3dShadowBinKeyData::new(5),
     (@core.Entity::new(12, 1), main_entity),
     7U,
-    Render3dShadowBinnedRenderPhaseType::mesh(
-      true,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
-    ),
+    Render3dShadowBinnedRenderPhaseType::mesh(true, GpuPreprocessingSupport()),
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
 
@@ -182,9 +177,7 @@ test "render3d: materials startup preserves pending queue resources" {
 
 ///|
 test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Render3dShadowViewPhaseData::new(None)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(901UL),
     @material.DrawFunctionId::new(9U),
@@ -199,14 +192,14 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
     bin,
     (@core.Entity::new(41, 1), first_main),
     14U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   phase.add(
     key,
     bin,
     (@core.Entity::new(42, 1), second_main),
     15U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   debug_inspect(phase.len(), content="1")
   let item = phase.items()[0]
@@ -233,17 +226,11 @@ test "render3d: batchable shadow phase merges contiguous Bevy batch ranges" {
   let meshes = [
     ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(first_main.id()),
-      payload: material_test_extracted_mesh_payload(
-        77,
-        @material.MaterialProperties::MaterialProperties(),
-      ),
+      payload: material_test_extracted_mesh_payload(77, MaterialProperties()),
     },
-    ExtractedMesh3d::{
+    {
       entity: phase_entity_ref3d_for_main(second_main.id()),
-      payload: material_test_extracted_mesh_payload(
-        77,
-        @material.MaterialProperties::MaterialProperties(),
-      ),
+      payload: material_test_extracted_mesh_payload(77, MaterialProperties()),
     },
   ]
   let resolved = render3d_shadow_resolve_phase_items(meshes, phase)
@@ -266,30 +253,22 @@ test "render3d: shadow phase resolve keeps Bevy mesh bins isolated" {
   )
   let first_main = @render.MainEntity::new(@core.Entity::new(51, 1))
   let second_main = @render.MainEntity::new(@core.Entity::new(52, 1))
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Render3dShadowViewPhaseData::new(None)
   phase.add(
     key,
     Render3dShadowBinKeyData::new(77),
     (@core.Entity::new(61, 1), first_main),
     14U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   let meshes = [
     ExtractedMesh3d::{
       entity: phase_entity_ref3d_for_main(first_main.id()),
-      payload: material_test_extracted_mesh_payload(
-        77,
-        @material.MaterialProperties::MaterialProperties(),
-      ),
+      payload: material_test_extracted_mesh_payload(77, MaterialProperties()),
     },
-    ExtractedMesh3d::{
+    {
       entity: phase_entity_ref3d_for_main(second_main.id()),
-      payload: material_test_extracted_mesh_payload(
-        78,
-        @material.MaterialProperties::MaterialProperties(),
-      ),
+      payload: material_test_extracted_mesh_payload(78, MaterialProperties()),
     },
   ]
   let resolved = render3d_shadow_resolve_phase_items(meshes, phase)
@@ -304,9 +283,7 @@ test "render3d: shadow phase resolve keeps Bevy mesh bins isolated" {
 
 ///|
 test "render3d: batchable shadow phase prepares Bevy work item buffers" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Render3dShadowViewPhaseData::new(None)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(905UL),
     @material.DrawFunctionId::new(13U),
@@ -321,14 +298,14 @@ test "render3d: batchable shadow phase prepares Bevy work item buffers" {
     bin,
     (@core.Entity::new(131, 1), first_main),
     70U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   phase.add(
     key,
     bin,
     (@core.Entity::new(132, 1), second_main),
     71U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   let direct_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
   let direct_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
@@ -346,22 +323,20 @@ test "render3d: batchable shadow phase prepares Bevy work item buffers" {
   inspect(phase.items()[0].batch_range().end(), content="2")
   debug_inspect(phase.items()[0].extra_index(), content="None")
 
-  let indirect_phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let indirect_phase = Render3dShadowViewPhaseData::new(None)
   indirect_phase.add(
     key,
     bin,
     (@core.Entity::new(133, 1), first_main),
     80U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   indirect_phase.add(
     key,
     bin,
     (@core.Entity::new(134, 1), second_main),
     81U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   let indirect_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
   let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
@@ -466,9 +441,7 @@ test "render3d: shadow unbatchable index set mirrors Bevy sparse and dense state
 
 ///|
 test "render3d: shadow view phase stores unbatchable meshes separately" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Render3dShadowViewPhaseData::new(None)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(902UL),
     @material.DrawFunctionId::new(10U),
@@ -483,14 +456,14 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
     bin,
     (@core.Entity::new(61, 1), first_main),
     30U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   phase.add(
     key,
     bin,
     (@core.Entity::new(62, 1), second_main),
     31U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   debug_inspect(phase.len(), content="2")
   debug_inspect(phase.phase_type(first_main), content="Some(UnbatchableMesh)")
@@ -523,9 +496,7 @@ test "render3d: shadow view phase stores unbatchable meshes separately" {
 
 ///|
 test "render3d: unbatchable shadow phase prepares Bevy work item buffers" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let phase = Render3dShadowViewPhaseData::new(None)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(906UL),
     @material.DrawFunctionId::new(14U),
@@ -540,14 +511,14 @@ test "render3d: unbatchable shadow phase prepares Bevy work item buffers" {
     bin,
     (@core.Entity::new(151, 1), first_main),
     90U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   phase.add(
     key,
     bin,
     (@core.Entity::new(152, 1), second_main),
     92U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   let direct_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
   let direct_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
@@ -565,22 +536,20 @@ test "render3d: unbatchable shadow phase prepares Bevy work item buffers" {
   inspect(direct_items[1].batch_range().start(), content="1")
   debug_inspect(direct_items[0].extra_index(), content="None")
 
-  let indirect_phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::None,
-  )
+  let indirect_phase = Render3dShadowViewPhaseData::new(None)
   indirect_phase.add(
     key,
     bin,
     (@core.Entity::new(153, 1), first_main),
     100U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   indirect_phase.add(
     key,
     bin,
     (@core.Entity::new(154, 1), second_main),
     101U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   let indirect_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
   let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
@@ -702,9 +671,7 @@ test "panic render3d: shadow multidraw removal rejects a missing entity" {
 
 ///|
 test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  let phase = Render3dShadowViewPhaseData::new(Culling)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(903UL),
     @material.DrawFunctionId::new(11U),
@@ -720,14 +687,14 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
     first_bin,
     (@core.Entity::new(91, 1), first_main),
     40U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   phase.add(
     key,
     second_bin,
     (@core.Entity::new(92, 1), second_main),
     41U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   debug_inspect(phase.len(), content="2")
   debug_inspect(phase.items().length(), content="0")
@@ -748,14 +715,14 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
   debug_inspect(phase.multidrawable_batch_set_count(), content="1")
 
   let preprocessing_only_phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::PreprocessingOnly,
+    PreprocessingOnly,
   )
   preprocessing_only_phase.add(
     key,
     first_bin,
     (@core.Entity::new(93, 1), first_main),
     50U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   debug_inspect(
     preprocessing_only_phase.multidrawable_batch_set_count(),
@@ -770,9 +737,7 @@ test "render3d: shadow view phase routes multidrawable meshes to batch sets" {
 
 ///|
 test "render3d: shadow view phase removes only the cached multidraw bin" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  let phase = Render3dShadowViewPhaseData::new(Culling)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(913UL),
     @material.DrawFunctionId::new(19U),
@@ -786,14 +751,14 @@ test "render3d: shadow view phase removes only the cached multidraw bin" {
     Render3dShadowBinKeyData::new(701),
     (@core.Entity::new(191, 1), retained_main),
     120U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   phase.add(
     key,
     Render3dShadowBinKeyData::new(702),
     (@core.Entity::new(192, 1), removed_main),
     121U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
 
   phase.remove(removed_main)
@@ -813,9 +778,7 @@ test "render3d: shadow view phase removes only the cached multidraw bin" {
 
 ///|
 test "render3d: shadow multidraw batch sets materialize Bevy indirect phase items" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  let phase = Render3dShadowViewPhaseData::new(Culling)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(904UL),
     @material.DrawFunctionId::new(12U),
@@ -830,14 +793,14 @@ test "render3d: shadow multidraw batch sets materialize Bevy indirect phase item
     bin,
     (@core.Entity::new(111, 1), first_main),
     60U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   phase.add(
     key,
     bin,
     (@core.Entity::new(112, 1), second_main),
     61U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   let items_without_count = phase.multidrawable_items(false)
   debug_inspect(items_without_count.length(), content="1")
@@ -860,9 +823,7 @@ test "render3d: shadow multidraw batch sets materialize Bevy indirect phase item
 
 ///|
 test "render3d: multidrawable shadow phase prepares Bevy indirect buffers" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  let phase = Render3dShadowViewPhaseData::new(Culling)
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(906UL),
     @material.DrawFunctionId::new(14U),
@@ -877,14 +838,14 @@ test "render3d: multidrawable shadow phase prepares Bevy indirect buffers" {
     bin,
     (@core.Entity::new(151, 1), first_main),
     90U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   phase.add(
     key,
     bin,
     (@core.Entity::new(152, 1), second_main),
     91U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
   let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
@@ -931,9 +892,7 @@ test "render3d: multidrawable shadow phase prepares Bevy indirect buffers" {
 
 ///|
 test "render3d: shadow phase prepares all binned mesh classes with one work buffer" {
-  let phase = Render3dShadowViewPhaseData::new(
-    @render_batching.GpuPreprocessingMode::Culling,
-  )
+  let phase = Render3dShadowViewPhaseData::new(Culling)
   let unbatchable_key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(910UL),
     @material.DrawFunctionId::new(18U),
@@ -960,7 +919,7 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
       @render.MainEntity::new(@core.Entity::new(151, 1)),
     ),
     10U,
-    Render3dShadowBinnedRenderPhaseType::UnbatchableMesh,
+    UnbatchableMesh,
   )
   phase.add(
     batchable_key,
@@ -970,7 +929,7 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
       @render.MainEntity::new(@core.Entity::new(152, 1)),
     ),
     20U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   phase.add(
     batchable_key,
@@ -980,7 +939,7 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
       @render.MainEntity::new(@core.Entity::new(153, 1)),
     ),
     21U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   phase.add(
     multidraw_key,
@@ -990,7 +949,7 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
       @render.MainEntity::new(@core.Entity::new(154, 1)),
     ),
     30U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   phase.add(
     multidraw_key,
@@ -1000,7 +959,7 @@ test "render3d: shadow phase prepares all binned mesh classes with one work buff
       @render.MainEntity::new(@core.Entity::new(155, 1)),
     ),
     31U,
-    Render3dShadowBinnedRenderPhaseType::MultidrawableMesh,
+    MultidrawableMesh,
   )
   let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
   let indirect_parameters = @render_batching.PhaseIndirectParametersBuffers::new(
@@ -1032,7 +991,7 @@ test "render3d: shadow phase buffer prepare system consumes phase resource" {
   )
   let phase = phases.prepare_for_new_frame(
     retained_view,
-    gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::Culling,
+    gpu_preprocessing_mode=Culling,
   )
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(913UL),
@@ -1048,22 +1007,20 @@ test "render3d: shadow phase buffer prepare system consumes phase resource" {
       @render.MainEntity::new(@core.Entity::new(156, 1)),
     ),
     40U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), phases)
   world.insert_resource(
     Render3dShadowPhaseBatchedInstanceBuffers::resource(),
-    Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers(),
+    Render3dShadowPhaseBatchedInstanceBuffers(),
   )
   world.insert_resource(
     Render3dShadowPhaseIndirectParametersBuffers::resource(),
-    Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers(),
+    Render3dShadowPhaseIndirectParametersBuffers(),
   )
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),
-    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-      @render_batching.GpuPreprocessingMode::Culling,
-    ),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(Culling),
   )
   render3d_prepare_shadow_phase_buffers_system(world)
   let phase_instances = world
@@ -1099,15 +1056,15 @@ test "render3d: shadow phase buffers collect into global preprocessing tables" {
   )
   world.insert_resource(
     RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
-    RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers(),
+    RenderMeshInstanceGpuBatchedInstanceBuffers(),
   )
   world.insert_resource(
     @render_batching.IndirectParametersBuffers::resource(),
-    @render_batching.IndirectParametersBuffers::IndirectParametersBuffers(),
+    IndirectParametersBuffers(),
   )
   world.insert_resource(
     @render_batching.IndirectParametersBuffersSettings::resource(),
-    @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+    IndirectParametersBuffersSettings(),
   )
   render3d_collect_shadow_phase_buffers_system(world)
   let global_instances = world
@@ -1148,7 +1105,7 @@ test "render3d: shadow phase prepare and collect bridge fills global preprocessi
   )
   let phase = phases.prepare_for_new_frame(
     retained_view,
-    gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::Culling,
+    gpu_preprocessing_mode=Culling,
   )
   let key = Render3dShadowBatchSetKeyData::new(
     @material.CachedRenderPipelineId::new(914UL),
@@ -1164,34 +1121,32 @@ test "render3d: shadow phase prepare and collect bridge fills global preprocessi
       @render.MainEntity::new(@core.Entity::new(157, 1)),
     ),
     41U,
-    Render3dShadowBinnedRenderPhaseType::BatchableMesh,
+    BatchableMesh,
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), phases)
   world.insert_resource(
     Render3dShadowPhaseBatchedInstanceBuffers::resource(),
-    Render3dShadowPhaseBatchedInstanceBuffers::Render3dShadowPhaseBatchedInstanceBuffers(),
+    Render3dShadowPhaseBatchedInstanceBuffers(),
   )
   world.insert_resource(
     Render3dShadowPhaseIndirectParametersBuffers::resource(),
-    Render3dShadowPhaseIndirectParametersBuffers::Render3dShadowPhaseIndirectParametersBuffers(),
+    Render3dShadowPhaseIndirectParametersBuffers(),
   )
   world.insert_resource(
     @render_batching.GpuPreprocessingSupport::resource(),
-    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-      @render_batching.GpuPreprocessingMode::Culling,
-    ),
+    @render_batching.GpuPreprocessingSupport::with_max_supported_mode(Culling),
   )
   world.insert_resource(
     RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
-    RenderMeshInstanceGpuBatchedInstanceBuffers::RenderMeshInstanceGpuBatchedInstanceBuffers(),
+    RenderMeshInstanceGpuBatchedInstanceBuffers(),
   )
   world.insert_resource(
     @render_batching.IndirectParametersBuffers::resource(),
-    @render_batching.IndirectParametersBuffers::IndirectParametersBuffers(),
+    IndirectParametersBuffers(),
   )
   world.insert_resource(
     @render_batching.IndirectParametersBuffersSettings::resource(),
-    @render_batching.IndirectParametersBuffersSettings::IndirectParametersBuffersSettings(),
+    IndirectParametersBuffersSettings(),
   )
   render3d_prepare_shadow_phase_buffers_system(world)
   render3d_collect_shadow_phase_buffers_system(world)
@@ -1264,10 +1219,7 @@ test "render3d: shadow phase preparation mirrors Bevy retained light views" {
       @render.MainEntity::new(@core.Entity::new(214, 1)),
     ),
     8U,
-    Render3dShadowBinnedRenderPhaseType::mesh(
-      true,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
-    ),
+    Render3dShadowBinnedRenderPhaseType::mesh(true, GpuPreprocessingSupport()),
   )
   ignore(shadow_phases.prepare_for_new_frame(stale_view))
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
@@ -1360,14 +1312,14 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
   let lighting = Render3dLightingState::{
     ..@pbr_render.render3d_default_lighting_state(),
     directional_lights: [
-      @pbr_render.Render3dLightingDirectionalLight::{
+      {
         render_entity: directional_light,
         light: @pbr_render.render3d_extracted_directional_light_for_shadow(
           directional_light,
           @transform.Transform::identity(),
           cascades,
           [42.0F],
-          @camera_render_layers.RenderLayers::RenderLayers(),
+          RenderLayers(),
           false,
         ),
       },
@@ -1386,7 +1338,7 @@ test "render3d: camera shadow phase preparation retains all Bevy light views onc
       entity: phase_entity_ref3d_for_main(camera_a),
       payload: material_test_camera_payload(),
     },
-    ExtractedCamera3d::{
+    {
       entity: phase_entity_ref3d_for_main(camera_b),
       payload: material_test_camera_payload(),
     },
@@ -1472,7 +1424,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
       @core.Entity::new(2101, 1),
       @core.Entity::new(2201, 1),
     ),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..material_test_extracted_mesh_payload(2101, material_properties),
       layers: @camera_render_layers.RenderLayers::layer(1),
       has_no_frustum_culling: true,
@@ -1483,7 +1435,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
       @core.Entity::new(2102, 1),
       @core.Entity::new(2202, 1),
     ),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..material_test_extracted_mesh_payload(2102, material_properties),
       layers: @camera_render_layers.RenderLayers::layer(1),
       has_not_shadow_caster: true,
@@ -1495,7 +1447,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
       @core.Entity::new(2103, 1),
       @core.Entity::new(2203, 1),
     ),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..material_test_extracted_mesh_payload(2103, material_properties),
       layers: @camera_render_layers.RenderLayers::layer(1),
       has_no_cpu_culling: true,
@@ -1507,7 +1459,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
       @core.Entity::new(2104, 1),
       @core.Entity::new(2204, 1),
     ),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..material_test_extracted_mesh_payload(2104, material_properties),
       layers: @camera_render_layers.RenderLayers::layer(2),
       has_no_frustum_culling: true,
@@ -1518,7 +1470,7 @@ test "render3d: shadow visible indices mirror Bevy CPU visibility filters" {
       @core.Entity::new(2105, 1),
       @core.Entity::new(2205, 1),
     ),
-    payload: Mesh3dExtractedPayload::{
+    payload: {
       ..material_test_extracted_mesh_payload(0, material_properties),
       layers: @camera_render_layers.RenderLayers::layer(1),
       has_no_frustum_culling: true,
@@ -1565,7 +1517,7 @@ test "render3d: shadow visible indices populate Bevy shadow map visibility" {
       entity: phase_entity_ref3d(first_main, first_render),
       payload: material_test_extracted_mesh_payload(901, material_properties),
     },
-    ExtractedMesh3d::{
+    {
       entity: phase_entity_ref3d(second_main, second_render),
       payload: material_test_extracted_mesh_payload(902, material_properties),
     },
@@ -1682,8 +1634,7 @@ test "render3d: pending mesh material queues prepare live views and expire stale
   )
 
   ignore(queues.prepare_for_new_frame(live_view))
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   live_views.add(live_view)
   queues.expire_stale_views(live_views)
 
@@ -1760,7 +1711,7 @@ fn material_test_type_tag_base_specialize(
 
 ///|
 fn material_test_camera_payload() -> Camera3dViewPayload {
-  Camera3dViewPayload::{
+  {
     decal_config: None,
     deferred_config: None,
     distance_fog: None,
@@ -1768,8 +1719,8 @@ fn material_test_camera_payload() -> Camera3dViewPayload {
     volumetric_fog: None,
     atmosphere: None,
     atmosphere_settings: None,
-    camera: @camera_camera.Camera::Camera(),
-    depth_texture_usages: Camera3dDepthTextureUsage::Camera3dDepthTextureUsage(),
+    camera: Camera(),
+    depth_texture_usages: Camera3dDepthTextureUsage(),
     projection: Projection::default(),
     sub_camera_view: None,
     oit_settings: None,
@@ -1804,13 +1755,13 @@ fn material_test_camera_payload() -> Camera3dViewPayload {
     shadow_filtering_method: None,
     motion_vector_prepass_enabled: false,
     msaa: None,
-    transform: @transform.Transform::Transform(),
-    previous_transform: @transform.Transform::Transform(),
+    transform: Transform(),
+    previous_transform: Transform(),
     previous_clip_from_world: None,
     target_id: 0,
     target_size: @math.IVec2::new(1280, 720),
     scale_factor: 1.0F,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    layers: RenderLayers(),
     invert_culling: false,
   }
 }
@@ -1822,19 +1773,17 @@ fn material_test_extracted_mesh_payload(
 ) -> Mesh3dExtractedPayload {
   let transform = @transform.Transform::identity()
   let world_from_local = @math.Affine3::identity()
-  Mesh3dExtractedPayload::{
+  {
     mesh_handle: @asset.Handle::new(mesh_id),
     world_from_local,
     previous_world_from_local: world_from_local,
     transform,
     previous_transform: transform,
     aabb: None,
-    material_draw_data: MaterialDrawData3d::Standard(
-      @material.StandardMaterial::StandardMaterial(),
-    ),
+    material_draw_data: Standard(StandardMaterial()),
     material_extension: None,
     material_properties,
-    material_bind_group_data: @render_resource.MaterialBindGroupResolvedData::MaterialBindGroupResolvedData(),
+    material_bind_group_data: MaterialBindGroupResolvedData(),
     lightmap: None,
     is_forward_decal: false,
     forward_decal_material_ext: None,
@@ -1844,7 +1793,7 @@ fn material_test_extracted_mesh_payload(
     has_transmitted_shadow_receiver: false,
     has_no_frustum_culling: false,
     has_no_cpu_culling: false,
-    layers: @camera_render_layers.RenderLayers::RenderLayers(),
+    layers: RenderLayers(),
     skinning_key_hi: -1,
     has_previous_skin: false,
     morph_weights_index: -1,
@@ -1862,12 +1811,8 @@ test "render3d: extract render visible entities mirrors camera visible Mesh3d pa
   let render_camera = world.spawn()
   let main_mesh = world.spawn()
   let render_mesh = world.spawn()
-  try! world.set_by_key(main_camera, ecs_key_camera3d, Camera3d::Camera3d())
-  try! world.set_by_key(
-    main_camera,
-    @camera_camera.ecs_key_camera,
-    @camera_camera.Camera::Camera(),
-  )
+  try! world.set_by_key(main_camera, ecs_key_camera3d, Camera3d())
+  try! world.set_by_key(main_camera, @camera_camera.ecs_key_camera, Camera())
   try! world.set_by_key(
     main_camera,
     @render.ecs_key_render_entity,
@@ -2011,7 +1956,7 @@ test "render3d: view key cache marks material views dirty when pipeline capabili
   let render_view = world.spawn()
   world.insert_resource(
     @render_visibility.DirtySpecializations::resource(),
-    @render_visibility.DirtySpecializations::DirtySpecializations(),
+    DirtySpecializations(),
   )
   let camera = ExtractedCamera3d::{
     entity: phase_entity_ref3d(main_view, render_view),
@@ -2171,7 +2116,7 @@ test "render3d: shadow specialization skips cached entities before readiness che
   )
   world.insert_resource(
     @render_visibility.DirtySpecializations::resource(),
-    @render_visibility.DirtySpecializations::DirtySpecializations(),
+    DirtySpecializations(),
   )
   let light_key_cache = @pbr_render.LightKeyCache::LightKeyCache()
   light_key_cache.insert(
@@ -2199,7 +2144,7 @@ test "render3d: shadow specialization skips cached entities before readiness che
   ignore(
     shadow_phases.prepare_for_new_frame(
       retained_view,
-      gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::PreprocessingOnly,
+      gpu_preprocessing_mode=PreprocessingOnly,
     ),
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
@@ -2351,6 +2296,7 @@ test "render3d: material specialization readiness follows Bevy resources" {
 struct ShadowReadinessNoShadowMaterial {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial() -> ShadowReadinessNoShadowMaterial {
   ShadowReadinessNoShadowMaterial::{  }
 }
@@ -2515,7 +2461,7 @@ impl Material for ShadowReadinessNoShadowMaterial with fn bind_group(
 ) {
   ignore(context)
   ignore(self)
-  MaterialBindGroup::MaterialBindGroup()
+  MaterialBindGroup()
 }
 
 ///|
@@ -2556,11 +2502,11 @@ impl Material for ShadowReadinessNoShadowMaterial with fn specialize(
 ///|
 test "render3d: shadow specialization readiness follows Bevy pending queue rules" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      ParityCustomMaterial::ParityCustomMaterial()
+      ParityCustomMaterial()
     },
   )
   let no_shadow_plugin : MaterialPlugin[ShadowReadinessNoShadowMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial()
+      ShadowReadinessNoShadowMaterial()
     },
   )
   let lifecycle_world_2571_0 = @ecs.World::new()
@@ -2569,7 +2515,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
     .add_plugins(no_shadow_plugin)
-  let world = app.sub_app(@app.RenderApp).world()
+  let world = app.sub_app(RenderApp).world()
   let retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(58, 1),
   )
@@ -2700,27 +2646,27 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       635,
       PreparedMaterial::from_material(
         @asset.Handle::new(635),
-        ParityCustomMaterial::ParityCustomMaterial(),
+        ParityCustomMaterial(),
         pipeline,
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
     )
     value.insert(
       640,
       PreparedMaterial::from_material(
         @asset.Handle::new(640),
-        ParityCustomMaterial::ParityCustomMaterial(),
+        ParityCustomMaterial(),
         pipeline,
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
     )
     value.insert(
       650,
       PreparedMaterial::from_material(
         @asset.Handle::new(650),
-        ParityCustomMaterial::ParityCustomMaterial(),
+        ParityCustomMaterial(),
         pipeline,
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
     )
   })
@@ -2729,9 +2675,9 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       630,
       PreparedMaterial::from_material(
         @asset.Handle::new(630),
-        ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial(),
+        ShadowReadinessNoShadowMaterial(),
         no_shadow_pipeline,
-        @material.OpaqueRendererMethod::Forward,
+        Forward,
       ),
     )
   })
@@ -2742,7 +2688,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       @asset.Handle::new(630),
       ShadowReadinessNoShadowMaterial::ShadowReadinessNoShadowMaterial(),
       no_shadow_pipeline,
-      @material.OpaqueRendererMethod::Forward,
+      Forward,
     ).resolved_material(),
   )
   resolved_slots.set_resolved(
@@ -2751,7 +2697,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       @asset.Handle::new(635),
       ParityCustomMaterial::ParityCustomMaterial(),
       pipeline,
-      @material.OpaqueRendererMethod::Forward,
+      Forward,
     ).resolved_material(),
   )
   resolved_slots.set_resolved(
@@ -2760,7 +2706,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       @asset.Handle::new(640),
       ParityCustomMaterial::ParityCustomMaterial(),
       pipeline,
-      @material.OpaqueRendererMethod::Forward,
+      Forward,
     ).resolved_material(),
   )
   resolved_slots.set_resolved(
@@ -2769,7 +2715,7 @@ test "render3d: shadow specialization readiness follows Bevy pending queue rules
       @asset.Handle::new(650),
       ParityCustomMaterial::ParityCustomMaterial(),
       pipeline,
-      @material.OpaqueRendererMethod::Forward,
+      Forward,
     ).resolved_material(),
   )
   world.insert_resource(
@@ -2929,7 +2875,7 @@ test "render3d: shadow specialization mesh key mirrors Bevy work item assembly" 
     ),
   )
   let blend_properties = @material.MaterialProperties::MaterialProperties().with_alpha_mode(
-    @material.AlphaMode3d::Blend,
+    Blend,
   )
   let blend_lightmapped_key = render3d_shadow_specialization_mesh_key(
     light_key,
@@ -2941,7 +2887,7 @@ test "render3d: shadow specialization mesh key mirrors Bevy work item assembly" 
   inspect(blend_lightmapped_key.bits(), content="4200")
 
   let multiply_properties = @material.MaterialProperties::MaterialProperties().with_alpha_mode(
-    @material.AlphaMode3d::Multiply,
+    Multiply,
   )
   let multiply_key = render3d_shadow_specialization_mesh_key(
     light_key,
@@ -2963,7 +2909,7 @@ test "render3d: shadow specialization work item selects Bevy draw function" {
   let visible_entity = @render.MainEntity::new(@core.Entity::new(74, 1))
   world.insert_resource(
     @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
-    @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache(),
+    SpecializedShadowMaterialPipelineCache(),
   )
   let properties = @material.MaterialProperties::MaterialProperties()
     .with_prepass_specialize(Some(material_test_base_specialize))
@@ -3016,7 +2962,7 @@ test "render3d: shadow specialization uses material draw when prepass reads mate
   let visible_entity = @render.MainEntity::new(@core.Entity::new(76, 1))
   world.insert_resource(
     @pbr_render.SpecializedShadowMaterialPipelineCache::resource(),
-    @pbr_render.SpecializedShadowMaterialPipelineCache::SpecializedShadowMaterialPipelineCache(),
+    SpecializedShadowMaterialPipelineCache(),
   )
   let properties = @material.MaterialProperties::MaterialProperties()
     .with_prepass_specialize(Some(material_test_base_specialize))
@@ -3110,7 +3056,7 @@ test "render3d: shadow specialization drains work items and expires stale views"
       properties,
       material_type_tag: "TestMaterial",
     },
-    Render3dShadowSpecializationWorkItemData::{
+    {
       queue_data: RenderMeshQueueData::new(83, 0U, false),
       visible_entity: stale_entity,
       retained_view_entity: live_view,
@@ -3120,8 +3066,7 @@ test "render3d: shadow specialization drains work items and expires stale views"
       material_type_tag: "TestMaterial",
     },
   ]
-  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = @hashset.HashSet([],
-  )
+  let live_views : @hashset.HashSet[@render_view.RetainedViewEntity] = HashSet([])
   live_views.add(live_view)
   let count = render3d_shadow_specialization_apply_work_items(
     world, work_items, live_views, false,
@@ -3170,7 +3115,7 @@ test "render3d: queue shadows checks cache and pending queues before empty visib
     retained_view,
     visible_entities,
     None,
-    @render_visibility.DirtySpecializations::DirtySpecializations(),
+    DirtySpecializations(),
     pending_shadow_queues,
   )
 
@@ -3185,7 +3130,7 @@ test "render3d: queue shadows checks cache and pending queues before empty visib
 ///|
 test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rules" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      ParityCustomMaterial::ParityCustomMaterial()
+      ParityCustomMaterial()
     },
   )
   let lifecycle_world_3198_0 = @ecs.World::new()
@@ -3193,7 +3138,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   let app = @app.App::new(lifecycle_world_3198_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
-  let world = app.sub_app(@app.RenderApp).world()
+  let world = app.sub_app(RenderApp).world()
   let camera_retained_view = @render_view.RetainedViewEntity::new(
     @core.Entity::new(90, 1),
   )
@@ -3266,16 +3211,14 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   let prepared_assets_key : @ecs.ResourceKey[
     @render.RenderAssets[PreparedMaterial[ParityCustomMaterial]],
   ] = @render.RenderAssets::resource()
-  let draw_function_ids = pbr_material_register_draw_functions(
-    @material.DrawFunctions::DrawFunctions(),
-  )
+  let draw_function_ids = pbr_material_register_draw_functions(DrawFunctions())
   let probe : @asset.Handle[ParityCustomMaterial] = @asset.Handle::new(0)
   let pipeline = material_pipeline_from_material_hooks(probe)
   let prepared_depth_base = PreparedMaterial::from_material(
     @asset.Handle::new(701),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let prepared_depth = PreparedMaterial::{
     ..prepared_depth_base,
@@ -3288,7 +3231,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(702),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let prepared_material = PreparedMaterial::{
     ..prepared_material_base,
@@ -3301,7 +3244,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(703),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let prepared_layer = PreparedMaterial::{
     ..prepared_layer_base,
@@ -3314,7 +3257,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(704),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let prepared_missing_binding = PreparedMaterial::{
     ..prepared_missing_binding_base,
@@ -3327,7 +3270,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     @asset.Handle::new(705),
     ParityCustomMaterial::ParityCustomMaterial(),
     pipeline,
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let prepared_cache_miss = PreparedMaterial::{
     ..prepared_cache_miss_base,
@@ -3566,16 +3509,14 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
   ignore(
     culling_shadow_phases.prepare_for_new_frame(
       retained_view,
-      gpu_preprocessing_mode=@render_batching.GpuPreprocessingMode::Culling,
+      gpu_preprocessing_mode=Culling,
     ),
   )
   ignore(
     culling_shadow_phases.apply_queue(
       retained_view,
       queued,
-      @render_batching.GpuPreprocessingSupport::with_max_supported_mode(
-        @render_batching.GpuPreprocessingMode::Culling,
-      ),
+      @render_batching.GpuPreprocessingSupport::with_max_supported_mode(Culling),
     ),
   )
   let culling_shadow_phase = match culling_shadow_phases.get(retained_view) {
@@ -3604,10 +3545,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     Render3dShadowBinKeyData::new(705),
     (cache_miss_render, cache_miss_main),
     99U,
-    Render3dShadowBinnedRenderPhaseType::mesh(
-      true,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
-    ),
+    Render3dShadowBinnedRenderPhaseType::mesh(true, GpuPreprocessingSupport()),
   )
   world.insert_resource(Render3dShadowPhasesData::resource(), shadow_phases)
   debug_inspect(
@@ -3622,7 +3560,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
       ],
       dirty_specializations,
       pending_shadow_queues,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+      GpuPreprocessingSupport(),
     ),
     content="1",
   )
@@ -3667,10 +3605,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
     ],
   )
   let material_shadow_mesh = Mesh3dExtractedPayload::{
-    ..material_test_extracted_mesh_payload(
-      702,
-      @material.MaterialProperties::MaterialProperties(),
-    ),
+    ..material_test_extracted_mesh_payload(702, MaterialProperties()),
     material_bind_group_data: nonempty_material_bind_group_data,
   }
   debug_inspect(
@@ -3697,7 +3632,7 @@ test "render3d: queue shadows mirrors Bevy cache layers bindings and pending rul
 ///|
 test "render3d: queue shadows skips missing shadow phase before pending queue lookup" {
   let plugin : MaterialPlugin[ParityCustomMaterial] = MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
-      ParityCustomMaterial::ParityCustomMaterial()
+      ParityCustomMaterial()
     },
   )
   let lifecycle_world_3708_0 = @ecs.World::new()
@@ -3705,7 +3640,7 @@ test "render3d: queue shadows skips missing shadow phase before pending queue lo
   let app = @app.App::new(lifecycle_world_3708_0)
     .add_plugins(@render.RenderPlugin::RenderPlugin())
     .add_plugins(plugin)
-  let world = app.sub_app(@app.RenderApp).world()
+  let world = app.sub_app(RenderApp).world()
   let light = world.spawn_empty()
   let light_entity = Render3dLightEntity::Spot(
     light_entity=light,
@@ -3721,15 +3656,15 @@ test "render3d: queue shadows skips missing shadow phase before pending queue lo
   )
   world.insert_resource(
     Render3dShadowPhasesData::resource(),
-    Render3dShadowPhasesData::Render3dShadowPhasesData(),
+    Render3dShadowPhasesData(),
   )
   debug_inspect(
     render3d_queue_shadow_phase_data_for_views(
       world,
       [Render3dQueuedShadowPhaseView::new(light_entity, retained_view)],
-      @render_visibility.DirtySpecializations::DirtySpecializations(),
+      DirtySpecializations(),
       pending_shadow_queues,
-      @render_batching.GpuPreprocessingSupport::GpuPreprocessingSupport(),
+      GpuPreprocessingSupport(),
     ),
     content="0",
   )
@@ -3766,11 +3701,11 @@ test "render3d: missing prepared render mesh does not return to pending queue" {
   )
   world.insert_resource(
     PendingMeshMaterialQueues::resource(),
-    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    PendingMeshMaterialQueues(),
   )
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
-    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    SpecializedMaterialPipelineCache(),
   )
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   material_instances.extract_mesh_material(
@@ -3843,11 +3778,11 @@ test "render3d: material specialization reads resolved material slots without ex
   )
   world.insert_resource(
     PendingMeshMaterialQueues::resource(),
-    PendingMeshMaterialQueues::PendingMeshMaterialQueues(),
+    PendingMeshMaterialQueues(),
   )
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
-    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    SpecializedMaterialPipelineCache(),
   )
   let material_instances = RenderMaterialInstances::RenderMaterialInstances()
   material_instances.extract_mesh_material(
@@ -3914,7 +3849,7 @@ test "render3d: material specialization reads prepared RenderMeshAssets only" {
   defer world.close()
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
-    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    SpecializedMaterialPipelineCache(),
   )
   let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
     Some(material_test_base_specialize),
@@ -3982,7 +3917,7 @@ test "render3d: material specialization key consumes render resources" {
   defer world.close()
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
-    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    SpecializedMaterialPipelineCache(),
   )
   let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
     Some(material_test_resource_key_base_specialize),
@@ -4046,7 +3981,7 @@ test "render3d: material specialization key preserves resolved material type" {
   defer world.close()
   world.insert_resource(
     ecs_key_specialized_material_pipeline_cache,
-    SpecializedMaterialPipelineCache::SpecializedMaterialPipelineCache(),
+    SpecializedMaterialPipelineCache(),
   )
   let material_properties = @material.MaterialProperties::MaterialProperties().with_base_specialize(
     Some(material_test_type_tag_base_specialize),

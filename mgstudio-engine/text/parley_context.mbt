@@ -18,7 +18,7 @@
 
 ///|
 pub fn text_font_context() -> FontCx {
-  FontCx::FontCx()
+  FontCx()
 }
 
 ///|

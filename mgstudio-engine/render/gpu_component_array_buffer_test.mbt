@@ -50,12 +50,12 @@ test "render gpu component array buffer: prepare populates buffer and entity ind
   try! world.set_by_key(
     entity0,
     TestGpuComponentArrayBufferComponent::component(),
-    TestGpuComponentArrayBufferComponent::{ value: 11 },
+    { value: 11 },
   )
   try! world.set_by_key(
     entity1,
     TestGpuComponentArrayBufferComponent::component(),
-    TestGpuComponentArrayBufferComponent::{ value: 22 },
+    { value: 22 },
   )
   let state_key : @ecs.ResourceKey[
     GpuComponentArrayBufferState[TestGpuComponentArrayBufferComponent],
@@ -81,7 +81,7 @@ test "render gpu component array buffer: prepare clears stale component indices"
   try! world.set_by_key(
     entity,
     TestGpuComponentArrayBufferComponent::component(),
-    TestGpuComponentArrayBufferComponent::{ value: 7 },
+    { value: 7 },
   )
   let state_key : @ecs.ResourceKey[
     GpuComponentArrayBufferState[TestGpuComponentArrayBufferComponent],

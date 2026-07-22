@@ -22,6 +22,7 @@ const OCCLUSION_CULLING_PLUGIN_NAME : String = "mgstudio.render.occlusion_cullin
 pub struct OcclusionCullingPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn OcclusionCullingPlugin::OcclusionCullingPlugin() -> OcclusionCullingPlugin {
   OcclusionCullingPlugin::{  }
 }
@@ -30,10 +31,7 @@ pub fn OcclusionCullingPlugin::OcclusionCullingPlugin() -> OcclusionCullingPlugi
 pub fn occlusion_culling_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  occlusion_culling_plugin_with(
-    app,
-    OcclusionCullingPlugin::OcclusionCullingPlugin(),
-  )
+  occlusion_culling_plugin_with(app, OcclusionCullingPlugin())
 }
 
 ///|
@@ -60,6 +58,7 @@ pub fn occlusion_culling_plugin_with(
 pub struct OcclusionCulling {} derive(Eq, Debug, ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn OcclusionCulling::OcclusionCulling() -> OcclusionCulling {
   OcclusionCulling::{  }
 }
@@ -85,7 +84,7 @@ pub fn OcclusionCullingSubview::new(
   depth_texture_view_id~ : Int,
   depth_texture_size~ : Int,
 ) -> OcclusionCullingSubview {
-  OcclusionCullingSubview::{
+  {
     depth_texture_view_id,
     depth_texture_size: if depth_texture_size <= 0 {
       1
@@ -118,7 +117,7 @@ pub struct OcclusionCullingSubviewEntities {
 pub fn OcclusionCullingSubviewEntities::new(
   entity_ids : Array[Int],
 ) -> OcclusionCullingSubviewEntities {
-  OcclusionCullingSubviewEntities::{ entity_ids, }
+  { entity_ids, }
 }
 
 ///|

@@ -54,7 +54,7 @@ test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
   debug_inspect(@post_process.MsaaWriteback::default(), content="Auto")
   debug_inspect(
     @post_process.msaa_writeback_required(
-      Some(@post_process.MsaaWriteback::Off),
+      Some(Off),
       4,
       sorted_camera_index_for_target=1,
     ),
@@ -62,7 +62,7 @@ test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
   )
   debug_inspect(
     @post_process.msaa_writeback_required(
-      Some(@post_process.MsaaWriteback::Auto),
+      Some(Auto),
       4,
       sorted_camera_index_for_target=0,
     ),
@@ -70,7 +70,7 @@ test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
   )
   debug_inspect(
     @post_process.msaa_writeback_required(
-      Some(@post_process.MsaaWriteback::Auto),
+      Some(Auto),
       4,
       sorted_camera_index_for_target=1,
     ),
@@ -78,7 +78,7 @@ test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
   )
   debug_inspect(
     @post_process.msaa_writeback_required(
-      Some(@post_process.MsaaWriteback::Always),
+      Some(Always),
       1,
       sorted_camera_index_for_target=0,
     ),
@@ -86,7 +86,7 @@ test "post_process msaa writeback mirrors Bevy Off Auto Always semantics" {
   )
   debug_inspect(
     @post_process.msaa_writeback_required(
-      Some(@post_process.MsaaWriteback::Always),
+      Some(Always),
       4,
       sorted_camera_index_for_target=0,
     ),
@@ -114,11 +114,7 @@ test "post_process plugin owns Bloom Hdr required component" {
   )
   let world = app.world()
   let entity = world.spawn()
-  try! world.set_by_key(
-    entity,
-    @post_process.ecs_key_bloom,
-    @post_process.Bloom::Bloom(),
-  )
+  try! world.set_by_key(entity, @post_process.ecs_key_bloom, Bloom())
   debug_inspect(
     (try! world.get_by_key(entity, @camera_hdr.ecs_key_hdr)) is Some(_),
     content="true",

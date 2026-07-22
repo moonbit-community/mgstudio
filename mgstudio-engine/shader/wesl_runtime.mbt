@@ -26,7 +26,7 @@ fn shader_runtime_load_module(
   match source {
     Wgsl(text) => text
     SpirV(_) =>
-      raise ShaderCacheError::CreateShaderModule(
+      raise CreateShaderModule(
         "runtime wesl registration does not support spirv modules",
       )
   }
@@ -148,7 +148,7 @@ pub fn shader_runtime_loaded_wgsl_sources(
   let shader_assets = shader_assets_or_abort(world)
   let shader_paths = shader_asset_paths_or_abort(world)
   let sources : Array[(String, String)] = []
-  let visited : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let visited : @hashset.HashSet[Int] = HashSet([])
   for entry in shader_paths.entries {
     let canonical_path = entry.0
     let handle = entry.1
@@ -212,7 +212,7 @@ fn shader_runtime_push_wgsl_source_closure(
   guard shader_assets.get(handle) is Some(shader) else { return }
   let source_path = if shader.path == "" { fallback_path } else { shader.path }
   match shader.source {
-    Source::Wgsl(source) =>
+    Wgsl(source) =>
       sources.push(
         (
           @asset.asset_canonical_path(source_path),
@@ -300,25 +300,25 @@ pub fn shader_runtime_load_wgsl_sources(
     }
   }
   match shader.source {
-    Source::Wgsl(_) => {
+    Wgsl(_) => {
       shader_runtime_cache_sync_loaded_assets(world)
       let sources : Array[(String, String)] = []
       shader_runtime_push_wgsl_source_closure(
         shader_assets,
         handle,
         path,
-        @hashset.HashSet([]),
+        HashSet([]),
         sources,
       )
       sources
     }
-    Source::Wesl(_) =>
+    Wesl(_) =>
       abort("shader_runtime_load_wgsl_sources received a WESL asset: \{path}")
-    Source::Glsl(_, _) =>
+    Glsl(_, _) =>
       abort(
         "shader_runtime_load_wgsl_sources only supports WGSL assets: \{path}",
       )
-    Source::SpirV(_) =>
+    SpirV(_) =>
       abort(
         "shader_runtime_load_wgsl_sources only supports WGSL assets: \{path}",
       )

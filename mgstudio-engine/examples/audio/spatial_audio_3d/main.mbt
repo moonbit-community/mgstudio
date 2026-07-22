@@ -54,10 +54,10 @@ let spatial_audio_3d_state : Ref[SpatialAudio3dState] = Ref({
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, update_positions)
-  .add_systems_world(@app.Update, update_listener)
-  .add_systems_world(@app.Update, mute)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, update_positions)
+  .add_systems_world(Update, update_listener)
+  .add_systems_world(Update, mute)
   .run()
 }
 
@@ -167,13 +167,11 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  try! world.set_by_key(root, @ui.ecs_key_ui_root, @ui.UiRoot::UiRoot())
+  try! world.set_by_key(root, @ui.ecs_key_ui_root, UiRoot())
   try! world.set_by_key(
     root,
     @ui.ecs_key_node,
-    @ui.Node::Node()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
+    @ui.Node::Node().with_width(Percent(100.0F)).with_height(Percent(100.0F)),
   )
 
   let text_entity = world.spawn_empty()
@@ -186,9 +184,9 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
     text_entity,
     @ui.ecs_key_node,
     @ui.Node::Node()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_bottom(@ui.Val::Px(12.0F)),
+    .with_position_type(Absolute)
+    .with_left(Px(12.0F))
+    .with_bottom(Px(12.0F)),
   )
   try! world.set_by_key(
     text_entity,
@@ -208,7 +206,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   try! world.set_by_key(
     text_entity,
     @text.ecs_key_text_layout,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    @text.TextLayout::new_with_justify(Left),
   )
 }
 
@@ -311,7 +309,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+    DirectionalLight(),
   )
   try! world.set_by_key(
     light,
@@ -327,7 +325,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -341,7 +339,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn update_positions(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Space) {
+  if @input.key_just_pressed(Space) {
     spatial_audio_3d_state.val.emitter_stopwatch = toggle_stopwatch(
       spatial_audio_3d_state.val.emitter_stopwatch,
     )
@@ -371,16 +369,16 @@ fn update_positions(world : @ecs.World) -> Unit {
 ///|
 fn update_listener(world : @ecs.World) -> Unit {
   let delta = LISTENER_SPEED * world_time(world).delta_seconds()
-  let dx = if @input.key_pressed(@window.KeyCode::ArrowRight) {
+  let dx = if @input.key_pressed(ArrowRight) {
     delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  } else if @input.key_pressed(ArrowLeft) {
     -delta
   } else {
     0.0F
   }
-  let dz = if @input.key_pressed(@window.KeyCode::ArrowDown) {
+  let dz = if @input.key_pressed(ArrowDown) {
     delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowUp) {
+  } else if @input.key_pressed(ArrowUp) {
     -delta
   } else {
     0.0F
@@ -405,7 +403,7 @@ fn update_listener(world : @ecs.World) -> Unit {
 
 ///|
 fn mute(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::KeyM) {
+  if !@input.key_just_pressed(KeyM) {
     return
   }
 

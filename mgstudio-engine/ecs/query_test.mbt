@@ -352,8 +352,8 @@ test "ecs query: query1 view and for_each" {
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e1, comp_position, Position::{ x: 1, y: 2 })
-  try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 6 })
+  try! world.set_by_key(e1, comp_position, { x: 1, y: 2 })
+  try! world.set_by_key(e2, comp_position, { x: 4, y: 6 })
 
   let sum_ref : Ref[Int] = Ref(0)
   let read_query : Query[Read[Position], All] = query(world)
@@ -393,7 +393,7 @@ test "ecs query: single returns only for exactly one match" {
   let position_query : Query[Read[Position], All] = query(world)
   debug_inspect(comp_option_value(try! position_query.single()), content="None")
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
+  try! world.set_by_key(e0, comp_position, { x: 5, y: 8 })
   let all_position_query : Query[Read[Position], All] = query_filtered(
     world,
     All::new(),
@@ -403,10 +403,10 @@ test "ecs query: single returns only for exactly one match" {
     content="Some({ x: 5, y: 8 })",
   )
 
-  try! world.set_by_key(e1, comp_position, Position::{ x: 13, y: 21 })
+  try! world.set_by_key(e1, comp_position, { x: 13, y: 21 })
   debug_inspect(comp_option_value(try! position_query.single()), content="None")
 
-  try! world.set_by_key(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
+  try! world.set_by_key(e0, comp_velocity, { dx: 1, dy: 1 })
   let with_velocity_query : Query[Read[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
@@ -416,7 +416,7 @@ test "ecs query: single returns only for exactly one match" {
     content="Some({ x: 5, y: 8 })",
   )
 
-  try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 2, dy: 3 })
+  try! world.set_by_key(e1, comp_velocity, { dx: 2, dy: 3 })
   debug_inspect(
     comp_option_value(try! with_velocity_query.single()),
     content="None",
@@ -434,20 +434,11 @@ test "ecs query: query2 view intersection and for_each" {
   let e_only_velocity0 = world.spawn()
   let e_only_velocity1 = world.spawn()
 
-  try! world.set_by_key(e_match, comp_position, Position::{ x: 3, y: 5 })
-  try! world.set_by_key(e_match, comp_velocity, Velocity::{ dx: 7, dy: 11 })
-  try! world.set_by_key(e_only_position, comp_position, Position::{
-    x: 100,
-    y: 200,
-  })
-  try! world.set_by_key(e_only_velocity0, comp_velocity, Velocity::{
-    dx: 1,
-    dy: 2,
-  })
-  try! world.set_by_key(e_only_velocity1, comp_velocity, Velocity::{
-    dx: 9,
-    dy: 10,
-  })
+  try! world.set_by_key(e_match, comp_position, { x: 3, y: 5 })
+  try! world.set_by_key(e_match, comp_velocity, { dx: 7, dy: 11 })
+  try! world.set_by_key(e_only_position, comp_position, { x: 100, y: 200 })
+  try! world.set_by_key(e_only_velocity0, comp_velocity, { dx: 1, dy: 2 })
+  try! world.set_by_key(e_only_velocity1, comp_velocity, { dx: 9, dy: 10 })
 
   let hits_ref : Ref[Int] = Ref(0)
   let sum_ref : Ref[Int] = Ref(0)
@@ -510,14 +501,14 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e2, comp_position, Position::{ x: 3, y: 3 })
+  try! world.set_by_key(e0, comp_position, { x: 1, y: 1 })
+  try! world.set_by_key(e1, comp_position, { x: 2, y: 2 })
+  try! world.set_by_key(e2, comp_position, { x: 3, y: 3 })
 
-  try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 4, dy: 5 })
-  try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 6, dy: 7 })
+  try! world.set_by_key(e1, comp_velocity, { dx: 4, dy: 5 })
+  try! world.set_by_key(e2, comp_velocity, { dx: 6, dy: 7 })
 
-  try! world.set_by_key(e2, comp_accel, Acceleration::{ ax: 8, ay: 9 })
+  try! world.set_by_key(e2, comp_accel, { ax: 8, ay: 9 })
 
   let hits_ref : Ref[Int] = Ref(0)
   let score_ref : Ref[Int] = Ref(0)
@@ -630,12 +621,12 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
-  try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 4 })
-  try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
-  try! world.set_by_key(e2, comp_accel, Acceleration::{ ax: 6, ay: 6 })
+  try! world.set_by_key(e0, comp_position, { x: 1, y: 1 })
+  try! world.set_by_key(e1, comp_position, { x: 2, y: 2 })
+  try! world.set_by_key(e1, comp_velocity, { dx: 3, dy: 3 })
+  try! world.set_by_key(e2, comp_position, { x: 4, y: 4 })
+  try! world.set_by_key(e2, comp_velocity, { dx: 5, dy: 5 })
+  try! world.set_by_key(e2, comp_accel, { ax: 6, ay: 6 })
 
   let query : Query[Read[Position], (With[Velocity], Without[Acceleration])] = query_filtered(
     world,
@@ -696,7 +687,7 @@ test "ecs query: component ref exposes live component values" {
   )
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, comp_position, Position::{ x: 1, y: 2 })
+  try! world.set_by_key(entity, comp_position, { x: 1, y: 2 })
   let ctx1 = @core.SystemTickContext::new()
   ctx1.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(ctx1)
@@ -707,7 +698,7 @@ test "ecs query: component ref exposes live component values" {
   world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.update_by_key(entity, comp_position, fn(position) {
-      Position::{ x: position.x + 10, y: position.y + 20 }
+      { x: position.x + 10, y: position.y + 20 }
     }),
     content="true",
   )
@@ -727,9 +718,9 @@ test "ecs query: structural filters compose without change detection" {
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
+  try! world.set_by_key(e0, comp_position, { x: 1, y: 1 })
+  try! world.set_by_key(e1, comp_position, { x: 2, y: 2 })
+  try! world.set_by_key(e1, comp_velocity, { dx: 3, dy: 3 })
 
   let with_position_query : Query[Read[Position], With[Position]] = query_filtered(
     world,
@@ -749,7 +740,7 @@ test "ecs query: structural filters compose without change detection" {
   world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.update_by_key(e1, comp_position, fn(position) {
-      Position::{ x: position.x + 1, y: position.y + 1 }
+      { x: position.x + 1, y: position.y + 1 }
     }),
     content="true",
   )
@@ -770,7 +761,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
   let ctx0 = @core.SystemTickContext::new()
   ctx0.set(@core.SystemTicks::new(0, 1))
   world.set_tick_context(ctx0)
@@ -782,7 +773,7 @@ test "ecs query: added filter only matches entities inserted in the current tick
 
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
   let ctx1 = @core.SystemTickContext::new()
   ctx1.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(ctx1)
@@ -810,7 +801,7 @@ test "ecs query: Read exposes change detection metadata" {
   defer world.close()
   let entity = world.spawn()
 
-  try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(entity, position_key, { x: 1, y: 1 })
   world.increment_change_tick() |> ignore
 
   let first_ctx = @core.SystemTickContext::new()
@@ -830,7 +821,7 @@ test "ecs query: Read exposes change detection metadata" {
   world.increment_change_tick() |> ignore
   debug_inspect(
     try! world.update_by_key(entity, position_key, fn(position) {
-      Position::{ x: position.x + 5, y: position.y + 6 }
+      { x: position.x + 5, y: position.y + 6 }
     }),
     content="true",
   )
@@ -856,7 +847,7 @@ test "ecs query: ReadValue returns the value without change metadata" {
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, position_key, Position::{ x: 3, y: 5 })
+  try! world.set_by_key(entity, position_key, { x: 3, y: 5 })
 
   let query : Query[ReadValue[Position], All] = query(world)
   let position = try! query.require_single()
@@ -869,7 +860,7 @@ test "ecs query_state: default query filter cache invalidates on resource update
   let world = World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(entity, position_key, { x: 1, y: 1 })
   try! world.set_by_key(entity, ecs_key_disabled, Disabled::new())
 
   let state : QueryState[Read[Position], All] = world.query()
@@ -921,8 +912,8 @@ test "ecs query cache: archetype fast path keeps entity cache lazy" {
   defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
 
   let query : Query[Read[Position], All] = query_filtered_with_cache(
     world,
@@ -953,6 +944,7 @@ test "ecs query cache: archetype fast path keeps entity cache lazy" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs query cache: sparse entity-check path materializes entity cache" {
   let world = World::new()
   defer world.close()
@@ -980,14 +972,15 @@ test "ecs query cache: sparse entity-check path materializes entity cache" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs query cache: dense mode tracks matched tables cache" {
   let world = World::new()
   defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
   let e1 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
   try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
 
   let query : Query[Read[Position], All] = query_filtered_with_cache(
@@ -1011,8 +1004,8 @@ test "ecs query cache: table tick filter uses dense matched tables" {
   defer world.close()
   let e0 = world.spawn()
   let e1 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
 
   let tick_context = @core.SystemTickContext::new()
   tick_context.set(@core.SystemTicks::new(0, 1))
@@ -1031,6 +1024,7 @@ test "ecs query cache: table tick filter uses dense matched tables" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs query cache: sparse non-dense mode keeps matched tables cache empty" {
   let world = World::new()
   defer world.close()
@@ -1056,12 +1050,13 @@ test "ecs query cache: sparse non-dense mode keeps matched tables cache empty" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs query cache: optional sparse data disables dense mode" {
   let world = World::new()
   defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
   try! world.set_by_key(e0, sparse_tag_key, SparseTag::{  })
 
   let optional_query : Query[Optional[SparseTag], All] = query_filtered_with_cache(
@@ -1093,11 +1088,11 @@ test "ecs query cache: tuple data anchors choose minimal membership candidate" {
   let e1 = world.spawn()
   let e2 = world.spawn()
   let e3 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
-  try! world.set_by_key(e3, position_key, Position::{ x: 4, y: 4 })
-  try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 9, dy: 9 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e2, position_key, { x: 3, y: 3 })
+  try! world.set_by_key(e3, position_key, { x: 4, y: 4 })
+  try! world.set_by_key(e3, velocity_key, { dx: 9, dy: 9 })
 
   let query : Query[(Read[Position], Read[Velocity]), All] = query_filtered_with_cache(
     world,
@@ -1125,11 +1120,11 @@ test "ecs query cache: tuple filter anchors choose minimal membership candidate"
   let e1 = world.spawn()
   let e2 = world.spawn()
   let e3 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
-  try! world.set_by_key(e3, position_key, Position::{ x: 4, y: 4 })
-  try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 9, dy: 9 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e2, position_key, { x: 3, y: 3 })
+  try! world.set_by_key(e3, position_key, { x: 4, y: 4 })
+  try! world.set_by_key(e3, velocity_key, { dx: 9, dy: 9 })
 
   let query : Query[@core.Entity, (With[Position], With[Velocity])] = query_filtered_with_cache(
     world,
@@ -1156,10 +1151,10 @@ test "ecs query_state cache: dependency generation invalidates entity cache with
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 3 })
-  try! world.set_by_key(e2, velocity_key, Velocity::{ dx: 7, dy: 7 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e2, position_key, { x: 3, y: 3 })
+  try! world.set_by_key(e2, velocity_key, { dx: 7, dy: 7 })
 
   let state : QueryState[Read[Position], Without[Velocity]] = world.query_filtered(
     Without::new(velocity_key),
@@ -1185,7 +1180,7 @@ test "ecs query_state cache: dependency generation invalidates entity cache with
     .cache_snapshot()
     .cached_matching_archetype_generation()
 
-  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 8, dy: 8 })
+  try! world.set_by_key(e1, velocity_key, { dx: 8, dy: 8 })
 
   let combinations1 = state.iter_combinations(world)
   let pairs1 : Array[(Int, Int)] = []
@@ -1214,7 +1209,7 @@ test "ecs query_state cache: table tick-dependent filters stay dense across runs
   let world = World::new()
   defer world.close()
   let e0 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
 
   let ctx0 = @core.SystemTickContext::new()
   ctx0.set(@core.SystemTicks::new(0, 1))
@@ -1255,7 +1250,7 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
   let world = World::new()
   defer world.close()
   let e0 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
 
   let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="1")
@@ -1282,8 +1277,8 @@ test "ecs query_state cache: archetype matching updates incrementally and keeps 
   )
 
   let e1 = world.spawn()
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 3, dy: 3 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e1, velocity_key, { dx: 3, dy: 3 })
 
   debug_inspect(state.count(world), content="2")
   debug_inspect(
@@ -1311,7 +1306,7 @@ test "ecs query_state cache: archetype generation remains stable across non-empt
   let world = World::new()
   defer world.close()
   let e0 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
 
   let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="1")
@@ -1323,8 +1318,8 @@ test "ecs query_state cache: archetype generation remains stable across non-empt
     .cached_candidate_archetype_generation()
 
   let e1 = world.spawn()
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 3, dy: 3 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
+  try! world.set_by_key(e1, velocity_key, { dx: 3, dy: 3 })
   debug_inspect(state.count(world), content="2")
   let generation_after_new_archetype = state
     .cache_snapshot()
@@ -1354,12 +1349,13 @@ test "ecs query_state cache: archetype generation remains stable across non-empt
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs query_state cache: dense tables update incrementally on matching archetype additions" {
   let world = World::new()
   defer world.close()
   ensure_sparse_tag_metadata_registered()
   let e0 = world.spawn()
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 1 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 1 })
 
   let state : QueryState[Read[Position], All] = world.query()
   debug_inspect(state.count(world), content="1")
@@ -1372,7 +1368,7 @@ test "ecs query_state cache: dense tables update incrementally on matching arche
     .cached_matching_tables_generation()
 
   let e1 = world.spawn()
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 2 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 2 })
   try! world.set_by_key(e1, sparse_tag_key, SparseTag::{  })
 
   debug_inspect(state.count(world), content="2")
@@ -1469,11 +1465,11 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
-  try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 4 })
-  try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
+  try! world.set_by_key(e0, comp_position, { x: 1, y: 1 })
+  try! world.set_by_key(e1, comp_position, { x: 2, y: 2 })
+  try! world.set_by_key(e1, comp_velocity, { dx: 3, dy: 3 })
+  try! world.set_by_key(e2, comp_position, { x: 4, y: 4 })
+  try! world.set_by_key(e2, comp_velocity, { dx: 5, dy: 5 })
 
   let ctx = @core.SystemTickContext::new()
   ctx.set(@core.SystemTicks::new(0, 1))
@@ -1506,11 +1502,11 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 1, y: 1 })
-  try! world.set_by_key(e1, comp_position, Position::{ x: 2, y: 2 })
-  try! world.set_by_key(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
-  try! world.set_by_key(e2, comp_position, Position::{ x: 4, y: 4 })
-  try! world.set_by_key(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
+  try! world.set_by_key(e0, comp_position, { x: 1, y: 1 })
+  try! world.set_by_key(e1, comp_position, { x: 2, y: 2 })
+  try! world.set_by_key(e1, comp_velocity, { dx: 3, dy: 3 })
+  try! world.set_by_key(e2, comp_position, { x: 4, y: 4 })
+  try! world.set_by_key(e2, comp_velocity, { dx: 5, dy: 5 })
 
   let ctx = @core.SystemTickContext::new()
   ctx.set(@core.SystemTicks::new(0, 1))
@@ -1564,7 +1560,7 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   }
   debug_inspect(message0, content="\"Expected exactly one matching entity\"")
 
-  try! world.set_by_key(e0, comp_position, Position::{ x: 5, y: 8 })
+  try! world.set_by_key(e0, comp_position, { x: 5, y: 8 })
   debug_inspect(
     (try! (query_filtered(world, All::new()) : Query[Read[Position], All]).require_single()).value(),
     content="{ x: 5, y: 8 }",
@@ -1575,8 +1571,8 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
   debug_inspect(single_entity.id, content="0")
   debug_inspect(single_entity.generation, content="1")
 
-  try! world.set_by_key(e1, comp_position, Position::{ x: 13, y: 21 })
-  try! world.set_by_key(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
+  try! world.set_by_key(e1, comp_position, { x: 13, y: 21 })
+  try! world.set_by_key(e0, comp_velocity, { dx: 1, dy: 1 })
   let filtered_query : Query[Read[Position], With[Velocity]] = query_filtered(
     world,
     With::new(comp_velocity),
@@ -1603,14 +1599,8 @@ test "ecs query: generic query supports wrappers and disabled mentions" {
   let enabled = world.spawn()
   let disabled = world.spawn()
 
-  try! world.set_by_key(enabled, generic_position_key, GenericPosition::{
-    x: 1,
-    y: 2,
-  })
-  try! world.set_by_key(disabled, generic_position_key, GenericPosition::{
-    x: 3,
-    y: 4,
-  })
+  try! world.set_by_key(enabled, generic_position_key, { x: 1, y: 2 })
+  try! world.set_by_key(disabled, generic_position_key, { x: 3, y: 4 })
   try! world.set_by_key(disabled, ecs_key_disabled, Disabled::new())
 
   let entity_query : Query[@core.Entity, All] = query(world)
@@ -1651,6 +1641,7 @@ test "ecs query: generic query supports wrappers and disabled mentions" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "ecs query: generic query supports named reusable data, filters and iterators" {
   let world = World::new()
   defer world.close()
@@ -1658,22 +1649,10 @@ test "ecs query: generic query supports named reusable data, filters and iterato
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, generic_position_key, GenericPosition::{
-    x: 10,
-    y: 20,
-  })
-  try! world.set_by_key(e1, generic_position_key, GenericPosition::{
-    x: 30,
-    y: 40,
-  })
-  try! world.set_by_key(e2, generic_position_key, GenericPosition::{
-    x: 50,
-    y: 60,
-  })
-  try! world.set_by_key(e0, generic_velocity_key, GenericVelocity::{
-    dx: 1,
-    dy: 2,
-  })
+  try! world.set_by_key(e0, generic_position_key, { x: 10, y: 20 })
+  try! world.set_by_key(e1, generic_position_key, { x: 30, y: 40 })
+  try! world.set_by_key(e2, generic_position_key, { x: 50, y: 60 })
+  try! world.set_by_key(e0, generic_velocity_key, { dx: 1, dy: 2 })
   try! world.set_by_key(e0, generic_tag_key, GenericTag::{  })
   try! world.set_by_key(e1, generic_tag_key, GenericTag::{  })
   try! world.set_by_key(e1, ecs_key_disabled, Disabled::new())
@@ -1752,10 +1731,10 @@ test "ecs query: iter_combinations returns pairwise combinations in anchor order
   let e2 = world.spawn()
   let e3 = world.spawn()
 
-  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 10 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 20 })
-  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 30 })
-  try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 4, dy: 40 })
+  try! world.set_by_key(e0, position_key, { x: 1, y: 10 })
+  try! world.set_by_key(e1, position_key, { x: 2, y: 20 })
+  try! world.set_by_key(e2, position_key, { x: 3, y: 30 })
+  try! world.set_by_key(e3, velocity_key, { dx: 4, dy: 40 })
 
   let query : Query[Read[Position], All] = query(world)
   let combinations = query.iter_combinations()
@@ -1790,12 +1769,12 @@ test "ecs query: iter_combinations supports mut query data across distinct entit
   let e1 = world.spawn()
   let e2 = world.spawn()
 
-  try! world.set_by_key(e0, position_key, Position::{ x: 0, y: 0 })
-  try! world.set_by_key(e1, position_key, Position::{ x: 0, y: 0 })
-  try! world.set_by_key(e2, position_key, Position::{ x: 0, y: 0 })
-  try! world.set_by_key(e0, velocity_key, Velocity::{ dx: 1, dy: 0 })
-  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 2, dy: 0 })
-  try! world.set_by_key(e2, velocity_key, Velocity::{ dx: 3, dy: 0 })
+  try! world.set_by_key(e0, position_key, { x: 0, y: 0 })
+  try! world.set_by_key(e1, position_key, { x: 0, y: 0 })
+  try! world.set_by_key(e2, position_key, { x: 0, y: 0 })
+  try! world.set_by_key(e0, velocity_key, { dx: 1, dy: 0 })
+  try! world.set_by_key(e1, velocity_key, { dx: 2, dy: 0 })
+  try! world.set_by_key(e2, velocity_key, { dx: 3, dy: 0 })
 
   let query : Query[(Write[Position], Read[Velocity]), All] = query(world)
   let combinations = query.iter_combinations()

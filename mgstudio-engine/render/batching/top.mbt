@@ -19,6 +19,7 @@
 pub struct NoAutomaticBatching {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn NoAutomaticBatching::NoAutomaticBatching() -> NoAutomaticBatching {
   NoAutomaticBatching::{  }
 }
@@ -48,7 +49,7 @@ pub fn[T] BatchMeta::new(
   dynamic_offset : Int?,
   user_data : T,
 ) -> BatchMeta[T] {
-  BatchMeta::{ pipeline_id, draw_function_id, dynamic_offset, user_data }
+  { pipeline_id, draw_function_id, dynamic_offset, user_data }
 }
 
 ///|

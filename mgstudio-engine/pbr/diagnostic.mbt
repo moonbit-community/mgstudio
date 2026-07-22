@@ -52,7 +52,7 @@ pub struct Render3dDiagnosticsSnapshot {
 
 ///|
 pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Render3dDiagnosticsSnapshot {
-  Render3dDiagnosticsSnapshot::{
+  {
     prepared_camera_count: 0,
     queued_visible_mesh_count: 0,
     queue_cpu_ms: 0.0F,
@@ -64,7 +64,7 @@ pub fn Render3dDiagnosticsSnapshot::Render3dDiagnosticsSnapshot() -> Render3dDia
 pub fn render3d_diagnostics_snapshot(
   world : @ecs.World,
 ) -> Render3dDiagnosticsSnapshot {
-  Render3dDiagnosticsSnapshot::{
+  {
     prepared_camera_count: render3d_diagnostic_prepared_camera_count(world),
     queued_visible_mesh_count: render3d_diagnostic_queued_visible_mesh_count(
       world,
@@ -83,11 +83,7 @@ pub struct MaterialAllocatorDiagnosticsSnapshot {
 
 ///|
 pub fn MaterialAllocatorDiagnosticsSnapshot::MaterialAllocatorDiagnosticsSnapshot() -> MaterialAllocatorDiagnosticsSnapshot {
-  MaterialAllocatorDiagnosticsSnapshot::{
-    slabs: 0,
-    slabs_size: 0,
-    allocations: 0U,
-  }
+  { slabs: 0, slabs_size: 0, allocations: 0U }
 }
 
 ///|
@@ -116,7 +112,7 @@ pub fn render3d_material_allocator_snapshot_for_key(
 ) -> MaterialAllocatorDiagnosticsSnapshot? {
   match allocators.get(material_name) {
     Some(allocator) =>
-      Some(MaterialAllocatorDiagnosticsSnapshot::{
+      Some({
         slabs: allocator.slab_count(),
         slabs_size: allocator.slabs_size(),
         allocations: allocator.allocations(),

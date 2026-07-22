@@ -46,7 +46,7 @@ fn meshlet_buffer_slice_range_new(
 ) -> MeshletBufferSliceRange {
   let safe_start = if start < 0 { 0 } else { start }
   let safe_end = if end_ < safe_start { safe_start } else { end_ }
-  MeshletBufferSliceRange::{ start: safe_start, end_: safe_end }
+  { start: safe_start, end_: safe_end }
 }
 
 ///|
@@ -79,7 +79,7 @@ pub struct MeshletMeshManager {
 
 ///|
 pub fn MeshletMeshManager::MeshletMeshManager() -> MeshletMeshManager {
-  MeshletMeshManager::{
+  {
     vertex_positions: PersistentGpuBuffer::new(
       label="meshlet_vertex_positions",
       element_byte_size=MESHLET_U32_BYTE_SIZE,
@@ -132,7 +132,7 @@ fn meshlet_slice_to_persistent(
   } else {
     slice_range.end_
   }
-  PersistentBufferSliceRange::{ start: safe_start, end_: safe_end }
+  { start: safe_start, end_: safe_end }
 }
 
 ///|
@@ -305,7 +305,7 @@ fn MeshletMeshManager::gpu_buffer_payload(
   meshlet_push_meshlet_values(meshlets, self.meshlets.snapshot())
   meshlet_push_cull_data_values(cull_data, self.meshlet_cull_data.snapshot())
   let instance_payload = instance_manager.gpu_buffer_payload()
-  MeshletGpuBufferPayload::{
+  {
     vertex_positions: Bytes::from_array(vertex_positions),
     vertex_normals: Bytes::from_array(vertex_normals),
     vertex_uvs: Bytes::from_array(vertex_uvs),

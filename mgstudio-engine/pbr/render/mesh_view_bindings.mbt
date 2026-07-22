@@ -25,7 +25,7 @@ pub struct MeshViewBindings3d {
 
 ///|
 pub fn MeshViewBindings3d::MeshViewBindings3d() -> MeshViewBindings3d {
-  MeshViewBindings3d::{
+  {
     viewport: None,
     clear_enabled: true,
     logical_rect: (0.0F, 0.0F, 1.0F, 1.0F),
@@ -35,7 +35,7 @@ pub fn MeshViewBindings3d::MeshViewBindings3d() -> MeshViewBindings3d {
       @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
       @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
     ),
-    layout_key: @mesh_view_layout.MeshPipelineViewLayoutKey::MeshPipelineViewLayoutKey(),
+    layout_key: MeshPipelineViewLayoutKey(),
   }
 }
 
@@ -64,7 +64,7 @@ pub fn render3d_mesh_view_bindings(
       true,
     ) ==
     1
-  MeshViewBindings3d::{
+  {
     viewport: Some(viewport),
     clear_enabled,
     logical_rect,

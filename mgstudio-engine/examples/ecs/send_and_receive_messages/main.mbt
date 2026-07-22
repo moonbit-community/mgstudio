@@ -86,6 +86,7 @@ let debug_messages_after_local_cursor_set : @app.SystemSet = @app.system_set(
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 fn read_and_write_different_message_types(
   a : @ecs.MessageWriter[A],
   b : @ecs.MessageReader[B],
@@ -104,28 +105,28 @@ fn send_messages(
   println("Sending messages for frame \{frame_count.get().value}")
 
   ignore(
-    debug_messages.write(DebugMessage::{
+    debug_messages.write({
       resend_from_param_set: false,
       resend_from_local_message_reader: false,
       times_sent: 1,
     }),
   )
   ignore(
-    debug_messages.write(DebugMessage::{
+    debug_messages.write({
       resend_from_param_set: true,
       resend_from_local_message_reader: false,
       times_sent: 1,
     }),
   )
   ignore(
-    debug_messages.write(DebugMessage::{
+    debug_messages.write({
       resend_from_param_set: false,
       resend_from_local_message_reader: true,
       times_sent: 1,
     }),
   )
   ignore(
-    debug_messages.write(DebugMessage::{
+    debug_messages.write({
       resend_from_param_set: true,
       resend_from_local_message_reader: true,
       times_sent: 1,
@@ -163,7 +164,7 @@ fn send_and_receive_param_set(
     ignore(
       param_set
       .p1()
-      .write(DebugMessage::{
+      .write({
         resend_from_param_set: message.resend_from_param_set,
         resend_from_local_message_reader: message.resend_from_local_message_reader,
         times_sent: message.times_sent + 1,
@@ -191,7 +192,7 @@ fn send_and_receive_manual_message_reader(
 
   for message in messages_to_resend {
     ignore(
-      messages.write(DebugMessage::{
+      messages.write({
         resend_from_param_set: message.resend_from_param_set,
         resend_from_local_message_reader: message.resend_from_local_message_reader,
         times_sent: message.times_sent + 1,
@@ -208,54 +209,54 @@ fn main {
     .add_message(debug_message_key)
     .add_message(a_key)
     .add_message(b_key)
-    .add_systems_param2(@app.Update, read_and_write_different_message_types)
+    .add_systems_param2(Update, read_and_write_different_message_types)
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param2(send_messages).in_set(send_messages_set),
     )
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param(debug_messages).in_set(
         debug_messages_before_param_set,
       ),
     )
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param2(send_and_receive_param_set).in_set(
         send_and_receive_param_set_set,
       ),
     )
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param(debug_messages).in_set(
         debug_messages_before_local_cursor_set,
       ),
     )
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param3(send_and_receive_manual_message_reader).in_set(
         send_and_receive_manual_reader_set,
       ),
     )
     .add_systems(
-      @app.Update,
+      Update,
       @app.system_config_param(debug_messages).in_set(
         debug_messages_after_local_cursor_set,
       ),
     )
-    .configure_set(@app.Update, send_messages_set, before=[
+    .configure_set(Update, send_messages_set, before=[
       debug_messages_before_param_set,
     ])
-    .configure_set(@app.Update, debug_messages_before_param_set, before=[
+    .configure_set(Update, debug_messages_before_param_set, before=[
       send_and_receive_param_set_set,
     ])
-    .configure_set(@app.Update, send_and_receive_param_set_set, before=[
+    .configure_set(Update, send_and_receive_param_set_set, before=[
       debug_messages_before_local_cursor_set,
     ])
-    .configure_set(@app.Update, debug_messages_before_local_cursor_set, before=[
+    .configure_set(Update, debug_messages_before_local_cursor_set, before=[
       send_and_receive_manual_reader_set,
     ])
-    .configure_set(@app.Update, send_and_receive_manual_reader_set, before=[
+    .configure_set(Update, send_and_receive_manual_reader_set, before=[
       debug_messages_after_local_cursor_set,
     ])
 

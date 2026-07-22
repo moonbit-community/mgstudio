@@ -22,7 +22,7 @@ pub(all) enum TrackClick {
 
 ///|
 pub fn TrackClick::default() -> TrackClick {
-  TrackClick::Drag
+  Drag
 }
 
 ///|
@@ -32,7 +32,7 @@ pub struct Slider {
 
 ///|
 pub fn Slider::Slider() -> Slider {
-  Slider::{ track_click: TrackClick::default() }
+  { track_click: TrackClick::default() }
 }
 
 ///|
@@ -41,13 +41,14 @@ pub fn Slider::with_track_click(
   track_click : TrackClick,
 ) -> Slider {
   ignore(self)
-  Slider::{ track_click, }
+  { track_click, }
 }
 
 ///|
 pub struct SliderThumb {} derive(ToJson, FromJson)
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn SliderThumb::SliderThumb() -> SliderThumb {
   SliderThumb::{  }
 }
@@ -59,12 +60,12 @@ pub struct SliderValue {
 
 ///|
 pub fn SliderValue::SliderValue() -> SliderValue {
-  SliderValue::{ value: 0.0F }
+  { value: 0.0F }
 }
 
 ///|
 pub fn SliderValue::new(value : Float) -> SliderValue {
-  SliderValue::{ value, }
+  { value, }
 }
 
 ///|
@@ -80,12 +81,12 @@ pub struct SliderRange {
 
 ///|
 pub fn SliderRange::SliderRange() -> SliderRange {
-  SliderRange::{ start: 0.0F, end: 1.0F }
+  { start: 0.0F, end: 1.0F }
 }
 
 ///|
 pub fn SliderRange::new(start : Float, end : Float) -> SliderRange {
-  SliderRange::{ start, end }
+  { start, end }
 }
 
 ///|
@@ -129,12 +130,12 @@ pub struct SliderStep {
 
 ///|
 pub fn SliderStep::SliderStep() -> SliderStep {
-  SliderStep::{ value: 1.0F }
+  { value: 1.0F }
 }
 
 ///|
 pub fn SliderStep::new(value : Float) -> SliderStep {
-  SliderStep::{ value, }
+  { value, }
 }
 
 ///|
@@ -155,12 +156,12 @@ pub struct SliderDragState {
 
 ///|
 pub fn SliderPrecision::SliderPrecision() -> SliderPrecision {
-  SliderPrecision::{ digits: 0 }
+  { digits: 0 }
 }
 
 ///|
 pub fn SliderPrecision::new(digits : Int) -> SliderPrecision {
-  SliderPrecision::{ digits, }
+  { digits, }
 }
 
 ///|
@@ -171,7 +172,7 @@ pub fn SliderPrecision::round(self : SliderPrecision, value : Float) -> Float {
 
 ///|
 pub fn SliderDragState::SliderDragState() -> SliderDragState {
-  SliderDragState::{ dragging: false, offset: 0.0F }
+  { dragging: false, offset: 0.0F }
 }
 
 ///|
@@ -275,7 +276,7 @@ pub impl @ecs.TriggerEvent for SetSliderValue with fn set_observer_entity(
   self,
   entity,
 ) {
-  SetSliderValue::{ entity, value: self.value }
+  { entity, value: self.value }
 }
 
 ///|
@@ -313,14 +314,14 @@ fn slider_value_from_pointer(
     range.center()
   }
   let stepped = match slider.track_click {
-    TrackClick::Step =>
+    Step =>
       if raw_click_value < current_value {
         current_value - step.value()
       } else {
         current_value + step.value()
       }
-    TrackClick::Drag => raw_click_value
-    TrackClick::Snap => raw_click_value
+    Drag => raw_click_value
+    Snap => raw_click_value
   }
   let rounded = match precision {
     Some(precision_comp) => precision_comp.round(stepped)
@@ -355,7 +356,7 @@ fn slider_on_pointer_down(
     slider_comp.value(),
     range_comp.value().start(),
     range_comp.value(),
-    SliderStep::SliderStep(),
+    SliderStep(),
     None,
     layout_comp.value(),
     pointer.position(),
@@ -389,7 +390,7 @@ fn slider_on_pointer_click(
     slider_comp.value(),
     range_comp.value().start(),
     range_comp.value(),
-    SliderStep::SliderStep(),
+    SliderStep(),
     None,
     layout_comp.value(),
     pointer.position(),
@@ -436,10 +437,7 @@ fn slider_on_drag_start(
   if disabled.present() {
     return
   }
-  drag_state.set(SliderDragState::{
-    dragging: true,
-    offset: value_comp.value().value(),
-  })
+  drag_state.set({ dragging: true, offset: value_comp.value().value() })
 }
 
 ///|
@@ -560,7 +558,7 @@ fn slider_on_drag_end(
     )
   }
   if drag_state.dragging {
-    drag_state_mut.set(SliderDragState::{ ..drag_state, dragging: false })
+    drag_state_mut.set({ ..drag_state, dragging: false })
   }
   commands.entity(entity).remove_component(ecs_key_pressed)
 }
@@ -594,13 +592,13 @@ fn slider_on_key_input(
     Some(value) => value.value().value()
     None => range.start()
   }
-  let step_direction = if keyboard.just_pressed(@window.KeyCode::ArrowLeft) ||
-    keyboard.just_pressed(@window.KeyCode::ArrowDown) ||
-    keyboard.just_pressed(@window.KeyCode::PageDown) {
+  let step_direction = if keyboard.just_pressed(ArrowLeft) ||
+    keyboard.just_pressed(ArrowDown) ||
+    keyboard.just_pressed(PageDown) {
     -step
-  } else if keyboard.just_pressed(@window.KeyCode::ArrowRight) ||
-    keyboard.just_pressed(@window.KeyCode::ArrowUp) ||
-    keyboard.just_pressed(@window.KeyCode::PageUp) {
+  } else if keyboard.just_pressed(ArrowRight) ||
+    keyboard.just_pressed(ArrowUp) ||
+    keyboard.just_pressed(PageUp) {
     step
   } else {
     0.0F
@@ -668,25 +666,25 @@ pub fn slider_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .register_required_components_with(
     ecs_key_slider,
     ecs_key_slider_drag_state,
-    fn() { SliderDragState::SliderDragState() },
+    fn() { SliderDragState() },
   )
   try! app
   .world()
   .register_required_components_with(ecs_key_slider, ecs_key_slider_value, fn() {
-    SliderValue::SliderValue()
+    SliderValue()
   })
   try! app
   .world()
   .register_required_components_with(ecs_key_slider, ecs_key_slider_range, fn() {
-    SliderRange::SliderRange()
+    SliderRange()
   })
   try! app
   .world()
   .register_required_components_with(ecs_key_slider, ecs_key_slider_step, fn() {
-    SliderStep::SliderStep()
+    SliderStep()
   })
   app
-  .add_systems(@app.Update, @app.system_config_param4(slider_on_key_input))
+  .add_systems(Update, @app.system_config_param4(slider_on_key_input))
   .add_pointer_observer3(slider_on_pointer_down)
   .add_pointer_observer3(slider_on_pointer_click)
   .add_pointer_observer3(slider_on_pointer_up)

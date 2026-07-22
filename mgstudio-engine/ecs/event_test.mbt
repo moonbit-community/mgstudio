@@ -30,13 +30,13 @@ test "ecs event: read includes previous and current frame" {
     debug_name="runtime_event",
   )
 
-  world.send_event(event_runtime, RuntimeEvent::{ value: 1 })
+  world.send_event(event_runtime, { value: 1 })
   debug_inspect(world.read_events(event_runtime), content="[{ value: 1 }]")
 
   world.advance_event_frame()
   debug_inspect(world.read_events(event_runtime), content="[{ value: 1 }]")
 
-  world.send_event(event_runtime, RuntimeEvent::{ value: 2 })
+  world.send_event(event_runtime, { value: 2 })
   debug_inspect(
     world.read_events(event_runtime),
     content="[{ value: 1 }, { value: 2 }]",
@@ -57,9 +57,9 @@ test "ecs event: clear removes both previous and current queues" {
     debug_name="runtime_event_clear",
   )
 
-  world.send_event(event_runtime, RuntimeEvent::{ value: 1 })
+  world.send_event(event_runtime, { value: 1 })
   world.advance_event_frame()
-  world.send_event(event_runtime, RuntimeEvent::{ value: 2 })
+  world.send_event(event_runtime, { value: 2 })
   world.clear_events(event_runtime)
 
   debug_inspect(world.read_events(event_runtime), content="[]")
@@ -76,8 +76,8 @@ test "ecs event: typed keys keep queues isolated" {
     debug_name="broken_event_isolated",
   )
 
-  world.send_event(event_runtime, RuntimeEvent::{ value: 9 })
-  world.send_event(event_broken, BrokenEvent::{ value: "broken" })
+  world.send_event(event_runtime, { value: 9 })
+  world.send_event(event_broken, { value: "broken" })
 
   debug_inspect(world.read_events(event_runtime), content="[{ value: 9 }]")
   debug_inspect(

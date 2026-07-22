@@ -19,6 +19,7 @@ fn atmosphere_collect_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 fn atmosphere_collect_insert_primary_window(
   world : @ecs.World,
   width : Int,
@@ -54,7 +55,7 @@ fn atmosphere_collect_attach_render_atmosphere_payload(
   try! (render_world.set_by_key(
     render_entity,
     @pbr_atmosphere.ecs_key_extracted_atmosphere,
-    @pbr_atmosphere.ExtractedAtmosphere::ExtractedAtmosphere(
+    ExtractedAtmosphere(
       atmosphere.inner_radius,
       atmosphere.outer_radius,
       atmosphere.ground_albedo,
@@ -78,11 +79,7 @@ test "render3d collect cameras: volumetric fog depth usage is prepared from rend
   defer source_world.close()
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
   let camera_entity = source_world.spawn()
-  try! (source_world.set_by_key(
-    camera_entity,
-    ecs_key_camera3d,
-    Camera3d::Camera3d(),
-  )
+  try! (source_world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d())
   |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
@@ -115,7 +112,7 @@ test "render3d collect cameras: volumetric fog depth usage is prepared from rend
   try! (render_world.set_by_key(
     render_view,
     ecs_key_volumetric_fog,
-    VolumetricFog::VolumetricFog(),
+    VolumetricFog(),
   )
   |> ignore)
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
@@ -129,7 +126,7 @@ test "render3d collect cameras: volumetric fog depth usage is prepared from rend
         false,
         false,
         true,
-        OpaqueRendererMethod::Forward,
+        Forward,
       )
     },
   )
@@ -173,11 +170,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  try! (source_world.set_by_key(
-    camera_entity,
-    ecs_key_camera3d,
-    Camera3d::Camera3d(),
-  )
+  try! (source_world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d())
   |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
@@ -204,7 +197,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
   try! (source_world.set_by_key(
     camera_entity,
     ecs_key_atmosphere_settings,
-    AtmosphereSettings::AtmosphereSettings(),
+    AtmosphereSettings(),
   )
   |> ignore)
 
@@ -217,7 +210,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
       camera_entity,
       atmosphere,
       @transform.GlobalTransform::from_transform(atmosphere_transform),
-      AtmosphereSettings::AtmosphereSettings(),
+      AtmosphereSettings(),
     ),
   )
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
@@ -231,7 +224,7 @@ test "render3d collect cameras: atmosphere example keeps Bevy camera and planet 
         false,
         false,
         true,
-        OpaqueRendererMethod::Forward,
+        Forward,
       )
     },
   )
@@ -297,11 +290,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  try! (source_world.set_by_key(
-    camera_entity,
-    ecs_key_camera3d,
-    Camera3d::Camera3d(),
-  )
+  try! (source_world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d())
   |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
@@ -328,7 +317,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
   try! (source_world.set_by_key(
     camera_entity,
     ecs_key_atmosphere_settings,
-    AtmosphereSettings::AtmosphereSettings(),
+    AtmosphereSettings(),
   )
   |> ignore)
 
@@ -344,7 +333,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
       camera_entity,
       atmosphere,
       atmosphere_global_transform,
-      AtmosphereSettings::AtmosphereSettings(),
+      AtmosphereSettings(),
     ),
   )
   let cameras = @pbr_render.render3d_world_transform_cache_mut(render_world).modify(fn(
@@ -358,7 +347,7 @@ test "render3d collect cameras: atmosphere default transform follows Bevy on_add
         false,
         false,
         true,
-        OpaqueRendererMethod::Forward,
+        Forward,
       )
     },
   )
@@ -383,11 +372,7 @@ test "render3d collect cameras: default deferred method enables deferred prepass
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
 
   let camera_entity = source_world.spawn()
-  try! (source_world.set_by_key(
-    camera_entity,
-    ecs_key_camera3d,
-    Camera3d::Camera3d(),
-  )
+  try! (source_world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d())
   |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
@@ -429,7 +414,7 @@ test "render3d collect cameras: default deferred method enables deferred prepass
         false,
         false,
         true,
-        OpaqueRendererMethod::Deferred,
+        Deferred,
       )
     },
   )
@@ -446,11 +431,7 @@ test "render3d collect cameras: Bevy component requirements enable prepass views
   atmosphere_collect_insert_primary_window(source_world, 1280, 720)
 
   let camera_entity = source_world.spawn()
-  try! (source_world.set_by_key(
-    camera_entity,
-    ecs_key_camera3d,
-    Camera3d::Camera3d(),
-  )
+  try! (source_world.set_by_key(camera_entity, ecs_key_camera3d, Camera3d())
   |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
@@ -467,21 +448,20 @@ test "render3d collect cameras: Bevy component requirements enable prepass views
   try! (source_world.set_by_key(
     camera_entity,
     @post_process.ScreenSpaceReflections::component(),
-    @post_process.ScreenSpaceReflections::ScreenSpaceReflections(),
+    ScreenSpaceReflections(),
   )
   |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
     @post_process.ScreenSpaceAmbientOcclusion::component(),
-    @post_process.ScreenSpaceAmbientOcclusion::ScreenSpaceAmbientOcclusion(),
+    ScreenSpaceAmbientOcclusion(),
   )
   |> ignore)
-  try! (source_world.set_by_key(camera_entity, ecs_key_msaa, Msaa::Off)
-  |> ignore)
+  try! (source_world.set_by_key(camera_entity, ecs_key_msaa, Off) |> ignore)
   try! (source_world.set_by_key(
     camera_entity,
     ecs_key_contact_shadows,
-    ContactShadows::ContactShadows(),
+    ContactShadows(),
   )
   |> ignore)
   let camera_transform = @transform.Transform::from_xyz(0.0F, 0.0F, 5.0F).looking_at(
@@ -512,7 +492,7 @@ test "render3d collect cameras: Bevy component requirements enable prepass views
         false,
         false,
         true,
-        OpaqueRendererMethod::Forward,
+        Forward,
       )
     },
   )

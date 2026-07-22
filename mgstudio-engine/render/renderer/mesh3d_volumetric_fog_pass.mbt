@@ -25,11 +25,7 @@ pub fn HostMesh3dVolumetricFogVolume::HostMesh3dVolumetricFogVolume(
   uniform_buffer_offset~ : UInt,
   exterior~ : Bool,
 ) -> HostMesh3dVolumetricFogVolume {
-  HostMesh3dVolumetricFogVolume::{
-    density_texture_id,
-    uniform_buffer_offset,
-    exterior,
-  }
+  { density_texture_id, uniform_buffer_offset, exterior }
 }
 
 ///|

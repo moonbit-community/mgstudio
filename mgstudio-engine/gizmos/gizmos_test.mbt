@@ -32,13 +32,14 @@ test "gizmos boundary re-exports configuration and plugin surface" {
 struct TestRoundGizmos {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn TestRoundGizmos::TestRoundGizmos() -> TestRoundGizmos {
   TestRoundGizmos::{  }
 }
 
 ///|
 impl Default for TestRoundGizmos with fn default() {
-  TestRoundGizmos::TestRoundGizmos()
+  TestRoundGizmos()
 }
 
 ///|
@@ -72,7 +73,7 @@ extenum @sprite.GizmoConfigGroupCell += {
 
 ///|
 impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn new_gizmo_config_group_cell() {
-  TestRoundGizmosCell(Ref(TestRoundGizmos::TestRoundGizmos()))
+  TestRoundGizmosCell(Ref(TestRoundGizmos()))
 }
 
 ///|
@@ -94,7 +95,7 @@ test "custom gizmo groups expose config through store and system param" {
     @app.App::new(lifecycle_world_86_0),
     TestRoundGizmos::TestRoundGizmos(),
   ).add_systems(
-    @app.Update,
+    Update,
     @app.system_config_param(fn(gizmos : @gizmos.Gizmos[TestRoundGizmos]) {
       seen_width.val = gizmos.config().line.width
     }),

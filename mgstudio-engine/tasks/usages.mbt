@@ -46,9 +46,7 @@ let task_pool_runtime_state : TaskPoolRuntimeState = {
 ///|
 pub fn ComputeTaskPool::get_or_init(init : () -> TaskPool) -> ComputeTaskPool {
   if task_pool_runtime_state.compute_task_pool is None {
-    task_pool_runtime_state.compute_task_pool = Some(ComputeTaskPool::{
-      pool: init(),
-    })
+    task_pool_runtime_state.compute_task_pool = Some({ pool: init() })
   }
   task_pool_runtime_state.compute_task_pool.unwrap()
 }
@@ -76,9 +74,7 @@ pub fn AsyncComputeTaskPool::get_or_init(
   init : () -> TaskPool,
 ) -> AsyncComputeTaskPool {
   if task_pool_runtime_state.async_compute_task_pool is None {
-    task_pool_runtime_state.async_compute_task_pool = Some(AsyncComputeTaskPool::{
-      pool: init(),
-    })
+    task_pool_runtime_state.async_compute_task_pool = Some({ pool: init() })
   }
   task_pool_runtime_state.async_compute_task_pool.unwrap()
 }
@@ -104,7 +100,7 @@ pub fn AsyncComputeTaskPool::task_pool(self : AsyncComputeTaskPool) -> TaskPool 
 ///|
 pub fn IoTaskPool::get_or_init(init : () -> TaskPool) -> IoTaskPool {
   if task_pool_runtime_state.io_task_pool is None {
-    task_pool_runtime_state.io_task_pool = Some(IoTaskPool::{ pool: init() })
+    task_pool_runtime_state.io_task_pool = Some({ pool: init() })
   }
   task_pool_runtime_state.io_task_pool.unwrap()
 }

@@ -127,7 +127,7 @@ fn setup_environment(
   ignore(
     commands.spawn(
       @camera.Camera3dBundle::new(
-        @camera_camera.Camera::Camera(),
+        Camera(),
         @transform.Transform::from_xyz(100.0F, 100.0F, 150.0F).looking_at(
           @math.Vec3::new(0.0F, 20.0F, 0.0F),
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -140,7 +140,7 @@ fn setup_environment(
     commands.spawn(
       (
         @transform.Transform::from_rotation(
-          @math.Quat::from_euler(@math.EulerRot::ZYX, 0.0F, 1.0F, -0.7853982F),
+          @math.Quat::from_euler(ZYX, 0.0F, 1.0F, -0.7853982F),
         ),
         @pbr.DirectionalLight::new(@color.Color::white(), 10000.0F, true),
       ),
@@ -186,6 +186,6 @@ fn play_animation_when_ready(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_param2(@app.Startup, setup_environment)
+  .add_systems_param2(Startup, setup_environment)
   .run()
 }

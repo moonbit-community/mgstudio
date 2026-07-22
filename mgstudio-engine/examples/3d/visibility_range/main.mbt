@@ -257,7 +257,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @camera.Camera3dBundle::new(
-    @camera_camera.Camera::Camera(),
+    Camera(),
     @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(CAMERA_FOCAL_X, CAMERA_FOCAL_Y, CAMERA_FOCAL_Z),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -288,11 +288,11 @@ fn setup(world : @ecs.World) -> Unit {
     )
     .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .with_layout(@text.TextLayout::new_with_justify(Left))
     .with_color(
       @text.TextColor::new(@color.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
-    .with_shadow(Some(@text.Text2dShadow::Text2dShadow()))
+    .with_shadow(Some(Text2dShadow()))
     .spawn()
   visibility_range_state.val.help_text = Some(help_text)
   update_help_text()
@@ -309,19 +309,15 @@ fn move_camera(world : @ecs.World) -> Unit {
   let mut zoom_delta = 0.0F
   let mut theta_delta = 0.0F
 
-  if @input.key_pressed(@window.KeyCode::KeyW) ||
-    @input.key_pressed(@window.KeyCode::ArrowUp) {
+  if @input.key_pressed(KeyW) || @input.key_pressed(ArrowUp) {
     zoom_delta = zoom_delta - CAMERA_KEYBOARD_ZOOM_SPEED
-  } else if @input.key_pressed(@window.KeyCode::KeyS) ||
-    @input.key_pressed(@window.KeyCode::ArrowDown) {
+  } else if @input.key_pressed(KeyS) || @input.key_pressed(ArrowDown) {
     zoom_delta = zoom_delta + CAMERA_KEYBOARD_ZOOM_SPEED
   }
 
-  if @input.key_pressed(@window.KeyCode::KeyA) ||
-    @input.key_pressed(@window.KeyCode::ArrowLeft) {
+  if @input.key_pressed(KeyA) || @input.key_pressed(ArrowLeft) {
     theta_delta = theta_delta - CAMERA_KEYBOARD_PAN_SPEED
-  } else if @input.key_pressed(@window.KeyCode::KeyD) ||
-    @input.key_pressed(@window.KeyCode::ArrowRight) {
+  } else if @input.key_pressed(KeyD) || @input.key_pressed(ArrowRight) {
     theta_delta = theta_delta + CAMERA_KEYBOARD_PAN_SPEED
   }
 
@@ -351,13 +347,13 @@ fn move_camera(world : @ecs.World) -> Unit {
 ///|
 fn update_mode() -> Unit {
   let mut changed = false
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
+  if @input.key_just_pressed(Digit1) {
     visibility_range_state.val.show_mode = SHOW_MODE_AUTO
     changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
+  } else if @input.key_just_pressed(Digit2) {
     visibility_range_state.val.show_mode = SHOW_MODE_HIGH
     changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
+  } else if @input.key_just_pressed(Digit3) {
     visibility_range_state.val.show_mode = SHOW_MODE_LOW
     changed = true
   }
@@ -368,28 +364,16 @@ fn update_mode() -> Unit {
 
 ///|
 fn toggle_prepass(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
+  if !@input.key_just_pressed(Space) {
     return
   }
   visibility_range_state.val.prepass_enabled = !visibility_range_state.val.prepass_enabled
 
   guard visibility_range_state.val.camera is Some(camera) else { return }
   if visibility_range_state.val.prepass_enabled {
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::DepthPrepass(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_depth_prepass,
-      @pbr.DepthPrepass::DepthPrepass(),
-    )
-    try! world.set_by_key(
-      camera,
-      @pbr.ecs_key_normal_prepass,
-      @pbr.NormalPrepass::NormalPrepass(),
-    )
+    try! world.set_by_key(camera, @pbr.ecs_key_depth_prepass, DepthPrepass())
+    try! world.set_by_key(camera, @pbr.ecs_key_depth_prepass, DepthPrepass())
+    try! world.set_by_key(camera, @pbr.ecs_key_normal_prepass, NormalPrepass())
   } else {
     try! (world.take(camera, @pbr.ecs_key_depth_prepass) |> ignore)
     try! (world.take(camera, @pbr.ecs_key_normal_prepass) |> ignore)
@@ -421,10 +405,10 @@ fn update_visibility(world : @ecs.World) -> Unit {
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.Update, move_camera)
-  .add_systems_fn(@app.Update, update_mode)
-  .add_systems_world(@app.Update, toggle_prepass)
-  .add_systems_world(@app.Update, update_visibility)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(Update, move_camera)
+  .add_systems_fn(Update, update_mode)
+  .add_systems_world(Update, toggle_prepass)
+  .add_systems_world(Update, update_visibility)
   .run()
 }

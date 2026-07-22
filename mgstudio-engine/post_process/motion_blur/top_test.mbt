@@ -68,7 +68,7 @@ test "motion blur: render resources skip inactive uniforms before GPU lookups" {
 test "motion blur: sample helper stays tied to component settings" {
   let disabled = motion_blur_generate_samples(MotionBlur::new(0.0F, 8U))
   inspect(disabled.length(), content="0")
-  let single = motion_blur_generate_samples(MotionBlur::MotionBlur())
+  let single = motion_blur_generate_samples(MotionBlur())
   inspect(single.length(), content="1")
   inspect(single[0].offset == 0.0F, content="true")
   inspect(single[0].weight == 1.0F, content="true")
@@ -93,7 +93,7 @@ test "motion blur: extract only writes uniforms for camera views" {
   try! world.set_by_key(
     camera_entity,
     @camera_camera.Camera::component(),
-    @camera_camera.Camera::Camera(),
+    Camera(),
   )
   try! world.set_by_key(
     camera_entity,
@@ -195,7 +195,7 @@ test "motion blur: prepare view depth texture usages adds texture binding" {
   try! world.set_by_key(
     entity,
     @camera_components3d.Camera3d::component(),
-    @camera_components3d.Camera3d::Camera3d(),
+    Camera3d(),
   )
   try! world.set_by_key(
     entity,

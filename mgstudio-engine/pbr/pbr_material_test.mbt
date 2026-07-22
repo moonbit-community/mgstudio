@@ -88,20 +88,14 @@ test "pbr material: auto opaque renderer method follows bevy diffuse transmissio
   let auto_deferred = standard_material_opaque_render_method(
     auto_material, deferred_default,
   )
-  inspect(
-    auto_deferred is @material.OpaqueRendererMethod::Deferred,
-    content="true",
-  )
+  inspect(auto_deferred is Deferred, content="true")
   let diffuse_transmissive_auto = @material.StandardMaterial::StandardMaterial().with_diffuse_transmission(
     0.5F,
   )
   let auto_forced_forward = standard_material_opaque_render_method(
     diffuse_transmissive_auto, deferred_default,
   )
-  inspect(
-    auto_forced_forward is @material.OpaqueRendererMethod::Forward,
-    content="true",
-  )
+  inspect(auto_forced_forward is Forward, content="true")
 }
 
 ///|
@@ -125,42 +119,36 @@ test "pbr material: reads_view_transmission_texture follows specular transmissio
 ///|
 test "pbr material: render phase type matches bevy ordering" {
   let transparent = @material.StandardMaterial::StandardMaterial()
-    .with_alpha_mode(@material.AlphaMode3d::Blend)
+    .with_alpha_mode(Blend)
     .with_specular_transmission(1.0F)
   let transmissive = @material.StandardMaterial::StandardMaterial().with_specular_transmission(
     1.0F,
   )
   let alpha_mask = @material.StandardMaterial::StandardMaterial().with_alpha_mode(
-    @material.AlphaMode3d::Mask(0.5F),
+    Mask(0.5F),
   )
   let opaque_material = @material.StandardMaterial::StandardMaterial()
   inspect(
-    standard_material_render_phase_type(transparent)
-    is @material.RenderPhaseType::Transparent,
+    standard_material_render_phase_type(transparent) is Transparent,
     content="true",
   )
   inspect(
-    standard_material_render_phase_type(transmissive)
-    is @material.RenderPhaseType::Transmissive,
+    standard_material_render_phase_type(transmissive) is Transmissive,
     content="true",
   )
   inspect(
-    standard_material_render_phase_type(alpha_mask)
-    is @material.RenderPhaseType::AlphaMask,
+    standard_material_render_phase_type(alpha_mask) is AlphaMask,
     content="true",
   )
   inspect(
-    standard_material_render_phase_type(opaque_material)
-    is @material.RenderPhaseType::Opaque,
+    standard_material_render_phase_type(opaque_material) is Opaque,
     content="true",
   )
 }
 
 ///|
 test "pbr material: standard material plugin plan mirrors material plugin build surface" {
-  let plan = standard_material_plugin_plan(
-    StandardMaterialPlugin::StandardMaterialPlugin(),
-  )
+  let plan = standard_material_plugin_plan(StandardMaterialPlugin())
   inspect(plan.prepass_enabled(), content="true")
   inspect(
     plan.debug_flags().allow_copies_from_indirect_parameters(),
@@ -276,7 +264,7 @@ test "pbr material: standard material uniform bytes match Bevy WGSL layout" {
     .with_clearcoat(0.125F)
     .with_clearcoat_perceptual_roughness(0.25F)
     .with_anisotropy_strength(0.5F)
-    .with_alpha_mode(@material.AlphaMode3d::Mask(0.375F))
+    .with_alpha_mode(Mask(0.375F))
   let uniform = standard_material_uniform_from_material(material, true)
   let bytes = uniform.to_bytes()
   inspect(bytes.length(), content="192")
@@ -373,79 +361,65 @@ test "pbr material: generic standard material bind group carries Bevy binding pa
     @asset.Handle::new(31),
     material,
     pbr_material_test_standard_material_pipeline(),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     context=pbr_material_test_all_standard_material_texture_features_context(),
   )
   let entries = prepared.bind_group_data().entries()
   inspect(entries.length(), content="31")
   match entries[0].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) =>
-      inspect(bytes.length(), content="192")
+    Uniform(bytes) => inspect(bytes.length(), content="192")
     _ => inspect(false, content="true")
   }
   match entries[1].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="11")
+    Texture(id) => inspect(id, content="11")
     _ => inspect(false, content="true")
   }
   match entries[2].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
-      inspect(id, content="11")
+    Sampler(id) => inspect(id, content="11")
     _ => inspect(false, content="true")
   }
   match entries[9].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="-1")
+    Texture(id) => inspect(id, content="-1")
     _ => inspect(false, content="true")
   }
   match entries[13].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="16")
+    Texture(id) => inspect(id, content="16")
     _ => inspect(false, content="true")
   }
   match entries[14].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
-      inspect(id, content="16")
+    Sampler(id) => inspect(id, content="16")
     _ => inspect(false, content="true")
   }
   match entries[15].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="20")
+    Texture(id) => inspect(id, content="20")
     _ => inspect(false, content="true")
   }
   match entries[17].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="21")
+    Texture(id) => inspect(id, content="21")
     _ => inspect(false, content="true")
   }
   match entries[19].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="22")
+    Texture(id) => inspect(id, content="22")
     _ => inspect(false, content="true")
   }
   match entries[21].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="17")
+    Texture(id) => inspect(id, content="17")
     _ => inspect(false, content="true")
   }
   match entries[25].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="19")
+    Texture(id) => inspect(id, content="19")
     _ => inspect(false, content="true")
   }
   match entries[27].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="23")
+    Texture(id) => inspect(id, content="23")
     _ => inspect(false, content="true")
   }
   match entries[29].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="24")
+    Texture(id) => inspect(id, content="24")
     _ => inspect(false, content="true")
   }
   match entries[30].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
-      inspect(id, content="24")
+    Sampler(id) => inspect(id, content="24")
     _ => inspect(false, content="true")
   }
 }
@@ -461,18 +435,16 @@ test "pbr material: default standard material bind group carries enabled feature
     @asset.Handle::new(32),
     material,
     pbr_material_test_standard_material_pipeline(),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   let entries = prepared.bind_group_data().entries()
   inspect(entries.length(), content="15")
   match entries[13].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Texture(id) =>
-      inspect(id, content="16")
+    Texture(id) => inspect(id, content="16")
     _ => inspect(false, content="true")
   }
   match entries[14].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Sampler(id) =>
-      inspect(id, content="16")
+    Sampler(id) => inspect(id, content="16")
     _ => inspect(false, content="true")
   }
 }
@@ -574,19 +546,18 @@ test "pbr material: generic standard material uniform flags carry enabled featur
 ///|
 fn pbr_material_test_prepared_standard_material_flags(
   material : @material.StandardMaterial,
-  context? : MaterialBindGroupContext = MaterialBindGroupContext::MaterialBindGroupContext(),
+  context? : MaterialBindGroupContext = MaterialBindGroupContext(),
 ) -> UInt {
   let prepared = PreparedMaterial::from_material(
     @asset.Handle::new(37),
     material,
     pbr_material_test_standard_material_pipeline(),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
     context~,
   )
   let entries = prepared.bind_group_data().entries()
   match entries[0].resource() {
-    @render_resource.MaterialBindGroupResolvedResource::Uniform(bytes) =>
-      pbr_material_test_u32le_word(bytes, 40)
+    Uniform(bytes) => pbr_material_test_u32le_word(bytes, 40)
     _ => abort("expected standard material uniform binding")
   }
 }
@@ -594,7 +565,7 @@ fn pbr_material_test_prepared_standard_material_flags(
 ///|
 fn pbr_material_test_all_standard_material_texture_features_context() -> MaterialBindGroupContext {
   MaterialBindGroupContext::MaterialBindGroupContext().with_standard_material_texture_features(
-    StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    StandardMaterialTextureFeatureSet(
       pbr_transmission_textures=true,
       pbr_multi_layer_material_textures=true,
       pbr_anisotropy_texture=true,
@@ -673,7 +644,7 @@ test "pbr material: standard material plugin installs render startup allocator" 
     .add_plugins(MaterialsPlugin::MaterialsPlugin())
     .add_plugins(StandardMaterialPlugin::StandardMaterialPlugin())
   let render_sub_app = app
-    .sub_app(@app.RenderApp)
+    .sub_app(RenderApp)
     .set_update_schedule(Some(@render.render_startup_schedule_stage()))
   let render_world = render_sub_app.world()
   match render_world.get_resource(ecs_key_material_bind_group_allocators) {
@@ -686,8 +657,7 @@ test "pbr material: standard material plugin installs render startup allocator" 
     Some(allocators) => {
       debug_inspect(allocators.contains("StandardMaterial"), content="true")
       match allocators.get("StandardMaterial") {
-        Some(MaterialBindGroupAllocator::NonBindless(_)) =>
-          debug_inspect(true, content="true")
+        Some(NonBindless(_)) => debug_inspect(true, content="true")
         _ => debug_inspect(false, content="true")
       }
     }
@@ -702,7 +672,7 @@ fn pbr_material_test_shader_defs_contain(
 ) -> Bool {
   for shader_def in shader_defs {
     match shader_def {
-      @material.ShaderDefVal::Flag(flag) if flag == name => return true
+      Flag(flag) if flag == name => return true
       _ => ()
     }
   }
@@ -736,27 +706,23 @@ fn pbr_material_test_mesh_layout() -> @mesh.MeshVertexBufferLayoutRef {
         @mesh.MeshVertexAttribute::normal().id(),
         @mesh.MeshVertexAttribute::uv_0().id(),
       ],
-      layout=@mesh.VertexBufferLayout::new(
-        array_stride=32,
-        step_mode=@mesh.MeshVertexStepMode::Vertex,
-        attributes=[
-          @mesh.VertexAttribute::new(
-            offset=0,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=0,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=12,
-            format=@mesh.MeshVertexFormat::Float32x3,
-            shader_location=1,
-          ),
-          @mesh.VertexAttribute::new(
-            offset=24,
-            format=@mesh.MeshVertexFormat::Float32x2,
-            shader_location=2,
-          ),
-        ],
-      ),
+      layout=@mesh.VertexBufferLayout::new(array_stride=32, step_mode=Vertex, attributes=[
+        @mesh.VertexAttribute::new(
+          offset=0,
+          format=Float32x3,
+          shader_location=0,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=12,
+          format=Float32x3,
+          shader_location=1,
+        ),
+        @mesh.VertexAttribute::new(
+          offset=24,
+          format=Float32x2,
+          shader_location=2,
+        ),
+      ]),
     ),
   )
 }
@@ -772,7 +738,7 @@ test "pbr material: generic standard material preparation uses typed material ke
     @asset.Handle::new(11),
     material,
     pbr_material_test_standard_material_pipeline(),
-    @material.OpaqueRendererMethod::Deferred,
+    Deferred,
   )
   inspect(prepared.key.material_key().type_tag(), content="StandardMaterialKey")
   inspect(
@@ -787,11 +753,7 @@ test "pbr material: generic standard material preparation uses typed material ke
     prepared.properties().material_key.bits() == expected_key.bits(),
     content="true",
   )
-  debug_inspect(
-    prepared.properties().render_method
-    is @material.OpaqueRendererMethod::Forward,
-    content="true",
-  )
+  debug_inspect(prepared.properties().render_method is Forward, content="true")
   debug_inspect(
     prepared.properties().get_shader(@material.MATERIAL_FRAGMENT_SHADER_LABEL),
     content="Some(\"pbr/render/pbr.wgsl\")",
@@ -815,7 +777,7 @@ test "pbr material: generic standard material user specialize consumes erased ty
     @asset.Handle::new(12),
     material,
     pbr_material_test_standard_material_pipeline(),
-    @material.OpaqueRendererMethod::Forward,
+    Forward,
   )
   guard prepared.properties().user_specialize is Some(user_specialize) else {
     abort("expected generic StandardMaterial user_specialize hook")

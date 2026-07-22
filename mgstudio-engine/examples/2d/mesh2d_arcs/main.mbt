@@ -71,9 +71,9 @@ fn main {
 
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
-  .add_systems(@app.Startup, setup_system)
+  .add_systems(Startup, setup_system)
   .add_systems(
-    @app.Update,
+    Update,
     (draw_sector_bounds_system, draw_segment_bounds_system) |> @app.chain(),
   )
   .run()

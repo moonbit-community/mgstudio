@@ -39,7 +39,7 @@ pub fn ImpulseJoint2d::with_wake_up(
   self : ImpulseJoint2d,
   wake_up : Bool,
 ) -> ImpulseJoint2d {
-  ImpulseJoint2d::{ ..self, wake_up, }
+  { ..self, wake_up, }
 }
 
 ///|
@@ -78,7 +78,7 @@ pub fn MultibodyJoint2d::with_wake_up(
   self : MultibodyJoint2d,
   wake_up : Bool,
 ) -> MultibodyJoint2d {
-  MultibodyJoint2d::{ ..self, wake_up, }
+  { ..self, wake_up, }
 }
 
 ///|
@@ -86,7 +86,7 @@ pub fn MultibodyJoint2d::with_kinematic(
   self : MultibodyJoint2d,
   kinematic : Bool,
 ) -> MultibodyJoint2d {
-  MultibodyJoint2d::{ ..self, kinematic, }
+  { ..self, kinematic, }
 }
 
 ///|

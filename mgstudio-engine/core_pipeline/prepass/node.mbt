@@ -52,12 +52,12 @@ pub struct PrepassRunPlan {
 
 ///|
 pub fn PrepassNode::early() -> PrepassNode {
-  PrepassNode::{ label: EARLY_PREPASS_LABEL }
+  { label: EARLY_PREPASS_LABEL }
 }
 
 ///|
 pub fn PrepassNode::late() -> PrepassNode {
-  PrepassNode::{ label: LATE_PREPASS_LABEL }
+  { label: LATE_PREPASS_LABEL }
 }
 
 ///|
@@ -110,7 +110,7 @@ pub fn PrepassViewState::new(
   no_indirect_drawing? : Bool = false,
   has_prepass_depth_attachment? : Bool = false,
 ) -> PrepassViewState {
-  PrepassViewState::{
+  {
     has_deferred_prepass_component,
     has_opaque_prepass_phase,
     has_alpha_mask_prepass_phase,
@@ -168,7 +168,7 @@ pub fn prepass_color_attachment_plan(
   state : PrepassViewState,
 ) -> PrepassColorAttachmentPlan {
   let any = prepass_has_any_color_attachment(state)
-  PrepassColorAttachmentPlan::{
+  {
     normal: state.has_normal_attachment,
     motion_vectors: state.has_motion_vectors_attachment,
     deferred: state.has_deferred_attachment,
@@ -215,7 +215,7 @@ pub fn prepass_run_plan(
     has_skybox_prepass_bind_group &&
     has_previous_view_uniform_offset &&
     skybox_pipeline_ready
-  PrepassRunPlan::{
+  {
     label: prepass_run_kind_label(kind),
     should_run,
     skip_due_to_deferred: prepass_should_skip_due_to_deferred(state),

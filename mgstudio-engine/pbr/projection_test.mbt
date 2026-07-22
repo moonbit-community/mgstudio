@@ -104,15 +104,15 @@ test "render3d: projection preserves configured orthographic values" {
     .with_scaling_mode(FixedVertical(7.5F))
   let projection = Projection::Orthographic(orthographic)
   let ok = match projection {
-    Projection::Orthographic(value) => {
+    Orthographic(value) => {
       let scaling_mode_ok = match value.scaling_mode {
         FixedVertical(height) => projection_approx_eq(height, 7.5F)
         _ => false
       }
       projection_approx_eq(value.scale, 2.5F) && scaling_mode_ok
     }
-    Projection::Perspective(_) => false
-    Projection::Custom(_) => false
+    Perspective(_) => false
+    Custom(_) => false
   }
   debug_inspect(ok, content="true")
 }
@@ -273,7 +273,7 @@ test "render3d: custom projection stores typed behavior and updates lifecycle st
   )
   let updated = initial.update(640.0F, 320.0F)
   let ok = match updated {
-    Projection::Custom(custom) => {
+    Custom(custom) => {
       let clip_matrix = custom.get_clip_from_view()
       let sub_matrix = custom.get_clip_from_view_for_sub(sub_view)
       let frustum = custom.get_frustum_corners(0.25F, 25.0F)
@@ -285,8 +285,8 @@ test "render3d: custom projection stores typed behavior and updates lifecycle st
       projection_approx_eq(frustum[0].x, 640.0F) &&
       projection_approx_eq(frustum[4].z, 25.0F)
     }
-    Projection::Perspective(_) => false
-    Projection::Orthographic(_) => false
+    Perspective(_) => false
+    Orthographic(_) => false
   }
   debug_inspect(ok, content="true")
 }

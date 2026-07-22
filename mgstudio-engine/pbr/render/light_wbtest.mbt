@@ -469,7 +469,7 @@ test "pbr/render light: scrolling_fog pass bytes preserve volumetric shadow inpu
 test "pbr/render light: volumetric cascade shader reads map to Bevy host fields" {
   let directional = GpuDirectionalLight3d::{
     cascades: [
-      GpuDirectionalCascade3d::{
+      {
         clip_from_world: ProjectionMatrix3d::from_cols(
           @math.Vec4::new(1.0F, 2.0F, 3.0F, 4.0F),
           @math.Vec4::new(5.0F, 6.0F, 7.0F, 8.0F),
@@ -479,7 +479,7 @@ test "pbr/render light: volumetric cascade shader reads map to Bevy host fields"
         texel_size: 0.125F,
         far_bound: 64.0F,
       },
-      GpuDirectionalCascade3d::{
+      {
         clip_from_world: ProjectionMatrix3d::from_cols(
           @math.Vec4::new(17.0F, 18.0F, 19.0F, 20.0F),
           @math.Vec4::new(21.0F, 22.0F, 23.0F, 24.0F),
@@ -584,7 +584,7 @@ test "pbr/render light: directional shadow flags respect texture array layer cap
   try! world.set_by_key(
     first,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
 
   let second = world.spawn()
@@ -602,7 +602,7 @@ test "pbr/render light: directional shadow flags respect texture array layer cap
   try! world.set_by_key(
     second,
     @light.ecs_key_volumetric_light,
-    @light.VolumetricLight::VolumetricLight(),
+    VolumetricLight(),
   )
 
   light_wbtest_extract_directional_lights(world)

@@ -17,7 +17,7 @@ fn configured_window() -> @window.Window {
   let window = @window.Window::Window()
   window.transparent = true
   window.decorations = true
-  window.window_level = @window.WindowLevel::AlwaysOnTop
+  window.window_level = AlwaysOnTop
   window
 }
 
@@ -42,8 +42,8 @@ fn setup(world : @ecs.World) -> Unit {
       (
         @ui.UiRoot::UiRoot(),
         @ui.Node::Node()
-        .with_width(@ui.Val::Percent(100.0F))
-        .with_height(@ui.Val::Percent(100.0F)),
+        .with_width(Percent(100.0F))
+        .with_height(Percent(100.0F)),
       ),
     ),
   )
@@ -60,9 +60,9 @@ fn setup(world : @ecs.World) -> Unit {
           asset_server.load_font("fonts/FiraSans-Bold.ttf"),
         ),
         @ui.Node::Node()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_bottom(@ui.Val::Px(5.0F))
-        .with_right(@ui.Val::Px(10.0F)),
+        .with_position_type(Absolute)
+        .with_bottom(Px(5.0F))
+        .with_right(Px(10.0F)),
       ),
     ),
   )
@@ -76,7 +76,7 @@ fn toggle_mouse_passthrough(
     @ecs.All,
   ],
 ) -> Unit {
-  if !keyboard_input.just_pressed(@window.KeyCode::KeyP) {
+  if !keyboard_input.just_pressed(KeyP) {
     return
   }
   guard (cursor_query.single() catch { _ => None })
@@ -84,10 +84,7 @@ fn toggle_mouse_passthrough(
     return
   }
   let current = cursor_options.value()
-  cursor_options.set(@window.CursorOptions::{
-    ..current,
-    hit_test: !current.hit_test,
-  })
+  cursor_options.set({ ..current, hit_test: !current.hit_test })
 }
 
 ///|
@@ -96,8 +93,8 @@ fn main {
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
       primary_window: Some(configured_window()),
-      primary_cursor_options: Some(@window.CursorOptions::CursorOptions()),
-      exit_condition: @window.ExitCondition::OnAllClosed,
+      primary_cursor_options: Some(CursorOptions()),
+      exit_condition: OnAllClosed,
       close_when_requested: true,
     }),
   )
@@ -106,7 +103,7 @@ fn main {
       @color.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     ),
   )
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_param2(@app.Update, toggle_mouse_passthrough)
+  .add_systems_world(Startup, setup)
+  .add_systems_param2(Update, toggle_mouse_passthrough)
   .run()
 }

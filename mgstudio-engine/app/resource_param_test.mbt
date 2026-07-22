@@ -257,9 +257,7 @@ test "app: any_with_component gates system execution on component presence" {
   debug_inspect(log.length(), content="0")
 
   let entity = app.world().spawn()
-  try! app
-  .world()
-  .set_by_key(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  try! app.world().set_by_key(entity, query_position_key, { x: 1, y: 2 })
   app.run_once() |> ignore
 
   debug_inspect(log.length(), content="1")
@@ -396,7 +394,7 @@ test "app: ResMut can update NextState resource" {
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_param(fn(next_state : ResMut[NextState[TestState]]) {
-      next_state.set(NextState::Pending(TestState::B))
+      next_state.set(Pending(B))
     })
 
   app.run_startup() |> ignore
@@ -469,10 +467,7 @@ test "app: Query and ResMut compose in a single system signature" {
   let world = @ecs.World::new()
   defer world.close()
   let entity = world.spawn()
-  try! world.set_by_key(entity, query_position_key, QueryPosition::{
-    x: 3,
-    y: 7,
-  })
+  try! world.set_by_key(entity, query_position_key, { x: 3, y: 7 })
 
   let app = App::new(world)
     .insert_resource(CounterResource::{ value: 10 })

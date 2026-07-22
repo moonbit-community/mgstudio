@@ -30,10 +30,7 @@ pub struct ForwardDecalMaterial {
 
 ///|
 pub fn ForwardDecalMaterial::ForwardDecalMaterial() -> ForwardDecalMaterial {
-  ForwardDecalMaterial::{
-    base: @material.StandardMaterial::StandardMaterial(),
-    extension: ForwardDecalMaterialExt::ForwardDecalMaterialExt(),
-  }
+  { base: StandardMaterial(), extension: ForwardDecalMaterialExt() }
 }
 
 ///|
@@ -41,7 +38,7 @@ pub fn ForwardDecalMaterial::new(
   base : @material.StandardMaterial,
   extension : ForwardDecalMaterialExt,
 ) -> ForwardDecalMaterial {
-  ForwardDecalMaterial::{ base, extension }
+  { base, extension }
 }
 
 ///|
@@ -140,16 +137,14 @@ pub fn forward_decal_material_get(
 pub fn forward_decal_mesh_material3d(
   handle : @asset.Handle[ForwardDecalMaterial],
 ) -> @material.MeshMaterial3d {
-  @material.MeshMaterial3d::from_erased_material_id(
-    @material.Material3dFamily::ForwardDecal,
-    handle.id(),
-  )
+  @material.MeshMaterial3d::from_erased_material_id(ForwardDecal, handle.id())
 }
 
 ///|
 pub struct ForwardDecalPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ForwardDecalPlugin::ForwardDecalPlugin() -> ForwardDecalPlugin {
   ForwardDecalPlugin::{  }
 }
@@ -161,7 +156,7 @@ priv struct ForwardDecalMesh {
 
 ///|
 fn ForwardDecalMesh::new(mesh : @asset.Handle[@mesh.Mesh]) -> ForwardDecalMesh {
-  ForwardDecalMesh::{ mesh, }
+  { mesh, }
 }
 
 ///|
@@ -313,7 +308,7 @@ pub struct ForwardDecalMaterialExtUniform {
 
 ///|
 pub fn ForwardDecalMaterialExtUniform::ForwardDecalMaterialExtUniform() -> ForwardDecalMaterialExtUniform {
-  ForwardDecalMaterialExtUniform::{ inv_depth_fade_factor: 1.0F / 8.0F }
+  { inv_depth_fade_factor: 1.0F / 8.0F }
 }
 
 ///|
@@ -321,7 +316,7 @@ pub fn pbr_forward_decal_material_ext_uniform(
   depth_fade_factor : Float,
 ) -> ForwardDecalMaterialExtUniform {
   let safe = if depth_fade_factor < 0.001F { 0.001F } else { depth_fade_factor }
-  ForwardDecalMaterialExtUniform::{ inv_depth_fade_factor: 1.0F / safe }
+  { inv_depth_fade_factor: 1.0F / safe }
 }
 
 ///|
@@ -332,7 +327,7 @@ pub struct ForwardDecalPipelineKey {
 
 ///|
 pub fn ForwardDecalPipelineKey::ForwardDecalPipelineKey() -> ForwardDecalPipelineKey {
-  ForwardDecalPipelineKey::{ alpha_blend: true, depth_compare_always: true }
+  { alpha_blend: true, depth_compare_always: true }
 }
 
 ///|
@@ -348,6 +343,7 @@ pub fn pbr_forward_decal_specialized_label(base : String) -> String {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn ForwardDecal::ForwardDecal() -> ForwardDecal {
   ForwardDecal::{  }
 }
@@ -378,10 +374,7 @@ test "pbr decal forward: plugin mesh carries generated tangents" {
 ///|
 test "pbr decal forward: material handle maps to forward decal family" {
   let mesh_material = forward_decal_mesh_material3d(@asset.Handle::new(17))
-  debug_inspect(
-    mesh_material.material_family is @material.Material3dFamily::ForwardDecal,
-    content="true",
-  )
+  debug_inspect(mesh_material.material_family is ForwardDecal, content="true")
   debug_inspect(mesh_material.material.id(), content="17")
 }
 
@@ -399,11 +392,7 @@ test "pbr decal forward: component hook assigns plugin decal mesh" {
     )
     .unwrap()
   let entity = world.spawn_empty()
-  try! world.set_by_key(
-    entity,
-    ecs_key_forward_decal,
-    ForwardDecal::ForwardDecal(),
-  )
+  try! world.set_by_key(entity, ecs_key_forward_decal, ForwardDecal())
   guard world.get_by_key(entity, @mesh.ecs_key_mesh3d) is Some(mesh3d) else {
     abort("ForwardDecal on_add hook must insert Mesh3d")
   }

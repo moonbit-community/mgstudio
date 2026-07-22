@@ -178,10 +178,10 @@ fn print_light_count(
 ) -> Unit {
   let next_timer = stats.get().print_timer + time.get().delta_secs()
   if next_timer < 1.0F {
-    stats.set(LightStats::{ print_timer: next_timer })
+    stats.set({ print_timer: next_timer })
     return
   }
-  stats.set(LightStats::{ print_timer: next_timer - 1.0F })
+  stats.set({ print_timer: next_timer - 1.0F })
   println("Lights: \{lights.count()}")
 }
 
@@ -192,8 +192,8 @@ fn main {
   .insert_resource(@winit.WinitSettings::continuous())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@diagnostic.StressDiagnosticsPlugin::StressDiagnosticsPlugin())
-  .add_systems_param3(@app.Startup, setup)
-  .add_systems_param2(@app.Update, move_camera)
-  .add_systems_param3(@app.Update, print_light_count)
+  .add_systems_param3(Startup, setup)
+  .add_systems_param2(Update, move_camera)
+  .add_systems_param3(Update, print_light_count)
   .run()
 }

@@ -21,7 +21,7 @@ pub(all) enum ControlOrientation {
 
 ///|
 pub fn ControlOrientation::default() -> ControlOrientation {
-  ControlOrientation::Vertical
+  Vertical
 }
 
 ///|
@@ -37,7 +37,7 @@ pub fn Scrollbar::new(
   orientation : ControlOrientation,
   min_thumb_length : Float,
 ) -> Scrollbar {
-  Scrollbar::{ target, orientation, min_thumb_length }
+  { target, orientation, min_thumb_length }
 }
 
 ///|
@@ -51,7 +51,7 @@ pub struct CoreScrollbarDragState {
 
 ///|
 pub fn CoreScrollbarDragState::CoreScrollbarDragState() -> CoreScrollbarDragState {
-  CoreScrollbarDragState::{ dragging: false, drag_origin: 0.0F }
+  { dragging: false, drag_origin: 0.0F }
 }
 
 ///|
@@ -124,7 +124,7 @@ fn scrollbar_on_pointer_click(
   let track_size = scrollbar_layout.size()
   let rect = scrollbar_layout.rect()
   let target_next_scroll = match scrollbar.orientation {
-    ControlOrientation::Horizontal => {
+    Horizontal => {
       let click_ratio = if track_size.x <= 0.0F {
         0.0F
       } else {
@@ -142,7 +142,7 @@ fn scrollbar_on_pointer_click(
       }).clamp(min=0.0F, max=max_offset)
       scroll_pos.with_x(next_offset)
     }
-    ControlOrientation::Vertical => {
+    Vertical => {
       let click_ratio = if track_size.y <= 0.0F {
         0.0F
       } else {
@@ -214,7 +214,7 @@ fn scrollbar_update_thumb_system(
       }
       let node = node_mut.peek()
       let next_node = match scrollbar.orientation {
-        ControlOrientation::Horizontal => {
+        Horizontal => {
           let thumb_size = if content_size.x > visible_size.x {
             (track_size.x * visible_size.x / content_size.x).clamp(
               min=scrollbar.min_thumb_length,
@@ -230,13 +230,13 @@ fn scrollbar_update_thumb_system(
             0.0F
           }
           node
-          .with_position_type(@ui.PositionType::Absolute)
-          .with_left(@ui.Val::Px(thumb_pos))
-          .with_top(@ui.Val::Px(0.0F))
-          .with_bottom(@ui.Val::Px(0.0F))
-          .with_width(@ui.Val::Px(thumb_size))
+          .with_position_type(Absolute)
+          .with_left(Px(thumb_pos))
+          .with_top(Px(0.0F))
+          .with_bottom(Px(0.0F))
+          .with_width(Px(thumb_size))
         }
-        ControlOrientation::Vertical => {
+        Vertical => {
           let thumb_size = if content_size.y > visible_size.y {
             (track_size.y * visible_size.y / content_size.y).clamp(
               min=scrollbar.min_thumb_length,
@@ -252,11 +252,11 @@ fn scrollbar_update_thumb_system(
             0.0F
           }
           node
-          .with_position_type(@ui.PositionType::Absolute)
-          .with_top(@ui.Val::Px(thumb_pos))
-          .with_left(@ui.Val::Px(0.0F))
-          .with_right(@ui.Val::Px(0.0F))
-          .with_height(@ui.Val::Px(thumb_size))
+          .with_position_type(Absolute)
+          .with_top(Px(thumb_pos))
+          .with_left(Px(0.0F))
+          .with_right(Px(0.0F))
+          .with_height(Px(thumb_size))
         }
       }
       node_mut.set(next_node)

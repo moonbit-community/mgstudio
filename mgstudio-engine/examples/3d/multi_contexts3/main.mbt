@@ -16,8 +16,8 @@
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@rapier_examples.rapier3d_plugins())
-  .add_systems_world(@app.Startup, setup)
-  .add_systems_world(@app.PostUpdate, report_hits)
+  .add_systems_world(Startup, setup)
+  .add_systems_world(PostUpdate, report_hits)
   .run()
 }
 
@@ -67,11 +67,7 @@ fn setup(world : @ecs.World) -> Unit {
       try! world.set_by_key(
         entity,
         @physics3d.ecs_key_collision_groups3d,
-        @physics3d.CollisionGroups3d::new(
-          group,
-          group,
-          @dynamics.InteractionTestMode::And,
-        ),
+        @physics3d.CollisionGroups3d::new(group, group, And),
       )
     }
   }

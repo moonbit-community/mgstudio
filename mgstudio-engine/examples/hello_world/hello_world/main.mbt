@@ -20,6 +20,6 @@ fn hello_world_system() -> Unit {
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
-  .add_systems_fn(@app.Update, hello_world_system)
+  .add_systems_fn(Update, hello_world_system)
   .run()
 }

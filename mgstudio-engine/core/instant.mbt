@@ -36,7 +36,7 @@ fn instant_clamp_positive(value : Int64) -> Int64 {
 
 ///|
 pub fn Instant::from_duration(duration : Duration) -> Instant {
-  Instant::{ nanos_since_start: duration.as_nanos() }
+  { nanos_since_start: duration.as_nanos() }
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn Instant::from_millis(millis : Int64) -> Instant {
 
 ///|
 pub fn Instant::from_nanos(nanos : Int64) -> Instant {
-  Instant::{ nanos_since_start: instant_clamp_positive(nanos) }
+  { nanos_since_start: instant_clamp_positive(nanos) }
 }
 
 ///|
@@ -141,7 +141,7 @@ pub fn Instant::checked_add(self : Instant, duration : Duration) -> Instant? {
     self.nanos_since_start > 9_223_372_036_854_775_807L - duration_nanos {
     None
   } else {
-    Some(Instant::{ nanos_since_start: self.nanos_since_start + duration_nanos })
+    Some({ nanos_since_start: self.nanos_since_start + duration_nanos })
   }
 }
 
@@ -150,9 +150,7 @@ pub fn Instant::checked_sub(self : Instant, duration : Duration) -> Instant? {
   if self.nanos_since_start < duration.as_nanos() {
     None
   } else {
-    Some(Instant::{
-      nanos_since_start: self.nanos_since_start - duration.as_nanos(),
-    })
+    Some({ nanos_since_start: self.nanos_since_start - duration.as_nanos() })
   }
 }
 

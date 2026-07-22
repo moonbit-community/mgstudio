@@ -36,11 +36,13 @@ let feathers_plugin_marker_key : @ecs.ResourceKey[FeathersPluginMarker] = @ecs.r
 )
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FeathersPlugin::FeathersPlugin() -> FeathersPlugin {
   FeathersPlugin::{  }
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn FeathersPlugins::FeathersPlugins() -> FeathersPlugins {
   FeathersPlugins::{  }
 }
@@ -75,6 +77,7 @@ pub impl @app.Plugin for FeathersPlugins with fn build(_self, app) {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   if app.contains_resource(feathers_plugin_marker_key) {
     app
@@ -91,5 +94,5 @@ pub fn feathers_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn feathers_plugins() -> FeathersPlugins {
-  FeathersPlugins::FeathersPlugins()
+  FeathersPlugins()
 }

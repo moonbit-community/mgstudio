@@ -33,7 +33,7 @@ pub struct RenderDiagnosticsSnapshot {
 
 ///|
 pub fn RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot() -> RenderDiagnosticsSnapshot {
-  RenderDiagnosticsSnapshot::{
+  {
     mesh2d_draw_calls: 0,
     mesh2d_executed_draw_calls: 0,
     mesh3d_draw_calls: 0,
@@ -58,7 +58,7 @@ pub fn RenderDiagnosticsSnapshot::new(
   mesh3d_draw_calls : Int,
   mesh3d_executed_draw_calls : Int,
 ) -> RenderDiagnosticsSnapshot {
-  RenderDiagnosticsSnapshot::{
+  {
     mesh2d_draw_calls,
     mesh2d_executed_draw_calls,
     mesh3d_draw_calls,
@@ -128,7 +128,7 @@ priv struct RenderDiagnosticsRuntimeState {
 
 ///|
 fn render_diagnostics_runtime_state_default() -> RenderDiagnosticsRuntimeState {
-  RenderDiagnosticsRuntimeState::{
+  {
     debug_frame_counter: 0,
     debug_mesh2d_draw_calls: 0,
     debug_mesh3d_draw_calls: 0,
@@ -147,7 +147,7 @@ fn render_diagnostics_runtime_state_default() -> RenderDiagnosticsRuntimeState {
     debug_mesh2d_drop_bad_stride: 0,
     debug_mesh2d_drop_no_pipeline: 0,
     debug_mesh2d_drop_no_uniform_buf: 0,
-    last_frame_render_diagnostics_snapshot: RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot(),
+    last_frame_render_diagnostics_snapshot: RenderDiagnosticsSnapshot(),
     pass_total_count: 0,
     pass_2d_count: 0,
     pass_3d_main_count: 0,
@@ -367,7 +367,7 @@ pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
   render_pass_timing_end_active_pass()
   let state = render_diagnostics_runtime_state
-  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::{
+  state.last_frame_render_diagnostics_snapshot = {
     mesh2d_draw_calls: state.current_frame_mesh2d_draw_calls,
     mesh2d_executed_draw_calls: state.current_frame_mesh2d_executed_draw_calls,
     mesh3d_draw_calls: state.current_frame_mesh3d_draw_calls,
@@ -395,5 +395,5 @@ pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
   state.current_frame_mesh3d_draw_calls = 0
   state.current_frame_mesh3d_executed_draw_calls = 0
   render_pass_timing_reset_counters()
-  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot::RenderDiagnosticsSnapshot()
+  state.last_frame_render_diagnostics_snapshot = RenderDiagnosticsSnapshot()
 }

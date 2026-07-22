@@ -71,12 +71,12 @@ pub fn Mesh3dGeometry::index_format(
 ///|
 pub fn Mesh::indices(self : Mesh) -> Array[Int]? {
   match self.geometry {
-    MeshGeometry::Geometry2d(geometry) =>
+    Geometry2d(geometry) =>
       match geometry.indices {
         Some(indices) => Some(indices.copy())
         None => None
       }
-    MeshGeometry::Geometry3d(geometry) =>
+    Geometry3d(geometry) =>
       match geometry.indices {
         Some(indices) => Some(indices.copy())
         None => None
@@ -87,15 +87,15 @@ pub fn Mesh::indices(self : Mesh) -> Array[Int]? {
 ///|
 pub fn Mesh::index_format(self : Mesh) -> Mesh3dIndexFormat? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => None
-    MeshGeometry::Geometry3d(geometry) => geometry.index_format()
+    Geometry2d(_) => None
+    Geometry3d(geometry) => geometry.index_format()
   }
 }
 
 ///|
 pub fn Mesh::primitive_topology(self : Mesh) -> Mesh3dPrimitiveTopology? {
   match self.geometry {
-    MeshGeometry::Geometry2d(_) => Some(Mesh3dPrimitiveTopology::TriangleList)
-    MeshGeometry::Geometry3d(geometry) => Some(geometry.primitive_topology())
+    Geometry2d(_) => Some(TriangleList)
+    Geometry3d(geometry) => Some(geometry.primitive_topology())
   }
 }

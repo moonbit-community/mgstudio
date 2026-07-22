@@ -87,9 +87,9 @@ fn mesh3d_index_format_from_indices(
   match indices {
     Some(values) =>
       if mesh3d_indices_need_u32(values) {
-        Some(Mesh3dIndexFormat::Uint32)
+        Some(Uint32)
       } else {
-        Some(Mesh3dIndexFormat::Uint16)
+        Some(Uint16)
       }
     None => None
   }
@@ -101,7 +101,7 @@ fn mesh3d_index_is_restart(
   index_format : Mesh3dIndexFormat?,
   index : Int,
 ) -> Bool {
-  guard topology == Mesh3dPrimitiveTopology::LineStrip else { return false }
+  guard topology == LineStrip else { return false }
   guard index_format is Some(format) else { return false }
   index == format.restart_index()
 }
@@ -135,7 +135,7 @@ pub fn Mesh3dGeometry::new(
   uvs : Array[@math.Vec2],
   indices : Array[Int]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions,
     normals: None,
     uvs: Some(uvs),
@@ -151,7 +151,7 @@ pub fn Mesh3dGeometry::new(
     tangents: None,
     indices,
     index_format: mesh3d_index_format_from_indices(indices),
-    topology: Mesh3dPrimitiveTopology::TriangleList,
+    topology: TriangleList,
   }
 }
 
@@ -162,7 +162,7 @@ pub fn Mesh3dGeometry::new_with_colors(
   colors : Array[@math.Vec4],
   indices : Array[Int]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions,
     normals: None,
     uvs: Some(uvs),
@@ -178,7 +178,7 @@ pub fn Mesh3dGeometry::new_with_colors(
     tangents: None,
     indices,
     index_format: mesh3d_index_format_from_indices(indices),
-    topology: Mesh3dPrimitiveTopology::TriangleList,
+    topology: TriangleList,
   }
 }
 
@@ -189,7 +189,7 @@ pub fn Mesh3dGeometry::new_with_topology(
   indices : Array[Int]?,
   topology : Mesh3dPrimitiveTopology,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions,
     normals: None,
     uvs: Some(uvs),
@@ -217,7 +217,7 @@ pub fn Mesh3dGeometry::new_with_colors_and_topology(
   indices : Array[Int]?,
   topology : Mesh3dPrimitiveTopology,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions,
     normals: None,
     uvs: Some(uvs),
@@ -242,7 +242,7 @@ pub fn Mesh3dGeometry::with_topology(
   self : Mesh3dGeometry,
   topology : Mesh3dPrimitiveTopology,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -274,7 +274,7 @@ pub fn Mesh3dGeometry::new_with_positions(
   positions : Array[@math.Vec3],
   indices : Array[Int]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions,
     normals: None,
     uvs: None,
@@ -290,7 +290,7 @@ pub fn Mesh3dGeometry::new_with_positions(
     tangents: None,
     indices,
     index_format: mesh3d_index_format_from_indices(indices),
-    topology: Mesh3dPrimitiveTopology::TriangleList,
+    topology: TriangleList,
   }
 }
 
@@ -300,7 +300,7 @@ pub fn Mesh3dGeometry::new_with_positions_and_topology(
   indices : Array[Int]?,
   topology : Mesh3dPrimitiveTopology,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions,
     normals: None,
     uvs: None,
@@ -434,7 +434,7 @@ pub fn Mesh3dGeometry::with_uvs(
   self : Mesh3dGeometry,
   uvs : Array[@math.Vec2]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs,
@@ -459,7 +459,7 @@ pub fn Mesh3dGeometry::with_uv1s(
   self : Mesh3dGeometry,
   uv1s : Array[@math.Vec2]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -484,7 +484,7 @@ pub fn Mesh3dGeometry::with_normals(
   self : Mesh3dGeometry,
   normals : Array[@math.Vec3]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals,
     uvs: self.uvs,
@@ -663,7 +663,7 @@ pub fn Mesh3dGeometry::with_duplicated_vertices(
     Some(_) => mesh3d_duplicate_vec4_values(self.tangents, indices)
     None => None
   }
-  Some(Mesh3dGeometry::{
+  Some({
     positions,
     normals,
     uvs,
@@ -687,8 +687,7 @@ pub fn Mesh3dGeometry::with_duplicated_vertices(
 pub fn Mesh3dGeometry::with_computed_flat_normals(
   self : Mesh3dGeometry,
 ) -> Mesh3dGeometry? {
-  if self.indices is Some(_) ||
-    self.topology != Mesh3dPrimitiveTopology::TriangleList {
+  if self.indices is Some(_) || self.topology != TriangleList {
     return None
   }
   if self.positions.length() % 3 != 0 {
@@ -707,7 +706,7 @@ pub fn Mesh3dGeometry::with_computed_flat_normals(
     normals.push(normal)
     normals.push(normal)
   }
-  Some(Mesh3dGeometry::{ ..self, normals: Some(normals), tangents: None })
+  Some({ ..self, normals: Some(normals), tangents: None })
 }
 
 ///|
@@ -975,7 +974,7 @@ pub fn Mesh3dGeometry::with_indices(
   self : Mesh3dGeometry,
   indices : Array[Int]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -1021,7 +1020,7 @@ pub fn Mesh3dGeometry::insert_indices_u16(
 ) -> Unit {
   self.indices = indices
   self.index_format = match indices {
-    Some(_) => Some(Mesh3dIndexFormat::Uint16)
+    Some(_) => Some(Uint16)
     None => None
   }
   self.tangents = None
@@ -1043,7 +1042,7 @@ pub fn Mesh3dGeometry::insert_indices_u32(
 ) -> Unit {
   self.indices = indices
   self.index_format = match indices {
-    Some(_) => Some(Mesh3dIndexFormat::Uint32)
+    Some(_) => Some(Uint32)
     None => None
   }
   self.tangents = None
@@ -1063,7 +1062,7 @@ pub fn Mesh3dGeometry::with_colors(
   self : Mesh3dGeometry,
   colors : Array[@math.Vec4]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -1089,7 +1088,7 @@ pub fn Mesh3dGeometry::with_joint_data(
   joint_indices : Array[MeshJointIndices]?,
   joint_weights : Array[@math.Vec4]?,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -1131,7 +1130,7 @@ pub fn Mesh3dGeometry::with_morph_targets(
   morph_target_normals? : Array[Array[@math.Vec3]]? = None,
   morph_target_tangents? : Array[Array[@math.Vec3]]? = None,
 ) -> Mesh3dGeometry {
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -1198,7 +1197,7 @@ pub fn Mesh3dGeometry::with_custom_attribute_vec3(
   if !replaced {
     next.push(MeshCustomAttributeVec3::new(name, values))
   }
-  Mesh3dGeometry::{
+  {
     positions: self.positions,
     normals: self.normals,
     uvs: self.uvs,
@@ -1311,7 +1310,7 @@ pub fn Mesh3dGeometry::rotated_by(
     }
     None => None
   }
-  Mesh3dGeometry::{ ..self, positions, normals, tangents }
+  { ..self, positions, normals, tangents }
 }
 
 ///|
@@ -1325,70 +1324,49 @@ pub fn Mesh3dGeometry::validate(
 ) -> Mesh3dValidationError? {
   let vertex_count = self.positions.length()
   if vertex_count == 0 {
-    return Some(Mesh3dValidationError::EmptyGeometry)
+    return Some(EmptyGeometry)
   }
   if self.normals is Some(normals) {
     let normal_count = normals.length()
     if normal_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::AttributeLengthMismatch(
-          vertex_count, normal_count,
-        ),
-      )
+      return Some(AttributeLengthMismatch(vertex_count, normal_count))
     }
   }
   if self.uvs is Some(uvs) {
     let uv_count = uvs.length()
     if uv_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::AttributeLengthMismatch(vertex_count, uv_count),
-      )
+      return Some(AttributeLengthMismatch(vertex_count, uv_count))
     }
   }
   if self.uv1s is Some(uv1s) {
     let uv1_count = uv1s.length()
     if uv1_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::AttributeLengthMismatch(vertex_count, uv1_count),
-      )
+      return Some(AttributeLengthMismatch(vertex_count, uv1_count))
     }
   }
   if self.colors is Some(colors) {
     let color_count = colors.length()
     if color_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::ColorLengthMismatch(vertex_count, color_count),
-      )
+      return Some(ColorLengthMismatch(vertex_count, color_count))
     }
   }
   if self.joint_indices is Some(joint_indices) {
     let joint_index_count = joint_indices.length()
     if joint_index_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::AttributeLengthMismatch(
-          vertex_count, joint_index_count,
-        ),
-      )
+      return Some(AttributeLengthMismatch(vertex_count, joint_index_count))
     }
   }
   if self.joint_weights is Some(joint_weights) {
     let joint_weight_count = joint_weights.length()
     if joint_weight_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::AttributeLengthMismatch(
-          vertex_count, joint_weight_count,
-        ),
-      )
+      return Some(AttributeLengthMismatch(vertex_count, joint_weight_count))
     }
   }
   if self.morph_target_positions is Some(morph_targets) {
     for morph_target in morph_targets {
       if morph_target.length() != vertex_count {
         return Some(
-          Mesh3dValidationError::AttributeLengthMismatch(
-            vertex_count,
-            morph_target.length(),
-          ),
+          AttributeLengthMismatch(vertex_count, morph_target.length()),
         )
       }
     }
@@ -1397,10 +1375,7 @@ pub fn Mesh3dGeometry::validate(
     for morph_target in morph_targets {
       if morph_target.length() != vertex_count {
         return Some(
-          Mesh3dValidationError::AttributeLengthMismatch(
-            vertex_count,
-            morph_target.length(),
-          ),
+          AttributeLengthMismatch(vertex_count, morph_target.length()),
         )
       }
     }
@@ -1409,10 +1384,7 @@ pub fn Mesh3dGeometry::validate(
     for morph_target in morph_targets {
       if morph_target.length() != vertex_count {
         return Some(
-          Mesh3dValidationError::AttributeLengthMismatch(
-            vertex_count,
-            morph_target.length(),
-          ),
+          AttributeLengthMismatch(vertex_count, morph_target.length()),
         )
       }
     }
@@ -1420,7 +1392,7 @@ pub fn Mesh3dGeometry::validate(
   for custom_attribute in self.custom_attributes_vec3 {
     if custom_attribute.values().length() != vertex_count {
       return Some(
-        Mesh3dValidationError::AttributeLengthMismatch(
+        AttributeLengthMismatch(
           vertex_count,
           custom_attribute.values().length(),
         ),
@@ -1430,11 +1402,7 @@ pub fn Mesh3dGeometry::validate(
   if self.tangents is Some(tangents) {
     let tangent_count = tangents.length()
     if tangent_count != vertex_count {
-      return Some(
-        Mesh3dValidationError::TangentLengthMismatch(
-          vertex_count, tangent_count,
-        ),
-      )
+      return Some(TangentLengthMismatch(vertex_count, tangent_count))
     }
   }
   let primitive_count = match self.indices {
@@ -1446,9 +1414,7 @@ pub fn Mesh3dGeometry::validate(
           continue
         }
         if idx < 0 || idx >= vertex_count {
-          return Some(
-            Mesh3dValidationError::IndexOutOfBounds(idx, vertex_count),
-          )
+          return Some(IndexOutOfBounds(idx, vertex_count))
         }
       }
       index_count
@@ -1457,39 +1423,39 @@ pub fn Mesh3dGeometry::validate(
   }
 
   match self.topology {
-    Mesh3dPrimitiveTopology::TriangleList =>
+    TriangleList =>
       if self.indices is Some(_) {
         if primitive_count == 0 || primitive_count % 3 != 0 {
-          Some(Mesh3dValidationError::NonTriangleIndexCount(primitive_count))
+          Some(NonTriangleIndexCount(primitive_count))
         } else {
           None
         }
       } else if primitive_count % 3 != 0 {
-        Some(Mesh3dValidationError::NonTriangleVertexCount(primitive_count))
+        Some(NonTriangleVertexCount(primitive_count))
       } else {
         None
       }
-    Mesh3dPrimitiveTopology::LineList =>
+    LineList =>
       if self.indices is Some(_) {
         if primitive_count == 0 || primitive_count % 2 != 0 {
-          Some(Mesh3dValidationError::NonLineListIndexCount(primitive_count))
+          Some(NonLineListIndexCount(primitive_count))
         } else {
           None
         }
       } else if primitive_count % 2 != 0 {
-        Some(Mesh3dValidationError::NonLineListVertexCount(primitive_count))
+        Some(NonLineListVertexCount(primitive_count))
       } else {
         None
       }
-    Mesh3dPrimitiveTopology::LineStrip =>
+    LineStrip =>
       if self.indices is Some(_) {
         if primitive_count < 2 {
-          Some(Mesh3dValidationError::NonLineStripIndexCount(primitive_count))
+          Some(NonLineStripIndexCount(primitive_count))
         } else {
           None
         }
       } else if primitive_count < 2 {
-        Some(Mesh3dValidationError::NonLineStripVertexCount(primitive_count))
+        Some(NonLineStripVertexCount(primitive_count))
       } else {
         None
       }
@@ -1548,40 +1514,26 @@ fn mesh3d_tangent_indices_fixed(indices : Array[Int]) -> FixedArray[UInt]? {
 pub fn Mesh3dGeometry::generate_tangents(
   self : Mesh3dGeometry,
 ) -> Mesh3dGenerateTangentsError? {
-  if self.topology != Mesh3dPrimitiveTopology::TriangleList {
-    return Some(Mesh3dGenerateTangentsError::UnsupportedTopology(self.topology))
+  if self.topology != TriangleList {
+    return Some(UnsupportedTopology(self.topology))
   }
   if self.validate() is Some(err) {
-    return Some(Mesh3dGenerateTangentsError::InvalidGeometry(err))
+    return Some(InvalidGeometry(err))
   }
   guard self.normals is Some(normals) else {
     return Some(
-      Mesh3dGenerateTangentsError::InvalidGeometry(
-        Mesh3dValidationError::AttributeLengthMismatch(
-          self.positions.length(),
-          0,
-        ),
-      ),
+      InvalidGeometry(AttributeLengthMismatch(self.positions.length(), 0)),
     )
   }
   guard self.uvs is Some(uvs) else {
     return Some(
-      Mesh3dGenerateTangentsError::InvalidGeometry(
-        Mesh3dValidationError::AttributeLengthMismatch(
-          self.positions.length(),
-          0,
-        ),
-      ),
+      InvalidGeometry(AttributeLengthMismatch(self.positions.length(), 0)),
     )
   }
 
   let indices = self.indices_or_sequential()
   guard mesh3d_tangent_indices_fixed(indices) is Some(fixed_indices) else {
-    return Some(
-      Mesh3dGenerateTangentsError::InvalidGeometry(
-        Mesh3dValidationError::IndexOutOfBounds(-1, self.positions.length()),
-      ),
-    )
+    return Some(InvalidGeometry(IndexOutOfBounds(-1, self.positions.length())))
   }
   let vertex_count = self.positions.length()
   let raw_tangents = @meshopt_mbt.generate_tangents(
@@ -1595,12 +1547,7 @@ pub fn Mesh3dGeometry::generate_tangents(
     8,
     options=@meshopt_mbt.TangentOptions::new(compatible=true),
   ) catch {
-    err =>
-      return Some(
-        Mesh3dGenerateTangentsError::TangentGenerationFailed(
-          to_repr(err).to_string(),
-        ),
-      )
+    err => return Some(TangentGenerationFailed(to_repr(err).to_string()))
   }
 
   let tangents = Array::make(
@@ -1610,11 +1557,7 @@ pub fn Mesh3dGeometry::generate_tangents(
   for corner in 0..<fixed_indices.length() {
     let vertex_index = fixed_indices[corner].reinterpret_as_int()
     if vertex_index < 0 || vertex_index >= vertex_count {
-      return Some(
-        Mesh3dGenerateTangentsError::InvalidGeometry(
-          Mesh3dValidationError::IndexOutOfBounds(vertex_index, vertex_count),
-        ),
-      )
+      return Some(InvalidGeometry(IndexOutOfBounds(vertex_index, vertex_count)))
     }
     let offset = corner * 4
     tangents[vertex_index] = @math.Vec4::new(
@@ -1635,7 +1578,7 @@ pub fn Mesh3dGeometry::vertex_count(self : Mesh3dGeometry) -> Int {
 
 ///|
 pub fn Mesh3dGeometry::triangle_count(self : Mesh3dGeometry) -> Int? {
-  if self.topology != Mesh3dPrimitiveTopology::TriangleList {
+  if self.topology != TriangleList {
     return None
   }
   match self.validate() {
@@ -1692,7 +1635,7 @@ pub fn Mesh3dGeometry::to_wireframe_line_list(
   if self.validate() is Some(_) {
     return None
   }
-  if self.topology != Mesh3dPrimitiveTopology::TriangleList {
+  if self.topology != TriangleList {
     return None
   }
   let out_positions : Array[@math.Vec3] = []
@@ -1788,7 +1731,7 @@ pub fn Mesh3dGeometry::to_wireframe_line_list(
           out_uvs,
           colors,
           None,
-          Mesh3dPrimitiveTopology::LineList,
+          LineList,
         ),
       )
     None =>
@@ -1797,7 +1740,7 @@ pub fn Mesh3dGeometry::to_wireframe_line_list(
           out_positions,
           out_uvs,
           None,
-          Mesh3dPrimitiveTopology::LineList,
+          LineList,
         ),
       )
   }
@@ -2007,7 +1950,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
   let out : Array[Double] = []
   let explicit_normals = self.mesh3d_valid_normals()
   match self.topology {
-    Mesh3dPrimitiveTopology::TriangleList =>
+    TriangleList =>
       match self.indices {
         None => {
           let triangle_count = self.positions.length() / 3
@@ -2064,7 +2007,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
           }
         }
       }
-    Mesh3dPrimitiveTopology::LineList => {
+    LineList => {
       let normal = mesh3d_runtime_default_normal()
       match self.indices {
         None => {
@@ -2092,7 +2035,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
           }
       }
     }
-    Mesh3dPrimitiveTopology::LineStrip => {
+    LineStrip => {
       let normal = mesh3d_runtime_default_normal()
       match self.indices {
         None => {
@@ -2136,7 +2079,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
   let joint_weights = self.joint_weights
   let explicit_normals = self.mesh3d_valid_normals()
   match self.topology {
-    Mesh3dPrimitiveTopology::TriangleList =>
+    TriangleList =>
       match self.indices {
         None => {
           let triangle_count = self.positions.length() / 3
@@ -2205,7 +2148,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
           }
         }
       }
-    Mesh3dPrimitiveTopology::LineList => {
+    LineList => {
       let normal = mesh3d_runtime_default_normal()
       match self.indices {
         None => {
@@ -2239,7 +2182,7 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba_joints_weights(
           }
       }
     }
-    Mesh3dPrimitiveTopology::LineStrip => {
+    LineStrip => {
       let normal = mesh3d_runtime_default_normal()
       match self.indices {
         None => {
@@ -2326,7 +2269,7 @@ pub fn Mesh3dGeometry::encode_interleaved_xyz_normal_uv_rgba_csv(
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(
   self : Mesh3dGeometry,
 ) -> Array[Double]? {
-  if self.topology != Mesh3dPrimitiveTopology::TriangleList {
+  if self.topology != TriangleList {
     return None
   }
   self.flatten_interleaved_xyz_uv_rgba()
@@ -2336,7 +2279,7 @@ pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(
 pub fn Mesh3dGeometry::encode_triangle_interleaved_xyz_uv_rgba_csv(
   self : Mesh3dGeometry,
 ) -> String? {
-  if self.topology != Mesh3dPrimitiveTopology::TriangleList {
+  if self.topology != TriangleList {
     return None
   }
   self.encode_interleaved_xyz_uv_rgba_csv()

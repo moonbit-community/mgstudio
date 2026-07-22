@@ -121,7 +121,7 @@ fn skin_test_add_skin_direct(
         @mesh.SkinnedMesh::new(handle, joints),
         skin_test_inverse_assets_or_abort(world),
         render3d_transform_columns(world),
-        Render3dSkinExtractionCounters::Render3dSkinExtractionCounters(),
+        Render3dSkinExtractionCounters(),
       )
     })
   })

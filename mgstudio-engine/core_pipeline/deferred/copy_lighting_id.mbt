@@ -41,6 +41,7 @@ pub const DEFERRED_LIGHTING_ID_DEPTH_TEXTURE_LABEL : String = "deferred_lighting
 pub struct CopyDeferredLightingIdPlugin {}
 
 ///|
+#warnings("-unnecessary_annotation")
 pub fn CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin() -> CopyDeferredLightingIdPlugin {
   CopyDeferredLightingIdPlugin::{  }
 }
@@ -98,17 +99,14 @@ pub struct DeferredLightingIdDepthTexture {
 pub fn DeferredLightingIdDepthTexture::new(
   texture_id~ : Int,
 ) -> DeferredLightingIdDepthTexture {
-  DeferredLightingIdDepthTexture::{ texture_id, }
+  { texture_id, }
 }
 
 ///|
 pub fn copy_deferred_lighting_id_plugin(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  copy_deferred_lighting_id_plugin_with(
-    app,
-    CopyDeferredLightingIdPlugin::CopyDeferredLightingIdPlugin(),
-  )
+  copy_deferred_lighting_id_plugin_with(app, CopyDeferredLightingIdPlugin())
 }
 
 ///|
@@ -158,7 +156,7 @@ pub fn CopyDeferredLightingIdState::new(
   has_deferred_lighting_pass_id_texture? : Bool = false,
   has_deferred_lighting_id_depth_texture? : Bool = false,
 ) -> CopyDeferredLightingIdState {
-  CopyDeferredLightingIdState::{
+  {
     has_copy_pipeline,
     has_deferred_lighting_pass_id_texture,
     has_deferred_lighting_id_depth_texture,
@@ -176,7 +174,7 @@ pub fn copy_deferred_lighting_id_should_run(
 
 ///|
 pub fn copy_deferred_lighting_id_pipeline_plan() -> CopyDeferredLightingIdPipelinePlan {
-  CopyDeferredLightingIdPipelinePlan::{
+  {
     bind_group_layout_label: COPY_DEFERRED_LIGHTING_ID_BIND_GROUP_LAYOUT_LABEL,
     bind_group_layout_count: 1,
     texture_sample_type_uint: true,
@@ -194,7 +192,7 @@ pub fn copy_deferred_lighting_id_pass_plan(
   state : CopyDeferredLightingIdState,
 ) -> CopyDeferredLightingIdPassPlan {
   let should_run = copy_deferred_lighting_id_should_run(state)
-  CopyDeferredLightingIdPassPlan::{
+  {
     label: COPY_DEFERRED_LIGHTING_ID_PASS_LABEL,
     should_run,
     bind_group_label: COPY_DEFERRED_LIGHTING_ID_BIND_GROUP_LABEL,
@@ -223,7 +221,7 @@ pub fn deferred_lighting_id_depth_texture_descriptor_plan(
   physical_target_width : Int,
   physical_target_height : Int,
 ) -> DeferredLightingIdDepthTextureDescriptorPlan {
-  DeferredLightingIdDepthTextureDescriptorPlan::{
+  {
     label: DEFERRED_LIGHTING_ID_DEPTH_TEXTURE_LABEL,
     should_prepare: deferred_lighting_id_depth_texture_should_prepare(
       physical_target_width, physical_target_height,

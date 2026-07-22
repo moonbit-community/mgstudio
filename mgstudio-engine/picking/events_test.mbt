@@ -19,7 +19,7 @@ struct PointerInputs {
 
 ///|
 fn PointerInputs::from_array(pointers : Array[PointerInput]) -> PointerInputs {
-  PointerInputs::{ pointers, }
+  { pointers, }
 }
 
 ///|
@@ -42,7 +42,7 @@ fn PickingHits::from_arrays(
   mesh3d? : Array[@core.Entity?] = [],
   window? : Array[@core.Entity?] = [],
 ) -> PickingHits {
-  PickingHits::{ ui, sprite2d, mesh3d, window }
+  { ui, sprite2d, mesh3d, window }
 }
 
 ///|
@@ -155,10 +155,8 @@ test "picking: generates enter/leave and click events (single pointer)" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
@@ -175,14 +173,8 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev0 = drain_events(world)
   debug_inspect(ev0.length(), content="2")
-  debug_inspect(
-    ev0[0].kind == @pointer_events.PointerEventKind::Move,
-    content="true",
-  )
-  debug_inspect(
-    ev0[1].kind == @pointer_events.PointerEventKind::Enter,
-    content="true",
-  )
+  debug_inspect(ev0[0].kind == Move, content="true")
+  debug_inspect(ev0[1].kind == Enter, content="true")
   debug_inspect(ev0[1].target.unwrap().id == e1.id, content="true")
 
   // Frame 2: move (same hit).
@@ -195,10 +187,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev1 = drain_events(world)
   debug_inspect(ev1.length(), content="1")
-  debug_inspect(
-    ev1[0].kind == @pointer_events.PointerEventKind::Move,
-    content="true",
-  )
+  debug_inspect(ev1[0].kind == Move, content="true")
 
   // Frame 3: switch hover to e2.
   set_frame(
@@ -210,15 +199,9 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev2 = drain_events(world)
   debug_inspect(ev2.length(), content="2")
-  debug_inspect(
-    ev2[0].kind == @pointer_events.PointerEventKind::Leave,
-    content="true",
-  )
+  debug_inspect(ev2[0].kind == Leave, content="true")
   debug_inspect(ev2[0].target.unwrap().id == e1.id, content="true")
-  debug_inspect(
-    ev2[1].kind == @pointer_events.PointerEventKind::Enter,
-    content="true",
-  )
+  debug_inspect(ev2[1].kind == Enter, content="true")
   debug_inspect(ev2[1].target.unwrap().id == e2.id, content="true")
 
   // Frame 4: press e2.
@@ -231,10 +214,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev3 = drain_events(world)
   debug_inspect(ev3.length(), content="1")
-  debug_inspect(
-    ev3[0].kind == @pointer_events.PointerEventKind::Down,
-    content="true",
-  )
+  debug_inspect(ev3[0].kind == Down, content="true")
   debug_inspect(ev3[0].target.unwrap().id == e2.id, content="true")
 
   // Frame 5: release on e2 (click).
@@ -247,14 +227,8 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev4 = drain_events(world)
   debug_inspect(ev4.length(), content="2")
-  debug_inspect(
-    ev4[0].kind == @pointer_events.PointerEventKind::Up,
-    content="true",
-  )
-  debug_inspect(
-    ev4[1].kind == @pointer_events.PointerEventKind::Click,
-    content="true",
-  )
+  debug_inspect(ev4[0].kind == Up, content="true")
+  debug_inspect(ev4[1].kind == Click, content="true")
 }
 
 ///|
@@ -263,10 +237,8 @@ test "picking: generates drag start drag and drag end events" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
   let entity = @core.Entity::new(10, 0)
   let start = @math.Vec2::new(10.0F, 20.0F)
@@ -290,14 +262,8 @@ test "picking: generates drag start drag and drag end events" {
   )
   let drag_events = drain_events(world)
   debug_inspect(drag_events.length(), content="3")
-  debug_inspect(
-    drag_events[1].kind == @pointer_events.PointerEventKind::DragStart,
-    content="true",
-  )
-  debug_inspect(
-    drag_events[2].kind == @pointer_events.PointerEventKind::Drag,
-    content="true",
-  )
+  debug_inspect(drag_events[1].kind == DragStart, content="true")
+  debug_inspect(drag_events[2].kind == Drag, content="true")
   debug_inspect(drag_events[2].delta.x, content="5")
   debug_inspect(drag_events[2].delta.y, content="-2")
   debug_inspect(drag_events[2].distance.x, content="5")
@@ -312,10 +278,7 @@ test "picking: generates drag start drag and drag end events" {
   )
   let end_events = drain_events(world)
   debug_inspect(end_events.length(), content="3")
-  debug_inspect(
-    end_events[2].kind == @pointer_events.PointerEventKind::DragEnd,
-    content="true",
-  )
+  debug_inspect(end_events[2].kind == DragEnd, content="true")
   debug_inspect(end_events[2].distance.x, content="5")
   debug_inspect(end_events[2].distance.y, content="-2")
 }
@@ -326,10 +289,8 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
   let ui_entity = @core.Entity::new(11, 0)
   let sprite_entity = @core.Entity::new(12, 0)
@@ -367,10 +328,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   )
   let sprite_events = drain_events(world)
   debug_inspect(sprite_events.length(), content="2")
-  debug_inspect(
-    sprite_events[0].kind == @pointer_events.PointerEventKind::Leave,
-    content="true",
-  )
+  debug_inspect(sprite_events[0].kind == Leave, content="true")
   debug_inspect(
     sprite_events[0].target.unwrap().id == ui_entity.id,
     content="true",
@@ -391,10 +349,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   )
   let mesh_events = drain_events(world)
   debug_inspect(mesh_events.length(), content="2")
-  debug_inspect(
-    mesh_events[0].kind == @pointer_events.PointerEventKind::Leave,
-    content="true",
-  )
+  debug_inspect(mesh_events[0].kind == Leave, content="true")
   debug_inspect(
     mesh_events[0].target.unwrap().id == sprite_entity.id,
     content="true",
@@ -415,10 +370,7 @@ test "picking: primary target priority is ui > sprite2d > mesh3d > window" {
   )
   let window_events = drain_events(world)
   debug_inspect(window_events.length(), content="2")
-  debug_inspect(
-    window_events[0].kind == @pointer_events.PointerEventKind::Leave,
-    content="true",
-  )
+  debug_inspect(window_events[0].kind == Leave, content="true")
   debug_inspect(
     window_events[0].target.unwrap().id == mesh_entity.id,
     content="true",
@@ -434,10 +386,8 @@ test "picking: non-hoverable non-blocking Pickable allows lower hit" {
   let world = @ecs.World::new()
   defer world.close()
   ignore(world.increment_change_tick())
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
   let top = world.spawn_empty()
   try! world.set_by_key(top, ecs_key_pickable, pickable_ignore)
@@ -452,10 +402,7 @@ test "picking: non-hoverable non-blocking Pickable allows lower hit" {
   )
   let events = drain_events(world)
   debug_inspect(events.length(), content="2")
-  debug_inspect(
-    events[1].kind == @pointer_events.PointerEventKind::Enter,
-    content="true",
-  )
+  debug_inspect(events[1].kind == Enter, content="true")
   debug_inspect(events[1].target.unwrap().id == lower.id, content="true")
 }
 
@@ -464,10 +411,8 @@ test "picking: non-hoverable blocking Pickable suppresses lower hits" {
   let world = @ecs.World::new()
   defer world.close()
   ignore(world.increment_change_tick())
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
   let top = world.spawn_empty()
   try! world.set_by_key(top, ecs_key_pickable, Pickable::new(true, false))
@@ -482,14 +427,12 @@ test "picking: non-hoverable blocking Pickable suppresses lower hits" {
   )
   let events = drain_events(world)
   debug_inspect(events.length(), content="1")
-  debug_inspect(
-    events[0].kind == @pointer_events.PointerEventKind::Move,
-    content="true",
-  )
+  debug_inspect(events[0].kind == Move, content="true")
   debug_inspect(events[0].target is None, content="true")
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "picking: window backend populates fallback hit for active pointers" {
   let world = @ecs.World::new()
   defer world.close()
@@ -508,19 +451,12 @@ test "picking: window backend populates fallback hit for active pointers" {
     ]),
   )
   let window_entity = world.spawn_empty()
-  try! world.set_by_key(
-    window_entity,
-    @window.ecs_key_window,
-    @window.Window::Window(),
-  )
+  try! world.set_by_key(window_entity, @window.ecs_key_window, Window())
   try! world.set_by_key(window_entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
 
   })
   picking_window_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(
-    world,
-    @ecs.MessageCursor::MessageCursor(),
-  )
+  let pointer_hits = read_test_pointer_hits(world, MessageCursor())
   debug_inspect(pointer_hits.length(), content="2")
   debug_inspect(pointer_hits[0].picks.length(), content="1")
   debug_inspect(
@@ -531,6 +467,7 @@ test "picking: window backend populates fallback hit for active pointers" {
 }
 
 ///|
+#warnings("-unnecessary_annotation")
 test "picking: window backend reads PointerLocation components" {
   let world = @ecs.World::new()
   defer world.close()
@@ -543,25 +480,14 @@ test "picking: window backend reads PointerLocation components" {
     ecs_key_pointer_location,
     PointerLocation::new(@math.Vec2::new(2.0F, 3.0F)),
   )
-  try! world.set_by_key(
-    pointer,
-    ecs_key_pointer_press,
-    PointerPress::PointerPress(),
-  )
+  try! world.set_by_key(pointer, ecs_key_pointer_press, PointerPress())
   let window_entity = world.spawn_empty()
-  try! world.set_by_key(
-    window_entity,
-    @window.ecs_key_window,
-    @window.Window::Window(),
-  )
+  try! world.set_by_key(window_entity, @window.ecs_key_window, Window())
   try! world.set_by_key(window_entity, @window.ecs_key_primary_window, @window.PrimaryWindow::{
 
   })
   picking_window_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(
-    world,
-    @ecs.MessageCursor::MessageCursor(),
-  )
+  let pointer_hits = read_test_pointer_hits(world, MessageCursor())
   debug_inspect(pointer_hits.length(), content="1")
   debug_inspect(
     pointer_hits[0].picks[0].0.id == window_entity.id,
@@ -575,10 +501,8 @@ test "picking: handles multiple pointers independently" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
   let e1 = @core.Entity::new(1, 0)
   let e2 = @core.Entity::new(2, 0)
@@ -598,14 +522,8 @@ test "picking: handles multiple pointers independently" {
   debug_inspect(events[1].pointer == 0, content="true")
   debug_inspect(events[2].pointer == 1, content="true")
   debug_inspect(events[3].pointer == 1, content="true")
-  debug_inspect(
-    events[1].kind == @pointer_events.PointerEventKind::Enter,
-    content="true",
-  )
-  debug_inspect(
-    events[3].kind == @pointer_events.PointerEventKind::Enter,
-    content="true",
-  )
+  debug_inspect(events[1].kind == Enter, content="true")
+  debug_inspect(events[3].kind == Enter, content="true")
 }
 
 ///|
@@ -638,7 +556,7 @@ test "picking: ui hit test respects transformed ui node" {
     ),
   )
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(entity, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     entity,
     @ui.ecs_key_ui_layout,
@@ -659,13 +577,10 @@ test "picking: ui hit test respects transformed ui node" {
       z=0.0F,
     ),
   )
-  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
+  @ui.get_ui_stack_resource(world).insert(UiStack())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(
-    world,
-    @ecs.MessageCursor::MessageCursor(),
-  )
+  let pointer_hits = read_test_pointer_hits(world, MessageCursor())
   debug_inspect(
     pointer_hits.length() == 1 &&
     pointer_hits[0].picks.length() == 1 &&
@@ -694,7 +609,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
     ),
   )
   let top = world.spawn_empty()
-  try! world.set_by_key(top, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(top, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     top,
     @ui.ecs_key_ui_layout,
@@ -706,7 +621,7 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
     ),
   )
   let bottom = world.spawn_empty()
-  try! world.set_by_key(bottom, @ui.ecs_key_button, @ui.Button::Button())
+  try! world.set_by_key(bottom, @ui.ecs_key_button, Button())
   try! world.set_by_key(
     bottom,
     @ui.ecs_key_ui_layout,
@@ -717,12 +632,12 @@ test "picking: ui hit test keeps top and bottom rows distinct" {
       ),
     ),
   )
-  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
+  @ui.get_ui_stack_resource(world).insert(UiStack())
   @ui.ui_stack_system(world)
   let top_center = @math.Vec2::new(220.0F, 130.0F)
   let bottom_center = @math.Vec2::new(220.0F, 310.0F)
 
-  let cursor : @ecs.MessageCursor[PointerHits] = @ecs.MessageCursor::MessageCursor()
+  let cursor : @ecs.MessageCursor[PointerHits] = MessageCursor()
   send_test_pointer_inputs(
     world,
     PointerInputs::from_array([
@@ -784,12 +699,8 @@ test "picking: ui hit test still matches button with Interaction component" {
     ),
   )
   let entity = world.spawn_empty()
-  try! world.set_by_key(entity, @ui.ecs_key_button, @ui.Button::Button())
-  try! world.set_by_key(
-    entity,
-    @ui.ecs_key_interaction,
-    @ui.Interaction::Hovered,
-  )
+  try! world.set_by_key(entity, @ui.ecs_key_button, Button())
+  try! world.set_by_key(entity, @ui.ecs_key_interaction, Hovered)
   try! world.set_by_key(
     entity,
     @ui.ecs_key_ui_layout,
@@ -800,13 +711,10 @@ test "picking: ui hit test still matches button with Interaction component" {
       ),
     ),
   )
-  @ui.get_ui_stack_resource(world).insert(@ui.UiStack::UiStack())
+  @ui.get_ui_stack_resource(world).insert(UiStack())
   @ui.ui_stack_system(world)
   picking_ui_hit_test_system(world)
-  let pointer_hits = read_test_pointer_hits(
-    world,
-    @ecs.MessageCursor::MessageCursor(),
-  )
+  let pointer_hits = read_test_pointer_hits(world, MessageCursor())
   debug_inspect(
     pointer_hits.length() == 1 &&
     pointer_hits[0].picks.length() == 1 &&
@@ -822,23 +730,18 @@ test "picking: a11y focus action maps to hovered interaction" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  world.insert_resource(
-    @input_focus.InputFocus::resource(),
-    @input_focus.InputFocus::InputFocus(),
-  )
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  world.insert_resource(@input_focus.InputFocus::resource(), InputFocus())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   let entity = world.spawn_empty()
   let req = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::Focus,
+    Focus,
     @moon_accesskit.TreeId::root(),
     @a11y.node_id_for_entity(entity),
   )
   enqueue_a11y_action(world, req)
   picking_apply_a11y_actions_system(world)
   let interaction = try! world.get_by_key(entity, @ui.ecs_key_interaction)
-  debug_inspect(interaction is Some(@ui.Interaction::Hovered), content="true")
+  debug_inspect(interaction is Some(Hovered), content="true")
   let focus = world.get_resource(@input_focus.InputFocus::resource())
   debug_inspect(focus.unwrap().get() == Some(entity), content="true")
 }
@@ -849,16 +752,12 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   let entity = world.spawn_empty()
   try! world.set_by_key(
     entity,
     @ui.ecs_key_node,
-    @ui.Node::Node().with_overflow(
-      @ui.Overflow::new(@ui.OverflowAxis::Hidden, @ui.OverflowAxis::Scroll),
-    ),
+    @ui.Node::Node().with_overflow(@ui.Overflow::new(Hidden, Scroll)),
   )
   try! world.set_by_key(
     entity,
@@ -870,11 +769,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
       ),
     ),
   )
-  try! world.set_by_key(
-    entity,
-    @ui.ecs_key_scroll_position,
-    @ui.ScrollPosition::ScrollPosition(),
-  )
+  try! world.set_by_key(entity, @ui.ecs_key_scroll_position, ScrollPosition())
   let child = world.spawn_empty()
   try! world.set_by_key(
     child,
@@ -893,12 +788,12 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   )
   let node_id = @a11y.node_id_for_entity(entity)
   let req_down = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::ScrollDown,
+    ScrollDown,
     @moon_accesskit.TreeId::root(),
     node_id,
   )
   let req_right = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::ScrollRight,
+    ScrollRight,
     @moon_accesskit.TreeId::root(),
     node_id,
   )
@@ -920,18 +815,16 @@ test "picking: a11y set-value action updates Text content" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   let entity = world.spawn_empty()
   try! world.set_by_key(entity, @text.ecs_key_text, @text.Text::new("Old"))
   let node_id = @a11y.node_id_for_entity(entity)
   let req = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::SetValue,
+    SetValue,
     @moon_accesskit.TreeId::root(),
     node_id,
   )
-  req.set_data(@moon_accesskit.ActionData::Value("Updated"))
+  req.set_data(Value("Updated"))
   enqueue_a11y_action(world, req)
   picking_apply_a11y_actions_system(world)
   debug_inspect(
@@ -948,16 +841,11 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   defer world.close()
   let tick = world.increment_change_tick()
   ignore(tick)
-  world.insert_resource(
-    @input_focus.InputFocus::resource(),
-    @input_focus.InputFocus::InputFocus(),
-  )
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  world.insert_resource(@input_focus.InputFocus::resource(), InputFocus())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   let dead_entity = @core.Entity::new(999, 1)
   let req = @moon_accesskit.ActionRequest::ActionRequest(
-    @moon_accesskit.Action::Focus,
+    Focus,
     @moon_accesskit.TreeId::root(),
     @a11y.node_id_for_entity(dead_entity),
   )
@@ -999,10 +887,8 @@ test "picking: pointer observers dispatch generated move enter and leave events"
   let world = app.world()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
 
   let e1 = @core.Entity::new(1, 0)
@@ -1061,10 +947,8 @@ test "picking: entity pointer observers dispatch drag events with delta" {
   let world = app.world()
   let tick = world.increment_change_tick()
   ignore(tick)
-  get_picking_state_resource(world).insert(PickingState::PickingState())
-  @app.get_picking_events_resource(world).insert(
-    @app.PickingEvents::PickingEvents(),
-  )
+  get_picking_state_resource(world).insert(PickingState())
+  @app.get_picking_events_resource(world).insert(PickingEvents())
   ensure_test_messages(world)
 
   set_frame(

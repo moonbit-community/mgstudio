@@ -16,6 +16,7 @@
 pub struct DefaultPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn default_plugins_marker() -> DefaultPlugins {
   DefaultPlugins::{  }
 }
@@ -110,7 +111,7 @@ fn default_plugins_builder(
 ///|
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
   default_plugins_marker() |> ignore
-  default_plugins_builder(@asset.AssetPlugin::AssetPlugin())
+  default_plugins_builder(AssetPlugin())
 }
 
 ///|
@@ -125,6 +126,7 @@ pub fn[P : @app.Plugin] DefaultPlugins::set(
 pub struct MinimalPlugins {}
 
 ///|
+#warnings("-unnecessary_annotation")
 fn minimal_plugins_marker() -> MinimalPlugins {
   MinimalPlugins::{  }
 }

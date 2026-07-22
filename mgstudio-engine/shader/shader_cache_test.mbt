@@ -14,14 +14,10 @@
 
 ///|
 test "shader cache data preserves shader-def sequence as cache key" {
-  let data : ShaderData[String, Int] = ShaderData::ShaderData()
-  let ab = [@shader.shader_def("A"), @shader.ShaderDefVal::UInt("MODE", 2U)]
+  let data : ShaderData[String, Int] = ShaderData()
+  let ab = [@shader.shader_def("A"), UInt("MODE", 2U)]
   let ba = [@shader.ShaderDefVal::UInt("MODE", 2U), @shader.shader_def("A")]
-  let abb = [
-    @shader.shader_def("A"),
-    @shader.ShaderDefVal::UInt("MODE", 2U),
-    @shader.shader_def("A"),
-  ]
+  let abb = [@shader.shader_def("A"), UInt("MODE", 2U), @shader.shader_def("A")]
   data.cache_processed_shader(ab, "module-ab")
 
   debug_inspect(data.processed_shader_count(), content="1")
@@ -32,21 +28,18 @@ test "shader cache data preserves shader-def sequence as cache key" {
 
 ///|
 test "shader cache data tracks pipelines imports and dependents" {
-  let data : ShaderData[String, String] = ShaderData::ShaderData()
+  let data : ShaderData[String, String] = ShaderData()
   data.track_pipeline(3)
   data.track_pipeline(3)
   data.track_pipeline(8)
-  data.resolve_import(
-    @shader.ShaderImport::Custom("bevy_render::view"),
-    "shader-view",
-  )
+  data.resolve_import(Custom("bevy_render::view"), "shader-view")
   data.track_dependent("shader-a")
   data.track_dependent("shader-a")
   data.track_dependent("shader-b")
 
   debug_inspect(data.pipeline_count(), content="2")
   debug_inspect(
-    data.resolved_import(@shader.ShaderImport::Custom("bevy_render::view")),
+    data.resolved_import(Custom("bevy_render::view")),
     content="Some(\"shader-view\")",
   )
   debug_inspect(data.dependent_count(), content="2")
@@ -73,9 +66,7 @@ fn shader_cache_dummy_load_module(
   match source {
     Wgsl(text) =>
       if text == "" {
-        raise @shader.ShaderCacheError::CreateShaderModule(
-          "empty WGSL source in shader cache test",
-        )
+        raise CreateShaderModule("empty WGSL source in shader cache test")
       } else {
         text
       }
@@ -96,15 +87,15 @@ fn shader_cache_test_shader(
   import_path : @shader.ShaderImport,
   imports : Array[@shader.ShaderImport],
 ) -> @shader.Shader {
-  @shader.Shader::{
+  {
     path: import_path.module_name(),
-    source: @shader.Source::Wgsl("fn main() {}"),
+    source: Wgsl("fn main() {}"),
     import_path,
     imports,
     additional_imports: [],
     shader_defs: [],
     file_dependencies: [],
-    validate_shader: @shader.ValidateShader::Disabled,
+    validate_shader: Disabled,
   }
 }
 
@@ -119,28 +110,26 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
   ignore(
     cache.set_shader(
       child_id,
-      shader_cache_test_shader(@shader.ShaderImport::Custom("test::child"), [
-        @shader.ShaderImport::Custom("test::base"),
-      ]),
+      shader_cache_test_shader(Custom("test::child"), [Custom("test::base")]),
     ),
   )
   let child_data_before = match cache.data.get(child_id.index()) {
     Some(data) => data
-    None => @shader.ShaderData::ShaderData()
+    None => ShaderData()
   }
   child_data_before.track_pipeline(7)
   cache.data.set(child_id.index(), child_data_before)
 
   debug_inspect(cache.contains_shader(child_id), content="true")
   debug_inspect(
-    cache.waiting_on_import.contains(@shader.ShaderImport::Custom("test::base")),
+    cache.waiting_on_import.contains(Custom("test::base")),
     content="true",
   )
 
   ignore(
     cache.set_shader(
       base_id,
-      shader_cache_test_shader(@shader.ShaderImport::Custom("test::base"), []),
+      shader_cache_test_shader(Custom("test::base"), []),
     ),
   )
 
@@ -149,11 +138,11 @@ test "shader cache lifecycle tracks waiting imports and dependent invalidation" 
     None => abort("expected child shader data after import resolution")
   }
   debug_inspect(
-    child_data_after.resolved_import(@shader.ShaderImport::Custom("test::base")),
+    child_data_after.resolved_import(Custom("test::base")),
     content="Some(1)",
   )
   debug_inspect(
-    cache.waiting_on_import.contains(@shader.ShaderImport::Custom("test::base")),
+    cache.waiting_on_import.contains(Custom("test::base")),
     content="false",
   )
 
@@ -218,8 +207,7 @@ test "shader cache wesl resolver requires imported modules to be loaded as shade
 
   let mut import_failed = false
   ignore(cache.get(root_id.index(), root_id, [])) catch {
-    @shader.ShaderCacheError::ShaderImportNotYetAvailable =>
-      import_failed = true
+    ShaderImportNotYetAvailable => import_failed = true
     _ => fail("expected resolver-backed wesl import failure")
   }
   debug_inspect(import_failed, content="true")
@@ -251,7 +239,7 @@ test "shader cache ignores non-bool defs when compiling wesl condcomp" {
   )
 
   let compiled = try! cache.get(root_id.index(), root_id, [
-    @shader.ShaderDefVal::UInt("PARTY_MODE", 1U),
+    UInt("PARTY_MODE", 1U),
   ])
 
   debug_inspect(compiled.contains("42.0"), content="false")
