@@ -22,6 +22,4 @@ import {
 
 supported_targets = "native"
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")

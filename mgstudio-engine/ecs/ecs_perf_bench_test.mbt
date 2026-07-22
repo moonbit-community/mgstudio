@@ -469,7 +469,9 @@ test "bench ecs: table batch read view cached" (b : @bench.T) {
   let cache = QueryCache::new()
   b.bench(name="table batch value accessor x102400", count=50U, () => {
     let query : Query[ReadValue[BenchPosition], All] = query_filtered_with_cache(
-      world, All::new(), cache,
+      world,
+      All::new(),
+      cache,
     )
     let total = Ref(0)
     try! query.for_each_table(fn(batch) {
@@ -482,11 +484,16 @@ test "bench ecs: table batch read view cached" (b : @bench.T) {
   })
   b.bench(name="table batch read view x102400", count=50U, () => {
     let query : Query[ReadValue[BenchPosition], All] = query_filtered_with_cache(
-      world, All::new(), cache,
+      world,
+      All::new(),
+      cache,
     )
     let total = Ref(0)
     try! query.for_each_table(fn(batch) {
-      batch.read(bench_position_key).unwrap().with_values(fn(positions) {
+      batch
+      .read(bench_position_key)
+      .unwrap()
+      .with_values(fn(positions) {
         for position in positions {
           total.val = total.val + position.x
         }

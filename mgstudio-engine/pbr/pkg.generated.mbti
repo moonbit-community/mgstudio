@@ -190,6 +190,8 @@ pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@Milky2018/mgstudio/mesh.Mes
 
 pub fn[BD] collect_meshes_for_gpu_building(RenderMeshInstances, @batching.BatchedInstanceBuffers[BD, MeshInputUniform], MeshCullingDataBuffer, RenderMeshInstanceGpuQueues, RenderGpuCulledEntities, @Milky2018/mgstudio/render/mesh.MeshAllocator, RenderMaterialInstances, RenderMaterialBindings, @lightmap.RenderLightmaps, @Milky2018/mgstudio/pbr/render.SkinUniforms, @Milky2018/mgstudio/pbr/render.MorphIndices, UInt, MeshesToReextractNextFrame) -> Unit
 
+pub fn collect_wireframe_3d_phase_buffers_system(@ecs.World) -> Unit
+
 pub fn configure_pbr_render_app_build_flow(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
 
 pub fn configure_pbr_render_light_view_observers(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
@@ -741,6 +743,8 @@ pub fn prepare_clusters_for_cpu_clustering(@ecs.World) -> Unit
 pub fn prepare_clusters_for_gpu_clustering(@ecs.World) -> Unit
 
 pub fn prepare_lights(@ecs.World) -> Unit
+
+pub fn prepare_wireframe_3d_phase_buffers_system(@ecs.World) -> Unit
 
 pub fn prepare_wireframe_wide_bind_groups(RenderMeshInstances, @Milky2018/mgstudio/render/mesh.RenderMeshAssets, RenderWireframeInstances, RenderWireframeAssets, @Milky2018/mgstudio/render/mesh.MeshAllocator, WireframeWideBindGroups) -> Unit
 
@@ -3131,10 +3135,17 @@ pub fn Wireframe3dBatchSetKey::mesh_asset_id(Self) -> Int?
 pub fn Wireframe3dBatchSetKey::new(@render_resource.CachedRenderPipelineId, Int, @material.DrawFunctionId, @Milky2018/mgstudio/render/mesh.MeshSlabs, mesh_asset_id? : Int?) -> Self
 pub fn Wireframe3dBatchSetKey::pipeline(Self) -> @render_resource.CachedRenderPipelineId
 pub fn Wireframe3dBatchSetKey::slabs(Self) -> @Milky2018/mgstudio/render/mesh.MeshSlabs
+pub impl Eq for Wireframe3dBatchSetKey
+
+pub struct Wireframe3dBatchedInstanceBuffer {
+  buffer : @batching.BatchedInstanceBuffer[Unit]
+}
+pub fn Wireframe3dBatchedInstanceBuffer::Wireframe3dBatchedInstanceBuffer() -> Self
+pub impl @app.Resource for Wireframe3dBatchedInstanceBuffer
 
 pub struct Wireframe3dBinKey {
   asset_id : Int
-} derive(Eq, @debug.Debug)
+} derive(Eq, Hash, @debug.Debug)
 pub fn Wireframe3dBinKey::asset_id(Self) -> Int
 pub fn Wireframe3dBinKey::new(Int) -> Self
 
@@ -3149,6 +3160,18 @@ pub fn Wireframe3dDrawFunctions::thin(Self) -> @material.DrawFunctionId
 pub fn Wireframe3dDrawFunctions::wide(Self) -> @material.DrawFunctionId
 pub impl @app.Resource for Wireframe3dDrawFunctions
 
+pub struct Wireframe3dPhaseBatchedInstanceBuffers {
+  buffers : @batching.PhaseBatchedInstanceBuffers[Unit]
+}
+pub fn Wireframe3dPhaseBatchedInstanceBuffers::Wireframe3dPhaseBatchedInstanceBuffers() -> Self
+pub impl @app.Resource for Wireframe3dPhaseBatchedInstanceBuffers
+
+pub struct Wireframe3dPhaseIndirectParametersBuffers {
+  buffers : @batching.PhaseIndirectParametersBuffers
+}
+pub fn Wireframe3dPhaseIndirectParametersBuffers::Wireframe3dPhaseIndirectParametersBuffers() -> Self
+pub impl @app.Resource for Wireframe3dPhaseIndirectParametersBuffers
+
 pub struct Wireframe3dPhases {
   views : Map[UInt64, Wireframe3dViewPhase]
 }
@@ -3158,6 +3181,7 @@ pub fn Wireframe3dPhases::contains(Self, @core.Entity) -> Bool
 pub fn Wireframe3dPhases::len(Self) -> Int
 pub fn Wireframe3dPhases::phase(Self, @core.Entity) -> Wireframe3dViewPhase?
 pub fn Wireframe3dPhases::prepare_for_new_frame(Self, @core.Entity, @batching.GpuPreprocessingMode) -> Unit
+pub fn Wireframe3dPhases::prepare_phase_buffers(Self, RenderMeshInstances, Map[UInt64, Bool], @batching.PhaseBatchedInstanceBuffers[Unit], @batching.PhaseIndirectParametersBuffers) -> Unit
 pub fn Wireframe3dPhases::remove(Self, @core.Entity, @sync_world.MainEntity) -> Unit
 pub fn Wireframe3dPhases::retain_live_views(Self, Map[UInt64, Bool]) -> Unit
 pub fn Wireframe3dPhases::retained_view_entities(Self) -> Array[@core.Entity]
@@ -3235,28 +3259,18 @@ pub fn Wireframe3dThinImmediates::color(Self) -> @color.Color
 pub fn Wireframe3dThinImmediates::float_count(Self) -> Int
 pub fn Wireframe3dThinImmediates::from_material(RenderWireframeMaterial) -> Self
 
-pub(all) struct Wireframe3dUnbatchableBinnedEntities {
-  batch_set_key : Wireframe3dBatchSetKey
-  bin_key : Wireframe3dBinKey
-  mut entities : Array[(@sync_world.MainEntity, @core.Entity)]
-  buffer_indices : @render_phase.UnbatchableBinnedEntityIndexSet
-}
-
 pub struct Wireframe3dViewPhase {
-  gpu_preprocessing_mode : @batching.GpuPreprocessingMode
-  mut items : Array[Wireframe3d]
-  mut unbatchable_meshes : Array[Wireframe3dUnbatchableBinnedEntities]
-  input_uniform_indices : Map[UInt64, @render_phase.InputUniformIndex]
-  cached_entity_bin_keys : Map[@sync_world.MainEntity, @render_phase.CachedBinnedEntity[Wireframe3dBatchSetKey, Wireframe3dBinKey]]
+  phase : @render_phase.BinnedRenderPhase[Wireframe3dBatchSetKey, Wireframe3dBinKey]
 }
 pub fn Wireframe3dViewPhase::add(Self, Wireframe3dBatchSetKey, Wireframe3dBinKey, (@core.Entity, @sync_world.MainEntity), @render_phase.InputUniformIndex, @render_phase.BinnedRenderPhaseType) -> Unit
 pub fn Wireframe3dViewPhase::gpu_preprocessing_mode(Self) -> @batching.GpuPreprocessingMode
 pub fn Wireframe3dViewPhase::input_uniform_index(Self, @sync_world.MainEntity) -> @render_phase.InputUniformIndex?
 pub fn Wireframe3dViewPhase::is_empty(Self) -> Bool
-pub fn Wireframe3dViewPhase::items(Self) -> Array[Wireframe3d]
+pub fn Wireframe3dViewPhase::items(Self, multi_draw_indirect_count_supported? : Bool) -> Array[Wireframe3d]
 pub fn Wireframe3dViewPhase::len(Self) -> Int
 pub fn Wireframe3dViewPhase::new(@batching.GpuPreprocessingMode) -> Self
 pub fn Wireframe3dViewPhase::phase_type(Self, @sync_world.MainEntity) -> @render_phase.BinnedRenderPhaseType?
+pub fn Wireframe3dViewPhase::prepare_cpu_buffers(Self, RenderMeshInstances) -> Unit
 pub fn Wireframe3dViewPhase::prepare_for_new_frame(Self) -> Unit
 pub fn Wireframe3dViewPhase::remove(Self, @sync_world.MainEntity) -> Unit
 pub fn Wireframe3dViewPhase::unbatchable_bin_count(Self) -> Int
@@ -3733,3 +3747,4 @@ pub(open) trait StandardMaterialExtension {
   fn enable_shadows_ref() -> Bool
   fn specialize_ref() -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
 }
+

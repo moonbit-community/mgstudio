@@ -80,14 +80,16 @@ test "camera visibility: check visibility fills camera VisibleEntities by visibi
     visible_mesh,
     @root_visibility.ecs_key_view_visibility,
     @root_visibility.ViewVisibility::visible(),
-  ) |> ignore)
+  )
+  |> ignore)
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
   let tick_context = @core.SystemTickContext::new()
   tick_context.set(@core.SystemTicks::new(1, 2))
   world.set_tick_context(tick_context)
   let view_visibility = (try! world.get_mut(
-    visible_mesh, key=@root_visibility.ecs_key_view_visibility,
+    visible_mesh,
+    key=@root_visibility.ecs_key_view_visibility,
   )).unwrap()
   view_visibility.bypass_change_detection(fn(value) { value.advance_frame() })
 

@@ -2543,19 +2543,12 @@ test "renderer: replacing mesh3d cluster buffers keeps handles bounded" {
 test "renderer: source-owned mesh3d cluster buffers reject legacy uploads" {
   let backend = GpuBackend::new()
   ensure_mesh3d_pipeline_layout_resources(backend)
-  let usage = bu(
-    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
-  )
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
   let clustered_lights = backend.device.create_buffer(size=16UL, usage~)
   let object_indices = backend.device.create_buffer(size=16UL, usage~)
   let offsets_and_counts = backend.device.create_buffer(size=16UL, usage~)
   backend.use_mesh3d_cluster_buffers(
-    clustered_lights,
-    16UL,
-    object_indices,
-    16UL,
-    offsets_and_counts,
-    16UL,
+    clustered_lights, 16UL, object_indices, 16UL, offsets_and_counts, 16UL,
   )
   clustered_lights.release()
   object_indices.release()

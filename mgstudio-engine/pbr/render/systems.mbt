@@ -62,7 +62,8 @@ pub fn[T : @ecs.Component] render3d_update_frusta_system_by_projection_key(
     let frusta = batch.write(ecs_key_frustum).unwrap()
     try! rows.for_each(fn(row_index) {
       let next = compute_frustum(
-        projections.value(row_index), transforms.value(row_index),
+        projections.value(row_index),
+        transforms.value(row_index),
       )
       if frusta.peek(row_index) != next {
         frusta.set(row_index, next)

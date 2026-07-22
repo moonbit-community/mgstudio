@@ -353,7 +353,10 @@ test "ecs table batch: read view exposes complete live column" {
   let seen : Array[Int] = []
 
   try! query.for_each_table(fn(batch) {
-    batch.read(table_batch_velocity_key).unwrap().with_values(fn(values) {
+    batch
+    .read(table_batch_velocity_key)
+    .unwrap()
+    .with_values(fn(values) {
       for value in values {
         seen.push(value.value)
       }
@@ -670,9 +673,10 @@ test "panic ecs table batch: read view rejects filtered row batches" {
 
   ignore(
     try! query.try_for_each_filtered_table(fn(batch, _rows) {
-      batch.read(table_batch_velocity_key).unwrap().with_values(fn(_values) {
-        ()
-      })
+      batch
+      .read(table_batch_velocity_key)
+      .unwrap()
+      .with_values(fn(_values) { () })
     }),
   )
 }

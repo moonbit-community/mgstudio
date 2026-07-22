@@ -290,9 +290,9 @@ fn render3d_shadow_resolve_phase_items(
       continue
     }
     guard render3d_extracted_shadow_mesh_matches_bin(
-        meshes[index],
-        cached_bin_key.bin_key(),
-      ) else {
+      meshes[index],
+      cached_bin_key.bin_key(),
+    ) else {
       continue
     }
     guard phase.input_uniform_index(main_entity) is Some(input_uniform_index) else {
@@ -309,9 +309,10 @@ fn render3d_shadow_resolve_phase_items(
       ),
       Render3dShadowPhaseItemExtraIndex::none(),
     )
-    resolved.push(
-      Render3dResolvedShadowPhaseItem::{ item, extracted_indices: [index] },
-    )
+    resolved.push(Render3dResolvedShadowPhaseItem::{
+      item,
+      extracted_indices: [index],
+    })
   }
   resolved
 }
