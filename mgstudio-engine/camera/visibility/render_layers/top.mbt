@@ -154,7 +154,7 @@ pub impl @ecs.Component for RenderLayers with fn component() {
 
 ///|
 fn encode_render_layers(layers : RenderLayers) -> Json {
-  layers.mask.to_json()
+  layers.mask |> ToJson::to_json
 }
 
 ///|

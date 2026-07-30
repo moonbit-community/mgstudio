@@ -38,7 +38,7 @@ pub fn IRect::as_rect(self : IRect) -> Rect {
 
 ///|
 pub impl ToJson for IRect with fn to_json(self) {
-  (self.min, self.max).to_json()
+  (self.min, self.max) |> ToJson::to_json
 }
 
 ///|

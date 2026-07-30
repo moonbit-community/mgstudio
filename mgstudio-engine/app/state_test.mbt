@@ -215,10 +215,10 @@ test "states plugin: inserts state transition into schedule order resources" {
   ignore(app)
   let order = world_main_schedule_order(app.world())
   let startup_labels = order.startup_labels.map(fn(stage : ScheduleStage) {
-    to_repr(stage).to_string()
+    Repr(stage).to_string()
   })
   let labels = order.labels.map(fn(stage : ScheduleStage) {
-    to_repr(stage).to_string()
+    Repr(stage).to_string()
   })
   debug_inspect(
     startup_labels.join(","),

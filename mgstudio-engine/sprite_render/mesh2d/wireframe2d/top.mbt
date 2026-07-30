@@ -129,7 +129,7 @@ pub impl @ecs.Component for Wireframe2dColor with fn component() {
 
 ///|
 fn wireframe2d_encode_color(color : Color) -> Json {
-  (color.r, color.g, color.b, color.a).to_json()
+  (color.r, color.g, color.b, color.a) |> ToJson::to_json
 }
 
 ///|
@@ -141,7 +141,7 @@ fn wireframe2d_decode_color(json : Json) -> Color {
 ///|
 pub impl ToJson for Wireframe2d with fn to_json(self) {
   self |> ignore
-  (0).to_json()
+  0 |> ToJson::to_json
 }
 
 ///|
@@ -152,7 +152,7 @@ pub impl @json.FromJson for Wireframe2d with fn from_json(_json, _path) {
 ///|
 pub impl ToJson for NoWireframe2d with fn to_json(self) {
   self |> ignore
-  (0).to_json()
+  0 |> ToJson::to_json
 }
 
 ///|

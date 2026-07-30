@@ -210,7 +210,7 @@ pub impl[T] Default for ButtonInput[T] with fn default() {
 
 ///|
 pub impl[T : ToJson] ToJson for ButtonInput[T] with fn to_json(self) {
-  (self.pressed, self.just_pressed, self.just_released).to_json()
+  (self.pressed, self.just_pressed, self.just_released) |> ToJson::to_json
 }
 
 ///|
@@ -254,7 +254,7 @@ pub impl[T] Default for Axis[T] with fn default() {
 
 ///|
 pub impl[T : ToJson] ToJson for Axis[T] with fn to_json(self) {
-  self.axis_data.to_json()
+  self.axis_data |> ToJson::to_json
 }
 
 ///|
@@ -2144,7 +2144,7 @@ pub impl ButtonInputButton for @window.MouseButton with fn button_id(self) {
 
 ///|
 pub impl ButtonInputButton for Key with fn button_id(self) {
-  self.to_json().stringify()
+  (self |> ToJson::to_json).stringify()
 }
 
 ///|

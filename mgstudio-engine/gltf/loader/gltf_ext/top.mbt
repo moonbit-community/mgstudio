@@ -365,7 +365,7 @@ pub fn GltfSkinIndex::index(self : GltfSkinIndex) -> Int {
 
 ///|
 pub impl ToJson for GltfSkinIndex with fn to_json(self) {
-  self.index.to_json()
+  self.index |> ToJson::to_json
 }
 
 ///|

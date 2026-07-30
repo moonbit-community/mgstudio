@@ -442,7 +442,7 @@ fn GpuBackend::create_pipeline_cache_render_pipeline(
         None => ()
       }
       fatal(
-        "wgpu: failed to create pipeline-cache render pipeline \{vertex_shader_path}: \{to_repr(err).to_string()}",
+        "wgpu: failed to create pipeline-cache render pipeline \{vertex_shader_path}: \{Repr(err).to_string()}",
       )
     }
   }

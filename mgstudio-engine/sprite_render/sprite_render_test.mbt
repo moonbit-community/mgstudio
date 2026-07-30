@@ -18,7 +18,7 @@ test "sprite_render boundary re-exports wireframe config and alpha mode" {
   debug_inspect(config.global, content="false")
   debug_inspect(config.default_color.r.to_double(), content="1")
   debug_inspect(
-    @sprite_render.AlphaMode2d::Blend.to_json(),
+    @sprite_render.AlphaMode2d::Blend |> ToJson::to_json,
     content="String(\"Blend\")",
   )
 }

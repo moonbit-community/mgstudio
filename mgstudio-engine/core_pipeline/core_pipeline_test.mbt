@@ -19,11 +19,11 @@ test "core_pipeline boundary re-exports prepass markers and msaa" {
   let motion = @core_pipeline.MotionVectorPrepass::MotionVectorPrepass()
   let deferred = @core_pipeline.DeferredPrepass::DeferredPrepass()
   let hdr = @core_pipeline.Hdr::Hdr()
-  debug_inspect(depth.to_json(), content="Object({})")
-  debug_inspect(normal.to_json(), content="Object({})")
-  debug_inspect(motion.to_json(), content="Object({})")
-  debug_inspect(deferred.to_json(), content="Object({})")
-  debug_inspect(hdr.to_json(), content="Object({})")
+  debug_inspect(depth |> ToJson::to_json, content="Object({})")
+  debug_inspect(normal |> ToJson::to_json, content="Object({})")
+  debug_inspect(motion |> ToJson::to_json, content="Object({})")
+  debug_inspect(deferred |> ToJson::to_json, content="Object({})")
+  debug_inspect(hdr |> ToJson::to_json, content="Object({})")
   debug_inspect(@core_pipeline.Msaa::from_samples(4).samples(), content="4")
 }
 

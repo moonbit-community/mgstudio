@@ -80,7 +80,7 @@ fn print_real_time(world : @ecs.World) -> Unit {
     world, @my_time.real_time_resource_key, "Time<Real>",
   )
   println(
-    "PreUpdate: this is real time clock, delta is \{to_repr(real_time.delta()).to_string()} and elapsed is \{to_repr(real_time.elapsed()).to_string()}",
+    "PreUpdate: this is real time clock, delta is \{Repr(real_time.delta()).to_string()} and elapsed is \{Repr(real_time.elapsed()).to_string()}",
   )
 }
 
@@ -90,7 +90,7 @@ fn print_fixed_time(world : @ecs.World) -> Unit {
     world, @my_time.default_time_resource_key, "Time<Unit>",
   )
   println(
-    "FixedUpdate: this is generic time clock inside fixed, delta is \{to_repr(time.delta()).to_string()} and elapsed is \{to_repr(time.elapsed()).to_string()}",
+    "FixedUpdate: this is generic time clock inside fixed, delta is \{Repr(time.delta()).to_string()} and elapsed is \{Repr(time.elapsed()).to_string()}",
   )
 }
 
@@ -100,7 +100,7 @@ fn print_time(world : @ecs.World) -> Unit {
     world, @my_time.default_time_resource_key, "Time<Unit>",
   )
   println(
-    "Update: this is generic time clock, delta is \{to_repr(time.delta()).to_string()} and elapsed is \{to_repr(time.elapsed()).to_string()}",
+    "Update: this is generic time clock, delta is \{Repr(time.delta()).to_string()} and elapsed is \{Repr(time.elapsed()).to_string()}",
   )
 }
 

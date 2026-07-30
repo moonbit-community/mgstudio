@@ -26,7 +26,7 @@ pub fn[T] Handle::new(id : Int) -> Handle[T] {
 
 ///|
 pub impl[T] ToJson for Handle[T] with fn to_json(self) {
-  self.id.to_json()
+  self.id |> ToJson::to_json
 }
 
 ///|

@@ -25,9 +25,9 @@ pub(all) enum Visibility {
 ///|
 pub impl ToJson for Visibility with fn to_json(self) {
   match self {
-    Hidden => (0).to_json()
-    Inherited => (1).to_json()
-    Visible => (2).to_json()
+    Hidden => 0 |> ToJson::to_json
+    Inherited => 1 |> ToJson::to_json
+    Visible => 2 |> ToJson::to_json
   }
 }
 
@@ -88,7 +88,7 @@ pub struct InheritedVisibility {
 
 ///|
 pub impl ToJson for InheritedVisibility with fn to_json(self) {
-  self.visible.to_json()
+  self.visible |> ToJson::to_json
 }
 
 ///|
@@ -130,7 +130,7 @@ pub struct ViewVisibility {
 
 ///|
 pub impl ToJson for ViewVisibility with fn to_json(self) {
-  self.get().to_json()
+  self.get() |> ToJson::to_json
 }
 
 ///|
@@ -322,7 +322,8 @@ pub impl ToJson for VisibilityRange with fn to_json(self) {
     self.end_margin_min,
     self.end_margin_max,
     self.use_aabb,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|

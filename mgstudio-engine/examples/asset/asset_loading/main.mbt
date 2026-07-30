@@ -42,7 +42,7 @@ fn setup(
 
   if meshes.get().get(sphere_handle) is Some(sphere) {
     let topology = if sphere.as_3d_geometry() is Some(geometry) {
-      to_repr(geometry.primitive_topology()).to_string()
+      Repr(geometry.primitive_topology()).to_string()
     } else {
       "Unknown"
     }

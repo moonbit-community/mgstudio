@@ -90,7 +90,7 @@ pub impl ToJson for UiContext with fn to_json(self) {
   let id = ui_serde_runtime_state.context_next_id
   ui_serde_runtime_state.context_next_id = id + 1
   ui_context_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|

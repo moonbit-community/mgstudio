@@ -89,7 +89,7 @@ fn picking_debug_log_system(
         }
         let position_label = "(\{event.position.x.to_string()}, \{event.position.y.to_string()})"
         println(
-          "[picking_debug] pointer=\{event.pointer.to_string()} kind=\{to_repr(event.kind).to_string()} target=\{target_label} position=\{position_label}",
+          "[picking_debug] pointer=\{event.pointer.to_string()} kind=\{Repr(event.kind).to_string()} target=\{target_label} position=\{position_label}",
         )
       }
       @app.PickingEvents::push(value, event)

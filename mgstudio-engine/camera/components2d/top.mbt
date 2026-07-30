@@ -36,7 +36,7 @@ pub impl @ecs.Component for Camera2d with fn component() {
 
 ///|
 fn encode_camera2d(_camera2d : Camera2d) -> Json {
-  (0).to_json()
+  0 |> ToJson::to_json
 }
 
 ///|

@@ -967,7 +967,7 @@ pub impl ToJson for RenderState with fn to_json(self) {
   let id = render2d_runtime_state.render_state_serde_next_id
   render2d_runtime_state.render_state_serde_next_id = id + 1
   render_state_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|
@@ -4238,7 +4238,10 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   render_queue_system(world)
 
   let counts = render_state_ref(world).unwrap().queued_draw_item_counts
-  debug_inspect(counts.to_json(), content="Array([Number(1), Number(1)])")
+  debug_inspect(
+    counts |> ToJson::to_json,
+    content="Array([Number(1), Number(1)])",
+  )
 }
 
 ///|

@@ -240,7 +240,7 @@ pub fn[Source] AudioPlayer::handle(
 
 ///|
 pub impl[Source] ToJson for AudioPlayer[Source] with fn to_json(self) {
-  self.source.to_json()
+  self.source |> ToJson::to_json
 }
 
 ///|

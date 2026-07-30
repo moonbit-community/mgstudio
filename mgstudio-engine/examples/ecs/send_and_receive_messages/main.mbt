@@ -137,7 +137,7 @@ fn send_messages(
 ///|
 fn debug_messages(messages : @ecs.MessageReader[DebugMessage]) -> Unit {
   for message in messages.read() {
-    println(to_repr(message).to_string())
+    println(Repr(message).to_string())
   }
 }
 

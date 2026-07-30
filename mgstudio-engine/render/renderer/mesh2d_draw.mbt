@@ -1603,10 +1603,10 @@ fn mesh2d_descriptor_vertex_buffer_layout(
 
 ///|
 fn mesh2d_vertex_layout_cache_key(layout : @mesh.VertexBufferLayout) -> String {
-  let mut key = "\{layout.array_stride.to_string()}:\{to_repr(layout.step_mode).to_string()}"
+  let mut key = "\{layout.array_stride.to_string()}:\{Repr(layout.step_mode).to_string()}"
   for attribute in layout.attributes {
     key = key +
-      "|\{attribute.offset.to_string()}:\{to_repr(attribute.format).to_string()}:\{attribute.shader_location.to_string()}"
+      "|\{attribute.offset.to_string()}:\{Repr(attribute.format).to_string()}:\{attribute.shader_location.to_string()}"
   }
   key
 }

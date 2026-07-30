@@ -350,7 +350,7 @@ fn ldtk_parse_color_hex(value : String) -> @color.Color {
 
 ///|
 fn ldtk_empty_json_array() -> Json {
-  ([] : Array[Json]).to_json()
+  ([] : Array[Json]) |> ToJson::to_json
 }
 
 ///|
@@ -663,10 +663,10 @@ fn ldtk_decode_level_background_position(
   {
     crop_rect,
     scale: ldtk_decode_vec2(
-      ldtk_object_get_or(object, "scale", [1.0, 1.0].to_json()),
+      ldtk_object_get_or(object, "scale", [1.0, 1.0] |> ToJson::to_json),
     ),
     top_left_px: ldtk_decode_ivec2(
-      ldtk_object_get_or(object, "topLeftPx", [0, 0].to_json()),
+      ldtk_object_get_or(object, "topLeftPx", [0, 0] |> ToJson::to_json),
     ),
   }
 }
@@ -675,8 +675,12 @@ fn ldtk_decode_level_background_position(
 fn ldtk_decode_tile_instance(json : Json) -> TileInstance {
   let object = ldtk_json_object(json)
   {
-    px: ldtk_decode_ivec2(ldtk_object_get_or(object, "__px", [0, 0].to_json())),
-    src: ldtk_decode_ivec2(ldtk_object_get_or(object, "src", [0, 0].to_json())),
+    px: ldtk_decode_ivec2(
+      ldtk_object_get_or(object, "__px", [0, 0] |> ToJson::to_json),
+    ),
+    src: ldtk_decode_ivec2(
+      ldtk_object_get_or(object, "src", [0, 0] |> ToJson::to_json),
+    ),
     f: ldtk_int_or_default(object, "f", 0),
     t: ldtk_int_or_default(object, "t", -1),
     d: match ldtk_optional_json(object, "d") {
@@ -730,11 +734,13 @@ fn ldtk_decode_entity_instance(json : Json) -> EntityInstance {
       None => []
     },
     grid: ldtk_decode_ivec2(
-      ldtk_object_get_or(object, "__grid", [0, 0].to_json()),
+      ldtk_object_get_or(object, "__grid", [0, 0] |> ToJson::to_json),
     ),
-    px: ldtk_decode_ivec2(ldtk_object_get_or(object, "px", [0, 0].to_json())),
+    px: ldtk_decode_ivec2(
+      ldtk_object_get_or(object, "px", [0, 0] |> ToJson::to_json),
+    ),
     pivot: ldtk_decode_vec2(
-      ldtk_object_get_or(object, "__pivot", [0.0, 0.0].to_json()),
+      ldtk_object_get_or(object, "__pivot", [0.0, 0.0] |> ToJson::to_json),
     ),
     tile: match ldtk_optional_json(object, "__tile") {
       Some(value) => Some(ldtk_decode_tileset_rectangle(value))
@@ -1096,7 +1102,8 @@ pub fn ldtk_parse_json_from_text(text : String) -> LdtkJson {
           "entities": ldtk_empty_json_array(),
           "layers": ldtk_empty_json_array(),
           "tilesets": ldtk_empty_json_array(),
-        }.to_json(),
+        }
+        |> ToJson::to_json,
       ),
     ),
   }

@@ -358,7 +358,7 @@ test "render schedule: pipeline queue is chained inside render set" {
         log.push("register")
         let cache = world.get_resource(pipeline_cache_resource_key).unwrap()
         log.push(
-          "driver:\{cache.pipeline_count()}:\{cache.queued_pipeline_count()}:\{to_repr(cache.waiting_pipelines()).to_string()}",
+          "driver:\{cache.pipeline_count()}:\{cache.queued_pipeline_count()}:\{Repr(cache.waiting_pipelines()).to_string()}",
         )
       }).in_set(render_system_set_register_pipeline_descriptors),
     )

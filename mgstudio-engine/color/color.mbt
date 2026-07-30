@@ -27,7 +27,7 @@ pub fn Color::new(r : Float, g : Float, b : Float, a : Float) -> Color {
 
 ///|
 pub impl ToJson for Color with fn to_json(self) {
-  (self.r, self.g, self.b, self.a).to_json()
+  (self.r, self.g, self.b, self.a) |> ToJson::to_json
 }
 
 ///|

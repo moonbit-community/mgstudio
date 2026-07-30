@@ -377,7 +377,7 @@ test "app: Res can read inserted State resource" {
     .add_plugins(@app.StatesPlugin::StatesPlugin())
     .insert_state(TestState::A)
     .add_system_param(fn(state : Res[State[TestState]]) {
-      observed.val = to_repr(state.get().get()).to_string()
+      observed.val = Repr(state.get().get()).to_string()
     })
 
   app.run_startup() |> ignore

@@ -35,7 +35,7 @@ pub fn AnimatedBy::player(self : AnimatedBy) -> @core.Entity {
 
 ///|
 pub impl ToJson for AnimatedBy with fn to_json(self) {
-  (self.player.id, self.player.generation).to_json()
+  (self.player.id, self.player.generation) |> ToJson::to_json
 }
 
 ///|
@@ -121,9 +121,9 @@ pub(all) enum RepeatAnimation {
 ///|
 pub impl ToJson for RepeatAnimation with fn to_json(self) {
   match self {
-    Never => (0, 0).to_json()
-    Count(count) => (1, count).to_json()
-    Forever => (2, 0).to_json()
+    Never => (0, 0) |> ToJson::to_json
+    Count(count) => (1, count) |> ToJson::to_json
+    Forever => (2, 0) |> ToJson::to_json
   }
 }
 
@@ -163,7 +163,8 @@ pub impl ToJson for ActiveAnimation with fn to_json(self) {
     self.completions,
     self.just_completed,
     self.paused,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -450,7 +451,7 @@ fn animation_player_entry_active_or_abort(
 
 ///|
 pub impl ToJson for AnimationPlayer with fn to_json(self) {
-  self.playing_animations().to_json()
+  self.playing_animations() |> ToJson::to_json
 }
 
 ///|

@@ -1460,7 +1460,7 @@ pub fn MeshMaterial3d::is_standard_material(self : MeshMaterial3d) -> Bool {
 
 ///|
 pub impl ToJson for MeshMaterial3d with fn to_json(self) {
-  self.material.id().to_json()
+  self.material.id() |> ToJson::to_json
 }
 
 ///|

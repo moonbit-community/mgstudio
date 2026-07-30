@@ -73,7 +73,7 @@ pub fn Cuboid::sample_interior(self : Cuboid, rng : @random.Rand) -> Vec3 {
 
 ///|
 pub impl ToJson for Cuboid with fn to_json(self) {
-  self.half_size.to_json()
+  self.half_size |> ToJson::to_json
 }
 
 ///|

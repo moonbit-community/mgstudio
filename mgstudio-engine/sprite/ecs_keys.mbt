@@ -106,57 +106,57 @@ pub fn render2d_create_render_target_ecs(
 
 ///|
 fn encode_color(color : @color.Color) -> Json {
-  (color.r, color.g, color.b, color.a).to_json()
+  (color.r, color.g, color.b, color.a) |> ToJson::to_json
 }
 
 ///|
 fn encode_vec2(value : @math.Vec2) -> Json {
-  (value.x, value.y).to_json()
+  (value.x, value.y) |> ToJson::to_json
 }
 
 ///|
 fn encode_rect(rect : @math.Rect) -> Json {
-  (rect.min.x, rect.min.y, rect.max.x, rect.max.y).to_json()
+  (rect.min.x, rect.min.y, rect.max.x, rect.max.y) |> ToJson::to_json
 }
 
 ///|
 fn encode_image_handle(handle : @asset.Handle[@asset.Image]) -> Json {
-  handle.id().to_json()
+  handle.id() |> ToJson::to_json
 }
 
 ///|
 fn encode_texture_atlas(texture_atlas : @asset.TextureAtlas) -> Json {
-  (texture_atlas.layout().id(), texture_atlas.index).to_json()
+  (texture_atlas.layout().id(), texture_atlas.index) |> ToJson::to_json
 }
 
 ///|
 fn encode_slice_scale_mode(mode : SliceScaleMode) -> Json {
   match mode {
-    Stretch => (0, Json::null()).to_json()
-    Tile(value) => (1, value.to_json()).to_json()
+    Stretch => (0, Json::null()) |> ToJson::to_json
+    Tile(value) => (1, value |> ToJson::to_json) |> ToJson::to_json
   }
 }
 
 ///|
 fn encode_sprite_scaling_mode(mode : SpriteScalingMode) -> Json {
   match mode {
-    FillCenter => (0).to_json()
-    FillStart => (1).to_json()
-    FillEnd => (2).to_json()
-    FitCenter => (3).to_json()
-    FitStart => (4).to_json()
-    FitEnd => (5).to_json()
+    FillCenter => 0 |> ToJson::to_json
+    FillStart => 1 |> ToJson::to_json
+    FillEnd => 2 |> ToJson::to_json
+    FitCenter => 3 |> ToJson::to_json
+    FitStart => 4 |> ToJson::to_json
+    FitEnd => 5 |> ToJson::to_json
   }
 }
 
 ///|
 fn encode_sprite_tiling(tiling : SpriteTiling) -> Json {
-  (tiling.tile_x, tiling.tile_y, tiling.stretch_value).to_json()
+  (tiling.tile_x, tiling.tile_y, tiling.stretch_value) |> ToJson::to_json
 }
 
 ///|
 fn encode_border_rect(border : BorderRect) -> Json {
-  (border.left, border.right, border.top, border.bottom).to_json()
+  (border.left, border.right, border.top, border.bottom) |> ToJson::to_json
 }
 
 ///|
@@ -166,17 +166,18 @@ fn encode_texture_slicer(slicer : TextureSlicer) -> Json {
     encode_slice_scale_mode(slicer.center_scale_mode),
     encode_slice_scale_mode(slicer.sides_scale_mode),
     slicer.max_corner_scale,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
 fn encode_sprite_image_mode(mode : SpriteImageMode) -> Json {
   match mode {
-    Auto => (0, Json::null()).to_json()
+    Auto => (0, Json::null()) |> ToJson::to_json
     Scale(scaling_mode) =>
-      (1, encode_sprite_scaling_mode(scaling_mode)).to_json()
-    Sliced(slicer) => (2, encode_texture_slicer(slicer)).to_json()
-    Tiled(tiling) => (3, encode_sprite_tiling(tiling)).to_json()
+      (1, encode_sprite_scaling_mode(scaling_mode)) |> ToJson::to_json
+    Sliced(slicer) => (2, encode_texture_slicer(slicer)) |> ToJson::to_json
+    Tiled(tiling) => (3, encode_sprite_tiling(tiling)) |> ToJson::to_json
   }
 }
 
@@ -193,7 +194,8 @@ fn encode_sprite(sprite : Sprite) -> Json {
     sprite.custom_size.map(fn(size) { encode_vec2(size) }),
     sprite.rect.map(fn(rect) { encode_rect(rect) }),
     encode_sprite_image_mode(sprite.image_mode),
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|

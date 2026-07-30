@@ -384,7 +384,7 @@ pub impl[M : Material2d] @ecs.Component for MeshMaterial2d[M] with fn component(
 
 ///|
 fn[M] encode_mesh_material2d(material : MeshMaterial2d[M]) -> Json {
-  material.handle.to_json()
+  material.handle |> ToJson::to_json
 }
 
 ///|

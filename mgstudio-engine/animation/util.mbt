@@ -433,7 +433,7 @@ pub fn AnimationTargetId::new(high : Int, low : Int) -> AnimationTargetId {
 
 ///|
 pub impl ToJson for AnimationTargetId with fn to_json(self) {
-  (self.high, self.low).to_json()
+  (self.high, self.low) |> ToJson::to_json
 }
 
 ///|

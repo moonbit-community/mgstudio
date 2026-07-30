@@ -39,7 +39,7 @@ pub impl @ecs.Component for ScissorRect with fn component() {
 
 ///|
 pub impl ToJson for ScissorRect with fn to_json(self) {
-  self.rect.to_json()
+  self.rect |> ToJson::to_json
 }
 
 ///|

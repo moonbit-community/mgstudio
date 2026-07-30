@@ -100,9 +100,9 @@ pub fn clear_color_current_value() -> @color.Color {
 ///|
 pub fn encode_clear_color_config(clear_color : ClearColorConfig) -> Json {
   match clear_color {
-    Default => (0, Json::null()).to_json()
-    Custom(color) => (1, color.to_json()).to_json()
-    None => (2, Json::null()).to_json()
+    Default => (0, Json::null()) |> ToJson::to_json
+    Custom(color) => (1, color |> ToJson::to_json) |> ToJson::to_json
+    None => (2, Json::null()) |> ToJson::to_json
   }
 }
 

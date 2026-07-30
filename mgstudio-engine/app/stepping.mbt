@@ -190,7 +190,7 @@ pub fn Stepping::cursor(self : Stepping) -> (ScheduleStage, Int)? {
 
 ///|
 fn stepping_schedule_key(schedule : ScheduleStage) -> String {
-  to_repr(schedule).to_string()
+  Repr(schedule).to_string()
 }
 
 ///|

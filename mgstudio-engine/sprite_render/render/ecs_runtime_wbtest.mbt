@@ -34,7 +34,7 @@ fn ecs_transform_matches(
     entity, @transform.ecs_key_transform,
   )
   match actual_transform {
-    Some(actual) => actual.to_json() == expected.to_json()
+    Some(actual) => ToJson::to_json(actual) == ToJson::to_json(expected)
     None => false
   }
 }
@@ -618,8 +618,10 @@ test "render2d: Camera2d tuple stores window render target" {
   )
   debug_inspect(
     target.map(fn(value) {
-      value.to_json() ==
-      @camera_camera.RenderTarget::Window(Entity(target_window)).to_json()
+      ToJson::to_json(value) ==
+      ToJson::to_json(
+        @camera_camera.RenderTarget::Window(Entity(target_window)),
+      )
     }),
     content="Some(true)",
   )

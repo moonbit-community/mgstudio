@@ -3205,7 +3205,7 @@ pub fn[W] App::modify_sub_app(
 pub fn[W] App::sub_app(self : App[W], label : AppLabel) -> SubApp[W] {
   match self.get_sub_app(label) {
     Some(sub_app) => sub_app
-    None => abort("Missing sub app for label: \{to_repr(label).to_string()}")
+    None => abort("Missing sub app for label: \{Repr(label).to_string()}")
   }
 }
 
@@ -4719,7 +4719,7 @@ fn run_schedule_stage(
 ) -> Unit {
   let stage_trace_start_us = timeline_trace_begin_span(
     ScheduleStage,
-    to_repr(stage).to_string(),
+    Repr(stage).to_string(),
   )
   app_execution_context_state.current_schedule_stage = Some(stage)
   let execution_plan = schedule_execution_plan(
@@ -4737,7 +4737,7 @@ fn run_schedule_stage(
           @ecs.Invalid(message),
           ErrorContext::new(
             Validation,
-            "\{to_repr(stage).to_string()}::<schedule>",
+            "\{Repr(stage).to_string()}::<schedule>",
             stage=Some(stage),
           ),
         )
@@ -4745,7 +4745,7 @@ fn run_schedule_stage(
       app_execution_context_state.current_schedule_stage = None
       timeline_trace_end_span(
         ScheduleStage,
-        to_repr(stage).to_string(),
+        Repr(stage).to_string(),
         stage_trace_start_us,
       )
       return
@@ -4767,7 +4767,7 @@ fn run_schedule_stage(
   app_execution_context_state.current_schedule_stage = None
   timeline_trace_end_span(
     ScheduleStage,
-    to_repr(stage).to_string(),
+    Repr(stage).to_string(),
     stage_trace_start_us,
   )
 }

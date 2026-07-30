@@ -158,7 +158,8 @@ pub fn encode_viewport(viewport : Viewport) -> Json {
     encode_ivec2(viewport.physical_size),
     viewport.depth_min,
     viewport.depth_max,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -173,7 +174,7 @@ pub fn decode_viewport(json : Json) -> Viewport {
 
 ///|
 fn encode_ivec2(value : @math.IVec2) -> Json {
-  (value.x, value.y).to_json()
+  (value.x, value.y) |> ToJson::to_json
 }
 
 ///|

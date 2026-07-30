@@ -1078,7 +1078,7 @@ fn[W] schedule_build_graph_plan(
         system_layers: [],
         execution_order: [],
         build_error: Some(
-          "Schedule `\{to_repr(stage).to_string()}` has a hierarchy cycle between system sets. Cyclic sets: \{edge.0}.",
+          "Schedule `\{Repr(stage).to_string()}` has a hierarchy cycle between system sets. Cyclic sets: \{edge.0}.",
         ),
       }
     }
@@ -1132,7 +1132,7 @@ fn[W] schedule_build_graph_plan(
       system_layers: [],
       execution_order: [],
       build_error: Some(
-        "Schedule `\{to_repr(stage).to_string()}` has a hierarchy cycle between system sets.\{cycle_hint}",
+        "Schedule `\{Repr(stage).to_string()}` has a hierarchy cycle between system sets.\{cycle_hint}",
       ),
     }
   }
@@ -1153,7 +1153,7 @@ fn[W] schedule_build_graph_plan(
         names.push("\{edge.0} in \{edge.1}")
       }
       let redundant_names = names.join(", ")
-      let message = "Schedule `\{to_repr(stage).to_string()}` has redundant system set hierarchy edges: \{redundant_names}."
+      let message = "Schedule `\{Repr(stage).to_string()}` has redundant system set hierarchy edges: \{redundant_names}."
       match schedule_entry.graph.settings.hierarchy_detection() {
         ScheduleBuildError =>
           return {
@@ -1327,7 +1327,7 @@ fn[W] schedule_build_graph_plan(
       system_layers,
       execution_order: [],
       build_error: Some(
-        "Schedule `\{to_repr(stage).to_string()}` has a dependency cycle between system sets.\{cycle_hint}",
+        "Schedule `\{Repr(stage).to_string()}` has a dependency cycle between system sets.\{cycle_hint}",
       ),
     }
   }
@@ -1373,7 +1373,7 @@ fn[W] schedule_build_graph_plan(
       system_layers,
       execution_order: [],
       build_error: Some(
-        "Schedule `\{to_repr(stage).to_string()}` failed to build a valid execution order.",
+        "Schedule `\{Repr(stage).to_string()}` failed to build a valid execution order.",
       ),
     }
   }
@@ -1411,7 +1411,7 @@ fn[W] schedule_build_graph_plan(
             systems_by_set[to_i],
           ) {
           return Some(
-            "Schedule `\{to_repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{from_set}` and `\{to_set}`.",
+            "Schedule `\{Repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{from_set}` and `\{to_set}`.",
           )
         }
       }
@@ -1473,7 +1473,7 @@ fn[W] schedule_build_graph_plan(
           system_layers: [],
           execution_order: [],
           build_error: Some(
-            "Schedule `\{to_repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{set_order[from_i]}` and `\{set_order[to_i]}`.",
+            "Schedule `\{Repr(stage).to_string()}` has ordered system sets with overlapping systems: `\{set_order[from_i]}` and `\{set_order[to_i]}`.",
           ),
         }
       }
@@ -1582,7 +1582,7 @@ fn[W] schedule_build_graph_plan(
       system_layers: [],
       execution_order: [],
       build_error: Some(
-        "Schedule `\{to_repr(stage).to_string()}` has a dependency cycle between systems.",
+        "Schedule `\{Repr(stage).to_string()}` has a dependency cycle between systems.",
       ),
     }
   }

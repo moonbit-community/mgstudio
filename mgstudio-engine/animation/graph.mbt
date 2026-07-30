@@ -32,7 +32,7 @@ pub fn AnimationNodeIndex::index(self : AnimationNodeIndex) -> Int {
 
 ///|
 pub impl ToJson for AnimationNodeIndex with fn to_json(self) {
-  self.index.to_json()
+  self.index |> ToJson::to_json
 }
 
 ///|
@@ -806,7 +806,7 @@ pub struct AnimationGraphHandle {
 
 ///|
 pub impl ToJson for AnimationGraphHandle with fn to_json(self) {
-  self.graph.to_json()
+  self.graph |> ToJson::to_json
 }
 
 ///|

@@ -17,7 +17,7 @@
 
 ///|
 pub impl ToJson for SceneRoot with fn to_json(self) {
-  self.scene.id().to_json()
+  self.scene.id() |> ToJson::to_json
 }
 
 ///|
@@ -28,7 +28,7 @@ pub impl @json.FromJson for SceneRoot with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for WorldAssetRoot with fn to_json(self) {
-  self.scene().id().to_json()
+  self.scene().id() |> ToJson::to_json
 }
 
 ///|
@@ -39,7 +39,7 @@ pub impl @json.FromJson for WorldAssetRoot with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for SceneInstance with fn to_json(self) {
-  self.instance_id.to_json()
+  self.instance_id |> ToJson::to_json
 }
 
 ///|
@@ -50,7 +50,7 @@ pub impl @json.FromJson for SceneInstance with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for SceneInstanceReady with fn to_json(self) {
-  (self.entity, self.instance_id).to_json()
+  (self.entity, self.instance_id) |> ToJson::to_json
 }
 
 ///|

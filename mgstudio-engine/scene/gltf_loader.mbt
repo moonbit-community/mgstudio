@@ -3515,7 +3515,7 @@ fn scene_generate_missing_gltf_tangents(
   let tangent_error = geometry.generate_tangents()
   if tangent_error is Some(err) {
     @log.warn(
-      "Failed to generate vertex tangents using the mikktspace algorithm: \{to_repr(err).to_string()}",
+      "Failed to generate vertex tangents using the mikktspace algorithm: \{Repr(err).to_string()}",
     )
   }
   geometry

@@ -25,7 +25,8 @@ pub struct AnimationTransition {
 
 ///|
 pub impl ToJson for AnimationTransition with fn to_json(self) {
-  (self.current_weight, self.weight_decline_per_sec, self.animation).to_json()
+  (self.current_weight, self.weight_decline_per_sec, self.animation)
+  |> ToJson::to_json
 }
 
 ///|
@@ -55,7 +56,7 @@ pub struct AnimationTransitions {
 
 ///|
 pub impl ToJson for AnimationTransitions with fn to_json(self) {
-  (self.main_animation, self.transitions).to_json()
+  (self.main_animation, self.transitions) |> ToJson::to_json
 }
 
 ///|

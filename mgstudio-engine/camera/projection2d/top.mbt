@@ -65,7 +65,7 @@ pub impl @ecs.Component for Projection with fn component() {
 ///|
 fn encode_projection(projection : Projection) -> Json {
   match projection {
-    Orthographic(orthographic) => (0, orthographic.scale).to_json()
+    Orthographic(orthographic) => (0, orthographic.scale) |> ToJson::to_json
   }
 }
 

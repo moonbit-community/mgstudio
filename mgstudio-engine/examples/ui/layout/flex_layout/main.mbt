@@ -210,7 +210,7 @@ fn setup(world : @ecs.World) -> Unit {
         spawn_label_chip(
           world,
           cell,
-          to_repr(alignment).to_string(),
+          Repr(alignment).to_string(),
           align_items_color(),
           UiRect(),
           font,
@@ -220,7 +220,7 @@ fn setup(world : @ecs.World) -> Unit {
         spawn_label_chip(
           world,
           cell,
-          to_repr(justification).to_string(),
+          Repr(justification).to_string(),
           justify_content_color(),
           margin_top(Px(3.0F)),
           font,

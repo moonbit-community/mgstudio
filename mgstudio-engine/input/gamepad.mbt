@@ -95,7 +95,7 @@ pub fn GamepadButton::all() -> Array[GamepadButton] {
 
 ///|
 pub impl ButtonInputButton for GamepadButton with fn button_id(self) {
-  self.to_json().stringify()
+  (self |> ToJson::to_json).stringify()
 }
 
 ///|

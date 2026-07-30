@@ -140,7 +140,7 @@ pub struct TextureAtlas {
 
 ///|
 pub impl ToJson for TextureAtlas with fn to_json(self) {
-  (self.layout_id, self.index).to_json()
+  (self.layout_id, self.index) |> ToJson::to_json
 }
 
 ///|

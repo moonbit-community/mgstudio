@@ -665,7 +665,7 @@ pub fn Quat::new(x : Float, y : Float, z : Float, w : Float) -> Quat {
 
 ///|
 pub impl ToJson for Vec2 with fn to_json(self) {
-  (self.x, self.y).to_json()
+  (self.x, self.y) |> ToJson::to_json
 }
 
 ///|
@@ -676,7 +676,7 @@ pub impl @json.FromJson for Vec2 with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Vec3 with fn to_json(self) {
-  (self.x, self.y, self.z).to_json()
+  (self.x, self.y, self.z) |> ToJson::to_json
 }
 
 ///|
@@ -687,7 +687,7 @@ pub impl @json.FromJson for Vec3 with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Vec4 with fn to_json(self) {
-  (self.x, self.y, self.z, self.w).to_json()
+  (self.x, self.y, self.z, self.w) |> ToJson::to_json
 }
 
 ///|
@@ -698,7 +698,7 @@ pub impl @json.FromJson for Vec4 with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Mat4 with fn to_json(self) {
-  (self.x_axis, self.y_axis, self.z_axis, self.w_axis).to_json()
+  (self.x_axis, self.y_axis, self.z_axis, self.w_axis) |> ToJson::to_json
 }
 
 ///|
@@ -712,7 +712,7 @@ pub impl @json.FromJson for Mat4 with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for IVec2 with fn to_json(self) {
-  (self.x, self.y).to_json()
+  (self.x, self.y) |> ToJson::to_json
 }
 
 ///|
@@ -723,7 +723,7 @@ pub impl @json.FromJson for IVec2 with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for UVec2 with fn to_json(self) {
-  (self.x, self.y).to_json()
+  (self.x, self.y) |> ToJson::to_json
 }
 
 ///|
@@ -734,7 +734,7 @@ pub impl @json.FromJson for UVec2 with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Quat with fn to_json(self) {
-  (self.x, self.y, self.z, self.w).to_json()
+  (self.x, self.y, self.z, self.w) |> ToJson::to_json
 }
 
 ///|

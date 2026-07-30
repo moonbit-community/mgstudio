@@ -67,7 +67,8 @@ pub fn ComputedCameraValues::new(
 
 ///|
 pub fn encode_render_target_info(target_info : RenderTargetInfo) -> Json {
-  (encode_ivec2(target_info.physical_size), target_info.scale_factor).to_json()
+  (encode_ivec2(target_info.physical_size), target_info.scale_factor)
+  |> ToJson::to_json
 }
 
 ///|
@@ -85,7 +86,8 @@ pub fn encode_computed_camera_values(computed : ComputedCameraValues) -> Json {
     }),
     computed.old_viewport_size.map(fn(size) { encode_ivec2(size) }),
     computed.old_sub_camera_view,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -112,7 +114,7 @@ pub fn decode_computed_camera_values(json : Json) -> ComputedCameraValues {
 
 ///|
 fn encode_ivec2(value : @math.IVec2) -> Json {
-  (value.x, value.y).to_json()
+  (value.x, value.y) |> ToJson::to_json
 }
 
 ///|

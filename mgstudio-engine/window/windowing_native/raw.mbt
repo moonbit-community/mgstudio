@@ -436,7 +436,9 @@ pub fn set_accessibility_requested(requested : Bool) -> Unit {
 
 ///|
 pub fn queue_accessibility_update(update : @moon_accesskit.TreeUpdate) -> Unit {
-  queue_accessibility_update_payload(payload=update.to_json().stringify())
+  queue_accessibility_update_payload(
+    payload=(update |> ToJson::to_json).stringify(),
+  )
 }
 
 ///|

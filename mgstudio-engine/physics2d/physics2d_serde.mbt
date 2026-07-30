@@ -26,7 +26,7 @@ fn json_get(parts : Array[Json], index : Int, fallback : Json) -> Json {
 
 ///|
 fn entity_to_json(entity : @core.Entity) -> Json {
-  (entity.id, entity.generation).to_json()
+  (entity.id, entity.generation) |> ToJson::to_json
 }
 
 ///|
@@ -41,8 +41,8 @@ fn entity_from_json(
 ///|
 fn entity_option_to_json(entity : @core.Entity?) -> Json {
   match entity {
-    Some(value) => (true, entity_to_json(value)).to_json()
-    None => (false, (0).to_json()).to_json()
+    Some(value) => (true, entity_to_json(value)) |> ToJson::to_json
+    None => (false, 0 |> ToJson::to_json) |> ToJson::to_json
   }
 }
 
@@ -61,7 +61,7 @@ fn entity_option_from_json(
 
 ///|
 fn rapier_vec2_to_json(v : @rapier_core.Vec2) -> Json {
-  (v.x, v.y).to_json()
+  (v.x, v.y) |> ToJson::to_json
 }
 
 ///|
@@ -75,7 +75,7 @@ fn rapier_vec2_from_json(
 
 ///|
 fn rapier_rot2_to_json(rot : @rapier_core.Rot2) -> Json {
-  rot.angle().to_json()
+  rot.angle() |> ToJson::to_json
 }
 
 ///|
@@ -89,7 +89,8 @@ fn rapier_rot2_from_json(
 
 ///|
 fn rapier_iso2_to_json(iso : @rapier_core.Isometry2) -> Json {
-  (rapier_vec2_to_json(iso.translation), rapier_rot2_to_json(iso.rotation)).to_json()
+  (rapier_vec2_to_json(iso.translation), rapier_rot2_to_json(iso.rotation))
+  |> ToJson::to_json
 }
 
 ///|
@@ -109,7 +110,8 @@ fn rapier_iso2_from_json(
 
 ///|
 fn rapier_mass_properties_to_json(props : @rapier_core.MassProperties) -> Json {
-  (props.mass, props.inertia, rapier_vec2_to_json(props.center_of_mass)).to_json()
+  (props.mass, props.inertia, rapier_vec2_to_json(props.center_of_mass))
+  |> ToJson::to_json
 }
 
 ///|
@@ -131,10 +133,10 @@ fn rapier_mass_properties_from_json(
 ///|
 fn rigid_body_type_to_json(body_type : @dynamics.RigidBodyType) -> Json {
   match body_type {
-    Dynamic => "dynamic".to_json()
-    Fixed => "fixed".to_json()
-    KinematicPositionBased => "kinematic_position_based".to_json()
-    KinematicVelocityBased => "kinematic_velocity_based".to_json()
+    Dynamic => "dynamic" |> ToJson::to_json
+    Fixed => "fixed" |> ToJson::to_json
+    KinematicPositionBased => "kinematic_position_based" |> ToJson::to_json
+    KinematicVelocityBased => "kinematic_velocity_based" |> ToJson::to_json
   }
 }
 
@@ -158,11 +160,11 @@ fn rigid_body_type_from_json(
 ///|
 fn combine_rule_to_json(rule : @dynamics.CoefficientCombineRule) -> Json {
   match rule {
-    Average => "average".to_json()
-    Min => "min".to_json()
-    Multiply => "multiply".to_json()
-    Max => "max".to_json()
-    ClampedSum => "clamped_sum".to_json()
+    Average => "average" |> ToJson::to_json
+    Min => "min" |> ToJson::to_json
+    Multiply => "multiply" |> ToJson::to_json
+    Max => "max" |> ToJson::to_json
+    ClampedSum => "clamped_sum" |> ToJson::to_json
   }
 }
 
@@ -188,8 +190,8 @@ fn combine_rule_from_json(
 ///|
 fn interaction_test_mode_to_json(mode : @dynamics.InteractionTestMode) -> Json {
   match mode {
-    And => "and".to_json()
-    Or => "or".to_json()
+    And => "and" |> ToJson::to_json
+    Or => "or" |> ToJson::to_json
   }
 }
 
@@ -210,7 +212,7 @@ fn interaction_test_mode_from_json(
 fn active_collision_types_to_json(
   types : @collision.ActiveCollisionTypes,
 ) -> Json {
-  types.value.to_json()
+  types.value |> ToJson::to_json
 }
 
 ///|
@@ -238,7 +240,7 @@ fn active_events_to_json(events : @collision.ActiveEvents) -> Json {
   if events.contains(@collision.ActiveEvents::intersection_events()) {
     bits = bits | (1 << 2)
   }
-  bits.to_json()
+  bits |> ToJson::to_json
 }
 
 ///|
@@ -262,7 +264,7 @@ fn active_hooks_to_json(hooks : @collision.ActiveHooks) -> Json {
   if hooks.contains(@collision.ActiveHooks::modify_solver_contacts()) {
     bits = bits | (1 << 2)
   }
-  bits.to_json()
+  bits |> ToJson::to_json
 }
 
 ///|
@@ -276,7 +278,7 @@ fn active_hooks_from_json(
 
 ///|
 fn rigid_body_handle_to_json(handle : @dynamics.RigidBodyHandle) -> Json {
-  handle.into_raw_parts().to_json()
+  handle.into_raw_parts() |> ToJson::to_json
 }
 
 ///|
@@ -290,7 +292,7 @@ fn rigid_body_handle_from_json(
 
 ///|
 fn collider_handle_to_json(handle : @collision.ColliderHandle) -> Json {
-  handle.into_raw_parts().to_json()
+  handle.into_raw_parts() |> ToJson::to_json
 }
 
 ///|
@@ -304,7 +306,7 @@ fn collider_handle_from_json(
 
 ///|
 fn impulse_joint_handle_to_json(handle : @dynamics.ImpulseJointHandle) -> Json {
-  handle.into_raw_parts().to_json()
+  handle.into_raw_parts() |> ToJson::to_json
 }
 
 ///|
@@ -320,7 +322,7 @@ fn impulse_joint_handle_from_json(
 fn multibody_joint_handle_to_json(
   handle : @dynamics.MultibodyJointHandle,
 ) -> Json {
-  handle.into_raw_parts().to_json()
+  handle.into_raw_parts() |> ToJson::to_json
 }
 
 ///|
@@ -334,7 +336,7 @@ fn multibody_joint_handle_from_json(
 
 ///|
 fn joint_axes_mask_to_json(mask : @dynamics.JointAxesMask) -> Json {
-  mask.bits().to_json()
+  mask.bits() |> ToJson::to_json
 }
 
 ///|
@@ -348,7 +350,7 @@ fn joint_axes_mask_from_json(
 
 ///|
 fn spring_coefficients_to_json(coeff : @dynamics.SpringCoefficients) -> Json {
-  (coeff.natural_frequency, coeff.damping_ratio).to_json()
+  (coeff.natural_frequency, coeff.damping_ratio) |> ToJson::to_json
 }
 
 ///|
@@ -366,8 +368,8 @@ fn spring_coefficients_from_json(
 ///|
 fn motor_model_to_json(model : @dynamics.MotorModel) -> Json {
   match model {
-    AccelerationBased => "acceleration_based".to_json()
-    ForceBased => "force_based".to_json()
+    AccelerationBased => "acceleration_based" |> ToJson::to_json
+    ForceBased => "force_based" |> ToJson::to_json
   }
 }
 
@@ -387,9 +389,9 @@ fn motor_model_from_json(
 ///|
 fn joint_enabled_to_json(enabled : @dynamics.JointEnabled) -> Json {
   match enabled {
-    Enabled => "enabled".to_json()
-    Disabled => "disabled".to_json()
-    DisabledByAttachedBody => "disabled_by_attached_body".to_json()
+    Enabled => "enabled" |> ToJson::to_json
+    Disabled => "disabled" |> ToJson::to_json
+    DisabledByAttachedBody => "disabled_by_attached_body" |> ToJson::to_json
   }
 }
 
@@ -410,7 +412,7 @@ fn joint_enabled_from_json(
 
 ///|
 fn joint_limits_to_json(limit : @dynamics.JointLimits) -> Json {
-  (limit.min(), limit.max(), limit.impulse()).to_json()
+  (limit.min(), limit.max(), limit.impulse()) |> ToJson::to_json
 }
 
 ///|
@@ -432,7 +434,8 @@ fn joint_motor_to_json(motor : @dynamics.JointMotor) -> Json {
     motor.max_force,
     motor.impulse(),
     motor_model_to_json(motor.model),
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -465,8 +468,8 @@ fn joint_motor_from_json(
 ///|
 fn character_length_to_json(length : @control.CharacterLength) -> Json {
   match length {
-    Absolute(value) => ("absolute", value).to_json()
-    Relative(value) => ("relative", value).to_json()
+    Absolute(value) => ("absolute", value) |> ToJson::to_json
+    Relative(value) => ("relative", value) |> ToJson::to_json
   }
 }
 
@@ -486,8 +489,8 @@ fn character_length_from_json(
 ///|
 fn character_length_option_to_json(length : @control.CharacterLength?) -> Json {
   match length {
-    Some(value) => (true, character_length_to_json(value)).to_json()
-    None => (false, (0).to_json()).to_json()
+    Some(value) => (true, character_length_to_json(value)) |> ToJson::to_json
+    None => (false, 0 |> ToJson::to_json) |> ToJson::to_json
   }
 }
 
@@ -510,7 +513,8 @@ fn character_autostep_to_json(autostep : @control.CharacterAutostep) -> Json {
     character_length_to_json(autostep.max_height()),
     character_length_to_json(autostep.min_width()),
     autostep.include_dynamic_bodies(),
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -534,8 +538,8 @@ fn character_autostep_option_to_json(
   autostep : @control.CharacterAutostep?,
 ) -> Json {
   match autostep {
-    Some(value) => (true, character_autostep_to_json(value)).to_json()
-    None => (false, (0).to_json()).to_json()
+    Some(value) => (true, character_autostep_to_json(value)) |> ToJson::to_json
+    None => (false, 0 |> ToJson::to_json) |> ToJson::to_json
   }
 }
 
@@ -565,7 +569,8 @@ fn kinematic_controller_to_json(
     character_length_option_to_json(controller.snap_to_ground),
     character_autostep_option_to_json(controller.autostep),
     controller.normal_nudge_factor,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -604,11 +609,13 @@ fn rigid_body_additional_mass_props_to_json(
   props : @dynamics.RigidBodyAdditionalMassProps,
 ) -> Json {
   match props {
-    Mass(mass) => ("mass", mass.to_json()).to_json()
+    Mass(mass) => ("mass", mass |> ToJson::to_json) |> ToJson::to_json
     MassProps(mass_props) =>
-      ("mass_props", rapier_mass_properties_to_json(mass_props)).to_json()
+      ("mass_props", rapier_mass_properties_to_json(mass_props))
+      |> ToJson::to_json
     MassProperties(mass_properties) =>
-      ("mass_properties", rapier_mass_properties_to_json(mass_properties)).to_json()
+      ("mass_properties", rapier_mass_properties_to_json(mass_properties))
+      |> ToJson::to_json
   }
 }
 
@@ -641,7 +648,7 @@ fn shape_vertices_to_json(vertices : Array[@rapier_core.Vec2]) -> Json {
   for v in vertices {
     result.push(rapier_vec2_to_json(v))
   }
-  result.to_json()
+  result |> ToJson::to_json
 }
 
 ///|
@@ -664,9 +671,11 @@ fn shape_compound_parts_to_json(
   let result : Array[Json] = []
   for part in parts {
     let (iso, shape) = part
-    result.push((rapier_iso2_to_json(iso), shape_to_json(shape)).to_json())
+    result.push(
+      (rapier_iso2_to_json(iso), shape_to_json(shape)) |> ToJson::to_json,
+    )
   }
-  result.to_json()
+  result |> ToJson::to_json
 }
 
 ///|
@@ -688,27 +697,42 @@ fn shape_compound_parts_from_json(
 ///|
 fn shape_to_json(shape : @collision.Shape) -> Json {
   match shape {
-    Ball(radius) => ("Ball", radius.to_json()).to_json()
-    Cuboid(hx, hy) => ("Cuboid", (hx, hy).to_json()).to_json()
-    HalfSpace(normal) => ("HalfSpace", rapier_vec2_to_json(normal)).to_json()
+    Ball(radius) => ("Ball", radius |> ToJson::to_json) |> ToJson::to_json
+    Cuboid(hx, hy) => ("Cuboid", (hx, hy) |> ToJson::to_json) |> ToJson::to_json
+    HalfSpace(normal) =>
+      ("HalfSpace", rapier_vec2_to_json(normal)) |> ToJson::to_json
     CapsuleX(half_height, radius) =>
-      ("CapsuleX", (half_height, radius).to_json()).to_json()
+      ("CapsuleX", (half_height, radius) |> ToJson::to_json) |> ToJson::to_json
     CapsuleY(half_height, radius) =>
-      ("CapsuleY", (half_height, radius).to_json()).to_json()
+      ("CapsuleY", (half_height, radius) |> ToJson::to_json) |> ToJson::to_json
     Segment(a, b) =>
-      ("Segment", (rapier_vec2_to_json(a), rapier_vec2_to_json(b)).to_json()).to_json()
+      (
+        "Segment",
+        (rapier_vec2_to_json(a), rapier_vec2_to_json(b)) |> ToJson::to_json,
+      )
+      |> ToJson::to_json
     Polyline(vertices, indices) =>
-      ("Polyline", (shape_vertices_to_json(vertices), indices).to_json()).to_json()
+      (
+        "Polyline",
+        (shape_vertices_to_json(vertices), indices) |> ToJson::to_json,
+      )
+      |> ToJson::to_json
     HeightField(heights, scale) =>
-      ("HeightField", (heights, rapier_vec2_to_json(scale)).to_json()).to_json()
+      ("HeightField", (heights, rapier_vec2_to_json(scale)) |> ToJson::to_json)
+      |> ToJson::to_json
     ConvexPolygon(vertices) =>
-      ("ConvexPolygon", shape_vertices_to_json(vertices)).to_json()
+      ("ConvexPolygon", shape_vertices_to_json(vertices)) |> ToJson::to_json
     TriMesh(vertices, indices) =>
-      ("TriMesh", (shape_vertices_to_json(vertices), indices).to_json()).to_json()
+      (
+        "TriMesh",
+        (shape_vertices_to_json(vertices), indices) |> ToJson::to_json,
+      )
+      |> ToJson::to_json
     Compound(parts) =>
-      ("Compound", shape_compound_parts_to_json(parts)).to_json()
+      ("Compound", shape_compound_parts_to_json(parts)) |> ToJson::to_json
     Round(inner, border_radius) =>
-      ("Round", (shape_to_json(inner.val), border_radius).to_json()).to_json()
+      ("Round", (shape_to_json(inner.val), border_radius) |> ToJson::to_json)
+      |> ToJson::to_json
   }
 }
 
@@ -852,10 +876,11 @@ fn generic_joint_to_json(joint : @dynamics.GenericJoint) -> Json {
     joint_motor_to_json(motors.lin_y),
     joint_motor_to_json(motors.ang_z),
     spring_coefficients_to_json(joint.softness()),
-    joint.contacts_enabled().to_json(),
+    joint.contacts_enabled() |> ToJson::to_json,
     joint_enabled_to_json(joint.enabled),
-    joint.user_data.to_json(),
-  ).to_json()
+    joint.user_data |> ToJson::to_json,
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -865,37 +890,37 @@ fn generic_joint_from_json(
 ) -> @dynamics.GenericJoint raise @json.JsonDecodeError {
   let parts : Array[Json] = @json.from_json(json, path~)
   let mut joint = @dynamics.GenericJoint::GenericJoint(
-    joint_axes_mask_from_json(json_get(parts, 2, (0).to_json()), path),
+    joint_axes_mask_from_json(json_get(parts, 2, 0 |> ToJson::to_json), path),
   )
   joint = joint.set_local_frame1(
-    rapier_iso2_from_json(json_get(parts, 0, (0).to_json()), path),
+    rapier_iso2_from_json(json_get(parts, 0, 0 |> ToJson::to_json), path),
   )
   joint = joint.set_local_frame2(
-    rapier_iso2_from_json(json_get(parts, 1, (0).to_json()), path),
+    rapier_iso2_from_json(json_get(parts, 1, 0 |> ToJson::to_json), path),
   )
   joint = joint.set_locked_axes(
-    joint_axes_mask_from_json(json_get(parts, 2, (0).to_json()), path),
+    joint_axes_mask_from_json(json_get(parts, 2, 0 |> ToJson::to_json), path),
   )
   joint = joint.set_limit_axes(
-    joint_axes_mask_from_json(json_get(parts, 3, (0).to_json()), path),
+    joint_axes_mask_from_json(json_get(parts, 3, 0 |> ToJson::to_json), path),
   )
   joint = joint.set_motor_axes(
-    joint_axes_mask_from_json(json_get(parts, 4, (0).to_json()), path),
+    joint_axes_mask_from_json(json_get(parts, 4, 0 |> ToJson::to_json), path),
   )
   joint = joint.set_coupled_axes(
-    joint_axes_mask_from_json(json_get(parts, 5, (0).to_json()), path),
+    joint_axes_mask_from_json(json_get(parts, 5, 0 |> ToJson::to_json), path),
   )
 
   let lin_x_limit = joint_limits_from_json(
-    json_get(parts, 6, (0).to_json()),
+    json_get(parts, 6, 0 |> ToJson::to_json),
     path,
   )
   let lin_y_limit = joint_limits_from_json(
-    json_get(parts, 7, (0).to_json()),
+    json_get(parts, 7, 0 |> ToJson::to_json),
     path,
   )
   let ang_z_limit = joint_limits_from_json(
-    json_get(parts, 8, (0).to_json()),
+    json_get(parts, 8, 0 |> ToJson::to_json),
     path,
   )
   joint = joint.set_limits_axis(LinX, lin_x_limit.min(), lin_x_limit.max())
@@ -903,15 +928,15 @@ fn generic_joint_from_json(
   joint = joint.set_limits_axis(AngZ, ang_z_limit.min(), ang_z_limit.max())
 
   let lin_x_motor = joint_motor_from_json(
-    json_get(parts, 9, (0).to_json()),
+    json_get(parts, 9, 0 |> ToJson::to_json),
     path,
   )
   let lin_y_motor = joint_motor_from_json(
-    json_get(parts, 10, (0).to_json()),
+    json_get(parts, 10, 0 |> ToJson::to_json),
     path,
   )
   let ang_z_motor = joint_motor_from_json(
-    json_get(parts, 11, (0).to_json()),
+    json_get(parts, 11, 0 |> ToJson::to_json),
     path,
   )
   joint = joint
@@ -948,16 +973,19 @@ fn generic_joint_from_json(
     .set_motor_model(AngZ, ang_z_motor.model)
 
   joint = joint.set_softness(
-    spring_coefficients_from_json(json_get(parts, 12, (0).to_json()), path),
+    spring_coefficients_from_json(
+      json_get(parts, 12, 0 |> ToJson::to_json),
+      path,
+    ),
   )
   let contacts_enabled : Bool = @json.from_json(
-    json_get(parts, 13, true.to_json()),
+    json_get(parts, 13, true |> ToJson::to_json),
     path~,
   )
   joint = joint.set_contacts_enabled(contacts_enabled)
 
   let enabled = joint_enabled_from_json(
-    json_get(parts, 14, "enabled".to_json()),
+    json_get(parts, 14, "enabled" |> ToJson::to_json),
     path,
   )
   match enabled {
@@ -993,7 +1021,7 @@ pub impl @json.FromJson for ColliderShape2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Collider2d with fn to_json(self) {
-  (self.shape.to_json(), self.sensor).to_json()
+  (self.shape |> ToJson::to_json, self.sensor) |> ToJson::to_json
 }
 
 ///|
@@ -1014,7 +1042,7 @@ pub impl @json.FromJson for ColliderParent2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Velocity2d with fn to_json(self) {
-  (self.linvel, self.angvel).to_json()
+  (self.linvel, self.angvel) |> ToJson::to_json
 }
 
 ///|
@@ -1025,7 +1053,7 @@ pub impl @json.FromJson for Velocity2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Damping2d with fn to_json(self) {
-  (self.linear, self.angular).to_json()
+  (self.linear, self.angular) |> ToJson::to_json
 }
 
 ///|
@@ -1036,7 +1064,7 @@ pub impl @json.FromJson for Damping2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for GravityScale2d with fn to_json(self) {
-  self.scale.to_json()
+  self.scale |> ToJson::to_json
 }
 
 ///|
@@ -1046,7 +1074,7 @@ pub impl @json.FromJson for GravityScale2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for LockedAxes2d with fn to_json(self) {
-  (self.lock_translations, self.lock_rotations).to_json()
+  (self.lock_translations, self.lock_rotations) |> ToJson::to_json
 }
 
 ///|
@@ -1060,7 +1088,7 @@ pub impl @json.FromJson for LockedAxes2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Ccd2d with fn to_json(self) {
-  (self.enabled, self.soft_prediction).to_json()
+  (self.enabled, self.soft_prediction) |> ToJson::to_json
 }
 
 ///|
@@ -1071,7 +1099,7 @@ pub impl @json.FromJson for Ccd2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Dominance2d with fn to_json(self) {
-  self.group.to_json()
+  self.group |> ToJson::to_json
 }
 
 ///|
@@ -1081,7 +1109,7 @@ pub impl @json.FromJson for Dominance2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Sleeping2d with fn to_json(self) {
-  self.sleeping.to_json()
+  self.sleeping |> ToJson::to_json
 }
 
 ///|
@@ -1091,7 +1119,7 @@ pub impl @json.FromJson for Sleeping2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for ExternalForce2d with fn to_json(self) {
-  (self.force, self.torque).to_json()
+  (self.force, self.torque) |> ToJson::to_json
 }
 
 ///|
@@ -1102,7 +1130,7 @@ pub impl @json.FromJson for ExternalForce2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for ExternalImpulse2d with fn to_json(self) {
-  (self.impulse, self.torque_impulse).to_json()
+  (self.impulse, self.torque_impulse) |> ToJson::to_json
 }
 
 ///|
@@ -1116,7 +1144,7 @@ pub impl @json.FromJson for ExternalImpulse2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for ContactForceEventThreshold2d with fn to_json(self) {
-  self.threshold.to_json()
+  self.threshold |> ToJson::to_json
 }
 
 ///|
@@ -1129,7 +1157,7 @@ pub impl @json.FromJson for ContactForceEventThreshold2d with fn from_json(
 
 ///|
 pub impl ToJson for ColliderDensity2d with fn to_json(self) {
-  self.density.to_json()
+  self.density |> ToJson::to_json
 }
 
 ///|
@@ -1139,7 +1167,7 @@ pub impl @json.FromJson for ColliderDensity2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Friction2d with fn to_json(self) {
-  self.coefficient.to_json()
+  self.coefficient |> ToJson::to_json
 }
 
 ///|
@@ -1159,7 +1187,7 @@ pub impl @json.FromJson for FrictionCombineRule2d with fn from_json(json, path) 
 
 ///|
 pub impl ToJson for Restitution2d with fn to_json(self) {
-  self.coefficient.to_json()
+  self.coefficient |> ToJson::to_json
 }
 
 ///|
@@ -1182,7 +1210,8 @@ pub impl @json.FromJson for RestitutionCombineRule2d with fn from_json(
 
 ///|
 pub impl ToJson for CollisionGroups2d with fn to_json(self) {
-  (self.memberships, self.filter, interaction_test_mode_to_json(self.test_mode)).to_json()
+  (self.memberships, self.filter, interaction_test_mode_to_json(self.test_mode))
+  |> ToJson::to_json
 }
 
 ///|
@@ -1200,7 +1229,8 @@ pub impl @json.FromJson for CollisionGroups2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for SolverGroups2d with fn to_json(self) {
-  (self.memberships, self.filter, interaction_test_mode_to_json(self.test_mode)).to_json()
+  (self.memberships, self.filter, interaction_test_mode_to_json(self.test_mode))
+  |> ToJson::to_json
 }
 
 ///|
@@ -1218,7 +1248,7 @@ pub impl @json.FromJson for SolverGroups2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for ColliderEnabled2d with fn to_json(self) {
-  self.enabled.to_json()
+  self.enabled |> ToJson::to_json
 }
 
 ///|
@@ -1258,7 +1288,7 @@ pub impl @json.FromJson for ActiveHooks2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for ContactSkin2d with fn to_json(self) {
-  self.skin.to_json()
+  self.skin |> ToJson::to_json
 }
 
 ///|
@@ -1281,7 +1311,7 @@ pub impl @json.FromJson for ColliderMassProperties2d with fn from_json(
 
 ///|
 pub impl ToJson for RigidBodyEnabled2d with fn to_json(self) {
-  self.enabled.to_json()
+  self.enabled |> ToJson::to_json
 }
 
 ///|
@@ -1304,7 +1334,7 @@ pub impl @json.FromJson for AdditionalMassProperties2d with fn from_json(
 
 ///|
 pub impl ToJson for AdditionalSolverIterations2d with fn to_json(self) {
-  self.iterations.to_json()
+  self.iterations |> ToJson::to_json
 }
 
 ///|
@@ -1344,7 +1374,8 @@ pub impl ToJson for CharacterCollision2d with fn to_json(self) {
     self.normal,
     self.translation_applied,
     self.translation_remaining,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -1372,7 +1403,8 @@ pub impl @json.FromJson for CharacterCollision2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for KinematicCharacterController2d with fn to_json(self) {
-  (self.translation, kinematic_controller_to_json(self.controller)).to_json()
+  (self.translation, kinematic_controller_to_json(self.controller))
+  |> ToJson::to_json
 }
 
 ///|
@@ -1397,7 +1429,8 @@ pub impl ToJson for KinematicCharacterControllerOutput2d with fn to_json(self) {
     self.grounded,
     self.sliding_down_slope,
     self.collisions,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -1416,7 +1449,8 @@ pub impl @json.FromJson for KinematicCharacterControllerOutput2d with fn from_js
 
 ///|
 pub impl ToJson for ImpulseJoint2d with fn to_json(self) {
-  (entity_to_json(self.other), generic_joint_to_json(self.data), self.wake_up).to_json()
+  (entity_to_json(self.other), generic_joint_to_json(self.data), self.wake_up)
+  |> ToJson::to_json
 }
 
 ///|
@@ -1434,7 +1468,8 @@ pub impl @json.FromJson for ImpulseJoint2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for RapierImpulseJointHandle2d with fn to_json(self) {
-  (impulse_joint_handle_to_json(self.handle), entity_to_json(self.other)).to_json()
+  (impulse_joint_handle_to_json(self.handle), entity_to_json(self.other))
+  |> ToJson::to_json
 }
 
 ///|
@@ -1456,7 +1491,8 @@ pub impl ToJson for MultibodyJoint2d with fn to_json(self) {
     generic_joint_to_json(self.data),
     self.wake_up,
     self.kinematic,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -1475,7 +1511,8 @@ pub impl @json.FromJson for MultibodyJoint2d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for RapierMultibodyJointHandle2d with fn to_json(self) {
-  (multibody_joint_handle_to_json(self.handle), entity_to_json(self.other)).to_json()
+  (multibody_joint_handle_to_json(self.handle), entity_to_json(self.other))
+  |> ToJson::to_json
 }
 
 ///|
@@ -1512,7 +1549,7 @@ pub impl ToJson for Physics2dConfig with fn to_json(self) {
   let id = physics2d_serde_runtime_state.config_next_id
   physics2d_serde_runtime_state.config_next_id = id + 1
   physics2d_config_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|
@@ -1529,7 +1566,7 @@ pub impl ToJson for Physics2dEvents with fn to_json(self) {
   let id = physics2d_serde_runtime_state.events_next_id
   physics2d_serde_runtime_state.events_next_id = id + 1
   physics2d_events_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|
@@ -1546,7 +1583,7 @@ pub impl ToJson for Physics2dContext with fn to_json(self) {
   let id = physics2d_serde_runtime_state.context_next_id
   physics2d_serde_runtime_state.context_next_id = id + 1
   physics2d_context_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|

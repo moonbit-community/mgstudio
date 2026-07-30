@@ -15,7 +15,7 @@
 ///|
 fn custom_layer(record : @app.LogRecord) -> Unit {
   println("Got event!")
-  println("  level=\{to_repr(record.level()).to_string()}")
+  println("  level=\{Repr(record.level()).to_string()}")
   println("  target=\{record.target()}")
   println("  name=\{record.name()}")
 }
@@ -23,9 +23,7 @@ fn custom_layer(record : @app.LogRecord) -> Unit {
 ///|
 fn fmt_layer(record : @app.LogRecord) -> Unit {
   let prefix = if record.target() == "" { "" } else { "[\{record.target()}] " }
-  println(
-    "[\{to_repr(record.level()).to_string()}] \{prefix}\{record.message()}",
-  )
+  println("[\{Repr(record.level()).to_string()}] \{prefix}\{record.message()}")
 }
 
 ///|

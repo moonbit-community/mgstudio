@@ -77,7 +77,7 @@ fn set_panic_policy(
   _main_world : @ecs.World,
   _render_world : @ecs.World,
 ) -> @render.RenderErrorPolicy {
-  abort("Rendering error \{to_repr(error).to_string()}")
+  abort("Rendering error \{Repr(error).to_string()}")
 }
 
 ///|
@@ -157,9 +157,7 @@ fn input_system(
 fn report_status(error : @app.Res[ExampleRenderError]) -> Unit {
   if error.get() != None {
     let render_error = example_error_to_render_error(error.get())
-    println(
-      "requested render runtime error: \{to_repr(render_error).to_string()}",
-    )
+    println("requested render runtime error: \{Repr(render_error).to_string()}")
   }
 }
 

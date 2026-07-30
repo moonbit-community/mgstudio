@@ -431,7 +431,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
               _ => ()
             }
           err =>
-            cache.mark_pipeline_error(pipeline_id, to_repr(err).to_string()) catch {
+            cache.mark_pipeline_error(pipeline_id, Repr(err).to_string()) catch {
               _ => ()
             }
         }
@@ -457,7 +457,7 @@ fn register_pipeline_cache_render_pipeline_descriptors(
               _ => ()
             }
           err =>
-            cache.mark_pipeline_error(pipeline_id, to_repr(err).to_string()) catch {
+            cache.mark_pipeline_error(pipeline_id, Repr(err).to_string()) catch {
               _ => ()
             }
         }

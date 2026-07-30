@@ -33,7 +33,7 @@ pub fn Mesh2d::mesh(self : Mesh2d) -> @asset.Handle[Mesh] {
 
 ///|
 pub impl ToJson for Mesh2d with fn to_json(self) {
-  self.mesh.id().to_json()
+  self.mesh.id() |> ToJson::to_json
 }
 
 ///|
@@ -59,7 +59,7 @@ pub fn Mesh3d::mesh(self : Mesh3d) -> @asset.Handle[Mesh] {
 
 ///|
 pub impl ToJson for Mesh3d with fn to_json(self) {
-  self.mesh.id().to_json()
+  self.mesh.id() |> ToJson::to_json
 }
 
 ///|
@@ -90,7 +90,7 @@ pub fn MeshTag::value(self : MeshTag) -> UInt {
 
 ///|
 pub impl ToJson for MeshTag with fn to_json(self) {
-  self.value.to_json()
+  self.value |> ToJson::to_json
 }
 
 ///|

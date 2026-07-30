@@ -18,10 +18,10 @@ const ACTIVE_COLLISION_TYPES_ALL_BITS : Int = 0xEE2F
 ///|
 fn rigid_body_type_to_json(body_type : @dynamics.RigidBodyType) -> Json {
   match body_type {
-    Dynamic => "dynamic".to_json()
-    Fixed => "fixed".to_json()
-    KinematicPositionBased => "kinematic_position_based".to_json()
-    KinematicVelocityBased => "kinematic_velocity_based".to_json()
+    Dynamic => "dynamic" |> ToJson::to_json
+    Fixed => "fixed" |> ToJson::to_json
+    KinematicPositionBased => "kinematic_position_based" |> ToJson::to_json
+    KinematicVelocityBased => "kinematic_velocity_based" |> ToJson::to_json
   }
 }
 
@@ -46,7 +46,7 @@ fn rigid_body_type_from_json(
 fn active_collision_types_to_json(
   types : @collision.ActiveCollisionTypes,
 ) -> Json {
-  types.value.to_json()
+  types.value |> ToJson::to_json
 }
 
 ///|
@@ -74,7 +74,7 @@ fn active_events_to_json(events : @collision.ActiveEvents) -> Json {
   if events.contains(@collision.ActiveEvents::intersection_events()) {
     bits = bits | (1 << 2)
   }
-  bits.to_json()
+  bits |> ToJson::to_json
 }
 
 ///|
@@ -98,7 +98,7 @@ fn active_hooks_to_json(hooks : @collision.ActiveHooks) -> Json {
   if hooks.contains(@collision.ActiveHooks::modify_solver_contacts()) {
     bits = bits | (1 << 2)
   }
-  bits.to_json()
+  bits |> ToJson::to_json
 }
 
 ///|
@@ -112,7 +112,7 @@ fn active_hooks_from_json(
 
 ///|
 fn rigid_body_handle_to_json(handle : @dynamics.RigidBodyHandle) -> Json {
-  handle.into_raw_parts().to_json()
+  handle.into_raw_parts() |> ToJson::to_json
 }
 
 ///|
@@ -126,7 +126,7 @@ fn rigid_body_handle_from_json(
 
 ///|
 fn collider_handle3d_to_json(handle : @collision.ColliderHandle3D) -> Json {
-  handle.into_raw_parts().to_json()
+  handle.into_raw_parts() |> ToJson::to_json
 }
 
 ///|
@@ -151,25 +151,27 @@ pub impl @json.FromJson for RigidBody3d with fn from_json(json, path) {
 ///|
 pub impl ToJson for ColliderShape3d with fn to_json(self) {
   match self {
-    Ball(radius) => ("Ball", radius).to_json()
-    Cuboid(hx, hy, hz) => ("Cuboid", (hx, hy, hz)).to_json()
+    Ball(radius) => ("Ball", radius) |> ToJson::to_json
+    Cuboid(hx, hy, hz) => ("Cuboid", (hx, hy, hz)) |> ToJson::to_json
     CapsuleX(half_height, radius) =>
-      ("CapsuleX", (half_height, radius)).to_json()
+      ("CapsuleX", (half_height, radius)) |> ToJson::to_json
     CapsuleY(half_height, radius) =>
-      ("CapsuleY", (half_height, radius)).to_json()
+      ("CapsuleY", (half_height, radius)) |> ToJson::to_json
     CapsuleZ(half_height, radius) =>
-      ("CapsuleZ", (half_height, radius)).to_json()
+      ("CapsuleZ", (half_height, radius)) |> ToJson::to_json
     Cylinder(half_height, radius) =>
-      ("Cylinder", (half_height, radius)).to_json()
-    Cone(half_height, radius) => ("Cone", (half_height, radius)).to_json()
-    HalfSpace(normal) => ("HalfSpace", normal).to_json()
-    Triangle(a, b, c) => ("Triangle", (a, b, c)).to_json()
-    TriMesh(vertices, indices) => ("TriMesh", (vertices, indices)).to_json()
-    ConvexHull(vertices) => ("ConvexHull", vertices).to_json()
-    Compound(parts) => ("Compound", parts).to_json()
+      ("Cylinder", (half_height, radius)) |> ToJson::to_json
+    Cone(half_height, radius) =>
+      ("Cone", (half_height, radius)) |> ToJson::to_json
+    HalfSpace(normal) => ("HalfSpace", normal) |> ToJson::to_json
+    Triangle(a, b, c) => ("Triangle", (a, b, c)) |> ToJson::to_json
+    TriMesh(vertices, indices) =>
+      ("TriMesh", (vertices, indices)) |> ToJson::to_json
+    ConvexHull(vertices) => ("ConvexHull", vertices) |> ToJson::to_json
+    Compound(parts) => ("Compound", parts) |> ToJson::to_json
     Heightfield(heights, nrows, ncols, scale) =>
-      ("Heightfield", (heights, nrows, ncols, scale)).to_json()
-    Raw(_shape) => ("RawUnsupported", ().to_json()).to_json()
+      ("Heightfield", (heights, nrows, ncols, scale)) |> ToJson::to_json
+    Raw(_shape) => ("RawUnsupported", () |> ToJson::to_json) |> ToJson::to_json
   }
 }
 
@@ -262,7 +264,7 @@ pub impl @json.FromJson for ColliderShape3d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Collider3d with fn to_json(self) {
-  (self.shape, self.sensor).to_json()
+  (self.shape, self.sensor) |> ToJson::to_json
 }
 
 ///|
@@ -283,7 +285,7 @@ pub impl @json.FromJson for ActiveEvents3d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for ContactForceEventThreshold3d with fn to_json(self) {
-  self.threshold.to_json()
+  self.threshold |> ToJson::to_json
 }
 
 ///|
@@ -316,7 +318,7 @@ pub impl @json.FromJson for ActiveHooks3d with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for Velocity3d with fn to_json(self) {
-  (self.linvel, self.angvel).to_json()
+  (self.linvel, self.angvel) |> ToJson::to_json
 }
 
 ///|
@@ -367,7 +369,7 @@ pub impl ToJson for Physics3dConfig with fn to_json(self) {
   let id = physics3d_serde_runtime_state.config_next_id
   physics3d_serde_runtime_state.config_next_id = id + 1
   physics3d_config_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|
@@ -384,7 +386,7 @@ pub impl ToJson for Physics3dEvents with fn to_json(self) {
   let id = physics3d_serde_runtime_state.events_next_id
   physics3d_serde_runtime_state.events_next_id = id + 1
   physics3d_events_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|
@@ -401,7 +403,7 @@ pub impl ToJson for Physics3dContext with fn to_json(self) {
   let id = physics3d_serde_runtime_state.context_next_id
   physics3d_serde_runtime_state.context_next_id = id + 1
   physics3d_context_serde_values.set(id, self)
-  id.to_json()
+  id |> ToJson::to_json
 }
 
 ///|

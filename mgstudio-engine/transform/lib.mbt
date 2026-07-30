@@ -41,7 +41,8 @@ pub impl ToJson for Transform with fn to_json(self) {
     self.scale.x,
     self.scale.y,
     self.scale.z,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|

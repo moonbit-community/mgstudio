@@ -1547,7 +1547,7 @@ pub fn Mesh3dGeometry::generate_tangents(
     8,
     options=@meshopt_mbt.TangentOptions::new(compatible=true),
   ) catch {
-    err => return Some(TangentGenerationFailed(to_repr(err).to_string()))
+    err => return Some(TangentGenerationFailed(Repr(err).to_string()))
   }
 
   let tangents = Array::make(

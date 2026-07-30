@@ -150,7 +150,8 @@ pub impl ToJson for GlobalTransform with fn to_json(self) {
     self.affine.translation.x,
     self.affine.translation.y,
     self.affine.translation.z,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|

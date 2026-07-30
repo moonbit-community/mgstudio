@@ -45,7 +45,7 @@ fn run_systems(
       None =>
         match stage {
           Some(stage_name) =>
-            "\{to_repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
+            "\{Repr(stage_name).to_string()}::__system#\{fallback_index.to_string()}"
           None => "__system#\{fallback_index.to_string()}"
         }
     }

@@ -125,7 +125,8 @@ pub impl ToJson for GlobalTransform with fn to_json(self) {
     self.affine.tx,
     self.affine.ty,
     self.z,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|

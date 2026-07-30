@@ -678,7 +678,7 @@ test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
   debug_inspect(key_index.get(KeyA), content="Some(1)")
   debug_inspect(key_index.get(Space), content="Some(2)")
   debug_inspect(KeyCode::KeyA == KeyA, content="true")
-  debug_inspect(to_repr(KeyCode::KeyA).to_string(), content="\"KeyA\"")
+  debug_inspect(Repr(KeyCode::KeyA).to_string(), content="\"KeyA\"")
 }
 
 ///|

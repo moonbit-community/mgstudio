@@ -92,9 +92,7 @@ fn easy_camera_movement_system(
   ],
 ) -> Unit {
   guard (cameras.require_single() catch { _ => return })
-    is (transform_mut, movement_comp) else {
-    return
-  }
+    is (transform_mut, movement_comp)
   let movement = movement_comp.value()
   let delta = time.get().delta_secs()
   let factor = easy_camera_movement_smooth_factor(decay_rate, delta)

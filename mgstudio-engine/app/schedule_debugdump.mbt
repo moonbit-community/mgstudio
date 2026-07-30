@@ -121,7 +121,7 @@ fn schedule_graph_dot_for_registry(
     "digraph ScheduleGraph {",
     "  rankdir=LR;",
     "  labelloc=\"t\";",
-    "  label=\"stage: \{to_repr(stage).to_string()}\";",
+    "  label=\"stage: \{Repr(stage).to_string()}\";",
   ]
 
   let included_system_names : Array[String] = []

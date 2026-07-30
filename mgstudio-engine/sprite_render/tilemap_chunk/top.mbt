@@ -210,7 +210,7 @@ pub impl @ecs.Component for TilemapChunkTileData with fn component() {
 
 ///|
 fn encode_tile_orientation(orientation : TileOrientation) -> Json {
-  orientation.to_int().to_json()
+  orientation.to_int() |> ToJson::to_json
 }
 
 ///|
@@ -220,7 +220,8 @@ fn encode_tile_data(tile_data : TileData) -> Json {
     tile_data.color,
     tile_data.visible,
     encode_tile_orientation(tile_data.orientation),
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
@@ -230,12 +231,13 @@ fn encode_tilemap_chunk(tilemap_chunk : TilemapChunk) -> Json {
     tilemap_chunk.tile_display_size,
     tilemap_chunk.tileset.id(),
     tilemap_chunk.alpha_mode,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
 fn encode_tilemap_chunk_tile_data(tile_data : TilemapChunkTileData) -> Json {
-  tile_data.tile_data.to_json()
+  tile_data.tile_data |> ToJson::to_json
 }
 
 ///|

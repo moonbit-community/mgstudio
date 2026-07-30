@@ -260,7 +260,7 @@ fn log_diagnostics_debug_system(
       }
       @app.log_record(
         Debug,
-        message=to_repr(diagnostic).to_string(),
+        message=Repr(diagnostic).to_string(),
         target="mgstudio_diagnostic",
       )
     }

@@ -567,7 +567,7 @@ pub impl[M : Material] @ecs.Component for MeshMaterial3dTyped[M] with fn compone
 
 ///|
 fn[M] encode_mesh_material3d_typed(material : MeshMaterial3dTyped[M]) -> Json {
-  material.handle.to_json()
+  material.handle |> ToJson::to_json
 }
 
 ///|

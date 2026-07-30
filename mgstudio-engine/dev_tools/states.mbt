@@ -26,6 +26,6 @@ pub fn[S : @app.States] log_transitions(world : @ecs.World, state : S) -> Unit {
   }
   let state_name = @app.States::debug_name(state)
   println(
-    "\{state_name} transition: \{to_repr(transition.exited).to_string()} => \{to_repr(transition.entered).to_string()}\{skip_text}",
+    "\{state_name} transition: \{Repr(transition.exited).to_string()} => \{Repr(transition.entered).to_string()}\{skip_text}",
   )
 }

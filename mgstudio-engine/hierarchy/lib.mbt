@@ -32,7 +32,7 @@ pub fn Parent::entity(self : Parent) -> @core.Entity {
 
 ///|
 pub impl ToJson for Parent with fn to_json(self) {
-  (self.entity.id, self.entity.generation).to_json()
+  (self.entity.id, self.entity.generation) |> ToJson::to_json
 }
 
 ///|
@@ -124,7 +124,7 @@ pub impl ToJson for Children with fn to_json(self) {
   for entity in self.entities {
     encoded.push((entity.id, entity.generation))
   }
-  encoded.to_json()
+  encoded |> ToJson::to_json
 }
 
 ///|

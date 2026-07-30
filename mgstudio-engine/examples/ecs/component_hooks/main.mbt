@@ -98,7 +98,7 @@ fn my_component_or_abort(
 fn my_component_index_text(index : MyComponentIndex) -> String {
   let entries : Array[String] = []
   index.entities.each(fn(key, entity) {
-    entries.push("\{to_repr(key).to_string()}:\{entity.id.to_string()}")
+    entries.push("\{Repr(key).to_string()}:\{entity.id.to_string()}")
   })
   let joined_entries = entries.join(", ")
   "{\{joined_entries}}"
@@ -136,7 +136,7 @@ fn setup(world : @ecs.World) -> Unit {
       let entity = context.entity()
       let component = my_component_or_abort(world, entity)
       @app.log_info(
-        "\{context.component_id().to_string()} added to entity \{entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller())}",
+        "\{context.component_id().to_string()} added to entity \{entity.id.to_string()} with value \{Repr(component.key).to_string()}\{caller_suffix(context.caller())}",
       )
       update_my_component_index(world, fn(index) {
         index.entities.set(component.key, entity)
@@ -160,7 +160,7 @@ fn setup(world : @ecs.World) -> Unit {
       let entity = context.entity()
       let component = my_component_or_abort(world, entity)
       @app.log_info(
-        "\{context.component_id().to_string()} removed from entity \{entity.id.to_string()} with value \{to_repr(component.key).to_string()}\{caller_suffix(context.caller())}",
+        "\{context.component_id().to_string()} removed from entity \{entity.id.to_string()} with value \{Repr(component.key).to_string()}\{caller_suffix(context.caller())}",
       )
       world.commands().entity(entity).despawn()
     }),

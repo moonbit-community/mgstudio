@@ -23,7 +23,7 @@ pub struct AnimationWeights {
 
 ///|
 pub impl ToJson for AnimationWeights with fn to_json(self) {
-  self.values.to_json()
+  self.values |> ToJson::to_json
 }
 
 ///|

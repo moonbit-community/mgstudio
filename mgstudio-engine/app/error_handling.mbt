@@ -76,7 +76,7 @@ fn error_context_prefix(context : ErrorContext) -> String {
     Validation => "Encountered a validation error"
   }
   let stage_suffix = match context.stage {
-    Some(stage) => " during \{to_repr(stage).to_string()}"
+    Some(stage) => " during \{Repr(stage).to_string()}"
     None => ""
   }
   "\{base} `\{context.source}`\{stage_suffix}"

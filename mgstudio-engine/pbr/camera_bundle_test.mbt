@@ -109,8 +109,10 @@ test "render3d: Camera3dBundle stores window render target" {
   )
   debug_inspect(
     target.map(fn(value) {
-      value.to_json() ==
-      @camera_camera.RenderTarget::Window(Entity(target_window)).to_json()
+      ToJson::to_json(value) ==
+      ToJson::to_json(
+        @camera_camera.RenderTarget::Window(Entity(target_window)),
+      )
     }),
     content="Some(true)",
   )

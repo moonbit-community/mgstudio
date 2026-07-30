@@ -130,8 +130,8 @@ pub fn Volume::mul(self : Volume, other : Volume) -> Volume {
 ///|
 pub impl ToJson for Volume with fn to_json(self) {
   match self {
-    Linear(value) => ("linear", value).to_json()
-    Decibels(value) => ("decibels", value).to_json()
+    Linear(value) => ("linear", value) |> ToJson::to_json
+    Decibels(value) => ("decibels", value) |> ToJson::to_json
   }
 }
 
@@ -147,7 +147,7 @@ pub impl @json.FromJson for Volume with fn from_json(json, path) {
 
 ///|
 pub impl ToJson for GlobalVolume with fn to_json(self) {
-  self.volume.to_json()
+  self.volume |> ToJson::to_json
 }
 
 ///|

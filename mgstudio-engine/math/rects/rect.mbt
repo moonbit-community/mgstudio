@@ -49,7 +49,7 @@ pub fn Rect::contains(self : Rect, value : @math.Vec2) -> Bool {
 
 ///|
 pub impl ToJson for Rect with fn to_json(self) {
-  (self.min, self.max).to_json()
+  (self.min, self.max) |> ToJson::to_json
 }
 
 ///|

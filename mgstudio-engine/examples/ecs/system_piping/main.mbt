@@ -95,7 +95,7 @@ fn print_info(output : String) -> Unit {
 
 ///|
 fn print_debug(result : ParseOutcome) -> Unit {
-  @app.log_debug(to_repr(result).to_string())
+  @app.log_debug(Repr(result).to_string())
 }
 
 ///|

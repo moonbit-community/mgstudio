@@ -559,20 +559,21 @@ fn encode_camera(camera : Camera) -> Json {
     @camera_clear_color.encode_clear_color_config(camera.clear_color),
     camera.invert_culling,
     camera.sub_camera_view,
-  ).to_json()
+  )
+  |> ToJson::to_json
 }
 
 ///|
 fn encode_image_handle(handle : @asset.Handle[@asset.Image]) -> Json {
-  handle.id().to_json()
+  handle.id() |> ToJson::to_json
 }
 
 ///|
 fn encode_render_target(target : RenderTarget) -> Json {
   match target {
-    Screen => (0, Json::null()).to_json()
-    Image(image) => (1, encode_image_handle(image)).to_json()
-    Window(window_ref) => (2, window_ref.to_json()).to_json()
+    Screen => (0, Json::null()) |> ToJson::to_json
+    Image(image) => (1, encode_image_handle(image)) |> ToJson::to_json
+    Window(window_ref) => (2, window_ref |> ToJson::to_json) |> ToJson::to_json
   }
 }
 

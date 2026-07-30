@@ -174,7 +174,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   sync_simple_transforms_world(world)
   let second_global = (try! world.get_by_key(entity, ecs_key_global_transform)).unwrap()
   debug_inspect(
-    second_global.to_json() == first_global.to_json(),
+    ToJson::to_json(second_global) == ToJson::to_json(first_global),
     content="true",
   )
 
@@ -747,8 +747,11 @@ test "transform ecs: reparenting in the same frame preserves global transform" {
   let parent_after = (try! world.get_by_key(parent, ecs_key_global_transform)).unwrap()
   let child_after = (try! world.get_by_key(child, ecs_key_global_transform)).unwrap()
   debug_inspect(
-    parent_after.to_json() == parent_before.to_json(),
+    ToJson::to_json(parent_after) == ToJson::to_json(parent_before),
     content="true",
   )
-  debug_inspect(child_after.to_json() == child_before.to_json(), content="true")
+  debug_inspect(
+    ToJson::to_json(child_after) == ToJson::to_json(child_before),
+    content="true",
+  )
 }
