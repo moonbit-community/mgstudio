@@ -54,8 +54,8 @@ pub fn Camera3dBundle::new(
     screen_space_transmission: None,
     screen_space_reflections: None,
     bloom: None,
-    tonemapping: Some(Tonemapping::default()),
-    deband_dither: Some(Enabled),
+    tonemapping: None,
+    deband_dither: None,
     chromatic_aberration: None,
     custom_post_process3d: None,
     vignette: None,
@@ -90,8 +90,8 @@ pub fn Camera3dBundle::new_with_projection(
     screen_space_transmission: None,
     screen_space_reflections: None,
     bloom: None,
-    tonemapping: Some(Tonemapping::default()),
-    deband_dither: Some(Enabled),
+    tonemapping: None,
+    deband_dither: None,
     chromatic_aberration: None,
     custom_post_process3d: None,
     vignette: None,
@@ -493,16 +493,12 @@ pub fn register_render3d_required_components(
     @camera_render_layers.ecs_key_render_layers,
     fn() { RenderLayers() },
   )
-  world.register_required_components_with(
-    ecs_key_camera3d,
-    ecs_key_tonemapping,
-    fn() { Tonemapping::default() },
-  )
-  world.register_required_components_with(
-    ecs_key_camera3d,
-    ecs_key_deband_dither,
-    fn() { Enabled },
-  )
+  // Bevy source: `bevy/crates/bevy_camera/src/components.rs` declares
+  // `#[require(Camera, Projection)]` for `Camera3d`. Neither `Tonemapping` nor
+  // `DebandDither` is a required component anywhere in Bevy; both are read as
+  // `Option<&T>` and an absent component means the effect is off
+  // (`bevy_core_pipeline/src/tonemapping/mod.rs` defaults an absent
+  // `DebandDither` to `DebandDither::Disabled`).
   world.register_required_components_with(ecs_key_camera3d, ecs_key_frustum, fn() {
     Projection::default().compute_frustum(@transform.Transform::identity())
   })
