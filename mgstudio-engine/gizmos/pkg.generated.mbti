@@ -81,6 +81,18 @@ pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Read[@primitives.Frustum], @ecs.Read
 
 pub let ecs_key_gizmo_mesh_config : @ecs.ComponentKey[GizmoMeshConfig]
 
+pub let ecs_key_transform_gizmo_camera : @ecs.ComponentKey[TransformGizmoCamera]
+
+pub let ecs_key_transform_gizmo_focus : @ecs.ComponentKey[TransformGizmoFocus]
+
+pub let ecs_key_transform_gizmo_mesh_marker : @ecs.ComponentKey[TransformGizmoMeshMarker]
+
+pub let ecs_key_transform_gizmo_root : @ecs.ComponentKey[TransformGizmoRoot]
+
+pub let ecs_res_key_transform_gizmo_settings : @ecs.ResourceKey[TransformGizmoSettings]
+
+pub let ecs_res_key_transform_gizmo_state : @ecs.ResourceKey[TransformGizmoState]
+
 pub fn effective_space(TransformGizmoSettings) -> TransformGizmoSpace
 
 pub fn flush_global_gizmos(Gizmos[DefaultGizmoConfigGroup]) -> Unit
@@ -217,7 +229,7 @@ pub fn transform_gizmo_color_y() -> @color.Color
 
 pub fn transform_gizmo_color_z() -> @color.Color
 
-pub fn transform_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn transform_gizmo_init_resources(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let transform_gizmo_systems : String
 
@@ -746,11 +758,6 @@ pub(all) enum TransformGizmoMode {
   Scale
 }
 pub impl Default for TransformGizmoMode
-
-pub struct TransformGizmoPlugin {
-}
-pub fn TransformGizmoPlugin::TransformGizmoPlugin() -> Self
-pub impl @app.Plugin for TransformGizmoPlugin
 
 pub struct TransformGizmoRoot {
 }

@@ -161,7 +161,7 @@ pub fn TransformGizmoFocus::TransformGizmoFocus() -> TransformGizmoFocus {
 }
 
 ///|
-let ecs_key_transform_gizmo_focus : @ecs.ComponentKey[TransformGizmoFocus] = @ecs.register_component(
+pub let ecs_key_transform_gizmo_focus : @ecs.ComponentKey[TransformGizmoFocus] = @ecs.register_component(
   debug_name="mgstudio_gizmos::TransformGizmoFocus",
 )
 
@@ -189,7 +189,7 @@ pub fn TransformGizmoCamera::TransformGizmoCamera() -> TransformGizmoCamera {
 }
 
 ///|
-let ecs_key_transform_gizmo_camera : @ecs.ComponentKey[TransformGizmoCamera] = @ecs.register_component(
+pub let ecs_key_transform_gizmo_camera : @ecs.ComponentKey[TransformGizmoCamera] = @ecs.register_component(
   debug_name="mgstudio_gizmos::TransformGizmoCamera",
 )
 
@@ -214,7 +214,7 @@ pub fn TransformGizmoRoot::TransformGizmoRoot() -> TransformGizmoRoot {
 }
 
 ///|
-let ecs_key_transform_gizmo_root : @ecs.ComponentKey[TransformGizmoRoot] = @ecs.register_component(
+pub let ecs_key_transform_gizmo_root : @ecs.ComponentKey[TransformGizmoRoot] = @ecs.register_component(
   debug_name="mgstudio_gizmos::TransformGizmoRoot",
 )
 
@@ -239,7 +239,7 @@ pub fn TransformGizmoMeshMarker::new(
 }
 
 ///|
-let ecs_key_transform_gizmo_mesh_marker : @ecs.ComponentKey[
+pub let ecs_key_transform_gizmo_mesh_marker : @ecs.ComponentKey[
   TransformGizmoMeshMarker,
 ] = @ecs.register_component(
   debug_name="mgstudio_gizmos::TransformGizmoMeshMarker",
@@ -288,7 +288,7 @@ pub impl Default for TransformGizmoSettings with fn default() {
 }
 
 ///|
-let ecs_res_key_transform_gizmo_settings : @ecs.ResourceKey[
+pub let ecs_res_key_transform_gizmo_settings : @ecs.ResourceKey[
   TransformGizmoSettings,
 ] = @ecs.register_resource(debug_name="mgstudio_gizmos::TransformGizmoSettings")
 
@@ -329,9 +329,9 @@ pub impl Default for TransformGizmoState with fn default() {
 }
 
 ///|
-let ecs_res_key_transform_gizmo_state : @ecs.ResourceKey[TransformGizmoState] = @ecs.register_resource(
-  debug_name="mgstudio_gizmos::TransformGizmoState",
-)
+pub let ecs_res_key_transform_gizmo_state : @ecs.ResourceKey[
+  TransformGizmoState,
+] = @ecs.register_resource(debug_name="mgstudio_gizmos::TransformGizmoState")
 
 ///|
 pub impl @app.Resource for TransformGizmoState with fn resource() {
@@ -480,30 +480,11 @@ pub fn snap_axis(
 }
 
 ///|
-/// Opt-in plugin that adds the interactive transform gizmo.
+/// Initialise the transform gizmo resources.
 ///
-/// This plugin registers the interaction resources and system set. Pair it with
-/// the render plugin in `gizmos_render` for mesh-based visualization.
-pub struct TransformGizmoPlugin {}
-
-///|
-#warnings("-unnecessary_annotation")
-pub fn TransformGizmoPlugin::TransformGizmoPlugin() -> TransformGizmoPlugin {
-  TransformGizmoPlugin::{  }
-}
-
-///|
-pub impl @app.Plugin for TransformGizmoPlugin with fn name(_self) {
-  "mgstudio.gizmos.TransformGizmoPlugin"
-}
-
-///|
-pub impl @app.Plugin for TransformGizmoPlugin with fn build(_self, app) {
-  transform_gizmo_plugin(app)
-}
-
-///|
-pub fn transform_gizmo_plugin(
+/// `TransformGizmoPlugin` lives in the `gizmos/transform_gizmo` fragment
+/// because the hover and drag systems need camera viewport projection.
+pub fn transform_gizmo_init_resources(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
   app
