@@ -1,0 +1,35 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera/projection_math"
+
+import {
+  "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/projection3d",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
+}
+
+// Values
+pub fn camera_viewport_rect_logical(@camera.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
+
+pub fn camera_viewport_to_world_ray(@math.Vec2, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+
+pub fn camera_world_to_viewport(@math.Vec3, @camera.Camera, @projection3d.Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn projection_matrix_inverse(@projection3d.ProjectionMatrix3d) -> @projection3d.ProjectionMatrix3d?
+
+pub fn projection_runtime_projection(@projection3d.Projection, @camera.Camera, @math.IVec2, Float) -> @projection3d.Projection
+
+pub fn quat_conjugate(@math.Quat) -> @math.Quat
+
+pub fn quat_rotate_vec3(@math.Quat, @math.Vec3) -> @math.Vec3
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @projection3d {type Projection}
+
+pub using @projection3d {type ProjectionMatrix3d}
+
+// Traits

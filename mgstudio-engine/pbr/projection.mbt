@@ -111,14 +111,9 @@ fn render3d_projection_runtime_projection(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> Projection {
-  match
-    @pbr_render.render3d_camera_viewport_rect_logical(
-      camera, target_size, scale_factor,
-    ) {
-    Some((_, _, viewport_width, viewport_height)) =>
-      projection.update(viewport_width, viewport_height)
-    None => projection
-  }
+  @camera_projection_math.projection_runtime_projection(
+    projection, camera, target_size, scale_factor,
+  )
 }
 
 ///|

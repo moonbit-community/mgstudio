@@ -4,7 +4,9 @@ package "Milky2018/mgstudio/gizmos"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/primitives",
+  "Milky2018/mgstudio/camera/projection3d",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -207,7 +209,11 @@ pub fn install_retained_gizmo_required_components(@ecs.World) -> Unit
 
 pub fn intersect_plane(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> @math.Vec3?
 
+pub fn point_to_ring_screen_dist(@math.Vec2, GizmoCamera, @math.IVec2, Float, @math.Vec3, @math.Vec3, Float) -> Float
+
 pub fn point_to_segment_dist(@math.Vec2, @math.Vec2, @math.Vec2) -> Float
+
+pub fn resolve_gizmo_camera(@ecs.World) -> GizmoCamera?
 
 pub fn simplex_stroke_font_cap_height() -> Float
 
@@ -229,7 +235,13 @@ pub fn transform_gizmo_color_y() -> @color.Color
 
 pub fn transform_gizmo_color_z() -> @color.Color
 
+pub fn transform_gizmo_drag(@ecs.World) -> Unit
+
+pub fn transform_gizmo_hover(@ecs.World) -> Unit
+
 pub fn transform_gizmo_init_resources(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn transform_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let transform_gizmo_systems : String
 
@@ -414,6 +426,13 @@ pub struct GizmoBufferView {
   list_colors : Array[@color.Color]
   strip_positions : Array[@math.Vec3]
   strip_colors : Array[@color.Color]
+}
+
+pub(all) struct GizmoCamera {
+  entity : @core.Entity
+  camera : @camera.Camera
+  projection : @projection3d.Projection
+  transform : @transform.Transform
 }
 
 pub(all) struct GizmoConfig {
@@ -758,6 +777,11 @@ pub(all) enum TransformGizmoMode {
   Scale
 }
 pub impl Default for TransformGizmoMode
+
+pub struct TransformGizmoPlugin {
+}
+pub fn TransformGizmoPlugin::TransformGizmoPlugin() -> Self
+pub impl @app.Plugin for TransformGizmoPlugin
 
 pub struct TransformGizmoRoot {
 }

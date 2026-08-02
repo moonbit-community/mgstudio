@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/camera/projection_math" @camera_projection_math,
   "Milky2018/mgstudio/camera/computed_camera_values" @camera_computed,
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/camera/components2d" @camera_components2d,

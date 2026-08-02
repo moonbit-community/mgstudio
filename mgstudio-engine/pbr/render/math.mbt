@@ -36,9 +36,7 @@ pub fn cmp_float(a : Float, b : Float) -> Int {
 
 ///|
 pub fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
-  let qv = @math.Vec3::new(q.x, q.y, q.z)
-  let t = qv.cross(v).mul_scalar(2.0F)
-  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
+  @camera_projection_math.quat_rotate_vec3(q, v)
 }
 
 ///|
@@ -53,7 +51,7 @@ pub fn render3d_quat_inverse(q : @math.Quat) -> @math.Quat {
 
 ///|
 pub fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
-  @math.Quat::new(-value.x, -value.y, -value.z, value.w)
+  @camera_projection_math.quat_conjugate(value)
 }
 
 ///|

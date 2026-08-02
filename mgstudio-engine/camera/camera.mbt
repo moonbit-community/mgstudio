@@ -79,7 +79,7 @@ pub fn camera_viewport_to_world_ray(
   viewport_size : @math.IVec2,
   render_scale : Float,
 ) -> (@math.Vec3, @math.Vec3)? {
-  @pbr.render3d_camera_viewport_to_world_ray(
+  @camera_projection_math.camera_viewport_to_world_ray(
     viewport_position, camera, projection, camera_transform, viewport_size, render_scale,
   )
 }
@@ -93,7 +93,7 @@ pub fn camera_world_to_viewport(
   viewport_size : @math.IVec2,
   render_scale : Float,
 ) -> @math.Vec2? {
-  @pbr.render3d_camera_world_to_viewport(
+  @camera_projection_math.camera_world_to_viewport(
     world_position, camera, projection, camera_transform, viewport_size, render_scale,
   )
 }

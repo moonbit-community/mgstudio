@@ -277,67 +277,8 @@ pub fn render3d_camera_viewport_to_world_ray(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> (@math.Vec3, @math.Vec3)? {
-  guard @pbr_render.render3d_camera_viewport_rect_logical(
-      camera, target_size, scale_factor,
-    )
-    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
-    return None
-  }
-  if screen.x < viewport_x ||
-    screen.y < viewport_y ||
-    screen.x > viewport_x + viewport_width ||
-    screen.y > viewport_y + viewport_height {
-    return None
-  }
-  let viewport_local_x = (screen.x - viewport_x) / viewport_width
-  let viewport_local_y = (screen.y - viewport_y) / viewport_height
-  let ndc_x = viewport_local_x * 2.0F - 1.0F
-  let ndc_y = 1.0F - viewport_local_y * 2.0F
-  let runtime_projection = render3d_projection_runtime_projection(
-    projection, camera, target_size, scale_factor,
-  )
-  let clip_from_view = runtime_projection.get_clip_from_view()
-  guard @pbr_render.render3d_projection_matrix_inverse(clip_from_view)
-    is Some(view_from_clip) else {
-    return None
-  }
-  let near_view_h = view_from_clip.mul_vec4(
-    @math.Vec4::new(ndc_x, ndc_y, 1.0F, 1.0F),
-  )
-  let far_view_h = view_from_clip.mul_vec4(
-    @math.Vec4::new(ndc_x, ndc_y, 1.1920929e-7F, 1.0F),
-  )
-  if near_view_h.w == 0.0F || far_view_h.w == 0.0F {
-    return None
-  }
-  let near_view = @math.Vec3::new(
-    near_view_h.x / near_view_h.w,
-    near_view_h.y / near_view_h.w,
-    near_view_h.z / near_view_h.w,
-  )
-  let far_view = @math.Vec3::new(
-    far_view_h.x / far_view_h.w,
-    far_view_h.y / far_view_h.w,
-    far_view_h.z / far_view_h.w,
-  )
-  let ray_camera = far_view.sub(near_view).normalize_or_zero()
-  if ray_camera.length_squared() <= 1.0e-12F {
-    return None
-  }
-  let ray_world = @pbr_render.quat_rotate_vec3(
-    camera_transform.rotation,
-    ray_camera,
-  ).normalize_or_zero()
-  if ray_world.length_squared() <= 1.0e-12F {
-    return None
-  }
-  Some(
-    (
-      camera_transform.translation.add(
-        @pbr_render.quat_rotate_vec3(camera_transform.rotation, near_view),
-      ),
-      ray_world,
-    ),
+  @camera_projection_math.camera_viewport_to_world_ray(
+    screen, camera, projection, camera_transform, target_size, scale_factor,
   )
 }
 
@@ -350,36 +291,7 @@ pub fn render3d_camera_world_to_viewport(
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {
-  guard @pbr_render.render3d_camera_viewport_rect_logical(
-      camera, target_size, scale_factor,
-    )
-    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
-    return None
-  }
-  let to_world = world.sub(camera_transform.translation)
-  let inv_rotation = @pbr_render.render3d_quat_conjugate(
-    camera_transform.rotation,
-  ).normalize()
-  let view_pos = @pbr_render.quat_rotate_vec3(inv_rotation, to_world)
-  let runtime_projection = render3d_projection_runtime_projection(
-    projection, camera, target_size, scale_factor,
+  @camera_projection_math.camera_world_to_viewport(
+    world, camera, projection, camera_transform, target_size, scale_factor,
   )
-  guard runtime_projection.get_clip_from_view().project_point3(view_pos)
-    is Some(ndc_point) else {
-    return None
-  }
-  if ndc_point.z < 0.0F || ndc_point.z > 1.0F {
-    return None
-  }
-  let ndc_x = ndc_point.x
-  let ndc_y = ndc_point.y
-  let local_x = (ndc_x + 1.0F) * 0.5F * viewport_width
-  let local_y = (1.0F - ndc_y) * 0.5F * viewport_height
-  if local_x < 0.0F ||
-    local_y < 0.0F ||
-    local_x > viewport_width ||
-    local_y > viewport_height {
-    return None
-  }
-  Some(@math.Vec2::new(local_x + viewport_x, local_y + viewport_y))
 }

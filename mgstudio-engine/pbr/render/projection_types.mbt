@@ -75,7 +75,7 @@ pub fn render3d_perspective_projection_matrix_for_sub(
 pub fn render3d_projection_matrix_inverse(
   matrix : ProjectionMatrix3d,
 ) -> ProjectionMatrix3d? {
-  @camera_projection3d.render3d_projection_matrix_inverse(matrix)
+  @camera_projection_math.projection_matrix_inverse(matrix)
 }
 
 ///|
