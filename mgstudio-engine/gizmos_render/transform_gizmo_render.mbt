@@ -206,8 +206,20 @@ fn spawn_gizmo_child(
 }
 
 ///|
-/// Spawn the gizmo mesh hierarchy and the overlay camera. Runs at `Startup`.
+/// Spawn the gizmo mesh hierarchy and the overlay camera. Runs at `Startup`,
+/// but only once `TransformGizmoSettings` exists.
+///
+/// Bevy gates this with
+/// `run_if(resource_exists::<TransformGizmoSettings>)`. The resource is
+/// inserted by `TransformGizmoPlugin`, which an app opts into, so an app that
+/// never adds that plugin gets no gizmo meshes and, crucially, no overlay
+/// camera. Without the guard every app built on `DefaultPlugins` gains a second
+/// order-1 camera on the primary window.
 pub fn spawn_gizmo_meshes(world : @ecs.World) -> Unit {
+  guard world.get_resource(@gizmos.ecs_res_key_transform_gizmo_settings)
+    is Some(_) else {
+    return
+  }
   if world.get_resource(ecs_res_key_transform_gizmo_materials) is Some(_) {
     return
   }

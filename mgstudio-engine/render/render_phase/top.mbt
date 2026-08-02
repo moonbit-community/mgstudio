@@ -314,6 +314,7 @@ pub fn host_gpu_begin_pass_3d(
   msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
+  depth_clear_enabled? : Int = -1,
 ) -> Unit {
   render_pass_trace_begin_span("pass_3d(kind=\{pass_kind})")
   @renderer.begin_pass_3d(
@@ -459,6 +460,7 @@ pub fn host_gpu_begin_pass_3d(
     msaa_sample_count~,
     pass_kind~,
     clear_enabled~,
+    depth_clear_enabled~,
   )
 }
 

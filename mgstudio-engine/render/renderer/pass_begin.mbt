@@ -699,6 +699,7 @@ pub fn GpuBackend::begin_pass_3d(
   msaa_sample_count : Int,
   pass_kind : Int,
   clear_enabled : Int,
+  depth_clear_enabled? : Int = -1,
 ) -> Unit raise GpuBackendError {
   let camera_rot = quat_to_z_rotation(
     camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
@@ -949,9 +950,22 @@ pub fn GpuBackend::begin_pass_3d(
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
+  // Bevy source: `bevy/crates/bevy_camera/src/components.rs::Camera3d::depth_load_op`.
+  //
+  // Depth is controlled per camera, independently of the colour load op. Bevy
+  // defaults to `Camera3dDepthLoadOp::Clear`, so a camera that shares a target
+  // with an earlier camera still starts from cleared depth and draws over it;
+  // tying depth to the colour op would make every camera after the first depth
+  // test against the previous camera's scene. `depth_clear_enabled < 0` keeps
+  // the legacy "follow colour" behaviour for callers that do not specify it.
+  let depth_clear_resolved = if depth_clear_enabled < 0 {
+    effective_clear_enabled
+  } else {
+    depth_clear_enabled
+  }
   let depth_load_op_u32 = if depth_attachment_uses_prepass {
     @wgpu.LOAD_OP_LOAD
-  } else if effective_clear_enabled == 0 {
+  } else if depth_clear_resolved == 0 {
     @wgpu.LOAD_OP_LOAD
   } else {
     @wgpu.LOAD_OP_CLEAR
@@ -1775,6 +1789,7 @@ pub fn begin_pass_3d(
   msaa_sample_count? : Int = 1,
   pass_kind~ : Int,
   clear_enabled~ : Int,
+  depth_clear_enabled? : Int = -1,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.begin_pass_3d(
@@ -1816,6 +1831,7 @@ pub fn begin_pass_3d(
       prepass_depth_texture_id, prepass_normal_texture_id, prepass_motion_vector_texture_id,
       prepass_deferred_texture_id, prepass_deferred_lighting_pass_id_texture_id,
       screen_space_reflections, msaa_sample_count, pass_kind, clear_enabled,
+      depth_clear_enabled~,
     ) catch {
       err => debug_runtime_error("begin_pass_3d", err)
     }

@@ -13,8 +13,17 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_render/src/view/mod.rs::prepare_view_targets`.
+//
+// Keyed by the camera's final render target, not by the camera entity, so every
+// camera drawing to one window shares a single intermediate colour texture --
+// Bevy's `ViewTarget`. Camera n renders into the texture camera n-1 already
+// wrote, and the first write of a frame clears while later writes load. Keying
+// this by camera entity gives each camera a private texture, and the last
+// camera's composite then erases every earlier camera's output (ISS-479).
+///|
 priv struct MotionBlurTargetsEntry {
-  entity : @core.Entity
+  render_target_id : Int
   width : Int
   height : Int
   sample_count : Int
@@ -241,7 +250,7 @@ fn render3d_prepass_targets_get_or_create(
 ///|
 fn render3d_motion_blur_targets_get_or_create(
   world : @ecs.World,
-  entity : @core.Entity,
+  render_target_id : Int,
   width : Int,
   height : Int,
   sample_count : Int,
@@ -254,8 +263,7 @@ fn render3d_motion_blur_targets_get_or_create(
   let safe_sample_count = if sample_count <= 1 { 1 } else { sample_count }
   let depth_usage_bits = depth_texture_usages.to_image_usage_bits()
   for item in motion_blur_targets {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation &&
+    if item.render_target_id == render_target_id &&
       item.width == width &&
       item.height == height &&
       item.sample_count == safe_sample_count &&
@@ -339,11 +347,10 @@ fn render3d_motion_blur_targets_get_or_create(
   let next : Array[MotionBlurTargetsEntry] = []
   let mut replaced = false
   for item in motion_blur_targets {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation {
+    if item.render_target_id == render_target_id {
       if !replaced {
         next.push({
-          entity,
+          render_target_id,
           width,
           height,
           sample_count: safe_sample_count,
@@ -363,7 +370,7 @@ fn render3d_motion_blur_targets_get_or_create(
   }
   if !replaced {
     next.push({
-      entity,
+      render_target_id,
       width,
       height,
       sample_count: safe_sample_count,

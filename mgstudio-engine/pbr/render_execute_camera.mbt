@@ -405,7 +405,7 @@ fn render3d_execute_camera(
       _deferred_lighting_pass_id,
     ) = render3d_motion_blur_targets_get_or_create(
       world,
-      camera_entity,
+      camera.target_id,
       view_width,
       view_height,
       msaa_sample_count,
@@ -643,3 +643,4 @@ fn render3d_execute_camera(
     camera.scale_factor,
   )
 }
+
