@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ///|
+// Bevy source: `bevy/crates/bevy_gizmos/src/gizmos.rs`.
+
+///|
+type RenderLayers = @camera_render_layers.RenderLayers
+
+///|
 pub struct Isometry2d {
   translation : @math.Vec2
   rotation : Float
@@ -2326,4 +2332,22 @@ pub fn[Config] Gizmos::text_2d(
     anchor,
     color,
   )
+}
+
+///|
+pub fn gizmos_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  gizmo_plugin(app)
+}
+
+///|
+pub fn gizmos_plugin_with(
+  app : @app.App[@ecs.World],
+  plugin : GizmoPlugin,
+) -> @app.App[@ecs.World] {
+  gizmo_plugin_with(app, plugin)
+}
+
+///|
+pub fn gizmos_default_group() -> DefaultGizmoConfigGroup {
+  DefaultGizmoConfigGroup()
 }

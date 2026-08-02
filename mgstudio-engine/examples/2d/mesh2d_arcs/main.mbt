@@ -169,7 +169,7 @@ fn setup(
 fn[T : @math.Bounded2d] draw_bounds_for_shape(
   shape : T,
   transform : @transform.GlobalTransform,
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   let red = @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F)
   let blue = @color.Color::srgba(0.0F, 0.0F, 1.0F, 1.0F)
@@ -182,14 +182,14 @@ fn[T : @math.Bounded2d] draw_bounds_for_shape(
   let isometry = @math.Isometry2d::new(translation, rotation)
   let aabb = shape.aabb_2d(isometry)
   gizmos.rect_2d(
-    @sprite.Isometry2d::new(aabb.center(), 0.0F),
+    @gizmos.Isometry2d::new(aabb.center(), 0.0F),
     aabb.half_size().mul_scalar(2.0F),
     red,
   )
   let bounding_circle = shape.bounding_circle(isometry)
   ignore(
     gizmos.circle_2d(
-      @sprite.Isometry2d::new(bounding_circle.center, 0.0F),
+      @gizmos.Isometry2d::new(bounding_circle.center, 0.0F),
       bounding_circle.radius(),
       blue,
     ),
@@ -202,7 +202,7 @@ fn draw_sector_bounds(
     (@ecs.Read[SectorBounds], @ecs.Read[@transform.GlobalTransform]),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (shape, transform) = data
@@ -216,7 +216,7 @@ fn draw_segment_bounds(
     (@ecs.Read[SegmentBounds], @ecs.Read[@transform.GlobalTransform]),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   try! query.for_each(fn(_entity, data) {
     let (shape, transform) = data

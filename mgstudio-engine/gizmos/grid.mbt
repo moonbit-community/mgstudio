@@ -17,18 +17,18 @@
 
 ///|
 pub fn[Config] gizmo_grid_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   cell_count : @math.IVec2,
   spacing : @math.Vec2,
   color : @color.Color,
-) -> @sprite.Grid2dBuilder {
+) -> Grid2dBuilder {
   gizmos.grid_2d(isometry, cell_count, spacing, color)
 }
 
 ///|
 pub fn[Config] gizmo_grid_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   isometry : @math.Isometry3d,
   cell_count : @math.IVec2,
   spacing : @math.Vec2,

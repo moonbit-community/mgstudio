@@ -338,7 +338,7 @@ fn draw_mines(
     ignore(
       gizmos
       .circle_2d(
-        @sprite.Isometry2d::new(mine.pos, 0.0F),
+        @gizmos.Isometry2d::new(mine.pos, 0.0F),
         mine.size,
         mine_color(mine.size),
       )

@@ -752,7 +752,7 @@ priv struct ExtractedLineGizmo {
 }
 
 ///|
-fn retained_line_joints_resolution(joints : @sprite.GizmoLineJoint) -> Int {
+fn retained_line_joints_resolution(joints : @gizmos.GizmoLineJoint) -> Int {
   match joints {
     Round(resolution) => resolution
     _ => 0
@@ -760,7 +760,7 @@ fn retained_line_joints_resolution(joints : @sprite.GizmoLineJoint) -> Int {
 }
 
 ///|
-fn retained_line_style_parts(style : @sprite.GizmoLineStyle) -> (Float, Float) {
+fn retained_line_style_parts(style : @gizmos.GizmoLineStyle) -> (Float, Float) {
   match style {
     Dashed(gap_scale~, line_scale~) => {
       if gap_scale <= 0.0F {
@@ -783,7 +783,7 @@ fn retained_line_style_parts(style : @sprite.GizmoLineStyle) -> (Float, Float) {
 fn line_gizmo_render_config(
   uniform : LineGizmoUniform,
   mesh_config : @gizmos.GizmoMeshConfig,
-) -> @sprite.GizmoConfig {
+) -> @gizmos.GizmoConfig {
   {
     enabled: true,
     line: {
@@ -800,7 +800,7 @@ fn line_gizmo_render_config(
 ///|
 fn queue_line_gizmo_list_3d(
   world_from_local : @math.Affine3,
-  config : @sprite.GizmoConfig,
+  config : @gizmos.GizmoConfig,
   positions : Array[@math.Vec3],
   colors : Array[@color.LinearRgba],
 ) -> Int {
@@ -809,7 +809,7 @@ fn queue_line_gizmo_list_3d(
   for pair in 0..<pair_count {
     let start_index = pair * 2
     let end_index = start_index + 1
-    @sprite.gizmos_push_retained_line_3d(
+    @gizmos.gizmos_push_retained_line_3d(
       config,
       world_from_local.transform_point3(positions[start_index]),
       world_from_local.transform_point3(positions[end_index]),
@@ -824,7 +824,7 @@ fn queue_line_gizmo_list_3d(
 ///|
 fn queue_line_gizmo_strip_3d(
   world_from_local : @math.Affine3,
-  config : @sprite.GizmoConfig,
+  config : @gizmos.GizmoConfig,
   positions : Array[@math.Vec3],
   colors : Array[@color.LinearRgba],
 ) -> Int {
@@ -833,7 +833,7 @@ fn queue_line_gizmo_strip_3d(
   }
   let mut queued = 0
   for index in 0..<(positions.length() - 1) {
-    @sprite.gizmos_push_retained_line_3d(
+    @gizmos.gizmos_push_retained_line_3d(
       config,
       world_from_local.transform_point3(positions[index]),
       world_from_local.transform_point3(positions[index + 1]),
@@ -853,7 +853,7 @@ fn line_gizmo_vec2(point : @math.Vec3) -> @math.Vec2 {
 ///|
 fn queue_line_gizmo_list_2d(
   world_from_local : @math.Affine3,
-  config : @sprite.GizmoConfig,
+  config : @gizmos.GizmoConfig,
   positions : Array[@math.Vec3],
   colors : Array[@color.LinearRgba],
 ) -> Int {
@@ -862,7 +862,7 @@ fn queue_line_gizmo_list_2d(
   for pair in 0..<pair_count {
     let start_index = pair * 2
     let end_index = start_index + 1
-    @sprite.gizmos_push_retained_line_2d(
+    @gizmos.gizmos_push_retained_line_2d(
       config,
       line_gizmo_vec2(world_from_local.transform_point3(positions[start_index])),
       line_gizmo_vec2(world_from_local.transform_point3(positions[end_index])),
@@ -877,7 +877,7 @@ fn queue_line_gizmo_list_2d(
 ///|
 fn queue_line_gizmo_strip_2d(
   world_from_local : @math.Affine3,
-  config : @sprite.GizmoConfig,
+  config : @gizmos.GizmoConfig,
   positions : Array[@math.Vec3],
   colors : Array[@color.LinearRgba],
 ) -> Int {
@@ -886,7 +886,7 @@ fn queue_line_gizmo_strip_2d(
   }
   let mut queued = 0
   for index in 0..<(positions.length() - 1) {
-    @sprite.gizmos_push_retained_line_2d(
+    @gizmos.gizmos_push_retained_line_2d(
       config,
       line_gizmo_vec2(world_from_local.transform_point3(positions[index])),
       line_gizmo_vec2(world_from_local.transform_point3(positions[index + 1])),

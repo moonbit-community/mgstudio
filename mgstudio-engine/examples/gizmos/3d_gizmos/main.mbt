@@ -33,41 +33,41 @@ impl Default for MyRoundGizmos with fn default() {
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_marker(
+impl @gizmos.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_debug_name() {
+impl @gizmos.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_debug_name() {
   "examples.gizmos.3d_gizmos.MyRoundGizmos"
 }
 
 ///|
 let my_round_gizmos_storage_resource_key : @ecs.ResourceKey[
-  @sprite.GizmoStorage[MyRoundGizmos],
+  @gizmos.GizmoStorage[MyRoundGizmos],
 ] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoStorage<examples.gizmos.3d_gizmos.MyRoundGizmos>",
 )
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_storage_resource_key() {
+impl @gizmos.GizmoConfigGroup for MyRoundGizmos with fn gizmo_storage_resource_key() {
   my_round_gizmos_storage_resource_key
 }
 
 ///|
-extenum @sprite.GizmoConfigGroupCell += {
+extenum @gizmos.GizmoConfigGroupCell += {
   MyRoundGizmosCell(Ref[MyRoundGizmos])
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn new_gizmo_config_group_cell() {
+impl @gizmos.GizmoConfigGroup for MyRoundGizmos with fn new_gizmo_config_group_cell() {
   MyRoundGizmosCell(Ref(MyRoundGizmos()))
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_cell_ref(
+impl @gizmos.GizmoConfigGroup for MyRoundGizmos with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {

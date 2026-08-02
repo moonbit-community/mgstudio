@@ -503,7 +503,7 @@ fn update_volumes(
 
 ///|
 fn render_shapes(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let query : @ecs.Query[
@@ -523,7 +523,7 @@ fn render_shapes(
 
 ///|
 fn render_volumes(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
@@ -532,13 +532,13 @@ fn render_volumes(
     match data.volume {
       Aabb(aabb) =>
         gizmos.rect_2d(
-          @sprite.Isometry2d::new(aabb.center(), 0.0F),
+          @gizmos.Isometry2d::new(aabb.center(), 0.0F),
           aabb.half_size().mul_scalar(2.0F),
           color,
         )
       Circle(circle) =>
         gizmos.circle_2d(
-          @sprite.Isometry2d::new(circle.center, 0.0F),
+          @gizmos.Isometry2d::new(circle.center, 0.0F),
           circle.radius(),
           color,
         )
@@ -549,7 +549,7 @@ fn render_volumes(
 
 ///|
 fn aabb_intersection_system(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
@@ -557,7 +557,7 @@ fn aabb_intersection_system(
   let center = get_intersection_position(time)
   let aabb = @math.Aabb2d::new(center, @math.Vec2::new(50.0F, 50.0F))
   gizmos.rect_2d(
-    @sprite.Isometry2d::new(center, 0.0F),
+    @gizmos.Isometry2d::new(center, 0.0F),
     aabb.half_size().mul_scalar(2.0F),
     color_yellow(),
   )
@@ -579,7 +579,7 @@ fn aabb_intersection_system(
 
 ///|
 fn circle_intersection_system(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
@@ -587,7 +587,7 @@ fn circle_intersection_system(
   let center = get_intersection_position(time)
   let circle = @math.BoundingCircle::new(center, 50.0F)
   gizmos.circle_2d(
-    @sprite.Isometry2d::new(center, 0.0F),
+    @gizmos.Isometry2d::new(center, 0.0F),
     circle.radius(),
     color_yellow(),
   )
@@ -610,7 +610,7 @@ fn circle_intersection_system(
 
 ///|
 fn ray_cast_system(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
@@ -636,7 +636,7 @@ fn ray_cast_system(
 
 ///|
 fn aabb_cast_system(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
@@ -660,7 +660,7 @@ fn aabb_cast_system(
       let center = cast.ray.ray.get_point(hit_time)
       let hit_aabb = @math.Aabb2d::new(center, cast.aabb.half_size())
       gizmos.rect_2d(
-        @sprite.Isometry2d::new(hit_aabb.center(), 0.0F),
+        @gizmos.Isometry2d::new(hit_aabb.center(), 0.0F),
         hit_aabb.half_size().mul_scalar(2.0F),
         color_lime(),
       )
@@ -674,7 +674,7 @@ fn aabb_cast_system(
 
 ///|
 fn bounding_circle_cast_system(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
@@ -697,7 +697,7 @@ fn bounding_circle_cast_system(
     if toi is Some(hit_time) {
       let center = cast.ray.ray.get_point(hit_time)
       gizmos.circle_2d(
-        @sprite.Isometry2d::new(center, 0.0F),
+        @gizmos.Isometry2d::new(center, 0.0F),
         cast.circle.radius(),
         color_lime(),
       )
@@ -720,7 +720,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn get_and_draw_ray(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
   time : @time.Time[Unit],
 ) -> @math.RayCast2d {
   let elapsed = time.elapsed_secs()
@@ -762,8 +762,8 @@ fn transform_math_isometry(
 ///|
 fn transform_sprite_isometry(
   transform : @transform.Transform,
-) -> @sprite.Isometry2d {
-  @sprite.Isometry2d::new(
+) -> @gizmos.Isometry2d {
+  @gizmos.Isometry2d::new(
     @math.Vec2::new(transform.translation.x, transform.translation.y),
     transform.rotation_z(),
   )
@@ -771,9 +771,9 @@ fn transform_sprite_isometry(
 
 ///|
 fn draw_shape_outline(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
   shape : Shape,
-  isometry : @sprite.Isometry2d,
+  isometry : @gizmos.Isometry2d,
   color : @color.Color,
 ) -> Unit {
   match shape {
@@ -834,7 +834,7 @@ fn shape_bounding_circle(
 ///|
 fn transformed_points(
   points : Array[@math.Vec2],
-  isometry : @sprite.Isometry2d,
+  isometry : @gizmos.Isometry2d,
 ) -> Array[@math.Vec2] {
   let transformed : Array[@math.Vec2] = []
   for point in points {
@@ -889,15 +889,15 @@ fn capsule_points_local(capsule : @math.Capsule2d) -> Array[@math.Vec2] {
 
 ///|
 fn draw_filled_circle(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
   position : @math.Vec2,
   color : @color.Color,
 ) -> Unit {
-  gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 1.0F, color)
+  gizmos.circle_2d(@gizmos.Isometry2d::new(position, 0.0F), 1.0F, color)
   |> ignore
-  gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 2.0F, color)
+  gizmos.circle_2d(@gizmos.Isometry2d::new(position, 0.0F), 2.0F, color)
   |> ignore
-  gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 3.0F, color)
+  gizmos.circle_2d(@gizmos.Isometry2d::new(position, 0.0F), 3.0F, color)
   |> ignore
 }
 

@@ -43,41 +43,41 @@ impl Default for TestRoundGizmos with fn default() {
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_marker(
+impl GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_debug_name() {
+impl GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos_test::TestRoundGizmos"
 }
 
 ///|
 let test_round_gizmos_storage_resource_key : @ecs.ResourceKey[
-  @sprite.GizmoStorage[TestRoundGizmos],
+  GizmoStorage[TestRoundGizmos],
 ] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos_test::TestRoundGizmos>",
 )
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_storage_resource_key() {
+impl GizmoConfigGroup for TestRoundGizmos with fn gizmo_storage_resource_key() {
   test_round_gizmos_storage_resource_key
 }
 
 ///|
-extenum @sprite.GizmoConfigGroupCell += {
+extenum @gizmos.GizmoConfigGroupCell += {
   TestRoundGizmosCell(Ref[TestRoundGizmos])
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn new_gizmo_config_group_cell() {
+impl GizmoConfigGroup for TestRoundGizmos with fn new_gizmo_config_group_cell() {
   TestRoundGizmosCell(Ref(TestRoundGizmos()))
 }
 
 ///|
-impl @sprite.GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_cell_ref(
+impl GizmoConfigGroup for TestRoundGizmos with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -199,7 +199,7 @@ test "retained gizmo asset delegates Bevy buffer helpers" {
 test "retained gizmo asset delegates Bevy rect and cube helpers" {
   let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.rect_2d(
-    @sprite.Isometry2d::identity(),
+    Isometry2d::identity(),
     @math.Vec2::new(2.0F, 2.0F),
     @color.Color::white(),
   )
@@ -234,7 +234,7 @@ test "retained gizmo asset delegates Bevy cross helpers" {
   let asset = @gizmos.GizmoAsset::GizmoAsset()
   asset.cross(@math.Isometry3d::identity(), 0.5F, @color.Color::white())
   debug_inspect(asset.buffer().list_positions().length(), content="6")
-  asset.cross_2d(@sprite.Isometry2d::identity(), 0.5F, @color.Color::white())
+  asset.cross_2d(Isometry2d::identity(), 0.5F, @color.Color::white())
   debug_inspect(asset.buffer().list_positions().length(), content="10")
 }
 
@@ -243,7 +243,7 @@ test "retained gizmo circle builder flushes with Bevy resolution semantics" {
   let asset = @gizmos.GizmoAsset::GizmoAsset()
   ignore(
     asset
-    .circle_2d(@sprite.Isometry2d::identity(), 1.0F, @color.Color::white())
+    .circle_2d(Isometry2d::identity(), 1.0F, @color.Color::white())
     .resolution(8),
   )
   debug_inspect(asset.buffer().strip_positions().length(), content="10")
@@ -270,7 +270,7 @@ test "retained gizmo arc builders flush in Bevy call order" {
   ignore(
     asset
     .arc_2d(
-      @sprite.Isometry2d::identity(),
+      Isometry2d::identity(),
       3.141592653589793F,
       1.0F,
       @color.Color::white(),
@@ -279,7 +279,7 @@ test "retained gizmo arc builders flush in Bevy call order" {
   )
   ignore(
     asset
-    .circle_2d(@sprite.Isometry2d::identity(), 1.0F, @color.Color::white())
+    .circle_2d(Isometry2d::identity(), 1.0F, @color.Color::white())
     .resolution(3),
   )
   let strip = asset.buffer().strip_positions()

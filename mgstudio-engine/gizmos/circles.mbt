@@ -17,17 +17,17 @@
 
 ///|
 pub fn[Config] gizmo_circle_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   radius : Float,
   color : @color.Color,
-) -> @sprite.Ellipse2dBuilder {
+) -> Ellipse2dBuilder {
   gizmos.circle_2d(isometry, radius, color)
 }
 
 ///|
 pub fn[Config] gizmo_circle_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   isometry : @math.Isometry3d,
   radius : Float,
   color : @color.Color,
@@ -37,17 +37,17 @@ pub fn[Config] gizmo_circle_3d(
 
 ///|
 pub fn[Config] gizmo_ellipse_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   half_size : @math.Vec2,
   color : @color.Color,
-) -> @sprite.Ellipse2dBuilder {
+) -> Ellipse2dBuilder {
   gizmos.ellipse_2d(isometry, half_size, color)
 }
 
 ///|
 pub fn[Config] gizmo_sphere_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   isometry : @math.Isometry3d,
   radius : Float,
   color : @color.Color,
@@ -57,22 +57,22 @@ pub fn[Config] gizmo_sphere_3d(
 
 ///|
 pub fn[Config] gizmo_draw_circle_shape_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   circle : @math.Circle,
   color : @color.Color,
-) -> @sprite.Ellipse2dBuilder {
+) -> Ellipse2dBuilder {
   gizmos.circle_2d(isometry, circle.radius, color)
 }
 
 ///|
 pub fn[Config] gizmo_draw_arc_shape_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   arc : @math.Arc2d,
   color : @color.Color,
-) -> @sprite.Arc2dBuilder {
-  let start = @sprite.Isometry2d::new(
+) -> Arc2dBuilder {
+  let start = Isometry2d::new(
     isometry.translation,
     isometry.rotation - arc.half_angle,
   )

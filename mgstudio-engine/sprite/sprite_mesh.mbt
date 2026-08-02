@@ -24,9 +24,6 @@ type Mesh2d = @mesh.Mesh2d
 type MeshMaterial2d[M] = @sprite_render_mesh2d_material.MeshMaterial2d[M]
 
 ///|
-type RenderLayers = @camera_render_layers.RenderLayers
-
-///|
 pub(all) enum SpriteAlphaMode {
   Opaque
   Mask(Float)

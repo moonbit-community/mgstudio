@@ -168,7 +168,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn display_curves(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let cycle_seconds = DURATION_SECONDS + TIME_MARGIN_SECONDS * 2.0F

@@ -17,7 +17,7 @@
 
 ///|
 pub fn[Config] gizmo_curve_2d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   points : Array[@math.Vec2],
   color : @color.Color,
 ) -> Unit {
@@ -26,7 +26,7 @@ pub fn[Config] gizmo_curve_2d(
 
 ///|
 pub fn[Config] gizmo_curve_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   points : Array[@math.Vec3],
   color : @color.Color,
 ) -> Unit {
@@ -35,7 +35,7 @@ pub fn[Config] gizmo_curve_3d(
 
 ///|
 pub fn[Config] gizmo_curve_gradient_2d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   points : Array[(@math.Vec2, @color.Color)],
 ) -> Unit {
   gizmos.curve_gradient_2d(points)
@@ -43,7 +43,7 @@ pub fn[Config] gizmo_curve_gradient_2d(
 
 ///|
 pub fn[Config] gizmo_curve_gradient_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   points : Array[(@math.Vec3, @color.Color)],
 ) -> Unit {
   gizmos.curve_gradient_3d(points)

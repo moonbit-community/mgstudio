@@ -45,55 +45,10 @@ pub fn GizmoPlugin::GizmoPlugin() -> GizmoPlugin {
   GizmoPlugin::{  }
 }
 
-///|
-pub type Isometry2d = @sprite.Isometry2d
-
-///|
-pub type GizmoLineJoint = @sprite.GizmoLineJoint
-
-///|
-pub type GizmoLineStyle = @sprite.GizmoLineStyle
-
-///|
-pub type GizmoLineConfig = @sprite.GizmoLineConfig
-
-///|
-pub type GizmoConfig = @sprite.GizmoConfig
-
-///|
-pub type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
-
-///|
-pub type GizmoConfigStore = @sprite.GizmoConfigStore
-
-///|
-pub fn[G : @sprite.GizmoConfigGroup] init_gizmo_group(
-  app : @app.App[@ecs.World],
-  group : G,
-) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(app, group)
-}
-
-///|
-pub type Gizmos[G] = @sprite.Gizmos[G]
-
-///|
-pub type GizmoStorage[G] = @sprite.GizmoStorage[G]
-
-///|
-pub type RoundedRectBuilder = @sprite.RoundedRectBuilder
-
-///|
-pub type Ellipse2dBuilder = @sprite.Ellipse2dBuilder
-
-///|
-pub type Arc2dBuilder = @sprite.Arc2dBuilder
-
-///|
-pub type ArrowBuilder = @sprite.ArrowBuilder
-
-///|
-pub type Grid2dBuilder = @sprite.Grid2dBuilder
+// The `Isometry2d`, `GizmoLine*`, `GizmoConfig*`, `Gizmos`, `GizmoStorage` and
+// builder types are now defined by their own Bevy source owners in this package
+// (`gizmos.mbt`, `config.mbt`), so the previous re-export bridge to `@sprite` is
+// gone. `init_gizmo_group` is owned by `config.mbt`.
 
 ///|
 pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

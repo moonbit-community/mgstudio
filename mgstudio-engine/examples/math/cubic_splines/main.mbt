@@ -313,7 +313,7 @@ fn update_curve(
 ///|
 fn draw_curve(
   curve : @app.Res[Curve],
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard curve.get().value is Some(curve_value) else { return }
   let resolution = 100 * curve_value.segments().length()
@@ -327,14 +327,14 @@ fn draw_curve(
 fn draw_control_points(
   control_points : @app.Res[ControlPoints],
   spline_mode : @app.Res[SplineMode],
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   let green = @color.Color::srgb(0.0F, 1.0F, 0.0F)
   let red = @color.Color::srgb(1.0F, 0.0F, 0.0F)
   for pair in control_points.get().points_and_tangents {
     let point = pair.0
     let tangent = pair.1
-    gizmos.circle_2d(@sprite.Isometry2d::new(point, 0.0F), 10.0F, green)
+    gizmos.circle_2d(@gizmos.Isometry2d::new(point, 0.0F), 10.0F, green)
     |> ignore
     if spline_mode.get() == Hermite {
       gizmos.arrow_2d(point, point.add(tangent), red) |> ignore
@@ -486,7 +486,7 @@ fn handle_mouse_press(
 fn draw_edit_move(
   edit_move : @app.Res[MouseEditMove],
   mouse_position : @app.Res[MousePosition],
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard edit_move.get().start is Some(start) else { return }
   guard mouse_position.get().position is Some(mouse_pos) else { return }
@@ -494,9 +494,9 @@ fn draw_edit_move(
   guard screen_to_world(mouse_pos) is Some(world_end) else { return }
 
   let preview = @color.Color::srgb(0.0F, 1.0F, 0.7F)
-  gizmos.circle_2d(@sprite.Isometry2d::new(world_start, 0.0F), 10.0F, preview)
+  gizmos.circle_2d(@gizmos.Isometry2d::new(world_start, 0.0F), 10.0F, preview)
   |> ignore
-  gizmos.circle_2d(@sprite.Isometry2d::new(world_start, 0.0F), 7.0F, preview)
+  gizmos.circle_2d(@gizmos.Isometry2d::new(world_start, 0.0F), 7.0F, preview)
   |> ignore
   gizmos.arrow_2d(world_start, world_end, @color.Color::srgb(1.0F, 0.0F, 0.7F))
   |> ignore

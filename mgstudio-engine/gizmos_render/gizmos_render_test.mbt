@@ -239,9 +239,9 @@ test "queue_line_gizmos consumes extracted GizmoMeshConfig-backed assets" {
   try! world.set(entity, @gizmos.Gizmo::Gizmo().with_handle(handle))
   try! world.set(entity, @transform.GlobalTransform::identity())
   @gizmos_render.extract_line_gizmos(world)
-  @sprite.gizmos_reset()
+  @gizmos.gizmos_reset()
   debug_inspect(@gizmos_render.queue_line_gizmos_3d(world), content="1")
-  @sprite.gizmos_reset()
+  @gizmos.gizmos_reset()
   debug_inspect(@gizmos_render.queue_line_gizmos_2d(world), content="1")
 }
 

@@ -13,7 +13,6 @@ import {
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/sync_world",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/debug",
 }
@@ -23,9 +22,9 @@ pub const LINE_GIZMO_UNIFORM_SIZE_BYTES : Int = 80
 
 pub fn draw_line_gizmo_plan(strip~ : Bool, list_vertex_count~ : Int, strip_vertex_count~ : Int) -> LineGizmoDrawPlan?
 
-pub fn draw_line_joint_gizmo_plan(strip_vertex_count~ : Int, joints~ : @sprite.GizmoLineJoint) -> LineGizmoDrawPlan?
+pub fn draw_line_joint_gizmo_plan(strip_vertex_count~ : Int, joints~ : @gizmos.GizmoLineJoint) -> LineGizmoDrawPlan?
 
-pub fn draw_line_joint_gizmo_vertex_count(@sprite.GizmoLineJoint) -> UInt?
+pub fn draw_line_joint_gizmo_vertex_count(@gizmos.GizmoLineJoint) -> UInt?
 
 pub let ecs_key_line_gizmo_uniform : @ecs.ComponentKey[LineGizmoUniform]
 
@@ -73,7 +72,7 @@ pub fn line_gizmo_3d_plugin_with(@app.App[@ecs.World], LineGizmo3dPlugin) -> @ap
 
 pub fn line_gizmo_color_bytes(Array[@color.Color]) -> Bytes
 
-pub fn line_gizmo_fragment_entry_point(@sprite.GizmoLineStyle) -> String
+pub fn line_gizmo_fragment_entry_point(@gizmos.GizmoLineStyle) -> String
 
 pub fn line_gizmo_phase_items_for_counts(@core.Entity, @sync_world.MainEntity, LineGizmoEntities, LineGizmoDrawFunctions, LineGizmoRenderDimension, @gizmos.GizmoMeshConfig, Int, Int) -> Array[LineGizmoPhaseItem]
 
@@ -93,7 +92,7 @@ pub fn line_joint_gizmo_3d_pipeline_plan(LineJointGizmo3dPipelineKey) -> LineGiz
 
 pub fn line_joint_gizmo_vertex_buffer_layouts() -> Array[@mesh.VertexBufferLayout]
 
-pub fn line_joint_gizmo_vertex_entry_point(@sprite.GizmoLineJoint) -> String
+pub fn line_joint_gizmo_vertex_entry_point(@gizmos.GizmoLineJoint) -> String
 
 pub fn prepare_gpu_line_gizmo(@wgpu_mbt.Device, @gizmos.GizmoAsset) -> GpuLineGizmo
 
@@ -148,10 +147,10 @@ pub struct LineGizmo2dPipelineKey {
   msaa_samples : UInt
   target_format : UInt
   strip : Bool
-  line_style : @sprite.GizmoLineStyle
+  line_style : @gizmos.GizmoLineStyle
 }
-pub fn LineGizmo2dPipelineKey::line_style(Self) -> @sprite.GizmoLineStyle
-pub fn LineGizmo2dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, strip~ : Bool, line_style~ : @sprite.GizmoLineStyle) -> Self
+pub fn LineGizmo2dPipelineKey::line_style(Self) -> @gizmos.GizmoLineStyle
+pub fn LineGizmo2dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, strip~ : Bool, line_style~ : @gizmos.GizmoLineStyle) -> Self
 pub fn LineGizmo2dPipelineKey::strip(Self) -> Bool
 
 pub struct LineGizmo2dPlugin {
@@ -164,9 +163,9 @@ pub struct LineGizmo3dPipelineKey {
   target_format : UInt
   strip : Bool
   perspective : Bool
-  line_style : @sprite.GizmoLineStyle
+  line_style : @gizmos.GizmoLineStyle
 }
-pub fn LineGizmo3dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, strip~ : Bool, perspective~ : Bool, line_style~ : @sprite.GizmoLineStyle) -> Self
+pub fn LineGizmo3dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, strip~ : Bool, perspective~ : Bool, line_style~ : @gizmos.GizmoLineStyle) -> Self
 pub fn LineGizmo3dPipelineKey::perspective(Self) -> Bool
 
 pub struct LineGizmo3dPlugin {
@@ -271,14 +270,14 @@ pub struct LineGizmoPhasePipelineKey {
   dimension : LineGizmoRenderDimension
   kind : LineGizmoPhaseKind
   perspective : Bool
-  line_style : @sprite.GizmoLineStyle
-  line_joints : @sprite.GizmoLineJoint
+  line_style : @gizmos.GizmoLineStyle
+  line_joints : @gizmos.GizmoLineJoint
 }
 pub fn LineGizmoPhasePipelineKey::dimension(Self) -> LineGizmoRenderDimension
 pub fn LineGizmoPhasePipelineKey::kind(Self) -> LineGizmoPhaseKind
-pub fn LineGizmoPhasePipelineKey::line_joints(Self) -> @sprite.GizmoLineJoint
-pub fn LineGizmoPhasePipelineKey::line_style(Self) -> @sprite.GizmoLineStyle
-pub fn LineGizmoPhasePipelineKey::new(LineGizmoRenderDimension, LineGizmoPhaseKind, Bool, @sprite.GizmoLineStyle, @sprite.GizmoLineJoint) -> Self
+pub fn LineGizmoPhasePipelineKey::line_joints(Self) -> @gizmos.GizmoLineJoint
+pub fn LineGizmoPhasePipelineKey::line_style(Self) -> @gizmos.GizmoLineStyle
+pub fn LineGizmoPhasePipelineKey::new(LineGizmoRenderDimension, LineGizmoPhaseKind, Bool, @gizmos.GizmoLineStyle, @gizmos.GizmoLineJoint) -> Self
 pub fn LineGizmoPhasePipelineKey::perspective(Self) -> Bool
 
 pub struct LineGizmoPipelinePlan {
@@ -354,18 +353,18 @@ pub fn LineGizmoVertexBufferBindingPlan::slot(Self) -> UInt
 pub struct LineJointGizmo2dPipelineKey {
   msaa_samples : UInt
   target_format : UInt
-  joints : @sprite.GizmoLineJoint
+  joints : @gizmos.GizmoLineJoint
 }
-pub fn LineJointGizmo2dPipelineKey::joints(Self) -> @sprite.GizmoLineJoint
-pub fn LineJointGizmo2dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, joints~ : @sprite.GizmoLineJoint) -> Self
+pub fn LineJointGizmo2dPipelineKey::joints(Self) -> @gizmos.GizmoLineJoint
+pub fn LineJointGizmo2dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, joints~ : @gizmos.GizmoLineJoint) -> Self
 
 pub struct LineJointGizmo3dPipelineKey {
   msaa_samples : UInt
   target_format : UInt
   perspective : Bool
-  joints : @sprite.GizmoLineJoint
+  joints : @gizmos.GizmoLineJoint
 }
-pub fn LineJointGizmo3dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, perspective~ : Bool, joints~ : @sprite.GizmoLineJoint) -> Self
+pub fn LineJointGizmo3dPipelineKey::new(msaa_samples~ : UInt, target_format~ : UInt, perspective~ : Bool, joints~ : @gizmos.GizmoLineJoint) -> Self
 
 pub struct RetainedLineGizmo {
   entity : @core.Entity
@@ -375,4 +374,3 @@ pub fn RetainedLineGizmo::new(@core.Entity) -> Self
 // Type aliases
 
 // Traits
-

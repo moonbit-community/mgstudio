@@ -17,18 +17,18 @@
 
 ///|
 pub fn[Config] gizmo_arc_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   arc_angle : Float,
   radius : Float,
   color : @color.Color,
-) -> @sprite.Arc2dBuilder {
+) -> Arc2dBuilder {
   gizmos.arc_2d(isometry, arc_angle, radius, color)
 }
 
 ///|
 pub fn[Config] gizmo_arc_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   isometry : @math.Isometry3d,
   angle : Float,
   radius : Float,
@@ -39,22 +39,22 @@ pub fn[Config] gizmo_arc_3d(
 
 ///|
 pub fn[Config] gizmo_short_arc_2d_between(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   center : @math.Vec2,
   from : @math.Vec2,
   to : @math.Vec2,
   color : @color.Color,
-) -> @sprite.Arc2dBuilder {
+) -> Arc2dBuilder {
   gizmos.short_arc_2d_between(center, from, to, color)
 }
 
 ///|
 pub fn[Config] gizmo_long_arc_2d_between(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   center : @math.Vec2,
   from : @math.Vec2,
   to : @math.Vec2,
   color : @color.Color,
-) -> @sprite.Arc2dBuilder {
+) -> Arc2dBuilder {
   gizmos.long_arc_2d_between(center, from, to, color)
 }

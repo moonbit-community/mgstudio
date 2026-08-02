@@ -90,7 +90,7 @@ fn render3d_execute_render_cameras(
       trace_camera_start_us,
     )
   }
-  @sprite.gizmos_clear_3d()
+  @gizmos.gizmos_clear_3d()
   @app.timeline_trace_end_span(
     RenderQueue,
     "execute_3d_render_cameras",

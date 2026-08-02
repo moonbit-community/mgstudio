@@ -17,10 +17,10 @@
 
 ///|
 pub fn[Config] gizmo_rounded_rect_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   size : @math.Vec2,
   color : @color.Color,
-) -> @sprite.RoundedRectBuilder {
+) -> RoundedRectBuilder {
   gizmos.rounded_rect_2d(isometry, size, color)
 }

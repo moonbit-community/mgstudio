@@ -12,7 +12,6 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/shader/source" @shader_source,
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/transform",
   "Milky2018/wgpu_mbt" @wgpu,

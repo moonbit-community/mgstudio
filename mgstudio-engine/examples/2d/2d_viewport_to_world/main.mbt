@@ -161,7 +161,7 @@ fn draw_cursor(
     @ecs.Read[@camera_projection2d.Projection],
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
   guard (camera_query.get(camera_entity) catch { _ => None })
@@ -197,7 +197,7 @@ fn draw_cursor(
       is Some(world_pos) {
       let white = @color.Color::white()
       let red = @color.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-      let cursor_iso = @sprite.Isometry2d::new(world_pos, 0.0F)
+      let cursor_iso = @gizmos.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
 
       if camera.world_to_viewport_2d(
@@ -209,7 +209,7 @@ fn draw_cursor(
             scale_factor,
           )
           is Some(world_check) {
-          let check_iso = @sprite.Isometry2d::new(world_check, 0.0F)
+          let check_iso = @gizmos.Isometry2d::new(world_check, 0.0F)
           gizmos.circle_2d(check_iso, 8.0F, red) |> ignore
         }
       }

@@ -51,43 +51,43 @@ pub impl Default for SkinnedMeshBoundsGizmoConfigGroup with fn default() {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_marker(
+pub impl GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_debug_name() {
+pub impl GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::SkinnedMeshBoundsGizmoConfigGroup"
 }
 
 ///|
 let skinned_mesh_bounds_gizmo_storage_resource_key : @ecs.ResourceKey[
-  @sprite.GizmoStorage[SkinnedMeshBoundsGizmoConfigGroup],
+  GizmoStorage[SkinnedMeshBoundsGizmoConfigGroup],
 ] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::SkinnedMeshBoundsGizmoConfigGroup>",
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_storage_resource_key() {
+pub impl GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_storage_resource_key() {
   skinned_mesh_bounds_gizmo_storage_resource_key
 }
 
 ///|
-extenum @sprite.GizmoConfigGroupCell += {
+extenum GizmoConfigGroupCell += {
   SkinnedMeshBoundsGizmoConfigGroupCell(Ref[SkinnedMeshBoundsGizmoConfigGroup])
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn new_gizmo_config_group_cell() {
+pub impl GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   SkinnedMeshBoundsGizmoConfigGroupCell(
     Ref(SkinnedMeshBoundsGizmoConfigGroup()),
   )
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_cell_ref(
+pub impl GizmoConfigGroup for SkinnedMeshBoundsGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {

@@ -5,8 +5,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/control",
@@ -148,7 +148,7 @@ pub fn physics2d_debug_render_set_config(Physics2dDebugRenderConfig) -> Unit
 
 pub fn physics2d_debug_render_set_enabled(Bool) -> Unit
 
-pub fn physics2d_debug_render_system(@sprite.Gizmos[@sprite.DefaultGizmoConfigGroup]) -> Unit
+pub fn physics2d_debug_render_system(@gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup]) -> Unit
 
 pub fn physics2d_hook_entity_from_collider_handle(@collision.ColliderHandle) -> @Milky2018/mgstudio/core.Entity?
 
@@ -728,4 +728,3 @@ pub impl @json.FromJson for Velocity2d
 // Type aliases
 
 // Traits
-

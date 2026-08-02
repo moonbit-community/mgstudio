@@ -7,9 +7,9 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
@@ -36,9 +36,9 @@ pub fn directional_light_validated_shadow_map_size(Int) -> Int
 
 pub fn directional_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
 
-pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Read[SpotLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Read[RectLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
+pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Read[SpotLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Read[RectLight], @ecs.Read[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @gizmos.Gizmos[LightGizmoConfigGroup]) -> Unit
 
-pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[SpotLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[RectLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
+pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Read[PointLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[SpotLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[DirectionalLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Read[RectLight], @ecs.Read[@transform.Transform], @ecs.Read[ShowLightGizmo]), @ecs.All], @gizmos.Gizmos[LightGizmoConfigGroup]) -> Unit
 
 pub let ecs_key_ambient_light : @ecs.ComponentKey[AmbientLight]
 
@@ -497,7 +497,7 @@ pub(all) struct LightGizmoConfigGroup {
   rect_light_color : @color.Color
 } derive(ToJson, @json.FromJson)
 pub fn LightGizmoConfigGroup::LightGizmoConfigGroup() -> Self
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup
+pub impl @gizmos.GizmoConfigGroup for LightGizmoConfigGroup
 pub impl Default for LightGizmoConfigGroup
 
 pub struct LightPlugin {
@@ -774,4 +774,3 @@ pub impl @ecs.Component for VolumetricLight
 pub type WithLight = @ecs.Or[(@ecs.With[PointLight], @ecs.With[SpotLight], @ecs.With[DirectionalLight], @ecs.With[RectLight])]
 
 // Traits
-

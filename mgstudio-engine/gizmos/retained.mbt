@@ -84,7 +84,7 @@ fn retained_long_arc_3d_angle(angle : Float) -> Float {
 struct RetainedPendingEllipse {
   order : Int
   is_2d : Bool
-  isometry2d : @sprite.Isometry2d
+  isometry2d : Isometry2d
   isometry3d : @math.Isometry3d
   half_size : @math.Vec2
   color : @color.Color
@@ -96,7 +96,7 @@ struct RetainedPendingArc {
   order : Int
   is_2d : Bool
   start_vertex : @math.Vec3
-  isometry2d : @sprite.Isometry2d
+  isometry2d : Isometry2d
   isometry3d : @math.Isometry3d
   angle : Float
   radius : Float
@@ -385,7 +385,7 @@ fn gizmo_buffer_vec2_to_vec3(value : @math.Vec2) -> @math.Vec3 {
 
 ///|
 fn gizmo_buffer_isometry2d_points(
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   points : Array[@math.Vec2],
 ) -> Array[@math.Vec2] {
   let out : Array[@math.Vec2] = []
@@ -813,7 +813,7 @@ pub fn GizmoBuffer::rect(
 ///|
 pub fn GizmoBuffer::rect_2d(
   self : GizmoBuffer,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   size : @math.Vec2,
   color : @color.Color,
 ) -> Unit {
@@ -890,7 +890,7 @@ pub fn GizmoBuffer::cross(
 ///|
 pub fn GizmoBuffer::cross_2d(
   self : GizmoBuffer,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   half_size : Float,
   color : @color.Color,
 ) -> Unit {
@@ -1005,7 +1005,7 @@ pub fn GizmoBuffer::ellipse(
   self.pending_ellipses.push({
     order,
     is_2d: false,
-    isometry2d: @sprite.Isometry2d::identity(),
+    isometry2d: Isometry2d::identity(),
     isometry3d: isometry,
     half_size,
     color,
@@ -1017,7 +1017,7 @@ pub fn GizmoBuffer::ellipse(
 ///|
 pub fn GizmoBuffer::ellipse_2d(
   self : GizmoBuffer,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   half_size : @math.Vec2,
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
@@ -1049,7 +1049,7 @@ pub fn GizmoBuffer::circle(
 ///|
 pub fn GizmoBuffer::circle_2d(
   self : GizmoBuffer,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   radius : Float,
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
@@ -1169,7 +1169,7 @@ pub fn[T : @transform.TransformPoint] GizmoBuffer::axes_2d(
 ///|
 pub fn GizmoBuffer::arc_2d(
   self : GizmoBuffer,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   arc_angle : Float,
   radius : Float,
   color : @color.Color,
@@ -1207,7 +1207,7 @@ pub fn GizmoBuffer::arc_3d(
     order,
     is_2d: false,
     start_vertex: @math.Vec3::new(1.0F, 0.0F, 0.0F),
-    isometry2d: @sprite.Isometry2d::identity(),
+    isometry2d: Isometry2d::identity(),
     isometry3d: isometry,
     angle,
     radius,
@@ -1237,7 +1237,7 @@ fn GizmoBuffer::arc_2d_from_to(
     arc_angle_raw
   }
   self.arc_2d(
-    @sprite.Isometry2d::new(center, rotation),
+    Isometry2d::new(center, rotation),
     arc_angle,
     center.distance(from),
     color,
@@ -1296,7 +1296,7 @@ fn GizmoBuffer::arc_3d_from_to(
     order,
     is_2d: false,
     start_vertex,
-    isometry2d: @sprite.Isometry2d::identity(),
+    isometry2d: Isometry2d::identity(),
     isometry3d: @math.Isometry3d::new(center, rotation),
     angle,
     radius,
@@ -1385,7 +1385,7 @@ pub impl @asset.Asset for GizmoAsset with fn asset_resource_keys() {
 pub fn GizmoAsset::new() -> GizmoAsset {
   {
     buffer: GizmoBuffer(),
-    config_type_name: @sprite.DefaultGizmoConfigGroup::gizmo_config_group_debug_name(),
+    config_type_name: DefaultGizmoConfigGroup::gizmo_config_group_debug_name(),
   }
 }
 
@@ -1396,7 +1396,7 @@ fn vec3_from_gizmo_line_2d(point : @math.Vec2) -> @math.Vec3 {
 
 ///|
 pub fn GizmoAsset::from_drained_storage(
-  drained : @sprite.DrainedGizmoStorage,
+  drained : DrainedGizmoStorage,
 ) -> GizmoAsset {
   let buffer = GizmoBuffer::GizmoBuffer()
   let state = drained.state()
@@ -1580,7 +1580,7 @@ pub fn GizmoAsset::rect(
 ///|
 pub fn GizmoAsset::rect_2d(
   self : GizmoAsset,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   size : @math.Vec2,
   color : @color.Color,
 ) -> Unit {
@@ -1609,7 +1609,7 @@ pub fn GizmoAsset::cross(
 ///|
 pub fn GizmoAsset::cross_2d(
   self : GizmoAsset,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   half_size : Float,
   color : @color.Color,
 ) -> Unit {
@@ -1629,7 +1629,7 @@ pub fn GizmoAsset::ellipse(
 ///|
 pub fn GizmoAsset::ellipse_2d(
   self : GizmoAsset,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   half_size : @math.Vec2,
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
@@ -1649,7 +1649,7 @@ pub fn GizmoAsset::circle(
 ///|
 pub fn GizmoAsset::circle_2d(
   self : GizmoAsset,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   radius : Float,
   color : @color.Color,
 ) -> RetainedEllipseBuilder {
@@ -1707,7 +1707,7 @@ pub fn[T : @transform.TransformPoint] GizmoAsset::axes_2d(
 ///|
 pub fn GizmoAsset::arc_2d(
   self : GizmoAsset,
-  isometry : @sprite.Isometry2d,
+  isometry : Isometry2d,
   arc_angle : Float,
   radius : Float,
   color : @color.Color,
@@ -1788,7 +1788,7 @@ pub impl Default for GizmoAsset with fn default() {
 ///|
 pub struct GizmoHandleEntry {
   handle : @asset.Handle[GizmoAsset]
-  config : @sprite.GizmoConfig
+  config : GizmoConfig
 }
 
 ///|
@@ -1799,7 +1799,7 @@ pub fn GizmoHandleEntry::handle(
 }
 
 ///|
-pub fn GizmoHandleEntry::config(self : GizmoHandleEntry) -> @sprite.GizmoConfig {
+pub fn GizmoHandleEntry::config(self : GizmoHandleEntry) -> GizmoConfig {
   self.config
 }
 
@@ -1876,7 +1876,7 @@ fn gizmo_handles_resource_or_insert(world : @ecs.World) -> GizmoHandles {
 
 ///|
 pub fn update_gizmo_meshes(world : @ecs.World) -> Unit {
-  let drained_storages = @sprite.drain_registered_gizmo_storages(world)
+  let drained_storages = drain_registered_gizmo_storages(world)
   if drained_storages.length() == 0 {
     return
   }

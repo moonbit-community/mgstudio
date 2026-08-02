@@ -67,41 +67,41 @@ pub impl Default for LightGizmoConfigGroup with fn default() {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_marker(
+pub impl @gizmos.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_debug_name() {
+pub impl @gizmos.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_light::LightGizmoConfigGroup"
 }
 
 ///|
 let light_gizmo_storage_resource_key : @ecs.ResourceKey[
-  @sprite.GizmoStorage[LightGizmoConfigGroup],
+  @gizmos.GizmoStorage[LightGizmoConfigGroup],
 ] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_light::LightGizmoConfigGroup>",
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_storage_resource_key() {
+pub impl @gizmos.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_storage_resource_key() {
   light_gizmo_storage_resource_key
 }
 
 ///|
-extenum @sprite.GizmoConfigGroupCell += {
+extenum @gizmos.GizmoConfigGroupCell += {
   LightGizmoConfigGroupCell(Ref[LightGizmoConfigGroup])
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn new_gizmo_config_group_cell() {
+pub impl @gizmos.GizmoConfigGroup for LightGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   LightGizmoConfigGroupCell(Ref(LightGizmoConfigGroup()))
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_cell_ref(
+pub impl @gizmos.GizmoConfigGroup for LightGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -176,7 +176,7 @@ fn light_gizmo_resolve_color(
 
 ///|
 fn[Config] draw_circle_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   center : @math.Vec3,
   axis_x : @math.Vec3,
   axis_y : @math.Vec3,
@@ -202,7 +202,7 @@ fn[Config] draw_circle_3d(
 
 ///|
 fn[Config] draw_wire_sphere(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   center : @math.Vec3,
   radius : Float,
   color : @color.Color,
@@ -218,7 +218,7 @@ fn[Config] draw_wire_sphere(
 
 ///|
 fn[Config] draw_spot_cone(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   transform : @transform.Transform,
   range : Float,
   angle : Float,
@@ -244,7 +244,7 @@ fn[Config] draw_spot_cone(
 
 ///|
 fn draw_point_light_gizmo(
-  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
   point_light : PointLight,
   color : @color.Color,
@@ -267,7 +267,7 @@ fn draw_point_light_gizmo(
 
 ///|
 fn draw_spot_light_gizmo(
-  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
   spot_light : SpotLight,
   color : @color.Color,
@@ -299,7 +299,7 @@ fn draw_spot_light_gizmo(
 
 ///|
 fn draw_directional_light_gizmo(
-  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
   color : @color.Color,
 ) -> Unit {
@@ -312,7 +312,7 @@ fn draw_directional_light_gizmo(
 
 ///|
 fn draw_rect_light_gizmo(
-  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[LightGizmoConfigGroup],
   transform : @transform.Transform,
   rect_light : RectLight,
   color : @color.Color,
@@ -367,7 +367,7 @@ pub fn draw_light_gizmos(
     ),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[LightGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()
   point_query.for_each(fn(_entity, item) {
@@ -454,7 +454,7 @@ pub fn draw_all_light_gizmos(
     (@core.Entity, @ecs.Read[RectLight], @ecs.Read[@transform.Transform]),
     @ecs.Without[ShowLightGizmo],
   ],
-  gizmos : @sprite.Gizmos[LightGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[LightGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()
   if !config_group.draw_all {

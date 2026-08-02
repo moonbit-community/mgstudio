@@ -540,7 +540,7 @@ fn animate_decals(
 
 ///|
 fn draw_gizmos(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
   decals : @ecs.Query[
     @ecs.Read[@transform.GlobalTransform],
     @ecs.With[@pbr.ClusteredDecal],

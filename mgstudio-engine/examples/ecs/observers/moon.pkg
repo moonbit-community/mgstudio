@@ -9,7 +9,6 @@ import {
   "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashmap",
 }

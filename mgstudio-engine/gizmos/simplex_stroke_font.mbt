@@ -6,15 +6,6 @@
 // This file contains Simplex stroke font data used by gizmo text rendering.
 
 ///|
-const SIMPLEX_LINE_HEIGHT : Float = 1.3F
-
-///|
-const SIMPLEX_CAP_HEIGHT : Float = 21.0F
-
-///|
-const SIMPLEX_HEIGHT : Float = 28.0F
-
-///|
 let simplex_positions : Array[(Int, Int)] = [
   (5, 21),
   (5, 7),
@@ -1434,4 +1425,31 @@ fn simplex_glyph(c : Char) -> (Int, Int, Int)? {
 ///|
 fn simplex_space_advance() -> Int {
   SIMPLEX_FALLBACK_ADVANCE
+}
+
+///|
+pub const SIMPLEX_LINE_HEIGHT : Float = 1.3F
+
+///|
+pub const SIMPLEX_CAP_HEIGHT : Float = 21.0F
+
+///|
+pub const SIMPLEX_DESCENDER_DEPTH : Float = 7.0F
+
+///|
+pub const SIMPLEX_HEIGHT : Float = 28.0F
+
+///|
+pub fn simplex_stroke_font_line_height() -> Float {
+  SIMPLEX_LINE_HEIGHT
+}
+
+///|
+pub fn simplex_stroke_font_cap_height() -> Float {
+  SIMPLEX_CAP_HEIGHT
+}
+
+///|
+pub fn simplex_stroke_font_height() -> Float {
+  SIMPLEX_HEIGHT
 }

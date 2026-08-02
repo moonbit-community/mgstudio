@@ -1,7 +1,7 @@
 import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/transform",
 }
 

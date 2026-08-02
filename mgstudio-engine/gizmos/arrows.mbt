@@ -17,17 +17,17 @@
 
 ///|
 pub fn[Config] gizmo_arrow_2d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   start : @math.Vec2,
   end : @math.Vec2,
   color : @color.Color,
-) -> @sprite.ArrowBuilder {
+) -> ArrowBuilder {
   gizmos.arrow_2d(start, end, color)
 }
 
 ///|
 pub fn[Config] gizmo_arrow_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   start : @math.Vec3,
   end : @math.Vec3,
   color : @color.Color,
@@ -37,8 +37,8 @@ pub fn[Config] gizmo_arrow_3d(
 
 ///|
 pub fn[Config] gizmo_axes_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : Gizmos[Config],
+  isometry : Isometry2d,
   base_length : Float,
 ) -> Unit {
   gizmos.axes_2d(isometry, base_length)
@@ -46,7 +46,7 @@ pub fn[Config] gizmo_axes_2d(
 
 ///|
 pub fn[Config] gizmo_axes_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : Gizmos[Config],
   transform : @transform.Transform,
   base_length : Float,
 ) -> Unit {

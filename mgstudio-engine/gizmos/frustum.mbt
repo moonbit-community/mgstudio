@@ -37,41 +37,41 @@ pub impl Default for FrustumGizmoConfigGroup with fn default() {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_marker(
+pub impl GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_debug_name() {
+pub impl GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::FrustumGizmoConfigGroup"
 }
 
 ///|
 let frustum_gizmo_storage_resource_key : @ecs.ResourceKey[
-  @sprite.GizmoStorage[FrustumGizmoConfigGroup],
+  GizmoStorage[FrustumGizmoConfigGroup],
 ] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::FrustumGizmoConfigGroup>",
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_storage_resource_key() {
+pub impl GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_storage_resource_key() {
   frustum_gizmo_storage_resource_key
 }
 
 ///|
-extenum @sprite.GizmoConfigGroupCell += {
+extenum GizmoConfigGroupCell += {
   FrustumGizmoConfigGroupCell(Ref[FrustumGizmoConfigGroup])
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn new_gizmo_config_group_cell() {
+pub impl GizmoConfigGroup for FrustumGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   FrustumGizmoConfigGroupCell(Ref(FrustumGizmoConfigGroup()))
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_cell_ref(
+pub impl GizmoConfigGroup for FrustumGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -132,8 +132,8 @@ fn frustum_gizmo_resolve_color(
 
 ///|
 fn draw_frustum_outline(
-  gizmos : @sprite.Gizmos[FrustumGizmoConfigGroup],
-  frustum : @camera.Frustum,
+  gizmos : Gizmos[FrustumGizmoConfigGroup],
+  frustum : @camera_primitives.Frustum,
   color : @color.Color,
 ) -> Unit {
   match frustum.corners() {
@@ -161,10 +161,10 @@ fn draw_frustum_outline(
 ///|
 pub fn draw_frustum_gizmos(
   query : @ecs.Query[
-    (@ecs.Read[@camera.Frustum], @ecs.Read[ShowFrustumGizmo]),
+    (@ecs.Read[@camera_primitives.Frustum], @ecs.Read[ShowFrustumGizmo]),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos[FrustumGizmoConfigGroup],
+  gizmos : Gizmos[FrustumGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()
   query.for_each(fn(entity, data) {
@@ -183,8 +183,11 @@ pub fn draw_frustum_gizmos(
 
 ///|
 pub fn draw_all_frustum_gizmos(
-  query : @ecs.Query[@ecs.Read[@camera.Frustum], @ecs.Without[ShowFrustumGizmo]],
-  gizmos : @sprite.Gizmos[FrustumGizmoConfigGroup],
+  query : @ecs.Query[
+    @ecs.Read[@camera_primitives.Frustum],
+    @ecs.Without[ShowFrustumGizmo],
+  ],
+  gizmos : Gizmos[FrustumGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()
   if !config_group.draw_all {
@@ -201,7 +204,7 @@ pub fn draw_all_frustum_gizmos(
 
 ///|
 pub fn frustum_gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(
+  init_gizmo_group(
     app
     .add_systems(PostUpdate, @app.system_config_param2(draw_frustum_gizmos))
     .add_systems(PostUpdate, @app.system_config_param2(draw_all_frustum_gizmos)),

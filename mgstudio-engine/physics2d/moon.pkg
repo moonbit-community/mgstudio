@@ -1,11 +1,11 @@
 import {
+  "Milky2018/mgstudio/gizmos",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
-  "Milky2018/mgstudio/sprite",
   "moonbitlang/core/json",
   "Milky2018/moon_rapier/core" @rapier_core,
   "Milky2018/moon_rapier/dynamics",

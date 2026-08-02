@@ -37,41 +37,41 @@ pub impl Default for AabbGizmoConfigGroup with fn default() {
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_marker(
+pub impl GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_marker(
   _self,
 ) {
 
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_debug_name() {
+pub impl GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_debug_name() {
   "mgstudio_gizmos::AabbGizmoConfigGroup"
 }
 
 ///|
 let aabb_gizmo_storage_resource_key : @ecs.ResourceKey[
-  @sprite.GizmoStorage[AabbGizmoConfigGroup],
+  GizmoStorage[AabbGizmoConfigGroup],
 ] = @ecs.register_resource(
   debug_name="mgstudio_gizmos::GizmoStorage<mgstudio_gizmos::AabbGizmoConfigGroup>",
 )
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_storage_resource_key() {
+pub impl GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_storage_resource_key() {
   aabb_gizmo_storage_resource_key
 }
 
 ///|
-extenum @sprite.GizmoConfigGroupCell += {
+extenum GizmoConfigGroupCell += {
   AabbGizmoConfigGroupCell(Ref[AabbGizmoConfigGroup])
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn new_gizmo_config_group_cell() {
+pub impl GizmoConfigGroup for AabbGizmoConfigGroup with fn new_gizmo_config_group_cell() {
   AabbGizmoConfigGroupCell(Ref(AabbGizmoConfigGroup()))
 }
 
 ///|
-pub impl @sprite.GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_cell_ref(
+pub impl GizmoConfigGroup for AabbGizmoConfigGroup with fn gizmo_config_group_cell_ref(
   cell,
 ) {
   match cell {
@@ -141,7 +141,7 @@ fn aabb_gizmo_resolve_color(
 }
 
 ///|
-fn aabb_local_corners(aabb : @camera.Aabb) -> Array[@math.Vec3] {
+fn aabb_local_corners(aabb : @camera_primitives.Aabb) -> Array[@math.Vec3] {
   let center = aabb.center()
   let half_size = aabb.half_size()
   let min = center.sub(half_size)
@@ -160,8 +160,8 @@ fn aabb_local_corners(aabb : @camera.Aabb) -> Array[@math.Vec3] {
 
 ///|
 fn[Config] draw_aabb_3d(
-  gizmos : @sprite.Gizmos[Config],
-  aabb : @camera.Aabb,
+  gizmos : Gizmos[Config],
+  aabb : @camera_primitives.Aabb,
   transform : @transform.GlobalTransform,
   color : @color.Color,
 ) -> Unit {
@@ -190,14 +190,14 @@ fn[Config] draw_aabb_3d(
 pub fn draw_aabb_gizmos(
   query : @ecs.Query[
     (
-      @ecs.Read[@camera.Aabb],
+      @ecs.Read[@camera_primitives.Aabb],
       @ecs.Read[@transform.GlobalTransform],
       @ecs.Read[@visibility.ViewVisibility]?,
       @ecs.Read[ShowAabbGizmo],
     ),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos[AabbGizmoConfigGroup],
+  gizmos : Gizmos[AabbGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()
   query.for_each(fn(entity, data) {
@@ -217,13 +217,13 @@ pub fn draw_aabb_gizmos(
 pub fn draw_all_aabb_gizmos(
   query : @ecs.Query[
     (
-      @ecs.Read[@camera.Aabb],
+      @ecs.Read[@camera_primitives.Aabb],
       @ecs.Read[@transform.GlobalTransform],
       @ecs.Read[@visibility.ViewVisibility]?,
     ),
     @ecs.Without[ShowAabbGizmo],
   ],
-  gizmos : @sprite.Gizmos[AabbGizmoConfigGroup],
+  gizmos : Gizmos[AabbGizmoConfigGroup],
 ) -> Unit {
   let config_group = gizmos.config_group()
   if !config_group.draw_all {
@@ -243,7 +243,7 @@ pub fn draw_all_aabb_gizmos(
 
 ///|
 pub fn aabb_gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(
+  init_gizmo_group(
     app
     .add_systems(PostUpdate, @app.system_config_param2(draw_aabb_gizmos))
     .add_systems(PostUpdate, @app.system_config_param2(draw_all_aabb_gizmos)),

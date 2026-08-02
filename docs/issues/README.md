@@ -579,6 +579,9 @@ graph TD
   ISS_472["ISS-472: Restrict filtered table batches to matching rows"]
   ISS_473["ISS-473: Align Camera2d frustum with uniform render scale"]
   ISS_474["ISS-474: Fix Commands deferred-spawn test regression"]
+  ISS_475["ISS-475: Stop requiring Tonemapping and DebandDither on Camera3d"]
+  ISS_476["ISS-476: Port the full Bevy colour palettes"]
+  ISS_477["ISS-477: Move the gizmos Bevy source owners out of sprite"]
   ISS_002 --> ISS_003
   ISS_002 --> ISS_004
   ISS_043 --> ISS_004

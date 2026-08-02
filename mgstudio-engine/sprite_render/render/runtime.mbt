@@ -74,7 +74,7 @@ type RenderMaterial2dResolvedSlots = @sprite_render_mesh2d_material.RenderMateri
 type SpriteMeshPlugin = @sprite_render_sprite_mesh.SpriteMeshPlugin
 
 ///|
-type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
+type DefaultGizmoConfigGroup = @gizmos.DefaultGizmoConfigGroup
 
 ///|
 type Mesh2dWireframe = @sprite_render_mesh2d_wireframe2d.Mesh2dWireframe
@@ -302,22 +302,22 @@ fn init_gizmo_group(
   app : @app.App[@ecs.World],
   group : DefaultGizmoConfigGroup,
 ) -> @app.App[@ecs.World] {
-  @sprite.init_gizmo_group(app, group)
+  @gizmos.init_gizmo_group(app, group)
 }
 
 ///|
 fn gizmos_prepare(world : @ecs.World) -> Unit {
-  @sprite.gizmos_prepare(world)
+  @gizmos.gizmos_prepare(world)
 }
 
 ///|
 fn gizmos_clear_2d() -> Unit {
-  @sprite.gizmos_clear_2d()
+  @gizmos.gizmos_clear_2d()
 }
 
 ///|
 fn gizmos_reset() -> Unit {
-  @sprite.gizmos_reset()
+  @gizmos.gizmos_reset()
 }
 
 ///|

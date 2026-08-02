@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
@@ -13,10 +12,8 @@ import {
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d",
-  "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "moonbitlang/core/ref",
 }
 
 // Values
@@ -30,8 +27,6 @@ pub fn compute_slices_on_sprite_change_system(@app.Commands, @app.ParamSet2[@app
 
 pub fn compute_sprite_slices_from_rect(Sprite, @math.Vec2, @math.Rect) -> ComputedTextureSlices?
 
-pub fn drain_registered_gizmo_storages(@ecs.World) -> Array[DrainedGizmoStorage]
-
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
 pub let ecs_key_computed_texture_slices : @ecs.ComponentKey[ComputedTextureSlices]
@@ -44,31 +39,7 @@ pub let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh]
 
 pub fn ensure_render2d_required_components(@ecs.World) -> Unit
 
-pub fn flush_global_gizmos(Gizmos[DefaultGizmoConfigGroup]) -> Unit
-
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[@wireframe2d.Wireframe2dConfig]
-
-pub fn gizmo() -> Gizmos[DefaultGizmoConfigGroup]
-
-pub fn gizmos_clear() -> Unit
-
-pub fn gizmos_clear_2d() -> Unit
-
-pub fn gizmos_clear_3d() -> Unit
-
-pub fn gizmos_draw_lines(@render_layers.RenderLayers) -> Unit
-
-pub fn gizmos_mesh_id_3d(@render_layers.RenderLayers) -> Int?
-
-pub fn gizmos_prepare(@ecs.World) -> Unit
-
-pub fn gizmos_push_retained_line_2d(GizmoConfig, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
-
-pub fn gizmos_push_retained_line_3d(GizmoConfig, @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
-
-pub fn gizmos_reset() -> Unit
-
-pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
 
 pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 
@@ -93,12 +64,6 @@ pub fn sprite_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn sprite_plugin_id() -> String
 
 pub fn sprite_plugin_with(@app.App[@ecs.World], SpritePlugin) -> @app.App[@ecs.World]
-
-pub fn sprite_stroke_text_emit_2d(GizmoConfig, Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
-
-pub fn sprite_stroke_text_emit_3d(GizmoConfig, @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
-
-pub fn sprite_stroke_text_measure(String, Float) -> @math.Vec2
 
 pub let sprite_systems_compute_slices : String
 
@@ -127,19 +92,6 @@ pub impl Default for Anchor
 pub impl ToJson for Anchor
 pub impl @json.FromJson for Anchor
 
-pub struct Arc2dBuilder {
-  id : Int
-  state : @ref.Ref[GizmoState]
-}
-pub fn Arc2dBuilder::resolution(Self, Int) -> Self
-
-pub struct ArrowBuilder {
-  id : Int
-  state : @ref.Ref[GizmoState]
-}
-pub fn ArrowBuilder::with_double_end(Self) -> Self
-pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
-
 pub struct BorderRect {
   left : Float
   right : Float
@@ -155,230 +107,6 @@ pub struct ComputedTextureSlices {
 }
 pub fn ComputedTextureSlices::extract_slices(Self, Sprite, Anchor) -> Array[TextureSlice]
 pub impl @ecs.Component for ComputedTextureSlices
-
-pub struct DefaultGizmoConfigGroup {
-}
-pub fn DefaultGizmoConfigGroup::DefaultGizmoConfigGroup() -> Self
-pub impl GizmoConfigGroup for DefaultGizmoConfigGroup
-pub impl Default for DefaultGizmoConfigGroup
-
-pub struct DrainedGizmoStorage {
-  group_type_name : String
-  config : GizmoConfig
-  state : GizmoState
-}
-pub fn DrainedGizmoStorage::config(Self) -> GizmoConfig
-pub fn DrainedGizmoStorage::group_type_name(Self) -> String
-pub fn DrainedGizmoStorage::state(Self) -> GizmoState
-
-pub struct Ellipse2dBuilder {
-  id : Int
-  state : @ref.Ref[GizmoState]
-}
-pub fn Ellipse2dBuilder::resolution(Self, Int) -> Self
-
-pub(all) struct GizmoConfig {
-  enabled : Bool
-  line : GizmoLineConfig
-  depth_bias : Float
-  render_layers : @render_layers.RenderLayers
-}
-pub fn GizmoConfig::GizmoConfig() -> Self
-
-pub extenum GizmoConfigGroupCell {
-}
-
-type GizmoConfigStore
-pub fn GizmoConfigStore::GizmoConfigStore() -> Self
-pub fn[T : GizmoConfigGroup] GizmoConfigStore::config(Self, T) -> (GizmoConfig, T)
-pub fn[T : GizmoConfigGroup] GizmoConfigStore::config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])
-pub fn[T : GizmoConfigGroup] GizmoConfigStore::contains(Self, T) -> Bool
-pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config(Self, T) -> (GizmoConfig, T)?
-pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])?
-pub fn[T : GizmoConfigGroup] GizmoConfigStore::register(Self, T) -> Unit
-pub impl @app.Resource for GizmoConfigStore
-pub impl Default for GizmoConfigStore
-
-pub(all) struct GizmoLine {
-  start : @math.Vec2
-  end : @math.Vec2
-  start_color : @color.Color
-  end_color : @color.Color
-  layers : @render_layers.RenderLayers
-  width : Float
-  style : GizmoLineStyle
-}
-
-pub(all) struct GizmoLine3d {
-  start : @math.Vec3
-  end : @math.Vec3
-  start_color : @color.Color
-  end_color : @color.Color
-  layers : @render_layers.RenderLayers
-}
-
-pub(all) struct GizmoLineConfig {
-  width : Float
-  perspective : Bool
-  style : GizmoLineStyle
-  joints : GizmoLineJoint
-}
-pub fn GizmoLineConfig::GizmoLineConfig() -> Self
-
-pub(all) enum GizmoLineJoint {
-  None
-  Miter
-  Round(Int)
-  Bevel
-}
-
-pub(all) enum GizmoLineStyle {
-  Solid
-  Dotted
-  Dashed(gap_scale~ : Float, line_scale~ : Float)
-}
-
-pub(all) struct GizmoState {
-  lines : Array[GizmoLine]
-  lines_3d : Array[GizmoLine3d]
-  pending_ellipses : Array[PendingEllipse]
-  pending_arcs : Array[PendingArc]
-  pending_rounded_rects : Array[PendingRoundedRect]
-  pending_arrows : Array[PendingArrow]
-  pending_grids : Array[PendingGrid]
-  mut mesh_id_3d : Int
-}
-
-pub struct GizmoStorage[Config] {
-  state : GizmoState
-  phantom : Config?
-}
-pub fn[Config] GizmoStorage::GizmoStorage() -> Self[Config]
-pub fn[Config] GizmoStorage::new() -> Self[Config]
-pub impl[Config : GizmoConfigGroup] @app.Resource for GizmoStorage[Config]
-pub impl[Config] Default for GizmoStorage[Config]
-
-pub struct Gizmos[Config] {
-  config : GizmoConfig
-  config_group : Config
-  state : @ref.Ref[GizmoState]
-  world : @ecs.World?
-}
-pub fn[Config] Gizmos::arc_2d(Self[Config], Isometry2d, Float, Float, @color.Color) -> Arc2dBuilder
-pub fn[Config] Gizmos::arc_3d(Self[Config], @math.Isometry3d, Float, Float, @color.Color) -> Unit
-pub fn[Config] Gizmos::arrow_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> ArrowBuilder
-pub fn[Config] Gizmos::arrow_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
-pub fn[Config] Gizmos::axes_2d(Self[Config], Isometry2d, Float) -> Unit
-pub fn[Config] Gizmos::axes_3d(Self[Config], @transform.Transform, Float) -> Unit
-pub fn[Config] Gizmos::circle_2d(Self[Config], Isometry2d, Float, @color.Color) -> Ellipse2dBuilder
-pub fn[Config] Gizmos::circle_3d(Self[Config], @math.Isometry3d, Float, @color.Color) -> Unit
-pub fn[Config] Gizmos::config(Self[Config]) -> GizmoConfig
-pub fn[Config] Gizmos::config_group(Self[Config]) -> Config
-pub fn[Config] Gizmos::cross_2d(Self[Config], Isometry2d, Float, @color.Color) -> Unit
-pub fn[Config] Gizmos::cross_3d(Self[Config], @math.Vec3, Float, @color.Color) -> Unit
-pub fn[Config] Gizmos::cuboid_3d(Self[Config], @transform.Transform, @math.Vec3, @color.Color) -> Unit
-pub fn[Config] Gizmos::curve_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
-pub fn[Config] Gizmos::curve_3d(Self[Config], Array[@math.Vec3], @color.Color) -> Unit
-pub fn[Config] Gizmos::curve_gradient_2d(Self[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
-pub fn[Config] Gizmos::curve_gradient_3d(Self[Config], Array[(@math.Vec3, @color.Color)]) -> Unit
-pub fn[Config] Gizmos::ellipse_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Ellipse2dBuilder
-pub fn[Config] Gizmos::grid_2d(Self[Config], Isometry2d, @math.IVec2, @math.Vec2, @color.Color) -> Grid2dBuilder
-pub fn[Config] Gizmos::grid_3d(Self[Config], @math.Isometry3d, @math.IVec2, @math.Vec2, @color.Color) -> Unit
-pub fn[Config] Gizmos::line_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
-pub fn[Config] Gizmos::line_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
-pub fn[Config] Gizmos::line_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
-pub fn[Config] Gizmos::line_gradient_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
-pub fn[Config] Gizmos::lineloop_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
-pub fn[Config] Gizmos::linestrip_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
-pub fn[Config] Gizmos::linestrip_3d(Self[Config], Array[@math.Vec3], @color.Color) -> Unit
-pub fn[Config] Gizmos::linestrip_gradient_2d(Self[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
-pub fn[Config] Gizmos::linestrip_gradient_3d(Self[Config], Array[(@math.Vec3, @color.Color)]) -> Unit
-pub fn[Config] Gizmos::long_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
-pub fn[Config] Gizmos::mesh_wireframe_2d(Self[Config], @mesh.Mesh2dGeometry, @transform.Transform, @color.Color) -> Unit
-pub fn[Config] Gizmos::ray_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
-pub fn[Config] Gizmos::ray_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
-pub fn[Config] Gizmos::ray_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
-pub fn[Config] Gizmos::rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Unit
-pub fn[Config] Gizmos::rect_3d(Self[Config], @math.Isometry3d, @math.Vec2, @color.Color) -> Unit
-pub fn[Config] Gizmos::rounded_rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
-pub fn[Config] Gizmos::short_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
-pub fn[Config] Gizmos::sphere_3d(Self[Config], @math.Isometry3d, Float, @color.Color) -> Unit
-pub fn[Config] Gizmos::text_2d(Self[Config], Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
-pub fn[Config] Gizmos::text_3d(Self[Config], @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
-pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config]
-
-pub struct Grid2dBuilder {
-  id : Int
-  state : @ref.Ref[GizmoState]
-}
-pub fn Grid2dBuilder::outer_edges(Self) -> Self
-pub fn Grid2dBuilder::outer_edges_x(Self) -> Self
-pub fn Grid2dBuilder::outer_edges_y(Self) -> Self
-pub fn Grid2dBuilder::skew(Self, @math.Vec2) -> Self
-pub fn Grid2dBuilder::skew_x(Self, Float) -> Self
-pub fn Grid2dBuilder::skew_y(Self, Float) -> Self
-
-pub struct Isometry2d {
-  translation : @math.Vec2
-  rotation : Float
-}
-pub fn Isometry2d::identity() -> Self
-pub fn Isometry2d::new(@math.Vec2, Float) -> Self
-pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
-
-pub(all) struct PendingArc {
-  isometry : Isometry2d
-  arc_angle : Float
-  radius : Float
-  color : @color.Color
-  mut resolution : Int
-  mut has_resolution : Bool
-  config : GizmoConfig
-}
-
-pub(all) struct PendingArrow {
-  start : @math.Vec2
-  end : @math.Vec2
-  color : @color.Color
-  mut tip_length : Float
-  mut double_ended : Bool
-  config : GizmoConfig
-}
-
-pub(all) struct PendingEllipse {
-  isometry : Isometry2d
-  half_size : @math.Vec2
-  color : @color.Color
-  mut resolution : Int
-  config : GizmoConfig
-}
-
-pub(all) struct PendingGrid {
-  isometry : Isometry2d
-  spacing : @math.Vec2
-  cell_count : @math.IVec2
-  mut skew : @math.Vec2
-  mut outer_edges_x : Bool
-  mut outer_edges_y : Bool
-  color : @color.Color
-  config : GizmoConfig
-}
-
-pub(all) struct PendingRoundedRect {
-  isometry : Isometry2d
-  size : @math.Vec2
-  color : @color.Color
-  mut corner_radius : Float
-  mut arc_resolution : Int
-  config : GizmoConfig
-}
-
-pub struct RoundedRectBuilder {
-  id : Int
-  state : @ref.Ref[GizmoState]
-}
-pub fn RoundedRectBuilder::arc_resolution(Self, Int) -> Self
-pub fn RoundedRectBuilder::corner_radius(Self, Float) -> Self
 
 pub(all) enum SliceScaleMode {
   Stretch
@@ -523,11 +251,3 @@ pub type ComputedSlicesAssetParams = @app.ParamSet2[@app.Res[@asset.Assets[@imag
 pub type ComputedSlicesChangedSpritesQuery = @ecs.Query[@ecs.ReadValue[Sprite], @ecs.Changed[Sprite]]
 
 // Traits
-pub(open) trait GizmoConfigGroup {
-  fn gizmo_config_group_debug_name() -> String
-  fn gizmo_storage_resource_key() -> @ecs.ResourceKey[GizmoStorage[Self]]
-  fn new_gizmo_config_group_cell() -> GizmoConfigGroupCell
-  fn gizmo_config_group_cell_ref(GizmoConfigGroupCell) -> @ref.Ref[Self]?
-  fn gizmo_config_group_marker(Self) -> Unit
-}
-

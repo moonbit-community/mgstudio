@@ -67,8 +67,8 @@ pub fn physics2d_debug_render_set_enabled(enabled : Bool) -> Unit {
 }
 
 ///|
-fn iso2_to_gizmo(iso : @rapier_core.Isometry2) -> @sprite.Isometry2d {
-  @sprite.Isometry2d::new(
+fn iso2_to_gizmo(iso : @rapier_core.Isometry2) -> @gizmos.Isometry2d {
+  @gizmos.Isometry2d::new(
     rapier_vec2_to_mg(iso.translation),
     iso.rotation.angle(),
   )
@@ -84,7 +84,7 @@ fn transform_point(
 
 ///|
 fn draw_shape_2d(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
   iso : @rapier_core.Isometry2,
   shape : @collision.Shape,
   color : @color.Color,
@@ -179,7 +179,7 @@ fn draw_shape_2d(
 
 ///|
 pub fn physics2d_debug_render_system(
-  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+  gizmos : @gizmos.Gizmos[@gizmos.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
   let config = physics2d_debug_render_state.val

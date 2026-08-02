@@ -17,18 +17,18 @@
 
 ///|
 pub fn[Config] gizmo_draw_circle_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : @gizmos.Gizmos[Config],
+  isometry : @gizmos.Isometry2d,
   circle : @math.Circle,
   color : @color.Color,
-) -> @sprite.Ellipse2dBuilder {
+) -> @gizmos.Ellipse2dBuilder {
   gizmos.circle_2d(isometry, circle.radius, color)
 }
 
 ///|
 pub fn[Config] gizmo_draw_rect_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : @gizmos.Gizmos[Config],
+  isometry : @gizmos.Isometry2d,
   rect : @math.Rectangle,
   color : @color.Color,
 ) -> Unit {
@@ -37,8 +37,8 @@ pub fn[Config] gizmo_draw_rect_2d(
 
 ///|
 pub fn[Config] gizmo_draw_capsule_2d(
-  gizmos : @sprite.Gizmos[Config],
-  isometry : @sprite.Isometry2d,
+  gizmos : @gizmos.Gizmos[Config],
+  isometry : @gizmos.Isometry2d,
   capsule : @math.Capsule2d,
   color : @color.Color,
 ) -> Unit {
@@ -57,8 +57,8 @@ pub fn[Config] gizmo_draw_capsule_2d(
   let bottom_center = isometry.transform_point(
     @math.Vec2::new(0.0F, -capsule.half_length),
   )
-  let cap_isometry_top = @sprite.Isometry2d::new(top_center, isometry.rotation)
-  let cap_isometry_bottom = @sprite.Isometry2d::new(
+  let cap_isometry_top = @gizmos.Isometry2d::new(top_center, isometry.rotation)
+  let cap_isometry_bottom = @gizmos.Isometry2d::new(
     bottom_center,
     isometry.rotation,
   )

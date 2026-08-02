@@ -46,7 +46,7 @@ fn gizmo_dim3_local_ring_points(
 
 ///|
 pub fn[Config] gizmo_draw_sphere_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   isometry : @math.Isometry3d,
   sphere : @math.Sphere,
   color : @color.Color,
@@ -56,7 +56,7 @@ pub fn[Config] gizmo_draw_sphere_3d(
 
 ///|
 pub fn[Config] gizmo_draw_capsule_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   isometry : @math.Isometry3d,
   capsule : @math.Capsule3d,
   color : @color.Color,
@@ -96,7 +96,7 @@ pub fn[Config] gizmo_draw_capsule_3d(
 
 ///|
 pub fn[Config] gizmo_draw_cone_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   isometry : @math.Isometry3d,
   cone : @math.Cone,
   color : @color.Color,
@@ -124,7 +124,7 @@ pub fn[Config] gizmo_draw_cone_3d(
 
 ///|
 pub fn[Config] gizmo_draw_torus_3d(
-  gizmos : @sprite.Gizmos[Config],
+  gizmos : @gizmos.Gizmos[Config],
   isometry : @math.Isometry3d,
   torus : @math.Torus,
   color : @color.Color,
