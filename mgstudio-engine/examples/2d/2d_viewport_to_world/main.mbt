@@ -174,7 +174,7 @@ fn draw_cursor(
     return
   }
   let projection = projection_comp.value()
-  guard projection is Orthographic(orthographic_projection) else { return }
+  guard projection is Orthographic(orthographic_projection)
   guard (transform_query.get(camera_entity) catch { _ => None })
     is Some(camera_transform_comp) else {
     return

@@ -88,7 +88,7 @@ fn player_movement_system(
   let (camera_comp, projection_comp, camera_global_transform_comp) = camera_query.get()
   let camera = camera_comp.value()
   let projection = projection_comp.value()
-  guard projection is Orthographic(orthographic_projection) else { return }
+  guard projection is Orthographic(orthographic_projection)
   let camera_transform = camera_global_transform_comp
     .value()
     .to_transform_approx()
