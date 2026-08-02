@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
@@ -18,6 +19,30 @@ import {
 }
 
 // Values
+pub const AXIS_HIT_DISTANCE : Float = 35.0
+
+pub const AXIS_LENGTH : Float = 1.0
+
+pub const AXIS_START_OFFSET : Float = 0.2
+
+pub const AXIS_TIP_LENGTH : Float = 0.2
+
+pub const CONE_HEIGHT : Float = 0.2
+
+pub const CONE_RADIUS : Float = 0.05
+
+pub const INACTIVE_ALPHA : Float = 0.5
+
+pub const MIN_SCALE : Float = 0.01
+
+pub const ROTATE_RING_RADIUS : Float = 1.0
+
+pub const SCALE_CUBE_SIZE : Float = 0.07
+
+pub const SHAFT_LENGTH : Float = 0.6
+
+pub const SHAFT_RADIUS : Float = 0.015
+
 pub const SIMPLEX_CAP_HEIGHT : Float = 21.0
 
 pub const SIMPLEX_DESCENDER_DEPTH : Float = 7.0
@@ -26,7 +51,17 @@ pub const SIMPLEX_HEIGHT : Float = 28.0
 
 pub const SIMPLEX_LINE_HEIGHT : Float = 1.3
 
+pub const VIEW_CIRCLE_MAJOR : Float = 0.15
+
+pub const VIEW_CIRCLE_MINOR : Float = 0.01
+
+pub const VIEW_RING_MAJOR : Float = 1.15
+
+pub const VIEW_RING_MINOR : Float = 0.01
+
 pub fn aabb_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn axis_direction(TransformGizmoAxis, @math.Quat, @math.Vec3) -> @math.Vec3
 
 pub fn default_gizmo_config() -> GizmoConfig
 
@@ -45,6 +80,8 @@ pub fn draw_all_frustum_gizmos(@ecs.Query[@ecs.Read[@primitives.Frustum], @ecs.W
 pub fn draw_frustum_gizmos(@ecs.Query[(@ecs.Read[@primitives.Frustum], @ecs.Read[ShowFrustumGizmo]), @ecs.All], Gizmos[FrustumGizmoConfigGroup]) -> Unit
 
 pub let ecs_key_gizmo_mesh_config : @ecs.ComponentKey[GizmoMeshConfig]
+
+pub fn effective_space(TransformGizmoSettings) -> TransformGizmoSpace
 
 pub fn flush_global_gizmos(Gizmos[DefaultGizmoConfigGroup]) -> Unit
 
@@ -106,6 +143,8 @@ pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn gizmo_plugin_with(@app.App[@ecs.World], GizmoPlugin) -> @app.App[@ecs.World]
 
+pub fn gizmo_rotation(@math.Quat, TransformGizmoSpace) -> @math.Quat
+
 pub fn[Config] gizmo_rounded_rect_2d(Gizmos[Config], Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
 
 pub let gizmo_set_flush : String
@@ -154,6 +193,10 @@ pub fn[T : GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], T) -> @app.A
 
 pub fn install_retained_gizmo_required_components(@ecs.World) -> Unit
 
+pub fn intersect_plane(@math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> @math.Vec3?
+
+pub fn point_to_segment_dist(@math.Vec2, @math.Vec2, @math.Vec2) -> Float
+
 pub fn simplex_stroke_font_cap_height() -> Float
 
 pub fn simplex_stroke_font_height() -> Float
@@ -163,6 +206,22 @@ pub fn simplex_stroke_font_line_height() -> Float
 pub fn skinned_mesh_bounds_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn skinned_mesh_bounds_gizmo_plugin_with(@app.App[@ecs.World], SkinnedMeshBoundsGizmoPlugin) -> @app.App[@ecs.World]
+
+pub fn snap_axis(@math.Vec3, @math.Vec3, TransformGizmoAxis, Float) -> @math.Vec3
+
+pub fn transform_gizmo_color_view() -> @color.Color
+
+pub fn transform_gizmo_color_x() -> @color.Color
+
+pub fn transform_gizmo_color_y() -> @color.Color
+
+pub fn transform_gizmo_color_z() -> @color.Color
+
+pub fn transform_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let transform_gizmo_systems : String
+
+pub fn translation_plane_normal(@math.Vec3, @math.Vec3) -> @math.Vec3
 
 pub fn update_gizmo_meshes(@ecs.World) -> Unit
 
@@ -654,6 +713,84 @@ pub struct SkinnedMeshBoundsGizmoPlugin {
 }
 pub fn SkinnedMeshBoundsGizmoPlugin::SkinnedMeshBoundsGizmoPlugin() -> Self
 pub impl @app.Plugin for SkinnedMeshBoundsGizmoPlugin
+
+pub(all) enum TransformGizmoAxis {
+  X
+  Y
+  Z
+  View
+}
+
+pub struct TransformGizmoCamera {
+}
+pub fn TransformGizmoCamera::TransformGizmoCamera() -> Self
+pub impl @ecs.Component for TransformGizmoCamera
+pub impl Default for TransformGizmoCamera
+
+pub struct TransformGizmoFocus {
+}
+pub fn TransformGizmoFocus::TransformGizmoFocus() -> Self
+pub impl @ecs.Component for TransformGizmoFocus
+pub impl Default for TransformGizmoFocus
+
+pub(all) struct TransformGizmoMeshMarker {
+  axis : TransformGizmoAxis
+  mode : TransformGizmoMode
+}
+pub fn TransformGizmoMeshMarker::new(TransformGizmoAxis, TransformGizmoMode) -> Self
+pub impl @ecs.Component for TransformGizmoMeshMarker
+
+pub(all) enum TransformGizmoMode {
+  Translate
+  Rotate
+  Scale
+}
+pub impl Default for TransformGizmoMode
+
+pub struct TransformGizmoPlugin {
+}
+pub fn TransformGizmoPlugin::TransformGizmoPlugin() -> Self
+pub impl @app.Plugin for TransformGizmoPlugin
+
+pub struct TransformGizmoRoot {
+}
+pub fn TransformGizmoRoot::TransformGizmoRoot() -> Self
+pub impl @ecs.Component for TransformGizmoRoot
+
+pub(all) struct TransformGizmoSettings {
+  mode : TransformGizmoMode
+  space : TransformGizmoSpace
+  axis_length : Float
+  rotate_ring_radius : Float
+  axis_hit_distance : Float
+  snap_translate : Float?
+  snap_rotate : Float?
+  snap_scale : Float?
+  confine_cursor : Bool
+  screen_scale_factor : Float
+}
+pub fn TransformGizmoSettings::TransformGizmoSettings() -> Self
+pub impl @app.Resource for TransformGizmoSettings
+pub impl Default for TransformGizmoSettings
+
+pub(all) enum TransformGizmoSpace {
+  World
+  Local
+}
+pub impl Default for TransformGizmoSpace
+
+pub(all) struct TransformGizmoState {
+  hovered_axis : TransformGizmoAxis?
+  active : Bool
+  axis : TransformGizmoAxis?
+  start_transform : @transform.Transform
+  entity : @core.Entity?
+  drag_start_world : @math.Vec3
+  gizmo_origin : @math.Vec3
+}
+pub fn TransformGizmoState::TransformGizmoState() -> Self
+pub impl @app.Resource for TransformGizmoState
+pub impl Default for TransformGizmoState
 
 // Type aliases
 
