@@ -26,6 +26,8 @@ pub fn draw_line_joint_gizmo_plan(strip_vertex_count~ : Int, joints~ : @gizmos.G
 
 pub fn draw_line_joint_gizmo_vertex_count(@gizmos.GizmoLineJoint) -> UInt?
 
+pub let ecs_key_gizmo_overlay_camera : @ecs.ComponentKey[GizmoOverlayCamera]
+
 pub let ecs_key_line_gizmo_uniform : @ecs.ComponentKey[LineGizmoUniform]
 
 pub let ecs_res_key_line_gizmo_draw_functions : @ecs.ResourceKey[LineGizmoDrawFunctions]
@@ -33,6 +35,8 @@ pub let ecs_res_key_line_gizmo_draw_functions : @ecs.ResourceKey[LineGizmoDrawFu
 pub let ecs_res_key_line_gizmo_entities : @ecs.ResourceKey[LineGizmoEntities]
 
 pub let ecs_res_key_line_gizmo_phase_items : @ecs.ResourceKey[LineGizmoPhaseItems]
+
+pub let ecs_res_key_transform_gizmo_materials : @ecs.ResourceKey[TransformGizmoMaterials]
 
 pub fn ensure_line_gizmo_draw_functions(@ecs.World) -> LineGizmoDrawFunctions
 
@@ -112,9 +116,22 @@ pub fn queue_line_gizmos_3d(@ecs.World) -> Int
 
 pub fn register_embedded_wgsl_sources() -> Unit
 
+pub fn spawn_gizmo_meshes(@ecs.World) -> Unit
+
+pub fn transform_gizmo_axis_index(@gizmos.TransformGizmoAxis) -> Int
+
+pub fn transform_gizmo_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn update_gizmo_meshes(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
+pub struct GizmoOverlayCamera {
+}
+pub fn GizmoOverlayCamera::GizmoOverlayCamera() -> Self
+pub impl @ecs.Component for GizmoOverlayCamera
+
 pub struct GizmoRenderPlugin {
 }
 pub fn GizmoRenderPlugin::GizmoRenderPlugin() -> Self
@@ -370,6 +387,19 @@ pub struct RetainedLineGizmo {
   entity : @core.Entity
 }
 pub fn RetainedLineGizmo::new(@core.Entity) -> Self
+
+pub(all) struct TransformGizmoMaterials {
+  normal_colors : Array[@color.Color]
+  highlight_colors : Array[@color.Color]
+  inactive_colors : Array[@color.Color]
+}
+pub fn TransformGizmoMaterials::color(Self, @gizmos.TransformGizmoAxis, Bool, Bool) -> @color.Color
+pub impl @app.Resource for TransformGizmoMaterials
+
+pub struct TransformGizmoRenderPlugin {
+}
+pub fn TransformGizmoRenderPlugin::TransformGizmoRenderPlugin() -> Self
+pub impl @app.Plugin for TransformGizmoRenderPlugin
 
 // Type aliases
 

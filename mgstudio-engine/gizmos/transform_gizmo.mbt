@@ -119,7 +119,7 @@ pub(all) enum TransformGizmoMode {
   Translate
   Rotate
   Scale
-}
+} derive(Eq)
 
 ///|
 pub impl Default for TransformGizmoMode with fn default() {
@@ -131,7 +131,7 @@ pub impl Default for TransformGizmoMode with fn default() {
 pub(all) enum TransformGizmoSpace {
   World
   Local
-}
+} derive(Eq)
 
 ///|
 pub impl Default for TransformGizmoSpace with fn default() {
@@ -145,7 +145,7 @@ pub(all) enum TransformGizmoAxis {
   Y
   Z
   View
-}
+} derive(Eq)
 
 ///|
 /// Component that marks the entity the transform gizmo operates on.

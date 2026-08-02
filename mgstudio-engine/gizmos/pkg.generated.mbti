@@ -750,7 +750,7 @@ pub(all) enum TransformGizmoAxis {
   Y
   Z
   View
-}
+} derive(Eq)
 
 pub struct TransformGizmoCamera {
 }
@@ -775,7 +775,7 @@ pub(all) enum TransformGizmoMode {
   Translate
   Rotate
   Scale
-}
+} derive(Eq)
 pub impl Default for TransformGizmoMode
 
 pub struct TransformGizmoPlugin {
@@ -807,7 +807,7 @@ pub impl Default for TransformGizmoSettings
 pub(all) enum TransformGizmoSpace {
   World
   Local
-}
+} derive(Eq)
 pub impl Default for TransformGizmoSpace
 
 pub(all) struct TransformGizmoState {
