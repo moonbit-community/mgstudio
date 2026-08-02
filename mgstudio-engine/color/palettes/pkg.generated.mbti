@@ -44,67 +44,753 @@ pub fn css_alice_blue() -> @color.Color
 
 pub fn css_antique_white() -> @color.Color
 
+pub fn css_aqua() -> @color.Color
+
 pub fn css_aquamarine() -> @color.Color
 
+pub fn css_azure() -> @color.Color
+
 pub fn css_beige() -> @color.Color
+
+pub fn css_bisque() -> @color.Color
+
+pub fn css_blanched_almond() -> @color.Color
+
+pub fn css_blue_violet() -> @color.Color
+
+pub fn css_brown() -> @color.Color
+
+pub fn css_burlywood() -> @color.Color
+
+pub fn css_cadet_blue() -> @color.Color
+
+pub fn css_chartreuse() -> @color.Color
+
+pub fn css_chocolate() -> @color.Color
 
 pub fn css_coral() -> @color.Color
 
 pub fn css_cornflower_blue() -> @color.Color
 
+pub fn css_cornsilk() -> @color.Color
+
 pub fn css_crimson() -> @color.Color
+
+pub fn css_dark_blue() -> @color.Color
+
+pub fn css_dark_cyan() -> @color.Color
+
+pub fn css_dark_goldenrod() -> @color.Color
+
+pub fn css_dark_gray() -> @color.Color
+
+pub fn css_dark_green() -> @color.Color
+
+pub fn css_dark_grey() -> @color.Color
+
+pub fn css_dark_khaki() -> @color.Color
+
+pub fn css_dark_magenta() -> @color.Color
+
+pub fn css_dark_olivegreen() -> @color.Color
 
 pub fn css_dark_orange() -> @color.Color
 
+pub fn css_dark_orchid() -> @color.Color
+
+pub fn css_dark_red() -> @color.Color
+
+pub fn css_dark_salmon() -> @color.Color
+
+pub fn css_dark_sea_green() -> @color.Color
+
+pub fn css_dark_slate_blue() -> @color.Color
+
+pub fn css_dark_slate_gray() -> @color.Color
+
+pub fn css_dark_slate_grey() -> @color.Color
+
+pub fn css_dark_turquoise() -> @color.Color
+
+pub fn css_dark_violet() -> @color.Color
+
+pub fn css_deep_pink() -> @color.Color
+
+pub fn css_deep_sky_blue() -> @color.Color
+
+pub fn css_dim_gray() -> @color.Color
+
+pub fn css_dim_grey() -> @color.Color
+
+pub fn css_dodger_blue() -> @color.Color
+
+pub fn css_fire_brick() -> @color.Color
+
+pub fn css_floral_white() -> @color.Color
+
+pub fn css_forest_green() -> @color.Color
+
 pub fn css_gainsboro() -> @color.Color
+
+pub fn css_ghost_white() -> @color.Color
 
 pub fn css_gold() -> @color.Color
 
+pub fn css_goldenrod() -> @color.Color
+
+pub fn css_green_yellow() -> @color.Color
+
+pub fn css_grey() -> @color.Color
+
+pub fn css_honeydew() -> @color.Color
+
 pub fn css_hot_pink() -> @color.Color
+
+pub fn css_indian_red() -> @color.Color
 
 pub fn css_indigo() -> @color.Color
 
+pub fn css_ivory() -> @color.Color
+
+pub fn css_khaki() -> @color.Color
+
+pub fn css_lavender() -> @color.Color
+
+pub fn css_lavender_blush() -> @color.Color
+
+pub fn css_lawn_green() -> @color.Color
+
+pub fn css_lemon_chiffon() -> @color.Color
+
+pub fn css_light_blue() -> @color.Color
+
+pub fn css_light_coral() -> @color.Color
+
+pub fn css_light_cyan() -> @color.Color
+
+pub fn css_light_goldenrod_yellow() -> @color.Color
+
+pub fn css_light_gray() -> @color.Color
+
+pub fn css_light_green() -> @color.Color
+
+pub fn css_light_grey() -> @color.Color
+
+pub fn css_light_pink() -> @color.Color
+
+pub fn css_light_salmon() -> @color.Color
+
+pub fn css_light_sea_green() -> @color.Color
+
+pub fn css_light_sky_blue() -> @color.Color
+
+pub fn css_light_slate_gray() -> @color.Color
+
+pub fn css_light_slate_grey() -> @color.Color
+
+pub fn css_light_steel_blue() -> @color.Color
+
+pub fn css_light_yellow() -> @color.Color
+
+pub fn css_limegreen() -> @color.Color
+
+pub fn css_linen() -> @color.Color
+
+pub fn css_magenta() -> @color.Color
+
+pub fn css_medium_aquamarine() -> @color.Color
+
+pub fn css_medium_blue() -> @color.Color
+
+pub fn css_medium_orchid() -> @color.Color
+
+pub fn css_medium_purple() -> @color.Color
+
+pub fn css_medium_sea_green() -> @color.Color
+
+pub fn css_medium_slate_blue() -> @color.Color
+
+pub fn css_medium_spring_green() -> @color.Color
+
+pub fn css_medium_turquoise() -> @color.Color
+
+pub fn css_medium_violet_red() -> @color.Color
+
+pub fn css_midnight_blue() -> @color.Color
+
+pub fn css_mint_cream() -> @color.Color
+
+pub fn css_misty_rose() -> @color.Color
+
+pub fn css_moccasin() -> @color.Color
+
+pub fn css_navajo_white() -> @color.Color
+
+pub fn css_old_lace() -> @color.Color
+
+pub fn css_olive_drab() -> @color.Color
+
+pub fn css_orange() -> @color.Color
+
 pub fn css_orange_red() -> @color.Color
+
+pub fn css_orchid() -> @color.Color
+
+pub fn css_pale_goldenrod() -> @color.Color
+
+pub fn css_pale_green() -> @color.Color
+
+pub fn css_pale_turquoise() -> @color.Color
+
+pub fn css_pale_violetred() -> @color.Color
 
 pub fn css_palette() -> Array[@color.Color]
 
+pub fn css_papaya_whip() -> @color.Color
+
+pub fn css_peachpuff() -> @color.Color
+
+pub fn css_peru() -> @color.Color
+
+pub fn css_pink() -> @color.Color
+
+pub fn css_plum() -> @color.Color
+
+pub fn css_powder_blue() -> @color.Color
+
 pub fn css_rebecca_purple() -> @color.Color
+
+pub fn css_rosy_brown() -> @color.Color
+
+pub fn css_royal_blue() -> @color.Color
+
+pub fn css_saddle_brown() -> @color.Color
+
+pub fn css_salmon() -> @color.Color
+
+pub fn css_sandy_brown() -> @color.Color
+
+pub fn css_sea_green() -> @color.Color
+
+pub fn css_seashell() -> @color.Color
+
+pub fn css_sienna() -> @color.Color
 
 pub fn css_sky_blue() -> @color.Color
 
+pub fn css_slate_blue() -> @color.Color
+
+pub fn css_slate_gray() -> @color.Color
+
+pub fn css_slate_grey() -> @color.Color
+
+pub fn css_snow() -> @color.Color
+
+pub fn css_spring_green() -> @color.Color
+
+pub fn css_steel_blue() -> @color.Color
+
+pub fn css_tan() -> @color.Color
+
+pub fn css_thistle() -> @color.Color
+
+pub fn css_tomato() -> @color.Color
+
+pub fn css_turquoise() -> @color.Color
+
+pub fn css_violet() -> @color.Color
+
+pub fn css_wheat() -> @color.Color
+
+pub fn css_white_smoke() -> @color.Color
+
+pub fn css_yellow_green() -> @color.Color
+
+pub fn tailwind_amber_100() -> @color.Color
+
+pub fn tailwind_amber_200() -> @color.Color
+
 pub fn tailwind_amber_300() -> @color.Color
+
+pub fn tailwind_amber_400() -> @color.Color
+
+pub fn tailwind_amber_50() -> @color.Color
 
 pub fn tailwind_amber_500() -> @color.Color
 
+pub fn tailwind_amber_600() -> @color.Color
+
 pub fn tailwind_amber_700() -> @color.Color
+
+pub fn tailwind_amber_800() -> @color.Color
+
+pub fn tailwind_amber_900() -> @color.Color
+
+pub fn tailwind_amber_950() -> @color.Color
+
+pub fn tailwind_blue_100() -> @color.Color
+
+pub fn tailwind_blue_200() -> @color.Color
 
 pub fn tailwind_blue_300() -> @color.Color
 
+pub fn tailwind_blue_400() -> @color.Color
+
+pub fn tailwind_blue_50() -> @color.Color
+
 pub fn tailwind_blue_500() -> @color.Color
+
+pub fn tailwind_blue_600() -> @color.Color
 
 pub fn tailwind_blue_700() -> @color.Color
 
+pub fn tailwind_blue_800() -> @color.Color
+
+pub fn tailwind_blue_900() -> @color.Color
+
+pub fn tailwind_blue_950() -> @color.Color
+
+pub fn tailwind_cyan_100() -> @color.Color
+
+pub fn tailwind_cyan_200() -> @color.Color
+
+pub fn tailwind_cyan_300() -> @color.Color
+
+pub fn tailwind_cyan_400() -> @color.Color
+
+pub fn tailwind_cyan_50() -> @color.Color
+
+pub fn tailwind_cyan_500() -> @color.Color
+
+pub fn tailwind_cyan_600() -> @color.Color
+
+pub fn tailwind_cyan_700() -> @color.Color
+
+pub fn tailwind_cyan_800() -> @color.Color
+
+pub fn tailwind_cyan_900() -> @color.Color
+
+pub fn tailwind_cyan_950() -> @color.Color
+
+pub fn tailwind_emerald_100() -> @color.Color
+
+pub fn tailwind_emerald_200() -> @color.Color
+
 pub fn tailwind_emerald_300() -> @color.Color
+
+pub fn tailwind_emerald_400() -> @color.Color
+
+pub fn tailwind_emerald_50() -> @color.Color
 
 pub fn tailwind_emerald_500() -> @color.Color
 
+pub fn tailwind_emerald_600() -> @color.Color
+
 pub fn tailwind_emerald_700() -> @color.Color
+
+pub fn tailwind_emerald_800() -> @color.Color
+
+pub fn tailwind_emerald_900() -> @color.Color
+
+pub fn tailwind_emerald_950() -> @color.Color
+
+pub fn tailwind_fuchsia_100() -> @color.Color
+
+pub fn tailwind_fuchsia_200() -> @color.Color
+
+pub fn tailwind_fuchsia_300() -> @color.Color
+
+pub fn tailwind_fuchsia_400() -> @color.Color
+
+pub fn tailwind_fuchsia_50() -> @color.Color
+
+pub fn tailwind_fuchsia_500() -> @color.Color
+
+pub fn tailwind_fuchsia_600() -> @color.Color
+
+pub fn tailwind_fuchsia_700() -> @color.Color
+
+pub fn tailwind_fuchsia_800() -> @color.Color
+
+pub fn tailwind_fuchsia_900() -> @color.Color
+
+pub fn tailwind_fuchsia_950() -> @color.Color
+
+pub fn tailwind_gray_100() -> @color.Color
+
+pub fn tailwind_gray_200() -> @color.Color
+
+pub fn tailwind_gray_300() -> @color.Color
+
+pub fn tailwind_gray_400() -> @color.Color
+
+pub fn tailwind_gray_50() -> @color.Color
+
+pub fn tailwind_gray_500() -> @color.Color
+
+pub fn tailwind_gray_600() -> @color.Color
+
+pub fn tailwind_gray_700() -> @color.Color
+
+pub fn tailwind_gray_800() -> @color.Color
+
+pub fn tailwind_gray_900() -> @color.Color
+
+pub fn tailwind_gray_950() -> @color.Color
+
+pub fn tailwind_green_100() -> @color.Color
+
+pub fn tailwind_green_200() -> @color.Color
+
+pub fn tailwind_green_300() -> @color.Color
+
+pub fn tailwind_green_400() -> @color.Color
+
+pub fn tailwind_green_50() -> @color.Color
+
+pub fn tailwind_green_500() -> @color.Color
+
+pub fn tailwind_green_600() -> @color.Color
+
+pub fn tailwind_green_700() -> @color.Color
+
+pub fn tailwind_green_800() -> @color.Color
+
+pub fn tailwind_green_900() -> @color.Color
+
+pub fn tailwind_green_950() -> @color.Color
+
+pub fn tailwind_indigo_100() -> @color.Color
+
+pub fn tailwind_indigo_200() -> @color.Color
+
+pub fn tailwind_indigo_300() -> @color.Color
+
+pub fn tailwind_indigo_400() -> @color.Color
+
+pub fn tailwind_indigo_50() -> @color.Color
+
+pub fn tailwind_indigo_500() -> @color.Color
+
+pub fn tailwind_indigo_600() -> @color.Color
+
+pub fn tailwind_indigo_700() -> @color.Color
+
+pub fn tailwind_indigo_800() -> @color.Color
+
+pub fn tailwind_indigo_900() -> @color.Color
+
+pub fn tailwind_indigo_950() -> @color.Color
+
+pub fn tailwind_lime_100() -> @color.Color
+
+pub fn tailwind_lime_200() -> @color.Color
+
+pub fn tailwind_lime_300() -> @color.Color
+
+pub fn tailwind_lime_400() -> @color.Color
+
+pub fn tailwind_lime_50() -> @color.Color
+
+pub fn tailwind_lime_500() -> @color.Color
+
+pub fn tailwind_lime_600() -> @color.Color
+
+pub fn tailwind_lime_700() -> @color.Color
+
+pub fn tailwind_lime_800() -> @color.Color
+
+pub fn tailwind_lime_900() -> @color.Color
+
+pub fn tailwind_lime_950() -> @color.Color
+
+pub fn tailwind_neutral_100() -> @color.Color
+
+pub fn tailwind_neutral_200() -> @color.Color
+
+pub fn tailwind_neutral_300() -> @color.Color
+
+pub fn tailwind_neutral_400() -> @color.Color
+
+pub fn tailwind_neutral_50() -> @color.Color
+
+pub fn tailwind_neutral_500() -> @color.Color
+
+pub fn tailwind_neutral_600() -> @color.Color
+
+pub fn tailwind_neutral_700() -> @color.Color
+
+pub fn tailwind_neutral_800() -> @color.Color
+
+pub fn tailwind_neutral_900() -> @color.Color
+
+pub fn tailwind_neutral_950() -> @color.Color
+
+pub fn tailwind_orange_100() -> @color.Color
+
+pub fn tailwind_orange_200() -> @color.Color
+
+pub fn tailwind_orange_300() -> @color.Color
+
+pub fn tailwind_orange_400() -> @color.Color
+
+pub fn tailwind_orange_50() -> @color.Color
+
+pub fn tailwind_orange_500() -> @color.Color
+
+pub fn tailwind_orange_600() -> @color.Color
+
+pub fn tailwind_orange_700() -> @color.Color
+
+pub fn tailwind_orange_800() -> @color.Color
+
+pub fn tailwind_orange_900() -> @color.Color
+
+pub fn tailwind_orange_950() -> @color.Color
 
 pub fn tailwind_palette() -> Array[@color.Color]
 
+pub fn tailwind_pink_100() -> @color.Color
+
+pub fn tailwind_pink_200() -> @color.Color
+
+pub fn tailwind_pink_300() -> @color.Color
+
+pub fn tailwind_pink_400() -> @color.Color
+
+pub fn tailwind_pink_50() -> @color.Color
+
+pub fn tailwind_pink_500() -> @color.Color
+
+pub fn tailwind_pink_600() -> @color.Color
+
+pub fn tailwind_pink_700() -> @color.Color
+
+pub fn tailwind_pink_800() -> @color.Color
+
+pub fn tailwind_pink_900() -> @color.Color
+
+pub fn tailwind_pink_950() -> @color.Color
+
+pub fn tailwind_purple_100() -> @color.Color
+
+pub fn tailwind_purple_200() -> @color.Color
+
+pub fn tailwind_purple_300() -> @color.Color
+
+pub fn tailwind_purple_400() -> @color.Color
+
+pub fn tailwind_purple_50() -> @color.Color
+
+pub fn tailwind_purple_500() -> @color.Color
+
+pub fn tailwind_purple_600() -> @color.Color
+
+pub fn tailwind_purple_700() -> @color.Color
+
+pub fn tailwind_purple_800() -> @color.Color
+
+pub fn tailwind_purple_900() -> @color.Color
+
+pub fn tailwind_purple_950() -> @color.Color
+
+pub fn tailwind_red_100() -> @color.Color
+
+pub fn tailwind_red_200() -> @color.Color
+
+pub fn tailwind_red_300() -> @color.Color
+
 pub fn tailwind_red_400() -> @color.Color
+
+pub fn tailwind_red_50() -> @color.Color
+
+pub fn tailwind_red_500() -> @color.Color
+
+pub fn tailwind_red_600() -> @color.Color
+
+pub fn tailwind_red_700() -> @color.Color
+
+pub fn tailwind_red_800() -> @color.Color
+
+pub fn tailwind_red_900() -> @color.Color
+
+pub fn tailwind_red_950() -> @color.Color
+
+pub fn tailwind_rose_100() -> @color.Color
+
+pub fn tailwind_rose_200() -> @color.Color
 
 pub fn tailwind_rose_300() -> @color.Color
 
+pub fn tailwind_rose_400() -> @color.Color
+
+pub fn tailwind_rose_50() -> @color.Color
+
 pub fn tailwind_rose_500() -> @color.Color
 
+pub fn tailwind_rose_600() -> @color.Color
+
 pub fn tailwind_rose_700() -> @color.Color
+
+pub fn tailwind_rose_800() -> @color.Color
+
+pub fn tailwind_rose_900() -> @color.Color
+
+pub fn tailwind_rose_950() -> @color.Color
+
+pub fn tailwind_sky_100() -> @color.Color
+
+pub fn tailwind_sky_200() -> @color.Color
+
+pub fn tailwind_sky_300() -> @color.Color
+
+pub fn tailwind_sky_400() -> @color.Color
+
+pub fn tailwind_sky_50() -> @color.Color
+
+pub fn tailwind_sky_500() -> @color.Color
+
+pub fn tailwind_sky_600() -> @color.Color
+
+pub fn tailwind_sky_700() -> @color.Color
+
+pub fn tailwind_sky_800() -> @color.Color
+
+pub fn tailwind_sky_900() -> @color.Color
+
+pub fn tailwind_sky_950() -> @color.Color
+
+pub fn tailwind_slate_100() -> @color.Color
+
+pub fn tailwind_slate_200() -> @color.Color
+
+pub fn tailwind_slate_300() -> @color.Color
+
+pub fn tailwind_slate_400() -> @color.Color
 
 pub fn tailwind_slate_50() -> @color.Color
 
 pub fn tailwind_slate_500() -> @color.Color
 
+pub fn tailwind_slate_600() -> @color.Color
+
+pub fn tailwind_slate_700() -> @color.Color
+
+pub fn tailwind_slate_800() -> @color.Color
+
+pub fn tailwind_slate_900() -> @color.Color
+
 pub fn tailwind_slate_950() -> @color.Color
+
+pub fn tailwind_stone_100() -> @color.Color
+
+pub fn tailwind_stone_200() -> @color.Color
+
+pub fn tailwind_stone_300() -> @color.Color
+
+pub fn tailwind_stone_400() -> @color.Color
+
+pub fn tailwind_stone_50() -> @color.Color
+
+pub fn tailwind_stone_500() -> @color.Color
+
+pub fn tailwind_stone_600() -> @color.Color
+
+pub fn tailwind_stone_700() -> @color.Color
+
+pub fn tailwind_stone_800() -> @color.Color
+
+pub fn tailwind_stone_900() -> @color.Color
+
+pub fn tailwind_stone_950() -> @color.Color
+
+pub fn tailwind_teal_100() -> @color.Color
+
+pub fn tailwind_teal_200() -> @color.Color
+
+pub fn tailwind_teal_300() -> @color.Color
+
+pub fn tailwind_teal_400() -> @color.Color
+
+pub fn tailwind_teal_50() -> @color.Color
+
+pub fn tailwind_teal_500() -> @color.Color
+
+pub fn tailwind_teal_600() -> @color.Color
+
+pub fn tailwind_teal_700() -> @color.Color
+
+pub fn tailwind_teal_800() -> @color.Color
+
+pub fn tailwind_teal_900() -> @color.Color
+
+pub fn tailwind_teal_950() -> @color.Color
+
+pub fn tailwind_violet_100() -> @color.Color
+
+pub fn tailwind_violet_200() -> @color.Color
+
+pub fn tailwind_violet_300() -> @color.Color
+
+pub fn tailwind_violet_400() -> @color.Color
+
+pub fn tailwind_violet_50() -> @color.Color
+
+pub fn tailwind_violet_500() -> @color.Color
+
+pub fn tailwind_violet_600() -> @color.Color
+
+pub fn tailwind_violet_700() -> @color.Color
+
+pub fn tailwind_violet_800() -> @color.Color
+
+pub fn tailwind_violet_900() -> @color.Color
+
+pub fn tailwind_violet_950() -> @color.Color
+
+pub fn tailwind_yellow_100() -> @color.Color
+
+pub fn tailwind_yellow_200() -> @color.Color
+
+pub fn tailwind_yellow_300() -> @color.Color
+
+pub fn tailwind_yellow_400() -> @color.Color
+
+pub fn tailwind_yellow_50() -> @color.Color
+
+pub fn tailwind_yellow_500() -> @color.Color
+
+pub fn tailwind_yellow_600() -> @color.Color
+
+pub fn tailwind_yellow_700() -> @color.Color
+
+pub fn tailwind_yellow_800() -> @color.Color
+
+pub fn tailwind_yellow_900() -> @color.Color
+
+pub fn tailwind_yellow_950() -> @color.Color
+
+pub fn tailwind_zinc_100() -> @color.Color
+
+pub fn tailwind_zinc_200() -> @color.Color
+
+pub fn tailwind_zinc_300() -> @color.Color
+
+pub fn tailwind_zinc_400() -> @color.Color
+
+pub fn tailwind_zinc_50() -> @color.Color
+
+pub fn tailwind_zinc_500() -> @color.Color
+
+pub fn tailwind_zinc_600() -> @color.Color
+
+pub fn tailwind_zinc_700() -> @color.Color
+
+pub fn tailwind_zinc_800() -> @color.Color
+
+pub fn tailwind_zinc_900() -> @color.Color
+
+pub fn tailwind_zinc_950() -> @color.Color
 
 // Errors
 
@@ -113,4 +799,3 @@ pub fn tailwind_slate_950() -> @color.Color
 // Type aliases
 
 // Traits
-

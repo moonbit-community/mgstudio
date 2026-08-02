@@ -15,19 +15,11 @@
 ///|
 fn anchor_items() -> Array[(String, @math.Vec2, @color.Color)] {
   [
-    ("left", @math.Vec2::new(-0.5F, 0.0F), @color.Color::srgb(1.0F, 0.0F, 0.0F)),
-    ("right", @math.Vec2::new(0.5F, 0.0F), @color.Color::srgb(1.0F, 0.5F, 0.0F)),
-    (
-      "center",
-      @math.Vec2::new(0.0F, 0.0F),
-      @color.Color::srgb(1.0F, 0.9F, 0.1F),
-    ),
-    ("top", @math.Vec2::new(0.0F, 0.5F), @color.Color::srgb(0.0F, 1.0F, 0.0F)),
-    (
-      "bottom",
-      @math.Vec2::new(0.0F, -0.5F),
-      @color.Color::srgb(0.2F, 0.4F, 1.0F),
-    ),
+    ("left", @math.Vec2::new(-0.5F, 0.0F), @palettes.basic_red()),
+    ("right", @math.Vec2::new(0.5F, 0.0F), @palettes.css_orange()),
+    ("center", @math.Vec2::new(0.0F, 0.0F), @palettes.basic_yellow()),
+    ("top", @math.Vec2::new(0.0F, 0.5F), @palettes.basic_green()),
+    ("bottom", @math.Vec2::new(0.0F, -0.5F), @palettes.basic_blue()),
   ]
 }
 

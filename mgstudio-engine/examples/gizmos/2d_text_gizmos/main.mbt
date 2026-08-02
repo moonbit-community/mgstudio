@@ -35,10 +35,10 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn label_color(index : Int) -> @color.Color {
   match index % 4 {
-    0 => @color.Color::srgb(1.0F, 0.0F, 0.0F)
-    1 => @color.Color::srgb(0.0F, 1.0F, 0.0F)
-    2 => @color.Color::srgb(0.2F, 0.4F, 1.0F)
-    _ => @color.Color::srgb(1.0F, 0.9F, 0.1F)
+    0 => @palettes.basic_red()
+    1 => @palettes.basic_green()
+    2 => @palettes.basic_blue()
+    _ => @palettes.basic_yellow()
   }
 }
 
