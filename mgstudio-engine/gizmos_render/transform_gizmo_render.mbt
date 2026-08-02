@@ -426,14 +426,19 @@ pub fn spawn_gizmo_meshes(world : @ecs.World) -> Unit {
 
   // Overlay camera: renders only the gizmo layer, after the main camera
   // (order 1), so gizmo meshes appear on top of everything.
+  //
+  // Bevy leaves `clear_color` at its default here: its `ColorAttachment` clears
+  // a target only on the first write of a frame, so a second camera on the same
+  // target implicitly loads. mgstudio does not yet compose cameras that way --
+  // post-process targets are keyed by camera entity rather than by render
+  // target, so this camera's composite currently erases the main camera's
+  // output. `ClearColorConfig::None` does not help, because the composite
+  // rewrites the whole surface regardless of the load op. Tracked as ISS-479;
+  // this spawn stays faithful to the Bevy source.
   let overlay = @camera.Camera3dBundle::new(
     @camera_camera.Camera::Camera().with_order(1),
     @transform.Transform::identity(),
   ).spawn(world)
-  // Bevy: "without clearing the color buffer -- so gizmo meshes appear on top
-  // of everything". Without this the overlay camera wipes the main camera's
-  // output and only the gizmo is visible.
-  try! world.set_by_key(overlay, @camera.ecs_key_clear_color_config, None)
   try! world.set_by_key(
     overlay,
     ecs_key_gizmo_overlay_camera,
