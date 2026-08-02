@@ -69,9 +69,13 @@ pub fn gizmo_render_plugin_with(
     return app
   }
   register_embedded_wgsl_sources()
-  let next = app.insert_world_resource(ecs_res_key_gizmo_render_plugin_marker, GizmoRenderPluginMarker::{
+  // Bevy source: `bevy_gizmos_render/src/lib.rs` adds `TransformGizmoRenderPlugin`
+  // alongside the 3d line gizmo pipeline.
+  let next = transform_gizmo_render_plugin(
+    app.insert_world_resource(ecs_res_key_gizmo_render_plugin_marker, GizmoRenderPluginMarker::{
 
-  })
+    }),
+  )
   @render.try_with_render_app(next, fn(sub_app) {
     sub_app
     .add_systems(

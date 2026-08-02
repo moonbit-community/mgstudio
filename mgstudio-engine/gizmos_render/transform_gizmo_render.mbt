@@ -430,6 +430,10 @@ pub fn spawn_gizmo_meshes(world : @ecs.World) -> Unit {
     @camera_camera.Camera::Camera().with_order(1),
     @transform.Transform::identity(),
   ).spawn(world)
+  // Bevy: "without clearing the color buffer -- so gizmo meshes appear on top
+  // of everything". Without this the overlay camera wipes the main camera's
+  // output and only the gizmo is visible.
+  try! world.set_by_key(overlay, @camera.ecs_key_clear_color_config, None)
   try! world.set_by_key(
     overlay,
     ecs_key_gizmo_overlay_camera,
