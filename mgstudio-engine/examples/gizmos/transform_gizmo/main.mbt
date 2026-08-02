@@ -44,10 +44,17 @@ fn solid_material(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  // Ground plane (not pickable). Bevy uses `Plane3d::default().mesh().size(10, 10)`;
-  // a flat cuboid gives the same visible ground quad here.
+  // Ground plane (not pickable). Bevy uses `Plane3d::default().mesh().size(10, 10)`.
   let ground = @pbr.MeshMaterial3dBundle::new(
-    cuboid_mesh_handle(10.0F, 0.0F, 10.0F),
+    @mesh.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().modify(fn(assets) {
+        assets.add(
+          @mesh.Mesh::from_3d_geometry(
+            @mesh_primitives_dim3.plane3d_mesh_from_size(10.0F, 10.0F, 0),
+          ),
+        )
+      }),
+    ),
     solid_material(@color.Color::srgb(0.3F, 0.3F, 0.3F)),
     @transform.Transform::identity(),
   ).spawn(world)
