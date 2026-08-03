@@ -16,8 +16,52 @@
 // Bevy source: `bevy/crates/bevy_post_process/src/dof/mod.rs`.
 
 ///|
+pub(all) enum DepthOfFieldMode {
+  Bokeh
+  Gaussian
+} derive(Eq, Debug, ToJson, FromJson)
+
+///|
+pub fn DepthOfFieldMode::default() -> DepthOfFieldMode {
+  Gaussian
+}
+
+///|
+/// API-parity data model aligned with Bevy's `DepthOfField` camera component.
+pub(all) struct DepthOfField {
+  mut mode : DepthOfFieldMode
+  mut focal_distance : Float
+  mut sensor_height : Float
+  mut aperture_f_stops : Float
+  mut max_circle_of_confusion_diameter : Float
+  mut max_depth : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn DepthOfField::DepthOfField() -> DepthOfField {
+  {
+    mode: DepthOfFieldMode::default(),
+    focal_distance: 10.0F,
+    sensor_height: @camera_camera.PhysicalCameraParameters::PhysicalCameraParameters().sensor_height,
+    aperture_f_stops: 4.0F,
+    max_circle_of_confusion_diameter: 64.0F,
+    max_depth: @float.infinity,
+  }
+}
+
+///|
+pub fn DepthOfField::from_physical_camera(
+  camera : @camera_camera.PhysicalCameraParameters,
+) -> DepthOfField {
+  let depth_of_field = DepthOfField::DepthOfField()
+  depth_of_field.sensor_height = camera.sensor_height
+  depth_of_field.aperture_f_stops = camera.aperture_f_stops
+  depth_of_field
+}
+
+///|
 pub struct DepthOfFieldUniform {
-  mode : @pbr.DepthOfFieldMode
+  mode : DepthOfFieldMode
   focal_distance : Float
   sensor_height : Float
   aperture_f_stops : Float
@@ -28,7 +72,7 @@ pub struct DepthOfFieldUniform {
 
 ///|
 pub fn DepthOfFieldUniform::from_settings(
-  settings : @pbr.DepthOfField,
+  settings : DepthOfField,
 ) -> DepthOfFieldUniform {
   let denominator = settings.sensor_height * settings.aperture_f_stops
   let coc_scale_factor = if denominator <= 0.0F {
@@ -49,7 +93,17 @@ pub fn DepthOfFieldUniform::from_settings(
 
 ///|
 pub fn depth_of_field_from_physical_camera(
-  camera : @pbr.PhysicalCameraParameters,
-) -> @pbr.DepthOfField {
-  @pbr.DepthOfField::from_physical_camera(camera)
+  camera : @camera_camera.PhysicalCameraParameters,
+) -> DepthOfField {
+  DepthOfField::from_physical_camera(camera)
+}
+
+///|
+pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField] = @ecs.register_component(
+  debug_name="render3d.depth_of_field",
+)
+
+///|
+pub impl @ecs.Component for DepthOfField with fn component() {
+  ecs_key_depth_of_field
 }

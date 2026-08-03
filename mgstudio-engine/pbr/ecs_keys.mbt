@@ -58,14 +58,10 @@ pub let ecs_key_distance_fog : @ecs.ComponentKey[DistanceFog] = @ecs.register_co
 )
 
 ///|
-pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure] = @ecs.register_component(
-  debug_name="render3d.auto_exposure",
-)
+pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure] = @post_process_auto_exposure.ecs_key_auto_exposure
 
 ///|
-pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField] = @ecs.register_component(
-  debug_name="render3d.depth_of_field",
-)
+pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField] = @post_process_dof.ecs_key_depth_of_field
 
 ///|
 pub let ecs_key_volumetric_fog : @ecs.ComponentKey[VolumetricFog] = @light.ecs_key_volumetric_fog
@@ -295,16 +291,6 @@ pub impl @ecs.Component for CameraDeferredConfig3d with fn component() {
 ///|
 pub impl @ecs.Component for DistanceFog with fn component() {
   ecs_key_distance_fog
-}
-
-///|
-pub impl @ecs.Component for AutoExposure with fn component() {
-  ecs_key_auto_exposure
-}
-
-///|
-pub impl @ecs.Component for DepthOfField with fn component() {
-  ecs_key_depth_of_field
 }
 
 ///|

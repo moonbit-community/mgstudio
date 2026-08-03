@@ -24,7 +24,9 @@ import {
   "Milky2018/mgstudio/pbr/lightmap",
   "Milky2018/mgstudio/pbr/transmission",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/auto_exposure",
   "Milky2018/mgstudio/post_process/bloom",
+  "Milky2018/mgstudio/post_process/dof",
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
   "Milky2018/mgstudio/render/batching",
@@ -236,7 +238,7 @@ pub let ecs_key_atmosphere_environment_map_light : @ecs.ComponentKey[@light.Atmo
 
 pub let ecs_key_atmosphere_settings : @ecs.ComponentKey[@light.AtmosphereSettings]
 
-pub let ecs_key_auto_exposure : @ecs.ComponentKey[AutoExposure]
+pub let ecs_key_auto_exposure : @ecs.ComponentKey[@auto_exposure.AutoExposure]
 
 pub let ecs_key_bloom : @ecs.ComponentKey[@bloom.Bloom]
 
@@ -268,7 +270,7 @@ pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[@Milky2018/mgstud
 
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/deferred.DeferredPrepass]
 
-pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField]
+pub let ecs_key_depth_of_field : @ecs.ComponentKey[@dof.DepthOfField]
 
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[@Milky2018/mgstudio/core_pipeline/prepass.DepthPrepass]
 
@@ -1015,12 +1017,6 @@ pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn wireframe_plugin_with(@app.App[@ecs.World], WireframePlugin) -> @app.App[@ecs.World]
 
 // Errors
-pub(all) suberror AutoExposureCompensationCurveError {
-  InvalidCurve
-  DiscontinuityFound
-  NotMonotonic
-}
-
 pub suberror Wireframe3dRenderNodeSkipReason {
   MissingPhase
   EmptyPhase
@@ -1041,39 +1037,6 @@ pub(all) struct AreaLightLuts {
   image : @asset.Handle[@image.Image]
 }
 pub impl @app.Resource for AreaLightLuts
-
-pub struct AutoExposure {
-  min_ev100 : Float
-  max_ev100 : Float
-  low_percent : Float
-  high_percent : Float
-  speed_brighten : Float
-  speed_darken : Float
-  exponential_transition_distance : Float
-  compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?
-  metering_mask : @asset.Handle[@image.Image]?
-} derive(ToJson, @json.FromJson)
-pub fn AutoExposure::AutoExposure() -> Self
-pub fn AutoExposure::new(Float, Float) -> Self
-pub fn AutoExposure::with_compensation_curve(Self, @asset.Handle[AutoExposureCompensationCurve]?) -> Self
-pub fn AutoExposure::with_exponential_transition_distance(Self, Float) -> Self
-pub fn AutoExposure::with_filter(Self, Float, Float) -> Self
-pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@image.Image]?) -> Self
-pub fn AutoExposure::with_range(Self, Float, Float) -> Self
-pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
-pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
-pub impl @ecs.Component for AutoExposure
-
-pub struct AutoExposureCompensationCurve {
-  min_log_lum : Float
-  max_log_lum : Float
-  min_compensation : Float
-  max_compensation : Float
-  lut : Bytes
-}
-pub fn AutoExposureCompensationCurve::AutoExposureCompensationCurve() -> Self
-pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Self raise AutoExposureCompensationCurveError
-pub impl @asset.Asset for AutoExposureCompensationCurve
 
 pub(all) struct Bluenoise {
   texture : @asset.Handle[@image.Image]
@@ -1099,8 +1062,8 @@ pub struct Camera3dBundle {
   decal_config : CameraDecalConfig3d?
   deferred_config : CameraDeferredConfig3d?
   distance_fog : DistanceFog?
-  auto_exposure : AutoExposure?
-  depth_of_field : DepthOfField?
+  auto_exposure : @auto_exposure.AutoExposure?
+  depth_of_field : @dof.DepthOfField?
   volumetric_fog : @light.VolumetricFog?
   atmosphere : @light.Atmosphere?
   atmosphere_settings : @light.AtmosphereSettings?
@@ -1114,7 +1077,7 @@ pub fn Camera3dBundle::new_with_projection(@camera.Camera, @projection3d.Project
 pub fn Camera3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
-pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
+pub fn Camera3dBundle::with_auto_exposure(Self, @auto_exposure.AutoExposure?) -> Self
 pub fn Camera3dBundle::with_bloom(Self, @bloom.Bloom?) -> Self
 pub fn Camera3dBundle::with_camera3d(Self, @components3d.Camera3d) -> Self
 pub fn Camera3dBundle::with_chromatic_aberration(Self, @effect_stack.ChromaticAberration?) -> Self
@@ -1123,7 +1086,7 @@ pub fn Camera3dBundle::with_custom_post_process3d(Self, @post_process.CustomPost
 pub fn Camera3dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
 pub fn Camera3dBundle::with_decal_config(Self, CameraDecalConfig3d) -> Self
 pub fn Camera3dBundle::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
-pub fn Camera3dBundle::with_depth_of_field(Self, DepthOfField?) -> Self
+pub fn Camera3dBundle::with_depth_of_field(Self, @dof.DepthOfField?) -> Self
 pub fn Camera3dBundle::with_distance_fog(Self, DistanceFog?) -> Self
 pub fn Camera3dBundle::with_exposure(Self, @camera.Exposure?) -> Self
 pub fn Camera3dBundle::with_motion_blur(Self, @motion_blur.MotionBlur?) -> Self
@@ -1333,24 +1296,6 @@ pub(all) enum DecalRenderMode3d {
   ForwardAndClustered
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 pub fn DecalRenderMode3d::default() -> Self
-
-pub(all) struct DepthOfField {
-  mut mode : DepthOfFieldMode
-  mut focal_distance : Float
-  mut sensor_height : Float
-  mut aperture_f_stops : Float
-  mut max_circle_of_confusion_diameter : Float
-  mut max_depth : Float
-} derive(ToJson, @json.FromJson)
-pub fn DepthOfField::DepthOfField() -> Self
-pub fn DepthOfField::from_physical_camera(@camera.PhysicalCameraParameters) -> Self
-pub impl @ecs.Component for DepthOfField
-
-pub(all) enum DepthOfFieldMode {
-  Bokeh
-  Gaussian
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
-pub fn DepthOfFieldMode::default() -> Self
 
 pub(all) struct DfgLut {
   texture : @asset.Handle[@image.Image]
@@ -3428,6 +3373,12 @@ pub using @light {type AtmosphereMode}
 
 pub using @light {type AtmosphereSettings}
 
+pub using @auto_exposure {type AutoExposure}
+
+pub using @auto_exposure {type AutoExposureCompensationCurve}
+
+pub using @auto_exposure {type AutoExposureCompensationCurveError}
+
 pub using @bloom {type Bloom}
 
 pub using @bloom {type BloomCompositeMode}
@@ -3483,6 +3434,10 @@ pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingPlugin}
 pub using @Milky2018/mgstudio/pbr/deferred {type DeferredPbrLightingState}
 
 pub using @Milky2018/mgstudio/core_pipeline/deferred {type DeferredPrepass}
+
+pub using @dof {type DepthOfField}
+
+pub using @dof {type DepthOfFieldMode}
 
 pub using @Milky2018/mgstudio/core_pipeline/prepass {type DepthPrepass}
 
@@ -3651,12 +3606,6 @@ pub using @render_phase {type BinnedRenderPhaseType as WireframeBinnedRenderPhas
 pub using @render_phase {type PhaseItemExtraIndex as WireframePhaseItemExtraIndex}
 
 // Traits
-pub(open) trait AutoExposureCompensationCurveSource {
-  fn to_auto_exposure_curve(Self) -> @math.CubicCurve[@math.Vec2] raise @math.InsufficientDataError
-}
-pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2]
-pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2]
-
 pub(open) trait IntoPbrMaterialAsset {
   fn into_pbr_material_asset(Self) -> @material.StandardMaterial
 }
@@ -3747,4 +3696,3 @@ pub(open) trait StandardMaterialExtension {
   fn enable_shadows_ref() -> Bool
   fn specialize_ref() -> ((String, @render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, @material.ErasedMaterialPipelineKey) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError)?
 }
-

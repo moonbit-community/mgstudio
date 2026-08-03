@@ -38,31 +38,10 @@ pub type Camera3dBundle = @pbr.Camera3dBundle
 pub type SubCameraView3d = @camera_camera.SubCameraView3d
 
 ///|
-pub type CameraDecalConfig3d = @pbr.CameraDecalConfig3d
-
-///|
-pub type CameraDecalRenderMode3d = @pbr.DecalRenderMode3d
-
-///|
-pub type CameraDeferredConfig3d = @pbr.CameraDeferredConfig3d
-
-///|
-pub type CameraDeferredMode3d = @pbr.CameraDeferredMode3d
-
-///|
 pub type PhysicalCameraParameters = @camera_camera.PhysicalCameraParameters
 
 ///|
 pub type Exposure = @camera_camera.Exposure
-
-///|
-pub type AutoExposure = @pbr.AutoExposure
-
-///|
-pub type DepthOfField = @pbr.DepthOfField
-
-///|
-pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
 
 ///|
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @camera_components3d.ecs_key_camera3d

@@ -3,18 +3,39 @@ package "Milky2018/mgstudio/post_process/dof"
 
 import {
   "Milky2018/mgstudio/camera/camera",
-  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
 
 // Values
-pub fn depth_of_field_from_physical_camera(@camera.PhysicalCameraParameters) -> @pbr.DepthOfField
+pub fn depth_of_field_from_physical_camera(@camera.PhysicalCameraParameters) -> DepthOfField
+
+pub let ecs_key_depth_of_field : @ecs.ComponentKey[DepthOfField]
 
 // Errors
 
 // Types and methods
+pub(all) struct DepthOfField {
+  mut mode : DepthOfFieldMode
+  mut focal_distance : Float
+  mut sensor_height : Float
+  mut aperture_f_stops : Float
+  mut max_circle_of_confusion_diameter : Float
+  mut max_depth : Float
+} derive(ToJson, @json.FromJson)
+pub fn DepthOfField::DepthOfField() -> Self
+pub fn DepthOfField::from_physical_camera(@camera.PhysicalCameraParameters) -> Self
+pub impl @ecs.Component for DepthOfField
+
+pub(all) enum DepthOfFieldMode {
+  Bokeh
+  Gaussian
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn DepthOfFieldMode::default() -> Self
+
 pub struct DepthOfFieldUniform {
-  mode : @pbr.DepthOfFieldMode
+  mode : DepthOfFieldMode
   focal_distance : Float
   sensor_height : Float
   aperture_f_stops : Float
@@ -22,9 +43,8 @@ pub struct DepthOfFieldUniform {
   max_depth : Float
   coc_scale_factor : Float
 } derive(ToJson, @json.FromJson)
-pub fn DepthOfFieldUniform::from_settings(@pbr.DepthOfField) -> Self
+pub fn DepthOfFieldUniform::from_settings(DepthOfField) -> Self
 
 // Type aliases
 
 // Traits
-

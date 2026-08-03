@@ -86,8 +86,6 @@ pub impl @app.Plugin for CameraProjectionPlugin
 // Type aliases
 pub using @primitives {type Aabb}
 
-pub using @pbr {type AutoExposure}
-
 pub using @Milky2018/mgstudio/camera/camera {type Camera}
 
 pub using @components2d {type Camera2d}
@@ -96,14 +94,6 @@ pub using @components3d {type Camera3d}
 
 pub using @pbr {type Camera3dBundle}
 
-pub using @pbr {type CameraDecalConfig3d}
-
-pub using @pbr {type DecalRenderMode3d as CameraDecalRenderMode3d}
-
-pub using @pbr {type CameraDeferredConfig3d}
-
-pub using @pbr {type CameraDeferredMode3d}
-
 pub using @clear_color {type ClearColor}
 
 pub using @clear_color {type ClearColorConfig}
@@ -111,10 +101,6 @@ pub using @clear_color {type ClearColorConfig}
 pub using @compositing_space {type CompositingSpace}
 
 pub using @computed_camera_values {type ComputedCameraValues}
-
-pub using @pbr {type DepthOfField}
-
-pub using @pbr {type DepthOfFieldMode}
 
 pub using @Milky2018/mgstudio/camera/camera {type Exposure}
 
@@ -153,4 +139,3 @@ pub using @viewport {type Viewport}
 pub using @primitives {trait MeshAabb}
 
 // Traits
-

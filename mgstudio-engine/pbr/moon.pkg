@@ -41,6 +41,8 @@ import {
   "Milky2018/mgstudio/pbr/ssr" @pbr_ssr,
   "Milky2018/mgstudio/pbr/volumetric_fog" @pbr_volumetric_fog,
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/post_process/auto_exposure" @post_process_auto_exposure,
+  "Milky2018/mgstudio/post_process/dof" @post_process_dof,
   "Milky2018/mgstudio/post_process/motion_blur" @post_process_motion_blur,
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/batching" @render_batching,

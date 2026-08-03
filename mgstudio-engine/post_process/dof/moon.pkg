@@ -1,5 +1,7 @@
 import {
-  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/camera/camera" @camera_camera,
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/float",
   "moonbitlang/core/json",
 }
 

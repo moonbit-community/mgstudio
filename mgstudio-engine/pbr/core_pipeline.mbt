@@ -105,180 +105,22 @@ pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(
 }
 
 ///|
-/// API-parity data model aligned with Bevy's `AutoExposure` camera component.
-pub struct AutoExposure {
-  min_ev100 : Float
-  max_ev100 : Float
-  low_percent : Float
-  high_percent : Float
-  speed_brighten : Float
-  speed_darken : Float
-  exponential_transition_distance : Float
-  compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?
-  metering_mask : @asset.Handle[@asset.Image]?
-} derive(ToJson, FromJson)
+// Re-exports of the Bevy `bevy_post_process` owners. The components live in
+// `post_process/auto_exposure` and `post_process/dof`; pbr consumes them for
+// the extracted view payload and the legacy `Camera3dBundle`.
+pub type AutoExposure = @post_process_auto_exposure.AutoExposure
 
 ///|
-pub fn AutoExposure::AutoExposure() -> AutoExposure {
-  {
-    min_ev100: -8.0F,
-    max_ev100: 8.0F,
-    low_percent: 0.10F,
-    high_percent: 0.90F,
-    speed_brighten: 3.0F,
-    speed_darken: 1.0F,
-    exponential_transition_distance: 1.5F,
-    compensation_curve: None,
-    metering_mask: None,
-  }
-}
+pub type AutoExposureCompensationCurve = @post_process_auto_exposure.AutoExposureCompensationCurve
 
 ///|
-pub fn AutoExposure::new(min_ev100 : Float, max_ev100 : Float) -> AutoExposure {
-  AutoExposure::AutoExposure().with_range(min_ev100, max_ev100)
-}
+pub type AutoExposureCompensationCurveError = @post_process_auto_exposure.AutoExposureCompensationCurveError
 
 ///|
-pub fn AutoExposure::with_range(
-  self : AutoExposure,
-  min_ev100 : Float,
-  max_ev100 : Float,
-) -> AutoExposure {
-  let safe_min = if min_ev100 < max_ev100 { min_ev100 } else { max_ev100 }
-  let safe_max = if max_ev100 > safe_min { max_ev100 } else { safe_min + 0.01F }
-  { ..self, min_ev100: safe_min, max_ev100: safe_max }
-}
+pub type DepthOfField = @post_process_dof.DepthOfField
 
 ///|
-pub fn AutoExposure::with_filter(
-  self : AutoExposure,
-  low_percent : Float,
-  high_percent : Float,
-) -> AutoExposure {
-  let safe_low = if low_percent < 0.0F {
-    0.0F
-  } else if low_percent > 1.0F {
-    1.0F
-  } else {
-    low_percent
-  }
-  let mut safe_high = if high_percent < 0.0F {
-    0.0F
-  } else if high_percent > 1.0F {
-    1.0F
-  } else {
-    high_percent
-  }
-  if safe_high < safe_low {
-    safe_high = safe_low
-  }
-  { ..self, low_percent: safe_low, high_percent: safe_high }
-}
-
-///|
-pub fn AutoExposure::with_speed_brighten(
-  self : AutoExposure,
-  speed_brighten : Float,
-) -> AutoExposure {
-  {
-    ..self,
-    speed_brighten: if speed_brighten < 0.0F {
-      0.0F
-    } else {
-      speed_brighten
-    },
-  }
-}
-
-///|
-pub fn AutoExposure::with_speed_darken(
-  self : AutoExposure,
-  speed_darken : Float,
-) -> AutoExposure {
-  {
-    ..self,
-    speed_darken: if speed_darken < 0.0F {
-      0.0F
-    } else {
-      speed_darken
-    },
-  }
-}
-
-///|
-pub fn AutoExposure::with_exponential_transition_distance(
-  self : AutoExposure,
-  exponential_transition_distance : Float,
-) -> AutoExposure {
-  {
-    ..self,
-    exponential_transition_distance: if exponential_transition_distance <= 0.0F {
-      0.0001F
-    } else {
-      exponential_transition_distance
-    },
-  }
-}
-
-///|
-pub fn AutoExposure::with_compensation_curve(
-  self : AutoExposure,
-  compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?,
-) -> AutoExposure {
-  { ..self, compensation_curve, }
-}
-
-///|
-pub fn AutoExposure::with_metering_mask(
-  self : AutoExposure,
-  metering_mask : @asset.Handle[@asset.Image]?,
-) -> AutoExposure {
-  { ..self, metering_mask, }
-}
-
-///|
-pub(all) enum DepthOfFieldMode {
-  Bokeh
-  Gaussian
-} derive(Eq, Debug, ToJson, FromJson)
-
-///|
-pub fn DepthOfFieldMode::default() -> DepthOfFieldMode {
-  Gaussian
-}
-
-///|
-/// API-parity data model aligned with Bevy's `DepthOfField` camera component.
-pub(all) struct DepthOfField {
-  mut mode : DepthOfFieldMode
-  mut focal_distance : Float
-  mut sensor_height : Float
-  mut aperture_f_stops : Float
-  mut max_circle_of_confusion_diameter : Float
-  mut max_depth : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn DepthOfField::DepthOfField() -> DepthOfField {
-  {
-    mode: DepthOfFieldMode::default(),
-    focal_distance: 10.0F,
-    sensor_height: PhysicalCameraParameters::PhysicalCameraParameters().sensor_height,
-    aperture_f_stops: 4.0F,
-    max_circle_of_confusion_diameter: 64.0F,
-    max_depth: @float.infinity,
-  }
-}
-
-///|
-pub fn DepthOfField::from_physical_camera(
-  camera : PhysicalCameraParameters,
-) -> DepthOfField {
-  let depth_of_field = DepthOfField::DepthOfField()
-  depth_of_field.sensor_height = camera.sensor_height
-  depth_of_field.aperture_f_stops = camera.aperture_f_stops
-  depth_of_field
-}
+pub type DepthOfFieldMode = @post_process_dof.DepthOfFieldMode
 
 ///|
 /// Camera component aligned with Bevy's `Camera3d`.

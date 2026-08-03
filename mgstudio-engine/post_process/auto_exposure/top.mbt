@@ -16,19 +16,10 @@
 // Bevy source: `bevy/crates/bevy_post_process/src/auto_exposure/mod.rs`.
 
 ///|
-pub type AutoExposure = @pbr.AutoExposure
+pub type PhysicalCameraParameters = @camera_camera.PhysicalCameraParameters
 
 ///|
-pub type AutoExposureCompensationCurve = @pbr.AutoExposureCompensationCurve
-
-///|
-pub type AutoExposureCompensationCurveError = @pbr.AutoExposureCompensationCurveError
-
-///|
-pub type PhysicalCameraParameters = @pbr.PhysicalCameraParameters
-
-///|
-pub fn auto_exposure_default() -> @pbr.AutoExposure {
+pub fn auto_exposure_default() -> AutoExposure {
   AutoExposure()
 }
 
@@ -36,39 +27,39 @@ pub fn auto_exposure_default() -> @pbr.AutoExposure {
 pub fn auto_exposure_new(
   min_luminance : Float,
   max_luminance : Float,
-) -> @pbr.AutoExposure {
-  @pbr.AutoExposure::new(min_luminance, max_luminance)
+) -> AutoExposure {
+  AutoExposure::new(min_luminance, max_luminance)
 }
 
 ///|
 pub fn auto_exposure_with_range(
-  auto_exposure : @pbr.AutoExposure,
+  auto_exposure : AutoExposure,
   min_luminance : Float,
   max_luminance : Float,
-) -> @pbr.AutoExposure {
+) -> AutoExposure {
   auto_exposure.with_range(min_luminance, max_luminance)
 }
 
 ///|
-pub fn auto_exposure_compensation_curve_default() -> @pbr.AutoExposureCompensationCurve {
+pub fn auto_exposure_compensation_curve_default() -> AutoExposureCompensationCurve {
   AutoExposureCompensationCurve()
 }
 
 ///|
-pub fn[T : @pbr.AutoExposureCompensationCurveSource] auto_exposure_compensation_curve_from_curve(
+pub fn[T : AutoExposureCompensationCurveSource] auto_exposure_compensation_curve_from_curve(
   source : T,
-) -> @pbr.AutoExposureCompensationCurve raise @pbr.AutoExposureCompensationCurveError {
-  @pbr.AutoExposureCompensationCurve::from_curve(source)
+) -> AutoExposureCompensationCurve raise AutoExposureCompensationCurveError {
+  AutoExposureCompensationCurve::from_curve(source)
 }
 
 ///|
-pub fn physical_camera_parameters_default() -> @pbr.PhysicalCameraParameters {
+pub fn physical_camera_parameters_default() -> @camera_camera.PhysicalCameraParameters {
   PhysicalCameraParameters()
 }
 
 ///|
 pub fn physical_camera_parameters_ev100(
-  camera : @pbr.PhysicalCameraParameters,
+  camera : @camera_camera.PhysicalCameraParameters,
 ) -> Float {
   camera.ev100()
 }
