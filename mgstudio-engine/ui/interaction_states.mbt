@@ -114,7 +114,7 @@ pub fn on_remove_disabled(
 }
 
 ///|
-pub fn on_add_checkable(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
+pub fn on_add_checkable(add : @ecs.ComponentOn[@ecs.Add, Checkable]) -> Unit {
   let world = add.world()
   let entity = add.entity()
   let checked = try! world.contains_by_key(entity, ecs_key_checked)
@@ -124,8 +124,10 @@ pub fn on_add_checkable(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
 }
 
 ///|
-pub fn on_remove_checkable(add : @ecs.ComponentOn[@ecs.Add, Checked]) -> Unit {
-  update_accessibility_node(add.world(), add.entity(), fn(accessibility) {
+pub fn on_remove_checkable(
+  remove : @ecs.ComponentOn[@ecs.Remove, Checkable],
+) -> Unit {
+  update_accessibility_node(remove.world(), remove.entity(), fn(accessibility) {
     accessibility.clear_toggled()
   })
 }
