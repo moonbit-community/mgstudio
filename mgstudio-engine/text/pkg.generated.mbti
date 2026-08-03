@@ -21,9 +21,9 @@ pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoo
 
 pub let ecs_key_text : @ecs.ComponentKey[Text]
 
-pub let ecs_key_text2d : @ecs.ComponentKey[Text2d]
+pub let ecs_key_text2d : @ecs.ComponentKey[@sprite.Text2d]
 
-pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow]
+pub let ecs_key_text2d_shadow : @ecs.ComponentKey[@sprite.Text2dShadow]
 
 pub let ecs_key_text_background_color : @ecs.ComponentKey[TextBackgroundColor]
 
@@ -203,7 +203,7 @@ pub fn text_set_runtime_rem_size(Float) -> Unit
 
 pub fn text_set_scale_factor(TextHandle, Float) -> Unit
 
-pub fn text_set_shadow(TextHandle, Text2dShadow?) -> Unit
+pub fn text_set_shadow(TextHandle, @sprite.Text2dShadow?) -> Unit
 
 pub fn text_set_strikethrough(TextHandle, Strikethrough?) -> Unit
 
@@ -561,15 +561,8 @@ pub fn Text::Text() -> Self
 pub fn Text::new(String) -> Self
 pub impl @ecs.Component for Text
 
-pub(all) struct Text2d {
-  mut content : String
-}
-pub fn Text2d::Text2d() -> Self
-pub fn Text2d::new(String) -> Self
-pub impl @ecs.Component for Text2d
-
 pub struct Text2dBundle {
-  text : Text2d
+  text : @sprite.Text2d
   font : TextFont
   color : TextColor
   background_color : TextBackgroundColor?
@@ -581,7 +574,7 @@ pub struct Text2dBundle {
   bounds : TextBounds
   line_height : LineHeight
   font_hinting : FontHinting
-  shadow : Text2dShadow?
+  shadow : @sprite.Text2dShadow?
   transform : @transform.Transform
   layers : @render_layers.RenderLayers
   no_frustum_culling : Bool
@@ -589,8 +582,8 @@ pub struct Text2dBundle {
   y_axis : YAxisOrientation
   logical_viewport_size : @math.Vec2?
 }
-pub fn Text2dBundle::new(Text2d, TextFont, @transform.Transform) -> Self
-pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @transform.Transform, @render_layers.RenderLayers) -> Self
+pub fn Text2dBundle::new(@sprite.Text2d, TextFont, @transform.Transform) -> Self
+pub fn Text2dBundle::new_with_layers(@sprite.Text2d, TextFont, @transform.Transform, @render_layers.RenderLayers) -> Self
 pub fn Text2dBundle::spawn(Self) -> TextHandle
 pub fn Text2dBundle::with_anchor(Self, @sprite.Anchor) -> Self
 pub fn Text2dBundle::with_background_color(Self, TextBackgroundColor?) -> Self
@@ -599,22 +592,12 @@ pub fn Text2dBundle::with_color(Self, TextColor) -> Self
 pub fn Text2dBundle::with_font_hinting(Self, FontHinting) -> Self
 pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
 pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
-pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self
+pub fn Text2dBundle::with_shadow(Self, @sprite.Text2dShadow?) -> Self
 pub fn Text2dBundle::with_strikethrough(Self, Strikethrough?) -> Self
 pub fn Text2dBundle::with_strikethrough_color(Self, StrikethroughColor?) -> Self
 pub fn Text2dBundle::with_underline(Self, Underline?) -> Self
 pub fn Text2dBundle::with_underline_color(Self, UnderlineColor?) -> Self
 pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
-
-pub(all) struct Text2dShadow {
-  mut offset : @math.Vec2
-  mut color : @color.Color
-}
-pub fn Text2dShadow::Text2dShadow() -> Self
-pub fn Text2dShadow::new(@math.Vec2, @color.Color) -> Self
-pub fn Text2dShadow::with_color(Self, @color.Color) -> Self
-pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
-pub impl @ecs.Component for Text2dShadow
 
 pub(all) struct TextBackgroundColor {
   mut color : @color.Color
@@ -823,6 +806,9 @@ pub(all) enum YAxisOrientation {
 pub impl @ecs.Component for YAxisOrientation
 
 // Type aliases
+pub using @sprite {type Text2d}
+
+pub using @sprite {type Text2dShadow}
 
 // Traits
 pub(open) trait IntoFontSize {
@@ -835,4 +821,3 @@ pub(open) trait IntoFontSource {
 }
 pub impl IntoFontSource for String
 pub impl IntoFontSource for @asset.Handle[@asset.Font]
-

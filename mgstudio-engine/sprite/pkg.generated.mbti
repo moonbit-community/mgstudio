@@ -37,6 +37,10 @@ pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
 
 pub let ecs_key_sprite_mesh : @ecs.ComponentKey[SpriteMesh]
 
+pub let ecs_key_text2d : @ecs.ComponentKey[Text2d]
+
+pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow]
+
 pub fn ensure_render2d_required_components(@ecs.World) -> Unit
 
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[@wireframe2d.Wireframe2dConfig]
@@ -220,6 +224,23 @@ pub fn SpriteTiling::with_stretch_value(Self, Float) -> Self
 pub fn SpriteTiling::with_tile_x(Self, Bool) -> Self
 pub fn SpriteTiling::with_tile_y(Self, Bool) -> Self
 pub impl Default for SpriteTiling
+
+pub(all) struct Text2d {
+  mut content : String
+}
+pub fn Text2d::Text2d() -> Self
+pub fn Text2d::new(String) -> Self
+pub impl @ecs.Component for Text2d
+
+pub(all) struct Text2dShadow {
+  mut offset : @math.Vec2
+  mut color : @color.Color
+}
+pub fn Text2dShadow::Text2dShadow() -> Self
+pub fn Text2dShadow::new(@math.Vec2, @color.Color) -> Self
+pub fn Text2dShadow::with_color(Self, @color.Color) -> Self
+pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for Text2dShadow
 
 pub struct TextureSlice {
   texture_rect : @math.Rect

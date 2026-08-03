@@ -32,19 +32,9 @@ pub fn Text::new(content : String) -> Text {
 }
 
 ///|
-pub(all) struct Text2d {
-  mut content : String
-}
-
-///|
-pub fn Text2d::Text2d() -> Text2d {
-  Text2d::new("")
-}
-
-///|
-pub fn Text2d::new(content : String) -> Text2d {
-  { content, }
-}
+// Bevy source: `bevy/crates/bevy_sprite/src/text2d.rs` owns `Text2d`;
+// re-exported here for existing consumers until ISS-480 phase 4.
+pub type Text2d = @sprite.Text2d
 
 ///|
 pub(all) struct TextSpan {

@@ -840,36 +840,6 @@ pub fn TextShadow::with_color(
 }
 
 ///|
-pub(all) struct Text2dShadow {
-  mut offset : @math.Vec2
-  mut color : @color.Color
-}
-
-///|
-pub fn Text2dShadow::new(
-  offset : @math.Vec2,
-  color : @color.Color,
-) -> Text2dShadow {
-  { offset, color }
-}
-
-///|
-pub fn Text2dShadow::Text2dShadow() -> Text2dShadow {
-  Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @color.Color::black())
-}
-
-///|
-pub fn Text2dShadow::with_offset(
-  self : Text2dShadow,
-  offset : @math.Vec2,
-) -> Text2dShadow {
-  { ..self, offset, }
-}
-
-///|
-pub fn Text2dShadow::with_color(
-  self : Text2dShadow,
-  color : @color.Color,
-) -> Text2dShadow {
-  { ..self, color, }
-}
+// Bevy source: `bevy/crates/bevy_sprite/src/text2d.rs` owns `Text2dShadow`;
+// re-exported here for existing consumers until ISS-480 phase 4.
+pub type Text2dShadow = @sprite.Text2dShadow

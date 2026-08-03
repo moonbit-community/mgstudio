@@ -18,9 +18,7 @@ pub let ecs_key_text : @ecs.ComponentKey[Text] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_text2d : @ecs.ComponentKey[Text2d] = @ecs.register_component(
-  debug_name="text.text2d",
-)
+pub let ecs_key_text2d : @ecs.ComponentKey[Text2d] = @sprite.ecs_key_text2d
 
 ///|
 pub let ecs_key_text_span : @ecs.ComponentKey[TextSpan] = @ecs.register_component(
@@ -83,9 +81,7 @@ pub let ecs_key_text_font_hinting : @ecs.ComponentKey[FontHinting] = @ecs.regist
 )
 
 ///|
-pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow] = @ecs.register_component(
-  debug_name="text.text_2d_shadow",
-)
+pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow] = @sprite.ecs_key_text2d_shadow
 
 ///|
 pub let ecs_key_text_shadow : @ecs.ComponentKey[TextShadow] = @ecs.register_component(
@@ -115,11 +111,6 @@ let ecs_res_key_font_atlas_set : @ecs.ResourceKey[FontAtlasSet] = @ecs.register_
 ///|
 pub impl @ecs.Component for Text with fn component() {
   ecs_key_text
-}
-
-///|
-pub impl @ecs.Component for Text2d with fn component() {
-  ecs_key_text2d
 }
 
 ///|
@@ -180,11 +171,6 @@ pub impl @ecs.Component for LineHeight with fn component() {
 ///|
 pub impl @ecs.Component for FontHinting with fn component() {
   ecs_key_text_font_hinting
-}
-
-///|
-pub impl @ecs.Component for Text2dShadow with fn component() {
-  ecs_key_text2d_shadow
 }
 
 ///|
