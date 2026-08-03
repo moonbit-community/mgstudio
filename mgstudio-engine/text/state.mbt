@@ -312,7 +312,7 @@ pub struct TextSpanInstance {
 // `ComputedTextBlock`, `TextBounds`, `Anchor`, `GlobalTransform`, ...).
 pub struct TextInstance {
   id : Int
-  text : Text2d
+  content : String
   font : TextFont
   color : TextColor
   background_color : TextBackgroundColor?
@@ -324,12 +324,12 @@ pub struct TextInstance {
   bounds : TextBounds
   line_height : LineHeight
   font_hinting : FontHinting
-  shadow : Text2dShadow?
+  shadow : TextShadow?
   transform : @transform.Transform
   layers : @camera_render_layers.RenderLayers
   view_visible : Bool
   no_frustum_culling : Bool
-  anchor : @sprite.Anchor
+  anchor : @math.Vec2
   y_axis : YAxisOrientation
   /// When set, this text handle is treated as "UI text" and will be positioned
   /// relative to a UI node's top-left corner (Bevy UI extraction semantics).
@@ -370,6 +370,14 @@ let text_state : TextState = {
 /// the `extract_text2d_sprite` query over public `bevy_text` components).
 pub fn text_instances() -> Array[TextInstance] {
   text_state.texts
+}
+
+///|
+fn text_shadow_opt_from_2d(shadow : @sprite.Text2dShadow?) -> TextShadow? {
+  match shadow {
+    Some(shadow) => Some(TextShadow::new(shadow.offset, shadow.color))
+    None => None
+  }
 }
 
 ///|
@@ -560,7 +568,7 @@ pub fn text_debug_all_draws() -> Array[TextDebugGlyphDraw] {
 pub fn text_debug_text_infos() -> Array[TextDebugTextInfo] {
   let infos : Array[TextDebugTextInfo] = []
   for instance in text_state.texts {
-    infos.push({ text_id: instance.id, content: instance.text.content })
+    infos.push({ text_id: instance.id, content: instance.content })
   }
   infos
 }
@@ -672,7 +680,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
   text_runtime_mark_layout_dirty()
   text_state.texts.push({
     id,
-    text: bundle.text,
+    content: bundle.text.content,
     font: bundle.font,
     color: bundle.color,
     background_color: bundle.background_color,
@@ -684,12 +692,12 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     bounds: bundle.bounds,
     line_height: bundle.line_height,
     font_hinting: bundle.font_hinting,
-    shadow: bundle.shadow,
+    shadow: text_shadow_opt_from_2d(bundle.shadow),
     transform: bundle.transform,
     layers: bundle.layers,
     view_visible: true,
     no_frustum_culling: bundle.no_frustum_culling,
-    anchor: bundle.anchor,
+    anchor: bundle.anchor.as_vec(),
     y_axis: bundle.y_axis,
     ui_node_size: None,
     logical_viewport_size: bundle.logical_viewport_size,
@@ -813,7 +821,7 @@ pub fn text_set_content(handle : TextHandle, content : String) -> Unit {
   text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => {
     ..instance,
-    text: { content, },
+    content,
     layout_dirty: true,
     computed: { ..instance.computed, needs_rerender: true },
   })
@@ -968,7 +976,7 @@ pub fn text_set_shadow(handle : TextHandle, shadow : Text2dShadow?) -> Unit {
   text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => {
     ..instance,
-    shadow,
+    shadow: text_shadow_opt_from_2d(shadow),
     layout_dirty: true,
     computed: { ..instance.computed, needs_rerender: true },
   })
@@ -1039,7 +1047,10 @@ pub fn text_set_no_frustum_culling(
 ///|
 /// Update the anchor of a text handle without marking it as needing rerender.
 pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
-  text_update_instance(handle, instance => { ..instance, anchor, })
+  text_update_instance(handle, instance => {
+    ..instance,
+    anchor: anchor.as_vec(),
+  })
 }
 
 ///|
@@ -1195,7 +1206,7 @@ pub fn text_set_runtime_rem_size(rem_size : Float) -> Unit {
 /// Get the current text content for a handle.
 pub fn text_get_content(handle : TextHandle) -> String? {
   if text_state_find_index_by_id(handle.id) is Some(index) {
-    return Some(text_state.texts[index].text.content)
+    return Some(text_state.texts[index].content)
   }
   None
 }
@@ -1251,7 +1262,7 @@ pub fn text_get_visual_bounds(handle : TextHandle) -> @math.Rect? {
       Some(node_size) =>
         @math.Vec2::new(0.0F - node_size.x / 2.0F, 0.0F - node_size.y / 2.0F)
       None => {
-        let anchor = instance.anchor.as_vec()
+        let anchor = instance.anchor
         match instance.y_axis {
           TopToBottom =>
             @math.Vec2::new(

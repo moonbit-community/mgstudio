@@ -667,7 +667,7 @@ pub fn TextHandle::new(Int) -> Self
 
 pub struct TextInstance {
   id : Int
-  text : @sprite.Text2d
+  content : String
   font : TextFont
   color : TextColor
   background_color : TextBackgroundColor?
@@ -679,12 +679,12 @@ pub struct TextInstance {
   bounds : TextBounds
   line_height : LineHeight
   font_hinting : FontHinting
-  shadow : @sprite.Text2dShadow?
+  shadow : TextShadow?
   transform : @transform.Transform
   layers : @render_layers.RenderLayers
   view_visible : Bool
   no_frustum_culling : Bool
-  anchor : @sprite.Anchor
+  anchor : @math.Vec2
   y_axis : YAxisOrientation
   ui_node_size : @math.Vec2?
   logical_viewport_size : @math.Vec2?

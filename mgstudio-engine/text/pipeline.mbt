@@ -201,7 +201,7 @@ fn build_text_buffer(
   rem_size : Float,
   scale_factor : Float,
 ) -> CosmicBuffer {
-  let mut text = instance.text.content
+  let mut text = instance.content
   let spans : Array[TextSpanRange] = []
   let mut cursor = text.length()
   spans.push({ start: 0, length: cursor })
@@ -737,7 +737,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   if base_family is Some(family) {
     base_attrs = base_attrs.family(family)
   }
-  spans.push((instance.text.content, base_attrs))
+  spans.push((instance.content, base_attrs))
   for i in 0..<instance.spans.length() {
     let sp = instance.spans[i]
     let idx = i + 1

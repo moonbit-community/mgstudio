@@ -659,7 +659,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         0.0F - node_size.y / 2.0F,
       )
     } else {
-      let a = instance.anchor.as_vec()
+      let a = instance.anchor
       // Bevy parity: top_left = (Anchor::TOP_LEFT - anchor) * size
       // for the default TopToBottom layout orientation.
       origin_offset_layout = match instance.y_axis {
