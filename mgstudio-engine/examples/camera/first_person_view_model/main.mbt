@@ -112,7 +112,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F),
   )
 
-  let world_camera = @camera.Camera3dBundle::new_with_projection(
+  let world_camera = @pbr.Camera3dBundle::new_with_projection(
     Camera(),
     Perspective({ ..PerspectiveProjection3d(), fov: degrees_to_radians(90.0F) }),
     @transform.Transform::identity(),
@@ -126,7 +126,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
     @hierarchy.Parent::new(player),
   )
 
-  let view_model_camera = @camera.Camera3dBundle::new_with_projection(
+  let view_model_camera = @pbr.Camera3dBundle::new_with_projection(
     @camera_camera.Camera::Camera().with_order(1),
     Perspective({ ..PerspectiveProjection3d(), fov: degrees_to_radians(70.0F) }),
     @transform.Transform::identity(),

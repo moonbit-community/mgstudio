@@ -267,7 +267,7 @@ fn setup(
     scale: 0.01F,
   }
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new_with_projection(
+    @engine_pbr.Camera3dBundle::new_with_projection(
       Camera(),
       Orthographic(orthographic),
       @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(

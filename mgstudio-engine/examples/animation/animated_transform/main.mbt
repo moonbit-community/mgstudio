@@ -120,7 +120,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.GlobalAmbientLight::new(@color.Color::white(), 150.0F),
   )
 
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),

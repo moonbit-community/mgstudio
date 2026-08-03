@@ -22,7 +22,7 @@ fn setup(world : @ecs.World) -> Unit {
     scaling_mode: FixedVertical(FIXED_VIEWPORT_HEIGHT),
   })
 
-  @camera.Camera3dBundle::new_with_projection(
+  @pbr.Camera3dBundle::new_with_projection(
     Camera(),
     projection,
     @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(

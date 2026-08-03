@@ -32,9 +32,6 @@ pub type ComputedCameraValues = @camera_computed.ComputedCameraValues
 pub type Camera3d = @camera_components3d.Camera3d
 
 ///|
-pub type Camera3dBundle = @pbr.Camera3dBundle
-
-///|
 pub type SubCameraView3d = @camera_camera.SubCameraView3d
 
 ///|

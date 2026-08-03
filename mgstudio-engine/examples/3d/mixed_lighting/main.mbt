@@ -218,7 +218,7 @@ fn lightmap_component(
 fn spawn_camera(commands : @app.Commands) -> Unit {
   commands.queue(fn(world) {
     ignore(
-      @camera.Camera3dBundle::new(
+      @pbr.Camera3dBundle::new(
         Camera(),
         @transform.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
           @math.Vec3::new(0.0F, 0.3F, 0.0F),

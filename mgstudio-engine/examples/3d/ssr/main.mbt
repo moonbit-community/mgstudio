@@ -878,7 +878,7 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World, app_settings : AppSettings) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       Camera(),
       @transform.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
         @math.Vec3::zero(),

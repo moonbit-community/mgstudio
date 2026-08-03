@@ -293,7 +293,7 @@ fn spawn_main_scene(
 
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @camera_camera.Camera::Camera().with_clear_color(
       @color.Color::srgb(0.18F, 0.20F, 0.24F),
     ),

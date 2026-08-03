@@ -320,7 +320,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   shadow_caster_receiver_state.val.directional_light = Some(directional_light)
 
-  @camera.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),

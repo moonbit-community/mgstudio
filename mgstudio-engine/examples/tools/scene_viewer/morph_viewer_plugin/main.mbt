@@ -64,7 +64,7 @@ fn setup(
   commands.insert_resource(MorphAssetState::{ primitive_handle, printed: false })
   ignore(
     commands.spawn(
-      @camera.Camera3dBundle::new(
+      @pbr.Camera3dBundle::new(
         Camera(),
         @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
           @math.Vec3::zero(),

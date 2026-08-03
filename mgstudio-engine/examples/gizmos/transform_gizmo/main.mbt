@@ -144,7 +144,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   // Camera.
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @camera_camera.Camera::Camera(),
     @transform.Transform::from_xyz(0.0F, 4.0F, 8.0F).looking_at(
       @math.Vec3::zero(),

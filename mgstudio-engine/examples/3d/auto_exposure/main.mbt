@@ -385,7 +385,7 @@ fn setup(world : @ecs.World) -> Unit {
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
   let basic_compensation_curve = build_basic_compensation_curve(world)
 
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       Camera(),
       @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),

@@ -57,7 +57,7 @@ fn spawn_perspective_camera(
   sub_camera_view? : @camera.SubCameraView3d? = None,
   moving? : Bool = false,
 ) -> Unit {
-  let entity = @camera.Camera3dBundle::new(
+  let entity = @pbr.Camera3dBundle::new(
       @camera_camera.Camera::Camera().with_order(order),
       camera_sub_view_state.val.base_transform,
     )
@@ -77,7 +77,7 @@ fn spawn_orthographic_camera(
   sub_camera_view? : @camera.SubCameraView3d? = None,
   moving? : Bool = false,
 ) -> Unit {
-  let entity = @camera.Camera3dBundle::new_with_projection(
+  let entity = @pbr.Camera3dBundle::new_with_projection(
       @camera_camera.Camera::Camera().with_order(order),
       Orthographic({
         ..@camera.OrthographicProjection3d::default_3d(),

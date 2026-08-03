@@ -1,5 +1,4 @@
 import {
-  "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/mesh/primitives/dim3" @mesh_primitives_dim3,

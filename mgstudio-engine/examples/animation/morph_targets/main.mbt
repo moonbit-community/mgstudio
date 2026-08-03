@@ -52,7 +52,7 @@ fn setup(
 
   ignore(
     commands.spawn(
-      @camera.Camera3dBundle::new(
+      @pbr.Camera3dBundle::new(
         Camera(),
         @transform.Transform::from_xyz(3.0F, 2.1F, 10.2F).looking_at(
           @math.Vec3::zero(),

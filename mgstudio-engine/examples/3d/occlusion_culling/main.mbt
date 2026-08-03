@@ -187,7 +187,7 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity().with_rotation(light_rot),
   )
 
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(0.0F, 0.0F, 9.0F).looking_at(
       @math.Vec3::zero(),

@@ -127,7 +127,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
       scene_focus(),

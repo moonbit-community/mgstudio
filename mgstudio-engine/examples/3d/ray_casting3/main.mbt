@@ -47,7 +47,7 @@ fn setup(world : @ecs.World) -> Unit {
     transform: camera_transform,
   }
   @rapier_examples.rapier3d_basic_lighting(world)
-  @camera.Camera3dBundle::new(Camera(), camera_transform).spawn(world) |> ignore
+  @pbr.Camera3dBundle::new(Camera(), camera_transform).spawn(world) |> ignore
   ignore(
     @rapier_examples.rapier3d_spawn_ground(
       world,

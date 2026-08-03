@@ -29,7 +29,7 @@ fn main {
 ///|
 fn setup_graphics(world : @ecs.World) -> Unit {
   let clear_color = @color.Color::new(0.9764706F, 0.9764706F, 1.0F, 1.0F)
-  @camera.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @camera_camera.Camera::new(clear_color),
     @transform.Transform::from_xyz(0.0F, 0.0F, 25.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),

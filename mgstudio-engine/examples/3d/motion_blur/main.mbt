@@ -268,7 +268,7 @@ fn set_camera_fov(
 
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::identity(),
   ).spawn(world)

@@ -17,7 +17,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/transform",
 }
 
@@ -93,8 +92,6 @@ pub using @Milky2018/mgstudio/camera/camera {type Camera}
 pub using @components2d {type Camera2d}
 
 pub using @components3d {type Camera3d}
-
-pub using @pbr {type Camera3dBundle}
 
 pub using @clear_color {type ClearColor}
 

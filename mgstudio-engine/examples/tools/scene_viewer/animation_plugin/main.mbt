@@ -48,7 +48,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   ignore(
-    @camera.Camera3dBundle::new(
+    @pbr.Camera3dBundle::new(
       Camera(),
       @transform.Transform::from_xyz(5.0F, 4.0F, 7.0F).looking_at(
         @math.Vec3::new(0.0F, 1.0F, 0.0F),

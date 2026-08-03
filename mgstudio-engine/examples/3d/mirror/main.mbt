@@ -459,7 +459,7 @@ fn spawn_main_camera(
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new_with_projection(
+    @pbr.Camera3dBundle::new_with_projection(
       Camera(),
       Perspective(camera_projection),
       camera_transform,
@@ -599,7 +599,7 @@ fn spawn_mirror_camera(
   let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
     camera_transform, camera_projection, mirror_transform,
   )
-  let mirror_camera = @camera.Camera3dBundle::new_with_projection(
+  let mirror_camera = @pbr.Camera3dBundle::new_with_projection(
     @camera_camera.Camera::new(@color.Color::black())
     .with_order(-1)
     .with_invert_culling(true),

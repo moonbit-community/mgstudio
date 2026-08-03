@@ -444,7 +444,7 @@ fn setup(
   camera_transform : @app.Res[CameraTransform],
 ) -> Unit {
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new(Camera(), camera_transform.get().transform)
+    @pbr.Camera3dBundle::new(Camera(), camera_transform.get().transform)
     .with_color_grading(Some(ColorGrading()))
     .with_distance_fog(
       Some(

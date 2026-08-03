@@ -116,7 +116,7 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
 ///|
 #warnings("-unnecessary_annotation")
 fn setup(world : @ecs.World) -> Unit {
-  @camera.Camera3dBundle::new(Camera(), @transform.Transform::identity()).spawn(
+  @pbr.Camera3dBundle::new(Camera(), @transform.Transform::identity()).spawn(
     world,
   )
   |> ignore

@@ -129,7 +129,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
     @color.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     @pbr.FogFalloff3d::linear(5.0F, 20.0F),
   )
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       Camera(),
       @transform.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),

@@ -199,7 +199,7 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
 
-  @camera.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),

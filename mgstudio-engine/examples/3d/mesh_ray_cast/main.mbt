@@ -342,7 +342,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  @camera.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     raycast_state.val.camera,
     raycast_state.val.camera_transform,
   ).spawn(world)

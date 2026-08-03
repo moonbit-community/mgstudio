@@ -447,7 +447,7 @@ pub fn spawn_gizmo_meshes(world : @ecs.World) -> Unit {
   // output. `ClearColorConfig::None` does not help, because the composite
   // rewrites the whole surface regardless of the load op. Tracked as ISS-479;
   // this spawn stays faithful to the Bevy source.
-  let overlay = @camera.Camera3dBundle::new(
+  let overlay = @pbr.Camera3dBundle::new(
     @camera_camera.Camera::Camera().with_order(1),
     @transform.Transform::identity(),
   ).spawn(world)

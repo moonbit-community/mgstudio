@@ -175,7 +175,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let camera = @camera.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),

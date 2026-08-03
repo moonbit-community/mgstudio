@@ -240,7 +240,7 @@ fn spawn_camera(
     @math.Quat::from_euler(YXZ, -134.76F / 180.0F * @math.pi(), -0.175F, 0.0F),
   )
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new(Camera(), camera_transform),
+    @pbr.Camera3dBundle::new(Camera(), camera_transform),
   )
   commands.entity(camera).insert_component(PcssCamera::{  })
   commands.entity(camera).insert_component(@pbr.ShadowFilteringMethod::Gaussian)

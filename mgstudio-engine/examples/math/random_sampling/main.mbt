@@ -217,7 +217,7 @@ fn setup(
     @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
   )
 
-  @camera.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),

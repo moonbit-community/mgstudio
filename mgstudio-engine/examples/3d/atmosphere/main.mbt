@@ -351,7 +351,7 @@ fn setup_camera_fog(
   })
   ignore(commands.spawn_component(@pbr.Atmosphere::earth(earth_medium)))
   let camera = commands.spawn(
-    @camera.Camera3dBundle::new(
+    @pbr.Camera3dBundle::new(
       @camera_camera.Camera::Camera().with_clear_color(@color.Color::black()),
       @transform.Transform::from_xyz(-2.8F, 0.045F, 0.0F).looking_at(
         @math.Vec3::zero(),

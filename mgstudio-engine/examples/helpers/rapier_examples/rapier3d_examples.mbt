@@ -44,7 +44,7 @@ pub fn rapier3d_camera(
   eye : @math.Vec3,
   target : @math.Vec3,
 ) -> Unit {
-  @camera.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     Camera(),
     @transform.Transform::from_xyz(eye.x, eye.y, eye.z).looking_at(
       target,
