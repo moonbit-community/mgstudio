@@ -192,6 +192,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
 // as `Option<&T>` by the render path, with an absent `DebandDither` meaning
 // `Disabled`. An earlier version of this test asserted that the bundle injected
 // `TonyMcMapface` and `Enabled`, which made every camera diverge from Bevy.
+
 ///|
 test "render3d: Camera3dBundle leaves tonemapping and deband dither unset" {
   let world = @ecs.World::new()

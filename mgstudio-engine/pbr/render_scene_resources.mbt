@@ -21,6 +21,7 @@
 // wrote, and the first write of a frame clears while later writes load. Keying
 // this by camera entity gives each camera a private texture, and the last
 // camera's composite then erases every earlier camera's output (ISS-479).
+
 ///|
 priv struct MotionBlurTargetsEntry {
   render_target_id : Int

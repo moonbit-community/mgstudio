@@ -97,13 +97,13 @@ pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
 pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
 
-pub fn on_add_checkable(@ecs.ComponentOn[@ecs.Add, Checked]) -> Unit
+pub fn on_add_checkable(@ecs.ComponentOn[@ecs.Add, Checkable]) -> Unit
 
 pub fn on_add_checked(@ecs.ComponentOn[@ecs.Add, Checked]) -> Unit
 
 pub fn on_add_disabled(@ecs.ComponentOn[@ecs.Add, InteractionDisabled]) -> Unit
 
-pub fn on_remove_checkable(@ecs.ComponentOn[@ecs.Add, Checked]) -> Unit
+pub fn on_remove_checkable(@ecs.ComponentOn[@ecs.Remove, Checkable]) -> Unit
 
 pub fn on_remove_checked(@ecs.ComponentOn[@ecs.Remove, Checked]) -> Unit
 
@@ -917,4 +917,3 @@ pub impl @ecs.Component for ZIndex
 // Type aliases
 
 // Traits
-

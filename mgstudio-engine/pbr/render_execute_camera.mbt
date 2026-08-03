@@ -651,5 +651,3 @@ fn render3d_execute_camera(
     camera.scale_factor,
   )
 }
-
-

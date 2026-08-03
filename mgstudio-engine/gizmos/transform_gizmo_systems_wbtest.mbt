@@ -67,12 +67,14 @@ fn gizmo_systems_test_scene() -> GizmoSystemsTestScene {
     @transform.Transform::from_xyz(-2.0F, 1.0F, 0.0F),
   )
   let window = world.spawn_empty()
-  try! world.set_by_key(window, @window.ecs_key_window, @window.Window::Window())
   try! world.set_by_key(
     window,
-    @window.ecs_key_primary_window,
-    @window.PrimaryWindow::{  },
+    @window.ecs_key_window,
+    @window.Window::Window(),
   )
+  try! world.set_by_key(window, @window.ecs_key_primary_window, @window.PrimaryWindow::{
+
+  })
   { app, focus, window }
 }
 
@@ -131,7 +133,10 @@ fn gizmo_systems_test_x_handle_screen(
 test "transform_gizmo: hover marks the axis under the cursor" {
   let scene = gizmo_systems_test_scene()
   defer scene.app.world().close()
-  gizmo_systems_test_place_cursor(scene, gizmo_systems_test_x_handle_screen(scene))
+  gizmo_systems_test_place_cursor(
+    scene,
+    gizmo_systems_test_x_handle_screen(scene),
+  )
   ignore(scene.app.update())
   let state = transform_gizmo_state_of(scene.app.world())
   debug_inspect(state.hovered_axis is Some(X), content="true")
@@ -144,7 +149,10 @@ test "transform_gizmo: hover clears when the cursor is elsewhere" {
   defer scene.app.world().close()
   // First frame on the handle, second frame in an empty corner: the hover
   // system must clear the stale axis, not only set fresh ones.
-  gizmo_systems_test_place_cursor(scene, gizmo_systems_test_x_handle_screen(scene))
+  gizmo_systems_test_place_cursor(
+    scene,
+    gizmo_systems_test_x_handle_screen(scene),
+  )
   ignore(scene.app.update())
   gizmo_systems_test_place_cursor(scene, @math.Vec2::new(5.0F, 5.0F))
   ignore(scene.app.update())
@@ -197,7 +205,10 @@ test "transform_gizmo: hover does not retarget during an active drag" {
   // hover system must leave `hovered_axis` cleared instead of retargeting;
   // since the button is not held the drag system deactivates in the same
   // frame, and hover ran with the pre-deactivation state.
-  gizmo_systems_test_place_cursor(scene, gizmo_systems_test_x_handle_screen(scene))
+  gizmo_systems_test_place_cursor(
+    scene,
+    gizmo_systems_test_x_handle_screen(scene),
+  )
   let focus_transform = @transform.Transform::from_xyz(-2.0F, 1.0F, 0.0F)
   set_gizmo_state(world, {
     ..transform_gizmo_state_of(world),

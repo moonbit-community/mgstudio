@@ -3,7 +3,6 @@ package "Milky2018/mgstudio/ui_render"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
@@ -12,7 +11,7 @@ import {
 }
 
 // Values
-pub fn draw_extracted_ui_overlay_for_camera(@ecs.World, @core.Entity, @render_layers.RenderLayers, Int, Int, Int, @color.Color, Int, Int, Int, Int, Float, Float, Float) -> Unit
+pub fn draw_extracted_ui_overlay_for_camera(@ecs.World, @core.Entity, Int, Int, Int, @color.Color, Int, Int, Int, Int, Float, Float, Float) -> Unit
 
 pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias]
 
@@ -52,4 +51,3 @@ pub impl @app.Plugin for UiRenderPlugin
 // Type aliases
 
 // Traits
-

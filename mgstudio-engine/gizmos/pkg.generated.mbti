@@ -35,8 +35,6 @@ pub const CONE_RADIUS : Float = 0.05
 
 pub const INACTIVE_ALPHA : Float = 0.5
 
-pub const MIN_SCALE : Float = 0.01
-
 pub const ROTATE_RING_RADIUS : Float = 1.0
 
 pub const SCALE_CUBE_SIZE : Float = 0.07
@@ -224,8 +222,6 @@ pub fn simplex_stroke_font_line_height() -> Float
 pub fn skinned_mesh_bounds_gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn skinned_mesh_bounds_gizmo_plugin_with(@app.App[@ecs.World], SkinnedMeshBoundsGizmoPlugin) -> @app.App[@ecs.World]
-
-pub fn snap_axis(@math.Vec3, @math.Vec3, TransformGizmoAxis, Float) -> @math.Vec3
 
 pub fn transform_gizmo_color_view() -> @color.Color
 
