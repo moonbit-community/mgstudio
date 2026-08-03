@@ -185,13 +185,38 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
 }
 
 ///|
-test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
+// Bevy source: `bevy/crates/bevy_camera/src/components.rs`.
+//
+// `Camera3d` declares `#[require(Camera, Projection)]` and nothing else, so a
+// bare 3d camera carries neither `Tonemapping` nor `DebandDither`. Both are read
+// as `Option<&T>` by the render path, with an absent `DebandDither` meaning
+// `Disabled`. An earlier version of this test asserted that the bundle injected
+// `TonyMcMapface` and `Enabled`, which made every camera diverge from Bevy.
+///|
+test "render3d: Camera3dBundle leaves tonemapping and deband dither unset" {
   let world = @ecs.World::new()
   defer world.close()
   let entity = Camera3dBundle::new(Camera(), @transform.Transform::identity()).spawn(
     world,
   )
+  debug_inspect(
+    (try! world.get_by_key(entity, ecs_key_tonemapping)) is None,
+    content="true",
+  )
+  debug_inspect(
+    (try! world.get_by_key(entity, ecs_key_deband_dither)) is None,
+    content="true",
+  )
+}
 
+///|
+test "render3d: Camera3dBundle stores explicit tonemapping and deband dither" {
+  let world = @ecs.World::new()
+  defer world.close()
+  let entity = Camera3dBundle::new(Camera(), @transform.Transform::identity())
+    .with_tonemapping(Some(TonyMcMapface))
+    .with_deband_dither(Some(Enabled))
+    .spawn(world)
   let tonemapping_ok = match
     (try! world.get_by_key(entity, ecs_key_tonemapping)) {
     Some(TonyMcMapface) => true
@@ -236,12 +261,14 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
     is Some(_),
     content="true",
   )
+  // Bevy's `Camera3d` requires only `Camera` and `Projection`; tonemapping and
+  // deband dither are opt-in components, not required ones.
   debug_inspect(
-    (try! world.get_by_key(entity, ecs_key_tonemapping)) is Some(_),
+    (try! world.get_by_key(entity, ecs_key_tonemapping)) is None,
     content="true",
   )
   debug_inspect(
-    (try! world.get_by_key(entity, ecs_key_deband_dither)) is Some(_),
+    (try! world.get_by_key(entity, ecs_key_deband_dither)) is None,
     content="true",
   )
   debug_inspect(
@@ -261,22 +288,14 @@ test "render3d: required components align PBR-owned Camera3d authoring" {
     content="true",
   )
 
-  let tonemapping_ok = match
-    (try! world.get_by_key(entity, ecs_key_tonemapping)) {
-    Some(TonyMcMapface) => true
-    _ => false
-  }
-  let deband_ok = match (try! world.get_by_key(entity, ecs_key_deband_dither)) {
-    Some(Enabled) => true
-    _ => false
-  }
+  // Tonemapping and deband dither are asserted absent above; this block used to
+  // re-assert them as present, contradicting itself once `Camera3d` stopped
+  // requiring them.
   let target_ok = match
     (try! world.get_by_key(entity, @camera_camera.ecs_key_render_target)) {
     Some(Screen) => true
     _ => false
   }
-  debug_inspect(tonemapping_ok, content="true")
-  debug_inspect(deband_ok, content="true")
   debug_inspect(target_ok, content="true")
 }
 

@@ -2768,9 +2768,15 @@ test "render3d: Mesh3d tuple insert receives visibility required components" {
     try! world.get_by_key(entity, @visibility.ecs_key_inherited_visibility),
     content="Some({ visible: true })",
   )
+  // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs`.
+  //
+  // `ViewVisibility` derives `Default` over its bit-packed field, so a freshly
+  // required component starts not-visible. `CheckVisibility` recomputes it every
+  // frame, and a default of visible would let an entity render for one frame
+  // before the first check runs.
   debug_inspect(
     try! world.get_by_key(entity, @visibility.ecs_key_view_visibility),
-    content="Some({ bits: 1 })",
+    content="Some({ bits: 0 })",
   )
 }
 
