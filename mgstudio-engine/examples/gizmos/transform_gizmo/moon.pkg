@@ -2,6 +2,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/camera/camera" @camera_camera,
   "Milky2018/mgstudio/ecs",
@@ -14,7 +15,9 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/picking",
   "Milky2018/mgstudio/picking/mesh_picking" @mesh_picking_plugin,
+  "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
+  "Milky2018/mgstudio/ui",
 }
 
 supported_targets = "native"

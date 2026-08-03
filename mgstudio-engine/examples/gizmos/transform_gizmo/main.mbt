@@ -43,6 +43,30 @@ fn solid_material(
 }
 
 ///|
+const INSTRUCTIONS_HEADER : String = "Click an object to select it\n1: Translate | 2: Rotate | 3: Scale | X: World/Local space"
+
+///|
+// The example has exactly one `Text` entity, so the per-frame readout below
+// rewrites all of them, as `examples/3d/depth_of_field` does. Bevy filters
+// with an `InstructionsText` marker instead.
+fn spawn_instructions(
+  commands : @app.Commands,
+  _assets : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(INSTRUCTIONS_HEADER),
+        @ui.Node::Node()
+        .with_position_type(Absolute)
+        .with_top(@ui.px(12.0F))
+        .with_left(@ui.px(12.0F)),
+      ),
+    ),
+  )
+}
+
+///|
 fn setup(world : @ecs.World) -> Unit {
   // Ground plane (not pickable). Bevy uses `Plane3d::default().mesh().size(10, 10)`.
   let ground = @pbr.MeshMaterial3dBundle::new(
@@ -163,12 +187,38 @@ fn gizmo_mode_keys(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn update_instructions(
+  texts : @ecs.Query[@ecs.Write[@text.Text], @ecs.All],
+  gizmo_settings : @app.Res[@gizmos.TransformGizmoSettings],
+) -> Unit {
+  let settings = gizmo_settings.get()
+  let mode_str = match settings.mode {
+    Translate => "Translate"
+    Rotate => "Rotate"
+    Scale => "Scale"
+  }
+  let space_str = match settings.space {
+    World => "World"
+    Local => "Local"
+  }
+  try! texts.view(fn(_entity, value) {
+    value.set(
+      @text.Text::new(
+        "\{INSTRUCTIONS_HEADER}\nMode: \{mode_str} | Space: \{space_str}",
+      ),
+    )
+  })
+}
+
+///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.DefaultPlugins::DefaultPlugins())
   .add_plugins(@mesh_picking_plugin.MeshPickingPlugin::MeshPickingPlugin())
   .add_plugins(@gizmos.TransformGizmoPlugin::TransformGizmoPlugin())
   .add_systems_world(Startup, setup)
+  .add_systems_param2(Startup, spawn_instructions)
   .add_systems_world(Update, gizmo_mode_keys)
+  .add_systems_param2(Update, update_instructions)
   .run()
 }

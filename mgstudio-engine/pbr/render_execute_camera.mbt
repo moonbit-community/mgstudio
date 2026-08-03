@@ -638,7 +638,6 @@ fn render3d_execute_camera(
   @ui_render.draw_extracted_ui_overlay_for_camera(
     world,
     camera_entity,
-    camera.layers,
     camera.target_id,
     overlay_width_logical,
     overlay_height_logical,

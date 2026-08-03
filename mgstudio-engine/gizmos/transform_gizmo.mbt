@@ -48,7 +48,7 @@ pub const INACTIVE_ALPHA : Float = 0.5
 ///
 /// Bevy keeps this private to `transform_gizmo.rs`; it is exposed here only
 /// until `transform_gizmo_drag`, its sole consumer, is ported.
-pub const MIN_SCALE : Float = 0.01
+const MIN_SCALE : Float = 0.01
 
 ///|
 /// Default screen-space pixel distance threshold for hover detection.
@@ -456,7 +456,7 @@ fn snap_value(value : Float, increment : Float) -> Float {
 ///
 /// Bevy keeps this private; it is exposed here only until
 /// `transform_gizmo_drag`, its sole consumer, is ported.
-pub fn snap_axis(
+fn snap_axis(
   position : @math.Vec3,
   original : @math.Vec3,
   axis : TransformGizmoAxis,

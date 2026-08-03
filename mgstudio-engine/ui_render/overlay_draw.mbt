@@ -133,17 +133,23 @@ fn ui_overlay_physical_scissor_for_camera(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_ui_render/src/lib.rs`.
+//
+// UI nodes route to a camera through `UiTargetCamera` / the default UI camera
+// only; Bevy never consults `RenderLayers` for UI. Filtering by the camera's
+// layers here hid every UI node from a camera with non-default layers, such as
+// the transform gizmo's overlay camera, which is the highest-order camera on
+// the primary window and therefore exactly the one the default UI camera
+// selection picks (ISS-478).
 fn ui_overlay_items_for_camera(
   nodes : @ui_render_runtime.ExtractedUiNodes,
   camera_entity : @core.Entity,
-  layers : @camera_render_layers.RenderLayers,
 ) -> Array[UiOverlayDrawItem] {
   let items : Array[UiOverlayDrawItem] = []
   let mut tie = 0
   for i in 0..<nodes.sprites.length() {
     let sprite = nodes.sprites[i]
-    if sprite.payload.layers.matches(layers) &&
-      @ui_render_runtime.ui_overlay_matches_camera(
+    if @ui_render_runtime.ui_overlay_matches_camera(
         sprite.extracted_camera_entity,
         camera_entity,
       ) {
@@ -157,8 +163,7 @@ fn ui_overlay_items_for_camera(
   }
   for i in 0..<nodes.sprite_slice_batches.length() {
     let batch = nodes.sprite_slice_batches[i]
-    if batch.payload.layers.matches(layers) &&
-      @ui_render_runtime.ui_overlay_matches_camera(
+    if @ui_render_runtime.ui_overlay_matches_camera(
         batch.extracted_camera_entity,
         camera_entity,
       ) {
@@ -168,8 +173,7 @@ fn ui_overlay_items_for_camera(
   }
   for i in 0..<nodes.rects.length() {
     let rect = nodes.rects[i]
-    if rect.payload.layers.matches(layers) &&
-      @ui_render_runtime.ui_overlay_matches_camera(
+    if @ui_render_runtime.ui_overlay_matches_camera(
         rect.extracted_camera_entity,
         camera_entity,
       ) {
@@ -179,8 +183,7 @@ fn ui_overlay_items_for_camera(
   }
   for i in 0..<nodes.box_shadows.length() {
     let shadow = nodes.box_shadows[i]
-    if shadow.payload.layers.matches(layers) &&
-      @ui_render_runtime.ui_overlay_matches_camera(
+    if @ui_render_runtime.ui_overlay_matches_camera(
         shadow.extracted_camera_entity,
         camera_entity,
       ) {
@@ -194,8 +197,7 @@ fn ui_overlay_items_for_camera(
   }
   for i in 0..<nodes.texture_slices.length() {
     let slice = nodes.texture_slices[i]
-    if slice.payload.layers.matches(layers) &&
-      @ui_render_runtime.ui_overlay_matches_camera(
+    if @ui_render_runtime.ui_overlay_matches_camera(
         slice.extracted_camera_entity,
         camera_entity,
       ) {
@@ -215,7 +217,6 @@ fn ui_overlay_items_for_camera(
 pub fn draw_extracted_ui_overlay_for_camera(
   world : @ecs.World,
   camera_entity : @core.Entity,
-  layers : @camera_render_layers.RenderLayers,
   target_id : Int,
   width_logical : Int,
   height_logical : Int,
@@ -235,7 +236,7 @@ pub fn draw_extracted_ui_overlay_for_camera(
     return
   }
   let nodes = @ui_render_runtime.extracted_ui_nodes_or_empty(world)
-  let items = ui_overlay_items_for_camera(nodes, camera_entity, layers)
+  let items = ui_overlay_items_for_camera(nodes, camera_entity)
   if items.length() == 0 {
     return
   }
