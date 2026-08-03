@@ -135,7 +135,7 @@ fn setup(
     ) {
       let color = texts.get(label) catch { _ => None }
       if color is Some(color) {
-        color.set(@text.TextColor::new(@color.Color::srgb(0.3F, 0.9F, 0.95F)))
+        color.set(@text.TextColor::new(@palettes.tailwind_cyan_400()))
       }
     })
     .observe_pointer2(fn(

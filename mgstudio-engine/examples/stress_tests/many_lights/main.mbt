@@ -85,9 +85,7 @@ fn setup(
     |> @pbr.add_mesh(@math.Cuboid::new(8.0F, 8.0F, 8.0F))
   let marker_material = materials
     .peek()
-    .add(
-      @pbr.StandardMaterial::from_color(@color.Color::srgb(1.0F, 0.08F, 0.58F)),
-    )
+    .add(@pbr.StandardMaterial::from_color(@palettes.css_deep_pink()))
   ignore(
     commands.spawn(
       (

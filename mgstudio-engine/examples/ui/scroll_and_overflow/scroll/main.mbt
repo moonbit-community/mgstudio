@@ -236,9 +236,7 @@ fn spawn_bidirectional_panel(
             grid_row: @ui.GridPlacement::start(y + 1),
             padding: @ui.UiRect::all(Px(8.0F)),
           },
-          @ui.BackgroundColor::new(
-            @color.Color::hsl(Float::from_int(x * 20 + y * 12), 0.55F, 0.45F),
-          ),
+          @ui.BackgroundColor::new(@palettes.basic_black()),
         ),
       )
       spawn_text(

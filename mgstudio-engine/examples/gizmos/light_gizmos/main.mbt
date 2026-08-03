@@ -108,7 +108,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @pbr.PointLight::PointLight()
         .with_shadow_maps_enabled(true)
         .with_range(2.0F)
-        .with_color(@color.Color::srgb(0.0F, 0.55F, 0.55F)),
+        .with_color(@palettes.css_dark_cyan()),
         @transform.Transform::from_xyz(0.0F, 1.5F, 0.0F),
       ),
     ),
@@ -121,7 +121,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .insert(
       (
         @pbr.SpotLight::new(
-          @color.Color::srgb(0.5F, 0.0F, 0.5F),
+          @palettes.basic_purple(),
           @pbr.SpotLight::SpotLight().intensity,
           3.5F,
           PI / 4.0F * 0.8F,
@@ -143,7 +143,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .insert(
       (
         @pbr.DirectionalLight::new(
-          @color.Color::srgb(1.0F, 0.84F, 0.0F),
+          @palettes.css_gold(),
           @pbr.DirectionalLight::DirectionalLight().illuminance * 0.05F,
           true,
         ),
@@ -161,7 +161,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .insert(
       (
         @light.RectLight::new(
-          @color.Color::srgb(1.0F, 0.647F, 0.0F),
+          @palettes.css_orange(),
           200_000.0F,
           20.0F,
           1.5F,
@@ -321,7 +321,7 @@ fn update_config(
           Manual(_) => Varied
           Varied => MatchLightColor
           MatchLightColor => ByLightType
-          ByLightType => Manual(@color.Color::srgb(0.5F, 0.5F, 0.5F))
+          ByLightType => Manual(@palettes.basic_gray())
         },
       }
       update_color_text(group.val)

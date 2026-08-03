@@ -124,7 +124,7 @@ fn setup(
           min_follow_radius: 50.0F,
         },
         @sprite.Sprite::from_image(texture).with_color(
-          @color.Color::srgb(0.12F, 0.24F, 0.67F),
+          @palettes.tailwind_blue_800(),
         ),
       ),
     ),
@@ -202,7 +202,7 @@ fn spawn_enemy(
       (
         enemy,
         @sprite.Sprite::from_image(enemy_texture).with_color(
-          @color.Color::srgb(0.67F, 0.16F, 0.16F),
+          @palettes.tailwind_red_800(),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),

@@ -119,12 +119,12 @@ fn normal_button_color() -> @color.Color {
 
 ///|
 fn hovered_button_color() -> @color.Color {
-  @color.Color::srgb(1.0F, 1.0F, 0.35F)
+  @palettes.basic_yellow()
 }
 
 ///|
 fn pressed_button_color() -> @color.Color {
-  @color.Color::srgb(1.0F, 0.2F, 0.2F)
+  @palettes.basic_red()
 }
 
 ///|
@@ -304,7 +304,7 @@ fn setup(
       .with_flex_direction(Column)
       .with_justify_content(SpaceBetween)
       .with_align_items(Center),
-      @ui.BackgroundColor::new(@color.Color::srgb(0.33F, 0.33F, 0.33F)),
+      @ui.BackgroundColor::new(@palettes.css_dark_gray()),
     ),
   )
 

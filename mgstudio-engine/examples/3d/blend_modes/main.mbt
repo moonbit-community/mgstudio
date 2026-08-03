@@ -231,7 +231,7 @@ fn spawn_label(
         @hierarchy.Parent::new(label_node),
         @text.Text::new(label),
         @text.TextFont::TextFont().with_font(font),
-        @text.TextColor::new(@color.Color::srgb(1.0F, 0.65F, 0.0F)),
+        @text.TextColor::new(@palettes.css_orange()),
         @ui.Node::Node().with_position_type(Absolute).with_bottom(Px(0.0F)),
         @text.TextLayout::new_with_no_wrap(),
       ),

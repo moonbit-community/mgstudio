@@ -50,11 +50,6 @@ fn white() -> @color.Color {
 }
 
 ///|
-fn light_gray() -> @color.Color {
-  @color.Color::srgb(0.83F, 0.83F, 0.83F)
-}
-
-///|
 pub(all) enum AnimationLabel {
   Idle
   Walk
@@ -405,7 +400,9 @@ fn spawn_mask_group_control(
       ),
     ),
   )
-  ignore(spawn_text(world, title, label, font, 14.0F, light_gray()))
+  ignore(
+    spawn_text(world, title, label, font, 14.0F, @palettes.css_light_gray()),
+  )
 
   let buttons = world.spawn_empty()
   ignore(
@@ -443,7 +440,7 @@ fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(pressed_controls_key, PressedControls())
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(white(), 100.0F),
+    @pbr.GlobalAmbientLight::new(@palettes.basic_white(), 100.0F),
   )
 
   ignore(

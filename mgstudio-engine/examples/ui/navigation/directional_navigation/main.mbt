@@ -20,17 +20,17 @@ const BUTTON_HEIGHT : Float = 80.0F
 
 ///|
 fn nav_normal_color() -> @color.Color {
-  @color.Color::srgb(0.23F, 0.45F, 0.88F)
+  @palettes.tailwind_blue_400()
 }
 
 ///|
 fn nav_active_color() -> @color.Color {
-  @color.Color::srgb(0.24F, 0.72F, 0.44F)
+  @palettes.tailwind_blue_500()
 }
 
 ///|
 fn nav_focus_color() -> @color.Color {
-  @color.Color::white()
+  @palettes.tailwind_blue_50()
 }
 
 ///|

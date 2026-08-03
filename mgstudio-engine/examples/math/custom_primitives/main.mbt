@@ -72,9 +72,7 @@ fn setup(
       |> @pbr.add_material(@color.Color::srgb(0.13F, 0.14F, 0.16F)),
       material_assets
       |> @pbr.add_material(
-        @pbr.StandardMaterial::from_color(
-          @color.Color::srgb(0.88F, 0.18F, 0.36F),
-        )
+        @pbr.StandardMaterial::from_color(@palettes.basic_red())
         .with_reflectance(0.28F)
         .with_perceptual_roughness(0.48F),
       ),

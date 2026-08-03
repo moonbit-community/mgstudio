@@ -14,17 +14,17 @@
 
 ///|
 fn wheat() -> @color.Color {
-  @color.Color::srgb(0.96F, 0.87F, 0.7F)
+  @palettes.css_wheat()
 }
 
 ///|
 fn yellow() -> @color.Color {
-  @color.Color::srgb(1.0F, 0.92F, 0.0F)
+  @palettes.basic_yellow()
 }
 
 ///|
 fn zinc_600() -> @color.Color {
-  @color.Color::srgb(0.32F, 0.32F, 0.36F)
+  @palettes.tailwind_zinc_600()
 }
 
 ///|

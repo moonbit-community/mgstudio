@@ -1,5 +1,6 @@
 import {
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/color/palettes",
   "Milky2018/mgstudio/camera/camera" @_,
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",

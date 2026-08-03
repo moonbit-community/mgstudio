@@ -108,36 +108,36 @@ fn open_context_menu(
     commands,
     menu,
     "Fuchsia",
-    @color.Color::srgb(0.68F, 0.2F, 0.66F),
-    @color.Color::srgb(0.68F, 0.2F, 0.66F),
+    @palettes.basic_fuchsia(),
+    @palettes.basic_fuchsia(),
   )
   spawn_menu_item(
     commands,
     menu,
     "Gray",
-    @color.Color::srgb(0.42F, 0.42F, 0.42F),
-    @color.Color::srgb(0.42F, 0.42F, 0.42F),
+    @palettes.basic_gray(),
+    @palettes.basic_gray(),
   )
   spawn_menu_item(
     commands,
     menu,
     "Maroon",
-    @color.Color::srgb(0.45F, 0.12F, 0.17F),
-    @color.Color::srgb(0.45F, 0.12F, 0.17F),
+    @palettes.basic_maroon(),
+    @palettes.basic_maroon(),
   )
   spawn_menu_item(
     commands,
     menu,
     "Purple",
-    @color.Color::srgb(0.33F, 0.18F, 0.6F),
-    @color.Color::srgb(0.33F, 0.18F, 0.6F),
+    @palettes.basic_purple(),
+    @palettes.basic_purple(),
   )
   spawn_menu_item(
     commands,
     menu,
     "Teal",
-    @color.Color::srgb(0.12F, 0.5F, 0.5F),
-    @color.Color::srgb(0.12F, 0.5F, 0.5F),
+    @palettes.basic_teal(),
+    @palettes.basic_teal(),
   )
 }
 

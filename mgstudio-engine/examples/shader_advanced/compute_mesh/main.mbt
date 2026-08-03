@@ -78,7 +78,7 @@ fn setup(
   let material = materials
     .peek()
     .add(
-      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.22F, 0.82F, 0.7F)).with_perceptual_roughness(
+      @pbr.StandardMaterial::from_color(@palettes.tailwind_red_400()).with_perceptual_roughness(
         0.55F,
       ),
     )

@@ -369,7 +369,7 @@ fn spawn_target_panel(
   try! world.set_by_key(
     panel,
     @ui.ecs_key_border_color,
-    @ui.BorderColor::new(@color.Color::white()),
+    @ui.BorderColor::new(@palettes.css_dark_cyan()),
   )
   ignore(
     spawn_text(

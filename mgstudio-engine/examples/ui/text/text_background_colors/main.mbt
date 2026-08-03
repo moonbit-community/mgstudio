@@ -15,11 +15,11 @@
 ///|
 fn palette_color(index : Int) -> @color.Color {
   match index % 5 {
-    0 => @color.Color::srgb(0.85F, 0.20F, 0.18F)
-    1 => @color.Color::srgb(0.18F, 0.70F, 0.28F)
-    2 => @color.Color::srgb(0.18F, 0.37F, 0.88F)
-    3 => @color.Color::srgb(0.98F, 0.82F, 0.18F)
-    _ => @color.Color::srgb(0.56F, 0.30F, 0.80F)
+    0 => @palettes.basic_red()
+    1 => @palettes.basic_green()
+    2 => @palettes.basic_blue()
+    3 => @palettes.basic_yellow()
+    _ => @palettes.basic_purple()
   }
 }
 

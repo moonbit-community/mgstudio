@@ -150,9 +150,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
     ),
     @pbr.MeshMaterial3dTyped::new(
       @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @color.Color::srgb(0.65F, 0.93F, 0.90F),
-        ),
+        @pbr.StandardMaterial::from_color(@palettes.tailwind_teal_200()),
       ),
     ),
     @transform.Transform::from_xyz(0.2F, -0.1F, -0.25F),
@@ -232,7 +230,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     light,
     @pbr.ecs_key_point_light,
     @pbr.PointLight::PointLight()
-    .with_color(@color.Color::srgb(1.0F, 0.76F, 0.84F))
+    .with_color(@palettes.tailwind_rose_300())
     .with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(

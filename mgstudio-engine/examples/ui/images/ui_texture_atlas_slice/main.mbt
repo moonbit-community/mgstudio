@@ -117,15 +117,13 @@ fn button_system(
             image
             .value()
             .with_texture_atlas(Some(atlas.with_index((atlas.index + 1) % 30)))
-            .with_color(@color.Color::srgb(1.0F, 0.84F, 0.0F)),
+            .with_color(@palettes.css_gold()),
           )
         }
       }
       Hovered => {
         text.modify(fn(value) { value.content = "Hover" })
-        image.set(
-          image.value().with_color(@color.Color::srgb(1.0F, 0.55F, 0.0F)),
-        )
+        image.set(image.value().with_color(@palettes.css_orange()))
       }
       None => {
         text.modify(fn(value) { value.content = "Button" })

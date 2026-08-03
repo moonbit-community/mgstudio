@@ -146,7 +146,7 @@ fn setup(
       .with_padding(@ui.UiRect::all(Px(10.0F)))
       .with_border(@ui.UiRect::all(Px(2.0F))),
       @ui.BorderColor::new(@color.Color::white()),
-      @ui.BackgroundColor::new(@color.Color::srgb(0.1F, 0.12F, 0.26F)),
+      @ui.BackgroundColor::new(@palettes.basic_navy()),
     ),
   )
   commands.spawn(

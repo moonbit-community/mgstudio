@@ -103,8 +103,8 @@ fn SetMessage::new(value : String, palette : MessagePalette) -> SetMessage {
 fn message_color(palette : MessagePalette, alpha : Float) -> @color.Color {
   match palette {
     None => @color.Color::srgba(0.0F, 0.0F, 0.0F, alpha)
-    Hello => @color.Color::srgba(0.94F, 0.97F, 1.0F, alpha)
-    Bye => @color.Color::srgba(0.86F, 0.08F, 0.24F, alpha)
+    Hello => @palettes.css_alice_blue().with_alpha(alpha)
+    Bye => @palettes.css_crimson().with_alpha(alpha)
   }
 }
 
@@ -113,7 +113,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! (world.spawn_bundle(
     (
       @camera_components2d.Camera2d::Camera2d(),
-      @camera_camera.Camera::new(@color.Color::black()),
+      @camera_camera.Camera::new(@palettes.basic_black()),
       @transform.Transform::identity(),
     ),
   )

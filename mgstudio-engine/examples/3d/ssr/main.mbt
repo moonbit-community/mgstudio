@@ -660,7 +660,7 @@ fn ssr_standard_material_add(
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let material = ssr_standard_material_add(
     world,
-    @pbr.StandardMaterial::from_color(@color.Color::white()).with_base_color_texture(
+    @pbr.StandardMaterial::from_color(@palettes.basic_white()).with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
@@ -749,9 +749,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 fn spawn_metallic_base(world : @ecs.World) -> Unit {
   let metallic_material = ssr_standard_material_add(
     world,
-    @pbr.StandardMaterial::from_color(
-      @color.Color::srgba(0.663F, 0.663F, 0.663F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@palettes.css_dark_gray())
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.3F),
   )
@@ -779,9 +777,7 @@ fn spawn_metallic_base(world : @ecs.World) -> Unit {
 fn spawn_non_metallic_base(world : @ecs.World) -> Unit {
   let red_material = ssr_standard_material_add(
     world,
-    @pbr.StandardMaterial::from_color(
-      @color.Color::srgba(1.0F, 0.0F, 0.0F, 1.0F),
-    )
+    @pbr.StandardMaterial::from_color(@palettes.basic_red())
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.2F),
   )
@@ -827,7 +823,7 @@ fn spawn_water(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     },
   }
   let water_base_material = @pbr.StandardMaterial::from_color(
-    @color.Color::black(),
+    @palettes.basic_black(),
   ).with_perceptual_roughness(0.09F)
   let water_material = ssr_standard_material_add(world, water_base_material)
   let water_mesh_material = @pbr.MeshMaterial3d::new(water_material).with_extended_material(

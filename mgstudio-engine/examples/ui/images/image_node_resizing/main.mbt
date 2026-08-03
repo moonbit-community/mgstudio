@@ -172,7 +172,7 @@ fn root_background() -> @color.Color {
 
 ///|
 fn group_background() -> @color.Color {
-  @color.Color::srgb(0.86F, 0.92F, 0.99F)
+  @palettes.tailwind_blue_100()
 }
 
 ///|

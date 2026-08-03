@@ -128,7 +128,7 @@ fn setup(
     @math.Vec2::new(0.0F, 0.0F),
     28.0F,
     1800.0F,
-    @color.Color::srgb(1.0F, 0.38F, 0.18F),
+    @palettes.css_orange_red(),
     star=true,
   )
   spawn_body(

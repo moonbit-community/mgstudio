@@ -263,9 +263,7 @@ fn spawn_environment(
   })
   let sphere_material = materials
     .peek()
-    .add(
-      @pbr.StandardMaterial::from_color(@color.Color::srgb(0.73F, 0.86F, 0.95F)),
-    )
+    .add(@pbr.StandardMaterial::from_color(@palettes.tailwind_sky_200()))
 
   for x in 0..<SPHERES_IN_X {
     for y in 0..<SPHERES_IN_Y {

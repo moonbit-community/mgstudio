@@ -200,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
     assets |> @pbr.add_mesh(@math.Sphere::new(0.4F))
   })
   let particle_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@color.Color::white()).with_unlit(true),
+    @pbr.StandardMaterial::from_color(@palettes.basic_white()).with_unlit(true),
   )
   world.insert_resource(particle_assets_key, {
     mesh: particle_mesh,

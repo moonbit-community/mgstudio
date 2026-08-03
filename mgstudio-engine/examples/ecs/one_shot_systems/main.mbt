@@ -153,7 +153,7 @@ fn setup_ui(
           top: Px(96.0F),
         },
         @text.TextFont::TextFont().with_font(font).with_font_size(22.0F),
-        @text.TextColor::new(@color.Color::srgb(1.0F, 0.55F, 0.2F)),
+        @text.TextColor::new(@palettes.css_orange()),
         @text.TextLayout::new_with_justify(Left),
         LastTriggeredLabel::{  },
       ),

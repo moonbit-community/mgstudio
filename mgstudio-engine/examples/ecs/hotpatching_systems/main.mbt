@@ -148,7 +148,7 @@ fn update_text(
         if mode.get().value == 0 {
           @color.Color::srgb(0.95F, 0.95F, 0.95F)
         } else {
-          @color.Color::srgb(0.95F, 0.4F, 0.4F)
+          @palettes.tailwind_red_600()
         },
       ),
     )

@@ -153,7 +153,7 @@ fn spawn_line(
       .with_bottom(Px(bottom))
       .with_width(Px(width))
       .with_height(Px(height)),
-      @ui.BackgroundColor::new(@color.Color::white()),
+      @ui.BackgroundColor::new(@palettes.basic_white()),
     ),
   )
   |> ignore
@@ -184,7 +184,7 @@ fn spawn_clip_node(
       .with_border(@ui.UiRect::all(Px(1.0F)))
       .with_justify_content(Center)
       .with_align_items(Center),
-      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BorderColor::new(@palettes.basic_white()),
     ),
   )
   let fill = commands.spawn(
@@ -197,7 +197,7 @@ fn spawn_clip_node(
       .with_bottom(Px(0.0F))
       .with_width(Px(NODE_WIDTH))
       .with_height(Px(NODE_HEIGHT)),
-      @ui.BackgroundColor::new(@color.Color::srgb(0.0F, 0.39F, 0.0F)),
+      @ui.BackgroundColor::new(@palettes.css_dark_green()),
     ),
   )
   let text_entity = commands.spawn(
@@ -208,7 +208,7 @@ fn spawn_clip_node(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
-      @text.TextColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
+      @text.TextColor::new(@palettes.css_antique_white()),
       @text.TextLayout::new_with_justify(Center),
       @ui.Node::Node(),
     ),
@@ -238,7 +238,7 @@ fn spawn_blend_node(
       .with_border(@ui.UiRect::all(Px(1.0F)))
       .with_justify_content(Center)
       .with_align_items(Center),
-      @ui.BorderColor::new(@color.Color::white()),
+      @ui.BorderColor::new(@palettes.basic_white()),
     ),
   )
   let text_entity = commands.spawn(
@@ -248,7 +248,7 @@ fn spawn_blend_node(
       @text.TextFont::TextFont()
       .with_font(font)
       .with_font_size(@text.FontSize::Px(16.0F)),
-      @text.TextColor::new(@color.Color::srgb(0.98F, 0.92F, 0.84F)),
+      @text.TextColor::new(@palettes.css_antique_white()),
       @text.TextLayout::new_with_justify(Center),
       @ui.Node::Node(),
     ),

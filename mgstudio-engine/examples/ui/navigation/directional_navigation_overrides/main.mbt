@@ -20,17 +20,17 @@ const OVERRIDE_BUTTON_HEIGHT : Float = 86.0F
 
 ///|
 fn override_normal_color() -> @color.Color {
-  @color.Color::srgb(0.72F, 0.34F, 0.32F)
+  @palettes.tailwind_red_400()
 }
 
 ///|
 fn override_active_color() -> @color.Color {
-  @color.Color::srgb(0.29F, 0.66F, 0.43F)
+  @palettes.tailwind_green_500()
 }
 
 ///|
 fn override_focus_color() -> @color.Color {
-  @color.Color::white()
+  @palettes.tailwind_green_50()
 }
 
 ///|

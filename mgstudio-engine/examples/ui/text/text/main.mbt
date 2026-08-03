@@ -40,7 +40,7 @@ pub impl @ecs.Component for AnimatedText with fn component() {
 
 ///|
 fn gold() -> @color.Color {
-  @color.Color::srgb(1.0F, 0.84F, 0.0F)
+  @palettes.css_gold()
 }
 
 ///|

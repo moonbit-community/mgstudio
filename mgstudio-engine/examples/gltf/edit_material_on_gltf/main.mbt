@@ -96,7 +96,7 @@ fn setup(
         (
           @scene.SceneRoot::new(flight_helmet),
           @transform.Transform::from_xyz(-1.25F, 0.0F, 0.0F),
-          ColorOverride::new(@color.Color::srgb(0.98F, 0.65F, 0.65F)),
+          ColorOverride::new(@palettes.tailwind_red_300()),
         ),
       ),
     )
@@ -109,7 +109,7 @@ fn setup(
         (
           @scene.SceneRoot::new(flight_helmet),
           @transform.Transform::from_xyz(1.25F, 0.0F, 0.0F),
-          ColorOverride::new(@color.Color::srgb(0.55F, 0.9F, 0.55F)),
+          ColorOverride::new(@palettes.tailwind_green_300()),
         ),
       ),
     )
