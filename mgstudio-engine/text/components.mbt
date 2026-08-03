@@ -838,8 +838,3 @@ pub fn TextShadow::with_color(
 ) -> TextShadow {
   { ..self, color, }
 }
-
-///|
-// Bevy source: `bevy/crates/bevy_sprite/src/text2d.rs` owns `Text2dShadow`;
-// re-exported here for existing consumers until ISS-480 phase 4.
-pub type Text2dShadow = @sprite.Text2dShadow

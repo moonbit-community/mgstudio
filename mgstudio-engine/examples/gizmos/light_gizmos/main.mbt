@@ -186,7 +186,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let instructions = @text.Text2dBundle::new(
+  let instructions = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(
         "Press D to toggle gizmo depth bias\nHold Left or Right to change line width\nPress A to toggle light gizmos\nPress C to cycle gizmo coloring modes",
       ),
@@ -206,7 +206,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .spawn()
   ignore(instructions)
 
-  let color_text = @text.Text2dBundle::new(
+  let color_text = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(""),
       @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),
       @transform.Transform::from_xy_rotation_scale(

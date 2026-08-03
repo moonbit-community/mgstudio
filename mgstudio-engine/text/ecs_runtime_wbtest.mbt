@@ -14,7 +14,6 @@
 
 ///|
 fn reset_text_ecs_test_state() -> Unit {
-  text_ecs_entries.clear()
   ui_text_ecs_entries.clear()
   text_ecs_runtime_state.world_id = None
   text_font_asset_events_cursor.clear(@ecs.Messages::new())
@@ -45,32 +44,6 @@ fn next_system_ticks(world : @ecs.World) -> @core.SystemTicks {
 }
 
 ///|
-test "text ecs sync ignores unrelated changed component streams" {
-  reset_text_ecs_test_state()
-  let world = @ecs.World::new()
-  defer world.close()
-  ignore(next_system_ticks(world))
-  for i in 0..<32 {
-    let entity = world.spawn()
-    try! (world
-    .entity_mut(entity)
-    .insert_component(
-      @transform.Transform::from_xyz(Float::from_int(i), 0.0F, 0.0F),
-    )
-    |> ignore)
-    try! (world
-    .entity_mut(entity)
-    .insert_component(@visibility.ViewVisibility::new(true))
-    |> ignore)
-  }
-
-  text_sync_ecs_system(world)
-  debug_inspect(text_ecs_sync_candidate_entity_count.val, content="0")
-  ui_text_sync_ecs_system(world)
-  debug_inspect(text_ecs_sync_candidate_entity_count.val, content="0")
-}
-
-///|
 test "text plugin inserts text runtime resources" {
   let lifecycle_world_47_0 = @ecs.World::new()
   defer lifecycle_world_47_0.close()
@@ -89,9 +62,9 @@ test "font asset Added events force text rerender on next update" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
   defer world.close()
-  let text_handle = text_spawn(
-    Text2dBundle::new(
-      Text2d::new("Font Event"),
+  let text_handle = text_spawn_data(
+    TextSpawnData::new(
+      "Font Event",
       { ..TextFont(), font: UiSansSerif },
       @transform.Transform::identity(),
     ),
@@ -130,9 +103,9 @@ test "font asset non-Added events follow Bevy and do not rerender text" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
   defer world.close()
-  let text_handle = text_spawn(
-    Text2dBundle::new(
-      Text2d::new("Font Event"),
+  let text_handle = text_spawn_data(
+    TextSpawnData::new(
+      "Font Event",
       { ..TextFont(), font: UiSansSerif },
       @transform.Transform::identity(),
     ),
@@ -169,239 +142,6 @@ test "font asset non-Added events follow Bevy and do not rerender text" {
     content="false",
   )
   debug_inspect(text_runtime_layout_dirty(), content="false")
-}
-
-///|
-test "ecs text bridge resolves a world-space bundle from ECS components" {
-  reset_text_ecs_test_state()
-  let world = @ecs.World::new()
-  defer world.close()
-  let entity = world.spawn()
-  let base_font = TextFont::TextFont()
-  let local_transform = @transform.Transform::from_xyz(0.0F, 125.0F, 0.0F)
-  let global_transform = @transform.Transform::from_xyz(250.0F, 125.0F, 0.0F)
-  let expected = Text2dBundle::{
-    text: Text2d::new("Repeat On"),
-    font: base_font,
-    color: TextColor(),
-    background_color: None,
-    underline: None,
-    underline_color: None,
-    strikethrough: None,
-    strikethrough_color: None,
-    layout: TextLayout::new_with_justify(Center),
-    bounds: TextBounds::new_horizontal(200.0F),
-    line_height: LineHeight::default(),
-    font_hinting: FontHinting::default(),
-    shadow: None,
-    transform: global_transform,
-    layers: RenderLayers(),
-    no_frustum_culling: false,
-    anchor: Anchor(),
-    y_axis: TopToBottom,
-    logical_viewport_size: None,
-  }
-  try! (world.entity_mut(entity).insert_component(Text2d::new("Repeat On"))
-  |> ignore)
-  try! (world.entity_mut(entity).insert_component(base_font) |> ignore)
-  try! (world.entity_mut(entity).insert_component(local_transform) |> ignore)
-  try! world.set_by_key(
-    entity,
-    @transform.ecs_key_global_transform,
-    @transform.GlobalTransform::from_transform(global_transform),
-  )
-  try! (world
-  .entity_mut(entity)
-  .insert_component(TextBounds::new_horizontal(200.0F))
-  |> ignore)
-  try! world.set_by_key(
-    entity,
-    ecs_key_text_layout,
-    TextLayout::new_with_justify(Center),
-  )
-
-  let (bundle, view_visible) = text_ecs_bundle_from_entity(
-    world,
-    entity,
-    Text2d::new("Repeat On"),
-    base_font,
-    local_transform,
-  )
-
-  debug_inspect(text_bundle_rerender_eq(bundle, expected), content="true")
-  debug_inspect(view_visible, content="true")
-  debug_inspect(
-    bundle.transform |> ToJson::to_json,
-    content=(
-      #|Array(
-      #|  [
-      #|    Number(250),
-      #|    Number(125),
-      #|    Number(0),
-      #|    Number(0),
-      #|    Number(0),
-      #|    Number(0),
-      #|    Number(1),
-      #|    Number(1),
-      #|    Number(1),
-      #|    Number(1),
-      #|  ],
-      #|)
-    ),
-  )
-}
-
-///|
-test "ecs text bridge treats NoCpuCulling as no-frustum-culling opt-out" {
-  reset_text_ecs_test_state()
-  let world = @ecs.World::new()
-  defer world.close()
-  let entity = world.spawn()
-  let font = TextFont::TextFont()
-  let transform = @transform.Transform::identity()
-  try! (world.entity_mut(entity).insert_component(Text2d::new("NoCpu"))
-  |> ignore)
-  try! (world.entity_mut(entity).insert_component(font) |> ignore)
-  try! (world.entity_mut(entity).insert_component(transform) |> ignore)
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_no_cpu_culling,
-    NoCpuCulling(),
-  )
-
-  let (bundle, _view_visible) = text_ecs_bundle_from_entity(
-    world,
-    entity,
-    Text2d::new("NoCpu"),
-    font,
-    transform,
-  )
-
-  debug_inspect(bundle.no_frustum_culling, content="true")
-}
-
-///|
-test "ecs text cleanup removes dead entity entries" {
-  reset_text_ecs_test_state()
-  let world = @ecs.World::new()
-  defer world.close()
-  let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Text2d::new("Cleanup"))
-  |> ignore)
-  try! (world.entity_mut(entity).insert_component(TextFont::TextFont())
-  |> ignore)
-  try! world.set_by_key(
-    entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
-  )
-  text_ecs_entries.push({
-    world_id: world.world_id(),
-    entity,
-    handle: TextHandle::new(42),
-    bundle: Text2dBundle::new(
-      Text2d::new("Cleanup"),
-      TextFont(),
-      @transform.Transform::identity(),
-    ),
-    view_visible: true,
-    span_bundles: [],
-  })
-
-  try! world.despawn(entity)
-  let world_id = world.world_id()
-  let tick = @core.SystemTicks::new(0, 1)
-  let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
-  text_ecs_cleanup_removed_entries(world, world_id, tick, index_by_entity_id)
-
-  debug_inspect(text_ecs_entries.length(), content="0")
-}
-
-///|
-test "text ecs registers required components for Text2d" {
-  let world = @ecs.World::new()
-  defer world.close()
-  try! register_text_required_components(world)
-  let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Text2d::new("Auto transform"))
-  |> ignore)
-
-  debug_inspect(
-    (try! world.entity(entity).get() : @transform.Transform?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : TextLayout?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : TextFont?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : TextColor?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : LineHeight?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : FontHinting?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : TextBounds?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : @sprite.Anchor?) is Some(_),
-    content="true",
-  )
-  debug_inspect(
-    (try! world.entity(entity).get() : @visibility.Visibility?) is Some(_),
-    content="true",
-  )
-}
-
-///|
-test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
-  reset_text_ecs_test_state()
-  let world = @ecs.World::new()
-  defer world.close()
-  try! register_text_required_components(world)
-  let entity = world.spawn()
-  try! (world.entity_mut(entity).insert_component(Text2d::new("Visibility"))
-  |> ignore)
-  try! (world.entity_mut(entity).insert_component(TextFont::TextFont())
-  |> ignore)
-  try! (world
-  .entity_mut(entity)
-  .insert_component(@transform.Transform::identity())
-  |> ignore)
-  ignore(next_system_ticks(world))
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    @visibility.ViewVisibility::new(false),
-  )
-
-  text_sync_ecs_system(world)
-  debug_inspect(text_ecs_entries.length(), content="1")
-  debug_inspect(text_ecs_entries[0].view_visible, content="false")
-  ignore(next_system_ticks(world))
-  try! world.set_by_key(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    @visibility.ViewVisibility::new(true),
-  )
-  try! world.set_by_key(
-    entity,
-    @transform.ecs_key_transform,
-    @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
-  )
-  text_sync_ecs_system(world)
-  debug_inspect(text_ecs_entries[0].view_visible, content="true")
 }
 
 ///|
@@ -443,11 +183,7 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
   let first = world.spawn()
   let second = world.spawn()
   let root_font = TextFont::TextFont().with_font_size(35.0F)
-  let root_bundle = Text2dBundle::new(
-    Text2d::new(" Anchor"),
-    root_font,
-    @transform.Transform::identity(),
-  )
+
   try! (world
   .entity_mut(root)
   .insert_component(@hierarchy.Children::new([first, second]))
@@ -483,7 +219,8 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
   let span_bundles = text_ecs_collect_span_bundles_for_entity(
     world,
     root,
-    root_bundle,
+    root_font,
+    LineHeight::default(),
     text_ecs_collect_span_edges(world),
   )
 
@@ -520,8 +257,8 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   let app = @asset.asset_plugin(@app.App::new(lifecycle_world_518_0))
   let world = app.world()
   let entity = world.spawn()
-  let bundle = Text2dBundle::{
-    text: Text2d::new("Button"),
+  let bundle = TextSpawnData::{
+    content: "Button",
     font: TextFont(),
     color: TextColor(),
     background_color: None,
@@ -537,7 +274,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     transform: @transform.Transform::identity(),
     layers: RenderLayers(),
     no_frustum_culling: false,
-    anchor: Anchor(),
+    anchor: @math.Vec2::new(0.0F, 0.0F),
     y_axis: TopToBottom,
     logical_viewport_size: None,
   }
@@ -547,7 +284,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
   let runtime_layers = @camera_render_layers.RenderLayers::layer(11)
   text_set_transform(entry.handle, runtime_transform)
   text_set_layers(entry.handle, runtime_layers)
-  text_set_anchor(entry.handle, @sprite.Anchor::center())
+  text_set_anchor_vec(entry.handle, @math.Vec2::new(0.0F, 0.0F))
   text_set_y_axis(entry.handle, BottomToTop)
 
   let synced = ui_text_ecs_sync_existing_entry(world, entry, bundle, [], true)

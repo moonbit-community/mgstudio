@@ -10,20 +10,17 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_cosmic",
   "moonbitlang/core/debug",
+  "moonbitlang/core/hashset",
+  "moonbitlang/core/ref",
 }
 
 // Values
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
 
 pub let ecs_key_text : @ecs.ComponentKey[Text]
-
-pub let ecs_key_text2d : @ecs.ComponentKey[@sprite.Text2d]
-
-pub let ecs_key_text2d_shadow : @ecs.ComponentKey[@sprite.Text2dShadow]
 
 pub let ecs_key_text_background_color : @ecs.ComponentKey[TextBackgroundColor]
 
@@ -53,6 +50,10 @@ pub let ecs_key_text_underline_color : @ecs.ComponentKey[UnderlineColor]
 
 pub let ecs_key_text_y_axis : @ecs.ComponentKey[YAxisOrientation]
 
+pub fn[A] empty_marker_opt_eq(A?, A?) -> Bool
+
+pub fn font_hinting_eq(FontHinting, FontHinting) -> Bool
+
 pub fn font_loader_error_content() -> FontLoaderError
 
 pub fn font_loader_error_io(String) -> FontLoaderError
@@ -71,7 +72,21 @@ pub fn font_rasterize_glyph_id_subpixel(@asset.Handle[@asset.Font], Float, Int, 
 
 pub fn get_glyph_atlas_info(Array[FontAtlas], GlyphCacheKey) -> GlyphAtlasInfo?
 
-pub fn text_bundle(String, TextFont, @transform.Transform) -> Text2dBundle
+pub fn line_height_eq(LineHeight, LineHeight) -> Bool
+
+pub fn prepare_text_runtime_world(@ecs.World) -> Unit
+
+pub fn render_layers_eq(@render_layers.RenderLayers, @render_layers.RenderLayers) -> Bool
+
+pub fn strikethrough_color_eq(StrikethroughColor?, StrikethroughColor?) -> Bool
+
+pub fn sync_text_runtime_rem_size(@ecs.World) -> Unit
+
+pub fn text_background_color_eq(TextBackgroundColor?, TextBackgroundColor?) -> Bool
+
+pub fn text_bounds_eq(TextBounds, TextBounds) -> Bool
+
+pub fn text_color_eq(TextColor, TextColor) -> Bool
 
 pub fn text_compute_cull_margin(TextBounds, @math.Vec2, @math.Vec3) -> Float
 
@@ -101,19 +116,31 @@ pub fn text_debug_visible_overlap_count(TextHandle, TextHandle) -> Int
 
 pub fn text_despawn(TextHandle) -> Bool
 
-pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float
-
-pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int
-
-pub fn text_diagnostic_sync_ecs_early_return() -> Bool
-
 pub fn text_diagnostic_update_cpu_ms() -> Float
 
 pub fn text_diagnostic_update_pending_layout_count() -> Int
 
+pub fn text_ecs_changed_span_parent_ids(@ecs.World, Array[(@core.Entity, @core.Entity)], @core.SystemTicks) -> @hashset.HashSet[Int]
+
+pub fn text_ecs_collect_span_bundles_for_entity(@ecs.World, @core.Entity, TextFont, LineHeight, Array[(@core.Entity, @core.Entity)]) -> Array[TextSpanBundle]
+
+pub fn text_ecs_collect_span_edges(@ecs.World) -> Array[(@core.Entity, @core.Entity)]
+
+pub fn text_ecs_entity_id_set_contains(@hashset.HashSet[Int], @core.Entity) -> Bool
+
+pub fn[T : @ecs.Component] text_ecs_entity_ref_get(@ecs.EntityRef) -> T?
+
+pub fn text_ecs_entity_ref_view_visible(@ecs.EntityRef) -> Bool
+
+pub let text_ecs_sync_candidate_entity_count : @ref.Ref[Int]
+
+pub fn text_ecs_world_entity_ref(@ecs.World, @core.Entity) -> @ecs.EntityRef?
+
 pub fn text_error_from_code(Int, message? : String, glyph? : UInt) -> TextError
 
 pub fn text_font_context() -> FontCx
+
+pub fn text_font_eq(TextFont, TextFont) -> Bool
 
 pub fn text_font_family_names(FontCx) -> Array[String]
 
@@ -135,6 +162,8 @@ pub fn text_get_visual_bounds(TextHandle) -> @math.Rect?
 
 pub fn text_instances() -> Array[TextInstance]
 
+pub fn text_layout_eq(TextLayout, TextLayout) -> Bool
+
 pub fn text_layout_size(TextHandle) -> @math.Vec2?
 
 pub fn text_measure_glyph_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
@@ -155,7 +184,7 @@ pub fn text_runtime_layout_dirty() -> Bool
 
 pub fn text_runtime_mark_layout_dirty() -> Unit
 
-pub fn text_set_anchor(TextHandle, @sprite.Anchor) -> Unit
+pub fn text_set_anchor_vec(TextHandle, @math.Vec2) -> Unit
 
 pub fn text_set_background_color(TextHandle, TextBackgroundColor?) -> Unit
 
@@ -183,13 +212,13 @@ pub fn text_set_runtime_rem_size(Float) -> Unit
 
 pub fn text_set_scale_factor(TextHandle, Float) -> Unit
 
-pub fn text_set_shadow(TextHandle, @sprite.Text2dShadow?) -> Unit
-
 pub fn text_set_strikethrough(TextHandle, Strikethrough?) -> Unit
 
 pub fn text_set_strikethrough_color(TextHandle, StrikethroughColor?) -> Unit
 
 pub let text_set_sync_ecs : String
+
+pub fn text_set_text_shadow(TextHandle, TextShadow?) -> Unit
 
 pub fn text_set_transform(TextHandle, @transform.Transform) -> Unit
 
@@ -207,7 +236,9 @@ pub fn text_set_view_visible(TextHandle, Bool) -> Unit
 
 pub fn text_set_y_axis(TextHandle, YAxisOrientation) -> Unit
 
-pub fn text_spawn(Text2dBundle) -> TextHandle
+pub fn text_span_bundle_array_eq(Array[TextSpanBundle], Array[TextSpanBundle]) -> Bool
+
+pub fn text_spawn_data(TextSpawnData) -> TextHandle
 
 pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
 
@@ -217,9 +248,17 @@ pub fn text_visual_bounds(TextHandle) -> @math.Rect?
 
 pub fn text_writer(@ecs.World) -> TextWriter
 
+pub fn transform_eq(@transform.Transform, @transform.Transform) -> Bool
+
 pub fn ui_text_ecs_handle(@ecs.World, @core.Entity) -> TextHandle?
 
 pub fn ui_text_sync_ecs_system(@ecs.World) -> Unit
+
+pub fn underline_color_eq(UnderlineColor?, UnderlineColor?) -> Bool
+
+pub fn vec2_opt_eq(@math.Vec2?, @math.Vec2?) -> Bool
+
+pub fn y_axis_eq(YAxisOrientation, YAxisOrientation) -> Bool
 
 // Errors
 
@@ -541,44 +580,6 @@ pub fn Text::Text() -> Self
 pub fn Text::new(String) -> Self
 pub impl @ecs.Component for Text
 
-pub struct Text2dBundle {
-  text : @sprite.Text2d
-  font : TextFont
-  color : TextColor
-  background_color : TextBackgroundColor?
-  underline : Underline?
-  underline_color : UnderlineColor?
-  strikethrough : Strikethrough?
-  strikethrough_color : StrikethroughColor?
-  layout : TextLayout
-  bounds : TextBounds
-  line_height : LineHeight
-  font_hinting : FontHinting
-  shadow : @sprite.Text2dShadow?
-  transform : @transform.Transform
-  layers : @render_layers.RenderLayers
-  no_frustum_culling : Bool
-  anchor : @sprite.Anchor
-  y_axis : YAxisOrientation
-  logical_viewport_size : @math.Vec2?
-}
-pub fn Text2dBundle::new(@sprite.Text2d, TextFont, @transform.Transform) -> Self
-pub fn Text2dBundle::new_with_layers(@sprite.Text2d, TextFont, @transform.Transform, @render_layers.RenderLayers) -> Self
-pub fn Text2dBundle::spawn(Self) -> TextHandle
-pub fn Text2dBundle::with_anchor(Self, @sprite.Anchor) -> Self
-pub fn Text2dBundle::with_background_color(Self, TextBackgroundColor?) -> Self
-pub fn Text2dBundle::with_bounds(Self, TextBounds) -> Self
-pub fn Text2dBundle::with_color(Self, TextColor) -> Self
-pub fn Text2dBundle::with_font_hinting(Self, FontHinting) -> Self
-pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
-pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
-pub fn Text2dBundle::with_shadow(Self, @sprite.Text2dShadow?) -> Self
-pub fn Text2dBundle::with_strikethrough(Self, Strikethrough?) -> Self
-pub fn Text2dBundle::with_strikethrough_color(Self, StrikethroughColor?) -> Self
-pub fn Text2dBundle::with_underline(Self, Underline?) -> Self
-pub fn Text2dBundle::with_underline_color(Self, UnderlineColor?) -> Self
-pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
-
 pub(all) struct TextBackgroundColor {
   mut color : @color.Color
 }
@@ -804,6 +805,29 @@ pub struct TextSpanRange {
   length : Int
 }
 
+pub(all) struct TextSpawnData {
+  content : String
+  font : TextFont
+  color : TextColor
+  background_color : TextBackgroundColor?
+  underline : Underline?
+  underline_color : UnderlineColor?
+  strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
+  layout : TextLayout
+  bounds : TextBounds
+  line_height : LineHeight
+  font_hinting : FontHinting
+  shadow : TextShadow?
+  transform : @transform.Transform
+  layers : @render_layers.RenderLayers
+  no_frustum_culling : Bool
+  anchor : @math.Vec2
+  y_axis : YAxisOrientation
+  logical_viewport_size : @math.Vec2?
+}
+pub fn TextSpawnData::new(String, TextFont, @transform.Transform) -> Self
+
 pub struct TextWriter {
   world : @ecs.World
 }
@@ -832,9 +856,6 @@ pub(all) enum YAxisOrientation {
 pub impl @ecs.Component for YAxisOrientation
 
 // Type aliases
-pub using @sprite {type Text2d}
-
-pub using @sprite {type Text2dShadow}
 
 // Traits
 pub(open) trait IntoFontSize {

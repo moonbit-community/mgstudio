@@ -201,7 +201,7 @@ fn setup(world : @ecs.World) -> Unit {
     OcclusionCulling(),
   )
 
-  let help_text = @text.Text2dBundle::new(
+  let help_text = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(""),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))

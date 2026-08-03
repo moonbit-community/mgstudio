@@ -209,7 +209,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
-  let text_entity = @text.Text2dBundle::new(
+  let text_entity = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(command_text_content(Disabled, default_filters())),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))

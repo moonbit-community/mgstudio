@@ -146,7 +146,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     text_font,
   )
 
-  @text.Text2dBundle::new(
+  @sprite.Text2dBundle::new(
     @sprite.Text2d::new(TEXT2D_PRIMARY),
     text_font,
     @transform.Transform::identity(),
@@ -156,7 +156,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .spawn()
   |> ignore
 
-  @text.Text2dBundle::new_with_layers(
+  @sprite.Text2dBundle::new_with_layers(
     @sprite.Text2d::new(TEXT2D_SECONDARY),
     text_font,
     @transform.Transform::identity(),
@@ -167,7 +167,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .spawn()
   |> ignore
 
-  @text.Text2dBundle::new_with_layers(
+  @sprite.Text2dBundle::new_with_layers(
     @sprite.Text2d::new(TEXT2D_BOTH),
     text_font,
     @transform.Transform::from_xyz(0.0F, -50.0F, 0.0F),

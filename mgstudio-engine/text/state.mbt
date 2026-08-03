@@ -13,8 +13,11 @@
 // limitations under the License.
 
 ///|
-pub struct Text2dBundle {
-  text : Text2d
+/// Sprite-free spawn data for the retained text runtime -- the `bevy_text`
+/// boundary. `sprite`'s `Text2dBundle` (the Bevy `Text2d` require-list
+/// owner) converts into this at spawn; UI text builds it directly.
+pub(all) struct TextSpawnData {
+  content : String
   font : TextFont
   color : TextColor
   background_color : TextBackgroundColor?
@@ -26,23 +29,25 @@ pub struct Text2dBundle {
   bounds : TextBounds
   line_height : LineHeight
   font_hinting : FontHinting
-  shadow : Text2dShadow?
+  shadow : TextShadow?
   transform : @transform.Transform
   layers : @camera_render_layers.RenderLayers
   no_frustum_culling : Bool
-  anchor : @sprite.Anchor
+  /// The anchor as its vector value (`Anchor::as_vec`); the sprite-owned
+  /// `Anchor` converts at the boundary.
+  anchor : @math.Vec2
   y_axis : YAxisOrientation
   logical_viewport_size : @math.Vec2?
 }
 
 ///|
-pub fn Text2dBundle::new(
-  text : Text2d,
+pub fn TextSpawnData::new(
+  content : String,
   font : TextFont,
   transform : @transform.Transform,
-) -> Text2dBundle {
+) -> TextSpawnData {
   {
-    text,
+    content,
     font,
     color: TextColor(),
     background_color: None,
@@ -58,151 +63,10 @@ pub fn Text2dBundle::new(
     transform,
     layers: RenderLayers(),
     no_frustum_culling: false,
-    anchor: Anchor(),
+    anchor: @math.Vec2::new(0.0F, 0.0F),
     y_axis: TopToBottom,
     logical_viewport_size: None,
   }
-}
-
-///|
-pub fn Text2dBundle::new_with_layers(
-  text : Text2d,
-  font : TextFont,
-  transform : @transform.Transform,
-  layers : @camera_render_layers.RenderLayers,
-) -> Text2dBundle {
-  {
-    text,
-    font,
-    color: TextColor(),
-    background_color: None,
-    underline: None,
-    underline_color: None,
-    strikethrough: None,
-    strikethrough_color: None,
-    layout: TextLayout(),
-    bounds: TextBounds(),
-    line_height: LineHeight::default(),
-    font_hinting: FontHinting::default(),
-    shadow: None,
-    transform,
-    layers,
-    no_frustum_culling: false,
-    anchor: Anchor(),
-    y_axis: TopToBottom,
-    logical_viewport_size: None,
-  }
-}
-
-///|
-pub fn Text2dBundle::with_color(
-  self : Text2dBundle,
-  color : TextColor,
-) -> Text2dBundle {
-  { ..self, color, }
-}
-
-///|
-pub fn Text2dBundle::with_background_color(
-  self : Text2dBundle,
-  background_color : TextBackgroundColor?,
-) -> Text2dBundle {
-  { ..self, background_color, }
-}
-
-///|
-pub fn Text2dBundle::with_underline(
-  self : Text2dBundle,
-  underline : Underline?,
-) -> Text2dBundle {
-  { ..self, underline, }
-}
-
-///|
-pub fn Text2dBundle::with_underline_color(
-  self : Text2dBundle,
-  underline_color : UnderlineColor?,
-) -> Text2dBundle {
-  { ..self, underline_color, }
-}
-
-///|
-pub fn Text2dBundle::with_strikethrough(
-  self : Text2dBundle,
-  strikethrough : Strikethrough?,
-) -> Text2dBundle {
-  { ..self, strikethrough, }
-}
-
-///|
-pub fn Text2dBundle::with_strikethrough_color(
-  self : Text2dBundle,
-  strikethrough_color : StrikethroughColor?,
-) -> Text2dBundle {
-  { ..self, strikethrough_color, }
-}
-
-///|
-pub fn Text2dBundle::with_layout(
-  self : Text2dBundle,
-  layout : TextLayout,
-) -> Text2dBundle {
-  { ..self, layout, }
-}
-
-///|
-pub fn Text2dBundle::with_bounds(
-  self : Text2dBundle,
-  bounds : TextBounds,
-) -> Text2dBundle {
-  { ..self, bounds, }
-}
-
-///|
-pub fn Text2dBundle::with_line_height(
-  self : Text2dBundle,
-  line_height : LineHeight,
-) -> Text2dBundle {
-  { ..self, line_height, }
-}
-
-///|
-pub fn Text2dBundle::with_font_hinting(
-  self : Text2dBundle,
-  font_hinting : FontHinting,
-) -> Text2dBundle {
-  { ..self, font_hinting, }
-}
-
-///|
-pub fn Text2dBundle::with_shadow(
-  self : Text2dBundle,
-  shadow : Text2dShadow?,
-) -> Text2dBundle {
-  { ..self, shadow, }
-}
-
-///|
-/// Set the anchor used for world-space `Text2d` positioning (Bevy-aligned).
-pub fn Text2dBundle::with_anchor(
-  self : Text2dBundle,
-  anchor : @sprite.Anchor,
-) -> Text2dBundle {
-  { ..self, anchor, }
-}
-
-///|
-/// Set the layout coordinate orientation.
-pub fn Text2dBundle::with_y_axis(
-  self : Text2dBundle,
-  y_axis : YAxisOrientation,
-) -> Text2dBundle {
-  { ..self, y_axis, }
-}
-
-///|
-pub fn Text2dBundle::spawn(self : Text2dBundle) -> TextHandle {
-  text_spawn(self)
 }
 
 ///|
@@ -370,14 +234,6 @@ let text_state : TextState = {
 /// the `extract_text2d_sprite` query over public `bevy_text` components).
 pub fn text_instances() -> Array[TextInstance] {
   text_state.texts
-}
-
-///|
-fn text_shadow_opt_from_2d(shadow : @sprite.Text2dShadow?) -> TextShadow? {
-  match shadow {
-    Some(shadow) => Some(TextShadow::new(shadow.offset, shadow.color))
-    None => None
-  }
 }
 
 ///|
@@ -673,41 +529,41 @@ pub fn text_debug_visible_overlap_count(
 }
 
 ///|
-pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
+pub fn text_spawn_data(data : TextSpawnData) -> TextHandle {
   let id = text_state.next_text_id
   let index = text_state.texts.length()
   text_state.next_text_id = id + 1
   text_runtime_mark_layout_dirty()
   text_state.texts.push({
     id,
-    content: bundle.text.content,
-    font: bundle.font,
-    color: bundle.color,
-    background_color: bundle.background_color,
-    underline: bundle.underline,
-    underline_color: bundle.underline_color,
-    strikethrough: bundle.strikethrough,
-    strikethrough_color: bundle.strikethrough_color,
-    layout: bundle.layout,
-    bounds: bundle.bounds,
-    line_height: bundle.line_height,
-    font_hinting: bundle.font_hinting,
-    shadow: text_shadow_opt_from_2d(bundle.shadow),
-    transform: bundle.transform,
-    layers: bundle.layers,
+    content: data.content,
+    font: data.font,
+    color: data.color,
+    background_color: data.background_color,
+    underline: data.underline,
+    underline_color: data.underline_color,
+    strikethrough: data.strikethrough,
+    strikethrough_color: data.strikethrough_color,
+    layout: data.layout,
+    bounds: data.bounds,
+    line_height: data.line_height,
+    font_hinting: data.font_hinting,
+    shadow: data.shadow,
+    transform: data.transform,
+    layers: data.layers,
     view_visible: true,
-    no_frustum_culling: bundle.no_frustum_culling,
-    anchor: bundle.anchor.as_vec(),
-    y_axis: bundle.y_axis,
+    no_frustum_culling: data.no_frustum_culling,
+    anchor: data.anchor,
+    y_axis: data.y_axis,
     ui_node_size: None,
-    logical_viewport_size: bundle.logical_viewport_size,
+    logical_viewport_size: data.logical_viewport_size,
     scale_factor: 1.0F,
     ui_camera_entity: None,
     ui_scissor: None,
     cull_margin: text_compute_cull_margin(
-      bundle.bounds,
+      data.bounds,
       @math.Vec2::new(0.0F, 0.0F),
-      bundle.transform.scale,
+      data.transform.scale,
     ),
     spans: [],
     layout_dirty: true,
@@ -972,11 +828,11 @@ pub fn text_set_font_hinting(
 }
 
 ///|
-pub fn text_set_shadow(handle : TextHandle, shadow : Text2dShadow?) -> Unit {
+pub fn text_set_text_shadow(handle : TextHandle, shadow : TextShadow?) -> Unit {
   text_runtime_mark_layout_dirty()
   text_update_instance(handle, instance => {
     ..instance,
-    shadow: text_shadow_opt_from_2d(shadow),
+    shadow,
     layout_dirty: true,
     computed: { ..instance.computed, needs_rerender: true },
   })
@@ -1046,11 +902,8 @@ pub fn text_set_no_frustum_culling(
 
 ///|
 /// Update the anchor of a text handle without marking it as needing rerender.
-pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
-  text_update_instance(handle, instance => {
-    ..instance,
-    anchor: anchor.as_vec(),
-  })
+pub fn text_set_anchor_vec(handle : TextHandle, anchor : @math.Vec2) -> Unit {
+  text_update_instance(handle, instance => { ..instance, anchor, })
 }
 
 ///|

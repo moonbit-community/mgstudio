@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/sprite"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
@@ -12,6 +13,8 @@ import {
   "Milky2018/mgstudio/sprite_render/mesh2d/color_material",
   "Milky2018/mgstudio/sprite_render/mesh2d/material",
   "Milky2018/mgstudio/sprite_render/mesh2d/wireframe2d",
+  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
@@ -70,6 +73,24 @@ pub fn sprite_plugin_id() -> String
 pub fn sprite_plugin_with(@app.App[@ecs.World], SpritePlugin) -> @app.App[@ecs.World]
 
 pub let sprite_systems_compute_slices : String
+
+pub fn text2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn text_bundle(String, @text.TextFont, @transform.Transform) -> Text2dBundle
+
+pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float
+
+pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int
+
+pub fn text_diagnostic_sync_ecs_early_return() -> Bool
+
+pub fn text_set_anchor(@text.TextHandle, Anchor) -> Unit
+
+pub fn text_set_shadow(@text.TextHandle, Text2dShadow?) -> Unit
+
+pub fn text_spawn(Text2dBundle) -> @text.TextHandle
+
+pub fn text_sync_ecs_system(@ecs.World) -> Unit
 
 pub fn uploaded_mesh_base_radius(Int) -> Float
 
@@ -231,6 +252,44 @@ pub(all) struct Text2d {
 pub fn Text2d::Text2d() -> Self
 pub fn Text2d::new(String) -> Self
 pub impl @ecs.Component for Text2d
+
+pub struct Text2dBundle {
+  text : Text2d
+  font : @text.TextFont
+  color : @text.TextColor
+  background_color : @text.TextBackgroundColor?
+  underline : @text.Underline?
+  underline_color : @text.UnderlineColor?
+  strikethrough : @text.Strikethrough?
+  strikethrough_color : @text.StrikethroughColor?
+  layout : @text.TextLayout
+  bounds : @text.TextBounds
+  line_height : @text.LineHeight
+  font_hinting : @text.FontHinting
+  shadow : Text2dShadow?
+  transform : @transform.Transform
+  layers : @render_layers.RenderLayers
+  no_frustum_culling : Bool
+  anchor : Anchor
+  y_axis : @text.YAxisOrientation
+  logical_viewport_size : @math.Vec2?
+}
+pub fn Text2dBundle::new(Text2d, @text.TextFont, @transform.Transform) -> Self
+pub fn Text2dBundle::new_with_layers(Text2d, @text.TextFont, @transform.Transform, @render_layers.RenderLayers) -> Self
+pub fn Text2dBundle::spawn(Self) -> @text.TextHandle
+pub fn Text2dBundle::with_anchor(Self, Anchor) -> Self
+pub fn Text2dBundle::with_background_color(Self, @text.TextBackgroundColor?) -> Self
+pub fn Text2dBundle::with_bounds(Self, @text.TextBounds) -> Self
+pub fn Text2dBundle::with_color(Self, @text.TextColor) -> Self
+pub fn Text2dBundle::with_font_hinting(Self, @text.FontHinting) -> Self
+pub fn Text2dBundle::with_layout(Self, @text.TextLayout) -> Self
+pub fn Text2dBundle::with_line_height(Self, @text.LineHeight) -> Self
+pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self
+pub fn Text2dBundle::with_strikethrough(Self, @text.Strikethrough?) -> Self
+pub fn Text2dBundle::with_strikethrough_color(Self, @text.StrikethroughColor?) -> Self
+pub fn Text2dBundle::with_underline(Self, @text.Underline?) -> Self
+pub fn Text2dBundle::with_underline_color(Self, @text.UnderlineColor?) -> Self
+pub fn Text2dBundle::with_y_axis(Self, @text.YAxisOrientation) -> Self
 
 pub(all) struct Text2dShadow {
   mut offset : @math.Vec2

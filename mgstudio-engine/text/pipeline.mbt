@@ -1091,7 +1091,6 @@ pub let text_set_sync_ecs : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_text_required_components(app.world())
   text_pipeline_ensure_default_font_handle() |> ignore
   // The render half (extraction/queue systems and their set ordering) lives in
   // `sprite_render/text2d` (Bevy: `bevy_sprite_render/src/text2d/mod.rs`);
@@ -1104,9 +1103,6 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_last_system(text_trim_shape_run_cache_system)
   .add_post_update_system_config(
     @app.system(text_sync_font_assets_system).in_set(text_set_sync_ecs),
-  )
-  .add_post_update_system_config(
-    @app.system(text_sync_ecs_system).in_set(text_set_sync_ecs),
   )
   .configure_set(PostUpdate, text_set_sync_ecs, after=[
     @app.system_set("mgstudio.ui.stack"),

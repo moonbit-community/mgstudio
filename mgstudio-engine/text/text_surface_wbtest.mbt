@@ -108,13 +108,14 @@ test "text: font hinting follows Bevy component and atlas-key semantics" {
   )
 
   reset_text_ecs_test_state()
-  let handle = text_spawn(
-    Text2dBundle::new(
-      Text2d::new("Hinted"),
+  let handle = text_spawn_data({
+    ..TextSpawnData::new(
+      "Hinted",
       TextFont::from_font_size(0.0F),
       @transform.Transform::identity(),
-    ).with_font_hinting(Enabled),
-  )
+    ),
+    font_hinting: Enabled,
+  })
   text_state.texts[0] = text_update_layout(text_state.texts[0])
   debug_inspect(
     text_state.texts[0].computed.font_hinting is Enabled,
@@ -142,9 +143,9 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
     font_size: Rem(1.5F),
   }
 
-  let viewport_handle = text_spawn(
-    Text2dBundle::new(
-      Text2d::new("Viewport text"),
+  let viewport_handle = text_spawn_data(
+    TextSpawnData::new(
+      "Viewport text",
       viewport_font,
       @transform.Transform::identity(),
     ),
@@ -181,12 +182,8 @@ test "text: layout tracks viewport and rem dependencies for UI text" {
     content="true",
   )
 
-  let rem_handle = text_spawn(
-    Text2dBundle::new(
-      Text2d::new("Rem text"),
-      rem_font,
-      @transform.Transform::identity(),
-    ),
+  let rem_handle = text_spawn_data(
+    TextSpawnData::new("Rem text", rem_font, @transform.Transform::identity()),
   )
   text_set_runtime_rem_size(18.0F)
   text_state.texts[1] = text_update_layout(text_state.texts[1])

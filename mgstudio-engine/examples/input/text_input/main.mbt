@@ -104,7 +104,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let ime_buffer = spawn_ui_text_line(world, root, "IME Buffer:  \n", ui_font)
   status_text_handles_ref.val = Some({ ime_enabled, ime_active, ime_buffer })
 
-  let edit_handle = @text.Text2dBundle::new(
+  let edit_handle = @sprite.Text2dBundle::new(
     @sprite.Text2d::new(""),
     edit_font,
     @transform.Transform::identity(),
@@ -307,7 +307,7 @@ fn commit_text_line() -> Unit {
   if committed == "" {
     return
   }
-  let handle = @text.Text2dBundle::new(
+  let handle = @sprite.Text2dBundle::new(
     @sprite.Text2d::new(committed),
     edit_state.font,
     @transform.Transform::identity(),

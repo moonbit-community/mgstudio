@@ -481,7 +481,7 @@ fn setup(world : @ecs.World) -> Unit {
     light, @camera_render_layers.ecs_key_render_layers, layer,
   )
 
-  let help_text = @text.Text2dBundle::new(
+  let help_text = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(""),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))

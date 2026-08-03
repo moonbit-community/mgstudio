@@ -41,5 +41,5 @@ pub impl @app.Plugin for SpritePlugin with fn name(_self) {
 
 ///|
 pub impl @app.Plugin for SpritePlugin with fn build(self, app) {
-  sprite_plugin_with(app, self)
+  text2d_plugin(sprite_plugin_with(app, self))
 }

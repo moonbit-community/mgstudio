@@ -138,7 +138,7 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  @text.Text2dBundle::new(
+  @sprite.Text2dBundle::new(
     @sprite.Text2d::new(INSTRUCTIONS),
     @text.TextFont::TextFont().with_font(overlay_font).with_font_size(18.0F),
     @transform.Transform::from_xy_rotation_scale(

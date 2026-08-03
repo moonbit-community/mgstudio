@@ -18,9 +18,6 @@ pub let ecs_key_text : @ecs.ComponentKey[Text] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_text2d : @ecs.ComponentKey[Text2d] = @sprite.ecs_key_text2d
-
-///|
 pub let ecs_key_text_span : @ecs.ComponentKey[TextSpan] = @ecs.register_component(
   debug_name="text.text_span",
 )
@@ -79,9 +76,6 @@ pub let ecs_key_text_line_height : @ecs.ComponentKey[LineHeight] = @ecs.register
 pub let ecs_key_text_font_hinting : @ecs.ComponentKey[FontHinting] = @ecs.register_component(
   debug_name="text.text_font_hinting",
 )
-
-///|
-pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow] = @sprite.ecs_key_text2d_shadow
 
 ///|
 pub let ecs_key_text_shadow : @ecs.ComponentKey[TextShadow] = @ecs.register_component(
@@ -199,27 +193,11 @@ pub impl @app.Resource for FontAtlasSet with fn resource() {
 }
 
 ///|
-priv struct EcsTextEntry {
-  world_id : Int
-  entity : @core.Entity
-  handle : TextHandle
-  bundle : Text2dBundle
-  view_visible : Bool
-  span_bundles : Array[TextSpanBundle]
-}
-
-///|
-let text_ecs_entries : Array[EcsTextEntry] = []
-
-///|
-let text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = Map([])
-
-///|
 priv struct UiEcsTextEntry {
   world_id : Int
   entity : @core.Entity
   handle : TextHandle
-  bundle : Text2dBundle
+  bundle : TextSpawnData
   view_visible : Bool
   span_bundles : Array[TextSpanBundle]
 }
@@ -233,21 +211,13 @@ let ui_text_ecs_index_by_world_id : Map[Int, Map[Int, Int]] = Map([])
 ///|
 priv struct TextEcsRuntimeState {
   mut world_id : Int?
-  mut diagnostic_sync_ecs_cpu_ms : Float
-  mut diagnostic_sync_ecs_dirty_entity_count : Int
-  mut diagnostic_sync_ecs_early_return : Bool
 }
 
 ///|
-let text_ecs_runtime_state : TextEcsRuntimeState = {
-  world_id: None,
-  diagnostic_sync_ecs_cpu_ms: 0.0F,
-  diagnostic_sync_ecs_dirty_entity_count: 0,
-  diagnostic_sync_ecs_early_return: false,
-}
+let text_ecs_runtime_state : TextEcsRuntimeState = { world_id: None }
 
 ///|
-let text_ecs_sync_candidate_entity_count : Ref[Int] = Ref(0)
+pub let text_ecs_sync_candidate_entity_count : Ref[Int] = Ref(0)
 
 ///|
 fn reset_text_runtime_state() -> Unit {
@@ -255,8 +225,6 @@ fn reset_text_runtime_state() -> Unit {
   text_state.next_span_id = 0
   text_state_clear_instances()
   text_debug_frame_state.draws.clear()
-  text_ecs_entries.clear()
-  text_ecs_index_by_world_id.clear()
   ui_text_ecs_entries.clear()
   ui_text_ecs_index_by_world_id.clear()
   text_pipeline_runtime_state.font_atlas_set = FontAtlasSet()
@@ -272,7 +240,7 @@ fn reset_text_runtime_state() -> Unit {
 }
 
 ///|
-fn prepare_text_runtime_world(world : @ecs.World) -> Unit {
+pub fn prepare_text_runtime_world(world : @ecs.World) -> Unit {
   let world_id = world.world_id()
   if text_ecs_runtime_state.world_id == Some(world_id) {
     return
@@ -288,50 +256,7 @@ pub fn text_reset_runtime_state_for_tests() -> Unit {
 }
 
 ///|
-fn register_text_required_components(
-  world : @ecs.World,
-) -> Unit raise @ecs.RequiredComponentsError {
-  world.register_required_components_with(ecs_key_text2d, ecs_key_text_layout, fn() {
-    TextLayout()
-  })
-  world.register_required_components_with(ecs_key_text2d, ecs_key_text_font, fn() {
-    TextFont()
-  })
-  world.register_required_components_with(ecs_key_text2d, ecs_key_text_color, fn() {
-    TextColor()
-  })
-  world.register_required_components_with(
-    ecs_key_text2d,
-    ecs_key_text_line_height,
-    fn() { LineHeight::default() },
-  )
-  world.register_required_components_with(
-    ecs_key_text2d,
-    ecs_key_text_font_hinting,
-    fn() { FontHinting::default() },
-  )
-  world.register_required_components_with(ecs_key_text2d, ecs_key_text_bounds, fn() {
-    TextBounds()
-  })
-  world.register_required_components_with(
-    ecs_key_text2d,
-    @sprite.ecs_key_anchor,
-    fn() { Anchor() },
-  )
-  world.register_required_components_with(
-    ecs_key_text2d,
-    @visibility.ecs_key_visibility,
-    fn() { Inherited },
-  )
-  world.register_required_components_with(
-    ecs_key_text2d,
-    @transform.ecs_key_transform,
-    fn() { @transform.Transform::identity() },
-  )
-}
-
-///|
-fn sync_text_runtime_rem_size(world : @ecs.World) -> Unit {
+pub fn sync_text_runtime_rem_size(world : @ecs.World) -> Unit {
   let rem_size = match world.resource(RemSize::resource()).get() {
     Some(value) => value.value()
     None => RemSize::RemSize().value()
@@ -369,14 +294,17 @@ fn quat_eq(lhs : @math.Quat, rhs : @math.Quat) -> Bool {
 }
 
 ///|
-fn transform_eq(lhs : @transform.Transform, rhs : @transform.Transform) -> Bool {
+pub fn transform_eq(
+  lhs : @transform.Transform,
+  rhs : @transform.Transform,
+) -> Bool {
   vec3_eq(lhs.translation, rhs.translation) &&
   quat_eq(lhs.rotation, rhs.rotation) &&
   vec3_eq(lhs.scale, rhs.scale)
 }
 
 ///|
-fn render_layers_eq(
+pub fn render_layers_eq(
   lhs : @camera_render_layers.RenderLayers,
   rhs : @camera_render_layers.RenderLayers,
 ) -> Bool {
@@ -384,12 +312,7 @@ fn render_layers_eq(
 }
 
 ///|
-fn anchor_eq(lhs : @sprite.Anchor, rhs : @sprite.Anchor) -> Bool {
-  vec2_eq(lhs.value, rhs.value)
-}
-
-///|
-fn vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
+pub fn vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
   match (lhs, rhs) {
     (Some(lhs), Some(rhs)) => vec2_eq(lhs, rhs)
     (None, None) => true
@@ -404,11 +327,6 @@ fn font_smoothing_eq(lhs : FontSmoothing, rhs : FontSmoothing) -> Bool {
     (AntiAliased, AntiAliased) => true
     _ => false
   }
-}
-
-///|
-fn text2d_eq(lhs : Text2d, rhs : Text2d) -> Bool {
-  lhs.content == rhs.content
 }
 
 ///|
@@ -495,7 +413,7 @@ fn font_features_eq(lhs : FontFeatures, rhs : FontFeatures) -> Bool {
 }
 
 ///|
-fn text_font_eq(lhs : TextFont, rhs : TextFont) -> Bool {
+pub fn text_font_eq(lhs : TextFont, rhs : TextFont) -> Bool {
   font_source_eq(lhs.font, rhs.font) &&
   font_size_eq(lhs.font_size, rhs.font_size) &&
   font_weight_eq(lhs.weight, rhs.weight) &&
@@ -506,12 +424,12 @@ fn text_font_eq(lhs : TextFont, rhs : TextFont) -> Bool {
 }
 
 ///|
-fn text_color_eq(lhs : TextColor, rhs : TextColor) -> Bool {
+pub fn text_color_eq(lhs : TextColor, rhs : TextColor) -> Bool {
   color_eq(lhs.color, rhs.color)
 }
 
 ///|
-fn text_background_color_eq(
+pub fn text_background_color_eq(
   lhs : TextBackgroundColor?,
   rhs : TextBackgroundColor?,
 ) -> Bool {
@@ -523,7 +441,7 @@ fn text_background_color_eq(
 }
 
 ///|
-fn underline_color_eq(lhs : UnderlineColor?, rhs : UnderlineColor?) -> Bool {
+pub fn underline_color_eq(lhs : UnderlineColor?, rhs : UnderlineColor?) -> Bool {
   match (lhs, rhs) {
     (Some(lhs), Some(rhs)) => color_eq(lhs.color, rhs.color)
     (None, None) => true
@@ -532,7 +450,7 @@ fn underline_color_eq(lhs : UnderlineColor?, rhs : UnderlineColor?) -> Bool {
 }
 
 ///|
-fn strikethrough_color_eq(
+pub fn strikethrough_color_eq(
   lhs : StrikethroughColor?,
   rhs : StrikethroughColor?,
 ) -> Bool {
@@ -544,7 +462,7 @@ fn strikethrough_color_eq(
 }
 
 ///|
-fn[A] empty_marker_opt_eq(lhs : A?, rhs : A?) -> Bool {
+pub fn[A] empty_marker_opt_eq(lhs : A?, rhs : A?) -> Bool {
   match (lhs, rhs) {
     (Some(_), Some(_)) => true
     (None, None) => true
@@ -577,13 +495,13 @@ fn line_break_eq(lhs : LineBreak, rhs : LineBreak) -> Bool {
 }
 
 ///|
-fn text_layout_eq(lhs : TextLayout, rhs : TextLayout) -> Bool {
+pub fn text_layout_eq(lhs : TextLayout, rhs : TextLayout) -> Bool {
   justify_eq(lhs.justify, rhs.justify) &&
   line_break_eq(lhs.linebreak, rhs.linebreak)
 }
 
 ///|
-fn line_height_eq(lhs : LineHeight, rhs : LineHeight) -> Bool {
+pub fn line_height_eq(lhs : LineHeight, rhs : LineHeight) -> Bool {
   match (lhs, rhs) {
     (Px(lhs), Px(rhs)) => lhs == rhs
     (RelativeToFont(lhs), RelativeToFont(rhs)) => lhs == rhs
@@ -592,7 +510,7 @@ fn line_height_eq(lhs : LineHeight, rhs : LineHeight) -> Bool {
 }
 
 ///|
-fn font_hinting_eq(lhs : FontHinting, rhs : FontHinting) -> Bool {
+pub fn font_hinting_eq(lhs : FontHinting, rhs : FontHinting) -> Bool {
   match (lhs, rhs) {
     (Disabled, Disabled) => true
     (Enabled, Enabled) => true
@@ -601,30 +519,12 @@ fn font_hinting_eq(lhs : FontHinting, rhs : FontHinting) -> Bool {
 }
 
 ///|
-fn text_bounds_eq(lhs : TextBounds, rhs : TextBounds) -> Bool {
+pub fn text_bounds_eq(lhs : TextBounds, rhs : TextBounds) -> Bool {
   float_opt_eq(lhs.width, rhs.width) && float_opt_eq(lhs.height, rhs.height)
 }
 
 ///|
-fn text_shadow_eq(lhs : Text2dShadow?, rhs : Text2dShadow?) -> Bool {
-  match (lhs, rhs) {
-    (Some(lhs), Some(rhs)) =>
-      vec2_eq(lhs.offset, rhs.offset) && color_eq(lhs.color, rhs.color)
-    (None, None) => true
-    _ => false
-  }
-}
-
-///|
-fn text_shadow_component_to_2d(shadow : TextShadow?) -> Text2dShadow? {
-  match shadow {
-    Some(shadow) => Some(Text2dShadow::new(shadow.offset, shadow.color))
-    None => None
-  }
-}
-
-///|
-fn y_axis_eq(lhs : YAxisOrientation, rhs : YAxisOrientation) -> Bool {
+pub fn y_axis_eq(lhs : YAxisOrientation, rhs : YAxisOrientation) -> Bool {
   match (lhs, rhs) {
     (TopToBottom, TopToBottom) => true
     (BottomToTop, BottomToTop) => true
@@ -646,7 +546,7 @@ fn text_span_bundle_eq(lhs : TextSpanBundle, rhs : TextSpanBundle) -> Bool {
 }
 
 ///|
-fn text_span_bundle_array_eq(
+pub fn text_span_bundle_array_eq(
   lhs : Array[TextSpanBundle],
   rhs : Array[TextSpanBundle],
 ) -> Bool {
@@ -662,8 +562,21 @@ fn text_span_bundle_array_eq(
 }
 
 ///|
-fn text_bundle_rerender_eq(lhs : Text2dBundle, rhs : Text2dBundle) -> Bool {
-  text2d_eq(lhs.text, rhs.text) &&
+fn text_component_shadow_eq(lhs : TextShadow?, rhs : TextShadow?) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs), Some(rhs)) =>
+      vec2_eq(lhs.offset, rhs.offset) && color_eq(lhs.color, rhs.color)
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
+fn text_spawn_data_rerender_eq(
+  lhs : TextSpawnData,
+  rhs : TextSpawnData,
+) -> Bool {
+  lhs.content == rhs.content &&
   text_font_eq(lhs.font, rhs.font) &&
   text_color_eq(lhs.color, rhs.color) &&
   text_background_color_eq(lhs.background_color, rhs.background_color) &&
@@ -675,65 +588,9 @@ fn text_bundle_rerender_eq(lhs : Text2dBundle, rhs : Text2dBundle) -> Bool {
   text_bounds_eq(lhs.bounds, rhs.bounds) &&
   line_height_eq(lhs.line_height, rhs.line_height) &&
   font_hinting_eq(lhs.font_hinting, rhs.font_hinting) &&
-  text_shadow_eq(lhs.shadow, rhs.shadow) &&
+  text_component_shadow_eq(lhs.shadow, rhs.shadow) &&
   y_axis_eq(lhs.y_axis, rhs.y_axis) &&
   vec2_opt_eq(lhs.logical_viewport_size, rhs.logical_viewport_size)
-}
-
-///|
-fn text_ecs_find_entry_index(world_id : Int, entity : @core.Entity) -> Int? {
-  let count = text_ecs_entries.length()
-  for i in 0..<count {
-    let entry = text_ecs_entries[i]
-    if entry.world_id == world_id && entry.entity == entity {
-      return Some(i)
-    }
-  }
-  None
-}
-
-///|
-fn text_ecs_build_entry_index_by_entity_id(world_id : Int) -> Map[Int, Int] {
-  if text_ecs_index_by_world_id.get(world_id) is Some(index_by_entity_id) {
-    return index_by_entity_id
-  }
-  let index_by_entity_id : Map[Int, Int] = Map([])
-  let count = text_ecs_entries.length()
-  for i in 0..<count {
-    let entry = text_ecs_entries[i]
-    if entry.world_id == world_id {
-      index_by_entity_id.set(entry.entity.id, i)
-    }
-  }
-  text_ecs_index_by_world_id.set(world_id, index_by_entity_id)
-  index_by_entity_id
-}
-
-///|
-fn text_ecs_text2d_root_is_changed(
-  world : @ecs.World,
-  entity : @core.Entity,
-  tick : @core.SystemTicks,
-) -> Bool {
-  world.is_changed_by_key(entity, @transform.ecs_key_global_transform, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_color, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_background_color, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_underline, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_underline_color, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_strikethrough, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_strikethrough_color, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_layout, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_bounds, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_line_height, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_font_hinting, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text2d_shadow, tick) ||
-  world.is_changed_by_key(
-    entity, @camera_render_layers.ecs_key_render_layers, tick,
-  ) ||
-  world.is_changed_by_key(entity, @sprite.ecs_key_anchor, tick) ||
-  world.is_changed_by_key(entity, ecs_key_text_y_axis, tick) ||
-  world.is_changed_by_key(entity, @visibility.ecs_key_view_visibility, tick) ||
-  world.is_changed_by_key(entity, @hierarchy.ecs_key_children, tick)
 }
 
 ///|
@@ -758,7 +615,7 @@ fn text_ecs_ui_root_is_changed(
 }
 
 ///|
-fn text_ecs_entity_id_set_contains(
+pub fn text_ecs_entity_id_set_contains(
   set : @hashset.HashSet[Int],
   entity : @core.Entity,
 ) -> Bool {
@@ -766,7 +623,7 @@ fn text_ecs_entity_id_set_contains(
 }
 
 ///|
-fn text_ecs_changed_span_parent_ids(
+pub fn text_ecs_changed_span_parent_ids(
   world : @ecs.World,
   span_edges : Array[(@core.Entity, @core.Entity)],
   tick : @core.SystemTicks,
@@ -791,27 +648,7 @@ fn text_ecs_changed_span_parent_ids(
 }
 
 ///|
-fn text_ecs_find_entry_index_from_index(
-  world_id : Int,
-  entity : @core.Entity,
-  index_by_entity_id : Map[Int, Int],
-) -> Int? {
-  match index_by_entity_id.get(entity.id) {
-    Some(index) =>
-      if index >= 0 &&
-        index < text_ecs_entries.length() &&
-        text_ecs_entries[index].world_id == world_id &&
-        text_ecs_entries[index].entity == entity {
-        Some(index)
-      } else {
-        text_ecs_find_entry_index(world_id, entity)
-      }
-    None => None
-  }
-}
-
-///|
-fn text_ecs_world_entity_ref(
+pub fn text_ecs_world_entity_ref(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> @ecs.EntityRef? {
@@ -821,7 +658,7 @@ fn text_ecs_world_entity_ref(
 }
 
 ///|
-fn[T : @ecs.Component] text_ecs_entity_ref_get(
+pub fn[T : @ecs.Component] text_ecs_entity_ref_get(
   entity_ref : @ecs.EntityRef,
 ) -> T? {
   entity_ref.get() catch {
@@ -830,128 +667,11 @@ fn[T : @ecs.Component] text_ecs_entity_ref_get(
 }
 
 ///|
-fn text_ecs_entity_ref_view_visible(entity_ref : @ecs.EntityRef) -> Bool {
+pub fn text_ecs_entity_ref_view_visible(entity_ref : @ecs.EntityRef) -> Bool {
   match (text_ecs_entity_ref_get(entity_ref) : @visibility.ViewVisibility?) {
     Some(view_visibility) => view_visibility.is_visible()
     None => true
   }
-}
-
-///|
-fn text_ecs_bundle_from_entity(
-  world : @ecs.World,
-  entity : @core.Entity,
-  text : Text2d,
-  font : TextFont,
-  local_transform : @transform.Transform,
-) -> (Text2dBundle, Bool) {
-  guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
-    return (
-      {
-        text,
-        font,
-        color: TextColor(),
-        background_color: None,
-        underline: None,
-        underline_color: None,
-        strikethrough: None,
-        strikethrough_color: None,
-        layout: TextLayout(),
-        bounds: TextBounds(),
-        line_height: LineHeight::default(),
-        font_hinting: FontHinting::default(),
-        shadow: None,
-        transform: local_transform,
-        layers: RenderLayers(),
-        no_frustum_culling: false,
-        anchor: Anchor(),
-        y_axis: TopToBottom,
-        logical_viewport_size: None,
-      },
-      true,
-    )
-  }
-  let transform = match
-    (text_ecs_entity_ref_get(entity_ref) : @transform.GlobalTransform?) {
-    Some(global_transform) => global_transform.to_transform_approx()
-    None => local_transform
-  }
-  let color = match (text_ecs_entity_ref_get(entity_ref) : TextColor?) {
-    Some(color) => color
-    None => TextColor()
-  }
-  let background_color : TextBackgroundColor? = text_ecs_entity_ref_get(
-    entity_ref,
-  )
-  let underline : Underline? = text_ecs_entity_ref_get(entity_ref)
-  let underline_color : UnderlineColor? = text_ecs_entity_ref_get(entity_ref)
-  let strikethrough : Strikethrough? = text_ecs_entity_ref_get(entity_ref)
-  let strikethrough_color : StrikethroughColor? = text_ecs_entity_ref_get(
-    entity_ref,
-  )
-  let layout = match (text_ecs_entity_ref_get(entity_ref) : TextLayout?) {
-    Some(layout) => layout
-    None => TextLayout()
-  }
-  let bounds = match (text_ecs_entity_ref_get(entity_ref) : TextBounds?) {
-    Some(bounds) => bounds
-    None => TextBounds()
-  }
-  let line_height = match (text_ecs_entity_ref_get(entity_ref) : LineHeight?) {
-    Some(line_height) => line_height
-    None => LineHeight::default()
-  }
-  let font_hinting = match
-    (text_ecs_entity_ref_get(entity_ref) : FontHinting?) {
-    Some(font_hinting) => font_hinting
-    None => FontHinting::default()
-  }
-  let shadow : Text2dShadow? = text_ecs_entity_ref_get(entity_ref)
-  let layers = match
-    (text_ecs_entity_ref_get(entity_ref) : @camera_render_layers.RenderLayers?) {
-    Some(layers) => layers
-    None => RenderLayers()
-  }
-  let anchor = match (text_ecs_entity_ref_get(entity_ref) : @sprite.Anchor?) {
-    Some(anchor) => anchor
-    None => Anchor()
-  }
-  let y_axis = match (text_ecs_entity_ref_get(entity_ref) : YAxisOrientation?) {
-    Some(y_axis) => y_axis
-    None => TopToBottom
-  }
-  let no_frustum_culling = (world.contains_by_key(
-      entity, @visibility.ecs_key_no_frustum_culling,
-    ) catch {
-      _ => false
-    }) ||
-    (world.contains_by_key(entity, @visibility.ecs_key_no_cpu_culling) catch {
-      _ => false
-    })
-  (
-    {
-      text,
-      font,
-      color,
-      background_color,
-      underline,
-      underline_color,
-      strikethrough,
-      strikethrough_color,
-      layout,
-      bounds,
-      line_height,
-      font_hinting,
-      shadow,
-      transform,
-      layers,
-      no_frustum_culling,
-      anchor,
-      y_axis,
-      logical_viewport_size: None,
-    },
-    text_ecs_entity_ref_view_visible(entity_ref),
-  )
 }
 
 ///|
@@ -1003,10 +723,11 @@ fn text_ecs_span_bundle_from_entity(
 }
 
 ///|
-fn text_ecs_collect_span_bundles_for_entity(
+pub fn text_ecs_collect_span_bundles_for_entity(
   world : @ecs.World,
   entity : @core.Entity,
-  bundle : Text2dBundle,
+  font : TextFont,
+  line_height : LineHeight,
   span_edges : Array[(@core.Entity, @core.Entity)],
 ) -> Array[TextSpanBundle] {
   let span_bundles : Array[TextSpanBundle] = []
@@ -1018,12 +739,7 @@ fn text_ecs_collect_span_bundles_for_entity(
   match children {
     Some(children) =>
       for child in children.entities() {
-        if text_ecs_span_bundle_from_entity(
-            world,
-            child,
-            bundle.font,
-            bundle.line_height,
-          )
+        if text_ecs_span_bundle_from_entity(world, child, font, line_height)
           is Some(span_bundle) {
           span_bundles.push(span_bundle)
         }
@@ -1035,12 +751,7 @@ fn text_ecs_collect_span_bundles_for_entity(
         if parent != entity {
           continue
         }
-        if text_ecs_span_bundle_from_entity(
-            world,
-            child,
-            bundle.font,
-            bundle.line_height,
-          )
+        if text_ecs_span_bundle_from_entity(world, child, font, line_height)
           is Some(span_bundle) {
           span_bundles.push(span_bundle)
         }
@@ -1050,7 +761,7 @@ fn text_ecs_collect_span_bundles_for_entity(
 }
 
 ///|
-fn text_ecs_collect_span_edges(
+pub fn text_ecs_collect_span_edges(
   world : @ecs.World,
 ) -> Array[(@core.Entity, @core.Entity)] {
   let span_edges : Array[(@core.Entity, @core.Entity)] = []
@@ -1063,296 +774,6 @@ fn text_ecs_collect_span_edges(
     span_edges.push((parent.value().entity(), child))
   })
   span_edges
-}
-
-///|
-fn text_ecs_spawn_entry(
-  world : @ecs.World,
-  world_id : Int,
-  entity : @core.Entity,
-  bundle : Text2dBundle,
-  span_bundles : Array[TextSpanBundle],
-  view_visible : Bool,
-) -> Unit {
-  sync_text_runtime_rem_size(world)
-  let handle = @asset.asset_with_world(world, fn() {
-    let handle = text_spawn(bundle)
-    for span_bundle in span_bundles {
-      ignore(text_spawn_span(handle, span_bundle))
-    }
-    handle
-  })
-  text_set_view_visible(handle, view_visible)
-  text_ecs_entries.push({
-    world_id,
-    entity,
-    handle,
-    bundle,
-    view_visible,
-    span_bundles,
-  })
-  text_ecs_build_entry_index_by_entity_id(world_id).set(
-    entity.id,
-    text_ecs_entries.length() - 1,
-  )
-}
-
-///|
-fn text_ecs_remove_entry_at_index(
-  index : Int,
-  index_by_entity_id : Map[Int, Int],
-) -> Unit {
-  let last_index = text_ecs_entries.length() - 1
-  let removed_entry = text_ecs_entries[index]
-  ignore(text_despawn(removed_entry.handle))
-  if index != last_index {
-    let moved_entry = text_ecs_entries[last_index]
-    text_ecs_entries[index] = moved_entry
-    index_by_entity_id.set(moved_entry.entity.id, index)
-  }
-  ignore(text_ecs_entries.pop())
-  ignore(index_by_entity_id.remove(removed_entry.entity.id))
-}
-
-///|
-fn text_ecs_cleanup_removed_entity(
-  world_id : Int,
-  entity : @core.Entity,
-  index_by_entity_id : Map[Int, Int],
-) -> Unit {
-  match
-    text_ecs_find_entry_index_from_index(world_id, entity, index_by_entity_id) {
-    Some(index) => text_ecs_remove_entry_at_index(index, index_by_entity_id)
-    None => ()
-  }
-}
-
-///|
-fn text_ecs_cleanup_removed_entries(
-  world : @ecs.World,
-  world_id : Int,
-  tick : @core.SystemTicks,
-  index_by_entity_id : Map[Int, Int],
-) -> Unit {
-  for entity in world.removed_components(ecs_key_text2d, tick).read() {
-    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
-  }
-  for entity in world.removed_components(ecs_key_text_font, tick).read() {
-    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
-  }
-  for entity in world.removed_components(ecs_key_text_font_hinting, tick).read() {
-    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
-  }
-  for
-    entity in world
-    .removed_components(@transform.ecs_key_transform, tick)
-    .read() {
-    text_ecs_cleanup_removed_entity(world_id, entity, index_by_entity_id)
-  }
-}
-
-///|
-fn text_ecs_respawn_entry(
-  world : @ecs.World,
-  entry : EcsTextEntry,
-  bundle : Text2dBundle,
-  span_bundles : Array[TextSpanBundle],
-  view_visible : Bool,
-) -> EcsTextEntry {
-  ignore(text_despawn(entry.handle))
-  sync_text_runtime_rem_size(world)
-  let handle = @asset.asset_with_world(world, fn() {
-    let handle = text_spawn(bundle)
-    for span_bundle in span_bundles {
-      ignore(text_spawn_span(handle, span_bundle))
-    }
-    handle
-  })
-  text_set_view_visible(handle, view_visible)
-  { ..entry, handle, bundle, view_visible, span_bundles }
-}
-
-///|
-fn text_ecs_sync_existing_entry(
-  world : @ecs.World,
-  entry : EcsTextEntry,
-  bundle : Text2dBundle,
-  span_bundles : Array[TextSpanBundle],
-  view_visible : Bool,
-) -> EcsTextEntry {
-  sync_text_runtime_rem_size(world)
-  let handle = entry.handle
-  if text_get_transform(handle) is None {
-    return text_ecs_respawn_entry(
-      world, entry, bundle, span_bundles, view_visible,
-    )
-  }
-  if !text_span_bundle_array_eq(entry.span_bundles, span_bundles) {
-    return text_ecs_respawn_entry(
-      world, entry, bundle, span_bundles, view_visible,
-    )
-  }
-  if entry.view_visible != view_visible {
-    text_set_view_visible(handle, view_visible)
-  }
-  if !text2d_eq(entry.bundle.text, bundle.text) {
-    text_set_content(handle, bundle.text.content)
-  }
-  if !text_font_eq(entry.bundle.font, bundle.font) {
-    text_set_font(handle, bundle.font)
-  }
-  if !text_color_eq(entry.bundle.color, bundle.color) {
-    text_set_color(handle, bundle.color)
-  }
-  if !text_background_color_eq(
-      entry.bundle.background_color,
-      bundle.background_color,
-    ) {
-    text_set_background_color(handle, bundle.background_color)
-  }
-  if !empty_marker_opt_eq(entry.bundle.underline, bundle.underline) {
-    text_set_underline(handle, bundle.underline)
-  }
-  if !underline_color_eq(entry.bundle.underline_color, bundle.underline_color) {
-    text_set_underline_color(handle, bundle.underline_color)
-  }
-  if !empty_marker_opt_eq(entry.bundle.strikethrough, bundle.strikethrough) {
-    text_set_strikethrough(handle, bundle.strikethrough)
-  }
-  if !strikethrough_color_eq(
-      entry.bundle.strikethrough_color,
-      bundle.strikethrough_color,
-    ) {
-    text_set_strikethrough_color(handle, bundle.strikethrough_color)
-  }
-  if !text_layout_eq(entry.bundle.layout, bundle.layout) {
-    text_set_layout(handle, bundle.layout)
-  }
-  if !text_bounds_eq(entry.bundle.bounds, bundle.bounds) {
-    text_set_bounds(handle, bundle.bounds)
-  }
-  if !line_height_eq(entry.bundle.line_height, bundle.line_height) {
-    text_set_line_height(handle, bundle.line_height)
-  }
-  if !font_hinting_eq(entry.bundle.font_hinting, bundle.font_hinting) {
-    text_set_font_hinting(handle, bundle.font_hinting)
-  }
-  if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
-    text_set_shadow(handle, bundle.shadow)
-  }
-  if !transform_eq(entry.bundle.transform, bundle.transform) {
-    text_set_transform(handle, bundle.transform)
-  }
-  if !render_layers_eq(entry.bundle.layers, bundle.layers) {
-    text_set_layers(handle, bundle.layers)
-  }
-  if entry.bundle.no_frustum_culling != bundle.no_frustum_culling {
-    text_set_no_frustum_culling(handle, bundle.no_frustum_culling)
-  }
-  if !anchor_eq(entry.bundle.anchor, bundle.anchor) {
-    text_set_anchor(handle, bundle.anchor)
-  }
-  if !y_axis_eq(entry.bundle.y_axis, bundle.y_axis) {
-    text_set_y_axis(handle, bundle.y_axis)
-  }
-  if !vec2_opt_eq(
-      entry.bundle.logical_viewport_size,
-      bundle.logical_viewport_size,
-    ) {
-    text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
-  }
-  { ..entry, bundle, view_visible, span_bundles }
-}
-
-///|
-fn text_sync_ecs_system(world : @ecs.World) -> Unit {
-  let sync_start = @time.host_time_now()
-  text_ecs_sync_candidate_entity_count.val = 0
-  text_ecs_runtime_state.diagnostic_sync_ecs_early_return = false
-  text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count = 0
-  prepare_text_runtime_world(world)
-  let world_id = world.world_id()
-  let index_by_entity_id = text_ecs_build_entry_index_by_entity_id(world_id)
-  let tick = world.get_tick_context().ticks()
-  text_ecs_cleanup_removed_entries(world, world_id, tick, index_by_entity_id)
-  let span_edges = text_ecs_collect_span_edges(world)
-  let has_any_spans = span_edges.length() > 0
-  let changed_span_parent_ids = text_ecs_changed_span_parent_ids(
-    world, span_edges, tick,
-  )
-  let dirty_root_count = Ref(0)
-  let query : @ecs.Query[
-    (@ecs.Read[Text2d], @ecs.Read[TextFont], @ecs.Read[@transform.Transform]),
-    @ecs.All,
-  ] = @ecs.query(world)
-  try! query.view(fn(entity, data) {
-    text_ecs_sync_candidate_entity_count.val = text_ecs_sync_candidate_entity_count.val +
-      1
-    let existing_index = text_ecs_find_entry_index_from_index(
-      world_id, entity, index_by_entity_id,
-    )
-    let (text, font, local_transform) = data
-    if existing_index is Some(_) &&
-      !text.is_changed() &&
-      !font.is_changed() &&
-      !local_transform.is_changed() &&
-      !text_ecs_text2d_root_is_changed(world, entity, tick) &&
-      !text_ecs_entity_id_set_contains(changed_span_parent_ids, entity) {
-      return
-    }
-    dirty_root_count.val = dirty_root_count.val + 1
-    let (bundle, view_visible) = text_ecs_bundle_from_entity(
-      world,
-      entity,
-      text.value(),
-      font.value(),
-      local_transform.value(),
-    )
-    let span_bundles = if has_any_spans {
-      text_ecs_collect_span_bundles_for_entity(
-        world, entity, bundle, span_edges,
-      )
-    } else {
-      []
-    }
-    match existing_index {
-      Some(index) => {
-        let entry = text_ecs_entries[index]
-        text_ecs_entries[index] = text_ecs_sync_existing_entry(
-          world, entry, bundle, span_bundles, view_visible,
-        )
-      }
-      None => {
-        text_ecs_spawn_entry(
-          world, world_id, entity, bundle, span_bundles, view_visible,
-        )
-        index_by_entity_id.set(entity.id, text_ecs_entries.length() - 1)
-      }
-    }
-  })
-  text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count = dirty_root_count.val
-  text_ecs_runtime_state.diagnostic_sync_ecs_early_return = dirty_root_count.val ==
-    0 &&
-    text_ecs_entries.length() > 0
-  text_ecs_runtime_state.diagnostic_sync_ecs_cpu_ms = (
-      @time.host_time_now() - sync_start
-    ) *
-    1000.0F
-}
-
-///|
-pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float {
-  text_ecs_runtime_state.diagnostic_sync_ecs_cpu_ms
-}
-
-///|
-pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int {
-  text_ecs_runtime_state.diagnostic_sync_ecs_dirty_entity_count
-}
-
-///|
-pub fn text_diagnostic_sync_ecs_early_return() -> Bool {
-  text_ecs_runtime_state.diagnostic_sync_ecs_early_return
 }
 
 ///|
@@ -1409,10 +830,10 @@ fn ui_text_ecs_bundle_from_entity(
   world : @ecs.World,
   entity : @core.Entity,
   text : Text,
-) -> Text2dBundle {
+) -> TextSpawnData {
   guard text_ecs_world_entity_ref(world, entity) is Some(entity_ref) else {
     return {
-      text: Text2d::new(text.content),
+      content: text.content,
       font: TextFont(),
       color: TextColor(),
       background_color: None,
@@ -1428,7 +849,7 @@ fn ui_text_ecs_bundle_from_entity(
       transform: @transform.Transform::identity(),
       layers: RenderLayers(),
       no_frustum_culling: false,
-      anchor: Anchor(),
+      anchor: @math.Vec2::new(0.0F, 0.0F),
       y_axis: TopToBottom,
       logical_viewport_size: None,
     }
@@ -1465,7 +886,7 @@ fn ui_text_ecs_bundle_from_entity(
   }
   let shadow_component : TextShadow? = text_ecs_entity_ref_get(entity_ref)
   {
-    text: Text2d::new(text.content),
+    content: text.content,
     font,
     color,
     background_color,
@@ -1477,11 +898,11 @@ fn ui_text_ecs_bundle_from_entity(
     bounds: TextBounds(),
     line_height,
     font_hinting,
-    shadow: text_shadow_component_to_2d(shadow_component),
+    shadow: shadow_component,
     transform: @transform.Transform::identity(),
     layers: RenderLayers(),
     no_frustum_culling: false,
-    anchor: Anchor(),
+    anchor: @math.Vec2::new(0.0F, 0.0F),
     y_axis: TopToBottom,
     logical_viewport_size: None,
   }
@@ -1492,13 +913,13 @@ fn ui_text_ecs_spawn_entry(
   world : @ecs.World,
   world_id : Int,
   entity : @core.Entity,
-  bundle : Text2dBundle,
+  bundle : TextSpawnData,
   span_bundles : Array[TextSpanBundle],
   view_visible : Bool,
 ) -> Unit {
   sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
-    let handle = text_spawn(bundle)
+    let handle = text_spawn_data(bundle)
     for span_bundle in span_bundles {
       ignore(text_spawn_span(handle, span_bundle))
     }
@@ -1567,14 +988,14 @@ fn ui_text_ecs_cleanup_removed_entries(
 fn ui_text_ecs_respawn_entry(
   world : @ecs.World,
   entry : UiEcsTextEntry,
-  bundle : Text2dBundle,
+  bundle : TextSpawnData,
   span_bundles : Array[TextSpanBundle],
   view_visible : Bool,
 ) -> UiEcsTextEntry {
   ignore(text_despawn(entry.handle))
   sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
-    let handle = text_spawn(bundle)
+    let handle = text_spawn_data(bundle)
     for span_bundle in span_bundles {
       ignore(text_spawn_span(handle, span_bundle))
     }
@@ -1588,7 +1009,7 @@ fn ui_text_ecs_respawn_entry(
 fn ui_text_ecs_sync_existing_entry(
   world : @ecs.World,
   entry : UiEcsTextEntry,
-  bundle : Text2dBundle,
+  bundle : TextSpawnData,
   span_bundles : Array[TextSpanBundle],
   view_visible : Bool,
 ) -> UiEcsTextEntry {
@@ -1607,9 +1028,9 @@ fn ui_text_ecs_sync_existing_entry(
   if entry.view_visible != view_visible {
     text_set_view_visible(handle, view_visible)
   }
-  let needs_layout = !text_bundle_rerender_eq(entry.bundle, bundle)
-  if !text2d_eq(entry.bundle.text, bundle.text) {
-    text_set_content(handle, bundle.text.content)
+  let needs_layout = !text_spawn_data_rerender_eq(entry.bundle, bundle)
+  if entry.bundle.content != bundle.content {
+    text_set_content(handle, bundle.content)
   }
   if !text_font_eq(entry.bundle.font, bundle.font) {
     text_set_font(handle, bundle.font)
@@ -1638,8 +1059,8 @@ fn ui_text_ecs_sync_existing_entry(
   if !font_hinting_eq(entry.bundle.font_hinting, bundle.font_hinting) {
     text_set_font_hinting(handle, bundle.font_hinting)
   }
-  if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
-    text_set_shadow(handle, bundle.shadow)
+  if !text_component_shadow_eq(entry.bundle.shadow, bundle.shadow) {
+    text_set_text_shadow(handle, bundle.shadow)
   }
   if !vec2_opt_eq(
       entry.bundle.logical_viewport_size,
@@ -1693,7 +1114,11 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
       None => true
     }
     let span_bundles = text_ecs_collect_span_bundles_for_entity(
-      world, entity, bundle, span_edges,
+      world,
+      entity,
+      bundle.font,
+      bundle.line_height,
+      span_edges,
     )
     match existing_index {
       Some(index) => {

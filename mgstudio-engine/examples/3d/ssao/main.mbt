@@ -313,7 +313,7 @@ fn setup(
     @pbr.DirectionalLight::new(@color.Color::white(), 10_000.0F, true),
   )
 
-  let instructions = @text.Text2dBundle::new(
+  let instructions = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(
         ssao_ui_text(Some(ScreenSpaceAmbientOcclusion()), true),
       ),

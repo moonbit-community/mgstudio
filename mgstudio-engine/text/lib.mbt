@@ -32,11 +32,6 @@ pub fn Text::new(content : String) -> Text {
 }
 
 ///|
-// Bevy source: `bevy/crates/bevy_sprite/src/text2d.rs` owns `Text2d`;
-// re-exported here for existing consumers until ISS-480 phase 4.
-pub type Text2d = @sprite.Text2d
-
-///|
 pub(all) struct TextSpan {
   mut content : String
 }
@@ -49,13 +44,4 @@ pub fn TextSpan::TextSpan() -> TextSpan {
 ///|
 pub fn TextSpan::new(content : String) -> TextSpan {
   { content, }
-}
-
-///|
-pub fn text_bundle(
-  content : String,
-  font : TextFont,
-  transform : @transform.Transform,
-) -> Text2dBundle {
-  Text2dBundle::new(Text2d::new(content), font, transform)
 }

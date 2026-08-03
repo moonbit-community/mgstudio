@@ -473,7 +473,7 @@ fn spawn_label(
   color : @color.Color,
   position : @math.Vec2,
 ) -> Unit {
-  @text.Text2dBundle::new(
+  @sprite.Text2dBundle::new(
     @sprite.Text2d::new(label),
     font,
     transform_from_position(position, LABEL_Z),

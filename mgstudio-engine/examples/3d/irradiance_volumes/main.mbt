@@ -457,7 +457,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let text = @text.Text2dBundle::new(
+  let text = @sprite.Text2dBundle::new(
       @sprite.Text2d::new(create_help_text()),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))

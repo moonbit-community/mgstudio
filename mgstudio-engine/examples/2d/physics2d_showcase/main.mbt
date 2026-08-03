@@ -70,7 +70,7 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
   let font_style = @text.TextFont::TextFont()
     .with_font(font)
     .with_font_size(20.0F)
-  @text.Text2dBundle::new(
+  @sprite.Text2dBundle::new(
     @sprite.Text2d::new(content),
     font_style,
     @transform.Transform::from_xy_rotation_scale(
