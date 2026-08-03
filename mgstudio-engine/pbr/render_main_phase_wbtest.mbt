@@ -153,6 +153,7 @@ test "pbr: main view phases retain only live cameras" {
       atmosphere_settings: None,
       camera: Camera(),
       depth_texture_usages: Camera3dDepthTextureUsage(),
+      depth_load_op: Camera3dDepthLoadOp::default(),
       projection: Perspective(PerspectiveProjection3d()),
       sub_camera_view: None,
       oit_settings: None,

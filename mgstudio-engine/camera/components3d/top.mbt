@@ -94,6 +94,11 @@ pub fn Camera3d::depth_texture_usages(
 }
 
 ///|
+pub fn Camera3d::depth_load_op(self : Camera3d) -> Camera3dDepthLoadOp {
+  self.depth_load_op
+}
+
+///|
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @ecs.register_component(
   debug_name="mgstudio.camera.Camera3d",
 )

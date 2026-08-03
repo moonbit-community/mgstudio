@@ -1721,6 +1721,7 @@ fn material_test_camera_payload() -> Camera3dViewPayload {
     atmosphere_settings: None,
     camera: Camera(),
     depth_texture_usages: Camera3dDepthTextureUsage(),
+    depth_load_op: Camera3dDepthLoadOp::default(),
     projection: Projection::default(),
     sub_camera_view: None,
     oit_settings: None,

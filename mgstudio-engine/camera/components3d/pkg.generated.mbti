@@ -17,6 +17,7 @@ pub struct Camera3d {
   depth_texture_usages : Camera3dDepthTextureUsage
 } derive(ToJson, @json.FromJson)
 pub fn Camera3d::Camera3d() -> Self
+pub fn Camera3d::depth_load_op(Self) -> Camera3dDepthLoadOp
 pub fn Camera3d::depth_texture_usages(Self) -> Camera3dDepthTextureUsage
 pub fn Camera3d::with_depth_texture_usages(Self, Camera3dDepthTextureUsage) -> Self
 pub impl @ecs.Component for Camera3d
@@ -39,4 +40,3 @@ pub fn Camera3dDepthTextureUsage::with_texture_binding(Self) -> Self
 // Type aliases
 
 // Traits
-

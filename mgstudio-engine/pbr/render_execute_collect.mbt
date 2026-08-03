@@ -381,6 +381,7 @@ fn render3d_execute_collect_cameras(
             atmosphere_settings,
             camera: camera_clamped,
             depth_texture_usages,
+            depth_load_op: camera3d.value().depth_load_op(),
             projection,
             sub_camera_view,
             oit_settings,

@@ -626,13 +626,18 @@ fn render3d_execute_camera_main_pass(
     clear_enabled=@pbr_render.render3d_pass_clear_enabled_for_target(
       cleared_targets_this_frame, scene_target_id, clear_enabled,
     ),
-    // Depth clears for every camera, independently of the colour load op and of
-    // `ClearColorConfig`. Colour clears only on the first write to a shared
-    // target, but a later camera that loaded depth would test its geometry
-    // against the earlier camera's scene and be rejected. Bevy defaults
-    // `depth_load_op` to `Clear`; honouring a non-default value needs the field
-    // carried on the extracted view payload, which it is not yet (ISS-479).
-    depth_clear_enabled=1,
+    // Bevy source: `bevy_camera/src/components.rs::Camera3d::depth_load_op`.
+    //
+    // Depth is controlled per camera, independently of the colour load op and
+    // of `ClearColorConfig`: colour clears only on the first write to a shared
+    // target, but a camera that loaded depth would test its geometry against
+    // the earlier camera's scene and be rejected. The default is `Clear(0.0)`;
+    // the backend hardcodes the 0.0 clear value, so a custom `Clear` depth
+    // remains unsupported (ISS-479).
+    depth_clear_enabled=match camera.depth_load_op {
+      Clear(_) => 1
+      Load => 0
+    },
   )
   render3d_main_pass_use_view_cluster_buffers(
     world,

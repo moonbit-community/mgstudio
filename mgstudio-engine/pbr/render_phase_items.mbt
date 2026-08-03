@@ -83,6 +83,7 @@ priv struct Camera3dViewPayload {
   atmosphere_settings : @pbr_atmosphere.GpuAtmosphereSettings?
   camera : @camera_camera.Camera
   depth_texture_usages : Camera3dDepthTextureUsage
+  depth_load_op : Camera3dDepthLoadOp
   projection : Projection
   sub_camera_view : SubCameraView3d?
   oit_settings : OrderIndependentTransparencySettings?

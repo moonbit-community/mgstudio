@@ -52,6 +52,7 @@ fn render3d_volumetric_fog_wbtest_camera_payload(
     atmosphere_settings: None,
     camera: Camera(),
     depth_texture_usages: Camera3dDepthTextureUsage(),
+    depth_load_op: Camera3dDepthLoadOp::default(),
     projection: Projection::default(),
     sub_camera_view: None,
     oit_settings: None,
