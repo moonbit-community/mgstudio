@@ -4,10 +4,14 @@ package "Milky2018/mgstudio/render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/camera/camera",
+  "Milky2018/mgstudio/camera/projection3d",
   "Milky2018/mgstudio/camera/render_target",
+  "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/render/camera_sort",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
@@ -83,6 +87,8 @@ pub fn asset_write_texture_region_rgba8(texture_id~ : Int, x~ : Int, y~ : Int, w
 
 pub fn asset_write_texture_region_rgba8_mip(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, pixels_rgba8~ : Bytes) -> Unit
 
+pub fn camera_system(@ecs.World) -> Unit
+
 pub fn clear_registered_wgsl_source_registry() -> Unit
 
 pub fn configure_base_render_graph_sets(@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]
@@ -111,7 +117,11 @@ pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
 
 pub let ecs_key_sync_to_render_world : @ecs.ComponentKey[SyncToRenderWorld]
 
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter]
+
 pub let ecs_key_temporary_render_entity : @ecs.ComponentKey[TemporaryRenderEntity]
+
+pub fn ensure_camera_sync_to_render_world(@ecs.World) -> Unit
 
 pub fn ensure_gpu_image_render_assets_resource(@ecs.World) -> Unit
 
@@ -449,6 +459,8 @@ pub fn prepare_window_surfaces(@ecs.World) -> Unit
 
 pub fn present_active_frames(@ecs.World) -> Unit
 
+pub fn register_camera_sync_to_render_world(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
+
 pub fn register_embedded_wgsl_sources() -> Unit
 
 pub fn[A] register_render_asset_resource_keys(String) -> RenderAssetResourceKeys[A]
@@ -456,6 +468,14 @@ pub fn[A] register_render_asset_resource_keys(String) -> RenderAssetResourceKeys
 pub fn[C] register_uniform_component_keys(String) -> UniformComponentKeys[C]
 
 pub fn register_wgsl_source(String, String) -> Unit
+
+pub fn render3d_clamp_viewport(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
+
+pub fn render3d_projection_matrix_apply_temporal_jitter(@projection3d.ProjectionMatrix3d, TemporalJitter, Int, Int) -> @projection3d.ProjectionMatrix3d
+
+pub fn render3d_projection_runtime_update(@projection3d.Projection, @projection3d.ProjectionRuntime3d?, Bool, @camera.Camera, @math.IVec2, Float) -> (@projection3d.Projection, @projection3d.ProjectionRuntime3d?)
+
+pub fn render3d_target_info(@ecs.World, @camera.RenderTarget) -> RenderTargetComputed3d?
 
 pub let render_adapter_info_resource_key : @ecs.ResourceKey[@renderer.RenderAdapterInfo]
 
@@ -1117,6 +1137,12 @@ pub fn[K, V] RenderStorage::len(Self[K, V]) -> Int
 pub fn[K : Hash + Eq, V] RenderStorage::new() -> Self[K, V]
 pub fn[K : Hash + Eq, V] RenderStorage::remove(Self[K, V], K) -> V?
 
+pub struct RenderTargetComputed3d {
+  target_id : Int
+  target_size : @math.IVec2
+  scale_factor : Float
+}
+
 pub struct Screenshot {
   target : ScreenshotTarget
 }
@@ -1229,6 +1255,14 @@ pub struct SyncWorldPlugin {
 }
 pub fn SyncWorldPlugin::SyncWorldPlugin() -> Self
 pub impl @app.Plugin for SyncWorldPlugin
+
+pub struct TemporalJitter {
+  offset : @math.Vec2
+} derive(ToJson, @json.FromJson)
+pub fn TemporalJitter::TemporalJitter() -> Self
+pub fn TemporalJitter::new(@math.Vec2) -> Self
+pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for TemporalJitter
 
 pub struct TemporaryRenderEntity {
 }

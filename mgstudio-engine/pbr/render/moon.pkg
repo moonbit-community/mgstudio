@@ -6,7 +6,6 @@ import {
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/camera/projection3d" @camera_projection3d,
   "Milky2018/mgstudio/camera/visibility/render_layers" @camera_render_layers,
-  "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "moonbitlang/core/hashset",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
@@ -41,6 +40,10 @@ import {
 }
 
 supported_targets = "native"
+
+import {
+  "Milky2018/mgstudio/camera/viewport" @camera_viewport,
+} for "test"
 
 options(
   "pre-build": [

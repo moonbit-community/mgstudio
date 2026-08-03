@@ -22,14 +22,11 @@ const CAMERA_PROJECTION_PLUGIN_NAME : String = "mgstudio.camera.CameraProjection
 const CAMERA_PLUGIN_NAME : String = "mgstudio.camera.CameraPlugin"
 
 ///|
-pub let camera_update_systems : @app.SystemSet = @app.system_set(
-  "mgstudio.camera.update",
-)
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::CameraUpdateSystems`.
+pub let camera_update_systems : @app.SystemSet = @camera_camera.camera_update_systems
 
 ///|
-pub let camera_update_frusta_systems : @app.SystemSet = @app.system_set(
-  "mgstudio.camera.update_frusta",
-)
+pub let camera_update_frusta_systems : @app.SystemSet = @camera_camera.camera_update_frusta_systems
 
 ///|
 fn camera2d_frustum_render_transform(
@@ -161,12 +158,6 @@ pub fn camera_projection_plugin(
   .configure_set(PostUpdate, camera_update_frusta_systems, after=[
     camera_update_systems, @transform.transform_set_propagate,
   ])
-  .add_post_update_system_config(
-    @app.system(@pbr.render3d_camera_system)
-    .named("mgstudio.pbr.render3d_camera_system")
-    .in_set(camera_update_systems)
-    .after(@transform.transform_set_propagate),
-  )
   .add_post_update_system_config(
     @app.system(update_frusta_3d_system)
     .named("mgstudio.camera.update_frusta_3d")

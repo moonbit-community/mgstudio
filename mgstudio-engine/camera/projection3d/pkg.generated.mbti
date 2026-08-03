@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
@@ -63,8 +62,6 @@ pub fn render3d_perspective_projection_matrix_raw(Float, Float, Float) -> Projec
 pub fn render3d_point_shadow_pass_projection(Float, Float) -> Render3dPassProjection
 
 pub fn render3d_projection_aspect_ratio(Float, Float) -> Float
-
-pub fn render3d_projection_matrix_apply_temporal_jitter(ProjectionMatrix3d, @post_process.TemporalJitter, Int, Int) -> ProjectionMatrix3d
 
 pub fn render3d_projection_matrix_inverse(ProjectionMatrix3d) -> ProjectionMatrix3d?
 
@@ -232,4 +229,3 @@ pub(open) trait CameraProjection3d {
   fn compute_frustum(Self, @transform.Transform) -> @primitives.Frustum
   fn get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
-

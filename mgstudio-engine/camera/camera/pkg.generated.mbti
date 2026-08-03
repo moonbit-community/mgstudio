@@ -20,6 +20,10 @@ import {
 }
 
 // Values
+pub let camera_update_frusta_systems : String
+
+pub let camera_update_systems : String
+
 pub let ecs_key_camera : @ecs.ComponentKey[Camera]
 
 pub let ecs_key_camera_main_texture_usages : @ecs.ComponentKey[CameraMainTextureUsages]
@@ -136,4 +140,3 @@ pub using @primitives {type SubCameraView3d}
 pub using @viewport {type Viewport}
 
 // Traits
-

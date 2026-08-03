@@ -13,3 +13,18 @@
 // limitations under the License.
 
 ///|
+test "render3d targets: viewport clamp matches bevy edge behavior" {
+  let viewport = @camera_viewport.Viewport::new(
+    @math.IVec2::new(260, 120),
+    @math.IVec2::new(50, 20),
+  )
+  let clamped = @render.render3d_clamp_viewport(
+    viewport,
+    @math.IVec2::new(200, 100),
+  )
+  let ok = clamped.physical_position.x == 199 &&
+    clamped.physical_position.y == 99 &&
+    clamped.physical_size.x == 1 &&
+    clamped.physical_size.y == 1
+  debug_inspect(ok, content="true")
+}

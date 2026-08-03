@@ -522,11 +522,6 @@ pub fn register_camera_required_components(
   )
   world.register_required_components_with(
     ecs_key_camera,
-    @render.ecs_key_sync_to_render_world,
-    fn() { SyncToRenderWorld() },
-  )
-  world.register_required_components_with(
-    ecs_key_camera,
     ecs_key_render_target,
     fn() { Screen },
   )
@@ -639,3 +634,14 @@ pub impl ToJson for RenderTarget with fn to_json(self) {
 pub impl @json.FromJson for RenderTarget with fn from_json(json, _path) {
   decode_render_target(json)
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/camera.rs::CameraUpdateSystems`.
+pub let camera_update_systems : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.update",
+)
+
+///|
+pub let camera_update_frusta_systems : @app.SystemSet = @app.system_set(
+  "mgstudio.camera.update_frusta",
+)

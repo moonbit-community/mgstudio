@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/post_process"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process/bloom",
   "Milky2018/mgstudio/post_process/effect_stack",
   "Milky2018/mgstudio/post_process/motion_blur",
@@ -40,7 +39,7 @@ pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[ScreenSpaceReflecti
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing]
 
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter]
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@render.TemporalJitter]
 
 pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping]
 
@@ -185,14 +184,6 @@ pub fn TemporalAntiAliasing::new(Bool) -> Self
 pub fn TemporalAntiAliasing::with_reset(Self, Bool) -> Self
 pub impl @ecs.Component for TemporalAntiAliasing
 
-pub struct TemporalJitter {
-  offset : @math.Vec2
-} derive(ToJson, @json.FromJson)
-pub fn TemporalJitter::TemporalJitter() -> Self
-pub fn TemporalJitter::new(@math.Vec2) -> Self
-pub fn TemporalJitter::with_offset(Self, @math.Vec2) -> Self
-pub impl @ecs.Component for TemporalJitter
-
 pub(all) enum Tonemapping {
   None
   Reinhard
@@ -226,7 +217,8 @@ pub using @render {type ColorGradingSection}
 
 pub using @motion_blur {type MotionBlur}
 
+pub using @render {type TemporalJitter}
+
 pub using @effect_stack {type Vignette}
 
 // Traits
-

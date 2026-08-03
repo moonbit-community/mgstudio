@@ -41,7 +41,7 @@ pub fn MeshViewBindings3d::MeshViewBindings3d() -> MeshViewBindings3d {
 
 ///|
 pub fn render3d_mesh_view_bindings(
-  target_info : RenderTargetComputed3d,
+  target_info : @render_gpu.RenderTargetComputed3d,
   camera_transform : @transform.Transform,
 ) -> MeshViewBindings3d {
   let logical_rect = (

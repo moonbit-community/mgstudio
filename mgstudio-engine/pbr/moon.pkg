@@ -18,7 +18,6 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/camera/primitives" @camera_primitives,
   "Milky2018/mgstudio/camera/projection3d" @camera_projection3d,
-  "Milky2018/mgstudio/camera/viewport" @camera_viewport,
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/core_pipeline/core_3d",
   "Milky2018/mgstudio/core",
@@ -75,6 +74,7 @@ import {
   "Milky2018/mgstudio/mesh/primitives" @mesh_primitives,
   "Milky2018/mgstudio/shader/compile" @shader_compile,
   "Milky2018/moon_wgsl" @wgsl_common,
+  "Milky2018/mgstudio/camera/viewport" @camera_viewport,
 } for "test"
 
 import {

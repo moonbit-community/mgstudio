@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/debug",
 }
 
@@ -16,7 +17,7 @@ pub let ecs_key_temporal_anti_alias_runtime_state : @ecs.ResourceKey[TemporalAnt
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter]
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@render.TemporalJitter]
 
 pub fn install_temporal_anti_alias_required_components() -> Unit
 
@@ -52,7 +53,6 @@ pub using @post_process {type MipBias}
 
 pub using @post_process {type TemporalAntiAliasing}
 
-pub using @post_process {type TemporalJitter}
+pub using @render {type TemporalJitter}
 
 // Traits
-

@@ -21,16 +21,6 @@ let ecs_key_render_plugin_marker : @ecs.ResourceKey[RenderPluginMarker] = @ecs.r
 )
 
 ///|
-priv struct RenderMainWorld {
-  world : @ecs.World
-}
-
-///|
-let ecs_key_render_main_world : @ecs.ResourceKey[RenderMainWorld] = @ecs.register_resource(
-  debug_name="mgstudio_render::MainWorld",
-)
-
-///|
 fn render_sub_app_extract(
   main_world : @ecs.World,
   render_world : @ecs.World,
@@ -40,17 +30,14 @@ fn render_sub_app_extract(
   let synced = sync_world(main_world, render_world)
   let main_world = synced.0
   let render_world = synced.1
-  render_world.insert_resource(ecs_key_render_main_world, { world: main_world })
+  @render_sync_world.render_set_source_world(render_world, main_world)
   @app.run_current_schedule_stage(render_world, render_extract_schedule_stage())
   (main_world, render_world)
 }
 
 ///|
 pub fn render_source_world(world : @ecs.World) -> @ecs.World {
-  match world.get_resource(ecs_key_render_main_world) {
-    Some(value) => value.world
-    None => world
-  }
+  @render_sync_world.render_source_world(world)
 }
 
 ///|
@@ -64,7 +51,15 @@ fn render_plugin_install_with(
   app : @app.App[@ecs.World],
   plugin : RenderPlugin,
 ) -> @app.App[@ecs.World] {
-  let mut next = app.add_plugins(SyncWorldPlugin::SyncWorldPlugin())
+  ensure_camera_sync_to_render_world(app.world())
+  let mut next = app
+    .add_post_update_system_config(
+      @app.system(camera_system)
+      .named("mgstudio.render.camera_system")
+      .in_set(@camera_camera.camera_update_systems)
+      .after(@transform.transform_set_propagate),
+    )
+    .add_plugins(SyncWorldPlugin::SyncWorldPlugin())
   let time_channels = @time.create_time_channels()
   next = next.insert_world_resource(
     @time.time_receiver_resource_key,

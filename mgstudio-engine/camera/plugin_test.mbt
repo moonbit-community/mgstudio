@@ -148,9 +148,12 @@ test "camera plugin: owns Camera required components" {
     (try! world.get_by_key(entity, @visibility.ecs_key_visibility)) is Some(_),
     content="true",
   )
+  // Bevy source: `bevy/crates/bevy_render/src/camera.rs` --
+  // `SyncToRenderWorld` is required on `Camera` by the *render* plugin, not by
+  // `bevy_camera`. A camera-plugin-only app must not attach it.
   debug_inspect(
     (try! world.get_by_key(entity, @render.ecs_key_sync_to_render_world))
-    is Some(_),
+    is None,
     content="true",
   )
   debug_inspect(

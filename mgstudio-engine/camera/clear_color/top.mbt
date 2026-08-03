@@ -87,7 +87,7 @@ pub impl @ecs.Component for ClearColorConfig with fn component() {
 pub fn clear_color_current_value() -> @color.Color {
   match @app.current_world() {
     Some(world) => {
-      let source_world = @render.render_source_world(world)
+      let source_world = @render_sync_world.render_source_world(world)
       match source_world.get_resource(ClearColor::resource()) {
         Some(clear_color) => clear_color.color
         None => clear_color_default_value()

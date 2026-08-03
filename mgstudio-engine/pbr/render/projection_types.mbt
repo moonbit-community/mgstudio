@@ -132,7 +132,7 @@ pub fn render3d_projection_matrix_apply_temporal_jitter(
   view_width : Int,
   view_height : Int,
 ) -> ProjectionMatrix3d {
-  @camera_projection3d.render3d_projection_matrix_apply_temporal_jitter(
+  @render_gpu.render3d_projection_matrix_apply_temporal_jitter(
     clip_from_view, temporal_jitter, view_width, view_height,
   )
 }

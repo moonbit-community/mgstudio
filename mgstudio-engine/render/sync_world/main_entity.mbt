@@ -37,3 +37,31 @@ pub let ecs_key_main_entity : @ecs.ComponentKey[MainEntity] = @ecs.register_comp
 pub impl @ecs.Component for MainEntity with fn component() {
   ecs_key_main_entity
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/sync_world.rs` -- the render
+// world's handle back to the main world.
+priv struct RenderMainWorld {
+  world : @ecs.World
+}
+
+///|
+let ecs_key_render_main_world : @ecs.ResourceKey[RenderMainWorld] = @ecs.register_resource(
+  debug_name="mgstudio_render::MainWorld",
+)
+
+///|
+pub fn render_set_source_world(
+  render_world : @ecs.World,
+  main_world : @ecs.World,
+) -> Unit {
+  render_world.insert_resource(ecs_key_render_main_world, { world: main_world })
+}
+
+///|
+pub fn render_source_world(world : @ecs.World) -> @ecs.World {
+  match world.get_resource(ecs_key_render_main_world) {
+    Some(value) => value.world
+    None => world
+  }
+}

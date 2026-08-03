@@ -973,36 +973,6 @@ pub fn render3d_pass_projection_unjittered_clip_from_world(
 }
 
 ///|
-pub fn render3d_projection_matrix_apply_temporal_jitter(
-  clip_from_view : ProjectionMatrix3d,
-  temporal_jitter : @post_process.TemporalJitter,
-  view_width : Int,
-  view_height : Int,
-) -> ProjectionMatrix3d {
-  let width = Float::from_double(view_width.to_double())
-  let height = Float::from_double(view_height.to_double())
-  if width <= 0.0F || height <= 0.0F {
-    return clip_from_view
-  }
-  let mut jitter_x = temporal_jitter.offset.x * 2.0F / width
-  let mut jitter_y = temporal_jitter.offset.y * -2.0F / height
-  if clip_from_view.w_axis.w == 1.0F {
-    jitter_x = jitter_x * clip_from_view.x_axis.x * 0.5F
-    jitter_y = jitter_y * clip_from_view.y_axis.y * 0.5F
-  }
-  let z_axis = clip_from_view.z_axis
-  {
-    ..clip_from_view,
-    z_axis: @math.Vec4::new(
-      z_axis.x + jitter_x,
-      z_axis.y + jitter_y,
-      z_axis.z,
-      z_axis.w,
-    ),
-  }
-}
-
-///|
 pub fn render3d_projection_near_from_clip_matrix(
   clip_from_view : ProjectionMatrix3d,
 ) -> Float {

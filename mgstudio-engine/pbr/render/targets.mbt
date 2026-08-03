@@ -13,13 +13,6 @@
 // limitations under the License.
 
 ///|
-pub struct RenderTargetComputed3d {
-  target_id : Int
-  target_size : @math.IVec2
-  scale_factor : Float
-}
-
-///|
 pub fn render3d_pass_clear_enabled_for_target(
   cleared_targets : Array[Int],
   target_id : Int,
@@ -53,75 +46,4 @@ pub fn render3d_pass_viewport_for_target(
   } else {
     (0, 0, camera_viewport_width, camera_viewport_height)
   }
-}
-
-///|
-pub fn render3d_target_info(
-  world : @ecs.World,
-  target : @camera_camera.RenderTarget,
-) -> RenderTargetComputed3d? {
-  match target {
-    Screen => {
-      let width = @window.window_physical_width_for(world, Primary)
-      let height = @window.window_physical_height_for(world, Primary)
-      if width <= 0 || height <= 0 {
-        return None
-      }
-      let mut scale_factor = @window.window_scale_factor_for(world, Primary)
-      if scale_factor <= 0.0F {
-        scale_factor = 1.0F
-      }
-      Some({
-        target_id: -1,
-        target_size: @math.IVec2::new(width, height),
-        scale_factor,
-      })
-    }
-    Window(window_ref) => {
-      guard @window.window_host_window_for_ref(world, window_ref)
-        is Some(host_window) else {
-        return None
-      }
-      let surface_target_id = @render_gpu.host_gpu_surface_target_id_for_window(
-        host_window,
-      )
-      if surface_target_id == 0 {
-        return None
-      }
-      let width = @window.window_physical_width_for(world, window_ref)
-      let height = @window.window_physical_height_for(world, window_ref)
-      if width <= 0 || height <= 0 {
-        return None
-      }
-      let mut scale_factor = @window.window_scale_factor_for(world, window_ref)
-      if scale_factor <= 0.0F {
-        scale_factor = 1.0F
-      }
-      Some({
-        target_id: surface_target_id,
-        target_size: @math.IVec2::new(width, height),
-        scale_factor,
-      })
-    }
-    Image(handle) => {
-      let width = @asset.asset_texture_width(handle)
-      let height = @asset.asset_texture_height(handle)
-      if width <= 0 || height <= 0 {
-        return None
-      }
-      Some({
-        target_id: handle.id(),
-        target_size: @math.IVec2::new(width, height),
-        scale_factor: 1.0F,
-      })
-    }
-  }
-}
-
-///|
-pub fn render3d_clamp_viewport(
-  viewport : @camera_viewport.Viewport,
-  target_size : @math.IVec2,
-) -> @camera_viewport.Viewport {
-  viewport.clamp_to_size(target_size)
 }

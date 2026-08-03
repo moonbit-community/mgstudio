@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/render/view",
 }
 
@@ -40,7 +41,7 @@ pub let ecs_key_smaa : @ecs.ComponentKey[@smaa.Smaa]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
 
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter]
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@render.TemporalJitter]
 
 // Errors
 
@@ -87,7 +88,6 @@ pub using @taa {type TemporalAntiAliasPlugin}
 
 pub using @post_process {type TemporalAntiAliasing}
 
-pub using @post_process {type TemporalJitter}
+pub using @render {type TemporalJitter}
 
 // Traits
-

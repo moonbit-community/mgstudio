@@ -2,7 +2,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/sync_world" @render_sync_world,
   "moonbitlang/core/json",
 }
 

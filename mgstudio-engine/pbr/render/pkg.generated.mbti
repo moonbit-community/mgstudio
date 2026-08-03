@@ -7,7 +7,6 @@ import {
   "Milky2018/mgstudio/camera/camera",
   "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/projection3d",
-  "Milky2018/mgstudio/camera/viewport",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
@@ -17,7 +16,6 @@ import {
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render/mesh_view_layout",
   "Milky2018/mgstudio/render/render_resource",
   "Milky2018/mgstudio/render/renderer",
@@ -282,8 +280,6 @@ pub fn render3d_camera_indirect_enabled(Bool, Bool, Bool) -> Bool
 
 pub fn render3d_camera_viewport_rect_logical(@camera.Camera, @math.IVec2, Float) -> (Float, Float, Float, Float)?
 
-pub fn render3d_clamp_viewport(@viewport.Viewport, @math.IVec2) -> @viewport.Viewport
-
 pub fn render3d_clear_mesh_upload_cache(Render3dMeshRuntimeState) -> Unit
 
 pub fn render3d_collect_extracted_clusterable_point_lights(@ecs.World) -> Array[ExtractedClusterablePointLight3d]
@@ -424,7 +420,7 @@ pub fn render3d_mesh_upload_cache_has_valid(Render3dMeshRuntimeState, @asset.Han
 
 pub fn render3d_mesh_upload_cache_state_after_clear(Render3dMeshUploadCacheState) -> Render3dMeshUploadCacheState
 
-pub fn render3d_mesh_view_bindings(RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
+pub fn render3d_mesh_view_bindings(@Milky2018/mgstudio/render.RenderTargetComputed3d, @transform.Transform) -> MeshViewBindings3d
 
 pub fn render3d_mesh_view_depth(@transform.Transform, @transform.Transform) -> Float
 
@@ -502,7 +498,7 @@ pub fn render3d_preprocess_dispatch_workgroup_count(Int) -> Int
 
 pub fn render3d_projection_aspect_ratio(Float, Float) -> Float
 
-pub fn render3d_projection_matrix_apply_temporal_jitter(@projection3d.ProjectionMatrix3d, @post_process.TemporalJitter, Int, Int) -> @projection3d.ProjectionMatrix3d
+pub fn render3d_projection_matrix_apply_temporal_jitter(@projection3d.ProjectionMatrix3d, @Milky2018/mgstudio/render.TemporalJitter, Int, Int) -> @projection3d.ProjectionMatrix3d
 
 pub fn render3d_projection_matrix_from_affine3(@math.Affine3) -> @projection3d.ProjectionMatrix3d
 
@@ -545,8 +541,6 @@ pub fn render3d_standard_material_flags(@material.StandardMaterial, Int, Int, In
 pub fn render3d_sweep_mesh_runtime_caches(Render3dMeshRuntimeState) -> Unit
 
 pub fn render3d_system_labels() -> Array[String]
-
-pub fn render3d_target_info(@ecs.World, @camera.RenderTarget) -> RenderTargetComputed3d?
 
 pub fn render3d_transform_columns(@ecs.World) -> Render3dTransformColumns
 
@@ -1252,12 +1246,6 @@ pub fn RenderMeshBindingInput3d::mesh_asset_id(Self) -> Int
 pub fn RenderMeshBindingInput3d::morph_targets(Self) -> Bool
 pub fn RenderMeshBindingInput3d::new(Int, skinned? : Bool, morph_targets? : Bool) -> Self
 pub fn RenderMeshBindingInput3d::skinned(Self) -> Bool
-
-pub struct RenderTargetComputed3d {
-  target_id : Int
-  target_size : @math.IVec2
-  scale_factor : Float
-}
 
 pub struct ResetIndirectBatchSetsPipeline {
   bind_group_layout_label : String

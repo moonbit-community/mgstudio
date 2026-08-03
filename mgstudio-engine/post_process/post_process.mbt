@@ -244,29 +244,9 @@ pub fn MipBias::with_bias(self : MipBias, bias : Float) -> MipBias {
 }
 
 ///|
-/// Camera jitter settings aligned with Bevy's `TemporalJitter`.
-pub struct TemporalJitter {
-  offset : @math.Vec2
-} derive(ToJson, FromJson)
-
-///|
-pub fn TemporalJitter::TemporalJitter() -> TemporalJitter {
-  { offset: @math.Vec2::new(0.0F, 0.0F) }
-}
-
-///|
-pub fn TemporalJitter::new(offset : @math.Vec2) -> TemporalJitter {
-  { offset, }
-}
-
-///|
-pub fn TemporalJitter::with_offset(
-  self : TemporalJitter,
-  offset : @math.Vec2,
-) -> TemporalJitter {
-  self |> ignore
-  { offset, }
-}
+// Bevy source: `bevy/crates/bevy_render/src/camera.rs` owns `TemporalJitter`;
+// re-exported here for the post-process consumers.
+pub type TemporalJitter = @render.TemporalJitter
 
 ///|
 pub type ColorGradingRange = @render.ColorGradingRange
@@ -611,9 +591,7 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_
 )
 
 ///|
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @ecs.register_component(
-  debug_name="render3d.temporal_jitter",
-)
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @render.ecs_key_temporal_jitter
 
 ///|
 pub let ecs_key_mip_bias : @ecs.ComponentKey[MipBias] = @ecs.register_component(
@@ -658,11 +636,6 @@ pub impl @ecs.Component for Tonemapping with fn component() {
 ///|
 pub impl @ecs.Component for DebandDither with fn component() {
   ecs_key_deband_dither
-}
-
-///|
-pub impl @ecs.Component for TemporalJitter with fn component() {
-  ecs_key_temporal_jitter
 }
 
 ///|

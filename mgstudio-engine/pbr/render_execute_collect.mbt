@@ -331,11 +331,11 @@ fn render3d_execute_collect_cameras(
       Some(v) => v.transform()
       None => transform
     }
-    match @pbr_render.render3d_target_info(source_world, target) {
+    match @render.render3d_target_info(source_world, target) {
       Some(target_info) => {
         let mut camera_clamped = camera
         if camera.viewport is Some(viewport) {
-          let clamped = @pbr_render.render3d_clamp_viewport(
+          let clamped = @render.render3d_clamp_viewport(
             viewport,
             target_info.target_size,
           )
@@ -343,7 +343,7 @@ fn render3d_execute_collect_cameras(
         }
         let projection = match projection_component {
           Some(component_projection) => {
-            let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
+            let (runtime_projection, runtime_update) = @render.render3d_projection_runtime_update(
               component_projection,
               projection_runtime_opt.value(),
               projection_changed,
