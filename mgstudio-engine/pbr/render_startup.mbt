@@ -225,6 +225,54 @@ fn configure_pbr_render_prepare_systems(
     .named("mgstudio_pbr::collect_shadow_phase_buffers")
     .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
   )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_prepare_opaque_prepass_phase_buffers_system)
+    .named("mgstudio_pbr::prepare_opaque_prepass_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_batch_phases),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_prepare_alpha_mask_prepass_phase_buffers_system)
+    .named("mgstudio_pbr::prepare_alpha_mask_prepass_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_batch_phases),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_prepare_opaque_deferred_phase_buffers_system)
+    .named("mgstudio_pbr::prepare_opaque_deferred_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_batch_phases),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_prepare_alpha_mask_deferred_phase_buffers_system)
+    .named("mgstudio_pbr::prepare_alpha_mask_deferred_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_batch_phases),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_collect_opaque_prepass_phase_buffers_system)
+    .named("mgstudio_pbr::collect_opaque_prepass_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_collect_alpha_mask_prepass_phase_buffers_system)
+    .named("mgstudio_pbr::collect_alpha_mask_prepass_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_collect_opaque_deferred_phase_buffers_system)
+    .named("mgstudio_pbr::collect_opaque_deferred_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
+  )
+  .add_systems(
+    @render.render_schedule_stage(),
+    @app.system(render3d_collect_alpha_mask_deferred_phase_buffers_system)
+    .named("mgstudio_pbr::collect_alpha_mask_deferred_phase_buffers")
+    .in_set(@render.render_system_set_prepare_resources_collect_phase_buffers),
+  )
 }
 
 ///|

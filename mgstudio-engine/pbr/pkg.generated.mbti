@@ -778,6 +778,14 @@ pub fn render3d_camera_world_to_viewport(@math.Vec3, @camera.Camera, @projection
 
 pub fn render3d_check_views_lights_need_specialization_system(@ecs.World) -> Unit
 
+pub fn render3d_collect_alpha_mask_deferred_phase_buffers_system(@ecs.World) -> Unit
+
+pub fn render3d_collect_alpha_mask_prepass_phase_buffers_system(@ecs.World) -> Unit
+
+pub fn render3d_collect_opaque_deferred_phase_buffers_system(@ecs.World) -> Unit
+
+pub fn render3d_collect_opaque_prepass_phase_buffers_system(@ecs.World) -> Unit
+
 pub fn render3d_collect_shadow_phase_buffers_system(@ecs.World) -> Unit
 
 pub fn render3d_contact_shadows_buffer_mut(@ecs.World) -> @ecs.ResourceMut[ContactShadowsBuffer]?
@@ -822,6 +830,10 @@ pub fn render3d_perspective_projection_compute_frustum(@projection3d.Perspective
 
 pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn render3d_prepare_alpha_mask_deferred_phase_buffers_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_alpha_mask_prepass_phase_buffers_system(@ecs.World) -> Unit
+
 pub fn render3d_prepare_bind_groups_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_camera_fog_uniforms(@ecs.World, Array[@core.Entity], @Milky2018/mgstudio/pbr/render.FogMeta) -> Array[(@core.Entity, @Milky2018/mgstudio/pbr/render.ViewFogUniformOffset)]
@@ -837,6 +849,10 @@ pub fn render3d_prepare_meshes_system(@ecs.World) -> Unit
 pub fn render3d_prepare_morphs(@ecs.World, @Milky2018/mgstudio/pbr/render.MorphIndices, @Milky2018/mgstudio/pbr/render.MorphUniforms) -> Unit
 
 pub fn render3d_prepare_morphs_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_opaque_deferred_phase_buffers_system(@ecs.World) -> Unit
+
+pub fn render3d_prepare_opaque_prepass_phase_buffers_system(@ecs.World) -> Unit
 
 pub fn render3d_prepare_resources_cleanup_system(@ecs.World) -> Unit
 

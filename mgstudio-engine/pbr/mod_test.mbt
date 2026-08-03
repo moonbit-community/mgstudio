@@ -299,7 +299,55 @@ test "pbr: MeshRenderPlugin registers Bevy-shaped render system order" {
   )
   debug_inspect(
     pbr_plugin_render_dot.contains(
-      "\"mgstudio_pbr::prepare_shadow_phase_buffers\" -> \"mgstudio_pbr::collect_shadow_phase_buffers\"",
+      "\"mgstudio_pbr::prepare_opaque_prepass_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_alpha_mask_prepass_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_opaque_deferred_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_alpha_mask_deferred_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::collect_opaque_prepass_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::collect_alpha_mask_prepass_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::collect_opaque_deferred_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::collect_alpha_mask_deferred_phase_buffers\"",
+    ),
+    content="true",
+  )
+  debug_inspect(
+    pbr_plugin_render_dot.contains(
+      "\"mgstudio_pbr::prepare_alpha_mask_deferred_phase_buffers\" -> \"mgstudio_pbr::collect_shadow_phase_buffers\"",
     ),
     content="true",
   )

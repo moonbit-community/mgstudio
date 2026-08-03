@@ -13,72 +13,231 @@
 // limitations under the License.
 
 ///|
-// Bevy source: `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`,
-// `extract_camera_prepass_phase`.
-
-///|
-priv struct Render3dRetainedMeshPhaseView {
-  mut items : Array[MeshPhaseItem3d]
-  gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode
-  phase_types : Map[UInt64, Render3dPrepassBinnedRenderPhaseType]
-}
+// Bevy sources:
+// - `bevy/crates/bevy_core_pipeline/src/prepass/mod.rs` (`Opaque3dPrepass`,
+//   `AlphaMask3dPrepass`, `OpaqueNoLightmap3dBatchSetKey`,
+//   `OpaqueNoLightmap3dBinKey`)
+// - `bevy/crates/bevy_core_pipeline/src/core_3d/mod.rs`
+//   (`extract_camera_prepass_phase`, `Opaque3dDeferred`, `AlphaMask3dDeferred`)
+// - `bevy/crates/bevy_render/src/render_phase/mod.rs` (`BinnedRenderPhase`,
+//   `BinnedRenderPhasePlugin::build`)
 
 ///|
 type Render3dPrepassBinnedRenderPhaseType = @render_phase.BinnedRenderPhaseType
 
 ///|
-fn render3d_prepass_effective_phase_type(
+// Bevy source:
+// `bevy/crates/bevy_core_pipeline/src/prepass/mod.rs::OpaqueNoLightmap3dBatchSetKey`.
+priv struct Render3dPrepassBatchSetKey {
+  pipeline : @material.CachedRenderPipelineId
+  draw_function : @material.DrawFunctionId
+  material_bind_group_index : Int?
+  slabs : @render_mesh.MeshSlabs
+}
+
+///|
+impl Eq for Render3dPrepassBatchSetKey with fn equal(self, other) {
+  self.pipeline.id() == other.pipeline.id() &&
+  self.draw_function == other.draw_function &&
+  self.material_bind_group_index == other.material_bind_group_index &&
+  self.slabs == other.slabs
+}
+
+///|
+fn Render3dPrepassBatchSetKey::indexed(
+  self : Render3dPrepassBatchSetKey,
+) -> Bool {
+  self.slabs.index_slab_id is Some(_)
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_core_pipeline/src/prepass/mod.rs::OpaqueNoLightmap3dBinKey`.
+// The asset id is the mesh asset id, matching
+// `bevy_pbr/src/prepass/mod.rs::queue_prepass_material_meshes`.
+priv struct Render3dPrepassBinKey {
+  asset_id : Int
+} derive(Eq, Hash)
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhase`
+// instantiated for the four prepass/deferred phase items. The Bevy phase item
+// stores only keys, representative entity, batch range, and extra index; the
+// per-entity draw payload in `queued_items` is the local bridge consumed by the
+// current executor until it reads this phase's own prepared buffers.
+priv struct Render3dPrepassViewPhase {
+  phase : @render_phase.BinnedRenderPhase[
+    Render3dPrepassBatchSetKey,
+    Render3dPrepassBinKey,
+  ]
+  queued_items : Map[UInt64, MeshPhaseItem3d]
+}
+
+///|
+fn Render3dPrepassViewPhase::new(
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
-  phase_type : Render3dPrepassBinnedRenderPhaseType,
-) -> Render3dPrepassBinnedRenderPhaseType {
-  match (gpu_preprocessing_mode, phase_type) {
-    (PreprocessingOnly, MultidrawableMesh) => BatchableMesh
-    (_, MultidrawableMesh) => MultidrawableMesh
-    (_, BatchableMesh) => BatchableMesh
-    (_, UnbatchableMesh) => UnbatchableMesh
-    (_, NonMesh) => NonMesh
+) -> Render3dPrepassViewPhase {
+  {
+    phase: @render_phase.BinnedRenderPhase::new(gpu_preprocessing_mode),
+    queued_items: Map([]),
   }
 }
 
 ///|
-priv struct Render3dRetainedMeshPhaseViews {
+fn Render3dPrepassViewPhase::gpu_preprocessing_mode(
+  self : Render3dPrepassViewPhase,
+) -> @render_batching.GpuPreprocessingMode {
+  self.phase.gpu_preprocessing_mode()
+}
+
+///|
+fn Render3dPrepassViewPhase::prepare_for_new_frame(
+  self : Render3dPrepassViewPhase,
+) -> Unit {
+  self.phase.prepare_for_new_frame()
+}
+
+///|
+fn Render3dPrepassViewPhase::add(
+  self : Render3dPrepassViewPhase,
+  item : MeshPhaseItem3d,
+  phase_type : Render3dPrepassBinnedRenderPhaseType,
+) -> Unit {
+  let batch_set_key = Render3dPrepassBatchSetKey::{
+    pipeline: item.pipeline_id,
+    draw_function: item.draw_function,
+    material_bind_group_index: if item.material_bind_group_index < 0 {
+      None
+    } else {
+      Some(item.material_bind_group_index)
+    },
+    slabs: item.slabs,
+  }
+  let bin_key = Render3dPrepassBinKey::{ asset_id: item.mesh_asset_id }
+  self.phase.add(
+    batch_set_key,
+    bin_key,
+    (
+      item.entity.render_entity,
+      @render.MainEntity::new(item.entity.main_entity),
+    ),
+    item.current_uniform_index,
+    phase_type,
+  )
+  self.queued_items.set(item.entity.main_entity.to_bits(), item)
+}
+
+///|
+fn Render3dPrepassViewPhase::remove(
+  self : Render3dPrepassViewPhase,
+  main_entity : @core.Entity,
+) -> Unit {
+  self.phase.remove(@render.MainEntity::new(main_entity))
+  self.queued_items.remove(main_entity.to_bits())
+}
+
+///|
+fn Render3dPrepassViewPhase::refresh_extracted_indices(
+  self : Render3dPrepassViewPhase,
+  extracted_indices : Map[UInt64, Int],
+) -> Unit {
+  let refreshed : Array[(UInt64, MeshPhaseItem3d)] = []
+  for entity_bits, item in self.queued_items {
+    guard extracted_indices.get(entity_bits) is Some(extracted_index) else {
+      abort(
+        "Retained prepass phase entity is missing its current extracted mesh payload",
+      )
+    }
+    refreshed.push((entity_bits, { ..item, extracted_index, }))
+  }
+  for entry in refreshed {
+    self.queued_items.set(entry.0, entry.1)
+  }
+}
+
+///|
+fn Render3dPrepassViewPhase::queued_item(
+  self : Render3dPrepassViewPhase,
+  main_entity : @render.MainEntity,
+) -> MeshPhaseItem3d {
+  match self.queued_items.get(main_entity.id().to_bits()) {
+    Some(item) => item
+    None =>
+      abort("Retained prepass phase entity is missing its queued draw payload")
+  }
+}
+
+///|
+// Materializes the retained bins in Bevy's binned iteration order:
+// multidrawable batch sets first, then batchable bins, then unbatchable
+// entities. The queue only emits mesh phase types, so `non_mesh_items` is
+// always empty for these phases.
+fn Render3dPrepassViewPhase::items(
+  self : Render3dPrepassViewPhase,
+) -> Array[MeshPhaseItem3d] {
+  let result : Array[MeshPhaseItem3d] = []
+  for entry in self.phase.multidrawable_meshes() {
+    let batch_set = entry.batch_set()
+    for index in 0..<batch_set.cpu_instance_count() {
+      guard batch_set.cpu_instance_at(index) is Some(cpu_instance) else {
+        continue
+      }
+      result.push(self.queued_item(cpu_instance.main_entity()))
+    }
+  }
+  for entry in self.phase.batchable_meshes() {
+    for entity_and_input_uniform_index in entry.bin().entities() {
+      result.push(self.queued_item(entity_and_input_uniform_index.0))
+    }
+  }
+  for entry in self.phase.unbatchable_meshes() {
+    for entity_pair in entry.entities().entities() {
+      result.push(self.queued_item(entity_pair.0))
+    }
+  }
+  result
+}
+
+///|
+priv struct Render3dPrepassPhases {
   views : @hashmap.HashMap[
     @render_view.RetainedViewEntity,
-    Render3dRetainedMeshPhaseView,
+    Render3dPrepassViewPhase,
   ]
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::Render3dRetainedMeshPhaseViews() -> Render3dRetainedMeshPhaseViews {
+fn Render3dPrepassPhases::Render3dPrepassPhases() -> Render3dPrepassPhases {
   { views: HashMap([]) }
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::prepare_for_new_frame(
-  self : Render3dRetainedMeshPhaseViews,
+fn Render3dPrepassPhases::prepare_for_new_frame(
+  self : Render3dPrepassPhases,
   retained_view_entity : @render_view.RetainedViewEntity,
   gpu_preprocessing_mode : @render_batching.GpuPreprocessingMode,
 ) -> Unit {
-  if !self.views.contains(retained_view_entity) {
-    self.views.set(retained_view_entity, {
-      items: [],
-      gpu_preprocessing_mode,
-      phase_types: Map([]),
-    })
+  match self.views.get(retained_view_entity) {
+    Some(phase) => phase.prepare_for_new_frame()
+    None =>
+      self.views.set(
+        retained_view_entity,
+        Render3dPrepassViewPhase::new(gpu_preprocessing_mode),
+      )
   }
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::remove(
-  self : Render3dRetainedMeshPhaseViews,
+fn Render3dPrepassPhases::remove(
+  self : Render3dPrepassPhases,
   retained_view_entity : @render_view.RetainedViewEntity,
 ) -> Unit {
   self.views.remove(retained_view_entity)
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::retain_live_views(
-  self : Render3dRetainedMeshPhaseViews,
+fn Render3dPrepassPhases::retain_live_views(
+  self : Render3dPrepassPhases,
   live_views : @hashset.HashSet[@render_view.RetainedViewEntity],
 ) -> Unit {
   let stale_views : Array[@render_view.RetainedViewEntity] = []
@@ -93,72 +252,78 @@ fn Render3dRetainedMeshPhaseViews::retain_live_views(
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::contains(
-  self : Render3dRetainedMeshPhaseViews,
+fn Render3dPrepassPhases::contains(
+  self : Render3dPrepassPhases,
   retained_view_entity : @render_view.RetainedViewEntity,
 ) -> Bool {
   self.views.contains(retained_view_entity)
 }
 
 ///|
-fn Render3dRetainedMeshPhaseViews::view(
-  self : Render3dRetainedMeshPhaseViews,
+fn Render3dPrepassPhases::view(
+  self : Render3dPrepassPhases,
   retained_view_entity : @render_view.RetainedViewEntity,
-) -> Render3dRetainedMeshPhaseView? {
+) -> Render3dPrepassViewPhase? {
   self.views.get(retained_view_entity)
 }
 
 ///|
-fn Render3dRetainedMeshPhaseView::remove(
-  self : Render3dRetainedMeshPhaseView,
-  main_entity : @core.Entity,
-) -> Unit {
-  self.items = self.items.filter(fn(item) {
-    item.entity.main_entity != main_entity
-  })
-  self.phase_types.remove(main_entity.to_bits())
+fn render3d_prepass_retained_view_id(
+  retained_view_entity : @render_view.RetainedViewEntity,
+) -> String {
+  let main_bits = retained_view_entity.main_entity().to_bits()
+  let auxiliary_bits = retained_view_entity.auxiliary_entity().to_bits()
+  let subview_index = retained_view_entity.subview_index()
+  "\{main_bits}:\{auxiliary_bits}:\{subview_index}"
 }
 
 ///|
-fn Render3dRetainedMeshPhaseView::add(
-  self : Render3dRetainedMeshPhaseView,
-  item : MeshPhaseItem3d,
-  phase_type : Render3dPrepassBinnedRenderPhaseType,
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+fn Render3dPrepassPhases::prepare_phase_buffers_into(
+  self : Render3dPrepassPhases,
+  render_mesh_instances : RenderMeshInstances,
+  occlusion_culling_views : @hashset.HashSet[@render_view.RetainedViewEntity],
+  cpu_batched_instance_buffer : @render_batching.BatchedInstanceBuffer[Unit],
+  phase_batched_instance_buffers : @render_batching.PhaseBatchedInstanceBuffers[
+    Unit,
+  ],
+  phase_indirect_parameters_buffers : @render_batching.PhaseIndirectParametersBuffers,
 ) -> Unit {
-  let effective_phase_type = render3d_prepass_effective_phase_type(
-    self.gpu_preprocessing_mode,
-    phase_type,
-  )
-  self.remove(item.entity.main_entity)
-  self.items.push(item)
-  self.phase_types.set(item.entity.main_entity.to_bits(), effective_phase_type)
-}
-
-///|
-fn Render3dRetainedMeshPhaseView::refresh_extracted_indices(
-  self : Render3dRetainedMeshPhaseView,
-  extracted_indices : Map[UInt64, Int],
-) -> Unit {
-  for index in 0..<self.items.length() {
-    let item = self.items[index]
-    guard extracted_indices.get(item.entity.main_entity.to_bits())
-      is Some(extracted_index) else {
-      abort(
-        "Retained prepass phase entity is missing its current extracted mesh payload",
-      )
+  cpu_batched_instance_buffer.clear()
+  let get_binned_index = fn(main_entity : @render.MainEntity) {
+    render_mesh_instances
+    .render_mesh_queue_data(main_entity)
+    .map(fn(mesh_instance) { mesh_instance.current_uniform_index() })
+  }
+  for retained_view_entity, view_phase in self.views {
+    match view_phase.gpu_preprocessing_mode() {
+      None =>
+        view_phase.phase.prepare_cpu_buffers(
+          cpu_batched_instance_buffer, get_binned_index,
+        )
+      mode =>
+        view_phase.phase.prepare_gpu_buffers(
+          render3d_prepass_retained_view_id(retained_view_entity),
+          mode == PreprocessingOnly,
+          occlusion_culling_views.contains(retained_view_entity),
+          phase_batched_instance_buffers,
+          phase_indirect_parameters_buffers,
+          get_binned_index,
+          fn(batch_set_key) { batch_set_key.indexed() },
+        )
     }
-    self.items[index] = { ..item, extracted_index, }
   }
 }
 
 ///|
 fn render3d_append_retained_prepass_phase_items(
   output : Array[MeshPhaseItem3d],
-  view : Render3dRetainedMeshPhaseView?,
+  view : Render3dPrepassViewPhase?,
 ) -> Unit {
   match view {
     Some(view) =>
-      for item in view.items {
+      for item in view.items() {
         output.push(item)
       }
     None => ()
@@ -219,12 +384,12 @@ fn render3d_retained_prepass_phase_items(
 
 ///|
 priv struct Render3dOpaquePrepassPhases {
-  phases : Render3dRetainedMeshPhaseViews
+  phases : Render3dPrepassPhases
 }
 
 ///|
 fn Render3dOpaquePrepassPhases::Render3dOpaquePrepassPhases() -> Render3dOpaquePrepassPhases {
-  { phases: Render3dRetainedMeshPhaseViews() }
+  { phases: Render3dPrepassPhases() }
 }
 
 ///|
@@ -241,12 +406,12 @@ impl @app.Resource for Render3dOpaquePrepassPhases with fn resource() {
 
 ///|
 priv struct Render3dAlphaMaskPrepassPhases {
-  phases : Render3dRetainedMeshPhaseViews
+  phases : Render3dPrepassPhases
 }
 
 ///|
 fn Render3dAlphaMaskPrepassPhases::Render3dAlphaMaskPrepassPhases() -> Render3dAlphaMaskPrepassPhases {
-  { phases: Render3dRetainedMeshPhaseViews() }
+  { phases: Render3dPrepassPhases() }
 }
 
 ///|
@@ -263,12 +428,12 @@ impl @app.Resource for Render3dAlphaMaskPrepassPhases with fn resource() {
 
 ///|
 priv struct Render3dOpaqueDeferredPhases {
-  phases : Render3dRetainedMeshPhaseViews
+  phases : Render3dPrepassPhases
 }
 
 ///|
 fn Render3dOpaqueDeferredPhases::Render3dOpaqueDeferredPhases() -> Render3dOpaqueDeferredPhases {
-  { phases: Render3dRetainedMeshPhaseViews() }
+  { phases: Render3dPrepassPhases() }
 }
 
 ///|
@@ -285,12 +450,12 @@ impl @app.Resource for Render3dOpaqueDeferredPhases with fn resource() {
 
 ///|
 priv struct Render3dAlphaMaskDeferredPhases {
-  phases : Render3dRetainedMeshPhaseViews
+  phases : Render3dPrepassPhases
 }
 
 ///|
 fn Render3dAlphaMaskDeferredPhases::Render3dAlphaMaskDeferredPhases() -> Render3dAlphaMaskDeferredPhases {
-  { phases: Render3dRetainedMeshPhaseViews() }
+  { phases: Render3dPrepassPhases() }
 }
 
 ///|
@@ -304,6 +469,65 @@ let render3d_alpha_mask_deferred_phases_key : @ecs.ResourceKey[
 impl @app.Resource for Render3dAlphaMaskDeferredPhases with fn resource() {
   render3d_alpha_mask_deferred_phases_key
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_render/src/render_phase/mod.rs::BinnedRenderPhasePlugin::build`
+// (`PhaseBatchedInstanceBuffers<BPI>`, `PhaseIndirectParametersBuffers<BPI>`,
+// and the CPU-path `no_gpu_preprocessing::BatchedInstanceBuffer`).
+priv struct Render3dPrepassPhaseBufferSet {
+  cpu_instances : @render_batching.BatchedInstanceBuffer[Unit]
+  phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit]
+  phase_indirect : @render_batching.PhaseIndirectParametersBuffers
+}
+
+///|
+fn Render3dPrepassPhaseBufferSet::Render3dPrepassPhaseBufferSet() -> Render3dPrepassPhaseBufferSet {
+  {
+    cpu_instances: @render_batching.BatchedInstanceBuffer::new(),
+    phase_instances: @render_batching.PhaseBatchedInstanceBuffers::new(),
+    phase_indirect: @render_batching.PhaseIndirectParametersBuffers::new(false),
+  }
+}
+
+///|
+const RENDER3D_OPAQUE_PREPASS_PHASE_ID : String = "mgstudio_pbr::Opaque3dPrepass"
+
+///|
+const RENDER3D_ALPHA_MASK_PREPASS_PHASE_ID : String = "mgstudio_pbr::AlphaMask3dPrepass"
+
+///|
+const RENDER3D_OPAQUE_DEFERRED_PHASE_ID : String = "mgstudio_pbr::Opaque3dDeferred"
+
+///|
+const RENDER3D_ALPHA_MASK_DEFERRED_PHASE_ID : String = "mgstudio_pbr::AlphaMask3dDeferred"
+
+///|
+let render3d_opaque_prepass_phase_buffers_key : @ecs.ResourceKey[
+  Render3dPrepassPhaseBufferSet,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::BinnedPhaseBuffers<Opaque3dPrepass>",
+)
+
+///|
+let render3d_alpha_mask_prepass_phase_buffers_key : @ecs.ResourceKey[
+  Render3dPrepassPhaseBufferSet,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::BinnedPhaseBuffers<AlphaMask3dPrepass>",
+)
+
+///|
+let render3d_opaque_deferred_phase_buffers_key : @ecs.ResourceKey[
+  Render3dPrepassPhaseBufferSet,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::BinnedPhaseBuffers<Opaque3dDeferred>",
+)
+
+///|
+let render3d_alpha_mask_deferred_phase_buffers_key : @ecs.ResourceKey[
+  Render3dPrepassPhaseBufferSet,
+] = @ecs.register_resource(
+  debug_name="mgstudio_pbr::BinnedPhaseBuffers<AlphaMask3dDeferred>",
+)
 
 ///|
 fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
@@ -353,6 +577,30 @@ fn ensure_render3d_prepass_phase_resources(world : @ecs.World) -> Unit {
         @app.Resource::resource() :
         @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
       Render3dAlphaMaskDeferredPhases(),
+    )
+  }
+  if world.get_resource(render3d_opaque_prepass_phase_buffers_key) is None {
+    world.insert_resource(
+      render3d_opaque_prepass_phase_buffers_key,
+      Render3dPrepassPhaseBufferSet(),
+    )
+  }
+  if world.get_resource(render3d_alpha_mask_prepass_phase_buffers_key) is None {
+    world.insert_resource(
+      render3d_alpha_mask_prepass_phase_buffers_key,
+      Render3dPrepassPhaseBufferSet(),
+    )
+  }
+  if world.get_resource(render3d_opaque_deferred_phase_buffers_key) is None {
+    world.insert_resource(
+      render3d_opaque_deferred_phase_buffers_key,
+      Render3dPrepassPhaseBufferSet(),
+    )
+  }
+  if world.get_resource(render3d_alpha_mask_deferred_phase_buffers_key) is None {
+    world.insert_resource(
+      render3d_alpha_mask_deferred_phase_buffers_key,
+      Render3dPrepassPhaseBufferSet(),
     )
   }
 }
@@ -516,4 +764,239 @@ fn render3d_extract_camera_prepass_phases(
     Some(phases) => phases.phases.retain_live_views(live_views)
     None => abort("Missing AlphaMask3dDeferred phases during extraction")
   }
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::batch_and_prepare_binned_render_phase`.
+fn render3d_prepare_prepass_phase_buffer_set(
+  world : @ecs.World,
+  phases : Render3dPrepassPhases,
+  buffers : Render3dPrepassPhaseBufferSet,
+) -> Unit {
+  guard world.get_resource(RenderMeshInstances::resource())
+    is Some(render_mesh_instances) else {
+    return
+  }
+  let source_world = @render.render_source_world(world)
+  let occlusion_culling_views : @hashset.HashSet[
+    @render_view.RetainedViewEntity,
+  ] = HashSet([])
+  for retained_view_entity, _view_phase in phases.views {
+    if (try! source_world.get_by_key(
+        retained_view_entity.main_entity(),
+        ecs_key_occlusion_culling,
+      ))
+      is Some(_) {
+      occlusion_culling_views.add(retained_view_entity)
+    }
+  }
+  phases.prepare_phase_buffers_into(
+    render_mesh_instances,
+    occlusion_culling_views,
+    buffers.cpu_instances,
+    buffers.phase_instances,
+    buffers.phase_indirect,
+  )
+}
+
+///|
+fn render3d_prepare_opaque_prepass_phase_buffers(world : @ecs.World) -> Unit {
+  let phases_ref = match
+    world.get_resource_mut(render3d_opaque_prepass_phases_key) {
+    Some(value) => value
+    None => return
+  }
+  let buffers_ref = match
+    world.get_resource_mut(render3d_opaque_prepass_phase_buffers_key) {
+    Some(value) => value
+    None => return
+  }
+  phases_ref.modify(fn(phases) {
+    buffers_ref.modify(fn(buffers) {
+      render3d_prepare_prepass_phase_buffer_set(world, phases.phases, buffers)
+    })
+  })
+}
+
+///|
+pub fn render3d_prepare_opaque_prepass_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_opaque_prepass_phase_buffers(world)
+}
+
+///|
+fn render3d_prepare_alpha_mask_prepass_phase_buffers(
+  world : @ecs.World,
+) -> Unit {
+  let phases_ref = match
+    world.get_resource_mut(render3d_alpha_mask_prepass_phases_key) {
+    Some(value) => value
+    None => return
+  }
+  let buffers_ref = match
+    world.get_resource_mut(render3d_alpha_mask_prepass_phase_buffers_key) {
+    Some(value) => value
+    None => return
+  }
+  phases_ref.modify(fn(phases) {
+    buffers_ref.modify(fn(buffers) {
+      render3d_prepare_prepass_phase_buffer_set(world, phases.phases, buffers)
+    })
+  })
+}
+
+///|
+pub fn render3d_prepare_alpha_mask_prepass_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_alpha_mask_prepass_phase_buffers(world)
+}
+
+///|
+fn render3d_prepare_opaque_deferred_phase_buffers(world : @ecs.World) -> Unit {
+  let phases_ref = match
+    world.get_resource_mut(render3d_opaque_deferred_phases_key) {
+    Some(value) => value
+    None => return
+  }
+  let buffers_ref = match
+    world.get_resource_mut(render3d_opaque_deferred_phase_buffers_key) {
+    Some(value) => value
+    None => return
+  }
+  phases_ref.modify(fn(phases) {
+    buffers_ref.modify(fn(buffers) {
+      render3d_prepare_prepass_phase_buffer_set(world, phases.phases, buffers)
+    })
+  })
+}
+
+///|
+pub fn render3d_prepare_opaque_deferred_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_opaque_deferred_phase_buffers(world)
+}
+
+///|
+fn render3d_prepare_alpha_mask_deferred_phase_buffers(
+  world : @ecs.World,
+) -> Unit {
+  let phases_ref = match
+    world.get_resource_mut(render3d_alpha_mask_deferred_phases_key) {
+    Some(value) => value
+    None => return
+  }
+  let buffers_ref = match
+    world.get_resource_mut(render3d_alpha_mask_deferred_phase_buffers_key) {
+    Some(value) => value
+    None => return
+  }
+  phases_ref.modify(fn(phases) {
+    buffers_ref.modify(fn(buffers) {
+      render3d_prepare_prepass_phase_buffer_set(world, phases.phases, buffers)
+    })
+  })
+}
+
+///|
+pub fn render3d_prepare_alpha_mask_deferred_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_prepare_alpha_mask_deferred_phase_buffers(world)
+}
+
+///|
+// Bevy source:
+// `bevy/crates/bevy_render/src/batching/gpu_preprocessing.rs::collect_buffers_for_phase`.
+fn render3d_collect_prepass_phase_buffer_set(
+  world : @ecs.World,
+  phase_id : String,
+  buffers_key : @ecs.ResourceKey[Render3dPrepassPhaseBufferSet],
+) -> Unit {
+  let buffers_ref = match world.get_resource_mut(buffers_key) {
+    Some(value) => value
+    None => return
+  }
+  let batched_instances_ref = match
+    world.get_resource_mut(
+      RenderMeshInstanceGpuBatchedInstanceBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let indirect_buffers_ref = match
+    world.get_resource_mut(
+      @render_batching.IndirectParametersBuffers::resource(),
+    ) {
+    Some(value) => value
+    None => return
+  }
+  let settings = match
+    world.get_resource(
+      @render_batching.IndirectParametersBuffersSettings::resource(),
+    ) {
+    Some(value) => value
+    None => IndirectParametersBuffersSettings()
+  }
+  buffers_ref.modify(fn(buffers) {
+    batched_instances_ref.modify(fn(batched_instances) {
+      indirect_buffers_ref.modify(fn(indirect_buffers) {
+        @render_batching.collect_buffers_for_phase(
+          phase_id,
+          buffers.phase_instances,
+          buffers.phase_indirect,
+          batched_instances.buffers,
+          indirect_buffers,
+          settings,
+        )
+      })
+    })
+  })
+}
+
+///|
+pub fn render3d_collect_opaque_prepass_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_collect_prepass_phase_buffer_set(
+    world,
+    RENDER3D_OPAQUE_PREPASS_PHASE_ID,
+    render3d_opaque_prepass_phase_buffers_key,
+  )
+}
+
+///|
+pub fn render3d_collect_alpha_mask_prepass_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_collect_prepass_phase_buffer_set(
+    world,
+    RENDER3D_ALPHA_MASK_PREPASS_PHASE_ID,
+    render3d_alpha_mask_prepass_phase_buffers_key,
+  )
+}
+
+///|
+pub fn render3d_collect_opaque_deferred_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_collect_prepass_phase_buffer_set(
+    world,
+    RENDER3D_OPAQUE_DEFERRED_PHASE_ID,
+    render3d_opaque_deferred_phase_buffers_key,
+  )
+}
+
+///|
+pub fn render3d_collect_alpha_mask_deferred_phase_buffers_system(
+  world : @ecs.World,
+) -> Unit {
+  render3d_collect_prepass_phase_buffer_set(
+    world,
+    RENDER3D_ALPHA_MASK_DEFERRED_PHASE_ID,
+    render3d_alpha_mask_deferred_phase_buffers_key,
+  )
 }

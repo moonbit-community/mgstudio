@@ -213,13 +213,13 @@ test "pbr prepass phases: extraction selects Bevy GPU preprocessing mode" {
   debug_inspect(
     phases.phases
     .view(indirect_view)
-    .map(fn(view) { view.gpu_preprocessing_mode }),
+    .map(fn(view) { view.gpu_preprocessing_mode() }),
     content="Some(Culling)",
   )
   debug_inspect(
     phases.phases
     .view(direct_view)
-    .map(fn(view) { view.gpu_preprocessing_mode }),
+    .map(fn(view) { view.gpu_preprocessing_mode() }),
     content="Some(PreprocessingOnly)",
   )
 }
@@ -314,12 +314,8 @@ test "pbr prepass specialization: cache retains live views and full entry data" 
 }
 
 ///|
-test "pbr prepass queue: retained phase replaces entities and refreshes payload indices" {
-  let phase = Render3dRetainedMeshPhaseView::{
-    items: [],
-    gpu_preprocessing_mode: Culling,
-    phase_types: Map([]),
-  }
+test "pbr prepass queue: retained phase bins entities and refreshes payload indices" {
+  let phase = Render3dPrepassViewPhase::new(Culling)
   let entity = phase_entity_ref3d(
     @core.Entity::new(50, 0),
     @core.Entity::new(60, 0),
@@ -343,30 +339,40 @@ test "pbr prepass queue: retained phase replaces entities and refreshes payload 
       material_bind_group_slot: -1,
     }
   }
+  fn cached_phase_type(
+    phase : Render3dPrepassViewPhase,
+    main_entity : @core.Entity,
+  ) -> Render3dPrepassBinnedRenderPhaseType? {
+    phase.phase
+    .cached_bin_key(@render.MainEntity::new(main_entity))
+    .map(fn(key) { key.phase_type() })
+  }
+
   phase.add(item(entity, 0, 7UL), MultidrawableMesh)
-  phase.add(item(entity, 1, 8UL), BatchableMesh)
-  inspect(phase.items.length(), content="1")
-  inspect(phase.items[0].pipeline_id.id(), content="8")
+  inspect(phase.items().length(), content="1")
+  inspect(phase.items()[0].pipeline_id.id(), content="7")
+  debug_inspect(
+    cached_phase_type(phase, entity.main_entity) is Some(MultidrawableMesh),
+    content="true",
+  )
   let indices : Map[UInt64, Int] = Map([])
   indices.set(entity.main_entity.to_bits(), 9)
   phase.refresh_extracted_indices(indices)
-  inspect(phase.items[0].extracted_index, content="9")
+  inspect(phase.items()[0].extracted_index, content="9")
+  phase.remove(entity.main_entity)
+  inspect(phase.items().length(), content="0")
+  phase.add(item(entity, 1, 8UL), BatchableMesh)
+  inspect(phase.items().length(), content="1")
+  inspect(phase.items()[0].pipeline_id.id(), content="8")
   debug_inspect(
-    phase.phase_types.get(entity.main_entity.to_bits()) is Some(BatchableMesh),
+    cached_phase_type(phase, entity.main_entity) is Some(BatchableMesh),
     content="true",
   )
-  phase.remove(entity.main_entity)
-  inspect(phase.items.length(), content="0")
 
-  let direct_phase = Render3dRetainedMeshPhaseView::{
-    items: [],
-    gpu_preprocessing_mode: PreprocessingOnly,
-    phase_types: Map([]),
-  }
+  let direct_phase = Render3dPrepassViewPhase::new(PreprocessingOnly)
   direct_phase.add(item(entity, 0, 9UL), MultidrawableMesh)
   debug_inspect(
-    direct_phase.phase_types.get(entity.main_entity.to_bits())
-    is Some(BatchableMesh),
+    cached_phase_type(direct_phase, entity.main_entity) is Some(BatchableMesh),
     content="true",
   )
 }

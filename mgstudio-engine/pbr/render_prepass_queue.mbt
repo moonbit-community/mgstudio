@@ -18,10 +18,10 @@
 
 ///|
 fn render3d_remove_prepass_phase_entity(
-  opaque_prepass : Render3dRetainedMeshPhaseView?,
-  alpha_mask_prepass : Render3dRetainedMeshPhaseView?,
-  opaque_deferred : Render3dRetainedMeshPhaseView?,
-  alpha_mask_deferred : Render3dRetainedMeshPhaseView?,
+  opaque_prepass : Render3dPrepassViewPhase?,
+  alpha_mask_prepass : Render3dPrepassViewPhase?,
+  opaque_deferred : Render3dPrepassViewPhase?,
+  alpha_mask_deferred : Render3dPrepassViewPhase?,
   entity : @core.Entity,
 ) -> Unit {
   match opaque_prepass {
