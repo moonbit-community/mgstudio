@@ -155,17 +155,51 @@ pub fn PreviousGlobalTransform::new(
 }
 
 ///|
+// Bevy's `PreviousGlobalTransform(pub Affine3A)` stores a by-value copy
+// (`Affine3A` is `Copy`). MoonBit affines are shared mutable references and
+// transform propagation mutates `GlobalTransform.affine` in place
+// (`set_from`/`set_mul_transform`), so storing the incoming reference would
+// alias the live transform and make "previous" always equal "current" --
+// zeroing every propagated child's motion vector. Snapshot at the boundary.
+fn previous_global_transform_snapshot(affine : @math.Affine3) -> @math.Affine3 {
+  @math.Affine3::from_mat3_translation(
+    @math.Mat3::from_cols(
+      @math.Vec3::new(
+        affine.matrix3.x_axis.x,
+        affine.matrix3.x_axis.y,
+        affine.matrix3.x_axis.z,
+      ),
+      @math.Vec3::new(
+        affine.matrix3.y_axis.x,
+        affine.matrix3.y_axis.y,
+        affine.matrix3.y_axis.z,
+      ),
+      @math.Vec3::new(
+        affine.matrix3.z_axis.x,
+        affine.matrix3.z_axis.y,
+        affine.matrix3.z_axis.z,
+      ),
+    ),
+    @math.Vec3::new(
+      affine.translation.x,
+      affine.translation.y,
+      affine.translation.z,
+    ),
+  )
+}
+
+///|
 pub fn PreviousGlobalTransform::from_affine(
   affine : @math.Affine3,
 ) -> PreviousGlobalTransform {
-  { affine, }
+  { affine: previous_global_transform_snapshot(affine) }
 }
 
 ///|
 pub fn PreviousGlobalTransform::from_global_transform(
   transform : @transform.GlobalTransform,
 ) -> PreviousGlobalTransform {
-  { affine: transform.affine() }
+  { affine: previous_global_transform_snapshot(transform.affine()) }
 }
 
 ///|
