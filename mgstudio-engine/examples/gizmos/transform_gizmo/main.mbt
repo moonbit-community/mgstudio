@@ -109,7 +109,7 @@ fn setup(world : @ecs.World) -> Unit {
   try! world.set_by_key(
     light,
     @pbr.ecs_key_directional_light,
-    @pbr.DirectionalLight::DirectionalLight(),
+    @pbr.DirectionalLight::DirectionalLight().with_shadow_maps_enabled(true),
   )
   try! world.set_by_key(
     light,

@@ -367,11 +367,19 @@ fn render3d_execute_camera(
     prepass_deferred_target_id = late_prepass_result.deferred_texture_id
     prepass_deferred_lighting_pass_id_target_id = late_prepass_result.deferred_lighting_pass_id_texture_id
   }
-  ignore(
-    @render.host_gpu_reserve_mesh3d_draw_storage(
-      count=render3d_main_view_phase_item_count_or_abort(world, camera_entity),
-    ),
+  // The reserved base is the camera's slice of the frame-shared instance draw
+  // storage. Instance writes go through `queue.write_buffer`, which flushes at
+  // submit before any pass executes, so two cameras writing the same slots
+  // would leave every pass reading the last camera's matrices (ISS-479). The
+  // shadow phase already offsets by its reserved base; the main pass must too.
+  let reserved_draw_storage_base = @render.host_gpu_reserve_mesh3d_draw_storage(
+    count=render3d_main_view_phase_item_count_or_abort(world, camera_entity),
   )
+  let draw_storage_base = if reserved_draw_storage_base < 0 {
+    0
+  } else {
+    reserved_draw_storage_base
+  }
   let shadow_pass_plan = execution_plan.shadow_pass_plan
   render3d_execute_shadow_phase_views(
     world,
@@ -438,6 +446,7 @@ fn render3d_execute_camera(
     meshes,
     indexed_indirect_parameter_indices,
     non_indexed_indirect_parameter_indices,
+    draw_storage_base,
     scene_target_id,
     view_width,
     view_height,
@@ -643,4 +652,5 @@ fn render3d_execute_camera(
     camera.scale_factor,
   )
 }
+
 

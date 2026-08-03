@@ -425,6 +425,7 @@ fn render3d_execute_camera_main_pass(
   meshes : Array[ExtractedMesh3d],
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
+  draw_storage_base : Int,
   scene_target_id : Int,
   view_width : Int,
   view_height : Int,
@@ -786,7 +787,7 @@ fn render3d_execute_camera_main_pass(
       render3d_uploaded_mesh_id_or_abort(world, draw_item.mesh_asset_id),
       camera_entity.id,
       camera_entity.generation,
-      draw_item_index,
+      draw_storage_base + draw_item_index,
       if draw_indirect_parameters_index >= 0 {
         if draw_indexed {
           MESH3D_DRAW_INDIRECT_KIND_INDEXED
