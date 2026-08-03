@@ -389,9 +389,6 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   text_sync_ecs_system(world)
   debug_inspect(text_ecs_entries.length(), content="1")
   debug_inspect(text_ecs_entries[0].view_visible, content="false")
-  text_render_system(world)
-  debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
-
   ignore(next_system_ticks(world))
   try! world.set_by_key(
     entity,
@@ -405,8 +402,6 @@ test "text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   )
   text_sync_ecs_system(world)
   debug_inspect(text_ecs_entries[0].view_visible, content="true")
-  text_render_system(world)
-  debug_inspect(text_diagnostic_render_visible_text_count(), content="1")
 }
 
 ///|
@@ -429,9 +424,6 @@ test "ui text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   ui_text_sync_ecs_system(world)
   debug_inspect(ui_text_ecs_entries.length(), content="1")
   debug_inspect(ui_text_ecs_entries[0].view_visible, content="false")
-  text_render_system(world)
-  debug_inspect(text_diagnostic_render_visible_text_count(), content="0")
-
   ignore(next_system_ticks(world))
   try! world.set_by_key(
     entity,
@@ -441,8 +433,6 @@ test "ui text ecs bridge syncs ViewVisibility into runtime visibility gating" {
   try! world.set_by_key(entity, ecs_key_text, Text::new("Visible UI"))
   ui_text_sync_ecs_system(world)
   debug_inspect(ui_text_ecs_entries[0].view_visible, content="true")
-  text_render_system(world)
-  debug_inspect(text_diagnostic_render_visible_text_count(), content="1")
 }
 
 ///|

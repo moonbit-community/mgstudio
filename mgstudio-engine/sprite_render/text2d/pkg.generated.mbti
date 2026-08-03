@@ -7,11 +7,21 @@ import {
 }
 
 // Values
+pub fn text2d_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn text_diagnostic_render_cpu_ms() -> Float
+
+pub fn text_diagnostic_render_culled_text_count() -> Int
+
+pub fn text_diagnostic_render_submitted_item_count() -> Int
+
+pub fn text_diagnostic_render_visible_text_count() -> Int
+
 pub fn text_render_system(@ecs.World) -> Unit
 
 pub fn text_render_transparent_2d_queue_system(@ecs.World) -> Unit
 
-pub fn text_runtime_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn text_render_transparent_ui_queue_system(@ecs.World) -> Unit
 
 pub let text_set_render_extract : String
 
@@ -21,11 +31,16 @@ pub let text_set_render_queue : String
 
 pub let text_set_render_transparent_2d : String
 
+pub let text_set_render_transparent_ui : String
+
 // Errors
 
 // Types and methods
+pub struct Text2dRenderPlugin {
+}
+pub fn Text2dRenderPlugin::Text2dRenderPlugin() -> Self
+pub impl @app.Plugin for Text2dRenderPlugin
 
 // Type aliases
 
 // Traits
-

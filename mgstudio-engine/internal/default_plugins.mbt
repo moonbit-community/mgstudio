@@ -90,6 +90,7 @@ fn default_plugins_builder(
   .add(@sprite.SpritePlugin::SpritePlugin())
   .add(@sprite_render.SpriteRenderPlugin::SpriteRenderPlugin())
   .add(@text.TextPlugin::TextPlugin())
+  .add(@sprite_render_text2d.Text2dRenderPlugin::Text2dRenderPlugin())
   .add(@ui.UiPlugin::UiPlugin())
   .add(@ui_render.UiRenderPlugin::UiRenderPlugin())
   .add(@gltf_loader.GltfPlugin::GltfPlugin())

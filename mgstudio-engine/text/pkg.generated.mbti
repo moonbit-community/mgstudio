@@ -101,14 +101,6 @@ pub fn text_debug_visible_overlap_count(TextHandle, TextHandle) -> Int
 
 pub fn text_despawn(TextHandle) -> Bool
 
-pub fn text_diagnostic_render_cpu_ms() -> Float
-
-pub fn text_diagnostic_render_culled_text_count() -> Int
-
-pub fn text_diagnostic_render_submitted_item_count() -> Int
-
-pub fn text_diagnostic_render_visible_text_count() -> Int
-
 pub fn text_diagnostic_sync_ecs_cpu_ms() -> Float
 
 pub fn text_diagnostic_sync_ecs_dirty_entity_count() -> Int
@@ -141,21 +133,19 @@ pub fn text_get_ui_scissor(TextHandle) -> @math.Rect?
 
 pub fn text_get_visual_bounds(TextHandle) -> @math.Rect?
 
+pub fn text_instances() -> Array[TextInstance]
+
 pub fn text_layout_size(TextHandle) -> @math.Vec2?
 
 pub fn text_measure_glyph_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
+
+pub fn text_pipeline_safe_scale_factor(Float) -> Float
 
 pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn text_rasterize_glyph(@asset.Handle[@asset.Font], Float, Int, FontSmoothing) -> GlyphRaster?
 
 pub fn text_reader(@ecs.World) -> TextReader
-
-pub fn text_render_system(@ecs.World) -> Unit
-
-pub fn text_render_transparent_2d_queue_system(@ecs.World) -> Unit
-
-pub fn text_render_transparent_ui_queue_system(@ecs.World) -> Unit
 
 pub fn text_reset_runtime_state_for_tests() -> Unit
 
@@ -188,16 +178,6 @@ pub fn text_set_line_height(TextHandle, LineHeight) -> Unit
 pub fn text_set_logical_viewport_size(TextHandle, @math.Vec2?) -> Unit
 
 pub fn text_set_no_frustum_culling(TextHandle, Bool) -> Unit
-
-pub let text_set_render_extract : String
-
-pub let text_set_render_prepare : String
-
-pub let text_set_render_queue : String
-
-pub let text_set_render_transparent_2d : String
-
-pub let text_set_render_transparent_ui : String
 
 pub fn text_set_runtime_rem_size(Float) -> Unit
 
@@ -685,6 +665,39 @@ pub struct TextHandle {
 pub fn TextHandle::id(Self) -> Int
 pub fn TextHandle::new(Int) -> Self
 
+pub struct TextInstance {
+  id : Int
+  text : @sprite.Text2d
+  font : TextFont
+  color : TextColor
+  background_color : TextBackgroundColor?
+  underline : Underline?
+  underline_color : UnderlineColor?
+  strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
+  layout : TextLayout
+  bounds : TextBounds
+  line_height : LineHeight
+  font_hinting : FontHinting
+  shadow : @sprite.Text2dShadow?
+  transform : @transform.Transform
+  layers : @render_layers.RenderLayers
+  view_visible : Bool
+  no_frustum_culling : Bool
+  anchor : @sprite.Anchor
+  y_axis : YAxisOrientation
+  ui_node_size : @math.Vec2?
+  logical_viewport_size : @math.Vec2?
+  scale_factor : Float
+  ui_camera_entity : @core.Entity?
+  ui_scissor : @math.Rect?
+  cull_margin : Float
+  spans : Array[TextSpanInstance]
+  layout_dirty : Bool
+  computed : ComputedTextBlock
+  layout_info : TextLayoutInfo
+}
+
 pub struct TextLayout {
   justify : Justify
   linebreak : LineBreak
@@ -772,6 +785,19 @@ pub struct TextSpanHandle {
   id : Int
 }
 pub fn TextSpanHandle::new(Int) -> Self
+
+pub struct TextSpanInstance {
+  id : Int
+  span : TextSpan
+  font : TextFont
+  color : TextColor
+  background_color : TextBackgroundColor?
+  underline : Underline?
+  underline_color : UnderlineColor?
+  strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
+  line_height : LineHeight
+}
 
 pub struct TextSpanRange {
   start : Int

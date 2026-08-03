@@ -290,7 +290,10 @@ pub fn TextSpanBundle::spawn(
 }
 
 ///|
-priv struct TextSpanInstance {
+// Readonly outside `text`: this is the public data surface the render
+// extraction in `sprite_render/text2d` reads, the retained analog of Bevy's
+// public `TextColor`/decoration components on span entities.
+pub struct TextSpanInstance {
   id : Int
   span : TextSpan
   font : TextFont
@@ -304,7 +307,10 @@ priv struct TextSpanInstance {
 }
 
 ///|
-priv struct TextInstance {
+// Readonly outside `text`: the retained analog of the public component data
+// Bevy's `extract_text2d_sprite` queries (`TextLayoutInfo`,
+// `ComputedTextBlock`, `TextBounds`, `Anchor`, `GlobalTransform`, ...).
+pub struct TextInstance {
   id : Int
   text : Text2d
   font : TextFont
@@ -356,6 +362,14 @@ let text_state : TextState = {
   next_span_id: 0,
   texts: [],
   text_index_by_id: Map([]),
+}
+
+///|
+/// The laid-out text instances, in spawn order. This is the read surface the
+/// render extraction in `sprite_render/text2d` iterates (Bevy's equivalent is
+/// the `extract_text2d_sprite` query over public `bevy_text` components).
+pub fn text_instances() -> Array[TextInstance] {
+  text_state.texts
 }
 
 ///|
