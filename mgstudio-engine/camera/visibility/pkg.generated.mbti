@@ -3,9 +3,11 @@ package "Milky2018/mgstudio/camera/visibility"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/camera/primitives",
   "Milky2018/mgstudio/camera/visibility/render_layers",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/debug",
   "moonbitlang/core/hashmap",
 }
@@ -46,6 +48,8 @@ pub fn render_layers_layer(Int) -> @render_layers.RenderLayers
 pub fn render_layers_matches(@render_layers.RenderLayers, @render_layers.RenderLayers) -> Bool
 
 pub fn render_layers_none() -> @render_layers.RenderLayers
+
+pub fn[T : @ecs.Component] update_frusta(@ecs.World, @ecs.ComponentKey[T], (T, @transform.Transform) -> @primitives.Frustum) -> Unit
 
 pub fn view_visibility(Bool) -> @Milky2018/mgstudio/visibility.ViewVisibility
 
@@ -137,4 +141,3 @@ pub type Layer = Int
 pub using @render_layers {type RenderLayers}
 
 // Traits
-

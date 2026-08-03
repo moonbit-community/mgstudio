@@ -49,6 +49,17 @@ fn camera2d_frustum_render_transform(
 }
 
 ///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs` registers
+// `update_frusta::<Projection>` for the 3d projection component.
+pub fn update_frusta_3d_system(world : @ecs.World) -> Unit {
+  @camera_visibility.update_frusta(
+    world,
+    @camera_projection3d.ecs_key_projection,
+    fn(projection, transform) { projection.compute_frustum(transform) },
+  )
+}
+
+///|
 // Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::update_frusta`.
 // The current 2D projection surface is the WindowSize orthographic subset, so
 // reuse the source-aligned orthographic implementation with the 2D defaults.
@@ -157,8 +168,8 @@ pub fn camera_projection_plugin(
     .after(@transform.transform_set_propagate),
   )
   .add_post_update_system_config(
-    @app.system(@pbr.render3d_update_frusta_system)
-    .named("mgstudio.pbr.render3d_update_frusta")
+    @app.system(update_frusta_3d_system)
+    .named("mgstudio.camera.update_frusta_3d")
     .in_set(camera_update_frusta_systems),
   )
   .add_post_update_system_config(

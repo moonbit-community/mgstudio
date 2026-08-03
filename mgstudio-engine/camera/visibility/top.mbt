@@ -522,3 +522,55 @@ pub fn no_auto_aabb() -> @root_visibility.NoAutoAabb {
 pub fn no_cpu_culling() -> @root_visibility.NoCpuCulling {
   NoCpuCulling()
 }
+
+///|
+// Bevy source: `bevy/crates/bevy_camera/src/visibility/mod.rs::update_frusta`.
+//
+// Generic over the projection component, as Bevy's
+// `update_frusta::<T: CameraProjection>` is generic over the projection type.
+
+pub fn[T : @ecs.Component] update_frusta(
+  world : @ecs.World,
+  projection_key : @ecs.ComponentKey[T],
+  compute_frustum : (T, @transform.Transform) -> @camera_primitives.Frustum,
+) -> Unit {
+  let query : @ecs.Query[
+    (
+      @ecs.ReadValue[@transform.Transform],
+      @ecs.ReadValue[T],
+      @ecs.Write[@camera_primitives.Frustum],
+    ),
+    @ecs.Or[(@ecs.Changed[@transform.Transform], @ecs.Changed[T])],
+  ] = @ecs.query_filtered(
+    world,
+    @ecs.Or::new(
+      (
+        @ecs.Changed::new(@transform.ecs_key_transform),
+        @ecs.Changed::new(projection_key),
+      ),
+    ),
+  )
+  let used_batch = try! query.try_for_each_filtered_table(fn(batch, rows) {
+    let transforms = batch.read(@transform.ecs_key_transform).unwrap()
+    let projections = batch.read(projection_key).unwrap()
+    let frusta = batch.write(@camera_primitives.ecs_key_frustum).unwrap()
+    try! rows.for_each(fn(row_index) {
+      let next = compute_frustum(
+        projections.value(row_index),
+        transforms.value(row_index),
+      )
+      if frusta.peek(row_index) != next {
+        frusta.set(row_index, next)
+      }
+    })
+  })
+  if !used_batch {
+    try! query.for_each(fn(_entity, data) {
+      let (transform, projection, frustum) = data
+      let next = compute_frustum(projection.value(), transform.value())
+      if frustum.peek() != next {
+        frustum.set(next)
+      }
+    })
+  }
+}

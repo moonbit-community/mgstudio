@@ -70,6 +70,8 @@ pub fn perspective_projection_3d_with_aspect_ratio(@projection3d.PerspectiveProj
 
 pub fn update_frusta_2d_system(@ecs.World) -> Unit
 
+pub fn update_frusta_3d_system(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods

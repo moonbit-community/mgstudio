@@ -45,12 +45,3 @@ pub fn render3d_frustum_plane_index_clamp(index : Int) -> Int {
     index
   }
 }
-
-///|
-pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
-  @pbr_render.render3d_update_frusta_system_by_projection_key(
-    world,
-    ecs_key_projection,
-    fn(projection, transform) { projection.compute_frustum(transform) },
-  )
-}

@@ -910,8 +910,6 @@ pub fn render3d_specialize_shadows_system(@ecs.World) -> Unit
 
 pub fn render3d_sync_and_apply_deformed_meshes(@ecs.World) -> Unit
 
-pub fn render3d_update_frusta_system(@ecs.World) -> Unit
-
 pub fn render3d_view_fog_data(DistanceFog) -> @Milky2018/mgstudio/pbr/render.Render3dViewFogData
 
 pub fn[M : Material] render_material3d_instances_or_empty(@ecs.World, @asset.Handle[M]) -> RenderMaterial3dInstances[M]
