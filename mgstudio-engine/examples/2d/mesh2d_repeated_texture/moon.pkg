@@ -11,7 +11,7 @@ import {
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/sprite",
 }
 
 supported_targets = "native"

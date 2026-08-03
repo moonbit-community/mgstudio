@@ -285,7 +285,7 @@ fn setup_instructions() -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Fog controls"),
+      @sprite.Text2d::new("Fog controls"),
       @text.TextFont::TextFont().with_font(font).with_font_size(18.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),

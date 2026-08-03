@@ -127,7 +127,7 @@ fn setup(world : @ecs.World) -> Unit {
       (
         MessageText::{  },
         MessageFade::{ palette: None },
-        @text.Text2d::Text2d(),
+        @sprite.Text2d::Text2d(),
         @text.TextFont::TextFont().with_font_size(@text.FontSize::Px(119.0F)),
         @text.TextColor::new(message_color(None, 0.0F)),
       ),
@@ -164,7 +164,7 @@ fn on_set_message(
   set_message : @ecs.On[SetMessage],
   text : @app.Single[
     (
-      @ecs.Write[@text.Text2d],
+      @ecs.Write[@sprite.Text2d],
       @ecs.Write[@text.TextColor],
       @ecs.Write[MessageFade],
     ),
@@ -173,7 +173,7 @@ fn on_set_message(
 ) -> Unit {
   let event = set_message.event()
   let (text2d, color, fade) = text.get()
-  text2d.set(@text.Text2d::new(event.value))
+  text2d.set(@sprite.Text2d::new(event.value))
   fade.modify(fn(value) { value.palette = event.palette })
   color.set(@text.TextColor::new(message_color(event.palette, 1.0F)))
 }

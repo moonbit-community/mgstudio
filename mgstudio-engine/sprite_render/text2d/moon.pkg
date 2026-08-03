@@ -13,4 +13,8 @@ import {
   "Milky2018/mgstudio/transform",
 }
 
+import {
+  "Milky2018/mgstudio/sprite",
+} for "test"
+
 supported_targets = "native"

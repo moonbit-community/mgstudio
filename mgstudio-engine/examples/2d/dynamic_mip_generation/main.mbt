@@ -644,10 +644,10 @@ fn spawn_mip_level_views(
     ignore(
       commands.spawn(
         (
-          @text.Text2d::new(mip_level_label(i, mip_size)),
+          @sprite.Text2d::new(mip_level_label(i, mip_size)),
           app_assets.text_font,
           @text.TextLayout::new_with_justify(Center),
-          @text.Text2dShadow::Text2dShadow(),
+          @sprite.Text2dShadow::Text2dShadow(),
           @transform.Transform::from_xy_rotation_scale(
             @math.Vec2::new(label_x, y_center),
             0.0F,

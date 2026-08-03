@@ -69,7 +69,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(center_panel),
-        @text.Text2d::new("Control"),
+        @sprite.Text2d::new("Control"),
         @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
       ),
     ),
@@ -101,7 +101,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(left_panel),
-        @text.Text2d::new("Repeat On"),
+        @sprite.Text2d::new("Repeat On"),
         @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
       ),
     ),
@@ -133,7 +133,7 @@ fn setup(
     commands.spawn(
       (
         @hierarchy.Parent::new(right_panel),
-        @text.Text2d::new("Repeat Off"),
+        @sprite.Text2d::new("Repeat Off"),
         @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
       ),
     ),

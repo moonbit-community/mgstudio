@@ -482,7 +482,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
+      @sprite.Text2d::new(""),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),

@@ -105,7 +105,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   status_text_handles_ref.val = Some({ ime_enabled, ime_active, ime_buffer })
 
   let edit_handle = @text.Text2dBundle::new(
-    @text.Text2d::new(""),
+    @sprite.Text2d::new(""),
     edit_font,
     @transform.Transform::identity(),
   ).spawn()
@@ -308,7 +308,7 @@ fn commit_text_line() -> Unit {
     return
   }
   let handle = @text.Text2dBundle::new(
-    @text.Text2d::new(committed),
+    @sprite.Text2d::new(committed),
     edit_state.font,
     @transform.Transform::identity(),
   ).spawn()

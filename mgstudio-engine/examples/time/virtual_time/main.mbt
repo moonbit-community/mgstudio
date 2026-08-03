@@ -178,7 +178,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let real_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
+      @sprite.Text2d::new(""),
       @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
@@ -196,7 +196,7 @@ fn setup(world : @ecs.World) -> Unit {
   virtual_time_state.val.real_text = Some(real_text)
 
   @text.Text2dBundle::new(
-    @text.Text2d::new("CONTROLS\n(Un)pause: Space\nSpeed+: Up\nSpeed-: Down"),
+    @sprite.Text2d::new("CONTROLS\n(Un)pause: Space\nSpeed+: Up\nSpeed-: Down"),
     @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 320.0F),
@@ -216,7 +216,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let virtual_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
+      @sprite.Text2d::new(""),
       @text.TextFont::TextFont().with_font(font).with_font_size(24.0F),
       @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(390.0F, 320.0F),

@@ -154,7 +154,7 @@ fn setup(
   let half_y = (MAP_SIZE / 4.0F).to_int()
   let text_entities : Array[
     (
-      @text.Text2d,
+      @sprite.Text2d,
       @text.TextFont,
       @text.TextColor,
       @text.TextLayout,
@@ -175,7 +175,7 @@ fn setup(
       let justify = if args.center { @text.Justify::Center } else { Left }
       text_entities.push(
         (
-          @text.Text2d::new(random_text(idx, args)),
+          @sprite.Text2d::new(random_text(idx, args)),
           @text.TextFont::TextFont()
           .with_font(font)
           .with_font_size(random_font_size(idx, args)),
@@ -197,7 +197,7 @@ fn setup(
   if args.no_frustum_culling {
     let uncullable : Array[
       (
-        @text.Text2d,
+        @sprite.Text2d,
         @text.TextFont,
         @text.TextColor,
         @text.TextLayout,
@@ -237,7 +237,7 @@ fn move_camera(
 }
 
 ///|
-fn recompute(texts : @ecs.Query[@ecs.Write[@text.Text2d], @ecs.All]) -> Unit {
+fn recompute(texts : @ecs.Query[@ecs.Write[@sprite.Text2d], @ecs.All]) -> Unit {
   try! texts.for_each(fn(_entity, text2d) { text2d.set_changed() })
 }
 
@@ -247,7 +247,7 @@ fn print_counts(
   stats : @app.ResMut[TextStats],
   visible_texts : @ecs.Query[
     @ecs.Read[@visibility.ViewVisibility],
-    @ecs.With[@text.Text2d],
+    @ecs.With[@sprite.Text2d],
   ],
   atlas_set : @app.Res[@text.FontAtlasSet],
 ) -> Unit {

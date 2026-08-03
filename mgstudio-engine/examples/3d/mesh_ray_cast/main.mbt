@@ -393,7 +393,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
-    @text.Text2d::new(
+    @sprite.Text2d::new(
       "mesh_ray_cast (Adapted)\nRed: automatic bouncing ray\nGreen: cursor ray bounce\nMAX_BOUNCES = 64",
     ),
     @text.TextFont::TextFont().with_font(font).with_font_size(16.0F),

@@ -210,7 +210,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let text_entity = @text.Text2dBundle::new(
-      @text.Text2d::new(command_text_content(Disabled, default_filters())),
+      @sprite.Text2d::new(command_text_content(Disabled, default_filters())),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),

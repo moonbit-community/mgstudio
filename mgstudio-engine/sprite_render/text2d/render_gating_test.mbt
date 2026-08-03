@@ -21,7 +21,7 @@ test "text2d render extraction gates on retained view visibility" {
   defer world.close()
   let handle = @text.text_spawn(
     @text.Text2dBundle::new(
-      @text.Text2d::new("Visibility"),
+      @sprite.Text2d::new("Visibility"),
       @text.TextFont::TextFont(),
       @transform.Transform::identity(),
     ),

@@ -83,11 +83,11 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @text.Text2d::new(" translation "),
+        @sprite.Text2d::new(" translation "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
         @text.TextBackgroundColor::new(@color.Color::black().with_alpha(0.5F)),
-        @text.Text2dShadow::Text2dShadow(),
+        @sprite.Text2dShadow::Text2dShadow(),
         AnimateTranslation::{  },
       ),
     ),
@@ -96,11 +96,11 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @text.Text2d::new(" rotation "),
+        @sprite.Text2d::new(" rotation "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
         @text.TextBackgroundColor::new(@color.Color::black().with_alpha(0.5F)),
-        @text.Text2dShadow::Text2dShadow(),
+        @sprite.Text2dShadow::Text2dShadow(),
         AnimateRotation::{  },
       ),
     ),
@@ -109,12 +109,12 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @text.Text2d::new(" scale "),
+        @sprite.Text2d::new(" scale "),
         large_font,
         @text.TextLayout::new_with_justify(text_justification),
         @transform.Transform::from_xyz(400.0F, 0.0F, 0.0F),
         @text.TextBackgroundColor::new(@color.Color::black().with_alpha(0.5F)),
-        @text.Text2dShadow::Text2dShadow(),
+        @sprite.Text2dShadow::Text2dShadow(),
         AnimateScale::{  },
       ),
     ),
@@ -146,13 +146,13 @@ fn setup(
   ignore(
     commands.spawn(
       (
-        @text.Text2d::new(
+        @sprite.Text2d::new(
           "This text has\nFontSmoothing::None\nAnd Justify::Center",
         ),
         medium_font.with_font_smoothing(None),
         @text.TextLayout::new_with_justify(Center),
         @transform.Transform::from_xyz(-400.0F, -250.0F, 0.0F),
-        @text.Text2dShadow::Text2dShadow(),
+        @sprite.Text2dShadow::Text2dShadow(),
       ),
     ),
   )
@@ -220,12 +220,12 @@ fn spawn_wrapped_text_box(
   let text_entity = commands.spawn(
     (
       @hierarchy.Parent::new(box_entity),
-      @text.Text2d::new(content),
+      @sprite.Text2d::new(content),
       font,
       @text.TextLayout::new(Left, linebreak),
       @text.TextBounds::new(size.x, size.y),
       @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
-      @text.Text2dShadow::Text2dShadow().with_color(shadow_color),
+      @sprite.Text2dShadow::Text2dShadow().with_color(shadow_color),
     ),
   )
   if underline {
@@ -244,7 +244,7 @@ fn spawn_anchor_label(
   let label_entity = commands.spawn(
     (
       @hierarchy.Parent::new(parent),
-      @text.Text2d::new(" Anchor"),
+      @sprite.Text2d::new(" Anchor"),
       font,
       anchor,
       @text.TextBackgroundColor::new(@color.Color::white().darker(0.8F)),
@@ -304,7 +304,7 @@ fn animate_translation(
   query : @ecs.Query[
     (
       @ecs.Write[@transform.Transform],
-      @ecs.Read[@text.Text2d],
+      @ecs.Read[@sprite.Text2d],
       @ecs.Read[AnimateTranslation],
     ),
     @ecs.All,
@@ -326,7 +326,7 @@ fn animate_rotation(
   query : @ecs.Query[
     (
       @ecs.Write[@transform.Transform],
-      @ecs.Read[@text.Text2d],
+      @ecs.Read[@sprite.Text2d],
       @ecs.Read[AnimateRotation],
     ),
     @ecs.All,
@@ -349,7 +349,7 @@ fn animate_scale(
   query : @ecs.Query[
     (
       @ecs.Write[@transform.Transform],
-      @ecs.Read[@text.Text2d],
+      @ecs.Read[@sprite.Text2d],
       @ecs.Read[AnimateScale],
     ),
     @ecs.All,

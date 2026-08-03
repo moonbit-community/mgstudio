@@ -44,7 +44,7 @@ fn setup(
   let root = commands.spawn(
     (
       PipelineText::{  },
-      @text.Text2d::Text2d(),
+      @sprite.Text2d::Text2d(),
       @text.TextLayout::new(Center, AnyCharacter),
       @text.TextBounds::TextBounds(),
     ),

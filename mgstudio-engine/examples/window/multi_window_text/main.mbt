@@ -147,7 +147,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   @text.Text2dBundle::new(
-    @text.Text2d::new(TEXT2D_PRIMARY),
+    @sprite.Text2d::new(TEXT2D_PRIMARY),
     text_font,
     @transform.Transform::identity(),
   )
@@ -157,7 +157,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   @text.Text2dBundle::new_with_layers(
-    @text.Text2d::new(TEXT2D_SECONDARY),
+    @sprite.Text2d::new(TEXT2D_SECONDARY),
     text_font,
     @transform.Transform::identity(),
     @camera_render_layers.RenderLayers::layer(1),
@@ -168,7 +168,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   |> ignore
 
   @text.Text2dBundle::new_with_layers(
-    @text.Text2d::new(TEXT2D_BOTH),
+    @sprite.Text2d::new(TEXT2D_BOTH),
     text_font,
     @transform.Transform::from_xyz(0.0F, -50.0F, 0.0F),
     @camera_render_layers.RenderLayers::from_layers([0, 1]),

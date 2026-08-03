@@ -92,7 +92,7 @@ fn setup(commands : @app.Commands, args : @app.Res[Args]) -> Unit {
     ignore(
       commands.spawn(
         (
-          @text.Text2d::new(text_string),
+          @sprite.Text2d::new(text_string),
           text_font,
           @text.TextColor::new(@color.Color::srgb(1.0F, 0.0F, 0.0F)),
           @sprite.Anchor::center(),

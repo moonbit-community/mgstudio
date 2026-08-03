@@ -267,7 +267,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
   let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
+      @sprite.Text2d::new(""),
       @text.TextFont::TextFont()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),

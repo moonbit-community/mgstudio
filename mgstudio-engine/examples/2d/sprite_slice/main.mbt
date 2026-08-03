@@ -135,7 +135,7 @@ fn spawn_slice_label(
   ignore(
     commands.spawn(
       (
-        @text.Text2d::new(label),
+        @sprite.Text2d::new(label),
         style,
         @text.TextLayout::new_with_justify(Center),
         @transform.Transform::from_xyz(

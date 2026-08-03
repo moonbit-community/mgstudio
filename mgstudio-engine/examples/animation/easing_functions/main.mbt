@@ -474,7 +474,7 @@ fn spawn_label(
   position : @math.Vec2,
 ) -> Unit {
   @text.Text2dBundle::new(
-    @text.Text2d::new(label),
+    @sprite.Text2d::new(label),
     font,
     transform_from_position(position, LABEL_Z),
   )

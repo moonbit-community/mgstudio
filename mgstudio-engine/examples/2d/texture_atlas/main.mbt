@@ -309,7 +309,7 @@ fn create_label(
   ignore(
     commands.spawn(
       (
-        @text.Text2d::new(text),
+        @sprite.Text2d::new(text),
         text_style,
         @text.TextLayout::new_with_justify(Center),
         @transform.Transform::from_xyz(

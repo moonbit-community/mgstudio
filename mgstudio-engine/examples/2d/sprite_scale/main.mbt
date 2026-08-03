@@ -221,7 +221,7 @@ fn setup_sprites(
       commands.spawn(
         (
           @hierarchy.Parent::new(entity),
-          @text.Text2d::new(rect.text),
+          @sprite.Text2d::new(rect.text),
           @text.TextLayout::new_with_justify(Center),
           @text.TextFont::from_font_size(15.0F),
           @transform.Transform::from_xyz(
@@ -394,7 +394,7 @@ fn setup_texture_atlas(
       commands.spawn(
         (
           @hierarchy.Parent::new(entity),
-          @text.Text2d::new(sprite_sheet.text),
+          @sprite.Text2d::new(sprite_sheet.text),
           @text.TextLayout::new_with_justify(Center),
           @text.TextFont::from_font_size(15.0F),
           @transform.Transform::from_xyz(

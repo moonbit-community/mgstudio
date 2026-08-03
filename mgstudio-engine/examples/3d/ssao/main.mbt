@@ -314,7 +314,9 @@ fn setup(
   )
 
   let instructions = @text.Text2dBundle::new(
-      @text.Text2d::new(ssao_ui_text(Some(ScreenSpaceAmbientOcclusion()), true)),
+      @sprite.Text2d::new(
+        ssao_ui_text(Some(ScreenSpaceAmbientOcclusion()), true),
+      ),
       @text.TextFont::TextFont()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
