@@ -28,8 +28,20 @@ fn render3d_main_pass_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
 }
 
 ///|
+// The tonemap curve must apply exactly once per frame. Whenever the
+// postprocess tonemapping stage resolves this camera (see
+// `render3d_tonemapping_stage_enabled` — it doubles as the fp16 -> surface
+// resolve and therefore runs for SDR cameras too), the main pass must NOT
+// also tonemap, or the curve runs twice on the same pixels.
 fn render3d_main_pass_tonemap_in_shader(camera : Camera3dViewPayload) -> Bool {
-  !camera.hdr_enabled && camera.tonemapping is Some(_)
+  !camera.hdr_enabled &&
+  camera.tonemapping is Some(_) &&
+  !render3d_tonemapping_stage_enabled(
+    camera.tonemapping,
+    camera.deband_dither,
+    camera.hdr_enabled,
+    camera.color_grading,
+  )
 }
 
 ///|

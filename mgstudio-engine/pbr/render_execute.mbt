@@ -472,7 +472,16 @@ fn render3d_camera_mesh_pipeline_view_key_bits(
         None => ShadowFilteringMethod::default()
       },
     )
-  if !camera.hdr_enabled {
+  // Keep in lockstep with `render3d_main_pass_tonemap_in_shader`: when the
+  // postprocess tonemapping stage resolves this camera, the main pass must
+  // not compile the in-shader tonemap or the curve applies twice.
+  if !camera.hdr_enabled &&
+    !render3d_tonemapping_stage_enabled(
+      camera.tonemapping,
+      camera.deband_dither,
+      camera.hdr_enabled,
+      camera.color_grading,
+    ) {
     if camera.tonemapping is Some(tonemapping) {
       bits = bits | MESH_PIPELINE_KEY_TONEMAP_IN_SHADER
       bits = bits | mesh_pipeline_key_tonemapping_bits(tonemapping)

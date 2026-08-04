@@ -762,6 +762,14 @@ fn render3d_cas_enabled(cas : @cas.ContrastAdaptiveSharpening?) -> Bool {
 }
 
 ///|
+// The renderer resolves every camera's Rgba16Float scene texture to the
+// surface through this stage (it doubles as the fp16 -> sRGB resolve), so it
+// runs for SDR cameras too — unlike Bevy's tonemapping node, which only
+// processes HDR view targets. The tonemap method must therefore apply HERE
+// and nowhere else: `render3d_main_pass_tonemap_in_shader` keys off this
+// same predicate to keep the curve from running twice. Adopting Bevy's
+// SDR topology (render straight into the sRGB target, tonemap in-shader,
+// no resolve) is recorded Bevy-shape debt in ISS-483.
 fn render3d_tonemapping_stage_enabled(
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,

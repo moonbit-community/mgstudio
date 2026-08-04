@@ -205,6 +205,39 @@ pub fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
         "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
       )
   }
+  // Bevy source: `bevy_core_pipeline/src/core_3d/mod.rs` `Core3dPlugin::build`
+  // requires `Tonemapping` (default TonyMcMapface) and `DebandDither::Enabled`
+  // on every `Camera3d`.
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    @post_process.ecs_key_tonemapping,
+    fn() { @post_process.Tonemapping::default() },
+  ) catch {
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
+      abort(
+        "CameraPlugin required-component registration ran too late for component \{component_id}",
+      )
+    CyclicRequirement(requiree, required) =>
+      abort(
+        "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    @post_process.ecs_key_deband_dither,
+    fn() { @post_process.DebandDither::Enabled },
+  ) catch {
+    DuplicateRegistration(_, _) => ()
+    ArchetypeExists(component_id) =>
+      abort(
+        "CameraPlugin required-component registration ran too late for component \{component_id}",
+      )
+    CyclicRequirement(requiree, required) =>
+      abort(
+        "CameraPlugin required-component cycle detected: \{requiree} -> \{required}",
+      )
+  }
   app
   .init_resource(fn() { @camera_clear_color.ClearColor::ClearColor() })
   .add_plugins(CameraProjectionPlugin::CameraProjectionPlugin())
