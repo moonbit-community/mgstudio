@@ -65,7 +65,7 @@ fn setup_terrain_scene(
       (
         @pbr.DirectionalLight::new(
           @color.Color::srgb(0.98F, 0.95F, 0.82F),
-          100_000.0F,
+          10_000.0F,
           true,
         ),
         cascade_shadow_config,
