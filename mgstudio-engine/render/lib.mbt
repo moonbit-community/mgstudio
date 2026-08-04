@@ -652,6 +652,45 @@ pub fn host_gpu_draw_mesh3d_deferred_lighting(
 }
 
 ///|
+pub fn host_gpu_prepare_mesh3d_fog(
+  base_color_r~ : Float,
+  base_color_g~ : Float,
+  base_color_b~ : Float,
+  base_color_a~ : Float,
+  directional_light_color_r~ : Float,
+  directional_light_color_g~ : Float,
+  directional_light_color_b~ : Float,
+  directional_light_color_a~ : Float,
+  be_x~ : Float,
+  be_y~ : Float,
+  be_z~ : Float,
+  directional_light_exponent~ : Float,
+  bi_x~ : Float,
+  bi_y~ : Float,
+  bi_z~ : Float,
+  mode~ : UInt,
+) -> Unit {
+  @renderer.prepare_mesh3d_fog(
+    base_color_r~,
+    base_color_g~,
+    base_color_b~,
+    base_color_a~,
+    directional_light_color_r~,
+    directional_light_color_g~,
+    directional_light_color_b~,
+    directional_light_color_a~,
+    be_x~,
+    be_y~,
+    be_z~,
+    directional_light_exponent~,
+    bi_x~,
+    bi_y~,
+    bi_z~,
+    mode~,
+  )
+}
+
+///|
 pub fn host_gpu_prepare_mesh3d_screen_space_reflections_settings(
   min_perceptual_roughness_start~ : Float,
   min_perceptual_roughness_end~ : Float,

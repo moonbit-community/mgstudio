@@ -111,7 +111,7 @@ fn fog_falloff_ln(value : Float) -> Float {
 
 ///|
 fn fog_falloff_pow_e(value : Float) -> Float {
-  @math.pow(FOG_FALLOFF_E, value)
+  @math.pow(value, FOG_FALLOFF_E)
 }
 
 ///|
@@ -537,144 +537,47 @@ pub fn render3d_prepare_fog_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn render3d_fog_channel_factor(density : Float, distance : Float) -> Float {
-  @pbr_render.render3d_fog_channel_factor(density, distance)
-}
-
-///|
-fn render3d_fog_falloff_factor(
-  falloff : FogFalloff3d,
-  distance : Float,
-) -> Float {
-  match falloff {
-    Linear(start, end_) =>
-      @pbr_render.render3d_fog_linear_factor(start, end_, distance)
-    Exponential(density) =>
-      @pbr_render.render3d_fog_exponential_factor(density, distance)
-    ExponentialSquared(density) =>
-      @pbr_render.render3d_fog_exponential_squared_factor(density, distance)
-    Atmospheric(extinction, inscattering) =>
-      @pbr_render.render3d_fog_atmospheric_presence(
-        extinction, inscattering, distance,
-      )
+// Bevy source: `bevy/crates/bevy_pbr/src/fog.rs` `prepare_fog` writes the
+// per-view `GpuFog` uniform; the mesh-view bind group exposes it at binding
+// 13 and `pbr_functions.wgsl` applies it per fragment under `DISTANCE_FOG`.
+// The renderer keeps a single 64-byte fog uniform, so each camera uploads
+// its own prepared `GpuFog` (or `off`) before its passes, the same shape as
+// the other per-camera mesh-view uniforms.
+fn render3d_prepare_camera_fog_binding(
+  world : @ecs.World,
+  view_entity : @core.Entity,
+) -> Unit {
+  let gpu_fog = match
+    (try! world.get_by_key(
+      view_entity,
+      @pbr_render.ViewFogUniformOffset::component(),
+    )) {
+    Some(offset) =>
+      match
+        @pbr_render.render3d_fog_meta_mut_or_init(world)
+        .peek()
+        .fog_at(offset.offset()) {
+        Some(fog) => fog
+        None => @pbr_render.GpuFog::off()
+      }
+    None => @pbr_render.GpuFog::off()
   }
-}
-
-///|
-fn render3d_distance_fog_mix_factor(
-  fog : DistanceFog,
-  distance : Float,
-) -> Float {
-  let falloff_factor = render3d_fog_falloff_factor(fog.falloff, distance)
-  @pbr_render.clamp01(falloff_factor * @pbr_render.clamp01(fog.color.a))
-}
-
-///|
-fn render3d_distance_fog_directional_mix(
-  fog : DistanceFog,
-  fog_presence : Float,
-  camera_position : @math.Vec3,
-  mesh_position : @math.Vec3,
-  lighting : Render3dLightingState,
-) -> Float {
-  @pbr_render.render3d_fog_directional_mix(
-    fog.directional_light_color.a,
-    fog.directional_light_exponent,
-    lighting.directional_dir,
-    lighting.directional_illuminance,
-    fog_presence,
-    camera_position,
-    mesh_position,
-  )
-}
-
-///|
-fn render3d_apply_distance_fog(
-  fog : DistanceFog,
-  distance : Float,
-  base_r : Float,
-  base_g : Float,
-  base_b : Float,
-  camera_position : @math.Vec3,
-  mesh_position : @math.Vec3,
-  lighting : Render3dLightingState,
-) -> (Float, Float, Float) {
-  let fog_alpha = @pbr_render.clamp01(fog.color.a)
-  let mut fogged_r = base_r
-  let mut fogged_g = base_g
-  let mut fogged_b = base_b
-  let mut fog_presence = 0.0F
-
-  match fog.falloff {
-    Atmospheric(extinction, inscattering) => {
-      let extinction_r = @pbr_render.clamp01(
-        render3d_fog_channel_factor(extinction.x, distance) * fog_alpha,
-      )
-      let extinction_g = @pbr_render.clamp01(
-        render3d_fog_channel_factor(extinction.y, distance) * fog_alpha,
-      )
-      let extinction_b = @pbr_render.clamp01(
-        render3d_fog_channel_factor(extinction.z, distance) * fog_alpha,
-      )
-      let inscattering_r = @pbr_render.clamp01(
-        render3d_fog_channel_factor(inscattering.x, distance) * fog_alpha,
-      )
-      let inscattering_g = @pbr_render.clamp01(
-        render3d_fog_channel_factor(inscattering.y, distance) * fog_alpha,
-      )
-      let inscattering_b = @pbr_render.clamp01(
-        render3d_fog_channel_factor(inscattering.z, distance) * fog_alpha,
-      )
-
-      fogged_r = base_r * (1.0F - extinction_r) + fog.color.r * inscattering_r
-      fogged_g = base_g * (1.0F - extinction_g) + fog.color.g * inscattering_g
-      fogged_b = base_b * (1.0F - extinction_b) + fog.color.b * inscattering_b
-
-      let extinction_peak = @pbr_render.maxf(
-        @pbr_render.maxf(extinction_r, extinction_g),
-        extinction_b,
-      )
-      let inscattering_peak = @pbr_render.maxf(
-        @pbr_render.maxf(inscattering_r, inscattering_g),
-        inscattering_b,
-      )
-      fog_presence = @pbr_render.clamp01(
-        (extinction_peak + inscattering_peak) * 0.5F,
-      )
-    }
-    _ => {
-      let fog_mix = render3d_distance_fog_mix_factor(fog, distance)
-      fogged_r = base_r * (1.0F - fog_mix) + fog.color.r * fog_mix
-      fogged_g = base_g * (1.0F - fog_mix) + fog.color.g * fog_mix
-      fogged_b = base_b * (1.0F - fog_mix) + fog.color.b * fog_mix
-      fog_presence = fog_mix
-    }
-  }
-
-  let directional_mix = render3d_distance_fog_directional_mix(
-    fog, fog_presence, camera_position, mesh_position, lighting,
-  )
-  if directional_mix > 0.0F {
-    let directional_tint_r = @pbr_render.clamp01(
-      fog.directional_light_color.r * lighting.directional_color.r,
-    )
-    let directional_tint_g = @pbr_render.clamp01(
-      fog.directional_light_color.g * lighting.directional_color.g,
-    )
-    let directional_tint_b = @pbr_render.clamp01(
-      fog.directional_light_color.b * lighting.directional_color.b,
-    )
-    fogged_r = fogged_r * (1.0F - directional_mix) +
-      directional_tint_r * directional_mix
-    fogged_g = fogged_g * (1.0F - directional_mix) +
-      directional_tint_g * directional_mix
-    fogged_b = fogged_b * (1.0F - directional_mix) +
-      directional_tint_b * directional_mix
-  }
-
-  (
-    @pbr_render.clamp01(fogged_r),
-    @pbr_render.clamp01(fogged_g),
-    @pbr_render.clamp01(fogged_b),
+  @render.host_gpu_prepare_mesh3d_fog(
+    base_color_r=gpu_fog.base_color.x,
+    base_color_g=gpu_fog.base_color.y,
+    base_color_b=gpu_fog.base_color.z,
+    base_color_a=gpu_fog.base_color.w,
+    directional_light_color_r=gpu_fog.directional_light_color.x,
+    directional_light_color_g=gpu_fog.directional_light_color.y,
+    directional_light_color_b=gpu_fog.directional_light_color.z,
+    directional_light_color_a=gpu_fog.directional_light_color.w,
+    be_x=gpu_fog.be.x,
+    be_y=gpu_fog.be.y,
+    be_z=gpu_fog.be.z,
+    directional_light_exponent=gpu_fog.directional_light_exponent,
+    bi_x=gpu_fog.bi.x,
+    bi_y=gpu_fog.bi.y,
+    bi_z=gpu_fog.bi.z,
+    mode=gpu_fog.mode,
   )
 }

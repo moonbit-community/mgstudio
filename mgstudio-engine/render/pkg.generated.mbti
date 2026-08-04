@@ -351,6 +351,8 @@ pub fn host_gpu_prepare_mesh3d_cluster_buffers(clustered_lights_bytes~ : Bytes, 
 
 pub fn host_gpu_prepare_mesh3d_clustered_decals(decal_words~ : Array[UInt], texture_ids~ : Array[Int]) -> Unit
 
+pub fn host_gpu_prepare_mesh3d_fog(base_color_r~ : Float, base_color_g~ : Float, base_color_b~ : Float, base_color_a~ : Float, directional_light_color_r~ : Float, directional_light_color_g~ : Float, directional_light_color_b~ : Float, directional_light_color_a~ : Float, be_x~ : Float, be_y~ : Float, be_z~ : Float, directional_light_exponent~ : Float, bi_x~ : Float, bi_y~ : Float, bi_z~ : Float, mode~ : UInt) -> Unit
+
 pub fn host_gpu_prepare_mesh3d_instance_vertex_buffer(buffer_id~ : Int, bytes~ : Bytes, length~ : Int) -> Unit
 
 pub fn host_gpu_prepare_mesh3d_light_probes(light_probes_uniform_bytes~ : Bytes, uniform_offset~ : UInt, diffuse_texture_ids~ : Array[Int], specular_texture_ids~ : Array[Int], irradiance_volume_texture_ids~ : Array[Int]) -> Unit

@@ -104,7 +104,7 @@ fn setup_terrain_scene(
             material_assets
             |> @pbr.add_material(
               @pbr.StandardMaterial::from_color(
-                @color.Color::new(0.53333336F, 0.53333336F, 0.53333336F, 1.0F),
+                @color.Color::srgb(0.53333336F, 0.53333336F, 0.53333336F),
               )
               .with_unlit(true)
               .with_cull_mode(None),

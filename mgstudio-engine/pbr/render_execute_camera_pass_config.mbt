@@ -19,7 +19,6 @@ priv struct Render3dExecuteCameraPassConfig {
   camera_clustered_decal_enabled : Bool
   effective_exposure : Exposure?
   camera_exposure_value : Float
-  distance_fog : DistanceFog
   clear_enabled : Bool
   clear_color : @color.Color
   motion_blur_active : Bool
@@ -228,7 +227,6 @@ fn render3d_execute_camera_pass_config(
     camera_clustered_decal_enabled,
     effective_exposure,
     camera_exposure_value,
-    distance_fog,
     clear_enabled,
     clear_color,
     motion_blur_active,

@@ -450,7 +450,6 @@ fn render3d_execute_camera_main_pass(
   camera_forward_decal_enabled : Bool,
   camera_clustered_decal_enabled : Bool,
   camera_deferred_enabled : Bool,
-  distance_fog : DistanceFog,
   fog_enabled : Bool,
   transmission_enabled : Bool,
   transmission_steps : Int,
@@ -645,6 +644,7 @@ fn render3d_execute_camera_main_pass(
   )
   prepare_light_probe_bindings()
   render3d_prepare_camera_screen_space_reflections_settings(camera)
+  render3d_prepare_camera_fog_binding(world, camera_entity)
   prepare_view_bind_group(-1)
   if camera.atmosphere is Some(_) {
     @render.host_gpu_dispatch_mesh3d_atmosphere_luts(
@@ -717,33 +717,9 @@ fn render3d_execute_camera_main_pass(
     let material_fields = render3d_resolve_mesh_draw_material_fields(
       world, extracted_mesh, draw_alpha,
     )
-    let needs_mesh_distance = fog_enabled
-    let mesh_distance = if needs_mesh_distance {
-      mesh.transform.translation.sub(camera.transform.translation).length()
-    } else {
-      0.0F
-    }
-    let (fogged_r, fogged_g, fogged_b) = if fog_enabled {
-      render3d_apply_distance_fog(
-        distance_fog,
-        mesh_distance,
-        material_fields.base_color_r,
-        material_fields.base_color_g,
-        material_fields.base_color_b,
-        camera.transform.translation,
-        mesh.transform.translation,
-        pass_lighting,
-      )
-    } else {
-      (
-        material_fields.base_color_r,
-        material_fields.base_color_g,
-        material_fields.base_color_b,
-      )
-    }
-    let draw_color_r = fogged_r
-    let draw_color_g = fogged_g
-    let draw_color_b = fogged_b
+    let draw_color_r = material_fields.base_color_r
+    let draw_color_g = material_fields.base_color_g
+    let draw_color_b = material_fields.base_color_b
     let draw_surface_roughness = material_fields.surface_roughness
     let draw_reflectance = material_fields.reflectance
     let draw_diffuse_transmission = material_fields.diffuse_transmission

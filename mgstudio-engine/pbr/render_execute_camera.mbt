@@ -251,7 +251,6 @@ fn render3d_execute_camera(
   let camera_clustered_decal_enabled = pass_config.camera_clustered_decal_enabled
   let effective_exposure = pass_config.effective_exposure
   let camera_exposure_value = pass_config.camera_exposure_value
-  let distance_fog = pass_config.distance_fog
   let clear_enabled = pass_config.clear_enabled
   let clear_color = pass_config.clear_color
   let motion_blur_active = pass_config.motion_blur_active
@@ -467,7 +466,6 @@ fn render3d_execute_camera(
     camera_forward_decal_enabled,
     camera_clustered_decal_enabled,
     camera_deferred_enabled,
-    distance_fog,
     fog_enabled,
     transmission_enabled,
     transmission_steps,

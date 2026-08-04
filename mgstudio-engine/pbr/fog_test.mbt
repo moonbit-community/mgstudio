@@ -22,3 +22,26 @@ test "pbr fog: koschmieder helper matches exponential convenience constructor" {
     _ => abort("expected exponential fog falloff")
   }
 }
+
+///|
+test "pbr fog: from_visibility_colors matches Bevy's atmospheric coefficients" {
+  // Bevy `FogFalloff::from_visibility_contrast_colors`:
+  // powf(1 - linear_channel, E) * koschmieder(15, 0.05) * powf(alpha, E),
+  // with the atmospheric_fog example's exact colors.
+  let falloff = FogFalloff3d::from_visibility_colors(
+    15.0F,
+    @color.Color::srgb(0.35F, 0.5F, 0.66F),
+    @color.Color::srgb(0.8F, 0.844F, 1.0F),
+  )
+  match falloff {
+    Atmospheric(extinction, inscattering) => {
+      inspect(@math.abs(extinction.x - 0.149761F) < 0.0005F, content="true")
+      inspect(@math.abs(extinction.y - 0.103772F) < 0.0005F, content="true")
+      inspect(@math.abs(extinction.z - 0.051383F) < 0.0005F, content="true")
+      inspect(@math.abs(inscattering.x - 0.050684F) < 0.0005F, content="true")
+      inspect(@math.abs(inscattering.y - 0.070315F) < 0.0005F, content="true")
+      inspect(@math.abs(inscattering.z - 0.199715F) < 0.0005F, content="true")
+    }
+    _ => abort("expected atmospheric fog falloff")
+  }
+}
