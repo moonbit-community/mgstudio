@@ -2598,11 +2598,12 @@ fn meshlet_material_shade_pipeline_get_or_create(
   let shadow_filter_method = pass_kind_shadow_filter_method(
     pass_state.pass_kind,
   )
+  let distance_fog = pass_kind_fog_enabled(pass_state.pass_kind)
   let view_layout_key_bits = 0U
   if mesh3d_pipeline_get(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, view_layout_key_bits,
       cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-      deband_dither_enabled, shadow_filter_method,
+      deband_dither_enabled, distance_fog, shadow_filter_method,
     )
     is Some(pipeline) {
     return Some(pipeline)
@@ -2610,7 +2611,7 @@ fn meshlet_material_shade_pipeline_get_or_create(
   if mesh3d_pipeline_failed(
       backend, color_format, msaa_sample_count, topology, material_pipeline_id, view_layout_key_bits,
       cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-      deband_dither_enabled, shadow_filter_method,
+      deband_dither_enabled, distance_fog, shadow_filter_method,
     ) {
     return None
   }
@@ -2630,6 +2631,7 @@ fn meshlet_material_shade_pipeline_get_or_create(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     vertex_shader_path,
   )
@@ -2640,6 +2642,7 @@ fn meshlet_material_shade_pipeline_get_or_create(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     fragment_shader_path,
   )
@@ -2683,7 +2686,8 @@ fn meshlet_material_shade_pipeline_get_or_create(
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
         view_layout_key_bits, cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader,
-        tonemapping_mode, deband_dither_enabled, shadow_filter_method, message,
+        tonemapping_mode, deband_dither_enabled, distance_fog, shadow_filter_method,
+        message,
       )
       debug("[renderer] meshlet material shade pipeline failed: \{message}")
       vertex_sm.release()
@@ -2698,7 +2702,8 @@ fn meshlet_material_shade_pipeline_get_or_create(
       mesh3d_pipeline_set_failed(
         backend, color_format, msaa_sample_count, topology, material_pipeline_id,
         view_layout_key_bits, cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader,
-        tonemapping_mode, deband_dither_enabled, shadow_filter_method, message,
+        tonemapping_mode, deband_dither_enabled, distance_fog, shadow_filter_method,
+        message,
       )
       debug("[renderer] meshlet material shade pipeline failed: \{message}")
       vertex_sm.release()
@@ -2710,7 +2715,7 @@ fn meshlet_material_shade_pipeline_get_or_create(
   mesh3d_pipeline_set(
     backend, color_format, msaa_sample_count, topology, material_pipeline_id, view_layout_key_bits,
     cull_mode, blend_kind, skinned, forward_decal, tonemap_in_shader, tonemapping_mode,
-    deband_dither_enabled, shadow_filter_method, pipeline,
+    deband_dither_enabled, distance_fog, shadow_filter_method, pipeline,
   )
   vertex_sm.release()
   fragment_sm.release()

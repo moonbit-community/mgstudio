@@ -48,6 +48,7 @@ struct Mesh3dPipelineCacheEntry {
   tonemap_in_shader : Bool
   tonemapping_mode : Int
   deband_dither_enabled : Bool
+  distance_fog : Bool
   shadow_filter_method : Int
   state : RenderPipelineCacheState
 }
@@ -67,6 +68,7 @@ fn mesh3d_pipeline_get(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   lightmapped? : Bool = false,
 ) -> @wgpu.RenderPipeline? {
@@ -85,6 +87,7 @@ fn mesh3d_pipeline_get(
       entry.tonemap_in_shader == tonemap_in_shader &&
       entry.tonemapping_mode == tonemapping_mode &&
       entry.deband_dither_enabled == deband_dither_enabled &&
+      entry.distance_fog == distance_fog &&
       entry.shadow_filter_method == shadow_filter_method {
       match entry.state {
         RenderPipelineOk(pipeline) => {
@@ -122,6 +125,7 @@ fn mesh3d_pipeline_failed(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   lightmapped? : Bool = false,
 ) -> Bool {
@@ -140,6 +144,7 @@ fn mesh3d_pipeline_failed(
       entry.tonemap_in_shader == tonemap_in_shader &&
       entry.tonemapping_mode == tonemapping_mode &&
       entry.deband_dither_enabled == deband_dither_enabled &&
+      entry.distance_fog == distance_fog &&
       entry.shadow_filter_method == shadow_filter_method {
       match entry.state {
         RenderPipelineOk(_) => return false
@@ -168,6 +173,7 @@ fn mesh3d_pipeline_set(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   pipeline : @wgpu.RenderPipeline,
   lightmapped? : Bool = false,
@@ -186,6 +192,7 @@ fn mesh3d_pipeline_set(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     state: RenderPipelineOk(pipeline),
   })
@@ -207,6 +214,7 @@ fn mesh3d_pipeline_set_failed(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   message : String,
   lightmapped? : Bool = false,
@@ -225,6 +233,7 @@ fn mesh3d_pipeline_set_failed(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     )
@@ -245,6 +254,7 @@ fn mesh3d_pipeline_set_failed(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     ) {
@@ -264,6 +274,7 @@ fn mesh3d_pipeline_set_failed(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     state: RenderPipelineErr(message),
   })

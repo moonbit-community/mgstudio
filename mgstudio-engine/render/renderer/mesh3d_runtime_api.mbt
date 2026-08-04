@@ -1046,6 +1046,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
               false,
               0,
               false,
+              false,
               1,
             ),
           ) catch {
@@ -1073,6 +1074,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
               false,
               0,
               false,
+              false,
               1,
             ),
           ) catch {
@@ -1097,6 +1099,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
             false,
             0,
             false,
+            false,
             1,
           ) catch {
             ShaderNotReady(_) => ()
@@ -1118,6 +1121,7 @@ pub fn prewarm_mesh3d_pipeline_variants(
             false,
             false,
             0,
+            false,
             false,
             1,
           ) catch {

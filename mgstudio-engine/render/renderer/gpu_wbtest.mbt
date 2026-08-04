@@ -2946,6 +2946,7 @@ test "renderer: lightmapped default forward shader defines LIGHTMAP" {
     false,
     0,
     false,
+    false,
     0,
     lightmapped=true,
   )
@@ -4068,6 +4069,7 @@ test "renderer: mesh3d custom material pipeline preprocesses Bevy PBR vertex sha
     false,
     0,
     false,
+    false,
     1,
     "test/custom_mesh.wgsl",
   ) catch {
@@ -4084,6 +4086,7 @@ test "renderer: mesh3d custom material pipeline preprocesses Bevy PBR vertex sha
     false,
     false,
     0,
+    false,
     false,
     1,
     "test/line_material.wgsl",

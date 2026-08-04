@@ -77,6 +77,7 @@ fn mesh3d_custom_pipeline_cache_key(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
 ) -> String {
   let surface_bits = match surface_format {
@@ -88,7 +89,8 @@ fn mesh3d_custom_pipeline_cache_key(
   let skinned_bits = if skinned { "1" } else { "0" }
   let tonemap_bits = if tonemap_in_shader { "1" } else { "0" }
   let deband_bits = if deband_dither_enabled { "1" } else { "0" }
-  "\{material_pipeline_id.to_string()}|\{surface_bits}|\{msaa_sample_count}|\{topology}|\{transparent_bits}|\{blend_kind}|\{forward_decal_bits}|\{mesh3d_cull_mode_sanitize(cull_mode)}|\{skinned_bits}|\{tonemap_bits}|\{tonemapping_mode}|\{deband_bits}|\{shadow_filter_method}|\{vertex_shader_path}|\{fragment_shader_path}"
+  let fog_bits = if distance_fog { "1" } else { "0" }
+  "\{material_pipeline_id.to_string()}|\{surface_bits}|\{msaa_sample_count}|\{topology}|\{transparent_bits}|\{blend_kind}|\{forward_decal_bits}|\{mesh3d_cull_mode_sanitize(cull_mode)}|\{skinned_bits}|\{tonemap_bits}|\{tonemapping_mode}|\{deband_bits}|\{fog_bits}|\{shadow_filter_method}|\{vertex_shader_path}|\{fragment_shader_path}"
 }
 
 ///|
@@ -108,12 +110,14 @@ fn mesh3d_custom_pipeline_cache_get(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
 ) -> @wgpu.RenderPipeline? {
   let cache_key = mesh3d_custom_pipeline_cache_key(
     material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
     msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
-    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, distance_fog,
+    shadow_filter_method,
   )
   match backend.mesh3d_custom_pipeline_cache.get(cache_key) {
     Some(state) =>
@@ -145,12 +149,14 @@ fn mesh3d_custom_pipeline_cache_failed(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
 ) -> Bool {
   let cache_key = mesh3d_custom_pipeline_cache_key(
     material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
     msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
-    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, distance_fog,
+    shadow_filter_method,
   )
   match backend.mesh3d_custom_pipeline_cache.get(cache_key) {
     Some(state) =>
@@ -182,13 +188,15 @@ fn mesh3d_custom_pipeline_cache_set_failed(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   message : String,
 ) -> Unit {
   if mesh3d_custom_pipeline_cache_get(
       backend, material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
       msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
-      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, distance_fog,
+      shadow_filter_method,
     )
     is Some(_) {
     return
@@ -196,14 +204,16 @@ fn mesh3d_custom_pipeline_cache_set_failed(
   if mesh3d_custom_pipeline_cache_failed(
       backend, material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
       msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
-      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+      skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, distance_fog,
+      shadow_filter_method,
     ) {
     return
   }
   let cache_key = mesh3d_custom_pipeline_cache_key(
     material_pipeline_id, vertex_shader_path, fragment_shader_path, surface_format,
     msaa_sample_count, topology, transparent, blend_kind, forward_decal, cull_mode,
-    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+    skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled, distance_fog,
+    shadow_filter_method,
   )
   backend.mesh3d_custom_pipeline_cache[cache_key] = RenderPipelineErr(message)
 }
@@ -216,12 +226,13 @@ fn load_wgsl_required_mesh3d_custom_pipeline(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   shader_path : String,
 ) -> String raise GpuBackendError {
   load_wgsl_required_mesh3d_forward_pipeline(
     assets_base, descriptor, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method, shader_path,
+    distance_fog, shadow_filter_method, shader_path,
   )
 }
 
@@ -231,6 +242,7 @@ fn mesh3d_forward_shader_defines(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   lightmapped? : Bool = false,
 ) -> @hashmap.HashMap[String, Bool] {
@@ -260,6 +272,9 @@ fn mesh3d_forward_shader_defines(
       defines.set("DEBAND_DITHER", true)
     }
   }
+  if distance_fog {
+    defines.set("DISTANCE_FOG", true)
+  }
   defines
 }
 
@@ -270,6 +285,7 @@ fn mesh3d_forward_shader_defines_from_descriptor(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   lightmapped? : Bool = false,
 ) -> @hashmap.HashMap[String, Bool] {
@@ -279,6 +295,7 @@ fn mesh3d_forward_shader_defines_from_descriptor(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     )
@@ -315,6 +332,9 @@ fn mesh3d_forward_shader_defines_from_descriptor(
     if deband_dither_enabled {
       defines.set("DEBAND_DITHER", true)
     }
+  }
+  if distance_fog {
+    defines.set("DISTANCE_FOG", true)
   }
   defines
 }
@@ -478,6 +498,7 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   shader_path : String,
   lightmapped? : Bool = false,
@@ -491,6 +512,7 @@ fn load_wgsl_required_mesh3d_forward_pipeline(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     ),
@@ -539,6 +561,7 @@ fn mesh3d_create_forward_shader_modules(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   label_prefix : String,
   lightmapped? : Bool = false,
@@ -550,6 +573,7 @@ fn mesh3d_create_forward_shader_modules(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     MESH3D_FORWARD_VERTEX_SHADER_PATH,
     lightmapped~,
@@ -561,6 +585,7 @@ fn mesh3d_create_forward_shader_modules(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     MESH3D_FORWARD_SHADER_PATH,
     lightmapped~,
@@ -959,6 +984,7 @@ fn mesh3d_custom_pipeline_get_or_create(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let resolved_vertex_shader_path = mesh3d_vertex_shader_path_or_default(
@@ -979,7 +1005,7 @@ fn mesh3d_custom_pipeline_get_or_create(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
       effective_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      distance_fog, shadow_filter_method,
     )
     is Some(pipeline) {
     return Some(pipeline)
@@ -988,7 +1014,7 @@ fn mesh3d_custom_pipeline_get_or_create(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
       effective_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method,
+      distance_fog, shadow_filter_method,
     ) {
     return None
   }
@@ -1010,6 +1036,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     resolved_vertex_shader_path,
   ) catch {
@@ -1019,7 +1046,7 @@ fn mesh3d_custom_pipeline_get_or_create(
         backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
         surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
         safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method, message,
+        distance_fog, shadow_filter_method, message,
       )
       debug(
         "[renderer] mesh3d custom pipeline failed while loading vertex shader \{resolved_vertex_shader_path} / fragment shader \{resolved_fragment_shader_path}: \{message}",
@@ -1034,6 +1061,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     resolved_fragment_shader_path,
   ) catch {
@@ -1043,7 +1071,7 @@ fn mesh3d_custom_pipeline_get_or_create(
         backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
         surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
         safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-        shadow_filter_method, message,
+        distance_fog, shadow_filter_method, message,
       )
       debug(
         "[renderer] mesh3d custom pipeline failed while loading fragment shader \{resolved_fragment_shader_path} / vertex shader \{resolved_vertex_shader_path}: \{message}",
@@ -1067,7 +1095,7 @@ fn mesh3d_custom_pipeline_get_or_create(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
       safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message,
+      distance_fog, shadow_filter_method, message,
     )
     debug(
       "[renderer] mesh3d custom pipeline failed while creating vertex shader module \{resolved_vertex_shader_path}: \{message}",
@@ -1091,7 +1119,7 @@ fn mesh3d_custom_pipeline_get_or_create(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
       safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message,
+      distance_fog, shadow_filter_method, message,
     )
     debug(
       "[renderer] mesh3d custom pipeline failed while creating fragment shader module \{resolved_fragment_shader_path}: \{message}",
@@ -1168,7 +1196,7 @@ fn mesh3d_custom_pipeline_get_or_create(
       backend, material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
       surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
       safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-      shadow_filter_method, message,
+      distance_fog, shadow_filter_method, message,
     )
     debug(
       "[renderer] mesh3d custom pipeline failed while creating render pipeline \{resolved_vertex_shader_path} / \{resolved_fragment_shader_path}: \{message}",
@@ -1200,7 +1228,7 @@ fn mesh3d_custom_pipeline_get_or_create(
     material_pipeline_id, resolved_vertex_shader_path, resolved_fragment_shader_path,
     surface_format, msaa_sample_count, topology, transparent, blend_kind, forward_decal,
     safe_cull_mode, skinned, tonemap_in_shader, tonemapping_mode, deband_dither_enabled,
-    shadow_filter_method,
+    distance_fog, shadow_filter_method,
   )
   backend.mesh3d_custom_pipeline_cache[cache_key] = RenderPipelineOk(pipeline)
   vertex_shader_module.release()
@@ -2472,6 +2500,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(
     tonemap_in_shader~,
@@ -2499,6 +2528,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     )
@@ -2519,6 +2549,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     ) {
@@ -2541,6 +2572,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     "mesh3d rgba8",
     lightmapped~,
@@ -2561,6 +2593,7 @@ fn ensure_mesh3d_pipeline_rgba8(
         tonemap_in_shader,
         tonemapping_mode,
         deband_dither_enabled,
+        distance_fog,
         shadow_filter_method,
         message,
         lightmapped~,
@@ -2630,6 +2663,7 @@ fn ensure_mesh3d_pipeline_rgba8(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       message,
       lightmapped~,
@@ -2660,6 +2694,7 @@ fn ensure_mesh3d_pipeline_rgba8(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     pipeline,
     lightmapped~,
@@ -2682,6 +2717,7 @@ fn ensure_mesh3d_pipeline_surface(
   tonemap_in_shader : Bool,
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  distance_fog : Bool,
   shadow_filter_method : Int,
   default_view_layout_key? : @mesh_view_layout.MeshPipelineViewLayoutKey = mesh3d_default_mesh_view_layout_key(
     tonemap_in_shader~,
@@ -2714,6 +2750,7 @@ fn ensure_mesh3d_pipeline_surface(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     )
@@ -2734,6 +2771,7 @@ fn ensure_mesh3d_pipeline_surface(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       lightmapped~,
     ) {
@@ -2756,6 +2794,7 @@ fn ensure_mesh3d_pipeline_surface(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     "mesh3d surface",
     lightmapped~,
@@ -2776,6 +2815,7 @@ fn ensure_mesh3d_pipeline_surface(
         tonemap_in_shader,
         tonemapping_mode,
         deband_dither_enabled,
+        distance_fog,
         shadow_filter_method,
         message,
         lightmapped~,
@@ -2845,6 +2885,7 @@ fn ensure_mesh3d_pipeline_surface(
       tonemap_in_shader,
       tonemapping_mode,
       deband_dither_enabled,
+      distance_fog,
       shadow_filter_method,
       message,
       lightmapped~,
@@ -2875,6 +2916,7 @@ fn ensure_mesh3d_pipeline_surface(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     pipeline,
     lightmapped~,
@@ -2937,6 +2979,10 @@ fn mesh3d_pipeline_for_current_pass(
     None => mesh3d_default_mesh_view_layout_key(tonemap_in_shader~)
   }
   let view_layout_key_bits = default_view_layout_key.bits()
+  let distance_fog = match backend.pass_state {
+    Some(pass_state) => pass_kind_fog_enabled(pass_state.pass_kind)
+    None => false
+  }
   if resolved_vertex_shader_path != MESH3D_FORWARD_VERTEX_SHADER_PATH ||
     resolved_fragment_shader_path != MESH3D_FORWARD_SHADER_PATH {
     let custom_surface_format = match current_pass_color_format(backend) {
@@ -2948,7 +2994,7 @@ fn mesh3d_pipeline_for_current_pass(
       backend, material_pipeline_id, material_descriptor, resolved_vertex_shader_path,
       resolved_fragment_shader_path, custom_surface_format, msaa_sample_count, topology,
       transparent, blend_kind, forward_decal, cull_mode, skinned, tonemap_in_shader,
-      tonemapping_mode, deband_dither_enabled, shadow_filter_method,
+      tonemapping_mode, deband_dither_enabled, distance_fog, shadow_filter_method,
     )
   }
   match current_pass_color_format(backend) {
@@ -2967,6 +3013,7 @@ fn mesh3d_pipeline_for_current_pass(
         tonemap_in_shader,
         tonemapping_mode,
         deband_dither_enabled,
+        distance_fog,
         shadow_filter_method,
         default_view_layout_key~,
         lightmapped~,
@@ -2985,6 +3032,7 @@ fn mesh3d_pipeline_for_current_pass(
         tonemap_in_shader,
         tonemapping_mode,
         deband_dither_enabled,
+        distance_fog,
         shadow_filter_method,
         lightmapped~,
       )
@@ -3004,6 +3052,7 @@ fn mesh3d_pipeline_for_current_pass(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     default_view_layout_key~,
     lightmapped~,
@@ -3022,6 +3071,7 @@ fn mesh3d_pipeline_for_current_pass(
     tonemap_in_shader,
     tonemapping_mode,
     deband_dither_enabled,
+    distance_fog,
     shadow_filter_method,
     lightmapped~,
   )

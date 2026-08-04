@@ -45,6 +45,7 @@ fn mesh3d_deferred_lighting_shader_defines(
     pass_state.tonemap_in_shader,
     pass_state.tonemapping_mode,
     pass_state.deband_dither_enabled,
+    pass_kind_fog_enabled(pass_state.pass_kind),
     shadow_filter_method,
   )
   defines.set("DEFERRED_LIGHTING_PIPELINE", true)
@@ -66,7 +67,7 @@ fn mesh3d_deferred_lighting_shader_defines(
     defines.set("SCREEN_SPACE_REFLECTIONS", true)
   }
   if distance_fog {
-    defines.set("DISTANCE_FOG", true)
+
   }
   if atmosphere {
     defines.set("ATMOSPHERE", true)
