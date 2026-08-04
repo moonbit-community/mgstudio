@@ -547,17 +547,32 @@ fn render3d_prepare_camera_fog_binding(
   world : @ecs.World,
   view_entity : @core.Entity,
 ) -> Unit {
-  let gpu_fog = match
-    (try! world.get_by_key(
-      view_entity,
-      @pbr_render.ViewFogUniformOffset::component(),
-    )) {
-    Some(offset) =>
+  // `render3d_prepare_fog_system` writes the offsets onto the exact entity
+  // objects in `SortedCameras`; resolve through the same list so the read
+  // uses the identical id AND generation. Reading via the pass's own
+  // `view_entity` handle is generation-fragile across runs.
+  let mut prepared_entity : @core.Entity? = None
+  for entity in @render.sorted_cameras_or_default(world).camera_entities() {
+    if entity.id == view_entity.id {
+      prepared_entity = Some(entity)
+      break
+    }
+  }
+  let gpu_fog = match prepared_entity {
+    Some(entity) =>
       match
-        @pbr_render.render3d_fog_meta_mut_or_init(world)
-        .peek()
-        .fog_at(offset.offset()) {
-        Some(fog) => fog
+        (try! world.get_by_key(
+          entity,
+          @pbr_render.ViewFogUniformOffset::component(),
+        )) {
+        Some(offset) =>
+          match
+            @pbr_render.render3d_fog_meta_mut_or_init(world)
+            .peek()
+            .fog_at(offset.offset()) {
+            Some(fog) => fog
+            None => @pbr_render.GpuFog::off()
+          }
         None => @pbr_render.GpuFog::off()
       }
     None => @pbr_render.GpuFog::off()
