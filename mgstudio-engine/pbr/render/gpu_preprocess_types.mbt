@@ -20,13 +20,6 @@ pub(all) struct PreparedSkinBinding3d {
 }
 
 ///|
-pub(all) struct GpuPreprocessPhaseRange3d {
-  phase : Int
-  start : Int
-  end : Int
-}
-
-///|
 pub(all) struct GpuPreprocessIndirectParametersCpuMetadata3d {
   base_output_index : Int
   batch_set_index : Int

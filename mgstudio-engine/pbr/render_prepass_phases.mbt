@@ -168,31 +168,83 @@ fn Render3dPrepassViewPhase::queued_item(
 }
 
 ///|
-// Materializes the retained bins in Bevy's binned iteration order:
-// multidrawable batch sets first, then batchable bins, then unbatchable
-// entities. The queue only emits mesh phase types, so `non_mesh_items` is
-// always empty for these phases.
-fn Render3dPrepassViewPhase::items(
+// Materializes the retained bins into executable draw items in Bevy's binned
+// iteration order: multidrawable batch sets first, then batchable bins, then
+// unbatchable entities. The queue only emits mesh phase types, so
+// `non_mesh_items` is always empty for these phases. `output_index` is filled
+// from the slots `prepare_gpu_buffers` recorded: batchable bins read their
+// absolute instance range from the prepared batch sets, and direct-mode
+// unbatchables read their per-entity buffer index. GPU-unpacked multidraw
+// slots and indirect-mode unbatchable slots are not CPU-authored, so those
+// items keep `-1` and draw through the per-draw payload slot path until
+// Bevy's batch-set indirect consumption is ported.
+fn Render3dPrepassViewPhase::draw_items(
   self : Render3dPrepassViewPhase,
-) -> Array[MeshPhaseItem3d] {
-  let result : Array[MeshPhaseItem3d] = []
+  phase_id : String,
+) -> Array[Render3dPrepassPhaseDrawItem3d] {
+  let result : Array[Render3dPrepassPhaseDrawItem3d] = []
   for entry in self.phase.multidrawable_meshes() {
     let batch_set = entry.batch_set()
     for index in 0..<batch_set.cpu_instance_count() {
       guard batch_set.cpu_instance_at(index) is Some(cpu_instance) else {
         continue
       }
-      result.push(self.queued_item(cpu_instance.main_entity()))
+      result.push({
+        phase_item: self.queued_item(cpu_instance.main_entity()),
+        phase_id,
+        output_index: -1,
+      })
     }
   }
-  for entry in self.phase.batchable_meshes() {
-    for entity_and_input_uniform_index in entry.bin().entities() {
-      result.push(self.queued_item(entity_and_input_uniform_index.0))
+  let batchable_entries = self.phase.batchable_meshes()
+  for index in 0..<batchable_entries.length() {
+    let entry = batchable_entries[index]
+    let range_start = match self.phase.batch_sets() {
+      Direct(batches) =>
+        if index < batches.length() {
+          batches[index].instance_range().start()
+        } else {
+          -1
+        }
+      MultidrawIndirect(batch_sets) =>
+        if index < batch_sets.length() {
+          batch_sets[index].first_batch().instance_range().start()
+        } else {
+          -1
+        }
+      DynamicUniforms(_) => -1
+    }
+    let entities = entry.bin().entities()
+    for entity_index in 0..<entities.length() {
+      result.push({
+        phase_item: self.queued_item(entities[entity_index].0),
+        phase_id,
+        output_index: if range_start < 0 {
+          -1
+        } else {
+          range_start + entity_index
+        },
+      })
     }
   }
   for entry in self.phase.unbatchable_meshes() {
-    for entity_pair in entry.entities().entities() {
-      result.push(self.queued_item(entity_pair.0))
+    let entities = entry.entities()
+    let retained_entities = entities.entities()
+    for entity_index in 0..<retained_entities.length() {
+      let output_index = match
+        entities.buffer_indices().indices_for_entity_index(entity_index) {
+        Some(indices) =>
+          match indices.extra_index() {
+            None => indices.instance_index()
+            _ => -1
+          }
+        None => -1
+      }
+      result.push({
+        phase_item: self.queued_item(retained_entities[entity_index].0),
+        phase_id,
+        output_index,
+      })
     }
   }
   result
@@ -317,13 +369,14 @@ fn Render3dPrepassPhases::prepare_phase_buffers_into(
 }
 
 ///|
-fn render3d_append_retained_prepass_phase_items(
-  output : Array[MeshPhaseItem3d],
+fn render3d_append_retained_prepass_phase_draw_items(
+  output : Array[Render3dPrepassPhaseDrawItem3d],
   view : Render3dPrepassViewPhase?,
+  phase_id : String,
 ) -> Unit {
   match view {
     Some(view) =>
-      for item in view.items() {
+      for item in view.draw_items(phase_id) {
         output.push(item)
       }
     None => ()
@@ -331,12 +384,18 @@ fn render3d_append_retained_prepass_phase_items(
 }
 
 ///|
-fn render3d_retained_prepass_phase_items(
+// Bevy source: `bevy/crates/bevy_core_pipeline/src/prepass/node.rs` reads the
+// retained prepass/deferred phases per view at render time; this is the
+// executor-side accessor for the same four retained phase resources.
+fn render3d_retained_prepass_phase_draw_items(
   world : @ecs.World,
   retained_view_entity : @render_view.RetainedViewEntity,
-) -> (Array[MeshPhaseItem3d], Array[MeshPhaseItem3d]) {
-  let prepass_items : Array[MeshPhaseItem3d] = []
-  let deferred_items : Array[MeshPhaseItem3d] = []
+) -> (
+  Array[Render3dPrepassPhaseDrawItem3d],
+  Array[Render3dPrepassPhaseDrawItem3d],
+) {
+  let prepass_items : Array[Render3dPrepassPhaseDrawItem3d] = []
+  let deferred_items : Array[Render3dPrepassPhaseDrawItem3d] = []
   let opaque_prepass = world
     .get_resource(
       (@app.Resource::resource() : @ecs.ResourceKey[Render3dOpaquePrepassPhases]),
@@ -363,21 +422,25 @@ fn render3d_retained_prepass_phase_items(
         @ecs.ResourceKey[Render3dAlphaMaskDeferredPhases]),
     )
     .unwrap()
-  render3d_append_retained_prepass_phase_items(
+  render3d_append_retained_prepass_phase_draw_items(
     prepass_items,
     opaque_prepass.phases.view(retained_view_entity),
+    RENDER3D_OPAQUE_PREPASS_PHASE_ID,
   )
-  render3d_append_retained_prepass_phase_items(
+  render3d_append_retained_prepass_phase_draw_items(
     prepass_items,
     alpha_mask_prepass.phases.view(retained_view_entity),
+    RENDER3D_ALPHA_MASK_PREPASS_PHASE_ID,
   )
-  render3d_append_retained_prepass_phase_items(
+  render3d_append_retained_prepass_phase_draw_items(
     deferred_items,
     opaque_deferred.phases.view(retained_view_entity),
+    RENDER3D_OPAQUE_DEFERRED_PHASE_ID,
   )
-  render3d_append_retained_prepass_phase_items(
+  render3d_append_retained_prepass_phase_draw_items(
     deferred_items,
     alpha_mask_deferred.phases.view(retained_view_entity),
+    RENDER3D_ALPHA_MASK_DEFERRED_PHASE_ID,
   )
   (prepass_items, deferred_items)
 }

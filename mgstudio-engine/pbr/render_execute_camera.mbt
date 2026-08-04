@@ -282,8 +282,6 @@ fn render3d_execute_camera(
   let mut shadow_bindings = render3d_view_shadow_bindings_none()
   let point_shadow_near = pass_config.point_shadow_near
   let draw_queue_entry = prepared_queue.draw_queue_entry
-  let prepass_draw_items = prepared_queue.prepass_draw_items
-  let deferred_prepass_draw_items = prepared_queue.deferred_prepass_draw_items
   let indexed_indirect_parameter_indices = prepared_queue.indexed_indirect_parameter_indices
   let non_indexed_indirect_parameter_indices = prepared_queue.non_indexed_indirect_parameter_indices
   let prepass_result = render3d_execute_camera_prepass(
@@ -291,8 +289,7 @@ fn render3d_execute_camera(
     camera_entity,
     camera,
     meshes,
-    prepass_draw_items,
-    deferred_prepass_draw_items,
+    draw_queue_entry,
     indexed_indirect_parameter_indices,
     non_indexed_indirect_parameter_indices,
     camera.depth_prepass_enabled,
@@ -333,8 +330,7 @@ fn render3d_execute_camera(
       camera_entity,
       camera,
       meshes,
-      prepass_draw_items,
-      deferred_prepass_draw_items,
+      draw_queue_entry,
       indexed_indirect_parameter_indices,
       non_indexed_indirect_parameter_indices,
       camera.depth_prepass_enabled,

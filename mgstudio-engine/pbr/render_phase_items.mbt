@@ -212,9 +212,15 @@ priv struct MeshPhaseItem3d {
 }
 
 ///|
+// One executable prepass/deferred phase draw. `phase_id` selects the retained
+// phase's own preprocess buffers on the renderer side; `output_index` is the
+// item's slot in that phase's prepared instance buffer, or `-1` when the slot
+// is not CPU-authored (GPU-unpacked multidraw bins and indirect-mode
+// unbatchables), in which case the draw uses the per-draw payload slot path.
 priv struct Render3dPrepassPhaseDrawItem3d {
   phase_item : MeshPhaseItem3d
-  preprocess_draw_item_index : Int
+  phase_id : String
+  output_index : Int
 }
 
 ///|

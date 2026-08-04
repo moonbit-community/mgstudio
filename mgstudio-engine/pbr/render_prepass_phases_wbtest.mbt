@@ -349,8 +349,10 @@ test "pbr prepass queue: retained phase bins entities and refreshes payload indi
   }
 
   phase.add(item(entity, 0, 7UL), MultidrawableMesh)
-  inspect(phase.items().length(), content="1")
-  inspect(phase.items()[0].pipeline_id.id(), content="7")
+  inspect(phase.draw_items("test").length(), content="1")
+  inspect(phase.draw_items("test")[0].phase_item.pipeline_id.id(), content="7")
+  inspect(phase.draw_items("test")[0].phase_id, content="test")
+  inspect(phase.draw_items("test")[0].output_index, content="-1")
   debug_inspect(
     cached_phase_type(phase, entity.main_entity) is Some(MultidrawableMesh),
     content="true",
@@ -358,12 +360,12 @@ test "pbr prepass queue: retained phase bins entities and refreshes payload indi
   let indices : Map[UInt64, Int] = Map([])
   indices.set(entity.main_entity.to_bits(), 9)
   phase.refresh_extracted_indices(indices)
-  inspect(phase.items()[0].extracted_index, content="9")
+  inspect(phase.draw_items("test")[0].phase_item.extracted_index, content="9")
   phase.remove(entity.main_entity)
-  inspect(phase.items().length(), content="0")
+  inspect(phase.draw_items("test").length(), content="0")
   phase.add(item(entity, 1, 8UL), BatchableMesh)
-  inspect(phase.items().length(), content="1")
-  inspect(phase.items()[0].pipeline_id.id(), content="8")
+  inspect(phase.draw_items("test").length(), content="1")
+  inspect(phase.draw_items("test")[0].phase_item.pipeline_id.id(), content="8")
   debug_inspect(
     cached_phase_type(phase, entity.main_entity) is Some(BatchableMesh),
     content="true",
@@ -375,4 +377,70 @@ test "pbr prepass queue: retained phase bins entities and refreshes payload indi
     cached_phase_type(direct_phase, entity.main_entity) is Some(BatchableMesh),
     content="true",
   )
+}
+
+///|
+test "pbr prepass queue: prepared phase buffers give CPU-authored draw slots" {
+  let phases = Render3dPrepassPhases()
+  let retained_view = @render_view.RetainedViewEntity::new(
+    @core.Entity::new(70, 0),
+  )
+  phases.prepare_for_new_frame(retained_view, PreprocessingOnly)
+  let phase = phases.view(retained_view).unwrap()
+  fn item(entity_id : Int, batchable : Bool) -> MeshPhaseItem3d {
+    {
+      entity: phase_entity_ref3d(
+        @core.Entity::new(entity_id, 0),
+        @core.Entity::new(entity_id + 100, 0),
+      ),
+      extracted_index: 0,
+      current_uniform_index: entity_id.reinterpret_as_uint(),
+      phase: RENDER3D_PHASE_OPAQUE,
+      draw_function: @material.DrawFunctionId::new(4U),
+      pipeline_id: @material.CachedRenderPipelineId::new(7UL),
+      distance: 0.0F,
+      mesh_asset_id: if batchable {
+        5
+      } else {
+        6
+      },
+      slabs: @render_mesh.MeshSlabs::new(if batchable { 6 } else { 7 }),
+      material_bind_group_index: -1,
+      material_bind_group_slot: -1,
+    }
+  }
+  // Two batchable entities share one bin; the unbatchable entity keeps its
+  // own per-entity buffer index. `prepare_gpu_buffers` authors unbatchable
+  // work items before batchable ones, so the unbatchable entity takes slot 0
+  // and the batchable bin takes the range starting at slot 1.
+  phase.add(item(71, true), BatchableMesh)
+  phase.add(item(72, true), BatchableMesh)
+  phase.add(item(73, false), UnbatchableMesh)
+  let phase_instances : @render_batching.PhaseBatchedInstanceBuffers[Unit] = @render_batching.PhaseBatchedInstanceBuffers::new()
+  let phase_indirect = @render_batching.PhaseIndirectParametersBuffers::new(
+    false,
+  )
+  phase.phase.prepare_gpu_buffers(
+    "test-view",
+    true,
+    false,
+    phase_instances,
+    phase_indirect,
+    fn(main_entity) {
+      Some(
+        @render_phase.InputUniformIndex::new(
+          main_entity.id().id.reinterpret_as_uint(),
+        ),
+      )
+    },
+    fn(batch_set_key) { batch_set_key.indexed() },
+  )
+  let draw_items = phase.draw_items("test")
+  inspect(draw_items.length(), content="3")
+  inspect(draw_items[0].phase_item.entity.main_entity.id, content="71")
+  inspect(draw_items[0].output_index, content="1")
+  inspect(draw_items[1].phase_item.entity.main_entity.id, content="72")
+  inspect(draw_items[1].output_index, content="2")
+  inspect(draw_items[2].phase_item.entity.main_entity.id, content="73")
+  inspect(draw_items[2].output_index, content="0")
 }

@@ -366,7 +366,6 @@ test "render3d: gpu preprocess queue entry can consume shared phase buffers" {
     work_items,
     indirect_buffers,
   )
-  debug_inspect(entry.phase_ranges.length(), content="1")
   debug_inspect(entry.mesh_culling_data.length(), content="8")
   match entry.work_item_buffers {
     Direct(_) => abort("expected indirect queue work items")

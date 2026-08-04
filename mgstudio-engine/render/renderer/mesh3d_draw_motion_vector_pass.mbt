@@ -107,6 +107,7 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
   mesh : GpuMeshInfo,
   preprocess_camera_key_hi : Int,
   preprocess_camera_key_lo : Int,
+  preprocess_phase_id : String,
   draw_storage_index : Int,
   indirect_kind : Int,
   indirect_parameters_index : Int,
@@ -239,7 +240,10 @@ pub fn GpuBackend::draw_mesh3d_motion_vector_pass(
     }
   }
   let preprocess_state_index = mesh3d_preprocess_camera_upload_state_index(
-    self, preprocess_camera_key_hi, preprocess_camera_key_lo,
+    self,
+    preprocess_camera_key_hi,
+    preprocess_camera_key_lo,
+    phase_id=preprocess_phase_id,
   )
   let preprocess_state = if preprocess_state_index is Some(state_index) {
     Some(self.mesh3d_preprocess_camera_upload_states[state_index])

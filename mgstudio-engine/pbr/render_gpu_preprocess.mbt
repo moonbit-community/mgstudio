@@ -436,32 +436,6 @@ fn render3d_write_batched_instance_buffers(
 }
 
 ///|
-fn render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
-  draw_items : Array[MeshPhaseItem3d],
-) -> Array[GpuPreprocessPhaseRange3d] {
-  let phase_ranges : Array[GpuPreprocessPhaseRange3d] = []
-  if draw_items.length() == 0 {
-    return phase_ranges
-  }
-  let mut current_phase = draw_items[0].phase
-  let mut range_start = 0
-  for i in 1..<draw_items.length() {
-    if draw_items[i].phase == current_phase {
-      continue
-    }
-    phase_ranges.push({ phase: current_phase, start: range_start, end: i })
-    current_phase = draw_items[i].phase
-    range_start = i
-  }
-  phase_ranges.push({
-    phase: current_phase,
-    start: range_start,
-    end: draw_items.length(),
-  })
-  phase_ranges
-}
-
-///|
 fn render3d_gpu_preprocess_shader_work_item_from_batching(
   item : @render_batching.PreprocessWorkItem,
 ) -> GpuPreprocessShaderWorkItem3d {
@@ -741,9 +715,6 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
   phase_indirect_parameters_buffers : @render_batching.UntypedPhaseIndirectParametersBuffers,
   output_count? : Int = -1,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
-  let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
-    draw_items,
-  )
   let resolved_work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_phase(
     work_item_buffers,
   )
@@ -800,33 +771,12 @@ fn render3d_build_gpu_preprocess_queue_entry_from_phase_buffers(
     } else {
       output_count
     },
-    phase_ranges,
     indirect_metadata,
     dispatch_metadata,
     work_item_buffers: resolved_work_item_buffers,
     mesh_culling_data,
     mesh_inputs,
   }
-}
-
-///|
-fn render3d_gpu_preprocess_opaque_alpha_end_index(
-  phase_ranges : Array[GpuPreprocessPhaseRange3d],
-) -> Int {
-  let mut opaque_alpha_end = 0
-  for phase_range in phase_ranges {
-    if phase_range.start < 0 {
-      continue
-    }
-    if phase_range.phase != RENDER3D_PHASE_OPAQUE &&
-      phase_range.phase != RENDER3D_PHASE_ALPHA_MASK {
-      continue
-    }
-    if phase_range.end > opaque_alpha_end {
-      opaque_alpha_end = phase_range.end
-    }
-  }
-  opaque_alpha_end
 }
 
 ///|
@@ -1327,66 +1277,6 @@ fn render3d_host_preprocess_camera_payload(
     non_indexed_batch_sets,
     dispatch_metadata,
   }
-}
-
-///|
-fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
-  draw_items : Array[MeshPhaseItem3d],
-  phase_ranges : Array[GpuPreprocessPhaseRange3d],
-  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
-) -> Array[Int] {
-  let opaque_alpha_end_index_raw = render3d_gpu_preprocess_opaque_alpha_end_index(
-    phase_ranges,
-  )
-  let opaque_alpha_end_index = if opaque_alpha_end_index_raw >
-    draw_items.length() {
-    draw_items.length()
-  } else {
-    opaque_alpha_end_index_raw
-  }
-  let indices : Array[Int] = []
-  let included : Array[Bool] = []
-  for _ in draw_items {
-    included.push(false)
-  }
-  let push_if_valid = fn(index : Int) {
-    if index < 0 || index >= opaque_alpha_end_index {
-      return
-    }
-    if draw_items[index].phase == RENDER3D_PHASE_OPAQUE ||
-      draw_items[index].phase == RENDER3D_PHASE_ALPHA_MASK {
-      if included[index] {
-        return
-      }
-      included[index] = true
-      indices.push(index)
-    }
-  }
-  match work_item_buffers {
-    Direct(items) =>
-      for item in items {
-        push_if_valid(item.output_or_indirect_parameters_index)
-      }
-    Indirect(indexed_items, non_indexed_items, _) => {
-      for item in indexed_items {
-        push_if_valid(item.input_index)
-      }
-      for item in non_indexed_items {
-        push_if_valid(item.input_index)
-      }
-    }
-  }
-  for i in 0..<opaque_alpha_end_index {
-    if draw_items[i].phase == RENDER3D_PHASE_OPAQUE ||
-      draw_items[i].phase == RENDER3D_PHASE_ALPHA_MASK {
-      if included[i] {
-        continue
-      }
-      included[i] = true
-      indices.push(i)
-    }
-  }
-  indices
 }
 
 ///|

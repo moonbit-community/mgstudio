@@ -223,6 +223,7 @@ pub(all) struct MeshGpuDrawPayload3d {
   mesh_id : Int
   preprocess_camera_key_hi : Int
   preprocess_camera_key_lo : Int
+  preprocess_phase_id : String
   draw_storage_index : Int
   indirect_kind : Int
   indirect_parameters_index : Int
@@ -535,6 +536,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   world_from_local? : @math.Affine3? = None,
   previous_world_from_local? : @math.Affine3? = None,
   instance_vertex_buffer_id? : Int = -1,
+  preprocess_phase_id? : String = @render_gpu.MESH3D_PREPROCESS_MAIN_PHASE_ID,
 ) -> MeshGpuDrawPayload3d {
   let resolved_world_from_local = match world_from_local {
     Some(affine) => affine
@@ -546,6 +548,7 @@ pub fn render3d_build_mesh_gpu_draw_payload(
   }
   {
     mesh_id,
+    preprocess_phase_id,
     preprocess_camera_key_hi,
     preprocess_camera_key_lo,
     draw_storage_index,
@@ -736,6 +739,7 @@ pub fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     mesh_id=payload.mesh_id,
     preprocess_camera_key_hi=payload.preprocess_camera_key_hi,
     preprocess_camera_key_lo=payload.preprocess_camera_key_lo,
+    preprocess_phase_id=payload.preprocess_phase_id,
     draw_storage_index=payload.draw_storage_index,
     indirect_kind=payload.indirect_kind,
     indirect_parameters_index=payload.indirect_parameters_index,

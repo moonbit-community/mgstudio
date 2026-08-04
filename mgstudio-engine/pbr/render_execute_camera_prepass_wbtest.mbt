@@ -77,63 +77,27 @@ test "pbr prepass: consumer reads retained prepass and deferred phase items" {
     ),
     UnbatchableMesh,
   )
-  let (prepass_items, deferred_items) = render3d_retained_prepass_phase_items(
+  let (prepass_items, deferred_items) = render3d_retained_prepass_phase_draw_items(
     world, retained_view,
   )
   inspect(prepass_items.length(), content="1")
-  inspect(prepass_items[0].phase, content="0")
-  inspect(prepass_items[0].pipeline_id.id(), content="101")
+  inspect(prepass_items[0].phase_item.phase, content="0")
+  inspect(prepass_items[0].phase_item.pipeline_id.id(), content="101")
+  inspect(prepass_items[0].phase_item.draw_function.id(), content="1")
+  inspect(prepass_items[0].phase_id, content="mgstudio_pbr::Opaque3dPrepass")
   inspect(deferred_items.length(), content="1")
-  inspect(deferred_items[0].phase, content="1")
-  inspect(deferred_items[0].pipeline_id.id(), content="102")
-
-  let main_items = [
-    render3d_prepass_consumer_test_item(1, 201UL),
-    render3d_prepass_consumer_test_item(
-      2,
-      202UL,
-      phase=RENDER3D_PHASE_ALPHA_MASK,
-    ),
-  ]
-  let queue_entry = render3d_build_gpu_preprocess_queue_entry(
-    main_items,
-    None,
-    None,
-    false,
-    false,
+  inspect(deferred_items[0].phase_item.phase, content="1")
+  inspect(deferred_items[0].phase_item.pipeline_id.id(), content="102")
+  inspect(deferred_items[0].phase_item.draw_function.id(), content="2")
+  inspect(
+    deferred_items[0].phase_id,
+    content="mgstudio_pbr::AlphaMask3dDeferred",
   )
-  let opaque_alpha_indices = render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
-    queue_entry.draw_items,
-    queue_entry.phase_ranges,
-    queue_entry.work_item_buffers,
-  )
-  debug_inspect(opaque_alpha_indices, content="[0, 1]")
-  let resolved_prepass = render3d_resolve_prepass_phase_draw_items(
-    prepass_items,
-    queue_entry.draw_items,
-    opaque_alpha_indices,
-  )
-  let resolved_deferred = render3d_resolve_prepass_phase_draw_items(
-    deferred_items,
-    queue_entry.draw_items,
-    opaque_alpha_indices,
-  )
-  inspect(queue_entry.draw_items.length(), content="2")
-  inspect(resolved_prepass[0].preprocess_draw_item_index, content="0")
-  inspect(resolved_prepass[0].phase_item.pipeline_id.id(), content="101")
-  inspect(resolved_prepass[0].phase_item.draw_function.id(), content="1")
-  inspect(resolved_deferred[0].preprocess_draw_item_index, content="1")
-  inspect(resolved_deferred[0].phase_item.pipeline_id.id(), content="102")
-  inspect(resolved_deferred[0].phase_item.draw_function.id(), content="2")
-  let (indexed, non_indexed) = render3d_gpu_preprocess_indirect_parameter_index_maps(
-    queue_entry.draw_items,
-    queue_entry.work_item_buffers,
-    queue_entry.indirect_metadata,
-  )
-  for index in 0..<main_items.length() {
-    inspect(indexed[index], content="-1")
-    inspect(non_indexed[index], content="-1")
-  }
+  // The phase buffers were not prepared in this world, so no slot in this
+  // phase's instance buffer is CPU-authored yet and every item draws through
+  // the per-draw payload slot path.
+  inspect(prepass_items[0].output_index, content="-1")
+  inspect(deferred_items[0].output_index, content="-1")
 }
 
 ///|

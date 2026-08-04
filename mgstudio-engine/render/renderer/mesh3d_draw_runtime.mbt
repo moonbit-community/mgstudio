@@ -179,10 +179,10 @@ pub fn GpuBackend::draw_mesh3d(
   if pass_kind == PASS_KIND_BASE_MOTION_VECTOR ||
     pass_kind == PASS_KIND_BASE_PREPASS {
     self.draw_mesh3d_motion_vector_pass(
-      pass, ps, mesh, preprocess_camera_key_hi, preprocess_camera_key_lo, draw_storage_index,
-      indirect_kind, indirect_parameters_index, x, y, z, rotation_x, rotation_y,
-      rotation_z, rotation_w, scale_x, scale_y, scale_z, previous_x, previous_y,
-      previous_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
+      pass, ps, mesh, preprocess_camera_key_hi, preprocess_camera_key_lo, preprocess_phase_id,
+      draw_storage_index, indirect_kind, indirect_parameters_index, x, y, z, rotation_x,
+      rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z, previous_x,
+      previous_y, previous_z, previous_rotation_x, previous_rotation_y, previous_rotation_z,
       previous_rotation_w, previous_scale_x, previous_scale_y, previous_scale_z,
       world_from_local, previous_world_from_local, skinning_key_hi, skinning_key_lo,
       morph_weights_index, previous_morph_weights_index, morph_targets_texture_id,

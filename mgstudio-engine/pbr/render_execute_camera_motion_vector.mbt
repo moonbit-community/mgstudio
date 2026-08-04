@@ -13,27 +13,85 @@
 // limitations under the License.
 
 ///|
+// While a camera's meshes run through the GPU preprocess, prepass vertex
+// matrices must come from the same preprocess output the main pass reads:
+// sourcing them from the CPU draw payload instead produces last-bit depth
+// differences that break the main pass depth-EQUAL test on MSAA silhouette
+// samples. Until the retained phases dispatch their own preprocess, such
+// cameras pair each prepass item with its main-pass output slot; a missing
+// slot is a queue-invariant failure.
+fn render3d_main_pass_preprocess_slots(
+  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
+) -> Map[UInt64, Int]? {
+  if !render3d_camera_queue_needs_gpu_preprocess(draw_queue_entry) {
+    return None
+  }
+  let slots : Map[UInt64, Int] = Map([])
+  let draw_items = draw_queue_entry.draw_items
+  for index in 0..<draw_items.length() {
+    let draw_item = draw_items[index]
+    if draw_item.phase == RENDER3D_PHASE_OPAQUE ||
+      draw_item.phase == RENDER3D_PHASE_ALPHA_MASK {
+      slots.set(draw_item.entity.main_entity.to_bits(), index)
+    }
+  }
+  Some(slots)
+}
+
+///|
 fn render3d_execute_camera_prepass_draw_phase(
   world : @ecs.World,
   camera_entity : @core.Entity,
   meshes : Array[ExtractedMesh3d],
   phase_draw_items : Array[Render3dPrepassPhaseDrawItem3d],
+  main_pass_slots : Map[UInt64, Int]?,
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
 ) -> Unit {
   for phase_draw_item in phase_draw_items {
     let draw_item = phase_draw_item.phase_item
-    let preprocess_draw_item_index = phase_draw_item.preprocess_draw_item_index
     let extracted_mesh = meshes[draw_item.extracted_index]
     let mesh = extracted_mesh.payload
     let material_pipeline_id = pbr_prepass_runtime_pipeline_id(
       draw_item.pipeline_id,
     )
-    let motion_vector_indexed = draw_item.slabs.index_slab_id() is Some(_)
-    let motion_vector_indirect_parameters_index = if motion_vector_indexed {
-      indexed_indirect_parameter_indices[preprocess_draw_item_index]
-    } else {
-      non_indexed_indirect_parameter_indices[preprocess_draw_item_index]
+    let (phase_id, draw_storage_index, indirect_kind, indirect_parameters_index) = match
+      main_pass_slots {
+      Some(slots) => {
+        guard slots.get(draw_item.entity.main_entity.to_bits())
+          is Some(main_pass_slot) else {
+          abort(
+            "Retained prepass phase entity is missing its main-pass GPU preprocess output",
+          )
+        }
+        let indexed = draw_item.slabs.index_slab_id() is Some(_)
+        let indirect_parameters_index = if indexed {
+          indexed_indirect_parameter_indices[main_pass_slot]
+        } else {
+          non_indexed_indirect_parameter_indices[main_pass_slot]
+        }
+        (
+          @render.MESH3D_PREPROCESS_MAIN_PHASE_ID,
+          main_pass_slot,
+          if indirect_parameters_index >= 0 {
+            if indexed {
+              MESH3D_DRAW_INDIRECT_KIND_INDEXED
+            } else {
+              MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
+            }
+          } else {
+            MESH3D_DRAW_INDIRECT_KIND_NONE
+          },
+          indirect_parameters_index,
+        )
+      }
+      None =>
+        (
+          phase_draw_item.phase_id,
+          phase_draw_item.output_index,
+          MESH3D_DRAW_INDIRECT_KIND_NONE,
+          -1,
+        )
     }
     guard render3d_mesh_draw_alpha(
         mesh.material_properties.alpha_mode,
@@ -50,17 +108,9 @@ fn render3d_execute_camera_prepass_draw_phase(
         render3d_uploaded_mesh_id_or_abort(world, draw_item.mesh_asset_id),
         camera_entity.id,
         camera_entity.generation,
-        preprocess_draw_item_index,
-        if motion_vector_indirect_parameters_index >= 0 {
-          if motion_vector_indexed {
-            MESH3D_DRAW_INDIRECT_KIND_INDEXED
-          } else {
-            MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
-          }
-        } else {
-          MESH3D_DRAW_INDIRECT_KIND_NONE
-        },
-        motion_vector_indirect_parameters_index,
+        draw_storage_index,
+        indirect_kind,
+        indirect_parameters_index,
         material_fields.draw_material_input,
         mesh.transform,
         mesh.previous_transform,
@@ -127,6 +177,7 @@ fn render3d_execute_camera_prepass_draw_phase(
         lightmap_uv_max_y=material_fields.lightmap_uv_max_y,
         world_from_local=Some(mesh.world_from_local),
         previous_world_from_local=Some(mesh.previous_world_from_local),
+        preprocess_phase_id=phase_id,
       ),
     )
   }
@@ -148,8 +199,7 @@ fn render3d_execute_camera_prepass(
   camera_entity : @core.Entity,
   camera : Camera3dViewPayload,
   meshes : Array[ExtractedMesh3d],
-  prepass_draw_items : Array[Render3dPrepassPhaseDrawItem3d],
-  deferred_prepass_draw_items : Array[Render3dPrepassPhaseDrawItem3d],
+  draw_queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   indexed_indirect_parameter_indices : Array[Int],
   non_indexed_indirect_parameter_indices : Array[Int],
   depth_prepass_enabled : Bool,
@@ -188,6 +238,11 @@ fn render3d_execute_camera_prepass(
       deferred_lighting_pass_id_texture_id: -1,
     }
   }
+  let (prepass_draw_items, deferred_prepass_draw_items) = render3d_retained_prepass_phase_draw_items(
+    world,
+    @render_view.RetainedViewEntity::new(camera_entity),
+  )
+  let main_pass_slots = render3d_main_pass_preprocess_slots(draw_queue_entry)
   let mut next_scene_target_id = scene_target_id
   let mut next_velocity_target_id = velocity_target_id
   let mut normal_target_id = -1
@@ -303,7 +358,7 @@ fn render3d_execute_camera_prepass(
     clear_enabled=1,
   )
   render3d_execute_camera_prepass_draw_phase(
-    world, camera_entity, meshes, prepass_draw_items, indexed_indirect_parameter_indices,
+    world, camera_entity, meshes, prepass_draw_items, main_pass_slots, indexed_indirect_parameter_indices,
     non_indexed_indirect_parameter_indices,
   )
   @render.host_gpu_end_pass()
@@ -350,8 +405,8 @@ fn render3d_execute_camera_prepass(
       clear_enabled=1,
     )
     render3d_execute_camera_prepass_draw_phase(
-      world, camera_entity, meshes, deferred_prepass_draw_items, indexed_indirect_parameter_indices,
-      non_indexed_indirect_parameter_indices,
+      world, camera_entity, meshes, deferred_prepass_draw_items, main_pass_slots,
+      indexed_indirect_parameter_indices, non_indexed_indirect_parameter_indices,
     )
     @render.host_gpu_end_pass()
   }

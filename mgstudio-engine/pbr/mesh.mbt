@@ -213,9 +213,6 @@ type Render3dLightingState = @pbr_render.Render3dLightingState
 type ExtractedDirectionalLight3d = @pbr_render.ExtractedDirectionalLight3d
 
 ///|
-type GpuPreprocessPhaseRange3d = @pbr_render.GpuPreprocessPhaseRange3d
-
-///|
 type GpuPreprocessIndirectParametersCpuMetadata3d = @pbr_render.GpuPreprocessIndirectParametersCpuMetadata3d
 
 ///|
@@ -249,7 +246,6 @@ type GpuPreprocessDispatchMetadata3d = @pbr_render.GpuPreprocessDispatchMetadata
 priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   draw_items : Array[MeshPhaseItem3d]
   output_count : Int
-  phase_ranges : Array[GpuPreprocessPhaseRange3d]
   indirect_metadata : GpuPreprocessIndirectMetadata3d
   dispatch_metadata : GpuPreprocessDispatchMetadata3d
   work_item_buffers : GpuPreprocessWorkItemBuffers3d
