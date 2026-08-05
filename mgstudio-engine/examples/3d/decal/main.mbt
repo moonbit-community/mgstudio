@@ -46,7 +46,7 @@ fn setup(
   let decal_material = decal_standard_materials
     .peek()
     .add(
-      @pbr.ForwardDecalMaterial::new(
+      @pbr.forward_decal_material(
         @pbr.StandardMaterial::StandardMaterial().with_base_color_texture(
           Some(asset_server.get().load("textures/uv_checker_bw.png")),
         ),

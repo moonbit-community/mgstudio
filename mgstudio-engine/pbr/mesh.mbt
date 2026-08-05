@@ -110,27 +110,26 @@ pub fn mesh_assets_mut_or_abort() -> @ecs.ResourceMut[@asset.Assets[@mesh.Mesh]]
 pub type ForwardDecal = @pbr_decal.ForwardDecal
 
 ///|
-pub type ForwardDecalMaterial = @pbr_decal.ForwardDecalMaterial
+// Bevy source: `bevy_pbr/src/decal/forward.rs`
+// `pub type ForwardDecalMaterial<B> = ExtendedMaterial<B, ForwardDecalMaterialExt>`.
+pub type ForwardDecalMaterial = ExtendedMaterial[
+  StandardMaterial,
+  ForwardDecalMaterialExtension,
+]
 
 ///|
-pub fn forward_decal_material_add(
-  material : ForwardDecalMaterial,
-) -> @asset.Handle[ForwardDecalMaterial] {
-  @pbr_decal.forward_decal_material_add(material)
-}
-
-///|
-pub fn forward_decal_material_get(
-  handle : @asset.Handle[ForwardDecalMaterial],
-) -> ForwardDecalMaterial? {
-  @pbr_decal.forward_decal_material_get(handle)
+pub fn forward_decal_material(
+  base : StandardMaterial,
+  extension : @material.ForwardDecalMaterialExt,
+) -> ForwardDecalMaterial {
+  ExtendedMaterial::new(base, ForwardDecalMaterialExtension::new(extension))
 }
 
 ///|
 pub fn forward_decal_mesh_material3d(
   handle : @asset.Handle[ForwardDecalMaterial],
-) -> @material.MeshMaterial3d {
-  @pbr_decal.forward_decal_mesh_material3d(handle)
+) -> MeshMaterial3dTyped[ForwardDecalMaterial] {
+  MeshMaterial3dTyped::new(handle)
 }
 
 ///|

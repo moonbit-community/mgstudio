@@ -438,6 +438,19 @@ fn pbr_plugin_sync_feature_plugins(
   .add_plugins(@pbr_decal.ClusteredDecalPlugin::ClusteredDecalPlugin())
   .add_plugins(ContactShadowsPlugin::ContactShadowsPlugin())
   .add_plugins(@pbr_decal.ForwardDecalPlugin::ForwardDecalPlugin())
+  // Bevy's `ForwardDecalPlugin::build` adds
+  // `MaterialPlugin::<ForwardDecalMaterial>` itself
+  // (`bevy_pbr/src/decal/forward.rs:43`); the mgstudio package split keeps
+  // the generic `MaterialPlugin` in `pbr`, so the registration lives here.
+  .add_plugins(
+    (MaterialPlugin::MaterialPlugin() : MaterialPlugin[ForwardDecalMaterial]).with_asset_init(fn() {
+        ExtendedMaterial::new(
+          StandardMaterial(),
+          ForwardDecalMaterialExtension::ForwardDecalMaterialExtension(),
+        )
+      },
+    ),
+  )
   .add_plugins(ScatteringMediumPlugin::ScatteringMediumPlugin())
   .add_plugins(@pbr_atmosphere.AtmospherePlugin::AtmospherePlugin())
   .add_plugins(GpuClusteringPlugin::GpuClusteringPlugin())

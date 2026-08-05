@@ -976,17 +976,121 @@ pub impl MaterialExtension for ForwardDecalMaterialExtension with fn specialize(
 }
 
 ///|
+// Bevy source: `bevy_pbr/src/decal/forward.rs`
+// `#[uniform(200, ForwardDecalMaterialExtUniform)]`.
 pub impl MaterialExtension for ForwardDecalMaterialExtension with fn bind_group_layout_entries(
   _self,
 ) {
-  []
+  [
+    @render_resource.BindGroupLayoutEntry::new(
+      200,
+      @wgpu.SHADER_STAGE_FRAGMENT.to_uint(),
+      BufferBinding(Uniform, false, 4UL),
+    ),
+  ]
 }
 
 ///|
 pub impl MaterialExtension for ForwardDecalMaterialExtension with fn bind_group_bindings(
-  _self,
+  self,
 ) {
-  []
+  let uniform = @pbr_decal.pbr_forward_decal_material_ext_uniform(
+    self.ext.depth_fade_factor,
+  )
+  let bits = uniform.inv_depth_fade_factor.reinterpret_as_int()
+  let bytes = Bytes::makei(4, i => ((bits >> (8 * i)) & 0xFF).to_byte())
+  [@material.MaterialExtensionBinding3d::uniform(200, bytes)]
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/decal/forward.rs` — the
+// `ForwardDecalMaterial` alias instantiates `ExtendedMaterial` with this
+// extension; the registrations below make that instantiation a live
+// `Material` (Bevy adds `MaterialPlugin::<ForwardDecalMaterial>` in
+// `ForwardDecalPlugin::build`).
+let forward_decal_extended_material_asset_keys : @asset.AssetResourceKeys[
+  ExtendedMaterial[StandardMaterial, ForwardDecalMaterialExtension],
+] = @asset.register_asset_resource_keys("mgstudio_pbr::ForwardDecalMaterial")
+
+///|
+let forward_decal_extended_material_keys : MaterialKeys[
+  ExtendedMaterial[StandardMaterial, ForwardDecalMaterialExtension],
+] = register_material_keys("mgstudio_pbr::ForwardDecalMaterial")
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn extended_material_asset_debug_name() {
+  "mgstudio_pbr::ForwardDecalMaterial"
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn extended_material_asset_keys() {
+  forward_decal_extended_material_asset_keys
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn extended_material_keys() {
+  forward_decal_extended_material_keys
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn vertex_shader_ref() {
+  standard_material_extension_default_vertex_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn fragment_shader_ref() {
+  standard_material_extension_default_fragment_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn prepass_vertex_shader_ref() {
+  standard_material_extension_default_prepass_vertex_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn prepass_fragment_shader_ref() {
+  standard_material_extension_default_prepass_fragment_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn deferred_vertex_shader_ref() {
+  standard_material_extension_default_deferred_vertex_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn deferred_fragment_shader_ref() {
+  standard_material_extension_default_deferred_fragment_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn meshlet_fragment_shader_ref() {
+  standard_material_extension_default_meshlet_fragment_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn meshlet_prepass_fragment_shader_ref() {
+  standard_material_extension_default_meshlet_prepass_fragment_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn meshlet_deferred_fragment_shader_ref() {
+  standard_material_extension_default_meshlet_deferred_fragment_shader_ref()
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn enable_prepass_ref() {
+  standard_material_extension_default_enable_prepass_ref()
+}
+
+///|
+// Bevy: `ForwardDecalMaterialExt::enable_shadows() -> false`.
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn enable_shadows_ref() {
+  false
+}
+
+///|
+pub impl StandardMaterialExtension for ForwardDecalMaterialExtension with fn specialize_ref() {
+  Some(forward_decal_specialize)
 }
 
 ///|

@@ -1658,10 +1658,23 @@ fn mesh3d_material_cache_get_or_create(
   material_extension_bind_group_data? : @render_resource.MaterialBindGroupResolvedData = MaterialBindGroupResolvedData(),
 ) -> @wgpu.BindGroup raise GpuBackendError {
   let material_layout = mesh3d_descriptor_material_layout(material_descriptor)
-  let uses_forward_decal_uniform = match material_layout {
-    Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 200)
-    None => false
+  // The Bevy-shaped carrier for the forward-decal depth-fade uniform is the
+  // material EXTENSION bind-group data (binding 200, mirroring
+  // `bevy_pbr/src/decal/forward.rs` `#[uniform(200, ...)]`). The ad-hoc
+  // draw-param path below only remains for layouts that carry binding 200
+  // without extension data; it dies with the untyped material_family shim.
+  let mut extension_provides_forward_decal_uniform = false
+  for entry in material_extension_bind_group_data.entries() {
+    if entry.binding() == 200 {
+      extension_provides_forward_decal_uniform = true
+      break
+    }
   }
+  let uses_forward_decal_uniform = !extension_provides_forward_decal_uniform &&
+    (match material_layout {
+      Some(layout) => mesh3d_bind_group_layout_has_binding(layout, 200)
+      None => false
+    })
   let forward_decal_uniform_bytes = if uses_forward_decal_uniform {
     u32le_pack([f32_bits(forward_decal_inv_depth_fade_factor)])
   } else {
