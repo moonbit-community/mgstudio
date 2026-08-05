@@ -656,7 +656,10 @@ fn render3d_execute_camera_main_pass(
   )
   prepare_light_probe_bindings()
   render3d_prepare_camera_screen_space_reflections_settings(camera)
-  render3d_prepare_camera_fog_binding(world, camera_entity)
+  render3d_prepare_camera_fog_binding(
+    world,
+    extracted_camera.entity.render_entity,
+  )
   prepare_view_bind_group(-1)
   if camera.atmosphere is Some(_) {
     @render.host_gpu_dispatch_mesh3d_atmosphere_luts(

@@ -545,37 +545,32 @@ pub fn render3d_prepare_fog_system(world : @ecs.World) -> Unit {
 // the other per-camera mesh-view uniforms.
 fn render3d_prepare_camera_fog_binding(
   world : @ecs.World,
-  view_entity : @core.Entity,
+  render_view_entity : @core.Entity,
 ) -> Unit {
-  // `render3d_prepare_fog_system` writes the offsets onto the exact entity
-  // objects in `SortedCameras`; resolve through the same list so the read
-  // uses the identical id AND generation. Reading via the pass's own
-  // `view_entity` handle is generation-fragile across runs.
-  let mut prepared_entity : @core.Entity? = None
-  for entity in @render.sorted_cameras_or_default(world).camera_entities() {
-    if entity.id == view_entity.id {
-      prepared_entity = Some(entity)
-      break
+  // `render3d_prepare_fog_system` writes `ViewFogUniformOffset` onto the
+  // RENDER-world view entity (Bevy: `prepare_fog` inserts the offset on the
+  // render-world view). The caller must pass the extracted camera's
+  // `render_entity`, never the main-world camera entity: the two worlds
+  // allocate entity ids independently, so a main-world handle only ever
+  // resolved here by numeric coincidence (ISS-494's whole-run fog dropout).
+  let gpu_fog = if world.is_alive(render_view_entity) {
+    match
+      (try! world.get_by_key(
+        render_view_entity,
+        @pbr_render.ViewFogUniformOffset::component(),
+      )) {
+      Some(offset) =>
+        match
+          @pbr_render.render3d_fog_meta_mut_or_init(world)
+          .peek()
+          .fog_at(offset.offset()) {
+          Some(fog) => fog
+          None => @pbr_render.GpuFog::off()
+        }
+      None => @pbr_render.GpuFog::off()
     }
-  }
-  let gpu_fog = match prepared_entity {
-    Some(entity) =>
-      match
-        (try! world.get_by_key(
-          entity,
-          @pbr_render.ViewFogUniformOffset::component(),
-        )) {
-        Some(offset) =>
-          match
-            @pbr_render.render3d_fog_meta_mut_or_init(world)
-            .peek()
-            .fog_at(offset.offset()) {
-            Some(fog) => fog
-            None => @pbr_render.GpuFog::off()
-          }
-        None => @pbr_render.GpuFog::off()
-      }
-    None => @pbr_render.GpuFog::off()
+  } else {
+    @pbr_render.GpuFog::off()
   }
   @render.host_gpu_prepare_mesh3d_fog(
     base_color_r=gpu_fog.base_color.x,
