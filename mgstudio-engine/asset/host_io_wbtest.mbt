@@ -702,8 +702,15 @@ test "asset host io: bevy tonemapping ktx2 zstd lut decodes as 3d" {
   debug_inspect(stbn_payload.width, content="128")
   debug_inspect(stbn_payload.height, content="128")
   debug_inspect(stbn_payload.slice_count, content="32")
+  // Bevy's stbn.ktx2 is RGB8 (vkFormat 23) and Bevy transcodes it to RGBA8
+  // (`bevy_image/src/ktx2.rs`, `TranscodeFormat::Rgb8`); decoding it as R8
+  // was the ISS-482 vkFormat-table bug.
   debug_inspect(
-    stbn_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_R8_UNORM,
+    stbn_payload.format.to_u32() == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    content="true",
+  )
+  debug_inspect(
+    stbn_payload.levels[0].length() == 128 * 128 * 32 * 4,
     content="true",
   )
 

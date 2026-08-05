@@ -211,8 +211,9 @@ impl Material for ParityCustomMaterial with fn bind_group_layout_descriptor(
 }
 
 ///|
-impl Material for ParityCustomMaterial with fn bind_group_data(self) {
+impl Material for ParityCustomMaterial with fn bind_group_data(self, context) {
   ignore(self)
+  ignore(context)
   MaterialBindGroupKey::from_bytes(
     @utf8.encode("parity_custom_material_pipeline_key"),
   )
@@ -227,8 +228,8 @@ impl Material for ParityCustomMaterial with fn renderer_extra_bind_group_data(
 }
 
 ///|
-impl Material for ParityCustomMaterial with fn material_key(self) {
-  material_default_material_key(self)
+impl Material for ParityCustomMaterial with fn material_key(self, context) {
+  material_default_material_key(self, context)
 }
 
 ///|
@@ -335,7 +336,7 @@ test "pbr material plugin: prepared material uses material bind group data hook"
     content="0:uniform(len=4:1,2,3,4);1:texture(9,float,2d);2:sampler(9)",
   )
   inspect(
-    material.bind_group_data().debug_string(),
+    material.bind_group_data(MaterialBindGroupContext()).debug_string(),
     content="parity_custom_material_pipeline_key",
   )
   inspect(
@@ -344,7 +345,7 @@ test "pbr material plugin: prepared material uses material bind group data hook"
   )
   inspect(
     prepared.properties().material_key.bits() ==
-    material_default_material_key(material).bits(),
+    material_default_material_key(material, MaterialBindGroupContext()).bits(),
     content="true",
   )
 }

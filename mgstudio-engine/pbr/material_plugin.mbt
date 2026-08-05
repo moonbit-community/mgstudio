@@ -802,12 +802,12 @@ pub(open) trait Material {
     self : Self,
     context : MaterialBindGroupContext,
   ) -> @render_resource.BindGroupLayoutDescriptor
-  fn bind_group_data(self : Self) -> MaterialBindGroupKey
+  fn bind_group_data(self : Self, context : MaterialBindGroupContext) -> MaterialBindGroupKey
   fn renderer_extra_bind_group_data(
     self : Self,
     context : MaterialBindGroupContext,
   ) -> @render_resource.MaterialBindGroupResolvedData
-  fn material_key(self : Self) -> @material.ErasedMaterialKey
+  fn material_key(self : Self, context : MaterialBindGroupContext) -> @material.ErasedMaterialKey
   fn specialize(
     descriptor : @render.RenderPipelineDescriptor,
     layout : @mesh.MeshVertexBufferLayoutRef,
@@ -895,8 +895,9 @@ pub fn[M : Material] material_default_bind_group_layout_descriptor(
 ///|
 pub fn[M : Material] material_default_bind_group_data(
   material : M,
+  context? : MaterialBindGroupContext = MaterialBindGroupContext(),
 ) -> MaterialBindGroupKey {
-  material.bind_group(MaterialBindGroupContext()).bind_group_data()
+  material.bind_group(context).bind_group_data()
 }
 
 ///|
@@ -910,9 +911,10 @@ pub fn[M : Material] material_default_renderer_extra_bind_group_data(
 ///|
 pub fn[M : Material] material_default_material_key(
   material : M,
+  context : MaterialBindGroupContext,
 ) -> @material.ErasedMaterialKey {
   @material.ErasedMaterialKey::new(
-    material.bind_group_data().hash64(),
+    material.bind_group_data(context).hash64(),
     "MaterialKey<\{M::material_debug_name()}>",
   )
 }
@@ -1158,11 +1160,11 @@ pub fn[M : Material] PreparedMaterial::from_material(
 ) -> PreparedMaterial[M] {
   let bind_group = material.bind_group(context)
   let material_layout = material.bind_group_layout_descriptor(context)
-  let material_key = material.material_key()
+  let material_key = material.material_key(context)
   let key = MaterialPipelineKey::new(
     material_mesh_pipeline_key(material),
     bind_group.layout_key(),
-    material.bind_group_data(),
+    material.bind_group_data(context),
     material_key~,
   )
   let render_method = material

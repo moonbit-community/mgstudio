@@ -722,6 +722,7 @@ pub fn render3d_material_properties_for_standard_material(
   }
   let standard_material_key = standard_material_key_from_material(
     effective_material,
+    features=standard_material_texture_features,
   )
   let base_material_layout = match extension {
     Some(metadata) if metadata.extension_tag == 1 =>

@@ -430,10 +430,17 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             cache.mark_pipeline_retryable_error(pipeline_id, message) catch {
               _ => ()
             }
-          err =>
+          err => {
+            // Bevy logs pipeline compilation failures
+            // (`bevy_render/src/render_resource/pipeline_cache.rs`); without
+            // this every mesh using the pipeline silently vanishes (ISS-482).
+            @app.log_error(
+              "failed to create render pipeline \{pipeline_id}: \{Repr(err)}",
+            )
             cache.mark_pipeline_error(pipeline_id, Repr(err).to_string()) catch {
               _ => ()
             }
+          }
         }
       }
       ComputePipelineDescriptor(descriptor) =>
@@ -456,10 +463,14 @@ fn register_pipeline_cache_render_pipeline_descriptors(
             cache.mark_pipeline_retryable_error(pipeline_id, message) catch {
               _ => ()
             }
-          err =>
+          err => {
+            @app.log_error(
+              "failed to create compute pipeline \{pipeline_id}: \{Repr(err)}",
+            )
             cache.mark_pipeline_error(pipeline_id, Repr(err).to_string()) catch {
               _ => ()
             }
+          }
         }
     }
   }

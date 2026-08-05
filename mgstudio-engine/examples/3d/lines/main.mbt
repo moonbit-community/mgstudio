@@ -208,8 +208,8 @@ impl @pbr.Material for LineMaterial with fn bind_group_layout_descriptor(
 }
 
 ///|
-impl @pbr.Material for LineMaterial with fn bind_group_data(self) {
-  @pbr.material_default_bind_group_data(self)
+impl @pbr.Material for LineMaterial with fn bind_group_data(self, context) {
+  @pbr.material_default_bind_group_data(self, context~)
 }
 
 ///|
@@ -221,8 +221,8 @@ impl @pbr.Material for LineMaterial with fn renderer_extra_bind_group_data(
 }
 
 ///|
-impl @pbr.Material for LineMaterial with fn material_key(self) {
-  @pbr.material_default_material_key(self)
+impl @pbr.Material for LineMaterial with fn material_key(self, context) {
+  @pbr.material_default_material_key(self, context)
 }
 
 ///|

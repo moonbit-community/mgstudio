@@ -2080,6 +2080,7 @@ test "volumetric_fog: GLB scene contributor is the inherited-visible Cube mesh" 
               properties.mesh_pipeline_key_bits.bits() == 0UL
             let material_key = @pbr.standard_material_key_from_material(
               material,
+              features=@pbr.standard_material_default_texture_feature_set(),
             )
             cube_prepared_material_key_matches.val = material_key.contains(
                 @pbr.STANDARD_MATERIAL_KEY_NORMAL_MAP,

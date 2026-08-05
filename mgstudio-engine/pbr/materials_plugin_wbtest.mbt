@@ -2474,8 +2474,11 @@ impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_layout_desc
 }
 
 ///|
-impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_data(self) {
-  material_default_bind_group_data(self)
+impl Material for ShadowReadinessNoShadowMaterial with fn bind_group_data(
+  self,
+  context,
+) {
+  material_default_bind_group_data(self, context~)
 }
 
 ///|
@@ -2487,8 +2490,11 @@ impl Material for ShadowReadinessNoShadowMaterial with fn renderer_extra_bind_gr
 }
 
 ///|
-impl Material for ShadowReadinessNoShadowMaterial with fn material_key(self) {
-  material_default_material_key(self)
+impl Material for ShadowReadinessNoShadowMaterial with fn material_key(
+  self,
+  context,
+) {
+  material_default_material_key(self, context)
 }
 
 ///|

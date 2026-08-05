@@ -546,7 +546,7 @@ pub fn material_default_alpha_mode() -> @material.AlphaMode3d
 
 pub fn material_default_bind_group() -> MaterialBindGroup
 
-pub fn[M : Material] material_default_bind_group_data(M) -> MaterialBindGroupKey
+pub fn[M : Material] material_default_bind_group_data(M, context? : MaterialBindGroupContext) -> MaterialBindGroupKey
 
 pub fn[M : Material] material_default_bind_group_layout_descriptor(M, context? : MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
 
@@ -564,7 +564,7 @@ pub fn material_default_enable_shadows() -> Bool
 
 pub fn material_default_fragment_shader() -> String?
 
-pub fn[M : Material] material_default_material_key(M) -> @material.ErasedMaterialKey
+pub fn[M : Material] material_default_material_key(M, MaterialBindGroupContext) -> @material.ErasedMaterialKey
 
 pub fn material_default_opaque_render_method() -> @material.OpaqueRendererMethod
 
@@ -986,7 +986,7 @@ pub fn standard_material_from_gltf_material(@material.StandardMaterial) -> @mate
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
 
-pub fn standard_material_key_from_material(@material.StandardMaterial) -> StandardMaterialKey
+pub fn standard_material_key_from_material(@material.StandardMaterial, features~ : StandardMaterialTextureFeatureSet) -> StandardMaterialKey
 
 pub fn standard_material_opaque_render_method(@material.StandardMaterial, @material.OpaqueRendererMethod) -> @material.OpaqueRendererMethod
 
@@ -3666,9 +3666,9 @@ pub(open) trait Material {
   fn bindless_slot_count() -> Int?
   fn bind_group(Self, MaterialBindGroupContext) -> MaterialBindGroup
   fn bind_group_layout_descriptor(Self, MaterialBindGroupContext) -> @render_resource.BindGroupLayoutDescriptor
-  fn bind_group_data(Self) -> MaterialBindGroupKey
+  fn bind_group_data(Self, MaterialBindGroupContext) -> MaterialBindGroupKey
   fn renderer_extra_bind_group_data(Self, MaterialBindGroupContext) -> @render_resource.MaterialBindGroupResolvedData
-  fn material_key(Self) -> @material.ErasedMaterialKey
+  fn material_key(Self, MaterialBindGroupContext) -> @material.ErasedMaterialKey
   fn specialize(@render_resource.RenderPipelineDescriptor, @Milky2018/mgstudio/mesh.MeshVertexBufferLayoutRef, MaterialPipelineKey[Self]) -> @render_resource.RenderPipelineDescriptor raise @material.SpecializedMeshPipelineError
 }
 pub impl Material for @material.StandardMaterial

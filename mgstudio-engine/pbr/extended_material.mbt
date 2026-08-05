@@ -738,8 +738,8 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
 pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
   StandardMaterial,
   E,
-] with fn bind_group_data(self) {
-  extended_material_standard_bind_group(self, MaterialBindGroupContext()).bind_group_data()
+] with fn bind_group_data(self, context) {
+  extended_material_standard_bind_group(self, context).bind_group_data()
 }
 
 ///|
@@ -761,10 +761,10 @@ pub impl[E : MaterialExtension + StandardMaterialExtension] Material for Extende
 pub impl[E : MaterialExtension + StandardMaterialExtension] Material for ExtendedMaterial[
   StandardMaterial,
   E,
-] with fn material_key(self) {
+] with fn material_key(self, context) {
   let witness : E? = None
   @material.ErasedMaterialKey::new(
-    self.bind_group_data().hash64(),
+    Material::bind_group_data(self, context).hash64(),
     "MaterialExtensionBindGroupData<\{standard_material_extension_asset_debug_name(witness)}>",
   )
 }

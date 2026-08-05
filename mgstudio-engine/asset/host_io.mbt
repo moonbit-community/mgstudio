@@ -116,7 +116,11 @@ priv struct Ktx2FormatInfo {
   format : @wgpu.TextureFormat
   block_width : Int
   block_height : Int
+  // Bytes per block in the SOURCE payload (3 for RGB8 before transcode).
   block_bytes : Int
+  // Bevy transcodes RGB8 KTX2 levels to RGBA8 because wgpu has no RGB8
+  // texture format (`bevy_image/src/ktx2.rs`, `TranscodeFormat::Rgb8`).
+  rgb8_to_rgba8 : Bool
 }
 
 ///|
@@ -132,7 +136,13 @@ const KTX2_SUPERCOMPRESSION_NONE : Int = 0
 const KTX2_SUPERCOMPRESSION_ZSTD : Int = 2
 
 ///|
-const KTX2_VK_FORMAT_R8_UNORM : Int = 23
+const KTX2_VK_FORMAT_R8_UNORM : Int = 9
+
+///|
+const KTX2_VK_FORMAT_R8G8B8_UNORM : Int = 23
+
+///|
+const KTX2_VK_FORMAT_R8G8B8_SRGB : Int = 29
 
 ///|
 const KTX2_VK_FORMAT_R16G16_SFLOAT : Int = 83
@@ -2266,6 +2276,27 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 1,
+      rgb8_to_rgba8: false,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_R8G8B8_UNORM {
+    return Some({
+      format: @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 3,
+      rgb8_to_rgba8: true,
+    })
+  }
+  if vulkan_format == KTX2_VK_FORMAT_R8G8B8_SRGB {
+    return Some({
+      format: @wgpu.TextureFormat::from_u32(
+        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB,
+      ),
+      block_width: 1,
+      block_height: 1,
+      block_bytes: 3,
+      rgb8_to_rgba8: true,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R32_SFLOAT {
@@ -2274,6 +2305,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 4,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R16G16_SFLOAT {
@@ -2282,6 +2314,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 4,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R16G16B16A16_SFLOAT {
@@ -2290,6 +2323,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 8,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_R32G32B32A32_SFLOAT {
@@ -2298,6 +2332,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 {
@@ -2306,6 +2341,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 4,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_B10G11R11_UFLOAT_PACK32 {
@@ -2316,6 +2352,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 1,
       block_height: 1,
       block_bytes: 4,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_BC7_UNORM_BLOCK {
@@ -2324,6 +2361,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_BC7_SRGB_BLOCK {
@@ -2334,6 +2372,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK {
@@ -2344,6 +2383,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK {
@@ -2354,6 +2394,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK {
@@ -2364,6 +2405,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK {
@@ -2374,6 +2416,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 8,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK {
@@ -2384,6 +2427,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK {
@@ -2394,6 +2438,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_UNORM_BLOCK {
@@ -2402,6 +2447,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   if vulkan_format == KTX2_VK_FORMAT_ASTC_4X4_SRGB_BLOCK {
@@ -2412,6 +2458,7 @@ fn ktx2_vulkan_format_info(vulkan_format : Int) -> Ktx2FormatInfo? {
       block_width: 4,
       block_height: 4,
       block_bytes: 16,
+      rgb8_to_rgba8: false,
     })
   }
   None
@@ -2471,6 +2518,22 @@ fn ktx2_decode_level_payload(
 }
 
 ///|
+// Bevy source: `bevy_image/src/ktx2.rs`, `TranscodeFormat::Rgb8` — wgpu has
+// no RGB8 texture format, so each level expands to RGBA8 with opaque alpha.
+fn ktx2_expand_rgb8_to_rgba8(source : Bytes) -> Bytes {
+  let pixel_count = source.length() / 3
+  Bytes::makei(pixel_count * 4, i => {
+    let pixel = i / 4
+    let channel = i % 4
+    if channel == 3 {
+      (255).to_byte()
+    } else {
+      source[pixel * 3 + channel]
+    }
+  })
+}
+
+///|
 fn ktx2_decode_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   if bytes.length() < KTX2_HEADER_SIZE {
     return None
@@ -2515,13 +2578,18 @@ fn ktx2_decode_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   if level_bytes.length() < expected_bytes {
     return None
   }
-  let pixels = if level_bytes.length() == expected_bytes {
+  let clipped_pixels = if level_bytes.length() == expected_bytes {
     level_bytes
   } else {
     guard bytes_slice_copy(level_bytes, 0, expected_bytes) is Some(clipped) else {
       return None
     }
     clipped
+  }
+  let pixels = if format_info.rgb8_to_rgba8 {
+    ktx2_expand_rgb8_to_rgba8(clipped_pixels)
+  } else {
+    clipped_pixels
   }
   Some({ width, height, depth, format: format_info.format, pixels })
 }
@@ -2598,13 +2666,18 @@ fn ktx2_decode_2d_payload(bytes : Bytes) -> Ktx2Texture2dPayload? {
     if level_bytes.length() < expected_bytes {
       return None
     }
-    if level_bytes.length() == expected_bytes {
-      levels.push(level_bytes)
+    let clipped_level = if level_bytes.length() == expected_bytes {
+      level_bytes
     } else {
       guard bytes_slice_copy(level_bytes, 0, expected_bytes) is Some(clipped) else {
         return None
       }
-      levels.push(clipped)
+      clipped
+    }
+    if format_info.rgb8_to_rgba8 {
+      levels.push(ktx2_expand_rgb8_to_rgba8(clipped_level))
+    } else {
+      levels.push(clipped_level)
     }
   }
   Some({

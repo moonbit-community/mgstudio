@@ -21,7 +21,10 @@ test "pbr material: key encodes common standard material toggles" {
     .with_diffuse_transmission(0.4)
     .with_specular_transmission(0.2)
     .with_depth_bias(7.0)
-  let key = standard_material_key_from_material(material)
+  let key = standard_material_key_from_material(
+    material,
+    features=standard_material_default_texture_feature_set(),
+  )
   inspect(key.contains(STANDARD_MATERIAL_KEY_BASE_COLOR_UV), content="false")
   inspect(key.contains(STANDARD_MATERIAL_KEY_EMISSIVE_UV), content="false")
   inspect(
@@ -46,8 +49,12 @@ test "pbr material: key matches Bevy clearcoat and anisotropy predicates" {
   let clearcoat_normal_without_clearcoat = @material.StandardMaterial::StandardMaterial().with_clearcoat_normal_texture(
     Some(@asset.Handle::new(1)),
   )
+  let multi_layer_features = StandardMaterialTextureFeatureSet::StandardMaterialTextureFeatureSet(
+    pbr_multi_layer_material_textures=true,
+  )
   let clearcoat_normal_key = standard_material_key_from_material(
     clearcoat_normal_without_clearcoat,
+    features=multi_layer_features,
   )
   inspect(
     clearcoat_normal_key.contains(STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP),
@@ -58,16 +65,30 @@ test "pbr material: key matches Bevy clearcoat and anisotropy predicates" {
   )
   let clearcoat_key = standard_material_key_from_material(
     clearcoat_normal_with_clearcoat,
+    features=multi_layer_features,
   )
   inspect(
     clearcoat_key.contains(STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP),
     content="true",
+  )
+  // Bevy gates the CLEARCOAT_NORMAL_MAP key bit behind the
+  // `pbr_multi_layer_material_textures` cargo feature; with the feature off
+  // the bit must stay clear even when the material carries the texture
+  // (ISS-482: an ungated bit produced an unresolvable shader import).
+  let feature_off_key = standard_material_key_from_material(
+    clearcoat_normal_with_clearcoat,
+    features=standard_material_default_texture_feature_set(),
+  )
+  inspect(
+    feature_off_key.contains(STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP),
+    content="false",
   )
   let negative_anisotropy = @material.StandardMaterial::StandardMaterial().with_anisotropy_strength(
     -1.0F,
   )
   let negative_anisotropy_key = standard_material_key_from_material(
     negative_anisotropy,
+    features=standard_material_default_texture_feature_set(),
   )
   inspect(
     negative_anisotropy_key.contains(STANDARD_MATERIAL_KEY_ANISOTROPY),
@@ -733,7 +754,10 @@ test "pbr material: generic standard material preparation uses typed material ke
     .with_normal_map_texture(Some(@asset.Handle::new(1)))
     .with_diffuse_transmission(0.5F)
     .with_depth_bias(7.0F)
-  let expected_key = standard_material_key_from_material(material)
+  let expected_key = standard_material_key_from_material(
+    material,
+    features=standard_material_default_texture_feature_set(),
+  )
   let prepared = PreparedMaterial::from_material(
     @asset.Handle::new(11),
     material,

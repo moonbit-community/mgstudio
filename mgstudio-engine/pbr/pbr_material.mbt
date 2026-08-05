@@ -176,6 +176,7 @@ pub fn StandardMaterialKey::depth_bias(self : StandardMaterialKey) -> UInt {
 ///|
 pub fn standard_material_key_from_material(
   material : StandardMaterial,
+  features~ : StandardMaterialTextureFeatureSet,
 ) -> StandardMaterialKey {
   let mut bits : UInt64 = 0UL
   match material.cull_mode {
@@ -199,7 +200,16 @@ pub fn standard_material_key_from_material(
   if material.clearcoat > 0.0F {
     bits = bits | STANDARD_MATERIAL_KEY_CLEARCOAT
   }
-  if material.clearcoat > 0.0F && material.clearcoat_normal_texture is Some(_) {
+  // Bevy sets CLEARCOAT_NORMAL_MAP under
+  // `#[cfg(feature = "pbr_multi_layer_material_textures")]`
+  // (`bevy_pbr/src/pbr_material.rs`, `StandardMaterialKey::from`); the
+  // runtime feature set is this port's equivalent of that cargo feature.
+  // Without the gate the key emits STANDARD_MATERIAL_CLEARCOAT_NORMAL_MAP
+  // while `pbr_bindings` omits the binding, and the composed shader fails
+  // with an unresolved `clearcoat_normal_texture` import (ISS-482).
+  if features.pbr_multi_layer_material_textures() &&
+    material.clearcoat > 0.0F &&
+    material.clearcoat_normal_texture is Some(_) {
     bits = bits | STANDARD_MATERIAL_KEY_CLEARCOAT_NORMAL_MAP
   }
   if material.anisotropy_strength > 0.0F {
@@ -767,9 +777,12 @@ pub impl Material for StandardMaterial with fn bind_group_layout_descriptor(
 }
 
 ///|
-pub impl Material for StandardMaterial with fn bind_group_data(self) {
+pub impl Material for StandardMaterial with fn bind_group_data(self, context) {
   MaterialBindGroupKey::from_u64_bits(
-    standard_material_key_from_material(self).bits(),
+    standard_material_key_from_material(
+      self,
+      features=context.standard_material_texture_features(),
+    ).bits(),
   )
 }
 
@@ -783,9 +796,12 @@ pub impl Material for StandardMaterial with fn renderer_extra_bind_group_data(
 }
 
 ///|
-pub impl Material for StandardMaterial with fn material_key(self) {
+pub impl Material for StandardMaterial with fn material_key(self, context) {
   @material.ErasedMaterialKey::new(
-    standard_material_key_from_material(self).bits(),
+    standard_material_key_from_material(
+      self,
+      features=context.standard_material_texture_features(),
+    ).bits(),
     "StandardMaterialKey",
   )
 }
