@@ -978,6 +978,22 @@ pub fn StandardMaterial::with_ior(
 }
 
 ///|
+pub fn StandardMaterial::with_attenuation_distance(
+  self : StandardMaterial,
+  attenuation_distance : Float,
+) -> StandardMaterial {
+  { ..self, attenuation_distance, }
+}
+
+///|
+pub fn StandardMaterial::with_attenuation_color(
+  self : StandardMaterial,
+  attenuation_color : @color.Color,
+) -> StandardMaterial {
+  { ..self, attenuation_color, }
+}
+
+///|
 pub fn StandardMaterial::with_specular_tint(
   self : StandardMaterial,
   specular_tint : @color.Color,

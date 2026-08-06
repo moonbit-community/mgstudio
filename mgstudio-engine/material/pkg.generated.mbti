@@ -453,6 +453,8 @@ pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
 pub fn StandardMaterial::with_anisotropy_rotation(Self, Float) -> Self
 pub fn StandardMaterial::with_anisotropy_strength(Self, Float) -> Self
 pub fn StandardMaterial::with_anisotropy_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_attenuation_color(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_attenuation_distance(Self, Float) -> Self
 pub fn StandardMaterial::with_base_color(Self, @color.Color) -> Self
 pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat(Self, Float) -> Self
@@ -557,4 +559,3 @@ pub(open) trait IntoStandardMaterialAsset {
 }
 pub impl IntoStandardMaterialAsset for @asset.Handle[@image.Image]
 pub impl IntoStandardMaterialAsset for @color.Color
-

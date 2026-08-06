@@ -735,6 +735,58 @@ test "scene gltf wb: parse KHR_materials_anisotropy" {
 }
 
 ///|
+test "scene gltf wb: parse KHR_materials_transmission and volume" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"extensions\":{\"KHR_materials_transmission\":{\"transmissionFactor\":1,\"transmissionTexture\":{\"index\":2}},\"KHR_materials_volume\":{\"thicknessFactor\":0.25,\"thicknessTexture\":{\"index\":6},\"attenuationDistance\":0.5,\"attenuationColor\":[0.25,0.5,0.75]}}},{}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  debug_inspect(doc.materials.length(), content="2")
+  debug_inspect(doc.materials[0].specular_transmission.to_double(), content="1")
+  debug_inspect(
+    doc.materials[0].specular_transmission_texture,
+    content="Some(2)",
+  )
+  debug_inspect(doc.materials[0].thickness.to_double(), content="0.25")
+  debug_inspect(doc.materials[0].thickness_texture, content="Some(6)")
+  debug_inspect(
+    doc.materials[0].attenuation_distance.to_double(),
+    content="0.5",
+  )
+  debug_inspect(
+    doc.materials[0].attenuation_color.r.to_double(),
+    content="0.25",
+  )
+  debug_inspect(doc.materials[0].attenuation_color.g.to_double(), content="0.5")
+  debug_inspect(
+    doc.materials[0].attenuation_color.b.to_double(),
+    content="0.75",
+  )
+  // Absent extensions fall back to the `bevy_gltf` defaults: transmission 0,
+  // thickness 0, attenuation distance +inf, attenuation color white.
+  debug_inspect(doc.materials[1].specular_transmission.to_double(), content="0")
+  debug_inspect(doc.materials[1].specular_transmission_texture, content="None")
+  debug_inspect(doc.materials[1].thickness.to_double(), content="0")
+  debug_inspect(doc.materials[1].thickness_texture, content="None")
+  debug_inspect(doc.materials[1].attenuation_distance > 1.0e30F, content="true")
+  debug_inspect(doc.materials[1].attenuation_color.r.to_double(), content="1")
+}
+
+///|
+test "scene gltf wb: parse KHR_materials_emissive_strength" {
+  let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[]}],\"nodes\":[],\"meshes\":[],\"materials\":[{\"emissiveFactor\":[1,0.5,0.25],\"extensions\":{\"KHR_materials_emissive_strength\":{\"emissiveStrength\":25}}},{\"emissiveFactor\":[1,0.5,0.25]}]}"
+  let doc = gltf_parse_document(source).unwrap()
+  debug_inspect(doc.materials.length(), content="2")
+  // Strength scales every component, alpha included, matching Bevy's
+  // componentwise `LinearRgba * f32`.
+  debug_inspect(doc.materials[0].emissive.r.to_double(), content="25")
+  debug_inspect(doc.materials[0].emissive.g.to_double(), content="12.5")
+  debug_inspect(doc.materials[0].emissive.b.to_double(), content="6.25")
+  debug_inspect(doc.materials[0].emissive.a.to_double(), content="25")
+  // Absent extension leaves the emissive factor untouched (strength 1).
+  debug_inspect(doc.materials[1].emissive.r.to_double(), content="1")
+  debug_inspect(doc.materials[1].emissive.g.to_double(), content="0.5")
+  debug_inspect(doc.materials[1].emissive.a.to_double(), content="1")
+}
+
+///|
 test "scene gltf wb: parse node MSFT_lod ids" {
   let source = "{\"asset\":{\"version\":\"2.0\"},\"scene\":0,\"scenes\":[{\"nodes\":[0]}],\"nodes\":[{\"mesh\":0,\"extensions\":{\"MSFT_lod\":{\"ids\":[1,2]}}},{\"mesh\":1},{\"mesh\":2}],\"meshes\":[]}"
   let doc = gltf_parse_document(source).unwrap()

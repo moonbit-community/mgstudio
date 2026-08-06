@@ -224,6 +224,12 @@ priv struct GltfMaterialDef {
   specular_texture : Int?
   specular_tint_texture : Int?
   ior : Float
+  specular_transmission : Float
+  specular_transmission_texture : Int?
+  thickness : Float
+  thickness_texture : Int?
+  attenuation_distance : Float
+  attenuation_color : @color.Color
   normal_texture : Int?
   emissive_texture : Int?
   metallic_roughness_texture : Int?
@@ -1082,7 +1088,7 @@ fn gltf_parse_material_anisotropy(
 }
 
 ///|
-fn gltf_parse_specular_color_factor(
+fn gltf_parse_rgb_color_factor(
   value : Json?,
   default_value : @color.Color,
 ) -> @color.Color {
@@ -1111,7 +1117,7 @@ fn gltf_parse_material_specular(
     0.5F
   (
     reflectance,
-    gltf_parse_specular_color_factor(
+    gltf_parse_rgb_color_factor(
       specular_ext.get("specularColorFactor"),
       @color.Color::white(),
     ),
@@ -1129,6 +1135,67 @@ fn gltf_parse_material_ior(obj : Map[String, Json]) -> Float {
     return 1.5F
   }
   json_get_float(ior_ext, "ior").unwrap_or(1.5F)
+}
+
+///|
+/// `KHR_materials_transmission`: `transmissionFactor` (spec default 0) plus
+/// the transmission texture, mirroring `bevy_gltf`'s `material.transmission()`
+/// handling in the glTF material loader.
+fn gltf_parse_material_transmission(obj : Map[String, Json]) -> (Float, Int?) {
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return (0.0F, None)
+  }
+  guard json_get_object(extensions, "KHR_materials_transmission")
+    is Some(transmission_ext) else {
+    return (0.0F, None)
+  }
+  (
+    json_get_float(transmission_ext, "transmissionFactor").unwrap_or(0.0F),
+    gltf_parse_texture_index(transmission_ext, "transmissionTexture"),
+  )
+}
+
+///|
+/// `KHR_materials_volume`: thickness factor/texture plus attenuation
+/// distance/color, mirroring `bevy_gltf`'s `material.volume()` handling.
+/// Absent extension or fields fall back to the spec defaults Bevy uses:
+/// thickness 0, attenuation distance +inf, attenuation color white.
+fn gltf_parse_material_volume(
+  obj : Map[String, Json],
+) -> (Float, Int?, Float, @color.Color) {
+  let default_attenuation_distance = 1.0F / 0.0F
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return (0.0F, None, default_attenuation_distance, @color.Color::white())
+  }
+  guard json_get_object(extensions, "KHR_materials_volume") is Some(volume_ext) else {
+    return (0.0F, None, default_attenuation_distance, @color.Color::white())
+  }
+  (
+    json_get_float(volume_ext, "thicknessFactor").unwrap_or(0.0F),
+    gltf_parse_texture_index(volume_ext, "thicknessTexture"),
+    json_get_float(volume_ext, "attenuationDistance").unwrap_or(
+      default_attenuation_distance,
+    ),
+    gltf_parse_rgb_color_factor(
+      volume_ext.get("attenuationColor"),
+      @color.Color::white(),
+    ),
+  )
+}
+
+///|
+/// `KHR_materials_emissive_strength`: scalar multiplier folded into the
+/// emissive factor at load, mirroring `bevy_gltf`'s
+/// `material.emissive_strength().unwrap_or(1.0)`.
+fn gltf_parse_material_emissive_strength(obj : Map[String, Json]) -> Float {
+  guard json_get_object(obj, "extensions") is Some(extensions) else {
+    return 1.0F
+  }
+  guard json_get_object(extensions, "KHR_materials_emissive_strength")
+    is Some(emissive_strength_ext) else {
+    return 1.0F
+  }
+  json_get_float(emissive_strength_ext, "emissiveStrength").unwrap_or(1.0F)
 }
 
 ///|
@@ -1756,12 +1823,30 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         specular_texture = parsed_specular_texture
         specular_tint_texture = parsed_specular_tint_texture
         ior = gltf_parse_material_ior(obj)
+        let (specular_transmission, specular_transmission_texture) = gltf_parse_material_transmission(
+          obj,
+        )
+        let (
+          thickness,
+          thickness_texture,
+          attenuation_distance,
+          attenuation_color,
+        ) = gltf_parse_material_volume(obj)
 
-        let emissive = if obj.get("emissiveFactor") is Some(value) {
+        let base_emissive = if obj.get("emissiveFactor") is Some(value) {
           gltf_parse_emissive(value, @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
         } else {
           @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
         }
+        // Bevy scales the whole emissive color by the strength via
+        // `LinearRgba`'s componentwise `Mul<f32>`, alpha included.
+        let emissive_strength = gltf_parse_material_emissive_strength(obj)
+        let emissive = @color.Color::new(
+          base_emissive.r * emissive_strength,
+          base_emissive.g * emissive_strength,
+          base_emissive.b * emissive_strength,
+          base_emissive.a * emissive_strength,
+        )
 
         materials.push({
           name: json_get_string(obj, "name").unwrap_or(""),
@@ -1784,6 +1869,12 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           specular_texture,
           specular_tint_texture,
           ior,
+          specular_transmission,
+          specular_transmission_texture,
+          thickness,
+          thickness_texture,
+          attenuation_distance,
+          attenuation_color,
           normal_texture: gltf_parse_texture_index(obj, "normalTexture"),
           emissive_texture: gltf_parse_texture_index(obj, "emissiveTexture"),
           metallic_roughness_texture,
@@ -1816,6 +1907,12 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           specular_texture: None,
           specular_tint_texture: None,
           ior: 1.5F,
+          specular_transmission: 0.0F,
+          specular_transmission_texture: None,
+          thickness: 0.0F,
+          thickness_texture: None,
+          attenuation_distance: 1.0F / 0.0F,
+          attenuation_color: @color.Color::white(),
           normal_texture: None,
           emissive_texture: None,
           metallic_roughness_texture: None,
@@ -3113,6 +3210,10 @@ fn scene_build_material_component(
   material = material.with_reflectance(def.reflectance)
   material = material.with_specular_tint(def.specular_tint)
   material = material.with_ior(def.ior)
+  material = material.with_specular_transmission(def.specular_transmission)
+  material = material.with_thickness(def.thickness)
+  material = material.with_attenuation_distance(def.attenuation_distance)
+  material = material.with_attenuation_color(def.attenuation_color)
   material = material.with_metallic(def.metallic)
   material = material.with_perceptual_roughness(def.roughness)
   material = material.with_emissive(def.emissive)
@@ -3180,6 +3281,22 @@ fn scene_build_material_component(
   }
   if def.specular_tint_texture is Some(texture_index) {
     material = material.with_specular_tint_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
+      ),
+    )
+  }
+  if def.specular_transmission_texture is Some(texture_index) {
+    material = material.with_specular_transmission_texture(
+      scene_cached_load_texture(
+        asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
+        override_sampler, image_cache,
+      ),
+    )
+  }
+  if def.thickness_texture is Some(texture_index) {
+    material = material.with_thickness_texture(
       scene_cached_load_texture(
         asset_server, gltf_path, doc, buffer_bytes, texture_index, default_sampler,
         override_sampler, image_cache,
