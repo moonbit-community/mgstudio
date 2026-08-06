@@ -129,6 +129,41 @@ pub fn configure_pbr_render_startup_systems(
       "mgstudio_pbr::init_fallback_bindless_resources",
     ),
   )
+  .add_systems(
+    @render.render_startup_schedule_stage(),
+    @app.system(init_render_lightmaps).named(
+      "mgstudio_pbr::init_render_lightmaps",
+    ),
+  )
+}
+
+///|
+// Bevy source: `bevy/crates/bevy_pbr/src/lightmap/mod.rs::init_render_lightmaps`.
+// The bindless capability is decided once at render startup so lightmap slabs
+// allocate with a stable capacity for the whole run; the check needs the pbr
+// texture-binding constants, which is why this system lives in pbr rather
+// than the lightmap package (ISS-488).
+fn init_render_lightmaps(world : @ecs.World) -> Unit {
+  let bindless_supported = @render.host_gpu_mesh3d_binding_arrays_are_usable(
+    required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
+    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
+    required_binding_array_sampler_elements_per_shader_stage=@pbr_render.RENDER3D_LIGHTMAPS_PER_SLAB.reinterpret_as_uint(),
+  )
+  match world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
+    Some(render_lightmaps) =>
+      render_lightmaps.modify(fn(value) {
+        value.set_bindless_supported(bindless_supported)
+        // Reset the initial slab so its capacity reflects the decided
+        // bindless mode; nothing has allocated yet at render startup.
+        value.clear()
+      })
+    None => {
+      let value = @lightmap.RenderLightmaps::RenderLightmaps()
+      value.set_bindless_supported(bindless_supported)
+      value.clear()
+      world.insert_resource(@lightmap.ecs_key_render_lightmaps, value)
+    }
+  }
 }
 
 ///|

@@ -481,19 +481,6 @@ fn render3d_execute_camera_main_pass(
   let draw_item_indices = render3d_main_view_phase_draw_item_indices_or_abort(
     world, camera_entity,
   )
-  let lightmap_bindless_supported = @render.host_gpu_mesh3d_binding_arrays_are_usable(
-    required_storage_textures_per_shader_stage=(@pbr_light_probe.STANDARD_MATERIAL_FRAGMENT_SHADER_MIN_TEXTURE_BINDINGS +
-    @pbr_light_probe.MAX_VIEW_LIGHT_PROBES).reinterpret_as_uint(),
-    required_binding_array_sampler_elements_per_shader_stage=@pbr_render.RENDER3D_LIGHTMAPS_PER_SLAB.reinterpret_as_uint(),
-  )
-  match world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
-    Some(render_lightmaps) =>
-      render_lightmaps.modify(fn(value) {
-        value.set_bindless_supported(lightmap_bindless_supported)
-        value.clear()
-      })
-    None => ()
-  }
   let point_shadow_binding = shadow_bindings.point
   let directional_shadow_binding = shadow_bindings.directional
   let render_decals = match

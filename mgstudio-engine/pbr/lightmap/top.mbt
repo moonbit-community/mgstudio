@@ -194,6 +194,9 @@ pub struct RenderLightmaps {
   render_lightmaps : Map[Int, RenderLightmap]
   slabs : Array[LightmapSlab]
   mut bindless_supported : Bool
+  // Change-detection cursor for `extract_lightmaps_system` over the main
+  // world, following the `RenderMaterialInstances` idiom.
+  mut last_source_change_tick : @core.Tick
 }
 
 ///|
@@ -202,6 +205,7 @@ pub fn RenderLightmaps::RenderLightmaps() -> RenderLightmaps {
     render_lightmaps: Map([]),
     slabs: [LightmapSlab::new(false)],
     bindless_supported: false,
+    last_source_change_tick: 0,
   }
 }
 
@@ -358,6 +362,81 @@ pub fn RenderLightmaps::slab_texture_ids(
 }
 
 ///|
+/// Bevy source: `bevy/crates/bevy_pbr/src/lightmap/mod.rs::extract_lightmaps`.
+///
+/// Change-driven population of the persistent `RenderLightmaps` table during
+/// the extract stage: entities whose `ViewVisibility` or `Lightmap` changed
+/// allocate a slab slot when visible, and removed `Lightmap` components free
+/// theirs. Specialization, queueing, and the draw payload all read the result
+/// later in the render schedule, so the table must be complete before the
+/// render schedule runs (ISS-488: the previous draw-time allocation left the
+/// table empty at specialization time and the `LIGHTMAP` define never
+/// activated).
+pub fn extract_lightmaps_system(render_world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(render_world)
+  guard render_world.get_resource_mut(ecs_key_render_lightmaps)
+    is Some(render_lightmaps_ref) else {
+    return
+  }
+  render_lightmaps_ref.modify(fn(render_lightmaps) {
+    let system_ticks = @core.SystemTicks::new(
+      render_lightmaps.last_source_change_tick,
+      source_world.read_change_tick(),
+    )
+    // `Or<(Changed<ViewVisibility>, Changed<Lightmap>)>`
+    let changed : Array[@core.Entity] = []
+    let seen : Map[UInt64, Bool] = Map([])
+    for
+      entity in source_world
+      .changed_components(@visibility.ecs_key_view_visibility, system_ticks)
+      .read() {
+      if !seen.contains(entity.to_bits()) {
+        seen.set(entity.to_bits(), true)
+        changed.push(entity)
+      }
+    }
+    for
+      entity in source_world
+      .changed_components(ecs_key_lightmap, system_ticks)
+      .read() {
+      if !seen.contains(entity.to_bits()) {
+        seen.set(entity.to_bits(), true)
+        changed.push(entity)
+      }
+    }
+    for entity in changed {
+      guard source_world.is_alive(entity) else { continue }
+      guard (try! source_world.get_by_key(entity, ecs_key_lightmap))
+        is Some(lightmap) else {
+        continue
+      }
+      guard (try! source_world.get_by_key(
+          entity, @visibility.ecs_key_view_visibility,
+        ))
+        is Some(view_visibility) else {
+        continue
+      }
+      // Only process visible entities; already-allocated entries are kept
+      // (`insert_lightmap` returns the existing allocation).
+      if !view_visibility.get() {
+        continue
+      }
+      if lightmap.image.id() < 0 {
+        continue
+      }
+      ignore(render_lightmaps.insert_lightmap(entity, lightmap))
+    }
+    for
+      entity in source_world
+      .removed_components(ecs_key_lightmap, system_ticks)
+      .read() {
+      ignore(render_lightmaps.remove(entity))
+    }
+    render_lightmaps.last_source_change_tick = system_ticks.this_run
+  })
+}
+
+///|
 pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap] = @ecs.register_component(
   debug_name="render3d.lightmap",
 )
@@ -406,7 +485,15 @@ pub fn lightmap_plugin_install_with(
     if render_world.get_resource(ecs_key_render_lightmaps) is None {
       render_world.insert_resource(ecs_key_render_lightmaps, RenderLightmaps())
     }
-    render_app
+    // Bevy registers `extract_lightmaps` in `ExtractSchedule` (after mesh
+    // extraction); every mgstudio consumer reads `RenderLightmaps` in the
+    // render schedule, which runs after the whole extract stage.
+    render_app.add_systems(
+      @render.render_extract_schedule_stage(),
+      @app.system(extract_lightmaps_system).named(
+        "mgstudio.pbr.lightmap.extract_lightmaps",
+      ),
+    )
   })
   if !next.contains_resource(ecs_key_lightmap_plugin_state) {
     next = next.insert_world_resource(

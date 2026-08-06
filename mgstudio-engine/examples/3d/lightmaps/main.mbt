@@ -110,14 +110,8 @@ fn lightmap_handle_for_name(
 ///|
 fn set_material_lightmap_exposure(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
-  mesh_material : @pbr.MeshMaterial3d,
+  material_handle : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
-  if !mesh_material.is_standard_material() {
-    return
-  }
-  let material_handle : @asset.Handle[@pbr.StandardMaterial] = @asset.Handle::new(
-    mesh_material.material_asset_id(),
-  )
   materials.modify(fn(material_assets) {
     guard material_assets.get(material_handle) is Some(material) else { return }
     ignore(
@@ -130,8 +124,14 @@ fn set_material_lightmap_exposure(
 }
 
 ///|
+// Bevy queries the typed material carrier here
+// (`&MeshMaterial3d<StandardMaterial>` in `examples/3d/lightmaps.rs`); the
+// glTF scene spawner attaches exactly that component (ISS-488).
 type LightmappedMeshQuery = @ecs.Query[
-  (@ecs.Read[@gltf.GltfMeshName], @ecs.Read[@pbr.MeshMaterial3d]),
+  (
+    @ecs.Read[@gltf.GltfMeshName],
+    @ecs.Read[@pbr.MeshMaterial3dTyped[@pbr.StandardMaterial]],
+  ),
   (@ecs.With[@mesh.Mesh3d], @ecs.Without[@pbr.Lightmap]),
 ]
 
@@ -150,7 +150,7 @@ fn add_lightmaps_to_meshes(
     guard lightmap_handle_for_name(server, name) is Some(lightmap_image) else {
       return
     }
-    set_material_lightmap_exposure(materials, mesh_material.value())
+    set_material_lightmap_exposure(materials, mesh_material.value().handle())
     commands
     .entity(entity)
     .insert_component(

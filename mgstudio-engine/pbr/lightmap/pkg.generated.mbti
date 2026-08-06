@@ -19,6 +19,8 @@ pub let ecs_key_lightmap : @ecs.ComponentKey[Lightmap]
 
 pub let ecs_key_render_lightmaps : @ecs.ResourceKey[RenderLightmaps]
 
+pub fn extract_lightmaps_system(@ecs.World) -> Unit
+
 pub fn lightmap_plugin() -> LightmapPlugin
 
 pub fn lightmap_plugin_install(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -88,6 +90,7 @@ pub struct RenderLightmaps {
   render_lightmaps : Map[Int, RenderLightmap]
   slabs : Array[LightmapSlab]
   mut bindless_supported : Bool
+  mut last_source_change_tick : Int64
 }
 pub fn RenderLightmaps::RenderLightmaps() -> Self
 pub fn RenderLightmaps::clear(Self) -> Unit
@@ -102,4 +105,3 @@ pub impl @app.Resource for RenderLightmaps
 // Type aliases
 
 // Traits
-

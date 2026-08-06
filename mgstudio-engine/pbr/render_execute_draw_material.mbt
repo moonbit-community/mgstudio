@@ -68,49 +68,48 @@ fn render3d_resolve_mesh_lightmap_draw_fields(
   world : @ecs.World,
   extracted_mesh : ExtractedMesh3d,
 ) -> Render3dMeshLightmapDrawFields {
+  let no_lightmap : Render3dMeshLightmapDrawFields = {
+    lightmap_texture_id: -1,
+    lightmap_slab_index: -1,
+    lightmap_slot_index: -1,
+    lightmap_slab_texture_ids: [],
+    lightmap_uv_min_x: 0.0F,
+    lightmap_uv_min_y: 0.0F,
+    lightmap_uv_max_x: 0.0F,
+    lightmap_uv_max_y: 0.0F,
+  }
   let mesh = extracted_mesh.payload
   match mesh.lightmap {
-    Some(lightmap) if lightmap.image.id() >= 0 => {
-      let uv_min = lightmap.uv_rect.min()
-      let uv_max = lightmap.uv_rect.max()
-      let (slab_index, slot_index, slab_texture_ids) = match
-        world.get_resource_mut(@lightmap.ecs_key_render_lightmaps) {
+    Some(lightmap) if lightmap.image.id() >= 0 =>
+      // The draw payload reads the persistent `RenderLightmaps` table that
+      // `extract_lightmaps_system` maintains; it no longer allocates slots,
+      // so pipeline specialization and the draw stay coherent (ISS-488). An
+      // entity absent from the table draws without a lightmap, matching its
+      // non-`LIGHTMAP` pipeline.
+      match world.get_resource(@lightmap.RenderLightmaps::resource()) {
         Some(render_lightmaps) =>
-          render_lightmaps.modify(fn(value) {
-            let render_lightmap = value.insert_lightmap(
-              extracted_mesh.entity.main_entity,
-              lightmap,
-            )
-            (
-              render_lightmap.slab_index.to_int(),
-              render_lightmap.slot_index.to_int(),
-              value.slab_texture_ids(render_lightmap.slab_index),
-            )
-          })
-        None => (-1, 0, [lightmap.image.id()])
+          match render_lightmaps.get(extracted_mesh.entity.main_entity) {
+            Some(render_lightmap) => {
+              let uv_min = render_lightmap.uv_rect.min()
+              let uv_max = render_lightmap.uv_rect.max()
+              {
+                lightmap_texture_id: lightmap.image.id(),
+                lightmap_slab_index: render_lightmap.slab_index.to_int(),
+                lightmap_slot_index: render_lightmap.slot_index.to_int(),
+                lightmap_slab_texture_ids: render_lightmaps.slab_texture_ids(
+                  render_lightmap.slab_index,
+                ),
+                lightmap_uv_min_x: uv_min.x,
+                lightmap_uv_min_y: uv_min.y,
+                lightmap_uv_max_x: uv_max.x,
+                lightmap_uv_max_y: uv_max.y,
+              }
+            }
+            None => no_lightmap
+          }
+        None => no_lightmap
       }
-      {
-        lightmap_texture_id: lightmap.image.id(),
-        lightmap_slab_index: slab_index,
-        lightmap_slot_index: slot_index,
-        lightmap_slab_texture_ids: slab_texture_ids,
-        lightmap_uv_min_x: uv_min.x,
-        lightmap_uv_min_y: uv_min.y,
-        lightmap_uv_max_x: uv_max.x,
-        lightmap_uv_max_y: uv_max.y,
-      }
-    }
-    _ =>
-      {
-        lightmap_texture_id: -1,
-        lightmap_slab_index: -1,
-        lightmap_slot_index: -1,
-        lightmap_slab_texture_ids: [],
-        lightmap_uv_min_x: 0.0F,
-        lightmap_uv_min_y: 0.0F,
-        lightmap_uv_max_x: 0.0F,
-        lightmap_uv_max_y: 0.0F,
-      }
+    _ => no_lightmap
   }
 }
 
